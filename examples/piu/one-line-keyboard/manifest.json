@@ -1,7 +1,7 @@
 {
 	"include": [
 		"../all.json",
-		"$(MODULES)/input/keyboard/keyboardManifest.json"
+		"$(MODULES)/input/keyboard/manifest.json"
 	],
 	"config": {
 		"ssid": "Moddable",
