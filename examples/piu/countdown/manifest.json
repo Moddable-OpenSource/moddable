@@ -1,0 +1,11 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*-alpha": [
+			"./digits",
+		],
+	},
+}

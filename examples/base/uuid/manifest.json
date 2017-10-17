@@ -1,0 +1,14 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/base/uuid/*",
+			"$(MODULES)/network/net/*",
+		]
+	},
+	"preload": [
+		"uuid",
+		"net"
+	]
+}

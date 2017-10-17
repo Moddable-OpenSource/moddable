@@ -1,0 +1,20 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/mqtt/*",
+			"$(MODULES)/network/websocket/*",
+		]
+	},
+	"preload": [
+		"base64",
+		"http",
+		"mqtt",
+		"websocket"
+	]
+}

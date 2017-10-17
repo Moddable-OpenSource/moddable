@@ -1,0 +1,25 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/network/websocket/*",
+			"$(MODULES)/network/wifi/*",
+		],
+	},
+	"preload": [
+		"base64",
+		"crypt",
+		"websocket",
+		"wifi",
+	],
+	"resources":{
+		"*-alpha": [
+			"./OpenSans-Semibold-28",
+		],
+	},
+	"strip":"*",
+}

@@ -1,0 +1,25 @@
+{
+	"include": [
+		"../all.json",
+	],
+	"creation":{
+		"stack":350,
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/socket/*",
+			"$(MODULES)/network/wifi/*",
+			"$(MODULES)/network/websocket/*",
+		]
+	},
+	"preload": [
+		"socket",
+		"websocket",
+		"wifi",
+
+	],
+	"resources":{
+		
+	},
+}

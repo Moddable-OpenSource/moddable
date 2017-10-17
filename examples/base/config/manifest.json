@@ -1,0 +1,16 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"./echo"
+		]
+	},
+	"config": {
+		"sntp": "pool.ntp.org",
+		"touchCount": 4,
+		"threshold": 0.8,
+		"screen": "ili9341",
+		"echo": "echo"
+	}
+}
