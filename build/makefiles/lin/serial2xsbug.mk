@@ -31,9 +31,7 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
-INC_DIR = $(XS_DIR)/includes
-SRC_DIR = $(XS_DIR)/sources
-TLS_DIR = $(XS_DIR)/tools
+SRC_DIR = $(MODDABLE)/tools/$(NAME)/lin
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 C_OPTIONS = -fno-common -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
@@ -49,7 +47,7 @@ LINK_OPTIONS =
 OBJECTS = \
 	$(TMP_DIR)/serial2xsbug.o
 	
-VPATH += $(MODDABLE)/tools/lin
+VPATH += $(SRC_DIR)
 	
 build: $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
