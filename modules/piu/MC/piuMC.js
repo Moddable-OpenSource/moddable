@@ -239,11 +239,3 @@ class Locals  @ "PiuLocalsDelete" {
 }
 Object.freeze(Locals.prototype);
 global.Locals = Locals;
-
-var 
-c_send,
-commandListLength,
-context,
-regionLength,
-send,
-;
