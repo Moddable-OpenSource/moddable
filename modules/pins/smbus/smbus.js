@@ -38,9 +38,9 @@ export default class SMBus extends I2C {
 		let value = this.read(2);			// read two bytes
 		return value[0] | (value[1] << 8);
 	}
-	readBlockDataSMB(register, count) {
+	readBlockDataSMB(register, count, buffer) {
 		this.write(register);				// set address
-		return this.read(count);
+		return buffer ? this.read(count, buffer) : this.read(count);
 	}
 	writeByteDataSMB(register, value) {
 		this.write(register, value & 255);
