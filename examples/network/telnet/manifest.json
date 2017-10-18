@@ -1,11 +1,15 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"include": [
+			"$(MODDABLE)/examples/manifest_net.json",
+			"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
 	"modules": {
 		"*": [
 			"./main",
 			"$(MODULES)/network/telnet/*",
 		],
 		"cli": "$(MODULES)/base/cli/cli",
+		"cli/xs": "$(MODULES)/base/cli/commands/xs",
 	},
 	"preload": [
 		"main",
@@ -15,17 +19,27 @@
 	"platforms":{
 		"esp": {
 			"modules": {
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 				"pins/digital": "$(MODULES)/pins/digital/digital",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 				"cli/digital": "$(MODULES)/base/cli/commands/digital",
 				"cli/esp": "$(MODULES)/base/cli/commands/esp/esp",
+				"cli/files": "$(MODULES)/base/cli/commands/files",
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
 				"cli/network": "$(MODULES)/base/cli/commands/network",
+				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
 				"*": [
+					"$(MODULES)/files/file/*",
 					"$(MODULES)/pins/digital/esp/*",
+					"$(MODULES)/pins/i2c/esp/*",
 				],
 			},
 			"preload": [
+				"file",
 				"pins/*",
 				"cli/*",
+				"commodetto/*",
 			],
 		},
 	}
