@@ -15,7 +15,6 @@
 import Net from "net";
 import DNS from "dns";
 
-
 new DNS((message, value) => {
 	if (1 == message)
 		return Net.get("IP");
