@@ -72,14 +72,12 @@
 #define CTRLX  0b11010011 		// 0xD3 = 211				// 11010011
 #define CTRL_RESET 0b11010100	// 0xD4 = 212		// 11010100
 
-#define RXPLANE 90.1
-
 #define MAX_X 1914
 #define MAX_Y 1870
-#define X_RANGE 1735 // maxX - minX (1914 - 179)
-#define Y_RANGE 1767 // maxY - minY (1870 - 103)
 #define MIN_X 179
 #define MIN_Y 103
+#define X_RANGE (MAX_X - MIN_X)
+#define Y_RANGE (MAX_Y - MIN_Y)
 
 struct xpt2046Record {
 	modSPIConfigurationRecord spiConfig;

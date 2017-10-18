@@ -27,6 +27,7 @@ let file;
 file = new File("test.txt", true);
 file.write("This is a test.\n");
 file.write("We can write ", "multiple", " values.\n");
+file.write("This is the end of the test.\n");
 file.position = 0;
 let content = file.read(String);
 trace(content);
@@ -59,7 +60,7 @@ length = shorts.length;
 trace("Last five shorts: ");
 for (let i = 0; i < length; ++i)
 	trace(shorts[i] + ' ');
-trace("\n\n");
+trace("\n");
 
 // directory iterator
 // Note: The SPIFFS file system used on the ESP8266 is a flat file system with no directories
@@ -71,6 +72,7 @@ while (item = root.next()) {
 	else
 		trace(`File: ${item.name}, ${item.length} bytes\n`);
 }
+trace("\n");
 
 File.delete("test.txt");
 File.delete("preferences.json");
