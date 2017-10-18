@@ -168,11 +168,11 @@ uint8_t *loadPrefs(void)
 	prefs = c_malloc(SPI_FLASH_SEC_SIZE);
 	if (!prefs) return NULL;
 
-    ets_isr_mask(FLASH_INT_MASK);
+	ets_isr_mask(FLASH_INT_MASK);
 	result = spi_flash_read((uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)prefs, SPI_FLASH_SEC_SIZE);
-    ets_isr_unmask(FLASH_INT_MASK);
+	ets_isr_unmask(FLASH_INT_MASK);
 
-    if (SPI_FLASH_RESULT_OK != result) {
+	if (SPI_FLASH_RESULT_OK != result) {
 		c_free(prefs);
 		return NULL;
 	}
@@ -244,11 +244,11 @@ uint8_t savePrefs(uint8_t *prefs)
 		*(uint32_t *)prefs = kPreferencesMagic;	// buffer written
 	}
 
-    ets_isr_mask(FLASH_INT_MASK);
+	ets_isr_mask(FLASH_INT_MASK);
 	result = spi_flash_write(&_MODPREF_start - kFlashStart, (uint32 *)prefs, SPI_FLASH_SEC_SIZE);
-    ets_isr_unmask(FLASH_INT_MASK);
+	ets_isr_unmask(FLASH_INT_MASK);
 
-    if (SPI_FLASH_RESULT_OK != result)
+	if (SPI_FLASH_RESULT_OK != result)
 		return 0;
 
 	return 1;
@@ -301,7 +301,13 @@ uint8_t setPref(uint8_t *prefs, char *domain, char *key, uint8_t type, uint8_t *
 		// flag that erase is needed
 		*(uint32_t *)prefs = 0;
 
+		// make sure there's enough space now
 		prefsEnd = findPref(prefs, NULL, NULL);
+		prefsFree = SPI_FLASH_SEC_SIZE - (prefsEnd - prefs);
+		if (prefsFree < prefSize) {
+			modLog("prefs full");
+			return 0;
+		}
 	}
 
 	// write preference at the end
@@ -335,10 +341,7 @@ int getPrefSize(uint8_t *pref)
 	return thisSize;
 }
 
-
 /*
-
-compact
 
 // ONE SPI BLOCK (4 KB)... no more. no less.
 
