@@ -18,17 +18,13 @@
 
 import config from "mc/config";
 
-let keys = Object.keys(config);
-
 trace("*** config properties ***\n");
-keys.forEach((key, index) => {
-	trace(`key: ${key}, value: ${config[key]}\n`);
-});
+let keys = Object.keys(config);
+keys.forEach(key => trace(`key: ${key}, value: ${config[key]}\n`));
 trace("\n");
 
 if (config.sntp)
-	trace(`NTP host: ${config.sntp}\n`);
+	trace(`SNTP host: ${config.sntp}\n`);
 	
-let echo = require(config.echo);
+let echo = require(config.printModuleName);
 echo.print("Fini!");
-	
