@@ -533,18 +533,6 @@ Math.sineEaseIn = function(fraction) @ "Math_sineEaseIn";
 Math.sineEaseInOut = function(fraction) @ "Math_sineEaseInOut";
 Math.sineEaseOut = function(fraction) @ "Math_sineEaseOut";
 
-// xsID_*
-
-var 
-anchor,
-ellipsis,
-font,
-fonts,
-parameters,
-spans,
-touchCount,
-;
-
 Object.freeze(Skin.prototype);
 Object.freeze(Style.prototype);
 Object.freeze(Behavior.prototype);

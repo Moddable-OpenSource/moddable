@@ -8,9 +8,8 @@
 	},
 	"config": {
 		"sntp": "pool.ntp.org",
-		"touchCount": 4,
 		"threshold": 0.8,
 		"screen": "ili9341",
-		"echo": "echo"
+		"printModuleName": "echo"
 	}
 }
