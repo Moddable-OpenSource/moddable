@@ -282,17 +282,17 @@ typedef va_list c_va_list;
 #define c_va_start va_start
 
 #if ESP32
-#define c_vprintf vprintf
-#define c_printf printf
-#define c_vsnprintf vsnprintf
-#define c_snprintf snprintf
-#define c_fprintf(FILE, ...) fprintf(FILE, __VA_ARGS__)
+	#define c_vprintf vprintf
+	#define c_printf printf
+	#define c_vsnprintf vsnprintf
+	#define c_snprintf snprintf
+	#define c_fprintf(FILE, ...) fprintf(FILE, __VA_ARGS__)
 #else
-#define c_vprintf tfp_vprintf
-#define c_printf tfp_printf
-#define c_vsnprintf tfp_vsnprintf
-#define c_snprintf tfp_snprintf
-#define c_fprintf(FILE, ...) tfp_printf( __VA_ARGS__)
+	#define c_vprintf tfp_vprintf
+	#define c_printf tfp_printf
+	#define c_vsnprintf tfp_vsnprintf
+	#define c_snprintf tfp_snprintf
+	#define c_fprintf(FILE, ...) tfp_printf( __VA_ARGS__)
 #endif
 
 #define c_calloc calloc
@@ -401,6 +401,21 @@ typedef va_list c_va_list;
 #define c_tanh tanh
 #define c_trunc trunc
 
+/* READ MEMORY */
+
+#if ESP32
+	#define c_read8(POINTER) (*((uint8_t *)(POINTER)))
+	#define c_read16(POINTER) (*((uint16_t *)(POINTER)))
+	#define c_read32(POINTER) (*((uint32_t *)(POINTER)))
+#else
+	#define c_read8 espRead8
+	#define c_read16 espRead16
+	#define c_read32 espRead32
+#endif
+
+#define c_read16be espRead16be
+#define c_read32be espRead32be
+
 /* STRING */
 
 #define c_memcpy espMemCpy
@@ -417,15 +432,7 @@ typedef va_list c_va_list;
 #define c_strncpy espStrNCpy
 #define c_strstr espStrStr
 #define c_strrchr espStrRChr
-#define c_isEmpty(s) (!espRead8(s))
-
-/* READ MEMORY */
-
-#define c_read8 espRead8
-#define c_read16 espRead16
-#define c_read32 espRead32
-#define c_read16be espRead16be
-#define c_read32be espRead32be
+#define c_isEmpty(s) (!c_read8(s))
 
 /* 32-BIT MEMORY */
 
