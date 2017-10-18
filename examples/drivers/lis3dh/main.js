@@ -13,11 +13,10 @@
  */
 
 import Timer from "timer";
-import Accelerometer from "lis3dh";
+import {LIS3DH} from "lis3dh";
 
-let values = {};
-let accel = new Accelerometer({});
+let sensor = new LIS3DH({sda: 5, clock: 4});
 Timer.repeat(() => {
-	accel.read(values);
+	let values = sensor.sample();
 	trace(`x: ${values.x}, y: ${values.y}, z: ${values.z}\n`);
 }, 100);
