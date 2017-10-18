@@ -1321,8 +1321,8 @@ static void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize);
 #else
 	static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
 
-	extern uint32_t _XSMOD_start;
-	extern uint32_t _XSMOD_end;
+	extern uint8_t _XSMOD_start;
+	extern uint8_t _XSMOD_end;
 
 	#define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
 	#define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
