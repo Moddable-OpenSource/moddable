@@ -13,12 +13,12 @@
  */
 
 import Timer from "timer";
-import Accelerometer from "lis3dh";
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import ILI9341 from "ili9341";
+import {LIS3DH} from "lis3dh";
 
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
@@ -45,10 +45,10 @@ render.begin();
 	render.fillRectangle(ball.backgroundColor, 0, ball.yMin, width, height);
 render.end();
 
-let values = {};
-let accel = new Accelerometer({});
+let sensor = new LIS3DH({sda: 5, clock: 4});
+
 Timer.repeat(() => {
-	accel.read(values);
+	let values = sensor.sample();
 
 	render.begin(0, 0, width, ball.yMin);
 		render.fillRectangle(backgroundColor, 0, 0, width, height);

@@ -7,10 +7,12 @@
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
+			"$(MODULES)/pins/smbus/*",
 		],
 	},
 	"preload": [
 		"lis3dh",
+		"smbus",
 		"pins/i2c",
 	],
 	"resources": {
@@ -22,13 +24,6 @@
 			"modules": {
 				"*": "$(MODULES)/pins/i2c/esp/*",
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
-			},
-			"defines": {
-				"lis3dh": {
-					"i2c_address": 24,
-					"i2c_sda": 5,
-					"i2c_scl": 4
-				}
 			},
 		},
 	}
