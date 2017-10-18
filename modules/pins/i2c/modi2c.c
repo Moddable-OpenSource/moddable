@@ -18,7 +18,7 @@
  *
  */
 
-#include "xs.h"
+#include "xsmc.h"
 #include "xsesp.h"
 #include "mc.xs.h"			// for xsID_ values
 
@@ -31,17 +31,24 @@
 void xs_i2c(xsMachine *the)
 {
 	modI2CConfiguration i2c;
-	int hz = 0;
-	int sda = xsToInteger(xsGet(xsArg(0), xsID_sda));
-	int scl = xsToInteger(xsGet(xsArg(0), xsID_clock));
-	int address = xsToInteger(xsGet(xsArg(0), xsID_address));
+	int sda, scl, address, hz = 0;
+
+	xsmcVars(1);
+	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
+	sda = xsmcToInteger(xsVar(0));
+	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
+	scl = xsmcToInteger(xsVar(0));
+	xsmcGet(xsVar(0), xsArg(0), xsID_address);
+	address = xsmcToInteger(xsVar(0));
 	if ((address < 0) || (address > 127))
 		xsUnknownError("invalid address");
 
-	if (xsHas(xsArg(0), xsID_hz))
-		hz = xsToInteger(xsGet(xsArg(0), xsID_hz));
+	if (xsmcHas(xsArg(0), xsID_hz)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hz);
+		hz = xsmcToInteger(xsVar(0));
+	}
 
-	i2c = xsSetHostChunk(xsThis, NULL, sizeof(modI2CConfigurationRecord));
+	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CConfigurationRecord));
 
 	i2c->hz = hz;
 	i2c->sda = sda;
@@ -58,50 +65,63 @@ void xs_i2c_destructor(void *data)
 
 void xs_i2c_close(xsMachine *the)
 {
-	modI2CConfiguration i2c = xsGetHostChunk(xsThis);
+	modI2CConfiguration i2c = xsmcGetHostChunk(xsThis);
 	if (i2c) {
 		modI2CUninit(i2c);
-		xsSetHostData(xsThis, NULL);		// this clears the host chunk allocated
+		xsmcSetHostData(xsThis, NULL);		// this clears the host chunk allocated
 	}
 }
 
 void xs_i2c_read(xsMachine *the)
 {
 	modI2CConfiguration i2c;
-	unsigned int len = xsToInteger(xsArg(0)), i;
+	int argc = xsmcArgc;
+	unsigned int len = xsmcToInteger(xsArg(0)), i;
 	unsigned char err;
 	unsigned char buffer[34];
 
 	if (len > sizeof(buffer))
 		xsUnknownError("34 byte read limit");
 
-	i2c = xsGetHostChunk(xsThis);
+	i2c = xsmcGetHostChunk(xsThis);
 	err = modI2CRead(i2c, buffer, len, true);
 	if (err)
 		return;		// undefined returned on read failure
 
-	xsResult = xsArrayBuffer(buffer, len);
-	xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
+	if (argc >= 2) {
+		int bufferByteLength;
+		xsResult = xsArg(1);
+		bufferByteLength = xsGetArrayBufferLength(xsResult);
+		if (bufferByteLength < len)
+			xsUnknownError("buffer too small");
+		c_memmove(xsmcToArrayBuffer(xsResult), buffer, len);
+	}
+	else {
+		xsResult = xsArrayBuffer(buffer, len);
+		xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
+	}
 }
 
 void xs_i2c_write(xsMachine *the)
 {
 	modI2CConfiguration i2c;
-	uint8_t argc = xsToInteger(xsArgc), i;
+	uint8_t argc = xsmcArgc, i;
 	unsigned char err;
 	unsigned int len = 0;
 	unsigned char buffer[34];
 
+	xsmcVars(1);
+
 	for (i = 0; i < argc; i++) {
-		xsType t = xsTypeOf(xsArg(i));
+		xsType t = xsmcTypeOf(xsArg(i));
 		if ((xsNumberType == t) || (xsIntegerType == t)) {
 			if ((len + 1) > sizeof(buffer))
 				xsUnknownError("34 byte write limit");
-			buffer[len++] = (unsigned char)xsToInteger(xsArg(i));
+			buffer[len++] = (unsigned char)xsmcToInteger(xsArg(i));
 			continue;
 		}
 		if (xsStringType == t) {
-			char *s = xsToString(xsArg(i));
+			char *s = xsmcToString(xsArg(i));
 			int l = espStrLen(s);
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("34 byte write limit");
@@ -110,17 +130,22 @@ void xs_i2c_write(xsMachine *the)
 			continue;
 		}
 
-		{	// assume some kind of array (Array, Uint8Array, etc)
-			int l = xsToInteger(xsGet(xsArg(i), xsID_length));
+		{	// assume some kind of array (Array, Uint8Array, etc) (@@ use .buffer if present)
+			int l;
 			uint8_t i;
+
+			xsmcGet(xsVar(0), xsArg(i), xsID_length);
+			l = xsmcToInteger(xsVar(0));
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("34 byte write limit");
-			for (i = 0; i < l; i++)
-				buffer[len++] = xsToInteger(xsGet(xsArg(i), i));
+			for (i = 0; i < l; i++) {
+				xsmcGet(xsVar(0), xsArg(i), i);
+				buffer[len++] = xsmcToInteger(xsVar(0));
+			}
 		}
 	}
 
-	i2c = xsGetHostChunk(xsThis);
+	i2c = xsmcGetHostChunk(xsThis);
 	err = modI2CWrite(i2c, buffer, len, true);
 	if (err)
 		xsUnknownError("write failed");
