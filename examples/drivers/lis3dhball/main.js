@@ -18,7 +18,7 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import ILI9341 from "ili9341";
-import {LIS3DH, Datarate, Range} from "lis3dh";
+import {LIS3DH} from "lis3dh";
 
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
@@ -46,7 +46,6 @@ render.begin();
 render.end();
 
 let sensor = new LIS3DH({sda: 5, clock: 4});
-sensor.configure({ rate: Datarate.DATARATE_400_HZ, range: Range.RANGE_4_G });
 
 Timer.repeat(() => {
 	let values = sensor.sample();
