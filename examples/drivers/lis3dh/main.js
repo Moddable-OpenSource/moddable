@@ -13,9 +13,11 @@
  */
 
 import Timer from "timer";
-import {LIS3DH} from "lis3dh";
+import {LIS3DH, Datarate, Range} from "lis3dh";
 
 let sensor = new LIS3DH({sda: 5, clock: 4});
+sensor.configure({ rate: Datarate.DATARATE_400_HZ, range: Range.RANGE_4_G });
+
 Timer.repeat(() => {
 	let values = sensor.sample();
 	trace(`x: ${values.x}, y: ${values.y}, z: ${values.z}\n`);
