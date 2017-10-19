@@ -29,7 +29,11 @@
 		},
 		"esp32": {
 			"modules": {
-				"*": "$(MODULES)/drivers/ili9341/*"
+				"*": [
+					"$(MODULES)/drivers/ili9341/*",
+					"$(BUILD)/devices/esp32/pins/*",
+					"$(BUILD)/devices/esp32/spi/*",
+				]
 			},
 			"defines": {
 				"ili9341": {
