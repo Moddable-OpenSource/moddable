@@ -36,7 +36,6 @@
 #include "mc.defines.h"
 #include "modGPIO.h"
 #include "modSPI.h"
-#include "stdlib.h"
 #include "stddef.h"		// for offsetof macro
 
 #ifndef MODDEF_XPT2046_HZ
@@ -54,11 +53,13 @@
 #ifndef MODDEF_XPT2046_DEJITTERTHRESHOLD
 	#define MODDEF_XPT2046_DEJITTERTHRESHOLD (30)
 #endif
-#ifndef MODDEF_XPT2046_FLIPX
-	#define MODDEF_XPT2046_FLIPX (false)
+#ifndef MODDEF_XPT2046_RAW
+	#define MODDEF_XPT2046_RAW (false)
 #endif
-#ifndef MODDEF_XPT2046_FLIPY
-	#define MODDEF_XPT2046_FLIPY (false)
+#if MODDEF_XPT2046_RAW
+	#define MODDEF_XPT2046_CALIBRATE (false)
+#else
+	#define MODDEF_XPT2046_CALIBRATE (true)
 #endif
 
 // bit 7 - start bit
@@ -72,25 +73,21 @@
 #define CTRLX  0b11010011 		// 0xD3 = 211				// 11010011
 #define CTRL_RESET 0b11010100	// 0xD4 = 212		// 11010100
 
-#define MAX_X 1914
-#define MAX_Y 1870
-#define MIN_X 179
-#define MIN_Y 103
-#define X_RANGE (MAX_X - MIN_X)
-#define Y_RANGE (MAX_Y - MIN_Y)
-
 struct xpt2046Record {
 	modSPIConfigurationRecord spiConfig;
 
-	double      widthOverRange;
-	double      xFirstTerm;
-	double      heightOverRange;
-	double      ySecondTerm;
+#if MODDEF_XPT2046_CALIBRATE
+	int16_t			min_x;
+	int16_t			max_x;
+	int16_t			min_y;
+	int16_t			max_y;
+#endif
 
 	uint16_t		priorX[MODDEF_XPT2046_HISTORYCOUNT];
 	uint16_t		priorY[MODDEF_XPT2046_HISTORYCOUNT];
 	uint8_t			priorCount;
 	uint8_t			state;		// 1 = down, 2 = move, 3 = lift
+	uint8_t			raw;
 
 	modGPIOConfigurationRecord	touchPin;
 	modGPIOConfigurationRecord	csPin;
@@ -128,10 +125,24 @@ void xs_XPT2046(xsMachine *the)
 
 	xpt->state = 0;
 
-	xpt->widthOverRange = (double)MODDEF_XPT2046_WIDTH / X_RANGE;
-	xpt->xFirstTerm = (double)MODDEF_XPT2046_WIDTH + (xpt->widthOverRange * MIN_X);
-	xpt->heightOverRange = (double)MODDEF_XPT2046_HEIGHT / Y_RANGE;
-	xpt->ySecondTerm = (double)MIN_Y * xpt->heightOverRange;
+#if MODDEF_XPT2046_CALIBRATE
+	xpt->min_x = MODDEF_XPT2046_RAW_LEFT;
+	xpt->max_x = MODDEF_XPT2046_RAW_RIGHT;
+	xpt->min_y = MODDEF_XPT2046_RAW_TOP;
+	xpt->max_y = MODDEF_XPT2046_RAW_BOTTOM;
+
+	xsmcVars(1);
+	xsVar(0) = xsCall0(xsThis, xsID_calibrate);
+	if (xsmcTest(xsVar(0))) {
+		uint16_t *calibration = xsmcToArrayBuffer(xsVar(0));
+		if (xsGetArrayBufferLength(xsVar(0)) >= 8) {
+			xpt->min_x = calibration[0];
+			xpt->max_x = calibration[1];
+			xpt->min_y = calibration[2];
+			xpt->max_y = calibration[3];
+		}
+	}
+#endif
 
 	powerDown(xpt);
 }
@@ -235,19 +246,15 @@ void xpt2046GetPosition(xpt2046 xpt, uint16_t *x, uint16_t *y)
 	modSPITxRx(&xpt->spiConfig, (uint8_t *)&sample, sizeof(sample));
 	*y = sample >> 4;
 
-	*x = (*x < MIN_X) ? MIN_X : *x;
-	*x = (*x > MAX_X) ? MAX_X : *x;
-	*y = (*y < MIN_Y) ? MIN_Y : *y;
-	*y = (*y > MAX_Y) ? MAX_Y : *y;
+#if MODDEF_XPT2046_CALIBRATE
+	*x = (*x - xpt->min_x) * ((float)MODDEF_XPT2046_WIDTH) / (xpt->max_x - xpt->min_x);
+	*y = (*y - xpt->min_y) * ((float)MODDEF_XPT2046_HEIGHT) / (xpt->max_y - xpt->min_y);
 
-	*x = (uint16_t)(xpt->xFirstTerm - (*x * xpt->widthOverRange));
-	*y = (uint16_t)((*y * xpt->heightOverRange) - xpt->ySecondTerm);
-
-	if (MODDEF_XPT2046_FLIPX)
-		*x = MODDEF_XPT2046_WIDTH - *x;
-
-	if (MODDEF_XPT2046_FLIPY)
-		*y = MODDEF_XPT2046_HEIGHT - *y;
+	if (*x < 0) *x = 0;
+	if (*x > (MODDEF_XPT2046_WIDTH - 1)) *x = MODDEF_XPT2046_WIDTH - 1;
+	if (*y < 0) *y = 0;
+	if (*y > (MODDEF_XPT2046_HEIGHT - 1)) *y = MODDEF_XPT2046_HEIGHT - 1;
+#endif
 
 	modSPITxRx(&xpt->spiConfig, (uint8_t *)&zero, sizeof(zero));
 
