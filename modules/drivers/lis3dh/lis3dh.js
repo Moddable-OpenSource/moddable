@@ -120,7 +120,6 @@ class LIS3DH extends SMBus {
 		this.values = new Int16Array(3);
 		this.rate = Datarate.DATARATE_400_HZ;
 		this.range = Range.RANGE_4_G;
-		this.divider = getDividerFromRange(this.range);
 	}
 
 	configure(dictionary) {
