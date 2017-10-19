@@ -22,6 +22,8 @@ class Preference {
 	static set(domain, name, value) @ "xs_preference_set";
 	static get(domain, name) @ "xs_preference_get";
 	static delete(domain, name)  @ "xs_preference_delete";
+	static keys(domain) @ "xs_preference_keys";
+//	static reset() @ "xs_preference_reset";
 }
 Object.freeze(Preference.prototype);
 
