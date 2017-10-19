@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsesp.h"
+#include "mc.xs.h"			// for xsID_ values
 
 #include "spi_flash.h"
 #include "user_interface.h"
@@ -149,6 +150,46 @@ void xs_preference_delete(xsMachine *the)
 
 	if (!success)
 		xsUnknownError("can't save prefs");
+}
+
+void xs_preference_keys(xsMachine *the)
+{
+	char *domain = xsmcToString(xsArg(0));
+	uint8_t *prefsStart = loadPrefs();
+	uint8_t *prefs = prefsStart;
+	uint8_t *prefsEnd = prefs + (&_MODPREF_end - &_MODPREF_start);
+
+	if (!prefsStart)
+		xsUnknownError("can't load prefs");
+
+	xsResult = xsNewArray(0);
+
+	xsmcVars(1);
+	prefs += sizeof(uint32_t);	// skip signature
+	while (prefs < prefsEnd) {
+		int size;
+
+		if (0xff == *prefs)
+			break;
+
+		if (0 == *prefs) {
+			prefs += 1;
+			continue;
+		}
+
+		size = getPrefSize(prefs);
+		if (0 == size)
+			break;
+
+		domain = xsmcToString(xsArg(0));
+		if (0 == c_strcmp(prefs, domain)) {
+			xsmcSetString(xsVar(0), prefs + c_strlen(domain) + 1);
+			xsCall1(xsResult, xsID_push, xsVar(0));
+		}
+		prefs += size;
+	}
+
+	c_free(prefsStart);
 }
 
 /*
@@ -335,7 +376,7 @@ int getPrefSize(uint8_t *pref)
 		case kPrefsTypeInteger: thisSize += 4; break;
 		case kPrefsTypeString: thisSize += c_strlen(pref + thisSize) + 1; break;
 		case kPrefsTypeBuffer: thisSize += 2 + c_read16(pref + thisSize); break;
-		default: modLog("corrupt getPrefSize"); break;
+		default: modLog("corrupt getPrefSize"); thisSize = 0; break;
 	}
 
 	return thisSize;
