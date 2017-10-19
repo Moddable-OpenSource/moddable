@@ -101,7 +101,7 @@ var formatValues = {
 
 var resourceExtensions = [  
 	".act", ".fnt", ".json", ".png", ".gif", ".jpg", ".jpeg", 
-	".bmp", ".cct", ".nfnt", ".rle", ".ttf", // copy
+	".bmp", ".cct", ".nfnt", ".rle", ".ttf", ".zip", // copy
 	".dat", ".der", ".pk8", ".ski", ".subject",
 ];
 

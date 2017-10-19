@@ -23,7 +23,7 @@
 import {ZIP} from "zip";
 import Resource from "Resource";
 
-let buffer = new Resource("test.dat");	// test.dat is a zip archive
+let buffer = new Resource("test.zip");
 let archive = new ZIP(buffer);
 
 function indent(level) {

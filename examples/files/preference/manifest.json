@@ -10,6 +10,13 @@
 		"preference"
 	],
 	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/esp/*"
+				],
+			},
+		},
 		"esp32": {
 			"modules": {
 				"*": [

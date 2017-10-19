@@ -55,7 +55,6 @@ void xs_preference_set(xsMachine *the)
 			break;
 
 		case xsStringType:
-		case xsStringXType:
 			err = nvs_set_str(handle, xsmcToString(xsArg(1)), xsmcToString(xsArg(2)));
 			break;
 
@@ -139,4 +138,9 @@ bail:
 
 	if (ESP_OK != err)
 		xsUnknownError("nvs erase fail");
+}
+
+void xs_preference_keys(xsMachine *the)
+{
+	xsResult = xsNewArray(0);
 }
