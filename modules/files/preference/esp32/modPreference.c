@@ -139,3 +139,8 @@ bail:
 	if (ESP_OK != err)
 		xsUnknownError("nvs erase fail");
 }
+
+void xs_preference_keys(xsMachine *the)
+{
+	xsResult = xsNewArray(0);
+}
