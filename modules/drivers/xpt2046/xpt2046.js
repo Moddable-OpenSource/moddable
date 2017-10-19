@@ -21,9 +21,15 @@
 /*
 	XPT2046 SPI touch controller
 */
+import Preference from "preference";
 
 export default class XPT2046 @ "xs_XPT2046_destructor" {
 	constructor(dictionary) @ "xs_XPT2046";
 
 	read(target) @  "xs_XPT2046_read";
+
+	calibrate() {
+		return Preference.get("xpt2046", "calibrate");
+	}
 }
+
