@@ -87,7 +87,6 @@ struct xpt2046Record {
 	uint16_t		priorY[MODDEF_XPT2046_HISTORYCOUNT];
 	uint8_t			priorCount;
 	uint8_t			state;		// 1 = down, 2 = move, 3 = lift
-	uint8_t			raw;
 
 	modGPIOConfigurationRecord	touchPin;
 	modGPIOConfigurationRecord	csPin;
