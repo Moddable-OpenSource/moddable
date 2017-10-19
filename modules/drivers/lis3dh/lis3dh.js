@@ -75,13 +75,6 @@ const Range = {
 };
 Object.freeze(Range);
 
-const Axis = {
-	X: 0x0,
-	Y: 0x1,
-	Z: 0x2
-};
-Object.freeze(Axis);
-
 // Used with register 0x2A (LIS3DH_REG_CTRL_REG1) to set bandwidth
 const Datarate = {
 	DATARATE_400_HZ: 0b0111,	//  400Hz 
@@ -120,6 +113,7 @@ class LIS3DH extends SMBus {
 		this.values = new Int16Array(3);
 		this.rate = Datarate.DATARATE_400_HZ;
 		this.range = Range.RANGE_4_G;
+		this.configure({});
 	}
 
 	configure(dictionary) {
