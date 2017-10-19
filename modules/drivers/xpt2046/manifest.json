@@ -6,21 +6,17 @@
 			"hz": 1000000,
 		}
 	},
-	"preload": [
-		"xpt2046",
-		"preference",
-	],
-	"modules": {
-		"*": "$(MODULES)/files/preference/*"
-	},
+	"preload": "xpt2046",
 	"platforms": {
 		"esp": {
 			"modules": {
 				"*": [
 					  "$(MODULES)/drivers/xpt2046/*",
+					  "$(MODULES)/files/preference/*",
 					  "$(MODULES)/files/preference/esp/*"
 				]
 			},
+			"preload": "preference",
 			"defines": {
 				"xpt2046": {
 					"old_cs_pin": 5,
@@ -38,9 +34,11 @@
 			"modules": {
 				"*": [
 					  "$(MODULES)/drivers/xpt2046/*",
+					  "$(MODULES)/files/preference/*",
 					  "$(MODULES)/files/preference/esp32/*"
 				]
 			},
+			"preload": "preference",
 			"defines": {
 				"xpt2046": {
 					"cs_pin": 18,
