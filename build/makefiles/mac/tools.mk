@@ -268,34 +268,34 @@ $(TMP_DIR)/%.xsi: %.c
 
 $(COMMANDS): $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
 	chmod +x $(BIN_DIR)/colorcellencode
 	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
 	chmod +x $(BIN_DIR)/compressbmf
 	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
 	chmod +x $(BIN_DIR)/image2cs
 	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
 	chmod +x $(BIN_DIR)/mcconfig
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
 	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
 	chmod +x $(BIN_DIR)/mcrun
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/debug/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
 
 clean:
