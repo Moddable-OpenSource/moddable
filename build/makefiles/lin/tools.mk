@@ -267,31 +267,31 @@ $(TMP_DIR)/%.xsi: %.c
 
 $(COMMANDS): $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
 	chmod +x $(BIN_DIR)/colorcellencode
 	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
 	chmod +x $(BIN_DIR)/compressbmf
 	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
 	chmod +x $(BIN_DIR)/image2cs
 	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
 	chmod +x $(BIN_DIR)/mcconfig
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/debug/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
 
 clean:
