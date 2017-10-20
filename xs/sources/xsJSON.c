@@ -69,6 +69,7 @@ typedef struct {
 	txSlot* string;
 	txInteger token;
 	txSlot* keys;
+	txInteger line;
 } txJSONParser;
 
 typedef struct {
@@ -206,8 +207,16 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 		case 0:
 			theParser->token = XS_JSON_TOKEN_EOF;
 			break;
-		case '\n':	
-		case '\r':	
+		case 10:
+			c = (++p < q) ? *p : 0;
+			theParser->line++;
+			break;
+		case 13:
+			c = (++p < q) ? *p : 0;
+			if (c != 10)
+				theParser->line++;
+			break;
+		
 		case '\t':
 		case ' ':
 			c = (++p < q) ? *p : 0;
@@ -246,7 +255,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 						}
 					}
 					else
-						mxSyntaxError("invalid character in number");
+						mxSyntaxError("%ld: invalid character in number", theParser->line);
 				}
 				if ((c == 'e') || (c == 'E')) {
 					c = (++p < q) ? *p : 0;
@@ -260,11 +269,11 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 						}
 					}
 					else
-						mxSyntaxError("invalid character in number");
+						mxSyntaxError("%ld: invalid character in number", theParser->line);
 				}
 				size = p - s;
 				if ((size + 1) > sizeof(the->nameBuffer))
-					mxSyntaxError("number overflow");
+					mxSyntaxError("%ld: number overflow", theParser->line);
 				c_memcpy(the->nameBuffer, s, size);
 				the->nameBuffer[size] = 0;
 				theParser->number = fxStringToNumber(the->dtoa, the->nameBuffer, 0);
@@ -276,7 +285,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 					theParser->token = XS_JSON_TOKEN_NUMBER;
 			}
 			else
-				mxSyntaxError("invalid character in number");
+				mxSyntaxError("%ld: invalid character in number", theParser->line);
 			break;
 		case ',':
 			p++;
@@ -309,7 +318,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 			size = 0;
 			for (;;) {
 				if ((0 <= c) && (c < 32)) {
-					mxSyntaxError("invalid character in string");				
+					mxSyntaxError("%ld: invalid character in string", theParser->line);				
 					break;
 				}
 				else if (c == '"') {
@@ -341,7 +350,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 							else if (('A' <= c) && (c <= 'F'))
 								value = (value * 16) + (10 + c - 'A');
 							else
-								mxSyntaxError("invalid character in string");
+								mxSyntaxError("%ld: invalid character in string", theParser->line);
 						}
 						// surrogate pair?
 						for (sequence = gxUTF8Sequences; sequence->size; sequence++)
@@ -351,7 +360,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 						c = (++p < q) ? *p : 0;
 						break;
 					default:
-						mxSyntaxError("invalid character in string");
+						mxSyntaxError("%ld: invalid character in string", theParser->line);
 						break;
 					}
 				}
@@ -450,7 +459,7 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 				theParser->token = XS_JSON_TOKEN_TRUE;
 			}
 			else
-				mxSyntaxError("invalid character");	
+				mxSyntaxError("%ld: invalid character", theParser->line);	
 			break;
 		}
 	}
@@ -461,10 +470,11 @@ void fxParseJSON(txMachine* the, txJSONParser* theParser)
 {
 	mxPush(mxEmptyString);
 	theParser->string = the->stack;
+	theParser->line = 1;
 	fxGetNextJSONToken(the, theParser);
 	fxParseJSONValue(the, theParser);
 	if (theParser->token != XS_JSON_TOKEN_EOF)
-		mxSyntaxError("missing EOF");
+		mxSyntaxError("%ld: missing EOF", theParser->line);
 }
 
 void fxParseJSONValue(txMachine* the, txJSONParser* theParser)
@@ -502,7 +512,7 @@ void fxParseJSONValue(txMachine* the, txJSONParser* theParser)
 		break;
 	default:
 		mxPushUndefined();
-		mxSyntaxError("invalid value");
+		mxSyntaxError("%ld: invalid value", theParser->line);
 		break;
 	}
 }
@@ -522,7 +532,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 		if (theParser->token == XS_JSON_TOKEN_RIGHT_BRACE)
 			break;
 		if (theParser->token != XS_JSON_TOKEN_STRING) {
-			mxSyntaxError("missing name");
+			mxSyntaxError("%ld: missing name", theParser->line);
 			break;
 		}
 		mxPushString(theParser->string->value.string);
@@ -560,7 +570,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 		}
 		fxGetNextJSONToken(the, theParser);
 		if (theParser->token != XS_JSON_TOKEN_COLON) {
-			mxSyntaxError("missing :");
+			mxSyntaxError("%ld: missing :", theParser->line);
 			break;
 		}
 		fxGetNextJSONToken(the, theParser);
@@ -577,7 +587,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 		fxGetNextJSONToken(the, theParser);
 	}
 	if (theParser->token != XS_JSON_TOKEN_RIGHT_BRACE)
-		mxSyntaxError("missing }");
+		mxSyntaxError("%ld: missing }", theParser->line);
 	fxGetNextJSONToken(the, theParser);
 }
 
@@ -609,7 +619,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 	anArray->next->value.array.length = aLength;
 	fxCacheArray(the, anArray);
 	if (theParser->token != XS_JSON_TOKEN_RIGHT_BRACKET)
-		mxSyntaxError("missing ]");
+		mxSyntaxError("%ld: missing ]", theParser->line);
 	fxGetNextJSONToken(the, theParser);
 }
 
