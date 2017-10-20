@@ -96,7 +96,7 @@ HEADERS = $(HEADERS) $(XS_HEADERS)
 
 C_DEFINES = \
 	/D XS_ARCHIVE=1 \
-	/D USE_XSPLATFORM=1 \
+	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
 	/D mxRun=1 \
 	/D mxParse=1 \
