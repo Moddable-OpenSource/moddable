@@ -737,7 +737,8 @@ int32_t modGetDaylightSavingsOffset(void)
 }
 
 static void installModules(xsMachine *the);
-static char *findAtom(uint32_t atomTypeIn, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
+static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
+#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
@@ -946,6 +947,33 @@ static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	return 0;
 }
 
+static uint8_t *findMod(txMachine *the, char *name, int *modSize)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	int modsSize;
+	uint8_t *mods;
+	int index = 1;
+	int nameLen;
+
+	if (!xsb) return NULL;
+
+	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsb, c_read32be(xsb), &modsSize);
+	if (!mods) return NULL;
+
+	nameLen = c_strlen(name);
+	while (true) {
+		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), index++, mods, modsSize, NULL);
+		if (!aName)
+			break;
+		if (0 == c_strncmp(name, aName, nameLen)) {
+			if (0 == c_strcmp(".xsb", aName + nameLen))
+				return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index - 1, mods, modsSize, modSize);
+		}
+	}
+
+	return NULL;
+}
+
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->archive;
@@ -955,15 +983,10 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txInteger dot = 0;
 	txString slash;
 	txID id;
-	uint8_t *xsb = (uint8_t *)kModulesStart;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-
-	if (xsb) {
-		char *aName = findAtom(FOURCC('N', 'A', 'M', 'E'), xsb, c_read32be(xsb), NULL);
-		if (aName && (0 == c_strcmp(name, aName)))
-			return fxNewNameX(the, aName);
-	}
+	if (findMod(the, name, NULL))
+		return fxNewNameX(the, name);
 
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
@@ -1021,33 +1044,28 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
-	uint8_t *xsb = (uint8_t *)kModulesStart;
+	uint8_t *mod;
+	int modSize;
 
-	if (xsb) {
-		char *aName = findAtom(FOURCC('N', 'A', 'M', 'E'), xsb, c_read32be(xsb), NULL);
-		if (aName && (0 == c_strcmp(path - preparation->baseLength, aName))) {
-			txScript aScript;
-			uint32_t xsbSize = c_read32be(xsb);
+	mod = findMod(the, path - preparation->baseLength, &modSize);
+	if (mod) {
+		txScript aScript;
 
-			aScript.codeBuffer = findAtom(FOURCC('C', 'O', 'D', 'E'), xsb, xsbSize, &aScript.codeSize);
-			if (!aScript.codeBuffer) return;
+		aScript.callback = NULL;
+		aScript.symbolsBuffer = NULL;
+		aScript.symbolsSize = 0;
+		aScript.codeBuffer = mod;
+		aScript.codeSize = modSize;
+		aScript.hostsBuffer = NULL;
+		aScript.hostsSize = 0;
+		aScript.path = path - preparation->baseLength;
+		aScript.version[0] = XS_MAJOR_VERSION;
+		aScript.version[1] = XS_MINOR_VERSION;
+		aScript.version[2] = XS_PATCH_VERSION;
+		aScript.version[3] = 0;
 
-			aScript.callback = NULL;
-			aScript.symbolsBuffer = NULL;
-			aScript.symbolsSize = 0;
-	//		aScript.codeBuffer = atom + 8;
-	//		aScript.codeSize = c_read32be(atom + 4) - 8;
-			aScript.hostsBuffer = NULL;
-			aScript.hostsSize = 0;
-			aScript.path = path - preparation->baseLength;
-			aScript.version[0] = XS_MAJOR_VERSION;
-			aScript.version[1] = XS_MINOR_VERSION;
-			aScript.version[2] = XS_PATCH_VERSION;
-			aScript.version[3] = 0;
-
-			fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
-			return;
-		}
+		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		return;
 	}
 
 	while (c > 0) {
@@ -1334,7 +1352,7 @@ void installModules(xsMachine *the)
 	int atomSize, xsbSize, symbolCount;
 	uint8_t *xsb;
 	char *xsbCopy = NULL;
-	uint8_t scratch[128] __attribute__((aligned(4)));
+	uint8_t scratch[256] __attribute__((aligned(4)));
 
 #if ESP32
 	spi_flash_mmap_handle_t handle;
@@ -1354,25 +1372,36 @@ void installModules(xsMachine *the)
 #else
 	const uint8_t *installLocation = kModulesStart;
 	SpiFlashOpResult result;
+	uint8_t stagedSIGN[16];
+
+	spi_flash_read((uint32)((uintptr_t)kModulesInstallStart - (uintptr_t)kFlashStart), (uint32 *)scratch, sizeof(scratch));
+	atom = findAtom(FOURCC('S', 'I', 'G', 'N'), scratch, sizeof(scratch), &atomSize);
+	if (!atom || (16 != atomSize))
+		return;		// staging area empty causes installed module to be ignored
+
+	xsbSize = c_read32be(scratch);
+	c_memcpy(stagedSIGN, atom, 16);
 
 	spi_flash_read((uint32)((uintptr_t)installLocation - (uintptr_t)kFlashStart), (uint32 *)scratch, sizeof(scratch));
 
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), scratch, sizeof(scratch), &atomSize);
-	if (atom) {
-		xsbSize = c_read32be(scratch);
-		xsb = (char *)installLocation;
-	}
-	else {
-		// nothing installed. see if an archive is availble to install
-		spi_flash_read((uint32)((uintptr_t)kModulesInstallStart - (uintptr_t)kFlashStart), (uint32 *)scratch, sizeof(scratch));
+	if (!atom) goto installArchive;
 
-		xsbSize = c_read32be(scratch);
+	{
+	txPreparation* preparation = the->archive;
+	int signSize, chksSize;
+	uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
+	uint8_t *signAtom = findAtom(FOURCC('S', 'I', 'G', 'N'), scratch, sizeof(scratch), &signSize);
 
-		atom = findAtom(FOURCC('V', 'E', 'R', 'S'), scratch, sizeof(scratch), &atomSize);
-		if (!atom)
-			return;
+	if (!chksAtom || !signAtom || (16 != signSize) || (16 != chksSize)) goto installArchive;
 
+	if (0 != c_memcmp(chksAtom, preparation->checksum, sizeof(preparation->checksum)))
 		goto installArchive;
+
+	if (0 != c_memcmp(signAtom, stagedSIGN, sizeof(stagedSIGN)))
+		goto installArchive;
+
+	xsb = (char *)installLocation;
 	}
 #endif
 
@@ -1430,6 +1459,12 @@ installArchive:
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbCopy, xsbSize, NULL);
 	atom[3] = 1;		// make as remapped
 
+	txPreparation* preparation = the->archive;
+	atom = findAtom(FOURCC('C', 'H', 'K', 'S'), xsbCopy, xsbSize, &atomSize);
+	if (!atom || (sizeof(preparation->checksum) != atomSize))
+		goto bail;
+	c_memcpy(atom, preparation->checksum, sizeof(preparation->checksum));
+
 #if ESP32
 	// erase
 	if (ESP_OK != esp_partition_erase_range(gPartition, 0, SPI_FLASH_SEC_SIZE)) {
@@ -1485,14 +1520,16 @@ bail:
 		c_free(xsbCopy);
 }
 
-char *findAtom(uint32_t atomTypeIn, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
+char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
 {
 	const uint8_t *atom = xsb, *xsbEnd = xsb + xsbSize;
 
-	if (c_read32be(xsb + 4) != FOURCC('X', 'S', '_', 'B'))
-		return NULL;
+	if (0 == index) {	// hack - only validate XS_A header at root...
+		if (c_read32be(xsb + 4) != FOURCC('X', 'S', '_', 'A'))
+			return NULL;
 
-	atom += 8;
+		atom += 8;
+	}
 
 	while (atom < xsbEnd) {
 		int32_t atomSize = c_read32be(atom);
@@ -1502,9 +1539,12 @@ char *findAtom(uint32_t atomTypeIn, const uint8_t *xsb, int xsbSize, int *atomSi
 			return NULL;
 
 		if (atomType == atomTypeIn) {
-			if (atomSizeOut)
-				*atomSizeOut = atomSize - 8;
-			return (char *)(atom + 8);
+			index -= 1;
+			if (index <= 0) {
+				if (atomSizeOut)
+					*atomSizeOut = atomSize - 8;
+				return (char *)(atom + 8);
+			}
 		}
 		atom += atomSize;
 	}
@@ -1517,12 +1557,12 @@ char *findAtom(uint32_t atomTypeIn, const uint8_t *xsb, int xsbSize, int *atomSi
 
 void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 {
-	uint8_t *atom;
-	int atomSize;
+	uint8_t *atom, *mods;
+	int atomSize, modsSize;
 	xsIndex *ids = NULL;
 	int symbolCount;
 	const char *symbol;
-	int i = 0;
+	int i = 0, index = 1;
 	txID keyIndex = the->keyIndex;
 
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbRAM, xsbSize, &atomSize);
@@ -1539,10 +1579,7 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 	}
 
 	atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsbRAM, xsbSize, &atomSize);
-	if (!atom) {
-		modLog("no symbol atom");
-		return;
-	}
+	if (!atom) return;
 
 	symbolCount = c_read16be(atom);
 	ids = c_malloc(sizeof(xsIndex) * symbolCount);
@@ -1558,10 +1595,15 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 		symbol += c_strlen(symbol) + 1;
 	}
 
-	atom = findAtom(FOURCC('C', 'O', 'D', 'E'), xsbRAM, xsbSize, &atomSize);
-	if (!atom) goto bail;
+	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsbRAM, xsbSize, &modsSize);
+	if (!mods) goto bail;
 
-	fxRemapIDs(the, atom, atomSize, ids);
+	while (true) {
+		atom = findNthAtom(FOURCC('C', 'O', 'D', 'E'), index++, mods, modsSize, &atomSize);
+		if (!atom)
+			break;
+		fxRemapIDs(the, atom, atomSize, ids);
+	}
 
 bail:
 	if (ids)
