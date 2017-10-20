@@ -104,7 +104,7 @@ static char gxLibraryPath[PATH_MAX] = "";
 
 static txMockup* gxMockups[64];
 static GtkWidget *gxMockupImage = NULL;
-static int gxMockupIndex = 0; 
+static int gxMockupIndex = -1; 
 
 static const char* gxResourcePrefix = "/tech/moddable/simulator/screens";
 static GResource *gxResource = NULL;
@@ -420,7 +420,7 @@ void onApplicationStartup(GtkApplication *app)
 		gxMockupIndex = g_key_file_get_integer(keyfile, "mockup", "index", &error);
 		if (error) {
 			g_clear_error(&error);
-			gxMockupIndex = 0;
+			gxMockupIndex = -1;
 		}
 	}
 	g_key_file_unref(keyfile);
@@ -482,7 +482,7 @@ void onApplicationStartup(GtkApplication *app)
 	g_strfreev(names);
 	g_menu_insert_submenu(menubar, 1, "Size", G_MENU_MODEL(menu));
 	if ((gxMockupIndex < 0) || (index <= gxMockupIndex))
-		gxMockupIndex = 0;
+		gxMockupIndex = 4;
 	g_object_unref(menu);
 	
 	menu = g_menu_new();
