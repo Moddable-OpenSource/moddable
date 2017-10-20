@@ -358,6 +358,10 @@ txInteger fxPrepareHeap(txMachine* the)
 					result.kind = XS_BOOLEAN_KIND;
 					result.value.boolean = 0;
 					if (property && ((property->kind == XS_ARRAY_KIND) || (property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND))) {
+						if (slot != mxArrayPrototype.value.reference)
+							slot->ID = XS_NO_ID;
+						else
+							slot->ID = aliasCount++;
 						while (property) {
 							if (property->kind != XS_ACCESSOR_KIND) 
 								property->flag |= XS_DONT_SET_FLAG;
@@ -365,7 +369,6 @@ txInteger fxPrepareHeap(txMachine* the)
 							property = property->next;
 						}
 						slot->flag |= XS_DONT_PATCH_FLAG;
-						slot->ID = XS_NO_ID;
 					}
 					else if (property && (property->kind == XS_MODULE_KIND)) {
 						property = property->next;
