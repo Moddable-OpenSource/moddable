@@ -1257,7 +1257,17 @@ export default class Tool extends TOOL {
 	}
 	parseManifest(path) {
 		var buffer = FS.readFileSync(path);
-		var manifest = JSON.parse(buffer);
+		try {
+			var manifest = JSON.parse(buffer);
+		}
+		catch (e) {
+			var message = e.toString();
+			var result = /SyntaxError: \(host\): ([0-9]+): (.+)/.exec(message);
+			if (result.length == 3) {
+				this.reportError(path, parseInt(result[1]), result[2]);
+			}
+			throw new Error("'" + path + "': invalid manifest!");;
+		}
 		this.manifests.already[path] = manifest;
 		this.parseBuild(manifest);
 		if ("platforms" in manifest) {
