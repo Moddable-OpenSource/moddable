@@ -147,7 +147,7 @@ static void fxScreenStop(txScreen* screen);
 
     NSMenu* screenMenu = [[[NSMenu alloc] initWithTitle:@"Size"] autorelease];
 	NSArray *paths = [[NSBundle mainBundle] pathsForResourcesOfType:@"json" inDirectory:@"screens"];
-	NSUInteger c = [paths count], i;
+	NSInteger c = [paths count], i;
 	for (i = 0; i < c; i++) {
 		NSString *path = [paths objectAtIndex:i];
 		NSData *data = [[NSData alloc] initWithContentsOfFile:path];
@@ -173,7 +173,16 @@ static void fxScreenStop(txScreen* screen);
 	[NSApp setServicesMenu: servicesMenu];
 	
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-    i = [userDefaults integerForKey:@"screenTag"];
+    if ([userDefaults objectForKey:@"screenTag"]) {
+    	i = [userDefaults integerForKey:@"screenTag"];
+    }
+    else {
+    	i = -1;
+    }
+    if ((i < 0) || (c <= i)) {
+    	i = 4;
+    	[userDefaults setInteger:i forKey:@"screenTag"];
+    }
     item = [screenMenu itemWithTag:i];
     item.state = 1;
     [self createScreen:item.representedObject];
