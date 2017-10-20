@@ -4,7 +4,7 @@
 		"*": [
 			"./main",
 			"$(MODULES)/network/http/*",
-			"$(MODULES)/network/pubnub/*",
+			"$(MODULES)/network/services/pubnub/*",
 			"$(MODULES)/base/uuid/*"
 		]
 	},
