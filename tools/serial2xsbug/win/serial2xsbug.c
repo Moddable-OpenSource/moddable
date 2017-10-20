@@ -151,11 +151,11 @@ void fxOpenSerial(txSerialTool self)
 	BuildCommDCB(configuration, &dcb);
 	mxThrowElse(SetCommState(self->serialConnection, &dcb));
 	memset(&timeouts, 0, sizeof(timeouts));
-	timeouts.ReadIntervalTimeout = 50; 
-	timeouts.ReadTotalTimeoutMultiplier = 10;
-	timeouts.ReadTotalTimeoutConstant = 100;
-	timeouts.WriteTotalTimeoutMultiplier = 10;
-	timeouts.WriteTotalTimeoutConstant = 100;
+	timeouts.ReadIntervalTimeout = 1; 
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.ReadTotalTimeoutConstant = 0;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 0;
 	mxThrowElse(SetCommTimeouts(self->serialConnection, &timeouts));
 	CloseHandle(self->serialConnection);
 
@@ -275,6 +275,7 @@ void fxWriteNetwork(txSerialTool self, char* buffer, DWORD size)
 	WSAOVERLAPPED overlapped;
 	WSABUF buf;
 	DWORD offset, flags;
+// 	fprintf(stderr, "%.*s\n", size, buffer);
     WSAResetEvent(self->networkEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->networkEvent;
@@ -292,6 +293,7 @@ void fxWriteSerial(txSerialTool self, char* buffer, DWORD size)
 {
 	OVERLAPPED overlapped;
 	DWORD offset;
+// 	fprintf(stderr, "%.*s\n", size, buffer);
 	ResetEvent(self->serialEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->serialEvent;
