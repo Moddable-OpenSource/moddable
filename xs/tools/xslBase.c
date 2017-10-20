@@ -624,8 +624,8 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	size = 8 
 		+ 8 + 4 
 		+ 8 + sizeof(signature) 
-		+ 8 + linker->symbolsSize 
 		+ 8 + sizeof(signature) 
+		+ 8 + linker->symbolsSize 
 		+ 8 + modsSize
 		+ 8;
 	rsrcSize = 0;
@@ -669,18 +669,18 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	mxThrowElse(fwrite("SIGN", 4, 1, file) == 1);
 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
 
-	size = 8 + linker->symbolsSize;
-	size = htonl(size);
-	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-	mxThrowElse(fwrite("SYMB", 4, 1, file) == 1);
-	mxThrowElse(fwrite(linker->symbolsBuffer, linker->symbolsSize, 1, file) == 1);
-
 	c_memset(signature, 0, sizeof(signature));
 	size = 8 + sizeof(signature);
 	size = htonl(size);
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
+
+	size = 8 + linker->symbolsSize;
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("SYMB", 4, 1, file) == 1);
+	mxThrowElse(fwrite(linker->symbolsBuffer, linker->symbolsSize, 1, file) == 1);
 
 	size = 8 + modsSize;
 	size = htonl(size);
