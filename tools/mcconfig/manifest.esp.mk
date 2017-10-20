@@ -208,13 +208,25 @@ MEM_USAGE = \
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
+	
+ifeq ($(DEBUG),1)
+	LAUNCH = debug
+else
+	LAUNCH = release
+endif
 
 .PHONY: all	
 
-all: $(LIB_DIR) $(BIN_DIR)/main.bin
+all: $(LAUNCH)
+
+debug: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
+	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
 	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)/main.elf
+	
+release: $(LIB_DIR) $(BIN_DIR)/main.bin
+	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
