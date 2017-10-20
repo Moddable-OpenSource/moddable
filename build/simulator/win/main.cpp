@@ -132,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wcex.hIcon = NULL;
 	wcex.hIconSm = NULL;
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
+	wcex.hbrBackground = NULL;
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = "ScreenView";
 	RegisterClassEx(&wcex);
@@ -400,10 +400,13 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 		
 		CreateWindowEx(0, "ScreenView", NULL, WS_CHILD, 0, 0, 0, 0, window, NULL, gInstance, NULL);
 		
+		gxMockupIndex = -1;
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\moddable.tech\\Screen Test\\screen", 0, KEY_READ, &key) == ERROR_SUCCESS) {
 			RegQueryValueEx(key, "index", 0, NULL, (BYTE*)&gxMockupIndex, &size);
 			RegCloseKey(key);
 		}
+		if ((gxMockupIndex < 0) || (gxMockupCount <= gxMockupIndex))
+			gxMockupIndex = 4;
 		
 		gxScreenDC = CreateCompatibleDC(gDC); 
 		SendMessage(window, WM_CREATE_SCREEN, 0, 0);
@@ -648,6 +651,8 @@ LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM
 				(*gxScreen->touch)(gxScreen, touchEventMovedKind, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		}
 		} break;
+	case WM_ERASEBKGND:
+		return TRUE;
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(view, &ps);
