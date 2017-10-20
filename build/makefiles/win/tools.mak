@@ -184,7 +184,7 @@ C_OPTIONS = \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D HAVE_MEMMOVE=1 \
-	/D USE_XSPLATFORM=1 \
+	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
 	/D mxRun=1 \
 	/D mxParse=1 \
