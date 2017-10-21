@@ -219,6 +219,9 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 				id = theIDs[id];
 				p -= 2;
 				mxEncode2(p, id);
+				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_VARIABLE == code)) {
+					fxReferenceLinkerSymbol(linker, id);
+				}
 			}
 		}
 		else if (-1 == offset) {
@@ -256,7 +259,7 @@ void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs)
 
 void fxMapScript(txLinker* linker, txLinkerScript* script)
 {
-	txID* symbols = fxMapSymbols(linker, script->symbolsBuffer, 1);
+	txID* symbols = fxMapSymbols(linker, script->symbolsBuffer, 0);
 	fxMapCode(linker, script, symbols);
 	fxMapHosts(linker, script, symbols);
 }
