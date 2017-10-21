@@ -392,6 +392,7 @@ struct PiuDirectoryHelperStruct {
 	HANDLE handle;
 	OVERLAPPED overlapped;
 	DWORD dummy[256];
+	BOOL queued;
 };
 
 struct PiuDirectoryNotifierStruct {
@@ -416,11 +417,13 @@ static xsHostHooks PiuDirectoryNotifierHooks ICACHE_RODATA_ATTR = {
 VOID CALLBACK PiuSystem_DirectoryNotifierCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
 {
 	PiuDirectoryHelper helper = (PiuDirectoryHelper)(lpOverlapped->hEvent);
-	if (helper->handle == INVALID_HANDLE_VALUE) {
+	if (!helper->queued) {
+		if (helper->handle != INVALID_HANDLE_VALUE)
+			CloseHandle(helper->handle);
 		c_free(helper);
 		return;
 	}
-	ReadDirectoryChangesW(helper->handle, helper->dummy, sizeof(helper->dummy), FALSE,
+	helper->queued = ReadDirectoryChangesW(helper->handle, helper->dummy, sizeof(helper->dummy), FALSE,
 		FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
 		NULL, &helper->overlapped, PiuSystem_DirectoryNotifierCallback);
 	PiuDirectoryNotifier self = helper->firstNotifier;
@@ -449,7 +452,8 @@ void PiuSystem_DirectoryNotifierCreate(xsMachine* the)
 		self->reference = xsToReference(xsThis);
 		self->path = PiuString(xsArg(0));
 		self->callback = xsToReference(xsArg(1));
-
+		xsSetHostData(xsThis, (void*)self);
+		xsSetHostHooks(xsThis, &PiuDirectoryNotifierHooks);
 		helper = gFirstDirectoryHelper;
 		while (helper) {
 			if (!c_strcmp(PiuToString(helper->firstNotifier->path), PiuToString(self->path)))
@@ -459,12 +463,10 @@ void PiuSystem_DirectoryNotifierCreate(xsMachine* the)
 		
 		if (!helper) {
 			helper = (PiuDirectoryHelper)c_calloc(1, sizeof(PiuDirectoryHelperRecord));
-			helper->nextHelper = gFirstDirectoryHelper;
-			gFirstDirectoryHelper = helper;
+			xsElseThrow(helper != NULL);
 			helper->handle = INVALID_HANDLE_VALUE;
 			helper->overlapped.hEvent = (HANDLE)helper;
-
-			wchar_t* path = xsToStringCopyW(xsArg(0));
+			path = xsToStringCopyW(xsArg(0));
 			helper->handle = CreateFileW(path, 
 				FILE_LIST_DIRECTORY,
 				FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -473,30 +475,32 @@ void PiuSystem_DirectoryNotifierCreate(xsMachine* the)
 				FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, 
 				NULL);
 			xsElseThrow(helper->handle != INVALID_HANDLE_VALUE);
-			BOOL success = ReadDirectoryChangesW(helper->handle, helper->dummy, sizeof(helper->dummy), FALSE,
+			helper->queued = ReadDirectoryChangesW(helper->handle, helper->dummy, sizeof(helper->dummy), FALSE,
 				FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
 				NULL, &helper->overlapped, PiuSystem_DirectoryNotifierCallback);
-			xsElseThrow(success);
+			xsElseThrow(helper->queued);
 			c_free(path);
 			path = NULL;
+			helper->nextHelper = gFirstDirectoryHelper;
+			gFirstDirectoryHelper = helper;
 		}
-		
 		self->helper = helper;
 		self->nextNotifier = helper->firstNotifier;
 		helper->firstNotifier = self;
 
-		xsSetHostData(xsThis, (void*)self);
-		xsSetHostHooks(xsThis, &PiuDirectoryNotifierHooks);
 	}
 	xsCatch {
 		if (path)
 			c_free(path);
 		if (helper) {
-			helper->firstNotifier = self->nextNotifier;
 			if (!helper->firstNotifier) {
-				if (helper->handle != INVALID_HANDLE_VALUE)
-					CloseHandle(helper->handle);
-				c_free(helper);
+				if (helper->queued)
+					helper->queued = FALSE;
+				else {
+					if (helper->handle != INVALID_HANDLE_VALUE)
+						CloseHandle(helper->handle);
+					c_free(helper);
+				}
 			}
 		}
 		if (self)
@@ -530,10 +534,12 @@ void PiuSystem_DirectoryNotifierDelete(void* it)
 			}
 			helperAddress = &current->nextHelper;
 		}
-		HANDLE handle = helper->handle;
-		if (handle != INVALID_HANDLE_VALUE) {
-			helper->handle = INVALID_HANDLE_VALUE;
-			CloseHandle(handle);
+		if (helper->queued)
+			helper->queued = FALSE;
+		else {
+			if (helper->handle != INVALID_HANDLE_VALUE)
+				CloseHandle(helper->handle);
+			c_free(helper);
 		}
 	}
 }
