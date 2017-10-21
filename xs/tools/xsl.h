@@ -222,6 +222,7 @@ extern void fxPrintStack(txMachine* the, FILE* file, txBoolean dummy);
 extern void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** table);
 
 /* xslStrip.c */
+extern void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 extern void fxStripCallbacks(txLinker* linker, txMachine* the);
 extern void fxStripDefaults(txLinker* linker, FILE* file);
 extern void fxStripName(txLinker* linker, txString name);
