@@ -51,7 +51,9 @@
 	static void espStartInstrumentation(txMachine* the);
 #endif
 
-#define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
+#ifndef SUPPORT_MODDABLE
+	#define SUPPORT_MODDABLE 1
+#endif
 
 uint8_t espRead8(const void *addr)
 {
@@ -736,9 +738,11 @@ int32_t modGetDaylightSavingsOffset(void)
 	return gDaylightSavings;
 }
 
-static void installModules(xsMachine *the);
-static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
-#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+#if SUPPORT_MODDABLE
+	static void installModules(xsMachine *the);
+	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
+	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+#endif
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
@@ -804,7 +808,9 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 	}
 
+#if SUPPORT_MODDABLE
 	installModules(result);
+#endif
 
 #ifdef mxInstrument
 	espStartInstrumentation(result);
@@ -947,12 +953,15 @@ static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	return 0;
 }
 
+#if SUPPORT_MODDABLE
+#define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
+
 static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 {
 	uint8_t *xsb = (uint8_t *)kModulesStart;
 	int modsSize;
 	uint8_t *mods;
-	int index = 1;
+	int index = 0;
 	int nameLen;
 
 	if (!xsb) return NULL;
@@ -962,17 +971,18 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 
 	nameLen = c_strlen(name);
 	while (true) {
-		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), index++, mods, modsSize, NULL);
+		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, NULL);
 		if (!aName)
 			break;
 		if (0 == c_strncmp(name, aName, nameLen)) {
 			if (0 == c_strcmp(".xsb", aName + nameLen))
-				return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index - 1, mods, modsSize, modSize);
+				return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index, mods, modsSize, modSize);
 		}
 	}
 
 	return NULL;
 }
+#endif
 
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
@@ -985,8 +995,10 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
+#if SUPPORT_MODDABLE
 	if (findMod(the, name, NULL))
 		return fxNewNameX(the, name);
+#endif
 
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
@@ -1044,6 +1056,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
+#if SUPPORT_MODDABLE
 	uint8_t *mod;
 	int modSize;
 
@@ -1067,6 +1080,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
 		return;
 	}
+#endif
 
 	while (c > 0) {
 		if (!c_strcmp(path, script->path)) {
@@ -1327,11 +1341,12 @@ void modMessageService(void)
 	 user installable modules
 */
 
+#if SUPPORT_MODDABLE
+
 extern void fxRemapIDs(xsMachine* the, uint8_t* codeBuffer, uint32_t codeSize, xsIndex* theIDs);
 extern txID fxNewNameX(txMachine* the, txString theString);
 
 static void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize);
-
 
 #if ESP32
 	const esp_partition_t *gPartition;
@@ -1352,7 +1367,7 @@ void installModules(xsMachine *the)
 	int atomSize, xsbSize, symbolCount;
 	uint8_t *xsb;
 	char *xsbCopy = NULL;
-	uint8_t scratch[256] __attribute__((aligned(4)));
+	uint8_t scratch[128] __attribute__((aligned(4)));
 
 #if ESP32
 	spi_flash_mmap_handle_t handle;
@@ -1369,6 +1384,16 @@ void installModules(xsMachine *the)
 	if (!atom) return;
 
 	xsbSize = c_read32be(scratch);
+
+	{
+		txPreparation* preparation = the->archive;
+		int chksSize;
+		uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
+		if (!chksAtom || (16 != chksSize)) return;
+
+		if (0 != c_memcmp(chksAtom, preparation->checksum, sizeof(preparation->checksum)))
+		goto installArchive;
+	}
 #else
 	const uint8_t *installLocation = kModulesStart;
 	SpiFlashOpResult result;
@@ -1507,6 +1532,7 @@ installArchive:
 #endif
 
 	// tell the VM abot the symbols added now available in ROM
+//@@ goto code above to do this?
 	atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsb, xsbSize, &atomSize);
 	symbolCount = c_read16be(atom);
 	atom += 2;
@@ -1562,7 +1588,7 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 	xsIndex *ids = NULL;
 	int symbolCount;
 	const char *symbol;
-	int i = 0, index = 1;
+	int i = 0, index = 0;
 	txID keyIndex = the->keyIndex;
 
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbRAM, xsbSize, &atomSize);
@@ -1599,7 +1625,7 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 	if (!mods) goto bail;
 
 	while (true) {
-		atom = findNthAtom(FOURCC('C', 'O', 'D', 'E'), index++, mods, modsSize, &atomSize);
+		atom = findNthAtom(FOURCC('C', 'O', 'D', 'E'), ++index, mods, modsSize, &atomSize);
 		if (!atom)
 			break;
 		fxRemapIDs(the, atom, atomSize, ids);
@@ -1626,4 +1652,6 @@ uint8_t *espFindUnusedFlashStart(void)
 }
 
 #endif
+
+#endif /* SUPPORT_MODDABLE */
 
