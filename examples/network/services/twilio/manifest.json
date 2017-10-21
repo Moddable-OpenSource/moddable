@@ -1,6 +1,6 @@
 {
 	"include": [
-		"../manifest_net.json",
+		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/crypt/tls.json"
 	],
 	"modules": {
