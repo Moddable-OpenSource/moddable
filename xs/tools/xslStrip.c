@@ -51,6 +51,12 @@ txFlag fxIsLinkerSymbolUsed(txLinker* linker, txID id)
 	return linkerSymbol->flag;
 }
 
+void fxReferenceLinkerSymbol(txLinker* linker, txID id)
+{
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	linkerSymbol->flag |= 1;
+}
+
 void fxStripCallback(txLinker* linker, txCallback which)
 {
 	txLinkerCallback* linkerCallback = fxGetLinkerCallbackByAddress(linker, which);
