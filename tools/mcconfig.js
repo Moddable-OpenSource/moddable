@@ -197,6 +197,41 @@ class MakeFile extends File {
 			this.write(result.target);
 		}	
 		this.line("");
+		this.generateObjectsDefinitions(tool);
+		this.generateResourcesDefinitions(tool);
+	}
+	generateIDsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var sourceParts = tool.splitPath(result.source);
+			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".xsi: ", source);
+			this.line("\t@echo \"# xsid ", sourceParts.name, ".xsi\"");
+			this.line("\t$(XSID) ", source, " -o $(@D)");
+		}
+	}
+	generateModulesRules(tool) {
+		for (var result of tool.jsFiles) {
+			var source = result.source;
+			var sourceParts = tool.splitPath(source);
+			var target = result.target;
+			var targetParts = tool.splitPath(target);
+			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
+			this.line("\t@echo \"# xsc ", target, "\"");
+			if (result.commonjs) {
+				if (tool.debug)
+					this.line("\t$(XSC) ", source, " -m -e -d -c -o $(@D) -r ", targetParts.name);
+				else
+					this.line("\t$(XSC) ", source, " -m -e -c -o $(@D) -r ", targetParts.name);
+			}
+			else {
+				if (tool.debug)
+					this.line("\t$(XSC) ", source, " -e -d -c -o $(@D) -r ", targetParts.name);
+				else
+					this.line("\t$(XSC) ", source, " -e -c -o $(@D) -r ", targetParts.name);
+			}
+		}
+	}
+	generateObjectsDefinitions(tool) {
 		this.write("DIRECTORIES =");
 		for (var folder of tool.cFolders) {
 			this.write("\\\n\t");
@@ -233,6 +268,22 @@ class MakeFile extends File {
 			this.write(result.target);
 		}	
 		this.line("");
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(TMP_DIR)/", target, ": ", source, " $(HEADERS) | $(TMP_DIR)/mc.xs.c");
+			if (result.recipe) {
+				this.write(tool.recipes[result.recipe]);
+			}
+			else {
+				this.line("\t@echo \"# cc ", target, "\"");
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@");
+			}
+		}
+	}
+	generateResourcesDefinitions(tool) {
 		this.write("RESOURCES = $(STRINGS)");
 		for (var result of tool.resourcesFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
@@ -284,51 +335,6 @@ class MakeFile extends File {
 		this.line("");
 		this.line("ROTATION = ", tool.rotation);
 		this.line("");
-	}
-	generateIDsRules(tool) {
-		for (var result of tool.cFiles) {
-			var source = result.source;
-			var sourceParts = tool.splitPath(result.source);
-			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".xsi: ", source);
-			this.line("\t@echo \"# xsid ", sourceParts.name, ".xsi\"");
-			this.line("\t$(XSID) ", source, " -o $(@D)");
-		}
-	}
-	generateModulesRules(tool) {
-		for (var result of tool.jsFiles) {
-			var source = result.source;
-			var sourceParts = tool.splitPath(source);
-			var target = result.target;
-			var targetParts = tool.splitPath(target);
-			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
-			this.line("\t@echo \"# xsc ", target, "\"");
-			if (result.commonjs) {
-				if (tool.debug)
-					this.line("\t$(XSC) ", source, " -m -e -d -c -o $(@D) -r ", targetParts.name);
-				else
-					this.line("\t$(XSC) ", source, " -m -e -c -o $(@D) -r ", targetParts.name);
-			}
-			else {
-				if (tool.debug)
-					this.line("\t$(XSC) ", source, " -e -d -c -o $(@D) -r ", targetParts.name);
-				else
-					this.line("\t$(XSC) ", source, " -e -c -o $(@D) -r ", targetParts.name);
-			}
-		}
-	}
-	generateObjectsRules(tool) {
-		for (var result of tool.cFiles) {
-			var source = result.source;
-			var target = result.target;
-			this.line("$(TMP_DIR)/", target, ": ", source, " $(HEADERS) | $(TMP_DIR)/mc.xs.c");
-			if (result.recipe) {
-				this.write(tool.recipes[result.recipe]);
-			}
-			else {
-				this.line("\t@echo \"# cc ", target, "\"");
-				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@");
-			}
-		}
 	}
 	generateResourcesRules(tool) {
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
@@ -493,6 +499,43 @@ class MakeFile extends File {
 	}
 }
 
+class AndroidMakeFile extends MakeFile {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsDefinitions(tool) {
+		this.line("SOURCES_DIR = ", tool.javaPath);
+		this.write("SOURCES =");
+		for (var result of tool.javaFiles) {
+			var source = result.source;
+			var buffer = FS.readFileSync(source);
+			var a = buffer.match(/package ([^;]+);/m);
+			if (a.length != 2) {
+				throw new Error("no package in ", source);
+			}
+			a = a[1].split(".");
+			var path = tool.javaPath;
+			for (var name of a) {
+				path += "/" + name;
+				FS.mkdirSync(path);
+			}			
+			var parts = tool.splitPath(source);
+			var target = a.join("/") + "/" + parts.name + ".java";
+			this.write("\\\n\t$(SOURCES_DIR)/");
+			this.write(target);
+			result.target = target;
+		}
+		this.line("");
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.javaFiles) {
+			this.line("$(SOURCES_DIR)/", result.target, ": ", result.source);
+			this.line("\t@echo \"# copy ", result.target, "\"");
+			this.line("\tcp $< $@");
+		}
+	}
+}
+
 class NMakeFile extends MakeFile {
 	constructor(path) {
 		super(path)
@@ -533,6 +576,62 @@ class SynergyNMakeFile extends NMakeFile {
 				this.line("\t$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
 			}
 		}
+	}
+}
+
+class CMakeListsFile extends PrerequisiteFile {
+	constructor(path) {
+		super(path);
+	}
+	generate(tool) {
+		this.line("# MCCONFIG GENERATED FILE; DO NOT EDIT!");
+		this.line("");
+		this.line("cmake_minimum_required(VERSION 3.4.1)");
+		this.line("");
+		this.line("add_library(tech-moddable-piu SHARED");
+		this.line("\t", tool.xsPath, "/platforms/android_xs.c");
+		var names = FS.readDirSync(tool.xsPath + "/sources");
+		var c = names.length;
+		for (var i = 0; i < c; i++) {
+			var name = names[i];
+			if (name.endsWith(".c") && (name != "xsDefaults.c"))
+				this.line("\t", tool.xsPath, "/sources/", name);
+		}
+		for (var result of tool.cFiles) {
+			this.line("\t", result.source);
+		}
+		this.line("\t", tool.tmpPath, "/mc.xs.c");
+		this.line(")");
+		
+		this.line("target_compile_definitions(tech-moddable-piu PUBLIC");
+		this.line("\tINCLUDE_XSPLATFORM=1");
+		this.line("\tXSPLATFORM=\"android_xs.h\"");
+		this.line("\tmxDebug=1");
+		this.line("\tmxRun=1");
+		this.line("\tmxParse=1");
+		this.line("\tmxNoFunctionLength=1");
+		this.line("\tmxNoFunctionName=1");
+		this.line("\tmxHostFunctionPrimitive=1");
+		this.line("\tmxFewGlobalsTable=1");
+		this.line(")");
+		
+		this.line("target_include_directories(tech-moddable-piu PUBLIC");
+		this.line("\t", tool.xsPath, "/includes");
+		this.line("\t", tool.xsPath, "/platforms");
+		this.line("\t", tool.xsPath, "/sources");
+		this.line("\t", tool.xsPath, "/sources/pcre");
+		for (var folder of tool.cFolders) {
+			this.line("\t", folder);
+		}	
+		this.line("\t", tool.tmpPath);
+		this.line(")");
+
+		this.line("target_link_libraries(tech-moddable-piu");
+   		this.line("\tandroid");
+		this.line("\tlog");
+		this.line(")");
+
+		this.close();
 	}
 }
 
@@ -763,6 +862,8 @@ class ModulesRule extends Rule {
 			this.appendFile(tool.cFiles, parts.name + ".c.o", path, include);
 		else if (parts.extension == ".cpp")
 			this.appendFile(tool.cFiles, parts.name + ".cpp.o", path, include);
+		else if (parts.extension == ".java")
+			this.appendFile(tool.javaFiles, parts.name + ".class", path, include);
 		else if (parts.extension == ".m")
 			this.appendFile(tool.cFiles, parts.name + ".m.o", path, include);
 		else if (parts.extension == ".h") {
@@ -772,7 +873,7 @@ class ModulesRule extends Rule {
 	}
 	appendSource(target, source, include, straight) {
 		var tool = this.tool;
-;		var path = source + ".js";
+		var path = source + ".js";
 		if (FS.existsSync(path) > 0) {
 			var parts = tool.splitPath(path);
 			this.appendFile(tool.jsFiles, straight ? target + ".xsb" : target + parts.name + ".xsb", path, include);
@@ -786,6 +887,11 @@ class ModulesRule extends Rule {
 		if (FS.existsSync(path) > 0) {
 			var parts = tool.splitPath(path);
 			this.appendFile(tool.cFiles, parts.name + ".cpp.o", path, include);
+		}
+		var path = source + ".java";
+		if (FS.existsSync(path) > 0) {
+			var parts = tool.splitPath(path);
+			this.appendFile(tool.javaFiles, parts.name + ".class", path, include);
 		}
 		var path = source + ".m";
 		if (FS.existsSync(path) > 0) {
@@ -1353,6 +1459,8 @@ export default class Tool extends TOOL {
 		this.cFolders.already = {};
 		this.hFiles = [];
 		this.hFiles.already = {};
+		this.javaFiles = [];
+		this.javaFiles.already = {};
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};
 		this.resourcesFolders = [];
@@ -1467,9 +1575,7 @@ export default class Tool extends TOOL {
 		
 		var name = this.environment.NAME
 		if (!this.binPath) {
-			if (this.platform == "x-ios")
-				this.binPath = this.createDirectories(this.outputPath, "bin", name + ".app");
-			else if (this.platform == "x-ios-simulator")
+			if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator"))
 				this.binPath = this.createDirectories(this.outputPath, "bin", name + ".app");
 			else if (this.platform == "x-lin")
 				this.binPath = this.createDirectories(this.outputPath, "bin");
@@ -1490,10 +1596,33 @@ export default class Tool extends TOOL {
 		this.dataPath = this.tmpPath + this.slash + "data";
 		FS.mkdirSync(this.dataPath);
 		
-		if (this.platform == "x-ios") {
-			this.resourcesPath = this.binPath;
+		if ((this.platform == "x-android") || (this.platform == "x-android-simulator")) {
+			var mainPath = this.environment.PROJECT, path;
+			if (!mainPath) {
+				mainPath = this.binPath;
+				this.environment.PROJECT = mainPath;
+			}
+			mainPath += "/app";
+			FS.mkdirSync(mainPath);
+			mainPath += "/src";
+			FS.mkdirSync(mainPath);
+			mainPath += "/main";
+			FS.mkdirSync(mainPath);
+			
+			path = mainPath + "/assets";
+			FS.mkdirSync(path);
+			this.resourcesPath = path;
+			
+			path = mainPath + "/cpp";
+			FS.mkdirSync(path);
+			file = new CMakeListsFile(path + "/CMakeLists.txt");
+			file.generate(this);
+			
+			path = mainPath + "/java";
+			FS.mkdirSync(path);
+			this.javaPath = path;
 		}
-		else if (this.platform == "x-ios-simulator") {
+		else if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
 			this.resourcesPath = this.binPath;
 		}
 		else if (this.platform == "x-lin") {
@@ -1528,9 +1657,12 @@ export default class Tool extends TOOL {
 			else
 				file = new NMakeFile(path);
 		}
-		else
-			file = new MakeFile(path);
-
+		else {
+			if ((this.platform == "x-android") || (this.platform == "x-android-simulator"))
+				file = new AndroidMakeFile(path);
+			else
+				file = new MakeFile(path);
+		}
 		var source = this.tmpPath + this.slash + "mc.config.js";
 		var target = "mc" + this.slash + "config.xsb";
 		this.jsFiles.push({ source, target });
