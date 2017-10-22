@@ -33,9 +33,9 @@ void modI2CInit(modI2CConfiguration config)
 	i2c_config_t conf;
 
 	conf.mode = I2C_MODE_MASTER;
-	conf.sda_io_num = config->sda;
+	conf.sda_io_num = (-1 == config->sda) ? 21 : config->sda;
 	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-	conf.scl_io_num = config->scl;
+	conf.scl_io_num = (-1 == config->scl) ? 22 : config->scl;;
 	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
 	conf.master.clk_speed = config->hz ? config->hz : 100000;
 	i2c_param_config(I2C_NUM_1, &conf);
