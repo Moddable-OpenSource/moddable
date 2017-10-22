@@ -40,7 +40,9 @@
 
 #ifdef INCLUDE_XSPLATFORM
 	#include "xsPlatform.h"
+	#define xsMachinePlatform mxMachinePlatform
 #else
+	#define xsMachinePlatform
 	#ifndef __XSPLATFORM__
 
 	#include <setjmp.h>
@@ -1090,6 +1092,9 @@ struct xsMachineRecord {
 	xsJump* firstJump;
 	void* context;
 	xsSlot scratch;
+#ifndef __XSALL__
+	xsMachinePlatform
+#endif
 };
 
 struct xsCreationRecord {
