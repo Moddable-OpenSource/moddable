@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+	],
 	"modules": {
 		"*": [
 			"./main",
@@ -22,6 +25,8 @@
 				"cli/archive": "$(MODULES)/base/cli/commands/archive",
 				"cli/files": "$(MODULES)/base/cli/commands/files",
 				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
+				"cli/sensor": "$(MODULES)/base/cli/commands/sensor",
 				"pins/digital": "$(MODULES)/pins/digital/digital",
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
@@ -31,12 +36,14 @@
 					"$(MODULES)/files/flash/esp/*",
 					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/i2c/esp/*",
+					"$(MODULES)/drivers/lis3dh/*",
 				],
 			},
 			"preload": [
 				"pins/*",
 				"file",
 				"flash",
+				"lis3dh",
 			],
 		},
 		"esp32": {

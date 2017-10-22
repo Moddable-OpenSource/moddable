@@ -7,13 +7,12 @@
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
-			"$(MODULES)/pins/smbus/*",
 		],
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 	},
 	"preload": [
 		"lis3dh",
-		"smbus",
-		"pins/i2c",
+		"pins/*",
 	],
 	"resources": {
 		"*": "./ball",
