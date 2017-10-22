@@ -133,8 +133,6 @@
 				"*": [
 					"$(MODULES)/base/timer/mc/*",
 					"$(MODULES)/base/time/*",
-					"$(BUILD)/devices/esp32/spi/*",
-					"$(BUILD)/devices/esp32/pins/*",
 					"$(MODULES)/network/wifi/*",
 					"$(MODULES)/network/wifi/esp32/*",
 					"$(MODULES)/network/net/*",
