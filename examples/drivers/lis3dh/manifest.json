@@ -4,14 +4,14 @@
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
-			"$(MODULES)/pins/smbus/*",
 		],
 		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 	},
 	"preload": [
 		"lis3dh",
-		"smbus",
 		"pins/i2c",
+		"pins/smbus",
 	],
 	"platforms": {
 		"esp": {
