@@ -15,7 +15,7 @@
 import Timer from "timer";
 import LIS3DH from "lis3dh";
 
-let sensor = new LIS3DH({sda: 5, clock: 4});
+let sensor = new LIS3DH({});
 
 Timer.repeat(() => {
 	let values = sensor.sample();
