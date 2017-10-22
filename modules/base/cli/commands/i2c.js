@@ -18,7 +18,6 @@
  *
  */
 
-
 import CLI from "cli";
 import SMBus from "pins/smbus";
 
@@ -28,7 +27,7 @@ CLI.install(function(command, parts) {
 			if (parts.length < 1)
 				throw new Error("missing read/write/scan");
 			let address = parseInt(parts[1]);
-			let i2c = new SMBus({sda: 4, clock: 5, address});
+			let i2c = new SMBus({address});
 			let mode = parts[0].toLowerCase();
 			if ("read" === mode) {
 				if (parts.length < 2)
@@ -36,7 +35,7 @@ CLI.install(function(command, parts) {
 				if (parts.length < 3)
 					throw new Error("missing register number");
 
-				let i2c = new SMBus({sda: 4, clock: 5, address});
+				let i2c = new SMBus({address});
 				let count = (3 == parts.length) ? 1 : parseInt(parts[3]);
 				for (let i = 0, register = parseInt(parts[2]); i < count; i++, register++)
 					this.line("0x", register.toString(16), ": 0x", i2c.readByteDataSMB(register).toString(16));
@@ -50,7 +49,7 @@ CLI.install(function(command, parts) {
 				if (parts.length < 4)
 					throw new Error("missing write value");
 
-				let i2c = new SMBus({sda: 4, clock: 5, address});
+				let i2c = new SMBus({address});
 				let count = parts.length - 3;
 				for (let i = 0, register = parseInt(parts[2]); i < count; i++, register++)
 					i2c.writeByteDataSMB(register, parseInt(parts[3 + i]));
@@ -60,7 +59,7 @@ CLI.install(function(command, parts) {
 				for (let address = 1; address < 128; address++) {
 					let i2c;
 					try {
-						i2c = new SMBus({sda: 4, clock: 5, address});
+						i2c = new SMBus({address});
 						i2c.readByteDataSMB(0);
 					 	this.line("Found: 0x", address.toString(16));
 					}

@@ -9,6 +9,9 @@ CLI.install(function(command, parts) {
 	if ("pixelsout" !== command)
 		return false;
 
+	if (!parts.length)
+		throw new Error("missing open/close/fill");
+
 	switch (parts.shift().toLowerCase()) {
 		case "open":
 			if (this.pixelsout)
@@ -28,20 +31,21 @@ CLI.install(function(command, parts) {
 		case "fill":
 			if (!this.pixelsout)
 				throw new Error("none open");
+			let r = parseInt(parts[0]), g = parseInt(parts[1]), b = parseInt(parts[2])
 			let x = 0, y = 0;
 			let width = this.pixelsout.width;
 			let height = this.pixelsout.height;
-			if (parts.length >= 4) {
-				x = parseInt(parts[0]);
-				y = parseInt(parts[1]);
-				width = parseInt(parts[2]);
-				height = parseInt(parts[3]);
-//@@ adjust
+			if (parts.length >= 7) {
+				x = parseInt(parts[3]);
+				y = parseInt(parts[4]);
+				width = parseInt(parts[5]);
+				height = parseInt(parts[6]);
+//@@			pixelsOut.adaptInvalid()
 			}
 
 			let buffer = new ArrayBuffer(this.pixelsout.pixelsToBytes(width));
-			let pixels = new Uint16Array(buffer);
-			pixels.fill(Math.random() * 65535);
+			let pixels = new Uint16Array(buffer);	//@@ consider pixelFormat to make color and array type
+			pixels.fill(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
 			this.pixelsout.begin(x, y, width, height);
 			for (let i = height; i > 0; i--)
 				this.pixelsout.send(buffer);
@@ -49,7 +53,9 @@ CLI.install(function(command, parts) {
 			break;
 
 		case "help":
-			this.line("pixelsout - list loaded modules");
+			this.line("pixelsout open name - opens PixelsOut module of 'name' and displays dimensions");
+			this.line("pixelsout close - closes active PixelsOut");
+			this.line("pixelsout fill r g b [x y width height] - uses specified color to fill full screen or specified area");
 			break;
 
 		default:
