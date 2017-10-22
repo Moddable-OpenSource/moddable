@@ -39,10 +39,15 @@ class Console @ "xs_console_destructor" {
 					return;
 
 				this.write(String.fromCharCode(c));
-				if (10 === c) {
+				if ((10 === c) || (13 === c)){
 					CLI.execute.call(this, this.incoming);
 					this.incoming = "";
 					this.prompt();
+				} else if (127 == c) {
+					if (this.incoming.length) {
+						this.incoming = this.incoming.slice(0, -1);
+						this.write(String.fromCharCode(8), " ", String.fromCharCode(8));
+					}
 				}
 				else
 					this.incoming += String.fromCharCode(c);
@@ -68,7 +73,7 @@ class Console @ "xs_console_destructor" {
 	}
 
 	line(...items) {
-		this.write(...items, "\n");
+		this.write(...items, "\r\n");
 	}
 }
 Object.freeze(Console.prototype);
