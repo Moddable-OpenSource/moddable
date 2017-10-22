@@ -282,6 +282,7 @@ struct sxMachine {
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
 	txSlot scratch; /* xs.h */
+	mxMachinePlatform /* xs.h */
 	txFlag status;
 	
 	txSlot* cRoot;
@@ -372,7 +373,6 @@ struct sxMachine {
 	txProfileRecord* profileCurrent;
 	txProfileRecord* profileTop;
 #endif
-	mxMachinePlatform
 };
 
 struct sxCreation {

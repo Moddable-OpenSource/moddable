@@ -42,7 +42,9 @@ struct ServiceThreadStruct {
 	ServiceEvent firstEvent;
 	ServiceEvent lastEvent;
 	ServiceProxy firstProxy;
-#if mxLinux
+#if mxAndroid
+	pthread_mutex_t mutex;
+#elif mxLinux
 	GMainContext* main_context;
 	GMutex mutex;
 #elif mxWindows
@@ -117,7 +119,15 @@ static xsHostHooks ServiceThreadHooks = {
 static txMachine ServiceRoot;
 static ServiceThreadRecord MainThread;
 
-#if mxLinux
+#if mxAndroid
+static void* ServiceThreadLoop(void* it)
+{
+	ServiceThread thread = it;
+	ServiceThreadInitialize(thread);
+	// ??
+    return NULL;
+}
+#elif mxLinux
 static gpointer ServiceThreadLoop(gpointer it)
 {
 	ServiceThread thread = it;
@@ -192,7 +202,6 @@ void ServiceThreadCreate(xsMachine* the)
 #endif
 }
 
-
 void ServiceThreadInitialize(void* it)
 {
 	ServiceThread thread = it;
@@ -215,7 +224,9 @@ void ServiceThreadInitialize(void* it)
 		xsSet(xsGlobal, xsID_Thread, xsVar(1));
 	}
 	xsEndHost(thread->the);
-#if mxLinux
+#if mxAndroid
+	// ??
+#elif mxLinux
 	thread->main_context = g_main_context_get_thread_default();
 #elif mxWindows
 	thread->the->thread = thread;
@@ -281,7 +292,7 @@ void ServiceThreadPerform(void* it)
 	ServiceThread thread = it;
 	ServiceEvent event;
 	//fprintf(stderr, "ServiceThreadPerform thread %p\n", thread);
-#if mxLinux	
+#if mxLinux
 	g_mutex_lock(&(thread->mutex));
 #elif mxWindows
 	EnterCriticalSection(&(thread->lock));
@@ -326,7 +337,10 @@ void ServiceThreadSignal(ServiceThread thread, ServiceEvent event)
 	else
 		thread->firstEvent = event;
 	thread->lastEvent = event;
-#if mxLinux
+#if mxAndroid
+    pthread_mutex_unlock(&(thread->mutex));
+    // ??
+#elif mxLinux
 	g_mutex_unlock(&(thread->mutex));
 // 	g_main_context_invoke(thread->main_context, ServiceThreadPerform, thread);
 	GSource* idle_source = g_idle_source_new();

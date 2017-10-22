@@ -74,6 +74,6 @@
 	CFRunLoopSourceRef promiseSource; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink;
+	void* waiterLink;
 
 #endif /* __MAC_XS__ */
