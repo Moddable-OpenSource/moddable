@@ -64,7 +64,7 @@ void modI2CActivate(modI2CConfiguration config)
 
 	gI2CConfig = *config;
 
-	twi_init(config->sda, config->scl);
+	twi_init((-1 == config->sda) ? 5 : config->sda, (-1 == config->scl) ? 4 : config->scl);
 	if (config->hz)
 		twi_setClock(config->hz);
 }
