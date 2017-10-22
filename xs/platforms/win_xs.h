@@ -74,7 +74,7 @@
 	void (*threadCallback)(void*); \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink;
+	void* waiterLink;
 
 #define WM_PROMISE WM_USER
 #define WM_SERVICE WM_USER + 1

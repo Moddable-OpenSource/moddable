@@ -619,7 +619,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInte
 		mxLockMutex(&gxSharedCluster->waiterMutex);
 		machineAddress = &gxSharedCluster->waiterLink;
 		while ((machine = *machineAddress))
-			machineAddress = &machine->waiterLink;
+			machineAddress = (txMachine**)&machine->waiterLink;
 		*machineAddress = the;
 		mxAtomicsLoad();
 		if (result != value) {
@@ -660,7 +660,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInte
 				the->waiterLink = C_NULL;
 				break;
 			}
-			machineAddress = &machine->waiterLink;
+			machineAddress = (txMachine**)&machine->waiterLink;
 		}
 		mxUnlockMutex(&gxSharedCluster->waiterMutex);
 	#endif
