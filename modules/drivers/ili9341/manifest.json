@@ -35,8 +35,8 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/drivers/ili9341/*",
-					"$(BUILD)/devices/esp32/pins/*",
-					"$(BUILD)/devices/esp32/spi/*",
+					"$(MODULES)/pins/digital/esp32/*",
+					"$(MODULES)/pins/spi/esp32/*",
 				],
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
