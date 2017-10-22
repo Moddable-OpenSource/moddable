@@ -23,7 +23,7 @@
 	Implementation based on Adafruit https://github.com/adafruit/Adafruit_LIS3DH
 */
 
-import SMBus from "smbus";
+import SMBus from "pins/smbus";
 
 const Register = {
 	STATUS1: 0x07,
@@ -76,7 +76,7 @@ const Range = {
 Object.freeze(Range);
 
 // Used with register 0x2A (LIS3DH_REG_CTRL_REG1) to set bandwidth
-const Datarate = {
+const DataRate = {
 	DATARATE_400_HZ: 0b0111,	//  400Hz 
 	DATARATE_200_HZ: 0b0110,	//  200Hz
 	DATARATE_100_HZ: 0b0101,	//  100Hz
@@ -88,22 +88,9 @@ const Datarate = {
 	LOWPOWER_1K6HZ: 0b1000,
 	LOWPOWER_5KHZ: 0b1001,
 };
-Object.freeze(Datarate);
+Object.freeze(DataRate);
 
-function getDividerFromRange(range) {
-	let divider = 1;
-	if (range == Range.RANGE_16_G)
-		divider = 1365; // different sensitivity at 16g
-	else if (range == Range.RANGE_8_G)
-		divider = 4096;
-	else if (range == Range.RANGE_4_G)
-		divider = 8190;
-	else
-		divider = 16380;
-	return divider;
-}
-
-class LIS3DH extends SMBus {
+class Sensor extends SMBus {
 	constructor(dictionary) {
 		super(Object.assign({address: 0x18}, dictionary));
 
@@ -111,9 +98,7 @@ class LIS3DH extends SMBus {
 			throw new Error("unexpected device ID");
 
 		this.values = new Int16Array(3);
-		this.rate = Datarate.DATARATE_400_HZ;
-		this.range = Range.RANGE_4_G;
-		this.configure({});
+		this.configure({rate: DataRate.DATARATE_400_HZ, range: Range.RANGE_4_G});
 	}
 
 	configure(dictionary) {
@@ -124,7 +109,7 @@ class LIS3DH extends SMBus {
 					this[property] = parseInt(dictionary[property]);
 					break;
 				default:
-					throw new Error(`invalid property "${property}`);
+					throw new Error(`invalid property "${property}"`);
 					break;
 			}
 		}
@@ -134,15 +119,19 @@ class LIS3DH extends SMBus {
 		// High res & BDU enabled
 		this.writeByteDataSMB(Register.CTRL4, 0x88 | (this.range << 4));
 
-		// DRDY on INT1
-		this.writeByteDataSMB(Register.CTRL3, 0x10);
-
-		this.divider = getDividerFromRange(this.range);
+		if (this.range === Range.RANGE_16_G)
+			this.divider = 1365; // different sensitivity at 16g
+		else if (this.range === Range.RANGE_8_G)
+			this.divider = 4096;
+		else if (this.range === Range.RANGE_4_G)
+			this.divider = 8190;
+		else
+			this.divider = 16380;
 	}
 
 	sample() {
 		this.readBlockDataSMB(Register.OUT_X_L | 0x80, 6, this.values.buffer);
-			
+
 		return {
 			x: this.values[0] / this.divider,
 			y: this.values[1] / this.divider,
@@ -150,6 +139,6 @@ class LIS3DH extends SMBus {
 		};
 	}
 }
-Object.freeze(LIS3DH.prototype);
+Object.freeze(Sensor.prototype);
 
-export {LIS3DH, Datarate, Range};
+export {Sensor as default, Sensor, DataRate, Range};
