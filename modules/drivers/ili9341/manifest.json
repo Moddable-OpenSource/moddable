@@ -8,7 +8,10 @@
 			"flipY": false,
 		}
 	},
-	"preload": "ili9341",
+	"preload": [
+		"ili9341",
+		"commodetto/*"
+	],
 	"platforms": {
 		"esp": {
 			"modules": {
@@ -16,7 +19,8 @@
 					"$(MODULES)/drivers/ili9341/*",
 					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/spi/esp/*",
-				]
+				],
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
 				"ili9341": {
@@ -33,7 +37,8 @@
 					"$(MODULES)/drivers/ili9341/*",
 					"$(BUILD)/devices/esp32/pins/*",
 					"$(BUILD)/devices/esp32/spi/*",
-				]
+				],
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
 				"ili9341": {
