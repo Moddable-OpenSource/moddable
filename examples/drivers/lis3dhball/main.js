@@ -51,7 +51,7 @@ let sensor = new LIS3DH({});
 Timer.repeat(() => {
 	let values = sensor.sample();
 
-	if (180 == parseInt(config.axis)) {
+	if (180 == parseInt(config.orientation)) {
 		values.x = -values.x;
 	}
 
