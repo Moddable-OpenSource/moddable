@@ -40,15 +40,15 @@ enum {
 	kPrefsTypeBuffer = 4,
 };
 
-static uint8_t *loadPrefs(void);
+static uint8_t *loadPrefs(xsMachine *the);
 static uint8_t *findPref(uint8_t *prefs, const char *domain, const char *key);
 static uint8_t savePrefs(uint8_t *prefs);		// 0 = failure, 1 = success
-static uint8_t setPref(uint8_t *buffer, char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
+static uint8_t setPref(xsMachine *the, char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
 static int getPrefSize(uint8_t *pref);
 
 void xs_preference_set(xsMachine *the)
 {
-	uint8_t *prefs = loadPrefs();
+	uint8_t *prefs = loadPrefs(the);
 	uint8_t success;
 	uint8_t boolean;
 	int32_t integer;
@@ -61,43 +61,37 @@ void xs_preference_set(xsMachine *the)
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsBooleanType:
 			boolean = xsmcToBoolean(xsArg(2));
-			success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBoolean, (uint8_t *)&boolean, 1);
+			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBoolean, (uint8_t *)&boolean, 1);
 			break;
 
 		case xsIntegerType:
 			integer = xsmcToInteger(xsArg(2));
-			success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
+			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
 			break;
 
 		case xsNumberType:
 			dbl = xsmcToNumber(xsArg(2));
-			if (dbl != (int)dbl) {
-				c_free(prefs);
+			if (dbl != (int)dbl)
 				xsUnknownError("float unsupported");
-			}
-			success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
+			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
 			break;
 
 		case xsStringType:
 			str = xsmcToString(xsArg(2));
-			success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeString, (uint8_t *)str, c_strlen(str) + 1);
+			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeString, (uint8_t *)str, c_strlen(str) + 1);
 			break;
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+				success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
 			else
 				goto unknown;
 			break;
 
 		unknown:
 		default:
-			c_free(prefs);
 			xsUnknownError("unsupported type");
 	}
-
-
-	c_free(prefs);
 
 	if (!success)
 		xsUnknownError("can't save prefs");
@@ -105,18 +99,14 @@ void xs_preference_set(xsMachine *the)
 
 void xs_preference_get(xsMachine *the)
 {
-	uint8_t *prefs = loadPrefs();
+	uint8_t *prefs = loadPrefs(the);
 	uint8_t *pref;
 	uint8_t success;
-
-	if (!prefs)
-		xsUnknownError("can't load prefs");
+	uint32_t offset;
 
 	pref = findPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)));
-	if (NULL == pref) {
-		c_free(prefs);
+	if (NULL == pref)
 		return;
-	}
 
 	switch (*pref++) {
 		case kPrefsTypeBoolean:
@@ -126,27 +116,26 @@ void xs_preference_get(xsMachine *the)
 			xsmcSetInteger(xsResult, c_read32(pref));
 			break;
 		case kPrefsTypeString:
-			xsmcSetString(xsResult, pref);
+			offset = pref - prefs;
+			xsmcSetStringBuffer(xsResult, NULL, c_strlen(pref));
+			pref = offset + (uint8_t *)xsmcToArrayBuffer(xsVar(0));
+			c_strcpy(xsmcToString(xsResult), pref);
 			break;
 		case kPrefsTypeBuffer:
-			xsResult = xsArrayBuffer(pref + 2, c_read16(pref));
+			offset = pref - prefs;
+			xsResult = xsArrayBuffer(NULL, c_read16(pref));
+			pref = offset + (uint8_t *)xsmcToArrayBuffer(xsVar(0));
+			c_memcpy(xsmcToArrayBuffer(xsResult), pref + 2, c_read16(pref));
 			break;
 	}
-
-	c_free(prefs);
 }
 
 void xs_preference_delete(xsMachine *the)
 {
-	uint8_t *prefs = loadPrefs();
+	uint8_t *prefs = loadPrefs(the);
 	uint8_t success;
 
-	if (!prefs)
-		xsUnknownError("can't load prefs");
-
-	success = setPref(prefs, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), 0, NULL, 0);
-
-	c_free(prefs);
+	success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), 0, NULL, 0);
 
 	if (!success)
 		xsUnknownError("can't save prefs");
@@ -154,20 +143,16 @@ void xs_preference_delete(xsMachine *the)
 
 void xs_preference_keys(xsMachine *the)
 {
+	uint8_t *prefsStart = loadPrefs(the);
 	char *domain = xsmcToString(xsArg(0));
-	uint8_t *prefsStart = loadPrefs();
 	uint8_t *prefs = prefsStart;
 	uint8_t *prefsEnd = prefs + (&_MODPREF_end - &_MODPREF_start);
 
-	if (!prefsStart)
-		xsUnknownError("can't load prefs");
-
 	xsResult = xsNewArray(0);
 
-	xsmcVars(1);
 	prefs += sizeof(uint32_t);	// skip signature
 	while (prefs < prefsEnd) {
-		int size;
+		int size, offset;
 
 		if (0xff == *prefs)
 			break;
@@ -181,42 +166,44 @@ void xs_preference_keys(xsMachine *the)
 		if (0 == size)
 			break;
 
+		offset = prefs - prefsStart;
+
 		domain = xsmcToString(xsArg(0));
 		if (0 == c_strcmp(prefs, domain)) {
-			xsmcSetString(xsVar(0), prefs + c_strlen(domain) + 1);
-			xsCall1(xsResult, xsID_push, xsVar(0));
+			xsVar(1) = xsString(prefs + c_strlen(domain) + 1);
+			xsCall1(xsResult, xsID_push, xsVar(1));
 		}
-		prefs += size;
+
+		prefsStart = (uint8_t *)xsmcToArrayBuffer(xsVar(0));
+		prefs = offset + prefsStart + size;
 	}
 
-	c_free(prefsStart);
+//	c_free(prefsStart);
 }
 
-/*
 void xs_preference_reset(xsMachine *the)
 {
 	ets_isr_mask(FLASH_INT_MASK);
 	spi_flash_erase_sector(((uint8_t *)&_MODPREF_start - kFlashStart) / SPI_FLASH_SEC_SIZE);
 	ets_isr_unmask(FLASH_INT_MASK);
 }
-*/
 
-uint8_t *loadPrefs(void)
+uint8_t *loadPrefs(xsMachine *the)
 {
 	SpiFlashOpResult result;
 	uint8_t *prefs;
 
-	prefs = c_malloc(SPI_FLASH_SEC_SIZE);
-	if (!prefs) return NULL;
+	xsmcVars(2);
+	xsVar(0) = xsArrayBuffer(NULL, SPI_FLASH_SEC_SIZE);
+	prefs = xsmcToArrayBuffer(xsVar(0));
 
 	ets_isr_mask(FLASH_INT_MASK);
 	result = spi_flash_read((uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)prefs, SPI_FLASH_SEC_SIZE);
 	ets_isr_unmask(FLASH_INT_MASK);
 
-	if (SPI_FLASH_RESULT_OK != result) {
-		c_free(prefs);
-		return NULL;
-	}
+	if (SPI_FLASH_RESULT_OK != result)
+		xsUnknownError("can't load prefs");
+
 
 	if (kPreferencesMagic != *(uint32_t *)prefs) {
 		c_memset(prefs, 0xFF, SPI_FLASH_SEC_SIZE);
@@ -296,8 +283,9 @@ uint8_t savePrefs(uint8_t *prefs)
 }
 
 // pass NULL for value to remove property
-uint8_t setPref(uint8_t *prefs, char *domain, char *key, uint8_t type, uint8_t *value, uint16_t byteCount)
+uint8_t setPref(xsMachine *the, char *domain, char *key, uint8_t type, uint8_t *value, uint16_t byteCount)
 {
+	uint8_t *prefs = xsmcToArrayBuffer(xsVar(0));
 	uint8_t *prevPref = findPref(prefs, domain, key);
 	int prefSize = (c_strlen(domain) + 1) + (c_strlen(key) + 1) + 1 + byteCount + ((kPrefsTypeBuffer == type) ? 2 : 0);
 	uint8_t *prefsEnd = findPref(prefs, NULL, NULL);
@@ -317,9 +305,9 @@ uint8_t setPref(uint8_t *prefs, char *domain, char *key, uint8_t type, uint8_t *
 		return prevPref ? savePrefs(prefs) : 1;
 
 	prefsFree = SPI_FLASH_SEC_SIZE - (prefsEnd - prefs);
-	if (prefsFree < prefSize) {
+	if (prefsFree <= prefSize) {
 		// compact to make room
-		uint8_t *from = prefs, *to = prefs;
+		uint8_t *from = prefs + sizeof(uint32_t), *to = prefs + sizeof(uint32_t);
 
 		while (from < prefsEnd) {
 			int thisSize;
@@ -333,6 +321,9 @@ uint8_t setPref(uint8_t *prefs, char *domain, char *key, uint8_t type, uint8_t *
 			}
 
 			thisSize = getPrefSize(from);
+			if (0 == thisSize)
+				return 0;		// corrupt! @@
+
 			while (thisSize--)
 				*to++ = *from++;
 		}
