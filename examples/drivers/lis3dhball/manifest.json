@@ -7,13 +7,12 @@
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
-			"$(MODULES)/pins/smbus/*",
 		],
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 	},
 	"preload": [
 		"lis3dh",
-		"smbus",
-		"pins/i2c",
+		"pins/*",
 	],
 	"resources": {
 		"*": "./ball",
@@ -23,6 +22,12 @@
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/pins/i2c/esp/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/esp32/*",
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 			},
 		},

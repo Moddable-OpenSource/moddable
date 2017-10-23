@@ -35,9 +35,9 @@ void xs_i2c(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
-	sda = xsmcToInteger(xsVar(0));
+	sda = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
-	scl = xsmcToInteger(xsVar(0));
+	scl = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = xsmcToInteger(xsVar(0));
 	if ((address < 0) || (address > 127))

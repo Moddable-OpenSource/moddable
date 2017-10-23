@@ -151,11 +151,11 @@ void fxOpenSerial(txSerialTool self)
 	BuildCommDCB(configuration, &dcb);
 	mxThrowElse(SetCommState(self->serialConnection, &dcb));
 	memset(&timeouts, 0, sizeof(timeouts));
-	timeouts.ReadIntervalTimeout = 50; 
-	timeouts.ReadTotalTimeoutMultiplier = 10;
-	timeouts.ReadTotalTimeoutConstant = 100;
-	timeouts.WriteTotalTimeoutMultiplier = 10;
-	timeouts.WriteTotalTimeoutConstant = 100;
+	timeouts.ReadIntervalTimeout = 1; 
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.ReadTotalTimeoutConstant = 0;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 0;
 	mxThrowElse(SetCommTimeouts(self->serialConnection, &timeouts));
 	CloseHandle(self->serialConnection);
 

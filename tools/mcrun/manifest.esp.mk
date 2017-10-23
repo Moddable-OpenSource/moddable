@@ -17,7 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-BASE = $(MODDABLE)/libraries/esp
+BASE = ~/esp
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 
 ESPTOOL = $(BASE)/esptool/esptool

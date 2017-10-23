@@ -21,9 +21,8 @@ CLI.install(function(command, parts) {
 			let archive = new Flash("xs");
 
 			let root = readAtom(archive, 0);
-			if (root.name != "XS_B")
+			if (root.name != "XS_A")
 				throw new Error("unexpected atom " + root.name);
-
 
 			this.line(`Archive size: ${root.byteLength} bytes`);
 
@@ -53,6 +52,7 @@ CLI.install(function(command, parts) {
 						}
 						break;
 
+			//@@ MODS & RSRC
 					case "NAME":
 						this.line(` ${readString(archive, position)}`);
 						break;
