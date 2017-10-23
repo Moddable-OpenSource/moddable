@@ -19,6 +19,7 @@
  */
 
 #include "xsPlatform.h"
+#include "mc.defines.h"
 #include "modI2C.h"
 
 #include "twi.h"		// i2c
@@ -64,7 +65,7 @@ void modI2CActivate(modI2CConfiguration config)
 
 	gI2CConfig = *config;
 
-	twi_init((-1 == config->sda) ? 5 : config->sda, (-1 == config->scl) ? 4 : config->scl);
+	twi_init((-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda, (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl);
 	if (config->hz)
 		twi_setClock(config->hz);
 }
