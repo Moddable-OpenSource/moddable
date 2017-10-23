@@ -12,6 +12,7 @@
  *
  */
 
+import config from "mc/config";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
@@ -49,6 +50,10 @@ let sensor = new LIS3DH({});
 
 Timer.repeat(() => {
 	let values = sensor.sample();
+
+	if (180 == parseInt(config.axis)) {
+		values.x = -values.x;
+	}
 
 	render.begin(0, 0, width, ball.yMin);
 		render.fillRectangle(backgroundColor, 0, 0, width, height);
