@@ -1,5 +1,4 @@
 {
-	"include": "manifest_base.json",
 	"platforms": {
 		"esp": {
 			"modules": {
