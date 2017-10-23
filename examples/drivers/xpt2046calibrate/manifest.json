@@ -1,0 +1,39 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/files/preference/*"
+		],
+		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+	},
+	"preload": [
+		"commodetto/*",
+		"preference",
+	],
+	"resources":{
+		"*-mask": [
+			"./assets/crosshair",
+			"./assets/success",
+		]
+	},
+	"defines": {
+		"xpt2046": {
+			"raw": true
+		}
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/files/preference/esp/*"
+			}
+		}
+	}
+}
