@@ -27,9 +27,7 @@
 			"modules": {
 				"setup": "$(BUILD)/devices/esp/setup/setup-piu-only",
 			},
-			"preload": [
-				"setup"
-			]
+			"preload": "setup"
 		}
 	}
 }
