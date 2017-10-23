@@ -1,0 +1,35 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "xpt2046",
+	},
+	"modules": {
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/ParseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"piu/*": [
+			"$(PIU)/All/piu*",
+			"$(PIU)/MC/piu*",
+		],
+	},
+	"preload": [
+		"commodetto/*",
+		"piu/*",
+	],
+	"platforms":{
+		"esp": {
+			"modules": {
+				"setup": "$(BUILD)/devices/esp/setup/setup-piu-only",
+			},
+			"preload": [
+				"setup"
+			]
+		}
+	}
+}
