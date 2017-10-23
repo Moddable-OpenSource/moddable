@@ -63,6 +63,12 @@
 					"Resource*",
 					"mod*",
 				],
+			},
+			"defines": {
+				"i2c": {
+					"sda_pin": 5,
+					"scl_pin": 4
+				}
 			}
 		},
 		"esp32": {
@@ -78,7 +84,13 @@
 				"debug",
 				"time",
 				"timer",
-			]
+			],
+			"defines": {
+				"i2c": {
+					"sda_pin": 21,
+					"scl_pin": 22
+				}
+			}
 		},
 		"mac": {
 			"modules": {
