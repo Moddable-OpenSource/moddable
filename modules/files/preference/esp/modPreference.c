@@ -177,16 +177,16 @@ void xs_preference_keys(xsMachine *the)
 		prefsStart = (uint8_t *)xsmcToArrayBuffer(xsVar(0));
 		prefs = offset + prefsStart + size;
 	}
-
-//	c_free(prefsStart);
 }
 
-void xs_preference_reset(xsMachine *the)
+/*
+ void xs_preference_reset(xsMachine *the)
 {
 	ets_isr_mask(FLASH_INT_MASK);
 	spi_flash_erase_sector(((uint8_t *)&_MODPREF_start - kFlashStart) / SPI_FLASH_SEC_SIZE);
 	ets_isr_unmask(FLASH_INT_MASK);
 }
+*/
 
 uint8_t *loadPrefs(xsMachine *the)
 {
