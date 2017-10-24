@@ -17,7 +17,7 @@ import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(screen ? screen : new (require(config.screen))({}));
+let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
 
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
