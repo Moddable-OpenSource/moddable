@@ -23,15 +23,10 @@
 		},
 		"main": "main",
 	},
-	"include": [
-	],
 	"modules": {
-		"~": [
-		],
 		"*": [
 			"$(MODULES)/files/resource/*",
 			"$(MODULES)/base/instrumentation/*",
-			"$(MODULES)/base/timer/*",
 		],
 	},
 	"preload": [
@@ -39,14 +34,13 @@
 		"instrumentation",
 	],
 	"strip": "*",
-	"resources": {
-	},
 	"platforms": {
 		"esp": {
 			"modules": {
 				"*": [
 					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
 			},
@@ -82,7 +76,6 @@
 			"preload": [
 				"debug",
 				"time",
-				"timer",
 			],
 			"defines": {
 				"i2c": {
@@ -95,6 +88,7 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*",
 				],
 			},
