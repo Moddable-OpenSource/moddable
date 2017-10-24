@@ -19,7 +19,7 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(new (require(config.screen))({}));
+let render = new Poco(screen ? screen : new (require(config.screen))({}));
 
 let backgroundColor = render.makeColor(0, 0, 0);
 
