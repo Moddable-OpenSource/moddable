@@ -8,7 +8,9 @@
 		"*": "./main",
 	},
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue"
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue"
+		]
 	},
 	"config": {
 		"screen": "ili9341"

@@ -14,17 +14,16 @@
 
 import config from "mc/config";
 import Timer from "timer";
-import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/parseBMP";
+import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
 let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
 
 let backgroundColor = render.makeColor(0, 0, 0);
+let spinnerColor = render.makeColor(49, 101, 173);
 
-let sprite = parseBMP(new Resource("spinner-strip-80px-24cell-blue-color.bmp"));
-sprite.alpha = parseBMP(new Resource("spinner-strip-80px-24cell-blue-alpha.bmp"));
+let sprite = parseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
 
 let spriteWidth = sprite.width / 24;
 let spriteHeight = sprite.height;
@@ -41,7 +40,7 @@ Timer.repeat(id => {
 	let sy = 0;
 	render.begin(x, y, spriteWidth, spriteHeight);
 		render.fillRectangle(backgroundColor, x, y, spriteWidth, spriteHeight);
-		render.drawMasked(sprite, x, y, sx, sy, spriteWidth, spriteHeight, sprite.alpha, sx, sy);
+		render.drawGray(sprite, spinnerColor, x, y, sx, sy, spriteWidth, spriteHeight);
 	render.end();
 	
 	if (++spriteCellIndex > 23)
