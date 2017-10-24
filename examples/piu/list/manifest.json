@@ -1,5 +1,8 @@
 {
-	"include": "../all.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
 	"modules": {
 		"*": [
 			"./main",
