@@ -4,13 +4,12 @@
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
 		"PIU": "$(MODULES)/piu",
-
 	},
 	"creation": {
 		"static": 32768,
 		"chunk": {
 			"initial": 1536,
-			"incremental": 1024,
+			"incremental": 512,
 		},
 		"heap": {
 			"initial": 512,
@@ -22,7 +21,7 @@
 			"name": 53,
 			"symbol": 3,
 		},
-		"main":"main",
+		"main": "main",
 	},
 	"include": [
 	],

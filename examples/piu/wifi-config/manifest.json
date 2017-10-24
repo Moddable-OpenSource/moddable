@@ -1,6 +1,8 @@
 {
 	"include": [
-		"../all.json",
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/input/keyboard/manifest.json"
 	],
 	"creation":{
