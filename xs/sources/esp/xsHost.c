@@ -984,6 +984,11 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 }
 #endif
 
+#if WINBUILD
+	#define SLASHCHAR '\\'
+#else
+	#define SLASHCHAR '/'
+#endif
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->archive;
@@ -1015,6 +1020,21 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 		relative = 1;
 		search = 1;
 	}
+
+#if WINBUILD
+{
+	char c;
+	slash = c_strrchr(name, '/');
+	if (!slash)
+		slash = name;
+	while ((c = *slash)) {
+		if (c == '/')
+			*slash = '\\';
+		slash++;
+	}
+}
+#endif
+
 	if (absolute) {
 		c_strcpy(path, preparation->base);
 		c_strcat(path, name + 1);
@@ -1023,14 +1043,14 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	}
 	if (relative && (moduleID != XS_NO_ID)) {
 		c_strcpy(path, fxGetKeyName(the, moduleID));
-		slash = c_strrchr(path, '/');
+		slash = c_strrchr(path, SLASHCHAR);
 		if (!slash)
 			return XS_NO_ID;
 		if (dot == 0)
 			slash++;
 		else if (dot == 2) {
 			*slash = 0;
-			slash = c_strrchr(path, '/');
+			slash = c_strrchr(path, SLASHCHAR);
 			if (!slash)
 				return XS_NO_ID;
 		}
