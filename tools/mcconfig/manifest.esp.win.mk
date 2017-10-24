@@ -264,8 +264,8 @@ XSL = $(BUILD_DIR)\bin\win\debug\xsl
 
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
-	-L$(ARDUINO_ROOT)\tools\sdk\lib \
 	-L$(ARDUINO_ROOT)\tools\sdk\ld \
+	-L$(ARDUINO_ROOT)\tools\sdk\lib \
 	-L$(SYSROOT)\lib \
 	-L$(SYSROOT)\usr\lib \
 
