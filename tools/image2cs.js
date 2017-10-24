@@ -460,3 +460,4 @@ export default class Tool extends TOOL {
 		FS.closeSync(output);
 	}
 }
+
