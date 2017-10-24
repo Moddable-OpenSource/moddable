@@ -19,12 +19,16 @@
  */
 
 #include "xsAll.h"
+#if mxAndroid
+#include "piuPC.h"
+#elif mxLinux
 #include "piuAll.h"
-#if mxLinux
 #include <glib.h>
 #elif mxWindows
+#include "piuAll.h"
 #include <process.h>
 #else
+#include "piuAll.h"
 #include "pthread.h"
 #endif
 
@@ -44,6 +48,8 @@ struct ServiceThreadStruct {
 	ServiceProxy firstProxy;
 #if mxAndroid
 	pthread_mutex_t mutex;
+	jobject jrunnable;
+	jobject jthread;
 #elif mxLinux
 	GMainContext* main_context;
 	GMutex mutex;
@@ -88,14 +94,18 @@ struct ServiceProxyStruct {
 
 
 static void ServiceThreadCreate(xsMachine* the);
+#if mxAndroid
+static void ServiceThreadInitialize(void* it, JNIEnv* jenv);
+#else
 static void ServiceThreadInitialize(void* it);
+#endif
 static void ServiceThreadMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 #if mxLinux	
 static gboolean ServiceThreadPerform(void* it);
 #else
 static void ServiceThreadPerform(void* it);
 #endif
-static void ServiceThreadSignal(ServiceThread thread, ServiceEvent event);
+static void ServiceThreadSignal(ServiceThread client, ServiceThread server, ServiceEvent event);
 
 static void ServiceEventCreate(ServiceEvent event);
 static void ServiceEventDelete(ServiceEvent event);
@@ -120,12 +130,21 @@ static txMachine ServiceRoot;
 static ServiceThreadRecord MainThread;
 
 #if mxAndroid
-static void* ServiceThreadLoop(void* it)
+JNIEXPORT void JNICALL Java_tech_moddable_piu_PiuThread_run(JNIEnv* jenv, jobject jthis)
 {
-	ServiceThread thread = it;
-	ServiceThreadInitialize(thread);
-	// ??
-    return NULL;
+	jobject jbytes = (*jenv)->GetObjectField(jenv, jthis, jPiuThread_self);
+	ServiceThread thread = (*jenv)->GetDirectBufferAddress(jenv, jbytes);
+	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_prepare);
+	ServiceThreadInitialize(thread, jenv);
+    pthread_mutex_unlock(&(thread->mutex));
+	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_loop);
+}
+JNIEXPORT void JNICALL Java_tech_moddable_piu_PiuRunnable_run(JNIEnv* jenv, jobject jthis)
+{
+	jobject jbytes = (*jenv)->GetObjectField(jenv, jthis, jPiuRunnable_self);
+	ServiceThread thread = (*jenv)->GetDirectBufferAddress(jenv, jbytes);
+	(*jenv)->DeleteLocalRef(jenv, jbytes);
+	ServiceThreadPerform(thread);
 }
 #elif mxLinux
 static gpointer ServiceThreadLoop(gpointer it)
@@ -182,7 +201,17 @@ void ServiceThreadCreate(xsMachine* the)
 	c_memcpy(&(thread->name[0]), name, length + 1);
 	xsResult = xsNewHostObject(NULL);
 	xsSetHostData(xsResult, thread);
-#if mxLinux
+#if mxAndroid
+    pthread_mutex_init(&(thread->mutex), NULL);
+    pthread_mutex_lock(&(thread->mutex));
+	JNIEnv* jenv = the->jenv;
+	jobject jbytes = (*jenv)->NewDirectByteBuffer(jenv, thread, sizeof(ServiceThreadRecord));
+	jobject jthread = (*jenv)->NewObject(jenv, jPiuThreadClass, jPiuThreadConstructor, jbytes);
+	thread->jthread = (*jenv)->NewGlobalRef(jenv, jthread);
+	(*jenv)->CallVoidMethod(jenv, jthread, jPiuThread_start);
+	(*jenv)->DeleteLocalRef(jenv, jthread);
+	(*jenv)->DeleteLocalRef(jenv, jbytes);
+#elif mxLinux
 	g_mutex_init(&(thread->mutex));
 	g_mutex_lock(&(thread->mutex));
 	g_thread_new(name, ServiceThreadLoop, thread);
@@ -202,13 +231,21 @@ void ServiceThreadCreate(xsMachine* the)
 #endif
 }
 
+#if mxAndroid
+void ServiceThreadInitialize(void* it, JNIEnv* jenv)
+#else
 void ServiceThreadInitialize(void* it)
+#endif
 {
 	ServiceThread thread = it;
 	//fprintf(stderr, "ServiceThreadInitialize thread %p\n", thread);
 	txMachine* root = &ServiceRoot;
 	txPreparation* preparation = xsPreparation();
+#if mxAndroid
+	thread->the = fxCloneMachine(&preparation->creation, root, thread->name[0] ? thread->name : "main", jenv);
+#else
 	thread->the = fxCloneMachine(&preparation->creation, root, thread->name[0] ? thread->name : "main", NULL);
+#endif
 	xsBeginHost(thread->the);
 	{
 		xsVars(3);
@@ -225,7 +262,11 @@ void ServiceThreadInitialize(void* it)
 	}
 	xsEndHost(thread->the);
 #if mxAndroid
-	// ??
+	jobject jbytes = (*jenv)->NewDirectByteBuffer(jenv, thread, sizeof(ServiceThreadRecord));
+	jobject jrunnable = (*jenv)->NewObject(jenv, jPiuRunnableClass, jPiuRunnableConstructor, jbytes);
+	thread->jrunnable = (*jenv)->NewGlobalRef(jenv, jrunnable);
+	(*jenv)->DeleteLocalRef(jenv, jrunnable);
+	(*jenv)->DeleteLocalRef(jenv, jbytes);
 #elif mxLinux
 	thread->main_context = g_main_context_get_thread_default();
 #elif mxWindows
@@ -242,7 +283,11 @@ void ServiceThreadInitialize(void* it)
 #endif
 }
 
+#if mxAndroid
+txMachine* ServiceThreadMain(JNIEnv* jenv)
+#else
 txMachine* ServiceThreadMain()
+#endif
 {
 	txMachine* root = &ServiceRoot;
 	ServiceThread thread = &MainThread;
@@ -268,8 +313,11 @@ txMachine* ServiceThreadMain()
 	root->aliasCount = (txID)preparation->aliasCount;
 	
 	c_memset(thread, 0, sizeof(ServiceThreadRecord));
+#if mxAndroid
+	ServiceThreadInitialize(thread, jenv);
+#else
 	ServiceThreadInitialize(thread);
-	
+#endif
 	return thread->the;
 }
 
@@ -322,39 +370,41 @@ void ServiceThreadPerform(void* it)
 #endif
 }
 
-void ServiceThreadSignal(ServiceThread thread, ServiceEvent event)
+void ServiceThreadSignal(ServiceThread client, ServiceThread server, ServiceEvent event)
 {
-	//fprintf(stderr, "ServiceThreadSignal thread %p event %p\n", thread, event);
+	//fprintf(stderr, "ServiceThreadSignal server %p event %p\n", server, event);
 #if mxLinux
-	g_mutex_lock(&(thread->mutex));
+	g_mutex_lock(&(server->mutex));
 #elif mxWindows
-	EnterCriticalSection(&(thread->lock));
+	EnterCriticalSection(&(server->lock));
 #else
-    pthread_mutex_lock(&(thread->mutex));
+    pthread_mutex_lock(&(server->mutex));
 #endif
-	if (thread->lastEvent)
-		thread->lastEvent->nextEvent = event;
+	if (server->lastEvent)
+		server->lastEvent->nextEvent = event;
 	else
-		thread->firstEvent = event;
-	thread->lastEvent = event;
+		server->firstEvent = event;
+	server->lastEvent = event;
 #if mxAndroid
-    pthread_mutex_unlock(&(thread->mutex));
-    // ??
+    pthread_mutex_unlock(&(server->mutex));
+	JNIEnv* jenv = client->the->jenv;
+	jobject jhandler = server->the->jhandler;
+	jobject jrunnable = server->jrunnable;
+	(*jenv)->CallBooleanMethod(jenv, jhandler, jHandler_post, jrunnable);
 #elif mxLinux
-	g_mutex_unlock(&(thread->mutex));
-// 	g_main_context_invoke(thread->main_context, ServiceThreadPerform, thread);
+	g_mutex_unlock(&(server->mutex));
 	GSource* idle_source = g_idle_source_new();
-	g_source_set_callback(idle_source, ServiceThreadPerform, thread, NULL);
+	g_source_set_callback(idle_source, ServiceThreadPerform, server, NULL);
 	g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
-	g_source_attach(idle_source, thread->main_context);
+	g_source_attach(idle_source, server->main_context);
 	g_source_unref(idle_source);
 #elif mxWindows
-	LeaveCriticalSection(&(thread->lock));
-	PostMessage(thread->the->window, WM_SERVICE, 0, 0);
+	LeaveCriticalSection(&(server->lock));
+	PostMessage(server->the->window, WM_SERVICE, 0, 0);
 #else
-    pthread_mutex_unlock(&(thread->mutex));
-    CFRunLoopSourceSignal(thread->runLoopSource);
-    CFRunLoopWakeUp(thread->runLoop);
+    pthread_mutex_unlock(&(server->mutex));
+    CFRunLoopSourceSignal(server->runLoopSource);
+    CFRunLoopWakeUp(server->runLoop);
 #endif
 }
 
@@ -400,7 +450,6 @@ void ServiceEventDelete(ServiceEvent event)
 {
 	ServiceProxy proxy = (ServiceProxy)(((uint8_t*)event) - offsetof(ServiceProxyRecord, deletion));
 	ServiceThread thread = proxy->server;
-	
 	//fprintf(stderr, "ServiceEventDelete thread %p proxy %p\n", thread, proxy);
 	ServiceProxy* address = &(thread->firstProxy);
 	while (*address) {
@@ -522,7 +571,7 @@ void ServiceMessageReject(xsMachine* the, ServiceMessage message)
 		callback = ServiceEventReject;
 	}
 	message->event.callback = callback;
-	ServiceThreadSignal(message->proxy->client, &(message->event));
+	ServiceThreadSignal(message->proxy->server, message->proxy->client, &(message->event));
 }
 
 void ServiceMessageResolve(xsMachine* the, ServiceMessage message)
@@ -535,7 +584,7 @@ void ServiceMessageResolve(xsMachine* the, ServiceMessage message)
 		callback = ServiceEventReject;
 	}
 	message->event.callback = callback;
-	ServiceThreadSignal(message->proxy->client, &(message->event));
+	ServiceThreadSignal(message->proxy->server, message->proxy->client, &(message->event));
 }
 
 void ServiceMessageThenReject(xsMachine* the)
@@ -595,7 +644,7 @@ void ServiceProxyCreate(xsMachine* the)
 		xsVar(0) = xsNewHostFunction(ServiceProxyInvoke, 4);
 		xsResult = xsNew2(xsGlobal, xsID_Proxy, xsVar(0), xsThis);
 		proxy->creation.callback = ServiceEventCreate;
-		ServiceThreadSignal(proxy->server, &(proxy->creation));
+		ServiceThreadSignal(proxy->client, proxy->server, &(proxy->creation));
 	}
 	xsCatch {
 		if (proxy) {
@@ -611,7 +660,7 @@ void ServiceProxyDelete(void* data)
 	proxy->usage--;
 	if (proxy->usage == 0) {
 		proxy->deletion.callback = ServiceEventDelete;
-		ServiceThreadSignal(proxy->server, &(proxy->deletion));
+		ServiceThreadSignal(proxy->client, proxy->server, &(proxy->deletion));
 	}
 }
 
@@ -637,7 +686,7 @@ void ServiceProxyInvoke(xsMachine* the)
 		proxy->usage++;
 		
 		message->event.callback = ServiceEventInvoke;
-		ServiceThreadSignal(proxy->server, &(message->event));
+		ServiceThreadSignal(proxy->client, proxy->server, &(message->event));
 	}
 	xsCatch {
 		if (message) {
