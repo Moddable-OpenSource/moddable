@@ -18,7 +18,7 @@ import Poco from "commodetto/Poco";
 import Stream from "commodetto/readStream";
 import Resource from "Resource";
 
-let render = new Poco(screen ? screen : new (require(config.screen))({}));
+let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
 let backgroundColor = render.makeColor(255, 255, 255);
 
 let buffer = new Resource("cell-flag.cs");
