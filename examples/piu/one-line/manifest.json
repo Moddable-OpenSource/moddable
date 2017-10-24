@@ -1,5 +1,9 @@
 {
-	"include": "../all.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
 	"modules": {
 		"*": [
 			"./main",
@@ -7,14 +11,12 @@
 			"$(MODULES)/crypt/digest/kcl/*",
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/network/websocket/*",
-			"$(MODULES)/network/wifi/*",
 		],
 	},
 	"preload": [
 		"base64",
 		"crypt",
 		"websocket",
-		"wifi",
 	],
 	"resources":{
 		"*-alpha": [
