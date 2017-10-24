@@ -111,7 +111,10 @@ class MakeFile extends File {
 	}
 	generate(tool) {
 		this.generateDefinitions(tool)
-		var path = tool.moddablePath + tool.slash + "tools" + tool.slash + "mcconfig" + tool.slash + "manifest." + tool.platform + ".mk";
+		var path = tool.moddablePath + tool.slash + "tools" + tool.slash + "mcconfig" + tool.slash + "manifest." + tool.platform + "." + tool.currentPlatform + ".mk";
+		if (!FS.existsSync(path)) {
+			path = tool.moddablePath + tool.slash + "tools" + tool.slash + "mcconfig" + tool.slash + "manifest." + tool.platform + ".mk";
+		}
 		this.write(FS.readFileSync(path));
 		this.line("");
 		this.generateModulesRules(tool)
@@ -235,7 +238,9 @@ class MakeFile extends File {
 		this.write("DIRECTORIES =");
 		for (var folder of tool.cFolders) {
 			this.write("\\\n\t");
-			if (tool.windows && tool.platform != "synergy")
+			if (tool.windows
+				&& (tool.platform != "synergy")
+				&& (tool.platform != "esp"))
 				this.write("/I");
 			else
 				this.write("-I");
@@ -544,13 +549,36 @@ class NMakeFile extends MakeFile {
 		for (var result of tool.cFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
+			this.line("$(TMP_DIR)\\", target, ": ", source );
 			if (result.recipe) {
 				this.write(tool.recipes[result.recipe]);
 			}
 			else {
 				this.line("\t@echo # cl ", target);
 				this.line("\tcl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " /Fo$@");
+			}
+		}
+	}
+}
+
+class espNMakeFile extends NMakeFile {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(TMP_DIR)\\", target, ": ", source);
+			if (result.recipe) {
+				this.write(tool.recipes[result.recipe]);
+			}
+			else {
+//				this.line("\t@echo # $(CC) ", target);
+				this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+				this.line("\techo # $(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
+				this.line("\t$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
 			}
 		}
 	}
@@ -1284,7 +1312,10 @@ export default class Tool extends TOOL {
 		for (var cFile of this.cFiles)
 			cFile.recipe = null;
 		for (var name in recipes) {
-			var path = this.moddablePath + "/tools/mcconfig/manifest." + this.platform + "." + name + ".mk";
+			var path = this.moddablePath + "/tools/mcconfig/manifest." + this.platform + "." + this.currentPlatform + "." + name + ".mk";
+			if (!FS.existsSync(path)) {
+				path = this.moddablePath + "/tools/mcconfig/manifest." + this.platform + "." + name + ".mk";
+			}
 			this.recipes[name] = FS.readFileSync(path);
 			var recipe = recipes[name];
 			if (recipe instanceof Array) {
@@ -1654,6 +1685,8 @@ export default class Tool extends TOOL {
 		if (this.windows) {
 			if (this.platform == "synergy")
 				file = new SynergyNMakeFile(path);
+			else if (this.platform == "esp")
+				file = new espNMakeFile(path);
 			else
 				file = new NMakeFile(path);
 		}
