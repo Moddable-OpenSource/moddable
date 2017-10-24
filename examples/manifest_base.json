@@ -93,5 +93,12 @@
 				],
 			},
 		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen"
+				]
+			}
+		}
 	},
 }
