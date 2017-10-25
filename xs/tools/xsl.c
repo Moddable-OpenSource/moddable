@@ -255,6 +255,7 @@ int main(int argc, char* argv[])
 					xsTry {
 						preload = linker->firstPreload;
 						while (preload) {
+							fxSlashPreload(preload, mxSeparator, url[0]);
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
