@@ -76,6 +76,7 @@
 			"preload": [
 				"debug",
 				"time",
+				"timer",
 			],
 			"defines": {
 				"i2c": {
