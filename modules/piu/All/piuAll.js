@@ -309,6 +309,7 @@ var content = {
 	hit(x, y) @ "PiuContent_hit",
 	measure() @ "PiuContent_measure",
 	moveBy(x, y) @ "PiuContent_moveBy",
+	render() @ "PiuContent_render",
 	sizeBy(x, y) @ "PiuContent_sizeBy",
 	start() @ "PiuContent_start",
 	stop() @ "PiuContent_stop",
