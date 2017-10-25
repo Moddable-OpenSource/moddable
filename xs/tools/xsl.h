@@ -202,8 +202,7 @@ extern void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** f
 extern txString fxRealDirectoryPath(txLinker* linker, txString path);
 extern txString fxRealFilePath(txLinker* linker, txString path);
 extern void fxReportLinkerError(txLinker* linker, txString theFormat, ...);
-extern void fxSlashPreload(txLinkerPreload* preload, char from, char to);
-extern void fxSlashScript(txLinkerScript* script, char from, char to);
+extern void fxSlashPath(txString path, char from, char to);
 extern void fxTerminateLinker(txLinker* linker);
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteCString(FILE* file, txString string);
