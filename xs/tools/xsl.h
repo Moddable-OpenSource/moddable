@@ -102,7 +102,7 @@ struct sxLinker {
 	txSize baseLength;
 	
 	txCreation creation;
-	
+
 	char main[1024];
 };
 
@@ -202,6 +202,7 @@ extern void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** f
 extern txString fxRealDirectoryPath(txLinker* linker, txString path);
 extern txString fxRealFilePath(txLinker* linker, txString path);
 extern void fxReportLinkerError(txLinker* linker, txString theFormat, ...);
+extern void fxSlashScript(txLinkerScript* script, char from, char to);
 extern void fxTerminateLinker(txLinker* linker);
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteCString(FILE* file, txString string);
