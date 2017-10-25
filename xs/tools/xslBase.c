@@ -576,6 +576,16 @@ void fxReportLinkerError(txLinker* linker, txString theFormat, ...)
 	c_longjmp(linker->jmp_buf, 1); 
 }
 
+void fxSlashScript(txLinkerScript* script, char from, char to)
+{
+	txString s = script->path;
+	while (*s) {
+		if (*s == from)
+			*s = to;
+		s++;
+	}
+}
+
 void fxTerminateLinker(txLinker* linker)
 {
 	txLinkerChunk* block = linker->firstChunk;
