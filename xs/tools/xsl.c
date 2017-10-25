@@ -235,14 +235,15 @@ int main(int argc, char* argv[])
 			script = linker->firstScript;
 			while (script) {
 				fxMapScript(linker, script);
-				fxSlashScript(script, mxSeparator, url[0]);
 				script = script->nextScript;
 			}
 			fxBufferSymbols(linker);
 			fxWriteSymbols(linker, path, &file);
 	
-			linker->base = url;
-			linker->baseLength = c_strlen(url);
+			c_strcpy(path, url);
+			fxSlashPath(path, url[0], mxSeparator);
+			linker->base = path;
+			linker->baseLength = c_strlen(path);
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
@@ -255,7 +256,7 @@ int main(int argc, char* argv[])
 					xsTry {
 						preload = linker->firstPreload;
 						while (preload) {
-							fxSlashPreload(preload, mxSeparator, url[0]);
+							fprintf(stderr, "preload %s\n", preload->name);
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
@@ -268,6 +269,9 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
+			
+			linker->base = url;
+			linker->baseLength = c_strlen(url);
 
 			if (stripping)
 				fxStripCallbacks(linker, the);
@@ -358,6 +362,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount] = {\n");
 			script = linker->firstScript;
 			while (script) {
+				fxSlashPath(script->path, mxSeparator, url[0]);
 				fxWriteScriptRecord(script, file);
 				script = script->nextScript;
 				if (script)
