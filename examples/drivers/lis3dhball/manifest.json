@@ -1,6 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/commodetto/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
@@ -9,6 +10,9 @@
 			"$(MODULES)/drivers/lis3dh/*",
 		],
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+	},
+	"config": {
+		"orientation": "0",
 	},
 	"preload": [
 		"lis3dh",

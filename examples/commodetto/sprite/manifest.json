@@ -1,13 +1,16 @@
 {
 	"include": [
-		"../manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"*": "./main",
 	},
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue"
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue"
+		]
 	},
 	"config": {
 		"screen": "ili9341"

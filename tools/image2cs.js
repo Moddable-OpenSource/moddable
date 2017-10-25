@@ -354,6 +354,7 @@ export default class Tool extends TOOL {
 		var frames = new Array;
 		if (this.directory) {
 			var names = FS.readDirSync(this.inputPath);
+			names.sort();
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
 				var path = this.inputPath + this.slash + names[i];

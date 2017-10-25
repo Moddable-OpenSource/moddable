@@ -275,6 +275,7 @@ void fxWriteNetwork(txSerialTool self, char* buffer, DWORD size)
 	WSAOVERLAPPED overlapped;
 	WSABUF buf;
 	DWORD offset, flags;
+// 	fprintf(stderr, "%.*s\n", size, buffer);
     WSAResetEvent(self->networkEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->networkEvent;
@@ -292,6 +293,7 @@ void fxWriteSerial(txSerialTool self, char* buffer, DWORD size)
 {
 	OVERLAPPED overlapped;
 	DWORD offset;
+// 	fprintf(stderr, "%.*s\n", size, buffer);
 	ResetEvent(self->serialEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->serialEvent;

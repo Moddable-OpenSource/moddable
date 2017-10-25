@@ -4,13 +4,12 @@
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
 		"PIU": "$(MODULES)/piu",
-
 	},
 	"creation": {
 		"static": 32768,
 		"chunk": {
 			"initial": 1536,
-			"incremental": 1024,
+			"incremental": 512,
 		},
 		"heap": {
 			"initial": 512,
@@ -22,17 +21,12 @@
 			"name": 53,
 			"symbol": 3,
 		},
-		"main":"main",
+		"main": "main",
 	},
-	"include": [
-	],
 	"modules": {
-		"~": [
-		],
 		"*": [
 			"$(MODULES)/files/resource/*",
 			"$(MODULES)/base/instrumentation/*",
-			"$(MODULES)/base/timer/*",
 		],
 	},
 	"preload": [
@@ -40,14 +34,13 @@
 		"instrumentation",
 	],
 	"strip": "*",
-	"resources": {
-	},
 	"platforms": {
 		"esp": {
 			"modules": {
 				"*": [
 					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
 			},
@@ -96,9 +89,17 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*",
 				],
 			},
 		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen"
+				]
+			}
+		}
 	},
 }
