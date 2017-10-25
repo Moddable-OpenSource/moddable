@@ -1355,6 +1355,14 @@ void PiuContent_moveBy(xsMachine *the)
 	PiuContentMoveBy(self, (PiuCoordinate)x, (PiuCoordinate)y);
 }
 
+void PiuContent_render(xsMachine *the)
+{
+    PiuContent* self = PIU(Content, xsThis);
+    xsAssert(self != NULL);
+    if ((*self)->application)
+        PiuApplicationAdjust((*self)->application);
+}
+
 void PiuContent_sizeBy(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
