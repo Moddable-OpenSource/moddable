@@ -22,7 +22,9 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp\release\lib
 
 # serial port configuration
 UPLOAD_SPEED = 921600
+!IF "$(UPLOAD_PORT)"==""
 UPLOAD_PORT = com8
+!ENDIF
 UPLOAD_RESET = nodemcu
 !IF "$(VERBOSE)"=="1"
 UPLOAD_VERB = -v
