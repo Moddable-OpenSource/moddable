@@ -165,10 +165,15 @@ export default class Tool extends TOOL {
 				file.line("};");
 			});
 			file.line("static const struct {const char *name; const unsigned char *data; unsigned int size;} resources[] = {");
-			this.resources.forEach((path, index) => {
-				var parts = this.splitPath(path);
-				file.line("\t{\"", parts.name, parts.extension, "\", _", index, ", sizeof(_", index, ")},");
-			});
+			if (this.resources.length) {
+				this.resources.forEach((path, index) => {
+					var parts = this.splitPath(path);
+					file.line("\t{\"", parts.name, parts.extension, "\", _", index, ", sizeof(_", index, ")},");
+				});
+			}
+			else {
+				file.line("\t{ NULL, NULL, 0 },");
+			}
 			file.line("};");
 			file.line("extern const void *mcGetResource(const char *path, size_t *sizep);");
 			file.line("const void *mcGetResource(const char *path, size_t *sizep)");
