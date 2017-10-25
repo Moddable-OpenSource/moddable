@@ -235,6 +235,7 @@ int main(int argc, char* argv[])
 			script = linker->firstScript;
 			while (script) {
 				fxMapScript(linker, script);
+				fxSlashScript(script, mxSeparator, url[0]);
 				script = script->nextScript;
 			}
 			fxBufferSymbols(linker);
@@ -356,7 +357,6 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount] = {\n");
 			script = linker->firstScript;
 			while (script) {
-				fxSlashScript(script, mxSeparator, url[0]);
 				fxWriteScriptRecord(script, file);
 				script = script->nextScript;
 				if (script)
