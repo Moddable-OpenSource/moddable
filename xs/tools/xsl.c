@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-u: no url");
 				url = argv[argi];
-				if (url[c_strlen(url) - 1] != mxSeparator)
+				if ((url[0] != '/') && (url[0] != '\\'))
 					fxReportLinkerError(linker, "-u: invalid url");
 			}
 			else {
@@ -356,6 +356,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount] = {\n");
 			script = linker->firstScript;
 			while (script) {
+				fxSlashScript(script, mxSeparator, url[0]);
 				fxWriteScriptRecord(script, file);
 				script = script->nextScript;
 				if (script)
