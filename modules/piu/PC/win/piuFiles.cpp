@@ -153,14 +153,14 @@ void PiuSystem_readFileBuffer(xsMachine* the)
 {
 	wchar_t* path = NULL;
 	HANDLE file = INVALID_HANDLE_VALUE;
-	DWORD size;
+	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
 		file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		size = GetFileSize(file, NULL);
 		xsResult = xsArrayBuffer(NULL, (xsIntegerValue)size);
-		xsElseThrow(ReadFile(file, xsToArrayBuffer(xsResult), size, NULL, NULL));
+		xsElseThrow(ReadFile(file, xsToArrayBuffer(xsResult), size, &result, NULL));
 		CloseHandle(file);
 		free(path);
 	}
@@ -177,14 +177,14 @@ void PiuSystem_readFileString(xsMachine* the)
 {
 	wchar_t* path = NULL;
 	HANDLE file = INVALID_HANDLE_VALUE;
-	DWORD size;
+	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
 		file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		size = GetFileSize(file, NULL);
 		xsResult = xsStringBuffer(NULL, (xsIntegerValue)size);
-		xsElseThrow(ReadFile(file, xsToString(xsResult), size, NULL, NULL));
+		xsElseThrow(ReadFile(file, xsToString(xsResult), size, &result, NULL));
 		CloseHandle(file);
 		free(path);
 	}
@@ -271,14 +271,14 @@ void PiuSystem_writeFileBuffer(xsMachine* the)
 	wchar_t* path = NULL;
 	HANDLE file = INVALID_HANDLE_VALUE;
 	void* buffer;
-	DWORD size;
+	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
 		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToArrayBuffer(xsArg(1));
 		size = (DWORD)xsGetArrayBufferLength(xsArg(1));
-		xsElseThrow(WriteFile(file, buffer, size, NULL, NULL));
+		xsElseThrow(WriteFile(file, buffer, size, &result, NULL));
 		CloseHandle(file);
 		free(path);
 	}
@@ -295,14 +295,14 @@ void PiuSystem_writeFileString(xsMachine* the)
 	wchar_t* path = NULL;
 	HANDLE file = INVALID_HANDLE_VALUE;
 	xsStringValue buffer;
-	DWORD size;
+	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
 		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToString(xsArg(1));
 		size = (DWORD)c_strlen(buffer);
-		xsElseThrow(WriteFile(file, buffer, size, NULL, NULL));
+		xsElseThrow(WriteFile(file, buffer, size, &result, NULL));
 		CloseHandle(file);
 		free(path);
 	}
