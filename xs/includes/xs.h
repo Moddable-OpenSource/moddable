@@ -1091,6 +1091,7 @@ struct xsMachineRecord {
 	xsSlot* stackPrototypes;
 	xsJump* firstJump;
 	void* context;
+	void* dummy;
 	xsSlot scratch;
 #ifndef __XSALL__
 	xsMachinePlatform
