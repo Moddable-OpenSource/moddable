@@ -49,6 +49,6 @@ export default class SMBus extends I2C {
 		this.write(register, value & 255, (value >> 8) & 255);
 	}
 	writeBlockDataSMB(register, ...value) {
-		this.write(register, value.length, ...value);
+		this.write(register, ...value);
 	}
 }
