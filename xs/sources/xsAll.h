@@ -281,6 +281,7 @@ struct sxMachine {
 	txSlot* stackPrototypes; /* xs.h */
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
+	void* dummy; /* xs.h */
 	txSlot scratch; /* xs.h */
 	mxMachinePlatform /* xs.h */
 	txFlag status;
