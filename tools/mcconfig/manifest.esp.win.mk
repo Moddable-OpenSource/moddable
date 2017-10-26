@@ -423,7 +423,7 @@ $(LIB_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u \ $(MODULES)
+	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
