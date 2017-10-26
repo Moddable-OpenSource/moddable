@@ -80,10 +80,12 @@ xINC_DIRS = \
 SDK = \
     -I$(PLATFORM_DIR)\lib\tinyprintf \
     -I$(PLATFORM_DIR)\lib\rtc
-    
-XS_OBJ = \
+
+j=\
 	$(LIB_DIR)\xsHost.o \
 	$(LIB_DIR)\xsPlatform.o \
+    
+XS_OBJ = \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
 	$(LIB_DIR)\xsArray.o \
@@ -319,16 +321,17 @@ LAUNCH = release
 
 .PHONY: all	
 
-ARCHIVE_FILE = $(BIN_DIR)\libxsar.a
+APP_ARCHIVE = $(BIN_DIR)\libxsar.a
+LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 
 all: $(LAUNCH)
 
-debug: $(LIB_DIR) $(BIN_DIR)\libxsar.a $(BIN_DIR)\main.bin
+debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	START $(BUILD_DIR)\bin\win\release\xsbug
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
 	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)\main.elf
 
-release: $(LIB_DIR) $(BIN_DIR)\libxsar.a $(BIN_DIR)\main.bin
+release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
 
 $(LIB_DIR):
@@ -336,18 +339,23 @@ $(LIB_DIR):
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
 delAr:
-	@del $(ARCHIVE_FILE)
+	@del $(APP_ARCHIVE)
+	@del $(LIB_ARCHIVE)
 
-$(ARCHIVE_FILE): $(XS_OBJ) $(SDK_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(LIB_DIR)\main.o
-	@echo # archive $(ARCHIVE_FILE)
-	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\main.o
-	
-$(BIN_DIR)\main.bin: $(ARCHIVE_FILE) $(LIB_DIR)\lib_a-setjmp.o
+$(APP_ARCHIVE): $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\main.o
+	@echo # archive $(APP_ARCHIVE)
+	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(TMP_DIR)\main.o
+
+$(LIB_ARCHIVE): $(XS_OBJ) $(SDK_OBJ)
+	@echo # archive $(LIB_ARCHIVE)
+#	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\main.o
+
+$(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
 	@echo "# ld main.bin"
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
-	$(LD) -L$(BIN_DIR) $(LD_FLAGS) -Wl,--start-group $(LIB_DIR)\buildinfo.o $(LIB_DIR)\lib_a-setjmp.o $(LD_STD_LIBS) -lxsar -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)\main.elf
+	$(LD) -L$(BIN_DIR) $(LD_FLAGS) -Wl,--start-group $(LIB_DIR)\buildinfo.o $(LIB_DIR)\lib_a-setjmp.o $(LD_STD_LIBS) -lxslib -lxsar -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)\main.elf
 	$(TOOLS_BIN)\xtensa-lx106-elf-objdump -t $(TMP_DIR)\main.elf > $(BIN_DIR)\main.sym
 	$(ESPTOOL) -eo $(ARDUINO_ROOT)\bootloaders\eboot\eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)\main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
 
@@ -360,53 +368,53 @@ $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $? -o $@.unmapped
 #	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 --rename-section .text=.irom0.code $@.unmapped $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.c{$(LIB_DIR)\}.o:
 	@echo "# cc - X2" $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.cpp{$(LIB_DIR)\}.o:
 	@echo "# cpp" $?
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	@echo "# cc - X2" 
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(S_FLAGS) $? -o $@
 #	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .text=.iram1_0_seg $@.unmapped $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\libb64\}.c{$(LIB_DIR)\}.o:
 	@echo "# cc - lib64" $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\spiffs\}.c{$(LIB_DIR)\}.o:
 	@echo "# cc - spiffs" $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
 	@echo "# cc - umm_malloc" $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
-$(LIB_DIR)\xsHost.o: $(XS_DIR)\sources\esp\xsHost.c
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\sources\esp\xsHost.c
 	@echo "# cc - X5" $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
-$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\sources\esp\xsPlatform.c
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\sources\esp\xsPlatform.c
 	@echo "# cc - X6" $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
@@ -416,7 +424,7 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 
-$(LIB_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
+$(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 	@echo "# cc - X7" $?
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
 
