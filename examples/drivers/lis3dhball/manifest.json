@@ -12,7 +12,7 @@
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 	},
 	"config": {
-		"orientation": "0",
+		"orientation": "180",
 	},
 	"preload": [
 		"lis3dh",
