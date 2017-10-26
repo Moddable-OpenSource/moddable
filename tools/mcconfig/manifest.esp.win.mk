@@ -5,12 +5,17 @@
 
 HOST_OS = win
 
-# ARDUINO_ROOT = $(USERPROFILE)\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.3.0
-ARDUINO_ROOT = C:\esp\Arduino-2.2.0
-# RTOS_SDK_ROOT = C:\esp8266\ESP8266_RTOS_SDK
-TOOLS_ROOT = C:\esp\xtensa-lx106-elf
-PLATFORM_DIR = $(MODDABLE)\build\devices\esp
+!IF "$(BASE_DIR)"==""
+BASE_DIR = $(USERPROFILE)\Downloads
+!ENDIF
+
+ESP_SDK_DIR = $(BASE_DIR)\esp
+
+ARDUINO_ROOT = $(ESP_SDK_DIR)\Arduino-2.2.0
+TOOLS_ROOT = $(ESP_SDK_DIR)\xtensa-lx106-elf
 SYSROOT = $(TOOLS_ROOT)\xtensa-lx106-elf\sysroot
+
+PLATFORM_DIR = $(MODDABLE)\build\devices\esp
 
 !IF "$(DEBUG)"=="1"
 LIB_DIR = $(BUILD_DIR)\tmp\esp\debug\lib
@@ -251,7 +256,7 @@ CC  = $(TOOLS_BIN)\xtensa-lx106-elf-gcc
 CPP = $(TOOLS_BIN)\xtensa-lx106-elf-g++
 LD  = $(CPP)
 AR  = $(TOOLS_BIN)\xtensa-lx106-elf-ar
-ESPTOOL = C:\esp\esptool.exe
+ESPTOOL = $(ESP_SDK_DIR)\esptool.exe
 
 AR_OPTIONS = rcs
 
