@@ -577,8 +577,8 @@ class espNMakeFile extends NMakeFile {
 //				this.line("\t@echo # $(CC) ", target);
 				this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
 				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
-				this.line("\techo # $(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
-				this.line("\t$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
+				this.line("\techo # $(AR) $(AR_OPTIONS) $(APP_ARCHIVE) $@");
+				this.line("\t$(AR) $(AR_OPTIONS) $(APP_ARCHIVE) $@");
 			}
 		}
 	}
