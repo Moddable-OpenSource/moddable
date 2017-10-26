@@ -59,8 +59,8 @@
 			},
 			"defines": {
 				"i2c": {
-					"sda_pin": 5,
-					"scl_pin": 4
+					"sda_pin": 4,
+					"scl_pin": 5
 				}
 			}
 		},
