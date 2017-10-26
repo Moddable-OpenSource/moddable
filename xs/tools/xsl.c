@@ -255,6 +255,7 @@ int main(int argc, char* argv[])
 					xsTry {
 						preload = linker->firstPreload;
 						while (preload) {
+							fxSlashPath(preload->name, mxSeparator, url[0]);
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
@@ -357,7 +358,6 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount] = {\n");
 			script = linker->firstScript;
 			while (script) {
-				fxSlashScript(script, mxSeparator, url[0]);
 				fxWriteScriptRecord(script, file);
 				script = script->nextScript;
 				if (script)
@@ -496,6 +496,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txLinker* linker = (txLinker*)(the->context);
 	char name[C_PATH_MAX];
 	char path[C_PATH_MAX];
+	char separator;
 	txBoolean absolute = 0, relative = 0, search = 0;
 	txInteger dot = 0;
 	txSlot *key;
@@ -518,18 +519,9 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 		relative = 1;
 		search = 1;
 	}
-#if mxWindows
-	{
-		char c;
-		slash = name;
-		while ((c = *slash)) {
-			if (c == '/')
-				*slash = '\\';
-			slash++;
-		}
-	}
-#endif
-	slash = c_strrchr(name, mxSeparator);
+	separator = linker->base[0];
+	fxSlashPath(name, '/', separator);
+	slash = c_strrchr(name, separator);
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
@@ -544,14 +536,14 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	if (relative && (moduleID != XS_NO_ID)) {
 		key = fxGetKey(the, moduleID);
 		c_strcpy(path, key->value.key.string);
-		slash = c_strrchr(path, mxSeparator);
+		slash = c_strrchr(path, separator);
 		if (!slash)
 			return XS_NO_ID;
 		if (dot == 0)
 			slash++;
 		else if (dot == 2) {
 			*slash = 0;
-			slash = c_strrchr(path, mxSeparator);
+			slash = c_strrchr(path, separator);
 			if (!slash)
 				return XS_NO_ID;
 		}
