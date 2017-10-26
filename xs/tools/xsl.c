@@ -197,6 +197,7 @@ int main(int argc, char* argv[])
 		script = linker->firstScript;
 		while (script) {
 			fxBaseScript(linker, script, base, size);
+			fxSlashPath(script->path, mxSeparator, url[0]);
 			script = script->nextScript;
 		}
 
