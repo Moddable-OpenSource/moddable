@@ -916,3 +916,13 @@ void PiuSystem_launchURL(xsMachine* the)
 {
 	PiuSystem_launchPath(the);
 }
+
+void PiuNavigationBar_create(xsMachine* the)
+{
+	xsDebugger();
+}
+
+void PiuStatusBar_create(xsMachine* the)
+{
+	xsDebugger();
+}
