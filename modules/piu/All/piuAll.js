@@ -232,6 +232,27 @@ export function Template(prototype) {
 	return result;
 }
 
+global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
+
+export class Component extends Behavior {
+	constructor($, it) {
+		super();
+		this.props = it;
+		let result = this.render($);
+		let anchor = it.anchor;
+		if ($ && anchor)
+			$[anchor] = result;
+		result.behavior = this;
+		let onCreate = this.onCreate;
+		if (onCreate)
+			onCreate.call(this, result, $);
+		return result;
+	}
+	render($) {
+		debugger;
+	}
+}
+
 // CONTENTS
 
 var proto = @ "PiuContentDelete";
