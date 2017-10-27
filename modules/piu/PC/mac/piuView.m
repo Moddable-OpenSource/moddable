@@ -897,3 +897,13 @@ void PiuSystem_launchURL(xsMachine* the)
 	NSString* string = [NSString stringWithUTF8String:xsToString(xsArg(0))];
 	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:string]];
 }
+
+void PiuNavigationBar_create(xsMachine* the)
+{
+	xsDebugger();
+}
+
+void PiuStatusBar_create(xsMachine* the)
+{
+	xsDebugger();
+}

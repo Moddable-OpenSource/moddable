@@ -122,6 +122,18 @@ class View @ "PiuViewDelete" {
 	constructor(it) @ "PiuViewCreate"
 }
 
+var statusBar = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuStatusBar_create",
+};
+export var StatusBar = Template(statusBar);
+
+var navigationBar = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuNavigationBar_create",
+};
+export var NavigationBar = Template(navigationBar);
+
 // PiuService.c
 
 export class Service @ "ServiceProxyDelete" {
@@ -253,30 +265,5 @@ global.Scroller = Scroller;
 
 global.Application = Application;
 global.Service = Service;
-
-var 
-date,
-directory,
-buttons,
-fileType,
-info,
-onStringChanged, 
-placeholder,
-prompt,
-url,
-menus,
-title,
-items,
-command,
-canID,
-doID,
-check,
-key, 
-onOpenFile,
-scale,
-onEnter,
-base,
-main,
-Thread,
-to,
-;
+global.StatusBar = StatusBar;
+global.NavigationBar = NavigationBar;
