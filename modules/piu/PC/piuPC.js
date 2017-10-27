@@ -27,6 +27,7 @@ import {
 	Skin,
 	Style,
 	Behavior,
+	Component,
 	Transition,
 	template,
 	Template,
@@ -248,6 +249,7 @@ global.Skin = Skin;
 global.Style = Style;
 
 global.Behavior = Behavior;
+global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
