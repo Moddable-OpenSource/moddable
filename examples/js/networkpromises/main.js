@@ -15,6 +15,7 @@
 import {Request} from "http";
 import Net from "net";
 import Timer from "timer";
+import WiFi from "wifi";
 
 function wait(ms)
 {
@@ -46,7 +47,20 @@ function fetch(host, path = "/")
 	});
 }
 
-//@@ wifi scan here...
+function scan(dictionary = {}) {
+	return new Promise((resolve, reject) => {
+		let result = [];
+		WiFi.scan(dictionary, item => {
+			if (!item)
+				resolve(result);
+			else if (!result.find(value => item.ssid == value))
+				result.push(item.ssid);
+
+		});
+	});
+}
+
+scan().then(result => result.forEach(name => trace(name, "\n")));
 
 resolve("moddable.tech")
 	.then(address => trace(`resolved to ${address}\n`))
@@ -55,5 +69,6 @@ resolve("moddable.tech")
 wait(3000).then(() => {
 	fetch("www.example.com")
 		.then(body => trace(body, "\n"))
-		.catch(error => trace("failed\n"));
+		.catch(error => trace("http get failed\n"));
 })
+
