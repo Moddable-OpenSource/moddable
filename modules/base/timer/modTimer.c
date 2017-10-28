@@ -45,7 +45,7 @@ static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 	xsEndHost(ts->the);
 }
 
-void xs_timer_add(xsMachine *the)
+void xs_timer_set(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	int interval = 0, repeat = 0;
