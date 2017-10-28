@@ -112,7 +112,7 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 			RegQueryValueEx(key, "right", 0, NULL, (BYTE*)&placement.rcNormalPosition.right, &size);
 			RegQueryValueEx(key, "top", 0, NULL, (BYTE*)&placement.rcNormalPosition.top, &size);
 			RegQueryValueEx(key, "bottom", 0, NULL, (BYTE*)&placement.rcNormalPosition.bottom, &size);
-			SetWindowPlacement(window, &placement);
+			SetWindowPos(window, NULL, placement.rcNormalPosition.left, placement.rcNormalPosition.top, placement.rcNormalPosition.right - placement.rcNormalPosition.left, placement.rcNormalPosition.bottom - placement.rcNormalPosition.top, SWP_NOZORDER);
 			RegCloseKey(key);
 		}
 		SetTimer(window, 0, USER_TIMER_MINIMUM, NULL);
