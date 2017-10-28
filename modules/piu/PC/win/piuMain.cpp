@@ -42,7 +42,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, name);
     if (hMutex) {
 		HWND window = FindWindow("PiuWindow", name);
-		SetForegroundWindow(window);
+		if ((nCmdShow != SW_SHOWMINIMIZED) && (nCmdShow != SW_MINIMIZE) && (nCmdShow != SW_SHOWMINNOACTIVE))
+			SetForegroundWindow(window);
 		for (argi = 1; argi < argc; argi++) {
 			COPYDATASTRUCT cds;
 			cds.cbData = 2 * (wcslen(argv[argi]) + 1);
