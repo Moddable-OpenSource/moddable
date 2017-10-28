@@ -20,22 +20,17 @@ let aps = [];
 WiFi.mode = 1;
 
 function scan() {
-	trace("Scan start\n");
-
 	WiFi.scan({}, ap => {
 		if (ap) {
-			if (aps.find(value => ap.ssid == value))
-				trace(` ignore ${ap.ssid}\n`);
-			else {
+			if (!aps.find(value => ap.ssid == value)) {
 				aps.push(ap.ssid);
-				trace(` add ${ap.ssid}\n`);
+				trace(` ${ap.ssid}\n`);
 			}
 		}
-		else {
-			trace("Scan complete\n\n");
-			Timer.set(scan, 1);
-		}
+		else
+			Timer.set(scan);
 	});
 }
 
+trace("Scan start\n");
 scan();
