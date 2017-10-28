@@ -549,9 +549,11 @@ class NMakeFile extends MakeFile {
 		for (var result of tool.cFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(TMP_DIR)\\", target, ": ", source );
+			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
 			if (result.recipe) {
-				this.write(tool.recipes[result.recipe]);
+				var recipe = tool.recipes[result.recipe];
+				recipe = recipe.replace(/\$</g, source);
+				this.write(recipe);
 			}
 			else {
 				this.line("\t@echo # cl ", target);
@@ -569,15 +571,17 @@ class espNMakeFile extends NMakeFile {
 		for (var result of tool.cFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(TMP_DIR)\\", target, ": ", source);
+			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
 			if (result.recipe) {
-				this.write(tool.recipes[result.recipe]);
+				var recipe = tool.recipes[result.recipe];
+				recipe = recipe.replace(/\$</g, source);
+				this.write(recipe);
 			}
 			else {
-//				this.line("\t@echo # $(CC) ", target);
-				this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+				this.line("\t@echo # cc ", target);
+				//this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
 				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
-				this.line("\techo # $(AR) $(AR_OPTIONS) $(APP_ARCHIVE) $@");
+				//this.line("\techo # $(AR) $(AR_OPTIONS) $(APP_ARCHIVE) $@");
 				this.line("\t$(AR) $(AR_OPTIONS) $(APP_ARCHIVE) $@");
 			}
 		}
@@ -594,13 +598,15 @@ class SynergyNMakeFile extends NMakeFile {
 			var target = result.target;
 			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
 			if (result.recipe) {
-				this.write(tool.recipes[result.recipe]);
+				var recipe = tool.recipes[result.recipe];
+				recipe = recipe.replace(/\$</g, source);
+				this.write(recipe);
 			}
 			else {
-//				this.line("\t@echo # $(CC) ", target);
-				this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+				this.line("\t@echo # cc ", target);
+				//this.line("\t@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
 				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
-				this.line("\techo # $(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
+				//this.line("\techo # $(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
 				this.line("\t$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@");
 			}
 		}
