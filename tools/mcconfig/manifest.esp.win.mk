@@ -17,6 +17,12 @@ SYSROOT = $(TOOLS_ROOT)\xtensa-lx106-elf\sysroot
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\esp
 
+!IF "$(VERBOSE)"=="1"
+!CMDSWITCHES -S
+!ELSE
+!CMDSWITCHES +S
+!ENDIF
+
 !IF "$(DEBUG)"=="1"
 LIB_DIR = $(BUILD_DIR)\tmp\esp\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
@@ -332,7 +338,7 @@ LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 all: $(LAUNCH)
 
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
-	START $(BUILD_DIR)\bin\win\release\xsbug
+	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
 	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)\main.elf
 
