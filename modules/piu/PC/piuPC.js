@@ -27,6 +27,7 @@ import {
 	Skin,
 	Style,
 	Behavior,
+	Component,
 	Transition,
 	template,
 	Template,
@@ -121,6 +122,18 @@ global.application = null;
 class View @ "PiuViewDelete" {
 	constructor(it) @ "PiuViewCreate"
 }
+
+var statusBar = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuStatusBar_create",
+};
+export var StatusBar = Template(statusBar);
+
+var navigationBar = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuNavigationBar_create",
+};
+export var NavigationBar = Template(navigationBar);
 
 // PiuService.c
 
@@ -236,6 +249,7 @@ global.Skin = Skin;
 global.Style = Style;
 
 global.Behavior = Behavior;
+global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
@@ -253,30 +267,5 @@ global.Scroller = Scroller;
 
 global.Application = Application;
 global.Service = Service;
-
-var 
-date,
-directory,
-buttons,
-fileType,
-info,
-onStringChanged, 
-placeholder,
-prompt,
-url,
-menus,
-title,
-items,
-command,
-canID,
-doID,
-check,
-key, 
-onOpenFile,
-scale,
-onEnter,
-base,
-main,
-Thread,
-to,
-;
+global.StatusBar = StatusBar;
+global.NavigationBar = NavigationBar;

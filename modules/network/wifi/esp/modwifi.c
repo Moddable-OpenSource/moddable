@@ -53,21 +53,38 @@ void xs_wifi_get_mode(xsMachine *the)
 
 void xs_wifi_scan(xsMachine *the)
 {
+	struct scan_config config;
+
 	if (STATION_MODE != wifi_get_opmode())
 		xsUnknownError("can only scan in STATION_MODE");
+
+	c_memset(&config, 0, sizeof(config));
+	if (xsmcArgc) {
+		xsmcVars(1);
+
+		if (xsmcHas(xsArg(0), xsID_hidden)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
+			config.show_hidden = xsmcTest(xsVar(0));
+		}
+
+		if (xsmcHas(xsArg(0), xsID_channel)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+			config.channel = xsmcToInteger(xsVar(0));
+		}
+	}
 
 	gScan = (wifiScanRecord *)c_calloc(1, sizeof(wifiScanRecord));
 	if (NULL == gScan)
 		xsUnknownError("out of memory");
 	gScan->callback = xsArg(1);
-	xsRemember(gScan->callback);
 
-	if (!wifi_station_scan(NULL, wifiScanComplete)) {
-		xsForget(gScan->callback);
+	if (!wifi_station_scan(&config, wifiScanComplete)) {
 		c_free(gScan);
 		gScan = NULL;
 		xsUnknownError("scan request failed");
 	}
+
+	xsRemember(gScan->callback);
 }
 
 void xs_wifi_status(xsMachine *the)

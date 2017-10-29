@@ -42,85 +42,85 @@ const backgroundColor = render.makeColor(64, 64, 64);
 const barColor = render.makeColor(128, 128, 128);
 
 render.begin();
-render.fillRectangle(backgroundColor, 0, 0, width, ball.yMin);
-render.fillRectangle(ball.backgroundColor, 0, ball.yMin, width, height);
+	render.fillRectangle(backgroundColor, 0, 0, width, ball.yMin);
+	render.fillRectangle(ball.backgroundColor, 0, ball.yMin, width, height);
 render.end();
 
 let sensor = new LIS3DH({});
 
 Timer.repeat(() => {
-    let values = sensor.sample();
+	let values = sensor.sample();
 
-    if (180 == parseInt(config.orientation)) {
-        values.x = -values.x;
-    }
+	if (180 == parseInt(config.orientation)) {
+		values.x = -values.x;
+	}
 
-    render.begin(0, 0, width, ball.yMin);
-    render.fillRectangle(backgroundColor, 0, 0, width, height);
+	render.begin(0, 0, width, ball.yMin);
+		render.fillRectangle(backgroundColor, 0, 0, width, height);
 
-    drawBar("X", values.x, 0, 0, width, font.height);
-    drawBar("Y", values.y, 0, font.height, width, font.height);
-    drawBar("Z", values.z, 0, font.height * 2, width, font.height);
-    render.end();
+		drawBar("X", values.x, 0, 0, width, font.height);
+		drawBar("Y", values.y, 0, font.height, width, font.height);
+		drawBar("Z", values.z, 0, font.height * 2, width, font.height);
+	render.end();
 
-    ball.vx = (ball.vx + values.y) * 0.98;
-    ball.vy = (ball.vy + values.x) * 0.98;
-    let x = ball.x + ball.vx;
-    let y = ball.y + ball.vy;
-    if (x < 0) {
-        x = -x;
-        ball.vx = -ball.vx;
-    }
-    else if (x > (width - ball.width)) {
-        x = width - ball.width;
-        ball.vx = -ball.vx;
-    }
-    if (y < ball.yMin) {
-        y = ball.yMin;
-        ball.vy = -ball.vy;
-    }
-    else if (y > (height - ball.height)) {
-        y = height - ball.height;
-        ball.vy = -ball.vy;
-    }
-    moveBallTo(x, y)
+	ball.vx = (ball.vx + values.y) * 0.98;
+	ball.vy = (ball.vy + values.x) * 0.98;
+	let x = ball.x + ball.vx;
+	let y = ball.y + ball.vy;
+	if (x < 0) {
+		x = -x;
+		ball.vx = -ball.vx;
+	}
+	else if (x > (width - ball.width)) {
+		x = width - ball.width;
+		ball.vx = -ball.vx;
+	}
+	if (y < ball.yMin) {
+		y = ball.yMin;
+		ball.vy = -ball.vy;
+	}
+	else if (y > (height - ball.height)) {
+		y = height - ball.height;
+		ball.vy = -ball.vy;
+	}
+	moveBallTo(x, y)
 }, 17);
 
 function formatValue(value) {
-    if (!value)
-        return value;
-    if (value < 0)
-        return value.toFixed(3);
-    return "+" + value.toFixed(3);
+	if (!value)
+		return value;
+	if (value < 0)
+		return value.toFixed(3);
+	return "+" + value.toFixed(3);
 }
 
 function drawBar(label, value, x, y, width, height) {
-    const halfWidth = width >> 1;
-    const barWidth = (value * halfWidth) | 0;
+	const halfWidth = width >> 1;
+	const barWidth = (value * halfWidth) | 0;
 
-    if (value > 0)
-        render.fillRectangle(barColor, x + halfWidth, y, barWidth, height);
-    else
-        render.fillRectangle(barColor, x + halfWidth + barWidth, y, -barWidth, height);
+	if (value > 0)
+		render.fillRectangle(barColor, x + halfWidth, y, barWidth, height);
+	else
+		render.fillRectangle(barColor, x + halfWidth + barWidth, y, -barWidth, height);
 
-    render.drawText(label + " " + formatValue(value), font, textColor, x + 50, y);
+	render.drawText(label + " " + formatValue(value), font, textColor, x + 50, y);
 }
 
 function moveBallTo(x, y) {
-    const w = ball.width, h = ball.height;
+	const w = ball.width, h = ball.height;
 
-    if ((Math.abs(ball.x - x) <= w) && (Math.abs(ball.y - y) <= h))
-        render.begin(Math.min(ball.x, x), Math.min(ball.y, y), w << 1, h << 1);		// often overdrawing
-    else {
-        render.begin(ball.x, ball.y, w, h);
-        render.fillRectangle(ball.backgroundColor, 0, 0, width, height);
-        render.continue(x, y, w, h);
-    }
+	if ((Math.abs(ball.x - x) <= w) && (Math.abs(ball.y - y) <= h))
+		render.begin(Math.min(ball.x, x), Math.min(ball.y, y), w << 1, h << 1);		// often overdrawing
+	else {
+		render.begin(ball.x, ball.y, w, h);
+		render.fillRectangle(ball.backgroundColor, 0, 0, width, height);
+		render.continue(x, y, w, h);
+	}
 
-    render.fillRectangle(ball.backgroundColor, 0, 0, width, height);
-    render.drawMasked(ball, x, y, 0, 0, w, h, ball.alpha, 0, 0);
-    render.end();
+	render.fillRectangle(ball.backgroundColor, 0, 0, width, height);
+	render.drawMasked(ball, x, y, 0, 0, w, h, ball.alpha, 0, 0);
+	render.end();
 
-    ball.x = x;
-    ball.y = y;
+	ball.x = x;
+	ball.y = y;
 }
