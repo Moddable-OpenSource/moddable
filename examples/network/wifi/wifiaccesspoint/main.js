@@ -14,6 +14,7 @@
 
 import WiFi from "wifi";
 import {Server} from "http"
+import Net from "net"
 
 WiFi.accessPoint({
 	ssid: "South Village",
@@ -30,4 +31,5 @@ WiFi.accessPoint({
 		return {headers: ["Content-type", "text/plain"], body: `hello, client at path ${this.path}.`};
 }
 
-trace("http server ready\n");
+trace(`http server ready at ${Net.get("IP")}\n`);
+
