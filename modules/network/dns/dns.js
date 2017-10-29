@@ -21,10 +21,10 @@
 import {Socket} from "socket";
 
 class DNS extends Socket {
-	constructor(callback, dictionary) {
-		super({kind: "UDP", port: (dictionary && dictionary.port) ? dictionary.port : 53});
+	constructor(callback, dictionary = {}) {
+		super({kind: "UDP", port: dictionary.port ? dictionary.port : 53});
 		this.client = callback;
-		this.ttl = (dictionary && dictionary.ttl) ? dictionary.ttl : 60;
+		this.ttl = dictionary.ttl ? dictionary.ttl : 60;
 	}
 	callback(message, value, address, port) {
 		if (2 == message) {

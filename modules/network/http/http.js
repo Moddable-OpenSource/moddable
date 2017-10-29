@@ -76,7 +76,7 @@ export class Request {
 		if (undefined !== this.chunk) {
 			if (undefined === limit)
 				limit = this.chunk;
-			else if (typeof limit !== "Number")
+			else if (typeof limit !== "number")	//@@ number
 				throw new Error("http limit only supports number");
 
 			if (type === Number)
@@ -470,7 +470,7 @@ function server(message, value, etc) {
 						if ("content-length" === name) {
 							let length = parseInt(data);
 							if (length)
-								this.total = parseInt(data);
+								this.total = length;
 						}
 						if ("transfer-encoding" === name) {
 							if ("chunked" === data.toLowerCase())
