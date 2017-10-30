@@ -86,4 +86,4 @@ struct PiuViewStruct {
 	CGColorRef color;
 };
 
-extern xsMachine* ServiceThreadMain();
+extern xsMachine* ServiceThreadMain(void* context);
