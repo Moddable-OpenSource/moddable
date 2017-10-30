@@ -27,12 +27,16 @@ extern txPreparation* xsPreparation();
 #if mxWindows
 	#include <direct.h>
 	#include <errno.h>
+	#include <iphlpapi.h>
 	#include <process.h>
 	#define mxSeparator '\\'
 	#define PATH_MAX 1024
 #else
 	#include <dirent.h>
 	#include <sys/stat.h>
+    #include <sys/types.h>
+    #include <ifaddrs.h>
+    #include <netdb.h>
 	#include <unistd.h>
 	#define mxSeparator '/'
 #endif

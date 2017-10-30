@@ -42,8 +42,8 @@
 #include <glib.h>
 #include <netdb.h>
 #include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/fcntl.h>
+
+static gboolean fxQueuePromiseJobsCallback(void *it);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
@@ -53,13 +53,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 {
 }
 
-gboolean fxQueuePromiseJobsCallback(void *it)
-{
-	txMachine* the = it;
-	fxRunPromiseJobs(the);
-	return G_SOURCE_REMOVE;
-}
-
 void fxQueuePromiseJobs(txMachine* the)
 {
 	GSource* idle_source = g_idle_source_new();
@@ -67,6 +60,13 @@ void fxQueuePromiseJobs(txMachine* the)
 	g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
 	g_source_attach(idle_source, g_main_context_get_thread_default());
 	g_source_unref(idle_source);
+}
+
+gboolean fxQueuePromiseJobsCallback(void *it)
+{
+	txMachine* the = it;
+	fxRunPromiseJobs(the);
+	return G_SOURCE_REMOVE;
 }
 
 #ifdef mxDebug
@@ -88,41 +88,20 @@ gboolean fxReadableCallback(GSocket *socket, GIOCondition condition, gpointer us
 
 void fxConnect(txMachine* the)
 {
-	char name[256];
-	char* colon;
-	int port;
+	struct hostent *host;
 	struct sockaddr_in address;
 	int fd = -1;
 	int	flag;
-	colon = getenv("XSBUG_HOST");
-	if ((colon) && (c_strlen(colon) + 1 < sizeof(name))) {
-		c_strcpy(name, colon);
-		colon = strchr(name, ':');
-		if (colon == NULL)
-			port = 5002;
-		else {
-			*colon = 0;
-			colon++;
-			port = strtol(colon, NULL, 10);
-		}
-	}
-	else {
-		if (strstr(program_invocation_name, "xsbug"))
-			port = 5003;
-		else
-			port = 5002;
-		strcpy(name, "localhost");
-	}
+	host = gethostbyname("localhost");
+	if (!host)
+		goto bail;
 	memset(&address, 0, sizeof(address));
-  	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(name);
-	if (address.sin_addr.s_addr == INADDR_NONE) {
-		struct hostent *host = gethostbyname(name);
-		if (!host)
-			return;
-		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-	}
-  	address.sin_port = htons(port);
+	address.sin_family = AF_INET;
+	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+	if (strstr(program_invocation_name, "xsbug"))
+		address.sin_port = htons(5003);
+	else
+		address.sin_port = htons(5002);
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		return;
@@ -151,17 +130,14 @@ void fxConnect(txMachine* the)
 	}
 	fcntl(fd, F_SETFL, flag);
 	signal(SIGPIPE, SIG_DFL);
-	
 	the->socket = g_socket_new_from_fd(fd, NULL);
 	if (!the->socket)
 		goto bail;
-		
 	g_socket_set_blocking(the->socket, FALSE);
 	the->source = g_socket_create_source(the->socket, G_IO_IN, NULL);
 	g_source_set_callback(the->source, (void*)fxReadableCallback, the, NULL);
 	g_source_set_priority(the->source, G_PRIORITY_DEFAULT);
 	g_source_attach(the->source, g_main_context_get_thread_default());
-	
 	return;
 bail:
 	if (fd >= 0)
@@ -183,12 +159,12 @@ void fxDisconnect(txMachine* the)
 
 txBoolean fxIsConnected(txMachine* the)
 {
-	return (the->socket != NULL) ? 1 : 0;
+	return (the->socket) ? 1 : 0;
 }
 
 txBoolean fxIsReadable(txMachine* the)
 {
-	if (the->socket != NULL) {
+	if (the->socket) {
 		gssize count = g_socket_receive(the->socket, the->debugBuffer, sizeof(the->debugBuffer) - 1, NULL, NULL);
 		if (count > 0) {
 			the->debugOffset = count;
@@ -200,7 +176,7 @@ txBoolean fxIsReadable(txMachine* the)
 
 void fxReceive(txMachine* the)
 {
-	if (the->socket != NULL) {
+	if (the->socket) {
 		GError* error = NULL;
 		gssize count;
 	again:
@@ -214,14 +190,16 @@ void fxReceive(txMachine* the)
 			else
 				fxDisconnect(the);
 		}
-		the->debugOffset = count;
+		else {
+			the->debugOffset += count;
+		}
 		the->debugBuffer[the->debugOffset] = 0;
 	}
 }
 
 void fxSend(txMachine* the, txBoolean more)
 {
-	if (the->socket != NULL) {
+	if (the->socket) {
 		GError* error = NULL;
 		gssize count;
 	again:
