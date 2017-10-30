@@ -2305,7 +2305,11 @@ void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 {
 	float value;
 	slot->kind = XS_NUMBER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
+#else
 	value = *((float*)(data->value.arrayBuffer.address + offset));
+#endif
 	slot->value.number = IMPORT(Float);
 }
 
@@ -2338,7 +2342,11 @@ void fxFloat64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 {
 	double value;
 	slot->kind = XS_NUMBER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
+#else
 	value = *((double*)(data->value.arrayBuffer.address + offset));
+#endif
 	slot->value.number = IMPORT(Double);
 }
 
@@ -2409,7 +2417,7 @@ void fxInt32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot,
 	txS4 value;
 	slot->kind = XS_INTEGER_KIND;
 #ifdef mxMisalignedSettersCrash
-	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(txS4));
+	value = c_read32(data->value.arrayBuffer.address + offset);
 #else
 	value = *((txS4*)(data->value.arrayBuffer.address + offset));
 #endif
@@ -2480,7 +2488,11 @@ int fxUint32Compare(const void* p, const void* q)
 
 void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
+#ifdef mxMisalignedSettersCrash
+	txUnsigned value = c_read32(data->value.arrayBuffer.address + offset);
+#else
 	txUnsigned value = *((txU4*)(data->value.arrayBuffer.address + offset));
+#endif
 	value = IMPORT(U32);
 	if (((txInteger)value) >= 0) {
 		slot->kind = XS_INTEGER_KIND;
