@@ -8,11 +8,11 @@
 	},
 	"resources":{
 		"*" : [
-			"$(MODDABLE)/examples/assets/images/keaton",
+			"$(MODDABLE)/examples/assets/images/street",
 		],
 		"*-image": [
 			"$(MODDABLE)/examples/assets/images/robby",
-			"$(MODDABLE)/examples/assets/images/twins",
+			"$(MODDABLE)/examples/assets/images/fish",
 		],
 		"*-image(100)": [
 			"$(MODDABLE)/examples/assets/images/screen1",
