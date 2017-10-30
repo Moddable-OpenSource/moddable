@@ -103,7 +103,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	
 	
 	PiuApplication* application;
-	xsMachine* machine = ServiceThreadMain();
+	xsMachine* machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
 		xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));

@@ -72,7 +72,7 @@ struct PiuViewStruct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern xsMachine* ServiceThreadMain();
+extern xsMachine* ServiceThreadMain(void* context);
 extern void fxAbort(xsMachine *the);
 #ifdef __cplusplus
 }
