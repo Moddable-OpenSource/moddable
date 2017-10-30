@@ -1,0 +1,25 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/sakuraio/*",
+		]
+	},
+	"preload": [
+		"sakuraio"
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+				"*": [
+					"$(MODULES)/pins/i2c/esp/*",
+				],
+			},
+			"preload": [
+				"pins/i2c",
+			]
+		},
+	}
+}
