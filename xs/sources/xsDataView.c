@@ -2408,7 +2408,11 @@ void fxInt32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot,
 {
 	txS4 value;
 	slot->kind = XS_INTEGER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(txS4));
+#else
 	value = *((txS4*)(data->value.arrayBuffer.address + offset));
+#endif
 	slot->value.integer = IMPORT(S32);
 }
 
