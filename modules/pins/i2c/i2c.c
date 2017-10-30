@@ -78,10 +78,10 @@ void xs_i2c_read(xsMachine *the)
 	int argc = xsmcArgc;
 	unsigned int len = xsmcToInteger(xsArg(0)), i;
 	unsigned char err;
-	unsigned char buffer[34];
+	unsigned char buffer[40];
 
 	if (len > sizeof(buffer))
-		xsUnknownError("34 byte read limit");
+		xsUnknownError("40 byte read limit");
 
 	i2c = xsmcGetHostChunk(xsThis);
 	err = modI2CRead(i2c, buffer, len, true);
@@ -108,7 +108,7 @@ void xs_i2c_write(xsMachine *the)
 	uint8_t argc = xsmcArgc, i;
 	unsigned char err;
 	unsigned int len = 0;
-	unsigned char buffer[34];
+	unsigned char buffer[40];
 
 	xsmcVars(1);
 
@@ -116,7 +116,7 @@ void xs_i2c_write(xsMachine *the)
 		xsType t = xsmcTypeOf(xsArg(i));
 		if ((xsNumberType == t) || (xsIntegerType == t)) {
 			if ((len + 1) > sizeof(buffer))
-				xsUnknownError("34 byte write limit");
+				xsUnknownError("40 byte write limit");
 			buffer[len++] = (unsigned char)xsmcToInteger(xsArg(i));
 			continue;
 		}
@@ -124,7 +124,7 @@ void xs_i2c_write(xsMachine *the)
 			char *s = xsmcToString(xsArg(i));
 			int l = espStrLen(s);
 			if ((len + l) > sizeof(buffer))
-				xsUnknownError("34 byte write limit");
+				xsUnknownError("40 byte write limit");
 			espMemCpy(buffer + len, s, l);
 			len += l;
 			continue;
@@ -132,14 +132,14 @@ void xs_i2c_write(xsMachine *the)
 
 		{	// assume some kind of array (Array, Uint8Array, etc) (@@ use .buffer if present)
 			int l;
-			uint8_t i;
+			uint8_t j;
 
 			xsmcGet(xsVar(0), xsArg(i), xsID_length);
 			l = xsmcToInteger(xsVar(0));
 			if ((len + l) > sizeof(buffer))
-				xsUnknownError("34 byte write limit");
-			for (i = 0; i < l; i++) {
-				xsmcGet(xsVar(0), xsArg(i), i);
+				xsUnknownError("40 byte write limit");
+			for (j = 0; j < l; j++) {
+				xsmcGet(xsVar(0), xsArg(i), j);
 				buffer[len++] = xsmcToInteger(xsVar(0));
 			}
 		}
