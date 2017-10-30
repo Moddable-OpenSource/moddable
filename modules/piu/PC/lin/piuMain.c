@@ -109,7 +109,7 @@ static void gtk_piu_application_startup(GApplication *app)
 	GtkPiuApplication* gtkApplication = GTK_PIU_APPLICATION(app);
 	GResource* resource = mc_get_resource();
 	g_resources_register(resource);
-	xsMachine* machine = gtkApplication->machine = ServiceThreadMain();
+	xsMachine* machine = gtkApplication->machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
 		xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));
