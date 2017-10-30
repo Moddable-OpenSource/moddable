@@ -110,7 +110,7 @@ void PiuImageSync(void* it)
 	xsIntegerValue frameCount = (*self)->frameCount;
 	if (frameCount > 1) {
 		xsIntegerValue fromIndex = (*self)->frameIndex;
-		xsIntegerValue toIndex = c_round((frameCount * (*self)->time) / (*self)->duration);
+		xsIntegerValue toIndex = (xsIntegerValue)c_round((frameCount * (*self)->time) / (*self)->duration);
 		if (toIndex >= frameCount)
 			toIndex = frameCount - 1;
 		if (fromIndex != toIndex) {
