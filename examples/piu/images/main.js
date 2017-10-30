@@ -17,11 +17,11 @@ import {} from "piu/MC";
 const whiteSkin = new Skin({ fill:"white" });
 
 const paths = [
-	"keaton.cs",
+	"fish.cs",
 	"robby.cs",
 	"screen1.cs",
 	"screen2.cs",
-	"twins.cs",
+	"street.cs",
 ];
 
 class ImageBehavior extends Behavior {
