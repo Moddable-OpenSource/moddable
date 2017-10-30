@@ -70,7 +70,7 @@ class SakuraIO extends I2C {
 	}
 	getConnectionStatus() {
 		let result = this.execute(CMD.GET_CONNECTION_STATUS, null, 1);
-		if ("number" == typeof result)
+		if ("number" === typeof result)
 			return 0x7f;
 		return result[0];
 	}
@@ -141,7 +141,7 @@ class SakuraIO extends I2C {
 		this.enqueueTxRaw(channel, 'd', bytes);
 	}
 	enqueueUint8Array(channel, value) {
-		if (8 != value.length) throw new Error("must be 8 bytes");
+		if (8 !== value.length) throw new Error("must be 8 bytes");
 		this.enqueueTxRaw(channel, 'b', value);
 	}
 	dequeue() {
@@ -171,10 +171,8 @@ class SakuraIO extends I2C {
 		let requestLength = request ? request.length : 0
 		let parity = cmd ^ requestLength;
 
-		if (requestLength) {
-			request.forEach(value => parity ^= value);
-			this.write(cmd, requestLength, request, parity);
-		}
+		if (requestLength)
+			this.write(cmd, requestLength, request, request.reduce((a, b) => a ^ b, parity));
 		else
 			this.write(cmd, 0, parity);
 
@@ -182,14 +180,10 @@ class SakuraIO extends I2C {
 		Timer.delay(10);
 
 		let result = this.read(responseLength + 3);
-		if (ERROR.NONE != result[0])
+		if (ERROR.NONE !== result[0])
 			return result[0];
 
-		parity = result[0] ^ result[1];
-		for (let i = 0; i < responseLength; i++)
-			parity ^= result[2 + i];
-
-		parity ^= result[responseLength + 2];
+		parity = result.reduce((a, b) => a ^ b);
 		if (parity)
 			return ERROR.PARITY;
 
