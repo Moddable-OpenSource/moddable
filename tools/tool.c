@@ -20,6 +20,74 @@
 
 #include "tool.h"
 
+void Tool_prototype_get_ipAddress(xsMachine* the)
+{
+#if mxWindows
+	#define WORKING_BUFFER_SIZE 15000
+	#define MAX_TRIES 3
+    DWORD dwRetVal = 0;
+    PIP_ADAPTER_ADDRESSES pAddresses = NULL;
+    ULONG outBufLen = 0;
+    ULONG iterations = 0;
+    unsigned int i = 0;
+    outBufLen = WORKING_BUFFER_SIZE;
+    do {
+        pAddresses = (IP_ADAPTER_ADDRESSES *)c_malloc(outBufLen);
+        if (pAddresses == NULL)
+        	goto bail;
+        dwRetVal = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &outBufLen);
+        if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
+        	c_free(pAddresses);
+       	 	pAddresses = NULL;
+       	}
+        iterations++;
+    } while ((dwRetVal == ERROR_BUFFER_OVERFLOW) && (iterations < MAX_TRIES));
+    if (dwRetVal == NO_ERROR) {
+        PIP_ADAPTER_ADDRESSES pCurrAddresses = pAddresses;
+        while (pCurrAddresses) {
+            PIP_ADAPTER_UNICAST_ADDRESS pUnicast = pCurrAddresses->FirstUnicastAddress;
+            if (pUnicast != NULL) {
+                for (i = 0; pUnicast != NULL; i++) {
+ 					struct sockaddr_in* address = (struct sockaddr_in*)pUnicast->Address.lpSockaddr;
+					int ip = ntohl(address->sin_addr.s_addr);
+					char buffer[22];
+					snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
+					if (c_strcmp(buffer, "127.0.0.1")) {
+						xsResult = xsString(buffer);
+						return;
+					}
+					pUnicast = pUnicast->Next;
+                }
+            }
+            pCurrAddresses = pCurrAddresses->Next;
+        }
+    }
+bail:
+    if (pAddresses) {
+        c_free(pAddresses);
+    }
+#else
+	struct ifaddrs *ifaddr, *ifa;
+	if (getifaddrs(&ifaddr) == -1)
+		return;
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL)
+			continue;
+		if (ifa->ifa_addr->sa_family == AF_INET) {
+			struct sockaddr_in* address = (struct sockaddr_in*)ifa->ifa_addr;
+			int ip = ntohl(address->sin_addr.s_addr);
+			char buffer[22];
+			snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
+			if (c_strcmp(buffer, "127.0.0.1")) {
+				xsResult = xsString(buffer);
+				return;
+			}
+		}
+	}
+	freeifaddrs(ifaddr);
+#endif
+}
+
 void Tool_prototype_get_currentDirectory(xsMachine* the)
 {
 	char buffer[PATH_MAX];
@@ -39,6 +107,7 @@ void Tool_prototype_set_currentDirectory(xsMachine* the)
 	xsElseThrow(0 == chdir(xsToString(xsArg(0))));
 #endif
 }
+
 
 void Tool_prototype_get_currentPlatform(xsMachine* the)
 {
