@@ -114,6 +114,7 @@ MODULES = \
 	$(MOD_DIR)\image2cs.xsb \
 	$(MOD_DIR)\mcconfig.xsb \
 	$(MOD_DIR)\mclocal.xsb \
+	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
