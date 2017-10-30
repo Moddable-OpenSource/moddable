@@ -85,6 +85,13 @@
 				}
 			}
 		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [
