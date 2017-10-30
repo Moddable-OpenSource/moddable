@@ -62,54 +62,54 @@ export const supportedCipherSuites = [
 		hashSize: 20,
 		encryptionMode: CBC,
 	},
-	{
-		// TLS_RSA_WITH_DES_CBC_SHA
-		value: [0x00, 0x09],
-		isExportable: false,
-		keyExchangeAlgorithm: RSA,
-		cipherAlgorithm: DES,
-		cipherKeySize: 8,
-		cipherBlockSize: 8,
-		hashAlgorithm: SHA1,
-		hashSize: 20,
-		encryptionMode: CBC,
-	},
-	{
-		// TLS_RSA_WITH_3DES_EDE_CBC_SHA
-		value: [0x00, 0x0A],
-		isExportable: false,
-		keyExchangeAlgorithm: RSA,
-		cipherAlgorithm: TDES,
-		cipherKeySize: 24,
-		cipherBlockSize: 8,
-		hashAlgorithm: SHA1,
-		hashSize: 20,
-		encryptionMode: CBC,
-	},
-	{
-		// TLS_RSA_WITH_RC4_128_MD5
-		value: [0x00, 0x04],
-		isExportable: false,
-		keyExchangeAlgorithm: RSA,
-		cipherAlgorithm: RC4,
-		cipherKeySize: 16,
-		cipherBlockSize: 0,
-		hashAlgorithm: MD5,
-		hashSize: 16,
-		encryptionMode: NONE,
-	},
-	{
-		// TLS_RSA_WITH_RC4_128_SHA
-		value: [0x00, 0x05],
-		isExportable: false,
-		keyExchangeAlgorithm: RSA,
-		cipherAlgorithm: RC4,
-		cipherKeySize: 16,
-		cipherBlockSize: 0,
-		hashAlgorithm: SHA1,
-		hashSize: 20,
-		encryptionMode: NONE,
-	},
+//	{
+//		// TLS_RSA_WITH_DES_CBC_SHA
+//		value: [0x00, 0x09],
+//		isExportable: false,
+//		keyExchangeAlgorithm: RSA,
+//		cipherAlgorithm: DES,
+//		cipherKeySize: 8,
+//		cipherBlockSize: 8,
+//		hashAlgorithm: SHA1,
+//		hashSize: 20,
+//		encryptionMode: CBC,
+//	},
+//	{
+//		// TLS_RSA_WITH_3DES_EDE_CBC_SHA
+//		value: [0x00, 0x0A],
+//		isExportable: false,
+//		keyExchangeAlgorithm: RSA,
+//		cipherAlgorithm: TDES,
+//		cipherKeySize: 24,
+//		cipherBlockSize: 8,
+//		hashAlgorithm: SHA1,
+//		hashSize: 20,
+//		encryptionMode: CBC,
+//	},
+//	{
+//		// TLS_RSA_WITH_RC4_128_MD5
+//		value: [0x00, 0x04],
+//		isExportable: false,
+//		keyExchangeAlgorithm: RSA,
+//		cipherAlgorithm: RC4,
+//		cipherKeySize: 16,
+//		cipherBlockSize: 0,
+//		hashAlgorithm: MD5,
+//		hashSize: 16,
+//		encryptionMode: NONE,
+//	},
+//	{
+//		// TLS_RSA_WITH_RC4_128_SHA
+//		value: [0x00, 0x05],
+//		isExportable: false,
+//		keyExchangeAlgorithm: RSA,
+//		cipherAlgorithm: RC4,
+//		cipherKeySize: 16,
+//		cipherBlockSize: 0,
+//		hashAlgorithm: SHA1,
+//		hashSize: 20,
+//		encryptionMode: NONE,
+//	},
 	{
 		// TLS_RSA_WITH_AES_128_CBC_SHA256
 		value: [0x00, 0x3c],
@@ -186,18 +186,18 @@ export const supportedCipherSuites = [
 		ivSize: 8,	// explicit nonce size
 		saltSize: 4,	// implicit part
 	},
-	{
-		// TLS_NULL_WITH_NULL_NULL
-		value: [0x00, 0x00],
-		isExportable: true,	// ?
-		keyExchangeAlgorithm: NULL,
-		cipherAlgorithm: NULL,
-		cipherKeySize: 0,
-		cipherBlockSize: 0,
-		hashAlgorithm: NULL,
-		hashSize: 0,
-		encryptionMode: NONE,
-	},
+//	{
+//		// TLS_NULL_WITH_NULL_NULL
+//		value: [0x00, 0x00],
+//		isExportable: true,	// ?
+//		keyExchangeAlgorithm: NULL,
+//		cipherAlgorithm: NULL,
+//		cipherKeySize: 0,
+//		cipherBlockSize: 0,
+//		hashAlgorithm: NULL,
+//		hashSize: 0,
+//		encryptionMode: NONE,
+//	},
 ];
 
 Object.freeze(supportedCipherSuites);
