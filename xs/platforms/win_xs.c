@@ -109,44 +109,26 @@ void fxQueuePromiseJobs(txMachine* the)
 void fxConnect(txMachine* the)
 {
 	WSADATA wsaData;
-	char name[256];
-	int port;
+	struct hostent *host;
 	struct sockaddr_in address;
+	char name[C_PATH_MAX];
 	unsigned long flag;
 
-	the->connection = INVALID_SOCKET;
 	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
 		goto bail;
-
-	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
-		char* colon = strchr(name, ':');
-		if (colon == NULL)
-			port = 5002;
-		else {
-			*colon = 0;
-			colon++;
-			port = strtol(colon, NULL, 10);
-		}
-	}
-	else {
-		strcpy(name, "localhost");
-		port = 5002;
-	}
+	host = gethostbyname("localhost");
+	if (!host)
+		goto bail;
 	memset(&address, 0, sizeof(address));
-  	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(name);
-	if (address.sin_addr.s_addr == INADDR_NONE) {
-		struct hostent *host = gethostbyname(name);
-		if (!host)
-			goto bail;
-		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-	}
-  	address.sin_port = htons(port);
-
+	address.sin_family = AF_INET;
+	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+	if (GetModuleFileName(NULL, name, sizeof(name)) && strstr(name, "xsbug"))
+		address.sin_port = htons(5003);
+	else
+		address.sin_port = htons(5002);
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection == INVALID_SOCKET)
 		goto bail;
-  	
   	flag = 1;
   	ioctlsocket(the->connection, FIONBIO, &flag);
 	if (connect(the->connection, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR) {
@@ -163,9 +145,8 @@ void fxConnect(txMachine* the)
 		else
 			goto bail;
 	}
- // 	flag = 0;
+ // flag = 0;
  //	ioctlsocket(the->connection, FIONBIO, &flag);
-		
 	if (WSAAsyncSelect(the->connection, the->window, WM_XSBUG, FD_READ))
 		goto bail;
 	return;
