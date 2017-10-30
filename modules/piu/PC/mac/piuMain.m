@@ -28,7 +28,7 @@ int main(int argc, const char **argv)
 		[application setDelegate:(id<NSApplicationDelegate>)appDelegate];
 	
 		appDelegate.shouldQuit = FALSE;
-		appDelegate.machine = ServiceThreadMain();
+		appDelegate.machine = ServiceThreadMain(NULL);
 	
 		xsBeginHost(appDelegate.machine);
 		{
