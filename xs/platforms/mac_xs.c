@@ -38,10 +38,8 @@
 #include "xsAll.h"
 #include "xsScript.h"
 
-#include <CoreFoundation/CoreFoundation.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
-#include <sys/fcntl.h>
 
 static void fxQueuePromiseJobsCallback(void *info);
 
@@ -63,15 +61,15 @@ void fxDeleteMachinePlatform(txMachine* the)
 	}
 }
 
+void fxQueuePromiseJobs(txMachine* the)
+{
+	CFRunLoopSourceSignal(the->promiseSource);
+}
+
 void fxQueuePromiseJobsCallback(void *info)
 {
 	txMachine* the = info;
 	fxRunPromiseJobs(the);
-}
-
-void fxQueuePromiseJobs(txMachine* the)
-{
-	CFRunLoopSourceSignal(the->promiseSource);
 }
 
 #ifdef mxDebug
@@ -93,8 +91,6 @@ void fxConnect(txMachine* the)
 	CFSocketContext context;
 	struct hostent *host;
 	struct sockaddr_in address;
-	c_memset(&context, 0, sizeof(CFSocketContext));
-	context.info = (void*)the;
 	host = gethostbyname("localhost");
 	if (!host)
 		goto bail;
@@ -106,6 +102,8 @@ void fxConnect(txMachine* the)
 		address.sin_port = htons(5003);
 	else
 		address.sin_port = htons(5002);
+	c_memset(&context, 0, sizeof(CFSocketContext));
+	context.info = (void*)the;
 	the->connection = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketReadCallBack, fxReadableCallback, &context);
 	if (CFSocketConnectToAddress(the->connection, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)2)) 
 		goto bail;

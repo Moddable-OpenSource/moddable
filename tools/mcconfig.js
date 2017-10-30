@@ -1098,7 +1098,6 @@ export default class Tool extends TOOL {
 		if (!this.moddablePath)
 			throw new Error("MODDABLE: variable not found!");
 
-			
 		this.binPath = null;
 		this.config = {};
 		this.defines = null;
@@ -1608,6 +1607,9 @@ export default class Tool extends TOOL {
 		if (!creation.keys.symbol) creation.keys.symbol = 127;
 		if (!creation.static) creation.static = 0;
 		if (!creation.main) creation.main = "main";
+		if ((this.platform == "x-android") || (this.platform == "x-android-simulator") || (this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
+			creation.main = this.ipAddress;
+		}
 		this.creation = creation;
 		
 		var name = this.environment.NAME
