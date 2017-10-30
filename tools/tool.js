@@ -34,6 +34,7 @@ export default class Tool {
 			args.forEach(arg => argv.push(arg));
 		}
 	}
+	get ipAddress() @ "Tool_prototype_get_ipAddress";
 	get currentDirectory() @ "Tool_prototype_get_currentDirectory";
 	set currentDirectory(it) @ "Tool_prototype_set_currentDirectory";
 	get currentPlatform() @ "Tool_prototype_get_currentPlatform";
