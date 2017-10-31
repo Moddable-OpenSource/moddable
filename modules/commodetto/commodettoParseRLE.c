@@ -23,7 +23,6 @@
 #include "commodettoBitmap.h"
 
 #include "xsmc.h"
-#include "mc.xs.h"			// for xsID_ values
 
 void xs_parseRLE(xsMachine *the)
 {
