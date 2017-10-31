@@ -1110,8 +1110,8 @@ struct xsCreationRecord {
 	xsIntegerValue staticSize;
 };
 
-#define xsCreateMachine(_CREATION,_ARCHIVE,_NAME,_CONTEXT) \
-	fxCreateMachine(_CREATION, _ARCHIVE, _NAME, _CONTEXT)
+#define xsCreateMachine(_CREATION,_NAME,_CONTEXT) \
+	fxCreateMachine(_CREATION, _NAME, _CONTEXT)
 	
 #define xsDeleteMachine(_THE) \
 	fxDeleteMachine(_THE)
@@ -1320,7 +1320,7 @@ mxImport void fxThrowMessage(xsMachine* the, xsStringValue thePath, xsIntegerVal
 mxImport void fxDebugger(xsMachine*, xsStringValue, xsIntegerValue);
 mxImport void fxReport(xsMachine*, xsStringValue, ...);
 
-mxImport xsMachine* fxCreateMachine(xsCreation*, void*, xsStringValue, void*);
+mxImport xsMachine* fxCreateMachine(xsCreation*, xsStringValue, void*);
 mxImport void fxDeleteMachine(xsMachine*);
 mxImport xsMachine* fxCloneMachine(xsCreation*, xsMachine*, xsStringValue, void*);
 mxImport void fxShareMachine(xsMachine*);
