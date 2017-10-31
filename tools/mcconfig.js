@@ -665,7 +665,7 @@ export default class Tool extends TOOL {
 			file = new RotationFile(this.tmpPath + this.slash + "mc.rotation.h");
 			file.generate(this);
 			this.dataPath = this.tmpPath + this.slash + "data";
-			FS.mkdirSync(this.resourcesPath);
+			FS.mkdirSync(this.dataPath);
 			this.resourcesPath = this.tmpPath + this.slash + "resources";
 			FS.mkdirSync(this.resourcesPath);
 		}
