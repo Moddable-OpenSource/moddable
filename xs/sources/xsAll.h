@@ -281,7 +281,7 @@ struct sxMachine {
 	txSlot* stackPrototypes; /* xs.h */
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
-	void* dummy; /* xs.h */
+	void* archive; /* xs.h */
 	txSlot scratch; /* xs.h */
 	mxMachinePlatform /* xs.h */
 	txFlag status;
@@ -545,6 +545,10 @@ mxExport void fxCopyObject(txMachine* the);
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 mxExport void fxModulePaths(txMachine* the);
+
+mxExport void fxBuildArchiveKeys(txMachine* the);
+mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
+mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
 
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
