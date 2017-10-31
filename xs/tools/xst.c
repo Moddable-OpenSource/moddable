@@ -554,7 +554,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	char buffer[C_PATH_MAX];
 	int success = 0;
 	fxInitializeSharedCluster();
-	machine = xsCreateMachine(creation, NULL, "xst", NULL);
+	machine = xsCreateMachine(creation, "xst", NULL);
 	xsBeginHost(machine);
 	{
 		xsTry {
@@ -818,7 +818,7 @@ void* fx_agent_start_aux(void* it)
 		127 		/* symbolModulo */
 	};
 	txAgent* agent = it;
-	xsMachine* machine = xsCreateMachine(&creation, NULL, "xst-agent", NULL);
+	xsMachine* machine = xsCreateMachine(&creation, "xst-agent", NULL);
 	machine->host = it;
 	xsBeginHost(machine);
 	{

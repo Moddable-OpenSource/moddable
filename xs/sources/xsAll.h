@@ -328,7 +328,7 @@ struct sxMachine {
 	txBoolean collectFlag;
 	txFlag requireFlag;
 	void* dtoa;
-	void* archive;
+	void* preparation;
 
 	char nameBuffer[256];
 #ifdef mxDebug
@@ -527,7 +527,7 @@ mxExport void fxThrowMessage(txMachine* the, txString thePath, txInteger theLine
 mxExport void fxDebugger(txMachine* the, txString thePath, txInteger theLine);
 
 mxExport const txByte gxNoCode[] ICACHE_FLASH_ATTR;
-mxExport txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString theName, void* theContext);
+mxExport txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext);
 mxExport void fxDeleteMachine(txMachine*);
 mxExport txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext);
 mxExport void fxShareMachine(txMachine* the);

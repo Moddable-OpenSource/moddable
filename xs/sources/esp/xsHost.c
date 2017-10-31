@@ -758,7 +758,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	creation = prep->creation;
 
-	root.archive = prep;
+	root.preparation = prep;
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
@@ -935,7 +935,7 @@ void fxBuildKeys(txMachine* the)
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 	path += preparation->baseLength;
@@ -986,7 +986,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	char name[PATH_MAX];
 	char path[PATH_MAX];
 	txBoolean absolute = 0, relative = 0, search = 0;
@@ -1052,7 +1052,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 
 void fxLoadModule(txMachine* the, txID moduleID)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
@@ -1386,7 +1386,7 @@ void installModules(xsMachine *the)
 	xsbSize = c_read32be(scratch);
 
 	{
-		txPreparation* preparation = the->archive;
+		txPreparation* preparation = the->preparation;
 		int chksSize;
 		uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
 		if (!chksAtom || (16 != chksSize)) return;
@@ -1413,7 +1413,7 @@ void installModules(xsMachine *the)
 	if (!atom) goto installArchive;
 
 	{
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	int signSize, chksSize;
 	uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
 	uint8_t *signAtom = findAtom(FOURCC('S', 'I', 'G', 'N'), scratch, sizeof(scratch), &signSize);
@@ -1484,7 +1484,7 @@ installArchive:
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbCopy, xsbSize, NULL);
 	atom[3] = 1;		// make as remapped
 
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	atom = findAtom(FOURCC('C', 'H', 'K', 'S'), xsbCopy, xsbSize, &atomSize);
 	if (!atom || (sizeof(preparation->checksum) != atomSize))
 		goto bail;
