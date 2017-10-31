@@ -20,6 +20,8 @@
 
 #import <Cocoa/Cocoa.h>
 #include <dlfcn.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "screen.h"
 
 NSString* gPixelFormatNames[pixelFormatCount] = {
@@ -61,7 +63,10 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @end
 
 @interface ScreenView : NSView {
-	NSString *filename;
+	NSString *archivePath;
+	int archiveFile;
+	int archiveSize;
+	NSString *libraryPath;
 	void* library;
 	txScreen* screen;
     NSTimeInterval time;
@@ -70,7 +75,10 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 	id *touches;
 	BOOL touching;
 }
-@property (retain) NSString *filename;
+@property (retain) NSString *archivePath;
+@property (assign) int archiveFile;
+@property (assign) int archiveSize;
+@property (retain) NSString *libraryPath;
 @property (assign) void* library;
 @property (assign) txScreen *screen;
 @property (assign) NSTimeInterval time;
@@ -78,7 +86,7 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @property (retain) NSImage *touchImage;
 @property (assign) id *touches;
 @property (assign) BOOL touching;
-- (void)launchMachine:(NSString*)string;
+- (void)launchMachine;
 - (void)quitMachine;
 @end
 
@@ -194,10 +202,18 @@ static void fxScreenStop(txScreen* screen);
 {
 	NSInteger c = [filenames count], i;
 	NSString* filename;
-	for (i = 0; i < c; i++) {
+	NSString* extension;
+	if (c) {
 		[self.screenView quitMachine];
-		filename = [filenames objectAtIndex:i];
-        [self.screenView launchMachine:filename];
+		for (i = 0; i < c; i++) {
+			filename = [filenames objectAtIndex:i];
+			extension = [filename pathExtension];
+			if ([extension compare:@"so"] == NSOrderedSame)
+				self.screenView.libraryPath = filename;
+			else if ([extension compare:@"xsa"] == NSOrderedSame)
+				self.screenView.archivePath = filename;
+		}
+		[self.screenView launchMachine];
 	}
 }
 - (void)about:(NSMenuItem *)sender {
@@ -211,6 +227,8 @@ static void fxScreenStop(txScreen* screen);
 }
 - (void)closeLibrary:(NSMenuItem *)sender {
 	[self.screenView quitMachine];
+    self.screenView.archivePath = nil;
+    self.screenView.libraryPath = nil;
 }
 - (void)createScreen:(NSString *)jsonPath {
     NSString *screenImagePath = [[jsonPath stringByDeletingPathExtension] stringByAppendingPathExtension:@"png"];
@@ -226,9 +244,16 @@ static void fxScreenStop(txScreen* screen);
     NSInteger width = [[json valueForKeyPath:@"width"] integerValue];
     NSInteger height = [[json valueForKeyPath:@"height"] integerValue];
     ScreenView *_screenView = [[[ScreenView alloc] initWithFrame:NSMakeRect(x, size.height - (y + height), width, height)] autorelease];
+   
+    _screenView.archivePath = nil;
+    _screenView.archiveFile = -1;
+    _screenView.archiveSize = 0;
+    _screenView.libraryPath = nil;
+    _screenView.library = NULL;
     
     txScreen* screen = malloc(sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
     memset(screen, 0, sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
+    screen->archive = NULL;
     screen->view = _screenView;
     screen->abort = fxScreenAbort;
     screen->bufferChanged = fxScreenBufferChanged;
@@ -269,7 +294,7 @@ static void fxScreenStop(txScreen* screen);
 - (void)getInfo:(NSMenuItem *)sender {
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
 	[alert setAlertStyle:NSAlertStyleInformational];
-	[alert setMessageText:[[screenView.filename stringByDeletingLastPathComponent] lastPathComponent]];
+	[alert setMessageText:[[screenView.libraryPath stringByDeletingLastPathComponent] lastPathComponent]];
 	[alert setInformativeText:gPixelFormatNames[screenView.screen->pixelFormat]];
 	[alert beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
 		[alert.window close]; 
@@ -277,7 +302,7 @@ static void fxScreenStop(txScreen* screen);
 }
 - (void)openLibrary:(NSMenuItem *)sender {
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
-	[openPanel setAllowedFileTypes: [NSArray arrayWithObject:@"so"]];
+	[openPanel setAllowedFileTypes: [NSArray arrayWithObjects:@"so", @"xsa", nil]];
 	[openPanel setAllowsMultipleSelection:NO];
 	[openPanel setCanChooseDirectories:NO];
 	[openPanel setCanChooseFiles:YES];
@@ -301,15 +326,14 @@ static void fxScreenStop(txScreen* screen);
     sender.state = 1;
     [userDefaults setInteger:sender.tag forKey:@"screenTag"];
     
-    NSString *_filename = self.screenView.filename;
-    if (_filename) {
-		[self.screenView quitMachine];
-    }
+    NSString* archivePath = self.screenView.archivePath;
+    NSString* libraryPath = self.screenView.libraryPath;
+	[self.screenView quitMachine];
     [self deleteScreen];
     [self createScreen:sender.representedObject];
-    if (_filename) {
-		[self.screenView launchMachine:_filename];
-    }
+    self.screenView.archivePath = archivePath;
+    self.screenView.libraryPath = libraryPath;
+	[self.screenView launchMachine];
     [self.window makeKeyAndOrderFront:NSApp];
 }
 - (void)support:(NSMenuItem *)sender {
@@ -403,7 +427,10 @@ static void fxScreenStop(txScreen* screen);
 @end
 
 @implementation ScreenView
-@synthesize filename;
+@synthesize archivePath;
+@synthesize archiveFile;
+@synthesize archiveSize;
+@synthesize libraryPath;
 @synthesize library;
 @synthesize screen;
 @synthesize time;
@@ -416,7 +443,8 @@ static void fxScreenStop(txScreen* screen);
     	free(screen);
 	if (library)
     	dlclose(library);
-    [filename release];
+    [libraryPath release];
+    [archivePath release];
     [touchImage release];
     [super dealloc];
 }
@@ -440,10 +468,12 @@ static void fxScreenStop(txScreen* screen);
 		}
 	}
 }
-- (void)launchMachine:(NSString*)path {
+- (void)launchMachine {
+	NSString *path = self.libraryPath;
 	NSString *info = nil;
 	txScreenLaunchProc launch;
-	self.filename = path;
+	if (!path)
+		return;
 	self.library = dlopen([path UTF8String], RTLD_NOW);
 	if (!self.library) {
 		info = [NSString stringWithFormat:@"%s", dlerror()];
@@ -454,9 +484,36 @@ static void fxScreenStop(txScreen* screen);
 		info = [NSString stringWithFormat:@"%s", dlerror()];
 		goto bail;
 	}
+	
+	path = self.archivePath;
+	if (path) {
+		struct stat statbuf;
+		self.archiveFile = open([path UTF8String], O_RDWR);
+		if (!self.archiveFile) {
+			info = [NSString stringWithFormat:@"%s", strerror(errno)];
+			goto bail;
+		}
+		fstat(self.archiveFile, &statbuf);
+		self.archiveSize = statbuf.st_size;
+		self.screen->archive = mmap(NULL, self.archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, self.archiveFile, 0);
+		if (!self.screen->archive) {
+			info = [NSString stringWithFormat:@"%s", strerror(errno)];
+			goto bail;
+		}
+	}
+
 	(*launch)(self.screen);
 	return;
 bail:
+	if (self.screen->archive) {
+		munmap(self.screen->archive, self.archiveSize);
+		self.screen->archive = NULL;
+		self.archiveSize = 0;
+	}
+	if (self.archiveFile >= 0) {
+		close(self.archiveFile);
+		self.archiveFile = -1;
+	}
 	if (self.library) {
 		dlclose(self.library);
 		self.library = nil;
@@ -500,6 +557,15 @@ bail:
 - (void)quitMachine {
 	if (self.screen->quit) 
 		(*self.screen->quit)(self.screen);
+	if (self.screen->archive) {
+		munmap(self.screen->archive, self.archiveSize);
+		self.screen->archive = NULL;
+		self.archiveSize = 0;
+	}
+	if (self.archiveFile >= 0) {
+		close(self.archiveFile);
+		self.archiveFile = -1;
+	}
 	if (self.library) {
     	dlclose(self.library);
     	self.library = nil;
