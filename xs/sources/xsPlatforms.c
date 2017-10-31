@@ -75,9 +75,6 @@
 #if mxUseDefaultFindModule
 	static txBoolean fxFindPreparation(txMachine* the, txString path, txID* id);
 #endif
-#if mxUseDefaultLoadModule
-	static txScript* fxLoadPreparation(txMachine* the, txString path);
-#endif
 
 #ifdef mxParse
 #include "xsScript.h"
@@ -102,7 +99,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 }
 
 #endif /* mxUseDefaultMachinePlatform */
-
 
 #ifndef mxLink
 
@@ -295,21 +291,28 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 
 txBoolean fxFindPreparation(txMachine* the, txString path, txID* id)
 {
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	path += preparation->baseLength;
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			path -= preparation->baseLength;
-			*id = fxNewNameC(the, path);
-			return 1;
+	txSize size;
+	txByte* code = fxGetArchiveCode(the, path, &size);
+	if (!code) {
+		txPreparation* preparation = the->preparation;
+		txInteger c = preparation->scriptCount;
+		txScript* script = preparation->scripts;
+		path += preparation->baseLength;
+		while (c > 0) {
+			if (!c_strcmp(path, script->path)) {
+				path -= preparation->baseLength;
+				break;
+			}
+			c--;
+			script++;
 		}
-		c--;
-		script++;
+		if (c == 0) {
+			*id = XS_NO_ID;
+			return 0;
+		}
 	}
-	*id = XS_NO_ID;
-	return 0;
+	*id = fxNewNameC(the, path);
+	return 1;
 }
 
 #ifdef mxParse
@@ -338,37 +341,54 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 
 void fxLoadModule(txMachine* the, txID moduleID)
 {
- 	char path[C_PATH_MAX];
+	char path[C_PATH_MAX];
+	txByte* code;
+	txSize size;
 	c_strcpy(path, fxGetKeyName(the, moduleID));
- 	txScript* script = fxLoadPreparation(the, path);
+	code = fxGetArchiveCode(the, path, &size);
+	if (code) {
+		txScript script;
+		script.callback = NULL;
+		script.symbolsBuffer = NULL;
+		script.symbolsSize = 0;
+		script.codeBuffer = code;
+		script.codeSize = size;
+		script.hostsBuffer = NULL;
+		script.hostsSize = 0;
+		script.path = path;
+		script.version[0] = XS_MAJOR_VERSION;
+		script.version[1] = XS_MINOR_VERSION;
+		script.version[2] = XS_PATCH_VERSION;
+		script.version[3] = 0;
+		fxResolveModule(the, moduleID, &script, C_NULL, C_NULL);
+	}
+	else {
+ 		txPreparation* preparation = the->preparation;
+		if (preparation) {
+			txInteger c = preparation->scriptCount;
+			txScript* script = preparation->scripts;
+			while (c > 0) {
+				if (!c_strcmp(path + preparation->baseLength, script->path)) {
+					fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+					return;
+				}
+				c--;
+				script++;
+			}
+		}
+	}
 #ifdef mxParse
- 	if (!script) {
+	{
 	#ifdef mxDebug
 		txUnsigned flags = mxDebugFlag;
 	#else
 		txUnsigned flags = 0;
 	#endif
- 		script = fxLoadScript(the, path, flags);
+ 		txScript* script = fxLoadScript(the, path, flags);
+ 		if (script)
+ 			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
  	}
 #endif
-	fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
-}
-
-txScript* fxLoadPreparation(txMachine* the, txString path)
-{
-	txPreparation* preparation = the->preparation;
-	if (preparation) {
-		txInteger c = preparation->scriptCount;
-		txScript* script = preparation->scripts;
-		path += preparation->baseLength;
-		while (c > 0) {
-			if (!c_strcmp(path, script->path))
-				return script;
-			c--;
-			script++;
-		}
-	}
-	return C_NULL;
 }
 
 #ifdef mxParse
