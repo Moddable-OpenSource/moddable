@@ -759,6 +759,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	creation = prep->creation;
 
 	root.preparation = prep;
+	root.archive = NULL;
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
