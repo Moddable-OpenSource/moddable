@@ -38,6 +38,7 @@ typedef void (*txScreenTouchProc)(txScreen* screen, int kind, int index, int x, 
 struct sxScreen {
 	void* machine;
 	void* view;
+	void* archive;
 	txScreenAbortProc abort;
 	txScreenBufferChangedProc bufferChanged;
 	txScreenFormatChangedProc formatChanged;
