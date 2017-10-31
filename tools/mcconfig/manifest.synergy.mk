@@ -33,7 +33,7 @@ AR_OPTIONS = rcs
 XS_DIRECTORIES = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
-	-I$(XS_DIR)\sources\synergy \
+	-I$(XS_DIR)\platforms\synergy \
 	-I$(XS_DIR)\sources\pcre
 
 XS_HEADERS = \
@@ -173,13 +173,13 @@ $(XS_OBJECTS) : $(XS_HEADERS)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	$(AR) $(AR_OPTIONS) $(ARCHIVE_FILE) $@
 
-#	-I$(XS_DIR)\sources\synergy \
+#	-I$(XS_DIR)\platforms\synergy \
 
-$(TMP_DIR)\xsHost.o: $(XS_DIR)\sources\synergy\xsHost.c
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\synergy\xsHost.c
 	@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 
-$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\sources\synergy\xsPlatform.c
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\synergy\xsPlatform.c
 	@echo # $(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 
