@@ -69,10 +69,7 @@ class SakuraIO extends I2C {
 		super(Object.assign({address: 0x4F}, dictionary));
 	}
 	getConnectionStatus() {
-		let result = this.execute(CMD.GET_CONNECTION_STATUS, null, 1);
-		if ("number" === typeof result)
-			return 0x7f;
-		return result[0];
+		return this.execute(CMD.GET_CONNECTION_STATUS, null, 1)[0];
 	}
 	echoback(data) {
 		return this.execute(CMD.ECHO_BACK, data, data.length);
@@ -158,38 +155,29 @@ class SakuraIO extends I2C {
 			default: throw new Error("unimplemented type");
 		}
 
-		return {
-			channel: result[0],
-			bytes: result.slice(2, 18),
-			value,
-			type
-		};
+		return {value, type, channel: result[0]}
 	}
 
 	// internal
-	execute(cmd, request = null, responseLength = 0) {  // returns Array-like object (success) or number (error)
-		let requestLength = request ? request.length : 0
-		let parity = cmd ^ requestLength;
-
-		if (requestLength)
-			this.write(cmd, requestLength, request, request.reduce((a, b) => a ^ b, parity));
+	execute(cmd, request = null, responseLength = 0) {
+		if (request)
+			this.write(cmd, request.length, request, request.reduce((a, b) => a ^ b, cmd ^ request.length));
 		else
-			this.write(cmd, 0, parity);
+			this.write(cmd, 0, cmd);
 
 		// write sets stop bit... could be a problem... but does not appear to be
 		Timer.delay(10);
 
 		let result = this.read(responseLength + 3);
 		if (ERROR.NONE !== result[0])
-			return result[0];
+			throw new Error(result[0]);
 
-		parity = result.reduce((a, b) => a ^ b);
-		if (parity)
-			return ERROR.PARITY;
+		if (result.reduce((a, b) => a ^ b))
+			throw new Error(ERROR.PARITY);
 
 		return result.slice(2, 2 + responseLength);
 	}
-	// offset is unimplemented. what does it do? "Time offset in ms"
+	// offset unimplemented. what does it do? "Time offset in ms"
 	enqueueTxRaw(channel, type, data) {
 		let request = new Uint8Array(10);
 		request[0] = channel;
