@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
-			the = xsCreateMachine(creation, NULL, "xsl", linker);
+			the = xsCreateMachine(creation, "xsl", linker);
 			mxThrowElse(the);
 			xsBeginHost(the);
 			{

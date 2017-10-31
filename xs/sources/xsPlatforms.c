@@ -177,7 +177,7 @@ void fxSweepHost(txMachine* the)
 
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	char name[C_PATH_MAX];
 	char path[C_PATH_MAX];
 	txBoolean absolute = 0, relative = 0, search = 0;
@@ -295,7 +295,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 
 txBoolean fxFindPreparation(txMachine* the, txString path, txID* id)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 	path += preparation->baseLength;
@@ -356,7 +356,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 
 txScript* fxLoadPreparation(txMachine* the, txString path)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	if (preparation) {
 		txInteger c = preparation->scriptCount;
 		txScript* script = preparation->scripts;
