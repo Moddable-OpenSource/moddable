@@ -132,8 +132,8 @@ XS_OBJ = \
 XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
-	-I$(XS_DIR)\sources\esp \
 	-I$(XS_DIR)\sources\pcre \
+	-I$(XS_DIR)\platforms\esp \
 	-I$(BUILD_DIR)\devices\esp
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -141,7 +141,7 @@ XS_HEADERS = \
 	$(XS_DIR)\includes\xsmc.h \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
-	$(XS_DIR)\sources\esp\xsPlatform.h
+	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
 	$(CORE_DIR)\base64.cpp \
@@ -420,12 +420,12 @@ $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
-$(TMP_DIR)\xsHost.o: $(XS_DIR)\sources\esp\xsHost.c
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
 	@echo "# cc - X5" $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
-$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\sources\esp\xsPlatform.c
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
 	@echo "# cc - X6" $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
