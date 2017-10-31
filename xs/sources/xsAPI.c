@@ -1268,7 +1268,7 @@ void fxDebugger(txMachine* the, txString thePath, txInteger theLine)
 
 const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_END };
 
-txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString theName, void* theContext)
+txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext)
 {
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
@@ -1299,8 +1299,6 @@ txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString t
 			the->profileCurrent = the->profileBottom;
 			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
 		#endif
-
-			the->archive = theArchive;
 
 			fxAllocate(the, theCreation);
 
@@ -1510,7 +1508,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			txID anID;
 
 			the->dtoa = fxNew_dtoa(the);
-			the->archive = theMachine->archive;
+			the->preparation = theMachine->preparation;
 			the->context = theContext;
 			the->sharedMachine = theMachine;
 			fxCreateMachinePlatform(the);
