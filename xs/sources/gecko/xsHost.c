@@ -26,7 +26,7 @@ static txBoolean fxFindScript(txMachine *the, txString path, txID* id);
 
 static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 	path += preparation->baseLength;
@@ -47,7 +47,7 @@ static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
 
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	char name[128];
 	char path[128];
 	txBoolean absolute = 0, relative = 0, search = 0;
@@ -109,7 +109,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 
 void fxLoadModule(txMachine* the, txID moduleID)
 {
-	txPreparation* preparation = the->archive;
+	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
@@ -371,7 +371,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	creation = prep->creation;
 
-	root.archive = prep;
+	root.preparation = prep;
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
