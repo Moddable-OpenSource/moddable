@@ -25,5 +25,5 @@ else
 	endif
 endif
 
-include $(MODDABLE)/tools/mcconfig/manifest.gecko_common.mk
+include $(MODDABLE)/tools/mcconfig/make.gecko_common.mk
 
