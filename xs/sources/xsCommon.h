@@ -72,14 +72,22 @@ typedef int (*txPutter)(txString, void*);
 
 #define XS_ATOM_ARCHIVE 0x58535F41 /* 'XS_A' */
 #define XS_ATOM_BINARY 0x58535F42 /* 'XS_B' */
+#define XS_ATOM_CHECKSUM 0x43484B53 /* 'CHKS' */
 #define XS_ATOM_CODE 0x434F4445 /* 'CODE' */
+#define XS_ATOM_DATA 0x44415441 /* 'DATA' */
 #define XS_ATOM_HOSTS 0x484F5354 /* 'HOST' */
-#define XS_ATOM_PATHS 0x50415448 /* 'PATH' */
+#define XS_ATOM_MODULES 0x4D4F4453 /* 'MODS' */
+#define XS_ATOM_PATH 0x50415448 /* 'PATH' */
+#define XS_ATOM_RESOURCES 0x52535243 /* 'RSRC' */
+#define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 7
+#define XS_MAJOR_VERSION 8
 #define XS_MINOR_VERSION 0
 #define XS_PATCH_VERSION 0
+
+#define XS_DIGEST_SIZE 16
+#define XS_VERSION_SIZE 4
 
 typedef struct {
 	txS4 atomSize;
