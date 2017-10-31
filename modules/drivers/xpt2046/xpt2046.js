@@ -29,7 +29,11 @@ export default class XPT2046 @ "xs_XPT2046_destructor" {
 	read(target) @  "xs_XPT2046_read";
 
 	calibrate() {
-		return Preference.get("xpt2046", "calibrate");
+		try {
+			return Preference.get("xpt2046", "calibrate");
+		}
+		catch(e) {
+		}
 	}
 }
 
