@@ -20,10 +20,10 @@
 BASE = $(MODDABLE)/libraries/esp
 HOST_OS := $(shell uname)
 
-ESP_BASE ?= $(HOME)/esp32
-IDF_PATH ?= $(ESP_BASE)/esp-idf
+ESP32_BASE ?= $(HOME)/esp32
+IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
-TOOLS_ROOT ?= $(ESP_BASE)/xtensa-esp32-elf
+TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/esp32/debug/lib
