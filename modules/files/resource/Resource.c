@@ -22,7 +22,8 @@
 #include "string.h"
 #include "mc.xs.h"
 
-extern const void *mcGetResource(char* path, size_t* size);
+extern const void* fxGetArchiveData(xsMachine* the, char* path, size_t* size);
+extern const void* mcGetResource(char* path, size_t* size);
 
 void Resource_destructor(void *data)
 {
@@ -35,7 +36,10 @@ void Resource_constructor(xsMachine *the)
 	const void *data;
 	size_t size;
 
-	if ((data = mcGetResource(path, &size)) == NULL)
+	data = fxGetArchiveData(the, path, &size);
+	if (!data)
+		data = mcGetResource(path, &size);
+	if (!data)
 		xsURIError("Resource not found: %s", path);
 	xsSetHostData(xsThis, (void *)data);
 	xsSet(xsThis, xsID_byteLength, xsInteger(size));
@@ -44,8 +48,12 @@ void Resource_constructor(xsMachine *the)
 void Resource_exists(xsMachine *the)
 {
 	xsStringValue path = xsToString(xsArg(0));
+	const void *data;
 	size_t size;
-	xsResult = (mcGetResource(path, &size)) ? xsTrue : xsFalse;
+	data = fxGetArchiveData(the, path, &size);
+	if (!data)
+		data = mcGetResource(path, &size);
+	xsResult = data ? xsTrue : xsFalse;
 }
 
 void Resource_slice(xsMachine *the)
