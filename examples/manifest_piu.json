@@ -28,6 +28,12 @@
 				"setup": "$(BUILD)/devices/esp/setup/setup-piu-only",
 			},
 			"preload": "setup"
+		},
+		"esp32": {
+			"modules": {
+				"setup": "$(BUILD)/devices/esp32/setup/setup-piu-only",
+			},
+			"preload": "setup"
 		}
 	}
 }
