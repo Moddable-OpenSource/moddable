@@ -68,13 +68,13 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/sources/pcre \
-	$(XS_DIR)/sources/zephyr
+	$(XS_DIR)/platforms/zephyr
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
-	$(XS_DIR)/sources/zephyr/xsPlatform.h
+	$(XS_DIR)/platforms/zephyr/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
 INC_DIRS += \
