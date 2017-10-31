@@ -90,7 +90,7 @@ XS_OBJ = \
 XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
-	$(XS_DIR)/sources/apollo \
+	$(XS_DIR)/platforms/apollo \
 	$(BUILD_DIR)/devices/apollo
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
@@ -98,7 +98,7 @@ XS_HEADERS = \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
-	$(XS_DIR)/sources/apollo/xsPlatform.h
+	$(XS_DIR)/platforms/apollo/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
 TOOLS_BIN = $(TOOLS_ROOT)/bin
