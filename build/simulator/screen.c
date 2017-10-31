@@ -201,7 +201,7 @@ void fxScreenLaunch(txScreen* screen)
 		return;
 	}
 	
-	root->archive = preparation;
+	root->preparation = preparation;
 	root->keyArray = preparation->keys;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	root->keyIndex = (txID)preparation->keyCount;
