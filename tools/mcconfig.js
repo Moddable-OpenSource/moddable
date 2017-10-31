@@ -403,7 +403,13 @@ class DefinesFile extends PrerequisiteFile {
 export default class Tool extends TOOL {
 	constructor(argv) {
 		super(argv);
-		var path = this.resolveFilePath(this.moddablePath + this.slash + "tools" + this.slash + "mcconfig" + this.slash + "manifest." + this.platform + ".mk");
+		var path = this.moddablePath + this.slash + "tools" + this.slash + "mcconfig" + this.slash;
+		if (this.windows)
+			path += "nmake.";
+		else
+			path += "make.";
+		path += this.platform + ".mk";
+		path = this.resolveFilePath(path);
 		if (!path)
 			throw new Error("unknown platform!");
 		this.fragmentPath = path;
@@ -555,10 +561,12 @@ export default class Tool extends TOOL {
 		for (var cFile of this.cFiles)
 			cFile.recipe = null;
 		for (var name in recipes) {
-			var path = this.moddablePath + "/tools/mcconfig/manifest." + this.platform + "." + this.currentPlatform + "." + name + ".mk";
-			if (!FS.existsSync(path)) {
-				path = this.moddablePath + "/tools/mcconfig/manifest." + this.platform + "." + name + ".mk";
-			}
+			var path = this.moddablePath + this.slash + "tools" + this.slash + "mcconfig" + this.slash;
+			if (this.windows)
+				path += "nmake.";
+			else
+				path += "make.";
+			path += this.platform + "." + name + ".mk";
 			this.recipes[name] = FS.readFileSync(path);
 			var recipe = recipes[name];
 			if (recipe instanceof Array) {
@@ -657,7 +665,7 @@ export default class Tool extends TOOL {
 			file = new RotationFile(this.tmpPath + this.slash + "mc.rotation.h");
 			file.generate(this);
 			this.dataPath = this.tmpPath + this.slash + "data";
-			FS.mkdirSync(this.dataPath);
+			FS.mkdirSync(this.resourcesPath);
 			this.resourcesPath = this.tmpPath + this.slash + "resources";
 			FS.mkdirSync(this.resourcesPath);
 		}
