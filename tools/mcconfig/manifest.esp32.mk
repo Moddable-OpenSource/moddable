@@ -104,8 +104,8 @@ XS_OBJ = \
 XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
-	$(XS_DIR)/sources/esp \
 	$(XS_DIR)/sources/pcre \
+	$(XS_DIR)/platforms/esp \
 	$(BUILD_DIR)/devices/esp32 \
 	$(BUILD_DIR)/devices/esp32/spi 
 XS_HEADERS = \
@@ -114,7 +114,7 @@ XS_HEADERS = \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
-	$(XS_DIR)/sources/esp/xsPlatform.h
+	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
 TOOLS_BIN = $(TOOLS_ROOT)/bin

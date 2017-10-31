@@ -75,7 +75,7 @@ XS_DIRS = \
     $(XS_DIR)/includes \
     $(XS_DIR)/../build/devices/linux \
     $(XS_DIR)/sources \
-    $(XS_DIR)/sources/linux \
+    $(XS_DIR)/platforms/linux \
     $(XS_DIR)/../build/devices/linux/spi \
     $(XS_DIR)/../build/devices/linux/gpio \
     $(XS_DIR)/modules/drivers/devfb \
