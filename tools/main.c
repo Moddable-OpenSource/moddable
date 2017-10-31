@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	txPreparation* preparation = xsPreparation();
 	
 	c_memset(machine, 0, sizeof(txMachine));
-	machine->archive = preparation;
+	machine->preparation = preparation;
 	machine->keyArray = preparation->keys;
 	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	machine->keyIndex = (txID)preparation->keyCount;
