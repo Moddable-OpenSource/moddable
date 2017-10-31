@@ -17,13 +17,13 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-BASE = $(HOME)/esp
+ESP_BASE ?= $(HOME)/esp
 HOST_OS := $(shell uname)
 
-ARDUINO_ROOT ?= $(BASE)/Arduino-2.2.0
-ESPRESSIF_SDK_ROOT ?= $(BASE)/ESP8266_RTOS_SDK
+ARDUINO_ROOT ?= $(ESP_BASE)/Arduino-2.2.0
+ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
 HACKED_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
-TOOLS_ROOT ?= $(BASE)/toolchain/$(HOST_OS)
+TOOLS_ROOT ?= $(ESP_BASE)/toolchain/$(HOST_OS)
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp
 
 ifeq ($(DEBUG),1)
@@ -144,7 +144,7 @@ CPP = $(TOOLS_BIN)/xtensa-lx106-elf-g++
 LD  = $(CC)
 AR  = $(TOOLS_BIN)/xtensa-lx106-elf-ar
 OTA_TOOL = $(TOOLS_ROOT)/espota.py
-ESPTOOL = $(BASE)/esptool/esptool
+ESPTOOL = $(ESP_BASE)/esptool/esptool
 
 BUILDCLUT = $(BUILD_DIR)/bin/mac/debug/buildclut
 COMPRESSBMF = $(BUILD_DIR)/bin/mac/debug/compressbmf
@@ -194,7 +194,7 @@ endif
 
 # Utility functions
 git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
-SRC_GIT_VERSION = $(call git_description,$(BASE)/sources)
+SRC_GIT_VERSION = $(call git_description,$(ESP_BASE)/sources)
 ESP_GIT_VERSION = $(call git_description,$(ARDUINO_ROOT))
 time_string = $(shell perl -e 'use POSIX qw(strftime); print strftime($(1), localtime());')
 BUILD_DATE = $(call time_string,"%Y-%m-%d")
