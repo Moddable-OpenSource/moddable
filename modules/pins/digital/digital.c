@@ -19,10 +19,15 @@
  */
 
 #include "xs.h"
-#include "xsesp.h"
+#if gecko
+	#include "xsPlatform.h"
+	#include "xsgecko.h"
+#else
+	#include "xsesp.h"
+	#include "Arduino.h"
+#endif
 #include "mc.xs.h"			// for xsID_ values
 
-#include "Arduino.h"
 #include "modGPIO.h"
 
 /*

@@ -12,9 +12,9 @@
 #include "stdint.h"
 #include "mc.defines.h"
 
-#define I2C_PORT	gpioPortB
-#define I2C_SDA		11
-#define I2C_SCL		12
+// #define I2C_PORT	gpioPortB
+// #define I2C_SDA		11
+// #define I2C_SCL		12
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
