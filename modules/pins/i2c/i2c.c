@@ -19,7 +19,12 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#ifdef gecko
+	#include "xsPlatform.h"
+	#include "xsgecko.h"
+#else
+	#include "xsesp.h"
+#endif
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modI2C.h"
@@ -122,10 +127,10 @@ void xs_i2c_write(xsMachine *the)
 		}
 		if (xsStringType == t) {
 			char *s = xsmcToString(xsArg(i));
-			int l = espStrLen(s);
+			int l = c_strlen(s);
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("40 byte write limit");
-			espMemCpy(buffer + len, s, l);
+			c_memcpy(buffer + len, s, l);
 			len += l;
 			continue;
 		}
