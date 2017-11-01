@@ -52,7 +52,8 @@
 #define MCP23017_OLATA		0x14
 #define MCP23017_OLATB		0x15
 
-static uint8_t initCmd[] = { MCP23017_IODIRA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+// static uint8_t initCmd[] = { MCP23017_IODIRA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static uint8_t initCmd[] = { MCP23017_IODIRA, 0, 0 };
 
 typedef struct mcp23017ConfigurationRecord {
 	modI2CConfigurationRecord	config;
