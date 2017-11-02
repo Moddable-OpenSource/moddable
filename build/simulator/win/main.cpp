@@ -484,7 +484,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				ofn.lpstrFile = szFile;
 				ofn.lpstrFile[0] = '\0';
 				ofn.nMaxFile = sizeof(szFile);
-				ofn.lpstrFilter = "All\0*.*\0Library\0*.dll\0Archive\0*.xsa\0";
+				ofn.lpstrFilter = "All\0*.*\0Apps\0*.dll\0Mods\0*.xsa\0";
 				ofn.nFilterIndex = 2;
 				ofn.lpstrFileTitle = NULL;
 				ofn.nMaxFileTitle = 0;

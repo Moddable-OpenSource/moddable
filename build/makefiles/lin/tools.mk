@@ -121,6 +121,7 @@ MODULES = \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
+	$(MOD_DIR)/mcrun.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
@@ -181,6 +182,7 @@ COMMANDS = \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mcrez \
+	$(BIN_DIR)/mcrun \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode
 
@@ -288,6 +290,9 @@ $(COMMANDS): $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
+	@echo "#" $(NAME) $(GOAL) ": mcrun"
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	chmod +x $(BIN_DIR)/mcrun
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
