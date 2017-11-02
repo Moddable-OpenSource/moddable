@@ -116,6 +116,7 @@ MODULES = \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
+	$(MOD_DIR)\mcrun.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
@@ -176,6 +177,7 @@ COMMANDS = \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
+	$(BIN_DIR)\mcrun.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat
 
@@ -345,6 +347,8 @@ $(BIN_DIR)\mclocal.bat :
 	echo @$(BIN_DIR)\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
 $(BIN_DIR)\mcrez.bat :
 	echo @$(BIN_DIR)\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
+$(BIN_DIR)\mcrun.bat :
+	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
 $(BIN_DIR)\png2bmp.bat :
 	echo @$(BIN_DIR)\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
 $(BIN_DIR)\rle4encode.bat :
