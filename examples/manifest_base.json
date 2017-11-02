@@ -40,6 +40,7 @@
 				"*": [
 					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
@@ -69,6 +70,7 @@
 				"*": [
 					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
@@ -96,6 +98,8 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*",
 				],
