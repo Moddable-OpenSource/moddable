@@ -495,7 +495,7 @@ static void fxScreenStop(txScreen* screen);
 	if (path) {
 		struct stat statbuf;
 		self.archiveFile = open([path UTF8String], O_RDWR);
-		if (!self.archiveFile) {
+		if (!self.archiveFile < 0) {
 			info = [NSString stringWithFormat:@"%s", strerror(errno)];
 			goto bail;
 		}

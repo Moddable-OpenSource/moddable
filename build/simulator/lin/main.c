@@ -19,8 +19,13 @@
  */
 
 #include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
@@ -99,6 +104,9 @@ static char* gxFormatNames[pixelFormatCount] = {
 	"4-bit Color Look-up Table",
 };
 
+static char gxArchivePath[PATH_MAX] = "";
+static int gxArchiveFile = -1;
+static size_t gxArchiveSize = 0;
 static void* gxLibrary = NULL;
 static char gxLibraryPath[PATH_MAX] = "";
 
@@ -127,29 +135,74 @@ static int gxWindowHeight = -1;
 void fxLibraryOpen()
 {
 	GtkWidget *dialog;
-	gxLibrary = dlopen(gxLibraryPath, RTLD_NOW);
-	if (!gxLibrary) {
-		goto error;
+	gchar* path;
+	gchar* error;
+	path = gxLibraryPath;
+	if (path[0]) { 
+		gxLibrary = dlopen(path, RTLD_NOW);
+		if (!gxLibrary) {
+			error = dlerror();
+			goto bail;
+		}
+		txScreenLaunchProc launch = (txScreenLaunchProc)dlsym(gxLibrary, "fxScreenLaunch");
+		if (!launch) {
+			error = dlerror();
+			goto bail;
+		}
+		path = gxArchivePath;
+		if (path[0]) { 
+			struct stat statbuf;
+			gxArchiveFile = open(path, O_RDWR);
+			if (gxArchiveFile < 0) {
+				error = strerror(errno);
+				goto bail;
+			}
+			fstat(gxArchiveFile, &statbuf);
+			gxArchiveSize = statbuf.st_size;
+			gxScreen->archive = mmap(NULL, gxArchiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, gxArchiveFile, 0);
+			if (gxScreen->archive == MAP_FAILED) {
+				gxScreen->archive = NULL;
+				error = strerror(errno);
+				goto bail;
+			}
+		}
+		(*launch)(gxScreen);
+		g_simple_action_set_enabled(gxCloseAction, TRUE);
 	}
-	txScreenLaunchProc launch = (txScreenLaunchProc)dlsym(gxLibrary, "fxScreenLaunch");
-	if (!launch) {
-    	dlclose(gxLibrary);
-    	gxLibrary = NULL;
-		goto error;
-	}
-    (*launch)(gxScreen);
-	g_simple_action_set_enabled(gxCloseAction, TRUE);
 	return;
-error:
-    dialog = gtk_message_dialog_new(gxWindow, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", dlerror());
+bail:
+    dialog = gtk_message_dialog_new(gxWindow, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "Cannot open \"%s\"", path);
+	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "%s", error);
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
+	if (gxScreen->archive) {
+		munmap(gxScreen->archive, gxArchiveSize);
+		gxScreen->archive = NULL;
+		gxArchiveSize = 0;
+	}
+	if (gxArchiveFile >= 0) {
+		close(gxArchiveFile);
+		gxArchiveFile = -1;
+	}
+	if (gxLibrary) {
+    	dlclose(gxLibrary);
+    	gxLibrary = NULL;
+    }
 } 
 
 void fxLibraryClose()
 {
 	if (gxScreen->quit) 
 		(*gxScreen->quit)(gxScreen);
+	if (gxScreen->archive) {
+		munmap(gxScreen->archive, gxArchiveSize);
+		gxScreen->archive = NULL;
+		gxArchiveSize = 0;
+	}
+	if (gxArchiveFile >= 0) {
+		close(gxArchiveFile);
+		gxArchiveFile = -1;
+	}
 	if (gxLibrary) {
     	dlclose(gxLibrary);
     	gxLibrary = NULL;
@@ -259,7 +312,6 @@ void fxScreenAbort(txScreen* screen)
 gboolean fxScreenAbortAux(gpointer it)
 {
 	fxLibraryClose();
-    gxLibraryPath[0] = 0;
     return FALSE;
 }
 
@@ -332,11 +384,31 @@ void onApplicationActivate(GtkApplication *app, gpointer it)
 	gtk_window_present(gxWindow);
 }
 
-void onApplicationOpen(GtkApplication *app, GFile **files, gint n_files, const gchar *hint, gpointer it)
+void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *hint, gpointer it)
 {
-    fxLibraryClose();
-	realpath(g_file_get_path(files[0]), gxLibraryPath);
-	fxLibraryOpen();
+	gboolean launch = FALSE;
+	gint i;
+	char path[PATH_MAX], *slash, *dot;
+	fxLibraryClose();
+	for (i = 0; i < c; i++) {
+		realpath(g_file_get_path(files[i]), path);
+		slash = strrchr(path, '/');
+		if (slash) {
+			dot = strrchr(slash, '.');
+			if (dot) {
+				if (!strcmp(dot, ".so")) {
+					strcpy(gxLibraryPath, path);
+					launch = TRUE;
+				}
+				else if (!strcmp(dot, ".xsa")) {
+					strcpy(gxArchivePath, path);
+					launch = TRUE;
+				}
+			}
+		}
+	}
+	if (launch)
+		fxLibraryOpen();
 	gtk_window_present(gxWindow);
 }
 
@@ -552,25 +624,29 @@ void onApplicationSupport(GSimpleAction *action, GVariant *parameter, gpointer a
 void onFileClose(GSimpleAction *action, GVariant *parameter, gpointer app)
 {
 	fxScreenAbortAux(NULL);
+    gxArchivePath[0] = 0;
+    gxLibraryPath[0] = 0;
 }
 
 void onFileOpen(GSimpleAction *action, GVariant *parameter, gpointer app)
 {
 	GtkWidget *dialog = gtk_file_chooser_dialog_new("Open File", gxWindow, GTK_FILE_CHOOSER_ACTION_OPEN, "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_ACCEPT, NULL);
 	GtkFileFilter *filter = gtk_file_filter_new();
-	gtk_file_filter_set_name(filter, "Moddable apps");
+	gtk_file_filter_set_name(filter, "Apps");
 	gtk_file_filter_add_pattern (filter, "mc.so");	
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+	filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, "Mods");
+	gtk_file_filter_add_pattern (filter, "*.xsa");	
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 	filter = gtk_file_filter_new ();
 	gtk_file_filter_set_name(filter, "All files");
 	gtk_file_filter_add_pattern (filter, "*");	
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-		char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-    	fxLibraryClose();
-		strcpy(gxLibraryPath, filename);
-    	fxLibraryOpen();
-		g_free(filename);
+		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
+		onApplicationOpen(app, &file, 1, NULL, NULL);
+		g_object_unref(file);
 	  }
 	gtk_widget_destroy (dialog);
 }
