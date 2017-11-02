@@ -219,6 +219,8 @@ static void fxScreenStop(txScreen* screen);
 	NSInteger c = [filenames count], i;
 	NSString* filename;
 	NSString* extension;
+	NSFileManager* manager = [NSFileManager defaultManager];
+	NSError* error = nil;
 	if (c) {
 		BOOL launch = NO;
 		[self.screenView quitMachine];
@@ -226,12 +228,14 @@ static void fxScreenStop(txScreen* screen);
 			filename = [filenames objectAtIndex:i];
 			extension = [filename pathExtension];
 			if ([extension compare:@"so"] == NSOrderedSame) {
-				[[NSFileManager defaultManager] copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:libraryURL error:nil];
+				[manager removeItemAtURL:libraryURL error:&error];
+				[manager copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:libraryURL error:&error];
 				self.screenView.libraryName = filename;
 				launch = YES;
 			}
 			else if ([extension compare:@"xsa"] == NSOrderedSame) {
-				[[NSFileManager defaultManager] copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:archiveURL error:nil];
+				[manager removeItemAtURL:archiveURL error:&error];
+				[manager copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:archiveURL error:&error];
 				self.screenView.archiveName = filename;
 				launch = YES;
 			}
@@ -320,7 +324,10 @@ static void fxScreenStop(txScreen* screen);
 - (void)getInfo:(NSMenuItem *)sender {
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
 	[alert setAlertStyle:NSAlertStyleInformational];
-	[alert setMessageText:[[screenView.libraryName stringByDeletingLastPathComponent] lastPathComponent]];
+	if (screenView.archiveName)
+		[alert setMessageText:[NSString stringWithFormat:@"%@ - %@",[[screenView.libraryName stringByDeletingLastPathComponent] lastPathComponent],[[screenView.archiveName stringByDeletingLastPathComponent] lastPathComponent]]];
+	else
+		[alert setMessageText:[[screenView.libraryName stringByDeletingLastPathComponent] lastPathComponent]];
 	[alert setInformativeText:gPixelFormatNames[screenView.screen->pixelFormat]];
 	[alert beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
 		[alert.window close]; 
