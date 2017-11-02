@@ -134,11 +134,12 @@ static int gxWindowHeight = -1;
 
 void fxLibraryOpen()
 {
+	char path[PATH_MAX];
 	GtkWidget *dialog;
-	gchar* path;
 	gchar* error;
-	path = gxLibraryPath;
-	if (path[0]) { 
+	if (gxLibraryPath[0]) { 
+		strcpy(path, gxConfigPath);
+		strcat(path, ".so");
 		gxLibrary = dlopen(path, RTLD_NOW);
 		if (!gxLibrary) {
 			error = dlerror();
@@ -149,14 +150,15 @@ void fxLibraryOpen()
 			error = dlerror();
 			goto bail;
 		}
-		path = gxArchivePath;
-		if (path[0]) { 
-			struct stat statbuf;
+		if (gxArchivePath[0]) { 
+			strcpy(path, gxConfigPath);
+			strcat(path, ".xsa");
 			gxArchiveFile = open(path, O_RDWR);
 			if (gxArchiveFile < 0) {
 				error = strerror(errno);
 				goto bail;
 			}
+			struct stat statbuf;
 			fstat(gxArchiveFile, &statbuf);
 			gxArchiveSize = statbuf.st_size;
 			gxScreen->archive = mmap(NULL, gxArchiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, gxArchiveFile, 0);
@@ -337,14 +339,22 @@ void fxScreenFormatChanged(txScreen* screen)
 	char title[PATH_MAX];
 	char* begin;
 	char* end;
+	strcpy(title, "Screen Test - ");
 	end = strrchr(gxLibraryPath, '/');
 	*end = 0;
 	begin = strrchr(gxLibraryPath, '/');
-	strcpy(title, "Screen Test - ");
 	strcat(title, begin + 1);
-	strcat(title, " - ");
-	strcat(title, gxFormatNames[screen->pixelFormat]);
 	*end = '/';
+	strcat(title, " - ");
+	if (gxArchivePath[0]) {
+		end = strrchr(gxArchivePath, '/');
+		*end = 0;
+		begin = strrchr(gxArchivePath, '/');
+		strcat(title, begin + 1);
+		*end = '/';
+		strcat(title, " - ");
+	}
+	strcat(title, gxFormatNames[screen->pixelFormat]);
 	gtk_window_set_title(gxWindow, title);
 }
 
@@ -389,6 +399,7 @@ void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *
 	gboolean launch = FALSE;
 	gint i;
 	char path[PATH_MAX], *slash, *dot;
+	char cmd[16 + PATH_MAX + PATH_MAX];
 	fxLibraryClose();
 	for (i = 0; i < c; i++) {
 		realpath(g_file_get_path(files[i]), path);
@@ -397,10 +408,14 @@ void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *
 			dot = strrchr(slash, '.');
 			if (dot) {
 				if (!strcmp(dot, ".so")) {
+					snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.so\'", path, gxConfigPath);
+					system(cmd);
 					strcpy(gxLibraryPath, path);
 					launch = TRUE;
 				}
 				else if (!strcmp(dot, ".xsa")) {
+					snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.xsa\'", path, gxConfigPath);
+					system(cmd);
 					strcpy(gxArchivePath, path);
 					launch = TRUE;
 				}
@@ -419,6 +434,9 @@ void onApplicationQuit(GSimpleAction *action, GVariant *parameter, gpointer app)
 
 void onApplicationShutdown(GtkApplication *app, gpointer it)
 {
+	char path[PATH_MAX];
+	strcpy(path, gxConfigPath);
+	strcat(path, ".ini");
 	GKeyFile* keyfile = g_key_file_new();
 	g_key_file_set_boolean(keyfile, "window", "fullscreen", gxWindowFullscreen);
 	g_key_file_set_boolean(keyfile, "window", "maximized", gxWindowMaximized);
@@ -427,7 +445,7 @@ void onApplicationShutdown(GtkApplication *app, gpointer it)
 	g_key_file_set_integer(keyfile, "window", "width", gxWindowWidth);
 	g_key_file_set_integer(keyfile, "window", "height", gxWindowHeight);
 	g_key_file_set_integer(keyfile, "mockup", "index", gxMockupIndex);
-	g_key_file_save_to_file(keyfile, gxConfigPath, NULL);
+	g_key_file_save_to_file(keyfile, path, NULL);
 	g_key_file_unref(keyfile);
 	g_resources_unregister(gxResource);
 }
@@ -453,10 +471,13 @@ void onApplicationStartup(GtkApplication *app)
 		strcpy(gxConfigPath, home);
 		strcat(gxConfigPath, "/.config");
 	}
-	strcat(gxConfigPath, "/tech.moddable.simulator.ini");
+	strcat(gxConfigPath, "/tech.moddable.simulator");
 	
+	char path[PATH_MAX];
+	strcpy(path, gxConfigPath);
+	strcat(path, ".ini");
 	GKeyFile* keyfile = g_key_file_new();
-	if (g_key_file_load_from_file(keyfile, gxConfigPath, G_KEY_FILE_NONE, NULL)) {
+	if (g_key_file_load_from_file(keyfile, path, G_KEY_FILE_NONE, NULL)) {
 		GError *error;
 		error = NULL;
 		gxWindowFullscreen = g_key_file_get_boolean(keyfile, "window", "fullscreen", &error);
@@ -632,16 +653,16 @@ void onFileOpen(GSimpleAction *action, GVariant *parameter, gpointer app)
 {
 	GtkWidget *dialog = gtk_file_chooser_dialog_new("Open File", gxWindow, GTK_FILE_CHOOSER_ACTION_OPEN, "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_ACCEPT, NULL);
 	GtkFileFilter *filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, "All");
+	gtk_file_filter_add_pattern (filter, "*");	
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+	filter = gtk_file_filter_new ();
 	gtk_file_filter_set_name(filter, "Apps");
 	gtk_file_filter_add_pattern (filter, "mc.so");	
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 	filter = gtk_file_filter_new();
 	gtk_file_filter_set_name(filter, "Mods");
 	gtk_file_filter_add_pattern (filter, "*.xsa");	
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
-	filter = gtk_file_filter_new ();
-	gtk_file_filter_set_name(filter, "All files");
-	gtk_file_filter_add_pattern (filter, "*");	
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
