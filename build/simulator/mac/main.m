@@ -63,10 +63,12 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @end
 
 @interface ScreenView : NSView {
-	NSString *archivePath;
+	NSURL *archiveURL;
+	NSString *archiveName;
 	int archiveFile;
 	int archiveSize;
-	NSString *libraryPath;
+	NSURL *libraryURL;
+	NSString *libraryName;
 	void* library;
 	txScreen* screen;
     NSTimeInterval time;
@@ -75,10 +77,12 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 	id *touches;
 	BOOL touching;
 }
-@property (retain) NSString *archivePath;
+@property (retain) NSString *archiveName;
+@property (retain) NSURL *archiveURL;
 @property (assign) int archiveFile;
 @property (assign) int archiveSize;
-@property (retain) NSString *libraryPath;
+@property (retain) NSString *libraryName;
+@property (retain) NSURL *libraryURL;
 @property (assign) void* library;
 @property (assign) txScreen *screen;
 @property (assign) NSTimeInterval time;
@@ -93,9 +97,13 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
 	ScreenView *screenView;
 	NSWindow *window;
+	NSURL *libraryURL;
+	NSURL *archiveURL;
 }
 @property (retain) ScreenView *screenView;
 @property (retain) NSWindow *window;
+@property (retain) NSURL *libraryURL;
+@property (retain) NSURL *archiveURL;
 @end
 
 static void fxScreenAbort(txScreen* screen);
@@ -107,12 +115,20 @@ static void fxScreenStop(txScreen* screen);
 @implementation AppDelegate
 @synthesize screenView;
 @synthesize window;
+@synthesize libraryURL;
+@synthesize archiveURL;
 - (void)dealloc {
+    [archiveURL release];
+    [libraryURL release];
     [screenView release];
     [window release];
     [super dealloc];
 }
 - (void) applicationWillFinishLaunching:(NSNotification *)notification {
+	NSURL* url = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:nil];
+    libraryURL = [url URLByAppendingPathComponent:@"tech.moddable.simulator.so" isDirectory:NO];
+   	archiveURL = [url URLByAppendingPathComponent:@"tech.moddable.simulator.xsa" isDirectory:NO];
+
 	NSMenu* menubar = [[NSMenu new] autorelease];
 	NSMenu *servicesMenu = [[NSMenu new] autorelease];
 	NSMenuItem* item;
@@ -210,11 +226,13 @@ static void fxScreenStop(txScreen* screen);
 			filename = [filenames objectAtIndex:i];
 			extension = [filename pathExtension];
 			if ([extension compare:@"so"] == NSOrderedSame) {
-				self.screenView.libraryPath = filename;
+				[[NSFileManager defaultManager] copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:libraryURL error:nil];
+				self.screenView.libraryName = filename;
 				launch = YES;
 			}
 			else if ([extension compare:@"xsa"] == NSOrderedSame) {
-				self.screenView.archivePath = filename;
+				[[NSFileManager defaultManager] copyItemAtURL:[NSURL fileURLWithPath:filename] toURL:archiveURL error:nil];
+				self.screenView.archiveName = filename;
 				launch = YES;
 			}
 		}
@@ -233,8 +251,8 @@ static void fxScreenStop(txScreen* screen);
 }
 - (void)closeLibrary:(NSMenuItem *)sender {
 	[self.screenView quitMachine];
-    self.screenView.archivePath = nil;
-    self.screenView.libraryPath = nil;
+    self.screenView.archiveName = nil;
+    self.screenView.libraryName = nil;
 }
 - (void)createScreen:(NSString *)jsonPath {
     NSString *screenImagePath = [[jsonPath stringByDeletingPathExtension] stringByAppendingPathExtension:@"png"];
@@ -251,10 +269,12 @@ static void fxScreenStop(txScreen* screen);
     NSInteger height = [[json valueForKeyPath:@"height"] integerValue];
     ScreenView *_screenView = [[[ScreenView alloc] initWithFrame:NSMakeRect(x, size.height - (y + height), width, height)] autorelease];
    
-    _screenView.archivePath = nil;
+    _screenView.archiveURL = archiveURL;
+    _screenView.archiveName = nil;
     _screenView.archiveFile = -1;
     _screenView.archiveSize = 0;
-    _screenView.libraryPath = nil;
+    _screenView.libraryURL = libraryURL;
+    _screenView.libraryName = nil;
     _screenView.library = NULL;
     
     txScreen* screen = malloc(sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
@@ -300,7 +320,7 @@ static void fxScreenStop(txScreen* screen);
 - (void)getInfo:(NSMenuItem *)sender {
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
 	[alert setAlertStyle:NSAlertStyleInformational];
-	[alert setMessageText:[[screenView.libraryPath stringByDeletingLastPathComponent] lastPathComponent]];
+	[alert setMessageText:[[screenView.libraryName stringByDeletingLastPathComponent] lastPathComponent]];
 	[alert setInformativeText:gPixelFormatNames[screenView.screen->pixelFormat]];
 	[alert beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
 		[alert.window close]; 
@@ -332,13 +352,13 @@ static void fxScreenStop(txScreen* screen);
     sender.state = 1;
     [userDefaults setInteger:sender.tag forKey:@"screenTag"];
     
-    NSString* archivePath = self.screenView.archivePath;
-    NSString* libraryPath = self.screenView.libraryPath;
+    NSString* archiveName = self.screenView.archiveName;
+    NSString* libraryName = self.screenView.libraryName;
 	[self.screenView quitMachine];
     [self deleteScreen];
     [self createScreen:sender.representedObject];
-    self.screenView.archivePath = archivePath;
-    self.screenView.libraryPath = libraryPath;
+    self.screenView.archiveName = archiveName;
+    self.screenView.libraryName = libraryName;
 	[self.screenView launchMachine];
     [self.window makeKeyAndOrderFront:NSApp];
 }
@@ -433,10 +453,12 @@ static void fxScreenStop(txScreen* screen);
 @end
 
 @implementation ScreenView
-@synthesize archivePath;
+@synthesize archiveURL;
+@synthesize archiveName;
 @synthesize archiveFile;
 @synthesize archiveSize;
-@synthesize libraryPath;
+@synthesize libraryURL;
+@synthesize libraryName;
 @synthesize library;
 @synthesize screen;
 @synthesize time;
@@ -449,8 +471,8 @@ static void fxScreenStop(txScreen* screen);
     	free(screen);
 	if (library)
     	dlclose(library);
-    [libraryPath release];
-    [archivePath release];
+    [libraryName release];
+    [archiveName release];
     [touchImage release];
     [super dealloc];
 }
@@ -475,40 +497,44 @@ static void fxScreenStop(txScreen* screen);
 	}
 }
 - (void)launchMachine {
-	NSString *path = self.libraryPath;
+	NSString *name = nil;
 	NSString *info = nil;
 	txScreenLaunchProc launch;
-	if (!path)
-		return;
-	self.library = dlopen([path UTF8String], RTLD_NOW);
-	if (!self.library) {
-		info = [NSString stringWithFormat:@"%s", dlerror()];
-		goto bail;
-	}
-	launch = (txScreenLaunchProc)dlsym(self.library, "fxScreenLaunch");
-	if (!launch) {
-		info = [NSString stringWithFormat:@"%s", dlerror()];
-		goto bail;
-	}
+	if (self.libraryName) {
+		self.library = dlopen([self.libraryURL fileSystemRepresentation], RTLD_NOW);
+		if (!self.library) {
+			name = self.libraryName;
+			info = [NSString stringWithFormat:@"%s", dlerror()];
+			goto bail;
+		}
+		launch = (txScreenLaunchProc)dlsym(self.library, "fxScreenLaunch");
+		if (!launch) {
+			name = self.libraryName;
+			info = [NSString stringWithFormat:@"%s", dlerror()];
+			goto bail;
+		}
 	
-	path = self.archivePath;
-	if (path) {
-		struct stat statbuf;
-		self.archiveFile = open([path UTF8String], O_RDWR);
-		if (!self.archiveFile < 0) {
-			info = [NSString stringWithFormat:@"%s", strerror(errno)];
-			goto bail;
+		if (self.archiveName) {
+			struct stat statbuf;
+			self.archiveFile = open([self.archiveURL fileSystemRepresentation], O_RDWR);
+			if (self.archiveFile < 0) {
+				name = self.archiveName;
+				info = [NSString stringWithFormat:@"%s", strerror(errno)];
+				goto bail;
+			}
+			fstat(self.archiveFile, &statbuf);
+			self.archiveSize = statbuf.st_size;
+			self.screen->archive = mmap(NULL, self.archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, self.archiveFile, 0);
+			if (self.screen->archive == MAP_FAILED) {
+				self.screen->archive = NULL;
+				name = self.archiveName;
+				info = [NSString stringWithFormat:@"%s", strerror(errno)];
+				goto bail;
+			}
 		}
-		fstat(self.archiveFile, &statbuf);
-		self.archiveSize = statbuf.st_size;
-		self.screen->archive = mmap(NULL, self.archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, self.archiveFile, 0);
-		if (!self.screen->archive) {
-			info = [NSString stringWithFormat:@"%s", strerror(errno)];
-			goto bail;
-		}
-	}
 
-	(*launch)(self.screen);
+		(*launch)(self.screen);
+	}
 	return;
 bail:
 	if (self.screen->archive) {
@@ -525,7 +551,7 @@ bail:
 		self.library = nil;
 	}
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-	[alert setMessageText:[NSString stringWithFormat:@"Cannot open \"%@\"", path]];
+	[alert setMessageText:[NSString stringWithFormat:@"Cannot open \"%@\"", name]];
 	if (info)
 		[alert setInformativeText:info];
 	[alert runModal];
