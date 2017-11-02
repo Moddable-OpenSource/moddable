@@ -50,6 +50,7 @@ static LRESULT CALLBACK fxScreenViewProc(HWND hWnd, UINT message, WPARAM wParam,
 
 #define WM_CREATE_SCREEN WM_USER
 #define WM_DELETE_SCREEN WM_USER + 1
+#define WM_OPEN_FILE WM_USER + 2
 
 #define WM_LAUNCH_MACHINE WM_USER
 #define WM_QUIT_MACHINE WM_USER + 1
@@ -75,6 +76,9 @@ HBITMAP gxScreenBitmap = NULL;
 BITMAPINFO* gxScreenBitmapInfo = NULL;
 HDC gxScreenDC = NULL;
 
+char gxArchivePath[MAX_PATH] = "";
+HANDLE gxArchiveFile = INVALID_HANDLE_VALUE;
+HANDLE gxArchiveMapping = INVALID_HANDLE_VALUE;
 char gxLibraryPath[MAX_PATH] = "";
 HMODULE gxLibrary = NULL;
 
@@ -359,6 +363,10 @@ void fxScreenStop(txScreen* screen)
 	KillTimer(view, 0);
 }
 
+void fxScreenStop(HWND window, char* )
+{
+}
+
 LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)	{
@@ -389,10 +397,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 		} break;
 	case WM_COPYDATA: {
 		COPYDATASTRUCT* cds = (COPYDATASTRUCT*)lParam;
-		HWND view = GetWindow(window, GW_CHILD);
-		SendMessage(view, WM_QUIT_MACHINE, 0, 0);
-		strcpy(gxLibraryPath, (LPSTR)cds->lpData);
-		SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+		SendMessage(window, WM_OPEN_FILE, 0, (LPARAM)cds->lpData);
 		} break;
 	case WM_CREATE: {
 		HKEY key;
@@ -479,17 +484,14 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				ofn.lpstrFile = szFile;
 				ofn.lpstrFile[0] = '\0';
 				ofn.nMaxFile = sizeof(szFile);
-				ofn.lpstrFilter = "All\0*.*\0Library\0*.dll\0";
+				ofn.lpstrFilter = "All\0*.*\0Library\0*.dll\0Archive\0*.xsa\0";
 				ofn.nFilterIndex = 2;
 				ofn.lpstrFileTitle = NULL;
 				ofn.nMaxFileTitle = 0;
 				ofn.lpstrInitialDir = NULL;
 				ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 				if (GetOpenFileName(&ofn)==TRUE) {
-					HWND view = GetWindow(window, GW_CHILD);
-					SendMessage(view, WM_QUIT_MACHINE, 0, 0);
-					strcpy(gxLibraryPath, szFile);
-					SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+					SendMessage(window, WM_OPEN_FILE, 0, (LPARAM)szFile);
 				}
 				} break;
 			case 1: {
@@ -498,6 +500,8 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				} break;
 			case 2:
 				SendMessage(window, WM_CLOSE, 0, 0);
+				gxArchivePath[0] = 0;
+				gxLibraryPath[0] = 0;
 				break;
 			}
 			break;
@@ -578,6 +582,29 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 			}
 		}
 		} break;
+	case WM_OPEN_FILE: {
+		char* path = (char*)lParam;
+		HWND view = GetWindow(window, GW_CHILD);
+		SendMessage(view, WM_QUIT_MACHINE, 0, 0);
+		if (path) {
+			char* slash = strrchr(path, '\\');
+			if (slash) {
+				char* dot = strrchr(slash, '.');
+				if (dot) {
+					if (!strcmp(dot, ".dll")) {
+						SendMessage(view, WM_QUIT_MACHINE, 0, 0);
+						strcpy(gxLibraryPath, path);
+						SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+					}
+					else if (!strcmp(dot, ".xsa")) {
+						SendMessage(view, WM_QUIT_MACHINE, 0, 0);
+						strcpy(gxArchivePath, path);
+						SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+					}
+				}
+			}
+		}
+		} break;
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(window, &ps);
@@ -609,7 +636,6 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 		return DefWindowProc(window, message, wParam, lParam);
 	}
 	return 0;
-
 }  
 
 LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM lParam)
@@ -622,6 +648,17 @@ LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM
 			if (!gxLibrary) goto error;
 			txScreenLaunchProc launch = (txScreenLaunchProc)GetProcAddress(gxLibrary, "fxScreenLaunch");
 			if (!launch) goto error;
+			if (gxArchivePath[0]) {
+				DWORD size;
+				gxArchiveFile = CreateFile(gxArchivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				if (gxArchiveFile == INVALID_HANDLE_VALUE) goto error;
+				size = GetFileSize(gxArchiveFile, &size);
+				if (size == INVALID_FILE_SIZE) goto error;
+				gxArchiveMapping = CreateFileMapping(gxArchiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
+				if (gxArchiveMapping == INVALID_HANDLE_VALUE) goto error;
+				gxScreen->archive = MapViewOfFile(gxArchiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
+				if (gxScreen->archive == NULL) goto error;
+			}
 			(*launch)(gxScreen);
 		}
 		return TRUE;
@@ -666,6 +703,18 @@ LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM
 	case WM_QUIT_MACHINE: {
 		if (gxScreen && gxScreen->quit) 
 			(*gxScreen->quit)(gxScreen);
+		if (gxScreen->archive) {
+			UnmapViewOfFile(gxScreen->archive);
+			gxScreen->archive = NULL;
+		}
+		if (gxArchiveMapping) {
+			CloseHandle(gxArchiveMapping);
+			gxArchiveMapping = INVALID_HANDLE_VALUE;
+		}
+		if (gxArchiveFile) {
+			CloseHandle(gxArchiveFile);
+			gxArchiveFile = INVALID_HANDLE_VALUE;
+		}
 		if (gxLibrary) {
 			FreeLibrary(gxLibrary);
 			gxLibrary = NULL;
