@@ -18,32 +18,44 @@
  *
  */
 
-#include "xsPlatform.h"
 #include "xs.h"
 
-void xs_sntp_packet(xsMachine *the)
+void xs_wifi_set_mode(xsMachine *the)
 {
-	unsigned char *packet;
-
-	xsResult = xsArrayBuffer(NULL, 48);
-
-	packet = xsToArrayBuffer(xsResult);
-	packet[0] = (4 << 3) | (3 << 0);		// version 4, mode 3 (client)
 }
 
-void xs_sntp_toNumber(xsMachine *the)
+void xs_wifi_get_mode(xsMachine *the)
 {
-	uint8_t bytes[4];
-	int32_t result;
+}
 
-	bytes[0] = (uint8_t)xsToInteger(xsArg(0));
-	bytes[1] = (uint8_t)xsToInteger(xsArg(1));
-	bytes[2] = (uint8_t)xsToInteger(xsArg(2));
-	bytes[3] = (uint8_t)xsToInteger(xsArg(3));
+void xs_wifi_scan(xsMachine *the)
+{
+}
 
-	result = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+void xs_wifi_status(xsMachine *the)
+{
+}
 
-	result -= 2208988800UL;		// convert from NTP to Unix Epoch time value
+void xs_wifi_connect(xsMachine *the)
+{
+}
 
-	xsResult = xsInteger(result);
+void xs_wifi_destructor(void *data)
+{
+}
+
+void xs_wifi_constructor(xsMachine *the)
+{
+}
+
+void xs_wifi_close(xsMachine *the)
+{
+}
+
+void xs_wifi_set_onNotify(xsMachine *the)
+{
+}
+
+void xs_wifi_accessPoint(xsMachine *the)
+{
 }
