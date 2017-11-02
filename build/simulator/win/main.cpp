@@ -76,9 +76,11 @@ HBITMAP gxScreenBitmap = NULL;
 BITMAPINFO* gxScreenBitmapInfo = NULL;
 HDC gxScreenDC = NULL;
 
+char gxArchiveName[MAX_PATH] = "";
 char gxArchivePath[MAX_PATH] = "";
 HANDLE gxArchiveFile = INVALID_HANDLE_VALUE;
 HANDLE gxArchiveMapping = INVALID_HANDLE_VALUE;
+char gxLibraryName[MAX_PATH] = "";
 char gxLibraryPath[MAX_PATH] = "";
 HMODULE gxLibrary = NULL;
 
@@ -177,6 +179,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetFocus(window);
 	if (cds.cbData)
 		SendMessage(window, WM_COPYDATA, 0, (LPARAM)&cds);
+
+	char path[MAX_PATH];
+	SHGetSpecialFolderPath(NULL, path, CSIDL_LOCAL_APPDATA, TRUE);
+	strcpy(gxLibraryPath, path);
+	strcat(gxLibraryPath, "\\tech.moddable.simulator.so");
+	strcpy(gxArchivePath, path);
+	strcat(gxArchivePath, "\\tech.moddable.simulator.xsa");
 		
 	HACCEL haccel = CreateAcceleratorTable((LPACCEL)accelerators, 2);		
 	MSG msg;
@@ -336,16 +345,14 @@ void fxScreenFormatChanged(txScreen* screen)
 	HWND view = (HWND)screen->view;
 	HWND window = GetParent(view);
 	char title[MAX_PATH];
-	char* begin;
-	char* end;
-	end = strrchr(gxLibraryPath, '\\');
-	*end = 0;
-	begin = strrchr(gxLibraryPath, '\\');
 	strcpy(title, "Screen Test - ");
-	strcat(title, begin + 1);
+	strcat(title, gxLibraryName);
 	strcat(title, " - ");
+	if (gxArchiveName[0]) {
+		strcat(title, gxArchiveName);
+		strcat(title, " - ");
+	}
 	strcat(title, gxFormatNames[screen->pixelFormat]);
-	*end = '/';
 	SetWindowText(window, title);
 }
 
@@ -485,7 +492,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				ofn.lpstrFile[0] = '\0';
 				ofn.nMaxFile = sizeof(szFile);
 				ofn.lpstrFilter = "All\0*.*\0Apps\0*.dll\0Mods\0*.xsa\0";
-				ofn.nFilterIndex = 2;
+				ofn.nFilterIndex = 1;
 				ofn.lpstrFileTitle = NULL;
 				ofn.nMaxFileTitle = 0;
 				ofn.lpstrInitialDir = NULL;
@@ -500,8 +507,8 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				} break;
 			case 2:
 				SendMessage(window, WM_CLOSE, 0, 0);
-				gxArchivePath[0] = 0;
-				gxLibraryPath[0] = 0;
+				gxArchiveName[0] = 0;
+				gxLibraryName[0] = 0;
 				break;
 			}
 			break;
@@ -591,15 +598,27 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 			if (slash) {
 				char* dot = strrchr(slash, '.');
 				if (dot) {
+					char* begin;
+					char* end;
 					if (!strcmp(dot, ".dll")) {
-						SendMessage(view, WM_QUIT_MACHINE, 0, 0);
-						strcpy(gxLibraryPath, path);
-						SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+						if (CopyFile(path, gxLibraryPath, FALSE)) {
+							end = strrchr(path, '\\');
+							*end = 0;
+							begin = strrchr(path, '\\');
+							strcpy(gxLibraryName, begin + 1);
+							*end = '/';
+							SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+						}
 					}
 					else if (!strcmp(dot, ".xsa")) {
-						SendMessage(view, WM_QUIT_MACHINE, 0, 0);
-						strcpy(gxArchivePath, path);
-						SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+						if (CopyFile(path, gxArchivePath, FALSE)) {
+							end = strrchr(path, '\\');
+							*end = 0;
+							begin = strrchr(path, '\\');
+							strcpy(gxArchiveName, begin + 1);
+							*end = '/';
+							SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+						}
 					}
 				}
 			}
@@ -643,12 +662,12 @@ LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM
 	static BOOL dragging = FALSE;
 	switch(message)	{
 	case WM_LAUNCH_MACHINE: {
-		if (gxLibraryPath[0]) {
+		if (gxLibraryName[0]) {
 			gxLibrary = LoadLibrary(gxLibraryPath);
 			if (!gxLibrary) goto error;
 			txScreenLaunchProc launch = (txScreenLaunchProc)GetProcAddress(gxLibrary, "fxScreenLaunch");
 			if (!launch) goto error;
-			if (gxArchivePath[0]) {
+			if (gxArchiveName[0]) {
 				DWORD size;
 				gxArchiveFile = CreateFile(gxArchivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				if (gxArchiveFile == INVALID_HANDLE_VALUE) goto error;
