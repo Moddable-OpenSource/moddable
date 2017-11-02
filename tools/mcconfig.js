@@ -641,6 +641,8 @@ export default class Tool extends TOOL {
 			this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
 			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
 			FS.mkdirSync(this.resourcesPath);
+			var file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h");
+			file.generate(this);
 		}	
 		else if (this.platform == "x-mac") {
 			var path = this.binPath + "/Contents";
