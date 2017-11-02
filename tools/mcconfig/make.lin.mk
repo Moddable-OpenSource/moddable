@@ -128,7 +128,7 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: $(LIB_DIR) $(BIN_DIR)/mc.so $(DATA)
-	 $(shell $(SIMULATOR) $(BIN_DIR)/mc.so)
+	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
