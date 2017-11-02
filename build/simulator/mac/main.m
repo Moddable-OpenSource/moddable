@@ -204,16 +204,22 @@ static void fxScreenStop(txScreen* screen);
 	NSString* filename;
 	NSString* extension;
 	if (c) {
+		BOOL launch = NO;
 		[self.screenView quitMachine];
 		for (i = 0; i < c; i++) {
 			filename = [filenames objectAtIndex:i];
 			extension = [filename pathExtension];
-			if ([extension compare:@"so"] == NSOrderedSame)
+			if ([extension compare:@"so"] == NSOrderedSame) {
 				self.screenView.libraryPath = filename;
-			else if ([extension compare:@"xsa"] == NSOrderedSame)
+				launch = YES;
+			}
+			else if ([extension compare:@"xsa"] == NSOrderedSame) {
 				self.screenView.archivePath = filename;
+				launch = YES;
+			}
 		}
-		[self.screenView launchMachine];
+		if (launch)
+			[self.screenView launchMachine];
 	}
 }
 - (void)about:(NSMenuItem *)sender {
