@@ -19,7 +19,7 @@
 import config from "mc/config";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/parseBMP";
+import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
@@ -32,9 +32,7 @@ const backgroundColor = render.makeColor(0, 0, 0);
 
 let titleFont = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
 let progressFont = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
-
-let spinner = parseBMP(new Resource("spinner-strip-80px-24cell-blue-color.bmp"));
-spinner.alpha = parseBMP(new Resource("spinner-strip-80px-24cell-blue-alpha.bmp"));
+let spinner = parseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
 
 const title = "Progress!";
 const headerHeight = 30;
@@ -100,6 +98,7 @@ class Spinner extends Progress {
 		super(dictionary);
 		this.cells = dictionary.cells;
 		this.bitmap = dictionary.bitmap;
+		this.color = render.makeColor(49, 101, 173);
 		this.cell = 0;
 		this.count = 0;
 	}
@@ -107,7 +106,7 @@ class Spinner extends Progress {
 		let sx = this.cell * this.width;
 		render.begin(this.x, this.y, this.width, this.height);
 			render.fillRectangle(this.backgroundColor, this.x, this.y, this.width, this.height);
-			render.drawMasked(this.bitmap, this.x, this.y, sx, 0, this.width, this.height, this.bitmap.alpha, sx, 0);
+			render.drawGray(this.bitmap, this.color, this.x, this.y, sx, 0, this.width, this.height);
 		render.end();
 		this.count += 1;
 		if (3 == this.count) {
