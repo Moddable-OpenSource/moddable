@@ -108,7 +108,9 @@
 		"win": {
 			"modules": {
 				"*": [
-					"$(BUILD)/simulator/screen"
+					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/win/*"
 				]
 			}
 		}
