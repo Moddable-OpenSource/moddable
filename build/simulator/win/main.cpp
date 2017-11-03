@@ -173,12 +173,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	AppendMenu(helpMenu, MF_SEPARATOR, 0, NULL);
 	AppendMenu(helpMenu, MF_STRING, 0x0302, "About Screen Test");
 	AppendMenu(menubar, MF_POPUP, (UINT)helpMenu, "Help");
-	
-	HWND window = CreateWindowEx(0, "ScreenWindow", "Screen Test", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, menubar, hInstance, NULL);
-	ShowWindow(window, nCmdShow);
-	SetFocus(window);
-	if (cds.cbData)
-		SendMessage(window, WM_COPYDATA, 0, (LPARAM)&cds);
 
 	char path[MAX_PATH];
 	SHGetSpecialFolderPath(NULL, path, CSIDL_LOCAL_APPDATA, TRUE);
@@ -186,6 +180,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	strcat(gxLibraryPath, "\\tech.moddable.simulator.so");
 	strcpy(gxArchivePath, path);
 	strcat(gxArchivePath, "\\tech.moddable.simulator.xsa");
+	
+	HWND window = CreateWindowEx(0, "ScreenWindow", "Screen Test", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, menubar, hInstance, NULL);
+	ShowWindow(window, nCmdShow);
+	SetFocus(window);
+	if (cds.cbData)
+		SendMessage(window, WM_COPYDATA, 0, (LPARAM)&cds);
 		
 	HACCEL haccel = CreateAcceleratorTable((LPACCEL)accelerators, 2);		
 	MSG msg;
