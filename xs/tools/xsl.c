@@ -36,6 +36,19 @@
  */
 
 #include "xsl.h"
+#if mxWindows
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/utime.h>
+	#define c_stat _stat
+	#define c_utime _utime
+	#define c_utimbuf _utimbuf 
+#else
+	#include <utime.h>
+	#define c_stat stat
+	#define c_utime utime
+	#define c_utimbuf utimbuf 
+#endif
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
 static txScript* fxLoadScript(txMachine* the, txString path);
@@ -84,6 +97,10 @@ int main(int argc, char* argv[])
 	xsMachine* the = NULL;
 	txInteger count;
 	txInteger globalCount;
+	
+	txBoolean incremental = 0;
+	struct c_stat headerStat;
+	struct c_utimbuf headerTimes;
 	
 	fxInitializeLinker(linker);
 	if (c_setjmp(linker->jmp_buf) == 0) {
@@ -224,8 +241,10 @@ int main(int argc, char* argv[])
 			c_strcpy(path, base);
 			c_strcat(path, name);
 			c_strcat(path, ".xsi");
-			if (fxRealFilePath(linker, path))
+			if (fxRealFilePath(linker, path)) {
 				fxReadSymbols(linker, path, 0, &file);
+				incremental = 1;
+			}
 			else
 				fxDefaultSymbols(linker);
 			include = linker->firstInclude;
@@ -285,6 +304,9 @@ int main(int argc, char* argv[])
 			c_strcpy(path, output);
 			c_strcat(path, name);
 			c_strcat(path, ".xs.h");
+ 			if (c_stat(path, &headerStat) != 0)
+ 				incremental = 0;
+			
 			file = fopen(path, "w");
 			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
 			fprintf(file, "#include \"xs.h\"\n\n");
@@ -307,10 +329,18 @@ int main(int argc, char* argv[])
 
 			fclose(file);
 			file = NULL;
+			
+			if (incremental) {
+				headerTimes.actime = headerStat.st_atime;
+				headerTimes.modtime = headerStat.st_mtime;
+				c_utime(path, &headerTimes);
+			}
 		
 			c_strcpy(path, output);
 			c_strcat(path, name);
 			c_strcat(path, ".xs.c");
+			
+			
 			file = fopen(path, "w");
 			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
 			//fprintf(file, "#pragma GCC diagnostic ignored \"-Wincompatible-pointer-types-discards-qualifiers\"\n");
