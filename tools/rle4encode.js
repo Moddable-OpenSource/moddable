@@ -18,14 +18,13 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/ParseBMP";
 import RLE4Out from "commodetto/RLE4Out";
 import Converter from "commodetto/Convert";
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 
@@ -70,9 +69,9 @@ export default class Tool extends TOOL {
 		let parts = this.splitPath(this.inputPath);
 		parts.directory = this.outputPath;
 		parts.extension = ".bm4";
-		let output = FS.openSync(this.joinPath(parts), "wb");
+		let output = new FILE(this.joinPath(parts), "wb");
 
-		let uncompressed = parseBMP(FS.readFileBufferSync(this.inputPath));
+		let uncompressed = parseBMP(this.readFileBuffer(this.inputPath));
 		let convert = new Converter(uncompressed.pixelFormat, Bitmap.Gray16);
 
 		let writer = new RLE4Out({width: uncompressed.width, height: uncompressed.height, pixelFormat: Bitmap.Gray16});
@@ -92,17 +91,17 @@ export default class Tool extends TOOL {
 		let compressed = writer.bitmap;
 
 		// header: 'md', version, Commodetto pixel format, width and height (big endian)
-		FS.writeByteSync(output, 'm'.charCodeAt(0));
-		FS.writeByteSync(output, 'd'.charCodeAt(0));
-		FS.writeByteSync(output, 0);
-		FS.writeByteSync(output, compressed.pixelFormat);
-		FS.writeByteSync(output, compressed.width >> 8);
-		FS.writeByteSync(output, compressed.width & 0xFF);
-		FS.writeByteSync(output, compressed.height >> 8);
-		FS.writeByteSync(output, compressed.height & 0xFF);
+		output.writeByte('m'.charCodeAt(0));
+		output.writeByte('d'.charCodeAt(0));
+		output.writeByte(0);
+		output.writeByte(compressed.pixelFormat);
+		output.writeByte(compressed.width >> 8);
+		output.writeByte(compressed.width & 0xFF);
+		output.writeByte(compressed.height >> 8);
+		output.writeByte(compressed.height & 0xFF);
 
-		FS.writeBufferSync(output, compressed.buffer);
+		output.writeBuffer(compressed.buffer);
 
-		FS.closeSync(output);
+		output.close();
 	}
 }
