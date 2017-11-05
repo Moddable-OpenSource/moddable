@@ -18,7 +18,223 @@
  *
  */
 
-#include "tool.h"
+#include "xsPlatform.h"
+#include "xsAll.h"
+#include "xs.h"
+#include "mc.xs.h"
+extern txPreparation* xsPreparation();
+
+#if mxWindows
+	#include <direct.h>
+	#include <errno.h>
+	#include <iphlpapi.h>
+	#include <process.h>
+	#define mxSeparator '\\'
+	#define PATH_MAX 1024
+#else
+	#include <dirent.h>
+	#include <sys/stat.h>
+    #include <sys/types.h>
+    #include <ifaddrs.h>
+    #include <netdb.h>
+	#include <unistd.h>
+	#define mxSeparator '/'
+#endif
+
+#ifdef mxDebug
+	#define xsElseThrow(_ASSERTION) \
+		((void)((_ASSERTION) || (fxThrowMessage(the,(char *)__FILE__,__LINE__,XS_UNKNOWN_ERROR,"%s",strerror(errno)), 1)))
+#else
+	#define xsElseThrow(_ASSERTION) \
+		((void)((_ASSERTION) || (fxThrowMessage(the,NULL,0,XS_UNKNOWN_ERROR,"%s",strerror(errno)), 1)))
+#endif
+
+static char** then = NULL;
+
+void fxAbort(xsMachine* the)
+{
+	exit(1);
+}
+
+int main(int argc, char* argv[]) 
+{
+	static txMachine root;
+	int error = 0;
+	txMachine* machine = &root;
+	txPreparation* preparation = xsPreparation();
+	
+	c_memset(machine, 0, sizeof(txMachine));
+	machine->preparation = preparation;
+	machine->keyArray = preparation->keys;
+	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
+	machine->keyIndex = (txID)preparation->keyCount;
+	machine->nameModulo = preparation->nameModulo;
+	machine->nameTable = preparation->names;
+	machine->symbolModulo = preparation->symbolModulo;
+	machine->symbolTable = preparation->symbols;
+	
+	machine->stack = &preparation->stack[0];
+	machine->stackBottom = &preparation->stack[0];
+	machine->stackTop = &preparation->stack[preparation->stackCount];
+	
+	machine->firstHeap = &preparation->heap[0];
+	machine->freeHeap = &preparation->heap[preparation->heapCount - 1];
+	machine->aliasCount = (txID)preparation->aliasCount;
+
+	machine = fxCloneMachine(&preparation->creation, machine, "tool", NULL);
+	
+	xsBeginHost(machine);
+	{
+		xsVars(2);
+		{
+			xsTry {
+				if (argc > 1) {
+					int argi;
+					xsVar(0) = xsNewArray(0);
+					for (argi = 1; argi < argc; argi++) {
+						xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
+					}
+					xsVar(1) = xsCall1(xsGlobal, xsID_require, xsString(argv[1]));
+					fxPush(xsVar(0));
+					fxPushCount(the, 1);
+					fxPush(xsVar(1));
+					fxNew(the);
+					xsResult = fxPop();
+					xsCall0(xsResult, xsID_run);
+				}
+			}
+			xsCatch {
+				xsStringValue message = xsToString(xsException);
+				fprintf(stderr, "### %s\n", message);
+				error = 1;
+			}
+		}
+	}
+	xsEndHost(the);
+	xsDeleteMachine(machine);
+	if (!error && then) {
+	#if mxWindows
+		error =_spawnvp(_P_WAIT, then[0], then);
+		if (error < 0)
+			fprintf(stderr, "### Cannot execute %s!\n", then[0]);
+	#else
+		execvp(then[0], then);
+	#endif
+	}
+	return error;
+}
+
+void FILE_prototype_constructor(xsMachine* the)
+{
+	xsIntegerValue c = xsToInteger(xsArgc);
+	char *path = xsToString(xsArg(0));
+	FILE* file = NULL;
+	xsTry {
+		char *flags;
+		if ((c > 1) && xsTest(xsArg(1)))
+			flags = xsToString(xsArg(1));
+		else
+			flags = "w";
+		file = fopen(path, flags);
+		xsElseThrow(file);
+		xsSetHostData(xsThis, file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
+}
+
+void FILE_prototype_destructor(void* data)
+{
+	if (data)
+		fclose(data);
+}
+
+void FILE_prototype_close(xsMachine* the)
+{
+	FILE* file = xsGetHostData(xsThis);
+	if (file) {
+		fclose(file);
+		xsSetHostData(xsThis, NULL);
+	}
+}
+
+void FILE_prototype_dump(xsMachine* the)
+{
+	FILE* output = xsGetHostData(xsThis);
+	char *path = xsToString(xsArg(0));
+	FILE* file = NULL;
+	size_t c, i;
+	unsigned char byte;
+	xsTry {
+		file = fopen(path, "rb");
+		xsElseThrow(file);
+		fseek(file, 0, SEEK_END);
+		c = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		i = 0;
+		fprintf(output, "\t");
+		for (;;) {
+			byte = fgetc(file);
+			fprintf(output, "0x%02x", byte);
+			i++;
+			if (i == c)
+				break;
+			if (i % 16)
+				fprintf(output, ", ");
+			else
+				fprintf(output, ",\n\t");
+		}
+		fprintf(output, "\n");
+		fclose(file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
+}
+
+void FILE_prototype_write(xsMachine* the)
+{
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	FILE* file = xsGetHostData(xsThis);
+	size_t total = 0;
+	for (i = 0; i < c; i++) {
+		char* buffer = xsToString(xsArg(0));
+		size_t size = strlen(buffer);
+		total += fwrite(buffer, 1, size, file);		
+	}
+	xsResult = xsInteger(total);
+}
+
+void FILE_prototype_writeBuffer(xsMachine* the)
+{
+	FILE* file = xsGetHostData(xsThis);
+	char* buffer = xsToArrayBuffer(xsArg(0));
+	size_t size = xsGetArrayBufferLength(xsArg(0));
+	size = fwrite(buffer, 1, size, file);		
+	xsResult = xsInteger(size);
+}
+
+void FILE_prototype_writeByte(xsMachine* the)
+{
+	FILE* file = xsGetHostData(xsThis);
+	unsigned char value = (unsigned char)xsToInteger(xsArg(0));
+	size_t size = fwrite(&value, 1, 1, file);		
+	xsResult = xsInteger(size);
+}
+
+void FILE_prototype_writeString(xsMachine* the)
+{
+	FILE* file = xsGetHostData(xsThis);
+	char* buffer = xsToString(xsArg(0));
+	size_t size = strlen(buffer);
+	size = fwrite(buffer, 1, size, file);		
+	xsResult = xsInteger(size);
+}
 
 void Tool_prototype_get_ipAddress(xsMachine* the)
 {
@@ -122,6 +338,153 @@ void Tool_prototype_get_currentPlatform(xsMachine* the)
 	#endif
 }
 
+void Tool_prototype_createDirectory(xsMachine* the)
+{
+	char* path = xsToString(xsArg(0));
+	int result;
+#if mxWindows
+	result = _mkdir(path);
+#else
+	result = mkdir(path, 0755);
+#endif
+	if (result) {
+		switch (errno) {
+			case EEXIST:
+				break;
+			default:
+				xsElseThrow(NULL);
+				break;
+		}
+	}
+	xsResult = xsArg(0);
+}
+
+
+void Tool_prototype_deleteDirectory(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+#if mxWindows
+	xsElseThrow(_rmdir(path) == 0);
+#else
+	xsElseThrow(rmdir(path) == 0);
+#endif
+}
+
+void Tool_prototype_deleteFile(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+#if mxWindows
+	xsElseThrow(_unlink(path) == 0);
+#else
+	xsElseThrow(unlink(path) == 0);
+#endif
+}
+
+void Tool_prototype_isDirectoryOrFile(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+#if mxWindows
+	DWORD attributes = GetFileAttributes(path);
+	if (attributes != 0xFFFFFFFF) {
+		if (attributes & FILE_ATTRIBUTE_DIRECTORY)
+			xsResult = xsInteger(-1);
+		else 
+			xsResult = xsInteger(1);
+	}
+	else
+		xsResult = xsInteger(0);
+#else
+	struct stat a_stat;
+	if (stat(path, &a_stat) == 0) {
+		if (S_ISDIR(a_stat.st_mode))
+			xsResult = xsInteger(-1);
+		else 
+			xsResult = xsInteger(1);
+	}
+	else
+		xsResult = xsInteger(0);
+#endif
+}
+
+void Tool_prototype_enumerateDirectory(xsMachine* the)
+{
+#if mxWindows
+	xsStringValue path, name = NULL;
+	UINT32 length, index;
+	UINT16 *pathW = NULL;
+	HANDLE findHandle = INVALID_HANDLE_VALUE;
+	WIN32_FIND_DATAW findData;
+
+	xsTry {
+		xsVars(1);
+		xsResult = xsNewArray(0);
+	
+		path = xsToString(xsArg(0));
+		length = strlen(path);
+		pathW = malloc((length + 3) * 2);
+		xsElseThrow(pathW);
+		MultiByteToWideChar(CP_UTF8, 0, path, length + 1, pathW, length + 1);
+		for (index = 0; index < length; index++) {
+			if (pathW[index] == '/')
+				pathW[index] = '\\';
+		}
+		pathW[length] = '\\';
+		pathW[length + 1] = '*';
+		pathW[length + 2] = 0;
+		findHandle = FindFirstFileW(pathW, &findData);
+		if (findHandle != INVALID_HANDLE_VALUE) {
+			do {
+				if ((findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) ||
+					!wcscmp(findData.cFileName, L".") ||
+					!wcscmp(findData.cFileName, L".."))
+					continue;
+				length = wcslen(findData.cFileName);
+				name = malloc((length + 1) * 2);
+				xsElseThrow(name);
+				WideCharToMultiByte(CP_UTF8, 0, findData.cFileName, length + 1, name, length + 1, NULL, NULL);
+				xsVar(0) = xsString(name);
+				xsCall1(xsResult, xsID_push, xsVar(0));
+				free(name);
+				name = NULL;
+			} while (FindNextFileW(findHandle, &findData));
+		}
+	}
+	xsCatch {
+	}
+	if (name)
+		free(name);
+	if (findHandle != INVALID_HANDLE_VALUE)
+		FindClose(findHandle);
+	if (pathW)
+		free(pathW);
+#else
+    DIR* dir;
+	char path[1024];
+	int length;
+
+	xsVars(1);
+	xsResult = xsNewArray(0);
+	dir = opendir(xsToStringBuffer(xsArg(0), path, sizeof(path) - 1));
+	length = strlen(path);
+	path[length] = '/';
+	length++;
+	if (dir) {
+		struct dirent *ent;
+		while ((ent = readdir(dir))) {
+			struct stat a_stat;
+			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+				continue;
+			strcpy(path + length, ent->d_name);
+			if (!stat(path, &a_stat)) {
+				xsVar(0) = xsString(ent->d_name);
+				(void)xsCall1(xsResult, xsID_push, xsVar(0));
+			}
+		}
+		closedir(dir);
+	}
+#endif
+}
+
 void Tool_prototype_execute(xsMachine* the)
 {
 	FILE* pipe;
@@ -170,6 +533,50 @@ void Tool_prototype_joinPath(xsMachine* the)
 	if (xsHas(xsArg(0), xsID("extension")))
 		strcat(path, xsToString(xsGet(xsArg(0), xsID("extension"))));
 	xsResult = xsString(path);
+}
+
+void Tool_prototype_readFileString(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+	FILE* file = NULL;
+	size_t size;
+	xsTry {
+		file = fopen(path, "r");
+		xsElseThrow(file);
+		fseek(file, 0, SEEK_END);
+		size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		xsResult = xsStringBuffer(NULL, size);
+		fread(xsToString(xsResult), 1, size, file);	
+		fclose(file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
+}
+
+void Tool_prototype_readFileBuffer(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+	FILE* file = NULL;
+	size_t size;
+	xsTry {
+		file = fopen(path, "rb");
+		xsElseThrow(file);
+		fseek(file, 0, SEEK_END);
+		size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		xsResult = xsArrayBuffer(NULL, size);
+		fread(xsToArrayBuffer(xsResult), 1, size, file);	
+		fclose(file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
 }
 
 void Tool_prototype_report(xsMachine* the)
@@ -318,6 +725,57 @@ void Tool_prototype_splitPath(xsMachine* the)
 	xsSet(xsResult, xsID("directory"), xsString(directory));
 	xsSet(xsResult, xsID("name"), xsString(name));
 	xsSet(xsResult, xsID("extension"), xsString(extension));
+}
+
+void Tool_prototype_then(xsMachine* the)
+{
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	then = malloc(sizeof(char *)*(c + 1));
+	for (i = 0; i < c; i++) {
+		xsStringValue string = xsToString(xsArg(i));
+		xsIntegerValue length = strlen(string) + 1;
+		then[i] = malloc(length);
+		c_memcpy(then[i], string, length);
+	}
+	then[c] = NULL;
+}
+
+void Tool_prototype_writeFileString(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+	char* buffer = xsToString(xsArg(1));
+	size_t size = strlen(buffer);
+	FILE* file = NULL;
+	xsTry {
+		file = fopen(path, "w");
+		xsElseThrow(file);
+		fwrite(buffer, 1, size, file);		
+		fclose(file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
+}
+
+void Tool_prototype_writeFileBuffer(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+	char* buffer = xsToArrayBuffer(xsArg(1));
+	size_t size = xsGetArrayBufferLength(xsArg(1));
+	FILE* file = NULL;
+	xsTry {
+		file = fopen(path, "wb");
+		xsElseThrow(file);
+		fwrite(buffer, 1, size, file);		
+		fclose(file);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
 }
 
 void Tool_prototype_fsvhash(xsMachine* the)
