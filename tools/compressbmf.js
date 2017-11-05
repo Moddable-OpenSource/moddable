@@ -18,15 +18,14 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/ParseBMP";
 import parseBMF from "commodetto/ParseBMF";
 import RLE4Out from "commodetto/RLE4Out";
 import Converter from "commodetto/Convert";
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 
@@ -99,15 +98,15 @@ export default class Tool extends TOOL {
 	}
 
 	run() {
-		let bmf = parseBMF(FS.readFileBufferSync(this.fontPath), true);
+		let bmf = parseBMF(this.readFileBuffer(this.fontPath), true);
 		let bytes = new Uint8Array(bmf);
 		bytes.position = bmf.position + 4;
 		bmf.writePosition = bmf.byteLength;
 
-		let bmp = parseBMP(FS.readFileBufferSync(this.bitmapPath));
+		let bmp = parseBMP(this.readFileBuffer(this.bitmapPath));
 		let bmpIs4 = 4 == Bitmap.depth(bmp.pixelFormat);
 
-		let output = FS.openSync(this.outputPath, "wb");
+		let output = new FILE(this.outputPath, "wb");
 
 		let convert = new Converter(bmp.pixelFormat, Bitmap.Gray16);
 		let chars = new Array(bmf.charCount);
@@ -215,11 +214,11 @@ export default class Tool extends TOOL {
 		}
 
 		bytes[3] = 4;		// bump version number to 4 to indicate RLE4 compressed bitmap data
-		FS.writeBufferSync(output, bmf);
+		output.writeBuffer(bmf);
 		for (let char = 0; char < bmf.charCount; char++)
-			FS.writeBufferSync(output, chars[char]);
+			output.writeBuffer(chars[char]);
 
-		FS.closeSync(output);
+		output.close();
 	}
 
 	readU32(bytes) {
