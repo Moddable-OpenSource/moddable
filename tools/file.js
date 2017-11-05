@@ -18,17 +18,13 @@
  *
  */
 
-import * as FS from "fs";
+import { FILE } from "tool";
 
-export default class File {
+// for commodetto
+
+export default class extends FILE {
 	constructor(path, mode) {
-		this.fd = FS.openSync(path, mode ? "wb+" : "rb");
-	}
-	close() {
-		if (this.fd) {
-			FS.closeSync(this.fd);
-			this.fd = null;
-		}
+		super(path, mode ? "wb+" : "rb");
 	}
 	write() {
 		let c = arguments.length; 
@@ -39,10 +35,10 @@ export default class File {
 		if (it instanceof Array)
 			it.forEach(item => this.writeAux(item));
 		else if (it instanceof ArrayBuffer)
-			FS.writeBufferSync(this.fd, it);
+			this.writeBuffer(it);
 		else if (typeof(it) == "number")
-			FS.writeByteSync(this.fd, it);
+			this.writeByte(it);
 		else
-			FS.writeSync(this.fd, it);
+			this.writeString(it);
 	}
-};
+}
