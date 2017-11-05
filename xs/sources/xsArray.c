@@ -1488,6 +1488,7 @@ void fx_Array_prototype_join(txMachine* the)
 		mxPop();
 		index++;
 	}
+	mxPop();
 	string = mxResult->value.string = fxNewChunk(the, size + 1);
 	slot = list->next;
 	while (slot) {
