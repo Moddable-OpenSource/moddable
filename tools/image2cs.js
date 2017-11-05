@@ -18,15 +18,14 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 import Bitmap from "commodetto/Bitmap";
 import ColorCellOut from "commodetto/ColorCellOut";
 import Convert from "commodetto/Convert";
 import JPEG from "commodetto/ReadJPEG";
 import PNG from "commodetto/ReadPNG";
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.directory = false;
@@ -179,7 +178,7 @@ export default class Tool extends TOOL {
 	}
 	readGIF(buffer) @ "Tool_readGIF";
 	readJPEG(path, frames) {
-		var data = FS.readFileBufferSync(path);
+		var data = this.readFileBuffer(path);
 		var jpeg = new JPEG(data, { pixelFormat:Bitmap.RGB565LE });
 		var jpegWidth = jpeg.width;
 		var jpegHeight = jpeg.height;
@@ -220,7 +219,7 @@ export default class Tool extends TOOL {
 		frames.height = height;
 	}
 	readPNG(path, frames) {
-		var data = FS.readFileBufferSync(path);
+		var data = this.readFileBuffer(path);
 		var png = new PNG(data);
 		let pngChannels = png.channels;
 		let pngDepth = png.depth;
@@ -353,7 +352,7 @@ export default class Tool extends TOOL {
 		var fps_denominator;
 		var frames = new Array;
 		if (this.directory) {
-			var names = FS.readDirSync(this.inputPath);
+			var names = this.enumerateDirectory(this.inputPath);
 			names.sort();
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -374,7 +373,7 @@ export default class Tool extends TOOL {
 		else {
 			var parts = this.splitPath(this.inputPath);
 			if (parts.extension == ".gif") {
-				var array = this.readGIF(FS.readFileBufferSync(this.inputPath));
+				var array = this.readGIF(this.readFileBuffer(this.inputPath));
 				var gifWidth = array.width;
 				var gifHeight = array.height;
 				var gifDuration = array.reduce((sum, item) => sum + item.delay, 0);
@@ -436,28 +435,28 @@ export default class Tool extends TOOL {
 		parts.extension = ".cs";
 		if (this.quality !== undefined)
 			parts.extension += this.quality;
-		let output = FS.openSync(this.joinPath(parts), "wb");
-		FS.writeByteSync(output, 'c'.charCodeAt(0));
-		FS.writeByteSync(output, 's'.charCodeAt(0));
-		FS.writeByteSync(output, Bitmap.RGB565LE);
-		FS.writeByteSync(output, 0);
-		FS.writeByteSync(output, width & 0xFF);
-		FS.writeByteSync(output, width >> 8);
-		FS.writeByteSync(output, height & 0xFF);
-		FS.writeByteSync(output, height >> 8);
-		FS.writeByteSync(output, frameCount & 0xFF);
-		FS.writeByteSync(output, frameCount >> 8);
-		FS.writeByteSync(output, fps_numerator & 0xFF);
-		FS.writeByteSync(output, fps_numerator >> 8);
-		FS.writeByteSync(output, fps_denominator & 0xFF);
-		FS.writeByteSync(output, fps_denominator >> 8);
+		let output = new FILE(this.joinPath(parts), "wb");
+		output.writeByte('c'.charCodeAt(0));
+		output.writeByte('s'.charCodeAt(0));
+		output.writeByte(Bitmap.RGB565LE);
+		output.writeByte(0);
+		output.writeByte(width & 0xFF);
+		output.writeByte(width >> 8);
+		output.writeByte(height & 0xFF);
+		output.writeByte(height >> 8);
+		output.writeByte(frameCount & 0xFF);
+		output.writeByte(frameCount >> 8);
+		output.writeByte(fps_numerator & 0xFF);
+		output.writeByte(fps_numerator >> 8);
+		output.writeByte(fps_denominator & 0xFF);
+		output.writeByte(fps_denominator >> 8);
 		for (var frameIndex = 0; frameIndex < frameCount; frameIndex++) {
 			var buffer = frames[frameIndex];
 			var frameSize = buffer.byteLength;
-			FS.writeByteSync(output, frameSize & 255);
-			FS.writeByteSync(output, frameSize >> 8);
-			FS.writeBufferSync(output, buffer);
+			output.writeByte(frameSize & 255);
+			output.writeByte(frameSize >> 8);
+			output.writeBuffer(buffer);
 		}
-		FS.closeSync(output);
+		output.close();
 	}
 }
