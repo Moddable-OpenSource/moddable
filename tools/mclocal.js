@@ -18,29 +18,9 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 
-class File {
-	constructor(path) {
-		this.fd = FS.openSync(path, "w");
-		this.slash = "/";
-	}
-	close() {
-		FS.closeSync(this.fd);
-		delete this.fd;
-	}
-	line(...strings) {
-		for (var string of strings)
-			this.write(string);
-		this.write("\n");
-	}
-	write(string) {
-		FS.writeSync(this.fd, string);
-	}
-}
-
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.debug = false;
@@ -151,7 +131,7 @@ export default class Tool extends TOOL {
 			var parts = this.splitPath(path);
 			return {
 				name: parts.name,
-				dictionary: JSON.parse(FS.readFileSync(path)),
+				dictionary: JSON.parse(this.readFileString(path)),
 			};
 		});
 		var all = {}
@@ -184,7 +164,7 @@ export default class Tool extends TOOL {
 		this.build(length, keys, values, G, H);
 		
 		var parts = { directory:this.outputPath, name:this.name, extension:".mhi" };
-		var file = FS.openSync(this.joinPath(parts), "wb");
+		var file = new FILE(this.joinPath(parts), "wb");
 		this.write32(file, length);
 		for (var index of G)
 			this.write32(file, index);
@@ -198,18 +178,18 @@ export default class Tool extends TOOL {
 			}
 			for (var index of H) {
 				var string = debug[index];
-				FS.writeSync(file, string);
-				FS.writeByteSync(file, 0);
+				file.writeString(string);
+				file.writeByte(0);
 			}
 		}	
-		FS.closeSync(file);
+		file.close();
 		
 		var characters = this.characters;
 		var parts = { directory:this.outputPath, extension:".mhr" };
 		locals.forEach(local => {
 			var table = local.table;
 			parts.name = this.name + "." + local.name;
-			var file = FS.openSync(this.joinPath(parts), "wb");
+			var file = new FILE(this.joinPath(parts), "wb");
 			this.write32(file, length);
 			var offset = (1 + length) << 2;
 			for (var index of H) {
@@ -225,22 +205,23 @@ export default class Tool extends TOOL {
 						characters[string.charCodeAt(i)] = string.charAt(i);
 					}
 				}
-				FS.writeSync(file, string);
-				FS.writeByteSync(file, 0);
+				file.writeString(string);
+				file.writeByte(0);
 			}
-			FS.closeSync(file);
+			file.close();
 		});
 		if (characters) {
 			var string = characters.join("");
 			var parts = { directory:this.outputPath, name:this.name, extension:".txt" };
-			var file = FS.openSync(this.joinPath(parts), "wb");
-			FS.writeSync(file, string);
+			var file = new FILE(this.joinPath(parts), "wb");
+			file.writeString(string);
+			file.close();
 		}
 	}
 	write32(file, value) {
-		FS.writeByteSync(file, value & 0xff);
-		FS.writeByteSync(file, (value >> 8) & 0xff);
-		FS.writeByteSync(file, (value >> 16) & 0xff);
-		FS.writeByteSync(file, (value >> 24) & 0xff);
+		file.writeByte(value & 0xff);
+		file.writeByte((value >> 8) & 0xff);
+		file.writeByte((value >> 16) & 0xff);
+		file.writeByte((value >> 24) & 0xff);
 	}
 }
