@@ -107,7 +107,6 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
 	$(MOD_DIR)\file.xsb \
-	$(MOD_DIR)\fs.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\colorcellencode.xsb \
 	$(MOD_DIR)\compressbmf.xsb \
@@ -129,12 +128,10 @@ MODULES = \
 	$(TMP_DIR)\commodettoParseBMF.xsi \
 	$(TMP_DIR)\commodettoReadJPEG.xsi \
 	$(TMP_DIR)\commodettoReadPNG.xsi \
+	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\fs.xsi \
-	$(TMP_DIR)\tool.xsi \
-	$(TMP_DIR)\main.xsi \
-	$(TMP_DIR)\image2cs.xsi
+	$(TMP_DIR)\tool.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -162,12 +159,10 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoPocoBlit.o \
 	$(TMP_DIR)\commodettoReadJPEG.o \
 	$(TMP_DIR)\commodettoReadPNG.o \
+	$(TMP_DIR)\image2cs.o \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
-	$(TMP_DIR)\fs.o \
-	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\main.o \
-	$(TMP_DIR)\image2cs.o
+	$(TMP_DIR)\tool.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
