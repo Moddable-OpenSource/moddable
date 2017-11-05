@@ -18,30 +18,7 @@
  *
  */
 
-import TOOL from "tool";
-import * as FS from "fs";
-
-class File {
-	constructor(path) {
-		this.fd = FS.openSync(path, "w");
-		this.slash = "/";
-	}
-	close() {
-		FS.closeSync(this.fd);
-		delete this.fd;
-	}
-	line(...strings) {
-		for (var string of strings)
-			this.write(string);
-		this.write("\n");
-	}
-	write(string) {
-		FS.writeSync(this.fd, string);
-	}
-	dump(path) {
-		FS.dumpSync(this.fd, path);
-	}
-}
+import { FILE, TOOL } from "tool";
 
 var platformNames = {
 	mac: "mac",
@@ -54,7 +31,7 @@ var types = {
 	".ttf": "TTF",
 };
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.name = null;
@@ -126,7 +103,7 @@ export default class Tool extends TOOL {
 	}
 	run() {
 		var path = this.joinPath({directory: this.outputPath, name:this.name});
-		var file = new File(path);
+		var file = new FILE(path);
 		if (this.platform == "x-lin") {
 			var length = this.outputPath.length + 1;
 			var signature = this.signature;
