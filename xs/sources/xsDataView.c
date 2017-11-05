@@ -1670,59 +1670,58 @@ void fx_TypedArray_prototype_indexOf(txMachine* the)
 
 void fx_TypedArray_prototype_join(txMachine* the)
 {
-	mxTypedArrayDeclarations;
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND))
-		fxToString(the, mxArgv(0));
-	if (length) {
-		txInteger offset = view->value.dataView.offset;
-		txInteger limit = offset + view->value.dataView.size;
-		txString string;
-		txBoolean comma = 0;
-		txInteger size = 0;
-		txSlot* list = fxNewInstance(the);
-		txSlot* slot = list;
-		if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
-			mxPushSlot(mxArgv(0));
-			the->stack->kind = XS_KEY_KIND;
-			the->stack->value.key.sum = c_strlen(the->stack->value.string);
-		}
-		else {
-			mxPushStringC(",");
-			the->stack->kind = XS_KEY_KIND;
-			the->stack->value.key.sum = 1;
-		}
-		mxPushUndefined();
-		while (offset < limit) {
-			if (comma) {
-				slot = fxNextSlotProperty(the, slot, the->stack + 1, XS_NO_ID, XS_NO_FLAG);
-				size += slot->value.key.sum;
-			}
-			else
-				comma = 1;
-			(*dispatch->value.typedArray.dispatch->getter)(the, data, offset, the->stack, EndianNative);
-			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
-			string = fxToString(the, slot);
-			slot->kind = XS_KEY_KIND;
-			slot->value.key.sum = c_strlen(string);
-			size += slot->value.key.sum;
-			offset += delta;
-		}
-		the->stack += 2;
-		string = mxResult->value.string = fxNewChunk(the, size + 1);
-		slot = list->next;
-		while (slot) {
-			c_memcpy(string, slot->value.key.string, slot->value.key.sum);
-			string += slot->value.key.sum;
-			slot = slot->next;
-		}
-		*string = 0;
-		the->stack++;
-		mxResult->kind = XS_STRING_KIND;
+	txSlot* instance = fxCheckTypedArrayInstance(the, mxThis);
+	txSlot* dispatch = instance->next;
+	txSlot* view = dispatch->next;
+	txSlot* buffer = view->next;
+	txSlot* data = fxCheckArrayBufferDetached(the, buffer);
+	txInteger delta = dispatch->value.typedArray.dispatch->size;
+	txInteger offset = view->value.dataView.offset;
+	txInteger limit = offset + view->value.dataView.size;
+	txString string;
+	txSlot* list = fxNewInstance(the);
+	txSlot* slot = list;
+	txBoolean comma = 0;
+	txInteger size = 0;
+	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
+		mxPushSlot(mxArgv(0));
+		string = fxToString(the, the->stack);
+		the->stack->kind += XS_KEY_KIND - XS_STRING_KIND;
+		the->stack->value.key.sum = c_strlen(the->stack->value.string);
 	}
 	else {
-		mxResult->value = mxEmptyString.value;
-		mxResult->kind = mxEmptyString.kind;
+		mxPushStringX(",");
+		the->stack->kind += XS_KEY_KIND - XS_STRING_KIND;
+		the->stack->value.key.sum = 1;
 	}
+	while (offset < limit) {
+		if (comma) {
+			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
+			size += slot->value.key.sum;
+		}
+		else
+			comma = 1;
+		mxPushUndefined();
+		(*dispatch->value.typedArray.dispatch->getter)(the, data, offset, the->stack, EndianNative);
+		slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
+		string = fxToString(the, slot);
+		slot->kind += XS_KEY_KIND - XS_STRING_KIND;
+		slot->value.key.sum = c_strlen(string);
+		size += slot->value.key.sum;
+		mxPop();
+		offset += delta;
+	}
+	mxPop();
+	string = mxResult->value.string = fxNewChunk(the, size + 1);
+	slot = list->next;
+	while (slot) {
+		c_memcpy(string, slot->value.key.string, slot->value.key.sum);
+		string += slot->value.key.sum;
+		slot = slot->next;
+	}
+	*string = 0;
+	mxResult->kind = XS_STRING_KIND;
+	mxPop();
 }
 
 void fx_TypedArray_prototype_keys(txMachine* the)
