@@ -18,14 +18,13 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/ParseBMP";
 import ColorCellOut from "commodetto/ColorCellOut";
 import Converter from "commodetto/Convert";
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 
@@ -70,9 +69,9 @@ export default class Tool extends TOOL {
 		let parts = this.splitPath(this.inputPath);
 		parts.directory = this.outputPath;
 		parts.extension = ".cs";
-		let output = FS.openSync(this.joinPath(parts), "wb");
+		let output = new FILE(this.joinPath(parts), "wb");
 
-		let uncompressed = parseBMP(FS.readFileBufferSync(this.inputPath));
+		let uncompressed = parseBMP(this.readFileBuffer(this.inputPath));
 		let convert = new Converter(uncompressed.pixelFormat, Bitmap.RGB565LE);
 
 		let writer = new ColorCellOut;
@@ -98,25 +97,25 @@ export default class Tool extends TOOL {
 		const fps_denominator = 1;
 		const frameSize = compressed.buffer.byteLength;
 
-		FS.writeByteSync(output, 'c'.charCodeAt(0));
-		FS.writeByteSync(output, 's'.charCodeAt(0));
-		FS.writeByteSync(output, Bitmap.RGB565LE);
-		FS.writeByteSync(output, 0);
-		FS.writeByteSync(output, compressed.width & 0xFF);
-		FS.writeByteSync(output, compressed.width >> 8);
-		FS.writeByteSync(output, compressed.height & 0xFF);
-		FS.writeByteSync(output, compressed.height >> 8);
-		FS.writeByteSync(output, frameCount & 0xFF);
-		FS.writeByteSync(output, frameCount >> 8);
-		FS.writeByteSync(output, fps_numerator & 0xFF);
-		FS.writeByteSync(output, fps_numerator >> 8);
-		FS.writeByteSync(output, fps_denominator & 0xFF);
-		FS.writeByteSync(output, fps_denominator >> 8);
+		output.writeByte('c'.charCodeAt(0));
+		output.writeByte('s'.charCodeAt(0));
+		output.writeByte(Bitmap.RGB565LE);
+		output.writeByte(0);
+		output.writeByte(compressed.width & 0xFF);
+		output.writeByte(compressed.width >> 8);
+		output.writeByte(compressed.height & 0xFF);
+		output.writeByte(compressed.height >> 8);
+		output.writeByte(frameCount & 0xFF);
+		output.writeByte(frameCount >> 8);
+		output.writeByte(fps_numerator & 0xFF);
+		output.writeByte(fps_numerator >> 8);
+		output.writeByte(fps_denominator & 0xFF);
+		output.writeByte(fps_denominator >> 8);
 
-		FS.writeByteSync(output, frameSize & 255);
-		FS.writeByteSync(output, frameSize >> 8);
-		FS.writeBufferSync(output, compressed.buffer);
+		output.writeByte(frameSize & 255);
+		output.writeByte(frameSize >> 8);
+		output.writeBuffer(compressed.buffer);
 
-		FS.closeSync(output);
+		output.close();
 	}
 }

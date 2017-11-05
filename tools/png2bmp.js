@@ -18,8 +18,7 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { TOOL } from "tool";
 import Bitmap from "commodetto/Bitmap";
 import BMPOut from "commodetto/BMPOut";
 import Convert from "commodetto/Convert";
@@ -43,7 +42,7 @@ var formatValues = {
 	clut16: 11,
 };
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.alpha = true;
@@ -201,7 +200,7 @@ export default class Tool extends TOOL {
 	}
 	run() {
 		let pngPath = this.inputPath;
-		let png = new PNG(FS.readFileBufferSync(pngPath));
+		let png = new PNG(this.readFileBuffer(pngPath));
 		let pngChannels = png.channels;
 		let pngDepth = png.depth;
 		let pngWidth = png.width;
@@ -284,7 +283,7 @@ export default class Tool extends TOOL {
 			let dictionary = {width, height, pixelFormat:this.format, path:colorPath};
 			let clut;
 			if (this.clut)
-				clut = dictionary.clut = FS.readFileBufferSync(this.clut);
+				clut = dictionary.clut = this.readFileBuffer(this.clut);
 			colorOut = new BMPOut(dictionary);
 			colorConvert = new Convert(Bitmap.RGBA32, this.format, clut);
 			colorLine = new Uint8Array(colorOut.pixelsToBytes(width))
