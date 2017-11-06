@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources": {
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
+		"*-color": "./desktop",
+		"*": "./button"
+	},
+	"config": {
+		"screen": "ili9341",
+		"touch": "xpt2046"
+	}
+}
