@@ -109,6 +109,11 @@ void PiuLabelDictionary(xsMachine* the, void* it)
 		xsSlot* string = PiuString(xsResult);
 		(*self)->string = string;
 	}
+	else if (xsFindResult(xsArg(1), xsID_contents)) {
+		xsResult = xsCall1(xsResult, xsID_join, xsString(""));
+		xsSlot* string = PiuString(xsResult);
+		(*self)->string = string;
+	}
 }
 
 void PiuLabelDraw(void* it, PiuView* view, PiuRectangle area) 
