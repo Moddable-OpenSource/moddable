@@ -527,6 +527,12 @@ void PiuTextDictionary(xsMachine* the, void* it)
 		PiuTextEndNode(self, piuTextNodeEndBlockKind);
 		PiuTextEnd(self);
 	}
+	else if (xsFindResult(xsArg(1), xsID_contents)) {
+		xsVar(0) = xsResult;
+		PiuTextBegin(self);
+		PiuTextBuild(self, 0, 0);
+		PiuTextEnd(self);
+	}
 }
 
 void PiuTextDraw(void* it, PiuView* view, PiuRectangle area)
