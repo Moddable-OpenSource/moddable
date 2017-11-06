@@ -1684,38 +1684,40 @@ void fxGetNextTokenJSXChild(txParser* parser)
 	}
 	parser->rawLength2 = p - parser->buffer;
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
-	p = parser->buffer;
-	q = p + parser->bufferSize - 1;
-	s = parser->raw2;
-	c = *s++;
-	while (c) {
-		if ((c == 10) || (c == 13)) {
-			if (before)
-				p = before;
-			else
-				before = p;
-			after = p;
-		}
-		else if ((c == 9) || (c == 32)) {
-			if (!before)
-				before = p;
-			*p++ = c;
-		}
-		else {
-			if (after) {
-				p = after;
-				if (text)
-					*p++ = 32;
-			}
-			after = C_NULL;
-			before = C_NULL;
-			text = p;
-			*p++ = c;
-		}
+	if (parser->crlf2) {
+		p = parser->buffer;
+		q = p + parser->bufferSize - 1;
+		s = parser->raw2;
 		c = *s++;
+		while (c) {
+			if ((c == 10) || (c == 13)) {
+				if (before)
+					p = before;
+				else
+					before = p;
+				after = p;
+			}
+			else if ((c == 9) || (c == 32)) {
+				if (!before)
+					before = p;
+				*p++ = c;
+			}
+			else {
+				if (after) {
+					p = after;
+					if (text)
+						*p++ = 32;
+				}
+				after = C_NULL;
+				before = C_NULL;
+				text = p;
+				*p++ = c;
+			}
+			c = *s++;
+		}
+		if (after)
+			p = after;
 	}
-	if (after)
-		p = after;
 	parser->stringLength2 = p - parser->buffer;
 	parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
 	
