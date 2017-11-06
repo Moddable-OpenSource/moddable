@@ -33,8 +33,10 @@ import {
 	Template,
 	Content,
 	Label,
-	Link,
 	Text,
+	TextComponent,
+	Link,
+	LinkComponent,
 	Port,
 	Container,
 	Column,
@@ -67,6 +69,7 @@ export class Texture @ "PiuTextureDelete" {
 		}
 	}
 }
+Object.freeze(Texture.prototype);
 
 // PiuField.c
 
@@ -83,6 +86,7 @@ var field = {
 	focus() @ "PiuField_focus",
 };
 export var Field = Template(field);
+Object.freeze(field);
 
 // PiuApplication.c
 
@@ -115,6 +119,7 @@ export function Application($, it = {}) {
 }
 Application.prototype = application;
 Application.template = template;
+Object.freeze(application);
 global.application = null;
 
 // PiuView.c
@@ -122,18 +127,21 @@ global.application = null;
 class View @ "PiuViewDelete" {
 	constructor(it) @ "PiuViewCreate"
 }
+Object.freeze(View.prototype);
 
 var statusBar = {
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuStatusBar_create",
 };
 export var StatusBar = Template(statusBar);
+Object.freeze(statusBar);
 
 var navigationBar = {
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuNavigationBar_create",
 };
 export var NavigationBar = Template(navigationBar);
+Object.freeze(navigationBar);
 
 // PiuService.c
 
@@ -214,30 +222,6 @@ global.system = {
 	getPathName(path) @ "PiuSystem_getPathName",
 }
 
-Object.freeze(Texture.prototype);
-Object.freeze(Skin.prototype);
-Object.freeze(Style.prototype);
-Object.freeze(Behavior.prototype);
-Object.freeze(Transition.prototype);
-
-Object.freeze(Content.prototype);
-Object.freeze(Label.prototype);
-Object.freeze(Text.prototype);
-Object.freeze(Link.prototype);
-Object.freeze(Port.prototype);
-
-Object.freeze(Container.prototype);
-Object.freeze(Column.prototype);
-Object.freeze(Layout.prototype);
-Object.freeze(Row.prototype);
-Object.freeze(Scroller.prototype);
-
-Object.freeze(Application.prototype);
-
-Object.freeze(View.prototype);
-
-global.assetMap = null;
-
 global.blendColors = blendColors;
 global.hsl = hsl;
 global.hsla = hsla;
@@ -247,17 +231,17 @@ global.rgba = rgba;
 global.Texture = Texture;
 global.Skin = Skin;
 global.Style = Style;
-
 global.Behavior = Behavior;
 global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
-global.Field = Field;
 global.Label = Label;
 global.Port = Port;
 global.Text = Text;
+global.TextComponent = TextComponent;
 global.Link = Link;
+global.LinkComponent = LinkComponent;
 
 global.Container = Container;
 global.Column = Column;
@@ -265,7 +249,13 @@ global.Layout = Layout;
 global.Row = Row;
 global.Scroller = Scroller;
 
+
+global.Texture = Texture;
+
+global.Field = Field;
+
 global.Application = Application;
-global.Service = Service;
 global.StatusBar = StatusBar;
 global.NavigationBar = NavigationBar;
+
+global.Service = Service;
