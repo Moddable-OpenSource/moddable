@@ -65,6 +65,7 @@ export class Skin @ "PiuSkinDelete" {
 		}
 	}
 }
+Object.freeze(Skin.prototype);
 
 // PiuStyle.c
 
@@ -103,6 +104,7 @@ export class Style @ "PiuStyleDelete" {
 		}
 	}
 }
+Object.freeze(Style.prototype);
 
 // BEHAVIOR
 
@@ -110,6 +112,7 @@ export class Behavior {
 	constructor() {
 	}
 }
+Object.freeze(Behavior.prototype);
 
 class DebugBehavior extends Behavior{
 	onAdapt(content) {
@@ -193,6 +196,7 @@ class DebugBehavior extends Behavior{
 		debugger
 	}
 }
+Object.freeze(DebugBehavior.prototype);
 
 // DISPATCH
 
@@ -237,25 +241,26 @@ global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
 export class Component extends Behavior {
 	constructor($, it) {
 		super();
-		this.props = it;
-		let result = this.render($);
+		let result = this.render($, it);
 		let anchor = it.anchor;
 		if ($ && anchor)
 			$[anchor] = result;
 		result.behavior = this;
 		let onCreate = this.onCreate;
 		if (onCreate)
-			onCreate.call(this, result, $);
+			onCreate.call(this, result, $, it);
 		return result;
 	}
-	render($) {
+	render($, it) {
 		debugger;
 	}
 }
+Object.freeze(Component.prototype);
 
 // CONTENTS
 
 var proto = @ "PiuContentDelete";
+Object.freeze(proto);
 
 // PiuContent.c
 
@@ -336,6 +341,7 @@ var content = {
 	stop() @ "PiuContent_stop",
 };
 export var Content = Template(content);
+Object.freeze(content);
 
 // PiuLabel.c
 
@@ -348,6 +354,7 @@ var label = {
 	set string(it) @ "PiuLabel_set_string",
 };
 export var Label = Template(label);
+Object.freeze(label);
 
 // PiuText.c
 
@@ -370,6 +377,15 @@ var text = {
 	endSpan() @ "PiuText_endSpan",
 };
 export var Text = Template(text);
+Object.freeze(text);
+
+export class TextComponent {
+	constructor($, it) {
+		this.spans = it.contents;
+		this.style = it.style;
+	}
+}
+Object.freeze(TextComponent.prototype);
 
 var link = {
 	__proto__: proto,
@@ -383,6 +399,15 @@ var link = {
 	captureTouch(id, x, y, ticks) @ "PiuContent_captureTouch",
 }
 export var Link = Template(link);
+Object.freeze(link);
+
+export class LinkComponent extends TextComponent {
+	constructor($, it) {
+		super($, it);
+		this.link = new Link($, { behavior:this });
+	}
+}
+Object.freeze(LinkComponent.prototype);
 
 // PiuPort.c
 
@@ -408,6 +433,7 @@ var port = {
 	measureString(string, style) @ "PiuPort_measureString",
 };
 export var Port = Template(port);
+Object.freeze(port);
 
 // CONTAINERS
 
@@ -420,8 +446,10 @@ var container = {
 		if (it) {
 			if (it instanceof Array)
 				it.forEach(this._recurse, this);
-			else
+			else if (it instanceof Content)
 				this.add(it);
+			else
+				throw new ReferenceError("No contents!"); 
 		}
 	},
 	
@@ -445,6 +473,7 @@ var container = {
 	swap(content0, content1) @ "PiuContainer_swap",
 };
 export var Container = Template(container);
+Object.freeze(container);
 
 // PiuColumn.c
 
@@ -453,6 +482,7 @@ var column = {
 	_create($, it) @ "PiuColumn_create",
 };
 export var Column = Template(column);
+Object.freeze(column);
 
 // PiuLayout.c
 
@@ -461,6 +491,7 @@ var layout = {
 	_create($, it) @ "PiuLayout_create",
 };
 export var Layout = Template(layout);
+Object.freeze(layout);
 
 // PiuRow.c
 
@@ -469,6 +500,7 @@ var row = {
 	_create($, it) @ "PiuRow_create",
 };
 export var Row = Template(row);
+Object.freeze(row);
 
 // PiuScroller.c
 
@@ -490,12 +522,14 @@ var scroller = {
 	scrollTo(x, y) @ "PiuScroller_scrollTo",
 };
 export var Scroller = Template(scroller);
+Object.freeze(scroller);
 
 // DEFER
 
 export class DeferLink @ "PiuDeferLinkDelete" {
 	constructor() @ "PiuDeferLinkCreate"
 }
+Object.freeze(DeferLink.prototype);
 
 // TOUCH
 
@@ -504,6 +538,7 @@ export class TouchLink @ "PiuTouchLinkDelete" {
 	get length() @ "PiuTouchLink_get_length"
 	peek(index) @ "PiuTouchLink_peek"
 }
+Object.freeze(TouchLink.prototype);
 
 // TRANSITION
 
@@ -523,6 +558,7 @@ export class Transition @ "PiuTransitionDelete" {
 	onStep(fraction) {
 	}
 }
+Object.freeze(Transition.prototype);
 
 Math.backEaseIn = function(fraction) @ "Math_backEaseIn";
 Math.backEaseInOut = function(fraction) @ "Math_backEaseInOut";
@@ -554,22 +590,4 @@ Math.quintEaseOut = function(fraction) @ "Math_quintEaseOut";
 Math.sineEaseIn = function(fraction) @ "Math_sineEaseIn";
 Math.sineEaseInOut = function(fraction) @ "Math_sineEaseInOut";
 Math.sineEaseOut = function(fraction) @ "Math_sineEaseOut";
-
-Object.freeze(Skin.prototype);
-Object.freeze(Style.prototype);
-Object.freeze(Behavior.prototype);
-Object.freeze(content);
-Object.freeze(label);
-Object.freeze(text);
-Object.freeze(link);
-Object.freeze(container);
-Object.freeze(port);
-Object.freeze(column);
-Object.freeze(layout);
-Object.freeze(row);
-Object.freeze(scroller);
-Object.freeze(TouchLink.prototype);
-Object.freeze(Transition.prototype);
-Object.freeze(DebugBehavior.prototype);
-Object.freeze(proto);
 
