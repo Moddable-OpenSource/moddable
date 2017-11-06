@@ -33,13 +33,16 @@ import {
 	Skin,
 	Style,
 	Behavior,
+	Component,
 	Transition,
 	template,
 	Template,
 	Content,
 	Label,
-	Link,
 	Text,
+	TextComponent,
+	Link,
+	LinkComponent,
 	Port,
 	Container,
 	Column,
@@ -58,6 +61,16 @@ export class CLUT extends Resource {
 	get colors() @ "PiuCLUT_get_colors"
 }
 Object.freeze(CLUT.prototype);
+
+// PiuLocals.c
+
+class Locals  @ "PiuLocalsDelete" {
+	constructor(name, language) @ "PiuLocalsCreate"
+	get language() @ "PiuLocals_get_language"
+	set language(it) @ "PiuLocals_set_language"
+	get(id) @ "PiuLocals_get"
+}
+Object.freeze(Locals.prototype);
 
 // PiuTexture.c
 
@@ -209,18 +222,19 @@ global.hsla = hsla;
 global.rgb = rgb;
 global.rgba = rgba;
 
-global.Texture = Texture;
 global.Skin = Skin;
 global.Style = Style;
 global.Behavior = Behavior;
+global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
-global.Image = Image;
 global.Label = Label;
 global.Port = Port;
 global.Text = Text;
+global.TextComponent = TextComponent;
 global.Link = Link;
+global.LinkComponent = LinkComponent;
 
 global.Container = Container;
 global.Column = Column;
@@ -228,14 +242,11 @@ global.Layout = Layout;
 global.Row = Row;
 global.Scroller = Scroller;
 
-global.Die = Die;
-global.Application = Application;
 
-class Locals  @ "PiuLocalsDelete" {
-	constructor(name, language) @ "PiuLocalsCreate"
-	get language() @ "PiuLocals_get_language"
-	set language(it) @ "PiuLocals_set_language"
-	get(id) @ "PiuLocals_get"
-}
-Object.freeze(Locals.prototype);
 global.Locals = Locals;
+global.Texture = Texture;
+
+global.Die = Die;
+global.Image = Image;
+
+global.Application = Application;
