@@ -599,11 +599,14 @@ void PiuContainer_content(xsMachine *the)
 			}
 		}
 		else {
-			xsIndex name = xsToID(xsArg(0));
+			xsStringValue string = xsToString(xsArg(0));
 			content = (*self)->first;
 			while (content) {
-				if ((*content)->name  == name)
-					break;
+				if ((*content)->name) {
+					xsStringValue name = PiuToString((*content)->name);
+					if (!c_strcmp(name, string))
+						break;
+				}
 				content = (*content)->next;
 			}
 		}

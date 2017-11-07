@@ -453,7 +453,7 @@ struct PiuDispatchStruct {
 	PiuSkin* skin; \
 	PiuStyle* style; \
 	PiuVariant variant; \
-	xsIndex name
+	xsSlot* name
 
 #define PiuContainerPart \
 	PiuContent* first; \
