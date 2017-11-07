@@ -100,6 +100,7 @@ typedef union configSPIandI2C {
 
 struct ssd1606Record {
 	PixelsOutDispatch	dispatch;
+	xsMachine			*the;
 
 	configSPIandI2C		config;
 
@@ -188,6 +189,7 @@ void xs_SSD1306(xsMachine *the)
 	xsmcSetHostData(xsThis, ssd);
 
 	ssd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
+	ssd->the = the;
 
 	ssd->width = (uint8_t)width;
 	ssd->height = (uint8_t)height;
@@ -491,7 +493,7 @@ void doCmd(ssd1606 ssd, uint8_t cmd)
 		uint8_t data[2] = {0, cmd};
 		uint8_t err = modI2CWrite(&ssd->config.i2c, data, 2, true);
 		if (err) {
-			xsMachine *the = gThe;
+			xsMachine *the = ssd->the;
 			xsUnknownError("command failed");
 		}
 	}
