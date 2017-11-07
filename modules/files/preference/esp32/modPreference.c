@@ -93,7 +93,7 @@ void xs_preference_get(xsMachine *the)
 
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READONLY, &handle);
 	if (ESP_OK != err)
-		xsUnknownError("nvs_open fail");
+		return;  // most likely that domain doesn't exist yet
 
 	key = xsmcToString(xsArg(1));
 	if (ESP_OK == nvs_get_u8(handle, key, &b))
@@ -125,7 +125,7 @@ void xs_preference_delete(xsMachine *the)
 
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
 	if (ESP_OK != err)
-		xsUnknownError("nvs_open fail");
+		return;  // most likely that domain doesn't exist yet
 
 	err = nvs_erase_key(handle, xsmcToString(xsArg(1)));
 	if (ESP_ERR_NVS_NOT_FOUND == err) err = ESP_OK;
