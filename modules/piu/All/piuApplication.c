@@ -20,7 +20,6 @@
 
 #include "piuAll.h"
 
-static void PiuApplicationIdleCheck(PiuApplication* self);
 static void PiuApplicationInvalidate(void* it, PiuRectangle area);
 static void PiuApplicationMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuApplicationReflow(void* it, PiuFlags flags);
@@ -157,6 +156,9 @@ void PiuApplicationIdleCheck(PiuApplication* self)
 	xsIntegerValue index;
 	
 	if ((*self)->idleChain) {
+		idle = 1;
+	}
+	else if ((*self)->deferChain) {
 		idle = 1;
 	}
 	else {
