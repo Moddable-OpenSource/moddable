@@ -63,6 +63,7 @@ typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 #define kReadQueueLength (8)
 struct xsSocketRecord {
 	xsSocket			next;
+	xsMachine			*the;
 
 	xsSlot				obj;
 	struct tcp_pcb		*skt;
@@ -98,6 +99,7 @@ typedef xsListenerRecord *xsListener;
 #define kListenerPendingSockets (4)
 struct xsListenerRecord {
 	xsListener			next;
+	xsMachine			*the;
 
 	xsSlot				obj;
 	struct tcp_pcb		*skt;
@@ -207,14 +209,14 @@ void xs_socket(xsMachine *the)
 				xss->next = gSockets;
 				gSockets = xss;
 
-				socketUpUseCount(gThe, xss);
+				socketUpUseCount(xss->the, xss);
 
 				for (j = 0; j < kReadQueueLength; j++) {
 					if (xss->reader[j])
 						socketSetPending(xss, kPendingReceive);
 				}
 
-				socketDownUseCount(gThe, xss);
+				socketDownUseCount(xss->the, xss);
 
 				return;
 			}
@@ -227,6 +229,7 @@ void xs_socket(xsMachine *the)
 	if (!xss)
 		xsUnknownError("no memory for socket record");
 
+	xss->the = the;
 	xss->obj = xsThis;
 	xss->constructed = true;
 	xss->useCount = 1;
@@ -640,7 +643,7 @@ void xs_socket_write(xsMachine *the)
 
 void socketMsgConnect(xsSocket xss)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 
 	xsBeginHost(the);
 	if (xss->skt)
@@ -650,7 +653,7 @@ void socketMsgConnect(xsSocket xss)
 
 void socketMsgDisconnect(xsSocket xss)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
@@ -659,7 +662,7 @@ void socketMsgDisconnect(xsSocket xss)
 
 void socketMsgError(xsSocket xss)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));		//@@ report the error value
@@ -668,7 +671,7 @@ void socketMsgError(xsSocket xss)
 
 void socketMsgDataReceived(xsSocket xss)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 	unsigned char i, readerCount;
 	uint16_t tot_len;
 	struct pbuf *pb, *walker;
@@ -753,7 +756,7 @@ void socketMsgDataReceived(xsSocket xss)
 
 void socketMsgDataSent(xsSocket xss)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 
 	xsBeginHost(the);
 		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(xss->skt ? tcp_sndbuf(xss->skt) : 0));
@@ -908,6 +911,7 @@ void xs_listener(xsMachine *the)
 	}
 
 	xsl->obj = xsThis;
+	xsl->the = the;
 	socketUpUseCount(the, xsl);
 	xsRemember(xsl->obj);
 
@@ -966,7 +970,7 @@ void xs_listener_close(xsMachine *the)
 
 static void listenerMsgNew(xsListener xsl)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = xsl->the;
 	uint8 i;
 
 	// service all incoming sockets currently in the list
@@ -999,6 +1003,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 	xss = calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
 	if (!xss) return ERR_MEM;
 
+	xss->the = xsl->the;
 	xss->skt = newpcb;
 	tcp_arg(xss->skt, xss);
 	tcp_recv(xss->skt, didReceive);
@@ -1008,7 +1013,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	xss->kind = kTCP;
 
-	socketUpUseCount(gThe, xsl);
+	socketUpUseCount(xsl->the, xsl);
 	tcp_accepted(xsl->skt);
 
 	socketSetPending((xsSocket)xsl, kPendingAcceptListener);
@@ -1028,7 +1033,7 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 	}
 
 	if (!xss->pending) {
-		socketUpUseCount(gThe, xss);
+		socketUpUseCount(xss->the, xss);
 
 		if (gTimerPending)
 			modTimerReschedule(gTimerPending, 0, kSocketCallbackExpire);
@@ -1080,7 +1085,7 @@ void socketClearPending(modTimer timer, void *refcon, uint32_t refconSize)
 			listenerMsgNew((xsListener)walker);
 
 		next = walker->next;
-		socketDownUseCount(gThe, walker);
+		socketDownUseCount(walker->the, walker);
 		walker = next;
 	}
 }
