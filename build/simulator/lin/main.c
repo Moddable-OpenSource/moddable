@@ -319,19 +319,7 @@ gboolean fxScreenAbortAux(gpointer it)
 
 void fxScreenBufferChanged(txScreen* screen)
 {
-	unsigned char* p = screen->buffer;
-	int x, y, width = screen->width, height = screen->height;
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
-			unsigned char r = p[0];
-			unsigned char b = p[2];
-			*p++ = b;
-			p++;
-			*p++ = r;
-			p++;
-		}
-	}
-	gtk_widget_queue_draw_area(screen->view, 0, 0, width, height);
+	gtk_widget_queue_draw_area(screen->view, 0, 0, screen->width, screen->height);
 }
 
 void fxScreenFormatChanged(txScreen* screen)

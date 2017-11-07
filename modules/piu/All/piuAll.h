@@ -696,6 +696,7 @@ struct PiuApplicationStruct {
 extern void PiuApplicationAdjust(PiuApplication* self);
 extern void PiuApplicationCaptureTouch(PiuApplication* self, PiuContent* it, xsIntegerValue index, PiuCoordinate x,  PiuCoordinate y, double ticks);
 extern void PiuApplicationDeferContents(xsMachine* the, PiuApplication* self);
+extern void PiuApplicationIdleCheck(PiuApplication* self);
 extern void PiuApplicationIdleContents(PiuApplication* self);
 extern void PiuApplicationResize(PiuApplication* self);
 extern void PiuApplicationSetFocus(PiuApplication* self, void* it);

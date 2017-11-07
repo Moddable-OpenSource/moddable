@@ -349,7 +349,7 @@ export class MakeFile extends FILE {
 			this.write(result.source);
 		}
 		this.line("");
-		this.echo(tool, "mclocal strings\"");
+		this.echo(tool, "mclocal strings");
 		this.write("\t$(MCLOCAL)");
 		this.write(tool.windows ? " $**" : " $^");
 		if (tool.debug)
