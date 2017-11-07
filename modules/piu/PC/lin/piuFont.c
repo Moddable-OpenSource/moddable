@@ -64,10 +64,16 @@ double PiuFontGetWidthSubPixel(PiuFont* self, xsSlot* slot, xsIntegerValue offse
 {
 	xsMachine* the = (*self)->the;
 	xsStringValue string = PiuToString(slot);
+	if (length < 0)
+		length = c_strlen(string + offset);
+	char* text = malloc(length + 1);
+	memcpy(text, string + offset, length);
+	text[length] = 0;
 	cairo_text_extents_t extents;
 	cairo_set_font_face(extents_cr, (*self)->face);
 	cairo_set_font_size(extents_cr, (*self)->size);
-	cairo_text_extents(extents_cr, string, &extents);
+	cairo_text_extents(extents_cr, text, &extents);
+	free(text);
 	//fprintf(stderr, "PiuFontGetWidthSubPixel %f %f\n", extents.width, extents.height);
 	return extents.x_advance;
 }
