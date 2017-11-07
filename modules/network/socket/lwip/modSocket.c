@@ -39,8 +39,6 @@
 	#define IP_ADDR4 IP4_ADDR
 #endif
 
-//#define COPY_ON_READ 1
-
 typedef struct xsSocketRecord xsSocketRecord;
 typedef xsSocketRecord *xsSocket;
 
@@ -78,11 +76,7 @@ struct xsSocketRecord {
 
 	struct udp_pcb		*udp;
 
-#if COPY_ON_READ
-	unsigned char		*reader[kReadQueueLength];
-#else
 	struct pbuf			*reader[kReadQueueLength];
-#endif
 
 	uint32_t			outstandingSent;
 
@@ -347,13 +341,8 @@ void xs_socket_destructor(void *data)
 		udp_remove(xss->udp);
 
 	for (i = 0; i < kReadQueueLength - 1; i++) {
-		if (xss->reader[i]) {
-#if COPY_ON_READ
-			free(xss->reader[i]);
-#else
+		if (xss->reader[i])
 			pbuf_free(xss->reader[i]);
-#endif
-		}
 	}
 
 	forgetSocket(xss);
@@ -394,9 +383,6 @@ void xs_socket_read(xsMachine *the)
 	}
 
 	srcData = xss->bufpos + (unsigned char *)xss->buf;
-#if COPY_ON_READ
-	srcData += sizeof(uint16);
-#endif
 	srcBytes = xss->buflen - xss->bufpos;
 
 	if (0 == argc) {
@@ -465,13 +451,9 @@ void xs_socket_read(xsMachine *the)
 	xss->bufpos += srcBytes;
 
 	if (xss->bufpos == xss->buflen) {
-	#if COPY_ON_READ
-		free(xss->buf);
-	#else
 		if (xss->pb)
 			pbuf_free(xss->pb);
 		xss->pb = NULL;
-	#endif
 
 		xss->bufpos = xss->buflen = 0;
 		xss->buf = NULL;
@@ -689,10 +671,8 @@ void socketMsgDataReceived(xsSocket xss)
 	xsMachine *the = gThe;
 	unsigned char i, readerCount;
 	uint16_t tot_len;
-#if !COPY_ON_READ
 	struct pbuf *pb, *walker;
 	uint8_t one = 0;
-#endif
 
 	modCriticalSectionBegin();
 	for (readerCount = 0; xss->reader[readerCount] && (readerCount < kReadQueueLength); readerCount++)
@@ -702,25 +682,14 @@ void socketMsgDataReceived(xsSocket xss)
 	while (xss->reader[0] && readerCount--) {
 		xsBeginHost(the);
 
-	#if COPY_ON_READ
-		xss->buf = xss->reader[0];
-	#else
 		pb = xss->reader[0];
-	#endif
 
-	modCriticalSectionBegin();
-	for (i = 0; i < kReadQueueLength - 1; i++)
-		xss->reader[i] = xss->reader[i + 1];
-	xss->reader[kReadQueueLength - 1] = NULL;
-	modCriticalSectionEnd();
+		modCriticalSectionBegin();
+		for (i = 0; i < kReadQueueLength - 1; i++)
+			xss->reader[i] = xss->reader[i + 1];
+		xss->reader[kReadQueueLength - 1] = NULL;
+		modCriticalSectionEnd();
 
-	#if COPY_ON_READ
-		xss->bufpos = 0;
-		xss->buflen = *(uint16 *)xss->buf;
-		tot_len = xss->buflen;
-//@@ this doesn't pass the 3rd and 4th argument for UDP sockets
-		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(tot_len));
-	#else
 		tot_len = pb->tot_len;
 
 		if (NULL == pb->next) {
@@ -765,23 +734,18 @@ void socketMsgDataReceived(xsSocket xss)
 			if (one)
 				break;
 		}
-	#endif
 
 		if (xss->skt)
 			tcp_recved(xss->skt, tot_len);
 
 		xsEndHost(the);
 
-	#if COPY_ON_READ
-		free(xss->buf);
-	#else
 		if (one) {
 			if (xss->pb)
 				pbuf_free(xss->pb);
 		}
 		else
 			pbuf_free(pb);
-	#endif
 
 		xss->buf = NULL;
 	}
@@ -819,9 +783,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 {
 	xsSocket xss = arg;
 	unsigned char i;
-#if COPY_ON_READ
-	unsigned char *buf;
-#endif
 	struct pbuf *walker;
 	uint16 offset;
 
@@ -853,23 +814,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
-#if COPY_ON_READ
-	buf = malloc(p->tot_len + sizeof(uint16));
-	if (!buf) {
-		pbuf_free(p);
-		return ERR_MEM;
-	}
-
-	*(uint16 *)buf = p->tot_len;
-	for (walker = p, offset = sizeof(uint16); walker; offset += walker->len, walker = walker->next)
-		memcpy(buf + offset, walker->payload, walker->len);
-
-	pbuf_free(p);
-
-	xss->reader[i] = buf;
-#else
 	xss->reader[i] = p;
-#endif
 	modCriticalSectionEnd();
 
 	if (xss->constructed)
@@ -895,20 +840,6 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 {
 	xsSocket xss = arg;
 	unsigned char i;
-#if COPY_ON_READ
-	unsigned char *buf;
-
-	buf = malloc(p->tot_len + sizeof(uint16));
-	if (!buf) {
-		pbuf_free(p);
-		return;
-	}
-
-	*(uint16_t *)buf = p->tot_len;
-	memcpy(buf + sizeof(uint16_t), p->payload, p->len);		//@@ can ever be multiple pbufs?
-
-	pbuf_free(p);
-#endif
 
 	modCriticalSectionBegin();
 
@@ -920,11 +851,7 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	if (kReadQueueLength == i) {
 		modCriticalSectionEnd();
 		modLog("udp read overflow!");
-#if COPY_ON_READ
-		free(buf);
-#else
 		pbuf_free(p);
-#endif
 		return;
 	}
 
@@ -932,13 +859,8 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	xss->remote[xss->remoteCount].address = *remoteAddr;
 	xss->remoteCount += 1;
 
-#if COPY_ON_READ
-	modInstrumentationAdjust(NetworkBytesRead, *(uint16 *)buf);
-	xss->reader[i] = buf;
-#else
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 	xss->reader[i] = p;
-#endif
 	modCriticalSectionEnd();
 
 	socketSetPending(xss, kPendingReceive);
