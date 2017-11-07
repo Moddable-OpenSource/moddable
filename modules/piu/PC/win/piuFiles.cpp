@@ -59,7 +59,26 @@ void PiuSystem_deleteFile(xsMachine* the)
 
 void PiuSystem_ensureDirectory(xsMachine* the)
 {
-	//@@
+	wchar_t* path = NULL;
+	xsTry {
+		path = xsToStringCopyW(xsArg(0));
+		if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) {
+			wchar_t* p = path;
+			while ((p = wcschr(p, '\\'))) {
+				*p = 0;
+				if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) {
+					xsElseThrow(CreateDirectoryW(path, NULL) != 0);
+				}
+				*p = '\\';
+				p++;
+			}
+		}
+	}
+	xsCatch {
+		if (path != NULL)
+			free(path);
+		xsThrow(xsException);
+	}
 }
 
 void PiuSystem_fileExists(xsMachine* the)
@@ -120,33 +139,63 @@ void PiuSystem_getFileInfoAux(xsMachine* the, LPWIN32_FIND_DATAW data)
 
 void PiuSystem_getPathDirectory(xsMachine* the)
 {
-	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '\\');
-	if (slash)
-		xsResult = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - path));
-	else
-		xsResult = xsString("");
+	wchar_t* path = NULL;
+	wchar_t* slash;
+	xsTry {
+		path = xsToStringCopyW(xsArg(0));
+		slash = wcsrchr(path, '\\');
+		if (slash) {
+			*slash = 0;
+			xsResult = xsStringW(path);
+		}
+		else
+			xsResult = xsString("");
+	}
+	xsCatch {
+		if (path != NULL)
+			free(path);
+		xsThrow(xsException);
+	}
 }
 
 void PiuSystem_getPathExtension(xsMachine* the)
 {
-	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '\\');
-	xsStringValue dot = c_strrchr(slash ? slash : path, '.');
-	if (slash)
-		xsResult = xsCall1(xsArg(0), xsID_slice, xsInteger(dot - path + 1));
-	else
-		xsResult = xsString("");
+	wchar_t* path = NULL;
+	wchar_t* slash;
+	wchar_t* dot;
+	xsTry {
+		path = xsToStringCopyW(xsArg(0));
+		slash = wcsrchr(path, '\\');
+		dot = wcsrchr(slash ? slash : path, '.');
+		if (dot)
+			xsResult = xsStringW(dot + 1);
+		else 
+			xsResult = xsString("");
+	}
+	xsCatch {
+		if (path != NULL)
+			free(path);
+		xsThrow(xsException);
+	}
 }
 
 void PiuSystem_getPathName(xsMachine* the)
 {
-	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '\\');
-	if (slash)
-		xsResult = xsCall1(xsArg(0), xsID_slice, xsInteger(slash - path + 1));
-	else
-		xsResult = xsArg(0);
+	wchar_t* path = NULL;
+	wchar_t* slash;
+	xsTry {
+		path = xsToStringCopyW(xsArg(0));
+		slash = wcsrchr(path, '\\');
+		if (slash)
+			xsResult = xsStringW(slash + 1);
+		else
+			xsResult = xsString("");
+	}
+	xsCatch {
+		if (path != NULL)
+			free(path);
+		xsThrow(xsException);
+	}
 }
 
 void PiuSystem_readFileBuffer(xsMachine* the)
@@ -212,26 +261,30 @@ void PiuSystem_readPreferenceString(xsMachine* the)
 
 void PiuSystem_renameDirectory(xsMachine* the)
 {
-	xsStringValue path;
-	xsStringValue slash;
 	wchar_t* from = NULL;
+	wchar_t* slash;
+	wchar_t* name = NULL;
 	wchar_t* to = NULL;
 	xsVars(1);
 	xsTry {
-		path = xsToString(xsArg(0));
-		slash = c_strrchr(path, '\\');
-		if (!slash) xsURIError("No path");
-		xsVar(0) = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - path + 1));
-		xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(1));
 		from = xsToStringCopyW(xsArg(0));
-		to = xsToStringCopyW(xsVar(0));
+		slash = wcsrchr(from, '\\');
+		if (!slash) xsURIError("No path");
+		*(slash + 1) = 0;
+		name = xsToStringCopyW(xsArg(1));
+		to = (wchar_t*)malloc((slash - from  + wcslen(name) + 1) * 2);
+		wcscpy(to, from);
+		wcscat(to, name);
 		xsElseThrow(MoveFileW(from, to));
 		free(to);
+		free(name);
 		free(from);
 	}
 	xsCatch {
 		if (to != NULL)
 			free(to);
+		if (name != NULL)
+			free(name);
 		if (from != NULL)
 			free(from);
 		xsThrow(xsException);
@@ -240,30 +293,7 @@ void PiuSystem_renameDirectory(xsMachine* the)
 
 void PiuSystem_renameFile(xsMachine* the)
 {
-	xsStringValue path;
-	xsStringValue slash;
-	wchar_t* from = NULL;
-	wchar_t* to = NULL;
-	xsVars(1);
-	xsTry {
-		path = xsToString(xsArg(0));
-		slash = c_strrchr(path, '\\');
-		if (!slash) xsURIError("No path");
-		xsVar(0) = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - path + 1));
-		xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(1));
-		from = xsToStringCopyW(xsArg(0));
-		to = xsToStringCopyW(xsVar(0));
-		xsElseThrow(MoveFileW(from, to));
-		free(to);
-		free(from);
-	}
-	xsCatch {
-		if (to != NULL)
-			free(to);
-		if (from != NULL)
-			free(from);
-		xsThrow(xsException);
-	}
+	PiuSystem_renameDirectory(the);
 }
 
 void PiuSystem_writeFileBuffer(xsMachine* the)
