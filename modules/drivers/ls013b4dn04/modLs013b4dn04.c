@@ -256,7 +256,6 @@ void ls013b4dn04Hold(ls013b4dn04 ls){
 }
 
 static void ls_clear(ls013b4dn04 ls){
-	xsMachine *the = gThe;
 	ls->updateCycle = !(ls->updateCycle);
 	uint8_t mode[6] = {0,0,0,0,0,0};
 	mode[0] = CLEAR_FLAG;
