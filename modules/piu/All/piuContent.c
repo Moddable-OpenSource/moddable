@@ -133,8 +133,10 @@ void PiuContentDictionary(xsMachine* the, void* it)
 			(*self)->behavior = xsToReference(xsResult);
 		}
 	}
-	if (xsFindResult(xsArg(1), xsID_name))
-		(*self)->name = xsToID(xsResult);	
+	if (xsFindResult(xsArg(1), xsID_name)) {
+		xsSlot* name = PiuString(xsResult);
+		(*self)->name = name;
+	}
 	
 	if (xsFindInteger(xsArg(1), xsID_left, &integer)) {
 		(*self)->coordinates.horizontal |= piuLeft;
@@ -371,6 +373,7 @@ void PiuContentMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuMarkHandle(the, self->next);
 	PiuMarkHandle(the, self->skin);
 	PiuMarkHandle(the, self->style);
+	PiuMarkString(the, self->name);
 }
 
 void PiuContentMeasureHorizontally(void* it) 
@@ -787,9 +790,8 @@ void PiuContent_get_multipleTouch(xsMachine *the)
 void PiuContent_get_name(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIndex name = (*self)->name;
-	if (name)
-		xsResult = xsString(xsName(name));
+	if ((*self)->name)
+		xsResult = *((*self)->name);
 }
 
 void PiuContent_get_next(xsMachine *the)
@@ -1042,10 +1044,12 @@ void PiuContent_set_multipleTouch(xsMachine *the)
 void PiuContent_set_name(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	if (xsTest(xsArg(0)))
-		(*self)->name = xsToID(xsArg(0));
+	if (xsTest(xsArg(0))) {
+		xsSlot* name = PiuString(xsArg(0));
+		(*self)->name = name;
+	}
 	else
-		(*self)->name = 0;
+		(*self)->name = NULL;
 }
 
 void PiuContent_set_offset(xsMachine *the)
