@@ -964,13 +964,19 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 	uint8_t *mods;
 	int index = 0;
 	int nameLen;
+	char *dot;
 
 	if (!xsb) return NULL;
 
 	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsb, c_read32be(xsb), &modsSize);
 	if (!mods) return NULL;
 
-	nameLen = c_strlen(name);
+	dot = c_strchr(name, '.');
+	if (dot)
+		nameLen = dot - name;
+	else
+		nameLen = c_strlen(name);
+
 	while (true) {
 		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, NULL);
 		if (!aName)
@@ -997,8 +1003,12 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
 #if SUPPORT_MODDABLE
-	if (findMod(the, name, NULL))
-		return fxNewNameX(the, name);
+	if (findMod(the, name, NULL)) {
+		c_strcpy(path, "/");
+		c_strcat(path, name);
+		c_strcat(path, ".xsb");
+		return fxNewNameC(the, path);
+	}
 #endif
 
 	if (!c_strncmp(name, "/", 1)) {
@@ -1061,7 +1071,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	uint8_t *mod;
 	int modSize;
 
-	mod = findMod(the, path - preparation->baseLength, &modSize);
+	mod = findMod(the, path, &modSize);
 	if (mod) {
 		txScript aScript;
 
@@ -1441,15 +1451,8 @@ void installModules(xsMachine *the)
 		xsb = (char *)gPartitionAddress;		// kModulesStart
 #endif
 
-		atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsb, xsbSize, &atomSize);
-		if (atom) {
-			int symbolCount = c_read16be(atom);
-			const char *symbol = atom + 2;
-			while (symbolCount--) {
-				fxNewNameX(the, (char *)symbol);
-				symbol += c_strlen(symbol) + 1;
-			}
-		}
+		the->archive = xsb;
+		fxBuildArchiveKeys(the);
 		return;
 	}
 
@@ -1533,14 +1536,8 @@ installArchive:
 #endif
 
 	// tell the VM abot the symbols added now available in ROM
-//@@ goto code above to do this?
-	atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsb, xsbSize, &atomSize);
-	symbolCount = c_read16be(atom);
-	atom += 2;
-	while (symbolCount--) {
-		fxNewNameX(the, (char *)atom);
-		atom += c_strlen(atom) + 1;
-	}
+	the->archive = xsb;
+	fxBuildArchiveKeys(the);
 
 bail:
 	if (xsbCopy)
