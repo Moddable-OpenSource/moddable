@@ -51,6 +51,8 @@ typedef xsSocketRecord *xsSocket;
 struct xsSocketRecord {
 	xsSlot						obj;
 
+	xsMachine					*the;
+
 ///@@ some/all of these go into a global to be shared?
     mbedtls_entropy_context		entropy;
     mbedtls_ctr_drbg_context	ctr_drbg;
@@ -142,6 +144,7 @@ void xs_socketmbedtls(xsMachine *the)
 //@@ root this so no garbage collection
 	xss->obj = xsThis;
 	xss->useCount = 1;
+	xss->the = the;
 
 	xsmcVars(1);
 	if (xsmcHas(xsArg(0), xsID_host)) {
@@ -405,7 +408,7 @@ void xs_socketmbedtls_write(xsMachine *the)
 void socketStateMachine(modTimer timer, void *refcon, uint32_t refconSize)
 {
 	xsSocket xss = *(xsSocket *)refcon;
-	xsMachine *the = gThe;
+	xsMachine *the = xss->the;
 	uint8_t doImmediate = 0;
 	int ret;
 

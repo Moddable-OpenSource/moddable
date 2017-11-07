@@ -36,6 +36,7 @@ static void reportScan(void);
 
 struct wifiScanRecord {
 	xsSlot			callback;
+	xsMachine		*the;
 	struct bss_info	*scan;
 	void			*data;
 };
@@ -85,6 +86,7 @@ void xs_wifi_scan(xsMachine *the)
 	if (NULL == gScan)
 		xsUnknownError("out of memory");
 	gScan->callback = xsArg(1);
+	gScan->the = the;
 	xsRemember(gScan->callback);
 
 	config.ssid = NULL;
@@ -158,7 +160,7 @@ void xs_wifi_connect(xsMachine *the)
 
 void reportScan(void)
 {
-	xsMachine *the = gThe;
+	xsMachine *the = gScan->the;
 	uint16_t count, i;
 	wifi_ap_record_t *aps;
 
@@ -227,6 +229,7 @@ typedef xsWiFiRecord *xsWiFi;
 
 struct xsWiFiRecord {
 	xsWiFi				next;
+	xsMachine			*the;
 	xsSlot				obj;
 	uint8_t				haveCallback;
 };
@@ -238,7 +241,6 @@ static void wifiEventPending(modTimer timer, void *refcon, uint32_t refconSize)
 	xsWiFi walker;
 	system_event_id_t event_id = *(system_event_id_t *)refcon;
 	const char *message;
-	xsMachine *the = gThe;
 
 	switch (event_id){
 		case SYSTEM_EVENT_STA_START:			message = "start"; break;
@@ -250,6 +252,8 @@ static void wifiEventPending(modTimer timer, void *refcon, uint32_t refconSize)
 	}
 
 	for (walker = gWiFi; NULL != walker; walker = walker->next) {
+		xsMachine *the = walker->the;
+
 		if (!walker->haveCallback)
 			continue;
 
@@ -303,6 +307,7 @@ void xs_wifi_set_onNotify(xsMachine *the)
 		if (!wifi)
 			xsUnknownError("out of memory");
 		xsmcSetHostData(xsThis, wifi);
+		wifi->the = the;
 	}
 	else if (wifi->haveCallback) {
 		xsmcDelete(xsThis, xsID("callback"));
