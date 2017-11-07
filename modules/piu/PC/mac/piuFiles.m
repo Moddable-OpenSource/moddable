@@ -150,12 +150,7 @@ void PiuSystem_renameDirectory(xsMachine* the)
 
 void PiuSystem_renameFile(xsMachine* the)
 {
-	NSError* error = nil;
-	NSString* from = [NSString stringWithUTF8String:xsToString(xsArg(0))];
-	NSString* directory = [from stringByDeletingLastPathComponent];
-	NSString* to = [directory stringByAppendingPathComponent:[NSString stringWithUTF8String:xsToString(xsArg(1))]];
-	if ([[NSFileManager defaultManager] moveItemAtPath:from toPath:to error:&error] == NO)
-		xsUnknownError("%s", [[error localizedDescription] UTF8String]);
+	PiuSystem_renameDirectory(the);
 }
 
 void PiuSystem_writeFileBuffer(xsMachine* the)
