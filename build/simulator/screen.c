@@ -508,9 +508,15 @@ void screen_send(xsMachine* the)
 			count >>= 1;
 			while (count) {
 				unsigned short pixel = *pixels++;
+			#if mxLinux
+				*rowAddress++ = (pixel & 0x001F) << 3;
+				*rowAddress++ = (pixel & 0x07E0) >> 3;
+				*rowAddress++ = (pixel & 0xF800) >> 8;
+			#else
 				*rowAddress++ = (pixel & 0xF800) >> 8;
 				*rowAddress++ = (pixel & 0x07E0) >> 3;
 				*rowAddress++ = (pixel & 0x001F) << 3;
+			#endif
 				*rowAddress++ = 0xFF;
 				rowIndex++;
 				if (rowIndex == rowCount) {
@@ -528,9 +534,15 @@ void screen_send(xsMachine* the)
 			count >>= 1;
 			while (count) {
 				unsigned short pixel = *pixels++;
+			#if mxLinux
+				*rowAddress++ = (pixel & 0xF800) >> 8;
+				*rowAddress++ = (pixel & 0x07E0) >> 3;
+				*rowAddress++ = (pixel & 0x001F) << 3;
+			#else
 				*rowAddress++ = (pixel & 0x001F) << 3;
 				*rowAddress++ = (pixel & 0x07E0) >> 3;
 				*rowAddress++ = (pixel & 0xF800) >> 8;
+			#endif
 				*rowAddress++ = 0xFF;
 				rowIndex++;
 				if (rowIndex == rowCount) {
@@ -567,14 +579,18 @@ void screen_send(xsMachine* the)
 			while (count) {
 				unsigned char pixel = *pixels++;
 				unsigned char r, g, b;
-
 				r = pixel >> 5;
 				g = (pixel >> 2) & 7;
 				b = pixel & 3;
-
+			#if mxLinux
+				*rowAddress++ = (b << 6) | (b << 4) | (b << 2) | b;
+				*rowAddress++ = (g << 5) | (g << 2) | (g >> 1);
+				*rowAddress++ = (r << 5) | (r << 2) | (r >> 1);
+			#else
 				*rowAddress++ = (r << 5) | (r << 2) | (r >> 1);
 				*rowAddress++ = (g << 5) | (g << 2) | (g >> 1);
 				*rowAddress++ = (b << 6) | (b << 4) | (b << 2) | b;
+			#endif
 				*rowAddress++ = 0xFF;
 				rowIndex++;
 				if (rowIndex == rowCount) {
@@ -631,9 +647,15 @@ void screen_send(xsMachine* the)
 				uint8_t index = twoPixels & 0x0F;
 #endif
 				uint8_t* component = components + (index << 2);
+			#if mxLinux
+				*rowAddress++ = component[2];
+				*rowAddress++ = component[1];
+				*rowAddress++ = component[0];
+			#else
 				*rowAddress++ = *component++;
 				*rowAddress++ = *component++;
 				*rowAddress++ = *component++;
+			#endif
 				*rowAddress++ = index;
 				rowIndex++;
 				if (rowIndex == rowCount) {
@@ -647,9 +669,15 @@ void screen_send(xsMachine* the)
 				index = twoPixels >> 4;
 #endif
 				component = components + (index << 2);
+			#if mxLinux
+				*rowAddress++ = component[2];
+				*rowAddress++ = component[1];
+				*rowAddress++ = component[0];
+			#else
 				*rowAddress++ = *component++;
 				*rowAddress++ = *component++;
 				*rowAddress++ = *component++;
+			#endif
 				*rowAddress++ = index;
 				rowIndex++;
 				if (rowIndex == rowCount) {
@@ -751,7 +779,7 @@ xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id)
 		fxPush(*slot);
 		fxGetID(the, id);
 		xsResult = *the->stack;
-		fxPop();
+		the->stack++;
 		result = 1;
 	}
 	else
