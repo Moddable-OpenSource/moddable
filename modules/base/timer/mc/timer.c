@@ -26,7 +26,6 @@
 #elif __ZEPHYR__
 	#include "modTimer.h"
 	#include "xsPlatform.h"
-//@@	extern xsMachine *gThe;		// the one XS6 virtual machine running
 #elif defined(linux)
 	#include "xslinux.h"
 #elif defined(gecko)
