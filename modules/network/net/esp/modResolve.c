@@ -28,6 +28,7 @@
 
 typedef struct {
 	xsSlot			callback;
+	xsMachine		*the;
 	ip_addr_t		ipaddr;
 	uint8_t			resolved;
 	char			name[1];
@@ -47,6 +48,7 @@ void xs_net_resolve(xsMachine *the)
 	if (!nr)
 		xsUnknownError("out of memory");
 
+	nr->the = the;
 	nr->callback = xsArg(1);
 	xsRemember(nr->callback);
 	nr->resolved = 0;
@@ -77,7 +79,7 @@ void didResolve(const char *name, ip_addr_t *ipaddr, void *arg)
 void resolvedImmediate(modTimer timer, void *refcon, uint32_t refconSize)
 {
 	xsNetResolve nr = *(xsNetResolve *)refcon;
-	xsMachine *the = gThe;
+	xsMachine *the = nr->the;
 
 	xsBeginHost(the);
 
