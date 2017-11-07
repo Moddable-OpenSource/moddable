@@ -1254,6 +1254,7 @@ void PiuContent_defer(xsMachine *the)
 	while ((former = *address))
 		address = &((*former)->deferLink);
 	*address = link;
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuContent_delegate(xsMachine *the)
