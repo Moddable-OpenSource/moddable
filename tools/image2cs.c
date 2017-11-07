@@ -18,10 +18,7 @@
  *
  */
 
-#include "tool.h"
-#include "commodettoPocoBlit.h"
-#include "commodettoStream.h"
-#include "mc.xs.h"			// for xsID_ values
+#include "mc.xs.h"
 
 typedef struct {
 	uint16_t* begin;
