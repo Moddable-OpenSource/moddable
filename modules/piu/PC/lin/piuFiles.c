@@ -44,8 +44,7 @@ void PiuSystem_deleteFile(xsMachine* the)
 void PiuSystem_ensureDirectory(xsMachine* the)
 {
 	char *path = xsToString(xsArg(0));
-	int result = mkdir(path, 0755);
-	if (result && (errno != EEXIST))
+	if (g_mkdir_with_parents(path, 0755) != 0)
 		xsThrowErrno();
 }
 
@@ -86,32 +85,42 @@ void PiuSystem_getFileInfoAux(xsMachine* the, char *path)
 void PiuSystem_getPathDirectory(xsMachine* the)
 {
 	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '/');
-	if (slash)
-		xsResult = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - path));
+	xsStringValue result = g_path_get_dirname(path);
+	if (result == NULL)
+		xsThrowErrno();
+	if (strcmp(result, "."))
+		xsResult = xsString(result);
 	else
 		xsResult = xsString("");
+	free(result);
 }
 
 void PiuSystem_getPathExtension(xsMachine* the)
 {
 	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '/');
-	xsStringValue dot = c_strrchr(slash ? slash : path, '.');
-	if (slash)
-		xsResult = xsCall1(xsArg(0), xsID_slice, xsInteger(dot - path + 1));
+	xsStringValue result = g_path_get_basename(path);
+	xsStringValue dot;
+	if (result == NULL)
+		xsThrowErrno();
+	dot = strrchr(result, '.');
+	if (dot)
+		xsResult = xsString(dot + 1);
 	else
 		xsResult = xsString("");
+	free(result);
 }
 
 void PiuSystem_getPathName(xsMachine* the)
 {
 	xsStringValue path = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(path, '/');
-	if (slash)
-		xsResult = xsCall1(xsArg(0), xsID_slice, xsInteger(slash - path + 1));
+	xsStringValue result = g_path_get_basename(path);
+	if (result == NULL)
+		xsThrowErrno();
+	if (strcmp(result, "."))
+		xsResult = xsString(result);
 	else
-		xsResult = xsArg(0);
+		xsResult = xsString("");
+	free(result);
 }
 
 void PiuSystem_preferenceAux(xsMachine* the)
@@ -126,7 +135,7 @@ void PiuSystem_preferenceAux(xsMachine* the)
 
 void PiuSystem_readFileBuffer(xsMachine* the)
 {
-	char *path = xsToString(xsArg(0));
+	char* path = xsToString(xsArg(0));
 	FILE* file = NULL;
 	size_t size;
 	xsTry {
@@ -148,7 +157,7 @@ void PiuSystem_readFileBuffer(xsMachine* the)
 
 void PiuSystem_readFileString(xsMachine* the)
 {
-	char *path = xsToString(xsArg(0));
+	char* path = xsToString(xsArg(0));
 	FILE* file = NULL;
 	size_t size;
 	xsTry {
@@ -176,35 +185,39 @@ void PiuSystem_readPreferenceString(xsMachine* the)
 
 void PiuSystem_renameDirectory(xsMachine* the)
 {
-	xsStringValue from = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(from, '/');
-	xsStringValue to;
-	xsVars(1);
-	if (!slash) xsURIError("No path");
-	xsVar(0) = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - from + 1));
-	xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(1));
-	to = xsToString(xsVar(0));
-	if (rename(from, to))
-		xsThrowErrno();
+	xsStringValue from;
+	xsStringValue directory = NULL;
+	xsStringValue name;
+	xsStringValue to = NULL;
+	xsTry {
+		from = xsToString(xsArg(0));
+		directory = g_path_get_dirname(from);
+		if (directory == NULL)
+			xsThrowErrno();
+		name = xsToString(xsArg(1));
+		to = g_build_filename(directory, name, NULL);
+		if (to  == NULL)
+			xsThrowErrno();
+		if (rename(from, to) != 0)
+			xsThrowErrno();
+	}
+	xsCatch {
+		if (to)
+			free(to);
+		if (directory)
+			free(directory);
+		xsThrow(xsException);
+	}
 }
 
 void PiuSystem_renameFile(xsMachine* the)
 {
-	xsStringValue from = xsToString(xsArg(0));
-	xsStringValue slash = c_strrchr(from, '/');
-	xsStringValue to;
-	xsVars(1);
-	if (!slash) xsURIError("No path");
-	xsVar(0) = xsCall2(xsArg(0), xsID_slice, xsInteger(0), xsInteger(slash - from + 1));
-	xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(1));
-	to = xsToString(xsVar(0));
-	if (rename(from, to))
-		xsThrowErrno();
+	PiuSystem_renameDirectory(the);
 }
 
 void PiuSystem_writeFileBuffer(xsMachine* the)
 {
-	char *path = xsToString(xsArg(0));
+	char* path = xsToString(xsArg(0));
 	char* buffer = xsToArrayBuffer(xsArg(1));
 	size_t size = xsGetArrayBufferLength(xsArg(1));
 	FILE* file = NULL;
@@ -223,7 +236,7 @@ void PiuSystem_writeFileBuffer(xsMachine* the)
 
 void PiuSystem_writeFileString(xsMachine* the)
 {
-	char *path = xsToString(xsArg(0));
+	char* path = xsToString(xsArg(0));
 	char* buffer = xsToString(xsArg(1));
 	size_t size = strlen(buffer);
 	FILE* file = NULL;
