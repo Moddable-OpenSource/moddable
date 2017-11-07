@@ -11,6 +11,10 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+/*
+	N.B.
+		Rectangle class modeled on FskRectangle.c (Apache License, Marvell Semiconductor)
+*/
 
 import config from "mc/config";
 import parseBMF from "commodetto/parseBMF";
@@ -33,64 +37,88 @@ function drawBackground() {
 	render.fillPattern(background, 0, 0, render.width, render.height, 0, 0, background.width, background.height);
 }
 
+class Rectangle {
+	constructor(x, y, w, h) {
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
+	}
+	contains(x, y) {
+		if (x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h)
+			return true;
+		return false;
+	}
+	static union(r1, r2) {
+		let r = new Rectangle();
+		if (r1.x > r2.x)
+			r.x = r2.x;
+		else
+			r.x = r1.x;
+
+		if (r1.y > r2.y)
+			r.y = r2.y;
+		else
+			r.y = r1.y;
+
+		let v1 = r1.x + r1.w;
+		let v2 = r2.x + r2.w;
+		if (v1 > v2)
+			r.w = v1 - r.x;
+		else
+			r.w = v2 - r.x;
+
+		v1 = r1.y + r1.h;
+		v2 = r2.y + r2.h;
+		if (v1 > v2)
+			r.h = v1 - r.y;
+		else
+			r.h = v2 - r.y;
+			
+		return r;
+	}
+}
+
 class Dragger {
 	constructor(x, y, label, image) {
 		this.image = image;
 		this.label = label;
-		this.width = image.width;
-		this.height = image.height >> 1;
-		this.position = { x: x - (this.width >> 1), y: y - (this.height >> 1) };
+		this.bounds = new Rectangle(x, y, image.width, image.height >> 1);
 		this.anchor = {};
 		this.state = 0;
 	}
 	contains(x, y) {
-		if (x >= this.position.x && x <= this.position.x + this.width && y >= this.position.y && y <= this.position.y + this.height)
-			return true;
-		return false;
+		return this.bounds.contains(x, y);
 	}
 	draw() {
 		let image = this.image;
 		let label = this.label;
-		let x = this.position.x;
-		let y = this.position.y;
+		let x = this.bounds.x;
+		let y = this.bounds.y;
+		let width = this.bounds.w;
+		let height = this.bounds.h;
 		let sx = 0;
-		let sy = (0 == this.state ? 0 : this.height);
+		let sy = (0 == this.state ? 0 : height);
 		let color = (0 == this.state ? black : white);
 		drawBackground();
-		render.drawMasked(image, x, y, sx, sy, this.width, this.height, image.alpha, sx, sy);
+		render.drawMasked(image, x, y, sx, sy, width, height, image.alpha, sx, sy);
 		render.drawText(label, font, color,
-			((this.width - render.getTextWidth(label, font)) >> 1) + x,
-			((this.height - font.height) >> 1) + y
+			((width - render.getTextWidth(label, font)) >> 1) + x,
+			((height - font.height) >> 1) + y
 		);
 	}
 	onTouchBegan(x, y) {
-		this.anchor.x = this.position.x - x;
-		this.anchor.y = this.position.y - y;
+		this.anchor.x = this.bounds.x - x;
+		this.anchor.y = this.bounds.y - y;
 		this.state = 1;
 		this.update();
 	}
 	onTouchMoved(x, y) {
-		let currentPosition = this.position;
-		let newPosition = { x:this.anchor.x + x, y:this.anchor.y + y };
-		let invalX, invalY, invalWidth, invalHeight;
-		if (currentPosition.x < newPosition.x) {
-			invalX = currentPosition.x;
-			invalWidth = newPosition.x + this.width;
-		}
-		else {
-			invalX = newPosition.x;
-			invalWidth = currentPosition.x + this.width;
-		}
-		if (currentPosition.y < newPosition.y) {
-			invalY = currentPosition.y;
-			invalHeight = newPosition.y + this.height;
-		}
-		else {
-			invalY = newPosition.y;
-			invalHeight = currentPosition.y + this.height;
-		}
-		this.position = newPosition;
-		render.begin(invalX, invalY, invalWidth, invalHeight);
+		let currentBounds = this.bounds;
+		let newBounds = new Rectangle(this.anchor.x + x, this.anchor.y + y, this.bounds.w, this.bounds.h);
+		let unionBounds = Rectangle.union(currentBounds, newBounds);
+		this.bounds = newBounds;
+		render.begin(unionBounds.x, unionBounds.y, unionBounds.w, unionBounds.h);
 			this.draw();
 		render.end();
 	}
@@ -99,13 +127,13 @@ class Dragger {
 		this.update();
 	}
 	update() {
-		render.begin(this.position.x, this.position.y, this.width, this.height);
+		render.begin(this.bounds.x, this.bounds.y, this.bounds.w, this.bounds.h);
 			this.draw();
 		render.end();
 	}
 }
 
-let dragger = new Dragger(render.width >> 1, render.height >> 1, "Drag Me", button);
+let dragger = new Dragger((render.width - button.width) >> 1, (render.height - (button.height >> 1)) >> 1, "Drag Me", button);
 let touch = require(config.touch);
 touch = new touch;
 touch.points = [{}];
