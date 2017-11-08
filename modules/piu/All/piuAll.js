@@ -236,27 +236,6 @@ export function Template(prototype) {
 	return result;
 }
 
-global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
-
-export class Component extends Behavior {
-	constructor($, it) {
-		super();
-		let result = this.render($, it);
-		let anchor = it.anchor;
-		if ($ && anchor)
-			$[anchor] = result;
-		result.behavior = this;
-		let onCreate = this.onCreate;
-		if (onCreate)
-			onCreate.call(this, result, $, it);
-		return result;
-	}
-	render($, it) {
-		debugger;
-	}
-}
-Object.freeze(Component.prototype);
-
 // CONTENTS
 
 var proto = @ "PiuContentDelete";
@@ -379,14 +358,6 @@ var text = {
 export var Text = Template(text);
 Object.freeze(text);
 
-export class TextComponent {
-	constructor($, it) {
-		this.spans = it.contents;
-		this.style = it.style;
-	}
-}
-Object.freeze(TextComponent.prototype);
-
 var link = {
 	__proto__: proto,
 	_create($, it) @ "PiuTextLink_create",
@@ -400,14 +371,6 @@ var link = {
 }
 export var Link = Template(link);
 Object.freeze(link);
-
-export class LinkComponent extends TextComponent {
-	constructor($, it) {
-		super($, it);
-		this.link = new Link($, { behavior:this });
-	}
-}
-Object.freeze(LinkComponent.prototype);
 
 // PiuPort.c
 
