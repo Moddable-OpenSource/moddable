@@ -231,6 +231,7 @@ void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef
 }
 
 static char* elfPath = NULL;
+static char* TOOLS_BIN = NULL;
 static char* gStackBuffers[ESP_STACK_COUNT];
 static char* gEPC1Buffer;
 static int gStackIndex;
@@ -290,10 +291,11 @@ static void systemCommand(char* command, char **buffer){
 }
 
 static char* printAddress(char* address){
-	char* commandPart = "${MODDABLE}/libraries/esp/toolchain/Darwin/xtensa-lx106-elf/bin/xtensa-lx106-elf-addr2line -aipfC -e ";
+	char* commandPart = "/xtensa-lx106-elf-addr2line -aipfC -e ";
 	char command[2000] = {0};
 	char* buffer;
 	
+	strcat(command, TOOLS_BIN);
 	strcat(command, commandPart);
 	strcat(command, elfPath);
 	strcat(command, " ");
@@ -396,7 +398,7 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 							}
 							self->state = 0;
 						}
-						else if (elfPath) {
+						else if (elfPath && TOOLS_BIN) {
 							char* p = self->buffer + 11;
 							char* q = self->buffer + offset - 9;
 							while (p < q) {
@@ -511,6 +513,11 @@ int main(int argc, char* argv[])
 		elfPath = argv[4];
 	}else{
 		elfPath = NULL;
+	}
+	if (argc >= 6){
+		TOOLS_BIN = argv[5];
+	}else{
+		TOOLS_BIN = NULL;
 	}
 	
     CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
