@@ -22,9 +22,41 @@
 
 static void PiuSystem_getFileInfoAux(xsMachine* the, char *path);
 
+void PiuSystem_get_localDirectory(xsMachine* the)
+{
+	char path[PATH_MAX];
+	PiuConfigPath(path);
+	mkdir(path, 0755);
+	xsResult = xsString(path);
+}
+
 void PiuSystem_get_platform(xsMachine* the)
 {
 	xsResult = xsString("lin");
+}
+
+void PiuSystem_buildPath(xsMachine* the)
+{
+ 	xsIntegerValue argc = xsToInteger(xsArgc);
+ 	xsStringValue directory = xsToString(xsArg(0));
+ 	xsStringValue name = xsToString(xsArg(1));
+	xsStringValue path = g_build_filename(directory, name, NULL);
+	xsResult = xsString(path);
+	free(path);
+	if ((argc > 2) && xsTest(xsArg(2))) {
+		xsResult = xsCall2(xsResult, xsID_concat, xsString("."), xsArg(2));
+	}
+}
+
+void PiuSystem_copyFile(xsMachine* the)
+{
+	char cmd[16 + PATH_MAX + PATH_MAX];
+	strcpy(cmd, "/bin/cp -p '");
+	strcat(cmd, xsToString(xsArg(0)));
+	strcat(cmd, "' '");
+	strcat(cmd, xsToString(xsArg(1)));
+	strcat(cmd, "'");
+	system(cmd);
 }
 
 void PiuSystem_deleteDirectory(xsMachine* the)
