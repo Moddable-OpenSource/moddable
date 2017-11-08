@@ -209,7 +209,7 @@ void xs_socket(xsMachine *the)
 				xss->next = gSockets;
 				gSockets = xss;
 
-				socketUpUseCount(xss->the, xss);
+				socketUpUseCount(the, xss);
 
 				for (j = 0; j < kReadQueueLength; j++) {
 					if (xss->reader[j])
@@ -618,10 +618,11 @@ void xs_socket_write(xsMachine *the)
 							if (ERR_OK == err)
 								break;
 
-							if (ERR_MEM != err)
-								xsUnknownError("write error - TypedArray");
+							if (ERR_MEM != err) {
+								socketSetPending(xss, kPendingError);
+								return;
+							}
 
-//							xsTrace("out of memory on TypedArray write. try again\n");
 							modDelayMilliseconds(25);
 						} while (true);
 					}
