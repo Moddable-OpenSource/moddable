@@ -542,10 +542,11 @@ void xs_socket_write(xsMachine *the)
 							if (ERR_OK == err)
 								break;
 
-							if (ERR_MEM != err)
-								xsUnknownError("write error - string");
+							if (ERR_MEM != err) {
+								socketSetPending(xss, kPendingError);
+								return;
+							}
 
-//							xsTrace("out of memory on string write. try again\n");
 							modDelayMilliseconds(25);
 						} while (true);
 
@@ -564,10 +565,11 @@ void xs_socket_write(xsMachine *the)
 						if (ERR_OK == err)
 							break;
 
-						if (ERR_MEM != err)
-							xsUnknownError("write error - number");
+						if (ERR_MEM != err) {
+							socketSetPending(xss, kPendingError);
+							return;
+						}
 
-//						xsTrace("out of memory on number write. try again\n");
 						modDelayMilliseconds(25);
 					} while (true);
 				}
@@ -585,10 +587,11 @@ void xs_socket_write(xsMachine *the)
 							if (ERR_OK == err)
 								break;
 
-							if (ERR_MEM != err)
-								xsUnknownError("write error - ArrayBuffer");
+							if (ERR_MEM != err) {
+								socketSetPending(xss, kPendingError);
+								return;
+							}
 
-//							xsTrace("out of memory on ArrayBuffer write. try again\n");
 							modDelayMilliseconds(25);
 						} while (true);
 					}
