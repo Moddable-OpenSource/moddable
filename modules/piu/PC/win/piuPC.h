@@ -32,6 +32,8 @@
 #include <gdiplus.h>
 using namespace Gdiplus;
 
+#include "mc.defines.h"
+
 struct PiuFontStruct {
 	PiuHandlePart;
 	xsMachine* the;
