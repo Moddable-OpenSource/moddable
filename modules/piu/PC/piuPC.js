@@ -27,16 +27,13 @@ import {
 	Skin,
 	Style,
 	Behavior,
-	Component,
 	Transition,
 	template,
 	Template,
 	Content,
 	Label,
 	Text,
-	TextComponent,
 	Link,
-	LinkComponent,
 	Port,
 	Container,
 	Column,
@@ -46,6 +43,43 @@ import {
 	DeferLink,
 	TouchLink,
 } from "All";
+
+global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
+
+export class Component extends Behavior {
+	constructor($, it) {
+		super();
+		let result = this.render($, it);
+		let anchor = it.anchor;
+		if ($ && anchor)
+			$[anchor] = result;
+		result.behavior = this;
+		let onCreate = this.onCreate;
+		if (onCreate)
+			onCreate.call(this, result, $, it);
+		return result;
+	}
+	render($, it) {
+		debugger;
+	}
+}
+Object.freeze(Component.prototype);
+
+export class TextComponent {
+	constructor($, it) {
+		this.spans = it.contents;
+		this.style = it.style;
+	}
+}
+Object.freeze(TextComponent.prototype);
+
+export class LinkComponent extends TextComponent {
+	constructor($, it) {
+		super($, it);
+		this.link = new Link($, { behavior:this });
+	}
+}
+Object.freeze(LinkComponent.prototype);
 
 // PiuTexture.c
 
