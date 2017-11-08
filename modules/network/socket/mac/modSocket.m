@@ -42,6 +42,9 @@
 
 #include "../socket/modSocket.h"
 
+#define kTCP (0)
+#define kUDP (1)
+
 typedef struct xsSocketRecord xsSocketRecord;
 typedef xsSocketRecord *xsSocket;
 
@@ -50,12 +53,14 @@ struct xsSocketRecord {
 	xsMachine					*the;
 
     int							skt;
+	int							port;
 
 	CFSocketRef					cfSkt;
 	CFRunLoopSourceRef			cfRunLoopSource;
 
 	uint8_t						useCount;
 	uint8_t						done;
+	uint8_t						kind;		// kTCP or kUDP
 
 	uint8_t						*readBuffer;
 	int32_t						readBytes;
@@ -84,6 +89,7 @@ struct xsListenerRecord {
 
 static void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, const void *data, void *info);
 static int doFlushWrite(xsSocket xss);
+static void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *error, void *info);
 
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
@@ -98,7 +104,7 @@ static void socketDownUseCount(xsMachine *the, xsSocket xss)
 void xs_socket(xsMachine *the)
 {
 	xsSocket xss;
-    int port, set;
+    int set;
 
 	xsmcVars(1);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
@@ -128,15 +134,33 @@ void xs_socket(xsMachine *the)
 	xss->the = the;
 	xss->useCount = 1;
 
-	if (xsmcHas(xsArg(0), xsID_port)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		port = xsmcToInteger(xsVar(0));
+	xss->kind = kTCP;
+	if (xsmcHas(xsArg(0), xsID_kind)) {
+		char *kind;
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_kind);
+		kind = xsmcToString(xsVar(0));
+		if (0 == c_strcmp(kind, "TCP"))
+			;
+		else if (0 == c_strcmp(kind, "UDP"))
+			xss->kind = kUDP;
+		else
+			xsUnknownError("invalid socket kind");
 	}
-	else
-		xsUnknownError("port required in dictionary");
 
 	CFSocketContext socketCtxt = {0, xss, NULL, NULL, NULL};
-	xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
+	if (kTCP == xss->kind) {
+		if (xsmcHas(xsArg(0), xsID_port)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_port);
+			xss->port = xsmcToInteger(xsVar(0));
+		}
+		else
+			xsUnknownError("port required in dictionary");
+
+		xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
+	}
+	else
+		xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_DGRAM, IPPROTO_UDP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
 
 	xss->skt = CFSocketGetNative(xss->cfSkt);
 	if (xss->skt < 0)
@@ -153,6 +177,9 @@ void xs_socket(xsMachine *the)
 	xss->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, xss->cfSkt, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), xss->cfRunLoopSource, kCFRunLoopCommonModes);
 
+	if (kUDP == xss->kind)
+		return;
+
 	CFHostRef cfHost;
 
 	if (xsmcHas(xsArg(0), xsID_host)) {
@@ -168,24 +195,39 @@ void xs_socket(xsMachine *the)
 	else
 		xsUnknownError("host required in dictionary");
 
+	CFHostClientContext context;
+	context.version = 0;
+	context.retain = nil;
+	context.release = nil;
+	context.copyDescription = nil;
+	context.info = xss;
+
+	CFHostSetClient(cfHost, resolved, &context);
+	CFHostScheduleWithRunLoop(cfHost, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+
 	// resolve
 	CFStreamError streamErr;
-	if (!CFHostStartInfoResolution(cfHost, kCFHostAddresses, &streamErr))		//@@ synchronous
+	if (!CFHostStartInfoResolution(cfHost, kCFHostAddresses, &streamErr))
 		xsUnknownError("cannot resolve host address");
+}
+
+void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *error, void *info)
+{
+	xsSocket xss = info;
 
 	CFArrayRef cfArray = CFHostGetAddressing(cfHost, NULL);
 	NSData *address = CFArrayGetValueAtIndex(cfArray, CFArrayGetCount(cfArray) - 1);
 
 	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
-	CFIndex length = CFDataGetLength((__bridge CFDataRef)address);
-	if (length != sizeof(struct sockaddr_in))
-		xsUnknownError("unexpected sockaddr");
+//@@	CFIndex length = CFDataGetLength((__bridge CFDataRef)address);
+//@@	if (length != sizeof(struct sockaddr_in))
+//@@		xsUnknownError("unexpected sockaddr");
 
 	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(xss->port);
 
 	if (CFSocketConnectToAddress(xss->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)-1))
-		xsUnknownError("can't connect");
+		; //@@ xsUnknownError("can't connect");
 }
 
 static void doDestructor(xsSocket xss)
@@ -333,6 +375,28 @@ void xs_socket_write(xsMachine *the)
 
 	if ((NULL == xss) || xss->done)
 		xsUnknownError("write on closed socket");
+
+	if (kUDP == xss->kind) {
+		char temp[64];
+
+		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
+
+		int len = xsGetArrayBufferLength(xsArg(2));
+		uint8_t *buf = xsmcToArrayBuffer(xsArg(2));
+
+		struct sockaddr_in dest_addr = {0};
+
+		int port = xsmcToInteger(xsArg(1));
+
+		dest_addr.sin_family = AF_INET;
+		dest_addr.sin_port = htons(port);
+		dest_addr.sin_addr.s_addr = inet_addr(temp);
+
+		int result = sendto(xss->skt, buf, len, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
+		if (result < 0)
+			xsUnknownError("sendto failed");
+		return;
+	}
 
 	available = sizeof(xss->writeBuf) - xss->writeBytes;
 	if (0 == argc) {
