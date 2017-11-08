@@ -24,9 +24,42 @@
 
 static void PiuFile_getFileInfoAux(xsMachine* the, NSURL* url);
 
+void PiuSystem_get_localDirectory(xsMachine* the)
+{
+	NSFileManager* manager = [NSFileManager defaultManager];
+	NSURL* url = [manager URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:nil];
+	url = [url URLByAppendingPathComponent:@PIU_DOT_SIGNATURE isDirectory:YES];
+	[manager createDirectoryAtURL:url withIntermediateDirectories:NO attributes:nil error:nil];
+	xsResult = xsString([url fileSystemRepresentation]);
+}
+
 void PiuSystem_get_platform(xsMachine* the)
 {
 	xsResult = xsString("mac");
+}
+
+void PiuSystem_buildPath(xsMachine* the)
+{
+ 	xsIntegerValue argc = xsToInteger(xsArgc);
+	NSString* directory = [NSString stringWithUTF8String:xsToString(xsArg(0))];
+	NSString* name = [NSString stringWithUTF8String:xsToString(xsArg(1))];
+	NSString* path = [directory stringByAppendingPathComponent:name];
+	if ((argc > 2) && xsTest(xsArg(2))) {
+		NSString* extension = [NSString stringWithUTF8String:xsToString(xsArg(2))];
+		path = [path stringByAppendingPathExtension:extension];
+	}
+	xsResult = xsString([path UTF8String]);
+}
+
+void PiuSystem_copyFile(xsMachine* the)
+{
+	NSError* error = nil;
+	NSString* from = [NSString stringWithUTF8String:xsToString(xsArg(0))];
+	NSString* to = [NSString stringWithUTF8String:xsToString(xsArg(1))];
+	NSFileManager* manager = [NSFileManager defaultManager];
+	[manager removeItemAtPath:to error:&error];
+	if ([manager copyItemAtPath:from toPath:to error:&error] == NO)
+		xsUnknownError("%s", [[error localizedDescription] UTF8String]);
 }
 
 void PiuSystem_deleteDirectory(xsMachine* the)
