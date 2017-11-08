@@ -59,6 +59,9 @@ void xs_wifi_scan(xsMachine *the)
 	if (STATION_MODE != wifi_get_opmode())
 		xsUnknownError("can only scan in STATION_MODE");
 
+	if (gScan)
+		xsUnknownError("unfinished wifi scan pending");
+
 	c_memset(&config, 0, sizeof(config));
 	if (xsmcArgc) {
 		xsmcVars(1);
@@ -227,6 +230,8 @@ void reportScan(modTimer timer, void *refcon, uint32_t refconSize)
 	if (gScan->data)
 		c_free(gScan->data);
 	c_free(gScan);
+	gScan = NULL;
+	
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
