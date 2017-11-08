@@ -158,7 +158,7 @@ void loop(void)
 
 	int delayMS = modTimersNext();
 	if (delayMS)
-		delay((delayMS < 5) ? delayMS : 5);
+		modDelayMilliseconds((delayMS < 5) ? delayMS : 5);
 }
 
 /*

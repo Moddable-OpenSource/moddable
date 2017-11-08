@@ -37,14 +37,10 @@
 
 #include "xsAll.h"
 #include "stdio.h"
-//#include "mc_event.h"
-//#include "mc_env.h"
 #include "lwip/tcp.h"
 
 #if ESP32
 	#include "rom/ets_sys.h"
-
-	void delay(uint32_t);
 #else
 	#include "tinyprintf.h"
 #endif
@@ -108,176 +104,6 @@ void fx_putc(void *refcon, char c)
 	ESP_putc(c);
 }
 
-#define mxEndian16_Swap(a)         \
-	((((txU1)a) << 8)      |   \
-	(((txU2)a) >> 8))
-
-#if mxLittleEndian
-	#define mxMisaligned16_GetN(a)         \
-		(((txU2)((txU1*)(a))[1] << 8) |  \
-		((txU2)((txU1*)(a))[0] << 0))
-	#define mxEndianU16_LtoN(a) (a)
-#else
-	#define mxMisaligned16_GetN(a)         \
-		(((txU2)((txU1*)(a))[0] << 8) |  \
-		((txU2)((txU1*)(a))[1] << 0))
-	#define mxEndianU16_LtoN(a) ((txU2)mxEndian16_Swap(a))
-#endif
-
-txU2* TextUTF8ToUnicode16NE(const unsigned char *text, txU4 textByteCount, txU4 *encodedTextByteCount)
-{
-	txU4  length      = 0;
-	const txU1 *p = text;
-	txU2* out;
-	txU2* encodedText;
-
-	while (textByteCount--) {                                       /* Convert from byte count to number of characters */
-		unsigned c = *p++;
-		if ((c & 0xC0) != 0x80)
-			length++;
-	}
-
-	encodedText = c_malloc((length + 1) * 2); /* Allocate Unicode16 memory, including a NULL terminator */
-	if(!encodedText)
-		return C_NULL;
-	if (encodedTextByteCount) *encodedTextByteCount = length * 2;   /* Set output byte count, if count was requested */
- 
-	out = encodedText;
-	while (length--) {
-		txU2 uc;
-		uc = *text++;
-		if (0x0080 & uc) {                                            /* non-ASCII */
-			const txUTF8Sequence *aSequence;
-			for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-				if ((uc & aSequence->cmask) == aSequence->cval)
-					break;
-			}
-			if (0 != aSequence->size) {
-				txU4 aSize = aSequence->size - 1;
-				while (aSize) {
-					aSize--;
-					uc = (uc << 6) | (*text++ & 0x3F);
-				}
-				uc &= aSequence->lmask;
-			}
-			else
-				uc = '?';
-		}
-		*out++ = uc;
-	}
-	*out = 0; /* terminate string */
-	return encodedText;
-}
-
-
-txU1* TextUnicode16LEToUTF8(const txU2 *text, txU4 textByteCount, txU4 *encodedTextByteCount)
-{
-	txU1 *encodedText = C_NULL;
-	txU4 encodeByteCount = 0;
-	txU4 characterCount = textByteCount >> 1;
-	txU1 *encodedTextOut;
-	txU2 c;
-
-	encodedText = c_malloc(1 + ((characterCount << 1) * 3));
-	if(!encodedText)
-		return C_NULL;
-	encodedTextOut = encodedText;
-	while (characterCount--) {
-		c = mxMisaligned16_GetN(text);
-		text++;
-		c = mxEndianU16_LtoN(c);
-
-		if (0 == (c & ~0x007f)) {
-			*encodedText++ = (txU1)c;
-			encodeByteCount += 1;
-		}
-		else
-			if (0 == (c & ~0x07ff)) {
-				*encodedText++ = (txU1)(0xc0 | (c >> 6));
-				*encodedText++ = (txU1)(0x80 | (c & 0x3f));
-				encodeByteCount += 2;
-			}
-			else {
-				*encodedText++ = (txU1)(0xe0 | (c >> 12));
-				*encodedText++ = (txU1)(0x80 | ((c >> 6) & 0x3f));
-				*encodedText++ = (txU1)(0x80 | (c & 0x3f));
-				encodeByteCount += 3;
-			}
-	}
-	*encodedText++ = 0;
-	if (encodedTextByteCount) *encodedTextByteCount = encodeByteCount;
-	return encodedTextOut;
-}
-
-txString fxStringToUpper(txMachine* the, txString theString)
-{
-	txString result = NULL;
-	txU2 *unicodeText;
-	txU4 unicodeBytes;
-	txU1 *utf8Text;
-	txU4 utf8Bytes;
-	txU4 i;
-	txU2 c;
-	unicodeText = TextUTF8ToUnicode16NE((const txU1 *)theString, c_strlen(theString), &unicodeBytes);
-	if(!unicodeText)
-		return C_NULL;
-	for (i = 0; i < unicodeBytes / 2; i++) {
-		c = unicodeText[i];
-		if (c < 0x080) {
-			unicodeText[i] = c_toupper(c);
-		}
-		/*according to http://www.unicode.org/charts*/
-		else if ((c >= 0xff41) && (c<=0xff5a))
-			unicodeText[i] = c - 0x20;
-		else if ( c >= 0x0561 && c < 0x0587 ) 
-			unicodeText[i] = c - 0x30;
-	}
- 
-	utf8Text = TextUnicode16LEToUTF8(unicodeText, unicodeBytes, &utf8Bytes);
-	if(!utf8Text)
-		return C_NULL;
-	result = fxNewChunk(the, utf8Bytes + 1);
-	c_memmove(result, utf8Text, utf8Bytes + 1);
-	c_free(utf8Text);
-	c_free(unicodeText);
- 	return result;
-}
-
-txString fxStringToLower(txMachine* the, txString theString)
-{
-	txString result = NULL;
-	txU2 *unicodeText;
-	txU4 unicodeBytes;
-	txU1 *utf8Text;
-	txU4 utf8Bytes;
-	txU4 i;
-	unicodeText = TextUTF8ToUnicode16NE((const txU1 *)theString, c_strlen(theString), &unicodeBytes);
-	if(!unicodeText)
-		return C_NULL;
-
-	for (i = 0; i < unicodeBytes / 2; i++) {
-		txU2 c = unicodeText[i];
-		if (c < 0x080) {
-			unicodeText[i] = c_tolower(c);
-		}
-		/*according to http://www.unicode.org/charts*/
-		else if ( c >= 0x0531 && c <= 0x0556 ) 
-			unicodeText[i] = c + 0x30;
-		else if ((c >= 0xff21) && (c<=0xff3a))
-			unicodeText[i] = c + 0x20;
-
-	}
- 
-	utf8Text = TextUnicode16LEToUTF8(unicodeText, unicodeBytes, &utf8Bytes);
-	if(!utf8Text)
-		return C_NULL;
-	result = fxNewChunk(the, utf8Bytes + 1);
-	c_memmove(result, utf8Text, utf8Bytes + 1);
-	c_free(utf8Text);
-	c_free(unicodeText);
- 	return result;
-}
-
 #ifdef mxDebug
 
 void fxAbort(txMachine* the)
@@ -285,10 +111,6 @@ void fxAbort(txMachine* the)
 	fxDisconnect(the);
 	c_exit(0);
 }
-
-/*
-	http://lwip.wikia.com/wiki/Raw/TCP
-*/
 
 static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
@@ -422,7 +244,7 @@ void fxConnect(txMachine* the)
 	}
 
 	while (!the->connection)
-		delay(100);
+		modDelayMilliseconds(100);
 
 	if ((txSocket)-1 == the->connection) {
 		the->connection = NULL;
@@ -475,7 +297,7 @@ void fxReceive(txMachine* the)
 		struct pbuf *p;
 
 		while (NULL == the->reader)
-			delay(100);
+			modDelayMilliseconds(100);
 
 		p = the->reader;
 		if (p->next)
@@ -534,7 +356,7 @@ void fxSend(txMachine* the, txBoolean more)
 			if (0 == available) {
 				xmodLog("  fxSend - need to wait");
 				tcp_output(pcb);
-				delay(100);
+				modDelayMilliseconds(100);
 				continue;
 			}
 
@@ -549,7 +371,7 @@ void fxSend(txMachine* the, txBoolean more)
 					the->pendingSendBytes -= available;
 					modLog("  fxSend - wait for send memory:");
 					tcp_output(pcb);
-					delay(100);
+					modDelayMilliseconds(100);
 					continue;
 				}
 				if (err) {
@@ -564,7 +386,7 @@ void fxSend(txMachine* the, txBoolean more)
 				err = tcp_output(pcb);
 				if (err)
 					modLog("  fxSend - tcp_output ERROR:");
-				delay(10);
+				modDelayMilliseconds(10);
 			}
 
 			length -= available;
@@ -640,10 +462,3 @@ double hack_fmod(double a, double b)
     return (a - b * floor(a / b));
 }
 #endif
-
-#if ESP32
-void delay(uint32_t msec) {
-	vTaskDelay(msec);
-}
-#endif
-
