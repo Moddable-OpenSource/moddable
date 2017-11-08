@@ -20,8 +20,31 @@
 
 #include "xs.h"
 
-void xs_net_resolve(xsMachine *the)
-{
+#import <CoreWLAN/CoreWLAN.h>
 
+void xs_net_get(xsMachine *the)
+{
+	const char *prop = xsToString(xsArg(0));
+
+	if (0 == c_strcmp(prop, "SSID")) {
+		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
+		NSString *ssid = wifi.ssid;
+		xsResult = xsString([ssid UTF8String]);
+	}
+	else if (0 == c_strcmp(prop, "RSSI")) {
+		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
+		NSInteger rssi = wifi.rssiValue;
+		xsResult = xsInteger(rssi);
+	}
+	else if (0 == c_strcmp(prop, "MAC")) {
+		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
+		NSString *mac = wifi.hardwareAddress;
+		xsResult = xsString([mac UTF8String]);
+	}
+	else if (0 == c_strcmp(prop, "BSSID")) {
+		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
+		NSString *bssid = wifi.bssid;
+		xsResult = xsString([bssid UTF8String]);
+	}
 }
 
