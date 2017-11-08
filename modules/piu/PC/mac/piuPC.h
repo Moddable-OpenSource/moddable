@@ -23,6 +23,8 @@
 #include <CoreText/CoreText.h>
 #import <Cocoa/Cocoa.h>
 
+#include "mc.defines.h"
+
 @interface NSPiuAppDelegate : NSObject {
 	xsMachine* machine;
 	PiuApplication* piuApplication;

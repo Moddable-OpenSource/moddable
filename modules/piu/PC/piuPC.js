@@ -206,6 +206,7 @@ global.cursors = {
 };
 
 global.system = {
+	get localDirectory() @ "PiuSystem_get_localDirectory",
 	get platform() @ "PiuSystem_get_platform",
 
 	launchPath(url) @ "PiuSystem_launchPath",
@@ -223,6 +224,7 @@ global.system = {
 	saveFile(dictionary, callback) @ "PiuSystem_saveFile",
 
 	// files
+	copyFile(from, to) @ "PiuSystem_copyFile",
 	deleteDirectory(path) @ "PiuSystem_deleteDirectory",
 	deleteFile(path) @ "PiuSystem_deleteFile",
 	ensureDirectory(path) @ "PiuSystem_ensureDirectory",
@@ -251,6 +253,7 @@ global.system = {
 	},
 	
 	// paths
+	buildPath(directory, name, extension) @ "PiuSystem_buildPath",
 	getPathDirectory(path) @ "PiuSystem_getPathDirectory",
 	getPathExtension(path) @ "PiuSystem_getPathExtension",
 	getPathName(path) @ "PiuSystem_getPathName",
