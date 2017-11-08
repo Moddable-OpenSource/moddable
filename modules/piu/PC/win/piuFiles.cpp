@@ -27,6 +27,44 @@ void PiuSystem_get_platform(xsMachine* the)
 	xsResult = xsString("win");
 }
 
+void PiuSystem_get_localDirectory(xsMachine* the)
+{
+	char path[MAX_PATH];
+	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path);
+	strcat(path, "\\");
+	strcat(path, PIU_DOT_SIGNATURE);
+	CreateDirectory(path, NULL);
+	xsResult = xsString(path);
+}
+
+void PiuSystem_buildPath(xsMachine* the)
+{
+ 	xsIntegerValue argc = xsToInteger(xsArgc);
+	xsResult = xsCall2(xsArg(0), xsID_concat, xsString("\\"), xsArg(1));
+	if ((argc > 2) && xsTest(xsArg(2)))
+		xsResult = xsCall2(xsResult, xsID_concat, xsString("."), xsArg(2));
+}
+
+void PiuSystem_copyFile(xsMachine* the)
+{
+	wchar_t* from = NULL;
+	wchar_t* to = NULL;
+	xsTry {
+		from = xsToStringCopyW(xsArg(0));
+		to = xsToStringCopyW(xsArg(1));
+		xsElseThrow(CopyFileW(from, to, FALSE));
+		free(to);
+		free(from);
+	}
+	xsCatch {
+		if (to != NULL)
+			free(to);
+		if (from != NULL)
+			free(from);
+		xsThrow(xsException);
+	}
+}
+
 void PiuSystem_deleteDirectory(xsMachine* the)
 {
 	wchar_t* path = NULL;
