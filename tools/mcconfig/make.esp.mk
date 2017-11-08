@@ -223,7 +223,7 @@ debug: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)/main.elf
+	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
 	
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
