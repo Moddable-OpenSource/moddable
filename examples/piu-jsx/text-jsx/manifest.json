@@ -8,9 +8,9 @@
 	},
 	"resources":{
 		"*-mask": [
-			"./OpenSans-Semibold-18",
-			"./OpenSans-SemiboldItalic-18",
-			"./OpenSans-Semibold-28",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-SemiboldItalic-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 		],
 	},
 }
