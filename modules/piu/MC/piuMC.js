@@ -33,16 +33,13 @@ import {
 	Skin,
 	Style,
 	Behavior,
-	Component,
 	Transition,
 	template,
 	Template,
 	Content,
 	Label,
 	Text,
-	TextComponent,
 	Link,
-	LinkComponent,
 	Port,
 	Container,
 	Column,
@@ -225,16 +222,13 @@ global.rgba = rgba;
 global.Skin = Skin;
 global.Style = Style;
 global.Behavior = Behavior;
-global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
 global.Label = Label;
 global.Port = Port;
 global.Text = Text;
-global.TextComponent = TextComponent;
 global.Link = Link;
-global.LinkComponent = LinkComponent;
 
 global.Container = Container;
 global.Column = Column;
