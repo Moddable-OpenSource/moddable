@@ -38,18 +38,23 @@ struct PiuScreenStruct {
 	guint timer;
 	gboolean timerRunning;
 	gboolean touching;
+	PiuScreenMessage firstMessage;
 };
 
 struct PiuScreenMessageStruct {
-    txScreen* screen;
+	PiuScreenMessage nextMessage;
+    PiuScreen* self;
 	int size;
 	char buffer[1];
 };
 
 static void PiuScreenBind(void* it, PiuApplication* application);
+static PiuScreenMessage PiuScreenCreateMessage(PiuScreen* self, char* buffer, int size);
 static void PiuScreenDelete(void* it);
+static void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuScreenQuit(PiuScreen* self);
 static void PiuScreenUnbind(void* it, PiuApplication* application);
 
 static gboolean PiuScreen_postMessageAux(gpointer data);
@@ -200,13 +205,76 @@ void PiuScreenDictionary(xsMachine* the, void* it)
 {
 }
 
+PiuScreenMessage PiuScreenCreateMessage(PiuScreen* self, char* buffer, int size) 
+{
+	PiuScreenMessage message;
+	if (size) {
+		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) - 1 + size);
+		if (!message)
+			return NULL;
+		message->size = size;
+		memcpy(message->buffer, buffer, size);
+	}
+	else {
+		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) + size);
+		if (!message)
+			return NULL;
+		message->size = 0;
+		strcpy(message->buffer, buffer);
+	}
+	message->nextMessage = (*self)->firstMessage;
+	(*self)->firstMessage = message;
+	message->self = self;
+	return message;
+}
+
 void PiuScreenDelete(void* it) 
 {
+}
+
+void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message) 
+{
+	PiuScreenMessage* address = &((*self)->firstMessage);
+	PiuScreenMessage current;
+	while ((current = *address)) {
+		if (current == message) {
+			*address = message->nextMessage;
+			free(message);
+			break;
+		}
+		address = &(current->nextMessage);
+	}
 }
 
 void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuContentMark(the, it, markRoot);
+}
+
+void PiuScreenQuit(PiuScreen* self) 
+{
+	txScreen* screen = (*self)->screen;
+	if (screen && screen->quit)
+		(*screen->quit)(screen);
+	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, screen->width, screen->height);
+    if ((*self)->firstMessage) {
+		PiuScreenMessage current = (*self)->firstMessage;
+		while (current) {
+			PiuScreenMessage next = current->nextMessage;
+			g_idle_remove_by_data(current);
+			free(current);
+			current = next;
+		}
+		(*self)->firstMessage = NULL;
+	}
+    if ((*self)->timerRunning) {
+        g_source_remove((*self)->timer);
+        (*self)->timerRunning = FALSE;
+	}
+	if ((*self)->library) {
+		dlclose((*self)->library);
+		(*self)->library = NULL;
+	}
 }
 
 void PiuScreenUnbind(void* it, PiuApplication* application)
@@ -216,10 +284,7 @@ void PiuScreenUnbind(void* it, PiuApplication* application)
 	GtkWidget* gtkDrawingArea = (*self)->gtkDrawingArea;
 	cairo_surface_t *surface = (*self)->surface;
 	txScreen* screen = (*self)->screen;
-    if ((*self)->timerRunning) {
-        g_source_remove((*self)->timer);
-        (*self)->timerRunning = FALSE;
-	}
+	PiuScreenQuit(self);
 	if (screen) {
 		free(screen);
 		(*self)->screen = NULL;
@@ -290,48 +355,34 @@ void PiuScreen_launch(xsMachine* the)
 void PiuScreen_postMessage(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	txScreen* screen = (*self)->screen;
 	PiuScreenMessage message;
 	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		int size = (int)xsGetArrayBufferLength(xsArg(0));
-		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) - 1 + size);
-		xsElseThrow(message != NULL);
-		message->screen = screen;
-		message->size = size;
-		memcpy(message->buffer, xsToArrayBuffer(xsArg(0)), size);
+		message = PiuScreenCreateMessage(self, xsToArrayBuffer(xsArg(0)), size);
 	}
 	else {
 		xsStringValue string = xsToString(xsArg(0));
-		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) + strlen(string));
-		xsElseThrow(message != NULL);
-		message->screen = screen;
-		message->size = 0;
-		strcpy(message->buffer, string);
+		message = PiuScreenCreateMessage(self, string, 0);
 	}
-	g_idle_add(PiuScreen_postMessageAux, message);
+	if (message)
+		g_idle_add(PiuScreen_postMessageAux, message);
 }
 
 gboolean PiuScreen_postMessageAux(gpointer data)
 {
 	PiuScreenMessage message = (PiuScreenMessage)data;
-	txScreen* screen = message->screen;
+	PiuScreen* self = message->self;
+	txScreen* screen = (*self)->screen;
 	if (screen && screen->invoke)
 		(*screen->invoke)(screen, message->buffer, message->size);
-	free(message);
+	PiuScreenDeleteMessage(self, message);
     return FALSE;
 }
 
 void PiuScreen_quit(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	txScreen* screen = (*self)->screen;
-	if (screen && screen->quit)
-		(*screen->quit)(screen);
-	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, screen->width, screen->height);
-	if ((*self)->library) {
-		dlclose((*self)->library);
-		(*self)->library = NULL;
-	}
+	PiuScreenQuit(self);
 }
 
 void fxScreenAbort(txScreen* screen)
@@ -343,11 +394,7 @@ void fxScreenAbort(txScreen* screen)
 gboolean fxScreenAbortAux(gpointer data)
 {
 	PiuScreen* self = (PiuScreen*)data;
-	xsBeginHost((*self)->the);
-	xsVars(1);
-	xsVar(0) = xsReference((*self)->reference);
-	(void)xsCall0(xsVar(0), xsID_quit);
-	xsEndHost((*self)->the);
+	PiuScreenQuit(self);
     return FALSE;
 }
 
@@ -371,45 +418,31 @@ gboolean fxScreenIdle(gpointer data)
 
 void fxScreenPost(txScreen* screen, char* buffer, int size)
 {
-	PiuScreenMessage message;
-	if (size) {
-		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) - 1 + size);
-		if (message) {
-			message->screen = screen;
-			message->size = size;
-			memcpy(message->buffer, buffer, size);
-			g_idle_add(fxScreenPostAux, message);
-		}
-	}
-	else {
-		message = (PiuScreenMessage)malloc(sizeof(PiuScreenMessageRecord) + size);
-		if (message) {
-			message->screen = screen;
-			message->size = 0;
-			strcpy(message->buffer, buffer);
-			g_idle_add(fxScreenPostAux, message);
-		}
-	}
+	PiuScreen* self = (PiuScreen*)screen->view;
+	PiuScreenMessage message = PiuScreenCreateMessage(self, buffer, size);
+	if (message)
+		g_idle_add(fxScreenPostAux, message);
 }
 
 gboolean fxScreenPostAux(gpointer data)
 {
 	PiuScreenMessage message = (PiuScreenMessage)data;
-	txScreen* screen = message->screen;
-	PiuScreen* self = (PiuScreen*)screen->view;
-	xsBeginHost((*self)->the);
-	xsVars(3);
-	xsVar(0) = xsReference((*self)->behavior);
-	if (xsFindResult(xsVar(0), xsID_onMessage)) {
-		xsVar(1) = xsReference((*self)->reference);
-		if (message->size)
-			xsVar(2) = xsArrayBuffer(message->buffer, message->size);
-		else
-			xsVar(2) = xsString(message->buffer);
-		(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+	PiuScreen* self = message->self;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onMessage)) {
+			xsVar(1) = xsReference((*self)->reference);
+			if (message->size)
+				xsVar(2) = xsArrayBuffer(message->buffer, message->size);
+			else
+				xsVar(2) = xsString(message->buffer);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
 	}
-	xsEndHost((*self)->the);
-	free(message);
+	PiuScreenDeleteMessage(self, message);
     return FALSE;
 }
 
