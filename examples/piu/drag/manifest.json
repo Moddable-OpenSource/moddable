@@ -21,4 +21,14 @@
 			"./button"
 		]
 	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/i2c/*",
+					"$(MODULES)/pins/i2c/esp/*",
+				],
+			},
+		},
+	},
 }
