@@ -678,4 +678,29 @@ void ServiceProxyInvoke(xsMachine* the)
 	}
 }
 
+void Piu__jsx__(xsMachine* the) 
+{
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	xsVars(3);
+	if (xsTest(xsArg(1))) {
+		xsVar(0) = xsArg(1);
+		xsVar(1) = xsGet(xsArg(1), xsID_data);
+	}
+	else
+		xsVar(0) = xsNewObject();
+	c -= 2;
+	if (c > 0) {
+		xsVar(2) = xsNewArray(c);
+		for (i = 0; i < c; i++)
+			xsSetAt(xsVar(2), xsInteger(i), xsArg(2 + i));
+		xsSet(xsVar(0), xsID_contents, xsVar(2));
+	}
+	fxPush(xsVar(1));
+	fxPush(xsVar(0));
+	fxPushCount(the, 2);
+	fxPush(xsArg(0));
+	fxNew(the);
+	xsResult = *the->stack;
+	the->stack++;
+}
 
