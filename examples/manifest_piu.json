@@ -1,8 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json",
-		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
