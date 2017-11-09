@@ -114,90 +114,6 @@ export class Behavior {
 }
 Object.freeze(Behavior.prototype);
 
-class DebugBehavior extends Behavior{
-	onAdapt(content) {
-		debugger
-	}
-	onCreate(content, $, it) {
-		debugger
-	}
-	onDisplaying(content) {
-		debugger
-	}
-	onDraw(view, x, y, width, height) {
-		debugger
-	}
-	onFinished(content) {
-		debugger
-	}
-	onFitHorizontally(layout, width) {
-		debugger
-	}
-	onFitVertically(layout, height) {
-		debugger
-	}
-	onFocused(content) {
-		debugger
-	}
-	onKeyDown(content, key) {
-		debugger
-	}
-	onKeyUp(content, key) {
-		debugger
-	}
-	onMeasureHorizontally(layout, width) {
-		debugger
-		return width;
-	}
-	onMeasureVertically(layout, height) {
-		debugger
-		return height;
-	}
-	onMessage(application, json) {
-		debugger
-	}
-	onMouseEntered(content, x, y) {
-		debugger
-	}
-	onMouseExited(content, x, y) {
-		debugger
-	}
-	onMouseMoved(content, x, y) {
-		debugger
-	}
-	onMouseScrolled(content, dx, dy) {
-		debugger
-	}
-	onScrolled(content) {
-		debugger
-	}
-	onTimeChanged(content) {
-		debugger
-	}
-	onTouchBegan(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchCancelled(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchEnded(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchMoved(content, index, x, y, ticks) {
-		debugger
-	}
-	onTransitionBeginning(container) {
-		debugger
-	}
-	onTransitionEnded(container) {
-		debugger
-	}
-	onUnfocused(content) {
-		debugger
-	}
-}
-Object.freeze(DebugBehavior.prototype);
-
 // DISPATCH
 
 export function template(f) {
@@ -238,12 +154,12 @@ export function Template(prototype) {
 
 // CONTENTS
 
-var proto = @ "PiuContentDelete";
+let proto = @ "PiuContentDelete";
 Object.freeze(proto);
 
 // PiuContent.c
 
-var content = {
+export let Content = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuContent_create",
 	
@@ -318,26 +234,22 @@ var content = {
 	sizeBy(x, y) @ "PiuContent_sizeBy",
 	start() @ "PiuContent_start",
 	stop() @ "PiuContent_stop",
-};
-export var Content = Template(content);
-Object.freeze(content);
+}));
 
 // PiuLabel.c
 
-var label = {
+export let Label = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuLabel_create",
 
 	get string() @ "PiuLabel_get_string",
 	
 	set string(it) @ "PiuLabel_set_string",
-};
-export var Label = Template(label);
-Object.freeze(label);
+}));
 
 // PiuText.c
 
-var text = {
+export let Text = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuText_create",
 
@@ -354,11 +266,9 @@ var text = {
 	end() @ "PiuText_end",
 	endBlock() @ "PiuText_endBlock",
 	endSpan() @ "PiuText_endSpan",
-};
-export var Text = Template(text);
-Object.freeze(text);
+}));
 
-var link = {
+export let Link = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuTextLink_create",
 
@@ -368,13 +278,11 @@ var link = {
 	set state(it) @ "PiuTextLink_set_state",
 	
 	captureTouch(id, x, y, ticks) @ "PiuContent_captureTouch",
-}
-export var Link = Template(link);
-Object.freeze(link);
+}));
 
 // PiuPort.c
 
-var port = {
+export let Port = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuPort_create",
 	
@@ -394,15 +302,13 @@ var port = {
 	popClip() @ "PiuPort_popClip",
 	pushClip(x, y, w, h) @ "PiuPort_pushClip",
 	measureString(string, style) @ "PiuPort_measureString",
-};
-export var Port = Template(port);
-Object.freeze(port);
+}));
 
 // CONTAINERS
 
 // PiuContainer.c
 
-var container = {
+export let Container = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuContainer_create",
 	_recurse(it) {
@@ -434,58 +340,48 @@ var container = {
 	replace(content, by) @ "PiuContainer_replace",
 	run(transition) @ "PiuContainer_run",
 	swap(content0, content1) @ "PiuContainer_swap",
-};
-export var Container = Template(container);
-Object.freeze(container);
+}));
 
 // PiuColumn.c
 
-var column = {
+export let Column = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuColumn_create",
-};
-export var Column = Template(column);
-Object.freeze(column);
+}));
 
 // PiuLayout.c
 
-var layout = {
+export let Layout = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuLayout_create",
-};
-export var Layout = Template(layout);
-Object.freeze(layout);
+}));
 
 // PiuRow.c
 
-var row = {
+export let Row = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuRow_create",
-};
-export var Row = Template(row);
-Object.freeze(row);
+}));
 
 // PiuScroller.c
 
-var scroller = {
+export let Scroller = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuScroller_create",
-	
+
 	get constraint() @ "PiuScroller_get_constraint",
 	get loop() @ "PiuScroller_get_loop",
 	get scroll() @ "PiuScroller_get_scroll",
 	get tracking() @ "PiuScroller_get_tracking",
-	
+
 	set loop(it) @ "PiuScroller_set_loop",
 	set scroll(it) @ "PiuScroller_set_scroll",
 	set tracking(it) @ "PiuScroller_set_tracking",
-	
+
 	reveal(bounds) @ "PiuScroller_reveal",
 	scrollBy(dx, dy) @ "PiuScroller_scrollBy",
 	scrollTo(x, y) @ "PiuScroller_scrollTo",
-};
-export var Scroller = Template(scroller);
-Object.freeze(scroller);
+}));
 
 // DEFER
 
