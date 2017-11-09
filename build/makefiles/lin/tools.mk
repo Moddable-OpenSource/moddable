@@ -124,19 +124,19 @@ MODULES = \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
-	$(TMP_DIR)/commodettoBitmap.xsi \
-	$(TMP_DIR)/commodettoColorCellOut.xsi \
-	$(TMP_DIR)/commodettoConvert.xsi \
-	$(TMP_DIR)/commodettoParseBMF.xsi \
-	$(TMP_DIR)/commodettoParseBMP.xsi \
-	$(TMP_DIR)/commodettoPoco.xsi \
-	$(TMP_DIR)/commodettoPocoBlit.xsi \
-	$(TMP_DIR)/commodettoReadJPEG.xsi \
-	$(TMP_DIR)/commodettoReadPNG.xsi \
-	$(TMP_DIR)/image2cs.xsi \
-	$(TMP_DIR)/miniz.xsi \
-	$(TMP_DIR)/modInstrumentation.xsi \
-	$(TMP_DIR)/tool.xsi
+	$(TMP_DIR)/commodettoBitmap.c.xsi \
+	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
+	$(TMP_DIR)/commodettoConvert.c.xsi \
+	$(TMP_DIR)/commodettoParseBMF.c.xsi \
+	$(TMP_DIR)/commodettoParseBMP.c.xsi \
+	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
+	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
+	$(TMP_DIR)/commodettoReadPNG.c.xsi \
+	$(TMP_DIR)/image2cs.c.xsi \
+	$(TMP_DIR)/miniz.c.xsi \
+	$(TMP_DIR)/modInstrumentation.c.xsi \
+	$(TMP_DIR)/tool.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -259,7 +259,7 @@ $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@
 
-$(TMP_DIR)/%.xsi: %.c
+$(TMP_DIR)/%.c.xsi: %.c
 	@echo "#" $(NAME) $(GOAL) ": xsid" $(<F)
 	$(XSID) $< -o $(TMP_DIR)
 
