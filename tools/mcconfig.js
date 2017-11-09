@@ -93,7 +93,15 @@ class MakeFile extends MAKEFILE {
 			this.write("\\\n\t$(TMP_DIR)");
 			this.write(tool.slash);
 			this.write(sourceParts.name);
+			this.write(sourceParts.extension);
 			this.write(".xsi");
+		}
+		for (var result of tool.hFiles) {
+			var sourceParts = tool.splitPath(result);
+			this.write("\\\n\t$(TMP_DIR)");
+			this.write(tool.slash);
+			this.write(sourceParts.name);
+			this.write(".h.xsi");
 		}
 		this.line("");
 		this.write("PRELOADS =");
@@ -109,9 +117,15 @@ class MakeFile extends MAKEFILE {
 		for (var result of tool.cFiles) {
 			var source = result.source;
 			var sourceParts = tool.splitPath(result.source);
-			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".xsi: ", source);
-			this.echo(tool, "xsid ", sourceParts.name, ".xsi");
+			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, sourceParts.extension, ".xsi: ", source);
+			this.echo(tool, "xsid ", sourceParts.name, sourceParts.extension, ".xsi");
 			this.line("\t$(XSID) ", source, " -o $(@D)");
+		}
+		for (var result of tool.hFiles) {
+			var sourceParts = tool.splitPath(result);
+			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".h.xsi: ", result);
+			this.echo(tool, "xsid ", sourceParts.name, ".h.xsi");
+			this.line("\t$(XSID) ", result, " -o $(@D)");
 		}
 		this.line("");
 	}
