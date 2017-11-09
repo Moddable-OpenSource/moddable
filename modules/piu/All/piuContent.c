@@ -1287,6 +1287,7 @@ void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsI
 			fxPush(xsResult);
 			fxCall(the);
 			xsResult = fxPop();
+			return;
 		}
 	}
 	xsResult = xsUndefined;
