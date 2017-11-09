@@ -207,7 +207,6 @@ int main(int argc, char* argv[])
 	if (rename)
 		c_strcat(output, rename);
 	else {
-		char* dot;
 		rename = strrchr(input, mxSeparator);
 		if (rename == NULL)
 			rename = input;
