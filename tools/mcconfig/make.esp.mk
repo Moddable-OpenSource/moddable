@@ -23,6 +23,7 @@ HOST_OS := $(shell uname)
 ARDUINO_ROOT ?= $(ESP_BASE)/Arduino-2.2.0
 ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
 HACKED_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
+ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
 TOOLS_ROOT ?= $(ESP_BASE)/toolchain/$(HOST_OS)
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp
 
@@ -79,11 +80,58 @@ INC_DIRS = \
  	$(CORE_DIR) \
  	$(ARDUINO_ROOT)/variants/generic \
  	$(ARDUINO_ROOT)/cores/esp8266/spiffs
-SDK = \
-	$(CORE_DIR) \
-    $(PLATFORM_DIR)/lib/rtc \
-    $(PLATFORM_DIR)/lib/tinyprintf
-SDK_SRC = $(shell find $(SDK) -name "*.S" -o -name "*.c" -o -name "*.cpp")   
+SDK_SRC = \
+	$(ARDUINO_ESP8266)/abi.cpp \
+	$(ARDUINO_ESP8266)/cont.S \
+	$(ARDUINO_ESP8266)/cont_util.c \
+	$(ARDUINO_ESP8266)/core_esp8266_main.cpp \
+	$(ARDUINO_ESP8266)/core_esp8266_noniso.c \
+	$(ARDUINO_ESP8266)/core_esp8266_phy.c \
+	$(ARDUINO_ESP8266)/core_esp8266_postmortem.c \
+	$(ARDUINO_ESP8266)/core_esp8266_si2c.c \
+	$(ARDUINO_ESP8266)/core_esp8266_timer.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring_digital.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring_pwm.c \
+	$(ARDUINO_ESP8266)/Esp.cpp \
+	$(ARDUINO_ESP8266)/HardwareSerial.cpp \
+	$(ARDUINO_ESP8266)/heap.c \
+	$(ARDUINO_ESP8266)/libc_replacements.c \
+	$(ARDUINO_ESP8266)/Print.cpp \
+	$(ARDUINO_ESP8266)/spiffs/spiffs_cache.c \
+	$(ARDUINO_ESP8266)/spiffs/spiffs_check.c \
+	$(ARDUINO_ESP8266)/spiffs/spiffs_gc.c \
+	$(ARDUINO_ESP8266)/spiffs/spiffs_hydrogen.c \
+	$(ARDUINO_ESP8266)/spiffs/spiffs_nucleus.c \
+	$(ARDUINO_ESP8266)/spiffs_hal.cpp \
+	$(ARDUINO_ESP8266)/Stream.cpp \
+	$(ARDUINO_ESP8266)/time.c \
+	$(ARDUINO_ESP8266)/uart.c \
+	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \
+	$(ARDUINO_ESP8266)/WString.cpp \
+	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
+	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c
+SDK_SRC_SKIPPED = \
+	$(ARDUINO_ESP8266)/base64.cpp \
+	$(ARDUINO_ESP8266)/cbuf.cpp \
+	$(ARDUINO_ESP8266)/core_esp8266_eboot_command.c \
+	$(ARDUINO_ESP8266)/core_esp8266_i2s.c \
+	$(ARDUINO_ESP8266)/core_esp8266_flash_utils.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring_analog.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring_pulse.c \
+	$(ARDUINO_ESP8266)/core_esp8266_wiring_shift.c \
+	$(ARDUINO_ESP8266)/debug.cpp \
+	$(ARDUINO_ESP8266)/pgmspace.cpp \
+	$(ARDUINO_ESP8266)/IPAddress.cpp \
+	$(ARDUINO_ESP8266)/spiffs_api.cpp \
+	$(ARDUINO_ESP8266)/WMath.cpp \
+	$(ARDUINO_ESP8266)/MD5Builder.cpp \
+	$(ARDUINO_ESP8266)/Updater.cpp \
+	$(ARDUINO_ESP8266)/Tone.cpp \
+	$(ARDUINO_ESP8266)/FS.cpp \
+	$(ARDUINO_ESP8266)/libb64/cdecode.c \
+	$(ARDUINO_ESP8266)/libb64/cencode.c \
+	$(ARDUINO_ESP8266)/StreamString.cpp
 SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
     
