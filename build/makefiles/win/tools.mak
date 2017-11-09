@@ -305,14 +305,14 @@ $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)
 	
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 {$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 {$(TOOLS)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
