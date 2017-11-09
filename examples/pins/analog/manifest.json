@@ -1,193 +1,31 @@
 {
-	"build": {
-		"BUILD": "$(MODDABLE)/build",
-		"MODULES": "$(MODDABLE)/modules",
-		"COMMODETTO": "$(MODULES)/commodetto",
-	},
-	"creation": {
-		"static": 32768,
-		"chunk": {
-			"initial":1536,
-			"incremental":1024,
-		},
-		"heap": {
-			"initial":512,
-			"incremental":64,
-		},
-		"stack":256,
-		"keys": {
-			"available":32,
-			"name":53,
-			"symbol":3,
-		},
-		"main":"main",
-	},
+	"include": [
+				"$(MODDABLE)/examples/manifest_base.json",
+				"$(MODDABLE)/examples/manifest_commodetto.json",
+				"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+				],
 	"modules": {
-		"~": [
-		],
-		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-		"*": [
-			"./main",
-			"$(MODULES)/base/debug/*",
-			"$(MODULES)/files/resource/*",
-			"$(MODULES)/base/instrumentation/*",
-		],
+		"*": "./main",
 	},
-	"preload": [
-		"debug",
-		"Resource",
-		"instrumentation",
-	],
 	"resources":{
 		"*-mask": [
-			"./myFont",
-		],
+				   "./myFont",
+				   ],
 	},
-	"strip": "*",
+	"config": {
+		"screen": "ili9341"
+	},
 	"platforms":{
 		"esp": {
 			"modules": {
-				"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-				"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
-				"commodetto/ParseBMF": "$(COMMODETTO)/commodettoParseBMF",
-				"commodetto/ParseRLE": "$(COMMODETTO)/commodettoParseRLE",
-				"*": [
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/drivers/ssd1306/*",
-					"$(MODULES)/pins/pins/*",
-					"$(MODULES)/pins/spi/*",
-				],
-				"setup": "$(BUILD)/devices/esp/setup/setup-piu-ssd1306",
+				"pins/analog": "$(MODULES)/pins/analog/analog",
+				"*": "$(MODULES)/pins/analog/esp/*"
 			},
 			"preload": [
-				"commodetto/*",
-				"timer",
-				"ssd1306",
-				"pins",
-				"setup",
+				"pins/analog"
 			],
-			"recipes": {
-				"strings-in-flash": [
-					"commodetto*",
-					"ili9341*",
-					"piu*",
-					"Resource*",
-					"xs6*",
-					"xpt2046*"
-				],
-			}
-		},
-		"zephyr": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/instrumentation/*",
-					"$(MODULES)/base/timer/*",
-				]
-			},
-			"preload": [
-				"instrumentation",
-				"timer",
-			],
-		},
-		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/instrumentation/*",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/crypt/digest/*",
-					"$(MODULES)/crypt/digest/kcl/*",
-					"$(MODULES)/data/base64/*",
-					"$(MODULES)/network/http/*",
-					"$(MODULES)/network/net/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socketmbedtls/*",
-					"$(MODULES)/network/websocket/*",
-					"$(MODULES)/pins/smbus/*",
-					"$(BUILD)/devices/esp32/wifi/*",
-					"$(BUILD)/devices/esp32/pins/*",
-				],
-				"setup": "$(BUILD)/devices/esp32/setup/setup",
-			},
-			"preload": [
-				"instrumentation",
-				"time",
-				"timer",
-				"crypt",
-				"base64",
-				"http",
-				"net",
-				"sntp",
-				"socket",
-				"smbus",
-				"websocket",
-				"wifi",
-				"pins",
-				"setup",
-			],
-		},
-		"gecko": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/instrumentation/*",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/timer/*",
-					"$(BUILD)/devices/gecko/pins/*",
-					"$(MODULES)/pins/smbus/*",
-				],
-				"setup": "$(BUILD)/devices/gecko/setup/setup",
-			},
-			"preload": [
-				"instrumentation",
-				"timer",
-				"setup"
-			],
-		},
-		"linux": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/instrumentation/*",
-					"$(MODULES)/base/timer/*",
-				]
-			},
-			"preload": [
-				"instrumentation",
-				"timer",
-			],
-		},
-		"mac": {
-			"modules": {
-				"*": [	"$(BUILD)/simulator/screen",
-						"$(MODULES)/network/socket/*",
-						"$(MODULES)/network/socket/mac/*",
-				],
-			},
-		},
-		"mac/clut16": {
-			"modules": {
-				"*": "$(BUILD)/simulator/formats/clut16/screen",
-			},
-		},
-		"mac/gray16": {
-			"modules": {
-				"*": "$(BUILD)/simulator/formats/gray16/screen",
-			},
-		},
-		"mac/gray256": {
-			"modules": {
-				"*": "$(BUILD)/simulator/formats/gray256/screen",
-			},
-		},
-		"mac/rgb332": {
-			"modules": {
-				"*": "$(BUILD)/simulator/formats/rgb332/screen",
-			},
-		},
-		"mac/rgb565le": {
-			"modules": {
-				"*": "$(BUILD)/simulator/formats/rgb565le/screen",
-			},
-		},
-	},
+		}
+	}
 }
+
+
