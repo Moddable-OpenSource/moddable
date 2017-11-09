@@ -12,17 +12,18 @@
  *
  */
 
+import config from "mc/config";
 import Analog from "pins/analog";
 import Timer from "timer";
 import Resource from "Resource";
-import parseBMF from "commodetto/ParseBMF";
+import parseBMF from "commodetto/parseBMF";
 
 import Poco from "commodetto/Poco";
 
 let font = parseBMF(new Resource("myFont.bf4"));
 
-let width = screen.width, height = screen.height;
-let render = new Poco(screen);
+let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let width = render.width, height = render.height;
 
 let white = render.makeColor(255, 255, 255);
 let black = render.makeColor(0, 0, 0);
