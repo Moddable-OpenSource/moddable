@@ -22,7 +22,7 @@
 #include "xsesp.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#include "Arduino.h"
+#include "user_interface.h"
 
 /*
 	Analog
@@ -31,6 +31,8 @@
 void xs_analog_read(xsMachine *the)
 {
 	int pin = xsToInteger(xsArg(0));
-	int value = analogRead(pin);		// 0 to 1023
+	if (0 != pin)
+		xsRangeError("");
+	int value = system_adc_read();		// 0 to 1023
 	xsResult = xsInteger(value);
 }
