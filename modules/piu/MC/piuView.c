@@ -470,7 +470,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, P
 			if (bits)
 				PocoBitmapDrawMasked(poco, kPocoOpaque, bits, cx, cy, sx, sy, sw, sh, mask, sx, sy);
 			else
-				PocoGrayBitmapDraw(poco, mask, color, cx, cy, sx, sy, sw, sh);
+				PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
 		}
 		else {
 			if (bits)
@@ -484,7 +484,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, P
 				pack.width = sh;
 				pack.height = sw;
 #endif
-				PocoGrayBitmapDraw(poco, &pack, color, cx, cy, 0, 0, sw, sh);
+				PocoGrayBitmapDraw(poco, &pack, color, kPocoOpaque, cx, cy, 0, 0, sw, sh);
 			}
 		}
 		x += xadvance;
@@ -539,7 +539,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 		if (bits)
 			PocoBitmapDrawMasked(poco, blend, bits, x, y, sx, sy, sw, sh, mask, sx, sy);
 		else
-			PocoGrayBitmapDraw(poco, mask, color, x, y, sx, sy, sw, sh);
+			PocoGrayBitmapDraw(poco, mask, color, blend, x, y, sx, sy, sw, sh);
 	}
 	else
 		PocoBitmapDraw(poco, bits, x, y, sx, sy, sw, sh);
@@ -694,23 +694,23 @@ void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 				xx = x;
 				ww = w;
 				while (ww >= sw) {
-					PocoGrayBitmapDraw(poco, mask, color, xx, y, sx, sy, sw, sh);
+					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, xx, y, sx, sy, sw, sh);
 					xx += sw;
 					ww -= sw;
 				}
 				if (ww)
-					PocoGrayBitmapDraw(poco, mask, color, xx, y, sx, sy, ww, sh);
+					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, xx, y, sx, sy, ww, sh);
 				y += sh;
 				h -= sh;
 			}
 			if (h) {
 				while (w >= sw) {
-					PocoGrayBitmapDraw(poco, mask, color, x, y, sx, sy, sw, h);
+					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, x, y, sx, sy, sw, h);
 					x += sw;
 					w -= sw;
 				}
 				if (w)
-					PocoGrayBitmapDraw(poco, mask, color, x, y, sx, sy, w, h);
+					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, x, y, sx, sy, w, h);
 			}
 		}
 	}
