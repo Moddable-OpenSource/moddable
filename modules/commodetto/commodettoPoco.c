@@ -517,7 +517,7 @@ void xs_poco_drawGray(xsMachine *the)
 		}
 	}
 
-	PocoGrayBitmapDraw(poco, &bits, color, x, y, sx, sy, sw, sh);
+	PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, x, y, sx, sy, sw, sh);
 }
 
 void xs_poco_drawMasked(xsMachine *the)
@@ -829,10 +829,10 @@ void xs_poco_drawText(xsMachine *the)
 				bits.width = sh;
 				bits.height = sw;
 #endif
-				PocoGrayBitmapDraw(poco, &bits, color, cx, cy, 0, 0, sw, sh);
+				PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, 0, 0, sw, sh);
 			}
 			else
-				PocoGrayBitmapDraw(poco, &bits, color, cx, cy, sx, sy, sw, sh);
+				PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
 		}
 
 		x += xadvance;
