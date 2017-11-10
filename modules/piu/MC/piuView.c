@@ -46,6 +46,7 @@ typedef struct {
 
 typedef struct {
 	PiuCommandID id;
+	uint8_t blend;
 	PocoColor color;
 	PiuCoordinate offset;
 	PiuDimension length;
@@ -117,7 +118,7 @@ typedef struct {
 static void PiuViewBegin(PiuView* view);
 static void PiuViewCombine(PiuView* self, PiuRectangle area, PiuCoordinate op);
 static void PiuViewCombineRegion(PiuView* self, PiuRegion* region, PiuCoordinate op);
-static void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
+static void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
 static void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 static void PiuViewEnd(PiuView* view);
 static void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
@@ -377,6 +378,7 @@ void PiuViewDrawString(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuD
 		command->length = length;
 		command->font = font;
 		command->color = (*self)->pixel;
+		command->blend = (*self)->blend;
 		command->x = x;
 		command->y = y;
 		command->w = w;
@@ -384,7 +386,7 @@ void PiuViewDrawString(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuD
 	}
 }
 
-void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, PiuCoordinate x, PiuCoordinate y, PiuDimension width, PiuDimension stringWidth)
+void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension width, PiuDimension stringWidth)
 {
 	xsMachine* the = (*self)->the;
 	Poco poco = (*self)->poco;
@@ -468,9 +470,9 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, P
 
 		if (mask) {
 			if (bits)
-				PocoBitmapDrawMasked(poco, kPocoOpaque, bits, cx, cy, sx, sy, sw, sh, mask, sx, sy);
+				PocoBitmapDrawMasked(poco, blend, bits, cx, cy, sx, sy, sw, sh, mask, sx, sy);
 			else
-				PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
+				PocoGrayBitmapDraw(poco, mask, color, blend, cx, cy, sx, sy, sw, sh);
 		}
 		else {
 			if (bits)
@@ -484,7 +486,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, P
 				pack.width = sh;
 				pack.height = sw;
 #endif
-				PocoGrayBitmapDraw(poco, &pack, color, kPocoOpaque, cx, cy, 0, 0, sw, sh);
+				PocoGrayBitmapDraw(poco, &pack, color, blend, cx, cy, 0, 0, sw, sh);
 			}
 		}
 		x += xadvance;
@@ -919,7 +921,7 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			PocoDrawFrame(poco, command->data, command->dataSize, command->x, command->y, command->sw, command->sh);
 			PIUBreak;
 		PIUCase(DrawStringCommand)
-			PiuViewDrawStringAux(self, command->string, command->offset, command->length, command->font, command->color, command->x, command->y, command->w, command->sw);
+			PiuViewDrawStringAux(self, command->string, command->offset, command->length, command->font, command->color, command->blend, command->x, command->y, command->w, command->sw);
 			PIUBreak;
 		PIUCase(DrawTextureCommand)
 			PiuViewDrawTextureAux(self, command->texture, command->color, command->blend, command->x, command->y, command->sx, command->sy, command->sw, command->sh);
