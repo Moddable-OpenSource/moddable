@@ -19,7 +19,7 @@ import WipeTransition from "piu/WipeTransition";
 const blackSkin = new Skin({ fill:[0x00000050, "transparent"] });
 const shinjukuTexture = new Texture("shinjuku.png");
 const shinjukuSkin = new Skin({ texture:shinjukuTexture, x:0, y:0, width:320, height:240 });
-const textStyle = new Style({ font:"myFont", color:"white", horizontal:"center", top:10, bottom:10 });
+const textStyle = new Style({ font:"myFont", color:["white","transparent"], horizontal:"center", top:10, bottom:10 });
 const textSkin = new Skin({ fill:0x000000A0 });
 
 class NeonTitleBehavior extends Behavior {
@@ -29,6 +29,9 @@ class NeonTitleBehavior extends Behavior {
 	}
 	onFinished(container) {
 		container.bubble("onTitleFinished");
+	}
+	onTimeChanged(container) {
+		container.first.first.state = container.fraction;
 	}
 }
 
