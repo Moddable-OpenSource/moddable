@@ -40,6 +40,7 @@ enum {
 	kPocoCommandMonochromeForegroundBitmapDraw,
 	kPocoCommandGray16BitmapDraw,
 	kPocoCommandGray16RLEBitmapDraw,
+	kPocoCommandGray16RLEBlendBitmapDraw,
 	kPocoCommandBitmapDrawMasked,
 	kPocoCommandBitmapPattern,
 	kPocoCommandFrame,
@@ -79,6 +80,7 @@ static void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst
 static void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h);
 static void doDrawGray16RLEBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h);
+static void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h);
 static void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h);
 static void doDrawPattern(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
@@ -90,12 +92,11 @@ static const PocoRenderCommandProc gDrawRenderCommand[kPocoCommandDrawMax] ICACH
 	doBlendRectangle,
 	doDrawPixel,
 	doDrawBitmap,
-//	doDrawPackedBitmapUnclipped,
-//	doDrawPackedBitmapClipped,
 	doDrawMonochromeBitmapPart,
 	doDrawMonochromeForegroundBitmapPart,
 	doDrawGray16BitmapPart,
 	doDrawGray16RLEBitmapPart,
+	doDrawGray16RLEBlendBitmapPart,
 	doDrawMaskedBitmap,
 	doDrawPattern,
 	doDrawFrame
@@ -191,7 +192,7 @@ struct PocoCommandRecord {
 */
 
 #if kPocoPixelSize >= 8
-	static const uint8_t gBlenders[256] ICACHE_RODATA_ATTR = {
+	static const uint8_t gBlenders[256] ICACHE_RAM_ATTR = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
 		4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0,
@@ -210,7 +211,7 @@ struct PocoCommandRecord {
 		31, 29, 27, 25, 23, 21, 19, 17, 14, 12, 10, 8, 6, 4, 2, 0
 	};
 #else
-	static const uint8_t gBlenders[256] ICACHE_RODATA_ATTR = {
+	static const uint8_t gBlenders[256] ICACHE_RAM_ATTR = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
@@ -301,6 +302,7 @@ typedef struct RenderGray16RLEBitsRecord {
 	PocoCommandFields;
 
 	uint8_t				nybbleCount;			// 0 to 7
+	uint8_t				blendersOffset;
 	PocoColor			color;
 	const uint8_t		*pixels;
 
@@ -605,7 +607,7 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 	PocoCommandBuilt(poco, pc);
 }
 
-void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
+void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	PocoCommand pc = poco->next;
 	int16_t d;
@@ -681,7 +683,16 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, PocoCoordin
 		nybbles = *pixels++;
 		nybbles >>= (32 - (nybbleCount << 2));
 
-		pc->command = kPocoCommandGray16RLEBitmapDraw;
+		if (kPocoOpaque == blend)
+			pc->command = kPocoCommandGray16RLEBitmapDraw;
+		else {
+			pc->command = kPocoCommandGray16RLEBlendBitmapDraw;
+			((RenderGray16RLEBits)pc)->blendersOffset = blend & 0xF0;		// (blend >> 4) << 4
+
+			if (0 == blend)
+				return;
+		}
+
 		if (bits->width - sw) {
 			PocoCommandSetLength(pc, sizeof(RenderGray16RLEBitsRecord));
 			srcBits->thisSkip = sx;
@@ -2097,6 +2108,314 @@ blitSkip:
 		/*
 			save clip right for next scan line
 		*/
+		if (skip)
+			srcBits->thisSkip = skip + remaining;
+
+#if 4 != kPocoPixelSize
+		d += scanBump;
+#else
+		d = dNext;
+#endif
+	}
+
+	srcBits->pixels = (uint8_t *)pixels;
+	srcBits->nybbleCount = nybbleCount;
+}
+
+void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h)
+{
+	RenderGray16RLEBits srcBits = (RenderGray16RLEBits)pc;
+	PocoCoordinate skip = (PocoCommandLength(RenderGray16RLEBitsRecord) == pc->length) ? srcBits->skip : 0;
+	const uint32_t *pixels = (const uint32_t *)srcBits->pixels;
+	uint32_t nybbles = pixels[-1];
+	uint8_t nybbleCount = srcBits->nybbleCount;
+#if 4 != kPocoPixelSize
+	PocoCoordinate scanBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - srcBits->w;
+#endif
+	PocoColor color = srcBits->color;
+#if kPocoPixelFormat == kCommodettoBitmapRGB565LE
+	int32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+#elif kPocoPixelFormat == kCommodettoBitmapRGB332
+	int32_t src32 = (color | (color << 16)) & 0x001C00E3;
+#elif kPocoPixelFormat == kCommodettoBitmapCLUT16
+	int32_t src32 = (color | (color << 16)) & 0x00F00F0F;
+	uint16_t *clut = (uint16_t *)poco->clut;
+	uint8_t *map = 32 + (uint8_t *)poco->clut;
+	color = c_read8(map + color);		// color index
+#endif
+	const uint8_t *blender = gBlenders + srcBits->blendersOffset;
+
+	nybbles >>= (32 - (nybbleCount << 2));
+
+	while (h--) {
+		uint8_t nybble, count;
+#if 4 == kPocoPixelSize
+		PocoPixel *dNext = (PocoPixel *)(poco->rowBytes + (char *)d);
+#endif
+		PocoCoordinate remaining;
+#if 4 == kPocoPixelSize
+		uint8_t xphase = srcBits->xphase;
+#endif
+
+		/*
+		 clip left and previous right
+		 */
+		if (skip && srcBits->thisSkip) {
+			remaining = srcBits->thisSkip;
+
+			do {
+				if (0 == nybbleCount) {
+					nybbles = *pixels++;
+					nybbleCount = 8;
+				}
+
+				nybble = nybbles & 0x0F;
+				nybbles >>= 4;
+				nybbleCount -= 1;
+
+				if (8 & nybble) {
+					if (0x08 == (nybble & 0x0C)) {		// solid
+						count = (nybble & 3) + 2;
+						if (count > remaining) {
+							count -= remaining;
+							remaining = srcBits->w;
+							goto blitSolid;
+						}
+						remaining -= count;
+					}
+					else {		// quote
+						count = (nybble & 3) + 1;
+						do {
+							if (0 == nybbleCount) {
+								nybbles = *pixels++;
+								nybbleCount = 8;
+							}
+
+							nybbles >>= 4;
+							nybbleCount -= 1;
+							remaining -= 1;
+							count -= 1;
+						} while (remaining && count);
+
+						if (count) {
+							remaining = srcBits->w;
+							goto blitQuote;
+						}
+					}
+				}
+				else {	// skip
+					count = nybble + 2;
+					if (count > remaining) {
+						count -= remaining;
+						remaining = srcBits->w;
+						goto blitSkip;
+					}
+					remaining -= count;
+				}
+			} while (remaining);
+		}
+
+		/*
+		 draw
+		 */
+		remaining = srcBits->w;
+		while (remaining > 0) {
+			if (0 == nybbleCount) {
+				nybbles = *pixels++;
+				nybbleCount = 8;
+			}
+
+			nybble = nybbles & 0x0F;
+			nybbles >>= 4;
+			nybbleCount -= 1;
+
+			if (8 & nybble) {
+				uint8_t blend;
+
+				if (0x08 == (nybble & 0x0C)) {
+					count = (nybble & 3) + 2;	// solid
+
+				blitSolid:
+					blend = c_read8(&blender[0]);
+					remaining -= count;
+					if (remaining < 0)
+						count += remaining;
+					if (31 == blend) {
+						while (count--) {
+	#if 4 != kPocoPixelSize
+							*d++ = color;
+	#else
+							if (PocoPixels4IsSecondPixel(xphase)) {
+								*d = (*d & 0xF0) | color;
+								d += 1;
+							}
+							else
+								*d = (color << 4) | (*d & 0x0F);
+							xphase ^= 1;
+	#endif
+						}
+					}
+					else if (blend) {
+						BlendDrawRecord bd;
+
+						bd.color = color;
+						bd.blend = blend;
+						bd.w = count;
+						// don't need to set bd.rowBytes when h == 1
+#if 4 == kPocoPixelSize
+						bd.xphase = xphase;
+#endif
+						doBlendRectangle(poco, (PocoCommand)&bd, d, 1);
+						goto blitSkip2;
+					}
+				}
+				else {		// quote
+					count = (nybble & 3) + 1;
+
+				blitQuote:
+					remaining -= count;
+					if (remaining < 0)
+						count += remaining;
+
+					while (count--) {
+
+						if (0 == nybbleCount) {
+							nybbles = *pixels++;
+							nybbleCount = 8;
+						}
+
+						blend = c_read8(&blender[nybbles & 0x0F]);
+						nybbles >>= 4;
+						nybbleCount -= 1;
+
+						if (blend) {
+							if (31 == blend) {
+#if 4 != kPocoPixelSize
+								*d = color;
+#else
+								if (PocoPixels4IsSecondPixel(xphase))
+									*d = (*d & 0xF0) | color;
+								else
+									*d = (color << 4) | (*d & 0x0F);
+#endif
+							}
+							else {
+#if kPocoPixelFormat == kCommodettoBitmapRGB565LE
+								int32_t dst = *d;
+
+//								blend = (blend << 1) | (blend >> 3);		// 5-bit blend
+
+								dst |= dst << 16;
+								dst &= 0x07E0F81F;
+								dst = blend * (src32 - dst) + (dst << 5) - dst;
+								dst += 0x02008010;
+								dst += (dst >> 5) & 0x03E0F81F;
+								dst >>= 5;
+								dst &= 0x07E0F81F;
+								dst |= dst >> 16;
+								*d = (PocoPixel)dst;
+#elif kPocoPixelFormat == kCommodettoBitmapGray256
+								blend >>= 1;			// 4 bit blend
+								*d = ((*d * (15 - blend)) + (color * blend)) >> 4;
+#elif kPocoPixelFormat == kCommodettoBitmapRGB332
+								int32_t dst = *d;
+
+								blend >>= 2;			// 3-bit blend
+
+								dst |= dst << 16;
+								dst &= 0x001C00E3;
+								dst = blend * (src32 - dst) + (dst << 3) - dst;
+								//@@ half bit precision			dst += 0x02008010;
+								dst += (dst >> 3) & 0x000C00E3;
+								dst >>= 3;
+								dst &= 0x001C00E3;
+								dst |= dst >> 16;
+								*d = (PocoPixel)dst;
+#elif kPocoPixelFormat == kCommodettoBitmapGray16
+								PocoPixel pixels = *d;
+								blend >>= 1;			// 4 bit blend
+								if (xphase)
+									*d = (pixels & 0xF0) | ((((pixels & 0x0F) * (15 - blend)) + (color * blend)) >> 4);
+								else
+									*d = ((((pixels >> 4) * (15 - blend)) + (color * blend)) & 0xF0) | (pixels & 0x0F);
+#elif kPocoPixelFormat == kCommodettoBitmapCLUT16
+								uint8_t dstTwo = *d;
+								blend >>= 1;			// 4 bit blend
+								if (PocoPixels4IsSecondPixel(xphase)) {
+									uint32_t ds = c_read16(clut + (dstTwo & 0x0F));
+									ds |= ds << 16;
+									ds &= 0x00F00F0F;
+									ds = blend * (src32 - ds) + (ds << 4) - ds;
+									ds += (ds >> 4) & 0x00F00F0F;
+									ds >>= 4;
+									ds &= 0x00F00F0F;
+									ds |= ds >> 16;
+
+									*d = (dstTwo & 0xF0) | c_read8(map + (uint16_t)ds);
+								}
+								else {
+									uint32_t ds = c_read16(clut + (dstTwo >> 4));
+									ds |= ds << 16;
+									ds &= 0x00F00F0F;
+									ds = blend * (src32 - ds) + (ds << 4) - ds;
+									ds += (ds >> 4) & 0x00F00F0F;
+									ds >>= 4;
+									ds &= 0x00F00F0F;
+									ds |= ds >> 16;
+
+									*d = (dstTwo & 0x0F) | (c_read8(map + (uint16_t)ds) << 4);
+								}
+#else
+#error
+#endif
+							}
+						}
+#if 4 != kPocoPixelSize
+						d += 1;
+#else
+						d += xphase;
+						xphase ^= 1;
+#endif
+					}
+
+					if (remaining < 0) {
+						count = -remaining;
+
+						do {
+							if (0 == nybbleCount) {
+								nybbles = *pixels++;
+								nybbleCount = 8;
+							}
+
+							nybbles >>= 4;
+							nybbleCount -= 1;
+						} while (--count);
+					}
+				}
+			}
+			else {		// skip
+				count = nybble + 2;
+			blitSkip:
+				remaining -= count;
+				if (remaining < 0)
+					count += remaining;
+
+			blitSkip2:
+#if 4 != kPocoPixelSize
+				d += count;
+#else
+				d += count >> 1;
+				if (1 & count) {
+					d += xphase;
+					xphase ^= 1;
+				}
+#endif
+			}
+		}
+
+		/*
+		 save clip right for next scan line
+		 */
 		if (skip)
 			srcBits->thisSkip = skip + remaining;
 
