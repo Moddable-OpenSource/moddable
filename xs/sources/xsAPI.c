@@ -168,9 +168,6 @@ again:
 			theSlot->value.integer = 0;
 			break;
 		default: {
-#ifdef __ets__
-			theSlot->value.integer = (txInteger)theSlot->value.number;
-#else
 			#define MODULO 4294967296.0
 			txNumber aNumber = c_fmod(c_trunc(theSlot->value.number), MODULO);
 			if (aNumber >= MODULO / 2)
@@ -178,7 +175,6 @@ again:
 			else if (aNumber < -MODULO / 2)
 				aNumber += MODULO;
 			theSlot->value.integer = (txInteger)aNumber;
-#endif
 			} break;
 		}
 		break;
