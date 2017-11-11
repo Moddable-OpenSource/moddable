@@ -456,9 +456,3 @@ void qsort(
 	//@@
 }
 
-#if !ESP32
-double hack_fmod(double a, double b)
-{
-    return (a - b * floor(a / b));
-}
-#endif
