@@ -226,7 +226,7 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 	math
 */
 
-double hack_fmod(double a, double b);
+double __ieee754_fmod_patch(double x, double y);
 
 /*
 	watchdog timer
@@ -374,7 +374,7 @@ typedef va_list c_va_list;
 #if ESP32
 	#define c_fmod fmod
 #else
-	#define c_fmod hack_fmod
+	#define c_fmod __ieee754_fmod_patch
 #endif
 #define c_fpclassify fpclassify
 #define c_hypot hypot
