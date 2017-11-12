@@ -272,7 +272,7 @@ debug: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
+	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 460800 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
 	
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
@@ -315,10 +315,6 @@ $(LIB_DIR)/%.c.o: %.c
 $(LIB_DIR)/%.cpp.o: %.cpp
 	@echo "# cpp" $(<F)
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
-
-$(LIB_DIR)/%.cpp.o: %.ino
-	@echo "# cpp" $(<F)
-	$(CPP) -x c++ -include $(CORE_DIR)/Arduino.h $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
 
 	
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
