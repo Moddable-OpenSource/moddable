@@ -105,7 +105,7 @@ void loop(void)
 
 	modTimersExecute();
 
-	if (xsRunPromiseJobs(gThe))
+	if (modRunPromiseJobs(gThe))
 		return;
 
 	modMessageService();
