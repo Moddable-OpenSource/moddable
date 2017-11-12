@@ -65,7 +65,9 @@ void setup()
 {
 	const char *module;
 
-	gUART = uart_init(UART0, 115200, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+	gUART = uart_init(UART0, 460800, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+
+	system_set_os_print(0);
 
 	gThe = ESP_cloneMachine(0, 0, 0, 0);
 
