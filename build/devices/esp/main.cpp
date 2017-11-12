@@ -53,6 +53,7 @@ xsMachine *gThe;		// the one XS6 virtual machine running
 #ifdef mxDebug
 	unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
+static uart_t *gUART;
 
 static const char gSetup[] ICACHE_RODATA_ATTR = "setup";
 static const char gRequire[] ICACHE_RODATA_ATTR = "require";
@@ -64,7 +65,7 @@ void setup()
 {
 	const char *module;
 
-	Serial.begin(115200);		// ESP8266 boots to 74880
+	gUART = uart_init(UART0, 115200, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
 
 	gThe = ESP_cloneMachine(0, 0, 0, 0);
 
@@ -138,20 +139,17 @@ void ESP_putc(int c)
 {
 	system_soft_wdt_feed();
 
-	Serial.write(c);
+	uart_write_char(gUART, c);
 }
 
 int ESP_getc(void)
 {
 	system_soft_wdt_feed();
 
-	if (!Serial.available())
-		return -1;
-
-	return Serial.read();
+	return uart_read_char(gUART);
 }
 
 uint8_t ESP_isReadable()
 {
-	return Serial.available() ? 1 : 0;
+	return uart_rx_available(gUART);
 }
