@@ -94,21 +94,17 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_digital.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_pwm.c \
 	$(ARDUINO_ESP8266)/Esp.cpp \
-	$(ARDUINO_ESP8266)/HardwareSerial.cpp \
 	$(ARDUINO_ESP8266)/heap.c \
 	$(ARDUINO_ESP8266)/libc_replacements.c \
-	$(ARDUINO_ESP8266)/Print.cpp \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_cache.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_check.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_gc.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_hydrogen.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_nucleus.c \
 	$(ARDUINO_ESP8266)/spiffs_hal.cpp \
-	$(ARDUINO_ESP8266)/Stream.cpp \
 	$(ARDUINO_ESP8266)/time.c \
 	$(ARDUINO_ESP8266)/uart.c \
 	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \
-	$(ARDUINO_ESP8266)/WString.cpp \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c
@@ -123,12 +119,16 @@ SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_shift.c \
 	$(ARDUINO_ESP8266)/debug.cpp \
 	$(ARDUINO_ESP8266)/pgmspace.cpp \
+	$(ARDUINO_ESP8266)/HardwareSerial.cpp \
 	$(ARDUINO_ESP8266)/IPAddress.cpp \
 	$(ARDUINO_ESP8266)/spiffs_api.cpp \
-	$(ARDUINO_ESP8266)/WMath.cpp \
+	$(ARDUINO_ESP8266)/Print.cpp \
 	$(ARDUINO_ESP8266)/MD5Builder.cpp \
-	$(ARDUINO_ESP8266)/Updater.cpp \
+	$(ARDUINO_ESP8266)/Stream.cpp \
 	$(ARDUINO_ESP8266)/Tone.cpp \
+	$(ARDUINO_ESP8266)/Updater.cpp \
+	$(ARDUINO_ESP8266)/WMath.cpp \
+	$(ARDUINO_ESP8266)/WString.cpp \
 	$(ARDUINO_ESP8266)/FS.cpp \
 	$(ARDUINO_ESP8266)/libb64/cdecode.c \
 	$(ARDUINO_ESP8266)/libb64/cencode.c \
