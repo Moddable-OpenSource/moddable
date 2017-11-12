@@ -820,16 +820,6 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	return result;
 }
 
-uint8_t xsRunPromiseJobs(txMachine *the)
-{
-	if (!mxPendingJobs.value.reference->next)
-		return 0;
-
-	fxRunPromiseJobs(the);
-
-	return mxPendingJobs.value.reference->next ? 1 : 0;
-}
-
 void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 {
 	if (the->heap_ptr + size <= the->heap_pend) {
@@ -1115,9 +1105,35 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	return C_NULL;
 }
 
+
+typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
+
+static uint8_t xsRunPromiseJobs_pending(txMachine *the);
+static RunPromiseJobs gRunPromiseJobs;
+
+uint8_t xsRunPromiseJobs_pending(txMachine *the)
+{
+	gRunPromiseJobs = NULL;
+	if (!mxPendingJobs.value.reference->next)
+		return 0;
+
+	fxRunPromiseJobs(the);
+
+	if (0 == mxPendingJobs.value.reference->next)
+		return 0;
+
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
+	return 1;
+}
+
+uint8_t modRunPromiseJobs(txMachine *the)
+{
+	return gRunPromiseJobs ? gRunPromiseJobs(the) : 0;
+}
+
 void fxQueuePromiseJobs(txMachine* the)
 {
-	// queued jobs serviced from the main loop
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
 }
 
 void fxSweepHost(txMachine* the)
