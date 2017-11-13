@@ -366,7 +366,7 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 
 void ili9341Init(spiDisplay sd)
 {
-	uint8_t data[15];
+	uint8_t data[16];
 
 	SCREEN_CS_INIT;
 	SCREEN_DC_INIT;
@@ -482,12 +482,12 @@ void ili9341Init(spiDisplay sd)
 	data[14] = 0x0F;
 	ili9341Command(sd, 0xE1, data, 15);    	// Set negative gamma
 
-	ili9341Command(sd, 0x11, 0, 0);    	// Exit Sleep
+	ili9341Command(sd, 0x11, NULL, 0);    	// Exit Sleep
 //@@	modDelayMilliseconds(120);		// delay in some sample code. but doesn't seem to be required (check data sheet)
 
-	ili9341Command(sd, 0x29, 0, 0);    // Display on
-	ili9341Command(sd, 0x2c, 0, 0);
+	ili9341Command(sd, 0x29, NULL, 0);    // Display on
 }
+
 
 void ili9341ChipSelect(uint8_t active, modSPIConfiguration config)
 {
