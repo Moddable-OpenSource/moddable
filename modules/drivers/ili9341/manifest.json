@@ -10,7 +10,6 @@
 	},
 	"preload": [
 		"ili9341",
-		"commodetto/*"
 	],
 	"platforms": {
 		"esp": {
@@ -20,7 +19,6 @@
 					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/spi/esp/*",
 				],
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
 				"ili9341": {
@@ -38,7 +36,6 @@
 					"$(MODULES)/pins/digital/esp32/*",
 					"$(MODULES)/pins/spi/esp32/*",
 				],
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
 				"ili9341": {
