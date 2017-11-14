@@ -231,6 +231,20 @@ class AndroidMakeFile extends MakeFile {
 	}
 }
 
+class IOSMakeFile extends MakeFile {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsDefinitions(tool) {
+		var task = tool.config.task;
+		if (!task)
+			task = "xcode"
+		this.line("TASK = ", task);
+	}
+	generateObjectsRules(tool) {
+	}
+}
+
 class NMakeFile extends MakeFile {
 	constructor(path) {
 		super(path)
@@ -412,6 +426,177 @@ class DefinesFile extends PrerequisiteFile {
 					break;
 			}
 		}
+	}
+}
+
+class XcodeFile extends PrerequisiteFile {
+	addSource(path) {
+		let parts = this.tool.splitPath(path);
+		parts.fileReferenceID = this.id++;
+		parts.buildFileID = this.id++;
+		if (parts.extension == ".m")
+			parts.fileType = "sourcecode.c.objc";
+		else
+			parts.fileType = "sourcecode.c.c";
+		this.sources.push(parts);
+	}
+	addResource(path, folder) {
+		let parts = this.tool.splitPath(path);
+		parts.fileReferenceID = this.id++;
+		parts.buildFileID = this.id++;
+		if (parts.extension == ".plist")
+			parts.fileType = "text.plist.xml";
+		else if (parts.extension == ".png")
+			parts.fileType = "image.png";
+		else if (parts.extension == ".jpg")
+			parts.fileType = "image.jpg";
+		else if (parts.extension == ".xcassets")
+			parts.fileType = "folder.assetcatalog";
+		else if (folder)
+			parts.fileType = "folder";
+		else
+			parts.fileType = "file";
+		this.resources.push(parts);
+	}
+	generate(tool) {
+		this.resources = [];
+		this.sources = [];
+		
+		this.id = 1;
+		this.addSource(tool.xsPath + "/platforms/ios_xs.c");
+		var names = tool.enumerateDirectory(tool.xsPath + "/sources");
+		var c = names.length;
+		for (var i = 0; i < c; i++) {
+			var name = names[i];
+			if (name.endsWith(".c") && (name != "xsDefaults.c"))
+				this.addSource(tool.xsPath + "/sources/" + name);
+		}
+		for (var result of tool.cFiles) {
+			this.addSource(result.source);
+		}
+		this.addSource(tool.tmpPath + "/mc.xs.c");
+	
+		for (var result of tool.resourcesFiles) {
+			let target = result.target;
+			if (target.indexOf("/") < 0)	
+				this.addResource(tool.resourcesPath + "/" + target);
+		}
+		for (var result of tool.resourcesFolders) {
+			this.addResource(tool.resourcesPath + "/" + result, true);
+		}
+		this.addResource(tool.mainPath + "/ios/Assets.xcassets", true);
+	
+		var path = tool.moddablePath + "/modules/piu/PC/ios/support/Xcode.txt";
+		var template = tool.readFileString(path);
+		
+		template = template.replace(/#DEVELOPMENT_TEAM#/g, tool.environment.DEVELOPMENT_TEAM);
+		template = template.replace(/#INFOPLIST_FILE#/g, tool.mainPath + "/ios/info.plist");
+		template = template.replace(/#NAME#/g, tool.environment.NAME);
+		template = template.replace(/#ORGANIZATIONNAME#/g, tool.environment.ORGANIZATION);
+		template = template.replace(/#PRODUCT_BUNDLE_IDENTIFIER#/g, tool.environment.DOT_SIGNATURE);
+		
+		this.current = ""
+		this.line("\t\t\t\t\t\"INCLUDE_XSPLATFORM=1\",");
+		this.line("\t\t\t\t\t\"XSPLATFORM=\\\\\\\"ios_xs.h\\\\\\\"\",");
+		this.line("\t\t\t\t\t\"mxDebug=1\",");
+		this.line("\t\t\t\t\t\"mxRun=1\",");
+		this.line("\t\t\t\t\t\"mxParse=1\",");
+		this.line("\t\t\t\t\t\"mxNoFunctionLength=1\",");
+		this.line("\t\t\t\t\t\"mxNoFunctionName=1\",");
+		this.line("\t\t\t\t\t\"mxHostFunctionPrimitive=1\",");
+		this.line("\t\t\t\t\t\"mxFewGlobalsTable=1\",");
+		template = template.replace(/#GCC_PREPROCESSOR_DEFINITIONS#/g, this.current);
+		
+		this.current = ""
+		this.line("\t\t\t\t\t", tool.xsPath, "/includes,");
+		this.line("\t\t\t\t\t", tool.xsPath, "/platforms,");
+		this.line("\t\t\t\t\t", tool.xsPath, "/sources,");
+		this.line("\t\t\t\t\t", tool.xsPath, "/sources/pcre,");
+		for (var folder of tool.cFolders) {
+			this.line("\t\t\t\t\t", folder, ",");
+		}	
+		this.line("\t\t\t\t\t", tool.tmpPath);
+		template = template.replace(/#HEADER_SEARCH_PATHS#/g, this.current);
+
+		this.current = ""
+		this.sources.forEach(file => this.generatePBXBuildFile(file));
+		this.resources.forEach(file => this.generatePBXBuildFile(file));
+		template = template.replace(/#PBXBuildFile#/g, this.current);
+		
+		this.current = ""
+		this.sources.forEach(file => this.generatePBXFileReference(file));
+		this.resources.forEach(file => this.generatePBXFileReference(file));
+		template = template.replace(/#PBXFileReference#/g, this.current);
+		
+		this.current = ""
+		this.resources.forEach(file => this.generatePBXGroup(file));
+		template = template.replace(/#PBXResourcesGroup#/g, this.current);
+		
+		this.current = ""
+		this.sources.forEach(file => this.generatePBXGroup(file));
+		template = template.replace(/#PBXSourcesGroup#/g, this.current);
+
+		this.current = ""
+		this.resources.forEach(file => this.generatePBXBuildPhase(file));
+		template = template.replace(/#PBXResourcesBuildPhase#/g, this.current);
+
+		this.current = ""
+		this.sources.forEach(file => this.generatePBXBuildPhase(file));
+		template = template.replace(/#PBXSourcesBuildPhase#/g, this.current);
+		
+		this.current = template;
+		this.close();
+	}
+	generatePBXBuildFile(file) {
+		this.write("\t\t");
+		this.writeID(file.buildFileID);
+		this.write(" /* ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.write(" in Sources */ = {isa = PBXBuildFile; fileRef = ");
+		this.writeID(file.fileReferenceID);
+		this.write(" /* ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.line(" */; };");
+	}
+	generatePBXBuildPhase(file) {
+		this.write("\t\t\t\t");
+		this.writeID(file.buildFileID);
+		this.write(" /* ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.line(" in Sources */,");
+	}
+	generatePBXFileReference(file) {
+		this.write("\t\t");
+		this.writeID(file.fileReferenceID);
+		this.write(" /* ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.write(" */ = {isa = PBXFileReference; lastKnownFileType = ");
+		this.write(file.fileType);
+		this.write("; name = ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.write("; path = ");
+		this.write(file.directory);
+		this.write("/");
+		this.write(file.name);
+		this.write(file.extension);
+		this.line("; sourceTree = \"<group>\"; };");
+	}
+	generatePBXGroup(file) {
+		this.write("\t\t\t\t");
+		this.writeID(file.fileReferenceID);
+		this.write(" /* ");
+		this.write(file.name);
+		this.write(file.extension);
+		this.line(" */,");
+	}
+	writeID(id) {
+		id = id.toString();
+		this.write("000000000000000000000000".slice(0, -id.length) + id);
 	}
 }
 
@@ -608,6 +793,24 @@ export default class extends Tool {
 			}
 		}
 	}
+	generateIOSDirectory(from, to) {
+		var names = this.enumerateDirectory(from);
+		var c = names.length;
+		for (var i = 0; i < c; i++) {
+			var name = names[i];
+			if (name[0] != ".") {
+				var source = from + this.slash + name;
+				var target = to ? to + this.slash + name : name;
+				if (this.isDirectoryOrFile(source) < 0) {
+					this.resourcesFolders.push(target);
+					this.generateIOSDirectory(source, target);
+				}
+				else {
+					this.resourcesFiles.push({ source, target });
+				}
+			}
+		}
+	}
 	run() {
 		super.run();
 		
@@ -620,7 +823,7 @@ export default class extends Tool {
 		this.strip = this.manifest.strip;
 		
 		var name = this.environment.NAME
-		if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator") || (this.platform == "x-mac"))
+		if (this.platform == "x-mac")
 			this.binPath = this.createDirectories(this.outputPath, "bin", name + ".app");
 		else if ((this.platform == "x-lin") || (this.platform == "x-win"))
 			this.binPath = this.createDirectories(this.outputPath, "bin");
@@ -665,7 +868,14 @@ export default class extends Tool {
 			this.javaPath = path;
 		}
 		else if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
-			this.dataPath = this.resourcesPath = this.binPath;
+			var path, file;
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.createDirectory(this.resourcesPath);
+			path = this.binPath + "/" + name + ".xcodeproj";
+			this.createDirectory(path);
+			path += "/project.pbxproj"
+			var file = new XcodeFile(path, this);
+			file.generate(this);
 		}
 		else if (this.platform == "x-lin") {
 			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
@@ -718,6 +928,8 @@ export default class extends Tool {
 		else {
 			if ((this.platform == "x-android") || (this.platform == "x-android-simulator"))
 				file = new AndroidMakeFile(path);
+			else if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator"))
+				file = new IOSMakeFile(path);
 			else
 				file = new MakeFile(path);
 		}
