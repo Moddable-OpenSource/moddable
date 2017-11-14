@@ -104,13 +104,14 @@ void PiuContainerAdjustVertically(void* it)
 	}
 }
 
-void PiuContainerBind(void* it, PiuApplication* application)
+void PiuContainerBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContainer* self = it;
 	PiuContent* content = (*self)->first;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
+	(*self)->view = view;
 	while (content) {
-		(*(*content)->dispatch->bind)(content, application);
+		(*(*content)->dispatch->bind)(content, application, view);
 		content = (*content)->next;
 	}
 }
@@ -119,10 +120,8 @@ void PiuContainerBindContent(PiuContainer* self, PiuContent* content)
 {
 	PiuApplication* application = (*self)->application;
 	if (application) {
-		(*(*content)->dispatch->bind)(content, application);
-	}
-	else {
-	
+		PiuView* view = (*self)->view;
+		(*(*content)->dispatch->bind)(content, application, view);
 	}
 }
 
@@ -389,25 +388,24 @@ void PiuContainerShown(void* it, PiuBoolean showIt)
 	}
 }
 
-void PiuContainerUnbind(void* it, PiuApplication* application)
+void PiuContainerUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContainer* self = it;
 	PiuContent* content = (*self)->last;
 	while (content) {
-		(*(*content)->dispatch->unbind)(content, application);
+		(*(*content)->dispatch->unbind)(content, application, view);
 		content = (*content)->previous;
 	}
-	PiuContentUnbind(it, application);
+	(*self)->view = NULL;
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuContainerUnbindContent(PiuContainer* self, PiuContent* content)
 {
 	PiuApplication* application = (*self)->application;
 	if (application) {
-		(*(*content)->dispatch->unbind)(content, application);
-	}
-	else {
-	
+		PiuView* view = (*self)->view;
+		(*(*content)->dispatch->unbind)(content, application, view);
 	}
 }
 

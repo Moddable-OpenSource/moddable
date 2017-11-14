@@ -163,20 +163,6 @@ class View @ "PiuViewDelete" {
 }
 Object.freeze(View.prototype);
 
-var statusBar = {
-	__proto__: Content.prototype,
-	_create($, it) @ "PiuStatusBar_create",
-};
-export var StatusBar = Template(statusBar);
-Object.freeze(statusBar);
-
-var navigationBar = {
-	__proto__: Content.prototype,
-	_create($, it) @ "PiuNavigationBar_create",
-};
-export var NavigationBar = Template(navigationBar);
-Object.freeze(navigationBar);
-
 // PiuService.c
 
 export class Service @ "ServiceProxyDelete" {
@@ -292,7 +278,5 @@ global.Texture = Texture;
 global.Field = Field;
 
 global.Application = Application;
-global.StatusBar = StatusBar;
-global.NavigationBar = NavigationBar;
 
 global.Service = Service;
