@@ -41,12 +41,12 @@ struct PiuScreenStruct {
 	HMODULE library;
 };
 
-static void PiuScreenBind(void* it, PiuApplication* application);
+static void PiuScreenBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuScreenDelete(void* it);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenQuit(PiuScreen* self);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuScreenUnbind(void* it, PiuApplication* application);
+static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
 static void fxScreenAbort(txScreen* screen);
 static void fxScreenBufferChanged(txScreen* screen);
@@ -167,7 +167,7 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuScreenHooks = {
 	NULL
 };
 
-void PiuScreenBind(void* it, PiuApplication* application)
+void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 {
 	static ATOM windowClass = 0;
 	if (!windowClass) {
@@ -187,7 +187,7 @@ void PiuScreenBind(void* it, PiuApplication* application)
 		windowClass = RegisterClassEx(&wcex);
 	}
 	PiuScreen* self = (PiuScreen*)it;
-	PiuContentBind((PiuContent*)it, application);
+	PiuContentBind(it, application, view);
 	
 	PiuDimension width = (*self)->coordinates.width;
 	PiuDimension height = (*self)->coordinates.height;
@@ -218,7 +218,6 @@ void PiuScreenBind(void* it, PiuApplication* application)
 	(*self)->bitmapInfo->bmiColors[1].rgbGreen = 0xFF;
 	(*self)->bitmapInfo->bmiColors[2].rgbRed = 0xFF;
     
-	PiuView* view = (*application)->view;
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "PiuScreenControl", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, (LPVOID)self);
 }
@@ -253,7 +252,7 @@ void PiuScreenQuit(PiuScreen* self)
 	InvalidateRect((*self)->control, NULL, FALSE);
 }
 
-void PiuScreenUnbind(void* it, PiuApplication* application)
+void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = (PiuScreen*)it;
 	PiuScreenQuit(self);
@@ -269,7 +268,7 @@ void PiuScreenUnbind(void* it, PiuApplication* application)
 	(*self)->dc = NULL;
 	free((*self)->screen);
 	(*self)->screen = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuScreen_create(xsMachine* the)
