@@ -405,54 +405,29 @@ void fxSend(txMachine* the, txBoolean more)
 
 #endif /* mxDebug */
 
-/* PROFILE */
-
-#ifdef mxProfile
-
-static txBoolean fxGetProfilePath(txMachine* the, char* thePath);
-
-void fxCloseProfileFile(txMachine* the)
+void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *))
 {
-	if (the->profileFile) {
-		fclose(the->profileFile);
-		the->profileFile = NULL;
+	size_t i, j;
+	uint8_t temp[256];
+
+	if (width > sizeof(temp)) {
+		modLog("width too big");
+		return;
 	}
-}
 
-txBoolean fxGetProfilePath(txMachine* the, char* thePath)
-{
-	(void)strcpy(thePath, mc_get_special_dir("temporaryDirectory"));
-	return 1;
-}
+	for (i = 0; i < num - 1; i++) {
+		size_t minIndex = i;
 
-void fxOpenProfileFile(txMachine* the, char* theName)
-{
-	char aPath[PATH_MAX];
+		for (j = i + 1; j < num; j++) {
+			if (compare((j * width) + (char *)base, (minIndex * width) + (char *)base) < 0)
+				minIndex = j;
+		}
+		if (minIndex == i)
+			continue;
 
-	if (fxGetProfilePath(the, aPath)) {
-		strcat(aPath, theName);
-		the->profileFile = fopen(aPath, "wb");
+		c_memcpy(temp, (i * width) + (char *)base, width);
+		c_memcpy((i * width) + (char *)base, (minIndex * width) + (char *)base, width);
+		c_memcpy((minIndex * width) + (char *)base, temp, width);
 	}
-	else
-		the->profileFile = NULL;
-}
-
-void fxWriteProfileFile(txMachine* the, void* theBuffer, txInteger theSize)
-{
-	if (the->profileFile)
-		fwrite(theBuffer, theSize, 1, the->profileFile);
-}
-
-#endif /* mxProfile */
-
-
-void qsort(
-   void *base,
-   size_t num,
-   size_t width,
-   int (*compare )(const void *, const void *)
-)
-{
-	//@@
 }
 
