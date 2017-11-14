@@ -176,10 +176,6 @@ extern void modTimersAdvanceTime(uint32_t advanceMS);
 	#define modCriticalSectionEnd()
 #endif
 
-
-// deprecated
-#define modTimersCheck() (modTimersExecute(), modTimersNext())
-
 /*
 	date and time
 */
@@ -301,7 +297,8 @@ typedef va_list c_va_list;
 #define c_exit(n) system_restart()
 #define c_free free
 #define c_malloc malloc
-#define c_qsort qsort
+void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *));
+#define c_qsort selectionSort
 #define c_realloc realloc
 #define c_strtod strtod
 #define c_strtol strtol
