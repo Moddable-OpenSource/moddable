@@ -59,7 +59,7 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuContentHooks = {
 	NULL
 };
 
-void PiuContentBind(void* it, PiuApplication* application)
+void PiuContentBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContent* self = it;
 	(*self)->application = application;
@@ -605,7 +605,7 @@ void PiuContentToApplicationCoordinates(void* it, PiuCoordinate x0, PiuCoordinat
 	*y1 = y0;
 }
 
-void PiuContentUnbind(void* it, PiuApplication* application)
+void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContent* self = it;
 #ifdef piuPC
