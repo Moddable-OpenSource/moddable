@@ -34,12 +34,12 @@ struct PiuFieldStruct {
 	GtkWidget* gtkField;
 };
 
-static void PiuFieldBind(void* it, PiuApplication* application);
+static void PiuFieldBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuFieldCascade(void* it);
 static void PiuFieldComputeStyle(PiuField* self);
 static void PiuFieldDictionary(xsMachine* the, void* it);
 static void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuFieldUnbind(void* it, PiuApplication* application);
+static void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuFieldDispatchRecord = {
 	"Field",
@@ -85,15 +85,14 @@ static void gtk_entry_changed(GtkEditable *editable, gpointer user_data)
 	}
 }
                
-void PiuFieldBind(void* it, PiuApplication* application)
+void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
 	xsMachine* the = (*self)->the;
-	PiuContentBind((PiuContent*)it, application);
+	PiuContentBind(it, application, view);
 	PiuFieldComputeStyle(self);
 	PiuStyle* style = (*self)->computedStyle;
 	PiuFont* font = (*style)->font;
-	PiuView* view = (*application)->view;
 	GtkFixed* gtkFixed = (*view)->gtkFixed;
 	GtkWidget* gtkField = gtk_entry_new();
 	g_signal_connect(G_OBJECT(gtkField), "changed", G_CALLBACK(gtk_entry_changed), self);
@@ -168,7 +167,7 @@ void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuMarkString(the, self->string);
 }
 
-void PiuFieldUnbind(void* it, PiuApplication* application)
+void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
 	GtkWidget* gtkClip = (*self)->gtkClip;
@@ -178,7 +177,7 @@ void PiuFieldUnbind(void* it, PiuApplication* application)
 	gtk_widget_destroy(gtkClip);
 	(*self)->gtkClip = NULL;
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind((PiuContent*)it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuField_create(xsMachine* the)
