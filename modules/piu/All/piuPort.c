@@ -20,13 +20,13 @@
 
 #include "piuAll.h"
 
-static void PiuPortBind(void* it, PiuApplication* application);
+static void PiuPortBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuPortCascade(void* it);
 static void PiuPortComputeStyle(PiuPort* self);
 static void PiuPortDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuPortMeasureHorizontally(void* it);
 static void PiuPortMeasureVertically(void* it);
-static void PiuPortUnbind(void* it, PiuApplication* application);
+static void PiuPortUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuPortDispatchRecord = {
 	"Port",
@@ -57,10 +57,10 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuPortHooks = {
 	NULL
 };
 
-void PiuPortBind(void* it, PiuApplication* application)
+void PiuPortBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuPort* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	PiuPortComputeStyle(self);
 }
 
@@ -115,11 +115,11 @@ void PiuPortMeasureVertically(void* it)
 	(*self)->coordinates.height = PiuBehaviorOnMeasureVertically(self, (*self)->coordinates.height);
 }
 
-void PiuPortUnbind(void* it, PiuApplication* application)
+void PiuPortUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuPort* self = it;
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuPort_create(xsMachine* the)

@@ -318,11 +318,11 @@ bail:
 }
 @end
 
-static void PiuScreenBind(void* it, PiuApplication* application);
+static void PiuScreenBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuScreenDelete(void* it);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuScreenUnbind(void* it, PiuApplication* application);
+static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuScreenDispatchRecord = {
 	"Screen",
@@ -353,10 +353,10 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuScreenHooks = {
 	NULL
 };
 
-void PiuScreenBind(void* it, PiuApplication* application)
+void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	
     NSPiuScreenView *screenView = [[NSPiuScreenView alloc] init];
 	screenView.piuScreen = self;
@@ -399,7 +399,6 @@ void PiuScreenBind(void* it, PiuApplication* application)
 		screenView.touches[i] = nil;
 	 screenView.touching = NO;
 	 
-	PiuView* view = (*application)->view;
     [(*view)->nsView addSubview:clipView];
 }
 
@@ -416,7 +415,7 @@ void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuContentMark(the, it, markRoot);
 }
 
-void PiuScreenUnbind(void* it, PiuApplication* application)
+void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = it;
     [(*self)->nsClipView removeFromSuperview];
@@ -426,7 +425,7 @@ void PiuScreenUnbind(void* it, PiuApplication* application)
 	(*self)->nsClipView = NULL;
     [(*self)->nsScreenView release];
 	(*self)->nsScreenView = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuScreen_create(xsMachine* the)
