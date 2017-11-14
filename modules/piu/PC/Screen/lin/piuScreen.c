@@ -48,14 +48,14 @@ struct PiuScreenMessageStruct {
 	char buffer[1];
 };
 
-static void PiuScreenBind(void* it, PiuApplication* application);
+static void PiuScreenBind(void* it, PiuApplication* application, PiuView* view);
 static PiuScreenMessage PiuScreenCreateMessage(PiuScreen* self, char* buffer, int size);
 static void PiuScreenDelete(void* it);
 static void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuScreenQuit(PiuScreen* self);
-static void PiuScreenUnbind(void* it, PiuApplication* application);
+static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
 static gboolean PiuScreen_postMessageAux(gpointer data);
 
@@ -142,12 +142,11 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuScreenHooks = {
 	NULL
 };
 
-void PiuScreenBind(void* it, PiuApplication* application)
+void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = (PiuScreen*)it;
-	PiuView* view = (*application)->view;
 	GtkFixed* gtkFixed = (*view)->gtkFixed;
-	PiuContentBind((PiuContent*)it, application);
+	PiuContentBind(it, application, view);
 	
 	PiuDimension width = (*self)->coordinates.width;
 	PiuDimension height = (*self)->coordinates.height;
@@ -277,7 +276,7 @@ void PiuScreenQuit(PiuScreen* self)
 	}
 }
 
-void PiuScreenUnbind(void* it, PiuApplication* application)
+void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = (PiuScreen*)it;
 	GtkWidget* gtkClip = (*self)->gtkClip;
@@ -301,7 +300,7 @@ void PiuScreenUnbind(void* it, PiuApplication* application)
 		gtk_widget_destroy(gtkClip);
 		(*self)->gtkClip = NULL;
 	}
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuScreen_create(xsMachine* the)
