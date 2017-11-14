@@ -98,7 +98,7 @@ static void PiuTextLinkMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static PiuTextKind PiuTextAdvance(xsMachine* the, xsSlot* string, PiuTextOffset offset, PiuTextOffset limit, PiuTextOffset *nextOffset);
 static void PiuTextBegin(PiuText* self);
 static void PiuTextBeginNode(PiuText* self, PiuTextKind kind, PiuStyle* style, PiuTextLink* link);
-static void PiuTextBind(void* it, PiuApplication* application);
+static void PiuTextBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuTextBuild(PiuText* self, xsIntegerValue depth, PiuTextKind delta);
 static void PiuTextCascade(void* it);
 static void PiuTextComputeStyles(PiuText* self);
@@ -114,7 +114,7 @@ static void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx);
 static void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y);
 static void PiuTextMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuTextMeasureVertically(void* it);
-static void PiuTextUnbind(void* it, PiuApplication* application);
+static void PiuTextUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuTextLinkDispatchRecord = {
 	"Link",
@@ -374,10 +374,10 @@ void PiuTextBeginNode(PiuText* self, PiuTextKind kind, PiuStyle* style, PiuTextL
 	(*self)->nodeOffset = nodeOffset;
 }
 
-void PiuTextBind(void* it, PiuApplication* application)
+void PiuTextBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuText* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	PiuTextComputeStyles(self);
 }
 
@@ -1039,7 +1039,7 @@ void PiuTextMeasureVertically(void* it)
 		(*self)->coordinates.height = (*self)->textHeight;	
 }
 
-void PiuTextUnbind(void* it, PiuApplication* application)
+void PiuTextUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuText* self = it;
 	PiuTextBuffer* nodeBuffer = (*self)->nodeBuffer;
@@ -1062,7 +1062,7 @@ void PiuTextUnbind(void* it, PiuApplication* application)
 			break;
 		}
 	}
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuText_create(xsMachine* the)
