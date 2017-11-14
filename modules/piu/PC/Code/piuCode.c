@@ -30,7 +30,7 @@ enum {
 };
 static const char *teSeparators = ".,:;-()\"\\/?<>{}[]+=-!@#%^&*~`|";
 
-static void PiuCodeBind(void* it, PiuApplication* application);
+static void PiuCodeBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuCodeCascade(void* it);
 static uint32_t PiuCodeClassifyCharacter(uint32_t character);
 static void PiuCodeComputeStyle(PiuCode* self);
@@ -50,7 +50,7 @@ static void PiuCodeMeasureVertically(void* it);
 static void PiuCodeOffsetToColumnLine(PiuCode* self, int32_t offset, int32_t* offsetColumn, int32_t* offsetLine);
 static void PiuCodeSearch(PiuCode* self, uint32_t size);
 static void PiuCodeSelect(PiuCode* self, int32_t selectionOffset, uint32_t selectionLength);
-static void PiuCodeUnbind(void* it, PiuApplication* application);
+static void PiuCodeUnbind(void* it, PiuApplication* application, PiuView* view);
 
 static void PiuCodeIteratorFirst(PiuCode* self, PiuCodeIterator iter, int32_t offset);
 static void PiuCodeIteratorLast(PiuCode* self, PiuCodeIterator iter, int32_t offset);
@@ -120,10 +120,10 @@ int32_t fxUTF8Advance(xsStringValue string, int32_t offset, int32_t direction)
 	return 0;			// error
 }
 
-void PiuCodeBind(void* it, PiuApplication* application)
+void PiuCodeBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuCode* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	PiuCodeComputeStyle(self);
 }
 
@@ -641,11 +641,11 @@ void PiuCodeSelect(PiuCode* self, int32_t selectionOffset, uint32_t selectionLen
 	PiuCodeInvalidate(self, NULL);
 }
 
-void PiuCodeUnbind(void* it, PiuApplication* application)
+void PiuCodeUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuCode* self = it;
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuCodeIteratorFirst(PiuCode* self, PiuCodeIterator iter, int32_t offset)

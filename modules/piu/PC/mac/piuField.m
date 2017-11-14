@@ -94,12 +94,12 @@ struct PiuFieldStruct {
 }
 @end
 
-static void PiuFieldBind(void* it, PiuApplication* application);
+static void PiuFieldBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuFieldCascade(void* it);
 static void PiuFieldComputeStyle(PiuField* self);
 static void PiuFieldDictionary(xsMachine* the, void* it);
 static void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuFieldUnbind(void* it, PiuApplication* application);
+static void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuFieldDispatchRecord = {
 	"Field",
@@ -130,12 +130,11 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuFieldHooks = {
 	NULL
 };
 
-void PiuFieldBind(void* it, PiuApplication* application)
+void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	PiuFieldComputeStyle(self);
-	PiuView* view = (*application)->view;
     [(*view)->nsView addSubview:(*self)->nsClipView];
 }
 
@@ -187,12 +186,12 @@ void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuMarkHandle(the, self->computedStyle);
 }
 
-void PiuFieldUnbind(void* it, PiuApplication* application)
+void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = it;
     [(*self)->nsClipView removeFromSuperview];
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuField_create(xsMachine* the)

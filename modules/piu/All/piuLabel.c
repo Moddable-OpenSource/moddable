@@ -20,7 +20,7 @@
 
 #include "piuAll.h"
 
-static void PiuLabelBind(void* it, PiuApplication* application);
+static void PiuLabelBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuLabelCascade(void* it);
 static void PiuLabelComputeStyle(PiuLabel* self);
 static void PiuLabelDictionary(xsMachine* the, void* it);
@@ -28,7 +28,7 @@ static void PiuLabelDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuLabelMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuLabelMeasureHorizontally(void* it);
 static void PiuLabelMeasureVertically(void* it);
-static void PiuLabelUnbind(void* it, PiuApplication* application);
+static void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuLabelDispatchRecord = {
 	"Label",
@@ -59,10 +59,10 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuLabelHooks = {
 	NULL
 };
 
-void PiuLabelBind(void* it, PiuApplication* application)
+void PiuLabelBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuLabel* self = it;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
 	PiuLabelComputeStyle(self);
 }
 
@@ -161,11 +161,11 @@ void PiuLabelMeasureVertically(void* it)
 	}
 }
 
-void PiuLabelUnbind(void* it, PiuApplication* application)
+void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuLabel* self = it;
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind(it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuLabel_create(xsMachine* the)

@@ -34,12 +34,12 @@ struct PiuFieldStruct {
 	HWND control;
 };
 
-static void PiuFieldBind(void* it, PiuApplication* application);
+static void PiuFieldBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuFieldCascade(void* it);
 static void PiuFieldComputeStyle(PiuField* self);
 static void PiuFieldDictionary(xsMachine* the, void* it);
 static void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuFieldUnbind(void* it, PiuApplication* application);
+static void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuFieldDispatchRecord = {
 	"Field",
@@ -100,13 +100,12 @@ LRESULT CALLBACK PiuFieldProc(HWND control, UINT message, WPARAM wParam, LPARAM 
     return DefSubclassProc(control, message, wParam, lParam);
 }
 
-void PiuFieldBind(void* it, PiuApplication* application)
+void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
 	xsMachine* the = (*self)->the;
-	PiuContentBind((PiuContent*)it, application);
+	PiuContentBind(it, application, view);
 	PiuFieldComputeStyle(self);
-	PiuView* view = (*application)->view;
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "Edit", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, NULL);
 	SetWindowSubclass((*self)->control, PiuFieldProc, 0, (DWORD_PTR)self);
@@ -174,14 +173,14 @@ void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuMarkString(the, self->string);
 }
 
-void PiuFieldUnbind(void* it, PiuApplication* application)
+void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
 	DestroyWindow((*self)->window);
 	(*self)->control = NULL;
 	(*self)->window = NULL;
 	(*self)->computedStyle = NULL;
-	PiuContentUnbind((PiuContent*)it, application);
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuField_create(xsMachine* the)
