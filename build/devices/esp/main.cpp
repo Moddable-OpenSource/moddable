@@ -21,20 +21,15 @@
 #define __XS6PLATFORMMINIMAL__
 
 #include <Arduino.h>
+#include "xs.h"
+#include "xsesp.h"
 
 extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
 
-	extern void fx_putc(void *refcon, char c);		//@@
+	extern void fx_putc(void *refcon, char c);
 	extern void mc_setup(xsMachine *the);
 }
-
-#include "xs.h"
-#include "xsesp.h"
-
-#include "xsPlatform.h"
-
-xsMachine *gThe;		// the one XS6 virtual machine running
 
 /*
 	Wi-Fi configuration and xsbug IP address
@@ -54,14 +49,13 @@ xsMachine *gThe;		// the one XS6 virtual machine running
 #ifdef mxDebug
 	unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
+
+static xsMachine *gThe;		// root virtual machine
+
 static uart_t *gUART;
 
-
-extern "C" int16_t fxFindModule(xsMachine* the, uint16_t moduleID, xsSlot* slot);
 void setup()
 {
-	const char *module;
-
 	gUART = uart_init(UART0, 460800, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
 
 	system_set_os_print(0);
