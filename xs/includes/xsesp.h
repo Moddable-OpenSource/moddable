@@ -235,7 +235,6 @@ double __ieee754_fmod_patch(double x, double y);
 */
 
 #ifdef __XS__
-	extern xsMachine *gThe;		// the one XS6 virtual machine running
 	extern xsMachine *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint8_t disableDebug);
 
 	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
