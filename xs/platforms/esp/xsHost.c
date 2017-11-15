@@ -543,128 +543,6 @@ modTime_t modMkTime(struct modTm *tm)
 #endif
 }
 
-static const char* gDayName[] ICACHE_XS6RO_ATTR = {
-	"Sun",
-	"Mon",
-	"Tue",
-	"Wed",
-	"Thu",
-	"Fri",
-	"Sat",
-	"Sun"
-};
-
-static const char* gMonths[] ICACHE_XS6RO_ATTR = {
-	"Jan",
-	"Feb",
-	"Mar",
-	"Apr",
-	"May",
-	"Jun",
-	"Jul",
-	"Aug",
-	"Sep",
-	"Oct",
-	"Nov",
-	"Dec"
-};
-
-void modStrfTime(char *s, size_t max, const char *format, const struct modTm *tm)
-{
-	while (true) {
-		uint8_t extend = 2;
-		char buffer[16];
-		size_t bufferLength;
-		char c = espRead8(format++);
-		if (!c) break;
-
-		if ('%' != c) {
-			if (!max) break;
-
-			*s++ = c;
-			max -= 1;
-			continue;
-		}
-
-		c = espRead8(format++);
-		if (!c) break;
-
-		buffer[0] = 0;
-		extend = 0;
-		switch (c) {		// N.B. only codes used by XS6 implemented
-			case 'a':
-				espStrCpy(buffer, gDayName[tm->tm_wday]);
-				break;
-			case 'b':
-				espStrCpy(buffer, gMonths[tm->tm_mon - 1]);
-				break;
-			case 'd':
-				itoa(tm->tm_mday, buffer, 10);
-				extend = 2;
-				break;
-			case 'm':
-				itoa(tm->tm_mon, buffer, 10);
-				break;
-			case 'z': {
-				int32_t offset = gTimeZoneOffset + gDaylightSavings;
-				uint8_t h, m;
-				buffer[0] = (offset >= 0) ? '+' : '-';
-				offset = (offset >= 0) ? offset : -offset;
-
-				offset /= 60;			// to minutes
-				m = offset % 60;		// minutes
-				h = (offset - m) / 60;	// hours
-
-				buffer[1] = (h > 9) ? '1' : '0';
-				itoa(h % 10, buffer + 2, 10);
-
-				buffer[3] = ':';
-
-				buffer[4] = (m > 9) ? '1' : '0';
-				itoa(m % 10, buffer + 5, 10);
-
-				buffer[6] = 0;
-				}
-				break;
-			case 'H':
-				itoa(tm->tm_hour, buffer, 10);
-				extend = 2;
-				break;
-			case 'M':
-				itoa(tm->tm_min, buffer, 10);
-				extend = 2;
-				break;
-			case 'S':
-				itoa(tm->tm_sec, buffer, 10);
-				extend = 2;
-				break;
-			case 'Y':
-				itoa(tm->tm_year + 1900, buffer, 10);
-				break;
-			case 'Z':
-//@@			not outputting time zone name... to do... but apparently it is allowed to output nothing if timezone name isn't known
- 				break;
-		}
-
-		if ((2 == extend) && (0 == buffer[1])) {
-			buffer[2] = buffer[1];
-			buffer[1] = buffer[0];
-			buffer[0] = '0';
-		}
-
-		bufferLength = strlen(buffer);
-		if (bufferLength >= max)
-			break;
-
-		memcpy(s, buffer, bufferLength);
-		s += bufferLength;
-		max -= bufferLength;
-	}
-
-	*s++ = 0;
-}
-
-
 static uint8_t gRTCInit = false;
 
 void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
@@ -1229,7 +1107,7 @@ static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)" bytes",
 };
 
-extern txMachine *gThe;
+txMachine *gInstrumentationThe;
 
 static int32_t modInstrumentationSystemFreeMemory(void)
 {
@@ -1242,34 +1120,34 @@ static int32_t modInstrumentationSystemFreeMemory(void)
 
 static int32_t modInstrumentationSlotHeapSize(void)
 {
-	return gThe->currentHeapCount * sizeof(txSlot);
+	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
 }
 
 static int32_t modInstrumentationChunkHeapSize(void)
 {
-	return gThe->currentChunksSize;
+	return gInstrumentationThe->currentChunksSize;
 }
 
 static int32_t modInstrumentationKeysUsed(void)
 {
-	return gThe->keyIndex - gThe->keyOffset;
+	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
 }
 
 static int32_t modInstrumentationGarbageCollectionCount(void)
 {
-	return gThe->garbageCollectionCount;
+	return gInstrumentationThe->garbageCollectionCount;
 }
 
 static int32_t modInstrumentationModulesLoaded(void)
 {
-	return gThe->loadedModulesCount;
+	return gInstrumentationThe->loadedModulesCount;
 }
 
 static int32_t modInstrumentationStackRemain(void)
 {
-	if (gThe->stackPeak > gThe->stack)
-		gThe->stackPeak = gThe->stack;
-	return (gThe->stackTop - gThe->stackPeak) * sizeof(txSlot);
+	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
+		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
 }
 
 static modTimer gInstrumentationTimer;
@@ -1300,6 +1178,7 @@ void espStartInstrumentation(txMachine *the)
 	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
 
 	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
+	gInstrumentationThe = the;
 
 	the->onBreak = espDebugBreak;
 }
@@ -1313,7 +1192,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
 
 	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;	// remove timer used by instrumentation
-	fxSampleInstrumentation(gThe, espInstrumentCount, values);
+	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
 	modInstrumentationSet(FramesDrawn, 0);
@@ -1321,8 +1200,8 @@ void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
-	gThe->garbageCollectionCount = 0;
-	gThe->stackPeak = gThe->stack;
+	gInstrumentationThe->garbageCollectionCount = 0;
+	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
 }
 #endif
 
