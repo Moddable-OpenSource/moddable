@@ -1232,6 +1232,10 @@ struct modMessageRecord {
 
 static modMessage gMessageQueue;
 
+typedef void (*DeliverMessages)(void);
+static void modMessageDeliver(void);
+static DeliverMessages gDeliverMessages;
+
 int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint16_t messageLength, uint8_t messageKind)
 {
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
@@ -1251,7 +1255,7 @@ int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint1
 
 	// append to message queue
 	if (NULL == gMessageQueue)
-		gMessageQueue= msg;
+		gMessageQueue = msg;
 	else {
 		modMessage walker;
 
@@ -1260,13 +1264,22 @@ int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint1
 		walker->next = msg;
 	}
 
+	gDeliverMessages = modMessageDeliver;
+
 	return 0;
 }
 
 void modMessageService(void)
 {
+	if (gDeliverMessages)
+		(*gDeliverMessages)();
+}
+
+void modMessageDeliver(void)
+{
 	modMessage msg = gMessageQueue;
 	gMessageQueue = NULL;
+	gDeliverMessages = NULL;
 
 	while (msg) {
 		modMessage next = msg->next;
