@@ -11,11 +11,11 @@
 					"$(MODULES)/network/wifi/*",
 					"$(MODULES)/network/wifi/esp/*",
 				],
-				"setup": "$(BUILD)/devices/esp/setup/setup",
+				"setup/network": "$(BUILD)/devices/esp/setup/network",
 			},
 			"preload": [
 				"socket",
-				"setup",
+				"setup/network",
 				"sntp",
 				"wifi",
 				"net"
@@ -32,11 +32,11 @@
 					"$(MODULES)/network/wifi/*",
 					"$(MODULES)/network/wifi/esp32/*",
 				],
-				"setup": "$(BUILD)/devices/esp/setup/setup",
+				"setup/network": "$(BUILD)/devices/esp/setup/network",
 			},
 			"preload": [
 				"socket",
-				"setup",
+				"setup/network",
 				"sntp",
 				"wifi",
 				"net"

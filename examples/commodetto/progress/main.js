@@ -16,14 +16,13 @@
  *     https://github.com/Kinoma/KPR-examples/blob/master/flickr-grid/src/mobile/assets/spinner-strip-80px-24cell-blue.png
  */
 
-import config from "mc/config";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let render = new Poco(screen);
 
 const white = render.makeColor(255, 255, 255);
 const green = render.makeColor(0, 255, 0);
