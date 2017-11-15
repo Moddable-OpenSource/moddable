@@ -25,15 +25,15 @@
 	"platforms":{
 		"esp": {
 			"modules": {
-				"setup": "$(BUILD)/devices/esp/setup/setup-piu-only",
+				"setup/piu": "$(BUILD)/devices/esp/setup/piu",
 			},
-			"preload": "setup"
+			"preload": "setup/piu"
 		},
 		"esp32": {
 			"modules": {
-				"setup": "$(BUILD)/devices/esp32/setup/setup-piu-only",
+				"setup/piu": "$(BUILD)/devices/esp32/setup/piu",
 			},
-			"preload": "setup"
+			"preload": "setup/piu"
 		}
 	}
 }
