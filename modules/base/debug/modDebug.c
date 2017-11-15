@@ -21,10 +21,6 @@
 
 #include "xs.h"
 
-#ifdef __ets__
-	#include "xsesp.h"
-#endif
-
 void xs_gc(xsMachine *the)
 {
 	int argc = xsToInteger(xsArgc);
@@ -34,13 +30,4 @@ void xs_gc(xsMachine *the)
 		int enable = xsTest(xsArg(0)) ? 1 : 0;
 		xsEnableGarbageCollection(enable);
 	}
-}
-
-void xs_free(xsMachine *the)
-{
-#ifdef __ets__
-	xsResult = xsInteger(system_get_free_heap_size());
-#else
-	xsResult = xsInteger(0);
-#endif
 }
