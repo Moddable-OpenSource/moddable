@@ -25,5 +25,4 @@
 
 export default class {
 	static gc(enable) @ "xs_gc";
-	static free() @ "xs_free";
 }
