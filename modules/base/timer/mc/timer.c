@@ -183,19 +183,6 @@ int modTimersNextScript(void)
 	return next;
 }
 
-void modTimersMark(xsMachine *the, xsMarkRoot markRoot)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if ((walker->flags & kTimerFlagMark) && (the == ((modTimerScript)&walker->refcon)->the))
-			(*markRoot)(the, &((modTimerScript)&walker->refcon)->slot);
-
-	modCriticalSectionEnd();
-}
-
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
 	modTimer timer;
@@ -230,6 +217,11 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	modInstrumentationAdjust(Timers, +1);
 
 	return timer;
+}
+
+void modTimerSetScript(modTimer timer)
+{
+	timer->flags |= kTimerFlagMark;
 }
 
 void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
