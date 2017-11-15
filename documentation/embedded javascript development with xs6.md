@@ -208,6 +208,7 @@ JavaScript is a powerful tool, but it will never outperform good native code. So
 
 The real challenge is determining when to use a native function. As a rule, start out in script. If the script doesn't perform adequately, optimize the script. If that doesn't achieve the needed performance, switch to C.
 
+
 <!--
 
 ### Cloned machine
@@ -215,5 +216,15 @@ The real challenge is determining when to use a native function. As a rule, star
 Use Map to keep list of items with arbitrary keys (HTTP headers)
 
 Use TypedArray (Uint8Array is more compact and potentially faster)
+	Uint8Array.from([regular array])
+		allow building the array the usual way and the compacting it
+
+Use tail calls to reduce stack use
+
+Use scoped let to reduce stack use
+
+Alias TypedArray to avoid copying data out of buffers
+
+
 
 -->
