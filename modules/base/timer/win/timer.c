@@ -132,6 +132,10 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	return timer;
 }
 
+void modTimerSetScript(modTimer timer)
+{
+}
+
 void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 {
 	timer->firstInterval = firstInterval;
