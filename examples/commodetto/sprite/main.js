@@ -12,13 +12,12 @@
  *
  */
 
-import config from "mc/config";
 import Timer from "timer";
 import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let render = new Poco(screen);
 
 let backgroundColor = render.makeColor(0, 0, 0);
 let spinnerColor = render.makeColor(49, 101, 173);

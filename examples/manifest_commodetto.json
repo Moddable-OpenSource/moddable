@@ -8,4 +8,18 @@
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 	},
 	"preload": "commodetto/*",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
+		},
+		"esp32": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
+		}
+	}
 }
