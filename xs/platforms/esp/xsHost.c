@@ -1027,9 +1027,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 
 void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 {
-	extern void modTimersMark(txMachine *the, txMarkRoot markRoot);
 	the->host = C_NULL;
-	modTimersMark(the, markRoot);
 }
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
