@@ -16,14 +16,13 @@
 		Rectangle class modeled on FskRectangle.c (Apache License, Marvell Semiconductor)
 */
 
-import config from "mc/config";
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import Timer from "timer";
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let render = new Poco(screen);
 
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);

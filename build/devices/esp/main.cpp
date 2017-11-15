@@ -26,6 +26,7 @@ extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
 
 	extern void fx_putc(void *refcon, char c);		//@@
+	extern void mc_setup(xsMachine *the);
 }
 
 #include "xs.h"
@@ -55,10 +56,6 @@ xsMachine *gThe;		// the one XS6 virtual machine running
 #endif
 static uart_t *gUART;
 
-static const char gSetup[] ICACHE_RODATA_ATTR = "setup";
-static const char gRequire[] ICACHE_RODATA_ATTR = "require";
-static const char gWeak[] ICACHE_RODATA_ATTR = "weak";
-static const char gMain[] ICACHE_RODATA_ATTR = "main";
 
 extern "C" int16_t fxFindModule(xsMachine* the, uint16_t moduleID, xsSlot* slot);
 void setup()
@@ -71,26 +68,12 @@ void setup()
 
 	gThe = ESP_cloneMachine(0, 0, 0, 0);
 
-	xsBeginHost(gThe);
-		xsResult = xsString(gSetup);
-		if (XS_NO_ID != fxFindModule(the, XS_NO_ID, &xsResult))
-			module = gSetup;
-		else
-			module = gMain;
-
-		xsResult = xsGet(xsGlobal, xsID(gRequire));
-		xsResult = xsCall1(xsResult, xsID(gWeak), xsString(module));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(gThe);
+	mc_setup(gThe);
 }
 
 
 void loop(void)
 {
-	if (!gThe)
-		return;
-
 #ifdef mxDebug
 	if (ESP_isReadable()) {
 		if (triggerDebugCommand(gThe)) {
@@ -112,7 +95,7 @@ void loop(void)
 
 	int delayMS = modTimersNext();
 	if (delayMS)
-		delay((delayMS < 5) ? delayMS : 5);
+		modDelayMilliseconds((delayMS < 5) ? delayMS : 5);
 }
 
 /*
