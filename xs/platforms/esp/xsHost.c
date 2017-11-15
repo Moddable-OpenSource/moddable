@@ -820,6 +820,60 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	return result;
 }
 
+static uint16_t gSetupPending = 0;
+
+void setStepDone(xsMachine *the)
+{
+	gSetupPending -= 1;
+	if (gSetupPending)
+		return;
+
+	xsBeginHost(the);
+		xsResult = xsGet(xsGlobal, xsID("require"));
+		xsResult = xsCall1(xsResult, xsID("weak"), xsString("main"));
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
+
+void mc_setup(xsMachine *the)
+{
+	extern txPreparation* xsPreparation();
+	txPreparation *preparation = xsPreparation();
+	txInteger scriptCount = preparation->scriptCount;
+	txScript* script = preparation->scripts;
+	xsIndex id_weak = xsID("weak");
+
+	gSetupPending = 1;
+
+	xsBeginHost(the);
+		xsVars(2);
+		xsVar(0) = xsNewHostFunction(setStepDone, 0);
+		xsVar(1) = xsGet(xsGlobal, xsID("require"));
+
+		while (scriptCount--) {
+			if (0 == c_strncmp(script->path, "setup/", 6)) {
+				char path[PATH_MAX];
+				char *dot;
+
+				c_strcpy(path, script->path);
+				dot = c_strchr(path, '.');
+				if (dot)
+					*dot = 0;
+
+				xsResult = xsCall1(xsVar(1), id_weak, xsString(path));
+				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
+					gSetupPending += 1;
+					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
+				}
+			}
+			script++;
+		}
+	xsEndHost(the);
+
+	setStepDone(the);
+}
+
 void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 {
 	if (the->heap_ptr + size <= the->heap_pend) {

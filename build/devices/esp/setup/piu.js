@@ -19,11 +19,8 @@
  */
 
 import config from "mc/config";
-import Timer from "timer";
 import Time from "time";
-import WiFi from "wifi";
-import Net from "net";
-import SNTP from "sntp";
+import Timer from "timer";
 
 class Screen extends require(config.screen) {
 	start(interval) {
@@ -77,50 +74,7 @@ class Screen extends require(config.screen) {
 	}
 }
 
-export default function () {
+export default function (done) {
 	global.screen = new Screen({});
-
-	WiFi.mode = 1;
-
-	if (!config.ssid)
-		return Timer.set(main);
-
-	let monitor = new WiFi({ssid: config.ssid, password: config.password}, msg => {
-		if ("gotIP" == msg) {
-			trace(`IP address ${Net.get("IP")}\n`);
-
-			monitor = undefined;
-			if (!config.sntp)
-				return Timer.set(main);
-
-			Net.resolve(config.sntp, (name, address) => {
-				if (!address)
-					return trace("unable to resolve sntp host\n");
-
-				trace(`resolved ${name} to ${address}\n`);
-
-				new SNTP({address}, function(message, value) {
-					if (1 == message) {
-						Time.set(value);
-						trace("got time\n");
-					}
-					else if (-1 == message)
-						trace("unable to retrieve time\n");
-					else
-						return;
-					Timer.set(main);
-				});
-			});
-		}
-		else if ("connect" == msg)
-			trace(`Wi-Fi connected to "${Net.get("SSID")}"\n`);
-		else if ("disconnect" == msg)
-			trace("Wi-Fi disconnected\n");
-	});
-}
-
-function main() {
-	let f = require.weak("main");
-	if (typeof f === "function")
-		f.call(this);
+	done();
 }
