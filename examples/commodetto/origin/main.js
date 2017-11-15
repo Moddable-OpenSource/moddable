@@ -12,11 +12,10 @@
  *
  */
 
-import config from "mc/config";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let render = new Poco(screen);
 
 let black = render.makeColor(0, 0, 0);
 let blue = render.makeColor(0, 0, 255);
