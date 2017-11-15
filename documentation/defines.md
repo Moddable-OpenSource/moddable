@@ -130,6 +130,17 @@ This allows a more concise statement of the pin connections:
 		}
 	},
 
+Or simply:
+
+	"defines": {
+		"ili9341": {
+			...
+			"cs_pin": 4,
+			"dc_pin": 2,
+			...
+		}
+	},
+
 ### Platform overrides
 For each driver, the configuration settings (e.g. width, height, flipX, flipY, hz) are typically consistent across all target platforms. The connections, however, are almost always different. The #defines block follows the pattern of mcconfig platform blocks by allowing a platform specific block to add values and override others.
 
