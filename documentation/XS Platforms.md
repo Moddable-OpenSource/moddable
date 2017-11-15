@@ -120,7 +120,7 @@ The functions in this section are only necessary for the debug version of XS. Th
 	
 If the platform does not support the communication with **xsbug**, functions in this section can be empty, except  `fxIsConnected` and `fxIsReadable`, which must return `0`.
 
-Communication between **xsbug** and the XS machine can be done over either a TCP/IP or serial connection. In the case of a TCP/IP connection, **xsbug** is the server and XS machines are clients. When using a serial connection, **xsbug** continues to communicate over TCP/IP and a bridge running on the computer relays data between the serial and TCP connections. In the case of the ESP8266, this relay is performed by **serial2xsbug**.
+Communication between **xsbug** and the XS machine can be done over either a TCP/IP or serial connection. In the case of a TCP/IP connection, **xsbug** is the server and XS machines are clients. When using a serial connection, **xsbug** continues to communication over TCP/IP and a bridge running on the computer relays data between the serial and TCP connections. In the case of the ESP8266, this relay is performed by **serial2xsbug**.
 
 Platforms must implement `fxIsReadable` to allow XS machines to receive messages from **xsbug** while executing byte codes, i.e. when platforms are inside the `fxRun` function. Most of the time, platforms are outside the `fxRun` function. So they use a system event and `fxDebugCommand` to tell XS about messages from **xsbug**.
 
