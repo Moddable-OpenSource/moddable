@@ -61,6 +61,7 @@ void xs_timer_set(xsMachine *the)
 	ts.the = the;
 	ts.slot = xsArg(0);
 	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
+	modTimerSetScript(timer);
 	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->slot);
 
 	xsmcSetInteger(xsResult, modTimerGetID(timer));
@@ -75,6 +76,7 @@ void xs_timer_repeat(xsMachine *the)
 	ts.the = the;
 	ts.slot = xsArg(0);
 	timer = modTimerAdd(interval, interval, xs_timer_callback, &ts, sizeof(ts));
+	modTimerSetScript(timer);
 	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->slot);
 
 	xsmcSetInteger(xsResult, modTimerGetID(timer));
