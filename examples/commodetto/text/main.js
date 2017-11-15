@@ -12,14 +12,13 @@
  *
  */
 
-import config from "mc/config";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}), { displayListLength: 2048 });
+let render = new Poco(screen, { displayListLength: 2048 });
 
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
