@@ -1,7 +1,7 @@
 # Pins
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 7, 2017
+Revised: November 15, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -10,11 +10,7 @@ Revised: November 7, 2017
 
 The `Digital` class provides access to the GPIO pins.
 
-<!-- 11/7/2017 BSF
-The import statement examples throughout this document need to be updated to match the existing pins module organization and export:
 	import Digital from "pins/digital";
--->
-	import {Digital} from "pins";
 
 Pin numbers are device dependent.
 	
@@ -58,7 +54,7 @@ The `write` function sets the value of the specified pin to either 0 or 1.
 
 The `Analog` class provides access to the analog input pins.
 
-	import {Analog} from "pins";
+	import Analog from "pins/analog";
 
 Pin numbers are device dependent.
 	
@@ -69,7 +65,7 @@ The Analog class provides only static functions. It is not instantiated.
 The following example samples an analog temperature sensor, converting the result to celsius degrees. The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
 
 	let temperature = (Analog.read(0) / 1024) * 330;
-	trace(`Temperature is ${temperature} degrees celsius\n");
+	trace(`Temperature is ${temperature} degrees celsius\n`);
 
 The example works with a widely-available low-cost [temperature sensor](https://learn.adafruit.com/tmp36-temperature-sensor/overview).
 
@@ -81,7 +77,7 @@ The `read` function samples the value of the specified pin, returning a value fr
 
 The `PWM` class provides access to the PWM output pins.
 
-	import {PWM} from "pins";
+	import PWM from "pins/pwm";
 
 PWM pins are Digital pins configured for output that are toggled between 0 and 1 at a specified frequency.
 
@@ -108,18 +104,15 @@ The following example uses two PWM pins to control the direction and speed of a 
 		}
 	}, 750);
 
-<!-- 11/7/2017 BSF
-Document the optional third "frequency" argument for PWM.write.
--->
-### write(pin, value)
+### write(pin, value [, frequency])
 
-The write function sets the frequency of the PWM pin. The value is between 0 and 1023.
+The write function sets the value of the PWM pin. The value is between 0 and 1023. The frequency defaults to 1 KHz and is be changed with optional frequency parameter.
 
 ## class I2C
 
 The `I2C` class provides access to the I2C bus connected to a pair of pins
 
-	import {I2C} from "pins";
+	import I2C from "pins/i2c";
 
 Pin numbers are device dependent.
 
@@ -142,44 +135,46 @@ The following example instantiates an I2C connection to a [temperature sensor](h
 
 	trace(`Celsius temperature: ${value}\n`);
 
-<!-- 11/7/2017 BSF
-Document the optional "hz" dictionary property.
--->
 ### constructor(dictionary)
 
 The I2C constructor takes a dictionary which contains the pins numbers to use for clock and data, as well as the I2C address of the target device.
 
 	let sensor = new I2C({sda: 5, clock: 4, address: 0x48});
 
+The constructor dictionary has an optional `hz` property to specify the speed of the I2C bus when using this instance.
+
+	let sensor = new I2C({sda: 5, clock: 4, address: 0x48, hz: 1000000});
+
+Many devices have a default I2C bus. On these devices, the sda and clock parameters may be omitted from the dictionary to use the default I2C bus.
+
+	let sensor = new I2C({address: 0x48});
+
+
 <!-- 11/7/2017 BSF
 Document the optional client provided ArrayBuffer second argument to read().
 -->
-### read(count)
+### read(count [, buffer])
 
-The `read` function reads `count` bytes from the target device, returning them in an `Array`. The maximum value of `count` is 34.
+The `read` function reads `count` bytes from the target device, returning them in a `Uint8Array`. The maximum value of `count` is 34.
 
-<!-- 11/7/2017 BSF
-Regarding note below, it looks like read() now always returns the client ArrayBuffer or an Uint8Array.
--->
-> **Note**: In the future, an `ArrayBuffer` may be optionally returned.
+	let bytes = sensor.read(4);
+
+An optional buffer parameter is used to provide an `ArrayBuffer` to be used to store the result. Using the same buffer for multiple reads can be more efficient by eliminating memory allocations and running the garbage collector less frequently.
+
+	let bytes = new UInt8Array(4);
+	sensor.read(4, bytes.buffer);
+	sensor.read(2, bytes.buffer);
+	sensor.read(3, bytes.buffer);
 
 ### write(...value)
 
-The `write` function writes up to 34 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, and strings (which are transmitted as UTF-8 bytes). 
-
-<!-- 11/7/2017 BSF
-Regarding note below, it looks write does now support arrays for the values.
--->
-> **Note**: In the future, `ArrayBuffers` may also be used as values.
+The `write` function writes up to 34 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes). 
 
 ## class SMBus
 
-<!-- 11/7/2017 BSF
-"is extends" -> "extends" below
--->
-The `SMBus` class implements support for the [System Management Bus](https://www.bing.com/search?q=smbus&form=APMCS1&PC=APMC) protocol, which is commonly used with I2C devices. The SMBus class is extends the `I2C` class with additional functions.
+The `SMBus` class implements support for the [System Management Bus](https://en.wikipedia.org/wiki/System_Management_Bus) protocol, which is commonly used with I2C devices. The `SMBus` class extends the `I2C` class with additional functions.
 
-	import SMBus from "smbus";
+	import SMBus from "pins/smbus";
 
 The `SMBus` constructor is identical to the `I2C` constructor.
 
@@ -187,46 +182,43 @@ The `SMBus` constructor is identical to the `I2C` constructor.
 
 The following example establishes an SMBus connection to a [triple axis magnetometer](https://www.sparkfun.com/products/10530). Once connected, it checks the device ID to confirm that it is the expected device model. It them puts the device into continuous measure mode.
 
-	let sensor = new SMBus({sda: 5, clock: 4, address: 0x1E});
+	let sensor = new SMBus({address: 0x1E});
 	
-	let id = sensor.readBlockDataSMB(10, 3);
+	let id = sensor.readBlock(10, 3);
 	id = String.fromCharCode(id[0]) + String.fromCharCode(id[1]) + String.fromCharCode(id[2]);
 	if ("H43" != id)
 		throw new Error("unable to verify magnetometer id");
 
-	sensor.writeByteDataSMB(2, 0);	// continuous measurement mode
+	sensor.writeByte(2, 0);	// continuous measurement mode
 
-### readByteDataSMB(register)
+### readByte(register)
 
 Reads a single byte of data from the specified register.
 
-### readWordDataSMB(register)
+### readWord(register)
 
 Reads a 16-bit data value starting from the specified register. The data is assumed to be transmitted in little-endian byte order.
 
 <!-- 11/7/2017 BSF
-Document the optional client provided buffer argument for readBlockDataSMB. Also the data is returned in the client buffer or Uint8Array.
+Document the optional client provided buffer argument for readBlock. Also the data is returned in the client buffer or Uint8Array.
 -->
-### readBlockDataSMB(register, count)
+### readBlock(register, count [, buffer])
 
-Reads count bytes of data starting from the specified register. Up to 34 bytes of data may be read. The data is returned in an `Array`.
+Reads count bytes of data starting from the specified register. Up to 34 bytes of data may be read. The data is returned in a `Uint8Array`. `readBlock` accepts an optional `buffer` argument that behaves the same as the optional `buffer` argument to the `I2C` class `read` function.
 
-### writeByteDataSMB(register, value)
+### writeByte(register, value)
 
 Writes a single byte of data to the specified register.
 
-### writeWordDataSMB(register, value)
+### writeWord(register, value)
 
 Writes a 16-bit data value starting at the specified register. The value is transmitted in little-endian byte order.
 
-### writeBlockDataSMB(register, ...value)
+### writeBlock(register, ...value)
 
 Writes the provided data values starting at the specified register. The value arguments are handled in the same way as the arguments to the `write` function of the `I2C` class.
 
-<!-- 11/7/2017 BSF
-The N.B. comment regarding in SMBus.js needs to be updated.
--->
 
-<!-- 11/7/2017 BSF
-The pins directory also contains the SPI implementation, but that is a native code interface. Probably should be added here if/when we ever provide a JS wrapper class.
--->
+## class SPI
+
+There is no JavaScript API to access SPI at this time.
