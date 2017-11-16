@@ -22,33 +22,31 @@
 	SMBus
 	
 	builds on I2C in Pins to provide SMBus functions like Kinoma Create and Kinoma Element
-	
-	N.B. readBlockDataSMB always returns an Array and writeBlockDataSMB only accepts Number and String value arguments
 */
 
 import I2C from "pins/i2c";
 
 export default class SMBus extends I2C {
-	readByteDataSMB(register) {
+	readByte(register) {
 		this.write(register);				// set address
 		return this.read(1)[0];				// read one byte
 	}
-	readWordDataSMB(register) {
+	readWord(register) {
 		this.write(register);				// set address
 		let value = this.read(2);			// read two bytes
 		return value[0] | (value[1] << 8);
 	}
-	readBlockDataSMB(register, count, buffer) {
+	readBlock(register, count, buffer) {
 		this.write(register);				// set address
 		return buffer ? this.read(count, buffer) : this.read(count);
 	}
-	writeByteDataSMB(register, value) {
+	writeByte(register, value) {
 		this.write(register, value & 255);
 	}
-	writeWordDataSMB(register, value) {
+	writeWord(register, value) {
 		this.write(register, value & 255, (value >> 8) & 255);
 	}
-	writeBlockDataSMB(register, ...value) {
+	writeBlock(register, ...value) {
 		this.write(register, ...value);
 	}
 }
