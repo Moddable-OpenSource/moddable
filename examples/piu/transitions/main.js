@@ -12,19 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Style,
-	Texture,
-	Behavior,
-	Content,
-	Column,
-	Label,
-	Container,
-	Application,
-	Transition,
-	Die,
-} from "piu/MC";
+import {} from "piu/MC";
 
 import WipeTransition from "piu/WipeTransition";
 import CombTransition from "piu/CombTransition";

@@ -12,16 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Style,
-	Texture,
-	Behavior,
-	Content,
-	Label,
-	Container,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const neSkin = new Skin({ texture:new Texture("ne.png"), x:0, y:0, width:120, height:120 });
 const nwSkin = new Skin({ texture:new Texture("nw.png"), x:0, y:0, width:120, height:120 });
