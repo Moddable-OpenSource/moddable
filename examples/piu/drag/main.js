@@ -12,16 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Style,
-	Texture,
-	Behavior,
-	Content,
-	Label,
-	Container,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 import config from "mc/config";
 
