@@ -480,6 +480,7 @@ void xs_poco_drawGray(xsMachine *the)
 	PocoDimension sx, sy, sw, sh;
 	PocoColor color = 0;
 	CommodettoBitmap cb;
+	uint8_t blend = kPocoOpaque;
 
 	xsmcVars(1);
 
@@ -514,10 +515,13 @@ void xs_poco_drawGray(xsMachine *the)
 		if (argc > 6) {
 			sw = (PocoDimension)xsmcToInteger(xsArg(6));
 			sh = (PocoDimension)xsmcToInteger(xsArg(7));
+
+			if (argc > 8)
+				blend = (uint8_t)xsmcToInteger(xsArg(8));
 		}
 	}
 
-	PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, x, y, sx, sy, sw, sh);
+	PocoGrayBitmapDraw(poco, &bits, color, blend, x, y, sx, sy, sw, sh);
 }
 
 void xs_poco_drawMasked(xsMachine *the)
