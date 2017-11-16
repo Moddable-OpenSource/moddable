@@ -8,9 +8,9 @@ Revised: September 9, 2017
 
 ## History
 
-A platform is a combination of hardware and system software. For each platform, XS requires an interface file, `xs6Platform.h`, and an implementation file, `xs6Platform.c`
+A platform is a combination of hardware and system software. For each platform, XS requires an interface file, `xsPlatform.h`, and an implementation file, `xsPlatform.c`
 
-Historically, XS used one interface file, `xs6Platform.h` splitting the implementation into two files: `xs6Platform.c` and `xs6Host.c`. Many platforms shared the same interface and implementation files, based either on the KinomaJS platform abstraction, or on an adhoc platform abstraction for command line tools.
+Historically, XS used one interface file, `xsPlatform.h` splitting the implementation into two files: `xsPlatform.c` and `xsHost.c`. Many platforms shared the same interface and implementation files, based either on the KinomaJS platform abstraction, or on an adhoc platform abstraction for command line tools.
 
 Further, an XS machine had many ways to find and load modules and programs: from JS files, from stand alone compiled XSB files with or without companion DLL or SO files, and from a linked XSA file with a companion DLL or SO file... The XS platform was in charge of providing such options. 
 
@@ -20,7 +20,7 @@ Today the XS runtime has been significantly streamlined, especially on micro-con
 
 Consequently, it is now much simpler to build an XS platform. This document describes the necessary interface and implementation files.
 
-## xs6Platform.h
+## xsPlatform.h
 
 ### Basic types
 
@@ -47,7 +47,7 @@ XS mostly relies on constants and functions from the C stantard library, accesse
 	#define c_malloc malloc
 	//...
 	
-Such definitions, and the corresponding includes, are the most significant part of the interface file. The macros allows a platform to provide its own constants and functions. See any of the provided `xs6Platform.h` for the list of macros to define.
+Such definitions, and the corresponding includes, are the most significant part of the interface file. The macros allows a platform to provide its own constants and functions. See any of the provided `xsPlatform.h` for the list of macros to define.
 
 ### ESP macros
 
@@ -88,13 +88,13 @@ On Windows, the `mxMachinePlatform` macro adds the socket and message window han
 		SOCKET connection; \
 		HWND window;
 
-## xs6Platform.c
+## xsPlatform.c
 
-The implementation file first includes `xs6All.h`, which contains the definitions of all XS macros and types, and the declarations of all XS extern functions. Then the platform has to implement the functions described here under.
+The implementation file first includes `xsAll.h`, which contains the definitions of all XS macros and types, and the declarations of all XS extern functions. Then the platform has to implement the functions described here under.
 
 XS machines do not support multiple threads, though platforms can support multiple threads, each with their own XS machines. All calls and callbacks described here must happen in the thread that created or cloned the machine. 
 
-The functions are grouped into meaningful sections. The xs6Platform.c file can also provide POSIX functions that the platform is missing.
+The functions are grouped into meaningful sections. The xsPlatform.c file can also provide POSIX functions that the platform is missing.
 
 --
 
@@ -215,9 +215,9 @@ XS lets the platform decides is such feature is worth the memory it takes.
 
 XS calls `fxParseScript` to transform source code into XS byte codes and keys. The `stream` and `getter` arguments allow the parser to access the source code. The `flags` argument tells the parser the kind of source code: `mxModuleCode`, `mxProgramCode` or `mxEvalCode`.
 
-If the platform supports such feature, it must include `xs6Script.h` and implements `fxParseScript` like:
+If the platform supports such feature, it must include `xsScript.h` and implements `fxParseScript` like:
 
-	#include "xs6Script.h"
+	#include "xsScript.h"
 
 	txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 	{
@@ -237,7 +237,7 @@ If the platform supports such feature, it must include `xs6Script.h` and impleme
 		return script;
 	}
 
-The platform must also compile and link `xs6Script.c`, `xs6Lexical.c`, `xs6Syntaxical.c`, `xs6Tree.c`, `xs6SourceMap.c`, `xs6Scope.c` and `xs6Code.c`.
+The platform must also compile and link `xsScript.c`, `xsLexical.c`, `xsSyntaxical.c`, `xsTree.c`, `xsSourceMap.c`, `xsScope.c` and `xsCode.c`.
 
 If the platform does not support such feature, `fxParseScript` must return `NULL` and the C files here above do not have to be compiled and linked.
 

@@ -8,7 +8,7 @@ Revised: November 22, 2016
 
 ## Introduction
 
-To get animations on a screen seriallly connected to a micro-controller, the game is to minimize the number of pixels that change from frame to frame.
+To get animations on a screen connected to a micro-controller by a serial interface (SPI), the game is to minimize the number of pixels that change from frame to frame.
 
 > FYI, here is what is happening at every frame when changes in the appearance or the layout invalidate and update the screen:
 > 
@@ -52,7 +52,7 @@ The `empty`, `or`, `xor` and `sub` methods are chainable operations to build the
 
 If you add the `TestContainer` to an application, here is what it will look like:
 
-![](./assets/die-cut.png)
+![](./../assets/die-cut.png)
 
 But of course the `die` object is mostly interesting to build animations and transitions. You will find examples in the Piu libraries: WipeTransition and CombTransition. 
 

@@ -25,7 +25,7 @@ When using JavaScript, the most obvious format to localize strings is a dictiona
 		return language[it];
 	}
 	
-It is not always possible to use the English string as the key, because of homonyms, contexts, etc. However, when it is possible, it is recommended: the code is easier to read and obvious reduncancies are avoided. 
+It is not always possible to use the English string as the key, because of homonyms, contexts, etc. However, when it is possible, it is recommended: the code is easier to read and obvious redundancies are avoided. 
 
 The trivial examples here above are used to compare solutions here under. Of course real applications use dictionaries with thousands of entries, small and large keys and values, so multiply accordingly.
 
