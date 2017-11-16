@@ -94,7 +94,7 @@ class Sensor extends SMBus {
 	constructor(dictionary) {
 		super(Object.assign({address: 0x18}, dictionary));
 
-		if (0x33 != this.readByteDataSMB(Register.WHOAMI))
+		if (0x33 != this.readByte(Register.WHOAMI))
 			throw new Error("unexpected device ID");
 
 		this.values = new Int16Array(3);
@@ -114,10 +114,10 @@ class Sensor extends SMBus {
 			}
 		}
 		// Enable all axes, normal mode @ rate
-		this.writeByteDataSMB(Register.CTRL1, 0x07 | (this.rate << 4));
+		this.writeByte(Register.CTRL1, 0x07 | (this.rate << 4));
 
 		// High res & BDU enabled
-		this.writeByteDataSMB(Register.CTRL4, 0x88 | (this.range << 4));
+		this.writeByte(Register.CTRL4, 0x88 | (this.range << 4));
 
 		if (this.range === Range.RANGE_16_G)
 			this.divider = 1365; // different sensitivity at 16g
@@ -130,7 +130,7 @@ class Sensor extends SMBus {
 	}
 
 	sample() {
-		this.readBlockDataSMB(Register.OUT_X_L | 0x80, 6, this.values.buffer);
+		this.readBlock(Register.OUT_X_L | 0x80, 6, this.values.buffer);
 
 		return {
 			x: this.values[0] / this.divider,
