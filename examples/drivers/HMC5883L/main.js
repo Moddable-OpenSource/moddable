@@ -23,15 +23,15 @@ import Timer from "timer";
 
 let sensor = new SMBus({sda: 5, clock: 4, address: 0x1E});
 
-let id = sensor.readBlockDataSMB(10, 3);			// ID
+let id = sensor.readBlock(10, 3);			// ID
 id = String.fromCharCode(id[0]) + String.fromCharCode(id[1]) + String.fromCharCode(id[2]);
 if ("H43" != id)
 	throw new Error("unable to verify magnometer id");
 
-sensor.writeByteDataSMB(2, 0);			// continuous measurement mode
+sensor.writeByte(2, 0);			// continuous measurement mode
 
 Timer.set(id => {
-	let result = sensor.readBlockDataSMB(3, 6);
+	let result = sensor.readBlock(3, 6);
 	trace(`x: ${toInt16(result[0], result[1])}, y: ${toInt16(result[2], result[3])}, z: ${toInt16(result[4], result[5])}\n`);
 }, 250, true);
 
