@@ -1,7 +1,7 @@
 # Poco
-Copyright 2016 Moddable Tech, Inc.
+Copyright 2016-2017 Moddable Tech, Inc.
 
-Revised: October 10, 2016
+Revised: November 16, 2017
 
 This document describes the Poco renderer, starting with a set of examples that introduce many of the main concepts of working with Poco. Following the examples is the reference for Poco, which fully describes each function call.
 
@@ -10,7 +10,7 @@ These examples illustrate working with the Poco renderer. They all use the JavaS
 
 To keep the examples concise and focused, the code makes several assumptions:
 
-- The examples assume a `PixelsOut` object in the variable `screen`.
+- The examples assume a `PixelsOut` object in the global variable `screen`.
 
 - They assume that the following color variables are defined:
 
@@ -105,7 +105,7 @@ This example draws a monochrome bitmap (in which all pixels are either black or 
 ```javascript
 poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
 
-let envelope = parseBMP(new File.Map("/k1/envelope.bmp"));
+let envelope = parseBMP(new Resource("envelope.bmp"));
 poco.drawMonochrome(envelope, black, white, 14, 10)
 poco.drawMonochrome(envelope, red, white, 14, 55)
 poco.drawMonochrome(envelope, green, undefined, 74, 10)
@@ -121,7 +121,7 @@ This example draws a color bitmap image of a face in two ways using `drawBitmap`
 ```javascript
 poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
 
-let image = parseBMP(new File.Map("/k1/lvb.bmp"));
+let image = parseBMP(new Resource("lvb.bmp"));
 
 let x = 0;
 let y = Math.round((screen.height - image.height) / 2);
@@ -141,7 +141,7 @@ This examples uses `fillPattern` to draw a single 30-pixel-square pattern in two
 Unlike the previous examples, this one does not first call `fillRectangle` to clear the screen, because the first call to `fillPattern` covers all the screen's pixels.
 
 ```javascript
-let pattern = parseBMP(new File.Map("/k1/pattern1.bmp"));
+let pattern = parseBMP(new Resource("pattern1.bmp"));
 poco.fillPattern(pattern, 0, 0, screen.width, screen.height);
 poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 ```
@@ -155,7 +155,7 @@ This example uses `drawGray` to draw a 16-level gray image in several colors. `d
 ```javascript
 poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
 
-let image = parseBMP(new File.Map("/k1/envelope-gray.bmp"));
+let image = parseBMP(new Resource("envelope-gray.bmp"));
 
 poco.drawGray(image, black, 10, 2);
 poco.drawGray(image, white, 10, 47);
@@ -176,7 +176,7 @@ This example uses `BufferOut` to create an offscreen bitmap, fills the bitmap wi
 ```javascript
 import BufferOut from "commodetto/BufferOut";
 
-let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: "rgb565le"});
+let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: Bitmap.RGB565LE});
 let poco = new Poco(offscreen);
 poco.begin();
 	poco.fillRectangle(gray, 0, 0, 30, 30);
@@ -196,43 +196,6 @@ poco.end();
 
 <img src="../assets/poco/offscreen.png" width="180" height="135"/>
 
-### RLE
-These examples demonstrate the two benefits of RLE encoding of bitmaps. The first example shows how a key color can be applied to a full-color bitmap to remove the background. The key color is used to generate a 1-bit mask. The `RLEOut.encode` function generates the RLE bitmap and applies the key color.
-
-```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-
-let image = parseBMP(new File.Map("/k1/lvbmask.bmp"));
-let keyed = RLEOut.encode(image, white);
-
-poco.drawBitmap(image, 0, 4);
-poco.drawBitmap(keyed, 60, 4)
-```
-
-<img src="../assets/poco/rle.png" width="180" height="135"/>
-
-The second example shows how using RLE can significantly reduce the size of many computer-generated graphics. This example compresses an image to RLE, writes the result to a file, and reloads it for display. The anti-aliased check mark image shown below is reduced from 5000 to 1350 bytes by RLE encoding. In addition, the RLE compressed image renders more quickly.
-
-```javascript
-// Load uncompressed image
-let bmp = parseBMP(new File.Map("/k1/button.bmp"));
-// Compress to RLE (no key color applied)
-let rle = RLEOut.encode(bmp);
-
-// Write RLE data to file
-let fileOut = new File("/k1/button.rle", 1);
-fileOut.write(rle.buffer);	
-fileOut.close();
-
-// Generate bitmap for RLE data written to file
-rle = new Bitmap(bmp.width, bmp.height, Bitmap.raw,
-			new File.Map("/k1/button.rle", 0);
-// Draw RLE bitmap loaded from file
-poco.drawBitmap(rle, 0, 0);
-```
-
-<img src="../assets/poco/check.png" width="100" height="100">
-
 ### Alpha
 
 This example shows how to draw a bitmap through an alpha mask. The bitmap to draw and the mask are in separate bitmaps, enabling an image to be drawn using more than one alpha mask. The example draws one bitmap through both a circle and a square mask, and also draws the original image and mask.
@@ -240,9 +203,9 @@ This example shows how to draw a bitmap through an alpha mask. The bitmap to dra
 ```javascript
 poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
 
-let girl = parseBMP(new File.Map("/k1/girl.bmp"));
-let circle = parseBMP(new File.Map("/k1/mask_circle.bmp"));
-let square = parseBMP(new File.Map("/k1/mask_square.bmp"));
+let girl = parseBMP(new Resource("girl.bmp"));
+let circle = parseBMP(new Resource("mask_circle.bmp"));
+let square = parseBMP(new Resource("mask_square.bmp"));
 
 poco.drawBitmap(girl, 0, 2);
 poco.drawGray(circle, black, 40, 2);
@@ -259,20 +222,20 @@ poco.drawMasked(girl, 80, 47, 0, 0,
 
 ### JPEG
 
-These two examples show different methods for working with JPEG images. The first example decompresses the full JPEG into a bitmap in memory and then renders the bitmap to the screen. The call to `console.log` shows how to access the bitmap's width and height.
+These two examples show different methods for working with JPEG images. The first example decompresses the full JPEG into a bitmap in memory and then renders the bitmap to the screen. The call to `trace` shows how to access the bitmap's width and height.
 
 ```javascript
 import JPEG from "commodetto/readJPEG";
 
-let piano = JPEG.decompress(new File.Map("/k1/piano.jpg"));
-console.log(`width ${piano.width}, height ${piano.height}\n`);
+let piano = JPEG.decompress(new Resource("piano.jpg"));
+trace(`width ${piano.width}, height ${piano.height}\n`);
 poco.drawBitmap(piano, 0, 0);
 ```
 
 The second example decodes the JPEG image one block at a time, drawing the block to the screen before decoding the next block. The advantage of this approach is that only a single JPEG block (typically 8 x 8 or 16 x 16 pixels) need be in memory at a time. The disadvantage is that the JPEG image appears to the user one block at a time rather than all at once.
 
 ```javascript
-let jpeg = new JPEG(new File.Map("/k1/piano.jpg"));
+let jpeg = new JPEG(new Resource("piano.jpg"));
 let block;
 while (block = jpeg.read()) {
 	poco.begin(block.x, block.y, block.width, block.height);
@@ -287,28 +250,18 @@ When complete, each approach generates the same result.
 
 ### Text
 
-Poco supports two types of fonts for rendering text: 
+Poco supports the BMPFont format for fonts used to rendering text. BMFont is a gray or color font used in games for anti-aliased fonts. A BMFont consists of two files: the font metrics and the font image. 
 
-- **NFNT** -- A monochrome bitmap font used on the early Macintosh computer. NFNT font resources are extracted to standalone files. 
-
-- **BMFont** -- A gray or color font used in games for anti-aliased fonts. A BMFont consists of two files: the font metrics and the font image. 
-
-The following example loads and draws a 12-point Palatino NFNT and a 36-point Palatino BMFont.
+The following example loads and draws a 36-point Palatino BMFont.
 
 ```javascript
-import parseNFNT from "commodetto/parseNFNT";
 import parseBMF from "commodetto/parseBMF";
 
 poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
 poco.fillRectangle(white, 2, 2, screen.width - 4, screen.height - 4);
 
-let palatino12 = parseNFNT(new File.Map("/k1/palatino_12.nfnt"));
-
-let palatino36 = parseBMF(new File.Map("/k1/palatino_36.fnt"));
-palatino36.bitmap = parseBMP(new File.Map("/k1/palatino_36_gray.bmp"));
-
-poco.drawText("Hello.", palatino12, black, 4, 4);
-poco.drawText("Hello.", palatino12, blue, 64, 4);
+let palatino36 = parseBMF(new Resource("palatino_36.fnt"));
+palatino36.bitmap = parseBMP(new Resource("palatino_36_gray.bmp"));
 
 poco.drawText("Hello.", palatino36, black, 4, 20);
 poco.drawText("Hello.", palatino36, green, 4, 55);
@@ -356,9 +309,9 @@ The `drawText` function also accepts a 16-gray-level alpha bitmap in the `color`
 ```javascript
 poco.fillRectangle(green, 0, 0, screen.width, screen.height);
 
-let openSans52 = parseBMF(new File.Map("/k1/OpenSans-BoldItalic-52.fnt"));
-openSans52.bitmap = parseBMP(new File.Map("/k1/OpenSans-BoldItalic-52.bmp"));
-openSans52.mask = parseBMP(new File.Map("/k1/OpenSans-BoldItalic-52-alpha.bmp"));
+let openSans52 = parseBMF(new Resource("OpenSans-BoldItalic-52.fnt"));
+openSans52.bitmap = parseBMP(new Resource("OpenSans-BoldItalic-52.bmp"));
+openSans52.mask = parseBMP(new Resource("OpenSans-BoldItalic-52-alpha.bmp"));
 
 poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
 ```
@@ -373,11 +326,42 @@ This is a section of the `OpenSans-BoldItalic-52-alpha.bmp` file, which contains
 
 <img src="../assets/poco/text_opensans_mask.png"/>
 
+## Pixel formats
+
+### Destination pixel formats
+Poco renders to the following pixel formats:
+
+- 16-bit RGB565 little-endian
+- 8-bit RGB323
+- 8-bit gray
+- 4-bit indexed color
+- 4-bit gray
+
+To keep the size of the code deployed to the target device small, Poco is configured at build time to render only one of these pixel formats.
+
+### Display pixel format
+For displays that require a different output format, the display driver is responsible for converting between a supported rendering format and the hardware required format. For example, many common LCD controllers require 16-bit RGB565 big-endian pixels. The display drivers for these controllers accept Poco rendered 16-bit RGB565 little-endian pixels and convert them to big-endian while transmitting to the LCD controller. Similarly, many displays are monochrome (1-bit). Their display driver accept pixels rendered in 4-bit or 8-bit gray and converts them to 1-bit for the monochrome display.
+
+### Source bitmap pixel formats
+Poco supports 1-bit monochrome and 4-bit gray bitmaps as sources for rendering to all pixel formats. In addition, the configured destination pixel format is always supported as a source format. For example, when the rendering pixel format is 16-bit RGB565 little-endian, supported source pixel formats are 1-bit monochrome, 4-bit gray, and 16-bit RGB565 little-endian.
+
+### Compressed pixel formats
+Poco implements support for two compressed pixel format.
+
+The first is a weighted run-length compression of 4-bit gray bitmaps. These are commonly used for anti-aliased fonts and image masks. They use the CommodettoBitmap and PocoBitmap data structures with the pixel format set to (kCommodettoBitmapGray16 | kCommodettoBitmapPacked).
+
+The second is a variant of the ColorCell algorithm used to compress full color images. These are not referenced by the CommodettoBitmap and PocoBitmap data structures, but treated as an image file in the same way as BMP, PNG, and JPEG. ColorCell images use 16-bit RGB565 little-endian pixels and consequently may only be rendered to 16-bit RGB565 little-endian destinations.
+
+## Immediate mode rendering
+By default, Poco is a scanline display list renderer. That means it stores all the drawing commands and then renders them all at once when all drawing commands for a given frame have been queued. When used with a display that has full frame buffers stored in memory accessible to Poco and is double buffered (e.g. has two frame buffers it flips between), scanline display list rendering is less efficient than immediate mode rendering, which executes each drawing command as it is received.
+
+Poco optionally supports immediate mode rendering. To enable this support, define kPocoFrameBuffer to 1 when building Poco, and use PocoDrawingBeginFrameBuffer/PocoDrawingEndFrameBuffer in place of PocoDrawingBegin/PocoDrawingEnd in the C code. No changes are required to JavaScript code to use immediate mode.
+
 ## JavaScript API Reference
 
 Poco is a renderer, a subclass of the Commodetto `Render` class.
 
-	class Poco extends Render
+	class Poco extends Render;
 
 ### Functions
 
@@ -391,8 +375,6 @@ import Poco from "commodetto/Poco";
 let screen = ... // SPIOut instance
 let poco = new Poco(screen, {displayListLength: 4096});
 ```
-
-> **Note:** Poco renders pixels in RGB 565 little-endian format (`"rgb565le"`). To accommodate display controllers that support only big-endian pixels, Poco outputs either `"rgb565le"` or `"rgb565be"` pixels, automatically configuring its output to match the pixel format of the `PixelsOut` instance passed to the constructor. Poco generates big-endian pixels by flipping the words of the rendered little-endian output before sending the pixels to the `PixelsOut` instance. Consequently, little-endian output is preferred, as it is somewhat faster.
 
 ##### `clip(x, y, width, height)`
 
@@ -482,14 +464,14 @@ The `drawPixel` function draws a single pixel of the specified color at the loca
 poco.drawPixel(poco.makeColor(0, 0, 127), 5, 5);
 ```
 
-> **Note:** Use of many calls to `drawPixel` in a single frame can quickly fill the display list.
+> **Note:** Making many calls to `drawPixel` in a single frame can quickly fill the display list.
 
 ##### `drawBitmap(bits, x, y, sx, sy, sw, sh)`
 
-The `drawBitmap` function draws all or part of a bitmap with pixels of type `Bitmap.Raw` or `Bitmap.RLE`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The following code draws the entire image at location `{x: 10, y: 5}`.
+The `drawBitmap` function draws all or part of a bitmap with pixels of type `Bitmap.Default`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The following code draws the entire image at location `{x: 10, y: 5}`.
 
 ```javascript
-let image = parseBMP(new File.Map("/k1/image.bmp"));
+let image = parseBMP(new Resource("image.bmp"));
 poco.drawBitmap(image, 10, 5);
 ```
 
@@ -511,7 +493,7 @@ The `fore` and `back` arguments specify the foreground and background colors to 
 let red = poco.makeColor(255, 0, 0);
 let gray = poco.makeColor(128, 128, 128);
 let white = poco.makeColor(255, 255, 255);
-let icon = parseBMP(new File.Map("/k1/icon.bmp"));
+let icon = parseBMP(new Resource("icon.bmp"));
 	
 poco.drawMonochrome(icon, red, white, 0, 5);  // red foreground and white background
 poco.drawMonochrome(icon, gray, undefined, 0, 5);  // only foreground pixels in gray
@@ -520,27 +502,25 @@ poco.drawMonochrome(icon, undefined, red, 0, 5);  // only background pixels in r
 
 The optional `sx`, `sy`, `sw`, and `sh` arguments specify the area of the bitmap to draw. If they are omitted, the entire bitmap is drawn.
 
-> **Note:** `drawMonochrome` is used by `drawText` to render NFNT fonts.
+##### `drawGray(bits, color, x, y, sx, sy, sw, sh[, blend])`
 
-##### `drawGray(bits, color, x, y, sx, sy, sw, sh)`
-
-The `drawGray` function draws all or part of a bitmap with pixels of type `Bitmap.Gray`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The pixels of the bitmap are treated as alpha values and are blended with the background. The `color` argument specifies the color to apply when blending.
+The `drawGray` function draws all or part of a bitmap with pixels of type `Bitmap.Gray16`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The pixels of the bitmap are treated as alpha values and are blended with the background. The `color` argument specifies the color to apply when blending.
 
 The optional `sx`, `sy`, `sw`, and `sh` arguments specify the area of the bitmap to draw. If they are omitted, the entire bitmap is drawn.
 
-> **Note:** `drawGray` is used by `drawText` to render anti-aliased grayscale BMFonts.
+The optional `blend` argument applies an additional blend level to all pixels in the bitmap prior to blending with the background. The `blend` value ranges from 0 for transparent to 255 for opaque.
 
-##### `drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy)`
+##### `drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy[, blend])`
 
-The `drawMasked` function uses two bitmaps--an image and the alpha channel--to alpha-blend the image through the mask onto the destination. The image, specified by the `bits` argument, is in `Bitmap.Raw` format. The alpha channel, specified by the `mask` argument, is in `Bitmap.Gray` format.
+The `drawMasked` function uses two bitmaps--an image and the alpha channel--to alpha-blend the image through the mask onto the destination. The image, specified by the `bits` argument, is in `Bitmap.Default` format. The alpha channel, specified by the `mask` argument, is in `Bitmap.Gray16` format.
 
 The `x` and `y` arguments specify where to locate the merged image in the output. The `sx`, `sy`, `sw`, and `sh` arguments specify the area of the image to use. The `mask_sx` and `mask_sy` arguments specify the top-left corner of the mask bitmap to use; the dimensions of the mask bitmap area are taken from the `sw` and `sh` arguments.
 
 The following example draws a button image with an alpha channel. The image and alpha channel are stored in separate files, each previously extracted from a PNG file with an alpha channel.
 
 ```javascript
-let buttonImage = parseBMP(new File.Map("/k1/button_image.bmp"));
-let buttonAlpha = parseBMP(new File.Map("/k1/button_alpha.bmp"));
+let buttonImage = parseBMP(new Resource("button_image.bmp"));
+let buttonAlpha = parseBMP(new Resource("button_alpha.bmp"));
 poco.drawMasked(buttonImage, 0, 0, 0, 0,
 	buttonImage.width, buttonImage.height, buttonAlpha, 0, 0);
 ```
@@ -549,14 +529,16 @@ Storing the alpha channel separately from the image is unusual, and has benefits
 
 * The alpha channel image can be 4 bits per pixel, which gives good results at half the size.
 * The image can be rendered with and without an alpha channel.
-* A mask can be applied to any image, allowing for effects and animations.
+* A single mask can be applied to any image, allowing for effects and animations.
+
+The optional `blend` argument applies an additional blend level to all pixels in the alpha channel bitmap prior to blending with the background. The `blend` value ranges from 0 for transparent to 255 for opaque.
 
 ##### `fillPattern(bits, x, y, w, h [, sx, sx, sx, sh])`
 
-The `fillPattern` function fills an area by repeatedly drawing all or part of a bitmap with pixels of type `Bitmap.Raw`. The bitmap is specified by the `bits` argument. The location of the area to fill is specified by the `x` and `y` arguments, and the dimensions of the area are specified by the `w` and `h` arguments.
+The `fillPattern` function fills an area by repeatedly drawing all or part of a bitmap with pixels of type `Bitmap.Default`. The bitmap is specified by the `bits` argument. The location of the area to fill is specified by the `x` and `y` arguments, and the dimensions of the area are specified by the `w` and `h` arguments.
 
 ```javascript
-let pattern = parseBMP(new File.Map("/k1/pattern.bmp"));
+let pattern = parseBMP(new Resource("pattern.bmp"));
 poco.fillPattern(pattern, 10, 10, 90, 90);
 ```
 
@@ -568,7 +550,7 @@ poco.fillPattern(pattern, 10, 10, 90, 90, 0, 0, 8, 8);
 
 ##### `drawText(text, font, color, x, y[, width])`
 
-The `drawText` function draws the `text` string using the NFNT or BMFont in the `font` argument. The text is drawn in the color of the `color` argument at the location of the `x` and `y` arguments. Text is drawn using top-left alignment.
+The `drawText` function draws the `text` string using the BMFont in the `font` argument. The text is drawn in the color of the `color` argument at the location of the `x` and `y` arguments. Text is drawn using top-left alignment.
 
 The following code draws the string `"Hello, world"` twice: first in the top-left corner of the screen using the Chicago font in black, and then beneath that string using the Palatino 36 font in red.
 
@@ -581,13 +563,11 @@ If the optional `width` argument is provided, the text is truncated on the right
 
 Characters in the text string that are not part of the font are ignored.
 
-To draw full-color text with anti-aliased edges, use a BMFont with a bitmap in `Bitmap.Raw` format. In place of the `color` argument, pass a mask bitmap in the `Bitmap.Gray` format. The mask must be at least as large as the BMFont's glyph atlas. When each glyph is drawn, the pixels in the mask image corresponding to the glyph in the font image are used to alpha-blend each glyph with the destination.
-
-> **Implementation note:** The optional `width` argument is not yet implemented for NFNT fonts.
+To draw full-color text with anti-aliased edges, use a BMFont with a bitmap in `Bitmap.Default` format. In place of the `color` argument, pass a mask bitmap in the `Bitmap.Gray16` format. The mask must be at least as large as the BMFont's glyph atlas. When each glyph is drawn, the pixels in the mask image corresponding to the glyph in the font image are used to alpha-blend each glyph with the destination.
 
 ##### `getTextWidth(text, font)`
 
-The `getTextWidth` function calculates the width in pixels of the `text` string when rendered using `font`. The font is either an NFNT or a BMFont.
+The `getTextWidth` function calculates the width in pixels of the `text` string when rendered using `font`.
 
 The following code draws the string `"Hello, world"` horizontally centered at the top of display.
 
@@ -599,7 +579,11 @@ poco.drawText(text, palatino36, green, (pixelsOut.width - width) / 2, 0);
 
 The height of the font is available in the `font.height` property.
 
-Characters in the text string that are not part of the font are ignored.
+Characters in the text string that are not part of the font are not rendered.
+
+##### `drawFrame(frame, dictionary, x, y)`
+
+The `drawFrame` function renders the ColorCell compressed image referenced by the `frame` argument at the location specified by the `x` and `y` arguments. The `dictionary` argument is an `Object` that contains width and height properties that indicate the source dimensions of the image.
 
 ## C API Reference
 
@@ -620,6 +604,7 @@ The following fields in `PocoRecord` are public and can be accessed by users of 
 * `height` -- height of output in pixels
 * `displayList` -- pointer to start of memory for display list
 * `displayListEnd` -- pointer to end of memory for display list
+* `pixelsLength` -- size in bytes of pixels array
 
 The following fields are available to read from the `PocoRecord` structure between calls to `PocoDrawingBegin` and `PocoDrawingEnd`:
 
@@ -631,12 +616,6 @@ The following fields are available to read from the `PocoRecord` structure betwe
 * `h` -- height of drawing clip
 * `xMax` -- right coordinate of drawing clip, `x + w`
 * `yMax` -- bottom coordinate of drawing clip, `y + h`
-
-<!--
-
-for origin and clip stack to work, pixelsLength and pixels must be initialized as well.
-
--->
 
 ##### `PocoCoordinate`
 
@@ -754,7 +733,7 @@ PocoCommand PocoBitmapDraw(Poco poco, PocoBitmap bits,
 			PocoDimension sw, PocoDimension sh);
 ```
 
-`PocoBitmapDraw` renders all or part of the bitmap `bits`, of type `kCommodettoBitmapRaw` or `kCommodettoBitmapPacked`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render.
+`PocoBitmapDraw` renders all or part of the bitmap `bits`, of type `kCommodettoBitmapDefault`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render.
 
 ##### `PocoMonochromeBitmapDraw`
 
@@ -777,25 +756,26 @@ The `fgColor` and `bgColor` arguments specify the colors to use to render the fo
 ##### `PocoGrayBitmapDraw`
 
 ```c
-void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoPixel color,
+void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits,
+		PocoPixel color, uint8_t blend,
 		PocoCoordinate x, PocoCoordinate y,
 		PocoDimension sx, PocoDimension sy,
 		PocoDimension sw, PocoDimension sh);
 ```
 
-`PocoGrayBitmapDraw` renders all or part of bitmap `bits`, of type `kCommodettoBitmapGray16`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render. The pixels of the bitmap are treated as alpha blending levels and are used to blend the `color` argument with the background pixels.
+`PocoGrayBitmapDraw` renders all or part of bitmap `bits`, of type `kCommodettoBitmapGray16`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render. The pixels of the bitmap are treated as alpha blending levels and are used to blend the `color` argument with the background pixels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
 
 ##### `PocoBitmapDrawMasked`
 
 ```c
-void PocoBitmapDrawMasked(Poco poco, PocoBitmap bits,
+void PocoBitmapDrawMasked(Poco poco, PocoBitmap bits, uint8_t blend,
 		PocoCoordinate x, PocoCoordinate y,
 		PocoDimension sx, PocoDimension sy,
 		PocoDimension sw, PocoDimension sh,
 		PocoBitmap mask, PocoDimension mask_sx, PocoDimension mask_sy);
 ```
 
-`PocoBitmapDrawMasked` renders the pixels of bitmap `bits`, of type `kCommodettoBitmapRaw`, enclosed by `sx`, `sy`, `sw`, and `sh` at the location specified by `x` and `y`. The pixels are drawn using the corresponding pixels of the bitmap `mask`, of type `kCommodettoBitmapGray16`, enclosed by `mask_x`, `mask_y`, `sw`, and `sh` as alpha blending levels.
+`PocoBitmapDrawMasked` renders the pixels of bitmap `bits`, of type `kCommodettoBitmapDefault`, enclosed by `sx`, `sy`, `sw`, and `sh` at the location specified by `x` and `y`. The pixels are drawn using the corresponding pixels of the bitmap `mask`, of type `kCommodettoBitmapGray16`, enclosed by `mask_x`, `mask_y`, `sw`, and `sh` as alpha blending levels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
 
 ##### `PocoBitmapPattern`
 
@@ -807,7 +787,18 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits,
 		PocoDimension sw, PocoDimension sh);
 ```
 
-`PocoBitmapPattern ` fills the area enclosed by the `x`, `y`, `w`, and `h` arguments with repeating copies of the area of the bitmap `bits` enclosed by the `sx`, `sy`, `sw`, and `sh` arguments. The bitmap must be of type `kCommodettoBitmapRaw`.
+`PocoBitmapPattern ` fills the area enclosed by the `x`, `y`, `w`, and `h` arguments with repeating copies of the area of the bitmap `bits` enclosed by the `sx`, `sy`, `sw`, and `sh` arguments. The bitmap must be of type `kCommodettoBitmapDefault`.
+
+##### `PocoDrawFrame`
+
+```c
+void PocoDrawFrame(Poco poco,
+	uint8_t *data, uint32_t dataSize,
+	PocoCoordinate x, PocoCoordinate y,
+	PocoDimension w, PocoDimension h);
+```
+
+`PocoDrawFrame` renders a compressed image stored in the Moddable variant of the ColorCell algorithm. The image to render is pointed to by the `data` argument with a byte count specified by the `dataSize` argument. The image is rendered at the location specified specified by the `x` and `y` arguments. The source dimensions (unclipped size) of the compressed image are given by the `w` and `h` arguments.
 
 ##### `PocoClipPush`
 
@@ -843,17 +834,29 @@ void PocoOriginPop(Poco poco);
 
 `PocoOriginPop` pops the origin from the stack and replaces the current origin with the popped value.
 
+##### `PocoDrawingBeginFrameBuffer`
+
+```c
+void PocoDrawingBeginFrameBuffer(Poco poco, PocoCoordinate x, PocoCoordinate y,
+	PocoDimension w, PocoDimension h,
+	PocoPixel *pixels, int16_t rowBytes);
+```
+
+`PocoDrawingBeginFrameBuffer ` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to first scan line of output pixels. The `rowBytes` parameters is the stride in bytes between scanlines.
+
+##### `PocoDrawingEndFrameBuffer`
+
+```c
+int PocoDrawingEndFrameBuffer(Poco poco;
+```
+
+`PocoDrawingEndFrameBuffer ` indicates that all drawing is complete for the current frame.
+
 ## Odds and Ends
 
 ### Relationship to Commodetto
 
-The C API of Poco may be used independently from Commodetto. Poco is the first renderer integrated into Commodetto. Poco runs on all hardware capable of supporting Commodetto--in particular the XS6 JavaScript engine. The Poco C API can also run on considerably less powerful hardware than Commodetto.
-
-### License
-
-Poco is provided under the [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/) (MPL). The MPL is a copyleft license, which guarantees that users of products that incorporate Poco have access to the version of the Poco source code used in that product. The MPL is an [OSI-approved](https://opensource.org/licenses) open source license compatible with major open source licenses, including the GPL and Apache 2.0.
-
-The MPL grants broad rights to developers incorporating Poco into their products. In exchange for those rights, developers have the obligation to acknowledge their use of Poco and to share the source code of any changes they make to Poco, as well other obligations described in the MPL.
+The C API of Poco may be used independently from Commodetto. Poco is the first renderer integrated into Commodetto. Poco runs on all hardware capable of supporting Commodetto--in particular the XS JavaScript engine. The Poco C API can also run on considerably less powerful hardware than Commodetto.
 
 ### About the Name "Poco"
 
