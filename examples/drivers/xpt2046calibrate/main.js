@@ -106,7 +106,7 @@ Timer.repeat(id => {
 	let y_min = Math.round(top - (30 * scale_y));
 	let y_max = Math.round(bottom + (30 * scale_y));
 
-	Preference.set("xpt2046", "calibrate", Int16Array.from([x_min, x_max, y_min, y_max]).buffer);
+	Preference.set("xpt2046", "calibrate", Int16Array.of(x_min, x_max, y_min, y_max).buffer);
 
 	let x = (render.width - success.width) >> 1, y = (render.height - success.height) >> 1;
 	for (let i = 0; i < 256; i += 2) {
