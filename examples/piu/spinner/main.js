@@ -12,14 +12,7 @@
  *
  */
 
-import {
-  Application,
-  Behavior,
-  Container,
-  Port,
-  Skin,
-  hsl
-} from "piu/MC";
+import {} from "piu/MC";
 
 /* Skins, styles, & textures */
 const whiteSkin = new Skin({ fill:"white" });

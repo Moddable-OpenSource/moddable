@@ -12,14 +12,7 @@
  *
  */
 
-import {
-	Texture,
-	Skin,
-	Behavior,
-	Port,
-	Application,
-	hsl,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const digitsTexture = new Texture("digits.png");
 
