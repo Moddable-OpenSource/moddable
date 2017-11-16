@@ -31,7 +31,7 @@ As in the early days of macOS a handle is a pointer to a pointer to a memory blo
 
 In XS, it is similar: a handle is a pointer to a pointer to a chunk. Here is a schema:
 
-![](./../assets/handle.png)
+![](./../assets/handle/handle.png)
 
 The `HANDLE` is a pointer to the `DATA` part of a `HOST` slot. The `DATA` part of a `HOST` slot is a pointer to a chunk. Since slots do not move, a handle remains valid across garbage collections. The XS garbage collector updates the `DATA` part of a `HOST` slot when sweeping chunks.
 
