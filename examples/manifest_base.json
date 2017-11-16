@@ -38,7 +38,6 @@
 		"esp": {
 			"modules": {
 				"*": [
-					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
 					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
@@ -46,7 +45,6 @@
 				]
 			},
 			"preload": [
-				"debug",
 				"time",
 				"timer",
 			],
@@ -68,7 +66,6 @@
 		"esp32": {
 			"modules": {
 				"*": [
-					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
 					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
@@ -76,7 +73,6 @@
 				]
 			},
 			"preload": [
-				"debug",
 				"time",
 				"timer",
 			],
