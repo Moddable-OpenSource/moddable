@@ -51,7 +51,7 @@ Such a runtime model introduces no conformance issues in itself since XS can ali
 - Scripts evaluation is optional. So some platforms do not support `eval`, `new Function`, `new AsyncFunction` or `new Generator`. But all platforms support `JSON.parse`. 
 - The XS linker can dead strip ECMAScript built-ins that Moddable apps do not use.
 
-Here the conformance is tested on macOS with a traditional runtime model and without any restrictions. For each case, XS creates a virtual machine, then parses and runs the script. The XS harness, `xst`, uses [LibYAML](http://pyyaml.org/wiki/LibYAML) to load the frontmatter, which contains, among other informations, the harness scripts to parse and run before the case script itself.
+Here the conformance is tested on macOS with a traditional runtime model and without any restrictions. For each case, XS creates a virtual machine, then parses and runs the script. The XS harness, `xst`, uses [LibYAML](http://pyyaml.org/wiki/LibYAML) to load the frontmatter, which contains, among other information, the harness scripts to parse and run before the case script itself.
 
 To build `xst`:
 
@@ -823,7 +823,7 @@ Currently, on macOS, XS passes **99%** of the language tests (`19176/19269`) and
 
 ## Failures
 
-Here under are the failed tests. The comments are mostly there for the sake of future versions of XS. 
+Here under are the failed tests. The comments are primarily here for the sake of future versions of XS. 
 
 ### Language
 
