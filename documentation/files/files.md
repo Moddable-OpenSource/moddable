@@ -1,7 +1,7 @@
 # Files
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 7, 2017
+Revised: November 15, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -12,9 +12,9 @@ The `File` class provides access to files in the [SPIFFS](https://github.com/pel
 
 	import {File} from "file";
 
-The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the File class only instantiates the SPIFFS file system when necessary - when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when no longer in use.
+The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the `File` class only instantiates the SPIFFS file system when necessary - when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when no longer in use.
 
-If the SPIFFS file system has not been initialized, it is formatted with SPIFFS_format when first used.
+If the SPIFFS file system has not been initialized, it is formatted with SPIFFS_format when first used. This operation may take up to one minute.
 
 ### Get file size
 
@@ -34,7 +34,7 @@ This example retrieves the entire content of a file into a `String`. If there is
 
 ### Read file into ArrayBuffers
 
-This example reads a file in 1024 byte ArrayBuffers. The final ArrayBuffer is smaller than 1024 when the file size is not an integer multiple of 1024.
+This example reads a file into one or more `ArrayBuffer`s. The final `ArrayBuffer` is smaller than 1024 when the file size is not an integer multiple of 1024.
 
 	let file = new File("test.txt");
 	while (file.position < file.length) {
@@ -95,9 +95,13 @@ The static `delete` function removes the file at the specified path.
 
 	File.delete("test.txt");
 
-<!-- 11/7/2017 BSF
-File.exists and File.rename need to be documented.
--->
+### exists(path)
+
+The static `exists` function returns a boolean indicating whether a file exists at the specified path.
+
+### rename(from, to)
+
+The static `rename` function renames the file specified by the `from` argument to the name specified by the `to` argument.
 
 ## class File Iterator
 
@@ -132,9 +136,24 @@ The constructor takes as its sole argument the path of the directory to iterate 
 
 The `next` function is called repeatedly, each time retrieving information about one file. When all files have been returned, the `next` function returns `undefined`. For each file and subdirectory, next returns an object. The object always contains a `name` property with the file name. If the object contains a `length` property, it references a file and the `length` property is the size of the file in bytes. If the `length` property is absent, it references a directory.
 
-<!-- 11/7/2017 BSF
-The System class needs to be documented.
--->
+## class File System
+
+The System class provides information about the file system.
+
+	import {System} from "file";
+
+### config
+
+The `config` function returns a dictionary with information about the file system. At this time, the dictionary has a single property, `maxPathLength`, which indicates the length of the longest file path in bytes.
+
+	let maxPathLength = System.config().maxPathLength;
+
+### info
+
+The info function returns a dictionary with information about the free and used space in the file system. The `used` property of the dictionary gives the number of bytes in use and the `total` property indicates the maximum capacity of the file system in bytes.
+
+	let info = System.info();
+	let percentFree = 1 - (info.used / info.total);
 
 ## class ZIP
 
@@ -152,13 +171,8 @@ A ZIP archive is stored in memory. If it is ROM, it will be accessed using a Hos
 
 	import {ZIP} from "zip";
 
-	let archive = new ZIP(ESP8266.getZIP());
-
-<!-- 11/7/2017 BSF
-Perhaps a snippet from our sample app provides an easier example:
 	let buffer = new Resource("test.zip");
 	let archive = new ZIP(buffer);
--->
 
 ### Reading a file from ZIP archive
 
