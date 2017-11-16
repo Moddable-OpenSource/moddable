@@ -19,14 +19,16 @@ Piu interpolates linearly between values in the array. You can reduce the frame 
 
 Install the ae2piu.jsx script in the "scripts" folder within your After Effects application folder.
 
-![](../assets/ae2piu/ae_script_install.png)
+<img src="assets/ae_script_install.png" height="233"/> 
 
 	
+
+
 ### Exporting motion data
 
 To run the script select "ae2piu.jsx" from the File -> Scripts menu.
 
-![](../assets/ae2piu/ae2piu-screen.png)
+<img src="assets/ae2piu-screen.png" height="600"/> 
 
 When you run the export script in After Effects, it displays a dialog box to select a folder. Create a new folder the first time. The export script copies the assets and creates the manifest.json and main.js files for a complete Moddable application. To build the project and run in the Moddable Simulator use the following command.
 
