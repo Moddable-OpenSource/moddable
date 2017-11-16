@@ -12,18 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Style,
-	Texture,
-	Behavior,
-	Content,
-	Die,
-	Text,
-	Link,
-	Container,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const blackSkin = new Skin({ fill:"black" });
 const whiteSkin = new Skin({ fill:"white" });
