@@ -12,17 +12,7 @@
  *
  */
 
-import {
-  Application,
-  Behavior,
-  Column,
-  Content,
-  Label,
-  Skin,
-  Style,
-  Texture, 
-  Container
-} from "piu/MC";
+import {} from "piu/MC";
 
 import {
   Request

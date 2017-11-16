@@ -12,17 +12,7 @@
  *
  */
 
-import {
-	Texture,
-	Skin,
-	Style,
-	Behavior,
-	Content,
-	Label,
-	Container,
-	Die,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 import Timeline from "piu/Timeline";
 
