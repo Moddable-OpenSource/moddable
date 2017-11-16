@@ -23,16 +23,16 @@
 	uuid
 */
 
-function UUID() {
-	let net = require.weak("net");
+import Net from "net";
 
+function UUID() {
 //@@ need a real time for this to be correct
 	return [
 				hex(Math.random() * 10000000, 8),
 				hex(Math.random() * 32767, 4),
 				hex(Math.random() * 32767, 4),
 				hex((Math.random() * 32767) | 0x8000, 4),
-				net.get("MAC").split(":").join("")
+				Net.get("MAC").split(":").join("")
 			].join("-").toUpperCase();
 }
 
@@ -40,9 +40,7 @@ function hex(value, count)
 {
 	if (value < 0) value = -value;
 	value = value.toString(16);
-	if (value.length < count)
-		value = '0'.repeat(count - value.length) + value;
-	return value;
+	return value.padStart(count, "0");
 }
 
 export default UUID;
