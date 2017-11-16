@@ -38,7 +38,7 @@ CLI.install(function(command, parts) {
 				let i2c = new SMBus({address});
 				let count = (3 == parts.length) ? 1 : parseInt(parts[3]);
 				for (let i = 0, register = parseInt(parts[2]); i < count; i++, register++)
-					this.line("0x", register.toString(16), ": 0x", i2c.readByteDataSMB(register).toString(16));
+					this.line("0x", register.toString(16), ": 0x", i2c.readByte(register).toString(16));
 				i2c.close();
 			}
 			else if ("write" === mode) {
@@ -52,7 +52,7 @@ CLI.install(function(command, parts) {
 				let i2c = new SMBus({address});
 				let count = parts.length - 3;
 				for (let i = 0, register = parseInt(parts[2]); i < count; i++, register++)
-					i2c.writeByteDataSMB(register, parseInt(parts[3 + i]));
+					i2c.writeByte(register, parseInt(parts[3 + i]));
 				i2c.close();
 			}
 			else if ("scan" === mode) {
@@ -60,7 +60,7 @@ CLI.install(function(command, parts) {
 					let i2c;
 					try {
 						i2c = new SMBus({address});
-						i2c.readByteDataSMB(0);
+						i2c.readByte(0);
 					 	this.line("Found: 0x", address.toString(16));
 					}
 					catch (e) {
