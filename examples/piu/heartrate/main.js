@@ -12,15 +12,7 @@
  *
  */
 
-import {
-	Texture,
-	Skin,
-	Content,
-	Row,
-	Behavior,
-	Port,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const GRAPH_INTERVAL = 2000;	// Changes how frequently a bar is added to the graph
 const MAX_RATE = 210;			// Max heart rate value
