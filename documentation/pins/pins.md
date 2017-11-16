@@ -149,10 +149,6 @@ Many devices have a default I2C bus. On these devices, the sda and clock paramet
 
 	let sensor = new I2C({address: 0x48});
 
-
-<!-- 11/7/2017 BSF
-Document the optional client provided ArrayBuffer second argument to read().
--->
 ### read(count [, buffer])
 
 The `read` function reads `count` bytes from the target device, returning them in a `Uint8Array`. The maximum value of `count` is 34.
@@ -199,9 +195,6 @@ Reads a single byte of data from the specified register.
 
 Reads a 16-bit data value starting from the specified register. The data is assumed to be transmitted in little-endian byte order.
 
-<!-- 11/7/2017 BSF
-Document the optional client provided buffer argument for readBlock. Also the data is returned in the client buffer or Uint8Array.
--->
 ### readBlock(register, count [, buffer])
 
 Reads count bytes of data starting from the specified register. Up to 34 bytes of data may be read. The data is returned in a `Uint8Array`. `readBlock` accepts an optional `buffer` argument that behaves the same as the optional `buffer` argument to the `I2C` class `read` function.
