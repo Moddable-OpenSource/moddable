@@ -70,8 +70,8 @@ export default class Poco @ "xs_poco_destructor" {
 	drawPixel(color, x, y) @ "xs_poco_drawPixel"
 	drawBitmap(bits, x, y, sx, sy, sw, sh) @ "xs_poco_drawBitmap"
 	drawMonochrome(monochrome, fore, back, x, y, sx, sy, sw, sh) @ "xs_poco_drawMonochrome"
-	drawGray(bits, color, x, y, sx, sy, sw, sh) @ "xs_poco_drawGray"
-	drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy) @ "xs_poco_drawMasked"
+	drawGray(bits, color, x, y, sx, sy, sw, sh, blend) @ "xs_poco_drawGray"
+	drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) @ "xs_poco_drawMasked"
 	fillPattern(bits, x, y, w, h, sx, sx, sx, sh) @ "xs_poco_fillPattern"
 
 	drawFrame(frame, stream, x, y) @ "xs_poco_drawFrame"
