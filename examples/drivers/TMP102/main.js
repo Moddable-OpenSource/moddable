@@ -15,10 +15,10 @@
 import I2C from "pins/i2c";
 import Timer from "timer";
 
-let sensor = new I2C({sda: 5, clock: 4, address: 0x48});
+let sensor = new I2C({address: 0x48});
 
 Timer.set(id => {
-	// readWordDataSMB - write address, read data: S Addr Wr [A] Comm [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
+	// SMB readWord - write address, read data: S Addr Wr [A] Comm [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
 	sensor.write(0);			// set address 0
 	let value = sensor.read(2);	// read two bytes
 
