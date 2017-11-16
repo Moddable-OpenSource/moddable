@@ -150,7 +150,7 @@ To be able to use bitmaps directly from flash storage, the bitmaps need to confo
 	cd $MODDABLE/piu/examples/balls
 	png2bmp balls.png -o ~/Desktop -f gray256 -r 90
 
-![](./../assets/png2bmp.png)
+![](./../assets/tools/png2bmp.png)
 
 ### Arguments
 	
@@ -221,7 +221,7 @@ The C code can then be compiled and linked with the implementation of the host f
 
 **Screen Test** is the Moddable simulator, a macOS, Linus or Windows application that hosts an XS machine to run Moddable apps in a simulator screen.
 
-![](./../assets/screen-test.png)
+![](./../assets/tools/screen-test.png)
 
 For the Moddable simulator, Moddable apps are dynamic libraries (mc.so or mc.dll) built by mcconfig. **Screen Test** loads such dynamic libraries and executes their main module.
 
