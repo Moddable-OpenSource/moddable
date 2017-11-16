@@ -44,7 +44,7 @@ poco.blendRectangle(blue, 128, screen.width / 4,
 	0, screen.width / 2, screen.height);
 ```
 
-<img src="assets/fillrectangle.png" width="180" height="135"/>
+<img src="../assets/poco/fillrectangle.png" width="180" height="135"/>
 
 ### Origin
 
@@ -72,7 +72,7 @@ poco.blendRectangle(black, 128, -4, -4, 20, 10);
 poco.origin();
 ```
 
-<img src="assets/origin.png" width="180" height="135"/>
+<img src="../assets/poco/origin.png" width="180" height="135"/>
 
 ### Clip
 
@@ -96,7 +96,7 @@ poco.clip();
 poco.fillRectangle(black, 34, 0, 2, screen.height);
 ```
 
-<img src="assets/clip.png" width="180" height="135"/>
+<img src="../assets/poco/clip.png" width="180" height="135"/>
 
 ### Monochrome Bitmap
 
@@ -112,7 +112,7 @@ poco.drawMonochrome(envelope, green, undefined, 74, 10)
 poco.drawMonochrome(envelope, undefined, blue, 74, 55)
 ```
 
-<img src="assets/monochrome.png" width="180" height="135"/>
+<img src="../assets/poco/monochrome.png" width="180" height="135"/>
 
 ### Color Bitmap
 
@@ -132,7 +132,7 @@ poco.drawBitmap(image, x + 25, y + 38, 25, 38, 11, 7);	 // left eye
 poco.drawBitmap(image, x +  7, y + 40,  7, 40, 10, 6);	 // right eye
 poco.drawBitmap(image, x + 15, y + 56, 15, 56, 16, 6);	 // mouth
 ```
-<img src="assets/bitmap.png" width="180" height="135"/>
+<img src="../assets/poco/bitmap.png" width="180" height="135"/>
 
 ### Pattern
 
@@ -146,7 +146,7 @@ poco.fillPattern(pattern, 0, 0, screen.width, screen.height);
 poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 ```
 
-<img src="assets/pattern.png" width="180" height="135"/>
+<img src="../assets/poco/pattern.png" width="180" height="135"/>
 
 ### Gray Bitmap
 
@@ -167,7 +167,7 @@ poco.drawGray(image, white, 70, 47);
 poco.drawGray(image, red, 70 + 2, 47 + 2);
 ```
 
-<img src="assets/gray.png" width="180" height="135"/>
+<img src="../assets/poco/gray.png" width="180" height="135"/>
 
 ### Offscreen Bitmap
 
@@ -194,7 +194,7 @@ poco.begin();
 poco.end();
 ```
 
-<img src="assets/offscreen.png" width="180" height="135"/>
+<img src="../assets/poco/offscreen.png" width="180" height="135"/>
 
 ### RLE
 These examples demonstrate the two benefits of RLE encoding of bitmaps. The first example shows how a key color can be applied to a full-color bitmap to remove the background. The key color is used to generate a 1-bit mask. The `RLEOut.encode` function generates the RLE bitmap and applies the key color.
@@ -209,7 +209,7 @@ poco.drawBitmap(image, 0, 4);
 poco.drawBitmap(keyed, 60, 4)
 ```
 
-<img src="assets/rle.png" width="180" height="135"/>
+<img src="../assets/poco/rle.png" width="180" height="135"/>
 
 The second example shows how using RLE can significantly reduce the size of many computer-generated graphics. This example compresses an image to RLE, writes the result to a file, and reloads it for display. The anti-aliased check mark image shown below is reduced from 5000 to 1350 bytes by RLE encoding. In addition, the RLE compressed image renders more quickly.
 
@@ -231,7 +231,7 @@ rle = new Bitmap(bmp.width, bmp.height, Bitmap.raw,
 poco.drawBitmap(rle, 0, 0);
 ```
 
-<img src="assets/check.png" width="100" height="100">
+<img src="../assets/poco/check.png" width="100" height="100">
 
 ### Alpha
 
@@ -255,7 +255,7 @@ poco.drawMasked(girl, 80, 47, 0, 0,
 	square.width, square.height, square, 0, 0);
 ```
 
-<img src="assets/alpha.png" width="180" height="135"/>
+<img src="../assets/poco/alpha.png" width="180" height="135"/>
 
 ### JPEG
 
@@ -283,7 +283,7 @@ while (block = jpeg.read()) {
 
 When complete, each approach generates the same result.
 
-<img src="assets/jpeg.png" width="180" height="135"/>
+<img src="../assets/poco/jpeg.png" width="180" height="135"/>
 
 ### Text
 
@@ -314,7 +314,7 @@ poco.drawText("Hello.", palatino36, black, 4, 20);
 poco.drawText("Hello.", palatino36, green, 4, 55);
 ```
 
-<img src="assets/text1.png" width="180" height="135"/>
+<img src="../assets/poco/text1.png" width="180" height="135"/>
 
 To truncate text when rendering, provide the optional `width` argument to `drawText` indicating the horizontal space available for the text.
 
@@ -326,7 +326,7 @@ poco.drawText("Hello, world.", palatino36, red, 2, 10);
 poco.drawText("Hello, world.", palatino36, green, 2, 45, screen.width - 2);
 ```
 
-<img src="assets/text2.png" width="180" height="135"/>
+<img src="../assets/poco/text2.png" width="180" height="135"/>
 
 Text is horizontally and vertically aligned using the `height` property of the font and measuring the width of strings using `getTextWidth`.
 
@@ -349,7 +349,7 @@ poco.drawText("Centered", palatino12, black,
 	(screen.width - poco.getTextWidth("Centered", palatino12)) / 2,
 	(screen.height - palatino12.height) / 2);
 ```
-<img src="assets/text3.png" width="180" height="135"/>
+<img src="../assets/poco/text3.png" width="180" height="135"/>
 
 The `drawText` function also accepts a 16-gray-level alpha bitmap in the `color` argument. This bitmap is used to draw fonts that consist of multiple colors. The following example shows drawing Open Sans Bold Italic with both black and white pixels in the glyph images.
 
@@ -363,15 +363,15 @@ openSans52.mask = parseBMP(new File.Map("/k1/OpenSans-BoldItalic-52-alpha.bmp"))
 poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
 ```
 
-<img src="assets/text4.png" width="180" height="135"/>
+<img src="../assets/poco/text4.png" width="180" height="135"/>
 
 The following image is a section of the `OpenSans-BoldItalic-52.bmp` file, which contains the glyph images.
 
-<img src="assets/text_opensans_glyphs.png"/>
+<img src="../assets/poco/text_opensans_glyphs.png"/>
 
 This is a section of the `OpenSans-BoldItalic-52-alpha.bmp` file, which contains the alpha channel of the glyph images:
 
-<img src="assets/text_opensans_mask.png"/>
+<img src="../assets/poco/text_opensans_mask.png"/>
 
 ## JavaScript API Reference
 
