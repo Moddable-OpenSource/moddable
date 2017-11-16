@@ -18,8 +18,7 @@
  *
  */
 
-import * as FS from "fs";
-import TOOL from "tool";
+import { FILE, TOOL } from "tool";
 
 /*
 	Photoshop colortable (.act) is 8-bit RGB triples.
@@ -32,7 +31,7 @@ import TOOL from "tool";
 		Remap table: Maps 4:4:4 pixel to 8-bit index (only 4 bits used) - 4096 bytes
 */
 
-export default class Tool extends TOOL {
+export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 
@@ -77,15 +76,15 @@ export default class Tool extends TOOL {
 		let parts = this.splitPath(this.inputPath);
 		parts.directory = this.outputPath;
 		parts.extension = ".cct";
-		let output = FS.openSync(this.joinPath(parts), "wb");
+		let output = new FILE(this.joinPath(parts), "wb");
 
-		let photoshopCLUT = new Uint8Array(FS.readFileBufferSync(this.inputPath));
+		let photoshopCLUT = new Uint8Array(this.readFileBuffer(this.inputPath));
 
 		// 4:4:4 color table
 		for (let i = 0, c = 0; i < 16; i++, c += 3) {
-			FS.writeByteSync(output, (this.roundComponent(photoshopCLUT[c + 1]) & 0xF0) |
+			output.writeByte((this.roundComponent(photoshopCLUT[c + 1]) & 0xF0) |
 										(this.roundComponent(photoshopCLUT[c + 2]) >> 4));
-			FS.writeByteSync(output, this.roundComponent(photoshopCLUT[c + 0]) >> 4);
+			output.writeByte(this.roundComponent(photoshopCLUT[c + 0]) >> 4);
 		}
 
 		// inverse table from 4:4:4 to 16 CLUT
@@ -93,7 +92,7 @@ export default class Tool extends TOOL {
 			for (let g = 0; g < 16; g++) {
 				for (let b = 0; b < 16; b++) {
 					let nearest = this.findNearest(photoshopCLUT, r | (r << 4), g | (g << 4), b | (b << 4));
-					FS.writeByteSync(output, nearest);
+					output.writeByte(nearest);
 				}
 			}
 		}
@@ -101,11 +100,11 @@ export default class Tool extends TOOL {
 		// 5:6:5 color table
 		for (let i = 0, c = 0; i < 16; i++, c += 3) {
 			let pixel = ((photoshopCLUT[c + 0] >> 3) << 11) | ((photoshopCLUT[c + 1] >> 2) << 5) | (photoshopCLUT[c + 2] >> 3);
-			FS.writeByteSync(output, pixel & 0xFF);
-			FS.writeByteSync(output, pixel >> 8);
+			output.writeByte(pixel & 0xFF);
+			output.writeByte(pixel >> 8);
 		}
 
-		FS.closeSync(output);
+		output.close();
 	}
 
 	findNearest(clut, r, g, b) {

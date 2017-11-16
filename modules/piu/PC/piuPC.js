@@ -27,14 +27,13 @@ import {
 	Skin,
 	Style,
 	Behavior,
-	Component,
 	Transition,
 	template,
 	Template,
 	Content,
 	Label,
-	Link,
 	Text,
+	Link,
 	Port,
 	Container,
 	Column,
@@ -44,6 +43,43 @@ import {
 	DeferLink,
 	TouchLink,
 } from "All";
+
+global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
+
+export class Component extends Behavior {
+	constructor($, it) {
+		super();
+		let result = this.render($, it);
+		let anchor = it.anchor;
+		if ($ && anchor)
+			$[anchor] = result;
+		result.behavior = this;
+		let onCreate = this.onCreate;
+		if (onCreate)
+			onCreate.call(this, result, $, it);
+		return result;
+	}
+	render($, it) {
+		debugger;
+	}
+}
+Object.freeze(Component.prototype);
+
+export class TextComponent {
+	constructor($, it) {
+		this.spans = it.contents;
+		this.style = it.style;
+	}
+}
+Object.freeze(TextComponent.prototype);
+
+export class LinkComponent extends TextComponent {
+	constructor($, it) {
+		super($, it);
+		this.link = new Link($, { behavior:this });
+	}
+}
+Object.freeze(LinkComponent.prototype);
 
 // PiuTexture.c
 
@@ -67,6 +103,7 @@ export class Texture @ "PiuTextureDelete" {
 		}
 	}
 }
+Object.freeze(Texture.prototype);
 
 // PiuField.c
 
@@ -83,6 +120,7 @@ var field = {
 	focus() @ "PiuField_focus",
 };
 export var Field = Template(field);
+Object.freeze(field);
 
 // PiuApplication.c
 
@@ -115,6 +153,7 @@ export function Application($, it = {}) {
 }
 Application.prototype = application;
 Application.template = template;
+Object.freeze(application);
 global.application = null;
 
 // PiuView.c
@@ -122,18 +161,7 @@ global.application = null;
 class View @ "PiuViewDelete" {
 	constructor(it) @ "PiuViewCreate"
 }
-
-var statusBar = {
-	__proto__: Content.prototype,
-	_create($, it) @ "PiuStatusBar_create",
-};
-export var StatusBar = Template(statusBar);
-
-var navigationBar = {
-	__proto__: Content.prototype,
-	_create($, it) @ "PiuNavigationBar_create",
-};
-export var NavigationBar = Template(navigationBar);
+Object.freeze(View.prototype);
 
 // PiuService.c
 
@@ -164,6 +192,7 @@ global.cursors = {
 };
 
 global.system = {
+	get localDirectory() @ "PiuSystem_get_localDirectory",
 	get platform() @ "PiuSystem_get_platform",
 
 	launchPath(url) @ "PiuSystem_launchPath",
@@ -181,6 +210,7 @@ global.system = {
 	saveFile(dictionary, callback) @ "PiuSystem_saveFile",
 
 	// files
+	copyFile(from, to) @ "PiuSystem_copyFile",
 	deleteDirectory(path) @ "PiuSystem_deleteDirectory",
 	deleteFile(path) @ "PiuSystem_deleteFile",
 	ensureDirectory(path) @ "PiuSystem_ensureDirectory",
@@ -209,34 +239,11 @@ global.system = {
 	},
 	
 	// paths
+	buildPath(directory, name, extension) @ "PiuSystem_buildPath",
 	getPathDirectory(path) @ "PiuSystem_getPathDirectory",
 	getPathExtension(path) @ "PiuSystem_getPathExtension",
 	getPathName(path) @ "PiuSystem_getPathName",
 }
-
-Object.freeze(Texture.prototype);
-Object.freeze(Skin.prototype);
-Object.freeze(Style.prototype);
-Object.freeze(Behavior.prototype);
-Object.freeze(Transition.prototype);
-
-Object.freeze(Content.prototype);
-Object.freeze(Label.prototype);
-Object.freeze(Text.prototype);
-Object.freeze(Link.prototype);
-Object.freeze(Port.prototype);
-
-Object.freeze(Container.prototype);
-Object.freeze(Column.prototype);
-Object.freeze(Layout.prototype);
-Object.freeze(Row.prototype);
-Object.freeze(Scroller.prototype);
-
-Object.freeze(Application.prototype);
-
-Object.freeze(View.prototype);
-
-global.assetMap = null;
 
 global.blendColors = blendColors;
 global.hsl = hsl;
@@ -247,17 +254,17 @@ global.rgba = rgba;
 global.Texture = Texture;
 global.Skin = Skin;
 global.Style = Style;
-
 global.Behavior = Behavior;
 global.Component = Component;
 global.Transition = Transition;
 
 global.Content = Content;
-global.Field = Field;
 global.Label = Label;
 global.Port = Port;
 global.Text = Text;
+global.TextComponent = TextComponent;
 global.Link = Link;
+global.LinkComponent = LinkComponent;
 
 global.Container = Container;
 global.Column = Column;
@@ -265,7 +272,11 @@ global.Layout = Layout;
 global.Row = Row;
 global.Scroller = Scroller;
 
+
+global.Texture = Texture;
+
+global.Field = Field;
+
 global.Application = Application;
+
 global.Service = Service;
-global.StatusBar = StatusBar;
-global.NavigationBar = NavigationBar;

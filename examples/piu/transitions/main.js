@@ -12,19 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Style,
-	Texture,
-	Behavior,
-	Content,
-	Column,
-	Label,
-	Container,
-	Application,
-	Transition,
-	Die,
-} from "piu/MC";
+import {} from "piu/MC";
 
 import WipeTransition from "piu/WipeTransition";
 import CombTransition from "piu/CombTransition";
@@ -53,10 +41,10 @@ let parameters = [
 	{ title:"Comb", transition:CombTransition, first:"vertical", last:8 },
 	{ title:"Wipe", transition:WipeTransition, first:"left" },
 	{ title:"Wipe", transition:WipeTransition, first:"right" },
-	{ title:"Wipe", transition:WipeTransition, first:"top" },
-	{ title:"Wipe", transition:WipeTransition, first:"bottom" },
+	{ title:"Wipe", transition:WipeTransition, last:"top" },
+	{ title:"Wipe", transition:WipeTransition, last:"bottom" },
 	{ title:"Wipe", transition:WipeTransition, first:"center" },
-	{ title:"Wipe", transition:WipeTransition, first:"middle" },
+	{ title:"Wipe", transition:WipeTransition, last:"middle" },
 	{ title:"Wipe", transition:WipeTransition, first:"center", last:"middle" },
 	{ title:"Wipe", transition:WipeTransition, first:"left", last:"top" },
 	{ title:"Wipe", transition:WipeTransition, first:"right", last:"top" },

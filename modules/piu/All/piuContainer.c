@@ -104,13 +104,14 @@ void PiuContainerAdjustVertically(void* it)
 	}
 }
 
-void PiuContainerBind(void* it, PiuApplication* application)
+void PiuContainerBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContainer* self = it;
 	PiuContent* content = (*self)->first;
-	PiuContentBind(it, application);
+	PiuContentBind(it, application, view);
+	(*self)->view = view;
 	while (content) {
-		(*(*content)->dispatch->bind)(content, application);
+		(*(*content)->dispatch->bind)(content, application, view);
 		content = (*content)->next;
 	}
 }
@@ -119,10 +120,8 @@ void PiuContainerBindContent(PiuContainer* self, PiuContent* content)
 {
 	PiuApplication* application = (*self)->application;
 	if (application) {
-		(*(*content)->dispatch->bind)(content, application);
-	}
-	else {
-	
+		PiuView* view = (*self)->view;
+		(*(*content)->dispatch->bind)(content, application, view);
 	}
 }
 
@@ -315,13 +314,7 @@ void PiuContainerPlaceContentHorizontally(void* it, PiuContent* content)
 	PiuCoordinates coordinates = &((*content)->coordinates);
 	PiuAlignment horizontal = coordinates->horizontal;
 	PiuDimension width = (*self)->bounds.width;
-	if ((horizontal & piuLeftRight) == piuLeftRight) {
-		if ((coordinates->left == 0) && (coordinates->right == 0))
-			bounds->x = ((width - bounds->width + 1) >> 1);
-		else
-			bounds->x = ((width - bounds->width) * coordinates->left) / (coordinates->left + coordinates->right);
-	}
-	else if (horizontal & piuLeft)
+	if (horizontal & piuLeft)
 		bounds->x = coordinates->left;
 	else if (horizontal & piuRight)
 		bounds->x = width - bounds->width - coordinates->right;
@@ -338,13 +331,7 @@ void PiuContainerPlaceContentVertically(void* it, PiuContent* content)
 	PiuCoordinates coordinates = &((*content)->coordinates);
 	PiuCoordinate vertical = coordinates->vertical;
 	PiuDimension height = (*self)->bounds.height;
-	if ((vertical & piuTopBottom) == piuTopBottom) {
-		if ((coordinates->top == 0) && (coordinates->bottom == 0))
-			bounds->y = ((height - bounds->height + 1) >> 1);
-		else
-			bounds->y = ((height - bounds->height) * coordinates->top) / (coordinates->top + coordinates->bottom);
-	}
-	else if (vertical & piuTop)
+	if (vertical & piuTop)
 		bounds->y = coordinates->top;
 	else if (vertical & piuBottom)
 		bounds->y = height - bounds->height - coordinates->bottom;
@@ -401,25 +388,24 @@ void PiuContainerShown(void* it, PiuBoolean showIt)
 	}
 }
 
-void PiuContainerUnbind(void* it, PiuApplication* application)
+void PiuContainerUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContainer* self = it;
 	PiuContent* content = (*self)->last;
 	while (content) {
-		(*(*content)->dispatch->unbind)(content, application);
+		(*(*content)->dispatch->unbind)(content, application, view);
 		content = (*content)->previous;
 	}
-	PiuContentUnbind(it, application);
+	(*self)->view = NULL;
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuContainerUnbindContent(PiuContainer* self, PiuContent* content)
 {
 	PiuApplication* application = (*self)->application;
 	if (application) {
-		(*(*content)->dispatch->unbind)(content, application);
-	}
-	else {
-	
+		PiuView* view = (*self)->view;
+		(*(*content)->dispatch->unbind)(content, application, view);
 	}
 }
 
@@ -599,11 +585,14 @@ void PiuContainer_content(xsMachine *the)
 			}
 		}
 		else {
-			xsIndex name = xsToID(xsArg(0));
+			xsStringValue string = xsToString(xsArg(0));
 			content = (*self)->first;
 			while (content) {
-				if ((*content)->name  == name)
-					break;
+				if ((*content)->name) {
+					xsStringValue name = PiuToString((*content)->name);
+					if (!c_strcmp(name, string))
+						break;
+				}
 				content = (*content)->next;
 			}
 		}
@@ -683,6 +672,7 @@ void PiuContainer_empty(xsMachine *the)
 void PiuContainer_firstThat(xsMachine *the)
 {
 	PiuContainer* self = PIU(Container, xsThis);
+	xsVars(2);
 	xsIndex id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	PiuContent* content;
@@ -727,6 +717,7 @@ void PiuContainer_insert(xsMachine *the)
 void PiuContainer_lastThat(xsMachine *the)
 {
 	PiuContainer* self = PIU(Container, xsThis);
+	xsVars(2);
 	xsIndex id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	PiuContent* content;

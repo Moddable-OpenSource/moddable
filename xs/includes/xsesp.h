@@ -135,14 +135,16 @@ extern uint8_t ESP_isReadable(void);
 
 #if ESP32
 	extern uint32_t modMilliseconds(void);
+	#define modMicroseconds() (uint32_t)(modMilliseconds() * 1000)		//@@
 
-	#define modDelayMilliseconds(ms) delay(ms)
-	#define modDelayMicroseconds(us) delay(((us) + 500) / 1000)
+	#define modDelayMilliseconds(ms) vTaskDelay(ms)
+	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
 
 #else
 	#define modMilliseconds() (uint32_t)(millis())
+	#define modMicroseconds() (uint32_t)(system_get_time())
 
-	#define modDelayMilliseconds(ms) ets_delay_us((ms) * 1000)
+	#define modDelayMilliseconds(ms) delay(ms)
 	#define modDelayMicroseconds(us) ets_delay_us(us)
 #endif
 
@@ -173,10 +175,6 @@ extern void modTimersAdvanceTime(uint32_t advanceMS);
 	#define modCriticalSectionBegin()
 	#define modCriticalSectionEnd()
 #endif
-
-
-// deprecated
-#define modTimersCheck() (modTimersExecute(), modTimersNext())
 
 /*
 	date and time
@@ -224,7 +222,7 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 	math
 */
 
-double hack_fmod(double a, double b);
+double __ieee754_fmod_patch(double x, double y);
 
 /*
 	watchdog timer
@@ -237,10 +235,9 @@ double hack_fmod(double a, double b);
 */
 
 #ifdef __XS__
-	extern xsMachine *gThe;		// the one XS6 virtual machine running
 	extern xsMachine *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint8_t disableDebug);
 
-	uint8_t xsRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
+	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint8_t disableDebug);
 #endif
@@ -299,7 +296,8 @@ typedef va_list c_va_list;
 #define c_exit(n) system_restart()
 #define c_free free
 #define c_malloc malloc
-#define c_qsort qsort
+void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *));
+#define c_qsort selectionSort
 #define c_realloc realloc
 #define c_strtod strtod
 #define c_strtol strtol
@@ -372,7 +370,7 @@ typedef va_list c_va_list;
 #if ESP32
 	#define c_fmod fmod
 #else
-	#define c_fmod hack_fmod
+	#define c_fmod __ieee754_fmod_patch
 #endif
 #define c_fpclassify fpclassify
 #define c_hypot hypot

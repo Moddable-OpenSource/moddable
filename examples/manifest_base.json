@@ -38,14 +38,13 @@
 		"esp": {
 			"modules": {
 				"*": [
-					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
 			},
 			"preload": [
-				"debug",
 				"time",
 				"timer",
 			],
@@ -59,22 +58,21 @@
 			},
 			"defines": {
 				"i2c": {
-					"sda_pin": 4,
-					"scl_pin": 5
+					"sda_pin": 5,
+					"scl_pin": 4
 				}
 			}
 		},
 		"esp32": {
 			"modules": {
 				"*": [
-					"$(MODULES)/base/debug/*",
 					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mc/*",
 				]
 			},
 			"preload": [
-				"debug",
 				"time",
 				"timer",
 			],
@@ -85,10 +83,19 @@
 				}
 			}
 		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*",
 				],
@@ -97,7 +104,9 @@
 		"win": {
 			"modules": {
 				"*": [
-					"$(BUILD)/simulator/screen"
+					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/win/*"
 				]
 			}
 		}

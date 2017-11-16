@@ -112,32 +112,31 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
 	$(MOD_DIR)/file.xsb \
-	$(MOD_DIR)/fs.xsb \
 	$(MOD_DIR)/buildclut.xsb \
 	$(MOD_DIR)/colorcellencode.xsb \
 	$(MOD_DIR)/compressbmf.xsb \
 	$(MOD_DIR)/image2cs.xsb \
 	$(MOD_DIR)/mcconfig.xsb \
 	$(MOD_DIR)/mclocal.xsb \
+	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
+	$(MOD_DIR)/mcrun.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
-	$(TMP_DIR)/commodettoBitmap.xsi \
-	$(TMP_DIR)/commodettoColorCellOut.xsi \
-	$(TMP_DIR)/commodettoConvert.xsi \
-	$(TMP_DIR)/commodettoParseBMF.xsi \
-	$(TMP_DIR)/commodettoParseBMP.xsi \
-	$(TMP_DIR)/commodettoPoco.xsi \
-	$(TMP_DIR)/commodettoPocoBlit.xsi \
-	$(TMP_DIR)/commodettoReadJPEG.xsi \
-	$(TMP_DIR)/commodettoReadPNG.xsi \
-	$(TMP_DIR)/miniz.xsi \
-	$(TMP_DIR)/modInstrumentation.xsi \
-	$(TMP_DIR)/fs.xsi \
-	$(TMP_DIR)/tool.xsi \
-	$(TMP_DIR)/main.xsi \
-	$(TMP_DIR)/image2cs.xsi
+	$(TMP_DIR)/commodettoBitmap.c.xsi \
+	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
+	$(TMP_DIR)/commodettoConvert.c.xsi \
+	$(TMP_DIR)/commodettoParseBMF.c.xsi \
+	$(TMP_DIR)/commodettoParseBMP.c.xsi \
+	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
+	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
+	$(TMP_DIR)/commodettoReadPNG.c.xsi \
+	$(TMP_DIR)/image2cs.c.xsi \
+	$(TMP_DIR)/miniz.c.xsi \
+	$(TMP_DIR)/modInstrumentation.c.xsi \
+	$(TMP_DIR)/tool.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -165,12 +164,10 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
-	$(TMP_DIR)/fs.c.o \
 	$(TMP_DIR)/image2cs.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
-	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/main.c.o
+	$(TMP_DIR)/tool.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -180,6 +177,7 @@ COMMANDS = \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mcrez \
+	$(BIN_DIR)/mcrun \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode
 
@@ -261,7 +259,7 @@ $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@
 
-$(TMP_DIR)/%.xsi: %.c
+$(TMP_DIR)/%.c.xsi: %.c
 	@echo "#" $(NAME) $(GOAL) ": xsid" $(<F)
 	$(XSID) $< -o $(TMP_DIR)
 
@@ -287,6 +285,9 @@ $(COMMANDS): $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
+	@echo "#" $(NAME) $(GOAL) ": mcrun"
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	chmod +x $(BIN_DIR)/mcrun
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp

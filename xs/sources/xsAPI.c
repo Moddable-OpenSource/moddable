@@ -168,9 +168,6 @@ again:
 			theSlot->value.integer = 0;
 			break;
 		default: {
-#ifdef __ets__
-			theSlot->value.integer = (txInteger)theSlot->value.number;
-#else
 			#define MODULO 4294967296.0
 			txNumber aNumber = c_fmod(c_trunc(theSlot->value.number), MODULO);
 			if (aNumber >= MODULO / 2)
@@ -178,7 +175,6 @@ again:
 			else if (aNumber < -MODULO / 2)
 				aNumber += MODULO;
 			theSlot->value.integer = (txInteger)aNumber;
-#endif
 			} break;
 		}
 		break;
@@ -1268,7 +1264,7 @@ void fxDebugger(txMachine* the, txString thePath, txInteger theLine)
 
 const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_END };
 
-txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString theName, void* theContext)
+txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext)
 {
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
@@ -1299,8 +1295,6 @@ txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString t
 			the->profileCurrent = the->profileBottom;
 			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
 		#endif
-
-			the->archive = theArchive;
 
 			fxAllocate(the, theCreation);
 
@@ -1510,8 +1504,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			txID anID;
 
 			the->dtoa = fxNew_dtoa(the);
-			the->archive = theMachine->archive;
+			the->preparation = theMachine->preparation;
 			the->context = theContext;
+			the->archive = theMachine->archive;
 			the->sharedMachine = theMachine;
 			fxCreateMachinePlatform(the);
 
@@ -1538,7 +1533,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
 			the->keyArrayHost = theMachine->keyArray;
-
+			
 			the->aliasCount = theMachine->aliasCount;
 			the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
 			if (!the->aliasArray)
@@ -1815,6 +1810,97 @@ void fxCopyObject(txMachine* the)
 void fxModulePaths(txMachine* the)
 {
 	mxPush(mxModulePaths);
+}
+
+void fxBuildArchiveKeys(txMachine* the)
+{
+	txPreparation* preparation = the->preparation;
+	if (preparation) {
+		txU1* p = the->archive;
+		if (p) {
+			txID c, i;
+			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE  + sizeof(Atom);
+			c = (txID)c_read16be(p);
+			p += 2;
+			for (i = 0; i < c; i++) {
+				fxNewNameX(the, (txString)p);
+				p += c_strlen((txString)p) + 1;
+			}
+		}
+	}
+}
+
+void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
+{
+	txPreparation* preparation = the->preparation;
+	if (preparation) {
+		txU1* p = the->archive;
+		if (p) {
+			txU4 atomSize;
+			txU1* q;
+			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+			// SYMB
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// MODS
+			atomSize = c_read32be(p);
+			q = p + atomSize;
+			p += sizeof(Atom);
+			while (p < q) {
+				// PATH
+				atomSize = c_read32be(p);
+				if (!c_strcmp(path + preparation->baseLength, (txString)(p + sizeof(Atom)))) {
+					p += atomSize;
+					atomSize = c_read32be(p);
+					*size = atomSize - sizeof(Atom);
+					return p + sizeof(Atom);
+				}
+				p += atomSize;
+				// CODE
+				atomSize = c_read32be(p);
+				p += atomSize;
+			}
+		}
+	}
+	return C_NULL;
+}
+
+void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
+{
+	txPreparation* preparation = the->preparation;
+	if (preparation) {
+		txU1* p = the->archive;
+		if (p) {
+			txU4 atomSize;
+			txU1* q;
+			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+			// SYMB
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// MODS
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// RSRC
+			atomSize = c_read32be(p);
+			q = p + atomSize;
+			p += sizeof(Atom);
+			while (p < q) {
+				// PATH
+				atomSize = c_read32be(p);
+				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
+					p += atomSize;
+					atomSize = c_read32be(p);
+					*size = atomSize - sizeof(Atom);
+					return p + sizeof(Atom);
+				}
+				p += atomSize;
+				// DATA
+				atomSize = c_read32be(p);
+				p += atomSize;
+			}
+		}
+	}
+	return C_NULL;
 }
 
 #ifdef mxFrequency

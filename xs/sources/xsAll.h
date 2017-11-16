@@ -281,7 +281,7 @@ struct sxMachine {
 	txSlot* stackPrototypes; /* xs.h */
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
-	void* dummy; /* xs.h */
+	void* archive; /* xs.h */
 	txSlot scratch; /* xs.h */
 	mxMachinePlatform /* xs.h */
 	txFlag status;
@@ -328,7 +328,7 @@ struct sxMachine {
 	txBoolean collectFlag;
 	txFlag requireFlag;
 	void* dtoa;
-	void* archive;
+	void* preparation;
 
 	char nameBuffer[256];
 #ifdef mxDebug
@@ -527,7 +527,7 @@ mxExport void fxThrowMessage(txMachine* the, txString thePath, txInteger theLine
 mxExport void fxDebugger(txMachine* the, txString thePath, txInteger theLine);
 
 mxExport const txByte gxNoCode[] ICACHE_FLASH_ATTR;
-mxExport txMachine* fxCreateMachine(txCreation* theCreation, void* theArchive, txString theName, void* theContext);
+mxExport txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext);
 mxExport void fxDeleteMachine(txMachine*);
 mxExport txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext);
 mxExport void fxShareMachine(txMachine* the);
@@ -545,6 +545,10 @@ mxExport void fxCopyObject(txMachine* the);
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 mxExport void fxModulePaths(txMachine* the);
+
+mxExport void fxBuildArchiveKeys(txMachine* the);
+mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
+mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
 
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);

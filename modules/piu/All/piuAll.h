@@ -388,7 +388,7 @@ enum {
 };
 
 
-typedef void (*PiuContentBindProc)(void* it, PiuApplication* application);
+typedef void (*PiuContentBindProc)(void* it, PiuApplication* application, PiuView* view);
 typedef void (*PiuContentCascadeProc)(void* it);
 typedef void (*PiuContentDrawProc)(void* it, PiuView* view, PiuRectangle area);
 typedef void (*PiuContentFitProc)(void* it);
@@ -402,7 +402,7 @@ typedef void (*PiuContentReflowProc)(void* it, PiuFlags flags);
 typedef void (*PiuContentShowingProc)(void* it, PiuBoolean showIt);
 typedef void (*PiuContentShownProc)(void* it, PiuBoolean showIt);
 typedef void (*PiuContentSyncProc)(void* it);
-typedef void (*PiuContentUnbindProc)(void* it, PiuApplication* application);
+typedef void (*PiuContentUnbindProc)(void* it, PiuApplication* application, PiuView* view);
 typedef void (*PiuContentUpdateProc)(void* it, PiuView* view, PiuRectangle area);
 
 struct PiuDispatchStruct {
@@ -453,12 +453,13 @@ struct PiuDispatchStruct {
 	PiuSkin* skin; \
 	PiuStyle* style; \
 	PiuVariant variant; \
-	xsIndex name
+	xsSlot* name
 
 #define PiuContainerPart \
 	PiuContent* first; \
 	PiuContent* last; \
-	PiuTransition* transition
+	PiuTransition* transition; \
+	PiuView* view
 
 // CONTENT
 
@@ -471,7 +472,7 @@ struct PiuContentStruct {
 	PiuContentPart;
 };
 
-extern void PiuContentBind(void* it, PiuApplication* application);
+extern void PiuContentBind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContentCascade(void* it);
 extern void PiuContentDelete(void* it);
 extern void PiuContentDictionary(xsMachine* the, void* it);
@@ -493,7 +494,7 @@ extern void PiuContentShown(void* it, PiuBoolean showIt);
 extern void PiuContentSizeBy(PiuContent* self, PiuCoordinate dx, PiuCoordinate dy);
 extern void PiuContentSync(void* it);
 extern void PiuContentToApplicationCoordinates(void* it, PiuCoordinate x0, PiuCoordinate y0, PiuCoordinate *x1, PiuCoordinate *y1);
-extern void PiuContentUnbind(void* it, PiuApplication* application);
+extern void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContentUpdate(void* it, PiuView* view, PiuRectangle area);
 extern void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsIntegerValue c);
 
@@ -570,7 +571,7 @@ struct PiuContainerStruct {
 
 extern void PiuContainerAdjustHorizontally(void* it);
 extern void PiuContainerAdjustVertically(void* it);
-extern void PiuContainerBind(void* it, PiuApplication* application);
+extern void PiuContainerBind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContainerCascade(void* it);
 extern xsIntegerValue PiuContainerCount(PiuContainer* self);
 extern void PiuContainerDictionary(xsMachine* the, void* it);
@@ -587,7 +588,7 @@ extern void PiuContainerPlaceContentVertically(void* it, PiuContent* content);
 extern void PiuContainerReflow(void* it, PiuFlags flags);
 extern void PiuContainerShowing(void* it, PiuBoolean showIt);
 extern void PiuContainerShown(void* it, PiuBoolean showIt);
-extern void PiuContainerUnbind(void* it, PiuApplication* application);
+extern void PiuContainerUnbind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContainerUpdate(void* it, PiuView* view, PiuRectangle area);
 
 // PiuColumn.c
@@ -673,7 +674,6 @@ struct PiuApplicationStruct {
 	PiuBehaviorPart;
 	PiuContentPart;
 	PiuContainerPart;
-	PiuView* view;
 	PiuDeferLink* deferChain;
 	PiuDeferLink* deferLoop;
 	PiuIdleLink* idleChain;
@@ -696,6 +696,7 @@ struct PiuApplicationStruct {
 extern void PiuApplicationAdjust(PiuApplication* self);
 extern void PiuApplicationCaptureTouch(PiuApplication* self, PiuContent* it, xsIntegerValue index, PiuCoordinate x,  PiuCoordinate y, double ticks);
 extern void PiuApplicationDeferContents(xsMachine* the, PiuApplication* self);
+extern void PiuApplicationIdleCheck(PiuApplication* self);
 extern void PiuApplicationIdleContents(PiuApplication* self);
 extern void PiuApplicationResize(PiuApplication* self);
 extern void PiuApplicationSetFocus(PiuApplication* self, void* it);

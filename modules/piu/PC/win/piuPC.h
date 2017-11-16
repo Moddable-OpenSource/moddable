@@ -32,6 +32,8 @@
 #include <gdiplus.h>
 using namespace Gdiplus;
 
+#include "mc.defines.h"
+
 struct PiuFontStruct {
 	PiuHandlePart;
 	xsMachine* the;
@@ -72,7 +74,7 @@ struct PiuViewStruct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern xsMachine* ServiceThreadMain();
+extern xsMachine* ServiceThreadMain(void* context);
 extern void fxAbort(xsMachine *the);
 #ifdef __cplusplus
 }

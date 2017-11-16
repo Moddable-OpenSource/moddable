@@ -207,15 +207,11 @@ int main(int argc, char* argv[])
 	if (rename)
 		c_strcat(output, rename);
 	else {
-		char* dot;
 		rename = strrchr(input, mxSeparator);
 		if (rename == NULL)
 			rename = input;
 		else
 			rename++;
-		dot = strrchr(rename, '.');
-		if (dot)
-			*dot = 0;
 		strcat(output, rename);
 		strcat(output, ".xsi");
 	}

@@ -65,6 +65,7 @@ export class Skin @ "PiuSkinDelete" {
 		}
 	}
 }
+Object.freeze(Skin.prototype);
 
 // PiuStyle.c
 
@@ -103,6 +104,7 @@ export class Style @ "PiuStyleDelete" {
 		}
 	}
 }
+Object.freeze(Style.prototype);
 
 // BEHAVIOR
 
@@ -110,89 +112,7 @@ export class Behavior {
 	constructor() {
 	}
 }
-
-class DebugBehavior extends Behavior{
-	onAdapt(content) {
-		debugger
-	}
-	onCreate(content, $, it) {
-		debugger
-	}
-	onDisplaying(content) {
-		debugger
-	}
-	onDraw(view, x, y, width, height) {
-		debugger
-	}
-	onFinished(content) {
-		debugger
-	}
-	onFitHorizontally(layout, width) {
-		debugger
-	}
-	onFitVertically(layout, height) {
-		debugger
-	}
-	onFocused(content) {
-		debugger
-	}
-	onKeyDown(content, key) {
-		debugger
-	}
-	onKeyUp(content, key) {
-		debugger
-	}
-	onMeasureHorizontally(layout, width) {
-		debugger
-		return width;
-	}
-	onMeasureVertically(layout, height) {
-		debugger
-		return height;
-	}
-	onMessage(application, json) {
-		debugger
-	}
-	onMouseEntered(content, x, y) {
-		debugger
-	}
-	onMouseExited(content, x, y) {
-		debugger
-	}
-	onMouseMoved(content, x, y) {
-		debugger
-	}
-	onMouseScrolled(content, dx, dy) {
-		debugger
-	}
-	onScrolled(content) {
-		debugger
-	}
-	onTimeChanged(content) {
-		debugger
-	}
-	onTouchBegan(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchCancelled(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchEnded(content, index, x, y, ticks) {
-		debugger
-	}
-	onTouchMoved(content, index, x, y, ticks) {
-		debugger
-	}
-	onTransitionBeginning(container) {
-		debugger
-	}
-	onTransitionEnded(container) {
-		debugger
-	}
-	onUnfocused(content) {
-		debugger
-	}
-}
+Object.freeze(Behavior.prototype);
 
 // DISPATCH
 
@@ -232,34 +152,14 @@ export function Template(prototype) {
 	return result;
 }
 
-global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
-
-export class Component extends Behavior {
-	constructor($, it) {
-		super();
-		this.props = it;
-		let result = this.render($);
-		let anchor = it.anchor;
-		if ($ && anchor)
-			$[anchor] = result;
-		result.behavior = this;
-		let onCreate = this.onCreate;
-		if (onCreate)
-			onCreate.call(this, result, $);
-		return result;
-	}
-	render($) {
-		debugger;
-	}
-}
-
 // CONTENTS
 
-var proto = @ "PiuContentDelete";
+let proto = @ "PiuContentDelete";
+Object.freeze(proto);
 
 // PiuContent.c
 
-var content = {
+export let Content = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuContent_create",
 	
@@ -334,24 +234,22 @@ var content = {
 	sizeBy(x, y) @ "PiuContent_sizeBy",
 	start() @ "PiuContent_start",
 	stop() @ "PiuContent_stop",
-};
-export var Content = Template(content);
+}));
 
 // PiuLabel.c
 
-var label = {
+export let Label = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuLabel_create",
 
 	get string() @ "PiuLabel_get_string",
 	
 	set string(it) @ "PiuLabel_set_string",
-};
-export var Label = Template(label);
+}));
 
 // PiuText.c
 
-var text = {
+export let Text = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuText_create",
 
@@ -368,10 +266,9 @@ var text = {
 	end() @ "PiuText_end",
 	endBlock() @ "PiuText_endBlock",
 	endSpan() @ "PiuText_endSpan",
-};
-export var Text = Template(text);
+}));
 
-var link = {
+export let Link = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuTextLink_create",
 
@@ -381,12 +278,11 @@ var link = {
 	set state(it) @ "PiuTextLink_set_state",
 	
 	captureTouch(id, x, y, ticks) @ "PiuContent_captureTouch",
-}
-export var Link = Template(link);
+}));
 
 // PiuPort.c
 
-var port = {
+export let Port = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuPort_create",
 	
@@ -406,22 +302,23 @@ var port = {
 	popClip() @ "PiuPort_popClip",
 	pushClip(x, y, w, h) @ "PiuPort_pushClip",
 	measureString(string, style) @ "PiuPort_measureString",
-};
-export var Port = Template(port);
+}));
 
 // CONTAINERS
 
 // PiuContainer.c
 
-var container = {
+export let Container = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuContainer_create",
 	_recurse(it) {
 		if (it) {
 			if (it instanceof Array)
 				it.forEach(this._recurse, this);
-			else
+			else if (it instanceof Content)
 				this.add(it);
+			else
+				throw new ReferenceError("No contents!"); 
 		}
 	},
 	
@@ -443,59 +340,55 @@ var container = {
 	replace(content, by) @ "PiuContainer_replace",
 	run(transition) @ "PiuContainer_run",
 	swap(content0, content1) @ "PiuContainer_swap",
-};
-export var Container = Template(container);
+}));
 
 // PiuColumn.c
 
-var column = {
+export let Column = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuColumn_create",
-};
-export var Column = Template(column);
+}));
 
 // PiuLayout.c
 
-var layout = {
+export let Layout = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuLayout_create",
-};
-export var Layout = Template(layout);
+}));
 
 // PiuRow.c
 
-var row = {
+export let Row = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuRow_create",
-};
-export var Row = Template(row);
+}));
 
 // PiuScroller.c
 
-var scroller = {
+export let Scroller = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuScroller_create",
-	
+
 	get constraint() @ "PiuScroller_get_constraint",
 	get loop() @ "PiuScroller_get_loop",
 	get scroll() @ "PiuScroller_get_scroll",
 	get tracking() @ "PiuScroller_get_tracking",
-	
+
 	set loop(it) @ "PiuScroller_set_loop",
 	set scroll(it) @ "PiuScroller_set_scroll",
 	set tracking(it) @ "PiuScroller_set_tracking",
-	
+
 	reveal(bounds) @ "PiuScroller_reveal",
 	scrollBy(dx, dy) @ "PiuScroller_scrollBy",
 	scrollTo(x, y) @ "PiuScroller_scrollTo",
-};
-export var Scroller = Template(scroller);
+}));
 
 // DEFER
 
 export class DeferLink @ "PiuDeferLinkDelete" {
 	constructor() @ "PiuDeferLinkCreate"
 }
+Object.freeze(DeferLink.prototype);
 
 // TOUCH
 
@@ -504,6 +397,7 @@ export class TouchLink @ "PiuTouchLinkDelete" {
 	get length() @ "PiuTouchLink_get_length"
 	peek(index) @ "PiuTouchLink_peek"
 }
+Object.freeze(TouchLink.prototype);
 
 // TRANSITION
 
@@ -523,6 +417,7 @@ export class Transition @ "PiuTransitionDelete" {
 	onStep(fraction) {
 	}
 }
+Object.freeze(Transition.prototype);
 
 Math.backEaseIn = function(fraction) @ "Math_backEaseIn";
 Math.backEaseInOut = function(fraction) @ "Math_backEaseInOut";
@@ -554,22 +449,4 @@ Math.quintEaseOut = function(fraction) @ "Math_quintEaseOut";
 Math.sineEaseIn = function(fraction) @ "Math_sineEaseIn";
 Math.sineEaseInOut = function(fraction) @ "Math_sineEaseInOut";
 Math.sineEaseOut = function(fraction) @ "Math_sineEaseOut";
-
-Object.freeze(Skin.prototype);
-Object.freeze(Style.prototype);
-Object.freeze(Behavior.prototype);
-Object.freeze(content);
-Object.freeze(label);
-Object.freeze(text);
-Object.freeze(link);
-Object.freeze(container);
-Object.freeze(port);
-Object.freeze(column);
-Object.freeze(layout);
-Object.freeze(row);
-Object.freeze(scroller);
-Object.freeze(TouchLink.prototype);
-Object.freeze(Transition.prototype);
-Object.freeze(DebugBehavior.prototype);
-Object.freeze(proto);
 

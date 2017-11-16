@@ -107,14 +107,15 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
 	$(MOD_DIR)\file.xsb \
-	$(MOD_DIR)\fs.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\colorcellencode.xsb \
 	$(MOD_DIR)\compressbmf.xsb \
 	$(MOD_DIR)\image2cs.xsb \
 	$(MOD_DIR)\mcconfig.xsb \
 	$(MOD_DIR)\mclocal.xsb \
+	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
+	$(MOD_DIR)\mcrun.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
@@ -127,12 +128,10 @@ MODULES = \
 	$(TMP_DIR)\commodettoParseBMF.xsi \
 	$(TMP_DIR)\commodettoReadJPEG.xsi \
 	$(TMP_DIR)\commodettoReadPNG.xsi \
+	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\fs.xsi \
-	$(TMP_DIR)\tool.xsi \
-	$(TMP_DIR)\main.xsi \
-	$(TMP_DIR)\image2cs.xsi
+	$(TMP_DIR)\tool.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -160,12 +159,10 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoPocoBlit.o \
 	$(TMP_DIR)\commodettoReadJPEG.o \
 	$(TMP_DIR)\commodettoReadPNG.o \
+	$(TMP_DIR)\image2cs.o \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
-	$(TMP_DIR)\fs.o \
-	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\main.o \
-	$(TMP_DIR)\image2cs.o
+	$(TMP_DIR)\tool.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
@@ -175,6 +172,7 @@ COMMANDS = \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
+	$(BIN_DIR)\mcrun.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat
 
@@ -221,7 +219,7 @@ C_OPTIONS = $(C_OPTIONS) \
 	/W0
 !ENDIF
 
-LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib
+LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib
 	
 LINK_OPTIONS = /incremental:no /machine:I386 /nologo /subsystem:console
 !IF "$(GOAL)"=="debug"
@@ -307,14 +305,14 @@ $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)
 	
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 {$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 {$(TOOLS)\}.c{$(TMP_DIR)\}.xsi:
-	@echo # xsid $(**F)
-	$(BIN_DIR)\xsid $< -o $(TMP_DIR)
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
@@ -344,6 +342,8 @@ $(BIN_DIR)\mclocal.bat :
 	echo @$(BIN_DIR)\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
 $(BIN_DIR)\mcrez.bat :
 	echo @$(BIN_DIR)\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
+$(BIN_DIR)\mcrun.bat :
+	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
 $(BIN_DIR)\png2bmp.bat :
 	echo @$(BIN_DIR)\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
 $(BIN_DIR)\rle4encode.bat :

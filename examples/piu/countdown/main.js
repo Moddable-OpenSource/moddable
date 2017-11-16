@@ -12,14 +12,7 @@
  *
  */
 
-import {
-	Texture,
-	Skin,
-	Behavior,
-	Port,
-	Application,
-	hsl,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const digitsTexture = new Texture("digits.png");
 
@@ -35,7 +28,7 @@ class PortBehavior extends Behavior {
 		port.start();
 	}
 	onDraw(port, x, y, w, h) {
-		let date = new Date(2017, 7, 21, 0, 0, 0);
+		let date = new Date(2018, 0, 0);
 		let time = (date.valueOf() - Date.now()) / 1000;
 		if (time < 0) time = 0;
 		let seconds = Math.floor(time % 60);

@@ -55,7 +55,7 @@ enum {
 	/* system */
 	kModInstrumentationSystemFreeMemory,
 
-	/* XS6 */
+	/* XS */
 	kModInstrumentationSlotHeapSize,
 	kModInstrumentationChunkHeapSize,
 	kModInstrumentationKeysUsed,

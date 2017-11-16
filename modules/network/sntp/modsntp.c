@@ -18,8 +18,8 @@
  *
  */
 
+#include "xsPlatform.h"
 #include "xs.h"
-#include "xsesp.h"
 
 void xs_sntp_packet(xsMachine *the)
 {
