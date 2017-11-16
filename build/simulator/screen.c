@@ -858,6 +858,7 @@ void* fxMapArchive(txPreparation* preparation, void* archive)
 		}
 		ids[i] = result ? result->ID : (id++ | 0x8000); 
 	}
+	bailAssert(id < preparation->creation.keyCount);
 	
 	p = fxMapAtom(p, &atom);
 	bailAssert(atom.atomType == XS_ATOM_MODULES);
