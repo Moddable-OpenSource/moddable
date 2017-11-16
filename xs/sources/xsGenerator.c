@@ -96,6 +96,8 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = XS_STACK_KIND;
 	property->ID = XS_NO_ID;
+    property->value.stack.length = 0;
+    property->value.stack.address = C_NULL;
 	if (prototype) {
 		slot = prototype->next;
 		if (slot && (slot->kind == XS_STACK_KIND)) {
@@ -103,10 +105,6 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 			property->value.stack.address = slot->value.stack.address;
 		}
 	}
-	else {
-		property->value.stack.length = 0;
-		property->value.stack.address = C_NULL;
-    }
 	result = fxNewInstance(the);
 	result->value.instance.prototype = mxObjectPrototype.value.reference;
 	slot = result->next = fxNewSlot(the);
