@@ -12,16 +12,7 @@
  *
  */
 
-import {
-	CLUT,
-	Skin,
-	Texture,
-	Behavior,
-	Content,
-	Scroller,
-	Application,
-	blendColors,
-} from "piu/MC";
+import { CLUT } from "piu/MC";
 
 const blackSkin = new Skin({ fill:"black" });
 const panoramaTexture = new Texture("panorama.png");
