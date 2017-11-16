@@ -12,14 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Texture,
-	Behavior,
-	Content,
-	Container,
-	Application,
-} from "piu/MC";
+import {} from "piu/MC";
 
 const backgroundSkin = new Skin({ fill:"silver" });
 const ballTexture = new Texture("balls.png");
