@@ -52,7 +52,7 @@ The `empty`, `or`, `xor` and `sub` methods are chainable operations to build the
 
 If you add the `TestContainer` to an application, here is what it will look like:
 
-![](./../assets/die-cut.png)
+![](./../assets/die-cut/die-cut.png)
 
 But of course the `die` object is mostly interesting to build animations and transitions. You will find examples in the Piu libraries: WipeTransition and CombTransition. 
 
