@@ -119,7 +119,6 @@ MODULES = \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
-	$(MOD_DIR)/mcrun.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
@@ -135,7 +134,8 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi
+	$(TMP_DIR)/tool.c.xsi \
+#	$(MOD_DIR)/mcrun.xsb
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -176,9 +176,9 @@ COMMANDS = \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mcrez \
-	$(BIN_DIR)/mcrun \
 	$(BIN_DIR)/png2bmp \
-	$(BIN_DIR)/rle4encode
+#	$(BIN_DIR)/rle4encode \
+	$(BIN_DIR)/mcrun
 
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
@@ -284,9 +284,9 @@ $(COMMANDS): $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
-	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
-	chmod +x $(BIN_DIR)/mcrun
+#	@echo "#" $(NAME) $(GOAL) ": mcrun"
+#	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+#	chmod +x $(BIN_DIR)/mcrun
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
