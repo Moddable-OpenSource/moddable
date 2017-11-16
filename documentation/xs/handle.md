@@ -11,9 +11,9 @@ Warning: These notes are preliminary. Omissions and errors are likely. If you en
 
 To develop frameworks for micro-controllers with XS, the most significant constraint is RAM. 
 
-The XS linker prepares most classes, prototypes, functions and byte codes to be accessed straightly from ROM. All the ECMAScript 2016 features, and most modules composing the frameworks are there, instantaneously available and requiring just a few KB of RAM.
+The XS linker prepares most classes, prototypes, functions and byte codes to be accessed straightly from ROM. All the ECMAScript 2017 features, and most modules composing the frameworks are there, instantaneously available and requiring just a few KB of RAM.
 
-For everything that is created at runtime, applications rely on the XS6 garbage collector to manage memory. XS6 divides memory into two zones: the slots and the chunks. 
+For everything that is created at runtime, applications rely on the XS garbage collector to manage memory. XS divides memory into two zones: the slots and the chunks. 
 
 Slots have a fixed size (16 bytes on a 32-bit processor) and cannot move. Chunks have a variable size and can move. The XS garbage collector can compact chunks when necessary, which is a life saver for processors without an MMU. 
 
@@ -31,7 +31,7 @@ As in the early days of macOS a handle is a pointer to a pointer to a memory blo
 
 In XS, it is similar: a handle is a pointer to a pointer to a chunk. Here is a schema:
 
-![](./assets/handle.png)
+![](./../assets/handle.png)
 
 The `HANDLE` is a pointer to the `DATA` part of a `HOST` slot. The `DATA` part of a `HOST` slot is a pointer to a chunk. Since slots do not move, a handle remains valid across garbage collections. The XS garbage collector updates the `DATA` part of a `HOST` slot when sweeping chunks.
 
@@ -51,18 +51,12 @@ What happens when XS collects garbage if a handle inside a chunk is the only ref
 
 By convention, at the beginning of each chunk corresponding to a C based object there is a pointer that is a `REFERENCE` to the `INSTANCE` slot.
 
-C based objects implement host `HOOKS`, which are XS garbage collector callbacks. It is the responsibility of the C based object to use such cakkbacks to mark its references
+C based objects implement host `HOOKS`, which are XS garbage collector callbacks. It is the responsibility of the C based object to use such callbacks to mark its references
 
 	xsMarkSlot(the, (*((*content)->container))->reference);
 
 ## Example
 
-Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on micro-controllers thanks to the *Commodetto* graphics library. 
-
-
-
-
-
-
+Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on micro-controllers using the *Commodetto* graphics library. 
 
 
