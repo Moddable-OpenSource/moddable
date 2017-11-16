@@ -12,12 +12,7 @@
  *
  */
 
-import {
-	Skin,
-	Container,
-	Application,
-	Style
-} from "piu/MC";
+import {} from "piu/MC";
 
 import {Keyboard, BACKSPACE, SUBMIT} from "keyboard";
 
