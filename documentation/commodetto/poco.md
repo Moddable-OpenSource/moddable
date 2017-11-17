@@ -14,7 +14,7 @@ To keep the examples concise and focused, the code makes several assumptions:
 
 - They assume that the following color variables are defined:
 
-  ```javascript
+```javascript
 let white = poco.makeColor(255, 255, 255);
 let black = poco.makeColor(0, 0, 0);
 let gray = poco.makeColor(128, 128, 128);
@@ -348,14 +348,14 @@ Poco supports 1-bit monochrome and 4-bit gray bitmaps as sources for rendering t
 ### Compressed pixel formats
 Poco implements support for two compressed pixel format.
 
-The first is a weighted run-length compression of 4-bit gray bitmaps. These are commonly used for anti-aliased fonts and image masks. They use the CommodettoBitmap and PocoBitmap data structures with the pixel format set to (kCommodettoBitmapGray16 | kCommodettoBitmapPacked).
+The first is a weighted run-length compression of 4-bit gray bitmaps. These are commonly used for anti-aliased fonts and image masks. They use the `CommodettoBitmap` and `PocoBitmap` data structures with the pixel format set to `(kCommodettoBitmapGray16 | kCommodettoBitmapPacked)`.
 
-The second is a variant of the ColorCell algorithm used to compress full color images. These are not referenced by the CommodettoBitmap and PocoBitmap data structures, but treated as an image file in the same way as BMP, PNG, and JPEG. ColorCell images use 16-bit RGB565 little-endian pixels and consequently may only be rendered to 16-bit RGB565 little-endian destinations.
+The second is a variant of the ColorCell algorithm used to compress full color images. These are not referenced by the `CommodettoBitmap` and `PocoBitmap` data structures, but treated as an image file in the same way as BMP, PNG, and JPEG. ColorCell images use 16-bit RGB565 little-endian pixels and consequently may only be rendered to 16-bit RGB565 little-endian destinations.
 
 ## Immediate mode rendering
 By default, Poco is a scanline display list renderer. That means it stores all the drawing commands and then renders them all at once when all drawing commands for a given frame have been queued. When used with a display that has full frame buffers stored in memory accessible to Poco and is double buffered (e.g. has two frame buffers it flips between), scanline display list rendering is less efficient than immediate mode rendering, which executes each drawing command as it is received.
 
-Poco optionally supports immediate mode rendering. To enable this support, define kPocoFrameBuffer to 1 when building Poco, and use PocoDrawingBeginFrameBuffer/PocoDrawingEndFrameBuffer in place of PocoDrawingBegin/PocoDrawingEnd in the C code. No changes are required to JavaScript code to use immediate mode.
+Poco optionally supports immediate mode rendering. To enable this support, define `kPocoFrameBuffer` to 1 when building Poco, and use `PocoDrawingBeginFrameBuffer`/`PocoDrawingEndFrameBuffer` in place of `PocoDrawingBegin`/`PocoDrawingEnd` in the C code. No changes are required to JavaScript code to use immediate mode.
 
 ## JavaScript API Reference
 
