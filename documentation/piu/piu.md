@@ -45,7 +45,7 @@ Figure 1 summarizes the inheritance hierarchy for the objects described in this 
 
 **Figure 1.** Piu Inheritance Hierarchy
 
-![](./assets/piu/inheritanceHierarchy.png)
+![](../assets/piu/inheritanceHierarchy.png)
 
 The basic relationship between these objects in the context of a Piu application is as follows:
 
@@ -282,7 +282,7 @@ let SampleContainer = Container.template($ => ({
 application.add(new SampleContainer({ title: "Tap to update", color: "blue" }));
 ```
 
-![](./assets/piu/anchor.gif)
+![](../assets/piu/anchor.gif)
 
 ### Color
 
@@ -375,7 +375,7 @@ let animatedContent = new Content(null, {
 application.add(animatedContent);
 ```
 
-![](./assets/piu/contentClockAnimation.gif)
+![](../assets/piu/contentClockAnimation.gif)
 
 ### Font
 
@@ -451,7 +451,7 @@ Applications can tile skins using their `tiles` property. The size of the tiles 
 
 Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitarily sized contents.
 
-![](./assets/piu/roundedRectangle.png)
+![](../assets/piu/roundedRectangle.png)
 
 ```javascript
 let roundedRectangleTexture = new Texture("roundedRectangle.png");
@@ -476,7 +476,7 @@ application.add(smallText);
 application.add(bigText);
 ```
 
-![](./assets/piu/skinTiles.png)
+![](../assets/piu/skinTiles.png)
 
 ### Variant, Variants, State, and States
 
@@ -505,7 +505,7 @@ application.add(redContent);
 application.add(grayContent);
 ```
 
-![](./assets/piu/states.png)
+![](../assets/piu/states.png)
 
 #### Reusing textures
 
@@ -513,7 +513,7 @@ It is often convenient to store several icons or other user interface elements i
 
 The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes four 60x50 pixel icons.
 
-![](./assets/piu/multipleIconTexture.png)
+![](../assets/piu/multipleIconTexture.png)
 
 ```javascript
 let multipleIconTexture = new Texture("multipleIconTexture.png");
@@ -558,7 +558,7 @@ let icon = new Content(null, {
 application.add(icon);
 ```
 
-![](./assets/piu/stateAndVariant.gif)
+![](../assets/piu/stateAndVariant.gif)
 
 ## Piu Object Reference
 
@@ -617,7 +617,7 @@ export default new Application(null, {
 });
 ```
 
-![](./assets/piu/sampleApplication1.png)
+![](../assets/piu/sampleApplication1.png)
 
 ##### `Application.template(anonymous)`
 
@@ -687,7 +687,7 @@ let sampleContent = new Content({ name: "Moddable" }, {
 application.add(sampleContent);
 ```
 
-![Behavior Sample](./assets/piu/behaviorSample.gif)
+![Behavior Sample](../assets/piu/behaviorSample.gif)
 
 #### Prototype Description
 
@@ -728,7 +728,7 @@ let sampleColumn = new Column(null, {
 application.add(sampleColumn);
 ```
 
-![](./assets/piu/sampleColumn1.png)
+![](../assets/piu/sampleColumn1.png)
 
 ##### `Column.template(anonymous)`
 
@@ -754,7 +754,7 @@ let SampleColumn = Column.template($ => ({
 application.add(new SampleColumn({ firstColor:"red", secondColor:"blue" }));
 ```
 
-![](./assets/piu/sampleColumn2.png)
+![](../assets/piu/sampleColumn2.png)
 
 #### Prototype Description
 
@@ -801,7 +801,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/sampleContainer1.png)
+![](../assets/piu/sampleContainer1.png)
 
 ##### `Container.template(anonymous)`
 
@@ -827,7 +827,7 @@ let SampleContainer = Container.template($ => ({
 application.add(new SampleContainer({ backgroundColor: "white", squareColor: "blue" }));
 ```
 
-![](./assets/piu/sampleContainer2.png)
+![](../assets/piu/sampleContainer2.png)
 
 <a id="container-dictionary"></a>
 #### Dictionary
@@ -882,7 +882,7 @@ sampleContainer.add(new ColoredSquare("green", {top: 10, left: 10}));
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerAdd.png)
+![](../assets/piu/containerAdd.png)
 
 ***
 
@@ -936,7 +936,7 @@ sampleContainer.empty();
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerEmpty.png)
+![](../assets/piu/containerEmpty.png)
 
 ***
 
@@ -1003,7 +1003,7 @@ sampleContainer.insert(redSquare, sampleContainer.first);
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerInsert.png)
+![](../assets/piu/containerInsert.png)
 
 ***
 
@@ -1073,7 +1073,7 @@ sampleContainer.remove(redSquare);
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerRemove.png)
+![](../assets/piu/containerRemove.png)
 
 ***
 
@@ -1106,7 +1106,7 @@ sampleContainer.replace(blueSquare, redSquare);
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerReplace.png)
+![](../assets/piu/containerReplace.png)
 
 ***
 
@@ -1146,7 +1146,7 @@ let ColoredScreen = Container.template($ => ({
 application.add(new ColoredScreen({ color: "red", nextColor: "blue" }));
 ```
 
-![](./assets/piu/containerRun.gif)
+![](../assets/piu/containerRun.gif)
 
 ***
 
@@ -1180,7 +1180,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/containerSwap.gif)
+![](../assets/piu/containerSwap.gif)
 
 ***
 
@@ -1240,7 +1240,7 @@ let sampleContent = new Content("Hello", {
 application.add(sampleContent);
 ```
 
-![](./assets/piu/sampleContent1.png)
+![](../assets/piu/sampleContent1.png)
  
 ##### `Content.template(anonymous)`
 
@@ -1264,7 +1264,7 @@ application.add(new SampleContent({color: "red"}, {top: 0, right: 50}));
 application.add(new SampleContent({color: "blue"}));
 ```
 
-![](./assets/piu/sampleContent2.png)
+![](../assets/piu/sampleContent2.png)
 
 <a id="content-dictionary"></a>
 #### Dictionary
@@ -1380,7 +1380,7 @@ middleContainer.add(innerContainer);
 application.add(outerContainer);
 ```
 
-![](./assets/piu/bubble.gif)
+![](../assets/piu/bubble.gif)
 
 ***
 
@@ -1434,7 +1434,7 @@ let redContainer = new Container(null, {
 application.add(redContainer);
 ```
 
-![](./assets/piu/contentCaptureTouch.gif)
+![](../assets/piu/contentCaptureTouch.gif)
 
 ***
 
@@ -1480,7 +1480,7 @@ middleContainer.add(innerContainer);
 application.add(outerContainer);
 ```
 
-![](./assets/piu/delegate.gif)
+![](../assets/piu/delegate.gif)
 
 ***
 
@@ -1521,7 +1521,7 @@ middleContainer.add(innerContainer);
 application.add(outerContainer);
 ```
 
-![](./assets/piu/distribute.gif)
+![](../assets/piu/distribute.gif)
 
 ***
 
@@ -1596,7 +1596,7 @@ application.add(constrainedContent);
 constrainedContent.moveBy(100,100);	// Does nothing
 ```
 
-![](./assets/piu/contentMoveBy.png)
+![](../assets/piu/contentMoveBy.png)
 
 ***
 
@@ -1632,7 +1632,7 @@ application.add(constrainedContent);
 constrainedContent.sizeBy(100,100);	// Does nothing
 ```
 
-![](./assets/piu/contentSizeBy.png)
+![](../assets/piu/contentSizeBy.png)
 
 ***
 
@@ -1662,7 +1662,7 @@ let sampleContent = new Content(null, {
 application.add(sampleContent);
 ```
 
-![](./assets/piu/contentStart.gif)
+![](../assets/piu/contentStart.gif)
 
 ***
 
@@ -1696,7 +1696,7 @@ let sampleContent = new Content(null, {
 application.add(sampleContent);
 ```
 
-![](./assets/piu/contentStop.gif)
+![](../assets/piu/contentStop.gif)
 
 <a id="content-events"></a>
 #### Events
@@ -1820,7 +1820,7 @@ let sampleScreenWithDie = new Container(null, {
 application.add(sampleScreenWithDie);
 ```
 
-![](./assets/piu/sampleDie1.png)
+![](../assets/piu/sampleDie1.png)
 
 ##### `Die.template(anonymous)`
 
@@ -1867,7 +1867,7 @@ application.add(sampleScreenWithDie);
 
 ```
 
-![](./assets/piu/sampleDie2.png)
+![](../assets/piu/sampleDie2.png)
 
 #### Prototype Description
 
@@ -1910,7 +1910,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/dieAndOr.png)
+![](../assets/piu/dieAndOr.png)
 
 ***
 
@@ -1944,7 +1944,7 @@ let blueScreen = new Content(null, {
 application.add(whiteScreen);
 ```
 
-![](./assets/piu/dieAttach.png)
+![](../assets/piu/dieAttach.png)
 
 ***
 
@@ -1985,7 +1985,7 @@ let blueScreen = new Content(null, {
 application.add(whiteScreen);
 ```
 
-![](./assets/piu/layoutDetach.gif)
+![](../assets/piu/layoutDetach.gif)
 
 ***
 
@@ -2034,7 +2034,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/dieOr.png)
+![](../assets/piu/dieOr.png)
 
 ***
 
@@ -2070,7 +2070,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/dieSet.png)
+![](../assets/piu/dieSet.png)
 
 ***
 
@@ -2110,7 +2110,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/dieSub.png)
+![](../assets/piu/dieSub.png)
 
 ***
 
@@ -2147,7 +2147,7 @@ let sampleContainer = new Container(null, {
 application.add(sampleContainer);
 ```
 
-![](./assets/piu/dieXor.png)
+![](../assets/piu/dieXor.png)
 
 
 ### Label Object
@@ -2177,7 +2177,7 @@ let sampleLabel = new Label(null, {
 });
 application.add(sampleLabel)
 ```
-![](./assets/piu/styleSample1.png)
+![](../assets/piu/styleSample1.png)
 
 ##### `Label.template(anonymous)`
 
@@ -2198,7 +2198,7 @@ application.add(new SampleLabel({ string: "Hello, World!", style: blueStyle }, {
 application.add(new SampleLabel({ string: "Hello, World!", style: redStyle }, { bottom: 0, right: 0 }));
 ```
 
-![](./assets/piu/styleSample2.png)
+![](../assets/piu/styleSample2.png)
 
 <a id="label-dictionary"></a>
 #### Dictionary
@@ -2280,7 +2280,7 @@ let sampleLayout = new Layout(null, {
 application.add(sampleLayout);
 ```
 
-![](./assets/piu/sampleLayout1.png)
+![](../assets/piu/sampleLayout1.png)
 
 ##### `Layout.template(anonymous)`
 
@@ -2328,7 +2328,7 @@ application.add(new SampleLayout(null, {top: 0, width: 100, left: 0, height: 100
 application.add(new SampleLayout(null, {bottom: 0, width: 200, right: 0, height: 100}));
 ```
 
-![](./assets/piu/sampleLayout2.png)
+![](../assets/piu/sampleLayout2.png)
 
 #### Prototype Description
 
@@ -2393,7 +2393,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/samplePort1.png)
+![](../assets/piu/samplePort1.png)
 
 ##### `Port.template(anonymous)`
 
@@ -2425,7 +2425,7 @@ let SamplePort = Port.template($ => ({
 application.add(new SamplePort(["blue", "red", "black"]));
 ```
 
-![](./assets/piu/samplePort2.png)
+![](../assets/piu/samplePort2.png)
 
 #### Prototype Description
 
@@ -2460,7 +2460,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portDrawString.png)
+![](../assets/piu/portDrawString.png)
 
 ***
 
@@ -2493,7 +2493,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portDrawTexture.png)
+![](../assets/piu/portDrawTexture.png)
 
 ***
 
@@ -2520,7 +2520,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portFillColor.png)
+![](../assets/piu/portFillColor.png)
 
 ***
 
@@ -2551,7 +2551,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portFillTexture.png)
+![](../assets/piu/portFillTexture.png)
 
 ***
 
@@ -2584,7 +2584,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portInvalidate.gif)
+![](../assets/piu/portInvalidate.gif)
 
 ***
 
@@ -2622,7 +2622,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portMeasure.gif)
+![](../assets/piu/portMeasure.gif)
 
 ***
 
@@ -2657,7 +2657,7 @@ let samplePort = new Port(null, {
 application.add(samplePort);
 ```
 
-![](./assets/piu/portPushPopClip.png)
+![](../assets/piu/portPushPopClip.png)
 
 ***
 
@@ -2706,7 +2706,7 @@ let sampleRow = new Row(null, {
 application.add(sampleRow);
 ```
 
-![](./assets/piu/sampleRow1.png)
+![](../assets/piu/sampleRow1.png)
 
 ##### `Row.template(anonymous)`
 
@@ -2732,7 +2732,7 @@ let SampleRow = Row.template($ => ({
 application.add(new SampleRow({ firstColor:"red", secondColor:"blue" }));
 ```
 
-![](./assets/piu/sampleRow2.png)
+![](../assets/piu/sampleRow2.png)
 
 #### Prototype Description
 
@@ -2786,7 +2786,7 @@ let scrollerSample = new Scroller(null, {
 application.add(scrollerSample);
 ```
 
-![](./assets/piu/sampleScroller1.gif)
+![](../assets/piu/sampleScroller1.gif)
 
 ##### `Scroller.template(anonymous)`
 
@@ -2826,7 +2826,7 @@ let screenWithScrollerSample = new Column(null, {
 application.add(screenWithScrollerSample);
 ```
 
-![](./assets/piu/scrollerSample2.gif)
+![](../assets/piu/scrollerSample2.gif)
 
 <a id="scroller-dictionary"></a>
 #### Dictionary
@@ -2893,7 +2893,7 @@ let scrollerSample = new Scroller(null, {
 application.add(scrollerSample);
 ```
 
-![](./assets/piu/scrollerReveal.png)
+![](../assets/piu/scrollerReveal.png)
 
 ***
 
@@ -2941,7 +2941,7 @@ let scrollerSample = new Scroller(null, {
 application.add(scrollerSample);
 ```
 
-![](./assets/piu/scrollBy.gif)
+![](../assets/piu/scrollBy.gif)
 
 ***
 
@@ -2988,7 +2988,7 @@ let scrollerSample = new Scroller(null, {
 application.add(scrollerSample);
 ```
 
-![](./assets/piu/scrollTo.gif)
+![](../assets/piu/scrollTo.gif)
 
 ***
 
@@ -3041,7 +3041,7 @@ let borderedContent = new Content(null, {
 application.add(borderedContent);
 ```
 
-![](./assets/piu/sampleSkin1.png)
+![](../assets/piu/sampleSkin1.png)
 
 ##### `Skin.template([dictionary])`
 
@@ -3070,7 +3070,7 @@ let borderedContent = new Content(null, {
 application.add(borderedContent);
 ```
 
-![](./assets/piu/sampleSkin2.png)
+![](../assets/piu/sampleSkin2.png)
 
 <a id="skin-dictionary"></a>
 #### Dictionary
@@ -3162,7 +3162,7 @@ let sampleLabel = new Label(null, {
 application.add(sampleLabel)
 ```
 
-![](./assets/piu/styleSample1.png)
+![](../assets/piu/styleSample1.png)
 
 ##### `Style.template(dictionary)`
 
@@ -3189,7 +3189,7 @@ application.add(sampleLabel);
 application.add(sampleLabel2);
 ```
 
-![](./assets/piu/sampleStyle2.png)
+![](../assets/piu/sampleStyle2.png)
 
 <a id="style-dictionary"></a>
 #### Dictionary
@@ -3302,7 +3302,7 @@ let sampleText = new Text(null, {
 application.add(sampleText);
 ```
 
-![](./assets/piu/sampleText1.png)
+![](../assets/piu/sampleText1.png)
 
 ##### `Text.template(anonymous)`
 
@@ -3329,7 +3329,7 @@ let SampleText = Text.template($ => ({
 application.add(new SampleText({ baseStyle: sampleStyle, redText: "Red!", blueText: "Blue!" }));
 ```
 
-![](./assets/piu/sampleText2.png)
+![](../assets/piu/sampleText2.png)
 
 <a id="text-dictionary"></a>
 #### Dictionary
@@ -3553,7 +3553,7 @@ let ColoredScreen = Container.template($ => ({
 application.add(new ColoredScreen({ color: "red", nextColor: "blue" }));
 ```
 
-![](./assets/piu/transition.gif)
+![](../assets/piu/transition.gif)
 
 #### Prototype Description
 
