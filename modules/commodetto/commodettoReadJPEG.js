@@ -38,7 +38,6 @@ export default class JPEG @ "xs_JPEG_destructor" {
 
 	initialize(pixelFormat) {
 		this.bitmap = new Bitmap(0, 0, pixelFormat, this.pixels, 0);
-		return this.bitmap;
 	}
 
 	static decompress(data, dictionary) {
@@ -46,7 +45,7 @@ export default class JPEG @ "xs_JPEG_destructor" {
 		let Poco = require("Poco");
 		let jpeg = new JPEG(data, dictionary);
 
-		let offscreen = new BufferOut({width: jpeg.width, height: jpeg.height, pixelFormat: jpeg.bitmap.format});
+		let offscreen = new BufferOut({width: jpeg.width, height: jpeg.height, pixelFormat: jpeg.bitmap.pixelFormat});
 		let render = new Poco(offscreen);
 
 		while (true) {
