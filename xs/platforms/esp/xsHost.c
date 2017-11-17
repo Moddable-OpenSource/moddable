@@ -51,8 +51,8 @@
 	static void espStartInstrumentation(txMachine* the);
 #endif
 
-#ifndef SUPPORT_MODDABLE
-	#define SUPPORT_MODDABLE 1
+#ifndef SUPPORT_MODS
+	#define SUPPORT_MODS 1
 #endif
 
 uint8_t espRead8(const void *addr)
@@ -616,7 +616,7 @@ int32_t modGetDaylightSavingsOffset(void)
 	return gDaylightSavings;
 }
 
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 	static void installModules(xsMachine *the);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
@@ -687,7 +687,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 	}
 
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 	installModules(result);
 #endif
 
@@ -876,7 +876,7 @@ static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	return 0;
 }
 
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 #define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
 
 static uint8_t *findMod(txMachine *the, char *name, int *modSize)
@@ -924,7 +924,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 	if (findMod(the, name, NULL)) {
 		c_strcpy(path, "/");
 		c_strcat(path, name);
@@ -989,7 +989,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 	uint8_t *mod;
 	int modSize;
 
@@ -1312,12 +1312,12 @@ void modMessageDeliver(void)
 	 user installable modules
 */
 
-#if SUPPORT_MODDABLE
+#if SUPPORT_MODS
 
 extern void fxRemapIDs(xsMachine* the, uint8_t* codeBuffer, uint32_t codeSize, xsIndex* theIDs);
 extern txID fxNewNameX(txMachine* the, txString theString);
 
-static void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize);
+static uint8_t remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize);		// 0 on success
 
 #if ESP32
 	const esp_partition_t *gPartition;
@@ -1443,7 +1443,10 @@ installArchive:
 
 	xsb = (char *)installLocation;
 #endif
-	remapXSB(the, xsbCopy, xsbSize);
+	if (0 != remapXSB(the, xsbCopy, xsbSize)) {
+		modLog("   remap failed");
+		goto bail;
+	}
 
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbCopy, xsbSize, NULL);
 	atom[3] = 1;		// make as remapped
@@ -1539,8 +1542,9 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 	return NULL;
 }
 
-void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
+uint8_t remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 {
+	uint8_t result = 1;  // failure
 	uint8_t *atom, *mods;
 	int atomSize, modsSize;
 	xsIndex *ids = NULL;
@@ -1551,7 +1555,7 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 
 	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbRAM, xsbSize, &atomSize);
 	if (!atom)
-		return;
+		goto bail;
 
 	if (XS_MAJOR_VERSION != c_read8(atom + 0)) {
 		modLog("bad major version");
@@ -1563,7 +1567,7 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 	}
 
 	atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsbRAM, xsbSize, &atomSize);
-	if (!atom) return;
+	if (!atom) goto bail;
 
 	symbolCount = c_read16be(atom);
 	ids = c_malloc(sizeof(xsIndex) * symbolCount);
@@ -1579,6 +1583,11 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 		symbol += c_strlen(symbol) + 1;
 	}
 
+	if (keyIndex >= the->keyCount) {
+		modLog("too many keys in mod");
+		goto bail;
+	}
+
 	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsbRAM, xsbSize, &modsSize);
 	if (!mods) goto bail;
 
@@ -1589,9 +1598,13 @@ void remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
 		fxRemapIDs(the, atom, atomSize, ids);
 	}
 
+	result = 0;
+
 bail:
 	if (ids)
 		c_free(ids);
+
+	return result;
 }
 
 #if !ESP32
@@ -1611,5 +1624,5 @@ uint8_t *espFindUnusedFlashStart(void)
 
 #endif
 
-#endif /* SUPPORT_MODDABLE */
+#endif /* SUPPORT_MODS */
 
