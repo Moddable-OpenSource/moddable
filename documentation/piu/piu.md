@@ -14,7 +14,7 @@ Piu is a user interface framework designed to run on micro-controllers. The prog
  	 * [Built-in Properties](#built-in-properties)
  	 * [Adding Additional Properties](#adding-additional-properties)
   * [Descriptions of Properties](#descriptions-of-properties)
-    * [Anchor](#anchor)
+  	 * [Anchor](#anchor)
  	 * [Color](#color)
  	 * [Coordinates](#coordinates)
  	 * [Duration, Fraction, Interval, Loop, and Time](#duration-fraction-interval-loop-and-time)
@@ -55,7 +55,7 @@ The basic relationship between these objects in the context of a Piu application
 - `transition` objects animate `content` objects 
 
 
-##Introduction to Important Concepts
+## Introduction to Important Concepts
 
 This section explains important concepts related to Piu applications and defines some of the terms used throughout the rest of this document.
 
@@ -2431,8 +2431,107 @@ application.add(new SamplePort(["blue", "red", "black"]));
 
 Prototype inherits from `Content.prototype`.
 
-<a id="layout-functions"></a>
+<a id="port-functions"></a>
 ##### Functions
+
+**`drawContent(x, y, width, height) `**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
+
+Draws this port's skin in the position specified
+
+```javascript
+let heartSkin = new Skin({ 
+	texture: new Texture("heart.png"), 
+	color: "red",
+	x: 0, y: 0, width: 60, height: 60, 
+});
+
+let sampleStyle = new Style({ font:"600 28px Open Sans", color: ["red", "yellow", "green", "blue"] });
+let samplePort = new Port(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: heartSkin, 
+	Behavior: class extends Behavior {
+		onDraw(port) {
+			let size = 60;
+			port.drawContent(0, 0, size, size);
+			port.drawContent(port.width-size, 0, size, size);
+			port.drawContent(0, port.height-size, size, size);
+			port.drawContent(port.width-size, port.height-size, size, size);
+		}
+	}
+});
+application.add(samplePort);
+```
+
+![](../assets/piu/portDrawContent.png)
+
+***
+
+**`drawLabel(string, x, y, width, height)`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `string ` | `string ` | The string to draw
+| `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
+
+Draws the string the way a label instance would, with the style of this port
+
+```javascript
+let sampleStyle = new Style({ font:"600 28px Open Sans", color: "red" });
+let samplePort = new Port(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: "white" }), style: sampleStyle,
+	Behavior: class extends Behavior {
+		onDraw(port) {
+			let string = "Hello, World!";
+			let size = sampleStyle.measure(string);
+			port.drawLabel(string, port.width-size.width, port.height-size.height, size.width, size.height);
+		}
+	}
+})
+application.add(samplePort);
+```
+
+![](../assets/piu/portDrawLabel.png)
+
+***
+
+**`drawSkin(skin, x, y, width, height [, variant, state])`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `skin ` | `skin ` | The skin to draw
+| `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
+| `variant` | `number` | The variant of the skin to draw. If the specified skin defines variants, setting the variant changes the appearance.
+| `state` | `number` | The state of the skin to draw. If the specified skin defines states, setting the state changes the appearance.
+
+Draws the skin the way a `content` instance would, with the state, variant, and position speciied.
+
+```javascript
+let heartSkin = new Skin({ 
+	texture: new Texture("heart.png"), 
+	color: ["red", "blue"],
+	x: 0, y: 0, width: 60, height: 60, 
+});
+
+let samplePort = new Port(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: "white" }),
+	Behavior: class extends Behavior {
+		onDraw(port) {
+			port.drawSkin(heartSkin, 20, 20, 60, 60, 0, 1); 
+		}
+	}
+})
+application.add(samplePort);
+```
+
+![](../assets/piu/portDrawSkin.png)
+
+***
 
 **`drawString(string, style, color, x, y, width, height)`**
 
@@ -2461,6 +2560,43 @@ application.add(samplePort);
 ```
 
 ![](../assets/piu/portDrawString.png)
+
+***
+
+**`drawStyle(string, style, x, y, w, h [, ellipsis, state])`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `string` | `string` | The string to draw
+| `style` | `style` | The style to use to draw the string
+| `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
+| `ellipsis` | `boolean` | [TO DO: figure out what this does]
+| `state` | `number` | The state of the style to draw. If the specified style has multiple fill colors, setting the state selects which color to use.
+
+Draws a string with the style, position, and state speciied.
+
+```javascript
+let sampleStyle = new Style({ font:"600 28px Open Sans", color: ["red", "yellow", "green", "blue"] });
+let samplePort = new Port(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: "white" }), 
+	Behavior: class extends Behavior {
+		onDraw(port) {
+			let string = "Hello, World!";
+			let size = sampleStyle.measure(string);
+			let w = size.width;
+			let h = size.height;
+			port.drawStyle(string, sampleStyle, 20, 10, w, h, true, 0);
+			port.drawStyle(string, sampleStyle, 20, h+10, w, h, true, 1);
+			port.drawStyle(string, sampleStyle, 20, h*2+10, w, h, true, 2);
+			port.drawStyle(string, sampleStyle, 20, h*3+10, w, h, true, 3);
+		}
+	}
+});
+application.add(samplePort);
+```
+
+![](../assets/piu/portDrawStyle.png)
 
 ***
 
