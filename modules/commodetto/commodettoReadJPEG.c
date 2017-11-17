@@ -53,9 +53,7 @@ typedef struct {
 	int					position;
 	int					length;
 	xsMachine			*the;
-	xsSlot				buffer;
-	xsSlot				pixels;
-	xsSlot				bitmap;
+	uint8_t				*pixels;
 	convertto			convert;
 	char				isArrayBuffer;
 
@@ -91,7 +89,13 @@ static void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels);
 void xs_JPEG_destructor(void *data)
 {
 	if (data)
-		free(data);
+		c_free(data);
+}
+
+static void pixelsDestructor(void *data)
+{
+	if (data)
+		c_free(data);
 }
 
 void xs_JPEG_constructor(xsMachine *the)
@@ -100,9 +104,9 @@ void xs_JPEG_constructor(xsMachine *the)
 	pjpeg_image_info_t info;
 	CommodettoBitmapFormat pixelFormat;
 	uint8_t pixelSize;
-	int argc = xsmcArgc;
+	int argc = xsmcArgc, pixelsLength;
 
-	JPEG jpeg = malloc(sizeof(JPEGRecord));
+	JPEG jpeg = c_malloc(sizeof(JPEGRecord));
 	if (!jpeg)
 		xsErrorPrintf("jpeg out of memory");
 
@@ -113,7 +117,6 @@ void xs_JPEG_constructor(xsMachine *the)
 	jpeg->length = xsmcToInteger(xsVar(0));
 	jpeg->position = 0;
 	jpeg->the = the;
-	jpeg->buffer = xsArg(0);
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(0));
 
@@ -161,8 +164,15 @@ void xs_JPEG_constructor(xsMachine *the)
 	else if (kCommodettoBitmapFormat != pixelFormat)
 		xsErrorPrintf("unsupported pixel format");
 
-	jpeg->pixels = xsArrayBuffer(NULL, (jpeg->mcuWidth * jpeg->mcuHeight * pixelSize) >> 3);
-	xsmcSet(xsThis, xsID_pixels, jpeg->pixels);
+	pixelsLength = (jpeg->mcuWidth * jpeg->mcuHeight * pixelSize) >> 3;
+	jpeg->pixels = c_malloc(pixelsLength);
+	if (!jpeg->pixels)
+		xsUnknownError("out of memory");
+	xsVar(0) = xsNewHostObject(pixelsDestructor);
+	xsmcSetHostData(xsVar(0), jpeg->pixels);
+	xsmcSetInteger(xsVar(1), pixelsLength);
+	xsmcSet(xsVar(0), xsID_byteLength, xsVar(1));
+	xsmcSet(xsThis, xsID_pixels, xsVar(0));
 
 	xsVar(0) = xsInteger(info.m_width);
 	xsmcSet(xsThis, xsID_width, xsVar(0));
@@ -170,16 +180,16 @@ void xs_JPEG_constructor(xsMachine *the)
 	xsmcSet(xsThis, xsID_height, xsVar(0));
 
 	xsmcSetInteger(xsVar(0), pixelFormat);
-	xsVar(1) = xsCall1(xsThis, xsID_initialize, xsVar(0));
-	jpeg->bitmap = xsVar(1);
+	xsCall1(xsThis, xsID_initialize, xsVar(0));
 }
 
 void xs_JPEG_read(xsMachine *the)
 {
 	JPEG jpeg = xsmcGetHostData(xsThis);
 	unsigned char result;
-	PocoPixel *pixels;
 	CommodettoBitmap cb;
+
+	xsmcVars(2);
 
 	result = pjpeg_decode_mcu();
 	if (0 != result) {
@@ -188,13 +198,13 @@ void xs_JPEG_read(xsMachine *the)
 		xsErrorPrintf("jpeg read failed");
 	}
 
-	xsmcVars(1);
+	xsmcGet(xsVar(1), xsThis, xsID_bitmap);
 	xsVar(0) = xsInteger(jpeg->blockX * jpeg->mcuWidth);
-	xsmcSet(jpeg->bitmap, xsID_x, xsVar(0));
+	xsmcSet(xsVar(1), xsID_x, xsVar(0));
 	xsVar(0) = xsInteger(jpeg->blockY * jpeg->mcuHeight);
-	xsmcSet(jpeg->bitmap, xsID_y, xsVar(0));
+	xsmcSet(xsVar(1), xsID_y, xsVar(0));
 
-	cb = xsmcGetHostChunk(jpeg->bitmap);
+	cb = xsmcGetHostChunk(xsVar(1));
 	if (jpeg->blockY >= jpeg->blockHeight)
 		cb->h = jpeg->mcuHeightBottom;
 	else
@@ -212,10 +222,9 @@ void xs_JPEG_read(xsMachine *the)
 		jpeg->blockX += 1;
 	}
 
-	pixels = (PocoPixel *)xsmcToArrayBuffer(jpeg->pixels);
-	(jpeg->convert)(jpeg, cb, pixels);
+	(jpeg->convert)(jpeg, cb, (void *)jpeg->pixels);
 
-	xsResult = jpeg->bitmap;
+	xsResult = xsVar(1);
 }
 
 #if (kPocoPixelSize == 16) || (kPocoPixelSize == 8)
@@ -407,12 +416,13 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 	if (buf_size > (jpeg->length - jpeg->position))
 		buf_size = jpeg->length - jpeg->position;
 
+	xsmcGet(xsVar(0), xsThis, xsID_buffer);
 	if (jpeg->isArrayBuffer)
-		buffer = xsmcToArrayBuffer(jpeg->buffer);
+		buffer = xsmcToArrayBuffer(xsVar(0));
 	else
-		buffer = xsmcGetHostData(jpeg->buffer);
+		buffer = xsmcGetHostData(xsVar(0));
 
-	memcpy(pBuf, buffer + jpeg->position, buf_size);
+	c_memcpy(pBuf, buffer + jpeg->position, buf_size);
 
 	*pBytes_actually_read = buf_size;
 	jpeg->position += buf_size;
