@@ -606,12 +606,15 @@ void xs_poco_fillPattern(xsMachine *the)
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
 	w = (PocoDimension)xsmcToInteger(xsArg(3));
 	h = (PocoDimension)xsmcToInteger(xsArg(4));
-	sx = (PocoCoordinate)xsmcToInteger(xsArg(5));
-	sy = (PocoCoordinate)xsmcToInteger(xsArg(6));
-	sw = (PocoDimension)xsmcToInteger(xsArg(7));
-	sh = (PocoDimension)xsmcToInteger(xsArg(8));
-
-	PocoBitmapPattern(poco, &bits, x, y, w, h, sx, sy, sw, sh);
+	if (argc > 5) {
+		sx = (PocoCoordinate)xsmcToInteger(xsArg(5));
+		sy = (PocoCoordinate)xsmcToInteger(xsArg(6));
+		sw = (PocoDimension)xsmcToInteger(xsArg(7));
+		sh = (PocoDimension)xsmcToInteger(xsArg(8));
+		PocoBitmapPattern(poco, &bits, x, y, w, h, sx, sy, sw, sh);
+	}
+	else
+		PocoBitmapPattern(poco, &bits, x, y, w, h, 0, 0, bits.width, bits.height);
 }
 
 void xs_poco_drawFrame(xsMachine *the)
