@@ -1,4 +1,7 @@
 {
+	"include": [
+		"$(MODDABLE)/modules/pins/i2c//manifest.json",
+	],
 	"defines": {
 		"ft6206": {
 			"width": 240,
