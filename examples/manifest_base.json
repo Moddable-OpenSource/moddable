@@ -54,6 +54,7 @@
 					"piu*",
 					"Resource*",
 					"mod*",
+					"i2c*",
 				],
 			},
 			"defines": {
