@@ -1,0 +1,19 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/esp/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+			"preload": "pins/i2c",
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/esp32/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+			"preload": "pins/i2c",
+		}
+	}
+}
+
