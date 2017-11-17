@@ -943,7 +943,7 @@ static uint8 locateSOSMarker(uint8* pFoundEOI)
    return readSOSMarker();
 }
 //------------------------------------------------------------------------------
-static uint8 init(void)
+static uint8 pjpeg_init(void)
 {
    gImageXSize = 0;
    gImageYSize = 0;
@@ -2292,7 +2292,7 @@ unsigned char pjpeg_decode_init(pjpeg_image_info_t *pInfo, pjpeg_need_bytes_call
    gCallbackStatus = 0;
    gReduce = reduce;
     
-   status = init();
+   status = pjpeg_init();
    if ((status) || (gCallbackStatus))
       return gCallbackStatus ? gCallbackStatus : status;
    
