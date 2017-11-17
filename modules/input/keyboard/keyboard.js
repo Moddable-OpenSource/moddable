@@ -31,8 +31,10 @@ dictionary options:
   textColor:              A string specifying the color of text on keys
   specialTextColor:       A string specifying the color of text and masks on the bottom row of keys
   keyDownColor:           A string specifying the color to highlight keys in while they are being pressed
-  keyToggled:             A string specifying the color to indicate toggle on the shift and symbol keys
+  keyToggledColor:        A string specifying the color to indicate toggle on the shift and symbol keys
   submit:                 A string to render on the submit key
+  doTransition:           A boolean specifying whether or not to transition in the keyboard when first displayed (Default: false)
+  transitionTime:         A number specifying the duration of the keyboard transition in ms (Default: 250)
 */
 import {
   Texture,
@@ -199,7 +201,7 @@ class KeyboardBehavior extends Behavior{
     this.specialTextColor = (data.specialTextColor) ? data.specialTextColor : SPECIALTEXTDEFAULT;
     this.submit = (data.submit) ? data.submit : SUBMITDEFAULT;
     this.keyDownColor = (data.keyDownColor) ? data.keyDownColor : KEYDOWNDEFAULT;
-    this.keyToggled = (data.keyToggled) ? data.keyToggled : KEYTOGGLEDDEFAULT;
+    this.keyToggledColor = (data.keyToggledColor) ? data.keyToggledColor : KEYTOGGLEDDEFAULT;
     
     this.doTransition = (data.doTransition !== undefined) ? data.doTransition : false;
     this.transitionTime = (data.transitionTime) ? data.transitionTime : 250;
@@ -236,7 +238,7 @@ class KeyboardBehavior extends Behavior{
     if (this.keyDown && this.keyDown.y == 3 && this.keyDown.x == 0){
       color = this.keyColor;
     }else if (this.shiftState){
-      color = this.keyToggled;
+      color = this.keyToggledColor;
     }
     port.fillColor(color, onX, y, this.shiftWidth, height);
     let xOff = onX + ((this.shiftWidth - 16) >> 1);
@@ -249,7 +251,7 @@ class KeyboardBehavior extends Behavior{
     if (this.keyDown && this.keyDown.y == 3 && this.keyDown.x == 1){
       color = this.keyColor;
     }else if(state == this.SYMBOL){
-      color = this.keyToggled;
+      color = this.keyToggledColor;
     }
     port.fillColor(color, onX, y, this.symbolWidth, height);
     xOff = onX + ((this.symbolWidth - 32) >> 1);
