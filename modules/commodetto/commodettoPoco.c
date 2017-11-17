@@ -26,18 +26,9 @@
 #include "stdint.h"
 #include "stdlib.h"
 
+#include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#ifdef __ets__				//@@ move somewhere else!
-	#include "xsesp.h"
-#else
-	#undef c_read8
-	#undef c_read16
-	#undef c_read32
-	#define c_read8(x) (*(uint8_t *)(x))
-	#define c_read16(x) (*(uint16_t *)(x))
-	#define c_read32(x) (*(uint32_t *)(x))
-#endif
 
 #define xsGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(PocoRecord, pixels)))
 
@@ -50,7 +41,7 @@
 void xs_poco_destructor(void *data)
 {
 	if (data)
-		free(((uint8_t *)data) - offsetof(PocoRecord, pixels));
+		c_free(((uint8_t *)data) - offsetof(PocoRecord, pixels));
 }
 
 void xs_poco_build(xsMachine *the)
@@ -68,7 +59,7 @@ void xs_poco_build(xsMachine *the)
 	if (rotation != kPocoRotation)
 		xsErrorPrintf("not configured for requested rotation");
 
-	poco = malloc(sizeof(PocoRecord) + byteLength + 8);		// overhang when dividing
+	poco = c_malloc(sizeof(PocoRecord) + byteLength + 8);		// overhang when dividing
 	if (!poco)
 		xsErrorPrintf("out of menory");
 	xsmcSetHostData(xsThis, poco->pixels);
@@ -586,6 +577,7 @@ void xs_poco_fillPattern(xsMachine *the)
 	PocoCoordinate x, y;
 	PocoDimension w, h, sx, sy, sw, sh;
 	CommodettoBitmap cb;
+	int argc = xsmcArgc;
 
 	xsmcVars(1);
 
