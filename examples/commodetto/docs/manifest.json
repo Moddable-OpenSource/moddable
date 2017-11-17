@@ -1,0 +1,33 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+	},
+	"resources": {
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
+		"*": [
+			"./envelope",
+			"./lvb",
+			"./pattern1",
+			"./envelope-gray",
+			"./mask_circle",
+			"./mask_square",
+			"./girl",
+			"./piano",
+			"./palatino_36",
+			"./palatino_36_gray",
+			"./OpenSans-SemiboldItalic-18"
+		]
+
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}
