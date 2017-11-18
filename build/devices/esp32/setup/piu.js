@@ -74,15 +74,7 @@ class Screen extends require(config.screen) {
 	}
 }
 
-export default function () {
+export default function (done) {
 	global.screen = new Screen({});
-	Timer.set(main);
+	done();
 }
-
-function main() {
-	let f = require.weak("main");
-	if (typeof f === "function")
-		f.call(this);
-}
-
-
