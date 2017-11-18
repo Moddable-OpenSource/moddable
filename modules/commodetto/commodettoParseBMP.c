@@ -82,7 +82,7 @@ void xs_parseBMP(xsMachine *the)
 				xsUnknownError("unsupported 4-bit compression");
 
 			if (width & 7)
-				xsUnknownError("8-bit bitmap width must be multiple of 8");
+				xsUnknownError("4-bit bitmap width must be multiple of 8");
 
 			for (palette = size + 14, i = 0; i < 16; i++, palette += 4) {
 				gray = i | (i << 4);
