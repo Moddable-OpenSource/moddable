@@ -98,8 +98,8 @@ static void IRAM_ATTR postTransfer(spi_transaction_t *transIn)
 	gTransactionIndex ^= 1;
 
 	trans->flags = 0;
-	trans->command = 0;
-	trans->address = 0;
+	trans->cmd = 0;
+	trans->addr = 0;
 	trans->length = bitsOut;
 	trans->rxlength = 0;
 	trans->user = 0;

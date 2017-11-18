@@ -49,6 +49,7 @@ INC_DIRS = \
     $(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/driver/include \
  	$(IDF_PATH)/components/soc/esp32/include \
+ 	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
@@ -56,6 +57,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/lwip/include/lwip/port \
  	$(IDF_PATH)/components/mbedtls/include \
  	$(IDF_PATH)/components/spi_flash/include \
+ 	$(IDF_PATH)/components/vfs/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter
     
