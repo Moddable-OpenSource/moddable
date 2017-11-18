@@ -40,15 +40,15 @@
 #include "modInstrumentation.h"
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
-
-extern void fx_putc(void *refcon, char c);		//@@
-
 #include "xs.h"
 #include "xsesp.h"
 
 #include "xsPlatform.h"
 
-xsMachine *gThe;		// the one XS virtual machine running
+extern void fx_putc(void *refcon, char c);		//@@
+extern void mc_setup(xsMachine *the);
+
+static xsMachine *gThe;		// the one XS virtual machine running
 
 /*
 	xsbug IP address
@@ -69,13 +69,6 @@ xsMachine *gThe;		// the one XS virtual machine running
 	unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
-extern xsCallback xsHostModuleAt(xsIndex i);
-
-xsCallback xsHostModuleAt(xsIndex i)
-{
-	return NULL;
-}
-
 #if 0
 	#define USE_UART	UART_NUM_2
 	#define USE_UART_TX	17
@@ -86,17 +79,8 @@ xsCallback xsHostModuleAt(xsIndex i)
 	#define USE_UART_RX	3
 #endif
 
-static const char gSetup[] ICACHE_RODATA_ATTR = "setup";
-static const char gRequire[] ICACHE_RODATA_ATTR = "require";
-static const char gWeak[] ICACHE_RODATA_ATTR = "weak";
-static const char gMain[] ICACHE_RODATA_ATTR = "main";
-
-extern int16_t fxFindModule(xsMachine* the, uint16_t moduleID, xsSlot* slot);
-
 void setup(void)
 {
-	const char *module;
-
 	esp_err_t err;
 	uart_config_t uartConfig;
 	uartConfig.baud_rate = 115200;
@@ -118,18 +102,7 @@ void setup(void)
 
 	gThe = ESP_cloneMachine(0, 0, 0, 0);
 
-	xsBeginHost(gThe);
-		xsResult = xsString(gSetup);
-		if (XS_NO_ID != fxFindModule(the, XS_NO_ID, &xsResult))
-			module = gSetup;
-		else
-			module = gMain;
-
-		xsResult = xsGet(xsGlobal, xsID(gRequire));
-		xsResult = xsCall1(xsResult, xsID(gWeak), xsString(module));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(gThe);
+	mc_setup(gThe);
 }
 
 void loop(void)
@@ -151,7 +124,7 @@ void loop(void)
 
 	modTimersExecute();
 
-	if (xsRunPromiseJobs(gThe))
+	if (modRunPromiseJobs(gThe))
 		return;
 
 	modMessageService();
