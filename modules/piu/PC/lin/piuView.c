@@ -570,12 +570,12 @@ void PiuViewDictionary(xsMachine* the, void* it)
 	
 }
 
-void PiuViewDrawString(PiuView* self, xsSlot* slot, PiuCoordinate offset, PiuDimension length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
+void PiuViewDrawString(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
 {
 	PiuViewDrawStringSubPixel(self, slot, offset, length, font, x, y, w, sw);
 }
 
-void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, PiuCoordinate offset, PiuDimension length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw)
+void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw)
 {
 	xsMachine* the = (*self)->the;
 	cairo_t* cr = (*self)->cairo;

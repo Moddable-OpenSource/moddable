@@ -800,10 +800,10 @@ void PiuCode_get_selectionBounds(xsMachine *the)
 		bounds.x += (*style)->margins.left;
 		bounds.y += (*style)->margins.top;
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger(bounds.x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger(bounds.y), xsDefault);
-		xsDefine(xsResult, xsID_width, xsInteger(bounds.width), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger(bounds.height), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate(bounds.x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate(bounds.y), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension(bounds.width), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension(bounds.height), xsDefault);
 	}
 }
 
@@ -1085,8 +1085,8 @@ void PiuCode_hitOffset(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
 	if ((*self)->application) {
-		xsIntegerValue x = xsToInteger(xsArg(0));
-		xsIntegerValue y = xsToInteger(xsArg(1));
+		PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+		PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
 		xsResult = xsInteger(PiuCodeHitOffset(self, x, y));
 	}
 }
@@ -1112,10 +1112,10 @@ void PiuCode_locate(xsMachine *the)
 		int32_t column, line;
 		PiuCodeOffsetToColumnLine(self, offset, &column, &line);
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger((xsIntegerValue)c_floor((*style)->margins.left + (column * (*self)->columnWidth))), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger((xsIntegerValue)c_floor((*style)->margins.top + (line * (*self)->lineHeight))), xsDefault);
-		xsDefine(xsResult, xsID_width, xsInteger((xsIntegerValue)c_ceil((*self)->columnWidth)), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger((xsIntegerValue)c_ceil((*self)->lineHeight)), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate((xsIntegerValue)c_floor((*style)->margins.left + (column * (*self)->columnWidth))), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate((xsIntegerValue)c_floor((*style)->margins.top + (line * (*self)->lineHeight))), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension((xsIntegerValue)c_ceil((*self)->columnWidth)), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension((xsIntegerValue)c_ceil((*self)->lineHeight)), xsDefault);
 	}
 }
 
