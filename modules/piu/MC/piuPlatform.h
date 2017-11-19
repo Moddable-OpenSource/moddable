@@ -29,3 +29,7 @@
 #define piuMC 1
 typedef PocoCoordinate PiuCoordinate;
 typedef PocoDimension PiuDimension;
+#define xsPiuCoordinate(VALUE) xsInteger((xsIntegerValue)(VALUE))
+#define xsPiuDimension(VALUE) xsInteger((xsIntegerValue)(VALUE))
+#define xsToPiuCoordinate(SLOT) (PiuCoordinate)xsToInteger(SLOT)
+#define xsToPiuDimension(SLOT) (PiuDimension)xsToInteger(SLOT)

@@ -164,10 +164,10 @@ void PiuPort_drawContent(xsMachine* the)
 	PiuView* view = (*self)->view;
 	PiuRectangleRecord bounds;
 	if (!view) xsUnknownError("out of sequence");
-	bounds.x = (PiuCoordinate)xsToInteger(xsArg(0));
-	bounds.y = (PiuCoordinate)xsToInteger(xsArg(1));
-	bounds.width = (PiuDimension)xsToInteger(xsArg(2));
-	bounds.height = (PiuDimension)xsToInteger(xsArg(3));
+	bounds.x = xsToPiuCoordinate(xsArg(0));
+	bounds.y = xsToPiuCoordinate(xsArg(1));
+	bounds.width = xsToPiuDimension(xsArg(2));
+	bounds.height = xsToPiuDimension(xsArg(3));
 	if ((*self)->skin)
 		PiuSkinDraw((*self)->skin, view, &bounds, (*self)->variant, (*self)->state, piuCenter, piuMiddle);
 }
@@ -182,10 +182,10 @@ void PiuPort_drawLabel(xsMachine* the)
 	PiuBoolean ellipsis;
 	if (!view) xsUnknownError("out of sequence");
 	string = PiuString(xsArg(0));
-	bounds.x = (PiuCoordinate)xsToInteger(xsArg(1));
-	bounds.y = (PiuCoordinate)xsToInteger(xsArg(2));
-	bounds.width = (PiuDimension)xsToInteger(xsArg(3));
-	bounds.height = (PiuDimension)xsToInteger(xsArg(4));
+	bounds.x = xsToPiuCoordinate(xsArg(1));
+	bounds.y = xsToPiuCoordinate(xsArg(2));
+	bounds.width = xsToPiuDimension(xsArg(3));
+	bounds.height = xsToPiuDimension(xsArg(4));
 	ellipsis = (c > 5) ? (PiuBoolean)xsToBoolean(xsArg(5)) : 0;
 	if ((*self)->skin)
 		PiuSkinDraw((*self)->skin, view, &bounds, (*self)->variant, (*self)->state, piuCenter, piuMiddle);
@@ -204,10 +204,10 @@ void PiuPort_drawSkin(xsMachine* the)
 	PiuState state;
 	if (!view) xsUnknownError("out of sequence");
 	skin = PIU(Skin, xsArg(0));
-	bounds.x = (PiuCoordinate)xsToInteger(xsArg(1));
-	bounds.y = (PiuCoordinate)xsToInteger(xsArg(2));
-	bounds.width = (PiuDimension)xsToInteger(xsArg(3));
-	bounds.height = (PiuDimension)xsToInteger(xsArg(4));
+	bounds.x = xsToPiuCoordinate(xsArg(1));
+	bounds.y = xsToPiuCoordinate(xsArg(2));
+	bounds.width = xsToPiuDimension(xsArg(3));
+	bounds.height = xsToPiuDimension(xsArg(4));
 	variant = (c > 5) ? (PiuVariant)xsToInteger(xsArg(5)) : 0;
 	state = (c > 6) ? (PiuState)xsToNumber(xsArg(6)) : 0;
 	PiuSkinDraw(skin, view, &bounds, variant, state, piuCenter, piuMiddle);
@@ -229,9 +229,9 @@ void PiuPort_drawString(xsMachine* the)
 	if ((*style)->font == NULL)
 		PiuStyleLookupFont(style);
 	PiuColorDictionary(the, &xsArg(2), &color);
-	x = (PiuCoordinate)xsToInteger(xsArg(3));
-	y = (PiuCoordinate)xsToInteger(xsArg(4));
-	w = (c > 5) ? (PiuDimension)xsToInteger(xsArg(5)) : 0;
+	x = xsToPiuCoordinate(xsArg(3));
+	y = xsToPiuCoordinate(xsArg(4));
+	w = (c > 5) ? xsToPiuDimension(xsArg(5)) : 0;
 	sw = w ? PiuFontGetWidth((*style)->font, string, 0, -1) : 0;
 	PiuViewPushColor(view, &color);
 	PiuViewDrawString(view, string, 0, -1, (*style)->font, x, y, w, sw);
@@ -253,10 +253,10 @@ void PiuPort_drawStyle(xsMachine* the)
 	style = PIU(Style, xsArg(1));
 	if ((*style)->font == NULL)
 		PiuStyleLookupFont(style);
-	bounds.x = (PiuCoordinate)xsToInteger(xsArg(2));
-	bounds.y = (PiuCoordinate)xsToInteger(xsArg(3));
-	bounds.width = (PiuDimension)xsToInteger(xsArg(4));
-	bounds.height = (PiuDimension)xsToInteger(xsArg(5));
+	bounds.x = xsToPiuCoordinate(xsArg(2));
+	bounds.y = xsToPiuCoordinate(xsArg(3));
+	bounds.width = xsToPiuDimension(xsArg(4));
+	bounds.height = xsToPiuDimension(xsArg(5));
 	ellipsis = (c > 6) ? (PiuBoolean)xsToBoolean(xsArg(6)) : 0;
 	state = (c > 7) ? (PiuState)xsToNumber(xsArg(7)) : 0;
 	PiuStyleDraw(style, string, view, &bounds, ellipsis, state);
@@ -273,12 +273,12 @@ void PiuPort_drawTexture(xsMachine* the)
 	if (!view) xsUnknownError("out of sequence");
 	texture = PIU(Texture, xsArg(0));
 	PiuColorDictionary(the, &xsArg(1), &color);
-	x = (PiuCoordinate)xsToInteger(xsArg(2));
-	y = (PiuCoordinate)xsToInteger(xsArg(3));
-	sx = (PiuCoordinate)xsToInteger(xsArg(4));
-	sy = (PiuCoordinate)xsToInteger(xsArg(5));
-	sw = (PiuDimension)xsToInteger(xsArg(6));
-	sh = (PiuDimension)xsToInteger(xsArg(7));
+	x = xsToPiuCoordinate(xsArg(2));
+	y = xsToPiuCoordinate(xsArg(3));
+	sx = xsToPiuCoordinate(xsArg(4));
+	sy = xsToPiuCoordinate(xsArg(5));
+	sw = xsToPiuDimension(xsArg(6));
+	sh = xsToPiuDimension(xsArg(7));
 	PiuViewPushColor(view, &color);
 	PiuViewDrawTexture(view, texture, x, y, sx, sy, sw, sh);
 	PiuViewPopColor(view);
@@ -293,10 +293,10 @@ void PiuPort_fillColor(xsMachine* the)
 	PiuDimension w, h;
 	if (!view) xsUnknownError("out of sequence");
 	PiuColorDictionary(the, &xsArg(0), &color);
-	x = (PiuCoordinate)xsToInteger(xsArg(1));
-	y = (PiuCoordinate)xsToInteger(xsArg(2));
-	w = (PiuDimension)xsToInteger(xsArg(3));
-	h = (PiuDimension)xsToInteger(xsArg(4));
+	x = xsToPiuCoordinate(xsArg(1));
+	y = xsToPiuCoordinate(xsArg(2));
+	w = xsToPiuDimension(xsArg(3));
+	h = xsToPiuDimension(xsArg(4));
 	PiuViewPushColor(view, &color);
 	PiuViewFillColor(view, x, y, w, h);
 	PiuViewPopColor(view);
@@ -313,14 +313,14 @@ void PiuPort_fillTexture(xsMachine* the)
 	if (!view) xsUnknownError("out of sequence");
 	texture = PIU(Texture, xsArg(0));
 	PiuColorDictionary(the, &xsArg(1), &color);
-	x = (PiuCoordinate)xsToInteger(xsArg(2));
-	y = (PiuCoordinate)xsToInteger(xsArg(3));
-	w = (PiuDimension)xsToInteger(xsArg(4));
-	h = (PiuDimension)xsToInteger(xsArg(5));
-	sx = (PiuCoordinate)xsToInteger(xsArg(6));
-	sy = (PiuCoordinate)xsToInteger(xsArg(7));
-	sw = (PiuDimension)xsToInteger(xsArg(8));
-	sh = (PiuDimension)xsToInteger(xsArg(9));
+	x = xsToPiuCoordinate(xsArg(2));
+	y = xsToPiuCoordinate(xsArg(3));
+	w = xsToPiuDimension(xsArg(4));
+	h = xsToPiuDimension(xsArg(5));
+	sx = xsToPiuCoordinate(xsArg(6));
+	sy = xsToPiuCoordinate(xsArg(7));
+	sw = xsToPiuDimension(xsArg(8));
+	sh = xsToPiuDimension(xsArg(9));
 	PiuViewPushColor(view, &color);
 	PiuViewFillTexture(view, texture, x, y, w, h, sx, sy, sw, sh);
 	PiuViewPopColor(view);
@@ -334,10 +334,10 @@ void PiuPort_invalidate(xsMachine* the)
 	if (view) xsUnknownError("out of sequence");
 	if (c >= 4) {
 		PiuRectangleRecord area;
-		PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-		PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-		PiuDimension w = (PiuDimension)xsToInteger(xsArg(2));
-		PiuDimension h = (PiuDimension)xsToInteger(xsArg(3));
+		PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+		PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+		PiuDimension w = xsToPiuDimension(xsArg(2));
+		PiuDimension h = xsToPiuDimension(xsArg(3));
 		PiuRectangleSet(&area, x, y, w, h);
 		PiuContentInvalidate(self, &area);
 	}
@@ -360,10 +360,10 @@ void PiuPort_pushClip(xsMachine* the)
 	PiuCoordinate x, y;
 	PiuDimension w, h;
 	if (!view) xsUnknownError("out of sequence");
-	x = (PiuCoordinate)xsToInteger(xsArg(0));
-	y = (PiuCoordinate)xsToInteger(xsArg(1));
-	w = (PiuDimension)xsToInteger(xsArg(2));
-	h = (PiuDimension)xsToInteger(xsArg(3));
+	x = xsToPiuCoordinate(xsArg(0));
+	y = xsToPiuCoordinate(xsArg(1));
+	w = xsToPiuDimension(xsArg(2));
+	h = xsToPiuDimension(xsArg(3));
 	PiuViewPushClip(view, x, y, w, h);
 }
 
@@ -380,6 +380,6 @@ void PiuPort_measureString(xsMachine* the)
 	w = PiuFontGetWidth((*style)->font, string, 0, -1);
 	h = PiuFontGetHeight((*style)->font);
 	xsResult = xsNewObject();
-	xsDefine(xsResult, xsID_width, xsInteger(w), xsDefault);
-	xsDefine(xsResult, xsID_height, xsInteger(h), xsDefault);
+	xsDefine(xsResult, xsID_width, xsPiuDimension(w), xsDefault);
+	xsDefine(xsResult, xsID_height, xsPiuDimension(h), xsDefault);
 }
