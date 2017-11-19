@@ -77,11 +77,11 @@ void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 void PiuTexture_get_width(xsMachine* the)
 {
 	PiuTexture* self = PIU(Texture, xsThis);
-	xsResult = xsInteger((*self)->width);
+	xsResult = xsPiuDimension((*self)->width);
 }
 
 void PiuTexture_get_height(xsMachine* the)
 {
 	PiuTexture* self = PIU(Texture, xsThis);
-	xsResult = xsInteger((*self)->height);
+	xsResult = xsPiuDimension((*self)->height);
 }

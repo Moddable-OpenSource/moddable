@@ -35,3 +35,7 @@
 #define piuPC 1
 typedef int32_t PiuCoordinate;
 typedef int32_t PiuDimension;
+#define xsPiuCoordinate(VALUE) xsInteger((xsIntegerValue)(VALUE))
+#define xsPiuDimension(VALUE) xsInteger((xsIntegerValue)(VALUE))
+#define xsToPiuCoordinate(SLOT) (PiuCoordinate)xsToInteger(SLOT)
+#define xsToPiuDimension(SLOT) (PiuDimension)xsToInteger(SLOT)
