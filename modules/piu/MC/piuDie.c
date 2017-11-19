@@ -135,10 +135,10 @@ void PiuDie__create(xsMachine* the)
 void PiuDie_and(xsMachine* the)
 {
     PiuDie* self = PIU(Die, xsThis);
-    PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-    PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-    PiuCoordinate width = (PiuCoordinate)xsToInteger(xsArg(2));
-    PiuCoordinate height = (PiuCoordinate)xsToInteger(xsArg(3));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+    PiuDimension width = xsToPiuDimension(xsArg(2));
+    PiuDimension height = xsToPiuDimension(xsArg(3));
     PiuRegionRecord regionRecord;
     PiuRegion region = &regionRecord;
     PiuRegion* tmp = (*self)->work;
@@ -275,10 +275,10 @@ void PiuDie_fill(xsMachine* the)
 void PiuDie_or(xsMachine* the)
 {
     PiuDie* self = PIU(Die, xsThis);
-    PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-    PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-    PiuCoordinate width = (PiuCoordinate)xsToInteger(xsArg(2));
-    PiuCoordinate height = (PiuCoordinate)xsToInteger(xsArg(3));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+    PiuDimension width = xsToPiuDimension(xsArg(2));
+    PiuDimension height = xsToPiuDimension(xsArg(3));
     PiuRegionRecord regionRecord;
     PiuRegion region = &regionRecord;
     PiuRegion* tmp = (*self)->work;
@@ -295,10 +295,10 @@ void PiuDie_or(xsMachine* the)
 void PiuDie_set(xsMachine* the)
 {
 	PiuDie* self = PIU(Die, xsThis);
-	PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-	PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-	PiuCoordinate width = (PiuCoordinate)xsToInteger(xsArg(2));
-	PiuCoordinate height = (PiuCoordinate)xsToInteger(xsArg(3));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+    PiuDimension width = xsToPiuDimension(xsArg(2));
+    PiuDimension height = xsToPiuDimension(xsArg(3));
 	if (!PiuRegionRectangle((*self)->work, x, y, width, height))
 		xsErrorPrintf("region overflowed");
 	xsResult = xsThis;
@@ -307,10 +307,10 @@ void PiuDie_set(xsMachine* the)
 void PiuDie_sub(xsMachine* the)
 {
 	PiuDie* self = PIU(Die, xsThis);
-	PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-	PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-	PiuCoordinate width = (PiuCoordinate)xsToInteger(xsArg(2));
-	PiuCoordinate height = (PiuCoordinate)xsToInteger(xsArg(3));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+    PiuDimension width = xsToPiuDimension(xsArg(2));
+    PiuDimension height = xsToPiuDimension(xsArg(3));
 	PiuRegionRecord regionRecord;
 	PiuRegion region = &regionRecord;
 	PiuRegion* tmp = (*self)->work;
@@ -327,10 +327,10 @@ void PiuDie_sub(xsMachine* the)
 void PiuDie_xor(xsMachine* the)
 {
     PiuDie* self = PIU(Die, xsThis);
-    PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-    PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
-    PiuCoordinate width = (PiuCoordinate)xsToInteger(xsArg(2));
-    PiuCoordinate height = (PiuCoordinate)xsToInteger(xsArg(3));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+    PiuDimension width = xsToPiuDimension(xsArg(2));
+    PiuDimension height = xsToPiuDimension(xsArg(3));
     PiuRegionRecord regionRecord;
     PiuRegion region = &regionRecord;
     PiuRegion* tmp = (*self)->work;
