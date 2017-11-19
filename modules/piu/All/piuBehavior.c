@@ -57,7 +57,7 @@ void PiuBehaviorOnDraw(void* it, PiuRectangle area)
 		xsVar(0) = xsReference((*content)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onDraw)) {
 			xsVar(1) = xsReference((*content)->reference);
-			(void)xsCallFunction5(xsResult, xsVar(0), xsVar(1), xsInteger(area->x), xsInteger(area->y), xsInteger(area->width), xsInteger(area->height));
+			(void)xsCallFunction5(xsResult, xsVar(0), xsVar(1), xsPiuCoordinate(area->x), xsPiuCoordinate(area->y), xsPiuDimension(area->width), xsPiuDimension(area->height));
 		}
 		xsEndHost((*content)->the);
 	}
@@ -72,7 +72,7 @@ void PiuBehaviorOnFitID(void* it, xsIndex id, PiuDimension dimension)
 		xsVar(0) = xsReference((*content)->behavior);
 		if (xsFindResult(xsVar(0), id)) {
 			xsVar(1) = xsReference((*content)->reference);
-			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsInteger(dimension));
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsPiuDimension(dimension));
 		}
 		xsEndHost((*content)->the);
 	}
@@ -87,7 +87,7 @@ PiuDimension PiuBehaviorOnMeasureID(void* it, xsIndex id, PiuDimension dimension
 		xsVar(0) = xsReference((*content)->behavior);
 		if (xsFindResult(xsVar(0), id)) {
 			xsVar(1) = xsReference((*content)->reference);
-			dimension = (PiuDimension)xsToInteger(xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsInteger(dimension)));
+			dimension = xsToPiuDimension(xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsPiuDimension(dimension)));
 		}
 		xsEndHost((*content)->the);
 	}
@@ -104,7 +104,7 @@ PiuBoolean PiuBehaviorOnMouseID(void* it, xsIndex id, PiuCoordinate x, PiuCoordi
 		xsVar(0) = xsReference((*content)->behavior);
 		if (xsFindResult(xsVar(0), id)) {
 			xsVar(1) = xsReference((*content)->reference);
-			result = (PiuBoolean)xsToBoolean(xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsInteger(x), xsInteger(y)));
+			result = (PiuBoolean)xsToBoolean(xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsPiuCoordinate(x), xsPiuCoordinate(y)));
 		}
 		xsEndHost((*content)->the);
 	}
@@ -121,7 +121,7 @@ void PiuBehaviorOnTouchID(void* it, xsIndex id, xsIntegerValue index, PiuCoordin
 		if (xsFindResult(xsVar(0), id)) {
 			xsVar(1) = xsReference((*content)->reference);
 			xsVar(2) = xsReference((*link)->reference);
-			(void)xsCallFunction6(xsResult, xsVar(0), xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(ticks), xsVar(2));
+			(void)xsCallFunction6(xsResult, xsVar(0), xsVar(1), xsInteger(index), xsPiuCoordinate(x), xsPiuCoordinate(y), xsNumber(ticks), xsVar(2));
 		}
 		xsEndHost((*content)->the);
 	}

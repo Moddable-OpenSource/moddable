@@ -344,7 +344,11 @@ void PiuStyleDraw(PiuStyle* self, xsSlot* string, PiuView* view, PiuRectangle bo
 			dx -= margins->left + margins->right;
 		}
 		else {
+#ifdef piuPC
+			x += margins->left + ((dx - du) / 2);
+#else
 			x += margins->left + ((dx - du) >> 1);
+#endif
 			dx = 0;
 		}
 		break;
@@ -375,7 +379,11 @@ void PiuStyleDraw(PiuStyle* self, xsSlot* string, PiuView* view, PiuRectangle bo
 	switch ((*self)->vertical) {
 	case piuMiddle:
 		dv = margins->top + PiuFontGetHeight(font) + margins->bottom;
+#ifdef piuPC
+		y += margins->top + ((dy - dv) / 2);
+#else
 		y += margins->top + ((dy - dv) >> 1);
+#endif
 		break;
 	case piuTop:
 		y += margins->top;
@@ -485,7 +493,7 @@ void PiuStyle_get_bottom(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleMarginBottom)
-		xsResult = xsInteger((*self)->margins.bottom);
+		xsResult = xsPiuCoordinate((*self)->margins.bottom);
 }
 
 void PiuStyle_get_color(xsMachine* the)
@@ -520,21 +528,21 @@ void PiuStyle_get_indentation(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleIndentation)
-		xsResult = xsInteger((*self)->indentation);
+		xsResult = xsPiuCoordinate((*self)->indentation);
 }
 
 void PiuStyle_get_leading(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleLeading)
-		xsResult = xsInteger((*self)->leading);
+		xsResult = xsPiuCoordinate((*self)->leading);
 }
 
 void PiuStyle_get_left(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleMarginLeft)
-		xsResult = xsInteger((*self)->margins.left);
+		xsResult = xsPiuCoordinate((*self)->margins.left);
 }
 
 void PiuStyle_get_margins(xsMachine* the)
@@ -542,20 +550,20 @@ void PiuStyle_get_margins(xsMachine* the)
 	PiuStyle* self = PIU(Style, xsThis);
 	xsResult = xsNewObject();
 	if ((*self)->flags & piuStyleMarginLeft) 
-		xsDefine(xsResult, xsID_left, xsInteger((*self)->margins.left), xsDefault);
+		xsDefine(xsResult, xsID_left, xsPiuCoordinate((*self)->margins.left), xsDefault);
 	if ((*self)->flags & piuStyleMarginRight)
-		xsDefine(xsResult, xsID_right, xsInteger((*self)->margins.right), xsDefault);
+		xsDefine(xsResult, xsID_right, xsPiuCoordinate((*self)->margins.right), xsDefault);
 	if ((*self)->flags & piuStyleMarginTop)
-		xsDefine(xsResult, xsID_top, xsInteger((*self)->margins.top), xsDefault);
+		xsDefine(xsResult, xsID_top, xsPiuCoordinate((*self)->margins.top), xsDefault);
 	if ((*self)->flags & piuStyleMarginBottom)
-		xsDefine(xsResult, xsID_bottom, xsInteger((*self)->margins.bottom), xsDefault);
+		xsDefine(xsResult, xsID_bottom, xsPiuCoordinate((*self)->margins.bottom), xsDefault);
 }
 
 void PiuStyle_get_right(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleMarginRight)
-		xsResult = xsInteger((*self)->margins.right);
+		xsResult = xsPiuCoordinate((*self)->margins.right);
 }
 
 void PiuStyle_get_size(xsMachine* the)
@@ -607,7 +615,7 @@ void PiuStyle_get_top(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleMarginTop)
-		xsResult = xsInteger((*self)->margins.top);
+		xsResult = xsPiuCoordinate((*self)->margins.top);
 }
 
 void PiuStyle_get_vertical(xsMachine* the)
@@ -646,7 +654,7 @@ void PiuStyle_measure(xsMachine* the)
 		PiuDimension width = PiuStyleGetWidth(self, &xsArg(0));
 		PiuDimension height = PiuStyleGetHeight(self, &xsArg(0));
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_width, xsInteger(width), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger(height), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension(width), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension(height), xsDefault);
 	}
 }

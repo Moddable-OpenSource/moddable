@@ -20,7 +20,7 @@
 
 #include "piuAll.h"
 
-static void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuCoordinate horizontal, PiuCoordinate vertical);
+static void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical);
 static void PiuSkinMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static xsHostHooks PiuSkinHooks ICACHE_RODATA_ATTR = {
@@ -141,7 +141,7 @@ void PiuSkinDelete(void* it)
 }
 
 
-void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuCoordinate horizontal, PiuCoordinate vertical)
+void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical)
 {
 	PiuFlags flags = (*self)->flags;
 	PiuColorRecord color;
@@ -198,7 +198,7 @@ void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant v
 	}
 }
 
-void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuCoordinate horizontal, PiuCoordinate vertical)
+void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical)
 {
 	PiuFlags flags = (*self)->flags;
 	PiuTexture* texture = (*self)->data.pattern.texture;
@@ -230,7 +230,11 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 			switch (vertical & piuTopBottom) {
 			case piuTop: break;
 			case piuBottom: y += dy - dv; break;
-			default: y += (dy - dv + 1) >> 1; break;
+#ifdef piuPC
+			default: y += ((dy - dv) / 2); break;
+#else
+			default: y += ((dy - dv + 1) >> 1); break;
+#endif			
 			}
 			PiuViewDrawTexture(view, texture, x, y, u, v, dl, dv);
 			PiuViewFillTexture(view, texture, x + dl, y, dx - dl - dr, dv, u + dl, v, du - dl - dr, dv);
@@ -242,7 +246,11 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 			switch (horizontal & piuLeftRight) {
 			case piuLeft: break;
 			case piuRight: x += dx - du; break;
-			default: x += (dx - du + 1) >> 1; break;
+#ifdef piuPC
+			default: x += ((dx - du) / 2); break;
+#else
+			default: x += ((dx - du + 1) >> 1); break;
+#endif			
 			}
 			PiuViewDrawTexture(view, texture, x, y, u, v, du, dt);
 			PiuViewFillTexture(view, texture, x, y + dt, du, dy - dt - db, u, v + dt, du, dv - dt - db);
@@ -252,12 +260,20 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 			switch (horizontal & piuLeftRight) {
 			case piuLeft: break;
 			case piuRight: x += dx - du; break;
-			default: x += (dx - du + 1) >> 1; break;
+#ifdef piuPC
+			default: x += ((dx - du) / 2); break;
+#else
+			default: x += ((dx - du + 1) >> 1); break;
+#endif			
 			}
 			switch (vertical & piuTopBottom) {
 			case piuTop: break;
 			case piuBottom: y += dy - dv; break;
-			default: y += (dy - dv + 1) >> 1; break;
+#ifdef piuPC
+			default: y += ((dy - dv) / 2); break;
+#else
+			default: y += ((dy - dv + 1) >> 1); break;
+#endif			
 			}
 			PiuViewDrawTexture(view, texture, x, y, u, v, du, dv);
 		}
@@ -299,10 +315,10 @@ void PiuSkin_get_borders(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (!(flags & piuSkinPattern)) {
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_left, xsInteger((*self)->data.color.borders.left), xsDefault);
-		xsDefine(xsResult, xsID_right, xsInteger((*self)->data.color.borders.right), xsDefault);
-		xsDefine(xsResult, xsID_top, xsInteger((*self)->data.color.borders.top), xsDefault);
-		xsDefine(xsResult, xsID_bottom, xsInteger((*self)->data.color.borders.bottom), xsDefault);
+		xsDefine(xsResult, xsID_left, xsPiuCoordinate((*self)->data.color.borders.left), xsDefault);
+		xsDefine(xsResult, xsID_right, xsPiuCoordinate((*self)->data.color.borders.right), xsDefault);
+		xsDefine(xsResult, xsID_top, xsPiuCoordinate((*self)->data.color.borders.top), xsDefault);
+		xsDefine(xsResult, xsID_bottom, xsPiuCoordinate((*self)->data.color.borders.bottom), xsDefault);
 	}
 }
 
@@ -312,10 +328,10 @@ void PiuSkin_get_bottom(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern) {
 		if (flags & piuRepeatY)
-			xsResult = xsInteger((*self)->data.pattern.tiles.bottom);
+			xsResult = xsPiuCoordinate((*self)->data.pattern.tiles.bottom);
 	}
 	else
-		xsResult = xsInteger((*self)->data.color.borders.bottom);
+		xsResult = xsPiuCoordinate((*self)->data.color.borders.bottom);
 }
 
 void PiuSkin_get_bounds(xsMachine* the)
@@ -324,10 +340,10 @@ void PiuSkin_get_bounds(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern) {
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger((*self)->data.pattern.bounds.x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger((*self)->data.pattern.bounds.y), xsDefault);
-		xsDefine(xsResult, xsID_width, xsInteger((*self)->data.pattern.bounds.width), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger((*self)->data.pattern.bounds.height), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate((*self)->data.pattern.bounds.x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate((*self)->data.pattern.bounds.y), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->data.pattern.bounds.width), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->data.pattern.bounds.height), xsDefault);
 	}
 }
 
@@ -355,10 +371,10 @@ void PiuSkin_get_left(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern) {
 		if (flags & piuRepeatX)
-			xsResult = xsInteger((*self)->data.pattern.tiles.left);
+			xsResult = xsPiuCoordinate((*self)->data.pattern.tiles.left);
 	}
 	else
-		xsResult = xsInteger((*self)->data.color.borders.left);
+		xsResult = xsPiuCoordinate((*self)->data.color.borders.left);
 }
 
 void PiuSkin_get_right(xsMachine* the)
@@ -367,10 +383,10 @@ void PiuSkin_get_right(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern) {
 		if (flags & piuRepeatX)
-			xsResult = xsInteger((*self)->data.pattern.tiles.right);
+			xsResult = xsPiuCoordinate((*self)->data.pattern.tiles.right);
 	}
 	else
-		xsResult = xsInteger((*self)->data.color.borders.right);
+		xsResult = xsPiuCoordinate((*self)->data.color.borders.right);
 }
 
 void PiuSkin_get_states(xsMachine* the)
@@ -378,7 +394,7 @@ void PiuSkin_get_states(xsMachine* the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.delta.y);
+		xsResult = xsPiuCoordinate((*self)->data.pattern.delta.y);
 }
 
 void PiuSkin_get_stroke(xsMachine* the)
@@ -407,12 +423,12 @@ void PiuSkin_get_tiles(xsMachine* the)
 	if (flags & piuSkinPattern) {
 		xsResult = xsNewObject();
 		if (flags & piuRepeatX) {
-			xsDefine(xsResult, xsID_left, xsInteger((*self)->data.pattern.tiles.left), xsDefault);
-			xsDefine(xsResult, xsID_right, xsInteger((*self)->data.pattern.tiles.right), xsDefault);
+			xsDefine(xsResult, xsID_left, xsPiuCoordinate((*self)->data.pattern.tiles.left), xsDefault);
+			xsDefine(xsResult, xsID_right, xsPiuCoordinate((*self)->data.pattern.tiles.right), xsDefault);
 		}
 		if (flags & piuRepeatY) {
-			xsDefine(xsResult, xsID_top, xsInteger((*self)->data.pattern.tiles.top), xsDefault);
-			xsDefine(xsResult, xsID_bottom, xsInteger((*self)->data.pattern.tiles.bottom), xsDefault);
+			xsDefine(xsResult, xsID_top, xsPiuCoordinate((*self)->data.pattern.tiles.top), xsDefault);
+			xsDefine(xsResult, xsID_bottom, xsPiuCoordinate((*self)->data.pattern.tiles.bottom), xsDefault);
 		}
 	}
 }
@@ -423,10 +439,10 @@ void PiuSkin_get_top(xsMachine* the)
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern) {
 		if (flags & piuRepeatY)
-			xsResult = xsInteger((*self)->data.pattern.tiles.top);
+			xsResult = xsPiuCoordinate((*self)->data.pattern.tiles.top);
 	}
 	else
-		xsResult = xsInteger((*self)->data.color.borders.top);
+		xsResult = xsPiuCoordinate((*self)->data.color.borders.top);
 }
 
 void PiuSkin_get_variants(xsMachine* the)
@@ -434,7 +450,7 @@ void PiuSkin_get_variants(xsMachine* the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.delta.x);
+		xsResult = xsPiuCoordinate((*self)->data.pattern.delta.x);
 }
 
 void PiuSkin_get_x(xsMachine *the)
@@ -442,7 +458,7 @@ void PiuSkin_get_x(xsMachine *the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.bounds.x);
+		xsResult = xsPiuCoordinate((*self)->data.pattern.bounds.x);
 }
 
 void PiuSkin_get_y(xsMachine *the)
@@ -450,7 +466,7 @@ void PiuSkin_get_y(xsMachine *the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.bounds.y);
+		xsResult = xsPiuCoordinate((*self)->data.pattern.bounds.y);
 }
 
 void PiuSkin_get_width(xsMachine *the)
@@ -458,7 +474,7 @@ void PiuSkin_get_width(xsMachine *the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.bounds.width);
+		xsResult = xsPiuDimension((*self)->data.pattern.bounds.width);
 }
 
 void PiuSkin_get_height(xsMachine *the)
@@ -466,6 +482,6 @@ void PiuSkin_get_height(xsMachine *the)
 	PiuSkin* self = PIU(Skin, xsThis);
 	PiuFlags flags = (*self)->flags;
 	if (flags & piuSkinPattern)
-		xsResult = xsInteger((*self)->data.pattern.bounds.height);
+		xsResult = xsPiuDimension((*self)->data.pattern.bounds.height);
 }
 
