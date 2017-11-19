@@ -56,8 +56,8 @@ typedef struct {
 struct PiuTextLineStruct {
 	PiuTextOffset textOffset;
 	PiuCoordinate x;
-	PiuCoordinate portion;
-	PiuCoordinate slop;
+	xsIntegerValue portion;
+	xsIntegerValue slop;
 	PiuCoordinate y;
 	PiuCoordinate base;
 };
@@ -835,7 +835,11 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx)
 	line->textOffset = ctx->lineOffset;
 	switch ((*ctx->blockStyle)->horizontal) {
 	case piuCenter:
+#ifdef piuPC
+		line->x = x + ((ctx->blockWidth - ctx->lineWidth) / 2);
+#else
 		line->x = x + ((ctx->blockWidth - ctx->lineWidth) >> 1);
+#endif
 		line->portion = line->slop = 0;
 		break;
 	case piuLeft:
