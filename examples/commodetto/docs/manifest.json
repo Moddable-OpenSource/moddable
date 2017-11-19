@@ -11,7 +11,6 @@
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
 	},
 	"resources": {
-		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 		"*": [
 			"./envelope",
 			"./lvb",
@@ -22,8 +21,8 @@
 			"./girl",
 			"./piano",
 			"./palatino_36",
-			"./palatino_36_gray",
-			"./OpenSans-SemiboldItalic-18"
+			"./OpenSans-SemiboldItalic-18",
+			"./OpenSans-BoldItalic-52",
 		]
 
 	},
