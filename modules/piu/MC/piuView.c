@@ -48,8 +48,8 @@ typedef struct {
 	PiuCommandID id;
 	uint8_t blend;
 	PocoColor color;
-	PiuCoordinate offset;
-	PiuDimension length;
+	xsIntegerValue offset;
+	xsIntegerValue length;
 	xsSlot* string;
 	PiuFont* font;
 	PocoCoordinate x;
@@ -118,7 +118,7 @@ typedef struct {
 static void PiuViewBegin(PiuView* view);
 static void PiuViewCombine(PiuView* self, PiuRectangle area, PiuCoordinate op);
 static void PiuViewCombineRegion(PiuView* self, PiuRegion* region, PiuCoordinate op);
-static void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
+static void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
 static void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 static void PiuViewEnd(PiuView* view);
 static void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
@@ -366,7 +366,7 @@ void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordi
 	}
 }
 
-void PiuViewDrawString(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
+void PiuViewDrawString(PiuView* self, xsSlot* string, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
 {
 	Poco poco = (*self)->poco;
 	x += poco->xOrigin;
@@ -386,7 +386,7 @@ void PiuViewDrawString(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuD
 	}
 }
 
-void PiuViewDrawStringAux(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension width, PiuDimension stringWidth)
+void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension width, PiuDimension stringWidth)
 {
 	xsMachine* the = (*self)->the;
 	Poco poco = (*self)->poco;
@@ -1208,8 +1208,8 @@ void PiuView_onTouchBegan(xsMachine* the)
 	PiuApplication* application = (*self)->application;
 	if (!application) return;
 	xsIntegerValue index = xsToInteger(xsArg(0));
-	PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(1));
-	PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(2));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
 	xsNumberValue ticks = xsToNumber(xsArg(3));
 #if (90 == kPocoRotation)
 	PiuCoordinate c = x;
@@ -1234,8 +1234,8 @@ void PiuView_onTouchEnded(xsMachine* the)
 	PiuApplication* application = (*self)->application;
 	if (!application) return;
 	xsIntegerValue index = xsToInteger(xsArg(0));
-	PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(1));
-	PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(2));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
 	xsNumberValue ticks = xsToNumber(xsArg(3));
 #if (90 == kPocoRotation)
 	PiuCoordinate c = x;
@@ -1260,8 +1260,8 @@ void PiuView_onTouchMoved(xsMachine* the)
 	PiuApplication* application = (*self)->application;
 	if (!application) return;
 	xsIntegerValue index = xsToInteger(xsArg(0));
-	PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(1));
-	PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(2));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
 	xsNumberValue ticks = xsToNumber(xsArg(3));
 #if (90 == kPocoRotation)
 	PiuCoordinate c = x;

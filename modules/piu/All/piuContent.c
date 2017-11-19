@@ -684,10 +684,10 @@ void PiuContent_get_bounds(xsMachine *the)
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger(x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger(y), xsDefault);
-		xsDefine(xsResult, xsID_width, xsInteger((*self)->bounds.width), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger((*self)->bounds.height), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate(x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate(y), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->bounds.width), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->bounds.height), xsDefault);
 	}
 }
 
@@ -713,17 +713,17 @@ void PiuContent_get_coordinates(xsMachine *the)
 	PiuCoordinate bottom = coordinates->bottom;
 	xsResult = xsNewObject();
 	if (horizontal & piuLeft)
-		xsDefine(xsResult, xsID_left, xsInteger(left), xsDefault);
+		xsDefine(xsResult, xsID_left, xsPiuCoordinate(left), xsDefault);
 	if (horizontal & piuWidth)
-		xsDefine(xsResult, xsID_width, xsInteger(width), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension(width), xsDefault);
 	if (horizontal & piuRight)
-		xsDefine(xsResult, xsID_right, xsInteger(right), xsDefault);
+		xsDefine(xsResult, xsID_right, xsPiuCoordinate(right), xsDefault);
 	if (vertical & piuTop)
-		xsDefine(xsResult, xsID_top, xsInteger(top), xsDefault);
+		xsDefine(xsResult, xsID_top, xsPiuCoordinate(top), xsDefault);
 	if (vertical & piuHeight)
-		xsDefine(xsResult, xsID_height, xsInteger(height), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension(height), xsDefault);
 	if (vertical & piuBottom)
-		xsDefine(xsResult, xsID_bottom, xsInteger(bottom), xsDefault);
+		xsDefine(xsResult, xsID_bottom, xsPiuCoordinate(bottom), xsDefault);
 }
 
 void PiuContent_get_duration(xsMachine *the)
@@ -808,8 +808,8 @@ void PiuContent_get_offset(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger((*self)->bounds.x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger((*self)->bounds.y), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate((*self)->bounds.x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate((*self)->bounds.y), xsDefault);
 	}
 }
 
@@ -821,8 +821,8 @@ void PiuContent_get_position(xsMachine *the)
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger(x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger(y), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate(x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate(y), xsDefault);
 	}
 }
 
@@ -846,8 +846,8 @@ void PiuContent_get_size(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_width, xsInteger((*self)->bounds.width), xsDefault);
-		xsDefine(xsResult, xsID_height, xsInteger((*self)->bounds.height), xsDefault);
+		xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->bounds.width), xsDefault);
+		xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->bounds.height), xsDefault);
 	}
 }
 
@@ -898,7 +898,7 @@ void PiuContent_get_x(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
-		xsResult = xsInteger(x);
+		xsResult = xsPiuCoordinate(x);
 	}
 }
 
@@ -909,7 +909,7 @@ void PiuContent_get_y(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
-		xsResult = xsInteger(y);
+		xsResult = xsPiuCoordinate(y);
 	}
 }
 
@@ -917,10 +917,10 @@ void PiuContent_get_width(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
 	if ((*self)->coordinates.horizontal & piuWidth)
-		xsResult = xsInteger((*self)->coordinates.width);
+		xsResult = xsPiuDimension((*self)->coordinates.width);
 	else if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
-		xsResult = xsInteger((*self)->bounds.width);
+		xsResult = xsPiuDimension((*self)->bounds.width);
 	}
 }
 
@@ -928,10 +928,10 @@ void PiuContent_get_height(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
 	if ((*self)->coordinates.vertical & piuHeight)
-		xsResult = xsInteger((*self)->coordinates.height);
+		xsResult = xsPiuDimension((*self)->coordinates.height);
 	else if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
-		xsResult = xsInteger((*self)->bounds.height);
+		xsResult = xsPiuDimension((*self)->bounds.height);
 	}
 }
 
@@ -1156,7 +1156,7 @@ void PiuContent_set_x(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
-		PiuContentMoveBy(self, (PiuCoordinate)xsToInteger(xsArg(0)) - x, 0);
+		PiuContentMoveBy(self, xsToPiuCoordinate(xsArg(0)) - x, 0);
 	}
 }
 
@@ -1167,7 +1167,7 @@ void PiuContent_set_y(xsMachine *the)
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
 		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
-		PiuContentMoveBy(self, 0, (PiuCoordinate)xsToInteger(xsArg(0)) - y);
+		PiuContentMoveBy(self, 0, xsToPiuCoordinate(xsArg(0)) - y);
 	}
 }
 
@@ -1176,7 +1176,7 @@ void PiuContent_set_width(xsMachine *the)
 	PiuContent* self = PIU(Content, xsThis);
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
-		PiuContentSizeBy(self, (PiuCoordinate)xsToInteger(xsArg(0)) - (*self)->bounds.width, 0);
+		PiuContentSizeBy(self, xsToPiuCoordinate(xsArg(0)) - (*self)->bounds.width, 0);
 	}
 }
 
@@ -1185,7 +1185,7 @@ void PiuContent_set_height(xsMachine *the)
 	PiuContent* self = PIU(Content, xsThis);
 	if ((*self)->application) {
 		PiuApplicationAdjust((*self)->application);
-		PiuContentSizeBy(self, 0, (PiuCoordinate)xsToInteger(xsArg(0)) - (*self)->bounds.height);
+		PiuContentSizeBy(self, 0, xsToPiuCoordinate(xsArg(0)) - (*self)->bounds.height);
 	}
 }
 
@@ -1220,10 +1220,10 @@ void PiuContent_captureTouch(xsMachine *the)
 	xsAssert(self != NULL);
 	if ((*self)->application){
 		xsIntegerValue id = xsToInteger(xsArg(0));
-		xsIntegerValue x = xsToInteger(xsArg(1));
-		xsIntegerValue y = xsToInteger(xsArg(2));
+		PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+		PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
 		xsNumberValue ticks = xsToNumber(xsArg(2));
-		PiuApplicationCaptureTouch((*self)->application, self, id, (PiuCoordinate)x, (PiuCoordinate)y, ticks);
+		PiuApplicationCaptureTouch((*self)->application, self, id, x, y, ticks);
 	}
 }
 
@@ -1334,8 +1334,8 @@ void PiuContent_hit(xsMachine *the)
 	PiuContent* result = NULL;
 	xsAssert(self != NULL);
 	if ((*self)->application) {
-		PiuCoordinate x = (PiuCoordinate)xsToInteger(xsArg(0));
-		PiuCoordinate y = (PiuCoordinate)xsToInteger(xsArg(1));
+		PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+		PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
 		PiuContentFromApplicationCoordinates(self, x, y, &x, &y);
 		result = (*(*self)->dispatch->hit)(self, x, y);
 	}
@@ -1348,17 +1348,17 @@ void PiuContent_measure(xsMachine *the)
 	PiuContent* self = PIU(Content, xsThis);
 	xsAssert(self != NULL);
 	xsResult = xsNewObject();
-	xsDefine(xsResult, xsID_width, xsInteger((*self)->coordinates.width), xsDefault);
-	xsDefine(xsResult, xsID_height, xsInteger((*self)->coordinates.height), xsDefault);
+	xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->coordinates.width), xsDefault);
+	xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->coordinates.height), xsDefault);
 }
 
 void PiuContent_moveBy(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIntegerValue x = xsToInteger(xsArg(0));
-	xsIntegerValue y = xsToInteger(xsArg(1));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
 	xsAssert(self != NULL);
-	PiuContentMoveBy(self, (PiuCoordinate)x, (PiuCoordinate)y);
+	PiuContentMoveBy(self, x, y);
 }
 
 void PiuContent_render(xsMachine *the)
@@ -1372,10 +1372,10 @@ void PiuContent_render(xsMachine *the)
 void PiuContent_sizeBy(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIntegerValue x = xsToInteger(xsArg(0));
-	xsIntegerValue y = xsToInteger(xsArg(1));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
 	xsAssert(self != NULL);
-	PiuContentSizeBy(self, (PiuCoordinate)x, (PiuCoordinate)y);
+	PiuContentSizeBy(self, x, y);
 }
 
 void PiuContent_start(xsMachine *the)
