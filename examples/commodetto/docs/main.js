@@ -95,7 +95,7 @@ function colorBitmap() {
 	let y = Math.round((poco.height - image.height) / 2);
 	poco.drawBitmap(image, x, y);
 
-	x = Math.round(image.width);
+	x = image.width;
 	poco.drawBitmap(image, x + 25, y + 38, 25, 38, 11, 7);   // left eye
 	poco.drawBitmap(image, x +  7, y + 40,  7, 40, 10, 6);   // right eye
 	poco.drawBitmap(image, x + 15, y + 56, 15, 56, 16, 6);   // mouth
@@ -123,7 +123,7 @@ function grayBitmap() {
 }
 
 function offscreen() {
-	let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: Bitmap.RGB565LE});
+	let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: poco.pixelsOut.pixelFormat});
 	let pocoOff = new Poco(offscreen);
 	pocoOff.begin();
 		pocoOff.fillRectangle(gray, 0, 0, 30, 30);
@@ -157,9 +157,6 @@ function alpha() {
 }
 
 function jpeg() {
-	poco.begin()
-		poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
-	poco.end();
 	if (0) {
 		/* requires more memory than many MCUs have free */
 		let piano = JPEG.decompress(new Resource("piano.dat"));
@@ -185,12 +182,12 @@ function jpeg() {
 	}
 }
 
-function tezt1() {
+function text1() {
 	poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 	poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
 
 	let palatino36 = parseBMF(new Resource("palatino_36.fnt"));
-	palatino36.bitmap = parseBMP(new Resource("palatino_36_gray.bmp"));
+	palatino36.bitmap = parseBMP(new Resource("palatino_36.bmp"));
 
 	poco.drawText("Hello.", palatino36, black, 4, 20);
 	poco.drawText("Hello.", palatino36, green, 4, 55);
@@ -201,15 +198,15 @@ function text2() {
 	poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
 
 	let palatino36 = parseBMF(new Resource("palatino_36.fnt"));
-	palatino36.bitmap = parseBMP(new Resource("palatino_36_gray.bmp"));
+	palatino36.bitmap = parseBMP(new Resource("palatino_36.bmp"));
 
 	poco.drawText("Hello, world. This is long.", palatino36, red, 2, 10);
 	poco.drawText("Hello, world. This is long.", palatino36, green, 2, 45, poco.width - 2);
 }
 
 function text3() {
-	poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-	poco.fillRectangle(white, 2, 2, screen.width - 4, screen.height - 4);
+	poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
+	poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
 
 	let palatino12 = parseBMF(new Resource("OpenSans-SemiboldItalic-18.fnt"));
 	palatino12.bitmap = parseBMP(new Resource("OpenSans-SemiboldItalic-18.bmp"));
@@ -217,20 +214,30 @@ function text3() {
 	poco.drawText("T Left", palatino12, red,
 				  2, 2);
 	poco.drawText("T Right", palatino12, green,
-				  screen.width - 2 - poco.getTextWidth("T Right", palatino12), 2);
+				  poco.width - 2 - poco.getTextWidth("T Right", palatino12), 2);
 
 	poco.drawText("B Left", palatino12, blue,
-				  2, screen.height - 2 - palatino12.height);
+				  2, poco.height - 2 - palatino12.height);
 	poco.drawText("B Right", palatino12, gray,
-				  screen.width - 2 - poco.getTextWidth("B Right", palatino12),
-				  screen.height - 2 - palatino12.height);
+				  poco.width - 2 - poco.getTextWidth("B Right", palatino12),
+				  poco.height - 2 - palatino12.height);
 
 	poco.drawText("Centered", palatino12, black,
-				  (screen.width - poco.getTextWidth("Centered", palatino12)) / 2,
-				  (screen.height - palatino12.height) / 2);
+				  (poco.width - poco.getTextWidth("Centered", palatino12)) / 2,
+				  (poco.height - palatino12.height) / 2);
 }
 
-let examples = [fillRectangle, origin, clip, monochrome, pattern, grayBitmap, offscreen, alpha, jpeg, tezt1, text2, text3, jpeg];
+function text4() {
+	poco.fillRectangle(green, 0, 0, screen.width, screen.height);
+
+	let openSans52 = parseBMF(new Resource("OpenSans-BoldItalic-52.fnt"));
+	openSans52.bitmap = parseBMP(new Resource("OpenSans-BoldItalic-52-color.bmp"));
+	openSans52.mask = parseBMP(new Resource("OpenSans-BoldItalic-52-alpha.bmp"));
+
+	poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
+}
+
+let examples = [fillRectangle, origin, clip, monochrome, pattern, grayBitmap, offscreen, alpha, jpeg, text1, text2, text3, text4];
 let index = 0;
 
 Timer.repeat(() => {
