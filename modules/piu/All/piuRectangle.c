@@ -33,8 +33,13 @@ void PiuRectangleApplyAspect(PiuRectangle r0, PiuRectangle r1, PiuRectangle r2, 
 			if (aspect & piuAspectFit)
 				PiuRectangleScaleToFit(r0, r1, r2);
 			else {
+#ifdef piuPC
+				r0->x = r2->x + ((r2->width - r1->width) / 2);
+				r0->y = r2->y + ((r2->height - r1->height) / 2);
+#else
 				r0->x = r2->x + ((r2->width - r1->width) >> 1);
 				r0->y = r2->y + ((r2->height - r1->height) >> 1);
+#endif
 				r0->width = r1->width;
 				r0->height = r1->height;
 			}
