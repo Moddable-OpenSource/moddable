@@ -319,7 +319,11 @@ void PiuContainerPlaceContentHorizontally(void* it, PiuContent* content)
 	else if (horizontal & piuRight)
 		bounds->x = width - bounds->width - coordinates->right;
 	else
+#ifdef piuPC
+        bounds->x = ((width - bounds->width) / 2);
+#else
 		bounds->x = ((width - bounds->width + 1) >> 1);
+#endif
 	(*content)->flags &= ~piuXChanged;
 	(*content)->flags |= piuPlaced;
 }
@@ -329,14 +333,18 @@ void PiuContainerPlaceContentVertically(void* it, PiuContent* content)
 	PiuContainer* self = it;
 	PiuRectangle bounds =  &((*content)->bounds);
 	PiuCoordinates coordinates = &((*content)->coordinates);
-	PiuCoordinate vertical = coordinates->vertical;
+	PiuAlignment vertical = coordinates->vertical;
 	PiuDimension height = (*self)->bounds.height;
 	if (vertical & piuTop)
 		bounds->y = coordinates->top;
 	else if (vertical & piuBottom)
 		bounds->y = height - bounds->height - coordinates->bottom;
 	else
-		bounds->y = ((height - bounds->height + 1) >> 1);
+#ifdef piuPC
+        bounds->y = ((height - bounds->height) / 2);
+#else
+        bounds->y = ((height - bounds->height + 1) >> 1);
+#endif
 	(*content)->flags &= ~piuYChanged;
 	(*content)->flags |= piuPlaced;
 }
