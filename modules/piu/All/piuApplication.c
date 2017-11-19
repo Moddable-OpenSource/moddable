@@ -459,8 +459,8 @@ void PiuTouchLink_peek(xsMachine* the)
 	if (index < (*link)->index) {
 		PiuTouchSampleRecord sample = (*link)->samples[index];
 		xsResult = xsNewObject();
-		xsDefine(xsResult, xsID_x, xsInteger(sample.x), xsDefault);
-		xsDefine(xsResult, xsID_y, xsInteger(sample.y), xsDefault);
+		xsDefine(xsResult, xsID_x, xsPiuCoordinate(sample.x), xsDefault);
+		xsDefine(xsResult, xsID_y, xsPiuCoordinate(sample.y), xsDefault);
 		xsDefine(xsResult, xsID_ticks, xsNumber(sample.ticks), xsDefault);
 	}
 }
