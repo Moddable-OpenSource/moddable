@@ -12,19 +12,14 @@
  *
  */
 
-/*
- *     09/19/2017 
- *     The SPIFFS file system is required by the file class and this example.
- *     https://github.com/pellepl/spiffs
- */
+import {File, Iterator} from "file";
 
-import {File} from "file";
-import {Iterator} from "file";
-
+//const root = "/Users/hoddie/";
+const root = "/";
 let file;
 
 // writing/reading strings
-file = new File("test.txt", true);
+file = new File(root + "test.txt", true);
 file.write("This is a test.\n");
 file.write("We can write ", "multiple", " values.\n");
 file.write("This is the end of the test.\n");
@@ -35,13 +30,13 @@ file.close();
 trace("\n");
 
 // writing/reading JSON
-let preferences = { name:"Brian", city:"Del Mar", state:"CA" };
-file = new File("preferences.json", true);
+let preferences = { name: "Brian", city: "Del Mar", state: "CA" };
+file = new File(root + "preferences.json", true);
 file.write(JSON.stringify(preferences));
 file.close();
-file = new File("preferences.json");
+file = new File(root + "preferences.json");
 preferences = JSON.parse(file.read(String));
-trace(`name: ${preferences.name}, city:${preferences.city}, state:${preferences.state}\n`);
+trace(`name: ${preferences.name}, city: ${preferences.city}, state: ${preferences.state}\n`);
 file.close(file)
 trace("\n");
 
@@ -51,7 +46,7 @@ let buffer = new ArrayBuffer(length * 2);
 let shorts = new Uint16Array(buffer);
 for (let i = 0; i < length; ++i)
 	shorts[i] = i;
-file = new File("test.bin", true);
+file = new File(root + "test.bin", true);
 file.write(buffer);
 trace(`File length: ${file.length}\n`);
 file.position = 10;
@@ -64,17 +59,16 @@ trace("\n");
 
 // directory iterator
 // Note: The SPIFFS file system used on the ESP8266 is a flat file system with no directories
-let root = new Iterator("/");
+let iterator = new Iterator(root);
 let item;
-while (item = root.next()) {
+while (item = iterator.next()) {
 	if (undefined == item.length)
-		trace(`Directory: ${item.name}\n`);
+		trace(`${item.name.padEnd(32)} directory\n`);
 	else
-		trace(`File: ${item.name}, ${item.length} bytes\n`);
+		trace(`${item.name.padEnd(32)} file          ${item.length} bytes\n`);
 }
 trace("\n");
 
-File.delete("test.txt");
-File.delete("preferences.json");
-File.delete("test.bin");
-
+File.delete(root + "test.txt");
+File.delete(root + "preferences.json");
+File.delete(root + "test.bin");

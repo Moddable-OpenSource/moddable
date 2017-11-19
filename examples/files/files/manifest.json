@@ -8,5 +8,22 @@
 	},
 	"preload": [
 		"file"
-	]
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/file/esp/*"
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					  "$(MODULES)/files/file/mac/*"
+				]
+			}
+		}
+	}
+
 }
