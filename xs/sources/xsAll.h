@@ -66,6 +66,7 @@ typedef struct sxHostHooks txHostHooks;
 typedef struct sxInspectorNameLink txInspectorNameLink;
 typedef struct sxInspectorNameList txInspectorNameList;
 
+typedef void* (*txArchiveCopy)(void* dst, const void* src, size_t size);
 typedef void (*txCallback)(txMachine*);
 typedef txCallback (*txCallbackAt)(txID index);
 typedef void (*txDestructor)(void*);
@@ -549,6 +550,7 @@ mxExport void fxModulePaths(txMachine* the);
 mxExport void fxBuildArchiveKeys(txMachine* the);
 mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
 mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
+mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveCopy read, txArchiveCopy write);
 
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
