@@ -525,12 +525,12 @@ The Wi-Fi scan runs for fixed period of time, approximately two seconds. During 
 
 The `status` property returns an integer indicating the current state of the Wi-Fi connection.
 
-- 0: Idle
-- 1. Connecting
-- 2. Password not accepted by access point
-- 3. Specified access point not found
-- 4. Connection attempt failed
-- 5. Connection established
+- Idle (0) 
+- Connecting (1)
+- Password not accepted by access point (2)
+- Specified access point not found (3)
+- Connection attempt failed (4)
+- Connection established (5)
 
 ### mode
 
