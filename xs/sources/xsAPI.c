@@ -1812,6 +1812,45 @@ void fxModulePaths(txMachine* the)
 	mxPush(mxModulePaths);
 }
 
+typedef struct {
+	txU1* archive;
+	txU1* stage;
+	txArchiveCopy read;
+	txArchiveCopy write;
+	txU1* buffer;
+	txU1* scratch;
+	size_t offset;
+	size_t size;
+	size_t bufferCode;
+	size_t bufferLoop;
+	size_t bufferOffset;
+	size_t bufferSize;
+	size_t scratchSize;
+	txID* ids;
+	c_jmp_buf jmp_buf;
+	txBoolean dirty;
+} txMapper;
+
+static void fxMapperMapID(txMapper* self);
+static void fxMapperMapIDs(txMapper* self);
+static txU1 fxMapperRead1(txMapper* self);
+static txU2 fxMapperRead2(txMapper* self);
+static txU4 fxMapperRead4(txMapper* self);
+static void fxMapperReadAtom(txMapper* self, Atom* atom);
+static void fxMapperSkip(txMapper* self, size_t size);
+static void fxMapperStep(txMapper* self);
+
+#define mxMapAtom(POINTER) \
+	atom.atomSize = c_read32be(POINTER); \
+	POINTER += 4; \
+	atom.atomType = c_read32be(POINTER); \
+	POINTER += 4
+	
+#define mxElseThrow(_ASSERTION) if (!(_ASSERTION)) c_longjmp(self->jmp_buf, 1)
+#define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
+
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) +  XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+
 void fxBuildArchiveKeys(txMachine* the)
 {
 	txPreparation* preparation = the->preparation;
@@ -1901,6 +1940,296 @@ void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
 		}
 	}
 	return C_NULL;
+}
+
+void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveCopy read, txArchiveCopy write)
+{
+	txMapper mapper;
+	txMapper* self = &mapper;
+	Atom atom;
+	txU1* p;
+	txU1* q;
+	txU1* flag;
+	txU1* signature;
+	txU1* checksum;
+	txID id;
+	txID c, i;
+
+	c_memset(self, 0, sizeof(txMapper));
+	if (c_setjmp(self->jmp_buf) == 0) {
+		self->archive = archive;
+		self->stage = stage;
+		self->read = read;
+		self->write = write;
+		
+		self->bufferSize = bufferSize;
+		self->buffer = c_malloc(bufferSize);
+		mxElseThrow(self->buffer != C_NULL);
+		self->scratchSize = 1024;
+		self->scratch = c_malloc(self->scratchSize);
+		mxElseThrow(self->scratch != C_NULL);
+		
+		mxElseThrow(self->read(self->buffer, self->archive, mxArchiveHeaderSize));
+	
+		p = self->buffer;
+		mxMapAtom(p);
+		mxElseThrow(atom.atomType == XS_ATOM_ARCHIVE);
+		self->size = atom.atomSize;
+		mxMapAtom(p);
+		mxElseThrow(atom.atomType == XS_ATOM_VERSION);
+		mxElseThrow(atom.atomSize == sizeof(Atom) + 4);
+		mxElseThrow(*p++ == XS_MAJOR_VERSION);
+		mxElseThrow(*p++ == XS_MINOR_VERSION);
+		mxElseThrow(*p++ == XS_PATCH_VERSION);
+		flag = p;
+		p++;
+		mxMapAtom(p);
+		mxElseThrow(atom.atomType == XS_ATOM_SIGNATURE);
+		mxElseThrow(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+		signature = p;
+		p += XS_DIGEST_SIZE;
+		mxMapAtom(p);
+		mxElseThrow(atom.atomType == XS_ATOM_CHECKSUM);
+		mxElseThrow(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+	
+		checksum = preparation->checksum;
+		if (self->archive == self->stage) {
+			if (*flag) {
+				mxElseThrow(c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0);
+				goto bail;
+			}
+		}
+		else {
+			mxElseThrow(self->read(self->scratch, self->stage, mxArchiveHeaderSize));
+			q = self->scratch;
+			mxMapAtom(q);
+			mxElseInstall(atom.atomType == XS_ATOM_ARCHIVE);
+			mxElseInstall(self->size == (size_t)atom.atomSize);
+			mxMapAtom(q);
+			mxElseInstall(atom.atomType == XS_ATOM_VERSION);
+			mxElseInstall(atom.atomSize == sizeof(Atom) + 4);
+			mxElseInstall(*q++ == XS_MAJOR_VERSION);
+			mxElseInstall(*q++ == XS_MINOR_VERSION);
+			mxElseInstall(*q++ == XS_PATCH_VERSION);
+			q++;
+			mxMapAtom(q);
+			mxElseInstall(atom.atomType == XS_ATOM_SIGNATURE);
+			mxElseInstall(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+			mxElseInstall(c_memcmp(q, signature, XS_DIGEST_SIZE) == 0);
+			q += XS_DIGEST_SIZE;
+			mxMapAtom(q);
+			mxElseInstall(atom.atomType == XS_ATOM_CHECKSUM);
+			mxElseInstall(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+			mxElseInstall(c_memcmp(q, checksum, XS_DIGEST_SIZE) == 0);
+			goto bail;
+		}
+
+	install:
+		*flag = 1;
+		c_memcpy(p, checksum, XS_DIGEST_SIZE);
+        p += XS_DIGEST_SIZE;
+		self->dirty = 1;
+		
+		self->bufferOffset = mxArchiveHeaderSize;
+		if (self->bufferSize > self->size)
+			self->bufferSize = self->size;
+		mxElseThrow(self->read(p, self->archive + mxArchiveHeaderSize, self->bufferSize - mxArchiveHeaderSize));
+	
+		fxMapperReadAtom(self, &atom);
+		mxElseThrow(atom.atomType == XS_ATOM_SYMBOLS);
+		c = fxMapperRead2(self);
+		self->ids = c_malloc(c * sizeof(txID));
+		mxElseThrow(self->ids != C_NULL);
+		id = (txID)preparation->keyCount;
+		for (i = 0; i < c; i++) {
+			txU1 byte;
+			txU4 sum = 0;
+			txU4 modulo = 0;
+			txSlot* result;
+			p = self->scratch;
+			q = p + self->scratchSize;
+			while ((byte = fxMapperRead1(self))) {
+				mxElseThrow(p < q);
+				*p++ = byte;
+				sum = (sum << 1) + byte;
+			}
+			mxElseThrow(p < q);
+			*p = 0;
+			sum &= 0x7FFFFFFF;
+			modulo = sum % preparation->nameModulo;
+			result = preparation->names[modulo];
+			while (result != C_NULL) {
+				if (result->value.key.sum == sum)
+					if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
+						break;
+				result = result->next;
+			}
+			self->ids[i] = result ? result->ID : (id++ | 0x8000); 
+		}
+		mxElseThrow(id < preparation->creation.keyCount);
+
+		fxMapperReadAtom(self, &atom);
+		mxElseThrow(atom.atomType == XS_ATOM_MODULES);
+		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+		while (self->bufferOffset < self->bufferLoop) {
+			fxMapperReadAtom(self, &atom);
+			mxElseThrow(atom.atomType == XS_ATOM_PATH);
+			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
+			fxMapperReadAtom(self, &atom);
+			mxElseThrow(atom.atomType == XS_ATOM_CODE);
+			self->bufferCode = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+			fxMapperMapIDs(self);
+		}
+	
+		fxMapperReadAtom(self, &atom);
+		mxElseThrow(atom.atomType == XS_ATOM_RESOURCES);
+		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+		while (self->bufferOffset < self->bufferLoop) {
+			fxMapperReadAtom(self, &atom);
+			mxElseThrow(atom.atomType == XS_ATOM_PATH);
+			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
+			fxMapperReadAtom(self, &atom);
+			mxElseThrow(atom.atomType == XS_ATOM_DATA);
+			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
+		}
+	
+		if (self->bufferOffset) {
+			if ((self->archive != self->stage) || self->dirty) {
+				mxElseThrow(self->write(self->stage + self->offset, self->buffer, self->bufferOffset));
+				self->dirty = 0;
+			}
+		}
+	}
+	else {
+		self->stage = C_NULL;
+	}
+bail:
+	if (self->ids)
+		c_free(self->ids);
+	if (self->scratch)
+		c_free(self->scratch);
+	if (self->buffer)
+		c_free(self->buffer);
+	return self->stage;
+}
+
+void fxMapperMapID(txMapper* self)
+{
+	txU1* high;
+	txU1* low;
+	txID id;
+	if (self->bufferOffset == self->bufferSize)
+		fxMapperStep(self);
+	high = self->buffer + self->bufferOffset;
+	self->bufferOffset++;
+	
+	if (self->bufferOffset == self->bufferSize) {
+		self->read(self->scratch, self->archive + self->offset, 1);
+		low = self->scratch;
+	}
+	else
+		low = self->buffer + self->bufferOffset;
+	
+	id = (*high << 8) | *low;
+	if (id != XS_NO_ID) {
+		id &= 0x7FFF;
+		id = self->ids[id];
+	}
+	*high = id >> 8;
+	self->dirty = 1;
+	
+	if (self->bufferOffset == self->bufferSize) {
+		fxMapperStep(self);
+		low = self->buffer;
+	}
+	*low = id & 0x00FF;
+	self->dirty = 1;
+	self->bufferOffset++;
+}
+
+void fxMapperMapIDs(txMapper* self)
+{
+	register const txS1* bytes = gxCodeSizes;
+	txS1 offset;
+	txU2 index;
+	while (self->bufferOffset < self->bufferCode) {
+		//fprintf(stderr, "%s", gxCodeNames[*((txU1*)p)]);
+		offset = (txS1)c_read8(bytes + fxMapperRead1(self));
+		if (0 < offset)
+			fxMapperSkip(self, offset - 1);
+		else if (0 == offset)
+			fxMapperMapID(self);
+		else if (-1 == offset) {
+			index = fxMapperRead1(self);
+			fxMapperSkip(self, index);
+		}
+		else if (-2 == offset) {
+			index = fxMapperRead2(self); 
+			fxMapperSkip(self, index);
+		}
+		//fprintf(stderr, "\n");
+	}
+}
+
+txU1 fxMapperRead1(txMapper* self)
+{
+	txU1 result;
+	if (self->bufferOffset == self->bufferSize)
+		fxMapperStep(self);
+	result = *(self->buffer + self->bufferOffset);
+	self->bufferOffset++;
+	return result;
+}
+
+txU2 fxMapperRead2(txMapper* self)
+{
+	txU2 result;
+	result = fxMapperRead1(self) << 8;
+	result |= fxMapperRead1(self);
+	return result;
+}
+
+txU4 fxMapperRead4(txMapper* self)
+{
+	txU4 result;
+	result = fxMapperRead1(self) << 24;
+	result |= fxMapperRead1(self) << 16;
+	result |= fxMapperRead1(self) << 8;
+	result |= fxMapperRead1(self);
+	return result;
+}
+
+void fxMapperReadAtom(txMapper* self, Atom* atom)
+{
+	atom->atomSize = fxMapperRead4(self);
+	atom->atomType = fxMapperRead4(self);
+}
+
+void fxMapperSkip(txMapper* self, size_t size)
+{
+	size_t offset = self->bufferOffset + size;
+	while ((offset >= self->bufferSize) && (self->bufferSize > 0)) {
+		offset -= self->bufferSize;
+		fxMapperStep(self);
+	}
+	self->bufferOffset = offset;
+}
+
+void fxMapperStep(txMapper* self)
+{
+	if ((self->archive != self->stage) || self->dirty) {
+		mxElseThrow(self->write(self->stage + self->offset, self->buffer, self->bufferSize));
+		self->dirty = 0;
+	}
+	self->offset += self->bufferSize;
+	self->size -= self->bufferSize;
+	self->bufferCode -= self->bufferSize;
+	self->bufferLoop -= self->bufferSize;
+	if (self->bufferSize > self->size)
+		self->bufferSize = self->size;
+	if (self->bufferSize > 0)
+		mxElseThrow(self->read(self->buffer, self->archive + self->offset, self->bufferSize));
+	self->bufferOffset = 0;
 }
 
 #ifdef mxFrequency
