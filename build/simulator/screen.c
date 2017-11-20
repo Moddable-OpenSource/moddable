@@ -39,9 +39,6 @@
 static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
 
-static void* fxMapArchive(txPreparation* preparation, void* archive);
-static void* fxMapAtom(txU1* p, Atom* atom);
-
 typedef struct {
 	xsIntegerValue bytesPerPixel;
 	xsIntegerValue bitsPerPixel;
@@ -205,7 +202,10 @@ void fxScreenLaunch(txScreen* screen)
 	}
 	
 	root->preparation = preparation;
-	root->archive = fxMapArchive(preparation, screen->archive);
+	if (screen->archive)
+		root->archive = fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, c_memcpy, c_memcpy);
+	else
+		root->archive = NULL;
 	root->keyArray = preparation->keys;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	root->keyIndex = (txID)preparation->keyCount;
@@ -787,118 +787,3 @@ xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id)
 	return result;
 }
 
-#define bailAssert(_ASSERTION) if (!(_ASSERTION)) goto bail
-extern void fxRemapIDs(xsMachine* the, uint8_t* codeBuffer, uint32_t codeSize, xsIndex* theIDs);
-
-void* fxMapArchive(txPreparation* preparation, void* archive)
-{
-	Atom atom;
-	txU1* p;
-	txU1* flag;
-	txU1* checksum;
-	txID* ids = C_NULL;
-	txID id;
-	txID c, i;
-	txU1* q;
-	
-	if (!archive)
-		return C_NULL;
-	p = archive;
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_ARCHIVE);
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_VERSION);
-	bailAssert(atom.atomSize == sizeof(Atom) + 4);
-	bailAssert(*p++ == XS_MAJOR_VERSION);
-	bailAssert(*p++ == XS_MINOR_VERSION);
-	bailAssert(*p++ == XS_PATCH_VERSION);
-	flag = p;
-	p++;
-	
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_SIGNATURE);
-	bailAssert(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-	p += XS_DIGEST_SIZE;
-	
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_CHECKSUM);
-	bailAssert(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-	checksum = preparation->checksum;
-	if (*flag) {
-		for (i = 0; i < XS_DIGEST_SIZE; i++)
-			bailAssert(*p++ == *checksum++);
-		return archive;
-	}
-	for (i = 0; i < XS_DIGEST_SIZE; i++)
-		*p++ = *checksum++;
-		
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_SYMBOLS);
-	c = c_read16be(p);
-	p += 2;
-	ids = c_malloc(c * sizeof(txID));
-	bailAssert(ids != C_NULL);
-	id = (txID)preparation->keyCount;
-	for (i = 0; i < c; i++) {
-		txString string = (txString)p;
-		txU1 byte;
-		txU4 sum = 0;
-		txU4 modulo = 0;
-		txSlot* result;
-		while ((byte = *p++))
-			sum = (sum << 1) + byte;
-		sum &= 0x7FFFFFFF;
-		modulo = sum % preparation->nameModulo;
-		result = preparation->names[modulo];
-		while (result != C_NULL) {
-			if (result->value.key.sum == sum)
-				if (c_strcmp(result->value.key.string, string) == 0)
-					break;
-			result = result->next;
-		}
-		ids[i] = result ? result->ID : (id++ | 0x8000); 
-	}
-	bailAssert(id < preparation->creation.keyCount);
-	
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_MODULES);
-	q = p - sizeof(Atom) + atom.atomSize;
-	while (p < q) {
-		p = fxMapAtom(p, &atom);
-		bailAssert(atom.atomType == XS_ATOM_PATH);
-		p += atom.atomSize - sizeof(Atom);
-		p = fxMapAtom(p, &atom);
-		bailAssert(atom.atomType == XS_ATOM_CODE);
-		fxRemapIDs(NULL, p, atom.atomSize - sizeof(Atom), ids);
-		p += atom.atomSize - sizeof(Atom);
-	}
-	
-	p = fxMapAtom(p, &atom);
-	bailAssert(atom.atomType == XS_ATOM_RESOURCES);
-	q = p - sizeof(Atom) + atom.atomSize;
-	while (p < q) {
-		p = fxMapAtom(p, &atom);
-		bailAssert(atom.atomType == XS_ATOM_PATH);
-		p += atom.atomSize - sizeof(Atom);
-		p = fxMapAtom(p, &atom);
-		bailAssert(atom.atomType == XS_ATOM_DATA);
-		p += atom.atomSize - sizeof(Atom);
-	}
-	
-	*flag = 1;
-	c_free(ids);
-	return archive;
-bail:
-	if (ids)
-		c_free(ids);
-	return C_NULL;
-}
-
-void* fxMapAtom(txU1* p, Atom* atom)
-{
-	atom->atomSize = c_read32be(p);
-	p += 4;
-	atom->atomType = c_read32be(p);
-	p += 4;
-	return p;
-}
