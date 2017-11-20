@@ -21,7 +21,7 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-let render = new Poco(screen);
+let render = new Poco(screen, { rotation:90 });
 
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
