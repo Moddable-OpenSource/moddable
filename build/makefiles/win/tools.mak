@@ -130,8 +130,7 @@ MODULES = \
 	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\tool.xsi \
-#	$(MOD_DIR)\mcrun.xsb
+	$(TMP_DIR)\tool.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -173,8 +172,12 @@ COMMANDS = \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
 	$(BIN_DIR)\png2bmp.bat \
-	$(BIN_DIR)\rle4encode.bat \
-#	$(BIN_DIR)\mcrun.bat
+	$(BIN_DIR)\rle4encode.bat
+	
+!IF EXISTS($(TOOLS)\mcrun.js)
+COMMANDS = $(COMMANDS) $(BIN_DIR)\mcrun.bat
+MODULES = $(MODULES) $(MOD_DIR)\mcrun.xsb
+!ENDIF
 
 C_OPTIONS = \
 	/c \
@@ -329,24 +332,34 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 	cl $< $(C_OPTIONS) /Fo$@
 
 $(BIN_DIR)\buildclut.bat :
+	@echo # buildclut.bat
 	echo @$(BIN_DIR)\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
 $(BIN_DIR)\colorcellencode.bat :
+	@echo # colorcellencode.bat
 	echo @$(BIN_DIR)\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat
 $(BIN_DIR)\compressbmf.bat :
+	@echo # compressbmf.bat
 	echo @$(BIN_DIR)\tools compressbmf %%* 1> $(BIN_DIR)\compressbmf.bat
 $(BIN_DIR)\image2cs.bat :
+	@echo # image2cs.bat
 	echo @$(BIN_DIR)\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
 $(BIN_DIR)\mcconfig.bat :
+	@echo # mcconfig.bat
 	echo @$(BIN_DIR)\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
 $(BIN_DIR)\mclocal.bat :
+	@echo # mclocal.bat
 	echo @$(BIN_DIR)\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
 $(BIN_DIR)\mcrez.bat :
+	@echo # mcrez.bat
 	echo @$(BIN_DIR)\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
-# $(BIN_DIR)\mcrun.bat :
-# 	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
+$(BIN_DIR)\mcrun.bat :
+	@echo # mcrun.bat
+	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
 $(BIN_DIR)\png2bmp.bat :
+	@echo # png2bmp.bat
 	echo @$(BIN_DIR)\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
 $(BIN_DIR)\rle4encode.bat :
+	@echo # rle4encode.bat
 	echo @$(BIN_DIR)\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
 
 clean :
