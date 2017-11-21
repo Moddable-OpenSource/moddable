@@ -28,6 +28,7 @@ Piu is a user interface framework designed to run on micro-controllers. The prog
  	 * [Container Object](#container-object)
  	 * [Content Object](#content-object)
  	 * [Die Object](#die-object)
+ 	 * [Image Object](#image-object)
  	 * [Label Object](#label-object)
  	 * [Layout Object](#layout-object)
  	 * [Port Object](#port-object)
@@ -194,8 +195,89 @@ application.add(sampleContent)
 
 ##### Templates
 
-[ TO DO ]
+*Templates* are a tool that reduce the script code needed to instantiate contents and build the containment hierarchy. Templates are often used to create objects that are similar, but have a few slightly different properties.
 
+For example, consider the following screens:
+
+![](../assets/piu/templates.png)
+
+The code for these screens without templates is unnecessarily repetitive. The only difference between `screen1` and `screen2` here is the header background color and string.
+
+```javascript
+let screen1 = new Column(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: "blue" }), style: sampleStyle,
+	contents: [
+		Label(null, {
+			top: 0, height: 40, left: 0, right: 0,
+			string: "Screen 1"
+		}),
+		Content(null, {
+			top: 0, bottom: 0, left: 0, right: 0,
+			skin: new Skin({ fill: "white" })
+		}),
+	]
+});
+
+let screen2 = new Column(null, {
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: "red" }), style: sampleStyle,
+	contents: [
+		Label(null, {
+			top: 0, height: 40, left: 0, right: 0,
+			string: "Screen 2"
+		}),
+		Content(null, {
+			top: 0, bottom: 0, left: 0, right: 0,
+			skin: new Skin({ fill: "white" })
+		}),
+	]
+});
+```
+
+Using templates significantly reduces the amount of code needed to define the two screens.
+
+```javascript
+let BasicScreen = Column.template($ => ({
+	top: 0, bottom: 0, left: 0, right: 0,
+	skin: new Skin({ fill: $.headerColor }), style: sampleStyle,
+	contents: [
+		Label(null, {
+			top: 0, height: 40, left: 0, right: 0,
+			string: $.title
+		}),
+		Content(null, {
+			top: 0, bottom: 0, left: 0, right: 0,
+			skin: new Skin({ fill: "white" })
+		}),
+	]
+}));
+
+let screen1 = new BasicScreen({ title: "Screen 1", headerColor: "blue" });
+let screen2 = new BasicScreen({ title: "Screen 2", headerColor: "red" });
+```
+
+As seen in the example above, the constructor has one parameter, `$`, which applications use to pass data to the template. The data may have any prototype; it is often a `string`, `number`, or JSON object. In their attributes, `content` and `container` objects use `$` to access data properties. The `$` parameter is referred to as “the data” or “the instantiating data.”
+
+The `template` function for most Piu objects returns a constructor and a `template` function; the only exceptions are the `Skin` and `Texture` objects, which simply return constructors. These `template` functions allow constructors to be further specialized. In the example below, a `HeaderWithBehavior` instance would have all the properties of a `BasicHeader` instance in addition to being active and having a behavior.
+
+```javascript
+let headerStyle = new Style({ font:"600 28px Open Sans", color: "white", horizontal: "left" });
+let headerSkin = new Skin({ fill: "blue" });
+let BasicHeader = Label.template($ => ({
+	top: 0, height: 40, left: 0, right: 0,
+	skin: headerSkin, style: headerStyle, string: $
+}));
+
+class HeaderBehavior extends Behavior {
+	onTouchEnded(header) {
+		trace("Header tapped\n");
+	}
+}
+let HeaderWithBehavior = BasicHeader.template($ => ({
+	active: true, Behavior: HeaderBehavior
+}));
+```
 ### Behavior and Flow
 
 Piu delivers *events* to the containment hierarchy of applications, and `content` objects can reference `behavior` objects, which contain functions that respond to events. Piu uses events extensively.
@@ -348,7 +430,7 @@ Every content in the containment hierarchy can be used as a clock to control tim
 - The `duration` property is the duration of the animation, expressed in milliseconds. 
 - The `time` property provides the current time of the content’s clock. 
 - The `fraction` property is the ratio of the clock’s current time to the content’s duration.
-- The `interval` property is the time between frames of the animation, expressed in milliseconds.
+- The `interval` property is the time between frames (frame rate) of the animation, expressed in milliseconds.
 
 The content’s `start` and `stop` functions control when the clock is running. The clock is automatically stopped when its current time reaches its duration. If the content's `loop` property is set to true, the clock will restart.
 
@@ -376,6 +458,72 @@ application.add(animatedContent);
 ```
 
 ![](../assets/piu/contentClockAnimation.gif)
+
+#### High frame-rate animation
+
+The `interval` property sets the desired frame rate for an object's clock, but be aware that it may not be exact if the interval is small and the application is overloaded.  It is not safe to assume, for instance, that if a content's `interval` is 2 and its `duration` is 100 that it will trigger the `onTimeChanged` event exactly 50 times before it triggers the `onFinished` event. Therefore, it is recommended that applications use the `fraction` or `time` properties to determine which frame to display for high frame rate animations.
+
+For example, consider two implementations of a button that expands and contracts 10 pixels in both directions  when tapped.
+
+![](../assets/piu/expandingButton.gif)
+
+The following implementation is **not recommended**, as it assumes that `onTimeChanged` will be triggered exactly 20 times before `onFinished`. While this may work most of the time, it is possible that the content will trigger its `onFinished` event before it shrinks down to its original size.
+
+```javascript
+class ExpandingBehavior extends Behavior {
+	onTouchEnded(content) {
+		this.index = 0;
+		content.interval = 5;
+		content.duration = 100;
+		content.time = 0;
+		content.start();
+	}
+	onTimeChanged(content) {
+		this.index++;
+		if (this.index < 10) content.sizeBy(1, 1);
+		else content.sizeBy(-1, -1);
+	}
+}
+
+let expandingButton = new Content(null, {
+	active: true, height: 50, width: 100,
+	skin: new Skin({ fill: "blue" }),
+	Behavior: ExpandingBehavior
+});
+```
+
+The following implementation is better because it makes no assumptions about the number of frames that will draw and ensures that the content shrinks down to the correct size when `onFinished` is called.
+
+```javascript
+class ExpandingBehavior extends Behavior {
+	onTouchEnded(content) {
+		this.startingSize = { h: content.height, w: content.width };
+		content.interval = 5;
+		content.duration = 100;
+		content.time = 0;
+		content.start();
+	}
+	onTimeChanged(content) {
+		let startingSize = this.startingSize;
+		let fraction = content.fraction;
+		if (fraction > 0.5) fraction = 1-fraction;
+		fraction *= 20;
+		content.height = startingSize.h + fraction;
+		content.width = startingSize.w + fraction;
+	}
+	onFinished(content) {
+		let startingSize = this.startingSize;
+		content.height = startingSize.h;
+		content.width = startingSize.w;
+	}
+}
+
+let expandingButton = new Content(null, {
+	active: true, height: 50, width: 100,
+	skin: new Skin({ fill: "blue" }),
+	Behavior: ExpandingBehavior
+});
+```
 
 ### Font
 
@@ -511,51 +659,40 @@ application.add(grayContent);
 
 It is often convenient to store several icons or other user interface elements in a single image. Specifying `states` and `variants` properties in the dictionary of `skin` constructors enables you to reference different sections of the same texture. This prevents an application from having to reference similar images and create multiple skins. 
 
-The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes four 60x50 pixel icons.
+The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes ten 28x28 pixel icons in one image.
 
-![](../assets/piu/multipleIconTexture.png)
+![](../assets/piu/wifi-strip.png)
 
 ```javascript
-let multipleIconTexture = new Texture("multipleIconTexture.png");
-let multipleIconSkin = new Skin({ 
-	texture: multipleIconTexture, 
-	x: 0, y: 0, width: 60, height: 50, 
-	states: 50, variants: 60
+const wiFiStripTexture = new Texture({ path:"wifi-strip.png" });
+const wiFiSkin = new Skin({ 
+	texture: wiFiStripTexture, 
+	width: 28, height: 28, 
+	states: 28, variants: 28
 });
 ```
 
 The `states` and `variants` properties of `texture` objects should not be confused with the `state` and `variant` properties of `content` objects, although they are related. The `state` and `variant` of a `content` object are used to select which area of their `skin` to render. Here is an example using the `skin` from the last example.
 
 ```javscript
-let icon = new Content(null, {
-	active: true, height: 50, width: 60,
-	skin: multipleIconSkin, state: 0, variant: 0,
-	Behavior: class extends Behavior {
-		onCreate(content) {
-			this.index = 0;
-		}
-		onTouchEnded(content) {
-			this.index++;
-			if (this.index > 3) this.index = 0;
-			switch(this.index) {
-				case 0:
-					content.state = content.variant = 0;
-					break;
-				case 1:
-					content.variant = 1;
-					break;
-				case 2:
-					content.state = 1;
-					content.variant = 0;
-					break;
-				case 3:
-					content.state = content.variant = 1;
-					break;
-			}
-		}
-	}
-});
-application.add(icon);
+let WiFiStatusIcon = Content.template($ => ({
+    skin: wiFiSkin, state: $.passwordProtected, variant: 0,
+    interval: 500, duration: 2500, loop: true,
+    active: true,
+    Behavior: class extends Behavior {
+    	onDisplaying(content) {
+    		content.start();
+    	}
+        onTimeChanged(content) {
+        	let variant = content.variant;
+        	variant++;
+        	if (variant > 4) variant = 0;
+        	content.variant = variant;
+        }
+    }
+}));
+application.add(new WiFiStatusIcon({ passwordProtected: false }, { top: 20, right: 20 }));
+application.add(new WiFiStatusIcon({ passwordProtected: true }, { top: 58, right: 20 }));
 ```
 
 ![](../assets/piu/stateAndVariant.gif)
@@ -674,9 +811,9 @@ class SampleBehavior extends Behavior {
 	onCreate(content, data) {
 		this.name = data.name;
 	}
-    onTouchEnded(content) {
-        trace(`Name is: ${this.name}\n`);	// "Name is: Moddable"
-    }
+	onTouchEnded(content) {
+		trace(`Name is: ${this.name}\n`);	// "Name is: Moddable"
+	}
 }
 
 let sampleContent = new Content({ name: "Moddable" }, { 
@@ -709,7 +846,7 @@ The `column` object is a `container` object that arranges its contents verticall
 | `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
-A `column` instance, an object that inherits from `Column .prototype`
+Returns a `column` instance, an object that inherits from `Column .prototype`
 
 ```javascript
 let ColoredSquare = Content.template($ => ({
@@ -1277,7 +1414,7 @@ application.add(new SampleContent({color: "blue"}));
 | `Behavior` | `function` | A function that creates instances of `Behavior.prototype`; generally a class that extends the `Behavior` class. This content will create an instance of this `behavior`, set its `behavior` parameter to the created instance, and trigger the `onCreate` method. 
 | `bottom` | `number` | This content's `bottom` coordinate, in pixels (setting `bottom` in the created instance's `coordinates` property)
 | `duration` | `number` |This content's duration, in milliseconds. This content triggers the `onFinished` event when its clock is running and its time equals its duration.
-| `exclusiveTouch` | `boolean` | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event.
+| `exclusiveTouch` | `boolean` | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event for every touch id.
 | `fraction` | `number` | This content's fraction--that is, the ratio of its time to its duration
 | `height` | `number` | This content's height, in pixels (setting `height` in the created instance's `coordinates` property)
 | `interval` | `number` | The time between ticks of this content's clock--that is, number of milliseconds between triggering the `onTimeChanged` events of the content's behavior when its clock is running.
@@ -1314,11 +1451,11 @@ Prototype inherits from `Object.prototype`.
 | `container` | `object` | |  ✓ | This content's container, or `null` if this content is unbound--that is, if it has no container
 | `coordinates` | `object` | | | This content's coordinates, as an object with `left`, `width`, `right`, `top`, `height`, or `bottom` number properties (specified in pixels), or an empty obkect if no coordinates are passed into the constructor
 | `duration` | `number` | 0 | | This content's duration, in milliseconds. This content triggers the `onFinished` event when its clock is running and its time equals its duration.
-| `exclusiveTouch` | `boolean` | `false` | | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event.
+| `exclusiveTouch` | `boolean` | `false` | | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event for every touch id.
 | `fraction` | `number` | `undefined` | | This content's fraction--that is, the ratio of its time to its duration. If the duration is 0, the getter returns `undefined` and the setter is ignored. This content triggers the `onTimeChanged` event when its fraction is set.
 | `height` | `number` | | | This content's height, in pixels
 | `index` | `number` | | ✓ |The index of this content in its container, or –1 if this content is unbound
-| `interval` | `number` | 1 |  |The time between ticks of this content's clock--that is, number of milliseconds between triggering the `onTimeChanged` events of the content's behavior when its clock is running.<BR><BR>***Important:*** Do not use this property for high frame-rate animation. Instead, use the object's clock.
+| `interval` | `number` | 1 |  |The time between ticks of this content's clock--that is, number of milliseconds between triggering the `onTimeChanged` events of the content's behavior when its clock is running.
 | `loop` | `boolean` | `false` | | If `true`, this content will restart its clock when its time equals its duration
 | `multipleTouch` | `boolean` | `false`| | If `true`, this content handles multiple touches.
 | `name` | `string` | | | This content's name
@@ -1340,14 +1477,6 @@ Prototype inherits from `Object.prototype`.
 
 <a id="content-functions"></a>
 ##### Functions
-
-**`adjust()`**
-
-Reflows this content.
-
-> Note: applications do not need to call this explicitly.
-
-***
 
 **`bubble(id [, ...])`**
 
@@ -1445,7 +1574,9 @@ application.add(redContainer);
 | `id` | `string` | The name of the event to trigger
 | `...` | `*` | Zero or more extra parameters
 
-Creates a `Promise` object. When the promise is fulfilled, distributes the event named by the value of `id`. Note that the first parameter of a distributed event is the `content` object that triggers the event, not this container. Additional parameters, if any, of the event are the extra parameters of the `defer` function.
+The `defer` function is similar to the `delegate` function; both cause this content to trigger an event named by the value of `id`. The difference is in their timing. The `delegate` function sends the event immediately while the `defer` functions posts the event. The event will be triggered at the following iteration of the main event loop.
+
+The first parameter of the deferred event is this content. Additional parameters, if any, of the deferred event are the extra parameters of the `defer` function.
 
 ***
 
@@ -1531,7 +1662,7 @@ application.add(outerContainer);
 | --- | --- | :--- |
 | `x, y` | `number` | The global position to test, in pixels
 
-Returns this content if this content is active, bound, and contains the position, and `undefined` otherwise.
+Returns this content if this content is active, bound, and contains the position, and `undefined` otherwise. If this content is a `container` instance, returns either one of its contents or itself if the content or itself is active, bound, and contains the position, or `undefined`.
 
 > Note that this function should only be used after a content has been measured and fitted; otherwise it will always return `undefined`.
 
@@ -1597,14 +1728,6 @@ constrainedContent.moveBy(100,100);	// Does nothing
 ```
 
 ![](../assets/piu/contentMoveBy.png)
-
-***
-
-**`render()`**
-
-Tells the application object to reflow.
-
-> Note: applications do not need to call this explicitly.
 
 ***
 
@@ -2149,6 +2272,80 @@ application.add(sampleContainer);
 
 ![](../assets/piu/dieXor.png)
 
+### Image Object
+
+- **Source code:** [`piuImage.c`][30]
+- **Relevant Examples:** [images][31] 
+
+The `image` object is a `content` object that displays images referenced by file paths.
+
+[TO DO: add information about file types supported/how frame rate is determined?]
+
+#### Constructor Description
+
+##### `Image([behaviorData, dictionary])`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this label's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#image-dictionary) section below will have an effect; other parameters will be ignored.
+
+Returns an `image` instance, an object that inherits from `Image.prototype`
+
+```javascript
+let sampleImage = new Image($, ({
+	path: "screen1.cs"
+}));
+application.add(sampleImage);
+```
+
+> This example uses `screen1.png` from [the example images folder](../../examples/assets/images)
+
+![](../assets/piu/imageSample1.png)
+
+##### `Image.template(anonymous)`
+
+| Arguments | Type | Description
+| --- | --- | :--- |
+| `anonymous` | `function` | A function that returns an object with properties to initialize the instances that the result creates
+
+Returns a constructor, a function that creates instances of `Image.prototype`. The `prototype` property of the result is `Image.prototype`. The result also provides a `template` function.
+
+```javascript
+class ImageBehavior extends Behavior {
+	onDisplaying(image) {
+		image.start();
+	}
+}
+let SampleImage = Image.template($ => ({
+	path: $, loop: true, Behavior:ImageBehavior,
+}));
+application.add(new SampleImage("street.cs"));
+```
+
+> This example uses `street.gif` from [the example images folder](../../examples/assets/images)
+
+![](../assets/piu/sampleImage2.gif)
+
+<a id="image-dictionary"></a>
+#### Dictionary
+
+Same as for `content` object (see [Dictionary](#content-dictionary) in the section [Content Object](#content-object)), plus:
+
+| Parameter | Type | Description |
+| --- | --- | :--- |
+| `path` | `string` | The URL of the image file. It must be a file URL.
+
+#### Prototype Description
+
+Prototype inherits from `Content.prototype`.
+
+##### Properties
+
+| Name | Type | Default Value | Read Only | Description |
+| --- | --- | --- | --- | :--- |
+| `frameCount ` | `number` | | ✓ | The total number of frames in this image
+| `frameIndex ` | `number` | | | The index of the current frame
 
 ### Label Object
 
@@ -2216,7 +2413,7 @@ Prototype inherits from `Content.prototype`.
 ##### Properties
 
 | Name | Type | Default Value | Read Only | Description |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | :--- |
 | `string` | `string` | | | This label's string
 
 ### Layout Object
@@ -2338,6 +2535,28 @@ Prototype inherits from `Container.prototype`.
 
 Same as for `container` object (see [Events](#container-events) in the section [Container Object](#container-object)), plus:
 
+**`onFitHorizontally(layout, width)`**
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `layout` | `object` | The `layout` object that triggered the event
+| `width` | `number` | The fitted width of the `layout` object, in pixels
+
+This event is triggered when the fitted width of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
+
+***
+
+**`onFitVertically(layout, height)`**
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `layout` | `object` | The `layout` object that triggered the event
+| `height` | `number` | The fitted height of the `layout` object, in pixels
+
+This event is triggered when the fitted height of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents.  Returns the height of the `layout` object, in pixels.
+
+***
+
 **`onMeasureHorizontally(layout, width)`**
 
 | Argument | Type | Description |
@@ -2345,7 +2564,7 @@ Same as for `container` object (see [Events](#container-events) in the section [
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The measured width of the `layout` object, in pixels
 
-This event is triggered when the width of the `layout` object is measured. Returns the width of the `layout` object, in pixels.
+This event is triggered when the measured width of the `layout` object is calculated. Returns the measured width of the `layout` object, in pixels.
 
 ***
 
@@ -2356,7 +2575,7 @@ This event is triggered when the width of the `layout` object is measured. Retur
 | `layout` | `object` | The `layout` object that triggered the event
 | `height` | `number` | The measured height of the `layout` object, in pixels
 
-This event is triggered when the height of the `layout` object is measured. Returns the height of the `layout` object, in pixels.
+This event is triggered when the measured height of the `layout` object is calculated. Returns the measured height of the `layout` object, in pixels.
 
 ***
 
@@ -2828,7 +3047,7 @@ The `row` object is a `container` object that arranges its contents horizontally
 | `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
-A `row` instance, an object that inherits from `Row.prototype`
+Returns a `row` instance, an object that inherits from `Row.prototype`
 
 ```javascript
 let sampleRow = new Row(null, {
@@ -2980,7 +3199,7 @@ Prototype inherits from `Container.prototype`.
 ##### Properties
 
 | Name | Type | Default Value | Read Only | Description |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | :--- |
 | `constraint` | `object` | | ✓| The constrained scroll offsets of this scroller, as an object with `x` and `y` number properties. The scroll offsets when this scroller is tracking may be different from the constrained scroll offsets.
 | `loop` | `boolean` | `false` | | If `true`, this content will restart its clock when its time equals its duration
 | `scroll` | `object` | | |  The scroll offsets of this scroller, as an object with `x` and `y` number properties, specified in pixels
@@ -3139,7 +3358,9 @@ Same as for `container` object (see [Events](#container-events) in the section [
 | --- | --- | :--- | 
 | `scroller` | `scroller` | The `scroller` object that triggered the event
 
-This event is triggered when the specified `scroller` object scrolls.
+This event is triggered when the specified `scroller` object scrolls. 
+
+When triggered by a scroller, this event is also triggered by all the contents of the scroller. This makes it easier to implement scrollbars, for example.
 
 ### Skin Object
 
@@ -3185,7 +3406,7 @@ application.add(borderedContent);
 | --- | --- | --- 
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#skin-dictionary) section below will have an effect; other parameters will be ignored.
 
-Returns a constructor, a function that creates instances of `Skin.prototype`. The `prototype` property of the result is `Skin.prototype`. The result also provides a `template` function.
+Returns a constructor, a function that creates instances of `Skin.prototype`. The `prototype` property of the result is `Skin.prototype`.
 
 ```javascript
 // Texture skin
@@ -3250,7 +3471,7 @@ All properties of a `skin` object are read-only, but you can change the style of
 | Name | Type | Default Value | Description |
 | --- | --- | --- | --- |
 | `bottom` | `number` | 0 | The skin's bottom tile
-| `color` | `string` | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Colors](colors) section of this document.
+| `color` | `string` | | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Colors](colors) section of this document.
 | `bounds` | `object` | | The portion of the `texture` object to extract, as an object with `x`, `y`, `width`, and `height` number properties, specified in pixels
 | `height` | `number` | | This skin's height, in pixels
 | `left` | `number` | 0 | The skin's left tile
@@ -3594,7 +3815,7 @@ const logoSkin = new Skin({ texture: logoTexture, x: 0, y: 0, width: 100, height
 | --- | --- | :--- |
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#texture-dictionary) section below will have an effect; other parameters will be ignored.
 
-Returns a constructor, a function that creates instances of `Texture.prototype`. The `prototype` property of the result is `Texture.prototype`. The result also provides a `template` function.
+Returns a constructor, a function that creates instances of `Texture.prototype`. The `prototype` property of the result is `Texture.prototype`.
 
 ```javascript
 const LogoTexture = Texture.template({ path: "logo.png" });
@@ -3698,7 +3919,7 @@ Prototype inherits from `Object.prototype`.
 ##### Properties
 
 | Name | Type | Default Value | Read Only | Description |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | :--- |
 | `duration ` | `number` | 250 |  | The duration of the transition, in milliseconds
 
 ##### Functions
@@ -3735,35 +3956,37 @@ Invoked when this transition ends. The extra parameters are the extra parameters
 Called while this transition is running; called at least twice (with a `fraction` parameter of 0 and 1) and at most at the display refresh rate--for example, 60 times a second
 
 <!-- Referenced Links -->
-[0]: ../modules/piu/All/piuAll.js "piuAll.js"
-[1]: ../xs/sources/xsGlobal.c "xsGlobal.c"
-[2]: ../modules/piu/All/piuApplication.c "piuApplication.c"
-[3]: ../modules/piu/All/piuBehavior.c "piuBehavior.c"
-[4]: ../modules/piu/All/piuColumn.c "piuColumn.c"
-[5]: ../modules/piu/All/piuContainer.c "piuContainer.c"
-[6]: ../modules/piu/All/piuContent.c "piuContent.c"
-[7]: ../modules/piu/MC/piuDie.c "piuDie.c"
-[8]: ../modules/piu/All/piuLabel.c "piuLabel.c"
-[9]: ../modules/piu/All/piuLayout.c "piuLayout.c"
-[10]: ../modules/piu/All/piuPort.c "piuPort.c"
-[11]: ../modules/piu/All/piuRow.c "piuRow.c"
-[12]: ../modules/piu/All/piuScroller.c "piuScroller.c"
-[13]: ../modules/piu/All/piuSkin.c "piuSkin.c"
-[14]: ../modules/piu/All/piuStyle.c "piuStyle.c"
-[15]: ../modules/piu/All/piuText.c "piuText.c"
-[16]: ../modules/piu/MC/piuTexture.c "piuTexture.c"
-[17]: ../modules/piu/All/piuTransition.c "piuTransition.c"
+[0]: ../../modules/piu/All/piuAll.js "piuAll.js"
+[1]: ../../xs/sources/xsGlobal.c "xsGlobal.c"
+[2]: ../../modules/piu/All/piuApplication.c "piuApplication.c"
+[3]: ../../modules/piu/All/piuBehavior.c "piuBehavior.c"
+[4]: ../../modules/piu/All/piuColumn.c "piuColumn.c"
+[5]: ../../modules/piu/All/piuContainer.c "piuContainer.c"
+[6]: ../../modules/piu/All/piuContent.c "piuContent.c"
+[7]: ../../modules/piu/MC/piuDie.c "piuDie.c"
+[8]: ../../modules/piu/All/piuLabel.c "piuLabel.c"
+[9]: ../../modules/piu/All/piuLayout.c "piuLayout.c"
+[10]: ../../modules/piu/All/piuPort.c "piuPort.c"
+[11]: ../../modules/piu/All/piuRow.c "piuRow.c"
+[12]: ../../modules/piu/All/piuScroller.c "piuScroller.c"
+[13]: ../../modules/piu/All/piuSkin.c "piuSkin.c"
+[14]: ../../modules/piu/All/piuStyle.c "piuStyle.c"
+[15]: ../../modules/piu/All/piuText.c "piuText.c"
+[16]: ../../modules/piu/MC/piuTexture.c "piuTexture.c"
+[17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
+[30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
 
-[18]: ../examples/piu/balls "balls"
-[19]: ../examples/piu/drag "drag"
-[20]: ../examples/piu/keyboard "keyboard"
-[21]: ../examples/piu/weather "weather"
-[22]: ../examples/piu/love-js "love-js"
-[23]: ../examples/piu/transitions "transitions"
-[24]: ../examples/piu/cards "cards"
-[25]: ../examples/piu/countdown "countdown"
-[26]: ../examples/piu/list "list"
-[27]: ../examples/piu/spinner "spinner"
-[28]: ../examples/piu/text "text"
+[18]: ../../examples/piu/balls "balls"
+[19]: ../../examples/piu/drag "drag"
+[20]: ../../examples/piu/keyboard "keyboard"
+[21]: ../../examples/piu/weather "weather"
+[22]: ../../examples/piu/love-js "love-js"
+[23]: ../../examples/piu/transitions "transitions"
+[24]: ../../examples/piu/cards "cards"
+[25]: ../../examples/piu/countdown "countdown"
+[26]: ../../examples/piu/list "list"
+[27]: ../../examples/piu/spinner "spinner"
+[28]: ../../examples/piu/text "text"
+[31]: ../../examples/piu/images "images"
 
 [29]: ./PiuContainmentHierarchy.md "Piu Containment Hierarchy"
