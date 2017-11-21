@@ -1449,7 +1449,7 @@ Prototype inherits from `Object.prototype`.
 | `behavior` | `object` | `null` |  | This content's `behavior` object or `null`. When this content triggers an event, it calls the corresponding function property of its behavior, if any.
 | `bounds` | `object` | | | This content's global position and size, as an object with `x`, `y`, `width`, and `height` number properties, specified in pixels. If this content is unbound, the getter returns `undefined` and the setter is ignored.
 | `container` | `object` | |  ✓ | This content's container, or `null` if this content is unbound--that is, if it has no container
-| `coordinates` | `object` | | | This content's coordinates, as an object with `left`, `width`, `right`, `top`, `height`, or `bottom` number properties (specified in pixels), or an empty obkect if no coordinates are passed into the constructor
+| `coordinates` | `object` | | | This content's coordinates, as an object with `left`, `width`, `right`, `top`, `height`, or `bottom` number properties (specified in pixels), or an empty object if no coordinates are passed into the constructor
 | `duration` | `number` | 0 | | This content's duration, in milliseconds. This content triggers the `onFinished` event when its clock is running and its time equals its duration.
 | `exclusiveTouch` | `boolean` | `false` | | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event for every touch id.
 | `fraction` | `number` | `undefined` | | This content's fraction--that is, the ratio of its time to its duration. If the duration is 0, the getter returns `undefined` and the setter is ignored. This content triggers the `onTimeChanged` event when its fraction is set.
@@ -2287,13 +2287,13 @@ The `image` object is a `content` object that displays images referenced by file
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this label's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this image's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#image-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns an `image` instance, an object that inherits from `Image.prototype`
 
 ```javascript
-let sampleImage = new Image($, ({
+let sampleImage = new Image(null, ({
 	path: "screen1.cs"
 }));
 application.add(sampleImage);
@@ -3101,7 +3101,7 @@ Same as for `container` object (see [Events](#container-events) in the section [
 ### Scroller Object
 
 - **Source code:** [`piuScroller.c`][12]
-- **Relevant Examples:** [list][26]
+- **Relevant Examples:** [scroller][32], [list][26]
 
 The `scroller` object is a `container` object that scrolls its first `content` object horizontally and vertically.
 
@@ -3988,5 +3988,5 @@ Called while this transition is running; called at least twice (with a `fraction
 [27]: ../../examples/piu/spinner "spinner"
 [28]: ../../examples/piu/text "text"
 [31]: ../../examples/piu/images "images"
-
+[32]: ../../examples/piu/scroller "scroller"
 [29]: ./PiuContainmentHierarchy.md "Piu Containment Hierarchy"
