@@ -11,35 +11,37 @@
  *   Mountain View, CA 94042, USA.
  *
  */
-
-import {} from "piu/MC";
-
 import Timeline from "piu/Timeline";
 
 const team = [
 	{
 		name: "Andy Carle",
-		title: "",
+		title: "Product & Prototype Engineer",
 		address: "andy@moddable.tech",
 	},
 	{
+		name: "Brian Friedkin",
+		title: "Principal Engineer",
+		address: "brian@moddable.tech",
+	},
+	{
 		name: "Chris Krueger",
-		title: "Art Director",
+		title: "Creative Director",
 		address: "chris@moddable.tech",
 	},
 	{
 		name: "Lizzie Prader",
-		title: "",
+		title: "Software Engineer",
 		address: "lizzie@moddable.tech",
 	},
 	{
 		name: "Michael Kellner",
-		title: "CFO",
+		title: "CFO & Embedded Engineer",
 		address: "mkellner@moddable.tech",
 	},
 	{
 		name: "Peter Hoddie",
-		title: "Principle",
+		title: "Principal",
 		address: "peter@moddable.tech",
 	},
 	{
@@ -125,7 +127,7 @@ let CardApplication = Application.template($ => ({
 		Content($, { anchor:"logo", left:90, top:130, skin:logoSkin, state:0 } ),
 		Content($, { anchor:"company", left:240, top:15, skin:companySkin, state:1 } ),
 		Label($, { anchor:"name", left:240, width:240, top:80, height:20, style:labelStyle, state:0 } ),
-		Label($, { anchor:"title", left:240, width:240, top:102, height:20, style:labelStyle, state:0 } ),
+		Text($, { anchor:"title", left:240, width:240, top:102, height:45, style:labelStyle, state:0 } ),
 		Label($, { anchor:"address", left:240, width:240, top:280, height:20, style:labelStyle, state:0 } ),
 	]
 }));
