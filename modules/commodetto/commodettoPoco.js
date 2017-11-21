@@ -54,9 +54,9 @@ export default class Poco @ "xs_poco_destructor" {
 	}
 	begin(x, y, width, height) @ "xs_poco_begin"
 	end() @ "xs_poco_end"
-	continue(...coodinates) {
+	continue(x, y, w, h) {
 		this.end(true);
-		this.begin(...coodinates);
+		this.begin(x, y, w, h);
 	}
 
 	// clip and origin stacks
