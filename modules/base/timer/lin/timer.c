@@ -12,6 +12,7 @@ typedef struct {
 static gboolean ModTimerCallback(gpointer data);
 static ModTimer ModTimerCreate(xsMachine* the);
 static void ModTimerDelete(void* it);
+static void ModTimerRemove(ModTimer self);
 
 gboolean ModTimerCallback(gpointer data)
 {
@@ -49,7 +50,14 @@ ModTimer ModTimerCreate(xsMachine* the)
 
 void ModTimerDelete(void* it)
 {
-	ModTimer self = it;
+	if (it) {
+		ModTimerRemove(it);
+		c_free(it);
+	}
+}
+
+void ModTimerRemove(ModTimer self)
+{
 	guint g_timer = self->g_timer;
 	if (g_timer) {
 		g_source_remove(g_timer);
@@ -76,8 +84,8 @@ void xs_timer_repeat(xsMachine *the)
 void xs_timer_schedule(xsMachine *the)
 {
 	int argc = xsToInteger(xsArgc);
-	ModTimer self = (ModTimer)xsGetHostHandle(xsArg(0));
-	ModTimerDelete(self);
+	ModTimer self = (ModTimer)xsGetHostData(xsArg(0));
+	ModTimerRemove(self);
 	self->interval = xsToInteger(xsArg(1));
 	self->repeat = (argc > 2) ? xsToInteger(xsArg(2)) : 0;
 	self->g_timer = g_timeout_add(self->interval, ModTimerCallback, self);
@@ -85,10 +93,11 @@ void xs_timer_schedule(xsMachine *the)
 
 void xs_timer_clear(xsMachine *the)
 {
-	ModTimer self = (ModTimer)xsGetHostHandle(xsArg(0));
+	ModTimer self = (ModTimer)xsGetHostData(xsArg(0));
 	xsForget(self->callback);
 	xsForget(self->slot);
 	ModTimerDelete(self);
+	xsSetHostData(xsArg(0), NULL);
 }
 
 void xs_timer_delay(xsMachine *the)
