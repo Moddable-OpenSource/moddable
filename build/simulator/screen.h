@@ -49,6 +49,7 @@ struct sxScreen {
 	txScreenStartProc start;
 	txScreenStopProc stop;
 	txScreenTouchProc touch;
+	int flags;
 	long instrumentTime;
 	int pixelFormat;
 	int width;
