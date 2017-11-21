@@ -87,7 +87,9 @@
 		"lin": {
 			"modules": {
 				"*": [
-					"$(BUILD)/simulator/screen"
+					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/lin/*",
 				]
 			}
 		},
