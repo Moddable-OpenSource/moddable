@@ -36,6 +36,8 @@
 #define kCommodettoBitmapCLUT16 (11)
 #define kCommodettoBitmapRGB444 (12)
 
+#define mxScreenIdling 1
+
 static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
 
@@ -153,19 +155,21 @@ void fxScreenIdle(txScreen* screen)
 			screen->instrumentTime = tv.tv_sec;
 			fxScreenSampleInstrumentation(screen);
 		}
-#endif		
-		xsBeginHost(screen->machine);
-		{
-			xsVars(2);
-			xsVar(0) = xsGet(xsGlobal, xsID("screen"));
-			xsVar(1) = xsGet(xsVar(0), xsID("context"));
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID("onIdle"))) {
-					xsCallFunction0(xsResult, xsVar(1));
+#endif	
+		if (screen->flags & mxScreenIdling) {
+			xsBeginHost(screen->machine);
+			{
+				xsVars(2);
+				xsVar(0) = xsGet(xsGlobal, xsID("screen"));
+				xsVar(1) = xsGet(xsVar(0), xsID("context"));
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID("onIdle"))) {
+						xsCallFunction0(xsResult, xsVar(1));
+					}
 				}
 			}
+			xsEndHost(screen->machine);
 		}
-		xsEndHost(screen->machine);
 	}
 }
 
@@ -299,6 +303,7 @@ void fxScreenLaunch(txScreen* screen)
 		xsCollectGarbage();
 	}
 	xsEndHost(screen->machine);
+	(*screen->start)(screen, 5);
 }
 
 #ifdef mxInstrument
@@ -323,6 +328,7 @@ void fxScreenSampleInstrumentation(txScreen* screen)
 void fxScreenQuit(txScreen* screen)
 {
 	if (screen->machine) {
+		(*screen->stop)(screen);
 		xsBeginHost(screen->machine);
 		{
 			xsVars(2);
@@ -695,13 +701,13 @@ void screen_send(xsMachine* the)
 void screen_start(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
-	(*screen->start)(screen, xsToNumber(xsArg(0)));
+	screen->flags |= mxScreenIdling;
 }
 
 void screen_stop(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
-	(*screen->stop)(screen);
+	screen->flags &= ~mxScreenIdling;
 }
 
 void screen_get_clut(xsMachine* the)
