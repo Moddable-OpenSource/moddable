@@ -74,28 +74,10 @@ INC_DIRS = \
 	-I$(PLATFORM_DIR)\lib\rtc \
 	-I$(PLATFORM_DIR)\lib\tinyprintf \
 
-xx = \
- 	-I$(RTOS_SDK_ROOT)\include \
- 	-I$(RTOS_SDK_ROOT)\extra_include \
-
-xINC_DIRS = \
- 	-I$(RTOS_SDK_ROOT)\include \
- 	-I$(RTOS_SDK_ROOT)\include\espressif \
- 	-I$(RTOS_SDK_ROOT)\include\espressif\esp8266 \
- 	-I$(RTOS_SDK_ROOT)\driver_lib\include \
- 	-I$(RTOS_SDK_ROOT)\include\lwip \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\lwip \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\ipv4 \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\ipv6 \
-
 SDK = \
     -I$(PLATFORM_DIR)\lib\tinyprintf \
     -I$(PLATFORM_DIR)\lib\rtc
 
-j=\
-	$(LIB_DIR)\xsHost.o \
-	$(LIB_DIR)\xsPlatform.o \
-    
 XS_OBJ = \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
@@ -191,11 +173,9 @@ SDK_SRC = \
 	$(CORE_DIR)\Updater.cpp \
 	$(CORE_DIR)\WMath.cpp \
 	$(CORE_DIR)\WString.cpp \
-	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
-	$(PLATFORM_DIR)\lib\rtc\rtctime.c
-
-xxi = \
-	$(CORE_DIR)\Schedule.cpp \
+	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
+	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
@@ -246,11 +226,10 @@ SDK_OBJ = \
 	$(LIB_DIR)\Updater.o \
 	$(LIB_DIR)\WMath.o \
 	$(LIB_DIR)\WString.o \
+	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
-
-xxo = \
-	$(LIB_DIR)\Schedule.o \
+	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
@@ -412,6 +391,10 @@ $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
+$(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
 $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
@@ -421,12 +404,12 @@ $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
-	@echo "# cc - X5" $?
+	@echo "# cc - " $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
-	@echo "# cc - X6" $?
+	@echo "# cc - " $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
@@ -436,7 +419,7 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 
 
 $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
-	@echo "# cc - X7" $?
+	@echo "# cc - " $?
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
 
 
