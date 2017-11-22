@@ -89,7 +89,7 @@ void PiuTextureCreate(xsMachine* the)
     		self->height /= 2;
     	}
     }
-	fprintf(stderr, "%s %f %d %d\n", path, self->scale, self->width, self->height);
+	//fprintf(stderr, "PiuTextureCreate %s %f %d %d\n", path, self->scale, self->width, self->height);
 	xsSetHostChunk(xsThis, self, sizeof(record));
 	xsSetHostHooks(xsThis, &PiuTextureHooks);
 	xsResult = xsThis;
