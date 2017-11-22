@@ -49,7 +49,6 @@ PiuDimension PiuFontGetHeight(PiuFont* self)
 	cairo_set_font_face(extents_cr, (*self)->face);
 	cairo_set_font_size(extents_cr, (*self)->size);
 	cairo_font_extents(extents_cr, &extents);
-	//fprintf(stderr, "PiuFontGetHeight %f %f %f\n", extents.ascent,  extents.descent, extents.height);
 	(*self)->ascent = extents.ascent;
 	(*self)->height = extents.ascent + extents.descent;
 	return extents.ascent + extents.descent;
@@ -74,7 +73,6 @@ double PiuFontGetWidthSubPixel(PiuFont* self, xsSlot* slot, xsIntegerValue offse
 	cairo_set_font_size(extents_cr, (*self)->size);
 	cairo_text_extents(extents_cr, text, &extents);
 	free(text);
-	//fprintf(stderr, "PiuFontGetWidthSubPixel %f %f\n", extents.width, extents.height);
 	return extents.x_advance;
 }
 
@@ -168,7 +166,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 	cairo_set_font_face(extents_cr, face);
 	cairo_set_font_size(extents_cr, (*self)->size);
 	cairo_font_extents(extents_cr, &extents);
-	fprintf(stderr, "PiuStyleLookupFont %s %f %f %f\n", ftFace->family_name, extents.ascent, extents.descent, extents.height);
+	//fprintf(stderr, "PiuStyleLookupFont %s %f %f %f\n", ftFace->family_name, extents.ascent, extents.descent, extents.height);
 
 	PiuFontNew(the);
 	font = PIU(Font, xsResult);
