@@ -76,7 +76,6 @@ static gboolean gtk_piu_view_draw(GtkWidget *widget, cairo_t *cairo)
 		area.y = floor(top);
 		area.width = ceil(right) - area.x;
 		area.height = ceil(bottom) - area.y;
-// 		fprintf(stderr, "gtk_piu_view_draw %d %d %d %d\n", area.x, area.y, area.width, area.height);
 		(*(*application)->dispatch->update)(application, view, &area);
 		(*view)->cairo = NULL;
 	}
@@ -452,8 +451,6 @@ static void PiuViewAdjustAux(GtkWidget *widget, gpointer it)
 		widget = gtkClip->widget;
 		gtk_fixed_move(GTK_FIXED(gtkClip), widget, bounds.x - clipBounds.x, bounds.y - clipBounds.y);
 		gtk_widget_set_size_request(widget, bounds.width, bounds.height);
-//  		fprintf(stderr, "PiuViewAdjustAux clip %d %d %d %d", clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
-//  		fprintf(stderr, " bounds %d %d %d %d\n", bounds.x, bounds.y, bounds.width, bounds.height);
 	}
 }
 
