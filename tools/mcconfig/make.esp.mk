@@ -279,6 +279,7 @@ all: $(LAUNCH)
 
 debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
+	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
 	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) 460800 8N1
 
