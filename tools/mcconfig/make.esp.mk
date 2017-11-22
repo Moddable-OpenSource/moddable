@@ -195,16 +195,21 @@ AR  = $(TOOLS_BIN)/xtensa-lx106-elf-ar
 OTA_TOOL = $(TOOLS_ROOT)/espota.py
 ESPTOOL = $(ESP_BASE)/esptool/esptool
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/debug/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/debug/compressbmf
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/debug/rle4encode
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/debug/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
-IMAGE2CS = $(BUILD_DIR)/bin/mac/debug/image2cs
-XSC = $(BUILD_DIR)/bin/mac/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
+ifeq ($(HOST_OS),Darwin)
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/debug
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/debug
+endif
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
+XSC = $(MODDABLE_TOOLS_DIR)/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 C_DEFINES = \
 	-D__ets__ \
@@ -259,7 +264,11 @@ MEM_USAGE = \
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 	
 ifeq ($(DEBUG),1)
-	LAUNCH = debug
+	ifeq ($(HOST_OS),Darwin)
+		LAUNCH = debugmac
+	else
+		LAUNCH = debuglin
+	endif
 else
 	LAUNCH = release
 endif
@@ -268,7 +277,12 @@ endif
 
 all: $(LAUNCH)
 
-debug: $(LIB_DIR) $(BIN_DIR)/main.bin
+debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
+	$(shell pkill serial2xsbug)
+	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
+	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) 460800 8N1
+
+debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
