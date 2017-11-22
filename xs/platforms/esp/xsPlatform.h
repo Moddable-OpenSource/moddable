@@ -86,6 +86,8 @@ typedef uint32_t txU4;
 typedef void *txSocket;
 #define mxNoSocket NULL
 
+#define LWIP_POSIX_SOCKETS_IO_NAMES 0
+
 #include <lwip/netdb.h>
 #include <lwip/inet.h>
 
