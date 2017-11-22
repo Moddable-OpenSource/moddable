@@ -220,7 +220,7 @@ struct PiuSkinStruct {
 	} data;
 };
 
-extern void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuCoordinate horizontal, PiuCoordinate vertical);
+extern void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical);
 extern PiuDimension PiuSkinGetWidth(PiuSkin* self);
 extern PiuDimension PiuSkinGetHeight(PiuSkin* self);
 
@@ -281,8 +281,8 @@ struct PiuStyleStruct {
 	xsMachine* the;
 	PiuFont* font;
 	xsIndex family;
-	PiuCoordinate size;
-	PiuCoordinate weight;
+	xsIntegerValue size;
+	xsIntegerValue weight;
 	PiuAlignment horizontal;
 	PiuAlignment vertical;
 	PiuCoordinate indentation;
@@ -727,7 +727,7 @@ extern void PiuApplicationMouseScrolled(PiuApplication* self, PiuCoordinate dx, 
 
 extern void PiuViewAdjust(PiuView* self);
 extern void PiuViewDictionary(xsMachine* the, void* it);
-extern void PiuViewDrawString(PiuView* self, xsSlot* string, PiuCoordinate offset, PiuDimension length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
+extern void PiuViewDrawString(PiuView* self, xsSlot* string, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw);
 extern void PiuViewDrawTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, PiuCoordinate y, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 extern void PiuViewFillColor(PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h);
 extern void PiuViewFillTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
@@ -744,7 +744,7 @@ extern PiuTick PiuViewTicks(PiuView* view);
 extern void PiuViewValidate(PiuView* view, PiuRectangle area);
 #ifdef piuPC
 extern void PiuViewChangeCursor(PiuView* self, int32_t shape);
-extern void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, PiuCoordinate offset, PiuDimension length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw);
+extern void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw);
 #endif
 
 

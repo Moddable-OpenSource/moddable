@@ -71,25 +71,33 @@ PiuCoordinate PiuScrollerConstraintHorizontally(PiuScroller* self)
 	PiuContent* content = (*self)->first;
 	if (content) {
 		PiuAlignment horizontal = (*content)->coordinates.horizontal;
-		int32_t offset = (*self)->delta.x;
-		int32_t range = (*content)->bounds.width;
-		int32_t size = (*self)->bounds.width;
+		PiuCoordinate offset = (*self)->delta.x;
+		PiuCoordinate range = (*content)->bounds.width;
+		PiuCoordinate size = (*self)->bounds.width;
 		if (size < range) {
-			int32_t c, d;
+			PiuCoordinate c, d;
 			if ((*self)->flags & piuLooping) {
 				c = 0;
 				d = c - offset;
+#ifdef piuPC
+				d = c_fmod(d, range);
+#else
 				d %= range;
+#endif
 			}
 			else {
-				int32_t min = size - range;
-				int32_t max = 0;
+				PiuCoordinate min = size - range;
+				PiuCoordinate max = 0;
 				if (horizontal & piuLeft)
 					c = 0;
 				else if (horizontal & piuRight)
 					c = size - range;
 				else
+#ifdef piuPC
+					c = (size - range + 1) / 2;
+#else
 					c = (size - range + 1) >> 1;
+#endif
 				d = c - offset;
 				if (d < min)
 					d = min;
@@ -107,25 +115,33 @@ PiuCoordinate PiuScrollerConstraintVertically(PiuScroller* self)
 	PiuContent* content = (*self)->first;
 	if (content) {
 		PiuAlignment vertical = (*content)->coordinates.vertical;
-		int32_t offset = (*self)->delta.y;
-		int32_t range = (*content)->bounds.height;
-		int32_t size = (*self)->bounds.height;
+		PiuCoordinate offset = (*self)->delta.y;
+		PiuCoordinate range = (*content)->bounds.height;
+		PiuCoordinate size = (*self)->bounds.height;
 		if (size < range) {
-			int32_t c, d;
+			PiuCoordinate c, d;
 			if ((*self)->flags & piuLooping) {
 				c = 0;
 				d = c - offset;
+#ifdef piuPC
+				d = c_fmod(d, range);
+#else
 				d %= range;
+#endif
 			}
 			else {
-				int32_t min = size - range;
-				int32_t max = 0;
+				PiuCoordinate min = size - range;
+				PiuCoordinate max = 0;
 				if (vertical & piuTop)
 					c = 0;
 				else if (vertical & piuBottom)
 					c = size - range;
 				else
+#ifdef piuPC
+					c = (size - range + 1) / 2;
+#else
 					c = (size - range + 1) >> 1;
+#endif
 				d = c - offset;
 				if (d < min)
 					d = min;
@@ -438,8 +454,8 @@ void PiuScroller_get_constraint(xsMachine* the)
 	PiuCoordinate x = PiuScrollerConstraintHorizontally(self);
 	PiuCoordinate y = PiuScrollerConstraintVertically(self);
 	xsResult = xsNewObject();
-	xsDefine(xsResult, xsID_x, xsInteger(x), xsDefault);
-	xsDefine(xsResult, xsID_y, xsInteger(y), xsDefault);
+	xsDefine(xsResult, xsID_x, xsPiuCoordinate(x), xsDefault);
+	xsDefine(xsResult, xsID_y, xsPiuCoordinate(y), xsDefault);
 }
 
 void PiuScroller_get_loop(xsMachine* the)
@@ -454,8 +470,8 @@ void PiuScroller_get_scroll(xsMachine* the)
 	PiuCoordinate x = (*self)->delta.x;
 	PiuCoordinate y = (*self)->delta.y;
 	xsResult = xsNewObject();
-	xsDefine(xsResult, xsID_x, xsInteger(x), xsDefault);
-	xsDefine(xsResult, xsID_y, xsInteger(y), xsDefault);
+	xsDefine(xsResult, xsID_x, xsPiuCoordinate(x), xsDefault);
+	xsDefine(xsResult, xsID_y, xsPiuCoordinate(y), xsDefault);
 }
 
 void PiuScroller_get_tracking(xsMachine* the)
@@ -518,17 +534,17 @@ void PiuScroller_reveal(xsMachine* the)
 void PiuScroller_scrollBy(xsMachine* the)
 {
 	PiuScroller* self = PIU(Scroller, xsThis);
-	xsIntegerValue x = xsToInteger(xsArg(0));
-	xsIntegerValue y = xsToInteger(xsArg(1));
-	PiuScrollerScrollBy(self, (PiuCoordinate)x, (PiuCoordinate)y);
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+	PiuScrollerScrollBy(self, x, y);
 }
 
 void PiuScroller_scrollTo(xsMachine* the)
 {
 	PiuScroller* self = PIU(Scroller, xsThis);
-	xsIntegerValue x = xsToInteger(xsArg(0));
-	xsIntegerValue y = xsToInteger(xsArg(1));
-	PiuScrollerScrollBy(self, (PiuCoordinate)x - (*self)->delta.x, (PiuCoordinate)y - (*self)->delta.y);
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(0));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(1));
+	PiuScrollerScrollBy(self, x - (*self)->delta.x, y - (*self)->delta.y);
 }
 
 
