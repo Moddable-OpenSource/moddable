@@ -204,12 +204,18 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 PROJ_DIR = $(BUILD_DIR)/devices/esp32/xsProj
 
 ifeq ($(DEBUG),1)
+	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+	DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` 115200 8N1"
 else
+	KILL_SERIAL_2_XSBUG = 
+	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); make monitor
 endif
 	
 all: $(LIB_DIR) $(BIN_DIR)/xs_esp.a
+	$(KILL_SERIAL_2_XSBUG)
+	$(DO_XSBUG)
 	-rm $(PROJ_DIR)/build/xs_esp32.elf
 	-mkdir $(PROJ_DIR)/build
 	cp $(BIN_DIR)/xs_esp.a $(PROJ_DIR)/build/.
