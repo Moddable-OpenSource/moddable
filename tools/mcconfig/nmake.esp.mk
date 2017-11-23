@@ -74,28 +74,10 @@ INC_DIRS = \
 	-I$(PLATFORM_DIR)\lib\rtc \
 	-I$(PLATFORM_DIR)\lib\tinyprintf \
 
-xx = \
- 	-I$(RTOS_SDK_ROOT)\include \
- 	-I$(RTOS_SDK_ROOT)\extra_include \
-
-xINC_DIRS = \
- 	-I$(RTOS_SDK_ROOT)\include \
- 	-I$(RTOS_SDK_ROOT)\include\espressif \
- 	-I$(RTOS_SDK_ROOT)\include\espressif\esp8266 \
- 	-I$(RTOS_SDK_ROOT)\driver_lib\include \
- 	-I$(RTOS_SDK_ROOT)\include\lwip \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\lwip \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\ipv4 \
- 	-I$(RTOS_SDK_ROOT)\include\lwip\ipv6 \
-
 SDK = \
     -I$(PLATFORM_DIR)\lib\tinyprintf \
     -I$(PLATFORM_DIR)\lib\rtc
 
-j=\
-	$(LIB_DIR)\xsHost.o \
-	$(LIB_DIR)\xsPlatform.o \
-    
 XS_OBJ = \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
@@ -144,13 +126,8 @@ XS_HEADERS = \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
-	$(CORE_DIR)\base64.cpp \
-	$(CORE_DIR)\cbuf.cpp \
 	$(CORE_DIR)\cont.S \
 	$(CORE_DIR)\cont_util.c \
-	$(CORE_DIR)\core_esp8266_eboot_command.c \
-	$(CORE_DIR)\core_esp8266_flash_utils.c \
-	$(CORE_DIR)\core_esp8266_i2s.c \
 	$(CORE_DIR)\core_esp8266_main.cpp \
 	$(CORE_DIR)\core_esp8266_noniso.c \
 	$(CORE_DIR)\core_esp8266_phy.c \
@@ -158,54 +135,54 @@ SDK_SRC = \
 	$(CORE_DIR)\core_esp8266_si2c.c \
 	$(CORE_DIR)\core_esp8266_timer.c \
 	$(CORE_DIR)\core_esp8266_wiring.c \
-	$(CORE_DIR)\core_esp8266_wiring_analog.c \
 	$(CORE_DIR)\core_esp8266_wiring_digital.c \
-	$(CORE_DIR)\core_esp8266_wiring_pulse.c \
 	$(CORE_DIR)\core_esp8266_wiring_pwm.c \
-	$(CORE_DIR)\core_esp8266_wiring_shift.c \
-	$(CORE_DIR)\debug.cpp \
 	$(CORE_DIR)\Esp.cpp \
-	$(CORE_DIR)\FS.cpp \
-	$(CORE_DIR)\HardwareSerial.cpp \
 	$(CORE_DIR)\heap.c \
-	$(CORE_DIR)\IPAddress.cpp \
-	$(CORE_DIR)\libb64\cdecode.c \
-	$(CORE_DIR)\libb64\cencode.c \
 	$(CORE_DIR)\libc_replacements.c \
-	$(CORE_DIR)\MD5Builder.cpp \
-	$(CORE_DIR)\pgmspace.cpp \
-	$(CORE_DIR)\Print.cpp \
 	$(CORE_DIR)\spiffs\spiffs_cache.c \
 	$(CORE_DIR)\spiffs\spiffs_check.c \
 	$(CORE_DIR)\spiffs\spiffs_gc.c \
 	$(CORE_DIR)\spiffs\spiffs_hydrogen.c \
 	$(CORE_DIR)\spiffs\spiffs_nucleus.c \
-	$(CORE_DIR)\spiffs_api.cpp \
 	$(CORE_DIR)\spiffs_hal.cpp \
-	$(CORE_DIR)\Stream.cpp \
 	$(CORE_DIR)\StreamString.cpp \
 	$(CORE_DIR)\time.c \
-	$(CORE_DIR)\Tone.cpp \
 	$(CORE_DIR)\uart.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
+	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
+	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
+
+SDK_SRC_SKIPPED = \
+	$(CORE_DIR)\base64.cpp \
+	$(CORE_DIR)\cbuf.cpp \
+	$(CORE_DIR)\core_esp8266_eboot_command.c \
+	$(CORE_DIR)\core_esp8266_flash_utils.c \
+	$(CORE_DIR)\core_esp8266_i2s.c \
+	$(CORE_DIR)\core_esp8266_wiring_analog.c \
+	$(CORE_DIR)\core_esp8266_wiring_pulse.c \
+	$(CORE_DIR)\core_esp8266_wiring_shift.c \
+	$(CORE_DIR)\debug.cpp \
+	$(CORE_DIR)\pgmspace.cpp \
+	$(CORE_DIR)\HardwareSerial.cpp \
+	$(CORE_DIR)\IPAddress.cpp \
+	$(CORE_DIR)\spiffs_api.cpp \
+	$(CORE_DIR)\Print.cpp \
+	$(CORE_DIR)\MD5Builder.cpp \
+	$(CORE_DIR)\Stream.cpp \
+	$(CORE_DIR)\Tone.cpp \
 	$(CORE_DIR)\Updater.cpp \
 	$(CORE_DIR)\WMath.cpp \
 	$(CORE_DIR)\WString.cpp \
-	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
-	$(PLATFORM_DIR)\lib\rtc\rtctime.c
-
-xxi = \
-	$(CORE_DIR)\Schedule.cpp \
+	$(CORE_DIR)\FS.cpp \
+	$(CORE_DIR)\libb64\cdecode.c \
+	$(CORE_DIR)\libb64\cencode.c
 
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
-	$(LIB_DIR)\base64.o \
-	$(LIB_DIR)\cbuf.o \
 	$(LIB_DIR)\cont.S.o \
 	$(LIB_DIR)\cont_util.o \
-	$(LIB_DIR)\core_esp8266_eboot_command.o \
-	$(LIB_DIR)\core_esp8266_flash_utils.o \
-	$(LIB_DIR)\core_esp8266_i2s.o \
 	$(LIB_DIR)\core_esp8266_main.o \
 	$(LIB_DIR)\core_esp8266_noniso.o \
 	$(LIB_DIR)\core_esp8266_phy.o \
@@ -213,44 +190,50 @@ SDK_OBJ = \
 	$(LIB_DIR)\core_esp8266_si2c.o \
 	$(LIB_DIR)\core_esp8266_timer.o \
 	$(LIB_DIR)\core_esp8266_wiring.o \
-	$(LIB_DIR)\core_esp8266_wiring_analog.o \
 	$(LIB_DIR)\core_esp8266_wiring_digital.o \
-	$(LIB_DIR)\core_esp8266_wiring_pulse.o \
 	$(LIB_DIR)\core_esp8266_wiring_pwm.o \
-	$(LIB_DIR)\core_esp8266_wiring_shift.o \
-	$(LIB_DIR)\debug.o \
 	$(LIB_DIR)\Esp.o \
-	$(LIB_DIR)\FS.o \
-	$(LIB_DIR)\HardwareSerial.o \
 	$(LIB_DIR)\heap.o \
-	$(LIB_DIR)\IPAddress.o \
-	$(LIB_DIR)\cdecode.o \
-	$(LIB_DIR)\cencode.o \
 	$(LIB_DIR)\libc_replacements.o \
-	$(LIB_DIR)\MD5Builder.o \
-	$(LIB_DIR)\pgmspace.o \
-	$(LIB_DIR)\Print.o \
 	$(LIB_DIR)\spiffs_cache.o \
 	$(LIB_DIR)\spiffs_check.o \
 	$(LIB_DIR)\spiffs_gc.o \
 	$(LIB_DIR)\spiffs_hydrogen.o \
 	$(LIB_DIR)\spiffs_nucleus.o \
-	$(LIB_DIR)\spiffs_api.o \
 	$(LIB_DIR)\spiffs_hal.o \
-	$(LIB_DIR)\Stream.o \
-	$(LIB_DIR)\StreamString.o \
 	$(LIB_DIR)\time.o \
-	$(LIB_DIR)\Tone.o \
 	$(LIB_DIR)\uart.o \
 	$(LIB_DIR)\umm_malloc.o \
+	$(LIB_DIR)\e_fmod.o \
+	$(LIB_DIR)\rtctime.o \
+	$(LIB_DIR)\tinyprintf.o \
+	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+
+SDK_OBJ_SKIPPED = \
+	$(LIB_DIR)\base64.o \
+	$(LIB_DIR)\cbuf.o \
+	$(LIB_DIR)\core_esp8266_eboot_command.o \
+	$(LIB_DIR)\core_esp8266_flash_utils.o \
+	$(LIB_DIR)\core_esp8266_i2s.o \
+	$(LIB_DIR)\core_esp8266_wiring_analog.o \
+	$(LIB_DIR)\core_esp8266_wiring_pulse.o \
+	$(LIB_DIR)\core_esp8266_wiring_shift.o \
+	$(LIB_DIR)\debug.o \
+	$(LIB_DIR)\pgmspace.o \
+	$(LIB_DIR)\HardwareSerial.o \
+	$(LIB_DIR)\IPAddress.o \
+	$(LIB_DIR)\spiffs_api.o \
+	$(LIB_DIR)\Print.o \
+	$(LIB_DIR)\MD5Builder.o \
+	$(LIB_DIR)\Stream.o \
+	$(LIB_DIR)\Tone.o \
 	$(LIB_DIR)\Updater.o \
 	$(LIB_DIR)\WMath.o \
 	$(LIB_DIR)\WString.o \
-	$(LIB_DIR)\rtctime.o \
-	$(LIB_DIR)\tinyprintf.o \
-
-xxo = \
-	$(LIB_DIR)\Schedule.o \
+	$(LIB_DIR)\FS.o \
+	$(LIB_DIR)\cdecode.o \
+	$(LIB_DIR)\cencode.o \
+	$(LIB_DIR)\StreamString.o 
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
@@ -266,16 +249,16 @@ ESPTOOL = $(ESP_SDK_DIR)\esptool.exe
 
 AR_OPTIONS = rcs
 
-BUILDCLUT = $(BUILD_DIR)\bin\win\debug\buildclut
-COMPRESSBMF = $(BUILD_DIR)\bin\win\debug\compressbmf
-RLE4ENCODE = $(BUILD_DIR)\bin\win\debug\rle4encode
-MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
-PNG2BMP = $(BUILD_DIR)\bin\win\debug\png2bmp
-IMAGE2CS = $(BUILD_DIR)\bin\win\debug\image2cs
-XSC = $(BUILD_DIR)\bin\win\debug\xsc
-XSID = $(BUILD_DIR)\bin\win\debug\xsid
-XSL = $(BUILD_DIR)\bin\win\debug\xsl
+BUILDCLUT = $(BUILD_DIR)\bin\win\release\buildclut
+COMPRESSBMF = $(BUILD_DIR)\bin\win\release\compressbmf
+RLE4ENCODE = $(BUILD_DIR)\bin\win\release\rle4encode
+MCLOCAL = $(BUILD_DIR)\bin\win\release\mclocal
+MCREZ = $(BUILD_DIR)\bin\win\release\mcrez
+PNG2BMP = $(BUILD_DIR)\bin\win\release\png2bmp
+IMAGE2CS = $(BUILD_DIR)\bin\win\release\image2cs
+XSC = $(BUILD_DIR)\bin\win\release\xsc
+XSID = $(BUILD_DIR)\bin\win\release\xsid
+XSL = $(BUILD_DIR)\bin\win\release\xsl
 
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
@@ -340,7 +323,7 @@ all: $(LAUNCH)
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)\main.elf
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 460800 8N1 $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
@@ -412,6 +395,10 @@ $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
+$(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
 $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
@@ -421,12 +408,12 @@ $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
-	@echo "# cc - X5" $?
+	@echo "# cc - " $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
-	@echo "# cc - X6" $?
+	@echo "# cc - " $?
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
@@ -436,7 +423,7 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 
 
 $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
-	@echo "# cc - X7" $?
+	@echo "# cc - " $?
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
 
 
