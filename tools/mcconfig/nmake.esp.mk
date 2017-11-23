@@ -6,7 +6,7 @@
 HOST_OS = win
 
 !IF "$(BASE_DIR)"==""
-BASE_DIR = $(USERPROFILE)\Downloads
+BASE_DIR = $(USERPROFILE)
 !ENDIF
 
 ESP_SDK_DIR = $(BASE_DIR)\esp
