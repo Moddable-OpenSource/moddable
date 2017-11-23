@@ -245,16 +245,16 @@ ESPTOOL = $(ESP_SDK_DIR)\esptool.exe
 
 AR_OPTIONS = rcs
 
-BUILDCLUT = $(BUILD_DIR)\bin\win\debug\buildclut
-COMPRESSBMF = $(BUILD_DIR)\bin\win\debug\compressbmf
-RLE4ENCODE = $(BUILD_DIR)\bin\win\debug\rle4encode
-MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
-PNG2BMP = $(BUILD_DIR)\bin\win\debug\png2bmp
-IMAGE2CS = $(BUILD_DIR)\bin\win\debug\image2cs
-XSC = $(BUILD_DIR)\bin\win\debug\xsc
-XSID = $(BUILD_DIR)\bin\win\debug\xsid
-XSL = $(BUILD_DIR)\bin\win\debug\xsl
+BUILDCLUT = $(BUILD_DIR)\bin\win\release\buildclut
+COMPRESSBMF = $(BUILD_DIR)\bin\win\release\compressbmf
+RLE4ENCODE = $(BUILD_DIR)\bin\win\release\rle4encode
+MCLOCAL = $(BUILD_DIR)\bin\win\release\mclocal
+MCREZ = $(BUILD_DIR)\bin\win\release\mcrez
+PNG2BMP = $(BUILD_DIR)\bin\win\release\png2bmp
+IMAGE2CS = $(BUILD_DIR)\bin\win\release\image2cs
+XSC = $(BUILD_DIR)\bin\win\release\xsc
+XSID = $(BUILD_DIR)\bin\win\release\xsid
+XSL = $(BUILD_DIR)\bin\win\release\xsl
 
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
@@ -319,7 +319,7 @@ all: $(LAUNCH)
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 115200 8N1 $(TMP_DIR)\main.elf
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 460800 8N1 $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
