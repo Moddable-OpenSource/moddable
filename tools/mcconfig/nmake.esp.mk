@@ -126,13 +126,8 @@ XS_HEADERS = \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
-	$(CORE_DIR)\base64.cpp \
-	$(CORE_DIR)\cbuf.cpp \
 	$(CORE_DIR)\cont.S \
 	$(CORE_DIR)\cont_util.c \
-	$(CORE_DIR)\core_esp8266_eboot_command.c \
-	$(CORE_DIR)\core_esp8266_flash_utils.c \
-	$(CORE_DIR)\core_esp8266_i2s.c \
 	$(CORE_DIR)\core_esp8266_main.cpp \
 	$(CORE_DIR)\core_esp8266_noniso.c \
 	$(CORE_DIR)\core_esp8266_phy.c \
@@ -140,52 +135,54 @@ SDK_SRC = \
 	$(CORE_DIR)\core_esp8266_si2c.c \
 	$(CORE_DIR)\core_esp8266_timer.c \
 	$(CORE_DIR)\core_esp8266_wiring.c \
-	$(CORE_DIR)\core_esp8266_wiring_analog.c \
 	$(CORE_DIR)\core_esp8266_wiring_digital.c \
-	$(CORE_DIR)\core_esp8266_wiring_pulse.c \
 	$(CORE_DIR)\core_esp8266_wiring_pwm.c \
-	$(CORE_DIR)\core_esp8266_wiring_shift.c \
-	$(CORE_DIR)\debug.cpp \
 	$(CORE_DIR)\Esp.cpp \
-	$(CORE_DIR)\FS.cpp \
-	$(CORE_DIR)\HardwareSerial.cpp \
 	$(CORE_DIR)\heap.c \
-	$(CORE_DIR)\IPAddress.cpp \
-	$(CORE_DIR)\libb64\cdecode.c \
-	$(CORE_DIR)\libb64\cencode.c \
 	$(CORE_DIR)\libc_replacements.c \
-	$(CORE_DIR)\MD5Builder.cpp \
-	$(CORE_DIR)\pgmspace.cpp \
-	$(CORE_DIR)\Print.cpp \
 	$(CORE_DIR)\spiffs\spiffs_cache.c \
 	$(CORE_DIR)\spiffs\spiffs_check.c \
 	$(CORE_DIR)\spiffs\spiffs_gc.c \
 	$(CORE_DIR)\spiffs\spiffs_hydrogen.c \
 	$(CORE_DIR)\spiffs\spiffs_nucleus.c \
-	$(CORE_DIR)\spiffs_api.cpp \
 	$(CORE_DIR)\spiffs_hal.cpp \
-	$(CORE_DIR)\Stream.cpp \
 	$(CORE_DIR)\StreamString.cpp \
 	$(CORE_DIR)\time.c \
-	$(CORE_DIR)\Tone.cpp \
 	$(CORE_DIR)\uart.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
-	$(CORE_DIR)\Updater.cpp \
-	$(CORE_DIR)\WMath.cpp \
-	$(CORE_DIR)\WString.cpp \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 
+SDK_SRC_SKIPPED = \
+	$(CORE_DIR)\base64.cpp \
+	$(CORE_DIR)\cbuf.cpp \
+	$(CORE_DIR)\core_esp8266_eboot_command.c \
+	$(CORE_DIR)\core_esp8266_flash_utils.c \
+	$(CORE_DIR)\core_esp8266_i2s.c \
+	$(CORE_DIR)\core_esp8266_wiring_analog.c \
+	$(CORE_DIR)\core_esp8266_wiring_pulse.c \
+	$(CORE_DIR)\core_esp8266_wiring_shift.c \
+	$(CORE_DIR)\debug.cpp \
+	$(CORE_DIR)\pgmspace.cpp \
+	$(CORE_DIR)\HardwareSerial.cpp \
+	$(CORE_DIR)\IPAddress.cpp \
+	$(CORE_DIR)\spiffs_api.cpp \
+	$(CORE_DIR)\Print.cpp \
+	$(CORE_DIR)\MD5Builder.cpp \
+	$(CORE_DIR)\Stream.cpp \
+	$(CORE_DIR)\Tone.cpp \
+	$(CORE_DIR)\Updater.cpp \
+	$(CORE_DIR)\WMath.cpp \
+	$(CORE_DIR)\WString.cpp \
+	$(CORE_DIR)\FS.cpp \
+	$(CORE_DIR)\libb64\cdecode.c \
+	$(CORE_DIR)\libb64\cencode.c
+
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
-	$(LIB_DIR)\base64.o \
-	$(LIB_DIR)\cbuf.o \
 	$(LIB_DIR)\cont.S.o \
 	$(LIB_DIR)\cont_util.o \
-	$(LIB_DIR)\core_esp8266_eboot_command.o \
-	$(LIB_DIR)\core_esp8266_flash_utils.o \
-	$(LIB_DIR)\core_esp8266_i2s.o \
 	$(LIB_DIR)\core_esp8266_main.o \
 	$(LIB_DIR)\core_esp8266_noniso.o \
 	$(LIB_DIR)\core_esp8266_phy.o \
@@ -193,43 +190,50 @@ SDK_OBJ = \
 	$(LIB_DIR)\core_esp8266_si2c.o \
 	$(LIB_DIR)\core_esp8266_timer.o \
 	$(LIB_DIR)\core_esp8266_wiring.o \
-	$(LIB_DIR)\core_esp8266_wiring_analog.o \
 	$(LIB_DIR)\core_esp8266_wiring_digital.o \
-	$(LIB_DIR)\core_esp8266_wiring_pulse.o \
 	$(LIB_DIR)\core_esp8266_wiring_pwm.o \
-	$(LIB_DIR)\core_esp8266_wiring_shift.o \
-	$(LIB_DIR)\debug.o \
 	$(LIB_DIR)\Esp.o \
-	$(LIB_DIR)\FS.o \
-	$(LIB_DIR)\HardwareSerial.o \
 	$(LIB_DIR)\heap.o \
-	$(LIB_DIR)\IPAddress.o \
-	$(LIB_DIR)\cdecode.o \
-	$(LIB_DIR)\cencode.o \
 	$(LIB_DIR)\libc_replacements.o \
-	$(LIB_DIR)\MD5Builder.o \
-	$(LIB_DIR)\pgmspace.o \
-	$(LIB_DIR)\Print.o \
 	$(LIB_DIR)\spiffs_cache.o \
 	$(LIB_DIR)\spiffs_check.o \
 	$(LIB_DIR)\spiffs_gc.o \
 	$(LIB_DIR)\spiffs_hydrogen.o \
 	$(LIB_DIR)\spiffs_nucleus.o \
-	$(LIB_DIR)\spiffs_api.o \
 	$(LIB_DIR)\spiffs_hal.o \
-	$(LIB_DIR)\Stream.o \
-	$(LIB_DIR)\StreamString.o \
 	$(LIB_DIR)\time.o \
-	$(LIB_DIR)\Tone.o \
 	$(LIB_DIR)\uart.o \
 	$(LIB_DIR)\umm_malloc.o \
-	$(LIB_DIR)\Updater.o \
-	$(LIB_DIR)\WMath.o \
-	$(LIB_DIR)\WString.o \
 	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+
+SDK_OBJ_SKIPPED = \
+	$(LIB_DIR)\base64.o \
+	$(LIB_DIR)\cbuf.o \
+	$(LIB_DIR)\core_esp8266_eboot_command.o \
+	$(LIB_DIR)\core_esp8266_flash_utils.o \
+	$(LIB_DIR)\core_esp8266_i2s.o \
+	$(LIB_DIR)\core_esp8266_wiring_analog.o \
+	$(LIB_DIR)\core_esp8266_wiring_pulse.o \
+	$(LIB_DIR)\core_esp8266_wiring_shift.o \
+	$(LIB_DIR)\debug.o \
+	$(LIB_DIR)\pgmspace.o \
+	$(LIB_DIR)\HardwareSerial.o \
+	$(LIB_DIR)\IPAddress.o \
+	$(LIB_DIR)\spiffs_api.o \
+	$(LIB_DIR)\Print.o \
+	$(LIB_DIR)\MD5Builder.o \
+	$(LIB_DIR)\Stream.o \
+	$(LIB_DIR)\Tone.o \
+	$(LIB_DIR)\Updater.o \
+	$(LIB_DIR)\WMath.o \
+	$(LIB_DIR)\WString.o \
+	$(LIB_DIR)\FS.o \
+	$(LIB_DIR)\cdecode.o \
+	$(LIB_DIR)\cencode.o \
+	$(LIB_DIR)\StreamString.o 
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
