@@ -459,9 +459,9 @@ application.add(animatedContent);
 
 ![](../assets/piu/contentClockAnimation.gif)
 
-#### High frame-rate animation
+#### Time-based animation
 
-The `interval` property sets the desired frame rate for an object's clock, but be aware that it may not be exact if the interval is small and the application is overloaded.  It is not safe to assume, for instance, that if a content's `interval` is 2 and its `duration` is 100 that it will trigger the `onTimeChanged` event exactly 50 times before it triggers the `onFinished` event. Therefore, it is recommended that applications use the `fraction` or `time` properties to determine which frame to display for high frame rate animations.
+The `interval` property sets the desired frame rate for an object's clock, but be aware that it may not be exact if the application is overloaded.  It is not safe to assume, for instance, that if a content's `interval` is 2 and its `duration` is 100 that it will trigger the `onTimeChanged` event exactly 50 times before it triggers the `onFinished` event. Therefore, it is recommended that applications use the `fraction` or `time` properties to determine which frame to display for animations.
 
 For example, consider two implementations of a button that expands and contracts 10 pixels in both directions  when tapped.
 
@@ -2277,9 +2277,36 @@ application.add(sampleContainer);
 - **Source code:** [`piuImage.c`][30]
 - **Relevant Examples:** [images][31] 
 
-The `image` object is a `content` object that displays images referenced by file paths.
+The `image` object is a `content` object that displays images.
 
-[TO DO: add information about file types supported/how frame rate is determined?]
+Image assets may be a GIF, JPEG, or PNG file, or a folder of JPEG and PNG files. The [images][31] example provides an example for every supported type.
+
+Assets must be defined in the resources of your manifest. The quality of JPEG and PNG files can be set to a value between 1 and 100; higher numbers correspond to higher quality.
+
+```javascript
+"resources":{
+	"*-image(100)": [
+		"$(MODDABLE)/examples/assets/images/screen1",
+	],
+	"*-image(40)": [
+		"$(MODDABLE)/examples/assets/images/screen2",
+	]
+},
+```
+
+Images in a folder are used as frames of a single animated image. The frame rate is determined by the name of the folder. For example, the `fish.15fps` folder from [the example images folder](../../examples/assets/images) tells the application to run at 15 frames per second. In the manifest, the `.15fps` is dropped from the path.
+
+```javascript
+"resources":{
+	"*-image": [
+		"$(MODDABLE)/examples/assets/images/fish",
+	],
+}
+```
+
+The frame rate of a GIF is set in the file itself and cannot be changed by the application.
+
+All supported image types are compressed into a single resource with a `.cs` extension. These are the files that should be referenced in the application's script code. For example, to create `image` objects using the assets mentioned above, the application would use the paths `"screen1.cs"`, `"screen2.cs"`, and `"street.cs"`.
 
 #### Constructor Description
 
