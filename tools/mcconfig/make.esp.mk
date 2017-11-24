@@ -20,7 +20,7 @@
 ESP_BASE ?= $(HOME)/esp
 HOST_OS := $(shell uname)
 
-ARDUINO_ROOT ?= $(ESP_BASE)/Arduino-2.2.0
+ARDUINO_ROOT ?= $(ESP_BASE)/esp8266-2.3.0
 ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
 HACKED_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
 ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
@@ -105,6 +105,7 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/time.c \
 	$(ARDUINO_ESP8266)/uart.c \
 	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \
+	$(ARDUINO_ESP8266)/Schedule.cpp \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c
@@ -133,6 +134,7 @@ SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/libb64/cdecode.c \
 	$(ARDUINO_ESP8266)/libb64/cencode.c \
 	$(ARDUINO_ESP8266)/StreamString.cpp
+	
 SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
     
