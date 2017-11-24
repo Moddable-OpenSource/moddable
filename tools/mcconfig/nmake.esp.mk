@@ -11,7 +11,7 @@ BASE_DIR = $(USERPROFILE)
 
 ESP_SDK_DIR = $(BASE_DIR)\esp
 
-ARDUINO_ROOT = $(ESP_SDK_DIR)\Arduino-2.2.0
+ARDUINO_ROOT = $(ESP_SDK_DIR)\esp8266-2.3.0
 TOOLS_ROOT = $(ESP_SDK_DIR)\xtensa-lx106-elf
 SYSROOT = $(TOOLS_ROOT)\xtensa-lx106-elf\sysroot
 
@@ -147,6 +147,7 @@ SDK_SRC = \
 	$(CORE_DIR)\spiffs\spiffs_nucleus.c \
 	$(CORE_DIR)\spiffs_hal.cpp \
 	$(CORE_DIR)\StreamString.cpp \
+	$(CORE_DIR)\Schedule.cpp \
 	$(CORE_DIR)\time.c \
 	$(CORE_DIR)\uart.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
@@ -207,6 +208,7 @@ SDK_OBJ = \
 	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
+	$(LIB_DIR)\Schedule.o \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 
 SDK_OBJ_SKIPPED = \
@@ -233,7 +235,8 @@ SDK_OBJ_SKIPPED = \
 	$(LIB_DIR)\FS.o \
 	$(LIB_DIR)\cdecode.o \
 	$(LIB_DIR)\cencode.o \
-	$(LIB_DIR)\StreamString.o 
+	$(LIB_DIR)\StreamString.o \
+	$(LIB_DIR)\Schedule.o 
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
