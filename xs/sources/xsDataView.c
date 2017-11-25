@@ -2389,7 +2389,11 @@ void fxInt16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot,
 {
 	txS2 value;
 	slot->kind = XS_INTEGER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
+#else
 	value = *((txS2*)(data->value.arrayBuffer.address + offset));
+#endif
 	slot->value.integer = IMPORT(S16);
 }
 
@@ -2463,7 +2467,11 @@ void fxUint16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot
 {
 	txU2 value;
 	slot->kind = XS_INTEGER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
+#else
 	value = *((txU2*)(data->value.arrayBuffer.address + offset));
+#endif
 	slot->value.integer = IMPORT(U16);
 }
 
