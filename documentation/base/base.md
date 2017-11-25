@@ -1,36 +1,19 @@
 # Timers
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 15, 2017
+Revised: November 25, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## class Timer
 
-<!-- 11/7/2017 BSF
-The Timer module does not provide a tick counter. That is provided by the Time module. Should we document the Time module here before Timer?
--->
-
-The Timer module provides both time based callbacks and a tick counter. The Timer module exports a class with only static functions, so it does not need to be instantiated using `new`.
+The Timer module provides both time based callbacks and a delay function.
 
 	import Timer from "timer";
 
 	let ms = Timer.ticks();
 
-### Timer.ticks()
-
-The `ticks` function returns the value of a millisecond counter. The value returned does not correspond to the time of day. The milliseconds are used to calculate time differences.
-
-	let start = Timer.ticks();
-	for (let i = 0; i < 1000; i++)
-		;
-	let stop = Timer.ticks();
-	trace(`Operation took ${stop - start} milliseconds\n`);
-
-<!-- 11/7/2017 BSF
-Timer.set now supports an optional third repeat interval parameter. The optional second parameter specifies a delay before invoking the callback.
--->
-### Timer.set(callback[, interval])
+### Timer.set(callback[, interval, repeat])
 
 The `set` function is used to request a function be called once after a certain period.
 
@@ -42,6 +25,10 @@ A one shot timer is called once after a specified number of milliseconds. If the
 
 	Timer.set(id => trace("one shot fired\n"), 1000);
 
+Calling `set` with a `repeat` is equivalent to a repeating timer with the first callback triggered after the `interval`.
+
+	Timer.set(id => trace("repeat fired\n", 1000, 100);
+	
 The callback function receives the timer id as the first argument.
 
 ### Timer.repeat(callback, interval)
@@ -52,6 +39,22 @@ A repeating timer is called continuously until stopped using the `Timer.clear` f
 
 The callback function receives the timer id as the first argument.
 
+### Timer.schedule(id, interval[, repeat])
+
+The `schedule` function is used to reschedule an existing timer.
+
+In the following example, the callback function is triggered twice at one second intervals and then rescheduled to once every two seconds.
+
+	let state = 0;
+	Timer.repeat(id => {
+		if (0 == state)
+			state = 1;
+		else if (1 == state) {
+			state = 2;
+			Timer.schedule(id, 2000, 2000);
+		}
+	}, 1000);
+
 ### Timer.clear(id)
 
 The `clear` function cancels a timer. The `Timer.set` and `Timer.repeat` functions returns the ID for a timer, which is then passed to clear.
@@ -61,10 +64,42 @@ The `clear` function cancels a timer. The `Timer.set` and `Timer.repeat` functio
 
 > **Note**: Immediate and one shot timers are automatically cleared after invoking their callback function. There is no need to call `clear` except to cancel the timer before it fires.
 
-<!-- 11/7/2017 BSF
-Timer.schedule and Timer.delay need to be documented.
--->
+### Timer.delay(ms)
 
+The `delay` function delays execution for the specified number of milliseconds.
+
+	Timer.delay(500);	// delay 1/2 second
+
+## class Time
+
+The Time module provides time functions and a tick counter.
+
+### Time.set(seconds)
+
+The `set` function sets the system time. The `seconds` argument corresponds to the number of seconds elapsed since January 1, 1970, i.e. Unix time.
+
+
+### timezone
+
+The `timezone` property is set to the time zone offset in seconds from UTC.
+
+	Time.timezone = +9 * 60 * 60;	// Set time zone to UTC+09:00
+
+### dst
+
+The `dst` property is set to the daylight saving time (DST) offset in seconds.
+
+	Time.dst = 60 * 60;	// Set DST
+
+### ticks
+
+The `ticks` property returns the value of a millisecond counter. The value returned does not correspond to the time of day. The milliseconds are used to calculate time differences.
+
+	let start = Time.ticks;
+	for (let i = 0; i < 1000; i++)
+		;
+	let stop = Time.ticks;
+	trace(`Operation took ${stop - start} milliseconds\n`);
 
 ## class Debug
 
