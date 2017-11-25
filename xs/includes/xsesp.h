@@ -293,7 +293,11 @@ typedef va_list c_va_list;
 #endif
 
 #define c_calloc calloc
-#define c_exit(n) system_restart()
+#if ESP32
+	#define c_exit(n) esp_restart()
+#else
+	#define c_exit(n) system_restart()
+#endif
 #define c_free free
 #define c_malloc malloc
 void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *));
