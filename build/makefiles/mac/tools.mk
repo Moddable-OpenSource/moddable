@@ -101,6 +101,7 @@ XS_OBJECTS = \
 MODULES = \
 	$(MOD_DIR)/commodetto/Bitmap.xsb \
 	$(MOD_DIR)/commodetto/BMPOut.xsb \
+	$(MOD_DIR)/commodetto/BufferOut.xsb \
 	$(MOD_DIR)/commodetto/ColorCellOut.xsb \
 	$(MOD_DIR)/commodetto/Convert.xsb \
 	$(MOD_DIR)/commodetto/ParseBMF.xsb \
@@ -123,6 +124,7 @@ MODULES = \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
+	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
@@ -138,6 +140,7 @@ MODULES = \
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
+	-p commodetto/BufferOut.xsb\
 	-p commodetto/ColorCellOut.xsb\
 	-p commodetto/Convert.xsb\
 	-p commodetto/ParseBMF.xsb\
@@ -154,6 +157,7 @@ HEADERS = \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
 	$(TMP_DIR)/commodettoBitmap.c.o \
+	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \

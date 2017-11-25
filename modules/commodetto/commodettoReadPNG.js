@@ -16,19 +16,33 @@
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
  */
 
 
 /*
 	Commodetto PNG reader
-		
-
-	To do:
-
-
 */
 
 import Bitmap from "Bitmap";
+import BufferOut from "commodetto/BufferOut";
+import Converter from "commodetto/Convert";
 
 export default class PNG @ "xs_PNG_destructor" {
 	constructor(buffer) @ "xs_PNG_constructor"
@@ -43,8 +57,6 @@ export default class PNG @ "xs_PNG_destructor" {
 //	get palette()
 
 	static decompress(data, pixelFormat, alpha) {
-		let BufferOut = require.weak("commodetto/BufferOut");
-		let Converter = require.weak("commodetto/Convert");
 		let png = new PNG(data);
 		let width = png.width, height = png.height, channels = png.channels, depth = png.depth, palette = png.palette ? new Uint8Array(png.palette) : undefined;
 
@@ -56,7 +68,7 @@ export default class PNG @ "xs_PNG_destructor" {
 
 			let mask, scanAlpha;
 			if (alpha && ((4 == channels) || palette)) {
-				mask = new BufferOut({width: width, height: height, pixelFormat: alpha});		//@@ only works with Gray16 buffer
+				mask = new BufferOut({width: width, height: height, pixelFormat: alpha});		// only works when alpha is Bitmap.Gray16
 				mask.begin(0, 0, width, height);
 				scanAlpha = new Uint8Array(scanOut);
 			}
