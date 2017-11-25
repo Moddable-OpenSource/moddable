@@ -235,8 +235,7 @@ SDK_OBJ_SKIPPED = \
 	$(LIB_DIR)\FS.o \
 	$(LIB_DIR)\cdecode.o \
 	$(LIB_DIR)\cencode.o \
-	$(LIB_DIR)\StreamString.o \
-	$(LIB_DIR)\Schedule.o 
+	$(LIB_DIR)\StreamString.o
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
