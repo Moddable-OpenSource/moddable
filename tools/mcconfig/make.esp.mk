@@ -22,7 +22,7 @@ HOST_OS := $(shell uname)
 
 ARDUINO_ROOT ?= $(ESP_BASE)/esp8266-2.3.0
 ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
-HACKED_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
+ESP_TOOLS_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
 ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
 TOOLS_ROOT ?= $(ESP_BASE)/toolchain/$(HOST_OS)
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp
@@ -75,8 +75,8 @@ endif
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \
- 	$(HACKED_SDK_ROOT)/include \
- 	$(HACKED_SDK_ROOT)/lwip/include \
+ 	$(ESP_TOOLS_SDK_ROOT)/include \
+ 	$(ESP_TOOLS_SDK_ROOT)/lwip/include \
  	$(CORE_DIR) \
  	$(ARDUINO_ROOT)/variants/generic \
  	$(ARDUINO_ROOT)/cores/esp8266/spiffs
@@ -240,7 +240,7 @@ C_FLAGS ?= -c -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL 
 C_FLAGS_NODATASECTION = -c -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -falign-functions=4 -MMD -std=gnu99
 CPP_FLAGS ?= -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions=4 -std=c++11 -MMD -ffunction-sections
 S_FLAGS ?= -c -g -x assembler-with-cpp -MMD
-LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(HACKED_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
+LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
 LD_STD_LIBS ?= -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls
 # stdc++ used in later versions of esp8266 Arduino
 LD_STD_CPP = lstdc++
