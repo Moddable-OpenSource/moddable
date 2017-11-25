@@ -529,8 +529,8 @@ modTime_t modMkTime(struct modTm *tm)
 {
 #if ESP32
 	struct tm theTm;
-	theTm.tm_year = tm->tm_year + 1900;
-	theTm.tm_mon = tm->tm_mon + 1;
+	theTm.tm_year = tm->tm_year;
+	theTm.tm_mon = tm->tm_mon;
 	theTm.tm_mday = tm->tm_mday;
 	theTm.tm_hour = tm->tm_hour;
 	theTm.tm_min = tm->tm_min;
