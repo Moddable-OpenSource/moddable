@@ -1533,6 +1533,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
 			the->keyArrayHost = theMachine->keyArray;
+			fxBuildArchiveKeys(the);
 			
 			the->aliasCount = theMachine->aliasCount;
 			the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
@@ -1813,10 +1814,10 @@ void fxModulePaths(txMachine* the)
 }
 
 typedef struct {
-	txU1* archive;
-	txU1* stage;
-	txArchiveCopy read;
-	txArchiveCopy write;
+	txU1* src;
+	txU1* dst;
+	txArchiveRead read;
+	txArchiveWrite write;
 	txU1* buffer;
 	txU1* scratch;
 	size_t offset;
@@ -1942,7 +1943,7 @@ void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
 	return C_NULL;
 }
 
-void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveCopy read, txArchiveCopy write)
+void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t bufferSize, txArchiveRead read, txArchiveWrite write)
 {
 	txMapper mapper;
 	txMapper* self = &mapper;
@@ -1957,19 +1958,19 @@ void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_
 
 	c_memset(self, 0, sizeof(txMapper));
 	if (c_setjmp(self->jmp_buf) == 0) {
-		self->archive = archive;
-		self->stage = stage;
+		self->src = src;
+		self->dst = dst;
 		self->read = read;
 		self->write = write;
 		
 		self->bufferSize = bufferSize;
-		self->buffer = c_malloc(bufferSize);
+		self->buffer = c_malloc_uint32(bufferSize);
 		mxElseThrow(self->buffer != C_NULL);
 		self->scratchSize = 1024;
-		self->scratch = c_malloc(self->scratchSize);
+		self->scratch = c_malloc_uint32(self->scratchSize);
 		mxElseThrow(self->scratch != C_NULL);
 		
-		mxElseThrow(self->read(self->buffer, self->archive, mxArchiveHeaderSize));
+		mxElseThrow(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
 	
 		p = self->buffer;
 		mxMapAtom(p);
@@ -1993,14 +1994,14 @@ void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_
 		mxElseThrow(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
 	
 		checksum = preparation->checksum;
-		if (self->archive == self->stage) {
+		if (self->src == self->dst) {
 			if (*flag) {
 				mxElseThrow(c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0);
 				goto bail;
 			}
 		}
 		else {
-			mxElseThrow(self->read(self->scratch, self->stage, mxArchiveHeaderSize));
+			mxElseThrow(self->read(self->dst, 0, self->scratch, mxArchiveHeaderSize));
 			q = self->scratch;
 			mxMapAtom(q);
 			mxElseInstall(atom.atomType == XS_ATOM_ARCHIVE);
@@ -2033,7 +2034,7 @@ void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_
 		self->bufferOffset = mxArchiveHeaderSize;
 		if (self->bufferSize > self->size)
 			self->bufferSize = self->size;
-		mxElseThrow(self->read(p, self->archive + mxArchiveHeaderSize, self->bufferSize - mxArchiveHeaderSize));
+		mxElseThrow(self->read(self->src, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
 	
 		fxMapperReadAtom(self, &atom);
 		mxElseThrow(atom.atomType == XS_ATOM_SYMBOLS);
@@ -2064,9 +2065,14 @@ void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_
 						break;
 				result = result->next;
 			}
-			self->ids[i] = result ? result->ID : (id++ | 0x8000); 
+			if (result)
+				self->ids[i] = result->ID;
+			else {
+				self->ids[i] = id | 0x8000;
+				id++;
+			}
 		}
-		mxElseThrow(id < preparation->creation.keyCount);
+		mxElseThrow((id - preparation->keyCount) < preparation->creation.keyCount);
 
 		fxMapperReadAtom(self, &atom);
 		mxElseThrow(atom.atomType == XS_ATOM_MODULES);
@@ -2094,14 +2100,14 @@ void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_
 		}
 	
 		if (self->bufferOffset) {
-			if ((self->archive != self->stage) || self->dirty) {
-				mxElseThrow(self->write(self->stage + self->offset, self->buffer, self->bufferOffset));
+			if ((self->src != self->dst) || self->dirty) {
+				mxElseThrow(self->write(self->dst, self->offset, self->buffer, self->bufferOffset));
 				self->dirty = 0;
 			}
 		}
 	}
 	else {
-		self->stage = C_NULL;
+		self->dst = C_NULL;
 	}
 bail:
 	if (self->ids)
@@ -2110,7 +2116,7 @@ bail:
 		c_free(self->scratch);
 	if (self->buffer)
 		c_free(self->buffer);
-	return self->stage;
+	return self->dst;
 }
 
 void fxMapperMapID(txMapper* self)
@@ -2124,7 +2130,7 @@ void fxMapperMapID(txMapper* self)
 	self->bufferOffset++;
 	
 	if (self->bufferOffset == self->bufferSize) {
-		self->read(self->scratch, self->archive + self->offset, 1);
+		self->read(self->src, self->offset, self->scratch, 1);
 		low = self->scratch;
 	}
 	else
@@ -2217,8 +2223,8 @@ void fxMapperSkip(txMapper* self, size_t size)
 
 void fxMapperStep(txMapper* self)
 {
-	if ((self->archive != self->stage) || self->dirty) {
-		mxElseThrow(self->write(self->stage + self->offset, self->buffer, self->bufferSize));
+	if ((self->src != self->dst) || self->dirty) {
+		mxElseThrow(self->write(self->dst, self->offset, self->buffer, self->bufferSize));
 		self->dirty = 0;
 	}
 	self->offset += self->bufferSize;
@@ -2228,7 +2234,7 @@ void fxMapperStep(txMapper* self)
 	if (self->bufferSize > self->size)
 		self->bufferSize = self->size;
 	if (self->bufferSize > 0)
-		mxElseThrow(self->read(self->buffer, self->archive + self->offset, self->bufferSize));
+		mxElseThrow(self->read(self->src, self->offset, self->buffer, self->bufferSize));
 	self->bufferOffset = 0;
 }
 

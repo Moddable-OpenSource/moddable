@@ -40,6 +40,8 @@
 
 static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
+static void* fxArchiveRead(void* src, size_t offset, void* buffer, size_t size);
+static void* fxArchiveWrite(void* src, size_t offset, void* buffer, size_t size);
 
 typedef struct {
 	xsIntegerValue bytesPerPixel;
@@ -207,7 +209,7 @@ void fxScreenLaunch(txScreen* screen)
 	
 	root->preparation = preparation;
 	if (screen->archive)
-		root->archive = fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, c_memcpy, c_memcpy);
+		root->archive = fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite);
 	else
 		root->archive = NULL;
 	root->keyArray = preparation->keys;
@@ -230,7 +232,6 @@ void fxScreenLaunch(txScreen* screen)
 	if (!screen->machine) {
 		return;
 	}
-	fxBuildArchiveKeys(screen->machine);
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
@@ -792,4 +793,17 @@ xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id)
 		result = 0;
 	return result;
 }
+
+void* fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
+{
+	c_memcpy(buffer, ((txU1*)src) + offset, size);
+	return src;
+}
+
+void* fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
+{
+	c_memcpy(((txU1*)dst) + offset, buffer, size);
+	return dst;
+}
+
 
