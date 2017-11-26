@@ -5,16 +5,21 @@ Revised: November 25, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
-
 ## class File
 
-The `File` class provides access to files in the [SPIFFS](https://github.com/pellepl/spiffs) file system.
+The `File` class provides access to files.
 
 	import {File} from "file";
 
-The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the `File` class only instantiates the SPIFFS file system when necessary - when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when no longer in use.
+### SPIFFS file system
 
-If the SPIFFS file system has not been initialized, it is formatted with SPIFFS_format when first used. This operation may take up to one minute.
+On embedded systems, the `File` class is implemented using the [SPIFFS](https://github.com/pellepl/spiffs) file system.
+
+SPIFFS is a flat file system, meaning that there are no directories and all files are at the root.
+
+The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the `File` class only instantiates the SPIFFS file system when necessary -- when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when not in use.
+
+If the SPIFFS file system has not been initialized, it is formatted with the `SPIFFS_format` API when first used. Initialization takes up to one minute.
 
 ### Get file size
 
@@ -109,7 +114,7 @@ The Iterator class enumerates the files and subdirectories in a directory.
 
 	import {Iterator} from "file";
 
-> **Note**: The SPIFFS file system used on ESP8266 is a flat file system, so there are no subdirectories.
+> **Note**: Because the SPIFFS file system is a flat file system,  no subdirectories are returned on devices that use it.
 
 ### List contents of a directory
 
@@ -118,7 +123,7 @@ This example lists all the files and subdirectories in a directory.
 	let root = new Iterator("/");
 	let item;
 	while (item = root.next()) {
-		if (undefined == item.length)
+		if (undefined === item.length)
 			trace(`Directory: ${item.name}\n`);
 		else
 			trace(`File: ${item.name}, ${item.length} bytes\n`);
@@ -246,24 +251,30 @@ The `slice` function returns a portion of the resource in an ArrayBuffer. The de
 
 ## class Preference
 
-The Preference class provides a persistent preferences mechanism for ESP32 and ESP8266 platforms. Preferences are stored in SPI flash and are available across power-down and reboot cycles.
+The Preference class provides storage of persistent preference storage. Preferences are appropriate for storing small amounts of data that needs to persist between runs of an application.
 
 	import Preference from "Preference";
 	
-Preferences are grouped by domain. A domain can contain multiple preference keys. A preference key value is a Boolean, Integer, String or ArrayBuffer.
+Preferences are grouped by domain. A domain contains one ore more keys. Each domain/key pair holds a single value, which is either a `Boolean`, integer (e.g. `Number` with no fractional part), `String` or `ArrayBuffer`.
 
 	const domain = "wifi";
 	let ssid = Preference.get(domain, "ssid");
 	let password = Preference.get(domain, "psk");
-	 
+
+Preference values are limited to 63 bytes. Key and domain names are limited to 32 bytes.
+
+On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
+
+> **Note**: On embedded devices, preferences are stored in SPI flash which has a limited number of erase cycles. Applications should minimize the number of write operations (set and delete). In practice, this isn't a significant concern. However, an application that updates preferences once per minute, for example, could eventually exceed the available erase cycles for the preference storage area in SPI flash.
+
 ### set(domain, key, value)
 
-The static `set` function sets and stores a preference value.
+The static `set` function sets a preference value.
 
 	Preference.set("wifi", "ssid", "linksys");
 	Preference.set("wifi", "password", "admin");
 	Preference.set("wifi", "channel", 6);
-	
+
 ### get(domain, key)
 
 The static `get` function reads a preference value. If the preference does not exist, `get` returns `undefined`.
@@ -278,13 +289,6 @@ The static `delete` function removes a preference. If the preference does not ex
 
 	Preference.delete("wifi", "password");
 
-### keys(domain)
-
-The static `keys` function returns an Array of all domain keys.
-
-	let keys = Preference.keys("wifi");
-	trace("wifi keys: " + keys.join(", ") + "\n");
-
 ## class Flash
 
-<!-- complete -->
+This class is experimental and not yet documented.
