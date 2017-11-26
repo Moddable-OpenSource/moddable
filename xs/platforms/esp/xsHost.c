@@ -617,7 +617,7 @@ int32_t modGetDaylightSavingsOffset(void)
 }
 
 #if SUPPORT_MODS
-	static void installModules(xsMachine *the);
+	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
 #endif
@@ -625,7 +625,7 @@ int32_t modGetDaylightSavingsOffset(void)
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
 	extern txPreparation* xsPreparation();
-	void *result;
+	void *result, *archive;
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
@@ -634,10 +634,12 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
 
+	archive = installModules(prep);
+
 	creation = prep->creation;
 
 	root.preparation = prep;
-	root.archive = NULL;
+	root.archive = archive;
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
@@ -687,9 +689,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 	}
 
-#if SUPPORT_MODS
-	installModules(result);
-#endif
+	((txMachine *)result)->preparation = prep;
 
 #ifdef mxInstrument
 	espStartInstrumentation(result);
@@ -707,8 +707,8 @@ void setStepDone(xsMachine *the)
 		return;
 
 	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, xsID("require"));
-		xsResult = xsCall1(xsResult, xsID("weak"), xsString("main"));
+		xsResult = xsGet(xsGlobal, mxID(_require));
+		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
 	xsEndHost(the);
@@ -720,14 +720,13 @@ void mc_setup(xsMachine *the)
 	txPreparation *preparation = xsPreparation();
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
-	xsIndex id_weak = xsID("weak");
 
 	gSetupPending = 1;
 
 	xsBeginHost(the);
 		xsVars(2);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
-		xsVar(1) = xsGet(xsGlobal, xsID("require"));
+		xsVar(1) = xsGet(xsGlobal, mxID(_require));
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
@@ -739,7 +738,7 @@ void mc_setup(xsMachine *the)
 				if (dot)
 					*dot = 0;
 
-				xsResult = xsCall1(xsVar(1), id_weak, xsString(path));
+				xsResult = xsCall1(xsVar(1), mxID(_weak), xsString(path));
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
 					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
@@ -1314,198 +1313,108 @@ void modMessageDeliver(void)
 
 #if SUPPORT_MODS
 
-extern void fxRemapIDs(xsMachine* the, uint8_t* codeBuffer, uint32_t codeSize, xsIndex* theIDs);
-extern txID fxNewNameX(txMachine* the, txString theString);
-
-static uint8_t remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize);		// 0 on success
-
 #if ESP32
-	const esp_partition_t *gPartition;
-	const void *gPartitionAddress;
-#else
-	static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
 
-	extern uint8_t _XSMOD_start;
-	extern uint8_t _XSMOD_end;
+const esp_partition_t *gPartition;
+const void *gPartitionAddress;
 
-	#define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
-	#define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
-#endif
-
-void installModules(xsMachine *the)
+static void *spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
-	char *atom;
-	int atomSize, xsbSize, symbolCount;
-	uint8_t *xsb;
-	char *xsbCopy = NULL;
-	uint8_t scratch[128] __attribute__((aligned(4)));
-
-#if ESP32
-	spi_flash_mmap_handle_t handle;
-
-	gPartition = esp_partition_find_first(0x40, 1,  NULL);
-	if (!gPartition) return;
-
-	if (ESP_OK != esp_partition_read(gPartition, 0, scratch, sizeof(scratch))) {
-		gPartition = NULL;
-		return;
-	}
-
-	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), scratch, sizeof(scratch), &atomSize);
-	if (!atom) return;
-
-	xsbSize = c_read32be(scratch);
-
-	{
-		txPreparation* preparation = the->preparation;
-		int chksSize;
-		uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
-		if (!chksAtom || (16 != chksSize)) return;
-
-		if (0 != c_memcmp(chksAtom, preparation->checksum, sizeof(preparation->checksum)))
-		goto installArchive;
-	}
-#else
-	const uint8_t *installLocation = kModulesStart;
-	SpiFlashOpResult result;
-	uint8_t stagedSIGN[16];
-
-	spi_flash_read((uint32)((uintptr_t)kModulesInstallStart - (uintptr_t)kFlashStart), (uint32 *)scratch, sizeof(scratch));
-	atom = findAtom(FOURCC('S', 'I', 'G', 'N'), scratch, sizeof(scratch), &atomSize);
-	if (!atom || (16 != atomSize))
-		return;		// staging area empty causes installed module to be ignored
-
-	xsbSize = c_read32be(scratch);
-	c_memcpy(stagedSIGN, atom, 16);
-
-	spi_flash_read((uint32)((uintptr_t)installLocation - (uintptr_t)kFlashStart), (uint32 *)scratch, sizeof(scratch));
-
-	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), scratch, sizeof(scratch), &atomSize);
-	if (!atom) goto installArchive;
-
-	{
-	txPreparation* preparation = the->preparation;
-	int signSize, chksSize;
-	uint8_t *chksAtom = findAtom(FOURCC('C', 'H', 'K', 'S'), scratch, sizeof(scratch), &chksSize);
-	uint8_t *signAtom = findAtom(FOURCC('S', 'I', 'G', 'N'), scratch, sizeof(scratch), &signSize);
-
-	if (!chksAtom || !signAtom || (16 != signSize) || (16 != chksSize)) goto installArchive;
-
-	if (0 != c_memcmp(chksAtom, preparation->checksum, sizeof(preparation->checksum)))
-		goto installArchive;
-
-	if (0 != c_memcmp(signAtom, stagedSIGN, sizeof(stagedSIGN)))
-		goto installArchive;
-
-	xsb = (char *)installLocation;
-	}
-#endif
-
-	if (0 /* unused version byte */ != c_read8(atom + 3)) {
-		// xsb has been remapped
-#if ESP32
-		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, &gPartitionAddress, &handle)) {
-			gPartition = NULL;
-			return;
-		}
-		xsb = (char *)gPartitionAddress;		// kModulesStart
-#endif
-
-		the->archive = xsb;
-		fxBuildArchiveKeys(the);
-		return;
-	}
-
-installArchive:
-	if (xsbSize > SPI_FLASH_SEC_SIZE) {
-		modLog("xsb too big to remap");
-		return;
-	}
-
-	// remap
-	xsbCopy = c_malloc(xsbSize);
-	if (NULL == xsbCopy) {
-		modLog("not enough memory to remap xsb");
-		return;
-	}
-
-#if ESP32
-	if (ESP_OK != esp_partition_read(gPartition, 0, xsbCopy, xsbSize)) {
-		modLog("xsb read fail");
-		goto bail;
-	}
-#else
-	result = spi_flash_read((uint32)((uintptr_t)kModulesInstallStart - (uintptr_t)kFlashStart), (uint32 *)xsbCopy, xsbSize);
-	if (SPI_FLASH_RESULT_OK != result) {
-		modLog("xsb read fail");
-		goto bail;
-	}
-
-	xsb = (char *)installLocation;
-#endif
-	if (0 != remapXSB(the, xsbCopy, xsbSize)) {
-		modLog("   remap failed");
-		goto bail;
-	}
-
-	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbCopy, xsbSize, NULL);
-	atom[3] = 1;		// make as remapped
-
-	txPreparation* preparation = the->preparation;
-	atom = findAtom(FOURCC('C', 'H', 'K', 'S'), xsbCopy, xsbSize, &atomSize);
-	if (!atom || (sizeof(preparation->checksum) != atomSize))
-		goto bail;
-	c_memcpy(atom, preparation->checksum, sizeof(preparation->checksum));
-
-#if ESP32
-	// erase
-	if (ESP_OK != esp_partition_erase_range(gPartition, 0, SPI_FLASH_SEC_SIZE)) {
-		modLog("erase fail");
-		goto bail;
-	}
-
-	// write
-	if (ESP_OK != esp_partition_write(gPartition, 0, xsbCopy, xsbSize)) {
-		modLog("write fail");
-		goto bail;
-	}
-
-	if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, &gPartitionAddress, &handle)) {
-		gPartition = NULL;
-		return;
-	}
-
-	xsb = (char *)gPartitionAddress;		// kModulesStart
-#else
-	// erase
-    ets_isr_mask(FLASH_INT_MASK);
-	result = spi_flash_erase_sector(((uintptr_t)xsb - (uintptr_t)kFlashStart) / SPI_FLASH_SEC_SIZE);
-    ets_isr_unmask(FLASH_INT_MASK);
-
-	if (SPI_FLASH_RESULT_OK != result) {
-		modLog("erase fail");
-		goto bail;
-	}
-
-	// write
-    ets_isr_mask(FLASH_INT_MASK);
-	result = spi_flash_write((uintptr_t)xsb - (uintptr_t)kFlashStart, (void *)xsbCopy, xsbSize);
-    ets_isr_unmask(FLASH_INT_MASK);
-
-	if (SPI_FLASH_RESULT_OK != result) {
-		modLog("write fail");
-		goto bail;
-	}
-#endif
-
-	// tell the VM abot the symbols added now available in ROM
-	the->archive = xsb;
-	fxBuildArchiveKeys(the);
-
-bail:
-	if (xsbCopy)
-		c_free(xsbCopy);
+	const esp_partition_t *partition = src;
+	esp_partition_read(partition, (uintptr_t)offset, buffer, size);
+	return src;
 }
+
+static void *spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+{
+	const esp_partition_t *partition = dst;
+	int result = esp_partition_erase_range(partition, (uintptr_t)offset, (size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1));
+	if (ESP_OK != result)
+		return NULL;
+
+	if (ESP_OK != esp_partition_write(partition, (uintptr_t)offset, buffer, size)) {
+		modLog("write fail");
+		return NULL;
+	}
+
+	return dst;
+}
+
+void *installModules(txPreparation *preparation)
+{
+	const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
+	const void *partitionAddress;
+	if (!partition) return NULL;
+
+	if (fxMapArchive(preparation, (void *)partition, (void *)partition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
+		spi_flash_mmap_handle_t handle;
+
+		if (ESP_OK != esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+			return NULL;
+	}
+	else
+		return 0;
+
+	gPartition = partition;
+	gPartitionAddress = partitionAddress;
+
+	return (void *)partitionAddress;
+}
+
+#else /* ESP8266 */
+
+static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
+
+extern uint8_t _XSMOD_start;
+extern uint8_t _XSMOD_end;
+
+#define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
+#define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
+
+static void *spiRead(void *src, size_t offset, void *buffer, size_t size)
+{
+	if (3 & offset) // this cannot happen
+		modLog("misalgned SPI read");
+	if (3 & size) {  // this can happen for the special case and  for the last block
+		modLog("misalgned SPI read size");
+		size = (size + 3) & ~3;
+	}
+	src = (((uint8_t*)src) + offset);
+	spi_flash_read((uint32)((uintptr_t)src - (uintptr_t)kFlashStart), (uint32 *)buffer, size);
+
+	return src;		//@@ (src could be partition... weird to return it offset?)
+}
+
+static void *spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+{
+	SpiFlashOpResult result;
+
+	dst = (((uint8_t*)dst) + offset);
+
+	ets_isr_mask(FLASH_INT_MASK);
+	result = spi_flash_erase_sector(((uintptr_t)dst - (uintptr_t)kFlashStart) / SPI_FLASH_SEC_SIZE);
+	if (SPI_FLASH_RESULT_OK == result)
+		result = spi_flash_write((uintptr_t)dst - (uintptr_t)kFlashStart, (void *)buffer, size);
+	ets_isr_unmask(FLASH_INT_MASK);
+
+	if (SPI_FLASH_RESULT_OK != result) {
+		modLog("write fail");
+		return NULL;
+	}
+
+	return dst;
+}
+
+void *installModules(txPreparation *preparation)
+{
+	if (fxMapArchive(preparation, (void *)kModulesInstallStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
+		return kModulesStart;
+
+	modLog("install modules failure");
+	return NULL;
+}
+
+#endif
 
 char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
 {
@@ -1540,71 +1449,6 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 		*atomSizeOut = 0;
 
 	return NULL;
-}
-
-uint8_t remapXSB(xsMachine *the, uint8_t *xsbRAM, int xsbSize)
-{
-	uint8_t result = 1;  // failure
-	uint8_t *atom, *mods;
-	int atomSize, modsSize;
-	xsIndex *ids = NULL;
-	int symbolCount;
-	const char *symbol;
-	int i = 0, index = 0;
-	txID keyIndex = the->keyIndex;
-
-	atom = findAtom(FOURCC('V', 'E', 'R', 'S'), xsbRAM, xsbSize, &atomSize);
-	if (!atom)
-		goto bail;
-
-	if (XS_MAJOR_VERSION != c_read8(atom + 0)) {
-		modLog("bad major version");
-		goto bail;
-	}
-	if (XS_MINOR_VERSION != c_read8(atom + 1)) {
-		modLog("bad minor version");
-		goto bail;
-	}
-
-	atom = findAtom(FOURCC('S', 'Y', 'M', 'B'), xsbRAM, xsbSize, &atomSize);
-	if (!atom) goto bail;
-
-	symbolCount = c_read16be(atom);
-	ids = c_malloc(sizeof(xsIndex) * symbolCount);
-	if (!ids) {
-		modLog("out of memory for id remap table");
-		goto bail;
-	}
-
-	symbol = atom + 2;
-	while (symbolCount--) {
-		txID id = fxFindName(the, (char *)symbol);
-		ids[i++] = id ? id : (keyIndex++ | 0x8000);		// not checking if would run out of keys. that will fail later when calling fxNewNameX.
-		symbol += c_strlen(symbol) + 1;
-	}
-
-	if (keyIndex >= the->keyCount) {
-		modLog("too many keys in mod");
-		goto bail;
-	}
-
-	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsbRAM, xsbSize, &modsSize);
-	if (!mods) goto bail;
-
-	while (true) {
-		atom = findNthAtom(FOURCC('C', 'O', 'D', 'E'), ++index, mods, modsSize, &atomSize);
-		if (!atom)
-			break;
-		fxRemapIDs(the, atom, atomSize, ids);
-	}
-
-	result = 0;
-
-bail:
-	if (ids)
-		c_free(ids);
-
-	return result;
 }
 
 #if !ESP32
