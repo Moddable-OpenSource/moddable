@@ -1964,10 +1964,10 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		self->write = write;
 		
 		self->bufferSize = bufferSize;
-		self->buffer = c_malloc_uint32(bufferSize);
+		self->buffer = c_malloc(bufferSize);
 		mxElseThrow(self->buffer != C_NULL);
 		self->scratchSize = 1024;
-		self->scratch = c_malloc_uint32(self->scratchSize);
+		self->scratch = c_malloc(self->scratchSize);
 		mxElseThrow(self->scratch != C_NULL);
 		
 		mxElseThrow(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
