@@ -70,7 +70,7 @@ The `delay` function delays execution for the specified number of milliseconds.
 
 ## class Time
 
-The Time module provides time functions and a tick counter. At this writing, the Time class is only implemented for ESP8266 devices.
+The Time module provides time functions and a tick counter.
 
 	import Time from "time";
 
