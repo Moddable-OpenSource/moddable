@@ -1,4 +1,4 @@
-# Timers
+# Base
 Copyright 2017 Moddable Tech, Inc.
 
 Revised: November 25, 2017
@@ -10,8 +10,6 @@ Revised: November 25, 2017
 The Timer module provides both time based callbacks and a delay function.
 
 	import Timer from "timer";
-
-	let ms = Timer.ticks();
 
 ### Timer.set(callback[, interval, repeat])
 
@@ -72,7 +70,9 @@ The `delay` function delays execution for the specified number of milliseconds.
 
 ## class Time
 
-The Time module provides time functions and a tick counter.
+The Time module provides time functions and a tick counter. At this writing, the Time class is only implemented for ESP8266 devices.
+
+	import Time from "time";
 
 ### Time.set(seconds)
 
