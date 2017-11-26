@@ -1,7 +1,7 @@
 # Files
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 15, 2017
+Revised: November 25, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -219,6 +219,72 @@ The `iterate` function instantiates an object to access the content of the speci
 
 The `map` function returns a Host Buffer that references the bytes of the file at the specified path.
 
-<!-- 11/7/2017 BSF
-The Flash, Preference and Resource classes live under files in the modules directory. Those classes should probably be documented here.
--->
+## class Resource
+
+The Resource class provides access to assets from an application's resource map.
+
+	import Resource from "Resource";
+
+### new Resource(path)
+
+The Resource constructor takes a single argument, the resource path, and returns an ArrayBuffer or Host Buffer containing the resource data.
+
+	let resource = new Resource("logo.bmp");
+	trace(`resource size is ${resource.byteLength}\n`);
+
+### exists(path)
+
+The static `exists` function returns a boolean indicating whether a resource exists at the specified path.
+
+### slice(begin[, end])
+
+The `slice` function returns a portion of the resource in an ArrayBuffer. The default value of `end` is the resource size.
+
+	let resource = new Resource("table.dat");
+	let buffer1 = resource.slice(5);		// Get a buffer starting from offset 5
+	let buffer2 = resource.slice(0, 10);	// Get a buffer of the first 10 bytes
+
+## class Preference
+
+The Preference class provides a persistent preferences mechanism for ESP32 and ESP8266 platforms. Preferences are stored in SPI flash and are available across power-down and reboot cycles.
+
+	import Preference from "Preference";
+	
+Preferences are grouped by domain. A domain can contain multiple preference keys. A preference key value is a Boolean, Integer, String or ArrayBuffer.
+
+	const domain = "wifi";
+	let ssid = Preference.get(domain, "ssid");
+	let password = Preference.get(domain, "psk");
+	 
+### set(domain, key, value)
+
+The static `set` function sets and stores a preference value.
+
+	Preference.set("wifi", "ssid", "linksys");
+	Preference.set("wifi", "password", "admin");
+	Preference.set("wifi", "channel", 6);
+	
+### get(domain, key)
+
+The static `get` function reads a preference value. If the preference does not exist, `get` returns `undefined`.
+
+	let value = Preference.get("settings", "timezone");
+	if (value !== undefined)
+		trace(`timezone ${value}\n`);
+
+### delete(domain, key)
+
+The static `delete` function removes a preference. If the preference does not exist, no error is thrown.
+
+	Preference.delete("wifi", "password");
+
+### keys(domain)
+
+The static `keys` function returns an Array of all domain keys.
+
+	let keys = Preference.keys("wifi");
+	trace("wifi keys: " + keys.join(", ") + "\n");
+
+## class Flash
+
+<!-- complete -->
