@@ -13,7 +13,7 @@ Each font asset consists of a (.png) glyph file and a corresponding font metrics
 This allows anti-aliased or non-anti-aliased font sets to be generated as desired. The Poco renderer in the Moddable SDK does not implement a font scaler. Consequently, each required font size/weight must be generated and included as an asset in the application.
 
 BMFont allows an arbitrary number of glyphs in the font.
-Moddable supports non-contiguous glyphs ranges allowing the developer or graphic designer to create an efficient font asset with just the characters needed for the application. This can significant reducing asset storage size.
+Moddable supports non-contiguous glyph ranges allowing the developer or graphic designer to create an efficient font asset with just the characters needed for the application. This can significantly reduce asset storage size.
 
 Fonts are generated in black. This allows the Moddable SDK build tools to create alpha masks of the characters. To render the fonts in color, applications apply styles.
 
