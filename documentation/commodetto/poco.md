@@ -8,7 +8,7 @@ This document describes the Poco renderer, starting with a set of examples that 
 ## Examples
 These examples illustrate working with the Poco renderer. They all use the JavaScript API, and they also use asset loaders and other capabilities of Commodetto.
 
-To keep the examples concise and focused, the code makes several assumptions:
+To keep the follow examples concise and focused, the code makes several assumptions:
 
 - The examples assume a `PixelsOut` object in the global variable `screen`.
 
@@ -26,6 +26,7 @@ let blue = poco.makeColor(0, 0, 255);
 - They assume that the drawing commands occur between calls to `begin` and `end`.
 
   ```javascript
+let poco = new Poco(screen);
 poco.begin();
 ...	// example code here
 poco.end();
