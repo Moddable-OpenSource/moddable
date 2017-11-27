@@ -375,7 +375,7 @@ out.send(pixels, 2, 2)	// Send 2nd pixel in buffer
 
 #### `adaptInvalid(r)`
 
-The `adaptInvalid` function takes a rectangle argument specifying an area inside the `PixelsOut` area and modifies them rectangle as needed to make it a valid update area for the this PixelsOut. The `adaptInvalid` function is necessary because some display controllers are only able to update the display in certain quanta. For example, one display requires that the x coordinate and width are even numbers, another display can only update complete horizontal scan lines, and another updates the entire display even if only a single pixel changed.
+The `adaptInvalid` function takes a rectangle argument specifying an area inside the `PixelsOut` area and modifies the rectangle as needed to make it a valid update area for the PixelsOut. The `adaptInvalid` function is necessary because some display controllers are only able to update the display in certain quanta. For example, one display requires that the x coordinate and width are even numbers, another display can only update complete horizontal scan lines, and another updates the entire display even if only a single pixel changed.
 
 	let r = renderer.rectangle(x, y, w, h);
 	pixelsOut.adaptInvalid(r);
@@ -478,7 +478,7 @@ RLE-encoded bitmaps are smaller, reducing the amount of ROM required for assets.
 
 The `RLE4Out` class may be used on the device. More commonly, however, a bitmap is RLE-encoded and written to storage at build time; this avoids the time and memory required to encode the image on the device, while saving storage space.
 
-The `rle4encode` tool in the Moddable SDK compressed 4-bit grayscale BMP files using the `RLE4Out` class. The `compressbmf` tool applies the RLE4Out to each individual glyph in a BMF font.
+The `rle4encode` tool in the Moddable SDK compresses 4-bit grayscale BMP files using the `RLE4Out` class. The `compressbmf` tool applies the RLE4Out class to each individual glyph in a BMF font.
 
 The `RLE4Out` class does not implement the optional `continue` function.
 
@@ -793,13 +793,13 @@ The renderer's `adaptInvalid` function is used to adjust the update area defined
 	renderer.begin(r.x, r.y, r.w, r.h);
 	...
 
-Applications written to work with a single display controlled be able to safely ignore `adaptInvalid` by applying its constraints themselves. Code written to work with more than a single display controller will likely need to use `adaptInvalid` for reliable updates to subsections of the display.
+Applications written to work with a single display controller should be able to safely ignore `adaptInvalid` by applying its constraints themselves. Code written to work with more than a single display controller will likely need to use `adaptInvalid` for reliable updates to subsections of the display.
 
 The Piu user interface framework calls `adaptInvalid` when necessary, so application scripts don't need to call it directly.
 
 ## Pixel format conversion
 
-Commodetto provides a pixel format conversion capability intended primarily for use in tools that process images running on a computer. They are used, for example, by the `image2cs` and `png2bmp` tools in the Moddable SDK. The converters are small and efficient, and so may also be use in deployments to microcontrollers.
+Commodetto provides a pixel format conversion capability intended primarily for use in tools that process images running on a computer. They are used, for example, by the `image2cs` and `png2bmp` tools in the Moddable SDK. The converters are small and efficient, and so may also be used in deployments to microcontrollers.
 
 ### Convert class
 
