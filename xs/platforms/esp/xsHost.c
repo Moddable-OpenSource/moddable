@@ -1318,26 +1318,26 @@ void modMessageDeliver(void)
 const esp_partition_t *gPartition;
 const void *gPartitionAddress;
 
-static void *spiRead(void *src, size_t offset, void *buffer, size_t size)
+static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = src;
 	esp_partition_read(partition, (uintptr_t)offset, buffer, size);
-	return src;
+	return 1;
 }
 
-static void *spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = dst;
 	int result = esp_partition_erase_range(partition, (uintptr_t)offset, (size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1));
 	if (ESP_OK != result)
-		return NULL;
+		return 0;
 
 	if (ESP_OK != esp_partition_write(partition, (uintptr_t)offset, buffer, size)) {
 		modLog("write fail");
-		return NULL;
+		return 0;
 	}
 
-	return dst;
+	return 1;
 }
 
 void *installModules(txPreparation *preparation)
@@ -1371,7 +1371,7 @@ extern uint8_t _XSMOD_end;
 #define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
 #define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
 
-static void *spiRead(void *src, size_t offset, void *buffer, size_t size)
+static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	if (3 & offset) // this cannot happen
 		modLog("misalgned SPI read");
@@ -1382,10 +1382,10 @@ static void *spiRead(void *src, size_t offset, void *buffer, size_t size)
 	src = (((uint8_t*)src) + offset);
 	spi_flash_read((uint32)((uintptr_t)src - (uintptr_t)kFlashStart), (uint32 *)buffer, size);
 
-	return src;		//@@ (src could be partition... weird to return it offset?)
+	return 1;		//@@ (src could be partition... weird to return it offset?)
 }
 
-static void *spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	SpiFlashOpResult result;
 
@@ -1399,10 +1399,10 @@ static void *spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 	if (SPI_FLASH_RESULT_OK != result) {
 		modLog("write fail");
-		return NULL;
+		return 0;
 	}
 
-	return dst;
+	return 1;
 }
 
 void *installModules(txPreparation *preparation)
