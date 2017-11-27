@@ -396,6 +396,7 @@ export default class BER {
 			res = String.fromArrayBuffer(b.getChunk(len));
 			break;
 		case 0x17:	// ITC time
+/*
 		case 0x18: {// generalized time
 			let s = String.fromArrayBuffer(b.getChunk(len));
 			let prefix = ""
@@ -417,6 +418,7 @@ export default class BER {
 			res = date;
 			}
 			break;
+*/
 		case 0x19:	// graphics string
 		case 0x1a:	// ISO64 string
 		case 0x1b:	// general string
