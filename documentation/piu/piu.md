@@ -70,11 +70,6 @@ The graphical user interface elements of Piu applications are composed of a hier
 
 Applications use constructors to define `content` and `container` objects. These objects are attached to the containment hierarchy using the `add`, `insert`, and `replace` functions, and are removed from the containment hierarchy using the `remove` and `replace` functions. See [Functions](#container-functions) in the section [Container Object](#container-object) for descriptions of these properties.
 
-<!--
-TO DO:
-For more information about how `content` and `container` objects are used in applications, see the [Piu Containment Hierarchy document][29].
--->
-
 #### Bound and Unbound Contents
 
 Contents that are not attached to the containment hierarchy are called *unbound* contents; contents attached to the containment hierarchy, *bound* contents. Only objects that are part of the containment hierarchy appear on screen. 
@@ -2816,7 +2811,7 @@ application.add(samplePort);
 | `string` | `string` | The string to draw
 | `style` | `style` | The style to use to draw the string
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
-| `ellipsis` | `boolean` | [TO DO: figure out what this does]
+| `ellipsis` | `boolean` | If `true`, the string is truncated to fit the specified bounds. If `false`, the entire string is drawn, even if it extends beyond the specified bounds.
 | `state` | `number` | The state of the style to draw. If the specified style has multiple fill colors, setting the state selects which color to use.
 
 Draws a string with the style, position, and state speciied.
@@ -2834,8 +2829,8 @@ let samplePort = new Port(null, {
 			let h = size.height;
 			port.drawStyle(string, sampleStyle, 20, 10, w, h, true, 0);
 			port.drawStyle(string, sampleStyle, 20, h+10, w, h, true, 1);
-			port.drawStyle(string, sampleStyle, 20, h*2+10, w, h, true, 2);
-			port.drawStyle(string, sampleStyle, 20, h*3+10, w, h, true, 3);
+			port.drawStyle(string, sampleStyle, 20, h*2+10, w-10, h, false, 2);	// Not truncated
+			port.drawStyle(string, sampleStyle, 20, h*3+10, w-10, h, true, 3);	// Truncated
 		}
 	}
 });
@@ -3583,10 +3578,13 @@ application.add(sampleLabel2);
 | Parameter | Type | Description |
 | --- | --- | :--- |
 | `bottom` | `number` | This style's bottom margin, in pixels (setting the `bottom` property of the created instance, and `bottom` in the created instance's `margins` property)
-| `indentation` | `number` | This style's indentation--the indentation of the first line of a block, in pixels
 | `leading` | `number` | This style's line height, or "leading"--the distance between lines of a block, in pixels. If 0 or unspecified, it is automatically calculated. Use a negative value to force a distance even if lines overlap.
 | `left` | `number` | This style's left margin, in pixels (setting the `left` property of the created instance, and `left` in the created instance's `margins` property)
 | `right` | `number` | This style's right margin, in pixels (setting the `right` property of the created instance, and `right` in the created instance's `margins` property)
+
+<!-- TO DO:
+| `indentation` | `number` | This style's indentation--the indentation of the first line of a block, in pixels
+-->
 
 ##### Label styles only
 
@@ -3617,7 +3615,6 @@ All properties of a `style` object are read-only, but you can change the style o
 | `color` | `object` | `undefined` | This style's color(s), as an array of strings, or `undefined` if no color has been specified. The `state` property of the `content` object using the style determines the index of the array; if `state` is not an integer, colors from surrounding states are blended.
 | `family` | `string` | | This style's font family
 | `horizontal` | `string` | | This style's horizontal alignment, as `left`, `center` (the default), `right`, or `justify`
-| `indentation` | `number` | | This style's indentation--the indentation of the first line of a block, in pixels **TO DO: test this**
 | `leading` | `number` | | This style's line height (or "leading")--the distance between lines of a block, in pixels. If `0` or unspecified, it is automatically calculated
 | `left` | `number` | 0 | The left margin of this style
 | `margins` | `object` | | This style's margins, as an object with `left`, `right`, `top`, and `bottom` number properties, specified in pixels
@@ -3627,6 +3624,11 @@ All properties of a `style` object are read-only, but you can change the style o
 | `top` | `number` | 0 | The top margin of this style
 | `vertical` | `string` | 	| This style's vertical alignment, as `top`, `middle` (the default), or `bottom`, specified in pixels
 | `weight` | `number` | | The weight of this style's font
+
+
+<!-- TO DO:
+| `indentation` | `number` | | This style's indentation--the indentation of the first line of a block, in pixels
+-->
 
 ##### Functions
 
