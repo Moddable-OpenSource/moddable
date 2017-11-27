@@ -168,7 +168,6 @@ typedef struct PocoBitmapRecord {
 
 typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, void *refCon);
 
-//#define READ_PROG_MEM_UNSIGNED_BYTE(a) (pgm_read_byte_near(a))
 #define READ_PROG_MEM_UNSIGNED_BYTE(a) (*(unsigned char *)(a))
 #define READ_PROG_MEM_UNSIGNED_LONG(a) (*(uint32_t *)(a))
 
