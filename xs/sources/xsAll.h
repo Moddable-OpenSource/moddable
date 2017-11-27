@@ -66,8 +66,8 @@ typedef struct sxHostHooks txHostHooks;
 typedef struct sxInspectorNameLink txInspectorNameLink;
 typedef struct sxInspectorNameList txInspectorNameList;
 
-typedef void* (*txArchiveRead)(void* src, size_t offset, void* buffer, size_t size);
-typedef void* (*txArchiveWrite)(void* dst, size_t offset, void* buffer, size_t size);
+typedef txBoolean (*txArchiveRead)(void* src, size_t offset, void* buffer, size_t size);
+typedef txBoolean (*txArchiveWrite)(void* dst, size_t offset, void* buffer, size_t size);
 typedef void (*txCallback)(txMachine*);
 typedef txCallback (*txCallbackAt)(txID index);
 typedef void (*txDestructor)(void*);
