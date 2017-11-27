@@ -430,24 +430,24 @@ let handshakeProtocol = {
 	certificate: {
 		name: "certificate",
 		msgType: certificate,
-		matchName(re, name) {
-			re = re.replace(/\./g, "\\.").replace(/\*/g, "[^.]*");
-			var a = name.match(new RegExp("^" + re + "$", "i"));
-			return a && a.length == 1;
-		},
-		verifyHost(session, cert) {
-//@@ this fails because (a) session.socket.host doesn't exist and (b) RegExp isn't (usually) available
-			var altNames = X509.decodeExtension(cert, 'subjectAlternativeName');
-			var hostname = session.socket.host;
-			for (var i = 0; i < altNames.length; i++) {
-				var name = altNames[i];
-				if (typeof name == "string" && this.matchName(name, hostname))
-					return true;
-			}
-			// @@ not supporting the common name
-			// var arr = X509.decodeTBS(cert).subject.match(/CN=([^,]*)/);
-			// return arr && arr.length > 1 && this.matchName(arr[1], hostname);
-		},
+//		matchName(re, name) {
+//			re = re.replace(/\./g, "\\.").replace(/\*/g, "[^.]*");
+//			var a = name.match(new RegExp("^" + re + "$", "i"));
+//			return a && a.length == 1;
+//		},
+//		verifyHost(session, cert) {
+//			//@@ this fails because session.socket.host doesn't exist
+//			var altNames = X509.decodeExtension(cert, 'subjectAlternativeName');
+//			var hostname = session.socket.host;
+//			for (var i = 0; i < altNames.length; i++) {
+//				var name = altNames[i];
+//				if (typeof name == "string" && this.matchName(name, hostname))
+//					return true;
+//			}
+//			var arr = X509.decodeTBS(cert).subject.match(/CN=([^,]*)/);
+//			return arr && arr.length > 1 && this.matchName(arr[1], hostname);
+//		},
+
 		unpacketize(session, s) {
 			session.traceProtocol(this);
 			let certs = [];
@@ -461,11 +461,12 @@ let handshakeProtocol = {
 				if (!session.certificateManager.verify(certs, session.options))
 					throw new Error("SSL: certificate: auth err");
 			}
+/*
 			if (session.options.verifyHost) {
 				if (!this.verifyHost(session, certs[0]))
 					throw new Error("SSL: certificate: bad host");
 			}
-
+*/
 			session.peerCert = certs[0].slice(0).buffer;		// could we store only the key?
 			return session.certificateManager.register(session.peerCert);	// tail call optimization
 		},
