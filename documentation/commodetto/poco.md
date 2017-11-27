@@ -1,7 +1,7 @@
 # Poco
 Copyright 2016-2017 Moddable Tech, Inc.
 
-Revised: November 16, 2017
+Revised: November 26, 2017
 
 This document describes the Poco renderer, starting with a set of examples that introduce many of the main concepts of working with Poco. Following the examples is the reference for Poco, which fully describes each function call.
 
@@ -38,10 +38,10 @@ Each example includes the image rendered by the code. The images are scaled 150%
 This example fills `screen` with gray pixels, covers the left half with red pixels, and then uses a 50% blending level (128) to draw blue pixels over the middle half of the screen.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-poco.fillRectangle(red, 0, 0, screen.width / 2, screen.height);
-poco.blendRectangle(blue, 128, screen.width / 4,
-	0, screen.width / 2, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
+poco.fillRectangle(red, 0, 0, poco.width / 2, poco.height);
+poco.blendRectangle(blue, 128, poco.width / 4,
+					0, poco.width / 2, poco.height);
 ```
 
 <img src="../assets/poco/fillrectangle.png" width="180" height="135"/>
@@ -51,7 +51,7 @@ poco.blendRectangle(blue, 128, screen.width / 4,
 This example shows how to move the drawing origin. Poco maintains an origin stack that is pushed when the origin changes and popped when `origin` is called with no arguments. Each change to the origin offsets the previous origin. The origin stack is convenient for building container-based user interfaces.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 poco.origin(10, 10);
 poco.fillRectangle(red, 0, 0, 40, 20);
@@ -79,21 +79,21 @@ poco.origin();
 This example shows how to use the drawing clip. Poco maintains a clip stack that is pushed when the clip changes and popped when `clip` is called with no arguments. Each change intersects the clip with the previous clip. The clip stack is convenient for building container-based user interfaces.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
-poco.clip(20, 20, screen.width - 40, screen.height - 40);
-poco.fillRectangle(green, 0, 0, screen.width, screen.height);
+poco.clip(20, 20, poco.width - 40, poco.height - 40);
+poco.fillRectangle(green, 0, 0, poco.width, poco.height);
 
 poco.clip(0, 0, 40, 40);
-poco.fillRectangle(blue, 0, 0, screen.width, screen.height);
+poco.fillRectangle(blue, 0, 0, poco.width, poco.height);
 
-poco.fillRectangle(white, 26, 0, 2, screen.height);
-
-poco.clip();
-poco.fillRectangle(red, 30, 0, 2, screen.height);
+poco.fillRectangle(white, 26, 0, 2, poco.height);
 
 poco.clip();
-poco.fillRectangle(black, 34, 0, 2, screen.height);
+poco.fillRectangle(red, 30, 0, 2, poco.height);
+
+poco.clip();
+poco.fillRectangle(black, 34, 0, 2, poco.height);
 ```
 
 <img src="../assets/poco/clip.png" width="180" height="135"/>
@@ -103,7 +103,7 @@ poco.fillRectangle(black, 34, 0, 2, screen.height);
 This example draws a monochrome bitmap (in which all pixels are either black or white) of an envelope. It shows how to control the color of the foreground and background pixels, as well as whether each is drawn. The bitmap is stored in a 1-bit BMP file with dimensions of 32 x 23.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 let envelope = parseBMP(new Resource("envelope.bmp"));
 poco.drawMonochrome(envelope, black, white, 14, 10)
@@ -119,18 +119,18 @@ poco.drawMonochrome(envelope, undefined, blue, 74, 55)
 This example draws a color bitmap image of a face in two ways using `drawBitmap`: on the left side of the screen, it draws the full image; on the right side, it draws only the eyes and mouth, using the optional source rectangle parameters of `drawBitmap`.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 let image = parseBMP(new Resource("lvb.bmp"));
 
 let x = 0;
-let y = Math.round((screen.height - image.height) / 2);
+let y = Math.round((poco.height - image.height) / 2);
 poco.drawBitmap(image, x, y);
 
-x = Math.round(screen.width / 2);
-poco.drawBitmap(image, x + 25, y + 38, 25, 38, 11, 7);	 // left eye
-poco.drawBitmap(image, x +  7, y + 40,  7, 40, 10, 6);	 // right eye
-poco.drawBitmap(image, x + 15, y + 56, 15, 56, 16, 6);	 // mouth
+x = image.width;
+poco.drawBitmap(image, x + 25, y + 38, 25, 38, 11, 7);   // left eye
+poco.drawBitmap(image, x +  7, y + 40,  7, 40, 10, 6);   // right eye
+poco.drawBitmap(image, x + 15, y + 56, 15, 56, 16, 6);   // mouth
 ```
 <img src="../assets/poco/bitmap.png" width="180" height="135"/>
 
@@ -142,7 +142,7 @@ Unlike the previous examples, this one does not first call `fillRectangle` to cl
 
 ```javascript
 let pattern = parseBMP(new Resource("pattern1.bmp"));
-poco.fillPattern(pattern, 0, 0, screen.width, screen.height);
+poco.fillPattern(pattern, 0, 0, poco.width, poco.height);
 poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 ```
 
@@ -153,7 +153,7 @@ poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 This example uses `drawGray` to draw a 16-level gray image in several colors. `drawGray` treats the pixel values as alpha blending levels, blending the specified color with the background. 
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 let image = parseBMP(new Resource("envelope-gray.bmp"));
 
@@ -176,22 +176,19 @@ This example uses `BufferOut` to create an offscreen bitmap, fills the bitmap wi
 ```javascript
 import BufferOut from "commodetto/BufferOut";
 
-let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: Bitmap.RGB565LE});
-let poco = new Poco(offscreen);
-poco.begin();
-	poco.fillRectangle(gray, 0, 0, 30, 30);
-	poco.fillRectangle(red, 2, 2, 26, 26);
-	poco.fillRectangle(black, 4, 4, 22, 22);
-	poco.fillRectangle(blue, 6, 6, 18, 18);
-	poco.fillRectangle(white, 8, 8, 14, 14);
-	poco.fillRectangle(green, 10, 10, 10, 10);
-	poco.fillRectangle(gray, 13, 13, 4, 4);
-poco.end();
+let offscreen = new BufferOut({width: 30, height: 30, pixelFormat: poco.pixelsOut.pixelFormat});
+let pocoOff = new Poco(offscreen);
+pocoOff.begin();
+	pocoOff.fillRectangle(gray, 0, 0, 30, 30);
+	pocoOff.fillRectangle(red, 2, 2, 26, 26);
+	pocoOff.fillRectangle(black, 4, 4, 22, 22);
+	pocoOff.fillRectangle(blue, 6, 6, 18, 18);
+	pocoOff.fillRectangle(white, 8, 8, 14, 14);
+	pocoOff.fillRectangle(green, 10, 10, 10, 10);
+	pocoOff.fillRectangle(gray, 13, 13, 4, 4);
+pocoOff.end();
 
-poco = new Poco(screen);
-poco.begin();
-	poco.fillPattern(offscreen.bitmap, 0, 0, screen.width, screen.height);
-poco.end();
+poco.fillPattern(offscreen.bitmap, 0, 0, poco.width, poco.height);
 ```
 
 <img src="../assets/poco/offscreen.png" width="180" height="135"/>
@@ -201,7 +198,7 @@ poco.end();
 This example shows how to draw a bitmap through an alpha mask. The bitmap to draw and the mask are in separate bitmaps, enabling an image to be drawn using more than one alpha mask. The example draws one bitmap through both a circle and a square mask, and also draws the original image and mask.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 let girl = parseBMP(new Resource("girl.bmp"));
 let circle = parseBMP(new Resource("mask_circle.bmp"));
@@ -210,12 +207,12 @@ let square = parseBMP(new Resource("mask_square.bmp"));
 poco.drawBitmap(girl, 0, 2);
 poco.drawGray(circle, black, 40, 2);
 poco.drawMasked(girl, 80, 2, 0, 0,
-	circle.width, circle.height, circle, 0, 0);
+				circle.width, circle.height, circle, 0, 0);
 
 poco.drawBitmap(girl, 0, 47);
 poco.drawGray(square, black, 40, 47);
 poco.drawMasked(girl, 80, 47, 0, 0,
-	square.width, square.height, square, 0, 0);
+				square.width, square.height, square, 0, 0);
 ```
 
 <img src="../assets/poco/alpha.png" width="180" height="135"/>
@@ -257,11 +254,11 @@ The following example loads and draws a 36-point Palatino BMFont.
 ```javascript
 import parseBMF from "commodetto/parseBMF";
 
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-poco.fillRectangle(white, 2, 2, screen.width - 4, screen.height - 4);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
+poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
 
 let palatino36 = parseBMF(new Resource("palatino_36.fnt"));
-palatino36.bitmap = parseBMP(new Resource("palatino_36_gray.bmp"));
+palatino36.bitmap = parseBMP(new Resource("palatino_36.bmp"));
 
 poco.drawText("Hello.", palatino36, black, 4, 20);
 poco.drawText("Hello.", palatino36, green, 4, 55);
@@ -272,11 +269,14 @@ poco.drawText("Hello.", palatino36, green, 4, 55);
 To truncate text when rendering, provide the optional `width` argument to `drawText` indicating the horizontal space available for the text.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-poco.fillRectangle(white, 2, 2, screen.width - 4, screen.height - 4);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
+poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
 
-poco.drawText("Hello, world.", palatino36, red, 2, 10);
-poco.drawText("Hello, world.", palatino36, green, 2, 45, screen.width - 2);
+let palatino36 = parseBMF(new Resource("palatino_36.fnt"));
+palatino36.bitmap = parseBMP(new Resource("palatino_36.bmp"));
+
+poco.drawText("Hello, world. This is long.", palatino36, red, 2, 10);
+poco.drawText("Hello, world. This is long.", palatino36, green, 2, 45, poco.width - 2);
 ```
 
 <img src="../assets/poco/text2.png" width="180" height="135"/>
@@ -284,23 +284,26 @@ poco.drawText("Hello, world.", palatino36, green, 2, 45, screen.width - 2);
 Text is horizontally and vertically aligned using the `height` property of the font and measuring the width of strings using `getTextWidth`.
 
 ```javascript
-poco.fillRectangle(gray, 0, 0, screen.width, screen.height);
-poco.fillRectangle(white, 2, 2, screen.width - 4, screen.height - 4);
+poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
+poco.fillRectangle(white, 2, 2, poco.width - 4, poco.height - 4);
+
+let palatino12 = parseBMF(new Resource("OpenSans-SemiboldItalic-18.fnt"));
+palatino12.bitmap = parseBMP(new Resource("OpenSans-SemiboldItalic-18.bmp"));
 
 poco.drawText("T Left", palatino12, red,
-	2, 2);
+			  2, 2);
 poco.drawText("T Right", palatino12, green,
-	screen.width - 2 - poco.getTextWidth("T Right", palatino12), 2);
+			  poco.width - 2 - poco.getTextWidth("T Right", palatino12), 2);
 
 poco.drawText("B Left", palatino12, blue,
-	2, screen.height - 2 - palatino12.height);
+			  2, poco.height - 2 - palatino12.height);
 poco.drawText("B Right", palatino12, gray,
-	screen.width - 2 - poco.getTextWidth("B Right", palatino12),
-	screen.height - 2 - palatino12.height);
+			  poco.width - 2 - poco.getTextWidth("B Right", palatino12),
+			  poco.height - 2 - palatino12.height);
 
 poco.drawText("Centered", palatino12, black,
-	(screen.width - poco.getTextWidth("Centered", palatino12)) / 2,
-	(screen.height - palatino12.height) / 2);
+			  (poco.width - poco.getTextWidth("Centered", palatino12)) / 2,
+			  (poco.height - palatino12.height) / 2);
 ```
 <img src="../assets/poco/text3.png" width="180" height="135"/>
 
@@ -310,7 +313,7 @@ The `drawText` function also accepts a 16-gray-level alpha bitmap in the `color`
 poco.fillRectangle(green, 0, 0, screen.width, screen.height);
 
 let openSans52 = parseBMF(new Resource("OpenSans-BoldItalic-52.fnt"));
-openSans52.bitmap = parseBMP(new Resource("OpenSans-BoldItalic-52.bmp"));
+openSans52.bitmap = parseBMP(new Resource("OpenSans-BoldItalic-52-color.bmp"));
 openSans52.mask = parseBMP(new Resource("OpenSans-BoldItalic-52-alpha.bmp"));
 
 poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
@@ -356,6 +359,13 @@ The second is a variant of the ColorCell algorithm used to compress full color i
 By default, Poco is a scanline display list renderer. That means it stores all the drawing commands and then renders them all at once when all drawing commands for a given frame have been queued. When used with a display that has full frame buffers stored in memory accessible to Poco and is double buffered (e.g. has two frame buffers it flips between), scanline display list rendering is less efficient than immediate mode rendering, which executes each drawing command as it is received.
 
 Poco optionally supports immediate mode rendering. To enable this support, define `kPocoFrameBuffer` to 1 when building Poco, and use `PocoDrawingBeginFrameBuffer`/`PocoDrawingEndFrameBuffer` in place of `PocoDrawingBegin`/`PocoDrawingEnd` in the C code. No changes are required to JavaScript code to use immediate mode.
+
+## Rotation
+Poco provides support for rendering to a `PixelsOut` at 0, 90, 180, or 270 degree rotations. This support allows use of a display in any orientation, independent of the natural scan order of the hardware.
+
+The rotation is selected at build time, not run time, by defining `kPocoRotation` to the target rotation (e.g. 90). The default rotation value is 0. The rotation is applied to the coordinates, both destination and source, of all drawing operations. Any assets (e.g. stored bitmaps and fonts) must be rotated prior to being passed to Poco. This is done either manually (e.g. in Photoshop) or automatically (e.g. by the png2bmp tool in the Moddable SDK).
+
+This approach to rotation allows rendering of rotated output at the same performance level as unrotated images, and without requiring an intermediate bitmap buffer.
 
 ## JavaScript API Reference
 
@@ -453,7 +463,7 @@ The following code draws 16 horizontal green lines with increasing opacity.
 ```javascript
 let green = poco.makeColor(0, 255, 0);
 for (let blend = 15, y = 0; blend < 256; blend += 16, y += 1)
-	poco.blendRectangle(green, blend, 0, y, pixelOut.width, 1);
+	poco.blendRectangle(green, blend, 0, y, pixelsOut.width, 1);
 ```
 
 ##### `drawPixel(color, x, y)`
@@ -584,6 +594,16 @@ Characters in the text string that are not part of the font are not rendered.
 ##### `drawFrame(frame, dictionary, x, y)`
 
 The `drawFrame` function renders the ColorCell compressed image referenced by the `frame` argument at the location specified by the `x` and `y` arguments. The `dictionary` argument is an `Object` that contains width and height properties that indicate the source dimensions of the image.
+
+### Properties
+
+#### `height`
+
+The logical height in pixels of the Poco instance after rotation is applied. When rotation is 0 or 180, this is equal to the `PixelsOut` instance's height; when rotation is 90 or 270, it is equal to the `PixelsOut` instance's width.
+
+#### `width`
+
+The logical width in pixels of the Poco instance after rotation is applied. When rotation is 0 or 180, this is equal to the `PixelsOut` instance's width; when rotation is 90 or 270, it is equal to the `PixelsOut` instance's height.
 
 ## C API Reference
 
