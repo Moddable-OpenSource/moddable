@@ -40,8 +40,8 @@
 
 static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
-static void* fxArchiveRead(void* src, size_t offset, void* buffer, size_t size);
-static void* fxArchiveWrite(void* src, size_t offset, void* buffer, size_t size);
+static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size);
+static xsBooleanValue fxArchiveWrite(void* src, size_t offset, void* buffer, size_t size);
 
 typedef struct {
 	xsIntegerValue bytesPerPixel;
@@ -794,16 +794,16 @@ xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id)
 	return result;
 }
 
-void* fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
+xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
 {
 	c_memcpy(buffer, ((txU1*)src) + offset, size);
-	return src;
+	return 1;
 }
 
-void* fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
+xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
 {
 	c_memcpy(((txU1*)dst) + offset, buffer, size);
-	return dst;
+	return 1;
 }
 
 
