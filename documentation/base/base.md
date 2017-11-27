@@ -33,7 +33,7 @@ The callback function receives the timer id as the first argument.
 
 A repeating timer is called continuously until stopped using the `Timer.clear` function. 
 
-	Timer.repeat(id => trace("repeat fired\n"), 1000,;
+	Timer.repeat(id => trace("repeat fired\n"), 1000);
 
 The callback function receives the timer id as the first argument.
 
