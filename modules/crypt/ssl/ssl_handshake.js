@@ -297,17 +297,18 @@ let handshakeProtocol = {
 			}
 		},
 		packetize(session, cipherSuites, compressionMethods, msgType) {
-			var s = new SSLStream();
+			let s = new SSLStream();
 			s.writeChars(session.protocolVersion, 2);
-			var random = this.random.serialize();
+			let random = this.random.serialize();
+			let sessionID;
 			s.writeChunk(random);
 			if (msgType == client_hello) {
 				session.clientRandom = random;
-				var sessionID = session.clientSessionID;
+				sessionID = session.clientSessionID;
 			}
 			else {
 				session.serverRandom = random;
-				var sessionID = session.serverSessionID;
+				sessionID = session.serverSessionID;
 			}
 			if (!sessionID || !sessionID.byteLength)
 				s.writeChar(0);
@@ -317,48 +318,50 @@ let handshakeProtocol = {
 			}
 			if (msgType == client_hello) {
 				s.writeChars(cipherSuites.length * 2, 2);
-				for (var i = 0; i < cipherSuites.length; i++) {
-					var val = cipherSuites[i].value;
+				for (let i = 0; i < cipherSuites.length; i++) {
+					let val = cipherSuites[i].value;
 					s.writeChar(val[0]);
 					s.writeChar(val[1]);
 				}
 				s.writeChar(compressionMethods.length);
-				for (var i = 0; i < compressionMethods.length; i++)
+				for (let i = 0; i < compressionMethods.length; i++)
 					s.writeChar(compressionMethods[i]);
 				//
 				// TLS extensions
 				//
-				var es = new SSLStream();
-				for (var i in session.options) {
+				let es = new SSLStream();
+				for (let i in session.options) {
 					if (!(i in extension_type))
 						continue;
-					var type = extension_type[i];
-					var ext = session.options[i];
+					let type = extension_type[i];
+					let ext = session.options[i];
 					switch (type) {
-					case extension_type.tls_server_name:
+					case extension_type.tls_server_name: {
 						es.writeChars(type, 2);
-						var len = 1 + 2 + ext.length;
+						let len = 1 + 2 + ext.length;
 						es.writeChars(2 + len, 2);
 						es.writeChars(len, 2);
 						es.writeChar(0);		// name_type, 0 -- host_name
 						es.writeChars(ext.length, 2);
 						es.writeString(ext);
+						}
 						break;
-					case extension_type.tls_max_fragment_length:
+					case extension_type.tls_max_fragment_length: {
 						es.writeChars(type, 2);
 						es.writeChars(2 + 1, 2);
 						es.writeChars(1, 2);
-						var j;
+						let j;
 						for (j = 1; j <= 4; j++) {
-							var e = j + 9;	// start with 2^9
+							let e = j + 9;	// start with 2^9
 							if ((ext >>> e) == 0)
 								break;
 						}
 						if (j > 4)
 							j = 4;
 						es.writeChar(j);
+						}
 						break;
-					case extension_type.tls_signature_algorithms:
+					case extension_type.tls_signature_algorithms: {
 						es.writeChars(type, 2);
 						es.writeChars(2 + ext.length * 2, 2);
 						es.writeChars(ext.length, 2);
@@ -366,19 +369,21 @@ let handshakeProtocol = {
 							es.writeChar(ext[j].hash);
 							es.writeChar(ext[j].sig);
 						}
+						}
 						break;
-					case extension_type.tls_application_layer_protocol_negotiation:
+					case extension_type.tls_application_layer_protocol_negotiation: {
 						es.writeChars(type, 2);
-						var len = 0;
+						let len = 0;
 						if (typeof ext == 'string') ext = ext.split(':');
-						for (var j = 0; j < ext.length; j++)
+						for (let j = 0; j < ext.length; j++)
 							len += ext[j].length + 1;
 						es.writeChars(len + 2, 2);
 						es.writeChars(len, 2);
-						for (var j = 0; j < ext.length; j++) {
-							var name = ext[j];
+						for (let j = 0; j < ext.length; j++) {
+							let name = ext[j];
 							es.writeChars(name.length, 1);
 							es.writeString(name);
+						}
 						}
 						break;
 					default:
@@ -392,7 +397,7 @@ let handshakeProtocol = {
 				}
 			}
 			else {
-				var val = cipherSuites[0].value;
+				let val = cipherSuites[0].value;
 				s.writeChar(val[0]);
 				s.writeChar(val[1]);
 				s.writeChar(compressionMethods[0]);
