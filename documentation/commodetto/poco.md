@@ -349,7 +349,7 @@ For displays that require a different output format, the display driver is respo
 Poco supports 1-bit monochrome and 4-bit gray bitmaps as sources for rendering to all pixel formats. In addition, the configured destination pixel format is always supported as a source format. For example, when the rendering pixel format is 16-bit RGB565 little-endian, supported source pixel formats are 1-bit monochrome, 4-bit gray, and 16-bit RGB565 little-endian.
 
 ### Compressed pixel formats
-Poco implements support for two compressed pixel format.
+Poco implements support for two compressed pixel formats.
 
 The first is a weighted run-length compression of 4-bit gray bitmaps. These are commonly used for anti-aliased fonts and image masks. They use the `CommodettoBitmap` and `PocoBitmap` data structures with the pixel format set to `(kCommodettoBitmapGray16 | kCommodettoBitmapPacked)`.
 
@@ -818,7 +818,7 @@ void PocoDrawFrame(Poco poco,
 	PocoDimension w, PocoDimension h);
 ```
 
-`PocoDrawFrame` renders a compressed image stored in the Moddable variant of the ColorCell algorithm. The image to render is pointed to by the `data` argument with a byte count specified by the `dataSize` argument. The image is rendered at the location specified specified by the `x` and `y` arguments. The source dimensions (unclipped size) of the compressed image are given by the `w` and `h` arguments.
+`PocoDrawFrame` renders a compressed image stored in the Moddable variant of the ColorCell algorithm. The image to render is pointed to by the `data` argument with a byte count specified by the `dataSize` argument. The image is rendered at the location specified by the `x` and `y` arguments. The source dimensions (unclipped size) of the compressed image are given by the `w` and `h` arguments.
 
 ##### `PocoClipPush`
 
