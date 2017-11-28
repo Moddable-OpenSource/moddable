@@ -45,7 +45,7 @@ static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolean dummy);
 
-int gxFakeCallback = 1;
+txCallback gxFakeCallback = (txCallback)1;
 
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
 {
@@ -126,7 +126,7 @@ txString fxGetCodeName(txMachine* the, txByte* which)
 			txS1* from = linkerScript->codeBuffer;
 			txS1* to = from + linkerScript->codeSize;
 			if ((from <= which) && (which < to)) {
-				sprintf(buffer, "(txByte*)(&gxCode%d[%d])", linkerScript->scriptIndex, which - from);
+				sprintf(buffer, "(txByte*)(&gxCode%d[%ld])", linkerScript->scriptIndex, which - from);
 				return buffer;
 			}
 			linkerScript = linkerScript->nextScript;
@@ -181,7 +181,7 @@ void fxLinkerScriptCallback(txMachine* the)
 				linkerScript->callbackNames = fxNewLinkerChunk(linker, c * sizeof(txCallbackName));
 				linkerScript->hostsCount = c;
 				for (i = 0; i < c; i++) {
-					txCallback callback = (txCallback)(gxFakeCallback++);
+					txCallback callback = gxFakeCallback++;
 					txHostFunctionBuilder* builder = &linkerScript->builders[i];
 					txCallbackName* callbackName = &linkerScript->callbackNames[i];
 					txS1 length = *p++;
@@ -351,12 +351,6 @@ txInteger fxPrepareHeap(txMachine* the)
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
-					txSlot result;
-					result.next = NULL;
-					result.ID = XS_NO_ID;
-					result.flag = XS_NO_FLAG;
-					result.kind = XS_BOOLEAN_KIND;
-					result.value.boolean = 0;
 					if (property && ((property->kind == XS_ARRAY_KIND) || (property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND))) {
 						if (slot != mxArrayPrototype.value.reference)
 							slot->ID = XS_NO_ID;
@@ -517,7 +511,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	fprintf(file, "\t{ ");
 	if (slot->flag & XS_DEBUG_FLAG) {
 		slot->flag &= ~XS_DEBUG_FLAG;
-		fprintf(file, "(txSlot*)%d", (txIndex)slot->next);
+		fprintf(file, "(txSlot*)%ld", (long int)slot->next);
 	}
 	else
 		fxPrintAddress(the, file, slot->next);
