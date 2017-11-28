@@ -52,8 +52,6 @@ The JSON defines configuration parameters of the driver, here width and height, 
 	#define MODDEF_ILI9341_CS_PIN (4)
 	#define MODDEF_ILI9341_DC_PORT NULL
 	#define MODDEF_ILI9341_DC_PIN (2)
-	#define MODDEF_ILI9341_RST_PORT NULL
-	#define MODDEF_ILI9341_RST_PIN (0)
 	#define MODDEF_ILI9341_SPI_PORT "HSPI"
 
 The GPIO pin connections (CS, DC) include both a port name and a pin number. In this example, the host target device does not use the port name, so it is left as null. The SPI port is defined by name, here the string "HSPI" for the ESP8266 "hardware" SPI bus. The "#" prefix on the string indicates that the value in the #define statement should be a quoted string.
