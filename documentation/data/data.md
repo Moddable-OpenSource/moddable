@@ -1,7 +1,7 @@
 # Data
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 7, 2017
+Revised: November 25, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -53,7 +53,3 @@ The `toString` function converts an `ArrayBuffer` to a hexadecimal encoded `Stri
 	let s1 = Hex.toString(buffer);
 	// s1 is 0123456789ABCDEF
 
-
-<!-- 11/7/2017 BSF
-The XML class can be documented here.
--->

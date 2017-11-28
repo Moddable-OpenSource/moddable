@@ -1,20 +1,25 @@
 # Files
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 15, 2017
+Revised: November 25, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
-
 ## class File
 
-The `File` class provides access to files in the [SPIFFS](https://github.com/pellepl/spiffs) file system.
+The `File` class provides access to files.
 
 	import {File} from "file";
 
-The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the `File` class only instantiates the SPIFFS file system when necessary - when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when no longer in use.
+### SPIFFS file system
 
-If the SPIFFS file system has not been initialized, it is formatted with SPIFFS_format when first used. This operation may take up to one minute.
+On embedded systems, the `File` class is implemented using the [SPIFFS](https://github.com/pellepl/spiffs) file system.
+
+SPIFFS is a flat file system, meaning that there are no directories and all files are at the root.
+
+The SPIFFS file system requires some additional memory. Including SPIFFS in the build increase RAM use by about 500 bytes. Using the SPIFFS file system requires about another 3 KB of RAM. To minimize the memory impact, the `File` class only instantiates the SPIFFS file system when necessary -- when a file is open and when a file is deleted. The SPIFFS file system is automatically closed when not in use.
+
+If the SPIFFS file system has not been initialized, it is formatted with the `SPIFFS_format` API when first used. Initialization takes up to one minute.
 
 ### Get file size
 
@@ -109,7 +114,7 @@ The Iterator class enumerates the files and subdirectories in a directory.
 
 	import {Iterator} from "file";
 
-> **Note**: The SPIFFS file system used on ESP8266 is a flat file system, so there are no subdirectories.
+> **Note**: Because the SPIFFS file system is a flat file system,  no subdirectories are returned on devices that use it.
 
 ### List contents of a directory
 
@@ -118,7 +123,7 @@ This example lists all the files and subdirectories in a directory.
 	let root = new Iterator("/");
 	let item;
 	while (item = root.next()) {
-		if (undefined == item.length)
+		if (undefined === item.length)
 			trace(`Directory: ${item.name}\n`);
 		else
 			trace(`File: ${item.name}, ${item.length} bytes\n`);
@@ -167,7 +172,7 @@ The [`zip`](https://linux.die.net/man/1/zip) command line tool creates uncompres
 
 ### Instantiate ZIP archive
 
-A ZIP archive is stored in memory. If it is ROM, it will be accessed using a Host Buffer, a variant of an `ArrayBuffer`. The host platform software provides the Host Buffer instance through a platform specific mechanism. This example assumes the ESP8266 object provides that.
+A ZIP archive is stored in memory. If it is ROM, it will be accessed using a Host Buffer, a variant of an `ArrayBuffer`. The host platform software provides the Host Buffer instance through a platform specific mechanism. This example uses the `Resource` constructor to create the Host Buffer.
 
 	import {ZIP} from "zip";
 
@@ -219,6 +224,71 @@ The `iterate` function instantiates an object to access the content of the speci
 
 The `map` function returns a Host Buffer that references the bytes of the file at the specified path.
 
-<!-- 11/7/2017 BSF
-The Flash, Preference and Resource classes live under files in the modules directory. Those classes should probably be documented here.
--->
+## class Resource
+
+The Resource class provides access to assets from an application's resource map.
+
+	import Resource from "Resource";
+
+### new Resource(path)
+
+The Resource constructor takes a single argument, the resource path, and returns an ArrayBuffer or Host Buffer containing the resource data.
+
+	let resource = new Resource("logo.bmp");
+	trace(`resource size is ${resource.byteLength}\n`);
+
+### exists(path)
+
+The static `exists` function returns a boolean indicating whether a resource exists at the specified path.
+
+### slice(begin[, end])
+
+The `slice` function returns a portion of the resource in an ArrayBuffer. The default value of `end` is the resource size.
+
+	let resource = new Resource("table.dat");
+	let buffer1 = resource.slice(5);		// Get a buffer starting from offset 5
+	let buffer2 = resource.slice(0, 10);	// Get a buffer of the first 10 bytes
+
+## class Preference
+
+The Preference class provides storage of persistent preference storage. Preferences are appropriate for storing small amounts of data that needs to persist between runs of an application.
+
+	import Preference from "Preference";
+	
+Preferences are grouped by domain. A domain contains one ore more keys. Each domain/key pair holds a single value, which is either a `Boolean`, integer (e.g. `Number` with no fractional part), `String` or `ArrayBuffer`.
+
+	const domain = "wifi";
+	let ssid = Preference.get(domain, "ssid");
+	let password = Preference.get(domain, "psk");
+
+Preference values are limited to 63 bytes. Key and domain names are limited to 32 bytes.
+
+On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
+
+> **Note**: On embedded devices, preferences are stored in SPI flash which has a limited number of erase cycles. Applications should minimize the number of write operations (set and delete). In practice, this isn't a significant concern. However, an application that updates preferences once per minute, for example, could eventually exceed the available erase cycles for the preference storage area in SPI flash.
+
+### set(domain, key, value)
+
+The static `set` function sets a preference value.
+
+	Preference.set("wifi", "ssid", "linksys");
+	Preference.set("wifi", "password", "admin");
+	Preference.set("wifi", "channel", 6);
+
+### get(domain, key)
+
+The static `get` function reads a preference value. If the preference does not exist, `get` returns `undefined`.
+
+	let value = Preference.get("settings", "timezone");
+	if (value !== undefined)
+		trace(`timezone ${value}\n`);
+
+### delete(domain, key)
+
+The static `delete` function removes a preference. If the preference does not exist, no error is thrown.
+
+	Preference.delete("wifi", "password");
+
+## class Flash
+
+This class is experimental and not yet documented.
