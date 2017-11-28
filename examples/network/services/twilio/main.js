@@ -16,12 +16,12 @@ import {Request} from "http"
 import SecureSocket from "securesocket";
 import Base64 from "base64";
 
-const account = "AC3ed2ef12baac0efd571d334ea40ba684";
-const token = "76e437f2332a97f2e72ddecd26dcd430";
+const account = "FILL IN YOUR ACCOUNT";
+const token = "FILL IN YOUR TOKEN";
 
 let params = {
-	To: "+14152794077",
-	From: "+16507795272",
+	To: "+1415nnnmmmm",
+	From: "+1650nnnmmmm",
 	Body: "hullo, from moddable.",
 };
 
