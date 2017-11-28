@@ -15,7 +15,7 @@ This document provides an introduction to getting started building apps with the
 
 1. Download and install [Xcode](https://developer.apple.com/xcode/). Launch Xcode to install additional command line components when prompted. 
 
-2. Download the [Moddable repository] (https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
 	git clone https://github.com/Moddable-OpenSource/moddable
@@ -123,7 +123,7 @@ This document provides an introduction to getting started building apps with the
 
 1. Download [Microsoft Visual Studio 2017 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option and install. 
 
-2. Download the [Moddable repository] (https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
 	git clone https://github.com/Moddable-OpenSource/moddable
@@ -217,7 +217,7 @@ This document provides an introduction to getting started building apps with the
 	sudo apt-get install libgtk-3-dev
 	```
 	
-2. Download the [Moddable repository] (https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
 	git clone https://github.com/Moddable-OpenSource/moddable
