@@ -13,7 +13,7 @@ a Moddable app.
 
 #### `$MODDABLE/examples/piu/balls/manifest.json`
 
-Let us look at the manifest of the "balls" app: . It is quite short:
+Let us look at the manifest of the "balls" app: It is quite short:
 
 	{
 		"include": [
