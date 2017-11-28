@@ -234,7 +234,7 @@ Non-negative message values indicate normal operation, and negative message valu
 
 ## class HTTP Server
 
-The HTTP Server class implements a server to response to HTTP requests. It is built on the Socket class. Like the Socket class, the HTTP Server uses a dictionary based constructor and a single callback.
+The HTTP Server class implements a server to respond to HTTP requests. It is built on the Socket class. Like the Socket class, the HTTP Server uses a dictionary based constructor and a single callback.
 
 	import {Server} from "http"
 
@@ -491,7 +491,7 @@ The following example performs a scan for access points, tracing their name (SSI
 
 ### Connecting to an access point
 
-The following example begins the process of connecting to a Wi-Fi access point and waits for the connection to success with an IP address being assigned to the device.
+The following example begins the process of connecting to a Wi-Fi access point and waits for the connection to succeed with an IP address being assigned to the device.
 
 	let monitor = new WiFi({ssid: "Free Wi-Fi, password: "secret"}, msg => {
 		switch (msg) {
@@ -519,7 +519,7 @@ The dictionary parameter supports two optional properties.
 - `hidden` - When `true`, hidden access point are included in the scan results. Defaults to `false`.
 - `channel` - The Wi-Fi channel number to scan. When this property is not present, all channels are scanned.
 
-The Wi-Fi scan runs for fixed period of time, approximately two seconds. During that time, not all access points may be found. It may be necessary to call scan several times to create a complete list of visible access points.
+The Wi-Fi scan runs for a fixed period of time, approximately two seconds. During that time, not all access points may be found. It may be necessary to call scan several times to create a complete list of visible access points.
 
 ### status
 
@@ -557,7 +557,7 @@ The dictionary implements the following properties:
 
 ## class SNTP
 
-The [SNTP](https://en.wikipedia.org/wiki/Network_Time_Protocol#SNTP) class provides implements an SNTP client ([RFC 4330](https://tools.ietf.org/html/rfc4330)) to retrieve a real time clock value.
+The [SNTP](https://en.wikipedia.org/wiki/Network_Time_Protocol#SNTP) class implements an SNTP client ([RFC 4330](https://tools.ietf.org/html/rfc4330)) to retrieve a real time clock value.
 
 	import SNTP from "sntp";
 
