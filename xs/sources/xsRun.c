@@ -336,7 +336,7 @@ static void fxTraceCallEnd(txMachine* the, txSlot* function)
 #endif
 
 #ifdef mxLink
-extern int gxFakeCallback;
+extern txCallback gxFakeCallback;
 #endif
 
 void fxRunID(txMachine* the, txSlot* generator, txID id)
@@ -730,7 +730,7 @@ XS_CODE_JUMP:
 				byte = XS_CODE_CALL;
 				mxSaveState;
 #ifdef mxLink
-				if ((int)slot->value.hostFunction.builder->callback < gxFakeCallback)
+				if (slot->value.hostFunction.builder->callback < gxFakeCallback)
 					mxRunDebugID(XS_TYPE_ERROR, "call %s: no function", offset);
 #endif
 				(*(slot->value.hostFunction.builder->callback))(the);
@@ -752,7 +752,7 @@ XS_CODE_JUMP:
 				byte = XS_CODE_CALL;
 				mxSaveState;
 #ifdef mxLink
-				if ((int)slot->next->value.callback.address < gxFakeCallback)
+				if (slot->next->value.callback.address < gxFakeCallback)
 					mxRunDebugID(XS_TYPE_ERROR, "call %s: no function", offset);
 #endif
 				if (slot->flag & XS_BASE_FLAG)
