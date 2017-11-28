@@ -730,7 +730,7 @@ XS_CODE_JUMP:
 				byte = XS_CODE_CALL;
 				mxSaveState;
 #ifdef mxLink
-				if (slot->value.hostFunction.builder->callback < gxFakeCallback)
+				if (slot->value.hostFunction.builder->callback - gxFakeCallback < 0)
 					mxRunDebugID(XS_TYPE_ERROR, "call %s: no function", offset);
 #endif
 				(*(slot->value.hostFunction.builder->callback))(the);
@@ -752,7 +752,7 @@ XS_CODE_JUMP:
 				byte = XS_CODE_CALL;
 				mxSaveState;
 #ifdef mxLink
-				if (slot->next->value.callback.address < gxFakeCallback)
+				if (slot->next->value.callback.address - gxFakeCallback < 0)
 					mxRunDebugID(XS_TYPE_ERROR, "call %s: no function", offset);
 #endif
 				if (slot->flag & XS_BASE_FLAG)
