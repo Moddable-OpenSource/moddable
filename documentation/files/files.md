@@ -172,7 +172,7 @@ The [`zip`](https://linux.die.net/man/1/zip) command line tool creates uncompres
 
 ### Instantiate ZIP archive
 
-A ZIP archive is stored in memory. If it is ROM, it will be accessed using a Host Buffer, a variant of an `ArrayBuffer`. The host platform software provides the Host Buffer instance through a platform specific mechanism. This example assumes the ESP8266 object provides that.
+A ZIP archive is stored in memory. If it is ROM, it will be accessed using a Host Buffer, a variant of an `ArrayBuffer`. The host platform software provides the Host Buffer instance through a platform specific mechanism. This example uses the `Resource` constructor to create the Host Buffer.
 
 	import {ZIP} from "zip";
 
