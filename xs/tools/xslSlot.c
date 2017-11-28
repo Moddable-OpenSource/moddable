@@ -126,7 +126,7 @@ txString fxGetCodeName(txMachine* the, txByte* which)
 			txS1* from = linkerScript->codeBuffer;
 			txS1* to = from + linkerScript->codeSize;
 			if ((from <= which) && (which < to)) {
-				sprintf(buffer, "(txByte*)(&gxCode%d[%ld])", linkerScript->scriptIndex, which - from);
+				sprintf(buffer, "(txByte*)(&gxCode%d[%ld])", linkerScript->scriptIndex, (long)(which - from));
 				return buffer;
 			}
 			linkerScript = linkerScript->nextScript;
