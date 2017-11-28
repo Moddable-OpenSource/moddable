@@ -185,8 +185,8 @@ void PiuStyleLookupFont(PiuStyle* self)
 		c_strcpy(buffer, string);
 	else
 		c_strcpy(buffer, "undefined");
+    c_strcat(buffer, "-");
 	if (((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)) || ((*self)->weight)) {
-		c_strcat(buffer, "-"); 
 		if ((*self)->flags & piuStyleCondensedBit)
 			c_strcat(buffer, "Condensed"); 
 		switch ((*self)->weight) {
@@ -198,14 +198,13 @@ void PiuStyleLookupFont(PiuStyle* self)
 			case 7: c_strcat(buffer, "Bold");break;
 			case 8: c_strcat(buffer, "Heavy"); break;
 			case 9: c_strcat(buffer, "Black");break;
-			default: 
-				if (!((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)))
-					c_strcat(buffer, "Regular"); 
-				break;
 		}
 		if ((*self)->flags & piuStyleItalicBit)
 			c_strcat(buffer, "Italic"); 
 	}
+    else {
+        c_strcat(buffer, "Regular");
+    }
 	if ((*self)->size) {
 		xsIntegerValue length = c_strlen(buffer) + 1;
 		c_strcat(buffer, "-");
