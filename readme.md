@@ -21,7 +21,7 @@ A significant part of building efficient software for microcontrollers occurs at
 ## Getting started
 The Moddable SDK is intended for use with micro-controller hardware. It includes simulators that run on macOS, Linux, and Windows. These are a great way to get started, and invaluable as development accelerators.
 
-The [Getting Started](documentation/Moddable SDK – Getting Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for the ESP8266 and ESP32 microcontrollers.
+The [Getting Started](documentation/Moddable%20SDK%20–%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for the ESP8266 and ESP32 microcontrollers.
 
 ## Source tree
 The Moddable SDK repository contains the following top level directories.
