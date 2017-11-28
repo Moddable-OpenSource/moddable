@@ -388,8 +388,8 @@ To build such hexadecimal numbers, Piu exports functions similar to the CSS func
 import { rgb, rgba, hsl, hsla } from "piu/All";
 const yellowSkin = new Skin({ fill:rgb(255, 255, 0) });
 const halfYellowSkin = new Skin({ fill:rgba(255, 255, 0, 0.5) });
-const cyanSkin = new Skin({ fill:hsl(180, 1, 0,5) });
-const halfCyanSkin = new Skin({ fill:hsl(180, 1, 0.5, 0.5) });
+const cyanSkin = new Skin({ fill:hsla(180, 1, 0.5) });
+const halfCyanSkin = new Skin({ fill:hsla(180, 1, 0.5, 0.5) });
 ```
 
 In dictionaries, colors can be a single color or an array of 2, 3, or 4 colors. The `skin` and `style` objects blend a color based on the state of the `content` object that uses them. See [Variant, Variants, State, and States](#variant-variants-state-and-states) for more information.
@@ -737,7 +737,7 @@ export default function() {
 
 | Arguments | Type | Description
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this container's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this container's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns an `application` instance, an object that inherits from `Container.prototype`.
@@ -838,7 +838,7 @@ The `column` object is a `container` object that arranges its contents verticall
 
 | Arguments | Type | Description
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
 Returns a `column` instance, an object that inherits from `Column .prototype`
@@ -910,7 +910,7 @@ The `container` object is a `content` object that can contain other `content` ob
 
 | Arguments | Type | Description
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this container's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this container's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result.Only parameters specified in the [Dictionary](#container-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `container` instance, an object that inherits from `Container.prototype`.
@@ -1354,7 +1354,7 @@ Applications use `content` objects for graphical parts of their user interface, 
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#content-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `content` instance, an object that inherits from `Content.prototype`
@@ -1899,7 +1899,7 @@ Both regions are initially empty.
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this die's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this die's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
 Returns a `die` instance, an object that inherits from `Die.prototype.`
@@ -2309,7 +2309,7 @@ All supported image types are compressed into a single resource with a `.cs` ext
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this image's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this image's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#image-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns an `image` instance, an object that inherits from `Image.prototype`
@@ -2382,7 +2382,7 @@ The `label` object is a `content` object that renders a string on a single line 
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this label's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this label's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#label-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `label` instance, an object that inherits from `Label.prototype`
@@ -2455,7 +2455,7 @@ When its height is measured, the `layout` object triggers the `onMeasureVertical
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this layout's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this layout's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
 Returns a `layout` instance, an object that inherits from `Layout.prototype/`
@@ -2616,7 +2616,7 @@ The `port` object has a clip rectangle (initially the bounds of the `port` objec
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
 Returns a `port` instance, an object that inherits from `Port.prototype`
@@ -2749,7 +2749,7 @@ application.add(samplePort);
 | `variant` | `number` | The variant of the skin to draw. If the specified skin defines variants, setting the variant changes the appearance.
 | `state` | `number` | The state of the skin to draw. If the specified skin defines states, setting the state changes the appearance.
 
-Draws the skin the way a `content` instance would, with the state, variant, and position speciied.
+Draws the skin the way a `content` instance would, with the state, variant, and position specified.
 
 ```javascript
 let heartSkin = new Skin({ 
@@ -2783,7 +2783,7 @@ application.add(samplePort);
 | `color` | `string` | The color to draw the string, as a string of the form specified in the [Color](#color) section of this document
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
 
-Draws the string the way a `label` instance would, with the style, color, and position speciied.
+Draws the string the way a `label` instance would, with the style, color, and position specified.
 
 ```javascript
 let sampleStyle = new Style({ font:"600 28px Open Sans"});
@@ -2814,7 +2814,7 @@ application.add(samplePort);
 | `ellipsis` | `boolean` | If `true`, the string is truncated to fit the specified bounds. If `false`, the entire string is drawn, even if it extends beyond the specified bounds.
 | `state` | `number` | The state of the style to draw. If the specified style has multiple fill colors, setting the state selects which color to use.
 
-Draws a string with the style, position, and state speciied.
+Draws a string with the style, position, and state specified.
 
 ```javascript
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: ["red", "yellow", "green", "blue"] });
@@ -3066,7 +3066,7 @@ The `row` object is a `container` object that arranges its contents horizontally
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. The dictionary is the same as for the `content` object. Only parameters specified in the [Dictionary](#content-dictionary) section of the [Content Object](#container-object) will have an effect; other parameters will be ignored.
 
 Returns a `row` instance, an object that inherits from `Row.prototype`
@@ -3133,7 +3133,7 @@ The `scroller` object is a `container` object that scrolls its first `content` o
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#scroller-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `scroller` instance, an object that inherits from `Scroller.prototype`
@@ -3663,7 +3663,7 @@ The `text` object is a `content` object that renders a string on multiple lines 
 
 | Argument | Type | Description |
 | --- | --- | :--- |
-| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitary parameters.
+| `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#text-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `text` instance, an object that inherits from `Text.prototype`
