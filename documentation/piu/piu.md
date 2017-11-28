@@ -388,7 +388,7 @@ To build such hexadecimal numbers, Piu exports functions similar to the CSS func
 import { rgb, rgba, hsl, hsla } from "piu/All";
 const yellowSkin = new Skin({ fill:rgb(255, 255, 0) });
 const halfYellowSkin = new Skin({ fill:rgba(255, 255, 0, 0.5) });
-const cyanSkin = new Skin({ fill:hsla(180, 1, 0.5) });
+const cyanSkin = new Skin({ fill:hsl(180, 1, 0.5) });
 const halfCyanSkin = new Skin({ fill:hsla(180, 1, 0.5, 0.5) });
 ```
 
