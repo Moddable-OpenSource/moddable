@@ -409,11 +409,11 @@ Returns the format of the pixels of the `PixelsOut` instance. This property is r
 
 Returns true if the PixelsOut supports asynchronous rendering. This means  pixels passed to `send` are not copied, and must remain unchanged through the completion of the next call to `send` or `end`.
 
-#### `c_dispatch`
+##### `c_dispatch`
 
 Optionally returns a pointer to a `HostBuffer` that contains a native `PixelsOutDispatchRecord`. Returns undefined if no native dispatch table is available. The native `PixelsOutDispatchRecord` allows native code to call the `PixelsOut`'s `begin`, `send`, `continue`, `end`, and `adaptInvalid` functions directly, without going through the XS virtual machine. The native dispatch table is strictly an optimization and provides only functionality in the JavaScript API.
 
-#### `clut`
+##### `clut`
 
 (Not documented yet)
 
