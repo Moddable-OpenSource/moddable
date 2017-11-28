@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "#define mxAliasCount %d\n", the->aliasCount);
 			fprintf(file, "#define mxHeapCount %d\n", (int)count);
 			fprintf(file, "static const txSlot gxHeap[mxHeapCount];\n");
-			fprintf(file, "#define mxStackCount %ld\n", the->stackTop - the->stack);
+			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
 			fprintf(file, "static const txSlot gxStack[mxStackCount];\n");
 			fprintf(file, "#define mxKeysCount %d\n", the->keyIndex);
 			fprintf(file, "static const txSlot* gxKeys[mxKeysCount];\n");
