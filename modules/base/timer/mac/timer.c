@@ -108,6 +108,7 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	context.info = timer;
 	timer->cfTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + (firstInterval / 1000.0),
 					secondInterval / 1000.0, 0, 0, modTimerExcecuteOne, &context);
+	CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer->cfTimer, kCFRunLoopCommonModes);
 }
 
 uint16_t modTimerGetID(modTimer timer)
