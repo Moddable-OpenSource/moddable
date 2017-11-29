@@ -336,7 +336,7 @@ This is a section of the `OpenSans-BoldItalic-52-alpha.bmp` file, which contains
 Poco renders to the following pixel formats:
 
 - 16-bit RGB565 little-endian
-- 8-bit RGB323
+- 8-bit RGB332
 - 8-bit gray
 - 4-bit indexed color
 - 4-bit gray
