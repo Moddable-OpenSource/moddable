@@ -34,8 +34,6 @@ enum {
 	kPocoCommandRectangleBlend,
 	kPocoCommandPixelDraw,
 	kPocoCommandBitmapDraw,
-//	kPocoCommandPackedBitmapDrawUnclipped,
-//	kPocoCommandPackedBitmapDrawClipped,
 	kPocoCommandMonochromeBitmapDraw,
 	kPocoCommandMonochromeForegroundBitmapDraw,
 	kPocoCommandGray16BitmapDraw,
@@ -532,26 +530,6 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 #endif
 #endif
 	}
-//	else
-//	if ((kCommodettoBitmapFormat | kCommodettoBitmapPacked) == bits->format) {
-//		PocoCoordinate right = bits->width - sx - sw;
-//
-//		if (sy)
-//			pixels = (const PocoPixel *)skipPackedPixels((const unsigned char *)pixels, bits->width * sy);  // clipped off top. skip sy scan lines.
-//
-//		if (right || sx) {
-//			pc->command = kPocoCommandPackedBitmapDrawClipped;
-//			PocoCommandSetLength(pc, sizeof(RenderPackedBitsClippedRecord));
-//			((RenderPackedBitsClipped)pc)->left = sx;
-//			((RenderPackedBitsClipped)pc)->right = right;
-//		}
-//		else {
-//			pc->command = kPocoCommandPackedBitmapDrawUnclipped;
-//			PocoCommandSetLength(pc, sizeof(RenderPackedBitsUnclippedRecord));
-//		}
-//
-//		((RenderPackedBitsClipped)pc)->pixels = (const unsigned char *)pixels;
-//	}
 	else
 	if (kCommodettoBitmapMonochrome == bits->format) {
 		uint8_t mask;
@@ -1419,146 +1397,6 @@ void doDrawBitmap(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 }
 
 #endif
-
-//void doDrawPackedBitmapUnclipped(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
-//{
-//	RenderPackedBitsUnclipped srcBits = (RenderPackedBitsUnclipped)pc;
-//	const unsigned char *src = srcBits->pixels;
-//	PocoCoordinate w = srcBits->w;
-//	PocoCoordinate scanBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - w;
-//
-//if (4 == kPocoPixelSize) return;		//@@
-//
-//	while (h--) {
-//		PocoCoordinate tw = w;
-//		while (tw) {
-//			signed char opcode = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//			unsigned char count = (opcode & 0x3F) + 1;
-//
-//			// blit
-//			if (opcode < 0) {
-//				if (!(opcode & 0x40)) {   // repeat
-//					unsigned char c = count;
-//					unsigned char *d = (unsigned char *)dst;
-//					unsigned char color = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#if 8 == kPocoPixelSize
-//						while (c--)
-//							*d++ = color;
-//					#else
-//						unsigned char color2 = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//						while (c--) {
-//							*d++ = color;
-//							*d++ = color2;
-//						}
-//					#endif
-//				}
-//			}
-//			else {	// literal
-//				unsigned char c = count;
-//				unsigned char *d = (unsigned char *)dst;
-//
-//				while (c--) {
-//					*d++ = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#if 16 == kPocoPixelSize
-//						*d++ = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#endif
-//				}
-//			}
-//			tw -= count;
-//			dst += count;
-//		}
-//		dst += scanBump;
-//	}
-//
-//	srcBits->pixels = (const void *)src;
-//}
-//
-//void doDrawPackedBitmapClipped(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
-//{
-//	RenderPackedBitsClipped srcBits = (RenderPackedBitsClipped)pc;
-//	const unsigned char *src = srcBits->pixels;
-//	PocoCoordinate w = srcBits->w;
-//	PocoCoordinate scanBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - w;
-//
-//if (4 == kPocoPixelSize) return;		//@@
-//
-//	while (h--) {
-//		PocoCoordinate tw = w, left = srcBits->left, right = srcBits->right;
-//		while (tw) {
-//			signed char opcode = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//			unsigned char count = (opcode & 0x3F) + 1, blitCount;
-//
-//			// left clip
-//			if (left) {
-//				if (left >= count) {  // consume this entire run
-//					if (opcode < 0) {
-//						if (!(opcode & 0x40))  // repeat
-//							src += sizeof(PocoPixel);
-//					}
-//					else	// literal
-//						src += count * sizeof(PocoPixel);
-//					left -= count;
-//					continue;
-//				}
-//
-//				// partial run
-//				if (opcode >= 0)  // literal
-//					src += left * sizeof(PocoPixel);
-//				count -= left;
-//				left = 0;
-//				// fall through to blit this opcode
-//			}
-//
-//			// right clip
-//			blitCount = count;
-//			if (count > tw) {
-//				right -= (count - tw);
-//				blitCount = (unsigned char)tw;
-//			}
-//
-//			// blit
-//			if (opcode < 0) {
-//				if (!(opcode & 0x40)) {  // repeat
-//					unsigned char c = blitCount;
-//					unsigned char *d = (unsigned char *)dst;
-//					unsigned char color = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#if 8 == kPocoPixelSize
-//						while (c--)
-//							*d++ = color;
-//					#else
-//						unsigned char color2 = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//						while (c--) {
-//							*d++ = color;
-//							*d++ = color2;
-//						}
-//					#endif
-//				}
-//			}
-//			else {	// literal
-//				unsigned char c = blitCount;
-//				unsigned char *d = (unsigned char *)dst;
-//
-//				while (c--) {
-//					*d++ = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#if 16 == kPocoPixelSize
-//						*d++ = READ_PROG_MEM_UNSIGNED_BYTE(src++);
-//					#endif
-//				}
-//
-//				src += (count - blitCount) * sizeof(PocoPixel);
-//			}
-//			tw -= blitCount;
-//			dst += blitCount;
-//		}
-//
-//		if (right)
-//			src = skipPackedPixels(src, right);
-//
-//  	   dst += scanBump;
-//	}
-//
-//	srcBits->pixels = src;
-//}
 
 void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 {

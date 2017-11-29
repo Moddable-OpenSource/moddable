@@ -76,14 +76,12 @@ void PiuRectangleEmpty(PiuRectangle r)
 void PiuRectangleInset(PiuRectangle r, PiuCoordinate dx, PiuCoordinate dy)
 {
 	r->x += dx;
-	r->width -= dx + dx;
-	if (r->width < 0)
-		r->width = 0;
+	dx = r->width - dx - dx;
+	r->width = (dx <= 0) ? 0 : dx;
 
 	r->y += dy;
-	r->height -= dy + dy;
-	if (r->height < 0)
-		r->height = 0;
+	dy = r->height - dy - dy;
+	r->height = (dy <= 0) ? 0 : dy;
 }
 
 PiuBoolean PiuRectangleIntersect(PiuRectangle r0, PiuRectangle r1, PiuRectangle r2)
