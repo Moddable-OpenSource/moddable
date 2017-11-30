@@ -6,7 +6,9 @@ Copyright 2017 Moddable Tech, Inc.
 
 Revised: November 29, 2017
 
-This document is a guide to building example applications in the Moddable SDK . It describes how to build apps using the `mcconfig` command line tool, configure builds for target platforms, and modify builds to support different screen/touch drivers and Wi-Fi configurations.
+The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
+
+This document is a guide to building example applications in the Moddable SDK. It describes how to build apps using the `mcconfig` command line tool, configure builds for target platforms, and modify builds to support different screen/touch drivers and Wi-Fi configurations for microcontroller device targets.
 
 > **Note**: This document assumes you have installed the Moddable SDK on your development machine. The [Getting Started](documentation/Moddable%20SDK%20–%20Getting%20Started.md) document describes how to install the SDK.
 
@@ -100,6 +102,8 @@ To build the `progress` app to run at 180 degrees rotation on the host platform:
 
 Example apps that require a network connection must configure the target device to connect to a Wi-Fi access point. Use the `ssid` and `password` configuration options to specify the access point credentials. The Moddable SDK runtime automatically tries to connect to the specified access point prior to launching the app.
 
+> **Note**: Wi-Fi configuration is only supported for microcontroller targets.
+
 To build and run the `httpget` app on the network `friedkin` with a password `tacos`:
 
 	cd $MODDABLE/examples/network/httpget
@@ -113,6 +117,8 @@ To build and run the `sntp` app for the open network `Free Wifi`:
 ### Screen driver configuration
 
 Most of the graphics example apps are pre-configured to run on ESP8266 devices with a LCD screen compatible with the [ILI9341](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/ili9341) driver and [XPT2046](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/xpt2046) touch controller. To use a different display or touch driver, two steps are required. First, change `screen` and `touch` configuration options to specify a screen or touch driver. Second, update the application's manifest to include the drivers. The remainder of this section explains how to do these steps.
+
+> **Note**: Screen driver configuration is only supported for microcontroller targets.
 
 To run the `text` app on an ESP8266 device with a [LPM013M126A](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/lpm013m126a) 8-color display:
 
