@@ -28,7 +28,7 @@ The Moddable SDK repository contains the following top level directories.
 
 - **build** - Files required for specific microcontroller targets, the simulator, and make files for build tools in the `tools` directory.
 - **documentation** - All the documentation for the Moddable SDK. Documentation is provided in markdown format.
-- **examples** - Example applications for many of the capabilities of the Moddable SDK. Many example applications are under one page of source code to focus on demonstrating how to use a specific capability. Not every example is compatible with every device target.
+- **examples** - Example applications for many of the capabilities of the Moddable SDK. Many example applications are under one page of source code to focus on demonstrating how to use a specific capability. Not every example is compatible with every device target. The [readme.md](examples/readme.md) document provides a guide to building the examples.
 - **license** - The license agreements for the software provided in the Moddable SDK. The Contributor License Agreements are here as well.
 - **modules** - The software modules that make up the runtime of the Moddable SDK. These include networking, graphics, user interface, hardware access, cryptographic primitives, and device drivers. All modules have a JavaScript API. Many modules are implemented in part using C.
 - **tools** - Tools to build applications using the Moddable SDK. These include command line tools for image format conversion, image compression, image rotation, font compression, processing localization strings, compiling resources, and building applications from JSON manifest files. In addition, xsbug, the XS source level debugger, is here.
