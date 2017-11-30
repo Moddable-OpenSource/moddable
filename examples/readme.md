@@ -116,15 +116,15 @@ To build and run the `sntp` app for the open network `Free Wifi`:
 	
 ### Screen driver configuration
 
-Most of the graphics example apps are pre-configured to run on ESP8266 devices with a LCD screen compatible with the [ILI9341](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/ili9341) driver and [XPT2046](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/xpt2046) touch controller. To use a different display or touch driver, two steps are required. First, change `screen` and `touch` configuration options to specify a screen or touch driver. Second, update the application's manifest to include the drivers. The remainder of this section explains how to do these steps.
+Most of the graphics example apps are pre-configured to run on ESP8266 devices with a LCD screen compatible with the [ILI9341](../modules/drivers/ili9341) driver and [XPT2046](../modules/drivers/xpt2046) touch controller. To use a different display or touch driver, two steps are required. First, change `screen` and `touch` configuration options to specify a screen or touch driver. Second, update the application's manifest to include the drivers. The remainder of this section explains how to do these steps.
 
 > **Note**: Screen driver configuration is only supported for microcontroller targets.
 
-To run the `text` app on an ESP8266 device with a [LPM013M126A](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/lpm013m126a) 8-color display:
+To run the `text` app on an ESP8266 device with a [LPM013M126A](../modules/drivers/lpm013m126a) 8-color display:
 
 	cd $MODDABLE/examples/commodetto/text
 	mcconfig -d -m -p esp screen=lpm013m126a	
-To run the `map-puzzle` app on an ESP8266 device with a [FT6206](https://github.com/Moddable-OpenSource/moddable/tree/master/modules/drivers/ft6206) multi-touch controller:
+To run the `map-puzzle` app on an ESP8266 device with a [FT6206](../modules/drivers/ft6206) multi-touch controller:
 
 	cd $MODDABLE/examples/piu/map-puzzle
 	mcconfig -d -m -p esp touch=ft6206
@@ -155,4 +155,4 @@ To build an app that for the `ft6206` touch controller driver, modify both the `
 		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
 	]
 
-> **Note**: For additional details on the `manifest.json` file please refer to the [manifest.md](https://github.com/Moddable-OpenSource/moddable/blob/master/documentation/tools/manifest.md) document.
+> **Note**: For additional details on the `manifest.json` file please refer to the [manifest.md](../documentation/tools/manifest.md) document.
