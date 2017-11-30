@@ -9,31 +9,33 @@
 		"stack":350,
 	},
 	"modules": {
+		"~": [
+			"$(PIU)/MC/piuCombTransition",
+			"$(PIU)/MC/piuWipeTransition",
+			"$(BUILD)/devices/esp/setup/network"
+		],
 		"*": [
 			"./main",
-			"./login",
-			"./network-list",
-			"./connection-error",
-			"./connecting",
+			"./wifi-screens",
 			"./assets",
 			"./scroller",
-			"./spinner",
-			"$(MODULES)/network/wifi/*",
-			"$(MODULES)/base/debug/*",
 		]
 	},
 	"preload": [
-		"pins",
-		"login",
-		"network-list",
-		"connection-error",
-		"connecting",
+		"wifi-screens",
 		"assets",
 		"scroller",
-		"spinner",
-		"wifi",
-		"debug"
 	],
+	"platforms": {
+		"mac": {
+			"modules": {
+				"~": [
+					"$(MODULES)/network/wifi/*",
+				],
+				"wifi": "./simulator/wifisim",
+			},
+		}
+	},
 	"resources":{
 		"*-alpha": [
 			"./fonts/OpenSans-Regular-20",
@@ -42,10 +44,8 @@
 			"./assets/header-arrow",
 			"./assets/wifi-strip",
 			"./assets/down-arrow-mask",
-			"./assets/up-arrow-mask"
-		],
-		"*": [
+			"./assets/up-arrow-mask",
 			"./assets/page-1",
-		]
+		],
 	},
 }

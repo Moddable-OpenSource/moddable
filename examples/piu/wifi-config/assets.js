@@ -25,7 +25,7 @@ const LightBlueSkin = Skin.template({ fill: LIGHT_BLUE });
 
 const OpenSans16 = Style.template({ font: "semibold 16px Open Sans", vertical: "middle" });
 const OpenSans18 = Style.template({ font: "semibold 18px Open Sans", vertical: "middle" });
-const OpenSans20 = Style.template({ font: "normal normal normal 20px Open Sans", vertical: "middle" });
+const OpenSans20 = Style.template({ font: "normal 20px Open Sans", vertical: "middle" });
 const BlackStyle = Style.template({ color: BLACK });
 const WhiteStyle = Style.template({ color: WHITE });
 const CenterStyle = Style.template({ horizontal: "center" });
@@ -48,131 +48,130 @@ const WiFiStripSkin = Skin.template({
 const ErrorTexture = Texture.template({ path:"page-1.png" });
 const ErrorSkin = Skin.template({ 
 	Texture: ErrorTexture, 
+  color: "red",
 	x: 0, y: 0, width: 48, height: 48 
 });
 
 const Header = Container.template($ => ({
-	top: 0, height:40, left: 0, right: 0,
+	active: true, top: 0, height:40, left: 0, right: 0,
 	Skin: LightBlueSkin, Style: OpenSans20,
 	contents: [
-		Content($, { active: true, left: 12, Skin: BackArrowSkin, Behavior: $.backArrowBehavior }),
+		($.backArrowBehavior)? Content($, { active: true, left: 12, Skin: BackArrowSkin, Behavior: $.backArrowBehavior }) : null,
 		Label($, { left: 33, Style: WhiteStyle, string: $.title }),
-	]
+	],
+  Behavior: $.backArrowBehavior
 }));
 
-const DOWN = 0;
-const RIGHT = 1;
-const UP = 2;
-const LEFT = 3;
-const PAUSE = 4;
+// Have to use easing function to get x coordinates of circle to make squares look evenly distributed
+// Simplified easeOutSine from https://github.com/danro/jquery-easing/blob/master/jquery.easing.js
+// t: current time, b: beginning value, c: change in value, d: duration
+const halfOfPi = (Math.PI/2);
+function getX(t, b, c, d) {
+  return c * Math.sin(t/d * halfOfPi) + b;
+}
+function getY(x, r) {
+  return Math.sqrt((r*r) - (x*x));
+}
 
-const LoadingSpinner = Port.template($ => ({
-  top: $.top, left: $.left, height: $.squareSize*5, width: $.squareSize*5,
-  Behavior: class extends Behavior {
-    onCreate(port, data) {
-      this.data = data;
-      data.color1 = hsl(data.color[0], data.color[1], data.color[2]);
-      data.color2 = hsl(data.color[0], data.color[1], data.color[2]+0.17);
-      data.color3 = hsl(data.color[0], data.color[1], data.color[2]+0.34);
-      data.color4 = hsl(data.color[0], data.color[1], data.color[2]+0.51);
-      this.direction = DOWN;
-      this.index = 0;
-    }
-    onDisplaying(port) {
-      this.dxy = Math.round(port.height / 10);
-      this.x = 0;
-      this.y = 0;
-      this.last6coords = new Int16Array(12);
-      port.interval = this.data.frequency / 30;
-      port.time = 0;
-      port.start();
-    }
-    onDraw(port) {
-      let dxy = this.dxy
-      let last6coords = this.last6coords;
-      port.fillColor(this.data.color4, last6coords[10], last6coords[11], this.data.squareSize, this.data.squareSize);
-      port.fillColor(this.data.color3, last6coords[6], last6coords[7], this.data.squareSize, this.data.squareSize);
-      port.fillColor(this.data.color2, last6coords[2], last6coords[3], this.data.squareSize, this.data.squareSize);
-      switch (this.direction) {
-        case DOWN:
-          this.y += this.dxy;
-          break;
-        case RIGHT:
-          this.x += this.dxy;
-          break;
-        case UP:
-          this.y -= this.dxy;
-          break;
-        case LEFT:
-          this.x -= this.dxy;
-          break;
-        case PAUSE:
-          break;
-      }
-      port.fillColor(this.data.color1, this.x, this.y, this.data.squareSize, this.data.squareSize);
-      last6coords.copyWithin(2, 0);
-      last6coords[0] = this.x;
-      last6coords[1] = this.y;
-    }
-    onTimeChanged(port) {
-      this.index++;
-      if (this.index == 8) {
-        this.index = 0;
-        this.direction++;
-        if (this.direction > PAUSE) {
-          this.x = 0;
-          this.direction = DOWN;
-        }
-      }
-      port.invalidate();
+class CircleOfSquaresBehavior extends Behavior {
+  onDisplaying(port) {
+    this.r = (port.width-8) / 2;
+    this.centerCoord = this.r;
+  }
+  onDraw(port) {
+    port.fillColor(WHITE, 0,0, port.width, port.height);
+    let r = this.r;
+    let centerCoord = this.centerCoord;
+    let x, y;
+    for (let i = 0; i < 9; i++) {
+      x = getX(i, 0, r, 9);
+      y = getY(x, r);
+      // Top left quadrant
+      port.fillColor("#cce6ff", centerCoord+x, centerCoord-y, 8, 8);
+      // Bottom left quadrant
+      port.fillColor("#cce6ff", centerCoord+y, centerCoord+x, 8, 8);
+      // Bottom right quadrant
+      port.fillColor("#cce6ff", centerCoord-x, centerCoord+y, 8, 8);
+      // Top right quadrant
+      port.fillColor("#cce6ff", centerCoord-y, centerCoord-x, 8, 8);
     }
   }
-}))
+}
+Object.freeze(CircleOfSquaresBehavior.prototype);
 
-const LoadingBubbles = Port.template($ => ({
-  top: $.top, left: $.left, height: $.squareSize, width: $.squareSize*5,
-  Behavior: class extends Behavior {
-    onCreate(port, data) {
-      this.data = data;
-      data.color1 = hsl(data.color[0], data.color[1], data.color[2]);
-      data.color2 = hsl(data.color[0], data.color[1], data.color[2]+0.51);
-      this.index = 0;
+class AnimatedCircleOfSquaresBehavior extends Behavior {
+  onDisplaying(port) {
+    let r = this.r = (port.width-8) / 2;
+    let centerCoord = this.centerCoord = r;
+    let last6coords = this.last6coords = new Int16Array(12).fill(centerCoord - r);
+    let startY = centerCoord;
+    for (let i = 1; i < 12; i += 2) {
+      last6coords[i] = startY;
     }
-    onDisplaying(port) {
-      port.interval = this.data.frequency / 30;
-      port.time = 0;
-      port.start();
-    }
-    onDraw(port) {
-    	let sq1color, sq2color, sq3color;
-    	switch (this.index) {
-    		case 0:
-    			sq1color = this.data.color1;
-    			sq2color = sq3color = this.data.color2;
-    			break;
-    		case 1:
-    			sq1color = sq3color = this.data.color2;
-    			sq2color = this.data.color1;
-    			break;
-    		case 2:
-    			sq3color = this.data.color1;
-    			sq2color = sq1color = this.data.color2;
-    			break;
-    		case 3:
-    			sq1color = sq3color = this.data.color2;
-    			sq2color = this.data.color1;
-    			break;
-    	}
-    	port.fillColor(sq1color, 0, 0, this.data.squareSize, this.data.squareSize);
-    	port.fillColor(sq2color, this.data.squareSize*2, 0, this.data.squareSize, this.data.squareSize);
-    	port.fillColor(sq3color, this.data.squareSize*4, 0, this.data.squareSize, this.data.squareSize);
-    }
-    onTimeChanged(port) {
-      this.index++;
-      if (this.index > 3) this.index = 0;
-      port.invalidate();
-    }
+    this.index = 0;
+    port.interval = port.duration / 36; // 36 is number of squares
+    port.start();
   }
+  onTimeChanged(port) {
+    this.index++;
+    if (this.index == 36) this.index = 0;
+    let index = this.index;
+    let r = this.r;
+    let last6coords = this.last6coords;
+    let centerCoord = this.centerCoord;
+    let step = index % 9;
+    let nextX, nextY;
+    let x = getX(step, 0, r, 9);
+    let y = getY(x, r);
+    if (index < 9) {
+      nextX = centerCoord-y;
+      nextY = centerCoord-x;
+    }
+    else if (index < 18) {
+      nextX = centerCoord+x;
+      nextY = centerCoord-y;
+    }
+    else if (index < 27) {
+      nextX = centerCoord+y;
+      nextY = centerCoord+x;
+    }
+    else {
+      nextX = centerCoord-x;
+      nextY = centerCoord+y;
+    }
+    last6coords.copyWithin(2, 0);
+    last6coords[0] = nextX;
+    last6coords[1] = nextY;
+    port.invalidate();
+  }
+  onDraw(port) {
+    let last6coords = this.last6coords;
+    port.fillColor("#005cb3", last6coords[1], last6coords[0], 8, 8);
+    port.fillColor(LIGHT_BLUE, last6coords[3], last6coords[2], 8, 8);
+    port.fillColor("#339cff", last6coords[5], last6coords[4], 8, 8);
+    port.fillColor("#66b5ff", last6coords[7], last6coords[6], 8, 8);
+    port.fillColor("#99ceff", last6coords[9], last6coords[8], 8, 8);
+    port.fillColor("#cce6ff", last6coords[11], last6coords[10], 8, 8);
+  } 
+}
+Object.freeze(AnimatedCircleOfSquaresBehavior.prototype);
+
+export const WiFiStatusSpinner = Container.template($ => ({
+  left: 0, right: 0, top: 0, bottom: 0, Skin: WhiteSkin,
+  contents: [
+    Port($, {
+      top: 30, height: 145, width: 145,
+      Behavior: CircleOfSquaresBehavior,
+    }),
+    Port($, {
+      loop: true, duration: 2000,
+      top: 30, height: 145, width: 145,
+      Behavior: AnimatedCircleOfSquaresBehavior,
+    }),
+    Label($, {
+      bottom: 30, height: 18, left:0, right: 0, Style: OpenSans16, string: $.status,
+    }),
+  ],
 }));
 
 export default {
@@ -195,8 +194,9 @@ export default {
 	WiFiStripSkin,
 	ErrorSkin,
 	Header,
-	LoadingSpinner,
-	LoadingBubbles
+  WiFiStatusSpinner
+	// LoadingSpinner,
+	// LoadingBubbles
 }
 
 
