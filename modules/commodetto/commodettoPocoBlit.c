@@ -1540,11 +1540,11 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 #endif
 	PocoColor color = srcBits->color;
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-	int32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+	uint32_t src32 = (color | (color << 16)) & 0x07E0F81F;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-	int32_t src32 = (color | (color << 16)) & 0x001C00E3;
+	uint32_t src32 = (color | (color << 16)) & 0x001C00E3;
 #elif kPocoPixelFormat == kCommodettoBitmapCLUT16
-	int32_t src32 = (color | (color << 16)) & 0x00F00F0F;
+	uint32_t src32 = (color | (color << 16)) & 0x00F00F0F;
 	uint16_t *clut = (uint16_t *)poco->clut;
 	uint8_t *map = 32 + (uint8_t *)poco->clut;
 	color = c_read8(map + color);		// color index
@@ -1587,7 +1587,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 				}
 				else {
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-					int32_t dst = *d;
+					uint32_t dst = *d;
 
 					blend = (blend << 1) | (blend >> 3);		// 5-bit blend
 
@@ -1603,7 +1603,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 #elif kPocoPixelFormat == kCommodettoBitmapGray256
 					*d = ((*d * (15 - blend)) + (color * blend)) >> 4;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-					int32_t dst = *d;
+					uint32_t dst = *d;
 
 					blend = blend >> 1;		// 3-bit blend
 
@@ -1685,11 +1685,11 @@ void doDrawGray16RLEBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDime
 #endif
 	PocoColor color = srcBits->color;
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-	int32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+	uint32_t src32 = (color | (color << 16)) & 0x07E0F81F;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-	int32_t src32 = (color | (color << 16)) & 0x001C00E3;
+	uint32_t src32 = (color | (color << 16)) & 0x001C00E3;
 #elif kPocoPixelFormat == kCommodettoBitmapCLUT16
-	int32_t src32 = (color | (color << 16)) & 0x00F00F0F;
+	uint32_t src32 = (color | (color << 16)) & 0x00F00F0F;
 	uint16_t *clut = (uint16_t *)poco->clut;
 	uint8_t *map = 32 + (uint8_t *)poco->clut;
 	color = c_read8(map + color);		// color index
@@ -1835,7 +1835,7 @@ blitQuote:
 							}
 							else {
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-								int32_t dst = *d;
+								uint32_t dst = *d;
 
 								blend = (blend << 1) | (blend >> 3);		// 5-bit blend
 
@@ -1851,7 +1851,7 @@ blitQuote:
 #elif kPocoPixelFormat == kCommodettoBitmapGray256
 								*d = ((*d * (15 - blend)) + (color * blend)) >> 4;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-								int32_t dst = *d;
+								uint32_t dst = *d;
 
 								blend = blend >> 1;		// 3-bit blend
 
@@ -1972,11 +1972,11 @@ void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, Poc
 #endif
 	PocoColor color = srcBits->color;
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-	int32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+	uint32_t src32 = (color | (color << 16)) & 0x07E0F81F;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-	int32_t src32 = (color | (color << 16)) & 0x001C00E3;
+	uint32_t src32 = (color | (color << 16)) & 0x001C00E3;
 #elif kPocoPixelFormat == kCommodettoBitmapCLUT16
-	int32_t src32 = (color | (color << 16)) & 0x00F00F0F;
+	uint32_t src32 = (color | (color << 16)) & 0x00F00F0F;
 	uint16_t *clut = (uint16_t *)poco->clut;
 	uint8_t *map = 32 + (uint8_t *)poco->clut;
 	color = c_read8(map + color);		// color index
@@ -2139,7 +2139,7 @@ void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, Poc
 							}
 							else {
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-								int32_t dst = *d;
+								uint32_t dst = *d;
 
 //								blend = (blend << 1) | (blend >> 3);		// 5-bit blend
 
@@ -2156,7 +2156,7 @@ void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, Poc
 								blend >>= 1;			// 4 bit blend
 								*d = ((*d * (15 - blend)) + (color * blend)) >> 4;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-								int32_t dst = *d;
+								uint32_t dst = *d;
 
 								blend >>= 2;			// 3-bit blend
 
@@ -2321,7 +2321,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 					*d = srcPixel;
 				else {
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-					int src32, dst;
+					uint32_t src32, dst;
 
 					src32 = srcPixel;
 					src32 |= src32 << 16;
@@ -2331,7 +2331,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 					dst |= dst << 16;
 					dst &= 0x07E0F81F;
 					dst = blend * (src32 - dst) + (dst << 5) - dst;
-					dst += 0x02008010;
+					dst += 0x02008010u;
 					dst += (dst >> 5) & 0x03E0F81F;
 					dst >>= 5;
 					dst &= 0x07E0F81F;
@@ -2340,8 +2340,8 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 #elif kPocoPixelFormat == kCommodettoBitmapGray256
 					*d = ((*d * (31 - blend)) + (srcPixel * blend)) >> 5;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
-					int32_t src32;
-					int32_t dst;
+					uint32_t src32;
+					uint32_t dst;
 
 					src32 = srcPixel;
 					src32 |= src32 << 16;
@@ -2475,7 +2475,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 						xmask_dst = 1;
 					}
 #else
-					int32_t src32 = c_read16(clut + srcPixel);
+					uint32_t src32 = c_read16(clut + srcPixel);
 					src32 = (src32 | (src32 << 16)) & 0x00F00F0F;
 					if (xmask_dst) {
 	#if kPocoCLUT16_01
