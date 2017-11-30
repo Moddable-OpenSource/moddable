@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
+	"creation": {
+		"stack": 400,
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./scroller",
+		]
+	},
+	"resources":{
+		"*-alpha": [
+			"./fonts/OpenSans-Semibold-20",
+		],
+	},
+}
