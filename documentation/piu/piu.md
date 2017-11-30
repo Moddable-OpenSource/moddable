@@ -3894,7 +3894,7 @@ Prototype inherits from `Object.prototype`.
 | `height` | `number` | ✓ | This texture's height, in physical pixels           
 | `width` | `number` | ✓ | This texture's width, in physical pixels
 
-###Timeline Object
+### Timeline Object
 
 - **Source code:** [`piuTimeline.js`][36]
 - **Relevant Examples:** [timeline][35], [easing-equations][34]
@@ -3933,7 +3933,7 @@ let timeline = new Timeline();
 | `fraction` | `number` | | | The fraction of this timeline that has completed, as a decimal between 0 and 1. Setting the fraction is equivalent to calling `seekTo(fraction * duration)`.
 | `time` | `number` | | | The amount of time the timeline has completed, in ms. This should not be modified directly — use `seekTo(time)` instead.
 
-#####Functions
+##### Functions
 
 <!-- The add function doesn't seem possible to use right now, because the Tween sub-class is not exported. Any reason to describe this in the docs? 
 
