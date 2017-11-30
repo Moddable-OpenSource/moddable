@@ -11,28 +11,18 @@
  *   Mountain View, CA 94042, USA.
  *
  */
-
-import {
-	NetworkListScreen
-} from "network-list";
-
-import {
-	LoginScreen
-} from "login";
-
-import {
-	ConnectingScreen
-} from "connecting";
-
-import {
-	ConnectionErrorScreen
-} from "connection-error";
-
-import {
-	Spinner
-} from "spinner";
-
+import Net from "net";
+import SNTP from "sntp";
 import WiFi from "wifi";
+import Time from "time";
+import {
+	WiFiStatusSpinner
+} from "assets";
+import {
+	NetworkListScreen,
+	LoginScreen,
+	ConnectionErrorScreen
+} from "wifi-screens";
 
 function getVariantFromSignalLevel(value) {
 	let low = -120;
@@ -42,53 +32,121 @@ function getVariantFromSignalLevel(value) {
 	return Math.round(4 * ((value - low) / (high - low)));
 }
 
-export default new Application(null, { 
-	displayListLength:4096, commandListLength: 4096,
-	Behavior: class extends Behavior {
-		onCreate(application) {
-			this.onSwitchScreen(application, "NETWORK_LIST_SCAN", {})
-		}
-		doNext(application, nextScreenName, nextScreenData) {
-			application.defer("onSwitchScreen", nextScreenName, nextScreenData);
-		}
-		onSwitchScreen(application, nextScreenName, nextScreenData) {
-			if (nextScreenData === undefined) nextScreenData = {};
-			if ((application.length) && (nextScreenName !=  "NETWORK_LIST_SCAN")) application.remove(application.first);
-			application.purge();
-			switch (nextScreenName) {
-				case "NETWORK_LIST_SCAN":
-					if (!("doNotRemove" in nextScreenData)) {
-						if (application.length) application.remove(application.first);
-						application.purge();
-						application.add(new Spinner());
-					}
-					// trace("\n\n\n**********\nFree before scan: "+Debug.free()+"\n");
-					nextScreenData.networks = null;//[];
-					WiFi.scan({}, item => {
-					    if (item) {
-					    	// trace("Free: "+Debug.free()+"\n");
-					    	let strength = getVariantFromSignalLevel(item.rssi);
-					    	let ap = { ssid: item.ssid, variant: (item.authentication == "none")? -strength : strength, next: nextScreenData.networks };
-					    	nextScreenData.networks = ap;
-					    } else {
-					    	// trace("Free at end of scan: "+Debug.free()+"\n");
-					    	application.delegate("doNext", "NETWORK_LIST", nextScreenData);
-					    }
-					});
-					break;
-				case "NETWORK_LIST":
-					application.add(new NetworkListScreen(nextScreenData));
-					break;
-				case "LOGIN":
-					application.add(new LoginScreen(nextScreenData));
-					break;
-				case "CONNECTING":
-					application.add(new ConnectingScreen(nextScreenData));
-					break;
-				case "CONNECTION_ERROR":
-					application.add(new ConnectionErrorScreen(nextScreenData));
-					break;
-			}
+class ApplicationBehavior extends Behavior {
+	onCreate(application) {
+		global.application = application;
+		WiFi.mode = 1;
+		this.doNext(application, "NETWORK_LIST_SCAN");
+		application.interval = 2000;
+		application.start();
+	}
+	onTimeChanged(application) {
+		let now = Date.now();
+		if ((this.timeout) && (now > this.timeout)) {
+			trace("Attempt to connect to Wi-Fi timed out\n");
+			global.monitor = undefined;
+			application.delegate("doNext", "CONNECTION_ERROR", this.nextScreenData);
+			delete this.timeout;
+			delete this.nextScreenData;
 		}
 	}
-});
+	doNext(application, nextScreenName, nextScreenData = {}) {
+		application.defer("onSwitchScreen", nextScreenName, nextScreenData);
+	}
+	onSwitchScreen(application, nextScreenName, nextScreenData = {}) {
+		if (application.length) application.remove(application.first);
+		application.purge();
+		switch (nextScreenName) {
+			case "NETWORK_LIST_SCAN":
+				// expected nextScreenData: {}
+				application.add(new WiFiStatusSpinner({ status: "Finding networks..." }));
+				this.scan(application, true);
+				break;
+			case "NETWORK_LIST":
+				// expected nextScreenData: { networks: x } where x is a linked list created above^
+				// or { networks: x, ssid: "y" }
+				application.add(new NetworkListScreen(nextScreenData));
+				break;
+			case "LOGIN":
+				application.add(new LoginScreen(nextScreenData));
+				break;
+			case "CONNECTING":
+				WiFi.connect();
+				application.add(new WiFiStatusSpinner({ status: "Joining network..." }));
+				this.timeout = Date.now() + 10000;
+				this.nextScreenData = nextScreenData;
+				global.monitor = new WiFi(nextScreenData, message => {
+					trace("message: "+message+"\n");
+					if (message == "gotIP"){
+					  	Net.resolve("pool.ntp.org", (name, address) => {
+							if (!address) {
+								trace("Unable to resolve sntp host\n");
+								application.delegate("doNext", "CONNECTION_ERROR", nextScreenData);
+								return;
+							}
+							trace(`resolved ${name} to ${address}\n`);
+							global.application.behavior.timeout = Date.now() + 10000;
+							global.monitor = new SNTP({address}, (message, value) => {
+								if (1 == message) {
+									Time.set(value);
+									delete global.application.behavior.timeout;
+									if (application.behavior.remoteControlEnabled) application.delegate("wsConnect", nextScreenData);
+									application.delegate("doNext", "NETWORK_LIST", { networks: application.behavior.networks, ssid: nextScreenData.ssid });
+								} else if (-1 == message) {
+									trace("Unable to retrieve time\n");
+									application.delegate("doNext", "CONNECTION_ERROR", nextScreenData);
+								} else {
+									return;
+								}
+							});
+						});
+						return;
+					} else if (message == "disconnect") {
+						return;
+					}
+				});
+				break;
+			case "CONNECTION_ERROR":
+				global.monitor = undefined;
+				application.add(new ConnectionErrorScreen(nextScreenData));
+				break;
+			case "SET_TIMEZONE":
+				// expected nextScreenData: { current: x } where x is the name of the current timezone, as a string
+				application.add(new SetTimezoneScreen(nextScreenData));
+				break;
+			case "REMOTE_CONTROL_SETTINGS":
+				// expected nextScreenData: {}
+				nextScreenData.enabled = this.remoteControlEnabled;
+				nextScreenData.wsConnected = (this.ws != undefined)? 1: 0;
+				application.add(new RemoteControlSettingsScreen(nextScreenData));
+				break;
+		}
+	}
+	scan(application, isFirstScan) {
+		WiFi.scan({}, item => {
+			let networks = application.behavior.networks;
+			if (item) {
+				let strength = getVariantFromSignalLevel(item.rssi);
+				for (let walker = networks; walker; walker = walker.next) {
+					if (walker.ssid === item.ssid) {
+						if (strength > Math.abs(walker.variant))
+							walker.variant = strength * Math.sign(walker.variant);
+						return;
+					}
+				}
+				let ap = { ssid: item.ssid, variant: (item.authentication === "none") ? -strength : strength, next: networks };
+				application.behavior.networks = ap;
+			} else {
+				if (isFirstScan) application.delegate("doNext", "NETWORK_LIST", { networks });
+				else application.first.distribute("onUpdateNetworkList", networks);
+			}
+		});
+	}
+}
+Object.freeze(ApplicationBehavior.prototype);
+
+export default function() {
+	return new Application(null, {
+		displayListLength: 2560, commandListLength: 2048, Behavior: ApplicationBehavior
+	});
+}
