@@ -312,7 +312,7 @@ void fxScreenSampleInstrumentation(txScreen* screen)
 {
 	int what;
 	txMachine *the = (txMachine*)screen->machine;
-	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
+	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationPiuCommandListUsed; what++)
 		screenInstrumentValues[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
 	fxSampleInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentValues);
 	modInstrumentationSet(PixelsDrawn, 0);
