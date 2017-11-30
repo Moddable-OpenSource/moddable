@@ -1,0 +1,39 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
+	"creation": {
+		"stack": 356,
+	},
+	"modules": {
+		"*": [
+			"./main",
+		]
+	},
+	"resources":{
+		"*-alpha": [
+			"./fonts/OpenSans-Semibold-20",
+			"./assets/fill-circle-mask",
+			"./assets/outline-circle-mask",
+		],
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/esp/*",
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/mac/*",
+				]
+			}
+		}
+	}
+}
