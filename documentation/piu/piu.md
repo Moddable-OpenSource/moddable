@@ -38,6 +38,7 @@ Piu is a user interface framework designed to run on micro-controllers. The prog
  	 * [Style Object](#style-object)
  	 * [Text Object](#text-object)
  	 * [Texture Object](#texture-object)
+ 	 * [Timeline Object](#timeline-object)
  	 * [Transition Object](#transition-object)
 
 ## Inheritance Hierarchy
@@ -53,7 +54,7 @@ The basic relationship between these objects in the context of a Piu application
 - Graphical parts of the user interface are all `content` objects
 - `skin`, `style`, and `texture` objects customize the look (colors, fonts, etc.) of `content` objects
 - `behavior` objects are bound to `content` objects to handle events
-- `transition` objects animate `content` objects 
+- `timeline` and `transition` objects animate `content` objects 
 
 
 ## Introduction to Important Concepts
@@ -275,17 +276,35 @@ let HeaderWithBehavior = BasicHeader.template($ => ({
 ```
 ### Behavior and Flow
 
+#### Events
+
 Piu delivers *events* to the containment hierarchy of applications, and `content` objects can reference `behavior` objects, which contain functions that respond to events. Piu uses events extensively.
 
 When a `content` object receives an event, it checks whether its `behavior` object has a corresponding function to respond to that event (either directly or indirectly in its prototype chain). If it does, the `content` object calls the function, passing itself as the first parameter. If it does not, nothing happens.
 
-#### Low-level events
+##### Low-level events
 
 Piu defines low-level events that are useful on a wide range of target devices. For example, `onTouchBegan` and `onTouchEnded` are useful for target devices with touch screens.
 
-#### Higher-level events
+##### Higher-level events
 
 Applications can also define their own higher-level events. To help efficiently implement common event propagation patterns, contents have `delegate`, `distribute`, `bubble`, `firstThat`, and `lastThat` properties. See [Functions](#content-functions) in the section [Content Object](#content-object) for descriptions of these properties.
+
+#### Animations
+
+There are multiple ways to create time-based animation behaviors. One way is to use `content` objects as clocks, as described in the [Duration, Fraction, Interval, Loop, and Time](#duration-fraction-interval-loop-and-time) section of this document. This method is commonly used to animate a single content in response to events (to show touch feedback, for example) and to animate a single content for long periods of time.
+
+The simplest way to create complex behaviors that animate several contents or properties is using the `timeline` object. The `timeline` object provides a mechanism for sequencing and running a collection of tweens, making it the best method for staggered animations of multiple content objects (to transition graphical elements of a screen in and out, for example). For more information, see the [Timeline Object](#timeline-object) section of this document.
+
+Piu `transition` objects are best for simple animations to move between screens or swap content objects. They often modify the containment hierarchy by adding or removing contents. They can also modify properties of objects as `timeline` objects do, but creating a sequence of animations is more complicated. For more information, see the [Transition Object](#transition-object) section of this document.
+
+##### Easing equations
+
+Animations that linearly modify the properties of content objects often appear awkward. Using easing equations is a common way to implement animations that feel more natural.
+
+Piu extends the JavaScript `Math` object with Robert Penner’s open source easing equations (see the Easing section of [Robert Penner’s Programming Macromedia Flash MX](http://robertpenner.com/easing/penner_chapter7_tweening.pdf)). The source code is in [`piuTransition.c`][33].
+
+The Piu implementations of these easing equations all take a single argument: a `number` in the range [0, 1]. The return value is a `number` in the range [0, 1] that maps the input to the eased output. These equations are used extensively in all types of animations. They are commonly used to map the `fraction` property of `content` objects or the `fraction` argument of a `transition` object's `onStep` function, and as an argument to many `timeline` object functions.
 
 ## Global Properties
 
@@ -3875,6 +3894,194 @@ Prototype inherits from `Object.prototype`.
 | `height` | `number` | ✓ | This texture's height, in physical pixels           
 | `width` | `number` | ✓ | This texture's width, in physical pixels
 
+###Timeline Object
+
+- **Source code:** [`piuTimeline.js`][36]
+- **Relevant Examples:** [timeline][35], [easing-equations][34]
+
+The `timeline` object provides a mechanism for sequencing and running a collection of tweens. This is useful for managing transitions between Piu screens and other animations.
+
+Tweens work by taking in a target object and an object that specifies a list of properties and values. When the tween is set to a specific fraction, the appropriate properties of the target object are updated with values between their initial value and the destination value. The specifics of how this works are determined by the type of tween ("on", "from", or "to", as described below) and the easing function used for the tween.
+
+The application manages all of the tweens in a timeline at once by seeking to a particular point in the timeline. This is usually driven by the `onTimeChanged` function of a `content` object.
+
+The Piu Timeline implementation is based on the [TimelineLite class developed by GreenSock](https://greensock.com/timelinelite).
+
+Note that the `Timeline` class must be imported into your application to be used:
+
+```javascript
+import Timeline from "piu/Timeline";`
+```
+
+#### Constructor Description
+
+##### `Timeline()`
+
+Returns a timeline object, an instance of the `Timeline` class.
+
+```javascript
+let timeline = new Timeline();
+```
+
+#### Prototype Description
+
+##### Properties
+
+| Name | Type | Default Value | Read Only | Description |
+| --- | --- | --- | --- | --- |
+| `duration` | `number` | | | How long this timeline will take to complete once started, in ms.
+| `fraction` | `number` | | | The fraction of this timeline that has completed, as a decimal between 0 and 1. Setting the fraction is equivalent to calling `seekTo(fraction * duration)`.
+| `time` | `number` | | | The amount of time the timeline has completed, in ms. This should not be modified directly — use `seekTo(time)` instead.
+
+#####Functions
+
+<!-- The add function doesn't seem possible to use right now, because the Tween sub-class is not exported. Any reason to describe this in the docs? 
+
+**`add(tween, when)`** -->
+
+**`from(target, fromProperties, duration, [easing, delay])`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `target` | `object` | The object that will have its properties tweened by the timeline.
+| `fromProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the starting values the properties of the `target` object will have at the begining of the tween.
+| `duration` | `number` | The duration of the tween in ms.
+| `easing` | `number` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
+| `delay` | `number` | The number of ms after the previous tween in the timeline completes that this one should begin. If this number is negative, the tween will begin before the prior tween completes. If no duration is provided, the tween will begin immediately upon completion of the prior tween.
+
+Adds a "from tween" to the timeline. A "from tween" eases the properties of the `target` object from the values specified in the `toProperties` object to the original values of the `target` object over `duration` ms.
+
+Returns this timeline, useful for chaining together multiple `to`, `from`, and `on` calls.
+
+```javascript
+let sampleStyle = new Style({ font: "600 28px Open Sans", color: ["blue", "white"] });
+let sampleColumn = new Column(null, {
+	top: 0, bottom: 0, left: 0, right: 0, 
+	skin: new Skin({ fill: "white" }), style: sampleStyle,
+	contents: [
+		Label(null, { top: 90, height: 28, left: 80, string: "Hello", state: 0 }),
+		Label(null, { top: 2, height: 28, left: 80, string: "Moddable", state: 0 }),
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(column) {
+			let timeline = this.timeline = new Timeline();
+			timeline.from(column.first, { x: -column.first.width, state: 1 }, 1000, Math.quadEaseOut, 0)
+				.from(column.last, { x: application.width, state: 1 }, 800, Math.quadEaseOut, -800);
+			column.duration = timeline.duration;
+			timeline.seekTo(0);
+			column.time = 0;
+			column.start();
+		}
+		onTimeChanged(column) {
+			this.timeline.seekTo(column.time);
+		}
+	}
+});
+application.add(sampleColumn);
+```
+
+![](../assets/piu/timelineFrom.gif)
+
+**`on(target, onProperties, duration, easing, delay, when)`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `target` | `object` | The object that will have its properties tweened by the timeline.
+| `onProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are arrays of values that the tween will ease between over the duration of the timeline.
+| `duration` | `number` | The duration of the tween in ms.
+| `easing` | `number` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
+| `delay` | `number` | The number of ms after the previous tween in the timeline completes that this one should begin. If this number is negative, the tween will begin before the prior tween completes. If no duration is provided, the tween will begin immediately upon completion of the prior tween.
+
+Adds an "on tween" to the timeline. An "on tween" eases the values of the `target` object through a sequence of steps as specified by arrays in the `onProperties` object over `duration` ms.
+
+Returns this timeline, useful for chaining together multiple `to`, `from`, and `on` calls.
+
+```javascript
+let sampleContainer = new Container(null, {
+	top: 0, bottom: 0, left: 0, right: 0, skin: new Skin({ fill: "white" }),
+	contents: [
+		Content(null, { top: 0, height: 50, left: 0, width: 50, skin: new Skin({ fill: ["blue", "red"] }) })
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(container) {
+			this.startAnimation(container);
+		}
+		startAnimation(container) {
+			let timeline = this.timeline = new Timeline();
+			let l=0, r=150, b=150, t=0;
+			timeline.on(container.first, { x: [l, r, r, l, l], y: [t, t, b, b, t], state: [0, 1] }, 1000, Math.quadEaseInOut, 500);
+			container.duration = timeline.duration;
+			timeline.seekTo(0);
+			container.time = 0;
+			container.start();
+		}
+		onTimeChanged(container) {
+			let time = container.time;
+			if (this.reverse) time = container.duration - time;
+			this.timeline.seekTo(time);
+		}
+		onFinished(container) {
+			this.reverse = !this.reverse;
+			this.startAnimation(container);
+		}
+	}
+});
+application.add(sampleContainer);
+```
+
+![](../assets/piu/timelineOn.gif)
+
+**`seekTo(time)`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `time` | `number` | The position in the Timeline to seek to.
+
+Causes this timeline to jump its tweens to the specified time. This sets the properties of the tweens' target objects.
+
+**`to(target, toProperties, duration, [easing, delay])`**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `target` | `object` | The object that will have its properties tweened by the timeline.
+| `toProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the destination values the properties of the `target` object will have when the tween is complete.
+| `duration` | `number` | The duration of the tween in ms.
+| `easing` | `number` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
+| `delay` | `number` | The number of ms after the previous tween in the timeline completes that this one should begin. If this number is negative, the tween will begin before the prior tween completes. If no duration is provided, the tween will begin immediately upon completion of the prior tween.
+
+Adds a "to tween" to the timeline. A "to tween" eases the properties of the `target` object from its current values to the desired values specified in the `toProperties` object over `duration` ms.
+
+Returns this timeline, useful for chaining together multiple `to`, `from`, and `on` calls.
+
+```javascript
+let sampleStyle = new Style({ font: "600 28px Open Sans", color: ["blue", "white"] });
+let sampleColumn = new Column(null, {
+	top: 0, bottom: 0, left: 0, right: 0, 
+	skin: new Skin({ fill: "white" }), style: sampleStyle,
+	contents: [
+		Label(null, { top: 90, height: 28, left: 80, string: "Hello", state: 0 }),
+		Label(null, { top: 2, height: 28, left: 80, string: "Moddable", state: 0 }),
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(column) {
+			let timeline = this.timeline = new Timeline();
+			timeline.to(column.first, { x: -column.first.width, state: 1 }, 1000, Math.quadEaseOut, 1000)
+				.to(column.last, { x: application.width, state: 1 }, 800, Math.quadEaseOut, -800);
+			column.duration = timeline.duration;
+			timeline.seekTo(0);
+			column.time = 0;
+			column.start();
+		}
+		onTimeChanged(column) {
+			this.timeline.seekTo(column.time);
+		}
+	}
+});
+application.add(sampleColumn);
+```
+
+![](../assets/piu/timelineTo.gif)
+
 ### Transition Object
 
 - **Source code:** [`piuTransition.c`][17]
@@ -4004,6 +4211,8 @@ Called while this transition is running; called at least twice (with a `fraction
 [16]: ../../modules/piu/MC/piuTexture.c "piuTexture.c"
 [17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
+[33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
+[36]: ../../modules/piu/MC/piuTimeline.js "piuTimeline.js"
 
 [18]: ../../examples/piu/balls "balls"
 [19]: ../../examples/piu/drag "drag"
@@ -4018,4 +4227,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [28]: ../../examples/piu/text "text"
 [31]: ../../examples/piu/images "images"
 [32]: ../../examples/piu/scroller "scroller"
+[34]: ../../examples/piu/easing-equations "easing-equations"
+[35]: ../../examples/piu/timeline "timeline"
+
 [29]: ./PiuContainmentHierarchy.md "Piu Containment Hierarchy"
