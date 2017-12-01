@@ -412,7 +412,7 @@ void *espMallocUint32(int byteCount)
 		return NULL;		// must be multiple of uint32_t in size
 
 	if (NULL == gUint32Memory)
-		gUint32Memory = (uint32_t *)gUnusedInstructionRAM[-2];;
+		gUint32Memory = (uint32_t *)gUnusedInstructionRAM[-2];
 
 	result = gUint32Memory;
 	if ((byteCount + (char *)result) > end)
@@ -1373,36 +1373,22 @@ extern uint8_t _XSMOD_end;
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
-	if (3 & offset) // this cannot happen
-		modLog("misalgned SPI read");
-	if (3 & size) {  // this can happen for the special case and  for the last block
-		modLog("misalgned SPI read size");
-		size = (size + 3) & ~3;
-	}
-	src = (((uint8_t*)src) + offset);
-	spi_flash_read((uint32)((uintptr_t)src - (uintptr_t)kFlashStart), (uint32 *)buffer, size);
-
-	return 1;		//@@ (src could be partition... weird to return it offset?)
+	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
 }
 
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
-	SpiFlashOpResult result;
+	offset += (uintptr_t)dst;
 
-	dst = (((uint8_t*)dst) + offset);
+	if ((offset + SPI_FLASH_SEC_SIZE) > (uintptr_t)kModulesInstallStart)
+		return 0;		// attempted write beyond end of available space
 
-	ets_isr_mask(FLASH_INT_MASK);
-	result = spi_flash_erase_sector(((uintptr_t)dst - (uintptr_t)kFlashStart) / SPI_FLASH_SEC_SIZE);
-	if (SPI_FLASH_RESULT_OK == result)
-		result = spi_flash_write((uintptr_t)dst - (uintptr_t)kFlashStart, (void *)buffer, size);
-	ets_isr_unmask(FLASH_INT_MASK);
-
-	if (SPI_FLASH_RESULT_OK != result) {
-		modLog("write fail");
-		return 0;
+	if (!(offset & (SPI_FLASH_SEC_SIZE - 1))) {		// if offset is at start of a sector, erase that sector
+		if (!modSPIErase(offset - (uintptr_t)kFlashStart, SPI_FLASH_SEC_SIZE))
+			return 0;
 	}
 
-	return 1;
+	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
 }
 
 void *installModules(txPreparation *preparation)
@@ -1410,7 +1396,6 @@ void *installModules(txPreparation *preparation)
 	if (fxMapArchive(preparation, (void *)kModulesInstallStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
 		return kModulesStart;
 
-	modLog("install modules failure");
 	return NULL;
 }
 
@@ -1470,3 +1455,109 @@ uint8_t *espFindUnusedFlashStart(void)
 
 #endif /* SUPPORT_MODS */
 
+uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
+{
+	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	if (offset & 3) {		// long align offset
+		toAlign = 4 - (offset & 3);
+		if (toAlign > size)
+			toAlign = size;
+		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, sizeof(temp)))
+			return 0;
+		c_memcpy(dst, temp + 4 - toAlign, toAlign);
+		dst += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+		if (!size)
+			return 1;
+	}
+
+	toAlign = size & ~3;
+	if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)dst, toAlign))
+		return 0;
+
+	dst += toAlign;
+	offset += toAlign;
+	size -= toAlign;
+
+	if (size) {				// long align tail
+		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, sizeof(temp)))
+			return 0;
+		c_memcpy(dst, temp, size);
+	}
+
+	return 1;
+}
+
+uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
+{
+	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	if (offset & 3) {		// long align offset
+		toAlign = 4 - (offset & 3);
+		if (toAlign > size)
+			toAlign = size;
+		c_memset(temp, 0xFF, sizeof(temp));
+		c_memcpy(temp + 4 - toAlign, src, toAlign);
+		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, sizeof(temp)))
+			return 0;
+
+		src += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+		if (!size)
+			return 1;
+	}
+
+	if (size >= 4) {
+		toAlign = size & ~3;
+		size -= toAlign;
+		if (((uintptr_t)src) & ~3) {	// src is not long aligned, copy through stack
+			while (toAlign >= 4) {
+				uint8_t scratch[512] __attribute__ ((aligned (4)));;
+				uint32_t use = (toAlign > sizeof(scratch)) ? sizeof(scratch) : toAlign;
+				c_memcpy(scratch, src, use);
+				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)scratch, use))
+					return 0;
+				toAlign -= use;
+				src += use;
+				offset += use;
+			}
+		}
+		else {
+			if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)src, toAlign))
+				return 0;
+
+			src += toAlign;
+			offset += toAlign;
+		}
+	}
+
+	if (size) {			// long align tail
+		c_memset(temp, 0xFF, sizeof(temp));
+		c_memcpy(temp, src, size);
+		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, sizeof(temp)))
+			return 0;
+	}
+
+	return 1;
+}
+
+uint8_t modSPIErase(uint32_t offset, uint32_t size)
+{
+	if ((offset & (SPI_FLASH_SEC_SIZE - 1)) || (size & (SPI_FLASH_SEC_SIZE - 1)))
+		return 0;
+
+	offset /= SPI_FLASH_SEC_SIZE;
+	size /= SPI_FLASH_SEC_SIZE;
+	while (size--) {
+		optimistic_yield(10000);
+		if (SPI_FLASH_RESULT_OK != spi_flash_erase_sector(offset++))
+			return 0;
+	}
+
+	return 1;
+}
