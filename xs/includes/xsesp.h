@@ -468,6 +468,11 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define kModulesByteLength (kModulesEnd - kModulesStart)
 #endif
 
+uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
+uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
+uint8_t modSPIErase(uint32_t offset, uint32_t size);
+
+
 #ifdef __cplusplus
 }
 #endif
