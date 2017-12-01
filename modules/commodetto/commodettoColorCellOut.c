@@ -81,7 +81,7 @@ void xs_colorcell_begin(xsMachine *the)
 
 	if (xsmcArgc >= 5) {
 		xsmcGet(xsVar(0), xsArg(4), xsID_quality);
-		quality	= xsmcToNumber(xsVar(0)) * 1023;
+		quality	= (int)(xsmcToNumber(xsVar(0)) * 1023);
 		if (quality < 0) quality = 0;
 		if (quality > 1023) quality = 1023;
 	}
@@ -215,16 +215,16 @@ void encodeRow(xsMachine *the, ColorCellOut cc, PocoPixel *pixels)
 
 	if (cc->quality < 333) {
 		if (cc->quality)
-			thresholdOneColor = 128 + (((333 - cc->quality) / 333.0) * 1024);	// from 1152 to 128
+			thresholdOneColor = 128 + (((333 - cc->quality) * 1024) / 333);		// from 1152 to 128
 	}
 	else if (cc->quality < 667) {
-		thresholdOneColor = 32 + (((667 - cc->quality) / 333.0) * 96);			// from 128 to 32
-		thresholdTwoColor = 64 + (((667 - cc->quality) / 333.0) * 1088);		// from 1152 to 64
+		thresholdOneColor = 32 + (((667 - cc->quality) * 96) / 333);			// from 128 to 32
+		thresholdTwoColor = 64 + (((667 - cc->quality) * 1088) / 333);			// from 1152 to 64
 	}
 	else {
-		thresholdOneColor = 16 + (((1023 - cc->quality) / 333.0) * 16);			// from 32 to 16
-		thresholdTwoColor = 64 + (((1023 - cc->quality) / 333.0) * 64);			// from 128 to 64
-		thresholdFourColor = 128 + (((1023 - cc->quality) / 333.0) * 1024);		// from 1152 to 128
+		thresholdOneColor = 16 + (((1023 - cc->quality) * 16) / 333);			// from 32 to 16
+		thresholdTwoColor = 64 + (((1023 - cc->quality) * 64) / 333);			// from 128 to 64
+		thresholdFourColor = 128 + (((1023 - cc->quality) * 1024) / 333);		// from 1152 to 128
 	}
 
 	for (x = 0; x < cc->width; x += 4, pixels += 4) {
