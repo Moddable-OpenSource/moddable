@@ -101,7 +101,6 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_gc.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_hydrogen.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_nucleus.c \
-	$(ARDUINO_ESP8266)/spiffs_hal.cpp \
 	$(ARDUINO_ESP8266)/time.c \
 	$(ARDUINO_ESP8266)/uart.c \
 	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \

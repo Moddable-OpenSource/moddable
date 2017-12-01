@@ -309,16 +309,29 @@ void xs_file_system_info(xsMachine *the)
 	xsmcSet(xsResult, xsID_used, xsVar(0));
 }
 
+static int32_t spiffs_hal_write(uint32_t addr, uint32_t size, uint8_t *src)
+{
+	optimistic_yield(10000);
+	return modSPIWrite(addr, size, src) ? SPIFFS_OK : SPIFFS_ERR_INTERNAL;
+}
+
+static int32_t spiffs_hal_erase(uint32_t addr, uint32_t size)
+{
+	return modSPIErase(addr, size) ? SPIFFS_OK : SPIFFS_ERR_INTERNAL;
+}
+
+static int32_t spiffs_hal_read(uint32_t addr, uint32_t size, uint8_t *dst)
+{
+	optimistic_yield(10000);
+	return modSPIRead(addr, size, dst) ? SPIFFS_OK : SPIFFS_ERR_INTERNAL;
+}
+
 /*
 	ESP SPIFFS fun... borrowed from various parts of ESP Arduino SPIFF code
 */
 
 static uint16_t gUseCount;
 static u8_t *_workBuf, *_fdsBuf, *_cacheBuf;		// these can be merged into a single pointer
-
-extern int32_t spiffs_hal_write_c(uint32_t addr, uint32_t size, uint8_t *src);
-extern int32_t spiffs_hal_erase_c(uint32_t addr, uint32_t size);
-extern int32_t spiffs_hal_read_c(uint32_t addr, uint32_t size, uint8_t *dst);
 
 extern uint32_t _SPIFFS_start;
 extern uint32_t _SPIFFS_end;
@@ -343,9 +356,9 @@ int startSPIFFS(void)
 
 	spiffs_config config = {0};
 
-	config.hal_read_f       = &spiffs_hal_read_c;
-	config.hal_write_f      = &spiffs_hal_write_c;
-	config.hal_erase_f      = &spiffs_hal_erase_c;
+	config.hal_read_f       = &spiffs_hal_read;
+	config.hal_write_f      = &spiffs_hal_write;
+	config.hal_erase_f      = &spiffs_hal_erase;
 	config.phys_size        = SPIFFS_PHYS_SIZE;
 	config.phys_addr        = SPIFFS_PHYS_ADDR;
 	config.phys_erase_block = FLASH_SECTOR_SIZE;
