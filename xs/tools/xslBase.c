@@ -1019,14 +1019,14 @@ void md5_fin(txMD5 *s, uint8_t *dgst)
 	memset(s->buf + r, 0, MD5_BLKSIZE - 8 - r);
 	l = s->len * 8;
 	p = &s->buf[MD5_BLKSIZE - 8];
-	*p++ = l;
-	*p++ = l >> 8;
-	*p++ = l >> 16;
-	*p++ = l >> 24;
-	*p++ = l >> 32;
-	*p++ = l >> 40;
-	*p++ = l >> 48;
-	*p++ = l >> 56;
+	*p++ = (uint8_t)l;
+	*p++ = (uint8_t)(l >> 8);
+	*p++ = (uint8_t)(l >> 16);
+	*p++ = (uint8_t)(l >> 24);
+	*p++ = (uint8_t)(l >> 32);
+	*p++ = (uint8_t)(l >> 40);
+	*p++ = (uint8_t)(l >> 48);
+	*p++ = (uint8_t)(l >> 56);
 	md5_process(s, s->buf);
 
 	for (i = 0; i < MD5_NUMSTATE; i++) {
