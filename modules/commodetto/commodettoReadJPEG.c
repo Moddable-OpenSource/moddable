@@ -385,7 +385,7 @@ void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixelsIn)
 	else if (PJPG_GRAYSCALE == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i++, pixels += 3) {
-				PocoPixel gray = ~jpeg->r[i];
+				uint8_t gray = ~jpeg->r[i];
 				pixels[0] = gray;
 				pixels[1] = gray;
 				pixels[2] = gray;
@@ -396,7 +396,7 @@ void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixelsIn)
 			i = 0;
 			for (y = 0; y < outHeight; y++) {
 				for (x = 0; x < outWidth; x++, i++, pixels += 3) {
-					PocoPixel gray = ~jpeg->r[i];
+					uint8_t gray = ~jpeg->r[i];
 					pixels[0] = gray;
 					pixels[1] = gray;
 					pixels[2] = gray;
