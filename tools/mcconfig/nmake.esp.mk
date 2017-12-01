@@ -145,7 +145,6 @@ SDK_SRC = \
 	$(CORE_DIR)\spiffs\spiffs_gc.c \
 	$(CORE_DIR)\spiffs\spiffs_hydrogen.c \
 	$(CORE_DIR)\spiffs\spiffs_nucleus.c \
-	$(CORE_DIR)\spiffs_hal.cpp \
 	$(CORE_DIR)\StreamString.cpp \
 	$(CORE_DIR)\Schedule.cpp \
 	$(CORE_DIR)\time.c \
