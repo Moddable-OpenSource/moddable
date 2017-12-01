@@ -80,7 +80,7 @@ PiuCoordinate PiuScrollerConstraintHorizontally(PiuScroller* self)
 				c = 0;
 				d = c - offset;
 #ifdef piuPC
-				d = c_fmod(d, range);
+				d = (PiuCoordinate)c_fmod(d, range);
 #else
 				d %= range;
 #endif
@@ -124,7 +124,7 @@ PiuCoordinate PiuScrollerConstraintVertically(PiuScroller* self)
 				c = 0;
 				d = c - offset;
 #ifdef piuPC
-				d = c_fmod(d, range);
+				d = (PiuCoordinate)c_fmod(d, range);
 #else
 				d %= range;
 #endif
