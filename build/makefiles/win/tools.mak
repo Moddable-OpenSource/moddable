@@ -280,6 +280,9 @@ $(MOD_DIR)\commodetto\Bitmap.xsb : $(COMMODETTO)\commodettoBitmap.js
 $(MOD_DIR)\commodetto\BMPOut.xsb : $(COMMODETTO)\commodettoBMPOut.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\commodetto\BufferOut.xsb : $(COMMODETTO)\commodettoBufferOut.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
 $(MOD_DIR)\commodetto\ColorCellOut.xsb : $(COMMODETTO)\commodettoColorCellOut.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)

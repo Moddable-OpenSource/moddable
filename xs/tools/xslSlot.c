@@ -181,7 +181,7 @@ void fxLinkerScriptCallback(txMachine* the)
 				linkerScript->callbackNames = fxNewLinkerChunk(linker, c * sizeof(txCallbackName));
 				linkerScript->hostsCount = c;
 				for (i = 0; i < c; i++) {
-					txCallback callback = gxFakeCallback++;
+					txCallback callback = (txCallback)(((txU1*)gxFakeCallback)++);
 					txHostFunctionBuilder* builder = &linkerScript->builders[i];
 					txCallbackName* callbackName = &linkerScript->callbackNames[i];
 					txS1 length = *p++;
