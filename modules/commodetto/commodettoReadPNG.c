@@ -42,7 +42,9 @@
 
 #include "commodettoPocoBlit.h"
 
-#pragma GCC diagnostic ignored "-Wmultichar"
+#if defined(__GNUC__) /* GCC */
+	#pragma GCC diagnostic ignored "-Wmultichar"
+#endif
 
 // 4 channels @ 8 bits per pixel = 4 bytes
 #define kScanLineSlop (4)
