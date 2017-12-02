@@ -673,9 +673,9 @@ application.add(grayContent);
 
 It is often convenient to store several icons or other user interface elements in a single image. Specifying `states` and `variants` properties in the dictionary of `skin` constructors enables you to reference different sections of the same texture. This prevents an application from having to reference similar images and create multiple skins. 
 
-The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes ten 28x28 pixel icons in one image.
+The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes ten 28x28 pixel icons in [one image](../assets/piu/wifi-strip.png).
 
-![](../assets/piu/wifi-strip.png)
+![](../assets/piu/wifi-strip.gif)
 
 ```javascript
 const wiFiStripTexture = new Texture({ path:"wifi-strip.png" });
