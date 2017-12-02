@@ -186,12 +186,28 @@ const LINE_MODE = 1;
 const WORD_MODE = 2;
 
 class CodeBehavior extends _CodeBehavior {
+	canDisableBreakpoint(code, item) {
+		let location = code.locate(code.selectionOffset);
+		var lines = this.data.LINES;
+		var line = lines.content(Math.floor(location.y / code.lineHeight));
+		if (line.first.state === 0) {
+			return false;
+		}
+		item.state = line.first.state & 1;
+		return true;
+	}
 	canToggleBreakpoint(code, item) {
 		let location = code.locate(code.selectionOffset);
 		var lines = this.data.LINES;
 		var line = lines.content(Math.floor(location.y / code.lineHeight));
 		item.state = line.first.state & 1;
 		return true;
+	}
+	doDisableBreakpoint(code, item) {
+		let data = this.data;
+		let location = code.locate(code.selectionOffset);
+		let at = Math.floor(location.y / code.lineHeight) + 1;
+		data.doDisableBreakpoint(data.path, at);
 	}
 	doToggleBreakpoint(code, item) {
 		let data = this.data;
@@ -483,7 +499,7 @@ class LineNumbersBehavior extends Behavior {
 				let at = breakpoint.line - 1;
 				if ((0 <= at) && (at < length)) {
 					let content = column.content(at);
-					content.first.state |= 1;
+					content.first.state = breakpoint.enabled ? 1 : 2;
 				}
 			}
 		});
@@ -550,7 +566,8 @@ class LineNumbersBehavior extends Behavior {
 	}
 	onTouchEnded(column, id, x, y, ticks) {
 		let at = Math.floor((y - column.y) / this.lineHeight);
-		model.doToggleBreakpoint(this.data.path, at + 1);
+		// shiftKey for disabling breakpoint
+		model.doToggleBreakpoint(this.data.path, at + 1, shiftKey);
 		//code.behavior.onTouchEnded(code, id, x, y, ticks);
 	}
 	onTouchMoved(column, id, x, y, ticks) {
