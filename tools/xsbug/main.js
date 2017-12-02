@@ -609,6 +609,7 @@ let DebuggerApplication = Application.template($ => ({
 				{ title:"Step Out", key:"O", command:"StepOut" },
 				null,
 				{ state:0, titles: ["Set Breakpoint", "Clear Breakpoint"], shift:true, key:"B", command:"ToggleBreakpoint" },
+				{ state:0, titles: ["Enable Breakpoint", "Disable Breakpoint"], command:"DisableBreakpoint" },
 				{ title:"Clear All Breakpoints", option:true, key:"B", command:"ClearAllBreakpoints" },
 			],
 		},
