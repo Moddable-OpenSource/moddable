@@ -113,6 +113,11 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let breakpoints = this.breakpoints.items;
 		return breakpoints.length > 0;
 	}
+	canDisableBreakpoint(path, line) {
+		let breakpoints = this.breakpoints.items;
+		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
+		return index >= 0;
+	}
 	canGo() {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
@@ -156,6 +161,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			application.distribute("onMachineLogged", this.consoleText, this.consoleLines);
 		}
 	}
+	doDisableBreakpoint(path, line) {
+		this.doToggleBreakpoint(path, line, true);
+	}
 	doGo() {
 		let machine = this.currentMachine;
 		machine.broken = false;
@@ -187,18 +195,26 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		machine.timeout = Date.now() + 500;
 		machine.doCommand(mxStepOutCommand);
 	}
-	doToggleBreakpoint(path, line) {
+	doToggleBreakpoint(path, line, toggleDisabled) {
 		let breakpoints = this.breakpoints.items;
 		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
 		if (index >= 0) {
-			breakpoints.splice(index, 1);
+			if (toggleDisabled) {
+				breakpoints[index].enabled = !breakpoints[index].enabled;
+			}
+			else {
+				breakpoints.splice(index, 1);
+			}
 			this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, path, line));
 			path = this.unmapPath(path);
 			if (path)
 				this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, path, line));
 		}
 		else {
-			breakpoints.push({ path, name:system.getPathName(path), line });
+			if (toggleDisabled) {
+				return;
+			}
+			breakpoints.push({ path, name:system.getPathName(path), line, enabled: true });
 			breakpoints.sort(this.sortBreakpoints);
 			this.machines.forEach(machine => machine.doCommand(mxSetBreakpointCommand, path, line));
 			path = this.unmapPath(path);
@@ -475,7 +491,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 					items.push({ path, line });
 				}
 			});
-			this.doCommand(mxSetAllBreakpointsCommand, items, behavior.breakOnStart, behavior.breakOnExceptions);
+			this.doCommand(mxSetAllBreakpointsCommand, items.filter(
+				item => item.enabled
+			), behavior.breakOnStart, behavior.breakOnExceptions);
 		}
 		else if (this.broken) {
 			this.framesView.expanded = true;
