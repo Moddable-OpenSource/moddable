@@ -52,7 +52,7 @@
 #endif
 
 #ifndef SUPPORT_MODS
-	#define SUPPORT_MODS 1
+	#define SUPPORT_MODS 0
 #endif
 
 uint8_t espRead8(const void *addr)
@@ -634,7 +634,9 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
 
+#if SUPPORT_MODS
 	archive = installModules(prep);
+#endif
 
 	creation = prep->creation;
 
