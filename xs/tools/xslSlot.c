@@ -181,10 +181,11 @@ void fxLinkerScriptCallback(txMachine* the)
 				linkerScript->callbackNames = fxNewLinkerChunk(linker, c * sizeof(txCallbackName));
 				linkerScript->hostsCount = c;
 				for (i = 0; i < c; i++) {
-					txCallback callback = (txCallback)(((txU1*)gxFakeCallback)++);
+					txCallback callback = gxFakeCallback;
 					txHostFunctionBuilder* builder = &linkerScript->builders[i];
 					txCallbackName* callbackName = &linkerScript->callbackNames[i];
 					txS1 length = *p++;
+					gxFakeCallback = (txCallback)(((txU1*)gxFakeCallback) + 1);
 					mxDecode2(p, id);
 					builder->callback = callback;
 					builder->length = length;
