@@ -13,7 +13,6 @@
  */
 
  import Timeline from "piu/Timeline";
- import { HorizontalScrollerBehavior } from "scroller";
 
 const WHITE = "#ffffff";
 const BLACK = "#000000";
@@ -43,58 +42,36 @@ const easingFunctions = [
 	{ name: "sineEase", out: Math.sineEaseOut, in: Math.sineEaseIn },
 ]
 
-class OptionBehavior extends Behavior {
-	onCreate(label, data) {
-		this.data = data;
+class HeaderBehavior extends Behavior {
+	onDisplaying(label) {
+		this.index = -1;
+		this.onAnimationComplete(label);
 	}
-	onTouchBegan(label) {
-		label.state = 1;
-	}
-	onTouchEnded(label) {
-		let data = this.data;
-		label.state = 0;
-		application.delegate("onStartTransition", data.name, data.in, data.out);
+	onAnimationComplete(label) {
+		this.index++;
+		if (this.index == easingFunctions.length) this.index = 0;
+		let easingData = easingFunctions[this.index];
+		label.string = easingData.name;
+		application.delegate("onStartAnimation", easingData.in, easingData.out);
 	}
 }
 
-const Option = Label.template($ => ({
-	string: $.name, active: true,
-	Behavior: OptionBehavior
-}));
-
-const Header = Scroller.template($ => ({ 
-	left: 0, right: 0, bottom: 0,  height: 40,
-	Skin: HeaderSkin, active: true, clip: true,
-	contents:  [
-		Row($, {
-			top: 0, bottom: 0, left: 0,
-			contents: easingFunctions.map(data => new Option(data, { height: 25, left: 20, right: 20 })),
-		}),
-    ],
-	Behavior: HorizontalScrollerBehavior
+const Header = Label.template($ => ({
+	anchor: "HEADER", top: 0, height: 40, left: 0, right: 0, Skin: HeaderSkin,
+	Behavior: HeaderBehavior
 }));
 
 class TransitionContainerBehavior extends Behavior {
-	onDisplaying(container) {
-		let transitioningContent = new Content(null, {
-			bottom: 2, height: 50, left: container.width/2-25, width: 50,
-			Skin: BlueSkin
-		})
-		container.add(transitioningContent);
-		this.bottom = container.y+container.height-52;
-		this.top = container.y+2;
-	}
-	onStartTransition(container, name, easeInFunction, easeOutFunction) {
+	onStartAnimation(container, easeInFunction, easeOutFunction) {
 		if (container.running) return;
-		this.name = name;
 		this.in = easeInFunction;
 		this.out = easeOutFunction;
 		this.easeIn(container);
 	}
 	easeIn(container) {
 		let timeline = this.timeline = new Timeline();
-		let animatedItem = container.first;
-		timeline.to(animatedItem, { y: this.top }, 750, this.in, 0);
+		let animatedItem = container.first, top  = container.y+2;
+		timeline.to(animatedItem, { y: top }, 750, this.in, 0);
 		container.duration = timeline.duration+250;
 		timeline.seekTo(0);
 		container.time = 0;
@@ -102,9 +79,9 @@ class TransitionContainerBehavior extends Behavior {
 	}
 	easeOut(container) {
 		let timeline = this.timeline = new Timeline();
-		let animatedItem = container.first;
-		timeline.to(animatedItem, { y: this.bottom }, 750, this.out, 0);
-		container.duration = timeline.duration;
+		let animatedItem = container.first, bottom = container.y+container.height-52;
+		timeline.to(animatedItem, { y: bottom }, 750, this.out, 0);
+		container.duration = timeline.duration+250;
 		timeline.seekTo(0);
 		container.time = 0;
 		container.start();
@@ -120,6 +97,7 @@ class TransitionContainerBehavior extends Behavior {
 		} else {
 			delete this.out;
 			delete this.timeline;
+			application.delegate("onAnimationComplete");
 		}
 	}
 }
@@ -132,8 +110,12 @@ const EasingFunctionApplication = Application.template($ => ({
 			contents: [
 				new Header($),
 				Container($, {
-					anchor: "TRANSITION_CONTAINER", top: 30, bottom: 30, left: 30, right: 30, 
-					Skin: BorderedSkin, clip: true,
+					anchor: "TRANSITION_CONTAINER", top: 30, bottom: 30, left: 30, right: 30, Skin: BorderedSkin,
+					contents: [
+						Content($, {
+							bottom: 2, height: 50, width: 50, Skin: BlueSkin
+						}),
+					],
 					Behavior: TransitionContainerBehavior
 				}),
 			]
@@ -143,8 +125,11 @@ const EasingFunctionApplication = Application.template($ => ({
 		onCreate(application, data) {
 			this.data = data;
 		}
-		onStartTransition(application, name, easeInFunction, easeOutFunction) {
-			this.data.TRANSITION_CONTAINER.delegate("onStartTransition", name, easeInFunction, easeOutFunction);
+		onStartAnimation(application, easeInFunction, easeOutFunction) {
+			this.data.TRANSITION_CONTAINER.delegate("onStartAnimation", easeInFunction, easeOutFunction);
+		}
+		onAnimationComplete(application) {
+			this.data.HEADER.delegate("onAnimationComplete");
 		}
 	}
 }));
