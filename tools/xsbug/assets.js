@@ -78,7 +78,7 @@ export const glyphsSkin = new Skin({ texture:glyphsTexture, x:0, y:0, width:20, 
 
 
 export const lineNumberSkin = new Skin({ texture:lineNumberTexture, x:0, y:0, width:40, height:16, tiles: { left:20, right: 12 }, states:16, variants:40 });
-export const lineNumberStyle = new Style({ font:"bold 10px", horizontal:"right", right:15, color: [ GRAYS[33], WHITE ] })
+export const lineNumberStyle = new Style({ font:"bold 10px", horizontal:"right", right:15, color: [ GRAYS[33], WHITE, WHITE ] })
 export const lineNumbersSkin = new Skin({ fill:GRAYS[2], stroke:GRAYS[10], borders: { right:1 } })
 
 export const logoSkin = new Skin({ texture:logoTexture, x:0, y:0, width:80, height:80 });
