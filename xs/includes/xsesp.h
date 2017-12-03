@@ -458,6 +458,8 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define kModulesStart (gPartitionAddress)
 	#define kModulesByteLength (gPartition ? gPartition->size : 0)
 	#define kModulesEnd (kModulesStart + kModulesByteLength)
+
+	#define SPI_FLASH_RESULT_OK		0
 #else
 	#define kFlashStart ((uint8_t *)0x040200000)
 	#define kFlashEnd ((uint8_t *)0x040300000)
