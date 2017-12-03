@@ -1457,6 +1457,7 @@ uint8_t *espFindUnusedFlashStart(void)
 
 #endif /* SUPPORT_MODS */
 
+#if !ESP32
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
 	uint8_t temp[4] __attribute__ ((aligned (4)));
@@ -1563,3 +1564,4 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 
 	return 1;
 }
+#endif
