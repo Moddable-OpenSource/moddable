@@ -150,17 +150,17 @@ void wifiScanComplete(void *arg, STATUS status)
 	gScan->scan = (OK == status) ? arg : NULL;
 	if (modTimerAdd(0, 0, reportScan, NULL, 0)) {
 		// copy scan record for use in callback
-		struct bss_info *bss = arg;
-		uint8_t count = 1;
-		for (bss = bss->next.stqe_next; NULL != bss; bss = bss->next.stqe_next)
+		struct bss_info *bss;
+		uint8_t count = 0, i = 0;
+		for (bss = arg; NULL != bss; bss = bss->next.stqe_next)
 			count += 1;
 
-		gScan->scan = c_malloc(count * sizeof(struct bss_info));
-		if (gScan->scan) {
-			uint8_t i = 1;
-			bss = arg;
-			gScan->scan[0].next.stqe_next = &gScan->scan[1];
-			for (bss = bss->next.stqe_next; NULL != bss; bss = bss->next.stqe_next, i++) {
+		if (count) {
+			gScan->scan = c_malloc(count * sizeof(struct bss_info));
+			if (!gScan->scan)
+				return;
+
+			for (bss = arg; NULL != bss; bss = bss->next.stqe_next, i++) {
 				gScan->scan[i] = *bss;
 				if (bss->next.stqe_next)
 					gScan->scan[i].next.stqe_next = &gScan->scan[i + 1];
@@ -179,10 +179,10 @@ void reportScan(modTimer timer, void *refcon, uint32_t refconSize)
 
 	xsmcVars(2);
 	if (gScan->scan) {
-		struct bss_info *bss = gScan->scan;
+		struct bss_info *bss;
 
 		xsTry {
-			for (bss = bss->next.stqe_next; NULL != bss; bss = bss->next.stqe_next) {
+			for (bss = gScan->scan; NULL != bss; bss = bss->next.stqe_next) {
 				xsmcSetNewObject(xsVar(1));
 
 				xsmcSetStringBuffer(xsVar(0), bss->ssid, bss->ssid_len);
@@ -231,7 +231,6 @@ void reportScan(modTimer timer, void *refcon, uint32_t refconSize)
 		c_free(gScan->data);
 	c_free(gScan);
 	gScan = NULL;
-	
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
