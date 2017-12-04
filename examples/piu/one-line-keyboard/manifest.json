@@ -1,0 +1,30 @@
+{
+	"include": [
+		"../all.json",
+		"$(MODULES)/input/keyboard/manifest.json"
+	],
+	"config": {
+		"ssid": "Moddable",
+		"password": "12345678",
+		"sntp": false,
+	},
+	"creation":{
+		"stack":350,
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/network/websocket/*",
+			"$(MODULES)/network/wifi/*",
+		],
+	},
+	"resources":{
+		"*-alpha": [
+			"./fonts/OpenSans-Regular-20",
+			"./fonts/OpenSans-Semibold-18",
+		]
+	},
+}

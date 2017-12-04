@@ -1,0 +1,15 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": [
+			"./main",
+		],
+		"*-mask": [
+			"./logo",
+			"./myFont",
+		],
+	},
+}
