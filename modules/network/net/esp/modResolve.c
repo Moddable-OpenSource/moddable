@@ -55,8 +55,10 @@ void xs_net_resolve(xsMachine *the)
 
 	xsToStringBuffer(xsArg(0), nr->name, nameLen + 1);
 	err = dns_gethostbyname(nr->name, &nr->ipaddr, didResolve, nr);
-	if (ERR_OK == err)
+	if (ERR_OK == err) {
+		nr->resolved = 1;
 		modTimerAdd(0, 0, resolvedImmediate, &nr, sizeof(nr));
+	}
 	else if (ERR_INPROGRESS == err)
 		;
 	else {
@@ -71,7 +73,7 @@ void didResolve(const char *name, ip_addr_t *ipaddr, void *arg)
 	xsNetResolve nr = arg;
 	if (ipaddr) {
 		nr->ipaddr = *ipaddr;
-		nr->resolved = true;
+		nr->resolved = 1;
 	}
 	modTimerAdd(0, 0, resolvedImmediate, &nr, sizeof(nr));
 }
