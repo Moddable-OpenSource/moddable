@@ -22,8 +22,7 @@
 #include "xsmc.h"
 #include "xsesp.h"
 
-#include "string.h"
-#include "malloc.h"
+#include "mc.xs.h"			// for xsID_ values
 
 #include "esp_wifi.h"
 
@@ -93,6 +92,21 @@ void xs_wifi_scan(xsMachine *the)
 	config.bssid = NULL;
 	config.channel = 0;
 	config.show_hidden = 0;
+
+	if (xsmcArgc) {
+		xsmcVars(1);
+
+		if (xsmcHas(xsArg(0), xsID_hidden)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
+			config.show_hidden = xsmcTest(xsVar(0));
+		}
+
+		if (xsmcHas(xsArg(0), xsID_channel)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+			config.channel = xsmcToInteger(xsVar(0));
+		}
+	}
+
 	if (ESP_OK != esp_wifi_scan_start(&config, 0)) {
 		xsForget(gScan->callback);
 		c_free(gScan);
@@ -114,6 +128,7 @@ void xs_wifi_connect(xsMachine *the)
 	wifi_config_t config;
 	char *str;
 	int argc = xsmcToInteger(xsArgc);
+	wifi_mode_t mode;
 
 	initWiFi();
 
@@ -150,12 +165,17 @@ void xs_wifi_connect(xsMachine *the)
 		config.sta.bssid_set = 1;
 	}
 
-	esp_wifi_set_mode(WIFI_MODE_STA);
+	esp_wifi_get_mode(&mode);
+	if (WIFI_MODE_STA != mode)
+		esp_wifi_set_mode(WIFI_MODE_STA);
+
+	if (gWiFiState >= 4)
+		esp_wifi_disconnect();
 
 	esp_wifi_set_config(WIFI_IF_STA, &config);
 
-	if (gWiFiState >= 3)
-		esp_wifi_connect();
+	if (0 != esp_wifi_connect())
+		xsUnknownError("esp_wifi_connect failed");
 }
 
 void reportScan(void)
