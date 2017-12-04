@@ -1,0 +1,24 @@
+{
+	"include": "$(MODDABLE)/modules/pins/i2c/manifest.json",
+	"defines": {
+		"gt911": {
+		}
+	},
+	"preload": "gt911",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					  "$(MODULES)/drivers/gt911/*",
+				]
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					  "$(MODULES)/drivers/gt911/*",
+				]
+			},
+		}
+	}
+}
