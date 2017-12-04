@@ -185,10 +185,13 @@ void PiuStyleLookupFont(PiuStyle* self)
 		c_strcpy(buffer, string);
 	else
 		c_strcpy(buffer, "undefined");
-    c_strcat(buffer, "-");
-	if (((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)) || ((*self)->weight)) {
+	if (((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)) || ((*self)->weight) || ((*self)->size)) {
+		xsIntegerValue flag = 0;
+		c_strcat(buffer, "-");
 		if ((*self)->flags & piuStyleCondensedBit)
-			c_strcat(buffer, "Condensed"); 
+			c_strcat(buffer, "Condensed");
+		else
+			flag |= 1;
 		switch ((*self)->weight) {
 			case 1: c_strcat(buffer, "Ultralight"); break;
 			case 2: c_strcat(buffer, "Thin"); break;
@@ -198,19 +201,20 @@ void PiuStyleLookupFont(PiuStyle* self)
 			case 7: c_strcat(buffer, "Bold");break;
 			case 8: c_strcat(buffer, "Heavy"); break;
 			case 9: c_strcat(buffer, "Black");break;
+			default: flag |= 2; break;
 		}
 		if ((*self)->flags & piuStyleItalicBit)
 			c_strcat(buffer, "Italic"); 
+		else
+			flag |= 4;
+		if (flag == 7)
+			c_strcat(buffer, "Regular");
+		if ((*self)->size) {
+			xsIntegerValue length = c_strlen(buffer) + 1;
+			c_strcat(buffer, "-");
+			fxIntegerToString(NULL, (*self)->size, buffer + length, sizeof(buffer) - length);
+		}
 	}
-    else {
-        c_strcat(buffer, "Regular");
-    }
-	if ((*self)->size) {
-		xsIntegerValue length = c_strlen(buffer) + 1;
-		c_strcat(buffer, "-");
-		fxIntegerToString(NULL, (*self)->size, buffer + length, sizeof(buffer) - length);
-	}
-	c_strcat(buffer, "");
 	xsResult = xsGet(xsGlobal, xsID_fonts);
 	if (xsTest(xsResult))
 		fontList = PIU(FontList, xsResult);
