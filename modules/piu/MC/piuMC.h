@@ -86,16 +86,17 @@ struct PiuRegionStruct {
 		right
 */
 
-void PiuRegionNew(xsMachine* the, PiuCoordinate available);
+extern void PiuRegionNew(xsMachine* the, PiuCoordinate available);
 // region0 = region1 op region2, return 1 if done, 0 if overflowed
-PiuBoolean PiuRegionCombine(PiuRegion* region0, PiuRegion* region1, PiuRegion* region2, PiuCoordinate op);
+extern PiuBoolean PiuRegionCombine(PiuRegion* region0, PiuRegion* region1, PiuRegion* region2, PiuCoordinate op);
 // region0 = region1, return 1 if done, 0 if overflowed
-PiuBoolean PiuRegionCopy(PiuRegion* region0, PiuRegion* region1);
+extern PiuBoolean PiuRegionCopy(PiuRegion* region0, PiuRegion* region1);
 // region = [ 5 0 0 0 0 ], return 1 if done, 0 if overflowed
-PiuBoolean PiuRegionEmpty(PiuRegion* region);
+extern PiuBoolean PiuRegionEmpty(PiuRegion* region);
 // region = [ 11 x y w h y 2 x x+w y+h 0 ], return 1 if done, 0 if overflowed
-PiuBoolean PiuRegionRectangle(PiuRegion* region, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h);
-PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* region2);
+extern PiuBoolean PiuRegionRectangle(PiuRegion* region, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h);
+extern void PiuRegionOffset(PiuRegion* region, PiuCoordinate dx, PiuCoordinate dy);
+extern PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* region2);
 
 // PiuDie.c
 
