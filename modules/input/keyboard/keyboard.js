@@ -22,7 +22,6 @@
 Responsive soft keyboard module.
 
 dictionary options:
-  callback (required):    Function to call when keys are pressed
   style (required):       Style object to use for the text on keys
 
   bgColor:                A string specifying the background fill color 
