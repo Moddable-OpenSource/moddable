@@ -12,6 +12,7 @@
  *
  */
 
+import {} from "piu/MC";
  import Timeline from "piu/Timeline";
 
 const WHITE = "#ffffff";
@@ -22,7 +23,7 @@ const HeaderSkin = Skin.template({ fill: WHITE });
 const BackgroundSkin = Skin.template({ fill: BLACK });
 const BorderedSkin = Skin.template({ fill: "transparent", stroke: WHITE, borders: { left: 2, right: 2, top: 2, bottom: 2}})
 const BlueSkin = Skin.template({ fill: BLUE });
-const OpenSans20 = Style.template({ font: "semibold 20px Open Sans", color: [BLACK, BLUE] });
+const OpenSans20 = Style.template({ font: "20px Open Sans", color: [BLACK, BLUE] });
 
 function linearEase(fraction) {
 	return fraction;

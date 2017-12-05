@@ -12,10 +12,10 @@
  *
  */
 
-import {} from "piu/MC";
+ import {} from "piu/MC";
 
 const itemSkin = new Skin({ fill:[ "#192eab", "black" ] });
-const itemStyle = new Style({ font:"OpenSans-Regular-20", color:"white" });
+const itemStyle = new Style({ font:"20px Open Sans", color:"white" });
 const stripSkin = new Skin({ 
 	texture: { path:"wifi-strip.png" }, 
 	color: "white", 
