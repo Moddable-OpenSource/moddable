@@ -11,6 +11,8 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+
+import {} from "piu/MC";
 import Preference from "preference";
 import WipeTransition from "piu/WipeTransition";
 import Timeline from "piu/Timeline";
@@ -25,7 +27,7 @@ const backgroundSkins = [
 	new Skin({ fill: "green" }), 
 	new Skin({ fill: "blue" })
 ];
-const openSans20 = new Style({ font: "semibold 20px Open Sans", color: ["white", "black"] });
+const openSans20 = new Style({ font: "20px Open Sans", color: ["white", "black"] });
 const circleTexture = new Texture({ path:"fill-circle-mask.png" });
 const circleSkin = new Skin({ 
 	texture: circleTexture, 
