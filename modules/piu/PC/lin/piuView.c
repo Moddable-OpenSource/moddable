@@ -121,12 +121,12 @@ static void gtk_piu_view_drag_data_received(GtkWidget *widget, GdkDragContext *c
 	PiuApplication* application = (*view)->application;
 	gchar** uris;
 	char* uri;
-	char path[PATH_MAX];
+	char buffer[PATH_MAX];
 	uris = gtk_selection_data_get_uris(data);
 	if (uris != NULL) {
 		while ((uri = *uris++)) {
 			GFile* file = g_file_new_for_uri(uri);
-			realpath(g_file_get_path(file), path);
+			char* path = realpath(g_file_get_path(file), buffer);
 			g_object_unref(file);
 			xsBeginHost((*view)->the);
 			{
@@ -856,7 +856,7 @@ void PiuSystem_launchPath(xsMachine* the)
 	char command[PATH_MAX];
 	strcpy(command, "xdg-open ");
 	strcat(command, xsToString(xsArg(0)));
-	system(command);
+	xsResult = xsInteger(system(command));
 }
 
 void PiuSystem_launchURL(xsMachine* the)
