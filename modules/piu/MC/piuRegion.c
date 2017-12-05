@@ -368,6 +368,36 @@ PiuBoolean PiuRegionEmpty(PiuRegion* region)
 	return 1;
 }
 
+void PiuRegionOffset(PiuRegion* region, PiuCoordinate dx, PiuCoordinate dy)
+{
+	if (dx || dy) {
+		PiuCoordinate* data = (*region)->data;
+		PiuCoordinate* limit = data + (*data - 2);
+		PocoCoordinate count;
+		data++;
+		*data += dx;
+		data++;
+		*data += dy;
+		data++;
+		data++;
+		data++;
+		while (data < limit) {
+			*data += dy;
+			data++;
+			count = *data++;
+			while (count) {
+				*data += dx;
+				data++;
+				count--;
+				*data += dx;
+				data++;
+				count--;
+			}
+		}
+		*data += dy;
+	}
+}
+
 PiuBoolean PiuRegionRectangle(PiuRegion* region, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if (w && h) {
