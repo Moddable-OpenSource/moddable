@@ -11,7 +11,7 @@
 			"./main",
 		],
 		"*-alpha": [
-			"./OpenSans-Semibold-28",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 		],
 	},
 }
