@@ -38,9 +38,9 @@
 	},
 	"resources":{
 		"*-alpha": [
-			"./fonts/OpenSans-Regular-20",
-			"./fonts/OpenSans-Semibold-18",
-			"./fonts/OpenSans-Semibold-16",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
 			"./assets/header-arrow",
 			"./assets/wifi-strip",
 			"./assets/down-arrow-mask",
