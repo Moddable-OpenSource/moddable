@@ -123,7 +123,10 @@ class KeyboardBehavior extends Behavior{
     y = y - port.y;
     
     this.keyDown = this.getKey(port, x, y);
-    if (this.keyDown) port.invalidate();
+    if (this.keyDown){
+      port.invalidate();
+      port.bubble("onKeyDown", this.keyDown.key);
+    }
   }
   
   onTouchEnded(port, id, x, y){
@@ -151,7 +154,7 @@ class KeyboardBehavior extends Behavior{
             this.state = this.CAPS;
           }
         }else{
-          this.callback(key.key);
+          port.bubble("onKeyUp", key.key);
         }
       }
       delete this.keyDown;
@@ -186,7 +189,6 @@ class KeyboardBehavior extends Behavior{
     this.backspaceArrow = new BackspaceTexture();
     this.numKeys = new NumKeysTexture();
     
-    this.callback = data.callback;
     this.style = data.style;
 
 	this.metrics = new Uint8Array(128);
@@ -293,12 +295,13 @@ class KeyboardBehavior extends Behavior{
     }else{
       this.drawNothing = true;
       port.invalidate();
-      if (this.transitionCallback) this.transitionCallback();
+      port.bubble("onKeyboardTransitionFinished");
     }
   }
   
   startTransition(port, transitioningIn){
     if (transitioningIn){
+      this.transitioningOut = false;
       let height = port.height;
       let timeline = this.timeline = new Timeline();
       let y = TOPMARGIN;
@@ -327,8 +330,7 @@ class KeyboardBehavior extends Behavior{
     port.start();
   }
   
-  doKeyboardTransitionOut(port, callback){
-    this.transitionCallback = callback;
+  doKeyboardTransitionOut(port){
     port.active = false;
     this.startTransition(port, false);
   }
