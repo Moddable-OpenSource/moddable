@@ -11,6 +11,8 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+
+import {} from "piu/MC";
 import Net from "net";
 import SNTP from "sntp";
 import WiFi from "wifi";
@@ -147,6 +149,6 @@ Object.freeze(ApplicationBehavior.prototype);
 
 export default function() {
 	return new Application(null, {
-		displayListLength: 2560, commandListLength: 2048, Behavior: ApplicationBehavior
+		displayListLength: 2560, commandListLength: 2048, touchCount: 1, Behavior: ApplicationBehavior
 	});
 }

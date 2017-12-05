@@ -25,7 +25,7 @@ const LightBlueSkin = Skin.template({ fill: LIGHT_BLUE });
 
 const OpenSans16 = Style.template({ font: "semibold 16px Open Sans", vertical: "middle" });
 const OpenSans18 = Style.template({ font: "semibold 18px Open Sans", vertical: "middle" });
-const OpenSans20 = Style.template({ font: "normal 20px Open Sans", vertical: "middle" });
+const OpenSans20 = Style.template({ font: "20px Open Sans", vertical: "middle" });
 const BlackStyle = Style.template({ color: BLACK });
 const WhiteStyle = Style.template({ color: WHITE });
 const CenterStyle = Style.template({ horizontal: "center" });

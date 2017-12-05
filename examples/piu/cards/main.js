@@ -11,6 +11,8 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+
+import {} from "piu/MC";
 import Timeline from "piu/Timeline";
 
 const team = [
@@ -58,7 +60,7 @@ const blueSkin = new Skin({ fill:BLUE });
 const logoTexture = new Texture("logo.png");
 const logoSkin = new Skin({ texture:logoTexture, color:[BLUE, WHITE], x:0, y:0, width:60, height:60 });
 const companySkin = new Skin({ texture:logoTexture, color:WHITE, x:60, y:0, width:180, height:60 });
-const labelStyle = new Style({ font:"myFont", color:WHITE, horizontal:"right", right:30});
+const labelStyle = new Style({ font:"semibold 16px Open Sans", color:WHITE, horizontal:"right", right:30});
 
 let CardApplication = Application.template($ => ({
 	skin:whiteSkin,
