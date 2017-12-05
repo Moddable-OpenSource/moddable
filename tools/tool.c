@@ -547,7 +547,7 @@ void Tool_prototype_readFileString(xsMachine* the)
 		size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		xsResult = xsStringBuffer(NULL, size);
-		fread(xsToString(xsResult), 1, size, file);	
+		size = fread(xsToString(xsResult), 1, size, file);	
 		fclose(file);
 	}
 	xsCatch {
@@ -569,7 +569,7 @@ void Tool_prototype_readFileBuffer(xsMachine* the)
 		size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		xsResult = xsArrayBuffer(NULL, size);
-		fread(xsToArrayBuffer(xsResult), 1, size, file);	
+		size = fread(xsToArrayBuffer(xsResult), 1, size, file);	
 		fclose(file);
 	}
 	xsCatch {
