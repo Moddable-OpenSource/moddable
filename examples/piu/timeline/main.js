@@ -12,6 +12,7 @@
  *
  */
 
+import {} from "piu/MC";
 import Timeline from "piu/Timeline";
 
 const WHITE = "#ffffff";
@@ -20,7 +21,7 @@ const BLUE = "#192eab";
 
 const backgroundSkin = new Skin({ fill: BLUE });
 const headerSkin = new Skin({ fill: WHITE });
-const OpenSans20 = new Style({ font: "semibold 20px Open Sans", color: [BLACK, "#637784"] });
+const OpenSans20 = new Style({ font: "20px Open Sans", color: [BLACK, "#637784"] });
 
 const CircleTexture = Texture.template({ path:"circle.png" });
 const CircleSkin = Skin.template({ 
