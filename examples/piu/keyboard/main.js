@@ -13,12 +13,11 @@
  */
 
 import {} from "piu/MC";
-
 import {Keyboard, BACKSPACE, SUBMIT} from "keyboard";
 
 const WhiteSkin = Skin.template({fill:"white"});
 const OpenSans18 = Style.template({ font: "semibold 18px Open Sans", color: "black", horizontal:"center", vertical:"middle" });
-const OpenSans20 = Style.template({ font: "normal normal normal 20px Open Sans", color: "black", horizontal:"left", vertical:"middle"});
+const OpenSans20 = Style.template({ font: "20px Open Sans", color: "black", horizontal:"left", vertical:"middle"});
 
 let theString = "";
 let keyboardUp = true;
