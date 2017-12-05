@@ -11,6 +11,7 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+ import {} from "piu/MC";
  import {
 	VerticalScrollerBehavior,
 	HorizontalScrollerBehavior
@@ -24,7 +25,7 @@ const backgroundSkin = new Skin({ fill: GRAY });
 const headerSkin = new Skin({ fill: BLUE });
 const itemsSkin = new Skin({ fill: WHITE });
 
-const OpenSans20 = new Style({ font: "semibold 20px Open Sans" });
+const OpenSans20 = new Style({ font: "20px Open Sans" });
 const headerStyle = new Style({ color: WHITE });
 const itemsStyle = new Style({ color: GRAY });
 

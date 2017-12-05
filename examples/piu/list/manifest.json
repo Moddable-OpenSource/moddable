@@ -11,7 +11,7 @@
 	},
 	"resources":{
 		"*-mask": [
-			"./OpenSans-Regular-20",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
 			"./wifi-strip",
 		],
 	},
