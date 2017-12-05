@@ -22,32 +22,14 @@ const OpenSans20 = Style.template({ font: "20px Open Sans", color: "black", hori
 let theString = "";
 let keyboardUp = true;
 
-function gotKey(key){
-  if (key == BACKSPACE){
-    theString = theString.slice(0, -1);
-  }else if(key == SUBMIT){
-    trace("String is: " + theString + "\n");
-		theString = "";
-		application.distribute("doKeyboardTransitionOut", keyboardTransitionDone);
-  }else{
-    theString += key;
-  }
-  application.first.first.string = theString;
-}
-
-let keyboardTransitionDone = function(){
-	application.first.first.next.remove(application.first.first.next.first);
-	keyboardUp = false;
-}
-
 let MainCon = Column.template($ => ({
-  left: 0, right: 0, top: 0, bottom: 0, active: true,
+  left: 0, right: 0, top: 0, bottom: 0, active: true, name: "mainContainer",
   Skin: WhiteSkin,
   contents:[
     Label($, {left: 25, right: 0, top: 0, height: 76, string: "", Style: OpenSans20}),
     Container($, {
-      left: 0, right: 0, top: 0, bottom: 0, contents: [
-        new Keyboard({style: new OpenSans18(), callback: gotKey, doTransition: true})
+      left: 0, right: 0, top: 0, bottom: 0, name: "keyboardContainer", contents: [
+        new Keyboard({style: new OpenSans18(), doTransition: true})
       ]
     }),
   ],
@@ -55,7 +37,7 @@ let MainCon = Column.template($ => ({
 		onTouchEnded(column){
 			if (!keyboardUp){
 				keyboardUp = true;
-				column.first.next.add(new Keyboard({style: new OpenSans18(), callback: gotKey, doTransition: true}));
+				column.content("keyboardContainer").add(new Keyboard({style: new OpenSans18(), doTransition: true}));
 			}
 		}
 	}
@@ -69,5 +51,22 @@ export default new Application(null, {
 		onCreate(application) {
 			application.add(new MainCon());
 		}
+    onKeyUp(application, key){
+      if (key == BACKSPACE){
+        theString = theString.slice(0, -1);
+      }else if(key == SUBMIT){
+        trace("String is: " + theString + "\n");
+    		theString = "";
+    		application.distribute("doKeyboardTransitionOut");
+      }else{
+        theString += key;
+      }
+      application.first.first.string = theString;
+    }
+    onKeyboardTransitionFinished(application){
+      let keyboardContainer = application.content("mainContainer").content("keyboardContainer");
+      keyboardContainer.remove(keyboardContainer.first);
+    	keyboardUp = false;
+    }
 	},
 });
