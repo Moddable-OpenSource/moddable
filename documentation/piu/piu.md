@@ -673,9 +673,9 @@ application.add(grayContent);
 
 It is often convenient to store several icons or other user interface elements in a single image. Specifying `states` and `variants` properties in the dictionary of `skin` constructors enables you to reference different sections of the same texture. This prevents an application from having to reference similar images and create multiple skins. 
 
-The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of a texture that includes ten 28x28 pixel icons in [one image](../assets/piu/wifi-strip.png).
+The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of an asset that includes ten 28x28 pixel icons in one image, and a `skin` that will allow applications to reference each icon separately.
 
-![](../assets/piu/wifi-strip.gif)
+![](../assets/piu/wifi-strip.png)
 
 ```javascript
 const wiFiStripTexture = new Texture({ path:"wifi-strip.png" });
@@ -686,7 +686,11 @@ const wiFiSkin = new Skin({
 });
 ```
 
-The `states` and `variants` properties of `texture` objects should not be confused with the `state` and `variant` properties of `content` objects, although they are related. The `state` and `variant` of a `content` object are used to select which area of their `skin` to render. Here is an example using the `skin` from the last example.
+The `states` and `variants` properties of `texture` objects should not be confused with the `state` and `variant` properties of `content` objects, although they are related. The `state` and `variant` of a `content` object are used to select which area of their `skin` to render. Here is a visualization of the `state` and `variant` properties a `content` would use to reference different portions of the `skin` object from the last example.
+
+![](../assets/piu/wifi-strip.gif)
+
+The `state` and `variant` of a `content` can be updated at any time. This is often done when an event is triggered.
 
 ```javscript
 let WiFiStatusIcon = Content.template($ => ({
