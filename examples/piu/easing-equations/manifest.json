@@ -13,7 +13,7 @@
 	},
 	"resources":{
 		"*-alpha": [
-			"./fonts/OpenSans-Semibold-20",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
 		],
 	},
 }
