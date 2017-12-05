@@ -258,8 +258,12 @@ void PiuDie_cut(xsMachine* the)
 		xsErrorPrintf("region overflowed");
 	if (!PiuRegionCopy((*self)->current, (*self)->work))
 		xsErrorPrintf("region overflowed");
-	if (application)
+	if (application) {
+		PiuCoordinate x, y;
+		PiuContentToApplicationCoordinates(self, 0, 0, &x, &y);
+		PiuRegionOffset((*self)->swap, x, y);
 		PiuViewInvalidateRegion((*application)->view, (*self)->swap);	
+	}
 }
 
 void PiuDie_fill(xsMachine* the)
