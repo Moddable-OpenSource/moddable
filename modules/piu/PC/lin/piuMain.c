@@ -74,11 +74,11 @@ static void gtk_piu_application_open(GApplication *app, GFile **files, gint c, c
 	PiuApplication* application = gtkApplication->piuApplication;
 	PiuView* view = (*application)->view;
 	GtkWindow *gtkWindow = (*view)->gtkWindow;
-	char path[PATH_MAX];
+	char buffer[PATH_MAX];
 	gtk_window_present(gtkWindow);
 	gint i;
 	for (i = 0; i < c; i++) {
-		realpath(g_file_get_path(files[0]), path);
+		char* path = realpath(g_file_get_path(files[0]), buffer);
 		xsBeginHost((*view)->the);
 		{
 			xsVars(2);
