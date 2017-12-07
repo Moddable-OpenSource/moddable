@@ -229,6 +229,16 @@ void xs_JPEG_read(xsMachine *the)
 
 #if (kPocoPixelSize == 16) || (kPocoPixelSize == 8)
 
+#if kCommodettoBitmapGray256 == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelGray256(r, g, b)
+#elif kCommodettoBitmapRGB332 == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelRGB332(r, g, b)
+#elif kCommodettoBitmapRGB565LE == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelRGB565LE(r, g, b)
+#else
+	#error
+#endif
+
 void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 {
 	int i, pixelCount;
@@ -238,14 +248,14 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 	if (PJPG_YH1V1 == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i++)
-				*pixels++ =	PocoMakeColor(jpeg->r[i], jpeg->g[i], jpeg->b[i]);
+				*pixels++ =	makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]);
 		}
 		else {									// horizontal clipping (right edge)
 			int x, y;
 			i = 0;
 			for (y = 0; y < outHeight; y++) {
 				for (x = 0; x < outWidth; x++, i++)
-					*pixels++ = PocoMakeColor(jpeg->r[i], jpeg->g[i], jpeg->b[i]);
+					*pixels++ = makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]);
 				i += jpeg->mcuWidth - outWidth;
 			}
 		}
@@ -257,7 +267,7 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i++) {
 				PocoPixel gray = ~jpeg->r[i];
-				*pixels++ = PocoMakeColor(gray, gray, gray);
+				*pixels++ = makePixel(gray, gray, gray);
 			}
 		}
 		else {									// horizontal clipping (right edge)
@@ -266,7 +276,7 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			for (y = 0; y < outHeight; y++) {
 				for (x = 0; x < outWidth; x++, i++) {
 					PocoPixel gray = ~jpeg->r[i];
-					*pixels++ = PocoMakeColor(gray, gray, gray);
+					*pixels++ = makePixel(gray, gray, gray);
 				}
 				i += jpeg->mcuWidth - outWidth;
 			}
@@ -276,6 +286,15 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 #endif
 
 #if kPocoPixelSize == 4
+
+#if kCommodettoBitmapCLUT16 == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelCLUT16(r, g, b)
+#elif kCommodettoBitmapGray16 == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelGray16(r, g, b)
+#else
+	#error
+#endif
+
 void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 {
 	int i, pixelCount;
@@ -285,8 +304,8 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 	if (PJPG_YH1V1 == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i += 2) {
-				*pixels++ = (PocoMakeColor(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) |
-							PocoMakeColor(jpeg->r[i + 1], jpeg->g[i + 1], jpeg->b[i + 1]);;
+				*pixels++ = (makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) |
+							makePixel(jpeg->r[i + 1], jpeg->g[i + 1], jpeg->b[i + 1]);;
 			}
 		}
 		else {									// horizontal clipping (right edge)
@@ -295,13 +314,13 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			for (y = 0; y < outHeight; y++) {
 				for (x = 0; x < outWidth; x += 2) {
 					if ((outWidth - x) >= 2) {
-						*pixels++ = (PocoMakeColor(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) |
-									PocoMakeColor(jpeg->r[i + 1], jpeg->g[i + 1], jpeg->b[i + 1]);;
+						*pixels++ = (makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) |
+									makePixel(jpeg->r[i + 1], jpeg->g[i + 1], jpeg->b[i + 1]);;
 						i += 2;
 					}
 					else {
 						PocoPixel twoPixels = *pixels;
-						*pixels++ = (PocoMakeColor(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) | (twoPixels & 0x0F);
+						*pixels++ = (makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]) << 4) | (twoPixels & 0x0F);
 						i += 1;
 					}
 				}
@@ -317,9 +336,9 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i += 2) {
 				PocoPixel twoPixels;
 				PocoPixel gray = ~jpeg->r[i];
-				twoPixels = PocoMakeColor(gray, gray, gray) << 4;
+				twoPixels = makePixel(gray, gray, gray) << 4;
 				gray = ~jpeg->r[i + 1];
-				twoPixels |= PocoMakeColor(gray, gray, gray);
+				twoPixels |= makePixel(gray, gray, gray);
 				*pixels++ = twoPixels;
 			}
 		}
@@ -331,16 +350,16 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 					if ((outWidth - x) >= 2) {
 						PocoPixel twoPixels = *pixels;
 						PocoPixel gray = ~jpeg->r[i];
-						twoPixels = PocoMakeColor(gray, gray, gray) << 4;
+						twoPixels = makePixel(gray, gray, gray) << 4;
 						gray = ~jpeg->r[i + 1];
-						twoPixels |= PocoMakeColor(gray, gray, gray);
+						twoPixels |= makePixel(gray, gray, gray);
 						*pixels ++ = twoPixels;
 						i += 2;
 					}
 					else {
 						PocoPixel twoPixels = *pixels;
 						PocoPixel gray = ~jpeg->r[i];
-						*pixels++ = (PocoMakeColor(gray, gray, gray) >> 4) | (twoPixels & 0x0F);
+						*pixels++ = (makePixel(gray, gray, gray) >> 4) | (twoPixels & 0x0F);
 						i += 1;
 				}
 				}
