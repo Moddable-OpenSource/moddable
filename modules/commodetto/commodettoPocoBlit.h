@@ -171,16 +171,22 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 #define READ_PROG_MEM_UNSIGNED_BYTE(a) (*(unsigned char *)(a))
 #define READ_PROG_MEM_UNSIGNED_LONG(a) (*(uint32_t *)(a))
 
+#define PocoMakePixelGray256(r, g, b) (((r << 1) + r + (g << 2) + b) >> 3)
+#define PocoMakePixelGray16(r, g, b) (((r << 1) + r + (g << 2) + b) >> 7)
+#define PocoMakePixelRGB332(r, g, b) (((r >> 5) << 5) | ((g >> 5) << 2) | (b >> 6))
+#define PocoMakePixelRGB565LE(r, g, b) (((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3))
+#define PocoMakePixelCLUT16(r, g, b) (((r & 0xF0) << 4) | (g & 0xF0) | (b >> 4))
+
 #if kCommodettoBitmapGray256 == kPocoPixelFormat
-	#define PocoMakeColor(r, g, b) (((r << 1) + r + (g << 2) + b) >> 3)
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelGray256(r, g, b)
 #elif kCommodettoBitmapGray16 == kPocoPixelFormat
-	#define PocoMakeColor(r, g, b) (((r << 1) + r + (g << 2) + b) >> 7)
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelGray16(r, g, b)
 #elif kCommodettoBitmapRGB332 == kPocoPixelFormat
-	#define PocoMakeColor(r, g, b) (((r >> 5) << 5) | ((g >> 5) << 2) | (b >> 6))
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB332(r, g, b)
 #elif kCommodettoBitmapRGB565LE == kPocoPixelFormat
-	#define PocoMakeColor(r, g, b) (((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3))
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565LE(r, g, b)
 #elif kCommodettoBitmapCLUT16 == kPocoPixelFormat
-	#define PocoMakeColor(r, g, b) ((r & 0xF0) << 4) | (g & 0xF0) | (b >> 4);
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelCLUT16(r, g, b)
 #else
 	#error
 #endif
