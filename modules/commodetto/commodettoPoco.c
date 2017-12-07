@@ -275,7 +275,7 @@ void xs_poco_makeColor(xsMachine *the)
 	g = xsmcToInteger(xsArg(1));
 	b = xsmcToInteger(xsArg(2));
 
-	color = PocoMakeColor(r, g, b);
+	color = PocoMakeColor(xsGetHostDataPoco(xsThis), r, g, b);
 
 	xsmcSetInteger(xsResult, color);
 }
