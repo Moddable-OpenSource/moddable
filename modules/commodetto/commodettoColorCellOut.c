@@ -98,8 +98,8 @@ void xs_colorcell_begin(xsMachine *the)
 	cc->outputOffset = 0;
 	cc->outputMax = outputMax;
 
-	cc->prevLight = PocoMakeColor(255, 255, 255);
-	cc->prevDark = PocoMakeColor(0, 0, 0);
+	cc->prevLight = PocoMakePixelRGB565LE(255, 255, 255);
+	cc->prevDark = PocoMakePixelRGB565LE(0, 0, 0);
 
 	cc->quality = quality;
 }
