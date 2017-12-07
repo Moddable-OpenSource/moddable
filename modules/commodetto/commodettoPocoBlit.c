@@ -896,8 +896,8 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 	f->data = data;
 	f->yOffset = 0;
 	f->blockWidth = sw >> 2;
-	f->prev0 = PocoMakeColor(255, 255, 255);
-	f->prev1 = PocoMakeColor(0, 0, 0);
+	f->prev0 = PocoMakeColor(poco, 255, 255, 255);
+	f->prev1 = PocoMakeColor(poco, 0, 0, 0);
 	f->clipLeft = f->clipRight = 0;
 
 	xMax = x + w;
