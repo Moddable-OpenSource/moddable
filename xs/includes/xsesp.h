@@ -261,7 +261,7 @@ double __ieee754_fmod_patch(double x, double y);
 
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-#ifdef __XS__
+#if defined(__XS__)
 	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 	#if ESP32
 		void modMessageService(xsMachine *the, uint8_t block);
@@ -275,12 +275,10 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
  */
 
 #ifdef __XS__
-	#if ESP32
-		void modMachineTaskInit(xsMachine *the);
-		void modMachineTaskUninit(xsMachine *the);
-		void modMachineTaskWait(xsMachine *the);
-		void modMachineTaskWake(xsMachine *the);
-	#endif
+	void modMachineTaskInit(xsMachine *the);
+	void modMachineTaskUninit(xsMachine *the);
+	void modMachineTaskWait(xsMachine *the);
+	void modMachineTaskWake(xsMachine *the);
 #endif
 
 /*
@@ -482,8 +480,6 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define kModulesStart (gPartitionAddress)
 	#define kModulesByteLength (gPartition ? gPartition->size : 0)
 	#define kModulesEnd (kModulesStart + kModulesByteLength)
-
-	#define SPI_FLASH_RESULT_OK		0
 #else
 	#define kFlashStart ((uint8_t *)0x040200000)
 	#define kFlashEnd ((uint8_t *)0x040300000)
