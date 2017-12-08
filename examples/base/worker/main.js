@@ -14,10 +14,12 @@
 
 import Worker from "worker";
 
+trace("hello\n");
+
 let index = 0
 
 function start() {
-	let aWorker = new Worker("simpleworker");
+	let aWorker = new Worker("simpleworker", {allocation: 8192, stackCount: 64, slotCount: 64});
 
 	aWorker.postMessage({hello: "world", index: ++index});
 	aWorker.postMessage("hello, again");
