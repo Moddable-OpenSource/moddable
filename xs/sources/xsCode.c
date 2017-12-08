@@ -3399,7 +3399,10 @@ void fxTemplateNodeCode(void* it, void* param)
 				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, strings);
 				fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, i);
 				fxCoderAddByte(param, 0, XS_CODE_AT);
-				fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
+				if (((txTemplateItemNode*)item)->string->flags & 1)
+					fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
+				else
+					fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
 				fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, flag);
 			
 				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, raws);
@@ -3446,11 +3449,16 @@ void fxTemplateNodeCode(void* it, void* param)
 		fxCoderUnuseTemporaryVariables(coder, 2);
 	}
 	else {
+        if (((txTemplateItemNode*)item)->string->flags & 1)
+            fxReportLineError(parser, item->line, "invalid escape sequence");
 		fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
 		item = item->next;
 		while (item) {
-			if (item->description->token == XS_TOKEN_TEMPLATE_MIDDLE)
+			if (item->description->token == XS_TOKEN_TEMPLATE_MIDDLE) {
+				if (((txTemplateItemNode*)item)->string->flags & 1)
+					fxReportLineError(parser, item->line, "invalid escape sequence");
 				fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
+			}
 			else {
 				fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
 				fxNodeDispatchCode(item, param);
