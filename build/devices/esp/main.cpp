@@ -82,10 +82,10 @@ void loop(void)
 
 	modTimersExecute();
 
+	modMessageService();
+
 	if (modRunPromiseJobs(gThe))
 		return;
-
-	modMessageService();
 
 	int delayMS = modTimersNext();
 	if (delayMS)

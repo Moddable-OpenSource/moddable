@@ -110,16 +110,31 @@ extern void fx_putc(void *refcon, char c);
 #define mxMapSetLength (1)
 
 /* machine */
-#define mxMachinePlatform \
-	void* host; \
-	txSocket connection; \
-	void* reader; \
-	txBoolean debugOnReceive; \
-	txBoolean pendingSendBytes; \
-	txBoolean inPrintf; \
-	uint8_t *heap; \
-	uint8_t *heap_ptr; \
-	uint8_t *heap_pend;
+#if ESP32
+	#define mxMachinePlatform \
+		void* host; \
+		txSocket connection; \
+		void* reader; \
+		txBoolean debugOnReceive; \
+		txBoolean pendingSendBytes; \
+		txBoolean inPrintf; \
+		uint8_t *heap; \
+		uint8_t *heap_ptr; \
+		uint8_t *heap_pend; \
+		void *msgQueue; \
+		void *task;
+#else
+	#define mxMachinePlatform \
+		void* host; \
+		txSocket connection; \
+		void* reader; \
+		txBoolean debugOnReceive; \
+		txBoolean pendingSendBytes; \
+		txBoolean inPrintf; \
+		uint8_t *heap; \
+		uint8_t *heap_ptr; \
+		uint8_t *heap_pend;
+#endif
 
 #ifdef __cplusplus
 }
