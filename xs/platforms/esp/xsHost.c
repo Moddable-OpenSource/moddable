@@ -1164,6 +1164,9 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 
 void espStartInstrumentation(txMachine *the)
 {
+	if (NULL == the->connection)
+		return;
+
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
