@@ -1217,40 +1217,98 @@ uint32_t modMilliseconds(void)
 	messages
 */
 
+#if ESP32
+
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
 
 struct modMessageRecord {
-	modMessage	next;
-	xsMachine	*target;
-	xsSlot		obj;
-	uint16_t	length;
-	uint8_t		kind;
-	char		message[1];
+	char				*message;
+	modMessageDeliver	callback;
+	void				*refcon;
+	uint16_t			length;
+};
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+{
+	modMessageRecord msg;
+
+	msg.message = c_malloc(messageLength);
+	if (!msg.message) return -1;
+
+	c_memmove(msg.message, message, messageLength);
+	msg.length = messageLength;
+	msg.callback = callback;
+	msg.refcon = refcon;
+
+	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
+
+	return 0;
+}
+
+void modMessageService(xsMachine *the, uint8_t block)
+{
+	while (true) {
+		modMessageRecord msg;
+
+		if (!xQueueReceive(the->msgQueue, &msg, block ? portMAX_DELAY : 0))
+			return;
+
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		c_free(msg.message);
+	}
+}
+
+void modMachineTaskInit(xsMachine *the)
+{
+	the->task = xTaskGetCurrentTaskHandle();
+	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
+}
+
+void modMachineTaskUninit(xsMachine *the)
+{
+	if (the->msgQueue)
+		vQueueDelete(the->msgQueue);
+}
+
+void modMachineTaskWait(xsMachine *the)
+{
+	ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+}
+
+void modMachineTaskWake(xsMachine *the)
+{
+	xTaskNotifyGive(the->task);
+}
+
+#else
+
+typedef struct modMessageRecord modMessageRecord;
+typedef modMessageRecord *modMessage;
+
+struct modMessageRecord {
+	modMessage			next;
+	xsMachine			*the;
+	modMessageDeliver	callback;
+	void				*refcon;
+	uint16_t			length;
+	char				message[1];
 };
 
 static modMessage gMessageQueue;
 
-typedef void (*DeliverMessages)(void);
-static void modMessageDeliver(void);
-static DeliverMessages gDeliverMessages;
-
-int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint16_t messageLength, uint8_t messageKind)
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
 	if (!msg) return -1;
 
-	c_memmove(msg->message, message, messageLength);
-	msg->message[messageLength] = 0;			// safe because +1 on length from message[1]
-	msg->length = messageLength;
-	msg->kind = messageKind;
-
 	msg->next = NULL;
-	msg->target = the;
-	if (obj)
-		msg->obj = *obj;
-	else
-		msg->obj = xsUndefined;
+	msg->the = the;
+	msg->callback = callback;
+	msg->refcon = refcon;
+
+	c_memmove(msg->message, message, messageLength);
+	msg->length = messageLength;
 
 	// append to message queue
 	if (NULL == gMessageQueue)
@@ -1263,51 +1321,25 @@ int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint1
 		walker->next = msg;
 	}
 
-	gDeliverMessages = modMessageDeliver;
-
 	return 0;
 }
 
 void modMessageService(void)
 {
-	if (gDeliverMessages)
-		(*gDeliverMessages)();
-}
-
-void modMessageDeliver(void)
-{
 	modMessage msg = gMessageQueue;
 	gMessageQueue = NULL;
-	gDeliverMessages = NULL;
 
 	while (msg) {
 		modMessage next = msg->next;
 
-		xsBeginHost(msg->target);
-
-		xsVars(3);
-
-		if (0 == msg->kind) {
-			xsVar(0) = xsString(msg->message);
-			xsVar(1) = xsGet(xsGlobal, mxID(_JSON));
-			xsVar(2) = xsCall1(xsVar(1), mxID(_parse), xsVar(0));
-		}
-		else
-			xsVar(2) = xsArrayBuffer(msg->message, msg->length);
-
-		if (xsTest(msg->obj))
-			xsCall1(msg->obj, xsID("onmessage"), xsVar(2));	// calling instantiator - through instance
-		else {
-			xsVar(0) = xsGet(xsGlobal, xsID("self"));
-			xsCall1(xsVar(0), xsID("onmessage"), xsVar(2));	// calling worker - through self
-		}
-
-		xsEndHost(msg->target);
-
+		(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
 		c_free(msg);
+
 		msg = next;
 	}
 }
+
+#endif
 
 /*
 	 user installable modules
