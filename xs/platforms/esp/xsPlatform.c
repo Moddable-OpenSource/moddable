@@ -52,22 +52,19 @@
 
 void fxCreateMachinePlatform(txMachine* the)
 {
+	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = mxNoSocket;
 	the->debugOnReceive = true;
 #endif
-#if ESP32
-	modMachineTaskInit(the);
-#else
+#if !ESP32
 	init_printf(the, fx_putc);
 #endif
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
-#if ESP32
 	modMachineTaskUninit(the);
-#endif
 }
 
 void fx_putc(void *refcon, char c)
