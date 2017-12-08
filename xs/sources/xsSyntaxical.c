@@ -603,7 +603,7 @@ void fxPushStringNode(txParser* parser, txInteger length, txString value, txInte
 	node->description = &gxTokenDescriptions[XS_TOKEN_STRING];
 	node->path = parser->path;
 	node->line = line;
-	node->flags = parser->escaped ? 1 : 0;
+	node->flags = (parser->escaped < 0) ? 1 : 0;
 	node->length = length;
 	node->value = value;
 	fxPushNode(parser, (txNode*)node);
