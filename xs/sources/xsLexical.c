@@ -494,6 +494,7 @@ void fxGetNextString(txParser* parser, int c)
 	parser->rawLength2 = p - parser->buffer;
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
 	if (parser->escaped2) {
+		int errorCount = 0;
 		p = parser->buffer;
 		q = p + parser->bufferSize - 1;	
 		s = parser->raw2;
@@ -537,12 +538,12 @@ void fxGetNextString(txParser* parser, int c)
 							*p++ = character;
 							character = *s++;
 						}
-						if (character == '}') {
+						if ((character == '}') && (t <= 0x10FFFF)) {
 							p = (txString)fsX2UTF8(t, (txU1*)r, q - r);
 							character = *s++;
 						}
 						else
-							fxReportParserError(parser, "invalid escape sequence");			
+							errorCount++;
 					}
 					else {
 						for (i = 0; i < 4; i++) {
@@ -577,13 +578,13 @@ void fxGetNextString(txParser* parser, int c)
 									}
 								}
 								else
-									fxReportParserError(parser, "invalid escape sequence");			
+									errorCount++;
 							}
 							else
 								p = (txString)fsX2UTF8(t, (txU1*)r, q - r);
 						}
 						else
-							fxReportParserError(parser, "invalid escape sequence");			
+							errorCount++;
 					}
 					break;
 				case 'v':
@@ -606,7 +607,7 @@ void fxGetNextString(txParser* parser, int c)
 					if (i == 2)
 						p = (txString)fsX2UTF8(t, (txU1*)r, q - r);
 					else
-						fxReportParserError(parser, "invalid escape sequence");			
+						errorCount++;
 					break;
 				case '0':
 				case '1':
@@ -625,7 +626,7 @@ void fxGetNextString(txParser* parser, int c)
 						character = *s++;
 					}
 					if (((t != 0) || ((p - r) > 1)) && ((parser->flags & mxStrictFlag) || (c == '`')))
-						fxReportParserError(parser, "invalid escape sequence (strict mode)");			
+						errorCount++;
 					p = (txString)fsX2UTF8(t, (txU1*)r, q - r);
 					break;
 				default:
@@ -649,6 +650,12 @@ void fxGetNextString(txParser* parser, int c)
 		*p = 0;
 		parser->stringLength2 = p - parser->buffer;
 		parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
+		if (errorCount > 0) {
+			if (c == '`')
+				parser->escaped2 = -1;
+			else
+				fxReportParserError(parser, "invalid escape sequence");	
+		}	
 	}
 	else {
 		parser->stringLength2 = parser->rawLength2;
