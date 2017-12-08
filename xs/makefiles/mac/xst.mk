@@ -45,7 +45,6 @@ C_OPTIONS = \
 	$(MACOS_VERSION_MIN) \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
-	-DmxInstrument=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
 	-DmxRun=1 \
