@@ -1,0 +1,19 @@
+{
+	"include": [
+			"$(MODDABLE)/examples/manifest_base.json",
+			],
+	"modules": {
+		"*": "./main",
+	},
+	"platforms":{
+		"esp32": {
+			"modules": {
+				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
+				"*": "$(MODULES)/pins/pulsecount/esp32/*"
+			},
+			"preload": [
+				"pins/pulsecount"
+			],
+		}
+	}
+}
