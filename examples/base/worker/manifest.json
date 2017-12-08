@@ -1,5 +1,23 @@
 {
 	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"creation": {
+		"static": 12288,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512,
+		},
+		"heap": {
+			"initial": 64,
+			"incremental": 32,
+		},
+		"stack": 128,
+		"keys": {
+			"available": 32,
+			"name": 53,
+			"symbol": 3,
+		},
+		"main": "main",
+	},
 	"modules": {
 		"*": [
 			"./main",
