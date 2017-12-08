@@ -45,6 +45,8 @@
 	#include "tinyprintf.h"
 #endif
 
+#include "xsesp.h"
+
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
@@ -54,13 +56,18 @@ void fxCreateMachinePlatform(txMachine* the)
 	the->connection = mxNoSocket;
 	the->debugOnReceive = true;
 #endif
-#if !ESP32
+#if ESP32
+	modMachineTaskInit(the);
+#else
 	init_printf(the, fx_putc);
 #endif
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+#if ESP32
+	modMachineTaskUninit(the);
+#endif
 }
 
 void fx_putc(void *refcon, char c)
