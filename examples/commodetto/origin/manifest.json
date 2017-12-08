@@ -1,0 +1,12 @@
+{
+	"include": [
+		"../manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}

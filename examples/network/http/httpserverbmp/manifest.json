@@ -1,0 +1,18 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"*": [
+			"./main",
+			"./bmpSpooler",
+			"$(MODULES)/network/http/*",
+		],
+	},
+	"preload": [
+		"commodetto/*",
+		"http",
+	]
+}
