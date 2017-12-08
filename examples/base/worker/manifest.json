@@ -18,6 +18,9 @@
 		},
 		"main": "main",
 	},
+	"defines": {
+		"messages": 1
+	},
 	"modules": {
 		"*": [
 			"./main",

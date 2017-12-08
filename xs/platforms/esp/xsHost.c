@@ -37,6 +37,7 @@
 
 #include "xsAll.h"
 #include "xs.h"
+#include "mc.defines.h"
 
 #if ESP32
 	#define rtc_timeval timeval
@@ -49,10 +50,6 @@
 #ifdef mxInstrument
 	#include "modInstrumentation.h"
 	static void espStartInstrumentation(txMachine* the);
-#endif
-
-#ifndef SUPPORT_MODS
-	#define SUPPORT_MODS 0
 #endif
 
 uint8_t espRead8(const void *addr)
@@ -616,7 +613,7 @@ int32_t modGetDaylightSavingsOffset(void)
 	return gDaylightSavings;
 }
 
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
@@ -634,7 +631,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
 
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 	archive = installModules(prep);
 #endif
 
@@ -877,7 +874,7 @@ static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	return 0;
 }
 
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 #define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
 
 static uint8_t *findMod(txMachine *the, char *name, int *modSize)
@@ -925,7 +922,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 	if (findMod(the, name, NULL)) {
 		c_strcpy(path, "/");
 		c_strcat(path, name);
@@ -990,7 +987,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 	uint8_t *mod;
 	int modSize;
 
@@ -1220,7 +1217,7 @@ uint32_t modMilliseconds(void)
 	messages
 */
 
-#if ESP32
+#if ESP32 && MODDEF_MESSAGES
 
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
@@ -1284,7 +1281,7 @@ void modMachineTaskWake(xsMachine *the)
 	xTaskNotifyGive(the->task);
 }
 
-#else
+#elif MODDEF_MESSAGES
 
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
@@ -1342,13 +1339,22 @@ void modMessageService(void)
 	}
 }
 
+void modMachineTaskInit(xsMachine *the) {}
+void modMachineTaskUninit(xsMachine *the) {}
+
+#else /* !MODDEF_MESSAGES */
+void modMessageService(void) {}
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon) {}
+
+void modMachineTaskInit(xsMachine *the) {}
+void modMachineTaskUninit(xsMachine *the) {}
 #endif
 
 /*
 	 user installable modules
 */
 
-#if SUPPORT_MODS
+#if MODDEF_XS_MODS
 
 #if ESP32
 
@@ -1490,7 +1496,7 @@ uint8_t *espFindUnusedFlashStart(void)
 
 #endif
 
-#endif /* SUPPORT_MODS */
+#endif /* MODDEF_XS_MODS */
 
 #if !ESP32
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
