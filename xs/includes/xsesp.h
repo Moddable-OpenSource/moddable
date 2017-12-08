@@ -36,6 +36,11 @@
 	#include "Arduino.h"
 #endif
 
+#if ESP32
+	#include "freertos/FreeRTOS.h"
+	#include "freertos/task.h"
+#endif
+
 /*
 	link locations
 */
@@ -254,9 +259,28 @@ double __ieee754_fmod_patch(double x, double y);
 	messages
 */
 
+typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
 #ifdef __XS__
-	int modMessagePostToMachine(xsMachine *the, xsSlot *obj, uint8_t *message, uint16_t messageLength, uint8_t messageKind);
-	void modMessageService(void);
+	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+	#if ESP32
+		void modMessageService(xsMachine *the, uint8_t block);
+	#else
+		void modMessageService(void);
+	#endif
+#endif
+
+/*
+	 task
+ */
+
+#ifdef __XS__
+	#if ESP32
+		void modMachineTaskInit(xsMachine *the);
+		void modMachineTaskUninit(xsMachine *the);
+		void modMachineTaskWait(xsMachine *the);
+		void modMachineTaskWake(xsMachine *the);
+	#endif
 #endif
 
 /*
