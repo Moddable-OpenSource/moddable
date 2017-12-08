@@ -24,10 +24,24 @@
 #include "xsesp.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#if ESP32
+	#include "freertos/FreeRTOS.h"
+	#include "freertos/task.h"
+
+	static void workerLoop(void *pvParameter);
+#endif
+
 struct modWorkerRecord {
-	xsMachine	*worker;
-	xsMachine	*parent;
-	xsSlot		owner;
+	xsMachine		*the;
+	xsMachine		*parent;
+	xsSlot			owner;
+	uint32_t		allocation;
+	uint32_t		stackCount;
+	uint32_t		slotCount;
+#if ESP32
+	TaskHandle_t	task;
+#endif
+	char			module[1];
 };
 
 typedef struct modWorkerRecord modWorkerRecord;
@@ -36,13 +50,25 @@ typedef modWorkerRecord *modWorker;
 static void xs_worker_postfromworker(xsMachine *the);
 static void xs_worker_close(xsMachine *the);
 
+static void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
+static void workerDeliverJSON(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
+
+static int workerStart(modWorker worker);
+
 void xs_worker_destructor(void *data)
 {
 	modWorker worker = data;
 
 	if (worker) {
-		if (worker->worker)
-			fxDeleteMachine(worker->worker);
+#if ESP32
+		if (worker->task) {
+			vTaskDelete(worker->task);
+			worker->task = NULL;
+		}
+#endif
+		if (worker->the)
+			xsDeleteMachine(worker->the);
+
 		c_free(worker);
 	}
 }
@@ -50,80 +76,45 @@ void xs_worker_destructor(void *data)
 void xs_worker(xsMachine *the)
 {
 	modWorker worker;
-	xsMachine *vm;
-	char *module;
-	uint32_t allocation = 0, stackCount = 0, slotCount = 0;
-	char buffer[256];
+	char *module = xsmcToString(xsArg(0));
 
 	xsmcVars(1);
+
+	worker = c_calloc(sizeof(modWorkerRecord) + c_strlen(module), 1);
+	if (!worker)
+		xsUnknownError("no memory");
+
+	worker->parent = the;
+	worker->owner = xsThis;
+	c_strcpy(worker->module, module);
+
+	xsmcSetHostData(xsThis, worker);
 
 	if (xsmcArgc > 1) {
 		if (xsmcHas(xsArg(1), xsID_allocation)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
-			allocation = xsmcToInteger(xsVar(0));
+			worker->allocation = xsmcToInteger(xsVar(0));
 		}
 		if (xsmcHas(xsArg(1), xsID_stackCount)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
-			stackCount = xsmcToInteger(xsVar(0));
+			worker->stackCount = xsmcToInteger(xsVar(0));
 		}
 		if (xsmcHas(xsArg(1), xsID_slotCount)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
-			slotCount = xsmcToInteger(xsVar(0));
+			worker->slotCount = xsmcToInteger(xsVar(0));
 		}
 	}
+#if ESP32
+	//	xTaskCreatePinnedToCore(workerLoop, "workertask", 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
+	xTaskCreate(workerLoop, "workertask", 4096 , worker, 5, &worker->task);
 
-	vm = ESP_cloneMachine(allocation, stackCount, slotCount, 1);	// no debugger
-	if (!vm)
-		xsUnknownError("no memory to instantiate worker");
+	modMachineTaskWait(the);
+#else
+	workerStart(worker);
+#endif
 
-	module = xsmcToString(xsArg(0));
-
-	worker = c_malloc(sizeof(modWorkerRecord));
-	if (!worker) {
-		xsDeleteMachine(vm);
-		xsUnknownError("no memory");
-	}
-
-	worker->worker = vm;
-	worker->parent = the;
-	worker->owner = xsThis;
-
-	xsmcSetHostData(xsThis, worker);
-
-	vm->context = worker;
-
-	xsBeginHost(vm);
-
-	xsmcVars(2);
-
-	xsVar(0) = xsmcNewObject();
-	xsmcSet(xsGlobal, xsID_self, xsVar(0));
-
-	xsVar(1) = xsNewHostFunction(xs_worker_postfromworker, 1);
-	xsmcSet(xsVar(0), xsID_postMessage, xsVar(1));
-
-	xsVar(1) = xsNewHostFunction(xs_worker_close, 0);
-	xsmcSet(xsVar(0), xsID_close, xsVar(1));
-
-	buffer[0] = 0;
-	xsTry {
-		xsmcGet(xsVar(0), xsGlobal, xsID_require);
-		xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(module));
-		if (xsmcTest(xsVar(0)) && xsmcIsInstanceOf(xsVar(0), xsFunctionPrototype)) {
-			xsCallFunction0(xsVar(0), xsGlobal);
-		}
-	}
-	xsCatch {
-		xsmcToStringBuffer(xsException, buffer, sizeof(buffer));
-	}
-	xsEndHost(vm);
-
-	if (buffer[0]) {
-		xsDeleteMachine(vm);
-		xsmcSetHostData(xsThis, NULL);
-		c_free(worker);
-		xsUnknownError(buffer);
-	}
+	if (NULL == worker->the)
+		xsUnknownError("unable to instantiate worker");
 
 	xsRemember(worker->owner);
 }
@@ -132,13 +123,21 @@ void xs_worker_terminate(xsMachine *the)
 {
 	modWorker worker = xsmcGetHostData(xsThis);
 
-	if (!worker->worker)
+	if (NULL == worker->the)
 		return;
 
-	xsDeleteMachine(worker->worker);
-	worker->worker = NULL;
+#if ESP32
+	vTaskDelete(worker->task);
+	worker->task = NULL;
+#endif
+
+	xsDeleteMachine(worker->the);
+	worker->the = NULL;
 
 	xsForget(worker->owner);
+
+	c_free(worker);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_worker_postfrominstantiator(xsMachine *the)
@@ -148,7 +147,7 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 	uint32_t messageLength;
 	uint8_t kind;
 
-	if (NULL == worker->worker)
+	if (NULL == worker->the)
 		xsUnknownError("worker terminated");
 
 	xsmcVars(2);
@@ -162,11 +161,11 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 		xsmcGet(xsVar(0), xsGlobal, xsID_JSON);
 		xsVar(1) = xsCall1(xsVar(0), xsID_stringify, xsArg(0));
 		message = xsmcToString(xsVar(1));
-		messageLength = c_strlen(message);
+		messageLength = c_strlen(message) + 1;
 		kind = 0;
 	}
 
-	if (modMessagePostToMachine(worker->worker, NULL, message, messageLength, kind))
+	if (modMessagePostToMachine(worker->the, message, messageLength, (modMessageDeliver)(kind ? workerDeliverArrayBuffer : workerDeliverJSON), worker))
 		xsUnknownError("post from instantiator failed");
 }
 
@@ -188,11 +187,11 @@ void xs_worker_postfromworker(xsMachine *the)
 		xsmcGet(xsVar(0), xsGlobal, xsID_JSON);
 		xsVar(1) = xsCall1(xsVar(0), xsID_stringify, xsArg(0));
 		message = xsmcToString(xsVar(1));
-		messageLength = c_strlen(message);
+		messageLength = c_strlen(message) + 1;
 		kind = 0;
 	}
 
-	if (modMessagePostToMachine(worker->parent, &worker->owner, message, messageLength, kind))
+	if (modMessagePostToMachine(worker->parent, message, messageLength, (modMessageDeliver)(kind ? workerDeliverArrayBuffer : workerDeliverJSON), worker))
 		xsUnknownError("post from worker failed");
 }
 
@@ -200,4 +199,99 @@ void xs_worker_close(xsMachine *the)
 {
 	xsUnknownError("worker close umimplemented");		//@@
 }
+
+void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
+{
+	xsBeginHost(the);
+
+	xsmcVars(0);
+
+	xsVar(0) = xsArrayBuffer(message, messageLength);
+
+	if (the == worker->parent)
+		xsCall1(worker->owner, xsID_onmessage, xsVar(0));	// calling instantiator - through instance
+	else {
+		xsmcGet(xsVar(0), xsGlobal, xsID_self);
+		xsCall1(xsVar(0), xsID_onmessage, xsVar(0));	// calling worker - through self
+	}
+
+	xsEndHost(the);
+}
+
+void workerDeliverJSON(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
+{
+	xsBeginHost(the);
+
+	xsmcVars(3);
+
+	xsVar(0) = xsString(message);
+	xsmcGet(xsVar(1), xsGlobal, xsID_JSON);
+	xsVar(2) = xsCall1(xsVar(1), xsID_parse, xsVar(0));
+
+	if (the == worker->parent)
+		xsCall1(worker->owner, xsID_onmessage, xsVar(2));	// calling instantiator - through instance
+	else {
+		xsmcGet(xsVar(0), xsGlobal, xsID_self);
+		xsCall1(xsVar(0), xsID_onmessage, xsVar(2));		// calling worker - through self
+	}
+
+	xsEndHost(the);
+}
+
+int workerStart(modWorker worker)
+{
+	xsMachine *the;
+
+	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, 1);	// no debugger
+	if (!the)
+		return -1;
+
+	the->context = worker;
+
+	xsBeginHost(the);
+
+	xsmcVars(2);
+
+	xsVar(0) = xsmcNewObject();
+	xsmcSet(xsGlobal, xsID_self, xsVar(0));
+
+	xsVar(1) = xsNewHostFunction(xs_worker_postfromworker, 1);
+	xsmcSet(xsVar(0), xsID_postMessage, xsVar(1));
+
+	xsVar(1) = xsNewHostFunction(xs_worker_close, 0);
+	xsmcSet(xsVar(0), xsID_close, xsVar(1));
+
+	xsTry {
+		xsmcGet(xsVar(0), xsGlobal, xsID_require);
+		xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(worker->module));
+		if (xsmcTest(xsVar(0)) && xsmcIsInstanceOf(xsVar(0), xsFunctionPrototype)) {
+			xsCallFunction0(xsVar(0), xsGlobal);
+		}
+	}
+	xsCatch {
+		return -1;
+	}
+	xsEndHost(the);
+
+	worker->the = the;
+
+	return 0;
+}
+
+#if ESP32
+
+void workerLoop(void *pvParameter)
+{
+	modWorker worker = (modWorker)pvParameter;
+
+	if (workerStart(worker)) {
+		modMachineTaskWake(worker->parent);
+		return;
+	}
+	modMachineTaskWake(worker->parent);
+
+	while (true)
+		modMessageService(worker->the, 1);
+}
+#endif
 
