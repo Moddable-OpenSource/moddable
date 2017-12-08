@@ -91,9 +91,10 @@ void fxConnect(txMachine* the)
 	CFSocketContext context;
 	struct hostent *host;
 	struct sockaddr_in address;
+	CFDataRef data = NULL;
 	host = gethostbyname("localhost");
 	if (!host)
-		goto bail;
+		return;
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
 	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
@@ -105,13 +106,14 @@ void fxConnect(txMachine* the)
 	c_memset(&context, 0, sizeof(CFSocketContext));
 	context.info = (void*)the;
 	the->connection = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketReadCallBack, fxReadableCallback, &context);
-	if (CFSocketConnectToAddress(the->connection, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)2)) 
-		goto bail;
-	the->connectionSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, the->connection, 0);
-	CFRunLoopAddSource(CFRunLoopGetCurrent(), the->connectionSource, kCFRunLoopCommonModes);
-    return;
-bail:
-	fxDisconnect(the);
+	data = CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address));
+	if (data) {
+		if (CFSocketConnectToAddress(the->connection, data, (CFTimeInterval)2) == 0)  {
+			the->connectionSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, the->connection, 0);
+			CFRunLoopAddSource(CFRunLoopGetCurrent(), the->connectionSource, kCFRunLoopCommonModes);
+		}
+		CFRelease(data);
+	}
 }
 
 void fxDisconnect(txMachine* the)
