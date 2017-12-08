@@ -20,7 +20,9 @@
 ESP_BASE ?= $(HOME)/esp
 HOST_OS := $(shell uname)
 
-ARDUINO_ROOT ?= $(ESP_BASE)/esp8266-2.3.0
+XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2>/dev/null)
+ESP_SDK_RELEASE ?= esp8266-2.3.0
+ARDUINO_ROOT ?= $(ESP_BASE)/$(ESP_SDK_RELEASE)
 ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
 ESP_TOOLS_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
 ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
@@ -248,9 +250,6 @@ ifneq ($(shell grep $(LD_STD_CPP) $(ARDUINO_ROOT)/platform.txt),)
 endif
 
 # Utility functions
-git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
-SRC_GIT_VERSION = $(call git_description,$(ESP_BASE)/sources)
-ESP_GIT_VERSION = $(call git_description,$(ARDUINO_ROOT))
 time_string = $(shell perl -e 'use POSIX qw(strftime); print strftime($(1), localtime());')
 BUILD_DATE = $(call time_string,"%Y-%m-%d")
 BUILD_TIME = $(call time_string,"%H:%M:%S")
@@ -300,14 +299,14 @@ $(LIB_DIR):
 $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld main.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.cpp
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.cpp
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(XS_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.cpp
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)/buildinfo.cpp -o $(LIB_DIR)/buildinfo.cpp.o
 	$(LD) $(LD_FLAGS) -Wl,--start-group $^ $(LIB_DIR)/buildinfo.cpp $(LD_STD_LIBS) -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)/main.elf
 	$(TOOLS_BIN)/xtensa-lx106-elf-objdump -t $(TMP_DIR)/main.elf > $(BIN_DIR)/main.sym
 	$(ESPTOOL) -eo $(ARDUINO_ROOT)/bootloaders/eboot/eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)/main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
 	@echo "# Versions"
-	@echo "#  SDK:   $(ESP_GIT_VERSION)"
-	@echo "#  XS:    $(SRC_GIT_VERSION)"
+	@echo "#  ESP:   $(ESP_SDK_RELEASE)"
+	@echo "#  XS:    $(XS_GIT_VERSION)"
 	@$(TOOLS_BIN)/xtensa-lx106-elf-size -A $(TMP_DIR)/main.elf | perl -e $(MEM_USAGE)
 
 $(LIB_DIR)/lib_a-setjmp.o: $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
