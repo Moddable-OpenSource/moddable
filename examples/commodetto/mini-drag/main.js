@@ -21,6 +21,7 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import Timer from "timer";
+import config from "mc/config";
 
 let render = new Poco(screen);
 
