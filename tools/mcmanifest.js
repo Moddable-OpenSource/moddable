@@ -552,6 +552,8 @@ class ModulesRule extends Rule {
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
+		else if (parts.extension == ".cc")
+			this.appendFile(tool.cFiles, parts.name + ".cc.o", source, include);
 		else if (parts.extension == ".cpp")
 			this.appendFile(tool.cFiles, parts.name + ".cpp.o", source, include);
 		else if (parts.extension == ".m")
@@ -572,7 +574,7 @@ class ModulesRule extends Rule {
 };
 
 var moduleExtensions = [  
-	".c", ".cpp", ".h", ".java", ".js", ".json", ".m",
+	".c", ".cc", ".cpp", ".h", ".java", ".js", ".json", ".m",
 ];
 
 class ResourcesRule extends Rule {
