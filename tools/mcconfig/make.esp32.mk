@@ -160,10 +160,9 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(dir))
 
-C_FLAGS ?= -c -Os -g \
+C_COMMON_FLAGS ?= -c -Os -g \
 	-Wno-unused-variable \
 	-Wpointer-arith \
-	-Wno-implicit-function-declaration \
 	-Wl,-EL \
 	-fno-inline-functions \
 	-nostdlib \
@@ -171,7 +170,6 @@ C_FLAGS ?= -c -Os -g \
 	-mtext-section-literals \
 	-falign-functions=4 \
 	-MMD \
-	-std=gnu99 \
 	-fdata-sections \
 	-ffunction-sections \
 	-fno-jump-tables \
@@ -181,6 +179,12 @@ C_FLAGS ?= -c -Os -g \
 	-D BOOTLOADER_BUILD=1 \
 	-DESP_PLATFORM \
 	-MP
+
+C_FLAGS ?= $(C_COMMON_FLAGS) \
+	-Wno-implicit-function-declaration \
+	-std=gnu99
+
+CPP_FLAGS ?= $(C_COMMON_FLAGS)
 
 # Utility functions
 git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
