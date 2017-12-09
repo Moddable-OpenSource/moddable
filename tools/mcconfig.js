@@ -739,7 +739,15 @@ export default class extends Tool {
 	}
 	filterRecipe(name, pattern) {
 		var star = pattern.lastIndexOf("*");
-		if (star >= 0) {
+		if (star == 0 && pattern.length > 2 && '.' == pattern[1]) {
+			pattern = pattern.slice(1);
+			for (var cFile of this.cFiles) {
+				var target = cFile.target;
+				if (target.endsWith(pattern))
+					cFile.recipe = name;
+			}
+		}
+		else if (star > 0) {
 			pattern = pattern.slice(0, star);
 			for (var cFile of this.cFiles) {
 				var target = cFile.target.slice(0, star);
