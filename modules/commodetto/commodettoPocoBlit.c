@@ -3490,8 +3490,12 @@ void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w
 
 	if ((x >= xMax) || (y >= yMax)) {
 		// clipped out
+		poco->x = 0;
+		poco->y = 0;
 		poco->w = 0;
 		poco->h = 0;
+		poco->xMax = 0;
+		poco->yMax = 0;
 		return;
 	}
 
