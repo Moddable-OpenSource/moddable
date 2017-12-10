@@ -112,6 +112,11 @@ void fxConnect(txMachine* the)
 			the->connectionSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, the->connection, 0);
 			CFRunLoopAddSource(CFRunLoopGetCurrent(), the->connectionSource, kCFRunLoopCommonModes);
 		}
+		else {
+			CFSocketInvalidate(the->connection);
+			CFRelease(the->connection);
+			the->connection = NULL;
+		}
 		CFRelease(data);
 	}
 }
