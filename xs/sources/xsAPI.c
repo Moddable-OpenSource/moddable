@@ -1346,9 +1346,9 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			the->stack->value.code.closures = C_NULL;
 			the->stack->kind = XS_CODE_X_KIND;	
 			/* mxEmptyString */
-			mxPushStringC("");
+			mxPushStringX("");
 			/* mxEmptyRegExp */
-			mxPushStringC("(?:)");
+			mxPushStringX("(?:)");
 			/* mxBooleanString */
 			mxPushStringX("boolean");
 			/* mxDefaultString */
