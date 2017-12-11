@@ -411,15 +411,25 @@ class DefinesFile extends PrerequisiteFile {
 					if (null === value)
 						this.line(`#define ${prefix + name} NULL`);
 					else if (Array.isArray(value)) {
-						this.write(`#define ${prefix + name} {`);
-						for (let i = 0, length = value.length; i < length; i++) {
-							if (i)
-								this.write(", ");
-							if ("number" != typeof value[i])
-								throw new Error("Array element not number!");
-							this.write(value[i]);
+						if (value.every(item => "number" == typeof item)) {
+							this.write(`#define ${prefix + name} {`);
+							for (let i = 0, length = value.length; i < length; i++) {
+								if (i)
+									this.write(", ");
+								this.write(value[i]);
+							}
+							this.write("}\n");
 						}
-						this.write("}\n");
+						else
+						if (value.every(item => "string" == typeof item)) {
+							this.write(`#define ${prefix + name} \\\n`);
+							for (let i = 0, length = value.length; i < length; i++) {
+								if (i)
+									this.write("\\\n");
+								this.write(value[i]);
+							}
+							this.write("\n");
+						}
 					}
 					else
 						this.generateDefines(tool, prefix + name + "_", value);
