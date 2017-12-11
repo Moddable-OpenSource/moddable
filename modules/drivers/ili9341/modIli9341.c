@@ -364,9 +364,54 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
     }
 }
 
+// delay of 0 is end of commands
+#define kDelayMS (255)
+
+#if MODDEF_ILI9341_FLIPX && MODDEF_ILI9341_FLIPY
+	#define kFlip 0x88
+#elif MODDEF_ILI9341_FLIPX
+	#define kFlip 0x08
+#elif MODDEF_ILI9341_FLIPY
+	#define kFlip 0xC8
+#else
+	#define kFlip 0x48
+#endif
+
+#define kILI9341RegistersModdableZero \
+	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
+	0xCF, 3, 0x00, 0xC1, 0X30, \
+	0xE8, 3, 0x85, 0x00, 0x78, \
+	0xEA, 2, 0x00, 0x00, \
+	0xED, 4, 0x64, 0x03, 0x12, 0x81, \
+	0xF7, 1, 0x20, \
+	0xC0, 1, 0x23, \
+	0xC1, 1, 0x10, \
+	0xC5, 2, 0x3e, 0x28, \
+	0xC7, 1, 0x86, \
+	0x36, 1, kFlip, \
+	0x3A, 1, 0x55, \
+	0xB1, 2, 0x00, 0x18, \
+	0xB6, 3, 0x08, 0x82, 0x27, \
+	0xF2, 1, 0x00, \
+	0x26, 1, 0x01, \
+	0xE0, 15, 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00, \
+	0xE1, 15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F, \
+	0x11, 0, \
+	0x29, 0, \
+	kDelayMS, 0
+
+#ifndef MODDEF_ILI9341_REGISTERS
+	#define MODDEF_ILI9341_REGISTERS kILI9341RegistersModdableZero
+#endif
+
+static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
+	MODDEF_ILI9341_REGISTERS
+};
+
 void ili9341Init(spiDisplay sd)
 {
-	uint8_t data[16];
+	uint8_t data[16] __attribute__((aligned(4)));
+	const uint8_t *cmds;
 
 	SCREEN_CS_INIT;
 	SCREEN_DC_INIT;
@@ -380,114 +425,24 @@ void ili9341Init(spiDisplay sd)
 	modDelayMilliseconds(1);
 #endif
 
-	data[0] = 0x39;
-	data[1] = 0x2C;
-	data[2] = 0x00;
-	data[3] = 0x34;
-	data[4] = 0x02;
-	ili9341Command(sd, 0xCB, data, 5);
-
-	data[0] = 0x00;
-	data[1] = 0XC1;
-	data[2] = 0X30;
-	ili9341Command(sd, 0xCF, data, 3);
-
-	data[0] = 0x85;
-	data[1] = 0x00;
-	data[2] = 0x78;
-	ili9341Command(sd, 0xE8, data, 3);
-
-	data[0] = 0x00;
-	data[1] = 0x00;
-	ili9341Command(sd, 0xEA, data, 2);
-
-	data[0] = 0x64;
-	data[1] = 0x03;
-	data[2] = 0X12;
-	data[3] = 0X81;
-	ili9341Command(sd, 0xED, data, 4);
-
-	data[0] = 0x20;
-	ili9341Command(sd, 0xF7, data, 1);
-
-	data[0] = 0x23;   	//VRH[5:0]
-	ili9341Command(sd, 0xC0, data, 1);    	//Power control
-
-	data[0] = 0x10;   	//SAP[2:0];BT[3:0]
-	ili9341Command(sd, 0xC1, data, 1);    	//Power control
-
-	data[0] = 0x3e;   	//Contrast
-	data[1] = 0x28;
-	ili9341Command(sd, 0xC5, data, 2);    	//VCM control
-
-	data[0] = 0x86;  	 //--
-	ili9341Command(sd, 0xC7, data, 1);    	//VCM control2
-
-	data[0] = 0x48;
-	if (MODDEF_ILI9341_FLIPX)
-		data[0] ^= 0x40;
-	if (MODDEF_ILI9341_FLIPY)
-		data[0] ^= 0x80;
-	ili9341Command(sd, 0x36, data, 1);    	// Memory Access Control
-
-	data[0] = 0x55;							// 16 bit
-	ili9341Command(sd, 0x3A, data, 1);		// pixel format
-
-	data[0] = 0x00;
-	data[1] = 0x18;							// ?? Hz
-	ili9341Command(sd, 0xB1, data, 2);		// frame rate
-
-	data[0] = 0x08;
-	data[1] = 0x82;
-	data[2] = 0x27;
-	ili9341Command(sd, 0xB6, data, 3);    	// Display Function Control
-
-	data[0] = 0x00;
-	ili9341Command(sd, 0xF2, data, 1);    	// 3Gamma Function Disable
-
-	data[0] = 0x01;
-	ili9341Command(sd, 0x26, data, 1);    	//Gamma curve selected
-
-	data[0] = 0x0F;
-	data[1] = 0x31;
-	data[2] = 0x2B;
-	data[3] = 0x0C;
-	data[4] = 0x0E;
-	data[5] = 0x08;
-	data[6] = 0x4E;
-	data[7] = 0xF1;
-	data[8] = 0x37;
-	data[9] = 0x07;
-	data[10] = 0x10;
-	data[11] = 0x03;
-	data[12] = 0x0E;
-	data[13] = 0x09;
-	data[14] = 0x00;
-	ili9341Command(sd, 0xE0, data, 15);    	// Set positive gamma
-
-	data[0] = 0x00;
-	data[1] = 0x0E;
-	data[2] = 0x14;
-	data[3] = 0x03;
-	data[4] = 0x11;
-	data[5] = 0x07;
-	data[6] = 0x31;
-	data[7] = 0xC1;
-	data[8] = 0x48;
-	data[9] = 0x08;
-	data[10] = 0x0F;
-	data[11] = 0x0C;
-	data[12] = 0x31;
-	data[13] = 0x36;
-	data[14] = 0x0F;
-	ili9341Command(sd, 0xE1, data, 15);    	// Set negative gamma
-
-	ili9341Command(sd, 0x11, NULL, 0);    	// Exit Sleep
-//@@	modDelayMilliseconds(120);		// delay in some sample code. but doesn't seem to be required (check data sheet)
-
-	ili9341Command(sd, 0x29, NULL, 0);    // Display on
+	cmds = gInit;
+	while (true) {
+		uint8_t cmd = c_read8(cmds++);
+		if (kDelayMS == cmd) {
+			uint8_t tenMS = c_read8(cmds++);
+			if (0 == tenMS)
+				break;
+			modDelayMilliseconds(tenMS * 10);
+		}
+		else {
+			uint8_t count = c_read8(cmds++);
+			if (count)
+				c_memcpy(data, cmds, count);
+			ili9341Command(sd, cmd, data, count);
+			cmds += count;
+		}
+	}
 }
-
 
 void ili9341ChipSelect(uint8_t active, modSPIConfiguration config)
 {
@@ -522,7 +477,7 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	data[3] = yMax & 0xff;
 	ili9341Command(sd, 0x2b, data, sizeof(data));
 
-    ili9341Command(sd, 0x2c, 0, 0);
+    ili9341Command(sd, 0x2c, NULL, 0);
 
 	SCREEN_DC_DATA;
 }
