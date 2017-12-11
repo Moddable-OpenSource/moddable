@@ -1,7 +1,7 @@
 # Using defines in manifests
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: July 3, 2017
+Revised: December 11, 2017
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -250,6 +250,28 @@ This can be used as:
 Because JSON allows only decimal values, hex and binary values must be converted to decimal values. An alternative is to define the registers property as a string in C language syntax:
 
 		"registers": "{0x00, 0x38, 0x20, 0x63, 0xFF, 0xFF, 0xFF, 0x00 0x41}"
+
+JSON does not allow line breaks in string literals. To allow multiline string literals, an array of strings is converted to a multiline `#define`. Each element of the array is output as a separate line. The following JSON,
+
+		"registers": [
+		   "0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02,",
+		   "0xCF, 3, 0x00, 0xC1, 0X30,",
+		   "0xE8, 3, 0x85, 0x00, 0x78"
+		]
+
+generates this `#define`
+
+		#define MODDEF_ILI9341_REGISTERS \
+		0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
+		0xCF, 3, 0x00, 0xC1, 0X30, \
+		0xE8, 3, 0x85, 0x00, 0x78
+
+which can be used as follows:
+
+		static const uint8_t gRegisters[] = {
+			MODDEF_ILI9341_REGISTERS
+		};
+
 
 ### Multiple devices
 The manifest can contain #define data for several devices:
