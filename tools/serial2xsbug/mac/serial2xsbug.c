@@ -45,12 +45,20 @@
 #define ESP_STACK_COUNT 1024
 
 typedef struct txSerialDescriptionStruct txSerialDescriptionRecord, *txSerialDescription;
+typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
 typedef struct txSerialToolStruct txSerialToolRecord, *txSerialTool;
 
 struct txSerialDescriptionStruct {
 	txSerialTool tool;
 	io_object_t notification;
 	char path[1];
+};
+
+struct txSerialMachineStruct {
+	txSerialTool tool;
+	int index;
+	CFSocketRef networkSocket;
+	CFRunLoopSourceRef networkSource;
 };
 
 struct txSerialToolStruct {
@@ -67,38 +75,53 @@ struct txSerialToolStruct {
 	
 	char* host;
 	int port;
-	CFSocketRef networkSocket;
-	CFRunLoopSourceRef networkSource;
+	txSerialMachine machines[10];
+	txSerialMachine currentMachine;
 	
 	int index;
 	int state;
 	char buffer[XS_BUFFER_COUNT + 1];
 };
 
-static void fxCloseNetwork(txSerialTool self);
+static void fxCloseNetwork(txSerialTool self, int index);
 static void fxCloseSerial(txSerialTool self);
-static void fxOpenNetwork(txSerialTool self);
+static txSerialMachine fxOpenNetwork(txSerialTool self, int index);
 static void fxOpenSerial(txSerialTool self);
 static void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxRegisterSerial(void *refcon, io_iterator_t iterator);
-//static char* fxSearchBuffer(char* buffer, int bufferSize, char* what);
 static void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageType, void *messageArgument);
 static void fxWriteNetwork(txSerialTool self, void *buffer, int size);
 static void fxWriteSerial(txSerialTool self, void *buffer, int size);
 
-void fxCloseNetwork(txSerialTool self)
+static char* gxMachineTags[10] = {
+	"?xs0?>\r\n<",
+	"?xs1?>\r\n<",
+	"?xs2?>\r\n<",
+	"?xs3?>\r\n<",
+	"?xs4?>\r\n<",
+	"?xs5?>\r\n<",
+	"?xs6?>\r\n<",
+	"?xs7?>\r\n<",
+	"?xs8?>\r\n<",
+	"?xs9?>\r\n<"
+};
+
+void fxCloseNetwork(txSerialTool self, int index)
 {
-	if (self->networkSource) {
-		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), self->networkSource, kCFRunLoopCommonModes);
-		CFRelease(self->networkSource);
-		self->networkSource = NULL;
+	txSerialMachine machine = self->machines[index];
+	if (machine->networkSource) {
+		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
+		CFRelease(machine->networkSource);
 	}
-	if (self->networkSocket) {
-		CFSocketInvalidate(self->networkSocket);
-		CFRelease(self->networkSocket);
-		self->networkSocket = NULL;
+	if (machine->networkSocket) {
+		CFSocketInvalidate(machine->networkSocket);
+		CFRelease(machine->networkSocket);
 	}
+	free(machine);
+	self->machines[index] = NULL;
+	if (self->currentMachine == machine)
+		self->currentMachine = NULL;
 }
 
 void fxCloseSerial(txSerialTool self)
@@ -115,30 +138,41 @@ void fxCloseSerial(txSerialTool self)
 	}
 }
 
-void fxOpenNetwork(txSerialTool self)
+txSerialMachine fxOpenNetwork(txSerialTool self, int index)
 {
-	CFSocketContext context;
-	struct hostent *host;
-	struct sockaddr_in address;
-
-	memset(&context, 0, sizeof(CFSocketContext));
-	context.info = (void*)self;
-	host = gethostbyname(self->host);
-	if (!host) {
-        fprintf(stderr, "Error getting host - %s(%d).\n", strerror(errno), errno);
-        exit(1);
+	txSerialMachine machine = self->machines[index];
+	if (!machine) {
+		CFSocketContext context;
+		struct hostent *host;
+		struct sockaddr_in address;
+		machine = calloc(sizeof(txSerialMachineRecord), 1);
+		if (!machine) {
+			fprintf(stderr, "Error allocating machine - %s(%d).\n", strerror(errno), errno);
+			exit(1);
+		}
+		machine->tool = self;
+		machine->index = index;
+		memset(&context, 0, sizeof(CFSocketContext));
+		context.info = (void*)machine;
+		host = gethostbyname(self->host);
+		if (!host) {
+			fprintf(stderr, "Error getting host - %s(%d).\n", strerror(errno), errno);
+			exit(1);
+		}
+		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+		address.sin_family = AF_INET;
+		address.sin_port = htons(self->port);
+		machine->networkSocket = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketReadCallBack, fxReadNetwork, &context);
+		CFSocketError err = CFSocketConnectToAddress(machine->networkSocket, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)10);
+		if (err) {
+			fprintf(stderr,"Error opening network: %ld.\n",err);
+			exit(1);
+		}
+		machine->networkSource = CFSocketCreateRunLoopSource(NULL, machine->networkSocket, 0);
+		CFRunLoopAddSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
+		self->machines[index] = machine;
 	}
-	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-	address.sin_family = AF_INET;
-	address.sin_port = htons(self->port);
-	self->networkSocket = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketReadCallBack, fxReadNetwork, &context);
-	CFSocketError err = CFSocketConnectToAddress(self->networkSocket, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)10);
-	if (err) {
-		fprintf(stderr,"Error opening network: %ld.\n",err);
-        exit(1);
-	}
-	self->networkSource = CFSocketCreateRunLoopSource(NULL, self->networkSocket, 0);
-	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->networkSource, kCFRunLoopCommonModes);
+	return machine;
 }
 
 void fxOpenSerial(txSerialTool self)
@@ -213,16 +247,29 @@ void fxOpenSerial(txSerialTool self)
 
 void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
 {
-	txSerialTool self = context;
+	txSerialMachine machine = context;
+	txSerialTool self = machine->tool;
 	CFSocketNativeHandle handle = CFSocketGetNative(socketRef);
 	char buffer[1024];
-	int size = read(handle, buffer, 1023);
+	int size = read(handle, buffer, 1024);
 	if (size > 0) {
 		//fprintf(stderr, "%.*s", size, buffer);
-		fxWriteSerial(self, buffer, size);
-		buffer[size] = 0;
-		if (strstr(buffer, "<abort/>") || strstr(buffer, "<logout/>"))
-			fxCloseNetwork(self);
+		char* former = buffer;
+		char* current = buffer;
+		char* limit = buffer + size;
+		int offset;
+		while (current < limit) {
+			offset = current - former;
+			if ((offset >= 3) && (current[-3] == 13) && (current[-2] == 10) && (current[-1] == '<')) {
+				fxWriteSerial(self, former, offset);
+				fxWriteSerial(self, gxMachineTags[machine->index], 9);
+				former = current;
+			}
+			current++;
+		}
+		offset = limit - former;
+		if (offset)
+			fxWriteSerial(self, former, offset);
 	}
 	else if ((size < 0) && (errno != EINPROGRESS)) {
         fprintf(stderr, "Error reading network - %s(%d).\n", strerror(errno), errno);
@@ -334,7 +381,13 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 			*dst++ = *src++;
 			offset++;
 			if ((offset >= 2) && (dst[-2] == 13) && (dst[-1] == 10)) {
-				if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
+				if ((offset >= 9) && (dst[-9] == '<') && (dst[-8] == '?') && (dst[-7] == 'x') && (dst[-6] == 's') && (dst[-5] >= '0') && (dst[-5] <= '9') && (dst[-4] == '?') && (dst[-3] == '>')) {
+					self->currentMachine = fxOpenNetwork(self, dst[-5] - '0');
+				}
+				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '?') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] >= '0') && (dst[-6] <= '9') && (dst[-5] == '-') && (dst[-4] == '?') && (dst[-3] == '>')) {
+					fxCloseNetwork(self, dst[-6] - '0');
+				}
+				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 					fxWriteNetwork(self, self->buffer, offset);
 				}
 				else {
@@ -443,7 +496,6 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 				CFStringGetCString(typeRef, &description->path[0], maxSize + 1, kCFStringEncodingUTF8);
 				if (!strcmp(self->path, description->path) 
 						&& IOServiceAddInterestNotification(self->notificationPort, usbDevice, kIOGeneralInterest, fxUnregisterSerial, description, &description->notification) == KERN_SUCCESS) {
-					fxOpenNetwork(self);
 					fxOpenSerial(self);
 				}
 				else
@@ -458,7 +510,6 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 {
 	txSerialDescription description = refCon;
 	fxCloseSerial(description->tool);
-	fxCloseNetwork(description->tool);
 	free(description);
 	fprintf(stderr, "Serial debugging connection dropped.\n");
 }
@@ -466,8 +517,9 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 void fxWriteNetwork(txSerialTool self, void *buffer, int size)
 {
 	//fprintf(stderr, "%.*s", size, buffer);
-	if (self->networkSocket) {
-		size = write(CFSocketGetNative(self->networkSocket), buffer, size);
+	txSerialMachine machine = self->currentMachine;
+	if (machine && machine->networkSocket) {
+		size = write(CFSocketGetNative(machine->networkSocket), buffer, size);
 		if (size < 0) {
 			fprintf(stderr, "Error writing network - %s(%d).\n", strerror(errno), errno);
 			exit(1);
@@ -479,6 +531,7 @@ void fxWriteNetwork(txSerialTool self, void *buffer, int size)
 
 void fxWriteSerial(txSerialTool self, void *buffer, int size)
 {
+	//fprintf(stderr, "%.*s", size, buffer);
 	size = write(CFSocketGetNative(self->serialSocket), buffer, size);
 	if (size < 0) {
         fprintf(stderr, "Error writing serial - %s(%d).\n", strerror(errno), errno);
