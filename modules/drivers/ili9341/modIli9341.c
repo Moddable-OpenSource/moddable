@@ -367,16 +367,6 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 // delay of 0 is end of commands
 #define kDelayMS (255)
 
-#if MODDEF_ILI9341_FLIPX && MODDEF_ILI9341_FLIPY
-	#define kFlip 0x88
-#elif MODDEF_ILI9341_FLIPX
-	#define kFlip 0x08
-#elif MODDEF_ILI9341_FLIPY
-	#define kFlip 0xC8
-#else
-	#define kFlip 0x48
-#endif
-
 #define kILI9341RegistersModdableZero \
 	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
 	0xCF, 3, 0x00, 0xC1, 0X30, \
@@ -388,7 +378,7 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	0xC1, 1, 0x10, \
 	0xC5, 2, 0x3e, 0x28, \
 	0xC7, 1, 0x86, \
-	0x36, 1, kFlip, \
+	0x36, 1, (0x48 ^ (MODDEF_ILI9341_FLIPY ? 0x80 : 0)) ^ (MODDEF_ILI9341_FLIPX ? 0x40 : 0), \
 	0x3A, 1, 0x55, \
 	0xB1, 2, 0x00, 0x18, \
 	0xB6, 3, 0x08, 0x82, 0x27, \
