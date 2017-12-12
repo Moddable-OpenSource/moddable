@@ -17,7 +17,7 @@ The `set` function is used to request a function be called once after a certain 
 
 An immediate timer is called on the next cycle through the run loop. To set an immediate timer, call `set` with a single argument.
 
-	Timer.set(id => trace("immediate fired\n");
+	Timer.set(id => trace("immediate fired\n"));
 
 A one shot timer is called once after a specified number of milliseconds. If the number of milliseconds is zero, a one shot timer is equivalent to an immediate timer.
 
@@ -25,7 +25,7 @@ A one shot timer is called once after a specified number of milliseconds. If the
 
 Calling `set` with a `repeat` is equivalent to a repeating timer with the first callback triggered after the `interval`.
 
-	Timer.set(id => trace("repeat fired\n", 1000, 100);
+	Timer.set(id => trace("repeat fired\n"), 1000, 100);
 	
 The callback function receives the timer id as the first argument.
 
