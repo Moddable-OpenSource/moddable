@@ -1,8 +1,8 @@
 # Manifest
 
-Copyright 2016 Moddable Tech, Inc.
+Copyright 2017 Moddable Tech, Inc.
 
-Revised: August 18, 2016
+Revised: December 12, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -180,7 +180,7 @@ The second pass matches files with the properties of the combined `modules` and 
 
 There are no extensions:
 
-- In the `modules` object, **mcconfig** matches `.c`, `.cpp`, `.h`, `.js` and `.m` files. 
+- In the `modules` object, **mcconfig** matches `.c`, `.cc`, `.cpp`, `.h`, `.js` and `.m` files. 
 - In the `resources` object, **mcconfig** matches `.act`, `.bmp`, `.cct`, `.dat`, `.der`, `.fnt`, `.jpg`, `.json`, `.nfnt`, `.pk8`, `.png`, `.rle`, `.ski` and `.ttf`  files. 
 
 ### Generate
