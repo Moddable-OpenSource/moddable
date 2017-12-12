@@ -95,7 +95,7 @@ void fx_putc(void *refcon, char c)
 		the->inPrintf = true;
 		if (kSerialConnection == the->connection) {
 			// write xsbug log header
-			static const char *xsbugHeader = "\r\n<xsbug><log>";
+			static const char *xsbugHeader = "\r\n<?xs0?>\r\n<xsbug><log>";
 			const char *cp = xsbugHeader;
 			while (true) {
 				char c = c_read8(cp++);
@@ -269,6 +269,20 @@ void fxDisconnect(txMachine* the)
 	if (the->connection) {
 		if (kSerialConnection != the->connection)
 			tcp_close((struct tcp_pcb *)the->connection);
+		else {
+			ESP_putc('\r');
+			ESP_putc('\n');
+			ESP_putc('<');
+			ESP_putc('?');
+			ESP_putc('x');
+			ESP_putc('s');
+			ESP_putc('0');
+			ESP_putc('-');
+			ESP_putc('?');
+			ESP_putc('>');
+			ESP_putc('\r');
+			ESP_putc('\n');
+		}
 		the->connection = NULL;
 	}
 	xmodLog("  fxDisconnect - EXIT");
@@ -400,6 +414,18 @@ void fxSend(txMachine* the, txBoolean more)
 	else {
 		char *c = the->echoBuffer;
 		txInteger count = the->echoOffset;
+		if (!the->inPrintf) {
+			ESP_putc('\r');
+			ESP_putc('\n');
+			ESP_putc('<');
+			ESP_putc('?');
+			ESP_putc('x');
+			ESP_putc('s');
+			ESP_putc('0');
+			ESP_putc('?');
+			ESP_putc('>');
+		}
+		the->inPrintf = more;
 		while (count--)
 			ESP_putc(*c++);
 	}
