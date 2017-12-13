@@ -1,7 +1,7 @@
 # Pins
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: November 15, 2017
+Revised: December 13, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -20,35 +20,69 @@ The Digital class provides only static functions. It is not instantiated.
 
 The following example configures pin 0 as an input and then tests to see if a button connected to the input is pressed. On an ESP8266 NodeMCU board pin 0 is the built-in user button.
 
-	Digital.configure(0, 1);		// built in button
 	if (Digital.read(0))
 		trace("button is pressed\n");
+
+### Reading a button with a built-in pull up resistor
+
+The static `Digital.read` and `Digital.write` do not allow configuring all pin modes. Use the Digital constructor for full configuration, for example setting the input to use an internal pull-up resistor.
+
+	let button = new Digital(0, Digital.inputPullUp);
+	trace(`button state is ${button.read()}`;
 
 ### Blinking an LED
 
 The following example configures pin 5 as an output and then blinks it one per second. On the ESP8266 NodeMCU board, pin 5 is the built-in LED.
 
-	Digital.configure(5, 0);
-
 	let blink = 1;
-	Digital.write(5, blink);
 	
 	Timer.repeat(id => {
 		blink = blink ^ 1;
 		Digital.write(5, blink);
 	}, 500);
 
-### configure(pin, mode)
+### Blinking an LED on a specific port
 
-The `configure` function sets a pin as either an input or output. It should be called before `read` and `write`. Set the mode to 0 for an output, 1 for an input, and 2 for input with pull-up resistor.
+To open a GPIO pin on a specific port, use the Digital constructor with the optional first argument.
 
-### read(pin)
+	let blink = 1;
+	let led = new Digital("gpioPortName", 5);
+	
+	Timer.repeat(id => {
+		blink = blink ^ 1;
+		led.write(blink);
+	}, 500);
 
-The `read` function samples the value of the specified pin, returning 0 or 1.
+### static read(pin)
 
-### write(pin)
+The `read` function sets the pin to `Digital.input` mode and samples the value of the specified pin, returning 0 or 1.
 
-The `write` function sets the value of the specified pin to either 0 or 1.
+### static write(pin)
+
+The `write` function sets the pin to `Digital.output` mode and its value to either 0 or 1.
+
+### constructor([port], pin, mode)
+
+The Digital constructor establishes a connection to the GPIO pin specified by the `port` and `pin` arguments. If the port is not provided, the default port (`NULL`) is used. The `mode` parameters is passed to the instance's `mode` function to configure the GPIO hardware.
+
+### mode(mode)
+
+The mode function sets the mode of the pin. Not all pins support all modes, so refer to the hardware documentation for details. The following mode values are available.
+
+	Digital.input
+	Digital.inputPullUp
+	Digital.inputPullDown
+	Digital.inputPullUpDown
+	Diigtal.output
+	Digital.outputOpenDrain
+
+### read()
+
+Samples the state of the pin and returns it as 0 or 1.
+
+### write(value)
+
+Sets the current value of the pin to 0 or 1.
 
 ## class Analog
 
