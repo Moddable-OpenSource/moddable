@@ -95,7 +95,7 @@ void fx_putc(void *refcon, char c)
 		the->inPrintf = true;
 		if (kSerialConnection == the->connection) {
 			// write xsbug log header
-			static const char *xsbugHeader = "\r\n<?xs0?>\r\n<xsbug><log>";
+			static const char *xsbugHeader = "\r\n<?xs.87654321?>\r\n<xsbug><log>";
 			const char *cp = xsbugHeader;
 			while (true) {
 				char c = c_read8(cp++);
@@ -276,8 +276,15 @@ void fxDisconnect(txMachine* the)
 			ESP_putc('?');
 			ESP_putc('x');
 			ESP_putc('s');
-			ESP_putc('0');
 			ESP_putc('-');
+			ESP_putc('8');
+			ESP_putc('7');
+			ESP_putc('6');
+			ESP_putc('5');
+			ESP_putc('4');
+			ESP_putc('3');
+			ESP_putc('2');
+			ESP_putc('1');
 			ESP_putc('?');
 			ESP_putc('>');
 			ESP_putc('\r');
@@ -421,7 +428,15 @@ void fxSend(txMachine* the, txBoolean more)
 			ESP_putc('?');
 			ESP_putc('x');
 			ESP_putc('s');
-			ESP_putc('0');
+			ESP_putc('.');
+			ESP_putc('8');
+			ESP_putc('7');
+			ESP_putc('6');
+			ESP_putc('5');
+			ESP_putc('4');
+			ESP_putc('3');
+			ESP_putc('2');
+			ESP_putc('1');
 			ESP_putc('?');
 			ESP_putc('>');
 		}
