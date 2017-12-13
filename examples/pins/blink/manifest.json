@@ -11,29 +11,16 @@
 					"$(MODULES)/pins/digital/esp/*",
 				],
 			},
-			"preload": [
-				"pins/*",
-			],
+			"preload": "pins/*",
 		},
-		"gecko": {
+		"esp32": {
 			"modules": {
+				"pins/digital": "$(MODULES)/pins/digital/digital",
 				"*": [
-					"$(BUILD)/devices/gecko/pins/*",
+					"$(MODULES)/pins/digital/esp32/*",
 				],
 			},
-			"preload": [
-				"pins",
-			],
-		},
-		"apollo": {
-			"modules": {
-				"*": [
-					"$(BUILD)/devices/apollo/pins/*",
-				],
-			},
-			"preload": [
-				"pins",
-			],
+			"preload": "pins/*",
 		},
 	}
 }
