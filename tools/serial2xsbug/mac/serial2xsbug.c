@@ -29,20 +29,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-//
+
 #include <CoreFoundation/CoreFoundation.h>
-// 
-#include <IOKit/IOKitLib.h>
-//#include <IOKit/IOMessage.h>
-//#include <IOKit/IOCFPlugIn.h>
-#include <IOKit/usb/IOUSBLib.h>
-//
 #include <IOKit/serial/IOSerialKeys.h>
 #include <IOKit/serial/ioss.h>
+#include <IOKit/usb/IOUSBLib.h>
 #include <IOKit/IOBSD.h>
+#include <IOKit/IOKitLib.h>
 
-#define XS_BUFFER_COUNT 32 * 1024
-#define ESP_STACK_COUNT 1024
+#define mxBufferSize 32 * 1024
+#define mxTagSize 17
+#define mxTrace 0
 
 typedef struct txSerialDescriptionStruct txSerialDescriptionRecord, *txSerialDescription;
 typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
@@ -56,7 +53,9 @@ struct txSerialDescriptionStruct {
 
 struct txSerialMachineStruct {
 	txSerialTool tool;
-	int index;
+	txSerialMachine nextMachine;
+	uint32_t value;
+	char tag[mxTagSize + 1];
 	CFSocketRef networkSocket;
 	CFRunLoopSourceRef networkSource;
 };
@@ -75,17 +74,18 @@ struct txSerialToolStruct {
 	
 	char* host;
 	int port;
-	txSerialMachine machines[10];
+	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	
 	int index;
 	int state;
-	char buffer[XS_BUFFER_COUNT + 1];
+	char buffer[mxBufferSize + 1];
 };
 
-static void fxCloseNetwork(txSerialTool self, int index);
+static void fxCloseNetwork(txSerialTool self, uint32_t value);
 static void fxCloseSerial(txSerialTool self);
-static txSerialMachine fxOpenNetwork(txSerialTool self, int index);
+static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
+static txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value);
 static void fxOpenSerial(txSerialTool self);
 static void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
@@ -94,34 +94,30 @@ static void fxUnregisterSerial(void *refCon, io_service_t service, natural_t mes
 static void fxWriteNetwork(txSerialTool self, void *buffer, int size);
 static void fxWriteSerial(txSerialTool self, void *buffer, int size);
 
-static char* gxMachineTags[10] = {
-	"?xs0?>\r\n<",
-	"?xs1?>\r\n<",
-	"?xs2?>\r\n<",
-	"?xs3?>\r\n<",
-	"?xs4?>\r\n<",
-	"?xs5?>\r\n<",
-	"?xs6?>\r\n<",
-	"?xs7?>\r\n<",
-	"?xs8?>\r\n<",
-	"?xs9?>\r\n<"
-};
-
-void fxCloseNetwork(txSerialTool self, int index)
+void fxCloseNetwork(txSerialTool self, uint32_t value)
 {
-	txSerialMachine machine = self->machines[index];
-	if (machine->networkSource) {
-		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
-		CFRelease(machine->networkSource);
+	txSerialMachine* link = &(self->firstMachine);
+	txSerialMachine machine;
+	while ((machine = *link)) {
+		if (machine->value == value)
+			break;
+		link = &(machine->nextMachine);
 	}
-	if (machine->networkSocket) {
-		CFSocketInvalidate(machine->networkSocket);
-		CFRelease(machine->networkSocket);
+	if (machine) {
+		*link = machine->nextMachine;
+		if (self->currentMachine == machine)
+			self->currentMachine = NULL;
+			
+		if (machine->networkSource) {
+			CFRunLoopRemoveSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
+			CFRelease(machine->networkSource);
+		}
+		if (machine->networkSocket) {
+			CFSocketInvalidate(machine->networkSocket);
+			CFRelease(machine->networkSocket);
+		}
+		free(machine);
 	}
-	free(machine);
-	self->machines[index] = NULL;
-	if (self->currentMachine == machine)
-		self->currentMachine = NULL;
 }
 
 void fxCloseSerial(txSerialTool self)
@@ -138,20 +134,68 @@ void fxCloseSerial(txSerialTool self)
 	}
 }
 
-txSerialMachine fxOpenNetwork(txSerialTool self, int index)
+uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value)
 {
-	txSerialMachine machine = self->machines[index];
+	char c;
+	int i;
+	if (*p++ != '<')
+		return 0;
+	if (*p++ != '?')
+		return 0;
+	if (*p++ != 'x')
+		return 0;
+	if (*p++ != 's')
+		return 0;
+	c = *p++;
+	if (c == '.')
+		*flag = 1;
+	else if (c == '-')
+		*flag = 0;
+	else
+		return 0;
+	*value = 0;
+	for (i = 0; i < 8; i++) {
+		c = *p++;
+		if (('0' <= c) && (c <= '9'))
+			*value = (*value * 16) + (c - '0');
+		else if (('a' <= c) && (c <= 'f'))
+			*value = (*value * 16) + (10 + c - 'a');
+		else if (('A' <= c) && (c <= 'F'))
+			*value = (*value * 16) + (10 + c - 'A');
+		else
+			return 0;
+	}
+	if (*p++ != '?')
+		return 0;
+	if (*p++ != '>')
+		return 0;
+	return 1;
+}
+
+txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
+{
+	txSerialMachine* link = &(self->firstMachine);
+	txSerialMachine machine;
+	while ((machine = *link)) {
+		if (machine->value == value)
+			break;
+		link = &(machine->nextMachine);
+	}
 	if (!machine) {
 		CFSocketContext context;
 		struct hostent *host;
 		struct sockaddr_in address;
+		
 		machine = calloc(sizeof(txSerialMachineRecord), 1);
 		if (!machine) {
 			fprintf(stderr, "Error allocating machine - %s(%d).\n", strerror(errno), errno);
 			exit(1);
 		}
 		machine->tool = self;
-		machine->index = index;
+		machine->value = value;
+		sprintf(machine->tag, "?xs.%8.8X?>\r\n<", value);
+		*link = machine;
+
 		memset(&context, 0, sizeof(CFSocketContext));
 		context.info = (void*)machine;
 		host = gethostbyname(self->host);
@@ -170,7 +214,6 @@ txSerialMachine fxOpenNetwork(txSerialTool self, int index)
 		}
 		machine->networkSource = CFSocketCreateRunLoopSource(NULL, machine->networkSocket, 0);
 		CFRunLoopAddSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
-		self->machines[index] = machine;
 	}
 	return machine;
 }
@@ -262,7 +305,7 @@ void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef
 			offset = current - former;
 			if ((offset >= 3) && (current[-3] == 13) && (current[-2] == 10) && (current[-1] == '<')) {
 				fxWriteSerial(self, former, offset);
-				fxWriteSerial(self, gxMachineTags[machine->index], 9);
+				fxWriteSerial(self, machine->tag, mxTagSize);
 				former = current;
 			}
 			current++;
@@ -277,6 +320,7 @@ void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef
 	}
 }
 
+#define ESP_STACK_COUNT 1024
 static char* elfPath = NULL;
 static char* TOOLS_BIN = NULL;
 static char* gStackBuffers[ESP_STACK_COUNT];
@@ -365,27 +409,31 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 	char buffer[1024];
 	int size = read(handle, buffer, 1024);
 	if (size > 0) {
-		//fprintf(stderr, "%.*s", size, buffer);
+#if mxTrace
+		fprintf(stderr, "%.*s", size, buffer);
+#endif
 		char* src = buffer;
 		char* srcLimit = src + size;
 		int offset = self->index;
 		char* dst = self->buffer + offset;
-		char* dstLimit = self->buffer + XS_BUFFER_COUNT;
+		char* dstLimit = self->buffer + mxBufferSize;
 		while (src < srcLimit) {
 			if (dst == dstLimit) {
-				fxWriteNetwork(self, self->buffer, XS_BUFFER_COUNT - 10);
-				memmove(self->buffer, dstLimit - 10, 10);
-				dst = self->buffer + 10;
-				offset = 10;
+				fxWriteNetwork(self, self->buffer, mxBufferSize - mxTagSize);
+				memmove(self->buffer, dstLimit - mxTagSize, mxTagSize);
+				dst = self->buffer + mxTagSize;
+				offset = mxTagSize;
 			}
 			*dst++ = *src++;
 			offset++;
 			if ((offset >= 2) && (dst[-2] == 13) && (dst[-1] == 10)) {
-				if ((offset >= 9) && (dst[-9] == '<') && (dst[-8] == '?') && (dst[-7] == 'x') && (dst[-6] == 's') && (dst[-5] >= '0') && (dst[-5] <= '9') && (dst[-4] == '?') && (dst[-3] == '>')) {
-					self->currentMachine = fxOpenNetwork(self, dst[-5] - '0');
-				}
-				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '?') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] >= '0') && (dst[-6] <= '9') && (dst[-5] == '-') && (dst[-4] == '?') && (dst[-3] == '>')) {
-					fxCloseNetwork(self, dst[-6] - '0');
+				uint8_t flag;
+				uint32_t value;
+				if ((offset >= mxTagSize) && fxMatchProcessingInstruction(dst - mxTagSize, &flag, &value)) {
+					if (flag)
+						self->currentMachine = fxOpenNetwork(self, value);
+					else
+						fxCloseNetwork(self, value);
 				}
 				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 					fxWriteNetwork(self, self->buffer, offset);
@@ -511,27 +559,25 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 	txSerialDescription description = refCon;
 	fxCloseSerial(description->tool);
 	free(description);
-	fprintf(stderr, "Serial debugging connection dropped.\n");
 }
 
 void fxWriteNetwork(txSerialTool self, void *buffer, int size)
 {
-	//fprintf(stderr, "%.*s", size, buffer);
 	txSerialMachine machine = self->currentMachine;
-	if (machine && machine->networkSocket) {
+	if (machine) {
 		size = write(CFSocketGetNative(machine->networkSocket), buffer, size);
 		if (size < 0) {
 			fprintf(stderr, "Error writing network - %s(%d).\n", strerror(errno), errno);
 			exit(1);
 		}
 	}
-	else
-		fprintf(stderr, "%.*s", size, buffer);
 }
 
 void fxWriteSerial(txSerialTool self, void *buffer, int size)
 {
-	//fprintf(stderr, "%.*s", size, buffer);
+#if mxTrace
+	fprintf(stderr, "%.*s", size, buffer);
+#endif
 	size = write(CFSocketGetNative(self->serialSocket), buffer, size);
 	if (size < 0) {
         fprintf(stderr, "Error writing serial - %s(%d).\n", strerror(errno), errno);
@@ -539,21 +585,19 @@ void fxWriteSerial(txSerialTool self, void *buffer, int size)
 	}
 }
 
-void my_handler(int s) {
-	   printf("Caught signal %d\n", s);
+void fxSignalHandler(int s) {
 	   exit(1); 
 }
 
-
 int main(int argc, char* argv[]) 
 {
-	int error = 0;
 	txSerialToolRecord tool;
 	txSerialTool self = &tool;
 	memset(&tool, 0, sizeof(tool));
 	
-	if (argc != 4) {
-	
+	if (argc < 4) {
+		fprintf(stderr, "### serial2xsbug <port name> <baud rate> <data bits><parity><stop bits>\n");
+		return 1;
 	}
 	self->path = argv[1];
 	self->baud = atoi(argv[2]);
@@ -580,9 +624,9 @@ int main(int argc, char* argv[])
 	IOServiceAddMatchingNotification(self->notificationPort, kIOPublishNotification, matchingDict, fxRegisterSerial, self, &self->ioIterator);
 	fxRegisterSerial(self, self->ioIterator);
 	
-	signal(SIGINT, my_handler);
+	signal(SIGINT, fxSignalHandler);
 
 	CFRunLoopRun();
 	
-	return error;
+	return 0;
 }
