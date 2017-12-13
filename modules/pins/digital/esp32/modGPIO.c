@@ -42,28 +42,21 @@
 
 #define kUninitializedPin (255)
 
-int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint8_t mode)
+int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
-	config->pin = kUninitializedPin;
+	int result;
 
-	if ((pin > GPIO_NUM_MAX) || port)
+	if ((pin > GPIO_NUM_MAX) || port) {
+		config->pin = kUninitializedPin;
 		return -1;
-
-	if (kModGPIOOutput == mode) {
-		if (pin < GPIO_NUM_34) {		// pins 34-39 are input only
-			GPIO_INIT_OUTPUT(pin);
-			GPIO_CLEAR(pin);
-		}
-		else 
-			return -1;
 	}
-	else if (kModGPIOInput == mode) {
-		GPIO_INIT_INPUT(pin);
-	}
-	else
-		return -1;
 
 	config->pin = pin;
+	result = modGPIOSetMode(config, mode);
+	if (result) {
+		config->pin = kUninitializedPin;
+		return -1;
+	}
 
 	return 0;
 }
@@ -73,22 +66,46 @@ void modGPIOUninit(modGPIOConfiguration config)
 	config->pin = kUninitializedPin;
 }
 
-int modGPIOSetMode(modGPIOConfiguration config, uint8_t mode)
+int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	return modGPIOInit(config, NULL, config->pin, mode);
+	switch (mode) {
+		case kModGPIOOutput:
+			if (config->pin >= GPIO_NUM_34)		// pins 34-39 are input only
+				return -1;
+
+			GPIO_INIT_OUTPUT(config->pin);
+			GPIO_CLEAR(config->pin);
+			break;
+
+		case kModGPIOInput:
+		case kModGPIOInputPullUp:
+		case kModGPIOInputPullDown:
+		case kModGPIOInputPullUpDown:
+			GPIO_INIT_INPUT(config->pin);
+
+			if (kModGPIOInputPullUp == mode)
+				gpio_set_pull_mode(config->pin, GPIO_PULLUP_ONLY);
+			else if (kModGPIOInputPullDown == mode)
+				gpio_set_pull_mode(config->pin, GPIO_PULLDOWN_ONLY);
+			else if (kModGPIOInputPullUpDown == mode)
+				gpio_set_pull_mode(config->pin, GPIO_PULLUP_PULLDOWN);
+			else
+				gpio_set_pull_mode(config->pin, GPIO_FLOATING);
+			break;
+
+		default:
+			return -1;
+	}
+
+	return 0;
 }
 
 uint8_t modGPIORead(modGPIOConfiguration config)
 {
-	if (config->pin < GPIO_NUM_MAX)
-		return (gpio_get_level(config->pin));
-
-	return 0xff;
+	return gpio_get_level(config->pin);
 }
 
 void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 {
-	if (config->pin < GPIO_NUM_MAX) {
-		gpio_set_level(config->pin, value ? 1 : 0);
-	}
+	gpio_set_level(config->pin, value ? 1 : 0);
 }
