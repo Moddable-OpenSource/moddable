@@ -15,22 +15,12 @@
 import Timer from "timer";
 import Digital from "pins/digital";
 
-Digital.configure(2, 0);
-Digital.configure(3, 1);
+// blinks the two LEDs on ESP8266 NodeMCU boards
 
 let count = 0;
 Timer.repeat(() => {
-	trace(`repeat ${count} \n`);
-	if (0 == ++count % 3) {
-		Digital.write(2, 1);
-		Digital.write(3, 0);
-	}
-	else if (1 == count % 3) {
-		Digital.write(2, 0);
-		Digital.write(3, 1);
-	}
-	else {
-		Digital.write(2, 0);
-		Digital.write(3, 0);
-	}
-}, 250);
+	trace(`repeat ${++count} \n`);
+	Digital.write(2, ~count & 1);
+	Digital.write(16, count & 1);
+}, 200);
+
