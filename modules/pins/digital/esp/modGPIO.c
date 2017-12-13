@@ -71,9 +71,9 @@ static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
 //@@ what else needs to be initialized here?
 #define GPCD   2  // DRIVER 0: normal, 1: open drain
 
-#define GPIO_INIT_OUTPUT(index) \
+#define GPIO_INIT_OUTPUT(index, opendrain) \
 		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index);					/* enable for write */ \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~(1 << GPCD);	/* normal (not open-drain) */ \
+		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~((opendrain ? 0 : 1) << GPCD);	/* normal (not open-drain) */ \
 
 //@@ test THIS!!
 #define GPIO_INIT_INPUT(index) \
@@ -85,50 +85,22 @@ static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
 
 #define kUninitializedPin (255)
 
-int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint8_t mode)
+int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
-	config->pin = kUninitializedPin;
+	int result;
 
-	if ((pin > 16) || port)
+	if ((pin > 16) || port) {
+		config->pin = kUninitializedPin;
 		return -1;
-
-	if (kModGPIOOutput == mode) {
-		if (pin < 16) {
-			PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
-			GPIO_INIT_OUTPUT(pin);
-			GPIO_CLEAR(pin);
-		}
-		else {
-			WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
-						   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC to output rtc_gpio0
-
-			WRITE_PERI_REG(RTC_GPIO_CONF,
-						   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
-
-			WRITE_PERI_REG(RTC_GPIO_ENABLE,
-						   (READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe) | (uint32)0x1);	//out enable
-		}
 	}
-	else if (kModGPIOInput == mode) {
-		if (pin < 16) {
-			PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
-			GPIO_INIT_INPUT(pin);
-		}
-		else {
-			WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
-						   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC and rtc_gpio0 connection
-
-			WRITE_PERI_REG(RTC_GPIO_CONF,
-						   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
-
-			WRITE_PERI_REG(RTC_GPIO_ENABLE,
-						   READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe);	//out disable
-		}
-	}
-	else
-		return -1;
 
 	config->pin = pin;
+
+	result = modGPIOSetMode(config, mode);
+	if (result) {
+		config->pin = kUninitializedPin;
+		return result;
+	}
 
 	return 0;
 }
@@ -138,9 +110,63 @@ void modGPIOUninit(modGPIOConfiguration config)
 	config->pin = kUninitializedPin;
 }
 
-int modGPIOSetMode(modGPIOConfiguration config, uint8_t mode)
+int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	return modGPIOInit(config, NULL, config->pin, mode);
+	switch (mode) {
+		case kModGPIOInput:
+		case kModGPIOInputPullUp:
+		case kModGPIOInputPullDown:
+			if (config->pin < 16) {
+				PIN_FUNC_SELECT(gPixMuxAddr[config->pin], c_read8(&gPixMuxValue[config->pin]));
+				GPIO_INIT_INPUT(config->pin);
+
+				if (mode == kModGPIOInputPullUp)
+					*(volatile uint32_t *)gPixMuxAddr[config->pin] |= 1 << 7;
+				else if (mode == kModGPIOInputPullDown)
+					*(volatile uint32_t *)gPixMuxAddr[config->pin] |= 1 << 6;
+			}
+			else {
+				if (kModGPIOInput != mode)
+					return -1;
+
+				WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
+							   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC and rtc_gpio0 connection
+
+				WRITE_PERI_REG(RTC_GPIO_CONF,
+							   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
+
+				WRITE_PERI_REG(RTC_GPIO_ENABLE,
+							   READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe);	//out disable
+			}
+			break;
+
+		case kModGPIOOutput:
+		case kModGPIOOutputOpenDrain:
+			if (config->pin < 16) {
+				PIN_FUNC_SELECT(gPixMuxAddr[config->pin], c_read8(&gPixMuxValue[config->pin]));
+				GPIO_INIT_OUTPUT(config->pin, kModGPIOOutputOpenDrain == mode);
+				GPIO_CLEAR(config->pin);
+			}
+			else {
+				if (kModGPIOOutputOpenDrain == mode)
+					return -1;
+
+				WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
+							   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC to output rtc_gpio0
+
+				WRITE_PERI_REG(RTC_GPIO_CONF,
+							   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
+
+				WRITE_PERI_REG(RTC_GPIO_ENABLE,
+							   (READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe) | (uint32)0x1);	//out enable
+			}
+			break;
+
+		default:
+			return -1;
+	}
+
+	return 0;
 }
 
 uint8_t modGPIORead(modGPIOConfiguration config)
@@ -151,7 +177,7 @@ uint8_t modGPIORead(modGPIOConfiguration config)
 	if (16 == config->pin)
 		return READ_PERI_REG(RTC_GPIO_IN_DATA) & 1;
 
-	return 0xff;
+	return kModGPIOReadError;
 }
 
 void modGPIOWrite(modGPIOConfiguration config, uint8_t value)

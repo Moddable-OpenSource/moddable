@@ -18,13 +18,12 @@
  *
  */
 
-#include "xs.h"
+#include "xsmc.h"
 #if gecko
 	#include "xsPlatform.h"
 	#include "xsgecko.h"
 #else
 	#include "xsesp.h"
-	#include "Arduino.h"
 #endif
 #include "mc.xs.h"			// for xsID_ values
 
@@ -34,13 +33,66 @@
 	Digital
 */
 
-void xs_digital_configure(xsMachine *the)
+void xs_digital_destructor(void *data)
 {
+	if (data)
+		modGPIOUninit((modGPIOConfiguration)data);
+}
+
+void xs_digital(xsMachine *the)
+{
+	int pin, mode, argc = xsmcArgc;
+	char *port = NULL;;
+	modGPIOConfigurationRecord gpio;
+
+	if (2 == argc) {
+		pin = xsmcToInteger(xsArg(0));
+		mode = xsmcToInteger(xsArg(1));
+	}
+	else if (3 == argc) {
+		pin = xsmcToInteger(xsArg(1));
+		mode = xsmcToInteger(xsArg(2));
+		if (xsmcTest(xsArg(0)))
+			port = xsmcToString(xsArg(0));
+	}
+
+	if (modGPIOInit(&gpio, port, (uint8_t)pin, mode))
+		xsUnknownError("can't init pin");
+
+	xsmcSetHostChunk(xsThis, &gpio, sizeof(gpio));
+}
+
+void xs_digital_mode(xsMachine *the)
+{
+	modGPIOConfiguration gpio = xsmcGetHostChunk(xsThis);
+	int mode = xsmcToInteger(xsArg(0));
+
+	if (modGPIOSetMode(gpio, mode))
+		xsUnknownError("unsupported mode");
 }
 
 void xs_digital_read(xsMachine *the)
 {
-	int pin = xsToInteger(xsArg(0));
+	modGPIOConfiguration gpio = xsmcGetHostChunk(xsThis);
+	int value;
+
+	value = modGPIORead(gpio);
+	if (kModGPIOReadError == value)
+		xsUnknownError("can't read pin");
+
+	xsmcSetInteger(xsResult, value);
+}
+
+void xs_digital_write(xsMachine *the)
+{
+	modGPIOConfiguration gpio = xsmcGetHostChunk(xsThis);
+	int value = xsmcToInteger(xsArg(0));
+	modGPIOWrite(gpio, value);
+}
+
+void xs_digital_static_read(xsMachine *the)
+{
+	int pin = xsmcToInteger(xsArg(0));
 	uint8_t value;
 	modGPIOConfigurationRecord config;
 
@@ -50,16 +102,16 @@ void xs_digital_read(xsMachine *the)
 	value = modGPIORead(&config);
 	modGPIOUninit(&config);
 
-	if (255 == value)
+	if (kModGPIOReadError == value)
 		xsUnknownError("can't read pin");
 
-	xsResult = xsInteger(value);
+	xsmcSetInteger(xsResult, value);
 }
 
-void xs_digital_write(xsMachine *the)
+void xs_digital_static_write(xsMachine *the)
 {
-	int pin = xsToInteger(xsArg(0));
-	int value = xsToInteger(xsArg(1));
+	int pin = xsmcToInteger(xsArg(0));
+	int value = xsmcToInteger(xsArg(1));
 	modGPIOConfigurationRecord config;
 
 	if (modGPIOInit(&config, NULL, pin, kModGPIOOutput))
