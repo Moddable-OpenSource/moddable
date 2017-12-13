@@ -108,8 +108,7 @@ XS_DIRS = \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/sources/pcre \
 	$(XS_DIR)/platforms/esp \
-	$(BUILD_DIR)/devices/esp32 \
-	$(BUILD_DIR)/devices/esp32/spi 
+	$(BUILD_DIR)/devices/esp32
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsesp.h \
