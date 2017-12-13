@@ -35,16 +35,21 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#define mxBufferSize 32 * 1024
+#define mxMachinesCount 10
 #define mxNetworkBufferSize 1024
 #define mxSerialBufferSize 1024
-#define mxBufferSize 32 * 1024
+#define mxTagSize 17
+#define mxTrace 0
 
 typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
 typedef struct txSerialToolStruct txSerialToolRecord, *txSerialTool;
 
 struct txSerialMachineStruct {
 	txSerialTool tool;
-	int index;
+	txSerialMachine nextMachine;
+	uint32_t value;
+	char tag[mxTagSize + 1];
 	int networkConnection;
 	char networkBuffer[mxNetworkBufferSize];
 };
@@ -54,7 +59,6 @@ struct txSerialToolStruct {
 	char* file;
 	int line;
 	int error;
-	struct pollfd fds[11];
 	
 	char* path;
 	int baud;
@@ -67,18 +71,21 @@ struct txSerialToolStruct {
 	
 	char* host;
 	int port;
-	txSerialMachine machines[10];
+	int count;
+	struct pollfd fds[1 + mxMachinesCount];
+	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	
 	int index;
 	int state;
-	
 	char buffer[mxBufferSize];
 };
 
-static void fxCloseNetwork(txSerialTool self, int index);
+static void fxCloseNetwork(txSerialTool self, uint32_t value);
 static void fxCloseSerial(txSerialTool self);
-static txSerialMachine fxOpenNetwork(txSerialTool self, int index);
+static void fxCountMachines(txSerialTool self);
+static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
+static txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value);
 static void fxOpenSerial(txSerialTool self);
 static void fxReadNetwork(txSerialMachine machine);
 static void fxReadSerial(txSerialTool self);
@@ -87,19 +94,6 @@ static void fxWriteSerial(txSerialTool self, char* buffer, int size);
 
 #define mxThrowElse(_ASSERTION) { if (!(_ASSERTION)) { self->file=__FILE__; self->line=__LINE__; self->error = errno; longjmp(self->_jmp_buf, 1); } }
 #define mxThrowError(_ERROR) { self->file=__FILE__; self->line=__LINE__; self->error = _ERROR; longjmp(self->_jmp_buf, 1); } 
-
-static char* gxMachineTags[10] = {
-	"?xs0?>\r\n<",
-	"?xs1?>\r\n<",
-	"?xs2?>\r\n<",
-	"?xs3?>\r\n<",
-	"?xs4?>\r\n<",
-	"?xs5?>\r\n<",
-	"?xs6?>\r\n<",
-	"?xs7?>\r\n<",
-	"?xs8?>\r\n<",
-	"?xs9?>\r\n<"
-};
 
 #define BOTHER 0010000
 struct termios2 {
@@ -115,17 +109,25 @@ struct termios2 {
 #define TCGETS2 _IOR('T', 0x2A, struct termios2)
 #define TCSETS2 _IOW('T', 0x2B, struct termios2)
 
-void fxCloseNetwork(txSerialTool self, int index)
+void fxCloseNetwork(txSerialTool self, uint32_t value)
 {
-	txSerialMachine machine = self->machines[index];
+	txSerialMachine* link = &(self->firstMachine);
+	txSerialMachine machine;
+	while ((machine = *link)) {
+		if (machine->value == value)
+			break;
+		link = &(machine->nextMachine);
+	}
 	if (machine) {
-		self->fds[index].fd = -1 - index;
+		*link = machine->nextMachine;
+		if (self->currentMachine == machine)
+			self->currentMachine = NULL;
+			
 		if (machine->networkConnection >= 0)
 			close(machine->networkConnection);
 		free(machine);
-		self->machines[index] = NULL;
-		if (self->currentMachine == machine)
-			self->currentMachine = NULL;
+		
+		fxCountMachines(self);
 	}
 }
 
@@ -136,17 +138,80 @@ void fxCloseSerial(txSerialTool self)
 	}
 }
 
-txSerialMachine fxOpenNetwork(txSerialTool self, int index)
+void fxCountMachines(txSerialTool self)
 {
-	txSerialMachine machine = self->machines[index];
+	txSerialMachine machine = self->firstMachine;
+	self->count = 1;
+	while (machine) {
+		self->fds[self->count].fd = machine->networkConnection;
+		self->fds[self->count].events = POLLIN;
+		self->fds[self->count].revents = 0;
+		self->count++;
+		machine = machine->nextMachine;
+	}
+}
+
+uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value)
+{
+	char c;
+	int i;
+	if (*p++ != '<')
+		return 0;
+	if (*p++ != '?')
+		return 0;
+	if (*p++ != 'x')
+		return 0;
+	if (*p++ != 's')
+		return 0;
+	c = *p++;
+	if (c == '.')
+		*flag = 1;
+	else if (c == '-')
+		*flag = 0;
+	else
+		return 0;
+	*value = 0;
+	for (i = 0; i < 8; i++) {
+		c = *p++;
+		if (('0' <= c) && (c <= '9'))
+			*value = (*value * 16) + (c - '0');
+		else if (('a' <= c) && (c <= 'f'))
+			*value = (*value * 16) + (10 + c - 'a');
+		else if (('A' <= c) && (c <= 'F'))
+			*value = (*value * 16) + (10 + c - 'A');
+		else
+			return 0;
+	}
+	if (*p++ != '?')
+		return 0;
+	if (*p++ != '>')
+		return 0;
+	return 1;
+}
+
+txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
+{
+	txSerialMachine* link = &(self->firstMachine);
+	txSerialMachine machine;
+	while ((machine = *link)) {
+		if (machine->value == value)
+			break;
+		link = &(machine->nextMachine);
+	}
 	if (!machine) {
 		struct hostent *host;
 		struct sockaddr_in address;
+		
+		if (self->count == 1 + mxMachinesCount)
+			mxThrowError(ENOMEM);
+		
 		machine = calloc(sizeof(txSerialMachineRecord), 1);
 		mxThrowElse(machine != NULL);
 		machine->tool = self;
-		machine->index = index;
-		self->machines[index] = machine;
+		machine->value = value;
+		sprintf(machine->tag, "?xs.%8.8X?>\r\n<", value);
+		*link = machine;
+		
 		host = gethostbyname(self->host);
 		mxThrowElse(host != NULL);
 		memset(&address, 0, sizeof(address));
@@ -156,7 +221,8 @@ txSerialMachine fxOpenNetwork(txSerialTool self, int index)
 		machine->networkConnection = socket(AF_INET, SOCK_STREAM, 0);
 		mxThrowElse(machine->networkConnection >= 0);
 		mxThrowElse(connect(machine->networkConnection, (struct sockaddr*)&address, sizeof(address)) >= 0);
-		self->fds[index].fd = machine->networkConnection;
+		
+		fxCountMachines(self);
 	}
 	return machine;
 }
@@ -212,7 +278,7 @@ void fxReadNetwork(txSerialMachine machine)
 			offset = current - former;
 			if ((offset >= 3) && (current[-3] == 13) && (current[-2] == 10) && (current[-1] == '<')) {
 				fxWriteSerial(self, former, offset);
-				fxWriteSerial(self, gxMachineTags[machine->index], 9);
+				fxWriteSerial(self, machine->tag, mxTagSize);
 				former = current;
 			}
 			current++;
@@ -227,7 +293,9 @@ void fxReadSerial(txSerialTool self)
 {
 	int size = read(self->serialConnection, self->serialBuffer, mxSerialBufferSize);
 	mxThrowElse(size > 0);
-// 	fprintf(stderr, "%.*s", size, self->serialBuffer);
+#if mxTrace
+ 	fprintf(stderr, "%.*s", size, self->serialBuffer);
+#endif
 	char* src = self->serialBuffer;
 	char* srcLimit = src + size;
 	int offset = self->index;
@@ -235,19 +303,21 @@ void fxReadSerial(txSerialTool self)
 	char* dstLimit = self->buffer + mxBufferSize;
 	while (src < srcLimit) {
 		if (dst == dstLimit) {
-			fxWriteNetwork(self, self->buffer, mxBufferSize - 10);
-			memmove(self->buffer, dstLimit - 10, 10);
-			dst = self->buffer + 10;
-			offset = 10;
+			fxWriteNetwork(self, self->buffer, mxBufferSize - mxTagSize);
+			memmove(self->buffer, dstLimit - mxTagSize, mxTagSize);
+			dst = self->buffer + mxTagSize;
+			offset = mxTagSize;
 		}
 		*dst++ = *src++;
 		offset++;
 		if ((offset >= 2) && (dst[-2] == 13) && (dst[-1] == 10)) {
-			if ((offset >= 9) && (dst[-9] == '<') && (dst[-8] == '?') && (dst[-7] == 'x') && (dst[-6] == 's') && (dst[-5] >= '0') && (dst[-5] <= '9') && (dst[-4] == '?') && (dst[-3] == '>')) {
-				self->currentMachine = fxOpenNetwork(self, dst[-5] - '0');
-			}
-			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '?') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] >= '0') && (dst[-6] <= '9') && (dst[-5] == '-') && (dst[-4] == '?') && (dst[-3] == '>')) {
-				fxCloseNetwork(self, dst[-6] - '0');
+			uint8_t flag;
+			uint32_t value;
+			if ((offset >= mxTagSize) && fxMatchProcessingInstruction(dst - mxTagSize, &flag, &value)) {
+				if (flag)
+					self->currentMachine = fxOpenNetwork(self, value);
+				else
+					fxCloseNetwork(self, value);
 			}
 			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 				fxWriteNetwork(self, self->buffer, offset);
@@ -279,7 +349,9 @@ void fxWriteNetwork(txSerialTool self, char* buffer, int size)
 
 void fxWriteSerial(txSerialTool self, char* buffer, int size)
 {
-// 	fprintf(stderr, "%.*s", size, buffer);
+#if mxTrace
+	fprintf(stderr, "%.*s", size, buffer);
+#endif
 	int count;
 	while (size) {
     	count = write(self->serialConnection, buffer, size);
@@ -319,31 +391,32 @@ int main(int argc, char* argv[])
 	signal(SIGINT, handler);
 
 	if (setjmp(self->_jmp_buf) == 0) {
-		int index;
-		for (index = 0; index < 10; index++) {
-			self->fds[index].fd = -1 - index;
-			self->fds[index].events = POLLIN;
-			self->fds[index].revents = 0;
-		}
 		fxOpenSerial(self);
-		self->fds[10].fd = self->serialConnection;
-		self->fds[10].events = POLLIN;
-		self->fds[10].revents = 0;
+		self->count = 1;
+		self->fds[0].fd = self->serialConnection;
+		self->fds[0].events = POLLIN;
+		self->fds[0].revents = 0;
 		for (;;) {
 			int res;
-			res = poll(self->fds, 11, 1000);
+			res = poll(self->fds, self->count, 1000);
 			mxThrowElse(res >= 0);
 			if (res) {
-				for (index = 0; index < 10; index++) {
-					if (self->fds[index].revents & (POLLERR | POLLHUP)) 
-						mxThrowError(EPIPE);
-					if (self->fds[index].revents & POLLIN)
-						fxReadNetwork(self->machines[index]);
-				}
-				if (self->fds[10].revents & (POLLERR | POLLHUP))
+				if (self->fds[0].revents & (POLLERR | POLLHUP))
 					mxThrowError(EPIPE);
-				if (self->fds[10].revents & POLLIN)
+				if (self->fds[0].revents & POLLIN)
 					fxReadSerial(self);
+				if (self->count > 1) {
+					txSerialMachine machine = self->firstMachine;
+					int index = 1;
+					while (index < self->count) {
+						if (self->fds[index].revents & (POLLERR | POLLHUP)) 
+							mxThrowError(EPIPE);
+						if (self->fds[index].revents & POLLIN)
+							fxReadNetwork(machine);
+						machine = machine->nextMachine;
+						index++;
+					}
+				}
 			}
 		}
 	}
