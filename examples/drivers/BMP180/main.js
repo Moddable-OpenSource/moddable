@@ -119,8 +119,8 @@ class BMP180 extends I2C {
 	}
 }
 
-// SDA = GPIO 4 = D2 - CLOCK = GPIO 5 = D1 - NODEMCU
-let sensor = new BMP180({sda: 4, clock: 5, address: BMP180_ADDR});
+// SDA = GPIO 4 = D2 - SCL = GPIO 5 = D1 - NODEMCU
+let sensor = new BMP180({sda: 4, scl: 5, address: BMP180_ADDR});
 
 WiFi.mode = 2;
 
