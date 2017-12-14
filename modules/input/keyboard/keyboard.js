@@ -56,8 +56,8 @@ const TOPMARGIN = 4;
 const BOTTOMMARGIN = 2;
 const LEFTRIGHTMARGIN = 6;
 
-export const BACKSPACE = "BACKSPACE";
-export const SUBMIT = "SUBMIT";
+export const BACKSPACE = "\b";
+export const SUBMIT = "\r";
 
 const ShiftTexture = Texture.template({ path:"shift-arrow.png" });
 const BackspaceTexture = Texture.template({path:"delete-arrow.png"});
