@@ -29,21 +29,24 @@ let MainCon = Column.template($ => ({
     Label($, {left: 25, right: 0, top: 0, height: 76, string: "", Style: OpenSans20}),
     Container($, {
       left: 0, right: 0, top: 0, bottom: 0, name: "keyboardContainer", contents: [
-        new Keyboard({style: new OpenSans18(), doTransition: true})
+        Keyboard($, {style: new OpenSans18(), doTransition: true})
       ]
     }),
   ],
 	Behavior: class extends Behavior {
+    onCreate(column, data){
+      this.data = data;
+    }
 		onTouchEnded(column){
 			if (!keyboardUp){
 				keyboardUp = true;
-				column.content("keyboardContainer").add(new Keyboard({style: new OpenSans18(), doTransition: true}));
+				column.content("keyboardContainer").add(Keyboard(this.data, {style: new OpenSans18(), doTransition: true}));
 			}
 		}
 	}
 }));
 
-export default new Application(null, {
+export default new Application({}, {
 	commandListLength:2048,
 	displayListLength:2600,
 	touchCount:1,
@@ -57,7 +60,7 @@ export default new Application(null, {
       }else if(key == SUBMIT){
         trace("String is: " + theString + "\n");
     		theString = "";
-    		application.distribute("doKeyboardTransitionOut");
+    		application.content("mainContainer").content("keyboardContainer").first.delegate("doKeyboardTransitionOut");
       }else{
         theString += key;
       }
