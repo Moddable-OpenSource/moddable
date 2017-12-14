@@ -1,0 +1,80 @@
+//
+// Copyright (c) 2016-2017  Moddable Tech, Inc.
+//
+//   This file is part of the Moddable SDK Tools.
+// 
+//   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+// 
+//   The Moddable SDK Tools is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+// 
+//   You should have received a copy of the GNU General Public License
+//   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include "windows.h"
+#include "commctrl.h"
+#include "winver.h"
+
+100 ICON DISCARDABLE "main.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "04090000"
+        BEGIN
+            VALUE "CompanyName", "Moddable, Inc."
+            VALUE "FileDescription", "Screen Test"
+            VALUE "FileVersion", "1.0b1"
+            VALUE "InternalName", "Screen Test"
+            VALUE "LegalCopyright", "Copyright (c) 2017 Moddable, Inc."
+            VALUE "OriginalFilename", "simulator.exe"
+            VALUE "ProductName", "Screen Test"
+            VALUE "ProductVersion", "1.0b1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 0
+    END
+END
+
+0096x0200 JSON DISCARDABLE "..\\screens\\0096x0200.json"
+0096x0200 PNG DISCARDABLE "..\\screens\\0096x0200.png"
+0128x0032 JSON DISCARDABLE "..\\screens\\0128x0032.json"
+0128x0032 PNG DISCARDABLE "..\\screens\\0128x0032.png"
+0128x0128 JSON DISCARDABLE "..\\screens\\0128x0128.json"
+0128x0128 PNG DISCARDABLE "..\\screens\\0128x0128.png"
+0200x0096 JSON DISCARDABLE "..\\screens\\0200x0096.json"
+0200x0096 PNG DISCARDABLE "..\\screens\\0200x0096.png"
+0240x0320 JSON DISCARDABLE "..\\screens\\0240x0320.json"
+0240x0320 PNG DISCARDABLE "..\\screens\\0240x0320.png"
+0250x0122 JSON DISCARDABLE "..\\screens\\0250x0122.json"
+0250x0122 PNG DISCARDABLE "..\\screens\\0250x0122.png"
+0320x0240 JSON DISCARDABLE "..\\screens\\0320x0240.json"
+0320x0240 PNG DISCARDABLE "..\\screens\\0320x0240.png"
+0480x0320 JSON DISCARDABLE "..\\screens\\0480x0320.json"
+0480x0320 PNG DISCARDABLE "..\\screens\\0480x0320.png"
+0800x0480 JSON DISCARDABLE "..\\screens\\0800x0480.json"
+0800x0480 PNG DISCARDABLE "..\\screens\\0800x0480.png"
+1024x0600 JSON DISCARDABLE "..\\screens\\1024x0600.json"
+1024x0600 PNG DISCARDABLE "..\\screens\\1024x0600.png"
+1280x0800 JSON DISCARDABLE "..\\screens\\1280x0800.json"
+1280x0800 PNG DISCARDABLE "..\\screens\\1280x0800.png"

@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+	},
+	"preload": [
+		"commodetto/*",
+	],
+	"resources": {
+		"*-alpha": "./digits",
+	},
+	"config": {
+		"sntp": "pool.ntp.org",
+		"screen": "ili9341"
+	},
+}

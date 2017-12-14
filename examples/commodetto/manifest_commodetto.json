@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+	},
+	"preload": [
+		"commodetto/*",
+	],
+}
