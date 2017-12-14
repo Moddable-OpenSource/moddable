@@ -18,10 +18,10 @@
 	HMC5883L - https://cdn.sparkfun.com/datasheets/Sensors/Magneto/HMC5883L-FDS.pdf
 */
 
-import SMBus from "smbus";
+import SMBus from "pins/smbus";
 import Timer from "timer";
 
-let sensor = new SMBus({sda: 5, clock: 4, address: 0x1E});
+let sensor = new SMBus({sda: 5, scl: 4, address: 0x1E});
 
 let id = sensor.readBlock(10, 3);			// ID
 id = String.fromCharCode(id[0]) + String.fromCharCode(id[1]) + String.fromCharCode(id[2]);
