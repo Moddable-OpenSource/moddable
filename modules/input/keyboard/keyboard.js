@@ -169,7 +169,7 @@ class KeyboardBehavior extends Behavior{
     this.fullPad = this.internalPad * 9;
   }
   
-  onCreate(port, data){
+  onCreate(port, $, data){
     this.CAPS = [ "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM',."];
     this.LOWER = [ "qwertyuiop", "asdfghjkl", "zxcvbnm',."];
     this.SYMBOL = [ "1234567890", "#$%&*()_@", "!?/\\;:=+-\""];
