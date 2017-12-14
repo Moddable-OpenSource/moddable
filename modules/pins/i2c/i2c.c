@@ -41,7 +41,7 @@ void xs_i2c(xsMachine *the)
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
 	sda = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
-	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
+	xsmcGet(xsVar(0), xsArg(0), xsID_scl);
 	scl = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = xsmcToInteger(xsVar(0));
