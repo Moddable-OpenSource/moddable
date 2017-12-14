@@ -35,7 +35,7 @@ void xs_pulsecount_destructor(void *data)
 void xs_pulsecount(xsMachine *the)
 {
 	PulseCountRecord pc;
-	int signal, control;
+	int signal, control, filter = 100;
 
 	xsmcVars(1);
 
@@ -51,6 +51,11 @@ void xs_pulsecount(xsMachine *the)
 		pc.unit = xsmcToInteger(xsVar(0));
 		if ((pc.unit < 0) || (pc.unit > PCNT_UNIT_MAX))
 			xsUnknownError("invalid unit");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_filter)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_filter);
+		filter = xsmcToInteger(xsVar(0));
 	}
 
 	pc.base = 0;
@@ -80,13 +85,12 @@ void xs_pulsecount(xsMachine *the)
 
 	pcnt_unit_config(&pcnt_config);
 
-	pcnt_set_filter_value(pc.unit, 100);
+	pcnt_set_filter_value(pc.unit, filter);
 	pcnt_filter_enable(pc.unit);
 
 	pcnt_counter_pause(pc.unit);
 	pcnt_counter_clear(pc.unit);
 	pcnt_counter_resume(pc.unit);
-
 }
 
 void xs_pulsecount_get(xsMachine *the)
