@@ -214,7 +214,7 @@ void xs_SSD1306(xsMachine *the)
 	else {
 		xsmcGet(xsVar(0), xsArg(0), xsID_sda);
 		ssd->config.i2c.sda = xsmcToInteger(xsVar(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_clock);
+		xsmcGet(xsVar(0), xsArg(0), xsID_scl);
 		ssd->config.i2c.scl = xsmcToInteger(xsVar(0));
 
 		ssd->doSPI = 0;
