@@ -154,7 +154,7 @@ Pin numbers are device dependent.
 
 The following example instantiates an I2C connection to a [temperature sensor](https://www.sparkfun.com/products/11931) with address 0x48 connected to pins 4 and 5. 
 
-	let sensor = new I2C({sda: 5, clock: 4, address: 0x48});
+	let sensor = new I2C({sda: 5, scl: 4, address: 0x48});
 	sensor.write(0);					// set register address 0
 	let value = sensor.read(2);	// read two bytes
 
@@ -171,15 +171,15 @@ The following example instantiates an I2C connection to a [temperature sensor](h
 
 ### constructor(dictionary)
 
-The I2C constructor takes a dictionary which contains the pins numbers to use for clock and data, as well as the I2C address of the target device.
+The I2C constructor takes a dictionary which contains the pins numbers to use for clock and data (`scl` and `sda` respectively), as well as the I2C address of the target device.
 
-	let sensor = new I2C({sda: 5, clock: 4, address: 0x48});
+	let sensor = new I2C({sda: 5, scl: 4, address: 0x48});
 
 The constructor dictionary has an optional `hz` property to specify the speed of the I2C bus when using this instance.
 
-	let sensor = new I2C({sda: 5, clock: 4, address: 0x48, hz: 1000000});
+	let sensor = new I2C({sda: 5, scl: 4, address: 0x48, hz: 1000000});
 
-Many devices have a default I2C bus. On these devices, the sda and clock parameters may be omitted from the dictionary to use the default I2C bus.
+Many devices have a default I2C bus. On these devices, the `sda` and `scl` parameters may be omitted from the dictionary to use the default I2C bus.
 
 	let sensor = new I2C({address: 0x48});
 
