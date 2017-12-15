@@ -12,13 +12,13 @@
 #include "stdint.h"
 
 enum {
-	kModGPIOInput 			= 1,
-	kModGPIOOutput 			= 2,
+	kModGPIOInput 			= 0,
+	kModGPIOInputPullUp		= 1,
+	kModGPIOInputPullDown	= 2,
+	kModGPIOInputPullUpDown	= 3,
 
-//	kModGPIOOutputOpenDrain,
-
-	kModGPIOInputPullUp 	= 4,
-//	kModGPIOInputPullDown
+	kModGPIOOutput 			= 8,
+	kModGPIOOutputOpenDrain	= 9
 };
 
 typedef struct modGPIOConfigurationRecord modGPIOConfigurationRecord;
@@ -38,7 +38,8 @@ extern void modGPIOUninit(modGPIOConfiguration config);
 
 extern int modGPIOSetMode(modGPIOConfiguration config, uint8_t mode);
 
-extern uint8_t modGPIORead(modGPIOConfiguration config);						// 255 on failure
+#define kModGPIOReadError (255)
+extern uint8_t modGPIORead(modGPIOConfiguration config);
 extern void modGPIOWrite(modGPIOConfiguration config, uint8_t value);
 
 // callback on input value change...
