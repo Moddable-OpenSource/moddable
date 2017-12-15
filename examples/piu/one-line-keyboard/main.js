@@ -22,19 +22,6 @@ const OpenSans20 = Style.template({ font: "normal normal normal 20px Open Sans",
 
 let theString = "";
 
-function gotKey(key){
-  if (key == BACKSPACE){
-    theString = theString.slice(0, -1);
-  }else if(key == SUBMIT){
-    trace("String is: " + theString + "\n");
-	application.behavior.ws.write(theString);
-	theString = "";
-  }else{
-    theString += key;
-  }
-  application.first.string = theString;
-}
-
 let KeyboardApplication = Application.template($ => ({
   	skin: new Skin({ fill:"white" }),
 	Behavior: class extends Behavior {
@@ -61,12 +48,24 @@ let KeyboardApplication = Application.template($ => ({
 				}
 			}
 		}
+    onKeyUp(application, key){
+      if (key == BACKSPACE){
+        theString = theString.slice(0, -1);
+      }else if(key == SUBMIT){
+        trace("String is: " + theString + "\n");
+    	application.behavior.ws.write(theString);
+    	theString = "";
+      }else{
+        theString += key;
+      }
+      application.first.string = theString;
+    }
 	},
 	contents:[
 		Label($, {left: 25, right: 0, top: 0, height: 76, string: "", Style: OpenSans20}),
 		Container($, {
 			left: 0, right: 0, top: 76, bottom: 0, contents: [
-				new Keyboard({style: new OpenSans18(), callback: gotKey, doTransition: false})
+				Keyboard($, {style: new OpenSans18(), doTransition: false})
 			]
 		}),
 	],
