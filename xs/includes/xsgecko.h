@@ -80,6 +80,11 @@ extern void ESP_putc(int c);
 
 #endif
 
+/*
+	messages
+*/
+typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
 
 /*
 	Sleep
