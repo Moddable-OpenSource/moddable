@@ -141,19 +141,6 @@ class BackArrowBehavior extends Behavior {
 	}
 }
 
-function gotKey(key){
-	let str = application.first.first.next.string || "";
-	if (key == BACKSPACE) {
-		if (str.length > 0) str = str.slice(0, -1);
-		else str = "";
-	} else if (key == SUBMIT) {
-		application.first.delegate("onPasswordEntered", str);
-	} else {
-		str += key;
-	}
-	application.first.first.next.string = str;
-}
-
 export const LoginScreen = Column.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: ASSETS.WhiteSkin,
 	contents: [
@@ -164,7 +151,7 @@ export const LoginScreen = Column.template($ => ({
 		}),
 		Container($, {
 			left: 0, right: 0, top: 0, bottom: 0, contents: [
-				new Keyboard({style: new ASSETS.OpenSans18(), callback: gotKey})
+				Keyboard($, {style: new ASSETS.OpenSans18()})
 			]
 		}),
 	],
@@ -175,6 +162,18 @@ export const LoginScreen = Column.template($ => ({
 		onPasswordEntered(column, password) {
 			let data = { ssid: this.ssid, password };
 			application.delegate("doNext", "CONNECTING", data);
+		}
+		onKeyUp(column, key){
+			let str = application.first.first.next.string || "";
+			if (key == BACKSPACE) {
+				if (str.length > 0) str = str.slice(0, -1);
+				else str = "";
+			} else if (key == SUBMIT) {
+				application.first.delegate("onPasswordEntered", str);
+			} else {
+				str += key;
+			}
+			application.first.first.next.string = str;
 		}
 	}
 }));
