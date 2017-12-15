@@ -47,7 +47,7 @@ typedef uint32_t txU4;
 
 
 typedef int txSocket;
-#define mxNoSocket -1
+#define mxNoSocket NULL
 
 #include "xsgecko.h"
 
