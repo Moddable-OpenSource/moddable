@@ -622,7 +622,7 @@ int32_t modGetDaylightSavingsOffset(void)
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
 	extern txPreparation* xsPreparation();
-	void *result, *archive;
+	void *result;
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
@@ -631,14 +631,14 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
 
-#if MODDEF_XS_MODS
-	archive = installModules(prep);
-#endif
-
 	creation = prep->creation;
 
 	root.preparation = prep;
-	root.archive = archive;
+#if MODDEF_XS_MODS
+	archive = installModules(prep);
+#else
+	root.archive = NULL;
+#endif
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
