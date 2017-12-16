@@ -33,10 +33,10 @@ struct modGPIOConfigurationRecord {
 typedef struct modGPIOConfigurationRecord modGPIOConfigurationRecord;
 typedef struct modGPIOConfigurationRecord *modGPIOConfiguration;
 
-extern int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint8_t mode);
+extern int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode);
 extern void modGPIOUninit(modGPIOConfiguration config);
 
-extern int modGPIOSetMode(modGPIOConfiguration config, uint8_t mode);
+extern int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode);
 
 #define kModGPIOReadError (255)
 extern uint8_t modGPIORead(modGPIOConfiguration config);
