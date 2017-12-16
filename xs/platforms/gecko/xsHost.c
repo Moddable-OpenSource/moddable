@@ -126,9 +126,9 @@ void fxLoadModule(txMachine* the, txID moduleID)
 
 void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 {
-	extern void modTimersMark(txMachine *the, txMarkRoot markRoot);
+//	extern void modTimersMark(txMachine *the, txMarkRoot markRoot);
 	the->host = C_NULL;
-	modTimersMark(the, markRoot);
+//	modTimersMark(the, markRoot);
 }
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
@@ -136,9 +136,35 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	return C_NULL;
 }
 
+typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
+
+static uint8_t xsRunPromiseJobs_pending(txMachine *the);
+static RunPromiseJobs gRunPromiseJobs;
+
+uint8_t xsRunPromiseJobs_pending(txMachine *the)
+{
+	gRunPromiseJobs = NULL;
+	if (!mxPendingJobs.value.reference->next)
+		return 0;
+
+	fxRunPromiseJobs(the);
+
+	if (0 == mxPendingJobs.value.reference->next)
+		return 0;
+
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
+	return 1;
+}
+
+uint8_t modRunPromiseJobs(txMachine *the)
+{
+	return gRunPromiseJobs ? gRunPromiseJobs(the) : 0;
+}
+
 void fxQueuePromiseJobs(txMachine* the)
 {
 	// queued jobs serviced from the main loop
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
 }
 
 void fxSweepHost(txMachine* the)
@@ -352,6 +378,8 @@ void *my_malloc(size_t size) {
 }
 #endif
 
+void modMessageService(void) {}
+
 extern uint32_t gDeviceUnique;
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
@@ -422,6 +450,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 	}
 
+	((txMachine *)result)->preparation = prep;
 #ifdef mxInstrument
 	espStartInstrumentation(result);
 #endif
