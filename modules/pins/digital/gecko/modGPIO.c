@@ -17,32 +17,28 @@
 
 #define kUninitializedPin (255)
 
-int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint8_t mode)
+int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
-	uint8_t portNum = (uint8_t)port;
+	int result;
+	uint32_t portNum = (uint32_t)port;
 
-	config->pin = kUninitializedPin;
+	if (portNum > 7) {				// sent numeric
+		portNum = port[8] - 'A';	// sent string "gpioPortX"
+	}
+
+	if (portNum > 7) {
+		config->pin = kUninitializedPin;
+		return -1;
+	}
+
 	config->portNum = portNum;
-
-	if (kModGPIOOutput == mode) {
-		GPIO_PinModeSet(portNum, pin, gpioModePushPull, 1);
-	}
-	else if (kModGPIOInput == mode) {
-		GPIO_PinModeSet(portNum, pin, gpioModeInput, 0);
-	}
-/*
-	else if (kModGPIOInputPullUp == mode) {
-		GPIO_PinModeSet(portNum, pin, gpioModeInputPull, 1);
-	}
-	else if (kModGPIOInputPullDown == mode) {
-		GPIO_PinModeSet(portNum, pin, gpioModeInputPull, 0);
-	}
-	else if (kModGPIOOutputOpenDrain == mode) {
-		GPIO_PinModeSet(portNum, pin, gpioModeWiredAnd, 0);
-	}
-*/
-
 	config->pin = pin;
+
+	result = modGPIOSetMode(config, mode);
+	if (result) {
+		config->pin = kUninitializedPin;
+		return result;
+	}
 
 	return 0;
 }
@@ -52,9 +48,26 @@ void modGPIOUninit(modGPIOConfiguration config)
 	config->pin = kUninitializedPin;
 }
 
-int modGPIOSetMode(modGPIOConfiguration config, uint8_t mode)
+int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	return modGPIOInit(config, NULL, config->pin, mode);
+	switch (mode) {
+		case kModGPIOInput:
+			GPIO_PinModeSet(config->portNum, config->pin, gpioModeInput, 0);
+			break;
+		case kModGPIOInputPullUp:
+		case kModGPIOInputPullDown:
+			GPIO_PinModeSet(config->portNum, config->pin, gpioModeInputPull, mode == kModGPIOInputPullUp ? 1 : 0);
+			break;
+		case kModGPIOOutput:
+			GPIO_PinModeSet(config->portNum, config->pin, gpioModePushPull, 1);
+			break;
+		case kModGPIOOutputOpenDrain:
+			GPIO_PinModeSet(config->portNum, config->pin, gpioModeWiredAnd, 0);
+			break;
+		default:
+			return -1;
+	}
+	return 0;
 }
 
 uint8_t modGPIORead(modGPIOConfiguration config)
