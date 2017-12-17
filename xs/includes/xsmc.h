@@ -58,6 +58,10 @@ static inline void _fxPush(xsMachine *the, xsSlot *v)
 #define fxPush(v)	_fxPush(the, &v)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #undef xsTypeOf
 #define xsmcTypeOf(_SLOT)	fxTypeOf(the, &_SLOT)
 
@@ -160,4 +164,9 @@ mxImport xsIntegerValue _xsArgc(xsMachine*);
 	#define false (0)
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif	/* __XSMC_H__ */
+
