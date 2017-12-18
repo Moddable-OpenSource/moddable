@@ -1,27 +1,9 @@
 {
-	"build": {
-		"ARDUINO_ESP8266": "/Users/$(USER)/esp/esp8266-2.3.0/",
-	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/servo/manifest.json",
 	],
 	"modules": {
 		"*": "./main",
 	},
-	"platforms":{
-		"esp": {
-			"modules": {
-				"pins/servo": "$(MODULES)/pins/servo/servo",
-				"*": [
-					"$(MODULES)/pins/digital/esp/*",
-					"$(MODULES)/pins/servo/esp/*",
-					"$(ARDUINO_ESP8266)/libraries/Servo/src/esp8266/*",
-					"$(ARDUINO_ESP8266)/libraries/Servo/src/*",
-				  ]
-			},
-			"preload": [
-				"pins/servo"
-			],
-		}
-	}
 }
