@@ -82,6 +82,59 @@ static txSlot* fxToInstanceInspector(txMachine* the, txSlot* instance);
 static void fxToggle(txMachine* the, txSlot* slot);
 static void fxReportException(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...);
 
+#define mxIsDigit(c) \
+	(('0' <= c) && (c <= '9'))
+#define mxIsFirstLetter(c) \
+	((('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')) || (c == '_') || (c == ':'))
+#define mxIsNextLetter(c) \
+	((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')) || (c == '.') || (c == '-') || (c == '_') || (c == ':'))
+#define mxIsSpace(c) \
+	((c == ' ') || (c == '\n') || (c == '\r') || (c == '\t'))
+	
+enum {
+	XS_BODY_STATE = 0,
+	XS_CR_STATE,
+	XS_LF_STATE,
+	XS_TAG_STATE,
+	XS_START_TAG_NAME_STATE,
+	XS_START_TAG_SPACE_STATE,
+	XS_ATTRIBUTE_NAME_STATE,
+	XS_ATTRIBUTE_SPACE_STATE,
+	XS_ATTRIBUTE_EQUAL_STATE,
+	XS_ATTRIBUTE_VALUE_STATE,
+	XS_EMPTY_TAG_STATE,
+	XS_END_TAG_STATE,
+	XS_END_TAG_NAME_STATE,
+	XS_END_TAG_SPACE_STATE,
+	XS_PROCESSING_INSTRUCTION_STATE,
+	XS_PROCESSING_INSTRUCTION_SPACE_STATE,
+	XS_ERROR_STATE
+};
+
+enum {
+	XS_ABORT_TAG = 0,
+	XS_BREAKPOINT_TAG,
+	XS_CLEAR_ALL_BREAKPOINTS_TAG,
+	XS_CLEAR_BREAKPOINTS_TAG,
+	XS_GO_TAG,
+	XS_LOGOUT_TAG,
+	XS_SET_BREAKPOINT_TAG,
+	XS_SET_ALL_BREAKPOINTS_TAG,
+	XS_SELECT_TAG,
+	XS_STEP_TAG,
+	XS_STEP_INSIDE_TAG,
+	XS_STEP_OUTSIDE_TAG,
+	XS_TOGGLE_TAG,
+	XS_UNKNOWN_TAG
+};
+
+enum {
+	XS_ID_ATTRIBUTE = 0,
+	XS_LINE_ATTRIBUTE,
+	XS_PATH_ATTRIBUTE,
+	XS_UNKNOWN_ATTRIBUTE
+};
+
 void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 {
 #if mxWindows
@@ -136,7 +189,7 @@ void fxDebugCommand(txMachine* the)
 	for (;;) {
 		fxReceive(the);
 		fxDebugParse(the);
-		if (the->debugExit > 0)
+		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 0))
 			break;
 	}
 	mxHostInspectors.value.list.first = C_NULL;
@@ -216,57 +269,6 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 #endif
 }
 
-#define mxIsDigit(c) \
-	(('0' <= c) && (c <= '9'))
-#define mxIsFirstLetter(c) \
-	((('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')) || (c == '_') || (c == ':'))
-#define mxIsNextLetter(c) \
-	((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')) || (c == '.') || (c == '-') || (c == '_') || (c == ':'))
-#define mxIsSpace(c) \
-	((c == ' ') || (c == '\n') || (c == '\r') || (c == '\t'))
-	
-enum {
-	XS_BODY_STATE = 0,
-	XS_TAG_STATE,
-	XS_START_TAG_NAME_STATE,
-	XS_START_TAG_SPACE_STATE,
-	XS_ATTRIBUTE_NAME_STATE,
-	XS_ATTRIBUTE_SPACE_STATE,
-	XS_ATTRIBUTE_EQUAL_STATE,
-	XS_ATTRIBUTE_VALUE_STATE,
-	XS_EMPTY_TAG_STATE,
-	XS_END_TAG_STATE,
-	XS_END_TAG_NAME_STATE,
-	XS_END_TAG_SPACE_STATE,
-	XS_PROCESSING_INSTRUCTION_STATE,
-	XS_PROCESSING_INSTRUCTION_SPACE_STATE,
-	XS_ERROR_STATE
-};
-
-enum {
-	XS_ABORT_TAG = 0,
-	XS_BREAKPOINT_TAG,
-	XS_CLEAR_ALL_BREAKPOINTS_TAG,
-	XS_CLEAR_BREAKPOINTS_TAG,
-	XS_GO_TAG,
-	XS_LOGOUT_TAG,
-	XS_SET_BREAKPOINT_TAG,
-	XS_SET_ALL_BREAKPOINTS_TAG,
-	XS_SELECT_TAG,
-	XS_STEP_TAG,
-	XS_STEP_INSIDE_TAG,
-	XS_STEP_OUTSIDE_TAG,
-	XS_TOGGLE_TAG,
-	XS_UNKNOWN_TAG
-};
-
-enum {
-	XS_ID_ATTRIBUTE = 0,
-	XS_LINE_ATTRIBUTE,
-	XS_PATH_ATTRIBUTE,
-	XS_UNKNOWN_ATTRIBUTE
-};
-
 void fxDebugParse(txMachine* the)
 {
 	txString string = the->debugBuffer;
@@ -276,6 +278,22 @@ void fxDebugParse(txMachine* the)
 		case XS_BODY_STATE:
 			if (c == '<') 
 				the->debugState = XS_TAG_STATE;
+			else if (c == '\r') 
+				the->debugState = XS_CR_STATE;
+			break;
+			
+		case XS_CR_STATE:
+			if (c == '\n') 
+				the->debugState = XS_LF_STATE;
+			else
+				the->debugState = XS_ERROR_STATE;
+			break;
+			
+		case XS_LF_STATE:
+			if (c == '<') 
+				the->debugState = XS_TAG_STATE;
+			else if (c == '\r') 
+				the->debugState = XS_CR_STATE;
 			break;
 			
 		case XS_TAG_STATE:
