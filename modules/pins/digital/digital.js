@@ -32,7 +32,7 @@ class Digital @ "xs_digital_destructor" {
 Digital.input = 0;
 Digital.inputPullUp = 1;
 Digital.inputPullDown = 2;
-Digital.inputPullUpDown = 2;
+Digital.inputPullUpDown = 3;
 Digital.output = 8;
 Digital.outputOpenDrain = 9;
 
