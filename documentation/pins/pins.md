@@ -1,7 +1,7 @@
 # Pins
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: December 13, 2017
+Revised: December 17, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -245,6 +245,36 @@ Writes a 16-bit data value starting at the specified register. The value is tran
 
 Writes the provided data values starting at the specified register. The value arguments are handled in the same way as the arguments to the `write` function of the `I2C` class.
 
+## class Servo
+
+The `Servo` class uses digital pins to control servo motor. The API is designed around the Arduino Servo class.
+
+	import Servo from "pins/servo";
+
+### Setting servo by degrees
+
+The following example instantiates a Servo on pin 4 and rotates it to to 45 degrees.
+
+	let servo = new Servo({pin: 4});
+	servo.write(45);
+
+### Setting servo by microseconds
+
+The Servo implementation pulses a digital signal for a number of microseconds that is proportional to the angle of rotation. Scripts may provide the number of microseconds for the signal pulse instead of degrees, for greater precision.
+
+	servo.writeMicroseconds(1000);
+
+### constructor(dictionary)
+
+The Servo constructor takes a dictionary. The `pin` property is required, and specifies the digital pin to use. The `min` and `max` properties are optional, and specify the range of the pulse duration in microseconds.
+
+### write(degrees)
+
+The `write` call changes the servo position to the number of degrees specified. Fractional degrees are supported.
+
+### writeMicroseconds(us)
+
+The `writeMicroseconds` call sets the duration of the pulse width in microseconds. The value provided is pinned by the `min` and `max` values. 
 
 ## class SPI
 
