@@ -257,7 +257,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	for (;;) {
 		fxReceive(the);
 		fxDebugParse(the);
-		if (the->debugExit > 1)
+		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 1))
 			break;
 	}
 	mxHostInspectors.value.list.first = C_NULL;
