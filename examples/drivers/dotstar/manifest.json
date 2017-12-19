@@ -1,0 +1,64 @@
+{
+    "build": {
+        "BUILD": "$(MODDABLE)/build",
+        "MODULES": "$(MODDABLE)/modules",
+        "COMMODETTO": "$(MODULES)/commodetto",
+	},
+    "creation": {
+        "chunk": {
+            "initial":1536,
+            "incremental":1024,
+        },
+        "heap": {
+            "initial":512,
+            "incremental":64,
+        },
+        "stack":256,
+        "keys": {
+            "available":32,
+            "name":53,
+            "symbol":3,
+        },
+        "main":"main",
+    },
+	"resources": {
+		"*": [
+			"./lights",
+		],
+	},
+	"modules": {
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"Resource": "$(MODDABLE)/modules/files/resource/Resource",
+		"*": "./main",
+	},
+	"preload": [
+		"commodetto/*",
+		"Resource",
+		"main"
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+                    "$(MODULES)/base/instrumentation/*",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/drivers/dotstar/*",
+					"$(MODULES)/pins/pins/*",
+					"$(MODULES)/pins/spi/*",
+				],
+			},
+			"preload": [
+				"instrumentation",
+				"time",
+				"timer",
+				"dotstar",
+				"pins",
+				"spi",
+			],
+		},
+	}
+}

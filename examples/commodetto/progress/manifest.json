@@ -1,0 +1,19 @@
+{
+	"include": [
+		"../manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": "$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue",
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
+		]
+	},
+	"config": {
+		"screen": "ili9341"
+	}
+}
