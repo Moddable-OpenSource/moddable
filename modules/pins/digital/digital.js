@@ -19,22 +19,21 @@
  */
 
 class Digital @ "xs_digital_destructor" {
-//	static configure(pin, mode) @ "xs_digital_configure";
 	static read(pin) @ "xs_digital_static_read";
 	static write(pin, value) @ "xs_digital_static_write";
 
-	constructor() @ "xs_digital";				// or (pin, mode) where port is implicitly NULL
+	constructor(port, pin, mode) @ "xs_digital";// or (pin, mode) where port is implicitly NULL
 	mode(mode) @ "xs_digital_mode";				// change pin mode
 	read() @ "xs_digital_read";					// read pin
 	write(value) @ "xs_digital_write";			// write pin
 	//@@ notify
 }
-Digital.input = 0;
-Digital.inputPullUp = 1;
-Digital.inputPullDown = 2;
-Digital.inputPullUpDown = 2;
-Digital.output = 8;
-Digital.outputOpenDrain = 9;
+Digital.Input = 0;
+Digital.InputPullUp = 1;
+Digital.InputPullDown = 2;
+Digital.InputPullUpDown = 2;
+Digital.Output = 8;
+Digital.OutputOpenDrain = 9;
 
 Object.freeze(Digital.prototype);
 
