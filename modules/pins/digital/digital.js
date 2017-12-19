@@ -31,7 +31,7 @@ class Digital @ "xs_digital_destructor" {
 Digital.Input = 0;
 Digital.InputPullUp = 1;
 Digital.InputPullDown = 2;
-Digital.InputPullUpDown = 2;
+Digital.InputPullUpDown = 3;
 Digital.Output = 8;
 Digital.OutputOpenDrain = 9;
 
