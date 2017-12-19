@@ -12,9 +12,7 @@ The `Digital` class provides access to the GPIO pins.
 
 	import Digital from "pins/digital";
 
-Pin numbers are device dependent.
-	
-The Digital class provides only static functions. It is not instantiated.
+Pin numbers and port names are device dependent.
 
 ### Reading a button
 
@@ -27,7 +25,7 @@ The following example configures pin 0 as an input and then tests to see if a bu
 
 The static `Digital.read` and `Digital.write` do not allow configuring all pin modes. Use the Digital constructor for full configuration, for example setting the input to use an internal pull-up resistor.
 
-	let button = new Digital(0, Digital.inputPullUp);
+	let button = new Digital(0, Digital.InputPullUp);
 	trace(`button state is ${button.read()}`;
 
 ### Blinking an LED
@@ -46,7 +44,7 @@ The following example configures pin 5 as an output and then blinks it one per s
 To open a GPIO pin on a specific port, use the Digital constructor with the optional first argument.
 
 	let blink = 1;
-	let led = new Digital("gpioPortName", 5);
+	let led = new Digital("gpioPortName", 5, Digital.Output);
 	
 	Timer.repeat(id => {
 		blink = blink ^ 1;
@@ -55,11 +53,11 @@ To open a GPIO pin on a specific port, use the Digital constructor with the opti
 
 ### static read(pin)
 
-The `read` function sets the pin to `Digital.input` mode and samples the value of the specified pin, returning 0 or 1.
+The `read` function sets the pin to `Digital.Input` mode and samples the value of the specified pin, returning 0 or 1. The default port is used.
 
 ### static write(pin)
 
-The `write` function sets the pin to `Digital.output` mode and its value to either 0 or 1.
+The `write` function sets the pin to `Digital.Output` mode and its value to either 0 or 1. The default port is used.
 
 ### constructor([port], pin, mode)
 
@@ -69,12 +67,12 @@ The Digital constructor establishes a connection to the GPIO pin specified by th
 
 The mode function sets the mode of the pin. Not all pins support all modes, so refer to the hardware documentation for details. The following mode values are available.
 
-	Digital.input
-	Digital.inputPullUp
-	Digital.inputPullDown
-	Digital.inputPullUpDown
-	Diigtal.output
-	Digital.outputOpenDrain
+	Digital.Input
+	Digital.InputPullUp
+	Digital.InputPullDown
+	Digital.InputPullUpDown
+	Digital.Output
+	Digital.OutputOpenDrain
 
 ### read()
 
