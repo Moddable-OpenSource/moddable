@@ -322,6 +322,7 @@ LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 all: $(LAUNCH)
 
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
+	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
 	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 460800 8N1 $(TMP_DIR)\main.elf
