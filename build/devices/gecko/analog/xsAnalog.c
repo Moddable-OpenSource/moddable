@@ -33,18 +33,11 @@ static void calibrate() {
 
 void xs_Analog(xsMachine *the) {
 	adcSetup();
-#ifdef MODDEF_ANALOG_POWER_PIN
-	GPIO_PinModeSet(MODDEF_ANALOG_POWER_PORT, MODDEF_ANALOG_POWER_PIN, gpioModePushPull, 0);
-#endif
 //	calibrate();
 }
 
 void xs_Analog_destructor(void *data) {
 	adcTerminate();
-#ifdef MODDEF_ANALOG_POWER_PIN
-	GPIO_PinOutClear( MODDEF_ANALOG_POWER_PORT, MODDEF_ANALOG_POWER_PIN );
-	GPIO_PinModeSet(MODDEF_ANALOG_POWER_PORT, MODDEF_ANALOG_POWER_PIN, gpioModeDisabled, 0);
-#endif
 }
 
 void xs_Analog_sleepEM4() {
@@ -91,13 +84,11 @@ void xs_Analog_read(xsMachine *the) {
 			xsUnknownError("bad analog input # " + chan);
 	}
 	if (gotChan) {
-		GPIO_PinOutSet( MODDEF_ANALOG_POWER_PORT, MODDEF_ANALOG_POWER_PIN );
 #ifdef MODDEF_ANALOG_REF
 		ret = adcSingle(true, inputChan, MODDEF_ANALOG_REF);
 #else
 		ret = adcSingle(true, inputChan, adcRefVDD);
 #endif
-		GPIO_PinOutClear( MODDEF_ANALOG_POWER_PORT, MODDEF_ANALOG_POWER_PIN );
 	}
 
 	xsResult = xsInteger(ret);
