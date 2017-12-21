@@ -15,7 +15,7 @@
 #include "mc.defines.h"
 
 void xs_get_persistent_value(xsMachine *the) {
-#if MODDEF_RETENTION
+#if MODDEF_RETENTION_MEMORY
 	uint32_t reg = xsToInteger(xsArg(0));
 	uint32_t val;
 	val = geckoGetPersistentValue(reg);
@@ -26,7 +26,7 @@ void xs_get_persistent_value(xsMachine *the) {
 }
 
 void xs_set_persistent_value(xsMachine *the) {
-#if MODDEF_RETENTION
+#if MODDEF_RETENTION_MEMORY
 	uint32_t reg = xsToInteger(xsArg(0));
 	uint32_t val = xsToInteger(xsArg(1));
 	geckoSetPersistentValue(reg, val);
