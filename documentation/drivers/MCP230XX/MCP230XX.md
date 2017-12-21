@@ -203,17 +203,13 @@ export default function() {
 
 ## Methods
 
-#### constructor({ [address], [hz], [sda], [scl], [inputs], [pullups] })
+#### constructor({ pin, expander })
 
   | Property | Type   | Value/Description    | Default | Required |
   |----------|--------|----------------------|---------|----------|
-  | address  | Number | The address of the I2C device | `0x20` | no |
-  | hz       | Number | The clock speed of the I2C device. | 100kHz | no       |
-  | sda      | Number | The I2C sda (data) pin.     | 4 | no       |
-  | scl      | Number | The I2C scl (clock) pin.     | 5 | no       |
-  | inputs   | Word | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output | `0b1111111111111111` | no       |
-  | pullups  | Word | A byte representing the pullup initialization state of the 8 GPIO pins. `1` for pullup, `0` for default | `0b0000000000000000` | no       |
-
+  | pin  | Number | The GPIO pin number | n/a | yes |
+  | expander | Number | The instance of `Expander` that created this `Pin` instance | n/a | yes       |
+  
 #### mode(mode)
 
 Set the _mode/direction_ of the pin by  object. 
