@@ -102,11 +102,19 @@ extern void espFreeUint32(void *t);
 extern void modLog_transmit(const char *msg);
 extern void ESP_putc(int c);
 
-#define modLog(msg) \
-	do { \
-		static const char scratch[] ICACHE_XS6STRING_ATTR = msg ; \
-		modLog_transmit(scratch); \
-	} while (0)
+#if !ESP32
+	#define modLog(msg) \
+		do { \
+			static const char scratch[] ICACHE_XS6STRING_ATTR = msg ; \
+			modLog_transmit(scratch); \
+		} while (0)
+#else
+	#define modLog(msg) \
+		do { \
+			static const char scratch[] = msg ; \
+			modLog_transmit(scratch); \
+		} while (0)
+#endif
 #define modLogVar(msg) modLog_transmit(msg)
 #define modLogInt(msg) \
 	do { \

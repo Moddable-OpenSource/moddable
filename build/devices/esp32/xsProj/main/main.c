@@ -140,24 +140,13 @@ void loop(void)
 	to enable serial port for diagnostic information and debugging
 */
 
-#if 0
-	#define DEBUGIT(x)	printf x
-#else
-	#define DEBUGIT(x)
-#endif
 void modLog_transmit(const char *msg)
 {
-#if 0
-	printf("%s\n", msg);
-#else
 	uint8_t c;
 
-DEBUGIT(("modLog_transmit %s\n", msg));
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);
-		fx_putc(gThe, 13);
-		fx_putc(gThe, 10);
 		fx_putc(gThe, 0);
 	}
 	else {
@@ -166,13 +155,10 @@ DEBUGIT(("modLog_transmit %s\n", msg));
 		ESP_putc(13);
 		ESP_putc(10);
 	}
-#endif
 }
 
 void ESP_putc(int c) {
 	char cx = c;
-
-DEBUGIT(("about to uart_write_bytes: %c\n", cx));
 	uart_write_bytes(USE_UART, &cx, 1);
 }
 
@@ -181,9 +167,7 @@ int ESP_getc(void) {
 	uint8_t myChar = ' ';
 	if (!ESP_isReadable())
 		return -1;
-DEBUGIT(("about to uart_read_bytes:\n"));
 	err = uart_read_bytes(USE_UART, &myChar, 1, 1);
-DEBUGIT((" ret: %d, char: %c\n", err, myChar));
 	if (err == 1)
 		return myChar;
 	return -1;
