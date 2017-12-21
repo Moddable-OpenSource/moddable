@@ -26,7 +26,7 @@ export {
 
 The `MCP23008` class produces instances that represent a single MCP23008 IC on the I2C bus. The `MCP23008` class extends an internal `Expander` class, which extends the `SMBus` class. `Expander` is not exported. 
 
-Instance objects of `MCP23008` are iterable, containing 8 `Pin` instance object entries.
+Instance objects of `MCP23008` contain 8 `Pin` instance object entries.
 
 
 ```js
@@ -56,7 +56,9 @@ export default function() {
 |---------------| ----------- | ----------|
 | `length` | Number of pins in collection: `8` | Yes |
 | `offset` | Register offset: `0` | Yes |
-| `reg` | Registers used by this IC | Yes |
+| `IODIR` | `IODIR` register: `0x00` | Yes |
+| `GPIO` | `GPIO` register: `0x06` | Yes |
+| `GPPU` | `GPPU` register: `0x09` | Yes |
 | 0-8 | `Pin` instances | Yes |
 
 
@@ -96,7 +98,7 @@ trace(`${expander.bankRead()}\n`);
 
 The `MCP23017` class produces instances that represent a single MCP23017 IC on the I2C bus. The `MCP23017` class extends an internal `Expander` class, which extends the `SMBus` class.
 
-Instance objects of `MCP23017` are iterable, containing 16 `Pin` instance object entries.
+Instance objects of `MCP23017` contain 16 `Pin` instance object entries.
 
 
 ```js
@@ -126,7 +128,9 @@ export default function() {
 |---------------| ----------- | ----------|
 | `length` | Number of pins in collection: `16` | Yes |
 | `offset` | Register offset: `1` | Yes |
-| `reg` | Registers used by this IC | Yes |
+| `IODIR` | `IODIR` register: `0x00` | Yes |
+| `GPIO` | `GPIO` register: `0x0C` | Yes |
+| `GPPU` | `GPPU` register: `0x12` | Yes |
 | 0-16 | `Pin` instances | Yes |
 
 
@@ -194,9 +198,7 @@ export default function() {
 | Property Name | Description | Read Only |
 |---------------| ----------- | ----------|
 | `pin` | The GPIO pin number | Yes |
-| `offset` | Register offset: `1` | Yes |
-| `reg` | Registers used by this IC | Yes |
-| 0-16 | `Pin` instances | Yes |
+| `expander` | The instance of `Expander` that this `Pin` belongs to | Yes |
 
 
 ## Methods

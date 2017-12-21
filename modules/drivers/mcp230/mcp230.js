@@ -32,138 +32,104 @@ const PULLUPS_8  = 0b00000000;
 const INPUTS_16  = 0b1111111111111111;
 const PULLUPS_16 = 0b0000000000000000;
 
-// Default Config (Both)
-const ADDRESS = 0x20;
-const HZ = 0x00;
-const SDA = 0x04;
-const SCL = 0x05;
-
 // Modes (Ref: modules/pins/digital)
 const INPUT = 0;
 const INPUT_PULLUP = 1;
 const OUTPUT = 8;
 
 class Expander extends SMBus {
-  constructor(dictionary) {
+  constructor(dictionary = { address: 0x20 }) {
+    super(dictionary);
 
-    const offset = (dictionary.pins >> 3) - 1;
+    this.offset = (this.length >> 3) - 1;
+
     const {
-      address = ADDRESS,
-      hz = HZ,
-      sda = SDA,
-      scl = SCL,
-
       // User specific state initialization settings
-      inputs = offset ? INPUTS_16 : INPUTS_8,
-      pullups = offset ? PULLUPS_16 : PULLUPS_8,
-      pins,
-      reg,
-      reg: { IODIR, GPIO, GPPU }
-    } = dictionary || {};
-
-    super({ address, hz, sda, scl });
-
-    // trace(`IODIR: 0x${IODIR.toString(16)}\n`);
-    // trace(`GPIO: 0x${GPIO.toString(16)}\n`);
-    // trace(`GPPU: 0x${GPPU.toString(16)}\n`);
+      inputs = this.offset ? INPUTS_16 : INPUTS_8,
+      pullups = this.offset ? PULLUPS_16 : PULLUPS_8,
+    } = dictionary;
 
     // If the value of inputs does not match the default,
     // then set the user defined inputs configuration
-    if ((inputs !== (offset ? INPUTS_16 : INPUTS_8))) {
-      this.writeByte(IODIR, inputs);
+    if ((inputs !== (this.offset ? INPUTS_16 : INPUTS_8))) {
+      this.writeByte(this.IODIR, inputs);
 
-      if (offset) {
-        this.writeByte(IODIR + offset, inputs >> 8);
+      if (this.offset) {
+        this.writeByte(this.IODIR + this.offset, inputs >> 8);
       }
     }
 
     // If the value of pullups does not match the default,
     // then set the user defined pullups configuration
-    if ((pullups !== (offset ? PULLUPS_16 : PULLUPS_8))) {
-      this.writeByte(GPPU, pullups);
+    if ((pullups !== (this.offset ? PULLUPS_16 : PULLUPS_8))) {
+      this.writeByte(this.GPPU, pullups);
 
-      if (offset) {
-        this.writeByte(GPPU + offset, pullups >> 8);
+      if (this.offset) {
+        this.writeByte(this.GPPU + this.offset, pullups >> 8);
       }
     }
 
-    for (let pin = 0; pin < pins; pin++) {
+    for (let pin = 0; pin < this.length; pin++) {
       this[pin] = new Pin({ pin, expander: this });
     }
-
-    this.length = pins;
-    this.offset = offset;
-    this.reg = Object.freeze(reg);
 
     Object.freeze(this);
   }
 
-  * [Symbol.iterator]() {
-    let i = 0;
-    while (i < this.length) {
-      yield this[i];
-      i++;
-    }
-  }
-
   bankWrite(state) {
-    const { IODIR, GPIO } = this.reg;
-
     if (this.offset) {
       // Read IODIR state
-      let iodir = this.readWord(IODIR);
+      let iodir = this.readWord(this.IODIR);
 
       // Set IODIR state to OUTPUT
-      this.writeWord(IODIR, 0x0000);
+      this.writeWord(this.IODIR, 0x0000);
 
       // Write GPIO
-      this.writeWord(GPIO, state);
+      this.writeWord(this.GPIO, state);
 
       // Restore previous IODIR state
-      this.writeWord(IODIR, iodir);
+      this.writeWord(this.IODIR, iodir);
     } else {
       // Read IODIR state
-      let iodir = this.readByte(IODIR);
+      let iodir = this.readByte(this.IODIR);
 
       // Set IODIR state to OUTPUT
-      this.writeByte(IODIR, 0x00);
+      this.writeByte(this.IODIR, 0x00);
 
       // Write GPIO
-      this.writeByte(GPIO, state & 0xFF);
+      this.writeByte(this.GPIO, state & 0xFF);
 
       // Restore previous IODIR state
-      this.writeByte(IODIR, iodir);
+      this.writeByte(this.IODIR, iodir);
     }
   }
   bankRead() {
-    const { IODIR, GPIO } = this.reg;
-
     if (this.offset) {
       // Read IODIR state
-      let iodir = this.readWord(IODIR);
+      let iodir = this.readWord(this.IODIR);
 
       // Set IODIR state to INPUT
-      this.writeWord(IODIR, 0xFFFF);
+      this.writeWord(this.IODIR, 0xFFFF);
 
       // Read GPIO
-      let gpio = this.readWord(GPIO);
+      let gpio = this.readWord(this.GPIO);
 
       // Restore previous IODIR state
-      this.writeWord(IODIR, iodir);
+      this.writeWord(this.IODIR, iodir);
 
       return gpio;
     } else {
       // Read IODIR state
-      let iodir = this.readByte(IODIR);
+      let iodir = this.readByte(this.IODIR);
 
       // Set IODIR state to INPUT
-      this.writeByte(IODIR, 0xFF);
+      this.writeByte(this.IODIR, 0xFF);
 
       // Read GPIO
-      let gpio = this.readByte(GPIO);
+      let gpio = this.readByte(this.GPIO);
 
       // Restore previous IODIR state
-      this.writeByte(IODIR, iodir);
+      this.writeByte(this.IODIR, iodir);
 
       return gpio;
     }
@@ -180,8 +146,8 @@ class Pin {
     const offset = this.pin >> 3;
     const pin = offset ? this.pin - 8 : this.pin;
     const pinMask = 1 << pin;
-    const IODIR = this.expander.reg.IODIR + offset;
-    const GPPU = this.expander.reg.GPPU + offset;
+    const IODIR = this.expander.IODIR + offset;
+    const GPPU = this.expander.GPPU + offset;
 
     let iodir = this.expander.readByte(IODIR);
     let gppu = this.expander.readByte(GPPU);
@@ -214,8 +180,8 @@ class Pin {
     const offset = this.pin >> 3;
     const pin = offset ? this.pin - 8 : this.pin;
     const pinMask = 1 << pin;
-    const IODIR = this.expander.reg.IODIR + offset;
-    const GPIO = this.expander.reg.GPIO + offset;
+    const IODIR = this.expander.IODIR + offset;
+    const GPIO = this.expander.GPIO + offset;
 
     let iodir = this.expander.readByte(IODIR);
 
@@ -233,9 +199,8 @@ class Pin {
     const offset = this.pin >> 3;
     const pin = offset ? this.pin - 8 : this.pin;
     const pinMask = 1 << pin;
-    const IODIR = this.expander.reg.IODIR + offset;
-    const GPIO = this.expander.reg.GPIO + offset;
-
+    const IODIR = this.expander.IODIR + offset;
+    const GPIO = this.expander.GPIO + offset;
 
     let gpio = this.expander.readByte(GPIO);
     let iodir = this.expander.readByte(IODIR);
@@ -257,34 +222,19 @@ class Pin {
   }
 }
 
-class MCP23008 extends Expander {
-  constructor(dictionary = {}) {
-    super(
-      Object.assign(dictionary, {
-        pins: 8,
-        reg: {
-          IODIR: 0x00,
-          GPPU: 0x06,
-          GPIO: 0x09,
-        }
-      })
-    );
-  }
-}
+class MCP23008 extends Expander {}
+MCP23008.prototype.length = 8;
+MCP23008.prototype.IODIR = 0x00;
+MCP23008.prototype.GPPU = 0x06;
+MCP23008.prototype.GPIO = 0x09;
+Object.freeze(MCP23008.prototype);
 
-class MCP23017 extends Expander {
-  constructor(dictionary = {}) {
-    super(
-      Object.assign(dictionary, {
-        pins: 16,
-        reg: {
-          IODIR: 0x00,
-          GPPU: 0x0C,
-          GPIO: 0x12,
-        }
-      })
-    );
-  }
-}
+class MCP23017 extends Expander {}
+MCP23017.prototype.length = 16;
+MCP23017.prototype.IODIR = 0x00;
+MCP23017.prototype.GPPU = 0x0C;
+MCP23017.prototype.GPIO = 0x12;
+Object.freeze(MCP23017.prototype);
+
 
 export { MCP23008, MCP23017 };
