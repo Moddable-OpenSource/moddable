@@ -8,7 +8,7 @@ The [MCP23008](http://www.microchip.com/wwwproducts/en/MCP23008) device provides
 
 The [MCP23017](http://www.microchip.com/wwwproducts/en/MCP23017) device provides 16-bit, general purpose, parallel I/O expansion for I2C bus applications. (Description from MCP23017 product page)
 
-## Module "MCP230XX"
+### Module "MCP230XX"
 
 The driver module "MCP230XX" exports the following:
 
@@ -19,7 +19,7 @@ export {
 };
 ```
 
-## MCP23008 Class
+### MCP23008 Class
 
 The `MCP23008` class produces instances that represent a single MCP23008 IC on the I2C bus. The `MCP23008` class extends an internal `Expander` class, which extends the `SMBus` class. `Expander` is not exported. 
 
@@ -46,9 +46,9 @@ export default function() {
 
 ![](ESP8266-MCP23008-leds.png)
 
-### Constructor Description
+#### Constructor Description
 
-#### `MCP23008([dictionary])`
+##### `MCP23008([dictionary])`
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -60,7 +60,7 @@ let leds = new MCP23008({ sda: 4, scl: 5 });
 ```
 
 <a id="MCP23008-dictionary"></a>
-### Dictionary
+#### Dictionary
 
 | Parameter | Type | Default Value | Description
 | --- | --- | --- | :--- |
@@ -71,7 +71,7 @@ let leds = new MCP23008({ sda: 4, scl: 5 });
 | `inputs`   | `number` (byte) | `0b11111111` | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output |
 | `pullups`  | `number` (byte)  | `0b00000000` | A byte representing the pullup initialization state of the 8 GPIO pins. `1` for pullup, `0` for default |
 
-### Properties
+#### Properties
 
 All properties are read-only.
 
@@ -84,9 +84,9 @@ All properties are read-only.
 | `GPPU` | `number` | `0x09` | `GPPU` register |
 | 0-8 | `pin` | | `Pin` instances (see the section [Pin Class](#pin-class)) |
 
-### Methods
+#### Methods
 
-#### `bankWrite(byte)`
+##### `bankWrite(byte)`
 
 Temporarily sets the mode of all pins to output and writes all pins at once. 
 
@@ -95,7 +95,7 @@ let expander = new MCP23008(); // defaults to 0x20!
 expander.bankWrite(0b11111111); // Set all pins to 1
 ```
 
-#### `bankRead()`
+##### `bankRead()`
 
 Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
@@ -105,7 +105,7 @@ trace(`${expander.bankRead()}\n`);
 ```
 
 
-## MCP23017 Class
+### MCP23017 Class
 
 The `MCP23017` class produces instances that represent a single MCP23017 IC on the I2C bus. The `MCP23017` class extends an internal `Expander` class, which extends the `SMBus` class.
 
@@ -132,9 +132,9 @@ export default function() {
 
 ![](ESP8266-MCP23017-leds.png)
 
-### Constructor Description
+#### Constructor Description
 
-#### `MCP23017([dictionary])`
+##### `MCP23017([dictionary])`
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -146,7 +146,7 @@ let leds = new MCP23017({ sda: 4, scl: 5 });
 ```
 
 <a id="MCP23017-dictionary"></a>
-### Dictionary
+#### Dictionary
 
 | Parameter | Type | Default Value | Description
 | --- | --- | --- | :--- |
@@ -157,7 +157,7 @@ let leds = new MCP23017({ sda: 4, scl: 5 });
 | `inputs`   | `number` (word) |  `0b1111111111111111` | A word representing the input/output initialization state of the 16 GPIO pins. `1` for input, `0` for output |
 | `pullups`  | `number` (word) | `0b0000000000000000` | A word representing the pullup initialization state of the 16 GPIO pins. `1` for pullup, `0` for default |
 
-### Properties
+#### Properties
 
 All properties are read-only. 
 
@@ -171,9 +171,9 @@ All properties are read-only.
 | 0-16 | `pin` | | `Pin` instances (see the section [Pin Class](#pin-class)) |
 
 
-### Methods
+#### Methods
 
-#### `bankWrite(word)`
+##### `bankWrite(word)`
 
 Temporarily sets the mode of all pins to output and writes all pins at once. 
 
@@ -182,7 +182,7 @@ let expander = new MCP23017(); // defaults to 0x20!
 expander.bankWrite(0b1111111111111111); // Set all pins to 1
 ```
 
-#### `bankRead()`
+##### `bankRead()`
 
 Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
@@ -191,7 +191,7 @@ let expander = new MCP23017(); // defaults to 0x20!
 trace(`${expander.bankRead()}\n`); 
 ```
 
-## Pin Class
+### Pin Class
 
 The `Pin` class represents a single pin within a `MCP23008` or `MCP23017` instance object. The class is not exported; `Pin` instances are automatically created by `MCP23008` and `MCP23017` instances.
 
@@ -218,9 +218,9 @@ export default function() {
 
 ![](ESP8266-MCP23008-leds.png)
 
-### Constructor Description
+#### Constructor Description
 
-#### `Pin(dictionary)`
+##### `Pin(dictionary)`
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -228,26 +228,25 @@ export default function() {
 
 
 <a id="Pin-dictionary"></a>
-### Dictionary
+#### Dictionary
 
 | Parameter | Type | Description
 | --- | --- | :--- |
 | `pin`  | `number` | The GPIO pin number |
 | `expander` | `expander` | The instance of `Expander` that created this `Pin` instance |
 
-### Properties
+#### Properties
 
 All properties are read-only.
 
-| Name | Description | 
-| --- | :--- |
-| `pin` | The GPIO pin number | 
-| `expander` | The instance of `Expander` that this `Pin` belongs to |
+| Name | Type | Description | 
+| --- | --- | :--- |
+| `pin` | `number` | The GPIO pin number |
+| `expander` | `expander` | The instance of `Expander` that this `Pin` belongs to |
 
+#### Methods
 
-### Methods
-
-#### `mode(mode)`
+##### `mode(mode)`
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -255,17 +254,15 @@ All properties are read-only.
 
 Sets the pin's mode to the specified mode. 
 
-#### `read()`
+##### `read()`
 
 Sets the pin's mode to input, reads the value of the pin object, and returns the value.
 
-#### `write(value)`
+##### `write(value)`
 
 Sets the pin's mode to output and writes the value to the pin object.
 
-
-
-## Manifest Example
+### Manifest Example
 
 ```
 {
