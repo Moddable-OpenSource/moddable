@@ -8,7 +8,7 @@ This document describes the Poco renderer, starting with a set of examples that 
 ## Examples
 These examples illustrate working with the Poco renderer. They all use the JavaScript API, and they also use asset loaders and other capabilities of Commodetto.
 
-To keep the follow examples concise and focused, the code makes several assumptions:
+To keep the following examples concise and focused, the code makes several assumptions:
 
 - The examples assume a `PixelsOut` object in the global variable `screen`.
 
