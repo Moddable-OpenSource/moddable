@@ -239,7 +239,7 @@ export default function() {
 
 All properties are read-only.
 
-| Name | Type | Description | 
+| Name | Type | Description 
 | --- | --- | :--- |
 | `pin` | `number` | The GPIO pin number |
 | `expander` | `expander` | The instance of `Expander` that this `Pin` belongs to |
