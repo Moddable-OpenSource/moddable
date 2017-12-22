@@ -2,14 +2,13 @@
 
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: Dec 19, 2017
+Revised: Dec 21, 2017
 
 The [MCP23008](http://www.microchip.com/wwwproducts/en/MCP23008) device provides 8-bit, general purpose, parallel I/O expansion for I2C bus applications. (Description from MCP23008 product page)
 
 The [MCP23017](http://www.microchip.com/wwwproducts/en/MCP23017) device provides 16-bit, general purpose, parallel I/O expansion for I2C bus applications. (Description from MCP23017 product page)
 
-
-## module "MCP230XX"
+## Module "MCP230XX"
 
 The driver module "MCP230XX" exports the following:
 
@@ -20,14 +19,11 @@ export {
 };
 ```
 
-
-
-## class MCP23008
+## MCP23008 Class
 
 The `MCP23008` class produces instances that represent a single MCP23008 IC on the I2C bus. The `MCP23008` class extends an internal `Expander` class, which extends the `SMBus` class. `Expander` is not exported. 
 
 Instance objects of `MCP23008` contain 8 `Pin` instance object entries.
-
 
 ```js
 import Timer from "timer";
@@ -50,43 +46,58 @@ export default function() {
 
 ![](ESP8266-MCP23008-leds.png)
 
+### Constructor Description
+
+#### `MCP23008([dictionary])`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `dictionary` | `object` | An object with properties to initialize the result. Supported parameters are specified in the [Dictionary](#MCP23008-dictionary) section below.
+
+
+```
+let leds = new MCP23008({ sda: 4, scl: 5 });
+```
+
+<a id="MCP23008-dictionary"></a>
+### Dictionary
+
+| Parameter | Type | Default Value | Description
+| --- | --- | --- | :--- |
+| `address`  | `number` | `0x20` | The address of the I2C device |
+| `hz`       | `number` | 100kHz | The clock speed of the I2C device. | 
+| `sda`      | `number` | 4 | The I2C sda (data) pin. | 
+| `scl`      | `number` |  5 | The I2C scl (clock) pin.     |
+| `inputs`   | `number` (byte) | `0b11111111` | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output |
+| `pullups`  | `number` (byte)  | `0b00000000` | A byte representing the pullup initialization state of the 8 GPIO pins. `1` for pullup, `0` for default |
+
 ### Properties
 
-| Property Name | Description | Read Only |
-|---------------| ----------- | ----------|
-| `length` | Number of pins in collection: `8` | Yes |
-| `offset` | Register offset: `0` | Yes |
-| `IODIR` | `IODIR` register: `0x00` | Yes |
-| `GPIO` | `GPIO` register: `0x06` | Yes |
-| `GPPU` | `GPPU` register: `0x09` | Yes |
-| 0-8 | `Pin` instances | Yes |
+All properties are read-only.
 
+| Name | Type | Value | Description|
+| --- | --- | --- | :--- |
+| `length` | `number` | `8` | Number of pins in collection |
+| `offset` | `number` | `0` | Register offset |
+| `IODIR` | `number` | `0x00` | `IODIR` register |
+| `GPIO` | `number` | `0x06` | `GPIO` register |
+| `GPPU` | `number` | `0x09` | `GPPU` register |
+| 0-8 | `pin` | | `Pin` instances (see the section [Pin Class](#pin-class)) |
 
 ### Methods
 
-#### constructor({ [address], [hz], [sda], [scl], [inputs], [pullups] })
+#### `bankWrite(byte)`
 
-  | Property | Type   | Value/Description    | Default | Required |
-  |----------|--------|----------------------|---------|----------|
-  | `address`  | Number | The address of the I2C device | `0x20` | no |
-  | `hz`       | Number | The clock speed of the I2C device. | 100kHz | no       |
-  | `sda`      | Number | The I2C sda (data) pin.     | 4 | no       |
-  | `scl`      | Number | The I2C scl (clock) pin.     | 5 | no       |
-  | `inputs`   | Byte | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output | `0b11111111` | no       |
-  | pullups  | Byte | A byte representing the pullup initialization state of the 8 GPIO pins. `1` for pullup, `0` for default | `0b00000000` | no       |
-
-#### bankWrite(byte)
-
-The method will temporarily set the _mode/direction_ of all pins to _output_ mode and write all pins at once. 
+Temporarily sets the mode of all pins to output and writes all pins at once. 
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
 expander.bankWrite(0b11111111); // Set all pins to 1
 ```
 
-#### bankRead() -> byte
+#### `bankRead()`
 
-The method will temporarily set the _mode/direction_ of all pins to _input_ mode and read all pins at once.
+Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
@@ -94,12 +105,11 @@ trace(`${expander.bankRead()}\n`);
 ```
 
 
-## class MCP23017
+## MCP23017 Class
 
 The `MCP23017` class produces instances that represent a single MCP23017 IC on the I2C bus. The `MCP23017` class extends an internal `Expander` class, which extends the `SMBus` class.
 
 Instance objects of `MCP23017` contain 16 `Pin` instance object entries.
-
 
 ```js
 import Timer from "timer";
@@ -122,105 +132,136 @@ export default function() {
 
 ![](ESP8266-MCP23017-leds.png)
 
+### Constructor Description
+
+#### `MCP23017([dictionary])`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `dictionary` | `object` | An object with properties to initialize the result. Supported parameters are specified in the [Dictionary](#MCP23017-dictionary) section below.
+
+
+```
+let leds = new MCP23017({ sda: 4, scl: 5 });
+```
+
+<a id="MCP23017-dictionary"></a>
+### Dictionary
+
+| Parameter | Type | Default Value | Description
+| --- | --- | --- | :--- |
+| `address`  | `number` | `0x20` | The address of the I2C device |
+| `hz`       | `number` | 100kHz | The clock speed of the I2C device. |
+| `sda`      | `number` | 4 | The I2C sda (data) pin. |
+| `scl`      | `number` | 5 | The I2C scl (clock) pin. |
+| `inputs`   | `number` (word) |  `0b1111111111111111` | A word representing the input/output initialization state of the 16 GPIO pins. `1` for input, `0` for output |
+| `pullups`  | `number` (word) | `0b0000000000000000` | A word representing the pullup initialization state of the 16 GPIO pins. `1` for pullup, `0` for default |
+
 ### Properties
 
-| Property Name | Description | Read Only |
-|---------------| ----------- | ----------|
-| `length` | Number of pins in collection: `16` | Yes |
-| `offset` | Register offset: `1` | Yes |
-| `IODIR` | `IODIR` register: `0x00` | Yes |
-| `GPIO` | `GPIO` register: `0x0C` | Yes |
-| `GPPU` | `GPPU` register: `0x12` | Yes |
-| 0-16 | `Pin` instances | Yes |
+All properties are read-only. 
+
+| Name | Type | Value | Description|
+| --- | --- | --- | :--- |
+| `length` | `number` | `16` | Number of pins in collection |
+| `offset` | `number` | `1` | Register offset |
+| `IODIR` | `number` | `0x00` | `IODIR` register |
+| `GPIO` | `number` | `0x0C` | `GPIO` register |
+| `GPPU` | `number` | `0x12` | `GPPU` register |
+| 0-16 | `pin` | | `Pin` instances (see the section [Pin Class](#pin-class)) |
 
 
 ### Methods
 
-#### constructor({ [address], [hz], [sda], [scl], [inputs], [pullups] })
+#### `bankWrite(word)`
 
-  | Property | Type   | Value/Description    | Default | Required |
-  |----------|--------|----------------------|---------|----------|
-  | `address`  | Number | The address of the I2C device | `0x20` | no |
-  | `hz`       | Number | The clock speed of the I2C device. | 100kHz | no       |
-  | `sda`      | Number | The I2C sda (data) pin.     | 4 | no       |
-  | `scl`      | Number | The I2C scl (clock) pin.     | 5 | no       |
-  | `inputs`   | Word | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output | `0b1111111111111111` | no       |
-  | `pullups`  | Word | A byte representing the pullup initialization state of the 16 GPIO pins. `1` for pullup, `0` for default | `0b0000000000000000` | no       |
-
-#### bankWrite(word)
-
-The method will temporarily set the _mode/direction_ of all pins to _output_ mode and write all pins at once. 
+Temporarily sets the mode of all pins to output and writes all pins at once. 
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
 expander.bankWrite(0b1111111111111111); // Set all pins to 1
 ```
 
-#### bankRead() -> word
+#### `bankRead()`
 
-The method will temporarily set the _mode/direction_ of all pins to _input_ mode and read all pins at once.
+Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
 trace(`${expander.bankRead()}\n`); 
 ```
 
-## class Pin
+## Pin Class
 
-The `Pin` class represents a single pin within a `MCP23008` instance object. `Pin` is not exported.  
-
+The `Pin` class represents a single pin within a `MCP23008` or `MCP23017` instance object. The class is not exported; `Pin` instances are automatically created by `MCP23008` and `MCP23017` instances.
 
 ```js
 import Timer from "timer";
 import { MCP23008 } from "MCP230XX";
 
-
 export default function() {
-  const leds = new MCP23008({
-    inputs: 0b00000000
-  });
+	const leds = new MCP23008({
+		inputs: 0b00000000
+	});
   
-  leds[0].write(1);
-  leds[1].write(0);
-  leds[2].write(1);
-  leds[3].write(0);
-  leds[4].write(1);
-  leds[5].write(0);
-  leds[6].write(1);
-  leds[7].write(0);
+  	// leds[0], leds[1], etc. are Pin instances
+	leds[0].write(1);
+	leds[1].write(0);
+	leds[2].write(1);
+	leds[3].write(0);
+	leds[4].write(1);
+	leds[5].write(0);
+	leds[6].write(1);
+	leds[7].write(0);
 }
 ```
 
 ![](ESP8266-MCP23008-leds.png)
 
-## Properties
+### Constructor Description
 
-| Property Name | Description | Read Only |
-|---------------| ----------- | ----------|
-| `pin` | The GPIO pin number | Yes |
-| `expander` | The instance of `Expander` that this `Pin` belongs to | Yes |
+#### `Pin(dictionary)`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `dictionary` | `object` | An object with properties to initialize the result. The required parameters are specified in the [Dictionary](#Pin-dictionary) section below.
 
 
-## Methods
+<a id="Pin-dictionary"></a>
+### Dictionary
 
-#### constructor({ pin, expander })
+| Parameter | Type | Description
+| --- | --- | :--- |
+| `pin`  | `number` | The GPIO pin number |
+| `expander` | `expander` | The instance of `Expander` that created this `Pin` instance |
 
-  | Property | Type   | Value/Description    | Default | Required |
-  |----------|--------|----------------------|---------|----------|
-  | pin  | Number | The GPIO pin number | n/a | yes |
-  | expander | Number | The instance of `Expander` that created this `Pin` instance | n/a | yes       |
-  
-#### mode(mode)
+### Properties
 
-Set the _mode/direction_ of the pin by  object. 
+All properties are read-only.
 
-#### read()
+| Name | Description | 
+| --- | :--- |
+| `pin` | The GPIO pin number | 
+| `expander` | The instance of `Expander` that this `Pin` belongs to |
 
-Set the _mode/direction_ to _input_ and read the value of the pin object.
 
-#### write(value)
+### Methods
 
-Set the _mode/direction_ to _output_ and write the value to the pin object.
+#### `mode(mode)`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `mode` | `number` | A number representing the desired mode. May be input, input pullup, or output.
+
+Sets the pin's mode to the specified mode. 
+
+#### `read()`
+
+Sets the pin's mode to input, reads the value of the pin object, and returns the value.
+
+#### `write(value)`
+
+Sets the pin's mode to output and writes the value to the pin object.
 
 
 
