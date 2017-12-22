@@ -1,8 +1,8 @@
 # Connecting a SPI display to ESP8266
 
-####Copyright 2017 Moddable Tech, Inc.
+#### Copyright 2017 Moddable Tech, Inc.
 
-####Revised: October 12, 2017
+#### Revised: October 12, 2017
 
 
 
