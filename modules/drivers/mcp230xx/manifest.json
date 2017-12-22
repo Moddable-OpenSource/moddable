@@ -1,6 +1,6 @@
 {
 	"modules": {
-		"MCP230XX": "$(MODULES)/drivers/mcp230/mcp230",
+		"MCP230XX": "$(MODULES)/drivers/mcp230xx/mcp230xx",
 		"pins/digital": "$(MODULES)/pins/digital/digital",
 		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
