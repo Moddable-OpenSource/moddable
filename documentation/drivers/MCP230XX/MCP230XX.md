@@ -268,7 +268,7 @@ Sets the pin's mode to output and writes the value to the pin object.
 {
   "include": [
     "$(MODDABLE)/examples/manifest_base.json",
-    "$(MODULES)/drivers/mcp230/manifest.json"
+    "$(MODULES)/drivers/mcp230xx/manifest.json"
   ],
   "modules": {
     "*": [
