@@ -875,8 +875,16 @@ export class Tool extends TOOL {
 		if ("platforms" in manifest) {
 			let platform = this.platform;
 			let platforms = manifest.platforms;
+			let platformed = false;
 			for (let name in platforms) {
-				if (platform == name)
+				if (platform == name) {
+					platformed = true;
+					this.mergePlatform(all, platforms[name]);
+				}
+			}
+			if (!platformed) {
+				let name = "...";
+				if (name in platforms)
 					this.mergePlatform(all, platforms[name]);
 			}
 			delete manifest.platforms;
@@ -896,6 +904,8 @@ export class Tool extends TOOL {
 		all.commonjs = this.concatProperty(all.commonjs, platform.commonjs);
 		all.preload = this.concatProperty(all.preload, platform.preload);
 		all.strip = this.concatProperty(all.strip, platform.strip);
+		all.errors = this.concatProperty(all.errors, platform.error);
+		all.warnings = this.concatProperty(all.warnings, platform.warning);
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -939,8 +949,16 @@ export class Tool extends TOOL {
 		if ("platforms" in manifest) {
 			let platform = this.platform;
 			let platforms = manifest.platforms;
+			let platformed = false;
 			for (let name in platforms) {
-				if (platform == name)
+				if (platform == name) {
+					platformed = true;
+					this.parseBuild(platforms[name]);
+				}
+			}
+			if (!platformed) {
+				let name = "...";
+				if (name in platforms)
 					this.parseBuild(platforms[name]);
 			}
 		}
@@ -995,8 +1013,18 @@ export class Tool extends TOOL {
 			preload:[],
 			strip:[],
 			commonjs:[],
+			errors:[],
+			warnings:[],
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
+		
+		if (this.manifest.errors.length) {
+			this.manifest.errors.forEach(error => { this.reportError(null, 0, error); });
+			throw new Error("incompatible platform!");
+		}
+		if (this.manifest.warnings.length) {
+			this.manifest.warnings.forEach(warning => { this.reportWarning(null, 0, warning); });
+		}
 		
 		// apply rules
 		this.dataFiles = [];
