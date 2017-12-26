@@ -1479,6 +1479,8 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 	return NULL;
 }
 
+#endif /* MODDEF_XS_MODS */
+
 #if !ESP32
 #include "flash_utils.h"
 
@@ -1494,11 +1496,6 @@ uint8_t *espFindUnusedFlashStart(void)
 	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + (int)section) & ~(SPI_FLASH_SEC_SIZE - 1));
 }
 
-#endif
-
-#endif /* MODDEF_XS_MODS */
-
-#if !ESP32
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
 	uint8_t temp[4] __attribute__ ((aligned (4)));
