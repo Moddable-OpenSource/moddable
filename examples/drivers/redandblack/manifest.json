@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": {
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/digital/manifest.json",
+	},
 	"modules": {
 		"*": [
 			  "./main",
@@ -27,7 +30,6 @@
 		"esp": {
 			"modules": {
 				"*": [
-					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/spi/esp/*",
 				]
 			},
