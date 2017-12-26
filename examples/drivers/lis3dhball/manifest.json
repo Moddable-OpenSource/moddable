@@ -2,7 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/pins/i2c//manifest.json",
 	],
 	"modules": {
 		"*": [
@@ -22,18 +23,4 @@
 		"*": "./ball",
 		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
 	},
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp/*",
-				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
-			},
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp32/*",
-				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
-			},
-		},
-	}
 }
