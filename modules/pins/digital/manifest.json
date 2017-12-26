@@ -1,0 +1,26 @@
+{
+	"modules": {
+		"pins/digital": "$(MODULES)/pins/digital/digital",
+	},
+	"preload": "pins/digital",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/esp/*",
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/esp32/*",
+			},
+		},
+		"gecko": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/gecko/*",
+			},
+		},
+		"...": {
+			"error": "pins/digital unsupported"
+		}
+	}
+}
