@@ -1,0 +1,17 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/esp/*",
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/esp32/*",
+			},
+		},
+		"...": {
+			"error": "pins/spi unsupported"
+		}
+	}
+}
