@@ -1,0 +1,21 @@
+{
+	"modules": {
+		"*": "$(MODULES)/files/file/*",
+	},
+	"preload": "file",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/files/file/esp/*",
+			},
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODULES)/files/file/mac/*",
+			},
+		},
+		"...": {
+			"error": "File unsupported"
+		}
+	}
+}
