@@ -19,6 +19,7 @@
 					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/spi/esp/*",
 				],
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
 				"ili9341": {
