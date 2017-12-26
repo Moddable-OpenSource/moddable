@@ -1,29 +1,17 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/pins/i2c//manifest.json",
+	],
 	"modules": {
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
 		],
-		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 	},
 	"preload": [
 		"lis3dh",
-		"pins/i2c",
 		"pins/smbus",
 	],
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp/*",
-			},
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp32/*",
-				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
-			},
-		},
-	}
 }
