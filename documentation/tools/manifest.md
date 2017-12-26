@@ -2,7 +2,7 @@
 
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: December 12, 2017
+Revised: December 26, 2017
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -157,6 +157,21 @@ The `platform` object has one property by platform. Each platform can have a `mo
 					],
 				}
 			},
+
+The "`...`" platform identifier is a fallback, if no matching platform is found. This is useful for errors and warnings.
+
+		"platforms":{
+			"esp": {
+				/* modules and resources for ESP8266 go here */
+			},
+			"esp32": {
+				"warning": "module XYZ not fully tested on esp32",
+				/* modules and resources for ESP32 go here */
+			},
+			"..." {
+				"error": "module XYZ supported",
+			}
+		}
 
 ## Reference
 
