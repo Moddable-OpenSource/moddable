@@ -9,6 +9,10 @@
 	"preload": "xpt2046",
 	"platforms": {
 		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
 			"modules": {
 				"*": [
 					  "$(MODULES)/drivers/xpt2046/*",
@@ -31,6 +35,10 @@
 			}
 		},
 		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
 			"modules": {
 				"*": [
 					  "$(MODULES)/drivers/xpt2046/*",
