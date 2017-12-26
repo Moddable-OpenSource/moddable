@@ -1,26 +1,9 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/digital/manifest.json",
+	],
 	"modules": {
 		"*": "./main",
 	},
-	"platforms":{
-		"esp": {
-			"modules": {
-				"pins/digital": "$(MODULES)/pins/digital/digital",
-				"*": [
-					"$(MODULES)/pins/digital/esp/*",
-				],
-			},
-			"preload": "pins/*",
-		},
-		"esp32": {
-			"modules": {
-				"pins/digital": "$(MODULES)/pins/digital/digital",
-				"*": [
-					"$(MODULES)/pins/digital/esp32/*",
-				],
-			},
-			"preload": "pins/*",
-		},
-	}
 }
