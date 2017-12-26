@@ -860,12 +860,12 @@ export class Tool extends TOOL {
 		var path = this.resolveFilePath(name);
 		if (!path)
 			throw new Error("'" + name + "': manifest not found!");
-		if (this.manifests.already[path])
-			throw new Error("'" + name + "': manifest already included!");
-		var parts = this.splitPath(path);	
-		this.currentDirectory = parts.directory;
-		var manifest = this.parseManifest(path);
-		manifest.directory = parts.directory;
+		if (!this.manifests.already[path]) {
+			var parts = this.splitPath(path);
+			this.currentDirectory = parts.directory;
+			var manifest = this.parseManifest(path);
+			manifest.directory = parts.directory;
+		}
 		this.currentDirectory = currentDirectory;
 	}
 	mergeManifest(all, manifest) {
@@ -932,6 +932,7 @@ export class Tool extends TOOL {
 		}
 	}
 	parseManifest(path) {
+		let platformInclude;
 		var buffer = this.readFileString(path);
 		try {
 			var manifest = JSON.parse(buffer);
@@ -954,12 +955,21 @@ export class Tool extends TOOL {
 				if (platform == name) {
 					platformed = true;
 					this.parseBuild(platforms[name]);
+					platformInclude = platforms[name].include;
 				}
 			}
 			if (!platformed) {
 				let name = "...";
-				if (name in platforms)
+				if (name in platforms) {
 					this.parseBuild(platforms[name]);
+					platformInclude = platforms[name].include;
+				}
+			}
+			if (platformInclude) {
+				if (!("include" in manifest))
+					manifest.include = platformInclude;
+				else
+					manifest.include = manifest.include.concat(manifest.include, platformInclude);
 			}
 		}
 		if ("include" in manifest) {
