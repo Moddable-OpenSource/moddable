@@ -4,20 +4,6 @@
 		"$(MODULES)/drivers/mcp230xx/manifest.json"
 	],
 	"modules": {
-		"*": [
-			"./main",
-		]
+		"*": "./main",
 	},
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp/*",
-			},
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp32/*",
-			},
-		},
-	}
 }
