@@ -16,5 +16,16 @@
 	"config": {
 		"screen": "ili9341",
 		"touch": "xpt2046"
+	},
+	"platforms": {
+		"mac": {
+			"error": "example not for simulator, device only"
+		},
+		"win": {
+			"error": "example not for simulator, device only"
+		},
+		"lin": {
+			"error": "example not for simulator, device only"
+		}
 	}
 }
