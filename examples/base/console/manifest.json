@@ -2,7 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/files/file/manifest.json",
 	],
 	"modules": {
 		"*": [
@@ -32,7 +33,6 @@
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 				"*": [
-					"$(MODULES)/files/file/*",
 					"$(MODULES)/files/flash/*",
 					"$(MODULES)/files/flash/esp/*",
 					"$(MODULES)/pins/digital/esp/*",
