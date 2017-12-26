@@ -3,6 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODDABLE)/modules/pins/i2c/manifest.json",
 		"$(MODDABLE)/modules/files/file/manifest.json",
 	],
@@ -31,9 +32,6 @@
 				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
 				"cli/network": "$(MODULES)/base/cli/commands/network",
 				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
-				"*": [
-					"$(MODULES)/pins/digital/esp/*",
-				],
 			},
 			"preload": [
 				"file",
