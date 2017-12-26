@@ -1,21 +1,11 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/i2c/manifest.json",
+	],
 	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/drivers/qm1h0p0073/*",
-		],
+		"*": "./main",
 		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
 	},
-	"preload": [
-		"qm1h0p0073",
-		"pins/i2c",
-	],
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/pins/i2c/esp/*",
-			},
-		},
-	}
+	"preload": "qm1h0p0073",
 }
