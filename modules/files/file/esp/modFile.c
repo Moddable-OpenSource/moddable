@@ -29,8 +29,6 @@
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#include "malloc.h"
-
 static int startSPIFFS(void);
 static void stopSPIFFS(void);
 

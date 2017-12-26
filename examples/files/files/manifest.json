@@ -1,29 +1,9 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
-	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/files/file/*"
-		]
-	},
-	"preload": [
-		"file"
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/files/file/manifest.json",
 	],
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/file/esp/*"
-				]
-			}
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					  "$(MODULES)/files/file/mac/*"
-				]
-			}
-		}
-	}
-
+	"modules": {
+		"*": "./main",
+	},
 }
