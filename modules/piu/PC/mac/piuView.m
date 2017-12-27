@@ -794,6 +794,10 @@ void PiuViewPopColor(PiuView* self)
 	(*self)->color = NULL;
 }
 
+void PiuViewPopColorFilter(PiuView* self)
+{
+}
+
 void PiuViewPopOrigin(PiuView* self)
 {
 	CGContextRef context = (*self)->context;
@@ -816,6 +820,10 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 	components[2] = (float)color->b / 255;
 	components[3] = (float)color->a / 255;
 	(*self)->color = CGColorCreate((*self)->colorSpace, components);
+}
+
+void PiuViewPushColorFilter(PiuView* self, PiuColor color)
+{
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
