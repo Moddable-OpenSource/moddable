@@ -7,11 +7,19 @@
 			"modules": {
 				"pins/servo": "$(MODULES)/pins/servo/servo",
 				"*": [
-					"$(MODULES)/pins/digital/esp/*",
 					"$(MODULES)/pins/servo/esp/*",
 					"$(ARDUINO_ESP8266)/libraries/Servo/src/esp8266/*",
 					"$(ARDUINO_ESP8266)/libraries/Servo/src/*",
 				]
+			},
+			"preload": [
+				"pins/servo"
+			],
+		},
+		"esp32": {
+			"modules": {
+				"pins/servo": "$(MODULES)/pins/servo/servo",
+				"*": "$(MODULES)/pins/servo/esp32/*",
 			},
 			"preload": [
 				"pins/servo"
