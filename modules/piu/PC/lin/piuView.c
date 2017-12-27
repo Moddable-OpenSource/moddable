@@ -751,6 +751,10 @@ void PiuViewPopColor(PiuView* self)
 {
 }
 
+void PiuViewPopColorFilter(PiuView* self)
+{
+}
+
 void PiuViewPopOrigin(PiuView* self)
 {
 	cairo_t* cr = (*self)->cairo;
@@ -769,6 +773,10 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	cairo_t* cr = (*self)->cairo;
 	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+}
+
+void PiuViewPushColorFilter(PiuView* self, PiuColor color)
+{
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
