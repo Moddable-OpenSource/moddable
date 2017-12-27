@@ -151,9 +151,9 @@ void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant v
 		PiuState index = c_floor(state);
 		if (flags & piuSkinColorized) {
 			PiuColorsBlend((*self)->data.pattern.color, state, &color);
-			PiuViewPushColor(view, &color);
+			PiuViewPushColorFilter(view, &color);
 			PiuSkinDrawAux(self, view, bounds, variant, index, horizontal, vertical);
-			PiuViewPopColor(view);
+			PiuViewPopColorFilter(view);
 		}
 		else {
 			color.r = color.g = color.b = 0;
