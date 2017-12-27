@@ -729,6 +729,10 @@ void PiuViewPopColor(PiuView* self)
 {
 }
 
+void PiuViewPopColorFilter(PiuView* self)
+{
+}
+
 void PiuViewPopOrigin(PiuView* self)
 {
 	Graphics* graphics = (*self)->graphics;
@@ -748,6 +752,10 @@ void PiuViewPushClip(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimensi
 void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	(*self)->solidBrush->SetColor(Color(color->a, color->r, color->g, color->b));
+}
+
+void PiuViewPushColorFilter(PiuView* self, PiuColor color)
+{
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
