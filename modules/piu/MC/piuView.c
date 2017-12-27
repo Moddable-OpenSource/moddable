@@ -793,6 +793,10 @@ void PiuViewPopColor(PiuView* self)
 {
 }
 
+void PiuViewPopColorFilter(PiuView* self)
+{
+}
+
 void PiuViewPopOrigin(PiuView* self)
 {
 	Poco poco = (*self)->poco;
@@ -814,6 +818,12 @@ void PiuViewPushClip(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDime
 }
 
 void PiuViewPushColor(PiuView* self, PiuColor color)
+{
+	(*self)->pixel = PocoMakeColor((*self)->poco, color->r, color->g, color->b);
+	(*self)->blend = color->a;
+}
+
+void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
 	(*self)->pixel = PocoMakeColor((*self)->poco, color->r, color->g, color->b);
 	(*self)->blend = color->a;
