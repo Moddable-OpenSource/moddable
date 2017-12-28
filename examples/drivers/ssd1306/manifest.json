@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODULES)/drivers/ssd1306/manifest.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"config": {
+		"screen": "ssd1306",
+	},
+	"defines": {
+		"ssd1306": {
+			"dither": true,
+			"width": 128,
+			"height": 32,
+		}
+	}
+}
