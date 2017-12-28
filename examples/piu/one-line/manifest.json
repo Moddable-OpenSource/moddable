@@ -3,7 +3,12 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/drivers/ssd1306/manifest.json",
 	],
+	"config": {
+		"screen": "ssd1306",
+		"touch": "",
+	},
 	"modules": {
 		"*": [
 			"./main",
