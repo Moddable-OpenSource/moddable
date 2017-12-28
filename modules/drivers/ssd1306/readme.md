@@ -1,0 +1,83 @@
+# SSD1306 display driver
+Copyright 2017 Moddable Tech, Inc.
+
+Revised: December 28, 2017
+
+**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+
+The [SSD1306](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf) OLED display controller drivers monochrome (1-bit) display. Displays are 128 pixels wide, and available in heights of 32, 64, and 128 pixels. The SSD1306 controller may be connected using SPI or I2C.
+
+### Adding SSD1306 to a project
+To add the SSD1306 driver to a project, include its manifest:
+
+	"include": [
+		/* other includes here */
+		"$(MODULES)/drivers/ssd1306/manifest.json",
+	],
+
+If using Commodetto or Piu, set the `screen` property of the `config` object in the manifest to `ssd1306` to make SSD1306 the default display driver. Since there is no touch input, disable that in the manifest by setting the touch driver name to an empty string.
+
+	"config": {
+		"screen": "ssd1306",
+		"touch": "",
+	},
+
+### Defines
+In the `defines` object, declare the pixel `width` and `height`. The default connection is SPI, but it is recommended to explicitly set the connection type in the application manifest>
+
+	"defines": {
+		"ssd1306": {
+			"width": 128,
+			"height": 32,
+			"spi": true,
+			"i2c": false,
+		}
+	}
+	
+The SSD1306 driver requires 8-bit gray (`gray256`) pixels as input. When building with `mcconfig`, set the pixel format to `gray256` on the command line:
+
+	mcconfig -m -p esp -f gray256
+
+### Dither
+The SSD1306 driver supports optional dithering. Dithering allows an approximation of gray pixels to be seen on the black and white OLED display. Enabling dithering uses about an additional 520 bytes of RAM and renders slower. Whether dithering is best for a given application depends on what it draws and the required frame rate. Dithering is disabled by default. To enable dithering, set the `dither` property in the `defines` section of the manifest.
+
+	"defines": {
+		"ssd1306": {
+			/* other properties here */
+			"dither": true,
+		}
+	}
+
+### Using SPI
+When using a SPI interface, the `defines` object must contain the `DC` and `CS` pin numbers. If a `RST` pin is provided, the device will be reset when the constructor is invoked. If the `cs_port`, `dc_port`, or `rst_port` properties are not provided, they default to NULL. 
+
+	"defines": {
+		"ssd1306": {
+			/* other properties here */	
+			"cs_pin": 4,
+			"dc_pin": 2,
+			"rst_pin": 0,
+			"spi": true,
+			"i2c": false,
+		}
+	}
+
+The `hz` property, when present, specifies the SPI bus speed.
+
+### Using I2C
+When using an I2C interface, the `defines` object may contain the I2C address of the device. If not provided, it defaults to `0x3C` or may be passed the constructor as the `address` property of the dictionary. The `scl_pin` and `sda_pin` properties define the pins to use for I2C. If not present, they may be provided by the constructor as the `scl` and `sda` properties of the dictionary. If they are not passed to the constructor, the default I2C interface is used.
+
+	"defines": {
+		"ssd1306": {
+			/* other properties here */	
+			"scl_pin": 4,
+			"sda_pin": 5,
+			"address": 0x3c,
+			"spi": false,
+			"i2c": true,
+		}
+	}
+
+The `hz` property, when present, specifies the I2C bus speed.
+
+**Note**: The I2C interface typically operates at a slower speed, so SPI is preferred when possible.
