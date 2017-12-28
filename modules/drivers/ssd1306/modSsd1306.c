@@ -20,10 +20,7 @@
 
 #include "xsmc.h"
 #include "xsesp.h"
-
-#include "osapi.h"
-
-#include "stdlib.h"
+#include "mc.defines.h"
 
 #include "modSPI.h"
 #include "modGPIO.h"
@@ -33,14 +30,34 @@
 
 #include "mc.xs.h"			// for xsID_ values
 
-#ifndef MODDEF_SSD1306_WIDTH
-	#define MODDEF_SSD1306_WIDTH 128
+#if !MODDEF_SSD1306_SPI && !MODDEF_SSD1306_I2C
+	#error "Must select set either MODDEF_SSD1306_SPI or MODDEF_SSD1306_I2C"
 #endif
-#ifndef MODDEF_SSD1306_HEIGHT
-	#define MODDEF_SSD1306_HEIGHT 32
+#if MODDEF_SSD1306_SPI && MODDEF_SSD1306_I2C
+	#error "Must select set ony MODDEF_SSD1306_SPI or MODDEF_SSD1306_I2C"
 #endif
-
-#define DITHER 0
+#ifndef MODDEF_SSD1306_CS_PORT
+	#define MODDEF_SSD1306_CS_PORT NULL
+#endif
+#ifndef MODDEF_SSD1306_RST_PORT
+	#define MODDEF_SSD1306_RST_PORT NULL
+#endif
+#ifndef MODDEF_SSD1306_DC_PORT
+	#define MODDEF_SSD1306_DC_PORT NULL
+#endif
+#ifndef MODDEF_SSD1306_DITHER
+	#define MODDEF_SSD1306_DITHER (0)
+#endif
+#ifndef MODDEF_SSD1306_HZ
+	#if MODDEF_SSD1306_SPI
+		#define MODDEF_SSD1306_HZ (10000000)
+	#elif MODDEF_SSD1306_I2C
+		#define MODDEF_SSD1306_HZ (600000)
+	#endif
+#endif
+#ifndef MODDEF_SSD1306_ADDRESS
+	#define MODDEF_SSD1306_ADDRESS (0x3C)
+#endif
 
 /*
 	crazy pixel layout
@@ -53,17 +70,17 @@
 
 #define SCREEN_CS_ACTIVE		modGPIOWrite(&ssd->cs, 0)
 #define SCREEN_CS_DEACTIVE		modGPIOWrite(&ssd->cs, 1)
-#define SCREEN_CS_INIT			modGPIOInit(&ssd->cs, NULL, 4, kModGPIOOutput); \
+#define SCREEN_CS_INIT			modGPIOInit(&ssd->cs, MODDEF_SSD1306_CS_PORT, MODDEF_SSD1306_CS_PIN, kModGPIOOutput); \
 								SCREEN_CS_DEACTIVE
 
 #define SCREEN_DC_DATA			modGPIOWrite(&ssd->dc, 1)
 #define SCREEN_DC_COMMAND		modGPIOWrite(&ssd->dc, 0)
-#define SCREEN_DC_INIT			modGPIOInit(&ssd->dc, NULL, 2, kModGPIOOutput); \
+#define SCREEN_DC_INIT			modGPIOInit(&ssd->dc, MODDEF_SSD1306_DC_PORT, MODDEF_SSD1306_DC_PIN, kModGPIOOutput); \
 								SCREEN_DC_DATA
 
 #define SCREEN_RST_ACTIVE		modGPIOWrite(&ssd->rst, 0)
 #define SCREEN_RST_DEACTIVE		modGPIOWrite(&ssd->rst, 1)
-#define SCREEN_RST_INIT			modGPIOInit(&ssd->rst, NULL, 0, kModGPIOOutput); \
+#define SCREEN_RST_INIT			modGPIOInit(&ssd->rst, MODDEF_SSD1306_RST_PORT, MODDEF_SSD1306_RST_PIN, kModGPIOOutput); \
 								SCREEN_RST_DEACTIVE;
 
 #define SSD1306_MAXWIDTH (128)
@@ -94,8 +111,11 @@
 #define kBufferSlop (4)
 
 typedef union configSPIandI2C {
+#if MODDEF_SSD1306_SPI
 	modSPIConfigurationRecord	spi;
+#elif MODDEF_SSD1306_I2C
 	modI2CConfigurationRecord	i2c;
+#endif
 } configSPIandI2C;
 
 struct ssd1606Record {
@@ -104,24 +124,24 @@ struct ssd1606Record {
 
 	configSPIandI2C		config;
 
+#if MODDEF_SSD1306_SPI
 	modGPIOConfigurationRecord	cs;
 	modGPIOConfigurationRecord	dc;
+#ifdef MODDEF_SSD1306_RST_PIN
 	modGPIOConfigurationRecord	rst;
+#endif
+#endif
 
-	uint8_t				pixel;							// mask for white pixel on current row
-
-	uint8_t				ditherPhase;
+	uint8_t				pixel;										// mask for white pixel on current row
 
 	uint8_t				width;
 	uint8_t				height;
 
-	uint8_t				doSPI;							// 1 for SPI, 0 for I2C
-	uint8_t				i2cAddr;
-
-	uint32_t			pad;							// ensure buffer is 4-byte aligned (SPI code requires that)
+	uint32_t			pad;										// ensure buffer is 4-byte aligned (SPI code requires that)
 	uint8_t				buffer[kBufferSlop + SSD1306_MAXWIDTH];		// 8 rows of 1-bit pixels, plus 32-bit header to allow I2C transmission in-place
 
-#if DITHER
+#if MODDEF_SSD1306_DITHER
+	uint8_t				ditherPhase;
 	int16_t				ditherA[SSD1306_MAXWIDTH + 4];
 	int16_t				ditherB[SSD1306_MAXWIDTH + 4];
 #endif
@@ -130,7 +150,9 @@ typedef struct ssd1606Record ssd1606Record;
 typedef ssd1606Record *ssd1606;
 
 static void doCmd(ssd1606 ssd, uint8_t cmd);
-static void ssd1306ChipSelect(uint8_t active, modSPIConfiguration config);
+#if MODDEF_SSD1306_SPI
+	static void ssd1306ChipSelect(uint8_t active, modSPIConfiguration config);
+#endif
 
 static void ssd1306Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
 static void ssd1306Continue(void *refcon);
@@ -150,8 +172,15 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 
 void xs_SSD1306_destructor(void *data)
 {
-	if (data)
-		free(data);
+	if (data) {
+		ssd1606 ssd = (ssd1606)data;
+#if MODDEF_SSD1306_SPI
+		modSPIUninit(&ssd->config.spi);
+#elif MODDEF_SSD1306_I2C
+		modI2CUninit(&ssd->config.i2c);
+#endif
+		c_free(data);
+	}
 }
 
 void xs_SSD1306(xsMachine *the)
@@ -161,18 +190,20 @@ void xs_SSD1306(xsMachine *the)
 	ssd1606 ssd;
 
 	xsmcVars(1);
-	if (xsmcHas(xsArg(0), xsID_width)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_width);
-		width = xsmcToInteger(xsVar(0));
-	}
-	else
-		width = MODDEF_SSD1306_WIDTH;
-	if (xsmcHas(xsArg(0), xsID_height)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_height);
-		height = xsmcToInteger(xsVar(0));
-	}
-	else
-		height = MODDEF_SSD1306_HEIGHT;
+#if MODDEF_SSD1306_WIDTH
+	width = MODDEF_SSD1306_WIDTH;
+#else
+	xsmcGet(xsVar(0), xsArg(0), xsID_width);
+	width = xsmcToInteger(xsVar(0));
+#endif
+
+#if MODDEF_SSD1306_HEIGHT
+	height = MODDEF_SSD1306_HEIGHT;
+#else
+	xsmcGet(xsVar(0), xsArg(0), xsID_height);
+	height = xsmcToInteger(xsVar(0));
+#endif
+
 	if (xsmcHas(xsArg(0), xsID_pixelFormat)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pixelFormat);
 		pixelFormat = xsmcToInteger(xsVar(0));
@@ -180,9 +211,9 @@ void xs_SSD1306(xsMachine *the)
 	else
 		pixelFormat = kCommodettoBitmapFormat;
 	if (kCommodettoBitmapGray256 != pixelFormat)
-		xsUnknownError("bad format");
+		xsUnknownError("gray256 pixels required");
 
-	ssd = calloc(1, sizeof(ssd1606Record));
+	ssd = c_calloc(1, sizeof(ssd1606Record));
 	if (!ssd)
 		xsUnknownError("out of memory");
 
@@ -194,38 +225,45 @@ void xs_SSD1306(xsMachine *the)
 	ssd->width = (uint8_t)width;
 	ssd->height = (uint8_t)height;
 
-	if (!xsmcHas(xsArg(0), xsID_address)) {
-		ssd->doSPI = 1;
+#if MODDEF_SSD1306_SPI
+	SCREEN_CS_INIT;
+	SCREEN_DC_INIT;
+#ifdef MODDEF_SSD1306_RST_PIN
+	SCREEN_RST_INIT;
+#endif
 
-		SCREEN_CS_INIT;
-		SCREEN_DC_INIT;
-		SCREEN_RST_INIT;
+	ssd->config.spi.hz = MODDEF_SSD1306_HZ;
+	ssd->config.spi.doChipSelect = ssd1306ChipSelect;
+	modSPIInit(&ssd->config.spi);
 
-		ssd->config.spi.hz = 1000000;		//@@
-		ssd->config.spi.doChipSelect = ssd1306ChipSelect;
-		modSPIInit(&ssd->config.spi);
-
-		SCREEN_RST_DEACTIVE;
-		modDelayMilliseconds(1);
-		SCREEN_RST_ACTIVE;
-		modDelayMilliseconds(10);
-		SCREEN_RST_DEACTIVE;
-	}
-	else {
+#ifdef MODDEF_SSD1306_RST_PIN
+	SCREEN_RST_DEACTIVE;
+	modDelayMilliseconds(1);
+	SCREEN_RST_ACTIVE;
+	modDelayMilliseconds(10);
+	SCREEN_RST_DEACTIVE;
+#endif
+#elif MODDEF_SSD1306_I2C
+	#ifdef MODDEF_SSD1306_SDA_PIN
+		ssd->config.i2c.sda = MODDEF_SSD1306_SDA;
+	#else
 		xsmcGet(xsVar(0), xsArg(0), xsID_sda);
-		ssd->config.i2c.sda = xsmcToInteger(xsVar(0));
+		ssd->config.i2c.sda = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
+	#endif
+	#ifdef MODDEF_SSD1306_SCL_PIN
+		ssd->config.i2c.scl = MODDEF_SSD1306_SCL_PIN
+	#else
 		xsmcGet(xsVar(0), xsArg(0), xsID_scl);
-		ssd->config.i2c.scl = xsmcToInteger(xsVar(0));
+		ssd->config.i2c.scl = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
+	#endif
 
-		ssd->doSPI = 0;
+	xsmcGet(xsVar(0), xsArg(0), xsID_address);
+	ssd->config.i2c.address = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? MODDEF_SSD1306_ADDRESS : (uint8_t)xsmcToInteger(xsVar(0));
+	ssd->config.i2c.hz = MODDEF_SSD1306_HZ;
+	modI2CInit(&ssd->config.i2c);
 
-		xsmcGet(xsVar(0), xsArg(0), xsID_address);
-		ssd->config.i2c.address = (uint8_t)xsmcToInteger(xsVar(0));
-		ssd->config.i2c.hz = 600000;
-		modI2CInit(&ssd->config.i2c);
-
-		ssd->buffer[kBufferSlop - 1] = 0x40;
-	}
+	ssd->buffer[kBufferSlop - 1] = 0x40;
+#endif
 
 	// Init sequence
 	doCmd(ssd, SSD1306_DISPLAYOFF);                    // 0xAE
@@ -352,24 +390,20 @@ void ssd1306Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 	doCmd(ssd, SSD1306_PAGEADDR);
 	doCmd(ssd, 0); // Page start address (0 = reset)
-	if (64 == ssd->height)
-		doCmd(ssd, 7); // Page end address
-	else if (32 == ssd->height)
-		doCmd(ssd, 3); // Page end address
-	else if (16 == ssd->height)
-		doCmd(ssd, 1); // Page end address
 
-#if DITHER
+	doCmd(ssd, (ssd->height >> 3) - 1);	// Page end address
+
+#if MODDEF_SSD1306_DITHER
 	c_memset(ssd->ditherA, 0, sizeof(ssd->ditherA));
 	c_memset(ssd->ditherB, 0, sizeof(ssd->ditherB));
 	ssd->ditherPhase = 0;
 #endif
 
-	if (ssd->doSPI) {
-		SCREEN_CS_DEACTIVE;		// inactive in sample when toggling DC
-		SCREEN_DC_DATA;
-		SCREEN_CS_ACTIVE;
-	}
+#if MODDEF_SSD1306_SPI
+	SCREEN_CS_DEACTIVE;		// inactive in sample when toggling DC
+	SCREEN_DC_DATA;
+	SCREEN_CS_ACTIVE;
+#endif
 
 	ssd->pixel = 0;
 }
@@ -388,15 +422,16 @@ void ssd1306Send(PocoPixel *pixels, int byteLength, void *refcon)
 	ssd1606 ssd = refcon;
 	uint8_t pixel, lines;
 
-	if (ssd->doSPI)
-		modSPIFlush();
+#if MODDEF_SSD1306_SPI
+	modSPIFlush();
+#endif
 
 	lines = (uint8_t)(byteLength / ssd->width);
 	pixel = ssd->pixel;
 	while (lines--) {
 		uint8_t *out;
 		uint8_t w;
-#if DITHER
+#if MODDEF_SSD1306_DITHER
 		int16_t *thisLineErrors, *nextLineErrors;
 
 		if (ssd->ditherPhase) {
@@ -418,7 +453,7 @@ void ssd1306Send(PocoPixel *pixels, int byteLength, void *refcon)
 			c_memset(&ssd->buffer[kBufferSlop], 0, sizeof(ssd->buffer) - kBufferSlop);
 		}
 
-#if DITHER
+#if MODDEF_SSD1306_DITHER
 		for (w = ssd->width, out = &ssd->buffer[kBufferSlop]; 0 != w; w--, out++) {
 			int16_t thisPixel = *pixels++ + (thisLineErrors[0] >> 4);
 
@@ -448,10 +483,11 @@ void ssd1306Send(PocoPixel *pixels, int byteLength, void *refcon)
 		pixel <<= 1;
 
 		if (0 == pixel)	 {	// flush this set of 8 lines
-			if (ssd->doSPI)
-				modSPITx(&ssd->config.spi, &ssd->buffer[kBufferSlop], ssd->width);
-			else
-				modI2CWrite(&ssd->config.i2c, &ssd->buffer[kBufferSlop - 1], ssd->width + 1, false);		// true also works for stop boolean
+#if MODDEF_SSD1306_SPI
+			modSPITx(&ssd->config.spi, &ssd->buffer[kBufferSlop], ssd->width);
+#elif MODDEF_SSD1306_I2C
+			modI2CWrite(&ssd->config.i2c, &ssd->buffer[kBufferSlop - 1], ssd->width + 1, false);		// true also works for stop boolean
+#endif
 		}
 	}
 
@@ -471,34 +507,34 @@ void ssd1306AdaptInvalid(void *refcon, CommodettoRectangle r)
 void xs_SSD1306_width(xsMachine *the)
 {
 	ssd1606 ssd = xsmcGetHostData(xsThis);
-	xsResult = xsInteger(ssd->width);
+	xsmcSetInteger(xsResult, ssd->width);
 }
 
 void xs_SSD1306_height(xsMachine *the)
 {
 	ssd1606 ssd = xsmcGetHostData(xsThis);
-	xsResult = xsInteger(ssd->height);
+	xsmcSetInteger(xsResult, ssd->height);
 }
 
 void doCmd(ssd1606 ssd, uint8_t cmd)
 {
-	if (ssd->doSPI) {
-		SCREEN_CS_DEACTIVE;		// inactive in sample when toggling DC
-		SCREEN_DC_COMMAND;
-		SCREEN_CS_ACTIVE;
-		modSPITx(&ssd->config.spi, &cmd, 1);
-		modSPIFlush();
+#if MODDEF_SSD1306_SPI
+	SCREEN_CS_DEACTIVE;		// inactive in sample when toggling DC
+	SCREEN_DC_COMMAND;
+	SCREEN_CS_ACTIVE;
+	modSPITx(&ssd->config.spi, &cmd, 1);
+	modSPIFlush();
+#elif MODDEF_SSD1306_I2C
+	uint8_t data[2] = {0, cmd};
+	uint8_t err = modI2CWrite(&ssd->config.i2c, data, 2, true);
+	if (err) {
+		xsMachine *the = ssd->the;
+		xsUnknownError("command failed");
 	}
-	else {
-		uint8_t data[2] = {0, cmd};
-		uint8_t err = modI2CWrite(&ssd->config.i2c, data, 2, true);
-		if (err) {
-			xsMachine *the = ssd->the;
-			xsUnknownError("command failed");
-		}
-	}
+#endif
 }
 
+#if MODDEF_SSD1306_SPI
 void ssd1306ChipSelect(uint8_t active, modSPIConfiguration config)
 {
 	ssd1606 ssd = (ssd1606)(((char *)config) - offsetof(ssd1606Record, config.spi));
@@ -508,6 +544,7 @@ void ssd1306ChipSelect(uint8_t active, modSPIConfiguration config)
 	else
 		SCREEN_CS_DEACTIVE;
 }
+#endif
 
 void xs_ssd1306_get_c_dispatch(xsMachine *the)
 {
