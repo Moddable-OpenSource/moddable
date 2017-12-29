@@ -1,0 +1,48 @@
+{
+	"defines": {
+		"ssd1351": {
+			"width": 128,
+			"height": 128,
+		}
+	},
+	"preload": [
+		"ssd1351",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ssd1351/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ssd1351": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ssd1351/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ssd1351": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		}
+	}
+}
