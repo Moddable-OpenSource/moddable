@@ -103,9 +103,11 @@
 #ifndef MODDEF_SSD1351_OFFSET_COLUMN
 	#define MODDEF_SSD1351_OFFSET_COLUMN (0)
 #endif
-
 #ifndef MODDEF_SSD1351_OFFSET_ROW
 	#define MODDEF_SSD1351_OFFSET_ROW (0)
+#endif
+#ifndef MODDEF_SSD1351_HZ
+	#define MODDEF_SSD1351_HZ (10000000)
 #endif
 
 #ifndef MODDEF_SSD1351_INITIALIZATION
@@ -153,19 +155,29 @@ static const uint8_t gSSD1351Initialization[] ICACHE_FLASH_ATTR = MODDEF_SSD1351
 #define SCREEN_DC_INIT			modGPIOInit(&sd->dc, MODDEF_SSD1351_DC_PORT, MODDEF_SSD1351_DC_PIN, kModGPIOOutput); \
 								SCREEN_DC_DATA
 
-#define SCREEN_RST_ACTIVE		modGPIOWrite(&sd->rst, 0)
-#define SCREEN_RST_DEACTIVE		modGPIOWrite(&sd->rst, 1)
-#define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_SSD1351_RST_PORT, MODDEF_SSD1351_RST_PIN, kModGPIOOutput); \
-								SCREEN_RST_DEACTIVE
+#ifdef MODDEF_SSD1351_RST_PIN
+	#define SCREEN_RST_ACTIVE		modGPIOWrite(&sd->rst, 0)
+	#define SCREEN_RST_DEACTIVE		modGPIOWrite(&sd->rst, 1)
+	#define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_SSD1351_RST_PORT, MODDEF_SSD1351_RST_PIN, kModGPIOOutput); \
+									SCREEN_RST_DEACTIVE
+#else
+	#define SCREEN_RST_ACTIVE
+	#define SCREEN_RST_DEACTIVE
+	#define SCREEN_RST_INIT
+#endif
 
 typedef struct {
 	PixelsOutDispatch			dispatch;
 
 	modSPIConfigurationRecord	spiConfig;
 
+#ifdef MODDEF_SSD1351_CS_PIN
 	modGPIOConfigurationRecord	cs;
+#endif
 	modGPIOConfigurationRecord	dc;
-	modGPIOConfigurationRecord	rst;			//@@ necessary?
+#ifdef MODDEF_SSD1351_RST_PIN
+	modGPIOConfigurationRecord	rst;
+#endif
 } spiDisplayRecord, *spiDisplay;
 
 static void ssd1351ChipSelect(uint8_t active, modSPIConfiguration config);
@@ -187,12 +199,15 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch_16BE ICACHE_RODATA_ATTR 
 	ssd1351Send_16LE,
 	NULL
 };
+#else
+	#error rgb565le pixels required
 #endif
 
 void xs_ssd1351_destructor(void *data)
 {
 	if (data) {
-//@@ uninit
+		spiDisplay sd = (spiDisplay)data;
+		modSPIUninit(&sd->spiConfig);
 		c_free(data);
 	}
 }
@@ -200,13 +215,6 @@ void xs_ssd1351_destructor(void *data)
 void xs_ssd1351(xsMachine *the)
 {
 	spiDisplay sd;
-
-	if (xsmcHas(xsArg(0), xsID_pixelFormat)) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_pixelFormat);
-		if (kCommodettoBitmapFormat != xsmcToInteger(xsVar(0)))
-			xsUnknownError("bad format");
-	}
 
 	sd = c_calloc(1, sizeof(spiDisplayRecord));
 	if (!sd)
@@ -371,11 +379,6 @@ void ssd1351Init(spiDisplay sd)
 	}
 }
 
-#if ESP32 || defined(__ZEPHYR__)
-void ssd1351ChipSelect(uint8_t active, modSPIConfiguration config)
-{
-}
-#else
 void ssd1351ChipSelect(uint8_t active, modSPIConfiguration config)
 {
 	spiDisplay sd = (spiDisplay)(((char *)config) - offsetof(spiDisplayRecord, spiConfig));
@@ -385,7 +388,6 @@ void ssd1351ChipSelect(uint8_t active, modSPIConfiguration config)
 	else
 		SCREEN_CS_DEACTIVE;
 }
-#endif
 
 void ssd1351Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
 {
