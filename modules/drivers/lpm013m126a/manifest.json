@@ -1,0 +1,49 @@
+{
+	"defines": {
+		"lpm013m126a": {
+			"width": 176,
+			"height": 176,
+			"dither": false
+		}
+	},
+	"preload": [
+		"lpm013m126a",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/lpm013m126a/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"lpm013m126a": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/lpm013m126a/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"lpm013m126a": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		}
+	}
+}
