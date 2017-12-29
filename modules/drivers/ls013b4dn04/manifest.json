@@ -1,0 +1,48 @@
+{
+	"defines": {
+		"ls013b4dn04": {
+			"width": 400,
+			"height": 240,
+		}
+	},
+	"preload": [
+		"ls013b4dn04",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ls013b4dn04/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ls013b4dn04": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ls013b4dn04/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ls013b4dn04": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		}
+	}
+}
