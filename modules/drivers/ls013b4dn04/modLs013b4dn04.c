@@ -18,7 +18,6 @@
  *
  */
 
-#define __XS6ESP_GPIO__ 1
 #include "ls013b4dn04.h"
 #include "xsmc.h"
 #if gecko
@@ -28,7 +27,6 @@
 	#include "xsesp.h"
 #endif
 #include "modGPIO.h"
-#include "stdlib.h"
 #include "modSPI.h"
 #include "commodettoBitmap.h"
 #include "commodettoPixelsOut.h"
@@ -36,7 +34,7 @@
 #include "mc.defines.h"
 
 #ifndef MODDEF_LS013B4DN04_HZ
-	#define MODDEF_LS013B4DN04_HZ 	10000000
+	#define MODDEF_LS013B4DN04_HZ 	(10000000)
 #endif
 #ifndef MODDEF_LS013B4DN04_CS_PORT
 	#define MODDEF_LS013B4DN04_CS_PORT	NULL
@@ -66,16 +64,16 @@ static uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 #define SCREEN_CS_INIT		modGPIOInit(&ls->cs, MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, kModGPIOOutput); \
 	SCREEN_CS_DEACTIVE
 
-//Host data record.
+// Host data record.
 struct ls013b4dn04Record {
 	PixelsOutDispatch dispatch;
 
 	modSPIConfigurationRecord	spiConfig;
 	modGPIOConfigurationRecord	cs;
 
-	uint8_t 	onRow;							//store what scanline row we are on
+	uint8_t 	onRow;						// store what scanline row we are on
 
-	uint8_t		updateCycle;				//for toggling COM bit to avoid DC Bias
+	uint8_t		updateCycle;				// for toggling COM bit to avoid DC Bias
 
 	uint16_t    bytesPerLine;
 
@@ -101,23 +99,19 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 	ls013b4dn04Send,
 	ls013b4dn04AdaptInvalid
 };
+#if kCommodettoBitmapFormat != kCommodettoBitmapGray256
+	#error gray256 pixels required
+#endif
 
 void xs_LS013B4DN04(xsMachine *the){
 	ls013b4dn04 ls;
 
 	xsmcVars(1);
 
-	if (xsmcHas(xsArg(0), xsID_pixelFormat)) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_pixelFormat);
-		if (kCommodettoBitmapFormat != xsmcToInteger(xsVar(0)))
-			xsUnknownError("bad format");
-	}
-
 	if (kCommodettoBitmapGray256 != kCommodettoBitmapFormat)
-		xsUnknownError("bad format");
+		xsUnknownError("gray256 pixels required");
 
-	ls = calloc(1, sizeof(ls013b4dn04Record));
+	ls = c_calloc(1, sizeof(ls013b4dn04Record));
 	if (!ls)
 		xsUnknownError("out of memory");
 
@@ -153,14 +147,13 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 
 void xs_ls013b4dn04_begin(xsMachine *the){
 	ls013b4dn04 ls = xsmcGetHostData(xsThis);
-
 	CommodettoCoordinate x = (CommodettoCoordinate)xsmcToInteger(xsArg(0));
 	CommodettoCoordinate y = (CommodettoCoordinate)xsmcToInteger(xsArg(1));
 	CommodettoDimension w = (CommodettoDimension)xsmcToInteger(xsArg(2));
 	CommodettoDimension h = (CommodettoDimension)xsmcToInteger(xsArg(3));
 
 	if (ls013b4dn04Begin(ls, x, y, w, h))
-		xsUnknownError("partial scan line updates are not supported");
+		xsUnknownError("partial scan line updates not supported");
 }
 
 void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
@@ -173,8 +166,14 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 	size = 2 + (ls->bytesPerLine * lines);
 
 	if (size + 10 > ls->bufferSize){
-		if (ls->pixelBuffer) free(ls->pixelBuffer);
-			ls->pixelBuffer = calloc(size + 10 , 1);
+		if (ls->pixelBuffer) {
+			c_free(ls->pixelBuffer);
+			ls->pixelBuffer = NULL;
+			ls->bufferSize = 0;
+		}
+		ls->pixelBuffer = c_malloc(size + 10);
+		if (!ls->pixelBuffer)
+			return;
 		ls->bufferSize = (size + 10);
 	}
 
@@ -239,9 +238,11 @@ void xs_ls013b4dn04_end(xsMachine *the){
 
 void xs_ls013b4dn04_destructor(void *data){
   if (data){
-		if ( ((ls013b4dn04)data)->pixelBuffer )
-			free(((ls013b4dn04)data)->pixelBuffer);
-		free(data);
+		ls013b4dn04 ls = (ls013b4dn04)data;
+		if ( ls->pixelBuffer )
+			c_free(ls->pixelBuffer);
+		modSPIUninit(&ls->spiConfig);
+		c_free(data);
 	}
 }
 
