@@ -18,32 +18,40 @@
  *
  */
 
-#define __XS6ESP_GPIO__ 1
 #include "lpm013m126a.h"
 #include "xsmc.h"
 #include "xsesp.h"
 #include "modGPIO.h"
-#include "stdlib.h"
 #include "modSPI.h"
 #include "commodettoBitmap.h"
 #include "commodettoPixelsOut.h"
 #include "mc.xs.h"
 #include "mc.defines.h"
 
+#define LPMSIZE (176)
+
 #ifndef MODDEF_LPM013M126A_CS_PORT
 	#define MODDEF_LPM013M126A_CS_PORT NULL
 #endif
 #ifndef MODDEF_LPM013M126A_HZ
-	#define MODDEF_LPM013M126A_HZ (2000000)
+	#define MODDEF_LPM013M126A_HZ (2500000)
 #endif
 #ifndef MODDEF_LPM013M126A_WIDTH
-	#define MODDEF_LPM013M126A_WIDTH (176)
+	#define MODDEF_LPM013M126A_WIDTH LPMSIZE
 #endif
 #ifndef MODDEF_LPM013M126A_HEIGHT
-	#define MODDEF_LPM013M126A_HEIGHT (176)
+	#define MODDEF_LPM013M126A_HEIGHT LPMSIZE
+#endif
+#ifndef MODDEF_LPM013M126A_DITHER
+	#define MODDEF_LPM013M126A_DITHER (0)
+#endif
+#if kCommodettoBitmapFormat != kCommodettoBitmapRGB332
+	#error rgb332 pixels required
+#endif
+#if (MODDEF_LPM013M126A_WIDTH != LPMSIZE) || (MODDEF_LPM013M126A_HEIGHT != LPMSIZE)
+	#error invalid dimensions
 #endif
 
-#define DITHER 0
 
 /*
 	LPM013M126A			ESP8266
@@ -63,8 +71,6 @@
 	VIN 						3V3
 */
 
-#define LPMSIZE 176
-
 #define redMask 0xE0		// 0b11100000
 #define greenMask 0x1C		// 0b00011100
 #define blueMask 0x3		// 0b00000011
@@ -73,10 +79,54 @@
 #define greenThresh 4
 #define blueThresh 2
 
-#define SCREEN_CS_DEACTIVE	modGPIOWrite(&lpm->cs, 0)
-#define SCREEN_CS_ACTIVE	modGPIOWrite(&lpm->cs, 1)
-#define SCREEN_CS_INIT		modGPIOInit(&lpm->cs, MODDEF_LPM013M126A_CS_PORT, MODDEF_LPM013M126A_CS_PIN, kModGPIOOutput); \
-	SCREEN_CS_DEACTIVE
+#ifdef MODDEF_LPM013M126A_CS_PIN
+	#define SCREEN_CS_DEACTIVE	modGPIOWrite(&lpm->cs, 0)
+	#define SCREEN_CS_ACTIVE	modGPIOWrite(&lpm->cs, 1)
+	#define SCREEN_CS_INIT		modGPIOInit(&lpm->cs, MODDEF_LPM013M126A_CS_PORT, MODDEF_LPM013M126A_CS_PIN, kModGPIOOutput); \
+		SCREEN_CS_DEACTIVE
+#else
+	#define SCREEN_CS_DEACTIVE
+	#define SCREEN_CS_ACTIVE
+	#define SCREEN_CS_INIT
+#endif
+
+#if !MODDEF_LPM013M126A_DITHER
+// deliberately not setting ICACHE_XS6RO_ATTR to allow fast access on ESP8266
+static uint8_t gRGB332to111[256] = {
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x01,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x02, 0x02, 0x03, 0x03, 0x02, 0x02, 0x03, 0x03,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x04, 0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x05,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07,
+	0x06, 0x06, 0x07, 0x07, 0x06, 0x06, 0x07, 0x07
+};
+#endif
 
 //Host data record.
 struct lpm013m126aRecord {
@@ -92,10 +142,10 @@ struct lpm013m126aRecord {
 
 	uint8_t		updateCycle;				//for toggling COM bit to avoid DC Bias
 
-#if DITHER
+#if MODDEF_LPM013M126A_DITHER
 	uint8_t		ditherPhase;
-	int8_t		ditherA[LPMSIZE + 4];
-	int8_t		ditherB[LPMSIZE + 4];
+	int8_t		ditherA[MODDEF_LPM013M126A_WIDTH + 4];
+	int8_t		ditherB[MODDEF_LPM013M126A_WIDTH + 4];
 #endif
 };
 typedef struct lpm013m126aRecord lpm013m126aRecord;
@@ -120,21 +170,7 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 void xs_LPM013M126A(xsMachine *the){
 	lpm013m126a lpm;
 
-	xsmcVars(1);
-	if (xsmcHas(xsArg(0), xsID_pixelFormat)) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_pixelFormat);
-		if (kCommodettoBitmapFormat != xsmcToInteger(xsVar(0)))
-			xsUnknownError("bad format");
-	}
-
-	if (kCommodettoBitmapFormat != kCommodettoBitmapRGB332)
-		xsUnknownError("rgb332 pixels required");
-
-	if (MODDEF_LPM013M126A_WIDTH != LPMSIZE || MODDEF_LPM013M126A_HEIGHT != LPMSIZE)
-		xsUnknownError("invalid dimensions");
-
-	lpm = calloc(1, sizeof(lpm013m126aRecord));
+	lpm = c_calloc(1, sizeof(lpm013m126aRecord));
 	if (!lpm)
 		xsUnknownError("out of memory");
 
@@ -164,7 +200,7 @@ void xs_lpm013m126a_begin(xsMachine *the){
 	uint16_t yMax = yMin + xsmcToInteger(xsArg(3));
 
 	if ((0 != xMin) || (MODDEF_LPM013M126A_WIDTH != xMax))
-		xsUnknownError("partial scan line updates are not supported");
+		xsUnknownError("partial updates unsupported");
 
 	lpm013m126aBegin(lpm, xMin, yMin, xMax - xMin, yMax - yMin);
 }
@@ -173,11 +209,11 @@ void lpm013m126aBegin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate
 {
 	lpm013m126a lpm = refcon;
 
-	lpm->onRow = y;
+	lpm->onRow = y + 1;
 
-#if DITHER
-	memset(lpm->ditherA, 0, sizeof(lpm->ditherA));
-	memset(lpm->ditherB, 0, sizeof(lpm->ditherB));
+#if MODDEF_LPM013M126A_DITHER
+	c_memset(lpm->ditherA, 0, sizeof(lpm->ditherA));
+	c_memset(lpm->ditherB, 0, sizeof(lpm->ditherB));
 	lpm->ditherPhase = 0;
 #endif
 }
@@ -219,27 +255,28 @@ void xs_lpm013m126a_send(xsMachine *the){
 void lpm013m126aSend(PocoPixel *data, int count, void *refcon)
 {
 	lpm013m126a lpm = refcon;
-	uint8_t *toSend;
 	int lines;
 	int size;
 	uint8_t *out;
 
 	modSPIActivateConfiguration(NULL);
 
-	lines = (int)(count / MODDEF_LPM013M126A_WIDTH);
+	lines = count / MODDEF_LPM013M126A_WIDTH;
 	size = 2 + ((PIXEL_BYTES_PER_LINE + 2) * lines);
 
 	if (size > lpm->bufferSize){
-		if (lpm->pixelBuffer) free(lpm->pixelBuffer);
-		lpm->pixelBuffer = calloc(size + 10, 1);
+		if (lpm->pixelBuffer)
+			c_free(lpm->pixelBuffer);
+		lpm->pixelBuffer = c_malloc(size);
+		if (!lpm->pixelBuffer)
+			return;
 		lpm->bufferSize = size;
 	}
 
-	toSend = lpm->pixelBuffer;
 	lpm->updateCycle = !(lpm->updateCycle);
-	toSend[0] = (lpm->updateCycle ? DATA_UPDATE_3BIT_COMH : DATA_UPDATE_3BIT_COML);
-	toSend[1] = lpm->onRow + 1;
-	out = toSend + 2;
+	out = lpm->pixelBuffer;
+	*out++ = (lpm->updateCycle ? DATA_UPDATE_3BIT_COMH : DATA_UPDATE_3BIT_COML);
+	*out++ = lpm->onRow;
 
 	//Prader Pixel Packing
 	uint32_t fourPixels;
@@ -249,25 +286,27 @@ void lpm013m126aSend(PocoPixel *data, int count, void *refcon)
  * 		  		 X    (1/2)
  * 		(1/4)  (1/4)
 */
-#if DITHER
+#if MODDEF_LPM013M126A_DITHER
 	int8_t *thisLineErrors, *nextLineErrors;
 	uint8_t thisPixel;	
 	uint8_t toAdd;
+//@@ assumes 8 lines....
 	for (int lineIndex = 0; lineIndex < 8; lineIndex++) { 		// 8 lines at a time
 		if (lpm->ditherPhase) {
-			memset(lpm->ditherB, 0, sizeof(lpm->ditherB));
+			c_memset(lpm->ditherB, 0, sizeof(lpm->ditherB));
 			thisLineErrors = lpm->ditherA + 2;
 			nextLineErrors = lpm->ditherB + 2;
 			lpm->ditherPhase = 0;
 		}
 		else {
-			memset(lpm->ditherA, 0, sizeof(lpm->ditherA));
+			c_memset(lpm->ditherA, 0, sizeof(lpm->ditherA));
 			thisLineErrors = lpm->ditherB + 2;
 			nextLineErrors = lpm->ditherA + 2;
 			lpm->ditherPhase = 1;
 		}
 		for (int i = 0; i < MODDEF_LPM013M126A_WIDTH; i += 8) {  // 8 pixels per loop iteration
 			fourPixels = *(uint32_t *)data;
+			data += 4;
 			outByte = 0;
 			toAdd = 128;
 			// RGBRGBRG, BRGB...
@@ -309,8 +348,8 @@ void lpm013m126aSend(PocoPixel *data, int count, void *refcon)
 				thisLineErrors++;
 				nextLineErrors++;
 			}
-			data += 4;
 			fourPixels = *(uint32_t *)data;
+			data += 4;
 			// ...RGBR, GBRGBRGB
 			for (int j=0; j<4; j++) {
 				// R
@@ -350,63 +389,60 @@ void lpm013m126aSend(PocoPixel *data, int count, void *refcon)
 				thisLineErrors++;
 				nextLineErrors++;
 			}	
-			data += 4;
 			*out++ = outByte;
 		}
 		*out++ = 0;
 		lpm->onRow++;
-		*out++ = (uint8_t)lpm->onRow + 1;
+		*out++ = (uint8_t)lpm->onRow;
 	}	
 #else 
-	for (int lineIndex = 0; lineIndex < lines; lineIndex++) {
-		for (int i = 0; i < MODDEF_LPM013M126A_WIDTH; i += 8) {  // 8 pixels per loop iteration
-			fourPixels = *(uint32_t *)data;
+	while (lines--) {
+		for (int i = MODDEF_LPM013M126A_WIDTH / 8; i > 0; i -= 1, out += 3, data += 8) {  // 8 pixels per loop iteration
+			uint8_t t;
+
 			// RGBRGBRG
-			outByte = (fourPixels & 128);
-			outByte |= (fourPixels & 16) << 2;
-			outByte |= (fourPixels & 2) << 4; 
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 3;
-			outByte |= (fourPixels & 16) >> 1;
-			outByte |= (fourPixels & 2) << 1;
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 6;
-			outByte |= (fourPixels & 16) >> 4;							
-			*out++ = outByte;
+			t = *(gRGB332to111 + data[0]);
+			outByte = t << 5;
+
+			t = *(gRGB332to111 + data[1]);
+			outByte |= t << 2;
+
+			t = *(gRGB332to111 + data[2]);
+			outByte |= t >> 1;
+
+			out[0] = outByte;
+
 			// BRGBRGBR
-			outByte = (fourPixels & 2) << 6;
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 1;
-			outByte |= (fourPixels & 16) << 1;
-			outByte |= (fourPixels & 2) << 3;
-			data += 4;
-			fourPixels = *(uint32_t *)data;
-			outByte |= (fourPixels & 128) >> 4;
-			outByte |= (fourPixels & 16) >> 2;
-			outByte |= (fourPixels & 2);
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 7;
-			*out++ = outByte;
+			outByte = t << 7;
+
+			t = *(gRGB332to111 + data[3]);
+			outByte |= t << 4;
+
+			t = *(gRGB332to111 + data[4]);
+			outByte |= t << 1;
+
+			t = *(gRGB332to111 + data[5]);
+			outByte |= t >> 2;
+
+			out[1] = outByte;
+
 			// GBRGBRGB
-			outByte = (fourPixels & 16) << 3;
-			outByte |= (fourPixels & 2) << 5;
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 2;
-			outByte |= (fourPixels & 16);
-			outByte |= (fourPixels & 2) << 2;
-			fourPixels = fourPixels >> 8;
-			outByte |= (fourPixels & 128) >> 5;
-			outByte |= (fourPixels & 16) >> 3;
-			outByte |= (fourPixels & 2) >> 1;
-			*out++ = outByte;
-			data += 4;
+			outByte = t << 6;
+
+			t = *(gRGB332to111 + data[6]);
+			outByte |= t << 3;
+
+			t = *(gRGB332to111 + data[7]);
+			outByte |= t;
+
+			out[2] = outByte;
 		}
 		*out++ = 0;
 		lpm->onRow++;
-		*out++ = (uint8_t)lpm->onRow + 1;
+		*out++ = (uint8_t)lpm->onRow;
 	}
 #endif
-	modSPITx(&lpm->spiConfig, toSend, size);
+	modSPITx(&lpm->spiConfig, lpm->pixelBuffer, size);
 }
 
 void xs_lpm013m126a_end(xsMachine *the){
@@ -421,9 +457,10 @@ void lpm013m126aEnd(void *refcon)
 
 void xs_LPM013M126A_destructor(void *data){
   if (data){
-		if ( ((lpm013m126a)data)->pixelBuffer )
-			free(((lpm013m126a)data)->pixelBuffer);
-		free(data);
+	  lpm013m126a lpm = data;
+		if ( lpm->pixelBuffer )
+			c_free(lpm->pixelBuffer);
+		c_free(data);
 	}
 }
 
@@ -436,7 +473,6 @@ void lpm013m126aHold(lpm013m126a lpm){
 		mode[0] = NO_UPDATE_COML;
 	}
 	modSPITx(&lpm->spiConfig, mode, 2);
-	modSPIFlush();
 	modSPIActivateConfiguration(NULL);
 }
 
@@ -450,7 +486,6 @@ static void lpm_clear(lpm013m126a lpm){
 	}
 
 	modSPITx(&lpm->spiConfig, mode, 2);
-	modSPIFlush();
 	modSPIActivateConfiguration(NULL);
 }
 
