@@ -23,6 +23,7 @@ static txBoolean fxFindScript(txMachine *the, txString path, txID* id);
 	static void espStartInstrumentation(txMachine *the);
 #endif
 
+txMachine *gInstrumentationThe;
 
 static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
 {
@@ -206,8 +207,6 @@ static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)" bytes",
 };  
     
-extern txMachine *gThe;
-
 static int32_t modInstrumentationSystemFreeMemory(void)
 {
 //	return (int32_t)xPortGetFreeHeapSize();
@@ -216,34 +215,34 @@ static int32_t modInstrumentationSystemFreeMemory(void)
 
 static int32_t modInstrumentationSlotHeapSize(void)
 {
-	return gThe->currentHeapCount * sizeof(txSlot);
+	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
 }
 
 static int32_t modInstrumentationChunkHeapSize(void)
 {
-	return gThe->currentChunksSize;
+	return gInstrumentationThe->currentChunksSize;
 }
 
 static int32_t modInstrumentationKeysUsed(void)
 {
-	return gThe->keyIndex - gThe->keyOffset;
+	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
 }
 
 static int32_t modInstrumentationGarbageCollectionCount(void)
 {
-	return gThe->garbageCollectionCount;
+	return gInstrumentationThe->garbageCollectionCount;
 }
 
 static int32_t modInstrumentationModulesLoaded(void)
 {
-	return gThe->loadedModulesCount;
+	return gInstrumentationThe->loadedModulesCount;
 }
 
 static int32_t modInstrumentationStackRemain(void)
 {
-	if (gThe->stackPeak > gThe->stack)
-		gThe->stackPeak = gThe->stack;
-	return (gThe->stackTop - gThe->stackPeak) * sizeof(txSlot);
+	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
+		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
 }
 
 static modTimer gInstrumentationTimer;
@@ -261,6 +260,9 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 
 void espStartInstrumentation(txMachine *the)
 {
+	if (NULL == the->connection)
+		return;
+
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -273,6 +275,7 @@ void espStartInstrumentation(txMachine *the)
 
 	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
 
+	gInstrumentationThe = the;
 	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
 
 	the->onBreak = espDebugBreak;
@@ -287,15 +290,16 @@ void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
 
 	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;    // remove timer used by instrumentation
-	fxSampleInstrumentation(gThe, espInstrumentCount, values);
+	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
 	modInstrumentationSet(FramesDrawn, 0);
 	modInstrumentationSet(PocoDisplayListUsed, 0);
+	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
-	gThe->garbageCollectionCount = 0;
-	gThe->stackPeak = gThe->stack;
+	gInstrumentationThe->garbageCollectionCount = 0;
+	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
 }
 #endif
 
@@ -378,6 +382,9 @@ void *my_malloc(size_t size) {
 }
 #endif
 
+/*
+	messages
+*/
 void modMessageService(void) {}
 
 extern uint32_t gDeviceUnique;
@@ -385,7 +392,7 @@ extern uint32_t gDeviceUnique;
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
 	extern txPreparation* xsPreparation();
-	void *result;
+	void *result, *archive = NULL;
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
@@ -400,7 +407,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	creation = prep->creation;
 
 	root.preparation = prep;
-	root.archive = NULL;
+	root.archive = archive;
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
@@ -451,6 +458,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	}
 
 	((txMachine *)result)->preparation = prep;
+
 #ifdef mxInstrument
 	espStartInstrumentation(result);
 #endif
