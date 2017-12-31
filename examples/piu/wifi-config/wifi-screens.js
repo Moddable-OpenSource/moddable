@@ -210,7 +210,7 @@ export const ConnectionErrorScreen = Column.template($ => ({
 		Content($, { top: 20, Skin: ASSETS.ErrorSkin }),
 		Text($, {
 			top: 20, height: 32, left: 0, right: 0, Style: ASSETS.OpenSans16,
-			string: "Please confirm that password\nis correct"
+			string: "Please confirm password is correct"
 		})
 	],
 }));
