@@ -236,7 +236,7 @@ void PiuCodeDraw(void* it, PiuView* view, PiuRectangle area)
 		xsStringValue string = PiuToString((*self)->string);
 		PiuTextBuffer* runs = (*self)->runs;
 		PiuCodeRun run = (PiuCodeRun)((uint8_t*)(*runs) + sizeof(PiuTextBufferRecord));
-		PiuDimension offset = 0;
+		xsIntegerValue offset = 0;
 		while (*(string + offset)) {
 			switch(run->kind) {
 			case piuCodeLineKind:
