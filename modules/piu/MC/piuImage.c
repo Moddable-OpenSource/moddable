@@ -21,8 +21,6 @@
 #include "piuAll.h"
 #include "piuMC.h"
 
-extern const void *mcGetResource(const char* path, size_t* size);
-
 static void PiuImageDictionary(xsMachine* the, void* it);
 static void PiuImageDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuImageMark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -158,7 +156,7 @@ void PiuImage_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
 	path = PiuToString((*self)->path);
-	data = (uint8_t *)mcGetResource(path, &dataSize);
+	data = (uint8_t *)mcGetResource(the, path, &dataSize);
 	if (!data)
 		xsURIError("image not found: %s", path);	
 	cch = (ColorCellHeader)data;

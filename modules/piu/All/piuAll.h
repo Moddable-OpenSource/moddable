@@ -749,8 +749,6 @@ extern void PiuViewChangeCursor(PiuView* self, int32_t shape);
 extern void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw);
 #endif
 
-
-
 // TRANSITION
 
 // PiuTransition.c
@@ -766,6 +764,12 @@ struct PiuTransitionStruct {
 
 extern void PiuTransitionRun(PiuTransition* self, PiuContainer* container);
 extern void PiuTransitionComplete(PiuTransition* self, PiuContainer* container);
+
+// RESOURCES
+
+extern int mcCountResources(xsMachine* the);
+extern const char* mcGetResourceName(xsMachine* the, int i);
+extern const void *mcGetResource(xsMachine* the, const char* path, size_t* size);
 
 // XS
 
