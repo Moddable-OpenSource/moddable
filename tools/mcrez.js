@@ -152,8 +152,8 @@ export default class extends TOOL {
 				file.line("\t{ NULL, NULL, 0 },");
 			}
 			file.line("};");
-			file.line("extern const void *mcGetResource(const char *path, size_t *sizep);");
-			file.line("const void *mcGetResource(const char *path, size_t *sizep)");
+			file.line("extern const void *mcGetResource(void* it, const char *path, size_t *sizep);");
+			file.line("const void *mcGetResource(void* it, const char *path, size_t *sizep)");
 			file.line("{");
 			if (this.resources.length) {
 				file.line("\tunsigned int i;");
@@ -167,13 +167,13 @@ export default class extends TOOL {
 			}
 			file.line("\treturn NULL;");
 			file.line("}");
-			file.line("extern int mcCountResources();");
-			file.line("int mcCountResources()");
+			file.line("extern int mcCountResources(void* it);");
+			file.line("int mcCountResources(void* it)");
 			file.line("{");
 			file.line("\treturn ", this.resources.length, ";");
 			file.line("}");
-			file.line("extern const char *mcGetResourceName(int i);");
-			file.line("const char *mcGetResourceName(int i)");
+			file.line("extern const char *mcGetResourceName(void* it, int i);");
+			file.line("const char *mcGetResourceName(void* it, int i)");
 			file.line("{");
 			file.line("\treturn resources[i].name;");
 			file.line("}");
