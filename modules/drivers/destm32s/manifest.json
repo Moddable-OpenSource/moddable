@@ -1,0 +1,52 @@
+{
+	"defines": {
+		"destm32s": {
+			"width": 122,
+			"height": 250,
+		}
+	},
+	"preload": [
+		"destm32s",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/destm32s/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"rst_pin": 0,
+					"busy_pin": 5,
+					"spi_port": "#HSPI"
+				},
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/destm32s/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"rst_pin": 0,
+					"busy_pin": 5,
+					"spi_port": "#HSPI"
+				},
+			}
+		},
+	}
+}
