@@ -1,22 +1,12 @@
 {
-	"include": {
+	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/manifest.json",
-	},
-	"modules": {
-		"*": [
-			  "./main",
-			  "$(MODULES)/drivers/destm32s/*",
-		],
-		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
-		"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
-	},
-	"preload": [
-		"destm32s",
-		"commodetto/*",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODULES)/drivers/destm32s/manifest.json",
 	],
+	"modules": {
+		"*": "./main",
+	},
 	"resources":{
 		"*-color": [
 			"./apple",
@@ -26,24 +16,14 @@
 			"./flowers",
 		]
 	},
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": [
-					"$(MODULES)/pins/spi/esp/*",
-				]
-			},
-			"defines": {
-				"destm32s": {
-					"width": 104,
-					"height": 212,
-					"cs_pin": 4,
-					"dc_pin": 2,
-					"rst_pin": 0,
-					"busy_pin": 5,
-					"spi_port": "#HSPI"
-				},
-			},
+	"config": {
+		"screen": "destm32s",
+		"touch": ""
+	},
+	"defines": {
+		"destm32s": {
+			"width": 104,
+			"height": 212,
 		}
 	}
 }
