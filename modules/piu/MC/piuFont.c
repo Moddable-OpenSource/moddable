@@ -21,10 +21,6 @@
 #include "piuAll.h"
 #include "piuMC.h"
 
-extern int mcCountResources();
-extern const char* mcGetResourceName(int i);
-extern const void *mcGetResource(const char* path, size_t* size);
-
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuFontParse(xsMachine* the, PiuFont* self);
@@ -219,12 +215,12 @@ void PiuStyleLookupFont(PiuStyle* self)
 	if (xsTest(xsResult))
 		fontList = PIU(FontList, xsResult);
 	else {
-		int c = mcCountResources(), i;
+		int c = mcCountResources(the), i;
 		PiuFontListNew(the);
 		xsSet(xsGlobal, xsID_fonts, xsResult);
 		fontList = PIU(FontList, xsResult);
 		for (i = 0; i < c; i++) {
-			const char* name = mcGetResourceName(i);
+			const char* name = mcGetResourceName(the, i);
 			char* extension = c_strrchr(name, '.');
 			if ((!c_strcmp(extension, ".bf4")) || (!c_strcmp(extension, ".fnt"))) {
 				PiuFont* font;
@@ -235,7 +231,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 				(*fontList)->first = font;
 				(*font)->name = name;
 				(*font)->nameLength = extension - name;
-				(*font)->buffer = (uint8_t *)mcGetResource(name, &size);
+				(*font)->buffer = (uint8_t *)mcGetResource(the, name, &size);
 				PiuFontParse(the, font);
 			}
 		}

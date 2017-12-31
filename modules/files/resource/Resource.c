@@ -23,7 +23,7 @@
 #include "mc.xs.h"
 
 extern const void* fxGetArchiveData(xsMachine* the, char* path, size_t* size);
-extern const void* mcGetResource(char* path, size_t* size);
+extern const void* mcGetResource(xsMachine* the, char* path, size_t* size);
 
 void Resource_destructor(void *data)
 {
@@ -38,7 +38,7 @@ void Resource_constructor(xsMachine *the)
 
 	data = fxGetArchiveData(the, path, &size);
 	if (!data)
-		data = mcGetResource(path, &size);
+		data = mcGetResource(the, path, &size);
 	if (!data)
 		xsURIError("Resource not found: %s", path);
 	xsSetHostData(xsThis, (void *)data);
@@ -52,7 +52,7 @@ void Resource_exists(xsMachine *the)
 	size_t size;
 	data = fxGetArchiveData(the, path, &size);
 	if (!data)
-		data = mcGetResource(path, &size);
+		data = mcGetResource(the, path, &size);
 	xsResult = data ? xsTrue : xsFalse;
 }
 
