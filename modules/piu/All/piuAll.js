@@ -419,6 +419,18 @@ export class Transition @ "PiuTransitionDelete" {
 }
 Object.freeze(Transition.prototype);
 
+// LOCALS
+
+// PiuLocals.c
+
+export class Locals  @ "PiuLocalsDelete" {
+	constructor(name, language) @ "PiuLocalsCreate"
+	get language() @ "PiuLocals_get_language"
+	set language(it) @ "PiuLocals_set_language"
+	get(id) @ "PiuLocals_get"
+}
+Object.freeze(Locals.prototype);
+
 Math.backEaseIn = function(fraction) @ "Math_backEaseIn";
 Math.backEaseInOut = function(fraction) @ "Math_backEaseInOut";
 Math.backEaseOut = function(fraction) @ "Math_backEaseOut";
