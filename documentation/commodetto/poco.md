@@ -691,10 +691,12 @@ Before calls to Poco can be made, a `PocoRecord` structure must be allocated and
 ##### `PocoMakeColor`
 
 ```c
-PocoPixel PocoMakeColor(uint8_t r, uint8_t g, uint8_t b);
+PocoPixel PocoMakeColor(Poco poco, uint8_t r, uint8_t g, uint8_t b);
 ```
 
 `PocoMakeColor` takes red, green, and blue values from 0 to 255 and returns a `PocoPixel` value. The returned pixel value can be used as a color argument in some rendering calls.
+
+> **Note:** In the current implementation the poco parameter is unused because Poco is always built with support for only a single output pixel format.
 
 ##### `PocoDrawingBegin`
 
