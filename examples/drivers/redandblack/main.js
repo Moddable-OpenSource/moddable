@@ -18,15 +18,16 @@
 
 import DESTM32S from "destm32s";
 import Bitmap from "commodetto/Bitmap";
-import parseBMP from "commodetto/ParseBMP";
+import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import Timer from "timer";
+import config from "mc/config";
 
 let images = ["apple", "coke", "flowers", "spiderman", "stormtrooper"].map(name => parseBMP(new Resource(name + "-color.bmp")));
 let index = 0;
 
-let render = new Poco(new DESTM32S({clear: false}), {rotation: 90});
+let render = new Poco(new DESTM32S({clear: false}), {rotation: config.rotation});
 
 let white = render.makeColor(255, 255, 255);
 let black = render.makeColor(0, 0, 0);
