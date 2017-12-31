@@ -116,6 +116,7 @@ LIBRARIES = -framework CoreFoundation -framework CoreServices -framework Cocoa
 
 LINK_FLAGS = -arch i386 -ObjC
 
+MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc
 XSID = $(BUILD_DIR)/bin/mac/debug/xsid
 XSL = $(BUILD_DIR)/bin/mac/debug/xsl

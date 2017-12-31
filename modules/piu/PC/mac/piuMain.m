@@ -95,3 +95,19 @@ void PiuApplication_quit(xsMachine *the)
 void PiuApplication_updateMenus(xsMachine *the)
 {
 }
+
+int mcCountResources(xsMachine* the)
+{
+	return 0;
+}
+
+const char* mcGetResourceName(xsMachine* the, int i)
+{
+	return NULL;
+}
+
+const void *mcGetResource(xsMachine* the, const char* path, size_t* size)
+{
+	*size = 0;
+	return NULL;\
+}
