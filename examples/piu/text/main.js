@@ -42,35 +42,6 @@ class LinkBehavior extends Behavior {
 };
 
 class TextBehavior extends Behavior {
-	onCreate(text) {
-// 		text.begin();
-// 
-// 		text.beginBlock();
-// 		text.beginSpan(redStyle, Link("tutu", { Behavior:LinkBehavior }));
-// 		text.concat("Lorem ipsum")
-// 		text.endSpan();
-// 		text.concat(" dolor sit amet, consectetur adipiscing elit. ")
-// 		text.beginSpan(otherStyle, Link("toto", { Behavior:LinkBehavior }));
-// 		text.concat("Nulla")
-// 		text.endSpan();
-// 		text.concat(" faucibus sodales ligula eu accumsan.");
-// 		text.endBlock();
-// 		
-// 		text.beginBlock();
-// 		text.concat("Aliquam consectetur\neleifend")
-// 		text.beginSpan(redStyle, Link("titi", { Behavior:LinkBehavior }));
-// 		text.concat(" molestie. ")
-// 		text.beginSpan(otherStyle);
-// 		text.concat("Sed")
-// 		text.endSpan();
-// 		text.concat(" dui est, ");
-// 		text.concat("suscipit vitae")
-// 		text.endSpan();
-// 		text.concat(" consequat a, aliquam eget nisl.");
-// 		text.endBlock();
-// 		
-// 		text.end();
-	}
 	onDisplaying(text) {
 		this.index = 0;
 		text.duration = 1000;
