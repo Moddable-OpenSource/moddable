@@ -48,6 +48,7 @@ import {
 	Scroller,
 	DeferLink,
 	TouchLink,
+	Locals,
 } from "All";
 export * from "All";
 
@@ -58,16 +59,6 @@ export class CLUT extends Resource {
 	get colors() @ "PiuCLUT_get_colors"
 }
 Object.freeze(CLUT.prototype);
-
-// PiuLocals.c
-
-class Locals  @ "PiuLocalsDelete" {
-	constructor(name, language) @ "PiuLocalsCreate"
-	get language() @ "PiuLocals_get_language"
-	set language(it) @ "PiuLocals_set_language"
-	get(id) @ "PiuLocals_get"
-}
-Object.freeze(Locals.prototype);
 
 // PiuTexture.c
 
