@@ -16,6 +16,7 @@ import Timer from "timer";
 import Digital from "pins/digital";
 
 // blinks the two LEDs on ESP8266 NodeMCU boards
+// blinks only blue LED on ESP32 Node<MCU boards (pin 2).
 
 let count = 0;
 Timer.repeat(() => {
