@@ -42,6 +42,7 @@ import {
 	Scroller,
 	DeferLink,
 	TouchLink,
+	Locals,
 } from "All";
 
 global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
@@ -274,9 +275,11 @@ global.Scroller = Scroller;
 
 
 global.Texture = Texture;
+global.Locals = Locals;
 
 global.Field = Field;
 
 global.Application = Application;
+
 
 global.Service = Service;
