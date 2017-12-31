@@ -35,8 +35,8 @@ If using Commodetto or Piu, set the `screen` property of the `config` object in 
 ### Pixel format
 The DESTM32S driver requires 8-bit gray or, when the display supports color (e.g. red), 8-bit color pixels as input. When building with `mcconfig`, set the pixel format to `gray256` or `rgb332` on the command line:
 
-	mcconfig -m -p esp -f gray256
-	mcconfig -m -p esp -f rgb332
+	mcconfig -m -p esp -r 90 -f gray256
+	mcconfig -m -p esp -r 90 -f rgb332
 
 ### Defines
 In the `defines` object, declare the pixel `width` and `height`. The dimensions of the display specified in the manifest select the display controller that is used, so it is essential to set this correctly.
