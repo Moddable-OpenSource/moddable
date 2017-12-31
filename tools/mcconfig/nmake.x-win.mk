@@ -146,6 +146,7 @@ LINK_OPTIONS = /incremental:no /machine:I386 /nologo /MANIFEST:EMBED
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
+MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
 XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid

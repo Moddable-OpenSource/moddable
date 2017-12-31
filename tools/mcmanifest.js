@@ -354,7 +354,9 @@ export class MakeFile extends FILE {
 		this.write(tool.windows ? " $**" : " $^");
 		if (tool.debug)
 			this.write(" -d");
-		this.line(" -o $(@D) -s");
+		if (tool.format)
+			this.write(" -s");
+		this.line(" -o $(@D)");
 		this.line("");
 	}
 	generateRules(tool) {
@@ -652,6 +654,10 @@ class ResourcesRule extends Rule {
 		}
 		if (tool.dataFiles.already[source])
 			return;
+		if ((parts.extension == ".json") && (parts.directory.endsWith("strings"))) {
+			this.appendFile(tool.stringFiles, "locals." + parts.name + ".mhr", source, include);
+			return;
+		}
 		if (tool.format) {
 			if (parts.extension == ".act") {
 				if (tool.format.startsWith("clut")) {
@@ -664,10 +670,6 @@ class ResourcesRule extends Rule {
 			}
 			if (parts.extension == ".fnt") {
 				this.appendFont(target, source, include, suffix);
-				return;
-			}
-			if ((parts.extension == ".json") && (parts.directory.endsWith("strings"))) {
-				this.appendFile(tool.stringFiles, "locals." + parts.name + ".mhr", source, include);
 				return;
 			}
 			if (parts.extension == ".png") {
