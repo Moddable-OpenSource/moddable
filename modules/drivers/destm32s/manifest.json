@@ -48,5 +48,45 @@
 				},
 			}
 		},
+		"gecko/giant": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/destm32s/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"hz": 5000000,
+					"cs": { "pin": 3, "port": "gpioPortD", },
+					"dc": { "pin": 3, "port": "gpioPortC", },
+					"rst": { "pin": 0, "port": "gpioPortC", },
+					"busy": { "pin": 4, "port": "gpioPortC", },
+					"spi_port": 1,
+				}
+			},
+		},
+		"gecko/mighty": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/destm32s/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"hz": 5000000,
+					"cs": { "pin": 9, "port": "gpioPortA", },
+					"dc": { "pin": 9, "port": "gpioPortD", },
+					"rst": { "pin": 8, "port": "gpioPortD", },
+					"busy": { "pin": 10, "port": "gpioPortD", },
+					"spi_port": 2,
+				}
+			},
+		},
 	}
 }
