@@ -58,6 +58,31 @@
 					"raw_bottom": 158,
 				}
 			}
+		},
+		"gecko/giant": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": [
+					  "$(MODULES)/drivers/xpt2046/*",
+					  "$(MODULES)/files/preference/*",
+					  "$(MODULES)/files/preference/gecko/*"
+				]
+			},
+			"preload": "preference",
+			"defines": {
+				"xpt2046": {
+					"cs": { "pin": "6", "port": "gpioPortC" },
+					"touch": { "pin": "0", "port": "gpioPortC" },
+					"spi_port": "1",
+					"raw_left": 141,
+					"raw_right": 1955,
+					"raw_top": 1970,
+					"raw_bottom": 158,
+				}
+			}
 		}
 	}
 }

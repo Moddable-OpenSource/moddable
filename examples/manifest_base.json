@@ -89,6 +89,86 @@
 				}
 			}
 		},
+		"gecko/giant": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+				]
+			},
+			"preload": [
+				"time",
+				"timer",
+			],
+			"defines": {
+				"giant": "true",
+				"retention_memory": true,
+				"retention_gpio": true,
+				"sleep": {
+					"wakeup": { "pin": "2", "port": "gpioPortF" },
+				},
+				"debugger": {
+					"tx": { "pin": "9", "port": "gpioPortB" },
+					"rx": { "pin": "10", "port": "gpioPortB" },
+					"port": "UART1",
+					"clock": "cmuClock_UART1",
+					"location": "2",
+				},
+				"spi": {
+					"mosi": { "pin": "0", "port": "gpioPortD" },
+					"miso": { "pin": "1", "port": "gpioPortD" },
+					"sck": { "pin": "2", "port": "gpioPortD" },
+					"port": "1",
+					"location": "1",
+				},
+				"i2c": {
+					"sda_pin": 5,
+					"scl_pin": 4
+				}
+			}
+		},
+		"gecko/mighty": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+				]
+			},
+			"preload": [
+				"time",
+				"timer",
+			],
+			"defines": {
+				"mighty": true,
+				"retention_memory": true,
+				"retention_gpio": true,
+				"sleep": {
+					"wakeup": { "pin": "7", "port": "gpioPortF" },
+				},
+				"debugger": {
+					"tx": { "pin": "11", "port": "gpioPortD" },
+					"rx": { "pin": "12", "port": "gpioPortD" },
+					"port": "USART1",
+					"clock": "cmuClock_USART1",
+					"location": "19",
+				},
+				"spi": {
+					"mosi": { "pin": "6", "port": "gpioPortA" },
+					"miso": { "pin": "7", "port": "gpioPortA" },
+					"sck": { "pin": "8", "port": "gpioPortA" },
+					"port": "2",
+					"location": "1",
+				},
+				"i2c": {
+					"sda_pin": 5,
+					"scl_pin": 4
+				}
+			}
+		},
 		"lin": {
 			"modules": {
 				"*": [
