@@ -20,7 +20,6 @@
 
 #include "xsesp.h"
 
-#include "driver/spi_master.h"
 #include "driver/gpio.h"
 
 #include "modGPIO.h"
@@ -28,17 +27,6 @@
 /*
 	gpio
 */
-
-#define GPIO_INIT_OUTPUT(index) \
-		gpio_pad_select_gpio(index); \
-		gpio_set_direction(index, GPIO_MODE_OUTPUT)
-
-#define GPIO_INIT_INPUT(index) \
-		gpio_pad_select_gpio(index); \
-		gpio_set_direction(index, GPIO_MODE_INPUT)
-
-#define GPIO_CLEAR(index) (gpio_set_level(index, 0))
-#define GPIO_SET(index) (gpio_set_level(index, 1))
 
 #define kUninitializedPin (255)
 
@@ -70,18 +58,21 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
 	switch (mode) {
 		case kModGPIOOutput:
+		case kModGPIOOutputOpenDrain:
 			if (config->pin >= GPIO_NUM_34)		// pins 34-39 are input only
 				return -1;
 
-			GPIO_INIT_OUTPUT(config->pin);
-			GPIO_CLEAR(config->pin);
+			gpio_pad_select_gpio(config->pin);
+			gpio_set_direction(config->pin, (kModGPIOOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
+			gpio_set_level(config->pin, 0);
 			break;
 
 		case kModGPIOInput:
 		case kModGPIOInputPullUp:
 		case kModGPIOInputPullDown:
 		case kModGPIOInputPullUpDown:
-			GPIO_INIT_INPUT(config->pin);
+			gpio_pad_select_gpio(config->pin);
+			gpio_set_direction(config->pin, GPIO_MODE_INPUT);
 
 			if (kModGPIOInputPullUp == mode)
 				gpio_set_pull_mode(config->pin, GPIO_PULLUP_ONLY);
