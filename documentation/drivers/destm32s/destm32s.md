@@ -15,7 +15,7 @@ The black and white display uses a different controller from the two displays th
 
 The ePaper display drivers in the Moddable SDK use the same API as LCD displays. However, because of their relatively slow refresh rate and other update requirements, they are typically used with dedicated applications which are designed to work well with the unique characteristics of the displays.
 
-The [love-e-ink](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/love-e-ink) example is designed to work with the black and white ePaper display. It demonstrates how to update parts of the display continuously without the need for long full screen refreshes. The [redandblack](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/drivers/redandblack) example is designed to work with ePaper displays that have red pixels. It cycles through a slide show of images that contain black, white, and red pixels.
+The [love-e-ink](../../../examples/piu/love-e-ink) example is designed to work with the black and white ePaper display. It demonstrates how to update parts of the display continuously without the need for long full screen refreshes. The [redandblack](../../../examples/drivers/redandblack) example is designed to work with ePaper displays that have red pixels. It cycles through a slide show of images that contain black, white, and red pixels.
 
 ### Adding DESTM32 to a project
 To add the SSD1351 driver to a project, include its manifest:
