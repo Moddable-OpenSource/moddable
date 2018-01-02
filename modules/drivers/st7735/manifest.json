@@ -6,9 +6,9 @@
 	"preload": "st7735",
 	"defines": {
 		"ili9341": {
-			"width": 240,
-			"height": 320,
-			"hz": 2000000,
+			"width": 128,
+			"height": 160,
+			"hz": 20000000,
 			"registers": [
 				"0x01, 0,",
 				"kDelayMS, 150,",
