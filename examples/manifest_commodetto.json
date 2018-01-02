@@ -21,6 +21,19 @@
 				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto",
 			},
 			"preload": "setup/commodetto",
+		},
+		"gecko/giant": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
 		}
+		"gecko/mighty": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
+		}
+
 	}
 }
