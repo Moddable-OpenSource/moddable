@@ -429,10 +429,10 @@ void ili9341Init(spiDisplay sd)
 	while (true) {
 		uint8_t cmd = c_read8(cmds++);
 		if (kDelayMS == cmd) {
-			uint8_t tenMS = c_read8(cmds++);
-			if (0 == tenMS)
+			uint8_t ms = c_read8(cmds++);
+			if (0 == ms)
 				break;
-			modDelayMilliseconds(tenMS * 10);
+			modDelayMilliseconds(ms);
 		}
 		else {
 			uint8_t count = c_read8(cmds++);
