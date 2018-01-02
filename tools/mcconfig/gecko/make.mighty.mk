@@ -16,15 +16,18 @@ DEV_C_FLAGS =
 HW_DEBUG_OPT = -O0
 HW_OPT = -O3
 
+
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/gecko_mighty/debug/lib
+	LIB_DIR = $(BUILD_DIR)/tmp/gecko/mighty/debug/lib
 else
 	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/gecko_mighty/instrument/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/gecko/mighty/instrument/lib
 	else
-		LIB_DIR = $(BUILD_DIR)/tmp/gecko_mighty/release/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/gecko/mighty/release/lib
 	endif
 endif
 
-include $(MODDABLE)/tools/mcconfig/make.gecko_common.mk
+C_DEFINES += -DuseRTCC=1
+
+include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
 
