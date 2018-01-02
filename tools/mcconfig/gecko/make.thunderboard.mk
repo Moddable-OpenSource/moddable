@@ -26,5 +26,7 @@ else
 	endif
 endif
 
-include $(MODDABLE)/tools/mcconfig/make.gecko_common.mk
+C_DEFINES += -DuseRTCC
+
+include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
 
