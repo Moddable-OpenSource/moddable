@@ -392,7 +392,7 @@ extern uint32_t gDeviceUnique;
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
 	extern txPreparation* xsPreparation();
-	void *result, *archive = NULL;
+	void *result;
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
@@ -407,7 +407,11 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	creation = prep->creation;
 
 	root.preparation = prep;
-	root.archive = archive;
+#if MODDEF_XS_MODS
+	root.archive = installModules(prep);
+#else
+	root.archive = NULL;
+#endif
 	root.keyArray = prep->keys;
 	root.keyCount = prep->keyCount + prep->creation.keyCount;
 	root.keyIndex = prep->keyCount;
@@ -464,6 +468,59 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 #endif
 
 	return result;
+}
+
+static uint16_t gSetupPending = 0;
+
+void setStepDone(xsMachine *the)
+{
+	gSetupPending -= 1;
+	if (gSetupPending)
+		return;
+
+	xsBeginHost(the);
+		xsResult = xsGet(xsGlobal, mxID(_require));
+		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
+
+void mc_setup(xsMachine *the)
+{
+	extern txPreparation* xsPreparation();
+	txPreparation *preparation = xsPreparation();
+	txInteger scriptCount = preparation->scriptCount;
+	txScript* script = preparation->scripts;
+
+	gSetupPending = 1;
+
+	xsBeginHost(the);
+		xsVars(2);
+		xsVar(0) = xsNewHostFunction(setStepDone, 0);
+		xsVar(1) = xsGet(xsGlobal, mxID(_require));
+
+		while (scriptCount--) {
+			if (0 == c_strncmp(script->path, "setup/", 6)) {
+				char path[128];
+				char *dot;
+
+				c_strcpy(path, script->path);
+				dot = c_strchr(path, '.');
+				if (dot)
+					*dot = 0;
+
+				xsResult = xsCall1(xsVar(1), mxID(_weak), xsString(path));
+				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
+					gSetupPending += 1;
+					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
+				}
+			}
+			script++;
+		}
+	xsEndHost(the);
+
+	setStepDone(the);
 }
 
 uint8_t xsRunPromiseJobs(txMachine *the)

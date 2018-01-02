@@ -60,15 +60,15 @@
 #endif
 
 #if MODDEF_SPI_PORT == 0
-	#define SPI_PORT	USART0
+	#define SPI_USART	USART0
 	#define SPI_CLOCK	cmuClock_USART0
 	#define SPI_TX_IRQ	USART0_TX_IRQn
 #elif MODDEF_SPI_PORT == 1
-	#define SPI_PORT	USART1
+	#define SPI_USART	USART1
 	#define SPI_CLOCK	cmuClock_USART1
 	#define SPI_TX_IRQ	USART1_TX_IRQn
 #elif MODDEF_SPI_PORT == 2
-	#define SPI_PORT	USART2
+	#define SPI_USART	USART2
 	#define SPI_CLOCK	cmuClock_USART2
 	#define SPI_TX_IRQ	USART2_TX_IRQn
 #else
@@ -124,7 +124,8 @@ void modSPIInit(modSPIConfiguration config)
 
 	// Enable the GPIO pins for the USART, starting with CS
 	// This is to avoid clocking the flash chip when we set CLK high
-	GPIO_PinModeSet(MODDEF_SPI_CS_PORT, MODDEF_SPI_CS_PIN, gpioModePushPull, 1);
+//MDK - do we need the CS port? It'll be handled by whoever instantiates it
+//	GPIO_PinModeSet(MODDEF_SPI_CS_PORT, MODDEF_SPI_CS_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MODDEF_SPI_MOSI_PORT, MODDEF_SPI_MOSI_PIN, gpioModePushPull, 0);
 	GPIO_PinModeSet(MODDEF_SPI_MISO_PORT, MODDEF_SPI_MISO_PIN, gpioModeInput, 0);
 	GPIO_PinModeSet(MODDEF_SPI_SCK_PORT, MODDEF_SPI_SCK_PIN, gpioModePushPull, 0);
@@ -142,21 +143,21 @@ void modSPIInit(modSPIConfiguration config)
 	spiInit.autoCsHold = false;
 	spiInit.autoCsSetup = false;
 #endif
-	USART_InitSync(SPI_PORT, &spiInit);
+	USART_InitSync(SPI_USART, &spiInit);
 
-	config->clkdiv = SPI_PORT->CLKDIV;  // store calculated speed for easy switch
+	config->clkdiv = SPI_USART->CLKDIV;  // store calculated speed for easy switch
 
 #if EFR32MG1P132F256GM48 || EFR32MG12P332F1024GL125
-	SPI_PORT->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN | USART_ROUTEPEN_CLKPEN;
-	SPI_PORT->ROUTELOC0  = ( SPI_PORT->ROUTELOC0 & ~( _USART_ROUTELOC0_TXLOC_MASK | _USART_ROUTELOC0_RXLOC_MASK | _USART_ROUTELOC0_CLKLOC_MASK ) );
-	SPI_PORT->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_TXLOC_SHIFT );
-	SPI_PORT->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_RXLOC_SHIFT );
-	SPI_PORT->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_CLKLOC_SHIFT );
+	SPI_USART->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN | USART_ROUTEPEN_CLKPEN;
+	SPI_USART->ROUTELOC0  = ( SPI_USART->ROUTELOC0 & ~( _USART_ROUTELOC0_TXLOC_MASK | _USART_ROUTELOC0_RXLOC_MASK | _USART_ROUTELOC0_CLKLOC_MASK ) );
+	SPI_USART->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_TXLOC_SHIFT );
+	SPI_USART->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_RXLOC_SHIFT );
+	SPI_USART->ROUTELOC0 |= ( MODDEF_SPI_LOCATION << _USART_ROUTELOC0_CLKLOC_SHIFT );
 #elif EFM32GG990F1024
 	// Connect the USART signals to the GPIO peripheral
-	SPI_PORT->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN |
+	SPI_USART->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN |
 		USART_ROUTE_CLKPEN | /* USART_ROUTE_CSPEN | */
-		MODDEF_SPI_LOCATION;
+		MODDEF_SPI_LOCATION << _USART_ROUTE_LOCATION_SHIFT;
 #else
 	#error need SPI pins for new gecko part
 #endif
@@ -185,7 +186,7 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 	gConfig = config;
 	if (gConfig) {
 //		USART1->CLKDIV = config->clkdiv;
-		USART_BaudrateSyncSet(SPI_PORT, 0, config->hz);
+		USART_BaudrateSyncSet(SPI_USART, 0, config->hz);
 		(gConfig->doChipSelect)(1, gConfig);
 	}
 }
@@ -334,8 +335,8 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	modSPIActivateConfiguration(config);
 
 	for (i=0; i<count; i++) {
-		USART_Tx(SPI_PORT, data[i]);
-		data[i] = USART_Rx(SPI_PORT);
+		USART_Tx(SPI_USART, data[i]);
+		data[i] = USART_Rx(SPI_USART);
 	}
 }
 
@@ -356,11 +357,11 @@ static volatile uint16_t spiTxBufferDataSize = 0;
 void modSPIStartSend(uint16_t dataSize) {
 	spiTxBuffer = gSPITransactionBuffer;
 	spiTxBufferDataSize = dataSize;
-	USART_IntClear(SPI_PORT, _USART_IF_MASK);
+	USART_IntClear(SPI_USART, _USART_IF_MASK);
 	NVIC_ClearPendingIRQ(SPI_TX_IRQ);
 //	NVIC_EnableIRQ(SPI_TX_IRQ);
 
-	USART_IntEnable(SPI_PORT, USART_IF_TXBL);
+	USART_IntEnable(SPI_USART, USART_IF_TXBL);
 }
 
 #if MODDEF_SPI_PORT == 0
@@ -372,15 +373,15 @@ void USART2_TX_IRQHandler(void)
 #endif
 {
 	uint16_t loaded;
-	if (SPI_PORT->STATUS & USART_STATUS_TXBL) {
+	if (SPI_USART->STATUS & USART_STATUS_TXBL) {
 		if (spiTxBufferDataSize != 0) {
-			SPI_PORT->TXDATA = (uint32_t)*spiTxBuffer++;
+			SPI_USART->TXDATA = (uint32_t)*spiTxBuffer++;
 				spiTxBufferDataSize--;
 		}
 		else {
 			if (gSPIDataCount <= 0) {
 				gSPIDataCount = -1;
-				USART_IntDisable(SPI_PORT, USART_IF_TXBL);
+				USART_IntDisable(SPI_USART, USART_IF_TXBL);
 				return;
 			}
 			loaded = gSPIBufferLoader(gSPIData, (gSPIDataCount <= SPI_BUFFER_SIZE) ? gSPIDataCount : SPI_BUFFER_SIZE);
