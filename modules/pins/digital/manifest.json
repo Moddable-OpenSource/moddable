@@ -14,7 +14,12 @@
 				"*": "$(MODULES)/pins/digital/esp32/*",
 			},
 		},
-		"gecko": {
+		"gecko/giant": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/gecko/*",
+			},
+		},
+		"gecko/mighty": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/gecko/*",
 			},

@@ -43,6 +43,18 @@
 				"setup/piu": "$(BUILD)/devices/esp32/setup/piu",
 			},
 			"preload": "setup/piu"
-		}
+		},
+		"gecko/giant": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/gecko/setup/piu",
+			},
+			"preload": "setup/piu"
+		},
+		"gecko/mighty": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/gecko/setup/piu",
+			},
+			"preload": "setup/piu"
+		},
 	}
 }
