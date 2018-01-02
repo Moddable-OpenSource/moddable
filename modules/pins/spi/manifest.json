@@ -10,6 +10,16 @@
 				"*": "$(MODULES)/pins/spi/esp32/*",
 			},
 		},
+		"gecko/giant": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/gecko/*",
+			},
+		},
+		"gecko/mighty": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/gecko/*",
+			},
+		},
 		"...": {
 			"error": "pins/spi unsupported"
 		}
