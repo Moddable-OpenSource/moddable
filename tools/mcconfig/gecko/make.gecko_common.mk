@@ -19,8 +19,6 @@ INC_DIRS = \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(BUILD_DIR)/devices/gecko
 
-#	$(SDK_BASE)/util/third_party/freertos/Source/include \
-
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
@@ -75,6 +73,14 @@ XS_HEADERS = \
 	$(XS_DIR)/platforms/gecko/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
+SDK_OBJ = \
+	$(LIB_DIR)/xsmain.c.o \
+	$(LIB_DIR)/systemclock.c.o \
+	$(LIB_DIR)/debugger.c.o \
+
+SDK_DIRS = \
+	$(BUILD_DIR)/devices/gecko/base
+
 TOOLS_BIN = $(TOOLS_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi
 
@@ -98,7 +104,7 @@ XSID = $(BUILD_DIR)/bin/mac/debug/xsid
 XSL = $(BUILD_DIR)/bin/mac/debug/xsl
 
 #	-DmxNoConsole=1
-C_DEFINES = \
+C_DEFINES += \
 	-DDEBUG_EFM=1 \
 	-Dgecko=1 \
 	-D$(HWPART)=1 \
