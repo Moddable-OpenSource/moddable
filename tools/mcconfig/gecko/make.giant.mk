@@ -25,5 +25,7 @@ else
 	endif
 endif
 
-include $(MODDABLE)/tools/mcconfig/make.gecko_common.mk
+C_DEFINES += -DuseBURTC=1
+
+include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
 
