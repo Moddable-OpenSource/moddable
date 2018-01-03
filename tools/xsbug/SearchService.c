@@ -68,7 +68,7 @@ void PiuCode_search(xsMachine* the)
 		xsVar(XS_MAP) = xsNew0(xsGlobal, xsID_Map);
 		xsSet(xsGlobal, xsID("search/results"), xsVar(XS_MAP));
 		if (!fxCompileRegExp(NULL, pattern, modifier, &self->code, &self->data, &self->flags, NULL, 0))
-			xsUnknownError("pcre_compile error");
+			xsUnknownError("invalid regexp");
 		c = xsToInteger(xsGet(xsArg(2), xsID_length));
 		for (i = 0; i < c; i++) {
 	// 		if (!KprMessageContinue(self->message))
