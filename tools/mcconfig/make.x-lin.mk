@@ -30,8 +30,7 @@ endif
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
-	$(XS_DIR)/sources \
-	$(XS_DIR)/sources/pcre
+	$(XS_DIR)/sources
 
 XS_HEADERS = \
 	$(XS_DIR)/platforms/lin_xs.h \
@@ -84,7 +83,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsmc.c.o \
-	$(LIB_DIR)/xspcre.c.o
+	$(LIB_DIR)/xsre.c.o
 
 HEADERS += $(XS_HEADERS)
 
@@ -118,11 +117,19 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs freetype2 gtk+-3.0) -ldl
 
 LINK_OPTIONS = -fPIC
 
+ifeq ($(DEBUG),1)
 MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
 XSC = $(BUILD_DIR)/bin/lin/debug/xsc
 XSID = $(BUILD_DIR)/bin/lin/debug/xsid
 XSL = $(BUILD_DIR)/bin/lin/debug/xsl
+else
+MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
+MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
+XSC = $(BUILD_DIR)/bin/lin/release/xsc
+XSID = $(BUILD_DIR)/bin/lin/release/xsid
+XSL = $(BUILD_DIR)/bin/lin/release/xsl
+endif
 
 VPATH += $(XS_DIRECTORIES)
 

@@ -92,7 +92,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \
-	$(LIB_DIR)\xspcre.o
+	$(LIB_DIR)\xsre.o
 
 MODULES = \
 	$(MOD_DIR)\commodetto\Bitmap.xsb \
@@ -200,7 +200,6 @@ C_OPTIONS = \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \
-	/I$(XS_DIR)\sources\pcre \
 	/I$(COMMODETTO) \
 	/I$(INSTRUMENTATION) \
 	/I$(TOOLS) \
