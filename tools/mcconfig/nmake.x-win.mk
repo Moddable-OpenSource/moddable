@@ -34,8 +34,7 @@ LIB_DIR = $(BUILD_DIR)\tmp\win\release\lib
 XS_DIRECTORIES = \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
-	/I$(XS_DIR)\sources \
-	/I$(XS_DIR)\sources\pcre
+	/I$(XS_DIR)\sources
 
 XS_HEADERS = \
 	$(XS_DIR)\platforms\win_xs.h \
@@ -88,7 +87,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \
-	$(LIB_DIR)\xspcre.o
+	$(LIB_DIR)\xsre.o
 
 DIRECTORIES = $(DIRECTORIES) $(XS_DIRECTORIES)
 	
