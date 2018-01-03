@@ -65,7 +65,6 @@ C_OPTIONS = \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \
-	/I$(SRC_DIR)\pcre \
 	/I$(TLS_DIR) \
 	/I$(TMP_DIR) \
 	/nologo \
@@ -96,7 +95,7 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 
 OBJECTS = \
 	$(TMP_DIR)\xsdtoa.o \
-	$(TMP_DIR)\xspcre.o \
+	$(TMP_DIR)\xsre.o \
 	$(TMP_DIR)\xsCommon.o \
 	$(TMP_DIR)\xsScript.o \
 	$(TMP_DIR)\xsLexical.o \
