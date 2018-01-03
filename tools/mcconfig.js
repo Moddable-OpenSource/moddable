@@ -325,7 +325,7 @@ class CMakeListsFile extends PrerequisiteFile {
 		var c = names.length;
 		for (var i = 0; i < c; i++) {
 			var name = names[i];
-			if (name.endsWith(".c") && (name != "xsDefaults.c"))
+			if (name.endsWith(".c") && (name != "xsDefaults.c") && (name != "xspcre.c"))
 				this.line("\t", tool.xsPath, "/sources/", name);
 		}
 		for (var result of tool.cFiles) {
@@ -350,7 +350,6 @@ class CMakeListsFile extends PrerequisiteFile {
 		this.line("\t", tool.xsPath, "/includes");
 		this.line("\t", tool.xsPath, "/platforms");
 		this.line("\t", tool.xsPath, "/sources");
-		this.line("\t", tool.xsPath, "/sources/pcre");
 		for (var folder of tool.cFolders) {
 			this.line("\t", folder);
 		}	
@@ -478,7 +477,7 @@ class XcodeFile extends PrerequisiteFile {
 		var c = names.length;
 		for (var i = 0; i < c; i++) {
 			var name = names[i];
-			if (name.endsWith(".c") && (name != "xsDefaults.c"))
+			if (name.endsWith(".c") && (name != "xsDefaults.c") && (name != "xspcre.c"))
 				this.addSource(tool.xsPath + "/sources/" + name);
 		}
 		for (var result of tool.cFiles) {
@@ -521,7 +520,6 @@ class XcodeFile extends PrerequisiteFile {
 		this.line("\t\t\t\t\t", tool.xsPath, "/includes,");
 		this.line("\t\t\t\t\t", tool.xsPath, "/platforms,");
 		this.line("\t\t\t\t\t", tool.xsPath, "/sources,");
-		this.line("\t\t\t\t\t", tool.xsPath, "/sources/pcre,");
 		for (var folder of tool.cFolders) {
 			this.line("\t\t\t\t\t", folder, ",");
 		}	
