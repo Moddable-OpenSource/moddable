@@ -630,10 +630,6 @@ extern txString fxResizeString(txMachine* the, txSlot* a, txSize theSize);
 extern int fxStringGetter(void*);
 extern int fxStringCGetter(void*);
 extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
-mxExport txInteger fxUnicodeCharacter(txString theString);
-mxExport txInteger fxUnicodeLength(txString theString);
-mxExport txInteger fxUnicodeToUTF8Offset(txString theString, txInteger theOffset);
-mxExport txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset);
 
 /* xsRun.c */
 extern void fxRunID(txMachine* the, txSlot* generator, txID theID);
@@ -1016,6 +1012,7 @@ extern void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger s
 
 /* xsRegExp.c */
 mxExport void fx_RegExp(txMachine* the);
+mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
 mxExport void fx_RegExp_prototype_get_ignoreCase(txMachine* the);

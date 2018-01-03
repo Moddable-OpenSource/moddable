@@ -57,6 +57,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_split), 2, mxID(_Symbol_split), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_test), 1, mxID(_test), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_dotAll), C_NULL, mxID(_dotAll), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_flags), C_NULL, mxID(_flags), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_global), C_NULL, mxID(_global), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_ignoreCase), C_NULL, mxID(_ignoreCase), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -270,6 +271,10 @@ void fx_RegExp_prototype_get_flags(txMachine* the)
 	if (fxToBoolean(the, the->stack++))
 		flags[index++] = 'm';
 	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_dotAll));
+	if (fxToBoolean(the, the->stack++))
+		flags[index++] = 's';
+	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_unicode));
 	if (fxToBoolean(the, the->stack++))
 		flags[index++] = 'u';
@@ -279,6 +284,13 @@ void fx_RegExp_prototype_get_flags(txMachine* the)
 		flags[index++] = 'y';
 	flags[index] = 0;
 	fxCopyStringC(the, mxResult, flags);
+#endif
+}
+
+void fx_RegExp_prototype_get_dotAll(txMachine* the)
+{
+#if mxRegExp
+	fx_RegExp_prototype_get_flag(the, XS_REGEXP_S);
 #endif
 }
 
