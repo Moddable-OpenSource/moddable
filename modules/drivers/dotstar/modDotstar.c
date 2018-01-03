@@ -22,19 +22,15 @@
 
 #ifdef __ets__
 	#include "xsesp.h"
-	#include "modGPIO.h"
 #elif defined(__ZEPHYR__)
 	#include "xsPlatform.h"
 	#include "modTimer.h"
-	#include "modGPIO.h"
 #elif defined(gecko)
 	#include "xsgecko.h"
 	#include "xsPlatform.h"
-	#include "modGPIO.h"
 #else
 	#include "xslinux.h"
 	#include "xsPlatform.h"
-	#include "gpio.h"
 #endif
 
 #include "commodettoBitmap.h"
@@ -44,9 +40,11 @@
 
 #include "modSPI.h"
 
-#ifdef __ets__
-	#define MOSI_PIN	13
-	#define CLK_PIN		14
+#ifndef MODDEF_DOTSTAR_BRIGHTNESS
+	#define MODDEF_DOTSTAR_BRIGHTNESS (64)
+#endif
+#ifndef MODDEF_DOTSTAR_HZ
+	#define MODDEF_DOTSTAR_HZ (20000000)
 #endif
 
 #ifdef __ZEPHYR__
@@ -70,8 +68,6 @@ typedef struct {
 	uint16_t					width;
 	uint16_t					height;
 
-	uint8_t						*clut;
-
 	uint8_t						format;
 
 	uint8_t						brightness[256];
@@ -81,6 +77,7 @@ static void dotstarChipSelect(uint8_t active, modSPIConfiguration config);
 
 static void dotstarCommand(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count);
 
+//@@ MODDEF
 void setBrightness(spiDisplay sd, int brightness);		// 0 to 255
 
 static void dotstarBegin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
@@ -100,15 +97,17 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch_16LE ICACHE_RODATA_ATTR 
 
 void xs_DotStar_destructor(void *data)
 {
-	if (data)
+	if (data) {
+		spiDisplay sd = data;
+		modSPIUninit(&sd->spiConfig);
 		c_free(data);
+	}
 }
 
 void xs_DotStar(xsMachine *the)
 {
 	int format;
 	spiDisplay sd;
-	int width, height;
 	int csPin;
 
 	xsmcVars(1);
@@ -128,27 +127,20 @@ void xs_DotStar(xsMachine *the)
 
 	xsmcSetHostData(xsThis, sd);
 
-	sd->spiConfig.mhz = 20000000;		//@@ what's a safe speed here?
-	sd->spiConfig.doChipSelect = dotstarChipSelect;
-#ifdef __ZEPHYR__
-	sd->spiConfig.deviceName = SPI_DEVICE;
-#endif
+	modSPIConfig(sd->spiConfig, MODDEF_DOTSTAR_HZ, MODDEF_DOTSTAR_SPI_PORT,
+				 NULL, -1, dotstarChipSelect);
+	modSPIInit(&sd->spiConfig);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_width);
-	width = xsmcToInteger(xsVar(0));
+	sd->width = (uint16_t)xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_height);
-	height = xsmcToInteger(xsVar(0));
-
-	sd->width = (uint16_t)width;
-	sd->height = (uint16_t)height;
+	sd->height = (uint16_t)xsmcToInteger(xsVar(0));
 
 	sd->format = (uint8_t)format;
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch_16LE;
 
-	modSPIInit(&sd->spiConfig);
-
-	setBrightness(sd, 32);
+	setBrightness(sd, MODDEF_DOTSTAR_BRIGHTNESS);
 }
 
 void xs_DotStar_begin(xsMachine *the)
@@ -217,6 +209,12 @@ void xs_DotStar_adaptInvalid(xsMachine *the)
 	dotstarAdaptInvalid(sd, invalid);
 }
 
+void xs_DotStar_pixelsToBytes(xsMachine *the)
+{
+	int count = xsmcToInteger(xsArg(0));
+	xsmcSetInteger(xsResult, ((count * kCommodettoPixelSize) + 7) >> 3);
+}
+
 void xs_DotStar_get_pixelFormat(xsMachine *the)
 {
 	spiDisplay sd = xsmcGetHostData(xsThis);
@@ -233,21 +231,6 @@ void xs_DotStar_get_height(xsMachine *the)
 {
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	xsmcSetInteger(xsResult, sd->height);
-}
-
-void xs_DotStar_get_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	if (sd->clut) {
-		xsResult = xsNewHostObject(NULL);
-		xsmcSetHostData(xsResult, sd->clut);
-	}
-}
-
-void xs_DotStar_set_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	sd->clut = xsmcGetHostData(xsArg(0));		// cannot be array buffer
 }
 
 void xs_DotStar_get_c_dispatch(xsMachine *the)
