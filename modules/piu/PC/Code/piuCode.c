@@ -19,8 +19,9 @@
  */
 
 #include "piuCode.h"
-#define PCRE_STATIC 1
-#include "pcre.h"
+extern xsBooleanValue fxCompileRegExp(void* the, xsStringValue pattern, xsStringValue modifier, void** code, void** data, xsUnsignedValue* flags, xsStringValue messageBuffer, xsIntegerValue messageSize);
+extern void fxDeleteRegExp(void* the, void* code, void* data);
+extern xsIntegerValue fxMatchRegExp(void* the, void* code, void* data, xsUnsignedValue flags, xsStringValue subject, xsIntegerValue offset, xsIntegerValue** offsets, xsIntegerValue* limit);
 
 enum {
 	teCharDone = 0,
@@ -211,9 +212,9 @@ void PiuCodeDraw(void* it, PiuView* view, PiuRectangle area)
 	if (skin) {
 		PiuTextBuffer* results = (*self)->results;
 		PiuCodeResult result = (PiuCodeResult)((char*)(*results) + sizeof(PiuTextBufferRecord));
-		if (result->count >= 0) {
+		if (result->count > 0) {
 			PiuViewPushColor(view, &((*skin)->data.color.fill[0]));
-			while (result->count >= 0) {
+			while (result->count > 0) {
 				PiuCodeHilite(self, view, result->fromColumn, result->fromLine, result->toColumn, result->toLine);
 				result = (PiuCodeResult)(((char*)result) + (*self)->resultsSize);
 			}
@@ -567,27 +568,19 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 	size_t former;
 	PiuCodeResult result;
 	PiuTextBufferClear(the, results);
-	if ((*self)->pcre) {
-		int32_t capture = 0;
+	if ((*self)->code) {
 		int32_t offset = 0;
 		int32_t itemCount = 0;
 		int32_t itemSize = 0;
 		int* offsets;
-		pcre_fullinfo((*self)->pcre, NULL, PCRE_INFO_CAPTURECOUNT, &capture);
-		capture++;
-		pcre_fullinfo((*self)->pcre, NULL, PCRE_INFO_BACKREFMAX, &offset);
-		if (capture < offset)
-			capture = offset;
-		capture *= 3;
 		itemCount = 0;
-		itemSize = sizeof(PiuCodeResultRecord) + (capture * sizeof(int));
+		itemSize = sizeof(PiuCodeResultRecord);
 		for (;;) {
 			former = (*results)->current;
 			PiuTextBufferGrow(the, results, itemSize);
 			result = (PiuCodeResult)((char*)(*results) + former);
-			offsets = (int*)(((char*)result) + sizeof(PiuCodeResultRecord));
 			string = PiuToString((*self)->string);
-			result->count = pcre_exec((*self)->pcre, NULL, string, size, offset, 0, offsets, capture);
+			result->count = fxMatchRegExp(NULL, (*self)->code, (*self)->data, (*self)->options, string, offset, &offsets, NULL);
 			if (result->count <= 0) {
 				break;
 			}
@@ -915,17 +908,14 @@ void PiuCode_find(xsMachine *the)
 		pattern = xsToString(xsArg(0));
 	if (argc > 1)
 		caseless = xsToBoolean(xsArg(1));
-	if ((*self)->pcre) {
-		pcre_free((*self)->pcre);
-		(*self)->pcre = NULL;
+	if ((*self)->code || (*self)->data) {
+		fxDeleteRegExp(NULL, (*self)->code, (*self)->data);
+		(*self)->code = NULL;
+		(*self)->data = NULL;
 	}	
 	if (pattern && pattern[0]) {
-		char* aMessage;
-		xsIntegerValue options = PCRE_UTF8; 
-		xsIntegerValue offset;
-		if (caseless)
-			options += PCRE_CASELESS;
-		(*self)->pcre = pcre_compile(pattern, options, (const char **)(void*)&aMessage, (int*)(void*)&offset, NULL); 
+		xsStringValue modifier = (caseless) ? "iu" : "u";
+		fxCompileRegExp(NULL, pattern, modifier, &(*self)->code, &(*self)->data, &(*self)->options, NULL, 0);
 	}
 	PiuCodeSearch(self, (*self)->size);
 	result = (PiuCodeResult)((char*)(*results) + sizeof(PiuTextBufferRecord));

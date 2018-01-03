@@ -484,8 +484,6 @@ void fxRunFile(txContext* context, char* path)
 			||	!strcmp((char*)node->data.scalar.value, "object-rest")
 			||	!strcmp((char*)node->data.scalar.value, "object-spread")
 			||	!strcmp((char*)node->data.scalar.value, "optional-catch-binding")
-			||	!strcmp((char*)node->data.scalar.value, "regexp-dotall")
-			||	!strcmp((char*)node->data.scalar.value, "regexp-lookbehind")
 			||	!strcmp((char*)node->data.scalar.value, "regexp-named-groups")
 			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 			) {

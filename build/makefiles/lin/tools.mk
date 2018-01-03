@@ -43,8 +43,7 @@ MOD_DIR = $(TMP_DIR)/modules
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
-	$(XS_DIR)/sources \
-	$(XS_DIR)/sources/pcre
+	$(XS_DIR)/sources
 
 XS_HEADERS = \
 	$(XS_DIR)/platforms/lin_xs.h \
@@ -97,7 +96,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsmc.c.o \
-	$(LIB_DIR)/xspcre.c.o
+	$(LIB_DIR)/xsre.c.o
 
 MODULES = \
 	$(MOD_DIR)/commodetto/Bitmap.xsb \
