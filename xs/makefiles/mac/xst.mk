@@ -53,7 +53,6 @@ C_OPTIONS = \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
-	-I$(SRC_DIR)/pcre \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
 	-I$(TMP_DIR)
@@ -114,7 +113,6 @@ OBJECTS = \
 	$(TMP_DIR)/xsTree.o \
 	$(TMP_DIR)/xsType.o \
 	$(TMP_DIR)/xsdtoa.o \
-	$(TMP_DIR)/xspcre.o \
 	$(TMP_DIR)/api.o \
 	$(TMP_DIR)/dumper.o \
 	$(TMP_DIR)/emitter.o \
@@ -123,6 +121,7 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
+	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xst.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
