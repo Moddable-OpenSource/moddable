@@ -1,0 +1,41 @@
+{
+	"defines": {
+		"dotstar": {
+			"brightness": 16
+		}
+	},
+	"preload": [
+		"dotstar",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/dotstar/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"dotstar": {
+					"spi_port": "#HSPI"
+				},
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/dotstar/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"spi_port": "#HSPI"
+				},
+			}
+		},
+	}
+}
