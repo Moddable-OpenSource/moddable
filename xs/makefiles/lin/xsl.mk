@@ -59,7 +59,6 @@ C_OPTIONS =\
 	-I$(INC_DIR)\
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR)\
-	-I$(SRC_DIR)/pcre\
 	-I$(TLS_DIR)\
 	-I$(TMP_DIR)\
 	-DmxLink=1
@@ -109,7 +108,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsSymbol.o \
 	$(TMP_DIR)/xsType.o \
 	$(TMP_DIR)/xsdtoa.o \
-	$(TMP_DIR)/xspcre.o \
+	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xslBase.o \
 	$(TMP_DIR)/xslSlot.o \
 	$(TMP_DIR)/xslStrip.o \
