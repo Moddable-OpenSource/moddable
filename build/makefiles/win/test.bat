@@ -1,3 +1,4 @@
+@echo off
 REM
 REM Copyright (c) 2016-2017  Moddable Tech, Inc.
 REM
@@ -16,8 +17,8 @@ REM
 REM   You should have received a copy of the GNU General Public License
 REM   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 REM
-
 SET BUILD_DIR=%MODDABLE%\build
 SET XS_DIR=%MODDABLE%\xs
+@echo on
 
 nmake GOAL=debug BUILD_DIR=%BUILD_DIR% XS_DIR=%XS_DIR% /c /f %XS_DIR%\makefiles\win\xst.mak /s
