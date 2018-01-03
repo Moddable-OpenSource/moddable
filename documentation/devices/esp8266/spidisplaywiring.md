@@ -27,6 +27,7 @@ When wired to an ESP8266 development board as shown below any of the Moddable ex
 | SCK | GPIO 14 | (D5) 
 | SDI / MOSI | GPIO 13 | (D7) 
 | DC | GPIO 2 | (D4) 
+| CS | GPIO 15 | (D8)
 | RESET | 3.3V | 
 | GND | GND | 
 | VCC | 3.3V | 
