@@ -36,18 +36,12 @@ export default class DotStar @ "xs_DotStar_destructor" {
 		// empty implementation overrides PixelOut.continue which throws
 	}
 
-	//@@ BAD BAD BADBADBADB
-	pixelsToBytes(count) {
-		return count << 1;
-	}
+	pixelsToBytes(count) @ "xs_DotStar_pixelsToBytes";
 
 	get pixelFormat() @ "xs_DotStar_get_pixelFormat";
 	get width() @ "xs_DotStar_get_width";
 	get height() @ "xs_DotStar_get_height";
 	get async() {return false;}
-
-	get clut() @ "xs_DotStar_get_clut";
-	set clut() @ "xs_DotStar_set_clut";
 
 	get c_dispatch() @ "xs_DotStar_get_c_dispatch";
 }
