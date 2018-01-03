@@ -18,22 +18,19 @@ import Poco from "commodetto/Poco";
 import parseBMP from "commodetto/parseBMP";
 import Resource from "Resource";
 
-export default function() {
-	let lights = parseBMP(new Resource("lights-color.bmp"));
+let lights = parseBMP(new Resource("lights-color.bmp"));
 
-	const width = 144, height = 1;
-	let display = new DotStar({width, height});
-	let render = new Poco(display);
+const width = lights.width, height = 1;
+let display = new DotStar({width, height});
+let render = new Poco(display);
 
-	let y = 0;
+let y = 0;
+Timer.repeat(() => {
+	y += 1;
+	if ((y + height) > lights.height)
+		y = 0;
 
-	Timer.repeat(() => {
-		y += 1;
-		if ((y + height) > lights.height)
-			y = 0;
-
-		render.begin(0, 0, width, height);
-			render.drawBitmap(lights, 0, 0, 0, y, width, height);
-		render.end();
-	}, 20);
-}
+	render.begin(0, 0, width, height);
+		render.drawBitmap(lights, 0, 0, 0, y, width, height);
+	render.end();
+}, 20);
