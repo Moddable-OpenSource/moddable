@@ -95,6 +95,12 @@ typedef struct {
 } Atom;
 
 typedef struct {
+	txInteger from; 
+	txInteger to; 
+	txInteger delta;
+} txCharCase;
+
+typedef struct {
 	void* callback;
 	txS1* symbolsBuffer;
 	txSize symbolsSize;
@@ -367,6 +373,10 @@ enum {
 	mxAwaitingFlag = 1 << 31,
 };
 
+#define mxCharCaseToLowerCount 84
+extern const txCharCase gxCharCaseToLower[];
+#define mxCharCaseToUpperCount 84
+extern const txCharCase gxCharCaseToUpper[];
 extern const txString gxCodeNames[XS_CODE_COUNT];
 extern const txUTF8Sequence gxUTF8Sequences[];
 
@@ -378,6 +388,10 @@ extern txBoolean fxIsIdentifierNext(txU4 c);
 extern txU1* fsX2UTF8(txU4 c, txU1* p, txU4 theSize);
 extern txString fxSkipSpaces(txString string);
 mxExport txU4 fxUTF8Character(txString theString, txS4* theSize);
+mxExport txInteger fxUnicodeCharacter(txString theString);
+mxExport txInteger fxUnicodeLength(txString theString);
+mxExport txInteger fxUnicodeToUTF8Offset(txString theString, txInteger theOffset);
+mxExport txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset);
 
 txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex);
 txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
@@ -400,8 +414,9 @@ enum {
 	XS_REGEXP_G = 1 << 31,
 	XS_REGEXP_I = 1 << 30,
 	XS_REGEXP_M = 1 << 29,
-	XS_REGEXP_U = 1 << 28,
-	XS_REGEXP_Y = 1 << 27,
+	XS_REGEXP_S = 1 << 28,
+	XS_REGEXP_U = 1 << 27,
+	XS_REGEXP_Y = 1 << 26,
 };
 #define XS_REGEXP_COUNT_MASK 0x00FFFFFF
 extern txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void** code, void** data, txUnsigned* flags, txString messageBuffer, txInteger messageSize);
@@ -694,6 +709,7 @@ enum {
 	_delete,
 	_deleteProperty,
 	_done,
+	_dotAll,
 	_eachDown,
 	_eachUp,
 	_endsWith,
