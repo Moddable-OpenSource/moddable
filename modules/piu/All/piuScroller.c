@@ -84,6 +84,8 @@ PiuCoordinate PiuScrollerConstraintHorizontally(PiuScroller* self)
 #else
 				d %= range;
 #endif
+				if (d > 0)
+					d -= range;
 			}
 			else {
 				PiuCoordinate min = size - range;
@@ -128,6 +130,8 @@ PiuCoordinate PiuScrollerConstraintVertically(PiuScroller* self)
 #else
 				d %= range;
 #endif
+				if (d > 0)
+					d -= range;
 			}
 			else {
 				PiuCoordinate min = size - range;
@@ -158,7 +162,7 @@ void PiuScrollerDictionary(xsMachine* the, void* it)
 {
 	PiuScroller* self = it;
 	xsBooleanValue boolean;
-	if (xsFindBoolean(xsArg(1), xsID_loop, &boolean)) {
+	if (xsFindBoolean(xsArg(1), xsID_looping, &boolean)) {
 		if (boolean)
 			(*self)->flags |= piuLooping;
 		else
@@ -280,7 +284,7 @@ void PiuScrollerPlaceContentHorizontally(void* it, PiuContent* content)
 	PiuScroller* self = it;
 	PiuContainerPlaceContentHorizontally(it, content);
 	if ((*self)->first == content) {
-		if (!((*self)->flags & piuTracking))
+		if (!((*self)->flags & piuTracking) || ((*self)->flags & piuLooping))
 			(*self)->delta.x = PiuScrollerConstraintHorizontally(self);
 		(*content)->bounds.x -= (*self)->delta.x;
 	}
@@ -291,7 +295,7 @@ void PiuScrollerPlaceContentVertically(void* it, PiuContent* content)
 	PiuScroller* self = it;
 	PiuContainerPlaceContentVertically(it, content);
 	if ((*self)->first == content) {
-		if (!((*self)->flags & piuTracking))
+		if (!((*self)->flags & piuTracking) || ((*self)->flags & piuLooping))
 			(*self)->delta.y = PiuScrollerConstraintVertically(self);
 		(*content)->bounds.y -= (*self)->delta.y;
 	}
@@ -353,7 +357,7 @@ void PiuScrollerScrollBy(PiuScroller* self, PiuCoordinate dx, PiuCoordinate dy)
 		if (((*content)->coordinates.horizontal & piuLeftRightWidth) == piuLeftRight) dx = 0;
 		if (((*content)->coordinates.vertical & piuTopBottomHeight) == piuTopBottom) dy = 0;
 		if (dx || dy) {
-			if ((*self)->flags & piuClip)
+			if ((*self)->flags & (piuClip | piuLooping))
 				PiuContentInvalidate(self, NULL);
 			else
 				PiuContentInvalidate(content, NULL);
@@ -458,7 +462,7 @@ void PiuScroller_get_constraint(xsMachine* the)
 	xsDefine(xsResult, xsID_y, xsPiuCoordinate(y), xsDefault);
 }
 
-void PiuScroller_get_loop(xsMachine* the)
+void PiuScroller_get_looping(xsMachine* the)
 {
 	PiuScroller* self = PIU(Scroller, xsThis);
 	xsResult = ((*self)->flags & piuLooping) ? xsTrue : xsFalse;
@@ -481,7 +485,7 @@ void PiuScroller_get_tracking(xsMachine* the)
 }
 
 	
-void PiuScroller_set_loop(xsMachine* the)
+void PiuScroller_set_looping(xsMachine* the)
 {
 	PiuScroller* self = PIU(Scroller, xsThis);
 	if (xsTest(xsArg(0)))
