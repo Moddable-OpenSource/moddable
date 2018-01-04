@@ -101,7 +101,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsTree.c.o \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
-	$(LIB_DIR)/xspcre.c.o \
+	$(LIB_DIR)/xsre.c.o \
 	$(LIB_DIR)/xsmc.c.o
 XS_DIRS = \
 	$(XS_DIR)/includes \
