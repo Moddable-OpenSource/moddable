@@ -485,6 +485,14 @@ class XcodeFile extends PrerequisiteFile {
 		}
 		this.addSource(tool.tmpPath + "/mc.xs.c");
 	
+		for (var result of tool.dataFiles) {
+			let target = result.target;
+			if (target.indexOf("/") < 0)	
+				this.addResource(tool.dataPath + "/" + target);
+		}
+		for (var result of tool.dataFolders) {
+			this.addResource(tool.dataPath + "/" + result, true);
+		}
 		for (var result of tool.resourcesFiles) {
 			let target = result.target;
 			if (target.indexOf("/") < 0)	
