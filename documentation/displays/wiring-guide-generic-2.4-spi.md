@@ -17,7 +17,7 @@ Revised: January 2, 2018
 
 ![Generic SPI Display](images/spi-touch-display.jpg)
 
-**Moddable Sample code:** The Piu example [Drag](../../examples/piu/drag/) is good for testing this display. The build command below includes the -d, debug flag so requries XSBug to be launched to run.
+**Moddable Sample code:** The Piu example [Drag](../../examples/piu/drag/) is good for testing this display. The build command below includes the -d, debug flag so requires XSBug to be launched to run.
 
 ```
 cd $MODDABLE/examples/piu/drag
