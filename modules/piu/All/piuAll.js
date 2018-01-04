@@ -370,11 +370,11 @@ export let Scroller = Template(Object.freeze({
 	_create($, it) @ "PiuScroller_create",
 
 	get constraint() @ "PiuScroller_get_constraint",
-	get loop() @ "PiuScroller_get_loop",
+	get looping() @ "PiuScroller_get_looping",
 	get scroll() @ "PiuScroller_get_scroll",
 	get tracking() @ "PiuScroller_get_tracking",
 
-	set loop(it) @ "PiuScroller_set_loop",
+	set looping(it) @ "PiuScroller_set_looping",
 	set scroll(it) @ "PiuScroller_set_scroll",
 	set tracking(it) @ "PiuScroller_set_tracking",
 
