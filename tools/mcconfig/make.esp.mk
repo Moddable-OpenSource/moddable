@@ -172,7 +172,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsSymbol.c.o \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
-	$(LIB_DIR)/xspcre.c.o \
+	$(LIB_DIR)/xsre.c.o \
 	$(LIB_DIR)/xsmc.c.o \
 	$(LIB_DIR)/main.cpp.o
 XS_DIRS = \
