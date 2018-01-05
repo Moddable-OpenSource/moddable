@@ -472,7 +472,6 @@ int main(int argc, char* argv[])
 	
 	if (setjmp(self->_jmp_buf) == 0) {
 		WSADATA wsaData;
-		int index;
 		self->error = WSAStartup(0x202, &wsaData);
 		self->signalEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 		signal(SIGINT, &fxSignalHandler);
