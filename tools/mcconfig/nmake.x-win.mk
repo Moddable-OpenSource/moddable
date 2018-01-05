@@ -162,14 +162,11 @@ $(BIN_DIR)\$(NAME).exe: $(TMP_DIR)\main.res $(TMP_DIR)\mc.res $(XS_OBJECTS) $(TM
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_DEFINES) $(C_INCLUDES) $(XS_C_FLAGS) $< /Fo$@
 {$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_DEFINES) $(C_INCLUDES) $(XS_C_FLAGS) $< /Fo$@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
-	@echo # cl mc.xs.o
 	cl $(C_DEFINES) $(C_INCLUDES) $(XS_C_FLAGS) $(TMP_DIR)\mc.xs.c /Fo$@
 	
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
