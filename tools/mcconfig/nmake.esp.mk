@@ -360,40 +360,40 @@ $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
 	(cd $(LIB_DIR) && $(AR) -xv $(SYSROOT)\lib\libcirom.a lib_a-setjmp.o)
 
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - X1 $? (strings in flash + (not) force-l32)
+	@echo # cc - X1 $(@F) (strings in flash + (not) force-l32)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $? -o $@.unmapped
 #	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 --rename-section .text=.irom0.code $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - X2 $?
+	@echo # cc - X2 $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.cpp{$(LIB_DIR)\}.o:
-	@echo # cpp $?
+	@echo # cpp $(@F)
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
-	@echo # cc - X2 
+	@echo # cc - X2 cont.S
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(S_FLAGS) $? -o $@
 #	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .text=.iram1_0_seg $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\libb64\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - lib64 $?
+	@echo # cc - lib64 $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\spiffs\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - spiffs $?
+	@echo # cc - spiffs $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - umm_malloc $?
+	@echo # cc - umm_malloc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
