@@ -158,14 +158,11 @@ $(BIN_DIR)\mc.dll: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
 {$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
-	@echo # cl mc.xs.o
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.xs.c /Fo$@
 	
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
@@ -173,7 +170,6 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c $(HEADERS)
-	@echo # cl mc.resources.o
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.resources.c /Fo$@
 
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
