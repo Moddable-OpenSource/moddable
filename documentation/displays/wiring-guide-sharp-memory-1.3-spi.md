@@ -31,8 +31,8 @@ mcconfig -d -m -r 0 -f rgb565le -p esp screen=ili9341 touch=xpt2046
 
 **ESP8266 Pinout:**
 
-| Memory Display | ESP8266 | ESP8266 Devboard label
-| --- | --- | --- |) 
+| 1.3" Memory Display | ESP8266 | ESP8266 Devboard label
+| --- | --- | --- | 
 | VIN |  | 
 | 3v3 | 3.3V | 
 | GND | GND | 
@@ -42,6 +42,7 @@ mcconfig -d -m -r 0 -f rgb565le -p esp screen=ili9341 touch=xpt2046
 | EMD | | 
 | DISP | | 
 | EIN | | 
+
 
 ![Generic SPI Display](images/sharp-memory-1.3-wiring.jpg)
 
