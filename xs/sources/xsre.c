@@ -1480,7 +1480,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void**
 	fxPatternParserInitialize(parser);
 	if (c_setjmp(parser->jmp_buf) == 0) {
 		char c;
-		while ((c = *modifier++)) {
+		while ((c = c_read8(modifier++))) {
 			if ((c == 'g') && !(parser->flags & XS_REGEXP_G))
 				parser->flags |= XS_REGEXP_G;
 			else if ((c == 'i') && !(parser->flags & XS_REGEXP_I))
