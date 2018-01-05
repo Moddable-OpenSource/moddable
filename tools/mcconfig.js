@@ -260,7 +260,6 @@ class NMakeFile extends MakeFile {
 				this.write(recipe);
 			}
 			else {
-				this.echo(tool, "cl ", target);
 				this.line("\tcl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " /Fo$@");
 			}
 		}
