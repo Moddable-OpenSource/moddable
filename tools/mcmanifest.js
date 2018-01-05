@@ -262,13 +262,19 @@ export class MakeFile extends FILE {
 			this.write(" ");
 			this.write(rotationPath);
 			this.line("");
-			this.write("\t@echo \"# png2bmp ");
+			if (tool.windows)
+				this.write("\t@echo # png2bmp ");
+			else
+				this.write("\t@echo \"# png2bmp ");
 			this.write(target);
 			if (alphaTarget) {
 				this.write(" ");
 				this.write(alphaTarget);
 			}
-			this.line("\"");
+			if (tool.windows)
+				this.line("");
+			else
+				this.line("\"");
 			this.write("\t$(PNG2BMP) ");
 			this.write(source);
 			this.write(" -f ");
