@@ -347,7 +347,7 @@ $(LIB_ARCHIVE): $(XS_OBJ) $(SDK_OBJ)
 #	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\main.o
 
 $(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
-	@echo "# ld main.bin"
+	@echo # ld main.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
@@ -356,44 +356,44 @@ $(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
 	$(ESPTOOL) -eo $(ARDUINO_ROOT)\bootloaders\eboot\eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)\main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
 
 $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
-	@echo "# ar" $?
+	@echo # ar $?
 	(cd $(LIB_DIR) && $(AR) -xv $(SYSROOT)\lib\libcirom.a lib_a-setjmp.o)
 
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo "# cc - X1" $? "(strings in flash + (not) force-l32)"
+	@echo # cc - X1 $? (strings in flash + (not) force-l32)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $? -o $@.unmapped
 #	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 --rename-section .text=.irom0.code $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.c{$(LIB_DIR)\}.o:
-	@echo "# cc - X2" $?
+	@echo # cc - X2 $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.cpp{$(LIB_DIR)\}.o:
-	@echo "# cpp" $?
+	@echo # cpp $?
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
-	@echo "# cc - X2" 
+	@echo # cc - X2 
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(S_FLAGS) $? -o $@
 #	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .text=.iram1_0_seg $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\libb64\}.c{$(LIB_DIR)\}.o:
-	@echo "# cc - lib64" $?
+	@echo # cc - lib64 $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\spiffs\}.c{$(LIB_DIR)\}.o:
-	@echo "# cc - spiffs" $?
+	@echo # cc - spiffs $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
-	@echo "# cc - umm_malloc" $?
+	@echo # cc - umm_malloc $?
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
@@ -410,12 +410,12 @@ $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
-	@echo "# cc - " $?
+	@echo # cc $(@F)
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
-	@echo "# cc - " $?
+	@echo # cc $(@F)
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
@@ -425,16 +425,16 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 
 
 $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
-	@echo "# cc - " $?
+	@echo # cc $(@F)
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
 
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
-	@echo "# xsl modules"
+	@echo # xsl modules
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
-	@echo "# mcrez resources"
+	@echo # mcrez resources
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
 	
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
