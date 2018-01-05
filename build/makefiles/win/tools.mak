@@ -261,14 +261,11 @@ $(BIN_DIR)\tools.exe : $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(OBJECTS)
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_OPTIONS) $< /Fo$@
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $(C_OPTIONS) $< /Fo$@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
-	@echo # cl mc.xs.o
 	cl $(C_OPTIONS) $(TMP_DIR)\mc.xs.c /Fo$@
 $(TMP_DIR)\mc.xs.c: $(MODULES)
 	@echo # xsl modules
@@ -325,16 +322,12 @@ $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $< $(C_OPTIONS) /Fo$@
 {$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TOOLS)\}.c{$(TMP_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
-	@echo # cl $(<F)
 	cl $< $(C_OPTIONS) /Fo$@
 
 $(BIN_DIR)\buildclut.bat :
