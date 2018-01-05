@@ -199,7 +199,7 @@ export default class extends TOOL {
 			}
 			for (var index of H) {
 				var string = table[index];
-				if (characters) {
+				if (characters && string) {
 					let c = string.length;
 					for (let i = 0; i < c; i++) {
 						characters[string.charCodeAt(i)] = string.charAt(i);
