@@ -50,9 +50,10 @@
 #define mxNoFunctionLength 1
 #define mxNoFunctionName 1
 #define mxHostFunctionPrimitive 1
-//#define mxDebug 1
 #define mxFewGlobalsTable 1
-//#define mxNoConsole 1
+#ifdef mxDebug
+	#define mxNoConsole 1
+#endif
 #define mxMisalignedSettersCrash 1
 
 #ifndef __XS6PLATFORMMINIMAL__
