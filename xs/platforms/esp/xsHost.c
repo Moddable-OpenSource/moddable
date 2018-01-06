@@ -1033,37 +1033,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	return C_NULL;
 }
 
-
-typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
-
-static uint8_t xsRunPromiseJobs_pending(txMachine *the);
-static RunPromiseJobs gRunPromiseJobs;
-
-uint8_t xsRunPromiseJobs_pending(txMachine *the)
-{
-	gRunPromiseJobs = NULL;
-	if (!mxPendingJobs.value.reference->next)
-		return 0;
-
-	fxRunPromiseJobs(the);
-
-	if (0 == mxPendingJobs.value.reference->next)
-		return 0;
-
-	gRunPromiseJobs = xsRunPromiseJobs_pending;
-	return 1;
-}
-
-uint8_t modRunPromiseJobs(txMachine *the)
-{
-	return gRunPromiseJobs ? gRunPromiseJobs(the) : 0;
-}
-
-void fxQueuePromiseJobs(txMachine* the)
-{
-	gRunPromiseJobs = xsRunPromiseJobs_pending;
-}
-
 void fxSweepHost(txMachine* the)
 {
 }
@@ -1233,10 +1202,14 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 {
 	modMessageRecord msg;
 
-	msg.message = c_malloc(messageLength);
-	if (!msg.message) return -1;
+	if (message && messageLength) {
+		msg.message = c_malloc(messageLength);
+		if (!msg.message) return -1;
 
-	c_memmove(msg.message, message, messageLength);
+		c_memmove(msg.message, message, messageLength);
+	}
+	else
+		msg.message = NULL;
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
@@ -1318,7 +1291,8 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg->refcon = refcon;
 	msg->marked = 0;
 
-	c_memmove(msg->message, message, messageLength);
+	if (message && messageLength()
+		c_memmove(msg->message, message, messageLength);
 	msg->length = messageLength;
 
 	// append to message queue
@@ -1369,6 +1343,20 @@ void modMachineTaskUninit(xsMachine *the)
 	}
 }
 #endif
+
+/*
+	promises
+*/
+
+static void doRunPromiseJobs(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	fxRunPromiseJobs((txMachine *)machine);
+}
+
+void fxQueuePromiseJobs(txMachine* the)
+{
+	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
+}
 
 /*
 	 user installable modules
