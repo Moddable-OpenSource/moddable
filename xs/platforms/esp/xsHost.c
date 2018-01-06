@@ -1291,7 +1291,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg->refcon = refcon;
 	msg->marked = 0;
 
-	if (message && messageLength()
+	if (message && messageLength)
 		c_memmove(msg->message, message, messageLength);
 	msg->length = messageLength;
 
