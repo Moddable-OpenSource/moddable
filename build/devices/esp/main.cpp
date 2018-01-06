@@ -84,9 +84,6 @@ void loop(void)
 
 	modMessageService();
 
-	if (modRunPromiseJobs(gThe))
-		return;
-
 	int delayMS = modTimersNext();
 	if (delayMS)
 		modDelayMilliseconds((delayMS < 5) ? delayMS : 5);
