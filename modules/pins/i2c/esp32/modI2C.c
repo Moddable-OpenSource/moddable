@@ -20,32 +20,28 @@
 
 #include "mc.defines.h"
 #include "modI2C.h"
+#include "xsesp.h"
 
 #include "driver/i2c.h"
 
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
-static void modI2CActivate(modI2CConfiguration config);
+static uint8_t modI2CActivate(modI2CConfiguration config);
 
-static modI2CConfigurationRecord gI2CConfig;
+static uint32_t gHz;		// non-zero when driver initialized
+static uint16_t gSda;
+static uint16_t gScl;
 
 void modI2CInit(modI2CConfiguration config)
 {
-	i2c_config_t conf;
-
-	conf.mode = I2C_MODE_MASTER;
-	conf.sda_io_num = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
-	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-	conf.scl_io_num = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;;
-	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-	conf.master.clk_speed = config->hz ? config->hz : 100000;
-	i2c_param_config(I2C_NUM_1, &conf);
-	i2c_driver_install(I2C_NUM_1, conf.mode, 0, 0, 0);
 }
 
 void modI2CUninit(modI2CConfiguration config)
 {
-	i2c_driver_delete(I2C_NUM_1);
+	if (gHz) {
+		i2c_driver_delete(I2C_NUM_1);
+		gHz = 0;
+	}
 }
 
 uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
@@ -53,7 +49,8 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 	int ret;
 	i2c_cmd_handle_t cmd;
 
-	modI2CActivate(config);
+	if (modI2CActivate(config))
+		return 1;
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -74,7 +71,8 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 	int ret;
 	i2c_cmd_handle_t cmd;
 
-	modI2CActivate(config);
+	if (modI2CActivate(config))
+		return 1;
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -88,7 +86,38 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 	return (ESP_OK == ret) ? 0 : 1;
 }
 
-void modI2CActivate(modI2CConfiguration config)
+uint8_t modI2CActivate(modI2CConfiguration config)
 {
-	gI2CConfig = *config;
+	i2c_config_t conf;
+
+	conf.sda_io_num = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
+	conf.scl_io_num = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;
+	conf.master.clk_speed = config->hz ? config->hz : 100000;
+
+	if ((conf.master.clk_speed == gHz) && (gSda == conf.sda_io_num) && (gScl == conf.scl_io_num))
+		return 0;
+
+	if (gHz) {
+		i2c_driver_delete(I2C_NUM_1);
+		gHz = 0;
+	}
+
+	conf.mode = I2C_MODE_MASTER;
+	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+	if (ESP_OK != i2c_param_config(I2C_NUM_1, &conf)) {
+		modLog("i2c_param_config fail");
+		return 1;
+	}
+
+	if (ESP_OK != i2c_driver_install(I2C_NUM_1, conf.mode, 0, 0, 0)) {
+		modLog("i2c_driver_install fail");
+		return 1;
+	}
+
+	gHz = conf.master.clk_speed;
+	gSda = conf.sda_io_num;
+	gScl = conf.scl_io_num;
+
+	return 0;
 }
