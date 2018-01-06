@@ -635,7 +635,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	root.preparation = prep;
 #if MODDEF_XS_MODS
-	archive = installModules(prep);
+	root.archive = installModules(prep);
 #else
 	root.archive = NULL;
 #endif
@@ -1161,7 +1161,7 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 
 void espStartInstrumentation(txMachine *the)
 {
-	if (NULL == the->connection)
+	if ((NULL == the->connection) || gInstrumentationThe)
 		return;
 
 	modInstrumentationInit();
@@ -1217,7 +1217,7 @@ uint32_t modMilliseconds(void)
 	messages
 */
 
-#if ESP32 && MODDEF_MESSAGES
+#if ESP32
 
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
@@ -1248,7 +1248,9 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 
 void modMessageService(xsMachine *the, uint8_t block)
 {
-	while (true) {
+	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
+
+	while (count--) {
 		modMessageRecord msg;
 
 		if (!xQueueReceive(the->msgQueue, &msg, block ? portMAX_DELAY : 0))
@@ -1267,8 +1269,14 @@ void modMachineTaskInit(xsMachine *the)
 
 void modMachineTaskUninit(xsMachine *the)
 {
-	if (the->msgQueue)
+	if (the->msgQueue) {
+		modMessageRecord msg;
+
+		while (xQueueReceive(the->msgQueue, &msg, 0))
+			c_free(msg.message);
+
 		vQueueDelete(the->msgQueue);
+	}
 }
 
 void modMachineTaskWait(xsMachine *the)
@@ -1281,7 +1289,7 @@ void modMachineTaskWake(xsMachine *the)
 	xTaskNotifyGive(the->task);
 }
 
-#elif MODDEF_MESSAGES
+#else
 
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
@@ -1292,6 +1300,8 @@ struct modMessageRecord {
 	modMessageDeliver	callback;
 	void				*refcon;
 	uint16_t			length;
+	uint8_t				marked;
+	uint8_t				unused;
 	char				message[1];
 };
 
@@ -1306,6 +1316,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg->the = the;
 	msg->callback = callback;
 	msg->refcon = refcon;
+	msg->marked = 0;
 
 	c_memmove(msg->message, message, messageLength);
 	msg->length = messageLength;
@@ -1327,27 +1338,36 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 void modMessageService(void)
 {
 	modMessage msg = gMessageQueue;
-	gMessageQueue = NULL;
-
 	while (msg) {
-		modMessage next = msg->next;
+		msg->marked = 1;
+		msg = msg->next;
+	}
 
-		(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
+	msg = gMessageQueue;
+	while (msg && msg->marked) {
+		modMessage next;
+
+		if (msg->the)
+			(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
+		next = msg->next;
 		c_free(msg);
 
+		gMessageQueue = next;
 		msg = next;
 	}
 }
 
 void modMachineTaskInit(xsMachine *the) {}
-void modMachineTaskUninit(xsMachine *the) {}
+void modMachineTaskUninit(xsMachine *the)
+{
+	modMessage msg = gMessageQueue;
 
-#else /* !MODDEF_MESSAGES */
-void modMessageService(void) {}
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon) {}
-
-void modMachineTaskInit(xsMachine *the) {}
-void modMachineTaskUninit(xsMachine *the) {}
+	while (msg) {
+		if (msg->the == the)
+			msg->the = NULL;
+		msg = msg->next;
+	}
+}
 #endif
 
 /*
