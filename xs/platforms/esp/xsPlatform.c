@@ -50,12 +50,28 @@
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
+static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
+
+#if defined (mxDebug) && ESP32
+	SemaphoreHandle_t gDebugMutex;
+
+	#define mxDebugMutexTake() xSemaphoreTake(gDebugMutex, portMAX_DELAY)
+	#define mxDebugMutexGive() xSemaphoreGive(gDebugMutex)
+#else
+	#define mxDebugMutexTake()
+	#define mxDebugMutexGive()
+#endif
+
 void fxCreateMachinePlatform(txMachine* the)
 {
 	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = mxNoSocket;
 	the->debugOnReceive = true;
+#if ESP32
+	if (!gDebugMutex)
+		gDebugMutex = xSemaphoreCreateMutex();
+#endif
 #endif
 #if !ESP32
 	init_printf(the, fx_putc);
@@ -64,6 +80,12 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	while (the->debugFragments) {
+		DebugFragment next = the->debugFragments->next;
+		c_free(the->debugFragments);
+		the->debugFragments = next;
+	}
+
 	modMachineTaskUninit(the);
 }
 
@@ -95,8 +117,9 @@ void fx_putc(void *refcon, char c)
 		the->inPrintf = true;
 		if (kSerialConnection == the->connection) {
 			// write xsbug log header
-			static const char *xsbugHeader = "\r\n<?xs.87654321?>\r\n<xsbug><log>";
+			static const char *xsbugHeader = "<xsbug><log>";
 			const char *cp = xsbugHeader;
+			fx_putpi(the, '.', true);
 			while (true) {
 				char c = c_read8(cp++);
 				if (!c) break;
@@ -106,6 +129,38 @@ void fx_putc(void *refcon, char c)
 	}
 
 	ESP_putc(c);
+}
+
+void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
+{
+	static const char *xsbugHeaderStart = "\r\n<?xs";
+	static const char *xsbugHeaderEnd = "?>";
+	static const char *gHex = "0123456789ABCDEF";
+	char hex[10];
+	signed char i;
+	const char *cp = xsbugHeaderStart;
+	while (true) {
+		char c = c_read8(cp++);
+		if (!c) break;
+		ESP_putc(c);
+	}
+
+	ESP_putc(separator);
+
+	for (i = 7; i >= 0; i--)
+		ESP_putc(c_read8(gHex + ((((uintptr_t)the) >> (i << 2)) & 0x0F)));
+
+	cp = xsbugHeaderEnd;
+	while (true) {
+		char c = c_read8(cp++);
+		if (!c) break;
+		ESP_putc(c);
+	}
+
+	if (trailingcrlf) {
+		ESP_putc('\r');
+		ESP_putc('\n');
+	}
 }
 
 #ifdef mxDebug
@@ -154,16 +209,6 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
     xmodLog("  didReceive - EXIT");
 
 	return ERR_OK;
-}
-
-uint8_t triggerDebugCommand(txMachine *the)
-{
-	if (the->debugOnReceive) {
-		fxDebugCommand(the);
-		return the->breakOnStartFlag;
-	}
-
-	return false;
 }
 
 static err_t didReceiveMonitor(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
@@ -269,27 +314,8 @@ void fxDisconnect(txMachine* the)
 	if (the->connection) {
 		if (kSerialConnection != the->connection)
 			tcp_close((struct tcp_pcb *)the->connection);
-		else {
-			ESP_putc('\r');
-			ESP_putc('\n');
-			ESP_putc('<');
-			ESP_putc('?');
-			ESP_putc('x');
-			ESP_putc('s');
-			ESP_putc('-');
-			ESP_putc('8');
-			ESP_putc('7');
-			ESP_putc('6');
-			ESP_putc('5');
-			ESP_putc('4');
-			ESP_putc('3');
-			ESP_putc('2');
-			ESP_putc('1');
-			ESP_putc('?');
-			ESP_putc('>');
-			ESP_putc('\r');
-			ESP_putc('\n');
-		}
+		else
+			fx_putpi(the, '-', true);
 		the->connection = NULL;
 	}
 	xmodLog("  fxDisconnect - EXIT");
@@ -302,8 +328,10 @@ txBoolean fxIsConnected(txMachine* the)
 
 txBoolean fxIsReadable(txMachine* the)
 {
-	if (kSerialConnection == the->connection)
-		return (txBoolean)ESP_isReadable();
+	if (kSerialConnection == the->connection) {
+		fxReceiveLoop();
+		return NULL != the->debugFragments;
+	}
 	else
 		return the->connection && the->reader;
 }
@@ -341,16 +369,21 @@ void fxReceive(txMachine* the)
 		the->reader = NULL;
 	}
 	else {
-		while (the->debugOffset < (sizeof(the->debugBuffer) - 3)) {
-			int c = ESP_getc();
-			if (-1 == c) {
-				modDelayMilliseconds(2);
-				c = ESP_getc();
-				if (-1 == c)
-					break;
-			}
+		while (true) {
+			fxReceiveLoop();
+			if (the->debugFragments) {
+				DebugFragment f;
 
-			the->debugBuffer[the->debugOffset++] = (txU1)c;
+				mxDebugMutexTake();
+				f = the->debugFragments;
+				the->debugFragments = f->next;
+				mxDebugMutexGive();
+
+				c_memcpy(the->debugBuffer, f->bytes, f->count);
+				the->debugOffset = f->count;
+				c_free(f);
+				break;
+			}
 		}
 	}
 
@@ -358,7 +391,138 @@ bail:
 	the->debugBuffer[the->debugOffset] = 0;
 
 	xmodLog("  fxReceive - EXIT with:");
-	xmodLog(the->debugBuffer);
+	if (the->debugOffset)
+		xmodLogVar(the->debugBuffer);
+}
+
+static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	txMachine* the = machine;
+
+	the->debugNotifyOutstanding = false;
+
+	if (!the->debugFragments || !the->debugOnReceive)
+		return;
+
+	fxDebugCommand(the);
+	if (the->breakOnStartFlag) {
+		fxBeginHost(the);
+		fxDebugger(the, (char *)__FILE__, __LINE__);
+		fxEndHost(the);
+	}
+}
+
+void fxReceiveLoop(void)
+{
+	static const char *piBegin = "\r\n<?xs.";
+	static const char *tagEnd = ">\r\n";
+	static txMachine* current = NULL;
+	static uint8_t state = 0;
+	static uint32_t value = 0;
+	static uint8_t buffered[28];
+	static uint8_t bufferedBytes = 0;
+	txBoolean didRead = false;
+
+	mxDebugMutexTake();
+
+	while (true) {
+		int c = ESP_getc();
+		if (-1 == c) {
+			if (!didRead)
+				break;
+			int retry;
+			for (retry = 0; retry < 5; retry++) {
+				modDelayMilliseconds(1);
+				c = ESP_getc();
+				if (-1 != c)
+					break;
+			}
+			if (-1 == c) break;
+		}
+		didRead = true;
+
+		if ((state >= 0) && (state <= 6)) {
+			if (0 == state) {
+				current = NULL;
+				value = 0;
+			}
+			if (c == piBegin[state])
+				state++;
+			else
+				state = 0;
+		}
+		else if ((state >= 7) && (state <= 14)) {
+			if (('0' <= c) && (c <= '9')) {
+				state++;
+				value = (value * 16) + (c - '0');
+			}
+			else if (('a' <= c) && (c <= 'f')) {
+				state++;
+				value = (value * 16) + (10 + c - 'a');
+			}
+			else if (('A' <= c) && (c <= 'F')) {
+				state++;
+				value = (value * 16) + (10 + c - 'A');
+			}
+			else
+				state = 0;
+		}
+		else if (state == 15) {
+			if (c == '?')
+				state++; 
+			else
+				state = 0;
+		}
+		else if (state == 16) {
+			if (c == '>') {
+				current = (txMachine*)value;
+				state++;
+				bufferedBytes = 0;
+			}
+			else
+				state = 0;
+		}
+		else if ((state >= 17) && (state <= 19)) {
+			txBoolean enqueue;
+			buffered[bufferedBytes++] = c;
+			enqueue = bufferedBytes == sizeof(buffered);
+			if (c == tagEnd[state - 17]) {
+				if (state == 19) {
+					state = 0;
+					enqueue = true;
+				}
+				else
+					state++;
+			}
+			else
+				state = 17;
+
+			if (enqueue) {
+				DebugFragment fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
+				if (NULL == fragment) {
+					modLog("no fragment memory");
+					break;
+				}
+				fragment->next = NULL;
+				fragment->count = bufferedBytes;
+				c_memcpy(fragment->bytes, buffered, bufferedBytes);
+				if (NULL == current->debugFragments)
+					current->debugFragments = fragment;
+				else {
+					DebugFragment walker = current->debugFragments;
+					while (walker->next)
+						walker = walker->next;
+					walker->next = fragment;
+				}
+				if (!current->debugNotifyOutstanding) {
+					current->debugNotifyOutstanding = true;
+					modMessagePostToMachine(current, NULL, 0, doDebugCommand, current);
+				}
+				bufferedBytes = 0;
+			}
+		}
+	}
+	mxDebugMutexGive();
 }
 
 void fxSend(txMachine* the, txBoolean more)
@@ -422,27 +586,15 @@ void fxSend(txMachine* the, txBoolean more)
 		char *c = the->echoBuffer;
 		txInteger count = the->echoOffset;
 		if (!the->inPrintf) {
-			ESP_putc('\r');
-			ESP_putc('\n');
-			ESP_putc('<');
-			ESP_putc('?');
-			ESP_putc('x');
-			ESP_putc('s');
-			ESP_putc('.');
-			ESP_putc('8');
-			ESP_putc('7');
-			ESP_putc('6');
-			ESP_putc('5');
-			ESP_putc('4');
-			ESP_putc('3');
-			ESP_putc('2');
-			ESP_putc('1');
-			ESP_putc('?');
-			ESP_putc('>');
+			mxDebugMutexTake();
+			fx_putpi(the, '.', false);
 		}
 		the->inPrintf = more;
 		while (count--)
 			ESP_putc(*c++);
+
+		if (!more)
+			mxDebugMutexGive();
 	}
 
 	xmodLog("  fxSend - EXIT");
