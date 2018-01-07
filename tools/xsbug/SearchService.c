@@ -4,9 +4,6 @@
  */
 
 #include "piuCode.h"
-extern xsBooleanValue fxCompileRegExp(void* the, xsStringValue pattern, xsStringValue modifier, void** code, void** data, xsUnsignedValue* flags, xsStringValue messageBuffer, xsIntegerValue messageSize);
-extern void fxDeleteRegExp(void* the, void* code, void* data);
-extern xsIntegerValue fxMatchRegExp(void* the, void* code, void* data, xsUnsignedValue flags, xsStringValue subject, xsIntegerValue offset, xsIntegerValue** offsets, xsIntegerValue* limit);
 
 #if mxLinux
 #include <fcntl.h>
@@ -37,9 +34,8 @@ enum {
 
 typedef struct {
 // 	KprMessage message;
-	void* code;
-	void* data;
-	xsUnsignedValue flags;
+	xsIntegerValue* code;
+	xsIntegerValue* data;
 	char* name;
 	int total;
 #if mxLinux
@@ -67,7 +63,7 @@ void PiuCode_search(xsMachine* the)
 		xsResult = xsNewArray(0);
 		xsVar(XS_MAP) = xsNew0(xsGlobal, xsID_Map);
 		xsSet(xsGlobal, xsID("search/results"), xsVar(XS_MAP));
-		if (!fxCompileRegExp(NULL, pattern, modifier, &self->code, &self->data, &self->flags, NULL, 0))
+		if (!fxCompileRegExp(NULL, pattern, modifier, &self->code, &self->data, NULL, 0))
 			xsUnknownError("invalid regexp");
 		c = xsToInteger(xsGet(xsArg(2), xsID_length));
 		for (i = 0; i < c; i++) {
@@ -234,7 +230,6 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 {
 	int offset, count, total = 0;
 	char *fromFile, *toFile, *fromLine, *toLine, *from, *to;
-	xsIntegerValue* offsets;
 	
 	offset = 0;
 	fromFile = data;
@@ -242,11 +237,11 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 	for (;;) {
 // 		if (!KprMessageContinue(self->message))
 // 			break;
-		count = fxMatchRegExp(NULL, self->code, self->data, self->flags, fromFile, offset, &offsets, NULL);
+		count = fxMatchRegExp(NULL, self->code, self->data, fromFile, offset);
 		if (count <= 0) {
 			break;
 		}
-		from = fromLine = fromFile + offsets[0];
+		from = fromLine = fromFile + self->data[0];
 		while (fromLine >= fromFile) {
 			char c = *fromLine;
 			if ((c == 10) || (c == 13))
@@ -260,7 +255,7 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 				break;
 			fromLine++;
 		}
-		to = toLine = fromFile + offsets[1];
+		to = toLine = fromFile + self->data[1];
 		while (toLine < toFile) {
 			char c = *toLine;
 			if ((c == 10) || (c == 13))
@@ -275,7 +270,7 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 			toLine--;
 		}
 		toLine++;
-		offset = offsets[1];
+		offset = self->data[1];
 		if (!xsTest(xsVar(XS_FILE))) {
 			xsVar(XS_RESULTS) = xsNewArray(0);
 			xsVar(XS_FILE) = xsNewObject();
@@ -289,7 +284,7 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 		}
 		xsVar(XS_RESULT) = xsNewObject();
 		xsDefine(xsVar(XS_RESULT), xsID_string, xsStringBuffer(fromLine, toLine - fromLine), xsDefault);
-		xsDefine(xsVar(XS_RESULT), xsID_offset, xsInteger(fxUTF8ToUnicodeOffset(fromFile, offsets[0])), xsDefault);
+		xsDefine(xsVar(XS_RESULT), xsID_offset, xsInteger(fxUTF8ToUnicodeOffset(fromFile, self->data[0])), xsDefault);
 		xsDefine(xsVar(XS_RESULT), xsID_length, xsInteger(fxUTF8ToUnicodeOffset(from, to - from)), xsDefault);
 		xsDefine(xsVar(XS_RESULT), xsID_delta, xsInteger(fxUTF8ToUnicodeOffset(fromLine, from - fromLine)), xsDefault);
 		(void)xsCall1(xsVar(XS_RESULTS), xsID_push, xsVar(XS_RESULT));
