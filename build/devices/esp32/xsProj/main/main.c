@@ -111,15 +111,7 @@ void loop(void)
 		return;
 
 #ifdef mxDebug
-	if (ESP_isReadable()) {
-		if (triggerDebugCommand(gThe)) {
-			if (modTimersNextScript() > 500) {		// if a script is not likely to fire within half a second, break immediately
-				xsBeginHost(gThe);
-				xsDebugger();
-				xsEndHost(gThe);
-			}
-		}
-	}
+	fxReceiveLoop();
 #endif
 
 	modTimersExecute();

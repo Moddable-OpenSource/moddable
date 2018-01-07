@@ -242,7 +242,7 @@ int workerStart(modWorker worker)
 {
 	xsMachine *the;
 
-	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, 1);	// no debugger
+	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, 0);
 	if (!the)
 		return -1;
 
