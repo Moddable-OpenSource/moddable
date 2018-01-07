@@ -125,7 +125,7 @@ void fxInitializeRegExp(txMachine* the)
         key->kind = XS_KEY_X_KIND;
     pattern = key->value.key.string = mxArgv(0)->value.string;
 	modifier = mxArgv(1)->value.string;
-	if (!fxCompileRegExp(the, pattern, modifier, &regexp->value.regexp.code, &regexp->value.regexp.data, &key->value.key.sum, the->nameBuffer, sizeof(the->nameBuffer)))
+	if (!fxCompileRegExp(the, pattern, modifier, &regexp->value.regexp.code, &regexp->value.regexp.data, the->nameBuffer, sizeof(the->nameBuffer)))
 		mxSyntaxError("invalid regular expression: %s", the->nameBuffer);
 	*mxResult = *mxThis;
 #endif
@@ -241,8 +241,8 @@ void fx_RegExp_prototype_get_flag(txMachine* the, txU4 flag)
 			return;
 		slot = slot->next;
 		if ((slot) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_REGEXP_KIND)) {
-            slot = slot->next;
-			mxResult->value.boolean = (slot->value.key.sum & flag) ? 1 : 0;
+			txInteger flags = slot->value.regexp.code[0];
+			mxResult->value.boolean = (flags & flag) ? 1 : 0;
 			mxResult->kind = XS_BOOLEAN_KIND;
 			return;
 		}
@@ -408,15 +408,13 @@ void fx_RegExp_prototype_exec(txMachine* the)
 #if mxRegExp
 	txSlot* instance = fxCheckRegExpInstance(the, mxThis);
 	txSlot* regexp = instance->next;
-	txSlot* key = regexp->next;
 	txSlot* argument;
 	txInteger lastIndex;
+	txInteger flags;
 	txBoolean globalFlag;
+	txBoolean namedFlag;
 	txBoolean stickyFlag;
 	txInteger offset;
-	txInteger count;
-	txInteger* offsets;
-	txInteger limit;
 
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -432,19 +430,22 @@ void fx_RegExp_prototype_exec(txMachine* the)
 	if (lastIndex < 0)
 		lastIndex = 0;
 
-	globalFlag = (key->value.key.sum & XS_REGEXP_G) ? 1 : 0;
-	stickyFlag = (key->value.key.sum & XS_REGEXP_Y) ? 1 : 0;
+	flags = regexp->value.regexp.code[0];
+	globalFlag = (flags & XS_REGEXP_G) ? 1 : 0;
+	namedFlag = (flags & XS_REGEXP_N) ? 1 : 0;
+	stickyFlag = (flags & XS_REGEXP_Y) ? 1 : 0;
 	offset = (globalFlag || stickyFlag) ? fxUnicodeToUTF8Offset(argument->value.string, lastIndex) : 0;
 
-	count = fxMatchRegExp(the, regexp->value.regexp.code, regexp->value.regexp.data, key->value.key.sum,
-			argument->value.string, offset, &offsets, &limit);
-	if (count > 0) {
+	if (fxMatchRegExp(the, regexp->value.regexp.code, regexp->value.regexp.data, argument->value.string, offset)) {
 		txSlot* array;
 		txSlot* item;
+		txSlot* object;
+		txSlot* property;
+		txInteger count;
 		txInteger index;
 		txInteger length;
 		if (globalFlag || stickyFlag) {
-			lastIndex = fxUTF8ToUnicodeOffset(argument->value.string, offsets[1]);
+			lastIndex = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[1]);
 			mxPushInteger(lastIndex);
 			mxPushSlot(mxThis);
 			fxSetID(the, mxID(_lastIndex));
@@ -453,21 +454,30 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		mxPush(mxArrayPrototype);
 		array = fxNewArrayInstance(the);
 		item = fxLastProperty(the, array);
+		if (namedFlag) {
+			object = fxNewInstance(the);
+			property = fxLastProperty(the, object);
+		}
+		count = regexp->value.regexp.code[1];
 		for (index = 0; index < count; index++) {
 			item = item->next = fxNewSlot(the);
-			offset = offsets[2 * index];
+			offset = regexp->value.regexp.data[2 * index];
 			if (offset >= 0) {
-				length = offsets[(2 * index) + 1] - offset;
+				length = regexp->value.regexp.data[(2 * index) + 1] - offset;
 				item->value.string = (txString)fxNewChunk(the, length + 1);
 				c_memcpy(item->value.string, argument->value.string + offset, length);
 				item->value.string[length] = 0;
 				item->kind = XS_STRING_KIND;
 			}
-			array->next->value.array.length++;
-		}
-		for (; index < limit; index++) {
-			item->next = fxNewSlot(the);
-			item = item->next;
+			if (namedFlag) {
+				txID name = (txID)(regexp->value.regexp.code[2 + index]);
+				if (name != XS_NO_ID) {
+					property = property->next = fxNewSlot(the);
+					property->value = item->value;
+					property->kind = item->kind;
+					property->ID = name;
+				}
+			}
 			array->next->value.array.length++;
 		}
 		fxCacheArray(the, array);
@@ -475,11 +485,18 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		item = item->next = fxNewSlot(the);
 		item->ID = mxID(_index);
 		item->kind = XS_INTEGER_KIND;
-		item->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, offsets[0]);
+		item->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
 		item = item->next = fxNewSlot(the);
 		item->ID = mxID(_input);
 		item->value.string = argument->value.string;
 		item->kind = argument->kind;
+		item = item->next = fxNewSlot(the);
+		item->ID = mxID(_groups);
+		if (namedFlag) {
+			item->value.reference = object;
+			item->kind = XS_REFERENCE_KIND;
+			mxPop();
+		}
 	}
 	else {
 		if (globalFlag || stickyFlag) {
@@ -647,7 +664,14 @@ void fx_RegExp_prototype_replace(txMachine* the)
             if (function) {
                 mxPushInteger(position);
                 mxPushSlot(argument);
-                mxPushInteger(3 + i - 1);
+				mxPushSlot(result);
+				fxGetID(the, mxID(_groups));
+				if (mxIsUndefined(the->stack)) {
+					mxPop();
+					mxPushInteger(3 + i - 1);
+				}
+				else
+					mxPushInteger(4 + i - 1);
                 mxPushUndefined();
                 mxPushSlot(function);
                 fxCall(the);
@@ -656,10 +680,12 @@ void fx_RegExp_prototype_replace(txMachine* the)
                 mxPullSlot(item);
             }
             else {
-                fxPushSubstitutionString(the, argument, utf8Size, fxUnicodeToUTF8Offset(argument->value.string, position), matched, c_strlen(matched->value.string), i - 1, the->stack, replacement);
+ 				mxPushSlot(result);
+				fxGetID(the, mxID(_groups));
+				fxPushSubstitutionString(the, argument, utf8Size, fxUnicodeToUTF8Offset(argument->value.string, position), matched, c_strlen(matched->value.string), i - 1, the->stack + 1, the->stack, replacement);
                 item = item->next = fxNewSlot(the);
                 mxPullSlot(item);
-                the->stack += i;			
+                the->stack += 1 + i;			
             }
             former = position + matchLength;
         }
