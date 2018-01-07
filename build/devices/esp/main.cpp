@@ -56,7 +56,7 @@ static uart_t *gUART;
 
 void setup()
 {
-	gUART = uart_init(UART0, 460800, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+	gUART = uart_init(UART0, 230400, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
 
 	system_set_os_print(0);
 
@@ -68,16 +68,11 @@ void setup()
 
 void loop(void)
 {
-#ifdef mxDebug
-	if (ESP_isReadable()) {
-		if (triggerDebugCommand(gThe)) {
-			if (modTimersNextScript() > 500) {		// if a script is not likely to fire within half a second, break immediately
-				xsBeginHost(gThe);
-				xsDebugger();
-				xsEndHost(gThe);
-			}
-		}
-	}
+	if (!gThe)
+		return;
+
+#if mxDebug
+	fxReceiveLoop();
 #endif
 
 	modTimersExecute();
