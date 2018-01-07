@@ -19,9 +19,6 @@
  */
 
 #include "piuCode.h"
-extern xsBooleanValue fxCompileRegExp(void* the, xsStringValue pattern, xsStringValue modifier, void** code, void** data, xsUnsignedValue* flags, xsStringValue messageBuffer, xsIntegerValue messageSize);
-extern void fxDeleteRegExp(void* the, void* code, void* data);
-extern xsIntegerValue fxMatchRegExp(void* the, void* code, void* data, xsUnsignedValue flags, xsStringValue subject, xsIntegerValue offset, xsIntegerValue** offsets, xsIntegerValue* limit);
 
 enum {
 	teCharDone = 0,
@@ -572,7 +569,6 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 		int32_t offset = 0;
 		int32_t itemCount = 0;
 		int32_t itemSize = 0;
-		int* offsets;
 		itemCount = 0;
 		itemSize = sizeof(PiuCodeResultRecord);
 		for (;;) {
@@ -580,12 +576,12 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 			PiuTextBufferGrow(the, results, itemSize);
 			result = (PiuCodeResult)((char*)(*results) + former);
 			string = PiuToString((*self)->string);
-			result->count = fxMatchRegExp(NULL, (*self)->code, (*self)->data, (*self)->options, string, offset, &offsets, NULL);
+			result->count = fxMatchRegExp(NULL, (*self)->code, (*self)->data, string, offset);
 			if (result->count <= 0) {
 				break;
 			}
-			offset = offsets[1];
-			result->from = offsets[0];
+			offset = (*self)->data[1];
+			result->from = (*self)->data[0];
 			result->to = offset;
 			PiuCodeOffsetToColumnLine(self, result->from, &result->fromColumn, &result->fromLine);
 			PiuCodeOffsetToColumnLine(self, result->to, &result->toColumn, &result->toLine);
@@ -915,7 +911,7 @@ void PiuCode_find(xsMachine *the)
 	}	
 	if (pattern && pattern[0]) {
 		xsStringValue modifier = (caseless) ? "iu" : "u";
-		fxCompileRegExp(NULL, pattern, modifier, &(*self)->code, &(*self)->data, &(*self)->options, NULL, 0);
+		fxCompileRegExp(NULL, pattern, modifier, &(*self)->code, &(*self)->data, NULL, 0);
 	}
 	PiuCodeSearch(self, (*self)->size);
 	result = (PiuCodeResult)((char*)(*results) + sizeof(PiuTextBufferRecord));

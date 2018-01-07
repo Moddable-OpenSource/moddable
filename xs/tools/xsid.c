@@ -102,12 +102,10 @@ int main(int argc, char* argv[])
 	FILE* file = NULL;
 	size_t size;
 	char* buffer = NULL;
-	void* code;
-	void* data;
-	txIndex flags;
+	txInteger* code;
+	txInteger* data;
 	char reason[256];
 	int offset;
-	int* offsets;
 	int count;
 	int total;
 	txLink* list = NULL;
@@ -160,15 +158,15 @@ int main(int argc, char* argv[])
 	fclose(file);
 	file = NULL;
 
-	if (!fxCompileRegExp(NULL, "xsID_[0-9A-Za-z_]+", "u", &code, &data, &flags, reason, sizeof(reason)))
+	if (!fxCompileRegExp(NULL, "xsID_[0-9A-Za-z_]+", "u", &code, &data, reason, sizeof(reason)))
 		fxReportError("%s", reason);
 		
 	offset = 0;
 	count = 0;
 	total = 2;
-	while (fxMatchRegExp(NULL, code, data, flags, buffer, offset, &offsets, NULL) > 0) {
-		char* from = buffer + offsets[0] + 5;
-		char* to = buffer + offsets[1];
+	while (fxMatchRegExp(NULL, code, data, buffer, offset) > 0) {
+		char* from = buffer + data[0] + 5;
+		char* to = buffer + data[1];
 		int length = to - from;
 		char tmp = *to;
 		txLink** address = &list;
@@ -195,7 +193,7 @@ int main(int argc, char* argv[])
 			*address = link;
 		}
 		*to = tmp;
-		offset = offsets[1];
+		offset = data[1];
 	}
 	
 	if (output)

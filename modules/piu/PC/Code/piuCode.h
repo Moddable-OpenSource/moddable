@@ -47,9 +47,8 @@ struct PiuCodeStruct {
 	double columnWidth;
 	double lineHeight;
 	PiuTextBuffer* runs;
-	void* code;
-	void* data;
-	xsUnsignedValue options;
+	xsIntegerValue* code;
+	xsIntegerValue* data;
 	PiuTextBuffer* results;
 	int32_t resultsSize;
 };
