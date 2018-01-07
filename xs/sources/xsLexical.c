@@ -408,7 +408,7 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 	*p = 0;
 	parser->modifierLength = p - parser->buffer;
 	parser->modifier = fxNewParserString(parser, parser->buffer, parser->modifierLength);
-	if (!fxCompileRegExp(C_NULL, parser->string, parser->modifier, C_NULL, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
+	if (!fxCompileRegExp(C_NULL, parser->string, parser->modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
 		fxReportParserError(parser, "invalid regular expression: %s", parser->buffer);
 	parser->token = XS_TOKEN_REGEXP;
 }
