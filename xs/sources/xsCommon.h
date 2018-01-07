@@ -411,17 +411,17 @@ mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole)
 
 /* xspcre.c */
 enum {
-	XS_REGEXP_G = 1 << 31,
-	XS_REGEXP_I = 1 << 30,
-	XS_REGEXP_M = 1 << 29,
-	XS_REGEXP_S = 1 << 28,
-	XS_REGEXP_U = 1 << 27,
-	XS_REGEXP_Y = 1 << 26,
+	XS_REGEXP_G = 1 << 0,
+	XS_REGEXP_I = 1 << 1,
+	XS_REGEXP_M = 1 << 2,
+	XS_REGEXP_N = 1 << 3,
+	XS_REGEXP_S = 1 << 4,
+	XS_REGEXP_U = 1 << 5,
+	XS_REGEXP_Y = 1 << 6,
 };
-#define XS_REGEXP_COUNT_MASK 0x00FFFFFF
-extern txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void** code, void** data, txUnsigned* flags, txString messageBuffer, txInteger messageSize);
-extern void fxDeleteRegExp(void* the, void* code, void* data);
-extern txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned flags, txString subject, txInteger offset, txInteger** offsets, txInteger* limit);
+mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
+mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
+mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger offset);
 
 #if mxLittleEndian
 #define mxDecode2(THE_CODE, THE_VALUE)	{ \
@@ -774,6 +774,7 @@ enum {
 	_getUint8Clamped,
 	_getYear,
 	_global,
+	_groups,
 	_has,
 	_hasInstance,
 	_hasOwnProperty,

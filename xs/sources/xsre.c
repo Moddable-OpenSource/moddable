@@ -1,6 +1,24 @@
+/*
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "xsAll.h"
-#include "xsScript.h"
-#include "xs.h"
 
 //#define mxTrace 1
 
@@ -94,16 +112,20 @@ typedef struct {
 	txInteger completion;
 } txAssertion;
 
-typedef struct {
+typedef struct sxCapture txCapture;
+struct sxCapture {
 	txTermPart;
 	txTerm* term;
 	txInteger captureIndex;
 	txInteger completion;
-} txCapture;
+	txCapture* nextNamedCapture;
+	char name[1];
+};
 
 typedef struct {
 	txTermPart;
 	txInteger captureIndex;
+	char name[1];
 } txCaptureReference;
 
 typedef struct {
@@ -148,33 +170,20 @@ struct sxPatternParser {
 	
 	txInteger character;
 	txInteger surrogate;
-	txCharSet* wordCharSet;
 		
 	txInteger assertionIndex;
 	txInteger captureIndex;
 	txInteger quantifierIndex;
-	txByte* buffer;
+	txCapture* firstNamedCapture;
+	
 	txInteger size;
+
+	txInteger** code;
+	txByte* buffer;
 	
 	c_jmp_buf jmp_buf;
 	char error[256];
 };
-
-#define mxCodeSize sizeof(txInteger)
-#define mxStepSize sizeof(txInteger)
-#define mxIndexSize sizeof(txInteger)
-#define mxTermStepSize mxCodeSize + mxStepSize
-#define mxAssertionNotStepSize mxTermStepSize + mxIndexSize + mxStepSize
-#define mxAssertionNotCompletionSize mxCodeSize + mxIndexSize
-#define mxAssertionStepSize mxTermStepSize + mxIndexSize
-#define mxAssertionCompletionSize mxTermStepSize + mxIndexSize
-#define mxCaptureStepSize mxTermStepSize + mxIndexSize
-#define mxCaptureCompletionSize mxTermStepSize + mxIndexSize
-#define mxCaptureReferenceStepSize mxTermStepSize + mxIndexSize
-#define mxDisjunctionStepSize mxTermStepSize + mxStepSize
-#define mxQuantifierStepSize mxTermStepSize + mxIndexSize + (2 * sizeof(txInteger))
-#define mxQuantifierLoopSize mxTermStepSize + mxIndexSize + mxStepSize + mxIndexSize + mxIndexSize
-#define mxQuantifierCompletionSize mxTermStepSize + mxIndexSize + mxStepSize
 
 static void* fxCharSetAny(txPatternParser* parser);
 static void* fxCharSetDigits(txPatternParser* parser);
@@ -223,10 +232,64 @@ static void fxWordContinueCode(txPatternParser* parser, void* it, txInteger dire
 static void fxPatternParserInitialize(txPatternParser* parser);
 static txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserError(txPatternParser* parser, txString format, ...);
-static void fxPatternParserErrorCharacter(txPatternParser* parser, txString string);
 static txBoolean fxPatternParserHexadecimal(txPatternParser* parser, txU4* value);
+static void fxPatternParserName(txPatternParser* parser, txInteger* length);
+static void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture);
 static void fxPatternParserNext(txPatternParser* parser);
 static void fxPatternParserTerminate(txPatternParser* parser);
+static txBoolean fxPatternParserUnicodeEscape(txPatternParser* parser, txU4* character);
+
+#define mxCodeSize sizeof(txInteger)
+#define mxStepSize sizeof(txInteger)
+#define mxIndexSize sizeof(txInteger)
+#define mxTermStepSize mxCodeSize + mxStepSize
+#define mxAssertionNotStepSize mxTermStepSize + mxIndexSize + mxStepSize
+#define mxAssertionNotCompletionSize mxCodeSize + mxIndexSize
+#define mxAssertionStepSize mxTermStepSize + mxIndexSize
+#define mxAssertionCompletionSize mxTermStepSize + mxIndexSize
+#define mxCaptureStepSize mxTermStepSize + mxIndexSize
+#define mxCaptureCompletionSize mxTermStepSize + mxIndexSize
+#define mxCaptureReferenceStepSize mxTermStepSize + mxIndexSize
+#define mxDisjunctionStepSize mxTermStepSize + mxStepSize
+#define mxQuantifierStepSize mxTermStepSize + mxIndexSize + (2 * sizeof(txInteger))
+#define mxQuantifierLoopSize mxTermStepSize + mxIndexSize + mxStepSize + mxIndexSize + mxIndexSize
+#define mxQuantifierCompletionSize mxTermStepSize + mxIndexSize + mxStepSize
+
+enum {
+	mxDuplicateCapture,
+	mxInvalidCharacter,
+	mxInvalidEscape,
+	mxInvalidFlags,
+	mxInvalidGroup,
+	mxInvalidName,
+	mxInvalidPattern,
+	mxInvalidQuantifier,
+	mxInvalidRange,
+	mxInvalidReferenceName,
+	mxInvalidReferenceNumber,
+	mxInvalidSequence,
+	mxInvalidUTF8,
+	mxNameOverflow,
+	mxNotEnoughMemory,
+	mxErrorCount
+};
+static const txString gxErrors[mxErrorCount] ICACHE_XS6RO_ATTR = {
+	"duplicate capture",
+	"invalid character",
+	"invalid escape",
+	"invalid flags",
+	"invalid group",
+	"invalid name",
+	"invalid pattern",
+	"invalid quantifier",
+	"invalid range",
+	"invalid reference name \\k<%s>",
+	"invalid reference number \\%d",
+	"invalid sequence",
+	"invalid UTF-8",
+	"name overflow",
+	"not enough memory",
+};
 
 // MATCH
 
@@ -458,7 +521,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 {
 	void* result = NULL;
 	switch(parser->character) {
-	case 0: 
+	case C_EOF:
 		break;
 	// character classes
 	case 'd': 
@@ -515,15 +578,11 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 			result = fxCharSetSingle(parser, value % 32);
 			fxPatternParserNext(parser);
 		}
-		else
-			fxPatternParserErrorCharacter(parser, "invalid escape \\c");
 	} break;
 	// null
 	case '0': {
 		fxPatternParserNext(parser);
-		if (('0' <= parser->character) && (parser->character <= '9'))
-			fxPatternParserErrorCharacter(parser, "invalid escape \\0");
-		else
+		if ((parser->character < '0') || ('9' < parser->character))
 			result = fxCharSetSingle(parser, 0);
 	} break;
 
@@ -543,59 +602,10 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 	} break;
 
 	case 'u': {
-		int i;
 		txU4 value = 0;
 		fxPatternParserNext(parser);
-		if ((parser->flags & XS_REGEXP_U) && (parser->character == '{')) {
-			fxPatternParserNext(parser);
-			for (i = 0; value < 0x00110000; i++) {
-				if (fxPatternParserHexadecimal(parser, &value))
-					fxPatternParserNext(parser);
-				else
-					break;
-			}
-			if ((parser->character == '}') && (i > 0) && (value < 0x00110000)) {
-				result = fxCharSetSingle(parser, value);
-				fxPatternParserNext(parser);
-			}
-		}
-		else {
-			for (i = 0; i < 4; ++i) {
-				if (fxPatternParserHexadecimal(parser, &value))
-					fxPatternParserNext(parser);
-				else
-					break;
-			}
-			if (i == 4) {
-				if ((parser->flags & XS_REGEXP_U) && (0x0000D800 <= value) && (value < 0x0000DBFF)) {
-					if (parser->character == '\\') {
-						txInteger offset = parser->offset;
-						fxPatternParserNext(parser);
-						if (parser->character == 'u') {
-							txU4 trail = 0;
-							fxPatternParserNext(parser);
-							for (i = 0; i < 4; ++i) {
-								if (fxPatternParserHexadecimal(parser, &trail))
-									fxPatternParserNext(parser);
-								else
-									break;
-							}
-							if (i == 4) {
-								if ((0x0000DC00 <= trail) && (trail <= 0x0000DFFF))
-									value = 0x00010000 + ((value & 0x03FF) << 10) + (trail & 0x03FF);
-								else
-									parser->offset = offset;
-							}
-							else
-								parser->offset = offset;
-						}
-						else
-							parser->offset = offset;
-					}
-				}
-				result = fxCharSetSingle(parser, value);
-			}
-		}
+		if (fxPatternParserUnicodeEscape(parser, &value))
+			result = fxCharSetSingle(parser, value);
 	} break;
 	case '^':
 	case '$':
@@ -623,7 +633,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		break;
 	}
 	if (result == NULL)
-		fxPatternParserErrorCharacter(parser, "invalid escape \\");
+		fxPatternParserError(parser, gxErrors[mxInvalidEscape]);
 	return result;
 }
 
@@ -666,7 +676,7 @@ void* fxCharSetParseList(txPatternParser* parser)
 		fxPatternParserNext(parser);
 		not = 1;
 	}
-	while (parser->character) {
+	while (parser->character != C_EOF) {
 		result = fxCharSetParseItem(parser);
 		if (parser->character == '-') {
 			fxPatternParserNext(parser);
@@ -693,11 +703,11 @@ void* fxCharSetRange(txPatternParser* parser, txCharSet* set1, txCharSet* set2)
 	if (set2->characters[0] == 0)
 		return set1;
 	if ((set1->characters[0] != 2) || (set2->characters[0] != 2))
-		fxPatternParserError(parser, "invalid range");
+		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 	if ((set1->characters[1] + 1 != set1->characters[2]) || (set2->characters[1] + 1 != set2->characters[2]))
-		fxPatternParserError(parser, "invalid range");
+		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 	if ((set1->characters[1] > set2->characters[1]))
-		fxPatternParserError(parser, "invalid range");
+		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 	if (parser->flags & XS_REGEXP_I) {
 		txBoolean flag = (parser->flags & XS_REGEXP_U) ? 1 : 0, beginInside, endInside;
 		txInteger begin = set1->characters[1];
@@ -762,16 +772,28 @@ void* fxCharSetSingle(txPatternParser* parser, txInteger character)
 
 void* fxCharSetSpaces(txPatternParser* parser)
 {
-	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (8 * sizeof(txInteger)), fxCharSetMeasure);
-	result->characters[0] = 8;
+	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (20 * sizeof(txInteger)), fxCharSetMeasure);
+	result->characters[0] = 20;
 	result->characters[1] = 0x0009;
-	result->characters[2] = 0x000E;
+	result->characters[2] = 0x000D + 1;
 	result->characters[3] = 0x0020;
-	result->characters[4] = 0x0021;
-	result->characters[5] = 0x2028;
-	result->characters[6] = 0x202A;
-	result->characters[7] = 0xFEFF;
-	result->characters[8] = 0xFF00;
+	result->characters[4] = 0x0020 + 1;
+	result->characters[5] = 0x00A0;
+	result->characters[6] = 0x00A0 + 1;
+	result->characters[7] = 0x1680;
+	result->characters[8] = 0x1680 + 1;
+	result->characters[9] = 0x2000;
+	result->characters[10] = 0x200A + 1;
+	result->characters[11] = 0x2028;
+	result->characters[12] = 0x2029 + 1;
+	result->characters[13] = 0x202F;
+	result->characters[14] = 0x202F + 1;
+	result->characters[15] = 0x205F;
+	result->characters[16] = 0x205F + 1;
+	result->characters[17] = 0x3000;
+	result->characters[18] = 0x3000 + 1;
+	result->characters[19] = 0xFEFF;
+	result->characters[20] = 0xFEFF + 1;
 	return result;
 }
 
@@ -830,7 +852,7 @@ void* fxDisjunctionParse(txPatternParser* parser, txInteger character)
 		result->right = right;
 	}
 	if (parser->character != character)
-		fxPatternParserErrorCharacter(parser, "invalid ");
+		fxPatternParserError(parser, gxErrors[mxInvalidSequence]);
 	return result;
 }
 
@@ -867,16 +889,15 @@ void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIn
 		}
 		else
 			max = min;
-		if (parser->character == '}')
-			fxPatternParserNext(parser);
-		else
-			fxPatternParserError(parser, "missing }");
+		if (parser->character != '}')
+			fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
+		if (min > max)
+			fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
+		fxPatternParserNext(parser);
 		break;
 	default:
 		return term;
 	}
-	if (min > max)
-		fxPatternParserError(parser, "invalid quantifier {%d,%d}", min, max);
 	if (parser->character == '?') {
 		greedy = 0;
 		fxPatternParserNext(parser);
@@ -903,7 +924,7 @@ txInteger fxQuantifierParseDigits(txPatternParser* parser)
 			fxPatternParserNext(parser);
 	}
 	else
-		fxPatternParserErrorCharacter(parser, "invalid digit ");
+		fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
 	if (value > 0x7FFFFFFF)
 		value = 0x7FFFFFFF;
 	return (txInteger)value;
@@ -916,7 +937,8 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 	txSequence* currentBranch = NULL;
 	void* former = NULL;
 	txSequence* formerBranch = NULL;
-	while (parser->character && (parser->character != character)) {
+	txInteger length;
+	while ((parser->character != C_EOF) && (parser->character != character)) {
 		txInteger currentIndex = parser->captureIndex;
 		void* term = NULL;
 		if (parser->character == '^') {
@@ -936,6 +958,17 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			else if (parser->character == 'B') {
 				fxPatternParserNext(parser);
 				current = fxTermCreate(parser, sizeof(txAssertion), fxWordContinueMeasure);
+			}
+			else if ((parser->flags & (XS_REGEXP_U | XS_REGEXP_N)) && (parser->character == 'k')) {
+				fxPatternParserNext(parser);
+				if (parser->character != '<')
+					fxPatternParserError(parser, gxErrors[mxInvalidName]);
+				fxPatternParserNext(parser);
+				fxPatternParserName(parser, &length);
+				current = fxTermCreate(parser, sizeof(txCaptureReference) + length, fxCaptureReferenceMeasure);
+				((txCaptureReference*)current)->captureIndex = -1;
+				c_memcpy(((txCaptureReference*)current)->name, parser->error, length + 1);
+				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 			else if (('1' <= parser->character) && (parser->character <= '9')) {
 				txU4 value = (txU4)(parser->character - '0');
@@ -957,13 +990,13 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			current = fxQuantifierParse(parser, current, currentIndex);
 		}
 		else if (parser->character == '*') {
-			fxPatternParserError(parser, "invalid *");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '+') {
-			fxPatternParserError(parser, "invalid +");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '?') {
-			fxPatternParserError(parser, "invalid ?");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '(') {
 			fxPatternParserNext(parser);
@@ -1018,11 +1051,20 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 						((txAssertion*)current)->assertionIndex = parser->assertionIndex++;
 					}
 					else {
-						fxPatternParserErrorCharacter(parser, "invalid assertion (?<");
+						parser->captureIndex++;
+						currentIndex++;
+						fxPatternParserName(parser, &length);
+						current = fxTermCreate(parser, sizeof(txCapture) + length, fxCaptureMeasure);
+						((txCapture*)current)->captureIndex = currentIndex;
+						c_memcpy(((txCapture*)current)->name, parser->error, length + 1);
+						fxPatternParserNamedCapture(parser, (txCapture*)current);
+						((txCapture*)current)->term = fxDisjunctionParse(parser, ')');	
+						fxPatternParserNext(parser);
+						current = fxQuantifierParse(parser, current, currentIndex - 1);
 					}
 				}
 				else {
-					fxPatternParserErrorCharacter(parser, "invalid assertion (?");
+					fxPatternParserError(parser, gxErrors[mxInvalidGroup]);
 				}
 			}
 			else {
@@ -1037,25 +1079,24 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			}
 		}
 		else if (parser->character == ')') {
-			fxPatternParserError(parser, "invalid )");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '[') {
 			fxPatternParserNext(parser);
 			current = fxCharSetParseList(parser);
-			if (parser->character == ']')
-				fxPatternParserNext(parser);
-			else
-				fxPatternParserError(parser, "missing ]");
+			if (parser->character != ']')
+				fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+			fxPatternParserNext(parser);
 			current = fxQuantifierParse(parser, current, currentIndex);
 		}
 		else if (parser->character == ']') {
-			fxPatternParserError(parser, "invalid ]");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '{') {
-			fxPatternParserError(parser, "invalid {");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '}') {
-			fxPatternParserError(parser, "invalid }");
+			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '|') {
 			break;
@@ -1089,7 +1130,7 @@ void* fxTermCreate(txPatternParser* parser, size_t size, txTermMeasure measure)
 {
 	txTerm* term = c_malloc(size);
 	if (!term)
-		fxPatternParserError(parser, "not enough memory");
+		fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
 	term->next = parser->first;
 	term->dispatch.measure = measure;
 	parser->first = term;
@@ -1127,8 +1168,20 @@ void fxCaptureMeasure(txPatternParser* parser, void* it, txInteger direction)
 void fxCaptureReferenceMeasure(txPatternParser* parser, void* it, txInteger direction)
 {
 	txCaptureReference* self = it;
-	if (self->captureIndex >= parser->captureIndex)
-		fxPatternParserError(parser, "invalid reference \\%d", self->captureIndex);
+	if (self->captureIndex < 0) {
+		txCapture* capture = parser->firstNamedCapture;
+		while (capture) {
+			if (!c_strcmp(self->name, capture->name))
+				break;
+			capture = capture->nextNamedCapture;
+		}
+		if (capture)
+			self->captureIndex = capture->captureIndex;
+		else
+			fxPatternParserError(parser, gxErrors[mxInvalidReferenceName], self->name);
+	}
+	else if (self->captureIndex >= parser->captureIndex)
+		fxPatternParserError(parser, gxErrors[mxInvalidReferenceNumber], self->captureIndex);
 	self->step = parser->size;
 	parser->size += mxCaptureReferenceStepSize;
 	self->dispatch.code = fxCaptureReferenceCode;
@@ -1224,7 +1277,7 @@ void fxWordContinueMeasure(txPatternParser* parser, void* it, txInteger directio
 void fxAssertionCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txAssertion* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	if (self->not) {
 		*buffer++ = cxAssertionNotStep;
 		*buffer++ = self->term->step;
@@ -1237,7 +1290,7 @@ void fxAssertionCode(txPatternParser* parser, void* it, txInteger direction, txI
 		*buffer++ = self->assertionIndex;
 	}
 	(*self->term->dispatch.code)(parser, self->term, self->direction, self->completion);
-	buffer = (txInteger*)(parser->buffer + self->completion);
+	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	if (self->not) {
 		*buffer++ = cxAssertionNotCompletion;
 		*buffer++ = self->assertionIndex;
@@ -1252,7 +1305,7 @@ void fxAssertionCode(txPatternParser* parser, void* it, txInteger direction, txI
 void fxCaptureCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txCapture* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	if (direction == 1)
 		*buffer++ = cxCaptureForwardStep;
 	else
@@ -1260,19 +1313,25 @@ void fxCaptureCode(txPatternParser* parser, void* it, txInteger direction, txInt
 	*buffer++ = self->term->step;
 	*buffer++ = self->captureIndex;
 	(*self->term->dispatch.code)(parser, self->term, direction, self->completion);
-	buffer = (txInteger*)(parser->buffer + self->completion);
+	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	if (direction == 1)
 		*buffer++ = cxCaptureForwardCompletion;
 	else
 		*buffer++ = cxCaptureBackwardCompletion;
 	*buffer++ = sequel;
 	*buffer++ = self->captureIndex;
+#ifdef mxRun
+	if (parser->the && self->name[0])
+		(*parser->code)[2 + self->captureIndex] = fxNewNameC(parser->the, self->name);
+	else
+#endif
+		(*parser->code)[2 + self->captureIndex] = XS_NO_ID;
 }
 
 void fxCaptureReferenceCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txCaptureReference* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	if (direction == 1)
 		*buffer++ = cxCaptureReferenceForwardStep;
 	else
@@ -1284,7 +1343,7 @@ void fxCaptureReferenceCode(txPatternParser* parser, void* it, txInteger directi
 void fxCharSetCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txCharSet* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	txInteger count, index;
 	if (direction == 1)
 		*buffer++ = cxCharSetForwardStep;
@@ -1301,7 +1360,7 @@ void fxCharSetCode(txPatternParser* parser, void* it, txInteger direction, txInt
 void fxDisjunctionCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txDisjunction* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxDisjunctionStep;
 	*buffer++ = self->left->step;
 	*buffer++ = self->right->step;
@@ -1312,7 +1371,7 @@ void fxDisjunctionCode(txPatternParser* parser, void* it, txInteger direction, t
 void fxEmptyCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txTerm* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxEmptyStep;
 	*buffer++ = sequel;
 }
@@ -1320,7 +1379,7 @@ void fxEmptyCode(txPatternParser* parser, void* it, txInteger direction, txInteg
 void fxLineBeginCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txTerm* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxLineBeginStep;
 	*buffer++ = sequel;
 }
@@ -1328,7 +1387,7 @@ void fxLineBeginCode(txPatternParser* parser, void* it, txInteger direction, txI
 void fxLineEndCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txTerm* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxLineEndStep;
 	*buffer++ = sequel;
 }
@@ -1336,13 +1395,13 @@ void fxLineEndCode(txPatternParser* parser, void* it, txInteger direction, txInt
 void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txQuantifier* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxQuantifierStep;
 	*buffer++ = self->loop;
 	*buffer++ = self->quantifierIndex;
 	*buffer++ = self->min;
 	*buffer++ = self->max;
-	buffer = (txInteger*)(parser->buffer + self->loop);
+	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->loop);
 	if (self->greedy)
 		*buffer++ = cxQuantifierGreedyLoop;
 	else
@@ -1353,7 +1412,7 @@ void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, tx
 	*buffer++ = self->captureIndex + 1;
 	*buffer++ = self->captureIndex + self->captureCount;
 	(*self->term->dispatch.code)(parser, self->term, direction, self->completion);
-	buffer = (txInteger*)(parser->buffer + self->completion);
+	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	*buffer++ = cxQuantifierCompletion;
 	*buffer++ = self->loop;
 	*buffer++ = self->quantifierIndex;
@@ -1376,7 +1435,7 @@ void fxSequenceCode(txPatternParser* parser, void* it, txInteger direction, txIn
 void fxWordBreakCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txTerm* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxWordBreakStep;
 	*buffer++ = sequel;
 }
@@ -1384,10 +1443,12 @@ void fxWordBreakCode(txPatternParser* parser, void* it, txInteger direction, txI
 void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txTerm* self = it;
-	txInteger* buffer = (txInteger*)(parser->buffer + self->step);
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxWordContinueStep;
 	*buffer++ = sequel;
 }
+
+
 void fxPatternParserInitialize(txPatternParser* parser)
 {
 	c_memset(parser, 0, sizeof(txPatternParser));
@@ -1406,18 +1467,18 @@ txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value)
 void fxPatternParserError(txPatternParser* parser, txString format, ...)
 {
 	c_va_list arguments;
+	txU1* pattern = parser->pattern;
+	txString error = parser->error;
+	txInteger offset = parser->offset;
+	while (offset) {
+		*error++ = c_read8(pattern++);
+		offset--;
+	}
+	*error++ = ' ';
 	c_va_start(arguments, format);
-	vsnprintf(parser->error, sizeof(parser->error), format, arguments);
+	vsnprintf(error, sizeof(parser->error) - (error - parser->error), format, arguments);
 	c_va_end(arguments);
 	c_longjmp(parser->jmp_buf, 1);
-}
-
-void fxPatternParserErrorCharacter(txPatternParser* parser, txString string)
-{
-	if ((32 <= parser->character) && (parser->character < 128))
-		fxPatternParserError(parser, "%s%c", string, parser->character);
-	else
-		fxPatternParserError(parser, "%s%4.4X", string, parser->character);
 }
 
 txBoolean fxPatternParserHexadecimal(txPatternParser* parser, txU4* value)
@@ -1434,6 +1495,68 @@ txBoolean fxPatternParserHexadecimal(txPatternParser* parser, txU4* value)
 	return 1;
 }
 
+void fxPatternParserName(txPatternParser* parser, txInteger* length)
+{
+	txU4 character;
+	txString p = parser->error;
+	txString q = p + 255;
+	if (fxIsIdentifierFirst(parser->character)) {
+		p = (txString)fsX2UTF8(parser->character, (txU1*)p, q - p);				
+		fxPatternParserNext(parser);
+	}
+	else if (parser->character == '\\') {
+		fxPatternParserNext(parser);
+		if (parser->character != 'u')
+			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+		fxPatternParserNext(parser);
+		if (!fxPatternParserUnicodeEscape(parser, &character))
+			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+		if (!fxIsIdentifierFirst(character))
+			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+		p = (txString)fsX2UTF8(character, (txU1*)p, q - p);				
+	}
+	else
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	while (parser->character != '>') {
+		if (p == q) {
+			fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
+			break;
+		}
+		if (fxIsIdentifierNext(parser->character)) {
+			p = (txString)fsX2UTF8(parser->character, (txU1*)p, q - p);				
+			fxPatternParserNext(parser);
+		}
+		else if (parser->character == '\\') {
+			fxPatternParserNext(parser);
+			if (parser->character != 'u')
+				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+			fxPatternParserNext(parser);
+			if (!fxPatternParserUnicodeEscape(parser, &character))
+				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+			if (!fxIsIdentifierNext(character))
+				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+			p = (txString)fsX2UTF8(character, (txU1*)p, q - p);				
+		}
+		else
+			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	}
+	fxPatternParserNext(parser);
+	*p = 0;
+	*length = p - parser->error;
+}
+
+void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture)
+{
+	txCapture* check = parser->firstNamedCapture;
+	while (check) {
+		if (!strcmp(check->name, capture->name))
+			fxPatternParserError(parser, gxErrors[mxDuplicateCapture]);
+		check = check->nextNamedCapture;
+	}
+	capture->nextNamedCapture = parser->firstNamedCapture;
+	parser->firstNamedCapture = capture;
+}
+
 void fxPatternParserNext(txPatternParser* parser)
 {
 	txU1* p = parser->pattern + parser->offset;
@@ -1441,23 +1564,38 @@ void fxPatternParserNext(txPatternParser* parser)
 	txUTF8Sequence const *aSequence = NULL;
 	txInteger aSize;
 	
-	character = c_read8(p++);
-	if (character) {
-		for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-			if ((character & aSequence->cmask) == aSequence->cval)
-				break;
-		}
-		if (aSequence->size == 0)
-			fxPatternParserError(parser, "invalid UTF-8");
-		aSize = aSequence->size - 1;
-		while (aSize) {
-			aSize--;
-			character = (character << 6) | (c_read8(p++) & 0x3F);
-		}
-		character &= aSequence->lmask;
-		parser->offset = p - parser->pattern;
+	if (parser->surrogate) {
+		parser->character = parser->surrogate;
+		parser->surrogate = 0;
 	}
-	parser->character = (txInteger)character;
+	else {
+		character = c_read8(p++);
+		if (character) {
+			for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
+				if ((character & aSequence->cmask) == aSequence->cval)
+					break;
+			}
+			if (aSequence->size == 0)
+				fxPatternParserError(parser, gxErrors[mxInvalidUTF8]);
+			aSize = aSequence->size - 1;
+			while (aSize) {
+				aSize--;
+				character = (character << 6) | (c_read8(p++) & 0x3F);
+			}
+			character &= aSequence->lmask;
+			parser->offset = p - parser->pattern;
+			if (character == 0x110000)
+				character = 0;
+			if (!(parser->flags & XS_REGEXP_U) && (character > 0xFFFF)) {
+				character -= 0x10000;
+				parser->surrogate = 0xDC00 | (character & 0x3FF);
+				character = 0xD800 | (character >> 10);
+			}
+			parser->character = (txInteger)character;
+		}
+		else
+			parser->character = C_EOF;
+	}
 }
 
 void fxPatternParserTerminate(txPatternParser* parser)
@@ -1468,9 +1606,70 @@ void fxPatternParserTerminate(txPatternParser* parser)
 		c_free(term);
 		term = next;
 	}
+	parser->first = NULL;
 }
 
-txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void** code, void** data, txUnsigned* flags, txString messageBuffer, txInteger messageSize)
+txBoolean fxPatternParserUnicodeEscape(txPatternParser* parser, txU4* character)
+{
+	txBoolean result = 0;
+	int i;
+	txU4 value = 0;
+	if ((parser->flags & XS_REGEXP_U) && (parser->character == '{')) {
+		fxPatternParserNext(parser);
+		for (i = 0; value < 0x00110000; i++) {
+			if (fxPatternParserHexadecimal(parser, &value))
+				fxPatternParserNext(parser);
+			else
+				break;
+		}
+		if ((parser->character == '}') && (i > 0) && (value < 0x00110000)) {
+			*character = value;
+			fxPatternParserNext(parser);
+			result = 1;
+		}
+	}
+	else {
+		for (i = 0; i < 4; ++i) {
+			if (fxPatternParserHexadecimal(parser, &value))
+				fxPatternParserNext(parser);
+			else
+				break;
+		}
+		if (i == 4) {
+			if ((parser->flags & XS_REGEXP_U) && (0x0000D800 <= value) && (value < 0x0000DBFF)) {
+				if (parser->character == '\\') {
+					txInteger offset = parser->offset;
+					fxPatternParserNext(parser);
+					if (parser->character == 'u') {
+						txU4 trail = 0;
+						fxPatternParserNext(parser);
+						for (i = 0; i < 4; ++i) {
+							if (fxPatternParserHexadecimal(parser, &trail))
+								fxPatternParserNext(parser);
+							else
+								break;
+						}
+						if (i == 4) {
+							if ((0x0000DC00 <= trail) && (trail <= 0x0000DFFF))
+								value = 0x00010000 + ((value & 0x03FF) << 10) + (trail & 0x03FF);
+							else
+								parser->offset = offset;
+						}
+						else
+							parser->offset = offset;
+					}
+					else
+						parser->offset = offset;
+				}
+			}
+			*character = value;
+			result = 1;
+		}
+	}
+	return result;
+}
+
+txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString messageBuffer, txInteger messageSize)
 {
 	txBoolean result = 1;
 	txPatternParser _parser;
@@ -1497,18 +1696,31 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void**
 				break;
 		}
 		if (c)
-			fxPatternParserError(parser, "invalid flags");
+			fxPatternParserError(parser, gxErrors[mxInvalidFlags]);
 		parser->pattern = (txU1*)pattern;
+		parser->the = the;
+		
 		fxPatternParserNext(parser);
-		term = fxDisjunctionParse(parser, 0);
+		term = fxDisjunctionParse(parser, C_EOF);
+		if (parser->firstNamedCapture)
+			parser->flags |= XS_REGEXP_N;
+		if (!(parser->flags & XS_REGEXP_U) && (parser->flags & XS_REGEXP_N)) {
+			fxPatternParserTerminate(parser);
+			parser->offset = 0;
+			parser->surrogate = 0;
+			parser->assertionIndex = 0;
+			parser->captureIndex = 0;
+			parser->quantifierIndex = 0;
+			parser->firstNamedCapture = NULL;
+			fxPatternParserNext(parser);
+			term = fxDisjunctionParse(parser, C_EOF);
+		}	
 		parser->captureIndex++;
 		if (!term) 
-			fxPatternParserError(parser, "invalid pattern");
-		parser->size = 4 * sizeof(txInteger);
+			fxPatternParserError(parser, gxErrors[mxInvalidPattern]);
+		parser->size = (4 + parser->captureIndex) * sizeof(txInteger);
 		(*term->dispatch.measure)(parser, term, 1);
 			
-		if (flags)
-			*flags = parser->flags | (parser->captureIndex & XS_REGEXP_COUNT_MASK);
 		if (data) {
 			txInteger size = parser->captureIndex * sizeof(txCaptureData)
 					+ parser->assertionIndex * sizeof(txAssertionData)
@@ -1520,7 +1732,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void**
 		#endif
 				*data = c_malloc(size);
 			if (!*data)
-				fxPatternParserError(parser, "not enough memory");
+				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
 		}
 		if (code) {
 			txInteger offset;
@@ -1528,27 +1740,30 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void**
 			offset = parser->size;
 			parser->size += sizeof(txInteger);
 		#ifdef mxRun
-			if (the)
-				parser->buffer = fxNewChunk(the, parser->size);
+			if (the) {
+				*code = fxNewChunk(the, parser->size);
+			}
 			else
 		#endif
-				parser->buffer = c_malloc(parser->size);
-			if (!parser->buffer)
-				fxPatternParserError(parser, "not enough memory");
-			buffer = (txInteger*)parser->buffer;
-			*buffer++ = parser->flags;
-			*buffer++ = parser->captureIndex;
-			*buffer++ = parser->assertionIndex;
-			*buffer++ = parser->quantifierIndex;
+				*code = c_malloc(parser->size);
+			if (!*code)
+				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+			parser->code = code;
+			buffer = *code;
+			buffer[0] = parser->flags;
+			buffer[1] = parser->captureIndex;
+			buffer[2 + parser->captureIndex] = parser->assertionIndex;
+			buffer[2 + parser->captureIndex + 1] = parser->quantifierIndex;
 			(*term->dispatch.code)(parser, term, 1, offset);
-			buffer = (txInteger*)(parser->buffer + offset);
+			buffer = (txInteger*)(((txByte*)*code) + offset);
 			*buffer = cxMatchStep;
-			*code = parser->buffer;
 		}
 	}
 	else {
-		c_strncpy(messageBuffer, parser->error, messageSize - 1);
-		messageBuffer[messageSize - 1] = 0;
+		if (messageBuffer) {
+			c_strncpy(messageBuffer, parser->error, messageSize - 1);
+			messageBuffer[messageSize - 1] = 0;
+		}
 		result = 0;
 		
 	}
@@ -1556,7 +1771,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, void**
 	return result;
 }
 
-void fxDeleteRegExp(void* the, void* code, void* data)
+void fxDeleteRegExp(void* the, txInteger* code, txInteger* data)
 {
 	if (!the) {
 		if (code)
@@ -1584,6 +1799,8 @@ txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
 txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags)
 {
 	txInteger character = fxUnicodeCharacter(input + offset);
+	if (character == 0x110000)
+		character = 0;
 	if (flags & XS_REGEXP_I) {
 		txBoolean flag = (flags & XS_REGEXP_U) ? 1 : 0, inside;
 		txCharCase* current = fxCharCaseFind(character, flag, &inside);
@@ -1649,8 +1866,10 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 	}
 	if (!state) {
 		state = c_malloc(size);
-		if (!state)
+		if (!state) {
+			fxPopStates(the, firstState, C_NULL);
 			return C_NULL;
+		}
 		state->the = C_NULL;
 	}	
 	state->nextState = firstState;
@@ -1673,7 +1892,7 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 		switch(WHICH)
 #endif
 
-txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers, txString subject, txInteger start, txInteger** offsets, txInteger* limit)
+txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger start)
 {
 #if defined(__GNUC__)
 	static void *const ICACHE_RAM_ATTR gxSteps[] = {
@@ -1704,19 +1923,20 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 	register void * const *steps = gxSteps;
 #endif
 	txInteger stop = c_strlen(subject);
-	txInteger flags = ((txInteger*)code)[0];
-	txCaptureData* captures = data;
+	txInteger flags = code[0];
+	txCaptureData* captures = (txCaptureData*)data;
 	txCaptureData* capture;
-	txInteger captureCount = ((txInteger*)code)[1];
+	txInteger captureCount = code[1];
 	txAssertionData* assertions = (txAssertionData*)(captures + captureCount);
 	txAssertionData* assertion;
-	txQuantifierData* quantifiers = (txQuantifierData*)(assertions + ((txInteger*)code)[2]);
+	txQuantifierData* quantifiers = (txQuantifierData*)(assertions + code[2 + captureCount]);
 	txQuantifierData* quantifier;
 	txStateData* firstState = C_NULL;
-	txInteger from, to, e, f, g, result = 0;
+	txInteger from, to, e, f, g;
+	txBoolean result = 0;
 	
 	while (!result && (0 <= start) && (start <= stop)) {
-		txInteger step = 4 * sizeof(txInteger), sequel;
+		txInteger step = (2 + captureCount + 2) * sizeof(txInteger), sequel;
 		txInteger offset = start;
 		c_memset(captures, -1, captureCount * sizeof(txCaptureData));
 		while (step) {
@@ -1736,12 +1956,8 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 					capture = captures;
 					capture->from = start;
 					capture->to = offset;
-					if (offsets)
-						*offsets = data;
-					if (limit)
-						*limit = captureCount;
 					step = 0;
-					result = captureCount;
+					result = 1;
 					mxBreak;
 				mxCase(cxAssertionStep):
 					step = *pointer++;
@@ -1771,6 +1987,8 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 					assertion->firstState = firstState;
 					sequel = *pointer;
 					firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+					if (!firstState)
+						return 0;
 					mxBreak;
 				mxCase(cxAssertionNotCompletion):
 					#ifdef mxTrace 
@@ -1882,6 +2100,8 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 					step = *pointer++;
 					sequel = *pointer;
 					firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+					if (!firstState)
+						return 0;
 					mxBreak;
 				mxCase(cxEmptyStep):
 					step = *pointer;
@@ -1929,8 +2149,11 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 						mxBreak;
 					}
 					else {
-						if (quantifier->min == 0)
+						if (quantifier->min == 0) {
 							firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+							if (!firstState)
+								return 0;
+						}
 						if (from < to)
 							c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
 					}
@@ -1955,6 +2178,8 @@ txInteger fxMatchRegExp(void* the, void* code, void* data, txUnsigned modifiers,
 					}
 					if (quantifier->min == 0) {
 						firstState = fxPushState(the, firstState, step, offset, captures, captureCount);
+						if (!firstState)
+							return 0;
 						if (from < to)
 							c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
 						step = sequel;
