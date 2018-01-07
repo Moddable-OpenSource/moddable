@@ -203,7 +203,7 @@ typedef union {
 	struct { txInteger offset; txInteger size; } dataView;
 	struct { void* data; union { txDestructor destructor; txHostHooks* hooks; } variant; } host;
 	struct { txSlot* handler; txSlot* target; } proxy;
-	struct { void* code; void* data; } regexp;
+	struct { txInteger* code; txInteger* data; } regexp;
 	struct { txSlot* address; txIndex length; } stack;
 	struct { txSlot** address; txSize length; } table;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
@@ -1008,7 +1008,7 @@ mxExport void fxStringAccessorSetter(txMachine* the);
 extern void fxBuildString(txMachine* the);
 extern txSlot* fxNewStringInstance(txMachine* the);
 extern txSlot* fxAccessStringProperty(txMachine* the, txSlot* instance, txInteger index);
-extern void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, txInteger offset, txSlot* match, txInteger length, txInteger count, txSlot* captures, txSlot* replace);
+extern void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, txInteger offset, txSlot* match, txInteger length, txInteger count, txSlot* captures, txSlot* groups, txSlot* replace);
 
 /* xsRegExp.c */
 mxExport void fx_RegExp(txMachine* the);
