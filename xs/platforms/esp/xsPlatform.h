@@ -110,6 +110,14 @@ extern void fx_putc(void *refcon, char c);
 
 #define mxMapSetLength (1)
 
+struct DebugFragmentRecord {
+	struct DebugFragmentRecord *next;
+	uint8_t count;
+	uint8_t bytes[1];
+};
+typedef struct DebugFragmentRecord DebugFragmentRecord;
+typedef struct DebugFragmentRecord *DebugFragment;
+
 /* machine */
 #if ESP32
 	#define mxMachinePlatform \
@@ -119,6 +127,8 @@ extern void fx_putc(void *refcon, char c);
 		txBoolean debugOnReceive; \
 		txBoolean pendingSendBytes; \
 		txBoolean inPrintf; \
+		txBoolean debugNotifyOutstanding; \
+		DebugFragment debugFragments; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \
@@ -132,6 +142,8 @@ extern void fx_putc(void *refcon, char c);
 		txBoolean debugOnReceive; \
 		txBoolean pendingSendBytes; \
 		txBoolean inPrintf; \
+		txBoolean debugNotifyOutstanding; \
+		DebugFragment debugFragments; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend;
