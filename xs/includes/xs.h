@@ -1369,6 +1369,10 @@ mxImport void fxRunModule(xsMachine*, xsStringValue);
 mxImport void fxInitializeSharedCluster();
 mxImport void fxTerminateSharedCluster();
 
+mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
+mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);
+mxImport xsBooleanValue fxMatchRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data, xsStringValue subject, xsIntegerValue offset);
+
 #ifdef __cplusplus
 }
 #endif
