@@ -850,7 +850,7 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 	};
 	PiuDebugUTF8Sequence* sequence;
 	txU1* p = (txU1*)theString;
-	txU1 c;
+	txU4 c;
 	txS2 s, i;
 	while ((c = *p)) {
 		for (sequence = sequences; sequence->size; sequence++) {
@@ -860,14 +860,13 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 		s = sequence->size;
 		if (s) {
 			for (i = 1; i < s; i++) {
-				c = p[i];
-				if ((c < 0x80) || (0xBF < c)) {
-					s = 0;
+				txU1 d = p[i];
+				if ((d < 0x80) || (0xBF < d))
 					break;
-				}
+				c = (c << 6) | (d & 0x3F);
 			}
 		}
-		if (s)
+		if ((i == s) && (c < 0x110000))
 			p += s;
 		else {
 			*p = 0;
