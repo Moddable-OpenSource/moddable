@@ -1,9 +1,9 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2017 Moddable Tech, Inc.
 
-<!-- Last edit: 11/25/2017 BSF -->
+<!-- Last edit: 01/05/2018 BSF -->
 
-Revised: November 25, 2017
+Revised: January 5, 2018
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
@@ -292,6 +292,57 @@ This document provides an introduction to getting started building apps with the
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp
 	```
+
+### ESP32 setup
+
+1. Complete "Host environment setup" for Linux.
+
+2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
+
+3. Download the [esptool](https://github.com/igrr/esptool-ck/releases) compatible with your Linux host. Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp32` directory.
+
+4. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-61-gab8375a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
+
+5. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+
+	```
+	cd ~/esp32
+	git clone --recursive https://github.com/espressif/esp-idf.git
+	```
+	
+6. Install the packages required to compile with the `ESP-IDF`:
+
+	```
+	sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial 
+	```
+7. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
+
+	```
+	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
+	```
+		
+8. Connect the ESP32 device to your Linux host with a USB cable.
+
+9. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
+
+	```
+	ls /dev
+	```
+	
+10. Set the `CONFIG_ESPTOOLPY_PORT` in the `$MODDABLE/build/devices/esp32/xsProj/sdkconfig` file to the ESP32 USB device path:
+
+	```
+	CONFIG_ESPTOOLPY_PORT="/dev/ttyUSB0"
+	```
+11. Verify the setup by building `helloworld` for the `esp32` target:
+
+
+	```
+	cd $MODDABLE/examples/helloworld
+	mcconfig -d -m -p esp32
+	```
+	
+> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 ## Debugging applications
 The `xsbug` JavaScript source level debugger is built as part of the Moddable SDK build described above. `xsbug` is a full featured debugger that supports debugging modules and applications for [XS platforms](xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.

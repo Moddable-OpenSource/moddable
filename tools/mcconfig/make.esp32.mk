@@ -35,18 +35,10 @@ else
 	endif
 endif
 
-ifeq ($(HOST_OS),Darwin)
-ARCH ?= mac
-else ifeq ($(HOST_OS),Linux)
-ARCH ?= linux
-else
-ARCH ?= windows
-endif
-
 INC_DIRS = \
 	$(BASE) \
  	$(IDF_PATH)/components \
-    $(IDF_PATH)/components/heap/include \
+	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/driver/include \
  	$(IDF_PATH)/components/soc/esp32/include \
  	$(IDF_PATH)/components/soc/include \
@@ -128,16 +120,21 @@ ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
 
 AR_FLAGS = crs
 
-BUILDCLUT = $(BUILD_DIR)/bin/$(ARCH)/debug/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/$(ARCH)/debug/compressbmf
-RLE4ENCODE = $(BUILD_DIR)/bin/$(ARCH)/debug/rle4encode
-MCLOCAL = $(BUILD_DIR)/bin/$(ARCH)/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/$(ARCH)/debug/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/$(ARCH)/debug/png2bmp
-IMAGE2CS = $(BUILD_DIR)/bin/mac/debug/image2cs
-XSC = $(BUILD_DIR)/bin/$(ARCH)/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/$(ARCH)/debug/xsl
+ifeq ($(HOST_OS),Darwin)
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/debug
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/debug
+endif
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
+XSC = $(MODDABLE_TOOLS_DIR)/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 #	-DICACHE_FLASH
 #	-DmxNoConsole=1
@@ -207,9 +204,15 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 PROJ_DIR = $(BUILD_DIR)/devices/esp32/xsProj
 
 ifeq ($(DEBUG),1)
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-	DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-	DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` 115200 8N1"
+	ifeq ($(HOST_OS),Darwin)
+		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` 115200 8N1"
+	else
+		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		DO_LAUNCH = bash -c "serial2xsbug `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'` 115200 8N1"
+	endif
 else
 	KILL_SERIAL_2_XSBUG = 
 	DO_XSBUG = 
