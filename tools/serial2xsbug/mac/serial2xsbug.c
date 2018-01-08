@@ -99,24 +99,22 @@ void fxCloseNetwork(txSerialTool self, uint32_t value)
 	txSerialMachine* link = &(self->firstMachine);
 	txSerialMachine machine;
 	while ((machine = *link)) {
-		if (machine->value == value)
-			break;
-		link = &(machine->nextMachine);
-	}
-	if (machine) {
-		*link = machine->nextMachine;
-		if (self->currentMachine == machine)
-			self->currentMachine = NULL;
-			
-		if (machine->networkSource) {
-			CFRunLoopRemoveSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
-			CFRelease(machine->networkSource);
+		if ((machine->value == value) || (0 == value)) {
+			*link = machine->nextMachine;
+			if (self->currentMachine == machine)
+				self->currentMachine = NULL;
+			if (machine->networkSource) {
+				CFRunLoopRemoveSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
+				CFRelease(machine->networkSource);
+			}
+			if (machine->networkSocket) {
+				CFSocketInvalidate(machine->networkSocket);
+				CFRelease(machine->networkSocket);
+			}
+			free(machine);
 		}
-		if (machine->networkSocket) {
-			CFSocketInvalidate(machine->networkSocket);
-			CFRelease(machine->networkSocket);
-		}
-		free(machine);
+		else
+			link = &(machine->nextMachine);
 	}
 }
 
