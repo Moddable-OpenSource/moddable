@@ -293,6 +293,11 @@ This document provides an introduction to getting started building apps with the
 	mcconfig -d -m -p esp
 	```
 
+> The ESP8266 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP8266, add your user to the `dialout` group:
+> 
+	sudo adduser <username> dialout 
+	sudo reboot
+
 ### ESP32 setup
 
 1. Complete "Host environment setup" for Linux.
@@ -342,6 +347,12 @@ This document provides an introduction to getting started building apps with the
 	mcconfig -d -m -p esp32
 	```
 	
+
+> The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
+> 
+	sudo adduser <username> dialout 
+	sudo reboot
+
 > Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 ## Debugging applications
