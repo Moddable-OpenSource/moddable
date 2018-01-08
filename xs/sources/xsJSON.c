@@ -84,6 +84,7 @@ typedef struct {
 } txJSONSerializer;
 
 static void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser);
+static txBoolean fxGetNextJSONX(txU1 c, txU4* value);
 static void fxParseJSON(txMachine* the, txJSONParser* theParser);
 static void fxParseJSONValue(txMachine* the, txJSONParser* theParser);
 static void fxParseJSONObject(txMachine* the, txJSONParser* theParser);
@@ -99,6 +100,7 @@ static void fxSerializeJSONName(txMachine* the, txJSONSerializer* theSerializer,
 static void fxSerializeJSONNumber(txMachine* the, txJSONSerializer* theSerializer, txNumber theNumber);
 static void fxSerializeJSONProperty(txMachine* the, txJSONSerializer* theSerializer, txInteger* theFlag);
 static void fxSerializeJSONString(txMachine* the, txJSONSerializer* theStream, txString theString);
+static void fxSerializeJSONStringEscape(txMachine* the, txJSONSerializer* theStream, txU4 character);
 
 static txSlot* fxToJSONKeys(txMachine* the, txSlot* reference);
 
@@ -181,24 +183,24 @@ void fx_JSON_parse(txMachine* the)
 
 void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 {
-	txString p;
-	txString q;
-	txString r;
-	txString s;
-	char c;
+	txU1* p;
+	txU1* q;
+	txU1* r;
+	txU1* s;
+	txU1 c;
 	txInteger i;
 	txBoolean escaped;
 	txNumber number;
 	txU4 size;
 	txU4 value;
 	const txUTF8Sequence* sequence;
-	txString string;
+	txU1* string;
 
 	theParser->integer = 0;
 	theParser->number = 0;
 	theParser->string->value.string = mxEmptyString.value.string;
 	theParser->token = XS_NO_JSON_TOKEN;
-	r = (theParser->data) ? theParser->data : theParser->slot->value.string;
+	r = (theParser->data) ? (txU1*)theParser->data : (txU1*)theParser->slot->value.string;
 	p = r + theParser->offset;
 	q = r + theParser->size;
 	c = (p < q) ? *p : 0;
@@ -317,7 +319,11 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 			escaped = 0;
 			size = 0;
 			for (;;) {
-				if ((0 <= c) && (c < 32)) {
+				if (((p + 3) < q) && (c == 0xF4) && (p[1] == 0x90) && (p[2] == 0x80) && (p[3] == 0x80)) { // 0x110000
+					mxSyntaxError("%ld: invalid character in string", theParser->line);				
+					break;
+				}
+				else if ((0 <= c) && (c < 32)) {
 					mxSyntaxError("%ld: invalid character in string", theParser->line);				
 					break;
 				}
@@ -343,16 +349,25 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 						value = 0;
 						for (i = 0; i < 4; i++) {
 							c = (++p < q) ? *p : 0;
-							if (('0' <= c) && (c <= '9'))
-								value = (value * 16) + (c - '0');
-							else if (('a' <= c) && (c <= 'f'))
-								value = (value * 16) + (10 + c - 'a');
-							else if (('A' <= c) && (c <= 'F'))
-								value = (value * 16) + (10 + c - 'A');
-							else
+							if (!fxGetNextJSONX(c, &value))
 								mxSyntaxError("%ld: invalid character in string", theParser->line);
 						}
-						// surrogate pair?
+						if ((0x0000D800 <= value) && (value <= 0x0000DBFF) && ((p + 1) < q) && (p[0] == '\\') && (p[1] == 'u')) {
+							txU4 surrogate = 0;
+							txU1* t = p;
+							p++;
+							for (i = 0; i < 4; i++) {
+								c = (++p < q) ? *p : 0;
+								if (!fxGetNextJSONX(c, &surrogate))
+									mxSyntaxError("%ld: invalid character in string", theParser->line);
+							}
+							if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF))
+								value = 0x00010000 + ((value & 0x03FF) << 10) + (surrogate & 0x03FF);
+							else
+								p = t;
+						}
+						if (value == 0)
+							value = 0x110000;
 						for (sequence = gxUTF8Sequences; sequence->size; sequence++)
 							if (value <= sequence->lmask)
 								break;
@@ -372,8 +387,9 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 			{
 				txSize after = p - r;
 				txSize before = s - r;
-				string = theParser->string->value.string = (txString)fxNewChunk(the, size + 1);
-				r = (theParser->data) ? theParser->data : theParser->slot->value.string;
+				theParser->string->value.string = (txString)fxNewChunk(the, size + 1);
+				string = (txU1*)theParser->string->value.string;
+				r = (theParser->data) ? (txU1*)theParser->data : (txU1*)theParser->slot->value.string;
 				p = r + after;
 				q = r + theParser->size;
 				s = r + before;
@@ -418,16 +434,25 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 							value = 0;
 							for (i = 0; i < 4; i++) {
 								p++; c = *p;
-								if (('0' <= c) && (c <= '9'))
-									value = (value * 16) + (c - '0');
-								else if (('a' <= c) && (c <= 'f'))
-									value = (value * 16) + (10 + c - 'a');
-								else
-									value = (value * 16) + (10 + c - 'A');
+								fxGetNextJSONX(c, &value);
 							}
-							// surrogate pair?
-							string = (txString)fsX2UTF8(value, (txU1*)string, 0x7FFFFFFF);
-							p++; c = *p;
+							p++;
+							if ((0x0000D800 <= value) && (value <= 0x0000DBFF) && ((p + 1) < q) && (p[0] == '\\') && (p[1] == 'u')) {
+								txU4 surrogate = 0;
+								txU1* t = p;
+								p++;
+								for (i = 0; i < 4; i++) {
+									p++; c = *p;
+									fxGetNextJSONX(c, &surrogate);
+								}
+								p++;
+								if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF))
+									value = 0x00010000 + ((value & 0x03FF) << 10) + (surrogate & 0x03FF);
+								else
+									p = t;
+							}
+							c = *p;
+							string = fsX2UTF8(value, (txU1*)string, 0x7FFFFFFF);
 							break;
 						}
 					}
@@ -446,15 +471,15 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 			theParser->token = XS_JSON_TOKEN_STRING;
 			break;
 		default:
-			if ((q - p >= 5) && (!c_strncmp(p, "false", 5))) {
+			if ((q - p >= 5) && (!c_strncmp((txString)p, "false", 5))) {
 				p += 5;
 				theParser->token = XS_JSON_TOKEN_FALSE;
 			}
-			else if ((q - p >= 4) && (!c_strncmp(p, "null", 4))) {
+			else if ((q - p >= 4) && (!c_strncmp((txString)p, "null", 4))) {
 				p += 4;
 				theParser->token = XS_JSON_TOKEN_NULL;
 			}
-			else if ((q - p >= 4) && (!c_strncmp(p, "true", 4))) {
+			else if ((q - p >= 4) && (!c_strncmp((txString)p, "true", 4))) {
 				p += 4;
 				theParser->token = XS_JSON_TOKEN_TRUE;
 			}
@@ -464,6 +489,19 @@ void fxGetNextJSONToken(txMachine* the, txJSONParser* theParser)
 		}
 	}
 	theParser->offset = p - r;
+}
+
+txBoolean fxGetNextJSONX(txU1 c, txU4* value)
+{
+	if (('0' <= c) && (c <= '9'))
+		*value = (*value * 16) + (c - '0');
+	else if (('a' <= c) && (c <= 'f'))
+		*value = (*value * 16) + (10 + c - 'a');
+	else if (('A' <= c) && (c <= 'F'))
+		*value = (*value * 16) + (10 + c - 'A');
+	else
+		return 0;
+	return 1;
 }
 
 void fxParseJSON(txMachine* the, txJSONParser* theParser)
@@ -984,50 +1022,86 @@ again:
 
 void fxSerializeJSONString(txMachine* the, txJSONSerializer* theStream, txString theString)
 {
-	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
 	txU1* aString = (txU1*)theString;
-	txU4 aResult;
-	const txUTF8Sequence *aSequence;
-	txInteger aSize;
-	char aBuffer[8];
+	txU4 character;
+	const txUTF8Sequence *sequence;
+	txInteger size;
 	
 	fxSerializeJSONChar(the, theStream, '"');
-	while ((aResult = c_read8(aString++))) {
-		for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-			if ((aResult & aSequence->cmask) == aSequence->cval)
+	while ((character = c_read8(aString++))) {
+		for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
+			if ((character & sequence->cmask) == sequence->cval)
 				break;
 		}
-		aSize = aSequence->size - 1;
-		while (aSize > 0) {
-			aSize--;
-			aResult = (aResult << 6) | (c_read8(aString++) & 0x3F);
+		size = sequence->size - 1;
+		while (size > 0) {
+			size--;
+			character = (character << 6) | (c_read8(aString++) & 0x3F);
 		}
-		aResult &= aSequence->lmask;
-		switch (aResult) {
-		case 8: fxSerializeJSONChars(the, theStream, "\\b"); break;
-		case 9: fxSerializeJSONChars(the, theStream, "\\t"); break;
-		case 10: fxSerializeJSONChars(the, theStream, "\\n"); break;
-		case 12: fxSerializeJSONChars(the, theStream, "\\f"); break;
-		case 13: fxSerializeJSONChars(the, theStream, "\\r"); break;
-		case 34: fxSerializeJSONChars(the, theStream, "\\\""); break;
-		case 92: fxSerializeJSONChars(the, theStream, "\\\\"); break;
-		default:
-			if ((32 <= aResult) && (aResult < 127))
-				fxSerializeJSONChar(the, theStream, (char)aResult);
-			else {
-				aBuffer[0] = '\\'; 
-				aBuffer[1] = 'u';
-				aBuffer[2] = c_read8(gxDigits + ((aResult & 0x0000F000) >> 12));
-				aBuffer[3] = c_read8(gxDigits + ((aResult & 0x00000F00) >> 8));
-				aBuffer[4] = c_read8(gxDigits + ((aResult & 0x000000F0) >> 4));
-				aBuffer[5] = c_read8(gxDigits + (aResult & 0x0000000F));
-				aBuffer[6] = 0;
-				fxSerializeJSONChars(the, theStream, aBuffer);
-			}
-			break;
-		}
+		character &= sequence->lmask;
+		if (character == 0x110000)
+			fxSerializeJSONStringEscape(the, theStream, 0);
+		else if (character < 8)
+			fxSerializeJSONStringEscape(the, theStream, character);
+		else if (character == 8)
+			fxSerializeJSONChars(the, theStream, "\\b"); 
+		else if (character == 9)
+			fxSerializeJSONChars(the, theStream, "\\t"); 
+		else if (character == 10)
+			fxSerializeJSONChars(the, theStream, "\\n"); 
+		else if (character == 11)
+			fxSerializeJSONStringEscape(the, theStream, character); 
+		else if (character == 12)
+			fxSerializeJSONChars(the, theStream, "\\f");
+		else if (character == 13)
+			fxSerializeJSONChars(the, theStream, "\\r");
+		else if (character < 32)
+			fxSerializeJSONStringEscape(the, theStream, character);
+		else if (character < 34)
+			fxSerializeJSONChar(the, theStream, (char)character);
+		else if (character == 34)
+			fxSerializeJSONChars(the, theStream, "\\\"");
+		else if (character < 92)
+			fxSerializeJSONChar(the, theStream, (char)character);
+		else if (character == 92)
+			fxSerializeJSONChars(the, theStream, "\\\\");
+		else if (character < 127)
+			fxSerializeJSONChar(the, theStream, (char)character);
+		else
+			fxSerializeJSONStringEscape(the, theStream, character);
 	}
 	fxSerializeJSONChar(the, theStream, '"');
+}
+
+void fxSerializeJSONStringEscape(txMachine* the, txJSONSerializer* theStream, txU4 character)
+{
+	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdef";
+	char buffer[16];
+	char* p = buffer;
+	txU4 surrogate;
+	if (character > 0xFFFF) {
+		character -= 0x10000;
+		surrogate = 0xDC00 | (character & 0x3FF);
+		character = 0xD800 | (character >> 10);
+	}
+	else
+		surrogate = 0;
+	*p++ = '\\'; 
+	*p++ = 'u';
+	*p++ = c_read8(gxDigits + ((character & 0x0000F000) >> 12));
+	*p++ = c_read8(gxDigits + ((character & 0x00000F00) >> 8));
+	*p++ = c_read8(gxDigits + ((character & 0x000000F0) >> 4));
+	*p++ = c_read8(gxDigits + (character & 0x0000000F));
+	if (surrogate) {
+		*p++ = '\\'; 
+		*p++ = 'u';
+		*p++ = c_read8(gxDigits + ((surrogate & 0x0000F000) >> 12));
+		*p++ = c_read8(gxDigits + ((surrogate & 0x00000F00) >> 8));
+		*p++ = c_read8(gxDigits + ((surrogate & 0x000000F0) >> 4));
+		*p++ = c_read8(gxDigits + (surrogate & 0x0000000F));
+	}
+	*p = 0;
+	fxSerializeJSONChars(the, theStream, buffer);
 }
 
 txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
