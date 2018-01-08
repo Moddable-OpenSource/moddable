@@ -259,9 +259,7 @@ double __ieee754_fmod_patch(double x, double y);
 	debugging
 */
 
-#ifdef __XS__
-	uint8_t triggerDebugCommand(xsMachine *the);
-#endif
+void fxReceiveLoop(void);
 
 /*
 	messages
