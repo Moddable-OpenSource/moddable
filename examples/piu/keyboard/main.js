@@ -14,13 +14,16 @@
 
 import {} from "piu/MC";
 import {Keyboard, BACKSPACE, SUBMIT} from "keyboard";
+import Timer from "timer";
 
+const PASSWORDMODE = true; //Set to true to replace input with asterisks, false for clear text. 
 const WhiteSkin = Skin.template({fill:"white"});
 const OpenSans18 = Style.template({ font: "semibold 18px Open Sans", color: "black", horizontal:"center", vertical:"middle" });
 const OpenSans20 = Style.template({ font: "20px Open Sans", color: "black", horizontal:"left", vertical:"middle"});
 
 let theString = "";
 let keyboardUp = true;
+let timerID = undefined;
 
 let MainCon = Column.template($ => ({
   left: 0, right: 0, top: 0, bottom: 0, active: true, name: "mainContainer",
@@ -64,7 +67,17 @@ export default new Application({}, {
       }else{
         theString += key;
       }
-      application.first.first.string = theString;
+      if (PASSWORDMODE && theString.length > 0){
+        if (timerID) Timer.clear(timerID);
+        if (key != BACKSPACE){
+          application.first.first.string = "*".repeat(theString.length - 1) + theString.charAt(theString.length - 1);
+          timerID = Timer.set(id => {timerID = undefined; application.first.first.string = "*".repeat(theString.length);}, 500);
+        }else{
+          application.first.first.string = "*".repeat(theString.length);
+        }
+      }else{
+        application.first.first.string = theString;
+      }
     }
     onKeyboardTransitionFinished(application){
       let keyboardContainer = application.content("mainContainer").content("keyboardContainer");
