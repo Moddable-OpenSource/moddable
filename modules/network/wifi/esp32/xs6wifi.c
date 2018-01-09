@@ -92,6 +92,8 @@ void xs_wifi_scan(xsMachine *the)
 	config.bssid = NULL;
 	config.channel = 0;
 	config.show_hidden = 0;
+	config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+	config.scan_time.active.min = config.scan_time.active.max = 0;
 
 	if (xsmcArgc) {
 		xsmcVars(1);
@@ -365,6 +367,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			gWiFiState = 2;
 			break;
 		case SYSTEM_EVENT_SCAN_DONE:
+			if (gScan)
+				modMessagePostToMachine(gScan->the, (uint8_t *)&event->event_id, sizeof(event->event_id), wifiEventPending, NULL);
 			break;
 		default:
 			return ESP_OK;
