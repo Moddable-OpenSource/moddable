@@ -79,11 +79,32 @@ static xsMachine *gThe;		// the one XS virtual machine running
 	#define USE_UART_RX	3
 #endif
 
+#ifdef mxDebug
+static QueueHandle_t gUARTQueue;
+
+static void debug_task(void *pvParameter)
+{
+	while (true) {
+		uart_event_t event;
+
+		if (!xQueueReceive(gUARTQueue, (void * )&event, portMAX_DELAY))
+			continue;
+
+		if (UART_DATA == event.type)
+			fxReceiveLoop();
+	}
+}
+#endif
+
 void setup(void)
 {
 	esp_err_t err;
 	uart_config_t uartConfig;
+#ifdef mxDebug
+	uartConfig.baud_rate = 921600;
+#else
 	uartConfig.baud_rate = 115200;
+#endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;
 	uartConfig.stop_bits = UART_STOP_BITS_1;
@@ -96,32 +117,32 @@ void setup(void)
 	err = uart_set_pin(USE_UART, USE_UART_TX, USE_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 	if (err)
 		printf("uart_set_pin err %d\n", err);
-	err = uart_driver_install(USE_UART, 2048, 2048, 0, NULL, 0);
+
+#ifdef mxDebug
+	err = uart_driver_install(USE_UART, 512, 512, 8, &gUARTQueue, 0);
+#else
+	err = uart_driver_install(USE_UART, 512, 512, 0, NULL, 0);
+#endif
 	if (err)
 		printf("uart_driver_install err %d\n", err);
+
+#ifdef mxDebug
+	xTaskCreate(debug_task, "debug", 1024, NULL, 5, NULL);
+#endif
 
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
 
 	mc_setup(gThe);
 }
 
-void loop(void)
+void loop_task(void *pvParameter)
 {
-	if (!gThe)
-		return;
+	setup();
 
-#ifdef mxDebug
-	fxReceiveLoop();
-#endif
-
-	modTimersExecute();
-
-#ifdef mxDebug
-	int delayMS = modTimersNext();
-	modMessageService(gThe, (delayMS < 3) ? delayMS : 3);		// to poll for debugger input
-#else
-	modMessageService(gThe, modTimersNext());
-#endif
+	while (true) {
+		modTimersExecute();
+		modMessageService(gThe, modTimersNext());
+	}
 }
 
 /*
@@ -168,13 +189,6 @@ uint8_t ESP_isReadable() {
 	return s > 0;
 }
 
-void loop_task(void *pvParameter)
-{
-	setup();
-	while (true)
-		loop();
-}
-
 void app_main() {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
@@ -183,5 +197,5 @@ void app_main() {
     ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 
-    xTaskCreate(&loop_task, "main", 8192, NULL, 5, NULL);
+    xTaskCreate(loop_task, "main", 8192, NULL, 5, NULL);
 }
