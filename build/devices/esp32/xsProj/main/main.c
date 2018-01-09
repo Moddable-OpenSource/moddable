@@ -100,7 +100,7 @@ void setup(void)
 	if (err)
 		printf("uart_driver_install err %d\n", err);
 
-	gThe = ESP_cloneMachine(0, 0, 0, 0);
+	gThe = ESP_cloneMachine(0, 0, 0, NULL);
 
 	mc_setup(gThe);
 }
