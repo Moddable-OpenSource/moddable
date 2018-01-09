@@ -60,7 +60,7 @@ void setup()
 
 	system_set_os_print(0);
 
-	gThe = ESP_cloneMachine(0, 0, 0, 0);
+	gThe = ESP_cloneMachine(0, 0, 0, NULL);
 
 	mc_setup(gThe);
 }
