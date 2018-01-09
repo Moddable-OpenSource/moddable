@@ -251,8 +251,24 @@ void fxConnect(txMachine* the)
 	extern unsigned char gXSBUG[4];
 
 	if (isSerialIP(gXSBUG)) {
+		static txBoolean once;
+
+		if (!once) {
+			static const char *piReset = "<?xs-00000000?>\r\n";
+			const char *cp = piReset;
+
+			while (true) {
+				char c = c_read8(cp++);
+				if (!c) break;
+				ESP_putc(c);
+			}
+
+			once = true;
+		}
+
 		the->connection = kSerialConnection;
-		return;
+
+	return;
 	}
 
 	if (0 == gXSBUG[0]) {
