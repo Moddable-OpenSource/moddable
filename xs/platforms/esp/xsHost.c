@@ -619,7 +619,7 @@ int32_t modGetDaylightSavingsOffset(void)
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
 #endif
 
-void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
+void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
 	extern txPreparation* xsPreparation();
 	void *result;
@@ -673,7 +673,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		context[1] = context[0] + allocation;
 		context[2] = (void *)(uintptr_t)disableDebug;
 
-		result = fxCloneMachine(&creation, &root, "modESP", context);
+		result = fxCloneMachine(&creation, &root, name ? (txString)name : "main", context);
 		if (NULL == result) {
 			if (context[0])
 				c_free(context[0]);
@@ -683,7 +683,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		((txMachine *)result)->context = NULL;
 	}
 	else {
-		result = fxCloneMachine(&prep->creation, &root, "modESP", NULL);
+		result = fxCloneMachine(&prep->creation, &root, "main", NULL);
 		if (NULL == result)
 			return NULL;
 	}
