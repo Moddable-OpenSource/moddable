@@ -47,7 +47,6 @@ typedef struct modTimerRecord modTimerRecord;
 typedef modTimerRecord *modTimer;
 
 #define kTimerFlagFire (1)
-#define kTimerFlagMark (2)
 
 struct modTimerRecord {
 	struct modTimerRecord  *next;
@@ -58,6 +57,9 @@ struct modTimerRecord {
 	txS1 flags;
 	txS1 useCount;
 	modTimerCallback cb;
+#if MOD_TASKS
+	uintptr_t task;
+#endif
 	txU4 refconSize;
 	char refcon[1];
 };
@@ -65,30 +67,13 @@ struct modTimerRecord {
 static modTimer gTimers = NULL;
 static txS2 gTimerID = 1;		//@@ could id share with other libraries that need unique ID?
 
-typedef struct modTimerScriptRecord modTimerScriptRecord;
-typedef modTimerScriptRecord *modTimerScript;
-
-struct modTimerScriptRecord {
-	xsMachine *the;
-	xsSlot slot;
-};
-
-void modTimersAdvanceTime(uint32_t advanceMS)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		walker->triggerTime -= advanceMS;
-
-	modCriticalSectionEnd();
-}
-
 void modTimersExecute(void)
 {
 	int now = modMilliseconds();
 	modTimer walker;
+#if MOD_TASKS
+	uintptr_t task = modTaskGetCurrent();
+#endif
 
 	// determine who is firing this time (timers added during this call are ineligible)
 	modCriticalSectionBegin();
@@ -97,7 +82,11 @@ void modTimersExecute(void)
 
 	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
 	for (walker = gTimers; NULL != walker; ) {
-		if (!(walker->flags & kTimerFlagFire) || !walker->cb) {
+		if (!(walker->flags & kTimerFlagFire) || !walker->cb
+#if MOD_TASKS
+			|| (task != walker->task)
+#endif
+			) {
 			walker = walker->next;
 			continue;
 		}
@@ -130,42 +119,20 @@ int modTimersNext(void)
 	int next = 60 * 60 * 1000;		// an hour
 	int now = modMilliseconds();
 	modTimer walker;
+#if MOD_TASKS
+	uintptr_t task = modTaskGetCurrent();
+#endif
 
 	modCriticalSectionBegin();
 
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
 		int delta;
 
-		if (!walker->cb)
-			continue;
-
-		delta = walker->triggerTime - now;
-		if (delta < next) {
-			if (delta <= 0) {
-				modCriticalSectionEnd();
-				return 0;
-			}
-			next = delta;
-		}
-	}
-
-	modCriticalSectionEnd();
-
-	return next;
-}
-
-int modTimersNextScript(void)
-{
-	int next = 60 * 60 * 1000;		// an hour
-	int now = modMilliseconds();
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next) {
-		int delta;
-
-		if (!walker->cb || !(walker->flags & kTimerFlagMark))
+		if (!walker->cb
+#if MOD_TASKS
+			|| (task != walker->task)
+#endif
+			)
 			continue;
 
 		delta = walker->triggerTime - now;
@@ -197,6 +164,9 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	timer->flags = 0;
 	timer->useCount = 1;
 	timer->cb = cb;
+#if MOD_TASKS
+	timer->task = modTaskGetCurrent();
+#endif
 	timer->refconSize = refconSize;
 	c_memmove(timer->refcon, refcon, refconSize);
 
@@ -217,11 +187,6 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	modInstrumentationAdjust(Timers, +1);
 
 	return timer;
-}
-
-void modTimerSetScript(modTimer timer)
-{
-	timer->flags |= kTimerFlagMark;
 }
 
 void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
