@@ -1218,18 +1218,24 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	return 0;
 }
 
-void modMessageService(xsMachine *the, uint8_t block)
+void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
-	while (count--) {
+	while (true) {
 		modMessageRecord msg;
 
-		if (!xQueueReceive(the->msgQueue, &msg, block ? portMAX_DELAY : 0))
+		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
 			return;
 
 		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		c_free(msg.message);
+		if (msg.message)
+			c_free(msg.message);
+
+		maxDelayMS = 0;
+		if (count <= 1)
+			break;
+		count -= 1;
 	}
 }
 
@@ -1244,8 +1250,10 @@ void modMachineTaskUninit(xsMachine *the)
 	if (the->msgQueue) {
 		modMessageRecord msg;
 
-		while (xQueueReceive(the->msgQueue, &msg, 0))
-			c_free(msg.message);
+		while (xQueueReceive(the->msgQueue, &msg, 0)) {
+			if (msg.message)
+				c_free(msg.message);
+		}
 
 		vQueueDelete(the->msgQueue);
 	}

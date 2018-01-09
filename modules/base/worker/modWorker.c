@@ -290,8 +290,10 @@ void workerLoop(void *pvParameter)
 	}
 	modMachineTaskWake(worker->parent);
 
-	while (true)
-		modMessageService(worker->the, 1);
+	while (true) {
+		modTimersExecute();
+		modMessageService(worker->the, modTimersNext());
+	}
 }
 #endif
 
