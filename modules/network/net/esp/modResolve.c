@@ -35,7 +35,7 @@ typedef struct {
 } xsNetResolveRecord, *xsNetResolve;
 
 static void didResolve(const char *name, ip_addr_t *ipaddr, void *arg);
-static void resolvedImmediate(modTimer timer, void *refcon, uint32_t refconSize);
+static void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 void xs_net_resolve(xsMachine *the)
 {
@@ -57,7 +57,7 @@ void xs_net_resolve(xsMachine *the)
 	err = dns_gethostbyname(nr->name, &nr->ipaddr, didResolve, nr);
 	if (ERR_OK == err) {
 		nr->resolved = 1;
-		modTimerAdd(0, 0, resolvedImmediate, &nr, sizeof(nr));
+		modMessagePostToMachine(the, NULL, 0, resolvedImmediate, nr);
 	}
 	else if (ERR_INPROGRESS == err)
 		;
@@ -75,15 +75,14 @@ void didResolve(const char *name, ip_addr_t *ipaddr, void *arg)
 		nr->ipaddr = *ipaddr;
 		nr->resolved = 1;
 	}
-	modTimerAdd(0, 0, resolvedImmediate, &nr, sizeof(nr));
+	modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 }
 
-void resolvedImmediate(modTimer timer, void *refcon, uint32_t refconSize)
+void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsNetResolve nr = *(xsNetResolve *)refcon;
-	xsMachine *the = nr->the;
+	xsNetResolve nr = refcon;
 
-	xsBeginHost(the);
+	xsBeginHost(nr->the);
 
 	if (nr->resolved) {
 		char ip[20], *out;

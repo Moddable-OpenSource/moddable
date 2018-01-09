@@ -117,12 +117,15 @@ struct xsListenerRecord {
 static xsSocket gSockets;		// N.B. this list contains both sockets and listeners
 
 #define kSocketCallbackExpire (24 * 60 * 60 * 1000)		// close to never
-static modTimer gTimerPending;
+#if !MOD_TASKS
+	static modTimer gTimerPending;
+#endif
 
 void xs_socket_destructor(void *data);
 
 static void socketSetPending(xsSocket xss, uint8_t pending);
-static void socketClearPending(modTimer timer, void *refcon, uint32_t refconSize);
+static void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize);
 
 static void socketMsgConnect(xsSocket xss);
 static void socketMsgDisconnect(xsSocket xss);
@@ -153,10 +156,12 @@ static void forgetSocket(xsSocket xss)
 		else
 			prev->next = walker->next;
 
+#if !MOD_TASKS
 		if ((NULL == gSockets) && gTimerPending) {
 			modTimerRemove(gTimerPending);
 			gTimerPending = NULL;
 		}
+#endif
 		return;
 	}
 
@@ -1029,6 +1034,8 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 void socketSetPending(xsSocket xss, uint8_t pending)
 {
+	uint8_t doSchedule;
+
 	modCriticalSectionBegin();
 
 	if ((xss->pending & pending) == pending) {
@@ -1036,60 +1043,71 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 		return;
 	}
 
-	if (!xss->pending) {
+	doSchedule = 0 == xss->pending;
+	xss->pending |= pending;
+
+	if (doSchedule) {
 		socketUpUseCount(xss->the, xss);
 
+#if MOD_TASKS
+		modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
+#else
 		if (gTimerPending)
 			modTimerReschedule(gTimerPending, 0, kSocketCallbackExpire);
 		else
-			gTimerPending = modTimerAdd(0, kSocketCallbackExpire, socketClearPending, NULL, 0);
+			gTimerPending = modTimerAdd(0, kSocketCallbackExpire, socketsClearPending, NULL, 0);
+#endif
 	}
-
-	xss->pending |= pending;
 
 	modCriticalSectionEnd();
 }
 
-void socketClearPending(modTimer timer, void *refcon, uint32_t refconSize)
+void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsSocket walker = gSockets;
+	xsSocket xss = refcon;
+	uint8_t pending;
+
+	modCriticalSectionBegin();
+
+	pending = xss->pending;
+	xss->pending = 0;
+
+	modCriticalSectionEnd();
+
+	if (!pending)
+		return;
+
+	c_printf("socketClearPending - begin\n");
+	if (pending & kPendingReceive)
+		socketMsgDataReceived(xss);
+
+	if (pending & kPendingSent)
+		socketMsgDataSent(xss);
+
+	if (pending & kPendingConnect)
+		socketMsgConnect(xss);
+
+	if (pending & kPendingDisconnect)
+		socketMsgDisconnect(xss);
+
+	if (pending & kPendingError)
+		socketMsgError(xss);
+
+	if (pending & kPendingAcceptListener)
+		listenerMsgNew((xsListener)xss);
+	c_printf("socketClearPending - end\n");
+}
+
+void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize)
+{
+	xsSocket walker = gSockets, next;
 
 	while (walker) {
-		uint8_t pending;
-		xsSocket next;
-
-		modCriticalSectionBegin();
-
-		pending = walker->pending;
-		walker->pending = 0;
-
-		modCriticalSectionEnd();
-
-		if (!pending) {
-			walker = walker->next;
-			continue;
-		}
-
-		if (pending & kPendingReceive)
-			socketMsgDataReceived(walker);
-
-		if (pending & kPendingSent)
-			socketMsgDataSent(walker);
-
-		if (pending & kPendingConnect)
-			socketMsgConnect(walker);
-
-		if (pending & kPendingDisconnect)
-			socketMsgDisconnect(walker);
-
-		if (pending & kPendingError)
-			socketMsgError(walker);
-
-		if (pending & kPendingAcceptListener)
-			listenerMsgNew((xsListener)walker);
+		socketClearPending(walker->the, walker, NULL, 0);
 
 		next = walker->next;
 		socketDownUseCount(walker->the, walker);
+
 		walker = next;
 	}
 }

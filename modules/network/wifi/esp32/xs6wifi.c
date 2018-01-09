@@ -256,31 +256,24 @@ struct xsWiFiRecord {
 
 static xsWiFi gWiFi;
 
-static void wifiEventPending(modTimer timer, void *refcon, uint32_t refconSize)
+static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsWiFi walker;
-	system_event_id_t event_id = *(system_event_id_t *)refcon;
-	const char *message;
+	xsWiFi wifi = refcon;
+	system_event_id_t event_id = *(system_event_id_t *)message;
+	const char *msg;
 
 	switch (event_id){
-		case SYSTEM_EVENT_STA_START:			message = "start"; break;
-		case SYSTEM_EVENT_STA_CONNECTED:		message = "connect"; break;
-		case SYSTEM_EVENT_STA_DISCONNECTED:		message = "disconnect"; break;
-		case SYSTEM_EVENT_STA_GOT_IP:			message = "gotIP"; break;
+		case SYSTEM_EVENT_STA_START:			msg = "start"; break;
+		case SYSTEM_EVENT_STA_CONNECTED:		msg = "connect"; break;
+		case SYSTEM_EVENT_STA_DISCONNECTED:		msg = "disconnect"; break;
+		case SYSTEM_EVENT_STA_GOT_IP:			msg = "gotIP"; break;
 		case SYSTEM_EVENT_SCAN_DONE:			reportScan(); return;
 		default: return;
 	}
 
-	for (walker = gWiFi; NULL != walker; walker = walker->next) {
-		xsMachine *the = walker->the;
-
-		if (!walker->haveCallback)
-			continue;
-
-		xsBeginHost(the);
-			xsCall1(walker->obj, xsID("callback"), xsString(message));
-		xsEndHost(the);
-	}
+	xsBeginHost(the);
+		xsCall1(wifi->obj, xsID("callback"), xsString(msg));
+	xsEndHost(the);
 }
 
 void xs_wifi_destructor(void *data)
@@ -351,8 +344,9 @@ void xs_wifi_set_onNotify(xsMachine *the)
 static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 {
 	wifi_config_t wifi_config;
+	xsWiFi walker;
 
-    switch(event->event_id) {
+    switch (event->event_id) {
 		case SYSTEM_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
 				gWiFiState = 3;
@@ -376,7 +370,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			return ESP_OK;
 	}
 
-	modTimerAdd(0, 0, wifiEventPending, &event->event_id, sizeof(event->event_id));
+	for (walker = gWiFi; NULL != walker; walker = walker->next)
+		modMessagePostToMachine(walker->the, (uint8_t *)&event->event_id, sizeof(event->event_id), wifiEventPending, walker);
 
 	return ESP_OK;
 }
