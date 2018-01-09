@@ -339,7 +339,9 @@ txBoolean fxIsConnected(txMachine* the)
 txBoolean fxIsReadable(txMachine* the)
 {
 	if (kSerialConnection == the->connection) {
+#if !ESP32
 		fxReceiveLoop();
+#endif
 		return NULL != the->debugFragments;
 	}
 	else
