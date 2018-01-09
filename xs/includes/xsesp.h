@@ -175,18 +175,16 @@ extern int modTimersNextScript(void);
 extern void modTimersAdvanceTime(uint32_t advanceMS);
 
 /*
-	critical section
+	critical section (one deep)
 */
 
 #if !ESP32
 	#define modCriticalSectionBegin() noInterrupts()
 	#define modCriticalSectionEnd() interrupts()
 #else
-//	#define modCriticalSectionBegin() taskENTER_CRITICAL()
-//	#define modCriticalSectionEnd() taskEXIT_CRITICAL()
-//@@
-	#define modCriticalSectionBegin()
-	#define modCriticalSectionEnd()
+	extern portMUX_TYPE gCriticalMux;
+	#define modCriticalSectionBegin() vTaskEnterCritical(&gCriticalMux)
+	#define modCriticalSectionEnd() vTaskExitCritical(&gCriticalMux)
 #endif
 
 /*
