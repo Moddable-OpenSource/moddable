@@ -270,7 +270,7 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #if defined(__XS__)
 	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 	#if ESP32
-		void modMessageService(xsMachine *the, uint8_t block);
+		void modMessageService(xsMachine *the, int maxDelayMS);
 	#else
 		void modMessageService(void);
 	#endif
@@ -285,6 +285,12 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 	void modMachineTaskUninit(xsMachine *the);
 	void modMachineTaskWait(xsMachine *the);
 	void modMachineTaskWake(xsMachine *the);
+#endif
+
+#if ESP32
+	#define MOD_TASKS (true)
+
+	#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
 #endif
 
 /*
