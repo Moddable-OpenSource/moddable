@@ -116,11 +116,12 @@ void loop(void)
 
 	modTimersExecute();
 
-	modMessageService(gThe, 0);
-
+#ifdef mxDebug
 	int delayMS = modTimersNext();
-	if (delayMS)
-		modDelayMilliseconds((delayMS < 5) ? delayMS : 5);
+	modMessageService(gThe, (delayMS < 3) ? delayMS : 3);		// to poll for debugger input
+#else
+	modMessageService(gThe, modTimersNext());
+#endif
 }
 
 /*
@@ -182,5 +183,5 @@ void app_main() {
     ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 
-    xTaskCreate(&loop_task, "loop_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&loop_task, "main", 8192, NULL, 5, NULL);
 }
