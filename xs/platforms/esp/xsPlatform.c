@@ -250,12 +250,6 @@ void fxConnect(txMachine* the)
 #endif
 	extern unsigned char gXSBUG[4];
 
-	if (the->context) {
-		uint8_t **context = the->context;
-		if (context[2])
-			return;
-	}
-
 	if (isSerialIP(gXSBUG)) {
 		the->connection = kSerialConnection;
 		return;

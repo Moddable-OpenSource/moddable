@@ -626,7 +626,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
-	uint8_t *context[3];
+	uint8_t *context[2];
 
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
@@ -671,7 +671,6 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 		}
 		context[1] = context[0] + allocation;
-		context[2] = (void *)(uintptr_t)disableDebug;
 
 		result = fxCloneMachine(&creation, &root, name ? (txString)name : "main", context);
 		if (NULL == result) {
