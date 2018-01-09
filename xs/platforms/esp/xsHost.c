@@ -42,6 +42,8 @@
 #if ESP32
 	#define rtc_timeval timeval
 	#define rtctime_gettimeofday(a) gettimeofday(a, NULL)
+
+	portMUX_TYPE gCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 #else
 	#include "rtctime.h"
 	#include "spi_flash.h"
