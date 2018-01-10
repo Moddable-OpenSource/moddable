@@ -36,8 +36,6 @@ static void reportScan(void);
 struct wifiScanRecord {
 	xsSlot			callback;
 	xsMachine		*the;
-	struct bss_info	*scan;
-	void			*data;
 };
 typedef struct wifiScanRecord wifiScanRecord;
 
@@ -80,6 +78,20 @@ void xs_wifi_scan(xsMachine *the)
 	esp_wifi_get_mode(&mode);
 	if (WIFI_MODE_STA != mode)
 		xsUnknownError("can't scan in WIFI_MODE_STA");
+
+	if (0 == xsmcArgc) {
+		// clean gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
+		if (gScan) {
+			xsForget(gScan->callback);
+			c_free(gScan);
+			gScan = NULL;
+		}
+		esp_wifi_scan_stop();
+		return;
+	}
+
+	if (gScan)
+		xsUnknownError("already scanning");
 
 	gScan = (wifiScanRecord *)c_calloc(1, sizeof(wifiScanRecord));
 	if (NULL == gScan)
@@ -143,24 +155,24 @@ void xs_wifi_connect(xsMachine *the)
 	c_memset(&config, 0, sizeof(config));
 
 	xsmcVars(2);
-	if (xsmcHas(xsArg(0), xsID("ssid"))) {
-		xsmcGet(xsVar(0), xsArg(0), xsID("ssid"));
+	if (xsmcHas(xsArg(0), xsID_ssid)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
 		str = xsmcToString(xsVar(0));
 		if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
 			xsUnknownError("ssid too long - 32 bytes max");
 		espMemCpy(config.sta.ssid, str, espStrLen(str));
 	}
 
-	if (xsmcHas(xsArg(0), xsID("password"))) {
-		xsmcGet(xsVar(0), xsArg(0), xsID("password"));
+	if (xsmcHas(xsArg(0), xsID_password)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_password);
 		str = xsmcToString(xsVar(0));
 		if (espStrLen(str) > (sizeof(config.sta.password) - 1))
 			xsUnknownError("password too long - 64 bytes max");
 		espMemCpy(config.sta.password, str, espStrLen(str));
 	}
 
-	if (xsmcHas(xsArg(0), xsID("bssid"))) {
-		xsmcGet(xsVar(0), xsArg(0), xsID("bssid"));
+	if (xsmcHas(xsArg(0), xsID_bssid)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
 		if (sizeof(config.sta.bssid) != xsGetArrayBufferLength(xsVar(0)))
 			xsUnknownError("bssid must be 6 bytes");
 		xsmcGetArrayBufferData(xsVar(0), 0, config.sta.bssid, sizeof(config.sta.bssid));
@@ -201,19 +213,19 @@ void reportScan(void)
 			xsmcSetNewObject(xsVar(1));
 
 			xsmcSetString(xsVar(0), bss->ssid);
-			xsmcSet(xsVar(1), xsID("ssid"), xsVar(0));
+			xsmcSet(xsVar(1), xsID_ssid, xsVar(0));
 
 			xsmcSetInteger(xsVar(0), bss->rssi);
-			xsmcSet(xsVar(1), xsID("rssi"), xsVar(0));
+			xsmcSet(xsVar(1), xsID_rssi, xsVar(0));
 
 			xsmcSetInteger(xsVar(0), bss->primary);
-			xsmcSet(xsVar(1), xsID("channel"), xsVar(0));
+			xsmcSet(xsVar(1), xsID_channel, xsVar(0));
 
 			xsmcSetBoolean(xsVar(0), 0);
-			xsmcSet(xsVar(1), xsID("hidden"), xsVar(0));
+			xsmcSet(xsVar(1), xsID_hidden, xsVar(0));
 
 			xsmcSetArrayBuffer(xsVar(0), bss->bssid, sizeof(bss->bssid));
-			xsmcSet(xsVar(1), xsID("bssid"), xsVar(0));
+			xsmcSet(xsVar(1), xsID_bssid, xsVar(0));
 
 			if (bss->authmode < WIFI_AUTH_MAX) {
 				if (WIFI_AUTH_OPEN == bss->authmode)
@@ -227,7 +239,7 @@ void reportScan(void)
 				else // if (WIFI_AUTH_WPA_WPA2_PSK == bss->authmode)
 					xsmcSetString(xsVar(0), "wpa_wpa2_psk");
 
-				xsmcSet(xsVar(1), xsID("authentication"), xsVar(0));
+				xsmcSet(xsVar(1), xsID_authentication, xsVar(0));
 			}
 
 			xsCallFunction1(gScan->callback, xsGlobal, xsVar(1));
@@ -241,9 +253,8 @@ void reportScan(void)
 	xsEndHost(the);
 
 	xsForget(gScan->callback);
-	if (gScan->data)
-		c_free(gScan->data);
 	c_free(aps);
+	gScan = NULL;
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
@@ -274,7 +285,7 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID("callback"), xsString(msg));
+		xsCall1(wifi->obj, xsID_callback, xsString(msg));
 	xsEndHost(the);
 }
 
@@ -301,9 +312,9 @@ void xs_wifi_constructor(xsMachine *the)
 	int argc = xsmcToInteger(xsArgc);
 
 	if (1 == argc)
-		xsCall1(xsThis, xsID("build"), xsArg(0));
+		xsCall1(xsThis, xsID_build, xsArg(0));
 	else if (2 == argc)
-		xsCall2(xsThis, xsID("build"), xsArg(0), xsArg(1));
+		xsCall2(xsThis, xsID_build, xsArg(0), xsArg(1));
 }
 
 void xs_wifi_close(xsMachine *the)
@@ -325,7 +336,7 @@ void xs_wifi_set_onNotify(xsMachine *the)
 		wifi->the = the;
 	}
 	else if (wifi->haveCallback) {
-		xsmcDelete(xsThis, xsID("callback"));
+		xsmcDelete(xsThis, xsID_callback);
 		wifi->haveCallback = false;
 	}
 
@@ -338,9 +349,9 @@ void xs_wifi_set_onNotify(xsMachine *the)
 	gWiFi = wifi;
 
 	wifi->obj = xsThis;
-	xsmcSet(xsThis, xsID("callback"), xsArg(0));
+	xsmcSet(xsThis, xsID_callback, xsArg(0));
 
-	xsCall1(wifi->obj, xsID("callback"), xsString("init"));		//@@ this should be unnecessary
+	xsCall1(wifi->obj, xsID_callback, xsString("init"));		//@@ this should be unnecessary
 }
 
 static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
@@ -394,3 +405,4 @@ void initWiFi(void)
 void xs_wifi_accessPoint(xsMachine *the)
 {
 }
+
