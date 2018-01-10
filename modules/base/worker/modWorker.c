@@ -204,15 +204,15 @@ void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message
 {
 	xsBeginHost(the);
 
-	xsmcVars(0);
+	xsmcVars(2);
 
 	xsVar(0) = xsArrayBuffer(message, messageLength);
 
 	if (the == worker->parent)
 		xsCall1(worker->owner, xsID_onmessage, xsVar(0));	// calling instantiator - through instance
 	else {
-		xsmcGet(xsVar(0), xsGlobal, xsID_self);
-		xsCall1(xsVar(0), xsID_onmessage, xsVar(0));	// calling worker - through self
+		xsmcGet(xsVar(1), xsGlobal, xsID_self);
+		xsCall1(xsVar(1), xsID_onmessage, xsVar(0));	// calling worker - through self
 	}
 
 	xsEndHost(the);
