@@ -123,7 +123,7 @@ AR  = $(TOOLS_BIN)\xtensa-esp32-elf-ar
 OBJCOPY = $(TOOLS_BIN)\xtensa-esp32-elf-objcopy
 ESPTOOL = $(IDF_PATH)\components\esptool_py\esptool\esptool.py
 
-AR_FLAGS = crs
+AR_OPTIONS = crs
 
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\debug
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
@@ -236,7 +236,7 @@ $(BIN_DIR)\xs_esp.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resou
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
-	$(AR) $(AR_FLAGS) $(BIN_DIR)\xs_esp.a $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\buildinfo.o
+	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\buildinfo.o
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)\xs%.c.o: xs%.c
