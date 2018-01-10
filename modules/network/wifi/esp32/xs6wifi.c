@@ -31,8 +31,6 @@ uint8_t gWiFiState = 0;	// 0 = not started, 1 = starting, 2 = started, 3 = conne
 
 static void initWiFi(void);
 
-static void reportScan(void);
-
 struct wifiScanRecord {
 	xsSlot			callback;
 	xsMachine		*the;
@@ -80,8 +78,10 @@ void xs_wifi_scan(xsMachine *the)
 		xsUnknownError("can't scan in WIFI_MODE_STA");
 
 	if (0 == xsmcArgc) {
-		// clean gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
+		// clear gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
 		if (gScan) {
+			if (gScan->the != the)
+				xsUnknownError("can't stop scan started by another VM");
 			xsForget(gScan->callback);
 			c_free(gScan);
 			gScan = NULL;
@@ -192,9 +192,8 @@ void xs_wifi_connect(xsMachine *the)
 		xsUnknownError("esp_wifi_connect failed");
 }
 
-void reportScan(void)
+static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsMachine *the = gScan->the;
 	uint16_t count, i;
 	wifi_ap_record_t *aps;
 
@@ -280,7 +279,6 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 		case SYSTEM_EVENT_STA_CONNECTED:		msg = "connect"; break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:		msg = "disconnect"; break;
 		case SYSTEM_EVENT_STA_GOT_IP:			msg = "gotIP"; break;
-		case SYSTEM_EVENT_SCAN_DONE:			reportScan(); return;
 		default: return;
 	}
 
@@ -379,8 +377,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
-				modMessagePostToMachine(gScan->the, (uint8_t *)&event->event_id, sizeof(event->event_id), wifiEventPending, NULL);
-			break;
+				modMessagePostToMachine(gScan->the, (uint8_t *)&event->event_id, sizeof(event->event_id), reportScan, NULL);
+			return ESP_OK;
 		default:
 			return ESP_OK;
 	}
