@@ -1095,19 +1095,18 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	if (pending & kPendingAcceptListener)
 		listenerMsgNew((xsListener)xss);
+
+	socketDownUseCount(xss->the, xss);
 	c_printf("socketClearPending - end\n");
 }
 
 void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize)
 {
-	xsSocket walker = gSockets, next;
+	xsSocket walker = gSockets;
 
 	while (walker) {
+		xsSocket next = walker->next;
 		socketClearPending(walker->the, walker, NULL, 0);
-
-		next = walker->next;
-		socketDownUseCount(walker->the, walker);
-
 		walker = next;
 	}
 }
