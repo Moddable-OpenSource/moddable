@@ -522,8 +522,8 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 		((RenderBits)pc)->pixels = (void *)(pixels + (sy * bits->width) + sx);
 		((RenderBits)pc)->rowPixels = bits->width;
 #else
-		((RenderBits)pc)->pixels = (void *)(pixels + ((sy * bits->width) >> 1) + (sx >> 1));
-		((RenderBits)pc)->rowBytes = bits->width >> 1;
+		((RenderBits)pc)->pixels = (void *)(pixels + ((sy * (bits->width + 1)) >> 1) + (sx >> 1));
+		((RenderBits)pc)->rowBytes = (bits->width + 1) >> 1;
 		((RenderBits)pc)->doCopy = getMemCpy4(sx, x - poco->x);
 #if kPocoPixelFormat == kCommodettoBitmapCLUT16
 		buildColorMap((uint32_t *)((uint8_t *)bits->pixels) - 16, poco->clut + 32, ((RenderBits)pc)->remap);
