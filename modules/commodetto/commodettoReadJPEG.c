@@ -58,7 +58,7 @@ typedef struct {
 	char				isArrayBuffer;
 
 	unsigned char		blockWidth;
-	unsigned char		blockHeight;
+	unsigned char		blockYMax;			 // info.m_MCUSPerCol - 1
 	unsigned char		blockX;
 	unsigned char		blockY;
 
@@ -127,7 +127,7 @@ void xs_JPEG_constructor(xsMachine *the)
 		xsErrorPrintf("jpeg init failed");
 
 	jpeg->blockWidth = info.m_MCUSPerRow;
-	jpeg->blockHeight = info.m_MCUSPerCol;
+	jpeg->blockYMax = info.m_MCUSPerCol - 1;
 	jpeg->blockX = 0;
 	jpeg->blockY = 0;
 	jpeg->mcuWidth = info.m_MCUWidth;
@@ -174,9 +174,9 @@ void xs_JPEG_constructor(xsMachine *the)
 	xsmcSet(xsVar(0), xsID_byteLength, xsVar(1));
 	xsmcSet(xsThis, xsID_pixels, xsVar(0));
 
-	xsVar(0) = xsInteger(info.m_width);
+	xsmcSetInteger(xsVar(0), info.m_width);
 	xsmcSet(xsThis, xsID_width, xsVar(0));
-	xsVar(0) = xsInteger(info.m_height);
+	xsmcSetInteger(xsVar(0), info.m_height);
 	xsmcSet(xsThis, xsID_height, xsVar(0));
 
 	xsmcSetInteger(xsVar(0), pixelFormat);
@@ -199,13 +199,13 @@ void xs_JPEG_read(xsMachine *the)
 	}
 
 	xsmcGet(xsVar(1), xsThis, xsID_bitmap);
-	xsVar(0) = xsInteger(jpeg->blockX * jpeg->mcuWidth);
+	xsmcSetInteger(xsVar(0), jpeg->blockX * jpeg->mcuWidth);
 	xsmcSet(xsVar(1), xsID_x, xsVar(0));
-	xsVar(0) = xsInteger(jpeg->blockY * jpeg->mcuHeight);
+	xsmcSetInteger(xsVar(0), jpeg->blockY * jpeg->mcuHeight);
 	xsmcSet(xsVar(1), xsID_y, xsVar(0));
 
 	cb = xsmcGetHostChunk(xsVar(1));
-	if (jpeg->blockY >= jpeg->blockHeight)
+	if (jpeg->blockY == jpeg->blockYMax)
 		cb->h = jpeg->mcuHeightBottom;
 	else
 		cb->h = jpeg->mcuHeight;
@@ -241,12 +241,13 @@ void xs_JPEG_read(xsMachine *the)
 
 void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 {
-	int i, pixelCount;
+	int i;
 	int outWidth = cb->w;
 	int outHeight = cb->h;
 
 	if (PJPG_YH1V1 == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
+			int pixelCount;
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i++)
 				*pixels++ =	makePixel(jpeg->r[i], jpeg->g[i], jpeg->b[i]);
 		}
@@ -261,10 +262,41 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 		}
 	}
 	else if (PJPG_YH2V2 == jpeg->scanType) {
-		;
+		unsigned char *r, *g, *b;
+		uint8_t jMaxLeft, jMaxRight;
+		int j;
+
+		if (jpeg->mcuWidth == outWidth) {
+			jMaxLeft = 8;
+			jMaxRight = 72;
+		}
+		else if (outWidth <= 8) {
+			jMaxLeft = outWidth;
+			jMaxRight = 0;
+		} else {
+			jMaxLeft = 8;
+			jMaxRight = 56 + outWidth;
+		}
+
+		r = jpeg->r, g = jpeg->g, b = jpeg->b;
+		for (i = (outHeight >= 8) ? 8 : outHeight; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+			for (j = 64; j < jMaxRight; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+		}
+
+		r = jpeg->r + 128, g = jpeg->g + 128, b = jpeg->b + 128;
+		for (i = (outHeight > 8) ? outHeight - 8 : 0; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+			for (j = 64; j < jMaxRight; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+		}
 	}
 	else if (PJPG_GRAYSCALE == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
+			int pixelCount;
 			for (i = 0, pixelCount = jpeg->mcuWidth * outHeight; i < pixelCount; i++) {
 				PocoPixel gray = ~jpeg->r[i];
 				*pixels++ = makePixel(gray, gray, gray);
@@ -329,7 +361,41 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 		}
 	}
 	else if (PJPG_YH2V2 == jpeg->scanType) {
-		;
+		unsigned char *r, *g, *b;
+		uint8_t jMaxLeft, jMaxRight;
+		int j;
+
+		if (jpeg->mcuWidth == outWidth) {
+			jMaxLeft = 8;
+			jMaxRight = 72;
+		}
+		else if (outWidth <= 8) {
+			jMaxLeft = outWidth;
+			jMaxRight = 0;
+		} else {
+			jMaxLeft = 8;
+			jMaxRight = 56 + outWidth;
+		}
+
+		r = jpeg->r, g = jpeg->g, b = jpeg->b;
+		for (i = (outHeight >= 8) ? 8 : outHeight; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j += 2)
+				*pixels++ = (makePixel(r[j], g[j], b[j]) << 4) |
+							makePixel(r[j + 1], g[j + 1], b[j + 1]);;
+			for (j = 64; j < jMaxRight; j += 2)
+				*pixels++ = (makePixel(r[j], g[j], b[j]) << 4) |
+							makePixel(r[j + 1], g[j + 1], b[j + 1]);;
+		}
+
+		r = jpeg->r + 128, g = jpeg->g + 128, b = jpeg->b + 128;
+		for (i = (outHeight > 8) ? outHeight - 8 : 0; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j += 2)
+				*pixels++ = (makePixel(r[j], g[j], b[j]) << 4) |
+							makePixel(r[j + 1], g[j + 1], b[j + 1]);;
+			for (j = 64; j < jMaxRight; j += 2)
+				*pixels++ = (makePixel(r[j], g[j], b[j]) << 4) |
+							makePixel(r[j + 1], g[j + 1], b[j + 1]);;
+		}
 	}
 	else if (PJPG_GRAYSCALE == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
@@ -399,7 +465,49 @@ void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixelsIn)
 		}
 	}
 	else if (PJPG_YH2V2 == jpeg->scanType) {
-		;
+		unsigned char *r, *g, *b;
+		uint8_t jMaxLeft, jMaxRight;
+		int j;
+
+		if (jpeg->mcuWidth == outWidth) {
+			jMaxLeft = 8;
+			jMaxRight = 72;
+		}
+		else if (outWidth <= 8) {
+			jMaxLeft = outWidth;
+			jMaxRight = 0;
+		} else {
+			jMaxLeft = 8;
+			jMaxRight = 56 + outWidth;
+		}
+
+		r = jpeg->r, g = jpeg->g, b = jpeg->b;
+		for (i = (outHeight >= 8) ? 8 : outHeight; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j++, pixels += 3) {
+				pixels[0] = r[j];
+				pixels[1] = g[j];
+				pixels[2] = b[j];
+			}
+			for (j = 64; j < jMaxRight; j++, pixels += 3) {
+				pixels[0] = r[j];
+				pixels[1] = g[j];
+				pixels[2] = b[j];
+			}
+		}
+
+		r = jpeg->r + 128, g = jpeg->g + 128, b = jpeg->b + 128;
+		for (i = (outHeight > 8) ? outHeight - 8 : 0; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j++, pixels += 3) {
+				pixels[0] = r[j];
+				pixels[1] = g[j];
+				pixels[2] = b[j];
+			}
+			for (j = 64; j < jMaxRight; j++, pixels += 3) {
+				pixels[0] = r[j];
+				pixels[1] = g[j];
+				pixels[2] = b[j];
+			}
+		}
 	}
 	else if (PJPG_GRAYSCALE == jpeg->scanType) {
 		if (jpeg->mcuWidth == outWidth) {		// no horizontal clipping
