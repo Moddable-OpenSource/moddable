@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,44 +25,25 @@
 #include "xsPlatform.h"
 #include "modInstrumentation.h"
 
-xsMachine *gThe;        // the one XS6 virtual machine running
+xsMachine *gThe = NULL;        // the one XS6 virtual machine running
+
+uint8_t triggerDebugCommand(xsMachine *the);
 
 xsCallback xsHostModuleAt(xsIndex i)
 {
     return NULL;
 }
 
-#define _OLD_STYLE 0
-
-#if _OLD_STYLE
-static const char gSetup[] = "setup";
-static const char gRequire[] = "require";
-static const char gWeak[] = "weak";
-static const char gMain[] = "main";
-#else
 extern void mc_setup(xsMachine *the);
-#endif
 
 void xs_setup() {
-    const char *module;
+	geckoStartRTCC();
+	geckoConfigureSysTick();
+	setupDebugger();
+
     gThe = ESP_cloneMachine(0, 0, 0, 0);
 
-#if _OLD_STYLE
-    xsBeginHost(gThe);
-    xsResult = xsString(gSetup);
-    if (XS_NO_ID != fxFindModule(the, XS_NO_ID, &xsResult))
-        module = gSetup;
-    else
-        module = gMain;
-
-    xsResult = xsGet(xsGlobal, xsID(gRequire));
-    xsResult = xsCall1(xsResult, xsID(gWeak), xsString(module));
-    if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-        xsCallFunction0(xsResult, xsGlobal);
-    xsEndHost(gThe);
-#else
 	mc_setup(gThe);
-#endif
 }
 
 void xs_loop(void)
@@ -94,5 +75,4 @@ void xs_loop(void)
     if (delayMS)
     	gecko_delay(delayMS);
 }
-
 
