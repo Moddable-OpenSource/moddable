@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "em_chip.h"
 #include "em_cmu.h"
 #include "em_emu.h"
@@ -5,17 +25,27 @@
 #include "em_rmu.h"
 #include "em_gpio.h"
 
+#include "xsgecko.h"
+
 #include "mc.defines.h"
 
-#if useRTCC
-#define xCRYOTIMER 1
+#if MODDEF_MIGHTY
+	#define USE_CRYOTIMER	1
+	#include "em_cryotimer.h"
+#endif
+#if MODDEF_GIANT
+	#define USE_RTC			1
+	#include "em_rtc.h"
+#endif
+
+#if USE_CRYOTIMER
 #include "em_cryotimer.h"
 #include "em_rtcc.h"
 #include "em_bus.h"
 #endif
 
 uint32_t geckoGetPersistentValue(uint32_t reg) {
-#if useRTCC
+#if USE_CRYOTIMER
 	return RTCC->RET[reg].REG;
 #else
 	return BURTC->RET[reg].REG;
@@ -23,7 +53,7 @@ uint32_t geckoGetPersistentValue(uint32_t reg) {
 }
 
 void geckoSetPersistentValue(uint32_t reg, uint32_t val) {
-#if useRTCC
+#if USE_CRYOTIMER
 	RTCC->RET[reg].REG = val;
 #else
 	BURTC->RET[reg].REG = val;
@@ -31,7 +61,7 @@ void geckoSetPersistentValue(uint32_t reg, uint32_t val) {
 }
 
 void configEM4(void) {
-#if useRTCC
+#if USE_CRYOTIMER
 	EMU_EM4Init_TypeDef init_EM4 = EMU_EM4INIT_DEFAULT;
 	init_EM4.em4State = emuEM4Hibernate;
 //	init_EM4.pinRetentionMode = emuPinRetentionEm4Exit;	// reset gpio pins after exit from EM4
@@ -43,7 +73,7 @@ void configEM4(void) {
 	init_EM4.pinRetentionMode = emuPinRetentionDisable;
 #endif
 	init_EM4.retainUlfrco = true;
-init_EM4.vScaleEM4HVoltage = emuVScaleEM4H_LowPower;
+//	init_EM4.vScaleEM4HVoltage = emuVScaleEM4H_LowPower;	// maybe this is too low to run some gpio
 	EMU_EM4Init( &init_EM4 );
 #else
 	EMU_EM4Init_TypeDef em4Init = EMU_EM4INIT_DEFAULT;
@@ -58,9 +88,9 @@ init_EM4.vScaleEM4HVoltage = emuVScaleEM4H_LowPower;
 #endif
 }
 
-void configSleepClock(uint32_t ms) {
-#if useRTCC
-	setCRYOTIMER_Timeout(ms);
+uint32_t configSleepClock(uint32_t ms) {
+#if USE_CRYOTIMER
+	return setupCryotimerTimeout(ms);
 #else
 	BURTC_Init_TypeDef burtcInit = BURTC_INIT_DEFAULT;
 
@@ -73,36 +103,60 @@ void configSleepClock(uint32_t ms) {
 	BURTC_IntClear( BURTC_IF_COMP0 );
 	BURTC_IntEnable( BURTC_IF_COMP0 );	/* Enable compare interrupt flag */
 	BURTC_Init(&burtcInit);
+	return ms;
 #endif
 }
 
 void configGPIO(void) {
-//#if EFR32MG12P332F1024GL125
+#ifdef MODDEF_SLEEP_WAKEUP_PORT
 #if MODDEF_MIGHTY
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPullFilter, 1);
 	while (!GPIO_PinInGet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN))
-		UTIL_delay(1);		//debounce
+		geckoDelayLoop(1);		//debounce
 //	GPIO_IntClear(0x0080);
 	GPIO_IntClear(_GPIO_IFC_EM4WU_MASK | _GPIO_IFC_EXT_MASK);
 	NVIC_EnableIRQ(GPIO_ODD_IRQn);
 	GPIO_IntConfig(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, true, false, true);
-	GPIO_EM4EnablePinWakeup(GPIO_EXTILEVEL_EM4WU1, 0);
-#else
+	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
+
+#elif MODDEF_GIANT
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPull, 1);
-	GPIO_EM4EnablePinWakeup(GPIO_EM4WUEN_EM4WUEN_F2, 0);
+	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
+
+#else
+	#error need wakeup pin code for new gecko platform
+#endif
 #endif
 }
 
 void radioSleep();
+
 void geckoSleepEM4(uint32_t ms) {
+	uint32_t remainingTime, sleepTime;
 	geckoDisableSysTick();
     radioSleep();
 //	geckoSleepSensors();
 //    CMU_HFRCOBandSet(cmuHFRCOFreq_1M0Hz);
 	configEM4();
-	configSleepClock(ms);
+	sleepTime = configSleepClock(ms);
+#if MODDEF_SLEEP_REPEAT_EM4
+	remainingTime = ms - sleepTime;
+	if (remainingTime > 100) {
+		geckoSetPersistentValue(kSleepTagReg, kxtimTag);
+		geckoSetPersistentValue(kSleepRemainReg, remainingTime);
+	}
+	else {
+		geckoSetPersistentValue(kSleepTagReg, kmdblTag);
+	}
+#endif
+	geckoStoreGpioRetention();
 	configGPIO();
-#if useRTCC
+	
+	WDOG0->CTRL |= WDOG_CTRL_CLKSEL_ULFRCO;		// wait for ULFRCO to start
+	while (CMU->SYNCBUSY)
+		;
+
+#if USE_CRYOTIMER
 	EMU_EnterEM4H();
 #else
 	BURTC_Enable(true);
