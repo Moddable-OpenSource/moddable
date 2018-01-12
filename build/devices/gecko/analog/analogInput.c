@@ -1,6 +1,23 @@
 /*
- * NEEDS BOILERPLATE
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
+
 #include "em_device.h"
 #include "em_chip.h"
 #include "em_emu.h"
@@ -309,6 +326,7 @@ NVIC_ClearPendingIRQ(ANALOG_IRQ);
   /* Start ADC single conversion */
   ADC_Start(ANALOG_PORT, adcStartSingle);
   while ((ANALOG_PORT->IF & ADC_IF_SINGLE) == 0)
+#if 0
 {
 //	SCB->SCR = 0x10;
 //	__WFE();
@@ -316,7 +334,11 @@ NVIC_ClearPendingIRQ(ANALOG_IRQ);
 	ADC_IntClear(ANALOG_PORT, ADC_IEN_SINGLE);
 	NVIC_ClearPendingIRQ(ANALOG_IRQ);
 }
-//    ;
+#else
+	;
+#endif
+
+
 
 ADC_IntDisable(ANALOG_PORT, ADC_IEN_SINGLE);
   /* Get ADC single result */
