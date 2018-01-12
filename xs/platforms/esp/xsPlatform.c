@@ -57,6 +57,8 @@ static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 
 	#define mxDebugMutexTake() xSemaphoreTake(gDebugMutex, portMAX_DELAY)
 	#define mxDebugMutexGive() xSemaphoreGive(gDebugMutex)
+
+	static int fx_vprintf(const char *str, va_list list);
 #else
 	#define mxDebugMutexTake()
 	#define mxDebugMutexGive()
@@ -69,8 +71,10 @@ void fxCreateMachinePlatform(txMachine* the)
 	the->connection = mxNoSocket;
 	the->debugOnReceive = true;
 #if ESP32
-	if (!gDebugMutex)
+	if (!gDebugMutex) {
 		gDebugMutex = xSemaphoreCreateMutex();
+		esp_log_set_vprintf(fx_vprintf);
+	}
 #endif
 #endif
 #if !ESP32
@@ -611,6 +615,19 @@ void fxSend(txMachine* the, txBoolean more)
 
 	xmodLog("  fxSend - EXIT");
 }
+
+#if defined(mxDebug) && ESP32
+int fx_vprintf(const char *str, va_list list)
+{
+	int result;
+
+	mxDebugMutexTake();
+		result = vprintf(str, list);
+	mxDebugMutexGive();
+
+	return result;
+}
+#endif
 
 #endif /* mxDebug */
 
