@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,25 +18,40 @@
  *
  */
 
+#include "xs.h"
+#include "xsgecko.h"
 #include "mc.defines.h"
 
 #include "em_cmu.h"
-#include "em_rtcc.h"
-#include "em_cryotimer.h"
+#include "em_emu.h"
+#include "em_gpio.h"
 
+#if MODDEF_MIGHTY
+	#define USE_CRYOTIMER	1
+	#include "em_cryotimer.h"
+#endif
+#if MODDEF_GIANT
+	#define USE_RTC			1
+	#include "em_rtc.h"
+#endif
+
+#ifndef MODDEF_SLEEP_IDLELEVEL
+	#define MODDEF_SLEEP_IDLELEVEL 3
+#endif
 
 #if useRTCC
-	#include "em_rtc.h"
+	#include "em_rtcc.h"
 #endif
 
 extern uint32_t msTickCount;
 
 void gecko_delay(uint32_t ms);
-void radioSleep();
-void setupRTCwakeup(uint32_t ms);
+//uint32_t setupRTCTimeout(uint32_t ms);
 
 extern uint32_t gResetCause;
-uint32_t gGeckoSetDelayMode = 0;
+//uint32_t gGeckoSetDelayMode = 0;
+uint32_t gModMaxIdleSleep = MODDEF_SLEEP_IDLELEVEL;
+uint32_t gModIdleSleep = MODDEF_SLEEP_IDLELEVEL;
 
 uint32_t geckoGetResetCause() {
 	return gResetCause;
@@ -45,7 +60,7 @@ uint32_t geckoGetResetCause() {
 
 /*  /MODDABLE */
 
-#if useRTCC
+#if USE_CRYOTIMER
 int findCRYOPeriod(uint32_t ms) {
 	int i;
 	for (i=0; i<33; i++) {
@@ -55,28 +70,76 @@ int findCRYOPeriod(uint32_t ms) {
 	return 32;
 }
 
+uint32_t findCRYOPeriodMS(uint32_t cryoPeriod) {
+	return (1 << cryoPeriod);
+}
+
 void CRYOTIMER_IRQHandler() {
 	CRYOTIMER_IntClear(CRYOTIMER_IntGet());
 }
 
-void setCRYOTIMER_Timeout(uint32_t delay) {
-	setupRTCwakeup(delay);
-}
 #endif
 
-#if 1 // GO_TO_EM3
+void geckoConfigureSysTick() {
+   uint32_t stat, ticks;
+   ticks = CMU_ClockFreqGet( cmuClock_CORE ) / 1000; /* 1 msec interrupts  */
+   stat = SysTick_Config( ticks );
+   return stat;
+}
 
-/******************************************************************************
- * @brief  Sets up the RTC
- *
- *****************************************************************************/
-void setupRTCTimeout(uint32_t delay)
+void geckoDelayLoop( uint32_t ms )
+{
+   uint32_t curTicks;
+
+   curTicks = msTickCount;
+   while( ( msTickCount - curTicks ) < ms ) {
+      EMU_EnterEM1();
+   }
+
+   return;
+}
+
+void SysTick_Handler( void )
+{
+   msTickCount++;
+}
+
+void geckoDisableSysTick() {
+	SysTick->CTRL = 0;
+}
+void geckoEnableSysTick() {
+	SysTick->CTRL = 1;
+}
+
+void geckoEnterEM1()
+{
+	geckoDisableSysTick();
+	EMU_EnterEM1();
+	geckoEnableSysTick();
+}
+void geckoEnterEM2()
+{
+	geckoDisableSysTick();
+	EMU_EnterEM2(true);
+	geckoEnableSysTick();
+}
+void geckoEnterEM3()
+{
+	geckoDisableSysTick();
+	EMU_EnterEM3(true);
+	geckoEnableSysTick();
+}
+
+
+#if USE_CRYOTIMER
+uint32_t setupCryotimerTimeout(uint32_t delay)
 {
     CRYOTIMER_Init_TypeDef init = CRYOTIMER_INIT_DEFAULT;
+CMU_ClockEnable(cmuClock_CRYOTIMER, false);
     CMU_ClockEnable(cmuClock_CRYOTIMER, true);
     CRYOTIMER_IntClear(CRYOTIMER_IF_PERIOD);
     init.enable = true;
-    init.osc = cryotimerOscULFRCO;
+    init.osc = cryotimerOscULFRCO;		// 1000Hz clock
     init.presc = cryotimerPresc_1;
     init.period = findCRYOPeriod(delay);
     init.em4Wakeup = true;
@@ -86,9 +149,27 @@ void setupRTCTimeout(uint32_t delay)
     CRYOTIMER_IntEnable(CRYOTIMER_IEN_PERIOD);
     NVIC_ClearPendingIRQ(CRYOTIMER_IRQn);
     NVIC_EnableIRQ(CRYOTIMER_IRQn);
+
+	return (findCRYOPeriodMS(init.period));
+}
+#else
+uint32_t setupRTCCTimeout(uint32_t delay) {
 }
 
-void startRTCC(void)
+uint32_t setupRTCTimeout(uint32_t delay) {
+	RTC_Init_TypeDef rtcInit = RTC_INIT_DEFAULT;
+	CMU_ClockEnable(cmuClock_RTC, true);
+	NVIC_DisableIRQ(RTC_IRQn);
+	RTC_Init(&rtcInit);
+	RTC_CompareSet(0, delay);
+
+	NVIC_EnableIRQ(RTC_IRQn);
+	RTC_IntEnable(RTC_IEN_COMP0);
+	RTC_Enable(true);
+}
+#endif
+
+void geckoStartRTCC(void)
 {
 #if MODDEF_SLEEP_RETENTION_MEMORY
    CMU_ClockEnable(cmuClock_CORELE, true);
@@ -105,36 +186,106 @@ void startRTCC(void)
 #endif
 }
 
-void setupRTCwakeup(uint32_t ms) {
-	uint32_t rtcDelay = ms;
-	setupRTCTimeout(rtcDelay);
-}
-#endif
-
 uint32_t gecko_milliseconds(void)
 {
 	return msTickCount;
 }
 
-void geckoDisableSysTick();
-void geckoEnableSysTick();
-extern bool radioStarted;
 void gecko_delay(uint32_t ms)
 {
+#if USE_CRYOTIMER
     uint32_t cryo;
-    setupRTCwakeup(ms);
+	setupCryotimerTimeout(ms);
     cryo = CRYOTIMER->CNT;
 
-//    geckoDisableSysTick();
-    if (radioStarted)
-    	geckoEnterEM1();
-    else
-    	geckoEnterEM3();
+	switch (gModIdleSleep) {
+		case 1: geckoEnterEM1(); break;
+		case 2: geckoEnterEM2(); break;
+		default:
+		case 3: geckoEnterEM3(); break;
+	}
+		
     NVIC_DisableIRQ(CRYOTIMER_IRQn);
-//    geckoEnableSysTick();
     msTickCount += (CRYOTIMER->CNT - cryo);
     CMU_ClockEnable(cmuClock_CRYOTIMER, false);		// this will null out CRYOTIMER->CNT
+
+#else
+
+	uint32_t curTicks;
+	curTicks = msTickCount;
+	setupRTCTimeout(ms);
+	while( ( msTickCount - curTicks ) < ms ) {
+		switch (gModIdleSleep) {
+			case 1: geckoEnterEM1(); break;
+			case 2: geckoEnterEM2(); break;
+			default:
+			case 3: geckoEnterEM3(); break;
+		}
+   }
+#endif
+}
+
+void geckoUnlatchPinRetention() {
+#if MODDEF_SLEEP_RETENTION_GPIO
+	/** Retention through EM4 and wakeup: call EMU_UnlatchPinRetention() to unlatch */
+	EMU_UnlatchPinRetention();
+#endif
+}
+
+void geckoCheckSleepRemainder() {
+#if MODDEF_SLEEP_REPEAT_EM4
+#if MODDEF_SLEEP_RETENTION_MEMORY
+	uint32_t remainingTime, check;
+
+	geckoStartRTCC();
+
+	check = geckoGetPersistentValue(kSleepTagReg);
+	if (check == kxtimTag) {
+		remainingTime = geckoGetPersistentValue(kSleepRemainReg);
+		geckoSleepEM4(remainingTime);
+	}
+#else
+	#error sleep_retention_memory must be true for repeat em4
+#endif
+#endif
 }
 
 
+void geckoStoreGpioRetention() {
+	int pinStates = 0;
+
+	if (GPIO_PinOutGet(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN)) {
+		pinStates += 0x1;
+	}
+	if (GPIO_PinOutGet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN)) {
+		pinStates += 0x2;
+	}
+ 	   
+	geckoSetPersistentValue(29, pinStates);
+}
+
+void geckoRestoreGpioRetention() {
+	int pinStates;
+
+	geckoStartRTCC();
+	pinStates = geckoGetPersistentValue(29);
+	if (pinStates & 0xfffffff0)
+		pinStates = 0;
+	else {
+		if (pinStates & 0x1)
+			GPIO_PinOutSet(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN);
+		else
+			GPIO_PinOutClear(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN);
+		if (pinStates & 0x2)
+			GPIO_PinOutSet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN);
+		else
+			GPIO_PinOutSet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN);
+	}
+}
+
+void geckoRestoreFromSleep() {
+	setupDebugger();
+    geckoRestoreGpioRetention();
+    geckoCheckSleepRemainder();
+}
 
