@@ -47,6 +47,13 @@ function execute(pattern, flags, string, expected) {
 	output += "]";
 	if (output != expected)
 		trace("# " + output + "\n");
+	if (results) {
+		let groups = results.groups;
+		if (groups) {
+			for (let name in groups)
+			trace("# groups." + name + ': "' + groups[name] + '"\n');
+		}
+  }
 }
 
 execute("a|ab", "", "abc", '["a"]');
@@ -66,3 +73,9 @@ execute("(?<=\\$\\d+\\.)\\d+", "", "$10.53", '["53"]');
 execute("(?<=(\\d+)(\\d+))$", "", "1053", '["", "1", "053"]');
 execute("^(\\d+)(\\d+)", "", "1053", '["1053", "105", "3"]');
 execute("(?<=\\1(.))bcd", "", "aabcd", '["bcd", "a"]');
+execute("(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})", "u", "2015-01-02", '["2015-01-02", "2015", "01", "02"]');
+execute("^(?<half>.*).\\k<half>$", "u", "a*a", '["a*a", "a"]');
+execute("^(?<half>.*).\\k<half>$", "u", "a*b", '[]');
+execute("^(?<part>.*).\\k<part>.\\1$", "", "a*a*a", '["a*a*a", "a"]');
+execute("^(?<part>.*).\\k<part>.\\1$", "", "a*a*b", '[]');
+execute("\\k<part>", "", "k<part>", '["k<part>"]');
