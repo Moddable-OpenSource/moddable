@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/i2c//manifest.json",
+		"$(MODDABLE)/modules/pins/i2c/manifest.json",
 	],
 	"modules": {
 		"*": [

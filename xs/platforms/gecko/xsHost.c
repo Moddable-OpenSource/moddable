@@ -1,13 +1,38 @@
 /*
- * NEEDS BOILERPLATE
- *     Copyright (C) 2016-2017 Moddable Tech, Inc.
- *     All rights reserved.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
- *     Portions Copyright (C) 2010-2015 Marvell International Ltd.
- *     Portions Copyright (C) 2002-2010 Kinoma, Inc.
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- *     Portions Copyright by Marvell International Ltd. and Kinoma, Inc. are 
- *     derived from KinomaJS/XS6 and used under the Apache 2.0 License.
+ * This file incorporates work covered by the following copyright and  
+ * permission notice:  
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
  */
 
 #include "xsAll.h"
@@ -15,379 +40,56 @@
 #include "xsScript.h"
 #include "xsgecko.h"
 
-
-static txBoolean fxFindScript(txMachine *the, txString path, txID* id);
-
 #ifdef mxInstrument
 	#include "modInstrumentation.h"
 	static void espStartInstrumentation(txMachine *the);
 #endif
 
-txMachine *gInstrumentationThe;
-
-static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
-{
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	path += preparation->baseLength;
-	c_strcat(path, ".xsb");
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			path -= preparation->baseLength;
-			*id = fxNewNameC(the, path);
-			return 1;
-		}
-		c--;
-		script++;
-	}
-	*id = XS_NO_ID;
-	return 0;
-}
-
-
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
-{
-	txPreparation* preparation = the->preparation;
-	char name[128];
-	char path[128];
-	txBoolean absolute = 0, relative = 0, search = 0;
-	txInteger dot = 0;
-	txString slash;
-	txID id;
-
-	fxToStringBuffer(the, slot, name, sizeof(name));
-	if (!c_strncmp(name, "/", 1)) {
-		absolute = 1;
-	}
-	else if (!c_strncmp(name, "./", 2)) {
-		dot = 1;
-		relative = 1;
-	}
-	else if (!c_strncmp(name, "../", 3)) {
-		dot = 2;
-		relative = 1;
-	}
-	else {
-		relative = 1;
-		search = 1;
-	}
-
-    if (absolute) {
-        c_strcpy(path, preparation->base);
-        c_strcat(path, name + 1);
-        if (fxFindScript(the, path, &id))
-            return id;
-    }
-    if (relative && (moduleID != XS_NO_ID)) {
-        c_strcpy(path, fxGetKeyName(the, moduleID));
-        slash = c_strrchr(path, '/');
-        if (!slash)
-            return XS_NO_ID;
-        if (dot == 0)
-            slash++;
-        else if (dot == 2) {
-            *slash = 0;
-            slash = c_strrchr(path, '/');
-            if (!slash)
-                return XS_NO_ID;
-        }
-        if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
-            *slash = 0;
-            c_strcat(path, name + dot);
-            if (fxFindScript(the, path, &id))
-                return id;
-        }
-    }
-    if (search) {
-        c_strcpy(path, preparation->base);
-        c_strcat(path, name);
-        if (fxFindScript(the, path, &id))
-            return id;
-    }
-    return XS_NO_ID;
-}
-
-void fxLoadModule(txMachine* the, txID moduleID)
-{
-	txPreparation* preparation = the->preparation;
-	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-    
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
-			return;
-		}
-		c--;
-		script++;
-	}
-}
-
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-//	extern void modTimersMark(txMachine *the, txMarkRoot markRoot);
-	the->host = C_NULL;
-//	modTimersMark(the, markRoot);
-}
-
-txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
-{
-	return C_NULL;
-}
-
-typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
-
-static uint8_t xsRunPromiseJobs_pending(txMachine *the);
-static RunPromiseJobs gRunPromiseJobs;
-
-uint8_t xsRunPromiseJobs_pending(txMachine *the)
-{
-	gRunPromiseJobs = NULL;
-	if (!mxPendingJobs.value.reference->next)
-		return 0;
-
-	fxRunPromiseJobs(the);
-
-	if (0 == mxPendingJobs.value.reference->next)
-		return 0;
-
-	gRunPromiseJobs = xsRunPromiseJobs_pending;
-	return 1;
-}
-
-uint8_t modRunPromiseJobs(txMachine *the)
-{
-	return gRunPromiseJobs ? gRunPromiseJobs(the) : 0;
-}
-
-void fxQueuePromiseJobs(txMachine* the)
-{
-	// queued jobs serviced from the main loop
-	gRunPromiseJobs = xsRunPromiseJobs_pending;
-}
-
-void fxSweepHost(txMachine* the)
-{
-}
-
-/*
-	Instrumentation
-*/
-
-#ifdef mxInstrument
-
-static void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize);
-
-#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
-static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)"Pixels drawn",
-	(char *)"Frames drawn",
-	(char *)"Network bytes read",
-	(char *)"Network bytes written",
-	(char *)"Network sockets",
-	(char *)"Timers",
-	(char *)"Files",
-	(char *)"Poco display list used",
-	(char *)"Piu command List used",
-	(char *)"System bytes free",
-};
-    
-static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)" pixels",
-	(char *)" frames",
-	(char *)" bytes",
-	(char *)" bytes",
-	(char *)" sockets",
-	(char *)" timers",
-	(char *)" files",
-	(char *)" bytes",
-	(char *)" bytes",
-	(char *)" bytes",
-};  
-    
-static int32_t modInstrumentationSystemFreeMemory(void)
-{
-//	return (int32_t)xPortGetFreeHeapSize();
-	return (int32_t)0;
-}
-
-static int32_t modInstrumentationSlotHeapSize(void)
-{
-	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
-}
-
-static int32_t modInstrumentationChunkHeapSize(void)
-{
-	return gInstrumentationThe->currentChunksSize;
-}
-
-static int32_t modInstrumentationKeysUsed(void)
-{
-	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
-}
-
-static int32_t modInstrumentationGarbageCollectionCount(void)
-{
-	return gInstrumentationThe->garbageCollectionCount;
-}
-
-static int32_t modInstrumentationModulesLoaded(void)
-{
-	return gInstrumentationThe->loadedModulesCount;
-}
-
-static int32_t modInstrumentationStackRemain(void)
-{
-	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
-		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
-}
-
-static modTimer gInstrumentationTimer;
-
-void espDebugBreak(txMachine* the, uint8_t stop)
-{
-	if (stop) {
-		fxCollectGarbage(the);
-		the->garbageCollectionCount -= 1;
-		espSampleInstrumentation(NULL, NULL, 0);
-	}
-	else
-		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
-}
-
-void espStartInstrumentation(txMachine *the)
-{
-	if (NULL == the->connection)
-		return;
-
-	modInstrumentationInit();
-	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
-
-	modInstrumentationSetCallback(SlotHeapSize, modInstrumentationSlotHeapSize);
-	modInstrumentationSetCallback(ChunkHeapSize, modInstrumentationChunkHeapSize);
-	modInstrumentationSetCallback(KeysUsed, modInstrumentationKeysUsed);
-	modInstrumentationSetCallback(GarbageCollectionCount, modInstrumentationGarbageCollectionCount);
-	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
-	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
-
-	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
-
-	gInstrumentationThe = the;
-	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
-
-	the->onBreak = espDebugBreak;
-}
-
-void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
-{
-	txInteger values[espInstrumentCount];
-	int what;
-
-	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
-		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
-
-	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;    // remove timer used by instrumentation
-	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
-
-	modInstrumentationSet(PixelsDrawn, 0);
-	modInstrumentationSet(FramesDrawn, 0);
-	modInstrumentationSet(PocoDisplayListUsed, 0);
-	modInstrumentationSet(PiuCommandListUsed, 0);
-	modInstrumentationSet(NetworkBytesRead, 0);
-	modInstrumentationSet(NetworkBytesWritten, 0);
-	gInstrumentationThe->garbageCollectionCount = 0;
-	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-}
-#endif
-
-/*
-    RegExp stubs
-*/
-
-void fx_RegExp_prototype_get_flags(txMachine* the) {}
-void fx_RegExp_prototype_get_global(txMachine* the) {}
-void fx_RegExp_prototype_get_ignoreCase(txMachine* the) {}
-void fx_RegExp_prototype_get_multiline(txMachine* the) {}
-void fx_RegExp_prototype_get_source(txMachine* the) {}
-void fx_RegExp_prototype_get_sticky(txMachine* the) {}
-void fx_RegExp_prototype_get_unicode(txMachine* the) {}
-void fx_RegExp_prototype_compile(txMachine* the) {}
-void fx_RegExp_prototype_exec(txMachine* the) {}
-void fx_RegExp_prototype_match(txMachine* the) {}
-void fx_RegExp_prototype_replace(txMachine* the) {}
-void fx_RegExp_prototype_search(txMachine* the) {}
-void fx_RegExp_prototype_split(txMachine* the) {}
-void fx_RegExp_prototype_test(txMachine* the) {}
-void fx_RegExp_prototype_toString(txMachine* the) {}
-void fx_RegExp(txMachine* the) {}
-void fxInitializeRegExp(txMachine* the) {}
-
-const txHostFunctionBuilder gx_RegExp_prototype_builders[] ICACHE_RODATA_ATTR = {
-    { fx_RegExp_prototype_compile, 0, mxID(_compile) },
-    { fx_RegExp_prototype_exec, 1, mxID(_exec) },
-    { fx_RegExp_prototype_match, 1, mxID(_Symbol_match) },
-    { fx_RegExp_prototype_replace, 2, mxID(_Symbol_replace) },
-    { fx_RegExp_prototype_search, 1, mxID(_Symbol_search) },
-    { fx_RegExp_prototype_split, 2, mxID(_Symbol_split) },
-    { fx_RegExp_prototype_test, 1, mxID(_test) },
-    { fx_RegExp_prototype_toString, 0, mxID(_toString) },
-    { C_NULL, 0, 0 },
-};
-
-txSlot* fxNewRegExpInstance(txMachine *the) {return NULL;}
-txBoolean fxIsRegExp(txMachine* the, txSlot* slot) {return 0;}
-
-
-extern void gecko_delay(uint32_t ms);
-extern uint32_t gecko_milliseconds();
-
-void delay(uint32_t ms) {
-	gecko_delay(ms);
-}
-
-uint32_t modMilliseconds() {
-	return gecko_milliseconds();
-}
-
-#if MY_MALLOC
-char synergyDebugStr[256];
-void *my_calloc(size_t nitems, size_t size) {
-	void *ret;
-	ret = calloc(nitems, size);
-	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# calloc failed %ld\n", size);
-	}
-	return ret;
-}
-
-void *my_realloc(void *ptr, size_t size) {
-	void *ret;
-	ret = realloc(ptr, size);
-	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# realloc failed %ld\n", size);
-	}
-	return ret;
-}
-
-void *my_malloc(size_t size) {
-	void *ret;
-	ret = malloc(size);
-	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# malloc failed %ld\n", size);
-	}
-	return ret;
-}
-#endif
-
-/*
-	messages
-*/
-void modMessageService(void) {}
-
 extern uint32_t gDeviceUnique;
+
+/*
+	settimeofday, daylightsavingstime
+ */
+static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
+static int16_t gDaylightSavings = 60 * 60;          // summer time
+
+void modSetTime(uint32_t seconds)
+{
+    struct timeval tv;
+//  struct timezone tz;
+
+    tv.tv_sec = seconds;
+    tv.tv_usec = 0;
+
+//  c_settimeofday(&tv, NULL);
+//          //// NEED TO IMPLEMENT SETTIMEOFDAY
+}
+
+void modSetTimeZone(int32_t timeZoneOffset)
+{
+    gTimeZoneOffset = timeZoneOffset;
+}
+
+int32_t modGetTimeZone(void)
+{
+    return gTimeZoneOffset;
+}
+
+void modSetDaylightSavingsOffset(int32_t daylightSavings)
+{
+    gDaylightSavings = daylightSavings;
+}
+
+int32_t modGetDaylightSavingsOffset(void)
+{
+    return gDaylightSavings;
+}
+
+#if MODDEF_XS_MODS
+	static void *installModules(txPreparation *preparation);
+	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
+	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+#endif
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
 {
@@ -523,16 +225,6 @@ void mc_setup(xsMachine *the)
 	setStepDone(the);
 }
 
-uint8_t xsRunPromiseJobs(txMachine *the)
-{
-	if (!mxPendingJobs.value.reference->next)
-		return 0;
-
-	fxRunPromiseJobs(the);
-
-	return mxPendingJobs.value.reference->next ? 1 : 0;
-}
-
 void* mc_xs_chunk_allocator(txMachine *the, size_t size)
 {
 	if (the->heap_ptr + size <= the->heap_pend) {
@@ -636,5 +328,345 @@ void fxFreeSlots(txMachine* the, void* theSlots)
 void fxBuildKeys(txMachine* the)
 {
 }
+
+static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
+{
+	txPreparation* preparation = the->preparation;
+	txInteger c = preparation->scriptCount;
+	txScript* script = preparation->scripts;
+	path += preparation->baseLength;
+	c_strcat(path, ".xsb");
+	while (c > 0) {
+		if (!c_strcmp(path, script->path)) {
+			path -= preparation->baseLength;
+			*id = fxNewNameC(the, path);
+			return 1;
+		}
+		c--;
+		script++;
+	}
+	*id = XS_NO_ID;
+	return 0;
+}
+
+#if MODDEF_XS_MODS
+	#error get from esp
+#endif
+
+txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+{
+	txPreparation* preparation = the->preparation;
+	char name[128];
+	char path[128];
+	txBoolean absolute = 0, relative = 0, search = 0;
+	txInteger dot = 0;
+	txString slash;
+	txID id;
+
+	fxToStringBuffer(the, slot, name, sizeof(name));
+#if MODDEF_XS_MODS
+	if (findMod(the, name, NULL)) {
+		c_strcpy(path, "/");
+		c_strcat(path, name);
+		c_strcat(path, ".xsb");
+		return fxNewNameC(the, path);
+	}
+#endif
+
+	if (!c_strncmp(name, "/", 1)) {
+		absolute = 1;
+	}
+	else if (!c_strncmp(name, "./", 2)) {
+		dot = 1;
+		relative = 1;
+	}
+	else if (!c_strncmp(name, "../", 3)) {
+		dot = 2;
+		relative = 1;
+	}
+	else {
+		relative = 1;
+		search = 1;
+	}
+    if (absolute) {
+        c_strcpy(path, preparation->base);
+        c_strcat(path, name + 1);
+        if (fxFindScript(the, path, &id))
+            return id;
+    }
+    if (relative && (moduleID != XS_NO_ID)) {
+        c_strcpy(path, fxGetKeyName(the, moduleID));
+        slash = c_strrchr(path, '/');
+        if (!slash)
+            return XS_NO_ID;
+        if (dot == 0)
+            slash++;
+        else if (dot == 2) {
+            *slash = 0;
+            slash = c_strrchr(path, '/');
+            if (!slash)
+                return XS_NO_ID;
+        }
+        if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
+            *slash = 0;
+            c_strcat(path, name + dot);
+            if (fxFindScript(the, path, &id))
+                return id;
+        }
+    }
+    if (search) {
+        c_strcpy(path, preparation->base);
+        c_strcat(path, name);
+        if (fxFindScript(the, path, &id))
+            return id;
+    }
+    return XS_NO_ID;
+}
+
+void fxLoadModule(txMachine* the, txID moduleID)
+{
+	txPreparation* preparation = the->preparation;
+	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
+	txInteger c = preparation->scriptCount;
+	txScript* script = preparation->scripts;
+#if MODDEF_XS_MODS
+	#error get from esp
+#endif
+    
+	while (c > 0) {
+		if (!c_strcmp(path, script->path)) {
+			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+			return;
+		}
+		c--;
+		script++;
+	}
+}
+
+void fxMarkHost(txMachine* the, txMarkRoot markRoot)
+{
+	the->host = C_NULL;
+}
+
+txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
+{
+	return C_NULL;
+}
+
+
+typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
+
+static uint8_t xsRunPromiseJobs_pending(txMachine *the);
+static RunPromiseJobs gRunPromiseJobs;
+
+uint8_t xsRunPromiseJobs_pending(txMachine *the)
+{
+	gRunPromiseJobs = NULL;
+	if (!mxPendingJobs.value.reference->next)
+		return 0;
+
+	fxRunPromiseJobs(the);
+
+	if (0 == mxPendingJobs.value.reference->next)
+		return 0;
+
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
+	return 1;
+}
+
+uint8_t modRunPromiseJobs(txMachine *the)
+{
+	return gRunPromiseJobs ? gRunPromiseJobs(the) : 0;
+}
+
+void fxQueuePromiseJobs(txMachine* the)
+{
+	gRunPromiseJobs = xsRunPromiseJobs_pending;
+}
+
+void fxSweepHost(txMachine* the)
+{
+}
+
+/*
+	Instrumentation
+*/
+
+#ifdef mxInstrument
+
+static void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize);
+
+#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
+static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+	(char *)"Pixels drawn",
+	(char *)"Frames drawn",
+	(char *)"Network bytes read",
+	(char *)"Network bytes written",
+	(char *)"Network sockets",
+	(char *)"Timers",
+	(char *)"Files",
+	(char *)"Poco display list used",
+	(char *)"Piu command List used",
+	(char *)"System bytes free",
+};
+    
+static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+	(char *)" pixels",
+	(char *)" frames",
+	(char *)" bytes",
+	(char *)" bytes",
+	(char *)" sockets",
+	(char *)" timers",
+	(char *)" files",
+	(char *)" bytes",
+	(char *)" bytes",
+	(char *)" bytes",
+};  
+
+txMachine *gInstrumentationThe;
+    
+static int32_t modInstrumentationSystemFreeMemory(void)
+{
+//	return (int32_t)xPortGetFreeHeapSize();
+	return (int32_t)0;
+}
+
+static int32_t modInstrumentationSlotHeapSize(void)
+{
+	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
+}
+
+static int32_t modInstrumentationChunkHeapSize(void)
+{
+	return gInstrumentationThe->currentChunksSize;
+}
+
+static int32_t modInstrumentationKeysUsed(void)
+{
+	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
+}
+
+static int32_t modInstrumentationGarbageCollectionCount(void)
+{
+	return gInstrumentationThe->garbageCollectionCount;
+}
+
+static int32_t modInstrumentationModulesLoaded(void)
+{
+	return gInstrumentationThe->loadedModulesCount;
+}
+
+static int32_t modInstrumentationStackRemain(void)
+{
+	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
+		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
+}
+
+static modTimer gInstrumentationTimer;
+
+void espDebugBreak(txMachine* the, uint8_t stop)
+{
+	if (stop) {
+		fxCollectGarbage(the);
+		the->garbageCollectionCount -= 1;
+		espSampleInstrumentation(NULL, NULL, 0);
+	}
+	else
+		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
+}
+
+void espStartInstrumentation(txMachine *the)
+{
+	if (NULL == (void*)the->connection)
+		return;
+
+	modInstrumentationInit();
+	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
+
+	modInstrumentationSetCallback(SlotHeapSize, modInstrumentationSlotHeapSize);
+	modInstrumentationSetCallback(ChunkHeapSize, modInstrumentationChunkHeapSize);
+	modInstrumentationSetCallback(KeysUsed, modInstrumentationKeysUsed);
+	modInstrumentationSetCallback(GarbageCollectionCount, modInstrumentationGarbageCollectionCount);
+	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
+	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
+
+	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
+
+	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
+	gInstrumentationThe = the;
+
+	the->onBreak = espDebugBreak;
+}
+
+void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
+{
+	txInteger values[espInstrumentCount];
+	int what;
+
+	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
+		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
+
+	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;    // remove timer used by instrumentation
+	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
+
+	modInstrumentationSet(PixelsDrawn, 0);
+	modInstrumentationSet(FramesDrawn, 0);
+	modInstrumentationSet(PocoDisplayListUsed, 0);
+	modInstrumentationSet(PiuCommandListUsed, 0);
+	modInstrumentationSet(NetworkBytesRead, 0);
+	modInstrumentationSet(NetworkBytesWritten, 0);
+	gInstrumentationThe->garbageCollectionCount = 0;
+	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+}
+#endif
+
+
+/*
+	messages
+*/
+#if MODDEF_MESSAGES
+#error need MESSAGES for gecko
+#else
+void modMessageService(void) {}
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon){}
+
+void modMachineTaskInit(xsMachine *the) {}
+void modMachineTaskUninit(xsMachine *the) {}
+#endif
+
+
+
+
+#if MY_MALLOC
+char synergyDebugStr[256];
+void *my_calloc(size_t nitems, size_t size) {
+	void *ret;
+	ret = calloc(nitems, size);
+	if (NULL == ret) {
+		sprintf(synergyDebugStr, "# calloc failed %ld\n", size);
+	}
+	return ret;
+}
+
+void *my_realloc(void *ptr, size_t size) {
+	void *ret;
+	ret = realloc(ptr, size);
+	if (NULL == ret) {
+		sprintf(synergyDebugStr, "# realloc failed %ld\n", size);
+	}
+	return ret;
+}
+
+void *my_malloc(size_t size) {
+	void *ret;
+	ret = malloc(size);
+	if (NULL == ret) {
+		sprintf(synergyDebugStr, "# malloc failed %ld\n", size);
+	}
+	return ret;
+}
+#endif
+
 
 
