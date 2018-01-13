@@ -320,16 +320,15 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			offset = p - theParser->slot->value.string;
 			size = 0;
 			for (;;) {
-				if ((0 <= *p) && (*p < 32)) {
+				p = fxUTF8Decode(p, &character);
+				if ((0 <= character) && (character < 32)) {
 					goto error;
 				}
-				else if (*p == '"') {
-					p++;
+				else if (character == '"') {
 					break;
 				}
-				else if (*p == '\\') {
+				else if (character == '\\') {
 					escaped = 1;
-					p++;
 					switch (*p) {
 					case '"':
 					case '/':
@@ -354,8 +353,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 					}
 				}
 				else {
-					p++;
-					size++;
+					size += fxUTF8Length(character);
 				}
 			}
 			s = theParser->string->value.string = fxNewChunk(the, size + 1);
