@@ -245,7 +245,7 @@ void fxParseXMLStopTag(PiuCodeParser parser)
 
 void fxParseXMLValue(PiuCodeParser parser)
 {
-	uint32_t character = parser->character;
+	int32_t character = parser->character;
 	if ((character != '"') && (character != '\''))
 		PiuCodeParserError(parser);
 	PiuCodeParserColorAt(parser, 2, parser->input);
