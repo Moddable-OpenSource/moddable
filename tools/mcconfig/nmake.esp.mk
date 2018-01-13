@@ -109,7 +109,6 @@ XS_OBJ = \
 	$(LIB_DIR)\xsSymbol.o \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
-	$(LIB_DIR)\xspcre.o \
 	$(LIB_DIR)\xsmc.o
 XS_DIRS = \
 	-I$(XS_DIR)\includes \
@@ -154,31 +153,6 @@ SDK_SRC = \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 
-SDK_SRC_SKIPPED = \
-	$(CORE_DIR)\base64.cpp \
-	$(CORE_DIR)\cbuf.cpp \
-	$(CORE_DIR)\core_esp8266_eboot_command.c \
-	$(CORE_DIR)\core_esp8266_flash_utils.c \
-	$(CORE_DIR)\core_esp8266_i2s.c \
-	$(CORE_DIR)\core_esp8266_wiring_analog.c \
-	$(CORE_DIR)\core_esp8266_wiring_pulse.c \
-	$(CORE_DIR)\core_esp8266_wiring_shift.c \
-	$(CORE_DIR)\debug.cpp \
-	$(CORE_DIR)\pgmspace.cpp \
-	$(CORE_DIR)\HardwareSerial.cpp \
-	$(CORE_DIR)\IPAddress.cpp \
-	$(CORE_DIR)\spiffs_api.cpp \
-	$(CORE_DIR)\Print.cpp \
-	$(CORE_DIR)\MD5Builder.cpp \
-	$(CORE_DIR)\Stream.cpp \
-	$(CORE_DIR)\Tone.cpp \
-	$(CORE_DIR)\Updater.cpp \
-	$(CORE_DIR)\WMath.cpp \
-	$(CORE_DIR)\WString.cpp \
-	$(CORE_DIR)\FS.cpp \
-	$(CORE_DIR)\libb64\cdecode.c \
-	$(CORE_DIR)\libb64\cencode.c
-
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
 	$(LIB_DIR)\cont.S.o \
@@ -208,33 +182,7 @@ SDK_OBJ = \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
 	$(LIB_DIR)\Schedule.o \
-	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
-
-SDK_OBJ_SKIPPED = \
-	$(LIB_DIR)\base64.o \
-	$(LIB_DIR)\cbuf.o \
-	$(LIB_DIR)\core_esp8266_eboot_command.o \
-	$(LIB_DIR)\core_esp8266_flash_utils.o \
-	$(LIB_DIR)\core_esp8266_i2s.o \
-	$(LIB_DIR)\core_esp8266_wiring_analog.o \
-	$(LIB_DIR)\core_esp8266_wiring_pulse.o \
-	$(LIB_DIR)\core_esp8266_wiring_shift.o \
-	$(LIB_DIR)\debug.o \
-	$(LIB_DIR)\pgmspace.o \
-	$(LIB_DIR)\HardwareSerial.o \
-	$(LIB_DIR)\IPAddress.o \
-	$(LIB_DIR)\spiffs_api.o \
-	$(LIB_DIR)\Print.o \
-	$(LIB_DIR)\MD5Builder.o \
-	$(LIB_DIR)\Stream.o \
-	$(LIB_DIR)\Tone.o \
-	$(LIB_DIR)\Updater.o \
-	$(LIB_DIR)\WMath.o \
-	$(LIB_DIR)\WString.o \
-	$(LIB_DIR)\FS.o \
-	$(LIB_DIR)\cdecode.o \
-	$(LIB_DIR)\cencode.o \
-	$(LIB_DIR)\StreamString.o
+	$(PLATFORM_DIR)\lib\fmod\e_fmod.c
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
@@ -356,18 +304,18 @@ $(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
 	$(ESPTOOL) -eo $(ARDUINO_ROOT)\bootloaders\eboot\eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)\main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
 
 $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
-	@echo # ar $?
+	@echo # ar $(@F)
 	(cd $(LIB_DIR) && $(AR) -xv $(SYSROOT)\lib\libcirom.a lib_a-setjmp.o)
 
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - X1 $(@F) (strings in flash + (not) force-l32)
+	@echo # cc $(@F) (strings in flash + (not) force-l32)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $? -o $@.unmapped
 #	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 --rename-section .text=.irom0.code $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - X2 $(@F)
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
@@ -377,23 +325,23 @@ $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
-	@echo # cc - X2 cont.S
+	@echo # cc cont.S
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(S_FLAGS) $? -o $@
 #	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .text=.iram1_0_seg $@.unmapped $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\libb64\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - lib64 $(@F)
+	@echo # cc lib64 $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\spiffs\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - spiffs $(@F)
+	@echo # cc spiffs $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
-	@echo # cc - umm_malloc $(@F)
+	@echo # cc umm_malloc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
