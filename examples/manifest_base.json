@@ -104,10 +104,10 @@
 			],
 			"defines": {
 				"giant": "true",
-				"retention_memory": true,
-				"retention_gpio": true,
 				"sleep": {
-					"wakeup": { "pin": "2", "port": "gpioPortF" },
+					"idleLevel" : 1,
+					"retention": { "memory": false, "gpio": true },
+					"wakeup": { "pin": "2", "port": "gpioPortF", "register": "GPIO_EM4WUEN_EM4WUEN_F2" },
 				},
 				"debugger": {
 					"tx": { "pin": "9", "port": "gpioPortB" },
@@ -144,10 +144,10 @@
 			],
 			"defines": {
 				"mighty": true,
-				"retention_memory": true,
-				"retention_gpio": true,
 				"sleep": {
-					"wakeup": { "pin": "7", "port": "gpioPortF" },
+					"idleLevel" : 3,
+					"retention": { "memory": true, "gpio": false },
+					"wakeup": { "pin": "7", "port": "gpioPortF", "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
 				"debugger": {
 					"tx": { "pin": "11", "port": "gpioPortD" },
@@ -164,8 +164,9 @@
 					"location": "1",
 				},
 				"i2c": {
-					"sda_pin": 5,
-					"scl_pin": 4
+					"port": "0",
+					"sda": { "pin": 11, "port": "gpioPortC", "location" : 16 },
+					"scl": { "pin": 10, "port": "gpioPortC", "location" : 14 },
 				}
 			}
 		},
