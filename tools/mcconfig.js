@@ -701,12 +701,18 @@ class XcodeFile extends PrerequisiteFile {
 export default class extends Tool {
 	constructor(argv) {
 		super(argv);
+		var prefix;
 		var path = this.moddablePath + this.slash + "tools" + this.slash + "mcconfig" + this.slash;
 		if (this.windows)
-			path += "nmake.";
+			prefix = "nmake.";
 		else
-			path += "make.";
-		path += this.platform + ".mk";
+			prefix = "make.";
+
+		let parts = this.platform.split("/");
+		if (parts[1])
+			path += parts[0] + "/" + prefix + parts[1] + ".mk";
+		else
+			path += prefix + parts[0] + ".mk";
 		path = this.resolveFilePath(path);
 		if (!path)
 			throw new Error("unknown platform!");

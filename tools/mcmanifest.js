@@ -968,25 +968,31 @@ export class Tool extends TOOL {
 		}
 		this.currentDirectory = currentDirectory;
 	}
+	matchPlatform(platforms, name) {
+		let parts = name.split("/");
+		while (parts.length) {
+			let partial = parts.join("/");
+			for (let n in platforms) {
+				if (partial === n)
+					return platforms[n];
+			}
+			parts.length -= 1;
+		}
+
+		for (let n in platforms) {
+			if ("..." === n)
+				return platforms[n];
+		}
+	}
 	mergeManifest(all, manifest) {
 		var currentDirectory = this.currentDirectory;
 		this.currentDirectory = manifest.directory;
 		this.mergePlatform(all, manifest);
 		if ("platforms" in manifest) {
-			let platform = this.platform;
 			let platforms = manifest.platforms;
-			let platformed = false;
-			for (let name in platforms) {
-				if (platform == name) {
-					platformed = true;
-					this.mergePlatform(all, platforms[name]);
-				}
-			}
-			if (!platformed) {
-				let name = "...";
-				if (name in platforms)
-					this.mergePlatform(all, platforms[name]);
-			}
+			let platform = this.matchPlatform(platforms, this.platform);
+			if (platform)
+				this.mergePlatform(all, platform);
 			delete manifest.platforms;
 		}
 		this.currentDirectory = currentDirectory;
@@ -1049,28 +1055,17 @@ export class Tool extends TOOL {
 		this.manifests.already[path] = manifest;
 		this.parseBuild(manifest);
 		if ("platforms" in manifest) {
-			let platform = this.platform;
 			let platforms = manifest.platforms;
-			let platformed = false;
-			for (let name in platforms) {
-				if (platform == name) {
-					platformed = true;
-					this.parseBuild(platforms[name]);
-					platformInclude = platforms[name].include;
+			let platform = this.matchPlatform(platforms, this.platform);
+			if (platform) {
+				this.parseBuild(platform);
+				platformInclude = platform.include;
+				if (platformInclude) {
+					if (!("include" in manifest))
+						manifest.include = platformInclude;
+					else
+						manifest.include = manifest.include.concat(manifest.include, platformInclude);
 				}
-			}
-			if (!platformed) {
-				let name = "...";
-				if (name in platforms) {
-					this.parseBuild(platforms[name]);
-					platformInclude = platforms[name].include;
-				}
-			}
-			if (platformInclude) {
-				if (!("include" in manifest))
-					manifest.include = platformInclude;
-				else
-					manifest.include = manifest.include.concat(manifest.include, platformInclude);
 			}
 		}
 		if ("include" in manifest) {
