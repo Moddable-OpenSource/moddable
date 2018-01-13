@@ -83,7 +83,7 @@ typedef int (*txPutter)(txString, void*);
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 0
+#define XS_MINOR_VERSION 1
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -187,6 +187,7 @@ enum {
 	XS_CODE_ENVIRONMENT,
 	XS_CODE_EQUAL,
 	XS_CODE_EVAL,
+	XS_CODE_EVAL_INTRINSIC,
 	XS_CODE_EVAL_REFERENCE,
 	XS_CODE_EVAL_VARIABLE,
 	XS_CODE_EXCEPTION,
@@ -316,6 +317,7 @@ enum {
 	XS_CODE_COUNT
 };
 
+extern const txString gxCodeNames[XS_CODE_COUNT];
 extern const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR;
 
 enum {
@@ -371,27 +373,35 @@ enum {
 	mxYieldingFlag = 1 << 29,
 	mxAsyncFlag = 1 << 30,
 	mxAwaitingFlag = 1 << 31,
+	
+	mxStringEscapeFlag = 1 << 0,
+	mxStringErrorFlag = 1 << 1,
 };
+
+extern void fxDeleteScript(txScript* script);
 
 #define mxCharCaseToLowerCount 84
 extern const txCharCase gxCharCaseToLower[];
 #define mxCharCaseToUpperCount 84
 extern const txCharCase gxCharCaseToUpper[];
-extern const txString gxCodeNames[XS_CODE_COUNT];
 extern const txUTF8Sequence gxUTF8Sequences[];
 
-extern void fxDeleteScript(txScript* script);
-
-extern txBoolean fxIsIdentifier(txString string);
 extern txBoolean fxIsIdentifierFirst(txU4 c);
 extern txBoolean fxIsIdentifierNext(txU4 c);
-extern txU1* fsX2UTF8(txU4 c, txU1* p, txU4 theSize);
+extern txBoolean fxIsSpace(txInteger character);
 extern txString fxSkipSpaces(txString string);
-mxExport txU4 fxUTF8Character(txString theString, txS4* theSize);
-mxExport txInteger fxUnicodeCharacter(txString theString);
+
+extern txBoolean fxParseHexEscape(txString* string, txInteger* character);
+extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger braces, txInteger separator);
+extern txString fxStringifyHexEscape(txString string, txInteger character);
+extern txString fxStringifyUnicodeEscape(txString string, txInteger character, txInteger separator);
+
+mxExport txString fxUTF8Decode(txString string, txInteger* character);
+mxExport txString fxUTF8Encode(txString string, txInteger character);
+mxExport txInteger fxUTF8Length(txInteger character);
+mxExport txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset);
 mxExport txInteger fxUnicodeLength(txString theString);
 mxExport txInteger fxUnicodeToUTF8Offset(txString theString, txInteger theOffset);
-mxExport txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset);
 
 txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex);
 txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
@@ -409,7 +419,7 @@ mxExport txString fxIntegerToString(void* dtoa, txInteger theValue, txString the
 mxExport txString fxNumberToString(void* dtoa, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
 mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole);
 
-/* xspcre.c */
+/* xsre.c */
 enum {
 	XS_REGEXP_G = 1 << 0,
 	XS_REGEXP_I = 1 << 1,
@@ -611,6 +621,7 @@ enum {
 	_Symbol,
 	_SyntaxError,
 	_TypeError,
+	_TypedArray,
 	_URIError,
 	_Uint16Array,
 	_Uint32Array,
@@ -676,6 +687,7 @@ enum {
 	_busy,
 	_byteLength,
 	_byteOffset,
+	_cache,
 	_call,
 	_callee,
 	_caller,
@@ -821,6 +833,7 @@ enum {
 	_min,
 	_multiline,
 	_name,
+	_new_target,
 	_next,
 	_normalize,
 	_now,
@@ -949,9 +962,6 @@ enum {
 	_xor,
 	___dirname,
 	___filename,
-	_new_target,
-	_TypedArray,
-	_cache,
 	XS_ID_COUNT
 };
 #ifdef mxFewGlobalsTable
