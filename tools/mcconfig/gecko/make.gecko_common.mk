@@ -1,7 +1,20 @@
 #
-# NEEDS BOILERPLATE
-#     Copyright (C) 2016-2017 Moddable Tech, Inc.
-#     All rights reserved.
+# Copyright (c) 2016-2018  Moddable Tech, Inc.
+#
+#   This file is part of the Moddable SDK Tools.
+#
+#   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   The Moddable SDK Tools is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 HOST_OS := $(shell uname)
@@ -15,7 +28,6 @@ INC_DIRS = \
 	$(SDK_BASE)/hardware/kit/common/drivers \
 	$(HWINC) \
 	$(HWKIT) \
-	$(XS_DIR)/sources/pcre \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(BUILD_DIR)/devices/gecko
 
@@ -169,10 +181,10 @@ $(LIB_DIR):
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
 $(BIN_DIR)/xs_gecko.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
-	@echo "# ld xs_gecko.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
+	@echo "# ld xs_gecko.bin"
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_gecko.a $^ $(LIB_DIR)/buildinfo.c.o
 
 
