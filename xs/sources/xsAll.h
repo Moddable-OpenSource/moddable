@@ -1982,6 +1982,7 @@ enum {
 	mxSharedArrayBufferPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
+	mxEvalFunctionStackIndex,
 	mxAsyncFunctionPrototypeStackIndex,
 	mxGeneratorPrototypeStackIndex,
 	mxGeneratorFunctionPrototypeStackIndex,
@@ -2094,6 +2095,7 @@ enum {
 #define mxUndefinedString the->stackPrototypes[-1 - mxUndefinedStringStackIndex]
 
 #define mxEnumeratorFunction the->stackPrototypes[-1 - mxEnumeratorFunctionStackIndex]
+#define mxEvalFunction the->stackPrototypes[-1 - mxEvalFunctionStackIndex]
 #define mxAsyncFunctionPrototype the->stackPrototypes[-1 - mxAsyncFunctionPrototypeStackIndex]
 #define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]
 #define mxGeneratorFunctionPrototype the->stackPrototypes[-1 - mxGeneratorFunctionPrototypeStackIndex]
