@@ -162,7 +162,7 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 		mxPushSlot(theSlot);
 		mxPushSlot(theSlot);
 		fxGetID(the, mxID(_Symbol_toPrimitive));
-		if (the->stack->kind == XS_UNDEFINED_KIND) {
+		if ((the->stack->kind == XS_UNDEFINED_KIND) || (the->stack->kind == XS_NULL_KIND)) {
             the->stack++;
 			mxPushSlot(&mxObjectPrototype);
 			fxGetID(the, mxID(_Symbol_toPrimitive));

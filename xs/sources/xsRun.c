@@ -417,6 +417,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_ENVIRONMENT,
 		&&XS_CODE_EQUAL,
 		&&XS_CODE_EVAL,
+		&&XS_CODE_EVAL_INTRINSIC,
 		&&XS_CODE_EVAL_REFERENCE,
 		&&XS_CODE_EVAL_VARIABLE,
 		&&XS_CODE_EXCEPTION,
@@ -3088,6 +3089,11 @@ XS_CODE_JUMP:
 			mxSaveState;
 			fxRunEval(the);
 			mxRestoreState;
+			mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_EVAL_INTRINSIC)
+			mxOverflow(1);
+			*mxStack = mxEvalFunction;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_EVAL_REFERENCE)
