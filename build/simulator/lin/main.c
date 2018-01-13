@@ -390,22 +390,25 @@ void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *
 	char cmd[16 + PATH_MAX + PATH_MAX];
 	fxLibraryClose();
 	for (i = 0; i < c; i++) {
-		realpath(g_file_get_path(files[i]), path);
-		slash = strrchr(path, '/');
-		if (slash) {
-			dot = strrchr(slash, '.');
-			if (dot) {
-				if (!strcmp(dot, ".so")) {
-					snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.so\'", path, gxConfigPath);
-					system(cmd);
-					strcpy(gxLibraryPath, path);
-					launch = TRUE;
-				}
-				else if (!strcmp(dot, ".xsa")) {
-					snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.xsa\'", path, gxConfigPath);
-					system(cmd);
-					strcpy(gxArchivePath, path);
-					launch = TRUE;
+		if (realpath(g_file_get_path(files[i]), path)) {
+			slash = strrchr(path, '/');
+			if (slash) {
+				dot = strrchr(slash, '.');
+				if (dot) {
+					if (!strcmp(dot, ".so")) {
+						snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.so\'", path, gxConfigPath);
+						if (system(cmd) != -1) {
+							strcpy(gxLibraryPath, path);
+							launch = TRUE;
+						}
+					}
+					else if (!strcmp(dot, ".xsa")) {
+						snprintf(cmd, sizeof(cmd), "/bin/cp -p \'%s\' \'%s.xsa\'", path, gxConfigPath);
+						if (system(cmd) != -1) {
+							strcpy(gxArchivePath, path);
+							launch = TRUE;
+						}
+					}
 				}
 			}
 		}
@@ -627,7 +630,8 @@ void onApplicationStartup(GtkApplication *app)
 
 void onApplicationSupport(GSimpleAction *action, GVariant *parameter, gpointer app)
 {
-	system("xdg-open http://moddable.tech");
+	if (system("xdg-open http://moddable.tech") == -1)
+		return;
 }
 
 void onFileClose(GSimpleAction *action, GVariant *parameter, gpointer app)
