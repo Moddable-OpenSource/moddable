@@ -1,12 +1,26 @@
 /*
- * NEEDS BOILERPLATE
- *     Copyright (C) 2016-2017 Moddable Tech, Inc.
- *     All rights reserved.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ *        
+ *   This file is part of the Moddable SDK Runtime.
+ *        
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify   
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *  
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>. 
+ *
  */
-
 #ifndef __XS6GECKO__
 #define __XS6GECKO__
 
+#include "mc.defines.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -15,25 +29,44 @@ extern "C" {
 
 #define sint8_t int8_t
 #define sint16_t int16_t
+
+void xs_setup();
+void xs_loop();
+
 /*
     timer
 */
-
+#ifndef __MODTIMER_H__
+#define __MODTIMER_H__
 typedef struct modTimerRecord modTimerRecord;
-typedef modTimerRecord *modTimer;
+typedef struct modTimerRecord *modTimer;
+
 typedef void (*modTimerCallback)(modTimer timer, void *refcon, uint32_t refconSize);
+
 extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
+extern void modTimerSetScript(modTimer timer);
+extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
+extern uint16_t modTimerGetID(modTimer timer);
+extern int modTimerGetSecondInterval(modTimer timer);
+extern void *modTimerGetRefcon(modTimer timer);
 extern void modTimerRemove(modTimer timer);
-extern modTimer modTimerCallWhenSafe(modTimerCallback cb, void *refcon, int refconSize);
+
+extern modTimer modTimerFind(uint16_t id);
+
+extern void modTimerDelayMS(uint32_t ms);
 
 extern void modTimersExecute(void);
 extern int modTimersNext(void);
 extern int modTimersNextScript(void);
 
-#define modDelayMilliseconds(ms) delay(ms)
-#define modDelayMicroseconds(us) delay(((us) + 500) / 1000)
+#endif
 
-extern uint32_t modMilliseconds(void);
+#define modDelayMilliseconds(ms) gecko_delay(ms)
+#define modDelayMicroseconds(us) gecko_delay(((us) + 500) / 1000)
+#define modMilliseconds() gecko_milliseconds()
+
+extern void gecko_delay(uint32_t ms);
+extern uint32_t gecko_milliseconds();
 
 /*
 	critical section
@@ -74,7 +107,7 @@ extern void ESP_putc(int c);
     extern xsMachine *gThe;     // the one XS6 virtual machine running
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug);
 
-	uint8_t xsRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
+	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug);
 
@@ -84,6 +117,7 @@ extern void ESP_putc(int c);
 	messages
 */
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+void modMessageService(void);
 
 
 /*
@@ -92,11 +126,54 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 uint32_t geckoGetResetCause();
 uint32_t geckoGetPersistentValue(uint32_t reg);
 void geckoSetPersistentValue(uint32_t reg, uint32_t val);
+void geckoUnlatchPinRetention();
+
+void geckoEnterEM1();
+void geckoEnterEM2();
+void geckoEnterEM3();
 void geckoSleepEM4(uint32_t ms);
+
+void geckoDisableSysTick();
+
+void geckoStartRTCC();
+
+#define kmdblTag 'mdbl'
+#define kxtimTag 'xtim'
+#define kSleepTagReg    31
+#define kSleepRemainReg 30
+
+/*
+	debugger
+ */
+#include <stdio.h>
+void setupDebugger();
+extern int gDebuggerSetup;
+uint8_t ESP_isReadable();
+void ESP_putc(int c);
+int ESP_getc(void);
+void modLog_transmit(const char *msg);
+
+extern uint32_t gMsgBuffer[1024];
+extern uint32_t gMsgBufferCnt;
+extern uint32_t gMsgBufferMax;
+#define geckoLogNum(x)	(gMsgBuffer[(gMsgBufferCnt++ > gMsgBufferMax) ? 0 : gMsgBufferCnt] = x)
 
 /*
 	Default types
  */
+#if MIGHTY_GECKO
+    #define USE_CRYOTIMER   1   // use cryotimer for EM4 and delay
+    #define USE_RTCC        1   // use RTCC for EM4 and delay and ticks
+    #include "em_cryotimer.h"
+    #include "em_rtcc.h"
+#endif
+#if GIANT_GECKO
+    #define USE_BURTC        1   // use RTCC for EM4 and delay and ticks
+    #define USE_RTC			1
+	#include "em_burtc.h"
+    #include "em_rtc.h"
+#endif
+
 #if 0
 
 #if EFR32MG1P132F256GM48			// MightyGecko - Thunderboard Sense

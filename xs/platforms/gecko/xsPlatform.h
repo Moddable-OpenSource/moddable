@@ -1,41 +1,68 @@
 /*
- * NEEDS BOILERPLATE
- *     Copyright (C) 2016-2017 Moddable Tech, Inc.
- *     All rights reserved.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
- *     Portions Copyright (C) 2010-2015 Marvell International Ltd.
- *     Portions Copyright (C) 2002-2010 Kinoma, Inc.
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- *     Portions Copyright by Marvell International Ltd. and Kinoma, Inc. are 
- *     derived from KinomaJS/XS6 and used under the Apache 2.0 License.
+ * This file incorporates work covered by the following copyright and  
+ * permission notice:  
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
  */
 
 #ifndef __XSPLATFORM__
 #define __XSPLATFORM__
 
-#define mxBigEndian 0
-#define mxLittleEndian 1
-
-#define mxExport extern
-#ifndef mxImport
-	#define mxImport
-#endif
-
-#define XS_FUNCTION_NORETURN __attribute__((noreturn))
-#define XS_FUNCTION_ANALYZER_NORETURN
-
-#ifndef true
-	#define true 1
-	#define false 0
-#endif
-
+#define mxRegExp 1
 //#define mxReport 1
 #define mxNoFunctionLength 1
 #define mxNoFunctionName 1
 #define mxHostFunctionPrimitive 1
 //#define mxDebug 1
 #define mxFewGlobalsTable 1
+//#define mxNoConsole 1
+#define mxMisalignedSettersCrash 1
 
+#ifndef __XS6PLATFORMMINIMAL__
+
+#define mxExport extern
+#define mxImport
+
+#define mxBigEndian 0
+#define mxLittleEndian 1
+
+#define mxiOS 0
+#define mxLinux 0
+#define mxMacOSX 0
+#define mxWindows 0
+
+#define XS_FUNCTION_NORETURN __attribute__((noreturn))
+#define XS_FUNCTION_ANALYZER_NORETURN
 
 #include <stdint.h>
 typedef int8_t txS1;
@@ -51,7 +78,10 @@ typedef int txSocket;
 
 #include "xsgecko.h"
 
-#define mxVolatile(type, name, value) type name = value; type *name ## Address __attribute__((unused)) = &name
+#ifndef true
+	#define true 1
+	#define false 0
+#endif
 
 
 /* C */
@@ -259,6 +289,15 @@ typedef struct tm c_tm;
 #define c_strstr strstr
 #define c_strrchr strrchr
 
+#if 1
+#define ICACHE_FLASH_ATTR
+#define ICACHE_STORE_ATTR
+#define ICACHE_RODATA_ATTR
+#define ICACHE_RAM_ATTR	
+#define ICACHE_XS6RO_ATTR
+#define ICACHE_XS6RO2_ATTR
+#define ICACHE_XS6STRING_ATTR
+#else
 #define ICACHE_FLASH_ATTR
 #define ICACHE_STORE_ATTR	__attribute__((aligned(4)))
 #define ICACHE_RODATA_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata")))
@@ -266,6 +305,7 @@ typedef struct tm c_tm;
 #define ICACHE_XS6RO_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.1")))
 #define ICACHE_XS6RO2_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.2")))
 #define ICACHE_XS6STRING_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.3")))
+#endif
 
 #define espRead8(POINTER) *((txU1*)POINTER)
 #define mxGetKeySlotID(SLOT) (SLOT)->ID
@@ -277,6 +317,7 @@ typedef struct tm c_tm;
 #define c_read32(POINTER) *((txU4*)(POINTER))
 #define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
 
+extern void fx_putc(void *refcon, char c);
 
 /* MACHINE */
 
@@ -290,5 +331,7 @@ typedef struct tm c_tm;
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend;
+
+#endif /* __XS6PLATFORMMINIMAL__ */
 
 #endif /* __XSPLATFORM__ */
