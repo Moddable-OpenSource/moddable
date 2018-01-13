@@ -320,7 +320,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			offset = p - theParser->slot->value.string;
 			size = 0;
 			for (;;) {
-				if (*p < 32) {
+				if ((0 <= *p) && (*p < 32)) {
 					goto error;
 				}
 				else if (*p == '"') {
