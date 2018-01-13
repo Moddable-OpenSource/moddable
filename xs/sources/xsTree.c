@@ -205,14 +205,6 @@ txDefineNode* fxDefineNodeNew(txParser* parser, txToken token, txSymbol* symbol)
 	return node;
 }
 
-txEvalNode* fxEvalNodeNew(txParser* parser, txToken token, txScope* scope)
-{
-	txEvalNode* node = fxNewParserChunkClear(parser, sizeof(txEvalNode));
-	node->description = &gxTokenDescriptions[token];
-	node->scope = scope;
-	return node;
-}
-
 txSpecifierNode* fxSpecifierNodeNew(txParser* parser, txToken token)
 {
 	txSpecifierNode* node = fxNewParserChunkClear(parser, sizeof(txSpecifierNode));
@@ -761,14 +753,6 @@ static const txNodeDispatch gxDoNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxEvalNodeDispatch = {
-	fxNodeDistribute,
-	fxNodeBind,
-	fxNodeHoist,
-	fxEvalNodeCode,
-	fxNodeCodeAssign,
-	fxNodeCodeReference
-};
 static const txNodeDispatch gxExportNodeDispatch = {
 	fxExportNodeDistribute,
 	fxExportNodeBind,
@@ -1220,7 +1204,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] = {
 	{ XS_NO_CODE, XS_TOKEN_ENUM, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_EOF, "", 0, NULL },
 	{ XS_CODE_EQUAL, XS_TOKEN_EQUAL, "Equal", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
-	{ XS_CODE_EVAL, XS_TOKEN_EVAL, "Eval", sizeof(txEvalNode), &gxEvalNodeDispatch },
+	{ XS_CODE_EVAL, XS_TOKEN_EVAL, "", 0, NULL },
 	{ XS_CODE_EXPONENTIATION, XS_TOKEN_EXPONENTIATION, "Exponent", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_CODE_EXPONENTIATION, XS_TOKEN_EXPONENTIATION_ASSIGN, "ExponentAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_EXPORT, "Export", sizeof(txExportNode), &gxExportNodeDispatch },

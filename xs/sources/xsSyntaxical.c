@@ -603,7 +603,7 @@ void fxPushStringNode(txParser* parser, txInteger length, txString value, txInte
 	node->description = &gxTokenDescriptions[XS_TOKEN_STRING];
 	node->path = parser->path;
 	node->line = line;
-	node->flags = (parser->escaped < 0) ? 1 : 0;
+	node->flags = parser->escaped;
 	node->length = length;
 	node->value = value;
 	fxPushNode(parser, (txNode*)node);
@@ -1061,23 +1061,6 @@ void fxProgram(txParser* parser)
 
 void fxBody(txParser* parser)
 {
-// 	fxGetNextToken2(parser);
-// 	while ((parser->token == XS_TOKEN_STRING) 
-// 			&& ((parser->crlf2 && (gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_STATEMENT))
-// 				|| (parser->token2 == XS_TOKEN_SEMICOLON))) {
-// 		if (!parser->escaped) {
-// 			if (c_strcmp(parser->string, "use strict") == 0) {
-// 				if (parser->flags & mxNotSimpleParametersFlag)
-// 					fxReportParserError(parser, "invalid directive");
-// 				parser->flags |= mxStrictFlag;
-// 			}
-// 		}
-// 		fxGetNextToken(parser);
-// 		if (parser->token == XS_TOKEN_SEMICOLON)
-// 			fxGetNextToken(parser);
-// 		fxGetNextToken2(parser);
-// 	}
-// 	fxStatements(parser);
 	txInteger count = parser->nodeCount;
 	txInteger line = parser->line;
 	txNode* node;
@@ -1089,7 +1072,7 @@ void fxBody(txParser* parser)
 		node = ((txStatementNode*)node)->expression;
 		if (!node || !node->description || (node->description->token != XS_TOKEN_STRING))
 			break;
-		if (!node->flags && (c_strcmp(((txStringNode*)node)->value, "use strict") == 0)) {
+		if (!(node->flags & mxStringEscapeFlag) && (c_strcmp(((txStringNode*)node)->value, "use strict") == 0)) {
 			if (parser->flags & mxNotSimpleParametersFlag)
 				fxReportParserError(parser, "invalid directive");
 			parser->flags |= mxStrictFlag;
@@ -1258,12 +1241,14 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 			fxPushNodeStruct(parser, 2, XS_TOKEN_LABEL, line);
 			break;
 		}
-		if ((parser->symbol == parser->asyncSymbol) && (!parser->escaped) && (!parser->crlf2) && (parser->token2 == XS_TOKEN_FUNCTION)) {
+		if ((parser->symbol == parser->asyncSymbol) && (!parser->escaped) 
+				&& (!parser->crlf2) && (parser->token2 == XS_TOKEN_FUNCTION)) {
 			fxGetNextToken(parser);
 			flag = mxAsyncFlag;
 			goto again;
 		}
-		if ((parser->symbol == parser->letSymbol) && (!parser->escaped) && (gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING) 
+		if ((parser->symbol == parser->letSymbol) && (!parser->escaped) 
+				&& ((gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))
 				&& (blockIt || (!parser->crlf2) || (parser->token2 == XS_TOKEN_LEFT_BRACKET))) {
 			parser->token = XS_TOKEN_LET;
 			if (!blockIt)

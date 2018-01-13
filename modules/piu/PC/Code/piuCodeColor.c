@@ -39,9 +39,17 @@
 
 void PiuCodeParserAdvance(PiuCodeParser parser)
 {
+	xsStringValue string; 
 	parser->columnIndex++;
 	parser->input += parser->size;
-	parser->character = fxUTF8Character((xsStringValue)parser->string + parser->input, (xsIntegerValue*)&parser->size);
+	string = fxUTF8Decode(parser->string + parser->input, &parser->character);
+	if (parser->character <= 0) {
+		parser->character = 0;
+		parser->size = 0;
+	}
+	else {
+		parser->size = string - (parser->string + parser->input);
+	}
 }
 
 void PiuCodeParserBegin(PiuCode* self, PiuCodeParser parser)
@@ -55,7 +63,7 @@ void PiuCodeParserBegin(PiuCode* self, PiuCodeParser parser)
 	parser->input = 0;
 	parser->output = 0;
 	parser->size = 0;
-	parser->string = (uint8_t*)fxToString(parser->the, parser->slot);
+	parser->string = fxToString(parser->the, parser->slot);
 	parser->tab = 4;
 	parser->color = 0;
 	parser->offset = 0;
@@ -72,7 +80,7 @@ void PiuCodeParserColorAt(PiuCodeParser parser, int32_t color, int32_t offset)
 			runRecord.color = parser->color;
 			runRecord.count = offset - parser->output;
 			PiuTextBufferAppend(parser->the, parser->runs, &runRecord, sizeof(PiuCodeRunRecord));
-			parser->string = (uint8_t*)fxToString(parser->the, parser->slot);
+			parser->string = fxToString(parser->the, parser->slot);
 			parser->output = offset;
 		}
 		parser->color = color;
@@ -138,7 +146,7 @@ void PiuCodeParserFill(PiuCodeParser parser)
 		runRecord.color = parser->color;
 		runRecord.count = parser->input - parser->output;
 		PiuTextBufferAppend(parser->the, parser->runs, &runRecord, sizeof(PiuCodeRunRecord));
-		parser->string = (uint8_t*)fxToString(parser->the, parser->slot);
+		parser->string = fxToString(parser->the, parser->slot);
 		parser->output = parser->input;
 	}
 }
@@ -155,7 +163,7 @@ void PiuCodeParserReturn(PiuCodeParser parser)
 	runRecord.color = 0;
 	runRecord.count = parser->input - parser->output;
 	PiuTextBufferAppend(parser->the, parser->runs, &runRecord, sizeof(PiuCodeRunRecord));
-	parser->string = (uint8_t*)fxToString(parser->the, parser->slot);
+	parser->string = fxToString(parser->the, parser->slot);
 	parser->output = parser->input;
 	if (parser->columnCount < parser->columnIndex)
 		parser->columnCount = parser->columnIndex;
@@ -175,6 +183,6 @@ void PiuCodeParserTab(PiuCodeParser parser)
 	runRecord.color = parser->columnIndex - columnIndex;
 	runRecord.count = 1;
 	PiuTextBufferAppend(parser->the, parser->runs, &runRecord, sizeof(PiuCodeRunRecord));
-	parser->string = (uint8_t*)fxToString(parser->the, parser->slot);
+	parser->string = fxToString(parser->the, parser->slot);
 	parser->output = parser->input;
 }

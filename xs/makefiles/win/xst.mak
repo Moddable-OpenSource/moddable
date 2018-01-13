@@ -45,7 +45,6 @@ C_OPTIONS = \
 	/D YAML_DECLARE_STATIC \
 	/D INCLUDE_XSPLATFORM \
 	/D XSPLATFORM=\"xst.h\" \
-	/D mxInstrument=1 \
 	/D mxNoConsole=1 \
 	/D mxParse=1 \
 	/D mxRun=1 \
