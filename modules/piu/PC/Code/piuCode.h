@@ -67,14 +67,14 @@ struct PiuCodeParserStruct {
 	xsSlot* slot;
 	PiuTextBuffer* runs;
 	
-	uint32_t character;
+	int32_t character;
 	int32_t columnCount;
 	int32_t columnIndex;
 	int32_t lineCount;
 	int32_t input;
 	int32_t output;
 	int32_t size;
-	uint8_t* string;
+	char* string;
 	int32_t tab;
 	
 	int32_t color;

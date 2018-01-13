@@ -159,15 +159,12 @@ typedef struct {
 } txSequence;
 
 struct sxPatternParser {
+	txMachine* the;
 	txTerm* first;
 	
-	txU1* pattern;
-	txInteger offset;
-	
 	txUnsigned flags;
-	
-	txMachine* the;
-	
+	txString pattern;
+	txInteger offset;
 	txInteger character;
 	txInteger surrogate;
 		
@@ -232,12 +229,11 @@ static void fxWordContinueCode(txPatternParser* parser, void* it, txInteger dire
 static void fxPatternParserInitialize(txPatternParser* parser);
 static txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserError(txPatternParser* parser, txString format, ...);
-static txBoolean fxPatternParserHexadecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserName(txPatternParser* parser, txInteger* length);
+static void fxPatternParserNameEscape(txPatternParser* parser);
 static void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture);
 static void fxPatternParserNext(txPatternParser* parser);
 static void fxPatternParserTerminate(txPatternParser* parser);
-static txBoolean fxPatternParserUnicodeEscape(txPatternParser* parser, txU4* character);
 
 #define mxCodeSize sizeof(txInteger)
 #define mxStepSize sizeof(txInteger)
@@ -588,24 +584,21 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 
 	
 	case 'x': {
-		txU4 value = 0;
-		int i;
-		fxPatternParserNext(parser);
-		for (i = 0; i < 2; i++) {
-			if (fxPatternParserHexadecimal(parser, &value))
-				fxPatternParserNext(parser);
-			else
-				break;
+		txString p = parser->pattern + parser->offset;
+		if (fxParseHexEscape(&p, &parser->character)) {
+			parser->offset = p - parser->pattern;
+			result = fxCharSetSingle(parser, parser->character);
+			fxPatternParserNext(parser);
 		}
-		if (i == 2)
-			result = fxCharSetSingle(parser, value);
 	} break;
 
 	case 'u': {
-		txU4 value = 0;
-		fxPatternParserNext(parser);
-		if (fxPatternParserUnicodeEscape(parser, &value))
-			result = fxCharSetSingle(parser, value);
+		txString p = parser->pattern + parser->offset;
+		if (fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0)) {
+			parser->offset = p - parser->pattern;
+			result = fxCharSetSingle(parser, parser->character);
+			fxPatternParserNext(parser);
+		}
 	} break;
 	case '^':
 	case '$':
@@ -680,7 +673,13 @@ void* fxCharSetParseList(txPatternParser* parser)
 		result = fxCharSetParseItem(parser);
 		if (parser->character == '-') {
 			fxPatternParserNext(parser);
-			result = fxCharSetRange(parser, result, fxCharSetParseItem(parser));
+			if (parser->character == ']') {
+				result = fxCharSetCanonicalizeSingle(parser, result);
+				result = fxCharSetOr(parser, result, fxCharSetSingle(parser, '-'));
+			}
+			else {
+				result = fxCharSetRange(parser, result, fxCharSetParseItem(parser));
+			}
 		}
 		else
 			result = fxCharSetCanonicalizeSingle(parser, result);
@@ -1467,7 +1466,7 @@ txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value)
 void fxPatternParserError(txPatternParser* parser, txString format, ...)
 {
 	c_va_list arguments;
-	txU1* pattern = parser->pattern;
+	txString pattern = parser->pattern;
 	txString error = parser->error;
 	txInteger offset = parser->offset;
 	while (offset) {
@@ -1481,61 +1480,26 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
 	c_longjmp(parser->jmp_buf, 1);
 }
 
-txBoolean fxPatternParserHexadecimal(txPatternParser* parser, txU4* value)
-{
-	txInteger c = parser->character;
-	if (('0' <= c) && (c <= '9'))
-		*value = (*value * 16) + (c - '0');
-	else if (('a' <= c) && (c <= 'f'))
-		*value = (*value * 16) + (10 + c - 'a');
-	else if (('A' <= c) && (c <= 'F'))
-		*value = (*value * 16) + (10 + c - 'A');
-	else
-		return 0;
-	return 1;
-}
-
 void fxPatternParserName(txPatternParser* parser, txInteger* length)
 {
-	txU4 character;
 	txString p = parser->error;
-	txString q = p + 255;
+	txString q = p + sizeof(parser->error);
+	if (parser->character == '\\')
+		fxPatternParserNameEscape(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		p = (txString)fsX2UTF8(parser->character, (txU1*)p, q - p);				
+		p = fxUTF8Encode(p, parser->character);
 		fxPatternParserNext(parser);
-	}
-	else if (parser->character == '\\') {
-		fxPatternParserNext(parser);
-		if (parser->character != 'u')
-			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-		fxPatternParserNext(parser);
-		if (!fxPatternParserUnicodeEscape(parser, &character))
-			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-		if (!fxIsIdentifierFirst(character))
-			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-		p = (txString)fsX2UTF8(character, (txU1*)p, q - p);				
 	}
 	else
 		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
 	while (parser->character != '>') {
-		if (p == q) {
-			fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
-			break;
-		}
+		if (parser->character == '\\')
+			fxPatternParserNameEscape(parser);
 		if (fxIsIdentifierNext(parser->character)) {
-			p = (txString)fsX2UTF8(parser->character, (txU1*)p, q - p);				
+			if (fxUTF8Length(parser->character) > (q - p))
+				fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
+			p = fxUTF8Encode(p, parser->character);
 			fxPatternParserNext(parser);
-		}
-		else if (parser->character == '\\') {
-			fxPatternParserNext(parser);
-			if (parser->character != 'u')
-				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-			fxPatternParserNext(parser);
-			if (!fxPatternParserUnicodeEscape(parser, &character))
-				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-			if (!fxIsIdentifierNext(character))
-				fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-			p = (txString)fsX2UTF8(character, (txU1*)p, q - p);				
 		}
 		else
 			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
@@ -1543,6 +1507,18 @@ void fxPatternParserName(txPatternParser* parser, txInteger* length)
 	fxPatternParserNext(parser);
 	*p = 0;
 	*length = p - parser->error;
+}
+
+void fxPatternParserNameEscape(txPatternParser* parser)
+{
+	txString p;
+	fxPatternParserNext(parser);
+	if (parser->character != 'u')
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	p = parser->pattern + parser->offset;
+	if (!fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0))
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	parser->offset = p - parser->pattern;
 }
 
 void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture)
@@ -1559,33 +1535,17 @@ void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture)
 
 void fxPatternParserNext(txPatternParser* parser)
 {
-	txU1* p = parser->pattern + parser->offset;
-	txU4 character;
-	txUTF8Sequence const *aSequence = NULL;
-	txInteger aSize;
+	txString p = parser->pattern + parser->offset;
+	txInteger character;
 	
 	if (parser->surrogate) {
 		parser->character = parser->surrogate;
 		parser->surrogate = 0;
 	}
 	else {
-		character = c_read8(p++);
-		if (character) {
-			for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-				if ((character & aSequence->cmask) == aSequence->cval)
-					break;
-			}
-			if (aSequence->size == 0)
-				fxPatternParserError(parser, gxErrors[mxInvalidUTF8]);
-			aSize = aSequence->size - 1;
-			while (aSize) {
-				aSize--;
-				character = (character << 6) | (c_read8(p++) & 0x3F);
-			}
-			character &= aSequence->lmask;
+		p = fxUTF8Decode(p, &character);
+		if (character != C_EOF) {
 			parser->offset = p - parser->pattern;
-			if (character == 0x110000)
-				character = 0;
 			if (!(parser->flags & XS_REGEXP_U) && (character > 0xFFFF)) {
 				character -= 0x10000;
 				parser->surrogate = 0xDC00 | (character & 0x3FF);
@@ -1607,66 +1567,6 @@ void fxPatternParserTerminate(txPatternParser* parser)
 		term = next;
 	}
 	parser->first = NULL;
-}
-
-txBoolean fxPatternParserUnicodeEscape(txPatternParser* parser, txU4* character)
-{
-	txBoolean result = 0;
-	int i;
-	txU4 value = 0;
-	if ((parser->flags & XS_REGEXP_U) && (parser->character == '{')) {
-		fxPatternParserNext(parser);
-		for (i = 0; value < 0x00110000; i++) {
-			if (fxPatternParserHexadecimal(parser, &value))
-				fxPatternParserNext(parser);
-			else
-				break;
-		}
-		if ((parser->character == '}') && (i > 0) && (value < 0x00110000)) {
-			*character = value;
-			fxPatternParserNext(parser);
-			result = 1;
-		}
-	}
-	else {
-		for (i = 0; i < 4; ++i) {
-			if (fxPatternParserHexadecimal(parser, &value))
-				fxPatternParserNext(parser);
-			else
-				break;
-		}
-		if (i == 4) {
-			if ((parser->flags & XS_REGEXP_U) && (0x0000D800 <= value) && (value < 0x0000DBFF)) {
-				if (parser->character == '\\') {
-					txInteger offset = parser->offset;
-					fxPatternParserNext(parser);
-					if (parser->character == 'u') {
-						txU4 trail = 0;
-						fxPatternParserNext(parser);
-						for (i = 0; i < 4; ++i) {
-							if (fxPatternParserHexadecimal(parser, &trail))
-								fxPatternParserNext(parser);
-							else
-								break;
-						}
-						if (i == 4) {
-							if ((0x0000DC00 <= trail) && (trail <= 0x0000DFFF))
-								value = 0x00010000 + ((value & 0x03FF) << 10) + (trail & 0x03FF);
-							else
-								parser->offset = offset;
-						}
-						else
-							parser->offset = offset;
-					}
-					else
-						parser->offset = offset;
-				}
-			}
-			*character = value;
-			result = 1;
-		}
-	}
-	return result;
 }
 
 txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString messageBuffer, txInteger messageSize)
@@ -1697,7 +1597,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		}
 		if (c)
 			fxPatternParserError(parser, gxErrors[mxInvalidFlags]);
-		parser->pattern = (txU1*)pattern;
+		parser->pattern = pattern;
 		parser->the = the;
 		
 		fxPatternParserNext(parser);
@@ -1798,9 +1698,8 @@ txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
 
 txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags)
 {
-	txInteger character = fxUnicodeCharacter(input + offset);
-	if (character == 0x110000)
-		character = 0;
+	txInteger character;
+	fxUTF8Decode(input + offset, &character);
 	if (flags & XS_REGEXP_I) {
 		txBoolean flag = (flags & XS_REGEXP_U) ? 1 : 0, inside;
 		txCharCase* current = fxCharCaseFind(character, flag, &inside);
