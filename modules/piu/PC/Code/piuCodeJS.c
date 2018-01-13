@@ -44,7 +44,7 @@ typedef struct {
 
 static xsBooleanValue fxIsJSIdentifierFirst(uint32_t c);
 static xsBooleanValue fxIsJSIdentifierNext(uint32_t c);
-static xsBooleanValue fxIsKeyword(uint8_t* string, uint32_t length, xsBooleanValue* noRegExp);
+static xsBooleanValue fxIsKeyword(char* string, uint32_t length, xsBooleanValue* noRegExp);
 static void fxParseJSCode(PiuCodeParser parser, xsBooleanValue template);
 static void fxParseJSNumberB(PiuCodeParser parser);
 static void fxParseJSNumberE(PiuCodeParser parser, int parseDot);
@@ -117,7 +117,7 @@ xsBooleanValue fxIsJSIdentifierNext(uint32_t c)
 	return ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')) || (c == '$') || (c == '_')) ? 1 : 0;
 }
 
-xsBooleanValue fxIsKeyword(uint8_t* string, uint32_t length, xsBooleanValue* noRegExp)
+xsBooleanValue fxIsKeyword(char* string, uint32_t length, xsBooleanValue* noRegExp)
 {
 	char* keywordString;
 	uint32_t keywordLength;
@@ -409,7 +409,7 @@ void fxParseJSNumberX(PiuCodeParser parser)
 
 void fxParseJSString(PiuCodeParser parser)
 {
-	uint32_t c = parser->character;
+	int32_t c = parser->character;
 	PiuCodeParserAdvance(parser);
 	for (;;) {
 		if (parser->character == 0) {
