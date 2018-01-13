@@ -409,13 +409,9 @@ void fxCallNodeHoist(void* it, void* param)
 	if (self->reference->description->token == XS_TOKEN_ACCESS) {
 		txAccessNode* access = (txAccessNode*)self->reference;
 		if (access->symbol == parser->evalSymbol) {
-			self->reference = (txNode*)fxEvalNodeNew(parser, XS_TOKEN_EVAL, hoister->scope);
-			self->reference->flags = self->flags & mxStrictFlag;
-			self->reference->line = self->line;
 			fxScopeEval(hoister->scope);
 			hoister->functionScope->node->flags |= mxArgumentsFlag | mxEvalFlag;
-			fxNodeDispatchHoist(self->params, param);
-			return;
+			self->scope = hoister->scope;
 		}
 	}
 	fxNodeDispatchHoist(self->reference, param);
@@ -973,14 +969,14 @@ void fxForNodeBind(void* it, void* param)
 void fxForInForOfNodeBind(void* it, void* param) 
 {
 	txForInForOfNode* self = it;
-	fxBinderPushVariables(param, 5);
+	fxBinderPushVariables(param, 6);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->reference, param);
 	fxNodeDispatchBind(self->expression, param);
 	fxNodeDispatchBind(self->statement, param);
 	fxScopeBound(self->scope, param);
-	fxBinderPopVariables(param, 5);
+	fxBinderPopVariables(param, 6);
 }
 
 void fxFunctionNodeBind(void* it, void* param) 
