@@ -119,7 +119,7 @@ void fx_Object_prototype___proto__set(txMachine* the)
 	if ((mxThis->kind == XS_UNDEFINED_KIND) || (mxThis->kind == XS_NULL_KIND))
 		mxTypeError("invalid this");
 	if ((mxArgc < 1) || ((mxArgv(0)->kind != XS_NULL_KIND) && (mxArgv(0)->kind != XS_REFERENCE_KIND)))
-		mxTypeError("invalid prototype");
+		return;
 	if (mxThis->kind == XS_REFERENCE_KIND) {
 		instance = mxThis->value.reference;
 		if (!mxBehaviorSetPrototype(the, instance, mxArgv(0)))

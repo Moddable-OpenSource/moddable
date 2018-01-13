@@ -43,7 +43,6 @@ C_OPTIONS = \
 	-fno-common \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
-	-DmxInstrument=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
 	-DmxRun=1 \
