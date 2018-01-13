@@ -204,6 +204,7 @@ typedef struct {
 	mxNodePart;
 	txNode* reference;
 	txNode* params;
+	txScope* scope;
 } txCallNewNode;
 
 typedef struct {
@@ -253,11 +254,6 @@ typedef struct {
 	txNode* statement;
 	txNode* expression;
 } txDoNode;
-
-typedef struct {
-	mxNodePart;
-	txScope* scope;
-} txEvalNode;
 
 struct sxExportNode {
 	mxNodePart;
@@ -884,7 +880,6 @@ extern void fxNodeListDistribute(txNodeList* list, txNodeCall call, void* param)
 extern txAccessNode* fxAccessNodeNew(txParser* parser, txToken token, txSymbol* symbol);
 extern txDeclareNode* fxDeclareNodeNew(txParser* parser, txToken token, txSymbol* symbol);
 extern txDefineNode* fxDefineNodeNew(txParser* parser, txToken token, txSymbol* symbol);
-extern txEvalNode* fxEvalNodeNew(txParser* parser, txToken token, txScope* scope);
 extern txSpecifierNode* fxSpecifierNodeNew(txParser* parser, txToken token);
 extern txNode* fxValueNodeNew(txParser* parser, txToken token);
 
@@ -985,7 +980,6 @@ extern void fxDefineNodeCode(void* it, void* param);
 extern void fxDelegateNodeCode(void* it, void* param); 
 extern void fxDeleteNodeCode(void* it, void* param); 
 extern void fxDoNodeCode(void* it, void* param); 
-extern void fxEvalNodeCode(void* it, void* param);
 extern void fxExportNodeCode(void* it, void* param); 
 extern void fxExpressionsNodeCode(void* it, void* param); 
 extern void fxForNodeCode(void* it, void* param); 

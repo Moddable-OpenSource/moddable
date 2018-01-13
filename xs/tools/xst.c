@@ -333,6 +333,12 @@ void fxPushResult(txContext* context, char* path)
 
 void fxRunDirectory(txContext* context, char* path)
 {
+	typedef struct sxEntry txEntry;
+	struct sxEntry {
+		txEntry* nextEntry;
+		char name[1];
+	};
+
 #if mxWindows
 	UINT32 length;
 	HANDLE findHandle = INVALID_HANDLE_VALUE;
@@ -344,21 +350,46 @@ void fxRunDirectory(txContext* context, char* path)
 	path[length + 1] = 0;
 	findHandle = FindFirstFile(path, &findData);
 	if (findHandle != INVALID_HANDLE_VALUE) {
+		txEntry* entry;
+		txEntry* firstEntry = NULL;
+		txEntry* nextEntry;
+		txEntry** address;
 		do {
 			if ((findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) ||
 				!strcmp(findData.cFileName, ".") ||
 				!strcmp(findData.cFileName, ".."))
 				continue;
-			strcpy(path + length, findData.cFileName);
-			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-				fxPushResult(context, findData.cFileName);
-				fxRunDirectory(context, path);
-				fxPopResult(context);
+			entry = malloc(sizeof(txEntry) + strlen(findData.cFileName));
+			if (!entry)
+				break;
+			strcpy(entry->name, findData.cFileName);
+			address = &firstEntry;
+			while ((nextEntry = *address)) {
+				if (strcmp(entry->name, nextEntry->name) < 0)
+					break;
+				address = &nextEntry->nextEntry;
 			}
-			else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-				fxRunFile(context, path);
+			entry->nextEntry = nextEntry;
+			*address = entry;
 		} while (FindNextFile(findHandle, &findData));
 		FindClose(findHandle);
+		while (firstEntry) {
+			DWORD attributes;
+			strcpy(path + length, firstEntry->name);
+			attributes = GetFileAttributes(path);
+			if (attributes != 0xFFFFFFFF) {
+				if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+					fxPushResult(context, firstEntry->name);
+					fxRunDirectory(context, path);
+					fxPopResult(context);
+				}
+				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
+					fxRunFile(context, path);
+			}
+			nextEntry = firstEntry->nextEntry;
+			free(firstEntry);
+			firstEntry = nextEntry;
+		}
 	}
 #else
     DIR* dir;
@@ -369,22 +400,43 @@ void fxRunDirectory(txContext* context, char* path)
 	length++;
 	if (dir) {
 		struct dirent *ent;
+		txEntry* entry;
+		txEntry* firstEntry = NULL;
+		txEntry* nextEntry;
+		txEntry** address;
 		while ((ent = readdir(dir))) {
-			struct stat a_stat;
 			if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
 				continue;
-			strcpy(path + length, ent->d_name);
+			entry = malloc(sizeof(txEntry) + strlen(ent->d_name));
+			if (!entry)
+				break;
+			strcpy(entry->name, ent->d_name);
+			address = &firstEntry;
+			while ((nextEntry = *address)) {
+				if (strcmp(entry->name, nextEntry->name) < 0)
+					break;
+				address = &nextEntry->nextEntry;
+			}
+			entry->nextEntry = nextEntry;
+			*address = entry;
+		}
+		closedir(dir);
+		while (firstEntry) {
+			struct stat a_stat;
+			strcpy(path + length, firstEntry->name);
 			if (stat(path, &a_stat) == 0) {
 				if (S_ISDIR(a_stat.st_mode)) {
-					fxPushResult(context, ent->d_name);
+					fxPushResult(context, firstEntry->name);
 					fxRunDirectory(context, path);
 					fxPopResult(context);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
 					fxRunFile(context, path);
 			}
+			nextEntry = firstEntry->nextEntry;
+			free(firstEntry);
+			firstEntry = nextEntry;
 		}
-		closedir(dir);
 	}
 #endif
 }
@@ -477,14 +529,17 @@ void fxRunFile(txContext* context, char* path)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (!strcmp((char*)node->data.scalar.value, "BigInt")
-			||	!strcmp((char*)node->data.scalar.value, "Promise.prototype.finally")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.asyncIterator")
-			||	!strcmp((char*)node->data.scalar.value, "async-iteration")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields")
+			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
+			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
+			||	!strcmp((char*)node->data.scalar.value, "Promise.prototype.finally")
+			||	!strcmp((char*)node->data.scalar.value, "async-iteration")
+			||	!strcmp((char*)node->data.scalar.value, "Symbol.asyncIterator")
 			||	!strcmp((char*)node->data.scalar.value, "object-rest")
 			||	!strcmp((char*)node->data.scalar.value, "object-spread")
-			||	!strcmp((char*)node->data.scalar.value, "optional-catch-binding")
 			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
+			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
+			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -676,14 +731,6 @@ int fxStringEndsWith(const char *string, const char *suffix)
 
 void fx_agent_broadcast(xsMachine* the)
 {
-	txAgent* agent = gxAgentCluster.firstAgent;
-    fxLockMutex(&(gxAgentCluster.countMutex));
-	while (agent) {
-		gxAgentCluster.count++;
-		agent = agent->next;
-	}
-    fxUnlockMutex(&(gxAgentCluster.countMutex));
-	
     fxLockMutex(&(gxAgentCluster.dataMutex));
 	gxAgentCluster.dataBuffer = xsGetHostData(xsArg(0));
 	if (mxArgc > 1)
@@ -789,6 +836,7 @@ void fx_agent_start(xsMachine* the)
 	else
 		gxAgentCluster.firstAgent = agent;
 	gxAgentCluster.lastAgent = agent;
+	gxAgentCluster.count++;
 	agent->scriptLength = scriptLength;
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #if mxWindows
@@ -876,6 +924,11 @@ void fx_agent_stop(xsMachine* the)
 	}
 	gxAgentCluster.firstAgent = C_NULL;
 	gxAgentCluster.lastAgent = C_NULL;
+	gxAgentCluster.count = 0;
+	gxAgentCluster.dataBuffer = C_NULL;
+	gxAgentCluster.dataValue = 0;
+	gxAgentCluster.firstReport = C_NULL;
+	gxAgentCluster.lastReport = C_NULL;
 }
 
 void fx_createRealm(xsMachine* the)

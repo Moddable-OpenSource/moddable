@@ -45,6 +45,7 @@ typedef struct {
 } txFunctionStream;
 
 static txString fxCombinePath(txParser* parser, txString theBase, txString theName);
+static txBoolean fxIsCIdentifier(txString string);
 static txString fxRealDirectoryPath(txParser* parser, txString path);
 static txString fxRealFilePath(txParser* parser, txString path);
 static void fxWriteExterns(txScript* script, FILE* file);
@@ -112,6 +113,28 @@ txString fxCombinePath(txParser* parser, txString base, txString name)
 		c_memcpy(path, base, baseLength);
 	c_memcpy(path + baseLength, name, nameLength + 1);
 	return fxRealFilePath(parser, path);
+}
+
+txBoolean fxIsCIdentifier(txString string)
+{
+	static char gxIdentifierSet[128] = {
+	  /* 0 1 2 3 4 5 6 7 8 9 A B C D E F */
+		 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 0x                    */
+		 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 1x                    */
+		 0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,	/* 2x   !"#$%&'()*+,-./  */
+		 1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,	/* 3x  0123456789:;<=>?  */
+		 0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 4x  @ABCDEFGHIJKLMNO  */
+		 1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,	/* 5X  PQRSTUVWXYZ[\]^_  */
+		 0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 6x  `abcdefghijklmno  */
+		 1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0 	/* 7X  pqrstuvwxyz{|}~   */
+	};
+	txU1 c;
+	while ((c = *((txU1*)string))) {
+		if ((c > 127) || (gxIdentifierSet[c] == 0))
+			return 0;
+		string++;
+	}
+	return 1;
 }
 
 txString fxRealDirectoryPath(txParser* parser, txString path)
@@ -215,7 +238,7 @@ void fxWriteIDs(txScript* script, FILE* file)
 	txID c, i;
 	mxDecode2(p, c);
 	for (i = 0; i < c; i++) {
-		if (fxIsIdentifier((txString)p))
+		if (fxIsCIdentifier((txString)p))
 			fprintf(file, "#define xsID_%s (the->code[%d])\n", p, i);
 		p += c_strlen((char*)p) + 1;
 	}

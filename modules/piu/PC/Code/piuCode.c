@@ -30,7 +30,7 @@ static const char *teSeparators = ".,:;-()\"\\/?<>{}[]+=-!@#%^&*~`|";
 
 static void PiuCodeBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuCodeCascade(void* it);
-static uint32_t PiuCodeClassifyCharacter(uint32_t character);
+static int32_t PiuCodeClassifyCharacter(int32_t character);
 static void PiuCodeComputeStyle(PiuCode* self);
 static void PiuCodeDictionary(xsMachine* the, void* it);
 static void PiuCodeDraw(void* it, PiuView* view, PiuRectangle area);
@@ -133,7 +133,7 @@ void PiuCodeCascade(void* it)
 	PiuContentReflow(self, piuSizeChanged);
 }
 
-uint32_t PiuCodeClassifyCharacter(uint32_t character)
+int32_t PiuCodeClassifyCharacter(int32_t character)
 {
 	const char *c;
 
@@ -344,19 +344,22 @@ int32_t PiuCodeFindWordBreak(PiuCode* self, int32_t result, int32_t direction)
 	else {
 		xsMachine* the = (*self)->the;
 		xsStringValue string = PiuToString((*self)->string);
-		uint32_t classification;
+		int32_t character;
+		int32_t classification;
 		if (direction > 0)
 			string += fxUnicodeToUTF8Offset(string, result);
 		else
 			string += fxUnicodeToUTF8Offset(string, result - 1);
-		classification = PiuCodeClassifyCharacter(fxUTF8Character(string, NULL));
-		while (PiuCodeClassifyCharacter(fxUTF8Character(string, NULL)) == classification) {
+		fxUTF8Decode(string, &character);
+		classification = PiuCodeClassifyCharacter(character);
+		do {
 			int32_t advance = fxUTF8Advance(string, 0, direction);
 			if (0 == advance)
 				break;
 			string += advance;
 			result += direction;
-		}
+			fxUTF8Decode(string, &character);
+		} while (PiuCodeClassifyCharacter(character) == classification);
 	}
 	return result;
 }
@@ -1081,10 +1084,12 @@ void PiuCode_isSpace(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
 	xsStringValue string = PiuToString((*self)->string);
+	xsIntegerValue character;
 	int32_t offset = xsToInteger(xsArg(0));
 	uint32_t classification;
 	string += fxUnicodeToUTF8Offset(string, offset);
-	classification = PiuCodeClassifyCharacter(fxUTF8Character(string, NULL));
+	fxUTF8Decode(string, &character);
+	classification = PiuCodeClassifyCharacter(character);
 	xsResult = xsBoolean(classification == teCharWhiteSpace);
 }
 
