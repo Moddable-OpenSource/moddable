@@ -1,47 +1,63 @@
 /*
- * NEEDS BOILERPLATE
- *     Copyright (C) 2016-2017 Moddable Tech, Inc.
- *     All rights reserved.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
- *     Portions Copyright (C) 2010-2015 Marvell International Ltd.
- *     Portions Copyright (C) 2002-2010 Kinoma, Inc.
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- *     Portions Copyright by Marvell International Ltd. and Kinoma, Inc. are 
- *     derived from KinomaJS/XS6 and used under the Apache 2.0 License.
+ * This file incorporates work covered by the following copyright and  
+ * permission notice:  
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
  */
 
 #include "xsAll.h"
 #include "stdio.h"
 
-#define XSDEBUG_NONE	0,0,0,0
-#define XSDEBUG_SERIAL	127,0,0,7
-
-#ifndef DEBUG_IP
-	#define DEBUG_IP XSDEBUG_SERIAL
-#endif
-
-unsigned char gXSBUG[4] = {DEBUG_IP};
+#include "xsgecko.h"
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void*)0x87654321)
 
-void ESP_putc(int c);
-int ESP_getc(void);
-uint8_t ESP_isReadable();
-
 void fxCreateMachinePlatform(txMachine* the)
 {
+	modMachineTaskInit(the);
 #ifdef mxDebug
-	the->connection = mxNoSocket;
+	the->connection = (txSocket)mxNoSocket;
 	the->debugOnReceive = true;
 #endif
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	modMachineTaskUninit(the);
 }
 
-#if 1
+#if 0
 void fx_putc(void *unused, char c) {
 	ESP_putc(c);
 }
@@ -52,7 +68,7 @@ void fx_putc(void *refcon, char c)
 
     if (the->inPrintf) {
         if (0 == c) {
-            if (kSerialConnection == the->connection) {
+            if ((txSocket)kSerialConnection == the->connection) {
                 // write xsbug log trailer
                 const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
                 const char *cp = xsbugTrailer;
@@ -71,7 +87,7 @@ void fx_putc(void *refcon, char c)
             return;
 
         the->inPrintf = true;
-        if (kSerialConnection == the->connection) {
+        if ((txSocket)kSerialConnection == the->connection) {
             // write xsbug log header
             static const char *xsbugHeader = "\r\n<?xs.87654321?>\r\n<xsbug><log>";
             const char *cp = xsbugHeader;
@@ -112,7 +128,7 @@ void fxConnect(txMachine* the)
 	extern unsigned char gXSBUG[4];
 
 	if (isSerialIP(gXSBUG)) {
-		the->connection = kSerialConnection;
+		the->connection = (txSocket)kSerialConnection;
 		return;
 	}
 
@@ -141,7 +157,7 @@ void fxDisconnect(txMachine* the)
 		ESP_putc('\r');
 		ESP_putc('\n');
 	}
-	the->connection = NULL;
+	the->connection = (txSocket)NULL;
 }
 
 txBoolean fxIsConnected(txMachine* the)
@@ -151,7 +167,7 @@ txBoolean fxIsConnected(txMachine* the)
 
 txBoolean fxIsReadable(txMachine* the)
 {
-	if (kSerialConnection == the->connection)
+	if ((txSocket)kSerialConnection == the->connection)
 		return (txBoolean)ESP_isReadable();
 
 	return 0;
@@ -161,9 +177,7 @@ void fxReceive(txMachine* the)
 {
 	the->debugOffset = 0;
 
-	if (kSerialConnection == the->connection) {
-		txU1 stop = 0, state = 0;
-
+	if ((txSocket)kSerialConnection == the->connection) {
 		while (the->debugOffset < (sizeof(the->debugBuffer) - 3)) {
 			int c = ESP_getc();
 			if (-1 == c) {
@@ -178,14 +192,12 @@ void fxReceive(txMachine* the)
 		}
 	}
 
-bail:
 	the->debugBuffer[the->debugOffset] = 0;
-
 }
 
 void fxSend(txMachine* the, txBoolean more)
 {
-	if (kSerialConnection == the->connection) {
+	if ((txSocket)kSerialConnection == the->connection) {
 		char *c = the->echoBuffer;
 		txInteger count = the->echoOffset;
 		if (!the->inPrintf) {
@@ -216,48 +228,42 @@ void fxSend(txMachine* the, txBoolean more)
 #endif /* mxDebug */
 
 
-void qsort(
-   void *base,
-   size_t num,
-   size_t width,
-   int (*compare )(const void *, const void *)
-)
+void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *))
 {
-	//@@
+	size_t i, j;
+	uint8_t temp[256];
+
+	if (width > sizeof(temp)) {
+		modLog("width too big");
+		return;
+	}
+
+	for (i = 0; i < num - 1; i++) {
+		size_t minIndex = i;
+
+		for (j = i + 1; j < num; j++) {
+			if (compare((j * width) + (char *)base, (minIndex * width) + (char *)base) < 0)
+				minIndex = j;
+		}
+		if (minIndex == i)
+			continue;
+
+		c_memcpy(temp, (i * width) + (char *)base, width);
+		c_memcpy((i * width) + (char *)base, (minIndex * width) + (char *)base, width);
+		c_memcpy((minIndex * width) + (char *)base, temp, width);
+	}
 }
 
-static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
-static int16_t gDaylightSavings = 60 * 60;          // summer time
 
-void modSetTime(uint32_t seconds)
-{
-	struct timeval tv;
-	struct timezone tz;
 
-	tv.tv_sec = seconds;
-	tv.tv_usec = 0;
+#define XSDEBUG_NONE	0,0,0,0
+#define XSDEBUG_SERIAL	127,0,0,7
 
-//  c_settimeofday(&tv, NULL);
-//          //// NEED TO IMPLEMENT SETTIMEOFDAY
-}
+#ifndef DEBUG_IP
+	#define DEBUG_IP XSDEBUG_SERIAL
+#endif
 
-void modSetTimeZone(int32_t timeZoneOffset)
-{
-	gTimeZoneOffset = timeZoneOffset;
-}
+unsigned char gXSBUG[4] = {DEBUG_IP};
 
-int32_t modGetTimeZone(void)
-{
-	return gTimeZoneOffset;
-}
 
-void modSetDaylightSavingsOffset(int32_t daylightSavings)
-{
-	gDaylightSavings = daylightSavings;
-}
-
-int32_t modGetDaylightSavingsOffset(void)
-{
-	return gDaylightSavings;
-}
 

@@ -88,7 +88,6 @@ static void ls_clear(ls013b4dn04 ls);
 
 static uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
 static void ls013b4dn04Send(PocoPixel *data, int count, void *refCon);
-static void ls013b4dn04Continue(void *refcon);
 static void ls013b4dn04End(void *refcon);
 static void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid);
 
@@ -135,7 +134,7 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 	uint16_t xMin = x;
 	uint16_t yMin = y;
 	uint16_t xMax = xMin + w;
-	uint16_t yMax = yMin + h;
+//	uint16_t yMax = yMin + h;
 
 	if ((0 != xMin) || (MODDEF_LS013B4DN04_WIDTH != xMax))
 		return 1;
@@ -269,7 +268,7 @@ static void ls_clear(ls013b4dn04 ls){
 }
 
 void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid){
-	ls013b4dn04 ls = refcon;
+//	ls013b4dn04 ls = refcon;
 	invalid->x = 0;
 	invalid->w = MODDEF_LS013B4DN04_WIDTH;
 }
