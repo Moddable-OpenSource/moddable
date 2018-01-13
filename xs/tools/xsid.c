@@ -153,7 +153,8 @@ int main(int argc, char* argv[])
 	buffer = c_malloc(size + 1);
 	if (!buffer)
 		fxReportError("not enough memory");
-	fread(buffer, 1, size, file);	
+	if (fread(buffer, 1, size, file) != size)
+		fxReportError("file not read");
 	buffer[size] = 0;
 	fclose(file);
 	file = NULL;

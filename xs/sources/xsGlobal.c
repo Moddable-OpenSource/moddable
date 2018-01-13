@@ -87,15 +87,6 @@ static const char ICACHE_RODATA_ATTR gxURIReservedAndUnescapedSet[128] = {
 	 1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0 	/* 7X  pqrstuvwxyz{|}~   */
 };
 
-static const txS1 * gxURIHexa = (txS1 * )"0123456789ABCDEF";
-
-#define mxURIXDigit(X) \
-	((('0' <= (X)) && ((X) <= '9')) \
-		? ((X) - '0') \
-		: ((('a' <= (X)) && ((X) <= 'f')) \
-			? (10 + (X) - 'a') \
-			: (10 + (X) - 'A')))
-
 static txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
 static txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 static txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
@@ -159,8 +150,11 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunctionGlobal(the, mxCallback(fx_encodeURI), 1, mxID(_encodeURI), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_encodeURIComponent), 1, mxID(_encodeURIComponent), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_escape), 1, mxID(_escape), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_eval), 1, mxID(_eval), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_unescape), 1, mxID(_unescape), XS_DONT_ENUM_FLAG);
+	
+	slot = fxNewHostFunctionGlobal(the, mxCallback(fx_eval), 1, mxID(_eval), XS_DONT_ENUM_FLAG);
+	mxEvalFunction.value.reference = slot;
+	mxEvalFunction.kind = XS_REFERENCE_KIND;
 
 	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_global), XS_NO_ID, XS_OWN);
 	slot->flag = XS_DONT_ENUM_FLAG;
@@ -513,7 +507,6 @@ void fx_decodeURI(txMachine* the)
 {
 	if (mxArgc < 1)
 		mxSyntaxError("no URI parameter");
-	fxToString(the, mxArgv(0));
 	fxDecodeURI(the, (txString)gxURIReservedSet);
 }
 
@@ -521,7 +514,6 @@ void fx_decodeURIComponent(txMachine* the)
 {
 	if (mxArgc < 1)
 		mxSyntaxError("no URI Component parameter");
-	fxToString(the, mxArgv(0));
 	fxDecodeURI(the, (txString)gxURIEmptySet);
 }
 
@@ -546,85 +538,57 @@ void fx_escape(txMachine* the)
 		 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 0x                    */
 		 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 1x                    */
 		 0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,	/* 2x   !"#$%&'()*+,-./  */
-		 1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,	/* 3x  0123456789:;<=>?  */
+		 1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,	/* 3x  0123456789:;<=>?  */
 		 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 4x  @ABCDEFGHIJKLMNO  */
 		 1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,	/* 5X  PQRSTUVWXYZ[\]^_  */
 		 0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 6x  `abcdefghijklmno  */
 		 1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0 	/* 7X  pqrstuvwxyz{|}~   */
 	};
-	txString string;
-	txU1 *src;
+	txString src;
 	txInteger length;
-	txU4 c;
-	const txUTF8Sequence *sequence;
-	txInteger size;
-	txString result;
-	txU1 *dst;
+	txInteger c;
+	txString dst;
 	
-	if (mxArgc < 1)
-		string = mxUndefinedString.value.string;
-	else {
-		string = fxToString(the, mxArgv(0));
+	if (mxArgc < 1) {
+		mxResult->value.string = mxUndefinedString.value.string;
+		mxResult->kind = mxUndefinedString.kind;
+		return;
 	}
-	src = (txU1*)string;
+	src = fxToString(the, mxArgv(0));
 	length = 0;
-	while ((c = c_read8(src++))) {
-		for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
-			if ((c & sequence->cmask) == sequence->cval)
-				break;
-		}
-		size = sequence->size - 1;
-		while (size > 0) {
-			size--;
-			c = (c << 6) | (c_read8(src++) & 0x3F);
-		}
-		c &= sequence->lmask;
+	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
 		if ((c < 128) && c_read8(gxSet + (int)c))
 			length += 1;
 		else if (c < 256)
 			length += 3;
-		else
+		else if (c < 0x10000)
 			length += 6;
+		else
+			length += 12;
 	}
-	length += 1;
-	if (length == (src - (txU1*)string)) {
-		mxResult->value.string = string;
-		mxResult->kind = XS_STRING_KIND;
+	if (length == (src - mxArgv(0)->value.string)) {
+		mxResult->value.string = mxArgv(0)->value.string;
+		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-	result = fxNewChunk(the, length);
-	src = (txU1*)string;
-	dst = (txU1*)result;
-	while ((c = c_read8(src++))) {
-		for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
-			if ((c & sequence->cmask) == sequence->cval)
-				break;
-		}
-		size = sequence->size - 1;
-		while (size > 0) {
-			size--;
-			c = (c << 6) | (c_read8(src++) & 0x3F);
-		}
-		c &= sequence->lmask;
+	mxResult->value.string = fxNewChunk(the, length + 1);
+	mxResult->kind = XS_STRING_KIND;
+	src = mxArgv(0)->value.string;
+	dst = mxResult->value.string;
+	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
 		if ((c < 128) && c_read8(gxSet + (int)c))
-			*dst++ = (txU1)c;
+			*dst++ = (char)c;
 		else if (c < 256) {
 			*dst++ = '%';
-			*dst++ = c_read8(gxURIHexa + (c >> 4));
-			*dst++ = c_read8(gxURIHexa + (c & 15));
+			dst = fxStringifyHexEscape(dst, c);
 		}
 		else {
-			*dst++ = '%';
-			*dst++ = 'u';
-			*dst++ = c_read8(gxURIHexa + (c >> 12));
-			*dst++ = c_read8(gxURIHexa + ((c >> 8) & 15));
-			*dst++ = c_read8(gxURIHexa + ((c >> 4) & 15));
-			*dst++ = c_read8(gxURIHexa + (c & 15));
+			*dst++ = '%'; 
+			*dst++ = 'u'; 
+			dst = fxStringifyUnicodeEscape(dst, c, '%');
 		}
 	}
 	*dst = 0;
-	mxResult->value.string = (char *)result;
-	mxResult->kind = XS_STRING_KIND;
 }
 
 void fx_eval(txMachine* the)
@@ -661,151 +625,91 @@ void fx_trace(txMachine* the)
 
 void fx_unescape(txMachine* the)
 {
-	txString string;
-	txU1 *src;
+	txString src;
 	txInteger length;
-	txU4 c, d;
-	txString result;
-	txU1 *dst;
+	char c;
+	txInteger d;
+	txString dst;
 
-	if (mxArgc < 1)
-		string = mxUndefinedString.value.string;
-	else {
-		string = fxToString(the, mxArgv(0));
+	if (mxArgc < 1) {
+		mxResult->value.string = mxUndefinedString.value.string;
+		mxResult->kind = mxUndefinedString.kind;
+		return;
 	}
-	src = (txU1*)string;
+	src = fxToString(the, mxArgv(0));
 	length = 0;
 	while ((c = c_read8(src++))) {
 		if (c == '%') {
 			c = c_read8(src++);
 			if (c == 'u') {
-				c = c_read8(src++);
-				if (c == 0)
-					mxURIError("invalid URI");
-				d = mxURIXDigit(c) << 12;
-				c = c_read8(src++);
-				if (c == 0)
-					mxURIError("invalid URI");
-				d += mxURIXDigit(c) << 8;
-				c = c_read8(src++);
+				if (fxParseUnicodeEscape(&src, &d, 0, '%'))
+					length += fxUTF8Length(d);
+				else
+					length += 2;
 			}
-			else 
-				d = 0;
-			if (c == 0)
-				mxURIError("invalid URI");
-			d += mxURIXDigit(c) << 4;
-			c = c_read8(src++);
-			if (c == 0)
-				mxURIError("invalid URI");
-			d += mxURIXDigit(c);
-			if (d < 0x80) {
-				length += 1;
-			}
-			else if (d < 0x800) {
-				length += 2;
-			}
-			else if (d < 0x10000) {
-				length += 3;
-			}
-			else if (d < 0x200000) {
-				length += 4;
+			else {
+				src--;
+				if (fxParseHexEscape(&src, &d))
+					length += fxUTF8Length(d);
+				else
+					length += 1;
 			}
 		}
 		else
 			length += 1;
 	}		
 	length += 1;
-	if (length == (src - (txU1*)string)) {
-		mxResult->value.string = string;
-		mxResult->kind = XS_STRING_KIND;
+	if (length == (src - mxArgv(0)->value.string)) {
+		mxResult->value.string = mxArgv(0)->value.string;
+		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-	result = fxNewChunk(the, length);
-	src = (txU1*)string;
-	dst = (txU1*)result;
+	mxResult->value.string = fxNewChunk(the, length);
+	mxResult->kind = XS_STRING_KIND;
+	src = mxArgv(0)->value.string;
+	dst = mxResult->value.string;
 	while ((c = c_read8(src++))) {
 		if (c == '%') {
 			c = c_read8(src++);
+			d = 0;
 			if (c == 'u') {
-				c = c_read8(src++);
-				d = mxURIXDigit(c) << 12;
-				c = c_read8(src++);
-				d += mxURIXDigit(c) << 8;
-				c = c_read8(src++);
+				if (fxParseUnicodeEscape(&src, &d, 0, '%'))
+					dst = fxUTF8Encode(dst, d);
+				else {
+					*dst++ = '%';
+					*dst++ = 'u';
+				}
 			}
-			else 
-				d = 0;
-			d += mxURIXDigit(c) << 4;
-			c = c_read8(src++);
-			d += mxURIXDigit(c);
-			if (d < 0x80) {
-				*dst++ = (txU1)d;
-			}
-			else if (d < 0x800) {
-				*dst++ = (txU1)(0xC0 | (d >> 6));
-				*dst++ = (txU1)(0x80 | (d & 0x3F));
-			}
-			else if (d < 0x10000) {
-				*dst++ = (txU1)(0xE0 | (d >> 12));
-				*dst++ = (txU1)(0x80 | ((d >> 6) & 0x3F));
-				*dst++ = (txU1)(0x80 | (d & 0x3F));
-			}
-			else if (d < 0x200000) {
-				*dst++ = (txU1)(0xF0 | (d >> 18));
-				*dst++ = (txU1)(0x80 | ((d >> 12) & 0x3F));
-				*dst++ = (txU1)(0x80 | ((d >> 6) & 0x3F));
-				*dst++ = (txU1)(0x80 | (d  & 0x3F));
+			else {
+				src--;
+				if (fxParseHexEscape(&src, &d))
+					dst = fxUTF8Encode(dst, d);
+				else
+					*dst++ = '%';
 			}
 		}
 		else
 			*dst++ = (txU1)c;
 	}
 	*dst = 0;
-	mxResult->value.string = (char *)result;
-	mxResult->kind = XS_STRING_KIND;
-}
-			
-static txU1 fxDecodeURIEscape(txMachine* the, txU1* string)
-{
-	txU1 result;
-	txU1 c = c_read8(string++);
-	if (('0' <= c) && (c <= '9'))
-		result = c - '0';
-	else if (('a' <= c) && (c <= 'f'))
-		result = 10 + c - 'a';
-	else if (('A' <= c) && (c <= 'F'))
-		result = 10 + c - 'A';
-	else
-		mxURIError("invalid URI");
-	c = c_read8(string);
-	if (('0' <= c) && (c <= '9'))
-		result = (result * 16) + (c - '0');
-	else if (('a' <= c) && (c <= 'f'))
-		result = (result * 16) + (10 + c - 'a');
-	else if (('A' <= c) && (c <= 'F'))
-		result = (result * 16) + (10 + c - 'A');
-	else
-		mxURIError("invalid URI");
-	return result;
 }
 
 void fxDecodeURI(txMachine* the, txString theSet)
 {
-	txU1* src;
-	txS4 length;
-	txU1 c, d;
+	txString src;
+	txInteger length;
+	txInteger c, d;
 	const txUTF8Sequence *sequence;
-	txS4 size;
-	txS1 *result;
-	txU1* dst;
+	txInteger size;
+	txString dst;
 	
-	src = (txU1*)mxArgv(0)->value.string;
+	src = fxToString(the, mxArgv(0));
 	length = 0;
 	while ((c = c_read8(src++))) {
 		if (c == '%') {
-			d = fxDecodeURIEscape(the, src);
-			src += 2;
-			if ((d < 128) && c_read8(theSet + (int)d))
+			if (!fxParseHexEscape(&src, &d))
+				mxURIError("invalid URI");
+			if ((d < 128) && c_read8(theSet + d))
 				length += 3;
 			else {
 				for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
@@ -815,106 +719,134 @@ void fxDecodeURI(txMachine* the, txString theSet)
 				if (!sequence->size)
 					mxURIError("invalid URI");
 				size = sequence->size - 1;
-				length++;
 				while (size > 0) {
 					c = c_read8(src++);
 					if (c != '%')
 						mxURIError("invalid URI");
-					d = fxDecodeURIEscape(the, src);
-					if ((d & 0xC0) != 0x80)
+					if (!fxParseHexEscape(&src, &c))
 						mxURIError("invalid URI");
-					src += 2;
+					if ((c & 0xC0) != 0x80)
+						mxURIError("invalid URI");
+					d = (d << 6) | (c & 0x3F);
 					size--;
-					length++;
 				}
+				d &= sequence->lmask;
+				length += fxUTF8Length(d);
 			}
 		}
 		else
 			length += 1;
 	}		
 	length += 1;
-
-	if (length == (src - (txU1*)mxArgv(0)->value.string)) {
+	if (length == (src - mxArgv(0)->value.string)) {
 		mxResult->value.string = mxArgv(0)->value.string;
 		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-
-	result = fxNewChunk(the, length);
-	
-	src = (txU1*)mxArgv(0)->value.string;
-	dst = (txU1*)result;
+	mxResult->value.string = fxNewChunk(the, length);
+	mxResult->kind = XS_STRING_KIND;
+	src = mxArgv(0)->value.string;
+	dst = mxResult->value.string;
 	while ((c = c_read8(src++))) {
 		if (c == '%') {
-			c = c_read8(src++);
-			d = mxURIXDigit(c) << 4;
-			c = c_read8(src++);
-			d += mxURIXDigit(c);
-			if ((d < 128) && c_read8(theSet + (int)d)) {
+			fxParseHexEscape(&src, &d);
+			if ((d < 128) && c_read8(theSet + d)) {
 				*dst++ = c_read8(src - 3);
 				*dst++ = c_read8(src - 2);
 				*dst++ = c_read8(src - 1);
 			}
-			else
-				*dst++ = d;
+			else {
+				for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
+					if ((d & sequence->cmask) == sequence->cval)
+						break;
+				}
+				size = sequence->size - 1;
+				while (size > 0) {
+					src++;
+					fxParseHexEscape(&src, &c);
+					d = (d << 6) | (c & 0x3F);
+					size--;
+				}
+				d &= sequence->lmask;
+				dst = fxUTF8Encode(dst, d);
+			}
 		}
 		else
 			*dst++ = c;
 	}
 	*dst = 0;
-	
-	mxResult->value.string = (char *)result;
-	mxResult->kind = XS_STRING_KIND;
 }
 
 void fxEncodeURI(txMachine* the, txString theSet)
 {
-	txU1* src;
-	txS4 size;
-	txU1 c;
-	txS1 *result;
-	txU1* dst;
+	txString src;
+	txInteger length;
+	txInteger c;
+	txString dst;
 
-	fxToString(the, mxArgv(0));
-
-	src = (txU1*)mxArgv(0)->value.string;
-	size = 0;
-	while ((c = c_read8(src++))) {
-		if ((c < 128) && c_read8(theSet + c))
-			size += 1;
-		else {
-			if (c == 0xED) { // ucs2 D800-DFFF utf8 EDA080-EDBFBF
-				txU4 d = (c_read8(src) << 8) | c_read8(src + 1);
-				if ((0xA080 <= d) && (d <= 0xBFBF))
-					mxURIError("invalid string");
-			}
-			size += 3;
+	src = fxToString(the, mxArgv(0));
+	length = 0;
+	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+		if (c < 0x80) {
+			if (c_read8(theSet + c))
+				length += 1;
+			else
+				length += 3;
 		}
+		else if (c < 0x800)
+			length += 6;
+		else if ((0xD800 <= c) && (c <= 0xDFFF))
+			mxURIError("invalid string");
+		else if (c < 0x10000)
+			length += 9;
+		else
+			length += 12;
 	}
-	size += 1;
-	if (size == (src - (txU1*)mxArgv(0)->value.string)) {
+	length += 1;
+	if (length == (src - mxArgv(0)->value.string)) {
 		mxResult->value.string = mxArgv(0)->value.string;
 		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-
-	result = fxNewChunk(the, size);
-
-	src = (txU1*)mxArgv(0)->value.string;
-	dst = (txU1*)result;
-	while ((c = c_read8(src++))) {
-		if ((c < 128) && c_read8(theSet + c))
-			*dst++ = c;
+	mxResult->value.string = fxNewChunk(the, length);
+	mxResult->kind = XS_STRING_KIND;
+	src = mxArgv(0)->value.string;
+	dst = mxResult->value.string;
+	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+		if (c < 0x80) {
+			if (c_read8(theSet + c))
+				*dst++ = (char)c;
+			else {
+				*dst++ = '%';
+				dst = fxStringifyHexEscape(dst, c);
+			}
+		}
+		else if (c < 0x800) {
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0xC0 | (c >> 6));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | (c & 0x3F));
+		}
+		else if (c < 0x10000) {
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0xE0 | (c >> 12));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | ((c >> 6) & 0x3F));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | (c & 0x3F));
+		}
 		else {
 			*dst++ = '%';
-			*dst++ = c_read8(gxURIHexa + (c >> 4));
-			*dst++ = c_read8(gxURIHexa + (c & 15));
+			dst = fxStringifyHexEscape(dst, 0xF0 | (c >> 18));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | ((c >> 12) & 0x3F));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | ((c >> 6) & 0x3F));
+			*dst++ = '%';
+			dst = fxStringifyHexEscape(dst, 0x80 | (c & 0x3F));
 		}
 	}
 	*dst = 0;
-
-	mxResult->value.string = (char *)result;
-	mxResult->kind = XS_STRING_KIND;
 }
 
 

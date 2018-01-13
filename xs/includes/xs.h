@@ -1342,10 +1342,12 @@ mxImport void fxAccess(xsMachine*, xsSlot*);
 mxImport void fxDecodeURI(xsMachine*, xsStringValue);
 mxImport void fxEncodeURI(xsMachine*, xsStringValue);
 
+mxImport xsStringValue fxUTF8Decode(xsStringValue string, xsIntegerValue* character);
+mxImport xsStringValue fxUTF8Encode(xsStringValue string, xsIntegerValue character);
+mxImport xsIntegerValue fxUTF8Length(xsIntegerValue character);
+mxImport xsIntegerValue fxUTF8ToUnicodeOffset(xsStringValue theString, xsIntegerValue theOffset);
 mxImport xsIntegerValue fxUnicodeLength(xsStringValue theString);
 mxImport xsIntegerValue fxUnicodeToUTF8Offset(xsStringValue theString, xsIntegerValue theOffset);
-mxImport xsIntegerValue fxUTF8ToUnicodeOffset(xsStringValue theString, xsIntegerValue theOffset);
-mxImport xsUnsignedValue fxUTF8Character(xsStringValue theString, xsIntegerValue* theSize);
 
 mxImport xsStringValue fxIntegerToString(xsMachine*, xsIntegerValue, xsStringValue, xsIntegerValue);
 mxImport xsStringValue fxNumberToString(xsMachine*, xsNumberValue, xsStringValue, xsIntegerValue, char theMode, xsIntegerValue thePrecision);
