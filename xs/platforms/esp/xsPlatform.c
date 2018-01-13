@@ -462,7 +462,7 @@ void fxReceiveLoop(void)
 				current = NULL;
 				value = 0;
 			}
-			if (c == piBegin[state])
+			if (c == c_read8(piBegin + state))
 				state++;
 			else
 				state = 0;
@@ -502,7 +502,7 @@ void fxReceiveLoop(void)
 			txBoolean enqueue;
 			buffered[bufferedBytes++] = c;
 			enqueue = bufferedBytes == sizeof(buffered);
-			if (c == tagEnd[state - 17]) {
+			if (c == c_read8(tagEnd + state - 17)) {
 				if (state == 19) {
 					state = 0;
 					enqueue = true;
