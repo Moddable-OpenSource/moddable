@@ -1,10 +1,24 @@
 /*
- * NEEDS BOILERPLATE
- *     Copyright (C) 2016-2017 Moddable Tech, Inc.
- *     All rights reserved.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
-#include "xsesp.h"
+#include "xsgecko.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -83,7 +97,7 @@ static uint16_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes);
 static uint16_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes);
 
 static modSPIConfiguration gConfig;
-static uint16_t *gCLUT16;		//@@ unused
+//static uint16_t *gCLUT16;		//@@ unused
 
 // SPI_BUFFER_SIZE can be larger than 64... tested up to 512
 //#define SPI_BUFFER_SIZE (64)
@@ -97,7 +111,7 @@ USART_InitSync_TypeDef spiInit;
  = {
 	usartEnable,	/* Enable RX/TX when init completed. */
 	0, // 48000000,		/* 48MHz clock (0 for current configd reference clock). */
-	48000000,		/* 1000000,           /* 1 Mbits/s. */
+	48000000,		/* was 1000000,           1 Mbits/s. */
 	usartDatabits8, /* 8 databits. */
 	true,			/* Master mode. */
 	true,			/* Send most significant bit first. */
@@ -355,7 +369,7 @@ static uint8_t *spiTxBuffer;
 static volatile uint16_t spiTxBufferDataSize = 0;
 
 void modSPIStartSend(uint16_t dataSize) {
-	spiTxBuffer = gSPITransactionBuffer;
+	spiTxBuffer = (uint8_t*)gSPITransactionBuffer;
 	spiTxBufferDataSize = dataSize;
 	USART_IntClear(SPI_USART, _USART_IF_MASK);
 	NVIC_ClearPendingIRQ(SPI_TX_IRQ);
@@ -395,7 +409,7 @@ void USART2_TX_IRQHandler(void)
 
 static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t count, modSPIBufferLoader loader)
 {
-	uint16_t i, loaded, bitsLoaded;
+	uint16_t loaded;
 
 	modSPIActivateConfiguration(config);
 
@@ -434,6 +448,6 @@ void modSPITxCLUT16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t co
 {
 //	gCLUT16 = colors;
 //	modSPITxCommon(config, data, count, modSpiLoadBufferGray16To16BE);
-	printf("need to implement CLUT16to16BE\n");
+	modLog_transmit("need to implement CLUT16to16BE\n");
 }
 
