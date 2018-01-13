@@ -113,7 +113,7 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_split), 2, mxID(_split), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_startsWith), 1, mxID(_startsWith), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_substr), 1, mxID(_substr), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_substr), 2, mxID(_substr), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_substring), 2, mxID(_substring), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toLowerCase), 0, mxID(_toLocaleLowerCase), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
@@ -325,66 +325,58 @@ void fx_String_fromArrayBuffer(txMachine* the)
 
 void fx_String_fromCharCode(txMachine* the)
 {
-	txInteger aLength;
-	txInteger aCount;
-	txInteger anIndex;
-	txU4 c; 
-	txU1* p;
-	
-	aLength = 0;
-	aCount = mxArgc;
-	for (anIndex = 0; anIndex < aCount; anIndex++) {
-		c = fxToUnsigned(the, mxArgv(anIndex));
-		if (c == 0)
-			c = 0x00110000;
-		else if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && ((anIndex + 1) < aCount)) {
-			txU4 d = fxToUnsigned(the, mxArgv(anIndex + 1));
-			if ((0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
-				c = 0x00010000 + ((c & 0x000003FF) << 10) + (d & 0x000003FF);
-				anIndex++;
-			}
+	txInteger length = 0;
+	txInteger count = mxArgc;
+	txInteger index = 0;
+	txInteger c, d; 
+	txString p;
+	while (index < count) {
+		txNumber number = fxToNumber(the, mxArgv(index));
+		switch (c_fpclassify(number)) {
+		case C_FP_INFINITE:
+		case C_FP_NAN:
+		case C_FP_ZERO:
+			mxArgv(index)->value.integer = 0;
+			break;
+		default:
+			#define MODULO 65536.0
+			number = c_fmod(c_trunc(number), MODULO);
+			if (number < 0)
+				number += MODULO;
+			mxArgv(index)->value.integer = (txInteger)number;
+			break;
 		}
-		if (c < 0x80)
-			aLength++;
-		else if (c < 0x800)
-			aLength += 2;
-		else if (c < 0x10000)
-			aLength += 3;
-		else
-			aLength += 4;
+		mxArgv(index)->kind = XS_INTEGER_KIND;
+		index++;
 	}
-	mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
-	mxResult->kind = XS_STRING_KIND;
-	p = (txU1*)mxResult->value.string;
-	for (anIndex = 0; anIndex < aCount; anIndex++) {
-		c = fxToUnsigned(the, mxArgv(anIndex));
-		if (c == 0)
-			c = 0x00110000;
-		else if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && ((anIndex + 1) < aCount)) {
-			txU4 d = fxToUnsigned(the, mxArgv(anIndex + 1));
-			if ((0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
+	index = 0;
+	while (index < count) {
+		c = mxArgv(index)->value.integer;
+		index++;
+		if (index < count) {
+			d = mxArgv(index)->value.integer;
+			if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && (0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
 				c = 0x00010000 + ((c & 0x000003FF) << 10) + (d & 0x000003FF);
-				anIndex++;
+				index++;
 			}
-		}
-		if (c < 0x80) {
-			*p++ = (txU1)c;
-		}
-		else if (c < 0x800) {
-			*p++ = (txU1)(0xC0 | (c >> 6));
-			*p++ = (txU1)(0x80 | (c & 0x3F));
-		}
-		else if (c < 0x10000) {
-			*p++ = (txU1)(0xE0 | (c >> 12));
-			*p++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-			*p++ = (txU1)(0x80 | (c & 0x3F));
-		}
-		else if (c < 0x200000) {
-			*p++ = (txU1)(0xF0 | (c >> 18));
-			*p++ = (txU1)(0x80 | ((c >> 12) & 0x3F));
-			*p++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-			*p++ = (txU1)(0x80 | (c  & 0x3F));
-		}
+		}	
+		length += fxUTF8Length(c);
+	}		
+	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
+	mxResult->kind = XS_STRING_KIND;
+	p = mxResult->value.string;
+	index = 0;
+	while (index < count) {
+		c = mxArgv(index)->value.integer;
+		index++;
+		if (index < count) {
+			d = mxArgv(index)->value.integer;
+			if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && (0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
+				c = 0x00010000 + ((c & 0x000003FF) << 10) + (d & 0x000003FF);
+				index++;
+			}
+		}	
+		p = fxUTF8Encode(p, c);
 	}	
 	*p = 0;
 }
@@ -394,8 +386,8 @@ void fx_String_fromCodePoint(txMachine* the)
 	txInteger length = 0;
 	txInteger count = mxArgc;
 	txInteger index = 0;
-	txU4 c; 
-	txU1* p;
+	txInteger c; 
+	txString p;
 	while (index < count) {
 		txNumber number = fxToNumber(the, mxArgv(index));
 		txNumber check = c_trunc(number);
@@ -403,45 +395,18 @@ void fx_String_fromCodePoint(txMachine* the)
 			mxRangeError("invalid code point %lf", number);
 		if ((number < 0) || (0x10FFFF < number))
 			mxRangeError("invalid code point %lf", number);
-		c = (txU4)number;
-		if (c == 0)
-			c = 0x00110000;
-		if (c < 0x80)
-			length++;
-		else if (c < 0x800)
-			length += 2;
-		else if (c < 0x10000)
-			length += 3;
-		else
-			length += 4;
+		c = mxArgv(index)->value.integer = (txInteger)number;
+		mxArgv(index)->kind = XS_INTEGER_KIND;
+		length += fxUTF8Length(c);
 		index++;
 	}
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 	mxResult->kind = XS_STRING_KIND;
-	p = (txU1*)mxResult->value.string;
+	p = mxResult->value.string;
 	index = 0;
 	while (index < count) {
-		c = fxToUnsigned(the, mxArgv(index));
-		if (c == 0)
-			c = 0x00110000;
-		if (c < 0x80) {
-			*p++ = (txU1)c;
-		}
-		else if (c < 0x800) {
-			*p++ = (txU1)(0xC0 | (c >> 6));
-			*p++ = (txU1)(0x80 | (c & 0x3F));
-		}
-		else if (c < 0x10000) {
-			*p++ = (txU1)(0xE0 | (c >> 12));
-			*p++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-			*p++ = (txU1)(0x80 | (c & 0x3F));
-		}
-		else if (c < 0x200000) {
-			*p++ = (txU1)(0xF0 | (c >> 18));
-			*p++ = (txU1)(0x80 | ((c >> 12) & 0x3F));
-			*p++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-			*p++ = (txU1)(0x80 | (c  & 0x3F));
-		}
+		c = mxArgv(index)->value.integer;
+		p = fxUTF8Encode(p, c);
 		index++;
 	}	
 	*p = 0;
@@ -562,9 +527,7 @@ void fx_String_prototype_charCodeAt(txMachine* the)
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
 		aLength = fxUnicodeToUTF8Offset(aString + anOffset, 1);
 		if ((anOffset >= 0) && (aLength > 0)) {
-			mxResult->value.integer = fxUnicodeCharacter(aString + anOffset);
-			if (mxResult->value.integer == 0x110000)
-				mxResult->value.integer = 0;
+			fxUTF8Decode(aString + anOffset, &mxResult->value.integer);
 			mxResult->kind = XS_INTEGER_KIND;
 		}
 		else {
@@ -589,9 +552,7 @@ void fx_String_prototype_codePointAt(txMachine* the)
 		txInteger offset = fxUnicodeToUTF8Offset(string, (txInteger)at);
 		length = fxUnicodeToUTF8Offset(string + offset, 1);
 		if ((offset >= 0) && (length > 0)) {
-			mxResult->value.integer = fxUnicodeCharacter(string + offset);
-			if (mxResult->value.integer == 0x110000)
-				mxResult->value.integer = 0;
+			fxUTF8Decode(string + offset, &mxResult->value.integer);
 			mxResult->kind = XS_INTEGER_KIND;
 		}
 	}
@@ -1294,11 +1255,16 @@ void fx_String_prototype_startsWith(txMachine* the)
 void fx_String_prototype_substr(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
-	txInteger length = c_strlen(string);
 	txInteger size = fxUnicodeLength(string);
 	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, size);
-	txInteger stop = (mxArgc > 1) ? start + fxToInteger(the, mxArgv(1)) : size;
+	txInteger stop = size;
+	if ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) {
+		stop = start + fxToInteger(the, mxArgv(1));
+		if (stop > size)
+			stop = size;
+	}	
 	if (start < stop) {
+		txInteger length;
 		start = fxUnicodeToUTF8Offset(string, start);
 		stop = fxUnicodeToUTF8Offset(string, stop);
 		length = stop - start;
@@ -1361,16 +1327,14 @@ void fx_String_prototype_substring(txMachine* the)
 
 void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 {
-	txString string;
-	txInteger stringLength;
-	txString result;
-	string = fxCoerceToString(the, mxThis);
-	stringLength = c_strlen(string);
+	txString string = fxCoerceToString(the, mxThis);
+	txInteger stringLength = c_strlen(string);
 	if (stringLength) {
 	#if mxWindows
 		txInteger unicodeLength;
 		txU2* unicodeBuffer = NULL;
 		txInteger resultLength;
+		txString result;
 		mxTry(the) {
 			unicodeLength = MultiByteToWideChar(CP_UTF8, 0, string, stringLength, NULL, 0);
 			if (unicodeLength == 0) fxJump(the);
@@ -1386,6 +1350,8 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 			WideCharToMultiByte(CP_UTF8, 0, unicodeBuffer, unicodeLength, result, resultLength, NULL, NULL);
 			result[resultLength] = 0;
 			c_free(unicodeBuffer);
+			mxResult->value.string = result;
+			mxResult->kind = XS_STRING_KIND;
 		}
 		mxCatch(the) {
 			if (unicodeBuffer)
@@ -1395,8 +1361,9 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 	#elif (mxMacOSX || mxiOS)
 		CFStringRef cfString = NULL;
 		CFMutableStringRef mutableCFString = NULL;
-		CFIndex resultLength;
 		CFRange range;
+		CFIndex resultLength;
+		txString result;
 		mxTry(the) {
 			cfString = CFStringCreateWithBytes(kCFAllocatorDefault, (const UInt8 *)string, stringLength, kCFStringEncodingUTF8, false);
 			if (cfString == NULL) fxJump(the);
@@ -1413,6 +1380,8 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 			result[resultLength] = 0;
 			CFRelease(mutableCFString);
 			CFRelease(cfString);
+			mxResult->value.string = result;
+			mxResult->kind = XS_STRING_KIND;
 		}
 		mxCatch(the) {
 			if (mutableCFString)
@@ -1422,26 +1391,15 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 			fxJump(the);
 		}
 	#else
-		txU1 *s, *r;
+		txString s, r;
 		txInteger c;
-		const txUTF8Sequence *aSequence;
-		txInteger aSize;
 		const txCharCase* current;
 		const txCharCase* limit = flag ? &gxCharCaseToUpper[mxCharCaseToUpperCount] : &gxCharCaseToLower[mxCharCaseToLowerCount];
-		result = fxNewChunk(the, stringLength + 1);
-		s = (txU1*)string;
-		r = (txU1*)result;
-		while ((c = c_read8(s++))) {
-			for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-				if ((c & aSequence->cmask) == aSequence->cval)
-					break;
-			}
-			aSize = aSequence->size - 1;
-			while (aSize > 0) {
-				aSize--;
-				c = (c << 6) | (c_read8(s++) & 0x3F);
-			}
-			c &= aSequence->lmask;
+		mxResult->value.string = fxNewChunk(the, stringLength + 1);
+		mxResult->kind = XS_STRING_KIND;
+		s = mxThis->value.string;
+		r = mxResult->value.string;
+		while (((s = fxUTF8Decode(s, &c))) && (c != C_EOF)) {
 			current = flag ? gxCharCaseToUpper : gxCharCaseToLower;
 			while (current < limit) {
 				if (c < current->from)
@@ -1457,32 +1415,15 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 				}
 				current++;
 			}
-			if (c < 0x80) {
-				*r++ = (txU1)c;
-			}
-			else if (c < 0x800) {
-				*r++ = (txU1)(0xC0 | (c >> 6));
-				*r++ = (txU1)(0x80 | (c & 0x3F));
-			}
-			else if (c < 0x10000) {
-				*r++ = (txU1)(0xE0 | (c >> 12));
-				*r++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-				*r++ = (txU1)(0x80 | (c & 0x3F));
-			}
-			else if (c < 0x200000) {
-				*r++ = (txU1)(0xF0 | (c >> 18));
-				*r++ = (txU1)(0x80 | ((c >> 12) & 0x3F));
-				*r++ = (txU1)(0x80 | ((c >> 6) & 0x3F));
-				*r++ = (txU1)(0x80 | (c  & 0x3F));
-			}
+			r = fxUTF8Encode(r, c);
 		}
 		*r = 0;
 	#endif
 	}
-	else
-		result = mxEmptyString.value.string;
-	mxResult->value.string = result;
-	mxResult->kind = XS_STRING_KIND;
+	else {
+		mxResult->value.string = mxEmptyString.value.string;
+		mxResult->kind = mxEmptyString.kind;
+	}
 }
 
 void fx_String_prototype_toLowerCase(txMachine* the)

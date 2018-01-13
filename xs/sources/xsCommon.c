@@ -37,8 +37,6 @@
 
 #include "xsCommon.h"
 
-static txBoolean fxIsSpace(txU4 c);
-
 const txString gxCodeNames[XS_CODE_COUNT] = {
 	"",
 	/* XS_CODE_ADD */ "add",
@@ -105,6 +103,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_ENVIRONMENT */ "environment",
 	/* XS_CODE_EQUAL */ "equal",
 	/* XS_CODE_EVAL */ "eval",
+	/* XS_CODE_EVAL_INTRINSIC */ "eval_intrinsic",
 	/* XS_CODE_EVAL_REFERENCE */ "eval_reference",
 	/* XS_CODE_EVAL_VARIABLE */ "eval_variable",
 	/* XS_CODE_EXCEPTION */ "exception",
@@ -299,6 +298,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_ENVIRONMENT */,
 	1 /* XS_CODE_EQUAL */,
 	1 /* XS_CODE_EVAL */,
+	1 /* XS_CODE_EVAL_INTRINSIC */,
 	0 /* XS_CODE_EVAL_REFERENCE */,
 	0 /* XS_CODE_EVAL_VARIABLE */,
 	1 /* XS_CODE_EXCEPTION */,
@@ -427,6 +427,20 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_YIELD */
 };
 
+void fxDeleteScript(txScript* script)
+{
+	if (script) {
+		if (script->symbolsBuffer)
+			c_free(script->symbolsBuffer);
+		if (script->hostsBuffer)
+			c_free(script->hostsBuffer);
+		if (script->codeBuffer)
+			c_free(script->codeBuffer);
+		c_free(script);
+	}
+}
+
+
 const txUTF8Sequence gxUTF8Sequences[] ICACHE_RODATA_ATTR = {
 	{1, 0x80, 0x00, 0*6, 0x0000007F, 0x00000000},
 	{2, 0xE0, 0xC0, 1*6, 0x000007FF, 0x00000080},
@@ -467,32 +481,9 @@ const txCharCase gxCharCaseToUpper[mxCharCaseToUpperCount] ICACHE_XS6RO_ATTR = {
 	{0x1F90,0x1F97,8},{0x1FA0,0x1FA7,8},{0x1FB0,0x1FB1,8},{0x1FD0,0x1FD1,8},{0x1FE0,0x1FE1,8},{0x24D0,0x24E9,-26},{0xFF41,0xFF5A,-32}
 };
 
-void fxDeleteScript(txScript* script)
-{
-	if (script) {
-		if (script->symbolsBuffer)
-			c_free(script->symbolsBuffer);
-		if (script->hostsBuffer)
-			c_free(script->hostsBuffer);
-		if (script->codeBuffer)
-			c_free(script->codeBuffer);
-		c_free(script);
-	}
-}
-
-txBoolean fxIsIdentifier(txString string)
-{
-	txString p = string;
-	char c = *p++;
-	if (!fxIsIdentifierFirst(c))
-		return 0;
-	while ((c = *p++)) {
-		if (!fxIsIdentifierNext(c))
-			return 0;
-	}
-	return 1;
-}
-
+static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";
+static const char gxHexUpper[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
+static txBoolean fxParseHex(txU1 c, txU4* value);
 
 txBoolean fxIsIdentifierFirst(txU4 c)
 {
@@ -534,10 +525,10 @@ txBoolean fxIsIdentifierFirst(txU4 c)
 	const txU2* q = p + mxIdentifierFirstCount;
 	txU4 s = 0;
 	while (p < q) {
-		s += *p++;
+		s += c_read16(p++);
 		if (c < s)
 			return 0;
-		s += *p++;
+		s += c_read16(p++);
 		if (c <= s)
 			return 1;
 	}
@@ -602,47 +593,17 @@ txBoolean fxIsIdentifierNext(txU4 c)
 	const txU2* q = p + mxIdentifierNextCount;
 	txU4 s = 0;
 	while (p < q) {
-		s += *p++;
+		s += c_read16(p++);
 		if (c < s)
 			return 0;
-		s += *p++;
+		s += c_read16(p++);
 		if (c <= s)
 			return 1;
 	}
 	return 0;
 }
 
-txU1* fsX2UTF8(txU4 c, txU1* p, txU4 theSize)
-{
-	txU4 i;
-	const txUTF8Sequence *aSequence;
-	txS4 aShift;
-	
-	if (c == 0)
-		c = 0x110000;
-	i = 0;
-	for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++)
-		if (c <= aSequence->lmask)
-			break;
-	if (aSequence->size == 0)
-		return p;
-	i += aSequence->size;
-	if (i < theSize) {
-		aShift = aSequence->shift;
-		*p++ = (unsigned char)(aSequence->cval | (c >> aShift));
-		while (aShift > 0) {
-			aShift -= 6;
-			*p++ = (unsigned char)(0x80 | ((c >> aShift) & 0x3F));
-		}
-	}
-	else {
-		*p = 0;
-		p += theSize;
-	}
-	return p;
-}
-
-txBoolean fxIsSpace(txU4 c)
+txBoolean fxIsSpace(txInteger character)
 {
 	static const txU4 spaces[27] ICACHE_RODATA_ATTR = {
 		0x00000009,
@@ -674,6 +635,7 @@ txBoolean fxIsSpace(txU4 c)
 		0x00000000,
 	};
 	const txU4 *p = spaces;
+	txU4 c = (txU4)character;
 	txU4 s;
 	while ((s = *p++)) {
 		if (c < s)
@@ -684,30 +646,138 @@ txBoolean fxIsSpace(txU4 c)
 	return 0;
 }
 
-txString fxSkipSpaces(txString string) 
+txBoolean fxParseHex(txU1 c, txU4* value)
 {
-	const txUTF8Sequence *sequence;
-	txU1* p = (txU1*)string;
-	txU1* q = p;
-	txU4 c;
-	txS4 size;
-	while ((c = c_read8(q))) {
-		q++;
-		for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
-			if ((c & sequence->cmask) == sequence->cval)
+	if (('0' <= c) && (c <= '9'))
+		*value = (*value * 16) + (c - '0');
+	else if (('a' <= c) && (c <= 'f'))
+		*value = (*value * 16) + (10 + c - 'a');
+	else if (('A' <= c) && (c <= 'F'))
+		*value = (*value * 16) + (10 + c - 'A');
+	else
+		return 0;
+	return 1;
+}
+
+txBoolean fxParseHexEscape(txString* string, txInteger* character)
+{
+	txU1* p = *((txU1**)string);
+	txU4 value = 0;
+	txU1 i, c;
+	for (i = 0; i < 2; i++) {
+		c = c_read8(p);
+		if (!fxParseHex(c, &value))
+			return 0;
+		p++;
+	}
+	*character = (txInteger)value;
+	*string = (txString)p;
+	return 1;
+}
+
+txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger braces, txInteger separator)
+{
+	txU1* p = *((txU1**)string);
+	txU4 value = 0;
+	txU1 c;
+	txInteger i;
+	
+	c = c_read8(p++);
+	if (braces && (c == '{')) {
+		c = c_read8(p++);
+		for (i = 0; value < 0x00110000; i++) {
+			if (fxParseHex(c, &value)) {
+				c = c_read8(p++);
+			}
+			else
 				break;
 		}
-		size = sequence->size - 1;
-		while (size > 0) {
-			size--;
-			c = (c << 6) | (c_read8(q) & 0x3F);
-			q++;
+		if ((c == '}') && (i > 0) && (value < 0x00110000)) {
+			*character = (txInteger)value;
+			*string = (txString)p;
+			return 1;
 		}
-		c &= sequence->lmask;
+		return 0;
+	}
+	if (!fxParseHex(c, &value)) return 0;
+	c = c_read8(p++);
+	if (!fxParseHex(c, &value)) return 0;
+	c = c_read8(p++);
+	if (!fxParseHex(c, &value)) return 0;
+	c = c_read8(p++);
+	if (!fxParseHex(c, &value)) return 0;
+	*character = (txInteger)value;
+	*string = (txString)p;
+	c = c_read8(p++);
+	if (c && (c == separator) && (0x0000D800 <= value) && (value <= 0x0000DBFF)) {
+		c = c_read8(p++);
+		if (c == 'u') {
+			txU4 surrogate = 0;
+			c = c_read8(p++);
+			if (!fxParseHex(c, &surrogate)) return 1;
+			c = c_read8(p++);
+			if (!fxParseHex(c, &surrogate)) return 1;
+			c = c_read8(p++);
+			if (!fxParseHex(c, &surrogate)) return 1;
+			c = c_read8(p++);
+			if (!fxParseHex(c, &surrogate)) return 1;
+			if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF))
+				value = 0x00010000 + ((value & 0x03FF) << 10) + (surrogate & 0x03FF);
+			else
+				return 1;
+			*character = (txInteger)value;
+			*string = (txString)p;
+		}
+	}
+	return 1;
+}
+
+txString fxSkipSpaces(txString string) 
+{
+	txString p = string;
+	txString q = p;
+	txInteger c;
+	while (((q = fxUTF8Decode(q, &c))) && (c != C_EOF)) {
 		if (fxIsSpace(c))
-			 p = q;
+			p = q;
 		else
 			break;
+	}
+	return p;
+}
+
+txString fxStringifyHexEscape(txString string, txInteger character)
+{
+	const char* digits = gxHexUpper;
+	txU1* p = (txU1*)string;
+	*p++ = c_read8(digits + ((character & 0x000000F0) >> 4));
+	*p++ = c_read8(digits + (character & 0x0000000F));
+	return (txString)p;
+}
+
+txString fxStringifyUnicodeEscape(txString string, txInteger character, txInteger separator)
+{
+	const char* digits = (separator == '%') ? gxHexUpper : gxHexLower;
+	txU1* p = (txU1*)string;
+	txInteger surrogate;
+	if (character > 0xFFFF) {
+		character -= 0x10000;
+		surrogate = 0xDC00 | (character & 0x3FF);
+		character = 0xD800 | (character >> 10);
+	}
+	else
+		surrogate = 0;
+	*p++ = c_read8(digits + ((character & 0x0000F000) >> 12));
+	*p++ = c_read8(digits + ((character & 0x00000F00) >> 8));
+	*p++ = c_read8(digits + ((character & 0x000000F0) >> 4));
+	*p++ = c_read8(digits + (character & 0x0000000F));
+	if (surrogate) {
+		*p++ = separator;
+		*p++ = 'u';
+		*p++ = c_read8(digits + ((surrogate & 0x0000F000) >> 12));
+		*p++ = c_read8(digits + ((surrogate & 0x00000F00) >> 8));
+		*p++ = c_read8(digits + ((surrogate & 0x000000F0) >> 4));
+		*p++ = c_read8(digits + (surrogate & 0x0000000F));
 	}
 	return (txString)p;
 }
@@ -743,24 +813,105 @@ txU4 fxUTF8Character(txString theString, txS4* theSize)
 	return c;
 }
 
-txInteger fxUnicodeCharacter(txString theString)
+txString fxUTF8Decode(txString string, txInteger* character)
 {
-	txU1* aString = (txU1*)theString;
-	txU4 aResult = c_read8(aString++);
-	const txUTF8Sequence *aSequence;
-	txInteger aSize;
+	txU1* p = (txU1*)string;
+	txU4 c = c_read8(p++);
+	if (c) {
+		if (c & 0x80) {
+			const txUTF8Sequence *sequence;
+			txS4 size;
+			for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
+				if ((c & sequence->cmask) == sequence->cval)
+					break;
+			}
+			size = sequence->size - 1;
+			while (size > 0) {
+				size--;
+				c = (c << 6) | (c_read8(p++) & 0x3F);
+			}
+			c &= sequence->lmask;
+			if (c == 0x110000)
+				c = 0;
+		}
+		*character = (txInteger)c;
+		return (txString)p;
+	}
+	*character = C_EOF;
+	return (txString)p;
+}
 
-	for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-		if ((aResult & aSequence->cmask) == aSequence->cval)
-			break;
+txString fxUTF8Encode(txString string, txInteger character)
+{
+	txU1* p = (txU1*)string;
+	if (character < 0) {
 	}
-	aSize = aSequence->size - 1;
-	while (aSize > 0) {
-		aSize--;
-		aResult = (aResult << 6) | (c_read8(aString++) & 0x3F);
+	else if (character == 0) {
+		*p++ = 0xF4;
+		*p++ = 0x90;
+		*p++ = 0x80;
+		*p++ = 0x80;
 	}
-	aResult &= aSequence->lmask;
-	return (txInteger)aResult;
+	else if (character < 0x80) {
+		*p++ = (txU1)character;
+	}
+	else if (character < 0x800) {
+		*p++ = (txU1)(0xC0 | (((txU4)character) >> 6));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+	}
+	else if (character < 0x10000) {
+		*p++ = (txU1)(0xE0 | (((txU4)character) >> 12));
+		*p++ = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+	}
+	else if (character < 0x110000) {
+		*p++ = (txU1)(0xF0 | (((txU4)character) >> 18));
+		*p++ = (txU1)(0x80 | ((((txU4)character) >> 12) & 0x3F));
+		*p++ = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+	}
+	return (txString)p;
+}
+
+txInteger fxUTF8Length(txInteger character)
+{
+	txInteger length;
+	if (character < 0)
+		length = 0;
+	else if (character == 0)
+		length = 4;
+	else if (character < 0x80)
+		length = 1;
+	else if (character < 0x800)
+		length = 2;
+	else if (character < 0x10000)
+		length = 3;
+	else if (character < 0x110000)
+		length = 4;
+	else
+		length = 0;
+	return length;
+}
+
+txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset)
+{
+	txU1* p = (txU1*)theString;
+	txU1 c;
+	txInteger unicodeOffset = 0;
+	txInteger utf8Offset = 0;
+	
+	while ((c = c_read8(p++))) {
+		if ((c & 0xC0) != 0x80) {
+			if (utf8Offset == theOffset)
+				return unicodeOffset;
+			unicodeOffset++;
+		}
+		utf8Offset++;
+	}
+	if (utf8Offset == theOffset)
+		return unicodeOffset;
+	else
+		return -1;
 }
 
 txInteger fxUnicodeLength(txString theString)
@@ -793,27 +944,6 @@ txInteger fxUnicodeToUTF8Offset(txString theString, txInteger theOffset)
 	}
 	if (unicodeOffset == theOffset)
 		return utf8Offset;
-	else
-		return -1;
-}
-
-txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset)
-{
-	txU1* p = (txU1*)theString;
-	txU1 c;
-	txInteger unicodeOffset = 0;
-	txInteger utf8Offset = 0;
-	
-	while ((c = c_read8(p++))) {
-		if ((c & 0xC0) != 0x80) {
-			if (utf8Offset == theOffset)
-				return unicodeOffset;
-			unicodeOffset++;
-		}
-		utf8Offset++;
-	}
-	if (utf8Offset == theOffset)
-		return unicodeOffset;
 	else
 		return -1;
 }
@@ -909,6 +1039,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Symbol",
 	"SyntaxError",
 	"TypeError",
+	"TypedArray",
 	"URIError",
 	"Uint16Array",
 	"Uint32Array",
@@ -974,6 +1105,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"busy",
 	"byteLength",
 	"byteOffset",
+	"cache",
 	"call",
 	"callee",
 	"caller",
@@ -1119,6 +1251,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"min",
 	"multiline",
 	"name",
+	"new.target",
 	"next",
 	"normalize",
 	"now",
@@ -1247,7 +1380,4 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"xor",
 	"__dirname",
 	"__filename",
-	"new.target",
-	"TypedArray",
-	"cache",
 };
