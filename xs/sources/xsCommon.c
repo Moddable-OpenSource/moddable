@@ -782,37 +782,6 @@ txString fxStringifyUnicodeEscape(txString string, txInteger character, txIntege
 	return (txString)p;
 }
 
-txU4 fxUTF8Character(txString theString, txS4* theSize)
-{
-	txU1* p = (txU1*)theString;
-	txU4 c = *p;
-	txS4 size;
-	if (c & 0x80) {
-		const txUTF8Sequence *sequence;
-		for (sequence = gxUTF8Sequences; sequence->size; sequence++) {
-			if ((c & sequence->cmask) == sequence->cval)
-				break;
-		}
-		size = sequence->size;
-        if (theSize)
-            *theSize = size;
-		if (size == 0) {
-			c = 0;
-		}
-		else {
-			size--;
-			while (size) {
-				size--;
-				c = (c << 6) | (*p++ & 0x3F);
-			}
-			c &= sequence->lmask;
-		}
-	}
-    else if (theSize)
-        *theSize = 1;
-	return c;
-}
-
 txString fxUTF8Decode(txString string, txInteger* character)
 {
 	txU1* p = (txU1*)string;
