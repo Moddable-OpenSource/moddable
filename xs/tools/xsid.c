@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 	input = fxRealFilePath(input, inputPath);
 	if (!input)
 		fxReportError("file not found");
-	file = fopen(input, "r");
+	file = fopen(input, "rb");
 	if (!file)
 		fxReportError("cannot open input file");
 	fseek(file, 0, SEEK_END);
