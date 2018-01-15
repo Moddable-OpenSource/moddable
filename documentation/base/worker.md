@@ -94,8 +94,6 @@ The messages sent by a worker script may be a JavaScript object or an `ArrayBuff
 A worker script terminates itself by calling `close` on the global object `self`.  This is equivalent to the instantiating script calling `terminate` on the worker instance.
 
 	self.close()
-	
-**Note**: The `close` function is currently unimplemented.
 
 ### constructor(modulePath[, dictionary])
 The `Worker` constructor takes a path to the module used to initialize the new worker instance.
