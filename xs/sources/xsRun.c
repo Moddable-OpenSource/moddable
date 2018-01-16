@@ -417,7 +417,6 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_ENVIRONMENT,
 		&&XS_CODE_EQUAL,
 		&&XS_CODE_EVAL,
-		&&XS_CODE_EVAL_INTRINSIC,
 		&&XS_CODE_EVAL_REFERENCE,
 		&&XS_CODE_EVAL_VARIABLE,
 		&&XS_CODE_EXCEPTION,
@@ -448,6 +447,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_INTEGER_1,
 		&&XS_CODE_INTEGER_2,
 		&&XS_CODE_INTEGER_4,
+		&&XS_CODE_INTRINSIC,
 		&&XS_CODE_LEFT_SHIFT,
 		&&XS_CODE_LESS,
 		&&XS_CODE_LESS_EQUAL,
@@ -1811,7 +1811,14 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 				
-	/* PROPERTIES */		
+	/* PROPERTIES */	
+		mxCase(XS_CODE_INTRINSIC)
+			offset = mxRunS2(1);
+			mxNextCode(3);
+			mxOverflow(1);
+			*mxStack = mxIntrinsics[-offset];
+			mxBreak;
+		
 		mxCase(XS_CODE_CHECK_INSTANCE)
 			if (mxStack->kind != XS_REFERENCE_KIND)
 				mxRunDebug(XS_TYPE_ERROR, "result: no instance");
@@ -3089,11 +3096,6 @@ XS_CODE_JUMP:
 			mxSaveState;
 			fxRunEval(the);
 			mxRestoreState;
-			mxNextCode(1);
-			mxBreak;
-		mxCase(XS_CODE_EVAL_INTRINSIC)
-			mxOverflow(1);
-			*mxStack = mxEvalFunction;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_EVAL_REFERENCE)

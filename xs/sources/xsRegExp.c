@@ -339,7 +339,7 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 			}
 			s = (txU1*)pattern;
 			while ((c = *s++)) {
-				if ((c == 10) || (c == 13))
+				if ((c == 10) || (c == 13) || (c == '/'))
 					escape++;
 				else if ((c == 0xE2) && (s[0] == 0x80) && ((s[1] == 0xA8) || (s[1] == 0xA9))) /* LS || PS */
 					escape += 3;
@@ -356,6 +356,9 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 					}
 					else if (c == 13) {
 						*r++ = '\\'; *r++ = 'r';
+					}
+					else if (c == '/') {
+						*r++ = '\\'; *r++ = '/';
 					}
 					else if ((c == 0xE2) && (s[0] == 0x80) && (s[1] == 0xA8)) {
 						*r++ = '\\'; *r++ = 'u'; *r++ = '2'; *r++ = '0'; *r++ = '2'; *r++ = '8';
