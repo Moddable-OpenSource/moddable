@@ -1764,50 +1764,6 @@ void fxEndHost(txMachine* the)
 	the->frame = the->frame->next;
 }
 
-void fxCopyObject(txMachine* the)
-{
-	txSlot* toInstance;
-	txSlot* fromInstance;
-	txSlot* toProperty;
-	txSlot* fromProperty;
-	txSlot** firstAddress;
-	txSlot** lastAddress;
-
-	fxToInstance(the, the->stack + 1);
-	toInstance = fxGetInstance(the, the->stack + 1);
-	fxToInstance(the, the->stack);
-	fromInstance = fxGetInstance(the, the->stack);
-	firstAddress = &toInstance->next;
-	while ((toProperty = *firstAddress))
-		firstAddress = &toProperty->next;
-	lastAddress = firstAddress;
-	fromProperty = fromInstance->next;
-	while (fromProperty) {
-		if (fromProperty->ID != XS_NO_ID) {
-			toProperty = toInstance->next;
-			while (toProperty != *firstAddress) {
-				if (toProperty->ID == fromProperty->ID)
-					break;
-				toProperty = toProperty->next;
-			}
-			if (toProperty != *firstAddress) {
-				toProperty->kind = fromProperty->kind;
-				toProperty->value = fromProperty->value;
-			}
-			else {
-				*lastAddress = toProperty = fxNewSlot(the);
-				toProperty->ID = fromProperty->ID;
-				toProperty->flag = fromProperty->flag;
-				toProperty->kind = fromProperty->kind;
-				toProperty->value = fromProperty->value;
-				lastAddress = &toProperty->next;
-			}
-		}
-		fromProperty = fromProperty->next;
-	}	
-	the->stack++;
-}
-
 void fxModulePaths(txMachine* the)
 {
 	mxPush(mxModulePaths);

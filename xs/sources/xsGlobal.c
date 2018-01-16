@@ -184,6 +184,9 @@ void fxBuildGlobal(txMachine* the)
 		slot = slot->next;
 	}
 	the->stack++;
+	fxNewHostFunction(the, mxCallback(fxCopyObject), 0, XS_NO_ID);
+	mxCopyObjectFunction = *the->stack;
+	the->stack++;
 }
 
 txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
