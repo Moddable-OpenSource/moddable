@@ -187,7 +187,6 @@ enum {
 	XS_CODE_ENVIRONMENT,
 	XS_CODE_EQUAL,
 	XS_CODE_EVAL,
-	XS_CODE_EVAL_INTRINSIC,
 	XS_CODE_EVAL_REFERENCE,
 	XS_CODE_EVAL_VARIABLE,
 	XS_CODE_EXCEPTION,
@@ -218,6 +217,7 @@ enum {
 	XS_CODE_INTEGER_1,
 	XS_CODE_INTEGER_2,
 	XS_CODE_INTEGER_4,
+	XS_CODE_INTRINSIC,
 	XS_CODE_LEFT_SHIFT,
 	XS_CODE_LESS,
 	XS_CODE_LESS_EQUAL,
@@ -327,6 +327,13 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+};
+
+enum {
+	mxEnumeratorIntrinsic = 0,
+	mxEvalIntrinsic,
+	mxCopyObjectIntrinsic,
+	mxIntrinsicCount,
 };
 
 enum {

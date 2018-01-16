@@ -543,7 +543,6 @@ mxExport void fxRemember(txMachine*, txSlot*);
 mxExport void fxForget(txMachine*, txSlot*);
 mxExport void fxAccess(txMachine*, txSlot*);
 
-mxExport void fxCopyObject(txMachine* the);
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 mxExport void fxModulePaths(txMachine* the);
@@ -754,6 +753,7 @@ mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
 /* xsObject.c */
+mxExport void fxCopyObject(txMachine* the);
 mxExport void fx_Object(txMachine* the);
 mxExport void fx_Object_prototype___proto__get(txMachine* the);
 mxExport void fx_Object_prototype___proto__set(txMachine* the);
@@ -1983,6 +1983,8 @@ enum {
 
 	mxEnumeratorFunctionStackIndex,
 	mxEvalFunctionStackIndex,
+	mxCopyObjectFunctionStackIndex,
+	
 	mxAsyncFunctionPrototypeStackIndex,
 	mxGeneratorPrototypeStackIndex,
 	mxGeneratorFunctionPrototypeStackIndex,
@@ -2094,8 +2096,11 @@ enum {
 #define mxSymbolString the->stackPrototypes[-1 - mxSymbolStringStackIndex]
 #define mxUndefinedString the->stackPrototypes[-1 - mxUndefinedStringStackIndex]
 
+#define mxIntrinsics (the->stackPrototypes - 1 - mxEnumeratorFunctionStackIndex)
 #define mxEnumeratorFunction the->stackPrototypes[-1 - mxEnumeratorFunctionStackIndex]
 #define mxEvalFunction the->stackPrototypes[-1 - mxEvalFunctionStackIndex]
+#define mxCopyObjectFunction the->stackPrototypes[-1 - mxCopyObjectFunctionStackIndex]
+
 #define mxAsyncFunctionPrototype the->stackPrototypes[-1 - mxAsyncFunctionPrototypeStackIndex]
 #define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]
 #define mxGeneratorFunctionPrototype the->stackPrototypes[-1 - mxGeneratorFunctionPrototypeStackIndex]
