@@ -203,14 +203,21 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 			*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_2;
 		else if (XS_CODE_CODE_4 == code)
 			*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_4;
-		if (XS_CODE_STRING_1 == code)
+		else if (XS_CODE_STRING_1 == code)
 			*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_1;
 		else if (XS_CODE_STRING_2 == code)
 			*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_2;
 		gxCodeUsages[code]++;	
 		offset = (txS1)sizes[code];
-		if (0 < offset)
-			p += offset;
+		if (0 < offset) {
+			if (XS_CODE_INTRINSIC == code) {
+				p++;
+				mxDecode2(p, id);
+				linker->intrinsicFlags[id] = 1;
+			}
+			else
+				p += offset;
+		}
 		else if (0 == offset) {
 			p++;
 			mxDecode2(p, id);
