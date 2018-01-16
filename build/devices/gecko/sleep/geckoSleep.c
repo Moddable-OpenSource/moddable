@@ -29,11 +29,11 @@
 
 #include "mc.defines.h"
 
-#if MODDEF_MIGHTY
+#if MIGHTY_GECKO
 	#define USE_CRYOTIMER	1
 	#include "em_cryotimer.h"
 #endif
-#if MODDEF_GIANT
+#if GIANT_GECKO
 	#define USE_RTC			1
 	#include "em_rtc.h"
 #endif
@@ -109,7 +109,7 @@ uint32_t configSleepClock(uint32_t ms) {
 
 void configGPIO(void) {
 #ifdef MODDEF_SLEEP_WAKEUP_PORT
-#if MODDEF_MIGHTY
+#if MIGHTY_GECKO
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPullFilter, 1);
 	while (!GPIO_PinInGet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN))
 		geckoDelayLoop(1);		//debounce
@@ -119,7 +119,7 @@ void configGPIO(void) {
 	GPIO_IntConfig(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, true, false, true);
 	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
 
-#elif MODDEF_GIANT
+#elif GIANT_GECKO
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPull, 1);
 	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
 
@@ -166,7 +166,7 @@ void geckoSleepEM4(uint32_t ms) {
 
 void geckoSleepEM4UntilButton() {
 //#if EFR32MG12P332F1024GL125
-#if MODDEF_MIGHTY
+#if MIGHTY_GECKO
 	CRYOTIMER->EM4WUEN = 0;
 	radioSleep();
 	configEM4();
