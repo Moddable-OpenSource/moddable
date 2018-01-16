@@ -20,7 +20,7 @@
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
 # Mighty Gecko radio test (BRD4162A)
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v1.0
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.1
 HWPART = EFR32MG12P332F1024GL125
 HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_BRD4162A/config
 HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
