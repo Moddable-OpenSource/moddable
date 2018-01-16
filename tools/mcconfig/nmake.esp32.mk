@@ -29,8 +29,8 @@ HOST_OS = win
 BASE_DIR = $(USERPROFILE)
 !ENDIF
 
-IDF_PATH = $(BASE_DIR)\esp32\esp-idf
 MSYS32_BASE = $(BASE_DIR)\msys32
+IDF_PATH = $(MSYS32_BASE)\home\$(USERNAME)\esp\esp-idf
 TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
 
 !IF "$(DEBUG)"=="1"
@@ -184,7 +184,15 @@ C_FLAGS = $(C_COMMON_FLAGS) \
 
 CPP_FLAGS = $(C_COMMON_FLAGS)
 
+!IF "$(DEBUG)"=="1"
+LAUNCH = debug
+!ELSE
+LAUNCH = release
+!ENDIF
+
 .PHONY: all	
+
+all: $(LAUNCH)
 
 PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
 
@@ -192,29 +200,44 @@ PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
 C_DEFINES = $(C_DEFINES) -DmxDebug=1
 !ENDIF
 
-all: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
+debug: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
 	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
 	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 230400 8N1
+	set HOME=$(PROJ_DIR)
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 make flash"
+#	@echo #before serial2xsbug
+#	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 921600 8N1
+#	@echo #after serial2xsbug
+
+release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
+	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
+	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
+	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
+	set HOME=$(PROJ_DIR)
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 make flash; make monitor"
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 	
-$(BIN_DIR)\xs_esp.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) 
+$(BIN_DIR)\xs_esp.a: $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) 
 	@echo # ld xs_esp.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
-	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\buildinfo.o
+	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(XS_OBJ) $(OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\buildinfo.o
 
 $(XS_OBJ): $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+{$(XS_DIR)\platforms\esp\}.c{$(LIB_DIR)\}.o:
+	@echo # cc $(@F) (strings in flash)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	@echo # cc $(@F) (slots in flash)
