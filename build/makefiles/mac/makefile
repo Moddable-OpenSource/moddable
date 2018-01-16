@@ -50,6 +50,7 @@ clean:
 	make clean -f serial2xsbug.mk
 	make clean -f simulator.mk
 	make clean -f tools.mk
+	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp
 	
 test:
 	make -f $(XS_DIR)/makefiles/mac/xst.mk
