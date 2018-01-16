@@ -1100,7 +1100,7 @@ void fxObjectNodeBind(void* it, void* param)
 
 void fxObjectBindingNodeBind(void* it, void* param) 
 {
-	txArrayBindingNode* self = it;
+	txObjectBindingNode* self = it;
 	if (self->initializer)
 		fxNodeDispatchBind(self->initializer, param);
 	fxBinderPushVariables(param, 2);
