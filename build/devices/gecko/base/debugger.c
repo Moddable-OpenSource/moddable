@@ -82,7 +82,7 @@ uint8_t ESP_isReadable() { return 0; }
 
 void setupDebugger() {
 #if mxDebug
-#if MODDEF_MIGHTY
+#if MIGHTY_GECKO
 	USART_InitAsync_TypeDef serialInit = USART_INITASYNC_DEFAULT;
 	CMU_ClockEnable(MODDEF_DEBUGGER_CLOCK, true);
 
@@ -98,7 +98,7 @@ void setupDebugger() {
 
 	gDebuggerSetup = 1;
 
-#elif MODDEF_GIANT
+#elif GIANT_GECKO
 	GPIO_PinModeSet(MODDEF_DEBUGGER_TX_PORT, MODDEF_DEBUGGER_TX_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MODDEF_DEBUGGER_RX_PORT, MODDEF_DEBUGGER_RX_PIN, gpioModeInput, 0);
 
