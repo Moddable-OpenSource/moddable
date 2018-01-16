@@ -66,6 +66,7 @@ void fxStripCallback(txLinker* linker, txCallback which)
 
 void fxStripCallbacks(txLinker* linker, txMachine* the)
 {
+
 	// for of ...
 	fxUseSymbol(linker, mxID(_Symbol_iterator));
 	// type conversion
@@ -244,6 +245,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Set_prototype_values_next);
 	// constructors
 	fxUnstripCallback(linker, fx_species_get);
+	// eval
+	if (linker->intrinsicFlags[mxEvalIntrinsic])
+		fxUnstripCallback(linker, fx_eval);
+	// object rest/spread
+	if (linker->intrinsicFlags[mxCopyObjectIntrinsic])
+		fxUnstripCallback(linker, fxCopyObject);
 }
 
 void fxStripClass(txLinker* linker, txMachine* the, txID id)
