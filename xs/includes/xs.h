@@ -1353,7 +1353,6 @@ mxImport xsStringValue fxIntegerToString(xsMachine*, xsIntegerValue, xsStringVal
 mxImport xsStringValue fxNumberToString(xsMachine*, xsNumberValue, xsStringValue, xsIntegerValue, char theMode, xsIntegerValue thePrecision);
 mxImport xsNumberValue fxStringToNumber(xsMachine*, xsStringValue theString, unsigned char whole);
 
-mxImport void fxCopyObject(xsMachine*);
 mxImport void fxDemarshall(xsMachine*, void*, xsBooleanValue);
 mxImport void* fxMarshall(xsMachine*, xsBooleanValue);
 mxImport void fxModulePaths(xsMachine*);
