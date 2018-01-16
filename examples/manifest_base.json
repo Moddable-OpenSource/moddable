@@ -103,9 +103,8 @@
 				"timer",
 			],
 			"defines": {
-				"giant": "true",
 				"sleep": {
-					"idleLevel" : 1,
+					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": true },
 					"wakeup": { "pin": "2", "port": "gpioPortF", "register": "GPIO_EM4WUEN_EM4WUEN_F2" },
 				},
@@ -124,8 +123,9 @@
 					"location": "1",
 				},
 				"i2c": {
-					"sda_pin": 5,
-					"scl_pin": 4
+					"port": "0",
+					"sda": { "pin": 6, "port": "gpioPortD", "location": 2 },
+					"scl": { "pin": 7, "port": "gpioPortD", "location": 2 },
 				}
 			}
 		},
@@ -143,10 +143,9 @@
 				"timer",
 			],
 			"defines": {
-				"mighty": true,
 				"sleep": {
 					"idleLevel" : 3,
-					"retention": { "memory": true, "gpio": false },
+					"retention": { "memory": false, "gpio": false },
 					"wakeup": { "pin": "7", "port": "gpioPortF", "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
 				"debugger": {
