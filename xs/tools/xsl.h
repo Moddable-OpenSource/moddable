@@ -102,6 +102,8 @@ struct sxLinker {
 	txSize baseLength;
 	
 	txCreation creation;
+	
+	txFlag intrinsicFlags[mxIntrinsicCount];
 
 	char main[1024];
 };
