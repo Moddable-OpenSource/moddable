@@ -626,7 +626,6 @@ struct sxParser {
 	txSymbol* argumentsSymbol;
 	txSymbol* arrowSymbol;
 	txSymbol* asSymbol;
-	txSymbol* assignSymbol;
 	txSymbol* asyncSymbol;
 	txSymbol* awaitSymbol;
 	txSymbol* callerSymbol;

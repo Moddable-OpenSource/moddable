@@ -75,6 +75,44 @@ void fxBuildObject(txMachine* the)
 	the->stack++;
 }
 
+void fxCopyObject(txMachine* the)
+{
+	txInteger c = mxArgc, i;
+	txSlot* target;
+	txSlot* source;
+	txSlot* at;
+	txSlot* property;
+	if ((c < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
+		mxTypeError("invalid object");
+	target = fxToInstance(the, mxArgv(0));
+	*mxResult = *mxArgv(0);
+	if ((c < 2) || (mxArgv(1)->kind == XS_UNDEFINED_KIND) || (mxArgv(1)->kind == XS_NULL_KIND))
+		return;
+	source = fxToInstance(the, mxArgv(1));
+	at = fxNewInstance(the);
+	mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
+	mxPushUndefined();
+	property = the->stack;
+	while ((at = at->next)) {
+		for (i = 2; i < c; i++) {
+			txSlot* exclude = mxArgv(i);
+			if ((exclude->value.at.id == at->value.at.id) && (exclude->value.at.index == at->value.at.index))
+				break;
+		}
+		if (i == c) {
+			if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushReference(source);
+				fxGetAll(the, at->value.at.id, at->value.at.index);
+				the->stack->flag = 0;
+				mxBehaviorDefineOwnProperty(the, target, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
+				mxPop();
+			}
+		}
+	}
+	mxPop(); // property
+	mxPop(); // at
+}
+
 txSlot* fxNewObjectInstance(txMachine* the)
 {
 	txSlot* instance;
