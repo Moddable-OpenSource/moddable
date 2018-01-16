@@ -60,6 +60,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
+	$(LIB_DIR)/xsRegExp.c.o \
 	$(LIB_DIR)/xsRun.c.o \
 	$(LIB_DIR)/xsScope.c.o \
 	$(LIB_DIR)/xsScript.c.o \
@@ -86,9 +87,9 @@ XS_HEADERS = \
 HEADERS += $(XS_HEADERS)
 
 SDK_OBJ = \
-	$(LIB_DIR)/xsmain.c.o \
-	$(LIB_DIR)/systemclock.c.o \
-	$(LIB_DIR)/debugger.c.o \
+	$(TMP_DIR)/xsmain.c.o \
+	$(TMP_DIR)/systemclock.c.o \
+	$(TMP_DIR)/debugger.c.o \
 
 SDK_DIRS = \
 	$(BUILD_DIR)/devices/gecko/base
@@ -201,13 +202,13 @@ $(LIB_DIR)/%.c.o: %.c
 	@echo "# cc" $(<F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
+$(TMP_DIR)/%.c.o: %.c
+	@echo "# cc" $(<F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
 $(LIB_DIR)/%.cpp.o: %.cpp
 	@echo "# cpp" $(<F)
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
-
-$(LIB_DIR)/%.cpp.o: %.ino
-	@echo "# cpp" $(<F)
-	$(CPP) -x c++ -include $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
 
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
