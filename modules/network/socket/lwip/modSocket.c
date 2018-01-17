@@ -801,11 +801,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (!p) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
-		if (ERR_OK == err)
-			tcp_abort(xss->skt);		//@@ matches tcp_recv_null in tcp.c
-		else
-			modLog("...error so don't toss socket... just zero it out");
-		xss->skt = 0;
 
 		socketSetPending(xss, kPendingDisconnect);
 		return ERR_OK;
@@ -1046,6 +1041,8 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 	doSchedule = 0 == xss->pending;
 	xss->pending |= pending;
 
+	modCriticalSectionEnd();
+
 	if (doSchedule) {
 		socketUpUseCount(xss->the, xss);
 
@@ -1058,8 +1055,6 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 			gTimerPending = modTimerAdd(0, kSocketCallbackExpire, socketsClearPending, NULL, 0);
 #endif
 	}
-
-	modCriticalSectionEnd();
 }
 
 void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
