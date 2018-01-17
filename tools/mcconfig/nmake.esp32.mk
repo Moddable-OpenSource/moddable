@@ -242,7 +242,7 @@ $(XS_OBJ): $(XS_HEADERS)
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	@echo # cc $(@F) (slots in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
-	
+
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 	@echo # cc $(@F) (slots in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
@@ -254,3 +254,5 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+
+
