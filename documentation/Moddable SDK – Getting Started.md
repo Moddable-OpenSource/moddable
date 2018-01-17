@@ -356,7 +356,8 @@ This document provides an introduction to getting started building apps with the
 > Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 ## Debugging applications
+
 The `xsbug` JavaScript source level debugger is built as part of the Moddable SDK build described above. `xsbug` is a full featured debugger that supports debugging modules and applications for [XS platforms](xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
-> For additional details on `xsbug` please refer to the [notes.md](https://github.com/Kinoma/kinomajs/blob/master/xs6/xsbug6/doc/notes.md) document in the [KinomaJS](https://github.com/Kinoma/kinomajs) open source repository.
+For additional details on `xsbug` please refer to the [xsbug](xs/xsbug.md) document.
 
