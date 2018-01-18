@@ -1,0 +1,21 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"config": {
+		"touchCount": 4
+	},
+	"resources":{
+		"*-color": [
+			"./main",
+			"./desktop",
+		],
+		"*-alpha": [
+			"./OpenSans-Semibold-28",
+		],
+		"*": [
+			"./button"
+		]
+	},
+}

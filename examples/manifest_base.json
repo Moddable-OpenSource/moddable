@@ -1,0 +1,92 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"COMMODETTO": "$(MODULES)/commodetto",
+		"PIU": "$(MODULES)/piu",
+
+	},
+	"creation": {
+		"static": 32768,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 1024,
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64,
+		},
+		"stack": 256,
+		"keys": {
+			"available": 32,
+			"name": 53,
+			"symbol": 3,
+		},
+		"main":"main",
+	},
+	"include": [
+	],
+	"modules": {
+		"~": [
+		],
+		"*": [
+			"$(MODULES)/files/resource/*",
+			"$(MODULES)/base/instrumentation/*",
+			"$(MODULES)/base/timer/*",
+		],
+	},
+	"preload": [
+		"Resource",
+		"instrumentation",
+	],
+	"strip": "*",
+	"resources": {
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/debug/*",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/timer/mc/*",
+				]
+			},
+			"preload": [
+				"debug",
+				"time",
+				"timer",
+			],
+			"recipes": {
+				"strings-in-flash": [
+					"commodetto*",
+					"piu*",
+					"Resource*",
+					"mod*",
+				],
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/debug/*",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+				]
+			},
+			"preload": [
+				"debug",
+				"time",
+				"timer",
+			]
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/mac/*",
+				],
+			},
+		},
+	},
+}

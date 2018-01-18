@@ -1,0 +1,5 @@
+build/bin/
+build/tmp/
+build/devices/esp32/xsProj/build
+libraries/esp/
+.DS_Store

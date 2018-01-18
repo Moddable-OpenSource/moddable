@@ -1,0 +1,37 @@
+{
+	"defines": {
+		"ft6206": {
+			"width": 240,
+			"height": 320,
+			"hz": 600000,
+			"flipX": true,
+			"flipY": true,
+			"threshold": 32
+		}
+	},
+	"preload": "ft6206",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/drivers/ft6206/*"
+			},
+			"defines": {
+				"ft6206": {
+					"sda": 5,
+					"scl": 4,
+				}
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/ft6206/*"
+			},
+			"defines": {
+				"ft6206": {
+					"sda": 0,
+					"scl": 5,
+				}
+			}
+		}
+	}
+}
