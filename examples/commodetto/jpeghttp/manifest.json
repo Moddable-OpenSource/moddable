@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*"
+		],
+		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+	},
+	"preload": [
+		"http",
+		"main",
+	],
+	"config": {
+		"screen": "ili9341"
+	},
+}
