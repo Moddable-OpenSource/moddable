@@ -30,22 +30,18 @@ typedef struct {
 void xs_rectangle(xsMachine *the)
 {
 	xsRectangleRecord r;
-	xsIntegerValue c = xsmcToInteger(xsArgc);
-	if (c == 0) {
+	if (xsmcArgc == 0) {
 		r.x = r.y = r.w = r.h = 0;
 	}
 	else if (xsmcIsInstanceOf(xsArg(0), xsObjectPrototype)) {
 		xsRectangle r1 = xsmcGetHostChunk(xsArg(0));
-		r.x = r1->x;
-		r.y = r1->y;
-		r.w = r1->w;
-		r.h = r1->h;
+		r = *r1;
 	}
 	else {
-		if (c > 0) r.x = xsmcToInteger(xsArg(0));
-		if (c > 1) r.y = xsmcToInteger(xsArg(1));
-		if (c > 2) r.w = xsmcToInteger(xsArg(2));
-		if (c > 3) r.h = xsmcToInteger(xsArg(3));
+		r.x = xsmcToInteger(xsArg(0));
+		r.y = xsmcToInteger(xsArg(1));
+		r.w = xsmcToInteger(xsArg(2));
+		r.h = xsmcToInteger(xsArg(3));
 	}
 	xsmcSetHostChunk(xsThis, &r, sizeof(r));
 }
@@ -127,12 +123,11 @@ static void Union(xsRectangle rUnion, xsRectangle r1, xsRectangle r2)
 
 void xs_rectangle_union(xsMachine *the)
 {
-	xsIntegerValue i, c = xsmcToInteger(xsArgc);
-	xsRectangle r0 = xsmcGetHostChunk(xsThis);
-	xsRectangle r;
+	xsIntegerValue i;
+	xsRectangle r, r0 = xsmcGetHostChunk(xsThis);
 	xsRectangleRecord rUnion;
 	r = r0;
-	for (i = 0; i < c; ++i) {
+	for (i = 0; i < xsmcArgc; ++i) {
 		Union(&rUnion, r, xsmcGetHostChunk(xsArg(i)));
 		r = &rUnion;
 	}

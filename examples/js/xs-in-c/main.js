@@ -16,7 +16,7 @@ import Rectangle from "rectangle";
 
 let r1 = new Rectangle(0, 0, 200, 100);
 let r2 = new Rectangle(20, 40, 300, 50);
-trace(`r1.x: ${r1.x}, r2.x: ${r2.x}\n`);
+trace(`r1.x: ${r1.x}, r2.w: ${r2.w}\n`);
 trace(`r1.contains(50, 50): ${r1.contains(50, 50)}\n`);
 trace(`r2.contains(100, 100): ${r2.contains(100, 100)}\n`);
 
