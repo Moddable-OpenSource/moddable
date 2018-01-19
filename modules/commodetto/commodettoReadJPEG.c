@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -26,10 +26,12 @@
 		
 	To do:
 
-		PJPG_YH2V2
+		 PJPG_YH2V1
+		 PJPG_YH1V2
 
-		sliding CommodettoBitmap
+		sliding CommodettoBitmap (e.g. pixels in chunk rather than malloc)
 
+		JPEG record as chunk
 */
 
 #include "stdlib.h"
@@ -37,9 +39,6 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#ifdef __ets__				//@@ move somewhere else!
-	#include "xsesp.h"
-#endif
 
 #include "commodettoPocoBlit.h"
 
@@ -51,11 +50,17 @@ typedef void (*convertto)(void *jpeg, CommodettoBitmap cb, PocoPixel *pixels);
 
 typedef struct {
 	int					position;
-	int					length;
 	xsMachine			*the;
 	uint8_t				*pixels;
 	convertto			convert;
+	int					totalBytesAvailable;
+	uint16_t			blocksRemaining;
+	uint16_t			bytesInBuffer;
 	char				isArrayBuffer;
+	CommodettoBitmapFormat pixelFormat;
+	uint8_t				pixelSize;
+	uint8_t				bufferIndex;
+	uint8_t				endOfData;
 
 	unsigned char		blockWidth;
 	unsigned char		blockYMax;			 // info.m_MCUSPerCol - 1
@@ -72,11 +77,11 @@ typedef struct {
 	unsigned char		*r;
 	unsigned char		*g;
 	unsigned char		*b;
-
-	int					lastByteLength;
 } JPEGRecord, *JPEG;
 
+static uint8_t tryInitialize(xsMachine *the, JPEG jpeg);
 static unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data);
+static void activateBuffer(JPEG jpeg);
 
 #if (16 == kPocoPixelSize) || (8 == kPocoPixelSize)
 	static void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels);
@@ -100,87 +105,84 @@ static void pixelsDestructor(void *data)
 
 void xs_JPEG_constructor(xsMachine *the)
 {
-	unsigned char result;
-	pjpeg_image_info_t info;
-	CommodettoBitmapFormat pixelFormat;
-	uint8_t pixelSize;
-	int argc = xsmcArgc, pixelsLength;
+	JPEG jpeg;
+	int argc = xsmcArgc;
 
-	JPEG jpeg = c_malloc(sizeof(JPEGRecord));
+	xsmcVars(2);
+
+	jpeg = c_calloc(sizeof(JPEGRecord), 1);
 	if (!jpeg)
 		xsErrorPrintf("jpeg out of memory");
 
 	xsmcSetHostData(xsThis, jpeg);
 
-	xsmcVars(2);
-	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-	jpeg->length = xsmcToInteger(xsVar(0));
-	jpeg->position = 0;
 	jpeg->the = the;
 
-	xsmcSet(xsThis, xsID_buffer, xsArg(0));
-
- 	jpeg->isArrayBuffer = xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype);
-
-	result = pjpeg_decode_init(&info, needBytes, jpeg, 0);
-	if (0 != result)
-		xsErrorPrintf("jpeg init failed");
-
-	jpeg->blockWidth = info.m_MCUSPerRow;
-	jpeg->blockYMax = info.m_MCUSPerCol - 1;
-	jpeg->blockX = 0;
-	jpeg->blockY = 0;
-	jpeg->mcuWidth = info.m_MCUWidth;
-	jpeg->mcuHeight = info.m_MCUHeight;
-	jpeg->mcuWidthRight = info.m_width % jpeg->mcuWidth;
-	if (!jpeg->mcuWidthRight)
-		jpeg->mcuWidthRight = jpeg->mcuWidth;
-	jpeg->mcuHeightBottom = info.m_height % jpeg->mcuHeight;
-	if (!jpeg->mcuHeightBottom)
-		jpeg->mcuHeightBottom = jpeg->mcuHeight;
-	jpeg->scanType = info.m_scanType;
-	jpeg->r = info.m_pMCUBufR;
-	jpeg->g = info.m_pMCUBufG;
-	jpeg->b = info.m_pMCUBufB;
-
-	pixelFormat = kCommodettoBitmapFormat;
+	jpeg->pixelFormat = kCommodettoBitmapFormat;
 	if ((argc > 1) && (xsUndefinedType != xsmcTypeOf(xsArg(1))) && xsmcHas(xsArg(1), xsID_pixelFormat)) {
 		xsmcGet(xsVar(0), xsArg(1), xsID_pixelFormat);
-		pixelFormat = xsmcToInteger(xsVar(0));
+		jpeg->pixelFormat = xsmcToInteger(xsVar(0));
 	}
 
 #if (16 == kPocoPixelSize) || (8 == kPocoPixelSize)
 	jpeg->convert = (convertto)convertto_16and8;
-	pixelSize = kPocoPixelSize;
+	jpeg->pixelSize = kPocoPixelSize;
 #endif
 #if 4 == kPocoPixelSize
 	jpeg->convert = (convertto)convertto_4;
-	pixelSize = 4;
+	jpeg->pixelSize = 4;
 #endif
-	if (kCommodettoBitmap24RGB == pixelFormat) {
+	if (kCommodettoBitmap24RGB == jpeg->pixelFormat) {
 		jpeg->convert = (convertto)convertto_24;
-		pixelSize = 24;
+		jpeg->pixelSize = 24;
 	}
-	else if (kCommodettoBitmapFormat != pixelFormat)
+	else if (kCommodettoBitmapFormat != jpeg->pixelFormat)
 		xsErrorPrintf("unsupported pixel format");
 
-	pixelsLength = (jpeg->mcuWidth * jpeg->mcuHeight * pixelSize) >> 3;
-	jpeg->pixels = c_malloc(pixelsLength);
-	if (!jpeg->pixels)
-		xsUnknownError("out of memory");
-	xsVar(0) = xsNewHostObject(pixelsDestructor);
-	xsmcSetHostData(xsVar(0), jpeg->pixels);
-	xsmcSetInteger(xsVar(1), pixelsLength);
-	xsmcSet(xsVar(0), xsID_byteLength, xsVar(1));
-	xsmcSet(xsThis, xsID_pixels, xsVar(0));
+	xsVar(0) = xsNewArray(0);
+	xsmcSet(xsThis, xsID_buffers, xsVar(0));
 
-	xsmcSetInteger(xsVar(0), info.m_width);
-	xsmcSet(xsThis, xsID_width, xsVar(0));
-	xsmcSetInteger(xsVar(0), info.m_height);
-	xsmcSet(xsThis, xsID_height, xsVar(0));
+	if ((0 == argc) || !xsmcTest(xsArg(0)))
+		return;
 
-	xsmcSetInteger(xsVar(0), pixelFormat);
-	xsCall1(xsThis, xsID_initialize, xsVar(0));
+	jpeg->endOfData = true;
+	xsCall1(xsThis, xsID_push, xsArg(0));
+	if (NULL == jpeg->r)
+		xsErrorPrintf("jpeg init failed");
+}
+
+void xs_JPEG_push(xsMachine *the)
+{
+	JPEG jpeg = xsmcGetHostData(xsThis);
+
+	if (!xsmcArgc) {
+		jpeg->endOfData = true;
+		return;
+	}
+
+	xsmcVars(2);
+
+	xsmcGet(xsResult, xsThis, xsID_buffers);
+	xsCall1(xsResult, xsID_push, xsArg(0));
+
+	if (0 == jpeg->totalBytesAvailable)
+		activateBuffer(jpeg);
+
+	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
+		jpeg->totalBytesAvailable += xsGetArrayBufferLength(xsArg(0));
+	else {
+		xsmcGet(xsResult, xsArg(0), xsID_byteLength);
+		jpeg->totalBytesAvailable += xsmcToInteger(xsResult);
+	}
+
+	if (NULL == jpeg->r)
+		tryInitialize(the, jpeg);
+}
+
+void xs_JPEG_get_ready(xsMachine *the)
+{
+	JPEG jpeg = xsmcGetHostData(xsThis);
+	xsmcSetBoolean(xsResult, (NULL != jpeg->r) && jpeg->blocksRemaining && (jpeg->endOfData || (jpeg->totalBytesAvailable >= 256)));
 }
 
 void xs_JPEG_read(xsMachine *the)
@@ -225,6 +227,8 @@ void xs_JPEG_read(xsMachine *the)
 	(jpeg->convert)(jpeg, cb, (void *)jpeg->pixels);
 
 	xsResult = xsVar(1);
+
+	jpeg->blocksRemaining -= 1;
 }
 
 #if (kPocoPixelSize == 16) || (kPocoPixelSize == 8)
@@ -534,16 +538,82 @@ void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixelsIn)
 	}
 }
 
+uint8_t tryInitialize(xsMachine *the, JPEG jpeg)
+{
+	unsigned char result;
+	pjpeg_image_info_t info;
+	int pixelsLength;
+	int totalBytesAvailable = jpeg->totalBytesAvailable;
+
+	jpeg->bufferIndex = 0;
+	activateBuffer(jpeg);
+
+	result = pjpeg_decode_init(&info, needBytes, jpeg, 0);
+	if (0 != result) {
+		jpeg->totalBytesAvailable = totalBytesAvailable;
+		return 1;
+	}
+
+	jpeg->blockWidth = info.m_MCUSPerRow;
+	jpeg->blockYMax = info.m_MCUSPerCol - 1;
+	jpeg->blockX = 0;
+	jpeg->blockY = 0;
+	jpeg->mcuWidth = info.m_MCUWidth;
+	jpeg->mcuHeight = info.m_MCUHeight;
+	jpeg->mcuWidthRight = info.m_width % jpeg->mcuWidth;
+	if (!jpeg->mcuWidthRight)
+		jpeg->mcuWidthRight = jpeg->mcuWidth;
+	jpeg->mcuHeightBottom = info.m_height % jpeg->mcuHeight;
+	if (!jpeg->mcuHeightBottom)
+		jpeg->mcuHeightBottom = jpeg->mcuHeight;
+	jpeg->blocksRemaining = info.m_MCUSPerCol * info.m_MCUSPerRow;
+	jpeg->scanType = info.m_scanType;
+	jpeg->r = info.m_pMCUBufR;
+	jpeg->g = info.m_pMCUBufG;
+	jpeg->b = info.m_pMCUBufB;
+
+	pixelsLength = (jpeg->mcuWidth * jpeg->mcuHeight * jpeg->pixelSize) >> 3;
+	jpeg->pixels = c_malloc(pixelsLength);
+	if (!jpeg->pixels)
+		xsUnknownError("out of memory");
+	xsVar(0) = xsNewHostObject(pixelsDestructor);
+	xsmcSetHostData(xsVar(0), jpeg->pixels);
+	xsmcSetInteger(xsVar(1), pixelsLength);
+	xsmcSet(xsVar(0), xsID_byteLength, xsVar(1));
+	xsmcSet(xsThis, xsID_pixels, xsVar(0));
+
+	xsmcSetInteger(xsVar(0), info.m_width);
+	xsmcSet(xsThis, xsID_width, xsVar(0));
+	xsmcSetInteger(xsVar(0), info.m_height);
+	xsmcSet(xsThis, xsID_height, xsVar(0));
+
+	xsmcSetInteger(xsVar(0), jpeg->pixelFormat);
+	xsCall1(xsThis, xsID_initialize, xsVar(0));
+
+	xsmcGet(xsVar(0), xsThis, xsID_buffers);
+	while (jpeg->bufferIndex--)
+		xsCall0(xsVar(0), xsID_shift);
+	jpeg->bufferIndex = 0;
+
+	return 0;
+}
+
 unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
 {
 	JPEG jpeg = pCallback_data;
 	const unsigned char *buffer;
 	xsMachine *the = jpeg->the;
 
-	if (buf_size > (jpeg->length - jpeg->position))
-		buf_size = jpeg->length - jpeg->position;
+	if (buf_size > (jpeg->bytesInBuffer - jpeg->position)) {
+		buf_size = jpeg->bytesInBuffer - jpeg->position;
+		if (0 == buf_size)
+			return PJPG_STREAM_READ_ERROR;
+	}
+	jpeg->totalBytesAvailable -= buf_size;
 
-	xsmcGet(xsVar(0), xsThis, xsID_buffer);
+	xsmcGet(xsVar(0), xsThis, xsID_buffers);
+	xsmcGet(xsVar(0), xsVar(0), jpeg->bufferIndex);
+
 	if (jpeg->isArrayBuffer)
 		buffer = xsmcToArrayBuffer(xsVar(0));
 	else
@@ -554,5 +624,34 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 	*pBytes_actually_read = buf_size;
 	jpeg->position += buf_size;
 
+	if (jpeg->position == jpeg->bytesInBuffer) {
+		xsmcGet(xsVar(0), xsThis, xsID_buffers);
+		if (jpeg->r)
+			xsCall0(xsVar(0), xsID_shift);
+		else
+			jpeg->bufferIndex += 1;
+		activateBuffer(jpeg);
+	}
+
 	return 0;
+}
+
+void activateBuffer(JPEG jpeg)
+{
+	xsMachine *the = jpeg->the;
+
+	xsmcGet(xsVar(0), xsThis, xsID_buffers);
+	xsmcGet(xsVar(0), xsVar(0), jpeg->bufferIndex);
+	if (!xsmcTest(xsVar(0)))
+		return;
+
+	jpeg->position = 0;
+
+	jpeg->isArrayBuffer = xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype);
+	if (jpeg->isArrayBuffer)
+		jpeg->bytesInBuffer = xsGetArrayBufferLength(xsVar(0));
+	else {
+		xsmcGet(xsVar(0), xsVar(0), xsID_byteLength);
+		jpeg->bytesInBuffer = xsmcToInteger(xsVar(0));
+	}
 }
