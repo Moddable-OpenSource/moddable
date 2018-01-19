@@ -538,17 +538,19 @@ trace(`Bitmap width ${bitmap.width}, height ${bitmap.height}\n`);
 
 The JPEG file format is the most common format for storing photos. Many resource-constrained devices have the performance to decompress JPEG images, though not all have the memory to store the result. Commodetto provides a way to render a JPEG image to an output, even if the decompressed JPEG image cannot fit into memory.
 
-The JPEG decoder used in Commodetto supports a subset of the JPEG specification. YUV encoding with H1V1 is supported, with plans to support H2V2 in a future release. Grayscale JPEG images are supported, and there are no restrictions on the width and height of the JPEG image. Progressive JPEG images are not supported.
+The JPEG decoder in Commodetto supports a subset of the JPEG specification. YUV encoding with H1V1 and H2V2 are supported. Grayscale JPEG images are supported, and there are no restrictions on the width and height of the JPEG image. Progressive JPEG images are not supported.
 
-To decompress JPEG data to an offscreen bitmap, use the static `decompress` function.
+#### Decompressing entire image
+To decompress a complete JPEG data to an offscreen bitmap, use the `loadJPEG` function.
 
 ```javascript
-import JPEG from "commodetto/readJPEG";
+import loadJPEG from "commodetto/loadJPEG";
 
 let jpegData = new Resource("image.jpg");
-let bitmap = JPEG.decompress(jpegData);
+let bitmap = loadJPEG(jpegData);
 ```
 
+#### Decoding block by block
 The JPEG decoder also implements a block-based decode mode to return a single block of decompressed data at a time.
 
 ```javascript
@@ -556,11 +558,9 @@ import JPEG from "commodetto/readJPEG";
 
 let jpegData = new Resource("image.jpg");
 let decoder = new JPEG(jpegData);
-	
-while (true) {
-	let block = decoder.read();
-	if (!block) break;		// all blocks decoded
 
+while (decoder.ready) {
+	let block = decoder.read();
 	trace(`block x: ${block.x}, y: ${block.y},
 			width: ${block.width}, height: ${block.height}\n`);
 }
@@ -568,11 +568,35 @@ while (true) {
 
 Each block returned is a bitmap. The `width` and `height` fields of the bitmap indicate the dimensions of the block. The width and height can change from block to block. The `x` and `y` properties indicate the placement of the block relative to the top-left corner of the full JPEG image. Blocks are returned in a left-to-right, top-to-bottom order.
 
-The same bitmap object is used for all blocks, so the contents of the block change after each call to `read`. This means an application cannot collect all the blocks into an array for later rendering. To do that, the application needs to make a copy of the data from each block.
+The same bitmap object is used for all blocks, so the contents of the block change after each call to `read`. This means an application cannot collect all the blocks into an array for later rendering. To do that, the application must copy the data from each block.
 
 Using a renderer, it is straightforward to incrementally send a JPEG image to a display block-by-block as it is decoded, eliminating the need to copy the data of each block. The Poco renderer documentation includes an example of this technique.
 
-> **Note:** Commodetto uses the excellent public domain [picojpeg](https://code.google.com/archive/p/picojpeg/) decoder, which is optimized to minimize memory use. Some quality and performance are sacrificed, but the results are generally quite good. Small changes have been made to picojpeg to eliminate compiler warnings; those changes are part of the Moddable SDK source code distribution.
+#### Streaming decode
+
+The preceding sections explain how to decode a JPEG image when the full compressed JPEG image is available. The JPEG decoder can also be used to decode a streaming JPEG image, that is decode JPEG data as it arrives over the network. This approach has the advantage of eliminating the need to store the entire compressed JPEG image in memory. Instead, network buffers are pushed to the JPEG decoder as they arrive, and `read` is used to retrieve as many decoded blocks as possible from the available buffers.
+
+To use the JPEG decoder in streaming mode, call the constructor with no arguments:
+
+	let decoder = new JPEG();
+
+As data arrives, push `ArrayBuffer` containing the data to the decoder:
+
+	decoder.push(buffer);
+
+After the final buffer arrives, call `push` with parameters to indicate the end of the data stream. Failure to do this may result in blocks missing from the bottom of the image:
+
+	decoder.push();
+
+The JPEG decoder `ready` property indicates blocks are available to be read. The first time the `ready` property returns true also indicates that the JPEG header has been successfully parsed and the JPEG `width` and `height` properties have been initialized.
+
+	decoder.push(buffer);
+	while (decoder.ready) {
+		let block = decoder.read();
+		// render block
+	}
+
+> **Note:** Commodetto uses the excellent public domain [picojpeg](https://code.google.com/archive/p/picojpeg/) decoder, which is optimized to minimize memory use. Some quality and performance are sacrificed, but the results are generally quite good. Small changes have been made to picojpeg to eliminate compiler warnings; those changes are included in the Moddable SDK source code distribution.
 
 ### PNG
 
