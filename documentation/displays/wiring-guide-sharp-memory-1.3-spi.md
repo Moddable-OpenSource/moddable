@@ -12,17 +12,21 @@ Revised: January 2, 2018
 
 **Type:** LCD, Monochrome
 
+**Interface:** SPI
+
 **Drivers:** video [ls013b4dn04](../../documentation/drivers/ls013b4dn04/ls013b4dn04.md), no touch
 
-**Availability:** [Sharp Memory Monochrome Display on Adafruit] (https://www.adafruit.com/product/3502)  
-[Sharp Memory Silver Display on Digi-Key] (https://www.digikey.com/product-detail/en/1393/1528-1183-ND/5353643)
+**Availability:**  
+[Sharp Memory Monochrome Display on Adafruit] (https://www.adafruit.com/product/3502)  
+[Sharp Memory Reflective Display on Digi-Key] (https://www.digikey.com/product-detail/en/1393/1528-1183-ND/5353643)  
+[Sharp Memory Reflective Display on Sparkfun](https://www.sparkfun.com/products/retired/13192)
 
 **Description:** These interesting displays have the ultra-low power usage of eInk and the fast-refresh rates of an LCD. The [older 96 x 96 version] (https://www.adafruit.com/product/1393) has an mirror-like display where the active pixels are reflective.
 
 
 ![Sharp Memory Display 1.3"](images/sharp-memory-display-1.3.jpg)
 
-**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag so requires XSBug to be launched to run.
+**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag.
 
 ```
 cd $MODDABLE/examples/piu/balls

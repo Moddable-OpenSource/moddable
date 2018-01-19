@@ -11,6 +11,8 @@ Revised: January 2, 2018
 
 **Type:** Sharp Memory TFT-LCD, Monochrome
 
+**Interface:** SPI
+
 **Drivers:** video [ls013b4dn04](../../documentation/drivers/ls013b4dn04/ls013b4dn04.md), no touch
 
 **Availability:** [Sharp Memory 2,7" LCD on Digi-Key] (https://www.digikey.com/product-detail/en/sharp-microelectronics/LS027B7DH01A/425-2908-ND/5054067?utm_adgroup=Optoelectronics&gclid=Cj0KCQiAvrfSBRC2ARIsAFumcm-L2iz88RlcYf9Z1MU0J1ZW97VgAa0oPoDBgqYSIIRUyZnhGNURyY4aAjIgEALw_wcB)
@@ -22,7 +24,7 @@ Moddable used the [Kuzyatech Sharp Memory display breakout board] (https://www.t
 
 ![Generic SPI Display](images/Sharp_Memory_LCD_LS027B7DH01.jpg)
 
-**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag so requires XSBug to be launched to run.
+**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag.
 
 ```
 cd $MODDABLE/examples/piu/balls
