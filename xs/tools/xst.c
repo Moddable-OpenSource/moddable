@@ -730,7 +730,7 @@ int fxStringEndsWith(const char *string, const char *suffix)
 void fx_agent_broadcast(xsMachine* the)
 {
     fxLockMutex(&(gxAgentCluster.dataMutex));
-	gxAgentCluster.dataBuffer = xsGetHostData(xsArg(0));
+	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
 		gxAgentCluster.dataValue = xsToInteger(xsArg(1));
 #if mxWindows
@@ -768,23 +768,10 @@ void fx_agent_leaving(xsMachine* the)
 
 void fx_agent_receiveBroadcast(xsMachine* the)
 {
-	txSlot* instance;
-	txSlot* host;
     fxLockMutex(&(gxAgentCluster.dataMutex));
 	while (gxAgentCluster.dataBuffer == NULL)
 		fxSleepCondition(&(gxAgentCluster.dataCondition), &(gxAgentCluster.dataMutex));
-		
-	instance = fxNewSlot(the);
-	instance->kind = XS_INSTANCE_KIND;
-	instance->value.instance.garbage = C_NULL;
-	instance->value.instance.prototype = mxSharedArrayBufferPrototype.value.reference;
-	mxResult->value.reference = instance;
-	mxResult->kind = XS_REFERENCE_KIND;
-	host = instance->next = fxNewSlot(the);
-	host->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	host->kind = XS_HOST_KIND;
-	host->value.host.data = fxRetainSharedChunk(gxAgentCluster.dataBuffer);
-	host->value.host.variant.destructor = fxReleaseSharedChunk;
+	xsResult = xsDemarshallAlien(gxAgentCluster.dataBuffer);
     fxUnlockMutex(&(gxAgentCluster.dataMutex));
 	
     fxLockMutex(&(gxAgentCluster.countMutex));
@@ -920,6 +907,8 @@ void fx_agent_stop(xsMachine* the)
 		c_free(agent);
 		agent = next;
 	}
+	if (gxAgentCluster.dataBuffer)
+		c_free(gxAgentCluster.dataBuffer);
 	gxAgentCluster.firstAgent = C_NULL;
 	gxAgentCluster.lastAgent = C_NULL;
 	gxAgentCluster.count = 0;

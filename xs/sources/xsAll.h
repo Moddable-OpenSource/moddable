@@ -1462,7 +1462,7 @@ enum {
 	XS_DERIVED_FLAG = 8,
 	XS_DONT_PATCH_FLAG = 16,
 	XS_LEVEL_FLAG = 32,
-	/* ? = 64, */
+	XS_DONT_MARSHALL_FLAG = 64,
 	/* XS_MARK_FLAG = 128, */
 
 	/* property flags */

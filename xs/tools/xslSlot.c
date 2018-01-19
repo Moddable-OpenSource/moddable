@@ -521,7 +521,10 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 		fprintf(file, "XS_NO_ID, ");
 	else
 		fprintf(file, "%d, ", slot->ID);
-	fprintf(file, "0x%x, ", slot->flag | flag);
+	if (slot->kind == 	XS_INSTANCE_KIND)
+		fprintf(file, "0x%x, ", slot->flag | flag | XS_DONT_MARSHALL_FLAG);
+	else
+		fprintf(file, "0x%x, ", slot->flag | flag);
 	switch (slot->kind) {
 	case XS_UNINITIALIZED_KIND: {
 		fprintf(file, "XS_UNINITIALIZED_KIND, ");
