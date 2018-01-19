@@ -23,6 +23,8 @@
 #include "screen.h"
 
 typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
+typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage;
+
 
 @interface TouchFinger : NSObject {
 	id identity;
@@ -65,6 +67,8 @@ typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
 
 static void fxScreenAbort(txScreen* screen);
 static void fxScreenBufferChanged(txScreen* screen);
+static int fxScreenCreateWorker(txScreen* screen, char* name);
+static void fxScreenDeleteWorker(txScreen* screen, int worker);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
 static void fxScreenStart(txScreen* screen, double interval);
@@ -78,6 +82,11 @@ struct PiuScreenStruct {
     NSPiuClipView *nsClipView;
     NSPiuScreenView *nsScreenView;
     txScreen* screen;
+};
+
+struct PiuScreenMessageStruct {
+	void* buffer;
+	int size;
 };
 
 @implementation NSPiuScreenView
@@ -141,37 +150,36 @@ bail:
 		[alert setInformativeText:info];
 	[alert runModal];
 }
-- (void)messageToApplication:(NSObject *)message {
+- (void)messageToApplication:(NSObject *)object {
 	if (self.screen->invoke) {
-		if ([message isKindOfClass:[NSData class]]) {
-			NSData* data = (NSData*)message;
-			(*self.screen->invoke)(self.screen, (char *)[data bytes], (int)[data length]);
-		}
-		else {
-			NSString* string = (NSString*)message;
-			(*self.screen->invoke)(self.screen, (char *)[string UTF8String], 0);
-		}
+		NSData* data = (NSData*)object;
+		PiuScreenMessage message = (PiuScreenMessage)[data bytes];
+		(*self.screen->invoke)(self.screen, message->buffer, message->size);
+		free(message->buffer);
 	}
 }
-- (void)messageToHost:(NSObject *)message {
+- (void)messageToHost:(NSObject *)object {
+	NSData* data = (NSData*)object;
+	PiuScreenMessage message = (PiuScreenMessage)[data bytes];
 	if ((*piuScreen)->behavior) {
 		xsBeginHost((*piuScreen)->the);
-		xsVars(3);
+		xsVars(4);
 		xsVar(0) = xsReference((*piuScreen)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onMessage)) {
 			xsVar(1) = xsReference((*piuScreen)->reference);
-			if ([message isKindOfClass:[NSData class]]) {
-				NSData* data = (NSData*)message;
-				xsVar(2) = xsArrayBuffer((xsStringValue)[data bytes], (xsIntegerValue)[data length]);
+			if (message->size < 0) {
+				xsVar(2) = xsDemarshallAlien(message->buffer);
+				xsVar(3) = xsInteger(0 - message->size);
 			}
-			else {
-				NSString* string = (NSString*)message;
-				xsVar(2) = xsString([string UTF8String]);
-			}
-			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+			else if (message->size > 0)
+				xsVar(2) = xsArrayBuffer(message->buffer, message->size);
+			else
+				xsVar(2) = xsString(message->buffer);
+			(void)xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
 		}
 		xsEndHost((*piuScreen)->the);
 	}
+	free(message->buffer);
 }
 - (void)mouseDown:(NSEvent *)event {
 	if (touching)
@@ -323,6 +331,7 @@ static void PiuScreenDelete(void* it);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
+static void PiuScreenMessageBuild(PiuScreenMessage message, char* buffer, int size);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuScreenDispatchRecord = {
 	"Screen",
@@ -376,6 +385,8 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->view = screenView;
     screen->abort = fxScreenAbort;
     screen->bufferChanged = fxScreenBufferChanged;
+    screen->createWorker = fxScreenCreateWorker;
+    screen->deleteWorker = fxScreenDeleteWorker;
     screen->formatChanged = fxScreenFormatChanged;
     screen->post = fxScreenPost;
     screen->start = fxScreenStart;
@@ -428,6 +439,19 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	PiuContentUnbind(it, application, view);
 }
 
+void PiuScreenMessageBuild(PiuScreenMessage message, char* buffer, int size) 
+{
+	message->size = size;
+	if (size < 0)
+		message->buffer = buffer;
+	else {
+		if (!size)
+			size = strlen(buffer) + 1;
+		message->buffer = malloc(size);
+		if (message->buffer)
+			memcpy(message->buffer, buffer, size);
+	}
+}
 void PiuScreen_create(xsMachine* the)
 {
 	PiuScreen* self;
@@ -460,15 +484,24 @@ void PiuScreen_launch(xsMachine* the)
 void PiuScreen_postMessage(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		void* buffer = xsToArrayBuffer(xsArg(0));
-		NSUInteger length = xsGetArrayBufferLength(xsArg(0));
-		NSData* data = [NSData dataWithBytes:buffer length:length];
-		[(*self)->nsScreenView performSelectorOnMainThread:@selector(messageToApplication:) withObject:data waitUntilDone:NO];
+	PiuScreenMessageRecord message;
+	if (xsToInteger(xsArgc) > 1) {
+		int worker = (int)xsToInteger(xsArg(1));
+		PiuScreenMessageBuild(&message, xsMarshallAlien(xsArg(0)), 0 - worker);
 	}
 	else {
-		NSString* string = [NSString stringWithUTF8String:xsToString(xsArg(0))];
-		[(*self)->nsScreenView performSelectorOnMainThread:@selector(messageToApplication:) withObject:string waitUntilDone:NO];
+		if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
+			int size = (int)xsGetArrayBufferLength(xsArg(0));
+			PiuScreenMessageBuild(&message, xsToArrayBuffer(xsArg(0)), size);
+		}
+		else {
+			xsStringValue string = xsToString(xsArg(0));
+			PiuScreenMessageBuild(&message, string, 0);
+		}
+	}
+	if (message.buffer) {
+		NSData* data = [NSData dataWithBytes:&message length:sizeof(PiuScreenMessageRecord)];
+		[(*self)->nsScreenView performSelectorOnMainThread:@selector(messageToApplication:) withObject:data waitUntilDone:NO];
 	}
 }
 
@@ -490,21 +523,56 @@ void fxScreenBufferChanged(txScreen* screen)
 	[screenView display];
 }
 
+int fxScreenCreateWorker(txScreen* screen, char* name)
+{
+	NSPiuScreenView *screenView = screen->view;
+	PiuScreen* self = screenView.piuScreen;
+	int worker = 0;
+	xsBeginHost((*self)->the);
+	{
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onCreateWorker)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsString(name);
+			xsResult = xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+			worker = xsToInteger(xsResult);
+		}
+	}
+	xsEndHost((*self)->the);
+	return worker;
+}
+
+void fxScreenDeleteWorker(txScreen* screen, int worker)
+{
+	NSPiuScreenView *screenView = screen->view;
+	PiuScreen* self = screenView.piuScreen;
+	xsBeginHost((*self)->the);
+	{
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onDeleteWorker)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(worker);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+	}
+	xsEndHost((*self)->the);
+}
+
 void fxScreenFormatChanged(txScreen* screen)
 {
 }
 
-void fxScreenPost(txScreen* screen, char* message, int size)
+void fxScreenPost(txScreen* screen, char* buffer, int size)
 {
 	NSPiuScreenView* screenView = screen->view;
-	if (size) {
-		NSData* data = [NSData dataWithBytes:message length:size];
-    	[screenView performSelectorOnMainThread:@selector(messageToHost:) withObject:data waitUntilDone:NO];
+	PiuScreenMessageRecord message;
+	PiuScreenMessageBuild(&message, buffer, size);
+	if (message.buffer) {
+		NSData* data = [NSData dataWithBytes:&message length:sizeof(PiuScreenMessageRecord)];
+		[screenView performSelectorOnMainThread:@selector(messageToHost:) withObject:data waitUntilDone:NO];
 	}
-	else {
-		NSString* string = [NSString stringWithUTF8String:message];
-    	[screenView performSelectorOnMainThread:@selector(messageToHost:) withObject:string waitUntilDone:NO];
-    }
 }
 
 void fxScreenStart(txScreen* screen, double interval)
@@ -520,6 +588,5 @@ void fxScreenStop(txScreen* screen)
 		[screenView.timer invalidate];
 	screenView.timer = nil;
 }
-
 
 
