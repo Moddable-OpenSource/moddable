@@ -9,6 +9,8 @@ Revised: January 2, 2018
 
 **Type:** TFT LCD
 
+**Interface:** SPI
+
 **Drivers:** video [ST7735](../../documentation/drivers/st7735/st7735.md), no touch
 
 **Availability:** [Generic 1.44" SPI Displays on eBay] (https://www.ebay.com/sch/i.html?_odkw=spi+display&_osacat=0&_from=R40&_trksid=p2045573.m570.l1313.TR0.TRC0.H0.Xspi+display+1.44%22.TRS1&_nkw=spi+display+1.44%22&_sacat=0)
@@ -17,7 +19,7 @@ Revised: January 2, 2018
 
 ![Generic SPI Display](images/generic-1.44-display.jpg)
 
-**Moddable Sample code:** The Piu example [Transitions](../../examples/piu/transitions/) is good for testing this display. The build command below includes the -d, debug flag so requires XSBug to be launched to run.
+**Moddable Sample code:** The Piu example [Transitions](../../examples/piu/transitions/) is good for testing this display. The build command below includes the -d, debug flag.
 
 ```
 cd $MODDABLE/examples/piu/transitions
