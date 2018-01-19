@@ -9,6 +9,7 @@
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
 		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG",
 	},
 	"resources": {
 		"*": [

@@ -17,6 +17,7 @@ import parseBMP from "commodetto/parseBMP";
 import BufferOut from "commodetto/BufferOut";
 import Bitmap from "commodetto/Bitmap";
 import JPEG from "commodetto/readJPEG";
+import loadJPEG from "commodetto/loadJPEG";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import Timer from "timer";
@@ -159,7 +160,7 @@ function alpha() {
 function jpeg() {
 	if (0) {
 		/* requires more memory than many MCUs have free */
-		let piano = JPEG.decompress(new Resource("piano.dat"));
+		let piano = loadJPEG(new Resource("piano.dat"));
 		trace(`width ${piano.width}, height ${piano.height}\n`);
 
 		poco.begin()
