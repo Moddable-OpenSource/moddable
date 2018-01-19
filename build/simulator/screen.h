@@ -24,10 +24,12 @@ typedef struct sxScreen txScreen;
 
 typedef void (*txScreenAbortProc)(txScreen* screen);
 typedef void (*txScreenBufferChangedProc)(txScreen* screen);
+typedef int (*txScreenCreateWorkerProc)(txScreen* screen, char* name);
 typedef void (*txScreenFormatChangedProc)(txScreen* screen);
+typedef void (*txScreenDeleteWorkerProc)(txScreen* screen, int id);
 typedef void (*txScreenIdleProc)(txScreen* screen);
 typedef void (*txScreenLaunchProc)(txScreen* screen);
-typedef void (*txScreenMessageProc)(txScreen* screen, char* message, int size);
+typedef void (*txScreenMessageProc)(txScreen* screen, char* buffer, int size);
 typedef void (*txScreenQuitProc)(txScreen* screen);
 typedef void (*txScreenStartProc)(txScreen* screen, double interval);
 typedef void (*txScreenStopProc)(txScreen* screen);
@@ -39,8 +41,11 @@ struct sxScreen {
 	void* machine;
 	void* view;
 	void* archive;
+	void* firstWorker;
 	txScreenAbortProc abort;
 	txScreenBufferChangedProc bufferChanged;
+	txScreenCreateWorkerProc createWorker;
+	txScreenDeleteWorkerProc deleteWorker;
 	txScreenFormatChangedProc formatChanged;
 	txScreenIdleProc idle;
 	txScreenMessageProc invoke;
