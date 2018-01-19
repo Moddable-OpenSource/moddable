@@ -42,6 +42,7 @@ struct sxMarshallBuffer {
 	txByte* base;
 	txByte* current;
 	txSlot* link;
+	txID* symbolMap;
 	txSize size;
 	txID symbolCount;
 	txIndex symbolSize;
@@ -107,13 +108,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 				p += aChunk->size;
 				mxMarshallAlign(p, aChunk->size);
 				break;
-			case XS_HOST_KIND:
-				aLength = aSlot->next->value.integer;
-				if (aLength) {
-					p += aLength;
-					mxMarshallAlign(p, aLength);
-				}
-				break;
 			case XS_INSTANCE_KIND:
 				aSlot->value.instance.garbage = C_NULL;
 				break;
@@ -159,7 +153,6 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 	case XS_INTEGER_KIND:
 	case XS_NUMBER_KIND:
 	case XS_DATE_KIND:
-	case XS_ERROR_KIND:
 	case XS_STRING_X_KIND:
 		theResult->value = theSlot->value;
 		theResult->kind = theSlot->kind;
@@ -179,34 +172,20 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		}
 		break;
 	case XS_HOST_KIND:
-		aLength = theSlot->next->value.integer;
-		if (aLength) {
-			theResult->value.host.data = c_malloc(aLength);
-			if (!theResult->value.host.data)
-				fxJump(the);
-			c_memcpy(theResult->value.host.data, theSlot->value.host.data, aLength);
-		}
-		else
-			theResult->value.host.data = C_NULL;
-		theResult->value.host.variant.destructor = theSlot->value.host.variant.destructor;
+		theResult->value.host.data = fxRetainSharedChunk(theSlot->value.host.data);
+		theResult->value.host.variant.destructor = fxReleaseSharedChunk;
 		theResult->kind = theSlot->kind;
 		break;
 	case XS_REFERENCE_KIND:
 		aSlot = theSlot->value.reference;
-		if (aSlot->ID == XS_NO_ID) {
-			if (aSlot->value.instance.garbage) {
-				theResult->value.reference = aSlot->value.instance.garbage;
-				theResult->kind = theSlot->kind;
-			}
-			else {
-				theResult->value.reference = fxNewSlot(the);
-				theResult->kind = theSlot->kind;
-				fxDemarshallSlot(the, aSlot, theResult->value.reference, theSymbolMap, alien);
-			}
+		if (aSlot->value.instance.garbage) {
+			theResult->value.reference = aSlot->value.instance.garbage;
+			theResult->kind = theSlot->kind;
 		}
 		else {
-			theResult->value.reference = aSlot;
+			theResult->value.reference = fxNewSlot(the);
 			theResult->kind = theSlot->kind;
+			fxDemarshallSlot(the, aSlot, theResult->value.reference, theSymbolMap, alien);
 		}
 		break;
 	case XS_ARRAY_KIND:
@@ -232,23 +211,23 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		break;
 	case XS_INSTANCE_KIND:
 		theSlot->value.instance.garbage = theResult;
-		
 		theResult->value.instance.garbage = C_NULL;
-		if (alien || (theSlot->value.instance.prototype == C_NULL))
-			theResult->value.instance.prototype = mxObjectPrototype.value.reference;
-		else
-			theResult->value.instance.prototype = theSlot->value.instance.prototype;
+		theResult->value.instance.prototype = mxObjectPrototype.value.reference;
 		theResult->kind = theSlot->kind;
-		
 		aSlot = theSlot->next;
-		if (aSlot && (aSlot->flag & XS_INTERNAL_FLAG)) {
-			switch (aSlot->kind) {
-			case XS_ARRAY_KIND: theResult->value.instance.prototype = mxArrayPrototype.value.reference; break;
-			case XS_BOOLEAN_KIND: theResult->value.instance.prototype = mxBooleanPrototype.value.reference; break;
-			case XS_DATE_KIND: theResult->value.instance.prototype = mxDatePrototype.value.reference; break;
-			case XS_NUMBER_KIND: theResult->value.instance.prototype = mxNumberPrototype.value.reference; break;
-			case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
-			case XS_ARRAY_BUFFER_KIND: theResult->value.instance.prototype = mxArrayBufferPrototype.value.reference; break;
+		if (aSlot) {
+			if (aSlot->ID == XS_ARRAY_BEHAVIOR)
+				theResult->value.instance.prototype = mxArrayPrototype.value.reference;
+			else if (aSlot->flag & XS_INTERNAL_FLAG) {
+				switch (aSlot->kind) {
+				case XS_ARRAY_KIND: theResult->value.instance.prototype = mxArrayPrototype.value.reference; break;
+				case XS_BOOLEAN_KIND: theResult->value.instance.prototype = mxBooleanPrototype.value.reference; break;
+				case XS_DATE_KIND: theResult->value.instance.prototype = mxDatePrototype.value.reference; break;
+				case XS_NUMBER_KIND: theResult->value.instance.prototype = mxNumberPrototype.value.reference; break;
+				case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
+				case XS_ARRAY_BUFFER_KIND: theResult->value.instance.prototype = mxArrayBufferPrototype.value.reference; break;
+				case XS_HOST_KIND: theResult->value.instance.prototype = mxSharedArrayBufferPrototype.value.reference; break;
+				}
 			}
 		}
 		aSlotAddress = &(theResult->next);
@@ -266,18 +245,22 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 
 void* fxMarshall(txMachine* the, txBoolean alien)
 {
-	txMarshallBuffer aBuffer = { C_NULL, C_NULL, C_NULL, 0, 0, 0 };
+	txMarshallBuffer aBuffer = { C_NULL, C_NULL, C_NULL, C_NULL, 0, 0, 0 };
 	txSlot* aSlot;
 	txSlot* bSlot;
 	txSlot* cSlot;
 	
 	mxTry(the) {
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
+		if (alien) {
+			aBuffer.symbolMap = c_calloc(the->keyIndex, sizeof(txID));
+			if (!aBuffer.symbolMap)
+				mxRangeError("marshall: cannot allocate buffer");
+		}
         the->stack->ID = XS_NO_ID;
 		fxMeasureSlot(the, the->stack, &aBuffer, alien);
 		aBuffer.size += aBuffer.symbolSize;
 		mxMarshallAlign(aBuffer.size, aBuffer.symbolSize);
-		
 		aBuffer.base = aBuffer.current = (txByte *)c_malloc(aBuffer.size);
 		if (!aBuffer.base)
 			mxRangeError("marshall: cannot allocate buffer");
@@ -286,22 +269,58 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		*((txID*)(aBuffer.current)) = aBuffer.symbolCount;
 		aBuffer.current += sizeof(txID);
 		if (aBuffer.symbolCount) {
-			txID anIndex = alien ? 0 : the->keyOffset;
-			txSlot** p = the->keyArray + anIndex;
-			txSlot** q = the->keyArray + the->keyIndex;
 			txID* lengths = (txID*)aBuffer.current;
+			txSlot** p;
+			txSlot** q;
 			aBuffer.current += aBuffer.symbolCount * sizeof(txID);
-			while (p < q) {
-				aSlot = *p;
-				if (aSlot->flag & XS_STRICT_FLAG) {
-					txID aLength = aSlot->ID;
-					aSlot->ID = anIndex | 0x8000;
-					c_memcpy(aBuffer.current, aSlot->value.key.string, aLength);
-					aBuffer.current += aLength;
-					anIndex++;
-					*lengths++ = aLength;
+			if (alien) {
+				txID* map = aBuffer.symbolMap;
+				txID dstIndex = 0;
+				p = the->keyArrayHost;
+				q = p + the->keyOffset;
+				while (p < q) {
+					txID length = *map;
+					if (length) {
+						*lengths++ = length;
+						*map = dstIndex | 0x8000;
+						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
+						aBuffer.current += length;
+						dstIndex++;
+					}
+					map++;
+					p++;
 				}
-				p++;
+				p = the->keyArray;
+				q = p + the->keyIndex - the->keyOffset;
+				while (p < q) {
+					txID length = *map;
+					if (length) {
+						*lengths++ = length;
+						*map = dstIndex | 0x8000;
+						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
+						aBuffer.current += length;
+						dstIndex++;
+					}
+					map++;
+					p++;
+				}
+			}
+			else {
+				txID dstIndex = the->keyOffset;
+				p = the->keyArray;
+				q = p + the->keyIndex - the->keyOffset;
+				while (p < q) {
+					aSlot = *p;
+					if (aSlot->flag & XS_STRICT_FLAG) {
+						txID length = aSlot->ID;
+						*lengths++ = length;
+						aSlot->ID = dstIndex | 0x8000;
+						c_memcpy(aBuffer.current, aSlot->value.key.string, length);
+						aBuffer.current += length;
+						dstIndex++;
+					}
+					p++;
+				}
 			}
 		}
 		mxMarshallAlign(aBuffer.current, aBuffer.symbolSize);
@@ -334,10 +353,10 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		}
 		break;
 	}
-	if (aBuffer.symbolCount) {
-		txID anIndex = alien ? 0 : the->keyOffset;
-		txSlot** p = the->keyArray + anIndex;
-		txSlot** q = the->keyArray + the->keyIndex;
+	if (!alien && aBuffer.symbolCount) {
+		txID anIndex = the->keyOffset;
+		txSlot** p = the->keyArray;
+		txSlot** q = p + the->keyIndex - the->keyOffset;
 		while (p < q) {
 			aSlot = *p;
 			if (aSlot->flag & XS_STRICT_FLAG) {
@@ -349,6 +368,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		}
 	}
 	the->stack++;
+	c_free(aBuffer.symbolMap);
 	return aBuffer.base;
 }
 
@@ -370,7 +390,6 @@ void fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, tx
 	txSlot* aResult;
 	txID anID;
 	txSlot* aSlot;
-	txIndex aLength;
 	txSlot** aSlotAddress;
 	
 	aResult = (txSlot*)(theBuffer->current);
@@ -378,15 +397,13 @@ void fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, tx
 	anID = theSlot->ID;
 	if (anID < XS_NO_ID) {
 		txID anIndex = anID & 0x7FFF;
-		if (alien)
-			aSlot = the->keyArray[anIndex];
-		else if (anID >= the->keyOffset)
-			aSlot = the->keyArray[anIndex - the->keyOffset];
-		else
-			aSlot = NULL;
-		if (aSlot) {
-			anID = aSlot->ID;
+		if (alien) {
+            anID = theBuffer->symbolMap[anIndex];
 		}
+		else if (anIndex >= the->keyOffset) {
+            aSlot = the->keyArray[anIndex - the->keyOffset];
+            anID = aSlot->ID;
+        }
 	}
 	aResult->ID = anID;
 	aResult->flag = theSlot->flag;
@@ -400,7 +417,6 @@ void fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, tx
 	case XS_INTEGER_KIND:
 	case XS_NUMBER_KIND:
 	case XS_DATE_KIND:
-	case XS_ERROR_KIND:
 	case XS_STRING_X_KIND:
 		break;
 	case XS_STRING_KIND: {
@@ -414,25 +430,14 @@ void fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, tx
 			fxMarshallChunk(the, theSlot->value.arrayBuffer.address, (void **)s, theBuffer);
 		}
 		break;
-	case XS_HOST_KIND:
-		aLength = theSlot->next->value.integer;
-		if (aLength) {
-			aResult->value.host.data = theBuffer->current;
-			c_memcpy(theBuffer->current, theSlot->value.host.data, aLength);
-			theBuffer->current += aLength;
-			mxMarshallAlign(theBuffer->current, aLength);
-		}
-		else
-			aResult->value.host.data = C_NULL;
+	case XS_HOST_KIND: 
 		break;
 	case XS_REFERENCE_KIND:
 		aSlot = theSlot->value.reference;
-		if (alien || (aSlot->ID == XS_NO_ID)) {
-			if (aSlot->value.instance.garbage)
-				aResult->value.reference = aSlot->value.instance.garbage;
-			else
-				fxMarshallSlot(the, aSlot, &(aResult->value.reference), theBuffer, alien);
-		}
+		if (aSlot->value.instance.garbage)
+			aResult->value.reference = aSlot->value.instance.garbage;
+		else
+			fxMarshallSlot(the, aSlot, &(aResult->value.reference), theBuffer, alien);
 		break;
 	case XS_ARRAY_KIND:  {
 		txIndex length = theSlot->value.array.length;
@@ -461,10 +466,7 @@ void fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, tx
 		} break;
 	case XS_INSTANCE_KIND:
 		aResult->value.instance.garbage = theBuffer->link;
-		if ((!alien) && theSlot->value.instance.prototype && (theSlot->value.instance.prototype->ID >= 0))
-			aResult->value.instance.prototype = theSlot->value.instance.prototype;
-		else
-			aResult->value.instance.prototype = C_NULL;
+		aResult->value.instance.prototype = C_NULL;
 		theSlot->value.instance.garbage = aResult;
 		theBuffer->link = theSlot;
 		aSlot = theSlot->next;
@@ -498,21 +500,37 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 	anID = theSlot->ID;
 	if (anID < XS_NO_ID) {
 		txID anIndex = anID & 0x7FFF;
-		if (alien)
-			aSlot = the->keyArray[anIndex];
-		else if (anID >= the->keyOffset)
+		if (alien) {
+			if (!theBuffer->symbolMap[anIndex]) {
+				if (anIndex >= the->keyOffset)
+					aSlot = the->keyArray[anIndex - the->keyOffset];
+				else
+					aSlot = the->keyArrayHost[anIndex];
+				if (!(aSlot->flag & XS_DONT_ENUM_FLAG))
+					mxTypeError("marshall: no symbols");
+				aLength = c_strlen(aSlot->value.key.string) + 1;
+				if (aLength > 0x7FFF)
+					mxRangeError("marshall: property name overflow");
+				theBuffer->symbolMap[anIndex] = (txID)aLength;
+				theBuffer->symbolSize += sizeof(txID);
+				theBuffer->symbolSize += aLength;
+				theBuffer->symbolCount++;
+			}
+		}
+		else if (anIndex >= the->keyOffset) {
 			aSlot = the->keyArray[anIndex - the->keyOffset];
-		else
-			aSlot = NULL;
-		if (aSlot && (!(aSlot->flag & XS_STRICT_FLAG))) {
-			aSlot->flag |= XS_STRICT_FLAG;
-			aLength = c_strlen(aSlot->value.key.string) + 1;
-			if (aLength > 0x7FFF)
-				mxRangeError("marshall: too long symbol");
-			aSlot->ID = (txID)aLength;
-			theBuffer->symbolSize += sizeof(txID);
-			theBuffer->symbolSize += aLength;
-			theBuffer->symbolCount++;
+			if (!(aSlot->flag & XS_STRICT_FLAG)) {
+				if (!(aSlot->flag & XS_DONT_ENUM_FLAG))
+					mxTypeError("marshall: no symbols");
+				aLength = c_strlen(aSlot->value.key.string) + 1;
+				if (aLength > 0x7FFF)
+					mxRangeError("marshall: property name overflow");
+				aSlot->flag |= XS_STRICT_FLAG;
+				aSlot->ID = (txID)aLength;
+				theBuffer->symbolSize += sizeof(txID);
+				theBuffer->symbolSize += aLength;
+				theBuffer->symbolCount++;
+			}
 		}
 	}
 	theBuffer->size += sizeof(txSlot);
@@ -523,7 +541,6 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 	case XS_INTEGER_KIND:
 	case XS_NUMBER_KIND:
 	case XS_DATE_KIND:
-	case XS_ERROR_KIND:
 	case XS_STRING_X_KIND:
 		break;
 	case XS_STRING_KIND:
@@ -533,22 +550,16 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		if (theSlot->value.arrayBuffer.address)
 			fxMeasureChunk(the, theSlot->value.arrayBuffer.address, theBuffer);
 		break;
-	case XS_HOST_KIND:
-		aSlot = theSlot->next;
-		if (aSlot && (aSlot->kind == XS_INTEGER_KIND)) {
-			aLength = aSlot->value.integer;
-			theBuffer->size += aLength;
-			mxMarshallAlign(theBuffer->size, aLength);
-		}
-		else
-			mxDebugID(XS_TYPE_ERROR, "marshall %s: no chunk host", theSlot->ID);
+	case XS_HOST_KIND: 
+		if (theSlot->value.host.variant.destructor != fxReleaseSharedChunk)
+			mxDebugID(XS_TYPE_ERROR, "marshall %s: no way", theSlot->ID);
 		break;
 	case XS_REFERENCE_KIND:
 		aSlot = theSlot->value.reference;
-		if ((aSlot->flag & XS_MARK_FLAG) == 0) {
-			if (alien || (aSlot->ID == XS_NO_ID))
-				fxMeasureSlot(the, aSlot, theBuffer, alien);
-		}
+		if ((aSlot->flag & XS_MARK_FLAG) == 0)
+			fxMeasureSlot(the, aSlot, theBuffer, alien);
+		else if (aSlot->flag & XS_DONT_MARSHALL_FLAG)
+			mxDebugID(XS_TYPE_ERROR, "marshall %s: no way", theSlot->ID);
 		break;
 	case XS_ARRAY_KIND: {
 		txIndex length = theSlot->value.array.length;
