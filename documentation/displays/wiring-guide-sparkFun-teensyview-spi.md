@@ -11,6 +11,8 @@ Revised: January 2, 2018
 
 **Type:** OLED, Monochrome
 
+**Interface:** SPI
+
 **Drivers:** video [SSD1306](../../documentation/drivers/ssd1306/ssd1306.md), no touch
 
 **Availability:** [TeensyView on Sparkfun] (https://www.sparkfun.com/products/14048)
@@ -20,7 +22,7 @@ Revised: January 2, 2018
 
 ![Generic SPI Display](images/teensyview.jpg)
 
-**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag so requires XSBug to be launched to run.
+**Moddable Sample code:** The Piu example [Balls](../../examples/piu/balls/) is good for testing this display. The build command below includes the -d, debug flag.
 
 ```
 cd $MODDABLE/examples/piu/balls
