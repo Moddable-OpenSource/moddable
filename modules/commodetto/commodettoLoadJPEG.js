@@ -18,16 +18,22 @@
  *
  */
 
-import Bitmap from "Bitmap";
+import JPEG from "commodetto/readJPEG";
+import Poco from "commodetto/Poco";
+import BufferOut from "commodetto/BufferOut";
 
-export default class JPEG @ "xs_JPEG_destructor" {
-	constructor(buffer) @ "xs_JPEG_constructor"
-	read() @ "xs_JPEG_read"
-	push(buffer) @ "xs_JPEG_push"
-	get ready() @ "xs_JPEG_get_ready"
+export default function decompress(data, dictionary) {
+	let jpeg = new JPEG(data, dictionary);
 
-	initialize(pixelFormat) {
-		this.bitmap = new Bitmap(0, 0, pixelFormat, this.pixels, 0);
+	let offscreen = new BufferOut({width: jpeg.width, height: jpeg.height, pixelFormat: jpeg.bitmap.pixelFormat});
+	let render = new Poco(offscreen);
+
+	while (jpeg.ready) {
+		let block = jpeg.read();
+		render.begin(block.x, block.y, block.width, block.height);
+		render.drawBitmap(block, block.x, block.y);
+		render.end();
 	}
-}
 
+	return offscreen.bitmap;
+}
