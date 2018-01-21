@@ -55,7 +55,7 @@ void PiuCode_search(xsMachine* the)
 	KprCodeSearch self = &searchRecord;
 	xsStringValue pattern = xsToString(xsArg(0));
 	xsBooleanValue caseless = xsToBoolean(xsArg(1));
-	xsStringValue modifier = (caseless) ? "iu" : "u";
+	xsStringValue modifier = (caseless) ? "imu" : "mu";
 	int c, i; 
 	xsVars(XS_COUNT);
 	xsTry {
@@ -239,6 +239,9 @@ void PiuCodeSearchData(xsMachine* the, KprCodeSearch self, xsStringValue data, x
 // 			break;
 		count = fxMatchRegExp(NULL, self->code, self->data, fromFile, offset);
 		if (count <= 0) {
+			break;
+		}
+		if (self->data[0] == self->data[1]) {
 			break;
 		}
 		from = fromLine = fromFile + self->data[0];

@@ -569,7 +569,7 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 	PiuCodeResult result;
 	PiuTextBufferClear(the, results);
 	if ((*self)->code) {
-		int32_t offset = 0;
+        int32_t offset = 0;
 		int32_t itemCount = 0;
 		int32_t itemSize = 0;
 		itemCount = 0;
@@ -580,9 +580,12 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 			result = (PiuCodeResult)((char*)(*results) + former);
 			string = PiuToString((*self)->string);
 			result->count = fxMatchRegExp(NULL, (*self)->code, (*self)->data, string, offset);
-			if (result->count <= 0) {
-				break;
-			}
+            if (result->count <= 0) {
+                break;
+            }
+            if ((*self)->data[0] == (*self)->data[1]) {
+                break;
+            }
 			offset = (*self)->data[1];
 			result->from = (*self)->data[0];
 			result->to = offset;
@@ -913,7 +916,7 @@ void PiuCode_find(xsMachine *the)
 		(*self)->data = NULL;
 	}	
 	if (pattern && pattern[0]) {
-		xsStringValue modifier = (caseless) ? "iu" : "u";
+		xsStringValue modifier = (caseless) ? "imu" : "mu";
 		fxCompileRegExp(NULL, pattern, modifier, &(*self)->code, &(*self)->data, NULL, 0);
 	}
 	PiuCodeSearch(self, (*self)->size);
