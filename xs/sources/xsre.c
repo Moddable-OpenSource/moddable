@@ -689,7 +689,7 @@ void* fxCharSetParseList(txPatternParser* parser)
 		if (parser->character == ']')
 			break;
 	}
-	if (not)
+	if (not && result)
 		result = fxCharSetNot(parser, result);
 	return result;
 }
