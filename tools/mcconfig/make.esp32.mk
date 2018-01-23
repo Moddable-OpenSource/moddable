@@ -17,7 +17,6 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-BASE = $(MODDABLE)/libraries/esp
 HOST_OS := $(shell uname)
 
 ESP32_BASE ?= $(HOME)/esp32
@@ -36,7 +35,6 @@ else
 endif
 
 INC_DIRS = \
-	$(BASE) \
  	$(IDF_PATH)/components \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/driver/include \
@@ -244,18 +242,6 @@ $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
-
-$(LIB_DIR)/%.S.o: %.S
-	@echo "# cc" $(<F)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(S_FLAGS) $< -o $@
-
-$(LIB_DIR)/%.c.o: %.c
-	@echo "# cc" $(<F)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
-
-$(LIB_DIR)/%.cpp.o: %.cpp
-	@echo "# cpp" $(<F)
-	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
 
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
