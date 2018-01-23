@@ -204,6 +204,68 @@ This document provides an introduction to getting started building apps with the
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp
 	```
+	
+### ESP32 setup
+
+1. Complete "Host environment setup" for Windows.
+
+2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
+
+2. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
+
+3. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
+
+	```
+	%USERPROFILE%\msys32\mingw32.exe
+	```
+	
+4. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
+
+	```
+	mkdir ~/esp
+	```
+	
+5. Clone the `ESP-IDF` GitHub repository into the `~/esp` directory. Make sure to specify the `--recursive` option:
+
+	```
+	cd ~/esp
+	git clone --recursive https://github.com/espressif/esp-idf.git
+	```
+	
+6. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
+
+	```
+	export IDF_PATH="C:/Users/<your-user-name>/msys32/home/<your-user-name>/esp/esp-idf"
+	```
+
+7. Connect the ESP32 to your computer with a USB cable.
+
+8. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+
+	> The Device Manager interface may vary depending on the Windows OS version.
+	
+9. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+
+	```
+	set BASE_DIR=%USERPROFILE%
+	set UPLOAD_PORT=COM3
+	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
+	```
+
+10. Set the `CONFIG_ESPTOOLPY_PORT` in the `%MODDABLE%\build\devices\esp32\xsProj\sdkconfig` file to the ESP32 COM port:
+
+	```
+	CONFIG_ESPTOOLPY_PORT="COM3"
+	```
+11. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+
+	```
+	cd %MODDABLE%\examples\helloworld
+	mcconfig -d -m -p esp32
+	```
+	> The mcconfig tool builds the Moddable app and then launches a MINGW32 shell to build the ESP32 firmware and flash the device.
+	
+	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
 
 ## Linux
 
