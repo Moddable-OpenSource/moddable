@@ -42,22 +42,22 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp32\release\lib
 !ENDIF
 
 INC_DIRS = \
- 	-I$(IDF_PATH)\components \
+	-I$(IDF_PATH)\components \
 	-I$(IDF_PATH)\components\heap\include \
- 	-I$(IDF_PATH)\components\driver\include \
- 	-I$(IDF_PATH)\components\soc\esp32\include \
- 	-I$(IDF_PATH)\components\soc\include \
- 	-I$(IDF_PATH)\components\esp32\include \
- 	-I$(IDF_PATH)\components\freertos \
- 	-I$(IDF_PATH)\components\freertos\include \
- 	-I$(IDF_PATH)\components\lwip\include\lwip \
+	-I$(IDF_PATH)\components\driver\include \
+	-I$(IDF_PATH)\components\soc\esp32\include \
+	-I$(IDF_PATH)\components\soc\include \
+	-I$(IDF_PATH)\components\esp32\include \
+	-I$(IDF_PATH)\components\freertos \
+	-I$(IDF_PATH)\components\freertos\include \
+	-I$(IDF_PATH)\components\lwip\include\lwip \
 	-I$(IDF_PATH)\components\lwip\include\lwip\port \
- 	-I$(IDF_PATH)\components\mbedtls\include \
- 	-I$(IDF_PATH)\components\spi_flash\include \
- 	-I$(IDF_PATH)\components\vfs\include \
- 	-I$(IDF_PATH)\components\tcpip_adapter\include \
- 	-I$(IDF_PATH)\components\tcpip_adapter
-    
+	-I$(IDF_PATH)\components\mbedtls\include \
+	-I$(IDF_PATH)\components\spi_flash\include \
+	-I$(IDF_PATH)\components\vfs\include \
+	-I$(IDF_PATH)\components\tcpip_adapter\include \
+	-I$(IDF_PATH)\components\tcpip_adapter
+
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
 	$(LIB_DIR)\xsPlatform.o \
@@ -118,15 +118,15 @@ XS_HEADERS = \
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
 TOOLS_BIN = $(TOOLS_ROOT)\bin
-CC  = $(TOOLS_BIN)\xtensa-esp32-elf-gcc
+CC = $(TOOLS_BIN)\xtensa-esp32-elf-gcc
 CPP = $(TOOLS_BIN)\xtensa-esp32-elf-g++
-LD  = $(CPP)
-AR  = $(TOOLS_BIN)\xtensa-esp32-elf-ar
+LD = $(CPP)
+AR = $(TOOLS_BIN)\xtensa-esp32-elf-ar
 OBJCOPY = $(TOOLS_BIN)\xtensa-esp32-elf-objcopy
 
 AR_OPTIONS = crs
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\debug
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
@@ -190,7 +190,7 @@ LAUNCH = debug
 LAUNCH = release
 !ENDIF
 
-.PHONY: all	
+.PHONY: all
 
 all: $(LAUNCH)
 
@@ -207,10 +207,7 @@ debug: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
 	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 make flash"
-#	@echo #before serial2xsbug
-#	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 921600 8N1
-#	@echo #after serial2xsbug
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 make flash; echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 | more"
 
 release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
@@ -222,15 +219,15 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
-	
-$(BIN_DIR)\xs_esp.a: $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) 
+
+$(BIN_DIR)\xs_esp.a: $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
 	@echo # ld xs_esp.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
-	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(XS_OBJ) $(OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\buildinfo.o
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
+	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
 
-$(XS_OBJ): $(XS_HEADERS)
+$(XS_OBJ):$(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
@@ -249,7 +246,7 @@ $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
