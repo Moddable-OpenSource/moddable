@@ -76,7 +76,7 @@ class Expander extends SMBus {
     Object.freeze(this);
   }
 
-  bankWrite(state) {
+  write(state) {
     if (this.offset) {
       // Read IODIR state
       let iodir = this.readWord(this.IODIR);
@@ -103,7 +103,7 @@ class Expander extends SMBus {
       this.writeByte(this.IODIR, iodir);
     }
   }
-  bankRead() {
+  read() {
     if (this.offset) {
       // Read IODIR state
       let iodir = this.readWord(this.IODIR);
@@ -133,6 +133,12 @@ class Expander extends SMBus {
 
       return gpio;
     }
+  }
+  bankWrite() {
+    throw new Error("bankWrite() has been renamed to write()");
+  }
+  bankRead() {
+    throw new Error("bankRead() has been renamed to read()");
   }
 }
 
