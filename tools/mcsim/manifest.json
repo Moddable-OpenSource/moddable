@@ -1,0 +1,85 @@
+{
+	"build": {
+		"NAME": "mcsim",
+		"MODULES": "$(MODDABLE)/modules",
+		"PIU": "$(MODULES)/piu",
+		"SIMULATOR": "$(MODDABLE)/build/simulator",
+	},
+	"creation": {
+		"chunk": {
+			"initial":16386,
+			"incremental":1024,
+		},
+		"heap": {
+			"initial":8192,
+			"incremental":1024,
+		},
+		"stack":2048,
+		"keys": {
+			"available":16386,
+			"name":1993,
+			"symbol":127,
+		},
+		"main":"main",
+	},
+	"data": {
+		"*": [
+		],
+	},
+	"modules": {
+		"~": [
+			"$(SIMULATOR)/screen",
+		],
+		"piu/*": [
+			"$(PIU)/All/piu*",
+			"$(PIU)/PC/piu*",
+			"$(PIU)/PC/Code/piu*",
+			"$(PIU)/PC/Common/piu*",
+			"$(PIU)/PC/Screen/piu*",
+		],
+		"*": [
+			"./*",
+			"$(SIMULATOR)/screen",
+			"$(MODULES)/data/binaryMessage/*",
+		],
+	},
+	"preload": [
+		"piu/PC",
+	],
+	"resources": {
+		"assets/*": "./assets/*",
+		"fonts/*": "./fonts/*",
+	},
+	"platforms":{
+		"x-lin": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/lin/piu*",
+					"$(PIU)/PC/Screen/lin/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+		"x-mac": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/mac/piu*",
+					"$(PIU)/PC/Screen/mac/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+		"x-win": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/win/piu*",
+					"$(PIU)/PC/Screen/win/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+	},
+}
