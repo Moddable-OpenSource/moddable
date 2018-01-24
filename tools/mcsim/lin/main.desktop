@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=mcsim
+Icon=tech-moddable-mcsim
+StartupNotify=true
+Exec=/usr/bin/tech-moddable-mcsim
