@@ -59,6 +59,7 @@ class ApplicationBehavior extends Behavior {
 		global.model = this;
   		application.interval = 100;
 		
+		this.orientation = false;
 		this.horizontalDividerCurrent = 320;
 		this.horizontalDividerStatus = true;
 		this.verticalDividerCurrent = 320;
@@ -75,7 +76,10 @@ class ApplicationBehavior extends Behavior {
 		
 		this.readPreferences();
 
-		application.add(new MainContainer(this));
+		if (this.orientation)
+			application.add(new VerticalContainer(this));
+		else
+			application.add(new HorizontalContainer(this));
 					
 		if (this.devicesPath)
 			this.reloadDevices(application);
@@ -97,7 +101,7 @@ class ApplicationBehavior extends Behavior {
 			this.SCREEN.quit();
 		application.updateMenus();
 	}
-	reloadDevices(application) {
+	reloadDevices(application, flag) {
 		let devices = this.devices = [];
 		let index = this.deviceIndex;
 		this.selectDevice(application, -1);
@@ -163,8 +167,23 @@ class ApplicationBehavior extends Behavior {
 		this.launchScreen();
 	}
 	onToggleMessages(application) {
-		let divider = this.HORIZONTAL_DIVIDER;
-		divider.behavior.toggle(divider);
+		let deviceIndex = this.deviceIndex;
+		this.horizontalDividerCurrent = this.HORIZONTAL_DIVIDER.behavior.current;
+		this.horizontalDividerStatus = this.HORIZONTAL_DIVIDER.behavior.status;
+		this.verticalDividerCurrent = this.VERTICAL_DIVIDER.behavior.current;
+		this.verticalDividerStatus = this.VERTICAL_DIVIDER.behavior.status;
+		this.quitScreen();
+		this.selectDevice(application, -1),
+		if (this.orientation) {
+			application.replace(application.first, new HorizontalContainer(this));
+			this.orientation = false;
+		}
+		else {
+			application.replace(application.first, new VerticalContainer(this));
+			this.orientation = true;
+		}
+		this.selectDevice(application, deviceIndex),
+		this.launchScreen();
 	}
 	
 /* APP MENU */
@@ -247,6 +266,8 @@ class ApplicationBehavior extends Behavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
+				if ("orientation" in preferences)
+					this.orientation = preferences.orientation;
 				if ("horizontalDividerCurrent" in preferences)
 					this.horizontalDividerCurrent = preferences.horizontalDividerCurrent;
 				if ("horizontalDividerStatus" in preferences)
@@ -272,6 +293,7 @@ class ApplicationBehavior extends Behavior {
 		try {
 			let content;
 			let preferences = {
+				orientation: this.orientation,
 				horizontalDividerCurrent: this.HORIZONTAL_DIVIDER.behavior.current,
 				horizontalDividerStatus: this.HORIZONTAL_DIVIDER.behavior.status,
 				verticalDividerCurrent: this.VERTICAL_DIVIDER.behavior.current,
@@ -289,7 +311,7 @@ class ApplicationBehavior extends Behavior {
 	}
 }
 
-var MainContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0, contents: [
+var VerticalContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0, contents: [
 	Layout($, { left:0, right:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
 		Layout($, { left:0, width:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
 			Container($, { left:0, right:0, top:0, height:0, contents: [
@@ -309,6 +331,30 @@ var MainContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0,
 		VerticalDivider($, { 
 			anchor:"VERTICAL_DIVIDER", left:$.verticalDividerStatus ? $.verticalDividerCurrent - 3 : 317, width:6,
 			before:320, current:$.verticalDividerCurrent, after:320, status:$.verticalDividerStatus,
+		}),
+	]}),
+]}));
+
+var HorizontalContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0, contents: [
+	Layout($, { left:0, right:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
+		Layout($, { left:0, right:0, top:0, height:0, Behavior:DividerLayoutBehavior, contents: [
+			Container($, { left:0, width:0, top:0, bottom:0, contents: [
+				ControlsPane($, { anchor:"CONTROLS" }),
+			]}),
+			Container($, { width:0, right:0, top:0, bottom:0, contents: [
+				MessagesPane($, { anchor:"MESSAGES" }),
+			]}),
+			VerticalDivider($, { 
+				anchor:"VERTICAL_DIVIDER", left:$.verticalDividerStatus ? $.verticalDividerCurrent - 3 : 317, width:6,
+				before:320, current:$.verticalDividerCurrent, after:320, status:$.verticalDividerStatus,
+			}),
+		]}),
+		Container($, { anchor:"DEVICE",  left:0, right:0, height:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
+			Content($, {}),
+		]}),
+		HorizontalDivider($, { 
+			anchor:"HORIZONTAL_DIVIDER", width:6, bottom:$.horizontalDividerStatus ? $.horizontalDividerCurrent - 3 : 23, 
+			before:160, current:$.horizontalDividerCurrent, after:26, status:$.horizontalDividerStatus,
 		}),
 	]}),
 ]}));
