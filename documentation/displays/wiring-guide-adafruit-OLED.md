@@ -41,5 +41,5 @@ mcconfig -d -m -r 0 -f rgb332 -p esp screen=ssd1351 touch=""
 | SCK | GPIO 14 | (D5)
 | MOSI | GPIO 13 | (D7)
 
-![Generic 2.4"-2.8" wiring illustration](images/adafruit-oled-wiring.png)
+![Generic 2.4"-2.8" wiring illustration](images/adafruit-oled-wiring2.png)
 
