@@ -36,14 +36,14 @@ class NoDeviceBehavior extends Behavior {
 }
 
 let noDevice = {
-	title:"NO APPLIANCES",
+	title:"NO SIMULATORS",
 	ControlsTemplate: Container.template($ => ({
 		left:0, right:0, top:0, bottom:0,
 		contents:[
 			Button({ label:"Locate..." }, {
 				Behavior: class extends ButtonBehavior {
 					onTap(container) {
-						container.bubble("doLocateAppliances");
+						container.bubble("doLocateSimulators");
 					}
 				}
 			}),
@@ -153,7 +153,7 @@ class ApplicationBehavior extends Behavior {
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
 		if (info.directory)
-			this.doLocateAppliancesCallback(path);
+			this.doLocateSimulatorsCallback(path);
 		else
 			this.doOpenFileCallback(path);
 	}
@@ -215,10 +215,10 @@ class ApplicationBehavior extends Behavior {
 	canReloadFile() {
 		return this.SCREEN && this.SCREEN.running;
 	}
-	canLocateAppliances() {
+	canLocateSimulators() {
 		return true;
 	}
-	canReloadAppliances() {
+	canReloadSimulators() {
 		return true;
 	}
 	doCloseFile() {
@@ -240,14 +240,14 @@ class ApplicationBehavior extends Behavior {
 		this.quitScreen();
 		this.launchScreen();
 	}
-	doLocateAppliances() {
-		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) this.doLocateAppliancesCallback(path); });
+	doLocateSimulators() {
+		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) this.doLocateSimulatorsCallback(path); });
 	}
-	doLocateAppliancesCallback(path) {
+	doLocateSimulatorsCallback(path) {
 		this.devicesPath = path;
-		this.doReloadAppliances();
+		this.doReloadSimulators();
 	}
-	doReloadAppliances() {
+	doReloadSimulators() {
 		this.quitScreen();
 		this.reloadDevices(application);
 		this.launchScreen();
@@ -386,8 +386,8 @@ let mcsimApplication = Application.template($ => ({
 				{ title:"Close Application", key:"W", command:"CloseFile" },
 				{ title:"Reload Application", key:"R", command:"ReloadFile" },
 				null,
-				{ title:"Locate Appliances...", key:"L", command:"LocateAppliances" },
-				{ title:"Reload Appliances", shift:true, key:"R", command:"ReloadAppliances" },
+				{ title:"Locate Simulators...", key:"L", command:"LocateSimulators" },
+				{ title:"Reload Simulators", shift:true, key:"R", command:"ReloadSimulators" },
 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],
