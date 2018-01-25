@@ -112,12 +112,7 @@ class MessageHeaderBehavior extends Behavior {
 		row.first.state = state;
 	}
 	onDisplaying(row) {
-		let divider = row.container.container.next;
-		this.changeArrowState(row, (divider.behavior.status) ? 3 : 1);
-	}
-	onDividerChanged(row, divider) {
-		if (divider == row.container.container.next)
-			this.changeArrowState(row, (divider.behavior.status) ? 3 : 1);
+		this.changeArrowState(row, (model.orientation) ? 3 : 1);
 	}
 	onMouseEntered(row, x, y) {
 		row.state = 1;
