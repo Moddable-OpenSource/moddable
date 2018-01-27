@@ -141,15 +141,17 @@ export default class extends TOOL {
 		});
 		var keys = Object.keys(all);
 		var length = keys.length;
+		if (length < 127)
+			length = 127;
 		var values = {};
-		var debug = new Array(length);
+		var debug = new Array(length).fill();
 		keys.forEach((key, index) => {
 			values[key] = index;
 			debug[index] = key;
 		})
 		locals.forEach(local => {
 			var dictionary = local.dictionary;
-			var table = local.table = new Array(length);
+			var table = local.table = new Array(length).fill();
 			keys.forEach((key, index) => {
 				if (key in dictionary)
 					table[index] = dictionary[key];
@@ -172,14 +174,17 @@ export default class extends TOOL {
 			this.write32(file, length);
 			var offset = (1 + length) << 3;
 			for (var index of H) {
-				var string = debug[index];
 				this.write32(file, offset);
-				offset += this.strlen(string) + 1;
+				var string = debug[index];
+				if (string)
+					offset += this.strlen(string) + 1;
 			}
 			for (var index of H) {
 				var string = debug[index];
-				file.writeString(string);
-				file.writeByte(0);
+				if (string) {
+					file.writeString(string);
+					file.writeByte(0);
+				}
 			}
 		}	
 		file.close();
@@ -193,20 +198,23 @@ export default class extends TOOL {
 			this.write32(file, length);
 			var offset = (1 + length) << 2;
 			for (var index of H) {
-				var string = table[index];
 				this.write32(file, offset);
-				offset += this.strlen(string) + 1;
+				var string = table[index];
+				if (string)
+					offset += this.strlen(string) + 1;
 			}
 			for (var index of H) {
 				var string = table[index];
-				if (characters && string) {
-					let c = string.length;
-					for (let i = 0; i < c; i++) {
-						characters[string.charCodeAt(i)] = string.charAt(i);
+				if (string) {
+					if (characters) {
+						let c = string.length;
+						for (let i = 0; i < c; i++) {
+							characters[string.charCodeAt(i)] = string.charAt(i);
+						}
 					}
+					file.writeString(string);
+					file.writeByte(0);
 				}
-				file.writeString(string);
-				file.writeByte(0);
 			}
 			file.close();
 		});
