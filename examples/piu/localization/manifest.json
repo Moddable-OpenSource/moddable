@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"resources":{
+		"*": [
+			"./strings/*",
+			"./settings"
+		],
+		"*-mask": [
+			"./OpenSans-Regular-24",
+		],
+	}
+}
