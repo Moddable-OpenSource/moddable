@@ -96,7 +96,7 @@ The Analog class provides only static functions. It is not instantiated.
 
 The following example samples an analog temperature sensor, converting the result to celsius degrees. The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
 
-	let temperature = (Analog.read(0) / 1024) * 330;
+	let temperature = (Analog.read(0) / 1023) * 330 - 50;
 	trace(`Temperature is ${temperature} degrees celsius\n`);
 
 The example works with a widely-available low-cost [temperature sensor](https://learn.adafruit.com/tmp36-temperature-sensor/overview).
