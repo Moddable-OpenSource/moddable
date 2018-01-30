@@ -23,21 +23,31 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "xsesp.h"
 
-#include "string.h"
-#include "malloc.h"
-
 #include "user_interface.h"
 
 static void wifiScanComplete(void *arg, STATUS status);
-static void reportScan(modTimer timer, void *refcon, uint32_t refconSize);
+static void deliverScanResults(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
+struct aWiFiResultRecord {
+	uint8 length;
+	uint8 bssid[6];
+	uint8 channel;
+	sint8 rssi;
+	uint8 authmode;		// instead of AUTH_MODE, to save space
+	uint8 is_hidden;
+	uint8 ssid[1];		// not null terminated... use record length to determine ssid length
+};
+typedef struct aWiFiResultRecord aWiFiResultRecord;
+typedef struct aWiFiResultRecord *aWiFiResult;
 
 struct wifiScanRecord {
 	xsSlot			callback;
 	xsMachine		*the;
-	struct bss_info	*scan;
-	void			*data;
+	uint8_t			count;
+	aWiFiResult		scan;
 };
 typedef struct wifiScanRecord wifiScanRecord;
+
 
 static wifiScanRecord *gScan;
 
@@ -147,90 +157,98 @@ void xs_wifi_connect(xsMachine *the)
 
 void wifiScanComplete(void *arg, STATUS status)
 {
-	gScan->scan = (OK == status) ? arg : NULL;
-	if (modTimerAdd(0, 0, reportScan, NULL, 0)) {
-		// copy scan record for use in callback
+	if (OK == status) {
 		struct bss_info *bss;
-		uint8_t count = 0, i = 0;
-		for (bss = arg; NULL != bss; bss = bss->next.stqe_next)
-			count += 1;
+		uint16_t size = 0;
 
-		if (count) {
-			gScan->scan = c_malloc(count * sizeof(struct bss_info));
-			if (!gScan->scan)
-				return;
+		// copy scan record for use in callback
+		for (bss = arg; NULL != bss; bss = bss->next.stqe_next) {
+			size += (sizeof(aWiFiResultRecord) - 1) + bss->ssid_len;
+			gScan->count += 1;
+		}
 
-			for (bss = arg; NULL != bss; bss = bss->next.stqe_next, i++) {
-				gScan->scan[i] = *bss;
-				if (bss->next.stqe_next)
-					gScan->scan[i].next.stqe_next = &gScan->scan[i + 1];
+		if (size) {
+			gScan->scan = c_malloc(size);
+			if (gScan->scan) {
+				aWiFiResult awr = (aWiFiResult)gScan->scan;
+				for (bss = arg; NULL != bss; bss = bss->next.stqe_next) {
+					awr->length = (sizeof(aWiFiResultRecord) - 1) + bss->ssid_len;
+					c_memcpy(awr->bssid, bss->bssid, sizeof(bss->bssid));
+					awr->channel = bss->channel;
+					awr->rssi = bss->rssi;
+					awr->authmode = bss->authmode;
+					awr->is_hidden = bss->is_hidden;
+					c_memcpy(awr->ssid, bss->ssid, bss->ssid_len);
+					awr = (aWiFiResult)(awr->length + (uint8_t *)awr);
+				}
 			}
-
-			gScan->data = gScan->scan;
 		}
 	}
+
+	modMessagePostToMachine(gScan->the, NULL, 0, deliverScanResults, NULL);
 }
 
-void reportScan(modTimer timer, void *refcon, uint32_t refconSize)
+void deliverScanResults(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsMachine *the = gScan->the;
-
 	xsBeginHost(the);
 
 	xsmcVars(2);
 	if (gScan->scan) {
-		struct bss_info *bss;
+		aWiFiResult awr = gScan->scan;
 
 		xsTry {
-			for (bss = gScan->scan; NULL != bss; bss = bss->next.stqe_next) {
+			while (gScan->count--) {
 				xsmcSetNewObject(xsVar(1));
 
-				xsmcSetStringBuffer(xsVar(0), bss->ssid, bss->ssid_len);
+				xsmcSetStringBuffer(xsVar(0), awr->ssid, awr->length - (sizeof(aWiFiResultRecord) - 1));
 				xsmcSet(xsVar(1), xsID_ssid, xsVar(0));
 
-				xsmcSetInteger(xsVar(0), bss->rssi);
+				xsmcSetInteger(xsVar(0), awr->rssi);
 				xsmcSet(xsVar(1), xsID_rssi, xsVar(0));
 
-				xsmcSetInteger(xsVar(0), bss->channel);
+				xsmcSetInteger(xsVar(0), awr->channel);
 				xsmcSet(xsVar(1), xsID_channel, xsVar(0));
 
-				xsmcSetBoolean(xsVar(0), bss->is_hidden);
+				xsmcSetBoolean(xsVar(0), awr->is_hidden);
 				xsmcSet(xsVar(1), xsID_hidden, xsVar(0));
 
-				xsmcSetArrayBuffer(xsVar(0), bss->bssid, sizeof(bss->bssid));
+				xsmcSetArrayBuffer(xsVar(0), awr->bssid, sizeof(awr->bssid));
 				xsmcSet(xsVar(1), xsID_bssid, xsVar(0));
 
-				if (bss->authmode < AUTH_MAX) {
-					if (AUTH_OPEN == bss->authmode)
+				if (awr->authmode < AUTH_MAX) {
+					if (AUTH_OPEN == awr->authmode)
 						xsmcSetString(xsVar(0), "none");
-					else if (AUTH_WEP == bss->authmode)
+					else if (AUTH_WEP == awr->authmode)
 						xsmcSetString(xsVar(0), "wep");
-					else if (AUTH_WPA_PSK == bss->authmode)
+					else if (AUTH_WPA_PSK == awr->authmode)
 						xsmcSetString(xsVar(0), "wpa_psk");
-					else if (AUTH_WPA2_PSK == bss->authmode)
+					else if (AUTH_WPA2_PSK == awr->authmode)
 						xsmcSetString(xsVar(0), "wpa2_psk");
-					else // if (AUTH_WPA_WPA2_PSK == bss->authmode)
+					else // if (AUTH_WPA_WPA2_PSK == awr->authmode)
 						xsmcSetString(xsVar(0), "wpa_wpa2_psk");
 
 					xsmcSet(xsVar(1), xsID_authentication, xsVar(0));
 				}
 
 				xsCallFunction1(gScan->callback, xsGlobal, xsVar(1));
+
+				awr = (aWiFiResult)(awr->length + (uint8_t *)awr);
 			}
 		}
 		xsCatch {
 		}
+
+		c_free(gScan->scan);
 	}
 
-	xsCallFunction1(gScan->callback, xsGlobal, xsNull);		// end of scan
-
-	xsEndHost(the);
-
+	xsResult = gScan->callback;
 	xsForget(gScan->callback);
-	if (gScan->data)
-		c_free(gScan->data);
 	c_free(gScan);
 	gScan = NULL;
+
+	xsCallFunction1(xsResult, xsGlobal, xsNull);		// end of scan
+
+	xsEndHost(the);
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
@@ -241,18 +259,15 @@ struct xsWiFiRecord {
 	xsMachine			*the;
 	xsSlot				obj;
 	uint8_t				haveCallback;
-	uint8_t				callIt;
 };
 
 static xsWiFi gWiFi;
 
-static void wifiEventPending(modTimer timer, void *refcon, uint32_t refconSize)
+static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsWiFi walker;
-	const char *message;
-	xsMachine *the = gWiFi->the;
+	xsWiFi wifi = refcon;
 
-	switch (*(uint32 *)refcon){
+	switch (*(uint32 *)message){
 		case EVENT_STAMODE_CONNECTED:		message = "connect"; break;
 		case EVENT_STAMODE_DISCONNECTED:	message = "disconnect"; break;
 		case EVENT_STAMODE_GOT_IP:			message = "gotIP"; break;
@@ -260,26 +275,18 @@ static void wifiEventPending(modTimer timer, void *refcon, uint32_t refconSize)
 		default: return;
 	}
 
-	for (walker = gWiFi; NULL != walker; walker = walker->next)
-		walker->callIt = walker->haveCallback;
-
-again:
-	for (walker = gWiFi; NULL != walker; walker = walker->next) {
-		if (!walker->callIt)
-			continue;
-
-		xsBeginHost(the);
-			walker->callIt = 0;
-			xsCall1(walker->obj, xsID_callback, xsString(message));
-		xsEndHost(the);
-
-		goto again;
-	}
+	xsBeginHost(the);
+		xsCall1(wifi->obj, xsID_callback, xsString(message));
+	xsEndHost(the);
 }
 
 static void doWiFiEvent(System_Event_t *msg)
 {
-	modTimerAdd(0, 0, wifiEventPending, &msg->event, sizeof(msg->event));
+	xsWiFi walker;
+
+	for (walker = gWiFi; NULL != walker; walker = walker->next)
+		if (walker->haveCallback)
+			modMessagePostToMachine(walker->the, (uint8_t *)&msg->event, sizeof(msg->event), wifiEventPending, walker);
 }
 
 void xs_wifi_destructor(void *data)
