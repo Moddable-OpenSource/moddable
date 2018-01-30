@@ -1056,7 +1056,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	if (!pending)
 		return;
 
-	c_printf("socketClearPending - begin\n");
 	if (pending & kPendingReceive)
 		socketMsgDataReceived(xss);
 
@@ -1076,7 +1075,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		listenerMsgNew((xsListener)xss);
 
 	socketDownUseCount(xss->the, xss);
-	c_printf("socketClearPending - end\n");
 }
 
 void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize)
