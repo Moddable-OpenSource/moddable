@@ -268,9 +268,10 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #if defined(__XS__)
 	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 	#if ESP32
+		int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
 		void modMessageService(xsMachine *the, int maxDelayMS);
 	#else
-		void modMessageService(void);
+		int modMessageService(void);
 	#endif
 #endif
 
