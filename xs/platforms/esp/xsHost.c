@@ -54,13 +54,13 @@
 	static void espStartInstrumentation(txMachine* the);
 #endif
 
-uint8_t espRead8(const void *addr)
+ICACHE_RAM_ATTR uint8_t espRead8(const void *addr)
 {
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
 	return *p >> ((3 & (uint32_t)addr) << 3);
 }
 
-uint16_t espRead16(const void *addr)
+ICACHE_RAM_ATTR uint16_t espRead16(const void *addr)
 {
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
 	switch (3 & (uint32_t)addr) {
@@ -71,7 +71,7 @@ uint16_t espRead16(const void *addr)
 	}
 }
 
-uint32_t espRead32(const void *addr)
+ICACHE_RAM_ATTR uint32_t espRead32(const void *addr)
 {
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
 	switch (3 & (uint32_t)addr) {
@@ -82,7 +82,7 @@ uint32_t espRead32(const void *addr)
 	}
 }
 
-uint16_t espRead16be(const void *addr)
+ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
 {
 	uint16_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
@@ -96,7 +96,7 @@ uint16_t espRead16be(const void *addr)
 	return (result >> 8) | (result << 8);
 }
 
-uint32_t espRead32be(const void *addr)
+ICACHE_RAM_ATTR uint32_t espRead32be(const void *addr)
 {
 	uint32_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
