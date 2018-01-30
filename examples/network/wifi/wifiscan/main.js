@@ -13,7 +13,6 @@
  */
 
 import WiFi from "wifi";
-import Timer from "timer";
 
 let aps = [];
 
@@ -28,7 +27,7 @@ function scan() {
 			}
 		}
 		else
-			Timer.set(scan);
+			scan();
 	});
 }
 
