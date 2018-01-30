@@ -72,20 +72,17 @@ void setup()
 
 void loop(void)
 {
-	if (!gThe)
-		return;
-
 #if mxDebug
 	fxReceiveLoop();
 #endif
 
 	modTimersExecute();
 
-	modMessageService();
-
-	int delayMS = modTimersNext();
-	if (delayMS)
-		modDelayMilliseconds((delayMS < 5) ? delayMS : 5);
+	if (0 == modMessageService()) {
+		int delayMS = modTimersNext();
+		if (delayMS)
+			modDelayMilliseconds(delayMS);
+	}
 }
 
 /*
