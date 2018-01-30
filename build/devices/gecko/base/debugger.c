@@ -34,6 +34,13 @@
 
 int gDebuggerSetup = 0;
 
+#ifndef MODDEF_DEBUGGER_TX_LOCATION
+	#define MODDEF_DEBUGGER_TX_LOCATION MODDEF_DEBUGGER_LOCATION
+#endif
+#ifndef MODDEF_DEBUGGER_RX_LOCATION
+	#define MODDEF_DEBUGGER_RX_LOCATION MODDEF_DEBUGGER_LOCATION
+#endif
+
 void modLog_transmit(const char *msg)
 {
 	uint8_t c;
@@ -82,7 +89,7 @@ uint8_t ESP_isReadable() { return 0; }
 
 void setupDebugger() {
 #if mxDebug
-#if MIGHTY_GECKO
+#if MIGHTY_GECKO || THUNDERBOARD2
 	USART_InitAsync_TypeDef serialInit = USART_INITASYNC_DEFAULT;
 	CMU_ClockEnable(MODDEF_DEBUGGER_CLOCK, true);
 
@@ -93,24 +100,22 @@ void setupDebugger() {
 
 	MODDEF_DEBUGGER_PORT->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN;
 	MODDEF_DEBUGGER_PORT->ROUTELOC0  = ( MODDEF_DEBUGGER_PORT->ROUTELOC0 & ~( _USART_ROUTELOC0_TXLOC_MASK | _USART_ROUTELOC0_RXLOC_MASK ) );
-	MODDEF_DEBUGGER_PORT->ROUTELOC0 |= ( MODDEF_DEBUGGER_LOCATION << _USART_ROUTELOC0_TXLOC_SHIFT );
-	MODDEF_DEBUGGER_PORT->ROUTELOC0 |= ( MODDEF_DEBUGGER_LOCATION << _USART_ROUTELOC0_RXLOC_SHIFT );
+	MODDEF_DEBUGGER_PORT->ROUTELOC0 |= ( MODDEF_DEBUGGER_TX_LOCATION << _USART_ROUTELOC0_TXLOC_SHIFT );
+	MODDEF_DEBUGGER_PORT->ROUTELOC0 |= ( MODDEF_DEBUGGER_RX_LOCATION << _USART_ROUTELOC0_RXLOC_SHIFT );
 
 	gDebuggerSetup = 1;
 
 #elif GIANT_GECKO
+	USART_InitAsync_TypeDef serialInit = USART_INITASYNC_DEFAULT;
+
 	GPIO_PinModeSet(MODDEF_DEBUGGER_TX_PORT, MODDEF_DEBUGGER_TX_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MODDEF_DEBUGGER_RX_PORT, MODDEF_DEBUGGER_RX_PIN, gpioModeInput, 0);
 
 	CMU_ClockEnable(MODDEF_DEBUGGER_CLOCK, true);
 
-#if CLOCK_LT_32MHz
-	MODDEF_DEBUGGER_PORT->CLKDIV = (48  << 6);                               // 48  will give 115200 baud rate (using 16-bit oversampling with 24MHz peripheral clock)
-#else
-	MODDEF_DEBUGGER_PORT->CLKDIV = (96  << 6);                               // 96  will give 115200 baud rate (using 16-bit oversampling with 48MHz peripheral clock)
-#endif
-	MODDEF_DEBUGGER_PORT->CMD = (1 << 11) | (1 << 10) | (1 << 2) | (1 << 0); // Clear RX/TX buffers and shif regs, Enable Transmitter and Receiver
-	MODDEF_DEBUGGER_PORT->IFC = 0x1FF9;                                      // clear all USART interrupt flags
+	serialInit.baudrate = MODDEF_DEBUGGER_BAUD;
+
+	USART_InitAsync(MODDEF_DEBUGGER_PORT, &serialInit);
 
 	MODDEF_DEBUGGER_PORT->ROUTE = (MODDEF_DEBUGGER_LOCATION << _USART_ROUTE_LOCATION_SHIFT)
 			| USART_ROUTE_RXPEN | USART_ROUTE_TXPEN;
