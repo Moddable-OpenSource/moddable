@@ -17,7 +17,8 @@ Revised: January 2, 2018
 
 **Availability:** [1.5" OLED Breakout Board] (https://www.adafruit.com/product/1431)
 
-**Description:** Excellent color, small OLED. 
+**Description:** Excellent color, small OLED.
+ 
 ![Generic SPI Display](images/adafruit-oled.jpg)
 
 **Moddable Sample code:** The Piu example [transitions](../../examples/piu/transitions/) is good for testing this display. The build command below includes the -d, debug flag.
