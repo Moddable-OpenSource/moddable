@@ -18,6 +18,7 @@ EXTERN(_DoubleExceptionVector)
 EXTERN(_KernelExceptionVector)
 EXTERN(_NMIExceptionVector)
 EXTERN(_UserExceptionVector)
+EXTERN(core_version)
 PROVIDE(_memmap_vecbase_reset = 0x40000000);
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x00000110;
@@ -78,6 +79,8 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
+    . = ALIGN(4);
+    _Pri_3_HandlerAddress = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
   } >dram0_0_seg :dram0_0_phdr
 
@@ -87,7 +90,6 @@ SECTIONS
     *(.sdk.version)
     *(.rodata)
     *(.rodata.*)
-    /* *( EXCLUDE_FILE (*xsDebug.c.o) .rodata.* ) */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
     __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
@@ -151,13 +153,46 @@ SECTIONS
   .irom0.text : ALIGN(4)
   {
     _irom0_text_start = ABSOLUTE(.);
+    *(.ver_number)
     *.c.o( EXCLUDE_FILE (umm_malloc.c.o) .literal*, \
            EXCLUDE_FILE (umm_malloc.c.o) .text*)
     *.cpp.o(.literal*, .text*)
+    *.pioenvs\\*\\lib*.a:(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *.pioenvs/*/lib*.a:(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *.pioenvs\\*\\lib\*.a:(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *.pioenvs/*/lib/*.a:(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *.pioenvs\\*\\src\\*.o(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *.pioenvs/*/src/*.o(EXCLUDE_FILE (umm_malloc.o) .literal*, \
+    EXCLUDE_FILE (umm_malloc.o) .text*)
+    *libc.a:(.literal .text .literal.* .text.*)
     *libm.a:(.literal .text .literal.* .text.*)
     *libgcc.a:_umoddi3.o(.literal .text)
     *libgcc.a:_udivdi3.o(.literal .text)
     *libsmartconfig.a:(.literal .text .literal.* .text.*)
+    *libstdc++.a:(.literal .text .literal.* .text.*)
+    *liblwip_gcc.a:(.literal .text .literal.* .text.*)
+    *liblwip_src.a:(.literal .text .literal.* .text.*)
+    *liblwip2.a:(.literal .text .literal.* .text.*)
+    *liblwip2_1460.a:(.literal .text .literal.* .text.*)
+    *libaxtls.a:(.literal .text .literal.* .text.*)
+    *libat.a:(.literal.* .text.*)
+    *libcrypto.a:(.literal.* .text.*)
+    *libespnow.a:(.literal.* .text.*)
+    *libjson.a:(.literal.* .text.*)
+    *liblwip.a:(.literal.* .text.*)
+    *libmesh.a:(.literal.* .text.*)
+    *libnet80211.a:(.literal.* .text.*)
+    *libsmartconfig.a:(.literal.* .text.*)
+    *libssl.a:(.literal.* .text.*)
+    *libupgrade.a:(.literal.* .text.*)
+    *libwpa.a:(.literal.* .text.*)
+    *libwpa2.a:(.literal.* .text.*)
+    *libwps.a:(.literal.* .text.*)
     *(.irom0.str .irom0.str.*)
     *(.irom2.literal .irom2.text.literal .irom2.text)		/* ICACHE_XS6RO2_ATTR */
     *(.irom1.literal .irom1.text.literal .irom1.text)		/* ICACHE_XS6RO_ATTR */
@@ -200,6 +235,12 @@ SECTIONS
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *.cpp.o(.iram.text)
     *.c.o(.iram.text)
+    *.pioenvs\\*\\lib*.a:(.iram.text)
+    *.pioenvs/*/lib*.a:(.iram.text)
+    *.pioenvs\\*\\lib\\*.a:(.iram.text)
+    *.pioenvs/*/lib/*.a:(.iram.text)
+    *.pioenvs\\*\\src\\*.o(.iram.text)
+    *.pioenvs/*/src/*.o(.iram.text)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
