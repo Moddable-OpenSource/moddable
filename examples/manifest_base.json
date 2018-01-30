@@ -55,6 +55,7 @@
 					"Resource*",
 					"mod*",
 					"i2c*",
+					"digital*",
 				],
 				"c++11": [
 					"*.cc.o",
