@@ -117,9 +117,6 @@ struct xsListenerRecord {
 static xsSocket gSockets;		// N.B. this list contains both sockets and listeners
 
 #define kSocketCallbackExpire (24 * 60 * 60 * 1000)		// close to never
-#if !MOD_TASKS
-	static modTimer gTimerPending;
-#endif
 
 void xs_socket_destructor(void *data);
 
@@ -156,12 +153,6 @@ static void forgetSocket(xsSocket xss)
 		else
 			prev->next = walker->next;
 
-#if !MOD_TASKS
-		if ((NULL == gSockets) && gTimerPending) {
-			modTimerRemove(gTimerPending);
-			gTimerPending = NULL;
-		}
-#endif
 		return;
 	}
 
@@ -1046,14 +1037,7 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 	if (doSchedule) {
 		socketUpUseCount(xss->the, xss);
 
-#if MOD_TASKS
 		modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
-#else
-		if (gTimerPending)
-			modTimerReschedule(gTimerPending, 0, kSocketCallbackExpire);
-		else
-			gTimerPending = modTimerAdd(0, kSocketCallbackExpire, socketsClearPending, NULL, 0);
-#endif
 	}
 }
 
@@ -1100,8 +1084,11 @@ void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize)
 	xsSocket walker = gSockets;
 
 	while (walker) {
-		xsSocket next = walker->next;
+		xsSocket next;
+		socketUpUseCount(walker->the, walker);
 		socketClearPending(walker->the, walker, NULL, 0);
+		next = walker->next;
+		socketDownUseCount(walker->the, walker);
 		walker = next;
 	}
 }
