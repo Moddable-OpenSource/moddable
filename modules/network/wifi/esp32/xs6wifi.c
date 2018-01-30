@@ -85,8 +85,9 @@ void xs_wifi_scan(xsMachine *the)
 			xsForget(gScan->callback);
 			c_free(gScan);
 			gScan = NULL;
+
+			esp_wifi_scan_stop();
 		}
-		esp_wifi_scan_stop();
 		return;
 	}
 
@@ -196,6 +197,9 @@ static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messa
 {
 	uint16_t count, i;
 	wifi_ap_record_t *aps;
+	wifiScanRecord *scan = gScan;
+
+	gScan = NULL;
 
 	esp_wifi_scan_get_ap_num(&count);
 
@@ -241,19 +245,18 @@ static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messa
 				xsmcSet(xsVar(1), xsID_authentication, xsVar(0));
 			}
 
-			xsCallFunction1(gScan->callback, xsGlobal, xsVar(1));
+			xsCallFunction1(scan->callback, xsGlobal, xsVar(1));
 		}
 		xsCatch {
 		}
 	}
 
-	xsCallFunction1(gScan->callback, xsGlobal, xsNull);		// end of scan
+	xsCallFunction1(scan->callback, xsGlobal, xsNull);		// end of scan
 
 	xsEndHost(the);
 
-	xsForget(gScan->callback);
+	xsForget(scan->callback);
 	c_free(aps);
-	gScan = NULL;
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
