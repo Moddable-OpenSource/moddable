@@ -104,12 +104,13 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_hydrogen.c \
 	$(ARDUINO_ESP8266)/spiffs/spiffs_nucleus.c \
 	$(ARDUINO_ESP8266)/time.c \
-	$(ARDUINO_ESP8266)/uart.c \
 	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \
 	$(ARDUINO_ESP8266)/Schedule.cpp \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
-	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c
+	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
+	$(PLATFORM_DIR)/lib/tinyuart/tinyuart.c
+
 SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/base64.cpp \
 	$(ARDUINO_ESP8266)/cbuf.cpp \
@@ -128,6 +129,7 @@ SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/MD5Builder.cpp \
 	$(ARDUINO_ESP8266)/Stream.cpp \
 	$(ARDUINO_ESP8266)/Tone.cpp \
+	$(ARDUINO_ESP8266)/uart.c \
 	$(ARDUINO_ESP8266)/Updater.cpp \
 	$(ARDUINO_ESP8266)/WMath.cpp \
 	$(ARDUINO_ESP8266)/WString.cpp \
@@ -135,7 +137,7 @@ SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/libb64/cdecode.c \
 	$(ARDUINO_ESP8266)/libb64/cencode.c \
 	$(ARDUINO_ESP8266)/StreamString.cpp
-	
+
 SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
     
