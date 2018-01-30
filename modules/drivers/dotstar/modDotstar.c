@@ -37,6 +37,7 @@
 #include "commodettoPocoBlit.h"
 #include "commodettoPixelsOut.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 
 #include "modSPI.h"
 
