@@ -439,25 +439,13 @@ void fxReceiveLoop(void)
 	static uint32_t value = 0;
 	static uint8_t buffered[28];
 	static uint8_t bufferedBytes = 0;
-	txBoolean didRead = false;
 
 	mxDebugMutexTake();
 
 	while (true) {
 		int c = ESP_getc();
-		if (-1 == c) {
-			if (!didRead)
-				break;
-			int retry;
-			for (retry = 0; retry < 5; retry++) {
-				modDelayMilliseconds(1);
-				c = ESP_getc();
-				if (-1 != c)
-					break;
-			}
-			if (-1 == c) break;
-		}
-		didRead = true;
+		if (-1 == c)
+			break;
 
 		if ((state >= 0) && (state <= 6)) {
 			if (0 == state) {
