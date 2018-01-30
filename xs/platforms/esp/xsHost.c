@@ -1220,6 +1220,21 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	return 0;
 }
 
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
+{
+	modMessageRecord msg;
+	portBASE_TYPE ignore;
+
+	msg.message = NULL;
+	msg.length = 0;
+	msg.callback = callback;
+	msg.refcon = refcon;
+
+	xQueueSendFromISR(the->msgQueue, &msg, &ignore);
+
+	return 0;
+}
+
 void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
@@ -1289,6 +1304,8 @@ struct modMessageRecord {
 
 static modMessage gMessageQueue;
 
+extern void esp_schedule();
+
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
@@ -1305,8 +1322,10 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg->length = messageLength;
 
 	// append to message queue
-	if (NULL == gMessageQueue)
+	if (NULL == gMessageQueue) {
 		gMessageQueue = msg;
+		esp_schedule();
+	}
 	else {
 		modMessage walker;
 
@@ -1318,7 +1337,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	return 0;
 }
 
-void modMessageService(void)
+int modMessageService(void)
 {
 	modMessage msg = gMessageQueue;
 	while (msg) {
@@ -1338,6 +1357,8 @@ void modMessageService(void)
 		gMessageQueue = next;
 		msg = next;
 	}
+
+	return gMessageQueue ? 1 : 0;
 }
 
 void modMachineTaskInit(xsMachine *the) {}
