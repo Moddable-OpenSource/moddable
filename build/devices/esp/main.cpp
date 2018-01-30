@@ -56,7 +56,11 @@ static uart_t *gUART;
 
 void setup()
 {
-	gUART = uart_init(UART0, 230400, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+#if kESP8266Version >= 24
+	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1, 128);
+#else
+	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+#endif
 
 	system_set_os_print(0);
 
