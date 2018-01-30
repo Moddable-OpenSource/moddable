@@ -116,14 +116,15 @@ extern void ESP_putc(int c);
 		} while (0)
 #endif
 #define modLogVar(msg) modLog_transmit(msg)
-#if !ESP32
+#if kESP8266Version >= 24
 	extern char* ltoa(long value, char* result, int base);
 	#define itoa(value, result, base) ltoa(value, result, base)
 #endif
 #define modLogInt(msg) \
 	do { \
 		char temp[10]; \
-		modLog_transmit(itoa(msg, temp, 10)); \
+		itoa((int)(msg), temp, 10); \
+		modLog_transmit(temp); \
 	} while (0)
 #define modLogHex(msg) \
 	do { \
