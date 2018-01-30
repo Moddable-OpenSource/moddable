@@ -10,6 +10,7 @@ BASE_DIR = $(USERPROFILE)
 !ENDIF
 
 ESP_SDK_DIR = $(BASE_DIR)\esp
+ESP_SDK_RELEASE = esp8266-2.3.0
 
 ARDUINO_ROOT = $(ESP_SDK_DIR)\esp8266-2.3.0
 TOOLS_ROOT = $(ESP_SDK_DIR)\xtensa-lx106-elf
@@ -147,11 +148,11 @@ SDK_SRC = \
 	$(CORE_DIR)\StreamString.cpp \
 	$(CORE_DIR)\Schedule.cpp \
 	$(CORE_DIR)\time.c \
-	$(CORE_DIR)\uart.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
-	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
+	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
+	$(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
 
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
@@ -176,11 +177,11 @@ SDK_OBJ = \
 	$(LIB_DIR)\spiffs_nucleus.o \
 	$(LIB_DIR)\spiffs_hal.o \
 	$(LIB_DIR)\time.o \
-	$(LIB_DIR)\uart.o \
 	$(LIB_DIR)\umm_malloc.o \
 	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
+	$(LIB_DIR)\tinyuart.o \
 	$(LIB_DIR)\Schedule.o \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c
 
@@ -238,13 +239,25 @@ C_DEFINES = $(C_DEFINES) -DmxDebug=1
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
 !ENDIF
+!IF "$(ESP_SDK_RELEASE)"=="esp8266-2.3.0"
+C_DEFINES = $(C_DEFINES) -DkESP8266Version=23
+!ELSE
+C_DEFINES = $(C_DEFINES) -DkESP8266Version=24
+!ENDIF
 C_INCLUDES = $(DIRECTORIES) $(INC_DIRS) $(XS_DIRS) -I$(LIB_DIR) -I$(TMP_DIR)
 C_FLAGS = -c -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -falign-functions=4 -MMD -std=gnu99 -fdata-sections -ffunction-sections -fno-jump-tables
 C_FLAGS_NODATASECTION = -c -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -falign-functions=4 -MMD -std=gnu99
 CPP_FLAGS = -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions=4 -std=c++11 -MMD -ffunction-sections
 S_FLAGS = -c -g -x assembler-with-cpp -MMD
+
+!IF "$(ESP_SDK_RELEASE)"=="esp8266-2.4.0"
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)\lib -L$(MODDABLE)\build\devices\esp\sdk\ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
+LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
+!ELSE
 LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls -lstdc++
+!ENDIF
+
 # LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -lmbedtls -lg -lcirom -lfreertos -lmirom
 # LD_STD_LIBS = -lm -lhal -lphy -lnet80211 -llwip -lwpa -lpp -lsmartconfig -lwps -lcrypto -lmbedtls -lmirom -lgcc -lg -lmain
 # stdc++ used in later versions of esp8266 Arduino
@@ -273,7 +286,7 @@ debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 230400 8N1 $(TMP_DIR)\main.elf
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(UPLOAD_SPEED) 8N1 $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
@@ -354,6 +367,10 @@ $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
+$(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
