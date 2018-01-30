@@ -12,7 +12,7 @@ BASE_DIR = $(USERPROFILE)
 ESP_SDK_DIR = $(BASE_DIR)\esp
 ESP_SDK_RELEASE = esp8266-2.3.0
 
-ARDUINO_ROOT = $(ESP_SDK_DIR)\esp8266-2.3.0
+ARDUINO_ROOT = $(ESP_SDK_DIR)\$(ESP_SDK_RELEASE)
 TOOLS_ROOT = $(ESP_SDK_DIR)\xtensa-lx106-elf
 SYSROOT = $(TOOLS_ROOT)\xtensa-lx106-elf\sysroot
 
@@ -251,7 +251,7 @@ CPP_FLAGS = -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-r
 S_FLAGS = -c -g -x assembler-with-cpp -MMD
 
 !IF "$(ESP_SDK_RELEASE)"=="esp8266-2.4.0"
-LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)\lib -L$(MODDABLE)\build\devices\esp\sdk\ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
 !ELSE
 LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
@@ -286,7 +286,7 @@ debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(UPLOAD_SPEED) 8N1 $(TMP_DIR)\main.elf
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 921600 8N1 $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
