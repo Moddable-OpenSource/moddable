@@ -1,7 +1,7 @@
 # Networking
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-2018 Moddable Tech, Inc.
 
-Revised: October 29, 2017
+Revised: January 29, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -511,7 +511,7 @@ The `scan` static function initiates a scan for available Wi-Fi access points.  
 
 	WiFi.scan({}, item => {
 		if (item)
-			trace(`name: ${item.ssid}, password: ${item.authentication != "none"}\n`, rssi: {$item.rssi});
+			trace(`name: ${item.ssid}, password: ${item.authentication != "none"}, rssi: ${item.rssi}, bssid: ${(new Uint8Array(item.bssid)).join(".")}\n`);
 	});
 
 The dictionary parameter supports two optional properties.
@@ -520,6 +520,8 @@ The dictionary parameter supports two optional properties.
 - `channel` - The Wi-Fi channel number to scan. When this property is not present, all channels are scanned.
 
 The Wi-Fi scan runs for a fixed period of time, approximately two seconds. During that time, not all access points may be found. It may be necessary to call scan several times to create a complete list of visible access points.
+
+**Note**: Only one scan may be active at a time. Starting a new scan while one is still active will throw an exception.
 
 ### status
 
