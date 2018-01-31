@@ -54,11 +54,9 @@ void xs_loop(void)
 #if mxDebug
     if (ESP_isReadable()) {
         if (triggerDebugCommand(gThe)) {
-            if (modTimersNextScript() > 500) {      // if a script is not likely to fire within half a second, break immediately
-                xsBeginHost(gThe);
-                xsDebugger();
-                xsEndHost(gThe);
-            }
+            xsBeginHost(gThe);
+            xsDebugger();
+            xsEndHost(gThe);
         }
     }
 #endif
