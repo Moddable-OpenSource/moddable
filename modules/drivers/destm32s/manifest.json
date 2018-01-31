@@ -88,5 +88,25 @@
 				}
 			},
 		},
+		"gecko/thunderboard2": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/destm32s/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"destm32s": {
+					"hz": 5000000,
+					"cs": { "pin": 5, "port": "gpioPortA", },
+					"dc": { "pin": 6, "port": "gpioPortF", },
+					"busy": { "pin": 5, "port": "gpioPortF", },
+					"rst": { "pin": 7, "port": "gpioPortA", },
+					"spi_port": 2,
+				}
+			},
+		},
 	}
 }
