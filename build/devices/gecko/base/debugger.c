@@ -40,6 +40,9 @@ int gDebuggerSetup = 0;
 #ifndef MODDEF_DEBUGGER_RX_LOCATION
 	#define MODDEF_DEBUGGER_RX_LOCATION MODDEF_DEBUGGER_LOCATION
 #endif
+#ifndef MODDEF_DEBUGGER_BAUD
+	#define MODDEF_DEBUGGER_BAUD	115200
+#endif
 
 void modLog_transmit(const char *msg)
 {
@@ -95,6 +98,8 @@ void setupDebugger() {
 
 	GPIO_PinModeSet(MODDEF_DEBUGGER_TX_PORT, MODDEF_DEBUGGER_TX_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MODDEF_DEBUGGER_RX_PORT, MODDEF_DEBUGGER_RX_PIN, gpioModeInput, 0);
+
+	serialInit.baudrate = MODDEF_DEBUGGER_BAUD;
 
 	USART_InitAsync(MODDEF_DEBUGGER_PORT, &serialInit);
 
