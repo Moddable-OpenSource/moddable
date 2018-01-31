@@ -480,8 +480,7 @@ void PiuApplication_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuApplicationHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuApplicationDispatchRecord;
-	(*self)->flags = piuVisible | piuContainer;
-	
+	(*self)->flags = piuVisible | piuContainer | piuDisplaying;
 	if (!xsFindResult(xsArg(1), xsID__DeferLink))
 		xsErrorPrintf("no DeferLink");
 	(*self)->DeferLink = xsResult;
