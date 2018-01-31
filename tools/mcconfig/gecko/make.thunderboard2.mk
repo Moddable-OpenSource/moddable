@@ -19,19 +19,21 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
-# Mighty Gecko radio test (BRD4162A)
-PLATFORM_NAME = mighty
+# ThunderBoard Sense 2 (BRD4166A)
+PLATFORM_NAME = thunderboard2
 SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.1
 HWPART = EFR32MG12P332F1024GL125
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_BRD4162A/config
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_BRD4166A/config
 HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
 HWCPU = cortex-m4
-DEV_C_FLAGS =
+DEV_C_FLAGS = \
+	-mfpu=fpv4-sp-d16	\
+	-mfloat-abi=softfp
+
 HW_DEBUG_OPT = -O0
 HW_OPT = -O3
 
-
-C_DEFINES += -DuseRTCC=1 -DMIGHTY_GECKO=1
+C_DEFINES += -DuseRTCC=1 -DTHUNDERBOARD2=1
 
 include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
 

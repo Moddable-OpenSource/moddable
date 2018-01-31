@@ -24,9 +24,12 @@
 
 #include "em_cmu.h"
 #include "em_emu.h"
+#include "em_rmu.h"
 #include "em_gpio.h"
 
-#if MIGHTY_GECKO
+#include "gpiointerrupt/inc/gpiointerrupt.h"
+
+#if MIGHTY_GECKO || THUNDERBOARD2
 	#define USE_CRYOTIMER	1
 	#include "em_cryotimer.h"
 #endif
@@ -43,7 +46,11 @@
 	#include "em_rtcc.h"
 #endif
 
-extern uint32_t msTickCount;
+#if THUNDERBOARD2
+	extern uint32_t msTickCount;
+#else
+	volatile uint32_t msTickCount;
+#endif
 
 void gecko_delay(uint32_t ms);
 //uint32_t setupRTCTimeout(uint32_t ms);
@@ -99,10 +106,13 @@ void geckoDelayLoop( uint32_t ms )
    return;
 }
 
+#if THUNDERBOARD2
+#else
 void SysTick_Handler( void )
 {
    msTickCount++;
 }
+#endif
 
 void geckoDisableSysTick() {
 	SysTick->CTRL = 0;
@@ -163,23 +173,26 @@ void RTC_IRQHandler() {
 uint32_t setupRTCTimeout(uint32_t delay) {
 	RTC_Init_TypeDef rtcInit = RTC_INIT_DEFAULT;
 
-#if defined( CMU_LFECLKEN0_RTCC )
-  // Enable LFECLK in CMU (will also enable oscillator if not enabled).
-  CMU_ClockSelectSet( cmuClock_LFE, cmuSelect_LFRCO );
-#else
-  // Enable LFACLK in CMU (will also enable oscillator if not enabled).
-  CMU_ClockSelectSet( cmuClock_LFA, cmuSelect_LFRCO );
-#endif
-
 	CMU_ClockEnable(cmuClock_CORELE, true);
-	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFRCO);
+
+//	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_ULFRCO);
+// The following two lines does the ClockSelect
+	CMU->LFCLKSEL &= ~_CMU_LFCLKSEL_LFA_MASK;
+	CMU->LFCLKSEL |= CMU_LFCLKSEL_LFAE_ULFRCO;
+
 	CMU_ClockEnable(cmuClock_RTC, true);
+	RTC_IntDisable(RTC_IEN_COMP1);
+	RTC_IntClear(RTC_IEN_COMP1);
 	NVIC_DisableIRQ(RTC_IRQn);
+	rtcInit.comp0Top = 0;
 	RTC_Init(&rtcInit);
-	RTC_CompareSet(0, delay);
+	RTC_CompareSet(0, _RTC_COMP0_COMP0_MASK);
+	if (RTC->CNT > 0x800000)
+		RTC->CNT = 0;
+	RTC_CompareSet(1, delay + RTC->CNT);
 
 	NVIC_EnableIRQ(RTC_IRQn);
-	RTC_IntEnable(RTC_IEN_COMP0);
+	RTC_IntEnable(RTC_IEN_COMP1);
 	RTC_Enable(true);
 }
 #endif
@@ -225,9 +238,8 @@ void gecko_delay(uint32_t ms)
     CMU_ClockEnable(cmuClock_CRYOTIMER, false);		// this will null out CRYOTIMER->CNT
 
 #else
+	volatile uint32_t first, last;
 
-	uint32_t curTicks, first, last;
-	curTicks = msTickCount;
 	setupRTCTimeout(ms);
 	last = first = RTC->CNT;
 	while( (last - first) < ms ) {
@@ -239,6 +251,7 @@ void gecko_delay(uint32_t ms)
 		}
 		last = RTC->CNT;
 	}
+
 	msTickCount += (last - first);
 #endif
 }
@@ -311,5 +324,27 @@ void geckoRestoreFromSleep() {
 	setupDebugger();
     geckoRestoreGpioRetention();
     geckoCheckSleepRemainder();
+}
+
+volatile uint8_t waitingForGPIO = 0;
+
+void waitGPIOHandler(uint8_t pin) {
+    waitingForGPIO = 0;
+}
+
+void waitForGPIO(int port, int pin) {
+#if 0
+    gecko_delay(5);
+#else
+    waitingForGPIO = 1;
+    GPIOINT_CallbackRegister(pin, waitGPIOHandler);
+    GPIO_IntConfig(port, pin, false, true, true);
+//  GPIO_IntEnable(1<<pin); // enable is last parameter of GPIO_IntConfig
+    while (waitingForGPIO && GPIO_PinInGet(port, pin))
+        geckoEnterEM2();
+//        gecko_delay(5);
+    GPIO_IntDisable(1<<pin);
+    GPIOINT_CallbackUnRegister(pin);
+#endif
 }
 
