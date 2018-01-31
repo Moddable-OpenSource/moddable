@@ -27,7 +27,7 @@
 				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
 			},
 			"preload": "setup/commodetto",
-		}
+		},
 		"gecko/mighty": {
 			"modules": {
 				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",

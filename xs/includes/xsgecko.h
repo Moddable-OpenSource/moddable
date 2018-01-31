@@ -161,7 +161,7 @@ extern uint32_t gMsgBufferMax;
 /*
 	Default types
  */
-#if MIGHTY_GECKO
+#if MIGHTY_GECKO || THUNDERBOARD2
     #define USE_CRYOTIMER   1   // use cryotimer for EM4 and delay
     #define USE_RTCC        1   // use RTCC for EM4 and delay and ticks
     #include "em_cryotimer.h"
