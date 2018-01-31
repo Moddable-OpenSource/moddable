@@ -289,7 +289,6 @@ typedef struct tm c_tm;
 #define c_strstr strstr
 #define c_strrchr strrchr
 
-#if 1
 #define ICACHE_FLASH_ATTR
 #define ICACHE_STORE_ATTR
 #define ICACHE_RODATA_ATTR
@@ -297,15 +296,6 @@ typedef struct tm c_tm;
 #define ICACHE_XS6RO_ATTR
 #define ICACHE_XS6RO2_ATTR
 #define ICACHE_XS6STRING_ATTR
-#else
-#define ICACHE_FLASH_ATTR
-#define ICACHE_STORE_ATTR	__attribute__((aligned(4)))
-#define ICACHE_RODATA_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata")))
-#define ICACHE_RAM_ATTR	
-#define ICACHE_XS6RO_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.1")))
-#define ICACHE_XS6RO2_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.2")))
-#define ICACHE_XS6STRING_ATTR	__attribute__((aligned(4))) __attribute__((section(".rodata.3")))
-#endif
 
 #define espRead8(POINTER) *((txU1*)POINTER)
 #define mxGetKeySlotID(SLOT) (SLOT)->ID

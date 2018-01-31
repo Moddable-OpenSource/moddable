@@ -24,6 +24,11 @@
 				"*": "$(MODULES)/pins/digital/gecko/*",
 			},
 		},
+		"gecko/thunderboard2": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/gecko/*",
+			},
+		},
 		"...": {
 			"error": "pins/digital unsupported"
 		}

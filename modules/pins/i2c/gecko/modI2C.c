@@ -42,11 +42,20 @@
 	#error bad I2C port
 #endif
 
+#ifndef MODDEF_I2C_SDA_LOCATION
+	#define MODDEF_I2C_SDA_LOCATION MODDEF_I2C_LOCATION
+#endif
+#ifndef MODDEF_I2C_SCL_LOCATION
+	#define MODDEF_I2C_SCL_LOCATION MODDEF_I2C_LOCATION
+#endif
+
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
 static void modI2CActivate(modI2CConfiguration config);
 
 static modI2CConfigurationRecord gI2CConfig;
+
+static uint8_t gI2CClientCount = 0;
 
 void modI2CInit(modI2CConfiguration config)
 {
@@ -58,7 +67,11 @@ void modI2CInit(modI2CConfiguration config)
 		i2cClockHLRStandard
 	};
 
+	if (0 != gI2CClientCount)
+		return;
+
 	gI2CConfig.hz = 1;		// garbage value to ensure mismatch
+	gI2CClientCount += 1;
 
 	CMU_ClockEnable(cmuClock_HFPER, true);
 	CMU_ClockEnable(I2C_CLOCK, true);
@@ -77,25 +90,37 @@ void modI2CInit(modI2CConfiguration config)
 	}
 #endif
 
-	i2cInit.freq = config->hz;
+	if (config->hz)
+		i2cInit.freq = config->hz;
+	else
+		config->hz = i2cInit.freq;
 
 	I2C_Init(I2C_PORT, &i2cInit);
+
+#if GIANT_GECKO
+
+	I2C_PORT->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (MODDEF_I2C_LOCATION << _I2C_ROUTE_LOCATION_SHIFT);	// Enable SDA, SDK at location #1
+
+#elif MIGHTY_GECKO || THUNDERBOARD2
 
 	I2C_PORT->ROUTEPEN = I2C_ROUTEPEN_SDAPEN | I2C_ROUTEPEN_SCLPEN;
 	I2C_PORT->ROUTELOC0 = (MODDEF_I2C_SDA_LOCATION << _I2C_ROUTELOC0_SDALOC_SHIFT)
 								 | (MODDEF_I2C_SCL_LOCATION << _I2C_ROUTELOC0_SCLLOC_SHIFT);
 
-#if geckoNeedsI2CRoute
-	I2C1->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | I2C_ROUTE_LOCATION_LOC1;	// Enable SDA, SDK at location #1
+#elif
+	#need routing for I2C
 #endif
 
 }
 
 void modI2CUninit(modI2CConfiguration config)
 {
-    GPIO_PinModeSet(MODDEF_I2C_SDA_PORT, MODDEF_I2C_SDA_PIN, gpioModeDisabled, 0);
-    GPIO_PinModeSet(MODDEF_I2C_SCL_PORT, MODDEF_I2C_SCL_PIN, gpioModeDisabled, 0);
-	I2C_Enable(I2C_PORT, false);
+	gI2CClientCount -= 1;
+	if (0 == gI2CClientCount) {
+		GPIO_PinModeSet(MODDEF_I2C_SDA_PORT, MODDEF_I2C_SDA_PIN, gpioModeDisabled, 0);
+		GPIO_PinModeSet(MODDEF_I2C_SCL_PORT, MODDEF_I2C_SCL_PIN, gpioModeDisabled, 0);
+		I2C_Enable(I2C_PORT, false);
+	}
 }
 
 #define I2CSPM_TRANSFER_TIMEOUT 300000

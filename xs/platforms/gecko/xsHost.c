@@ -40,6 +40,8 @@
 #include "xsScript.h"
 #include "xsgecko.h"
 
+#include <stdio.h>
+
 #ifdef mxInstrument
 	#include "modInstrumentation.h"
 	static void espStartInstrumentation(txMachine *the);
