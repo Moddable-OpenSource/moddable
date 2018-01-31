@@ -81,6 +81,8 @@ class ApplicationBehavior extends Behavior {
 		else
 			application.add(new HorizontalContainer(this));
 					
+	}
+	onDisplaying(application) {
 		if (this.devicesPath)
 			this.reloadDevices(application);
 		else
@@ -92,13 +94,14 @@ class ApplicationBehavior extends Behavior {
 		if (this.screenPath) {
 			system.copyFile(this.screenPath, this.localScreenPath);
 			this.SCREEN.launch(this.localScreenPath);
-			this.DEVICE.first.delegate("onConfigure");
+			this.DEVICE.first.defer("onConfigure");
 		}
 		application.updateMenus();
 	}
 	quitScreen() {
 		if (this.SCREEN)
 			this.SCREEN.quit();
+		system.deleteFile(this.localScreenPath);
 		application.updateMenus();
 	}
 	reloadDevices(application, flag) {
