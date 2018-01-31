@@ -111,6 +111,7 @@
 				"debugger": {
 					"tx": { "pin": "9", "port": "gpioPortB" },
 					"rx": { "pin": "10", "port": "gpioPortB" },
+					"baud": 115200,
 					"port": "UART1",
 					"clock": "cmuClock_UART1",
 					"location": "2",
@@ -124,8 +125,9 @@
 				},
 				"i2c": {
 					"port": "0",
-					"sda": { "pin": 6, "port": "gpioPortD", "location": 2 },
-					"scl": { "pin": 7, "port": "gpioPortD", "location": 2 },
+					"location": "1",
+					"sda": { "pin": 6, "port": "gpioPortD" },
+					"scl": { "pin": 7, "port": "gpioPortD" },
 				}
 			}
 		},
@@ -166,6 +168,44 @@
 					"port": "0",
 					"sda": { "pin": 11, "port": "gpioPortC", "location" : 16 },
 					"scl": { "pin": 10, "port": "gpioPortC", "location" : 14 },
+				}
+			}
+		},
+		"gecko/thunderboard2": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/esp/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+				]
+			},
+			"preload": [
+				"time",
+				"timer",
+			],
+			"defines": {
+				"sleep": {
+					"idleLevel" : 3,
+					"retention": { "memory": false, "gpio": false },
+					"wakeup": { "pin": "14", "port": "gpioPortD", "register": "GPIO_EXTILEVEL_EM4WU4" },
+				},
+				"debugger": {
+					"tx": { "pin": 3, "port": "gpioPortF", "location": 27 },
+					"rx": { "pin": 4, "port": "gpioPortF", "location": 27 },
+					"port": "USART0",
+					"clock": "cmuClock_USART0",
+				},
+				"spi": {
+					"mosi": { "pin": 0, "port": "gpioPortK", "location": 29 },
+					"miso": { "pin": 2, "port": "gpioPortK", "location": 30 },
+					"sck": { "pin": 7, "port": "gpioPortF", "location": 18 },
+					"port": "2",
+				},
+				"i2c": {
+					"port": "0",
+					"sda": { "pin": 10, "port": "gpioPortC", "location": 15 },
+					"scl": { "pin": 11, "port": "gpioPortC", "location": 15 },
 				}
 			}
 		},
