@@ -92,8 +92,6 @@ Pin numbers are device dependent.
 	
 The Analog class provides only static functions. It is not instantiated.
 
-Caution: The output voltage range of the TMP36 temperature sensor is 0.1V to 2.0V and the input voltage range of the analog to digital converter on the ESP8266 is 0V to 1.0V. To avoid damaging the ESP8266 a voltage divider should be used to reduce the magnitude of the TMP36 output voltage. The ESP8266 NodeMCU board has a voltage divider for this purpose. Other boards may not have a voltage divider.
-
 ### Reading analog temperature sensor
 
 The following example samples an analog temperature sensor, converting the result to celsius degrees. The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
@@ -102,6 +100,8 @@ The following example samples an analog temperature sensor, converting the resul
 	trace(`Temperature is ${temperature} degrees celsius\n`);
 
 The example works with a widely-available low-cost [temperature sensor](https://learn.adafruit.com/tmp36-temperature-sensor/overview).
+
+Caution: The output voltage range of the TMP36 temperature sensor is 0.1V to 2.0V and the input voltage range of the analog to digital converter on the ESP8266 is 0V to 1.0V. To avoid damaging the ESP8266 a voltage divider should be used to reduce the magnitude of the TMP36 output voltage. The ESP8266 NodeMCU board has a voltage divider for this purpose. Other boards may not have a voltage divider.
 
 ### read(pin)
 
