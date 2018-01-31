@@ -67,5 +67,22 @@
 				}
 			},
 		},
+		"gecko/mighty": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ili9341/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ili9341": {
+					"hz": 40000000,
+					"cs": { "pin": 9, "port": "gpioPortA", },
+					"dc": { "pin": 6, "port": "gpioPortB", },
+				}
+			},
+		},
 	}
 }
