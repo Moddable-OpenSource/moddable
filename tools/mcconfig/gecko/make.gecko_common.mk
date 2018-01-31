@@ -21,8 +21,19 @@ HOST_OS := $(shell uname)
 
 TOOLS_ROOT ?= $(BASE)/toolchains/gnu_arm/4.9_2015q3
 
+ifeq ($(DEBUG),1)
+    LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/debug/lib
+else
+    ifeq ($(INSTRUMENT),1)
+        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/instrument/lib
+    else
+        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/release/lib
+    endif
+endif
+
 INC_DIRS = \
 	$(SDK_BASE)/platform/emlib/inc \
+	$(SDK_BASE)/platform/emdrv \
 	$(SDK_BASE)/platform/CMSIS/Include \
 	$(SDK_BASE)/hardware/kit/common/bsp \
 	$(SDK_BASE)/hardware/kit/common/drivers \
@@ -179,14 +190,16 @@ all: $(LIB_DIR) $(BIN_DIR)/xs_gecko.a
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
+
+$(TMP_DIR)/buildinfo.h:
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	
-$(BIN_DIR)/xs_gecko.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
-	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
+$(BIN_DIR)/xs_gecko.a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	@echo "# ld xs_gecko.bin"
-	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_gecko.a $^ $(LIB_DIR)/buildinfo.c.o
+	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_gecko.a $^ $(TMP_DIR)/buildinfo.c.o
 
 
 $(XS_OBJ): $(XS_HEADERS)
@@ -212,8 +225,9 @@ $(LIB_DIR)/%.cpp.o: %.cpp
 
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
-	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
-	$(TOOLS_BIN)/$(TOOLS_PREFIX)-objcopy --rename-section .data.gxKeys=.rodata.gxKeys --rename-section .data.gxNames=.rodata.gxNames --rename-section .data.gxGlobals=.rodata.gxGlobals $@.unmapped $@
+	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@
+#	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
+#	$(TOOLS_BIN)/$(TOOLS_PREFIX)-objcopy --rename-section .data.gxKeys=.rodata.gxKeys --rename-section .data.gxNames=.rodata.gxNames --rename-section .data.gxGlobals=.rodata.gxGlobals $@.unmapped $@
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)

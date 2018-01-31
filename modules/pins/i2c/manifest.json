@@ -21,6 +21,20 @@
 			},
 			"preload": "pins/i2c",
 		},
+		"gecko/giant": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/gecko/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+			"preload": "pins/i2c",
+		},
+		"gecko/thunderboard2": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/gecko/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+			"preload": "pins/i2c",
+		},
 		"...": {
 			"error": "pins/i2c unsupported"
 		}
