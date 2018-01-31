@@ -1087,6 +1087,44 @@ void PiuApplication_set_clut(xsMachine* the)
 #endif
 }
 
+void PiuApplication_keyDown(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuContent* content = (*self)->focus;
+	xsVars(3);
+	while (content) {
+		if ((*content)->behavior) {
+			xsVar(0) = xsReference((*content)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onKeyDown)) {
+				xsVar(1) = xsReference((*content)->reference);
+				xsVar(2) = xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsArg(0));
+				if (xsTest(xsVar(2)))
+					break;
+			}
+		}
+		content = (PiuContent*)(*content)->container;
+	}
+}
+
+void PiuApplication_keyUp(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuContent* content = (*self)->focus;
+	xsVars(3);
+	while (content) {
+		if ((*content)->behavior) {
+			xsVar(0) = xsReference((*content)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onKeyUp)) {
+				xsVar(1) = xsReference((*content)->reference);
+				xsVar(2) = xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsArg(0));
+				if (xsTest(xsVar(2)))
+					break;
+			}
+		}
+		content = (PiuContent*)(*content)->container;
+	}
+}
+
 void PiuApplication_postMessage(xsMachine* the) 
 {
 	PiuApplication* self = PIU(Application, xsThis);
