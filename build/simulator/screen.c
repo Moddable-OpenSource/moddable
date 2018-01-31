@@ -374,6 +374,7 @@ void fxScreenQuit(txScreen* screen)
 		xsDeleteMachine(screen->machine);
 		screen->machine = NULL;
 		screen->idle = NULL;
+		screen->invoke = NULL;
 		screen->quit = NULL;
 		screen->touch = NULL;
 		memset(screen->buffer, 0, screen->width * screen->height * screenBytesPerPixel);
