@@ -20,6 +20,11 @@
 				"*": "$(MODULES)/pins/spi/gecko/*",
 			},
 		},
+		"gecko/thunderboard2": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/gecko/*",
+			},
+		},
 		"...": {
 			"error": "pins/spi unsupported"
 		}
