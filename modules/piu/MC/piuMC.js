@@ -160,6 +160,8 @@ var application = {
 	set clut(it) @ "PiuApplication_set_clut",
 	
 	animateColors(colors) @ "PiuApplication_animateColors",
+	keyDown(key) @ "PiuApplication_keyDown",
+	keyUp(key) @ "PiuApplication_keyUp",
 	postMessage(json) @ "PiuApplication_postMessage",
 	purge() @ "PiuApplication_purge",
 }
