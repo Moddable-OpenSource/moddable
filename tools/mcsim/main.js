@@ -101,7 +101,8 @@ class ApplicationBehavior extends Behavior {
 	quitScreen() {
 		if (this.SCREEN)
 			this.SCREEN.quit();
-		system.deleteFile(this.localScreenPath);
+		if (system.fileExists(this.localScreenPath))
+			system.deleteFile(this.localScreenPath);
 		application.updateMenus();
 	}
 	reloadDevices(application, flag) {

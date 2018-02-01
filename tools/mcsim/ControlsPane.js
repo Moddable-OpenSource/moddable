@@ -193,6 +193,11 @@ export var SliderRow = Row.template(function($) { return {
 		HorizontalSlider($, { 
 			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
 			Behavior: class extends HorizontalSliderBehavior {
+				onCreate(container, data) {
+					super.onCreate(container, data);
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+				}
 				onValueChanged(container) {
 					let data = this.data;
 					model.DEVICE.first.delegate(data.event, data);
@@ -214,6 +219,11 @@ export var SwitchRow = Row.template(function($) { return {
 		Switch($, {
 			barSkin: switchBarSkin, buttonSkin: switchButtonSkin,
 			Behavior: class extends SwitchBehavior {
+				onCreate(container, data) {
+					super.onCreate(container, data);
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+				}
 				onValueChanged(container) {
 					let data = this.data;
 					container.next.string = data.value ? data.on : data.off;
@@ -232,7 +242,12 @@ export var TimerRow = Row.template(function($) { return {
 			this.data = data;
 			if ("interval" in data)
 				row.interval = data.interval;
-			model.DEVICE.first.behavior[data.name] = row;
+			if ("name" in data)
+				model.DEVICE.first.behavior[data.name] = row;
+		}
+		onDisplaying(row) {
+			let container = row.first.next;
+			container.next.string = this.secondsToString(0);
 		}
 		onFinished(row) {
 			let data = this.data;
