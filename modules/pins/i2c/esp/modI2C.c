@@ -18,7 +18,6 @@
  *
  */
 
-#include "xsPlatform.h"
 #include "mc.defines.h"
 #include "modI2C.h"
 
