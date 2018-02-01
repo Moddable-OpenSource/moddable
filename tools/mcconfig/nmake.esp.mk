@@ -199,16 +199,17 @@ ESPTOOL = $(ESP_SDK_DIR)\esptool.exe
 
 AR_OPTIONS = rcs
 
-BUILDCLUT = $(BUILD_DIR)\bin\win\release\buildclut
-COMPRESSBMF = $(BUILD_DIR)\bin\win\release\compressbmf
-RLE4ENCODE = $(BUILD_DIR)\bin\win\release\rle4encode
-MCLOCAL = $(BUILD_DIR)\bin\win\release\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\release\mcrez
-PNG2BMP = $(BUILD_DIR)\bin\win\release\png2bmp
-IMAGE2CS = $(BUILD_DIR)\bin\win\release\image2cs
-XSC = $(BUILD_DIR)\bin\win\release\xsc
-XSID = $(BUILD_DIR)\bin\win\release\xsid
-XSL = $(BUILD_DIR)\bin\win\release\xsl
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
+XSC = $(MODDABLE_TOOLS_DIR)\xsc
+XSID = $(MODDABLE_TOOLS_DIR)\xsid
+XSL = $(MODDABLE_TOOLS_DIR)\xsl
 
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
@@ -354,23 +355,27 @@ $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
-	@echo # cc umm_malloc $(@F)
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
+	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
