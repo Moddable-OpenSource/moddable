@@ -1,9 +1,7 @@
 # Moddable SDK – Getting Started
-Copyright 2016-2017 Moddable Tech, Inc.
+Copyright 2016-2018 Moddable Tech, Inc.
 
-<!-- Last edit: 01/05/2018 BSF -->
-
-Revised: January 5, 2018
+Revised: January 31, 2018
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
@@ -423,3 +421,9 @@ The `xsbug` JavaScript source level debugger is built as part of the Moddable SD
 
 For additional details on `xsbug` please refer to the [xsbug](xs/xsbug.md) document.
 
+
+## ESP8266 Arduino version 2.4
+
+The Moddable SDK on ESP8266 is hosted by the [ESP8266 core for Arduino](https://github.com/esp8266/Arduino). The Moddable SDK uses version 2.3. Version 2.4 is supported as well. At this time, we do not recommend using version 2.4 as it requires more ROM and more RAM without providing significant benefits for most uses of the Moddable SDK. The team responsible for ESP8266 core for Arduino is aware of [these](https://github.com/esp8266/Arduino/issues/3740) [issues](https://github.com/esp8266/Arduino/issues/4089) and actively working to address them.
+
+You can use version 2.4 today if building on macOS or Linux. Follow the instructions above, but use the [version 2.4](https://github.com/esp8266/Arduino/releases/download/2.4.0/esp8266-2.4.0.zip) of ESP8266 Core for Arduino. Next, in `{MODDABLE}/tools/mcconfig/make.esp.mk` change `ESP_SDK_RELEASE ?= esp8266-2.3.0` to `ESP_SDK_RELEASE ?= esp8266-2.4.0`. Finally, delete the contents of $`{MODDABLE}/build/bin/esp/` and `${MODDABLE}/build/tmp/esp/` and build as above.
