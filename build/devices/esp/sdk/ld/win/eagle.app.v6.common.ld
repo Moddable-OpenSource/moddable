@@ -209,32 +209,6 @@ SECTIONS
     *.cpp.o(.iram.text)
     *.c.o(.iram.text)
     *.o(.iram.text)
-/* SDK libraries expect their .text sections in iram, not irom */
-	*libmain.a*:*(.literal .text .literal.* .text.*)
-	*libnet80211.a*:*(.literal .text .literal.* .text.*)
-	*libphy.a*:*(.literal .text .literal.* .text.*)
-	*libpp.a*:*(.literal .text .literal.* .text.*)
-	*libwpa.a*:*(.literal .text .literal.* .text.*)
-/*end: SDK libraries expect their .text sections in iram, not irom */
-/* some math integer */
-	*libgcc.a:*i3.o(.literal .text .literal.* .text.*)
-/* libc */
-	*libc.a:*malloc.o(.literal .text .literal.* .text.*)
-	*libc.a:*mallocr.o(.literal .text .literal.* .text.*)
-	*libc.a:*freer.o(.literal .text .literal.* .text.*)
-	*libc.a:*memcpy.o(.literal .text .literal.* .text.*)
-	*libc.a:*memset.o(.literal .text .literal.* .text.*)
-	*libc.a:*memcmp.o(.literal .text .literal.* .text.*)
-	*libc.a:*memmove.o(.literal .text .literal.* .text.*)
-	*libc.a:*rand.o(.literal .text .literal.* .text.*)
-	*libc.a:*bzero.o(.literal .text .literal.* .text.*)
-	*libc.a:*lock.o(.literal .text .literal.* .text.*)
-	*libc.a:*printf.o(.literal .text .literal.* .text.*)
-	*libc.a:*findfp.o(.literal .text .literal.* .text.*)
-	*libc.a:*fputwc.o(.literal .text .literal.* .text.*)
-
-	*libhal.a:*set_intset.o(.literal .text .literal.* .text.*)
-
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
