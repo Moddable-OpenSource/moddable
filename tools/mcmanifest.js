@@ -193,6 +193,11 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}	
+		for (var result of tool.soundFiles) {
+			this.write("\\\n\t$(RESOURCES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target);
+		}	
 		for (var result of tool.stringFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
@@ -343,6 +348,14 @@ export class MakeFile extends FILE {
 				this.echo(tool, "image2cs ", target);
 				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -r ", tool.rotation);
 			}
+		}
+		
+		for (var result of tool.soundFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
+			this.echo(tool, "wav2maud ", target);
+			this.line("\t$(WAV2MAUD) ", source, " -o $(@D)");
 		}
 		
 		for (var result of tool.stringFiles)
@@ -610,6 +623,15 @@ class ResourcesRule extends Rule {
 			colorFile.clutName = tool.clutFiles.current;
 		}
 	}
+	appendFont(name, path, include, suffix) {
+		var tool = this.tool;
+		if (suffix == "-mask") {
+			this.appendFile(tool.bmpFontFiles, name + ".bf4", path, include);
+			return false;
+		}
+		this.appendFile(tool.resourcesFiles, name + ".fnt", path, include);
+		return true;
+	}
 	appendImage(name, path, include, suffix) {
 		var tool = this.tool;
 		if (tool.imageFiles.already[path])
@@ -635,13 +657,9 @@ class ResourcesRule extends Rule {
 		files.push({ target, source, quality });
 		this.count++;
 	}
-	appendFont(name, path, include, suffix) {
+	appendSound(name, path, include, suffix) {
 		var tool = this.tool;
-		if (suffix == "-mask") {
-			this.appendFile(tool.bmpFontFiles, name + ".bf4", path, include);
-			return false;
-		}
-		this.appendFile(tool.resourcesFiles, name + ".fnt", path, include);
+		this.appendFile(tool.soundFiles, name + ".maud", path, include);
 		return true;
 	}
 	appendSource(target, source, include, suffix, parts, kind) {
@@ -690,6 +708,10 @@ class ResourcesRule extends Rule {
 			}
 			if ((parts.extension == ".gif") || (parts.extension == ".jpeg") || (parts.extension == ".jpg")) {
 				this.appendImage(target, source, include, suffix);
+				return;
+			}
+			if ((parts.extension == ".wav")) {
+				this.appendSound(target, source, include, suffix);
 				return;
 			}
 		}
@@ -1082,6 +1104,8 @@ export class Tool extends TOOL {
 		this.clutFiles.current = "";
 		this.imageFiles = [];
 		this.imageFiles.already = {};
+		this.soundFiles = [];
+		this.soundFiles.already = {};
 		this.stringFiles = [];
 		this.stringFiles.already = {};
 		
