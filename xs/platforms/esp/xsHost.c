@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+#include "Arduino.h"
 #include "xsAll.h"
 #include "xs.h"
 #include "mc.defines.h"
@@ -1298,7 +1299,7 @@ struct modMessageRecord {
 	void				*refcon;
 	uint16_t			length;
 	uint8_t				marked;
-	uint8_t				unused;
+	uint8_t				isStatic;		// this doubles as a flag to indicate entry is use gMessagePool
 	char				message[1];
 };
 
@@ -1306,22 +1307,12 @@ static modMessage gMessageQueue;
 
 extern void esp_schedule();
 
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+static void appendMessage(modMessage msg)
 {
-	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
-	if (!msg) return -1;
-
 	msg->next = NULL;
-	msg->the = the;
-	msg->callback = callback;
-	msg->refcon = refcon;
 	msg->marked = 0;
 
-	if (message && messageLength)
-		c_memmove(msg->message, message, messageLength);
-	msg->length = messageLength;
-
-	// append to message queue
+	modCriticalSectionBegin();
 	if (NULL == gMessageQueue) {
 		gMessageQueue = msg;
 		esp_schedule();
@@ -1333,6 +1324,58 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 			;
 		walker->next = msg;
 	}
+	modCriticalSectionEnd();
+}
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+{
+	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
+	if (!msg) return -1;
+
+	msg->the = the;
+	msg->callback = callback;
+	msg->refcon = refcon;
+	msg->isStatic = 0;
+
+	if (message && messageLength)
+		c_memmove(msg->message, message, messageLength);
+	msg->length = messageLength;
+
+	appendMessage(msg);
+
+	return 0;
+}
+
+#define kMessagePoolCount (2)
+static modMessageRecord gMessagePool[kMessagePoolCount];
+
+int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
+{
+	modMessage msg;
+	uint8_t i;
+
+	modCriticalSectionBegin();
+
+	for (i = 0, msg = gMessagePool; i < kMessagePoolCount; i++, msg++) {
+		if (!msg->isStatic) {
+			msg->isStatic = 1;
+			break;
+		}
+	}
+
+	modCriticalSectionEnd();
+
+	if ((gMessagePool + kMessagePoolCount) == msg) {
+		modLog("message pool full");
+		return -1;
+	}
+
+	msg->the = the;
+	msg->callback = callback;
+	msg->refcon = refcon;
+	msg->length = 0;
+
+	appendMessage(msg);
 
 	return 0;
 }
@@ -1349,12 +1392,18 @@ int modMessageService(void)
 	while (msg && msg->marked) {
 		modMessage next;
 
-		if (msg->the)
+		if (msg->callback)
 			(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
-		next = msg->next;
-		c_free(msg);
 
+		modCriticalSectionBegin();
+		next = msg->next;
 		gMessageQueue = next;
+		modCriticalSectionEnd();
+
+		if (msg->isStatic)
+			msg->isStatic = 0;		// return to pool
+		else
+			c_free(msg);
 		msg = next;
 	}
 
@@ -1368,7 +1417,7 @@ void modMachineTaskUninit(xsMachine *the)
 
 	while (msg) {
 		if (msg->the == the)
-			msg->the = NULL;
+			msg->callback = NULL;
 		msg = msg->next;
 	}
 }
