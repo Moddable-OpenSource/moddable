@@ -14,23 +14,23 @@ To keep the following examples concise and focused, the code makes several assum
 
 - They assume that the following color variables are defined:
 
-```javascript
-let white = poco.makeColor(255, 255, 255);
-let black = poco.makeColor(0, 0, 0);
-let gray = poco.makeColor(128, 128, 128);
-let red = poco.makeColor(255, 0, 0);
-let green = poco.makeColor(0, 255, 0);
-let blue = poco.makeColor(0, 0, 255);
-```
+	```javascript
+	let white = poco.makeColor(255, 255, 255);
+	let black = poco.makeColor(0, 0, 0);
+	let gray = poco.makeColor(128, 128, 128);
+	let red = poco.makeColor(255, 0, 0);
+	let green = poco.makeColor(0, 255, 0);
+	let blue = poco.makeColor(0, 0, 255);
+	```
 
 - They assume that the drawing commands occur between calls to `begin` and `end`.
 
-  ```javascript
-let poco = new Poco(screen);
-poco.begin();
-...	// example code here
-poco.end();
-```
+	```javascript
+	let poco = new Poco(screen);
+	poco.begin();
+	...	// example code here
+	poco.end();
+	```
 
 Each example includes the image rendered by the code. The images are scaled 150% here to make them easier to see; this scaling causes some blurring and introduces some jaggedness that is not in the actual image.
 
@@ -41,8 +41,7 @@ This example fills `screen` with gray pixels, covers the left half with red pixe
 ```javascript
 poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 poco.fillRectangle(red, 0, 0, poco.width / 2, poco.height);
-poco.blendRectangle(blue, 128, poco.width / 4,
-					0, poco.width / 2, poco.height);
+poco.blendRectangle(blue, 128, poco.width / 4, 0, poco.width / 2, poco.height);
 ```
 
 <img src="../assets/poco/fillrectangle.png" width="180" height="135"/>
@@ -107,10 +106,10 @@ This example draws a monochrome bitmap (in which all pixels are either black or 
 poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 
 let envelope = parseBMP(new Resource("envelope.bmp"));
-poco.drawMonochrome(envelope, black, white, 14, 10)
-poco.drawMonochrome(envelope, red, white, 14, 55)
-poco.drawMonochrome(envelope, green, undefined, 74, 10)
-poco.drawMonochrome(envelope, undefined, blue, 74, 55)
+poco.drawMonochrome(envelope, black, white, 14, 10);
+poco.drawMonochrome(envelope, red, white, 14, 55);
+poco.drawMonochrome(envelope, green, undefined, 74, 10);
+poco.drawMonochrome(envelope, undefined, blue, 74, 55);
 ```
 
 <img src="../assets/poco/monochrome.png" width="180" height="135"/>
@@ -306,6 +305,7 @@ poco.drawText("Centered", palatino12, black,
 			  (poco.width - poco.getTextWidth("Centered", palatino12)) / 2,
 			  (poco.height - palatino12.height) / 2);
 ```
+
 <img src="../assets/poco/text3.png" width="180" height="135"/>
 
 The `drawText` function also accepts a 16-gray-level alpha bitmap in the `color` argument. This bitmap is used to draw fonts that consist of multiple colors. The following example shows drawing Open Sans Bold Italic with both black and white pixels in the glyph images.
