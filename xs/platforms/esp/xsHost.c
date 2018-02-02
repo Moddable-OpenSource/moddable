@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-#include "Arduino.h"
 #include "xsAll.h"
 #include "xs.h"
 #include "mc.defines.h"
@@ -46,6 +45,7 @@
 
 	portMUX_TYPE gCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 #else
+	#include "Arduino.h"
 	#include "rtctime.h"
 	#include "spi_flash.h"
 #endif
