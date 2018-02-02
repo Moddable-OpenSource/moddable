@@ -86,22 +86,22 @@ All properties are read-only.
 
 #### Methods
 
-##### `bankWrite(byte)`
+##### `write(byte)`
 
 Temporarily sets the mode of all pins to output and writes all pins at once. 
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
-expander.bankWrite(0b11111111); // Set all pins to 1
+expander.write(0b11111111); // Set all pins to 1
 ```
 
-##### `bankRead()`
+##### `read()`
 
 Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
-trace(`${expander.bankRead()}\n`); 
+trace(`${expander.read()}\n`); 
 ```
 
 
@@ -173,22 +173,22 @@ All properties are read-only.
 
 #### Methods
 
-##### `bankWrite(word)`
+##### `write(word)`
 
 Temporarily sets the mode of all pins to output and writes all pins at once. 
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
-expander.bankWrite(0b1111111111111111); // Set all pins to 1
+expander.write(0b1111111111111111); // Set all pins to 1
 ```
 
-##### `bankRead()`
+##### `read()`
 
 Temporarily sets the mode of all pins to input, reads all pins at once, and returns their values.
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
-trace(`${expander.bankRead()}\n`); 
+trace(`${expander.read()}\n`); 
 ```
 
 ### Pin Class
