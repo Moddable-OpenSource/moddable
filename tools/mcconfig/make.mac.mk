@@ -114,6 +114,7 @@ MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 MCREZ = $(BUILD_DIR)/bin/mac/debug/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/mac/debug/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/mac/debug/wav2maud
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc
 XSID = $(BUILD_DIR)/bin/mac/debug/xsid
 XSL = $(BUILD_DIR)/bin/mac/debug/xsl
