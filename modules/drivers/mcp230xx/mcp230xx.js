@@ -76,7 +76,7 @@ class Expander extends SMBus {
     Object.freeze(this);
   }
 
-  bankWrite(state) {
+  write(state) {
     if (this.offset) {
       // Read IODIR state
       let iodir = this.readWord(this.IODIR);
@@ -103,7 +103,7 @@ class Expander extends SMBus {
       this.writeByte(this.IODIR, iodir);
     }
   }
-  bankRead() {
+  read() {
     if (this.offset) {
       // Read IODIR state
       let iodir = this.readWord(this.IODIR);
