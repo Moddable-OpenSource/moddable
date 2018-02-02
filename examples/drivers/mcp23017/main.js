@@ -30,7 +30,7 @@ export default function() {
 	let last = Date.now();
 
 	// Set pins 0-15
-	expander.bankWrite(0x0000);
+	expander.write(0x0000);
 
 	button.mode(Digital.Input);
 
@@ -46,13 +46,13 @@ export default function() {
 			last = now;
 
 			// Check if the button is pressed...
-			if (expander.bankRead() >> 15) {
+			if (expander.read() >> 15) {
 				indicator ^= 1;
 			}
 		}
 		// Set pins 8-15 (Or: port B)
 		ports.b = (indicator << 8);
 
-		expander.bankWrite(ports.b | ports.a);
+		expander.write(ports.b | ports.a);
 	}, 50);
 }
