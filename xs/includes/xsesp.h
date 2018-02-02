@@ -275,6 +275,7 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 		int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
 		void modMessageService(xsMachine *the, int maxDelayMS);
 	#else
+		int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon);
 		int modMessageService(void);
 	#endif
 #endif
