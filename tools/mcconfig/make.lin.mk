@@ -118,6 +118,7 @@ MCLOCAL = $(BUILD_DIR)/bin/lin/debug/mclocal
 MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/lin/debug/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/lin/debug/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/lin/debug/wav2maud
 XSC = $(BUILD_DIR)/bin/lin/debug/xsc
 XSID = $(BUILD_DIR)/bin/lin/debug/xsid
 XSL = $(BUILD_DIR)/bin/lin/debug/xsl
