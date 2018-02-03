@@ -22,12 +22,17 @@ import AudioOut from "pins/audioout";
 import Resource from "Resource";
 
 export default class Sound {
+	static callback(index) {
+		Sound.private.callbacks[index].call();
+	}
 	static close() {
 		let audioOut = this.private.audioOut
 		if (audioOut) {
 			audioOut.stop();
 			audioOut.close();
-			this.audioOut = null;
+			this.private.audioOut = null;
+			this.private.callbacks = null;
+			this.private.streams = 0;
 		}
 	}
 	static open(streams = 1) {
@@ -37,22 +42,30 @@ export default class Sound {
 			sampleRate:this.sampleRate, 
 			streams
 		});
+		this.private.callbacks = new Array(streams);
+		this.private.streams = streams;
+		audioOut.callback = this.callback;
 		audioOut.start();
-		audioOut.enqueue(0, AudioOut.Volume, this.private.volume);
+		this.volume = this.volume;
 		return audioOut;
 	}
 	static get bitsPerSample() @ "PiuSound_get_bitsPerSample";
 	static get numChannels() @ "PiuSound_get_numChannels";
 	static get sampleRate() @ "PiuSound_get_sampleRate";
 	static get volume() {
-		return volume / 256;
+		return this.private.volume / 256;
 	}
 	static set volume(it)  {
+		let volume = this.private.volume = Math.round(it * 256);
 		let audioOut = this.private.audioOut
-		if (!audioOut)
-			audioOut = Sound.open();
-		this.private.volume = Math.round(it * 256);
-		audioOut.enqueue(0, AudioOut.Volume, this.private.volume);
+		if (audioOut) {
+			let streams = this.private.streams, stream = 0;
+			while (stream < streams) {
+				audioOut.enqueue(stream, AudioOut.Flush);
+				audioOut.enqueue(stream, AudioOut.Volume, volume);
+				stream++;
+			}
+		}
 	}
 	constructor(it) {
 		let path = it.path;
@@ -73,8 +86,10 @@ export default class Sound {
 			audioOut = Sound.open();
 		audioOut.enqueue(stream, AudioOut.Flush);
 		audioOut.enqueue(stream, AudioOut.Samples, this.buffer, repeat, this.offset, this.size);
-		if (callback) 
-			audioOut.enqueue(0, AudioOut.Callback, callback);
+		if (callback) {
+			Sound.private.callbacks[stream] = callback;
+			audioOut.enqueue(stream, AudioOut.Callback, stream);
+		}
 	}
 }
-Sound.private = { audioOut:null, volume:256 };
+Sound.private = { audioOut:null, callbacks:null, streams:0, volume:256 };
