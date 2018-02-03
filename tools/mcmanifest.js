@@ -212,6 +212,7 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateResourcesRules(tool) {
+		var definesPath = "$(TMP_DIR)" + tool.slash + "mc.defines.h";
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
 		var rotationPath = "$(TMP_DIR)" + tool.slash + "mc.rotation.h";
 	
@@ -350,12 +351,19 @@ export class MakeFile extends FILE {
 			}
 		}
 		
+		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025;
+		let audioOut = tool.defines.audioOut;
+		if (audioOut) {
+			if ("bitsPerSample" in audioOut) bitsPerSample = audioOut.bitsPerSample;
+			if ("numChannels" in audioOut) numChannels = audioOut.numChannels;
+			if ("sampleRate" in audioOut) sampleRate = audioOut.sampleRate;
+		}		
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
 			this.echo(tool, "wav2maud ", target);
-			this.line("\t$(WAV2MAUD) ", source, " -o $(@D)");
+			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample);
 		}
 		
 		for (var result of tool.stringFiles)
