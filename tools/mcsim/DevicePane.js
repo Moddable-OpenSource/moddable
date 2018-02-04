@@ -54,25 +54,13 @@ export class DeviceWorker {
 		if (this.id)
 			model.SCREEN.postMessage(message, this.id);
 	}
-	traceInput(buffer) {
+	traceInput(message, buffer) {
 		let messagesPane = model.MESSAGES;
-		if (buffer instanceof ArrayBuffer) {
-			let device = this.device;
-			let message = BIN.parse(device.format, buffer, device.endian);
-			messagesPane.behavior.input(messagesPane, message, buffer);
-		}
-		else
-			messagesPane.behavior.input(messagesPane, buffer);
+		messagesPane.behavior.input(messagesPane, message, buffer);
 	}
-	traceOutput(buffer) {
+	traceOutput(message, buffer) {
 		let messagesPane = model.MESSAGES;
-		if (buffer instanceof ArrayBuffer) {
-			let device = this.device;
-			let message = BIN.parse(device.format, buffer, device.endian);
-			messagesPane.behavior.output(messagesPane, message, buffer);
-		}
-		else
-			messagesPane.behavior.output(messagesPane, buffer);
+		messagesPane.behavior.output(messagesPane, message, buffer);
 	}
 	unbindContent(content) {
 		content.active = false;
