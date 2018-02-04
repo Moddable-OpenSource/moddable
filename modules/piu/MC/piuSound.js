@@ -46,7 +46,6 @@ export default class Sound {
 		this.private.streams = streams;
 		audioOut.callback = this.callback;
 		audioOut.start();
-		this.volume = this.volume;
 		return audioOut;
 	}
 	static get bitsPerSample() @ "PiuSound_get_bitsPerSample";
@@ -56,16 +55,7 @@ export default class Sound {
 		return this.private.volume / 256;
 	}
 	static set volume(it)  {
-		let volume = this.private.volume = Math.round(it * 256);
-		let audioOut = this.private.audioOut
-		if (audioOut) {
-			let streams = this.private.streams, stream = 0;
-			while (stream < streams) {
-				audioOut.enqueue(stream, AudioOut.Flush);
-				audioOut.enqueue(stream, AudioOut.Volume, volume);
-				stream++;
-			}
-		}
+		this.private.volume = Math.round(it * 256);
 	}
 	constructor(it) {
 		let path = it.path;
@@ -85,6 +75,7 @@ export default class Sound {
 		if (!audioOut)
 			audioOut = Sound.open();
 		audioOut.enqueue(stream, AudioOut.Flush);
+		audioOut.enqueue(stream, AudioOut.Volume, Sound.private.volume);
 		audioOut.enqueue(stream, AudioOut.Samples, this.buffer, repeat, this.offset, this.size);
 		if (callback) {
 			Sound.private.callbacks[stream] = callback;
