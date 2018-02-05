@@ -30,6 +30,8 @@ export class DeviceBehavior extends Behavior {
 	onCreate(container, device) {
 		this.device = device;
 	}
+	onMessage(message) {
+	}
 }
 
 export class DeviceWorker {
@@ -54,13 +56,13 @@ export class DeviceWorker {
 		if (this.id)
 			model.SCREEN.postMessage(message, this.id);
 	}
-	traceInput(message, buffer) {
+	traceInput(message, buffer, state = 0) {
 		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.input(messagesPane, message, buffer);
+		messagesPane.behavior.input(messagesPane, message, buffer, state);
 	}
-	traceOutput(message, buffer) {
+	traceOutput(message, buffer, state = 0) {
 		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.output(messagesPane, message, buffer);
+		messagesPane.behavior.output(messagesPane, message, buffer, state);
 	}
 	unbindContent(content) {
 		content.active = false;
@@ -101,6 +103,8 @@ class DeviceScreenBehavior extends Behavior {
 			if (worker)
 				worker.onmessage(message);
 		}
+		else
+			screen.container.bubble("onMessage", message);
 	}
 }
 
