@@ -1,31 +1,19 @@
 {
 	"include": [
-				"$(MODDABLE)/examples/manifest_base.json",
-				"$(MODDABLE)/examples/manifest_commodetto.json",
-				"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
-				],
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/pins/analog/manifest.json",
+	],
 	"modules": {
 		"*": "./main",
 	},
 	"resources":{
 		"*-mask": [
-				   "./myFont",
-				   ],
+			"./myFont",
+	   ],
 	},
 	"config": {
 		"screen": "ili9341"
 	},
-	"platforms":{
-		"esp": {
-			"modules": {
-				"pins/analog": "$(MODULES)/pins/analog/analog",
-				"*": "$(MODULES)/pins/analog/esp/*"
-			},
-			"preload": [
-				"pins/analog"
-			],
-		}
-	}
 }
-
-
