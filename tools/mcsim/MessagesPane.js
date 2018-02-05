@@ -30,8 +30,8 @@ import {
 } from "assets";	
 
 var messageTexture = new Texture({ path:"assets/bubbles.png" });
-var messageOutSkin = new Skin({ texture: messageTexture, x:0, y:0, width:100, height:64, tiles:{ left:20, right:20, top:20, bottom:20 } });
-var messageInSkin = new Skin({ texture: messageTexture, x:100, y:0, width:100, height:64, tiles:{ left:20, right:20, top:20, bottom:20 } });
+var messageOutSkin = new Skin({ texture: messageTexture, x:0, y:0, width:100, height:64, tiles:{ left:20, right:20, top:20, bottom:20 }, states:64 });
+var messageInSkin = new Skin({ texture: messageTexture, x:100, y:0, width:100, height:64, tiles:{ left:20, right:20, top:20, bottom:20 }, states:64 });
 var messageListSkin = new Skin({ fill:"#e2e2e2" });
 const CODE_BLACK = "#000000";
 const CODE_COMMENT = "#008d32";
@@ -69,7 +69,7 @@ class MessagePaneBehavior extends Behavior {
 	formatMessage(message) {
 		return JSON.stringify(message, null, 2);
 	}
-	input(container, message, buffer) {
+	input(container, message, buffer, state = 0) {
 		var scroller = container.first;
 		if (message)
 			message = this.formatMessage(message);
@@ -79,10 +79,10 @@ class MessagePaneBehavior extends Behavior {
 			buffer = this.formatBuffer(buffer);
 		else
 			buffer = "...";
-		this.add(container, scroller, new MessageInLine(message));
-		this.add(container, scroller.next, new BufferInLine(buffer));
+		this.add(container, scroller, new MessageInLine(message, { state }));
+		this.add(container, scroller.next, new BufferInLine(buffer, { state }));
 	}
-	output(container, message, buffer) {
+	output(container, message, buffer, state = 0) {
 		var scroller = container.first;
 		if (message)
 			message = this.formatMessage(message);
@@ -92,8 +92,8 @@ class MessagePaneBehavior extends Behavior {
 			buffer = this.formatBuffer(buffer);
 		else
 			buffer = "...";
-		this.add(container, scroller, new MessageOutLine(message));
-		this.add(container, scroller.next, new BufferOutLine(buffer));
+		this.add(container, scroller, new MessageOutLine(message, { state }));
+		this.add(container, scroller.next, new BufferOutLine(buffer, { state }));
 	}
 	onEmptyMessages(container) {
 		var scroller = container.first;
