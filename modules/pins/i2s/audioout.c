@@ -78,13 +78,14 @@
 
 typedef struct {
 	void	*samples;
-	int		sampleCount;		// 0 means this is a callback with value of (uintptr_t)samples
-	int		position;
-	int		repeat;				// alwauys 1 for callback, negative for infinite
+	int		sampleCount;		// 0 means this is a callback or volume command with value of (uintptr_t)samples
+	int		position;			// less than zero if callback, else
+	int		repeat;				// always 1 for callback, negative for infinite
 } modAudioQueueElementRecord, *modAudioQueueElement;
 
 typedef struct {
-	int		elementCount;
+	uint16_t	volume;				// 8.8 fixed
+	int			elementCount;
 	modAudioQueueElementRecord	element[MODDEF_AUDIOOUT_QUEUELENGTH];
 } modAudioOutStreamRecord, *modAudioOutStream;
 
@@ -96,6 +97,7 @@ typedef struct {
 	uint8_t					numChannels;
 	uint8_t					bitsPerSample;
 	uint8_t					bytesPerFrame;
+	uint8_t					applyVolume;		// one or more active streams is not at 1.0 volume
 
 	int						activeStreamCount;
 	modAudioOutStream		activeStream[MODDEF_AUDIOOUT_STREAMS];
@@ -131,6 +133,7 @@ static void audioOutLoop(void *pvParameter);
 #endif
 static void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output);
 static void endOfElement(modAudioOut out, modAudioOutStream stream);
+static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
 
 void xs_audioout_destructor(void *data)
 {
@@ -216,6 +219,9 @@ void xs_audioout(xsMachine *the)
 	out->bytesPerFrame = (bitsPerSample * numChannels) >> 3;
 	out->streamCount = streamCount;
 
+	for (i = 0; i < streamCount; i++)
+		out->stream[i].volume = 256;
+
 #if defined(__APPLE__)
 	OSStatus err;
 	AudioStreamBasicDescription desc = {0};
@@ -286,11 +292,19 @@ void xs_audioout_stop(xsMachine *the)
 #endif
 }
 
+enum {
+	kKindSamples = 1,
+	kKindFlush = 2,
+	kKindCallback = 3,
+	kKindVolume = 4
+};
+
 void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
 	int stream, argc = xsmcArgc;
-	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples;
+	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume;
+	uint8_t kind;
 	uint8_t *buffer;
 	uint16_t sampleRate;
 	uint8_t numChannels;
@@ -303,93 +317,119 @@ void xs_audioout_enqueue(xsMachine *the)
 	if ((stream < 0) || (stream >= out->streamCount))
 		xsRangeError("invalid stream");
 
-	if (MODDEF_AUDIOOUT_QUEUELENGTH == out->stream[stream].elementCount)
-		xsUnknownError("queue full");
-
-	if (1 == argc) {
-#if defined(__APPLE__)
-		pthread_mutex_lock(&out->mutex);
-#elif ESP32
-		xSemaphoreTake(out->mutex, portMAX_DELAY);
-#endif
-		out->stream[stream].elementCount = 0;		// flush queue
-#if defined(__APPLE__)
-		pthread_mutex_unlock(&out->mutex);
-#elif ESP32
-		xSemaphoreGive(out->mutex);
-#endif
-		return;
+	kind = xsmcToInteger(xsArg(1));
+	if (kKindFlush != kind) {
+		if (MODDEF_AUDIOOUT_QUEUELENGTH == out->stream[stream].elementCount)
+			xsUnknownError("queue full");
 	}
 
-	if ((2 == argc) && ((xsNumberType == xsmcTypeOf(xsArg(1))) || (xsIntegerType == xsmcTypeOf(xsArg(1))))) {
-		// callback id
+	switch (kind) {
+		case kKindSamples:
+			if (argc > 3) {
+				if ((xsNumberType == xsmcTypeOf(xsArg(3))) && (C_INFINITY == xsmcToNumber(xsArg(3))))
+					repeat = -1;
+				else
+					repeat = xsmcToInteger(xsArg(3));
+				if (argc > 4) {
+					sampleOffset = xsmcToInteger(xsArg(4));
+					if (argc > 5)
+						samplesToUse = xsmcToInteger(xsArg(5));
+				}
+			}
+
+			buffer = xsmcGetHostData(xsArg(2));
+			if (('m' != buffer[0]) || ('a' != buffer[1]) || (1 != buffer[2]))
+				xsUnknownError("bad header");
+
+			bitsPerSample = c_read8(buffer + 3);
+			sampleRate = c_read16(buffer + 4);
+			numChannels = c_read8(buffer + 6);
+			bufferSamples = c_read32(buffer + 8);
+			if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
+				xsUnknownError("format doesn't match output");
+			
+			buffer += 12;
+			
+			if (sampleOffset >= bufferSamples)
+				xsUnknownError("invalid offset");
+			
+			if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
+				samplesToUse = bufferSamples - sampleOffset;
+			
 #if defined(__APPLE__)
-		pthread_mutex_lock(&out->mutex);
+			pthread_mutex_lock(&out->mutex);
 #elif ESP32
-		xSemaphoreTake(out->mutex, portMAX_DELAY);
+			xSemaphoreTake(out->mutex, portMAX_DELAY);
 #endif
-		element = &out->stream[stream].element[out->stream[stream].elementCount];
-		element->samples = (void *)xsmcToInteger(xsArg(1));
-		element->sampleCount = 0;
-		element->position = 0;
-		element->repeat = 1;
-		goto done;
+			
+			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element->samples = buffer + (sampleOffset * out->bytesPerFrame);
+			element->sampleCount = samplesToUse;
+			element->position = 0;
+			element->repeat = repeat;
+
+		enqueue:
+			out->stream[stream].elementCount += 1;
+
+			if (1 == out->stream[stream].elementCount)
+				updateActiveStreams(out);
+
+#if defined(__APPLE__)
+			pthread_mutex_unlock(&out->mutex);
+#elif ESP32
+			xSemaphoreGive(out->mutex);
+#endif
+			break;
+
+		case kKindFlush:
+#if defined(__APPLE__)
+				pthread_mutex_lock(&out->mutex);
+#elif ESP32
+				xSemaphoreTake(out->mutex, portMAX_DELAY);
+#endif
+				out->stream[stream].elementCount = 0;		// flush queue
+#if defined(__APPLE__)
+				pthread_mutex_unlock(&out->mutex);
+#elif ESP32
+				xSemaphoreGive(out->mutex);
+#endif
+			break;
+
+		case kKindCallback:
+#if defined(__APPLE__)
+			pthread_mutex_lock(&out->mutex);
+#elif ESP32
+			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#endif
+			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element->samples = (void *)xsmcToInteger(xsArg(2));
+			element->sampleCount = 0;
+			element->position = -1;
+			element->repeat = 0;		//@@
+			goto enqueue;
+
+		case kKindVolume:
+			volume = xsmcToInteger(xsArg(2));
+			if (0 == out->stream[stream].elementCount) {
+				setStreamVolume(out, &out->stream[stream], volume);
+				break;
+			}
+
+#if defined(__APPLE__)
+			pthread_mutex_lock(&out->mutex);
+#elif ESP32
+			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#endif
+			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element->samples = NULL;
+			element->sampleCount = 0;
+			element->position = volume;
+			element->repeat = 0;		//@@
+			goto enqueue;
+
+		default:
+			xsUnknownError("bad kind");
 	}
-
-	if (argc > 2) {
-		if ((xsNumberType == xsmcTypeOf(xsArg(2))) && (C_INFINITY == xsmcToNumber(xsArg(2))))
-			repeat = -1;
-		else
-			repeat = xsmcToInteger(xsArg(2));
-		if (argc > 3) {
-			sampleOffset = xsmcToInteger(xsArg(3));
-			if (argc > 4)
-				samplesToUse = xsmcToInteger(xsArg(4));
-		}
-	}
-
-	buffer = xsmcGetHostData(xsArg(1));
-	if (('m' != buffer[0]) || ('a' != buffer[1]) || (1 != buffer[2]))
-		xsUnknownError("bad header");
-
-	bitsPerSample = c_read8(buffer + 3);
-	sampleRate = c_read16(buffer + 4);
-	numChannels = c_read8(buffer + 6);
-	bufferSamples = c_read32(buffer + 8);
-	if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
-		xsUnknownError("format doesn't match output");
-
-	buffer += 12;
-
-	if (sampleOffset >= bufferSamples)
-		xsUnknownError("invalid offset");
-
-	if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
-		samplesToUse = bufferSamples - sampleOffset;
-
-#if defined(__APPLE__)
-	pthread_mutex_lock(&out->mutex);
-#elif ESP32
-	xSemaphoreTake(out->mutex, portMAX_DELAY);
-#endif
-
-	element = &out->stream[stream].element[out->stream[stream].elementCount];
-	element->samples = buffer + (sampleOffset * out->bytesPerFrame);
-	element->sampleCount = samplesToUse;
-	element->position = 0;
-	element->repeat = repeat;
-
-done:
-	out->stream[stream].elementCount += 1;
-
-	if (1 == out->stream[stream].elementCount)
-		updateActiveStreams(out);
-
-#if defined(__APPLE__)
-	pthread_mutex_unlock(&out->mutex);
-#elif ESP32
-	xSemaphoreGive(out->mutex);
-#endif
 
 	xsResult = xsThis;
 }
@@ -400,10 +440,15 @@ void updateActiveStreams(modAudioOut out)
 	int i;
 
 	out->activeStreamCount = 0;
+	out->applyVolume = false;
 	for (i = 0; i < out->streamCount; i++) {
-		if (0 == out->stream[i].elementCount)
+		modAudioOutStream stream = &out->stream[i];
+
+		if ((0 == stream->elementCount) || (0 == stream->volume))
 			continue;
-		out->activeStream[out->activeStreamCount++] = &out->stream[i];
+		out->activeStream[out->activeStreamCount++] = stream;
+		if (stream->volume != 256)
+			out->applyVolume = true;
 	}
 }
 
@@ -585,7 +630,16 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int use = element->sampleCount - element->position;
 				if (use > samplesToGenerate)
 					use = samplesToGenerate;
-				c_memcpy(output, (element->position * bytesPerFrame) + (uint8_t *)element->samples, use * bytesPerFrame);
+
+				OUTPUTSAMPLETYPE *s0 = (OUTPUTSAMPLETYPE *)((element->position * bytesPerFrame) + (uint8_t *)element->samples);
+				if (!out->applyVolume)
+					c_memcpy(output, s0, use * bytesPerFrame);
+				else {
+					uint16_t v0 = stream->volume;
+					int count = use * out->numChannels;
+					while (count--)
+						*output++ = (*s0++ * v0) >> 8;
+				}
 
 				output = (OUTPUTSAMPLETYPE *)((use * bytesPerFrame) + (uint8_t *)output);
 				samplesToGenerate -= use;
@@ -611,8 +665,16 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s0 = (OUTPUTSAMPLETYPE *)((element0->position * bytesPerFrame) + (uint8_t *)element0->samples);
 				OUTPUTSAMPLETYPE *s1 = (OUTPUTSAMPLETYPE *)((element1->position * bytesPerFrame) + (uint8_t *)element1->samples);
 				int count = use * out->numChannels;
-				while (count--)
-					*output++ = *s0++ + *s1++;
+				if (!out->applyVolume) {
+					while (count--)
+						*output++ = *s0++ + *s1++;
+				}
+				else {
+					uint16_t v0 = stream0->volume;
+					uint16_t v1 = stream1->volume;
+					while (count--)
+						*output++ = ((*s0++ * v0) + (*s1++ * v1)) >> 8;
+				}
 
 				samplesToGenerate -= use;
 				element0->position += use;
@@ -646,8 +708,17 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s1 = (OUTPUTSAMPLETYPE *)((element1->position * bytesPerFrame) + (uint8_t *)element1->samples);
 				OUTPUTSAMPLETYPE *s2 = (OUTPUTSAMPLETYPE *)((element2->position * bytesPerFrame) + (uint8_t *)element2->samples);
 				int count = use * out->numChannels;
-				while (count--)
-					*output++ = *s0++ + *s1++ + *s2++;
+				if (!out->applyVolume) {
+					while (count--)
+						*output++ = *s0++ + *s1++ + *s2++;
+				}
+				else {
+					uint16_t v0 = stream0->volume;
+					uint16_t v1 = stream1->volume;
+					uint16_t v2 = stream2->volume;
+					while (count--)
+						*output++ = ((*s0++ * v0) + (*s1++ * v1) + (*s2++ * v2)) >> 8;
+				}
 
 				samplesToGenerate -= use;
 				element0->position += use;
@@ -689,8 +760,18 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s2 = (OUTPUTSAMPLETYPE *)((element2->position * bytesPerFrame) + (uint8_t *)element2->samples);
 				OUTPUTSAMPLETYPE *s3 = (OUTPUTSAMPLETYPE *)((element3->position * bytesPerFrame) + (uint8_t *)element3->samples);
 				int count = use * out->numChannels;
-				while (count--)
-					*output++ = *s0++ + *s1++ + *s2++ + *s3++;
+				if (!out->applyVolume) {
+					while (count--)
+						*output++ = *s0++ + *s1++ + *s2++ + *s3++;
+				}
+				else {
+					uint16_t v0 = stream0->volume;
+					uint16_t v1 = stream1->volume;
+					uint16_t v2 = stream2->volume;
+					uint16_t v3 = stream3->volume;
+					while (count--)
+						*output++ = ((*s0++ * v0) + (*s1++ * v1) + (*s2++ * v2) + (*s3++ * v3)) >> 8;
+				}
 
 				samplesToGenerate -= use;
 				element0->position += use;
@@ -732,8 +813,12 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 		element->repeat -= 1;
 
 	while (0 == element->repeat) {
-		if (0 == element->sampleCount)
-			queueCallback(out, (xsIntegerValue)element->samples);
+		if (0 == element->sampleCount) {
+			if (element->position < 0)
+				queueCallback(out, (xsIntegerValue)element->samples);
+			else
+				setStreamVolume(out, stream, element->position);
+		}
 
 		stream->elementCount -= 1;
 		if (stream->elementCount)
@@ -744,3 +829,14 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 		}
 	}
 }
+
+void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume)
+{
+	if (stream->volume == volume)
+		return;
+
+	stream->volume = volume;
+	updateActiveStreams(out);
+}
+
+
