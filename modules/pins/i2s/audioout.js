@@ -23,8 +23,12 @@ class AudioOut @ "xs_audioout_destructor" {
 	close() @ "xs_audioout_close"
 	start() @ "xs_audioout_start"
 	stop() @ "xs_audioout_stop"
-	enqueue(stream, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
+	enqueue(stream, kind, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
 };
+AudioOut.Samples = 1;
+AudioOut.Flush = 2;
+AudioOut.Callback = 3;
+AudioOut.Volume = 4;
 Object.freeze(AudioOut.prototype);
 
 export default AudioOut;
