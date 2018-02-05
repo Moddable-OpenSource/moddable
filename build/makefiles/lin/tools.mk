@@ -272,52 +272,52 @@ $(TMP_DIR)/%.c.xsi: %.c
 
 $(BIN_DIR)/buildclut: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
 	chmod +x $(BIN_DIR)/colorcellencode
 
 $(BIN_DIR)/compressbmf: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
 	chmod +x $(BIN_DIR)/compressbmf
 
 $(BIN_DIR)/image2cs: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
 	chmod +x $(BIN_DIR)/image2cs
 
 $(BIN_DIR)/mcconfig: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
 	chmod +x $(BIN_DIR)/mcconfig
 
 $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
 
 $(BIN_DIR)/mcrez: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
 
 $(BIN_DIR)/mcrun: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
 	chmod +x $(BIN_DIR)/mcrun
 
 $(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
 
 $(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
 
 clean:
