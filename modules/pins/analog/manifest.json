@@ -1,0 +1,21 @@
+{
+	"modules": {
+		"pins/analog": "$(MODULES)/pins/analog/analog",
+	},
+	"preload": "pins/analog",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/analog/esp/*"
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/analog/esp32/*"
+			},
+		},
+		"...": {
+			"error": "pins/analog unsupported"
+		}
+	}
+}
