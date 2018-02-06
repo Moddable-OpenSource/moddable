@@ -83,6 +83,7 @@ void PiuTransitionComplete(PiuTransition* self, PiuContainer* container)
 		self = (*self)->next;
 	}
 	(*container)->transition = NULL;
+	PiuBehaviorOnTransitionEnded(container);
 }
 
 void PiuTransitionCreate(xsMachine* the)
