@@ -13,10 +13,18 @@
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 		"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
 		"commodetto/ParseRLE": "$(COMMODETTO)/commodettoParseRLE",
-		"piu/*": [
-			"$(PIU)/All/piu*",
-			"$(PIU)/MC/piu*",
-		],
+		"piu/*": "$(PIU)/All/piu*",
+		"piu/CombTransition": "$(PIU)/MC/piuCombTransition",
+		"piu/MC": "$(PIU)/MC/piuMC",
+		"piu/WipeTransition": "$(PIU)/MC/piuWipeTransition",
+		"*": [
+			  "$(PIU)/MC/piuDie",
+			  "$(PIU)/MC/piuFont",
+			  "$(PIU)/MC/piuImage",
+			  "$(PIU)/MC/piuRegion",
+			  "$(PIU)/MC/piuTexture",
+			  "$(PIU)/MC/piuView",
+		]
 	},
 	"preload": [
 		"commodetto/*",
