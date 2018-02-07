@@ -352,11 +352,14 @@ export class MakeFile extends FILE {
 		}
 		
 		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025;
-		let audioOut = tool.defines.audioOut;
-		if (audioOut) {
-			if ("bitsPerSample" in audioOut) bitsPerSample = audioOut.bitsPerSample;
-			if ("numChannels" in audioOut) numChannels = audioOut.numChannels;
-			if ("sampleRate" in audioOut) sampleRate = audioOut.sampleRate;
+		let defines = tool.defines;
+		if (defines) {
+			let audioOut = defines.audioOut;
+			if (audioOut) {
+				if ("bitsPerSample" in audioOut) bitsPerSample = audioOut.bitsPerSample;
+				if ("numChannels" in audioOut) numChannels = audioOut.numChannels;
+				if ("sampleRate" in audioOut) sampleRate = audioOut.sampleRate;
+			}		
 		}		
 		for (var result of tool.soundFiles) {
 			var source = result.source;
