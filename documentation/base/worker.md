@@ -69,7 +69,7 @@ An alternative approach is to create a subclass of `Worker` which contains the `
 	let aWorker = new MyWorker("simpleworker");
 
 ### Terminating a worker
-The script that instantiates a worker may terminate the work.
+The script that instantiates a worker may terminate the worker.
 
 	aWorker.terminate();
 
