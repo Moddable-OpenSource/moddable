@@ -221,10 +221,18 @@ export class MakeFile extends FILE {
 			var target = result.target;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "copy ", target);
-			if (tool.windows)
-				this.line("\tcopy /Y $** $@");
-			else
-				this.line("\tcp $< $@");
+			if (tool.isDirectoryOrFile(source) < 0) {
+				if (tool.windows)
+					this.line("\tcopy /E /Y $** $@");
+				else
+					this.line("\tcp -R $< $@");
+			}
+			else {
+				if (tool.windows)
+					this.line("\tcopy /Y $** $@");
+				else
+					this.line("\tcp $< $@");
+			}
 		}
 	
 		if (tool.clutFiles) {
@@ -643,6 +651,21 @@ class ResourcesRule extends Rule {
 		this.appendFile(tool.resourcesFiles, name + ".fnt", path, include);
 		return true;
 	}
+	appendFramework(files, target, source, include) {
+		this.count++;
+		source = this.tool.resolveDirectoryPath(source);
+		if (!files.already[source]) {
+			files.already[source] = true;
+			if (include) {
+				if (!files.find(file => file.target == target)) {
+					//this.tool.report(target + " " + source);
+					let result = { target, source };
+					files.push(result);
+					return result;
+				}
+			}
+		}
+	}
 	appendImage(name, path, include, suffix) {
 		var tool = this.tool;
 		if (tool.imageFiles.already[path])
@@ -684,6 +707,10 @@ class ResourcesRule extends Rule {
 						return;
 					}
 				}
+			}
+			if (tool.platform == "x-ios" && parts.extension == ".framework") {
+				this.appendFramework(tool.resourcesFiles, target + parts.extension, source, include);
+				return;
 			}
 			return;
 		}
