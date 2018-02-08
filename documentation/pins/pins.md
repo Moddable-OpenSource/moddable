@@ -91,6 +91,55 @@ Samples the state of the pin and returns it as 0 or 1.
 
 Sets the current value of the pin to 0 or 1.
 
+## class Monitor
+
+The `Monitor` class tracks changes in the state of Digital input pins. An instance is configured to trigger on rising and/or falling edge events. When a trigger event occurs, a callback function is invoked. In addition, the instance maintains a counter of the total number of events triggered.
+
+	import Monitor from "pins/digital/monitor";
+
+**Note**: For efficiency reasons, implementations may only support a single monitor for each pin. Scripts should only instantiate a single monitor for a given pin.
+
+### Receiving notifications
+The following example shows how to receive callbacks on rising and falling edge events.
+
+	let monitor = new Monitor({pin: 4, mode: Digital.InputPullUp,
+						edges: Monitor.Rising | Monitor.Falling});
+	monitor.onChanged = function() {
+		trace(`Pin value is ${this.read()}\n`);
+	}
+
+### constructor(dictionary)
+The constructor takes a single dictionary argument containing properties to configure the instance. The `Monitor` dictionary is an extension of the `Digital` constructor accepting `pin`, `port`, and `mode` arguments. Only input modes are allowed for a `Monitor` instance  and the mode cannot be changed after instantiation.
+
+	let monitor = new Monitor({pin: 0, port: "B", mode: Digital.Input,
+							edges: Monitor.Rising});
+
+### close()
+The `close` function releases the resources associated with the `Monitor` instance.
+
+	monitor.close();
+
+The monitor is not eligible to be garbage collected until its `close` function is called.
+
+### onChanged() callback
+A script must install an `onChanged` callback on the instance to be invoked with the specified edge events occur. 
+
+	monitor.onChanged = function() {
+		trace(`Pin value is ${this.read()}\n`);
+	}
+
+The `onChanged` function is called as soon as possible following the event trigger. This may occur some time after the event occurs, as it may take some time to dispatch to a point where the script can be invoked safely. Because of this delay, it is possible the value of the pin may have again changed. For this reason, scripts should not assume the value of the pin when the callback is invoked but instead call the instances `read` function to retrieve the current value.
+
+### read()
+The `read` function returns the current value of the pin.
+
+	let value = this.read();
+
+### count property
+The `count` property returns the total number of trigger events since the instance was created. Events may trigger more quickly than the `onChanged` callback can be invoked, so the `onChanged` callback cannot be used to maintain an accurate count of the number of trigger events.
+
+	let count = this.count;
+
 ## class Analog
 
 The `Analog` class provides access to the analog input pins.
