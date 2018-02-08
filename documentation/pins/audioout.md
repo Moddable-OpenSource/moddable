@@ -147,6 +147,6 @@ To schedule a callback at a particular point in a stream, call enqueue with an i
 	audio.callback = id => trace(`finished playing buffer ${id}\n`);
 
 #### Dequeuing audio samples
-All of the samples and callbacks enqueued on a specified channel may be dequeued by calling `enqueue` with only the `stream` parameter:
+All of the samples and callbacks enqueued on a specified stream may be dequeued by calling `enqueue` with only the `stream` parameter:
 
 	audio.enqueue(3);
