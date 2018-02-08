@@ -74,6 +74,9 @@
 		kStatePlaying = 1,
 		kStateTerminated = 2
 	};
+#elif defined(__ets__)
+	#include "xsesp.h"
+	#include "tinyi2s.h"
 #endif
 
 typedef struct {
@@ -117,6 +120,9 @@ typedef struct {
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
 	uint32_t				buffer[128];
+#elif defined(__ets__)
+	uint8_t					i2sActive;
+	int16_t					buffer[64];		// size assumes DMA Buffer size of I2S
 #endif
 
 	int						pendingCallbackCount;
@@ -127,9 +133,15 @@ typedef struct {
 
 static void updateActiveStreams(modAudioOut out);
 #if defined(__APPLE__)
-static void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
+	static void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
 #elif ESP32
-static void audioOutLoop(void *pvParameter);
+	static void audioOutLoop(void *pvParameter);
+#elif defined(__ets__)
+	static void doRenderSamples(void *refcon, int16_t *lr, int count);
+#endif
+#if defined(__ets__) || ESP32
+	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+	void queueCallback(modAudioOut out, xsIntegerValue id);
 #endif
 static void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output);
 static void endOfElement(modAudioOut out, modAudioOutStream stream);
@@ -164,6 +176,9 @@ void xs_audioout_destructor(void *data)
 	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
 
 	vSemaphoreDelete(out->mutex);
+#elif defined(__ets__)
+	if (out->i2sActive)
+		i2s_end();
 #endif
 
 	c_free(out);
@@ -277,6 +292,9 @@ void xs_audioout_start(xsMachine *the)
 #elif ESP32
 	out->state = kStatePlaying;
 	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
+#elif defined(__ets__)
+	i2s_begin(doRenderSamples, out, out->sampleRate);
+	out->i2sActive = true;
 #endif
 }
 
@@ -289,6 +307,9 @@ void xs_audioout_stop(xsMachine *the)
 #elif ESP32
 	out->state = kStateIdle;
 	xTaskNotify(out->task, kStateIdle, eSetValueWithOverwrite);
+#elif defined(__ets__)
+	i2s_end();
+	out->i2sActive = false;
 #endif
 }
 
@@ -338,7 +359,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			}
 
 			buffer = xsmcGetHostData(xsArg(2));
-			if (('m' != buffer[0]) || ('a' != buffer[1]) || (1 != buffer[2]))
+			if (('m' != c_read8(buffer + 0)) || ('a' != c_read8(buffer + 1)) || (1 != c_read8(buffer + 2)))
 				xsUnknownError("bad header");
 
 			bitsPerSample = c_read8(buffer + 3);
@@ -360,6 +381,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			pthread_mutex_lock(&out->mutex);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+			modCriticalSectionBegin();
 #endif
 			
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
@@ -378,6 +401,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			pthread_mutex_unlock(&out->mutex);
 #elif ESP32
 			xSemaphoreGive(out->mutex);
+#elif defined(__ets__)
+			modCriticalSectionEnd();
 #endif
 			break;
 
@@ -386,12 +411,16 @@ void xs_audioout_enqueue(xsMachine *the)
 				pthread_mutex_lock(&out->mutex);
 #elif ESP32
 				xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+				modCriticalSectionBegin();
 #endif
 				out->stream[stream].elementCount = 0;		// flush queue
 #if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
 #elif ESP32
 				xSemaphoreGive(out->mutex);
+#elif defined(__ets__)
+				modCriticalSectionEnd();
 #endif
 			break;
 
@@ -400,6 +429,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			pthread_mutex_lock(&out->mutex);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+			modCriticalSectionBegin();
 #endif
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = (void *)xsmcToInteger(xsArg(2));
@@ -419,6 +450,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			pthread_mutex_lock(&out->mutex);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+			modCriticalSectionBegin();
 #endif
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = NULL;
@@ -548,14 +581,8 @@ void audioOutLoop(void *pvParameter)
 			if (kStateTerminated == newState)
 				break;
 
-			if (kStateIdle == newState) {
-				c_memset(out->buffer, 0, sizeof(out->buffer));
-				// write silence into i2s buffers (why 4 writes instead of 2?)
-				i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
-				i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
-				i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
-				i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
-			}
+			if (kStateIdle == newState)
+				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
 			continue;
 		}
 
@@ -572,7 +599,28 @@ void audioOutLoop(void *pvParameter)
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
 
-static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+#elif defined(__ets__)
+
+void doRenderSamples(void *refcon, int16_t *lr, int count)
+{
+	modAudioOut out = refcon;
+	int16_t *s = (int16_t *)out->buffer;
+
+	audioMix(out, count, out->buffer);
+
+	// expand mono to stereo
+	while (count--) {
+		int16_t sample = *s++;
+		lr[0] = sample;
+		lr[1] = sample;
+		lr += 2;
+	}
+}
+#endif
+
+#if defined(__ets__) || ESP32
+
+void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modAudioOut out = refcon;
 
@@ -582,13 +630,21 @@ static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t
 	while (out->pendingCallbackCount) {
 		int id;
 
+#if ESP32
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+		modCriticalSectionBegin();
+#endif
 		id = out->pendingCallbacks[0];
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
 			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
+#if ESP32
 		xSemaphoreGive(out->mutex);
+#elif defined(__ets__)
+		modCriticalSectionEnd();
+#endif
 
 		xsmcSetInteger(xsVar(0), id);
 		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
@@ -597,7 +653,8 @@ static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t
 	xsEndHost(out->the);
 }
 
-static void queueCallback(modAudioOut out, xsIntegerValue id)
+// note: queueCallback relies on caller to lock mutex
+void queueCallback(modAudioOut out, xsIntegerValue id)
 {
 	if (out->pendingCallbackCount < MODDEF_AUDIOOUT_QUEUELENGTH) {
 		out->pendingCallbacks[out->pendingCallbackCount++] = id;
@@ -608,7 +665,12 @@ static void queueCallback(modAudioOut out, xsIntegerValue id)
 	else
 		printf("audio callback queue full\n");
 }
+#endif
 
+#if defined(__ets__)
+	#define c_read16s(x) ((int16_t)c_read16(x))
+#else
+	#define c_read16s(x) (*(int16_t *)(x))
 #endif
 
 void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
@@ -638,7 +700,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 					uint16_t v0 = stream->volume;
 					int count = use * out->numChannels;
 					while (count--)
-						*output++ = (*s0++ * v0) >> 8;
+						*output++ = (c_read16s(s0++) * v0) >> 8;
 				}
 
 				output = (OUTPUTSAMPLETYPE *)((use * bytesPerFrame) + (uint8_t *)output);
@@ -667,13 +729,13 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = *s0++ + *s1++;
+						*output++ = c_read16s(s0++) + c_read16s(s1++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					while (count--)
-						*output++ = ((*s0++ * v0) + (*s1++ * v1)) >> 8;
+						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1)) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -710,14 +772,14 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = *s0++ + *s1++ + *s2++;
+						*output++ = c_read16s(s0++) + c_read16s(s1++) + c_read16s(s2++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
 					while (count--)
-						*output++ = ((*s0++ * v0) + (*s1++ * v1) + (*s2++ * v2)) >> 8;
+						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1) + (c_read16s(s2++) * v2)) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -762,7 +824,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = *s0++ + *s1++ + *s2++ + *s3++;
+						*output++ = c_read16s(s0++) + c_read16s(s1++) + c_read16s(s2++) + c_read16s(s3++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
@@ -770,7 +832,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 					uint16_t v2 = stream2->volume;
 					uint16_t v3 = stream3->volume;
 					while (count--)
-						*output++ = ((*s0++ * v0) + (*s1++ * v1) + (*s2++ * v2) + (*s3++ * v3)) >> 8;
+						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1) + (c_read16s(s2++) * v2) + (c_read16s(s3++) * v3)) >> 8;
 				}
 
 				samplesToGenerate -= use;
