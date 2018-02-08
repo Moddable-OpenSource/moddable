@@ -166,7 +166,7 @@ To be able to use bitmaps directly from flash storage, the bitmaps need to confo
 
 **xsc** is the XS compiler, a command line tool that compiles JS files into XS binary files containing symbols and byte codes. 
 
-By default **xsc** parses the JS file as an ECMAScript module. Optionnaly, for the sake of compatibility and conformance, **xsc** can parse the JS file as an ECMAScript program or a CommonJS module. Moddable apps only uses ECMAScript modules.
+By default **xsc** parses the JS file as an ECMAScript module. Optionally, for compatibility and conformance, **xsc** can parse the JS file as an ECMAScript program or a CommonJS module. Moddable apps only uses ECMAScript modules.
 
 With the `-c` option, **xsc** accepts the `@` constructs that reference host functions and host objects. For instance:
 
@@ -185,7 +185,7 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-	xsc file [-c] [-d] [-d] [-m] [-o directory] [-p] [-r name] [-t directory]
+	xsc file [-c] [-d] [-e] [-m] [-o directory] [-p] [-r name] [-t directory]
 
 - `file`: the path of a JS file to compile.
 - `-c`: to accept the `@` constructs that reference host functions and host objects. With the `-c` option and without the `-e` option, **xsc** generates C code that declares XS symbols, host functions and host objects.
