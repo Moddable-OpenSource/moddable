@@ -45,7 +45,27 @@ void xs_digital(xsMachine *the)
 	char *port = NULL;;
 	modGPIOConfigurationRecord gpio;
 
-	if (2 == argc) {
+	if (1 == argc) {		//@@ eventually only dictionary case should be here
+		xsmcVars(1);
+
+		if (!xsmcHas(xsArg(0), xsID_pin))
+			xsUnknownError("pin missing");
+
+		if (!xsmcHas(xsArg(0), xsID_mode))
+			xsUnknownError("mode missing");
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+		pin = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_mode);
+		mode = xsmcToInteger(xsVar(0));
+
+		if (xsmcHas(xsArg(0), xsID_port)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_port);
+			port = xsmcToString(xsVar(0));
+		}
+	}
+	else if (2 == argc) {
 		pin = xsmcToInteger(xsArg(0));
 		mode = xsmcToInteger(xsArg(1));
 	}
