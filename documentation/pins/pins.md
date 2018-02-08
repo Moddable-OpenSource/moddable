@@ -59,9 +59,18 @@ The `read` function sets the pin to `Digital.Input` mode and samples the value o
 
 The `write` function sets the pin to `Digital.Output` mode and its value to either 0 or 1. The default port is used.
 
+### constructor(dictionary)
 ### constructor([port], pin, mode)
 
-The Digital constructor establishes a connection to the GPIO pin specified by the `port` and `pin` arguments. If the port is not provided, the default port (`NULL`) is used. The `mode` parameters is passed to the instance's `mode` function to configure the GPIO hardware.
+The Digital constructor establishes a connection to the GPIO pin specified. There are two ways to configure the pin, by passing a dictionary or by passing separate arguments.
+
+When using a dictionary, the `pin` and `mode` property are required. The port property is optional, with a default value of `NULL`.
+
+	let pin = new Digital({pin: 4, mode: Digital.Input});
+
+When providing separate arguments, the  `port` and `pin` arguments specify the pin. If the port is not provided, the default port (`NULL`) is used. The `mode` parameters is passed to the instance's `mode` function to configure the GPIO hardware.
+
+	let pin = new Digital(4, Digital.Input);
 
 ### mode(mode)
 
