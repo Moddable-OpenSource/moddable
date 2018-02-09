@@ -244,6 +244,19 @@ global.system = {
 	getPathDirectory(path) @ "PiuSystem_getPathDirectory",
 	getPathExtension(path) @ "PiuSystem_getPathExtension",
 	getPathName(path) @ "PiuSystem_getPathName",
+
+	// location
+	hasLocationService() @ "PiuSystem_hasLocationService",
+	getLocationStatus() @ "PiuSystem_getLocationStatus",
+	getLocation(success, error) @ "PiuSystem_getLocation",
+
+	// notification
+	BadgeNotification: 1,
+	SoundNotification: 2,
+	AlertNotification: 4,
+	hasNotificationService() @ "PiuSystem_hasNotificationService",
+	getNotificationStatus() @ "PiuSystem_getNotificationStatus",
+	registerNotification(type) @ "PiuSystem_registerNotification",
 }
 
 global.blendColors = blendColors;
