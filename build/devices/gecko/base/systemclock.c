@@ -88,10 +88,9 @@ void CRYOTIMER_IRQHandler() {
 #endif
 
 void geckoConfigureSysTick() {
-   uint32_t stat, ticks;
+   uint32_t ticks;
    ticks = CMU_ClockFreqGet( cmuClock_CORE ) / 1000; /* 1 msec interrupts  */
-   stat = SysTick_Config( ticks );
-   return stat;
+   SysTick_Config( ticks );
 }
 
 void geckoDelayLoop( uint32_t ms )
@@ -222,19 +221,22 @@ uint32_t gecko_milliseconds(void)
 void gecko_delay(uint32_t ms)
 {
 #if USE_CRYOTIMER
-    uint32_t cryo;
+	volatile uint32_t first, last;
 	setupCryotimerTimeout(ms);
-    cryo = CRYOTIMER->CNT;
+    last = first = CRYOTIMER->CNT;
 
+while ((last - first) < ms) {
 	switch (gModIdleSleep) {
 		case 1: geckoEnterEM1(); break;
 		case 2: geckoEnterEM2(); break;
 		default:
 		case 3: geckoEnterEM3(); break;
 	}
+	last = CRYOTIMER->CNT;
+}
 		
     NVIC_DisableIRQ(CRYOTIMER_IRQn);
-    msTickCount += (CRYOTIMER->CNT - cryo);
+    msTickCount += (last - first);
     CMU_ClockEnable(cmuClock_CRYOTIMER, false);		// this will null out CRYOTIMER->CNT
 
 #else
@@ -346,5 +348,13 @@ void waitForGPIO(int port, int pin) {
     GPIO_IntDisable(1<<pin);
     GPIOINT_CallbackUnRegister(pin);
 #endif
+}
+
+void geckoEM1Idle(uint32_t ms) {
+	uint32_t last;
+	last = gModIdleSleep;
+	gModIdleSleep = 1;
+	gecko_delay(ms);
+	gModIdleSleep = last;
 }
 
