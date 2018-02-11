@@ -25,7 +25,10 @@
 #include "xsPlatform.h"
 #include "modInstrumentation.h"
 
+#include "em_system.h"
+
 xsMachine *gThe = NULL;        // the one XS6 virtual machine running
+uint32_t gDeviceUnique;
 
 uint8_t triggerDebugCommand(xsMachine *the);
 
@@ -37,6 +40,7 @@ xsCallback xsHostModuleAt(xsIndex i)
 extern void mc_setup(xsMachine *the);
 
 void xs_setup() {
+	gDeviceUnique = SYSTEM_GetUnique() & 0xffffffff;
 	geckoStartRTCC();
 	geckoConfigureSysTick();
 	setupDebugger();
