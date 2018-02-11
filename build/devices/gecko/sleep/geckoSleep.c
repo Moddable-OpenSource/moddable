@@ -151,10 +151,12 @@ void geckoSleepEM4(uint32_t ms) {
 #endif
 	geckoStoreGpioRetention();
 	configGPIO();
-	
+
+/* do we need this?	
 	WDOG0->CTRL |= WDOG_CTRL_CLKSEL_ULFRCO;		// wait for ULFRCO to start
 	while (CMU->SYNCBUSY)
 		;
+*/
 
 #if USE_CRYOTIMER
 	EMU_EnterEM4H();
