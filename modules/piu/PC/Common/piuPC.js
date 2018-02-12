@@ -18,32 +18,7 @@
  *
  */
 
-import { 
-	blendColors,
-	hsl,
-	hsla,
-	rgb,
-	rgba,
-	Skin,
-	Style,
-	Behavior,
-	Transition,
-	template,
-	Template,
-	Content,
-	Label,
-	Text,
-	Link,
-	Port,
-	Container,
-	Column,
-	Layout,
-	Row,
-	Scroller,
-	DeferLink,
-	TouchLink,
-	Locals,
-} from "All";
+import {} from "All";
 
 global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
 
@@ -65,6 +40,7 @@ export class Component extends Behavior {
 	}
 }
 Object.freeze(Component.prototype);
+global.Component = Component;
 
 export class TextComponent {
 	constructor($, it) {
@@ -73,6 +49,7 @@ export class TextComponent {
 	}
 }
 Object.freeze(TextComponent.prototype);
+global.TextComponent = TextComponent;
 
 export class LinkComponent extends TextComponent {
 	constructor($, it) {
@@ -81,6 +58,7 @@ export class LinkComponent extends TextComponent {
 	}
 }
 Object.freeze(LinkComponent.prototype);
+global.LinkComponent = LinkComponent;
 
 // PiuTexture.c
 
@@ -105,6 +83,7 @@ export class Texture @ "PiuTextureDelete" {
 	}
 }
 Object.freeze(Texture.prototype);
+global.Texture = Texture;
 
 // PiuField.c
 
@@ -122,6 +101,7 @@ var field = {
 };
 export var Field = Template(field);
 Object.freeze(field);
+global.Field = Field;
 
 // PiuApplication.c
 
@@ -155,6 +135,7 @@ export function Application($, it = {}) {
 Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
+global.Application = Application;
 global.application = null;
 
 // PiuView.c
@@ -177,6 +158,7 @@ export class Service @ "ServiceProxyDelete" {
 		}
 	}
 };
+global.Service = Service;
 
 global.controlKey = false;
 global.optionKey = false;
@@ -246,40 +228,6 @@ global.system = {
 	getPathName(path) @ "PiuSystem_getPathName",
 }
 
-global.blendColors = blendColors;
-global.hsl = hsl;
-global.hsla = hsla;
-global.rgb = rgb;
-global.rgba = rgba;
-
-global.Texture = Texture;
-global.Skin = Skin;
-global.Style = Style;
-global.Behavior = Behavior;
-global.Component = Component;
-global.Transition = Transition;
-
-global.Content = Content;
-global.Label = Label;
-global.Port = Port;
-global.Text = Text;
-global.TextComponent = TextComponent;
-global.Link = Link;
-global.LinkComponent = LinkComponent;
-
-global.Container = Container;
-global.Column = Column;
-global.Layout = Layout;
-global.Row = Row;
-global.Scroller = Scroller;
 
 
-global.Texture = Texture;
-global.Locals = Locals;
 
-global.Field = Field;
-
-global.Application = Application;
-
-
-global.Service = Service;

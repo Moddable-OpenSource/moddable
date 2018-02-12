@@ -18,6 +18,8 @@
  *
  */
 
+#include "piuAll.h"
+
 typedef struct PiuDieStruct PiuDieRecord, *PiuDie;
 typedef struct PiuImageStruct PiuImageRecord, *PiuImage;
 typedef struct PiuRegionStruct PiuRegionRecord, *PiuRegion;
