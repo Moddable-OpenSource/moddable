@@ -23,10 +23,15 @@
 // PiuColor.c
 
 export function blendColors(a, c1, c2) @ "Piu_blendColors";
+global.blendColors = blendColors;
 export function hsl(r, g, b) @ "Piu_hsl";
+global.hsl = hsl;
 export function hsla(r, g, b, a) @ "Piu_hsla";
+global.hsla = hsla;
 export function rgb(r, g, b) @ "Piu_rgb";
+global.rgb = rgb;
 export function rgba(r, g, b, a) @ "Piu_rgba";
+global.rgba = rgba;
 
 // PiuSkin.c
 
@@ -66,6 +71,7 @@ export class Skin @ "PiuSkinDelete" {
 	}
 }
 Object.freeze(Skin.prototype);
+global.Skin = Skin;
 
 // PiuStyle.c
 
@@ -105,6 +111,7 @@ export class Style @ "PiuStyleDelete" {
 	}
 }
 Object.freeze(Style.prototype);
+global.Style = Style;
 
 // BEHAVIOR
 
@@ -113,6 +120,7 @@ export class Behavior {
 	}
 }
 Object.freeze(Behavior.prototype);
+global.Behavior = Behavior;
 
 // DISPATCH
 
@@ -140,6 +148,7 @@ export function template(f) {
 	result.template = template;
 	return result;
 }
+global.template = template;
 
 export function Template(prototype) {
 	let result = function($, it = {}) {
@@ -151,6 +160,7 @@ export function Template(prototype) {
 	result.template = template;
 	return result;
 }
+global.Template = Template;
 
 // CONTENTS
 
@@ -235,6 +245,7 @@ export let Content = Template(Object.freeze({
 	start() @ "PiuContent_start",
 	stop() @ "PiuContent_stop",
 }));
+global.Content = Content;
 
 // PiuLabel.c
 
@@ -246,6 +257,7 @@ export let Label = Template(Object.freeze({
 	
 	set string(it) @ "PiuLabel_set_string",
 }));
+global.Label = Label;
 
 // PiuText.c
 
@@ -267,6 +279,7 @@ export let Text = Template(Object.freeze({
 	endBlock() @ "PiuText_endBlock",
 	endSpan() @ "PiuText_endSpan",
 }));
+global.Text = Text;
 
 export let Link = Template(Object.freeze({
 	__proto__: proto,
@@ -279,6 +292,7 @@ export let Link = Template(Object.freeze({
 	
 	captureTouch(id, x, y, ticks) @ "PiuContent_captureTouch",
 }));
+global.Link = Link;
 
 // PiuPort.c
 
@@ -303,6 +317,7 @@ export let Port = Template(Object.freeze({
 	pushClip(x, y, w, h) @ "PiuPort_pushClip",
 	measureString(string, style) @ "PiuPort_measureString",
 }));
+global.Port = Port;
 
 // CONTAINERS
 
@@ -341,6 +356,7 @@ export let Container = Template(Object.freeze({
 	run(transition) @ "PiuContainer_run",
 	swap(content0, content1) @ "PiuContainer_swap",
 }));
+global.Container = Container;
 
 // PiuColumn.c
 
@@ -348,6 +364,7 @@ export let Column = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuColumn_create",
 }));
+global.Column = Column;
 
 // PiuLayout.c
 
@@ -355,6 +372,7 @@ export let Layout = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuLayout_create",
 }));
+global.Layout = Layout;
 
 // PiuRow.c
 
@@ -362,6 +380,7 @@ export let Row = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuRow_create",
 }));
+global.Row = Row;
 
 // PiuScroller.c
 
@@ -382,6 +401,7 @@ export let Scroller = Template(Object.freeze({
 	scrollBy(dx, dy) @ "PiuScroller_scrollBy",
 	scrollTo(x, y) @ "PiuScroller_scrollTo",
 }));
+global.Scroller = Scroller;
 
 // DEFER
 
@@ -389,6 +409,7 @@ export class DeferLink @ "PiuDeferLinkDelete" {
 	constructor() @ "PiuDeferLinkCreate"
 }
 Object.freeze(DeferLink.prototype);
+global.DeferLink = DeferLink;
 
 // TOUCH
 
@@ -398,6 +419,7 @@ export class TouchLink @ "PiuTouchLinkDelete" {
 	peek(index) @ "PiuTouchLink_peek"
 }
 Object.freeze(TouchLink.prototype);
+global.TouchLink = TouchLink;
 
 // TRANSITION
 
@@ -418,6 +440,7 @@ export class Transition @ "PiuTransitionDelete" {
 	}
 }
 Object.freeze(Transition.prototype);
+global.Transition = Transition;
 
 // LOCALS
 
@@ -430,6 +453,7 @@ export class Locals  @ "PiuLocalsDelete" {
 	get(id) @ "PiuLocals_get"
 }
 Object.freeze(Locals.prototype);
+global.Locals = Locals;
 
 Math.backEaseIn = function(fraction) @ "Math_backEaseIn";
 Math.backEaseInOut = function(fraction) @ "Math_backEaseInOut";
