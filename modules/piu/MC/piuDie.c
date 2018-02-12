@@ -18,7 +18,6 @@
  *
  */
 
-#include "piuAll.h"
 #include "piuMC.h"
 
 static void PiuDieUpdate(void* it, PiuView* view, PiuRectangle area);
