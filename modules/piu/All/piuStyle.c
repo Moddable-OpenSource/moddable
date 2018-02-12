@@ -109,7 +109,8 @@ PiuStyle* PiuStyleLinkCompute(xsMachine *the, PiuStyleLink* chain, PiuApplicatio
 	PiuStyle* result = (*chain)->computedStyle;
 	if (result == NULL) {
 		PiuStyleLink* link = chain;
-		xsResult = xsNewFunction0((*application)->Style);
+		xsResult = xsGet(xsGlobal, xsID_Style);
+		xsResult = xsNewFunction0(xsResult);
 		result = PIU(Style, xsResult);
 		while (link) {
 			PiuStyleOverride((*link)->style, result);
@@ -486,8 +487,6 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 		(*result)->color[3] = (*self)->color[3];
 	}
 }
-
-
 
 void PiuStyle_get_bottom(xsMachine* the)
 {

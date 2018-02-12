@@ -24,32 +24,7 @@ import parseRLE from "commodetto/ParseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-import { 
-	blendColors,
-	hsl,
-	hsla,
-	rgb,
-	rgba,
-	Skin,
-	Style,
-	Behavior,
-	Transition,
-	template,
-	Template,
-	Content,
-	Label,
-	Text,
-	Link,
-	Port,
-	Container,
-	Column,
-	Layout,
-	Row,
-	Scroller,
-	DeferLink,
-	TouchLink,
-	Locals,
-} from "All";
+import {} from "All";
 export * from "All";
 
 export class CLUT extends Resource {
@@ -59,6 +34,7 @@ export class CLUT extends Resource {
 	get colors() @ "PiuCLUT_get_colors"
 }
 Object.freeze(CLUT.prototype);
+global.CLUT = CLUT;
 
 // PiuTexture.c
 
@@ -115,6 +91,7 @@ export class Texture @ "PiuTextureDelete" {
 	}
 }
 Object.freeze(Texture.prototype);
+global.Texture = Texture;
 
 // PiuDie.c
 
@@ -134,6 +111,7 @@ var die = {
 };
 export var Die = Template(die);
 Object.freeze(die);
+global.Die = Die;
 
 // PiuImage.c
 
@@ -148,6 +126,7 @@ var image = {
 };
 export var Image = Template(image);
 Object.freeze(image);
+global.Image = Image;
 
 // PiuApplication.c
 
@@ -180,6 +159,7 @@ export function Application($, it = {}) {
 Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
+global.Application = Application;
 
 // PiuView.c
 
@@ -206,34 +186,10 @@ class View @ "PiuViewDelete" {
 }
 Object.freeze(View.prototype);
 
-global.blendColors = blendColors;
-global.hsl = hsl;
-global.hsla = hsla;
-global.rgb = rgb;
-global.rgba = rgba;
-
-global.Skin = Skin;
-global.Style = Style;
-global.Behavior = Behavior;
-global.Transition = Transition;
-
-global.Content = Content;
-global.Label = Label;
-global.Port = Port;
-global.Text = Text;
-global.Link = Link;
-
-global.Container = Container;
-global.Column = Column;
-global.Layout = Layout;
-global.Row = Row;
-global.Scroller = Scroller;
 
 
-global.Locals = Locals;
-global.Texture = Texture;
 
-global.Die = Die;
-global.Image = Image;
 
-global.Application = Application;
+
+
+
