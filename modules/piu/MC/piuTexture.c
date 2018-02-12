@@ -18,7 +18,6 @@
  *
  */
 
-#include "piuAll.h"
 #include "piuMC.h"
 
 static void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot);
