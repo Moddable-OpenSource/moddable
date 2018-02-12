@@ -394,10 +394,10 @@ void PiuViewAdjust(PiuView* self)
 			frame.size.width = clipBounds.width;
 			frame.size.height = clipBounds.height;
 			[clipView setFrame:frame];
-// 			NSPoint origin;
-// 			origin.x = clipBounds.x - bounds.x;
-// 			origin.y = clipBounds.y - bounds.y;
-// 			[clipView scrollToPoint:origin];
+			NSPoint origin;
+			origin.x = clipBounds.x - bounds.x;
+			origin.y = clipBounds.y - bounds.y;
+			[clipView scrollToPoint:origin];
     	}
     }
     if ((*self)->context == NULL) {
