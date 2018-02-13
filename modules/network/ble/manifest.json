@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/network/ble/*"
+		]
+	},
+	"preload": [
+		"btutils",
+		"buffers",
+		"gap",
+		"gapadvdata",
+		"utils"
+	],
+	"platforms": {
+	}
+}
