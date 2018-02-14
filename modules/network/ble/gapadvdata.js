@@ -293,6 +293,25 @@ const AdvertisingDataParser = {
 	}
 };
 
+function toAdvertisingDataArray(structures) {
+	let buffer = ByteBuffer.allocateUint8Array(GAP.MAX_AD_LENGTH, true);
+	writeAdvertisingData(buffer, structures);
+	buffer.flip();
+	return buffer.getByteArray();
+}
+
+function writeAdvertisingData(buffer, structures) {
+	for (let i = 0; i < structures.length; i++) {
+		let structure = structures[i]
+		if (structure.data == null) {
+			break;
+		}
+		buffer.putInt8(structure.data.length + 1);
+		buffer.putInt8(structure.type);
+		buffer.putByteArray(structure.data);
+	}
+}
+
 class AdvertisingData {
 	static parse(structures) {
 		let params = new Object();
@@ -311,6 +330,11 @@ class AdvertisingData {
 			}
 		}
 		return structures;
+	}
+	static toByteArray(params) {
+		let structures = AdvertisingData.serialize(params);
+		let array = toAdvertisingDataArray(structures);
+		return array;
 	}
 }
 

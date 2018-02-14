@@ -44,7 +44,7 @@ function isArrayEquals(a1, a2) {
 }
 
 function isArrayEquals2(a1, off1, a2, off2, len) {
-	for (var i = 0; i < len; i++) {
+	for (let i = 0; i < len; i++) {
 		if (a1[i + off1] != a2[i + off2]) {
 			return false;
 		}
@@ -101,7 +101,7 @@ class UUID {
 		if (this._array.length == Utils.INT_16_SIZE) {
 			return true;
 		} else {
-			return isArrayEquals2(this._array, 0, BASE_UUID, 0, UUID_SIZE - 4);
+			return !isArrayEquals2(this._array, 0, BASE_UUID, 0, UUID_SIZE - 4);
 		}
 	}
 	/**

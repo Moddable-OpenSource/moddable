@@ -22,43 +22,9 @@
 
 import ByteBuffer from "buffers";
 
-function toAdvertisingDataArray(structures) {
-	let buffer = ByteBuffer.allocateUint8Array(MAX_AD_LENGTH, true);
-	writeAdvertisingData(buffer, structures);
-	buffer.flip();
-	return buffer.getByteArray();
-}
-
-function readAdvertisingData(buffer) {
-	let structures = [];
-	while (buffer.remaining() > 0) {
-		let length = buffer.getInt8();
-		if (length == 0) {
-			/* Early termination of data */
-			break;
-		}
-		let structure = {
-			type: buffer.getInt8(),
-			data: buffer.getByteArray(length - 1)
-		};
-		structures.push(structure);
-	}
-	return structures;
-}
-
-function writeAdvertisingData(buffer, structures) {
-	for (let i = 0; i < structures.length; i++) {
-		let structure = structures[i]
-		if (structure.data == null) {
-			break;
-		}
-		buffer.putInt8(structure.data.length + 1);
-		buffer.putInt8(structure.type);
-		buffer.putByteArray(structure.data);
-	}
-}
-
 class GAP {
+	constructor() {
+	}
 };
 GAP.SCAN_FAST_INTERVAL = 0x0030;		// TGAP(scan_fast_interval)		30ms to 60ms
 GAP.SCAN_FAST_WINDOW = 0x0030;			// TGAP(scan_fast_window)		30ms
@@ -116,6 +82,13 @@ GAP.ADType = {
 	URI: 0x24
 };
 GAP.MAX_AD_LENGTH = 31;
+GAP.ADFlag = {
+	LE_LIMITED_DISCOVERABLE_MODE: 0x01,
+	LE_GENERAL_DISCOVERABLE_MODE: 0x02,
+	NO_BR_EDR: 0x04,
+	LE_BR_EDR_CONTROLLER: 0x08,
+	LE_BR_EDR_HOST: 0x10,
+};
 
 Object.freeze(GAP.prototype);
 

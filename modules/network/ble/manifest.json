@@ -5,6 +5,7 @@
 		]
 	},
 	"preload": [
+		"ble",
 		"btutils",
 		"buffers",
 		"gap",
@@ -12,5 +13,15 @@
 		"utils"
 	],
 	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/esp32/*",
+			},
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/sim/*",
+			},
+		}
 	}
 }
