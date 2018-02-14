@@ -12,18 +12,28 @@
  *
  */
 
-import AdvertisingData from "gapadvdata";
+import BLE from "ble";
 
 let advertisingData = {
-	incompleteUUID16List: ['180D', '2900'],
+	incompleteUUID16List: ['180D'],
+	shortName: "Brian",
+};
+
+let scanResponseData = {
+	incompleteUUID16List: ['180D'],
 	shortName: "Brian",
 	publicAddress: "01:02:03:04:05:06",
 	incompleteUUID128List: ['00000000-0000-1000-8000-00805F9B34FB'],
 	flags: 0xBE
 };
 
-let serialized = AdvertisingData.serialize(advertisingData);
-let parsed = AdvertisingData.parse(serialized);
+let ble = new BLE;
+ble.initialize();
+ble.advertisingData = advertisingData;
+ble.scanResponseData = scanResponseData;
+
+let advertisingParams = { discoverable:true, connectable:true };	// @@ make these optional
+ble.startAdvertising(advertisingParams);
 
 debugger;
 
