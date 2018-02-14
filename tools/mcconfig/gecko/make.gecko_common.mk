@@ -100,6 +100,7 @@ HEADERS += $(XS_HEADERS)
 SDK_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/systemclock.c.o \
+	$(TMP_DIR)/geckoGPIO.c.o \
 	$(TMP_DIR)/debugger.c.o \
 
 SDK_DIRS = \
