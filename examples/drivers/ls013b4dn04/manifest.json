@@ -1,0 +1,99 @@
+{
+	"include" : [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
+	],
+	"config": {
+		"screen": "ls013b4dn04",
+		"touch": "",
+	},
+	"resources": {
+		"*": [
+			"./moddable-white",
+		],
+	},
+	"defines": {
+		"ls013b4dn04": {
+			"width": 96,
+			"height": 96,
+			"hz": 3500000,
+		},
+	},
+	"modules": {
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"Resource": "$(MODDABLE)/modules/files/resource/Resource",
+		"*": "./main",
+	},
+	"preload": [
+		"commodetto/*",
+		"Resource",
+		"main"
+	],
+	"strip":"*",
+	"platforms": {
+		"gecko/mighty": {
+			"defines": {
+				"mighty": true,
+				"ls013b4dn04": {
+					"cs": { "pin": 9, "port": "gpioPortA" },
+				},
+			},
+			"modules": {
+				"*": [
+                    "$(MODULES)/base/instrumentation/*",
+					"$(BUILD)/devices/gecko/sleep/*",
+				],
+			},
+			"preload": [
+				"instrumentation",
+				"pins",
+				"spi",
+				"sleep",
+			],
+		},
+		"gecko/thunderboard2": {
+			"defines": {
+				"mighty": true,
+				"ls013b4dn04": {
+					"cs": { "pin": 9, "port": "gpioPortA" },
+				},
+			},
+			"modules": {
+				"*": [
+                    "$(MODULES)/base/instrumentation/*",
+					"$(BUILD)/devices/gecko/sleep/*",
+				],
+			},
+			"preload": [
+				"instrumentation",
+				"pins",
+				"spi",
+				"sleep",
+			],
+		},
+		"gecko/giant": {
+			"defines": {
+				"ls013b4dn04": {
+					"cs": { "pin": 3, "port": "gpioPortD" },
+				},
+			},
+			"modules": {
+				"*": [
+                    "$(MODULES)/base/instrumentation/*",
+					"$(BUILD)/devices/gecko/pins/*",
+					"$(BUILD)/devices/gecko/sleep/*",
+				],
+			},
+			"preload": [
+				"instrumentation",
+				"pins",
+				"spi",
+				"sleep",
+			],
+		},
+	}
+}
