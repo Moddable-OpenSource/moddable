@@ -48,6 +48,7 @@
 #endif
 
 extern uint32_t gDeviceUnique;
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 
 /*
 	settimeofday, daylightsavingstime
@@ -57,6 +58,7 @@ static int16_t gDaylightSavings = 60 * 60;          // summer time
 
 void modSetTime(uint32_t seconds)
 {
+#if 0
     struct timeval tv;
 //  struct timezone tz;
 
@@ -65,6 +67,7 @@ void modSetTime(uint32_t seconds)
 
 //  c_settimeofday(&tv, NULL);
 //          //// NEED TO IMPLEMENT SETTIMEOFDAY
+#endif
 }
 
 void modSetTimeZone(int32_t timeZoneOffset)
@@ -455,7 +458,21 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	return C_NULL;
 }
 
+void fxSweepHost(txMachine *the)
+{
+}
 
+static void doRunPromiseJobs(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	fxRunPromiseJobs((txMachine *)machine);
+}
+
+void fxQueuePromiseJobs(txMachine* the)
+{
+	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
+}
+
+#if 0
 typedef uint8_t (*RunPromiseJobs)(xsMachine *the);
 
 static uint8_t xsRunPromiseJobs_pending(txMachine *the);
@@ -489,6 +506,7 @@ void fxQueuePromiseJobs(txMachine* the)
 void fxSweepHost(txMachine* the)
 {
 }
+#endif
 
 /*
 	Instrumentation
@@ -627,15 +645,136 @@ void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
 /*
 	messages
 */
-#if MODDEF_MESSAGES
-#error need MESSAGES for gecko
-#else
-void modMessageService(void) {}
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon){}
+typedef struct modMessageRecord modMessageRecord;
+typedef modMessageRecord *modMessage;
+
+struct modMessageRecord {
+	modMessage          next;
+	xsMachine           *the;
+	modMessageDeliver   callback;
+	void                *refcon;
+	uint16_t            length;
+	uint8_t             marked;
+	uint8_t             isStatic;       // this doubles as a flag to indicate entry is use gMessagePool
+	char                message[1];
+};
+
+static modMessage gMessageQueue;
+
+static void appendMessage(modMessage msg)
+{
+	msg->next = NULL;
+    msg->marked = 0;
+
+    modCriticalSectionBegin();
+    if (NULL == gMessageQueue) {
+        gMessageQueue = msg;
+        gecko_schedule();
+    }
+    else {
+        modMessage walker;
+
+        for (walker = gMessageQueue; NULL != walker->next; walker = walker->next)
+            ;
+        walker->next = msg;
+    }
+    modCriticalSectionEnd();
+}
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+{
+    modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
+    if (!msg) return -1;
+
+    msg->the = the;
+    msg->callback = callback;
+    msg->refcon = refcon;
+    msg->isStatic = 0;
+
+    if (message && messageLength)
+        c_memmove(msg->message, message, messageLength);
+    msg->length = messageLength;
+
+    appendMessage(msg);
+
+    return 0;
+}
+
+#define kMessagePoolCount (2)
+static modMessageRecord gMessagePool[kMessagePoolCount];
+
+int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
+{
+    modMessage msg;
+    uint8_t i;
+
+    modCriticalSectionBegin();
+
+    for (i = 0, msg = gMessagePool; i < kMessagePoolCount; i++, msg++) {
+        if (!msg->isStatic) {
+            msg->isStatic = 1;
+            break;
+        }
+    }
+
+    modCriticalSectionEnd();
+
+    if ((gMessagePool + kMessagePoolCount) == msg) {
+        modLog("message pool full");
+        return -1;
+    }
+
+    msg->the = the;
+    msg->callback = callback;
+    msg->refcon = refcon;
+    msg->length = 0;
+
+    appendMessage(msg);
+
+    return 0;
+}
+
+int modMessageService(void)
+{
+    modMessage msg = gMessageQueue;
+    while (msg) {
+        msg->marked = 1;
+        msg = msg->next;
+    }
+
+    msg = gMessageQueue;
+    while (msg && msg->marked) {
+        modMessage next;
+
+        if (msg->callback)
+            (msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
+
+        modCriticalSectionBegin();
+        next = msg->next;
+        gMessageQueue = next;
+        modCriticalSectionEnd();
+
+        if (msg->isStatic)
+            msg->isStatic = 0;      // return to pool
+        else
+            c_free(msg);
+        msg = next;
+    }
+
+    return gMessageQueue ? 1 : 0;
+}
 
 void modMachineTaskInit(xsMachine *the) {}
-void modMachineTaskUninit(xsMachine *the) {}
-#endif
+void modMachineTaskUninit(xsMachine *the)
+{
+    modMessage msg = gMessageQueue;
+
+    while (msg) {
+        if (msg->the == the)
+            msg->callback = NULL;
+        msg = msg->next;
+    }
+}
 
 
 
