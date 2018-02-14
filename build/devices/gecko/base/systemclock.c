@@ -59,6 +59,7 @@ extern uint32_t gResetCause;
 //uint32_t gGeckoSetDelayMode = 0;
 uint32_t gModMaxIdleSleep = MODDEF_SLEEP_IDLELEVEL;
 uint32_t gModIdleSleep = MODDEF_SLEEP_IDLELEVEL;
+static uint8_t gecko_schedule_now = 0;		// interrupts delay
 
 uint32_t geckoGetResetCause() {
 	return gResetCause;
@@ -225,16 +226,19 @@ void gecko_delay(uint32_t ms)
 	setupCryotimerTimeout(ms);
     last = first = CRYOTIMER->CNT;
 
-while ((last - first) < ms) {
-	switch (gModIdleSleep) {
-		case 1: geckoEnterEM1(); break;
-		case 2: geckoEnterEM2(); break;
-		default:
-		case 3: geckoEnterEM3(); break;
+	while ((last - first) < ms) {
+		switch (gModIdleSleep) {
+			case 1: geckoEnterEM1(); break;
+			case 2: geckoEnterEM2(); break;
+			default:
+			case 3: geckoEnterEM3(); break;
+		}
+		last = CRYOTIMER->CNT;
+		if (gecko_schedule_now)
+			break;
 	}
-	last = CRYOTIMER->CNT;
-}
-		
+	gecko_schedule_now = 0;
+
     NVIC_DisableIRQ(CRYOTIMER_IRQn);
     msTickCount += (last - first);
     CMU_ClockEnable(cmuClock_CRYOTIMER, false);		// this will null out CRYOTIMER->CNT
@@ -356,5 +360,11 @@ void geckoEM1Idle(uint32_t ms) {
 	gModIdleSleep = 1;
 	gecko_delay(ms);
 	gModIdleSleep = last;
+}
+
+// gecko_schedule causes the next interrupt to stop a gecko_delay loop
+void gecko_schedule() {
+	gecko_schedule_now = 1;		// interrupts delay
+	// need to post an interrupt?
 }
 
