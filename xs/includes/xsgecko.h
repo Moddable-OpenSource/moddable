@@ -117,8 +117,15 @@ extern void ESP_putc(int c);
 	messages
 */
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-void modMessageService(void);
 
+#if defined(__XS__)
+	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+	int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon);
+	int modMessageService(void);
+
+	void modMachineTaskInit(xsMachine *the);
+	void modMachineTaskUninit(xsMachine *the);
+#endif
 
 /*
 	Sleep
@@ -132,6 +139,10 @@ void geckoEnterEM1();
 void geckoEnterEM2();
 void geckoEnterEM3();
 void geckoSleepEM4(uint32_t ms);
+
+void geckoEM1Idle(uint32_t ms);		// idle ms at EM1 (to not disable various peripherals)
+
+void gecko_schedule();			// at next interrupt, stop current gecko_delay
 
 void geckoDisableSysTick();
 
