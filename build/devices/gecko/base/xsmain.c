@@ -41,6 +41,7 @@ extern void mc_setup(xsMachine *the);
 
 void xs_setup() {
 	gDeviceUnique = SYSTEM_GetUnique() & 0xffffffff;
+	geckoSetupGPIO();
 	geckoStartRTCC();
 	geckoConfigureSysTick();
 	setupDebugger();
@@ -67,14 +68,10 @@ void xs_loop(void)
 
     modTimersExecute();
 	
-	modMessageService();
-
-    if (modRunPromiseJobs(gThe))
-    	return;
-
-    int delayMS = modTimersNext();
-
-    if (delayMS)
-    	gecko_delay(delayMS);
+	if (0 == modMessageService()) {
+		int delayMS = modTimersNext();
+	    if (delayMS)
+    		gecko_delay(delayMS);
+	}
 }
 
