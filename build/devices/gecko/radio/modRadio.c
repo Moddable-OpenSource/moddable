@@ -28,13 +28,11 @@
 
 #include "mc.xs.h"      // for xsID_ values
     
-#define ID(symbol) (xsID_##symbol)
-
 void geckoPostMessage(void *buffer, uint32_t size);
 void geckoSetRadioListen(uint32_t mode);
 extern uint32_t gDeviceUnique;
 
-xsMachine *gRadioMachine;
+xsMachine *gRadioMachine = NULL;
 
 void xs_Radio(xsMachine *the) {
 	gRadioMachine = the;
@@ -82,17 +80,18 @@ void xs_Radio_postMessage(xsMachine *the) {
 	geckoPostMessage(buffer, size);
 }
 
-void fromGeckoMessage(modTimer timer, void *message, uint32_t size)
+
+void fromGeckoMessage(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsBeginHost(gRadioMachine);
+	xsBeginHost(the);
 		xsmcVars(1);
-		xsVar(0) = xsArrayBuffer(message, size);
-		(void)xsCall1(xsGlobal, ID(onMessage), xsVar(0));
-	xsEndHost(gRadioMachine);
+		xsVar(0) = xsArrayBuffer(message, messageLength);
+		(void)xsCall1(xsGlobal, xsID_onMessage, xsVar(0));
+	xsEndHost(the);
 }
 
-void queueGeckoReceivedMessage(void *message, uint32_t size) {
-	if (message) {
-		modTimerAdd(0, 0, fromGeckoMessage, message, size);
-	}
+void queueGeckoReceivedMessage(void *message, uint32_t size)
+{
+	if (message && gRadioMachine)
+		modMessagePostToMachine(gRadioMachine, message, size, fromGeckoMessage,  NULL);
 }
