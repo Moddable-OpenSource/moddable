@@ -51,9 +51,24 @@ class Expander extends SMBus {
         this.writeSize(this.GPPU, pullups);
     }
 
-    for (let pin = 0; pin < this.length; pin++) {
-      this[pin] = new Pin({ pin, expander: this });
-    }
+	let prototype = Object.freeze(Object.create(Pin.prototype, {
+		expander: {
+			writable: false,
+			configurable: false,
+			value: this
+		}
+	}));
+
+	let properties = {
+		pin: {
+			writable: false,
+			configurable: false,
+		}
+	};
+
+	for (properties.pin.value = 0; properties.pin.value < this.length; properties.pin.value++) {
+		this[properties.pin.value] = Object.freeze(Object.create(prototype, properties));
+	}
 
     Object.freeze(this);
   }
@@ -89,11 +104,6 @@ class Expander extends SMBus {
 }
 
 class Pin {
-  constructor(dictionary) {
-    Object.assign(this, dictionary);
-    Object.freeze(this);
-  }
-
   mode(mode) {
     const offset = this.pin >> 3;
     const pin = offset ? this.pin - 8 : this.pin;
