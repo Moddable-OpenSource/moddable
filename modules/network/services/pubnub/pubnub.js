@@ -67,6 +67,7 @@ export class PubNub {
 		let channel = params.channel || params.channels[0];
 		let timetoken = params.timetoken || this.timetoken;
 		REST_API.subscribe(this.config, { channel, timetoken }, (error, data) => {
+			if (data) data = JSON.parse(data);
 			if (error) trace("Subscribe Error: " + error + "\n");
 			else if (Array.isArray(data)) {
 				timetoken = data[1].toString();
@@ -115,7 +116,7 @@ function makeRequest(params, callback, scope) {
 		];
 		method = "POST";
 	}
-	let request = new Request({ host, path, method, headers, body, response:JSON });
+	let request = new Request({ host, path, method, headers, body, response:String });
 	request.callback = (message, data) => {
 		switch (message) {
 			case 0:
