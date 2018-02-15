@@ -24,14 +24,6 @@
 
 import SMBus from "pins/smbus";
 
-// Default State: MCP23008
-const INPUTS_8   = 0b11111111;
-const PULLUPS_8  = 0b00000000;
-
-// Default State: MCP23017
-const INPUTS_16  = 0b1111111111111111;
-const PULLUPS_16 = 0b0000000000000000;
-
 // Modes (Ref: modules/pins/digital)
 const INPUT = 0;
 const INPUT_PULLUP = 1;
@@ -41,32 +33,22 @@ class Expander extends SMBus {
   constructor(dictionary = { address: 0x20 }) {
     super(dictionary);
 
-    this.offset = (this.length >> 3) - 1;
-
     const {
       // User specific state initialization settings
-      inputs = this.offset ? INPUTS_16 : INPUTS_8,
-      pullups = this.offset ? PULLUPS_16 : PULLUPS_8,
+      inputs = this.INPUTS,
+      pullups = this.PULLUPS,
     } = dictionary;
 
     // If the value of inputs does not match the default,
     // then set the user defined inputs configuration
-    if ((inputs !== (this.offset ? INPUTS_16 : INPUTS_8))) {
-      this.writeByte(this.IODIR, inputs);
-
-      if (this.offset) {
-        this.writeByte(this.IODIR + this.offset, inputs >> 8);
-      }
+    if ((inputs !== this.INPUTS)) {
+		this.writeSize(this.IODIR, inputs);
     }
 
     // If the value of pullups does not match the default,
     // then set the user defined pullups configuration
-    if ((pullups !== (this.offset ? PULLUPS_16 : PULLUPS_8))) {
-      this.writeByte(this.GPPU, pullups);
-
-      if (this.offset) {
-        this.writeByte(this.GPPU + this.offset, pullups >> 8);
-      }
+    if ((pullups !== this.PULLUPS)) {
+        this.writeSize(this.GPPU, pullups);
     }
 
     for (let pin = 0; pin < this.length; pin++) {
@@ -77,62 +59,32 @@ class Expander extends SMBus {
   }
 
   write(state) {
-    if (this.offset) {
-      // Read IODIR state
-      let iodir = this.readWord(this.IODIR);
+    // Read IODIR state
+    let iodir = this.readSize(this.IODIR);
 
-      // Set IODIR state to OUTPUT
-      this.writeWord(this.IODIR, 0x0000);
+    // Set IODIR state to OUTPUT
+    this.writeSize(this.IODIR, 0x0000);
 
-      // Write GPIO
-      this.writeWord(this.GPIO, state);
+    // Write GPIO
+    this.writeSize(this.GPIO, state);
 
-      // Restore previous IODIR state
-      this.writeWord(this.IODIR, iodir);
-    } else {
-      // Read IODIR state
-      let iodir = this.readByte(this.IODIR);
-
-      // Set IODIR state to OUTPUT
-      this.writeByte(this.IODIR, 0x00);
-
-      // Write GPIO
-      this.writeByte(this.GPIO, state & 0xFF);
-
-      // Restore previous IODIR state
-      this.writeByte(this.IODIR, iodir);
-    }
+    // Restore previous IODIR state
+    this.writeSize(this.IODIR, iodir);
   }
   read() {
-    if (this.offset) {
-      // Read IODIR state
-      let iodir = this.readWord(this.IODIR);
+    // Read IODIR state
+    let iodir = this.readSize(this.IODIR);
 
-      // Set IODIR state to INPUT
-      this.writeWord(this.IODIR, 0xFFFF);
+    // Set IODIR state to INPUT
+    this.writeSize(this.IODIR, 0xFFFF);
 
-      // Read GPIO
-      let gpio = this.readWord(this.GPIO);
+    // Read GPIO
+    let gpio = this.readSize(this.GPIO);
 
-      // Restore previous IODIR state
-      this.writeWord(this.IODIR, iodir);
+    // Restore previous IODIR state
+    this.writeSize(this.IODIR, iodir);
 
-      return gpio;
-    } else {
-      // Read IODIR state
-      let iodir = this.readByte(this.IODIR);
-
-      // Set IODIR state to INPUT
-      this.writeByte(this.IODIR, 0xFF);
-
-      // Read GPIO
-      let gpio = this.readByte(this.GPIO);
-
-      // Restore previous IODIR state
-      this.writeByte(this.IODIR, iodir);
-
-      return gpio;
-    }
+    return gpio;
   }
 }
 
@@ -224,16 +176,24 @@ class Pin {
 
 class MCP23008 extends Expander {}
 MCP23008.prototype.length = 8;
+MCP23008.prototype.INPUTS = 0b11111111;
+MCP23008.prototype.PULLUPS = 0b00000000;
 MCP23008.prototype.IODIR = 0x00;
 MCP23008.prototype.GPPU = 0x06;
 MCP23008.prototype.GPIO = 0x09;
+MCP23008.prototype.writeSize = SMBus.prototype.writeByte;
+MCP23008.prototype.readSize = SMBus.prototype.readByte;
 Object.freeze(MCP23008.prototype);
 
 class MCP23017 extends Expander {}
 MCP23017.prototype.length = 16;
+MCP23017.prototype.INPUTS = 0b1111111111111111;
+MCP23017.prototype.PULLUPS = 0b0000000000000000;
 MCP23017.prototype.IODIR = 0x00;
 MCP23017.prototype.GPPU = 0x0C;
 MCP23017.prototype.GPIO = 0x12;
+MCP23017.prototype.writeSize = SMBus.prototype.writeWord;
+MCP23017.prototype.readSize = SMBus.prototype.readWord;
 Object.freeze(MCP23017.prototype);
 
 
