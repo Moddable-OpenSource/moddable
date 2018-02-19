@@ -415,6 +415,7 @@ void xs_audioout_enqueue(xsMachine *the)
 				modCriticalSectionBegin();
 #endif
 				out->stream[stream].elementCount = 0;		// flush queue
+				updateActiveStreams(out);
 #if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
 #elif ESP32
@@ -477,8 +478,9 @@ void updateActiveStreams(modAudioOut out)
 	for (i = 0; i < out->streamCount; i++) {
 		modAudioOutStream stream = &out->stream[i];
 
-		if ((0 == stream->elementCount) || (0 == stream->volume))
+		if (0 == stream->elementCount)
 			continue;
+
 		out->activeStream[out->activeStreamCount++] = stream;
 		if (stream->volume != 256)
 			out->applyVolume = true;
@@ -694,8 +696,10 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 					use = samplesToGenerate;
 
 				OUTPUTSAMPLETYPE *s0 = (OUTPUTSAMPLETYPE *)((element->position * bytesPerFrame) + (uint8_t *)element->samples);
-				if (!out->applyVolume)
+				if (!out->applyVolume) {
 					c_memcpy(output, s0, use * bytesPerFrame);
+					output = (OUTPUTSAMPLETYPE *)((use * bytesPerFrame) + (uint8_t *)output);
+				}
 				else {
 					uint16_t v0 = stream->volume;
 					int count = use * out->numChannels;
@@ -703,7 +707,6 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 						*output++ = (c_read16s(s0++) * v0) >> 8;
 				}
 
-				output = (OUTPUTSAMPLETYPE *)((use * bytesPerFrame) + (uint8_t *)output);
 				samplesToGenerate -= use;
 				element->position += use;
 
