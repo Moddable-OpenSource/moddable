@@ -474,8 +474,10 @@ class XcodeFile extends PrerequisiteFile {
 		let parts = this.tool.splitPath(path);
 		parts.fileReferenceID = this.id++;
 		parts.buildFileID = this.id++;
-		if (parts.extension == ".framework")
+		if (parts.extension == ".framework") {
+			parts.copyFileID = this.id++;
 			parts.fileType = "wrapper.framework";
+		}
 		else if (parts.extension == ".plist")
 			parts.fileType = "text.plist.xml";
 		else if (parts.extension == ".png")
@@ -570,6 +572,10 @@ class XcodeFile extends PrerequisiteFile {
 		template = template.replace(/#PBXFileReference#/g, this.current);
 		
 		this.current = ""
+		this.resources.forEach(file => this.generatePBXCopyFilesBuildPhase(file));
+		template = template.replace(/#PBXCopyFilesBuildPhase#/g, this.current);
+		
+		this.current = ""
 		this.resources.forEach(file => this.generatePBXFrameworksBuildPhase(file));
 		template = template.replace(/#PBXFrameworksBuildPhase#/g, this.current);
 		
@@ -604,6 +610,29 @@ class XcodeFile extends PrerequisiteFile {
 		this.write(file.name);
 		this.write(file.extension);
 		this.line(" */; };");
+		if (file.fileType == "wrapper.framework") {
+			this.write("\t\t");
+			this.writeID(file.copyFileID);
+			this.write(" /* ");
+			this.write(file.name);
+			this.write(file.extension);
+			this.write(" in Sources */ = {isa = PBXBuildFile; fileRef = ");
+			this.writeID(file.fileReferenceID);
+			this.write(" /* ");
+			this.write(file.name);
+			this.write(file.extension);
+			this.line(" */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };");
+		}
+	}
+	generatePBXCopyFilesBuildPhase(file) {
+		if (file.fileType == "wrapper.framework") {
+			this.write("\t\t\t\t");
+			this.writeID(file.copyFileID);
+			this.write(" /* ");
+			this.write(file.name);
+			this.write(file.extension);
+			this.line(" in Embed Frameworks */,");
+		}
 	}
 	generatePBXFrameworksBuildPhase(file) {
 		if (file.fileType == "wrapper.framework") {
@@ -612,18 +641,18 @@ class XcodeFile extends PrerequisiteFile {
 			this.write(" /* ");
 			this.write(file.name);
 			this.write(file.extension);
-			this.line(" in Resources */,");
+			this.line(" in Frameworks */,");
 		}
 	}
 	generatePBXResourcesBuildPhase(file) {
-		//if (file.fileType != "wrapper.framework") {
+		if (file.fileType != "wrapper.framework") {
 			this.write("\t\t\t\t");
 			this.writeID(file.buildFileID);
 			this.write(" /* ");
 			this.write(file.name);
 			this.write(file.extension);
 			this.line(" in Resources */,");
-		//}
+		}
 	}
 	generatePBXBuildPhase(file) {
 		this.write("\t\t\t\t");
