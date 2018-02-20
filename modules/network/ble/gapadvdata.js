@@ -312,7 +312,7 @@ function writeAdvertisingData(buffer, structures) {
 	}
 }
 
-class AdvertisingData {
+class Advertisement {
 	static parse(structures) {
 		let params = new Object();
 		for (let structure of structures) {
@@ -332,11 +332,11 @@ class AdvertisingData {
 		return structures;
 	}
 	static toByteArray(params) {
-		let structures = AdvertisingData.serialize(params);
+		let structures = Advertisement.serialize(params);
 		let array = toAdvertisingDataArray(structures);
 		return array;
 	}
 }
 
-export default AdvertisingData;
+export default Advertisement;
 
