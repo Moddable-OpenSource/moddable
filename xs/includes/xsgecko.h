@@ -105,11 +105,11 @@ extern void ESP_putc(int c);
 
 #ifdef __XS__
     extern xsMachine *gThe;     // the one XS6 virtual machine running
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug);
+	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
 
 	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug);
+	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
 
 #endif
 
