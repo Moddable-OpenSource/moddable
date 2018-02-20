@@ -96,20 +96,17 @@ int32_t modGetDaylightSavingsOffset(void)
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
 #endif
 
-void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint8_t disableDebug)
+void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
 	extern txPreparation* xsPreparation();
 	void *result;
 	txMachine root;
 	txPreparation *prep = xsPreparation();
 	txCreation creation;
-	uint8_t *context[3];
-	char name[20];
+	uint8_t *context[2];
 
 	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
 		modLog("version mismatch");
-
-	snprintf(name, 20, "gecko %x", gDeviceUnique);
 
 	creation = prep->creation;
 
@@ -151,9 +148,8 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 			return NULL;
 		}
 		context[1] = context[0] + allocation;
-		context[2] = (void*)(uintptr_t)disableDebug;
 
-		result = fxCloneMachine(&prep->creation, &root, name, context);
+		result = fxCloneMachine(&creation, &root, name ? (txString)name : "main", context);
 		if (NULL == result) {
 			if (context[0])
 				c_free(context[0]);
@@ -163,7 +159,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		((txMachine *)result)->context = NULL;
 	}
 	else {
-		result = fxCloneMachine(&prep->creation, &root, name, NULL);
+		result = fxCloneMachine(&prep->creation, &root, "main", NULL);
 		if (NULL == result)
 			return NULL;
 	}
@@ -230,7 +226,7 @@ void mc_setup(xsMachine *the)
 	setStepDone(the);
 }
 
-void* mc_xs_chunk_allocator(txMachine *the, size_t size)
+void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 {
 	if (the->heap_ptr + size <= the->heap_pend) {
 		void *ptr = the->heap_ptr;
@@ -251,13 +247,13 @@ void mc_xs_chunk_disposer(txMachine* the, void *data)
 	if (the->heap_ptr == the->heap) {
 		if (the->context) {
 			uint8_t **context = the->context;
-			context[0] == NULL;
+			context[0] = NULL;
 		}
 		c_free(the->heap);		// VM is terminated
 	}
 }
 
-void *mc_xs_slot_allocator(txMachine *the, size_t size)
+void *mc_xs_slot_allocator(txMachine* the, size_t size)
 {
 	if (the->heap_pend - size >= the->heap_ptr) {
 		void *ptr = the->heap_pend - size;
@@ -274,7 +270,7 @@ void mc_xs_slot_disposer(txMachine *the, void *data)
 	/* nothing to do */
 }
 
-void *fxAllocateChunks(txMachine* the, txSize theSize)
+void* fxAllocateChunks(txMachine* the, txSize theSize)
 {
 	if ((NULL == the->stack) && (NULL == the->heap)) {
 		// initialization
@@ -300,7 +296,7 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 
 	result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
 	if (!result) {
-		fxReport(the, "# Slot allocation: failed. trying to make a room...\n");
+		fxReport(the, "# Slot allocation: failed. trying to make room...\n");
 		fxCollect(the, 1);	/* expecting memory from the chunk pool */
 		if (the->firstBlock != C_NULL && the->firstBlock->limit == mc_xs_chunk_allocator(the, 0)) {	/* sanity check just in case */
 			fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
@@ -334,7 +330,7 @@ void fxBuildKeys(txMachine* the)
 {
 }
 
-static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
+static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
 	txPreparation* preparation = the->preparation;
 	txInteger c = preparation->scriptCount;
@@ -355,7 +351,40 @@ static txBoolean fxFindScript(txMachine *the, txString path, txID *id)
 }
 
 #if MODDEF_XS_MODS
-	#error get from esp
+#define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
+
+static uint8_t *findMod(txMachine *the, char *name, int *modSize)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	int modsSize;
+	uint8_t *mods;
+	int index = 0;
+	int nameLen;
+	char *dot;
+
+	if (!xsb) return NULL;
+
+	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsb, c_read32be(xsb), &modsSize);
+	if (!mods) return NULL;
+
+	dot = c_strchr(name, '.');
+	if (dot)
+		nameLen = dot - name;
+	else
+		nameLen = c_strlen(name);
+
+	while (true) {
+		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, NULL);
+		if (!aName)
+			break;
+		if (0 == c_strncmp(name, aName, nameLen)) {
+			if (0 == c_strcmp(".xsb", aName + nameLen))
+				return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index, mods, modsSize, modSize);
+		}
+	}
+
+	return NULL;
+}
 #endif
 
 txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
@@ -435,7 +464,29 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	txInteger c = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 #if MODDEF_XS_MODS
-	#error get from esp
+	uint8_t *mod;
+	int modSize;
+
+	mod = findMod(the, path, &modSize);
+	if (mod) {
+		txScript aScript;
+
+		aScript.callback = NULL;
+		aScript.symbolsBuffer = NULL;
+		aScript.symbolsSize = 0;
+		aScript.codeBuffer = mod;
+		aScript.codeSize = modSize;
+		aScript.hostsBuffer = NULL;
+		aScript.hostsSize = 0;
+		aScript.path = path - preparation->baseLength;
+		aScript.version[0] = XS_MAJOR_VERSION;
+		aScript.version[1] = XS_MINOR_VERSION;
+		aScript.version[2] = XS_PATCH_VERSION;
+		aScript.version[3] = 0;
+
+		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		return;
+	}
 #endif
     
 	while (c > 0) {
@@ -655,8 +706,8 @@ struct modMessageRecord {
 	void                *refcon;
 	uint16_t            length;
 	uint8_t             marked;
-	uint8_t             isStatic;       // this doubles as a flag to indicate entry is use gMessagePool
-	char                message[1];
+	uint8_t				isStatic;		// this doubles as a flag to indicate entry is use gMessagePool
+	char				message[1];
 };
 
 static modMessage gMessageQueue;
@@ -664,40 +715,40 @@ static modMessage gMessageQueue;
 static void appendMessage(modMessage msg)
 {
 	msg->next = NULL;
-    msg->marked = 0;
+	msg->marked = 0;
 
-    modCriticalSectionBegin();
-    if (NULL == gMessageQueue) {
-        gMessageQueue = msg;
-        gecko_schedule();
-    }
-    else {
-        modMessage walker;
+	modCriticalSectionBegin();
+	if (NULL == gMessageQueue) {
+		gMessageQueue = msg;
+		gecko_schedule();
+	}
+	else {
+		modMessage walker;
 
-        for (walker = gMessageQueue; NULL != walker->next; walker = walker->next)
-            ;
-        walker->next = msg;
-    }
-    modCriticalSectionEnd();
+		for (walker = gMessageQueue; NULL != walker->next; walker = walker->next)
+			;
+		walker->next = msg;
+	}
+	modCriticalSectionEnd();
 }
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
-    modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
-    if (!msg) return -1;
+	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
+	if (!msg) return -1;
 
-    msg->the = the;
-    msg->callback = callback;
-    msg->refcon = refcon;
-    msg->isStatic = 0;
+	msg->the = the;
+	msg->callback = callback;
+	msg->refcon = refcon;
+	msg->isStatic = 0;
 
-    if (message && messageLength)
-        c_memmove(msg->message, message, messageLength);
-    msg->length = messageLength;
+	if (message && messageLength)
+		c_memmove(msg->message, message, messageLength);
+	msg->length = messageLength;
 
-    appendMessage(msg);
+	appendMessage(msg);
 
-    return 0;
+	return 0;
 }
 
 #define kMessagePoolCount (2)
@@ -705,75 +756,75 @@ static modMessageRecord gMessagePool[kMessagePoolCount];
 
 int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
 {
-    modMessage msg;
-    uint8_t i;
+	modMessage msg;
+	uint8_t i;
 
-    modCriticalSectionBegin();
+	modCriticalSectionBegin();
 
-    for (i = 0, msg = gMessagePool; i < kMessagePoolCount; i++, msg++) {
-        if (!msg->isStatic) {
-            msg->isStatic = 1;
-            break;
-        }
-    }
+	for (i = 0, msg = gMessagePool; i < kMessagePoolCount; i++, msg++) {
+		if (!msg->isStatic) {
+			msg->isStatic = 1;
+			break;
+		}
+	}
 
-    modCriticalSectionEnd();
+	modCriticalSectionEnd();
 
-    if ((gMessagePool + kMessagePoolCount) == msg) {
-        modLog("message pool full");
-        return -1;
-    }
+	if ((gMessagePool + kMessagePoolCount) == msg) {
+		modLog("message pool full");
+		return -1;
+	}
 
-    msg->the = the;
-    msg->callback = callback;
-    msg->refcon = refcon;
-    msg->length = 0;
+	msg->the = the;
+	msg->callback = callback;
+	msg->refcon = refcon;
+	msg->length = 0;
 
-    appendMessage(msg);
+	appendMessage(msg);
 
-    return 0;
+	return 0;
 }
 
 int modMessageService(void)
 {
-    modMessage msg = gMessageQueue;
-    while (msg) {
-        msg->marked = 1;
-        msg = msg->next;
-    }
+	modMessage msg = gMessageQueue;
+	while (msg) {
+		msg->marked = 1;
+		msg = msg->next;
+	}
 
-    msg = gMessageQueue;
-    while (msg && msg->marked) {
-        modMessage next;
+	msg = gMessageQueue;
+	while (msg && msg->marked) {
+		modMessage next;
 
-        if (msg->callback)
-            (msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
+		if (msg->callback)
+			(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
 
-        modCriticalSectionBegin();
-        next = msg->next;
-        gMessageQueue = next;
-        modCriticalSectionEnd();
+		modCriticalSectionBegin();
+		next = msg->next;
+		gMessageQueue = next;
+		modCriticalSectionEnd();
 
-        if (msg->isStatic)
-            msg->isStatic = 0;      // return to pool
-        else
-            c_free(msg);
-        msg = next;
-    }
+		if (msg->isStatic)
+			msg->isStatic = 0;		// return to pool
+		else
+			c_free(msg);
+		msg = next;
+	}
 
-    return gMessageQueue ? 1 : 0;
+	return gMessageQueue ? 1 : 0;
 }
 
 void modMachineTaskInit(xsMachine *the) {}
 void modMachineTaskUninit(xsMachine *the)
 {
-    modMessage msg = gMessageQueue;
+	modMessage msg = gMessageQueue;
 
-    while (msg) {
-        if (msg->the == the)
-            msg->callback = NULL;
-        msg = msg->next;
-    }
+	while (msg) {
+		if (msg->the == the)
+			msg->callback = NULL;
+		msg = msg->next;
+	}
 }
 
 

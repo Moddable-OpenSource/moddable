@@ -38,6 +38,8 @@
 #ifndef __XSPLATFORM__
 #define __XSPLATFORM__
 
+#include "stdint.h"
+
 #define mxRegExp 1
 //#define mxReport 1
 #define mxNoFunctionLength 1
@@ -68,7 +70,6 @@
 #define XS_FUNCTION_NORETURN __attribute__((noreturn))
 #define XS_FUNCTION_ANALYZER_NORETURN
 
-#include <stdint.h>
 typedef int8_t txS1;
 typedef uint8_t txU1;
 typedef int16_t txS2;
@@ -313,6 +314,14 @@ typedef struct tm c_tm;
 
 extern void fx_putc(void *refcon, char c);
 
+struct DebugFragmentRecord {
+	struct DebugFragmentRecord *next;
+	uint8_t count;
+	uint8_t bytes[1];
+};
+typedef struct DebugFragmentRecord DebugFragmentRecord;
+typedef struct DebugFragmentRecord *DebugFragment;
+
 /* MACHINE */
 
 #define mxMachinePlatform \
@@ -322,6 +331,8 @@ extern void fx_putc(void *refcon, char c);
 	txBoolean debugOnReceive; \
 	txBoolean pendingSendBytes; \
 	txBoolean inPrintf; \
+	txBoolean debugNotifyOutstanding; \
+	DebugFragment debugFragments; \
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend;
