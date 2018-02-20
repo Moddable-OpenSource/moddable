@@ -18,28 +18,25 @@
  *
  */
 
-import AdvertisingData from "gapadvdata";
+import Advertisement from "gapadvdata";
 import GAP from "gap";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
-		this._advertisingData = null;
-		this._scanResponseData = null;
+		this.onReady = function() {};
+		this.onDiscovered = function() {};
+		this.onConnected = function() {};
 	}
 	
 	initialize(params) @ "xs_ble_initialize"
 	close() @ "xs_ble_close"
 	
-	set advertisingData(data) {
-		this._advertisingData = data;
-	}
-	set scanResponseData(data) {
-		this._scanResponseData = data;
-	}
 	startAdvertising(params) {
 		let fast = params.hasOwnProperty("fast") ? params.fast : true;
-		let connectable = params.connectable;
-		let discoverable = params.discoverable;
+		let connectable = params.hasOwnProperty("connectable") ? params.connectable : true;
+		let discoverable = params.hasOwnProperty("discoverable") ? params.discoverable : true;
+		let scanResponseData = params.hasOwnProperty("scanResponseData") ? params.scanResponseData : null;
+		let advertisingData = params.advertisingData;
 		let flags = GAP.ADFlag.NO_BR_EDR;
 		if (discoverable)
 			flags |= GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE;
@@ -53,15 +50,20 @@ class BLE @ "xs_ble_destructor" {
 			// Non-Connectable Mode
 			interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
 		}
-		let advertisingData = this._advertisingData;
 		advertisingData.flags = flags;
-		let advertisingDataBuffer = AdvertisingData.toByteArray(advertisingData).buffer;
-		let scanResponseDataBuffer = this._scanResponseData ? AdvertisingData.toByteArray(this._scanResponseData).buffer : null;
+		let advertisingDataBuffer = Advertisement.toByteArray(advertisingData).buffer;
+		let scanResponseDataBuffer = scanResponseData ? Advertisement.toByteArray(scanResponseData).buffer : null;
 		this._startAdvertising(interval.intervalMin, interval.intervalMax, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_stop_advertising"
 	
+	set deviceName() @ "xs_ble_set_device_name"
+	
 	_startAdvertising() @ "xs_ble_start_advertising"
+	
+	callback(event, params) {
+		this[event](params);
+	}
 };
 
 export default BLE;

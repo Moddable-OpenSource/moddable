@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,25 +15,25 @@
 import BLE from "ble";
 
 let advertisingData = {
-	incompleteUUID16List: ['180D'],
 	shortName: "Brian",
 };
 
 let scanResponseData = {
-	incompleteUUID16List: ['180D'],
-	shortName: "Brian",
+	completeName: "Brian's device",
 	publicAddress: "01:02:03:04:05:06",
-	incompleteUUID128List: ['00000000-0000-1000-8000-00805F9B34FB'],
-	flags: 0xBE
+	incompleteUUID16List: ['FF00', 'FF01'],
+	incompleteUUID128List: ['00000000-0000-1000-8000-00805F9B34FB']
 };
 
-let ble = new BLE;
+let ble = new BLE();
+ble.onReady = () => {
+	ble.deviceName = "Moddable ESP32";
+	ble.startAdvertising({ advertisingData, scanResponseData });
+	
+	ble.onConnected = connection => {
+		ble.stopAdvertising();
+	}
+}
+	
 ble.initialize();
-ble.advertisingData = advertisingData;
-ble.scanResponseData = scanResponseData;
-
-let advertisingParams = { discoverable:true, connectable:true };	// @@ make these optional
-ble.startAdvertising(advertisingParams);
-
-debugger;
 
