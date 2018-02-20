@@ -38,6 +38,8 @@ void xs_ble_initialize(xsMachine *the)
 	xsmcSetHostData(xsThis, ble);
 	ble->the = the;
 	ble->obj = xsThis;
+
+	xsCall1(ble->obj, xsID_callback, xsString("onReady"));
 }
 
 void xs_ble_close(xsMachine *the)
