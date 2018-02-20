@@ -22,12 +22,12 @@ HOST_OS := $(shell uname)
 TOOLS_ROOT ?= $(BASE)/toolchains/gnu_arm/4.9_2015q3
 
 ifeq ($(DEBUG),1)
-    LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/debug/lib
+    LIB_DIR = $(BUILD_DIR)/tmp/gecko/$(PLATFORM_NAME)/debug/lib
 else
     ifeq ($(INSTRUMENT),1)
-        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/instrument/lib
+        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$(PLATFORM_NAME)/instrument/lib
     else
-        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$PLATFORM_NAME/release/lib
+        LIB_DIR = $(BUILD_DIR)/tmp/gecko/$(PLATFORM_NAME)/release/lib
     endif
 endif
 
