@@ -20,6 +20,7 @@
 
 import Advertisement from "gapadvdata";
 import GAP from "gap";
+import {BluetoothAddress} from "btutils";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
@@ -30,6 +31,13 @@ class BLE @ "xs_ble_destructor" {
 	
 	initialize(params) @ "xs_ble_initialize"
 	close() @ "xs_ble_close"
+	
+	set deviceName() @ "xs_ble_set_device_name"
+	
+	connect(address) {
+		address = BluetoothAddress.getByString(address).getRawArray();
+		this._connect(address);
+	}
 	
 	startAdvertising(params) {
 		let fast = params.hasOwnProperty("fast") ? params.fast : true;
@@ -57,11 +65,25 @@ class BLE @ "xs_ble_destructor" {
 	}
 	stopAdvertising() @ "xs_ble_stop_advertising"
 	
-	set deviceName() @ "xs_ble_set_device_name"
+	startScanning(params) {
+		if (!params) params = {};
+		let active = params.hasOwnProperty("active") ? params.active : true;
+		let interval = params.hasOwnProperty("interval") ? params.interval : 0x50;
+		let window = params.hasOwnProperty("window") ? params.window : 0x30;
+		this._startScanning(active, interval, window);
+	}
+	stopScanning() @ "xs_ble_stop_scanning"
 	
+	_connect() @ "xs_ble_connect"
+	_startScanning() @ "xs_ble_start_scanning"
 	_startAdvertising() @ "xs_ble_start_advertising"
 	
 	callback(event, params) {
+		if ("onDiscovered" == event) {
+			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
+			let advertisement = Advertisement.fromByteArray(new Uint8Array(params.scanResponse));
+			params = { address, advertisement };
+		}
 		this[event](params);
 	}
 };
