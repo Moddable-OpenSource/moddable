@@ -300,6 +300,23 @@ function toAdvertisingDataArray(structures) {
 	return buffer.getByteArray();
 }
 
+function readAdvertisingData(buffer) {
+	let structures = [];
+	while (buffer.remaining() > 0) {
+		let length = buffer.getInt8();
+		if (length == 0) {
+			/* Early termination of data */
+			break;
+		}
+		let structure = {
+			type: buffer.getInt8(),
+			data: buffer.getByteArray(length - 1)
+		};
+		structures.push(structure);
+	}
+	return structures;
+}
+
 function writeAdvertisingData(buffer, structures) {
 	for (let i = 0; i < structures.length; i++) {
 		let structure = structures[i]
@@ -330,6 +347,10 @@ class Advertisement {
 			}
 		}
 		return structures;
+	}
+	static fromByteArray(buffer) {
+		let structures = readAdvertisingData(ByteBuffer.wrap(buffer, 0, buffer.byteLength));
+		return Advertisement.parse(structures);
 	}
 	static toByteArray(params) {
 		let structures = Advertisement.serialize(params);
