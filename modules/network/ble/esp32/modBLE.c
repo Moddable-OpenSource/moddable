@@ -44,7 +44,9 @@ typedef struct {
 	uint8_t *scanResponseData;
 	
 	esp_ble_adv_params_t adv_params;
+	esp_ble_scan_params_t scan_params;
 	uint8_t adv_config_done;
+	uint8_t connecting;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -100,6 +102,12 @@ void xs_ble_destructor(void *data)
 	}
 }
 
+void xs_ble_set_device_name(xsMachine *the)
+{
+	char *deviceName = xsmcToString(xsArg(0));
+	esp_ble_gap_set_device_name(deviceName);
+}
+
 void xs_ble_start_advertising(xsMachine *the)
 {
 	modBLE ble = (modBLE)xsmcGetHostData(xsThis);
@@ -145,6 +153,34 @@ void xs_ble_stop_advertising(xsMachine *the)
 	esp_ble_gap_stop_advertising();
 }
 
+void xs_ble_start_scanning(xsMachine *the)
+{
+	modBLE ble = (modBLE)xsmcGetHostData(xsThis);
+	uint8_t active = xsmcToBoolean(xsArg(0));
+	uint32_t interval = xsmcToInteger(xsArg(1));
+	uint32_t window = xsmcToInteger(xsArg(2));
+	
+	// Set the scan parameters
+	ble->scan_params.scan_type = active ? BLE_SCAN_TYPE_ACTIVE : BLE_SCAN_TYPE_PASSIVE;
+	ble->scan_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+	ble->scan_params.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
+	ble->scan_params.scan_interval = interval;
+	ble->scan_params.scan_window = window;
+	esp_ble_gap_set_scan_params(&ble->scan_params);
+}
+
+void xs_ble_stop_scanning(xsMachine *the)
+{
+	esp_ble_gap_stop_scanning();
+}
+
+void xs_ble_connect(xsMachine *the)
+{
+	modBLE ble = (modBLE)xsmcGetHostData(xsThis);
+	
+	// @@ xsArg(0) is an array buffer address
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
 	xsBeginHost(gThe);
@@ -172,17 +208,26 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 			break;
 		case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
 			break;
+		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
+			esp_ble_gap_start_scanning(0);			// 0 == scan until explicitly stopped
+			break;
+		case ESP_GAP_BLE_SCAN_RESULT_EVT:
+			if (ESP_GAP_SEARCH_INQ_RES_EVT == param->scan_rst.search_evt) {
+				esp_ble_gap_cb_param_t *scan_result = param;
+				xsmcVars(3);
+				xsVar(0) = xsmcNewObject();
+				xsmcSetArrayBuffer(xsVar(1), scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len);
+				xsmcSetArrayBuffer(xsVar(2), scan_result->scan_rst.bda, 6);
+				xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
+				xsmcSet(xsVar(0), xsID_address, xsVar(2));
+				xsCall2(ble->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+			}
+            break;
 		default:
 			break;
     }
     
 	xsEndHost(gThe);
-}
-
-void xs_ble_set_device_name(xsMachine *the)
-{
-	char *deviceName = xsmcToString(xsArg(0));
-	esp_ble_gap_set_device_name(deviceName);
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -195,6 +240,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         case ESP_GATTS_REG_EVT:
             break;
     	case ESP_GATTS_CONNECT_EVT:
+    		// @@ Create connection object here
 			xsCall1(ble->obj, xsID_callback, xsString("onConnected"));
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
