@@ -55,7 +55,7 @@ function isArrayEquals2(a1, off1, a2, off2, len) {
 /**
  * A class represents Bluetooth UUID
  */
-class UUID {
+export class UUID {
 	constructor(byteArray) {
 		this._array = byteArray;
 	}
@@ -169,7 +169,7 @@ class UUID {
 /**
  * A class represents Bluetooth address
  */
-class BluetoothAddress {
+export class BluetoothAddress {
 	constructor(byteArray) {
 		this._array = byteArray;
 	}
@@ -193,16 +193,16 @@ class BluetoothAddress {
 	 * Static function to create instance by string representation.
 	 */
 	static getByString(addressString, random) {
-		let byteArray = [];
+		let byteArray = new Uint8Array(BD_ADDR_SIZE);
 		if (BD_ADDR_SEPARATOR.length > 0) {
 			let ar = addressString.split(BD_ADDR_SEPARATOR);
-			for (let i = (BD_ADDR_SIZE - 1); i >= 0; i--) {
-				byteArray.push(parseInt(ar[i], 16));
+			for (let i = 0; i < BD_ADDR_SIZE; i++) {
+				byteArray[i] = parseInt(ar[i], 16);
 			}
 		} else {
-			for (let i = (BD_ADDR_SIZE - 1); i >= 0; i--) {
+			for (let i = 0; i < BD_ADDR_SIZE; i++) {
 				let pos = i * 2;
-				byteArray.push(parseInt(addressString.substring(pos, pos + 2), 16));
+				byteArray[i] = parseInt(addressString.substring(pos, pos + 2), 16);
 			}
 		}
 		if (random !== undefined) {
@@ -217,7 +217,7 @@ class BluetoothAddress {
 		let byteArray = this.getRawArray();
 		let str = Utils.toHexString(byteArray[0], 1, "");
 		for (let i = 1; i < BD_ADDR_SIZE; i++) {
-			str = Utils.toHexString(byteArray[i], 1, "") + BD_ADDR_SEPARATOR + str;
+			str += BD_ADDR_SEPARATOR + Utils.toHexString(byteArray[i], 1, "");
 		}
 		return str;
 	}
@@ -245,7 +245,7 @@ const RANDOM_STATIC = 0x3;
 const RANDOM_PRIVATE = 0x0;
 const RANDOM_RESOLVABLE = 0x01;
 
-class LEBluetoothAddress extends BluetoothAddress {
+export class LEBluetoothAddress extends BluetoothAddress {
 	constructor(byteArray, random = false) {
 		super(byteArray);
 		this._random = random;
@@ -290,4 +290,6 @@ class LEBluetoothAddress extends BluetoothAddress {
 	}
 }
 
-export {UUID as default, UUID, BluetoothAddress, LEBluetoothAddress};
+export default {
+	UUID, BluetoothAddress, LEBluetoothAddress
+};
