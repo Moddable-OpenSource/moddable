@@ -27,7 +27,7 @@ MAKEFLAGS += --silent
 endif
 
 XS_DIR ?= $(realpath ../..)
-BUILD_DIR ?= $(XS_DIR)
+BUILD_DIR ?= $(realpath ../../../build)
 
 BIN_DIR = $(BUILD_DIR)/bin/mac/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
@@ -45,6 +45,7 @@ C_OPTIONS = \
 	$(MACOS_VERSION_MIN) \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
+	-DmxDebug=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
 	-DmxRun=1 \
@@ -60,7 +61,7 @@ ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
 endif
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
 	C_OPTIONS += -O3
 endif
@@ -113,6 +114,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsTree.o \
 	$(TMP_DIR)/xsType.o \
 	$(TMP_DIR)/xsdtoa.o \
+	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/api.o \
 	$(TMP_DIR)/dumper.o \
 	$(TMP_DIR)/emitter.o \
@@ -121,7 +123,6 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
-	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xst.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml

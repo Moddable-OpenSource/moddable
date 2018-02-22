@@ -260,6 +260,9 @@
 #ifndef c_snprintf
 	#define c_snprintf snprintf
 #endif
+#ifndef c_vfprintf
+	#define c_vfprintf vfprintf
+#endif
 #ifndef c_fprintf
 	#define c_fprintf fprintf
 #endif

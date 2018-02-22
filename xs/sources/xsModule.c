@@ -833,10 +833,9 @@ void fxResolveModules(txMachine* the)
 	while (module) {
 		txSlot* function = mxModuleFunction(module);
 		if (function->kind == XS_REFERENCE_KIND) {
-			closures = fxNewInstance(the);
-			closure = closures->next = fxNewSlot(the);
-			closure->kind = XS_WITH_KIND;
-			closure->value.reference = C_NULL;
+			mxPushUndefined();
+			closures = fxNewEnvironmentInstance(the, &mxClosures);
+			closure = closures->next;
 			transfer = mxModuleTransfers(module)->value.reference->next;
 			while (transfer) {
 				local = mxTransferLocal(transfer);
