@@ -1,22 +1,14 @@
-# XS 8 Conformance
+# Moddable XS test engine
 
 Copyright 2016-2018 Moddable Tech, Inc.
 
-Revised: January 11, 2018
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: February 22, 2018
 
 ## Caveat
 
 #### Function Code
 
 XS does not store the source code of functions so `Function.prototype.toString` always fails.
-
-#### Global Code
-
-Moddable apps only use modules. XS supports global code (and the "sloppy" mode) only for the sake of passing conformance tests.
-
-With one limitation: XS does not allow separate scripts to share a lexical scope. The XS harness can parse several files sequentially in the same lexical scope. But a few tests fail because they depend on a non standard function that evaluates strings in the current realm (`$262.evalScript`).
 
 #### Realm
 
@@ -36,7 +28,6 @@ XS does not implement ECMA-402, the Internationalization API Specification, so t
 
 No XS hosts are web browsers, so the `annexB` tests are skipped. However XS implements `Date.prototype.getYear`, `Date.prototype.setYear`, `Object.prototype.__proto__`, `String.prototype.substr`, `escape` and `unescape`, 
 
-
 ## Runtime models
 
 On micro-controllers, XS uses a runtime model based on a virtual machine prepared by the XS compiler and linker. The prepared virtual machine contains the ECMAScript built-ins, along with the classes, functions and objects of preloaded modules. The prepared virtual machine is in ROM, its contents is shared by the the tiny virtual machines that XS quickly creates in RAM to run apps.
@@ -53,10 +44,22 @@ Here the conformance is tested on macOS with a traditional runtime model and wit
 
 To build `xst`:
 
-	cd $MODDABLE/build/makefiles/mac
-	make test
+#### Linux
+
+	cd $MODDABLE/xs/makefiles/lin
+	make
 	
-To pass some tests, get `test262` from `https://github.com/tc39/test262.git` and change the directory to the `test` directory inside the `test262` directory. Then you can run `xst` with files or directories. For instance:
+#### macOS
+
+	cd $MODDABLE/xs/makefiles/mac
+	make
+	
+#### Windows
+
+	cd %MODDABLE%\xs\makefiles\win
+	build
+	
+To pass some tests, clone [test262](https://github.com/tc39/test262.git) and change the directory to the `test` directory inside the `test262` directory. Then you can run `xst` with files or directories. For instance:
 
 	cd ~/test262/test
 	$MODDABLE/build/bin/mac/debug/xst language/block-scope
@@ -68,11 +71,11 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped proposals at the end of this document.
 
-Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) and **99.5%** of the built-ins tests (`25423/25555`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.8%** of the language tests (`19819/19856`) and **99.5%** of the built-ins tests (`25433/25565`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     99% 19786/19848 (3999) language
+     99% 19819/19856 (4063) language
         100% 231/231 arguments-object
             100% 40/40 mapped
             100% 8/8 unmapped
@@ -102,12 +105,12 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 30/30 binding
                 100% 24/24 syntax
         100% 54/54 directive-prologue
-         97% 250/256 eval-code
+         99% 254/256 eval-code
             100% 140/140 direct
-             94% 110/116 indirect
+             98% 114/116 indirect
         100% 3/3 export
-         99% 8855/8883 (1707) expressions
-            100% 81/81 (5) addition
+         99% 8883/8905 (1719) expressions
+            100% 83/83 (6) addition
             100% 104/104 array
             100% 525/525 arrow-function
                 100% 10/10 arrow
@@ -119,39 +122,39 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 113/113 async-function
               0% 0/0 (598) async-generator
             100% 30/30 await
-            100% 45/45 (5) bitwise-and
+            100% 47/47 (6) bitwise-and
             100% 28/28 (2) bitwise-not
-            100% 45/45 (5) bitwise-or
-            100% 45/45 (5) bitwise-xor
+            100% 47/47 (6) bitwise-or
+            100% 47/47 (6) bitwise-xor
              98% 176/179 call
             100% 1796/1796 (710) class
             100% 11/11 comma
             100% 703/703 compound-assignment
             100% 10/10 concatenation
             100% 40/40 conditional
-            100% 119/119 delete
-            100% 69/69 (5) division
+            100% 93/93 delete
+            100% 71/71 (6) division
             100% 59/59 (8) does-not-equals
             100% 77/77 (8) equals
-            100% 70/70 (6) exponentiation
-             99% 420/421 function
+            100% 74/74 (7) exponentiation
+             99% 438/439 function
              99% 507/508 generators
             100% 81/81 (4) greater-than
             100% 73/73 (4) greater-than-or-equal
             100% 16/16 grouping
             100% 27/27 in
             100% 85/85 instanceof
-            100% 75/75 (5) left-shift
+            100% 77/77 (6) left-shift
             100% 73/73 (4) less-than
             100% 83/83 (4) less-than-or-equal
             100% 34/34 logical-and
             100% 36/36 (1) logical-not
             100% 34/34 logical-or
-             96% 61/63 (5) modulus
-            100% 65/65 (4) multiplication
+             96% 63/65 (6) modulus
+            100% 67/67 (5) multiplication
             100% 110/110 new
             100% 26/26 new.target
-             99% 1167/1169 (281) object
+             99% 1165/1167 (281) object
                 100% 255/255 (101) method-definition
             100% 62/62 (1) postfix-decrement
             100% 62/62 (1) postfix-increment
@@ -159,33 +162,33 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 54/54 (1) prefix-increment
             100% 42/42 property-accessors
             100% 2/2 relational
-            100% 59/59 (5) right-shift
+            100% 61/61 (6) right-shift
             100% 43/43 (8) strict-does-not-equals
             100% 43/43 (8) strict-equals
-            100% 63/63 (4) subtraction
+            100% 65/65 (5) subtraction
              98% 160/162 super
-             68% 26/38 tagged-template
+             86% 38/44 tagged-template
             100% 106/106 template-literal
             100% 9/9 this
             100% 28/28 (1) typeof
             100% 24/24 (2) unary-minus
             100% 32/32 (1) unary-plus
-            100% 75/75 (5) unsigned-right-shift
+            100% 77/77 (6) unsigned-right-shift
             100% 18/18 void
             100% 119/119 yield
          99% 285/287 function-code
         100% 85/85 future-reserved-words
-         76% 50/65 global-code
+        100% 65/65 global-code
         100% 19/19 identifier-resolution
         100% 283/283 identifiers
         100% 4/4 import
         100% 50/50 keywords
         100% 118/118 line-terminators
-         99% 483/484 (6) literals
+         99% 483/484 (58) literals
               0% 0/0 (6) bigint
             100% 4/4 boolean
             100% 4/4 null
-            100% 172/172 numeric
+            100% 172/172 (52) numeric
             100% 178/178 regexp
              99% 125/126 string
         100% 273/273 (9) module-code
@@ -195,7 +198,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
         100% 53/53 reserved-words
         100% 22/22 rest-parameters
           0% 0/2 source-text
-         99% 7789/7797 (2262) statements
+         99% 7775/7783 (2262) statements
             100% 107/107 async-function
               0% 0/0 (278) async-generator
             100% 30/30 block
@@ -242,7 +245,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
               0% 0/0 (1213) for-await-of
             100% 170/170 (1) for-in
              99% 1324/1328 (1) for-of
-            100% 759/759 function
+            100% 745/745 function
             100% 482/482 generators
             100% 115/115 (4) if
             100% 33/33 (1) labeled
@@ -270,7 +273,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
 
 ### Built-ins
 
-     99% 25423/25555 (584) built-ins
+     99% 25433/25565 (1539) built-ins
          99% 5106/5118 (22) Array
             100% 8/8 Symbol.species
             100% 80/80 from
@@ -320,6 +323,10 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 6/6 Symbol.toStringTag
             100% 40/40 next
         100% 30/30 AsyncFunction
+          0% 0/0 (19) AsyncGeneratorFunction
+              0% 0/0 (5) prototype
+          0% 0/0 (4) AsyncIteratorPrototype
+              0% 0/0 (4) Symbol.asyncIterator
         100% 220/220 Atomics
             100% 16/16 add
             100% 16/16 and
@@ -369,8 +376,8 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
                 100% 42/42 setUint16
                 100% 42/42 setUint32
                 100% 38/38 setUint8
-        100% 1376/1376 Date
-            100% 38/38 UTC
+        100% 1378/1378 Date
+            100% 40/40 UTC
             100% 10/10 now
             100% 16/16 parse
             100% 1166/1166 prototype
@@ -449,7 +456,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
         100% 242/242 (4) JSON
             100% 116/116 parse
             100% 116/116 (4) stringify
-        100% 283/283 Map
+        100% 285/285 Map
             100% 8/8 Symbol.species
             100% 223/223 prototype
                 100% 20/20 clear
@@ -464,7 +471,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
                 100% 18/18 values
         100% 22/22 MapIteratorPrototype
             100% 20/20 next
-        100% 542/542 Math
+        100% 544/544 Math
             100% 4/4 E
             100% 4/4 LN10
             100% 4/4 LN2
@@ -498,7 +505,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 8/8 log2
             100% 16/16 max
             100% 16/16 min
-            100% 52/52 pow
+            100% 54/54 pow
             100% 8/8 random
             100% 20/20 round
             100% 8/8 sign
@@ -522,7 +529,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
                 100% 10/10 prototype
             100% 24/24 URIError
                 100% 10/10 prototype
-        100% 500/500 (1) Number
+        100% 500/500 (31) Number
             100% 6/6 MAX_VALUE
             100% 6/6 MIN_VALUE
             100% 8/8 NEGATIVE_INFINITY
@@ -569,12 +576,12 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 90/90 seal
             100% 20/20 (1) setPrototypeOf
             100% 34/34 values
-        100% 622/622 (18) Promise
+        100% 622/622 (23) Promise
             100% 10/10 Symbol.species
             100% 132/132 all
-            100% 182/182 (18) prototype
+            100% 182/182 (23) prototype
                 100% 26/26 catch
-                  0% 0/0 (18) finally
+                  0% 0/0 (23) finally
                 100% 144/144 then
             100% 110/110 race
             100% 28/28 reject
@@ -653,10 +660,10 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 84/84 prototype
                 100% 18/18 byteLength
                 100% 62/62 slice
-         99% 1997/2009 (2) String
+         99% 1997/2009 (46) String
             100% 28/28 fromCharCode
             100% 20/20 fromCodePoint
-             99% 1714/1724 (2) prototype
+             99% 1714/1724 (46) prototype
                 100% 10/10 Symbol.iterator
                 100% 58/58 charAt
                 100% 48/48 charCodeAt
@@ -685,6 +692,8 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
                 100% 18/18 toString
                 100% 50/50 toUpperCase
                 100% 256/256 trim
+                  0% 0/0 (22) trimEnd
+                  0% 0/0 (22) trimStart
                 100% 16/16 valueOf
             100% 58/58 raw
          85% 12/14 StringIteratorPrototype
@@ -708,42 +717,72 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
             100% 4/4 toStringTag
             100% 4/4 unscopables
         100% 26/26 ThrowTypeError
-        100% 1250/1250 TypedArray
+        100% 1250/1250 (562) TypedArray
             100% 8/8 Symbol.species
             100% 26/26 from
             100% 12/12 of
-            100% 1196/1196 prototype
-                100% 18/18 Symbol.toStringTag
-                100% 18/18 buffer
-                100% 18/18 byteLength
-                100% 18/18 byteOffset
-                100% 62/62 copyWithin
-                100% 20/20 entries
-                100% 44/44 every
-                100% 50/50 fill
-                100% 80/80 filter
-                100% 36/36 find
-                100% 36/36 findIndex
-                100% 42/42 forEach
-                100% 38/38 includes
-                100% 38/38 indexOf
-                100% 32/32 join
-                100% 20/20 keys
-                100% 36/36 lastIndexOf
-                100% 18/18 length
-                100% 52/52 map
-                100% 50/50 reduce
-                100% 50/50 reduceRight
-                100% 24/24 reverse
-                100% 96/96 set
-                100% 86/86 slice
-                100% 44/44 some
-                100% 34/34 sort
-                100% 68/68 subarray
-                100% 40/40 toLocaleString
-                100% 2/2 toString
-                100% 20/20 values
-        100% 737/737 (22) TypedArrays
+            100% 1196/1196 (562) prototype
+                100% 18/18 (9) Symbol.toStringTag
+                      0% 0/0 (9) BigInt
+                100% 18/18 (2) buffer
+                      0% 0/0 (2) BigInt
+                100% 18/18 (2) byteLength
+                      0% 0/0 (2) BigInt
+                100% 18/18 (2) byteOffset
+                      0% 0/0 (2) BigInt
+                100% 62/62 (30) copyWithin
+                      0% 0/0 (30) BigInt
+                100% 20/20 (3) entries
+                      0% 0/0 (3) BigInt
+                100% 44/44 (22) every
+                      0% 0/0 (22) BigInt
+                100% 50/50 (25) fill
+                      0% 0/0 (25) BigInt
+                100% 80/80 (40) filter
+                      0% 0/0 (40) BigInt
+                100% 36/36 (19) find
+                      0% 0/0 (19) BigInt
+                100% 36/36 (19) findIndex
+                      0% 0/0 (19) BigInt
+                100% 42/42 (21) forEach
+                      0% 0/0 (21) BigInt
+                100% 38/38 (18) includes
+                      0% 0/0 (18) BigInt
+                100% 38/38 (18) indexOf
+                      0% 0/0 (18) BigInt
+                100% 32/32 (14) join
+                      0% 0/0 (14) BigInt
+                100% 20/20 (10) keys
+                      0% 0/0 (10) BigInt
+                100% 36/36 (17) lastIndexOf
+                      0% 0/0 (17) BigInt
+                100% 18/18 (9) length
+                      0% 0/0 (9) BigInt
+                100% 52/52 (26) map
+                      0% 0/0 (26) BigInt
+                100% 50/50 (25) reduce
+                      0% 0/0 (25) BigInt
+                100% 50/50 (25) reduceRight
+                      0% 0/0 (25) BigInt
+                100% 24/24 (12) reverse
+                      0% 0/0 (12) BigInt
+                100% 96/96 (47) set
+                      0% 0/0 (47) BigInt
+                100% 86/86 (43) slice
+                      0% 0/0 (43) BigInt
+                100% 44/44 (22) some
+                      0% 0/0 (22) BigInt
+                100% 34/34 (17) sort
+                      0% 0/0 (17) BigInt
+                100% 68/68 (34) subarray
+                      0% 0/0 (34) BigInt
+                100% 40/40 (20) toLocaleString
+                      0% 0/0 (20) BigInt
+                100% 2/2 (1) toString
+                      0% 0/0 (1) BigInt
+                100% 20/20 (10) values
+                      0% 0/0 (10) BigInt
+        100% 741/741 (298) TypedArrays
               0% 0/0 (11) BigInt64Array
                   0% 0/0 (4) prototype
               0% 0/0 (11) BigUint64Array
@@ -766,45 +805,65 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
                 100% 8/8 prototype
             100% 20/20 Uint8ClampedArray
                 100% 8/8 prototype
-            100% 58/58 from
-            100% 165/165 internals
-                100% 44/44 DefineOwnProperty
-                100% 28/28 Get
-                100% 24/24 GetOwnProperty
-                100% 29/29 HasProperty
-                100% 8/8 OwnPropertyKeys
-                100% 32/32 Set
-            100% 28/28 of
-            100% 60/60 prototype
-                100% 2/2 Symbol.toStringTag
-                100% 2/2 buffer
-                100% 2/2 byteLength
-                100% 2/2 byteOffset
-                100% 2/2 copyWithin
-                100% 2/2 entries
-                100% 2/2 every
-                100% 2/2 fill
-                100% 2/2 filter
-                100% 2/2 find
-                100% 2/2 findIndex
-                100% 2/2 forEach
-                100% 2/2 indexOf
-                100% 2/2 join
-                100% 2/2 keys
-                100% 2/2 lastIndexOf
-                100% 2/2 length
-                100% 2/2 map
-                100% 2/2 reduce
-                100% 2/2 reduceRight
-                100% 2/2 reverse
-                100% 2/2 set
-                100% 2/2 slice
-                100% 2/2 some
-                100% 2/2 sort
-                100% 2/2 subarray
-                100% 2/2 toLocaleString
-                100% 2/2 toString
-                100% 2/2 values
+            100% 250/250 ctors
+                100% 104/104 buffer-arg
+                100% 24/24 length-arg
+                100% 14/14 no-args
+                100% 50/50 object-arg
+                100% 58/58 typedarray-arg
+              0% 0/0 (121) ctors-bigint
+                  0% 0/0 (52) buffer-arg
+                  0% 0/0 (12) length-arg
+                  0% 0/0 (7) no-args
+                  0% 0/0 (24) object-arg
+                  0% 0/0 (26) typedarray-arg
+            100% 58/58 (30) from
+                  0% 0/0 (30) BigInt
+            100% 165/165 (81) internals
+                100% 44/44 (21) DefineOwnProperty
+                      0% 0/0 (21) BigInt
+                100% 28/28 (14) Get
+                      0% 0/0 (14) BigInt
+                100% 24/24 (12) GetOwnProperty
+                      0% 0/0 (12) BigInt
+                100% 29/29 (15) HasProperty
+                      0% 0/0 (15) BigInt
+                100% 8/8 (4) OwnPropertyKeys
+                      0% 0/0 (4) BigInt
+                100% 32/32 (15) Set
+                      0% 0/0 (15) BigInt
+            100% 28/28 (14) of
+                  0% 0/0 (14) BigInt
+            100% 60/60 (30) prototype
+                100% 2/2 (1) Symbol.toStringTag
+                100% 2/2 (1) buffer
+                100% 2/2 (1) byteLength
+                100% 2/2 (1) byteOffset
+                100% 2/2 (1) copyWithin
+                100% 2/2 (1) entries
+                100% 2/2 (1) every
+                100% 2/2 (1) fill
+                100% 2/2 (1) filter
+                100% 2/2 (1) find
+                100% 2/2 (1) findIndex
+                100% 2/2 (1) forEach
+                100% 2/2 (1) indexOf
+                100% 2/2 (1) join
+                100% 2/2 (1) keys
+                100% 2/2 (1) lastIndexOf
+                100% 2/2 (1) length
+                100% 2/2 (1) map
+                100% 2/2 (1) reduce
+                100% 2/2 (1) reduceRight
+                100% 2/2 (1) reverse
+                100% 2/2 (1) set
+                100% 2/2 (1) slice
+                100% 2/2 (1) some
+                100% 2/2 (1) sort
+                100% 2/2 (1) subarray
+                100% 2/2 (1) toLocaleString
+                100% 2/2 (1) toString
+                100% 2/2 (1) values
         100% 176/176 WeakMap
             100% 132/132 prototype
                 100% 36/36 delete
@@ -825,7 +884,7 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
         100% 58/58 global
         100% 32/32 isFinite
         100% 32/32 isNaN
-        100% 84/84 parseFloat
+        100% 84/84 (15) parseFloat
         100% 118/118 parseInt
         100% 12/12 undefined
         
@@ -843,11 +902,6 @@ Currently, on macOS, XS passes **99.7%** of the language tests (`19786/19848`) a
 Here under are the failed tests. The comments are primarily here for the sake of future versions of XS. 
 
 ### Language
-
-	language/eval-code/indirect/non-definable-function-with-function.js
-	language/eval-code/indirect/non-definable-function-with-variable.js
-
-When evaluating string with `eval`, if the definition of one global function failed, no global functions and no global variables should be defined, even if their definitions precede the failure.
 
 	language/eval-code/indirect/realm.js
 
@@ -888,12 +942,9 @@ In object initializers, if property values are functions, the implementation mus
 
 When calling `super`, XS evaluates parameters before `super`.
 
-	language/expressions/tagged-template/cache-differing-expressions-eval.js
-	language/expressions/tagged-template/cache-differing-expressions-new-function.js
-	language/expressions/tagged-template/cache-differing-expressions.js
-	language/expressions/tagged-template/cache-identical-source-eval.js
-	language/expressions/tagged-template/cache-identical-source-new-function.js
-	language/expressions/tagged-template/cache-identical-source.js
+	language/expressions/tagged-template/cache-different-functions-same-site.js
+	language/expressions/tagged-template/cache-same-site-top-level.js
+	language/expressions/tagged-template/cache-same-site.js
 
 No tagged templates cache.
 
@@ -901,10 +952,6 @@ No tagged templates cache.
 	language/function-code/10.4.3-1-106.js (strict)
 	
 When calling a member, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
-
-	language/global-code/script-*
-	
-No shared lexical scope.
 
 	language/literals/string/7.8.4-1-s.js (sloppy)
 
@@ -952,8 +999,8 @@ No source code.
 	built-ins/RegExp/dotall/without-dotall.js
 	built-ins/RegExp/prototype/Symbol.match/builtin-infer-unicode.js
 	built-ins/RegExp/prototype/Symbol.replace/coerce-unicode.js
-	built-ins/RegExp/prototype/exec/u-lastindex-value.js
 	built-ins/RegExp/prototype/exec/u-captured-value.js
+	built-ins/RegExp/prototype/exec/u-lastindex-value.js
 	
 Code points vs code units.	
 	
@@ -985,9 +1032,13 @@ Code points vs code units.
 	Array.prototype.flatMap
 	BigInt
 	Promise.prototype.finally
+	String.prototype.trimEnd
+	String.prototype.trimStart
 	Symbol.asyncIterator
 	async-iteration
 	class-fields-private
 	class-fields-public
+	numeric-separator-literal
 	regexp-unicode-property-escapes
+	string-trimming
 
