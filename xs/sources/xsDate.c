@@ -1226,8 +1226,8 @@ txNumber fxDateMerge(txDateTime* dt, txBoolean utc)
 	|| (!c_isfinite(dt->seconds))
 	|| (!c_isfinite(dt->milliseconds)))
 		return C_NAN;
-	year = (txInteger)dt->year;
-	month = (txInteger)dt->month;
+	year = (txInteger)c_trunc(dt->year);
+	month = (txInteger)c_trunc(dt->month);
 	year += month / 12;
 	month %= 12;
 	if (month < 0) {
@@ -1241,12 +1241,12 @@ txNumber fxDateMerge(txDateTime* dt, txBoolean utc)
 		value += gxLeapYearMonthsDays[month];
 	else
 		value += gxCommonYearMonthsDays[month];
-	value += dt->date - 1;
+	value += c_trunc(dt->date) - 1;
 	value *= mxDayMilliseconds;
-	value += dt->hours * 60 * 60 * 1000;
-	value += dt->minutes * 60 * 1000;
-	value += dt->seconds * 1000;
-	value += dt->milliseconds;
+	value += c_trunc(dt->hours) * 60 * 60 * 1000;
+	value += c_trunc(dt->minutes) * 60 * 1000;
+	value += c_trunc(dt->seconds) * 1000;
+    value += c_trunc(dt->milliseconds);
 	if (!utc) {
 		txNumber former = value;
 		txInteger similar;
