@@ -27,7 +27,7 @@ XS_DIR = ..\..
 !ENDIF
 
 !IFNDEF BUILD_DIR
-BUILD_DIR = $(XS_DIR)
+BUILD_DIR = ..\..\..\build
 !ENDIF
 
 BIN_DIR = $(BUILD_DIR)\bin\win\$(GOAL)
@@ -45,6 +45,7 @@ C_OPTIONS = \
 	/D YAML_DECLARE_STATIC \
 	/D INCLUDE_XSPLATFORM \
 	/D XSPLATFORM=\"xst.h\" \
+	/D mxDebug=1 \
 	/D mxNoConsole=1 \
 	/D mxParse=1 \
 	/D mxRun=1 \
@@ -60,7 +61,6 @@ C_OPTIONS = \
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \
-	/D mxDebug \
 	/Fp$(TMP_DIR_DBG)\ \
 	/Od \
 	/W3 \
@@ -148,10 +148,11 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/implib:$(TMP_DIR)\$(NAME).lib \
 		/out:$(BIN_DIR)\$(NAME).exe
 
+$(OBJECTS) : $(TLS_DIR)\xst.h
 $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
-$(OBJECTS) : $(SRC_DIR)\xsScript.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
+$(OBJECTS) : $(SRC_DIR)\xsScript.h
 
 {$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@

@@ -825,3 +825,302 @@ txBoolean fxIsPropertyCompatible(txMachine* the, txSlot* property, txSlot* slot,
 	}
 	return 1;
 }
+
+static txBoolean fxEnvironmentDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
+static txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
+static txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
+static txBoolean fxEnvironmentHasProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
+static txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
+
+const txBehavior ICACHE_FLASH_ATTR gxEnvironmentBehavior = {
+	fxEnvironmentGetProperty,
+	fxEnvironmentSetProperty,
+	fxOrdinaryCall,
+	fxOrdinaryConstruct,
+	fxEnvironmentDefineOwnProperty,
+	fxEnvironmentDeleteProperty,
+	fxOrdinaryGetOwnProperty,
+	fxOrdinaryGetPropertyValue,
+	fxOrdinaryGetPrototype,
+	fxEnvironmentHasProperty,
+	fxOrdinaryIsExtensible,
+	fxOrdinaryOwnKeys,
+	fxOrdinaryPreventExtensions,
+	fxOrdinarySetPropertyValue,
+	fxOrdinarySetPrototype,
+};
+
+txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
+{
+	txSlot* with = the->stack;
+	txSlot* instance = fxNewSlot(the);
+	txSlot* slot;
+	instance->flag = XS_EXOTIC_FLAG;
+	instance->kind = XS_INSTANCE_KIND;
+	instance->value.instance.garbage = C_NULL;
+	instance->value.instance.prototype = (environment->kind == XS_REFERENCE_KIND) ? environment->value.reference : C_NULL;
+	mxPushReference(instance);
+	slot = instance->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG;
+	slot->ID = XS_ENVIRONMENT_BEHAVIOR;
+	slot->kind = with->kind;
+	slot->value = with->value;
+    mxPop();
+	the->stack->value.reference = instance;
+	the->stack->kind = XS_REFERENCE_KIND;
+	return instance;
+}
+
+txBoolean fxEnvironmentDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask) 
+{
+	txSlot* property = fxOrdinarySetProperty(the, instance, id, index, XS_OWN);
+	property->flag = slot->flag & mask;
+	property->kind = slot->kind;
+	property->value = slot->value;
+	return 1;
+}
+
+txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
+{
+	if (id) {
+		txSlot** address = &(instance->next->next);
+		txSlot* property;
+		while ((property = *address)) {
+			if (property->ID == id) {
+				if (property->flag & XS_DONT_DELETE_FLAG)
+					return 0;
+				*address = property->next;
+				property->next = C_NULL;
+				return 1;
+			}
+			address = &(property->next);
+		}
+		return 1;
+	}
+	return 0;
+}
+
+txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
+{
+	if (id) {
+		txSlot* result = instance->next->next;
+		while (result) {
+			if (result->ID == id) {
+				result = result->value.closure;
+				if (result->kind < 0)
+					mxDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", id);
+				return result;
+			}
+			result = result->next;
+		}
+	}
+	return C_NULL;
+}
+
+txBoolean fxEnvironmentHasProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
+{
+	if (id) {
+		txSlot* result = instance->next->next;
+		while (result) {
+			if (result->ID == id) {
+				return 1;
+			}
+			result = result->next;
+		}
+	}
+	return 0;
+}
+
+txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
+{
+	if (id) {
+		txSlot* result = instance->next->next;
+		while (result) {
+			if (result->ID == id) {
+				result = result->value.closure;
+				if (result->flag & XS_DONT_SET_FLAG)
+					mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+				return result;
+			}
+			result = result->next;
+		}
+	}
+	return C_NULL;
+}
+
+void fxRunEvalEnvironment(txMachine* the)
+{
+	txSlot* global = mxGlobal.value.reference;
+	txSlot* top = the->frame - 2;
+	txSlot* bottom = the->scope;
+	txSlot* slot;
+	txSlot* property;
+	txSlot* currentEnvironment = (the->frame - 1)->value.reference;
+	txSlot* varEnvironment = currentEnvironment;
+	while (varEnvironment) {
+		property = varEnvironment->next;
+		if (property->kind == XS_NULL_KIND)
+			break;
+		varEnvironment = varEnvironment->value.instance.prototype;
+	}
+	slot = top;
+	while (slot >= bottom) {
+		txSlot* environment = currentEnvironment;
+		while (environment != varEnvironment) {
+			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
+			if (property)
+				mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
+			environment = environment->value.instance.prototype;
+		}
+		slot--;
+	}
+	if (varEnvironment) {
+		slot = top;
+		while (slot >= bottom) {
+			property = mxBehaviorGetProperty(the, varEnvironment, slot->ID, XS_NO_ID, XS_OWN);
+			if (!property) {
+				slot->value.closure = fxNewSlot(the);
+				slot->kind = XS_CLOSURE_KIND;
+				mxBehaviorDefineOwnProperty(the, varEnvironment, slot->ID, XS_NO_ID, slot, XS_NO_FLAG); // configurable variable!
+			}
+			slot--;
+		}
+	}
+	else {
+		mxPushUndefined();
+		slot = bottom;
+		while (slot <= top) {
+			if (slot->kind == XS_NULL_KIND) {
+				property = the->stack;
+				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+					if (!mxBehaviorIsExtensible(the, global))
+						mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
+				}
+				else if (property->flag & XS_DONT_DELETE_FLAG) {
+					if (property->flag & (XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG))
+						mxDebugID(XS_TYPE_ERROR, "%s: global property not configurable and not enumerable or writable", slot->ID);
+				}
+			}
+			slot++;
+		}
+		slot = top;
+		while (slot >= bottom) {
+			if (slot->kind == XS_UNDEFINED_KIND) {
+				property = the->stack;
+				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+					if (!mxBehaviorIsExtensible(the, global))
+						mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
+				}
+			}
+			slot--;
+		}
+		mxPop();
+		slot = bottom;
+		while (slot <= top) {
+			if (slot->kind == XS_NULL_KIND) {
+				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+				if (!(property->flag & XS_DONT_DELETE_FLAG))
+					property->flag = XS_NO_FLAG;
+			}
+			slot++;
+		}
+		slot = top;
+		while (slot >= bottom) {
+			if (slot->kind == XS_UNDEFINED_KIND) {
+				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			}
+			slot--;
+		}
+	}
+	the->stack = the->scope = the->frame - 1;
+}
+
+void fxRunProgramEnvironment(txMachine* the)
+{
+	txSlot* environment = mxClosures.value.reference;
+	txSlot* global = mxGlobal.value.reference;
+	txSlot* top = the->frame - 2;
+	txSlot* middle = C_NULL;
+	txSlot* bottom = the->scope;
+	txSlot* slot;
+	txSlot* property;
+	slot = top;
+	while (slot >= bottom) {
+		if (slot->kind == XS_CLOSURE_KIND) {
+			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
+			if (property)
+				mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
+			property = mxBehaviorGetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			if (property && (property->flag & XS_DONT_DELETE_FLAG))
+				mxDebugID(XS_SYNTAX_ERROR, "%s: restricted variable", slot->ID);
+		}
+		else
+			break;
+		
+		slot--;
+	}
+	middle = slot;
+	while (slot >= bottom) {
+		property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
+		if (property)
+			mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
+		slot--;
+	}
+	mxPushUndefined();
+	slot = bottom;
+	while (slot <= middle) {
+		if (slot->kind == XS_NULL_KIND) {
+			property = the->stack;
+			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+				if (!mxBehaviorIsExtensible(the, global))
+					mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
+			}
+			else if (property->flag & XS_DONT_DELETE_FLAG) {
+				if (property->flag & (XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG))
+					mxDebugID(XS_TYPE_ERROR, "%s: global property not configurable and not enumerable or writable", slot->ID);
+			}
+		}
+		slot++;
+	}
+	while (slot >= bottom) {
+		if (slot->kind == XS_UNDEFINED_KIND) {
+			property = the->stack;
+			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+				if (!mxBehaviorIsExtensible(the, global))
+					mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
+			}
+		}
+        slot--;
+	}
+	
+	slot = top;
+	while (slot > middle) {
+		mxBehaviorDefineOwnProperty(the, environment, slot->ID, XS_NO_ID, slot, XS_GET_ONLY);
+		slot--;
+	}
+	slot = bottom;
+	while (slot <= middle) {
+		if (slot->kind == XS_NULL_KIND) {
+			property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			if (!(property->flag & XS_DONT_DELETE_FLAG))
+				property->flag = XS_DONT_DELETE_FLAG;
+			slot->value.closure = property;
+			slot->kind = XS_CLOSURE_KIND;
+		}
+		slot++;
+	}
+	while (slot >= bottom) {
+		if (slot->kind == XS_UNDEFINED_KIND) {
+			property = mxBehaviorGetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			if (!property) {
+				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+				property->flag = XS_DONT_DELETE_FLAG;
+			}
+			slot->value.closure = property;
+			slot->kind = XS_CLOSURE_KIND;
+		}
+		slot--;
+	}
+	mxPop();
+	the->stack = the->scope = middle + 1;
+}

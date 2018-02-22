@@ -372,9 +372,6 @@ txInteger fxPrepareHeap(txMachine* the)
 					else if (property && (property->kind == XS_PROXY_KIND)) {
 						slot->ID = aliasCount++;
 					}
-					else if (property && (property->kind == XS_WITH_KIND)) {
-						slot->ID = XS_NO_ID;
-					}
 					else {
 						txBoolean frozen = (slot->flag & XS_DONT_PATCH_FLAG) ? 1 : 0;
 						if (frozen) {
@@ -689,13 +686,6 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 		fprintf(file, "XS_WEAK_SET_KIND, ");
 		if (dummy) fprintf(file, "0, ");
 		fprintf(file, "{ .table = { NULL, %d } }", slot->value.table.length);
-	} break;
-	case XS_WITH_KIND: {
-		fprintf(file, "XS_WITH_KIND, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .reference = ");
-		fxPrintAddress(the, file, slot->value.reference);
-		fprintf(file, " } ");
 	} break;
 	case XS_ACCESSOR_KIND: {
 		fprintf(file, "XS_ACCESSOR_KIND, ");

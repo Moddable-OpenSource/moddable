@@ -286,6 +286,14 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewGeneratorFunctionInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_EVAL_ENVIRONMENT))
+		fprintf(file, "\tfxRunEvalEnvironment,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
+		fprintf(file, "\tfxRunProgramEnvironment,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");

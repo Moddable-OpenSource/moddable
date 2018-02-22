@@ -83,7 +83,7 @@ typedef int (*txPutter)(txString, void*);
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 2
+#define XS_MINOR_VERSION 3
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -187,8 +187,8 @@ enum {
 	XS_CODE_ENVIRONMENT,
 	XS_CODE_EQUAL,
 	XS_CODE_EVAL,
+	XS_CODE_EVAL_ENVIRONMENT,
 	XS_CODE_EVAL_REFERENCE,
-	XS_CODE_EVAL_VARIABLE,
 	XS_CODE_EXCEPTION,
 	XS_CODE_EXPONENTIATION,
 	XS_CODE_EXTEND,
@@ -245,7 +245,8 @@ enum {
 	XS_CODE_OBJECT,
 	XS_CODE_PLUS,
 	XS_CODE_POP,
-	XS_CODE_PROGRAM_VARIABLE,
+	XS_CODE_PROGRAM_ENVIRONMENT,
+	XS_CODE_PROGRAM_REFERENCE,
 	XS_CODE_PULL_CLOSURE_1,
 	XS_CODE_PULL_CLOSURE_2,
 	XS_CODE_PULL_LOCAL_1,
@@ -341,48 +342,9 @@ enum {
 	mxDebugFlag = 1 << 1,
 	mxEvalFlag = 1 << 2,
 	mxProgramFlag = 1 << 3,
-	
-	mxParserFlags = mxCFlag | mxDebugFlag | mxEvalFlag | mxProgramFlag,
-	
 	mxStrictFlag = 1 << 4,
-	
-	mxArgumentsFlag = 1 << 5,
-	mxArrowFlag = 1 << 6,
-	mxBaseFlag = 1 << 7,
-	mxDerivedFlag = 1 << 8,
-	mxFunctionFlag = 1 << 9,
-	mxGeneratorFlag = 1 << 10,
-	mxGetterFlag = 1 << 11,
-	mxSetterFlag = 1 << 12,
-	mxShorthandFlag = 1 << 13,
-	mxSpreadFlag = 1 << 14,
-	mxStaticFlag = 1 << 15,
-	mxSuperFlag = 1 << 16,
-	mxExpressionNoValue = 1 << 17,
-	
-	mxCommonModuleFlag = 1 << 18,
-	mxCommonProgramFlag = 1 << 19,
-	mxDefaultFlag = 1 << 20,
-	mxForFlag = 1 << 21,
-	
-	mxDeclareNodeClosureFlag = 1 << 18,
-	mxDeclareNodeUseClosureFlag = 1 << 19,
-	mxDeclareNodeInitializedFlag = 1 << 20,
-	mxDeclareNodeBoundFlag = 1 << 21,
-	mxDefineNodeBoundFlag = 1 << 22,
-	mxDefineNodeCodedFlag = 1 << 23,
-	
-	mxTailRecursionFlag = 1 << 24,
-	mxMethodFlag = 1 << 25,
-	mxNotSimpleParametersFlag = 1 << 26,
-	mxYieldFlag = 1 << 27,
-	mxElisionFlag = 1 << 28,
-	mxYieldingFlag = 1 << 29,
-	mxAsyncFlag = 1 << 30,
-	mxAwaitingFlag = 1 << 31,
-	
-	mxStringEscapeFlag = 1 << 0,
-	mxStringErrorFlag = 1 << 1,
+	mxSuperFlag = 1 << 5,
+	mxTargetFlag = 1 << 6,
 };
 
 extern void fxDeleteScript(txScript* script);

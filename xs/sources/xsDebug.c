@@ -1656,9 +1656,6 @@ void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 #ifndef mxNoConsole
 	c_vprintf(theFormat, theArguments);
 #endif
-#if defined(linux)
-	vfprintf(stderr, theFormat, theArguments);
-#endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	memmove(lastDebugStr, synergyDebugStr, 256);
 	vsprintf(synergyDebugStr, theFormat, theArguments);
@@ -1691,14 +1688,6 @@ void fxVReportException(void* console, txString thePath, txInteger theLine, txSt
 		c_printf("# exception: ");
 	c_vprintf(theFormat, theArguments);
 	c_printf("!\n");
-#endif
-#if defined(linux)
-	if (thePath && theLine)
-		fprintf(stderr, "%s:%d: exception: ", thePath, (int)theLine);
-	else
-		fprintf(stderr, "# exception: ");
-	vfprintf(stderr, theFormat, theArguments);
-	fprintf(stderr, "!\n");
 #endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)
@@ -1737,14 +1726,6 @@ void fxVReportError(void* console, txString thePath, txInteger theLine, txString
 	c_vprintf(theFormat, theArguments);
 	c_printf("!\n");
 #endif
-#if defined(linux)
-	if (thePath && theLine)
-		fprintf(stderr, "%s:%d: error: ", thePath, (int)theLine);
-	else
-		fprintf(stderr, "# error: ");
-	vfprintf(stderr, theFormat, theArguments);
-	fprintf(stderr, "!\n");
-#endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)
 		sprintf(synergyDebugStr, "%s:%d: error: ", thePath, (int)theLine);
@@ -1780,14 +1761,6 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 		c_printf("# warning: ");
 	c_vprintf(theFormat, theArguments);
 	c_printf("!\n");
-#endif
-#if defined(linux)
-	if (thePath && theLine)
-		fprintf(stderr, "%s:%d: warning: ", thePath, (int)theLine);
-	else
-		fprintf(stderr, "# warning: ");
-	vfprintf(stderr, theFormat, theArguments);
-	fprintf(stderr, "!\n");
 #endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)

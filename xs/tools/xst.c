@@ -23,6 +23,8 @@
 #include "xs.h"
 #include "yaml.h"
 
+extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
+
 #if mxWindows
 	#include <direct.h>
 	#include <errno.h>
@@ -133,20 +135,18 @@ struct sxResult {
 	char path[1];
 };
 
+static int main262(int argc, char* argv[]);
+
 static void fxCountResult(txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 static void fxPopResult(txContext* context);
 static void fxPrintResult(txContext* context, txResult* result, int c);
+static void fxPrintUsage();
 static void fxPushResult(txContext* context, char* path);
 static void fxRunDirectory(txContext* context, char* path);
 static void fxRunFile(txContext* context, char* path);
 static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
-
-static void fxRunModule(txMachine* the, txString path);
-static void fxRunProgram(txMachine* the, txString path, txUnsigned flags);
-static void fxRunLoop(txMachine* the);
-static void fxQueuePromiseJobsCallback(txJob* job);
 
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
@@ -161,29 +161,112 @@ static unsigned int __stdcall fx_agent_start_aux(void* it);
 static void* fx_agent_start_aux(void* it);
 #endif
 static void fx_agent_stop(xsMachine* the);
+extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_print(xsMachine* the);
-static void fx_clearTimer(txMachine* the);
-static void fx_destroyTimer(void* data);
-static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
+
+static void fxQueuePromiseJobsCallback(txJob* job);
+static void fxRunModule(txMachine* the, txString path);
+static void fxRunProgram(txMachine* the, txString path, txUnsigned flags);
+static void fxRunLoop(txMachine* the);
+
 static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
+static void fx_destroyTimer(void* data);
+static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setTimerCallback(txJob* job);
 
-extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
-
-static txHostHooks gxTimerHooks = {
-	fx_destroyTimer,
-	fx_markTimer
-};
 
 static txAgentCluster gxAgentCluster;
 
 int main(int argc, char* argv[]) 
+{
+	int argi;
+	int error = 0;
+	int option = 0;
+	if (argc == 1) {
+		fxPrintUsage();
+		return 0;
+	}
+	for (argi = 1; argi < argc; argi++) {
+		if (argv[argi][0] != '-')
+			continue;
+		if (!strcmp(argv[argi], "-h"))
+			fxPrintUsage();
+		else if (!strcmp(argv[argi], "-m"))
+			option = 1;
+		else if (!strcmp(argv[argi], "-s"))
+			option = 2;
+		else if (!strcmp(argv[argi], "-v"))
+			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
+		else {
+			fxPrintUsage();
+			return 1;
+		}
+	}
+	if (option == 0)
+		error = main262(argc, argv);
+	else {
+		xsCreation _creation = {
+			128 * 1024 * 1024, 	/* initialChunkSize */
+			16 * 1024 * 1024, 	/* incrementalChunkSize */
+			8 * 1024 * 1024, 		/* initialHeapCount */
+			1 * 1024 * 1024, 		/* incrementalHeapCount */
+			4096, 		/* stackCount */
+			4096*3, 		/* keyCount */
+			1993, 		/* nameModulo */
+			127 		/* symbolModulo */
+		};
+		xsCreation* creation = &_creation;
+		xsMachine* machine;
+		char path[C_PATH_MAX];
+		fxInitializeSharedCluster();
+		machine = xsCreateMachine(creation, "xsr", NULL);
+		xsBeginHost(machine);
+		{
+			xsTry {
+				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+				the->stack++;
+
+				for (argi = 1; argi < argc; argi++) {
+					if (argv[argi][0] == '-')
+						continue;
+					if (!c_realpath(argv[argi], path))
+						xsURIError("file not found: %s", argv[argi]);
+					if (option == 1) 
+						fxRunModule(the, path);
+					else
+						fxRunProgram(the, path, mxProgramFlag | mxDebugFlag);
+				}
+				fxRunLoop(the);
+			}
+			xsCatch {
+				fprintf(stderr, "%s\n", xsToString(xsException));
+				error = 1;
+			}
+		}
+		xsEndHost(the);
+		xsDeleteMachine(machine);
+		fxTerminateSharedCluster();
+	}
+	return error;
+}
+
+int main262(int argc, char* argv[]) 
 {
 	txContext context;
 	char separator[2];
@@ -219,7 +302,9 @@ int main(int argc, char* argv[])
 	context.current = NULL;
 	fxPushResult(&context, "");
 	
-	while (argi < argc) {
+	for (argi = 1; argi < argc; argi++) {
+		if (argv[argi][0] == '-')
+			continue;
 		if (c_realpath(argv[argi], path)) {
 #if mxWindows
 			DWORD attributes = GetFileAttributes(path);
@@ -242,7 +327,6 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "### test not found: %s\n", argv[argi]);
 			error = 1;
 		}
-		argi++;
 	}
 	fxPrintResult(&context, context.current, 0);
 #ifdef mxInstrument
@@ -304,6 +388,16 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 		fxPrintResult(context, result, c);
 		result = result->next;
 	}
+}
+
+void fxPrintUsage()
+{
+	printf("xst [-h] [-m] [-s] [-v] files...\n");
+	printf("\t-h: print this help message\n");
+	printf("\t-m: run files as modules\n");
+	printf("\t-s: run files as scripts\n");
+	printf("\t-v: print XS version\n");
+	printf("without -m or -s, files are test262 cases or directories\n");
 }
 
 void fxPushResult(txContext* context, char* path) 
@@ -538,6 +632,10 @@ void fxRunFile(txContext* context, char* path)
 			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
+			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
+			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
+			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
+			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -943,20 +1041,39 @@ void fx_done(xsMachine* the)
 
 void fx_evalScript(xsMachine* the)
 {
-// 	txStringStream aStream;
-// 	aStream.slot = mxArgv(0);
-// 	aStream.offset = 0;
-// 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
-// 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, C_NULL);
-// 	aStream.slot->kind = the->stack->kind;
-// 	aStream.slot->value = the->stack->value;
-	xsCall1(xsGlobal, xsID("eval"), xsArg(0));
+	txStringStream aStream;
+	aStream.slot = mxArgv(0);
+	aStream.offset = 0;
+	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
+	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	mxPullSlot(mxResult);
 }
 
 void fx_print(xsMachine* the)
 {
-	fprintf(stdout, "%s\n", xsToString(xsArg(0)));
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	for (i = 0; i < c; i++) {
+		if (i)
+			fprintf(stdout, " ");
+		fprintf(stdout, "%s", xsToString(xsArg(i)));
+	}
+	fprintf(stdout, "\n");
 }
+
+void fx_setInterval(txMachine* the)
+{
+	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 1);
+}
+
+void fx_setTimeout(txMachine* the)
+{
+	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 0);
+}
+
+static txHostHooks gxTimerHooks = {
+	fx_destroyTimer,
+	fx_markTimer
+};
 
 void fx_clearTimer(txMachine* the)
 {
@@ -988,16 +1105,6 @@ void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot)
 		(*markRoot)(the, &job->function);
 		(*markRoot)(the, &job->argument);
 	}
-}
-
-void fx_setInterval(txMachine* the)
-{
-	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 1);
-}
-
-void fx_setTimeout(txMachine* the)
-{
-	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 0);
 }
 
 void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
@@ -1120,6 +1227,7 @@ void fxRunProgram(txMachine* the, txString path, txUnsigned flags)
 {
 	txScript* script = fxLoadScript(the, path, flags);
 	fxRunScript(the, script, &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	mxPullSlot(mxResult);
 }
 
 /* DEBUG */
@@ -1310,27 +1418,6 @@ void fxSend(txMachine* the, txBoolean more)
 }
 
 #endif /* mxDebug */
-
-int fxSleepConditionUntil(txCondition* condition, txMutex* mutex, double when)
-{
-#if mxWindows
-	struct _timeb tb;
-	_ftime(&tb);
-	when -= ((txNumber)(tb.time) * 1000.0) + (txNumber)tb.millitm;
-	return (SleepConditionVariableCS(condition, mutex, (DWORD)when)) ? 1 : 0;
-#elif defined(_POSIX_THREADS)
-	struct timespec ts;
-	ts.tv_sec = c_floor(when / 1000);
-	ts.tv_nsec = c_fmod(when, 1000) * 1000000;
-	int rc = pthread_cond_timedwait(condition, mutex, &ts);
-	if (rc == ETIMEDOUT)
-		return 0;
-	return 1;
-#else
-	return 1;
-#endif
-}
-
 
 
 
