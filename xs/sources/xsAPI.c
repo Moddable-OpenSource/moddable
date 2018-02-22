@@ -1388,7 +1388,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildMapSet(the);
 			fxBuildModule(the);
 
-			mxPush(mxGlobal);
+			mxPushUndefined();
 			fxNewEnvironmentInstance(the, &mxClosures);
 			mxPull(mxClosures);
 
@@ -1599,7 +1599,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			/* mxInstanceInspectors */
 			mxPushList();
 			
-			mxPush(mxGlobal);
+			mxPushUndefined();
 			fxNewEnvironmentInstance(the, &mxClosures);
 			mxPull(mxClosures);
 
