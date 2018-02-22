@@ -150,11 +150,6 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 		fxGetNextToken(parser);
 		fxProgram(parser);
 	}
-	else if (parser->flags & mxCommonModuleFlag) {
-		fxGetNextCharacter(parser);
-		fxGetNextToken(parser);
-		fxCommonModule(parser);
-	}
 	else {
 		parser->flags |= mxStrictFlag;
 		fxGetNextCharacter(parser);
@@ -653,7 +648,7 @@ static const txNodeDispatch gxBodyNodeDispatch = {
 	fxBodyNodeDistribute,
 	fxBlockNodeBind,
 	fxBodyNodeHoist,
-	fxBlockNodeCode,
+	fxBodyNodeCode,
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
@@ -1395,7 +1390,7 @@ void fxNodePrintTree(void* it, void* param)
 			fprintf(stderr, " base");
 		if (node->flags & mxDerivedFlag)
 			fprintf(stderr, " derived");
-		if (node->flags & mxFunctionFlag)
+		if (node->flags & mxTargetFlag)
 			fprintf(stderr, " function");
 		if (node->flags & mxGeneratorFlag)
 			fprintf(stderr, " generator");
