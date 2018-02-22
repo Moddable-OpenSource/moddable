@@ -20,7 +20,9 @@
 
 import Advertisement from "gapadvdata";
 import GAP from "gap";
-import {BluetoothAddress} from "btutils";
+import Connection from "connection";
+import {BluetoothAddress, UUID} from "btutils";
+import {Client} from "gatt";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
@@ -36,7 +38,7 @@ class BLE @ "xs_ble_destructor" {
 	
 	connect(address) {
 		address = BluetoothAddress.getByString(address).getRawArray();
-		this._connect(address);
+		this._connect(address.buffer);
 	}
 	
 	startAdvertising(params) {
@@ -81,8 +83,24 @@ class BLE @ "xs_ble_destructor" {
 	callback(event, params) {
 		if ("onDiscovered" == event) {
 			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
-			let advertisement = Advertisement.fromByteArray(new Uint8Array(params.scanResponse));
-			params = { address, advertisement };
+			let scanResponse = Advertisement.fromByteArray(new Uint8Array(params.scanResponse));
+			params = { address, scanResponse };
+		}
+		else if ("onConnected" == event) {
+			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
+			let iface = params.iface;
+			let connection = params.connection;
+			let client = new Client({ iface, connection });
+			params = new Connection({ address, client });
+		}
+		else if ("_onService" == event) {
+			// @@
+			let service = params;
+			let uuid = UUID.getByUUID(new Uint8Array(service.uuid)).toString();
+			let start = service.start;
+			let end = service.end;
+			debugger;
+			return;
 		}
 		this[event](params);
 	}
