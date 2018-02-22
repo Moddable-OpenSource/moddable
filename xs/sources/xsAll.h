@@ -102,6 +102,8 @@ typedef struct {
 	void (*runAwait)(txMachine*, txSlot*);
 	txSlot* (*newGeneratorInstance)(txMachine*);
 	txSlot* (*newGeneratorFunctionInstance)(txMachine*, txID name);
+	void (*runEvalEnvironment)(txMachine*);
+	void (*runProgramEnvironment)(txMachine*);
 } txDefaults;
 
 enum {
@@ -666,9 +668,6 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 #endif
 
 /* xsType.c */
-extern const txBehavior gxOrdinaryBehavior;
-
-extern txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment);
 
 extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
 extern void fxPushSpeciesConstructor(txMachine* the, txSlot* constructor);
@@ -681,6 +680,7 @@ extern void fxDescribeProperty(txMachine* the, txSlot* property, txFlag mask);
 extern txBoolean fxIsPropertyCompatible(txMachine* the, txSlot* property, txSlot* slot, txFlag mask);
 mxExport void fx_species_get(txMachine* the);
 
+extern const txBehavior gxOrdinaryBehavior;
 extern void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments);
 extern void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target);
 extern txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
@@ -696,6 +696,11 @@ extern txBoolean fxOrdinaryIsExtensible(txMachine* the, txSlot* instance);
 extern void fxOrdinaryOwnKeys(txMachine* the, txSlot* target, txFlag flag, txSlot* keys);
 extern txBoolean fxOrdinaryPreventExtensions(txMachine* the, txSlot* instance);
 extern txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* prototype);
+
+extern const txBehavior gxEnvironmentBehavior;
+extern txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment);
+extern void fxRunEvalEnvironment(txMachine* the);
+extern void fxRunProgramEnvironment(txMachine* the);
 
 /* xsProperty.c */
 extern txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag);
@@ -726,7 +731,6 @@ extern txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* arra
 extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
 
 /* xsGlobal.c */
-extern const txBehavior gxEnvironmentBehavior;
 extern const txBehavior gxGlobalBehavior;
 extern void fxBuildGlobal(txMachine* the);
 
@@ -1535,7 +1539,6 @@ enum {
 	XS_TYPED_ARRAY_KIND,
 	XS_WEAK_MAP_KIND, // 30
 	XS_WEAK_SET_KIND,
-	XS_WITH_KIND,
 
 	XS_ACCESSOR_KIND,
 	XS_AT_KIND,
@@ -1544,8 +1547,8 @@ enum {
 	XS_HOME_KIND,
 	XS_KEY_KIND,
 	XS_KEY_X_KIND,
-	XS_LIST_KIND, //40
-	XS_STACK_KIND,
+	XS_LIST_KIND,
+	XS_STACK_KIND, //40
 	XS_VAR_KIND,
 	XS_CALLBACK_X_KIND,
 #ifdef mxHostFunctionPrimitive

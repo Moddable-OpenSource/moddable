@@ -1206,6 +1206,7 @@ void fx_TypedArray(txMachine* the)
 			mxPushUndefined();	
 			fxRunID(the, C_NULL, XS_NO_ID);
 			mxPullSlot(buffer);
+			arrayData = fxCheckArrayBufferDetached(the, arrayBuffer);
 			data = fxCheckArrayBufferDetached(the, buffer);
 			view->value.dataView.offset = offset;
 			view->value.dataView.size = size;
