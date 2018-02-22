@@ -109,6 +109,23 @@ static txString fxUTF8Buffer(txParser* parser, txInteger character, txString str
 	return fxUTF8Encode(string, character);
 } 
 
+void fxCheckStrictKeyword(txParser* parser)
+{
+	int low, high, anIndex, aDelta;
+	for (low = 0, high = XS_STRICT_KEYWORD_COUNT; high > low;
+			(aDelta < 0) ? (low = anIndex + 1) : (high = anIndex)) {
+		anIndex = low + ((high - low) / 2);
+		aDelta = c_strcmp(gxStrictKeywords[anIndex].text, parser->buffer);
+		if (aDelta == 0) {
+			parser->token = gxStrictKeywords[anIndex].token;
+			goto bail;
+		}
+	}
+bail:
+	if (parser->escaped2)
+		fxReportParserError(parser, "escaped keyword");			
+}
+
 void fxGetNextCharacter(txParser* parser)
 {
 	txU4 aResult;
@@ -626,8 +643,6 @@ txBoolean fxGetNextStringX(int c, txU4* value)
 		return 0;
 	return 1;
 }
-
-extern void fxTraceToken(txParser* parser);
 
 void fxGetNextToken(txParser* parser)
 {

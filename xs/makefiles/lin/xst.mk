@@ -27,7 +27,7 @@ MAKEFLAGS += --silent
 endif
 
 XS_DIR ?= $(realpath ../..)
-BUILD_DIR ?= $(XS_DIR)
+BUILD_DIR ?= $(realpath ../../../build)
 
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
@@ -43,6 +43,7 @@ C_OPTIONS = \
 	-fno-common \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
+	-DmxDebug=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
 	-DmxRun=1 \
@@ -55,7 +56,7 @@ C_OPTIONS = \
 	-I$(TLS_DIR)/yaml \
 	-I$(TMP_DIR)
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
 	C_OPTIONS += -O3
 endif
