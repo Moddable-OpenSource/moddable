@@ -52,10 +52,6 @@ clean:
 	make clean -f tools.mk
 	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp
 	
-test:
-	make -f $(XS_DIR)/makefiles/lin/xst.mk
-
 install:
 	make install -f simulator.mk
 	make install -f $(BUILD_DIR)/tmp/lin/release/xsbug/makefile
-	

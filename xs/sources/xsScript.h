@@ -291,7 +291,7 @@ typedef struct {
 	txNode* params;
 	txNode* body;
 	txScope* scope;
-	txInteger variableCount;
+	txInteger scopeCount;
 } txFunctionNode;
 
 struct sxHostNode {
@@ -349,7 +349,7 @@ typedef struct {
 	mxNodePart;
 	txNode* body;
 	txScope* scope;
-	txInteger variableCount;
+	txInteger scopeCount;
 	txSpecifierNode* firstEmptySpecifier;
 } txModuleNode;
 
@@ -390,6 +390,7 @@ typedef struct {
 	mxNodePart;
 	txNode* body;
 	txScope* scope;
+	txInteger scopeCount;
 	txInteger variableCount;
 } txProgramNode;
 
@@ -604,6 +605,7 @@ struct sxParser {
 	txSymbol* function;
 
 	int errorCount;
+	txString errorMessage;
 	txSymbol* errorSymbol;
 	int warningCount;
 	txReport reportError;
@@ -834,6 +836,46 @@ enum {
 	XS_TOKEN_COUNT
 };
 
+enum {
+	/* mxCFlag = 1 << 0, */
+	/* mxDebugFlag = 1 << 1, */
+	/* mxEvalFlag = 1 << 2, */
+	/* mxProgramFlag = 1 << 3, */
+	/* mxStrictFlag = 1 << 4, */
+	/* mxSuperFlag = 1 << 5, */
+	/* mxTargetFlag = 1 << 6, */
+	mxParserFlags = mxCFlag | mxDebugFlag | mxEvalFlag | mxProgramFlag,
+
+	mxArgumentsFlag = 1 << 7,
+	mxArrowFlag = 1 << 8,
+	mxAsyncFlag = 1 << 9,
+	mxAwaitingFlag = 1 << 10,
+	mxBaseFlag = 1 << 11,
+	mxDeclareNodeClosureFlag = 1 << 12,
+	mxDeclareNodeUseClosureFlag = 1 << 13,
+	mxDefaultFlag = 1 << 14,
+	mxDefineNodeBoundFlag = 1 << 15,
+	mxDefineNodeCodedFlag = 1 << 16,
+	mxDerivedFlag = 1 << 17,
+	mxElisionFlag = 1 << 18,
+	mxExpressionNoValue = 1 << 19,
+	mxForFlag = 1 << 20,
+	mxGeneratorFlag = 1 << 21,
+	mxGetterFlag = 1 << 22,
+	mxMethodFlag = 1 << 23,
+	mxNotSimpleParametersFlag = 1 << 24,
+	mxSetterFlag = 1 << 25,
+	mxShorthandFlag = 1 << 26,
+	mxSpreadFlag = 1 << 27,
+	mxStaticFlag = 1 << 28,
+	mxTailRecursionFlag = 1 << 29,
+	mxYieldFlag = 1 << 30,
+	mxYieldingFlag = 1 << 31,
+	
+	mxStringEscapeFlag = 1 << 0,
+	mxStringErrorFlag = 1 << 1,
+};
+
 /* xsScript.c */
 
 extern void fxDisposeParserChunks(txParser* parser);
@@ -853,6 +895,7 @@ extern void fxThrowParserError(txParser* parser, txInteger count);
 
 /* xsLexical.c */
 
+extern void fxCheckStrictKeyword(txParser* parser);
 extern void fxGetNextCharacter(txParser* parser);
 extern void fxGetNextRegExp(txParser* parser, txU4 c);
 extern void fxGetNextToken(txParser* parser);
@@ -864,7 +907,6 @@ extern void fxGetNextTokenJSXChild(txParser* parser);
 
 /* xsSyntaxical.c */
 
-extern void fxCommonModule(txParser* parser);
 extern void fxProgram(txParser* parser);
 extern void fxModule(txParser* parser);
 extern void fxJSONValue(txParser* parser);
@@ -967,6 +1009,7 @@ extern void fxBindingNodeCode(void* it, void* param);
 extern void fxBindingNodeCodeAssign(void* it, void* param); 
 extern void fxBindingNodeCodeReference(void* it, void* param);
 extern void fxBlockNodeCode(void* it, void* param); 
+extern void fxBodyNodeCode(void* it, void* param);
 extern void fxBreakContinueNodeCode(void* it, void* param); 
 extern void fxCallNodeCode(void* it, void* param); 
 extern void fxCatchNodeCode(void* it, void* param); 

@@ -289,8 +289,6 @@ int main(int argc, char* argv[])
 				else
 					output = fxRealDirectoryPath(parser, argv[argi]);
 			}
-			else if (!strcmp(argv[argi], "-m"))
-				flags |= mxCommonModuleFlag;
 			else if (!strcmp(argv[argi], "-p"))
 				flags |= mxProgramFlag;
 			else if (!strcmp(argv[argi], "-r")) {
