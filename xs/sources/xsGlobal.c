@@ -87,28 +87,6 @@ static const char ICACHE_RODATA_ATTR gxURIReservedAndUnescapedSet[128] = {
 	 1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0 	/* 7X  pqrstuvwxyz{|}~   */
 };
 
-static txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
-static txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
-static txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
-
-const txBehavior ICACHE_FLASH_ATTR gxEnvironmentBehavior = {
-	fxEnvironmentGetProperty,
-	fxEnvironmentSetProperty,
-	fxOrdinaryCall,
-	fxOrdinaryConstruct,
-	fxOrdinaryDefineOwnProperty,
-	fxEnvironmentDeleteProperty,
-	fxOrdinaryGetOwnProperty,
-	fxOrdinaryGetPropertyValue,
-	fxOrdinaryGetPrototype,
-	fxOrdinaryHasProperty,
-	fxOrdinaryIsExtensible,
-	fxOrdinaryOwnKeys,
-	fxOrdinaryPreventExtensions,
-	fxOrdinarySetPropertyValue,
-	fxOrdinarySetPrototype,
-};
-
 const txBehavior ICACHE_FLASH_ATTR gxGlobalBehavior = {
 	fxGlobalGetProperty,
 	fxGlobalSetProperty,
@@ -187,46 +165,6 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxCopyObject), 0, XS_NO_ID);
 	mxCopyObjectFunction = *the->stack;
 	the->stack++;
-}
-
-txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
-{
-	txSlot* with = the->stack;
-	txSlot* instance = fxNewSlot(the);
-	txSlot* slot;
-	instance->flag = XS_EXOTIC_FLAG;
-	instance->kind = XS_INSTANCE_KIND;
-	instance->value.instance.garbage = C_NULL;
-	instance->value.instance.prototype = (environment->kind == XS_REFERENCE_KIND) ? environment->value.reference : C_NULL;
-	mxPushReference(instance);
-	slot = instance->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG;
-	slot->ID = XS_ENVIRONMENT_BEHAVIOR;
-	slot->kind = XS_WITH_KIND;
-	slot->value.reference = C_NULL;
-	if (with->kind == XS_REFERENCE_KIND) {
-		if (with->value.reference == mxGlobal.value.reference) {
-			if (environment->kind == XS_REFERENCE_KIND)
-				mxClosures.value.reference = instance;
-			else {
-				slot->flag |= XS_DONT_DELETE_FLAG;
-				slot->value.reference = with->value.reference;
-			}
-		}
-		else {
-			slot->flag |= XS_DONT_SET_FLAG;
-			slot->value.reference = with->value.reference;
-		}
-	}
-	else if (with->kind == XS_NULL_KIND) {
-		slot->flag |= XS_DONT_DELETE_FLAG;
-		slot->value.reference = fxNewInstance(the);
-		mxPop();
-	}
-    mxPop();
-	the->stack->value.reference = instance;
-	the->stack->kind = XS_REFERENCE_KIND;
-	return instance;
 }
 
 txSlot* fxNewGlobalInstance(txMachine* the)
@@ -429,37 +367,6 @@ void fx_Enumerator_next(txMachine* the)
 	mxResult->value = result->value;
 }
 
-txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
-{
-	return 0;
-}
-
-txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
-{
-	if (id) {
-		txSlot* result = instance->next->next;
-		while (result) {
-			if (result->ID == id)
-				return result->value.closure;
-			result = result->next;
-		}
-	}
-	return C_NULL;
-}
-
-txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
-{
-	if (id) {
-		txSlot* result = instance->next->next;
-		while (result) {
-			if (result->ID == id)
-				return result->value.closure;
-			result = result->next;
-		}
-	}
-	return C_NULL;
-}
-
 txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
 {
 	txBoolean result = fxOrdinaryDeleteProperty(the, instance, id, index);
@@ -474,36 +381,40 @@ txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
+	txSlot* result = C_NULL;
 	if (id) {
 		txInteger i = id & 0x00007FFF;
 		txSlot* globals = instance->next;
 		if (i < globals->value.table.length) {
-			txSlot* result = globals->value.table.address[i];
+			result = globals->value.table.address[i];
 			if (!result) {
 				result = fxOrdinaryGetProperty(the, instance, id, index, flag);
 				globals->value.table.address[i] = result;
 			}
-			return result;
 		}
 	}
-	return fxOrdinaryGetProperty(the, instance, id, index, flag);
+	if (!result)
+		result = fxOrdinaryGetProperty(the, instance, id, index, flag);
+	return result;
 }
 
 txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
+	txSlot* result = C_NULL;
 	if (id) {
 		txInteger i = id & 0x00007FFF;
 		txSlot* globals = instance->next;
 		if (i < globals->value.table.length) {
-			txSlot* result = globals->value.table.address[i];
+			result = globals->value.table.address[i];
 			if (!result) {
 				result = fxOrdinarySetProperty(the, instance, id, index, flag);
 				globals->value.table.address[i] = result;
 			}
-			return result;
 		}
 	}
-	return fxOrdinarySetProperty(the, instance, id, index, flag);
+	if (!result)
+		result = fxOrdinarySetProperty(the, instance, id, index, flag);
+	return result;
 }
 
 void fx_decodeURI(txMachine* the)
@@ -851,6 +762,3 @@ void fxEncodeURI(txMachine* the, txString theSet)
 	}
 	*dst = 0;
 }
-
-
-

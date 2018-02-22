@@ -43,6 +43,8 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxRunAwait,
 	fxNewGeneratorInstance,
 	fxNewGeneratorFunctionInstance,
+	fxRunEvalEnvironment,
+	fxRunProgramEnvironment,
 };
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {

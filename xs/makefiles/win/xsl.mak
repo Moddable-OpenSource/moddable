@@ -45,7 +45,7 @@ XS_DIR = ..\..
 !ENDIF
 
 !IFNDEF BUILD_DIR
-BUILD_DIR = $(XS_DIR)
+BUILD_DIR = ..\..\..\build
 !ENDIF
 
 BIN_DIR = $(BUILD_DIR)\bin\win\$(GOAL)
