@@ -8,6 +8,8 @@
 		"ble",
 		"btutils",
 		"buffers",
+		"gatt",
+		"connection",
 		"gap",
 		"gapadvdata",
 		"utils"
