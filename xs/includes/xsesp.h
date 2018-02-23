@@ -165,18 +165,8 @@ extern uint8_t ESP_isReadable(void);
 	#define modDelayMicroseconds(us) ets_delay_us(us)
 #endif
 
-typedef struct modTimerRecord modTimerRecord;
-typedef modTimerRecord *modTimer;
-typedef void (*modTimerCallback)(modTimer timer, void *refcon, uint32_t refconSize);
-extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
-extern void modTimerRemove(modTimer timer);
-extern modTimer modTimerCallWhenSafe(modTimerCallback cb, void *refcon, int refconSize);
-extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
-
 extern void modTimersExecute(void);
 extern int modTimersNext(void);
-extern int modTimersNextScript(void);
-extern void modTimersAdvanceTime(uint32_t advanceMS);
 
 /*
 	critical section (one deep)
