@@ -20,37 +20,78 @@
 
 
 #include "xsmc.h"
-#include "inttypes.h"
 
 #include "modTimer.h"
+#if __ets__ || defined(ESP32)
+	#include "xsesp.h"
+#endif
 
+static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void modTimerDelete(void *data);
+
+static xsHostHooks modTimerHooks ICACHE_RODATA_ATTR = {
+	modTimerDelete,
+	modTimerMark,
+	NULL
+};
 typedef struct modTimerScriptRecord modTimerScriptRecord;
 typedef modTimerScriptRecord *modTimerScript;
 
 struct modTimerScriptRecord {
 	xsMachine *the;
-	xsSlot slot;
+	xsSlot *callback;
+	xsSlot self;
 };
+
+void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	modTimerScript ts = (modTimerScript)modTimerGetRefcon((modTimer)it);
+
+	if (ts->callback)
+		(*markRoot)(the, ts->callback);
+}
+
+void modTimerDelete(void *data)
+{
+	if (data)
+		modTimerRemove((modTimer)data);
+}
 
 static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 {
 	modTimerScript ts = refcon;
 
 	xsBeginHost(ts->the);
-		xsCallFunction1(ts->slot, xsGlobal, xsInteger(modTimerGetID(timer)));
+		xsCallFunction1(xsReference(ts->callback), xsGlobal, ts->self);
 
-		if (0 == modTimerGetSecondInterval(timer))
-			xsForget(ts->slot);
+		if (0 == modTimerGetSecondInterval(timer)) {
+			xsForget(ts->self);
+			ts->callback = NULL;
+		}
 
 	xsEndHost(ts->the);
+}
+
+static void createTimer(xsMachine *the, int interval, int repeat)
+{
+	modTimer timer;
+	modTimerScriptRecord ts;
+
+	ts.the = the;
+	ts.callback = xsToReference(xsArg(0));
+	ts.self = xsNewHostObject(NULL);
+	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
+	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->self);
+
+	xsmcSetHostData(ts.self, timer);
+	xsSetHostHooks(ts.self, &modTimerHooks);
+	xsResult = ts.self;
 }
 
 void xs_timer_set(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	int interval = 0, repeat = 0;
-	modTimer timer;
-	modTimerScriptRecord ts;
 
 	if (argc > 1) {
 		interval = xsmcToInteger(xsArg(1));
@@ -58,35 +99,22 @@ void xs_timer_set(xsMachine *the)
 			repeat = xsmcToInteger(xsArg(2));
 	}
 
-	ts.the = the;
-	ts.slot = xsArg(0);
-	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
-	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->slot);
-
-	xsmcSetInteger(xsResult, modTimerGetID(timer));
+	createTimer(the, interval, repeat);
 }
 
 void xs_timer_repeat(xsMachine *the)
 {
 	int interval = xsmcToInteger(xsArg(1));
-	modTimer timer;
-	modTimerScriptRecord ts;
 
-	ts.the = the;
-	ts.slot = xsArg(0);
-	timer = modTimerAdd(interval, interval, xs_timer_callback, &ts, sizeof(ts));
-	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->slot);
-
-	xsmcSetInteger(xsResult, modTimerGetID(timer));
+	createTimer(the, interval, interval);
 }
 
 void xs_timer_schedule(xsMachine *the)
 {
 	int interval = xsmcToInteger(xsArg(1)), repeat = 0;
-	int id = xsmcToInteger(xsArg(0));
-	modTimer timer = modTimerFind((short)id);
+	modTimer timer = xsmcGetHostData(xsArg(0));
 	if (NULL == timer)
-		xsUnknownError("invalid timer id");
+		xsUnknownError("invalid timer");
 
 	if (xsmcArgc > 2)
 		repeat = xsmcToInteger(xsArg(2));
@@ -97,15 +125,15 @@ void xs_timer_schedule(xsMachine *the)
 void xs_timer_clear(xsMachine *the)
 {
 	modTimerScript ts;
-	int id = xsmcToInteger(xsArg(0));
-	modTimer timer = modTimerFind((short)id);
+	modTimer timer = xsmcGetHostData(xsArg(0));
 	if (NULL == timer)
-		xsUnknownError("invalid timer id");
+		xsUnknownError("invalid timer");
 
 	ts = (modTimerScript)modTimerGetRefcon(timer);
-	xsForget(ts->slot);
-
+	xsForget(ts->self);
+	ts->callback = NULL;
 	modTimerRemove(timer);
+	xsmcSetHostData(ts->self, NULL);
 }
 
 void xs_timer_delay(xsMachine *the)
