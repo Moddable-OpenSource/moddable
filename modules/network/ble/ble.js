@@ -88,19 +88,8 @@ class BLE @ "xs_ble_destructor" {
 		}
 		else if ("onConnected" == event) {
 			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
-			let iface = params.iface;
-			let connection = params.connection;
-			let client = new Client({ iface, connection });
+			let client = new Client(params.connection);
 			params = new Connection({ address, client });
-		}
-		else if ("_onService" == event) {
-			// @@
-			let service = params;
-			let uuid = UUID.getByUUID(new Uint8Array(service.uuid)).toString();
-			let start = service.start;
-			let end = service.end;
-			debugger;
-			return;
 		}
 		this[event](params);
 	}
