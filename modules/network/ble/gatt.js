@@ -17,35 +17,33 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+import {UUID} from "btutils";
 
 export class Client {
-	constructor(dictionary) {
+	constructor(connection) {
 		this.onServices = function() {};
+		this.services = [];
 		
-		for (let property in dictionary) {
-			switch (property) {
-				case "iface":
-					this.iface = dictionary.iface;
-					break;
-				case "connection":
-					this.connection = dictionary.connection;
-					break;
-			}
-		}
+		this.connection = connection;
+		this.initialize(connection);
 	}
+	initialize() @ "xs_gatt_client_initialize"
 	
 	discoverAllPrimaryServices() {
 		this.services = [];
-		this._discoverAllPrimaryServices(this.iface, this.connection);
+		this._discoverAllPrimaryServices(this.connection);
 	}
 	
-	_discoverAllPrimaryServices() @ "xs_ble_gatt_client_discover_all_primary_services"
+	_discoverAllPrimaryServices() @ "xs_gatt_client_discover_all_primary_services"
 
-	_onService(service) {
-		if (!service)
+	_onService(params) {
+		if (!params)
 			this.onServices(this.services);
-		else
-			this.services.push(service);
+		else {
+			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.connection = this.connection;
+			this.services.push(new Service(params));
+		}
 	}
 
 	callback(event, params) {
@@ -55,14 +53,115 @@ export class Client {
 
 export class Service {
 	constructor(dictionary) {
+		this.onCharacteristics = function() {};
+		this.characteristics = [];
+		
+		for (let property in dictionary) {
+			switch (property) {
+				case "connection":
+					this.connection = dictionary.connection;
+					break;
+				case "uuid":
+					this.uuid = dictionary.uuid;
+					break;
+				case "start":
+					this.start = dictionary.start;
+					break;
+				case "end":
+					this.end = dictionary.end;
+					break;
+			}
+		}
 	}
 	
+	discoverAllCharacteristics() {
+		this.characteristics = [];
+		this._discoverAllCharacteristics(this.connection, this.start, this.end);
+	}
+	
+	_onCharacteristic(params) {
+		if (!params)
+			this.onCharacteristics(this.characteristics);
+		else {
+			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.connection = this.connection;
+			this.characteristics.push(new Characteristic(params));
+		}
+	}
+	
+	_discoverAllCharacteristics() @ "xs_gatt_service_discover_all_characteristics"
+
 	callback(event, params) {
-		//this[event](params);
+		this[event](params);
+	}
+};
+
+export class Characteristic {
+	constructor(dictionary) {
+		this.onDescriptors = function() {};
+		this.descriptors = [];
+		
+		for (let property in dictionary) {
+			switch (property) {
+				case "connection":
+					this.connection = dictionary.connection;
+					break;
+				case "uuid":
+					this.uuid = dictionary.uuid;
+					break;
+				case "handle":
+					this.handle = dictionary.handle;
+					break;
+				case "properties":
+					this.properties = dictionary.properties;
+					break;
+			}
+		}
+	}
+	
+	discoverAllCharacteristicDescriptors() {
+		this.descriptors = [];
+		this._discoverAllCharacteristicDescriptors(this.connection, this.start, this.end);
+	}
+	
+	_onDescriptor(params) {
+		if (!params)
+			this.onDescriptors(this.descriptors);
+		else {
+			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.connection = this.connection;
+			this.descriptors.push(new Descriptor(params));
+		}
+	}
+	
+	_discoverAllCharacteristicDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
+
+	callback(event, params) {
+		this[event](params);
+	}
+};
+
+export class Descriptor {
+	constructor(dictionary) {
+		for (let property in dictionary) {
+			switch (property) {
+				case "connection":
+					this.connection = dictionary.connection;
+					break;
+				case "uuid":
+					this.uuid = dictionary.uuid;
+					break;
+				case "handle":
+					this.handle = dictionary.handle;
+					break;
+			}
+		}
 	}
 };
 
 export default {
 	Client,
-	Service
+	Service,
+	Characteristic,
+	Descriptor
 };
