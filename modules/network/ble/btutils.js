@@ -101,7 +101,7 @@ export class UUID {
 		if (this._array.length == Utils.INT_16_SIZE) {
 			return true;
 		} else {
-			return !isArrayEquals2(this._array, 0, BASE_UUID, 0, UUID_SIZE - 4);
+			return isArrayEquals2(this._array, 0, BASE_UUID, 0, UUID_SIZE - 4);
 		}
 	}
 	/**
