@@ -20,6 +20,7 @@
 
 
 #include "xsmc.h"
+#include "modTimer.h"
 
 #if ESP32 || __ets__
 	#include "xsesp.h"
@@ -53,19 +54,17 @@ struct modTimerRecord {
 
 	txS4 triggerTime;				// ms
 	txS4 repeatInterval;			// ms
-	txS2 id;
+	txU2 refconSize;
 	txS1 flags;
 	txS1 useCount;
 	modTimerCallback cb;
 #if MOD_TASKS
 	uintptr_t task;
 #endif
-	txU4 refconSize;
 	char refcon[1];
 };
 
 static modTimer gTimers = NULL;
-static txS2 gTimerID = 1;		//@@ could id share with other libraries that need unique ID?
 
 void modTimersExecute(void)
 {
@@ -160,7 +159,6 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	timer->next = NULL;
 	timer->triggerTime = modMilliseconds() + firstInterval;
 	timer->repeatInterval = secondInterval;
-	timer->id = ++gTimerID;
 	timer->flags = 0;
 	timer->useCount = 1;
 	timer->cb = cb;
@@ -197,11 +195,6 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	modCriticalSectionEnd();
 }
 
-uint16_t modTimerGetID(modTimer timer)
-{
-	return timer->id;
-}
-
 int modTimerGetSecondInterval(modTimer timer)
 {
 	return timer->repeatInterval;
@@ -212,21 +205,6 @@ void *modTimerGetRefcon(modTimer timer)
 	return timer->refcon;
 }
 
-modTimer modTimerFind(uint16_t id)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if (id == walker->id)
-			break;
-
-	modCriticalSectionEnd();
-
-	return walker;
-}
-
 void modTimerRemove(modTimer timer)
 {
 	modTimer walker, prev = NULL;
@@ -235,7 +213,6 @@ void modTimerRemove(modTimer timer)
 
 	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
-			timer->id = 0;		// can't be found again by script
 			timer->cb = NULL;
 
 			timer->useCount--;
