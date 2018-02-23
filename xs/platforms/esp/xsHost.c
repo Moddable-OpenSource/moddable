@@ -51,6 +51,7 @@
 #endif
 
 #ifdef mxInstrument
+	#include "modTimer.h"
 	#include "modInstrumentation.h"
 	static void espStartInstrumentation(txMachine* the);
 #endif
@@ -1045,7 +1046,7 @@ void fxSweepHost(txMachine* the)
 
 #ifdef mxInstrument
 
-static void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize);
+static void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize);
 
 #define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
 static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
@@ -1153,7 +1154,7 @@ void espStartInstrumentation(txMachine *the)
 	the->onBreak = espDebugBreak;
 }
 
-void espSampleInstrumentation(modTimer timer, void *refcon, uint32_t refconSize)
+void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 {
 	txInteger values[espInstrumentCount];
 	int what;

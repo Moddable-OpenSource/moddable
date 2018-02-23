@@ -22,6 +22,12 @@
 #ifndef __MODTIMER_H__
 #define __MODTIMER_H__
 
+#include "inttypes.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct modTimerRecord modTimerRecord;
 typedef struct modTimerRecord *modTimer;
 
@@ -37,5 +43,9 @@ extern void modTimerRemove(modTimer timer);
 extern modTimer modTimerFind(uint16_t id);
 
 extern void modTimerDelayMS(uint32_t ms);
+
+#ifdef __cplusplus
+	}
+#endif
 
 #endif
