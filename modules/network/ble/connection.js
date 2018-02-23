@@ -33,10 +33,14 @@ export class Connection {
 					break;
 			}
 		}
+		this.initialize(this.client);
 	}
-	initialize(params) @ "xs_ble_connection_initialize"
+	initialize(params) @ "xs_gap_connection_initialize"
 	
-	disconnect() @ "xs_ble_connection_disconnect"
+	disconnect() {
+		this._disconnect(this.client.connection);
+	}
+	_disconnect() @ "xs_gap_connection_disconnect"
 	
 	callback(event, params) {
 		this[event](params);
