@@ -23,6 +23,7 @@
 #include <Arduino.h>
 #include "xs.h"
 #include "xsesp.h"
+#include "modTimer.h"
 
 extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
