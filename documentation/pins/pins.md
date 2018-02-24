@@ -1,7 +1,7 @@
 # Pins
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: December 17, 2017
+Revised: February 23, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -135,10 +135,10 @@ The `read` function returns the current value of the pin.
 
 	let value = this.read();
 
-### count property
-The `count` property returns the total number of trigger events since the instance was created. Events may trigger more quickly than the `onChanged` callback can be invoked, so the `onChanged` callback cannot be used to maintain an accurate count of the number of trigger events.
+### `rises` and `falls` properties
+The `rises` and `falls` properties return the total number of the corresponding trigger events since the instance was created. Events may trigger more quickly than the `onChanged` callback can be invoked, which makes maintaining an accurate count of trigger events using the `onChanged` callback impossible.
 
-	let count = this.count;
+	let triggers = this.rises + this.falls;
 
 ## class Analog
 
