@@ -23,7 +23,6 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "modGPIO.h"
 
 typedef struct {
@@ -31,15 +30,15 @@ typedef struct {
 	xsSlot				obj;
 	uint8_t				pin;
 	uint8_t				triggered;
-	uint32_t			triggerCount;
+	uint8_t				edge;
+	uint32_t			rises;
+	uint32_t			falls;
 } modDigitalMonitorRecord, *modDigitalMonitor;
 
 static void digitalMonitorISR(void *refcon);
 static void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static uint8_t gISRCount;
-
-static SemaphoreHandle_t gMutex;
 
 void xs_digital_monitor_destructor(void *data)
 {
@@ -49,11 +48,8 @@ void xs_digital_monitor_destructor(void *data)
 
 	gpio_set_intr_type(monitor->pin, GPIO_INTR_DISABLE);
 	gpio_isr_handler_remove(monitor->pin);
-	if (0 == --gISRCount) {
+	if (0 == --gISRCount)
 		gpio_uninstall_isr_service();
-		vSemaphoreDelete(gMutex);
-		gMutex = NULL;
-	}
 
 	c_free(monitor);
 }
@@ -89,8 +85,10 @@ void xs_digital_monitor(xsMachine *the)
 	monitor->the = the;
 	monitor->obj = xsThis;
 	monitor->pin = pin;
+	monitor->edge = (uint8_t)edge;
 	monitor->triggered = false;
-	monitor->triggerCount = 0;
+	monitor->rises = 0;
+	monitor->falls = 0;
 
 	xsRemember(monitor->obj);
 
@@ -108,10 +106,8 @@ void xs_digital_monitor(xsMachine *the)
 	else
 		gpio_set_pull_mode(pin, GPIO_FLOATING);
 
-	if (0 == gISRCount++) {
-		gMutex = xSemaphoreCreateMutex();
+	if (0 == gISRCount++)
 		gpio_install_isr_service(0);
-	}
 
 	if (1 == edge)
 		gpio_set_intr_type(pin, GPIO_INTR_POSEDGE);
@@ -138,26 +134,39 @@ void xs_digital_monitor_read(xsMachine *the)
 	xsmcSetInteger(xsResult, gpio_get_level(monitor->pin));
 }
 
-void xs_digital_monitor_get_count(xsMachine *the)
+void xs_digital_monitor_get_rises(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
 
-	xsmcSetInteger(xsResult, monitor->triggerCount);
+	if (!(monitor->edge & 1))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->rises);
+}
+
+void xs_digital_monitor_get_falls(xsMachine *the)
+{
+	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+
+	if (!(monitor->edge & 2))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->falls);
 }
 
 void digitalMonitorISR(void *refcon)
 {
 	modDigitalMonitor monitor = refcon;
 	BaseType_t ignore;
+	uint8_t value = gpio_get_level(monitor->pin);
 
-	xSemaphoreTakeFromISR(gMutex, &ignore);
-	monitor->triggerCount += 1;
-	if (monitor->triggered) {
-		xSemaphoreGiveFromISR(gMutex, &ignore);
+	if (value)
+		monitor->rises += 1;
+	else
+		monitor->falls += 1;
+	if (monitor->triggered)
 		return;
-	}
 	monitor->triggered = true;
-	xSemaphoreGiveFromISR(gMutex, &ignore);
 
 	modMessagePostToMachineFromISR(monitor->the, digitalMonitorDeliver, monitor);
 }
@@ -166,9 +175,7 @@ void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 {
 	modDigitalMonitor monitor = refcon;
 
-	xSemaphoreTake(gMutex, portMAX_DELAY);
-		monitor->triggered = false;
-	xSemaphoreGive(gMutex);
+	monitor->triggered = false;
 
 	xsBeginHost(the);
 		xsCall0(monitor->obj, xsID_onChanged);
