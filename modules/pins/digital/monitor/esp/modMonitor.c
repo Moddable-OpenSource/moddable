@@ -30,7 +30,8 @@ struct modDigitalMonitorRecord {
 	uint8_t		pin;
 	uint8_t		edge;
 	uint8_t		triggered;
-	uint32_t	triggerCount;
+	uint32_t	rises;
+	uint32_t	falls;
 };
 typedef struct modDigitalMonitorRecord modDigitalMonitorRecord;
 typedef struct modDigitalMonitorRecord *modDigitalMonitor;
@@ -106,7 +107,8 @@ void xs_digital_monitor(xsMachine *the)
 	monitor->pin = pin;
 	monitor->edge = edge;
 	monitor->triggered = false;
-	monitor->triggerCount = 0;
+	monitor->rises = 0;
+	monitor->falls = 0;
 
 	xsRemember(monitor->obj);
 
@@ -145,11 +147,24 @@ void xs_digital_monitor_read(xsMachine *the)
 	xsmcSetInteger(xsResult, (GPIO_REG_READ(GPIO_IN_ADDRESS) >> monitor->pin) & 1);
 }
 
-void xs_digital_monitor_get_count(xsMachine *the)
+void xs_digital_monitor_get_rises(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
 
-	xsmcSetInteger(xsResult, monitor->triggerCount);
+	if (!(monitor->edge & 1))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->rises);
+}
+
+void xs_digital_monitor_get_falls(xsMachine *the)
+{
+	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+
+	if (!(monitor->edge & 2))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->falls);
 }
 
 void ICACHE_RAM_ATTR digitalMonitorISR(void *ignore)
@@ -172,13 +187,13 @@ void ICACHE_RAM_ATTR digitalMonitorISR(void *ignore)
 
 				if (1 & levels) {
 					if (1 & walker->edge) {
-						walker->triggerCount += 1;
+						walker->rises += 1;
 						walker->triggered = true;
 						doUpdate = 1;
 					}
 				}
 				else if (2 & walker->edge) {
-					walker->triggerCount += 1;
+					walker->falls += 1;
 					walker->triggered = true;
 					doUpdate = 1;
 				}
