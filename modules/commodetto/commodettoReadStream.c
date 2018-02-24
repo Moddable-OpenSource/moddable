@@ -31,86 +31,85 @@ typedef struct {
 
 	uint32_t	offset;
 	uint8_t		loop;
+	uint16_t	nextFrameSize;
 } CSRecord, *CS;
 
 void xs_cs_destructor(void *data)
 {
-	CS cs = data;
-	if (cs)
-		c_free(cs);
 }
 
 void xs_cs_constructor(xsMachine *the)
 {
-	CS cs;
-	ColorCellHeader cch;
-
-	cs = c_calloc(1, sizeof(CSRecord));
-	if (!cs)
-		xsErrorPrintf("no memory");
-
-	xsmcSetHostData(xsThis, cs);
-
-//@@ keep reference to buffer
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		cs->data = xsmcToArrayBuffer(xsArg(0));
-		cs->dataSize = xsGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		xsmcVars(1);
-		cs->data = xsmcGetHostData(xsArg(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		cs->dataSize = xsmcToInteger(xsVar(0));
-	}
-
-	cch = (ColorCellHeader)cs->data;
-	if (('c' != c_read8(&cch->id_c)) || ('s' != c_read8(&cch->id_s)))
-		xsErrorPrintf("bad stream");
-
-	if (kCommodettoBitmapRGB565LE != c_read8(&cch->bitmapFormat))
-		xsErrorPrintf("bad pixel format");
-
-	if (0 != c_read8(&cch->reserved))
-		xsErrorPrintf("bad reserved");
-
-	cs->offset = sizeof(ColorCellHeaderRecord);
+	CSRecord cs = {0};
+	ColorCellHeaderRecord cch;
 
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), c_read16(&cch->width));
+	cs.data = xsmcGetHostData(xsArg(0));
+	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
+	cs.dataSize = xsmcToInteger(xsVar(0));
+
+	c_memcpy(&cch, cs.data, sizeof(cch));
+	if (('c' != c_read8(&cch.id_c)) || ('s' != c_read8(&cch.id_s)))
+		xsErrorPrintf("bad stream");
+
+	if (kCommodettoBitmapRGB565LE != c_read8(&cch.bitmapFormat))
+		xsErrorPrintf("bad pixel format");
+
+	if (0 != cch.reserved)
+		xsErrorPrintf("bad reserved");
+
+	cs.offset = sizeof(ColorCellHeaderRecord);
+
+	xsmcSetInteger(xsVar(0), cch.width);
 	xsmcSet(xsThis, xsID_width, xsVar(0));
-	xsmcSetInteger(xsVar(0), c_read16(&cch->height));
+	xsmcSetInteger(xsVar(0), cch.height);
 	xsmcSet(xsThis, xsID_height, xsVar(0));
-	xsmcSetInteger(xsVar(0), c_read16(&cch->bitmapFormat));
+	xsmcSetInteger(xsVar(0), cch.bitmapFormat);
 	xsmcSet(xsThis, xsID_pixelFormat, xsVar(0));
+
+	cs.nextFrameSize = c_read16(cs.data + cs.offset);
+	cs.offset += 2;
 
 	if (xsmcArgc > 1) {
 		xsmcGet(xsVar(0), xsArg(1), xsID_loop);
-		cs->loop = xsmcTest(xsVar(0));
+		cs.loop = xsmcTest(xsVar(0));
 	}
+
+	xsmcSetHostChunk(xsThis, &cs, sizeof(cs));
 }
 
 void xs_cs_next(xsMachine *the)
 {
-	CS cs = xsmcGetHostData(xsThis);
-	uint16_t size;
+	CS cs = xsmcGetHostChunk(xsThis);
 	uint8_t *data;
+	uint16_t nextFrameSize = cs->nextFrameSize;
 
 	if (cs->offset >= cs->dataSize) {
 		if (!cs->loop)
 			return;
 		cs->offset = sizeof(ColorCellHeaderRecord);
+
+		nextFrameSize = cs->nextFrameSize = c_read16(cs->data + cs->offset);
+		cs->offset += 2;
 	}
 
 	data = cs->data + cs->offset;
-	size = c_read16(data);
-	if ((cs->offset + size) > cs->dataSize)
+	if ((cs->offset + nextFrameSize) > cs->dataSize)
 		xsErrorPrintf("bad stream");
 
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, data + sizeof(uint16_t));
+	xsmcSetHostData(xsResult, data);
 	xsmcVars(1);
-	xsVar(0) = xsInteger(size);
+	xsVar(0) = xsInteger(nextFrameSize);
 	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 
-	cs->offset += size + sizeof(uint16_t);
+	cs = xsmcGetHostChunk(xsThis);
+	cs->offset += nextFrameSize;
+
+	if (cs->offset + 2 <= cs->dataSize) {
+		cs->nextFrameSize = c_read16(cs->data + cs->offset);
+		cs->offset += 2;
+	}
+	else
+		cs->offset = cs->dataSize;
 }
