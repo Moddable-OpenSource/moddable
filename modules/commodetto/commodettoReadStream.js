@@ -23,3 +23,4 @@ export default class Stream @ "xs_cs_destructor" {
 	constructor(buffer, dictionary) @ "xs_cs_constructor"
 	next() @ "xs_cs_next"
 }
+Object.freeze(Stream.prototype);
