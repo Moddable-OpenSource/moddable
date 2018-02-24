@@ -30,7 +30,6 @@ render.end();
 
 Timer.repeat(id => {
 	render.begin(x, y, stream.width, stream.height);
-		render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 		render.drawFrame(stream.next(), stream, x, y);
 	render.end();
-}, 67);
+}, 33);
