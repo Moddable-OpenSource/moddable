@@ -1,7 +1,7 @@
 # AudioOut
 Copyright 2018 Moddable Tech, Inc.
 
-Revised: February 8, 2018
+Revised: February 23, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -173,3 +173,20 @@ The format has a simple twelve byte header followed by samples.
 - offset 8 -- sample count. 4 bytes, unsigned little-endian
 
 Audio samples immediately follow the header. If there are two channels, the channels are interleaved. 16-bit samples are signed little-endian values. 8-bit samples are signed values.
+
+## Manifest defines
+The `audioOut` module is be configured at build time.
+
+### Defines for all targets
+- `MODDEF_AUDIOOUT_STREAMS` -- maximum number of simultaneous audio streams. The maximum is 4 and the default is 4.
+- `MODDEF_AUDIOOUT_BITSPERSAMPLE` -- number of bits per sample. macOS supports 8 and 16. ESP32 and ESP8266 support 16 only. The default is 16.
+- `MODDEF_AUDIOOUT_QUEUELENGTH` -- maximum number of items that may be queued on a single stream. Default is 8.
+
+### Defines for ESP32
+- `MODDEF_AUDIOOUT_I2S_NUM` -- The ESP32 I2S unit number. Default is 0.
+- `MODDEF_AUDIOOUT_I2S_BCK_PIN` -- The I2S clock pin. The default is 26.
+- `MODDEF_AUDIOOUT_I2S_LR_PIN` -- The I2S LR pin. The default is 25.
+- `MODDEF_AUDIOOUT_I2S_DATAOUT_PIN` -- The I2S data pin. The default is 22.
+
+### Defines for ESP8266
+- `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
