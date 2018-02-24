@@ -27,7 +27,7 @@
 
 	 Changes:
 		 - i2s_end doesn't hang and does free memory buffers
-		 - change from push to pull. instead of pusing in samples, DMA ISR invokes callback
+		 - change from push to pull. instead of pushing in samples, DMA ISR invokes callback
 			 to get next batch of samples
 		 - setrate merged into i2s_begin
 		 - i2s_end restores pin 3 to serial
