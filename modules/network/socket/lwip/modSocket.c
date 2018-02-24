@@ -27,6 +27,7 @@
 #include "lwip/udp.h"
 
 #include "modSocket.h"
+#include "modTimer.h"
 
 #if ESP32
 	typedef int8_t int8;
