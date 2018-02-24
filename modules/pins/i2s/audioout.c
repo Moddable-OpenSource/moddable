@@ -45,6 +45,14 @@
 	#endif
 #endif
 
+#ifndef MODDEF_AUDIOOUT_I2S_PDM
+	#define MODDEF_AUDIOOUT_I2S_PDM (0)
+#elif !defined(__ets__)
+	#error "PDM on ESP8266 only"
+#elif (MODDEF_AUDIOOUT_I2S_PDM != 32) && (MODDEF_AUDIOOUT_I2S_PDM != 64) && (MODDEF_AUDIOOUT_I2S_PDM != 128)
+	#error "invalid PDM oversampling"
+#endif
+
 #if MODDEF_AUDIOOUT_STREAMS > 4
 	#error "can't mix over 4 streams"
 #endif
@@ -123,6 +131,11 @@ typedef struct {
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	int16_t					buffer[64];		// size assumes DMA Buffer size of I2S
+#endif
+
+#if MODDEF_AUDIOOUT_I2S_PDM
+	int32_t					prevSample;
+	int32_t					error;
 #endif
 
 	int						pendingCallbackCount;
@@ -284,6 +297,11 @@ void xs_audioout_start(xsMachine *the)
 	modAudioOut out = xsmcGetHostData(xsThis);
 	int i;
 
+#if MODDEF_AUDIOOUT_I2S_PDM
+	out->prevSample = 0;
+	out->error = 0;
+#endif
+
 #if defined(__APPLE__)
 	for (i = 0; i < kAudioQueueBufferCount; i++)
 		audioQueueCallback(out, out->audioQueue, out->buffer[i]);
@@ -293,7 +311,11 @@ void xs_audioout_start(xsMachine *the)
 	out->state = kStatePlaying;
 	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
 #elif defined(__ets__)
-	i2s_begin(doRenderSamples, out, out->sampleRate);
+	#if MODDEF_AUDIOOUT_I2S_PDM
+		i2s_begin(doRenderSamples, out, out->sampleRate * (MODDEF_AUDIOOUT_I2S_PDM >> 5));
+	#else
+		i2s_begin(doRenderSamples, out, out->sampleRate);
+	#endif
 	out->i2sActive = true;
 #endif
 }
@@ -608,8 +630,13 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 	modAudioOut out = refcon;
 	int16_t *s = (int16_t *)out->buffer;
 
+#if MODDEF_AUDIOOUT_I2S_PDM
+	count /= (MODDEF_AUDIOOUT_I2S_PDM >> 5);
+#endif
+
 	audioMix(out, count, out->buffer);
 
+#if 0 == MODDEF_AUDIOOUT_I2S_PDM
 	// expand mono to stereo
 	while (count--) {
 		int16_t sample = *s++;
@@ -617,6 +644,40 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 		lr[1] = sample;
 		lr += 2;
 	}
+#else
+	// expand mono to PDM
+	#define FRACTIONAL_BITS (13)
+	const int32_t SAMPLE_MAX = 0x7FFF << FRACTIONAL_BITS;
+	int32_t *pdm = (int32_t *)lr;
+	int32_t value = 0;		// doesn't need to be initialized, but compiler will complain if it isn't
+	int32_t prevSample = out->prevSample;
+	int32_t error = out->error;
+
+	while (count--) {
+		int16_t i, j;
+		int32_t sample = *s++ << FRACTIONAL_BITS;		// smear high bits to shifted in low bits?
+		int32_t step = (sample - prevSample) >> (4 + (MODDEF_AUDIOOUT_I2S_PDM >> 5));
+		prevSample = sample;
+
+		for (j = MODDEF_AUDIOOUT_I2S_PDM >> 5; j; j--) {
+			i = 31;
+			do {
+				if (error < 0) {
+					value = (value << 1) | 1;
+					error += SAMPLE_MAX - sample;
+				}
+				else {
+					value <<= 1;
+					error -= SAMPLE_MAX + sample;
+				}
+				sample += step;
+			} while (--i);
+			*pdm++ = value;
+		}
+    }
+	out->prevSample = prevSample;
+	out->error = error;
+#endif
 }
 #endif
 
