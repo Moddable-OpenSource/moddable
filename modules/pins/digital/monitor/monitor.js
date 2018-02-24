@@ -22,7 +22,8 @@ class Monitor @ "xs_digital_monitor_destructor" {
 	constructor(dictionary) @ "xs_digital_monitor";
 	close() @ "xs_digital_monitor_close"
 	read() @ "xs_digital_monitor_read"
-	get count() @ "xs_digital_monitor_get_count"
+	get rises() @ "xs_digital_monitor_get_rises"
+	get falls() @ "xs_digital_monitor_get_falls"
 }
 Monitor.Rising = 1;
 Monitor.Falling = 2;
