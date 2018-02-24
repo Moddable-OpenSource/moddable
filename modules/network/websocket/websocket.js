@@ -27,6 +27,7 @@
 
 import {Socket, Listener} from "socket";
 import Base64 from "base64";
+import Logical from "logical";
 import {Digest} from "crypt";
 
 /*
@@ -98,8 +99,6 @@ export class Client {
 		this.socket.close();
 		delete this.socket;
 	}
-
-	mask() @ "xs_websocket_mask";
 };
 
 function callback(message, value) {
@@ -229,7 +228,10 @@ trace("partial header!!\n");		//@@ untested
 					let data;
 					if (mask) {
 						mask = socket.read(ArrayBuffer, 4);
-						data = this.mask(socket.read(ArrayBuffer, length), mask, (1 === (tag & 0x0f)) ? String : ArrayBuffer);
+						data = socket.read(ArrayBuffer, length);
+						Logical.xor(data, mask);
+						if (1 === (tag & 0x0f))
+							data = String.fromArrayBuffer(data);
 					}
 					else
 						data = socket.read((1 === (tag & 0x0f)) ? String : ArrayBuffer, length);
