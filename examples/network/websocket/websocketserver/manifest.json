@@ -8,6 +8,7 @@
 			"./main",
 			"$(MODULES)/network/websocket/*",
 			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
 			"$(MODULES)/crypt/digest/kcl/*",
 		]
@@ -15,6 +16,7 @@
 	"preload": [
 		"websocket",
 		"base64",
-		"digest"
+		"digest",
+		"logical"
 	]
 }
