@@ -116,6 +116,9 @@ export default class extends TOOL {
 		output.writeByte(frameSize >> 8);
 		output.writeBuffer(compressed.buffer);
 
+		output.writeByte(0);	// 0 size frame to end
+		output.writeByte(0);
+
 		output.close();
 	}
 }
