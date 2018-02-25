@@ -457,6 +457,9 @@ export default class extends TOOL {
 			output.writeByte(frameSize >> 8);
 			output.writeBuffer(buffer);
 		}
+		// 0 size frame at the end
+		output.writeByte(0);
+		output.writeByte(0);
 		output.close();
 	}
 }
