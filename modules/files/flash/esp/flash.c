@@ -39,8 +39,9 @@ typedef struct modFlashRecord *modFlash;
 void xs_flash(xsMachine *the)
 {
 	modFlashRecord flash;
+	int kind = xsmcTypeOf(xsArg(0));
 
-	if (xsStringType == xsmcTypeOf(xsArg(0))) {
+	if ((xsStringType == kind) || (xsStringXType == kind)) {
 		char *partition = xsmcToString(xsArg(0));
 		if (0 == c_strcmp(partition, "xs")) {
 			flash.partitionStart = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
@@ -51,7 +52,14 @@ void xs_flash(xsMachine *the)
 			extern uint8_t _XSMOD_end;
 
 			flash.partitionStart = (uintptr_t)&_XSMOD_start - (uintptr_t)kFlashStart;
-			flash.partitionByteLength = _XSMOD_end - _XSMOD_end;
+			flash.partitionByteLength = &_XSMOD_end - &_XSMOD_start;		//@@
+		}
+		else if (0 == c_strcmp(partition, "spiffs")) {
+			extern uint8_t _SPIFFS_start;
+			extern uint8_t _SPIFFS_end;
+
+			flash.partitionStart = (uintptr_t)&_SPIFFS_start - (uintptr_t)kFlashStart;
+			flash.partitionByteLength = &_SPIFFS_end - &_SPIFFS_start;
 		}
 		else
 			xsUnknownError("unknown partition");
@@ -88,10 +96,9 @@ void xs_flash_erase(xsMachine *the)
 void xs_flash_read(xsMachine *the)
 {
 	modFlash flash = xsmcGetHostChunk(xsThis);
-	SpiFlashOpResult result;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
-	void *buffer;
+	uint8_t *buffer;
 
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
@@ -99,12 +106,27 @@ void xs_flash_read(xsMachine *the)
 	xsResult = xsArrayBuffer(NULL, byteLength);
 	buffer = xsmcToArrayBuffer(xsResult);
 
-    ets_isr_mask(FLASH_INT_MASK);
-	result = spi_flash_read(offset + flash->partitionStart, buffer, byteLength);
-    ets_isr_unmask(FLASH_INT_MASK);
+	offset += flash->partitionStart;
+	while (byteLength) {
+		int use = byteLength;
 
-	if (SPI_FLASH_RESULT_OK != result)
-		modLog("read fail");
+		if (offset & 0x1FF) {
+			use = 512 - (offset & 0x1FF);
+			if (use > byteLength)
+				use = byteLength;
+		}
+		else if (use >= 512)
+			use = 512;
+
+		if (0 == modSPIRead(offset, use, buffer)) {
+			modLog("read fail");
+			break;
+		}
+
+		offset += use;
+		buffer += use;
+		byteLength -= use;
+	}
 }
 
 void xs_flash_write(xsMachine *the)
@@ -120,6 +142,7 @@ void xs_flash_write(xsMachine *the)
 
 	buffer = xsmcToArrayBuffer(xsArg(2));
 
+	//@@ modSPIWrite
     ets_isr_mask(FLASH_INT_MASK);
 	result = spi_flash_write(offset + flash->partitionStart, buffer, byteLength);
     ets_isr_unmask(FLASH_INT_MASK);
