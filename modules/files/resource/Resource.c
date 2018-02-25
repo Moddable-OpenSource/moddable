@@ -59,9 +59,11 @@ void Resource_exists(xsMachine *the)
 void Resource_slice(xsMachine *the)
 {
 	int argc = xsToInteger(xsArgc);
+	unsigned char *data = (unsigned char *)xsGetHostData(xsThis);
 	int start = xsToInteger(xsArg(0));
 	int end;
 	int byteLength;
+	xsBooleanValue copy = 1;
 
 	xsResult = xsGet(xsThis, xsID_byteLength);
 	byteLength = xsToInteger(xsResult);
@@ -70,9 +72,18 @@ void Resource_slice(xsMachine *the)
 		end = xsToInteger(xsArg(1));
 		if (end > byteLength)
 			end = byteLength;
+			if (argc > 2)
+				copy = xsTest(xsArg(2));
+
 	}
 	else
 		end = byteLength;
 
-	xsResult = xsArrayBuffer(((unsigned char *)xsGetHostData(xsThis)) + start, end - start);
+	if (copy)
+		xsResult = xsArrayBuffer(data + start, end - start);
+	else {
+		xsResult = xsNewHostObject(NULL);
+		xsSetHostData(xsResult, data + start);
+		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
+	}
 }
