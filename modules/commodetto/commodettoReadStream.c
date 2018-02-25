@@ -26,13 +26,12 @@
 #include "mc.xs.h"			// for xsID_ values
 
 typedef struct {
-	uint8_t		*data;
-	uint32_t	dataSize;
-
 	uint32_t	offset;
 	uint8_t		loop;
 	uint16_t	nextFrameSize;
 } CSRecord, *CS;
+
+static void doRead(xsMachine *the, CS cs, void *data, uint16_t size);
 
 void xs_cs_destructor(void *data)
 {
@@ -40,15 +39,15 @@ void xs_cs_destructor(void *data)
 
 void xs_cs_constructor(xsMachine *the)
 {
-	CSRecord cs = {0};
+	CS cs;
 	ColorCellHeaderRecord cch;
+	uint16_t nextFrameSize;
 
 	xsmcVars(1);
-	cs.data = xsmcGetHostData(xsArg(0));
-	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-	cs.dataSize = xsmcToInteger(xsVar(0));
 
-	c_memcpy(&cch, cs.data, sizeof(cch));
+	cs = xsmcSetHostChunk(xsThis, NULL, sizeof(CSRecord));
+
+	doRead(the, cs, &cch, sizeof(cch));
 	if (('c' != c_read8(&cch.id_c)) || ('s' != c_read8(&cch.id_s)))
 		xsErrorPrintf("bad stream");
 
@@ -58,58 +57,79 @@ void xs_cs_constructor(xsMachine *the)
 	if (0 != cch.reserved)
 		xsErrorPrintf("bad reserved");
 
-	cs.offset = sizeof(ColorCellHeaderRecord);
-
 	xsmcSetInteger(xsVar(0), cch.width);
 	xsmcSet(xsThis, xsID_width, xsVar(0));
 	xsmcSetInteger(xsVar(0), cch.height);
 	xsmcSet(xsThis, xsID_height, xsVar(0));
 	xsmcSetInteger(xsVar(0), cch.bitmapFormat);
 	xsmcSet(xsThis, xsID_pixelFormat, xsVar(0));
+	//@@ frame rate too...
 
-	cs.nextFrameSize = c_read16(cs.data + cs.offset);
-	cs.offset += 2;
+	cs = xsmcGetHostChunk(xsThis);
+	doRead(the, cs, &nextFrameSize, sizeof(nextFrameSize));
+	cs = xsmcGetHostChunk(xsThis);
+	cs->nextFrameSize = nextFrameSize;
 
-	if (xsmcArgc > 1) {
-		xsmcGet(xsVar(0), xsArg(1), xsID_loop);
-		cs.loop = xsmcTest(xsVar(0));
+	if (xsmcArgc && xsmcTest(xsArg(0))) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_loop);
+		cs->loop = xsmcTest(xsVar(0));
 	}
-
-	xsmcSetHostChunk(xsThis, &cs, sizeof(cs));
 }
 
 void xs_cs_next(xsMachine *the)
 {
 	CS cs = xsmcGetHostChunk(xsThis);
-	uint8_t *data;
 	uint16_t nextFrameSize = cs->nextFrameSize;
+	uint8_t *data;
 
-	if (cs->offset >= cs->dataSize) {
-		if (!cs->loop)
-			return;
-		cs->offset = sizeof(ColorCellHeaderRecord);
-
-		nextFrameSize = cs->nextFrameSize = c_read16(cs->data + cs->offset);
-		cs->offset += 2;
-	}
-
-	data = cs->data + cs->offset;
-	if ((cs->offset + nextFrameSize) > cs->dataSize)
-		xsErrorPrintf("bad stream");
-
-	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, data);
 	xsmcVars(1);
-	xsVar(0) = xsInteger(nextFrameSize);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+
+	do {
+		int kind;
+
+		xsResult = xsCall2(xsThis, xsID_read, xsInteger(cs->offset), xsInteger(nextFrameSize + 2));
+		kind = xsmcTypeOf(xsResult);
+		cs = xsmcGetHostChunk(xsThis);
+		if (xsBooleanType == kind) {
+			if (xsmcToBoolean(xsResult)) {
+				// end of file
+				if (!cs->loop)
+					return;
+
+				cs->offset = sizeof(ColorCellHeaderRecord);
+				doRead(the, cs, &nextFrameSize, sizeof(nextFrameSize));
+				cs = xsmcGetHostChunk(xsThis);
+				cs->nextFrameSize = nextFrameSize;
+			}
+			else
+				return;
+		}
+		else
+			break;
+	} while (true);
+
+	cs->offset += nextFrameSize + 2;
+
+	if (xsmcIsInstanceOf(xsResult, xsArrayBufferPrototype))
+		data = (uint8_t *)xsmcToArrayBuffer(xsResult);
+	else
+		data = xsmcGetHostData(xsResult);
+	c_memcpy(&nextFrameSize, data + nextFrameSize, sizeof(nextFrameSize));
+	cs->nextFrameSize = nextFrameSize;
+}
+
+void doRead(xsMachine *the, CS cs, void *data, uint16_t size)
+{
+	void *src;
+
+	xsVar(0) = xsCall2(xsThis, xsID_read, xsInteger(cs->offset), xsInteger(size));
+
+	if (xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype))
+		src = (uint8_t *)xsmcToArrayBuffer(xsVar(0));
+	else
+		src = xsmcGetHostData(xsVar(0));
+	c_memcpy(data, src, size);
 
 	cs = xsmcGetHostChunk(xsThis);
-	cs->offset += nextFrameSize;
-
-	if (cs->offset + 2 <= cs->dataSize) {
-		cs->nextFrameSize = c_read16(cs->data + cs->offset);
-		cs->offset += 2;
-	}
-	else
-		cs->offset = cs->dataSize;
+	cs->offset += size;
 }

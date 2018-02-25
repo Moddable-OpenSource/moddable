@@ -18,9 +18,18 @@
  *
  */
 
-
 export default class Stream @ "xs_cs_destructor" {
-	constructor(buffer, dictionary) @ "xs_cs_constructor"
+	constructor(buffer, dictionary) {
+		this.buffer = buffer;
+		this.build(dictionary);
+	}
+	build() @ "xs_cs_constructor";
 	next() @ "xs_cs_next"
+	read(offset, size) {
+		if (offset >= this.buffer.byteLength)
+			return true;
+
+		return this.buffer.slice(offset, offset + size, false);
+	}
 }
 Object.freeze(Stream.prototype);
