@@ -47,6 +47,15 @@ void xs_cs_constructor(xsMachine *the)
 
 	cs = xsmcSetHostChunk(xsThis, NULL, sizeof(CSRecord));
 
+	if (xsmcArgc < 2)
+		xsCall1(xsThis, xsID_initialize, xsArg(0));
+	else {
+		xsmcGet(xsVar(0), xsArg(1), xsID_loop);
+		cs->loop = xsmcTest(xsVar(0));
+
+		xsCall2(xsThis, xsID_initialize, xsArg(0), xsArg(1));
+	}
+
 	doRead(the, cs, &cch, sizeof(cch));
 	if (('c' != c_read8(&cch.id_c)) || ('s' != c_read8(&cch.id_s)))
 		xsErrorPrintf("bad stream");
@@ -69,11 +78,6 @@ void xs_cs_constructor(xsMachine *the)
 	doRead(the, cs, &nextFrameSize, sizeof(nextFrameSize));
 	cs = xsmcGetHostChunk(xsThis);
 	cs->nextFrameSize = nextFrameSize;
-
-	if (xsmcArgc && xsmcTest(xsArg(0))) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_loop);
-		cs->loop = xsmcTest(xsVar(0));
-	}
 }
 
 void xs_cs_next(xsMachine *the)
@@ -84,30 +88,17 @@ void xs_cs_next(xsMachine *the)
 
 	xsmcVars(1);
 
-	do {
-		int kind;
+	if (0 == nextFrameSize) {
+		if (!cs->loop)
+			return;
 
-		xsResult = xsCall2(xsThis, xsID_read, xsInteger(cs->offset), xsInteger(nextFrameSize + 2));
-		kind = xsmcTypeOf(xsResult);
+		cs->offset = sizeof(ColorCellHeaderRecord);
+		doRead(the, cs, &nextFrameSize, sizeof(nextFrameSize));
 		cs = xsmcGetHostChunk(xsThis);
-		if (xsBooleanType == kind) {
-			if (xsmcToBoolean(xsResult)) {
-				// end of file
-				if (!cs->loop)
-					return;
+		cs->nextFrameSize = nextFrameSize;
+	}
 
-				cs->offset = sizeof(ColorCellHeaderRecord);
-				doRead(the, cs, &nextFrameSize, sizeof(nextFrameSize));
-				cs = xsmcGetHostChunk(xsThis);
-				cs->nextFrameSize = nextFrameSize;
-			}
-			else
-				return;
-		}
-		else
-			break;
-	} while (true);
-
+	xsResult = xsCall2(xsThis, xsID_read, xsInteger(cs->offset), xsInteger(nextFrameSize + 2));
 	cs->offset += nextFrameSize + 2;
 
 	if (xsmcIsInstanceOf(xsResult, xsArrayBufferPrototype))
