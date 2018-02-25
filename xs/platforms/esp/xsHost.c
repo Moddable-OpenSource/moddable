@@ -1586,16 +1586,21 @@ uint8_t *espFindUnusedFlashStart(void)
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
-	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
 		if (toAlign > size)
 			toAlign = size;
-		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, sizeof(temp)))
+		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset & ~3, (uint32_t *)temp, 4))
 			return 0;
-		c_memcpy(dst, temp + 4 - toAlign, toAlign);
+		if (size < toAlign) {
+			c_memcpy(dst, temp + 4 - toAlign, size);
+			toAlign = size;
+		}
+		else
+			c_memcpy(dst, temp + 4 - toAlign, toAlign);
 		dst += toAlign;
 		offset += toAlign;
 		size -= toAlign;
@@ -1604,15 +1609,18 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	}
 
 	toAlign = size & ~3;
-	if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)dst, toAlign))
-		return 0;
+	if (toAlign) {
+		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, toAlign))
+			return 0;
+		c_memmove(dst, temp, toAlign);
 
-	dst += toAlign;
-	offset += toAlign;
-	size -= toAlign;
+		dst += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+	}
 
 	if (size) {				// long align tail
-		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, sizeof(temp)))
+		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, 4))
 			return 0;
 		c_memcpy(dst, temp, size);
 	}
