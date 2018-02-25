@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 
 #ifndef MODDEF_AUDIOOUT_STREAMS
 	#define MODDEF_AUDIOOUT_STREAMS (4)
@@ -61,7 +62,7 @@
 #endif
 
 #if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
-	#define OUTPUTSAMPLETYPE uint8_t
+	#define OUTPUTSAMPLETYPE int8_t
 #elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
 	#define OUTPUTSAMPLETYPE int16_t
 #endif
@@ -130,7 +131,7 @@ typedef struct {
 	uint32_t				buffer[128];
 #elif defined(__ets__)
 	uint8_t					i2sActive;
-	int16_t					buffer[64];		// size assumes DMA Buffer size of I2S
+	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
 #endif
 
 #if MODDEF_AUDIOOUT_I2S_PDM
@@ -201,36 +202,53 @@ void xs_audioout(xsMachine *the)
 {
 	int i;
 	modAudioOut out;
-	uint16_t sampleRate;
-	uint8_t numChannels;
-	uint8_t bitsPerSample;
-	int streamCount;
+	uint16_t sampleRate = 0;
+	uint8_t numChannels = 0;
+	uint8_t bitsPerSample = 0;
+	int streamCount = 0;
 
 	xsmcVars(1);
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_sampleRate);
-	sampleRate = xsmcToInteger(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_sampleRate)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_sampleRate);
+		sampleRate = xsmcToInteger(xsVar(0));
+	}
+#ifdef MODDEF_AUDIOOUT_SAMPLERATE
+	else
+		sampleRate = MODDEF_AUDIOOUT_SAMPLERATE;
+#endif
 	if ((sampleRate < 8000) || (sampleRate > 48000))
 		xsRangeError("invalid sample rate");
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_numChannels);
-	numChannels = xsmcToInteger(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_numChannels)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_numChannels);
+		numChannels = xsmcToInteger(xsVar(0));
+	}
+#ifdef MODDEF_AUDIOOUT_NUMCHANNELS
+	else
+		numChannels = MODDEF_AUDIOOUT_NUMCHANNELS;
+#endif
 	if ((1 != numChannels) && (2 != numChannels))
 		xsRangeError("bad numChannels");
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_bitsPerSample);
-	bitsPerSample = xsmcToInteger(xsVar(0));
-	if (MODDEF_AUDIOOUT_BITSPERSAMPLE != bitsPerSample)
+	if (xsmcHas(xsArg(0), xsID_bitsPerSample)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_bitsPerSample);
+		bitsPerSample = xsmcToInteger(xsVar(0));
+	}
+#ifdef MODDEF_AUDIOOUT_BITSPERSAMPLE
+	else
+		bitsPerSample = MODDEF_AUDIOOUT_BITSPERSAMPLE;
+#endif
+	if ((8 != bitsPerSample) && (16 != bitsPerSample))
 		xsRangeError("bad bitsPerSample");
 
-	if (!xsmcHas(xsArg(0), xsID_streams))
-		streamCount = 1;
-	else {
+	streamCount = MODDEF_AUDIOOUT_STREAMS;
+	if (xsmcHas(xsArg(0), xsID_streams)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_streams);
 		streamCount = xsmcToInteger(xsVar(0));
-		if ((streamCount < 1) || (streamCount > MODDEF_AUDIOOUT_STREAMS))
-			xsRangeError("bad streamCount");
 	}
+	if ((streamCount < 1) || (streamCount > MODDEF_AUDIOOUT_STREAMS))
+		xsRangeError("bad streamCount");
 
 	out = (modAudioOut)c_calloc(sizeof(modAudioOutRecord) + (sizeof(modAudioOutStreamRecord) * (streamCount - 1)), 1);
 	if (!out)
@@ -628,7 +646,7 @@ void audioOutLoop(void *pvParameter)
 void doRenderSamples(void *refcon, int16_t *lr, int count)
 {
 	modAudioOut out = refcon;
-	int16_t *s = (int16_t *)out->buffer;
+	OUTPUTSAMPLETYPE *s = (OUTPUTSAMPLETYPE *)out->buffer;
 
 #if MODDEF_AUDIOOUT_I2S_PDM
 	count /= (MODDEF_AUDIOOUT_I2S_PDM >> 5);
@@ -640,6 +658,9 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 	// expand mono to stereo
 	while (count--) {
 		int16_t sample = *s++;
+#if 8 == MODDEF_AUDIOOUT_BITSPERSAMPLE
+		sample |= sample << 8;
+#endif
 		lr[0] = sample;
 		lr[1] = sample;
 		lr += 2;
@@ -655,8 +676,13 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 
 	while (count--) {
 		int16_t i, j;
-		int32_t sample = *s++ << FRACTIONAL_BITS;		// smear high bits to shifted in low bits?
-		int32_t step = (sample - prevSample) >> (4 + (MODDEF_AUDIOOUT_I2S_PDM >> 5));
+		int32_t sample = *s++, step;
+
+#if 8 == MODDEF_AUDIOOUT_BITSPERSAMPLE
+		sample |= sample << 8;
+#endif
+		sample <<= FRACTIONAL_BITS;		// smear high bits to shifted in low bits?
+		step = (sample - prevSample) >> (4 + (MODDEF_AUDIOOUT_I2S_PDM >> 5));
 		prevSample = sample;
 
 		for (j = MODDEF_AUDIOOUT_I2S_PDM >> 5; j; j--) {
