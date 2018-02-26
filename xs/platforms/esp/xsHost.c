@@ -1590,33 +1590,42 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	uint32_t toAlign;
 
 	if (offset & 3) {		// long align offset
-		toAlign = 4 - (offset & 3);
-		if (toAlign > size)
-			toAlign = size;
 		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset & ~3, (uint32_t *)temp, 4))
 			return 0;
-		if (size < toAlign) {
-			c_memcpy(dst, temp + 4 - toAlign, size);
-			toAlign = size;
-		}
-		else
-			c_memcpy(dst, temp + 4 - toAlign, toAlign);
+
+		toAlign = 4 - (offset & 3);
+		c_memcpy(dst, temp + 4 - toAlign, (size < toAlign) ? size : toAlign);
+
+		if (size <= toAlign)
+			return 1;
+
 		dst += toAlign;
 		offset += toAlign;
 		size -= toAlign;
-		if (!size)
-			return 1;
 	}
 
 	toAlign = size & ~3;
 	if (toAlign) {
-		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, toAlign))
-			return 0;
-		c_memmove(dst, temp, toAlign);
-
-		dst += toAlign;
-		offset += toAlign;
 		size -= toAlign;
+		if (((uintptr_t)dst) & ~3) {	// dst is not long aligned, copy through stack
+			while (toAlign) {
+				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
+
+				if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, use))
+						return 0;
+				c_memmove(dst, temp, use);
+
+				toAlign -= use;
+				dst += use;
+				offset += use;
+			}
+		}
+		else {
+			if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)dst, toAlign))
+				return 0;
+			dst += toAlign;
+			offset += toAlign;
+		}
 	}
 
 	if (size) {				// long align tail
@@ -1630,35 +1639,34 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 {
-	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
-		if (toAlign > size)
-			toAlign = size;
-		c_memset(temp, 0xFF, sizeof(temp));
-		c_memcpy(temp + 4 - toAlign, src, toAlign);
-		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, sizeof(temp)))
+		c_memset(temp, 0xFF, 4);
+		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
+		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, 4))
 			return 0;
+
+		if (size <= toAlign)
+			return 1;
 
 		src += toAlign;
 		offset += toAlign;
 		size -= toAlign;
-		if (!size)
-			return 1;
 	}
 
-	if (size >= 4) {
-		toAlign = size & ~3;
+	toAlign = size & ~3;
+	if (toAlign) {
 		size -= toAlign;
 		if (((uintptr_t)src) & ~3) {	// src is not long aligned, copy through stack
-			while (toAlign >= 4) {
-				uint8_t scratch[512] __attribute__ ((aligned (4)));;
-				uint32_t use = (toAlign > sizeof(scratch)) ? sizeof(scratch) : toAlign;
-				c_memcpy(scratch, src, use);
-				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)scratch, use))
+			while (toAlign) {
+				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
+				c_memcpy(temp, src, use);
+				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, use))
 					return 0;
+
 				toAlign -= use;
 				src += use;
 				offset += use;
@@ -1667,16 +1675,15 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		else {
 			if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)src, toAlign))
 				return 0;
-
 			src += toAlign;
 			offset += toAlign;
 		}
 	}
 
 	if (size) {			// long align tail
-		c_memset(temp, 0xFF, sizeof(temp));
+		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
-		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, sizeof(temp)))
+		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, 4))
 			return 0;
 	}
 
