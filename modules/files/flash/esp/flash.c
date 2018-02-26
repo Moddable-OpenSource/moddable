@@ -90,7 +90,7 @@ void xs_flash_erase(xsMachine *the)
     ets_isr_unmask(FLASH_INT_MASK);
 
 	if (SPI_FLASH_RESULT_OK != result)
-		modLog("erase fail");
+		xsUnknownError("erase fail");
 }
 
 void xs_flash_read(xsMachine *the)
@@ -103,30 +103,14 @@ void xs_flash_read(xsMachine *the)
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
 
+	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
+		xsUnknownError("invalid length");
+
 	xsResult = xsArrayBuffer(NULL, byteLength);
 	buffer = xsmcToArrayBuffer(xsResult);
 
-	offset += flash->partitionStart;
-	while (byteLength) {
-		int use = byteLength;
-
-		if (offset & 0x1FF) {
-			use = 512 - (offset & 0x1FF);
-			if (use > byteLength)
-				use = byteLength;
-		}
-		else if (use >= 512)
-			use = 512;
-
-		if (0 == modSPIRead(offset, use, buffer)) {
-			modLog("read fail");
-			break;
-		}
-
-		offset += use;
-		buffer += use;
-		byteLength -= use;
-	}
+	if (0 == modSPIRead(offset + flash->partitionStart, byteLength, buffer))
+		xsUnknownError("read fail");
 }
 
 void xs_flash_write(xsMachine *the)
@@ -140,15 +124,13 @@ void xs_flash_write(xsMachine *the)
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
 
+	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
+		xsUnknownError("invalid length");
+
 	buffer = xsmcToArrayBuffer(xsArg(2));
 
-	//@@ modSPIWrite
-    ets_isr_mask(FLASH_INT_MASK);
-	result = spi_flash_write(offset + flash->partitionStart, buffer, byteLength);
-    ets_isr_unmask(FLASH_INT_MASK);
-
-	if (SPI_FLASH_RESULT_OK != result)
-		modLog("write fail");
+	if (0 == modSPIWrite(offset + flash->partitionStart, byteLength, buffer))
+		xsUnknownError("write fail");
 }
 
 void xs_flash_byteLength(xsMachine *the)
