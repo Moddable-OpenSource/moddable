@@ -22,6 +22,7 @@
 
 #include "mc.defines.h"
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,30 +37,8 @@ void xs_loop();
 /*
     timer
 */
-#ifndef __MODTIMER_H__
-#define __MODTIMER_H__
-typedef struct modTimerRecord modTimerRecord;
-typedef struct modTimerRecord *modTimer;
-
-typedef void (*modTimerCallback)(modTimer timer, void *refcon, uint32_t refconSize);
-
-extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
-extern void modTimerSetScript(modTimer timer);
-extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
-extern uint16_t modTimerGetID(modTimer timer);
-extern int modTimerGetSecondInterval(modTimer timer);
-extern void *modTimerGetRefcon(modTimer timer);
-extern void modTimerRemove(modTimer timer);
-
-extern modTimer modTimerFind(uint16_t id);
-
-extern void modTimerDelayMS(uint32_t ms);
-
 extern void modTimersExecute(void);
 extern int modTimersNext(void);
-extern int modTimersNextScript(void);
-
-#endif
 
 #define modDelayMilliseconds(ms) gecko_delay(ms)
 #define modDelayMicroseconds(us) gecko_delay(((us) + 500) / 1000)
@@ -74,6 +53,47 @@ extern uint32_t gecko_milliseconds();
 #define modCriticalSectionBegin()
 #define modCriticalSectionEnd()
 
+/*
+	date and time
+ */
+typedef uint32_t modTime_t;
+
+struct modTimeVal {
+	modTime_t	tv_sec;		/* seconds */
+	uint32_t	tv_usec;	/* microseconds */
+};
+typedef struct modTimeVal modTimeVal;
+
+struct modTimeZone {
+	int32_t		tz_minuteswest;		/* minutes west of Greenwich */
+	int32_t		tz_dsttime;			/* type of DST correction */
+};
+
+struct modTm {
+	int32_t		tm_sec;
+	int32_t		tm_min;
+	int32_t		tm_hour;
+	int32_t		tm_mday;
+	int32_t		tm_mon;
+	int32_t		tm_year;
+	int32_t		tm_wday;
+	int32_t		tm_yday;
+	int32_t		tm_isdst;
+};
+typedef struct modTm modTm;
+
+void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz);
+struct modTm *modGmTime(const modTime_t *timep);
+struct modTm *modLocalTime(const modTime_t *timep);
+modTime_t modMkTime(struct modTm *tm);
+void modStrfTime(char *s, size_t max, const char *format, const struct modTm *tm);
+
+void modSetTime(uint32_t seconds);					// since 1970 - UNIX epoch
+int32_t	modGetTimeZone(void);						// seconds
+void modSetTimeZone(int32_t timeZoneOffset);		// seconds
+int32_t modGetDaylightSavingsOffset(void);			// seconds
+void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
+	
 /*
     report
 */
@@ -118,13 +138,15 @@ extern void ESP_putc(int c);
 */
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-#if defined(__XS__)
+#ifdef __XS__
 	int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 	int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon);
 	int modMessageService(void);
 
 	void modMachineTaskInit(xsMachine *the);
 	void modMachineTaskUninit(xsMachine *the);
+	void modMachineTaskWait(xsMachine *the);
+	void modMachineTaskWake(xsMachine *the);
 #endif
 
 /*
