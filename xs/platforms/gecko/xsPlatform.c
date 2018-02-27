@@ -36,7 +36,7 @@
  */
 
 #include "xsAll.h"
-#include "stdio.h"
+#include <stdio.h>
 
 #include "xsgecko.h"
 
@@ -121,7 +121,6 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	static const char *xsbugHeaderStart = "\r\n<?xs";
 	static const char *xsbugHeaderEnd = "?>";
 	static const char *gHex = "0123456789ABCDEF";
-	char hex[10];
 	signed char i;
 	const char *cp = xsbugHeaderStart;
 	while (true) {

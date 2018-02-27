@@ -24,6 +24,9 @@
 #include "modTimer.h"
 #if __ets__ || defined(ESP32)
 	#include "xsesp.h"
+#elif gecko
+	#include "xsgecko.h"
+	#include "xsPlatform.h"
 #endif
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
