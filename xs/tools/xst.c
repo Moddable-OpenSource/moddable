@@ -163,6 +163,7 @@ static void* fx_agent_start_aux(void* it);
 static void fx_agent_stop(xsMachine* the);
 extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
+static void fx_createRealmException(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
@@ -197,10 +198,12 @@ int main(int argc, char* argv[])
 			continue;
 		if (!strcmp(argv[argi], "-h"))
 			fxPrintUsage();
-		else if (!strcmp(argv[argi], "-m"))
+		else if (!strcmp(argv[argi], "-e"))
 			option = 1;
-		else if (!strcmp(argv[argi], "-s"))
+		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-s"))
+			option = 3;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
 		else {
@@ -233,6 +236,8 @@ int main(int argc, char* argv[])
 				the->stack++;
 				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 				the->stack++;
+				fxNewHostFunctionGlobal(the, fx_createRealmException, 1, xsID("createRealm"), XS_DONT_ENUM_FLAG);
+				the->stack++;
 				fxNewHostFunctionGlobal(the, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
 				the->stack++;
 				fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
@@ -245,12 +250,18 @@ int main(int argc, char* argv[])
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
-					if (!c_realpath(argv[argi], path))
-						xsURIError("file not found: %s", argv[argi]);
-					if (option == 1) 
-						fxRunModule(the, path);
-					else
-						fxRunProgram(the, path, mxProgramFlag | mxDebugFlag);
+					if (option == 1) {
+						xsResult = xsString(argv[argi]);
+						xsCall1(xsGlobal, xsID("evalScript"), xsResult);
+					}
+					else {	
+						if (!c_realpath(argv[argi], path))
+							xsURIError("file not found: %s", argv[argi]);
+						if (option == 2) 
+							fxRunModule(the, path);
+						else
+							fxRunProgram(the, path, mxProgramFlag | mxDebugFlag);
+					}
 				}
 				fxRunLoop(the);
 			}
@@ -273,6 +284,7 @@ int main262(int argc, char* argv[])
 	char path[C_PATH_MAX];
 	int error = 0;
 	int argi = 1;
+	int argj = 0;
 	
 	c_memset(&context, 0, sizeof(txContext));
 	
@@ -306,6 +318,7 @@ int main262(int argc, char* argv[])
 		if (argv[argi][0] == '-')
 			continue;
 		if (c_realpath(argv[argi], path)) {
+			argj++;
 #if mxWindows
 			DWORD attributes = GetFileAttributes(path);
 			if (attributes != 0xFFFFFFFF) {
@@ -328,7 +341,8 @@ int main262(int argc, char* argv[])
 			error = 1;
 		}
 	}
-	fxPrintResult(&context, context.current, 0);
+	if (argj)
+		fxPrintResult(&context, context.current, 0);
 #ifdef mxInstrument
 	fprintf(stderr, "# parser chunks: %d bytes\n", context.parserTotal);
 	fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
@@ -392,12 +406,13 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-m] [-s] [-v] files...\n");
+	printf("xst [-h] [-e] [-m] [-s] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
-	printf("\t-m: run files as modules\n");
-	printf("\t-s: run files as scripts\n");
+	printf("\t-e: eval strings\n");
+	printf("\t-m: strings are paths to modules\n");
+	printf("\t-s: strings are paths to scripts\n");
 	printf("\t-v: print XS version\n");
-	printf("without -m or -s, files are test262 cases or directories\n");
+	printf("without -e, -m or -s, strings are paths to test262 cases or directories\n");
 }
 
 void fxPushResult(txContext* context, char* path) 
@@ -1019,6 +1034,11 @@ void fx_agent_stop(xsMachine* the)
 void fx_createRealm(xsMachine* the)
 {
 	xsResult = xsThis;
+}
+
+void fx_createRealmException(xsMachine* the)
+{
+	mxUnknownError("one realm only");
 }
 
 void fx_detachArrayBuffer(xsMachine* the)
