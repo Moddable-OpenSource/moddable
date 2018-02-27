@@ -36,6 +36,7 @@ xsMachine *gRadioMachine = NULL;
 
 void xs_Radio(xsMachine *the) {
 	gRadioMachine = the;
+	geckoSetMaxSleep(1);
 }
 
 void xs_Radio_destructor(void *data) {
