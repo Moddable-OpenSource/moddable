@@ -1,0 +1,57 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/base/console/*",
+		],
+		"cli": "$(MODULES)/base/cli/cli",
+		"cli/network": "$(MODULES)/base/cli/commands/network",
+		"cli/xs": "$(MODULES)/base/cli/commands/xs",
+	},
+	"preload": [
+		"console",
+		"cli",
+		"cli/*",
+	],
+	"platforms":{
+		"esp": {
+			"modules": {
+				"cli/digital": "$(MODULES)/base/cli/commands/digital",
+				"cli/esp": "$(MODULES)/base/cli/commands/esp/esp",
+				"cli/archive": "$(MODULES)/base/cli/commands/archive",
+				"cli/files": "$(MODULES)/base/cli/commands/files",
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"pins/digital": "$(MODULES)/pins/digital/digital",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+				"*": [
+					"$(MODULES)/files/file/*",
+					"$(MODULES)/files/flash/*",
+					"$(MODULES)/files/flash/esp/*",
+					"$(MODULES)/pins/digital/esp/*",
+					"$(MODULES)/pins/i2c/esp/*",
+				],
+			},
+			"preload": [
+				"pins/*",
+				"file",
+				"flash",
+			],
+		},
+		"esp32": {
+			"modules": {
+				"cli/archive": "$(MODULES)/base/cli/commands/archive",
+				"*": [
+					"$(MODULES)/files/flash/*",
+					"$(MODULES)/files/flash/esp32/*",
+				],
+			},
+			"preload": [
+				"pins/*",
+				"file",
+				"flash",
+			],
+		},
+	}
+}
