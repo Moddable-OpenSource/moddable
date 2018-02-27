@@ -22,6 +22,7 @@ let graysDirection = -1;
 
 const render = new Poco(new ILI9341({}));
 const blue = render.makeColor(0, 0, 255);
+const green = render.makeColor(0, 255, 0);
 const white = render.makeColor(255, 255, 255);
 const crosshair = parseRLE(new Resource("crosshair-alpha.bm4"));
 const success = parseRLE(new Resource("success-alpha.bm4"));
@@ -108,13 +109,13 @@ Timer.repeat(id => {
 
 	Preference.set("xpt2046", "calibrate", Int16Array.of(x_min, x_max, y_min, y_max).buffer);
 
-	let x = (render.width - success.width) >> 1, y = (render.height - success.height) >> 1;
-	for (let i = 0; i < 256; i += 2) {
-		render.begin(x, y, success.width, success.height);
-			render.fillRectangle(blue, 0, 0, render.width, render.height);
-			render.drawGray(success, render.makeColor(i, i, 255), x, y);
-		render.end();
-	}
+	let x = (render.width - success.width) >> 1;
+	let y = (render.height - success.height) >> 1;
 
-	 Timer.clear(id);
+	render.begin();
+		render.fillRectangle(white, 0, 0, render.width, render.height);
+		render.drawGray(success, green, x, y);
+	render.end();
+
+	Timer.clear(id);
 }, 10);
