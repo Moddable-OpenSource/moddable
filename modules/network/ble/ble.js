@@ -26,9 +26,9 @@ import {Client} from "gatt";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
-		this.onReady = function() {};
-		this.onDiscovered = function() {};
-		this.onConnected = function() {};
+		this.onReady = function() { trace("proto onReady\n"); };
+		this.onDiscovered = function() { trace("proto onDiscovered\n");};
+		this.onConnected = function() {trace("proto onConnected\n");};
 	}
 	
 	initialize(params) @ "xs_ble_initialize"
@@ -80,11 +80,15 @@ class BLE @ "xs_ble_destructor" {
 	_startScanning() @ "xs_ble_start_scanning"
 	_startAdvertising() @ "xs_ble_start_advertising"
 	
+	_purge() @ "xs_ble_purge"
+	
 	callback(event, params) {
+		let purge = false;
 		if ("onDiscovered" == event) {
 			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
 			let scanResponse = Advertisement.fromByteArray(new Uint8Array(params.scanResponse));
 			params = { address, scanResponse };
+			purge = true;
 		}
 		else if ("onConnected" == event) {
 			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
@@ -92,6 +96,8 @@ class BLE @ "xs_ble_destructor" {
 			params = new Connection({ address, client });
 		}
 		this[event](params);
+		if (purge)
+			this._purge();
 	}
 };
 

@@ -30,8 +30,12 @@ export class Client {
 	initialize() @ "xs_gatt_client_initialize"
 	
 	discoverAllPrimaryServices() {
-		this.services = [];
+		this.services.length = 0;;
 		this._discoverAllPrimaryServices(this.connection);
+	}
+	
+	findServiceByUUID(uuid) {
+		return this.services.find(service => uuid == service.uuid);
 	}
 	
 	_discoverAllPrimaryServices() @ "xs_gatt_client_discover_all_primary_services"
@@ -75,10 +79,14 @@ export class Service {
 	}
 	
 	discoverAllCharacteristics() {
-		this.characteristics = [];
+		this.characteristics.length = 0;
 		this._discoverAllCharacteristics(this.connection, this.start, this.end);
 	}
 	
+	findCharacteristicByUUID(uuid) {
+		return this.characteristics.find(characteristic => uuid == characteristic.uuid);
+	}
+
 	_onCharacteristic(params) {
 		if (!params)
 			this.onCharacteristics(this.characteristics);
@@ -119,11 +127,15 @@ export class Characteristic {
 		}
 	}
 	
-	discoverAllCharacteristicDescriptors() {
-		this.descriptors = [];
-		this._discoverAllCharacteristicDescriptors(this.connection, this.start, this.end);
+	discoverAllDescriptors() {
+		this.descriptors.length = 0;
+		this._discoverAllDescriptors(this.connection, this.handle);
 	}
 	
+	findDescriptorByUUID(uuid) {
+		return this.descriptors.find(descriptor => uuid == descriptor.uuid);
+	}
+
 	_onDescriptor(params) {
 		if (!params)
 			this.onDescriptors(this.descriptors);
@@ -134,7 +146,7 @@ export class Characteristic {
 		}
 	}
 	
-	_discoverAllCharacteristicDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
+	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
 
 	callback(event, params) {
 		this[event](params);
@@ -157,7 +169,14 @@ export class Descriptor {
 			}
 		}
 	}
+	
+	writeValue(value) {
+		this._writeValue(this.connection, this.handle, value);
+	}
+	
+	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
+Descriptor.CCCD_UUID = '2902';
 
 export default {
 	Client,
