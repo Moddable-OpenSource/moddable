@@ -18,7 +18,6 @@
  *
  */
 
-
 export class Connection {
 	constructor(dictionary) {
 		this.onDisconnected = function() {};
@@ -40,7 +39,13 @@ export class Connection {
 	disconnect() {
 		this._disconnect(this.client.connection);
 	}
+	
+	readRSSI() {
+		this._readRSSI(this.client.connection);
+	}
+	
 	_disconnect() @ "xs_gap_connection_disconnect"
+	_readRSSI() @ "xs_gap_connection_read_rssi"
 	
 	callback(event, params) {
 		this[event](params);
