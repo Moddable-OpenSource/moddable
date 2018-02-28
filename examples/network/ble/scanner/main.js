@@ -13,16 +13,31 @@
  */
 
 import BLE from "ble";
+import Timer from "timer";
 
 const DEVICE_NAME = "UART";
 
 let ble = new BLE();
 ble.onReady = () => {
-	ble.startScanning();
 	ble.onDiscovered = device => {
-		let scanResponse = device.scanResponse;
-		trace(JSON.stringify(scanResponse) + "\n");
+		if (DEVICE_NAME == device.scanResponse.completeName) {
+			ble.stopScanning();
+			ble.connect(device.address);
+		}
 	}
+	ble.onConnected = connection => {
+		connection.onDisconnected = () => {
+			Timer.clear(ble.timer);
+			ble.startScanning();
+		}
+		connection.onRSSI = rssi => {
+			trace(`RSSI: ${rssi}\n`);
+		}
+		ble.timer = Timer.repeat(() => {
+			connection.readRSSI();
+		}, 500);
+	}
+	ble.startScanning();
 }
 	
 ble.initialize();
