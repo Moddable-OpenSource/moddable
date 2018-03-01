@@ -30,6 +30,9 @@ export class Connection {
 				case "address":
 					this.address = dictionary.address;
 					break;
+				default:
+					throw new Error(`invalid property "${property}`);
+					break;
 			}
 		}
 		this.initialize(this.client);
