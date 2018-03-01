@@ -14,14 +14,23 @@
  /*
  	Adafruit Bluefruit LE Friend UART service
  	https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service
+	https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/terminal-settings
+ 
+ 	To use this application, first set the BLEFriend for UART mode and connect with a serial terminal @ 9600,8,N,1.
+ 	Strings written to the RX characteristic display in the terminal, and strings sent from
+ 	the terminal arrive as TX notifications and are traced to the console.
  */
 
 import BLE from "ble";
-import {Descriptor} from "gatt";
+import {UUID} from "btutils";
+import Timer from "timer";
 
 const DEVICE_NAME = "UART";
 const UART_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
-const UART_CHARACTERISTIC_RX_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+const UART_CHARACTERISTIC_RX_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E';
+const UART_CHARACTERISTIC_TX_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+
+let count = 1;
 
 let ble = new BLE();
 ble.onReady = () => {
@@ -40,15 +49,23 @@ ble.onReady = () => {
 			let service = client.findServiceByUUID(UART_SERVICE_UUID);
 			if (service) {
 				service.onCharacteristics = characteristics => {
-					let characteristic = service.findCharacteristicByUUID(UART_CHARACTERISTIC_RX_UUID);
-					if (characteristic) {
-						characteristic.onDescriptors = descriptors => {
-							let descriptor = characteristic.findDescriptorByUUID(Descriptor.CCCD_UUID);
+					let rx_characteristic = service.findCharacteristicByUUID(UART_CHARACTERISTIC_RX_UUID);
+					let tx_characteristic = service.findCharacteristicByUUID(UART_CHARACTERISTIC_TX_UUID);
+					if (tx_characteristic && rx_characteristic) {
+						tx_characteristic.onNotification = value => {
+							trace(String.fromArrayBuffer(value));
+						}
+						tx_characteristic.onDescriptors = descriptors => {
+							let descriptor = tx_characteristic.findDescriptorByUUID(UUID.CCCD);
 							if (descriptor) {
-								trace("bingo!!\n");
+								descriptor.writeValue(1);	// enable notifications
+								ble.timer = Timer.repeat(id => {
+									rx_characteristic.writeWithoutResponse(`Hello UART ${count}\n`);
+									++count;
+								}, 1000);
 							}
 						}
-						characteristic.discoverAllDescriptors();
+						tx_characteristic.discoverAllDescriptors();
 					}
 				}
 				service.discoverAllCharacteristics();
