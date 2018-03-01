@@ -26,9 +26,9 @@ import {Client} from "gatt";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
-		this.onReady = function() { trace("proto onReady\n"); };
-		this.onDiscovered = function() { trace("proto onDiscovered\n");};
-		this.onConnected = function() {trace("proto onConnected\n");};
+		this.onReady = function() {};
+		this.onDiscovered = function() {};
+		this.onConnected = function() {};
 	}
 	
 	initialize(params) @ "xs_ble_initialize"

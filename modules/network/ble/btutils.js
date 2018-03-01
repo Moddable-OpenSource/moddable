@@ -165,6 +165,7 @@ export class UUID {
 		}
 	}
 }
+UUID.CCCD = '2902';
 
 /**
  * A class represents Bluetooth address
