@@ -107,6 +107,7 @@ export class Service {
 export class Characteristic {
 	constructor(dictionary) {
 		this.onDescriptors = function() {};
+		this.onNotification = function() {};
 		this.descriptors = [];
 		
 		for (let property in dictionary) {
@@ -136,17 +137,27 @@ export class Characteristic {
 		return this.descriptors.find(descriptor => uuid == descriptor.uuid);
 	}
 
+	writeWithoutResponse(value) {
+		this._writeWithoutResponse(this.connection, this.handle, value);
+	}
+	
 	_onDescriptor(params) {
 		if (!params)
 			this.onDescriptors(this.descriptors);
 		else {
 			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
 			params.connection = this.connection;
+			params.characteristic = this;
 			this.descriptors.push(new Descriptor(params));
 		}
 	}
 	
+	_onNotification(params) {
+		this.callback("onNotification", params.value);
+	}
+	
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
+	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
 
 	callback(event, params) {
 		this[event](params);
@@ -166,17 +177,24 @@ export class Descriptor {
 				case "handle":
 					this.handle = dictionary.handle;
 					break;
+				case "characteristic":
+					this.characteristic = dictionary.characteristic;
+					break;
+				default:
+					throw new Error(`invalid property "${property}`);
+					break;
 			}
 		}
 	}
 	
 	writeValue(value) {
-		this._writeValue(this.connection, this.handle, value);
+		let desc_handle = this.handle;
+		let char_handle = ('2902' == this.uuid && 1 == value) ? this.characteristic.handle : 0xFFFF;
+		this._writeValue(this.connection, this.characteristic, desc_handle, char_handle, value);
 	}
 	
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
-Descriptor.CCCD_UUID = '2902';
 
 export default {
 	Client,

@@ -35,23 +35,27 @@
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
-enum {
-	IDLE = 0,
-	ADVERTISING,
-	SCANNING,
-	CONNECTING,
-	CONNECTED,
-	SERVICES
+typedef struct modBLENotificationRecord modBLENotificationRecord;
+typedef modBLENotificationRecord *modBLENotification;
+
+struct modBLENotificationRecord {
+	struct modBLENotificationRecord *next;
+
+	xsMachine	*the;
+	xsSlot		objCharacteristic;
+
+	uint16_t value;
+	uint16_t char_handle;
+	uint16_t desc_handle;
 };
 
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
 typedef modBLEConnectionRecord *modBLEConnection;
 
 struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord  *next;
+	struct modBLEConnectionRecord *next;
 
 	xsMachine	*the;
-	
 	xsSlot		objConnection;
 	xsSlot		objClient;
 
@@ -59,14 +63,15 @@ struct modBLEConnectionRecord {
 	esp_gatt_if_t gattc_if;
 	uint16_t conn_id;
 	uint16_t app_id;
+
+	// client notifications
+	modBLENotification notifications;
 };
 
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
 
-	uint16_t state;
-	
 	// server
 	esp_gatt_if_t gatts_if;
 	uint8_t *advertisingData;
@@ -230,10 +235,8 @@ void xs_ble_connect(xsMachine *the)
 	c_memmove(connection->bda, address, sizeof(esp_bd_addr_t));
 	modBLEConnectionAdd(connection);
 	
-	gBLE->state = CONNECTING;
-
 	// register application client and connect when ESP_GATTC_REG_EVT received
-    ESP_ERROR_CHECK(esp_ble_gattc_app_register(connection->app_id));
+	esp_ble_gattc_app_register(connection->app_id);
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
@@ -307,28 +310,29 @@ void xs_gap_connection_initialize(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_connection);
 	conn_id = xsmcToInteger(xsVar(0));
 	connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection) {
-		connection->the = the;
-		connection->objConnection = xsThis;
-		connection->objClient = xsArg(0);
-	}
+	if (!connection)
+		xsUnknownError("connection not found");
+	connection->the = the;
+	connection->objConnection = xsThis;
+	connection->objClient = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection) {
-		esp_ble_gap_disconnect(connection->bda);
-	}
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gap_disconnect(connection->bda);
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection)
-		esp_ble_gap_read_rssi(connection->bda);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gap_read_rssi(connection->bda);
 }
 
 void xs_gatt_client_initialize(xsMachine *the)
@@ -339,8 +343,9 @@ void xs_gatt_client_discover_all_primary_services(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection)
-		esp_ble_gattc_search_service(connection->gattc_if, conn_id, NULL);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gattc_search_service(connection->gattc_if, conn_id, NULL);
 }
 
 void xs_gatt_service_discover_all_characteristics(xsMachine *the)
@@ -348,70 +353,110 @@ void xs_gatt_service_discover_all_characteristics(xsMachine *the)
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
+	uint16_t count = 0;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection) {
-        uint16_t count  = 0;
-		ESP_ERROR_CHECK(esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count));
-		if (count > 0) {
-			xsmcVars(4);
-            esp_gattc_char_elem_t *char_elem_result = c_malloc(sizeof(esp_gattc_char_elem_t) * count);
-			if (!char_elem_result)
-				xsUnknownError("out of memory");
-			ESP_ERROR_CHECK(esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0));
-			for (int i = 0; i < count; ++i) {
-				uint16_t uuid_length;
-				uint8_t uuid[ESP_UUID_LEN_128];
-				esp_gattc_char_elem_t *char_elem = &char_elem_result[i];
-				uuidToBuffer(&char_elem->uuid, uuid, &uuid_length);
-				xsVar(0) = xsmcNewObject();
-				xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
-				xsmcSetInteger(xsVar(2), char_elem->char_handle);
-				xsmcSetInteger(xsVar(3), char_elem->properties);
-				xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-				xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-				xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-				xsCall2(xsThis, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
-			}
-			c_free(char_elem_result);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count);
+	if (count > 0) {
+		xsmcVars(4);
+		esp_gattc_char_elem_t *char_elem_result = c_malloc(sizeof(esp_gattc_char_elem_t) * count);
+		if (!char_elem_result)
+			xsUnknownError("out of memory");
+		esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0);
+		for (int i = 0; i < count; ++i) {
+			uint16_t uuid_length;
+			uint8_t uuid[ESP_UUID_LEN_128];
+			esp_gattc_char_elem_t *char_elem = &char_elem_result[i];
+			uuidToBuffer(&char_elem->uuid, uuid, &uuid_length);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
+			xsmcSetInteger(xsVar(2), char_elem->char_handle);
+			xsmcSetInteger(xsVar(3), char_elem->properties);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+			xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+			xsCall2(xsThis, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
 		}
-		xsCall1(xsThis, xsID_callback, xsString("_onCharacteristic"));	// procedure complete
+		c_free(char_elem_result);
 	}
+	xsCall1(xsThis, xsID_callback, xsString("_onCharacteristic"));	// procedure complete
 }
 
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
+    uint16_t count  = 0;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (connection) {
-        uint16_t count  = 0;
-		ESP_ERROR_CHECK(esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count));
-		if (count > 0) {
-			xsmcVars(3);
-            esp_gattc_descr_elem_t *descr_elem_result = c_malloc(sizeof(esp_gattc_descr_elem_t) * count);
-			if (!descr_elem_result)
-				xsUnknownError("out of memory");
-			ESP_ERROR_CHECK(esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, descr_elem_result, &count, 0));
-			for (int i = 0; i < count; ++i) {
-				uint16_t uuid_length;
-				uint8_t uuid[ESP_UUID_LEN_128];
-				esp_gattc_descr_elem_t *descr_elem = &descr_elem_result[i];
-				uuidToBuffer(&descr_elem->uuid, uuid, &uuid_length);
-				xsVar(0) = xsmcNewObject();
-				xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
-				xsmcSetInteger(xsVar(2), descr_elem->handle);
-				xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-				xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-				xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
-			}
-			c_free(descr_elem_result);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count);
+	if (count > 0) {
+		xsmcVars(3);
+		esp_gattc_descr_elem_t *descr_elem_result = c_malloc(sizeof(esp_gattc_descr_elem_t) * count);
+		if (!descr_elem_result)
+			xsUnknownError("out of memory");
+		esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, descr_elem_result, &count, 0);
+		for (int i = 0; i < count; ++i) {
+			uint16_t uuid_length;
+			uint8_t uuid[ESP_UUID_LEN_128];
+			esp_gattc_descr_elem_t *descr_elem = &descr_elem_result[i];
+			uuidToBuffer(&descr_elem->uuid, uuid, &uuid_length);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
+			xsmcSetInteger(xsVar(2), descr_elem->handle);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+			xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
 		}
-		xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
+		c_free(descr_elem_result);
 	}
+	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
+}
+
+void xs_gatt_characteristic_write_without_response(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	char *value = xsmcToString(xsArg(2));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, c_strlen(value), (uint8_t*)value, ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
 {
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t desc_handle = xsmcToInteger(xsArg(2));
+	uint16_t char_handle = xsmcToInteger(xsArg(3));
+	uint16_t value = xsmcToInteger(xsArg(4));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (0xFFFF != char_handle) {
+		modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
+		if (!notification)
+			xsUnknownError("out of memory");
+		notification->the = the;
+		notification->value = value;
+		notification->char_handle = char_handle;
+		notification->desc_handle = desc_handle;
+		notification->objCharacteristic = xsArg(1);
+		if (!connection->notifications)
+			connection->notifications = notification;
+		else {
+			modBLENotification walker;
+			for (walker = connection->notifications; walker->next; walker = walker->next)
+				;
+			walker->next = notification;
+		}
+		esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, char_handle);
+	}
+	else {
+		esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, desc_handle, sizeof(value), (uint8_t*)&value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+	}
 }
 
 void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length)
@@ -438,13 +483,13 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 {
 	struct ble_scan_result_evt_param *scan_rst = (struct ble_scan_result_evt_param *)message;
 	xsBeginHost(gBLE->the);
-		xsmcVars(3);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), scan_rst->ble_adv, scan_rst->adv_data_len + scan_rst->scan_rsp_len);
-		xsmcSetArrayBuffer(xsVar(2), scan_rst->bda, 6);
-		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-		xsmcSet(xsVar(0), xsID_address, xsVar(2));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), scan_rst->ble_adv, scan_rst->adv_data_len + scan_rst->scan_rsp_len);
+	xsmcSetArrayBuffer(xsVar(2), scan_rst->bda, 6);
+	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
+	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -452,9 +497,10 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 {
 	struct ble_read_rssi_cmpl_evt_param *read_rssi_cmpl = (struct ble_read_rssi_cmpl_evt_param *)message;
 	xsBeginHost(gBLE->the);
-		modBLEConnection connection = modBLEConnectionFindByAddress(&read_rssi_cmpl->remote_addr);
-		if (connection)
-			xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(read_rssi_cmpl->rssi));
+	modBLEConnection connection = modBLEConnectionFindByAddress(&read_rssi_cmpl->remote_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(read_rssi_cmpl->rssi));
 	xsEndHost(gBLE->the);
 }
 
@@ -502,15 +548,15 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
 	xsBeginHost(gBLE->the);
-		switch(event) {
-			case ESP_GATTS_REG_EVT:
-				gBLE->gatts_if = gatts_if;
-				break;
-			case ESP_GATTS_CONNECT_EVT:
-				break;
-			case ESP_GATTS_DISCONNECT_EVT:
-				break;
-		}
+	switch(event) {
+		case ESP_GATTS_REG_EVT:
+			gBLE->gatts_if = gatts_if;
+			break;
+		case ESP_GATTS_CONNECT_EVT:
+			break;
+		case ESP_GATTS_DISCONNECT_EVT:
+			break;
+	}
 	xsEndHost(gBLE->the);
 }
 
@@ -518,20 +564,17 @@ static void gattcConnectEvent(void *the, void *refcon, uint8_t *message, uint16_
 {
 	struct gattc_connect_evt_param *connect = (struct gattc_connect_evt_param *)message;
 	xsBeginHost(gBLE->the);
-//	if (gBLE->state == CONNECTING) {
-		modBLEConnection connection = modBLEConnectionFindByAddress(&connect->remote_bda);
-		if (connection) {
-			connection->conn_id = connect->conn_id;
-			//gBLE->state = CONNECTED;
-			xsmcVars(3);
-			xsVar(0) = xsmcNewObject();
-			xsmcSetInteger(xsVar(1), connect->conn_id);
-			xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-			xsmcSetArrayBuffer(xsVar(2), connect->remote_bda, 6);
-			xsmcSet(xsVar(0), xsID_address, xsVar(2));
-			xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
-		}
-//	}
+	modBLEConnection connection = modBLEConnectionFindByAddress(&connect->remote_bda);
+	if (!connection)
+		xsUnknownError("connection not found");
+	connection->conn_id = connect->conn_id;
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), connect->conn_id);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(2), connect->remote_bda, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -539,11 +582,11 @@ static void gattcDisconnectEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	struct gattc_disconnect_evt_param *disconnect = (struct gattc_disconnect_evt_param *)message;
 	xsBeginHost(gBLE->the);
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(disconnect->conn_id);
-		if (connection) {
-			xsCall1(connection->objConnection, xsID_callback, xsString("onDisconnected"));
-			modBLEConnectionRemove(connection);
-		}
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(disconnect->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsCall1(connection->objConnection, xsID_callback, xsString("onDisconnected"));
+	modBLEConnectionRemove(connection);
 	xsEndHost(gBLE->the);
 }
 
@@ -551,21 +594,21 @@ static void gattcSearchResultEvent(void *the, void *refcon, uint8_t *message, ui
 {
 	struct gattc_search_res_evt_param *search_res = (struct gattc_search_res_evt_param *)message;
 	xsBeginHost(gBLE->the);
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(search_res->conn_id);
-		if (connection) {
-			uint16_t uuid_length;
-			uint8_t uuid[ESP_UUID_LEN_128];
-			uuidToBuffer(&search_res->srvc_id.uuid, uuid, &uuid_length);
-			xsmcVars(4);
-			xsVar(0) = xsmcNewObject();
-			xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
-			xsmcSetInteger(xsVar(2), search_res->start_handle);
-			xsmcSetInteger(xsVar(3), search_res->end_handle);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-			xsmcSet(xsVar(0), xsID_start, xsVar(2));
-			xsmcSet(xsVar(0), xsID_end, xsVar(3));
-			xsCall2(connection->objClient, xsID_callback, xsString("_onService"), xsVar(0));
-		}
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(search_res->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	uint16_t uuid_length;
+	uint8_t uuid[ESP_UUID_LEN_128];
+	uuidToBuffer(&search_res->srvc_id.uuid, uuid, &uuid_length);
+	xsmcVars(4);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
+	xsmcSetInteger(xsVar(2), search_res->start_handle);
+	xsmcSetInteger(xsVar(3), search_res->end_handle);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	xsmcSet(xsVar(0), xsID_start, xsVar(2));
+	xsmcSet(xsVar(0), xsID_end, xsVar(3));
+	xsCall2(connection->objClient, xsID_callback, xsString("_onService"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -573,9 +616,33 @@ static void gattcSearchCompleteEvent(void *the, void *refcon, uint8_t *message, 
 {
 	struct gattc_search_cmpl_evt_param *search_cmpl = (struct gattc_search_cmpl_evt_param *)message;
 	xsBeginHost(gBLE->the);
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(search_cmpl->conn_id);
-		if (connection)
-			xsCall1(connection->objClient, xsID_callback, xsString("_onService"));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(search_cmpl->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsCall1(connection->objClient, xsID_callback, xsString("_onService"));
+	xsEndHost(gBLE->the);
+}
+
+static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_notify_evt_param *notify = (struct gattc_notify_evt_param *)message;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(notify->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	modBLENotification walker;
+	for (walker = connection->notifications; NULL != walker; walker = walker->next)
+		if (notify->handle == walker->char_handle)
+			break;
+	if (!walker)
+		xsUnknownError("notification not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), notify->value, notify->value_len);
+	xsmcSetInteger(xsVar(2), notify->handle);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsCall2(walker->objCharacteristic, xsID_callback, xsString("_onNotification"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -604,10 +671,26 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 		case ESP_GATTC_SEARCH_RES_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_res, sizeof(struct gattc_search_res_evt_param), gattcSearchResultEvent, gBLE);
 			break;
-		case ESP_GATTC_SEARCH_CMPL_EVT: {
+		case ESP_GATTC_SEARCH_CMPL_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_cmpl, sizeof(struct gattc_search_cmpl_evt_param), gattcSearchCompleteEvent, gBLE);
 			break;
-		}
+		case ESP_GATTC_REG_FOR_NOTIFY_EVT:
+			if (param->reg_for_notify.status == ESP_GATT_OK) {
+				modBLENotification walker;
+				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
+				if (!connection)
+					xsUnknownError("connection not found");
+				for (walker = connection->notifications; NULL != walker; walker = walker->next)
+					if (param->reg_for_notify.handle == walker->char_handle)
+						break;
+				if (!walker)
+					xsUnknownError("notification not found");
+				esp_ble_gattc_write_char_descr(gattc_if, 0, walker->desc_handle, sizeof(walker->value), (uint8_t*)&walker->value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+			}
+			break;
+		case ESP_GATTC_NOTIFY_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, gBLE);
+			break;
 	}
 
 	xsEndHost(gBLE->the);
