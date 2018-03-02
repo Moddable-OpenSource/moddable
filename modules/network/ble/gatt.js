@@ -18,6 +18,7 @@
  *
  */
 import {UUID} from "btutils";
+import BLE from "ble";
 
 export class Client {
 	constructor(connection) {
@@ -52,6 +53,7 @@ export class Client {
 
 	callback(event, params) {
 		this[event](params);
+		BLE._purge();
 	}
 };
 
@@ -188,9 +190,8 @@ export class Descriptor {
 	}
 	
 	writeValue(value) {
-		let desc_handle = this.handle;
-		let char_handle = ('2902' == this.uuid && 1 == value) ? this.characteristic.handle : 0xFFFF;
-		this._writeValue(this.connection, this.characteristic, desc_handle, char_handle, value);
+		let isNotify = ('2902' == this.uuid && 1 == value) ? true : false;
+		this._writeValue(this.connection, this.handle, value, isNotify, this.characteristic);
 	}
 	
 	_writeValue() @ "xs_gatt_descriptor_write_value"
