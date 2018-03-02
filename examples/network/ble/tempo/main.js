@@ -24,17 +24,15 @@ ble.onReady = () => {
 	ble.startScanning();
 	
 	ble.onDiscovered = device => {
-		let scanResponse = device.scanResponse;
-		if ("manufacturerSpecific" in scanResponse) {
-			let manufacturerSpecific = scanResponse.manufacturerSpecific;
+		if ("manufacturerSpecific" in device.scanResponse) {
+			let manufacturerSpecific = device.scanResponse.manufacturerSpecific;
 			
 			// If this is a Tempo device...
 			if (TempoManufacturerID == manufacturerSpecific.identifier) {
 				let data = manufacturerSpecific.data;
 				if (data[0] == 0 || data[0] == 1) {	// ...and product model T30 or THP
 					let temperature, humidity, pressure;
-					temperature = data[3] | (data[4] << 8);
-					temperature /= 10;
+					temperature = (data[3] | (data[4] << 8)) / 10;
 					if (data.length > 7) {
 						humidity = data[7];
 						pressure = data[8] | (data[9] << 8);
