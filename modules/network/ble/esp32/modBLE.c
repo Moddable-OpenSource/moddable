@@ -109,6 +109,7 @@ void xs_ble_initialize(xsMachine *the)
 		xsUnknownError("no memory");
 	gBLE->the = the;
 	gBLE->obj = xsThis;
+	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
@@ -131,11 +132,14 @@ void xs_ble_initialize(xsMachine *the)
 
 void xs_ble_close(xsMachine *the)
 {
+modLog("xs_ble_close!!!");
+	xsForget(gBLE->obj);
 	xs_ble_destructor(gBLE);
 }
 
 void xs_ble_destructor(void *data)
 {
+modLog("xs_ble_destructor!!!");
 	modBLE ble = data;
 	if (ble) {
 		if (gBLE->advertisingData)
@@ -419,23 +423,45 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	char *value = xsmcToString(xsArg(2));
+	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_RSP;
+	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
+	char *str;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, c_strlen(value), (uint8_t*)value, ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
+		
+	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
+			break;
+		case xsReferenceType:
+			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
+				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+			else
+				goto unknown;
+			break;
+		unknown:
+		default:
+			xsUnknownError("unsupported type");
+			break;
+	}
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t desc_handle = xsmcToInteger(xsArg(2));
-	uint16_t char_handle = xsmcToInteger(xsArg(3));
-	uint16_t value = xsmcToInteger(xsArg(4));
+	uint16_t desc_handle = xsmcToInteger(xsArg(1));
+	uint16_t value = xsmcToInteger(xsArg(2));
+	uint8_t isNotify = xsmcToBoolean(xsArg(3));
+	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	if (0xFFFF != char_handle) {
+	if (isNotify) {
+		xsmcVars(1);
+		xsmcGet(xsVar(0), xsArg(4), xsID_handle);	// xsArg(4) is characteristic
+		uint16_t char_handle = xsmcToInteger(xsVar(0));
 		modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
 		if (!notification)
 			xsUnknownError("out of memory");
@@ -443,7 +469,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 		notification->value = value;
 		notification->char_handle = char_handle;
 		notification->desc_handle = desc_handle;
-		notification->objCharacteristic = xsArg(1);
+		notification->objCharacteristic = xsArg(4);
 		if (!connection->notifications)
 			connection->notifications = notification;
 		else {
