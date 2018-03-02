@@ -1,4 +1,4 @@
-# Moddable XS test engine
+# XS Conformance
 
 Copyright 2016-2018 Moddable Tech, Inc.
 
