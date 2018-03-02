@@ -80,7 +80,7 @@ class BLE @ "xs_ble_destructor" {
 	_startScanning() @ "xs_ble_start_scanning"
 	_startAdvertising() @ "xs_ble_start_advertising"
 	
-	_purge() @ "xs_ble_purge"
+	static _purge() @ "xs_ble_purge"
 	
 	callback(event, params) {
 		let purge = false;
@@ -97,7 +97,7 @@ class BLE @ "xs_ble_destructor" {
 		}
 		this[event](params);
 		if (purge)
-			this._purge();
+			BLE._purge();
 	}
 };
 
