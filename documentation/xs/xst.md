@@ -1,4 +1,4 @@
-# xst 8.3.0
+# xst
 
 `xst` is the XS test engine, a JavaScript engine to test XS on Linux, macOS and Windows.
 
@@ -23,12 +23,8 @@
 
 You can use the [jsvu CLI](https://github.com/GoogleChromeLabs/jsvu) to install or update  **xst**.  
 
-You can also download the latest versions of `xst` into a directory that is on your `PATH`.
-
-- [xst-lin32.zip](http://moddable.com/release/binaries/xst-lin32.zip) (471 KB)
-- [xst-lin64.zip](http://moddable.com/release/binaries/xst-lin64.zip) (459 KB)
-- [xst-mac.zip](http://moddable.com/release/binaries/xst-mac.zip) (365 KB)
-- [xst-win.zip](http://moddable.com/release/binaries/xst-win.zip) (365 KB)
+You can also download the latest versions of `xst` 
+from the [moddable-xst](https://github.com/Moddable-OpenSource/moddable-xst/releases) repository into a directory that is on your `PATH`
 
 
 ## Usage
@@ -45,7 +41,7 @@ Without the `-e`, `-m` or `-s` options, `strings` are paths to **test262** cases
 
 ### eshost
 
-To test XS with **eshost**, install the [eshost CLI](https://github.com/bterlson/eshost-cli]). Then add XS to the hosts:
+To test XS with **eshost**, install the [eshost CLI](https://github.com/bterlson/eshost-cli). Then add XS to the hosts:
 
 	eshost --add 'XS' xs ~/.jsvu/xst
 
