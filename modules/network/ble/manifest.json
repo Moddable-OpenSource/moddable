@@ -1,12 +1,15 @@
 {
 	"modules": {
 		"*": [
-			"$(MODULES)/network/ble/*"
+			"$(MODULES)/network/ble/*",
+			"$(MODULES)/data/hex/*"
 		]
 	},
 	"preload": [
 		"ble",
 		"btutils",
+		"btutils2",
+		"btaddress",
 		"buffers",
 		"gatt",
 		"connection",
