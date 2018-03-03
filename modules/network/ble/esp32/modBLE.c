@@ -132,14 +132,12 @@ void xs_ble_initialize(xsMachine *the)
 
 void xs_ble_close(xsMachine *the)
 {
-modLog("xs_ble_close!!!");
 	xsForget(gBLE->obj);
 	xs_ble_destructor(gBLE);
 }
 
 void xs_ble_destructor(void *data)
 {
-modLog("xs_ble_destructor!!!");
 	modBLE ble = data;
 	if (ble) {
 		if (gBLE->advertisingData)
@@ -151,15 +149,9 @@ modLog("xs_ble_destructor!!!");
 	gBLE = NULL;
 }
 
-void xs_ble_purge(xsMachine *the)
-{
-	xsCollectGarbage();
-}
-
 void xs_ble_set_device_name(xsMachine *the)
 {
-	char *deviceName = xsmcToString(xsArg(0));
-	esp_ble_gap_set_device_name(deviceName);
+	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
 }
 
 void xs_ble_start_advertising(xsMachine *the)
@@ -339,10 +331,6 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	esp_ble_gap_read_rssi(connection->bda);
 }
 
-void xs_gatt_client_initialize(xsMachine *the)
-{
-}
-
 void xs_gatt_client_discover_all_primary_services(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
@@ -470,6 +458,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 		notification->char_handle = char_handle;
 		notification->desc_handle = desc_handle;
 		notification->objCharacteristic = xsArg(4);
+		xsRemember(notification->objCharacteristic);	// @@ where to forget?
 		if (!connection->notifications)
 			connection->notifications = notification;
 		else {
@@ -532,8 +521,6 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-	xsBeginHost(gBLE->the);
-
 	switch(event) {
 		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
 			gBLE->adv_config_done &= ~adv_config_flag;
@@ -567,13 +554,10 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 		default:
 			break;
     }
-    
-	xsEndHost(gBLE->the);
 }
 
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-	xsBeginHost(gBLE->the);
 	switch(event) {
 		case ESP_GATTS_REG_EVT:
 			gBLE->gatts_if = gatts_if;
@@ -583,7 +567,6 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 		case ESP_GATTS_DISCONNECT_EVT:
 			break;
 	}
-	xsEndHost(gBLE->the);
 }
 
 static void gattcConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -674,8 +657,6 @@ static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
-	xsBeginHost(gBLE->the);
-	
     esp_ble_gattc_cb_param_t *p_data = (esp_ble_gattc_cb_param_t *)param;
 
     switch (event) {
@@ -702,23 +683,20 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT:
 			if (param->reg_for_notify.status == ESP_GATT_OK) {
-				modBLENotification walker;
 				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
-				if (!connection)
-					xsUnknownError("connection not found");
-				for (walker = connection->notifications; NULL != walker; walker = walker->next)
-					if (param->reg_for_notify.handle == walker->char_handle)
-						break;
-				if (!walker)
-					xsUnknownError("notification not found");
-				esp_ble_gattc_write_char_descr(gattc_if, 0, walker->desc_handle, sizeof(walker->value), (uint8_t*)&walker->value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+				if (connection) {
+					modBLENotification walker;
+					for (walker = connection->notifications; NULL != walker; walker = walker->next)
+						if (param->reg_for_notify.handle == walker->char_handle)
+							break;
+					if (walker)
+						esp_ble_gattc_write_char_descr(gattc_if, 0, walker->desc_handle, sizeof(walker->value), (uint8_t*)&walker->value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+				}
 			}
 			break;
 		case ESP_GATTC_NOTIFY_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, gBLE);
 			break;
 	}
-
-	xsEndHost(gBLE->the);
 }
 

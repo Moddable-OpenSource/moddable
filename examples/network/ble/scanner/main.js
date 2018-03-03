@@ -14,17 +14,17 @@
 
 import BLE from "ble";
 
+const DEVICE_NAME = "UART";
+
 let ble = new BLE();
 ble.onReady = () => {
-	ble.onDiscovered = device => {
-		trace(JSON.stringify(device.scanResponse) + '\n');
-	}
-	ble.onConnected = connection => {
-		connection.onDisconnected = () => {
-			ble.startScanning();
-		}
-	}
 	ble.startScanning();
+	ble.onDiscovered = device => {
+		let scanResponse = device.scanResponse;
+		let completeName = scanResponse.completeName;
+		if (completeName)
+			trace(completeName + "\n");
+	}
 }
 	
 ble.initialize();
