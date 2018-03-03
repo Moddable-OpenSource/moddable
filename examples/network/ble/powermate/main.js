@@ -26,11 +26,9 @@ const CHARACTERISTIC_UUID = '9CF53570-DDD9-47F3-BA63-09ACEFC60415';
 let ble = new BLE();
 ble.onReady = () => {
 	ble.onDiscovered = device => {
-		if ("incompleteUUID128List" in device.scanResponse) {
-			if (device.scanResponse.incompleteUUID128List.find(uuid => SERVICE_UUID == uuid)) {
-				ble.stopScanning();
-				ble.connect(device.address);
-			}
+		if (DEVICE_NAME == device.scanResponse.completeName) {
+			ble.stopScanning();
+			ble.connect(device.address);
 		}
 	}
 	ble.onConnected = connection => {
