@@ -17,7 +17,6 @@
  */
 
 import BLE from "ble";
-import {UUID} from "btutils";
 import Timer from "timer";
 
 const DEVICE_NAME = "RGBLightOne";
