@@ -24,6 +24,8 @@ import Connection from "connection";
 import {BluetoothAddress, UUID} from "btutils";
 import {Client} from "gatt";
 
+import {BluetoothAddress as BTAddress, UUID as BTUUID, Advertisement as BTAdvertisement} from "btutils2";
+
 class BLE @ "xs_ble_destructor" {
 	constructor() {
 		this.onReady = function() {};
@@ -37,8 +39,7 @@ class BLE @ "xs_ble_destructor" {
 	set deviceName() @ "xs_ble_set_device_name"
 	
 	connect(address) {
-		address = BluetoothAddress.getByString(address).getRawArray();
-		this._connect(address.buffer);
+		this._connect(BTAddress.toBuffer(address));
 	}
 	
 	startAdvertising(params) {
@@ -80,15 +81,11 @@ class BLE @ "xs_ble_destructor" {
 	_startScanning() @ "xs_ble_start_scanning"
 	_startAdvertising() @ "xs_ble_start_advertising"
 	
-	static _purge() @ "xs_ble_purge"
-	
 	callback(event, params) {
-		let purge = false;
 		if ("onDiscovered" == event) {
-			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
-			let scanResponse = Advertisement.fromByteArray(new Uint8Array(params.scanResponse));
+			let address = BTAddress.toString(params.address);
+			let scanResponse = new BTAdvertisement(params.scanResponse);
 			params = { address, scanResponse };
-			purge = true;
 		}
 		else if ("onConnected" == event) {
 			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
@@ -96,8 +93,6 @@ class BLE @ "xs_ble_destructor" {
 			params = new Connection({ address, client });
 		}
 		this[event](params);
-		if (purge)
-			BLE._purge();
 	}
 };
 

@@ -18,7 +18,6 @@
  *
  */
 import {UUID} from "btutils";
-import BLE from "ble";
 
 export class Client {
 	constructor(connection) {
@@ -26,9 +25,7 @@ export class Client {
 		this.services = [];
 		
 		this.connection = connection;
-		this.initialize(connection);
 	}
-	initialize() @ "xs_gatt_client_initialize"
 	
 	discoverAllPrimaryServices() {
 		this.services.length = 0;;
@@ -53,7 +50,6 @@ export class Client {
 
 	callback(event, params) {
 		this[event](params);
-		BLE._purge();
 	}
 };
 
