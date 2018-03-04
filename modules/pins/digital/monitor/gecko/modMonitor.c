@@ -26,33 +26,56 @@
 #include "modGPIO.h"
 #include "gpiointerrupt/inc/gpiointerrupt.h"
 
-typedef struct {
+struct modDigitalMonitorRecord {
+	struct modDigitalMonitorRecord *next;
 	xsMachine			*the;
 	xsSlot				obj;
 	modGPIOConfigurationRecord	config;
 	uint8_t				pin;
-	uint8_t				externalInterrupt;
+	uint8_t				edge;
 	uint8_t				triggered;
-	uint32_t			triggerCount;
-} modDigitalMonitorRecord, *modDigitalMonitor;
+	uint8_t				externalInterrupt;
+	uint32_t			rises;
+	uint32_t			falls;
+};
+typedef struct modDigitalMonitorRecord modDigitalMonitorRecord;
+typedef struct modDigitalMonitorRecord *modDigitalMonitor;
 
 static void digitalMonitorISR(uint8_t pin);
 static void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-modDigitalMonitor gMonitors[16] = {NULL};
-
-//static uint8_t gISRCount;
-//static SemaphoreHandle_t gMutex;
+static modDigitalMonitor gMonitors;
+static uint8_t gMonitorCallbackPending;
 
 void xs_digital_monitor_destructor(void *data)
 {
 	modDigitalMonitor monitor = data;
+	uint8_t activeMonitors = 0;
 	if (NULL == monitor)
 		return;
 
-	GPIO_IntDisable(1 << monitor->config.pin);
-	gMonitors[monitor->config.pin] = NULL;
-	GPIOINT_CallbackUnRegister(monitor->config.pin);
+	modCriticalSectionBegin();
+
+	if (gMonitors == monitor)
+		gMonitors = monitor->next;
+	else {
+		modDigitalMonitor walker = gMonitors;
+		while (walker) {
+			if (walker->pin == monitor->pin)
+				activeMonitors++;
+			if (walker->next == monitor)
+				walker->next = monitor->next;
+			walker = walker->next;
+		}
+	}
+
+	if (activeMonitors == 1) {
+		// disable interrupt for this pin
+		GPIO_IntDisable(1 << monitor->config.pin);
+		GPIOINT_CallbackUnRegister(monitor->config.pin);
+	}
+
+	modCriticalSectionEnd();
 
 	c_free(monitor);
 }
@@ -85,14 +108,13 @@ void xs_digital_monitor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_edge);
 	edge = xsmcToInteger(xsVar(0));
+	if ((edge < 1) || (edge > 3))
+		xsUnknownError("invalid edge");
 
 	if (xsmcHas(xsArg(0), xsID_mode)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_mode);
 		mode = xsmcToInteger(xsVar(0));
 	}
-
-	if (gMonitors[pin])
-		xsUnknownError("pin already monitored");
 
 	monitor = c_malloc(sizeof(modDigitalMonitorRecord));
 	if (!monitor)
@@ -100,23 +122,34 @@ void xs_digital_monitor(xsMachine *the)
 
 	monitor->the = the;
 	monitor->obj = xsThis;
+	monitor->pin = pin;
+	monitor->edge = edge;
 	monitor->triggered = false;
-	monitor->triggerCount = 0;
+	monitor->rises = 0;
+	monitor->falls = 0;
 
 	xsRemember(monitor->obj);
 
 	xsmcSetHostData(xsThis, monitor);
 
-	gMonitors[pin] = monitor;
+	modCriticalSectionBegin();
 
 	modGPIOInit(&monitor->config, (char*)port, pin, mode);
 
+	// install ISR
 	GPIOINT_CallbackRegister(pin, digitalMonitorISR);
+
+	monitor->next = gMonitors;
+	gMonitors = monitor;
+
+	// enable interrupt for this pin
 	GPIO_ExtIntConfig(port, pin, pin, // pin >> 2,
 		(edge != 2) ? true : false, 	// rising edge (pos or any)
 		(edge != 1) ? true : false,		// falling edge (neg or any)
 		true);							// enable
 	GPIO_IntEnable(pin);
+
+	modCriticalSectionEnd();
 }
 
 void xs_digital_monitor_close(xsMachine *the)
@@ -134,30 +167,72 @@ void xs_digital_monitor_read(xsMachine *the)
 	xsmcSetInteger(xsResult, modGPIORead(&monitor->config));
 }
 
-void xs_digital_monitor_get_count(xsMachine *the)
+void xs_digital_monitor_get_rises(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
 
-	xsmcSetInteger(xsResult, monitor->triggerCount);
+	if (!(monitor->edge & 1))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->rises);
+}
+
+void xs_digital_monitor_get_falls(xsMachine *the)
+{
+	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+
+	if (!(monitor->edge & 2))
+		xsUnknownError("not configured");
+
+	xsmcSetInteger(xsResult, monitor->falls);
 }
 
 void digitalMonitorISR(uint8_t pin)
 {
-	modDigitalMonitor monitor = gMonitors[pin];
+	uint8_t doUpdate = 0;
+	modDigitalMonitor walker = gMonitors;
 
-	monitor->triggerCount += 1;
-	monitor->triggered = true;
+// disable GPIO Interrupts
+	while (walker) {
+		if (walker->pin == pin) {
+			if (modGPIORead(&walker->config)) {
+				if (1 & walker->edge) {
+					walker->rises += 1;
+					walker->triggered = true;
+					doUpdate = 1;
+				}
+			}
+			else if (2 & walker->edge) {
+				walker->falls += 1;
+				walker->triggered = true;
+				doUpdate = 1;
+			}
+		}
+		walker = walker->next;
+	}
+// enable GPIO Interrupts
 
-	modMessagePostToMachineFromPool(monitor->the, digitalMonitorDeliver, monitor);
+	if (doUpdate && !gMonitorCallbackPending) {
+		gMonitorCallbackPending = true;
+		modMessagePostToMachineFromPool(NULL, digitalMonitorDeliver, NULL);
+	}
 }
 
-void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void digitalMonitorDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	modDigitalMonitor monitor = refcon;
+	modDigitalMonitor walker;
 
-	monitor->triggered = false;
+	gMonitorCallbackPending = false;
 
-	xsBeginHost(the);
-		xsCall0(monitor->obj, xsID_onChanged);
-	xsEndHost(the);
+	for (walker = gMonitors; walker; walker = walker->next) {
+		if (!walker->triggered)
+			continue;
+
+		walker->triggered = false;
+
+		xsBeginHost(walker->the);
+			xsCall0(walker->obj, xsID_onChanged);
+		xsEndHost(walker->the);
+	}
 }
+
