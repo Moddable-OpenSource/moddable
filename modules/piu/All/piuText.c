@@ -864,7 +864,7 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx)
 		height = (height * leading) / 100;
 	}
 	else if (leading > 0) {
-		if (height < leading) {
+		if (0 < height && height < leading) {
 			ascent = (ascent * leading) / height;
 			height = leading;
 		}
