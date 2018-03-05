@@ -46,6 +46,10 @@
 	#endif
 #endif
 
+#ifndef MODDEF_AUDIOOUT_VOLUME_DIVIDER
+	#define MODDEF_AUDIOOUT_VOLUME_DIVIDER (1)
+#endif
+
 #ifndef MODDEF_AUDIOOUT_I2S_PDM
 	#define MODDEF_AUDIOOUT_I2S_PDM (0)
 #elif !defined(__ets__)
@@ -266,7 +270,7 @@ void xs_audioout(xsMachine *the)
 	out->streamCount = streamCount;
 
 	for (i = 0; i < streamCount; i++)
-		out->stream[i].volume = 256;
+		out->stream[i].volume = 256 / MODDEF_AUDIOOUT_VOLUME_DIVIDER;
 
 #if defined(__APPLE__)
 	OSStatus err;
@@ -757,9 +761,17 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 #endif
 
 #if defined(__ets__)
-	#define c_read16s(x) ((int16_t)c_read16(x))
+	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
+		#define readSample(x) ((int16_t)c_read16(x))
+	#else
+		#define readSample(x) ((int8_t)c_read8(x))
+	#endif
 #else
-	#define c_read16s(x) (*(int16_t *)(x))
+	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
+		#define readSample(x) (*(int16_t *)(x))
+	#else
+		#define readSample(x) (*(int8_t *)(x))
+	#endif
 #endif
 
 void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
@@ -791,7 +803,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 					uint16_t v0 = stream->volume;
 					int count = use * out->numChannels;
 					while (count--)
-						*output++ = (c_read16s(s0++) * v0) >> 8;
+						*output++ = (readSample(s0++) * v0) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -819,13 +831,13 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = c_read16s(s0++) + c_read16s(s1++);
+						*output++ = readSample(s0++) + readSample(s1++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					while (count--)
-						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1)) >> 8;
+						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1)) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -862,14 +874,14 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = c_read16s(s0++) + c_read16s(s1++) + c_read16s(s2++);
+						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
 					while (count--)
-						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1) + (c_read16s(s2++) * v2)) >> 8;
+						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2)) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -914,7 +926,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
 					while (count--)
-						*output++ = c_read16s(s0++) + c_read16s(s1++) + c_read16s(s2++) + c_read16s(s3++);
+						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++) + readSample(s3++);
 				}
 				else {
 					uint16_t v0 = stream0->volume;
@@ -922,7 +934,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 					uint16_t v2 = stream2->volume;
 					uint16_t v3 = stream3->volume;
 					while (count--)
-						*output++ = ((c_read16s(s0++) * v0) + (c_read16s(s1++) * v1) + (c_read16s(s2++) * v2) + (c_read16s(s3++) * v3)) >> 8;
+						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2) + (readSample(s3++) * v3)) >> 8;
 				}
 
 				samplesToGenerate -= use;
@@ -984,6 +996,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 
 void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume)
 {
+	stream->volume /= MODDEF_AUDIOOUT_VOLUME_DIVIDER;
 	if (stream->volume == volume)
 		return;
 
