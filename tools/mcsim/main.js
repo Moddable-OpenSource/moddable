@@ -134,8 +134,21 @@ class ApplicationBehavior extends Behavior {
 				if (info.name.endsWith(".js")) {
 					try {
 						let device = require.weak(info.path);
-						if (device)
+						if (device) {
 							devices.push(device);
+							let name = device.applicationName;
+							if (name) {
+								let path = system.applicationPath;
+								let directory = system.getPathDirectory(path);
+								directory = system.buildPath(directory, "mc");
+								directory = system.buildPath(directory, name);
+								if (system.platform == "win")
+									path = system.buildPath(directory, "mc", "dll");
+								else
+									path = system.buildPath(directory, "mc", "so");
+								device.applicationPath = path;
+							}
+						}
 					}
 					catch (e) {
 					}
@@ -163,6 +176,10 @@ class ApplicationBehavior extends Behavior {
 		let controlsColumn = new device.ControlsTemplate(device);
 		let scroller = this.CONTROLS.first;
 		scroller.replace(scroller.first, controlsColumn);
+		
+		let path = device.applicationPath;
+		if (path && system.fileExists(path))
+			this.screenPath = path;
 		
 		application.distribute("onDeviceSelected", device);
 		application.updateMenus();
@@ -251,6 +268,9 @@ class ApplicationBehavior extends Behavior {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
 			this.quitScreen();
+			let index = this.devices.findIndex(device => device.applicationPath == path);
+			if ((index > 0) && (index != this.deviceIndex))
+				this.selectDevice(application, index);
 			this.screenPath = path;
 			this.launchScreen();
 		}
