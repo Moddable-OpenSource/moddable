@@ -478,6 +478,10 @@ class XcodeFile extends PrerequisiteFile {
 			parts.copyFileID = this.id++;
 			parts.fileType = "wrapper.framework";
 		}
+		else if (parts.extension == ".bundle") {
+			parts.copyFileID = this.id++;
+			parts.fileType = "wrapper.plug-in";
+		}
 		else if (parts.extension == ".plist")
 			parts.fileType = "text.plist.xml";
 		else if (parts.extension == ".png")
