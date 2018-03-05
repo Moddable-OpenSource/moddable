@@ -1626,23 +1626,23 @@ enum {
 #define mxIsReference(THE_SLOT) \
 	((THE_SLOT)->kind == XS_REFERENCE_KIND)
 #define mxIsFunction(THE_SLOT) \
-	( (THE_SLOT) &&  ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && (((THE_SLOT)->next->kind == XS_CALLBACK_KIND) || ((THE_SLOT)->next->kind == XS_CALLBACK_X_KIND) || ((THE_SLOT)->next->kind == XS_CODE_KIND) || ((THE_SLOT)->next->kind == XS_CODE_X_KIND)))
+	( (THE_SLOT) &&  ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && (((THE_SLOT)->next->kind == XS_CALLBACK_KIND) || ((THE_SLOT)->next->kind == XS_CALLBACK_X_KIND) || ((THE_SLOT)->next->kind == XS_CODE_KIND) || ((THE_SLOT)->next->kind == XS_CODE_X_KIND)))
 #define mxIsString(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && (((THE_SLOT)->next->kind == XS_STRING_KIND) || ((THE_SLOT)->next->kind == XS_STRING_X_KIND)))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && (((THE_SLOT)->next->kind == XS_STRING_KIND) || ((THE_SLOT)->next->kind == XS_STRING_X_KIND)))
 #define mxIsBoolean(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_BOOLEAN_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_BOOLEAN_KIND))
 #define mxIsNumber(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_NUMBER_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_NUMBER_KIND))
 #define mxIsDate(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_DATE_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_DATE_KIND))
 #define mxIsRegExp(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_REGEXP_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_REGEXP_KIND))
 #define mxIsSymbol(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_SYMBOL_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_SYMBOL_KIND))
 #define mxIsHost(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_HOST_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_HOST_KIND))
 #define mxIsProxy(THE_SLOT) \
-	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag && XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_PROXY_KIND))
+	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_PROXY_KIND))
 #define mxIsCallable(THE_SLOT) \
 	( (THE_SLOT) &&  ((THE_SLOT)->next) && (((THE_SLOT)->next->kind == XS_CALLBACK_KIND) || ((THE_SLOT)->next->kind == XS_CALLBACK_X_KIND) || ((THE_SLOT)->next->kind == XS_CODE_KIND) || ((THE_SLOT)->next->kind == XS_CODE_X_KIND) || ((THE_SLOT)->next->kind == XS_PROXY_KIND)))
 #define mxIsConstructor(THE_SLOT) \
