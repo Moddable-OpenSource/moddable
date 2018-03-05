@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsesp.h"
+#include "mc.xs.h"			// for xsID_ values
 
 #include "user_interface.h"
 #include "spi_flash.h"
@@ -35,6 +36,9 @@ struct modFlashRecord {
 
 typedef struct modFlashRecord modFlashRecord;
 typedef struct modFlashRecord *modFlash;
+
+static void flashFreeBuffer(void *data);
+static void flashCloseBuffer(xsMachine *the);
 
 void xs_flash(xsMachine *the)
 {
@@ -106,8 +110,23 @@ void xs_flash_read(xsMachine *the)
 	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
 		xsUnknownError("invalid length");
 
-	xsResult = xsArrayBuffer(NULL, byteLength);
-	buffer = xsmcToArrayBuffer(xsResult);
+	if ((xsmcArgc > 2) && xsmcToBoolean(xsArg(2))) {
+		xsmcVars(1);
+		xsResult = xsNewHostObject(flashFreeBuffer);
+		buffer = c_malloc(byteLength);
+		if (NULL == buffer)
+			xsUnknownError("no memory");
+		xsmcSetHostData(xsResult, buffer);
+		xsVar(0) = xsNewHostFunction(flashCloseBuffer, 0);
+		xsmcSet(xsResult, xsID_close, xsVar(0));
+		xsmcSetInteger(xsVar(0), byteLength);
+		xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+
+	}
+	else {
+		xsResult = xsArrayBuffer(NULL, byteLength);
+		buffer = xsmcToArrayBuffer(xsResult);
+	}
 
 	if (0 == modSPIRead(offset + flash->partitionStart, byteLength, buffer))
 		xsUnknownError("read fail");
@@ -142,4 +161,20 @@ void xs_flash_byteLength(xsMachine *the)
 void xs_flash_blockSize(xsMachine *the)
 {
 	xsmcSetInteger(xsResult, SPI_FLASH_SEC_SIZE);
+}
+
+void flashFreeBuffer(void *data)
+{
+	if (data)
+		c_free(data);
+}
+
+void flashCloseBuffer(xsMachine *the)
+{
+	void *data = xsmcGetHostData(xsThis);
+	if (!data)
+		return;
+
+	c_free(data);
+	xsmcSetHostData(xsThis, NULL);
 }
