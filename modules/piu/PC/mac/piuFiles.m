@@ -24,6 +24,12 @@
 
 static void PiuFile_getFileInfoAux(xsMachine* the, NSURL* url);
 
+void PiuSystem_get_applicationPath(xsMachine* the)
+{
+	NSString* path = [[NSBundle mainBundle] bundlePath];
+	xsResult = xsString([path UTF8String]);
+}
+
 void PiuSystem_get_localDirectory(xsMachine* the)
 {
 	NSFileManager* manager = [NSFileManager defaultManager];

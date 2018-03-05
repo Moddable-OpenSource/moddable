@@ -22,6 +22,11 @@
 
 static void PiuSystem_getFileInfoAux(xsMachine* the, char *path);
 
+void PiuSystem_get_applicationPath(xsMachine* the)
+{
+	xsResult = xsString(gtkApplicationPath);
+}
+
 void PiuSystem_get_localDirectory(xsMachine* the)
 {
 	char path[PATH_MAX];
