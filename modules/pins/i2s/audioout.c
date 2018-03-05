@@ -152,6 +152,8 @@ typedef struct {
 static void updateActiveStreams(modAudioOut out);
 #if defined(__APPLE__)
 	static void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
+	static void queueCallback(modAudioOut out, xsIntegerValue id);
+	static void invokeCallbacks(CFRunLoopTimerRef timer, void *info);
 #elif ESP32
 	static void audioOutLoop(void *pvParameter);
 #elif defined(__ets__)
@@ -573,7 +575,7 @@ void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRe
 	AudioQueueEnqueueBuffer(out->audioQueue, buffer, 0, NULL);
 }
 
-static void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
+void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 {
 	modAudioOut out = info;
 
@@ -601,7 +603,7 @@ static void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 }
 
 // note: queueCallback relies on caller to lock mutex
-static void queueCallback(modAudioOut out, xsIntegerValue id)
+void queueCallback(modAudioOut out, xsIntegerValue id)
 {
 	if (out->pendingCallbackCount < MODDEF_AUDIOOUT_QUEUELENGTH) {
 		out->pendingCallbacks[out->pendingCallbackCount++] = id;
