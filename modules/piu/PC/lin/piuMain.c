@@ -139,9 +139,11 @@ static GtkPiuApplication* gtk_piu_application_new(void)
 }
 
 GtkApplication *gtkApplication;
+char gtkApplicationPath[PATH_MAX];
 
 int main(int argc, char** argv)
 {
+	realpath(argv[0], gtkApplicationPath);
 	gtkApplication = GTK_APPLICATION(gtk_piu_application_new());
   	return g_application_run(G_APPLICATION(gtkApplication), argc, argv);
 }
