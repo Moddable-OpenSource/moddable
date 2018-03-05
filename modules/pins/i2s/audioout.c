@@ -361,7 +361,8 @@ enum {
 	kKindSamples = 1,
 	kKindFlush = 2,
 	kKindCallback = 3,
-	kKindVolume = 4
+	kKindVolume = 4,
+	kKindRawSamples = 5,
 };
 
 void xs_audioout_enqueue(xsMachine *the)
@@ -390,6 +391,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 	switch (kind) {
 		case kKindSamples:
+		case kKindRawSamples:
 			if (argc > 3) {
 				if ((xsNumberType == xsmcTypeOf(xsArg(3))) && (C_INFINITY == xsmcToNumber(xsArg(3))))
 					repeat = -1;
@@ -403,23 +405,29 @@ void xs_audioout_enqueue(xsMachine *the)
 			}
 
 			buffer = xsmcGetHostData(xsArg(2));
-			if (('m' != c_read8(buffer + 0)) || ('a' != c_read8(buffer + 1)) || (1 != c_read8(buffer + 2)))
-				xsUnknownError("bad header");
+			if (kind == kKindSamples) {
+				if (('m' != c_read8(buffer + 0)) || ('a' != c_read8(buffer + 1)) || (1 != c_read8(buffer + 2)))
+					xsUnknownError("bad header");
 
-			bitsPerSample = c_read8(buffer + 3);
-			sampleRate = c_read16(buffer + 4);
-			numChannels = c_read8(buffer + 6);
-			bufferSamples = c_read32(buffer + 8);
-			if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
-				xsUnknownError("format doesn't match output");
-			
-			buffer += 12;
-			
-			if (sampleOffset >= bufferSamples)
-				xsUnknownError("invalid offset");
-			
-			if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
-				samplesToUse = bufferSamples - sampleOffset;
+				bitsPerSample = c_read8(buffer + 3);
+				sampleRate = c_read16(buffer + 4);
+				numChannels = c_read8(buffer + 6);
+				bufferSamples = c_read32(buffer + 8);
+				if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
+					xsUnknownError("format doesn't match output");
+
+				buffer += 12;
+
+				if (sampleOffset >= bufferSamples)
+					xsUnknownError("invalid offset");
+
+				if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
+					samplesToUse = bufferSamples - sampleOffset;
+			}
+			else {
+				if (samplesToUse <= 0)
+					xsUnknownError("samplesToUse required");
+			}
 			
 #if defined(__APPLE__)
 			pthread_mutex_lock(&out->mutex);
