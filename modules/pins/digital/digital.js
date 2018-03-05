@@ -26,7 +26,6 @@ class Digital @ "xs_digital_destructor" {
 	mode(mode) @ "xs_digital_mode";				// change pin mode
 	read() @ "xs_digital_read";					// read pin
 	write(value) @ "xs_digital_write";			// write pin
-	//@@ notify
 }
 Digital.Input = 0;
 Digital.InputPullUp = 1;
