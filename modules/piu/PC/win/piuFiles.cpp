@@ -22,9 +22,11 @@
 
 static void PiuSystem_getFileInfoAux(xsMachine* the, LPWIN32_FIND_DATAW data);
 
-void PiuSystem_get_platform(xsMachine* the)
+void PiuSystem_get_applicationPath(xsMachine* the)
 {
-	xsResult = xsString("win");
+	wchar_t path[MAX_PATH];
+	GetModuleFileNameW(GetModuleHandleW(NULL), path, MAX_PATH);
+	xsResult = xsStringW(path);
 }
 
 void PiuSystem_get_localDirectory(xsMachine* the)
@@ -35,6 +37,11 @@ void PiuSystem_get_localDirectory(xsMachine* the)
 	strcat(path, PIU_DOT_SIGNATURE);
 	CreateDirectory(path, NULL);
 	xsResult = xsString(path);
+}
+
+void PiuSystem_get_platform(xsMachine* the)
+{
+	xsResult = xsString("win");
 }
 
 void PiuSystem_buildPath(xsMachine* the)
