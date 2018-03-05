@@ -29,6 +29,7 @@ AudioOut.Samples = 1;
 AudioOut.Flush = 2;
 AudioOut.Callback = 3;
 AudioOut.Volume = 4;
+AudioOut.RawSamples = 5;
 Object.freeze(AudioOut.prototype);
 
 export default AudioOut;
