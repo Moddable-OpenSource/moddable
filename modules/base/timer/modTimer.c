@@ -66,7 +66,7 @@ static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 
 		if (0 == modTimerGetSecondInterval(timer)) {
 			xsForget(ts->self);
-			ts->callback = NULL;
+			xsmcSetHostData(ts->self, NULL);
 		}
 
 	xsEndHost(ts->the);
@@ -81,6 +81,8 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 	ts.callback = xsToReference(xsArg(0));
 	ts.self = xsNewHostObject(NULL);
 	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
+	if (!timer)
+		xsUnknownError("add failed");
 	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->self);
 
 	xsmcSetHostData(ts.self, timer);
