@@ -458,7 +458,9 @@ void xs_audioout_enqueue(xsMachine *the)
 #endif
 			break;
 
-		case kKindFlush:
+		case kKindFlush: {
+				int elementCount, i;
+
 #if defined(__APPLE__)
 				pthread_mutex_lock(&out->mutex);
 #elif ESP32
@@ -466,8 +468,22 @@ void xs_audioout_enqueue(xsMachine *the)
 #elif defined(__ets__)
 				modCriticalSectionBegin();
 #endif
+				elementCount = out->stream[stream].elementCount;
 				out->stream[stream].elementCount = 0;		// flush queue
 				updateActiveStreams(out);
+
+				for (i = 0; i < elementCount; i++) {
+					modAudioQueueElement element = &out->stream[stream].element[i];
+					if ((0 == element->repeat) && (element->position < 0) && (0 == element->sampleCount))
+						queueCallback(out, (xsIntegerValue)element->samples);
+				}
+
+#if defined(__APPLE__)
+				invokeCallbacks(NULL, out);
+#elif ESP || defined(__ets__)
+				deliverCallbacks(the, out, NULL, 0);
+#endif
+
 #if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
 #elif ESP32
@@ -475,7 +491,7 @@ void xs_audioout_enqueue(xsMachine *the)
 #elif defined(__ets__)
 				modCriticalSectionEnd();
 #endif
-			break;
+		} break;
 
 		case kKindCallback:
 #if defined(__APPLE__)
