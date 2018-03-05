@@ -237,7 +237,7 @@ void xs_PNG_constructor(xsMachine *the)
 
 				// check for undefined values
 				if ((compressionMethod != 0) || (filterMethod != 0) || (interlaceMethod != 0))
-					xsErrorPrintf("invalid compresson, filter, or interlace method");
+					xsErrorPrintf("invalid compression, filter, or interlace method");
 
 				// sort ouf the bitmap format
 				if (6 == colorType)
