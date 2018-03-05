@@ -121,8 +121,10 @@ MODULES = \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
+	$(MOD_DIR)/resampler.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
+	$(MOD_DIR)/wav2maud.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -148,6 +150,7 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p resampler.xsb\
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,main
 
@@ -180,8 +183,9 @@ COMMANDS = \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mcrez \
 	$(BIN_DIR)/png2bmp \
-	$(BIN_DIR)/rle4encode
-	
+	$(BIN_DIR)/rle4encode \
+	$(BIN_DIR)/wav2maud
+
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
   MODULES += $(MOD_DIR)/mcrun.xsb
@@ -319,6 +323,11 @@ $(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
 	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
+
+$(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": wav2maud"
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
+	chmod +x $(BIN_DIR)/wav2maud
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME).*
