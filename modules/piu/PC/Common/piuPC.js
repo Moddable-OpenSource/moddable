@@ -175,6 +175,7 @@ global.cursors = {
 };
 
 global.system = {
+	get applicationPath() @ "PiuSystem_get_applicationPath",
 	get localDirectory() @ "PiuSystem_get_localDirectory",
 	get platform() @ "PiuSystem_get_platform",
 
