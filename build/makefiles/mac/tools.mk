@@ -318,15 +318,15 @@ $(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
 
-$(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": wav2maud"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
-	chmod +x $(BIN_DIR)/wav2maud
-
 $(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
+
+$(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": wav2maud"
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
+	chmod +x $(BIN_DIR)/wav2maud
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/mac/debug/$(NAME).*

@@ -117,8 +117,10 @@ MODULES = \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
+	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
+	$(MOD_DIR)\wav2maud.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -144,6 +146,7 @@ PRELOADS =\
 	-p commodetto\Poco.xsb\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
+	-p resampler.xsb\
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,main
 
@@ -176,7 +179,8 @@ COMMANDS = \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
 	$(BIN_DIR)\png2bmp.bat \
-	$(BIN_DIR)\rle4encode.bat
+	$(BIN_DIR)\rle4encode.bat \
+	$(BIN_DIR)\wav2maud.bat
 	
 !IF EXISTS($(TOOLS)\mcrun.js)
 COMMANDS = $(COMMANDS) $(BIN_DIR)\mcrun.bat
@@ -360,6 +364,9 @@ $(BIN_DIR)\png2bmp.bat :
 $(BIN_DIR)\rle4encode.bat :
 	@echo # rle4encode.bat
 	echo @$(BIN_DIR)\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
+$(BIN_DIR)\wav2maud.bat :
+	@echo # wav2maud.bat
+	echo @$(BIN_DIR)\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).*
