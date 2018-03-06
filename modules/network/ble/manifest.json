@@ -23,11 +23,6 @@
 				"*": "$(MODULES)/network/ble/esp32/*",
 			},
 		},
-		"mac": {
-			"modules": {
-				"*": "$(MODULES)/network/ble/sim/*",
-			},
-		},
 		"...": {
 			"error": "ble unsupported"
 		}
