@@ -27,6 +27,9 @@
 			"modules": {
 				"*": "$(MODULES)/network/ble/sim/*",
 			},
+		},
+		"...": {
+			"error": "ble unsupported"
 		}
 	}
 }
