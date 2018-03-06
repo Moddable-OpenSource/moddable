@@ -47,6 +47,9 @@ export class Client {
 			this.services.push(new Service(params));
 		}
 	}
+	
+	_onCharacteristicValue(params) {
+	}
 
 	callback(event, params) {
 		this[event](params);
@@ -135,6 +138,10 @@ export class Characteristic {
 		return this.descriptors.find(descriptor => uuid == descriptor.uuid);
 	}
 
+	readValue() {
+		this._readValue(this.connection, this.handle);
+	}
+
 	writeWithoutResponse(value) {
 		this._writeWithoutResponse(this.connection, this.handle, value);
 	}
@@ -153,8 +160,12 @@ export class Characteristic {
 	_onNotification(params) {
 		this.callback("onNotification", params.value);
 	}
+	_onValue(params) {
+		this.callback("onValue", params.value);
+	}
 	
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
+	_readValue() @ "xs_gatt_characteristic_read_value"
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
 
 	callback(event, params) {
