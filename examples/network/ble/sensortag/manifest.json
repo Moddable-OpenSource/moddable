@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/ble/manifest.json",
+	],
+	"creation": {
+		"static": 65535,
+		"stack": 356
+	},
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+}

@@ -90,9 +90,19 @@ export class Advertisement {
 	get manufacturerSpecific() {
 		let index = this.find(ADType.manufacturerSpecific);
 		if (-1 != index) {
-			let start = index + 2, end = start + adLength - 1;
-			return new Uint8Array(this._buffer.slice(start, end));
+			let data = this._data;
+			let adLength = data[index];
+			let start = index + 2;
+			let identifier = data[start] | (data[start+1] << 8);
+			start += 2;
+			let end = start + adLength - 1
+			return { identifier, data: new Uint8Array(this._buffer.slice(start, end)) };
 		}
+	}
+	get flags() {
+		let index = this.find(ADType.flags);
+		if (-1 != index)
+			return this._data[index+2];
 	}
 	find(type) {
 		let data = this._data;
