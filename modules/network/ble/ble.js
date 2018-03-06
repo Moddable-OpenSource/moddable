@@ -88,7 +88,7 @@ class BLE @ "xs_ble_destructor" {
 			params = { address, scanResponse };
 		}
 		else if ("onConnected" == event) {
-			let address = BluetoothAddress.getByAddress(new Uint8Array(params.address)).toString();
+			let address = BTAddress.toString(params.address);
 			let client = new Client(params.connection);
 			params = new Connection({ address, client });
 		}
