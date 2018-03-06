@@ -311,6 +311,8 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	connection->objClient = xsArg(0);
+	xsRemember(connection->objConnection);
+	xsRemember(connection->objClient);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -434,6 +436,17 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			xsUnknownError("unsupported type");
 			break;
 	}
+}
+
+void xs_gatt_characteristic_read_value(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	esp_ble_gattc_read_char(connection->gattc_if, conn_id, handle, auth_req);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
@@ -655,6 +668,23 @@ static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	xsEndHost(gBLE->the);
 }
 
+static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_read_char_evt_param *read = (struct gattc_read_char_evt_param *)message;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(read->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), read->value, read->value_len);
+	xsmcSetInteger(xsVar(2), read->handle);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsCall2(connection->objClient, xsID_callback, xsString("_onCharacteristicValue"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_ble_gattc_cb_param_t *p_data = (esp_ble_gattc_cb_param_t *)param;
@@ -696,6 +726,9 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_NOTIFY_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, gBLE);
+			break;
+		case ESP_GATTC_READ_CHAR_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, gBLE);
 			break;
 	}
 }
