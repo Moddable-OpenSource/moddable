@@ -14,8 +14,6 @@
 
 import BLE from "ble";
 
-const DEVICE_NAME = "UART";
-
 let ble = new BLE();
 ble.onReady = () => {
 	ble.startScanning();

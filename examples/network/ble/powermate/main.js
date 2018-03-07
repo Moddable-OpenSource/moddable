@@ -61,13 +61,13 @@ ble.onReady = () => {
 							if (descriptor)
 								descriptor.writeValue(1);	// enable notifications
 						}
-						characteristic.discoverAllDescriptors();
+						characteristic.discoverDescriptor(UUID.CCCD);
 					}
 				}
-				service.discoverAllCharacteristics();
+				service.discoverCharacteristic(CHARACTERISTIC_UUID);
 			}
 		}
-		client.discoverAllPrimaryServices();
+		client.discoverPrimaryService(SERVICE_UUID);
 	}
 	ble.startScanning();
 }
