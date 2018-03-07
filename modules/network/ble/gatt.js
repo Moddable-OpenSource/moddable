@@ -43,6 +43,14 @@ export class Client {
 	
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
+	_findCharacteristicByHandle(handle) {
+		let service = this.services.find(service => (handle >= service.start && handle <= service.end));
+		if (service) {
+			let characteristic = service.characteristics.find(characteristic => handle == characteristic.handle);
+			return characteristic;
+		}
+	}
+	
 	_onService(params) {
 		if (!params)
 			this.onServices(this.services);
@@ -53,15 +61,16 @@ export class Client {
 		}
 	}
 	
+	_onCharacteristicNotification(params) {
+		let characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			characteristic._onNotification.call(characteristic, params);
+	}
+
 	_onCharacteristicValue(params) {
-		let handle = params.handle;
-		let service = this.services.find(service => (handle >= service.start && handle <= service.end));
-		if (service) {
-			let characteristic = service.characteristics.find(characteristic => handle == characteristic.handle);
-			if (characteristic) {
-				characteristic._onValue.call(characteristic, params);
-			}
-		}
+		let characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			characteristic._onValue.call(characteristic, params);
 	}
 
 	callback(event, params) {
@@ -225,7 +234,7 @@ export class Descriptor {
 	}
 	
 	writeValue(value) {
-		let isNotify = ('2902' == this.uuid && 1 == value) ? true : false;
+		let isNotify = ('2902' == this.uuid && (1 == value || 0 == value)) ? true : false;
 		this._writeValue(this.connection, this.handle, value, isNotify, this.characteristic);
 	}
 	
