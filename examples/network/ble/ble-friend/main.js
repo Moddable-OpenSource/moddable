@@ -65,13 +65,13 @@ ble.onReady = () => {
 								}, 1000);
 							}
 						}
-						tx_characteristic.discoverAllDescriptors();
+						tx_characteristic.discoverDescriptor(UUID.CCCD);
 					}
 				}
 				service.discoverAllCharacteristics();
 			}
 		}
-		client.discoverAllPrimaryServices();
+		client.discoverPrimaryService(SERVICE_UUID);
 	}
 	ble.startScanning();
 }
