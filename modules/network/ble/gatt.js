@@ -17,7 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import {UUID} from "btutils";
+import {UUID} from "btutils2";
 
 export class Client {
 	constructor(connection) {
@@ -27,28 +27,41 @@ export class Client {
 		this.connection = connection;
 	}
 	
+	discoverPrimaryService(uuid) {
+		this.services.length = 0;
+		this._discoverPrimaryServices(this.connection, UUID.toBuffer(uuid));
+	}
+
 	discoverAllPrimaryServices() {
-		this.services.length = 0;;
-		this._discoverAllPrimaryServices(this.connection);
+		this.services.length = 0;
+		this._discoverPrimaryServices(this.connection);
 	}
 	
 	findServiceByUUID(uuid) {
 		return this.services.find(service => uuid == service.uuid);
 	}
 	
-	_discoverAllPrimaryServices() @ "xs_gatt_client_discover_all_primary_services"
+	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
 	_onService(params) {
 		if (!params)
 			this.onServices(this.services);
 		else {
-			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;
 			this.services.push(new Service(params));
 		}
 	}
 	
 	_onCharacteristicValue(params) {
+		let handle = params.handle;
+		let service = this.services.find(service => (handle >= service.start && handle <= service.end));
+		if (service) {
+			let characteristic = service.characteristics.find(characteristic => handle == characteristic.handle);
+			if (characteristic) {
+				characteristic._onValue.call(characteristic, params);
+			}
+		}
 	}
 
 	callback(event, params) {
@@ -79,9 +92,14 @@ export class Service {
 		}
 	}
 	
+	discoverCharacteristic(uuid) {
+		this.characteristics.length = 0;
+		this._discoverCharacteristics(this.connection, this.start, this.end, UUID.toBuffer(uuid));
+	}
+
 	discoverAllCharacteristics() {
 		this.characteristics.length = 0;
-		this._discoverAllCharacteristics(this.connection, this.start, this.end);
+		this._discoverCharacteristics(this.connection, this.start, this.end);
 	}
 	
 	findCharacteristicByUUID(uuid) {
@@ -92,13 +110,14 @@ export class Service {
 		if (!params)
 			this.onCharacteristics(this.characteristics);
 		else {
-			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;
+			params.service = this;
 			this.characteristics.push(new Characteristic(params));
 		}
 	}
 	
-	_discoverAllCharacteristics() @ "xs_gatt_service_discover_all_characteristics"
+	_discoverCharacteristics() @ "xs_gatt_service_discover_characteristics"
 
 	callback(event, params) {
 		this[event](params);
@@ -113,6 +132,9 @@ export class Characteristic {
 		
 		for (let property in dictionary) {
 			switch (property) {
+				case "service":
+					this.service = dictionary.service;
+					break;
 				case "connection":
 					this.connection = dictionary.connection;
 					break;
@@ -129,6 +151,11 @@ export class Characteristic {
 		}
 	}
 	
+	discoverDescriptor(uuid) {
+		this.descriptors.length = 0;
+		this._discoverDescriptor(this.connection, this.service.start, this.service.end, UUID.toBuffer(this.uuid), UUID.toBuffer(uuid));
+	}
+
 	discoverAllDescriptors() {
 		this.descriptors.length = 0;
 		this._discoverAllDescriptors(this.connection, this.handle);
@@ -150,7 +177,7 @@ export class Characteristic {
 		if (!params)
 			this.onDescriptors(this.descriptors);
 		else {
-			params.uuid = UUID.getByUUID(new Uint8Array(params.uuid)).toString();
+			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;
 			params.characteristic = this;
 			this.descriptors.push(new Descriptor(params));
@@ -164,6 +191,7 @@ export class Characteristic {
 		this.callback("onValue", params.value);
 	}
 	
+	_discoverDescriptor() @ "xs_gatt_characteristic_discover_characteristic_descriptor"
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
 	_readValue() @ "xs_gatt_characteristic_read_value"
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
