@@ -95,6 +95,7 @@ static modBLEConnection modBLEConnectionFindByAppID(uint16_t app_id);
 static modBLEConnection modBLEConnectionFindByAddress(esp_bd_addr_t *bda);
 
 static void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length);
+static void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length);
 
 // @@ The ESP32 BT APIs don't support a refcon to tuck away this kind of stuff for use in callbacks...
 static modBLE gBLE = NULL;
@@ -333,17 +334,22 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	esp_ble_gap_read_rssi(connection->bda);
 }
 
-void xs_gatt_client_discover_all_primary_services(xsMachine *the)
+void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
+	esp_bt_uuid_t uuid;
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t argc = xsmcArgc;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gattc_search_service(connection->gattc_if, conn_id, NULL);
+	if (argc > 1)
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsGetArrayBufferLength(xsArg(1)));
+	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
-void xs_gatt_service_discover_all_characteristics(xsMachine *the)
+void xs_gatt_service_discover_characteristics(xsMachine *the)
 {
+	uint16_t argc = xsmcArgc;
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
@@ -357,7 +363,13 @@ void xs_gatt_service_discover_all_characteristics(xsMachine *the)
 		esp_gattc_char_elem_t *char_elem_result = c_malloc(sizeof(esp_gattc_char_elem_t) * count);
 		if (!char_elem_result)
 			xsUnknownError("out of memory");
-		esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0);
+		if (argc > 3) {
+			esp_bt_uuid_t uuid;
+			bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsGetArrayBufferLength(xsArg(3)));
+			esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, char_elem_result, &count);
+		}
+		else
+			esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0);
 		for (int i = 0; i < count; ++i) {
 			uint16_t uuid_length;
 			uint8_t uuid[ESP_UUID_LEN_128];
@@ -405,6 +417,35 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 			xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
 		}
 		c_free(descr_elem_result);
+	}
+	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
+}
+
+void xs_gatt_characteristic_discover_characteristic_descriptor(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t start = xsmcToInteger(xsArg(1));
+	uint16_t end = xsmcToInteger(xsArg(2));
+	uint16_t count = 1;
+	esp_bt_uuid_t char_uuid, desc_uuid;
+	esp_gattc_descr_elem_t descr_elem;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &char_uuid, xsGetArrayBufferLength(xsArg(3)));
+	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(4)), &desc_uuid, xsGetArrayBufferLength(xsArg(4)));
+	esp_ble_gattc_get_descr_by_uuid(connection->gattc_if, conn_id, start, end, char_uuid, desc_uuid, &descr_elem, &count);
+	if (1 == count) {
+		xsmcVars(3);
+		uint16_t uuid_length;
+		uint8_t uuid[ESP_UUID_LEN_128];
+		uuidToBuffer(&descr_elem.uuid, uuid, &uuid_length);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
+		xsmcSetInteger(xsVar(2), descr_elem.handle);
+		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
 	}
 	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
 }
@@ -491,8 +532,8 @@ void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
 		*length = ESP_UUID_LEN_16;
-		buffer[0] = uuid->uuid.uuid16 & 0xFF;
-		buffer[1] = (uuid->uuid.uuid16 >> 8) & 0xFF;
+		buffer[1] = uuid->uuid.uuid16 & 0xFF;
+		buffer[0] = (uuid->uuid.uuid16 >> 8) & 0xFF;
 	}
 	else if (uuid->len == ESP_UUID_LEN_32) {
 		*length = ESP_UUID_LEN_32;
@@ -503,8 +544,24 @@ void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length)
 	}
 	else {
 		*length = ESP_UUID_LEN_128;
-		c_memmove(buffer, uuid->uuid.uuid128, ESP_UUID_LEN_128);
+		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
+			buffer[i] = uuid->uuid.uuid128[ESP_UUID_LEN_128 - 1 - i];
 	}
+}
+
+void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length)
+{
+	if (length == ESP_UUID_LEN_16) {
+		uuid->uuid.uuid16 = buffer[1] | (buffer[0] << 8);
+	}
+	else if (length == ESP_UUID_LEN_32) {
+		uuid->uuid.uuid32 = buffer[3] | (buffer[2] << 8) | (buffer[1] << 16) | (buffer[0] << 24);
+	}
+	else {
+		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
+			uuid->uuid.uuid128[i] = buffer[ESP_UUID_LEN_128 - 1 - i];
+	}
+	uuid->len = length;
 }
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
