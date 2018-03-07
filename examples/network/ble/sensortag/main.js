@@ -49,6 +49,9 @@ class SensorTagSensor {
 					break;
 			}
 		}
+		this.initialize();
+	}
+	initialize() {
 		if (this.configuration) {
 			if (!this.configuration_data)
 				this.configuration_data = [1];	// start measurements
@@ -127,9 +130,49 @@ class MagnetometerSensor extends SensorTagSensor {
 
 class BarometerSensor extends SensorTagSensor {
 	configure(dictionary) {
-		// @@ TBD
-		//let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-		//characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
+		super.configure(dictionary);
+		let characteristic;
+		characteristic = this.service.findCharacteristicByUUID(this.configuration);
+		characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
+		characteristic = this.service.findCharacteristicByUUID(dictionary.calibration);
+		characteristic.onValue = buffer => {
+			let view = new DataView(buffer);
+			let calibration_data = this.calibration_data = new Array(8);
+			for (let i = 0; i < 4; ++i)
+				calibration_data[i] = view.getUint16(i * 2, true);
+			for (let i = 4; i < 8; ++i)
+				calibration_data[i] = view.getUint16(i * 2, true);
+				
+			// enable measurements
+			let ch = this.service.findCharacteristicByUUID(this.configuration);
+			let config = new Uint8Array(1);
+			config[0] = 0x01;
+			ch.writeWithoutResponse(config.buffer);
+			
+			// enable notifications
+			ch = this.service.findCharacteristicByUUID(this.data);
+			ch.onNotification = this.onNotification.bind(this);
+			let descriptor = ch.findDescriptorByUUID(UUID.CCCD);
+			descriptor.writeValue(1);
+		}
+		characteristic.readValue();
+	}
+	initialize() {
+	}
+	start() {
+	}
+	onNotification(buffer) {
+		let view = new DataView(buffer);
+		let t_r = view.getInt16(0, true);
+		let p_r = view.getUint16(2, true);
+		let c = this.calibration_data;
+	
+		let t_a = (100 * (c[0] * t_r / Math.pow(2,8) + c[1] * Math.pow(2,6))) / Math.pow(2,16);
+		let S = c[2] + c[3] * t_r / Math.pow(2,17) + ((c[4] * t_r / Math.pow(2,15)) * t_r) / Math.pow(2,19);
+		let O = c[5] * Math.pow(2,14) + c[6] * t_r / Math.pow(2,3) + ((c[7] * t_r / Math.pow(2,15)) * t_r) / Math.pow(2,4);
+		let p_a = (S * p_r + O) / Math.pow(2,14);
+		let pressure = (p_a / 100).toFixed(1) + ' hPa';
+		trace(`[${this.name}] pressure: ${pressure}\n`);
 	}
 }
 

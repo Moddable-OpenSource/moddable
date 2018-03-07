@@ -56,13 +56,13 @@ ble.onReady = () => {
 							payload[7] = Math.floor(Math.random() * 256);
 							payload[8] = Math.floor(Math.random() * 256);
 							characteristic.writeWithoutResponse(buffer);
-						}, 200);
+						}, 100);
 					}
 				}
-				service.discoverAllCharacteristics();
+				service.discoverCharacteristic(CHARACTERISTIC_UUID);
 			}
 		}
-		client.discoverAllPrimaryServices();
+		client.discoverPrimaryService(SERVICE_UUID);
 	}
 	ble.startScanning();
 }
