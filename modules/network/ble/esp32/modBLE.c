@@ -492,36 +492,55 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
 {
+	xsmcVars(1);
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t desc_handle = xsmcToInteger(xsArg(1));
 	uint16_t value = xsmcToInteger(xsArg(2));
 	uint8_t isNotify = xsmcToBoolean(xsArg(3));
+	xsmcGet(xsVar(0), xsArg(4), xsID_handle);	// xsArg(4) is characteristic
+	uint16_t char_handle = xsmcToInteger(xsVar(0));
 	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	if (isNotify) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(4), xsID_handle);	// xsArg(4) is characteristic
-		uint16_t char_handle = xsmcToInteger(xsVar(0));
-		modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
-		if (!notification)
-			xsUnknownError("out of memory");
-		notification->the = the;
-		notification->value = value;
-		notification->char_handle = char_handle;
-		notification->desc_handle = desc_handle;
-		notification->objCharacteristic = xsArg(4);
-		xsRemember(notification->objCharacteristic);	// @@ where to forget?
-		if (!connection->notifications)
-			connection->notifications = notification;
-		else {
-			modBLENotification walker;
-			for (walker = connection->notifications; walker->next; walker = walker->next)
-				;
-			walker->next = notification;
+		if (0 == value) {	// disable notifications
+			modBLENotification walker, previous = NULL;
+			if (connection->notifications) {
+				for (walker = connection->notifications; walker->next; walker = walker->next) {
+					if (walker->char_handle == char_handle) {
+						if (previous)
+							previous->next = walker->next;
+						else
+							connection->notifications = walker->next;
+						break;
+					}
+					previous = walker;
+				}
+			}
+			esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, char_handle);
 		}
-		esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, char_handle);
+		else if (1 == value) {	// enable notifications
+			modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
+			if (!notification)
+				xsUnknownError("out of memory");
+			notification->the = the;
+			notification->value = value;
+			notification->char_handle = char_handle;
+			notification->desc_handle = desc_handle;
+			notification->objCharacteristic = xsArg(4);
+			xsRemember(notification->objCharacteristic);	// @@ where to forget?
+			if (!connection->notifications)
+				connection->notifications = notification;
+			else {
+				for (walker = connection->notifications; walker->next; walker = walker->next)
+					;
+				walker->next = notification;
+			}
+			esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, char_handle);
+		}
+		else
+			xsUnknownError("unsupported descriptor write");
 	}
 	else {
 		esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, desc_handle, sizeof(value), (uint8_t*)&value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
@@ -702,44 +721,32 @@ static void gattcSearchCompleteEvent(void *the, void *refcon, uint8_t *message, 
 	xsEndHost(gBLE->the);
 }
 
+static void doCharEvent(void *the, const char *callback, uint16_t conn_id, uint16_t handle, uint8_t *value, uint16_t value_len)
+{
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), value, value_len);
+	xsmcSetInteger(xsVar(2), handle);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsCall2(connection->objClient, xsID_callback, xsString(callback), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_notify_evt_param *notify = (struct gattc_notify_evt_param *)message;
-	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(notify->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-	modBLENotification walker;
-	for (walker = connection->notifications; NULL != walker; walker = walker->next)
-		if (notify->handle == walker->char_handle)
-			break;
-	if (!walker)
-		xsUnknownError("notification not found");
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), notify->value, notify->value_len);
-	xsmcSetInteger(xsVar(2), notify->handle);
-	xsmcSet(xsVar(0), xsID_value, xsVar(1));
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(walker->objCharacteristic, xsID_callback, xsString("_onNotification"), xsVar(0));
-	xsEndHost(gBLE->the);
+	doCharEvent(the, "_onCharacteristicNotification", notify->conn_id, notify->handle, notify->value, notify->value_len);
 }
 
 static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_read_char_evt_param *read = (struct gattc_read_char_evt_param *)message;
-	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(read->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), read->value, read->value_len);
-	xsmcSetInteger(xsVar(2), read->handle);
-	xsmcSet(xsVar(0), xsID_value, xsVar(1));
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, xsString("_onCharacteristicValue"), xsVar(0));
-	xsEndHost(gBLE->the);
+	doCharEvent(the, "_onCharacteristicValue", read->conn_id, read->handle, read->value, read->value_len);
 }
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
