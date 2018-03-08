@@ -74,6 +74,7 @@ export class Client {
 	}
 
 	callback(event, params) {
+		//trace(`Client callback ${event}\n`);
 		this[event](params);
 	}
 };
@@ -129,6 +130,7 @@ export class Service {
 	_discoverCharacteristics() @ "xs_gatt_service_discover_characteristics"
 
 	callback(event, params) {
+		//trace(`Service callback ${event}\n`);
 		this[event](params);
 	}
 };
@@ -137,6 +139,7 @@ export class Characteristic {
 	constructor(dictionary) {
 		this.onDescriptors = function() {};
 		this.onNotification = function() {};
+		this.onValue = function() {};
 		this.descriptors = [];
 		
 		for (let property in dictionary) {
@@ -192,12 +195,11 @@ export class Characteristic {
 			this.descriptors.push(new Descriptor(params));
 		}
 	}
-	
 	_onNotification(params) {
-		this.callback("onNotification", params.value);
+		this.onNotification(params.value);
 	}
 	_onValue(params) {
-		this.callback("onValue", params.value);
+		this.onValue(params.value);
 	}
 	
 	_discoverDescriptor() @ "xs_gatt_characteristic_discover_characteristic_descriptor"
@@ -206,6 +208,7 @@ export class Characteristic {
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
 
 	callback(event, params) {
+		//trace(`Characteristic callback ${event}\n`);
 		this[event](params);
 	}
 };
