@@ -35,6 +35,7 @@ export class Connection {
 					break;
 			}
 		}
+		rememberConnection(this);
 		this.initialize(this.client);
 	}
 	initialize(params) @ "xs_gap_connection_initialize"
@@ -50,9 +51,37 @@ export class Connection {
 	_disconnect() @ "xs_gap_connection_disconnect"
 	_readRSSI() @ "xs_gap_connection_read_rssi"
 	
+	_onDisconnected() {
+		forgetConnection(this);
+		this.onDisconnected();
+	}
+	_onRSSI(rssi) {
+		this.onRSSI(onRSSI);
+	}
 	callback(event, params) {
+		//trace(`Connection callback ${event}\n`);
 		this[event](params);
 	}
 };
+
+// Maintain a list of connections to ensure each connection and associated properties
+// are not garbage collected when active.
+let _private = { connections:null };
+function rememberConnection(connection) {
+	if (_private.connections) {
+		if (-1 == _private.connections.indexOf(connection))
+			_private.connections.push(connection);
+	}
+	else
+		_private.connections = [connection];
+}
+function forgetConnection(connection) {
+	if (_private.connections) {
+		let index = _private.connections.indexOf(connection);
+		if (-1 != index) {
+			_private.connections.splice(index, 1);
+		}
+	}
+}
 
 export default Connection;
