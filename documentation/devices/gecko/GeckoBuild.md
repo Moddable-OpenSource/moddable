@@ -13,7 +13,7 @@ The Thunderboard Sense 2 is a Mighty Gecko based radio device that includes a nu
 
 There are two major build steps in building a Moddable application for Gecko.
 
-First, JS application, assets, modules and XS runtime are built into an archive using the `mcconfig` tool. This produces a `xs_gecko.a` archive file.
+First, JS application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_gecko.a` archive file.
 
 Second, a Simplicity Studio project builds an application stub and device libraries and links the Moddable archive.
 
@@ -96,6 +96,20 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 It is located in $MODDABLE/build/bin/gecko/_platform_/debug/_application_/xs_gecko.a
 
 > You will need to change this file path if you change the application that you are building.
+ 
+
+You may also need to add the math library:
+
+Open the properties window for the project and select *C/C++ Build->Settings*.
+
+1) In the **GNU ARM C Linker section**, select **Libraries**.
+
+![Add Library](AddLibrary.png)
+
+2) Click the _add document_ icon ![Add Document](AddDoc.png) to add a library to your project.
+
+3) Type in **'m'** to add the "Math" library.
+
 
 #### Integrate Moddable runtime
 
@@ -104,7 +118,7 @@ In the app's main.c, add a few things:
 	int gResetCause = 0;
 	uint32_t wakeupPin = 0;
 	
-	void assertEFM() { }
+	void assertEFM() { } // maybe  void assertEFM(const char *file, int line) {} depending on your SDK
 
 In the app's main() function after chip initialization, enable some clocks:
 
