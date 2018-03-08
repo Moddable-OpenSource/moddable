@@ -42,6 +42,7 @@ ble.onReady = () => {
 	}
 	ble.onConnected = connection => {
 		connection.onDisconnected = () => {
+			Timer.clear(ble.timer);
 			ble.startScanning();
 		}
 		let client = connection.client;
