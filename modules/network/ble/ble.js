@@ -81,17 +81,23 @@ class BLE @ "xs_ble_destructor" {
 	_startScanning() @ "xs_ble_start_scanning"
 	_startAdvertising() @ "xs_ble_start_advertising"
 	
+	_onReady() {
+		this.onReady();
+	}
+	_onDiscovered(params) {
+		let address = BTAddress.toString(params.address);
+		let scanResponse = new BTAdvertisement(params.scanResponse);
+		params = { address, scanResponse };
+		this.onDiscovered(params);
+	}
+	_onConnected(params) {
+		let address = BTAddress.toString(params.address);
+		let client = new Client(params.connection);
+		params = new Connection({ address, client });
+		this.onConnected(params);
+	}
 	callback(event, params) {
-		if ("onDiscovered" == event) {
-			let address = BTAddress.toString(params.address);
-			let scanResponse = new BTAdvertisement(params.scanResponse);
-			params = { address, scanResponse };
-		}
-		else if ("onConnected" == event) {
-			let address = BTAddress.toString(params.address);
-			let client = new Client(params.connection);
-			params = new Connection({ address, client });
-		}
+		//trace(`BLE callback ${event}\n`);
 		this[event](params);
 	}
 };
