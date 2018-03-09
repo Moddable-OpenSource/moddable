@@ -4,7 +4,7 @@
 		"$(MODDABLE)/modules/network/ble/manifest.json",
 	],
 	"creation": {
-		"static": 65535,
+		"static": 49152,
 		"stack": 356
 	},
 	"modules": {
