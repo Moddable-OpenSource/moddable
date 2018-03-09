@@ -15,14 +15,13 @@
 import BLE from "ble";
 
 let advertisingData = {
-	shortName: "Brian",
+	shortName: "Thermometer",
 };
 
 let scanResponseData = {
-	completeName: "Brian's device",
-	publicAddress: "01:02:03:04:05:06",
-	incompleteUUID16List: ['FF00', 'FF01'],
-	incompleteUUID128List: ['00000000-0000-1000-8000-00805F9B34FB']
+	flags: 6,
+	completeUUID16List: ['1809'],
+	completeName: 'Thermometer Example'
 };
 
 let ble = new BLE();

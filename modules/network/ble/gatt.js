@@ -17,7 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import {UUID} from "btutils2";
+import {UUID} from "btutils";
 
 export class Client {
 	constructor(connection) {
