@@ -20,6 +20,8 @@
 
 import Hex from "hex";
 
+const MAX_AD_LENGTH = 31;
+
 export class BluetoothAddress {
 	static toString(buffer) {
 		return Hex.toString(buffer, ':');
@@ -71,6 +73,210 @@ const ADType = {
 	uri: 0x24
 };
 
+function serializeUint16(data) {
+	let buffer = new ArrayBuffer(2);
+	let result = new Uint8Array(buffer);
+	result[0] = uuid[1];
+	result[1] = uuid[0];
+	return buffer;
+}
+
+function serializeUUID16List(data) {
+	let count = data.length;
+	let buffer = new ArrayBuffer(count * 2);
+	let result = new Uint8Array(buffer);
+	for (let j = 0, i = 0; i < count; ++i) {
+		let uuid = new Uint8Array(UUID.toBuffer(data[i]));
+		result[j++] = uuid[1];
+		result[j++] = uuid[0];
+	}
+	return buffer;
+}
+
+function serializeUUID128List(data) {
+	let count = data.length;
+	let buffer = new ArrayBuffer(count * 16);
+	let result = new Uint8Array(buffer);
+	for (let i = 0; i < count; ++i) {
+		let uuid = (new Uint8Array(UUID.toBuffer(data[i]))).reverse();
+		result.set(uuid, i * 16);
+	}
+	return buffer;
+}
+
+function serializeString(data) {
+	let length = data.length;
+	let buffer = new ArrayBuffer(length);
+	let result = new Uint8Array(buffer);
+	for (let i = 0; i < length; i++)
+		result[i] = data.charCodeAt(i);
+	return buffer;
+}
+
+function serializeManufacturerSpecificData({identifier, data = null}) {
+	let length = 2 + (data ? data.length : 0);
+	let buffer = new ArrayBuffer(length);
+	let result = new Uint8Array(buffer);
+	result[0] = identifier & 0xFF;
+	result[1] = (identifier >> 8) & 0xFF;
+	if (data)
+		result.set(data, 2);
+	return buffer;
+}
+
+function serializeConnectionInterval({intervalMin, intervalMax}) {
+	let buffer = new ArrayBuffer(4);
+	let result = new DataView(buffer);
+	result.setUint16(intervalMin, 0, true);
+	result.setUint16(intervalMax, 2, true);
+	return buffer;
+}
+
+function serializeServiceData16({uuid, data = null}) {
+	let length = 2 + (data ? data.length : 0);
+	let buffer = new ArrayBuffer(length);
+	let result = new Uint8Array(buffer);
+	result[0] = uuid & 0xFF;
+	result[1] = (uuid >> 8) & 0xFF;
+	if (data)
+		result.set(data, 2);
+	return buffer;
+}
+
+function serializeServiceData128({uuid, data = null}) {
+	let length = 16 + (data ? data.length : 0);
+	let buffer = new ArrayBuffer(length);
+	let result = new Uint8Array(buffer);
+	result.set((new Uint8Array(UUID.toBuffer(uuid))).reverse(), 0);
+	if (data)
+		result.set(data, 16);
+	return buffer;
+}
+
+const AdvertisementSerializer = {
+	["incompleteUUID16List"]: param => {
+		return {
+			type: ADType.incompleteUUID16List,
+			data: serializeUUID16List(param)
+		};
+	},
+	["completeUUID16List"]: param => {
+		return {
+			type: ADType.completeUUID16List,
+			data: serializeUUID16List(param)
+		};
+	},
+	["incompleteUUID128List"]: param => {
+		return {
+			type: ADType.incompleteUUID128List,
+			data: serializeUUID128List(param)
+		};
+	},
+	["completeUUID128List"]: param => {
+		return {
+			type: ADType.completeUUID128List,
+			data: serializeUUID128List(param)
+		};
+	},
+	["shortName"]: param => {
+		return {
+			type: ADType.shortName,
+			data: serializeString(param)
+		};
+	},
+	["completeName"]: param => {
+		return {
+			type: ADType.completeName,
+			data: serializeString(param)
+		};
+	},
+	["flags"]: param => {
+		return {
+			type: ADType.flags,
+			data: [param & 0xFF]
+		};
+	},
+	["manufacturerSpecific"]: param => {
+		return {
+			type: ADType.manufacturerSpecific,
+			data: serializeManufacturerSpecificData(param)
+		};
+	},
+	["txPowerLevel"]: param => {
+		return {
+			type: ADType.txPowerLevel,
+			data: [param & 0xFF]
+		};
+	},
+	["connectionInterval"]: param => {
+		return {
+			type: ADType.connectionInterval,
+			data: serializeConnectionInterval(param)
+		};
+	},
+	["solicitationUUID16List"]: param => {
+		return {
+			type: ADType.solicitationUUID16List,
+			data: serializeUUID16List(param)
+		};
+	},
+	["solicitationUUID128List"]: param => {
+		return {
+			type: ADType.solicitationUUID128List,
+			data: serializeUUID128List(param)
+		};
+	},
+	["serviceDataUUID16"]: param => {
+		return {
+			type: ADType.serviceDataUUID16,
+			data: serializeServiceData16(param)
+		};
+	},
+	["serviceDataUUID128"]: param => {
+		return {
+			type: ADType.serviceDataUUID128,
+			data: serializeServiceData128(param)
+		};
+	},
+	["appearance"]: param => {
+		return {
+			type: ADType.appearance,
+			data: serializeUint16(param)
+		};
+	},
+	["publicAddress"]: param => {
+		return {
+			type: ADType.publicAddress,
+			data: BluetoothAddress.toBuffer(param)
+		};
+	},
+	["randomAddress"]: param => {
+		return {
+			type: ADType.randomAddress,
+			data: BluetoothAddress.toBuffer(param)
+		};
+	},
+	["advertisingInterval"]: param => {
+		return {
+			type: ADType.advertisingInterval,
+			data: serializeUint16(param)
+		};
+	},
+//	["deviceAddress"]: null,
+	["role"]: param => {
+		return {
+			type: ADType.role,
+			data: [param & 0xFF]
+		};
+	},
+	["uri"]: param => {
+		return {
+			type: ADType.uri,
+			data: serializeString(param)
+		};
+	}
+};
+
 export class Advertisement {
 	constructor(buffer) {
 		this._buffer = buffer;
@@ -116,6 +322,8 @@ export class Advertisement {
 				i += adLength - 1;
 		}
 		return -1;
+	}
+	static serialize(obj) {
 	}
 	_getStringType(index) {
 		let adLength = this._data[index];
