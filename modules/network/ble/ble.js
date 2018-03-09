@@ -18,13 +18,11 @@
  *
  */
 
-import Advertisement from "gapadvdata";
 import GAP from "gap";
 import Connection from "connection";
-import {BluetoothAddress, UUID} from "btutils";
 import {Client} from "gatt";
 
-import {BluetoothAddress as BTAddress, UUID as BTUUID, Advertisement as BTAdvertisement} from "btutils2";
+import {BluetoothAddress, Advertisement} from "btutils";
 
 class BLE @ "xs_ble_destructor" {
 	constructor() {
@@ -39,7 +37,7 @@ class BLE @ "xs_ble_destructor" {
 	set deviceName() @ "xs_ble_set_device_name"
 	
 	connect(address) {
-		this._connect(BTAddress.toBuffer(address));
+		this._connect(BluetoothAddress.toBuffer(address));
 	}
 	
 	startAdvertising(params) {
@@ -62,8 +60,8 @@ class BLE @ "xs_ble_destructor" {
 			interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
 		}
 		advertisingData.flags = flags;
-		let advertisingDataBuffer = Advertisement.toByteArray(advertisingData).buffer;
-		let scanResponseDataBuffer = scanResponseData ? Advertisement.toByteArray(scanResponseData).buffer : null;
+		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
+		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
 		this._startAdvertising(interval.intervalMin, interval.intervalMax, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_stop_advertising"
@@ -85,13 +83,13 @@ class BLE @ "xs_ble_destructor" {
 		this.onReady();
 	}
 	_onDiscovered(params) {
-		let address = BTAddress.toString(params.address);
-		let scanResponse = new BTAdvertisement(params.scanResponse);
+		let address = BluetoothAddress.toString(params.address);
+		let scanResponse = new Advertisement(params.scanResponse);
 		params = { address, scanResponse };
 		this.onDiscovered(params);
 	}
 	_onConnected(params) {
-		let address = BTAddress.toString(params.address);
+		let address = BluetoothAddress.toString(params.address);
 		let client = new Client(params.connection);
 		params = new Connection({ address, client });
 		this.onConnected(params);
