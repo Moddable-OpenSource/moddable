@@ -14,18 +14,13 @@
  *     See the License for the specific language governing permissions and
  *     limitations under the License.
  */
-
-/**
- * Kinoma LowPAN Framework: Kinoma Bluetooth Stack
- * Bluetooth v4.2 - Generic Access Profile (LE Only)
+/*
+ * Portions based on Kinoma LowPAN Framework: Kinoma Bluetooth 4.2 Stack
  */
 
-import ByteBuffer from "buffers";
-
 class GAP {
-	constructor() {
-	}
 };
+
 GAP.SCAN_FAST_INTERVAL = 0x0030;		// TGAP(scan_fast_interval)		30ms to 60ms
 GAP.SCAN_FAST_WINDOW = 0x0030;			// TGAP(scan_fast_window)		30ms
 GAP.SCAN_SLOW_INTERVAL1 = 0x0800;		// TGAP(scan_slow_interval1)	1.28s
