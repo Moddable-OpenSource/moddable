@@ -3,19 +3,15 @@
 		"*": [
 			"$(MODULES)/network/ble/*",
 			"$(MODULES)/data/hex/*"
-		]
+		],
 	},
 	"preload": [
+		"connection",
 		"ble",
 		"btutils",
-		"btutils2",
-		"btaddress",
-		"buffers",
-		"gatt",
-		"connection",
 		"gap",
-		"gapadvdata",
-		"utils"
+		"gatt",
+		"hex"
 	],
 	"platforms": {
 		"esp32": {
