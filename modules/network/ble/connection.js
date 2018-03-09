@@ -21,6 +21,7 @@
 export class Connection {
 	constructor(dictionary) {
 		this.onDisconnected = function() {};
+		this.onRSSI = function() {};
 		
 		for (let property in dictionary) {
 			switch (property) {
