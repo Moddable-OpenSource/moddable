@@ -66,10 +66,19 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		};
 		this.breakOnStart = 0;
 		this.breakOnExceptions = 1;
+		this.bubbles = {
+			expanded: true,
+			items: [],
+		};
 		this.consoleLines = [];
 		this.consoleScroll = { x:0, y:0 };
 		this.consoleText = "";
+		this.conversations = {
+			expanded: false,
+			items: [],
+		};
 		this.currentMachine = null;
+		this.currentTab = 0;
 		this.machines = [];
 		this.mappings = [];
 		if (system.platform == "win") {
@@ -113,6 +122,10 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let breakpoints = this.breakpoints.items;
 		return breakpoints.length > 0;
 	}
+	canClearAllBubbles() {
+		let bubbles = this.bubbles.items;
+		return bubbles.length > 0;
+	}
 	canDisableBreakpoint(path, line) {
 		let breakpoints = this.breakpoints.items;
 		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
@@ -147,6 +160,12 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		this.breakpoints.items = [];
 		this.machines.forEach(machine => machine.doCommand(mxClearAllBreakpointsCommand));
 		application.distribute("onBreakpointsChanged");
+	}
+	doClearAllBubbles() {
+		this.conversations.items = [];
+		this.bubbles.items = [];
+		application.distribute("onConversationsChanged", this.conversations.items);
+		application.distribute("onBubblesChanged", this.bubbles.items);
 	}
 	doClearConsole() {
 		let machine = this.currentMachine;
@@ -226,6 +245,12 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	doToggleItem(application, value) {
 		this.currentMachine.doCommand(mxToggleCommand, value);
 	}
+	doToggleConversation(application, conversation) {
+		conversation.visible = !conversation.visible;
+		application.distribute("onConversationsChanged", this.conversations.items);
+		application.distribute("onBubblesChanged", this.bubbles.items);
+	}
+	formatBinaryMessage(message) @ "PiuDebugBehavior_formatBinaryMessage"
 	mapPath(path, flag) {
 		for (let mapping of this.mappings) {
 			if (path.startsWith(mapping.remote)) {
@@ -251,6 +276,33 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		if (this.currentMachine == machine)
 			application.distribute("onMachineBroken", machine);
 		application.gotoFront();
+	}
+	onBubbled(machine, path, line, id, flags, message) {
+		let conversations = this.conversations.items;
+		let conversation = conversations.find(item => item.id == id);
+		if (!conversation) {
+			conversation = { visible:true, id, tint:conversations.length % 7 };
+			conversations.push(conversation);
+			application.distribute("onConversationsChanged", conversations);
+		}
+		let bubbles = this.bubbles.items;
+		if (flags & 4) {
+			message = this.formatBinaryMessage(message);
+		}
+		else {
+			try {
+				let json = JSON.parse(message);
+				if (json)
+					message = JSON.stringify(json, null, 2);
+				else
+					flags |= 4;
+			}
+			catch {
+				flags |= 4;
+			}
+		}
+		bubbles.push({ path, line, conversation, flags, message });
+		application.distribute("onBubblesChanged", bubbles);
 	}
 	onDisconnected(machine) {
 		let machines = this.machines;
@@ -425,6 +477,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			this.line = line;
 			this.behavior.onFileChanged(this, path, line);
 		}
+	}
+	onBubbled(path, line, id, flags, message) {
+		this.behavior.onBubbled(this, path, line, id, flags, message);
 	}
 	onDisconnected() {
 		this.behavior.onDisconnected(this);
