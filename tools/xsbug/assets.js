@@ -70,6 +70,14 @@ export const backgroundSkin = new Skin({ fill:WHITE });
 
 export const dividerSkin = new Skin({ fill:GRAYS[24] });
 
+export const messageTexture = new Texture({ path:"assets/bubbles.png" });
+export const messageLeftSkin = new Skin({ texture: messageTexture, x:0, y:0, width:64, height:32, tiles:{ left:16, right:16, top:12, bottom:12 }, variants:64, states:32 });
+export const messageRightSkin = new Skin({ texture: messageTexture, x:0, y:128, width:64, height:32, tiles:{ left:16, right:16, top:12, bottom:12 }, variants:64, states:32 });
+export const messageCenterSkin = new Skin({ texture: messageTexture, x:0, y:256, width:64, height:32, tiles:{ left:16, right:16, top:12, bottom:12 }, variants:64, states:32 });
+export const messageStyle = new Style({ font:"11px Fira Mono", color:[ BLACK, CODE_KEYWORD, CODE_LITERAL, CODE_COMMENT ], top:5, bottom:5, horizontal:"left" });
+export const conversationSkin = new Skin({ texture:lineNumberTexture, x:48, y:48, width:16, height:16, variants:16 });
+export const conversationStyle = new Style({ font:"11px Fira Mono", color:BLACK, left:15, right:15, top:5, bottom:5, horizontal:"left" });
+
 export const buttonSkin = new Skin({ texture:buttonsTexture, x:0, y:0, width:60, height:30, states:30, tiles:{ left:15, right:15 } });
 export const buttonStyle = new Style({ font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE ] });
 export const buttonsSkin = new Skin({ texture:buttonsTexture, x:62, y:2, width:26, height:26, variants:30, states:30 });
@@ -92,6 +100,8 @@ export const tabSkin = new Skin({ fill:[GRAYS[6], GRAYS[14], GRAYS[10], GRAYS[6]
 export const tabStyle = new Style({ font:"semibold 12px Open Sans", color:[BLACK, GRAYS[75], GRAYS[75], BLACK], horizontal:"center", left:26, right:26 });
 export const tabBreakpointSkin = new Skin({ texture:lineNumberTexture, x:16, y:16, width:24, height:16, tiles: { left:2, right: 12 }, });
 export const tabBreakpointStyle = new Style({ font:"bold 10px", horizontal:"right", right:15, color: WHITE });
+export const tabBubbleSkin = new Skin({ texture:lineNumberTexture, x:0, y:48, width:48, height:16, tiles: { left:16, right: 16 }, });
+export const tabBubbleStyle = new Style({ font:"bold 10px", horizontal:"right", right:10, color: WHITE });
 export const tabBrokenSkin = new Skin({ texture:lineNumberTexture, x:40, y:0, width:16, height:16 });
 
 export const paneBackgroundSkin = new Skin({ fill:GRAYS[6] });
