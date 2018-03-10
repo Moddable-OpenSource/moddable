@@ -38,6 +38,7 @@
 #include "xsAll.h"
 
 static txSlot* fxNewGlobalInstance(txMachine* the);
+static void fx_trace_aux(txMachine* the, txInteger flags);
 
 static const char ICACHE_RODATA_ATTR gxURIEmptySet[128] = {
   /* 0 1 2 3 4 5 6 7 8 9 A B C D E F */
@@ -122,7 +123,10 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunctionGlobal(the, mxCallback(fx_isNaN), 1, mxID(_isNaN), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_parseFloat), 1, mxID(_parseFloat), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_parseInt), 2, mxID(_parseInt), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_trace), 1, mxID(_trace), XS_DONT_ENUM_FLAG);
+	slot = fxLastProperty(the, fxNewHostFunctionGlobal(the, mxCallback(fx_trace), 1, mxID(_trace), XS_DONT_ENUM_FLAG));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_center), 1, mxID(_center), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_left), 1, mxID(_left), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_right), 1, mxID(_right), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_decodeURI), 1, mxID(_decodeURI), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_decodeURIComponent), 1, mxID(_decodeURIComponent), XS_DONT_ENUM_FLAG);
 	fxNewHostFunctionGlobal(the, mxCallback(fx_encodeURI), 1, mxID(_encodeURI), XS_DONT_ENUM_FLAG);
@@ -535,6 +539,51 @@ void fx_trace(txMachine* the)
 		fxReport(the, "%s", mxArgv(i)->value.string);
 	}
 //#endif
+}
+
+void fx_trace_aux(txMachine* the, txInteger flags)
+{
+	txSlot* conversation = C_NULL;
+	void* message = C_NULL;
+	txInteger length = 0;
+	if (mxArgc > 1) {
+		conversation = mxArgv(1);
+		fxToString(the, conversation);
+	}
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
+		txSlot* slot = mxArgv(0)->value.reference->next;
+		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
+			length = slot->value.arrayBuffer.length;
+			message = slot->value.arrayBuffer.address;
+			flags |= XS_BUBBLE_BINARY;
+		}
+		else if (slot && (slot->kind == XS_HOST_KIND)) {
+			mxPushSlot(mxArgv(0));
+			fxGetID(the, mxID(_byteLength));
+			length = fxToInteger(the, the->stack);
+			mxPop();
+			message = slot->value.host.data;
+			flags |= XS_BUBBLE_BINARY;
+		}
+	}
+	if (!message)
+		message = fxToString(the, mxArgv(0));
+	fxBubble(the, flags, message, length, (conversation) ? conversation->value.string : C_NULL);
+}
+
+void fx_trace_center(txMachine* the)
+{
+	fx_trace_aux(the, XS_NO_FLAG);
+}
+
+void fx_trace_left(txMachine* the)
+{
+	fx_trace_aux(the, XS_BUBBLE_LEFT);
+}
+
+void fx_trace_right(txMachine* the)
+{
+	fx_trace_aux(the, XS_BUBBLE_RIGHT);
 }
 
 void fx_unescape(txMachine* the)
