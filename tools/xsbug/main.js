@@ -72,6 +72,10 @@ import {
 } from "FilePane";
 
 import {
+	MessagePane,
+} from "MessagePane";
+
+import {
 	PreferencesView,
 } from "PreferencesView";
 
@@ -164,16 +168,21 @@ class ApplicationBehavior extends DebugBehavior {
 		application.updateMenus();
 	}
 
-	selectMachine(machine) {
-		if (this.currentMachine != machine) {
-			application.distribute("onMachineDeselected", this.currentMachine);
+	selectMachine(machine, tab = 0) {
+		if ((this.currentMachine != machine) || (this.currentTab != tab)) {
+			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
 			let container = this.FEATURE;
-			if (!this.currentMachine)
+			if (!this.currentMachine && machine)
 				container.replace(container.first, new DebugPane(this));
-			else if (!machine)
-				container.replace(container.first, new FilePane(this));
+			else if (this.currentTab != tab) {
+				if (tab == 0)
+					container.replace(container.first, new FilePane(this));
+				else
+					container.replace(container.first, new MessagePane(this));
+			}	
 			this.currentMachine = machine
-			application.distribute("onMachineSelected", machine);
+			this.currentTab = tab
+			application.distribute("onMachineSelected", machine, tab);
 		}
 	}
 
