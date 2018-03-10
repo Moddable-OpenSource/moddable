@@ -84,7 +84,7 @@ typedef int (*txPutter)(txString, void*);
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
 #define XS_MINOR_VERSION 3
-#define XS_PATCH_VERSION 0
+#define XS_PATCH_VERSION 1
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -663,6 +663,7 @@ enum {
 	_catch,
 	_cbrt,
 	_ceil,
+	_center,
 	_charAt,
 	_charCodeAt,
 	_chunk,
@@ -786,6 +787,7 @@ enum {
 	_keys,
 	_lastIndex,
 	_lastIndexOf,
+	_left,
 	_length,
 	_line,
 	_load,
@@ -837,6 +839,7 @@ enum {
 	_reverse,
 	_revocable,
 	_revoke,
+	_right,
 	_round,
 	_seal,
 	_search,
