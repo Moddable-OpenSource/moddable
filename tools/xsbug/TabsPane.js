@@ -38,6 +38,8 @@
 import {
 	tabBreakpointSkin,
 	tabBreakpointStyle,
+	tabBubbleSkin,
+	tabBubbleStyle,
 	tabBrokenSkin,
 	tabSkin,
 	tabStyle,
@@ -60,7 +62,8 @@ class TabsPaneBehavior extends Behavior {
 		let row = scroller.first;
 		row.empty(0);
 		row.add(new BreakpointsTab(null));
-		machines.forEach(machine => row.add(new Tab(machine)));
+		row.add(new BubblesTab(null));
+		machines.forEach(machine => row.add(new MachineTab(machine)));
 		this.onMeasureHorizontally(layout);
 	}
 	onMeasureHorizontally(layout, width) {
@@ -72,7 +75,7 @@ class TabsPaneBehavior extends Behavior {
 	}
 };
 
-class BreakpointsTabBehavior extends Behavior {
+class TabBehavior extends Behavior {
 	changeState(container, state) {
 		container.state = state;
 		var content = container.first.first;
@@ -80,6 +83,61 @@ class BreakpointsTabBehavior extends Behavior {
 			content.state = state;
 			content = content.next;
 		}
+	}
+	isSelected(container) {
+		return false;
+	}
+	onMouseEntered(container, x, y) {
+		application.cursor = cursors.arrow;
+		this.changeState(container, this.isSelected(container) ? 0 : 2);
+	}
+	onMouseExited(container, x, y) {
+		this.changeState(container, this.isSelected(container) ? 0 : 1);
+	}
+	onTouchBegan(container) {
+		this.changeState(container, 0);
+		this.select(container);
+	}
+	select(container) {
+	}
+};
+
+class BreakpointsTabBehavior extends TabBehavior {
+	isSelected(container) {
+		return (model.currentMachine == null) && (model.currentTab == 0);
+	}
+	onCreate(container) {
+		this.onMachineSelected(container, model.currentMachine, model.currentTab);
+	}
+	onMachineSelected(container, machine, tab) {
+		this.changeState(container, (machine == null) && (tab == 0) ? 0 : 1);
+	}
+	select(container) {
+		model.selectMachine(null, 0);
+	}
+};
+
+class BubblesTabBehavior extends TabBehavior {
+	isSelected(container) {
+		return (model.currentMachine == null) && (model.currentTab == 1);
+	}
+	onCreate(container) {
+		this.onMachineSelected(container, model.currentMachine);
+	}
+	onMachineSelected(container, machine, tab) {
+		this.changeState(container, (machine == null) && (tab == 1) ? 0 : 1);
+	}
+	select(container) {
+		model.selectMachine(null, 1);
+	}
+};
+
+class MachineTabBehavior extends TabBehavior {
+	isSelected(container) {
+		return model.currentMachine == this.machine ;
+	}
+	onCloseTab(container) {
+		this.machine.close();
 	}
 	onCreate(container, machine) {
 		this.machine = machine;
@@ -93,23 +151,6 @@ class BreakpointsTabBehavior extends Behavior {
 	onMachineSelected(container, machine) {
 		this.changeState(container, this.machine == machine ? 0 : 1);
 	}
-	onTouchBegan(container) {
-		this.changeState(container, 0);
-		model.selectMachine(this.machine);
-	}
-	onMouseEntered(container, x, y) {
-		application.cursor = cursors.arrow;
-		this.changeState(container, this.machine != model.currentMachine ? 2 : 0);
-	}
-	onMouseExited(container, x, y) {
-		this.changeState(container, this.machine != model.currentMachine ? 1 : 0);
-	}
-};
-
-class TabBehavior extends BreakpointsTabBehavior {
-	onCloseTab(container) {
-		this.machine.close();
-	}
 	onMouseEntered(container, x, y) {
 		container.last.visible = !this.machine.broken;
 		super.onMouseEntered(container, x, y);
@@ -117,6 +158,9 @@ class TabBehavior extends BreakpointsTabBehavior {
 	onMouseExited(container, x, y) {
 		container.last.visible = false;
 		super.onMouseExited(container, x, y);
+	}
+	select(container) {
+		model.selectMachine(this.machine);
 	}
 };
 
@@ -136,20 +180,6 @@ export var TabsPane = Layout.template($ => ({
 	]
 }));
 
-var Tab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:TabBehavior,
-	contents: [
-		Container($, { 
-			top:0, bottom:0,
-			contents: [
-				Content($, { left:3, width:20, visible:$.broken, skin:tabBrokenSkin, }),
-				Label($, { top:0, bottom:0, style:tabStyle, string:$.title }),
-			],
-		}),
-		Content($, { left:0, width:26, active:true, visible:false, skin:buttonsSkin, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
-	],
-}));
-
 var BreakpointsTab = Container.template($ => ({
 	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BreakpointsTabBehavior,
 	contents: [
@@ -164,5 +194,36 @@ var BreakpointsTab = Container.template($ => ({
 				}
 			},
 		}),
+	],
+}));
+
+var BubblesTab = Container.template($ => ({
+	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BubblesTabBehavior,
+	contents: [
+		Label($, { 
+			left:2, right:5, height:16, skin:tabBubbleSkin, style:tabBubbleStyle,
+			Behavior: class extends Behavior {
+				onCreate(label) {
+					this.onBubblesChanged(label);
+				}
+				onBubblesChanged(label) {
+					label.string = model.bubbles.items.length;
+				}
+			},
+		}),
+	],
+}));
+
+var MachineTab = Container.template($ => ({
+	top:0, bottom:0, skin:tabSkin, active:true, Behavior:MachineTabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Content($, { left:3, width:20, visible:$.broken, skin:tabBrokenSkin, }),
+				Label($, { top:0, bottom:0, style:tabStyle, string:$.title }),
+			],
+		}),
+		Content($, { left:0, width:26, active:true, visible:false, skin:buttonsSkin, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
 	],
 }));

@@ -1067,6 +1067,19 @@ struct xsJumpRecord {
 
 #define xsTrace(_STRING) \
 	fxReport(the, "%s", _STRING)
+#define xsTraceCenter(_STRING,_ID) \
+	fxBubble(the, 0, _STRING, 0, _ID)
+#define xsTraceLeft(_STRING,_ID) \
+	fxBubble(the, 1, _STRING, 0, _ID)
+#define xsTraceRight(_STRING,_ID) \
+	fxBubble(the, 2, _STRING, 0, _ID)
+#define xsTraceCenterBytes(_BUFFER,_LENGTH,_ID) \
+	fxBubble(the, 4, _BUFFER, _LENGTH, _ID)
+#define xsTraceLeftBytes(_BUFFER,_LENGTH,_ID) \
+	fxBubble(the, 5, _BUFFER, _LENGTH, _ID)
+#define xsTraceRightBytes(_BUFFER,_LENGTH,_ID) \
+	fxBubble(the, 6, _BUFFER, _LENGTH, _ID)
+	
 #define xsLog(...) \
 	fxReport(the, __VA_ARGS__)
 
@@ -1317,6 +1330,7 @@ mxImport void fxOverflow(xsMachine*, xsIntegerValue, xsStringValue, xsIntegerVal
 mxImport void fxThrow(xsMachine*, xsStringValue, xsIntegerValue) XS_FUNCTION_NORETURN;
 mxImport void fxThrowMessage(xsMachine* the, xsStringValue thePath, xsIntegerValue theLine, xsIntegerValue theError, xsStringValue theMessage, ...) XS_FUNCTION_NORETURN;
 
+mxImport void fxBubble(xsMachine*, xsIntegerValue, void*, xsIntegerValue, xsStringValue);
 mxImport void fxDebugger(xsMachine*, xsStringValue, xsIntegerValue);
 mxImport void fxReport(xsMachine*, xsStringValue, ...);
 
