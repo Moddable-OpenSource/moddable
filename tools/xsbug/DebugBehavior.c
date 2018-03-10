@@ -382,6 +382,27 @@ void PiuDebugBehavior_stop(xsMachine* the)
 	PiuDebugBehaviorStop(self);
 }
 
+void PiuDebugBehavior_formatBinaryMessage(xsMachine* the)
+{
+	xsIntegerValue length = c_strlen(xsToString(xsArg(0)));
+	if (length) {
+		xsStringValue from, to;
+		xsResult = xsStringBuffer(NULL, length + (length / 2) - 1);
+		from = xsToString(xsArg(0));
+		to = xsToString(xsResult);
+		for (;;) {
+			*to++ = *from++;
+			*to++ = *from++;
+			if (*from)
+				*to++ = ' ';
+			else
+				break;
+		}
+	}
+	else
+		xsResult = xsArg(0);
+}
+
 #if mxLinux
 gboolean PiuDebugMachineCallback(GSocket *socket, GIOCondition condition, gpointer user_data)
 {
@@ -392,7 +413,7 @@ gboolean PiuDebugMachineCallback(GSocket *socket, GIOCondition condition, gpoint
 		//fprintf(stderr, "%s", self->buffer);
 		xsBeginHost(self->the);
 		{
-			xsVars(2);
+			xsVars(4);
 			PiuDebugMachineParse(self, self->buffer, length);
 		}
 		xsEndHost();
@@ -418,7 +439,7 @@ void PiuDebugMachineCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 			//fprintf(stderr, "%s", self->buffer);
 			xsBeginHost(self->the);
 			{
-				xsVars(2);
+				xsVars(4);
 				PiuDebugMachineParse(self, self->buffer, length);
 			}
 			xsEndHost();
@@ -445,7 +466,7 @@ LRESULT CALLBACK PiuDebugMachineWindowProc(HWND window, UINT message, WPARAM wPa
 				//fprintf(stderr, "%s", self->buffer);
 				xsBeginHost(self->the);
 				{
-					xsVars(2);
+					xsVars(4);
 					PiuDebugMachineParse(self, self->buffer, length);
 				}
 				xsEndHost(self->the);
@@ -919,6 +940,9 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "log") == 0) {
 		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
 	}
+	else if (strcmp(theName, "bubble") == 0) {
+		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+	}
 	else if (strcmp(theName, "breakpoint") == 0) {
 		(void)xsCall1(self->listSlot, xsID_push, self->itemSlot);
 	}
@@ -971,6 +995,15 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 		xsVar(1) = xsGet(self->itemSlot, xsID_line);
 		xsResult = xsGet(self->itemSlot, xsID_data);
 		(void)xsCall3(self->thisSlot, xsID_onLogged, xsVar(0), xsVar(1), xsResult);
+	}
+	else if (strcmp(theName, "bubble") == 0) {
+        self->logging = 0;
+		xsVar(0) = xsGet(self->itemSlot, xsID_path);
+		xsVar(1) = xsGet(self->itemSlot, xsID_line);
+		xsVar(2) = xsGet(self->itemSlot, xsID_name);
+		xsVar(3) = xsGet(self->itemSlot, xsID_value);
+		xsResult = xsGet(self->itemSlot, xsID_data);
+		(void)xsCall5(self->thisSlot, xsID_onBubbled, xsVar(0), xsVar(1), xsVar(2), xsVar(3), xsResult);
 	}
 	else if (strcmp(theName, "break") == 0) {
 		self->logging = 0;
@@ -1028,6 +1061,9 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 		self->logging = 1;
 	}
 	else if (strcmp(theName, "log") == 0) {
+		self->logging = 1;
+	}
+	else if (strcmp(theName, "bubble") == 0) {
 		self->logging = 1;
 	}
 	else if (strcmp(theName, "break") == 0) {
