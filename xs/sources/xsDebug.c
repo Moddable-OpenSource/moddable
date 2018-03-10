@@ -135,6 +135,8 @@ enum {
 	XS_UNKNOWN_ATTRIBUTE
 };
 
+static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
+
 void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 {
 #if mxWindows
@@ -639,7 +641,6 @@ void fxEcho(txMachine* the, txString theString)
 
 void fxEchoAddress(txMachine* the, txSlot* theSlot)
 {
-	static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
 	unsigned long aValue = (unsigned long)theSlot;
 	unsigned long aMask = 0xF;
 	int aShift;
@@ -1604,6 +1605,49 @@ void fxToggle(txMachine* the, txSlot* slot)
 }
 
 #endif
+
+void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, txString conversation)
+{
+#ifdef mxDebug
+	if (fxIsConnected(the)) {
+		txString path = C_NULL;
+		txInteger line = 0;
+		txSlot* frame = the->frame;
+		while (frame && !path) {
+			txSlot* environment = frame - 1;
+			if (environment->ID != XS_NO_ID) {
+				path = fxGetKeyName(the, environment->ID);
+				line = environment->value.environment.line;
+			}
+			frame = frame->next;
+		}
+		fxEchoStart(the);
+		fxEcho(the, "<bubble name=\"");
+		if (conversation)
+			fxEchoString(the, conversation);
+		fxEcho(the, "\" value=\"");
+		fxEchoInteger(the, flags);
+		fxEcho(the, "\"");
+		fxEchoPathLine(the, path, line);
+		fxEcho(the, ">");
+		if (flags & XS_BUBBLE_BINARY) {
+			txU1* bytes = message;
+			txInteger byteLength = length;
+			while (byteLength) {
+				txU1 byte = c_read8(bytes);
+				fxEchoCharacter(the, gxHexaDigits[(byte & 0xF0) >> 4]);
+				fxEchoCharacter(the, gxHexaDigits[(byte & 0x0F)]);	
+				bytes++;
+				byteLength--;
+			}
+		}
+		else
+			fxEchoString(the, message);
+		fxEcho(the, "</bubble>");
+		fxEchoStop(the);
+	}
+#endif
+}
 
 void fxReport(txMachine* the, txString theFormat, ...)
 {

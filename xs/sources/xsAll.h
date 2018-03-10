@@ -659,6 +659,7 @@ extern void fxDebugThrow(txMachine* the, txString thePath, txInteger theLine, tx
 mxExport void fxLogin(txMachine* the);
 mxExport void fxLogout(txMachine* the);
 #endif
+mxExport void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, txString conversation);
 mxExport void fxReport(txMachine* the, txString theFormat, ...);
 mxExport void fxReportError(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...);
 mxExport void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...);
@@ -748,6 +749,9 @@ mxExport void fx_encodeURIComponent(txMachine* the);
 mxExport void fx_escape(txMachine* the);
 mxExport void fx_eval(txMachine* the);
 mxExport void fx_trace(txMachine* the);
+mxExport void fx_trace_center(txMachine* the);
+mxExport void fx_trace_left(txMachine* the);
+mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
 
 extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot);
@@ -1498,7 +1502,12 @@ enum {
 	XS_TRASHING_FLAG = 2,
 	XS_SKIPPED_COLLECT_FLAG = 4,
 	XS_HOST_CHUNK_FLAG = 32,
-	XS_HOST_HOOKS_FLAG = 64
+	XS_HOST_HOOKS_FLAG = 64,
+	
+	/* bubble flags */
+	XS_BUBBLE_LEFT = 1,
+	XS_BUBBLE_RIGHT = 2,
+	XS_BUBBLE_BINARY = 4,
 };
 
 enum {
