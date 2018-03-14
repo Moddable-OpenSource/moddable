@@ -30,12 +30,14 @@
     
 void geckoPostMessage(void *buffer, uint32_t size);
 void geckoSetRadioListen(uint32_t mode);
+void geckoInitRadio();
 extern uint32_t gDeviceUnique;
 
 xsMachine *gRadioMachine = NULL;
 
 void xs_Radio(xsMachine *the) {
 	gRadioMachine = the;
+	geckoInitRadio();
 	geckoSetMaxSleep(1);
 }
 
@@ -96,3 +98,4 @@ void queueGeckoReceivedMessage(void *message, uint32_t size)
 	if (message && gRadioMachine)
 		modMessagePostToMachine(gRadioMachine, message, size, fromGeckoMessage,  NULL);
 }
+
