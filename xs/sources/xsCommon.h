@@ -706,6 +706,7 @@ enum {
 	_exports,
 	_fill,
 	_filter,
+	_finally_,
 	_find,
 	_findIndex,
 	_flags,
