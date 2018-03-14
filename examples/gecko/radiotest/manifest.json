@@ -1,0 +1,37 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"./main",
+		],
+	},
+	"strip": "*",
+	"platforms": {
+		"gecko/mighty": {
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/digital/monitor/gecko/*",
+					"$(BUILD)/devices/gecko/sleep/*",
+					"$(BUILD)/devices/gecko/radio/*",
+				],
+			},
+		},
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/drivers/radio/nrf24/manifest.json",
+			],
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/digital/monitor/esp/*",
+					"$(MODULES)/pins/spi/*",
+					"$(MODULES)/pins/spi/esp/*",
+				],
+			},
+		},
+	}
+}
