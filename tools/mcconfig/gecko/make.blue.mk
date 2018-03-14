@@ -20,7 +20,9 @@
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
 
-# BlueGecko WSTK	(BRD4100A) -- 32kB ram, 256kB flash
+# BlueGecko WSTK
+# (BRD4100A) -- 32kB ram, 256kB flash
+# (BRD4104A) -- 64kB ram, 512kB flash
 PLATFORM_NAME = blue
 SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.1
 HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG1_BRD4100A/config
@@ -32,7 +34,7 @@ HW_OPT = -Os
 # DEV_C_FLAGS = -fno-short-enums
 DEV_C_FLAGS = 
 
-C_DEFINES += -DuseRTCC
+C_DEFINES += -DuseRTCC -DBLUE_GECKO=1
 
 include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
 
