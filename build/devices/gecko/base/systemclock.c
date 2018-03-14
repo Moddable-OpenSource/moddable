@@ -29,7 +29,7 @@
 
 #include "gpiointerrupt/inc/gpiointerrupt.h"
 
-#if MIGHTY_GECKO || THUNDERBOARD2
+#if MIGHTY_GECKO || BLUE_GECKO || THUNDERBOARD2
 	#define USE_CRYOTIMER	1
 	#include "em_cryotimer.h"
 #endif
