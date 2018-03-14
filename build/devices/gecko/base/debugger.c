@@ -134,7 +134,7 @@ uint8_t ESP_isReadable() { return 0; }
 
 void setupDebugger() {
 #if mxDebug
-#if MIGHTY_GECKO || THUNDERBOARD2
+#if MIGHTY_GECKO || BLUE_GECKO || THUNDERBOARD2
 	USART_InitAsync_TypeDef serialInit = USART_INITASYNC_DEFAULT;
 	CMU_ClockEnable(DEBUGGER_CLOCK, true);
 
@@ -175,6 +175,8 @@ void setupDebugger() {
 			| USART_ROUTE_RXPEN | USART_ROUTE_TXPEN;
 
 	gDebuggerSetup = 1;
+#else
+	#error undefined gecko platform
 #endif
 
 #endif

@@ -110,7 +110,7 @@ uint32_t configSleepClock(uint32_t ms) {
 
 void configGPIO(void) {
 #ifdef MODDEF_SLEEP_WAKEUP_PORT
-#if MIGHTY_GECKO || THUNDERBOARD2
+#if MIGHTY_GECKO || BLUE_GECKO || THUNDERBOARD2
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPullFilter, 1);
 	while (!GPIO_PinInGet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN))
 		geckoDelayLoop(1);		//debounce
