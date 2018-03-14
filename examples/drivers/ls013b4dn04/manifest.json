@@ -37,7 +37,6 @@
 	"platforms": {
 		"gecko/mighty": {
 			"defines": {
-				"mighty": true,
 				"ls013b4dn04": {
 					"cs": { "pin": 9, "port": "gpioPortA" },
 				},
@@ -57,7 +56,6 @@
 		},
 		"gecko/thunderboard2": {
 			"defines": {
-				"mighty": true,
 				"ls013b4dn04": {
 					"cs": { "pin": 9, "port": "gpioPortA" },
 				},
@@ -77,6 +75,9 @@
 		},
 		"gecko/giant": {
 			"defines": {
+				"sleep": {
+					"retention": { "memory": true },
+				},
 				"ls013b4dn04": {
 					"cs": { "pin": 3, "port": "gpioPortD" },
 				},
@@ -84,7 +85,6 @@
 			"modules": {
 				"*": [
                     "$(MODULES)/base/instrumentation/*",
-					"$(BUILD)/devices/gecko/pins/*",
 					"$(BUILD)/devices/gecko/sleep/*",
 				],
 			},

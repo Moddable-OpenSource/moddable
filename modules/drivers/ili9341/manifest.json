@@ -62,8 +62,8 @@
 				"ili9341": {
 					"hz": 40000000,
 					"cs": { "pin": 3, "port": "gpioPortD", },
-					"dc": { "pin": 5, "port": "gpioPortD", },
-					"rst": { "pin": 4, "port": "gpioPortD", },
+					"dc": { "pin": 4, "port": "gpioPortC", },
+					"rst": { "pin": 3, "port": "gpioPortC", },
 				}
 			},
 		},

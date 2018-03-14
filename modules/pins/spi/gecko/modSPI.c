@@ -33,55 +33,19 @@
 	#include "em_usart.h"
 	#include "em_system.h"
 
-#if 0
-
-#if EFR32MG1P132F256GM48		// thunderboard
-	#define SPI_PORT	gpioPortC
-	#define SPI_MOSI	6
-	#define SPI_MISO	7
-	#define SPI_SCK		8
-	#define SPI_CS		9
-	#define SPI_LOCATION	11
-	#define SPI_USART	USART1
-	#define SPI_CLOCK	cmuClock_USART1
-#elif EFM32GG990F1024			// giant gecko
-	#define SPI_PORT	gpioPortD
-	#define SPI_MOSI	0
-	#define SPI_MISO	1
-	#define SPI_SCK		2
-	#define SPI_CS		3
-//	#define SPI_RST		4
-//	#define SPI_DC		5
-	#define SPI_USART	USART1
-	#define SPI_CLOCK	cmuClock_USART1
-#elif EFR32MG12P332F1024GL125	// radio board
-	#define SPI_PORT	gpioPortA
-	#define SPI_MOSI	6
-	#define SPI_MISO	7
-	#define SPI_SCK		8
-	#define SPI_CS		9
-	#define SPI_LOCATION	1
-	#define SPI_USART	USART2
-	#define SPI_CLOCK	cmuClock_USART2
-#else
-	#error need SPI pins for new gecko part
+#if !defined(MODDEF_SPI_INTERFACE_USART)
+	#error "need a USART interface for spi"
 #endif
 
-#endif
-
-#if !defined(MODDEF_SPI_PORT)
-	#define MODDEF_SPI_PORT	0
-#endif
-
-#if MODDEF_SPI_PORT == 0
+#if MODDEF_SPI_INTERFACE_USART == 0
 	#define SPI_USART	USART0
 	#define SPI_CLOCK	cmuClock_USART0
 	#define SPI_TX_IRQ	USART0_TX_IRQn
-#elif MODDEF_SPI_PORT == 1
+#elif MODDEF_SPI_INTERFACE_USART == 1
 	#define SPI_USART	USART1
 	#define SPI_CLOCK	cmuClock_USART1
 	#define SPI_TX_IRQ	USART1_TX_IRQn
-#elif MODDEF_SPI_PORT == 2
+#elif MODDEF_SPI_INTERFACE_USART == 2
 	#define SPI_USART	USART2
 	#define SPI_CLOCK	cmuClock_USART2
 	#define SPI_TX_IRQ	USART2_TX_IRQn
@@ -148,8 +112,7 @@ void modSPIInit(modSPIConfiguration config)
 
 	// Enable the GPIO pins for the USART, starting with CS
 	// This is to avoid clocking the flash chip when we set CLK high
-//MDK - do we need the CS port? It'll be handled by whoever instantiates it
-//	GPIO_PinModeSet(MODDEF_SPI_CS_PORT, MODDEF_SPI_CS_PIN, gpioModePushPull, 1);
+// CS port will be handled by whoever instantiates it
 	GPIO_PinModeSet(MODDEF_SPI_MOSI_PORT, MODDEF_SPI_MOSI_PIN, gpioModePushPull, 0);
 	GPIO_PinModeSet(MODDEF_SPI_MISO_PORT, MODDEF_SPI_MISO_PIN, gpioModeInput, 0);
 	GPIO_PinModeSet(MODDEF_SPI_SCK_PORT, MODDEF_SPI_SCK_PIN, gpioModePushPull, 0);
@@ -162,7 +125,7 @@ void modSPIInit(modSPIConfiguration config)
 	spiInit.msbf = true;
 	spiInit.prsRxEnable = false;
 	spiInit.autoTx = false;
-#if EFR32MG1P132F256GM48 || EFR32MG12P332F1024GL125
+#if (MIGHTY_GECKO || THUNDERBOARD2) // EFR32MG1P132F256GM48 || EFR32MG12P332F1024GL125
 	spiInit.autoCsEnable = false;
 	spiInit.autoCsHold = false;
 	spiInit.autoCsSetup = false;
@@ -388,11 +351,11 @@ void modSPIStartSend(uint16_t dataSize) {
 	USART_IntEnable(SPI_USART, USART_IF_TXBL);
 }
 
-#if MODDEF_SPI_PORT == 0
+#if MODDEF_SPI_INTERFACE_USART == 0
 void USART0_TX_IRQHandler(void)
-#elif MODDEF_SPI_PORT == 1
+#elif MODDEF_SPI_INTERFACE_USART == 1
 void USART1_TX_IRQHandler(void)
-#elif MODDEF_SPI_PORT == 2
+#elif MODDEF_SPI_INTERFACE_USART == 2
 void USART2_TX_IRQHandler(void)
 #endif
 {

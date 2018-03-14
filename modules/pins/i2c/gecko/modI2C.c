@@ -26,15 +26,15 @@
 
 #define USE_I2C_SLEEP 1
 
-#if !defined(MODDEF_I2C_PORT)
-	#define MODDEF_I2C_PORT 0
+#if !defined(MODDEF_I2C_INTERFACE_I2C)
+	#define MODDEF_I2C_INTERFACE_I2C 0
 #endif
 
-#if MODDEF_I2C_PORT == 0
+#if MODDEF_I2C_INTERFACE_I2C == 0
 	#define I2C_PORT	I2C0
 	#define I2C_CLOCK	cmuClock_I2C0
 	#define I2C_IRQ		I2C0_IRQn
-#elif MODDEF_I2C_PORT == 1
+#elif MODDEF_I2C_INTERFACE_I2C == 1
 	#define I2C_PORT	I2C1
 	#define I2C_CLOCK	cmuClock_I2C1
 	#define I2C_IRQ		I2C1_IRQn
@@ -128,11 +128,11 @@ static volatile I2C_TransferReturn_TypeDef I2C_transferStatus;
 
 #if USE_I2C_SLEEP
 
-#if MODDEF_I2C_PORT == 0
+#if MODDEF_I2C_INTERFACE_I2C == 0
 void I2C0_IRQHandler(void) {
 	I2C_transferStatus = I2C_Transfer(I2C_PORT);
 }
-#elif MODDEF_I2C_PORT == 1
+#elif MODDEF_I2C_INTERFACE_I2C == 1
 void I2C1_IRQHandler(void) {
 	I2C_transferStatus = I2C_Transfer(I2C_PORT);
 }
