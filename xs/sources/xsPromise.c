@@ -48,12 +48,18 @@ static void fxCallPromiseAll(txMachine* the);
 static void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
 static void fxQueueJob(txMachine* the, txID id);
 
+static void fx_Promise_resolveAux(txMachine* the);
+static void fx_Promise_prototype_finallyAux(txMachine* the);
+static void fx_Promise_prototype_finallyReturn(txMachine* the);
+static void fx_Promise_prototype_finallyThrow(txMachine* the);
+
 void fxBuildPromise(txMachine* the)
 {
 	txSlot* slot;
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewPromiseInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_catch), 1, mxID(_catch), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_finally), 1, mxID(_finally_), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_then), 2, mxID(_then), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Promise", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPromisePrototype = *the->stack;
@@ -774,19 +780,34 @@ void fx_Promise_reject(txMachine* the)
 
 void fx_Promise_resolve(txMachine* the)
 {
+	if (!mxIsReference(mxThis))
+		mxTypeError("this is no object");
+	mxPushSlot(mxThis);
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	fx_Promise_resolveAux(the);		
+	mxPop();
+	mxPop();
+}
+
+void fx_Promise_resolveAux(txMachine* the)
+{
+	txSlot* argument = the->stack;
+	txSlot* constructor = the->stack + 1;
 	txSlot* capability;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
-
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	if ((mxArgc > 0) && mxIsReference(mxArgv(0))) {
-		txSlot* promise = mxArgv(0)->value.reference;
+	if (mxIsReference(argument)) {
+		txSlot* promise = argument->value.reference;
 		if (mxIsPromise(promise)) {
 			mxPushReference(promise);
 			fxGetID(the, mxID(_constructor));
-			if (fxIsSameValue(the, mxThis, the->stack, 0)) {
-				*mxResult = *mxArgv(0);
+			if (fxIsSameValue(the, constructor, the->stack, 0)) {
+				*mxResult = *argument;
 				return;
 			}
 			mxPop();
@@ -795,14 +816,11 @@ void fx_Promise_resolve(txMachine* the)
 	capability = fxNewHostFunction(the, fxBuildPromiseCapability, 2, XS_NO_ID);
 	mxPushReference(capability);
 	mxPushInteger(1);
-	mxPushSlot(mxThis);
+	mxPushSlot(constructor);
 	fxNew(the);
 	mxPullSlot(mxResult);
 	fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);
-	if (mxArgc > 0)
-		mxPushSlot(mxArgv(0));
-	else
-		mxPushUndefined();
+	mxPushSlot(argument);
 	/* COUNT */
 	mxPushInteger(1);
 	/* THIS */
@@ -843,6 +861,112 @@ void fx_Promise_prototype_dumpAux(txMachine* the, txSlot* promise, txInteger c)
 	}
 }
 #endif
+
+void fx_Promise_prototype_finally(txMachine* the)
+{
+	if (!mxIsReference(mxThis))
+		mxTypeError("this is no object");
+	fxPushSpeciesConstructor(the, &mxPromiseConstructor);
+	if (mxArgc > 0) {
+		if (mxIsReference(mxArgv(0)) && mxIsCallable(mxArgv(0)->value.reference)) {
+			txSlot* function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
+			txSlot* object = fxNewInstance(the);
+			txSlot* slot = object->next = fxNewSlot(the);
+			slot->kind = XS_REFERENCE_KIND;
+			slot->value.reference = the->stack->value.reference;
+			slot = slot->next = fxNewSlot(the);
+			slot->kind = XS_REFERENCE_KIND;
+			slot->value.reference = mxArgv(0)->value.reference;
+			slot = slot->next = fxNewSlot(the);
+			slot->kind = XS_BOOLEAN_KIND;
+			slot->value.boolean = 1;
+			slot = mxFunctionInstanceHome(function);
+			slot->value.home.object = object;
+			the->stack++;
+			
+			function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
+			object = fxNewInstance(the);
+			slot = object->next = fxNewSlot(the);
+			slot->kind = XS_REFERENCE_KIND;
+			slot->value.reference = the->stack->value.reference;
+			slot = slot->next = fxNewSlot(the);
+			slot->kind = XS_REFERENCE_KIND;
+			slot->value.reference = mxArgv(0)->value.reference;
+			slot = slot->next = fxNewSlot(the);
+			slot->kind = XS_BOOLEAN_KIND;
+			slot->value.boolean = 0;
+			slot = mxFunctionInstanceHome(function);
+			slot->value.home.object = object;
+			the->stack++;
+		}
+		else {
+			mxPushSlot(mxArgv(0));
+			mxPushSlot(mxArgv(0));
+		}
+	}
+	else {
+		mxPushUndefined();
+		mxPushUndefined();
+	}
+	mxPushInteger(2);
+	mxPushSlot(mxThis);
+	fxCallID(the, mxID(_then));
+	mxPullSlot(mxResult);
+	mxPop();
+}
+
+void fx_Promise_prototype_finallyAux(txMachine* the)
+{
+	txSlot* object = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.object;
+	txSlot* constructor = object->next;
+	txSlot* onFinally = constructor->next;
+	txSlot* slot = onFinally->next;
+	txSlot* function;
+	if (slot->value.boolean)
+		function = fxNewHostFunction(the, fx_Promise_prototype_finallyReturn, 0, XS_NO_ID);
+	else
+		function = fxNewHostFunction(the, fx_Promise_prototype_finallyThrow, 0, XS_NO_ID);
+	object = fxNewInstance(the);
+	slot = object->next = fxNewSlot(the);
+	slot->kind = mxArgv(0)->kind;
+	slot->value = mxArgv(0)->value;
+	slot = mxFunctionInstanceHome(function);
+	slot->value.home.object = object;
+	the->stack++;
+	mxPushUndefined();
+	mxPushInteger(2);
+	mxPushSlot(constructor);
+	{
+		mxTry(the) {
+			mxPushInteger(0);
+			mxPushUndefined();
+			mxPushSlot(onFinally);
+			fxCall(the);
+		}
+		mxCatch(the) {
+			mxPush(mxException);
+		}
+	}
+	fx_Promise_resolveAux(the);
+	fxCallID(the, mxID(_then));
+	mxPullSlot(mxResult);
+}
+
+void fx_Promise_prototype_finallyReturn(txMachine* the)
+{
+	txSlot* object = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.object;
+	txSlot* slot = object->next;
+	mxResult->kind = slot->kind;
+	mxResult->value = slot->value;
+}
+
+void fx_Promise_prototype_finallyThrow(txMachine* the)
+{
+	txSlot* object = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.object;
+	txSlot* slot = object->next;
+	mxPushSlot(slot);
+	fxThrow(the, NULL, 0);
+}
 
 void fx_Promise_prototype_then(txMachine* the)
 {
