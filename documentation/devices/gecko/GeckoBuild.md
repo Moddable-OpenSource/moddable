@@ -180,33 +180,29 @@ An example, using UART1 on Giant Gecko, USART1 on Mighty Gecko and USART0 on Thu
 		"gecko/giant": {
 			"defines": {
 				"debugger": {
+					"interface": { "UART": 1 },
+					"location": "2",
 					"tx" : { "pin": "9", "port": "gpioPortB" },
 					"rx" : { "pin": "10", "port": "gpioPortB" },
-					"baud": 115200,
-					"port": "UART1",
-					"clock": "cmuClock_UART1",
-					"location": "2",
 				},
 			},
 		},
 		"gecko/mighty": {
 			"defines": {
 				"debugger": {
+					"interface": { "USART": 1 },
+					"location": "19",
 					"tx" : { "pin": "11", "port": "gpioPortD" },
 					"rx" : { "pin": "12", "port": "gpioPortD" },
-					"port": "USART1",
-					"clock": "cmuClock_USART1",
-					"location": "19",
 				},
 			},
 		},
 		"gecko/thunderboard2": {
 			"defines": {
 				"debugger": {
+					"interface": { "USART": 0 },
 					"tx" : { "pin": "3", "port": "gpioPortF", "location": 27 },
 					"rx" : { "pin": "4", "port": "gpioPortF", "location": 27 },
-					"port": "USART0",
-					"clock": "cmuClock_USART0",
 				},
 			},
 		},
@@ -217,22 +213,20 @@ An alternate configuration, using USART0 on Giant Gecko,and USART3 on Mighty Gec
 		"gecko/giant": {
 			"defines": {
 				"debugger": {
+					"interface": { "USART": 0 },
+					"location": "5",
 					"tx" : { "pin": "0", "port": "gpioPortC" },
 					"rx" : { "pin": "1", "port": "gpioPortC" },
-					"port": "USART0",
-					"clock": "cmuClock_USART0",
-					"location": "5",
 				},
 			},
 		},
 		"gecko/mighty": {
 			"defines": {
 				"debugger": {
+					"interface": { "USART": 3 },
+					"location": "10",
 					"tx" : { "pin": "6", "port": "gpioPortB" },
 					"rx" : { "pin": "7", "port": "gpioPortB" },
-					"port": "USART3",
-					"clock": "cmuClock_USART3",
-					"location": "10",
 				},
 			},
 		},
@@ -338,7 +332,7 @@ Gecko devices have a number of analog inputs and can be configured to use variou
 		"gecko/mighty": {
 			"defines": {
 				"analog": {
-					"port": "0",
+					"interface": { "ADC": 0 },
 					"ref": "adcRefVDD",
 					"input1": "adcPosSelAPORT2XCH9",
 					"input2": "adcPosSelAPORT3YCH22",
@@ -349,7 +343,8 @@ Gecko devices have a number of analog inputs and can be configured to use variou
 					],
 				},
 			
-Moddable currently supports ADC0 and ADC1 specified in the `manifest.json` file as analog:port:0 or 1.
+
+**interface** specifies which ADC interface to use.
 
 **input_n_** specifies a particular pin for input. Moddable currently supports 5 concurrent input sources on gecko.
 
@@ -382,10 +377,10 @@ The `manifest.json` file contains defines for the base SPI pins
 		"gecko/mighty": {
 			"defines": {
 				"spi": {
+					"interface": { "USART": 1 },
+					"location": "1",
 					"mosi": { "pin": "0", "port": "gpioPortD" },					"miso": { "pin": "1", "port": "gpioPortD" },
 					"sck": { "pin": "2", "port": "gpioPortD" },
-					"port": "1",
-					"location": "1",
 				},
 				"ili9341": {
 					"hz": 40000000,
@@ -396,7 +391,9 @@ The `manifest.json` file contains defines for the base SPI pins
 			
 This section of the `manifest.json` defines the **spi** pins and locations, and the USART port to be used on the Mighty Gecko platform.
 
-The **port** definition specifies the USART port number, clock and irq to be used. See your Gecko device datasheet for which pins refer to what USART location.
+The **interface** definition specifies which USART interface to use.
+
+**location** specifies which pin configuration to use for the _interface_. See your Gecko device datasheet for which pins refer to what USART location.
 
 Other definitions for a specific SPI device's driver will define the **cs** (chip-select) pin, **hz** (speed in hz) and other driver specific defines.
 
@@ -411,16 +408,16 @@ Gecko devices have a number of I2C interfaces.
 		"gecko/mighty": {
 			"defines": {
 				"i2c": {
-					"port": "0",
+					"interface": { "I2C": 0 },
 					"sda": { "pin": 11, "port": "gpioPortC", "location": 16 },
 					"scl": { "pin": 10, "port": "gpioPortC", "location": 14 },
 				},
 				
-The **port** definition specifies the I2C port number
+The **interface** definition specifies which I2C interface to use.
 
 In this example, **I2C0** is used. The pin PC11 is the SDA pin for I2C0 at location 16 (I2C0_SDA#16). The pin PC10 is the SCL pin for I2C0 at location 14.
 
-See your Gecko device datasheet for which pins refer to what I2C location.
+**location** specifies which pin configuration to use for the _interface_. See your Gecko device datasheet for which pins refer to what I2C location.
 
 Note: some Gecko devices split the location for various pins. This i2c example shows a different pin location for `sda` and `scl`.
 
@@ -487,19 +484,29 @@ Change the payload size to the size you need. Then click the **Generate** button
 
 ## Useful pin configurations
 
+The Gecko reference boards expose many pins. There is a pre-populated expansion connector on the right side of the board, and rows of pins at the top and bottom of the board.
+
+For most Moddable examples, the pins used are located on the expansion connector for easier access.
+
+Below are some default hookup schemes:
+
 ### Giant Gecko
 
-The Giant Gecko development boards have an expansion connector on the right side. Below are some default hookup schemes:y
+Giant Gecko locates the xsbug serial pins on the top row of pins, other peripherals on the expansion port.
 
-![STK3700 Expansion pinout](GG3700Expansion.png)
+![STK3700 Breakout pins](stk3700-BreakoutPins.png)
 
 Xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
-PB9 | UART1_TX#2 | FTDI RX
-PB10 | UART1_RX#2 | FTDI TX
+PB9 | UART1_TX#2 | FTDI TX
+PB10 | UART1_RX#2 | FTDI RX
 GND | GND | FTDI GND
+
+![STK3700 Expansion pinout](GG3700Expansion.png)
+
+
 
 Epaper Display
 
