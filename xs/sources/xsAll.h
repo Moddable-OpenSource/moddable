@@ -1356,6 +1356,7 @@ mxExport void fx_Promise_race(txMachine* the);
 mxExport void fx_Promise_reject(txMachine* the);
 mxExport void fx_Promise_resolve(txMachine* the);
 mxExport void fx_Promise_prototype_catch(txMachine* the);
+mxExport void fx_Promise_prototype_finally(txMachine* the);
 mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
