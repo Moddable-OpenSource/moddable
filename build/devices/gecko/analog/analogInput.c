@@ -41,15 +41,15 @@
 #define ADC_INPUT0              adcPosSelAPORT3XCH8     /* PA0 */
 //#define ADC_INPUT0				adcPosSelAPORT3YCH23	/* PB7 */
 
-#if !defined(MODDEF_ANALOG_PORT)
-	#define MODDEF_ANALOG_PORT 0
+#if !defined(MODDEF_ANALOG_INTERFACE_ADC)
+	#define MODDEF_ANALOG_INTERFACE_ADC 0
 #endif
 
-#if MODDEF_ANALOG_PORT == 0
+#if MODDEF_ANALOG_INTERFACE_ADC == 0
 	#define ANALOG_PORT		ADC0
 	#define ANALOG_CLOCK	cmuClock_ADC0
 	#define ANALOG_IRQ		ADC0_IRQn
-#elif MODDEF_ANALOG_PORT == 1
+#elif MODDEF_ANALOG_INTERFACE_ADC == 1
 	#define ANALOG_PORT		ADC1
 	#define ANALOG_CLOCK	cmuClock_ADC1
 	#define ANALOG_IRQ		ADC1_IRQn
@@ -272,9 +272,9 @@ void adcReset(void)
 
 }
 
-#if MODDEF_ANALOG_PORT == 0
+#if MODDEF_ANALOG_INTERFACE_ADC == 0
 void ADC0_IRQHandler(void)
-#elif MODDEF_ANALOG_PORT == 1
+#elif MODDEF_ANALOG_INTERFACE_ADC == 1
 void ADC1_IRQHandler(void)
 #endif
 {
