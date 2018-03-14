@@ -94,9 +94,10 @@ uint32_t configSleepClock(uint32_t ms) {
 #else
 	BURTC_Init_TypeDef burtcInit = BURTC_INIT_DEFAULT;
 
+	RMU_ResetControl(rmuResetBU, rmuResetModeClear);
+
 	burtcInit.mode = burtcModeEM4;			/* BURTC is enabled in EM0-EM4 */
 	burtcInit.clkSel = burtcClkSelULFRCO;	/* Select ULFRCO as clock source */
-//	burtcInit.clkDiv = burtcClkDiv_2;	/* Choose 1kHz ULFRCO clock frequency */
 	burtcInit.clkDiv = burtcClkDiv_128;
 
 	BURTC_CompareSet(0, ms);     		/* Set top value for comparator */
@@ -129,12 +130,15 @@ void configGPIO(void) {
 #endif
 }
 
-void radioSleep();
+void geckoRadioSleep() __attribute__ ((weak));
+void geckoRadioSleep()
+{
+}
 
 void geckoSleepEM4(uint32_t ms) {
 	uint32_t remainingTime, sleepTime;
 	geckoDisableSysTick();
-    radioSleep();
+    geckoRadioSleep();
 //	geckoSleepSensors();
 //    CMU_HFRCOBandSet(cmuHFRCOFreq_1M0Hz);
 	configEM4();
@@ -176,3 +180,4 @@ void geckoSleepEM4UntilButton() {
 	EMU_EnterEM4H();
 #endif
 }
+
