@@ -133,6 +133,7 @@ void xs_securesocket_read(xsMachine *the)
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])	{	//@@
 					xsResult = xsArrayBuffer(NULL, srcBytes);
+					resolveBuffer(the, &xsVar(1), &srcData, NULL);
 					c_memmove(xsmcToArrayBuffer(xsResult), srcData + position, srcBytes);
 				}
 				else
