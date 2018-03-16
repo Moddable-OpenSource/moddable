@@ -120,13 +120,8 @@ In the app's main.c, add a few things:
 	
 	void assertEFM() { } // maybe  void assertEFM(const char *file, int line) {} depending on your SDK
 
-In the app's main() function after chip initialization, enable some clocks:
 
-	  CMU_ClockEnable(cmuClock_CORELE, true);
-	  CMU_ClockEnable(cmuClock_HFPER, true);
-	  CMU_ClockEnable(cmuClock_GPIO, true);
-
-Add some code to get the reset cause:
+Near the beginning of main(), add some code to get the reset cause. This must be done early in device initialization.
 
 	  gResetCause = RMU_ResetCauseGet();
 	  if (gResetCause & (RMU_RSTCAUSE_EM4RST | RMU_RSTCAUSE_SYSREQRST | RMU_RSTCAUSE_EXTRST)) {
@@ -466,7 +461,7 @@ Depending on the processor and project configuration, you may need to adjust the
 
 In **GNU ARM C Compiler -> Symbols** and **GNU ARM Assembler -> Symbols**, add a `__STACK_SIZE` and/or `__HEAP_SIZE`
 
-	__STACK_SIZE=0x1000
+	__STACK_SIZE=0x1E00
 	__HEAP_SIZE=0xA000
 
 - Some Simplicity Studio example projects use a fixed size packet length.
