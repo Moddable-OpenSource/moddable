@@ -53,7 +53,8 @@
 #endif
 
 void gecko_delay(uint32_t ms);
-//uint32_t setupRTCTimeout(uint32_t ms);
+void geckoStoreGpioRetention(void);
+void geckoRestoreGpioRetention(void);
 
 extern uint32_t gResetCause;
 //uint32_t gGeckoSetDelayMode = 0;
@@ -64,7 +65,6 @@ static uint8_t gecko_schedule_now = 0;		// interrupts delay
 uint32_t geckoGetResetCause() {
 	return gResetCause;
 }
-
 
 /*  /MODDABLE */
 
@@ -163,9 +163,6 @@ CMU_ClockEnable(cmuClock_CRYOTIMER, false);
 	return (findCRYOPeriodMS(init.period));
 }
 #else
-uint32_t setupRTCCTimeout(uint32_t delay) {
-}
-
 void RTC_IRQHandler() {
 	RTC_IntClear(RTC_IntGet());
 }
@@ -194,14 +191,25 @@ uint32_t setupRTCTimeout(uint32_t delay) {
 	NVIC_EnableIRQ(RTC_IRQn);
 	RTC_IntEnable(RTC_IEN_COMP1);
 	RTC_Enable(true);
+
+	return delay;
 }
 #endif
 
 void geckoStartRTCC(void)
 {
 #if MODDEF_SLEEP_RETENTION_MEMORY
+#if GIANT_GECKO
+	BURTC_Init_TypeDef burtcInit = BURTC_INIT_DEFAULT;
+    RMU_ResetControl(rmuResetBU, rmuResetModeClear);
+	burtcInit.mode = burtcModeEM4;
+	burtcInit.clkSel = burtcClkSelULFRCO;
+	burtcInit.clkDiv = burtcClkDiv_128;
+	BURTC_IntClear(BURTC_IF_COMP0);
+	BURTC_Init(&burtcInit);
+#else // mighty gecko, etc. - cryotimer
    CMU_ClockEnable(cmuClock_CORELE, true);
-    CMU_ClockSelectSet(cmuClock_LFE, cmuSelect_ULFRCO); //<---Enable ULFRCO as LFECLK 1kHz clock
+   CMU_ClockSelectSet(cmuClock_LFE, cmuSelect_ULFRCO); //<---Enable ULFRCO as LFECLK 1kHz clock
 
     /* need RTCC for retention register */
     CMU_ClockEnable(cmuClock_RTCC, true);
@@ -211,6 +219,7 @@ void geckoStartRTCC(void)
       rtccInit.debugRun = true;
       RTCC_Init(&rtccInit);
     RTCC_EM4WakeupEnable(false);		// we're using the cryotimer for this
+#endif
 #endif
 }
 
@@ -262,13 +271,6 @@ void gecko_delay(uint32_t ms)
 #endif
 }
 
-void geckoUnlatchPinRetention() {
-#if MODDEF_SLEEP_RETENTION_GPIO
-	/** Retention through EM4 and wakeup: call EMU_UnlatchPinRetention() to unlatch */
-	EMU_UnlatchPinRetention();
-#endif
-}
-
 void geckoCheckSleepRemainder() {
 #if 0
 #if MODDEF_SLEEP_REPEAT_EM4
@@ -289,42 +291,6 @@ void geckoCheckSleepRemainder() {
 #endif
 }
 
-
-void geckoStoreGpioRetention() {
-#if 0
-	int pinStates = 0;
-
-	if (GPIO_PinOutGet(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN)) {
-		pinStates += 0x1;
-	}
-	if (GPIO_PinOutGet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN)) {
-		pinStates += 0x2;
-	}
- 	   
-	geckoSetPersistentValue(29, pinStates);
-#endif
-}
-
-void geckoRestoreGpioRetention() {
-#if 0
-	int pinStates;
-
-	geckoStartRTCC();
-	pinStates = geckoGetPersistentValue(29);
-	if (pinStates & 0xfffffff0)
-		pinStates = 0;
-	else {
-		if (pinStates & 0x1)
-			GPIO_PinOutSet(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN);
-		else
-			GPIO_PinOutClear(MODDEF_IOTCONTROL_GPIOPOWER_PORT, MODDEF_IOTCONTROL_GPIOPOWER_PIN);
-		if (pinStates & 0x2)
-			GPIO_PinOutSet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN);
-		else
-			GPIO_PinOutSet(MODDEF_IOTCONTROL_SENSORPOWER_PORT, MODDEF_IOTCONTROL_SENSORPOWER_PIN);
-	}
-#endif
-}
 
 void geckoRestoreFromSleep() {
 	setupDebugger();
