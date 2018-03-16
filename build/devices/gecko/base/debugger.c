@@ -182,5 +182,3 @@ void setupDebugger() {
 #endif
 }
 
-char gOutMsg[128];
-
