@@ -44,6 +44,8 @@
 #include "em_bus.h"
 #endif
 
+void geckoStoreGpioRetention(void);
+
 uint32_t geckoGetPersistentValue(uint32_t reg) {
 #if USE_CRYOTIMER
 	return RTCC->RET[reg].REG;
@@ -136,31 +138,14 @@ void geckoRadioSleep()
 }
 
 void geckoSleepEM4(uint32_t ms) {
-	uint32_t remainingTime, sleepTime;
 	geckoDisableSysTick();
     geckoRadioSleep();
 //	geckoSleepSensors();
 //    CMU_HFRCOBandSet(cmuHFRCOFreq_1M0Hz);
 	configEM4();
-	sleepTime = configSleepClock(ms);
-#if MODDEF_SLEEP_REPEAT_EM4
-	remainingTime = ms - sleepTime;
-	if (remainingTime > 100) {
-		geckoSetPersistentValue(kSleepTagReg, kxtimTag);
-		geckoSetPersistentValue(kSleepRemainReg, remainingTime);
-	}
-	else {
-		geckoSetPersistentValue(kSleepTagReg, kmdblTag);
-	}
-#endif
+	configSleepClock(ms);
 	geckoStoreGpioRetention();
 	configGPIO();
-
-/* do we need this?	
-	WDOG0->CTRL |= WDOG_CTRL_CLKSEL_ULFRCO;		// wait for ULFRCO to start
-	while (CMU->SYNCBUSY)
-		;
-*/
 
 #if USE_CRYOTIMER
 	EMU_EnterEM4H();
@@ -171,7 +156,6 @@ void geckoSleepEM4(uint32_t ms) {
 }
 
 void geckoSleepEM4UntilButton() {
-//#if EFR32MG12P332F1024GL125
 #if MIGHTY_GECKO
 	CRYOTIMER->EM4WUEN = 0;
 	radioSleep();
