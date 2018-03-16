@@ -61,7 +61,7 @@ static uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 
 #define SCREEN_CS_DEACTIVE	modGPIOWrite(&ls->cs, 0)
 #define SCREEN_CS_ACTIVE	modGPIOWrite(&ls->cs, 1)
-#define SCREEN_CS_INIT		modGPIOInit(&ls->cs, MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, kModGPIOOutput); \
+#define SCREEN_CS_INIT		modGPIOInit(&ls->cs, (const char *)MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, kModGPIOOutput); \
 	SCREEN_CS_DEACTIVE
 
 // Host data record.
