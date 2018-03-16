@@ -49,6 +49,15 @@ void fxReceiveLoop(void);
 #define mxDebugMutexTake()
 #define mxDebugMutexGive()
 
+int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+int modMessagePostToMachineFromPool(txMachine *the, modMessageDeliver callback, void *refcon);
+int modMessageService(void);
+
+void modMachineTaskInit(txMachine *the);
+void modMachineTaskUninit(txMachine *the);
+void modMachineTaskWait(txMachine *the);
+void modMachineTaskWake(txMachine *the);
+
 void fxCreateMachinePlatform(txMachine* the)
 {
 	modMachineTaskInit(the);

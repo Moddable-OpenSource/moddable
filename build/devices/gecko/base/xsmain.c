@@ -38,6 +38,10 @@ xsCallback xsHostModuleAt(xsIndex i)
 }
 
 extern void mc_setup(xsMachine *the);
+extern void geckoSetupGPIO();
+extern void geckoSetupRTCC();
+extern void	geckoConfigureSysTick();
+extern void	setupDebugger();
 
 void xs_setup() {
 	gDeviceUnique = SYSTEM_GetUnique() & 0xffffffff;

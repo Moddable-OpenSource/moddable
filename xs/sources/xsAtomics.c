@@ -592,10 +592,10 @@ void fxUnlockSharedChunk(void* data)
 
 txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInteger value, txNumber timeout)
 {
-	txInteger* address = (txInteger*)((txByte*)data + offset);
-	txInteger result;
+	txInteger result = 0;
 	if (gxSharedCluster && (gxSharedCluster->mainThread != mxCurrentThread())) {
 	#if defined(mxUseLinuxFutex)
+		txInteger* address = (txInteger*)((txByte*)data + offset);
 		if (timeout == C_INFINITY)
 			futex(address, FUTEX_WAIT, value, C_NULL, C_NULL, 0);
 		else {

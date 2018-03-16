@@ -302,7 +302,7 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		if (the->firstBlock != C_NULL && the->firstBlock->limit == mc_xs_chunk_allocator(the, 0)) {	/* sanity check just in case */
 			fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 			the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
-			the->heap_ptr = the->firstBlock->current;
+			the->heap_ptr = (uint8_t*)the->firstBlock->current;
 			the->firstBlock->limit = the->firstBlock->current;
 		}
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
@@ -708,7 +708,7 @@ struct modMessageRecord {
 	uint16_t            length;
 	uint8_t             marked;
 	uint8_t				isStatic;		// this doubles as a flag to indicate entry is use gMessagePool
-	char				message[1];
+	uint8_t				message[1];
 };
 
 static modMessage gMessageQueue;

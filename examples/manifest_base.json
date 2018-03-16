@@ -113,7 +113,6 @@
 					"location": "2",
 					"tx": { "pin": "9", "port": "gpioPortB" },
 					"rx": { "pin": "10", "port": "gpioPortB" },
-					"baud": 115200,
 				},
 				"spi": {
 					"interface": { "USART": 1 },
