@@ -2,7 +2,7 @@
  * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
- * 
+ *
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
@@ -12,14 +12,8 @@
  *
  */
 
-//trace("simple worker launched\n");
-
 let counter = 0
 
 self.onmessage = function(msg) {
-//	trace("simple worker received message\n");
-//	trace(JSON.stringify(msg));
-//	trace("\n");
-
 	self.postMessage({hello: "from simple worker", counter: ++counter});
 }
