@@ -24,11 +24,19 @@
 */
 
 class Worker @ "xs_worker_destructor" {
-	constructor(module) @ "xs_worker";
+	constructor(module, options) @ "xs_worker";
 	postMessage(message) @ "xs_worker_postfrominstantiator";
 	terminate() @ "xs_worker_terminate";
 };
+Object.freeze(Worker.prototype);
+
+/*
+	shared worker
+*/
+
+export class SharedWorker @ "xs_worker_destructor" {
+	constructor(module, options) @ "xs_sharedworker";
+};
+Object.freeze(SharedWorker.prototype);
 
 export default Worker;
-
-Object.freeze(Worker.prototype);
