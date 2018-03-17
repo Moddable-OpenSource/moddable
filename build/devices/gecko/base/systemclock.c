@@ -340,3 +340,14 @@ void gecko_schedule() {
 	// need to post an interrupt?
 }
 
+void geckoSetupClocks() {
+#if USE_CRYOTIMER
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO);
+#else
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFRCO);
+#endif
+
+	geckoStartRTCC();
+	geckoConfigureSysTick();
+}
+
