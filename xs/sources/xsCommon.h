@@ -83,8 +83,8 @@ typedef int (*txPutter)(txString, void*);
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 3
-#define XS_PATCH_VERSION 1
+#define XS_MINOR_VERSION 4
+#define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -130,6 +130,7 @@ enum {
 	XS_CODE_ARGUMENTS_STRICT,
 	XS_CODE_ARRAY,
 	XS_CODE_ASYNC_FUNCTION,
+	XS_CODE_ASYNC_GENERATOR_FUNCTION,
 	XS_CODE_AT,
 	XS_CODE_AWAIT,
 	XS_CODE_BEGIN_SLOPPY,
@@ -194,6 +195,7 @@ enum {
 	XS_CODE_EXTEND,
 	XS_CODE_FALSE,
 	XS_CODE_FILE,
+	XS_CODE_FOR_AWAIT_OF,
 	XS_CODE_FOR_IN,
 	XS_CODE_FOR_OF,
 	XS_CODE_FUNCTION,
@@ -280,6 +282,7 @@ enum {
 	XS_CODE_SET_VARIABLE,
 	XS_CODE_SIGNED_RIGHT_SHIFT,
 	XS_CODE_START_ASYNC,
+	XS_CODE_START_ASYNC_GENERATOR,
 	XS_CODE_START_GENERATOR,
 	XS_CODE_STORE_1,
 	XS_CODE_STORE_2,
@@ -298,6 +301,7 @@ enum {
 	XS_CODE_TEMPLATE,
 	XS_CODE_THIS,
 	XS_CODE_THROW,
+	XS_CODE_THROW_STATUS,
 	XS_CODE_TO_INSTANCE,
 	XS_CODE_TRANSFER,
 	XS_CODE_TRUE,
@@ -544,7 +548,8 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 
 #define XS_NO_ID -1
 enum {
-	_Symbol_hasInstance = 1,
+	_Symbol_asyncIterator = 1,
+	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,
 	_Symbol_iterator,
 	_Symbol_match,
@@ -558,6 +563,7 @@ enum {
 	_Array,
 	_ArrayBuffer,
 	_AsyncFunction,
+	_AsyncGeneratorFunction,
 	_Atomics,
 	_Boolean,
 	_Chunk,
@@ -645,6 +651,7 @@ enum {
 	_asin,
 	_asinh,
 	_assign,
+	_asyncIterator,
 	_atan,
 	_atanh,
 	_atan2,
