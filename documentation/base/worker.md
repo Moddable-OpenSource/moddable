@@ -1,7 +1,7 @@
 # Worker
 Copyright 2018 Moddable Tech, Inc.
 
-Revised: January 14, 2017
+Revised: March 19, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -19,13 +19,6 @@ The `Worker` class is an API for working with virtual machines. The implementati
 Those familiar with Web Workers are strongly advised to read this document to understand whether the implementation differences are relevant to their use of workers.
 
 This document contains a standalone description of the `Worker` class implemented in the Moddable SDK, without reference to the Web Worker specification. The [`worker` example](../../examples/base/worker/) is a simple example of using the `Worker` class.
-
-## Scheduling
-Depending on the host runtime, workers may be preemptively scheduled (e.g. run in parallel to each other and the main virtual machine, or they may be cooperatively scheduled (e.g. other virtual machines may only run after the current virtual machine yields). Cooperative scheduling is useful for isolating scripts but does not prevent one virtual machine from blocking another.
-
-The Web Worker specification requires assumes that all Workers are preemptively scheduled. On some microcontrollers, preemptive scheduling is impractical (too much memory required) or nearly impossible (not supported by the host RTOS).
-
-Each host of the Moddable SDK runtime decided whether to support multiple virtual machines. If it does, it then decides whether to support preemptive or cooperative scheduling.  The ESP8266 runtime is built on a cooperative task model and so implements cooperative scheduling of virtual machines. The ESP32 is built on FreeRTOS, a preemptively scheduled RTOS, an so supports preemptive scheduling. When deciding whether to use multiple virtual machines in a project, check to see what is supported by the host runtime.
 
 ## class Worker
 Scripts import the `Worker` class to be able to create a new worker.
@@ -131,6 +124,27 @@ The worker `onmessage` property contains a function which receives messages from
 	aWorker.onmessage = function(msg) {
 		trace(msg, "\n");
 	}
+
+## Shared Workers
+The `SharedWorker` class is an API for working with shared virtual machines. The implementation is based on the [Shared Workers](https://html.spec.whatwg.org/multipage/workers.html#shared-workers-introduction) API from the web with some differences, including:
+
+- The `close` function on the message port is not yet implemented, so Shared Workers cannot be terminated
+- Workers are always launched from a module, never from a script file.
+
+
+## class SharedWorker
+Scripts import the `SharedWorker` class to be able to connect to a shared worker, creating the shared worker if it is not currently instantiated.
+
+	import {SharedWorker} from "worker";
+	
+**Note**: Examples and documentation needed.
+
+## Scheduling
+Depending on the host runtime, workers may be preemptively scheduled (e.g. run in parallel to each other and the main virtual machine, or they may be cooperatively scheduled (e.g. other virtual machines may only run after the current virtual machine yields). Cooperative scheduling is useful for isolating scripts but does not prevent one virtual machine from blocking another.
+
+The Web Worker specification requires assumes that all Workers are preemptively scheduled. On some microcontrollers, preemptive scheduling is impractical (too much memory required) or nearly impossible (not supported by the host RTOS).
+
+Each host of the Moddable SDK runtime decided whether to support multiple virtual machines. If it does, it then decides whether to support preemptive or cooperative scheduling.  The ESP8266 runtime is built on a cooperative task model and so implements cooperative scheduling of virtual machines. The ESP32 is built on FreeRTOS, a preemptively scheduled RTOS, an so supports preemptive scheduling. When deciding whether to use multiple virtual machines in a project, check to see what is supported by the host runtime.
 
 ## xsbug support
 The debugger for the XS virtual machine, `xsbug`, supports working with multiple virtual machines simultaneously. Each virtual machine appears in a separate tab with the name of the module path used to initialize the worker.
