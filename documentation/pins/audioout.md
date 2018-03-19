@@ -1,7 +1,7 @@
 # AudioOut
 Copyright 2018 Moddable Tech, Inc.
 
-Revised: February 23, 2018
+Revised: March 19, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -124,9 +124,15 @@ The enqueue function has several different functions, all related to the audio q
 All invocations of the `enqueue` function include the first parameter, the target stream number, a value from 0 to one less than the number of streams configured using the constructor.
 
 #### Enqueuing audio samples
-To `enqueue` audio samples call enqueue with a buffer of samples:
+Audio samples to play may be provided either as a MAUD audio resource or as raw audio samples. In both cases, the samples must be in the same format as the audio output (e.g. have the same sample rate, bits per sample, and number of channels).
 
-	audio.enqueue(0, buffer);
+To `enqueue` audio samples with a Moddable Audio header (MAUD), call enqueue with a buffer of samples:
+
+	audio.enqueue(0, AuioOut.Samples, buffer);
+
+To `enqueue` a buffer of audio samples with no header call enqueue with a buffer of samples:
+
+	audio.enqueue(0, AudioOut.RawSamples, buffer);
 
 To play the buffer several times, specify the optional `repeat` count. The repeat count is either a positive integer or `Infinity`.
 
@@ -159,9 +165,9 @@ To change the volume, enqueue a `Volume` command on a stream. The volume command
 Values for the volume command range from 0 for silent, to 256 for full volume.
 
 ## MAUD format
-The `maud` format, "Moddable Audio", is a trivial uncompressed audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts only samples in the `maud` format.
+The `maud` format, "Moddable Audio", is a simple uncompressed audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts samples in the `maud` format. The `wav2maud` tool in the Moddable SDK converts WAV files to `maud` resources.
 
-The format has a simple twelve byte header followed by samples.
+The format has a twelve byte header followed immediately by audio samples.
 
 - offset 0 -- ASCII 'm'
 - offset 1 -- ASCII 'a'
@@ -187,6 +193,7 @@ The `audioOut` module is be configured at build time.
 - `MODDEF_AUDIOOUT_I2S_BCK_PIN` -- The I2S clock pin. The default is 26.
 - `MODDEF_AUDIOOUT_I2S_LR_PIN` -- The I2S LR pin. The default is 25.
 - `MODDEF_AUDIOOUT_I2S_DATAOUT_PIN` -- The I2S data pin. The default is 22.
+- `MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE` - Number of bits per sample to transmit over I2S, either 16 or 32. Default is 16.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
