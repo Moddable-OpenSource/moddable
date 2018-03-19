@@ -1208,6 +1208,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] = {
 	{ XS_CODE_FALSE, XS_TOKEN_FALSE, "False", sizeof(txNode), &gxValueNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_FINALLY, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_FOR, "For", sizeof(txForNode), &gxForNodeDispatch },
+	{ XS_CODE_FOR_AWAIT_OF, XS_TOKEN_FOR_AWAIT_OF, "ForAwaitOf", sizeof(txForInForOfNode), &gxForInForOfNodeDispatch },
 	{ XS_CODE_FOR_IN, XS_TOKEN_FOR_IN, "ForIn", sizeof(txForInForOfNode), &gxForInForOfNodeDispatch },
 	{ XS_CODE_FOR_OF, XS_TOKEN_FOR_OF, "ForOf", sizeof(txForInForOfNode), &gxForInForOfNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_FUNCTION, "Function", sizeof(txFunctionNode), &gxFunctionNodeDispatch },

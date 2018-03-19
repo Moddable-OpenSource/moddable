@@ -212,6 +212,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_FALSE */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_FINALLY */ XS_TOKEN_IDENTIFIER_NAME | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_FOR */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
+	/* XS_TOKEN_FOR_AWAIT_OF */ 0,
 	/* XS_TOKEN_FOR_IN */ 0,
 	/* XS_TOKEN_FOR_OF */ 0,
 	/* XS_TOKEN_FUNCTION */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
@@ -372,6 +373,7 @@ static txString gxTokenNames[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_FALSE */ "false",
 	/* XS_TOKEN_FINALLY */ "finally",
 	/* XS_TOKEN_FOR */ "for",
+	/* XS_TOKEN_FOR_AWAIT_OF */ "for_await_of",
 	/* XS_TOKEN_FOR_IN */ "for_in",
 	/* XS_TOKEN_FOR_OF */ "for_of",
 	/* XS_TOKEN_FUNCTION */ "function",
@@ -536,7 +538,7 @@ void fxPushNodeStruct(txParser* parser, txInteger count, txToken token, txIntege
 	}
     node = fxNewParserChunkClear(parser, description->size);
 	node->description = description;
-	node->flags |= parser->flags & (mxStrictFlag | mxGeneratorFlag);
+	node->flags |= parser->flags & (mxStrictFlag | mxGeneratorFlag | mxAsyncFlag);
 	node->path = parser->path;
 	node->line = line;
     parser->nodeCount -= count;
@@ -1258,10 +1260,15 @@ void fxDoStatement(txParser* parser)
 void fxForStatement(txParser* parser)
 {
 	txInteger aLine = parser->line;
+	txBoolean awaitFlag = 0;
 	txBoolean expressionFlag = 0;
 	txToken aToken;
 	fxPushNULL(parser);
 	fxMatchToken(parser, XS_TOKEN_FOR);
+	if (parser->token == XS_TOKEN_AWAIT) {
+		awaitFlag = 1;
+		fxGetNextToken(parser);
+	}
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
 	fxGetNextToken2(parser);
 	parser->flags |= mxForFlag;
@@ -1286,6 +1293,8 @@ void fxForStatement(txParser* parser)
 		expressionFlag = 1;
 	}
 	parser->flags &= ~mxForFlag;
+	if (awaitFlag && !fxIsKeyword(parser, parser->ofSymbol))
+		fxReportParserError(parser, "invalid for await");
 	if ((parser->token == XS_TOKEN_IN) || fxIsKeyword(parser, parser->ofSymbol)) {
 		if (expressionFlag) {
 			if (!fxCheckReference(parser, XS_TOKEN_ASSIGN)) {
@@ -1306,7 +1315,9 @@ void fxForStatement(txParser* parser)
 			fxAssignmentExpression(parser);
 		fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
 		fxStatement(parser, 0);
-		if (aToken == XS_TOKEN_IN)
+		if (awaitFlag)
+			fxPushNodeStruct(parser, 3, XS_TOKEN_FOR_AWAIT_OF, aLine);
+		else if (aToken == XS_TOKEN_IN)
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FOR_IN, aLine);
 		else
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FOR_OF, aLine);
@@ -1742,7 +1753,10 @@ void fxUnaryExpression(txParser* parser)
 			fxPushNodeStruct(parser, 1, aToken, aLine);
 		}
 		else if (aToken == XS_TOKEN_AWAIT) {
-			parser->flags |= mxAwaitingFlag;
+			if ((parser->flags & mxGeneratorFlag) && !(parser->flags & mxYieldFlag))
+				fxReportParserError(parser, "invalid await");
+			else
+				parser->flags |= mxAwaitingFlag;
 			fxPushNodeStruct(parser, 1, aToken, aLine);
 		}
 		else
@@ -2264,6 +2278,8 @@ void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSy
 			*theSymbol = parser->symbol;
 		else if (parser->symbol == parser->yieldSymbol)
  			fxReportParserError(parser, "invalid yield");
+		else if ((parser->flags & mxAsyncFlag) && (parser->symbol == parser->awaitSymbol))
+ 			fxReportParserError(parser, "invalid await");
 		fxCheckStrictSymbol(parser, parser->symbol);
 		fxGetNextToken(parser);
 	}
@@ -2578,7 +2594,8 @@ void fxPropertyName(txParser* parser, txSymbol** theSymbol, txToken* theToken0, 
 				aToken2 = XS_TOKEN_GENERATOR;
 				fxGetNextToken(parser);
 			}
-			aToken2 = XS_TOKEN_FUNCTION;
+			else
+				aToken2 = XS_TOKEN_FUNCTION;
 		}
 		else if (fxIsKeyword(parser, parser->getSymbol)) {
 			aToken2 = XS_TOKEN_GETTER;

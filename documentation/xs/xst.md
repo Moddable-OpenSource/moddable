@@ -39,14 +39,14 @@ from the [moddable-xst](https://github.com/Moddable-OpenSource/moddable-xst/rele
 
 Without the `-e`, `-m` or `-s` options, `strings` are paths to **test262** cases or directories. 
 
-<!--### eshost
+### eshost
 
 To test XS with **eshost**, install the [eshost CLI](https://github.com/bterlson/eshost-cli). Then add XS to the hosts:
 
 	eshost --add 'XS' xs ~/.jsvu/xst
 
 **eshost** uses the `-s` option of **xst**.
--->
+
 ### test262
 
 To test XS with **test262**, clone [test262](https://github.com/tc39/test262) and change the directory to the `test` directory inside the `test262` directory. For instance:
