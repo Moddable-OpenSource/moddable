@@ -138,6 +138,16 @@ txSlot* fxNextNumberProperty(txMachine* the, txSlot* property, txNumber number, 
 	return property;
 }
 
+txSlot* fxNextReferenceProperty(txMachine* the, txSlot* property, txSlot* slot, txID id, txFlag flag)
+{
+	property = property->next = fxNewSlot(the);
+	property->flag = flag;
+	property->ID = id;
+	property->kind = XS_REFERENCE_KIND;
+	property->value.reference = slot;
+	return property;
+}
+
 txSlot* fxNextSlotProperty(txMachine* the, txSlot* property, txSlot* slot, txID id, txFlag flag)
 {
 	property = property->next = fxNewSlot(the);
