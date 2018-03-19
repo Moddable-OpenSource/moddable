@@ -1,0 +1,15 @@
+{
+	"include": [
+		"../manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources": {
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+	},
+	"config": {
+		"screen": "ili9341"
+	}
+}
