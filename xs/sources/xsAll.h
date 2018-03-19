@@ -99,9 +99,10 @@ typedef txBoolean (*txBehaviorSetPrototype)(txMachine* the, txSlot* instance, tx
 typedef struct {
 	txSlot* (*newAsyncInstance)(txMachine*);
 	void (*runAsync)(txMachine*, txSlot*);
-	void (*runAwait)(txMachine*, txSlot*);
 	txSlot* (*newGeneratorInstance)(txMachine*);
 	txSlot* (*newGeneratorFunctionInstance)(txMachine*, txID name);
+	txSlot* (*newAsyncGeneratorInstance)(txMachine*);
+	txSlot* (*newAsyncGeneratorFunctionInstance)(txMachine*, txID name);
 	void (*runEvalEnvironment)(txMachine*);
 	void (*runProgramEnvironment)(txMachine*);
 } txDefaults;
@@ -715,6 +716,7 @@ extern txSlot* fxNextNullProperty(txMachine* the, txSlot* property, txID id, txF
 extern txSlot* fxNextBooleanProperty(txMachine* the, txSlot* property, txBoolean boolean, txID id, txFlag flag);
 extern txSlot* fxNextIntegerProperty(txMachine* the, txSlot* property, txInteger integer, txID id, txFlag flag);
 extern txSlot* fxNextNumberProperty(txMachine* the, txSlot* property, txNumber number, txID id, txFlag flag);
+extern txSlot* fxNextReferenceProperty(txMachine* the, txSlot* property, txSlot* slot, txID id, txFlag flag);
 extern txSlot* fxNextSlotProperty(txMachine* the, txSlot* property, txSlot* slot, txID id, txFlag flag);
 extern txSlot* fxNextStringProperty(txMachine* the, txSlot* property, txString string, txID id, txFlag flag);
 extern txSlot* fxNextStringXProperty(txMachine* the, txSlot* property, txString string, txID id, txFlag flag);
@@ -820,7 +822,6 @@ mxExport void fx_AsyncFunction(txMachine* the);
 
 extern txSlot* fxNewAsyncInstance(txMachine* the);
 extern void fxRunAsync(txMachine* the, txSlot* instance);
-extern void fxRunAwait(txMachine* the, txSlot* instance);
 
 /* xsBoolean.c */
 mxExport void fx_Boolean(txMachine* the);
@@ -1345,9 +1346,23 @@ mxExport void fx_Generator_prototype_return(txMachine* the);
 mxExport void fx_Generator_prototype_throw(txMachine* the);
 mxExport void fx_GeneratorFunction(txMachine* the);
 
+mxExport void fx_AsyncGenerator(txMachine* the);
+mxExport void fx_AsyncGenerator_prototype_next(txMachine* the);
+mxExport void fx_AsyncGenerator_prototype_return(txMachine* the);
+mxExport void fx_AsyncGenerator_prototype_throw(txMachine* the);
+mxExport void fx_AsyncGeneratorFunction(txMachine* the);
+
+mxExport void fx_AsyncIterator_asyncIterator(txMachine* the);
+mxExport void fx_AsyncFromSyncIterator_prototype_next(txMachine* the);
+mxExport void fx_AsyncFromSyncIterator_prototype_return(txMachine* the);
+mxExport void fx_AsyncFromSyncIterator_prototype_throw(txMachine* the);
+
 extern void fxBuildGenerator(txMachine* the);
 extern txSlot* fxNewGeneratorInstance(txMachine* the);
 extern txSlot* fxNewGeneratorFunctionInstance(txMachine* the, txID name);
+extern txSlot* fxNewAsyncGeneratorInstance(txMachine* the);
+extern txSlot* fxNewAsyncGeneratorFunctionInstance(txMachine* the, txID name);
+extern txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the);
 
 /* xsPromise.c */
 mxExport void fx_Promise(txMachine* the);
@@ -2025,6 +2040,11 @@ enum {
 	mxSetValuesIteratorPrototypeStackIndex,
 	mxStringIteratorPrototypeStackIndex,
 	
+	mxAsyncIteratorPrototypeStackIndex,
+	mxAsyncFromSyncIteratorPrototypeStackIndex,
+	mxAsyncGeneratorPrototypeStackIndex,
+	mxAsyncGeneratorFunctionPrototypeStackIndex,
+	
 	mxArgumentsSloppyPrototypeStackIndex,
 	mxArgumentsStrictPrototypeStackIndex,
 	mxThrowTypeErrorFunctionStackIndex,
@@ -2140,6 +2160,11 @@ enum {
 #define mxSetKeysIteratorPrototype the->stackPrototypes[-1 - mxSetKeysIteratorPrototypeStackIndex]
 #define mxSetValuesIteratorPrototype the->stackPrototypes[-1 - mxSetValuesIteratorPrototypeStackIndex]
 #define mxStringIteratorPrototype the->stackPrototypes[-1 - mxStringIteratorPrototypeStackIndex]
+
+#define mxAsyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncIteratorPrototypeStackIndex]
+#define mxAsyncFromSyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncFromSyncIteratorPrototypeStackIndex]
+#define mxAsyncGeneratorPrototype the->stackPrototypes[-1 - mxAsyncGeneratorPrototypeStackIndex]
+#define mxAsyncGeneratorFunctionPrototype the->stackPrototypes[-1 - mxAsyncGeneratorFunctionPrototypeStackIndex]
 
 #define mxArgumentsSloppyPrototype the->stackPrototypes[-1 - mxArgumentsSloppyPrototypeStackIndex]
 #define mxArgumentsStrictPrototype the->stackPrototypes[-1 - mxArgumentsStrictPrototypeStackIndex]
