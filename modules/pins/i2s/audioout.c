@@ -44,6 +44,9 @@
 	#ifndef MODDEF_AUDIOOUT_I2S_DATAOUT_PIN
 		#define MODDEF_AUDIOOUT_I2S_DATAOUT_PIN (22)
 	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+		#define MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE (16)
+	#endif
 #endif
 
 #ifndef MODDEF_AUDIOOUT_VOLUME_DIVIDER
@@ -132,7 +135,7 @@ typedef struct {
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
-	uint32_t				buffer[128];
+	uint32_t				buffer[512];		//@@ bigger when 32-bit samples
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
@@ -306,7 +309,11 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 768, out, 7, &out->task);
+#if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
+	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 7, &out->task);
+#else
+	xTaskCreate(audioOutLoop, "audioOut", 2048, out, 7, &out->task);
+#endif
 #endif
 }
 
@@ -627,9 +634,14 @@ void audioOutLoop(void *pvParameter)
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX,	// Only TX
 		.sample_rate = out->sampleRate,
-		.bits_per_sample = 16,
+		.bits_per_sample = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE,
+#if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
 		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,	// 2-channels
 		.communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+#else
+		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT /* I2S_CHANNEL_FMT_RIGHT_LEFT */,	// 2-channels
+		.communication_format = I2S_COMM_FORMAT_I2S /* | I2S_COMM_FORMAT_I2S_MSB */,
+#endif
 		.dma_buf_count = 2,
 		.dma_buf_len = sizeof(out->buffer) / out->bytesPerFrame,		// dma_buf_len is in frames, not bytes
 		.use_apll = 0,
@@ -643,7 +655,6 @@ void audioOutLoop(void *pvParameter)
 	};
 	i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
 	i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
-	i2s_set_clk(MODDEF_AUDIOOUT_I2S_NUM, out->sampleRate, out->bitsPerSample, out->numChannels);
 
 	while (kStateTerminated != out->state) {
 		if (kStateIdle == out->state) {
@@ -662,7 +673,27 @@ void audioOutLoop(void *pvParameter)
 		audioMix(out, sizeof(out->buffer) / out->bytesPerFrame, (OUTPUTSAMPLETYPE *)out->buffer);
 		xSemaphoreGive(out->mutex);
 
+#if 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
+#elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+		int samples = sizeof(out->buffer) / out->bytesPerFrame;
+		int32_t samples32[64];
+		int16_t *src = (int16_t *)out->buffer;
+		while (samples) {
+			int use = (samples >= 64) ? 64 : samples;
+			int32_t *dst = samples32;
+			int remain = use;
+
+			while (remain--)
+				*dst++ = *src++ << 16;
+
+			samples -= use;
+
+			i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)samples32, use << 2, portMAX_DELAY);
+		}
+#else
+	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#endif
 	}
 
 	// from here, "out" is invalid
