@@ -194,10 +194,16 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_WeakSet)))
 		fxStripClass(linker, the, mxID(_WeakSet));
 	// Iterator ?
+	if (!fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF))
+		fxStripInstance(linker, the, mxAsyncFromSyncIteratorPrototype.value.reference);
 	// Generator
 	if (!fxIsCodeUsed(XS_CODE_GENERATOR_FUNCTION)) {
 		fxStripInstance(linker, the, mxGeneratorPrototype.value.reference);
 		fxStripInstance(linker, the, mxGeneratorFunctionPrototype.value.reference);
+	}
+	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION)) {
+		fxStripInstance(linker, the, mxAsyncGeneratorPrototype.value.reference);
+		fxStripInstance(linker, the, mxAsyncGeneratorFunctionPrototype.value.reference);
 	}
 	// ArrayBuffer ?
 	fxUnstripCallback(linker, fx_ArrayBuffer);
@@ -214,7 +220,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
 		fxStripObject(linker, the, mxID(_JSON));
 	// Promise
-	if (!fxIsLinkerSymbolUsed(linker, mxID(_Promise)) && !fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION) && !fxIsCodeUsed(XS_CODE_AWAIT) && !fxIsCodeUsed(XS_CODE_START_ASYNC)) {
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_Promise)) && !fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION) && !fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION)) {
 		fxStripClass(linker, the, mxID(_Promise));
 	}
 	else {
@@ -274,16 +280,20 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
 	}
-	if (fxIsCodeUsed(XS_CODE_AWAIT))
-		fprintf(file, "\tfxRunAwait,\n");
-	else
-		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_START_GENERATOR))
 		fprintf(file, "\tfxNewGeneratorInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_GENERATOR_FUNCTION))
 		fprintf(file, "\tfxNewGeneratorFunctionInstance,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_START_ASYNC_GENERATOR))
+		fprintf(file, "\tfxNewAsyncGeneratorInstance,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
+		fprintf(file, "\tfxNewAsyncGeneratorFunctionInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_EVAL_ENVIRONMENT))
