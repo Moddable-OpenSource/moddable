@@ -50,6 +50,7 @@ static txBoolean fxRunDelete(txMachine* the, txSlot* instance, txID id, txIndex 
 static void fxRunDerived(txMachine* the);
 static void fxRunExtends(txMachine* the);
 static void fxRunEval(txMachine* the);
+static void fxRunForAwaitOf(txMachine* the);
 static void fxRunForOf(txMachine* the);
 static void fxRunIn(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
@@ -360,6 +361,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_ARGUMENTS_STRICT,
 		&&XS_CODE_ARRAY,
 		&&XS_CODE_ASYNC_FUNCTION,
+		&&XS_CODE_ASYNC_GENERATOR_FUNCTION,
 		&&XS_CODE_AT,
 		&&XS_CODE_AWAIT,
 		&&XS_CODE_BEGIN_SLOPPY,
@@ -424,6 +426,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_EXTEND,
 		&&XS_CODE_FALSE,
 		&&XS_CODE_FILE,
+		&&XS_CODE_FOR_AWAIT_OF,
 		&&XS_CODE_FOR_IN,
 		&&XS_CODE_FOR_OF,
 		&&XS_CODE_FUNCTION,
@@ -510,6 +513,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_SET_VARIABLE,
 		&&XS_CODE_SIGNED_RIGHT_SHIFT,
 		&&XS_CODE_START_ASYNC,
+		&&XS_CODE_START_ASYNC_GENERATOR,
 		&&XS_CODE_START_GENERATOR,
 		&&XS_CODE_STORE_1,
 		&&XS_CODE_STORE_2,
@@ -528,6 +532,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_TEMPLATE,
 		&&XS_CODE_THIS,
 		&&XS_CODE_THROW,
+		&&XS_CODE_THROW_STATUS,
 		&&XS_CODE_TO_INSTANCE,
 		&&XS_CODE_TRANSFER,
 		&&XS_CODE_TRUE,
@@ -915,7 +920,8 @@ XS_CODE_JUMP:
 				if (gxDoTrace) fxTraceReturn(the);
 #endif
 			mxSaveState;
-			return;	
+			return;
+			
 		mxCase(XS_CODE_START_ASYNC)
 			mxSkipCode(1);
             if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
@@ -954,6 +960,46 @@ XS_CODE_JUMP:
 			mxRestoreState;
  			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
+ 			
+		mxCase(XS_CODE_START_ASYNC_GENERATOR)
+			mxSkipCode(1);
+             if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
+				mxRunDebug(XS_TYPE_ERROR, "new async generator");
+			slot = mxBehaviorGetProperty(the, mxFrameFunction->value.reference, mxID(_prototype), XS_NO_ID, XS_ANY);
+			mxPushKind(slot->kind);
+			mxStack->value = slot->value;
+			mxSaveState;
+			variable = gxDefaults.newAsyncGeneratorInstance(the);
+			mxRestoreState;
+			
+			*mxFrameResult = *mxStack;
+			slot = mxFrameArgv(-1);
+			mxPushKind(XS_INTEGER_KIND);
+			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
+			mxPushKind(XS_INTEGER_KIND);
+			mxStack->value.integer = slot - mxScope;
+			mxPushKind(XS_INTEGER_KIND);
+			mxStack->value.integer = slot - mxFrame;
+			mxPushKind(XS_INTEGER_KIND);
+			mxStack->value.integer = 0;
+			mxPushKind(mxFrameFunction->kind);
+			mxStack->value = mxFrameFunction->value;
+			index = slot - mxStack;
+			slot = variable->next;
+			variable = slot->value.stack.address;
+			if (slot->value.stack.length < index) {
+				mxSaveState;
+				if (variable)
+					variable = (txSlot *)fxRenewChunk(the, variable, index * sizeof(txSlot));
+				if (!variable)
+					variable = (txSlot *)fxNewChunk(the, index * sizeof(txSlot));
+				mxRestoreState;
+				slot->value.stack.address = variable;
+			}
+			slot->value.stack.length = index;
+			c_memcpy(variable, mxStack, index * sizeof(txSlot));
+ 			slot = mxFrameResult;
+			goto XS_CODE_END_ALL;
 		
 		mxCase(XS_CODE_START_GENERATOR)
 			mxSkipCode(1);
@@ -965,6 +1011,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newGeneratorInstance(the);
 			mxRestoreState;
+			
 			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
@@ -993,15 +1040,12 @@ XS_CODE_JUMP:
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
  			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
+ 			
 		mxCase(XS_CODE_AWAIT)
-			mxSaveState;
-			gxDefaults.runAwait(the, generator);
-			mxRestoreState;
-			// continue
 		mxCase(XS_CODE_YIELD)
+			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
 			*mxFrameResult = *mxStack;
-			generator->next->next->next->value.integer = 0; // suspended
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;;
@@ -1202,6 +1246,19 @@ XS_CODE_JUMP:
 		#endif
 			mxSaveState;
 			fxJump(the);
+			mxBreak;
+		mxCase(XS_CODE_THROW_STATUS)
+			if (the->status & XS_THROW_STATUS) {
+				mxException = *mxStack;
+			#ifdef mxDebug
+				mxSaveState;
+				fxDebugThrow(the, C_NULL, 0, "throw");
+				mxRestoreState;
+			#endif
+				mxSaveState;
+				fxJump(the);
+			}
+			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_UNCATCH)
 			jump = the->firstJump;
@@ -2245,6 +2302,18 @@ XS_CODE_JUMP:
 			mxRestoreState;
 			mxNextCode(3);
 			mxBreak;
+		mxCase(XS_CODE_ASYNC_GENERATOR_FUNCTION)
+			offset = mxRunS2(1);
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceID(the, (txID)offset);
+#endif
+			mxOverflow(1);
+			*mxStack = mxAsyncGeneratorFunctionPrototype;
+			mxSaveState;
+			gxDefaults.newAsyncGeneratorFunctionInstance(the,(txID) offset);
+			mxRestoreState;
+			mxNextCode(3);
+			mxBreak;
 		mxCase(XS_CODE_CONSTRUCTOR_FUNCTION)
 			offset = mxRunS2(1);
 #ifdef mxTrace
@@ -2942,11 +3011,11 @@ XS_CODE_JUMP:
 			mxStack++;
 			mxNextCode(1);
 			mxBreak;
-
-		mxCase(XS_CODE_FOR_OF)
+			
+		mxCase(XS_CODE_FOR_AWAIT_OF)
 			mxNextCode(1);
 			mxSaveState;
-			fxRunForOf(the);
+			fxRunForAwaitOf(the);
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_FOR_IN)
@@ -2966,6 +3035,13 @@ XS_CODE_JUMP:
 			/* RESULT */
 			mxPushKind(XS_UNDEFINED_KIND);
 			goto XS_CODE_CALL_ALL;
+
+		mxCase(XS_CODE_FOR_OF)
+			mxNextCode(1);
+			mxSaveState;
+			fxRunForOf(the);
+			mxRestoreState;
+			mxBreak;
 			
 		mxCase(XS_CODE_IN)
 			mxNextCode(1);
@@ -3304,6 +3380,25 @@ void fxRunEval(txMachine* the)
 #else
 	mxUnknownError("not built-in");
 #endif
+}
+
+void fxRunForAwaitOf(txMachine* the)
+{
+	txSlot* slot = the->stack;
+	fxBeginHost(the);
+	mxPushInteger(0);
+	mxPushSlot(slot);
+	mxPushSlot(slot);
+	fxGetID(the, mxID(_Symbol_asyncIterator));
+	if (mxIsUndefined(the->stack)) {
+		mxPop();
+		fxCallID(the, mxID(_Symbol_iterator));
+		fxNewAsyncFromSyncIteratorInstance(the);
+	}
+	else
+		fxCall(the);
+	mxPullSlot(slot);
+	fxEndHost(the);
 }
 
 void fxRunForOf(txMachine* the)
