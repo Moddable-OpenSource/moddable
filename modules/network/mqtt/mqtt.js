@@ -42,15 +42,19 @@ import {Client as WSClient} from "websocket";
 
 export default class Client {
 	constructor(params) {
-		this.id = params.id;
-		if (!this.id) {
+		if (!params.id)
 			throw new Error("parameter id is required");
-		}
+
+		if (!params.host)
+			throw new Error("parameter host is required");
+
+		this.connect = {id: params.id};
+		if (params.user)
+			this.connect.user = params.user;
+		if (params.password)
+			this.connect.password = params.password;
 
 		this.host = params.host;
-		if (!this.host) {
-			throw new Error("parameter host is required");
-		}
 
 		// set default callbacks to be overridden by caller
 		this.onReady = function() {};
@@ -66,7 +70,10 @@ export default class Client {
 
 		if (this.path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
-			this.ws = new WSClient({host: this.host, port: this.port, path: this.path, protocol: "mqtt"});
+			if (params.Socket)
+				this.ws = new WSClient({host: this.host, port: this.port, path: this.path, protocol: "mqtt", Socket: params.Socket, secure: params.secure});
+			else
+				this.ws = new WSClient({host: this.host, port: this.port, path: this.path, protocol: "mqtt"});
 			this.ws.callback = ws_callback.bind(this);
 		} else {
 			throw new Error("native MQTT not yet implemented; use websockets");
@@ -139,7 +146,7 @@ function ws_callback(state, message) {
 		case 2: // websocket handshake complete
 			// at this point we need to begin the MQTT protocol handshake
 			this.ws_state = 1;
-			let bytes = MQTTHelper.to_connect_msg(this.id);
+			let bytes = MQTTHelper.to_connect_msg(this.connect);
 			this.ws.write(bytes);
 			break;
 

@@ -19,8 +19,11 @@
  */
 
 #include "xs.h"
-#include "xsesp.h"
-#include "malloc.h"
+#include "mc.xs.h"			// for xsID_ values
+
+#if __ets__
+	#include "xsesp.h"
+#endif
 #include <string.h>
 
 // Utility functions for generating byte arrays formatted as various MQTT 3.1.1 messages.
@@ -60,7 +63,7 @@ typedef enum {
 #define PING_INTERVAL 5
 
 // VLQ is a name someone made up for the ints-as-7-bit-octets-where-high-bit-indicates-more-octets int format
-inline int to_vlq(uint8_t* buf, int size, uint32_t value) {
+/* inline */ int to_vlq(uint8_t* buf, int size, uint32_t value) {
 	int i = 0;
 	for (int i = 0; value; ++i) {
 		if (i > size)
@@ -74,7 +77,7 @@ inline int to_vlq(uint8_t* buf, int size, uint32_t value) {
 	}
 }
 
-inline size_t from_vlq(uint8_t *buf, uint32_t *n, size_t size) {
+/* inline */ size_t from_vlq(uint8_t *buf, uint32_t *n, size_t size) {
 	*n = 0;
 	size = size > 4 ? 4 : size;
 
@@ -93,7 +96,7 @@ inline size_t from_vlq(uint8_t *buf, uint32_t *n, size_t size) {
 	return -1;
 }
 
-inline uint8_t* mqtt_string(uint8_t *in, size_t len) {
+/* inline */ uint8_t* mqtt_string(uint8_t *in, size_t len) {
 	uint8_t *out = calloc(1, len + 2);
 	if (!out) {
 		return NULL;
@@ -101,69 +104,101 @@ inline uint8_t* mqtt_string(uint8_t *in, size_t len) {
 	out[0] = (len >> 8) & 0xff;
 	out[1] = len & 0xff;
 	uint8_t buf[32];
-	tfp_snprintf(buf, 32, "booga %x %x %d\n", out + 2, in, len);
-	espMemCpy(out + 2, in, len);
+	c_snprintf(buf, 32, "booga %x %x %d\n", out + 2, in, len);
+	c_memcpy(out + 2, in, len);
 	return out;
 }
 
 void mqtt_connect_msg(xsMachine* the) {
 	// MQTT connect messages start with a standard(ish) header block
 	static const uint8_t hdr[] ICACHE_XS6RO_ATTR = {
-		0x00,0x04,'M','Q','T','T',	      // protocol name MQTT
-		0x04,				   // protocol level 4
-		0x02,				   // flags : CleanSession
-		0x00, 0x00			      // no keepalive -- never drop on inactivity
+		0x00,0x04,'M','Q','T','T',		// protocol name MQTT
+		0x04,							// protocol level 4
+		0x02,							// flags : CleanSession
+		0x00, 0x00						// no keepalive -- never drop on inactivity
 	};
 	size_t hdr_len = sizeof(hdr);
+	char *str;
+	uint8_t* id, *user = NULL, *password = NULL;
+	size_t id_len, user_len, password_len;
+
+	xsVars(2);
 
 	// ...followed by the client ID (string)
-	uint8_t* name;
-	size_t name_len;
-	if (xsStringType == xsTypeOf(xsArg(0))) {
-		uint8_t* xsname = xsToString(xsArg(0));
-		name_len = espStrLen(xsname);
-		name = mqtt_string(xsname, name_len);
-		if (!name) {
-			xsUnknownError("mqtt: error allocating client ID in connect");
-			return;
-		}
-		name_len += 2;
-	} else {
-		xsUnknownError("mqtt: client ID must be a string");
+
+	xsVar(0) = xsGet(xsArg(0), xsID_id);
+	str = xsToString(xsVar(0));
+	id_len = c_strlen(str);
+	id = mqtt_string(str, id_len);
+	if (!id) {
+		xsUnknownError("mqtt: error allocating client ID in connect");
 		return;
+	}
+	id_len += 2;
+
+	if (xsHas(xsArg(0), xsID_user)) {
+		xsVar(0) = xsGet(xsArg(0), xsID_user);
+		str = xsToString(xsVar(0));
+		user_len = c_strlen(str);
+		user = mqtt_string(str, user_len);
+		user_len += 2;
+	}
+
+	if (xsHas(xsArg(0), xsID_password)) {
+		xsVar(1) = xsGet(xsArg(0), xsID_password);
+		password_len = xsGetArrayBufferLength(xsVar(1));
 	}
 
 	// now we know how long our payload will be, so prepare the final buffer
-	size_t payload_len = hdr_len + name_len;
+	size_t payload_len = hdr_len + id_len + user_len + (password_len + 2);
 	uint8_t buf[512];
 	size_t count = 1;
 	buf[0] = CONNECT;
 
 	// MQTT payload length header is variable length
 	count += to_vlq(buf + 1, 511, payload_len);
-	if (!count) { // i.e. if to_vlq() returned -1 on error
-		if (name) free(name);
+	if (!count) { // i.e. if to_vlq() returned -1 on	 error
+		if (id) c_free(id);
+		if (user) c_free(user);
 		xsUnknownError("mqtt: error encoding payload length");
 		return;
 	}
 
 	// don't blow the stack
 	if (count + payload_len > sizeof(buf)) {
-		if (name) free(name);
+		if (id) c_free(id);
+		if (user) c_free(user);
 		xsUnknownError("mqtt: payload buffer overflow creating connect message");
 		return;
 	}
 
 	// memcpy the payload fragments into buf
-	espMemCpy(buf + count, hdr, hdr_len);
+	c_memcpy(buf + count, hdr, hdr_len);
+	if (user)
+		buf[count + 7] |= 0x80;
+	if (password_len)
+		buf[count + 7] |= 0x40;
 	count += hdr_len;
-	espMemCpy(buf + count, name, name_len);
-	count += name_len;
+	c_memcpy(buf + count, id, id_len);
+	count += id_len;
 
-	// tell XS6 to use that as the return value.
+	if (user) {
+		c_memcpy(buf + count, user, user_len);
+		count += user_len;
+	}
+
+	if (password_len) {
+		buf[count++] = password_len >> 8;
+		buf[count++] = password_len & 0xff;
+		password = xsToArrayBuffer(xsVar(1));
+		c_memcpy(buf + count, password, password_len);
+		count += password_len;
+	}
+
 	xsResult = xsArrayBuffer(buf, count);
 
-	if (name) free(name);
+	if (id) c_free(id);
+	if (user) c_free(user);
 	// hdr & buf are on the stack and xsArrayBuffer is a malloc + memcpy, so no free() for these
 }
 
@@ -174,7 +209,7 @@ void mqtt_publish_msg(xsMachine* the) {
 
 	if (xsStringType == xsTypeOf(xsArg(0))) {
 		topic = xsToString(xsArg(0));
-		topic_len = espStrLen(topic);
+		topic_len = c_strlen(topic);
 		topic = mqtt_string(topic, topic_len);
 		if (!topic) {
 			xsUnknownError("mqtt: error allocating topic in publish");
@@ -188,7 +223,7 @@ void mqtt_publish_msg(xsMachine* the) {
 
 	if (xsStringType == xsTypeOf(xsArg(1))) {
 		data = xsToString(xsArg(1));
-		data_len = espStrLen(data);
+		data_len = c_strlen(data);
 	} else {
 		data = xsToArrayBuffer(xsArg(1));
 		data_len = xsGetArrayBufferLength(xsArg(1));
@@ -222,7 +257,7 @@ void mqtt_publish_msg(xsMachine* the) {
 	}
 
 	// copy in topic name; note this is in "variable header" which is why it precedes packet ID vs. SUBSCRIBE
-	espMemCpy(msg + count, topic, topic_len);
+	c_memcpy(msg + count, topic, topic_len);
 	count += topic_len;
 
 	// copy in packet ID to end of variable header; but only if QoS > 0 which we don't support
@@ -230,7 +265,7 @@ void mqtt_publish_msg(xsMachine* the) {
 	// msg[count++] = (uint8_t)id & 0xff;
 
 	// actual payload bytes
-	espMemCpy(msg + count, data, data_len);
+	c_memcpy(msg + count, data, data_len);
 	count += data_len;
 
 	// tell XS6 to use msg as the return value.
@@ -245,7 +280,7 @@ void mqtt_subscribe_msg(xsMachine* the) {
 	size_t topic_len;
 	if (xsStringType == xsTypeOf(xsArg(0))) {
 		topic = xsToString(xsArg(0));
-		topic_len = espStrLen(topic);
+		topic_len = c_strlen(topic);
 
 		topic = mqtt_string(topic, topic_len);
 
@@ -288,7 +323,7 @@ void mqtt_subscribe_msg(xsMachine* the) {
 
 	msg[count++] = (uint8_t)(id >> 8);
 	msg[count++] = (uint8_t)id & 0xff;
-	espMemCpy(msg + count, topic, topic_len);
+	c_memcpy(msg + count, topic, topic_len);
 	count += topic_len;
 	msg[count++] = 0;
 
@@ -304,7 +339,7 @@ void mqtt_unsubscribe_msg(xsMachine* the) {
 
 	if (xsStringType == xsTypeOf(xsArg(0))) {
 		topic = xsToString(xsArg(0));
-		topic_len = espStrLen(topic);
+		topic_len = c_strlen(topic);
 		topic = mqtt_string(topic, topic_len);
 		if (!topic) {
 			xsUnknownError("mqtt: error allocating topic in unsubscribe");
@@ -340,7 +375,7 @@ void mqtt_unsubscribe_msg(xsMachine* the) {
 	msg[count++] = (uint8_t)id & 0xff;
 
 	// topic ID
-	espMemCpy(msg + count, topic, topic_len);
+	c_memcpy(msg + count, topic, topic_len);
 	count += topic_len;
 
 	xsResult = xsArrayBuffer(msg, count);
