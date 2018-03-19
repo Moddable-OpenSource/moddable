@@ -549,6 +549,8 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	property->ID = XS_NO_ID;
 	property->value.stack.length = 0;
 	property->value.stack.address = C_NULL;
+	
+    property = fxNextIntegerProperty(the, property, XS_CODE_START_ASYNC, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
@@ -556,8 +558,6 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	status->value.integer = mxPendingStatus;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPop();
-	
-    property = fxNextIntegerProperty(the, property, -1, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	
 	already = fxNewPromiseAlready(the);
 	fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
@@ -603,7 +603,7 @@ void fxRejectAwait(txMachine* the)
 
 void fxRunAsync(txMachine* the, txSlot* instance)
 {
-	txSlot* promise = instance->next->next;
+	txSlot* promise = instance->next->next->next;
 	fxBeginHost(the);
 	the->scratch.kind = XS_UNDEFINED_KIND;
 	fxStepAsync(the, instance, XS_NO_STATUS);
@@ -612,42 +612,19 @@ void fxRunAsync(txMachine* the, txSlot* instance)
 	mxResult->value = promise->value;
 }
 
-void fxRunAwait(txMachine* the, txSlot* instance)
+void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 {
-	txSlot* promise = instance->next->next;
-	txSlot* state = promise->next;
-	txSlot* resolveFunction = state->next;
+	txSlot* state = instance->next->next;
+	txSlot* promise = state->next;
+	txSlot* resolveFunction = promise->next;
 	txSlot* rejectFunction = resolveFunction->next;
 	txSlot* resolveAwaitFunction = rejectFunction->next;
 	txSlot* rejectAwaitFunction = resolveAwaitFunction->next;
-	txSlot* value = the->stack;
-	
-	fxBeginHost(the);
-	mxPushSlot(value);
-	mxPushInteger(1);
-	mxPush(mxPromiseConstructor);
-	fxCallID(the, mxID(_resolve));
-	mxPullSlot(value);
-	mxPushSlot(resolveAwaitFunction);
-	mxPushSlot(rejectAwaitFunction);
-	mxPushInteger(2);
-	mxPushSlot(value);
-	fxCallID(the, mxID(_then));
-	mxPop();
-	fxEndHost(the);
-}
-
-void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
-{
-	txSlot* promise = instance->next->next;
-	txSlot* state = promise->next;
-	txSlot* resolveFunction = state->next;
-	txSlot* rejectFunction = resolveFunction->next;
 	mxTry(the) {
 		the->status = status;
-		state->value.integer = 1;
+		state->value.integer = XS_NO_CODE;
 		fxRunID(the, instance, XS_NO_ID);
-		if (state->value.integer) {
+		if (state->value.integer == XS_NO_CODE) {
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -655,6 +632,19 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			/* FUNCTION */
 			mxPushSlot(resolveFunction);
 			fxCall(the);
+		}
+		else {
+			txSlot* value = the->stack;
+			mxPushSlot(value);
+			mxPushInteger(1);
+			mxPush(mxPromiseConstructor);
+			fxCallID(the, mxID(_resolve));
+			mxPullSlot(value);
+			mxPushSlot(resolveAwaitFunction);
+			mxPushSlot(rejectAwaitFunction);
+			mxPushInteger(2);
+			mxPushSlot(value);
+			fxCallID(the, mxID(_then));
 		}
 		mxPop();
 	}
