@@ -223,7 +223,7 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DataView_prototype_byteOffset_get), C_NULL, mxID(_byteOffset), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "DataView", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxDataViewPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_DataView), 3, mxID(_DataView), XS_DONT_ENUM_FLAG));
+	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_DataView), 1, mxID(_DataView), XS_DONT_ENUM_FLAG));
 	the->stack++;
 	
 	fxNewHostFunction(the, mxCallback(fxTypedArrayGetter), 0, XS_NO_ID);
