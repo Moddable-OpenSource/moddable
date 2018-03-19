@@ -92,7 +92,7 @@ export default class extends TOOL {
 				if (argi >= argc)
 					throw new Error("-o: no directory!");
 				name = argv[argi];
-				if (this.outputDirectory)
+				if (this.outputPath)
 					throw new Error("-o '" + name + "': too many directories!");
 				path = this.resolveDirectoryPath(name);
 				if (!path)
