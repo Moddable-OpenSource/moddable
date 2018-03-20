@@ -52,7 +52,7 @@ export default class RLE4Out extends PixelsOut {
 		this.scan = new Uint8Array(width);
 
 		// buffer to hold worst-case encoded image
-		this.output = new Uint8Array((width >> 1) * (height + (height >> 2)));
+		this.output = new Uint8Array(width * (height + (height >> 2)));
 		this.output.position = 0;
 		this.output.firstNybble = true;
 	}
@@ -74,7 +74,7 @@ export default class RLE4Out extends PixelsOut {
 			}
 
 			// encode one run
-			for (let remain = width, pos = offset; remain > 0; ) {
+			for (let remain = width, pos = 0; remain > 0; ) {
 				if (remain >= 2) {
 					// check for skip run
 					if ((skip === scan[pos]) && (skip === scan[pos + 1])) {
