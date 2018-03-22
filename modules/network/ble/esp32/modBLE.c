@@ -50,11 +50,7 @@ typedef modBLENotificationRecord *modBLENotification;
 struct modBLENotificationRecord {
 	struct modBLENotificationRecord *next;
 
-	xsSlot		objCharacteristic;
-
-	uint16_t value;
 	uint16_t char_handle;
-	uint16_t desc_handle;
 };
 
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
@@ -71,8 +67,8 @@ struct modBLEConnectionRecord {
 	esp_gatt_if_t gattc_if;
 	int16_t conn_id;
 	uint16_t app_id;
-
-	// client notifications
+	
+	// registered notifications
 	modBLENotification notifications;
 };
 
@@ -90,6 +86,8 @@ typedef struct {
 
 	// client connections
 	modBLEConnection connections;
+	
+	uint32_t scratch;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -314,8 +312,7 @@ void modBLEConnectionRemove(modBLEConnection connection)
 			else
 				prev->next = walker->next;
 			while (connection->notifications) {
-				modBLENotification notification;
-				notification = connection->notifications;
+				modBLENotification notification = connection->notifications;
 				esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, notification->char_handle);
 				connection->notifications = notification->next;
 				c_free(notification);
@@ -441,34 +438,6 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
 }
 
-void xs_gatt_characteristic_discover_characteristic_descriptor(xsMachine *the)
-{
-	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t start = xsmcToInteger(xsArg(1));
-	uint16_t end = xsmcToInteger(xsArg(2));
-	uint16_t count = 1;
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection) return;
-	esp_bt_uuid_t char_uuid, desc_uuid;
-	esp_gattc_descr_elem_t descr_elem;
-	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &char_uuid, xsGetArrayBufferLength(xsArg(3)));
-	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(4)), &desc_uuid, xsGetArrayBufferLength(xsArg(4)));
-	esp_ble_gattc_get_descr_by_uuid(connection->gattc_if, conn_id, start, end, char_uuid, desc_uuid, &descr_elem, &count);
-	if (1 == count) {
-		xsmcVars(3);
-		uint16_t uuid_length;
-		uint8_t uuid[ESP_UUID_LEN_128];
-		uuidToBuffer(&descr_elem.uuid, uuid, &uuid_length);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), uuid, uuid_length);
-		xsmcSetInteger(xsVar(2), descr_elem.handle);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
-	}
-	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
-}
-
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
@@ -507,58 +476,53 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 	esp_ble_gattc_read_char(connection->gattc_if, conn_id, handle, auth_req);
 }
 
-void xs_gatt_descriptor_write_value(xsMachine *the)
+void xs_gatt_characteristic_enable_notifications(xsMachine *the)
 {
-	xsmcVars(1);
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t desc_handle = xsmcToInteger(xsArg(1));
-	uint16_t value = xsmcToInteger(xsArg(2));
-	uint8_t isNotify = xsmcToBoolean(xsArg(3));
-	xsmcGet(xsVar(0), xsArg(4), xsID_handle);	// xsArg(4) is characteristic
-	uint16_t char_handle = xsmcToInteger(xsVar(0));
-	
+	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-
-	if (isNotify) {
-		if (0 == value) {	// disable notifications
-			modBLENotification walker, previous = NULL;
-			if (connection->notifications) {
-				for (walker = connection->notifications; walker->next; walker = walker->next) {
-					if (walker->char_handle == char_handle) {
-						if (previous)
-							previous->next = walker->next;
-						else
-							connection->notifications = walker->next;
-						break;
-					}
-					previous = walker;
-				}
-			}
-			esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, char_handle);
-		}
-		else if (1 == value) {	// enable notifications
-			modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
-			if (!notification)
-				xsUnknownError("out of memory");
-			notification->value = value;
-			notification->char_handle = char_handle;
-			notification->desc_handle = desc_handle;
-			notification->objCharacteristic = xsArg(4);
-			if (!connection->notifications)
-				connection->notifications = notification;
-			else {
-				for (walker = connection->notifications; walker->next; walker = walker->next)
-					;
-				walker->next = notification;
-			}
-			esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, char_handle);
-		}
-		else
-			xsUnknownError("unsupported descriptor write");
-	}
+	modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
+	if (!notification)
+		xsUnknownError("out of memory");
+	if (!connection->notifications)
+		connection->notifications = notification;
 	else {
-		esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, desc_handle, sizeof(value), (uint8_t*)&value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+		for (walker = connection->notifications; walker->next; walker = walker->next)
+			;
+		walker->next = notification;
+	}
+	notification->char_handle = handle;
+	esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, handle);
+}
+
+void xs_gatt_characteristic_disable_notifications(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, handle);
+}
+
+void xs_gatt_descriptor_write_value(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	uint16_t value = xsmcToInteger(xsArg(2));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	switch (xsmcTypeOf(xsArg(2))) {
+		case xsReferenceType:
+			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
+				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+			else
+				goto unknown;
+			break;
+		unknown:
+		default:
+			xsUnknownError("unsupported type");
+			break;
 	}
 }
 
@@ -671,6 +635,17 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 		case ESP_GATTS_DISCONNECT_EVT:
 			break;
 	}
+}
+
+static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_reg_evt_param *reg = (struct gattc_reg_evt_param *)message;
+	esp_gatt_if_t gattc_if = *(esp_gatt_if_t*)refcon;
+	modBLEConnection connection = modBLEConnectionFindByAppID(reg->app_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	connection->gattc_if = gattc_if;
+	esp_ble_gattc_open(gattc_if, connection->bda, true);
 }
 
 static void gattcConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -818,6 +793,23 @@ static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16
 	doCharEvent(the, "_onCharacteristicValue", read->conn_id, read->handle, read->value, read->value_len);
 }
 
+static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
+	esp_gatt_if_t gattc_if = *(esp_gatt_if_t*)refcon;
+    modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
+    if (!connection) return;
+	uint16_t count = 1;
+	esp_bt_uuid_t uuid;
+	esp_gattc_descr_elem_t result;
+	uuid.len = ESP_UUID_LEN_16;
+	uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connection->gattc_if, connection->conn_id, reg_for_notify->handle, uuid, &result, &count)) {
+		uint16_t notify_en = 1;
+		esp_ble_gattc_write_char_descr(connection->gattc_if, 0, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+	}
+}
+
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_ble_gattc_cb_param_t *p_data = (esp_ble_gattc_cb_param_t *)param;
@@ -827,52 +819,41 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     switch (event) {
 		case ESP_GATTC_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
-				modBLEConnection connection = modBLEConnectionFindByAppID(p_data->reg.app_id);
-				if (connection) {
-					connection->gattc_if = gattc_if;
-					esp_ble_gattc_open(gattc_if, connection->bda, true);
-				}
+				gBLE->scratch = gattc_if;
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gattc_reg_evt_param), gattcRegisterEvent, &gBLE->scratch);
         	}
         	break;
     	case ESP_GATTC_CONNECT_EVT:
-			//modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gattc_connect_evt_param), gattcConnectEvent, gBLE);
+			//modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gattc_connect_evt_param), gattcConnectEvent, NULL);
     		break;
     	case ESP_GATTC_OPEN_EVT:
         	if (param->open.status == ESP_GATT_OK)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->open, sizeof(struct gattc_open_evt_param), gattcOpenEvent, gBLE);
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->open, sizeof(struct gattc_open_evt_param), gattcOpenEvent, NULL);
     		break;
     	case ESP_GATTC_DISCONNECT_EVT:
-			//modMessagePostToMachine(gBLE->the, (uint8_t*)&param->disconnect, sizeof(struct gattc_disconnect_evt_param), gattcDisconnectEvent, gBLE);
+			//modMessagePostToMachine(gBLE->the, (uint8_t*)&param->disconnect, sizeof(struct gattc_disconnect_evt_param), gattcDisconnectEvent, NULL);
     		break;
     	case ESP_GATTC_CLOSE_EVT:
         	if (param->close.status == ESP_GATT_OK)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->close, sizeof(struct gattc_close_evt_param), gattcCloseEvent, gBLE);
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->close, sizeof(struct gattc_close_evt_param), gattcCloseEvent, NULL);
     		break;
 		case ESP_GATTC_SEARCH_RES_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_res, sizeof(struct gattc_search_res_evt_param), gattcSearchResultEvent, gBLE);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_res, sizeof(struct gattc_search_res_evt_param), gattcSearchResultEvent, NULL);
 			break;
 		case ESP_GATTC_SEARCH_CMPL_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_cmpl, sizeof(struct gattc_search_cmpl_evt_param), gattcSearchCompleteEvent, gBLE);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_cmpl, sizeof(struct gattc_search_cmpl_evt_param), gattcSearchCompleteEvent, NULL);
 			break;
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT:
 			if (param->reg_for_notify.status == ESP_GATT_OK) {
-				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
-				if (connection) {
-					modBLENotification walker;
-					for (walker = connection->notifications; NULL != walker; walker = walker->next)
-						if (param->reg_for_notify.handle == walker->char_handle)
-							break;
-					if (walker) {
-						esp_ble_gattc_write_char_descr(gattc_if, 0, walker->desc_handle, sizeof(walker->value), (uint8_t*)&walker->value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
-					}
-				}
+				gBLE->scratch = gattc_if;
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg_for_notify, sizeof(struct gattc_reg_for_notify_evt_param), gattcRegisterNotifyEvent, &gBLE->scratch);
 			}
 			break;
 		case ESP_GATTC_NOTIFY_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, gBLE);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, NULL);
 			break;
 		case ESP_GATTC_READ_CHAR_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, gBLE);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, NULL);
 			break;
 	}
 }

@@ -69,8 +69,7 @@ class SensorTagSensor {
 		if (this.data) {
 			let characteristic = this.service.findCharacteristicByUUID(this.data);
 			characteristic.onNotification = this.onNotification.bind(this);
-			let descriptor = characteristic.findDescriptorByUUID(UUID.CCCD);
-			descriptor.writeValue(1);
+			characteristic.enableNotifications();
 		}
 	}
 	stop() {
@@ -152,8 +151,7 @@ class BarometerSensor extends SensorTagSensor {
 			// enable notifications
 			ch = this.service.findCharacteristicByUUID(this.data);
 			ch.onNotification = this.onNotification.bind(this);
-			let descriptor = ch.findDescriptorByUUID(UUID.CCCD);
-			descriptor.writeValue(1);
+			ch.enableNotifications();
 		}
 		characteristic.readValue();
 	}
@@ -281,18 +279,13 @@ ble.onReady = () => {
 			ble.sensors.forEach(sensor => {
 				--ble.remaining;
 				sensor.service.onCharacteristics = characteristics => {
-					characteristics.forEach(characteristic => {
-						characteristic.onDescriptors = descriptors => {
-							if (0 == ble.remaining) {
-								ble.sensors.forEach(sensor => {
-									sensor.driver = new sensor.constructor();
-									sensor.driver.configure(sensor);
-									sensor.driver.start();
-								});
-							}
-						}
-						characteristic.discoverAllDescriptors();
-					})
+					if (0 == ble.remaining) {
+						ble.sensors.forEach(sensor => {
+							sensor.driver = new sensor.constructor();
+							sensor.driver.configure(sensor);
+							sensor.driver.start();
+						});
+					}
 				}
 				sensor.service.discoverAllCharacteristics();
 			});

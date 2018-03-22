@@ -163,14 +163,17 @@ export class Characteristic {
 		}
 	}
 	
-	discoverDescriptor(uuid) {
-		this.descriptors.length = 0;
-		this._discoverDescriptor(this.connection, this.service.start, this.service.end, UUID.toBuffer(this.uuid), UUID.toBuffer(uuid));
-	}
-
 	discoverAllDescriptors() {
 		this.descriptors.length = 0;
 		this._discoverAllDescriptors(this.connection, this.handle);
+	}
+	
+	disableNotifications() {
+		this._disableNotifications(this.connection, this.handle);
+	}
+	
+	enableNotifications() {
+		this._enableNotifications(this.connection, this.handle);
 	}
 	
 	findDescriptorByUUID(uuid) {
@@ -202,10 +205,11 @@ export class Characteristic {
 		this.onValue(params.value);
 	}
 	
-	_discoverDescriptor() @ "xs_gatt_characteristic_discover_characteristic_descriptor"
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
 	_readValue() @ "xs_gatt_characteristic_read_value"
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
+	_disableNotifications() @ "xs_gatt_characteristic_enable_notifications"
+	_enableNotifications() @ "xs_gatt_characteristic_enable_notifications"
 
 	callback(event, params) {
 		//trace(`Characteristic callback ${event}\n`);
@@ -237,8 +241,7 @@ export class Descriptor {
 	}
 	
 	writeValue(value) {
-		let isNotify = ('2902' == this.uuid && (1 == value || 0 == value)) ? true : false;
-		this._writeValue(this.connection, this.handle, value, isNotify, this.characteristic);
+		this._writeValue(this.connection, this.handle, value);
 	}
 	
 	_writeValue() @ "xs_gatt_descriptor_write_value"
