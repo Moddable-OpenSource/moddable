@@ -56,12 +56,7 @@ ble.onReady = () => {
 								state = "idle";
 							trace(`state: ${state}\n`);
 						}
-						characteristic.onDescriptors = descriptors => {
-							let descriptor = characteristic.findDescriptorByUUID(UUID.CCCD);
-							if (descriptor)
-								descriptor.writeValue(1);	// enable notifications
-						}
-						characteristic.discoverDescriptor(UUID.CCCD);
+						characteristic.enableNotifications();
 					}
 				}
 				service.discoverCharacteristic(CHARACTERISTIC_UUID);

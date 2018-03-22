@@ -56,17 +56,11 @@ ble.onReady = () => {
 						tx_characteristic.onNotification = buffer => {
 							trace(String.fromArrayBuffer(buffer));
 						}
-						tx_characteristic.onDescriptors = descriptors => {
-							let descriptor = tx_characteristic.findDescriptorByUUID(UUID.CCCD);
-							if (descriptor) {
-								descriptor.writeValue(1);	// enable notifications
-								ble.timer = Timer.repeat(id => {
-									rx_characteristic.writeWithoutResponse(`Hello UART ${count}\n`);
-									++count;
-								}, 1000);
-							}
-						}
-						tx_characteristic.discoverDescriptor(UUID.CCCD);
+						tx_characteristic.enableNotifications();
+						ble.timer = Timer.repeat(id => {
+							rx_characteristic.writeWithoutResponse(`Hello UART ${count}\n`);
+							++count;
+						}, 1000);
 					}
 				}
 				service.discoverAllCharacteristics();
