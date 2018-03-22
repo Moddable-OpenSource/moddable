@@ -6,9 +6,9 @@
 		],
 	},
 	"preload": [
-		"connection",
 		"ble",
 		"btutils",
+		"connection",
 		"gap",
 		"gatt",
 		"hex"
