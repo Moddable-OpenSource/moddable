@@ -66,8 +66,8 @@ static void bytesToHexString(xsMachine *the, char *string, uint8_t *buffer, uint
 
 void xs_btuuid_toString(xsMachine *the)
 {
-	int i, length = xsGetArrayBufferLength(xsArg(0));
-	uint8_t byte, *bytes = xsmcToArrayBuffer(xsArg(0));
+	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint8_t *bytes = xsmcToArrayBuffer(xsArg(0));
 	char *string;
 
 	if (2 == length) {
