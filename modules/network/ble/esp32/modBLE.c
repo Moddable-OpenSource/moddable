@@ -86,8 +86,6 @@ typedef struct {
 
 	// client connections
 	modBLEConnection connections;
-	
-	uint32_t scratch;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -641,6 +639,7 @@ static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 {
 	struct gattc_reg_evt_param *reg = (struct gattc_reg_evt_param *)message;
 	esp_gatt_if_t gattc_if = *(esp_gatt_if_t*)refcon;
+	c_free(refcon);
 	modBLEConnection connection = modBLEConnectionFindByAppID(reg->app_id);
 	if (!connection)
 		xsUnknownError("connection not found");
@@ -796,18 +795,12 @@ static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16
 static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
+	uint16_t notify_en = 1;
 	esp_gatt_if_t gattc_if = *(esp_gatt_if_t*)refcon;
+	c_free(refcon);
     modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
     if (!connection) return;
-	uint16_t count = 1;
-	esp_bt_uuid_t uuid;
-	esp_gattc_descr_elem_t result;
-	uuid.len = ESP_UUID_LEN_16;
-	uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
-	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connection->gattc_if, connection->conn_id, reg_for_notify->handle, uuid, &result, &count)) {
-		uint16_t notify_en = 1;
-		esp_ble_gattc_write_char_descr(connection->gattc_if, 0, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
-	}
+	esp_ble_gattc_write_char_descr(connection->gattc_if, 0, reg_for_notify->handle + 1, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
 }
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
@@ -819,8 +812,11 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     switch (event) {
 		case ESP_GATTC_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
-				gBLE->scratch = gattc_if;
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gattc_reg_evt_param), gattcRegisterEvent, &gBLE->scratch);
+				esp_gatt_if_t *_gattc_if = (esp_gatt_if_t *)c_malloc(sizeof(esp_gatt_if_t));
+				if (_gattc_if) {
+					*_gattc_if = gattc_if;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gattc_reg_evt_param), gattcRegisterEvent, (void*)_gattc_if);
+				}
         	}
         	break;
     	case ESP_GATTC_CONNECT_EVT:
@@ -845,8 +841,11 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT:
 			if (param->reg_for_notify.status == ESP_GATT_OK) {
-				gBLE->scratch = gattc_if;
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg_for_notify, sizeof(struct gattc_reg_for_notify_evt_param), gattcRegisterNotifyEvent, &gBLE->scratch);
+				esp_gatt_if_t *_gattc_if = (esp_gatt_if_t *)c_malloc(sizeof(esp_gatt_if_t));
+				if (_gattc_if) {
+					*_gattc_if = gattc_if;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg_for_notify, sizeof(struct gattc_reg_for_notify_evt_param), gattcRegisterNotifyEvent, _gattc_if);
+				}
 			}
 			break;
 		case ESP_GATTC_NOTIFY_EVT:
