@@ -968,7 +968,7 @@ export class Tool extends TOOL {
 		}
 		this.currentDirectory = currentDirectory;
 	}
-	matchPlatform(platforms, name) {
+	matchPlatform(platforms, name, simple) {
 		let parts = name.split("/");
 		while (parts.length) {
 			let partial = parts.join("/");
@@ -979,6 +979,9 @@ export class Tool extends TOOL {
 			parts.length -= 1;
 		}
 
+		if (simple)
+			return;
+
 		for (let n in platforms) {
 			if ("..." === n)
 				return platforms[n];
@@ -988,9 +991,18 @@ export class Tool extends TOOL {
 		var currentDirectory = this.currentDirectory;
 		this.currentDirectory = manifest.directory;
 		this.mergePlatform(all, manifest);
+
+		let parts = this.platform.split("/");		// subplatform
 		if ("platforms" in manifest) {
 			let platforms = manifest.platforms;
-			let platform = this.matchPlatform(platforms, this.platform);
+			let platform;
+
+			if (parts[1]) {
+				platform = this.matchPlatform(platforms, parts[0], true);
+				if (platform)
+					this.mergePlatform(all, platform);
+			}
+			platform = this.matchPlatform(platforms, this.platform, false);
 			if (platform)
 				this.mergePlatform(all, platform);
 			delete manifest.platforms;
@@ -1056,7 +1068,22 @@ export class Tool extends TOOL {
 		this.parseBuild(manifest);
 		if ("platforms" in manifest) {
 			let platforms = manifest.platforms;
-			let platform = this.matchPlatform(platforms, this.platform);
+			let parts = this.platform.split("/");		// subplatform
+			if (parts[1]) {
+				let platform = this.matchPlatform(platforms, parts[0], true);
+				if (platform) {
+					this.parseBuild(platform);
+					platformInclude = platform.include;
+					if (platformInclude) {
+						if (!("include" in manifest))
+							manifest.include = platformInclude;
+						else
+							manifest.include = manifest.include.concat(manifest.include, platformInclude);
+					}
+				}
+			}
+
+			let platform = this.matchPlatform(platforms, this.platform, false);
 			if (platform) {
 				this.parseBuild(platform);
 				platformInclude = platform.include;

@@ -35,12 +35,7 @@
 	],
 	"strip":"*",
 	"platforms": {
-		"gecko/mighty": {
-			"defines": {
-				"ls013b4dn04": {
-					"cs": { "pin": 9, "port": "gpioPortA" },
-				},
-			},
+		"gecko": {
 			"modules": {
 				"*": [
                     "$(MODULES)/base/instrumentation/*",
@@ -54,24 +49,19 @@
 				"sleep",
 			],
 		},
+		"gecko/mighty": {
+			"defines": {
+				"ls013b4dn04": {
+					"cs": { "pin": 9, "port": "gpioPortA" },
+				},
+			},
+		},
 		"gecko/thunderboard2": {
 			"defines": {
 				"ls013b4dn04": {
 					"cs": { "pin": 9, "port": "gpioPortA" },
 				},
 			},
-			"modules": {
-				"*": [
-                    "$(MODULES)/base/instrumentation/*",
-					"$(BUILD)/devices/gecko/sleep/*",
-				],
-			},
-			"preload": [
-				"instrumentation",
-				"pins",
-				"spi",
-				"sleep",
-			],
 		},
 		"gecko/giant": {
 			"defines": {
@@ -82,18 +72,6 @@
 					"cs": { "pin": 3, "port": "gpioPortD" },
 				},
 			},
-			"modules": {
-				"*": [
-                    "$(MODULES)/base/instrumentation/*",
-					"$(BUILD)/devices/gecko/sleep/*",
-				],
-			},
-			"preload": [
-				"instrumentation",
-				"pins",
-				"spi",
-				"sleep",
-			],
 		},
 	}
 }
