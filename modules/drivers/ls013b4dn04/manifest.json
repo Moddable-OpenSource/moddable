@@ -44,7 +44,7 @@
 				}
 			}
 		},
-		"gecko/mighty": {
+		"gecko": {
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/spi/manifest.json",
@@ -53,6 +53,8 @@
 				"*": "$(MODULES)/drivers/ls013b4dn04/*",
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
+		},
+		"gecko/mighty": {
 			"defines": {
 				"ls013b4dn04": {
 					"cs": { "pin": 3, "port": "gpioPortD" },
@@ -60,14 +62,6 @@
 			}
 		},
 		"gecko/giant": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/ls013b4dn04/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 			"defines": {
 				"ls013b4dn04": {
 					"cs": { "pin": 3, "port": "gpioPortD" },
