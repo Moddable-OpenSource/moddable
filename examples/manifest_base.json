@@ -89,7 +89,7 @@
 				}
 			}
 		},
-		"gecko/giant": {
+		"gecko": {
 			"modules": {
 				"*": [
 					"$(MODULES)/base/time/*",
@@ -102,6 +102,8 @@
 				"time",
 				"timer",
 			],
+		},
+		"gecko/giant": {
 			"defines": {
 				"sleep": {
 					"idleLevel" : 3,
@@ -130,18 +132,6 @@
 			}
 		},
 		"gecko/mighty": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/esp/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mc/*",
-				]
-			},
-			"preload": [
-				"time",
-				"timer",
-			],
 			"defines": {
 				"sleep": {
 					"idleLevel" : 3,
@@ -169,18 +159,6 @@
 			}
 		},
 		"gecko/thunderboard2": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/esp/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mc/*",
-				]
-			},
-			"preload": [
-				"time",
-				"timer",
-			],
 			"defines": {
 				"sleep": {
 					"idleLevel" : 3,
@@ -206,18 +184,6 @@
 			}
 		},
 		"gecko/blue": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/esp/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mc/*",
-				]
-			},
-			"preload": [
-				"time",
-				"timer",
-			],
 			"defines": {
 				"sleep": {
 					"idleLevel" : 3,

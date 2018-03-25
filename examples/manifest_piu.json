@@ -44,13 +44,7 @@
 			},
 			"preload": "setup/piu"
 		},
-		"gecko/giant": {
-			"modules": {
-				"setup/piu": "$(BUILD)/devices/gecko/setup/piu",
-			},
-			"preload": "setup/piu"
-		},
-		"gecko/mighty": {
+		"gecko": {
 			"modules": {
 				"setup/piu": "$(BUILD)/devices/gecko/setup/piu",
 			},
