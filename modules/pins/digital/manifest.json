@@ -14,17 +14,7 @@
 				"*": "$(MODULES)/pins/digital/esp32/*",
 			},
 		},
-		"gecko/giant": {
-			"modules": {
-				"*": "$(MODULES)/pins/digital/gecko/*",
-			},
-		},
-		"gecko/mighty": {
-			"modules": {
-				"*": "$(MODULES)/pins/digital/gecko/*",
-			},
-		},
-		"gecko/thunderboard2": {
+		"gecko": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/gecko/*",
 			},
