@@ -1,5 +1,13 @@
 # Gecko
 
+The Gecko series of processors from Silicon Labs are low-powered ARM based devices.
+
+With the goal of consuming very little current, the Geckos are highly configurable. Peripherals, subsystems, clocks and oscillators can be enabled or disabled with high specificity.
+
+Sleep is another important aspect of the Gecko platform. To achieve low power goals, the device must sleep when it is not active. Managing the various sleep modes and cycles is a big focus of the Gecko implementation.
+
+Moddable on Gecko runs on the bare metal. It is very efficient and gives a lot of control to the developer, but requires expertise and time to get it right.
+
 There are currently three flavors of Gecko implemented in the Moddable SDK.
 
 The Giant Gecko is based off of the EFM32 family of devices. Its platform identifier is **gecko/giant**. We've worked with the EFM32GG STK3700 - [Giant Gecko Starter Kit](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit).
@@ -8,16 +16,17 @@ The Mighty Gecko is a family of devices that include radio hardware. Its platfor
 
 The Thunderboard Sense 2 is a Mighty Gecko based radio device that includes a number of sensors included on the board. Its platform identifier is **gecko/thunderboard2**. [Thunderboard™ Sense 2 IoT Development Kit](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
 
+The Blue Gecko is a Bluetooth focused board. Its port is currently under development. Its platform identifier is **gecko/blue**.
 
 ### Development workflow
 
 There are two major build steps in building a Moddable application for Gecko.
 
-First, JS application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_gecko.a` archive file.
+First, the JavaScript application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_gecko.a` archive file.
 
 Second, a Simplicity Studio project builds an application stub and device libraries and links the Moddable archive.
 
-Simplicity Studio is then used to upload the binary to the device and debug C-level code. JS Script code can be debugged with the **Xsbug** debugger as described below.
+Simplicity Studio is then used to upload the binary to the device and debug C-level code. JavaScript code can be debugged with the **xsbug** debugger as described below.
 
 #### `mcconfig` and Subplatforms
 
@@ -85,9 +94,9 @@ You will need to change some settings in the Simplicity Studio project for the M
 
 Open the properties window for the project and select *C/C++ Build->Settings*.
 
-1) In the **Other Objects** section, click the _add document_ icon ![Add Document](AddDoc.png) to add the Moddable archive to your project.
+1) In the **Other Objects** section, click the _add document_ icon ![Add Document](assets/AddDoc.png) to add the Moddable archive to your project.
 
-![Add Archive](AddArchive.png)
+![Add Archive](assets/AddArchive.png)
 
 2) Select "File system..."
 
@@ -104,16 +113,16 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 
 1) In the **GNU ARM C Linker section**, select **Libraries**.
 
-![Add Library](AddLibrary.png)
+![Add Library](assets/AddLibrary.png)
 
-2) Click the _add document_ icon ![Add Document](AddDoc.png) to add a library to your project.
+2) Click the _add document_ icon ![Add Document](assets/AddDoc.png) to add a library to your project.
 
 3) Type in **'m'** to add the "Math" library.
 
 
 #### Integrate Moddable runtime
 
-In the app's main.c, add a few things:
+In the Simplicity Studio sample app's **main.c**, add a few things:
 
 	int gResetCause = 0;
 	uint32_t wakeupPin = 0;
@@ -156,7 +165,7 @@ The various pin/port/location values for interfaces can be found in the specific
 
 Native code can be debugged with Simplicity Studio.
 
-XS script code can be debugged with Xsbug by using a FTDI adapter. On the adapter, the pins RX, TX and GND will be used.
+XS script code can be debugged with xsbug by using a FTDI adapter. On the adapter, the pins RX, TX and GND will be used.
 
 On your device, you will need to use a UART or USART and specify it in a **defines** section for your platform. Other required definitions include the tx and rx pins and location and the serial clock. Baud rate can also be defined, defaulting to 115200. Examples are shown below.
 
@@ -230,13 +239,13 @@ An alternate configuration, using USART0 on Giant Gecko,and USART3 on Mighty Gec
 
 The Gecko series devices use low power. Careful programming and management of sleep cycles are necessary to optimize power usage for your application.
 
-Moddable sleeps at times, waiting for sensor or user input, or the specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application.
+Moddable sleeps at times, waiting for sensor or user input, or the specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application to operate correctly.
 
 By default, Moddable uses Sleep level EM3 while waiting. Certain Gecko interfaces are shut down at level EM3. For example, while operating the Mighty Gecko radio, the sleep level must be constrained to EM1.
 
 #### EM4 Sleep
 
-Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by an external GPIO pin or a low power clock. When awoken, the device reboots. 
+Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a low power clock. When awoken, the device reboots. 
 
 During EM4 sleep, a small amount of memory can be kept active at the expense of a slightly increased power draw. The GPIO state can also be retained.
 
@@ -262,7 +271,7 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 
 `retention`:`memory`: enables or disables retention memory.
 
-`retention`:`gpio`: enables or disables retention state.
+`retention`:`gpio`: enables or disables gpio retention state.
 
 `wakeup`: defines the pin used to wake from EM4.
 
@@ -273,7 +282,7 @@ The various Gecko devices specify specific port/pin combinations that will wake 
 
 The `Sleep` class provides access to Gecko's sleep functions.
 
-	import Sleep from "sleep"
+	import Sleep from "sleep";
 	let sleep = new Sleep();
 
 #### Determine cause of wakeup
@@ -468,11 +477,11 @@ In **GNU ARM C Compiler -> Symbols** and **GNU ARM Assembler -> Symbols**, add a
 
 You can increase that by changing the Radio Profile. When starting a new radio project, Simplicity Studio creates the ISC file, select the **Radio Configuration** tab and change the *Select a radio PHY for selected profile* to **Custom Settings**.
 
-![ISC Custom Settings](ISC-RadioConfig.png)
+![ISC Custom Settings](assets/ISC-RadioConfig.png)
 
 Scroll down to **Profile options->Packet** and select the **Frame Fixed Length** tab. 
 
-![Frame Fixed Length](FrameLength.png)
+![Frame Fixed Length](assets/FrameLength.png)
 
 Change the payload size to the size you need. Then click the **Generate** button to create the radio support files for the project.
 
@@ -489,9 +498,9 @@ Below are some default hookup schemes:
 
 Giant Gecko locates the xsbug serial pins on the top row of pins, other peripherals on the expansion port.
 
-![STK3700 Breakout pins](stk3700-BreakoutPins.png)
+![STK3700 Breakout pins](assets/stk3700-BreakoutPins.png)
 
-Xsbug Connection
+xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -499,7 +508,7 @@ PB9 | UART1_TX#2 | FTDI TX
 PB10 | UART1_RX#2 | FTDI RX
 GND | GND | FTDI GND
 
-![STK3700 Expansion pinout](GG3700Expansion.png)
+![STK3700 Expansion pinout](assets/GG3700Expansion.png)
 
 
 
@@ -534,9 +543,9 @@ PB10 | SW1 | Push Button 1
 
 ### Mighty Gecko
 
-![WSTK Expansion pinout](WirelessSTKExpansion.png)
+![WSTK Expansion pinout](assets/WirelessSTKExpansion.png)
 
-Xsbug Connection
+xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -574,9 +583,9 @@ PF7 | SW1 | Push Button 1
 
 ### Thunderboard Sense 2
 
-![Thunderboard Sense 2 pinout](TBS2Pinout.png)
+![Thunderboard Sense 2 pinout](assets/TBS2Pinout.png)
 
-Xsbug Connection
+xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -611,3 +620,18 @@ PD8 | LED_RED | Red LED
 PD9 | LED_GREEN | Green LED
 PD14 | PUSH_BUTTON0 | Push Button 0
 PD15 | PUSH_BUTTON1 | Push Button 1
+
+## Example apps with gecko support
+
+App | Feature | Giant | Mighty | Thunderboard Sense 2
+--- | ------- | ----- | ------ | --------------------
+helloworld | xsbug | x | x | x
+drivers/TMP102 | I2C | x | x |
+drivers/HMC5883L | I2C | x | x |
+piu/balls | SPI/ili9341 | x | x |
+piu/transitions | SPI/ili9341 | x | x |
+piu/cards | SPI/ili9341 | x | x |
+piu/love-e-ink | SPI/destm32s | x | x |
+drivers/radio/radiotest | radio |   | x |
+
+
