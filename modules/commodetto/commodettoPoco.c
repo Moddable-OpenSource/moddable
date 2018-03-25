@@ -19,7 +19,7 @@
  */
 
 
-#include "commodettoPocoBlit.h"
+#include "commodettoPoco.h"
 #include "commodettoPixelsOut.h"
 
 #include "stddef.h"		// for offsetof macro
@@ -29,8 +29,6 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-
-#define xsGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(PocoRecord, pixels)))
 
 #define PocoDisableGC(poco) \
 	if (!(poco->flags & kPocoFlagGCDisabled)) {	\
@@ -106,7 +104,7 @@ void xs_poco_build(xsMachine *the)
 
 void xs_poco_begin(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoCoordinate x, y;
 	PocoDimension w, h;
@@ -187,7 +185,7 @@ void xs_poco_begin(xsMachine *the)
 static void pixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 {
 	xsMachine *the = refCon;
-	Poco poco = xsGetHostDataPoco(xsThis);		//@@ eliminate this call
+	Poco poco = xsmcGetHostDataPoco(xsThis);		//@@ eliminate this call
 
 	xsmcSetInteger(xsVar(1), (char *)pixels - (char *)poco->pixels);		// offset
 	xsmcSetInteger(xsVar(2), byteLength);
@@ -196,7 +194,7 @@ static void pixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 
 void xs_poco_end(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
 
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
@@ -275,14 +273,14 @@ void xs_poco_makeColor(xsMachine *the)
 	g = xsmcToInteger(xsArg(1));
 	b = xsmcToInteger(xsArg(2));
 
-	color = PocoMakeColor(xsGetHostDataPoco(xsThis), r, g, b);
+	color = PocoMakeColor(xsmcGetHostDataPoco(xsThis), r, g, b);
 
 	xsmcSetInteger(xsResult, color);
 }
 
 void xs_poco_clip(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 
 	if (argc) {
@@ -301,7 +299,7 @@ void xs_poco_clip(xsMachine *the)
 
 void xs_poco_origin(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 
 	if (argc) {
@@ -317,7 +315,7 @@ void xs_poco_origin(xsMachine *the)
 
 void xs_poco_fillRectangle(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PocoColor color;
 	PocoCoordinate x, y;
 	PocoDimension w, h;
@@ -333,7 +331,7 @@ void xs_poco_fillRectangle(xsMachine *the)
 
 void xs_poco_blendRectangle(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PocoColor color;
 	PocoCoordinate x, y;
 	PocoDimension w, h;
@@ -351,7 +349,7 @@ void xs_poco_blendRectangle(xsMachine *the)
 
 void xs_poco_drawPixel(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PocoColor color;
 	PocoCoordinate x, y;
 
@@ -364,7 +362,7 @@ void xs_poco_drawPixel(xsMachine *the)
 
 void xs_poco_drawBitmap(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits;
 	PocoCoordinate x, y;
@@ -410,7 +408,7 @@ void xs_poco_drawBitmap(xsMachine *the)
 
 void xs_poco_drawMonochrome(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits;
 	PocoCoordinate x, y;
@@ -464,7 +462,7 @@ void xs_poco_drawMonochrome(xsMachine *the)
 
 void xs_poco_drawGray(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits;
 	PocoCoordinate x, y;
@@ -517,7 +515,7 @@ void xs_poco_drawGray(xsMachine *the)
 
 void xs_poco_drawMasked(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits, mask;
 	PocoCoordinate x, y, mask_sx, mask_sy;
@@ -572,7 +570,7 @@ void xs_poco_drawMasked(xsMachine *the)
 
 void xs_poco_fillPattern(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PocoBitmapRecord bits;
 	PocoCoordinate x, y;
 	PocoDimension w, h, sx, sy, sw, sh;
@@ -611,7 +609,7 @@ void xs_poco_fillPattern(xsMachine *the)
 
 void xs_poco_drawFrame(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	uint8_t *data;
 	uint32_t dataSize;
 	PocoCoordinate x, y;
@@ -673,7 +671,7 @@ void xs_poco_getTextWidth(xsMachine *the)
 
 void xs_poco_drawText(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	const unsigned char *text = (const unsigned char *)xsmcToString(xsArg(0));
 	int charCount;
@@ -841,7 +839,7 @@ void xs_poco_drawText(xsMachine *the)
 
 void xs_poco_adaptInvalid(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch;
 
 	if (!(kPocoFlagAdaptInvalid & poco->flags))
@@ -873,13 +871,13 @@ void xs_poco_adaptInvalid(xsMachine *the)
 
 void xs_poco_get_width(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	xsmcSetInteger(xsResult, poco->width);
 }
 
 void xs_poco_get_height(xsMachine *the)
 {
-	Poco poco = xsGetHostDataPoco(xsThis);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
 	xsmcSetInteger(xsResult, poco->height);
 }
 
