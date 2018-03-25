@@ -1,10 +1,10 @@
 # Moddable SDK - Examples
 
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2018 Moddable Tech, Inc.
 
-<!-- Last edit: 11/29/2017 BSF -->
+<!-- Last edit: 3/23/2018 MDK -->
 
-Revised: November 29, 2017
+Revised: March 23, 2018
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -47,7 +47,10 @@ The `-p` command line option specifies the target platform you are building for:
 - `-p win`: Windows target
 - `-p lin`: Linux target
 - `-p esp`: ESP8266 device target
-- `-p esp32`: ESP32 device target 
+- `-p esp32`: ESP32 device target
+- `-p gecko/giant`: SiLabs Giant Gecko
+- `-p gecko/mighty`: SiLabs Mighty Gecko
+- `-p gecko/thunderboard2`: SiLabs Thunderboard Sense 2
 
 To build a release app that targets ESP8266 devices:
 
@@ -57,7 +60,7 @@ To build a debug app that targets ESP32 devices:
 
 	mcconfig -d -m -p esp32
 	
-> **Note**: `mcconfig` automatically deploys apps to target devices. The `xsbug` debugger is launched when deploying debug apps to devices.
+> **Note**: `mcconfig` automatically deploys apps to target devices. For many platforms, the `xsbug` debugger is launched when deploying debug apps to devices.
 
 ### Screen pixel formats
 
@@ -143,7 +146,7 @@ The `include` section specifies which driver modules are built for the applicati
 		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
 	]
 
-To build an app that for the `ft6206` touch controller driver, modify both the `config` and `include` sections in the `manifest.json` file:
+To build an app for the `ft6206` touch controller driver, modify both the `config` and `include` sections in the `manifest.json` file:
 
 	"config": {
 		"screen": "ili9341",
