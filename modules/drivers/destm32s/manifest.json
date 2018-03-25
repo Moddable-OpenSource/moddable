@@ -48,7 +48,7 @@
 				},
 			}
 		},
-		"gecko/giant": {
+		"gecko": {
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/spi/manifest.json",
@@ -57,6 +57,8 @@
 				"*": "$(MODULES)/drivers/destm32s/*",
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
+		},
+		"gecko/giant": {
 			"defines": {
 				"destm32s": {
 					"hz": 5000000,
@@ -69,14 +71,6 @@
 			},
 		},
 		"gecko/mighty": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/destm32s/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 			"defines": {
 				"destm32s": {
 					"hz": 5000000,
@@ -89,14 +83,6 @@
 			},
 		},
 		"gecko/thunderboard2": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/destm32s/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 			"defines": {
 				"destm32s": {
 					"hz": 5000000,
