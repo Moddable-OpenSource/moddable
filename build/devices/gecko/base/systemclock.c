@@ -321,9 +321,10 @@ void waitForGPIO(int port, int pin) {
 }
 
 static int lastSleep;
-void geckoSetMaxSleep(int sleep) {
+int setMaxSleep(int sleepLevel) {
 	lastSleep = gModIdleSleep;
-	gModIdleSleep = sleep;
+	gModIdleSleep = sleepLevel;
+	return lastSleep;
 }
 
 void geckoEM1Idle(uint32_t ms) {
