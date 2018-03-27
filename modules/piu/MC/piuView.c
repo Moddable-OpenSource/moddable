@@ -169,10 +169,12 @@ void PiuViewAdjust(PiuView* self)
 
 void PiuViewBegin(PiuView* self) 
 {
+	xsMachine* the = (*self)->the;
 	Poco poco = (*self)->poco;
 	PocoCoordinate x, y;
 	PocoDimension w, h;
 	
+	PiuFontListLockCache(the);
 	x = 0;
 	y = 0;
 	w = poco->width;
@@ -390,24 +392,14 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	xsMachine* the = (*self)->the;
 	Poco poco = (*self)->poco;
 	xsStringValue text = PiuToString(string);
-	const unsigned char *chars = (*font)->buffer + (*font)->offset;
-	uint32_t charCount;
-	PiuTexture* texture = (*font)->texture;
-	PocoBitmap bits, mask;
-	PocoBitmapRecord pack;
-	
 	static const char *ellipsis = "...";
 	PocoDimension ellipsisWidth;
-	
-	charCount = c_read32(chars) / 20;
-	chars += 4;
-
 	if (width) {
-		const char *t = ellipsis;
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&t, chars, charCount);
+		xsStringValue t = (xsStringValue)ellipsis;
+		PiuGlyph glyph = PiuFontGetGlyph(font, &t, 0);
 
-		if (cc) {
-			ellipsisWidth = c_read16(cc + 16);						// +16 -> offset to xadvance
+		if (glyph) {
+			ellipsisWidth = glyph->advance;
 			ellipsisWidth *= 3;
 		}
 		else
@@ -416,42 +408,23 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	else
 		ellipsisWidth = 0;
 
-	if (texture) {
-		PiuFlags flags = (*texture)->flags;
-		bits = (flags & piuTextureColor) ? &((*texture)->bits) : NULL;
-		mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
-	}
-	else {
-		bits = NULL;
-		mask = NULL;
-		pack.format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
-	}
-
 	text += offset;
 	while (length) {
-		PocoCoordinate cx, cy, sx, sy;
-		PocoDimension sw, sh;
-		uint16_t xadvance;
 		char *prev = text;
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&text, chars, charCount);
-
+		PiuGlyph glyph = PiuFontGetGlyph(font, &text, 1);
 		length -= (PiuDimension)(text - prev);
-		if (!cc) {
-			uint8_t missing, *pp;
-
+		if (!glyph) {
+			char missing, *pp;
 			if (!c_read8(prev))
 				break;
-
 			missing = '?';
 			pp = &missing;
-			cc = PocoBMFGlyphFromUTF8(&pp, chars, charCount);
-			if (NULL == cc)
+			glyph = PiuFontGetGlyph(font, &pp, 1);
+			if (!glyph)
 				continue;
 		}
-
-		xadvance = c_read16(cc + 16);	// +16 -> offset to xadvance
-
-		if (ellipsisWidth && ((width - xadvance) <= ellipsisWidth)) {
+		
+		if (ellipsisWidth && ((width - glyph->advance) <= ellipsisWidth)) {
 			ellipsisWidth = 0;
 			if (stringWidth > width) {
 				text = (xsStringValue)ellipsis;
@@ -459,38 +432,20 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 				continue;
 			}
 		}
-			
-		cx = x + c_read16(cc + 12);
-		cy = y + c_read16(cc + 14);
-		sx = c_read16(cc + 4);
-		sy = c_read16(cc + 6);
-		sw = c_read16(cc + 8);
-		sh = c_read16(cc + 10);
-
-		if (mask) {
-			if (bits)
-				PocoBitmapDrawMasked(poco, blend, bits, cx, cy, sx, sy, sw, sh, mask, sx, sy);
+		
+		if (glyph->mask) {
+			if (glyph->bits)
+				PocoBitmapDrawMasked(poco, blend, glyph->bits, x + glyph->dx, y + glyph->dy, glyph->sx, glyph->sy, glyph->sw, glyph->sh, glyph->mask, glyph->sx, glyph->sy);
 			else
-				PocoGrayBitmapDraw(poco, mask, color, blend, cx, cy, sx, sy, sw, sh);
+				PocoGrayBitmapDraw(poco, glyph->mask, color, blend, x + glyph->dx, y + glyph->dy, glyph->sx, glyph->sy, glyph->sw, glyph->sh);
 		}
 		else {
-			if (bits)
-				PocoBitmapDraw(poco, bits, cx, cy, sx, sy, sw, sh);
-			else {
-				pack.pixels = (PocoPixel *)((sx | (sy << 16)) + (char *)cc);
-#if (0 == kPocoRotation) || (180 == kPocoRotation)
-				pack.width = sw;
-				pack.height = sh;
-#elif (90 == kPocoRotation) || (270 == kPocoRotation)
-				pack.width = sh;
-				pack.height = sw;
-#endif
-				PocoGrayBitmapDraw(poco, &pack, color, blend, cx, cy, 0, 0, sw, sh);
-			}
+			if (glyph->bits)
+				PocoBitmapDraw(poco, glyph->bits, x + glyph->dx, y + glyph->dy, glyph->sx, glyph->sy, glyph->sw, glyph->sh);
 		}
-		x += xadvance;
-		width -= xadvance;
-		stringWidth -= xadvance;
+		x += glyph->advance;
+		width -= glyph->advance;
+		stringWidth -= glyph->advance;
 	}
 }
 
@@ -583,6 +538,7 @@ void PiuViewEnd(PiuView* self)
 	
 	PiuRegionEmpty(dirty);
 
+	PiuFontListUnlockCache(the);
 	if (poco->flags & kPocoFlagGCDisabled) {
 		xsEnableGarbageCollection(1);
 		xsCollectGarbage();
