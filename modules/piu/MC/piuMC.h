@@ -20,24 +20,31 @@
 
 #include "piuAll.h"
 
+typedef struct PiuGlyphStruct PiuGlyphRecord, *PiuGlyph;
 typedef struct PiuDieStruct PiuDieRecord, *PiuDie;
 typedef struct PiuImageStruct PiuImageRecord, *PiuImage;
 typedef struct PiuRegionStruct PiuRegionRecord, *PiuRegion;
 
 // PiuFont.c
 
-struct PiuFontStruct {
-	PiuHandlePart;
-	xsMachine* the;
-	const char* name;
-	int32_t nameLength;
-	PiuFont* next;
-	uint8_t *buffer;
-	uint32_t offset;
-	PiuDimension height;
-	PiuDimension ascent;
-	PiuTexture* texture;
+#define PiuGlyphPart \
+	uint16_t advance; \
+	uint16_t sx; \
+	uint16_t sy; \
+	uint16_t sw; \
+	uint16_t sh; \
+	uint16_t dx; \
+	uint16_t dy; \
+	PocoBitmap bits; \
+	PocoBitmap mask
+
+struct PiuGlyphStruct {
+	PiuGlyphPart;
 };
+
+extern PiuGlyph PiuFontGetGlyph(PiuFont* self, xsStringValue *string, uint8_t needPixels);
+extern void PiuFontListLockCache(xsMachine* the);
+extern void PiuFontListUnlockCache(xsMachine* the);
 
 // PiuTexture.c
 
