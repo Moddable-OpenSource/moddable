@@ -20,6 +20,19 @@
 
 #include "piuMC.h"
 
+struct PiuFontStruct {
+	PiuHandlePart;
+	xsMachine* the;
+	const char* name;
+	int32_t nameLength;
+	PiuFont* next;
+	uint8_t *buffer;
+	uint32_t offset;
+	PiuDimension height;
+	PiuDimension ascent;
+	PiuTexture* texture;
+};
+
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuFontParse(xsMachine* the, PiuFont* self);
@@ -39,6 +52,48 @@ PiuDimension PiuFontGetAscent(PiuFont* self)
 	return (*self)->ascent;
 }
 
+PiuGlyph PiuFontGetGlyph(PiuFont* self, xsStringValue *string, uint8_t needPixels)
+{
+	static PiuGlyphRecord glyph;
+	static PocoBitmapRecord pack;
+	PiuTexture* texture = (*self)->texture;
+	const unsigned char *chars = (*self)->buffer + (*self)->offset;
+	uint32_t charCount = c_read32(chars) / 20;
+	const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t**)string, chars + 4, charCount);
+	if (!cc)
+		return NULL;
+	glyph.advance = c_read16(cc + 16);
+	if (needPixels) {
+		glyph.sx = c_read16(cc + 4);
+		glyph.sy = c_read16(cc + 6);
+		glyph.sw = c_read16(cc + 8);
+		glyph.sh = c_read16(cc + 10);
+		glyph.dx = c_read16(cc + 12);
+		glyph.dy = c_read16(cc + 14);
+		if (texture) {
+			PiuFlags flags = (*texture)->flags;
+			glyph.bits = (flags & piuTextureColor) ? &((*texture)->bits) : NULL;
+			glyph.mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
+		}
+		else {
+			glyph.bits = NULL;
+			glyph.mask = &pack;
+			pack.format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
+			pack.pixels = (PocoPixel *)((glyph.sx | (glyph.sy << 16)) + (char *)cc);
+	#if (0 == kPocoRotation) || (180 == kPocoRotation)
+			pack.width = glyph.sw;
+			pack.height = glyph.sh;
+	#elif (90 == kPocoRotation) || (270 == kPocoRotation)
+			pack.width = glyph.sh;
+			pack.height = glyph.sw;
+	#endif
+			glyph.sx = 0;
+			glyph.sy = 0;
+		}
+	}
+	return &glyph;
+}
+
 PiuDimension PiuFontGetHeight(PiuFont* self)
 {
 	return (*self)->height;
@@ -48,33 +103,23 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 {
 	xsMachine* the = (*self)->the;
 	xsStringValue text = PiuToString(string);
-	unsigned char *chars = (*self)->buffer + (*self)->offset;
-	uint32_t charCount;
 	PiuDimension width = 0;
-	
-	charCount = c_read32(chars) / 20;
-	chars += 4;
-
 	text += offset;
 	while (length) {
 		char *prev = text;
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&text, chars, charCount);
+		PiuGlyph glyph = PiuFontGetGlyph(self, &text, 0);
 		length -= (text - prev);
-
-		if (!cc) {
-			uint8_t missing, *pp;
-
+		if (!glyph) {
+			char missing, *pp;
 			if (!c_read8(prev))
 				break;
-
 			missing = '?';
 			pp = &missing;
-			cc = PocoBMFGlyphFromUTF8(&pp, chars, charCount);
-			if (NULL == cc)
+			glyph = PiuFontGetGlyph(self, &pp, 0);
+			if (!glyph)
 				continue;
 		}
-
-		width += c_read16(cc + 16);	// +16 -> offset to xadvance
+		width += glyph->advance;
 	}
 	return width;
 }
@@ -167,6 +212,14 @@ void PiuFontParse(xsMachine* the, PiuFont* self)
 
 	firstChar = c_read32(buffer);
 	lastChar = firstChar + (size / 20);
+}
+
+void PiuFontListLockCache(xsMachine* the)
+{
+}
+
+void PiuFontListUnlockCache(xsMachine* the)
+{
 }
 
 void PiuStyleLookupFont(PiuStyle* self)
