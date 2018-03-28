@@ -993,7 +993,7 @@ struct xsJumpRecord {
 	__JUMP__.code = the->code; \
 	__JUMP__.flag = 0; \
 	the->firstJump = &__JUMP__; \
-	if (setjmp(__JUMP__.buffer) == 0) {
+	if (_setjmp(__JUMP__.buffer) == 0) {
 
 #define xsCatch \
 		the->firstJump = __JUMP__.nextJump; \
@@ -1157,7 +1157,7 @@ struct xsCreationRecord {
 		__HOST_JUMP__.code = (__HOST_THE__)->code; \
 		__HOST_JUMP__.flag = 0; \
 		(__HOST_THE__)->firstJump = &__HOST_JUMP__; \
-		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
+		if (_setjmp(__HOST_JUMP__.buffer) == 0) { \
 			xsMachine* the = fxBeginHost(__HOST_THE__)
 
 #ifndef XSLOGEXCEPTION
