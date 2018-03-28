@@ -26,7 +26,7 @@ let scanResponseData = {
 
 let ble = new BLE();
 ble.onReady = () => {
-	ble.deviceName = "Moddable ESP32";
+	ble.deviceName = "Moddable";
 	ble.startAdvertising({ advertisingData, scanResponseData });
 	
 	ble.onConnected = connection => {
