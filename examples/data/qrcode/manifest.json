@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/data/qrcode/qrcode",
+			"$(MODULES)/data/qrcode/qrcodegen",
+		]
+	},
+	"preload": [
+		"qrcode"
+	],
+	"config": {
+		"screen": "ili9341"
+	},
+}
