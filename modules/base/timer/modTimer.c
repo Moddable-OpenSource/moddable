@@ -60,16 +60,16 @@ void modTimerDelete(void *data)
 static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 {
 	modTimerScript ts = refcon;
+	xsMachine *the = ts->the;
 
-	xsBeginHost(ts->the);
-		xsCallFunction1(xsReference(ts->callback), xsGlobal, ts->self);
+	xsBeginHost(the);
+		xsCallFunction1(xsReference(ts->callback), xsGlobal, xsAccess(ts->self));
+	xsEndHost(the);
 
-		if (0 == modTimerGetSecondInterval(timer)) {
-			xsForget(ts->self);
-			xsmcSetHostData(ts->self, NULL);
-		}
-
-	xsEndHost(ts->the);
+	if (0 == modTimerGetSecondInterval(timer)) {
+		xsForget(ts->self);
+		xsmcSetHostData(ts->self, NULL);
+	}
 }
 
 static void createTimer(xsMachine *the, int interval, int repeat)
