@@ -71,6 +71,7 @@ let noDevice = {
 
 class ApplicationBehavior extends Behavior {
 	onCreate(application) {
+		let extension = (system.platform == "win") ? "dll" : "so";
 		global.model = this;
   		application.interval = 100;
 		
@@ -85,9 +86,24 @@ class ApplicationBehavior extends Behavior {
 		this.deviceIndex = -1;
 
 		this.screenPath = "";
-		this.localScreenPath = system.buildPath(system.localDirectory, "mc.so");
+		this.localScreenPath = system.buildPath(system.localDirectory, "mc", extension);
 		
 		this.messagesKind = false;
+		
+		try {
+			let directory = system.getPathDirectory(system.applicationPath);
+			directory = system.buildPath(directory, "autorun");
+			if (system.fileExists(directory)) {
+				let devicesPath = system.buildPath(directory, "simulators");
+				let screenPath = system.buildPath(directory, "mc", extension);
+				if (system.fileExists(devicesPath) && system.fileExists(screenPath)) {
+					this.devicesPath = devicesPath;
+					this.screenPath = screenPath;
+				}
+			}
+		}
+		catch {
+		}
 		
 		this.readPreferences();
 
