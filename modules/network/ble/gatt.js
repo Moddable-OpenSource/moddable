@@ -73,6 +73,12 @@ export class Client {
 			characteristic._onValue.call(characteristic, params);
 	}
 
+	_onNotificationsEnabled(params) {
+		let characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			characteristic._onNotificationsEnabled.call(characteristic, params);
+	}
+
 	callback(event, params) {
 		//trace(`Client callback ${event}\n`);
 		this[event](params);
@@ -139,6 +145,7 @@ export class Characteristic {
 	constructor(dictionary) {
 		this.onDescriptors = function() {};
 		this.onNotification = function() {};
+		this.onNotificationsEnabled = function() {};
 		this.onValue = function() {};
 		this.descriptors = [];
 		
@@ -200,6 +207,9 @@ export class Characteristic {
 	}
 	_onNotification(params) {
 		this.onNotification(params.value);
+	}
+	_onNotificationsEnabled() {
+		this.onNotificationsEnabled(this);
 	}
 	_onValue(params) {
 		this.onValue(params.value);
