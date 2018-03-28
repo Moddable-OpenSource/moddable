@@ -90,6 +90,8 @@ class ApplicationBehavior extends Behavior {
 		
 		this.messagesKind = false;
 		
+		this.readPreferences();
+		
 		try {
 			let directory = system.getPathDirectory(system.applicationPath);
 			directory = system.buildPath(directory, "autorun");
@@ -104,8 +106,6 @@ class ApplicationBehavior extends Behavior {
 		}
 		catch {
 		}
-		
-		this.readPreferences();
 
 		if (this.orientation)
 			application.add(new VerticalContainer(this));
