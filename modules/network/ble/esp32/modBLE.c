@@ -801,6 +801,13 @@ static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, 
     modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
     if (!connection) return;
 	esp_ble_gattc_write_char_descr(connection->gattc_if, 0, reg_for_notify->handle + 1, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), reg_for_notify->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("_onNotificationsEnabled"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
