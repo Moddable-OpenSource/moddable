@@ -27,33 +27,66 @@
 
 #define DEFAULT_MTU 247
 
-#undef LOGGING
-#if defined(LOGGING)
-	static void logEvent(struct gecko_cmd_packet* evt);
-	#define LOG_EVENT(event) logEvent(event)
-	#define LOG_MSG(msg) modLog(msg)
-	#define LOG_GAP_MSG(msg) modLog(msg)
-	#define LOG_GATTC_MSG(msg) modLog(msg)
-#else
-	#define LOG_EVENT(event)
-	#define LOG_MSG(msg)
-	#define LOG_GAP_MSG(msg)
-	#define LOG_GATTC_MSG(msg)
-#endif
-
 enum {
-	GATT_PROCEDURE_NONE_ID = 0,
-	GATT_PROCEDURE_SERVICES_ID,
-	GATT_PROCEDURE_CHARACTERISTICS_ID,
-	GATT_PROCEDURE_DESCRIPTORS_ID,
-	GATT_PROCEDURE_CHARACTERISTIC_VALUE_ID,
-	GATT_PROCEDURE_CHARACTERISTIC_NOTIFICATIONS_ENABLED_ID
+	CMD_GATT_DISCOVER_SERVICES_ID = 0,
+	CMD_GATT_DISCOVER_SERVICES_UUID_ID,
+	CMD_GATT_DISCOVER_CHARACTERISTICS_ID,
+	CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID,
+	CMD_GATT_DISCOVER_DESCRIPTORS_ID,
+	CMD_GATT_CHARACTERISTIC_READ_VALUE_ID,
+	CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID,
+	CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID,
 };
 
 typedef struct {
+  uint8 len;
+  uint8  data[16];
+} uuidRecord;
+
+typedef struct gattProcedureRecord gattProcedureRecord;
+typedef gattProcedureRecord *gattProcedure;
+
+static uint8_t __index = 0;	// @@ remove me
+
+struct gattProcedureRecord {
+	struct gattProcedureRecord *next;
+
+	uint8_t cmd;
 	uint8_t id;
+	uint8_t executed;
+	uint8_t index;
 	xsSlot obj;
-} gattProcedureRecord, *gattProcedure;
+	union {
+		struct {
+			uint8_t connection;
+			uuidRecord uuid;
+		} discover_services_param;
+		struct {
+			uint8_t connection;
+			uint32_t service;
+			uuidRecord uuid;
+		} discover_characteristics_param;
+		struct {
+			uint8_t connection;
+			uint16_t characteristic;
+		} discover_descriptors_param;
+		struct {
+			uint8_t connection;
+			uint8_t flags;
+			uint16_t characteristic;
+		} notification_param;
+		struct {
+			uint8_t connection;
+			uint16_t handle;
+		} read_value_param;
+		struct {
+			uint8_t connection;
+			uint16_t handle;
+			uint8_t *value;
+			uint8_t length;
+		} write_value_param;
+	};
+};
 
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
 typedef modBLEConnectionRecord *modBLEConnection;
@@ -67,7 +100,7 @@ struct modBLEConnectionRecord {
 
 	int8_t id;
 	bd_addr bda;
-	gattProcedureRecord procedure;
+	gattProcedure procedureQueue;
 };
 
 typedef struct {
@@ -80,11 +113,6 @@ typedef struct {
 	modBLEConnection connections;
 } modBLERecord, *modBLE;
 
-typedef struct {
-  uint8 len;
-  uint8  data[16];
-} uuidRecord;
-
 static void modBLEConnectionAdd(modBLEConnection connection);
 static void modBLEConnectionRemove(modBLEConnection connection);
 static modBLEConnection modBLEConnectionFindByConnectionID(uint8_t conn_id);
@@ -96,29 +124,6 @@ static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
 static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
 
 static modBLE gBLE = NULL;
-
-#ifndef MAX_CONNECTIONS
-#define MAX_CONNECTIONS 4
-#endif
-uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
-
-// Gecko configuration parameters (see gecko_configuration.h)
-static const gecko_configuration_t config = {
-  .config_flags = 0,
-  .sleep.flags = SLEEP_FLAGS_DEEP_SLEEP_ENABLE,
-  .bluetooth.max_connections = MAX_CONNECTIONS,
-  .bluetooth.heap = bluetooth_stack_heap,
-  .bluetooth.heap_size = sizeof(bluetooth_stack_heap),
-  .bluetooth.sleep_clock_accuracy = 100, // ppm
-  .gattdb = NULL,	// @@
-  .ota.flags = 0,
-  .ota.device_name_len = 3,
-  .ota.device_name_ptr = "OTA",
-#if (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
-  .pa.config_enable = 1, // Enable high power PA
-  .pa.input = GECKO_RADIO_PA_INPUT_VBAT, // Configure PA input to VBAT
-#endif // (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
-};
 
 void xs_ble_initialize(xsMachine *the)
 {
@@ -201,7 +206,6 @@ void xs_ble_connect(xsMachine *the)
 		
 	// Ignore duplicate connection attempts
 	if (modBLEConnectionFindByAddress(&bda)) {
-		LOG_GAP_MSG("Ignoring duplicate connect attempt");
 		return;
 	};
 	
@@ -292,21 +296,82 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	gecko_cmd_le_connection_get_rssi(conn_id);
 }
 
+static void gattProcedureExecute(gattProcedure procedure)
+{
+	procedure->executed = true;
+	
+	switch(procedure->cmd) {
+		case CMD_GATT_DISCOVER_SERVICES_ID:
+			gecko_cmd_gatt_discover_primary_services(procedure->discover_services_param.connection);
+			break;
+		case CMD_GATT_DISCOVER_SERVICES_UUID_ID:
+			gecko_cmd_gatt_discover_primary_services_by_uuid(procedure->discover_services_param.connection, procedure->discover_services_param.uuid.len, (const uint8_t*)&procedure->discover_services_param.uuid.data);
+			break;
+		case CMD_GATT_DISCOVER_CHARACTERISTICS_ID:
+			gecko_cmd_gatt_discover_characteristics(procedure->discover_characteristics_param.connection, procedure->discover_characteristics_param.service);
+			break;
+		case CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID:
+			gecko_cmd_gatt_discover_characteristics_by_uuid(procedure->discover_characteristics_param.connection, procedure->discover_characteristics_param.service, procedure->discover_characteristics_param.uuid.len, (const uint8_t*)&procedure->discover_characteristics_param.uuid.data);
+			break;
+		case CMD_GATT_DISCOVER_DESCRIPTORS_ID:
+			gecko_cmd_gatt_discover_descriptors(procedure->discover_descriptors_param.connection, procedure->discover_descriptors_param.characteristic);
+			break;
+		case CMD_GATT_CHARACTERISTIC_READ_VALUE_ID:
+			gecko_cmd_gatt_read_characteristic_value(procedure->read_value_param.connection, procedure->read_value_param.handle);
+			break;
+		case CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID:
+			gecko_cmd_gatt_set_characteristic_notification(procedure->notification_param.connection, procedure->notification_param.characteristic, procedure->notification_param.flags);
+			break;
+		case CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID:
+			gecko_cmd_gatt_write_descriptor_value(procedure->write_value_param.connection, procedure->write_value_param.handle, procedure->write_value_param.length, procedure->write_value_param.value);
+			c_free(procedure->write_value_param.value);
+			break;
+		default:
+			procedure->executed = false;	// @@
+			break;
+	}
+}
+
+static void gattProcedureQueueAndDo(xsMachine *the, modBLEConnection connection, gattProcedure procedure)
+{
+	gattProcedure proc = c_malloc(sizeof(gattProcedureRecord));
+	if (!proc)
+		xsUnknownError("out of memory");
+	*proc = *procedure;
+	proc->index = __index++;
+	if (!connection->procedureQueue) {
+		connection->procedureQueue = proc;
+xsTrace("gattProcedureQueueAndDo executing procedure\n");
+		gattProcedureExecute(proc);
+	}
+	else {
+		gattProcedure walker;
+		for (walker = connection->procedureQueue; walker->next; walker = walker->next)
+			;
+		walker->next = proc;
+xsTrace("gattProcedureQueueAndDo queuing procedure\n");
+	}
+}
+
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t argc = xsmcArgc;
+	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	connection->procedure.id = GATT_PROCEDURE_SERVICES_ID;
-	connection->procedure.obj = xsThis;
+	procedure.obj = xsThis;
+	procedure.discover_services_param.connection = conn_id;
 	if (argc > 1) {
 		uuidRecord uuid;
 		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsGetArrayBufferLength(xsArg(1)));
-		gecko_cmd_gatt_discover_primary_services_by_uuid(conn_id, uuid.len, uuid.data);
+		procedure.cmd = CMD_GATT_DISCOVER_SERVICES_UUID_ID;
+		procedure.discover_services_param.uuid = uuid;
 	}
-	else
-		gecko_cmd_gatt_discover_primary_services(conn_id);
+	else {
+		procedure.cmd = CMD_GATT_DISCOVER_SERVICES_ID;
+	}
+	gattProcedureQueueAndDo(the, connection, &procedure);
 }
 
 void xs_gatt_service_discover_characteristics(xsMachine *the)
@@ -315,29 +380,113 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
-	uint32_t handle = ((uint32_t)start << 16) | end;
+	uint32_t service = ((uint32_t)start << 16) | end;
+	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	connection->procedure.id = GATT_PROCEDURE_CHARACTERISTICS_ID;
-	connection->procedure.obj = xsThis;
+	procedure.obj = xsThis;
+	procedure.discover_characteristics_param.connection = conn_id;
+	procedure.discover_characteristics_param.service = service;
 	if (argc > 3) {
 		uuidRecord uuid;
 		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsGetArrayBufferLength(xsArg(3)));
-		gecko_cmd_gatt_discover_characteristics_by_uuid(conn_id, handle, uuid.len, uuid.data);
+		procedure.cmd = CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID;
+		procedure.discover_characteristics_param.uuid = uuid;
 	}
-	else
-		gecko_cmd_gatt_discover_characteristics(conn_id, handle);
+	else {
+		procedure.cmd = CMD_GATT_DISCOVER_CHARACTERISTICS_ID;
+	}
+	gattProcedureQueueAndDo(the, connection, &procedure);
 }
 
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
 {
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t characteristic = xsmcToInteger(xsArg(1));
+	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	connection->procedure.id = GATT_PROCEDURE_DESCRIPTORS_ID;
-	connection->procedure.obj = xsThis;
-	gecko_cmd_gatt_discover_descriptors(conn_id, characteristic);
+	procedure.obj = xsThis;
+	procedure.cmd = CMD_GATT_DISCOVER_DESCRIPTORS_ID;
+	procedure.discover_descriptors_param.connection = conn_id;
+	procedure.discover_descriptors_param.characteristic = characteristic;
+	gattProcedureQueueAndDo(the, connection, &procedure);
+}
+
+void xs_gatt_characteristic_read_value(xsMachine *the)
+{
+	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	gattProcedureRecord procedure = {0};
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	procedure.obj = connection->objClient;
+	procedure.cmd = CMD_GATT_CHARACTERISTIC_READ_VALUE_ID;
+	procedure.read_value_param.connection = conn_id;
+	procedure.read_value_param.handle = handle;
+	gattProcedureQueueAndDo(the, connection, &procedure);
+}
+
+static void set_notifications(xsMachine *the, xsSlot theThis, modBLEConnection connection, uint16_t handle, uint8_t flags)
+{
+	gattProcedureRecord procedure = {0};
+	procedure.obj = theThis;
+	procedure.cmd = CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID;
+	procedure.notification_param.connection = connection->id;
+	procedure.notification_param.characteristic = handle;
+	procedure.notification_param.flags = flags;
+	gattProcedureQueueAndDo(the, connection, &procedure);
+}
+
+void xs_gatt_characteristic_enable_notifications(xsMachine *the)
+{
+	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t characteristic = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	set_notifications(the, xsThis, connection, characteristic, gatt_notification);
+}
+
+void xs_gatt_characteristic_disable_notifications(xsMachine *the)
+{
+	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t characteristic = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	set_notifications(the, xsThis, connection, characteristic, gatt_disable);
+}
+
+void xs_gatt_descriptor_write_value(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	switch (xsmcTypeOf(xsArg(2))) {
+		case xsReferenceType:
+			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
+				gattProcedureRecord procedure = {0};
+				uint16_t length = xsGetArrayBufferLength(xsArg(2));
+				uint8_t *buffer = c_malloc(length);
+				if (!buffer)
+					xsUnknownError("out of memory");
+				c_memmove(buffer, (uint8_t*)xsmcToArrayBuffer(xsArg(2)), length);
+				procedure.obj = xsThis;
+				procedure.cmd = CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID;
+				procedure.write_value_param.connection = conn_id;
+				procedure.write_value_param.handle = handle;
+				procedure.write_value_param.value = buffer;
+				procedure.write_value_param.length = length;
+				gattProcedureQueueAndDo(the, connection, &procedure);
+			}
+			else
+				goto unknown;
+			break;
+		unknown:
+		default:
+			xsUnknownError("unsupported type");
+			break;
+	}
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
@@ -356,57 +505,6 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
 				gecko_cmd_gatt_write_characteristic_value_without_response(conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
-			else
-				goto unknown;
-			break;
-		unknown:
-		default:
-			xsUnknownError("unsupported type");
-			break;
-	}
-}
-
-void xs_gatt_characteristic_read_value(xsMachine *the)
-{
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t handle = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection) return;
-	connection->procedure.id = GATT_PROCEDURE_CHARACTERISTIC_VALUE_ID;
-	connection->procedure.obj = connection->objClient;
-	gecko_cmd_gatt_read_characteristic_value(conn_id, handle);
-}
-
-void xs_gatt_characteristic_enable_notifications(xsMachine *the)
-{
-	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t handle = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection) return;
-	gecko_cmd_gatt_set_characteristic_notification(conn_id, handle, gatt_notification);
-	connection->procedure.id = GATT_PROCEDURE_CHARACTERISTIC_NOTIFICATIONS_ENABLED_ID;
-	connection->procedure.obj = xsThis;
-}
-
-void xs_gatt_characteristic_disable_notifications(xsMachine *the)
-{
-	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t handle = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection) return;
-	gecko_cmd_gatt_set_characteristic_notification(conn_id, handle, gatt_disable);
-}
-
-void xs_gatt_descriptor_write_value(xsMachine *the)
-{
-	uint16_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t handle = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection) return;
-	switch (xsmcTypeOf(xsArg(2))) {
-		case xsReferenceType:
-			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				gecko_cmd_gatt_write_descriptor_value(conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
 			else
 				goto unknown;
 			break;
@@ -476,7 +574,6 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 		
 	// Ignore duplicate connection events
 	if (-1 != connection->id) {
-		LOG_GAP_MSG("Ignoring duplicate connect event");
 		goto bail;
 	}
 	connection->id = evt->connection;
@@ -500,7 +597,6 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 		
 	// ignore multiple disconnects on same connection
 	if (!connection) {
-		LOG_GATTC_MSG("Ignoring duplicate disconnect event");
 		goto bail;
 	}	
 	
@@ -539,7 +635,7 @@ static void gattServiceEvent(struct gecko_msg_gatt_service_evt_t *evt)
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_start, xsVar(2));
 	xsmcSet(xsVar(0), xsID_end, xsVar(3));
-	xsCall2(connection->procedure.obj, xsID_callback, xsString("_onService"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onService"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -560,7 +656,7 @@ static void gattCharacteristicEvent(struct gecko_msg_gatt_characteristic_evt_t *
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-	xsCall2(connection->procedure.obj, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -579,7 +675,7 @@ static void gattDescriptorEvent(struct gecko_msg_gatt_descriptor_evt_t *evt)
 	xsmcSetInteger(xsVar(2), evt->descriptor);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->procedure.obj, xsID_callback, xsString("_onDescriptor"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onDescriptor"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -595,7 +691,7 @@ static void gattCharacteristicValueEvent(struct gecko_msg_gatt_characteristic_va
 	xsmcSetInteger(xsVar(2), evt->characteristic);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, xsString("_onCharacteristicValue"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onCharacteristicValue"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -618,37 +714,45 @@ static void gattCharacteristicNotifyEvent(struct gecko_msg_gatt_characteristic_v
 static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_completed_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
+	gattProcedure procedure;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
+	xsTrace("in gattProcedureCompletedEvent\n");
 	if (!connection)
 		xsUnknownError("connection not found");
 	if (0 != evt->result)
 		xsUnknownError("procedure completed error");
-	uint8_t id = connection->procedure.id;
-	connection->procedure.id = GATT_PROCEDURE_NONE_ID;
-	switch(id) {
-		case GATT_PROCEDURE_SERVICES_ID:
-			xsCall1(connection->procedure.obj, xsID_callback, xsString("_onService"));
+	procedure = connection->procedureQueue;
+	connection->procedureQueue = connection->procedureQueue->next;
+	switch(procedure->cmd) {
+		case CMD_GATT_DISCOVER_SERVICES_ID:
+		case CMD_GATT_DISCOVER_SERVICES_UUID_ID:
+			xsCall1(procedure->obj, xsID_callback, xsString("_onService"));
 			break;
-		case GATT_PROCEDURE_CHARACTERISTICS_ID:
-			xsCall1(connection->procedure.obj, xsID_callback, xsString("_onCharacteristic"));
+		case CMD_GATT_DISCOVER_CHARACTERISTICS_ID:
+		case CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID:
+			xsCall1(procedure->obj, xsID_callback, xsString("_onCharacteristic"));
 			break;
-		case GATT_PROCEDURE_DESCRIPTORS_ID:
-			xsCall1(connection->procedure.obj, xsID_callback, xsString("_onDescriptor"));
-			break;
-		case GATT_PROCEDURE_CHARACTERISTIC_NOTIFICATIONS_ENABLED_ID:
-			xsCall1(connection->procedure.obj, xsID_callback, xsString("_onNotificationsEnabled"));
+		case CMD_GATT_DISCOVER_DESCRIPTORS_ID:
+			xsCall1(procedure->obj, xsID_callback, xsString("_onDescriptor"));
 			break;
 		default:
-			xsUnknownError("unknown completed event");
 			break;
 	}
+	c_free(procedure);
+		
+	// execute next queued procedure
+	if ((NULL != connection->procedureQueue) && !connection->procedureQueue->executed) {
+		procedure = connection->procedureQueue;
+		xsTrace("gattProcedureCompletedEvent executing procedure\n");
+		gattProcedureExecute(procedure);
+	}
+	
+	xsTrace("out gattProcedureCompletedEvent\n");
 	xsEndHost(gBLE->the);
 }
 
-void bglib_event_handler(struct gecko_cmd_packet* evt)
+void ble_event_handler(struct gecko_cmd_packet* evt)
 {
-	LOG_EVENT(evt);
-	
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
 			systemBootEvent(&evt->data.evt_system_boot);
@@ -688,21 +792,3 @@ void bglib_event_handler(struct gecko_cmd_packet* evt)
 			break;
 	}
 }
-
-#if defined(LOGGING)
-void logEvent(struct gecko_cmd_packet* evt)
-{
-	switch(BGLIB_MSG_ID(evt->header)) {
-		case gecko_evt_system_boot_id: modLog("gecko_evt_system_boot_id"); break;
-		case gecko_evt_le_connection_opened_id: modLog("gecko_evt_le_connection_opened_id"); break;
-		case gecko_evt_le_connection_closed_id: modLog("gecko_evt_le_connection_closed_id"); break;
-		case gecko_evt_le_connection_rssi_id: modLog("gecko_evt_le_connection_rssi_id"); break;
-		case gecko_evt_le_gap_scan_response_id: modLog("gecko_evt_le_gap_scan_response_id"); break;
-		case gecko_evt_gatt_service_id: modLog("gecko_evt_gatt_service_id"); break;
-		case gecko_evt_gatt_characteristic_id: modLog("evt_gatt_characteristic_id"); break;
-		case gecko_evt_gatt_descriptor_id: modLog("evt_gatt_descriptor_id"); break;
-		case gecko_evt_gatt_characteristic_value_id: modLog("evt_gatt_characteristic_value_id"); break;
-		case gecko_evt_gatt_procedure_completed_id: modLog("evt_gatt_procedure_completed_id"); break;
-	}
-}
-#endif
