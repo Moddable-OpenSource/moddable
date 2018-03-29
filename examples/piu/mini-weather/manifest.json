@@ -1,0 +1,34 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/socket/*",
+			"./timeline",
+			"$(MODULES)/drivers/lpm013m126a/*",
+			"$(MODULES)/network/wifi/*"
+		]
+	},
+	"preload": [
+		"http",
+		"socket",
+		"lpm013m126a",
+		"wifi"
+	],
+	"resources":{
+		"*-alpha": [
+			"./assets/icons-alpha",
+			"./fonts/OpenSans-Regular-52",
+			"./fonts/OpenSans-Semibold-20",
+			"./fonts/OpenSans-Semibold-28",
+		],
+	},
+	"platforms": {
+		"esp/rgb332": {
+			"modules": {
+				"screen": "$(BUILD)/devices/esp/lpm013m126a/rgb332/screen",
+			},
+		},
+	}
+}

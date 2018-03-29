@@ -1,0 +1,14 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/data/xml/*"
+		]
+	},
+	"preload": [
+		"http",
+		"xml"
+	]
+}
