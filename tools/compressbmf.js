@@ -138,6 +138,8 @@ export default class extends TOOL {
 		if (ascending)
 			bytes[position + 19] |= 0x20;
 
+		bytes[position + 19] |= 0x10;			// kerning table sorted (below)
+
 		/*
 			compress each glyph independently
 		*/
@@ -211,6 +213,41 @@ export default class extends TOOL {
 			bytes[bytes.position - 5] = (dataOffset >> 24) & 0xFF;
 
 			bmf.writePosition += writer.bitmap.buffer.byteLength;
+		}
+
+		/*
+			sort kern table
+		*/
+		if (5 == this.readU8(bytes)) {
+			let count = this.readU32(bytes) / 10;
+			let table = new DataView(bytes.buffer, bytes.position);
+
+			// load table
+			let kerns = new Array(count);
+			for (let i = 0; i < count; i++) {
+				let first = this.readU32(bytes);
+				let second = this.readU32(bytes);
+				let dx = this.readS16(bytes);
+				kerns[i] = {first, second, dx};
+			}
+
+			// sort it
+			kerns.sort((k1, k2) => {
+				if (k1.first < k2.first)
+					return -1;
+				if (k1.first > k2.first)
+					return +1;
+				return k1.second - k2.second;
+			});
+
+			// write it back to BMF
+			let position = 0;
+			kerns.forEach(kern => {
+				table.setUint32(position, kern.first, true)
+				table.setUint32(position + 4, kern.second, true)
+				table.setInt16(position + 8, kern.dx, true)
+				position += 10;
+			});
 		}
 
 		bytes[3] = 4;		// bump version number to 4 to indicate RLE4 compressed bitmap data
