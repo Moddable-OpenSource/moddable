@@ -11,6 +11,7 @@
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 		"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
 		"commodetto/ParseRLE": "$(COMMODETTO)/commodettoParseRLE",
 		"piu/*": "$(PIU)/All/piu*",
