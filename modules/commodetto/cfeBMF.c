@@ -1,7 +1,9 @@
 #include "commodettoFontEngine.h"
 #include "commodettoPocoBlit.h"
 #include "xsPlatform.h"
-#include "mc.defines.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+#endif
 
 #ifndef MODDEF_CFE_KERN
 	#define MODDEF_CFE_KERN (0)

@@ -195,6 +195,7 @@ C_OPTIONS = \
 	/D HAVE_MEMMOVE=1 \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
+	/D XSTOOLS=1 \
 	/D mxRun=1 \
 	/D mxParse=1 \
 	/D mxNoFunctionLength=1 \
