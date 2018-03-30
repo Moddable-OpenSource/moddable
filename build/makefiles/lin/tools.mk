@@ -196,6 +196,7 @@ C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"lin_xs.h\" \
+	-DXSTOOLS=1 \
 	-DmxRun=1 \
 	-DmxParse=1 \
 	-DmxNoFunctionLength=1 \

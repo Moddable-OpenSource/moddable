@@ -29,7 +29,9 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "mc.defines.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+#endif
 
 #ifndef MODDEF_CFE_KERN
 	#define MODDEF_CFE_KERN (0)
