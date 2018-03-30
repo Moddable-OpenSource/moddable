@@ -18,9 +18,9 @@
  *
  */
 
-
 #include "commodettoPoco.h"
 #include "commodettoPixelsOut.h"
+#include "commodettoFontEngine.h"
 
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
@@ -29,6 +29,15 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
+
+#ifndef MODDEF_CFE_KERN
+	#define MODDEF_CFE_KERN (0)
+#endif
+
+extern int PocoNextFromUTF8(uint8_t **src);		//@@
+
+CommodettoFontEngine gCFE;
 
 #define PocoDisableGC(poco) \
 	if (!(poco->flags & kPocoFlagGCDisabled)) {	\
@@ -100,6 +109,9 @@ void xs_poco_build(xsMachine *the)
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), pixelsLength);
 	xsmcSet(xsThis, xsID_byteLength, xsVar(0));
+
+	if (NULL == gCFE)
+		gCFE = CFENew();
 }
 
 void xs_poco_begin(xsMachine *the)
@@ -178,6 +190,8 @@ void xs_poco_begin(xsMachine *the)
 		PocoDrawingBeginFrameBuffer(poco, x, y, w, h, pixels, rowBytes);
 	}
 #endif
+
+	CFELockCache(gCFE, true);
 
 	poco->flags &= ~kPocoFlagGCDisabled;
 }
@@ -263,6 +277,8 @@ void xs_poco_end(xsMachine *the)
 
 		pocoInstrumentationAdjust(FramesDrawn, 1);
 	}
+
+	CFELockCache(gCFE, false);
 }
 
 void xs_poco_makeColor(xsMachine *the)
@@ -641,29 +657,36 @@ void xs_poco_drawFrame(xsMachine *the)
 void xs_poco_getTextWidth(xsMachine *the)
 {
 	const unsigned char *text = (const unsigned char *)xsmcToString(xsArg(0));
-	const unsigned char *chars;
-	int charCount, width = 0;
+	const char *fontData;
+	int width = 0;
+#if MODDEF_CFE_KERN
+	uint16_t previousUnicode = 0;
+#endif
 
-	if (xsmcIsInstanceOf(xsArg(1), xsArrayBufferPrototype))
-		chars = xsmcToArrayBuffer(xsArg(1));
-	else
-		chars = xsmcGetHostData(xsArg(1));
+	xsmcVars(1);
 
-	xsmcGet(xsResult, xsArg(1), xsID_position);
-	chars += xsmcToInteger(xsResult);
-
-	charCount = c_read32(chars) / 20;
-	chars += 4;
+	fontData = xsmcGetHostData(xsArg(1));
+	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
+	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
 
 	while (true) {
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&text, chars, charCount);
-		if (!cc) {
+		CFEGlyph glyph;
+		uint16_t unicode = PocoNextFromUTF8((uint8_t **)&text);
+		if (!unicode) {
 			if (!c_read8(text - 1))
 				break;
 			continue;
 		}
 
-		width += c_read16(cc + 16);	// +16 -> offset to xadvance
+		glyph = CFEGetGlyphFromUnicode(gCFE, unicode, false);
+		if (glyph) {
+			width += glyph->advance;
+#if MODDEF_CFE_KERN
+			if (previousUnicode)
+				width += CFEGetKerningOffset(gCFE, previousUnicode, unicode);
+			previousUnicode = unicode;
+#endif
+		}
 	}
 
 	xsmcSetInteger(xsResult, width);
@@ -674,125 +697,80 @@ void xs_poco_drawText(xsMachine *the)
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	const unsigned char *text = (const unsigned char *)xsmcToString(xsArg(0));
-	int charCount;
 	PocoCoordinate x, y;
 	PocoColor color;
-	CommodettoBitmap cb;
+	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
 	static const char *ellipsis = "...";
 	PocoDimension ellipsisWidth;
 	int width;
-	const unsigned char *chars;
-	uint8_t isColor, isCompressed;
+	const unsigned char *fontData;
+	uint8_t isColor;
 	PocoBitmapRecord mask;
+#if MODDEF_CFE_KERN
+	uint16_t previousUnicode = 0;
+#endif
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(4)) + poco->yOrigin;
 
 	xsmcVars(2);
 
-	if (xsmcIsInstanceOf(xsArg(1), xsArrayBufferPrototype))
-		chars = xsmcToArrayBuffer(xsArg(1));
-	else
-		chars = xsmcGetHostData(xsArg(1));
-
-	isCompressed = 4 == c_read8(chars + 3);
-
-	xsmcGet(xsVar(0), xsArg(1), xsID_position);
-	chars += xsmcToInteger(xsVar(0));
-
-	charCount = c_read32(chars) / 20;
-	chars += 4;
+	fontData = xsmcGetHostData(xsArg(1));
+	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
+	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
 
 	if (argc > 5) {
-		const char *t = ellipsis;
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&t, chars, charCount);
+		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, ellipsis[0], false);
 
 		width = xsmcToInteger(xsArg(5));
-		if (cc) {
-			ellipsisWidth = c_read16(cc + 16);						// +16 -> offset to xadvance
-			ellipsisWidth *= 3;
-		}
-		else
-			ellipsisWidth = 0;
+		ellipsisWidth = glyph ? glyph->advance * 3 : 0;
 	}
 	else {
 		width = 0;
 		ellipsisWidth = 0;
 	}
 
-	if (!isCompressed) {
-		// fill out the bitmap
-		xsmcGet(xsVar(0), xsArg(1), xsID_bitmap);
-		cb = xsmcGetHostChunk(xsVar(0));
-		bits.width = cb->w;
-		bits.height = cb->h;
-		bits.format = cb->format;
-
-		if (cb->havePointer)
-			bits.pixels = cb->bits.data;
-		else {
-			xsmcGet(xsVar(1), xsVar(0), xsID_buffer);
-			bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
-			PocoDisableGC(poco);
-		}
-
-		if (kPocoPixelFormat == cb->format) {
-			isColor = 1;
-			if (xsReferenceType == xsmcTypeOf(xsArg(2))) {
-				isColor = 2;
-
-				cb = xsmcGetHostChunk(xsArg(2));
-				mask.width = cb->w;
-				mask.height = cb->h;
-				mask.format = cb->format;
-				if (cb->havePointer)
-					mask.pixels = cb->bits.data;
-				else {
-					xsmcGet(xsVar(1), xsArg(2), xsID_buffer);
-					mask.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
-					PocoDisableGC(poco);
-				}
-			}
-		}
-		else {
-			isColor = 0;
-			color = (PocoColor)xsmcToInteger(xsArg(2));
-		}
-	}
-	else {
-		bits.format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
-
-		isColor = 0;
-		color = (PocoColor)xsmcToInteger(xsArg(2));
-	}
-
 	while (true) {
 		PocoCoordinate cx, cy, sx, sy;
 		PocoDimension sw, sh;
-		uint16_t xadvance;
-		const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t **)&text, chars, charCount);
-		if (!cc) {
+		CFEGlyph glyph;
+		const uint16_t unicode = PocoNextFromUTF8((uint8_t **)&text);
+		if (!unicode) {
 			if (!c_read8(text - 1))
 				break;
 			continue;
 		}
 
-		xadvance = c_read16(cc + 16);	// +16 -> offset to xadvance
+		glyph = CFEGetGlyphFromUnicode(gCFE, unicode, true);
+		if (NULL == glyph)
+			continue;
 
-		if (ellipsisWidth && ((width - xadvance) <= ellipsisWidth)) {
+#if MODDEF_CFE_KERN
+		if (previousUnicode) {
+			int16_t kerningOffset = CFEGetKerningOffset(gCFE, previousUnicode, unicode);
+			width += kerningOffset;
+			x += kerningOffset;
+		}
+		previousUnicode = unicode;
+#endif
+
+		if (ellipsisWidth && ((width - glyph->advance) <= ellipsisWidth)) {
 			// measure the rest of the string to see if it fits
 			const unsigned char *t = text - 1;		//@@ fails if multibyte...
 			int w = 0;
 			while (w < width) {
-				const uint8_t *tc = PocoBMFGlyphFromUTF8((uint8_t **)&t, chars, charCount);
-				if (!tc) {
+				CFEGlyph tg;
+				const uint16_t unicode = PocoNextFromUTF8((uint8_t **)&t);
+				if (!unicode) {
 					if (!c_read8(t - 1))
 						break;
 					continue;
 				}
+				tg = CFEGetGlyphFromUnicode(gCFE, unicode, false);
+				if (!tg) continue;
 
-				w += c_read16(tc + 16);
+				w += tg->advance;
 			}
 			if (w <= width)
 				ellipsisWidth = 0;		// enough room to draw entire string
@@ -802,38 +780,83 @@ void xs_poco_drawText(xsMachine *the)
 			}
 		}
 
-		sx = c_read16(cc + 4);
-		sy = c_read16(cc + 6);
-		sw = c_read16(cc + 8);
-		sh = c_read16(cc + 10);
-		cx = x + c_read16(cc + 12);
-		cy = y + c_read16(cc + 14);
+		sx = glyph->sx;
+		sy = glyph->sy;
+		sw = glyph->w;
+		sh = glyph->h;
+		cx = x + glyph->dx;
+		cy = y + glyph->dy;
 
-		if (isColor) {
-			if (1 == isColor)
-				PocoBitmapDraw(poco, &bits, cx, cy, sx, sy, sw, sh);
-			else
-				PocoBitmapDrawMasked(poco, kPocoOpaque, &bits, cx, cy, sx, sy, sw, sh,
-					&mask, sx, sy);
+		if (glyph->format) {
+			if (NULL == cb) {
+				color = (PocoColor)xsmcToInteger(xsArg(2));
+				cb = (void *)1;
+			}
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+			bits.width = glyph->w;
+			bits.height = glyph->h;
+#elif (90 == kPocoRotation) || (270 == kPocoRotation)
+			bits.width = glyph->h;
+			bits.height = glyph->w;
+#endif
+			bits.format = glyph->format;
+			bits.pixels = (PocoPixel *)glyph->bits;
+			PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
 		}
 		else {
-			if (isCompressed) {
-				bits.pixels = (PocoPixel *)((sx | (sy << 16)) + (char *)cc);
-#if (0 == kPocoRotation) || (180 == kPocoRotation)
-				bits.width = sw;
-				bits.height = sh;
-#elif (90 == kPocoRotation) || (270 == kPocoRotation)
-				bits.width = sh;
-				bits.height = sw;
-#endif
-				PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, 0, 0, sw, sh);
+			if (NULL == cb) {
+				// fill out the bitmap
+				xsmcGet(xsVar(0), xsArg(1), xsID_bitmap);
+				cb = xsmcGetHostChunk(xsVar(0));
+				bits.width = cb->w;
+				bits.height = cb->h;
+				bits.format = cb->format;
+
+				if (cb->havePointer)
+					bits.pixels = cb->bits.data;
+				else {
+					xsmcGet(xsVar(1), xsVar(0), xsID_buffer);
+					bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
+					PocoDisableGC(poco);
+				}
+
+				if (kPocoPixelFormat == cb->format) {
+					isColor = 1;
+					if (xsReferenceType == xsmcTypeOf(xsArg(2))) {
+						isColor = 2;
+
+						cb = xsmcGetHostChunk(xsArg(2));
+						mask.width = cb->w;
+						mask.height = cb->h;
+						mask.format = cb->format;
+						if (cb->havePointer)
+							mask.pixels = cb->bits.data;
+						else {
+							xsmcGet(xsVar(1), xsArg(2), xsID_buffer);
+							mask.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
+							PocoDisableGC(poco);
+						}
+					}
+				}
+				else {
+					isColor = 0;
+					color = (PocoColor)xsmcToInteger(xsArg(2));
+				}
+			}
+
+			if (isColor) {
+				if (1 == isColor)
+					PocoBitmapDraw(poco, &bits, cx, cy, sx, sy, sw, sh);
+				else
+					PocoBitmapDrawMasked(poco, kPocoOpaque, &bits, cx, cy, sx, sy, sw, sh,
+						&mask, sx, sy);
 			}
 			else
 				PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
 		}
 
-		x += xadvance;
-		width -= xadvance;
+		x += glyph->advance;
+		width -= glyph->advance;
 	}
 }
 
