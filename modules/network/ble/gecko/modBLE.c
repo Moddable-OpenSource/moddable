@@ -35,6 +35,7 @@ enum {
 	CMD_GATT_DISCOVER_DESCRIPTORS_ID,
 	CMD_GATT_CHARACTERISTIC_READ_VALUE_ID,
 	CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID,
+	CMD_GATT_CHARACTERISTIC_WRITE_WITHOUT_RESPONSE_ID,
 	CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID,
 };
 
@@ -46,13 +47,10 @@ typedef struct {
 typedef struct gattProcedureRecord gattProcedureRecord;
 typedef gattProcedureRecord *gattProcedure;
 
-static uint8_t __index = 0;	// @@ remove me
-
 struct gattProcedureRecord {
 	struct gattProcedureRecord *next;
 
 	uint8_t cmd;
-	uint8_t id;
 	uint8_t executed;
 	uint8_t index;
 	xsSlot obj;
@@ -322,6 +320,10 @@ static void gattProcedureExecute(gattProcedure procedure)
 		case CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID:
 			gecko_cmd_gatt_set_characteristic_notification(procedure->notification_param.connection, procedure->notification_param.characteristic, procedure->notification_param.flags);
 			break;
+		case CMD_GATT_CHARACTERISTIC_WRITE_WITHOUT_RESPONSE_ID:
+			gecko_cmd_gatt_write_characteristic_value_without_response(procedure->write_value_param.connection, procedure->write_value_param.handle, procedure->write_value_param.length, procedure->write_value_param.value);
+			c_free(procedure->write_value_param.value);
+			break;
 		case CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID:
 			gecko_cmd_gatt_write_descriptor_value(procedure->write_value_param.connection, procedure->write_value_param.handle, procedure->write_value_param.length, procedure->write_value_param.value);
 			c_free(procedure->write_value_param.value);
@@ -338,10 +340,9 @@ static void gattProcedureQueueAndDo(xsMachine *the, modBLEConnection connection,
 	if (!proc)
 		xsUnknownError("out of memory");
 	*proc = *procedure;
-	proc->index = __index++;
 	if (!connection->procedureQueue) {
 		connection->procedureQueue = proc;
-xsTrace("gattProcedureQueueAndDo executing procedure\n");
+		//xsTrace("gattProcedureQueueAndDo executing procedure\n");
 		gattProcedureExecute(proc);
 	}
 	else {
@@ -349,7 +350,7 @@ xsTrace("gattProcedureQueueAndDo executing procedure\n");
 		for (walker = connection->procedureQueue; walker->next; walker = walker->next)
 			;
 		walker->next = proc;
-xsTrace("gattProcedureQueueAndDo queuing procedure\n");
+		//xsTrace("gattProcedureQueueAndDo queuing procedure\n");
 	}
 }
 
@@ -496,15 +497,26 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	char *str;
+	uint8_t *buffer;
+	uint8_t length;
 		
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsStringType:
 			str = xsmcToString(xsArg(2));
-			gecko_cmd_gatt_write_characteristic_value_without_response(conn_id, handle, strlen(str), (uint8_t*)str);
+			length = strlen(str);
+			buffer = c_malloc(length);
+			if (!buffer)
+				xsUnknownError("out of memory");
+			c_memmove(buffer, str, length);
 			break;
 		case xsReferenceType:
-			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				gecko_cmd_gatt_write_characteristic_value_without_response(conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
+			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
+				length = xsGetArrayBufferLength(xsArg(2));
+				buffer = c_malloc(length);
+				if (!buffer)
+					xsUnknownError("out of memory");
+				c_memmove(buffer, xsmcToArrayBuffer(xsArg(2)), length);
+			}
 			else
 				goto unknown;
 			break;
@@ -512,6 +524,20 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 		default:
 			xsUnknownError("unsupported type");
 			break;
+	}
+	if (!connection->procedureQueue) {
+		gecko_cmd_gatt_write_characteristic_value_without_response(conn_id, handle, length, buffer);
+	}
+	else {
+		//xsTrace("queuing write_without_response\n");
+		gattProcedureRecord procedure = {0};
+		xsmcSetUndefined(procedure.obj);
+		procedure.cmd = CMD_GATT_CHARACTERISTIC_WRITE_WITHOUT_RESPONSE_ID;
+		procedure.write_value_param.connection = conn_id;
+		procedure.write_value_param.handle = handle;
+		procedure.write_value_param.value = buffer;
+		procedure.write_value_param.length = length;
+		gattProcedureQueueAndDo(the, connection, &procedure);
 	}
 }
 
@@ -716,7 +742,7 @@ static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_complete
 	xsBeginHost(gBLE->the);
 	gattProcedure procedure;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
-	xsTrace("in gattProcedureCompletedEvent\n");
+	//xsTrace("in gattProcedureCompletedEvent\n");
 	if (!connection)
 		xsUnknownError("connection not found");
 	if (0 != evt->result)
@@ -740,14 +766,16 @@ static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_complete
 	}
 	c_free(procedure);
 		
-	// execute next queued procedure
-	if ((NULL != connection->procedureQueue) && !connection->procedureQueue->executed) {
+	// execute all queued procedures that don't generate completion events
+	while ((NULL != connection->procedureQueue) && !connection->procedureQueue->executed) {
 		procedure = connection->procedureQueue;
-		xsTrace("gattProcedureCompletedEvent executing procedure\n");
 		gattProcedureExecute(procedure);
+		if (xsUndefinedType == xsmcTypeOf(procedure->obj)) {
+			connection->procedureQueue = procedure->next;
+			c_free(procedure);
+		}
 	}
 	
-	xsTrace("out gattProcedureCompletedEvent\n");
 	xsEndHost(gBLE->the);
 }
 
