@@ -224,6 +224,7 @@ void PocoOriginPush(Poco poco, PocoCoordinate x, PocoCoordinate y);
 void PocoOriginPop(Poco poco);
 
 const uint8_t *PocoBMFGlyphFromUTF8(uint8_t **utf8Text, const uint8_t *bmfGlyphs, int glyphCount);
+int PocoNextFromUTF8(uint8_t **src);
 
 /*
 
