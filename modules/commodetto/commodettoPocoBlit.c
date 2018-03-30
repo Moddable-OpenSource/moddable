@@ -939,9 +939,7 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 	BMFont support
 */
 
-static int nextFromUTF8(uint8_t **src);
-
-int nextFromUTF8(uint8_t **src)
+int PocoNextFromUTF8(uint8_t **src)
 {
 	int result;
 	uint8_t *s = *src;
@@ -974,12 +972,12 @@ int nextFromUTF8(uint8_t **src)
 const uint8_t *PocoBMFGlyphFromUTF8(uint8_t **src, const uint8_t *chars, int charCount)
 {
 	int min, max;
-	int c = nextFromUTF8(src);
+	int c = PocoNextFromUTF8(src);
 	if (!c)
 		return NULL;
 
 	if (c_read8(chars + 19) & 0x40) {
-		// one run of continuousy numbered characters
+		// one run of continuously numbered characters
 		int firstChar = c_read32(chars);
 		if (c < firstChar)
 			return NULL;
