@@ -6,6 +6,7 @@
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 	},
 	"preload": "commodetto/*",
 	"platforms": {
