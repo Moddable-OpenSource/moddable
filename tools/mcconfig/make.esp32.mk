@@ -43,13 +43,16 @@ INC_DIRS = \
  	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
+ 	$(IDF_PATH)/components/freertos/include/freertos \
  	$(IDF_PATH)/components/lwip/include/lwip \
  	$(IDF_PATH)/components/lwip/include/lwip/port \
  	$(IDF_PATH)/components/mbedtls/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/vfs/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
- 	$(IDF_PATH)/components/tcpip_adapter
+ 	$(IDF_PATH)/components/tcpip_adapter \
+ 	$(IDF_PATH)/components/bt/include \
+ 	$(IDF_PATH)/components/bt/bluedroid/api/include
     
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
