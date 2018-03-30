@@ -199,6 +199,22 @@ class KeysSensor extends SensorTagSensor {
 }
 
 const SERVICES = {
+	["F000AA40-0451-4000-B000-000000000000"]: {
+		name: "barometer",
+	    constructor: BarometerSensor,
+	    data: "F000AA41-0451-4000-B000-000000000000",
+	    configuration: "F000AA42-0451-4000-B000-000000000000",
+		configuration_data: [0x02],
+	    period: "F000AA44-0451-4000-B000-000000000000",
+	    calibration: "F000AA43-0451-4000-B000-000000000000",
+	},
+	["F000AA20-0451-4000-B000-000000000000"]: {
+		name: "humidity",
+	    constructor: HumiditySensor,
+	    data: "F000AA21-0451-4000-B000-000000000000",
+	    configuration: "F000AA22-0451-4000-B000-000000000000",
+	    period: "F000AA23-0451-4000-B000-000000000000",
+	},
 	["F000AA00-0451-4000-B000-000000000000"]: {
 		name: "temperature",
 	    constructor: TemperatureSensor,
@@ -213,28 +229,12 @@ const SERVICES = {
 	    configuration: "F000AA12-0451-4000-B000-000000000000",
 	    period: "F000AA13-0451-4000-B000-000000000000",
 	},
-	["F000AA20-0451-4000-B000-000000000000"]: {
-		name: "humidity",
-	    constructor: HumiditySensor,
-	    data: "F000AA21-0451-4000-B000-000000000000",
-	    configuration: "F000AA22-0451-4000-B000-000000000000",
-	    period: "F000AA23-0451-4000-B000-000000000000",
-	},
 	["F000AA30-0451-4000-B000-000000000000"]: {
 		name: "magnetometer",
 	    constructor: MagnetometerSensor,
 	    data: "F000AA31-0451-4000-B000-000000000000",
 	    configuration: "F000AA32-0451-4000-B000-000000000000",
 	    period: "F000AA33-0451-4000-B000-000000000000",
-	},
-	["F000AA40-0451-4000-B000-000000000000"]: {
-		name: "barometer",
-	    constructor: BarometerSensor,
-	    data: "F000AA41-0451-4000-B000-000000000000",
-	    configuration: "F000AA42-0451-4000-B000-000000000000",
-		configuration_data: [0x02],
-	    period: "F000AA44-0451-4000-B000-000000000000",
-	    calibration: "F000AA43-0451-4000-B000-000000000000",
 	},
 	["F000AA50-0451-4000-B000-000000000000"]: {
 		name: "gyroscope",
@@ -250,14 +250,12 @@ const SERVICES = {
 	    data: "FFE1",
 	},
 };
-let serviceCount = Object.keys(SERVICES).length;
 
 let ble = new BLE();
 ble.onReady = () => {
 	ble.onDiscovered = device => {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
 			ble.sensors = [];
-			ble.remaining = serviceCount;
 			ble.stopScanning();
 			ble.connect(device.address);
 		}
@@ -265,31 +263,35 @@ ble.onReady = () => {
 	ble.onConnected = connection => {
 		connection.onDisconnected = () => {
 			ble.sensors.length = 0;
-			ble.remaining = serviceCount;
 			ble.startScanning();
 		}
 		let client = connection.client;
 		client.onServices = services => {
+			trace(`discovered all services\n`);
 			services.forEach(service => {
 				if (service.uuid in SERVICES) {
 					let sensor = Object.assign({service}, SERVICES[service.uuid]);
 					ble.sensors.push(sensor);
 				}
 			});
+			ble.remaining = Object.keys(SERVICES).length;
 			ble.sensors.forEach(sensor => {
-				--ble.remaining;
 				sensor.service.onCharacteristics = characteristics => {
-					if (0 == ble.remaining) {
+					trace(`discovered characteristics for service ${sensor.service.uuid}\n`);
+					if (0 == --ble.remaining) {
 						ble.sensors.forEach(sensor => {
+							trace(`starting sensor [${sensor.name}]\n`);
 							sensor.driver = new sensor.constructor();
 							sensor.driver.configure(sensor);
 							sensor.driver.start();
 						});
 					}
 				}
+				trace(`discovering all characteristics for service ${sensor.service.uuid}\n`);
 				sensor.service.discoverAllCharacteristics();
 			});
 		}
+		trace(`discovering all primary services\n`);
 		client.discoverAllPrimaryServices();
 	}
 	ble.startScanning();
