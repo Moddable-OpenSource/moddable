@@ -37,6 +37,8 @@ INC_DIRS = \
 	$(SDK_BASE)/platform/CMSIS/Include \
 	$(SDK_BASE)/hardware/kit/common/bsp \
 	$(SDK_BASE)/hardware/kit/common/drivers \
+	$(SDK_BASE)/protocol/bluetooth/ble_stack/inc/common \
+	$(SDK_BASE)/protocol/bluetooth/ble_stack/inc/soc \
 	$(HWINC) \
 	$(HWKIT) \
 	$(XS_DIR)/../modules/base/instrumentation \
