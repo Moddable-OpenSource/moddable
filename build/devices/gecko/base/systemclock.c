@@ -46,11 +46,14 @@
 	#include "em_rtcc.h"
 #endif
 
+#if 0
 #if THUNDERBOARD2
 	extern uint32_t msTickCount;
 #else
 	volatile uint32_t msTickCount;
 #endif
+#endif
+	volatile uint32_t msTickCount __attribute__ ((weak));
 
 void gecko_delay(uint32_t ms);
 void geckoStoreGpioRetention(void);

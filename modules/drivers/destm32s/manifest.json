@@ -1,4 +1,12 @@
 {
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json",
+	],
+	"modules": {
+		"*": "$(MODULES)/drivers/destm32s/*",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+	},
 	"defines": {
 		"destm32s": {
 			"width": 122,
@@ -11,14 +19,6 @@
 	],
 	"platforms": {
 		"esp": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/destm32s/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 			"defines": {
 				"destm32s": {
 					"cs_pin": 4,
@@ -30,14 +30,6 @@
 			}
 		},
 		"esp32": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/destm32s/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 			"defines": {
 				"destm32s": {
 					"cs_pin": 4,
@@ -47,16 +39,6 @@
 					"spi_port": "#HSPI"
 				},
 			}
-		},
-		"gecko": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/destm32s/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			},
 		},
 		"gecko/giant": {
 			"defines": {

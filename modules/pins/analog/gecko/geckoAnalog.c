@@ -256,8 +256,6 @@ void adcTerminate(void) {
  *****************************************************************************/
 void adcReset(void)
 {
-  uint32_t i;
-
 #if 0
   /* Switch the ADCCLKMODE to SYNC */
   NVIC_DisableIRQ(ANALOG_IRQ);
@@ -269,7 +267,6 @@ void adcReset(void)
 
   /* Reset AUXHFRCO to default */
   CMU_AUXHFRCOFreqSet(cmuAUXHFRCOFreq_19M0Hz);
-
 }
 
 #if MODDEF_ANALOG_INTERFACE_ADC == 0
@@ -288,16 +285,10 @@ void ADC1_IRQHandler(void)
  *****************************************************************************/
 uint32_t adcSingle(bool ovs, uint32_t inputChan, uint32_t reference)
 {
-  uint32_t sample, adcMax;
+  uint32_t sample;
 
   ADC_Init_TypeDef init = ADC_INIT_DEFAULT;
   ADC_InitSingle_TypeDef singleInit = ADC_INITSINGLE_DEFAULT;
-
-  adcMax = ADC_12BIT_MAX;
-  if (ovs)
-  {
-    adcMax = ADC_16BIT_MAX;
-  }
 
   /* Init common issues for both single conversion and scan mode */
   init.timebase = ADC_TimebaseCalc(0);

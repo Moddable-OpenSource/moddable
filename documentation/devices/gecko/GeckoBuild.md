@@ -360,12 +360,14 @@ See your Gecko device datasheet for the values to use to set a particular pin fo
 
 ### class Analog
 	import Analog from "analog"
+	
 	...
-		let analog = new Analog();
-		let voltage1 = analog.read(1);
-		let voltage2 = analog.read(2);
+	
+	let analog = new Analog();
+	let voltage1 = analog.read(1);
+	let voltage2 = analog.read(2);
 
-`analog.read(1)` reads from `input1` described in the manifest.json segment above. 
+`analog.read(1)` reads from `input1` described in the manifest.json segment above. `analog.read(2)` reads from `input2` described in the manifest.json segment above.
 
 
 ### SPI
@@ -446,7 +448,18 @@ Click the "Generate" button to create the radio support files for the project.
 
 #### Radio main.c
 
-The changes to the project's `main.c` are a bit more involved than the simple examples above. Copy the file `$MODDABLE/build/devices/gecko/project/radio/main.c` into your Simplicity Studio's simple_trx project, replacing the existing `main.c`.
+The changes to the project's `main.c` are a bit more involved than the simple examples above.
+
+For the `simple_rail_without_hal` example:
+
+	$MODDABLE/build/devices/gecko/project/radio/simple_rail_without_hal/main.c
+
+For the `simple_trx_with_fifo` example:
+
+	$MODDABLE/build/devices/gecko/project/radio/simple_trx_with_fifo/main.c
+
+
+Copy the particular `main.c` file into your Simplicity Studio's project, replacing the existing `main.c`.
 
 Continue with *__Build xs_gecko.a archive__* above.
 
