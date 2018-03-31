@@ -19,15 +19,20 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
-
 # BlueGecko WSTK
-# (BRD4100A) -- 32kB ram, 256kB flash
-# (BRD4104A) -- 64kB ram, 512kB flash
 PLATFORM_NAME = blue
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.1
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG1_BRD4100A/config
-HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG1P/Include
-HWPART = EFR32BG1P232F256GM48
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
+
+# (BRD4104A) -- 64kB ram, 512kB flash
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG13_BRD4104A/config
+HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG13P/Include
+HWPART = EFR32BG13P632F512GM48
+
+# (BRD4100A) -- 32kB ram, 256kB flash
+# HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG1_BRD4100A/config
+# HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG1P/Include
+# HWPART = EFR32BG1P232F256GM48
+
 HWCPU = cortex-m4
 HW_DEBUG_OPT= -O0
 HW_OPT = -Os
