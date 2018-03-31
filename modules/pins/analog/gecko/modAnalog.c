@@ -45,24 +45,13 @@ static void calibrate() {
 	ADC_Calibration(adc, ref);
 }
 
-void xs_Analog(xsMachine *the) {
-	adcSetup();
-//	calibrate();
-}
-
-void xs_Analog_destructor(void *data) {
-	adcTerminate();
-}
-
-void xs_Analog_sleepEM4() {
-	xs_Analog_destructor(NULL);
-}
-
-
-void xs_Analog_read(xsMachine *the) {
-	uint32_t chan = xsToInteger(xsArg(0));
+void xs_analog_read(xsMachine *the) {
+	int chan = xsToInteger(xsArg(0));
 	uint32_t ret, inputChan = 0;
 	int gotChan = 0;
+
+	adcSetup();
+
 	switch (chan) {
 #ifdef MODDEF_ANALOG_INPUT1
 		case 1:
@@ -106,5 +95,7 @@ void xs_Analog_read(xsMachine *the) {
 	}
 
 	xsResult = xsInteger(ret);
+
+	adcTerminate();
 }
 

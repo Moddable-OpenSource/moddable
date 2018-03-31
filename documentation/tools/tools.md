@@ -98,7 +98,7 @@ See the [Manifest](./Manifest.md) document for explanations about manifests.
 
 ### Arguments
 
-	mcconfig [manifest] [-d] [f format] [-i] [-m] [-o directory] [p platform] [-r rotation] [-v]
+	mcconfig [manifest] [-d] [f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v]
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
 - `-d`: to build a debug instrumented version.
@@ -106,7 +106,7 @@ See the [Manifest](./Manifest.md) document for explanations about manifests.
 - `-i`: to build a release instrumented version.
 - `-m`: to run make automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
-- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin` or `mac`. Defaults to `mac`
+- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue` or `gecko/thunderboard2`. Defaults to the host build platform:`mac`, `win` or `lin`.
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
 - `-v`: to trace all commands executed by make
 
@@ -129,7 +129,7 @@ Notice that most assets are used directly from flash storage.
 - `files`: the paths of the assets to include.
 - `-o output`: the path of the output directory. Defaults to the current directory.
 - `-r name`: the name of the generated C file. Defaults to `mc.resources.c`.
-- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin` or `mac`. Defaults to `mac`
+- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin` or `mac`. Defaults to the host build platform:`mac`, `win` or `lin`.
 
 ## png2bmp
 
