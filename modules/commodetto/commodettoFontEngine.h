@@ -39,9 +39,9 @@ void CFEGetFontMetrics(CommodettoFontEngine cfe, int32_t *ascent, int32_t *desce
 void CFELockCache(CommodettoFontEngine cfe, uint8_t lock);
 
 CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine cfe, uint16_t glyphID, uint8_t needPixels);
-CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine cfe, uint16_t unicode, uint8_t needPixels);
+CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine cfe, uint32_t unicode, uint8_t needPixels);
 
-int16_t CFEGetKerningOffset(CommodettoFontEngine cfe, uint16_t unicode1, uint16_t unicode2);
+int16_t CFEGetKerningOffset(CommodettoFontEngine cfe, uint32_t unicode1, uint32_t unicode2);
 
 void CFELayoutRun(CommodettoFontEngine cfe, const char *utf8, int32_t byteLength, CFERun run, int32_t runLength, int32_t width);
 

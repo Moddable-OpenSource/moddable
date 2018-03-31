@@ -37,8 +37,6 @@
 	#define MODDEF_CFE_KERN (0)
 #endif
 
-extern int PocoNextFromUTF8(uint8_t **src);		//@@
-
 CommodettoFontEngine gCFE;
 
 #define PocoDisableGC(poco) \
@@ -662,7 +660,7 @@ void xs_poco_getTextWidth(xsMachine *the)
 	const char *fontData;
 	int width = 0;
 #if MODDEF_CFE_KERN
-	uint16_t previousUnicode = 0;
+	uint32_t previousUnicode = 0;
 #endif
 
 	xsmcVars(1);
@@ -673,7 +671,7 @@ void xs_poco_getTextWidth(xsMachine *the)
 
 	while (true) {
 		CFEGlyph glyph;
-		uint16_t unicode = PocoNextFromUTF8((uint8_t **)&text);
+		uint32_t unicode = PocoNextFromUTF8((uint8_t **)&text);
 		if (!unicode) {
 			if (!c_read8(text - 1))
 				break;
@@ -710,7 +708,7 @@ void xs_poco_drawText(xsMachine *the)
 	uint8_t isColor;
 	PocoBitmapRecord mask;
 #if MODDEF_CFE_KERN
-	uint16_t previousUnicode = 0;
+	uint32_t previousUnicode = 0;
 #endif
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->xOrigin;
@@ -737,7 +735,7 @@ void xs_poco_drawText(xsMachine *the)
 		PocoCoordinate cx, cy, sx, sy;
 		PocoDimension sw, sh;
 		CFEGlyph glyph;
-		const uint16_t unicode = PocoNextFromUTF8((uint8_t **)&text);
+		uint32_t unicode = PocoNextFromUTF8((uint8_t **)&text);
 		if (!unicode) {
 			if (!c_read8(text - 1))
 				break;
@@ -763,7 +761,7 @@ void xs_poco_drawText(xsMachine *the)
 			int w = 0;
 			while (w < width) {
 				CFEGlyph tg;
-				const uint16_t unicode = PocoNextFromUTF8((uint8_t **)&t);
+				uint32_t unicode = PocoNextFromUTF8((uint8_t **)&t);
 				if (!unicode) {
 					if (!c_read8(t - 1))
 						break;
