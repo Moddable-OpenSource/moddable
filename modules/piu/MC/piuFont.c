@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,15 +19,19 @@
  */
 
 #include "piuMC.h"
+#include "commodettoFontEngine.h"
+#include "mc.defines.h"
 
 struct PiuFontStruct {
 	PiuHandlePart;
 	xsMachine* the;
-	const char* name;
-	int32_t nameLength;
 	PiuFont* next;
+	PiuFlags flags;
+	xsIndex family;
+	PiuCoordinate size;
+	PiuCoordinate weight;
 	uint8_t *buffer;
-	uint32_t offset;
+	size_t bufferSize;
 	PiuDimension height;
 	PiuDimension ascent;
 	PiuTexture* texture;
@@ -35,7 +39,8 @@ struct PiuFontStruct {
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuFontParse(xsMachine* the, PiuFont* self);
+
+static CommodettoFontEngine gCFE = NULL;
 
 static xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 	PiuFontDelete,
@@ -52,46 +57,41 @@ PiuDimension PiuFontGetAscent(PiuFont* self)
 	return (*self)->ascent;
 }
 
-PiuGlyph PiuFontGetGlyph(PiuFont* self, xsStringValue *string, uint8_t needPixels)
+PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPixels)
 {
-	static PiuGlyphRecord glyph;
-	static PocoBitmapRecord pack;
+	static PiuGlyphRecord piuGlyph;
+	static PocoBitmapRecord bitmap;
 	PiuTexture* texture = (*self)->texture;
-	const unsigned char *chars = (*self)->buffer + (*self)->offset;
-	uint32_t charCount = c_read32(chars) / 20;
-	const uint8_t *cc = PocoBMFGlyphFromUTF8((uint8_t**)string, chars + 4, charCount);
-	if (!cc)
-		return NULL;
-	glyph.advance = c_read16(cc + 16);
-	if (needPixels) {
-		glyph.sx = c_read16(cc + 4);
-		glyph.sy = c_read16(cc + 6);
-		glyph.sw = c_read16(cc + 8);
-		glyph.sh = c_read16(cc + 10);
-		glyph.dx = c_read16(cc + 12);
-		glyph.dy = c_read16(cc + 14);
-		if (texture) {
-			PiuFlags flags = (*texture)->flags;
-			glyph.bits = (flags & piuTextureColor) ? &((*texture)->bits) : NULL;
-			glyph.mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
+	CFEGlyph cfeGlyph;
+	CFESetFontData(gCFE, (*self)->buffer, (*self)->bufferSize);
+	CFESetFontSize(gCFE, (*self)->size);
+	cfeGlyph = CFEGetGlyphFromUnicode(gCFE, character, needPixels);
+	if (cfeGlyph) {
+		piuGlyph.advance = cfeGlyph->advance;
+		if (needPixels) {
+			piuGlyph.dx = cfeGlyph->dx;
+			piuGlyph.dy = cfeGlyph->dy;
+			piuGlyph.sx = cfeGlyph->sx;
+			piuGlyph.sy = cfeGlyph->sy;
+			piuGlyph.sw = cfeGlyph->w;
+			piuGlyph.sh = cfeGlyph->h;
+			if (texture) {
+				PiuFlags flags = (*texture)->flags;
+				piuGlyph.bits = (flags & piuTextureColor) ? &((*texture)->bits) : NULL;
+				piuGlyph.mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
+			}
+			else {
+				piuGlyph.bits = NULL;
+				piuGlyph.mask = &bitmap;
+				bitmap.format = cfeGlyph->format;
+				bitmap.pixels = (PocoPixel *)cfeGlyph->bits;
+				bitmap.width = cfeGlyph->w;
+				bitmap.height = cfeGlyph->h;
+			}
 		}
-		else {
-			glyph.bits = NULL;
-			glyph.mask = &pack;
-			pack.format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
-			pack.pixels = (PocoPixel *)((glyph.sx | (glyph.sy << 16)) + (char *)cc);
-	#if (0 == kPocoRotation) || (180 == kPocoRotation)
-			pack.width = glyph.sw;
-			pack.height = glyph.sh;
-	#elif (90 == kPocoRotation) || (270 == kPocoRotation)
-			pack.width = glyph.sh;
-			pack.height = glyph.sw;
-	#endif
-			glyph.sx = 0;
-			glyph.sy = 0;
-		}
+		return &piuGlyph;
 	}
-	return &glyph;
+	return NULL;
 }
 
 PiuDimension PiuFontGetHeight(PiuFont* self)
@@ -103,23 +103,31 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 {
 	xsMachine* the = (*self)->the;
 	xsStringValue text = PiuToString(string);
+	xsIntegerValue character = 0;
+	PiuGlyph glyph;
 	PiuDimension width = 0;
 	text += offset;
 	while (length) {
-		char *prev = text;
-		PiuGlyph glyph = PiuFontGetGlyph(self, &text, 0);
-		length -= (text - prev);
+		xsStringValue formerText = text;
+#if MODDEF_CFE_KERN
+		xsIntegerValue formerCharacter = character;
+#endif
+		text = fxUTF8Decode(text, &character);
+		if (character <= 0)
+			break;
+		length -= text - formerText;
+		glyph = PiuFontGetGlyph(self, character, 0);
 		if (!glyph) {
-			char missing, *pp;
-			if (!c_read8(prev))
-				break;
-			missing = '?';
-			pp = &missing;
-			glyph = PiuFontGetGlyph(self, &pp, 0);
+			character = '?';
+			glyph = PiuFontGetGlyph(self, character, 0);
 			if (!glyph)
 				continue;
 		}
 		width += glyph->advance;
+#if MODDEF_CFE_KERN
+		if (formerCharacter)
+			width += CFEGetKerningOffset(gCFE, formerCharacter, character);
+#endif
 	}
 	return width;
 }
@@ -142,159 +150,123 @@ void PiuFontNew(xsMachine* the)
 	xsSetHostHooks(xsResult, &PiuFontHooks);
 }
 
-void PiuFontParse(xsMachine* the, PiuFont* self) 
-{
-	uint8_t *buffer = (*self)->buffer, version;
-	int size, firstChar, lastChar;
-	if (0x42 != c_read8(buffer))
-		xsErrorPrintf("Invalid BMF header");
-	buffer++;
-	if (0x4D != c_read8(buffer))
-		xsErrorPrintf("Invalid BMF header");
-	buffer++;
-	if (0x46 != c_read8(buffer))
-		xsErrorPrintf("Invalid BMF header");
-	buffer++;
-	version = c_read8(buffer);
-	if ((3 != version) && (4 != version))
-		xsErrorPrintf("Invalid BMF header");
-	buffer++;
-
-	// skip block 1
-	if (1 != c_read8(buffer))
-		xsErrorPrintf("can't find info block");
-	buffer++;
-	size = c_read32(buffer);
-    buffer += 4;
-// 	fontSize = c_read16(buffer);
-//     buffer += 2;
-// 	fontBits = c_read8(buffer);
-// 	italic = (fontBits & 0x20) ? 1 : 0;
-// 	bold = (fontBits & 0x10) ? 1 : 0;
-//     buffer += 12;
-//     fontName = (char*)buffer;
-	buffer += size;
-
-	// get lineHeight from block 2
-	if (2 != c_read8(buffer))
-		xsErrorPrintf("can't find common block");
-	buffer++;
-	size = c_read32(buffer);
-	buffer += 4;
-	(*self)->height = c_read16(buffer);
-	buffer += 2;
-	(*self)->ascent = c_read16(buffer);
-	buffer += 2;
-	buffer += size - 4;
-
-	// skip block 3
-	if (3 != c_read8(buffer))
-		xsErrorPrintf("can't find pages block");
-	buffer++;
-	size = c_read32(buffer);
-    buffer += 4;
-    if (version == 3) {
-    	xsResult = xsGet(xsGlobal, xsID_Texture);
-		xsResult = xsNewFunction1(xsResult, xsString(buffer));
-		(*self)->texture = PIU(Texture, xsResult);
-	}
-    buffer += size;
-
-	// use block 4
-	if (4 != c_read8(buffer))
-		xsErrorPrintf("can't find chars block");
-	buffer++;
-	(*self)->offset = buffer - (*self)->buffer;		// position of size of chars table
-	size = c_read32(buffer);
-	if (size % 20)
-		xsErrorPrintf("bad chars block size");
-	buffer += 4;
-
-	firstChar = c_read32(buffer);
-	lastChar = firstChar + (size / 20);
-}
-
 void PiuFontListLockCache(xsMachine* the)
 {
+	CFELockCache(gCFE, 1);
 }
 
 void PiuFontListUnlockCache(xsMachine* the)
 {
+	CFELockCache(gCFE, 0);
 }
 
 void PiuStyleLookupFont(PiuStyle* self)
 {
 	xsMachine* the = (*self)->the;
-	char buffer[256];
-	xsStringValue string = xsName((*self)->family);
 	PiuFontList* fontList;
-	PiuFont* font;
-	if (string)
-		c_strcpy(buffer, string);
-	else
-		c_strcpy(buffer, "undefined");
-	if (((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)) || ((*self)->weight) || ((*self)->size)) {
-		xsIntegerValue flag = 0;
-		c_strcat(buffer, "-");
-		if ((*self)->flags & piuStyleCondensedBit)
-			c_strcat(buffer, "Condensed");
-		else
-			flag |= 1;
-		switch ((*self)->weight) {
-			case 1: c_strcat(buffer, "Ultralight"); break;
-			case 2: c_strcat(buffer, "Thin"); break;
-			case 3: c_strcat(buffer, "Light"); break;
-			case 5: c_strcat(buffer, "Medium");break;
-			case 6: c_strcat(buffer, "Semibold"); break;
-			case 7: c_strcat(buffer, "Bold");break;
-			case 8: c_strcat(buffer, "Heavy"); break;
-			case 9: c_strcat(buffer, "Black");break;
-			default: flag |= 2; break;
-		}
-		if ((*self)->flags & piuStyleItalicBit)
-			c_strcat(buffer, "Italic"); 
-		else
-			flag |= 4;
-		if (flag == 7)
-			c_strcat(buffer, "Regular");
-		if ((*self)->size) {
-			xsIntegerValue length = c_strlen(buffer) + 1;
-			c_strcat(buffer, "-");
-			fxIntegerToString(NULL, (*self)->size, buffer + length, sizeof(buffer) - length);
+	PiuFont* font = NULL;
+	xsStringValue name;
+	char path[256];
+	void* buffer;
+	size_t bufferSize;
+	int32_t ascent, descent, leading;
+
+	xsResult = xsGet(xsGlobal, xsID_fonts);
+	if (xsTest(xsResult)) {
+		fontList = PIU(FontList, xsResult);
+		font = (*fontList)->first;
+		while (font) {
+			if (((*font)->family == (*self)->family)
+					&& ((*font)->size == (*self)->size)
+					&& ((*font)->weight == (*self)->weight)
+					&& ((*font)->flags == ((*self)->flags & piuStyleBits))) {
+				(*self)->font = font;
+				return;
+			}
+			font = (*font)->next;
 		}
 	}
-	xsResult = xsGet(xsGlobal, xsID_fonts);
-	if (xsTest(xsResult))
-		fontList = PIU(FontList, xsResult);
 	else {
-		int c = mcCountResources(the), i;
+		gCFE = CFENew();
 		PiuFontListNew(the);
 		xsSet(xsGlobal, xsID_fonts, xsResult);
 		fontList = PIU(FontList, xsResult);
-		for (i = 0; i < c; i++) {
-			const char* name = mcGetResourceName(the, i);
-			char* extension = c_strrchr(name, '.');
-			if ((!c_strcmp(extension, ".bf4")) || (!c_strcmp(extension, ".fnt"))) {
-				PiuFont* font;
-				size_t size;
-				PiuFontNew(the);
-				font = PIU(Font, xsResult);
-				(*font)->next = (*fontList)->first;
-				(*fontList)->first = font;
-				(*font)->name = name;
-				(*font)->nameLength = extension - name;
-				(*font)->buffer = (uint8_t *)mcGetResource(the, name, &size);
-				PiuFontParse(the, font);
-			}
-		}
 	}
-	font = (*fontList)->first;
-	while (font) {
-		if (!c_strncmp(buffer, (*font)->name, (*font)->nameLength)) {
-			(*self)->font = font;
-			return;
+	
+	name = xsName((*self)->family);
+	if (name)
+		c_strcpy(path, name);
+	else
+		c_strcpy(path, "undefined");
+	if (((*self)->flags & (piuStyleCondensedBit | piuStyleItalicBit)) || ((*self)->weight) || ((*self)->size)) {
+		xsIntegerValue flag = 0;
+		c_strcat(path, "-");
+		if ((*self)->flags & piuStyleCondensedBit)
+			c_strcat(path, "Condensed");
+		else
+			flag |= 1;
+		switch ((*self)->weight) {
+			case 1: c_strcat(path, "Ultralight"); break;
+			case 2: c_strcat(path, "Thin"); break;
+			case 3: c_strcat(path, "Light"); break;
+			case 5: c_strcat(path, "Medium");break;
+			case 6: c_strcat(path, "Semibold"); break;
+			case 7: c_strcat(path, "Bold");break;
+			case 8: c_strcat(path, "Heavy"); break;
+			case 9: c_strcat(path, "Black");break;
+			default: flag |= 2; break;
 		}
-		font = (*font)->next;
+		if ((*self)->flags & piuStyleItalicBit)
+			c_strcat(path, "Italic"); 
+		else
+			flag |= 4;
+		if (flag == 7)
+			c_strcat(path, "Regular");
 	}
-	xsURIError("font not found: %s", buffer);
+	
+	PiuFontNew(the);
+	font = PIU(Font, xsResult);
+#if MODDEF_CFE_TTF
+	c_strcat(path, ".ttf");
+	buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+	if (!buffer)
+		xsURIError("font not found: %s", path);
+#else
+	if ((*self)->size) {
+		xsIntegerValue length = c_strlen(path) + 1;
+		c_strcat(path, "-");
+		fxIntegerToString(NULL, (*self)->size, path + length, sizeof(path) - length);
+	}
+	name = path + c_strlen(path);
+	c_strcpy(name, ".bf4");
+	buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+	if (!buffer) {
+		c_strcpy(name, ".fnt");
+		buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+		if (!buffer)
+			xsURIError("font not found: %s", path);
+		c_strcpy(name, ".png");
+    	xsResult = xsGet(xsGlobal, xsID_Texture);
+		xsResult = xsNewFunction1(xsResult, xsString(path));
+		(*font)->texture = PIU(Texture, xsResult);
+	}
+#endif
+    (*font)->next = (*fontList)->first;
+    (*fontList)->first = font;
+    
+	CFESetFontData(gCFE, buffer, bufferSize);
+	CFESetFontSize(gCFE, (*self)->size);
+	CFEGetFontMetrics(gCFE, &ascent, &descent, &leading);
+    
+	(*font)->flags = (*self)->flags & piuStyleBits;
+	(*font)->family = (*self)->family;
+	(*font)->size = (*self)->size;
+	(*font)->weight = (*self)->weight;
+	
+	(*font)->buffer = buffer;
+	(*font)->bufferSize = bufferSize;
+	(*font)->ascent = ascent;
+	(*font)->height = ascent + descent + leading;
+	
+	(*self)->font = font;
 }
