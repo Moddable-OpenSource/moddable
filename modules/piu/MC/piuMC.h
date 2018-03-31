@@ -42,7 +42,7 @@ struct PiuGlyphStruct {
 	PiuGlyphPart;
 };
 
-extern PiuGlyph PiuFontGetGlyph(PiuFont* self, xsStringValue *string, uint8_t needPixels);
+extern PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPixels);
 extern void PiuFontListLockCache(xsMachine* the);
 extern void PiuFontListUnlockCache(xsMachine* the);
 
