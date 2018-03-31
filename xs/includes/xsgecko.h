@@ -23,6 +23,7 @@
 #include "mc.defines.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "malloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -236,6 +237,16 @@ extern uint32_t gMsgBufferMax;
 
 #endif
 
+/*
+	c libraries
+*/
+#define c_calloc calloc
+#define c_free free
+#define c_malloc malloc
+
+/* STRING */
+#define c_memmove memmove
+#define c_memcmp memcmp
 
 #ifdef __cplusplus
 }
