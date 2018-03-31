@@ -1,4 +1,7 @@
 {
+	"defines": {
+		"cfe": { "kern": true },
+	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
