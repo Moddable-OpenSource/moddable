@@ -392,16 +392,16 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	xsMachine* the = (*self)->the;
 	Poco poco = (*self)->poco;
 	xsStringValue text = PiuToString(string);
+	xsIntegerValue character = 0;
+	PiuGlyph glyph;
+	PiuCoordinate advance;
+	
 	static const char *ellipsis = "...";
 	PocoDimension ellipsisWidth;
 	if (width) {
-		xsStringValue t = (xsStringValue)ellipsis;
-		PiuGlyph glyph = PiuFontGetGlyph(font, &t, 0);
-
-		if (glyph) {
-			ellipsisWidth = glyph->advance;
-			ellipsisWidth *= 3;
-		}
+		PiuGlyph glyph = PiuFontGetGlyph(font, '.', 0);
+		if (glyph)
+			ellipsisWidth = 3 * glyph->advance;
 		else
 			ellipsisWidth = 0;
 	}
@@ -410,25 +410,37 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 
 	text += offset;
 	while (length) {
-		char *prev = text;
-		PiuGlyph glyph = PiuFontGetGlyph(font, &text, 1);
-		length -= (PiuDimension)(text - prev);
+		xsStringValue formerText = text;
+#if MODDEF_CFE_KERN
+		xsIntegerValue formerCharacter = character;
+#endif
+		text = fxUTF8Decode(text, &character);
+		if (character <= 0)
+			break;
+		length -= text - formerText;
+			
+		glyph = PiuFontGetGlyph(font, character, 1);
 		if (!glyph) {
-			char missing, *pp;
-			if (!c_read8(prev))
-				break;
-			missing = '?';
-			pp = &missing;
-			glyph = PiuFontGetGlyph(font, &pp, 1);
+			character = '?';
+			glyph = PiuFontGetGlyph(font, character, 1);
 			if (!glyph)
 				continue;
 		}
 		
-		if (ellipsisWidth && ((width - glyph->advance) <= ellipsisWidth)) {
+		advance = glyph->advance;
+#if MODDEF_CFE_KERN
+		if (formerCharacter)
+			advance += CFEGetKerningOffset(gCFE, formerCharacter, character);
+#endif
+		
+		if (ellipsisWidth && ((width - advance) <= ellipsisWidth)) {
 			ellipsisWidth = 0;
 			if (stringWidth > width) {
-				text = (xsStringValue)ellipsis;
 				length = 3;
+				text = (xsStringValue)ellipsis;
+#if MODDEF_CFE_KERN
+				character = formerCharacter;
+#endif
 				continue;
 			}
 		}
@@ -443,9 +455,9 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 			if (glyph->bits)
 				PocoBitmapDraw(poco, glyph->bits, x + glyph->dx, y + glyph->dy, glyph->sx, glyph->sy, glyph->sw, glyph->sh);
 		}
-		x += glyph->advance;
-		width -= glyph->advance;
-		stringWidth -= glyph->advance;
+		x += advance;
+		width -= advance;
+		stringWidth -= advance;
 	}
 }
 
