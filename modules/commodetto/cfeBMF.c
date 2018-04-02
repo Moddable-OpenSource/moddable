@@ -16,7 +16,7 @@ struct CommodettoFontEngineRecord {
 
 	int					height;
 	int					ascent;
-	int					charCount;
+	unsigned int			charCount;
 	const uint8_t		*charTable;
 	uint8_t				isCompressed;
 	uint8_t				isContinuous;
@@ -32,7 +32,7 @@ typedef struct CommodettoFontEngineRecord CommodettoFontEngineRecord;
 typedef struct CommodettoFontEngineRecord BMFRecord;
 typedef struct CommodettoFontEngineRecord *BMF;
 
-static uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint16_t c);
+static uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint32_t c);
 
 CommodettoFontEngine CFENew(void)
 {
@@ -194,7 +194,7 @@ CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine bmf, uint16_t glyphID, uint
 	return glyph;
 }
 
-CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine bmf, uint16_t unicode, uint8_t needPixels)
+CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine bmf, uint32_t unicode, uint8_t needPixels)
 {
 	uint16_t glyphID = bmfUnicodeToGlyphID(bmf, unicode);
 	if (kInvalidGlyphID == glyphID)
@@ -203,7 +203,7 @@ CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine bmf, uint16_t unicode, uint
 	return CFEGetGlyphFromGlyphID(bmf, glyphID, needPixels);
 }
 
-int16_t CFEGetKerningOffset(CommodettoFontEngine bmf, uint16_t unicode1, uint16_t unicode2)
+int16_t CFEGetKerningOffset(CommodettoFontEngine bmf, uint32_t unicode1, uint32_t unicode2)
 {
 #if MODDEF_CFE_KERN
 	const uint8_t *kernTriples = bmf->kernTriples;
@@ -269,7 +269,7 @@ void CFELayoutRun(CommodettoFontEngine bmf, const char *utf8, int32_t byteLength
 	while (utf8 < utf8End) {
 		CFEGlyph glyph;
 		unsigned int unicode = PocoNextFromUTF8((uint8_t **)&utf8);
-		uint16_t glyphID = bmfUnicodeToGlyphID(bmf, (uint16_t)unicode);
+		uint16_t glyphID = bmfUnicodeToGlyphID(bmf, unicode);
 		if (kInvalidGlyphID == glyphID)
 			continue;
 
@@ -299,14 +299,14 @@ void CFELayoutRun(CommodettoFontEngine bmf, const char *utf8, int32_t byteLength
 	utility functions
 */
 
-uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint16_t c)
+uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint32_t c)
 {
 	const uint8_t *chars = bmf->charTable;
 	int min, max;
 
 	if (bmf->isContinuous) {
 		// one run of continuously numbered characters
-		int firstChar = c_read32(chars);
+		uint32_t firstChar = c_read32(chars);
 		if (c < firstChar)
 			return kInvalidGlyphID;
 
@@ -323,7 +323,7 @@ uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint16_t c)
 	do {
 		int mid = (min + max) >> 1;
 		const uint8_t *cc = (20 * mid) + chars;
-		int code = c_read32(cc);
+		uint32_t code = c_read32(cc);
 		if (code < c)
 			min = mid + 1;
 		else if (c < code)
