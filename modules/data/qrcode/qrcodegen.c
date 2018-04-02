@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "qrcodegen.h"
+#include "xsPlatform.h"
 
 #ifndef QRCODEGEN_TEST
 	#define testable static  // Keep functions private
@@ -92,10 +93,10 @@ static int numCharCountBits(enum qrcodegen_Mode mode, int version);
 /*---- Private tables of constants ----*/
 
 // For checking text and encoding segments.
-static const char *ALPHANUMERIC_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+static const char *ALPHANUMERIC_CHARSET ICACHE_XS6RO2_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
 // For generating error correction codes.
-testable const int8_t ECC_CODEWORDS_PER_BLOCK[4][41] = {
+testable const int8_t ECC_CODEWORDS_PER_BLOCK[4][41] ICACHE_XS6RO_ATTR = {
 	// Version: (note that index 0 is for padding, and is set to an illegal value)
 	//0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
 	{-1,  7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30},  // Low
@@ -105,7 +106,7 @@ testable const int8_t ECC_CODEWORDS_PER_BLOCK[4][41] = {
 };
 
 // For generating error correction codes.
-testable const int8_t NUM_ERROR_CORRECTION_BLOCKS[4][41] = {
+testable const int8_t NUM_ERROR_CORRECTION_BLOCKS[4][41] ICACHE_XS6RO_ATTR = {
 	// Version: (note that index 0 is for padding, and is set to an illegal value)
 	//0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
 	{-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4,  4,  4,  4,  4,  6,  6,  6,  6,  7,  8,  8,  9,  9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25},  // Low
@@ -128,7 +129,7 @@ static const int PENALTY_N4 = 10;
 bool qrcodegen_encodeText(const char *text, uint8_t tempBuffer[], uint8_t qrcode[],
 		enum qrcodegen_Ecc ecl, int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl) {
 	
-	size_t textLen = strlen(text);
+	size_t textLen = c_strlen(text);
 	if (textLen == 0)
 		return qrcodegen_encodeSegmentsAdvanced(NULL, 0, ecl, minVersion, maxVersion, mask, boostEcl, tempBuffer, qrcode);
 	size_t bufLen = qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion);
@@ -146,7 +147,7 @@ bool qrcodegen_encodeText(const char *text, uint8_t tempBuffer[], uint8_t qrcode
 		if (textLen > bufLen)
 			goto fail;
 		for (size_t i = 0; i < textLen; i++)
-			tempBuffer[i] = (uint8_t)text[i];
+			tempBuffer[i] = (uint8_t)c_read8(&text[i]);
 		seg.mode = qrcodegen_Mode_BYTE;
 		seg.bitLength = calcSegmentBitLength(seg.mode, textLen);
 		if (seg.bitLength == -1)
@@ -197,8 +198,8 @@ testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[]
 testable void appendErrorCorrection(uint8_t data[], int version, enum qrcodegen_Ecc ecl, uint8_t result[]) {
 	// Calculate parameter numbers
 	assert(0 <= (int)ecl && (int)ecl < 4 && qrcodegen_VERSION_MIN <= version && version <= qrcodegen_VERSION_MAX);
-	int numBlocks = NUM_ERROR_CORRECTION_BLOCKS[(int)ecl][version];
-	int blockEccLen = ECC_CODEWORDS_PER_BLOCK[(int)ecl][version];
+	int numBlocks = c_read8(&NUM_ERROR_CORRECTION_BLOCKS[(int)ecl][version]);
+	int blockEccLen = c_read8(&ECC_CODEWORDS_PER_BLOCK[(int)ecl][version]);
 	int rawCodewords = getNumRawDataModules(version) / 8;
 	int dataLen = rawCodewords - blockEccLen * numBlocks;
 	int numShortBlocks = numBlocks - rawCodewords % numBlocks;
@@ -238,7 +239,7 @@ testable void appendErrorCorrection(uint8_t data[], int version, enum qrcodegen_
 testable int getNumDataCodewords(int version, enum qrcodegen_Ecc ecl) {
 	int v = version, e = (int)ecl;
 	assert(0 <= e && e < 4 && qrcodegen_VERSION_MIN <= v && v <= qrcodegen_VERSION_MAX);
-	return getNumRawDataModules(v) / 8 - ECC_CODEWORDS_PER_BLOCK[e][v] * NUM_ERROR_CORRECTION_BLOCKS[e][v];
+	return getNumRawDataModules(v) / 8 - c_read8(&ECC_CODEWORDS_PER_BLOCK[e][v]) * c_read8(&NUM_ERROR_CORRECTION_BLOCKS[e][v]);
 }
 
 
@@ -294,7 +295,7 @@ testable void calcReedSolomonRemainder(const uint8_t data[], int dataLen,
 	memset(result, 0, degree * sizeof(result[0]));
 	for (int i = 0; i < dataLen; i++) {
 		uint8_t factor = data[i] ^ result[0];
-		memmove(&result[0], &result[1], (degree - 1) * sizeof(result[0]));
+		c_memmove(&result[0], &result[1], (degree - 1) * sizeof(result[0]));
 		result[degree - 1] = 0;
 		for (int j = 0; j < degree; j++)
 			result[j] ^= finiteFieldMultiply(generator[j], factor);
@@ -691,8 +692,8 @@ testable void setModuleBounded(uint8_t qrcode[], int x, int y, bool isBlack) {
 // Public function - see documentation comment in header file.
 bool qrcodegen_isAlphanumeric(const char *text) {
 	assert(text != NULL);
-	for (; *text != '\0'; text++) {
-		if (strchr(ALPHANUMERIC_CHARSET, *text) == NULL)
+	for (; c_read8(text) != '\0'; text++) {
+		if (c_strchr(ALPHANUMERIC_CHARSET, c_read8(text)) == NULL)
 			return false;
 	}
 	return true;
@@ -702,8 +703,8 @@ bool qrcodegen_isAlphanumeric(const char *text) {
 // Public function - see documentation comment in header file.
 bool qrcodegen_isNumeric(const char *text) {
 	assert(text != NULL);
-	for (; *text != '\0'; text++) {
-		if (*text < '0' || *text > '9')
+	for (; c_read8(text) != '\0'; text++) {
+		if (c_read8(text) < '0' || c_read8(text) > '9')
 			return false;
 	}
 	return true;
@@ -779,7 +780,7 @@ struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, u
 	assert(result.bitLength != -1);
 	result.numChars = (int)len;
 	if (len > 0)
-		memcpy(buf, data, len * sizeof(buf[0]));
+		c_memcpy(buf, data, len * sizeof(buf[0]));
 	result.data = buf;
 	return result;
 }
@@ -789,7 +790,7 @@ struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, u
 struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {
 	assert(digits != NULL);
 	struct qrcodegen_Segment result;
-	size_t len = strlen(digits);
+	size_t len = c_strlen(digits);
 	result.mode = qrcodegen_Mode_NUMERIC;
 	int bitLen = calcSegmentBitLength(result.mode, len);
 	assert(bitLen != -1);
@@ -823,7 +824,7 @@ struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]
 struct qrcodegen_Segment qrcodegen_makeAlphanumeric(const char *text, uint8_t buf[]) {
 	assert(text != NULL);
 	struct qrcodegen_Segment result;
-	size_t len = strlen(text);
+	size_t len = c_strlen(text);
 	result.mode = qrcodegen_Mode_ALPHANUMERIC;
 	int bitLen = calcSegmentBitLength(result.mode, len);
 	assert(bitLen != -1);
@@ -834,8 +835,8 @@ struct qrcodegen_Segment qrcodegen_makeAlphanumeric(const char *text, uint8_t bu
 	
 	unsigned int accumData = 0;
 	int accumCount = 0;
-	for (; *text != '\0'; text++) {
-		const char *temp = strchr(ALPHANUMERIC_CHARSET, *text);
+	for (; c_read8(text) != '\0'; text++) {
+		const char *temp = c_strchr(ALPHANUMERIC_CHARSET, c_read8(text));
 		assert(temp != NULL);
 		accumData = accumData * 45 + (temp - ALPHANUMERIC_CHARSET);
 		accumCount++;
