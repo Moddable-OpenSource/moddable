@@ -11,11 +11,11 @@
  *   Mountain View, CA 94042, USA.
  *
  */
-import QRCode from "qrcode";
+import qrCode from "qrcode";
 import Poco from "commodetto/Poco";
 
 // generate QR code
-let qr = QRCode({input: "Welcome to Moddable"});
+let qr = qrCode({input: "Welcome to Moddable", maxVersion: 4});
 let size = qr.size;
 qr = new Uint8Array(qr);
 
