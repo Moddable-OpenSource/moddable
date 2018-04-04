@@ -795,19 +795,19 @@ static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16
 static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
-	uint16_t notify_en = 1;
 	esp_gatt_if_t gattc_if = *(esp_gatt_if_t*)refcon;
 	c_free(refcon);
     modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
     if (!connection) return;
-	esp_ble_gattc_write_char_descr(connection->gattc_if, 0, reg_for_notify->handle + 1, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
-	xsBeginHost(gBLE->the);
-	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetInteger(xsVar(1), reg_for_notify->handle);
-	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, xsString("_onNotificationsEnabled"), xsVar(0));
-	xsEndHost(gBLE->the);
+	esp_gattc_descr_elem_t result;
+	uint16_t count = 1;
+	esp_bt_uuid_t uuid;
+	uuid.len = ESP_UUID_LEN_16;
+	uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connection->gattc_if, connection->conn_id, reg_for_notify->handle, uuid, &result, &count)) {
+		uint16_t notify_en = 1;
+		esp_ble_gattc_write_char_descr(connection->gattc_if, connection->conn_id, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+	}
 }
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
