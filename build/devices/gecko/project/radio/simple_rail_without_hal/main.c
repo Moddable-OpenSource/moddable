@@ -26,7 +26,7 @@ uint8_t channel = 0;
 
 // volatile uint32_t msTickCount = 0;
 int gResetCause = 0;
-uint32_t wakeupPin = 0;
+uint32_t gWakeupPin = 0;
 
 
 void assertEFM() { }
@@ -170,14 +170,14 @@ void geckoSleepSensors() {
 int main(void)
 {
   CHIP_Init();
- // initRadio();
+ // initRadio();		// initialized if radio module is loaded
 
   gResetCause = RMU_ResetCauseGet();
-  if (gResetCause & (RMU_RSTCAUSE_EM4RST | RMU_RSTCAUSE_SYSREQRST | RMU_RSTCAUSE_EXTRST)) {
-	  wakeupPin = GPIO_EM4GetPinWakeupCause();
+  if (gResetCause & (RMU_RSTCAUSE_EM4RST | RMU_RSTCAUSE_EXTRST)) {
+	  gWakeupPin = GPIO_EM4GetPinWakeupCause();
   }
   RMU_ResetCauseClear();
-//  RMU_ResetControl(rmuResetPin, rmuResetModeLimited);
+  RMU_ResetControl(rmuResetPin, rmuResetModeLimited);	// The CRYOTIMER, DEBUGGER, RTCC, are not reset.
   RMU_ResetControl(rmuResetSys, rmuResetModeLimited);
 
   xs_setup();

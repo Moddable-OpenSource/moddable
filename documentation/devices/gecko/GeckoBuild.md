@@ -37,6 +37,7 @@ Platform | Subplatform | Platform Flag | Device
 gecko | giant | **-p gecko/giant** | Giant Gecko
 gecko | mighty | **-p gecko/mighty** | Mighty Gecko
 gecko | thunderboard2 | **-p gecko/thunderboard2** | Thunderboard Sense 2
+gecko | blue | **-p gecko/bluel** | Blue Gecko
 
 The platform flag is used with `mcconfig`.
 
@@ -125,7 +126,7 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 In the Simplicity Studio sample app's **main.c**, add a few things:
 
 	int gResetCause = 0;
-	uint32_t wakeupPin = 0;
+	uint32_t gWakeupPin = 0;
 	
 	void assertEFM() { } // maybe  void assertEFM(const char *file, int line) {} depending on your SDK
 
@@ -133,8 +134,8 @@ In the Simplicity Studio sample app's **main.c**, add a few things:
 Near the beginning of main(), add some code to get the reset cause. This must be done early in device initialization.
 
 	  gResetCause = RMU_ResetCauseGet();
-	  if (gResetCause & (RMU_RSTCAUSE_EM4RST | RMU_RSTCAUSE_SYSREQRST | RMU_RSTCAUSE_EXTRST)) {
-		  wakeupPin = GPIO_EM4GetPinWakeupCause();
+	  if (gResetCause & (RMU_RSTCAUSE_EM4RST |  RMU_RSTCAUSE_EXTRST)) {
+		  gWakeupPin = GPIO_EM4GetPinWakeupCause();
 	  }
 	  RMU_ResetCauseClear();
 
@@ -245,7 +246,7 @@ By default, Moddable uses Sleep level EM3 while waiting. Certain Gecko interface
 
 #### EM4 Sleep
 
-Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a low power clock. When awoken, the device reboots. 
+Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer with a low power clock. When awoken, the device reboots. 
 
 During EM4 sleep, a small amount of memory can be kept active at the expense of a slightly increased power draw. The GPIO state can also be retained.
 
@@ -258,7 +259,7 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": true },
-					"wakeup": { "pin": "7", "port": "gpioPortF", "register": "GPIO_EXTILEVEL_EM4WU1" },
+					"wakeup": { "pin": "7", "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
 			},
 			"modules": {
@@ -273,7 +274,11 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 
 `retention`:`gpio`: enables or disables gpio retention state.
 
-`wakeup`: defines the pin used to wake from EM4.
+`wakeup`:`port` and `pin` defines the pin used to wake from EM4.
+
+`wakeup`:`level` indicates whether pulling the wakeup pin low (0) or high (1) wakes the device.
+
+`wakeup`:`register` specifies which GPIO interrupt register to use.
 
 The various Gecko devices specify specific port/pin combinations that will wake the device from EM4 sleep. The device's data sheet will specify what pins can be used, and what GPIO interupt register to use.
 
@@ -283,7 +288,6 @@ The various Gecko devices specify specific port/pin combinations that will wake 
 The `Sleep` class provides access to Gecko's sleep functions.
 
 	import Sleep from "sleep";
-	let sleep = new Sleep();
 
 #### Determine cause of wakeup
 
@@ -296,9 +300,15 @@ To determine the cause of wakeup, use:
 
 **wakeupcause** is a bitmask of:
 
-	Sleep.ExternalReset     = 0b00000001;
-	Sleep.SysRequestReset   = 0b00000010;
-	Sleep.EM4WakeupReset    = 0b00000100;
+```
+Sleep.PowerOnReset      = 0b00000001;
+Sleep.ExternalReset     = 0b00000010;
+Sleep.SysRequestReset   = 0b00000100;
+Sleep.EM4WakeupReset    = 0b00001000;
+Sleep.BrownOutReset     = 0b00010000;
+Sleep.LockupReset       = 0b00100000;
+Sleep.WatchdogReset     = 0b01000000;
+```
 
 #### Storing data for retention during EM4 sleep
 
