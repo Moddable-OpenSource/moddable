@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"sleep": "$(MODULES)/base/sleep/sleep",
+	},
+	"preload": "sleep",
+	"platforms": {
+		"gecko": {
+			"modules": {
+				"*": "$(MODULES)/base/sleep/gecko/*"
+			},
+		},
+		"...": {
+			"error": "sleep unsupported"
+		},
+	}
+}

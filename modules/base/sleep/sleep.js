@@ -19,23 +19,35 @@
  */
 
 export class Sleep {
-	constructor(dictionary) { global.sleepers = []; }
-	static getPersistentValue(reg) @ "xs_get_persistent_value";
-	static setPersistentValue(reg, value) @ "xs_set_persistent_value";
-	static sleepEM4(ms) {
-		sleepers.forEach(callback => (callback)());
+	static install(handler) {
+		// this dance allows handlers to be installed both at preload and run time
+		if (Object.isFrozen(Sleep.prototype.handlers))
+			Sleep.prototype.handlers = Array.from(Sleep.prototype.handlers);
+		Sleep.prototype.handlers.push(handler);
+	}
+
+	static getPersistentValue(index) @ "xs_get_persistent_value";
+	static setPersistentValue(index, value) @ "xs_set_persistent_value";
+	static deep(ms) {
+		Sleep.prototype.handlers.forEach(handler => (handler)());
 		this.doSleepEM4(ms);
 	}
 	static doSleepEM4(ms) @ "xs_sleep_enter_em4";
 	static getWakeupCause() @ "xs_sleep_get_reset_cause";
 	static getWakeupPin() @ "xs_sleep_get_wakeup_pin";
+
+	static getIdleSleepLevel() @ "xs_sleep_get_idle_sleep_level";
+	static setIdleSleepLevel(level) @ "xs_sleep_set_idle_sleep_level";
 };
 
-Sleep.ExternalReset		= 0b00000001;
-Sleep.SysRequestReset	= 0b00000010;
-Sleep.EM4WakeupReset	= 0b00000100;
+Sleep.PowerOnReset		= 0b00000001;
+Sleep.ExternalReset		= 0b00000010;
+Sleep.SysRequestReset	= 0b00000100;
+Sleep.EM4WakeupReset	= 0b00001000;
+Sleep.BrownOutReset		= 0b00010000;
+Sleep.LockupReset		= 0b00100000;
+Sleep.WatchdogReset		= 0b01000000;
 
-Object.freeze(Sleep.prototype);
+/* Do not call Object.freeze on Sleep.prototype */
 
 export default Sleep;
-
