@@ -30,6 +30,8 @@ void modRadioPostMessage(void *buffer, uint32_t size);
 void modRadioListen(uint32_t mode);
 void modRadioInit();
 int setMaxSleep(int sleepLevel);
+
+extern void modRadioSleep(void);
 extern uint32_t gDeviceUnique;
 
 xsMachine *gRadioMachine = NULL;
@@ -97,3 +99,4 @@ void modRadioQueueReceivedMessage(void *message, uint32_t size)
 	if (message && gRadioMachine)
 		modMessagePostToMachine(gRadioMachine, message, size, modRadioReceivedMessage, NULL);
 }
+

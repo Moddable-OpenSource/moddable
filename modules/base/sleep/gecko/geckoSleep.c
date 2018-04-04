@@ -29,9 +29,10 @@
 
 #include "mc.defines.h"
 
-#if MIGHTY_GECKO
+#if MIGHTY_GECKO || BLUE_GECKO
 	#define USE_CRYOTIMER	1
 	#include "em_cryotimer.h"
+	uint32_t setupCryotimerTimeout(uint32_t delay);
 #endif
 #if GIANT_GECKO
 	#define USE_RTC			1
@@ -43,6 +44,8 @@
 #include "em_rtcc.h"
 #include "em_bus.h"
 #endif
+
+void geckoDelayLoop( uint32_t ms );
 
 void geckoStoreGpioRetention(void);
 
@@ -118,13 +121,17 @@ void configGPIO(void) {
 		geckoDelayLoop(1);		//debounce
 //	GPIO_IntClear(0x0080);
 	GPIO_IntClear(_GPIO_IFC_EM4WU_MASK | _GPIO_IFC_EXT_MASK);
-	NVIC_EnableIRQ(GPIO_ODD_IRQn);
+	if (MODDEF_SLEEP_WAKEUP_PIN & 0x1)
+		NVIC_EnableIRQ(GPIO_ODD_IRQn);
+	else
+		NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+	
 	GPIO_IntConfig(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, true, false, true);
-	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
+	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, MODDEF_SLEEP_WAKEUP_LEVEL);
 
 #elif GIANT_GECKO
 	GPIO_PinModeSet(MODDEF_SLEEP_WAKEUP_PORT, MODDEF_SLEEP_WAKEUP_PIN, gpioModeInputPull, 1);
-	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, 0);
+	GPIO_EM4EnablePinWakeup(MODDEF_SLEEP_WAKEUP_REGISTER, MODDEF_SLEEP_WAKEUP_LEVEL);
 
 #else
 	#error need wakeup pin code for new gecko platform
@@ -132,14 +139,13 @@ void configGPIO(void) {
 #endif
 }
 
-void geckoRadioSleep() __attribute__ ((weak));
-void geckoRadioSleep()
+void modRadioSleep() __attribute__ ((weak));
+void modRadioSleep()
 {
 }
 
 void geckoSleepEM4(uint32_t ms) {
-	geckoDisableSysTick();
-    geckoRadioSleep();
+    modRadioSleep();
 //	geckoSleepSensors();
 //    CMU_HFRCOBandSet(cmuHFRCOFreq_1M0Hz);
 	configEM4();
@@ -147,6 +153,7 @@ void geckoSleepEM4(uint32_t ms) {
 	geckoStoreGpioRetention();
 	configGPIO();
 
+	geckoDisableSysTick();
 #if USE_CRYOTIMER
 	EMU_EnterEM4H();
 #else
@@ -158,7 +165,7 @@ void geckoSleepEM4(uint32_t ms) {
 void geckoSleepEM4UntilButton() {
 #if MIGHTY_GECKO
 	CRYOTIMER->EM4WUEN = 0;
-	radioSleep();
+	modRadioSleep();
 	configEM4();
 	configGPIO();
 	EMU_EnterEM4H();
