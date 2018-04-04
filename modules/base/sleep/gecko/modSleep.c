@@ -28,6 +28,9 @@
 #include "em_rmu.h"
 #include "mc.defines.h"
 
+extern uint32_t gModIdleSleep;
+int setMaxSleep(int sleepLevel);
+
 void xs_get_persistent_value(xsMachine *the) {
 #if MODDEF_SLEEP_RETENTION_MEMORY
 	uint32_t reg = xsToInteger(xsArg(0));
@@ -54,24 +57,47 @@ void xs_sleep_enter_em4(xsMachine *the) {
 	geckoSleepEM4(delay);
 }
 
-#define kSleepExternalReset     0x1
-#define kSleepSysRequestReset   0x2
-#define kSleepEM4WakeupReset    0x4
+#define kSleepPowerOnReset	    0x01
+#define kSleepExternalReset     0x02
+#define kSleepSysRequestReset   0x04
+#define kSleepEM4WakeupReset    0x08
+#define kSleepBrownOutReset	    0x10
+#define kSleepLockupReset	    0x20
+#define kSleepWatchdogReset	    0x40
 
 void xs_sleep_get_reset_cause(xsMachine *the) {
 	uint32_t resetCause = geckoGetResetCause();
 	uint32_t ret = 0;
+	if (resetCause & RMU_RSTCAUSE_PORST)
+		ret += kSleepPowerOnReset;
 	if (resetCause & RMU_RSTCAUSE_EXTRST)
 		ret += kSleepExternalReset;
 	if (resetCause & RMU_RSTCAUSE_SYSREQRST)
 		ret += kSleepSysRequestReset;
 	if (resetCause & RMU_RSTCAUSE_EM4RST)
-		ret += kSleepSysRequestReset;
+		ret += kSleepEM4WakeupReset;
+	if (resetCause & (RMU_RSTCAUSE_DECBOD | RMU_RSTCAUSE_DVDDBOD | RMU_RSTCAUSE_AVDDBOD))
+		ret += kSleepBrownOutReset;
+	if (resetCause & RMU_RSTCAUSE_LOCKUPRST)
+		ret += kSleepLockupReset;
+	if (resetCause & RMU_RSTCAUSE_WDOGRST)
+		ret += kSleepWatchdogReset;
+
+//	xsLog("reset cause %d\n", resetCause);
 
 	xsResult = xsInteger(ret);
 }
 
-extern uint32_t wakeupPin;
+extern uint32_t gWakeupPin;
 void xs_sleep_get_wakeup_pin(xsMachine *the) {
-	xsResult = xsInteger(wakeupPin);
+	xsResult = xsInteger(gWakeupPin);
+}
+
+void xs_sleep_get_idle_sleep_level(xsMachine *the) {
+	xsResult = xsInteger(gModIdleSleep);
+}
+
+void xs_sleep_set_idle_sleep_level(xsMachine *the) {
+	uint32_t level = xsToInteger(xsArg(0));
+	xsResult = xsInteger(setMaxSleep(level));
 }
