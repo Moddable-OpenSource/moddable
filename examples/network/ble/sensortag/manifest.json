@@ -8,11 +8,7 @@
 			"./main"
 		]
 	},
-	"platforms": {
-		"gecko/blue": {
-			"creation": {
-				"static": 37500,
-			},
-		},
+	"creation": {
+		"static": 37500
 	}
 }
