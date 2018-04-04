@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/base/sleep/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+		]
+	},
+	"platforms": {
+		"gecko": {
+			"defines": {
+				"sleep": {
+					"retention": { "memory": true },
+				},
+			},
+		},
+	},
+}
