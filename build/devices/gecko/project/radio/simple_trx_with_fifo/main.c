@@ -68,7 +68,7 @@ static const RAIL_DataConfig_t dataConfig = {
 };
 
 int gResetCause = 0;
-uint32_t wakeupPin = 0;
+uint32_t gWakeupPin = 0;
 void assertEFM() { }
 
 
@@ -186,6 +186,14 @@ int main(void)
   // Initialize the chip
   CHIP_Init();
 
+  gResetCause = RMU_ResetCauseGet();
+  if (gResetCause & (RMU_RSTCAUSE_EM4RST | RMU_RSTCAUSE_EXTRST)) {
+	  gWakeupPin = GPIO_EM4GetPinWakeupCause();
+  }
+  RMU_ResetCauseClear();
+  RMU_ResetControl(rmuResetPin, rmuResetModeLimited);	// The CRYOTIMER, DEBUGGER, RTCC, are not reset.
+  RMU_ResetControl(rmuResetSys, rmuResetModeLimited);
+
   // Initialize the system clocks and other HAL components
   halInit();
 
@@ -201,7 +209,7 @@ int main(void)
   // Initialize gpio for buttons
   buttonInit();
 
-//  setupRadio();
+//  setupRadio();		// initialized when radio module is loaded
 
   xs_setup();
   while (1) {
