@@ -246,14 +246,18 @@ void PiuStyleLookupFont(PiuStyle* self)
 		if (!buffer)
 			xsURIError("font not found: %s", path);
 		c_strcpy(name, ".png");
+		(*font)->next = (*fontList)->first;
+		(*fontList)->first = font;
     	xsResult = xsGet(xsGlobal, xsID_Texture);
 		xsResult = xsNewFunction1(xsResult, xsString(path));
 		(*font)->texture = PIU(Texture, xsResult);
 	}
+	else {
+		(*font)->next = (*fontList)->first;
+		(*fontList)->first = font;
+	}
 #endif
-    (*font)->next = (*fontList)->first;
-    (*fontList)->first = font;
-    
+
 	CFESetFontData(gCFE, buffer, bufferSize);
 	CFESetFontSize(gCFE, (*self)->size);
 	CFEGetFontMetrics(gCFE, &ascent, &descent, &leading);
