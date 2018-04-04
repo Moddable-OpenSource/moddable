@@ -108,7 +108,7 @@
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": true },
-					"wakeup": { "pin": "2", "port": "gpioPortF", "register": "GPIO_EM4WUEN_EM4WUEN_F2" },
+					"wakeup": { "pin": "2", "port": "gpioPortF", "level": 0, "register": "GPIO_EM4WUEN_EM4WUEN_F2" },
 				},
 				"debugger": {
 					"interface": { "UART": 1 },
@@ -136,7 +136,7 @@
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": false },
-					"wakeup": { "pin": "7", "port": "gpioPortF", "register": "GPIO_EXTILEVEL_EM4WU1" },
+					"wakeup": { "pin": "7", "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
 				"debugger": {
 					"interface": { "USART": 1 },
@@ -163,7 +163,7 @@
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": false },
-					"wakeup": { "pin": "14", "port": "gpioPortD", "register": "GPIO_EXTILEVEL_EM4WU4" },
+					"wakeup": { "pin": "14", "port": "gpioPortD", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU4" },
 				},
 				"debugger": {
 					"interface": { "USART": 0 },
@@ -188,7 +188,7 @@
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": false },
-					"wakeup": { "pin": "7", "port": "gpioPortF", "register": "GPIO_EXTILEVEL_EM4WU1" },
+					"wakeup": { "pin": "7", "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
 				"debugger": {
 					"interface": { "USART": 1 },
