@@ -84,6 +84,7 @@ export class Client {
 		this[event](params);
 	}
 };
+Object.freeze(Client.prototype);
 
 export class Service {
 	constructor(dictionary) {
@@ -140,6 +141,7 @@ export class Service {
 		this[event](params);
 	}
 };
+Object.freeze(Service.prototype);
 
 export class Characteristic {
 	constructor(dictionary) {
@@ -226,6 +228,7 @@ export class Characteristic {
 		this[event](params);
 	}
 };
+Object.freeze(Characteristic.prototype);
 
 export class Descriptor {
 	constructor(dictionary) {
@@ -256,6 +259,7 @@ export class Descriptor {
 	
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
+Object.freeze(Descriptor.prototype);
 
 export default {
 	Client,
