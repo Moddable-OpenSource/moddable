@@ -57,7 +57,7 @@ export class Connection {
 		this.onDisconnected();
 	}
 	_onRSSI(rssi) {
-		this.onRSSI(onRSSI);
+		this.onRSSI(rssi);
 	}
 	callback(event, params) {
 		//trace(`Connection callback ${event}\n`);
