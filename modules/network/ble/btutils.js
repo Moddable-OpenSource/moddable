@@ -32,12 +32,14 @@ export class BluetoothAddress {
 		return Hex.toBuffer(string, ':');
 	}
 }
+Object.freeze(BluetoothAddress.prototype);
 
 export class UUID {
 	static toString(buffer) @ "xs_btuuid_toString"
 	static toBuffer(string) @ "xs_btuuid_toBuffer"
 }
 UUID.CCCD = '2902';
+Object.freeze(UUID.prototype);
 
 function serializeUUID16List(data) {
 	let count = data.length;
@@ -312,6 +314,7 @@ export class Advertisement {
 		return String.fromArrayBuffer(this._buffer.slice(start, end));
 	}
 }
+Object.freeze(Advertisement.prototype);
 
 export default {
 	BluetoothAddress, UUID, Advertisement
