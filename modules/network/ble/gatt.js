@@ -218,7 +218,7 @@ export class Characteristic {
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
 	_readValue() @ "xs_gatt_characteristic_read_value"
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
-	_disableNotifications() @ "xs_gatt_characteristic_enable_notifications"
+	_disableNotifications() @ "xs_gatt_characteristic_disable_notifications"
 	_enableNotifications() @ "xs_gatt_characteristic_enable_notifications"
 
 	callback(event, params) {
