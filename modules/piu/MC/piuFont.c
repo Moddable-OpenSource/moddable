@@ -85,8 +85,13 @@ PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPi
 				piuGlyph.mask = &bitmap;
 				bitmap.format = cfeGlyph->format;
 				bitmap.pixels = (PocoPixel *)cfeGlyph->bits;
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
 				bitmap.width = cfeGlyph->w;
 				bitmap.height = cfeGlyph->h;
+#elif (90 == kPocoRotation) || (270 == kPocoRotation)
+				bitmap.width = cfeGlyph->h;
+				bitmap.height = cfeGlyph->w;
+#endif
 			}
 		}
 		return &piuGlyph;
