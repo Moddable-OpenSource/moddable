@@ -64,6 +64,7 @@ export class Connection {
 		this[event](params);
 	}
 };
+Object.freeze(Connection.prototype);
 
 // Maintain a list of connections to ensure each connection and associated properties
 // are not garbage collected when active.
