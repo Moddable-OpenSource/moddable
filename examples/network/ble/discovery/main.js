@@ -11,34 +11,38 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+/*
+	This application discovers the device information service (0x180A), traces the
+	manufacturer name read from the contained characteristic (0x2A29) and disconnects.
+	To use the app, set the DEVICE_NAME string to your device's advertised complete name.
+*/
 
 import BLE from "ble";
 
-const DEVICE_NAME = "UART";
+const DEVICE_NAME = "<YOUR DEVICE NAME>";
 
 let ble = new BLE();
 ble.onReady = () => {
 	ble.startScanning();
 	ble.onDiscovered = device => {
-		let scanResponse = device.scanResponse;
-		if ("completeName" in scanResponse && DEVICE_NAME == scanResponse.completeName) {
+		if (DEVICE_NAME == device.scanResponse.completeName) {
 			ble.stopScanning();
 			ble.connect(device.address);
 		}
 	}
 	ble.onConnected = connection => {
-		connection.onDisconnected = () => {
-			ble.startScanning();
-		}
 		let client = connection.client;
 		client.onServices = services => {
 			let service = services.find(service => '180A' == service.uuid);
 			if (service) {
 				service.onCharacteristics = characteristics => {
-					let characteristic = characteristics.find(characteristic => '2A29' == characteristic.uuid);
-					if (characteristic) {
-						//debugger
+					let characteristic = service.findCharacteristicByUUID('2A29');
+					characteristic.onValue = value => {
+						let manufacturer = String.fromArrayBuffer(value);
+						trace(`Manufacturer: ${manufacturer}\n`);
+						connection.disconnect();
 					}
+					characteristic.readValue();
 				}
 				service.discoverAllCharacteristics();
 			}
