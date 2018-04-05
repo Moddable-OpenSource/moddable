@@ -17,7 +17,6 @@
  */
 
 import BLE from "ble";
-import {UUID} from "btutils";
 
 const DEVICE_NAME = "SensorTag";
 
@@ -59,10 +58,12 @@ class SensorTagSensor {
 			characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
 		}
 		if (this.period) {
-			if (!this.period_data)
-				this.period_data = [100];	// 1s (10ms * 100) read interval
 			let characteristic = this.service.findCharacteristicByUUID(this.period);
-			characteristic.writeWithoutResponse((new Uint8Array(this.period_data)).buffer);
+			if (characteristic) {
+				if (!this.period_data)
+					this.period_data = [100];	// 1s (10ms * 100) read interval
+				characteristic.writeWithoutResponse((new Uint8Array(this.period_data)).buffer);
+			}
 		}
 	}
 	start() {
