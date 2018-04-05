@@ -30,10 +30,12 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
+#include "esp_bt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/dns.h"
 #include "nvs_flash.h"
+#include "sdkconfig.h"
 
 #include "driver/uart.h"
 
@@ -194,6 +196,9 @@ void app_main() {
 
 	nvs_flash_init();
     tcpip_adapter_init();
+#if CONFIG_BT_ENABLED
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
     ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 
