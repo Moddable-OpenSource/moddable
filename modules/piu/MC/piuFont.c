@@ -231,6 +231,8 @@ void PiuStyleLookupFont(PiuStyle* self)
 	buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
 	if (!buffer)
 		xsURIError("font not found: %s", path);
+	(*font)->next = (*fontList)->first;
+	(*fontList)->first = font;
 #else
 	if ((*self)->size) {
 		xsIntegerValue length = c_strlen(path) + 1;
