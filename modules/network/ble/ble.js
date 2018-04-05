@@ -21,7 +21,6 @@
 import GAP from "gap";
 import Connection from "connection";
 import {Client} from "gatt";
-
 import {BluetoothAddress, Advertisement} from "btutils";
 
 class BLE @ "xs_ble_destructor" {
@@ -99,5 +98,6 @@ class BLE @ "xs_ble_destructor" {
 		this[event](params);
 	}
 };
+Object.freeze(BLE.prototype);
 
 export default BLE;
