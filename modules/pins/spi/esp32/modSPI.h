@@ -58,6 +58,7 @@ extern void modSPIUninit(modSPIConfiguration config);
 extern void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPITxSwap16(modSPIConfiguration config, uint8_t *data, uint16_t count);
+extern void modSPITxRGB565LEtoRGB444(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPITxRGB332To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPITxGray256To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
