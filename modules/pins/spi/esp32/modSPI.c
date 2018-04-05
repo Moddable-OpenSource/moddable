@@ -43,6 +43,7 @@ typedef uint16_t (*modSPIBufferLoader)(uint8_t *data, uint16_t bytes, uint16_t *
 
 static uint16_t modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
+static uint16_t modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
@@ -265,6 +266,42 @@ uint16_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_
 
 }
 
+uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+{
+	uint16_t *from = (uint16_t *)data;
+	uint8_t *to = (uint8_t *)gSPITransactionBuffer;
+	uint16_t remain;
+
+	if (bytes > SPI_BUFFER_SIZE)
+		bytes = SPI_BUFFER_SIZE;
+
+	*bitsOut = (bytes >> 1) * 12;
+
+	remain = bytes >> 2;
+	while (remain--) {
+		uint8_t r, g, b;
+		uint16_t rgb565 = *from++;
+		r = rgb565 >> 12, g = (rgb565 >> 7) & 0x0F, b = (rgb565 >> 1) & 0x0F;
+		*to++ = (r << 4) | g;
+
+		rgb565 = *from++;
+		r = rgb565 >> 12;
+		*to++ = (b << 4) | r;
+		g = (rgb565 >> 7) & 0x0F, b = (rgb565 >> 1) & 0x0F;
+		*to++ = (g << 4) | b;
+	}
+
+	if (bytes & 2) {
+		uint8_t r, g, b;
+		uint16_t rgb565 = *from;
+		r = rgb565 >> 12, g = (rgb565 >> 7) & 0x0F, b = (rgb565 >> 1) & 0x0F;
+		*to++ = (r << 4) | g;
+		*to = b << 4;
+	}
+
+	return bytes;		// input bytes consumed
+}
+
 uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
@@ -428,6 +465,11 @@ void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 void modSPITxSwap16(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	modSPITxCommon(config, data, count, modSpiLoadBufferSwap16);
+}
+
+void modSPITxRGB565LEtoRGB444(modSPIConfiguration config, uint8_t *data, uint16_t count)
+{
+	modSPITxCommon(config, data, count, modSpiLoadBufferRGB565LEtoRGB444);
 }
 
 void modSPITxRGB332To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count)
