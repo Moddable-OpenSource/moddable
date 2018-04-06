@@ -23,6 +23,6 @@
 */
 
 export default class {
-	static encode(string) @ "xs_base64_encode";
+	static encode(buffer) @ "xs_base64_encode";
 	static decode(string) @ "xs_base64_decode";
 }
