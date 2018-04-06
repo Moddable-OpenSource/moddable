@@ -23,10 +23,17 @@ BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 PLATFORM_NAME = blue
 SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
 
+ifeq ("x$(GECKO_BOARD)", "x")
+	GECKO_BOARD=BRD4104A
+endif
+ifeq ("x$(GECKO_PART)", "x")
+	GECKO_PART=EFR32BG13P632F512GM48
+endif
+
 # (BRD4104A) -- 64kB ram, 512kB flash
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG13_BRD4104A/config
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG13_$(GECKO_BOARD)/config
 HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG13P/Include
-HWPART = EFR32BG13P632F512GM48
+HWPART = $(GECKO_PART)
 
 # (BRD4100A) -- 32kB ram, 256kB flash
 # HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG1_BRD4100A/config

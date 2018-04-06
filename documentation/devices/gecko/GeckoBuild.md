@@ -20,7 +20,7 @@ The Blue Gecko is a Bluetooth focused board. Its port is currently under develop
 
 ### Development workflow
 
-There are two major build steps in building a Moddable application for Gecko.
+After the initial setup, there are two major build steps in building a Moddable application for Gecko.
 
 First, the JavaScript application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_gecko.a` archive file.
 
@@ -43,7 +43,9 @@ The platform flag is used with `mcconfig`.
 
 	$ mcconfig -d -m -p gecko/mighty
 	
+If the platform flag specifies a subplatform, then `mcconfig` will load the build rules from `$MODDABLE/tools/mcconfig/`*platform*`/mk.`*subplatform*`.mk`.
 
+In the `manifest.json` file, the `platforms` section can specify both `platform` and `platform/subplatform` subsections. The items are merged and the more specific `platform/subplatform` specifications override the general `platform`.
 
 
 ## Getting Started
@@ -63,15 +65,42 @@ As of this writing, the current versions are:
 
 > If the SDK version changes, or you wish to use a specific SDK version, you can change the **SDK_BASE** build define in $MODDABLE/tools/mcconfig/gecko/make.*subplatform*.mk.
 
+#### Create a new Simplicity Studio Project
 
-Install a sample project for your device or board.
+Each time you work with a new board variant, install a sample project for your device or board.
 
-	Giant Gecko: STK3700_powertest
-	Mighty Gecko: simple_rail_without_hal
-	Thunderboard Sense 2: soc-thunderboard-sense-2, soc-empty
+When you have your device connected, choose an example project from the Launcher screen:
+
+![New Project](assets/NewProject.png)
+
+1. Choose the Launcher
+2. Choose your device
+3. Find an example for your device
+
+We've used
+
+Device | Example project
+----|----------------------|---------
+Giant Gecko | STK3700_powertest
+Mighty Gecko | simple_rail_without_hal
+Thunderboard Sense 2 | soc-thunderboard-sense-2, soc-empty
 
 Build, install and run the sample to become familiar with the process.
 
+> Note: It is necessary to start with an example project with your board connected as Simplicity Studio will populate the build rules for the project with the appropriate values for your device.
+> 
+> There are many variants of a family of devices.
+
+Please note the board (4) and part (2).
+
+Export the part and board as `GECKO_PART` and `GECKO_BOARD`.
+
+```
+export GECKO_PART=EFR32MG12P432F1024GL125
+export GECKO_BOARD=BRD4161A
+```
+
+This allows the build system to find the appropriate register definition files, configuration, etc. for your specific board.
 
 ### Get Moddable Open Source
 
@@ -478,9 +507,9 @@ Continue with *__Build xs_gecko.a archive__* above.
 
 - During the final link, if Simplicity Studio does not find the Cryotimer routines or defines, you will need to copy the code and header files to your project.
 
-`em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.1/platform/emlib/inc/em_cryotimer.h`
+`em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/inc/em_cryotimer.h`
 	
-`em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.1/platform/emlib/src/em_cryotimer.c`
+`em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/src/em_cryotimer.c`
 
 - During the final link, if Simplicity Studio does not find the `xs_gecko.a` file, either the library path is incorrect, or you have not built the `xs_gecko.a` file with **mcconfig**.
 
@@ -658,3 +687,4 @@ piu/love-e-ink | SPI/destm32s | x | x |
 drivers/radio/radiotest | radio |   | x |
 
 
+	
