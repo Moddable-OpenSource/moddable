@@ -21,9 +21,15 @@ BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
 # ThunderBoard Sense 2 (BRD4166A)
 PLATFORM_NAME = thunderboard2
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.1
-HWPART = EFR32MG12P332F1024GL125
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_BRD4166A/config
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
+ifeq ("x$(GECKO_BOARD)", "x")
+    GECKO_BOARD=BRD4166A
+endif
+ifeq ("x$(GECKO_PART)", "x")
+    GECKO_PART=EFR32MG12P332F1024GL125
+endif
+HWPART = $(GECKO_PART)
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_$(GECKO_BOARD)/config
 HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
 HWCPU = cortex-m4
 DEV_C_FLAGS = \

@@ -22,9 +22,15 @@ BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 # Giant Gecko starter kit
 PLATFORM_NAME = giant
 SDK_BASE = $(BASE)/sdks/exx32/v5.0.0.0
-HWKIT = $(SDK_BASE)/hardware/kit/EFM32GG_STK3700/config
+ifeq ("x$(GECKO_BOARD)", "x")
+    GECKO_BOARD=STK3700
+endif
+ifeq ("x$(GECKO_PART)", "x")
+    GECKO_PART=EFM32GG990F1024
+endif
+HWKIT = $(SDK_BASE)/hardware/kit/EFM32GG_$(GECKO_BOARD)/config
 HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFM32GG/Include 
-HWPART = EFM32GG990F1024
+HWPART = $(GECKO_PART)
 HWCPU = cortex-m3
 HW_DEBUG_OPT = -O0
 HW_OPT = -O3
