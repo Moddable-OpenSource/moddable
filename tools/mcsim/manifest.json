@@ -40,7 +40,6 @@
 		"*": [
 			"./*",
 			"$(SIMULATOR)/screen",
-			"$(MODULES)/data/binaryMessage/*",
 		],
 	},
 	"preload": [
