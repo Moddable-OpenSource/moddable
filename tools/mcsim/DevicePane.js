@@ -22,8 +22,6 @@ import {
 	Screen,
 } from "piu/Screen";
 
-import BIN from "BinaryMessage";
-
 export class DeviceBehavior extends Behavior {
 	onConfigure(container) {
 	}
