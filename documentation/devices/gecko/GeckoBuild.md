@@ -1,5 +1,41 @@
 # Gecko
 
+## About This Document
+
+This document describes how to set up and build Moddable applications for the Silicon Labs Gecko boards and processors.
+
+## Table of Contents
+
+  * [About Gecko](#about-gecko)
+  * [Development workflow](#development-workflow)
+    * [mcconfig and Subplatforms](#mcconfig-and-subplatforms)
+  * [Getting Started](#getting-started)
+    * [Install Simplicity Studio](#install-simplicity-studio)
+      * [Create a new Simplicity Studio Project](#create-a-new-simplicity-studio-project)
+    * [Get Moddable Open Source](#get-moddable-open-source)
+    * [Build xs_gecko.a archive](#build-xs_gecko-a-archive)
+      * [Modify Simplicity Studio Project](#modify-simplicity-studio-project)
+      * [Integrate Moddable runtime](#integrate-moddable-runtime)
+  * [Pin and Feature configuration](#pin-and-feature-configuration)
+    * [Debugging](#debugging)
+      * [Connecting xsbug](#connecting-xsbug)
+    * [Analog](#analog)
+    * [SPI](#spi)
+    * [Digital](#digital)
+    * [I2C](#i2c)
+    * [Radio](#radio)
+      * [Radio setup](#radio-setup)
+      * [Radio main.c](#radio-main-c)
+    * [Notes and Troubleshooting](#notes-and-troubleshooting)
+    * [Useful pin configurations](#useful-pin-configurations)
+      * [Giant Gecko pin configuration](#giant-gecko-pin-configuration)
+      * [Mighty Gecko pin configuration](#mighty-gecko-pin-configuration)
+      * [Thunderboard Sense 2 pin configuration](#thunderboard-sense-2-gecko-pin-configuration)
+    * [ Example apps with gecko support](#example-apps-with-gecko-support)
+
+
+## About Gecko
+
 The Gecko series of processors from Silicon Labs are low-powered ARM based devices.
 
 With the goal of consuming very little current, the Geckos are highly configurable. Peripherals, subsystems, clocks and oscillators can be enabled or disabled with high specificity.
@@ -37,7 +73,7 @@ Platform | Subplatform | Platform Flag | Device
 gecko | giant | **-p gecko/giant** | Giant Gecko
 gecko | mighty | **-p gecko/mighty** | Mighty Gecko
 gecko | thunderboard2 | **-p gecko/thunderboard2** | Thunderboard Sense 2
-gecko | blue | **-p gecko/bluel** | Blue Gecko
+gecko | blue | **-p gecko/blue** | Blue Gecko
 
 The platform flag is used with `mcconfig`.
 
@@ -152,6 +188,7 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 
 #### Integrate Moddable runtime
 
+
 In the Simplicity Studio sample app's **main.c**, add a few things:
 
 	int gResetCause = 0;
@@ -190,6 +227,7 @@ The pins and features of the Gecko family is highly configurable. For each appli
 In the `manifest.json` platforms, defines section there are defines for the various peripherals to specify what pins, ports, clocks, irq, etc. to use.
 
 The various pin/port/location values for interfaces can be found in the specific data sheet for your chip family.
+
 
 ### Debugging
 
@@ -546,7 +584,8 @@ For most Moddable examples, the pins used are located on the expansion connector
 
 Below are some default hookup schemes:
 
-### Giant Gecko
+### Giant Gecko pin configuration
+
 
 Giant Gecko locates the xsbug serial pins on the top row of pins, other peripherals on the expansion port.
 
@@ -593,7 +632,7 @@ PB9 | SW0 | Push Button 0
 PB10 | SW1 | Push Button 1
 
 
-### Mighty Gecko
+### Mighty Gecko pin configuration
 
 ![WSTK Expansion pinout](assets/WirelessSTKExpansion.png)
 
@@ -633,7 +672,7 @@ PF5 | LED1 | Left LED
 PF6 | SW0 | Push Button 0
 PF7 | SW1 | Push Button 1
 
-### Thunderboard Sense 2
+### Thunderboard Sense 2 pin configuration
 
 ![Thunderboard Sense 2 pinout](assets/TBS2Pinout.png)
 
@@ -685,6 +724,5 @@ piu/transitions | SPI/ili9341 | x | x |
 piu/cards | SPI/ili9341 | x | x |
 piu/love-e-ink | SPI/destm32s | x | x |
 drivers/radio/radiotest | radio |   | x |
-
 
 	
