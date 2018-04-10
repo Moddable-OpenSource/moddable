@@ -247,6 +247,7 @@ extern uint32_t gMsgBufferMax;
 /* STRING */
 #define c_memmove memmove
 #define c_memcmp memcmp
+#define c_memcpy memcpy
 
 #ifdef __cplusplus
 }

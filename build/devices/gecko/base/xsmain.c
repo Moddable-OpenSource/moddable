@@ -59,13 +59,7 @@ void xs_loop(void)
         return;
 
 #if mxDebug
-    if (ESP_isReadable()) {
-        if (triggerDebugCommand(gThe)) {
-            xsBeginHost(gThe);
-            xsDebugger();
-            xsEndHost(gThe);
-        }
-    }
+	fxReceiveLoop();
 #endif
 
     modTimersExecute();

@@ -19,11 +19,11 @@ import Monitor from "monitor";
 let led1 = new Digital({pin: 4, port: "gpioPortF", mode: Digital.Output});
 let led2 = new Digital({pin: 5, port: "gpioPortF", mode: Digital.Output});
 
-let monitor1 = new Monitor({pin: 6, port: "gpioPortF", mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge});
+let monitor1 = new Monitor({pin: 6, port: "gpioPortF", mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 monitor1.onChanged = function() {
 	trace("Button 0, ", this.read(), " times\n");
 }
-let monitor2 = new Monitor({pin: 7, port: "gpioPortF", mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge});
+let monitor2 = new Monitor({pin: 7, port: "gpioPortF", mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 monitor2.onChanged = function() {
 	trace("Button 1, ", this.read(), " times\n");
 }
