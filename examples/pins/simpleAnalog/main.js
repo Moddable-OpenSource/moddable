@@ -17,10 +17,7 @@ import Digital from "pins/digital";
 import Timer from "timer";
 
 Timer.repeat(id => {
-	let exciter = new Digital({pin: 6, port: "gpioPortB", mode: Digital.Output});
-	exciter.write(0);				// turn on ground to potentiometers
 	let value1 = Analog.read(1);
 	let value2 = Analog.read(2);
-	exciter.write(1);
 	trace("value1: " + value1 + " value2: " + value2 + "\n");
 }, 100);

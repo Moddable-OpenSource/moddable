@@ -164,17 +164,6 @@ void fxAbort(txMachine* the)
 	c_exit(0);
 }
 
-uint8_t triggerDebugCommand(txMachine *the)
-{
-	if (the->debugOnReceive) {
-		fxDebugCommand(the);
-		return the->breakOnStartFlag;
-	}
-
-	return false;
-}
-
-
 void fxConnect(txMachine* the)
 {
 	extern unsigned char gXSBUG[4];
@@ -395,33 +384,6 @@ void fxSend(txMachine* the, txBoolean more)
 }
 
 #endif /* mxDebug */
-
-
-void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *))
-{
-	size_t i, j;
-	uint8_t temp[256];
-
-	if (width > sizeof(temp)) {
-		modLog("width too big");
-		return;
-	}
-
-	for (i = 0; i < num - 1; i++) {
-		size_t minIndex = i;
-
-		for (j = i + 1; j < num; j++) {
-			if (compare((j * width) + (char *)base, (minIndex * width) + (char *)base) < 0)
-				minIndex = j;
-		}
-		if (minIndex == i)
-			continue;
-
-		c_memcpy(temp, (i * width) + (char *)base, width);
-		c_memcpy((i * width) + (char *)base, (minIndex * width) + (char *)base, width);
-		c_memcpy((minIndex * width) + (char *)base, temp, width);
-	}
-}
 
 
 
