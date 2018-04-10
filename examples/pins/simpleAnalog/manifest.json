@@ -18,9 +18,5 @@
 				},
 			},
 		},
-		"gecko/thunderboard2": {
-			"defines": {
-			},
-		},
 	},
 }
