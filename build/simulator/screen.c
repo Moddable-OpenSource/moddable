@@ -170,10 +170,10 @@ void fxScreenIdle(txScreen* screen)
 			xsBeginHost(screen->machine);
 			{
 				xsVars(2);
-				xsVar(0) = xsGet(xsGlobal, xsID("screen"));
-				xsVar(1) = xsGet(xsVar(0), xsID("context"));
+				xsVar(0) = xsGet(xsGlobal, xsID_screen);
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
 				if (xsTest(xsVar(1))) {
-					if (xsFindResult(xsVar(1), xsID("onIdle"))) {
+					if (xsFindResult(xsVar(1), xsID_onIdle)) {
 						xsCallFunction0(xsResult, xsVar(1));
 					}
 				}
@@ -198,20 +198,20 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 			xsVars(2);
 			xsVar(0) = xsAccess(worker->slot);
 			xsVar(1) = xsDemarshallAlien(buffer);
-			if (xsFindResult(xsVar(0), xsID("onmessage"))) {
+			if (xsFindResult(xsVar(0), xsID_onmessage)) {
 				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
 			}
-			else if (xsFindResult(xsVar(0), xsID("onMessage"))) {
+			else if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
 			}
 		}
 	}
 	else {
 		xsVars(2);
-		xsVar(0) = xsGet(xsGlobal, xsID("screen"));
-		xsVar(1) = xsGet(xsVar(0), xsID("context"));
+		xsVar(0) = xsGet(xsGlobal, xsID_screen);
+		xsVar(1) = xsGet(xsVar(0), xsID_context);
 		if (xsTest(xsVar(1))) {
-			if (xsFindResult(xsVar(1), xsID("onMessage"))) {
+			if (xsFindResult(xsVar(1), xsID_onMessage)) {
 				if (size)
 					(void)xsCallFunction1(xsResult, xsVar(1), xsArrayBuffer(buffer, size));
 				else
@@ -279,53 +279,53 @@ void fxScreenLaunch(txScreen* screen)
 		xsVar(0) = xsNewHostObject(NULL); // no destructor
 		xsSetHostData(xsVar(0), screen);
 		xsVar(1) = xsNewHostFunction(screen_adaptInvalid, 0);
-		xsDefine(xsVar(0), xsID("adaptInvalid"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_adaptInvalid, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_animateColors, 1);
-		xsDefine(xsVar(0), xsID("animateColors"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_animateColors, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_begin, 4);
-		xsDefine(xsVar(0), xsID("begin"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_begin, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_clear, 0);
-		xsDefine(xsVar(0), xsID("clear"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_clear, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_get_clut, 0);
-		xsDefine(xsVar(0), xsID("clut"), xsVar(1), xsIsGetter);
+		xsDefine(xsVar(0), xsID_clut, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_set_clut, 1);
-		xsDefine(xsVar(0), xsID("clut"), xsVar(1), xsIsSetter);
+		xsDefine(xsVar(0), xsID_clut, xsVar(1), xsIsSetter);
 		xsVar(1) = xsNewHostFunction(screen_continue, 0);
-		xsDefine(xsVar(0), xsID("continue"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_continue, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_end, 0);
-		xsDefine(xsVar(0), xsID("end"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_end, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_pixelsToBytes, 1);
-		xsDefine(xsVar(0), xsID("pixelsToBytes"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_pixelsToBytes, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_postMessage, 1);
-		xsDefine(xsVar(0), xsID("postMessage"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_postMessage, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_send, 1);
-		xsDefine(xsVar(0), xsID("send"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_send, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_start, 1);
-		xsDefine(xsVar(0), xsID("start"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_start, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_stop, 0);
-		xsDefine(xsVar(0), xsID("stop"), xsVar(1), xsDefault);
+		xsDefine(xsVar(0), xsID_stop, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_get_pixelFormat, 0);
-		xsDefine(xsVar(0), xsID("pixelFormat"), xsVar(1), xsIsGetter);
+		xsDefine(xsVar(0), xsID_pixelFormat, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_set_pixelFormat, 0);
-		xsDefine(xsVar(0), xsID("pixelFormat"), xsVar(1), xsIsSetter);
+		xsDefine(xsVar(0), xsID_pixelFormat, xsVar(1), xsIsSetter);
 		xsVar(1) = xsNewHostFunction(screen_get_width, 0);
-		xsDefine(xsVar(0), xsID("width"), xsVar(1), xsIsGetter);
+		xsDefine(xsVar(0), xsID_width, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_get_height, 0);
-		xsDefine(xsVar(0), xsID("height"), xsVar(1), xsIsGetter);
+		xsDefine(xsVar(0), xsID_height, xsVar(1), xsIsGetter);
 #if kPocoFrameBuffer
 		xsVar(1) = xsNewHostFunction(screen_get_frameBuffer, 0);
-		xsDefine(xsVar(0), xsID("frameBuffer"), xsVar(1), xsIsGetter);
+		xsDefine(xsVar(0), xsID_frameBuffer, xsVar(1), xsIsGetter);
 #endif
-		xsSet(xsVar(0), xsID("pixelFormat"), xsInteger(kCommodettoBitmapFormat));
-		xsSet(xsGlobal, xsID("screen"), xsVar(0));
+		xsSet(xsVar(0), xsID_pixelFormat, xsInteger(kCommodettoBitmapFormat));
+		xsSet(xsGlobal, xsID_screen, xsVar(0));
 
-		xsVar(0) = xsGet(xsGlobal, xsID("require"));
-		xsVar(1) = xsCall1(xsVar(0), xsID("weak"), xsString("main"));
+		xsVar(0) = xsGet(xsGlobal, xsID_require);
+		xsVar(1) = xsCall1(xsVar(0), xsID_weak, xsString("main"));
 		if (xsTest(xsVar(1))) {
 			if (xsIsInstanceOf(xsVar(1), xsFunctionPrototype)) {
 				xsCallFunction0(xsVar(1), xsGlobal);
 			}
-			else if (xsFindResult(xsVar(1), xsID("onLaunch"))) {
+			else if (xsFindResult(xsVar(1), xsID_onLaunch)) {
 				xsCallFunction0(xsResult, xsVar(1));
 			}
 		}
@@ -362,10 +362,10 @@ void fxScreenQuit(txScreen* screen)
 		xsBeginHost(screen->machine);
 		{
 			xsVars(2);
-			xsVar(0) = xsGet(xsGlobal, xsID("screen"));
-			xsVar(1) = xsGet(xsVar(0), xsID("context"));
+			xsVar(0) = xsGet(xsGlobal, xsID_screen);
+			xsVar(1) = xsGet(xsVar(0), xsID_context);
 			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID("onQuit"))) {
+				if (xsFindResult(xsVar(1), xsID_onQuit)) {
 					xsCallFunction0(xsResult, xsVar(1));
 				}
 			}
@@ -404,8 +404,8 @@ void fxScreenTouch(txScreen* screen, int kind, int index, int x, int y, double w
 		xsBeginHost(screen->machine);
 		{
 			xsVars(2);
-			xsVar(0) = xsGet(xsGlobal, xsID("screen"));
-			xsVar(1) = xsGet(xsVar(0), xsID("context"));
+			xsVar(0) = xsGet(xsGlobal, xsID_screen);
+			xsVar(1) = xsGet(xsVar(0), xsID_context);
 			if (xsTest(xsVar(1))) {
 				if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
 					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(when));
@@ -453,7 +453,7 @@ void screen_begin(xsMachine* the)
 #if kPocoFrameBuffer
 	xsResult = xsNewHostObject(NULL);
 	xsSetHostData(xsResult, screen->frameBuffer);
-	xsSet(xsResult, xsID("byteLength"), xsInteger(screen->frameBufferLength));
+	xsSet(xsResult, xsID_byteLength, xsInteger(screen->frameBufferLength));
 #endif
 }
 
@@ -479,7 +479,7 @@ void screen_end(xsMachine* the)
 	screen->rowDelta = 0;
 	screen->rowIndex = 0;
 
-	xsCall0(xsThis, xsID("send"));
+	xsCall0(xsThis, xsID_send);
 #endif
 	(*screen->bufferChanged)(screen);
 }
@@ -522,7 +522,7 @@ void screen_send(xsMachine* the)
 
 	if (c) {
 		data = (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) ? xsToArrayBuffer(xsArg(0)) : xsGetHostData(xsArg(0));
-		byteLength = xsToInteger(xsGet(xsArg(0), xsID("byteLength")));
+		byteLength = xsToInteger(xsGet(xsArg(0), xsID_byteLength));
 		offset = (c > 1) ? xsToInteger(xsArg(1)) : 0;
 		count = (c > 2) ? xsToInteger(xsArg(2)) : byteLength - offset;
 	}
