@@ -1,48 +1,7 @@
-<!--
- | Copyright (c) 2016-2018  Moddable Tech, Inc.
- |
- |   This file is part of the Moddable SDK Runtime.
- | 
- |   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
- |   it under the terms of the GNU Lesser General Public License as published by
- |   the Free Software Foundation, either version 3 of the License, or
- |   (at your option) any later version.
- | 
- |   The Moddable SDK Runtime is distributed in the hope that it will be useful,
- |   but WITHOUT ANY WARRANTY; without even the implied warranty of
- |   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- |   GNU Lesser General Public License for more details.
- | 
- |   You should have received a copy of the GNU Lesser General Public License
- |   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
- |
- | This file incorporates work covered by the following copyright and  
- | permission notice:  
- |
- |       Copyright (C) 2010-2016 Marvell International Ltd.
- |       Copyright (C) 2002-2010 Kinoma, Inc.
- |
- |       Licensed under the Apache License, Version 2.0 (the "License");
- |       you may not use this file except in compliance with the License.
- |       You may obtain a copy of the License at
- |
- |        http://www.apache.org/licenses/LICENSE-2.0
- |
- |       Unless required by applicable law or agreed to in writing, software
- |       distributed under the License is distributed on an "AS IS" BASIS,
- |       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- |       See the License for the specific language governing permissions and
- |       limitations under the License.
--->
-
-<!-- 
-This document describes XS in C, the C interface to the runtime library component of the XS toolkit.
--->
-
 # XS in C
 
 Revised: March 27, 2018  
-**See end of document for copyright and license**
+**See end of document for [copyright and license](#license)**
 
 ## About This Document
 
@@ -50,15 +9,29 @@ This document describes XS in C, the C interface to the runtime of the XS JavaSc
 
 In accordance with the ECMAScript specifications, the XS runtime implements only generic features that all scripts can use. An application defines the specific features that its own scripts can use through C callbacks. An application that uses the XS runtime is a host in ECMAScript terminology. 
 
-This document is organized into the following sections:
+XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate larger binary code whereas the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. Including the `xsmc.h` header file makes the `xsmc` versions of some operations available.
 
-* [Slots](#slots) describes how to handle ECMAScript constructs in C callbacks, with examples that show the correspondences between ECMAScript and XS in C. 
- 
-* [Machine](#machine) introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with an example that demonstrates how to use XS in C to implement a JavaScript class with C functions.
+## Table of Contents
 
-* A [Glossary](#glossary) includes all the terms defined or referenced in this document.
-
-XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate a larger binary code where as the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. Including the xsmc.h header file makes the `xs` versions of some operations available.
+* [Slots](#slots): Describes how to handle ECMAScript constructs in C callbacks, with examples that show the correspondences between ECMAScript and XS in C.
+	* [Slot types](#slot-types) 
+	* [Primitives](#primitives)
+	* [ArrayBuffer](#arraybuffer)
+	* [Instances and Prototypes](#instances-and-prototypes)
+	* [Identifiers](#identifiers)
+	* [Properties](#properties)
+	* [Arguments and Variables](#xsvars)
+	* [Garbage Collector](#garbage-collector)
+	* [Exceptions](#exceptions)
+	* [Errors](#errors)
+	* [Debugger](#debugger)
+* [Machine](#machine): Introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with an example that demonstrates how to use XS in C to implement a JavaScript class with C functions.
+	* [Machine Allocation](#machine-allocation)
+	* [Context](#context)
+	* [Host](#host)
+	* [JavaScript `@` language syntax extension](#syntax-extension)
+* [Glossary](#glossary): Includes all the terms defined or referenced in this document.
+* [License](#license)
 
 <a id="slots"></a>
 ## Slots
@@ -70,7 +43,9 @@ In the XS runtime, the *slot* is a fundamental storage unit. A slot is an opaque
 		void* data[4];
 	};
 
+<a id="slot-types"></a>
 ### Slot types
+
 There are nine types of slots:
 
 	enum {
@@ -86,752 +61,581 @@ There are nine types of slots:
 	}
 	typedef char xsType;
  
-The undefined, null, boolean, number, string, and symbol slots correspond to the ECMAScript primitive types. The reference slot corresponds to the ECMAScript `reference` type. The integer and stringx slots are optimizations that are unobservable by scripts. The integer slot is equivalent to the number slot, but allowing floating point operations to be bypassed. The stringx slot is equivalent to the string slot, but uses a string in place (e.g. in ROM) without making copy.
- 
+The undefined, null, boolean, number, string, and symbol slots correspond to the ECMAScript primitive types. The reference slot corresponds to the ECMAScript `reference` type. The integer and stringx slots are optimizations that are unobservable by scripts. The integer slot is equivalent to the number slot, but allowing floating point operations to be bypassed. The stringx slot is equivalent to the string slot, but uses a string in place (e.g. in ROM) without making a copy.
+
 ##### In ECMAScript:
 
-	undefined
-	null
-	false
-	true
-	0
-	0.0
-	"foo"
+```javascript
+undefined
+null
+false
+true
+0
+0.0
+"foo"
+```
 
 ##### In C:
 
-	xsUndefined;
-	xsNull;
-	xsFalse;
-	xsTrue;
-	xsInteger(0);
-	xsNumber(0.0);
-	xsString("foo");
+```
+xsUndefined;
+xsNull;
+xsFalse;
+xsTrue;
+xsInteger(0);
+xsNumber(0.0);
+xsString("foo");
+```
 
 The `xsTypeOf` macro returns the type of a slot. It is similar to the ECMAScript `typeof` keyword.
 
-```
-xsType xsTypeOf(xsSlot theSlot)
-xsType xsmcTypeOf(xsSlot theSlot)
-```
+**`xsType xsTypeOf(xsSlot theSlot)`**<BR>
+**`xsType xsmcTypeOf(xsSlot theSlot)`**
 
-| |
-| --- | 
-| `theSlot`| 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot`|  The slot to test
 
-> The slot to test
-
-| |
-| --- |
-| Returns | 
-
-> The type of the slot
+Returns the type of the slot
 
 ##### In ECMAScript:
 
-	switch(typeof arguments[0]) {
-		case "undefined": break;
-		/* Null is an object. */
-		case "boolean": break;	
-		/* Integers are numbers */	
-		case "number": break;
-		/* StringX is a string */
-		case "string": break;
-		case "symbol": break;
-		case "object": break;
-		case "function": break;
-	}	
+```javascript
+switch(typeof arguments[0]) {
+	case "undefined": break;
+	/* Null is an object. */
+	case "boolean": break;	
+	/* Integers are numbers */	
+	case "number": break;
+	/* StringX is a string */
+	case "string": break;
+	case "symbol": break;
+	case "object": break;
+	case "function": break;
+}	
+```
 
 ##### In C:
 
-	switch(xsTypeOf(xsArg(0))) {
-		case xsUndefinedType: break;
-		case xsNullType: break;
-		case xsBooleanType: break;
-		case xsIntegerType: break;
-		case xsNumberType: break;
-		case xsStringType: break;
-		case xsSymbolType: break;
-		case xsReferenceType: break;  /* Objects and functions are references. */
-	}		
+```
+switch(xsTypeOf(xsArg(0))) {
+	case xsUndefinedType: break;
+	case xsNullType: break;
+	case xsBooleanType: break;
+	case xsIntegerType: break;
+	case xsNumberType: break;
+	case xsStringType: break;
+	case xsSymbolType: break;
+	case xsReferenceType: break;  /* Objects and functions are references. */
+}		
+```
 
-
+<a id="primitives"></a>
 ### Primitives
 
 The undefined, null, boolean, integer, number, string, and symbol slots (collectively known as *direct slots*) correspond to the ECMAScript primitive types, with the integer and stringx slots added as optimizations.
 
+#### Undefined and null
+
 The undefined and null slots contain no value. The `xsUndefined` and `xsNull` macros return slots of those types.
 
-	xsSlot xsUndefined
+**`xsSlot xsUndefined`**
 
-| |
-| --- |
-| Returns| 
+Returns an undefined slot
 
-> An undefined slot
+***
 
-Use the `xsmcSetUndefined` macro to set a slot value to `undefined`.
+**`void xsmcSetUndefined(xsSlot theSlot)`**
 
-	void xsmcSetUndefined(xsSlot theSlot)
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set to `undefined`
 
-| |
-| --- |
-| `theSlot` | 
+Sets the specified slot value to `undefined`
 
-> The slot to set to `undefined`
+***
 
-	xsSlot xsNull
+**`xsSlot xsNull`**
 
-| |
-| --- |
-| Returns| 
+Returns a null slot
 
-> A null slot
+***
 
-Use the `xsmcSetNull` macro to set a slot value to `null`.
+**`void xsmcSetNull(xsSlot theSlot)`**
 
-	void xsmcSetNull(xsSlot theSlot)
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set to `null`
 
-| |
-| --- |
-| `theSlot` | 
+Sets the specified slot value to `null`
 
-> The slot to set to `null`
+***
 
-The remaining direct slots contain values of the corresponding type.
+#### Booleans, integers, and numbers
+
+These slots contain values of the corresponding type.
 
 	typedef char xsBooleanValue;  
 	typedef long xsIntegerValue;  
 	typedef double xsNumberValue;  
-	typedef char* xsStringValue;
-
-The following macros return slots of each of these types (set to a particular value) or access/set the value in a slot. When accessing the value in a slot, you specify a desired type; the slot is coerced to the requested type if necessary, and the value is returned. The string macros listed here are discussed further at the end of the list.
-
-	xsSlot xsTrue
-
-| |
-| --- |
-| Returns| 
-
-> A boolean slot containing `true`
-
-	xsSlot xsFalse
-
-| |
-| --- |
-| Returns| 
-
-> A boolean slot containing `false`
-
-	xsSlot xsBoolean(xsBooleanValue theValue)
-
-| |
-| --- |
-| `theValue` |
-
-> The value to be contained in the slot
-
-| |
-| --- |
-| Returns| 
-
-> A boolean slot
-
-```
-xsBooleanValue xsToBoolean(xsSlot theSlot)
-xsBooleanValue xsmcToBoolean(xsSlot theSlot)
-```
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to coerce to boolean
-
-| |
-| --- |
-| Returns | 
-
-> The value contained in the slot
-
-Use the `xsmcSetFalse` macro to set a slot value to `false`.
-
-	void xsmcSetFalse(xsSlot theSlot)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to set false
-
-Use the `xsmcSetTrue` macro to set a slot value to `true`.
-
-	void xsmcSetTrue(xsSlot theSlot)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to set true
-
-Use the `xsmcSetBoolean` macro to set a slot value to `true` or `false`.
-
-	void xsmcSetBoolean(xsSlot theSlot, xsBooleanValue theValue)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to set
-
-| |
-| --- |
-| `theValue` | 
-
-> The boolean `true` or `false` value to set
-
-	xsSlot xsInteger(xsIntegerValue theValue)
-
-| |
-| --- |
-| `theValue` |
-
-> The value to be contained in the slot
-
-| |
-| --- |
-| Returns| 
-
-> An integer slot
-
-```
-xsIntegerValue xsToInteger(xsSlot theSlot)
-xsIntegerValue xsmcToInteger(xsSlot theSlot)
-```
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to coerce to integer
-
-| |
-| --- |
-| Returns| 
-
-> The value contained in the slot
-
-Use the `xsmcSetInteger` macro to set a slot value to an integer.
-
-	void xsmcSetInteger(xsSlot theSlot, xsIntegerValue theValue)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to set
-
-| |
-| --- |
-| `theValue` | 
-
-> The integer value to set
 	
-	xsSlot xsNumber(xsNumberValue theValue)
+The following macros return slots of each of these types (set to a particular value) or access/set the value in a slot. When accessing the value in a slot, you specify a desired type; the slot is coerced to the requested type if necessary, and the value is returned.
 
-| |
-| --- |
-| `theValue` |
+**`xsSlot xsTrue`**
 
-> The value to be contained in the slot
+Returns a boolean slot containing `true`
 
-| |
-| --- |
-| Returns| 
+***
 
-> A number slot
+**`xsSlot xsFalse`**
 
-```
-xsNumberValue xsToNumber(xsSlot theSlot)
-xsNumberValue xsmcToNumber(xsSlot theSlot)
-```
+Returns a boolean slot containing `false`
 
-| |
-| --- |
-| `theSlot` | 
+***
 
-> The slot to coerce to number
+**`xsSlot xsBoolean(xsBooleanValue theValue)`**
 
-| |
-| --- |
-| Returns| 
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to be contained in the slot
 
-> The value contained in the slot
+Returns a boolean slot
 
-Use the `xsmcSetNumber` macro to set a slot value to a number.
+***
 
-	void xsmcSetNumber(xsSlot theSlot, xsNumberValue theValue)
+**`xsBooleanValue xsToBoolean(xsSlot theSlot)`**<BR>
+**`xsBooleanValue xsmcToBoolean(xsSlot theSlot)`**
 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to boolean
 
-| |
-| --- |
-| `theSlot` | 
+Returns the value contained in the slot
 
-> The slot to set
+***
 
-| |
-| --- |
-| `theValue` | 
+**`void xsmcSetFalse(xsSlot theSlot)`**
 
-> The number value to set
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set false
 
-	xsSlot xsString(xsStringValue theValue)
+Sets the slot value to `false`
 
-| |
-| --- |
-| `theValue` |
+***
 
-> The value to be contained in the slot
+**`void xsmcSetTrue(xsSlot theSlot)`**
 
-| |
-| --- |
-| Returns| 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set true
 
-> A string slot
+Sets the slot value to `true`
 
-```
-xsStringValue xsToString(xsSlot theSlot)
-xsStringValue xsmcToString(xsSlot theSlot)
-```
+***
 
-| |
-| --- |
-| `theSlot` | 
+**`void xsmcSetBoolean(xsSlot theSlot, xsBooleanValue theValue)`**
 
-> The slot to coerce to string
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The boolean `true` or `false` value to set
 
-| |
-| --- |
-| Returns| 
+Sets the slot value to `true` or `false`
 
-> The string contained in the slot
+***
 
-Use the `xsmcSetString` macro to set a slot value to a string.
+**`xsSlot xsInteger(xsIntegerValue theValue)`**
 
-	void xsmcSetString(xsSlot theSlot, xsStringValue theValue)
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to be contained in the slot
 
-| |
-| --- |
-| `theSlot` | 
+Returns an integer slot
 
-> The slot to set
+***
 
-| |
-| --- |
-| `theValue` | 
+**`xsIntegerValue xsToInteger(xsSlot theSlot)`**<BR>
+**`xsIntegerValue xsmcToInteger(xsSlot theSlot)`**
 
-> The string value to set
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to integer
 
-```
-xsStringValue xsToStringBuffer(xsSlot theSlot, xsStringValue theBuffer, xsIntegerValue theSize)
-xsStringValue xsmcToStringBuffer(xsSlot theSlot, xsStringValue theBuffer, xsIntegerValue theSize)
-```
+Returns the value contained in the slot
 
-| |
-| --- |
-| `theSlot` | 
+***
 
-> The slot to coerce to string
+**`void xsmcSetInteger(xsSlot theSlot, xsIntegerValue theValue)`**
 
-| |
-| --- |
-| `theBuffer` | 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The integer value to set
 
-> A buffer to copy the string into
+Sets the slot value to an integer
 
-| |
-| --- |
-| `theSize` | 
+***
 
-> The size of the buffer
+**`xsSlot xsNumber(xsNumberValue theValue)`**
 
-| |
-| --- |
-| Returns| 
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to be contained in the slot
 
-> The buffer containing the copy of the string
+Returns a number slot
 
-A string value is a pointer to a UTF-8 C string. The XS runtime virtual machine and the garbage collector manage UTF-8 C strings used by scripts. C constants, C globals, or C locals can safely be passed to the `xsString` macro, since it duplicates its parameter. 
+***
+
+**`xsNumberValue xsToNumber(xsSlot theSlot)`**<BR>
+**`xsNumberValue xsmcToNumber(xsSlot theSlot)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to number
+
+Returns the value contained in the slot
+
+***
+
+**`void xsmcSetNumber(xsSlot theSlot, xsNumberValue theValue)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The number value to set
+
+Sets the slot value to a number
+
+***
+
+#### Strings
+
+These slots contain values of the corresponding type.
+
+	typedef char* xsStringValue;
+	
+A string value is a pointer to a UTF-8 C string. The XS runtime virtual machine and the garbage collector manage UTF-8 C strings used by scripts.
+
+**`xsSlot xsString(xsStringValue theValue)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to be contained in the slot
+
+Returns a string slot
+
+C constants, C globals, or C locals can safely be passed to the `xsString` macro, since it duplicates its parameter. 
+
+***
+
+**`xsStringValue xsToString(xsSlot theSlot)`**<BR>
+**`xsStringValue xsmcToString(xsSlot theSlot)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to string
+
+Returns the string contained in the slot
 
 For speed, the `xsToString` macro returns the value contained in the slot itself, a pointer to the string in the memory managed by XS. Since the XS runtime can compact memory containing string values, the result of the `xsToString` macro cannot be used across or in other macros of XS in C. The ECMAScript language specification forbids modifying the string in place.
 
-To copy the string value, use the `xsToStringBuffer` or `xsmcToStringBuffer` macro. The buffer provided has to be large enough to hold a copy of the string value. 
+***
 
-Use the `xsStringBuffer` or `xsmcSetStringBuffer` macro to set a slot value to a string buffer. The string is copied into an allocated buffer.
+**`void xsmcSetString(xsSlot theSlot, xsStringValue theValue)`**
 
-	xsSlot xsStringBuffer(void *theData, xsIntegerValue theSize)
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The string value to set
 
-| |
-| --- |
-| `theData` | 
+Sets the slot value to a string
 
-> A pointer to the data to copy into the string buffer, or `NULL` to leave the string buffer data uninitialized
- 
-| |
-| --- |
-| `theSize` | 
+***
 
-> The data size to copy in bytes
+**`xsStringValue xsToStringBuffer(xsSlot theSlot, xsStringValue theBuffer, xsIntegerValue theSize)`**<BR>
+**`xsStringValue xsmcToStringBuffer(xsSlot theSlot, xsStringValue theBuffer, xsIntegerValue theSize)`**
 
-| |
-| --- |
-| Returns| 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to string
+| `theBuffer` | A buffer to copy the string into
+| `theSize` | The size of the buffer
 
-> A reference to the new string buffer instance 
+Copies the string value and returns the buffer containing the copy of the string. The buffer provided has to be large enough to hold a copy of the string value. 
 
-	void xsmcSetStringBuffer(xsSlot theSlot, xsStringValue theValue, xsIntegerValue theSize)
+***
 
-| |
-| --- |
-| `theSlot` | 
+**`xsSlot xsStringBuffer(void *theData, xsIntegerValue theSize)`**
 
-> The slot to set
+| Arguments | Description |
+| --- | :-- |
+| `theData` | A pointer to the data to copy into the string buffer, or `NULL` to leave the string buffer data uninitialized
+| `theSize` | The data size to copy in bytes
 
-| |
-| --- |
-| `theValue` | 
+Copies the string into an allocated buffer, sets a slot value to the string buffer, and returns a reference to the new string buffer instance.
 
-> The string value to set
+***
 
-| |
-| --- |
-| `theSize` | 
+**`void xsmcSetStringBuffer(xsSlot theSlot, xsStringValue theValue, xsIntegerValue theSize)`**
 
-> The size of the string in bytes
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The string value to set
+| `theSize` | The size of the string in bytes
 
+Copies the string into an allocated buffer and sets the slot value to the string buffer.
+
+***
+
+<a id="arraybuffer"></a>
 ### ArrayBuffer
 
-In ECMAScript an `ArrayBuffer` is commonly used to store fixed length binary data. The following XS in C macros are provided to create `ArrayBuffer` instances and access their properties and data.
+In ECMAScript an `ArrayBuffer` is commonly used to store fixed length binary data. 
 
-The `xsArrayBuffer` macro creates an `ArrayBuffer` instance.
+#### Macros
 
-	xsSlot xsArrayBuffer(void *theData, xsIntegerValue theSize)
+**`xsSlot xsArrayBuffer(void *theData, xsIntegerValue theSize)`**
  
-| |
-| --- |
-| `theData` |
+| Arguments | Description |
+| --- | :-- |
+| `theData` | A pointer to the data to copy into the `ArrayBuffer`, or `NULL` to leave the `ArrayBuffer` data uninitialized
+| `theSize` | The size of the data in bytes
 
-> A pointer to the data to copy into the `ArrayBuffer`, or `NULL` to leave the `ArrayBuffer` data uninitialized
+Creates an `ArrayBuffer` instance and returns a reference to the new `ArrayBuffer` instance 
 
-| |
-| --- |
-| `theSize` |
+***
 
-> The size of the data in bytes
-
-| |
-| --- |
-| Returns| 
-
-> A reference to the new `ArrayBuffer` instance 
-
-Use the `xsGetArrayBufferData` macro to copy bytes from the `ArrayBuffer`.
-
-	void xsGetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)
-	void xsmcGetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)
+**`void xsGetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)`**<BR>
+**`void xsmcGetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)`**
  
-| |
-| --- |
-| `theSlot` |
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
+| `theOffset` | The starting byte offset to get the data
+| `theData` | The data pointer to get the `ArrayBuffer` data
+| `theSize` | The data size to copy in bytes
 
-> The `ArrayBuffer` slot
+Copies bytes from the `ArrayBuffer`
 
-| |
-| --- |
-| `theOffset` |
+***
 
-> The starting byte offset to get the data
-
-| |
-| --- |
-| `theData` |
-
-> The data pointer to get the `ArrayBuffer` data
+**`void xsSetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)`**<BR>
+**`void xsmcSetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)`**
  
-| |
-| --- |
-| `theSize` |
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
+| `theOffset` | The starting byte offset to set the data
+| `theData` | The data pointer to set the `ArrayBuffer` data
+| `theSize` | The data size to copy in bytes
 
-> The data size to copy in bytes
+Copies bytes into the `ArrayBuffer`
 
-Use the `xsSetArrayBufferData` macro to copy bytes into the `ArrayBuffer`.
+***
 
-	void xsSetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)
-	void xsmcSetArrayBufferData(xsSlot theSlot, xsIntegerValue theOffset, void *theData, xsIntegerValue theSize)
- 
-| |
-| --- |
-| `theSlot` |
+**`void xsmcSetArrayBuffer(xsSlot theSlot, void *theData, xsIntegerValue theSize)`**
 
-> The `ArrayBuffer` slot
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
+| `theData` | The data pointer to set the `ArrayBuffer` data
+| `theSize` | The data size to copy in bytes
 
-| |
-| --- |
-| `theOffset` |
+Creates an `ArrayBuffer` instance initialized from the provided data
 
-> The starting byte offset to set the data
-
-| |
-| --- |
-| `theData` |
-
-> The data pointer to set the `ArrayBuffer` data
- 
-| |
-| --- |
-| `theSize` |
-
-> The data size to copy in bytes
-
-
-The `xsmcSetArrayBuffer` macro creates an `ArrayBuffer` instance initialized from the provided data.
-
-	void xsmcSetArrayBuffer(xsSlot theSlot, void *theData, xsIntegerValue theSize)
-
-| |
-| --- |
-| `theSlot` |
-
-> The `ArrayBuffer` slot
-
-| |
-| --- |
-| `theData` |
-
-> The data pointer to set the `ArrayBuffer` data
- 
-| |
-| --- |
-| `theSize` |
-
-> The data size to copy in bytes
+***
 
 Use the `xsGetArrayBufferLength` macro to get the `ArrayBuffer` length.
 
-	xsIntegerValue xsGetArrayBufferLength(xsSlot theSlot)
+**`xsIntegerValue xsGetArrayBufferLength(xsSlot theSlot)`**
  
-| |
-| --- |
-| `theSlot` |
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
 
-> The `ArrayBuffer` slot
+Returns the size of the `ArrayBuffer` in bytes
 
-| |
-| --- |
-| Returns| 
+***
 
-> The size of the `ArrayBuffer` in bytes
-
-Use the `xsSetArrayBufferLength` macro to set the `ArrayBuffer` length.
-
-	void xsSetArrayBufferLength(xsSlot theSlot, xsIntegerValue theSize)
+**`void xsSetArrayBufferLength(xsSlot theSlot, xsIntegerValue theSize)`**
  
-| |
-| --- |
-| `theSlot` |
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
+| `theSize` | The size of the `ArrayBuffer` data in bytes. If the size of the buffer is increased, the new data is initialized to 0.
 
-> The `ArrayBuffer` slot
+Sets the length of the `ArrayBuffer`
 
-| |
-| --- |
-| `theSize` |
+***
 
-> The size of the `ArrayBuffer` data in bytes. If the size of the buffer is increased, the new data is initialized to 0.
-
-To get a pointer to the data of an `ArrayBuffer`, use the `xsToArrayBuffer` macro.
-
-	void *xsToArrayBuffer(xsSlot theSlot)
-	void *xsmcToArrayBuffer(xsSlot theSlot)
+**`void *xsToArrayBuffer(xsSlot theSlot)`**<BR>
+**`void *xsmcToArrayBuffer(xsSlot theSlot)`**
  
-| |
-| --- |
-| `theSlot` |
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The `ArrayBuffer` slot
 
-> The `ArrayBuffer` slot
-
-| |
-| --- |
-| Returns| 
-
-> A pointer to the `ArrayBuffer` data
+Returns a pointer to the `ArrayBuffer` data
 
 For speed, the `xsToArrayBuffer ` macro returns the value contained in the slot itself, a pointer to the buffer in the memory managed by XS. Since the XS runtime can compact memory containing string values, the result of the `xsToArrayBuffer ` macro cannot be used across or in other macros of XS in C. 
 
+***
+
+<a id="instances-and-prototypes"></a>
 ### Instances and Prototypes
 
 In XS in C, as in ECMAScript, an object can inherit properties from another object, which can inherit from another object, and so on; the inheriting object is the *instance*, and the object from which it inherits is the *prototype*.
 
 Reference slots (type `xsReferenceType`) are *indirect* slots: they contain a reference to an instance of an object, function, array, and so on. Instances themselves are made of slots that are the properties of the instance (or, for an array, the items of the instance).
 
-XS in C defines the following macros to refer to the prototypes created by the XS runtime:
+#### Macros
 
-	xsSlot xsObjectPrototype
-	xsSlot xsFunctionPrototype
-	xsSlot xsArrayPrototype
-	xsSlot xsStringPrototype
-	xsSlot xsBooleanPrototype
-	xsSlot xsNumberPrototype
-	xsSlot xsDatePrototype
-	xsSlot xsRegExpPrototype
-	xsSlot xsHostPrototype
-	xsSlot xsErrorPrototype
-	xsSlot xsEvalErrorPrototype
-	xsSlot xsRangeErrorPrototype
-	xsSlot xsReferenceErrorPrototype
-	xsSlot xsSyntaxErrorPrototype
-	xsSlot xsTypeErrorPrototype
-	xsSlot xsURIErrorPrototype
-	xsSlot xsSymbolPrototype
-	xsSlot xsArrayBufferPrototype
-	xsSlot xsDataViewPrototype
-	xsSlot xsTypedArrayPrototype
-	xsSlot xsMapPrototype
-	xsSlot xsSetPrototype
-	xsSlot xsWeakMapPrototype
-	xsSlot xsWeakSetPrototype
-	xsSlot xsPromisePrototype
-	xsSlot xsProxyPrototype
+**`xsSlot xsObjectPrototype`**<BR>
+**`xsSlot xsFunctionPrototype`**<BR>
+**`xsSlot xsArrayPrototype`**<BR>
+**`xsSlot xsStringPrototype`**<BR>
+**`xsSlot xsBooleanPrototype`**<BR>
+**`xsSlot xsNumberPrototype`**<BR>
+**`xsSlot xsDatePrototype`**<BR>
+**`xsSlot xsRegExpPrototype`**<BR>
+**`xsSlot xsHostPrototype`**<BR>
+**`xsSlot xsErrorPrototype`**<BR>
+**`xsSlot xsEvalErrorPrototype`**<BR>
+**`xsSlot xsRangeErrorPrototype`**<BR>
+**`xsSlot xsReferenceErrorPrototype`**<BR>
+**`xsSlot xsSyntaxErrorPrototype`**<BR>
+**`xsSlot xsTypeErrorPrototype`**<BR>
+**`xsSlot xsURIErrorPrototype`**<BR>
+**`xsSlot xsSymbolPrototype`**<BR>
+**`xsSlot xsArrayBufferPrototype`**<BR>
+**`xsSlot xsDataViewPrototype`**<BR>
+**`xsSlot xsTypedArrayPrototype`**<BR>
+**`xsSlot xsMapPrototype`**<BR>
+**`xsSlot xsSetPrototype`**<BR>
+**`xsSlot xsWeakMapPrototype`**<BR>
+**`xsSlot xsWeakSetPrototype`**<BR>
+**`xsSlot xsPromisePrototype`**<BR>
+**`xsSlot xsProxyPrototype`**<BR>
 
-| |
-| --- |
-| Returns | 
+Returns a reference to the prototype instance created by the XS runtime.
 
-> A reference to the prototype instance.
+***
 
-For convenience, the `xsNewArray` and `xsNewObject` macros are provided to create array and object instances.
+**`xsSlot xsNewArray(xsIntegerValue theLength)`**<BR>
+**`xsSlot xsmcNewArray(xsIntegerValue theLength)`**
 
-	xsSlot xsNewArray(xsIntegerValue theLength)
-	xsSlot xsmcNewArray(xsIntegerValue theLength)
+| Arguments | Description |
+| --- | :-- |
+| `theLength` | The array length property to set
 
-| |
-| --- |
-| `theLength` |
-
-> The array length property to set
-
-| |
-| --- |
-| Returns | 
-
-> A reference to the new array instance 
+Creates an array instance, and returns a reference to the new array instance 
 
 ##### In ECMAScript:
 
-	new Array(5);
+```javascript
+new Array(5);
+```
 
 ##### In C:
 
-	xsNewArray(5);
+```
+xsNewArray(5);
+```
 
-To create a new object instance, use the`xsNewObject` macro.
+***
 
-	xsSlot xsNewObject()
-	xsSlot xsmcNewObject()
+**`xsSlot xsNewObject()`**<BR>
+**`xsSlot xsmcNewObject()`**
 
-| |
-| --- |
-| Returns | 
-
-> A reference to the new object instance 
+Creates an object instance, and returns a reference to the new object instance 
 
 ##### In ECMAScript:
 
-	new Object();
+```javascript
+new Object();
+```
 
 ##### In C:
 
-	xsNewObject();
+```
+xsNewObject();
+```
+
+***
+
+**`void xsmcSetNewObject(theSlot theSlot)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The result slot 
 
 The `xsmcSetNewObject` macro is functionally equivalent to the `xsNewObject` macro. The property is returned in the slot provided.
 
-	void xsmcSetNewObject(theSlot theSlot)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The result slot 
-
 ##### In ECMAScript:
 
-	new Object();
+```javascript
+new Object();
+```
 
 ##### In C:
 
-	xsVars(1);
-	xsmcNewObject(xsVar(0));
+```
+xsVars(1);
+xsmcNewObject(xsVar(0));
+```
 
-To test whether an instance has a particular prototype, directly or indirectly (that is, one or more levels up in the prototype hierarchy), use the `xsIsInstanceOf` macro.
+***
 
-	xsBooleanValue xsIsInstanceOf(xsSlot theInstance, xsSlot thePrototype)
-	xsBooleanValue xsmcIsInstanceOf(xsSlot theInstance, xsSlot thePrototype)
+**`xsBooleanValue xsIsInstanceOf(xsSlot theInstance, xsSlot thePrototype)`**<BR>
+**`xsBooleanValue xsmcIsInstanceOf(xsSlot theInstance, xsSlot thePrototype)`**
 
-| |
-| --- |
-| `theInstance` |
+| Arguments | Description |
+| --- | :-- |
+| `theInstance` | A reference to the instance to test
+| `thePrototype` | A reference to the prototype to test
 
-> A reference to the instance to test
-
-| |
-| --- |
-| `thePrototype` |
-
-> A reference to the prototype to test
-
-| |
-| --- |
-| Returns | 
-
-> `true` if the instance has the prototype, `false` otherwise
+Tests whether an instance has a particular prototype, directly or indirectly (that is, one or more levels up in the prototype hierarchy). Returns `true` if the instance has the prototype, `false` otherwise.
 
 The `xsIsInstanceOf` macro has no equivalent in ECMAScript; scripts test instances through *constructors* rather than directly through prototypes. A constructor is a function that has a `prototype` property that is used to test instances with `isPrototypeOf`.
 
 ##### In ECMAScript:
 
-	if (Object.prototype.isPrototypeOf(this))
-		return new Object();
+```javascript
+if (Object.prototype.isPrototypeOf(this))
+	return new Object();
+```
 
 ##### In C:
 
-	if (xsIsInstanceOf(xsThis, xsObjectPrototype))
-		xsResult = xsNewObject();
+```
+if (xsIsInstanceOf(xsThis, xsObjectPrototype))
+	xsResult = xsNewObject();
+```
 
+***
+
+<a id="identifiers"></a>
 ### Identifiers
 
 In ECMAScript, the properties of an object are identified by strings, numbers, and symbols. Similarly in XS in C you can access properties with strings, numbers, and symbols through the xs*At macros described below. The `xsIndex` type is used to identify properties by index.
 
-	typedef short xsIndex;
+```
+typedef short xsIndex;
+```
 
 The properties of an object are identified by negative indexes, and the items of an array are identified by positive indexes.
 
-<a id="xsid"></a>
-#### xsID
+#### Macros
 
-XS in C defines the `xsID` macro to convert a string value corresponding to an ECMAScript property name into an identifier. 
+**`xsIndex xsID(xsStringValue theValue)`**
 
-	xsIndex xsID(xsStringValue theValue)
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The string to convert
 
-| |
-| --- |
-| `theValue` |
-
-> The string to convert
-
-| |
-| --- |
-| Returns | 
-
-> The identifier (a negative index)
+Converts a string value corresponding to an ECMAScript property name into an identifier. Returns the identifier (a negative index).
 
 For a given virtual machine, the same string value is always converted to the same identifier, allowing frequently used identifiers to be cached.
 
@@ -841,33 +645,31 @@ In the C examples below, the `xsGet` macro (discussed in the next section) takes
 
 ##### In ECMAScript:
 
-	this.foo
-	this[0]
+```javascript
+this.foo
+this[0]
+```
 
 ##### In C:
 
-	xsGet(xsThis, xsID_foo);
-	xsGet(xsThis, 0);
+```
+xsGet(xsThis, xsID_foo);
+xsGet(xsThis, 0);
+```
 
-#### xsIsID
+***
 
-Use the `xsIsID` macro to test whether a given string corresponds to an existing property name.
+**`xsBooleanValue xsIsID(xsStringValue theValue)`**
 
-	xsBooleanValue xsIsID(xsStringValue theValue)
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The string to test
 
-| |
-| --- |
-| `theValue` |
+Tests whether a given string corresponds to an existing property name. Returns `true` if the string is an identifier, `false` otherwise.
 
-> The string to test
+***
 
-| |
-| --- |
-| Returns | 
-
-> `true` if the string is an identifier, `false` otherwise
-
-
+<a id="properties"></a>
 ### Properties 
 
 This section describes the macros related to accessing properties of objects (or items of arrays), as summarized in Table 1.
@@ -949,15 +751,13 @@ This section describes the macros related to accessing properties of objects (or
 
 Globals available to scripts are properties of a special instance referred to using the `xsGlobal` macro in XS in C.
 
-	xsSlot xsGlobal
+**`xsSlot xsGlobal`**
 
-| |
-| --- |
-| Returns | 
-
-> A reference to the special instance made of globals
+Returns a reference to the special instance made of globals
 
 You can use the `xsGet`, `xsSet`, `xsDelete`, `xsCall*`, and `xsNew*` macros with the `xsGlobal` macro as the first parameter. Examples are shown in the sections describing those macros.
+
+***
 
 #### xsDefine
 
@@ -976,31 +776,14 @@ To define a new property or item of an instance with attributes, use the `xsDefi
 	typedef unsigned char xsAttribute;
 
 
-	void xsDefine(xsSlot theThis, xsIndex theIndex, xsSlot theParam, xsAttribute theAttributes)
+**`void xsDefine(xsSlot theThis, xsIndex theIndex, xsSlot theParam, xsAttribute theAttributes)`**
 
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that will have the property or item
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to define
-
-| |
-| --- |
-| `theParam` | 
-
-> The value of the property or item to define
-
-| |
-| --- |
-| `theAttributes` | 
-
-> A combination of attributes to set.
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that will have the property or item
+| `theIndex` | The identifier of the property or item to define
+| `theParam` | The value of the property or item to define
+| `theAttributes` | A combination of attributes to set.
 
 For `theAttributes`, specify the constants corresponding to the attributes you want to set (the others being cleared).
 
@@ -1010,469 +793,370 @@ When a property is created, if the prototype of the instance has a property with
 
 ##### In ECMAScript:
 	
-	Object.defineProperty(this, "foo", 7, { writable: true, enumerable: true, configurable: true });
+```javascript
+Object.defineProperty(this, "foo", 7, { writable: true, enumerable: true, configurable: true });
+```
 
 ##### In C:
 
-	xsDefine(xsThis, xsID_foo, xsInteger(7), xsDefault);
+```
+xsDefine(xsThis, xsID_foo, xsInteger(7), xsDefault);
+```
+
+***
 
 #### xsDefineAt
 
 To define a new property or item of an instance by slot with attributes, use the `xsDefineAt` macro. The `xsDefineAt` macro is functionally equivalent to the `xsDefine` macro, except that a slot is used to identify the property or item to define.
 
-	void xsDefineAt(xsSlot theThis, xsSlot theSlot, xsSlot theParam, xsAttribute theAttributes)
+**`void xsDefineAt(xsSlot theThis, xsSlot theSlot, xsSlot theParam, xsAttribute theAttributes)`**
 
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that will have the property or item
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot of the property or item to define
-
-| |
-| --- |
-| `theParam` | 
-
-> The value of the property or item to define
-
-| |
-| --- |
-| `theAttributes` | 
-
-> A combination of attributes to set.
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that will have the property or item
+| `theSlot` | The slot of the property or item to define
+| `theParam` | The value of the property or item to define
+| `theAttributes` | A combination of attributes to set.
 
 ##### In ECMAScript:
-	
-	Object.defineProperty(this, "foo", 7, { writable: true, enumerable: true, configurable: true });
-	Object.defineProperty(this, 5, 7, { writable: true, enumerable: true, configurable: true });
+
+```javascript
+Object.defineProperty(this, "foo", 7, { writable: true, enumerable: true, configurable: true });
+Object.defineProperty(this, 5, 7, { writable: true, enumerable: true, configurable: true });
+```
 
 ##### In C:
 
-	xsDefineAt(xsThis, xsString("foo"), xsInteger(7), xsDefault);
-	xsDefineAt(xsThis, xsInteger(5), xsInteger(7), xsDefault);
+```
+xsDefineAt(xsThis, xsString("foo"), xsInteger(7), xsDefault);
+xsDefineAt(xsThis, xsInteger(5), xsInteger(7), xsDefault);
+```
+***
 
 #### xsHas
 
 To test whether an instance has a property corresponding to a particular ECMAScript property name, use the `xsHas` macro. This macro is similar to the ECMAScript `in` keyword.
 
-	xsBooleanValue xsHas(xsSlot theThis, xsIndex theIndex)
-	xsBooleanValue xsmcHas(xsSlot theThis, xsIndex theIndex)
+**`xsBooleanValue xsHas(xsSlot theThis, xsIndex theIndex)`**<BR>
+**`xsBooleanValue xsmcHas(xsSlot theThis, xsIndex theIndex)`**
 
-| |
-| --- |
-| `theThis` | 
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance to test
+| `theIndex` | The identifier of the property to test
 
-> A reference to the instance to test
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property to test
-
-
-| |
-| --- |
-| Returns | 
-
-> `true` if the instance has the property, `false` otherwise
-
+Returns `true` if the instance has the property, `false` otherwise
 
 ##### In ECMAScript:
 
-	if ("foo" in this)
+```javascript
+if ("foo" in this)
+```
 
 ##### In C:
 
-	if (xsHas(xsThis, xsID_foo));
+```
+if (xsHas(xsThis, xsID_foo));
+```
 
+***
 
 #### xsHasAt
 
 To test whether an instance has a property corresponding to a particular ECMAScript property key, use the `xsHasAt` macro.
 
-	xsBooleanValue xsmcHasAt(xsSlot theObject, xsSlot theKey)
+**`xsBooleanValue xsmcHasAt(xsSlot theObject, xsSlot theKey)`**
 
-| |
-| --- |
-| `theObject ` | 
+| Arguments | Description |
+| --- | :-- |
+| `theObject ` | A reference to the instance to test
+| `theKey` | The key of the property to test
 
-> A reference to the instance to test
-
-
-| |
-| --- |
-| `theKey` | 
-
-> The key of the property to test
-
-
-| |
-| --- |
-| Returns | 
-
-> `true` if the instance has the property, `false` otherwise
+Returns `true` if the instance has the property, `false` otherwise
 
 
 ##### In ECMAScript:
 
-	if (7 in this)
+```javascript
+if (7 in this)
+```
 
 ##### In C:
 
-	if (xsHasAt(xsThis, xsInteger(7));
+```
+if (xsHasAt(xsThis, xsInteger(7));
+```
 
+***
 
 #### xsGet
 
-To get a property or item of an instance, use the `xsGet` macro. If the property or item is not defined by the instance or its prototypes, the macro returns `xsUndefined`.
+To get a property or item of an instance, use the `xsGet` macro.
 
-	xsSlot xsGet(xsSlot theThis, xsIndex theIndex)
+**`xsSlot xsGet(xsSlot theThis, xsIndex theIndex)`**
 
-| |
-| --- |
-| `theThis` | 
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that has the property or item
+| `theIndex` | The identifier of the property or item to get
 
-> A reference to the instance that has the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to get
-
-
-| |
-| --- |
-| Returns | 
-
-> A slot containing what is contained in the property or item
-
+Returns a slot containing what is contained in the property or item, or `xsUndefined` if the property or item is not defined by the instance or its prototypes
 
 ##### In ECMAScript:
 
-	foo
-	this.foo
-	this[0]
+```javascript
+foo
+this.foo
+this[0]
+```
 
 ##### In C:
 
-	xsGet(xsGlobal, xsID_foo);
-	xsGet(xsThis, xsID_foo);
-	xsGet(xsThis, 0);
+```
+xsGet(xsGlobal, xsID_foo);
+xsGet(xsThis, xsID_foo);
+xsGet(xsThis, 0);
+```
+
+***
+
 
 #### xsmcGet
 
 The `xsmcGet` macro is functionally equivalent to the `xsGet` macro. The property is returned in the slot provided.
 
-	void xsmcGet(xsSlot theSlot, xsSlot theThis, xsIndex theIndex)
+**`void xsmcGet(xsSlot theSlot, xsSlot theThis, xsIndex theIndex)`**
 
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to contain the property or item
-
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that has the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to get
-
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to contain the property or item
+| `theThis` | A reference to the instance that has the property or item
+| `theIndex` | The identifier of the property or item to get
 
 ##### In ECMAScript:
 
-	foo
-	this.foo
-	this[0]
+```javascript
+foo
+this.foo
+this[0]
+```
 
 ##### In C:
 
-	xsVars(1);
-	xsmcGet(xsVar(0), xsGlobal, xsID_foo);
-	xsmcGet(xsVar(0), xsThis, xsID_foo);
-	xsmcGet(xsVar(0), xsThis, 0);
+```
+xsVars(1);
+xsmcGet(xsVar(0), xsGlobal, xsID_foo);
+xsmcGet(xsVar(0), xsThis, xsID_foo);
+xsmcGet(xsVar(0), xsThis, 0);
+```
+
+***
 
 #### xsGetAt
 
-To get a property or item of an array instance with a specified name, index or symbol, use the `xsGetAt` macro. If the property or item is not defined by the instance or its prototypes, the macro returns `xsUndefined`.
+To get a property or item of an array instance with a specified name, index or symbol, use the `xsGetAt` macro.
 
-	xsSlot xsGetAt(xsSlot theObject, xsSlot theKey)
+**`xsSlot xsGetAt(xsSlot theObject, xsSlot theKey)`**
 
-| |
-| --- |
-| `theObject` | 
+| Arguments | Description |
+| --- | :-- |
+| `theObject` |A reference to the object that has the property or item
+| `theKey` | The key of the property or item to get
 
-> A reference to the object that has the property or item
-
-
-| |
-| --- |
-| `theKey` | 
-
-> The key of the property or item to get
-
-
-| |
-| --- |
-| Returns | 
-
-> A slot containing what is contained in the property or item
+Returns a slot containing what is contained in the property or item, or `xsUndefined` if the property or item is not defined by the instance or its prototypes
 
 
 ##### In ECMAScript:
 
-	this.foo[3]
+```javascript
+this.foo[3]
+```
 
 ##### In C:
 
-	xsVars(2);
-	xsVar(0) = xsGet(xsThis, xsID_foo);
-	xsVar(1) = xsGetAt(xsVar(0), xsInteger(3));
+```
+xsVars(2);
+xsVar(0) = xsGet(xsThis, xsID_foo);
+xsVar(1) = xsGetAt(xsVar(0), xsInteger(3));
+```
+
+***
 
 #### xsmcGetAt
 
 The `xsmcGetAt` macro is functionally equivalent to the `xsGetAt` macro. The property is returned in the slot provided.
 
+**`void xsmcGetAt(xsSlot theSlot, xsSlot theObject, xsSlot theKey)`**
 
-	void xsmcGetAt(xsSlot theSlot, xsSlot theObject, xsSlot theKey)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to contain the property or item
- 
-| |
-| --- |
-| `theObject` | 
-
-> A reference to the object that has the property or item
-
-| |
-| --- |
-| `theKey` | 
-
-> The key of the property or item to get
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to contain the property or item
+| `theObject` | A reference to the object that has the property or item
+| `theKey` | The key of the property or item to get
 
 ##### In ECMAScript:
 
-	var tmp, tmp2;
-	tmp = this.foo
-	tmp2 = tmp[3]
+```javascript
+var tmp, tmp2;
+tmp = this.foo
+tmp2 = tmp[3]
+```
 
 ##### In C:
 
-	xsVars(2);
-	xsmcGet(xsVar(0), xsThis, xsID_foo);
-	xsmcGetAt(xsVar(1), xsVar(0), xsInteger(3));
+```
+xsVars(2);
+xsmcGet(xsVar(0), xsThis, xsID_foo);
+xsmcGetAt(xsVar(1), xsVar(0), xsInteger(3));
+```
+***
 
 #### xsSet
 
 To set a property or item of an instance, use the `xsSet` macro. If the property or item is not defined by the instance, this macro inserts it into the instance.
 
-	void xsSet(xsSlot theThis, xsIndex theIndex, xsSlot theParam)
-	void xsmcSet(xsSlot theThis, xsIndex theIndex, xsSlot theParam)
+**`void xsSet(xsSlot theThis, xsIndex theIndex, xsSlot theParam)`**<BR>
+**`void xsmcSet(xsSlot theThis, xsIndex theIndex, xsSlot theParam)`**
 
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that will have the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to set
-
-| |
-| --- |
-| `theParam` | 
-
-> The value of the property or item to set
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that will have the property or item
+| `theIndex` | The identifier of the property or item to set
+| `theParam` | The value of the property or item to set
 
 ##### In ECMAScript:
 
-	foo = 0
-	this.foo = 1
-	this[0] = 2
+```javascript
+foo = 0
+this.foo = 1
+this[0] = 2
+```
 
 ##### In C:
 
-	xsSet(xsGlobal, xsID_foo, xsInteger(0));
-	xsSet(xsThis, xsID_foo, xsInteger(1));
-	xsSet(xsThis, 0, xsInteger(2));
+```
+xsSet(xsGlobal, xsID_foo, xsInteger(0));
+xsSet(xsThis, xsID_foo, xsInteger(1));
+xsSet(xsThis, 0, xsInteger(2));
+```
+
+***
 
 
 #### xsSetAt
 
 To set a property or item of an array instance by key, use the `xsSetAt` macro. If the property or item is not defined by the instance, this macro inserts it into the instance.
 
-	void xsSetAt(xsSlot theObject, xsSlot theKey, xsSlot theValue)
-	void xsmcSetAt(xsSlot theObject, xsSlot theKey, xsSlot theValue)
+**`void xsSetAt(xsSlot theObject, xsSlot theKey, xsSlot theValue)`**<BR>
+**`void xsmcSetAt(xsSlot theObject, xsSlot theKey, xsSlot theValue)`**
 
-| |
-| --- |
-| `theObject` | 
-
-> A reference to the object that has the property or item
-
-| |
-| --- |
-| `theKey` | 
-
-> The key of the property or item to set
-
-| |
-| --- |
-| `theValue` | 
-
-> The value of the property or item to set
+| Arguments | Description |
+| --- | :-- |
+| `theObject` | A reference to the object that has the property or item
+| `theKey` | The key of the property or item to set
+| `theValue` | The value of the property or item to set
 
 ##### In ECMAScript:
 
-	this.foo[3] = 7
+```javascript
+this.foo[3] = 7
+```
 
 ##### In C:
 
-	xsVars(1);
-	xsVar(0) = xsGet(xsThis, xsID_foo);
-	xsSetAt(xsVar(0), xsInteger(3), xsInteger(7));
+```
+xsVars(1);
+xsVar(0) = xsGet(xsThis, xsID_foo);
+xsSetAt(xsVar(0), xsInteger(3), xsInteger(7));
+```
+
+***
 
 #### xsDelete
 
 To delete a property or item of an instance, use the `xsDelete` macro. If the property or item is not defined by the instance, this macro has no effect.
 
-	void xsDelete(xsSlot theThis, xsIndex theIndex)
-	void xsmcDelete(xsSlot theThis, xsIndex theIndex)
+**`void xsDelete(xsSlot theThis, xsIndex theIndex)`**<BR>
+**`void xsmcDelete(xsSlot theThis, xsIndex theIndex)`**
 
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that has the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to delete
-
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that has the property or item 
+| `theIndex` | The identifier of the property or item to delete
 
 ##### In ECMAScript:
 
-	delete foo
-	delete this.foo
-	delete this[0]
+```javascript
+delete foo
+delete this.foo
+delete this[0]
+```
 
 ##### In C:
 
-	xsDelete(xsGlobal, xsID_foo);
-	xsDelete(xsThis, xsID_foo);
-	xsDelete(xsThis, 0);
+```
+xsDelete(xsGlobal, xsID_foo);
+xsDelete(xsThis, xsID_foo);
+xsDelete(xsThis, 0);
+```
+
+***
 
 
 #### xsDeleteAt, xsmcDeleteAt
 
 To delete a property or item of an instance by key, use the `xsDeleteAt` macro. If the property or item is not defined by the instance, this macro has no effect.
 
-	void xsDeleteAt(xsSlot theObject, xsSlot theKey)
-	void xsmcDeleteAt(xsSlot theObject, xsSlot theKey)
+**`void xsDeleteAt(xsSlot theObject, xsSlot theKey)`**<BR>
+**`void xsmcDeleteAt(xsSlot theObject, xsSlot theKey)`**
 
-| |
-| --- |
-| `theObject` | 
-
-> A reference to the object that has the property or item
-
-
-| |
-| --- |
-| `theKey` | 
-
-> The key of the property or item to delete
-
+| Arguments | Description |
+| --- | :-- |
+| `theObject` | A reference to the object that has the property or item
+| `theKey` | The key of the property or item to delete
 
 ##### In ECMAScript:
 
-	delete this.foo
-	delete this[0]
+```javascript
+delete this.foo
+delete this[0]
+```
 
 ##### In C:
 
 	xsDeleteAt(xsThis, xsID_foo);
 	xsDeleteAt(xsThis, xsInteger(0));
 
+***
 
 #### xsCall*
 
 When a property or item of an instance is a reference to a function, you can call the function with one of the `xsCall*` macros (where `*` is `0` through `7`, representing the number of parameter slots passed). If the property or item is not defined by the instance or its prototypes or is not a reference to a function, the `xsCall*` macro throws an exception.
 
-	xsSlot xsCall0(xsSlot theThis, xsIndex theIndex)
-  
-	xsSlot xsCall1(xsSlot theThis, xsIndex theIndex, xsSlot theParam0)
- 
-	xsSlot xsCall2(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1)
+**`xsSlot xsCall0(xsSlot theThis, xsIndex theIndex)`**<BR>
+**`xsSlot xsCall1(xsSlot theThis, xsIndex theIndex, xsSlot theParam0)`**<BR>
+**`xsSlot xsCall2(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1)`**<BR>
+**`xsSlot xsCall3(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)`**<BR>
+**`xsSlot xsCall4(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)`**<BR>
+**`xsSlot xsCall5(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)`**<BR>
+**`xsSlot xsCall6(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)`**<BR>
+**`xsSlot xsCall7(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)`**
 
-	xsSlot xsCall3(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that will have the property or item
+| `theIndex` | The identifier of the property or item to call
+| `theParam0` ... `theParam6` | The parameter slots to pass to the function
 
-	xsSlot xsCall4(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)
-
-	xsSlot xsCall5(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)
-
-	xsSlot xsCall6(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)
-
-	xsSlot xsCall7(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)
-
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that will have the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to call
-
-
-| |
-| --- |
-| `theParam0` ... `theParam6` | 
-
-> The parameter slots to pass to the function
-
-| |
-| --- |
-| Returns | 
-
-> The result slot of the function
-
+Returns the result slot of the function
 
 ##### In ECMAScript:
 
-	foo()
-	this.foo(1)
-	this[0](2, 3)
+```javascript
+foo()
+this.foo(1)
+this[0](2, 3)
+```
 
 ##### In C:
 
@@ -1484,40 +1168,22 @@ When a property or item of an instance is a reference to a function, you can cal
 
 The `xsmcCall` macro is functionally equivalent to the `xsCall*` macros. The result and parameter slots are provided as function parameters.
 
-	void xsmcCall(xsSlot xsSlot, xsSlot theThis, xsIndex theIndex, ...)
+**`void xsmcCall(xsSlot xsSlot, xsSlot theThis, xsIndex theIndex, ...)`**
 
-| |
-| --- |
-| `theSlot` | 
-
-> The result slot
-
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that will have the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to call
-
-
-| |
-| --- |
-| ... | 
-
-> The variable length parameter slots to pass to the function
-
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The result slot 
+| `theThis` | A reference to the instance that will have the property or item 
+| `theIndex` | The identifier of the property or item to call 
+| ... | The variable length parameter slots to pass to the function
 
 ##### In ECMAScript:
 
-	foo(1)
-	this.foo(1)
-	this[0](2, 3)
+```javascript
+foo(1)
+this.foo(1)
+this[0](2, 3)
+```
 
 ##### In C:
 
@@ -1529,59 +1195,39 @@ The `xsmcCall` macro is functionally equivalent to the `xsCall*` macros. The res
 	xsmcCall(xsResult, xsThis, xsID_foo, xsVar(0));
 	xsmcCall(xsResult, xsThis, 0, xsVar(1), xsVar(2));
 	
+	
+***
+
 <a id="xsnew"></a>
 #### xsNew*
 
 When a property or item of an instance is a reference to a constructor, you can call the constructor with one of the `xsNew*` macros (where `*` is `0` through `7`, representing the number of parameter slots passed). If the property or item is not defined by the instance or its prototypes or is not a reference to a constructor, the `xsNew*` macro throws an exception.
 
-	xsSlot xsNew0(xsSlot theThis, xsIndex theIndex)
+**`xsSlot xsNew0(xsSlot theThis, xsIndex theIndex)`**<BR>
+**`xsSlot xsNew1(xsSlot theThis, xsIndex theIndex, xsSlot theParam0)`**<BR>
+**`xsSlot xsNew2(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1)`**<BR>
+**`xsSlot xsNew3(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)`**<BR>
+**`xsSlot xsNew4(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)`**<BR>
+**`xsSlot xsNew5(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)`**<BR>
+**`xsSlot xsNew6(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)`**<BR>
+**`xsSlot xsNew7(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)`**
 
-	xsSlot xsNew1(xsSlot theThis, xsIndex theIndex, xsSlot theParam0)
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to the instance that has the property or item 
+| `theIndex` | The identifier of the property or item to call 
+| `theParam0` ... `theParam6` | The parameter slots to pass to the constructor
 
-	xsSlot xsNew2(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1)
-
-	xsSlot xsNew3(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)
-
-	xsSlot xsNew4(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)
-
-	xsSlot xsNew5(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)
-
-	xsSlot xsNew6(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)
-
-	xsSlot xsNew7(xsSlot theThis, xsIndex theIndex, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)
-
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that has the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to call
-
-| |
-| --- |
-| `theParam0` ... `theParam6` | 
-
-> The parameter slots to pass to the constructor
-
-
-| |
-| --- |
-| Returns | 
-
-> The result slot of the constructor
+Returns the result slot of the constructor
 
 
 ##### In ECMAScript:
 
-	new foo()
-	new this.foo(1)
-	new this[0](2, 3)
+```javascript
+new foo()
+new this.foo(1)
+new this[0](2, 3)
+```
 
 ##### In C:
 
@@ -1589,45 +1235,29 @@ When a property or item of an instance is a reference to a constructor, you can 
 	xsNew1(xsThis, xsID_foo, xsInteger(1));
 	xsNew2(xsThis, 0, xsInteger(2), xsInteger(3));
 
+***
 
 #### xsmcNew
 
 The `xsmcNew` macro is functionally equivalent to the `xsNew*` macros. The result and parameter slots are provided as function parameters.
 
+**`void xsmcNew(xsSlot theSlot, xsSlot theThis, xsIndex theIndex, ...)`**
 
-	void xsmcNew(xsSlot theSlot, xsSlot theThis, xsIndex theIndex, ...)
-
-| |
-| --- |
-| `theSlot` | 
-
-> The result slot of the constructor
-
-| |
-| --- |
-| `theThis` | 
-
-> A reference to the instance that has the property or item
-
-
-| |
-| --- |
-| `theIndex` | 
-
-> The identifier of the property or item to call
-
-| |
-| --- |
-| ... | 
-
-> The variable length parameter slots to pass to the function
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The result slot of the constructor 
+| `theThis` | A reference to the instance that has the property or item 
+| `theIndex` | The identifier of the property or item to call 
+| ... | The variable length parameter slots to pass to the function
 
 
 ##### In ECMAScript:
 
-	new foo(1)
-	new this.foo(1)
-	new this[0](2, 3)
+```javascript
+new foo(1)
+new this.foo(1)
+new this[0](2, 3)
+```
 
 ##### In C:
 
@@ -1639,59 +1269,53 @@ The `xsmcNew` macro is functionally equivalent to the `xsNew*` macros. The resul
 	xsmcNew(xsResult, xsThis, xsID_foo, xsVar(0));
 	xsmcNew(xsResult, xsThis, 0, xsVar(1), xsVar(2));
 
+***
+
 #### xsTest
 
 Like an `if` clause in ECMAScript, the `xsTest` macro takes a value of any type and determines whether it is true or false. This macro applies the same rules as in ECMAScript (per the ECMA-262 specification, section 12.5).
 
-	xsBooleanValue xsTest(xsSlot theValue)
-	xsBooleanValue xsmcTest(xsSlot theValue)
+**`xsBooleanValue xsTest(xsSlot theValue)`**<BR>
+**`xsBooleanValue xsmcTest(xsSlot theValue)`**
 
-| |
-| --- |
-| `theValue` | 
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to test
 
-> The value to test
-
-
-| |
-| --- |
-| Returns | 
-
-> `true` if the value is true, `false` otherwise
+Returns `true` if the value is true, `false` otherwise
 
 
 ##### In ECMAScript:
 
-	if (foo) {}
+```javascript
+if (foo) {}
+```
 
 ##### In C:
 
 	if (xsTest(xsGet(xsGlobal, xsID_foo)) {}
 	
+***
+
 #### xsEnumerate
 
 Use the `xsEnumerate` macro to get an iterator for enumerable instance properties. The iterator provides `next`, `value` and `done` functions to iterate the properties. 
 
-	xsSlot xsEnumerate(xsSlot theObject)
+**`xsSlot xsEnumerate(xsSlot theObject)`**
 
-| |
-| --- |
-| `theObject` | 
+| Arguments | Description |
+| --- | :-- |
+| `theObject` | A reference to the object that has enumerable properties
 
-> A reference to the object that has enumerable properties
-
-
-| |
-| --- |
-| Returns | 
-
-> A slot containing the iterator
+Returns a slot containing the iterator
 
 ##### In ECMAScript:
 
-	rectangle = { x:0, y:0, width:200, height:100 };
-	for (let prop in rectangle)
-		trace(`${prop}: ${rectangle[prop]}\n`);
+```javascript
+rectangle = { x:0, y:0, width:200, height:100 };
+for (let prop in rectangle)
+	trace(`${prop}: ${rectangle[prop]}\n`);
+```
 
 ##### In C:
 
@@ -1708,6 +1332,8 @@ Use the `xsEnumerate` macro to get an iterator for enumerable instance propertie
 		xsTrace(xsToString(xsVar(4)));xsTrace("\n");
 	}
 
+***
+
 <a id="xsvars"></a>
 ### Arguments and Variables
 
@@ -1715,14 +1341,14 @@ The XS runtime virtual machine uses a heap and a stack of slots. With XS in C, y
 
 When a C callback is executed, the stack contains its argument slots, its `this` slot, and its result slot, but no variable slots. To use variable slots, you have to reserve them on the stack with the `xsVars` or `xsmcVars` macros. The `xsVars` macro can only be used once at the beginning of the callback execution. The `xsmcVars` macro can be used multiple times within a callback. Using `xsmcVars`, the callback can use a different number of variables in different branches of the code, to reduce the XS stack size.
 
-	void xsVars(xsIntegerValue theCount)
-	void xsmcVars(xsIntegerValue theCount)
+**`void xsVars(xsIntegerValue theCount)`**<BR>
+**`void xsmcVars(xsIntegerValue theCount)`**
 
-| |
-| --- |
-| `theCount` | 
+| Arguments | Description |
+| --- | :-- |
+| `theCount` | The number of variable slots to reserve
 
-> The number of variable slots to reserve
+***
 
 Argument and variable slots are accessed and assigned by index. An exception is thrown if the index is invalid.
 
@@ -1738,66 +1364,54 @@ Initially:
 
 Scripts can call a constructor as a function or a function as a constructor. To find out whether the C callback is executed as a constructor or as a function, you can check whether the result slot is initially undefined.
 
-	xsSlot xsArgc
-	int xsmcArgc
+***
 
-| |
-| --- |
-| Returns |
+**`xsSlot xsArgc`<BR>
+`int xsmcArgc`**
 
-> An integer slot that contains the number of arguments
+Returns an integer slot that contains the number of arguments
 
-	xsSlot xsArg(xsIntegerValue theIndex)
+***
 
-| |
-| --- |
-| `theIndex` | 
+**`xsSlot xsArg(xsIntegerValue theIndex)`**
 
-> The index of the argument, from 0 to `xsArgc-1`
+| Arguments | Description |
+| --- | :-- |
+| `theIndex` | The index of the argument, from 0 to `xsArgc-1`
 
-| |
-| --- |
-| Returns | 
+Returns the argument slot
 
-> The argument slot
+***
 
-`xsSlot xsThis`
+**`xsSlot xsThis`**
 
-| |
-| --- |
-| Returns | 
+Returns the `this` slot
 
-> The `this` slot
+***
 
-	xsSlot xsResult
+**`xsSlot xsResult`**
 
-| |
-| --- |
-| Returns | 
+Returns the result slot
 
-> The result slot
+***
 
-	xsSlot xsVarc
+**`xsSlot xsVarc`**
 
-| |
-| --- |
-| Returns | 
+Returns an integer slot that contains the number of variables
 
-> An integer slot that contains the number of variables
+***
 
-	xsSlot xsVar(xsIntegerValue theIndex)
+**`xsSlot xsVar(xsIntegerValue theIndex)`**
 
-| |
-| --- |
-| `theIndex` | 
+| Arguments | Description |
+| --- | :-- |
+| `theIndex` | The index of the variable, from 0 to `xsVarc-1`
 
-> The index of the variable, from 0 to `xsVarc-1`
+Returns the variable slot
 
-| |
-| --- |
-| Returns | 
+***
 
-> The variable slot
+#### Example
 
 Usually you access the argument, `this`, result, and variable slots but you assign only the result and variable slots. Whatever is in the result slot at the end of the callback execution is returned to scripts by the function or constructor.
 
@@ -1805,15 +1419,16 @@ In the C example in this section (and the next one), `xsMachine` is the virtual 
 
 ##### In ECMAScript:
 
-	function foo() {
-		var c, i, s;
-		c = arguments.length;
-		s = "";
-		for (i = 0; i < c; i++)
-			s = s.concat(arguments[i]);
-		return s;
-	}
-
+```javascript
+function foo() {
+	var c, i, s;
+	c = arguments.length;
+	s = "";
+	for (i = 0; i < c; i++)
+		s = s.concat(arguments[i]);
+	return s;
+}
+```
 
 ##### In C:
 
@@ -1827,47 +1442,43 @@ In the C example in this section (and the next one), `xsMachine` is the virtual 
 		xsResult = xsVar(0);
 	}
 
+<a id="garbage-collector"></a>
 ### Garbage Collector
 
 When the XS runtime needs to allocate slots and there is not enough memory, it automatically deletes unused slots. The runtime garbage collector uses a mark and sweep algorithm.  To force the runtime to delete unused  slots, you can use the `xsCollectGarbage` macro.
 
-	void xsCollectGarbage()
+**`void xsCollectGarbage()`**
+
+***
 
 If you store slots in memory that is no managed by the garbage collector, such as a C global or a C allocated structure, use the `xsRemember` and `xsForget` macros to inform the runtime.
 
-	void xsRemember(xsSlot theSlot)
+**`void xsRemember(xsSlot theSlot)`**
 
-| |
-| --- |
-| `theSlot` | 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to remember
 
-> The slot to remember
 
-	void xsForget(xsSlot theSlot)
+**`void xsForget(xsSlot theSlot)`**
 
-| |
-| --- |
-| `theSlot` | 
-
-> The slot to forget
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to forget
 
 `xsRemember` links and `xsForget` unlinks a slot to and from a chain of slots which the garbage collector scans to mark the slots that the C global or the C allocated structure references.
 
+***
+
 Use `xsAccess` to get the value of a slot previously linked to the chain of slots.
 
-	xsSlot xsAccess(xsSlot theSlot)
+**`xsSlot xsAccess(xsSlot theSlot)`**
 
-| |
-| --- |
-| `theSlot` | 
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to access
 
-> The slot to access
-
-| |
-| --- |
-| Returns | 
-
-> The value of the slot
+Returns the value of the slot
 
 ##### In C:
 
@@ -1886,16 +1497,19 @@ Use `xsAccess` to get the value of a slot previously linked to the chain of slot
 		xsForget(gFooSlot);
 	}
 
+***
+
 The garbage collector is enabled by default. Use `xsEnableGarbageCollection` to enable or disable the garbage collector.
  
-	xsSlot xsEnableGarbageCollection(xsBooleanValue enable)
+**`xsSlot xsEnableGarbageCollection(xsBooleanValue enable)`**
 
-| |
-| --- |
-| `enable` | 
+| Arguments | Description |
+| --- | :-- |
+| `enable` | Set `true` to enable garbage collection or `false` to disable garbage collection
 
-> Set `true` to enable garbage collection or `false` to disable garbage collection
+***
 
+<a id="exceptions"></a>
 ### Exceptions
 
 To handle exceptions in C, the XS runtime uses `setjmp`, `longjmp`, and a chain of `jmp_buf` buffers, defined as follows:
@@ -1912,37 +1526,37 @@ However, you do not need to use this directly, because XS in C defines macros fo
 
 To throw an exception, use the `xsThrow` macro.
 
-	void xsThrow(xsSlot theException)
+**`void xsThrow(xsSlot theException)`**
 
-| |
-| --- |
-| `theException` | 
+| Arguments | Description |
+| --- | :-- |
+| `theException` | The exception slot
 
-> The exception slot
+Assigns the current exception
 
-The `xsThrow` macro assigns the current exception; the `xsException` macro accesses the current exception.
+***
 
-	xsSlot xsException
+**`xsSlot xsException`**
 
-| |
-| --- |
-| Returns | 
+Accesses the current exception and returns the exception slot
 
-> The exception slot
+***
 
 As shown in the following example, the `xsTry` and `xsCatch` macros are used together to catch exceptions. If you catch an exception in your C callback and you want to propagate the exception to the script that calls your function or constructor, throw the exception again.
 
 ##### In ECMAScript:
 
-	{
-		try {
-			/* Exception thrown here ... */
-		}
-		catch(e) {
-			/* ... is caught here. */	
-			throw e
-	 	}
+```javascript
+{
+	try {
+		/* Exception thrown here ... */
 	}
+	catch(e) {
+		/* ... is caught here. */	
+		throw e
+ 	}
+}
+```
 
 ##### In C:
 
@@ -1956,6 +1570,7 @@ As shown in the following example, the `xsTry` and `xsCatch` macros are used tog
 		}
 	} 
 
+<a id="errors"></a>
 ### Errors
 
 Exceptions may be thrown by C callbacks. C callbacks are often provide the interface between scripts and systems. Many system calls can fail, and they have a way to return an error to the application which can be propegated as an exception.
@@ -1976,18 +1591,17 @@ For specific errors, the XS runtime provides error types and prototypes.
 	
 XS in C defines the following macros to throw specific exceptions.
 
-	void xsUnknownError(...)
-	void xsEvalError(...)
-	void xsRangeError(...)
-	void xsReferenceError(...)
-	void xsSyntaxError(...)
-	void xsTypeError(...)
-	void xsURIError(...)
+**`void xsUnknownError(...)`<BR>
+`void xsEvalError(...)`<BR>
+`void xsRangeError(...)`<BR>
+`void xsReferenceError(...)`<BR>
+`void xsSyntaxError(...)`<BR>
+`void xsTypeError(...)`<BR>
+`void xsURIError(...)`**
 
-| |
-| --- |
-| ... | 
-> The message and optional arguments to display when throwing the exception
+| Arguments | Description |
+| --- | :-- |
+| ... | The message and optional arguments to display when throwing the exception
 
 ##### In C:
 
@@ -2001,66 +1615,75 @@ XS in C defines the following macros to throw specific exceptions.
 	if (!slash)
 		xsURIError("No path");
 
+***
+
 The `xsErrorPrintf` macro is a shortcut for `xsUnknownError` when only a message parameter is required.
 
-	xsErrorPrintf(xsStringValue theMessage)
-	xsUnknownError("%s", theMessage)
+**`xsErrorPrintf(xsStringValue theMessage)`<BR>
+`xsUnknownError("%s", theMessage)`**
 
-| |
-| --- |
-| theMessage | 
-> The message to display when throwing the exception
+| Arguments | Description |
+| --- | :-- |
+| theMessage | The message to display when throwing the exception
 
 ##### In C:
 
 	if (rotation != requestedRotation)
 		xsErrorPrintf("not configured for requested rotation");
-		
+
+***
+
+<a id="debugger"></a>
 ### Debugger
 
 XS in C provides two macros to help you debug your C callbacks.
 
 The `xsDebugger` macro is equivalent to the ECMAScript `debugger` keyword.
 
-	void xsDebugger()
+**`void xsDebugger()`**
+
+***
 
 The `xsTrace` macro is equivalent to the global `trace` function.
 
-	void xsTrace(xsStringValue theMessage)
+**`void xsTrace(xsStringValue theMessage)`**
 
-| |
-| --- |
-| `theMessage` | 
-
-> The message to log in the debugger
+| Arguments | Description |
+| --- | :-- |
+| `theMessage` | The message to log in the debugger
 
 ##### In ECMAScript:
 
-	debugger;
-	trace("Hello xsbug!\n");
+```javascript
+debugger;
+trace("Hello xsbug!\n");
+```
 
 ##### In C:
 
-	 xsDebugger();
-	 xsTrace("Hello xsbug!\n");
-
+```
+xsDebugger();
+xsTrace("Hello xsbug!\n");
+```
 
 <a id="machine"></a>
 ## Machine
 
 The main structure of the XS runtime is its virtual machine, which is what parses, compiles, links, and executes scripts. A virtual machine is an opaque structure though some members of the structure are available to optimize the macros of XS in C; you never need to use them directly.
 
-	typedef struct xsMachineRecord xsMachine
-	struct xsMachineRecord {
-		xsSlot* stack;
-		xsSlot* scope;
-		xsSlot* frame;
-		xsIndex* code;
-		xsSlot* stackBottom;
-		xsSlot* stackTop;
-		xsSlot* stackPrototypes;
-		xsJump* firstJump;
-	};
+```
+typedef struct xsMachineRecord xsMachine
+struct xsMachineRecord {
+	xsSlot* stack;
+	xsSlot* scope;
+	xsSlot* frame;
+	xsIndex* code;
+	xsSlot* stackBottom;
+	xsSlot* stackTop;
+	xsSlot* stackPrototypes;
+	xsJump* firstJump;
+};
+```
 
 A single machine does not support multiple threads. To work with multiple threads, create one XS runtime machine for each thread, with the host optionally providing a way for the machines to communicate. 
 
@@ -2089,31 +1712,18 @@ typedef struct {
 
 - A context you can set and get in your callbacks (as discussed in the next section). Pass `NULL` if you do not want an initial context.
 
-	xsMachine* xsCreateMachine(xsCreation* theCreation, xsStringValue theName, void* theContext)
+**`xsMachine* xsCreateMachine(xsCreation* theCreation, xsStringValue theName, void* theContext)`**
 
-| |
-| --- |
-| `theCreation` | 
+| Arguments | Description |
+| --- | :-- |
+| `theCreation` | The parameters of the machine
+| `theName` | The name of the machine as a string
+| `theContext` | The initial context of the machine, or `NULL`
 
-> The parameters of the machine
+Returns a machine if successful, otherwise `NULL`
 
-| |
-| --- |
-| `theName` | 
 
-> The name of the machine as a string
 
-| |
-| --- |
-| `theContext` | 
-
-> The initial context of the machine, or `NULL`
-
-| |
-| --- |
-| Returns | 
-
-> A machine if successful, otherwise `NULL`
 
 Regarding the parameters of the machine that are specified in the `xsCreation` structure:
 
@@ -2123,105 +1733,101 @@ Regarding the parameters of the machine that are specified in the `xsCreation` s
 
 - The symbol count is the number of symbols the machine will use. The symbol modulo is the size of the hash table the machine will use for symbols. A symbol binds a string value and an identifier; see [`xsID`](#xs-id).
 
+***
+
 When you are done with a machine, you free it with the `xsDeleteMachine` macro. The destructors of all the host objects are executed, and all the memory allocated by the machine is freed.
 
-	void xsDeleteMachine(xsMachine* the)
+**`void xsDeleteMachine(xsMachine* the)`**
 
-| |
-| --- |
-| `the` | 
-
-> A machine
+| Arguments | Description |
+| --- | :-- |
+| `the` | A machine
 
 The `xsDeleteMachine` macro is one of a number of macros described in this document that have an explicit machine parameter named `the`, for which the value returned by `xsCreateMachine` is passed. (The other such macros are `xsGetContext`, `xsSetContext`, `xsBeginHost`, and `xsEndHost`.) Only those macros have an explicit `the` parameter because they are the only ones that can be used outside a callback and cannot throw exceptions. Callbacks must name their machine parameter `the` because all other macros have an implicit parameter named `the`; the primary reason for this convention is terseness, but it also emphasizes the fact that these other macros can be used only inside a callback and can throw exceptions.
 
+#### Example
+
 The following example illustrates the use of `xsCreateMachine` and `xsDeleteMachine`. The `xsMainContext` function called in the example is defined in the next section.
 
+```
+int main(int argc, char* argv[]) 
+{
+	xsCreation aCreation = {
+		128 * 1024 * 1024,	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		4 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024,	/* incrementalHeapCount */
+		1024,				/* stack count */
+		2048+1024,			/* key count */
+		1993,				/* name modulo */
+		127					/* symbol modulo */
+	};
+	xsMachine* aMachine;
 
-##### Example
-
-	int main(int argc, char* argv[]) 
-	{
-		xsCreation aCreation = {
-			128 * 1024 * 1024, 	/* initialChunkSize */
-			16 * 1024 * 1024, 	/* incrementalChunkSize */
-			4 * 1024 * 1024, 	/* initialHeapCount */
-			1 * 1024 * 1024,		/* incrementalHeapCount */
-			1024,					/* stack count */
-			2048+1024,			/* key count */
-			1993,					/* name modulo */
-			127						/* symbol modulo */
-		};
-		xsMachine* aMachine;
-
-		aMachine = xsCreateMachine(&aCreation, "machine", NULL);
-		if (aMachine) {
-			xsMainContext(aMachine, argc, argv);
-			xsDeleteMachine(aMachine);
-		}
-		else
-			fprintf(stderr, "### Cannot allocate machine\n");
-		return 0;
+	aMachine = xsCreateMachine(&aCreation, "machine", NULL);
+	if (aMachine) {
+		xsMainContext(aMachine, argc, argv);
+		xsDeleteMachine(aMachine);
 	}
+	else
+		fprintf(stderr, "### Cannot allocate machine\n");
+	return 0;
+}
+```
 
+<a id="context"></a>
 ### Context
 
 The machine will call your C code primarily through callbacks. In your callbacks, you can set and get a *context*: a pointer to an area where you can store and retrieve information for the machine.
 
-	void xsSetContext(xsMachine* the, void* theContext)
+**`void xsSetContext(xsMachine* the, void* theContext)`**
 
-| |
-| --- |
-| `the` | 
+| Arguments | Description |
+| --- | :-- |
+| `the` | A machine
+| `theContext` | A context
 
-> A machine
+Sets a context
 
-| |
-| --- |
-| `theContext` | 
+***
 
-> A context
+**`void* xsGetContext(xsMachine* the)`**
 
+| Arguments | Description |
+| --- | :-- |
+| `the` | A machine
 
-	void* xsGetContext(xsMachine* the)
+Returns a context
 
-| |
-| --- |
-| `the` | 
+***
 
-> A machine
-
-| |
-| --- |
-| Returns | 
-
-> A context
-
+#### Example 
 The following code shows a context being set in the `xsMainContext` function, which was called in the preceding section's example.
 
-##### Example
+```
+typedef struct {
+	int argc;
+	char** argv;
+} xsContext;
 
-	typedef struct {
-		int argc;
-		char** argv;
-	} xsContext;
+void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
+{
+	xsContext* aContext;
 
-	void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
-	{
-		xsContext* aContext;
-
-		aContext = malloc(sizeof(xsContext));
-		if (aContext) {
-			aContext->argc = argc;
-			aContext->argv = argv;
-			xsSetContext(theMachine, aContext);
-			xsSetContext(theMachine, NULL);
-			free(aContext);
-		}
-		else
-			fprintf(stderr, "### Cannot allocate context\n");
+	aContext = malloc(sizeof(xsContext));
+	if (aContext) {
+		aContext->argc = argc;
+		aContext->argv = argv;
+		xsSetContext(theMachine, aContext);
+		xsSetContext(theMachine, NULL);
+		free(aContext);
 	}
+	else
+		fprintf(stderr, "### Cannot allocate context\n");
+}
+```
 
+<a id="host"></a>
 ### Host
 
 This section describes the host-related macros of XS in C (see Table 2). The example code that uses these macros is shown after the last macro it uses has been described. (The remaining two macros do not enter into the sample application.)
@@ -2275,63 +1881,36 @@ This section describes the host-related macros of XS in C (see Table 2). The exa
 
 #### xsNewHostFunction and xsNewHostConstructor
 
-A *host function* is a special kind of function, onw whose implementation is in C rather than ECMAScript. For a script, a host function is just like a function; however, when a script invokes a host function, a C callback is executed. The same is true for *host constructors*, which are constructors implemented in C.
+A *host function* is a special kind of function, one whose implementation is in C rather than ECMAScript. For a script, a host function is just like a function; however, when a script invokes a host function, a C callback is executed. The same is true for *host constructors*, which are constructors implemented in C.
 
-<div class="ccode"></div>
-
-	typedef void (*xsCallback)(xsMachine* the);
+```
+typedef void (*xsCallback)(xsMachine* the);
+```
 
 To create a host function, use the `xsNewHostFunction` macro.
 
-	xsSlot xsNewHostFunction(xsCallback theCallback, xsIntegerValue theLength);
+**`xsSlot xsNewHostFunction(xsCallback theCallback, xsIntegerValue theLength)`**
 
-| |
-| --- |
-| `theCallback` | 
+| Arguments | Description |
+| --- | :-- |
+| `theCallback` | The callback to execute
+| `theLength` | The number of parameters expected by the callback
 
-> The callback to execute
+Creates a host function, and returns a reference to the new host function
 
-| |
-| --- |
-| `theLength` | 
+***
 
-> The number of parameters expected by the callback
+**`xsSlot xsNewHostConstructor(xsCallback theCallback, xsIntegerValue theLength, xsSlot thePrototype)`**
 
-| |
-| --- |
-| Returns | 
+| Arguments | Description |
+| --- | :-- |
+| `theCallback` | The callback to execute
+| `theLength` | The number of parameters expected by the callback
+| `thePrototype` | A reference to the prototype of the instance to create
 
-> A reference to the new host function
+Creates a host constructor, and returns a reference to the new host constructor
 
-
-To create a host constructor, use the `xsNewHostConstructor` macro.
-
-	xsSlot xsNewHostConstructor(xsCallback theCallback, xsIntegerValue theLength, xsSlot thePrototype)`
-
-| |
-| --- |
-| `theCallback` | 
-
-> The callback to execute
-
-| |
-| --- |
-| `theLength` | 
-
-> The number of parameters expected by the callback
-
-| |
-| --- |
-| `thePrototype` | 
-
-> A reference to the prototype of the instance to create
-
-| |
-| --- |
-| Returns | 
-
-> A reference to the new host constructor
-
+***
 
 #### xsNewHostObject
 
@@ -2339,138 +1918,98 @@ A *host object* is a special kind of object with data that can be directly acces
 
 When the garbage collector is about to get rid of a host object, it executes the host object's destructor, if any. No reference to the host object is passed to the destructor: a destructor can only destroy data.
 
-	typedef void (xsDestructor)(void* theData);
+```
+typedef void (xsDestructor)(void* theData);
+```
 
-To create a host object, use the `xsNewHostObject` macro. Pass the host object's destructor, or `NULL` if it does not need a destructor. 
+To create a host object, use the `xsNewHostObject` macro.
 
-	xsSlot xsNewHostObject(xsDestructor theDestructor)
+**`xsSlot xsNewHostObject(xsDestructor theDestructor)`**
 
-| |
-| --- |
-| `theDestructor` | 
+| Arguments | Description |
+| --- | :-- |
+| `theDestructor` | The destructor to be executed by the garbage collector. Pass the host object's destructor, or `NULL` if it does not need a destructor.
 
-> The destructor to be executed by the garbage collector
+Creates a host object, and returns a reference to the new host object
 
-| |
-| --- |
-| Returns | 
-
-> A reference to the new host object
-
+***
 
 #### xsGetHostData and xsSetHostData
 
 To get and set the data of a host object, use the `xsGetHostData` and `xsSetHostData` macros. Both throw an exception if the `theThis` parameter does not refer to a host object.
 
-	void* xsGetHostData(xsSlot theThis)
-	void* xsmcGetHostData(xsSlot theThis)
+**`void* xsGetHostData(xsSlot theThis)`**<BR>
+**`void* xsmcGetHostData(xsSlot theThis)`**
 
-| |
-| --- |
-| `theThis` | 
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to a host object
 
-> A reference to a host object
+Returns the data
 
-| |
-| --- |
-| Returns | 
+***
 
-> The data
+**`void xsSetHostData(xsSlot theThis, void* theData)`<BR>
+`void xsmcSetHostData(xsSlot theThis, void* theData)`**
 
-	void xsSetHostData(xsSlot theThis, void* theData)
-	void xsmcSetHostData(xsSlot theThis, void* theData)
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to a host object 
+| `theData` | The data to set
 
-| |
-| --- |
-| `theThis` | 
-
-> A reference to a host object
-
-| |
-| --- |
-| `theData` | 
-
-> The data to set
+***
 
 #### xsGetHostChunk and xsSetHostChunk
 
 To get and set the data of a host object as a chunk, use the `xsGetHostChunk` and `xsSetHostChunk` macros. Both throw an exception if the `theThis` parameter does not refer to a host object. Like the memory used by ArrayBuffer and String, chunk memory is allocated and managed by the XS runtime; see the [handle](./handle.md) document for details. 
 
-	void* xsGetHostChunk(xsSlot theThis)
-	void* xsmcGetHostChunk(xsSlot theThis)
+**`void* xsGetHostChunk(xsSlot theThis)`<BR>
+`void* xsmcGetHostChunk(xsSlot theThis)`**
 
-| |
-| --- |
-| `theThis` | 
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to a host object
 
-> A reference to a host object
+Returns the data
 
-| |
-| --- |
-| Returns | 
+***
 
-> The data
+**`void xsSetHostChunk(xsSlot theThis, void* theData, xsIntegerValue theSize)`<BR>
+`void xsmcSetHostChunk(xsSlot theThis, void* theData, xsIntegerValue theSize)`**
 
-	void xsSetHostChunk(xsSlot theThis, void* theData, xsIntegerValue theSize)
-	void xsmcSetHostChunk(xsSlot theThis, void* theData, xsIntegerValue theSize)
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to a host object
+| `theData` | The data to set or `NULL` to leave the chunk data uninitialized 
+| `theSize` | The size of the data in bytes
 
-| |
-| --- |
-| `theThis` | 
+> Note that an object has either host data or a host chunk but never both. 
 
-> A reference to a host object
-
-| |
-| --- |
-| `theData` | 
-
-> The data to set or `NULL` to leave the chunk data uninitialized
-
-| |
-| --- |
-| `theSize` | 
-
-> The size of the data in bytes
-
-Note that an object has either host data or a host chunk but never both. 
+***
 
 #### xsSetHostDestructor
 
 To set the destructor of a host object (or to clear the destructor, by passing `NULL`), use the `xsSetHostDestructor` macro. This macro throws an exception if the `theThis` parameter does not refer to a host object.
 
-	void xsSetHostDestructor(xsSlot theThis, xsDestructor theDestructor)
+**`void xsSetHostDestructor(xsSlot theThis, xsDestructor theDestructor)`**
 
-| |
-| --- |
-| `theThis` | 
+| Arguments | Description |
+| --- | :-- |
+| `theThis` | A reference to a host object 
+| `theDestructor` | The destructor to be executed by the garbage collector, or `NULL` to clear the destructor
 
-> A reference to a host object
-
-| |
-| --- |
-| `theDestructor` | 
-
-> The destructor to be executed by the garbage collector
+***
 
 #### xsBeginHost and xsEndHost
 
 Use the `xsBeginHost` macro to establish a new stack frame and the `xsEndHost` macro to remove it. 
 
-	void xsBeginHost(xsMachine* the)
+**`void xsBeginHost(xsMachine* the)`**<BR>
+**`void xsEndHost(xsMachine* the)`**
 
-| |
-| --- |
-| `the` | 
-
-> A machine
-
-	void xsEndHost(xsMachine* the)
-
-| |
-| --- |
-| `the` | 
-
-> A machine
+| Arguments | Description |
+| --- | :-- |
+| `the` | A machine
 
 The `xsBeginHost` macro sets up the stack, and the `xsEndHost` macro cleans up the stack, so that you can use all the macros of XS in C in the block between `xsBeginHost` and `xsEndHost`.
 
@@ -2478,19 +2017,24 @@ Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHos
 
 ##### Example
 
-	long FAR PASCAL xsWndProc(HWND hwnd, UINT m, UINT w, LONG l)
+```
+long FAR PASCAL xsWndProc(HWND hwnd, UINT m, UINT w, LONG l)
+{
+	long result = 0;
+	xsMachine* aMachine = GetWindowLongPtr(hwnd, GWL_USERDATA);
+	xsBeginHost(aMachine);
 	{
-		long result = 0;
-		xsMachine* aMachine = GetWindowLongPtr(hwnd, GWL_USERDATA);
-		xsBeginHost(aMachine);
-		{
-			result = xsToInteger(xsCall3(xsGlobal, xsID_dispatch, 
-				xsInteger(m), xsInteger(w), xsInteger(l)));
-		} 
-		xsEndHost(aMachine);
-		return result;
-	}
+		result = xsToInteger(xsCall3(xsGlobal, xsID_dispatch, 
+			xsInteger(m), xsInteger(w), xsInteger(l)));
+	} 
+	xsEndHost(aMachine);
+	return result;
+}
+```
 
+***
+
+<a id="syntax-extension"></a>
 ### JavaScript `@` language syntax extension
 
 XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
@@ -2528,7 +2072,7 @@ r3.union(r1, r2);
 
 The `Rectangle` constructor `xs_rectangle` function stores the parameters in a host chunk. The constructor accepts either a single `Rectangle` instance or the individual `x`, `y`, `w` and `h` values. The function uses the `xsmcArgc` macro to count the function parameters and the `xsmcIsInstanceOf` macro to determine if the first parameter is an object.
 
-```javascript
+```
 typedef struct {
 	int x;
 	int y;
@@ -2557,7 +2101,7 @@ void xs_rectangle(xsMachine *the)
 ```
 The destructor function `xs_rectangle_destructor` is called when the object instance is deleted or garbage collected. Any memory or resources allocated by the instance should be freed in the destructor. Because the XS runtime manages host chunk memory, the destructor doesn't need to dispose the chunk.
 
-```javascript
+```
 void xs_rectangle_destructor(void *data)
 {
 }
@@ -2571,7 +2115,7 @@ The `Rectangle` class provides getters and setters for class properties.
 
 The `get` functions read the corresponding field from the host chunk and return the property to the caller by setting `xsResult`. The `set` functions store the value provided into the host chunk.
 
-```javascript
+```
 void xs_rectangle_get_x(xsMachine *the)
 {
 	xsRectangle r = xsmcGetHostChunk(xsThis);
@@ -2584,9 +2128,10 @@ void xs_rectangle_set_x(xsMachine *the)
 	r->x = xsmcToInteger(xsArg(0));
 }
 ```
+
 The `union` method returns the union of all the rectangles passed to the function. The `xs_rectangle_union` function uses the `xsmcArgc` macro to count the number or `Rectangle` instances. The union result is stored back into calling instance's host chunk. JavaScript applications read the result rectangle properties using the `get *()` methods.
 
-```javascript
+```
 void xs_rectangle_union(xsMachine *the)
 {
 	xsIntegerValue i, argc;
@@ -2604,83 +2149,27 @@ void xs_rectangle_union(xsMachine *the)
 <a id="glossary"></a>
 ## Glossary
 
-##### constructor
-
-In ECMAScript, a function that has a `prototype` property and that the `new` operator invokes to build an instance. The value of the `prototype` property becomes the prototype of the instances that the constructor builds.
-
-##### context
-
-A pointer to an area where you can store and retrieve information for the XS runtime virtual machine in your callbacks.
-
-##### direct slot
-
-One of the slot types that correspond to the ECMAScript primitive types (undefined, null, boolean, number, string, and symbol), plus an integer and stringx slot provided as an optimization.
-
-##### ECMAScript
-
-An object-oriented, prototype-based language for implementing application logic and control.
-
-##### host
-
-In ECMAScript terminology, an application that uses the XS runtime.
-
-##### host constructor
-
-In XS, a constructor whose implementation is in C rather than ECMAScript.
-
-##### host function
-
-In XS, a function whose implementation is in C rather than ECMAScript.
-
-##### host object
-
-In XS, an object with data that can be directly accessed only in C.
-
-##### indirect slot
-
-A type of slot that contains a reference to an instance of an object, function, array, and so on; corresponds to the ECMAScript `reference` type.
-
-##### instance
-
-An object that inherits properties from another object, which is called its *prototype*.
-
-##### property
-
-In ECMAScript, a value accessed by name within an object (in contrast to items accessed by index within an array); in XS in C, a slot accessed by index within an object (just as an item is accessed by index within an array).
-
-##### prototype
-
-An object from which another object (called an instance) inherits properties.
-
-##### sandbox
-
-An environment that is restricted to prevent untrusted code from harming the device on which the code is running. The sandbox for XS application scripts includes the standard features defined in the ECMAScript specification plus additional features as defined and permitted by the XS modules.
-
-##### slot
-
-An opaque structure in which everything in the XS runtime is stored, and which is manipulated only through XS in C.
-
-##### XS
-
-A toolkit, consisting of a runtime library and a command-line tool, that is designed for developing standards-based, networked, interactive multimedia applications (GUI-based runtimes) or command-line tools for various devices. See also [**XS runtime**](#xsruntime) and [**xsc**](#xsc).
-
-<a name="xsruntime"></a>
-##### XS runtime
-
-The runtime library part of XS.
-
-##### XS in C
-
-The C interface of the XS runtime.
-
-##### xsbug
-
-The XS debugger, used to debug applications, modules, and scripts.
-
-<a name="xsc"></a>
-##### xsc
-
-The command-line tool part of XS. It compiles JavaScript files into XS binary files containing symbols and bytecodes, which is executed by the XS virtual machine that is contained within the XS runtime.
+| Term | Definition |
+| :--- | :-- |
+| constructor | In ECMAScript, a function that has a `prototype` property and that the `new` operator invokes to build an instance. The value of the `prototype` property becomes the prototype of the instances that the constructor builds.
+| context | A pointer to an area where you can store and retrieve information for the XS runtime virtual machine in your callbacks.
+| direct slot | One of the slot types that correspond to the ECMAScript primitive types (undefined, null, boolean, number, string, and symbol), plus an integer and stringx slot provided as an optimization.
+| ECMAScript | An object-oriented, prototype-based language for implementing application logic and control.
+| host | In ECMAScript terminology, an application that uses the XS runtime.
+| host constructor | In XS, a constructor whose implementation is in C rather than ECMAScript.
+| host function | In XS, a function whose implementation is in C rather than ECMAScript.
+| host object | In XS, an object with data that can be directly accessed only in C.
+| indirect slot | A type of slot that contains a reference to an instance of an object, function, array, and so on; corresponds to the ECMAScript `reference` type.
+| instance | An object that inherits properties from another object, which is called its *prototype*.
+| property | In ECMAScript, a value accessed by name within an object (in contrast to items accessed by index within an array); in XS in C, a slot accessed by index within an object (just as an item is accessed by index within an array).
+| prototype | An object from which another object (called an instance) inherits properties.
+| sandbox | An environment that is restricted to prevent untrusted code from harming the device on which the code is running. The sandbox for XS application scripts includes the standard features defined in the ECMAScript specification plus additional features as defined and permitted by the XS modules.
+| slot | An opaque structure in which everything in the XS runtime is stored, and which is manipulated only through XS in C.
+| XS | A toolkit, consisting of a runtime library and a command-line tool, that is designed for developing standards-based, networked, interactive multimedia applications (GUI-based runtimes) or command-line tools for various devices. See also xsruntime and xsc.
+| XS runtime | The runtime library part of XS.
+| XS in C | The C interface of the XS runtime.
+| xsbug | The XS debugger, used to debug applications, modules, and scripts.
+| xsc | The command-line tool part of XS. It compiles JavaScript files into XS binary files containing symbols and bytecodes, which is executed by the XS virtual machine that is contained within the XS runtime.
 
 <!-- TBD:
 	- Document xsCall*_noResult, xsmcCall_noResult
@@ -2689,6 +2178,7 @@ The command-line tool part of XS. It compiles JavaScript files into XS binary fi
 	- Document: xsReference
 -->
 
+<a id="license"></a>
 ## License
     Copyright (c) 2016-2018  Moddable Tech, Inc.
  
