@@ -24,6 +24,8 @@
 
 #ifdef __ets__
 	#include "xsesp.h"
+#elif gecko
+	#include "xsgecko.h"
 #endif
 
 void xs_qrcode(xsMachine *the)

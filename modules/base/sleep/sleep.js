@@ -40,13 +40,13 @@ export class Sleep {
 	static setIdleSleepLevel(level) @ "xs_sleep_set_idle_sleep_level";
 };
 
-Sleep.PowerOnReset		= 0b00000001;
-Sleep.ExternalReset		= 0b00000010;
-Sleep.SysRequestReset	= 0b00000100;
-Sleep.EM4WakeupReset	= 0b00001000;
-Sleep.BrownOutReset		= 0b00010000;
-Sleep.LockupReset		= 0b00100000;
-Sleep.WatchdogReset		= 0b01000000;
+Sleep.PowerOnReset		= 0b00000001;			// power applied
+Sleep.ExternalReset		= 0b00000010;			// reset button
+Sleep.SysRequestReset	= 0b00000100;			// software reset
+Sleep.EM4WakeupReset	= 0b00001000;			// woke from EM4
+Sleep.BrownOutReset		= 0b00010000;			// power dipped to low
+Sleep.LockupReset		= 0b00100000;			// device hung
+Sleep.WatchdogReset		= 0b01000000;			// watchdog expired
 
 /* Do not call Object.freeze on Sleep.prototype */
 
