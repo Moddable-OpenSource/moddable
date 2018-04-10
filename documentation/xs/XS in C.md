@@ -1757,10 +1757,10 @@ int main(int argc, char* argv[])
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
-		1024,				/* stack count */
-		2048+1024,			/* key count */
-		1993,				/* name modulo */
-		127					/* symbol modulo */
+		1024,			/* stack count */
+		2048+1024,		/* key count */
+		1993,			/* name modulo */
+		127			/* symbol modulo */
 	};
 	xsMachine* aMachine;
 
