@@ -12,6 +12,7 @@
 		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 	},
 	"preload": [
