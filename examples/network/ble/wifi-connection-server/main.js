@@ -32,18 +32,15 @@ let scanResponseData = {
 let ssid, password;
 
 function connectToWiFiNetwork() {
-	trace(`Conneting to ${ssid}\n`);
+	trace(`Conneting to ${ssid}...\n`);
 	let monitor = new WiFi({ ssid, password }, msg => {
 		switch (msg) {
 			case "connect":
-				trace(`connect\n`);
 				break; // still waiting for IP address
 			case "gotIP":
-				trace(`gotIP\n`);
 				trace(`IP address ${Net.get("IP")}\n`);
 				break;
 			case "disconnect":
-				trace(`disconnect\n`);
 				break;  // connection lost
 		}
 	})
