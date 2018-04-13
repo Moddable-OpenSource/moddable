@@ -64,6 +64,14 @@
 #ifndef MODDEF_ILI9341_BACKLIGHT_PORT
 	#define MODDEF_ILI9341_BACKLIGHT_PORT NULL
 #endif
+#ifndef MODDEF_ILI9341_BACKLIGHT_ON
+	#define MODDEF_ILI9341_BACKLIGHT_ON (0)
+#endif
+#if MODDEF_ILI9341_BACKLIGHT_ON
+	#define MODDEF_ILI9341_BACKLIGHT_OFF (0)
+#else
+	#define MODDEF_ILI9341_BACKLIGHT_OFF (1)
+#endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
 	#define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
@@ -102,6 +110,7 @@ typedef struct {
 #endif
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOConfigurationRecord	backlight;
+	uint8_t						backlightOn;
 #endif
 } spiDisplayRecord, *spiDisplay;
 
@@ -422,7 +431,8 @@ void ili9341Init(spiDisplay sd)
 #endif
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
-	modGPIOWrite(&sd->backlight, 0);
+	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);
+	sd->backlightOn = 0;		// start off in case there's garbage in frame buffer
 #endif
 
 	cmds = gInit;
@@ -484,6 +494,14 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 void ili9341End(void *refcon)
 {
+#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
+	spiDisplay sd = refcon;
+
+	if (!sd->backlightOn) {
+		modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_ON);
+		sd->backlightOn = 1;
+	}
+#endif
 }
 
 void ili9341AdaptInvalid(void *refcon, CommodettoRectangle invalid)
