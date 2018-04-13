@@ -68,14 +68,13 @@ export default class extends TOOL {
 		var file = new FILE(path);
 		var services = [];
 		var attributeIndex = 0;
+		var attributeCount = 0;
 		var characteristicIndex = 0;
 		file.line("#define CHAR_DECLARATION_SIZE (sizeof(uint8_t))");
 		file.line("");
-		file.line("enum {");
-		file.line("\tgattServerPrimaryServiceUUID = 0x2800,");
-		file.line("\tgattServerCharDeclarationUUID = 0x2803,");
-		file.line("\tgattServerClientCharConfigUUID = 0x2902");
-		file.line("};");
+		file.line("static const uint16_t primary_service_uuid = 0x2800;");
+		file.line("static const uint16_t character_declaration_uuid = 0x2803;");
+		file.line("static const uint16_t character_client_config_uuid = 0x2902;");
 		file.line("");
 		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
 		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
@@ -87,10 +86,13 @@ export default class extends TOOL {
 			services = services.concat(JSON.parse(this.readFileString(path)));
 		});
 		services.forEach((service, index) => {
-			file.line(`static const uint16_t service_uuid${index} = 0x${service.uuid};`);
+			++attributeCount;
+			if ("characteristics" in service) {
+				attributeCount += (service.characteristics.length * 2);
+			}
 		});
-		file.line("");
 		services.forEach((service, index) => {
+			file.line(`static const uint16_t service_uuid${index} = 0x${service.uuid};`);
 			if ("characteristics" in service) {
 				service.characteristics.forEach((characteristic, index) => {
 					var value, buffer;
@@ -116,21 +118,24 @@ export default class extends TOOL {
 								break;
 						}
 						characteristic._length = buffer.byteLength;
-						file.write(`static const uint8_t *char_value${characteristicIndex} = { `);
+						file.write(`static const uint8_t char_value${characteristicIndex}[${buffer.byteLength}] = { `);
 						file.write(buffer2hexlist(buffer));
 						file.write(" };");
-						file.line("");
 						file.line("");
 					}
 					++characteristicIndex;
 				});
+				file.line("");
 			}
 		});
 		characteristicIndex = 0;
 		
-		file.line("static const esp_gatts_attr_db_t gatt_db[] = {");
+		file.line(`#define attribute_count ${attributeCount}`);
+		file.line("");
+		file.line(`static const esp_gatts_attr_db_t gatt_db[attribute_count] = {`);
 		services.forEach((service, index) => {
 			// primary service attribute
+			file.line(`\t// service ${service.uuid}`);
 			file.line("\t[", attributeIndex, "] = {");
 			file.line("\t\t{ESP_GATT_AUTO_RSP},");
 			file.line(`\t\t{ESP_UUID_LEN_16, (uint8_t*)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(service_uuid${index}), (uint8_t*)&service_uuid${index}}`);
@@ -223,8 +228,8 @@ function buffer2hexlist(buffer) {
 	let hexParts = [];
 	for (let i = 0; i < byteArray.length; i++) {
 		let hex = byteArray[i].toString(16);
-		let padded = ('00' + hex).slice(-2);
-		hexParts.push('0x' + padded);
+		let padded = ("00" + hex).slice(-2);
+		hexParts.push("0x" + padded);
 	}
 	return hexParts.join(", ");
 }
