@@ -134,6 +134,7 @@ MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
 PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
 IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
 WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
+BLES2GATT = $(MODDABLE_TOOLS_DIR)/bles2gatt
 XSC = $(MODDABLE_TOOLS_DIR)/xsc
 XSID = $(MODDABLE_TOOLS_DIR)/xsid
 XSL = $(MODDABLE_TOOLS_DIR)/xsl
@@ -221,7 +222,7 @@ else
 	DO_LAUNCH = cd $(PROJ_DIR); make monitor
 endif
 	
-all: $(LIB_DIR) $(BIN_DIR)/xs_esp.a
+all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	-rm $(PROJ_DIR)/build/xs_esp32.elf
