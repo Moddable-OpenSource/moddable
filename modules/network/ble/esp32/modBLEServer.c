@@ -62,7 +62,6 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 static void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length);
 static void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length);
 
-// @@ The ESP32 BT APIs don't support a refcon to tuck away this kind of stuff for use in callbacks...
 static modBLE gBLE = NULL;
 static int gAPP_ID = 0;
 
@@ -96,6 +95,10 @@ void xs_ble_server_initialize(xsMachine *the)
 void xs_ble_server_close(xsMachine *the)
 {
 	xsForget(gBLE->obj);
+	esp_ble_gatts_app_unregister(gBLE->gatts_if);
+	esp_bluedroid_disable();
+	esp_bluedroid_deinit();
+	esp_bt_controller_deinit();
 	xs_ble_server_destructor(gBLE);
 }
 
@@ -229,31 +232,10 @@ void xs_ble_server_deploy(xsMachine *the)
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	struct gatts_reg_evt_param *reg = (struct gatts_reg_evt_param *)message;
-	esp_gatt_if_t gatts_if = *(esp_gatt_if_t*)refcon;
-	c_free(refcon);
-	gBLE->gatts_if = gatts_if;
-	
 	// Stack is ready
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("_onReady"));
 	xsEndHost(gBLE->the);
-}
-
-static void gattsAddAttrTabEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	uint16_t i;
-	struct gatts_add_attr_tab_evt_param *add_attr_tab = (struct gatts_add_attr_tab_evt_param *)message;
-	c_memmove(gBLE->handles, add_attr_tab->handles, attribute_count * sizeof(uint16_t));
-	modLog("handles");
-	for (i = 0; i < add_attr_tab->num_handle; ++i) {
-		modLogInt(add_attr_tab->handles[i]);
-		modLog("");
-	}
-		
-	modLog("starting service, handle =");
-	modLogInt(gBLE->handles[0]);
-	esp_ble_gatts_start_service(gBLE->handles[0]);
 }
 
 static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -286,10 +268,46 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static const esp_attr_desc_t *handleToAttDesc(uint16_t handle) {
+	for (uint16_t i = 0; i < attribute_count; ++i)
+		if (handle == gBLE->handles[i])
+			return &gatt_db[i].att_desc;
+	return NULL;
+}
+
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_write_evt_param *write = (struct gatts_write_evt_param *)message;
+	esp_bt_uuid_t uuid;
+	uint8_t buffer[ESP_UUID_LEN_128];
+	uint16_t uuid_length;
+	const esp_attr_desc_t *att_desc = handleToAttDesc(write->handle);
+	if (NULL == att_desc) return;
+    if (write->need_rsp) {
+        esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_malloc(sizeof(esp_gatt_rsp_t));
+        if (gatt_rsp != NULL) {
+            gatt_rsp->attr_value.len = write->len;
+            gatt_rsp->attr_value.handle = write->handle;
+            gatt_rsp->attr_value.offset = write->offset;
+            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+            memcpy(gatt_rsp->attr_value.value, write->value, write->len);
+			esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, gatt_rsp);
+            c_free(gatt_rsp);
+        }
+    }
 	xsBeginHost(gBLE->the);
+	xsmcVars(4);
+	uuid.len = att_desc->uuid_length;
+	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
+	uuidToBuffer(&uuid, buffer, &uuid_length);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+	xsmcSetInteger(xsVar(2), write->handle);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(3), write->value, write->len);
+	xsmcSet(xsVar(0), xsID_value, xsVar(3));
+	xsCall2(gBLE->obj, xsID_callback, xsString("_onCharacteristicWritten"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -298,26 +316,15 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 	switch(event) {
 		case ESP_GATTS_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
-				esp_gatt_if_t *_gatts_if = (esp_gatt_if_t *)c_malloc(sizeof(esp_gatt_if_t));
-				if (_gatts_if) {
-					*_gatts_if = gatts_if;
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gatts_reg_evt_param), gattsRegisterEvent, (void*)_gatts_if);
-				}
+        		gBLE->gatts_if = gatts_if;
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gatts_reg_evt_param), gattsRegisterEvent, NULL);
         	}
 			break;
-		case ESP_GATTS_START_EVT:
-			modLog("in ESP_GATTS_START_EVT");
-			if (param->start.status == ESP_GATT_OK)
-				modLog("service started");
-			else
-				modLogInt(param->start.status);
-			modLog("out ESP_GATTS_START_EVT");
-			break;
 		case ESP_GATTS_CREAT_ATTR_TAB_EVT:
-        	if (param->add_attr_tab.status == ESP_GATT_OK)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->add_attr_tab, sizeof(struct gatts_add_attr_tab_evt_param), gattsAddAttrTabEvent, NULL);
-			else
-				modLogInt(param->add_attr_tab.status);
+        	if (param->add_attr_tab.status == ESP_GATT_OK) {
+				c_memmove(gBLE->handles, param->add_attr_tab.handles, sizeof(gBLE->handles));
+				esp_ble_gatts_start_service(param->add_attr_tab.handles[0]);
+			}
 			break;
 		case ESP_GATTS_CONNECT_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gatts_connect_evt_param), gattsConnectEvent, NULL);
@@ -327,6 +334,9 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			break;
 		case ESP_GATTS_WRITE_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, NULL);
+			break;
+		case ESP_GATTS_START_EVT:
+		case ESP_GATTS_STOP_EVT:
 			break;
 	}
 }
