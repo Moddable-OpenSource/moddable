@@ -1,0 +1,28 @@
+[
+	{
+		"uuid": "FF00",
+		"characteristics": [
+			{
+				"uuid": "FF01",
+				"format": "utf8",
+				"maxBytes": "32",
+				"permissions": "write",
+				"properties": "write",
+			},
+			{
+				"uuid": "FF02",
+				"format": "utf8",
+				"maxBytes": "32",
+				"permissions": "write",
+				"properties": "write",
+			},
+			{
+				"uuid": "FF03",
+				"format": "uint8",
+				"maxBytes": "1",
+				"permissions": "write",
+				"properties": "write",
+			},
+		]
+	}
+]
