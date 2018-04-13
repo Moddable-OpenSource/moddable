@@ -14,20 +14,4 @@
 			"./bleservices/*",
 		],
 	},
-	"platforms": {
-		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/net/*",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp32/*",
-				],
-			},
-			"preload": [
-				"net",
-				"wifi"
-			]
-		},
-	}
 }
