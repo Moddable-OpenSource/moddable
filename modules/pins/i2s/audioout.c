@@ -462,6 +462,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			pthread_mutex_unlock(&out->mutex);
 #elif ESP32
 			xSemaphoreGive(out->mutex);
+			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
 #elif defined(__ets__)
 			modCriticalSectionEnd();
 #endif
@@ -630,6 +631,7 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 void audioOutLoop(void *pvParameter)
 {
 	modAudioOut out = pvParameter;
+	uint8_t installed = false;
 
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX,	// Only TX
@@ -653,12 +655,15 @@ void audioOutLoop(void *pvParameter)
 		.data_out_num = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
 		.data_in_num = -1	// unused
 	};
-	i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
-	i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
 
 	while (kStateTerminated != out->state) {
-		if (kStateIdle == out->state) {
+		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
+
+			if (installed) {
+				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+				installed = false;
+			}
 
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 			if (kStateTerminated == newState)
@@ -667,6 +672,12 @@ void audioOutLoop(void *pvParameter)
 			if (kStateIdle == newState)
 				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
 			continue;
+		}
+
+		if (!installed) {
+			i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
+			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
+			installed = true;
 		}
 
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
@@ -697,6 +708,7 @@ void audioOutLoop(void *pvParameter)
 	}
 
 	// from here, "out" is invalid
+	if (installed)
 	i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
 
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
