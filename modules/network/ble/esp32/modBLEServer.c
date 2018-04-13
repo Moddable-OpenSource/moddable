@@ -54,6 +54,7 @@ typedef struct {
 	// connection
 	int16_t conn_id;
 	uint16_t app_id;
+	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -94,12 +95,13 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
+	gBLE->terminating = true;
 	esp_ble_gatts_app_unregister(gBLE->gatts_if);
+	xsForget(gBLE->obj);
+	xs_ble_server_destructor(gBLE);
 	esp_bluedroid_disable();
 	esp_bluedroid_deinit();
 	esp_bt_controller_deinit();
-	xs_ble_server_destructor(gBLE);
 }
 
 void xs_ble_server_destructor(void *data)
@@ -201,6 +203,8 @@ void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length)
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+	if (!gBLE || gBLE->terminating) return;
+
 	switch(event) {
 		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
 			gBLE->adv_config_done &= ~adv_config_flag;
@@ -313,6 +317,8 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
+	if (!gBLE || gBLE->terminating) return;
+	
 	switch(event) {
 		case ESP_GATTS_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
