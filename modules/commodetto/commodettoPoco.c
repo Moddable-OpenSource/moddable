@@ -755,11 +755,11 @@ void xs_poco_drawText(xsMachine *the)
 		previousUnicode = unicode;
 #endif
 
-		if (ellipsisWidth && ((width - glyph->advance) <= ellipsisWidth)) {
+		if (ellipsisWidth && ((width - glyph->advance) < ellipsisWidth)) {
 			// measure the rest of the string to see if it fits
-			const unsigned char *t = text - 1;		//@@ fails if multibyte...
-			int w = 0;
-			while (w < width) {
+			const unsigned char *t = text;
+			int w = glyph->advance;
+			while (w <= width) {
 				CFEGlyph tg;
 				uint32_t unicode = PocoNextFromUTF8((uint8_t **)&t);
 				if (!unicode) {
@@ -772,12 +772,12 @@ void xs_poco_drawText(xsMachine *the)
 
 				w += tg->advance;
 			}
-			if (w <= width)
-				ellipsisWidth = 0;		// enough room to draw entire string
-			else {
+			if (w > width) {
 				text = (const unsigned char *)ellipsis;		// draw ellipsis
 				continue;
 			}
+			ellipsisWidth = 0;		// enough room to draw entire string
+			glyph = CFEGetGlyphFromUnicode(gCFE, unicode, true);
 		}
 
 		sx = glyph->sx;
