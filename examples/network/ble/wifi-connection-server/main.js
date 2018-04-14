@@ -12,66 +12,8 @@
  *
  */
 
-import {BLEServer} from "ble";
-import WiFi from "wifi";
-import Net from "net";
+import WiFiServer from "wifiserver";
 
-const WIFI_NETWORK_CHARACTERISTIC = "FF01";
-const WIFI_PASSWORD_CHARACTERISTIC = "FF02";
-const WIFI_CONTROL_CHARACTERISTIC = "FF03";
-const DEVICE_NAME = "Moddable Device";
-
-let advertisingData = {
-	shortName: "Moddable",
-	completeUUID16List: ["FF00"]
-};
-let scanResponseData = {
-	flags: 6,
-	completeName: DEVICE_NAME
-};
-let ssid, password;
-
-function connectToWiFiNetwork() {
-	trace(`Conneting to ${ssid}...\n`);
-	let monitor = new WiFi({ ssid, password }, msg => {
-		switch (msg) {
-			case "connect":
-				break; // still waiting for IP address
-			case "gotIP":
-				trace(`IP address ${Net.get("IP")}\n`);
-				break;
-			case "disconnect":
-				break;  // connection lost
-		}
-	})
-}
-
-let server = new BLEServer();
-server.onReady = () => {
-	server.deviceName = DEVICE_NAME;
-	server.startAdvertising({ advertisingData, scanResponseData });
-	server.deploy();
-}
-server.onConnected = () => {
-	server.stopAdvertising();
-}
-server.onDisconnected = () => {
-	server.startAdvertising({ advertisingData, scanResponseData });
-}
-server.onCharacteristicWritten = params => {
-	let characteristic = params.characteristic;
-	let value = params.value;
-	if (WIFI_NETWORK_CHARACTERISTIC == characteristic.uuid)
-		ssid = String.fromArrayBuffer(value);
-	else if (WIFI_PASSWORD_CHARACTERISTIC == characteristic.uuid)
-		password = String.fromArrayBuffer(value);
-	else if (WIFI_CONTROL_CHARACTERISTIC == characteristic.uuid) {
-		let command = new Uint8Array(value)[0];
-		if ((1 == command) && ssid && password) {
-			server.close();
-			connectToWiFiNetwork();
-		}
-	}
-}
+let server = new WiFiServer;
 server.initialize();
 
