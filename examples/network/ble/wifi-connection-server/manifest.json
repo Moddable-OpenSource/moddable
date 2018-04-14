@@ -6,9 +6,13 @@
 	],
 	"modules": {
 		"*": [
-			"./main"
+			"./main",
+			"./wifiserver"
 		]
 	},
+	"preload": [
+		"wifiserver",
+	],
 	"ble":{
 		"*": [
 			"./bleservices/*",
