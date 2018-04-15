@@ -541,14 +541,14 @@
 	#if mxBigEndian
 		#define c_read16be(POINTER) *((txU2*)(POINTER))
 	#else
-		#define c_read16be(POINTER) ((((txU2)((txU1*)POINTER)[0]) << 8) | ((txU2)((txU1*)POINTER)[1]))
+		#define c_read16be(POINTER) ((((txU2)((txU1*)(POINTER))[0]) << 8) | ((txU2)((txU1*)(POINTER))[1]))
 	#endif
 #endif
 #ifndef c_read32be
 	#if mxBigEndian
 		#define c_read32be(POINTER) *((txU4*)(POINTER))
 	#else
-		#define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
+		#define c_read32be(POINTER) ((((txU4)((txU1*)(POINTER))[0]) << 24) | (((txU4)((txU1*)(POINTER))[1]) << 16) | (((txU4)((txU1*)(POINTER))[2]) << 8) | ((txU4)((txU1*)(POINTER))[3]))
 	#endif
 #endif
 
