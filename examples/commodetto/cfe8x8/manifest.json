@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"~": "$(COMMODETTO)/cfeBMF",
+		"*": [
+			"./main",
+			"$(COMMODETTO)/cfe8x8",
+		]
+	},
+	"resources": {
+		"*": "./assets/8x8font",
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}
