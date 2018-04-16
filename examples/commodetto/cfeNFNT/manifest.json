@@ -1,0 +1,23 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"~": "$(COMMODETTO)/cfeBMF",
+		"commodetto/parseNFNT": "$(COMMODETTO)/commodettoParseNFNT",
+		"*": [
+			"./main",
+			"$(COMMODETTO)/cfeNFNT",
+		]
+	},
+	"resources": {
+		"*": [
+			"./assets/chicago12",
+		]
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}
