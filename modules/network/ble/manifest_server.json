@@ -1,0 +1,31 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/network/ble/bleserver",
+			"$(MODULES)/network/ble/btutils",
+			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/data/hex/*"
+		],
+	},
+	"preload": [
+		"bleserver",
+		"btutils",
+		"gap",
+		"hex"
+	],
+	"defines": {
+		"ble": {
+			"enabled": true
+		}
+	},
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/esp32/modBLEServer",
+			},
+		},
+		"...": {
+			"error": "ble unsupported"
+		}
+	}
+}

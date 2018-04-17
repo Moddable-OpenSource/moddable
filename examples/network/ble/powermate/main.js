@@ -16,56 +16,52 @@
 	https://griffintechnology.com/us/powermate-bluetooth
  */
 
-import BLE from "ble";
-import {UUID} from "btutils";
+import BLEClient from "bleclient";
 
 const DEVICE_NAME = 'PowerMate Bluetooth';
 const SERVICE_UUID = '25598CF7-4240-40A6-9910-080F19F91EBC';
 const CHARACTERISTIC_UUID = '9CF53570-DDD9-47F3-BA63-09ACEFC60415';
 
-let ble = new BLE();
-ble.onReady = () => {
-	ble.onDiscovered = device => {
+class PowerMate extends BLEClient {
+	onReady() {
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
-			ble.stopScanning();
-			ble.connect(device.address);
+			this.stopScanning();
+			this.connect(device.address);
 		}
 	}
-	ble.onConnected = connection => {
-		connection.onDisconnected = () => {
-			ble.startScanning();
-		}
-		let client = connection.client;
-		client.onServices = services => {
-			let service = client.findServiceByUUID(SERVICE_UUID);
-			if (service) {
-				service.onCharacteristics = characteristics => {
-					let characteristic = service.findCharacteristicByUUID(CHARACTERISTIC_UUID);
-					if (characteristic) {
-						characteristic.onNotification = buffer => {
-							let state, value = new Uint8Array(buffer)[0];
-							if (104 == value)
-								state = "right";
-							else if (103 == value)
-								state = "left";
-							else if (101 == value)
-								state = "press";
-							else if (value >= 114)
-								state = "hold";
-							else
-								state = "idle";
-							trace(`state: ${state}\n`);
-						}
-						characteristic.enableNotifications();
-					}
-				}
-				service.discoverCharacteristic(CHARACTERISTIC_UUID);
-			}
-		}
-		client.discoverPrimaryService(SERVICE_UUID);
+	onConnected(device) {
+		device.discoverPrimaryService(SERVICE_UUID);
 	}
-	ble.startScanning();
+	onDisconnected() {
+		this.startScanning();
+	}
+	onServices(services) {
+		let service = services.find(service => SERVICE_UUID == service.uuid);
+		if (service)
+			service.discoverCharacteristic(CHARACTERISTIC_UUID);
+	}
+	onCharacteristics(characteristics) {
+		let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
+		if (characteristic)
+			characteristic.enableNotifications();
+	}
+	onCharacteristicNotification(characteristic, buffer) {
+		let state, value = new Uint8Array(buffer)[0];
+		if (104 == value)
+			state = "right";
+		else if (103 == value)
+			state = "left";
+		else if (101 == value)
+			state = "press";
+		else if (value >= 114)
+			state = "hold";
+		else
+			state = "idle";
+		trace(`state: ${state}\n`);
+	}
 }
-	
-ble.initialize();
 
+let powermate = new PowerMate;
