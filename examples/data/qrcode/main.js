@@ -34,7 +34,7 @@ for (let y = 0; y < size; y++) {
 let render = new Poco(screen);
 
 render.begin();
-render.fillRectangle(render.makeColor(0, 0, 255), 0, 0, render.width, render.height);
+render.fillRectangle(render.makeColor(255, 255, 255), 0, 0, render.width, render.height);
 render.end();
 
 let margin = 10;
@@ -47,7 +47,7 @@ for (let y = 0; y < size; y++) {
 	render.fillRectangle(render.makeColor(255, 255, 255), 0, 0, render.width, render.height);
 	for (let x = 0; x < size; x++) {
 		if (qr[(y * size) + x])
-			render.fillRectangle(render.makeColor(0, 0, 0), margin + (x * pixels), margin + (y * pixels), pixels, pixels);
+			render.fillRectangle(render.makeColor(0, 0, 255), margin + (x * pixels), margin + (y * pixels), pixels, pixels);
 	}
 	render.end();
 }
