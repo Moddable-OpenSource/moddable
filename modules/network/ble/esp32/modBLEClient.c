@@ -262,7 +262,6 @@ void modBLEConnectionRemove(modBLEConnection connection)
 				gBLE->connections = walker->next;
 			else
 				prev->next = walker->next;
-			esp_ble_gattc_app_unregister(connection->gattc_if);
 			while (connection->notifications) {
 				modBLENotification notification = connection->notifications;
 				//esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, notification->char_handle);
@@ -318,6 +317,35 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
+typedef struct {
+	esp_gattc_char_elem_t char_elem_result;
+	xsSlot obj;
+} characteristicSearchRecord;
+
+static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	characteristicSearchRecord *csr = (characteristicSearchRecord*)message;
+	esp_gattc_char_elem_t *char_elem = &csr->char_elem_result;
+	xsBeginHost(gBLE->the);
+	if (csr->char_elem_result.char_handle == 0)
+		xsCall1(csr->obj, xsID_callback, xsString("_onCharacteristic"));	// procedure complete
+	else {
+		uint16_t length;
+		uint8_t buffer[ESP_UUID_LEN_128];
+		uuidToBuffer(buffer, &char_elem->uuid, &length);
+		xsmcVars(4);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), buffer, length);
+		xsmcSetInteger(xsVar(2), char_elem->char_handle);
+		xsmcSetInteger(xsVar(3), char_elem->properties);
+		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+		xsCall2(csr->obj, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
+	}
+	xsEndHost(gBLE->the);
+}
+
 void xs_gatt_service_discover_characteristics(xsMachine *the)
 {
 	uint16_t argc = xsmcArgc;
@@ -325,11 +353,12 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
 	uint16_t count = 0;
+	characteristicSearchRecord csr;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	csr.obj = xsThis;
 	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count);
 	if (count > 0) {
-		xsmcVars(4);
 		esp_gattc_char_elem_t *char_elem_result = c_malloc(sizeof(esp_gattc_char_elem_t) * count);
 		if (!char_elem_result)
 			xsUnknownError("out of memory");
@@ -341,22 +370,13 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 		else
 			esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0);
 		for (int i = 0; i < count; ++i) {
-			uint16_t length;
-			uint8_t buffer[ESP_UUID_LEN_128];
-			esp_gattc_char_elem_t *char_elem = &char_elem_result[i];
-			uuidToBuffer(buffer, &char_elem->uuid, &length);
-			xsVar(0) = xsmcNewObject();
-			xsmcSetArrayBuffer(xsVar(1), buffer, length);
-			xsmcSetInteger(xsVar(2), char_elem->char_handle);
-			xsmcSetInteger(xsVar(3), char_elem->properties);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-			xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-			xsCall2(xsThis, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
+			csr.char_elem_result = char_elem_result[i];
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
 		}
 		c_free(char_elem_result);
 	}
-	xsCall1(xsThis, xsID_callback, xsString("_onCharacteristic"));	// procedure complete
+	csr.char_elem_result.char_handle = 0;
+	modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
 }
 
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
@@ -606,6 +626,7 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		LOG_GATTC_MSG("Ignoring duplicate disconnect event");
 		goto bail;
 	}	
+	esp_ble_gattc_app_unregister(connection->gattc_if);
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), close->conn_id);
 	xsCall2(connection->objConnection, xsID_callback, xsString("_onDisconnected"), xsVar(0));

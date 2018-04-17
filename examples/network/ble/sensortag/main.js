@@ -16,12 +16,12 @@
 	http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments
  */
 
-import BLE from "ble";
+import BLEClient from "bleclient";
+import Timer from "timer";
 
 const DEVICE_NAME = "SensorTag";
 
 class SensorTagSensor {
-	constructor() {}
 	configure(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -69,18 +69,14 @@ class SensorTagSensor {
 	start() {
 		if (this.data) {
 			let characteristic = this.service.findCharacteristicByUUID(this.data);
-			characteristic.onNotification = this.onNotification.bind(this);
 			characteristic.enableNotifications();
-		}
-	}
-	stop() {
-		if (this.data) {
-			let characteristic = this.service.findCharacteristicByUUID(this.data);
-			let descriptor = characteristic.findCharacteristicByUUID(UUID.CCCD);
-			descriptor.writeValue(0);
+			Timer.delay(100);
 		}
 	}
 	onNotification(buffer) {
+		debugger;
+	}
+	onValue(buffer) {
 		debugger;
 	}
 }
@@ -131,29 +127,9 @@ class MagnetometerSensor extends SensorTagSensor {
 class BarometerSensor extends SensorTagSensor {
 	configure(dictionary) {
 		super.configure(dictionary);
-		let characteristic;
-		characteristic = this.service.findCharacteristicByUUID(this.configuration);
+		let characteristic = this.service.findCharacteristicByUUID(this.configuration);
 		characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
 		characteristic = this.service.findCharacteristicByUUID(dictionary.calibration);
-		characteristic.onValue = buffer => {
-			let view = new DataView(buffer);
-			let calibration_data = this.calibration_data = new Array(8);
-			for (let i = 0; i < 4; ++i)
-				calibration_data[i] = view.getUint16(i * 2, true);
-			for (let i = 4; i < 8; ++i)
-				calibration_data[i] = view.getUint16(i * 2, true);
-				
-			// enable measurements
-			let ch = this.service.findCharacteristicByUUID(this.configuration);
-			let config = new Uint8Array(1);
-			config[0] = 0x01;
-			ch.writeWithoutResponse(config.buffer);
-			
-			// enable notifications
-			ch = this.service.findCharacteristicByUUID(this.data);
-			ch.onNotification = this.onNotification.bind(this);
-			ch.enableNotifications();
-		}
 		characteristic.readValue();
 	}
 	initialize() {
@@ -172,6 +148,25 @@ class BarometerSensor extends SensorTagSensor {
 		let p_a = (S * p_r + O) / Math.pow(2,14);
 		let pressure = (p_a / 100).toFixed(1) + ' hPa';
 		trace(`[${this.name}] pressure: ${pressure}\n`);
+	}
+	onValue(buffer) {
+		let view = new DataView(buffer);
+		let calibration_data = this.calibration_data = new Array(8);
+		for (let i = 0; i < 4; ++i)
+			calibration_data[i] = view.getUint16(i * 2, true);
+		for (let i = 4; i < 8; ++i)
+			calibration_data[i] = view.getUint16(i * 2, true);
+			
+		// enable measurements
+		let ch = this.service.findCharacteristicByUUID(this.configuration);
+		let config = new Uint8Array(1);
+		config[0] = 0x01;
+		ch.writeWithoutResponse(config.buffer);
+		
+		// enable notifications
+		ch = this.service.findCharacteristicByUUID(this.data);
+		ch.enableNotifications();
+		Timer.delay(100);
 	}
 }
 
@@ -252,51 +247,66 @@ const SERVICES = {
 	},
 };
 
-let ble = new BLE();
-ble.onReady = () => {
-	ble.onDiscovered = device => {
+class SensorTag extends BLEClient {
+	onReady() {
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
-			ble.sensors = [];
-			ble.stopScanning();
-			ble.connect(device.address);
+			this.sensors = [];
+			this.stopScanning();
+			this.connect(device.address);
 		}
 	}
-	ble.onConnected = connection => {
-		connection.onDisconnected = () => {
-			ble.sensors.length = 0;
-			ble.startScanning();
-		}
-		let client = connection.client;
-		client.onServices = services => {
-			trace(`discovered all services\n`);
-			services.forEach(service => {
-				if (service.uuid in SERVICES) {
-					let sensor = Object.assign({service}, SERVICES[service.uuid]);
-					ble.sensors.push(sensor);
-				}
-			});
-			ble.remaining = Object.keys(SERVICES).length;
-			ble.sensors.forEach(sensor => {
-				sensor.service.onCharacteristics = characteristics => {
-					trace(`discovered characteristics for service ${sensor.service.uuid}\n`);
-					if (0 == --ble.remaining) {
-						ble.sensors.forEach(sensor => {
-							trace(`starting sensor [${sensor.name}]\n`);
-							sensor.driver = new sensor.constructor();
-							sensor.driver.configure(sensor);
-							sensor.driver.start();
-						});
-					}
-				}
-				trace(`discovering all characteristics for service ${sensor.service.uuid}\n`);
-				sensor.service.discoverAllCharacteristics();
-			});
-		}
-		trace(`discovering all primary services\n`);
-		client.discoverAllPrimaryServices();
+	onConnected(device) {
+		device.discoverAllPrimaryServices();
 	}
-	ble.startScanning();
+	onServices(services) {
+		services.forEach(service => {
+			if (service.uuid in SERVICES) {
+				let sensor = Object.assign({service}, SERVICES[service.uuid]);
+				this.sensors.push(sensor);
+			}
+		});
+		this.index = 0;
+		this.sensors[0].service.discoverAllCharacteristics();
+	}
+	onCharacteristics(characteristics) {
+		if (++this.index == this.sensors.length) {
+			this.sensors.forEach(sensor => {
+				trace(`starting sensor [${sensor.name}]\n`);
+				sensor.driver = new sensor.constructor();
+				sensor.driver.configure(sensor);
+				sensor.driver.start();
+			});
+		}
+		else
+			this.sensors[this.index].service.discoverAllCharacteristics();
+	}
+	onCharacteristicValue(characteristic, buffer) {
+		let sensors = this.sensors;
+		for (let i = 0; i < sensors.length; ++i) {
+			let sensor = sensors[i];
+			if (sensor.service.findCharacteristicByUUID(characteristic.uuid)) {
+				sensor.driver.onValue.call(sensor.driver, buffer);
+				break;
+			}
+		}
+	}
+	onCharacteristicNotification(characteristic, buffer) {
+		let sensors = this.sensors;
+		for (let i = 0; i < sensors.length; ++i) {
+			let sensor = sensors[i];
+			if (sensor.service.findCharacteristicByUUID(characteristic.uuid)) {
+				sensor.driver.onNotification.call(sensor.driver, buffer);
+				break;
+			}
+		}
+	}
+	onDisconnected() {
+		this.sensors.length = 0;
+		this.startScanning();
+	}
 }
-	
-ble.initialize();
 
+let sensortag = new SensorTag;

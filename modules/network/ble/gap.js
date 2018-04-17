@@ -87,7 +87,5 @@ GAP.ADFlag = {
 
 Object.freeze(GAP.prototype);
 
-let MIN_INITIAL_CONN_INTERVAL = 0x18;	// TGAP(initial_conn_interval)	30ms to 50ms
-let MAX_INITIAL_CONN_INTERVAL = 0x28;	// TGAP(initial_conn_interval)	30ms to 50ms
 
 export default GAP;

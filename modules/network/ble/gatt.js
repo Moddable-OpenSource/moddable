@@ -80,13 +80,13 @@ export class Client {
 	_onCharacteristicNotification(params) {
 		let characteristic = this._findCharacteristicByHandle(params.handle);
 		if (characteristic)
-			characteristic._onNotification.call(characteristic, params);
+			this.ble.onCharacteristicNotification(characteristic, params.value);		
 	}
 
 	_onCharacteristicValue(params) {
 		let characteristic = this._findCharacteristicByHandle(params.handle);
 		if (characteristic)
-			characteristic._onValue.call(characteristic, params);
+			this.ble.onCharacteristicValue(characteristic, params.value);		
 	}
 
 	callback(event, params) {
@@ -98,8 +98,6 @@ Object.freeze(Client.prototype);
 
 export class Service {
 	constructor(dictionary) {
-		this.characteristics = [];
-		
 		for (let property in dictionary) {
 			switch (property) {
 				case "ble":
@@ -122,6 +120,7 @@ export class Service {
 					break;
 			}
 		}
+		this.characteristics = [];		
 	}
 	
 	discoverCharacteristic(uuid) {
@@ -219,12 +218,6 @@ export class Characteristic {
 			params.characteristic = this;
 			this.descriptors.push(new Descriptor(params));
 		}
-	}
-	_onNotification(params) {
-		this.ble.onCharacteristicNotification(this, params.value);
-	}
-	_onValue(params) {
-		this.ble.onCharacteristicValue(this, params.value);
 	}
 	
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
