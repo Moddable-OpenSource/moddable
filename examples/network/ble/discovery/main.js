@@ -17,39 +17,42 @@
 	To use the app, set the DEVICE_NAME string to your device's advertised complete name.
 */
 
-import BLE from "ble";
+import BLEClient from "bleclient";
 
 const DEVICE_NAME = "<YOUR DEVICE NAME>";
 
-let ble = new BLE();
-ble.onReady = () => {
-	ble.startScanning();
-	ble.onDiscovered = device => {
+class Discovery extends BLEClient {
+	onReady() {
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
-			ble.stopScanning();
-			ble.connect(device.address);
+			this.stopScanning();
+			this.connect(device.address);
 		}
 	}
-	ble.onConnected = connection => {
-		let client = connection.client;
-		client.onServices = services => {
-			let service = services.find(service => '180A' == service.uuid);
-			if (service) {
-				service.onCharacteristics = characteristics => {
-					let characteristic = service.findCharacteristicByUUID('2A29');
-					characteristic.onValue = value => {
-						let manufacturer = String.fromArrayBuffer(value);
-						trace(`Manufacturer: ${manufacturer}\n`);
-						connection.disconnect();
-					}
-					characteristic.readValue();
-				}
-				service.discoverAllCharacteristics();
-			}
-		}
-		client.discoverAllPrimaryServices();
+	onConnected(device) {
+		this.device = device;
+		device.discoverAllPrimaryServices();
+	}
+	onServices(services) {
+		let service = services.find(service => "180A" == service.uuid);
+		if (service)
+			service.discoverAllCharacteristics();
+	}
+	onCharacteristics(characteristics) {
+		let characteristic = characteristics.find(characteristic => "2A29" == characteristic.uuid);
+		if (characteristic)
+			characteristic.readValue();
+	}
+	onCharacteristicValue(characteristic, value) {
+		let manufacturer = String.fromArrayBuffer(value);
+		trace(`Manufacturer: ${manufacturer}\n`);
+		this.device.close();
+	}
+	onDisconnected() {
+		trace("done!\n");
 	}
 }
-	
-ble.initialize();
 
+let discovery = new Discovery;
