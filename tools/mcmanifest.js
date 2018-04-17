@@ -88,16 +88,13 @@ export class MakeFile extends FILE {
 	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
-		if (tool.bleServicesFiles.length) {
-			this.write("\\\n\t$(TMP_DIR)");
-			this.write(tool.slash);
-			this.write("mc.bleservices.c");
-		}	
+		this.write("\\\n\t$(TMP_DIR)");
+		this.write(tool.slash);
+		this.write("mc.bleservices.c");
 		this.line("");
 		this.line("");
 	}
 	generateBLERules(tool) {
-		if (!tool.bleServicesFiles.length) return;
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
 		this.write("mc.bleservices.c:");
