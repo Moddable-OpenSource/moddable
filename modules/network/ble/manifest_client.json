@@ -1,0 +1,40 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/network/ble/bleclient",
+			"$(MODULES)/network/ble/btutils",
+			"$(MODULES)/network/ble/connection",
+			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/network/ble/gatt",
+			"$(MODULES)/data/hex/*"
+		],
+	},
+	"preload": [
+		"bleclient",
+		"btutils",
+		"connection",
+		"gap",
+		"gatt",
+		"hex"
+	],
+	"defines": {
+		"ble": {
+			"enabled": true
+		}
+	},
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/esp32/modBLEClient",
+			},
+		},
+		"gecko/blue": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/gecko/*",
+			},
+		},
+		"...": {
+			"error": "ble unsupported"
+		}
+	}
+}
