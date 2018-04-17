@@ -66,6 +66,13 @@ export default class extends TOOL {
 	run() {
 		var path = this.joinPath({directory: this.outputPath, name:this.name});
 		var file = new FILE(path);
+		if (0 == this.files.length) {
+			file.line("#define attribute_count 0");
+			file.line("");
+			file.line("static const esp_gatts_attr_db_t gatt_db[0] = {};");
+			file.close();
+			return;
+		}
 		var services = [];
 		var attributeIndex = 0;
 		var attributeCount = 0;
