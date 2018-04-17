@@ -19,26 +19,14 @@
  */
 
 import GAP from "gap";
-import Connection from "connection";
-import {Client} from "gatt";
-import {BluetoothAddress, Advertisement} from "btutils";
+import {BluetoothAddress, Advertisement, UUID} from "btutils";
 
-class BLE @ "xs_ble_destructor" {
+export class BLEServer @ "xs_ble_server_destructor" {
 	constructor() {
-		this.onReady = function() {};
-		this.onDiscovered = function() {};
-		this.onConnected = function() {};
+		this.initialize();
 	}
-	
-	initialize(params) @ "xs_ble_initialize"
-	close() @ "xs_ble_close"
-	
-	set deviceName() @ "xs_ble_set_device_name"
-	
-	connect(address) {
-		this._connect(BluetoothAddress.toBuffer(address));
-	}
-	
+	close() @ "xs_ble_server_close"
+	set deviceName() @ "xs_ble_server_set_device_name"
 	startAdvertising(params) {
 		let fast = params.hasOwnProperty("fast") ? params.fast : true;
 		let connectable = params.hasOwnProperty("connectable") ? params.connectable : true;
@@ -63,41 +51,35 @@ class BLE @ "xs_ble_destructor" {
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
 		this._startAdvertising(interval.intervalMin, interval.intervalMax, advertisingDataBuffer, scanResponseDataBuffer);
 	}
-	stopAdvertising() @ "xs_ble_stop_advertising"
+	stopAdvertising() @ "xs_ble_server_stop_advertising"
+	deploy() @ "xs_ble_server_deploy"
+	initialize() @ "xs_ble_server_initialize"
 	
-	startScanning(params) {
-		if (!params) params = {};
-		let active = params.hasOwnProperty("active") ? params.active : true;
-		let interval = params.hasOwnProperty("interval") ? params.interval : 0x50;
-		let window = params.hasOwnProperty("window") ? params.window : 0x30;
-		this._startScanning(active, interval, window);
-	}
-	stopScanning() @ "xs_ble_stop_scanning"
-	
-	_connect() @ "xs_ble_connect"
-	_startScanning() @ "xs_ble_start_scanning"
-	_startAdvertising() @ "xs_ble_start_advertising"
-	
+	onReady() {}
+	onCharacteristicWritten() {}
+	onConnected() {}
+	onDisconnected() {}
+
+	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_onReady() {
 		this.onReady();
 	}
-	_onDiscovered(params) {
-		let address = BluetoothAddress.toString(params.address);
-		let scanResponse = new Advertisement(params.scanResponse);
-		params = { address, scanResponse };
-		this.onDiscovered(params);
+	_onCharacteristicWritten(params) {
+		let characteristic = { uuid:UUID.toString(params.uuid), handle:params.handle };
+		this.onCharacteristicWritten({ characteristic, value:params.value });
 	}
 	_onConnected(params) {
 		let address = BluetoothAddress.toString(params.address);
-		let client = new Client(params.connection);
-		params = new Connection({ address, client });
-		this.onConnected(params);
+		this.onConnected({ address, connection:params.connection });
+	}
+	_onDisconnected(params) {
+		this.onDisconnected(params);
 	}
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
 		this[event](params);
 	}
 };
-Object.freeze(BLE.prototype);
+Object.freeze(BLEServer.prototype);
 
-export default BLE;
+export default BLEServer;
