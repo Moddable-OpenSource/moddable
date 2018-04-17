@@ -12,7 +12,7 @@
  *
  */
 
-import {BLEServer} from "ble";
+import BLEServer from "bleserver";
 import WiFi from "wifi";
 import Net from "net";
 
@@ -37,13 +37,13 @@ export default class WiFiServer extends BLEServer {
 		});
 	}
 	onCharacteristicWritten(params) {
-		let characteristic = params.characteristic;
+		let uuid = params.characteristic.uuid;
 		let value = params.value;
-		if (WIFI_NETWORK_CHARACTERISTIC == characteristic.uuid)
+		if (WIFI_NETWORK_CHARACTERISTIC == uuid)
 			this.ssid = String.fromArrayBuffer(value);
-		else if (WIFI_PASSWORD_CHARACTERISTIC == characteristic.uuid)
+		else if (WIFI_PASSWORD_CHARACTERISTIC == uuid)
 			this.password = String.fromArrayBuffer(value);
-		else if (WIFI_CONTROL_CHARACTERISTIC == characteristic.uuid) {
+		else if (WIFI_CONTROL_CHARACTERISTIC == uuid) {
 			let command = new Uint8Array(value)[0];
 			if ((1 == command) && this.ssid && this.password) {
 				this.close();
