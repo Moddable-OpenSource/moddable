@@ -16,57 +16,54 @@
 	https://www.walmart.com/ip/Star-Tech-Bc090-Colorific-A19-Bluetooth-D67-Controlled-LED-Bulb/46711393
  */
 
-import BLE from "ble";
+import BLEClient from "bleclient";
 import Timer from "timer";
 
 const DEVICE_NAME = "RGBLightOne";
 const SERVICE_UUID = '1802';
 const CHARACTERISTIC_UUID = '2A06';
 
-let buffer = new ArrayBuffer(9);
-let payload = new Uint8Array(buffer);
-payload[0] = 0x58;
-payload[1] = 0x01;
-payload[2] = 0x03;
-payload[3] = 0x01;
-payload[4] = 0x10; // White brightness
-payload[5] = 0x00; // Separator byte
-
-let ble = new BLE();
-ble.onReady = () => {
-	ble.onDiscovered = device => {
+class Colorific extends BLEClient {
+	onReady() {
+		let payload = this.payload = new Uint8Array(new ArrayBuffer(9));
+		payload[0] = 0x58;
+		payload[1] = 0x01;
+		payload[2] = 0x03;
+		payload[3] = 0x01;
+		payload[4] = 0x10; // White brightness
+		payload[5] = 0x00; // Separator byte
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
-			ble.stopScanning();
-			ble.connect(device.address);
+			this.stopScanning();
+			this.connect(device.address);
 		}
 	}
-	ble.onConnected = connection => {
-		connection.onDisconnected = () => {
-			Timer.clear(ble.timer);
-			ble.startScanning();
-		}
-		let client = connection.client;
-		client.onServices = services => {
-			let service = client.findServiceByUUID(SERVICE_UUID);
-			if (service) {
-				service.onCharacteristics = characteristics => {
-					let characteristic = service.findCharacteristicByUUID(CHARACTERISTIC_UUID);
-					if (characteristic) {
-						ble.timer = Timer.repeat(id => {
-							payload[6] = Math.floor(Math.random() * 256);
-							payload[7] = Math.floor(Math.random() * 256);
-							payload[8] = Math.floor(Math.random() * 256);
-							characteristic.writeWithoutResponse(buffer);
-						}, 100);
-					}
-				}
-				service.discoverCharacteristic(CHARACTERISTIC_UUID);
-			}
-		}
-		client.discoverPrimaryService(SERVICE_UUID);
+	onConnected(device) {
+		device.discoverPrimaryService(SERVICE_UUID);
 	}
-	ble.startScanning();
+	onServices(services) {
+		let service = services.find(service => SERVICE_UUID == service.uuid);
+		if (service)
+			service.discoverCharacteristic(CHARACTERISTIC_UUID);
+	}
+	onCharacteristics(characteristics) {
+		let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
+		if (characteristic) {
+			this.timer = Timer.repeat(() => {
+				let payload = this.payload;
+				payload[6] = Math.floor(Math.random() * 256);
+				payload[7] = Math.floor(Math.random() * 256);
+				payload[8] = Math.floor(Math.random() * 256);
+				characteristic.writeWithoutResponse(payload.buffer);
+			}, 100);
+		}
+	}
+	onDisconnected() {
+		Timer.clear(this.timer);
+		this.startScanning();
+	}
 }
-	
-ble.initialize();
 
+let colorific = new Colorific;

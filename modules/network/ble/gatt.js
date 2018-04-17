@@ -20,13 +20,27 @@
 import {UUID} from "btutils";
 
 export class Client {
-	constructor(connection) {
-		this.onServices = function() {};
+	constructor(dictionary) {
+		for (let property in dictionary) {
+			switch (property) {
+				case "ble":
+					this.ble = dictionary.ble;
+					break;
+				case "connection":
+					this.connection = dictionary.connection;
+					break;
+				default:
+					throw new Error(`invalid property "${property}`);
+					break;
+			}
+		}
 		this.services = [];
-		
-		this.connection = connection;
 	}
 	
+	close() {
+		this._disconnect(this.connection);
+	}
+
 	discoverPrimaryService(uuid) {
 		this.services.length = 0;
 		this._discoverPrimaryServices(this.connection, UUID.toBuffer(uuid));
@@ -37,12 +51,13 @@ export class Client {
 		this._discoverPrimaryServices(this.connection);
 	}
 	
-	findServiceByUUID(uuid) {
-		return this.services.find(service => uuid == service.uuid);
+	onServices() {
 	}
-	
+
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
+	_disconnect() @ "xs_gap_connection_disconnect"
+	
 	_findCharacteristicByHandle(handle) {
 		let service = this.services.find(service => (handle >= service.start && handle <= service.end));
 		if (service) {
@@ -53,10 +68,11 @@ export class Client {
 	
 	_onService(params) {
 		if (!params)
-			this.onServices(this.services);
+			this.ble.onServices(this.services);
 		else {
 			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;
+			params.ble = this.ble;
 			this.services.push(new Service(params));
 		}
 	}
@@ -73,12 +89,6 @@ export class Client {
 			characteristic._onValue.call(characteristic, params);
 	}
 
-	_onNotificationsEnabled(params) {
-		let characteristic = this._findCharacteristicByHandle(params.handle);
-		if (characteristic)
-			characteristic._onNotificationsEnabled.call(characteristic, params);
-	}
-
 	callback(event, params) {
 		//trace(`Client callback ${event}\n`);
 		this[event](params);
@@ -88,11 +98,13 @@ Object.freeze(Client.prototype);
 
 export class Service {
 	constructor(dictionary) {
-		this.onCharacteristics = function() {};
 		this.characteristics = [];
 		
 		for (let property in dictionary) {
 			switch (property) {
+				case "ble":
+					this.ble = dictionary.ble;
+					break;
 				case "connection":
 					this.connection = dictionary.connection;
 					break;
@@ -104,6 +116,9 @@ export class Service {
 					break;
 				case "end":
 					this.end = dictionary.end;
+					break;
+				default:
+					throw new Error(`invalid property "${property}`);
 					break;
 			}
 		}
@@ -125,11 +140,12 @@ export class Service {
 
 	_onCharacteristic(params) {
 		if (!params)
-			this.onCharacteristics(this.characteristics);
+			this.ble.onCharacteristics(this.characteristics);
 		else {
 			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;
 			params.service = this;
+			params.ble = this.ble;
 			this.characteristics.push(new Characteristic(params));
 		}
 	}
@@ -145,14 +161,11 @@ Object.freeze(Service.prototype);
 
 export class Characteristic {
 	constructor(dictionary) {
-		this.onDescriptors = function() {};
-		this.onNotification = function() {};
-		this.onNotificationsEnabled = function() {};
-		this.onValue = function() {};
-		this.descriptors = [];
-		
 		for (let property in dictionary) {
 			switch (property) {
+				case "ble":
+					this.ble = dictionary.ble;
+					break;
 				case "service":
 					this.service = dictionary.service;
 					break;
@@ -168,8 +181,12 @@ export class Characteristic {
 				case "properties":
 					this.properties = dictionary.properties;
 					break;
+				default:
+					throw new Error(`invalid property "${property}`);
+					break;
 			}
 		}
+		this.descriptors = [];
 	}
 	
 	discoverAllDescriptors() {
@@ -185,10 +202,6 @@ export class Characteristic {
 		this._enableNotifications(this.connection, this.handle);
 	}
 	
-	findDescriptorByUUID(uuid) {
-		return this.descriptors.find(descriptor => uuid == descriptor.uuid);
-	}
-
 	readValue() {
 		this._readValue(this.connection, this.handle);
 	}
@@ -208,13 +221,10 @@ export class Characteristic {
 		}
 	}
 	_onNotification(params) {
-		this.onNotification(params.value);
-	}
-	_onNotificationsEnabled() {
-		this.onNotificationsEnabled(this);
+		this.ble.onCharacteristicNotification(this, params.value);
 	}
 	_onValue(params) {
-		this.onValue(params.value);
+		this.ble.onCharacteristicValue(this, params.value);
 	}
 	
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
@@ -234,6 +244,9 @@ export class Descriptor {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
+				case "ble":
+					this.ble = dictionary.ble;
+					break;
 				case "connection":
 					this.connection = dictionary.connection;
 					break;

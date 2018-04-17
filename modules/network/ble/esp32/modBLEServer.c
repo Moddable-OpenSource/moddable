@@ -45,7 +45,6 @@ typedef struct {
 	uint8_t *advertisingData;
 	uint8_t *scanResponseData;
 	esp_ble_adv_params_t adv_params;
-	esp_ble_scan_params_t scan_params;
 	uint8_t adv_config_done;
 	
 	// services
@@ -60,8 +59,7 @@ typedef struct {
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
-static void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length);
-static void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length);
+static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
 
 static modBLE gBLE = NULL;
 static int gAPP_ID = 0;
@@ -165,7 +163,7 @@ void xs_ble_server_stop_advertising(xsMachine *the)
 	esp_ble_gap_stop_advertising();
 }
 
-void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length)
+void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
 		*length = ESP_UUID_LEN_16;
@@ -184,21 +182,6 @@ void uuidToBuffer(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t *length)
 		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
 			buffer[i] = uuid->uuid.uuid128[ESP_UUID_LEN_128 - 1 - i];
 	}
-}
-
-void bufferToUUID(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t length)
-{
-	if (length == ESP_UUID_LEN_16) {
-		uuid->uuid.uuid16 = buffer[1] | (buffer[0] << 8);
-	}
-	else if (length == ESP_UUID_LEN_32) {
-		uuid->uuid.uuid32 = buffer[3] | (buffer[2] << 8) | (buffer[1] << 16) | (buffer[0] << 24);
-	}
-	else {
-		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
-			uuid->uuid.uuid128[i] = buffer[ESP_UUID_LEN_128 - 1 - i];
-	}
-	uuid->len = length;
 }
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -231,7 +214,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
 void xs_ble_server_deploy(xsMachine *the)
 {
-	esp_ble_gatts_create_attr_tab(gatt_db, gBLE->gatts_if, attribute_count, 0);
+	if (attribute_count > 0)
+		esp_ble_gatts_create_attr_tab(gatt_db, gBLE->gatts_if, attribute_count, 0);
 }
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -303,7 +287,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcVars(4);
 	uuid.len = att_desc->uuid_length;
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
-	uuidToBuffer(&uuid, buffer, &uuid_length);
+	uuidToBuffer(buffer, &uuid, &uuid_length);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSetInteger(xsVar(2), write->handle);

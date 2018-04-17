@@ -12,18 +12,19 @@
  *
  */
 
-import BLE from "ble";
+import BLEClient from "bleclient";
 
-let ble = new BLE();
-ble.onReady = () => {
-	ble.startScanning();
-	ble.onDiscovered = device => {
+class Scanner extends BLEClient {
+	onReady() {
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		let scanResponse = device.scanResponse;
 		let completeName = scanResponse.completeName;
 		if (completeName)
 			trace(completeName + "\n");
 	}
 }
-	
-ble.initialize();
+
+let scanner = new Scanner;
 

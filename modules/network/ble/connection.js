@@ -20,11 +20,11 @@
 
 export class Connection {
 	constructor(dictionary) {
-		this.onDisconnected = function() {};
-		this.onRSSI = function() {};
-		
 		for (let property in dictionary) {
 			switch (property) {
+				case "ble":
+					this.ble = dictionary.ble;
+					break;
 				case "client":
 					this.client = dictionary.client;
 					break;
@@ -54,10 +54,10 @@ export class Connection {
 	
 	_onDisconnected() {
 		forgetConnection(this);
-		this.onDisconnected();
+		this.ble.onDisconnected();
 	}
 	_onRSSI(rssi) {
-		this.onRSSI(rssi);
+		this.ble.onRSSI(rssi);
 	}
 	callback(event, params) {
 		//trace(`Connection callback ${event}\n`);

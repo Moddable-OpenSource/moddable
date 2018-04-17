@@ -12,27 +12,20 @@
  *
  */
 
-import BLE from "ble";
+import BLEServer from "bleserver";
 
-let advertisingData = {
-	shortName: "Thermometer",
-};
-
-let scanResponseData = {
-	flags: 6,
-	completeUUID16List: ['1809'],
-	completeName: 'Thermometer Example'
-};
-
-let ble = new BLE();
-ble.onReady = () => {
-	ble.deviceName = "Moddable";
-	ble.startAdvertising({ advertisingData, scanResponseData });
-	
-	ble.onConnected = connection => {
-		ble.stopAdvertising();
+class Advertiser extends BLEServer {
+	onReady() {
+		this.deviceName = "Moddable Device";
+		this.startAdvertising({
+			advertisingData: {shortName: "Thermometer", completeUUID16List: ["1809"]},
+			scanResponseData: {flags: 6, completeName: "Thermometer Example"}
+		});
+	}
+	onConnected(connection) {
+		this.stopAdvertising();
 	}
 }
 	
-ble.initialize();
+let advertiser = new Advertiser;
 

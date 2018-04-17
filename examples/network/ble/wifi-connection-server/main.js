@@ -15,5 +15,4 @@
 import WiFiServer from "wifiserver";
 
 let server = new WiFiServer;
-server.initialize();
 

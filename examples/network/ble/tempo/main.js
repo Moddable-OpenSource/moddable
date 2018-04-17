@@ -15,15 +15,15 @@
  	Blue Maestro environment monitor: https://www.bluemaestro.com/product/tempo-environment-monitor/
  */
 
-import BLE from "ble";
+import BLEClient from "bleclient";
 
 const TempoManufacturerID = 307;
 
-let ble = new BLE();
-ble.onReady = () => {
-	ble.startScanning();
-	
-	ble.onDiscovered = device => {
+class Tempo extends BLEClient {
+	onReady() {
+		this.startScanning();
+	}
+	onDiscovered(device) {
 		let manufacturerSpecific = device.scanResponse.manufacturerSpecific;
 		
 		// If this is a Tempo device...
@@ -46,6 +46,5 @@ ble.onReady = () => {
 		}
 	}
 }
-	
-ble.initialize();
 
+let tempo = new Tempo;
