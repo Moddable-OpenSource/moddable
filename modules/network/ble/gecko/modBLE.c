@@ -25,6 +25,8 @@
 #include "bg_types.h"
 #include "native_gecko.h"
 
+#error - modBLE.c is deprecated!
+
 #define DEFAULT_MTU 247
 
 enum {
