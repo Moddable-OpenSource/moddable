@@ -211,7 +211,7 @@ export class Characteristic {
 	
 	_onDescriptor(params) {
 		if (!params)
-			this.onDescriptors(this.descriptors);
+			this.ble.onDescriptors(this.descriptors);
 		else {
 			params.uuid = UUID.toString(params.uuid);
 			params.connection = this.connection;

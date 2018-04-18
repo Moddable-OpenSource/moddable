@@ -102,28 +102,15 @@ export default class extends TOOL {
 			file.line(`static const uint16_t service_uuid${index} = 0x${service.uuid};`);
 			if ("characteristics" in service) {
 				service.characteristics.forEach((characteristic, index) => {
-					var value, buffer;
 					file.line(`static const uint16_t char_uuid${characteristicIndex} = 0x${characteristic.uuid};`);
 					if ("value" in characteristic) {
-						switch(characteristic.format) {
-							case "uint8":
-								value = new Uint8Array(1);
-								value[0] = (characteristic.value & 0xFF);
-								buffer = value.buffer;
-								break;
-							case "uint16":
-								value = new Uint8Array(2);
-								value[0] = (characteristic.value & 0xFF);
-								value[1] = (characteristic.value >> 8);
-								buffer = value.buffer;
-								break;
-							case "utf8":
-								buffer = ArrayBuffer.fromString(characteristic.value);
-								break;
-							default:
-								throw new Error("unknown format");
-								break;
-						}
+						let buffer, value = characteristic.value;
+						if (value instanceof Array)
+							buffer = new Uint8Array(value).buffer;
+						else if (typeof value == "string")
+							buffer = ArrayBuffer.fromString(value);
+						else
+							throw new Error("unknown format");
 						characteristic._length = buffer.byteLength;
 						file.write(`static const uint8_t char_value${characteristicIndex}[${buffer.byteLength}] = { `);
 						file.write(buffer2hexlist(buffer));
