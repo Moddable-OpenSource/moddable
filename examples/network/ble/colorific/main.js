@@ -25,7 +25,7 @@ const CHARACTERISTIC_UUID = '2A06';
 
 class Colorific extends BLEClient {
 	onReady() {
-		let payload = this.payload = new Uint8Array(new ArrayBuffer(9));
+		let payload = this.payload = new Uint8Array(9);
 		payload[0] = 0x58;
 		payload[1] = 0x01;
 		payload[2] = 0x03;
