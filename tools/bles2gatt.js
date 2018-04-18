@@ -102,7 +102,21 @@ export default class extends TOOL {
 			file.line(`static const uint16_t service_uuid${index} = 0x${service.uuid};`);
 			if ("characteristics" in service) {
 				service.characteristics.forEach((characteristic, index) => {
-					file.line(`static const uint16_t char_uuid${characteristicIndex} = 0x${characteristic.uuid};`);
+					let uuid = characteristic.uuid;
+					if (4 == uuid.length)
+						file.line(`static const uint16_t char_uuid${characteristicIndex} = 0x${characteristic.uuid};`);
+					else if (36 == uuid.length) {
+						uuid = uuid.replace(/-/g,'');
+						let uuid128 = new Uint8Array(16);
+						for (let i = 0; i < 16; ++i)
+							uuid128[15 - i] = parseInt(uuid.slice(2 * i, 2 * i + 2), 16);
+						file.write(`static const uint8_t char_uuid${characteristicIndex}[16] = { `);
+						file.write(buffer2hexlist(uuid128.buffer));
+						file.write(" };");
+						file.line("");
+					}
+					else
+						throw new Error("unsupported UUID length");
 					if ("value" in characteristic) {
 						let buffer, value = characteristic.value;
 						if (value instanceof Array)
@@ -148,9 +162,10 @@ export default class extends TOOL {
 					++attributeIndex;
 
 					// characteristic value
+					let esp_uuid_len = (4 == characteristic.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 					file.line("\t[", attributeIndex, "] = {");
 					file.line("\t\t{ESP_GATT_RSP_BY_APP},");
-					file.write(`\t\t{ESP_UUID_LEN_16, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${characteristic.maxBytes}, `);
+					file.write(`\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${characteristic.maxBytes}, `);
 					if ("value" in characteristic)
 						file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
 					else
