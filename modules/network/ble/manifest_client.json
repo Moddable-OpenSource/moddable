@@ -30,7 +30,7 @@
 		},
 		"gecko/blue": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/gecko/*",
+				"*": "$(MODULES)/network/ble/gecko/modBLEClient",
 			},
 		},
 		"...": {
