@@ -379,13 +379,42 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
 }
 
+typedef struct {
+	esp_gattc_descr_elem_t descr_elem_result;
+	xsSlot obj;
+} descriptorSearchRecord;
+
+static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	descriptorSearchRecord *dsr = (descriptorSearchRecord*)message;
+	esp_gattc_descr_elem_t *descr_elem = &dsr->descr_elem_result;
+	xsBeginHost(gBLE->the);
+	if (dsr->descr_elem_result.handle == 0)
+		xsCall1(dsr->obj, xsID_callback, xsString("_onDescriptor"));	// procedure complete
+	else {
+		uint16_t length;
+		uint8_t buffer[ESP_UUID_LEN_128];
+		uuidToBuffer(buffer, &descr_elem->uuid, &length);
+		xsmcVars(3);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), buffer, length);
+		xsmcSetInteger(xsVar(2), descr_elem->handle);
+		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsCall2(dsr->obj, xsID_callback, xsString("_onDescriptor"), xsVar(0));
+	}
+	xsEndHost(gBLE->the);
+}
+
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
     uint16_t count = 0;
+	descriptorSearchRecord dsr;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	dsr.obj = xsThis;
 	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count);
 	if (count > 0) {
 		xsmcVars(3);
@@ -394,20 +423,13 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 			xsUnknownError("out of memory");
 		esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, descr_elem_result, &count, 0);
 		for (int i = 0; i < count; ++i) {
-			uint16_t length;
-			uint8_t buffer[ESP_UUID_LEN_128];
-			esp_gattc_descr_elem_t *descr_elem = &descr_elem_result[i];
-			uuidToBuffer(buffer, &descr_elem->uuid, &length);
-			xsVar(0) = xsmcNewObject();
-			xsmcSetArrayBuffer(xsVar(1), buffer, length);
-			xsmcSetInteger(xsVar(2), descr_elem->handle);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-			xsCall2(xsThis, xsID_callback, xsString("_onDescriptor"), xsVar(0));
+			dsr.descr_elem_result = descr_elem_result[i];
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&dsr, sizeof(dsr), descSearchResultEvent, NULL);
 		}
 		c_free(descr_elem_result);
 	}
-	xsCall1(xsThis, xsID_callback, xsString("_onDescriptor"));	// procedure complete
+	dsr.descr_elem_result.handle = 0;
+	modMessagePostToMachine(gBLE->the, (uint8_t*)&dsr, sizeof(dsr), descSearchResultEvent, NULL);
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
@@ -474,7 +496,6 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-modLog("xs_gatt_characteristic_disable_notifications - unregister for notify");
 	esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, handle);
 }
 
@@ -727,8 +748,6 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 				modCriticalSectionEnd();
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gattc_reg_evt_param), gattcRegisterEvent, NULL);
         	}
-        	else
-				modLogInt(param->reg.status);
         	break;
     	case ESP_GATTC_OPEN_EVT:
         	if (param->open.status == ESP_GATT_OK)
