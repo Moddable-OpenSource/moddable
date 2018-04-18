@@ -139,7 +139,7 @@ void xs_ble_client_initialize(xsMachine *the)
 void xs_ble_client_close(xsMachine *the)
 {
 	xsForget(gBLE->obj);
-	xs_ble_destructor(gBLE);
+	xs_ble_client_destructor(gBLE);
 }
 
 void xs_ble_client_destructor(void *data)
