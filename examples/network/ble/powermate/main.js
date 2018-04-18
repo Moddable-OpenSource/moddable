@@ -35,9 +35,6 @@ class PowerMate extends BLEClient {
 	onConnected(device) {
 		device.discoverPrimaryService(SERVICE_UUID);
 	}
-	onDisconnected() {
-		this.startScanning();
-	}
 	onServices(services) {
 		let service = services.find(service => SERVICE_UUID == service.uuid);
 		if (service)
@@ -61,6 +58,9 @@ class PowerMate extends BLEClient {
 		else
 			state = "idle";
 		trace(`state: ${state}\n`);
+	}
+	onDisconnected() {
+		this.startScanning();
 	}
 }
 
