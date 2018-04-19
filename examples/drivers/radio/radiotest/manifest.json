@@ -2,6 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/base/sleep/manifest.json",
 	],
 	"modules": {
 		"*": [
@@ -16,7 +17,6 @@
 				"*": [
 					"$(MODULES)/pins/digital/monitor/gecko/*",
 					"$(MODULES)/drivers/radio/*",
-					"$(BUILD)/devices/gecko/sleep/*",
 				],
 			},
 		},
