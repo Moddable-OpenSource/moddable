@@ -116,10 +116,10 @@ When you have your device connected, choose an example project from the Launcher
 We've used
 
 Device | Example project
-----|----------------------|---------
-Giant Gecko | STK3700_powertest
-Mighty Gecko | simple_rail_without_hal
-Thunderboard Sense 2 | soc-thunderboard-sense-2, soc-empty
+----|--------------------
+Giant Gecko | `STK3700_powertest`
+Mighty Gecko | `simple_rail_without_hal`
+Thunderboard Sense 2 | `soc-thunderboard-sense-2`, `soc-empty`
 
 Build, install and run the sample to become familiar with the process.
 
@@ -144,7 +144,7 @@ Follow the macOS [Host environment setup](../../Moddable SDK – Getting Started
 
 ### Build xs_gecko.a archive
 
-Use mcconfig to build the moddable library for your gecko platform:
+Use mcconfig to build the moddable library and application for your gecko platform:
 
 	$ cd $(MODDABLE)/examples/helloworld
 	$ mcconfig -d -m -p gecko/mighty
@@ -224,9 +224,9 @@ In your main loop, call xs_loop(); repeatedly.
 
 The pins and features of the Gecko family is highly configurable. For each application, the specific configuration is defined in the application's `manifest.json` file.
 
-In the `manifest.json` platforms, defines section there are defines for the various peripherals to specify what pins, ports, clocks, irq, etc. to use.
+In the `manifest.json` platforms:defines section there are defines for the various peripherals to specify what pins, ports, clocks, irq, etc. to use.
 
-The various pin/port/location values for interfaces can be found in the specific data sheet for your chip family.
+The various pin/port/location values for specific interfaces can be found in the particular data sheet for your chip family.
 
 
 ### Debugging
@@ -235,7 +235,7 @@ Native code can be debugged with Simplicity Studio.
 
 XS script code can be debugged with xsbug by using a FTDI adapter. On the adapter, the pins RX, TX and GND will be used.
 
-On your device, you will need to use a UART or USART and specify it in a **defines** section for your platform. Other required definitions include the tx and rx pins and location and the serial clock. Baud rate can also be defined, defaulting to 115200. Examples are shown below.
+On your device, you will need to use a UART or USART and specify it in a **defines** section for your platform. Other required definitions include the tx and rx pins and location. Baud rate can also be defined, defaulting to 115200. Examples are shown below.
 
 ##### Connecting xsbug
 Prior to launching your application from Simplicity Studio, start the **xsbug.app** application and use **serial2xsbug** to connect the FTDI adapter.
@@ -243,7 +243,7 @@ Prior to launching your application from Simplicity Studio, start the **xsbug.ap
 	$ open $MODDABLE/build/bin/mac/release/xsbug.app
 	$ serial2xsbug /dev/cu.usbserial-AL035VAU 115200 8N1
 
-In this case, the FTDI adapter is identified by the MacOS as /dev/cu.usbserial-AL035VAU.
+In this case, the FTDI adapter is identified by the MacOS as `/dev/cu.usbserial-AL035VAU`.
 
 ##### Example manifest.json defines for xsbug
 An example, using UART1 on Giant Gecko, USART1 on Mighty Gecko and USART0 on Thunderboard 2:
@@ -253,9 +253,9 @@ An example, using UART1 on Giant Gecko, USART1 on Mighty Gecko and USART0 on Thu
 			"defines": {
 				"debugger": {
 					"interface": { "UART": 1 },
-					"location": "2",
-					"tx" : { "pin": "9", "port": "gpioPortB" },
-					"rx" : { "pin": "10", "port": "gpioPortB" },
+					"location": 2,
+					"tx" : { "pin": 9, "port": "gpioPortB" },
+					"rx" : { "pin": 10, "port": "gpioPortB" },
 				},
 			},
 		},
@@ -263,9 +263,9 @@ An example, using UART1 on Giant Gecko, USART1 on Mighty Gecko and USART0 on Thu
 			"defines": {
 				"debugger": {
 					"interface": { "USART": 1 },
-					"location": "19",
-					"tx" : { "pin": "11", "port": "gpioPortD" },
-					"rx" : { "pin": "12", "port": "gpioPortD" },
+					"location": 19,
+					"tx" : { "pin": 11, "port": "gpioPortD" },
+					"rx" : { "pin": 12, "port": "gpioPortD" },
 				},
 			},
 		},
@@ -273,8 +273,8 @@ An example, using UART1 on Giant Gecko, USART1 on Mighty Gecko and USART0 on Thu
 			"defines": {
 				"debugger": {
 					"interface": { "USART": 0 },
-					"tx" : { "pin": "3", "port": "gpioPortF", "location": 27 },
-					"rx" : { "pin": "4", "port": "gpioPortF", "location": 27 },
+					"tx" : { "pin": 3, "port": "gpioPortF", "location": 27 },
+					"rx" : { "pin": 4, "port": "gpioPortF", "location": 27 },
 				},
 			},
 		},
@@ -286,9 +286,9 @@ An alternate configuration, using USART0 on Giant Gecko,and USART3 on Mighty Gec
 			"defines": {
 				"debugger": {
 					"interface": { "USART": 0 },
-					"location": "5",
-					"tx" : { "pin": "0", "port": "gpioPortC" },
-					"rx" : { "pin": "1", "port": "gpioPortC" },
+					"location": 5,
+					"tx" : { "pin": 0, "port": "gpioPortC" },
+					"rx" : { "pin": 1, "port": "gpioPortC" },
 				},
 			},
 		},
@@ -296,24 +296,24 @@ An alternate configuration, using USART0 on Giant Gecko,and USART3 on Mighty Gec
 			"defines": {
 				"debugger": {
 					"interface": { "USART": 3 },
-					"location": "10",
-					"tx" : { "pin": "6", "port": "gpioPortB" },
-					"rx" : { "pin": "7", "port": "gpioPortB" },
+					"location": 10,
+					"tx" : { "pin": 6, "port": "gpioPortB" },
+					"rx" : { "pin": 7, "port": "gpioPortB" },
 				},
 			},
 		},
 
 ### Sleep
 
-The Gecko series devices use low power. Careful programming and management of sleep cycles are necessary to optimize power usage for your application.
+The Gecko series devices are designed to use little power. Careful programming and management of sleep cycles are necessary to optimize power usage for your application.
 
-Moddable sleeps at times, waiting for sensor or user input, or the specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application to operate correctly.
+Moddable sleeps at idle times, while waiting for sensor or user input, or until a specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application to operate correctly.
 
 By default, Moddable uses Sleep level EM3 while waiting. Certain Gecko interfaces are shut down at level EM3. For example, while operating the Mighty Gecko radio, the sleep level must be constrained to EM1.
 
 #### EM4 Sleep
 
-Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer with a low power clock. When awoken, the device reboots. 
+Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer expiry using a low power clock. When awoken, the device reboots. 
 
 During EM4 sleep, a small amount of memory can be kept active at the expense of a slightly increased power draw. The GPIO state can also be retained.
 
@@ -368,13 +368,13 @@ To determine the cause of wakeup, use:
 **wakeupcause** is a bitmask of:
 
 ```
-Sleep.PowerOnReset      = 0b00000001;
-Sleep.ExternalReset     = 0b00000010;
-Sleep.SysRequestReset   = 0b00000100;
-Sleep.EM4WakeupReset    = 0b00001000;
-Sleep.BrownOutReset     = 0b00010000;
-Sleep.LockupReset       = 0b00100000;
-Sleep.WatchdogReset     = 0b01000000;
+Sleep.PowerOnReset      = 0b00000001;		// power applied
+Sleep.ExternalReset     = 0b00000010;		// reset button
+Sleep.SysRequestReset   = 0b00000100;		// software reset
+Sleep.EM4WakeupReset    = 0b00001000;		// woke from EM4
+Sleep.BrownOutReset     = 0b00010000;		// power dipped too low
+Sleep.LockupReset       = 0b00100000;		// device hung
+Sleep.WatchdogReset     = 0b01000000;		// watchdog timer expired
 ```
 
 #### Storing data for retention during EM4 sleep
@@ -403,7 +403,7 @@ To enter EM4 sleep, use:
 
 This will sleep the device in the lowest power mode for about 10 seconds.
 
-> Note that the sleepTime value is reduced to a base 2 value as that is what is supported by the Cryotimer. That is, sleepTime is 1, 2, 4, 8, 16, 32... ms.
+> For devices that use the Cryotimer: the sleepTime value is reduced to a base 2 value as that is what is supported by the Cryotimer. That is, sleepTime is 1, 2, 4, 8, 16, 32... ms.
 
 ### Analog
 
@@ -437,9 +437,7 @@ See your Gecko device datasheet for the values to use to set a particular pin fo
 
 ### class Analog
 	import Analog from "analog"
-	
 	...
-	
 	let analog = new Analog();
 	let voltage1 = analog.read(1);
 	let voltage2 = analog.read(2);
@@ -563,7 +561,7 @@ In **GNU ARM C Compiler -> Symbols** and **GNU ARM Assembler -> Symbols**, add a
 	__STACK_SIZE=0x1E00
 	__HEAP_SIZE=0xA000
 
-- Some Simplicity Studio example projects use a fixed size packet length.
+- Some Simplicity Studio example radio projects use a fixed size packet length.
 
 You can increase that by changing the Radio Profile. When starting a new radio project, Simplicity Studio creates the ISC file, select the **Radio Configuration** tab and change the *Select a radio PHY for selected profile* to **Custom Settings**.
 
@@ -573,7 +571,7 @@ Scroll down to **Profile options->Packet** and select the **Frame Fixed Length**
 
 ![Frame Fixed Length](assets/FrameLength.png)
 
-Change the payload size to the size you need. Then click the **Generate** button to create the radio support files for the project.
+Change the payload size to the size you need. Then click the **Generate** button to create the radio support files for the project and rebuild the Simplicity Studio project.
 
 
 ## Useful pin configurations
@@ -723,12 +721,16 @@ PD15 | PUSH_BUTTON1 | Push Button 1
 App | Feature | Giant | Mighty | Thunderboard Sense 2
 --- | ------- | ----- | ------ | --------------------
 helloworld | xsbug | x | x | x
+base/sleep | sleep | x | x | x
 drivers/TMP102 | I2C | x | x |
 drivers/HMC5883L | I2C | x | x |
-piu/balls | SPI/ili9341 | x | x |
-piu/transitions | SPI/ili9341 | x | x |
-piu/cards | SPI/ili9341 | x | x |
-piu/love-e-ink | SPI/destm32s | x | x |
+drivers/ls013b4dn04 | Sharp Memory Display | x | x | x 
+pins/monitor | GPIO Interrupt |   | x | 
+pins/simpleAnalog | analog |   | x | 
+piu/balls | SPI / ili9341 | x | x |
+piu/transitions | SPI / ili9341 | x | x |
+piu/cards | SPI / ili9341 | x | x |
+piu/love-e-ink | SPI / destm32s | x | x |
 drivers/radio/radiotest | radio |   | x |
 
 	
