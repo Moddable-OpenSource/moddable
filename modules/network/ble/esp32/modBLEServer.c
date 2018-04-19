@@ -274,6 +274,36 @@ static const esp_attr_desc_t *handleToAttDesc(uint16_t handle) {
 	return NULL;
 }
 
+static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gatts_read_evt_param *read = (struct gatts_read_evt_param *)message;
+	esp_bt_uuid_t uuid;
+	uint8_t buffer[ESP_UUID_LEN_128];
+	uint16_t uuid_length;
+	const esp_attr_desc_t *att_desc = handleToAttDesc(read->handle);
+	if (NULL == att_desc) return;
+	xsBeginHost(gBLE->the);
+	xsmcVars(3);
+	uuid.len = att_desc->uuid_length;
+	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
+	uuidToBuffer(buffer, &uuid, &uuid_length);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+	xsmcSetInteger(xsVar(2), read->handle);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("_onCharacteristicRead"), xsVar(0));
+	esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
+	if (gatt_rsp != NULL) {
+        gatt_rsp->attr_value.handle = read->handle;
+		gatt_rsp->attr_value.len = xsGetArrayBufferLength(xsResult);
+        c_memmove(gatt_rsp->attr_value.value, xsmcToArrayBuffer(xsResult), gatt_rsp->attr_value.len);
+        esp_ble_gatts_send_response(gBLE->gatts_if, read->conn_id, read->trans_id, ESP_GATT_OK, gatt_rsp);
+        c_free(gatt_rsp);
+	}
+	xsEndHost(gBLE->the);
+}
+
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_write_evt_param *write = (struct gatts_write_evt_param *)message;
@@ -332,6 +362,9 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			break;
 		case ESP_GATTS_DISCONNECT_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->disconnect, sizeof(struct gatts_disconnect_evt_param), gattsDisconnectEvent, NULL);
+			break;
+		case ESP_GATTS_READ_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gatts_read_evt_param), gattsReadEvent, NULL);
 			break;
 		case ESP_GATTS_WRITE_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, NULL);
