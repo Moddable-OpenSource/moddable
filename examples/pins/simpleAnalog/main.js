@@ -13,7 +13,6 @@
  */
 
 import Analog from "pins/analog";
-import Digital from "pins/digital";
 import Timer from "timer";
 
 Timer.repeat(id => {

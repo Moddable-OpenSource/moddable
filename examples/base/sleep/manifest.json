@@ -16,5 +16,8 @@
 				},
 			},
 		},
+		"...": {
+			"error": "sleep unsupported"
+		},
 	},
 }

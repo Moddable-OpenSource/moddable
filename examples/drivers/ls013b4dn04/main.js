@@ -12,7 +12,9 @@
  *
  */
 
-// for gecko
+/* Demonstrates the use of the Sharp mirror display on the */
+/* SiLabs gecko device, deep sleeping between inversions of */
+/* the Moddable logo on the display. */
 
 import LS013B4DN04 from "ls013b4dn04";
 import Poco from "commodetto/Poco";
