@@ -2,7 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/pins/analog/manifest.json",
-		"$(MODDABLE)/modules/pins/digital/manifest.json",
 	],
 	"modules": {
 		"*": "./main",
