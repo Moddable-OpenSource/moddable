@@ -55,6 +55,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	deploy() @ "xs_ble_server_deploy"
 	initialize() @ "xs_ble_server_initialize"
 	
+	set passkey() @ "xs_ble_server_set_passkey"
+	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onConnected() {}
