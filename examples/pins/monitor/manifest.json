@@ -6,8 +6,43 @@
 	"modules": {
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
-			"$(MODULES)/pins/digital/monitor/gecko/*",
 			"./main",
 		],
 	},
+	"platforms": {
+		"esp32": {
+			"config": {
+				"led1_pin": 2,
+				"button1_pin": 0,
+			},
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/esp32/*",
+			},
+		},
+		"gecko/mighty": {
+			"config": {
+				"led1_pin": 4,		"led1_port": "gpioPortF",
+				"led2_pin": 5,		"led2_port": "gpioPortF",
+				"button1_pin": 6,	"button1_port": "gpioPortF",
+				"button2_pin": 7,	"button2_port": "gpioPortF",
+			},
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/gecko/*",
+			},
+		},
+		"gecko/giant": {
+			"config": {
+				"led1_pin": 2,		"led1_port": "gpioPortE",
+				"led2_pin": 3,		"led2_port": "gpioPortE",
+				"button1_pin": 9,	"button1_port": "gpioPortB",
+				"button2_pin": 10,	"button2_port": "gpioPortB" ,
+			},
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/gecko/*",
+			},
+		},
+		"...": {
+			"error": "need button and led pins"
+		},
+	}
 }
