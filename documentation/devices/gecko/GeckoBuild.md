@@ -634,6 +634,12 @@ PB10 | SW1 | Push Button 1
 
 ### Mighty Gecko pin configuration
 
+WSTK Onboard Pins
+
+![WSTK Board pinout](assets/WSTKBoardPins.png)
+
+Side Expansion Header
+
 ![WSTK Expansion pinout](assets/WirelessSTKExpansion.png)
 
 xsbug Connection
