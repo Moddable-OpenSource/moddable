@@ -44,9 +44,9 @@ Sleep.PowerOnReset		= 0b00000001;			// power applied
 Sleep.ExternalReset		= 0b00000010;			// reset button
 Sleep.SysRequestReset	= 0b00000100;			// software reset
 Sleep.EM4WakeupReset	= 0b00001000;			// woke from EM4
-Sleep.BrownOutReset		= 0b00010000;			// power dipped to low
+Sleep.BrownOutReset		= 0b00010000;			// power dipped too low
 Sleep.LockupReset		= 0b00100000;			// device hung
-Sleep.WatchdogReset		= 0b01000000;			// watchdog expired
+Sleep.WatchdogReset		= 0b01000000;			// watchdog timer expired
 
 /* Do not call Object.freeze on Sleep.prototype */
 
