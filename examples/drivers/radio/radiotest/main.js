@@ -12,6 +12,11 @@
  *
  */
 
+/* Demonstrates the use of the Mighty Gecko radio. */
+/* Deploy on two Mighty Geckos. Pressing either button */
+/* sends button state to the other device for display */
+/* while alternately blinking the two  LEDs on the device. */
+
 import Timer from "timer";
 import Digital from "pins/digital";
 import Monitor from "monitor";

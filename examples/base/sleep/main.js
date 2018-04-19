@@ -12,6 +12,8 @@
  *
  */
 
+/* This example is to demonstrate sleep on SiLabs Gecko devices */
+
 import Sleep from "sleep";
 import Timer from "timer";
 
