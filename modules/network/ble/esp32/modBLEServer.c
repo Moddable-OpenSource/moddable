@@ -51,6 +51,8 @@ typedef struct {
 	uint16_t handles[attribute_count];
 	
 	// connection
+	esp_bd_addr_t remote_bda;
+	uint32_t passkey;
 	int16_t conn_id;
 	uint16_t app_id;
 	uint8_t terminating;
@@ -118,6 +120,11 @@ void xs_ble_server_destructor(void *data)
 void xs_ble_server_set_device_name(xsMachine *the)
 {
 	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
+}
+
+void xs_ble_server_set_passkey(xsMachine *the)
+{
+	gBLE->passkey = xsmcToInteger(xsArg(0));
 }
 
 void xs_ble_server_start_advertising(xsMachine *the)
@@ -207,6 +214,9 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 				gBLE->scanResponseData = NULL;
 			}
 			break;
+		ESP_GAP_BLE_PASSKEY_REQ_EVT:
+			esp_ble_passkey_reply(gBLE->remote_bda, true, gBLE->passkey);
+			break;
 		default:
 			break;
     }
@@ -233,6 +243,7 @@ static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_
 	if (-1 != gBLE->conn_id)
 		goto bail;
 	gBLE->conn_id = connect->conn_id;
+	c_memmove(&gBLE->remote_bda, &connect->remote_bda, sizeof(esp_bd_addr_t));
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), connect->conn_id);
