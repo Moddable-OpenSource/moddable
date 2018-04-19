@@ -59,6 +59,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	
 	onReady() {}
 	onCharacteristicWritten() {}
+	onCharacteristicRead() {}
 	onConnected() {}
 	onDisconnected() {}
 
@@ -70,6 +71,11 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		let characteristic = { uuid:UUID.toString(params.uuid), handle:params.handle };
 		this.onCharacteristicWritten({ characteristic, value:params.value });
 	}
+	_onCharacteristicRead(params) {
+		let characteristic = { uuid:UUID.toString(params.uuid), handle:params.handle };
+		let value = this.onCharacteristicRead({ characteristic });
+		return value;
+	}
 	_onConnected(params) {
 		let address = BluetoothAddress.toString(params.address);
 		this.onConnected({ address, connection:params.connection });
@@ -79,7 +85,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	}
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
-		this[event](params);
+		return this[event](params);
 	}
 };
 Object.freeze(BLEServer.prototype);
