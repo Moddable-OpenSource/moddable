@@ -438,11 +438,10 @@ See your Gecko device datasheet for the values to use to set a particular pin fo
 ### class Analog
 	import Analog from "analog"
 	...
-	let analog = new Analog();
-	let voltage1 = analog.read(1);
-	let voltage2 = analog.read(2);
+	let voltage1 = Analog.read(1);
+	let voltage2 = Analog.read(2);
 
-`analog.read(1)` reads from `input1` described in the manifest.json segment above. `analog.read(2)` reads from `input2` described in the manifest.json segment above.
+`Analog.read(1)` reads from `input1` described in the manifest.json segment above. `Analog.read(2)` reads from `input2` described in the manifest.json segment above.
 
 
 ### SPI
