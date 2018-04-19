@@ -48,17 +48,10 @@
 #define ICACHE_STORE_ATTR __attribute__((aligned(4)))
 
 #if ESP32
-#if 1
-	#define ICACHE_RODATA_ATTR  __attribute__((section(".rodata")))
-	#define ICACHE_XS6RO_ATTR __attribute__((section(".sdata.1"))) __attribute__((aligned(4)))
-	#define ICACHE_XS6RO2_ATTR __attribute__((section(".sdata2"))) __attribute__((aligned(4)))
-	#define ICACHE_XS6STRING_ATTR __attribute((section(".data1"))) __attribute__((aligned(4)))
-#else
-	#define ICACHE_RODATA_ATTR  __attribute__((section(".rodata")))
+	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
 	#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
 	#define ICACHE_XS6STRING_ATTR __attribute((section(".rodata.str1.4"))) __attribute__((aligned(4)))
-#endif
 #else
 	#define ICACHE_RODATA_ATTR  __attribute__((section(".irom.text")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".irom1.text"))) __attribute__((aligned(4)))
