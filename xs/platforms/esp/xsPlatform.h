@@ -41,7 +41,8 @@
 #include "stdint.h"
 
 #if ESP32
-	#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.flash")))
+	#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.mod.0")))
+	#define ICACHE_FLASH1_ATTR __attribute__((section(".rodata.mod.1")))
 	#define ICACHE_RAM_ATTR __attribute__((section(".iram1.mod")))
 #endif
 
