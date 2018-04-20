@@ -232,7 +232,7 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 {
 	// Stack is ready
 	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("_onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
 }
 
@@ -250,7 +250,7 @@ static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(2), connect->remote_bda, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("_onConnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -262,7 +262,7 @@ static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint
 	if (disconnect->conn_id != gBLE->conn_id)
 		goto bail;
 	gBLE->conn_id = -1;
-	xsCall1(gBLE->obj, xsID_callback, xsString("_onDisconnected"));
+	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -292,7 +292,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	xsmcSetInteger(xsVar(2), read->handle);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("_onCharacteristicRead"), xsVar(0));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
 	esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
 	if (gatt_rsp != NULL) {
         gatt_rsp->attr_value.handle = read->handle;
@@ -336,7 +336,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsmcSetArrayBuffer(xsVar(3), write->value, write->len);
 	xsmcSet(xsVar(0), xsID_value, xsVar(3));
-	xsCall2(gBLE->obj, xsID_callback, xsString("_onCharacteristicWritten"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 

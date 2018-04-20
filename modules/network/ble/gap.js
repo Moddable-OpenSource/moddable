@@ -18,8 +18,7 @@
  * Portions based on Kinoma LowPAN Framework: Kinoma Bluetooth 4.2 Stack
  */
 
-class GAP {
-};
+let GAP = {};
 
 GAP.SCAN_FAST_INTERVAL = 0x0030;		// TGAP(scan_fast_interval)		30ms to 60ms
 GAP.SCAN_FAST_WINDOW = 0x0030;			// TGAP(scan_fast_window)		30ms
@@ -85,7 +84,12 @@ GAP.ADFlag = {
 	LE_BR_EDR_HOST: 0x10,
 };
 
-Object.freeze(GAP.prototype);
+Object.freeze(GAP);
+Object.freeze(GAP.ADFlag);
+Object.freeze(GAP.ADType);
+Object.freeze(GAP.ADV_FAST_INTERVAL1);
+Object.freeze(GAP.ADV_FAST_INTERVAL2);
+Object.freeze(GAP.ADV_SLOW_INTERVAL);
 
 
 export default GAP;

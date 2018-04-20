@@ -42,8 +42,7 @@ Object.freeze(UUID.prototype);
 
 function serializeUUID16List(data) {
 	let count = data.length;
-	let buffer = new ArrayBuffer(count * 2);
-	let result = new Uint8Array(buffer);
+	let result = new Uint8Array(count * 2);
 	for (let j = 0, i = 0; i < count; ++i) {
 		let uuid = new Uint8Array(UUID.toBuffer(data[i]));
 		result[j++] = uuid[1];
@@ -54,8 +53,7 @@ function serializeUUID16List(data) {
 
 function serializeUUID128List(data) {
 	let count = data.length;
-	let buffer = new ArrayBuffer(count * 16);
-	let result = new Uint8Array(buffer);
+	let result = new Uint8Array(count * 16);
 	for (let i = 0; i < count; ++i) {
 		let uuid = (new Uint8Array(UUID.toBuffer(data[i]))).reverse();
 		result.set(uuid, i * 16);
@@ -71,8 +69,7 @@ function serializeString(data) {
 
 function serializeManufacturerSpecificData({identifier, data = null}) {
 	let length = 2 + (data ? data.length : 0);
-	let buffer = new ArrayBuffer(length);
-	let result = new Uint8Array(buffer);
+	let result = new Uint8Array(length);
 	result[0] = identifier & 0xFF;
 	result[1] = (identifier >> 8) & 0xFF;
 	if (data)
@@ -90,8 +87,7 @@ function serializeConnectionInterval({intervalMin, intervalMax}) {
 
 function serializeServiceData16({uuid, data = null}) {
 	let length = 2 + (data ? data.length : 0);
-	let buffer = new ArrayBuffer(length);
-	let result = new Uint8Array(buffer);
+	let result = new Uint8Array(length);
 	result[0] = uuid & 0xFF;
 	result[1] = (uuid >> 8) & 0xFF;
 	if (data)
@@ -101,8 +97,7 @@ function serializeServiceData16({uuid, data = null}) {
 
 function serializeServiceData128({uuid, data = null}) {
 	let length = 16 + (data ? data.length : 0);
-	let buffer = new ArrayBuffer(length);
-	let result = new Uint8Array(buffer);
+	let result = new Uint8Array(length);
 	result.set((new Uint8Array(UUID.toBuffer(uuid))).reverse(), 0);
 	if (data)
 		result.set(data, 16);
@@ -295,8 +290,7 @@ export class Advertisement {
 		}
 		if (length > GAP.MAX_AD_LENGTH)
 			throw new Error("advertisement exceeds maximum length");
-		let buffer = new ArrayBuffer(length);
-		let advertisement = new Uint8Array(buffer);
+		let advertisement = new Uint8Array(length);
 		for (let i = 0, j = 0; i < parts.length; ++i) {
 			let part = parts[i];
 			advertisement[j++] = 1 + part.data.length;
@@ -304,7 +298,7 @@ export class Advertisement {
 			advertisement.set(part.data, j);
 			j += part.data.length;
 		}
-		return buffer;
+		return advertisement.buffer;
 	}
 	
 	_getStringType(index) {

@@ -64,28 +64,34 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onDisconnected() {}
 
 	_startAdvertising() @ "xs_ble_server_start_advertising"
-	_onReady() {
-		this.onReady();
-	}
-	_onCharacteristicWritten(params) {
-		let characteristic = { uuid:UUID.toString(params.uuid), handle:params.handle };
-		this.onCharacteristicWritten({ characteristic, value:params.value });
-	}
-	_onCharacteristicRead(params) {
-		let characteristic = { uuid:UUID.toString(params.uuid), handle:params.handle };
-		let value = this.onCharacteristicRead({ characteristic });
-		return value;
-	}
-	_onConnected(params) {
-		let address = BluetoothAddress.toString(params.address);
-		this.onConnected({ address, connection:params.connection });
-	}
-	_onDisconnected(params) {
-		this.onDisconnected(params);
-	}
+
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
-		return this[event](params);
+		switch(event) {
+			case "onReady":
+				this.onReady();
+				break;
+			case "onCharacteristicWritten":
+				this.onCharacteristicWritten({
+					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
+					value:params.value
+				});
+				break;
+			case "onCharacteristicRead":
+				return this.onCharacteristicRead({
+					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle }
+				});
+				break;
+			case "onConnected":
+				this.onConnected({
+					address:BluetoothAddress.toString(params.address),
+					connection:params.connection
+				});
+				break;
+			case "onDisconnected":
+				this.onDisconnected(params);
+				break;
+		}
 	}
 };
 Object.freeze(BLEServer.prototype);
