@@ -121,8 +121,7 @@ void fxInitializeRegExp(txMachine* the)
 		*mxArgv(1) = mxEmptyString;
 	else
 		fxToString(the, mxArgv(1));
-    if (mxArgv(0)->kind == XS_STRING_X_KIND)
-        key->kind = XS_KEY_X_KIND;
+    key->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
     pattern = key->value.key.string = mxArgv(0)->value.string;
 	modifier = mxArgv(1)->value.string;
 	if (!fxCompileRegExp(the, pattern, modifier, &regexp->value.regexp.code, &regexp->value.regexp.data, the->nameBuffer, sizeof(the->nameBuffer)))
@@ -348,7 +347,7 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 			if (escape) {
 				mxResult->value.string = fxNewChunk(the, count + escape + 1);
 				mxResult->kind = XS_STRING_KIND;
-				s = (txU1*)pattern;
+				s = (txU1*)slot->value.key.string;
 				r = (txU1*)mxResult->value.string;
 				while ((c = *s++)) {
 					if (c == 10) {
