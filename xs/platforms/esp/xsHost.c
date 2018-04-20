@@ -400,20 +400,30 @@ int espMemCmp(const void *a, const void *b, size_t count)
 	return 0;
 }
 
-extern const uint32_t *gUnusedInstructionRAM;
+#if !ESP32
+	extern const uint32_t *gUnusedInstructionRAM;
+#else
+	extern const uint8_t *_iram_text_end;
+#endif
+
 static uint32_t *gUint32Memory;
 
 void *espMallocUint32(int byteCount)
 {
 #if !ESP32
-	char *end = gUnusedInstructionRAM[-1] + (char *)gUnusedInstructionRAM[-2];
+	const char *start = (char *)gUnusedInstructionRAM[-2];
+	const char *end = start + gUnusedInstructionRAM[-1];
+#else
+	const char *start = (const char *)&_iram_text_end;
+	const char *end = 0x20000 + (const char *)0x40080000;
+#endif
 	uint32_t *result;
 
 	if (byteCount & 3)
 		return NULL;		// must be multiple of uint32_t in size
 
 	if (NULL == gUint32Memory)
-		gUint32Memory = (uint32_t *)gUnusedInstructionRAM[-2];
+		gUint32Memory = (uint32_t *)start;
 
 	result = gUint32Memory;
 	if ((byteCount + (char *)result) > end)
@@ -422,28 +432,25 @@ void *espMallocUint32(int byteCount)
 	gUint32Memory += byteCount;
 
 	return result;
-#else
-	return c_malloc(byteCount);
-#endif
-
 }
 
 void espFreeUint32(void *t)
 {
 #if !ESP32
-	void *end = gUnusedInstructionRAM[-1] + (char *)gUnusedInstructionRAM[-2];
-
+	const char *start = (char *)gUnusedInstructionRAM[-2];
+	const char *end = start + gUnusedInstructionRAM[-1];
+#else
+	const char *start = (const char *)&_iram_text_end;
+	const char *end = 0x20000 + (const char *)0x40080000;
+#endif
 	if (!t) return;
 
-	if ((t < (void *)gUnusedInstructionRAM[-2]) || (t >= end)) {
+	if ((t < (void *)start) || (t >= (void *)end)) {
 		c_free(t);
 		return;
 	}
 
 	gUint32Memory = t;		//@@ assumes alloc/free are paired
-#else
-	c_free(t);
-#endif
 }
 
 #if !ESP32
@@ -1612,7 +1619,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 
 				if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, use))
-						return 0;
+					return 0;
 				c_memmove(dst, temp, use);
 
 				toAlign -= use;
