@@ -81,16 +81,27 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
+	esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg))
-	ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
-	ESP_ERROR_CHECK(esp_bluedroid_init());
-	ESP_ERROR_CHECK(esp_bluedroid_enable());
+	err = esp_bt_controller_init(&bt_cfg);
+	if (ESP_OK == err)
+		err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+	if (ESP_OK == err)
+		err = esp_bluedroid_init();
+	if (ESP_OK == err)
+		err = esp_bluedroid_enable();
 
 	// Register callbacks
-	ESP_ERROR_CHECK(esp_ble_gatts_register_callback(gatts_event_handler));
-	ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_event_handler));
-	ESP_ERROR_CHECK(esp_ble_gatts_app_register(gBLE->app_id));
+	if (ESP_OK == err)
+		err = esp_ble_gatts_register_callback(gatts_event_handler);
+	if (ESP_OK == err)
+		err = esp_ble_gap_register_callback(gap_event_handler);
+	if (ESP_OK == err)
+		err = esp_ble_gatts_app_register(gBLE->app_id);
+	if (ESP_OK == err)
+		err = esp_ble_gatt_set_local_mtu(500);
+	if (ESP_OK != err)
+		xsUnknownError("ble initialization failed");
 }
 
 void xs_ble_server_close(xsMachine *the)
@@ -307,41 +318,37 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_write_evt_param *write = (struct gatts_write_evt_param *)message;
+	uint8_t *value = refcon;
+	
+	xsBeginHost(gBLE->the);
 	esp_bt_uuid_t uuid;
 	uint8_t buffer[ESP_UUID_LEN_128];
 	uint16_t uuid_length;
 	const esp_attr_desc_t *att_desc = handleToAttDesc(write->handle);
-	if (NULL == att_desc) return;
-    if (write->need_rsp) {
-        esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_malloc(sizeof(esp_gatt_rsp_t));
-        if (gatt_rsp != NULL) {
-            gatt_rsp->attr_value.len = write->len;
-            gatt_rsp->attr_value.handle = write->handle;
-            gatt_rsp->attr_value.offset = write->offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, write->value, write->len);
-			esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, gatt_rsp);
-            c_free(gatt_rsp);
-        }
-    }
-	xsBeginHost(gBLE->the);
+	if (NULL == att_desc) goto bail;
+	if (write->need_rsp)
+		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
 	xsmcVars(4);
-	uuid.len = att_desc->uuid_length;
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
+	uuid.len = att_desc->uuid_length;
 	uuidToBuffer(buffer, &uuid, &uuid_length);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSetInteger(xsVar(2), write->handle);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsmcSetArrayBuffer(xsVar(3), write->value, write->len);
+	xsmcSetArrayBuffer(xsVar(3), value, write->len);
 	xsmcSet(xsVar(0), xsID_value, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+bail:
+	c_free(value);
 	xsEndHost(gBLE->the);
 }
 
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
+	uint8_t *value;
+	
 	if (!gBLE || gBLE->terminating) return;
 	
 	switch(event) {
@@ -367,7 +374,15 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gatts_read_evt_param), gattsReadEvent, NULL);
 			break;
 		case ESP_GATTS_WRITE_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, NULL);
+			value = c_malloc(param->write.len);
+			if (NULL == value) {
+				if (param->write.need_rsp)
+					esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_ERROR, NULL);
+			}
+			else {
+				c_memmove(value, param->write.value, param->write.len);
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
+			}
 			break;
 		case ESP_GATTS_START_EVT:
 		case ESP_GATTS_STOP_EVT:
