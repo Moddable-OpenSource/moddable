@@ -74,18 +74,100 @@ int gDebuggerSetup = 0;
 		#define DEBUGGER_PORT	USART0
 		#define DEBUGGER_CLOCK	cmuClock_USART0
 		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_USART0;
+		#define DEBUGGER_RX_IRQ	USART0_RX_IRQn
+		#define DEBUGGER_TX_IRQ	USART0_TX_IRQn
 	#elif (MODDEF_DEBUGGER_INTERFACE_USART == 1)
 		#define DEBUGGER_PORT	USART1
 		#define DEBUGGER_CLOCK	cmuClock_USART1
 		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_USART1;
+		#define DEBUGGER_RX_IRQ	USART1_RX_IRQn
+		#define DEBUGGER_TX_IRQ	USART1_TX_IRQn
 	#elif (MODDEF_DEBUGGER_INTERFACE_USART == 2)
 		#define DEBUGGER_PORT	USART2
 		#define DEBUGGER_CLOCK	cmuClock_USART2
 		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_USART2;
+		#define DEBUGGER_RX_IRQ	USART2_RX_IRQn
+		#define DEBUGGER_TX_IRQ	USART2_TX_IRQn
+	#elif (MODDEF_DEBUGGER_INTERFACE_USART == 3)
+		#define DEBUGGER_PORT	USART3
+		#define DEBUGGER_CLOCK	cmuClock_USART3
+		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_USART3;
+		#define DEBUGGER_RX_IRQ	USART3_RX_IRQn
+		#define DEBUGGER_TX_IRQ	USART3_TX_IRQn
 	#endif
 #else
 	#error unknown debugger interface
 #endif
+
+#define BUFFERSIZE	256
+volatile struct circBuf {
+	uint8_t		data[BUFFERSIZE];
+	uint16_t	readIdx;
+	uint16_t	writeIdx;
+	uint16_t	pendingBytes;
+	bool		overflow;
+} rxBuf, txBuf = { {0}, 0, 0, 0, false };
+
+static int debuggerLastSleep = 3;
+
+#define blockInterrupts() { NVIC_DisableIRQ(DEBUGGER_RX_IRQ); NVIC_DisableIRQ(DEBUGGER_TX_IRQ); }
+
+#define unblockInterrupts() { NVIC_EnableIRQ(DEBUGGER_RX_IRQ); NVIC_EnableIRQ(DEBUGGER_TX_IRQ); }
+
+#if (MODDEF_DEBUGGER_INTERFACE_USART == 0)
+void USART0_RX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 1)
+void USART1_RX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 2)
+void USART2_RX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 3)
+void USART3_RX_IRQHandler(void)
+#else
+	#error Need to implement IRQ Handler
+#endif
+{
+	if (DEBUGGER_PORT->STATUS & USART_STATUS_RXDATAV) {
+		uint8_t rxData = USART_Rx(DEBUGGER_PORT);
+		rxBuf.data[rxBuf.writeIdx] = rxData;
+		rxBuf.writeIdx = (rxBuf.writeIdx + 1) % BUFFERSIZE;
+
+		if (rxBuf.pendingBytes == BUFFERSIZE)
+			rxBuf.overflow = true;
+		else
+			rxBuf.pendingBytes++;
+
+		USART_IntClear(DEBUGGER_PORT, USART_IF_RXDATAV);
+	}
+}
+
+#if (MODDEF_DEBUGGER_INTERFACE_USART == 0)
+void USART0_TX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 1)
+void USART1_TX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 2)
+void USART2_TX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 3)
+void USART3_TX_IRQHandler(void)
+#else
+	#error Need to implement IRQ Handler
+#endif
+{
+	USART_IntGet(DEBUGGER_PORT);
+
+	if (DEBUGGER_PORT->STATUS & USART_STATUS_TXBL) {
+		if (txBuf.pendingBytes > 0) {
+			USART_Tx(DEBUGGER_PORT, txBuf.data[txBuf.readIdx]);
+			txBuf.readIdx = (txBuf.readIdx + 1) % BUFFERSIZE;
+			txBuf.pendingBytes --;
+		}
+		if (txBuf.pendingBytes == 0) {
+			USART_IntDisable(DEBUGGER_PORT, USART_IF_TXBL);
+			setMaxSleep(debuggerLastSleep);
+		}
+	}
+
+}
+
 
 void modLog_transmit(const char *msg)
 {
@@ -107,23 +189,39 @@ void modLog_transmit(const char *msg)
 }
 
 void ESP_putc(int c) {
-    while( !(DEBUGGER_PORT->STATUS & (1 << 6)) ); // wait for TX buffer to empty
-//    while(USART_GetFlagStatus(DEBUGGER_PORT, USART_FLAG_TXE) == RESET ); // wait for TX buffer to empty
-    DEBUGGER_PORT->TXDATA = c;       // print each character of the test string
+	
+	while (txBuf.pendingBytes >= BUFFERSIZE)
+		/* wait for space */ ;
+
+blockInterrupts();
+	txBuf.data[txBuf.writeIdx] = c;
+	txBuf.writeIdx = (txBuf.writeIdx + 1) % BUFFERSIZE;
+
+	txBuf.pendingBytes++;
+unblockInterrupts();
+
+	USART_IntEnable(DEBUGGER_PORT, USART_IF_TXBL);
+	debuggerLastSleep = setMaxSleep(1);
 }
 
 int ESP_getc(void) {
-	if (!ESP_isReadable())
+	uint8_t ch;
+	if (rxBuf.pendingBytes < 1)
 		return -1;
-	return DEBUGGER_PORT->RXDATA;
+blockInterrupts();
+	ch = rxBuf.data[rxBuf.readIdx];
+	rxBuf.readIdx = (rxBuf.readIdx + 1) % BUFFERSIZE;
+
+	rxBuf.pendingBytes--;
+unblockInterrupts();
+
+	return ch;
 }
 
 uint8_t ESP_isReadable() {
-	if (DEBUGGER_PORT->STATUS & (1<<7))
-		return 1;
-//	if (USART_GetFlagStatus(DEBUGGER_PORT, USART_FLAG_RXNE) == SET)
-//		return 1;
-	return 0;
+	if (rxBuf.pendingBytes < 1)
+		return 0;
+	return 1;
 }
 #else
 void modLog_transmit(const char *msg) { }
@@ -141,6 +239,7 @@ void setupDebugger() {
 	GPIO_PinModeSet(MODDEF_DEBUGGER_TX_PORT, MODDEF_DEBUGGER_TX_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MODDEF_DEBUGGER_RX_PORT, MODDEF_DEBUGGER_RX_PIN, gpioModeInput, 0);
 
+	serialInit.enable = usartDisable;
 	serialInit.baudrate = MODDEF_DEBUGGER_BAUD;
 
 	USART_InitAsync(DEBUGGER_PORT, &serialInit);
@@ -152,6 +251,14 @@ void setupDebugger() {
 
 	gDebuggerSetup = 1;
 
+	USART_IntClear(DEBUGGER_PORT, _USART_IF_MASK);
+	USART_IntEnable(DEBUGGER_PORT, _USART_IF_RXDATAV_MASK);
+	NVIC_ClearPendingIRQ(DEBUGGER_RX_IRQ);
+	NVIC_ClearPendingIRQ(DEBUGGER_TX_IRQ);
+	NVIC_EnableIRQ(DEBUGGER_RX_IRQ);
+	NVIC_EnableIRQ(DEBUGGER_TX_IRQ);
+
+	USART_Enable(DEBUGGER_PORT, usartEnable);
 #elif GIANT_GECKO
 	CMU_ClockEnable(DEBUGGER_CLOCK, true);
 	DEBUGGER_INIT_CLOCK();
