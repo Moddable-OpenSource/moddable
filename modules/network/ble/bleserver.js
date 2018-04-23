@@ -28,11 +28,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	close() @ "xs_ble_server_close"
 	set deviceName() @ "xs_ble_server_set_device_name"
 	startAdvertising(params) {
-		let fast = params.hasOwnProperty("fast") ? params.fast : true;
-		let connectable = params.hasOwnProperty("connectable") ? params.connectable : true;
-		let discoverable = params.hasOwnProperty("discoverable") ? params.discoverable : true;
-		let scanResponseData = params.hasOwnProperty("scanResponseData") ? params.scanResponseData : null;
-		let advertisingData = params.advertisingData;
+		let {fast = true, connectable = true, discoverable = true, scanResponseData = null, advertisingData} = params;
 		let flags = GAP.ADFlag.NO_BR_EDR;
 		if (discoverable)
 			flags |= GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE;
@@ -49,7 +45,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		advertisingData.flags = flags;
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(interval.intervalMin, interval.intervalMax, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
 	deploy() @ "xs_ble_server_deploy"
