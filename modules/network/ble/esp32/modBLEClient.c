@@ -106,15 +106,23 @@ void xs_ble_client_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
+	esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg))
-	ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
-	ESP_ERROR_CHECK(esp_bluedroid_init());
-	ESP_ERROR_CHECK(esp_bluedroid_enable());
+	err = esp_bt_controller_init(&bt_cfg);
+	if (ESP_OK == err)
+		err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+	if (ESP_OK == err)
+		err = esp_bluedroid_init();
+	if (ESP_OK == err)
+		err = esp_bluedroid_enable();
 
 	// Register callbacks
-	ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_event_handler));
-    ESP_ERROR_CHECK(esp_ble_gattc_register_callback(gattc_event_handler));
+	if (ESP_OK == err)
+		err = esp_ble_gap_register_callback(gap_event_handler);
+	if (ESP_OK == err)
+		err = esp_ble_gattc_register_callback(gattc_event_handler);
+	if (ESP_OK != err)
+		xsUnknownError("ble initialization failed");
     
 	// Stack is ready
 	xsCall1(gBLE->obj, xsID_callback, xsString("_onReady"));
@@ -138,18 +146,17 @@ void xs_ble_client_close(xsMachine *the)
 	}
 	xsForget(gBLE->obj);
 	xs_ble_client_destructor(gBLE);
-	esp_bluedroid_disable();
-	esp_bluedroid_deinit();
-	esp_bt_controller_deinit();
 }
 
 void xs_ble_client_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
+	if (ble)
 		c_free(ble);
-	}
 	gBLE = NULL;
+	esp_bluedroid_disable();
+	esp_bluedroid_deinit();
+	esp_bt_controller_deinit();
 }
 
 void xs_ble_client_set_device_name(xsMachine *the)
