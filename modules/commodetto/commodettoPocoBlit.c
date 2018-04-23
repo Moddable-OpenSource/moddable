@@ -190,7 +190,7 @@ struct PocoCommandRecord {
 */
 
 #if kPocoPixelSize >= 8
-	static const uint8_t gBlenders[256] ICACHE_RAM_ATTR = {
+	static const uint8_t gBlenders[256] ICACHE_XS6RO_ATTR = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
 		4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0,
@@ -209,7 +209,7 @@ struct PocoCommandRecord {
 		31, 29, 27, 25, 23, 21, 19, 17, 14, 12, 10, 8, 6, 4, 2, 0
 	};
 #else
-	static const uint8_t gBlenders[256] ICACHE_RAM_ATTR = {
+	static const uint8_t gBlenders[256] ICACHE_XS6RO_ATTR = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
