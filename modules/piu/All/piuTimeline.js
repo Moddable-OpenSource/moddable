@@ -26,19 +26,21 @@ class TweenProperty {
 			this.tweenValue = this.tweenY;
 		else if (name == "state")
 			this.tweenValue = this.tweenState;
-		else
+		else {
+			this.tweenValue = this.tweenName;
 			this.name = name;
+		}
 		this.from = from;
 		this.to = to;
 	}
 	tween(target, fraction) {
 		this.tweenValue(target, fraction, this.from, this.to);
 	}
+	tweenName(target, fraction, from, to) {
+		target[this.name] = from + (fraction * (to - from));
+	}
 	tweenState(target, fraction, from, to) {
 		target.state = from + (fraction * (to - from));
-	}
-	tweenValue(target, fraction, from, to) {
-		target[this.name] = from + (fraction * (to - from));
 	}
 	tweenX(target, fraction, from, to) {
 		target.x = from + (fraction * (to - from));
