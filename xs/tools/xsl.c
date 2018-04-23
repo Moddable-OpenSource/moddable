@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
 				strip = strip->nextStrip;
 			}
 	
-			count = fxPrepareHeap(the);
+			count = fxPrepareHeap(the, stripping || linker->firstStrip);
 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
 	
 			c_strcpy(path, output);
