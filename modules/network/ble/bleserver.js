@@ -51,15 +51,22 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	deploy() @ "xs_ble_server_deploy"
 	initialize() @ "xs_ble_server_initialize"
 	
+	notifyValue(characteristic, value) {
+		this._notifyValue(characteristic.handle, characteristic.notify, value);
+	}
+
 	set passkey() @ "xs_ble_server_set_passkey"
 	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onCharacteristicRead() {}
+	onCharacteristicNotifyEnabled() {}
+	onCharacteristicNotifyDisabled() {}
 	onConnected() {}
 	onDisconnected() {}
 
 	_startAdvertising() @ "xs_ble_server_start_advertising"
+	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
 
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
@@ -76,6 +83,16 @@ export class BLEServer @ "xs_ble_server_destructor" {
 			case "onCharacteristicRead":
 				return this.onCharacteristicRead({
 					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle }
+				});
+				break;
+			case "onCharacteristicNotifyEnabled":
+				this.onCharacteristicNotifyEnabled({
+					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
+				});
+				break;
+			case "onCharacteristicNotifyDisabled":
+				this.onCharacteristicNotifyDisabled({
+					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
 				});
 				break;
 			case "onConnected":

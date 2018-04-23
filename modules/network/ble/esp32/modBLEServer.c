@@ -182,6 +182,13 @@ void xs_ble_server_stop_advertising(xsMachine *the)
 	esp_ble_gap_stop_advertising();
 }
 
+void xs_ble_server_characteristic_notify_value(xsMachine *the)
+{
+	uint16_t handle = xsmcToInteger(xsArg(0));
+	uint16_t notify = xsmcToInteger(xsArg(1));
+	esp_err_t err = esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(1 == notify));
+}
+
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
@@ -325,22 +332,41 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	esp_bt_uuid_t uuid;
 	uint8_t buffer[ESP_UUID_LEN_128];
 	uint16_t uuid_length;
+	uint8_t notify = 0xFF;
 	const esp_attr_desc_t *att_desc = handleToAttDesc(write->handle);
 	if (NULL == att_desc) goto bail;
 	if (write->need_rsp)
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
 	xsmcVars(4);
+	if (sizeof(uint16_t) == att_desc->uuid_length && *(uint16_t*)att_desc->uuid_p == character_client_config_uuid && 2 == write->len) {
+		uint16_t descr_value = write->value[1]<<8 | write->value[0];
+		if (descr_value < 0x0003) {
+			att_desc = handleToAttDesc(write->handle - 1);
+			notify = (uint8_t)descr_value;
+		}
+		else
+			xsUnknownError("invalid cccd value");
+	}
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuid.len = att_desc->uuid_length;
 	uuidToBuffer(buffer, &uuid, &uuid_length);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
-	xsmcSetInteger(xsVar(2), write->handle);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsmcSetArrayBuffer(xsVar(3), value, write->len);
-	xsmcSet(xsVar(0), xsID_value, xsVar(3));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+	if (0xFF != notify) {
+		xsmcSetInteger(xsVar(2), write->handle - 1);
+		xsmcSetInteger(xsVar(3), notify);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsmcSet(xsVar(0), xsID_notify, xsVar(3));
+		xsCall2(gBLE->obj, xsID_callback, xsString(0 == notify ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
+	}
+	else {
+		xsmcSetInteger(xsVar(2), write->handle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsmcSetArrayBuffer(xsVar(3), value, write->len);
+		xsmcSet(xsVar(0), xsID_value, xsVar(3));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+	}
 bail:
 	c_free(value);
 	xsEndHost(gBLE->the);
