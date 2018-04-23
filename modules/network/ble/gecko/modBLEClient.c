@@ -570,7 +570,7 @@ static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
 	gecko_cmd_gatt_set_max_mtu(DEFAULT_MTU);
-	xsCall1(gBLE->obj, xsID_callback, xsString("_onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
 }
 
@@ -585,7 +585,7 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 	xsmcSetArrayBuffer(xsVar(2), addr, 6);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("_onDiscovered"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -607,7 +607,7 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(2), evt->address.addr, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("_onConnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -624,7 +624,7 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 		goto bail;
 	}	
 	
-	xsCall1(connection->objConnection, xsID_callback, xsString("_onDisconnected"));
+	xsCall1(connection->objConnection, xsID_callback, xsString("onDisconnected"));
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
@@ -636,7 +636,7 @@ static void leConnectionRSSIEvent(struct gecko_msg_le_connection_rssi_evt_t *evt
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall2(connection->objConnection, xsID_callback, xsString("_onRSSI"), xsInteger(((int16_t)evt->rssi)));
+	xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(((int16_t)evt->rssi)));
 	xsEndHost(gBLE->the);
 }
 
@@ -659,7 +659,7 @@ static void gattServiceEvent(struct gecko_msg_gatt_service_evt_t *evt)
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_start, xsVar(2));
 	xsmcSet(xsVar(0), xsID_end, xsVar(3));
-	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onService"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onService"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -680,7 +680,7 @@ static void gattCharacteristicEvent(struct gecko_msg_gatt_characteristic_evt_t *
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onCharacteristic"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -699,7 +699,7 @@ static void gattDescriptorEvent(struct gecko_msg_gatt_descriptor_evt_t *evt)
 	xsmcSetInteger(xsVar(2), evt->descriptor);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onDescriptor"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -715,7 +715,7 @@ static void gattCharacteristicValueEvent(struct gecko_msg_gatt_characteristic_va
 	xsmcSetInteger(xsVar(2), evt->characteristic);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("_onCharacteristicValue"), xsVar(0));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onCharacteristicValue"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -731,7 +731,7 @@ static void gattCharacteristicNotifyEvent(struct gecko_msg_gatt_characteristic_v
 	xsmcSetInteger(xsVar(2), evt->characteristic);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, xsString("_onCharacteristicNotification"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -750,14 +750,14 @@ static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_complete
 	switch(procedure->cmd) {
 		case CMD_GATT_DISCOVER_SERVICES_ID:
 		case CMD_GATT_DISCOVER_SERVICES_UUID_ID:
-			xsCall1(procedure->obj, xsID_callback, xsString("_onService"));
+			xsCall1(procedure->obj, xsID_callback, xsString("onService"));
 			break;
 		case CMD_GATT_DISCOVER_CHARACTERISTICS_ID:
 		case CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID:
-			xsCall1(procedure->obj, xsID_callback, xsString("_onCharacteristic"));
+			xsCall1(procedure->obj, xsID_callback, xsString("onCharacteristic"));
 			break;
 		case CMD_GATT_DISCOVER_DESCRIPTORS_ID:
-			xsCall1(procedure->obj, xsID_callback, xsString("_onDescriptor"));
+			xsCall1(procedure->obj, xsID_callback, xsString("onDescriptor"));
 			break;
 		default:
 			break;
