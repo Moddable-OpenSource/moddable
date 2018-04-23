@@ -64,24 +64,27 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	_connect() @ "xs_ble_client_connect"
 	_startScanning() @ "xs_ble_client_start_scanning"
 	
-	_onReady() {
-		this.onReady();
-	}
-	_onDiscovered(params) {
-		let address = BluetoothAddress.toString(params.address);
-		let scanResponse = new Advertisement(params.scanResponse);
-		this.onDiscovered({ address, scanResponse });
-	}
-	_onConnected(params) {
-		let address = BluetoothAddress.toString(params.address);
-		let ble = this;
-		let client = new Client({ connection:params.connection, ble });
-		let connection = new Connection({ address, client, ble });
-		this.onConnected(client);
-	}
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
-		this[event](params);
+		switch(event) {
+			case "onReady":
+				this.onReady();
+				break;
+			case "onDiscovered": {
+				let address = BluetoothAddress.toString(params.address);
+				let scanResponse = new Advertisement(params.scanResponse);
+				this.onDiscovered({ address, scanResponse });
+				break;
+			}
+			case "onConnected": {
+				let address = BluetoothAddress.toString(params.address);
+				let ble = this;
+				let client = new Client({ connection:params.connection, ble });
+				let connection = new Connection({ address, client, ble });
+				this.onConnected(client);
+				break;
+			}
+		}
 	}
 };
 Object.freeze(BLEClient.prototype);
