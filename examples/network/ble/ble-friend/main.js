@@ -36,7 +36,7 @@ class BLEFriend extends BLEClient {
 	}
 	onDiscovered(device) {
 		let completeName = device.scanResponse.completeName;
-		if (completeName && (completeName.includes("UART") || completeName.includes("BLE Friend"))) {
+		if (completeName && ((completeName == "UART") || completeName.includes("BLE Friend"))) {
 			this.stopScanning();
 			this.connect(device.address);
 		}
