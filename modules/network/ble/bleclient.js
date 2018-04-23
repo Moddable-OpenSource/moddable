@@ -56,9 +56,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 
 	startScanning(params) {
 		if (!params) params = {};
-		let active = params.hasOwnProperty("active") ? params.active : true;
-		let interval = params.hasOwnProperty("interval") ? params.interval : 0x50;
-		let window = params.hasOwnProperty("window") ? params.window : 0x30;
+		let {active = true, interval = 0x50, window = 0x30} = params;
 		this._startScanning(active, interval, window);
 	}
 	stopScanning() @ "xs_ble_client_stop_scanning"
