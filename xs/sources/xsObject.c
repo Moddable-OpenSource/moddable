@@ -599,6 +599,31 @@ void fx_Object_freeze(txMachine* the)
 				}
 			}
 			mxPop();
+			if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1))) {
+				at = the->stack->value.reference;
+				mxPushUndefined();
+				property = the->stack;
+				while ((at = at->next)) {
+					if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
+						if (property->kind == XS_REFERENCE_KIND) {
+							mxPushSlot(property);
+							mxPushInteger(1);
+							mxPushSlot(mxThis);
+							fxCallID(the, mxID(_isFrozen));
+							if (!fxRunTest(the)) {
+								mxPushSlot(property);
+								mxPushBoolean(1);
+								mxPushInteger(2);
+								mxPushSlot(mxThis);
+								mxPushSlot(mxFunction);
+								fxCall(the);
+								mxPop();
+							}
+						}
+					}
+				}
+				mxPop();
+			}
 			mxPop();
 		}
 		*mxResult = *mxArgv(0);
