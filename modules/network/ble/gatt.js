@@ -66,32 +66,32 @@ export class Client {
 		}
 	}
 	
-	_onService(params) {
-		if (!params)
-			this.ble.onServices(this.services);
-		else {
-			params.uuid = UUID.toString(params.uuid);
-			params.connection = this.connection;
-			params.ble = this.ble;
-			this.services.push(new Service(params));
-		}
-	}
-	
-	_onCharacteristicNotification(params) {
-		let characteristic = this._findCharacteristicByHandle(params.handle);
-		if (characteristic)
-			this.ble.onCharacteristicNotification(characteristic, params.value);		
-	}
-
-	_onCharacteristicValue(params) {
-		let characteristic = this._findCharacteristicByHandle(params.handle);
-		if (characteristic)
-			this.ble.onCharacteristicValue(characteristic, params.value);		
-	}
-
 	callback(event, params) {
 		//trace(`Client callback ${event}\n`);
-		this[event](params);
+		switch(event) {
+			case "onService":
+				if (!params)
+					this.ble.onServices(this.services);
+				else {
+					params.uuid = UUID.toString(params.uuid);
+					params.connection = this.connection;
+					params.ble = this.ble;
+					this.services.push(new Service(params));
+				}
+				break;
+			case "onCharacteristicNotification": {
+				let characteristic = this._findCharacteristicByHandle(params.handle);
+				if (characteristic)
+					this.ble.onCharacteristicNotification(characteristic, params.value);		
+				break;
+			}
+			case "onCharacteristicValue": {
+				let characteristic = this._findCharacteristicByHandle(params.handle);
+				if (characteristic)
+					this.ble.onCharacteristicValue(characteristic, params.value);		
+				break;
+			}
+		}
 	}
 };
 Object.freeze(Client.prototype);
@@ -137,23 +137,23 @@ export class Service {
 		return this.characteristics.find(characteristic => uuid == characteristic.uuid);
 	}
 
-	_onCharacteristic(params) {
-		if (!params)
-			this.ble.onCharacteristics(this.characteristics);
-		else {
-			params.uuid = UUID.toString(params.uuid);
-			params.connection = this.connection;
-			params.service = this;
-			params.ble = this.ble;
-			this.characteristics.push(new Characteristic(params));
-		}
-	}
-	
 	_discoverCharacteristics() @ "xs_gatt_service_discover_characteristics"
 
 	callback(event, params) {
 		//trace(`Service callback ${event}\n`);
-		this[event](params);
+		switch(event) {
+			case "onCharacteristic":
+				if (!params)
+					this.ble.onCharacteristics(this.characteristics);
+				else {
+					params.uuid = UUID.toString(params.uuid);
+					params.connection = this.connection;
+					params.service = this;
+					params.ble = this.ble;
+					this.characteristics.push(new Characteristic(params));
+				}
+				break;
+		}
 	}
 };
 Object.freeze(Service.prototype);
@@ -209,17 +209,6 @@ export class Characteristic {
 		this._writeWithoutResponse(this.connection, this.handle, value);
 	}
 	
-	_onDescriptor(params) {
-		if (!params)
-			this.ble.onDescriptors(this.descriptors);
-		else {
-			params.uuid = UUID.toString(params.uuid);
-			params.connection = this.connection;
-			params.characteristic = this;
-			this.descriptors.push(new Descriptor(params));
-		}
-	}
-	
 	_discoverAllDescriptors() @ "xs_gatt_characteristic_discover_all_characteristic_descriptors"
 	_readValue() @ "xs_gatt_characteristic_read_value"
 	_writeWithoutResponse() @ "xs_gatt_characteristic_write_without_response"
@@ -228,7 +217,18 @@ export class Characteristic {
 
 	callback(event, params) {
 		//trace(`Characteristic callback ${event}\n`);
-		this[event](params);
+		switch(event) {
+			case "onDescriptor":
+				if (!params)
+					this.ble.onDescriptors(this.descriptors);
+				else {
+					params.uuid = UUID.toString(params.uuid);
+					params.connection = this.connection;
+					params.characteristic = this;
+					this.descriptors.push(new Descriptor(params));
+				}
+				break;
+		}
 	}
 };
 Object.freeze(Characteristic.prototype);
