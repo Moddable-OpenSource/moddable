@@ -41,6 +41,7 @@ static txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* wh
 static txString fxGetCallbackName(txMachine* the, txCallback callback); 
 static txString fxGetCodeName(txMachine* the, txByte* which);
 static txInteger fxGetTypeDispatchIndex(txTypeDispatch* dispatch);
+static void fxPrepareInstance(txMachine* the, txSlot* instance);
 static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolean dummy);
@@ -284,7 +285,19 @@ txSlot* fxNewHostFunctionGlobal(txMachine* the, txCallback call, txInteger lengt
 	return function;
 }
 
-txInteger fxPrepareHeap(txMachine* the)
+void fxPrepareInstance(txMachine* the, txSlot* instance)
+{
+	txSlot *property = instance->next;
+	while (property) {
+		if (property->kind != XS_ACCESSOR_KIND) 
+			property->flag |= XS_DONT_SET_FLAG;
+		property->flag |= XS_DONT_DELETE_FLAG;
+		property = property->next;
+	}
+	instance->flag |= XS_DONT_PATCH_FLAG;
+}
+
+txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txID aliasCount = 0;
@@ -352,42 +365,30 @@ txInteger fxPrepareHeap(txMachine* the)
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
-					if (property && ((property->kind == XS_ARRAY_KIND) || (property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND))) {
-						if (slot != mxArrayPrototype.value.reference)
-							slot->ID = XS_NO_ID;
-						else
-							slot->ID = aliasCount++;
-						while (property) {
-							if (property->kind != XS_ACCESSOR_KIND) 
-								property->flag |= XS_DONT_SET_FLAG;
-							property->flag |= XS_DONT_DELETE_FLAG;
-							property = property->next;
-						}
-						slot->flag |= XS_DONT_PATCH_FLAG;
-					}
-					else if (property && (property->kind == XS_MODULE_KIND)) {
-						property = property->next;
-						slot->ID = XS_NO_ID;
-					}
-					else if (property && (property->kind == XS_PROXY_KIND)) {
-						slot->ID = aliasCount++;
-					}
-					else {
-						txBoolean frozen = (slot->flag & XS_DONT_PATCH_FLAG) ? 1 : 0;
-						if (frozen) {
-							while (property) {
-								if (property->kind != XS_ACCESSOR_KIND) 
-									if (!(property->flag & XS_DONT_SET_FLAG))
-										frozen = 0;
-								if (!(property->flag & XS_DONT_DELETE_FLAG))
-									frozen = 0;
-								property = property->next;
+					if (property) {
+						if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
+							fxPrepareInstance(the, slot);
+						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
+							fxPrepareInstance(the, slot);
+							if (stripping) {
+								if (slot->flag & (XS_BASE_FLAG | XS_DERIVED_FLAG)) {
+									property = property->next;
+									while (property) {
+										if ((property->ID == mxID(_prototype)) && (property->kind == XS_REFERENCE_KIND)) {
+											fxPrepareInstance(the, property->value.reference);
+											break;
+										}
+										property = property->next;
+									}
+								}
 							}
 						}
-						if (frozen)
-							slot->ID = XS_NO_ID;
-						else
-							slot->ID = aliasCount++;
+						else if (property->kind == XS_MODULE_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_EXPORT_KIND)
+							fxPrepareInstance(the, slot);
+						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
+							fxPrepareInstance(the, slot);
 					}
 				}
 			}
@@ -397,7 +398,37 @@ txInteger fxPrepareHeap(txMachine* the)
 	}
 	index++;
 	
+	heap = the->firstHeap;
+	while (heap) {
+		slot = heap + 1;
+		limit = heap->value.reference;
+		while (slot < limit) {
+			if (!(slot->flag & XS_MARK_FLAG)) {
+				if (slot->kind == XS_INSTANCE_KIND) {
+					txBoolean frozen = (slot->flag & XS_DONT_PATCH_FLAG) ? 1 : 0;
+					if (frozen) {
+						txSlot *property = slot->next;
+						while (property) {
+							if (property->kind != XS_ACCESSOR_KIND) 
+								if (!(property->flag & XS_DONT_SET_FLAG))
+									frozen = 0;
+							if (!(property->flag & XS_DONT_DELETE_FLAG))
+								frozen = 0;
+							property = property->next;
+						}
+					}
+					if (frozen)
+						slot->ID = XS_NO_ID;
+					else
+						slot->ID = aliasCount++;
+				}
+			}
+			slot++;
+		}
+		heap = heap->next;
+	}
 	the->aliasCount = aliasCount;
+	
 	return index;
 }
 
