@@ -107,25 +107,26 @@ void xs_ble_server_initialize(xsMachine *the)
 void xs_ble_server_close(xsMachine *the)
 {
 	gBLE->terminating = true;
-	esp_ble_gatts_app_unregister(gBLE->gatts_if);
 	xsForget(gBLE->obj);
 	xs_ble_server_destructor(gBLE);
-	esp_bluedroid_disable();
-	esp_bluedroid_deinit();
-	esp_bt_controller_deinit();
 }
 
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
 	if (ble) {
-		if (gBLE->advertisingData)
-			c_free(gBLE->advertisingData);
-		if (gBLE->scanResponseData)
-			c_free(gBLE->scanResponseData);
+		ble->terminating = true;
+		esp_ble_gatts_app_unregister(ble->gatts_if);
+		if (ble->advertisingData)
+			c_free(ble->advertisingData);
+		if (ble->scanResponseData)
+			c_free(ble->scanResponseData);
 		c_free(ble);
 	}
 	gBLE = NULL;
+	esp_bluedroid_disable();
+	esp_bluedroid_deinit();
+	esp_bt_controller_deinit();
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)

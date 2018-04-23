@@ -27,16 +27,16 @@ GAP.SCAN_SLOW_WINDOW1 = 0x0012;			// TGAP(scan_slow_window1)		11.25ms
 GAP.SCAN_SLOW_INTERVAL2 = 0x1000;		// TGAP(scan_slow_interval2)	2.56s
 GAP.SCAN_SLOW_WINDOW2 = 0x0024;			// TGAP(scan_slow_window2)		22.5ms
 GAP.ADV_FAST_INTERVAL1 = {				// TGAP(adv_fast_interval1)		30ms to 60ms
-	intervalMin: 0x0030,
-	intervalMax: 0x0060
+	min: 0x0030,
+	max: 0x0060
 };
 GAP.ADV_FAST_INTERVAL2 = {				// TGAP(adv_fast_interval2)		100ms to 150ms
-	intervalMin: 0x00A0,
-	intervalMax: 0x00F0
+	min: 0x00A0,
+	max: 0x00F0
 };
 GAP.ADV_SLOW_INTERVAL = {				// TGAP(adv_slow_interval)		1s to 1.2s
-	intervalMin: 0x0640,
-	intervalMax: 0x0780
+	min: 0x0640,
+	max: 0x0780
 };
 GAP.ADType = {
 	/* Service UUID */
