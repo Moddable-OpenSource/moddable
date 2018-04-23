@@ -24,6 +24,7 @@ const DEVICE_NAME = "Moddable Device";
 export default class WiFiServer extends BLEServer {
 	onReady() {
 		this.deviceName = DEVICE_NAME;
+		this.password = "";
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -45,7 +46,7 @@ export default class WiFiServer extends BLEServer {
 			this.password = String.fromArrayBuffer(value);
 		else if (WIFI_CONTROL_CHARACTERISTIC == uuid) {
 			let command = new Uint8Array(value)[0];
-			if ((1 == command) && this.ssid && this.password) {
+			if ((1 == command) && this.ssid) {
 				this.close();
 				this.connectToWiFiNetwork();
 			}
