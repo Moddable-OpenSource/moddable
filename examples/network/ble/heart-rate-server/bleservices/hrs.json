@@ -1,0 +1,19 @@
+[
+	{
+		"uuid": "180D",
+		"characteristics": [
+			{
+				"uuid": "2A37",
+				"maxBytes": 2,
+				"permissions": "read",
+				"properties": "read,notify",
+			},
+			{
+				"uuid": "2A38",
+				"maxBytes": 1,
+				"permissions": "read",
+				"properties": "read",
+			}
+		]
+	}
+]

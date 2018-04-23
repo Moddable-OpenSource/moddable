@@ -23,6 +23,7 @@ import { FILE, TOOL } from "tool";
 const ESP_GATT_CHAR_PROP_BIT_READ = (1 << 1);
 const ESP_GATT_CHAR_PROP_BIT_WRITE = (1 << 3);
 const ESP_GATT_CHAR_PROP_BIT_NOTIFY = (1 << 4);
+const ESP_GATT_CHAR_PROP_BIT_INDICATE = (1 << 5);
 
 export default class extends TOOL {
 	constructor(argv) {
@@ -87,6 +88,7 @@ export default class extends TOOL {
 		file.line("");
 		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
 		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
+		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
 		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
 		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
 		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
@@ -97,7 +99,15 @@ export default class extends TOOL {
 		services.forEach((service, index) => {
 			++attributeCount;
 			if ("characteristics" in service) {
-				attributeCount += (service.characteristics.length * 2);
+				let characteristics = service.characteristics;
+				attributeCount += (characteristics.length * 2);
+				characteristics.forEach(characteristic => {
+					let properties = characteristic.properties;
+					if (properties.includes("notify") || properties.includes("indicate")) {
+						++attributeCount;
+						characteristic._notify = true;
+					}
+				});
 			}
 		});
 		services.forEach((service, index) => {
@@ -135,6 +145,9 @@ export default class extends TOOL {
 						file.write(buffer2hexlist(buffer));
 						file.write(" };");
 						file.line("");
+					}
+					if (characteristic._notify) {
+						file.line(`static const uint8_t char_ccc${characteristicIndex}[2] = { 0x00, 0x00 };`);
 					}
 					++characteristicIndex;
 				});
@@ -178,6 +191,15 @@ export default class extends TOOL {
 					file.line("");
 					file.line("\t},");
 					++attributeIndex;
+					
+					// characteristic configuration descriptor
+					if (characteristic._notify) {
+						file.line("\t[", attributeIndex, "] = {");
+						file.line("\t\t{ESP_GATT_AUTO_RSP},");
+						file.line(`\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(char_ccc${characteristicIndex}), (uint8_t*)char_ccc${characteristicIndex}}`);
+						file.line("\t},");
+						++attributeIndex;
+					}
 					++characteristicIndex;
 				});
 			}
@@ -201,6 +223,9 @@ function parseProperties(properties) {
 			case "notify":
 				props |= ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 				break;
+			case "indicate":
+				props |= ESP_GATT_CHAR_PROP_BIT_INDICATE;
+				break;
 			default:
 				throw new Error("unknown property");
 		}
@@ -215,6 +240,8 @@ function parseProperties(properties) {
 		props = "char_prop_read_write";
 	else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 		props = "char_prop_read_notify";
+	else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
+		props = "char_prop_read_indicate";
 	else
 		throw new Error("unsupported property combination");
 	return props;
