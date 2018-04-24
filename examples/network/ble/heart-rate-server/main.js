@@ -61,7 +61,8 @@ class HeartRateService extends BLEServer {
 		}, 1000);
 	}
 	onCharacteristicNotifyDisabled(params) {
-		this.onDisconnected();
+		Timer.clear(this.timer);
+		this.timer = 0;
 	}
 }
 
