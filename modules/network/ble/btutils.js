@@ -109,123 +109,123 @@ function serializeAddress(data) {
 	return result;
 }
 
-const AdvertisementSerializer = {
-	["incompleteUUID16List"]: param => {
+class AdvertisementSerializer {
+	static incompleteUUID16List(param) {
 		return {
 			type: GAP.ADType.INCOMPLETE_UUID16_LIST,
 			data: serializeUUID16List(param)
 		};
-	},
-	["completeUUID16List"]: param => {
+	}
+	static completeUUID16List(param) {
 		return {
 			type: GAP.ADType.COMPLETE_UUID16_LIST,
 			data: serializeUUID16List(param)
 		};
-	},
-	["incompleteUUID128List"]: param => {
+	}
+	static incompleteUUID128List(param) {
 		return {
 			type: GAP.ADType.INCOMPLETE_UUID128_LIST,
 			data: serializeUUID128List(param)
 		};
-	},
-	["completeUUID128List"]: param => {
+	}
+	static completeUUID128List(param) {
 		return {
 			type: GAP.ADType.COMPLETE_UUID128_LIST,
 			data: serializeUUID128List(param)
 		};
-	},
-	["shortName"]: param => {
+	}
+	static shortName(param) {
 		return {
 			type: GAP.ADType.SHORTENED_LOCAL_NAME,
 			data: serializeString(param)
 		};
-	},
-	["completeName"]: param => {
+	}
+	static completeName(param) {
 		return {
 			type: GAP.ADType.COMPLETE_LOCAL_NAME,
 			data: serializeString(param)
 		};
-	},
-	["flags"]: param => {
+	}
+	static flags(param) {
 		return {
 			type: GAP.ADType.FLAGS,
 			data: [param & 0xFF]
 		};
-	},
-	["manufacturerSpecific"]: param => {
+	}
+	static manufacturerSpecific(param) {
 		return {
 			type: GAP.ADType.MANUFACTURER_SPECIFIC_DATA,
 			data: serializeManufacturerSpecificData(param)
 		};
-	},
-	["txPowerLevel"]: param => {
+	}
+	static txPowerLevel(param) {
 		return {
 			type: GAP.ADType.TX_POWER_LEVEL,
 			data: [param & 0xFF]
 		};
-	},
-	["connectionInterval"]: param => {
+	}
+	static connectionInterval(param) {
 		return {
 			type: GAP.ADType.MANUFACTURER_SPECIFIC_DATA,
 			data: serializeConnectionInterval(param)
 		};
-	},
-	["solicitationUUID16List"]: param => {
+	}
+	static solicitationUUID16List(param) {
 		return {
 			type: GAP.ADType.SOLICITATION_UUID16_LIST,
 			data: [data & 0xFF, (data >> 8) & 0xFF]
 		};
-	},
-	["solicitationUUID128List"]: param => {
+	}
+	static solicitationUUID128List(param) {
 		return {
 			type: GAP.ADType.SOLICITATION_UUID128_LIST,
 			data: serializeUUID128List(param)
 		};
-	},
-	["serviceDataUUID16"]: param => {
+	}
+	static serviceDataUUID16(param) {
 		return {
 			type: GAP.ADType.SERVICE_DATA_UUID16,
 			data: serializeServiceData16(param)
 		};
-	},
-	["serviceDataUUID128"]: param => {
+	}
+	static serviceDataUUID128(param) {
 		return {
 			type: GAP.ADType.SERVICE_DATA_UUID128,
 			data: serializeServiceData128(param)
 		};
-	},
-	["appearance"]: param => {
+	}
+	static appearance(param) {
 		return {
 			type: GAP.ADType.APPEARANCE,
 			data: [data & 0xFF, (data >> 8) & 0xFF]
 		};
-	},
-	["publicAddress"]: param => {
+	}
+	static publicAddress(param) {
 		return {
 			type: GAP.ADType.PUBLIC_TARGET_ADDRESS,
 			data: serializeAddress(param)
 		};
-	},
-	["randomAddress"]: param => {
+	}
+	static randomAddress(param) {
 		return {
 			type: GAP.ADType.RANDOM_TARGET_ADDRESS,
 			data: serializeAddress(param)
 		};
-	},
-	["advertisingInterval"]: param => {
+	}
+	static advertisingInterval(param) {
 		return {
 			type: GAP.ADType.ADVERTISING_INTERVAL,
 			data: serializeUint16(param)
 		};
-	},
-//	["deviceAddress"]: null,
-	["role"]: param => {
+	}
+	//static deviceAddress(param) {}
+	static role(param) {
 		return {
 			type: GAP.ADType.LE_ROLE,
 			data: serializeByte(param)
 		};
-	},
-	["uri"]: param => {
+	}
+	static uri(param) {
 		return {
 			type: GAP.ADType.URI,
 			data: serializeString(param)
