@@ -101,6 +101,7 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE = (modBLE)c_calloc(sizeof(modBLERecord), 1);
 	if (!gBLE)
 		xsUnknownError("no memory");
+	xsmcSetHostData(xsThis, gBLE);
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
@@ -130,8 +131,21 @@ void xs_ble_client_initialize(xsMachine *the)
 
 void xs_ble_client_close(xsMachine *the)
 {
-	gBLE->terminating = true;
-	modBLEConnection connections = gBLE->connections, next;
+	modBLE *ble = xsmcGetHostData(xsThis);
+	if (!ble) return;
+	
+	xsForget(gBLE->obj);
+	xs_ble_client_destructor(gBLE);
+	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_ble_client_destructor(void *data)
+{
+	modBLE ble = data;
+	if (!ble) return;
+	
+	ble->terminating = true;
+	modBLEConnection connections = ble->connections, next;
 	while (connections != NULL) {
 		modBLEConnection connection = connections;
 		connections = connections->next;
@@ -144,18 +158,11 @@ void xs_ble_client_close(xsMachine *the)
 		}
 		c_free(connection);
 	}
-	xsForget(gBLE->obj);
-	xs_ble_client_destructor(gBLE);
-}
-
-void xs_ble_client_destructor(void *data)
-{
-	modBLE ble = data;
-	if (ble)
-		c_free(ble);
+	c_free(ble);
 	gBLE = NULL;
 	esp_bluedroid_disable();
 	esp_bluedroid_deinit();
+	esp_bt_controller_disable();
 	esp_bt_controller_deinit();
 }
 
