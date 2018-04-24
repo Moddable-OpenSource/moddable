@@ -73,6 +73,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE = (modBLE)c_calloc(sizeof(modBLERecord), 1);
 	if (!gBLE)
 		xsUnknownError("no memory");
+	xsmcSetHostData(xsThis, gBLE);
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	gBLE->app_id = gAPP_ID++;
@@ -98,34 +99,39 @@ void xs_ble_server_initialize(xsMachine *the)
 		err = esp_ble_gap_register_callback(gap_event_handler);
 	if (ESP_OK == err)
 		err = esp_ble_gatts_app_register(gBLE->app_id);
-	if (ESP_OK == err)
-		err = esp_ble_gatt_set_local_mtu(500);
 	if (ESP_OK != err)
 		xsUnknownError("ble initialization failed");
 }
 
 void xs_ble_server_close(xsMachine *the)
 {
-	gBLE->terminating = true;
+	modBLE *ble = xsmcGetHostData(xsThis);
+	if (!ble) return;
+	
 	xsForget(gBLE->obj);
 	xs_ble_server_destructor(gBLE);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
-		ble->terminating = true;
-		esp_ble_gatts_app_unregister(ble->gatts_if);
-		if (ble->advertisingData)
-			c_free(ble->advertisingData);
-		if (ble->scanResponseData)
-			c_free(ble->scanResponseData);
-		c_free(ble);
-	}
+	if (!ble) return;
+	
+	ble->terminating = true;
+	if (ble->handles[0])
+		esp_ble_gatts_delete_service(ble->handles[0]);
+	esp_ble_gatts_app_unregister(ble->gatts_if);
+	if (ble->advertisingData)
+		c_free(ble->advertisingData);
+	if (ble->scanResponseData)
+		c_free(ble->scanResponseData);
+	c_free(ble);
 	gBLE = NULL;
+	
 	esp_bluedroid_disable();
 	esp_bluedroid_deinit();
+	esp_bt_controller_disable();
 	esp_bt_controller_deinit();
 }
 
@@ -226,8 +232,10 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 				esp_ble_gap_start_advertising(&gBLE->adv_params);
 			break;
 		case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:	// The advertising data can be freed after advertising starts
-			c_free(gBLE->advertisingData);
-			gBLE->advertisingData = NULL;
+			if (gBLE->advertisingData) {
+				c_free(gBLE->advertisingData);
+				gBLE->advertisingData = NULL;
+			}
 			if (gBLE->scanResponseData) {
 				c_free(gBLE->scanResponseData);
 				gBLE->scanResponseData = NULL;
@@ -410,9 +418,6 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 				c_memmove(value, param->write.value, param->write.len);
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
 			}
-			break;
-		case ESP_GATTS_START_EVT:
-		case ESP_GATTS_STOP_EVT:
 			break;
 	}
 }
