@@ -18,16 +18,14 @@
  *
  */
 
+const CLI = {
+	handlers: [],
 
-class CLI {
-	static install(item) {
-		// this dance allows handlers to be installed both at preload and run time
-		if (Object.isFrozen(CLI.prototype.handlers))
-			CLI.prototype.handlers = Array.from(CLI.prototype.handlers);
-		CLI.prototype.handlers.push(item);
-	}
+	install(item) {
+		this.handlers = this.handlers.concat(item);
+	},
 
-	static execute(incoming) {
+	execute(incoming) {
 		if (!incoming)
 			return;
 
@@ -37,18 +35,18 @@ class CLI {
 
 			let command = parts.shift().toLowerCase();
 			if ("help" !== command) {
-				if (!CLI.prototype.handlers.some(handler => handler.call(this, command, parts)))
+				if (!CLI.handlers.some(handler => handler.call(this, command, parts)))
 					this.line(`Unknown command: ${command}`);
 			}
 			else
-				CLI.prototype.handlers.forEach(handler => handler.call(this, command, parts));
+				CLI.handlers.forEach(handler => handler.call(this, command, parts));
 		}
 		catch (e) {
 			this.line(e.toString());
 		}
-	}
+	},
 
-	static split(line) {
+	split(line) {
 		let parts = [];
 		line = line.trim();
 
@@ -73,9 +71,8 @@ class CLI {
 		}
 
 		return parts;
-	}
-}
-CLI.prototype.handlers = [];
+	},
+};
 
 CLI.install(function (command, parts) {
 	switch (command) {
