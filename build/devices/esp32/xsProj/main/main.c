@@ -36,6 +36,7 @@
 #include "lwip/dns.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
+#include "esp_log.h"
 
 #include "driver/uart.h"
 
@@ -194,6 +195,8 @@ uint8_t ESP_isReadable() {
 void app_main() {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
+	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
+
 	nvs_flash_init();
     tcpip_adapter_init();
 #if CONFIG_BT_ENABLED
@@ -202,5 +205,10 @@ void app_main() {
     ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 
-    xTaskCreate(loop_task, "main", 8192, NULL, 5, NULL);
+	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
+		#define kStack ((6 * 1024) / sizeof(StackType_t))
+	#else
+		#define kStack ((8 * 1024) / sizeof(StackType_t))
+	#endif
+    xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
 }
