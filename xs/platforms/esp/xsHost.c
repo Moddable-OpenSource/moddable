@@ -402,21 +402,17 @@ int espMemCmp(const void *a, const void *b, size_t count)
 
 #if !ESP32
 	extern const uint32_t *gUnusedInstructionRAM;
-#else
-	extern const uint8_t *_iram_text_end;
+	static uint32_t *gUint32Memory;
 #endif
 
-static uint32_t *gUint32Memory;
 
 void *espMallocUint32(int byteCount)
 {
-#if !ESP32
+#if ESP32
+	return heap_caps_malloc(byteCount, MALLOC_CAP_32BIT);
+#else
 	const char *start = (char *)gUnusedInstructionRAM[-2];
 	const char *end = start + gUnusedInstructionRAM[-1];
-#else
-	const char *start = (const char *)&_iram_text_end;
-	const char *end = 0x20000 + (const char *)0x40080000;
-#endif
 	uint32_t *result;
 
 	if (byteCount & 3)
@@ -432,17 +428,18 @@ void *espMallocUint32(int byteCount)
 	gUint32Memory += byteCount;
 
 	return result;
+#endif
 }
 
 void espFreeUint32(void *t)
 {
-#if !ESP32
+#if ESP32
+	if (t)
+		heap_caps_free(t);
+#else
 	const char *start = (char *)gUnusedInstructionRAM[-2];
 	const char *end = start + gUnusedInstructionRAM[-1];
-#else
-	const char *start = (const char *)&_iram_text_end;
-	const char *end = 0x20000 + (const char *)0x40080000;
-#endif
+
 	if (!t) return;
 
 	if ((t < (void *)start) || (t >= (void *)end)) {
@@ -451,6 +448,7 @@ void espFreeUint32(void *t)
 	}
 
 	gUint32Memory = t;		//@@ assumes alloc/free are paired
+#endif
 }
 
 #if !ESP32
