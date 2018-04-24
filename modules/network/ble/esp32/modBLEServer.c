@@ -338,7 +338,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	if (write->need_rsp)
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
 	xsmcVars(4);
-	if (sizeof(uint16_t) == att_desc->uuid_length && *(uint16_t*)att_desc->uuid_p == character_client_config_uuid && 2 == write->len) {
+	if (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len) {
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
 			att_desc = handleToAttDesc(write->handle - 1);
