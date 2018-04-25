@@ -370,6 +370,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
 			att_desc = handleToAttDesc(write->handle - 1);
+			char_name = handleToCharName(write->handle - 1);
 			notify = (uint8_t)descr_value;
 		}
 		else

@@ -22,9 +22,6 @@ import Timer from "timer";
 
 const DEVICE_NAME = "Moddable HRM";
 
-const bpm = new Uint8Array([0, 60]);				// flags, beats per minute
-const body_sensor_location = new Uint8Array([1]);	// chest
-
 class HeartRateService extends BLEServer {
 	onReady() {
 		this.timer = 0;
@@ -47,13 +44,13 @@ class HeartRateService extends BLEServer {
 	}
 	onCharacteristicRead(params) {
 		if ("location" == params.name)
-			return body_sensor_location.buffer;
+			return 1;		// chest
 		else if ("bpm" == params.name)
-			return bpm.buffer;
+			return [0, 60];	// flags, beats per minute
 	}
 	onCharacteristicNotifyEnabled(params) {
 		this.timer = Timer.repeat(id => {
-			this.notifyValue(params, bpm.buffer);
+			this.notifyValue(params, [0, 60]);
 		}, 1000);
 	}
 	onCharacteristicNotifyDisabled(params) {
