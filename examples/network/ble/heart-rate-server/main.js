@@ -20,12 +20,12 @@
 import BLEServer from "bleserver";
 import Timer from "timer";
 
-const DEVICE_NAME = "Moddable HRM";
-
 class HeartRateService extends BLEServer {
 	onReady() {
 		this.timer = 0;
-		this.deviceName = DEVICE_NAME;
+		this.bpm = [0, 60];		// flags, beats per minute
+		this.location = 1;		// chest location
+		this.deviceName = "Moddable HRM";
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -43,14 +43,11 @@ class HeartRateService extends BLEServer {
 		});
 	}
 	onCharacteristicRead(params) {
-		if ("location" == params.name)
-			return 1;		// chest
-		else if ("bpm" == params.name)
-			return [0, 60];	// flags, beats per minute
+		return this[params.name];
 	}
 	onCharacteristicNotifyEnabled(params) {
 		this.timer = Timer.repeat(id => {
-			this.notifyValue(params, [0, 60]);
+			this.notifyValue(params, this.bpm);
 		}, 1000);
 	}
 	onCharacteristicNotifyDisabled(params) {
