@@ -176,14 +176,9 @@ void ESP_putc(int c) {
 }
 
 int ESP_getc(void) {
-	int err;
-	uint8_t myChar = ' ';
-	if (!ESP_isReadable())
-		return -1;
-	err = uart_read_bytes(USE_UART, &myChar, 1, 1);
-	if (err == 1)
-		return myChar;
-	return -1;
+	uint8_t c;
+	int err = uart_read_bytes(USE_UART, &c, 1, 0);
+	return (1 == err) ? c : -1;
 }
 
 uint8_t ESP_isReadable() {
@@ -193,22 +188,18 @@ uint8_t ESP_isReadable() {
 }
 
 void app_main() {
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-
 	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 
 	nvs_flash_init();
-    tcpip_adapter_init();
 #if CONFIG_BT_ENABLED
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
-    ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack ((6 * 1024) / sizeof(StackType_t))
 	#else
 		#define kStack ((8 * 1024) / sizeof(StackType_t))
 	#endif
+
     xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
 }
