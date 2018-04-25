@@ -122,7 +122,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				return value;
 			}
 			case "onCharacteristicNotifyEnabled":
-				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type });
+				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type, notify:params.notify });
 				break;
 			case "onCharacteristicNotifyDisabled":
 				this.onCharacteristicNotifyDisabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type });
