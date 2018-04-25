@@ -52,6 +52,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	initialize() @ "xs_ble_server_initialize"
 	
 	notifyValue(characteristic, value) {
+		value = this._typedValueToBuffer(characteristic.type, value);
 		this._notifyValue(characteristic.handle, characteristic.notify, value);
 	}
 
@@ -68,6 +69,43 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
 
+	_typedValueToBuffer(type, value) {
+		let buffer;
+		switch(type) {
+			case "Array":
+				buffer = new Uint8Array(value).buffer;
+				break;
+			case "String":
+				buffer = ArrayBuffer.fromString(value);
+				break;
+			case "Uint8":
+				buffer = new Uint8Array([value & 0xFF]).buffer;
+				break;
+			default:
+				buffer = value;
+				break;
+		}
+		return buffer;
+	}
+	_typedBufferToValue(type, buffer) {
+		let value;
+		switch(type) {
+			case "Array":
+				value = new Uint8Array(buffer);
+				break;
+			case "String":
+				value = String.fromArrayBuffer(buffer);
+				break;
+			case "Uint8":
+				value = new Uint8Array(buffer)[0] & 0xFF;
+				break;
+			default:
+				value = buffer;
+				break;
+		}
+		return value;
+	}
+	
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
 		switch(event) {
@@ -75,24 +113,19 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onReady();
 				break;
 			case "onCharacteristicWritten":
-				switch(params.type) {
-					case "String":
-						params.value = String.fromArrayBuffer(params.value);
-						break;
-					case "Uint8":
-						params.value = new Uint8Array(params.value)[0] & 0xFF;
-						break;
-				}
+				params.value = this._typedBufferToValue(params.type, params.value);
 				this.onCharacteristicWritten({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, value:params.value });
 				break;
-			case "onCharacteristicRead":
-				return this.onCharacteristicRead({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
-				break;
+			case "onCharacteristicRead": {
+				let value = this.onCharacteristicRead({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
+				value = this._typedValueToBuffer(params.type, value);
+				return value;
+			}
 			case "onCharacteristicNotifyEnabled":
-				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
+				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type });
 				break;
 			case "onCharacteristicNotifyDisabled":
-				this.onCharacteristicNotifyDisabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
+				this.onCharacteristicNotifyDisabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type });
 				break;
 			case "onConnected":
 				this.onConnected({ address:BluetoothAddress.toString(params.address), connection:params.connection });
