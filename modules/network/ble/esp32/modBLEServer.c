@@ -48,7 +48,7 @@ typedef struct {
 	uint8_t adv_config_done;
 	
 	// services
-	uint16_t handles[attribute_count];
+	uint16_t handles[service_count][max_attribute_count];
 	
 	// connection
 	esp_bd_addr_t remote_bda;
@@ -119,8 +119,9 @@ void xs_ble_server_destructor(void *data)
 	if (!ble) return;
 	
 	ble->terminating = true;
-	if (ble->handles[0])
-		esp_ble_gatts_delete_service(ble->handles[0]);
+	for (uint16_t i = 0; i < service_count; ++i)
+		if (ble->handles[i][0])
+			esp_ble_gatts_delete_service(ble->handles[i][0]);
 	esp_ble_gatts_app_unregister(ble->gatts_if);
 	if (ble->advertisingData)
 		c_free(ble->advertisingData);
@@ -251,8 +252,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
 void xs_ble_server_deploy(xsMachine *the)
 {
-	if (attribute_count > 0)
-		esp_ble_gatts_create_attr_tab(gatt_db, gBLE->gatts_if, attribute_count, 0);
+	for (uint16_t i = 0; i < service_count; ++i)
+		esp_ble_gatts_create_attr_tab(gatt_db[i], gBLE->gatts_if, attribute_counts[i], i);
 }
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -295,18 +296,23 @@ bail:
 }
 
 static const esp_attr_desc_t *handleToAttDesc(uint16_t handle) {
-	for (uint16_t i = 0; i < attribute_count; ++i)
-		if (handle == gBLE->handles[i])
-			return &gatt_db[i].att_desc;
+	for (uint16_t i = 0; i < service_count; ++i) {
+		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
+			if (handle == gBLE->handles[i][j])
+				return &gatt_db[i][j].att_desc;
+		}
+	}
 	return NULL;
 }
 
 static const char_name_table *handleToCharName(uint16_t handle) {
-	for (uint16_t i = 0; i < attribute_count; ++i) {
-		if (handle == gBLE->handles[i]) {
-			for (uint16_t j = 0; j < char_name_count; ++j) {
-				if (char_names[j].att_index == i)
-					return &char_names[j];
+	for (uint16_t i = 0; i < service_count; ++i) {
+		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
+			if (handle == gBLE->handles[i][j]) {
+				for (uint16_t k = 0; k < char_name_count; ++k) {
+					if (char_names[k].service_index == i && char_names[k].att_index == j)
+						return &char_names[k];
+				}
 			}
 		}
 	}
@@ -422,8 +428,13 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			break;
 		case ESP_GATTS_CREAT_ATTR_TAB_EVT:
         	if (param->add_attr_tab.status == ESP_GATT_OK) {
-				c_memmove(gBLE->handles, param->add_attr_tab.handles, sizeof(gBLE->handles));
-				esp_ble_gatts_start_service(param->add_attr_tab.handles[0]);
+        		uint16_t uuid_length = param->add_attr_tab.svc_uuid.len;
+        		for (uint16_t i = 0; i < service_count; ++i) {
+        			if (uuid_length == gatt_db[i][0].att_desc.length && 0 == c_memcmp(param->add_attr_tab.svc_uuid.uuid.uuid128, gatt_db[i][0].att_desc.value, uuid_length)) {
+						c_memmove(gBLE->handles[i], param->add_attr_tab.handles, sizeof(uint16_t) * param->add_attr_tab.num_handle);
+						esp_ble_gatts_start_service(param->add_attr_tab.handles[0]);
+        			}
+        		}
 			}
 			break;
 		case ESP_GATTS_CONNECT_EVT:

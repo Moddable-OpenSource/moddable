@@ -1,0 +1,14 @@
+{
+	"service": {
+		"uuid": "180F",
+		"characteristics": {
+			"battery": {
+				"uuid": "2A19",
+				"maxBytes": 1,
+				"type": "Uint8",
+				"permissions": "read",
+				"properties": "read",
+			},
+		}
+	}
+}

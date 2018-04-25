@@ -81,6 +81,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 			case "Uint8":
 				buffer = new Uint8Array([value & 0xFF]).buffer;
 				break;
+			case "Uint16":
+				buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF]).buffer;
+				break;
 			default:
 				buffer = value;
 				break;
@@ -98,6 +101,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "Uint8":
 				value = new Uint8Array(buffer)[0] & 0xFF;
+				break;
+			case "Uint16":
+				value = (new DataView(buffer)).getUint16(0, true);
 				break;
 			default:
 				value = buffer;
