@@ -1,0 +1,15 @@
+{
+	"modules": {
+		"*": "$(MODULES)/base/worker/*",
+	},
+	"preload": "worker",
+	"platforms": {
+		"esp": {
+		},
+		"esp32": {
+		},
+		"...": {
+			"error": "Worker unsupported"
+		}
+	}
+}

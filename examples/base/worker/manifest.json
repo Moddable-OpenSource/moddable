@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/base/worker/manifest.json",
+	],
 	"creation": {
 		"static": 12288,
 		"chunk": {
@@ -22,10 +25,6 @@
 		"*": [
 			"./main",
 			"./simpleworker",
-			"$(MODULES)/base/worker/*",
 		]
-	},
-	"preload": [
-		"worker"
-	]
+	}
 }
