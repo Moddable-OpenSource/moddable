@@ -27,7 +27,7 @@
 #include "esp_wifi.h"
 
 // maybe use task event group flags for this like all the samples?
-uint8_t gWiFiState = 0;	// 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
+int8_t gWiFiState = -1;	// -1 = uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 
 static void initWiFi(void);
 
@@ -395,6 +395,14 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 void initWiFi(void)
 {
 	if (gWiFiState > 0) return;
+
+	if (-1 == gWiFiState) {
+		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		tcpip_adapter_init();
+		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
+		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+		gWiFiState = 0;
+	}
 
 	ESP_ERROR_CHECK( esp_event_loop_set_cb(doWiFiEvent, NULL) );
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
