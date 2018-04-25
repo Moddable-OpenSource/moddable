@@ -5,7 +5,7 @@
 			"bpm": {
 				"uuid": "2A37",
 				"maxBytes": 2,
-				"type": "Uint16",
+				"type": "Array",
 				"permissions": "read",
 				"properties": "read,notify",
 			},
