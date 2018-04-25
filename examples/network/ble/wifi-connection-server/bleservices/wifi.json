@@ -1,25 +1,28 @@
-[
-	{
+{
+	"service": {
 		"uuid": "FF00",
-		"characteristics": [
-			{
+		"characteristics": {
+			"SSID": {
 				"uuid": "FF01",
-				"maxBytes": "32",
+				"maxBytes": 32,
+				"type": "String",
 				"permissions": "write",
 				"properties": "write",
 			},
-			{
+			"password": {
 				"uuid": "FF02",
-				"maxBytes": "32",
+				"maxBytes": 32,
+				"type": "String",
 				"permissions": "write",
 				"properties": "write",
 			},
-			{
+			"control": {
 				"uuid": "FF03",
-				"maxBytes": "1",
+				"maxBytes": 1,
+				"type": "Uint8",
 				"permissions": "write",
 				"properties": "write",
-			},
-		]
+			}
+		}
 	}
-]
+}
