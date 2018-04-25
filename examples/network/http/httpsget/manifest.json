@@ -13,4 +13,9 @@
 	"preload": [
 		"http"
 	],
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca107",
+		]
+	},
 }

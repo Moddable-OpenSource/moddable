@@ -14,10 +14,10 @@
 
 import {Request} from "http"
 
-let request = new Request({	host: "api.service.cloud.kinoma.com",
-							path: "/0/sample/hash",
+let request = new Request({	host: "httpbin.org",
+							path: "/post",
 							method: "POST",
-							body: JSON.stringify({algorithm: "MD5", string: "Hello, Mark."}),
+							body: JSON.stringify({name: "Moddable", value: 123}),
 							response: String
 						});
 
@@ -25,7 +25,8 @@ request.callback = function(message, value)
 {
 	if (5 == message) {
 		value = JSON.parse(value);
-		trace(`Success: ${value.success}\n`);
-		trace(`Hash: ${value.result}\n`);
+		value = JSON.parse(value.data);
+		trace(`name: ${value.name}\n`);
+		trace(`value: ${value.value}\n`);
 	}
 }

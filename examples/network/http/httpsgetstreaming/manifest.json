@@ -12,5 +12,10 @@
 	},
 	"preload": [
 		"http"
-	]
+	],
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca56",
+		]
+	},
 }

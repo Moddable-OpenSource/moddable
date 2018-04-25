@@ -27,15 +27,6 @@
 	"resources":{
 		"*": [
 			"$(MODULES)/crypt/data/ca",
-			"$(MODULES)/crypt/data/ca9",
-			"$(MODULES)/crypt/data/ca17",
-			"$(MODULES)/crypt/data/ca56",
-			"$(MODULES)/crypt/data/ca107",
-			"$(MODULES)/crypt/data/ca109",
-			"$(MODULES)/crypt/data/ca117",
-			"$(MODULES)/crypt/data/ca118",
-			"$(MODULES)/crypt/data/ca220",
-			"$(MODULES)/crypt/data/ca221",
 		]
 	}
 }
