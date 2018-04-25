@@ -301,6 +301,18 @@ static const esp_attr_desc_t *handleToAttDesc(uint16_t handle) {
 	return NULL;
 }
 
+static const char_name_table *handleToCharName(uint16_t handle) {
+	for (uint16_t i = 0; i < attribute_count; ++i) {
+		if (handle == gBLE->handles[i]) {
+			for (uint16_t j = 0; j < char_name_count; ++j) {
+				if (char_names[j].att_index == i)
+					return &char_names[j];
+			}
+		}
+	}
+	return NULL;
+}
+
 static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_read_evt_param *read = (struct gatts_read_evt_param *)message;
@@ -308,9 +320,10 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	uint8_t buffer[ESP_UUID_LEN_128];
 	uint16_t uuid_length;
 	const esp_attr_desc_t *att_desc = handleToAttDesc(read->handle);
+	const char_name_table *char_name = handleToCharName(read->handle);
 	if (NULL == att_desc) return;
 	xsBeginHost(gBLE->the);
-	xsmcVars(3);
+	xsmcVars(5);
 	uuid.len = att_desc->uuid_length;
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuidToBuffer(buffer, &uuid, &uuid_length);
@@ -319,6 +332,12 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	xsmcSetInteger(xsVar(2), read->handle);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	if (char_name) {
+		xsmcSetString(xsVar(3), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(3));
+		xsmcSetString(xsVar(4), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(4));
+	}
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
 	esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
 	if (gatt_rsp != NULL) {
@@ -342,10 +361,11 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	uint16_t uuid_length;
 	uint8_t notify = 0xFF;
 	const esp_attr_desc_t *att_desc = handleToAttDesc(write->handle);
+	const char_name_table *char_name = handleToCharName(write->handle);
 	if (NULL == att_desc) goto bail;
 	if (write->need_rsp)
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
-	xsmcVars(4);
+	xsmcVars(6);
 	if (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len) {
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
@@ -361,11 +381,17 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
 	if (0xFF != notify) {
-		xsmcSetInteger(xsVar(2), write->handle - 1);
-		xsmcSetInteger(xsVar(3), notify);
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsmcSet(xsVar(0), xsID_notify, xsVar(3));
+		xsmcSetInteger(xsVar(4), write->handle - 1);
+		xsmcSetInteger(xsVar(5), notify);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(4));
+		xsmcSet(xsVar(0), xsID_notify, xsVar(5));
 		xsCall2(gBLE->obj, xsID_callback, xsString(0 == notify ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
 	}
 	else {
