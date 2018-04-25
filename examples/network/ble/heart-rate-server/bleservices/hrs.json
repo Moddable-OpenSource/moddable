@@ -1,19 +1,21 @@
-[
-	{
+{
+	"service": {
 		"uuid": "180D",
-		"characteristics": [
-			{
+		"characteristics": {
+			"bpm": {
 				"uuid": "2A37",
 				"maxBytes": 2,
+				"type": "Uint16",
 				"permissions": "read",
 				"properties": "read,notify",
 			},
-			{
+			"location": {
 				"uuid": "2A38",
 				"maxBytes": 1,
+				"type": "Uint8",
 				"permissions": "read",
 				"properties": "read",
-			}
-		]
+			},
+		}
 	}
-]
+}

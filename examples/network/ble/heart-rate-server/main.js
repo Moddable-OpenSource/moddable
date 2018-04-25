@@ -20,8 +20,6 @@
 import BLEServer from "bleserver";
 import Timer from "timer";
 
-const BPM_CHARACTERISTIC = "2A37";
-const BODY_SENSOR_LOCATION_CHARACTERISTIC = "2A38";
 const DEVICE_NAME = "Moddable HRM";
 
 const bpm = new Uint8Array([0, 60]);				// flags, beats per minute
@@ -48,16 +46,14 @@ class HeartRateService extends BLEServer {
 		});
 	}
 	onCharacteristicRead(params) {
-		let uuid = params.characteristic.uuid;
-		if (BODY_SENSOR_LOCATION_CHARACTERISTIC == uuid)
+		if ("location" == params.name)
 			return body_sensor_location.buffer;
-		else if (BPM_CHARACTERISTIC == uuid)
+		else if ("bpm" == params.name)
 			return bpm.buffer;
 	}
 	onCharacteristicNotifyEnabled(params) {
-		let characteristic = params.characteristic;
 		this.timer = Timer.repeat(id => {
-			this.notifyValue(characteristic, bpm.buffer);
+			this.notifyValue(params, bpm.buffer);
 		}, 1000);
 	}
 	onCharacteristicNotifyDisabled(params) {

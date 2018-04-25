@@ -75,31 +75,27 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onReady();
 				break;
 			case "onCharacteristicWritten":
-				this.onCharacteristicWritten({
-					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
-					value:params.value
-				});
+				switch(params.type) {
+					case "String":
+						params.value = String.fromArrayBuffer(params.value);
+						break;
+					case "Uint8":
+						params.value = new Uint8Array(params.value)[0] & 0xFF;
+						break;
+				}
+				this.onCharacteristicWritten({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, value:params.value });
 				break;
 			case "onCharacteristicRead":
-				return this.onCharacteristicRead({
-					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle }
-				});
+				return this.onCharacteristicRead({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
 				break;
 			case "onCharacteristicNotifyEnabled":
-				this.onCharacteristicNotifyEnabled({
-					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
-				});
+				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
 				break;
 			case "onCharacteristicNotifyDisabled":
-				this.onCharacteristicNotifyDisabled({
-					characteristic:{ uuid:UUID.toString(params.uuid), handle:params.handle },
-				});
+				this.onCharacteristicNotifyDisabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
 				break;
 			case "onConnected":
-				this.onConnected({
-					address:BluetoothAddress.toString(params.address),
-					connection:params.connection
-				});
+				this.onConnected({ address:BluetoothAddress.toString(params.address), connection:params.connection });
 				break;
 			case "onDisconnected":
 				this.onDisconnected(params);
