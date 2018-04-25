@@ -192,7 +192,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
-	esp_err_t err = esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(1 == notify));
+	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(1 == notify));
 }
 
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
