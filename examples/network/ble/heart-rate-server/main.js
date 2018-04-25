@@ -12,7 +12,9 @@
  *
  */
  /*
- 	https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=239866&_ga=2.113570511.973536733.1524505559-1286694985.1517851833
+	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml
+ 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml
+	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml
  	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml
 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.body_sensor_location.xml
  */
@@ -25,7 +27,11 @@ class HeartRateService extends BLEServer {
 		this.timer = 0;
 		this.bpm = [0, 60];		// flags, beats per minute
 		this.location = 1;		// chest location
-		this.deviceName = "Moddable HRM";
+		this.battery = 85;		// battery level percent
+		this.device_name = "Moddable HRM";
+		this.appearance = 832;	// generic heart rate sensor
+		
+		this.deviceName = this.device_name;
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -38,7 +44,7 @@ class HeartRateService extends BLEServer {
 			this.timer = 0;
 		}
 		this.startAdvertising({
-			advertisingData: {shortName: "HRS", completeUUID16List: ["180D"]},
+			advertisingData: {shortName: "HRS", completeUUID16List: ["180D","180F"]},
 			scanResponseData: {flags: 6, completeName: "HRS Example"}
 		});
 	}
