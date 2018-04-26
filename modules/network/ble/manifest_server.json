@@ -24,6 +24,21 @@
 				"*": "$(MODULES)/network/ble/esp32/modBLEServer",
 			},
 		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+			}
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+			}
+		},
 		"...": {
 			"error": "ble unsupported"
 		}
