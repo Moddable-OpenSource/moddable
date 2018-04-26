@@ -136,6 +136,12 @@ void xs_ble_server_destructor(void *data)
 	esp_bt_controller_deinit();
 }
 
+void xs_ble_server_get_local_address(xsMachine *the)
+{
+	const uint8_t *addr = (const uint8_t *)esp_bt_dev_get_address();
+	xsmcSetArrayBuffer(xsResult, (void*)addr, 6);
+}
+
 void xs_ble_server_set_device_name(xsMachine *the)
 {
 	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
