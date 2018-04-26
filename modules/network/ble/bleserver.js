@@ -51,6 +51,11 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	deploy() @ "xs_ble_server_deploy"
 	initialize() @ "xs_ble_server_initialize"
 	
+	get localAddress() {
+		let address = this._getLocalAddress();
+		return BluetoothAddress.toString(address);
+	}
+	
 	notifyValue(characteristic, value) {
 		value = this._typedValueToBuffer(characteristic.type, value);
 		this._notifyValue(characteristic.handle, characteristic.notify, value);
@@ -69,6 +74,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
 
+	_getLocalAddress() @ "xs_ble_server_get_local_address"
+	
 	_typedValueToBuffer(type, value) {
 		let buffer;
 		switch(type) {
@@ -83,6 +90,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "Uint16":
 				buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF]).buffer;
+				break;
+			case "Uint32":
+				buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF]).buffer;
 				break;
 			default:
 				buffer = value;
@@ -104,6 +114,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "Uint16":
 				value = (new DataView(buffer)).getUint16(0, true);
+				break;
+			case "Uint32":
+				value = (new DataView(buffer)).getUint32(0, true);
 				break;
 			default:
 				value = buffer;
