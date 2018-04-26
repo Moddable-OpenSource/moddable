@@ -1,0 +1,26 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"config": {
+		"username": "YOUR_USERNAME_HERE",
+		"feedKey": "YOUR_FEED_KEY_HERE",
+		"AIOKey": "YOUR_AIO_KEY_HERE",
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+		]
+	},
+	"preload": [
+		"http",		
+	],
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca170",
+		]
+	},
+}
