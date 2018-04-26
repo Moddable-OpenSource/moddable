@@ -3418,7 +3418,7 @@ void fxJSXAttributeName(txParser* parser)
 	fxGetNextToken(parser);
 	if (parser->token == XS_TOKEN_COLON) {
 		fxGetNextToken(parser);
-		if (parser->token == XS_TOKEN_IDENTIFIER)
+		if (gxTokenFlags[parser->token] & XS_TOKEN_IDENTIFIER_NAME)
 			symbol = fxJSXNamespace(parser, symbol, parser->symbol);
 		else
 			fxReportParserError(parser, "missing name");
@@ -3482,7 +3482,7 @@ void fxJSXElement(txParser* parser)
 			closed = 1;
 			break;
 		}
-		if (parser->token == XS_TOKEN_IDENTIFIER) {
+		if (gxTokenFlags[parser->token] & XS_TOKEN_IDENTIFIER_NAME) {
 			fxJSXAttributeName(parser);
 			if (parser->token == XS_TOKEN_ASSIGN)
 				fxJSXAttributeValue(parser);
@@ -3538,7 +3538,10 @@ void fxJSXElement(txParser* parser)
 					fxGetNextToken(parser);
 					if (parser->token == XS_TOKEN_IDENTIFIER) {
 						fxJSXElementName(parser);
-						fxJSXMatch(parser, name, parser->root);
+						if (!fxJSXMatch(parser, name, parser->root)) {
+							fxReportParserError(parser, "invalid element");
+							fxPushNULL(parser);
+						}
 					}
 					else {
 						fxReportParserError(parser, "missing identifier");
@@ -3576,6 +3579,7 @@ void fxJSXElementName(txParser* parser)
 			fxReportParserError(parser, "missing name");
 		fxPushSymbol(parser, symbol);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_ACCESS, line);
+		fxGetNextToken(parser);
 	}
 	else {
 		fxPushSymbol(parser, symbol);
@@ -3620,9 +3624,6 @@ txSymbol* fxJSXNamespace(txParser* parser, txSymbol* namespace, txSymbol* name)
 	txSize namespaceLength = namespace->length;
 	txSize nameLength = name->length;
 	txString string = fxNewParserChunk(parser, namespaceLength + 1 + nameLength + 1);
-	c_memcpy(string, namespace, namespaceLength);
-	string[namespaceLength] = ':';
-	c_memcpy(string + namespaceLength + 1, name, nameLength);
-	string[namespaceLength + 1 + nameLength] = 0;
+	sprintf(string, "%s:%s", namespace->string, name->string);
 	return fxNewParserSymbol(parser, string);
 }
