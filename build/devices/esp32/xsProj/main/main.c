@@ -130,7 +130,7 @@ void setup(void)
 		printf("uart_driver_install err %d\n", err);
 
 #ifdef mxDebug
-	xTaskCreate(debug_task, "debug", 1024, NULL, 5, NULL);
+	xTaskCreate(debug_task, "debug", 768 / sizeof(StackType_t), NULL, 8, NULL);
 #endif
 
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
@@ -140,7 +140,21 @@ void setup(void)
 
 void loop_task(void *pvParameter)
 {
+	int before8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+	int before32 = heap_caps_get_free_size(MALLOC_CAP_32BIT) - before8;
+
+
 	setup();
+
+	int after8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+	int after32 = heap_caps_get_free_size(MALLOC_CAP_32BIT) - after8;
+
+	xsMachine *the = gThe;
+	xsLog("\ngeneral used in setup %d,  free %d\n", before8 - after8, after8);
+	xsLog("IRAM used in setup %d, free %d\n", before32 - after32, after32);
+
+	heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+	heap_caps_print_heap_info(MALLOC_CAP_32BIT);
 
 	while (true) {
 		modTimersExecute();
@@ -196,9 +210,9 @@ void app_main() {
 #endif
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((6 * 1024) / sizeof(StackType_t))
+		#define kStack ((5 * 1024) / sizeof(StackType_t))
 	#else
-		#define kStack ((8 * 1024) / sizeof(StackType_t))
+		#define kStack ((7 * 1024) / sizeof(StackType_t))
 	#endif
 
     xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
