@@ -140,21 +140,7 @@ void setup(void)
 
 void loop_task(void *pvParameter)
 {
-	int before8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-	int before32 = heap_caps_get_free_size(MALLOC_CAP_32BIT) - before8;
-
-
 	setup();
-
-	int after8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-	int after32 = heap_caps_get_free_size(MALLOC_CAP_32BIT) - after8;
-
-	xsMachine *the = gThe;
-	xsLog("\ngeneral used in setup %d,  free %d\n", before8 - after8, after8);
-	xsLog("IRAM used in setup %d, free %d\n", before32 - after32, after32);
-
-	heap_caps_print_heap_info(MALLOC_CAP_8BIT);
-	heap_caps_print_heap_info(MALLOC_CAP_32BIT);
 
 	while (true) {
 		modTimersExecute();
