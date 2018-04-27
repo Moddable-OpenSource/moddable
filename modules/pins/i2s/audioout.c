@@ -135,7 +135,10 @@ typedef struct {
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
-	uint32_t				buffer[512];		//@@ bigger when 32-bit samples
+	uint32_t				buffer[384];
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	uint32_t				*buffer32;
+#endif
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
@@ -199,6 +202,11 @@ void xs_audioout_destructor(void *data)
 	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
 
 	vSemaphoreDelete(out->mutex);
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	if (out->buffer32)
+		heap_caps_free(out->buffer32);
+#endif
+
 #elif defined(__ets__)
 	if (out->i2sActive)
 		i2s_end();
@@ -309,10 +317,11 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-#if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
 	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 7, &out->task);
-#else
-	xTaskCreate(audioOutLoop, "audioOut", 2048, out, 7, &out->task);
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
+	if (!out->buffer32)
+		xsUnknownError("out of memory");
 #endif
 #endif
 }
@@ -687,21 +696,15 @@ void audioOutLoop(void *pvParameter)
 #if 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		int samples = sizeof(out->buffer) / out->bytesPerFrame;
-		int32_t samples32[64];
+		int count = sizeof(out->buffer) / out->bytesPerFrame;
+		int i = count;
 		int16_t *src = (int16_t *)out->buffer;
-		while (samples) {
-			int use = (samples >= 64) ? 64 : samples;
-			int32_t *dst = samples32;
-			int remain = use;
+		int32_t *dst = out->buffer32;
 
-			while (remain--)
-				*dst++ = *src++ << 16;
+		while (i--)
+			*dst++ = *src++ << 16;
 
-			samples -= use;
-
-			i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)samples32, use << 2, portMAX_DELAY);
-		}
+		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
@@ -709,7 +712,7 @@ void audioOutLoop(void *pvParameter)
 
 	// from here, "out" is invalid
 	if (installed)
-	i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+		i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
 
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
