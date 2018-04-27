@@ -717,7 +717,11 @@ export default class extends Tool {
 		path += this.slash + first;
 		this.createDirectory(path);
 		var platform = this.platform;
-		if (platform.startsWith("x-")) {
+		if (platform.startsWith("x-cli-")) {
+			path += this.slash + platform.slice(6);
+			this.createDirectory(path);
+		}
+		else if (platform.startsWith("x-")) {
 			path += this.slash + platform.slice(2);
 			this.createDirectory(path);
 		}
@@ -931,7 +935,7 @@ export default class extends Tool {
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")
 			this.binPath = this.createDirectories(this.outputPath, "bin", name + ".app");
-		else if ((this.platform == "x-lin") || (this.platform == "x-win"))
+		else if ((this.platform == "x-lin") || (this.platform == "x-win") || (this.platform.startsWith("x-cli-")))
 			this.binPath = this.createDirectories(this.outputPath, "bin");
 		else
 			this.binPath = this.createDirectories(this.outputPath, "bin", name);
@@ -994,6 +998,8 @@ export default class extends Tool {
 			this.createDirectory(path + "/MacOS");
 			this.dataPath = this.resourcesPath = path + "/Resources";
 			this.createDirectory(this.resourcesPath);
+		}
+		else if (this.platform.startsWith("x-cli-")) {
 		}
 		else {
 			var folder = "mc", file;
