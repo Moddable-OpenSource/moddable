@@ -133,7 +133,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onCharacteristicWritten":
 				params.value = this._typedBufferToValue(params.type, params.value);
-				this.onCharacteristicWritten({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, value:params.value });
+				this.onCharacteristicWritten(params);
 				break;
 			case "onCharacteristicRead": {
 				let value = this.onCharacteristicRead({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
@@ -141,10 +141,12 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				return value;
 			}
 			case "onCharacteristicNotifyEnabled":
-				this.onCharacteristicNotifyEnabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type, notify:params.notify });
+				params.uuid = UUID.toString(params.uuid);
+				this.onCharacteristicNotifyEnabled(params);
 				break;
 			case "onCharacteristicNotifyDisabled":
-				this.onCharacteristicNotifyDisabled({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name, type:params.type });
+				params.uuid = UUID.toString(params.uuid);
+				this.onCharacteristicNotifyDisabled(params);
 				break;
 			case "onConnected":
 				this.onConnected({ address:BluetoothAddress.toString(params.address), connection:params.connection });
