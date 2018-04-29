@@ -28,7 +28,18 @@ export class DeviceBehavior extends Behavior {
 	onCreate(container, device) {
 		this.device = device;
 	}
-	onMessage(message) {
+	onMessage(container, buffer) {
+	}
+	postMessage(container, buffer) {
+		container.first.postMessage(buffer);
+	}
+	traceInput(message, buffer, state = 0) {
+		let messagesPane = model.MESSAGES;
+		messagesPane.behavior.input(messagesPane, message, buffer, state);
+	}
+	traceOutput(message, buffer, state = 0) {
+		let messagesPane = model.MESSAGES;
+		messagesPane.behavior.output(messagesPane, message, buffer, state);
 	}
 }
 
