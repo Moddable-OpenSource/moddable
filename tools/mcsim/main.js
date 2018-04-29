@@ -150,7 +150,7 @@ class ApplicationBehavior extends Behavior {
 				if (info.name.endsWith(".js")) {
 					try {
 						let device = require.weak(info.path);
-						if (device) {
+						if (device && ("DeviceTemplate" in device)) {
 							devices.push(device);
 							let name = device.applicationName;
 							if (name) {
