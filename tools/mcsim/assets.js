@@ -67,8 +67,11 @@ const glyphsTexture = { path:"assets/glyphs.png", scale:2 };
 export const glyphsSkin = { texture:glyphsTexture, x:0, y:0, width:20, height:20, variants:20, states:20 };
 
 const buttonTexture = { path:"assets/button.png", scale:2 };
-export const buttonSkin = { texture:buttonTexture, x:0, y:0, width:60, height:30, states:30, tiles:{ left:15, right:15 } };
+export const buttonSkin = { texture:buttonTexture, x:0, y:0, width:60, height:30, states:30, tiles:{ left:15, right:40 }, variants:60 };
 export const buttonStyle = { font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE] };
+export const popupStyle = { font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE], horizontal:"left",  };
+const dotTexture = { path:"assets/dot.png", scale:2 };
+export const dotSkin = { texture:dotTexture, x:0, y:0, width:20, height:30 };
 
 const sliderTexture = { path:"assets/slider.png", scale:2};
 export const sliderBarSkin = { texture:sliderTexture, x:0, y:0, width:60, height:30, left:15, right:15, states:30 };

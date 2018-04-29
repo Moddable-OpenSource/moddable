@@ -30,10 +30,13 @@ import {
 	controlsMenuItemSkin,
 	controlsMenuItemStyle,
 	controlRowSkin,
+	dotSkin,
+	glyphsSkin,
 	paneBodySkin,
 	paneBorderSkin,
 	paneHeaderSkin,
 	paneHeaderStyle,
+	popupStyle,
 	sliderBarSkin,
 	sliderButtonSkin,
 	switchBarSkin,
@@ -121,6 +124,41 @@ class ControlsMenuItemBehavior extends ButtonBehavior {
 	}
 }
 
+class PopupMenuBehavior extends Behavior {	
+	onClose(layout, index) {
+		let data = this.data;
+		application.remove(application.last);
+		data.button.delegate("onMenuSelected", index);
+	}
+	onCreate(layout, data) {
+		this.data = data;
+	}
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y - ((size.height / data.items.length) * data.selection);
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { left:button.x - 15, width:button.width + 30, top:y, height:height + 10 };
+		scroller.coordinates = { left:10, width:button.width + 10, top:0, height:height };
+		scroller.first.content(data.selection).first.visible = true;
+		return value;
+	}
+	onTouchEnded(layout, id, x, y, ticks) {
+		var content = layout.first.first.first;
+		if (!content.hit(x, y))
+			this.onClose(layout, -1);
+	}
+};
+
+class PopupMenuItemBehavior extends ButtonBehavior {
+	onTap(item) {
+		item.bubble("onClose", item.index);
+	}
+}
+
 // TEMPLATES
 
 import {
@@ -198,6 +236,74 @@ export var ButtonsRow = Row.template(function($) { return {
 		Label($, { width:120, style:controlNameStyle, string:$.label }),
 		$.buttons.map($$ => new Button($$)),
 		Content($, { left:0, right:0 }),
+	],
+}});
+
+var PopupMenu = Layout.template($ => ({
+	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
+	Behavior: PopupMenuBehavior,
+	contents: [
+		Container($, { skin:controlsMenuSkin, contents:[
+			Scroller($, { clip:true, active:true, contents:[
+				Column($, { left:0, right:0, top:0, 
+					contents: $.items.map($$ => new PopupMenuItem($$)),
+				}),
+			]}),
+		]}),
+	],
+}));
+
+var PopupMenuItem = Row.template($ => ({
+	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
+	Behavior:PopupMenuItemBehavior,
+	contents: [
+		Content($, { width:20, height:30, skin:dotSkin, visible:false }),
+		Label($, { left:0, right:0, height:30, style:controlsMenuItemStyle, string:$.title }),
+	]
+}));
+
+export var PopupRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Container($, { 
+			width:160, height:30, active:true, skin:buttonSkin, variant:1,
+			Behavior: class extends ButtonBehavior {
+				onCreate(container, data) {
+					super.onCreate(container, data);
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+				}
+				onDisplaying(container) {
+					super.onDisplaying(container);
+					let data = this.data;
+					this.selection = data.items.findIndex(item => item.value == data.value);
+					container.first.string = data.items[this.selection].title;
+				}
+				onMenuSelected(container, index) {
+					if ((index >= 0) && (this.selection != index)) {
+						let data = this.data;
+						let item = data.items[index];
+						this.selection = index;
+						data.value = item.value;
+						container.first.string = item.title;
+						model.DEVICE.first.delegate(data.event, data);
+					}
+				}
+				onTap(container) {
+					let data = this.data;
+					let it = {
+						button: container,
+						items: data.items,
+						selection: this.selection,
+					};
+					application.add(new PopupMenu(it));
+				}
+			},
+			contents: [
+				Label($, { left:15, right:40, height:30, style:controlsMenuItemStyle, string:$.value }),
+			],
+		}),
 	],
 }});
 
