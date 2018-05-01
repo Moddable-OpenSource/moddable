@@ -186,7 +186,6 @@ COMMANDS = \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
-	$(BIN_DIR)/bles2gatt
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
