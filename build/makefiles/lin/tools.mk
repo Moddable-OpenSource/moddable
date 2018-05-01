@@ -135,6 +135,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
+	$(TMP_DIR)/cfeBMF.c.xsi \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
@@ -169,6 +170,7 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
+	$(TMP_DIR)/cfeBMF.c.o \
 	$(TMP_DIR)/image2cs.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
