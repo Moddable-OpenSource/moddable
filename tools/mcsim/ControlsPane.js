@@ -221,9 +221,27 @@ export var ControlsColumn = Column.template($ => ({ left:0, right:0, top:0 }));
 export var Button = Container.template($ => ({
 	width:80, height:30, skin:buttonSkin, active:true,
 	Behavior: class extends ButtonBehavior {
+		onCreate(container, data) {
+			super.onCreate(container, data);
+			if ("name" in data)
+				model.DEVICE.first.behavior[data.name] = container;
+		}
+		onTouchBegan(container, id, x, y, ticks) {
+			super.onTouchBegan(container, id, x, y, ticks);
+			let data = this.data;
+			if (data.eventDown)
+				model.DEVICE.first.delegate(data.eventDown, data);
+		}
+		onTouchEnded(container, id, x, y, ticks) {
+			super.onTouchEnded(container, id, x, y, ticks);
+			let data = this.data;
+			if (data.eventUp)
+				model.DEVICE.first.delegate(data.eventUp, data);
+		}
 		onTap(container) {
 			let data = this.data;
-			model.DEVICE.first.delegate(data.event, data);
+			if (data.event)
+				model.DEVICE.first.delegate(data.event, data);
 		}
 	},
 	contents: [
