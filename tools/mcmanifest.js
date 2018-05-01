@@ -134,7 +134,7 @@ export class MakeFile extends FILE {
 		this.generateModulesDefinitions(tool);
 		this.generateObjectsDefinitions(tool);
 		this.generateDataDefinitions(tool);
-		this.generateBLEDefinitions(tool);
+//		this.generateBLEDefinitions(tool);
 		this.generateResourcesDefinitions(tool);
 	}
 	generateManifestDefinitions(tool) {
@@ -424,7 +424,7 @@ export class MakeFile extends FILE {
 		this.generateModulesRules(tool);
 		this.generateObjectsRules(tool);
 		this.generateDataRules(tool);
-		this.generateBLERules(tool);
+//		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
 	}
 }
@@ -1189,7 +1189,9 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.modules);
 		var rule = new ResourcesRule(this);
 		rule.process(this.manifest.resources);
+/*
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
+*/
 	}
 }
