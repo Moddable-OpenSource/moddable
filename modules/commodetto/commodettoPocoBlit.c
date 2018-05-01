@@ -1020,7 +1020,7 @@ void doFillRectangle(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 	PocoPixel color = ((ColorDraw)pc)->color;
 
 #if 16 == kPocoPixelSize
-	uint32_t colors = (color << 16) | color;
+	uint32_t colors = ((uint32_t)color << 16) | color;
 
 	while (h--) {
 		PocoCoordinate tw = w;
@@ -1178,7 +1178,7 @@ void doBlendRectangle(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h)
 			src = src32 - dst;
 			dst = blend * src + (dst << 5) - dst;
 			dst += 0x02008010;
-			dst += (dst >> 5) & 0x03E0F81F;
+			dst += (dst >> 5) & 0x07E0F81F;
 			dst >>= 5;
 			dst &= 0x07E0F81F;
 			dst |= dst >> 16;
@@ -1538,7 +1538,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 #endif
 	PocoColor color = srcBits->color;
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-	uint32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+	uint32_t src32 = (color | ((uint32_t)color << 16)) & 0x07E0F81F;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
 	uint32_t src32 = (color | (color << 16)) & 0x001C00E3;
 #elif kPocoPixelFormat == kCommodettoBitmapCLUT16
@@ -1593,7 +1593,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 					dst &= 0x07E0F81F;
 					dst = blend * (src32 - dst) + (dst << 5) - dst;
 					dst += 0x02008010;
-					dst += (dst >> 5) & 0x03E0F81F;
+					dst += (dst >> 5) & 0x07E0F81F;
 					dst >>= 5;
 					dst &= 0x07E0F81F;
 					dst |= dst >> 16;
@@ -1683,7 +1683,7 @@ void doDrawGray16RLEBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDime
 #endif
 	PocoColor color = srcBits->color;
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
-	uint32_t src32 = (color | (color << 16)) & 0x07E0F81F;
+	uint32_t src32 = (color | ((uint32_t)color << 16)) & 0x07E0F81F;
 #elif kPocoPixelFormat == kCommodettoBitmapRGB332
 	uint32_t src32 = (color | (color << 16)) & 0x001C00E3;
 #elif kPocoPixelFormat == kCommodettoBitmapCLUT16
@@ -1841,7 +1841,7 @@ blitQuote:
 								dst &= 0x07E0F81F;
 								dst = blend * (src32 - dst) + (dst << 5) - dst;
 								dst += 0x02008010;
-								dst += (dst >> 5) & 0x03E0F81F;
+								dst += (dst >> 5) & 0x07E0F81F;
 								dst >>= 5;
 								dst &= 0x07E0F81F;
 								dst |= dst >> 16;
@@ -2145,7 +2145,7 @@ void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, Poc
 								dst &= 0x07E0F81F;
 								dst = blend * (src32 - dst) + (dst << 5) - dst;
 								dst += 0x02008010;
-								dst += (dst >> 5) & 0x03E0F81F;
+								dst += (dst >> 5) & 0x07E0F81F;
 								dst >>= 5;
 								dst &= 0x07E0F81F;
 								dst |= dst >> 16;
@@ -2330,7 +2330,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 					dst &= 0x07E0F81F;
 					dst = blend * (src32 - dst) + (dst << 5) - dst;
 					dst += 0x02008010u;
-					dst += (dst >> 5) & 0x03E0F81F;
+					dst += (dst >> 5) & 0x07E0F81F;
 					dst >>= 5;
 					dst &= 0x07E0F81F;
 					dst |= dst >> 16;
