@@ -293,7 +293,7 @@ void CFELayoutRun(CommodettoFontEngine bmf, const char *utf8, int32_t byteLength
 		if (kInvalidGlyphID == glyphID)
 			continue;
 
-		glyph = CFEGetGlyphFromGlyphID(bmf, glyphID, false);
+		glyph = CFEGetGlyphFromGlyphID(bmf, glyphID, 0);
 		if (NULL == glyph)
 			continue;
 
