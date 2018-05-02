@@ -42,9 +42,9 @@ With the goal of consuming very little current, the Geckos are highly configurab
 
 Sleep is another important aspect of the Gecko platform. To achieve low power goals, the device must sleep when it is not active. Managing the various sleep modes and cycles is a big focus of the Gecko implementation.
 
-Moddable on Gecko runs on the bare metal. It is very efficient and gives a lot of control to the developer, but requires expertise and time to get it right.
+Moddable on Gecko runs on the bare metal. It is very efficient and gives a great deal of control to the developer. However, expertise and time are required to get it right.
 
-There are currently three flavors of Gecko implemented in the Moddable SDK.
+Three models of Gecko are supported in the Moddable SDK today, with a fourth under development.
 
 The Giant Gecko is based off of the EFM32 family of devices. Its platform identifier is **gecko/giant**. We've worked with the EFM32GG STK3700 - [Giant Gecko Starter Kit](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit).
 
@@ -56,17 +56,17 @@ The Blue Gecko is a Bluetooth focused board. Its port is currently under develop
 
 ### Development workflow
 
-After the initial setup, there are two major build steps in building a Moddable application for Gecko.
+After the initial setup, there are two major steps to build a Moddable application for Gecko.
 
 First, the JavaScript application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_gecko.a` archive file.
 
-Second, a Simplicity Studio project builds an application stub and device libraries and links the Moddable archive.
+Second, a Simplicity Studio project builds an application stub and device libraries which are linked to the Moddable archive.
 
-Simplicity Studio is then used to upload the binary to the device and debug C-level code. JavaScript code can be debugged with the **xsbug** debugger as described below.
+After the application is built, Simplicity Studio uploads the binary to the device and can be used to debug C code. JavaScript code can be debugged with the **xsbug** debugger as described below.
 
 #### `mcconfig` and Subplatforms
 
-The Gecko introduces subplatforms to the Moddable build.
+Each major Gecko model is represented by a sub-platform in the model build, both in the manifests and in the command line arguments to `mcconfig`.
 
 Platform | Subplatform | Platform Flag | Device
 ---------|-------------|------|-------
@@ -81,7 +81,7 @@ The platform flag is used with `mcconfig`.
 	
 If the platform flag specifies a subplatform, then `mcconfig` will load the build rules from `$MODDABLE/tools/mcconfig/`*platform*`/mk.`*subplatform*`.mk`.
 
-In the `manifest.json` file, the `platforms` section can specify both `platform` and `platform/subplatform` subsections. The items are merged and the more specific `platform/subplatform` specifications override the general `platform`.
+In the `manifest.json` file, the `platforms` section can specify both `platform` and `platform/subplatform` subsections. The items are merged with more specific `platform/subplatform` specifications overriding general `platform` specifications.
 
 
 ## Getting Started
@@ -89,17 +89,18 @@ In the `manifest.json` file, the `platforms` section can specify both `platform`
 
 ### Install Simplicity Studio
 
-To get started, install [Simplicity Studio](https://www.silabs.com/products/development-tools/software/simplicity-studio). MacOS v.4.2 is currently supported.
+To get started, install [Simplicity Studio](https://www.silabs.com/products/development-tools/software/simplicity-studio). These instructions are based on on MacOS with v.4.2 of Simplicity Studio.
 
-Plug in your board when launching for the first time so that Simplicity Studio will update with the correct SDKs. Install 32 bit MCU, Flex and Bluetooth.
+Plug in your board when launching for the first time so that Simplicity Studio updates with the correct SDKs. Install 32 bit MCU, Flex and Bluetooth.
 
 As of this writing, the current versions are:
 	
-	32-bit MCU SDK - 5.3.5.0
-	Flex SDK - 2.1.0.0
-	Bluetooth SDK - 2.7.0.0
+	Gecko SDK Suite - 2.2.2
+	32-bit MCU SDK - 5.4.0.0
+	Flex SDK - 2.2.2.1
+	Bluetooth SDK - 2.8.1.0
 
-> If the SDK version changes, or you wish to use a specific SDK version, you can change the **SDK_BASE** build define in $MODDABLE/tools/mcconfig/gecko/make.*subplatform*.mk.
+> If the SDK version changes, or you wish to use a specific SDK version, change the **SDK_BASE** build define in $MODDABLE/tools/mcconfig/gecko/make.*subplatform*.mk.
 
 #### Create a new Simplicity Studio Project
 
@@ -118,14 +119,14 @@ We've used
 Device | Example project
 ----|--------------------
 Giant Gecko | `STK3700_powertest`
-Mighty Gecko | `simple_rail_without_hal`
+Mighty Gecko | `simple_rail_without_hal`, `simple_trx_with_fifo`
 Thunderboard Sense 2 | `soc-thunderboard-sense-2`, `soc-empty`
 
 Build, install and run the sample to become familiar with the process.
 
-> Note: It is necessary to start with an example project with your board connected as Simplicity Studio will populate the build rules for the project with the appropriate values for your device.
+> Note: It is necessary to start with an example project with your board connected so that Simplicity Studio will populate the build rules for the project with the appropriate values for your device.
 > 
-> There are many variants of a family of devices.
+> Also note: There are many variants of a family of devices.
 
 Please note the board (4) and part (2).
 
@@ -140,11 +141,11 @@ This allows the build system to find the appropriate register definition files, 
 
 ### Get Moddable Open Source
 
-Follow the macOS [Host environment setup](../../Moddable SDK – Getting Started.md) section of the Getting Started guide.
+Follow the macOS [Host environment setup](../../Moddable SDK – Getting Started.md) section of the Moddable Getting Started guide.
 
 ### Build xs_gecko.a archive
 
-Use mcconfig to build the moddable library and application for your gecko platform:
+Use `mcconfig` to build the moddable library and application for your Gecko sub-platform:
 
 	$ cd $(MODDABLE)/examples/helloworld
 	$ mcconfig -d -m -p gecko/mighty
@@ -156,7 +157,7 @@ See the **Debugging** section below for instructions on connecting to xsbug.
 
 #### Modifications to the Simplicity Studio project for the Moddable sdk.
 
-You will need to change some settings in the Simplicity Studio project for the Moddable application you are building.
+It is necessary to change certain settings in the Simplicity Studio project to build an application using the Moddable SDK.
 
 Open the properties window for the project and select *C/C++ Build->Settings*.
 
@@ -170,10 +171,9 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 
 It is located in $MODDABLE/build/bin/gecko/_platform_/debug/_application_/xs_gecko.a
 
-> You will need to change this file path if you change the application that you are building.
+> You will need to change this file path to match the application you are building.
  
-
-You may also need to add the math library:
+You may also need to add the `math` library:
 
 Open the properties window for the project and select *C/C++ Build->Settings*.
 
@@ -187,7 +187,6 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 
 
 #### Integrate Moddable runtime
-
 
 In the Simplicity Studio sample app's **main.c**, add a few things:
 
@@ -207,7 +206,7 @@ Near the beginning of main(), add some code to get the reset cause. This must be
 
 Do other setup for your device/application as necessary.
 
-Add **xs_setup()** which configures the xs runtime and debugger:
+Add a call to **xs_setup()** to configure the XS runtime and debugger:
 
 	xs_setup();
 
@@ -222,20 +221,28 @@ In your main loop, call xs_loop(); repeatedly.
 
 ## Pin and Feature configuration
 
-The pins and features of the Gecko family is highly configurable. For each application, the specific configuration is defined in the application's `manifest.json` file.
+The pins and features of the Gecko family are highly configurable. For each application, the specific configuration is defined in the application's `manifest.json` file.
 
 In the `manifest.json` platforms:defines section there are defines for the various peripherals to specify what pins, ports, clocks, irq, etc. to use.
+
+        "gecko/mighty": {
+            "defines": {
+                "sleep": {
+                    "idleLevel" : 3,
+                    "retention": { "memory": false, "gpio": false },
+                    "wakeup": { "pin": 7, "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
+                },
 
 The various pin/port/location values for specific interfaces can be found in the particular data sheet for your chip family.
 
 
 ### Debugging
 
-Native code can be debugged with Simplicity Studio.
+Native code is debugged with Simplicity Studio.
 
 XS script code can be debugged with xsbug by using a FTDI adapter. On the adapter, the pins RX, TX and GND will be used.
 
-On your device, you will need to use a UART or USART and specify it in a **defines** section for your platform. Other required definitions include the tx and rx pins and location. Baud rate can also be defined, defaulting to 115200. Examples are shown below.
+On your device, you will need to use a UART or USART and specify it in a **defines** section for your platform. Other required definitions include the TX and RX pins and location. Baud rate can also be defined, defaulting to 115200. Examples are shown below.
 
 ##### Connecting xsbug
 Prior to launching your application from Simplicity Studio, start the **xsbug.app** application and use **serial2xsbug** to connect the FTDI adapter.
@@ -307,13 +314,13 @@ An alternate configuration, using USART0 on Giant Gecko,and USART3 on Mighty Gec
 
 The Gecko series devices are designed to use little power. Careful programming and management of sleep cycles are necessary to optimize power usage for your application.
 
-Moddable sleeps at idle times, while waiting for sensor or user input, or until a specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application to operate correctly.
+The Moddable SDK sleeps at idle times, while waiting for sensor or user input, or until a specific time for sensor output. Fewer interfaces are active at higher sleep levels, so it may be necessary to reduce the sleep level for your application to operate correctly.
 
 By default, Moddable uses Sleep level EM3 while waiting. Certain Gecko interfaces are shut down at level EM3. For example, while operating the Mighty Gecko radio, the sleep level must be constrained to EM1.
 
 #### EM4 Sleep
 
-Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer expiry using a low power clock. When awoken, the device reboots. 
+Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer expiration using a low power clock. When awoken, the device reboots. 
 
 During EM4 sleep, a small amount of memory can be kept active at the expense of a slightly increased power draw. The GPIO state can also be retained.
 
@@ -321,18 +328,18 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 
 ##### manifest.json file:
 
+    "include": [
+        "$(MODULES)/base/sleep/manifest.json",
+    ],
+
+    "platforms": {
 		"gecko/mighty": {
 			"defines": {
 				"sleep": {
 					"idleLevel" : 3,
 					"retention": { "memory": false, "gpio": true },
-					"wakeup": { "pin": "7", "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
+					"wakeup": { "pin": 7, "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
 				},
-			},
-			"modules": {
-				"*": [
-					"$(BUILD)/devices/gecko/sleep/*",
-				],
 			},
 
 `idleLevel`: Specifies the maximum sleep level allowed during idle periods.
@@ -347,12 +354,12 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 
 `wakeup`:`register` specifies which GPIO interrupt register to use.
 
-The various Gecko devices specify specific port/pin combinations that will wake the device from EM4 sleep. The device's data sheet will specify what pins can be used, and what GPIO interupt register to use.
+The various Gecko devices specify port/pin combinations that will wake the device from EM4 sleep. The device's data sheet will specify what pins can be used, and what GPIO interupt register to use.
 
 
 ### class Sleep
 
-The `Sleep` class provides access to Gecko's sleep functions.
+The JavaScript `Sleep` class provides access to Gecko's sleep functions to scripts.
 
 	import Sleep from "sleep";
 
@@ -379,7 +386,7 @@ Sleep.WatchdogReset     = 0b01000000;		// watchdog timer expired
 
 #### Storing data for retention during EM4 sleep
 
-During EM4 sleep, RAM is shut off and only a small amount of memory is available for retreival after wakeup.
+During EM4 sleep, RAM is shut off. A small amount of memory persists, and is available for retreival after wakeup.
 
 		let index;
 		
@@ -401,9 +408,17 @@ To enter EM4 sleep, use:
 		let sleepTime = 10000;
 		Sleep.sleepEM4(sleepTime);
 
-This will sleep the device in the lowest power mode for about 10 seconds.
+This sleeps the device in the lowest power mode for about 10 seconds.
 
 > For devices that use the Cryotimer: the sleepTime value is reduced to a base 2 value as that is what is supported by the Cryotimer. That is, sleepTime is 1, 2, 4, 8, 16, 32... ms.
+
+### Digital
+
+On Gecko, GPIO pins are specified by port and pin.
+
+	let led1 = new Digital({pin: 4, port: "gpioPortF", mode: Digital.Output});
+
+When using the Digital Monitor, the port is used to create the pin, but is ignored when discerning the interrupt. That is, a monitor created for GPIO PC0 (GPIO port C, pin 0) will also be triggered by PD0 (and PA0, PB0, etc.)
 
 ### Analog
 
@@ -427,11 +442,11 @@ Gecko devices have a number of analog inputs and can be configured to use variou
 
 **interface** specifies which ADC interface to use.
 
-**input_n_** specifies a particular pin for input. Moddable currently supports 5 concurrent input sources on gecko.
+**input_n_** specifies a particular pin for input. Moddable currently supports 5 concurrent input sources on Gecko.
 
 `adcPosSelAPORT2XCH9` - APORT2X, Channel 9 refers to pin **PC9** on the Mighty Gecko.
 
-See your Gecko device datasheet for the values to use to set a particular pin for analog input.
+See your Gecko device data-sheet for the values to use to set a particular pin for analog input.
 
 **ref** specifies an analog voltage reference source. The default value is **adcRefVDD**. Other possibilities include **adcRef1V25**, **adcRef2V5** and others, as included by your device.
 
@@ -441,7 +456,7 @@ See your Gecko device datasheet for the values to use to set a particular pin fo
 	let voltage1 = Analog.read(1);
 	let voltage2 = Analog.read(2);
 
-`Analog.read(1)` reads from `input1` described in the manifest.json segment above. `Analog.read(2)` reads from `input2` described in the manifest.json segment above.
+`Analog.read(1)` reads from `input1` described in the `manifest.json` fragment above. `Analog.read(2)` reads from `input2` described in the `manifest.json` fragment above.
 
 
 ### SPI
@@ -469,13 +484,13 @@ The `manifest.json` file contains defines for the base SPI pins
 				}
 			},
 			
-This section of the `manifest.json` defines the **spi** pins and locations, and the USART port to be used on the Mighty Gecko platform.
+This section of the `manifest.json` defines the **SPI** pins, ports, and locations, and which interface to use.
 
 The **interface** definition specifies which USART interface to use.
 
-**location** specifies which pin configuration to use for the _interface_. See your Gecko device datasheet for which pins refer to what USART location.
+**location** specifies which pin configuration to use for the _interface_. See your Gecko device data-sheet for which pins refer to what USART location.
 
-Other definitions for a specific SPI device's driver will define the **cs** (chip-select) pin, **hz** (speed in hz) and other driver specific defines.
+Other definitions for a specific SPI device's driver will define the **CS** (chip-select) pin, **HZ** (speed in hz) and other driver specific defines.
 
 ### I2C
 
@@ -497,24 +512,16 @@ The **interface** definition specifies which I2C interface to use.
 
 In this example, **I2C0** is used. The pin PC11 is the SDA pin for I2C0 at location 16 (I2C0_SDA#16). The pin PC10 is the SCL pin for I2C0 at location 14.
 
-**location** specifies which pin configuration to use for the _interface_. See your Gecko device datasheet for which pins refer to what I2C location.
+**location** specifies which pin configuration to use for the _interface_. See your Gecko device data-sheet for which pins refer to what I2C location.
 
-Note: some Gecko devices split the location for various pins. This i2c example shows a different pin location for `sda` and `scl`.
-
-### Digital
-
-On Gecko, GPIO pins are specified by port and pin.
-
-	let led1 = new Digital({pin: 4, port: "gpioPortF", mode: Digital.Output});
-
-When using the Digital Monitor, the port is used to create the pin, but is ignored when discerning the interrupt. That is, a monitor created for GPIO PC0 (GPIO port C, pin 0) will also be triggered by PD0 (and PA0, PB0, etc.)
+Note: some Gecko devices split the location for various pins. The I2C defined in the `manifest.json` fragment above shows a different pin location for `sda` and `scl`.
 
 
 ### Radio
 
 #### Radio setup
 
-Using the Mighty Gecko radio requires a bit more work with Simplicity Studio.
+Using the radio on Mighty Gecko requires additional work in Simplicity Studio.
 
 As a base application, use **RAIL: Simple TRX with FiFo**. After creating the sample project, Simplicity Studio will open a application configuration window.
 
@@ -540,11 +547,11 @@ Continue with *__Build xs_gecko.a archive__* above.
 
 ### Notes and Troubleshooting
 
-- During the final link, if Simplicity Studio does not find the Cryotimer routines or defines, you will need to copy the code and header files to your project.
+- During the final link, if Simplicity Studio does not find the Cryotimer routines or defines,  copy the code and header files to your project.
 
 `em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/inc/em_cryotimer.h`
 	
-`em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/src/em_cryotimer.c`
+`em_cryotimer.c` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/src/em_cryotimer.c`
 
 - During the final link, if Simplicity Studio does not find the `xs_gecko.a` file, either the library path is incorrect, or you have not built the `xs_gecko.a` file with **mcconfig**.
 
@@ -577,7 +584,7 @@ Change the payload size to the size you need. Then click the **Generate** button
 
 The Gecko reference boards expose many pins. There is a pre-populated expansion connector on the right side of the board, and rows of pins at the top and bottom of the board.
 
-For most Moddable examples, the pins used are located on the expansion connector for easier access.
+For most Moddable examples, the pins used are located on the expansion connector for easy access.
 
 Below are some default hookup schemes:
 
@@ -588,7 +595,7 @@ Giant Gecko locates the xsbug serial pins on the top row of pins, other peripher
 
 ![STK3700 Breakout pins](assets/stk3700-BreakoutPins.png)
 
-xsbug Connection
+#### xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -600,7 +607,7 @@ GND | GND | FTDI GND
 
 
 
-Epaper Display
+#### Epaper Display
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -612,14 +619,14 @@ PC3 | GPIO | D/C
 PC4 | GPIO | Busy
 PC0 | GPIO | RST
 
-I2C Sensors
+#### I2C Sensors
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
 PD6 | I2C0_SDA#1 | Sensor SDA
 PD7 | I2C0_SCL#1 | Sensor SCL
 
-Onboard Switches & LEDs
+#### Onboard Switches & LEDs
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -631,15 +638,15 @@ PB10 | SW1 | Push Button 1
 
 ### Mighty Gecko pin configuration
 
-WSTK Onboard Pins
+#### WSTK Onboard Pins
 
 ![WSTK Board pinout](assets/WSTKBoardPins.png)
 
-Side Expansion Header
+#### Side Expansion Header
 
 ![WSTK Expansion pinout](assets/WirelessSTKExpansion.png)
 
-xsbug Connection
+#### xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -647,7 +654,7 @@ PD11 | USART1_TX#19 | FTDI RX
 PD12 | USART1_RX#19 | FTDI TX
 GND | GND | FTDI GND
 
-Epaper Display
+#### Epaper Display
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -659,14 +666,14 @@ PD9 | GPIO | D/C
 PD10 | GPIO | Busy
 PD8 | GPIO | RST
 
-I2C Sensors
+#### I2C Sensors
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
 PC11 | I2C0_SDA#16 | Sensor SDA
 PC10 | I2C0_SCL#14 | Sensor SCL
 
-Onboard Switches & LEDs
+#### Onboard Switches & LEDs
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -679,7 +686,7 @@ PF7 | SW1 | Push Button 1
 
 ![Thunderboard Sense 2 pinout](assets/TBS2Pinout.png)
 
-xsbug Connection
+#### xsbug Connection
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -687,7 +694,7 @@ PF3 | USART0_TX#27 | FTDI RX
 PF4 | USART0_RX#27 | FTDI TX
 GND | GND | FTDI GND
 
-Epaper Display
+#### Epaper Display
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
@@ -699,14 +706,14 @@ PF6 | GPIO | D/C
 PF5 | GPIO | Busy
 PA7 | GPIO | RST
 
-I2C Sensors
+#### I2C Sensors
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------
 PC10 | I2C0_SDA#15 | Sensor SDA
 PC11 | I2C0_SCL#15 | Sensor SCL
 
-Onboard Switches & LEDs
+#### Onboard Switches & LEDs
 
 Pin | Interface / Location | Hardware
 ----|----------------------|---------

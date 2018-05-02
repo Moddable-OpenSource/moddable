@@ -26,29 +26,6 @@
 
 #define USE_I2C_SLEEP 1
 
-#if !defined(MODDEF_I2C_INTERFACE_I2C)
-	#define MODDEF_I2C_INTERFACE_I2C 0
-#endif
-
-#if MODDEF_I2C_INTERFACE_I2C == 0
-	#define I2C_PORT	I2C0
-	#define I2C_CLOCK	cmuClock_I2C0
-	#define I2C_IRQ		I2C0_IRQn
-#elif MODDEF_I2C_INTERFACE_I2C == 1
-	#define I2C_PORT	I2C1
-	#define I2C_CLOCK	cmuClock_I2C1
-	#define I2C_IRQ		I2C1_IRQn
-#else
-	#error bad I2C port
-#endif
-
-#ifndef MODDEF_I2C_SDA_LOCATION
-	#define MODDEF_I2C_SDA_LOCATION MODDEF_I2C_LOCATION
-#endif
-#ifndef MODDEF_I2C_SCL_LOCATION
-	#define MODDEF_I2C_SCL_LOCATION MODDEF_I2C_LOCATION
-#endif
-
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
 static void modI2CActivate(modI2CConfiguration config);
@@ -79,7 +56,7 @@ void modI2CInit(modI2CConfiguration config)
     GPIO_PinModeSet(MODDEF_I2C_SCL_PORT, MODDEF_I2C_SCL_PIN, gpioModeWiredAndPullUp, 1);
     GPIO_PinModeSet(MODDEF_I2C_SDA_PORT, MODDEF_I2C_SDA_PIN, gpioModeWiredAndPullUp, 1);
 
-#if 0
+#if 1
 	// clock out 9 pulses to set slave in a defined state
 	{
 	int i;
@@ -95,8 +72,6 @@ void modI2CInit(modI2CConfiguration config)
 	else
 		config->hz = i2cInit.freq;
 
-	I2C_Init(I2C_PORT, &i2cInit);
-
 #if defined(GIANT_GECKO)
 
 	I2C_PORT->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (MODDEF_I2C_LOCATION << _I2C_ROUTE_LOCATION_SHIFT);	// Enable SDA, SDK at location #1
@@ -111,6 +86,7 @@ void modI2CInit(modI2CConfiguration config)
 	#need routing for I2C
 #endif
 
+	I2C_Init(I2C_PORT, &i2cInit);
 }
 
 void modI2CUninit(modI2CConfiguration config)
@@ -129,39 +105,36 @@ static volatile I2C_TransferReturn_TypeDef I2C_transferStatus;
 #if USE_I2C_SLEEP
 
 #if MODDEF_I2C_INTERFACE_I2C == 0
-void I2C0_IRQHandler(void) {
-	I2C_transferStatus = I2C_Transfer(I2C_PORT);
-}
+void I2C0_IRQHandler(void)
 #elif MODDEF_I2C_INTERFACE_I2C == 1
-void I2C1_IRQHandler(void) {
+void I2C1_IRQHandler(void)
+#elif MODDEF_I2C_INTERFACE_I2C == 2
+void I2C2_IRQHandler(void)
+#endif
+{
 	I2C_transferStatus = I2C_Transfer(I2C_PORT);
 }
-#endif
 
 static void doTransfer(I2C_TransferSeq_TypeDef *tcb) {
 	bool done = false;
 	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
-	CORE_irqState_t irqState;
 
 	NVIC_EnableIRQ(I2C_IRQ);
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, tcb);
 	while (!done)  {
-		irqState = CORE_EnterAtomic();
 		if (I2C_transferStatus == i2cTransferInProgress && timeout--) {
-//			EMU_EnterEM1();
 			geckoEnterEM1();
 		}
 		else {
 			done = true;
 		}
-		CORE_ExitAtomic(irqState);
 	}
 	NVIC_DisableIRQ(I2C_IRQ);
 }
 
 #endif
 
-uint8_t modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t w1Length, uint8_t *w2Buffer, uint16_t w2Length)
+I2C_TransferReturn_TypeDef modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t w1Length, uint8_t *w2Buffer, uint16_t w2Length)
 {
 	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
 
@@ -184,7 +157,7 @@ uint8_t modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t
 	return I2C_transferStatus;
 }
 
-uint8_t modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t wLength, uint8_t *rBuffer, uint16_t rLength)
+I2C_TransferReturn_TypeDef modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t wLength, uint8_t *rBuffer, uint16_t rLength)
 {
 	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
 
@@ -207,7 +180,7 @@ uint8_t modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t w
 	return I2C_transferStatus;
 }
 
-uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
+I2C_TransferReturn_TypeDef modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
 	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
 
@@ -230,7 +203,7 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 }
 
 
-uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop)
+I2C_TransferReturn_TypeDef modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
 	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
 
