@@ -1,0 +1,33 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/si7021/*",
+		],
+	},
+	"preload": [
+		"si7021",
+	],
+	"platforms": {
+		"gecko": {
+			"modules": {
+				"*": [
+					"$(MODULES)/drivers/si7021/gecko/*",
+				],
+			},
+		},
+		"gecko/mighty": {
+			"defines": {
+				"si7021": {
+					"hz": 1000000,
+					"addr": "0x40",
+					"device_id": "0x15",
+					"enable": { "pin": 10, "port": "gpioPortB" },
+				},
+			},
+		},
+	},
+}
