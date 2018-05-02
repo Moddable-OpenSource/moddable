@@ -26,9 +26,32 @@
 #include "stdint.h"
 #include "mc.defines.h"
 
-// #define I2C_PORT	gpioPortB
-// #define I2C_SDA		11
-// #define I2C_SCL		12
+#if !defined(MODDEF_I2C_INTERFACE_I2C)
+    #define MODDEF_I2C_INTERFACE_I2C 0
+#endif
+
+#if MODDEF_I2C_INTERFACE_I2C == 0
+    #define I2C_PORT    I2C0
+    #define I2C_CLOCK   cmuClock_I2C0
+    #define I2C_IRQ     I2C0_IRQn
+#elif MODDEF_I2C_INTERFACE_I2C == 1
+    #define I2C_PORT    I2C1
+    #define I2C_CLOCK   cmuClock_I2C1
+    #define I2C_IRQ     I2C1_IRQn
+#elif MODDEF_I2C_INTERFACE_I2C == 2
+    #define I2C_PORT    I2C2
+    #define I2C_CLOCK   cmuClock_I2C2
+    #define I2C_IRQ     I2C2_IRQn
+#else
+    #error bad I2C port
+#endif
+
+#ifndef MODDEF_I2C_SDA_LOCATION
+    #define MODDEF_I2C_SDA_LOCATION MODDEF_I2C_LOCATION
+#endif
+#ifndef MODDEF_I2C_SCL_LOCATION 
+    #define MODDEF_I2C_SCL_LOCATION MODDEF_I2C_LOCATION
+#endif
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
@@ -47,11 +70,11 @@ typedef struct modI2CConfigurationRecord *modI2CConfiguration;
 extern void modI2CInit(modI2CConfiguration config);		// required
 extern void modI2CUninit(modI2CConfiguration config);	// optional
 
-extern uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop);
-extern uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop);
+I2C_TransferReturn_TypeDef modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop);
+I2C_TransferReturn_TypeDef modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop);
 
-uint8_t modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t wLength, uint8_t *rBuffer, uint16_t rLength);
-uint8_t modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t w1Length, uint8_t *w2Buffer, uint16_t w2Length);
+I2C_TransferReturn_TypeDef modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t wLength, uint8_t *rBuffer, uint16_t rLength);
+I2C_TransferReturn_TypeDef modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t w1Length, uint8_t *w2Buffer, uint16_t w2Length);
 
 
 #endif

@@ -78,6 +78,7 @@ void configEM4(void) {
 	init_EM4.pinRetentionMode = emuPinRetentionDisable;
 #endif
 	init_EM4.retainUlfrco = true;
+//	init_EM4.retainLfrco = true;
 //	init_EM4.vScaleEM4HVoltage = emuVScaleEM4H_LowPower;	// maybe this is too low to run some gpio
 	EMU_EM4Init( &init_EM4 );
 #else
