@@ -1,6 +1,6 @@
 # Manifest
 
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-2018 Moddable Tech, Inc.
 
 Revised: May 4, 2018
 
@@ -134,7 +134,7 @@ If you only want to allow certain objects or functions to be stripped, pass in a
 
 #### `platform `
 
-The `platform` object has one property by platform. Each platform can have a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when that platform is the goal of the build.
+The `platform` object has one property by platform or sub-platform. Objects in a sub-platform are merged with platform objects. Each platform can have a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when such platform is the goal of the build.
 		
 		"platforms": {
 			"esp": {
@@ -187,13 +187,45 @@ The "`...`" platform identifier is a fallback, if no matching platform is found.
 			}
 		}
 
+### Sub-platforms
+
+The Gecko family of devices are similar and share much of the same configuration. A sub-platform is used to configure an application for the variations in a product family.
+
+In the segment below, the `timer` module is specified for all `gecko` platforms. The `wakeup` pin is defined differently for the `gecko/giant` and `gecko/mighty` platforms.
+
+        "gecko": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/base/timer/*",
+                    "$(MODULES)/base/timer/mc/*",
+                ]
+            },
+            "preload": [
+                "timer",
+            ],
+        },
+        "gecko/giant": {
+            "defines": {
+                "sleep": {
+                    "wakeup": { "pin": 2, "port": "gpioPortF", "level": 0, "register": "GPIO_EM4WUEN_EM4WUEN_F2" },
+                },
+		     },
+		 },
+        "gecko/mighty": {
+            "defines": {
+                "sleep": {
+                    "wakeup": { "pin": 7, "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
+                },
+             },
+          },
+          			
 ## Reference
 
 **mcconfig** processes a manifest in three passes.
 
 ### Combine
 
-The first pass combines the properties of the included manifests (in depth first order) with the properties of the processed manifest. For each manifest, the common properties are combined with the properties of the platform that is the goal of the build.
+The first pass combines the properties of the included manifests (in depth first order) with the properties of the processed manifest. For each manifest, the common properties are combined with the properties of the platform that is the goal of the build. Sub-platform properties are combined with platform properties.
 
 When combining properties with the same name, the combined value is the concatenation of the two values.
 
@@ -226,6 +258,4 @@ The generated make file contains the generated variables, then the make fragment
 
 You will find the make fragments and the make recipes in `$(MODDABLE)/tools/mcconfig`. It is the make fragments that define the compiler options, the linker options, the libraries, etc.
 
-
-
-
+If a platform also has a sub-platform, it's make fragments will be contained in `$(MODDABLE)/tools/mcconfig/`_platform_`/`_subplatform_.
