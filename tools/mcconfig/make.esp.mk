@@ -75,6 +75,12 @@ comma := ,
 NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
 endif
 
+ifneq ("$(wildcard $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a)", "")
+	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
+else
+	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
+endif
+
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \
  	$(ESP_TOOLS_SDK_ROOT)/include \
@@ -322,9 +328,9 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	@$(TOOLS_BIN)/xtensa-lx106-elf-size -A $(TMP_DIR)/main.elf | perl -e $(MEM_USAGE)
 
-$(LIB_DIR)/lib_a-setjmp.o: $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
+$(LIB_DIR)/lib_a-setjmp.o: $(LIBCIROM_PATH)
 	@echo "# ar" $(<F)
-	(cd $(LIB_DIR) && $(AR) -xv $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a lib_a-setjmp.o)
+	(cd $(LIB_DIR) && $(AR) -xv $< lib_a-setjmp.o)
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
