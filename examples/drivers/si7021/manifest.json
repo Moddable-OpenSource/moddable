@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/base/sleep/manifest.json",
+		"$(MODULES)/drivers/si7021/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+		],
+	},
+}
