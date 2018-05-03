@@ -165,6 +165,7 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoPocoBlit.o \
 	$(TMP_DIR)\commodettoReadJPEG.o \
 	$(TMP_DIR)\commodettoReadPNG.o \
+	$(TMP_DIR)\cfeBMF.o \
 	$(TMP_DIR)\image2cs.o \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
