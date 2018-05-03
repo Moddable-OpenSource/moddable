@@ -348,7 +348,7 @@ void geckoSetupClocks() {
 #if USE_CRYOTIMER
 	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_ULFRCO);
 #else
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFRCO);
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFRCO);
 #endif
 
 	geckoStartRTCC();
