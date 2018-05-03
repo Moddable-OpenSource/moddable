@@ -63,11 +63,15 @@ int gDebuggerSetup = 0;
 	#if (MODDEF_DEBUGGER_INTERFACE_UART == 0)
 		#define DEBUGGER_PORT	UART0
 		#define DEBUGGER_CLOCK	cmuClock_UART0
-		#define DEBUGGER_INIT_CLOCK() CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_UART0;
+		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_UART0;
+		#define DEBUGGER_RX_IRQ	UART0_RX_IRQn
+		#define DEBUGGER_TX_IRQ	UART0_TX_IRQn
 	#elif (MODDEF_DEBUGGER_INTERFACE_UART == 1)
 		#define DEBUGGER_PORT	UART1
 		#define DEBUGGER_CLOCK	cmuClock_UART1
-		#define DEBUGGER_INIT_CLOCK() CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_UART1;
+		#define DEBUGGER_INIT_CLOCK() CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFRCO); CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_UART1;
+		#define DEBUGGER_RX_IRQ	UART1_RX_IRQn
+		#define DEBUGGER_TX_IRQ	UART1_TX_IRQn
 	#endif
 #elif defined(MODDEF_DEBUGGER_INTERFACE_USART)
 	#if (MODDEF_DEBUGGER_INTERFACE_USART == 0)
@@ -108,13 +112,18 @@ volatile struct circBuf {
 	bool		overflow;
 } rxBuf, txBuf = { {0}, 0, 0, 0, false };
 
+int setMaxSleep(int sleepLevel);
 static int debuggerLastSleep = 3;
 
 #define blockInterrupts() { NVIC_DisableIRQ(DEBUGGER_RX_IRQ); NVIC_DisableIRQ(DEBUGGER_TX_IRQ); }
 
 #define unblockInterrupts() { NVIC_EnableIRQ(DEBUGGER_RX_IRQ); NVIC_EnableIRQ(DEBUGGER_TX_IRQ); }
 
-#if (MODDEF_DEBUGGER_INTERFACE_USART == 0)
+#if (MODDEF_DEBUGGER_INTERFACE_UART == 0)
+void UART0_RX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_UART == 1)
+void UART1_RX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 0)
 void USART0_RX_IRQHandler(void)
 #elif (MODDEF_DEBUGGER_INTERFACE_USART == 1)
 void USART1_RX_IRQHandler(void)
@@ -140,7 +149,11 @@ void USART3_RX_IRQHandler(void)
 	}
 }
 
-#if (MODDEF_DEBUGGER_INTERFACE_USART == 0)
+#if (MODDEF_DEBUGGER_INTERFACE_UART == 0)
+void UART0_TX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_UART == 1)
+void UART1_TX_IRQHandler(void)
+#elif (MODDEF_DEBUGGER_INTERFACE_USART == 0)
 void USART0_TX_IRQHandler(void)
 #elif (MODDEF_DEBUGGER_INTERFACE_USART == 1)
 void USART1_TX_IRQHandler(void)
@@ -272,6 +285,8 @@ void setupDebugger() {
 	LEUART_Init(DEBUGGER_PORT, &serialInit);
 #elif defined(MODDEF_DEBUGGER_INTERFACE_UART) || defined(MODDEF_DEBUGGER_INTERFACE_USART)
 	USART_InitAsync_TypeDef serialInit = USART_INITASYNC_DEFAULT;
+
+	serialInit.enable = usartDisable;
 	serialInit.baudrate = MODDEF_DEBUGGER_BAUD;
 	USART_InitAsync(DEBUGGER_PORT, &serialInit);
 #else
@@ -282,6 +297,15 @@ void setupDebugger() {
 			| USART_ROUTE_RXPEN | USART_ROUTE_TXPEN;
 
 	gDebuggerSetup = 1;
+
+	USART_IntClear(DEBUGGER_PORT, _UART_IF_MASK);
+	USART_IntEnable(DEBUGGER_PORT, UART_IF_RXDATAV);
+	NVIC_ClearPendingIRQ(DEBUGGER_RX_IRQ);
+	NVIC_ClearPendingIRQ(DEBUGGER_TX_IRQ);
+	NVIC_EnableIRQ(DEBUGGER_RX_IRQ);
+	NVIC_EnableIRQ(DEBUGGER_TX_IRQ);
+
+	USART_Enable(DEBUGGER_PORT, usartEnable);
 #else
 	#error undefined gecko platform
 #endif
