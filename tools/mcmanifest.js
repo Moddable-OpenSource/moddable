@@ -2,17 +2,17 @@
  * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
- * 
+ *
  *   The Moddable SDK Tools is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Tools is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -69,7 +69,7 @@ export class MakeFile extends FILE {
 			this.write("\\\n\t$(DATA_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		this.line("");
 		this.line("");
 	}
@@ -119,7 +119,7 @@ export class MakeFile extends FILE {
 		for (var result in tool.environment)
 			this.line(result, " = ", tool.environment[result].replace(/ /g, "\\ "));
 		this.line("");
-			
+
 		this.line("BIN_DIR = ", tool.binPath);
 		this.line("BUILD_DIR = ", tool.buildPath);
 		this.line("DATA_DIR = ", tool.dataPath);
@@ -129,7 +129,7 @@ export class MakeFile extends FILE {
 		this.line("TMP_DIR = ", tool.tmpPath);
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("");
-		
+
 		this.generateManifestDefinitions(tool);
 		this.generateModulesDefinitions(tool);
 		this.generateObjectsDefinitions(tool);
@@ -142,7 +142,7 @@ export class MakeFile extends FILE {
 		for (var result in tool.manifests.already) {
 			this.write(" \\\n\t");
 			this.write(result);
-		}	
+		}
 		this.line("");
 		this.line("");
 	}
@@ -152,7 +152,7 @@ export class MakeFile extends FILE {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		this.line("");
 		this.line("");
 	}
@@ -185,42 +185,42 @@ export class MakeFile extends FILE {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.bmpColorFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.bmpAlphaFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.bmpFontFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.bmpMaskFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.clutFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.imageFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.soundFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
-		}	
+		}
 		for (var result of tool.stringFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
@@ -238,7 +238,7 @@ export class MakeFile extends FILE {
 		var definesPath = "$(TMP_DIR)" + tool.slash + "mc.defines.h";
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
 		var rotationPath = "$(TMP_DIR)" + tool.slash + "mc.rotation.h";
-	
+
 		for (var result of tool.resourcesFiles) {
 			var source = result.source;
 			var target = result.target;
@@ -257,7 +257,7 @@ export class MakeFile extends FILE {
 					this.line("\tcp $< $@");
 			}
 		}
-	
+
 		if (tool.clutFiles) {
 			for (var result of tool.clutFiles) {
 				var source = result.source;
@@ -279,7 +279,7 @@ export class MakeFile extends FILE {
 				this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation);
 			}
 		}
-		
+
 		for (var result of tool.bmpColorFiles) {
 			var source = result.source;
 			var target = result.target;
@@ -326,7 +326,7 @@ export class MakeFile extends FILE {
 			}
 			this.line("");
 		}
-		
+
 		for (var result of tool.bmpFontFiles) {
 			var parts;
 			var source = result.source;
@@ -359,7 +359,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "png2bmp ", bmpTarget);
 			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t");
 		}
-		
+
 		for (var result of tool.imageFiles) {
 			var source = result.source;
 			var target = result.target;
@@ -381,7 +381,7 @@ export class MakeFile extends FILE {
 				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -r ", tool.rotation);
 			}
 		}
-		
+
 		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025;
 		let defines = tool.defines;
 		if (defines) {
@@ -390,8 +390,8 @@ export class MakeFile extends FILE {
 				if ("bitsPerSample" in audioOut) bitsPerSample = audioOut.bitsPerSample;
 				if ("numChannels" in audioOut) numChannels = audioOut.numChannels;
 				if ("sampleRate" in audioOut) sampleRate = audioOut.sampleRate;
-			}		
-		}		
+			}
+		}
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
@@ -399,7 +399,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "wav2maud ", target);
 			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample);
 		}
-		
+
 		for (var result of tool.stringFiles)
 			this.line("$(RESOURCES_DIR)", tool.slash, result.target, ": ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
 		this.write("$(RESOURCES_DIR)");
@@ -550,7 +550,7 @@ class Rule {
 		if (target in property) {
 			var sources = property[target];
 			if (sources instanceof Array) {
-				for (var source of sources) 
+				for (var source of sources)
 					this.iterate(target, source, false, true);
 			}
 			else
@@ -645,7 +645,7 @@ class ModulesRule extends Rule {
 	}
 };
 
-var moduleExtensions = [  
+var moduleExtensions = [
 	".c", ".cc", ".cpp", ".h", ".java", ".js", ".json", ".m",
 ];
 
@@ -803,7 +803,7 @@ export class Tool extends TOOL {
 		this.moddablePath = this.getenv("MODDABLE");
 		if (!this.moddablePath)
 			throw new Error("MODDABLE: variable not found!");
-		
+
 		this.config = {};
 		this.debug = false;
 		this.environment = { "MODDABLE": this.moddablePath }
@@ -818,10 +818,10 @@ export class Tool extends TOOL {
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
-		
+
 		this.buildPath = this.moddablePath + this.slash + "build";
 		this.xsPath = this.moddablePath + this.slash + "xs";
-		
+
 		var name, path;
 		var argc = argv.length;
 		for (var argi = 1; argi < argc; argi++) {
@@ -832,7 +832,7 @@ export class Tool extends TOOL {
 				this.instrument = true;
 				break;
 			case "-f":
-				argi++;	
+				argi++;
 				if (argi >= argc)
 					throw new Error("-f: no format!");
 				name = argv[argi];
@@ -852,7 +852,7 @@ export class Tool extends TOOL {
 				this.make = true;
 				break;
 			case "-o":
-				argi++;	
+				argi++;
 				if (argi >= argc)
 					throw new Error("-o: no directory!");
 				name = argv[argi];
@@ -864,7 +864,7 @@ export class Tool extends TOOL {
 				this.outputPath = path;
 				break;
 			case "-p":
-				argi++;	
+				argi++;
 				if (argi >= argc)
 					throw new Error("-p: no platform!");
 				name = argv[argi];
@@ -874,7 +874,7 @@ export class Tool extends TOOL {
 				this.platform = name;
 				break;
 			case "-r":
-				argi++;	
+				argi++;
 				if (argi >= argc)
 					throw new Error("-r: no rotation!");
 				name = parseInt(argv[argi]);
@@ -996,15 +996,15 @@ export class Tool extends TOOL {
 		this.mergeProperties(all.creation, platform.creation);
 		this.mergeProperties(all.defines, platform.defines);
 		this.mergeProperties(all.ble, platform.ble);
-		
+
 		this.concatProperties(all.data, platform.data, true);
 		this.concatProperties(all.modules, platform.modules, true);
 		this.concatProperties(all.resources, platform.resources, true);
 		this.concatProperties(all.recipes, platform.recipes);
-		
+
 		all.commonjs = this.concatProperty(all.commonjs, platform.commonjs);
 		all.preload = this.concatProperty(all.preload, platform.preload);
-		all.strip = this.concatProperty(all.strip, platform.strip);
+		all.strip = platform.strip ? platform.strip : all.strip;
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
 	}
@@ -1076,7 +1076,7 @@ export class Tool extends TOOL {
 		if ("include" in manifest) {
 			if (manifest.include instanceof Array)
 				manifest.include.forEach(include => this.includeManifest(this.resolveVariable(include)));
-			else 
+			else
 				this.includeManifest(this.resolveVariable(manifest.include));
 		}
 		this.manifests.push(manifest);
@@ -1090,10 +1090,10 @@ export class Tool extends TOOL {
 	resolveSource(source) {
 		var result = this.resolveVariable(source);
 		var slash = result.lastIndexOf(this.slash);
-		if (slash < 0) 
+		if (slash < 0)
 			throw new Error("'" + source + "': path not found!");
 		var directory = this.resolveDirectoryPath(result.slice(0, slash));
-		if (!directory) 
+		if (!directory)
 			throw new Error("'" + source + "': directory not found!");
 		result = directory + result.slice(slash);
 		return result;
@@ -1129,7 +1129,7 @@ export class Tool extends TOOL {
 			warnings:[],
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
-		
+
 		if (this.manifest.errors.length) {
 			this.manifest.errors.forEach(error => { this.reportError(null, 0, error); });
 			throw new Error("incompatible platform!");
@@ -1137,18 +1137,18 @@ export class Tool extends TOOL {
 		if (this.manifest.warnings.length) {
 			this.manifest.warnings.forEach(warning => { this.reportWarning(null, 0, warning); });
 		}
-		
+
 		// apply rules
 		this.dataFiles = [];
 		this.dataFiles.already = {};
 		this.dataFolders = [];
 		this.dataFolders.already = {};
-		
+
 		this.jsFiles = [];
 		this.jsFiles.already = {};
 		this.jsFolders = [];
 		this.jsFolders.already = {};
-		
+
 		this.cFiles = [];
 		this.cFiles.already = {};
 		this.cFolders = [];
@@ -1157,12 +1157,12 @@ export class Tool extends TOOL {
 		this.hFiles.already = {};
 		this.javaFiles = [];
 		this.javaFiles.already = {};
-		
+
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};
 		this.resourcesFolders = [];
 		this.resourcesFolders.already = {};
-		
+
 		this.bmpColorFiles = [];
 		this.bmpColorFiles.already = {};
 		this.bmpAlphaFiles = [];
@@ -1182,7 +1182,7 @@ export class Tool extends TOOL {
 		this.stringFiles.already = {};
 		this.bleServicesFiles = [];
 		this.bleServicesFiles.already = {};
-		
+
 		var rule = new DataRule(this);
 		rule.process(this.manifest.data);
 		var rule = new ModulesRule(this);
