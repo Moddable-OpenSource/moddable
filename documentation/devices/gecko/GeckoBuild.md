@@ -139,6 +139,9 @@ export GECKO_BOARD=BRD4161A
 
 This allows the build system to find the appropriate register definition files, configuration, etc. for your specific board.
 
+> **Thunderboard Sense 2**: if you start with `soc-thunderboard-sense-2`, you will have to change the size of the `__STACK_SIZE` and `__HEAP_SIZE`.
+> See the [Notes and Troubleshooting](#notes-and-troubleshooting) section below.
+
 ### Get Moddable Open Source
 
 Follow the macOS [Host environment setup](../../Moddable SDK – Getting Started.md) section of the Moddable Getting Started guide.
@@ -564,7 +567,7 @@ Depending on the processor and project configuration, you may need to adjust the
 
 In **GNU ARM C Compiler -> Symbols** and **GNU ARM Assembler -> Symbols**, add a `__STACK_SIZE` and/or `__HEAP_SIZE`
 
-	__STACK_SIZE=0x1E00
+	__STACK_SIZE=0x4000
 	__HEAP_SIZE=0xA000
 
 - Some Simplicity Studio example radio projects use a fixed size packet length.
