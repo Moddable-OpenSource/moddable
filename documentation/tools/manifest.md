@@ -2,38 +2,53 @@
 
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: December 26, 2017
+Revised: May 4, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Overview
 
-A manifest is a JSON file that describes the modules and resources necessary to build
-a Moddable app.
+A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app.
 
-#### `$MODDABLE/examples/piu/balls/manifest.json`
+### `$MODDABLE/examples/piu/balls/manifest.json`
 
-Let us look at the manifest of the "balls" app: It is quite short:
+Let us look at the manifest of the [balls example app](../../examples/piu/balls). It is quite short:
 
-	{
-		"include": [
-			"../all.json",
+```
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": [
+			"./main",
+			"./balls",
 		]
-		"modules": {
-			"*": "./main",
-		},
-		"resources":{
-			"*": "./balls",
-		},
-	}
+	},
+}
+```
 
-The `include` array lists the manifests to include. Most apps have a lot in common. Instead of repeating properties, Piu examples include `all.json` which describes the modules necessary to all of them.
+The `include` array lists other manifests to include. Most apps have many common properties, so instead of repeating common properties in every manifest, our examples include some subset of the manifests in the [examples folder](../../examples/).
 
-The `modules` and `resources` objects contain the module and resource that are specific to the "balls" app. 
+- `manifest_base.json` is included in all of our example applications. It includes resource, instrumentation, time, and timer modules and a `creation` object that works for many applications. The `creation` object is covered in more detail later in this document.
 
-#### `$MODDABLE/examples/piu/all.json`
+- `manifest_commodetto.json` is for applications that use the [Commodetto graphics library](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/commodetto.md).
 
-Now let us look at the included manifest. It is quite long so let us split it into its properties...
+- `manifest_net.json` is for applications that use Wi-Fi. It includes Socket, Net, SNTP, and Wi-Fi modules. It does not include specific networking protocols like HTTP and MQTT.
+
+- `manifest_piu.json` is for applications that use the [Piu application framework](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md). It includes all the modules needed to use Piu, as well as the `ili9341` screen driver and `xpt2046` touch driver.
+
+The `modules` and `resources` objects contain the module and resources that are specific to the balls app. 
+
+### `$(MODDABLE)/examples/manifest_base.json`
+
+Now let us look at one of the included manifests: `manifest_base.json`. It is quite long so let us split it into its properties...
+
+#### `build`
 
 The `build` object contains the definition of environment variables that will be used to build paths by the rest of the manifest. Notice that the manifest can access shell environment variables like `MODDABLE`.
 
@@ -45,116 +60,115 @@ The `build` object contains the definition of environment variables that will be
 			"PIU": "$(MODULES)/piu",
 		},
 
-The `creation` object defines the creation parameters of the XS machine that will run the app. See **XS in C** for details.
+#### `creation`
+
+The `creation` object defines the creation parameters of the XS machine that will run the app. See the [XS in C documentation](../xs/XS\ in\ C.md) for details.
 		
 		"creation": {
+			"static": 32768,
 			"chunk": {
-				"initial":1536,
-				"incremental":1024,
+				"initial": 1536,
+				"incremental": 512,
 			},
 			"heap": {
-				"initial":512,
-				"incremental":64,
+				"initial": 512,
+				"incremental": 64,
 			},
-			"stack":256,
+			"stack": 256,
 			"keys": {
-				"available":32,
-				"name":53,
-				"symbol":3,
+				"available": 32,
+				"name": 53,
+				"symbol": 3,
 			},
-			"main":"main",
+			"main": "main",
 		},
 		
+#### `modules`
+
 The `modules` object describes the necessary modules on all platforms.
 
 		"modules": {
-			"~": [
-			],
-			"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-			"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-			"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
-			"commodetto/ParseBMF": "$(COMMODETTO)/commodettoParseBMF",
-			"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
-			"piu/*": [
-				"$(PIU)/All/piu*",
-				"$(PIU)/MC/piu*",
-			],
 			"*": [
 				"$(MODULES)/files/resource/*",
 				"$(MODULES)/base/instrumentation/*",
 			],
 		},
 
+#### `preload`
+
 The `preload` array lists the modules preloaded in the read-only XS virtual machine that will be cloned to run the app.
 		
 		"preload": [
-			"commodetto/*",
-			"piu/*",
 			"Resource",
 			"instrumentation",
 		],
+
+#### `strip`
+
+The `strip` object specifies which built-in objects and functions of the JavaScript language may/may not be removed by the XS linker.
+
+		"strip": "*",
 		
-The `platform` object has one property by platform. Each platform can have a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when such platform is the goal of the build.
+`"*"` means anything unused by the application can be stripped.
+
+If you only want to allow certain objects or functions to be stripped, pass in an array. Items in the array can be stripped. Anything not included in the array will not be stripped. For example, the following allows `RegExp` to be stripped:
+
+		"strip": [
+			"fx_RegExp_prototype_compile",
+			"fx_RegExp_prototype_exec",
+			"fx_RegExp_prototype_match",
+			"fx_RegExp_prototype_replace",
+			"fx_RegExp_prototype_search",
+			"fx_RegExp_prototype_split",
+			"fx_RegExp_prototype_test",
+			"fx_RegExp_prototype_toString",
+			"fx_RegExp_prototype_get_flags",
+			"fx_RegExp_prototype_get_global",
+			"fx_RegExp_prototype_get_ignoreCase",
+			"fx_RegExp_prototype_get_multiline",
+			"fx_RegExp_prototype_get_source",
+			"fx_RegExp_prototype_get_sticky",
+			"fx_RegExp_prototype_get_unicode",
+			"fx_RegExp",
+		]
+
+#### `platform `
+
+The `platform` object has one property by platform. Each platform can have a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when that platform is the goal of the build.
 		
-		"platforms":{
+		"platforms": {
 			"esp": {
 				"modules": {
 					"*": [
-						"$(MODULES)/drivers/ssd1306/*",
-						"$(MODULES)/drivers/ssd1351/*",
-						"$(MODULES)/drivers/ls013b4dn04/*",
-						"$(MODULES)/drivers/lpm013m126a/*",
 						"$(MODULES)/base/time/*",
+						"$(MODULES)/base/time/esp/*",
 						"$(MODULES)/base/timer/*",
-						"$(MODULES)/pins/spi/*",
-						"$(MODULES)/pins/pins/*",
-						"$(MODULES)/network/wifi/*",
-						"$(MODULES)/network/net/*",
-						"$(MODULES)/network/sntp/*",
-						"$(MODULES)/network/socket/*",
-						"$(MODULES)/network/socket/lwip/*",
-					],
-					"setup": "$(BUILD)/devices/esp/setup/setup-piu",
+						"$(MODULES)/base/timer/mc/*",
+					]
 				},
 				"preload": [
-					"ssd1306",
-					"ssd1351",
-					"ls013b4dn04",
-					"lpm013m126a",
 					"time",
 					"timer",
-					"pins",
-					"wifi",
-					"net",
-					"sntp",
-					"socket",
-					"setup",
 				],
-				"defines": {
-					"ls013b4dn04": {
-						"cs": {
-							"pin": 4
-						},
-						"spi": {
-							"port": "#HSPI"
-						}
-					},
-					"lpm013m126a": {
-						"cs": {
-							"pin": 4
-						},
-						"spi": {
-							"port": "#HSPI"
-						}
-					}
-				},
 				"recipes": {
 					"strings-in-flash": [
 						"commodetto*",
 						"piu*",
 						"Resource*",
 						"mod*",
+						"i2c*",
+						"digital*",
 					],
+					"c++11": [
+						"*.cc.o",
+						"*.cpp.o",
+					],
+				},
+				"defines": {
+					"i2c": {
+						"sda_pin": 5,
+						"scl_pin": 4
+					}
 				}
 			},
 
