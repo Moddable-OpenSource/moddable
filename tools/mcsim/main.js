@@ -285,7 +285,7 @@ class ApplicationBehavior extends Behavior {
 		if (path.endsWith(extension)) {
 			this.quitScreen();
 			let index = this.devices.findIndex(device => device.applicationPath == path);
-			if ((index > 0) && (index != this.deviceIndex))
+			if ((index >= 0) && (index != this.deviceIndex))
 				this.selectDevice(application, index);
 			this.screenPath = path;
 			this.launchScreen();
