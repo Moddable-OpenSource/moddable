@@ -172,13 +172,17 @@ class ApplicationBehavior extends DebugBehavior {
 		if ((this.currentMachine != machine) || (this.currentTab != tab)) {
 			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
 			let container = this.FEATURE;
-			if (!this.currentMachine && machine)
-				container.replace(container.first, new DebugPane(this));
-			else if (this.currentTab != tab) {
-				if (tab == 0)
-					container.replace(container.first, new FilePane(this));
-				else
-					container.replace(container.first, new MessagePane(this));
+			if (machine) {
+				if (!this.currentMachine)
+					container.replace(container.first, new DebugPane(this));
+			}
+			else {
+				if ((this.currentMachine) || (this.currentTab != tab)) {
+					if (tab == 0)
+						container.replace(container.first, new FilePane(this));
+					else
+						container.replace(container.first, new MessagePane(this));
+				}	
 			}	
 			this.currentMachine = machine
 			this.currentTab = tab
