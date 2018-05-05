@@ -122,7 +122,7 @@ class BubblesTabBehavior extends TabBehavior {
 		return (model.currentMachine == null) && (model.currentTab == 1);
 	}
 	onCreate(container) {
-		this.onMachineSelected(container, model.currentMachine);
+		this.onMachineSelected(container, model.currentMachine, model.currentTab);
 	}
 	onMachineSelected(container, machine, tab) {
 		this.changeState(container, (machine == null) && (tab == 1) ? 0 : 1);
