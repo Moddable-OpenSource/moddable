@@ -23,5 +23,3 @@ export default class SI7021 @ "xs_SI7021_destructor" {
 	read() @ "xs_SI7021_read";
 };
 
-let rh, celcius
-

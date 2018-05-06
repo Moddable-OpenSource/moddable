@@ -27,7 +27,7 @@ export default function() {
 	let v = {};
 	humidTemp.read(v);
 
-	let f = Math.round(v.celcius * 1.8 + 32);
+	let f = Math.round(v.celsius * 1.8 + 32);
 	let h = Math.round(v.rh);
 
 	trace(f + " degrees Fahrenheit\n");
