@@ -98,7 +98,7 @@ void xs_SI7021_read(xsMachine *the) {
 	xsmcVars(2);
 
 	// relative humidity in milli-percent
-	// temperature in milli-degrees celcius
+	// temperature in milli-degrees celsius
 	cmd = SI7021_CMD_MEASURE_RH_NO_HOLD;
 	err = modI2CWrite(&si->i2c, &cmd, 1, true);
 	if (err) xsUnknownError("measure RH_NO_HOLD failed");
@@ -131,6 +131,6 @@ void xs_SI7021_read(xsMachine *the) {
 	xsmcSet(xsArg(0), xsID_rh, xsVar(1));
 	x = (float)tData / 1000.0;
 	xsmcSetNumber(xsVar(1), x);
-	xsmcSet(xsArg(0), xsID_celcius, xsVar(1));
+	xsmcSet(xsArg(0), xsID_celsius, xsVar(1));
 }
 
