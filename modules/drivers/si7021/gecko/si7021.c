@@ -128,7 +128,7 @@ void xs_SI7021_read(xsMachine *the) {
 
 	x = (float)rhData / 1000.0;
 	xsmcSetNumber(xsVar(1), x);
-	xsmcSet(xsArg(0), xsID_rh, xsVar(1));
+	xsmcSet(xsArg(0), xsID_humidity, xsVar(1));
 	x = (float)tData / 1000.0;
 	xsmcSetNumber(xsVar(1), x);
 	xsmcSet(xsArg(0), xsID_celsius, xsVar(1));
