@@ -39,6 +39,9 @@ typedef struct {
 
 static modBLE gBLE = NULL;
 
+static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
+static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
+
 void xs_ble_server_initialize(xsMachine *the)
 {
 	if (NULL != gBLE)
@@ -70,6 +73,11 @@ void xs_ble_server_destructor(void *data)
 
 void xs_ble_server_get_local_address(xsMachine *the)
 {
+	uint8_t buffer[6];
+	struct gecko_msg_system_get_bt_address_rsp_t *rsp;
+	rsp = gecko_cmd_system_get_bt_address();
+	addressToBuffer(&rsp->address, buffer);
+	xsmcSetArrayBuffer(xsResult, (void*)buffer, sizeof(buffer));
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)
@@ -117,6 +125,18 @@ static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
 	gecko_cmd_gatt_set_max_mtu(DEFAULT_MTU);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
+}
+
+static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
+{
+	for (uint8_t i = 0; i < 6; ++i)
+		bda->addr[i] = buffer[5 - i];
+}
+
+static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
+{
+	for (uint8_t i = 0; i < 6; ++i)
+		buffer[i] = bda->addr[5 - i];
 }
 
 void ble_event_handler(struct gecko_cmd_packet* evt)
