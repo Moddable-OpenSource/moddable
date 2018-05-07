@@ -12,22 +12,23 @@
  *
  */
 
-// Demonstrates reading the si7021 Temperature/Humidity sensor
-// that is built into many of the SiLabs dev kits.
+// Demonstrates reading the bmp280 Temperature/Humidity sensor
+// that is built into the Thunderboard Sense.
 
-import SI7021 from "si7021";
+import BMP280 from "bmp280";
+
 
 export default function() {
 	// fetch sensor data
-	let humidTemp = new SI7021();
+	let pressTemp = new BMP280();
 	let v = {};
-	humidTemp.read(v);
+	pressTemp.read(v);
 
-	let f = Math.round(v.celsius * 1.8 + 32);
-	let h = Math.round(v.humidity);
+	let f = Math.round(v.celcius * 1.8 + 32);
+	let p = Math.round(v.millibar);
 
 	trace(f + " degrees Fahrenheit\n");
-	trace(h + " % humidity\n");
+	trace(p + " millibar\n");
 
 	debugger;
 }

@@ -99,7 +99,7 @@ void modI2CUninit(modI2CConfiguration config)
 	}
 }
 
-#define I2CSPM_TRANSFER_TIMEOUT 300000
+#define I2C_TIMEOUT 300000
 static volatile I2C_TransferReturn_TypeDef I2C_transferStatus;
 
 #if USE_I2C_SLEEP
@@ -117,7 +117,7 @@ void I2C2_IRQHandler(void)
 
 static void doTransfer(I2C_TransferSeq_TypeDef *tcb) {
 	bool done = false;
-	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
+	uint32_t timeout = I2C_TIMEOUT;
 
 	NVIC_EnableIRQ(I2C_IRQ);
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, tcb);
@@ -136,8 +136,6 @@ static void doTransfer(I2C_TransferSeq_TypeDef *tcb) {
 
 I2C_TransferReturn_TypeDef modI2CWriteWrite(modI2CConfiguration config, uint8_t *w1Buffer, uint16_t w1Length, uint8_t *w2Buffer, uint16_t w2Length)
 {
-	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
-
 	config->tcb.addr = config->address << 1;
 	config->tcb.flags = I2C_FLAG_WRITE_WRITE;
 	config->tcb.buf[0].data = w1Buffer;
@@ -147,11 +145,15 @@ I2C_TransferReturn_TypeDef modI2CWriteWrite(modI2CConfiguration config, uint8_t 
 
 #if USE_I2C_SLEEP
 	doTransfer(&config->tcb);
-#else
+#else 
+{
+	uint32_t timeout = I2C_TIMEOUT;
+
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, &config->tcb);
 	while (I2C_transferStatus == i2cTransferInProgress && timeout--) {
 		I2C_transferStatus = I2C_Transfer(I2C_PORT);
 	}
+}
 #endif
 
 	return I2C_transferStatus;
@@ -159,8 +161,6 @@ I2C_TransferReturn_TypeDef modI2CWriteWrite(modI2CConfiguration config, uint8_t 
 
 I2C_TransferReturn_TypeDef modI2CWriteRead(modI2CConfiguration config, uint8_t *wBuffer, uint16_t wLength, uint8_t *rBuffer, uint16_t rLength)
 {
-	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
-
 	config->tcb.addr = config->address << 1;
 	config->tcb.flags = I2C_FLAG_WRITE_READ;
 	config->tcb.buf[0].data = wBuffer;
@@ -171,10 +171,14 @@ I2C_TransferReturn_TypeDef modI2CWriteRead(modI2CConfiguration config, uint8_t *
 #if USE_I2C_SLEEP
 	doTransfer(&config->tcb);
 #else
+{
+	uint32_t timeout = I2C_TIMEOUT;
+
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, &config->tcb);
 	while (I2C_transferStatus == i2cTransferInProgress && timeout--) {
 		I2C_transferStatus = I2C_Transfer(I2C_PORT);
 	}
+}
 #endif
 
 	return I2C_transferStatus;
@@ -182,8 +186,6 @@ I2C_TransferReturn_TypeDef modI2CWriteRead(modI2CConfiguration config, uint8_t *
 
 I2C_TransferReturn_TypeDef modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
-	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
-
 	config->tcb.addr = config->address << 1;
 	config->tcb.flags = I2C_FLAG_READ;
 	config->tcb.buf[0].data = buffer;
@@ -194,10 +196,14 @@ I2C_TransferReturn_TypeDef modI2CRead(modI2CConfiguration config, uint8_t *buffe
 #if USE_I2C_SLEEP
 	doTransfer(&config->tcb);
 #else
+{
+	uint32_t timeout = I2C_TIMEOUT;
+
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, &config->tcb);
 	while (I2C_transferStatus == i2cTransferInProgress && timeout--) {
 		I2C_transferStatus = I2C_Transfer(I2C_PORT);
 	}
+}
 #endif
 	return I2C_transferStatus;
 }
@@ -205,8 +211,6 @@ I2C_TransferReturn_TypeDef modI2CRead(modI2CConfiguration config, uint8_t *buffe
 
 I2C_TransferReturn_TypeDef modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
-	uint32_t timeout = I2CSPM_TRANSFER_TIMEOUT;
-
 	config->tcb.addr = config->address << 1;
 	config->tcb.flags = I2C_FLAG_WRITE;
 	config->tcb.buf[0].data = buffer;
@@ -217,10 +221,14 @@ I2C_TransferReturn_TypeDef modI2CWrite(modI2CConfiguration config, const uint8_t
 #if USE_I2C_SLEEP
 	doTransfer(&config->tcb);
 #else
+{
+	uint32_t timeout = I2C_TIMEOUT;
+
 	I2C_transferStatus = I2C_TransferInit(I2C_PORT, &config->tcb);
 	while (I2C_transferStatus == i2cTransferInProgress && timeout--) {
 		I2C_transferStatus = I2C_Transfer(I2C_PORT);
 	}
+}
 #endif
 	return I2C_transferStatus;
 }

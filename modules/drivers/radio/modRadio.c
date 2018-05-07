@@ -35,16 +35,21 @@ extern void modRadioSleep(void);
 extern uint32_t gDeviceUnique;
 
 xsMachine *gRadioMachine = NULL;
+xsSlot gRadioInstance;
 
 void xs_Radio(xsMachine *the) {
+	if (gRadioMachine)
+		xsUnknownError("already instantiated");
 	gRadioMachine = the;
+	gRadioInstance = xsThis;
+	xsmcSetHostData(xsThis, (void *)-1);
 	modRadioInit();
 	setMaxSleep(1);
 }
 
 void xs_Radio_destructor(void *data) {
 	if (data)
-		c_free(data);
+		gRadioMachine = NULL;
 }
 
 void xs_Radio_listen(xsMachine *the) {
@@ -90,7 +95,7 @@ void modRadioReceivedMessage(void *the, void *refcon, uint8_t *message, uint16_t
 	xsBeginHost(the);
 		xsmcVars(1);
 		xsVar(0) = xsArrayBuffer(message, messageLength);
-		(void)xsCall1(xsGlobal, xsID_onMessage, xsVar(0));
+		xsCall1_noResult(gRadioInstance, xsID_onMessage, xsVar(0));
 	xsEndHost(the);
 }
 
