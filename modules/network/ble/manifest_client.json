@@ -19,7 +19,7 @@
 	],
 	"defines": {
 		"ble": {
-			"enabled": true
+			"client": true
 		}
 	},
 	"platforms": {
