@@ -157,12 +157,15 @@ void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
+#if mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);
 		fx_putc(gThe, 0);
 	}
-	else {
+	else
+#endif
+	{
 		while (0 != (c = c_read8(msg++)))
 			ESP_putc(c);
 		ESP_putc(13);
