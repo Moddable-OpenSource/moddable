@@ -35,7 +35,6 @@ const kModdableTag = 0x6d64626e;
 
 export default function() {
 	let radio = new Radio();
-	global.selfID = radio.getUnique();
 
 	let sendBuffer = new ArrayBuffer(8 * 4);
 	let sendLongs = new Uint32Array(sendBuffer);
@@ -47,7 +46,7 @@ export default function() {
 
 	radio.listen(1);
 
-	global.onMessage = function(msg) {
+	radio.onMessage = function(msg) {
 		let longs = new Uint32Array(msg);
 		receivedPacket++;
 
@@ -60,7 +59,7 @@ export default function() {
 		trace("rcvd from: ", requesterID, " tag: ", tag, " seqNum ", seqNum, " type ", type, " button0 ", button0, " button1 ", button1, "\n"); 
 	}
 
-	sendLongs[0] = global.selfID;
+	sendLongs[0] = radio.getUnique();
 	sendLongs[1] = kModdableTag;
 	sendLongs[3] = packetType;
 

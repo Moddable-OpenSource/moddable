@@ -2,6 +2,7 @@
  * @file main.c
  * @brief Simple RAIL application which does not include hal
  * @copyright Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com
+ * Modified 2018 by Moddable Tech, Inc. for the Moddable SDK Runtime.
  ******************************************************************************/
 #include "em_chip.h"
 #include "em_emu.h"
