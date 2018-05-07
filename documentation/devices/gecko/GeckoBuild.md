@@ -19,6 +19,7 @@ This document describes how to set up and build Moddable applications for the Si
   * [Pin and Feature configuration](#pin-and-feature-configuration)
     * [Debugging](#debugging)
       * [Connecting xsbug](#connecting-xsbug)
+    * [Sleep](#sleep)
     * [Analog](#analog)
     * [SPI](#spi)
     * [Digital](#digital)
