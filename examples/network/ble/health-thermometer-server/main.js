@@ -21,7 +21,7 @@ import Timer from "timer";
 
 class HealthThermometerService extends BLEServer {
 	onReady() {
-		this.timer = 0;
+		this.timer = null;
 		this.battery = 85;	// battery level percent
 		this.deviceName = "Moddable HTM";
 		this.onDisconnected();
@@ -31,27 +31,20 @@ class HealthThermometerService extends BLEServer {
 		this.stopAdvertising();
 	}
 	onDisconnected() {
-		this.temp = 95.0;
-		if (this.timer) {
-			Timer.clear(this.timer);
-			this.timer = 0;
-		}
+		this.stopMeasurements();
 		this.startAdvertising({
 			advertisingData: {shortName: "Thermometer", completeUUID16List: ["1809","180F"]},
 			scanResponseData: {flags: 6, completeName: "HTM Example"}
 		});
 	}
-	onCharacteristicRead(params) {
-		return this[params.name];
+	onCharacteristicRead(characteristic) {
+		return this[characteristic.name];
 	}
-	onCharacteristicNotifyEnabled(params) {
-		this.timer = Timer.repeat(id => {
-			this.notifyValue(params, this.temperature);
-		}, 250);
+	onCharacteristicNotifyEnabled(characteristic) {
+		this.startMeasurements(characteristic);
 	}
-	onCharacteristicNotifyDisabled(params) {
-		Timer.clear(this.timer);
-		this.timer = 0;
+	onCharacteristicNotifyDisabled(characteristic) {
+		this.stopMeasurements();
 	}
 	get temperature() {
 		if (98.5 > this.temp)
@@ -62,6 +55,18 @@ class HealthThermometerService extends BLEServer {
 		let temp = (exponent << 24) | mantissa;		// IEEE-11073 32-bit float
 		let result = [flags, temp & 0xFF, (temp >> 8) & 0xFF, (temp >> 16) & 0xFF, (temp >> 24) & 0xFF];
 		return result;
+	}
+	startMeasurements(characteristic) {
+		this.timer = Timer.repeat(id => {
+			this.notifyValue(characteristic, this.temperature);
+		}, 250);
+	}
+	stopMeasurements() {
+		if (this.timer) {
+			Timer.clear(this.timer);
+			this.timer = null;
+		}
+		this.temp = 95.0;
 	}
 }
 
