@@ -1,0 +1,39 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/bmp280/*",
+		],
+	},
+	"preload": [
+		"bmp280",
+	],
+	"platforms": {
+		"gecko/thunderboard2": {
+			"modules": {
+				"*": [
+					"$(MODULES)/drivers/bmp280/gecko/*",
+				],
+			},
+			"defines": {
+				"i2c": {
+					"interface": { "I2C": 1 },
+					"sda": { "pin": 5, "port": "gpioPortC", "location": 17 },
+					"scl": { "pin": 4, "port": "gpioPortC", "location": 17 },
+				},
+				"bmp280": {
+					"hz": 1000000,
+					"addr": "0x77",
+					"device_id": "0x58",
+					"enable": { "pin": 9, "port": "gpioPortF" },
+				},
+			},
+		},
+		"...": {
+			"error": "bmp280 unsupported"
+		}
+	},
+}
