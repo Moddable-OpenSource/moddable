@@ -110,7 +110,5 @@ Object.freeze(BinaryMessage.Int32);
 Object.freeze(BinaryMessage.Uint8);
 Object.freeze(BinaryMessage.Uint16);
 Object.freeze(BinaryMessage.Uint32);
-Object.freeze(BinaryMessage.XX);
-Object.freeze(BinaryMessage.XX);
 
 export default BinaryMessage;
