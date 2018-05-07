@@ -24,7 +24,7 @@ import Timer from "timer";
 
 class HeartRateService extends BLEServer {
 	onReady() {
-		this.timer = 0;
+		this.timer = null;
 		this.bpm = [0, 60];		// flags, beats per minute
 		this.location = 1;		// chest location
 		this.battery = 85;		// battery level percent
@@ -39,26 +39,31 @@ class HeartRateService extends BLEServer {
 		this.stopAdvertising();
 	}
 	onDisconnected() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			this.timer = 0;
-		}
+		this.stopMeasurements();
 		this.startAdvertising({
 			advertisingData: {shortName: "HRS", completeUUID16List: ["180D","180F"]},
 			scanResponseData: {flags: 6, completeName: "HRS Example"}
 		});
 	}
-	onCharacteristicRead(params) {
-		return this[params.name];
+	onCharacteristicRead(characteristic) {
+		return this[characteristic.name];
 	}
-	onCharacteristicNotifyEnabled(params) {
+	onCharacteristicNotifyEnabled(characteristic) {
+		this.startMeasurements(characteristic);
+	}
+	onCharacteristicNotifyDisabled(characteristic) {
+		this.stopMeasurements();
+	}
+	startMeasurements(characteristic) {
 		this.timer = Timer.repeat(id => {
-			this.notifyValue(params, this.bpm);
+			this.notifyValue(characteristic, this.bpm);
 		}, 1000);
 	}
-	onCharacteristicNotifyDisabled(params) {
-		Timer.clear(this.timer);
-		this.timer = 0;
+	stopMeasurements() {
+		if (this.timer) {
+			Timer.clear(this.timer);
+			this.timer = null;
+		}
 	}
 }
 
