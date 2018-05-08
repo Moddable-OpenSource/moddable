@@ -626,6 +626,8 @@ int32_t modGetDaylightSavingsOffset(void)
 	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+
+	static uint8_t gHasMods;
 #endif
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
@@ -645,6 +647,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	root.preparation = prep;
 #if MODDEF_XS_MODS
 	root.archive = installModules(prep);
+	gHasMods = root.archive != NULL;
 #else
 	root.archive = NULL;
 #endif
@@ -883,6 +886,7 @@ static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 }
 
 #if MODDEF_XS_MODS
+
 #define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
 
 static uint8_t *findMod(txMachine *the, char *name, int *modSize)
@@ -894,7 +898,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 	int nameLen;
 	char *dot;
 
-	if (!xsb) return NULL;
+	if (!xsb || !gHasMods) return NULL;
 
 	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsb, c_read32be(xsb), &modsSize);
 	if (!mods) return NULL;
