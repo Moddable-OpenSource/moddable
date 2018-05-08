@@ -44,7 +44,7 @@ mcconfig -d -m -p esp -f gray256 -r 270
 | 13 - SCK | GPIO 14 | (D5)
 | 14 - SDI | GPIO 13 | (D7)
 | 15 - DC | GPIO 2 | (D4) 
-| 16 - CS | GPIO 15 | (D8) 
+| 16 - CS | GPIO 4 | (D2) 
 | 17 - BUSY | GPIO 5 | (D1)
 | 18 - Reset | 3.3v |
 | 19 - BUSSEL | GND |  
