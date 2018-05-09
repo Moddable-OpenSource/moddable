@@ -25,7 +25,7 @@
 #include "bg_types.h"
 #include "native_gecko.h"
 
-#define DEFAULT_MTU 247
+#include "mc.bleservices.c"
 
 typedef struct {
 	xsMachine *the;
@@ -39,7 +39,22 @@ typedef struct {
 
 static modBLE gBLE = NULL;
 
-static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
+uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];
+
+static const gecko_configuration_t config = {
+	.config_flags = 0,
+	.sleep.flags = SLEEP_FLAGS_DEEP_SLEEP_ENABLE,
+	.bluetooth.max_connections = MODDEF_BLE_MAX_CONNECTIONS,
+	.bluetooth.heap = bluetooth_stack_heap,
+	.bluetooth.sleep_clock_accuracy = 100, // ppm
+	.bluetooth.heap_size = sizeof(bluetooth_stack_heap),
+	.gattdb = &bg_gattdb_data,
+#if (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
+	.pa.config_enable = 1, // Enable high power PA
+	.pa.input = GECKO_RADIO_PA_INPUT_VBAT, // Configure PA input to VBAT
+#endif
+};
+
 static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
 
 void xs_ble_server_initialize(xsMachine *the)
@@ -54,7 +69,11 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
-	//gecko_init(&config);
+	gecko_stack_init(&config);
+	gecko_bgapi_class_system_init();
+	gecko_bgapi_class_le_gap_init();
+	gecko_bgapi_class_le_connection_init();
+	gecko_bgapi_class_gatt_server_init();
 }
 
 void xs_ble_server_close(xsMachine *the)
@@ -117,20 +136,14 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+	// server deployed automatically by gecko_stack_init()
 }
 
 static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
-	gecko_cmd_gatt_set_max_mtu(DEFAULT_MTU);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
-}
-
-static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
-{
-	for (uint8_t i = 0; i < 6; ++i)
-		bda->addr[i] = buffer[5 - i];
 }
 
 static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
