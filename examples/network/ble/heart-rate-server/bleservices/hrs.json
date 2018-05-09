@@ -7,7 +7,7 @@
 				"maxBytes": 2,
 				"type": "Array",
 				"permissions": "read",
-				"properties": "read,notify",
+				"properties": "notify",
 			},
 			"location": {
 				"uuid": "2A38",
