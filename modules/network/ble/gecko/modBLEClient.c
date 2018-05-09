@@ -28,16 +28,16 @@
 #include "bg_gattdb_def.h"
 
 #ifdef __GNUC__
-#define GATT_HEADER(F) F __attribute__ ((section (".gatt_header"))) 
-#define GATT_DATA(F) F __attribute__ ((section (".gatt_data"))) 
+	#define GATT_HEADER(F) F __attribute__ ((section (".gatt_header"))) 
+	#define GATT_DATA(F) F __attribute__ ((section (".gatt_data"))) 
 #else
-#ifdef __ICCARM__
-#define GATT_HEADER(F) _Pragma("location=\".gatt_header\"") F 
-#define GATT_DATA(F) _Pragma("location=\".gatt_data\"") F 
-#else
-#define GATT_HEADER(F) F 
-#define GATT_DATA(F) F 
-#endif
+	#ifdef __ICCARM__
+		#define GATT_HEADER(F) _Pragma("location=\".gatt_header\"") F 
+		#define GATT_DATA(F) _Pragma("location=\".gatt_data\"") F 
+	#else
+		#define GATT_HEADER(F) F 
+		#define GATT_DATA(F) F 
+	#endif
 #endif
 
 GATT_DATA(const uint16_t bg_gattdb_data_uuidtable_16_map [])={0x2800,0x2801,0x2803};
@@ -63,13 +63,12 @@ GATT_HEADER(const struct bg_gattdb_def bg_gattdb_data)={
     .enabled_caps=0xffff,
 };
 
-#define MAX_CONNECTIONS 2
-uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
+uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];
 
 static const gecko_configuration_t config = {
 	.config_flags = 0,
 	.sleep.flags = SLEEP_FLAGS_DEEP_SLEEP_ENABLE,
-	.bluetooth.max_connections = MAX_CONNECTIONS,
+	.bluetooth.max_connections = MODDEF_BLE_MAX_CONNECTIONS,
 	.bluetooth.heap = bluetooth_stack_heap,
 	.bluetooth.sleep_clock_accuracy = 100, // ppm
 	.bluetooth.heap_size = sizeof(bluetooth_stack_heap),

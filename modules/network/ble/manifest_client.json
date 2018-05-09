@@ -19,7 +19,8 @@
 	],
 	"defines": {
 		"ble": {
-			"client": true
+			"client": true,
+			"max_connections": 2
 		}
 	},
 	"platforms": {
