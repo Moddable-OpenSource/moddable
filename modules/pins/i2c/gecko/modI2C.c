@@ -100,7 +100,8 @@ void modI2CUninit(modI2CConfiguration config)
 }
 
 #define I2C_TIMEOUT 300000
-static volatile I2C_TransferReturn_TypeDef I2C_transferStatus;
+//static volatile I2C_TransferReturn_TypeDef I2C_transferStatus;
+static volatile int I2C_transferStatus;
 
 #if USE_I2C_SLEEP
 
@@ -230,6 +231,8 @@ I2C_TransferReturn_TypeDef modI2CWrite(modI2CConfiguration config, const uint8_t
 	}
 }
 #endif
+	if (I2C_transferStatus == i2cTransferNack)
+		I2C_transferStatus = i2cTransferDone;
 	return I2C_transferStatus;
 }
 
