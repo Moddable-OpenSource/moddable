@@ -15,7 +15,8 @@
 	],
 	"defines": {
 		"ble": {
-			"server": true
+			"server": true,
+			"max_connections": 1
 		}
 	},
 	"platforms": {
