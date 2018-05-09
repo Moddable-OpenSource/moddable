@@ -23,6 +23,8 @@ The Moddable SDK is intended for use with micro-controller hardware. It includes
 
 The [Getting Started](documentation/Moddable%20SDK%20–%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for the ESP8266 and ESP32 microcontrollers.
 
+Build and configuration instructions for the Silicon Labs Gecko devices is at [Gecko Build](documentation/devices/gecko/GeckoBuild.md).
+
 ## Source tree
 The Moddable SDK repository contains the following top level directories.
 
