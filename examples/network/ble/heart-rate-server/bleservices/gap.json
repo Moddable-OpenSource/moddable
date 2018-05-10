@@ -4,7 +4,7 @@
 		"characteristics": {
 			"device_name": {
 				"uuid": "2A00",
-				"maxBytes": 32,
+				"maxBytes": 20,
 				"type": "String",
 				"permissions": "read",
 				"properties": "read",
