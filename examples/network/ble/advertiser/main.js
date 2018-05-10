@@ -18,8 +18,8 @@ class Advertiser extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable Device";
 		this.startAdvertising({
-			advertisingData: {shortName: "Thermometer", completeUUID16List: ["1809"]},
-			scanResponseData: {flags: 6, completeName: "Thermometer Example"}
+			advertisingData: {shortName: "Thermometer"},
+			scanResponseData: {flags: 6, completeName: "Thermometer Example", completeUUID16List: ["1809"]}
 		});
 	}
 	onConnected(connection) {

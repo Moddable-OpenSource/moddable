@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsgecko.h"
 #include "mc.xs.h"
+#include "modTimer.h"
 
 #include "bg_types.h"
 #include "native_gecko.h"
@@ -159,6 +160,8 @@ typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
 
+	modTimer timer;
+
 	// client connections
 	modBLEConnection connections;
 } modBLERecord, *modBLE;
@@ -172,6 +175,8 @@ static void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length);
 static void bufferToUUID(uint8_t *buffer, uuidRecord *uuid, uint16_t length);
 static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
 static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
+static void bleTimerCallback(modTimer timer, void *refcon, int refconSize);
+static void ble_event_handler(struct gecko_cmd_packet* evt);
 
 static modBLE gBLE = NULL;
 
@@ -192,6 +197,8 @@ void xs_ble_client_initialize(xsMachine *the)
 	gecko_bgapi_class_le_gap_init();
 	gecko_bgapi_class_le_connection_init();
 	gecko_bgapi_class_gatt_init();
+
+	gBLE->timer = modTimerAdd(0, 20, bleTimerCallback, NULL, 0);
 }
 
 void xs_ble_client_close(xsMachine *the)
@@ -203,8 +210,10 @@ void xs_ble_client_close(xsMachine *the)
 void xs_ble_client_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble)
+	if (ble) {
+		modTimerRemove(ble->timer);
 		c_free(ble);
+	}
 	gBLE = NULL;
 }
 
@@ -600,6 +609,12 @@ static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
 {
 	for (uint8_t i = 0; i < 6; ++i)
 		bda->addr[i] = buffer[5 - i];
+}
+
+void bleTimerCallback(modTimer timer, void *refcon, int refconSize)
+{
+    struct gecko_cmd_packet* evt = gecko_peek_event();
+    ble_event_handler(evt);
 }
 
 static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
