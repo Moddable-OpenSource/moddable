@@ -8,7 +8,7 @@
 				"type": "String",
 				"permissions": "read",
 				"properties": "read",
-				"value": "Moddable HRM"
+				"value": "Moddable HTM"
 			},
 			"appearance": {
 				"uuid": "2A01",
@@ -16,7 +16,7 @@
 				"type": "Uint16",
 				"permissions": "read",
 				"properties": "read",
-				"value": 832
+				"value": 768
 			},
 		}
 	}
