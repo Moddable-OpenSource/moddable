@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsgecko.h"
 #include "mc.xs.h"
+#include "modTimer.h"
 
 #include "bg_types.h"
 #include "native_gecko.h"
@@ -31,12 +32,17 @@ typedef struct {
 	xsMachine *the;
 	xsSlot obj;
 
+	modTimer timer;
 	int8_t connection;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
 
-uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];	// always only one connection
+#if MODDEF_BLE_MAX_CONNECTIONS != 1
+	#error - only one ble client connection supported
+#endif
+
+uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];
 
 static const gecko_configuration_t config = {
 	.config_flags = 0,
@@ -53,6 +59,9 @@ static const gecko_configuration_t config = {
 };
 
 static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
+static void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length);
+static void bleTimerCallback(modTimer timer, void *refcon, int refconSize);
+static void ble_event_handler(struct gecko_cmd_packet* evt);
 
 void xs_ble_server_initialize(xsMachine *the)
 {
@@ -72,6 +81,8 @@ void xs_ble_server_initialize(xsMachine *the)
 	gecko_bgapi_class_le_gap_init();
 	gecko_bgapi_class_le_connection_init();
 	gecko_bgapi_class_gatt_server_init();
+
+	gBLE->timer = modTimerAdd(0, 20, bleTimerCallback, NULL, 0);
 }
 
 void xs_ble_server_close(xsMachine *the)
@@ -83,8 +94,10 @@ void xs_ble_server_close(xsMachine *the)
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble)
+	if (ble) {
+		modTimerRemove(ble->timer);
 		c_free(ble);
+	}
 	gBLE = NULL;
 }
 
@@ -140,17 +153,18 @@ void xs_ble_server_deploy(xsMachine *the)
 	// server deployed automatically by gecko_stack_init()
 }
 
-static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
-{
-	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
-	xsEndHost(gBLE->the);
-}
-
-static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
+void addressToBuffer(bd_addr *bda, uint8_t *buffer)
 {
 	for (uint8_t i = 0; i < 6; ++i)
 		buffer[i] = bda->addr[5 - i];
+}
+
+void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length)
+{
+	uint16_t len = uuid->len;
+	for (uint8_t i = 0; i < len; ++i)
+		buffer[i] = uuid->data[len - 1 - i];
+	*length = len;
 }
 
 static const char_name_table *handleToCharName(uint16_t handle) {
@@ -159,6 +173,19 @@ static const char_name_table *handleToCharName(uint16_t handle) {
 			return &char_names[i];
 	}
 	return NULL;
+}
+
+void bleTimerCallback(modTimer timer, void *refcon, int refconSize)
+{
+    struct gecko_cmd_packet* evt = gecko_peek_event();
+    ble_event_handler(evt);
+}
+
+static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsEndHost(gBLE->the);
 }
 
 static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t *evt)
@@ -203,7 +230,10 @@ static void gattServerCharacteristicStatus(struct gecko_msg_gatt_server_characte
 	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
 	xsmcVars(6);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
+	uint16_t buffer_length;
+	uint8_t buffer[16];
+	uuidToBuffer(&uuid->type, buffer, &buffer_length);
+	xsmcSetArrayBuffer(xsVar(1), buffer, buffer_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	if (char_name) {
 		xsmcSetString(xsVar(2), (char*)char_name->name);
@@ -220,7 +250,7 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
-static void gattServerUserReadRequest(struct gecko_msg_gatt_server_user_read_request_evt_t *evt)
+static void doReadOrWriteRequest(struct gecko_msg_gatt_server_user_write_request_evt_t *evt, uint8_t write)
 {
 	xsBeginHost(gBLE->the);
 	if (evt->connection != gBLE->connection)
@@ -231,7 +261,10 @@ static void gattServerUserReadRequest(struct gecko_msg_gatt_server_user_read_req
 	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
 	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
+	uint16_t buffer_length;
+	uint8_t buffer[16];
+	uuidToBuffer(&uuid->type, buffer, &buffer_length);
+	xsmcSetArrayBuffer(xsVar(1), buffer, buffer_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	if (char_name) {
 		xsmcSetString(xsVar(2), (char*)char_name->name);
@@ -241,38 +274,27 @@ static void gattServerUserReadRequest(struct gecko_msg_gatt_server_user_read_req
 	}
 	xsmcSetInteger(xsVar(2), evt->characteristic);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-	gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+	if (write) {
+		xsmcSetArrayBuffer(xsVar(3), evt->value.data, evt->value.len);
+		xsmcSet(xsVar(0), xsID_value, xsVar(3));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+	}
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
+		gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+	}
 bail:
 	xsEndHost(gBLE->the);
 }
 
+static void gattServerUserReadRequest(struct gecko_msg_gatt_server_user_read_request_evt_t *evt)
+{
+	doReadOrWriteRequest((struct gecko_msg_gatt_server_user_write_request_evt_t *)evt, false);
+}
+
 static void gattServerUserWriteRequest(struct gecko_msg_gatt_server_user_write_request_evt_t *evt)
 {
-	xsBeginHost(gBLE->the);
-	if (evt->connection != gBLE->connection)
-		goto bail;
-	struct gecko_msg_gatt_server_read_attribute_type_rsp_t *uuid = gecko_cmd_gatt_server_read_attribute_type(evt->characteristic);
-	if (0 != uuid->result)
-		goto bail;
-	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
-	xsmcVars(4);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
-	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-	if (char_name) {
-		xsmcSetString(xsVar(2), (char*)char_name->name);
-		xsmcSet(xsVar(0), xsID_name, xsVar(2));
-		xsmcSetString(xsVar(3), (char*)char_name->type);
-		xsmcSet(xsVar(0), xsID_type, xsVar(3));
-	}
-	xsmcSetInteger(xsVar(2), evt->characteristic);
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsmcSetArrayBuffer(xsVar(3), evt->value.data, evt->value.len);
-	xsmcSet(xsVar(0), xsID_value, xsVar(3));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
-bail:
-	xsEndHost(gBLE->the);
+	doReadOrWriteRequest(evt, true);
 }
 
 void ble_event_handler(struct gecko_cmd_packet* evt)

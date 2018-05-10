@@ -41,8 +41,8 @@ class HeartRateService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {shortName: "HRS", completeUUID16List: ["180D","180F"]},
-			scanResponseData: {flags: 6, completeName: "HRS Example"}
+			advertisingData: {shortName: "HRS"},
+			scanResponseData: {flags: 6, completeName: this.device_name, completeUUID16List: ["180D","180F"]}
 		});
 	}
 	onCharacteristicRead(characteristic) {
@@ -55,8 +55,18 @@ class HeartRateService extends BLEServer {
 		this.stopMeasurements();
 	}
 	startMeasurements(characteristic) {
+		this.bump = +1;
 		this.timer = Timer.repeat(id => {
 			this.notifyValue(characteristic, this.bpm);
+			this.bpm[1] += this.bump;
+			if (this.bpm[1] == 65) {
+				this.bump = -1;
+				this.bpm[1] == 64;
+			}
+			else if (this.bpm[1] == 55) {
+				this.bump = +1;
+				this.bpm[1] == 56;
+			}
 		}, 1000);
 	}
 	stopMeasurements() {
@@ -64,6 +74,7 @@ class HeartRateService extends BLEServer {
 			Timer.clear(this.timer);
 			this.timer = null;
 		}
+		this.bmp = [0, 60];
 	}
 }
 

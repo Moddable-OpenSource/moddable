@@ -126,6 +126,7 @@ MCREZ = $(BUILD_DIR)/bin/mac/debug/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
 IMAGE2CS = $(BUILD_DIR)/bin/mac/debug/image2cs
 WAV2MAUD = $(BUILD_DIR)/bin/mac/debug/wav2maud
+BLES2GATT = $(BUILD_DIR)/bin/mac/debug/bles2gatt
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc
 XSID = $(BUILD_DIR)/bin/mac/debug/xsid
 XSL = $(BUILD_DIR)/bin/mac/debug/xsl
@@ -189,7 +190,7 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 
-all: $(LIB_DIR) $(BIN_DIR)/xs_gecko.a
+all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_gecko.a
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
