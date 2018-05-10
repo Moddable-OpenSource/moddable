@@ -31,7 +31,7 @@ typedef struct {
 	xsMachine *the;
 	xsSlot obj;
 
-	uint8_t connection;
+	int8_t connection;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -130,6 +130,9 @@ void xs_ble_server_stop_advertising(xsMachine *the)
 
 void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
+	uint16_t handle = xsmcToInteger(xsArg(0));
+	//uint16_t notify = xsmcToInteger(xsArg(1));
+	gecko_cmd_gatt_server_send_characteristic_notification(gBLE->connection, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)));
 }
 
 void xs_ble_server_deploy(xsMachine *the)
@@ -148,6 +151,14 @@ static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
 {
 	for (uint8_t i = 0; i < 6; ++i)
 		buffer[i] = bda->addr[5 - i];
+}
+
+static const char_name_table *handleToCharName(uint16_t handle) {
+	for (uint16_t i = 0; i < char_name_count; ++i) {
+		if (char_names[i].handle == handle)
+			return &char_names[i];
+	}
+	return NULL;
 }
 
 static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t *evt)
@@ -181,19 +192,109 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void gattServerCharacteristicStatus(struct gecko_msg_gatt_server_characteristic_status_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection || gatt_server_client_config != evt->status_flags)
+		goto bail;
+	struct gecko_msg_gatt_server_read_attribute_type_rsp_t *uuid = gecko_cmd_gatt_server_read_attribute_type(evt->characteristic);
+	if (0 != uuid->result)
+		goto bail;
+	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
+	xsmcVars(6);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
+	xsmcSetInteger(xsVar(4), evt->characteristic);
+	xsmcSetInteger(xsVar(5), evt->client_config_flags);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(4));
+	xsmcSet(xsVar(0), xsID_notify, xsVar(5));
+	xsCall2(gBLE->obj, xsID_callback, xsString(gatt_disable == evt->client_config_flags ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void gattServerUserReadRequest(struct gecko_msg_gatt_server_user_read_request_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	struct gecko_msg_gatt_server_read_attribute_type_rsp_t *uuid = gecko_cmd_gatt_server_read_attribute_type(evt->characteristic);
+	if (0 != uuid->result)
+		goto bail;
+	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
+	xsmcVars(4);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
+	xsmcSetInteger(xsVar(2), evt->characteristic);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
+	gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void gattServerUserWriteRequest(struct gecko_msg_gatt_server_user_write_request_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	struct gecko_msg_gatt_server_read_attribute_type_rsp_t *uuid = gecko_cmd_gatt_server_read_attribute_type(evt->characteristic);
+	if (0 != uuid->result)
+		goto bail;
+	char_name_table *char_name = (char_name_table *)handleToCharName(evt->characteristic);
+	xsmcVars(4);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), uuid->type.data, uuid->type.len);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
+	xsmcSetInteger(xsVar(2), evt->characteristic);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(3), evt->value.data, evt->value.len);
+	xsmcSet(xsVar(0), xsID_value, xsVar(3));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
 			systemBootEvent(&evt->data.evt_system_boot);
 			break;
-		case gecko_evt_gatt_server_characteristic_status_id:
-			break;
 		case gecko_evt_le_connection_opened_id:
 			leConnectionOpenedEvent(&evt->data.evt_le_connection_opened);
 			break;
 		case gecko_evt_le_connection_closed_id:
 			leConnectionClosedEvent(&evt->data.evt_le_connection_closed);
+			break;
+		case gecko_evt_gatt_server_characteristic_status_id:
+			gattServerCharacteristicStatus(&evt->data.evt_gatt_server_characteristic_status);
+			break;
+		case gecko_evt_gatt_server_user_read_request_id:
+			gattServerUserReadRequest(&evt->data.evt_gatt_server_user_read_request);
+			break;
+		case gecko_evt_gatt_server_user_write_request_id:
+			gattServerUserWriteRequest(&evt->data.evt_gatt_server_user_write_request);
 			break;
 		default:
 			break;
