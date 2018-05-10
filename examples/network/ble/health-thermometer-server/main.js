@@ -22,8 +22,10 @@ import Timer from "timer";
 class HealthThermometerService extends BLEServer {
 	onReady() {
 		this.timer = null;
-		this.battery = 85;	// battery level percent
-		this.deviceName = "Moddable HTM";
+		this.battery = 75;	// battery level percent
+		this.device_name = "Moddable HTM";
+		this.deviceName = this.device_name;
+		this.appearance = 768;	// generic health thermometer
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -33,8 +35,8 @@ class HealthThermometerService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {shortName: "Thermometer", completeUUID16List: ["1809","180F"]},
-			scanResponseData: {flags: 6, completeName: "HTM Example"}
+			advertisingData: {shortName: "HTM"},
+			scanResponseData: {flags: 6, completeName: this.device_name, completeUUID16List: ["1809","180F"]}
 		});
 	}
 	onCharacteristicRead(characteristic) {
