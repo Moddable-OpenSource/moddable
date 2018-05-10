@@ -74,7 +74,7 @@ class HeartRateService extends BLEServer {
 			Timer.clear(this.timer);
 			this.timer = null;
 		}
-		this.bmp = [0, 60];
+		this.bpm = [0, 60];
 	}
 }
 
