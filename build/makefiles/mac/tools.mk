@@ -124,6 +124,7 @@ MODULES = \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
+	$(MOD_DIR)/bles2gatt.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -186,6 +187,7 @@ COMMANDS = \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
+	$(BIN_DIR)/bles2gatt \
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
