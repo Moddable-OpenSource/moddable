@@ -18,4 +18,9 @@
 			"./bleservices/*",
 		],
 	},
+	"platforms": {
+		"gecko/blue": {
+			"error": "application not supported on this platform"
+		}
+	}
 }
