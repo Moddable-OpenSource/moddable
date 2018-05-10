@@ -30,16 +30,13 @@
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
-	xsSlot objConnection;
-	xsSlot objClient;
 
-	int8_t id;
-	bd_addr bda;
+	uint8_t connection;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
 
-uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];
+uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];	// always only one connection
 
 static const gecko_configuration_t config = {
 	.config_flags = 0,
@@ -64,6 +61,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE = (modBLE)c_calloc(sizeof(modBLERecord), 1);
 	if (!gBLE)
 		xsUnknownError("no memory");
+	gBLE->connection = -1;
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
@@ -152,11 +150,50 @@ static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
 		buffer[i] = bda->addr[5 - i];
 }
 
+static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+		
+	// Ignore duplicate connection events
+	if (-1 != gBLE->connection) {
+		goto bail;
+	}
+	gBLE->connection = evt->connection;
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), evt->connection);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(2), evt->address.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	gBLE->connection = -1;
+	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
+bail:
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
 			systemBootEvent(&evt->data.evt_system_boot);
+			break;
+		case gecko_evt_gatt_server_characteristic_status_id:
+			break;
+		case gecko_evt_le_connection_opened_id:
+			leConnectionOpenedEvent(&evt->data.evt_le_connection_opened);
+			break;
+		case gecko_evt_le_connection_closed_id:
+			leConnectionClosedEvent(&evt->data.evt_le_connection_closed);
 			break;
 		default:
 			break;

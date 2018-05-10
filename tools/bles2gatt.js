@@ -286,6 +286,13 @@ class GeckoGATTFile extends GATTFile {
 		file.line('\t#endif');
 		file.line('#endif');
 		file.line('');
+		file.line("typedef struct {");
+		file.line("\tuint16_t handle;");
+		file.line("\tconst char *name;");
+		file.line("\tconst char *type;");
+		file.line("} char_name_table;");
+		file.line("");
+		let char_names = [];
 		let uuidtable_16_map = ["0x2800","0x2801","0x2803"];
 		let uuidtable_128_map = [];
 		let dynamic_mapping_map = [];
@@ -305,8 +312,10 @@ class GeckoGATTFile extends GATTFile {
 				if (properties.includes("notify") || properties.includes("indicate")) {
 					++attributes_max;
 					characteristic._flags = properties.includes("notify") ? 1 : 2;
-					uuidtable_16_map.push('0x2902');
-					needs_cccd = false;
+					if (needs_cccd) {
+						uuidtable_16_map.push('0x2902');
+						needs_cccd = false;
+					}
 				}
 			}
 		});
@@ -326,6 +335,8 @@ class GeckoGATTFile extends GATTFile {
 		
 		services.forEach((service) => {
 			buffer = uuid16toBuffer(parseInt(service.uuid, 16));
+			
+			// service
 			file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
 			file.line(`\t.len = ${buffer.byteLength},`);
 			file.write('\t.data = {');
@@ -345,6 +356,8 @@ class GeckoGATTFile extends GATTFile {
 				data[2] = ((field_index + 2) >> 8) & 0xFF;
 				data[3] = uuid & 0xFF;
 				data[4] = (uuid >> 8) & 0xFF;
+				
+				// characteristic declaration
 				file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
 				file.line(`\t.len = ${data.buffer.byteLength},`);
 				file.write('\t.data = {');
@@ -355,6 +368,10 @@ class GeckoGATTFile extends GATTFile {
 				dynamic_mapping_map.push('0x' + parseInt(field_index + 2).toString(16));
 				++field_index;
 
+				// characteristic value
+				let char_name = { handle:field_index + 1, name:key };
+				char_name.type = characteristic.type ? characteristic.type: "";
+				char_names.push(char_name);
 				let maxBytes = characteristic.maxBytes;
 				if (!this.user) {
 					data = new Uint8Array(maxBytes);
@@ -430,7 +447,13 @@ class GeckoGATTFile extends GATTFile {
 		file.line('\t.enabled_caps = 0xffff');
 		file.line('};');
 		file.line('');
-		
+		file.line(`#define char_name_count ${char_names.length}`);
+		file.line(`static const char_name_table char_names[${char_names.length}] = {`);
+		char_names.forEach(entry => {
+			file.line(`\t{${entry.handle}, "${entry.name}", "${entry.type}"},`);
+		});
+		file.line("};");
+		file.line("");		
 	}
 	parseProperties(properties) {
 		const gatt_char_prop_read = 0x02;
