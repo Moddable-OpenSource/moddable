@@ -108,13 +108,7 @@ class ESP32GATTFile extends GATTFile {
 				else
 					throw new Error("unsupported UUID length");
 				if ("value" in characteristic) {
-					let buffer, value = characteristic.value;
-					if (value instanceof Array)
-						buffer = new Uint8Array(value).buffer;
-					else if (typeof value == "string")
-						buffer = ArrayBuffer.fromString(value);
-					else
-						throw new Error("unknown format");
+					let buffer = typedValueToBuffer(characteristic.type, characteristic.value);
 					characteristic._length = buffer.byteLength;
 					file.write(`static const uint8_t char_value${characteristicIndex}[${buffer.byteLength}] = { `);
 					file.write(buffer2hexlist(buffer));
@@ -164,12 +158,16 @@ class ESP32GATTFile extends GATTFile {
 				++attributeIndex;
 
 				// characteristic value
-				let char_name = { service_index:index, att_index:attributeIndex, name:key };
-				char_name.type = characteristic.type ? characteristic.type: "";
-				char_names.push(char_name);
 				let esp_uuid_len = (4 == characteristic.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 				file.line("\t\t[", attributeIndex, "] = {");
-				file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
+				if ("value" in characteristic)
+					file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
+				else {
+					let char_name = { service_index:index, att_index:attributeIndex, name:key };
+					char_name.type = characteristic.type ? characteristic.type: "";
+					char_names.push(char_name);
+					file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
+				}
 				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${characteristic.maxBytes}, `);
 				if ("value" in characteristic)
 					file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
@@ -365,9 +363,6 @@ class GeckoGATTFile extends GATTFile {
 				++field_index;
 
 				// characteristic value
-				let char_name = { handle:field_index + 1, name:key };
-				char_name.type = characteristic.type ? characteristic.type: "";
-				char_names.push(char_name);
 				let maxBytes = characteristic.maxBytes;
 				if (characteristic.hasOwnProperty("value")) {
 					buffer = typedValueToBuffer(characteristic.type, characteristic.value);
@@ -375,6 +370,11 @@ class GeckoGATTFile extends GATTFile {
 					file.write(buffer2hexlist(buffer));
 					file.write('};');
 					file.line('');
+				}
+				else {
+					let char_name = { handle:field_index + 1, name:key };
+					char_name.type = characteristic.type ? characteristic.type: "";
+					char_names.push(char_name);
 				}
 				file.line(`GATT_DATA(const struct bg_gattdb_attribute_chrvalue bg_gattdb_data_attribute_field_${field_index}) = {`);
 				file.line(`\t.properties = 0x${properties.toString(16)},`);

@@ -24,9 +24,16 @@ import {BluetoothAddress, Advertisement, UUID} from "btutils";
 export class BLEServer @ "xs_ble_server_destructor" {
 	constructor() {
 		this.initialize();
+		this.device_name = "";
 	}
 	close() @ "xs_ble_server_close"
-	set deviceName() @ "xs_ble_server_set_device_name"
+	set deviceName(it) {
+		this.device_name = it;
+		this._setDeviceName(it);
+	}
+	get deviceName() {
+		return this.device_name;
+	}
 	startAdvertising(params) {
 		let {fast = true, connectable = true, discoverable = true, scanResponseData = null, advertisingData} = params;
 		let flags = GAP.ADFlag.NO_BR_EDR;
@@ -70,6 +77,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onCharacteristicNotifyDisabled() {}
 	onConnected() {}
 	onDisconnected() {}
+
+	_setDeviceName() @ "xs_ble_server_set_device_name"
 
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"

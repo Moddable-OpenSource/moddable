@@ -351,14 +351,17 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsmcSet(xsVar(0), xsID_type, xsVar(4));
 	}
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-	esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
-	if (gatt_rsp != NULL) {
-        gatt_rsp->attr_value.handle = read->handle;
-		gatt_rsp->attr_value.len = xsGetArrayBufferLength(xsResult);
-        c_memmove(gatt_rsp->attr_value.value, xsmcToArrayBuffer(xsResult), gatt_rsp->attr_value.len);
-        esp_ble_gatts_send_response(gBLE->gatts_if, read->conn_id, read->trans_id, ESP_GATT_OK, gatt_rsp);
-        c_free(gatt_rsp);
+	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
+		esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
+		if (gatt_rsp != NULL) {
+			gatt_rsp->attr_value.handle = read->handle;
+			gatt_rsp->attr_value.len = xsGetArrayBufferLength(xsResult);
+			c_memmove(gatt_rsp->attr_value.value, xsmcToArrayBuffer(xsResult), gatt_rsp->attr_value.len);
+			esp_ble_gatts_send_response(gBLE->gatts_if, read->conn_id, read->trans_id, ESP_GATT_OK, gatt_rsp);
+			c_free(gatt_rsp);
+		}
 	}
+bail:
 	xsEndHost(gBLE->the);
 }
 
