@@ -128,9 +128,10 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
 	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
 	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	uint8_t scan_rsp = scanResponseData ? 0 : 1;
 	
 	gecko_cmd_le_gap_set_advertise_timing(0, intervalMin, intervalMax, 0, 0);
-	gecko_cmd_le_gap_set_adv_data(0, advertisingDataLength, advertisingData);
+	gecko_cmd_le_gap_set_adv_data(scan_rsp, advertisingDataLength, advertisingData);
 	if (scanResponseData)
 		gecko_cmd_le_gap_set_adv_data(1, scanResponseDataLength, scanResponseData);	
 	gecko_cmd_le_gap_set_mode(le_gap_general_discoverable, le_gap_undirected_connectable);
