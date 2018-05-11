@@ -25,13 +25,7 @@ import Timer from "timer";
 class HeartRateService extends BLEServer {
 	onReady() {
 		this.timer = null;
-		this.bpm = [0, 60];		// flags, beats per minute
-		this.location = 1;		// chest location
-		this.battery = 85;		// battery level percent
-		this.device_name = "Moddable HRM";
-		this.appearance = 832;	// generic heart rate sensor
-		
-		this.deviceName = this.device_name;
+		this.deviceName = "Moddable HRM";
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -42,11 +36,8 @@ class HeartRateService extends BLEServer {
 		this.stopMeasurements();
 		this.startAdvertising({
 			advertisingData: {shortName: "HRS"},
-			scanResponseData: {flags: 6, completeName: this.device_name, completeUUID16List: ["180D","180F"]}
+			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["180D","180F"]}
 		});
-	}
-	onCharacteristicRead(characteristic) {
-		return this[characteristic.name];
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
 		this.startMeasurements(characteristic);
@@ -74,7 +65,7 @@ class HeartRateService extends BLEServer {
 			Timer.clear(this.timer);
 			this.timer = null;
 		}
-		this.bpm = [0, 60];
+		this.bpm = [0, 60]; // flags, beats per minute
 	}
 }
 
