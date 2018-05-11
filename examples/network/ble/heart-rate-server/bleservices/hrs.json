@@ -15,6 +15,7 @@
 				"type": "Uint8",
 				"permissions": "read",
 				"properties": "read",
+				"value": 1
 			},
 		}
 	}
