@@ -16,11 +16,9 @@ import BLEServer from "bleserver";
 import WiFi from "wifi";
 import Net from "net";
 
-const DEVICE_NAME = "Moddable Device";
-
 export default class WiFiServer extends BLEServer {
 	onReady() {
-		this.deviceName = DEVICE_NAME;
+		this.deviceName = "Moddable Device";
 		this.onDisconnected();
 		this.deploy();
 	}
@@ -29,8 +27,8 @@ export default class WiFiServer extends BLEServer {
 	}
 	onDisconnected() {
 		this.startAdvertising({
-			advertisingData: {shortName: "Moddable", completeUUID16List: ["FF00"]},
-			scanResponseData: {flags: 6, completeName: DEVICE_NAME}
+			advertisingData: {shortName: "Moddable"},
+			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["FF00"]}
 		});
 	}
 	onCharacteristicWritten(params) {

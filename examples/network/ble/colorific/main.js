@@ -13,6 +13,7 @@
  */
  /*
  	BLE Colorific Light Bulb
+ 	https://learn.adafruit.com/reverse-engineering-a-bluetooth-low-energy-light-bulb/overview
 	https://www.walmart.com/ip/Star-Tech-Bc090-Colorific-A19-Bluetooth-D67-Controlled-LED-Bulb/46711393
  */
 
@@ -25,13 +26,7 @@ const CHARACTERISTIC_UUID = '2A06';
 
 class Colorific extends BLEClient {
 	onReady() {
-		let payload = this.payload = new Uint8Array(9);
-		payload[0] = 0x58;
-		payload[1] = 0x01;
-		payload[2] = 0x03;
-		payload[3] = 0x01;
-		payload[4] = 0x10; // White brightness
-		payload[5] = 0x00; // Separator byte
+		this.payload = new Uint8Array([0x58, 0x01, 0x03, 0x01, 0x10, 0x00, 0xFF, 0xFF, 0xFF]);
 		this.startScanning();
 	}
 	onDiscovered(device) {
