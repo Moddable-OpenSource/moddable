@@ -95,13 +95,13 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				buffer = ArrayBuffer.fromString(value);
 				break;
 			case "Uint8":
-				buffer = new Uint8Array([value & 0xFF]).buffer;
+				buffer = Uint8Array.of(value & 0xFF).buffer;
 				break;
 			case "Uint16":
-				buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF]).buffer;
+				buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
 				break;
 			case "Uint32":
-				buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF]).buffer;
+				buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF).buffer;
 				break;
 			default:
 				buffer = value;
