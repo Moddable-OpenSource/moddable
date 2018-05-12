@@ -20,8 +20,8 @@ import BLEServer from "bleserver";
 
 const URI = "http://www.moddable.com";
 
-const prefixes = [ 'http://www.', 'https://www.', 'http://', 'https://', 'urn:uuid:' ];
-const suffixes = [ '.com/', '.org/', '.edu/', '.net/', '.info/', '.biz/', '.gov/', '.com', '.org', '.edu', '.net', '.info', '.biz', '.gov' ];
+const schemes = [ 'http://www.', 'https://www.', 'http://', 'https://', 'urn:uuid:' ];
+const domains = [ '.com/', '.org/', '.edu/', '.net/', '.info/', '.biz/', '.gov/', '.com', '.org', '.edu', '.net', '.info', '.biz', '.gov' ];
 
 class URIBeacon extends BLEServer {
 	onReady() {
@@ -32,18 +32,22 @@ class URIBeacon extends BLEServer {
 	encodeData(uri) {
 		let flags = 0;
 		let txPower = 0xEE;
-		let prefix = prefixes.findIndex(item => uri.startsWith(item));
-		if (-1 == prefix)
-			throw new Error('invalid uri prefix');
-		uri = uri.slice(prefixes[prefix].length);
-		let suffix = suffixes.findIndex(item => uri.endsWith(item));
-		if (-1 == suffix)
-			throw new Error('invalid uri suffix');
-		uri = uri.slice(0, -suffixes[suffix].length);
-
-		let data = new Array(flags, txPower, prefix);
-		data = data.concat(Array.from(new Uint8Array(ArrayBuffer.fromString(uri))));
-		data.push(suffix);
+		let scheme = schemes.findIndex(item => uri.startsWith(item));
+		if (-1 == scheme)
+			throw new Error('invalid uri scheme');
+		uri = uri.slice(schemes[scheme].length);
+		let data = new Array(flags, txPower, scheme);
+		domains.some((domain, index) => {
+			let idx = uri.indexOf(domain);
+			if (-1 != idx) {
+				data = data.concat(Array.from(new Uint8Array(ArrayBuffer.fromString(uri.substr(0, idx)))));
+				data.push(index);
+				uri = uri.slice(idx + domains[index].length);
+				return true;
+			}
+		});
+		if (uri.length)
+			data = data.concat(Array.from(new Uint8Array(ArrayBuffer.fromString(uri))));
 		return data;
 	}
 }
