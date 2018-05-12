@@ -32,8 +32,7 @@ class HealthThermometerService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {shortName: "HTM"},
-			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["1809","180F"]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["1809","180F"]}
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
