@@ -13,6 +13,7 @@
  */
  /*
  	https://github.com/google/uribeacon/tree/uribeacon-final/specification
+	https://play.google.com/store/apps/details?id=physical_web.org.physicalweb&hl=en_US
  	https://itunes.apple.com/us/app/physical-web/id927653608?mt=8
  */
 
@@ -32,22 +33,12 @@ class URIBeacon extends BLEServer {
 	encodeData(uri) {
 		let flags = 0;
 		let txPower = 0xEE;
-		let scheme = schemes.findIndex(item => uri.startsWith(item));
+		let scheme = schemes.findIndex(scheme => uri.startsWith(scheme));
 		if (-1 == scheme)
 			throw new Error('invalid uri scheme');
 		uri = uri.slice(schemes[scheme].length);
-		let data = new Array(flags, txPower, scheme);
-		domains.some((domain, index) => {
-			let idx = uri.indexOf(domain);
-			if (-1 != idx) {
-				data = data.concat(Array.from(new Uint8Array(ArrayBuffer.fromString(uri.substr(0, idx)))));
-				data.push(index);
-				uri = uri.slice(idx + domains[index].length);
-				return true;
-			}
-		});
-		if (uri.length)
-			data = data.concat(Array.from(new Uint8Array(ArrayBuffer.fromString(uri))));
+		uri = domains.reduce((uri, domain, index) => uri.replace(domain, String.fromCharCode(index)), uri);
+		let data = [flags, txPower, scheme].concat(Array.from(uri).map(c => c.charCodeAt(0)));
 		return data;
 	}
 }
