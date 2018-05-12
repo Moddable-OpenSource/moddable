@@ -35,8 +35,7 @@ class HeartRateService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {shortName: "HRS"},
-			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["180D","180F"]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["180D","180F"]}
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
