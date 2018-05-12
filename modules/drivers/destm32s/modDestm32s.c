@@ -129,6 +129,9 @@
 #ifndef MODDEF_DESTM32S_HEIGHT
 	#define MODDEF_DESTM32S_HEIGHT 250
 #endif
+#ifndef MODDEF_DESTM32S_CLEAR
+	#define MODDEF_DESTM32S_CLEAR true
+#endif
 
 #define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
 #define SCREEN_CS_DEACTIVE	modGPIOWrite(&sd->cs, 1)
@@ -318,7 +321,7 @@ void xs_destm32s_destructor(void *data)
 void xs_destm32s(xsMachine *the)
 {
 	spiDisplay sd;
-	uint8_t clear = 1;
+	uint8_t clear = MODDEF_DESTM32S_CLEAR;
 
 #if EPAPER == kePaperBlackWhite
 	if (kCommodettoBitmapGray256 != kCommodettoBitmapFormat)
