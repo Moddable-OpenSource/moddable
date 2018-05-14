@@ -355,6 +355,10 @@ void fx_require(txMachine* the)
 		the->requireFlag &= ~XS_REQUIRE_FLAG;
 	}
 	mxCatch(the) {
+		mxImportingModules.value.reference->next = C_NULL;
+		mxLoadingModules.value.reference->next = C_NULL;
+		mxLoadedModules.value.reference->next = C_NULL;
+		mxResolvingModules.value.reference->next = C_NULL;
 		the->requireFlag &= ~XS_REQUIRE_FLAG;
 		fxJump(the);
 	}
