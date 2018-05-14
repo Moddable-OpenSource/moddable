@@ -32,10 +32,6 @@ void xs_ble_client_destructor(void *data)
 {
 }
 
-void xs_ble_client_set_device_name(xsMachine *the)
-{
-}
-
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 }
