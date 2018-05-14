@@ -166,12 +166,6 @@ void xs_ble_client_destructor(void *data)
 	esp_bt_controller_deinit();
 }
 
-void xs_ble_client_set_device_name(xsMachine *the)
-{
-	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
-}
-
-
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
