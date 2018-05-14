@@ -31,8 +31,6 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	initialize() @ "xs_ble_client_initialize"
 	close() @ "xs_ble_client_close"
 	
-	set deviceName() @ "xs_ble_client_set_device_name"
-	
 	connect(address) {
 		this._connect(BluetoothAddress.toBuffer(address));
 	}

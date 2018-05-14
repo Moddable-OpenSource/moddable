@@ -217,12 +217,6 @@ void xs_ble_client_destructor(void *data)
 	gBLE = NULL;
 }
 
-void xs_ble_client_set_device_name(xsMachine *the)
-{
-	const char *name = xsmcToString(xsArg(0));
-	gecko_cmd_system_set_device_name(0, strlen(name), (uint8_t*)name);
-}
-
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
