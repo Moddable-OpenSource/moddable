@@ -55,14 +55,14 @@ class SensorTagSensor {
 			if (!this.configuration_data)
 				this.configuration_data = [1];	// start measurements
 			let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-			characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
+			characteristic.writeWithoutResponse((Uint8Array.from(this.configuration_data)).buffer);
 		}
 		if (this.period) {
 			let characteristic = this.service.findCharacteristicByUUID(this.period);
 			if (characteristic) {
 				if (!this.period_data)
 					this.period_data = [100];	// 1s (10ms * 100) read interval
-				characteristic.writeWithoutResponse((new Uint8Array(this.period_data)).buffer);
+				characteristic.writeWithoutResponse((Uint8Array.from(this.period_data)).buffer);
 			}
 		}
 	}
@@ -70,7 +70,6 @@ class SensorTagSensor {
 		if (this.data) {
 			let characteristic = this.service.findCharacteristicByUUID(this.data);
 			characteristic.enableNotifications();
-			Timer.delay(100);
 		}
 	}
 	onNotification(buffer) {
@@ -159,8 +158,7 @@ class BarometerSensor extends SensorTagSensor {
 			
 		// enable measurements
 		let ch = this.service.findCharacteristicByUUID(this.configuration);
-		let config = new Uint8Array(1);
-		config[0] = 0x01;
+		let config = Uint8Array.of(0x01);
 		ch.writeWithoutResponse(config.buffer);
 		
 		// enable notifications
@@ -195,22 +193,6 @@ class KeysSensor extends SensorTagSensor {
 }
 
 const SERVICES = {
-	["F000AA40-0451-4000-B000-000000000000"]: {
-		name: "barometer",
-	    constructor: BarometerSensor,
-	    data: "F000AA41-0451-4000-B000-000000000000",
-	    configuration: "F000AA42-0451-4000-B000-000000000000",
-		configuration_data: [0x02],
-	    period: "F000AA44-0451-4000-B000-000000000000",
-	    calibration: "F000AA43-0451-4000-B000-000000000000",
-	},
-	["F000AA20-0451-4000-B000-000000000000"]: {
-		name: "humidity",
-	    constructor: HumiditySensor,
-	    data: "F000AA21-0451-4000-B000-000000000000",
-	    configuration: "F000AA22-0451-4000-B000-000000000000",
-	    period: "F000AA23-0451-4000-B000-000000000000",
-	},
 	["F000AA00-0451-4000-B000-000000000000"]: {
 		name: "temperature",
 	    constructor: TemperatureSensor,
@@ -225,12 +207,28 @@ const SERVICES = {
 	    configuration: "F000AA12-0451-4000-B000-000000000000",
 	    period: "F000AA13-0451-4000-B000-000000000000",
 	},
+	["F000AA20-0451-4000-B000-000000000000"]: {
+		name: "humidity",
+	    constructor: HumiditySensor,
+	    data: "F000AA21-0451-4000-B000-000000000000",
+	    configuration: "F000AA22-0451-4000-B000-000000000000",
+	    period: "F000AA23-0451-4000-B000-000000000000",
+	},
 	["F000AA30-0451-4000-B000-000000000000"]: {
 		name: "magnetometer",
 	    constructor: MagnetometerSensor,
 	    data: "F000AA31-0451-4000-B000-000000000000",
 	    configuration: "F000AA32-0451-4000-B000-000000000000",
 	    period: "F000AA33-0451-4000-B000-000000000000",
+	},
+	["F000AA40-0451-4000-B000-000000000000"]: {
+		name: "barometer",
+	    constructor: BarometerSensor,
+	    data: "F000AA41-0451-4000-B000-000000000000",
+	    configuration: "F000AA42-0451-4000-B000-000000000000",
+		configuration_data: [0x02],
+	    period: "F000AA44-0451-4000-B000-000000000000",
+	    calibration: "F000AA43-0451-4000-B000-000000000000",
 	},
 	["F000AA50-0451-4000-B000-000000000000"]: {
 		name: "gyroscope",
@@ -273,12 +271,8 @@ class SensorTag extends BLEClient {
 	}
 	onCharacteristics(characteristics) {
 		if (++this.index == this.sensors.length) {
-			this.sensors.forEach(sensor => {
-				trace(`starting sensor [${sensor.name}]\n`);
-				sensor.driver = new sensor.constructor();
-				sensor.driver.configure(sensor);
-				sensor.driver.start();
-			});
+			this.index = 0;
+			this.startMeasurements(this.index);
 		}
 		else
 			this.sensors[this.index].service.discoverAllCharacteristics();
@@ -295,17 +289,29 @@ class SensorTag extends BLEClient {
 	}
 	onCharacteristicNotification(characteristic, buffer) {
 		let sensors = this.sensors;
-		for (let i = 0; i < sensors.length; ++i) {
+		let i = 0;
+		for (; i < sensors.length; ++i) {
 			let sensor = sensors[i];
 			if (sensor.service.findCharacteristicByUUID(characteristic.uuid)) {
 				sensor.driver.onNotification.call(sensor.driver, buffer);
 				break;
 			}
 		}
+		if (this.index < this.sensors.length - 1 && this.index == i) {
+			Timer.delay(100);
+			this.startMeasurements(++this.index);
+		}
 	}
 	onDisconnected() {
 		this.sensors.length = 0;
 		this.startScanning();
+	}
+	startMeasurements(index) {
+		let sensor = this.sensors[index];
+		trace(`starting sensor [${sensor.name}]\n`);
+		sensor.driver = new sensor.constructor();
+		sensor.driver.configure(sensor);
+		sensor.driver.start();
 	}
 }
 

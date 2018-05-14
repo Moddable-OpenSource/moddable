@@ -68,25 +68,24 @@ void xs_btuuid_toString(xsMachine *the)
 {
 	uint16_t length = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *bytes = xsmcToArrayBuffer(xsArg(0));
-	char *string;
+	char buffer[36];
+	char *p = buffer;
 
 	if (2 == length) {
-		xsResult = xsStringBuffer(NULL, length * 2);
-		string = xsmcToString(xsResult);
-		bytesToHexString(the, string, bytes, 2);
+		bytesToHexString(the, p, bytes, 2);
+		xsResult = xsStringBuffer(buffer, 4);
 	}
 	else if (16 == length) {
-		xsResult = xsStringBuffer(NULL, 36);
-		string = xsmcToString(xsResult);
-		bytesToHexString(the, string, bytes, 4);
-		bytes += 4; string += 8; *string++ = kUUIDSeparator;
-		bytesToHexString(the, string, bytes, 2);
-		bytes += 2; string += 4; *string++ = kUUIDSeparator;
-		bytesToHexString(the, string, bytes, 2);
-		bytes += 2; string += 4; *string++ = kUUIDSeparator;
-		bytesToHexString(the, string, bytes, 2);
-		bytes += 2; string += 4; *string++ = kUUIDSeparator;
-		bytesToHexString(the, string, bytes, 6);
+		bytesToHexString(the, p, bytes, 4);
+		bytes += 4; p += 8; *p++ = kUUIDSeparator;
+		bytesToHexString(the, p, bytes, 2);
+		bytes += 2; p += 4; *p++ = kUUIDSeparator;
+		bytesToHexString(the, p, bytes, 2);
+		bytes += 2; p += 4; *p++ = kUUIDSeparator;
+		bytesToHexString(the, p, bytes, 2);
+		bytes += 2; p += 4; *p++ = kUUIDSeparator;
+		bytesToHexString(the, p, bytes, 6);
+		xsResult = xsStringBuffer(buffer, 36);
 	}
 	else
 		xsUnknownError("invalid uuid length");
