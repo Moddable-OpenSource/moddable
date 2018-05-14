@@ -33,7 +33,7 @@ struct CFEGlyphRecord {
 	uint8_t					format;
 	uint16_t				w;
 	uint16_t				h;
-	void						*bits;
+	void					*bits;
 
 	uint16_t				sx;
 	uint16_t				sy;
@@ -64,3 +64,5 @@ int16_t CFEGetKerningOffset(CommodettoFontEngine cfe, uint32_t unicode1, uint32_
 
 void CFELayoutRun(CommodettoFontEngine cfe, const char *utf8, int32_t byteLength, CFERun run, int32_t runLength, int32_t width);
 
+void CFEGetOutlineFromUnicode(CommodettoFontEngine cfe, uint32_t unicode, uint8_t **outline, uint32_t *outlineSize);
+void CFERenderOutline(CommodettoFontEngine cfe, uint8_t *outline, uint32_t outlineSize, double scaleX, double scaleY, CFEGlyph glyph);
