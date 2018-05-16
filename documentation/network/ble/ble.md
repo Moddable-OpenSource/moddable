@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: May 15, 2018
+Revised: May 16, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -10,7 +10,25 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 
 > **Note:** A BLE server/slave is also commonly referred to as a BLE peripheral. The terms *server*, *slave* and *peripheral* in this document are used interchangeably.
 
-### Adding BLE to a project
+## Table of Contents
+* [Adding BLE to a Project](#addingble)
+* [Using BLE](#usingble)
+* [BLE Client](#bleclient)
+	* [Class BLEClient](#classbleclient)
+		* [Class Device](#classdevice)
+		* [Class Service](#classservice)
+		* [Class Characteristic](#classcharacteristic)
+		* [Class Descriptor](#classdescriptor)
+		* [Class Advertisement](#classadvertisement)
+* [BLE Server](#bleserver)
+	* [Class BLEServer](#classbleserver)
+	* [GATT Services](#gattservices)
+* [BLE Apps on ESP32 Platform](#esp32platform)
+* [BLE Apps on Blue Gecko Platform](#geckoplatform)
+* [BLE Example Apps](#exampleapps)
+
+<a id="addingble"></a>
+### Adding BLE to a Project
 The BLE client and server are implemented as separate modules to accomodate the limited memory and storage available on embedded devices. BLE applications instantiate a BLE client or BLE server, but never both.
 
 To add the BLE client to a project, include its manifest:
@@ -27,9 +45,10 @@ Similarly, to add the BLE server to a project, include its manifest:
 		"$(MODDABLE)/modules/network/ble/manifest_server.json",
 	],
 
+<a id="usingble"></a>
 ### Using BLE
 
-BLE applications typically subclass `BLEClient` or `BLEServer` and add device and/or application specific code. The following BLE client example subclasses `BLEClient` to scan for and discover peripherals:
+BLE applications typically subclass `BLEClient` or `BLEServer` and then add device and/or application specific code. The following BLE client example subclasses `BLEClient` to scan for and discover peripherals:
 
 	import BLEClient from "bleclient";
 
@@ -62,8 +81,9 @@ The following BLE server example subclasses `BLEServer` to advertise the device 
 	let htm = new HealthThermometerService;
 
 
+<a id="bleclient"></a>
 ## BLE Client
-A BLE client can connect to one or more BLE peripherals. The maximum number of concurrent connections is defined at build time and ultimately limited by what the underlying embedded platform supports. To override the default maximum of two connections, override the `max_connections` define in the application manifest:
+A BLE client can connect to one or more BLE peripherals. The maximum number of concurrent connections is defined at build time and ultimately limited by what the underlying embedded platform supports. To override the default maximum of two connections, override the `max_connections` value in the manifest `defines` section:
 
 	"defines": {
 		"ble": {
@@ -74,13 +94,13 @@ A BLE client can connect to one or more BLE peripherals. The maximum number of c
 A BLE client typically performs the following steps to receive notifications from a BLE peripheral:
 
 1. Start scanning for peripherals
-2. Find the peripheral of interest by matching the advertised complete name in the scan response
+2. Find the peripheral of interest by matching the advertised complete name or UUID(s) in the scan response
 3. Establish a connection with the peripheral
 4. Discover the primary service(s) of interest
 5. Discover the characteristic(s) within the service(s) of interest
-6. Enable notifications for characteristics of interest
+6. Enable notifications for characteristic(s) of interest
 
-The following code from the colorific example app shows a typical client flow:
+The following code from the [colorific](../../../examples/network/ble/colorific) example app shows a typical client flow:
 
 	const DEVICE_NAME = 'PowerMate Bluetooth';
 	const SERVICE_UUID = '25598CF7-4240-40A6-9910-080F19F91EBC';
@@ -115,8 +135,9 @@ The following code from the colorific example app shows a typical client flow:
 		}
 	}
 
-BLE is fundamentally asynchronous and results are always delivered to class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the BLE client classes, properties and callbacks.
+A BLE client is fundamentally asynchronous and results are always delivered to the `BLEClient` class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the BLE client classes, properties and callbacks.
 
+<a id="classbleclient"></a>
 ## Class BLEClient
 
 The `BLEClient` class provides access to the BLE client features.
@@ -145,7 +166,7 @@ The `startScanning` function enables scanning for nearby peripherals.
 		}
 	}
 
-The `startScanning` function performs active scanning by default. The optional `params` can be used to override the scan parameters:
+The `startScanning` function performs active scanning by default. The optional `params` includes properties that can be set to override the default scan behavior:
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -172,7 +193,7 @@ To connect to a device named "Brian" from the `onDiscovered` callback:
 The `stopScanning` function disables scanning for nearby peripherals.
 
 ### connect(address)
-The `connect` function initiates a connection request between the `BLEClient` and target peripheral with the Bluetooth address `address`.
+The `connect` function initiates a connection request between the `BLEClient` and target peripheral `device` with the Bluetooth address `address`.
 
 	onDiscovered(device) {
 		this.connect(device.address);
@@ -186,8 +207,9 @@ The `onConnected` callback function is called when the client connects to a peri
 
 > **Note:** The `BLEClient` object hosts all callbacks for classes used with `BLEClient`.
 
+<a id="classdevice"></a>
 ## Class Device
-An instance of the `Device ` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class methods to perform GATT service/characteristic discovery and other functions.
+An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery.
 
 The `Device` class includes the following properties:
 
@@ -195,7 +217,7 @@ The `Device` class includes the following properties:
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
 | `address` | `string` | Bluetooth device address.
-| `scanResponse` | `object` | Instance of [Advertisement](#advertisement) class (described below) containing advertisement and scan response packet values.
+| `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 | `discoverAllPrimaryServices` | `function` | A function to initiate full GATT primary service discovery.
 | `discoverPrimaryService` | `function` | A function to initiate discovery of a single GATT primary service.
 
@@ -206,7 +228,7 @@ Use the `discoverAllPrimaryServices` function to discover all the peripheral's G
 Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID.
 
 ### onServices(services)
-The `onServices` callback function is called when service discovery completes. The `services` parameter contains an `Array` of services discovered.
+The `onServices` callback function is called when service discovery completes. The `services` parameter contains an `Array` of services discovered. If no services are discovered, an empty `services` array is returned.
 
 To discover all primary services:
 
@@ -238,6 +260,7 @@ The `close` function terminates the peripheral connection. The `onDisconnected` 
 		trace("connection closed\n");
 	}
 	
+<a id="classservice"></a>
 ## Class Service
 The `Service` class provides access to a single peripheral GATT service. The following properties are included:
 
@@ -253,13 +276,13 @@ The `Service` class provides access to a single peripheral GATT service. The fol
 | `findCharacteristicByUUID` | `function` | A function to find a specific service characteristic by UUID.
 
 ### discoverAllCharacteristics()
-Use the `discoverAllCharacteristics()` function to discover all the characteristics in a GATT service. Discovered characteristics are returned to the `onCharacteristics` callback.
+Use the `discoverAllCharacteristics()` function to discover all the service characteristics. Discovered characteristics are returned to the `onCharacteristics` callback.
 
 ### discoverCharacteristic(uuid)
 Use the `discoverCharacteristic` function to discover a single service characteristic by UUID.
 
 ### onCharacteristics(characteristics)
-The `onCharacteristics` callback function is called when characteristic discovery completes. The `characteristics` parameter contains an `Array` of characteristics discovered.
+The `onCharacteristics` callback function is called when characteristic discovery completes. The `characteristics` parameter contains an `Array` of characteristics discovered. If no characteristics are discovered, an empty `characteristics` array is returned.
 
 ### findCharacteristicByUUID(uuid)
 The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.
@@ -272,7 +295,7 @@ To discover all the characteristics in the [Device Information](https://www.blue
 			service.discoverAllCharacteristics();
 	}
 	onCharacteristics(characteristics) {
-		characteristics.forEach( characteristic => trace(`found characteristic ${characteristic}\n`);
+		characteristics.forEach(characteristic => trace(`found characteristic ${characteristic}\n`));
 	}
 
 To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml) characteristic in the [Heart Rate](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) service:
@@ -291,8 +314,9 @@ To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/ga
 			trace("Found heart rate measurement characteristic\n");
 	}
 
+<a id="classcharacteristic"></a>
 ## Class Characteristic
-The `Characteristic` class provides access to a single GATT service characteristic. The following properties are included:
+The `Characteristic` class provides access to a single service characteristic. The following properties are included:
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -308,10 +332,11 @@ The `Characteristic` class provides access to a single GATT service characterist
 | `writeWithoutResponse` | `function` | A function to write a characteristic value without requiring a server response.
 
 ### discoverAllDescriptors()
-Use the `discoverAllDescriptors` function to discover all the descriptors in the characteristic. Discovered descriptors are returned to the `onDescriptors` callback.
+Use the `discoverAllDescriptors` function to discover all the characteristic's descriptors. Discovered descriptors are returned to the `onDescriptors` callback.
 
 ### onDescriptors(descriptors)
-The `onDescriptors` callback function is called when descriptor discovery completes. The `descriptors` parameter contains an `Array` of characteristic descriptors discovered.
+The `onDescriptors` callback function is called when descriptor discovery completes. The `descriptors` parameter contains an `Array` of characteristic descriptors discovered. If no descriptors are discovered, an empty `descriptors` array is returned.
+
 
 To discover the [Characteristic Presentation Format Descriptor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.characteristic_presentation_format.xml) for a characteristic with UUID 0xFF00:
 
@@ -333,7 +358,7 @@ Use the `enableNotifications` function to enable characteristic value change not
 Use the `disableNotifications` function to disable characteristic value change notifications.
 
 ### onCharacteristicNotification(characteristic, value)
-The `onCharacteristicNotification` callback is called when notifications are enabled and the peripheral notifies the characteristic value. The `value` parameter is an `ArrayBuffer` containing the characteristic value.
+The `onCharacteristicNotification` callback function is called when notifications are enabled and the peripheral notifies the characteristic value. The `value` parameter is an `ArrayBuffer` containing the characteristic value.
 
 To enable and receive characteristic value change notifications for the [Battery Level](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.battery_level.xml) characteristic in the [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
 
@@ -359,7 +384,7 @@ To enable and receive characteristic value change notifications for the [Battery
 Use the `readValue` function to read a characteristic value on demand.
 
 ### onCharacteristicValue(characteristic, value)
-The `onCharacteristicValue` callback function is called when a characteristic is read by the `readValue()` function. The `value` parameter is an `ArrayBuffer` containing the characteristic value.
+The `onCharacteristicValue` callback function is called when a characteristic is read by the `readValue` function. The `value` parameter is an `ArrayBuffer` containing the characteristic value.
 
 To read the [Device Name](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.device_name.xml) from the [Generic Access Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml):
 
@@ -400,8 +425,9 @@ To write the [URI](https://www.bluetooth.com/specifications/gatt/viewer?attribut
 			characteristic.writeWithoutResponse(ArrayBuffer.fromString("http://moddable.tech"));
 	}
 
+<a id="classdescriptor"></a>
 ## Class Descriptor
-The `Descriptor` class provides access to a single GATT service characteristic descriptor. The following properties are included:
+The `Descriptor` class provides access to a single characteristic descriptor. The following properties are included:
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -411,7 +437,7 @@ The `Descriptor` class provides access to a single GATT service characteristic d
 | `handle` | `number` | Descriptor handle.
 
 ### writeValue(value)
-Use the `writeValue()` function to write a descriptor value. The `value` parameter is an `ArrayBuffer` containing the descriptor value to write.
+Use the `writeValue` function to write a descriptor value. The `value` parameter is an `ArrayBuffer` containing the descriptor value to write.
 
 To enable characteristic value change notifications by writing 0x0001 to the [Client Characteristic Configuration](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml) descriptor:
 
@@ -423,11 +449,11 @@ To enable characteristic value change notifications by writing 0x0001 to the [Cl
 		}
 	}
 	
-> **Note:** The `Characteristic` `enableNotifications()` convenience function is typically used for this purpose, though writing the CCCD descriptor offers the same net result.
+> **Note:** The `Characteristic` `enableNotifications` convenience function is typically used for this purpose, though writing the CCCD descriptor directly provides the same net result.
 
-<a id="advertisement"></a>
+<a id="classadvertisement"></a>
 ## Class Advertisement
-The `Advertisement` class provides accessor functions to read common advertisement and scan response data types as JavaScript properties. The class is primarily used to parse the `scanResponseData` provided to BLE clients via the `onDiscovered` callback function `device` parameter.
+The `Advertisement` class provides accessor functions to read common advertisement and scan response data types as JavaScript properties. The class is primarily used to parse the `scanResponseData` provided to BLE clients via the `onDiscovered` callback function's `device` parameter.
 
 ### completeName
 The advertised complete local name.
@@ -466,6 +492,7 @@ To identify a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/pro
 		}
 	}
 
+<a id="bleserver"></a>
 ## BLE Server
 A BLE server/peripheral can connect to one BLE client and typically performs the following steps to send notifications to a BLE client:
 
@@ -475,13 +502,13 @@ A BLE server/peripheral can connect to one BLE client and typically performs the
 4. Accept characteristic value change notification request(s)
 5. Notify characteristic value changes.
 
-The following abbreviated code from the heart-rate-server example app shows a typical server flow:
+The following abbreviated code from the [heart-rate-server](../../../examples/network/ble/heart-rate-server) example app shows a typical server flow:
 
 	onReady() {
 		this.bpm = [0, 60]; // flags, beats per minute
 		this.deploy();
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["180D","180F"]}
+			advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: ["180D","180F"]}
 		});
 	}
 	onConnected() {
@@ -506,8 +533,9 @@ The following abbreviated code from the heart-rate-server example app shows a ty
 		}, 1000);
 	}
 
-BLE is fundamentally asynchronous and results are always delivered to class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the BLE server class, properties and callbacks.
+A BLE server is fundamentally asynchronous and results are always delivered to the `BLEServer` class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the BLE server class, properties and callbacks.
 
+<a id="classbleserver"></a>
 ## Class BLEServer
 
 The `BLEServer` class provides access to the BLE server features.
@@ -558,7 +586,7 @@ The `startAdvertising` function starts broadcasting advertisement and scan respo
 | `fast` | `number` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv_fast_interval1); `false` to specify TGAP(adv_slow_interval). Defaults to `true`.
 | `scanResponseData` | `object` | Optional object containing scan response data types.
 
-The `advertisementData` and `scanResponseData` contain properties corresponding to the [Bluetooth Advertisement Data Types](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile):
+The `advertisementData` and `scanResponseData` contain one or more properties corresponding to the [Bluetooth Advertisement Data Types](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile):
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -588,7 +616,7 @@ To advertise a [Health Thermometer Sensor](https://www.bluetooth.com/specificati
 			advertisingData: {flags: 6, completeName: "Thermometer", completeUUID16List: ["1809"]}
 		});
 
-To advertise a [Heart Rate Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 180F:
+To advertise a [Heart Rate Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 0x180F:
 
 		this.startAdvertising({
 			advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: completeUUID16List: ["180D","180F"]}
@@ -615,7 +643,7 @@ Call the `stopAdvertising` function to stop broadcasting Bluetooth advertisement
 	}
 
 ### close()
-Use the `close` function to terminate a BLE client connection. The `onConnected` callback function is called when the client connection is opened. The `onDisconnected` callback function is called when the connection is closed.
+Use the `close` function to terminate a BLE client connection. The `onDisconnected` callback function is called when the connection is closed.
 
 	onReady() {
 		this.allowed = ["11:22:33:44:55:66"];
@@ -658,7 +686,7 @@ The `onCharacteristicWritten` callback is called when a client writes a service 
 
 The `BLEServer` application is responsible for handling the write request.
 
-The following example from the wifi-connection-server example shows how characteristic write requests are handled. The `SSID` and `password` characteristics are strings and the `control` characteristic is a numeric value:
+The following example from the [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) example shows how characteristic write requests are handled. The `SSID` and `password` characteristics are strings and the `control` characteristic is a numeric value. When the `control` characteristic value is 1, the app initiates a WiFi connection:
 
 	onCharacteristicWritten(params) {
 		let value = params.value;
@@ -698,7 +726,7 @@ To respond to a read request corresponding to a numeric "status" characteristic:
 
 <a id="gattservices"></a>
 ## GATT Services
-GATT services are defined by simple JSON files located in a project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app. The object code lives in Flash memory, significantly reducing the footprint required to deploy GATT services.
+GATT services are defined by simple JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app. The object code lives in Flash memory, significantly reducing the footprint required to deploy GATT services.
 
 The following is an example of JSON corresponding to a Bluetooth [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
 
@@ -718,7 +746,7 @@ The following is an example of JSON corresponding to a Bluetooth [Battery Servic
 		}
 	}
 	
-The service properties are defined as follows:
+The service is defined as follows:
 
 * The service UUID is 0x180F
 * The service contains a single characteristic named "battery"
@@ -726,7 +754,7 @@ The service properties are defined as follows:
 	* The characteristic represents an unsigned 8-bit value
 	* The characteristic value is 85 and clients only have permission to read the characteristic
 
-Characteristics that include a `value` property are considered static. The base `BLEServer` class automatically services read requests for static characteristic values, further reducing the script code required to host a GATT service.
+Characteristics that include a `value` property are considered static. The `BLEServer` class automatically responds to read requests for static characteristic values, further reducing the script code required to host a GATT service.
 
 The service JSON includes the following top-level properties:
 
@@ -734,7 +762,7 @@ The service JSON includes the following top-level properties:
 | --- | --- | :--- |
 | `service` | Service object. Each JSON file must contain only a single `service` property.
 | `uuid` | Service UUID.
-| `characteristics` | Service characteristic(s). Each key corresponds to the characteristic name.
+| `characteristics` | Service characteristic(s). Each key corresponds to a characteristic name.
 
 Each JSON `characteristic` contains the following properties:
 
@@ -746,6 +774,7 @@ Each JSON `characteristic` contains the following properties:
 | `permissions` | Characteristic permissions. Supported permissions include `read` and `write`.
 | `properties` | Characteristic properties. Supported properties include `read`, `write`, `notify` and `indicate`.
 
+<a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
 In order to enable the BLE client or server on the ESP32 platform, the [sdkconfig](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig) file must set the following core BLE features:
 
@@ -760,31 +789,47 @@ In order to enable the BLE client or server on the ESP32 platform, the [sdkconfi
 	CONFIG_SMP_ENABLE=y
 	CONFIG_BT_RESERVE_DRAM=0x10000
 	
-The `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection.
+>**Note:** The `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
 
 The core features defined above build the core ESP32 BLE firmware, but not the client or server interfaces. To enable only BLE client functionality, additionally set the `CONFIG_GATTC_ENABLE` feature:
 
 	CONFIG_GATTC_ENABLE=y
 	
-To enable only BLE server functionality, additionally set the `CONFIG_GATTS_ENABLE ` feature:
+To enable only BLE server functionality, additionally set the `CONFIG_GATTS_ENABLE` feature:
 
 	CONFIG_GATTS_ENABLE=y
 	
 > **Note:** Because both a BLE client and server cannot be enabled on the same device, we recommend setting only the `CONFIG_GATTC_ENABLE` or `CONFIG_GATTS_ENABLE` feature, but not both. This will conserve memory and Flash.
 
-## BLE Apps on Blue Gecko Platform
-Building and deploying BLE apps on Gecko follow the same workflow outlined in our [Gecko developer documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md). We recommend starting from the `soc-ibeacon` Simplicity Studio example project.
+Once the sdkconfig file changes have been made, build the [scanner](../../../examples/network/ble/scanner) BLE app for the ESP32 platform:
 
-The `main()` native code function for a basic BLE client/server app can be reduced to the following:
+	cd $MODDABLE/examples/network/ble/scanner
+	mcconfig -d -m -p esp32
+
+<a id="geckoplatform"></a>
+## BLE Apps on Blue Gecko Platform
+Building and deploying BLE apps on Blue Gecko follow the same workflow outlined in our [Gecko developer documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md). For BLE apps, we recommend starting from the `soc-ibeacon` Simplicity Studio example project.
+
+The [make.blue.mk](../../../tools/mcconfig/geck0/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` accordingly.
+
+To build the [scanner](../../../examples/network/ble/scanner) BLE app `xs_gecko.a` archive for Blue Gecko:
+
+	cd $MODDABLE/examples/network/ble/scanner
+	mcconfig -d -m -p gecko/blue
+
+After building the BLE archive, the archive is linked to the native app hosted in Simplicity Studio. The `main()` native code function for a basic BLE client/server app can be reduced to the following:
 
 	void main(void)
 	{
 		initMcu();
 		initBoard();
 		initApp();
+		
 		xs_setup();
-		while (1)
+		
+		while (1) {
 			xs_loop();
+		}
 	}
 
 BLE apps require additional stack and heap. We've been able to run the Moddable BLE example apps using the following values:
@@ -792,55 +837,56 @@ BLE apps require additional stack and heap. We've been able to run the Moddable 
 	__STACK_SIZE=0x2000
 	__HEAP_SIZE=0xA000
 	
-Simplicity Studio includes a **BLE GATT Configurator** to define BLE services. Moddable apps define BLE services in JSON files and hence don't use the `gatt_db.c` and `gatt_db.h` files generated by the configurator tool. These files should be removed from the Simplicity Studio project.
+Simplicity Studio includes a **BLE GATT Configurator** to define BLE services. Moddable apps define BLE services in JSON files and hence don't use the `gatt_db.c` and `gatt_db.h` files generated by the configurator tool. These two files must be removed from the Simplicity Studio project.
 
+<a id="exampleapps"></a>
 ## BLE Example Apps
 The Moddable SDK includes many BLE client and server example apps to build from. We recommend starting from an example app, since the apps demonstrate how to implement common use cases:
 
-[advertiser]()
+[advertiser](../../../examples/network/ble/advertiser)
 
 Server app that broadcast advertisements until a BLE client connects.
 
-[ble-friend]()
+[ble-friend](../../../examples/network/ble/ble-friend)
 
 Client app that shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service).
 
-[colorific]()
+[colorific](../../../examples/network/ble/colorific)
 
 Client app that randomly changes the color of a BLE bulb every 100 ms.
 
-[discovery]()
+[discovery](../../../examples/network/ble/discovery)
 
 Client app that demonstrates how to perform full service and characteristic discovery.
 
-[health-thermometer-server]()
+[health-thermometer-server](../../../examples/network/ble/health-thermometer-server)
 
 Server app that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
 
-[heart-rate-server]()
+[heart-rate-server](../../../examples/network/ble/heart-rate-server)
 
 Server app that implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
 
-[powermate]()
+[powermate](../../../examples/network/ble/powermate)
 
-Client app that shows how to interact with the [Griffin Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
+Client app that shows how to recieve button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 
-[scanner]()
+[scanner](../../../examples/network/ble/scanner)
 
 Client app that shows how to scan for BLE peripherals.
 
-[sensortag]()
+[sensortag](../../../examples/network/ble/sensortag)
 
 Client app that shows how to receive sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments).
 
-[tempo]()
+[tempo](../../../examples/network/ble/tempo)
 
 Client app that reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
 
-[uri-beacon]()
+[uri-beacon](../../../examples/network/ble/uri-beacon)
 
 Server app that implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 
-[wifi-connection-server]()
+[wifi-connection-server](../../../examples/network/ble/wifi-connection-server)
 
-Server app that deploys a BLE WiFi connection service. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
+Server app for ESP32 that deploys a BLE WiFi connection service. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
