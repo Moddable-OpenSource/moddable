@@ -304,7 +304,7 @@ To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/ga
 		device.discoverPrimaryService('180D');
 	}
 	onServices(services) {
-		this.hrs = services.find(service => SERVICE_UUID == service.uuid);
+		this.hrs = services.find(service => '180D' == service.uuid);
 		if (this.hrs)
 			this.hrs.discoverCharacteristic('2A37');
 	}
@@ -533,7 +533,7 @@ The following abbreviated code from the [heart-rate-server](../../../examples/ne
 		}, 1000);
 	}
 
-A BLE server is fundamentally asynchronous and results are always delivered to the `BLEServer` class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the BLE server class, properties and callbacks.
+A BLE server is fundamentally asynchronous and results are always delivered to the `BLEServer` class callback methods, e.g. `onReady`, `onConnected`, etc... above. The following sections describe the `BLEServer` class, properties and callbacks.
 
 <a id="classbleserver"></a>
 ## Class BLEServer
@@ -580,11 +580,11 @@ The `startAdvertising` function starts broadcasting advertisement and scan respo
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `advertisingData` | `object` | Object containing advertisement data types.
+| `advertisingData` | `object` | Object containing advertisement data properties.
 | `connectable` | `boolean` | Optional property to specify connectable mode. Set to `true` to specify unidirected connectable mode; `false` to specify non-connectable mode. Defaults to `true`.
 | `discoverable` | `object` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
-| `fast` | `number` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv_fast_interval1); `false` to specify TGAP(adv_slow_interval). Defaults to `true`.
-| `scanResponseData` | `object` | Optional object containing scan response data types.
+| `fast` | `number` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv\_fast\_interval1); `false` to specify TGAP(adv\_slow\_interval). Defaults to `true`.
+| `scanResponseData` | `object` | Optional object containing scan response data properties.
 
 The `advertisementData` and `scanResponseData` contain one or more properties corresponding to the [Bluetooth Advertisement Data Types](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile):
 
@@ -612,23 +612,23 @@ The `advertisementData` and `scanResponseData` contain one or more properties co
 
 To advertise a [Health Thermometer Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml) BLE-only connectable device with the complete local name "Thermometer" and one service with UUID 0x1809:
 
-		this.startAdvertising({
+	this.startAdvertising({
 			advertisingData: {flags: 6, completeName: "Thermometer", completeUUID16List: ["1809"]}
-		});
+	});
 
 To advertise a [Heart Rate Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 0x180F:
 
-		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: completeUUID16List: ["180D","180F"]}
-		});
+	this.startAdvertising({
+		advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: completeUUID16List: ["180D","180F"]}
+	});
 
 To advertise a BLE-only non-connectable and limited discoverable device with the complete local name "Moddable Device" and the short name "Moddable" provided in the scan response:
 
-		this.startAdvertising({
-			connectable: false,
-			advertisingData: {flags: 5, completeName: "Moddable HRS"},
-			scanResponseData: {shortName: "Moddable"} 
-		});
+	this.startAdvertising({
+		connectable: false,
+		advertisingData: {flags: 5, completeName: "Moddable HRS"},
+		scanResponseData: {shortName: "Moddable"} 
+	});
 		
 ### stopAdvertising()
 Call the `stopAdvertising` function to stop broadcasting Bluetooth advertisements.
@@ -686,7 +686,7 @@ The `onCharacteristicWritten` callback is called when a client writes a service 
 
 The `BLEServer` application is responsible for handling the write request.
 
-The following example from the [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) example shows how characteristic write requests are handled. The `SSID` and `password` characteristics are strings and the `control` characteristic is a numeric value. When the `control` characteristic value is 1, the app initiates a WiFi connection:
+The following abbreviated example from the [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) example shows how characteristic write requests are handled. The `SSID` and `password` characteristics are strings and the `control` characteristic is a numeric value. When the BLE client writes the value 1 to the `control` characteristic, the app closes the client connection and initiates a WiFi connection:
 
 	onCharacteristicWritten(params) {
 		let value = params.value;
@@ -697,7 +697,7 @@ The following example from the [wifi-connection-server](../../../examples/networ
 		else if ("control" == params.name) {
 			if ((1 == value) && this.ssid) {
 				this.close();
-				this.connectToWiFiNetwork();
+				this.connectToWiFiNetwork(this.ssid, this.password);
 			}
 		}
 	}
@@ -726,7 +726,7 @@ To respond to a read request corresponding to a numeric "status" characteristic:
 
 <a id="gattservices"></a>
 ## GATT Services
-GATT services are defined by simple JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app. The object code lives in Flash memory, significantly reducing the footprint required to deploy GATT services.
+GATT services are defined by JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app. The object code lives in Flash memory, significantly reducing the footprint required to deploy GATT services.
 
 The following is an example of JSON corresponding to a Bluetooth [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
 
@@ -791,13 +791,15 @@ In order to enable the BLE client or server on the ESP32 platform, the [sdkconfi
 	
 >**Note:** The `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
 
-The core features defined above build the core ESP32 BLE firmware, but not the client or server interfaces. To enable only BLE client functionality, additionally set the `CONFIG_GATTC_ENABLE` feature:
+The core features defined above build the core ESP32 BLE firmware, but not the client or server interfaces. To enable only BLE client functionality, set the `CONFIG_GATTC_ENABLE` feature:
 
 	CONFIG_GATTC_ENABLE=y
+	CONFIG_GATTS_ENABLE=
 	
-To enable only BLE server functionality, additionally set the `CONFIG_GATTS_ENABLE` feature:
+To enable only BLE server functionality, set the `CONFIG_GATTS_ENABLE` feature:
 
 	CONFIG_GATTS_ENABLE=y
+	CONFIG_GATTC_ENABLE=
 	
 > **Note:** Because both a BLE client and server cannot be enabled on the same device, we recommend setting only the `CONFIG_GATTC_ENABLE` or `CONFIG_GATTS_ENABLE` feature, but not both. This will conserve memory and Flash.
 
@@ -810,7 +812,7 @@ Once the sdkconfig file changes have been made, build the [scanner](../../../exa
 ## BLE Apps on Blue Gecko Platform
 Building and deploying BLE apps on Blue Gecko follow the same workflow outlined in our [Gecko developer documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md). For BLE apps, we recommend starting from the `soc-ibeacon` Simplicity Studio example project.
 
-The [make.blue.mk](../../../tools/mcconfig/geck0/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` accordingly.
+The [make.blue.mk](../../../tools/mcconfig/geck0/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` variables accordingly.
 
 To build the [scanner](../../../examples/network/ble/scanner) BLE app `xs_gecko.a` archive for Blue Gecko:
 
