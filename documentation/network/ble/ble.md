@@ -843,50 +843,54 @@ Simplicity Studio includes a **BLE GATT Configurator** to define BLE services. M
 ## BLE Example Apps
 The Moddable SDK includes many BLE client and server example apps to build from. We recommend starting from an example app, since the apps demonstrate how to implement common use cases:
 
-[advertiser](../../../examples/network/ble/advertiser)
-
-Server app that broadcast advertisements until a BLE client connects.
+### Client Apps
 
 [ble-friend](../../../examples/network/ble/ble-friend)
 
-Client app that shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service).
+Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 
 [colorific](../../../examples/network/ble/colorific)
 
-Client app that randomly changes the color of a BLE bulb every 100 ms.
+Randomly changes the color of a BLE bulb every 100 ms.
 
 [discovery](../../../examples/network/ble/discovery)
 
-Client app that demonstrates how to perform full service and characteristic discovery.
-
-[health-thermometer-server](../../../examples/network/ble/health-thermometer-server)
-
-Server app that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
-
-[heart-rate-server](../../../examples/network/ble/heart-rate-server)
-
-Server app that implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
+Demonstrates how to perform full service and characteristic discovery.
 
 [powermate](../../../examples/network/ble/powermate)
 
-Client app that shows how to recieve button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
+Recieves button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 
 [scanner](../../../examples/network/ble/scanner)
 
-Client app that shows how to scan for BLE peripherals.
+Scans for and displays peripheral advertised names.
 
 [sensortag](../../../examples/network/ble/sensortag)
 
-Client app that shows how to receive sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments).
+Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 
 [tempo](../../../examples/network/ble/tempo)
 
-Client app that reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
+Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
+
+### Server Apps
+
+[advertiser](../../../examples/network/ble/advertiser)
+
+Broadcasts advertisements until a BLE client connects.
+
+[health-thermometer-server](../../../examples/network/ble/health-thermometer-server)
+
+Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
+
+[heart-rate-server](../../../examples/network/ble/heart-rate-server)
+
+Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
 
 [uri-beacon](../../../examples/network/ble/uri-beacon)
 
-Server app that implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
+Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 
 [wifi-connection-server](../../../examples/network/ble/wifi-connection-server)
 
-Server app for ESP32 that deploys a BLE WiFi connection service. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
+Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
