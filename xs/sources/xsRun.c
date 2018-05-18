@@ -1294,15 +1294,15 @@ XS_CODE_JUMP:
 		XS_CODE_BRANCH_ELSE:
 			byte = mxStack->kind;
 			if (XS_BOOLEAN_KIND == byte)
-				mxNextCode(mxStack->value.boolean ? index : index + offset)
+				mxNextCode(mxStack->value.boolean ? (txS4)index : (txS4)index + offset)
 			else if (XS_INTEGER_KIND == byte)
-				mxNextCode(mxStack->value.integer ? index : index + offset)
+				mxNextCode(mxStack->value.integer ? (txS4)index : (txS4)index + offset)
 			else if (XS_NUMBER_KIND == byte)
-				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? index + offset : index)
+				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index + offset : (txS4)index)
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
-				mxNextCode(c_isEmpty(mxStack->value.string) ? index + offset : index)
+				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index + offset : (txS4)index)
 			else
-				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? index + offset : index)
+				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index + offset : (txS4)index)
 			mxStack++;
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_IF_1)
@@ -1319,15 +1319,15 @@ XS_CODE_JUMP:
 		XS_CODE_BRANCH_IF:
 			byte = mxStack->kind;
 			if (XS_BOOLEAN_KIND == byte)
-				mxNextCode(mxStack->value.boolean ? index + offset : index)
+				mxNextCode(mxStack->value.boolean ? (txS4)index + offset : (txS4)index)
 			else if (XS_INTEGER_KIND == byte)
-				mxNextCode(mxStack->value.integer ? index + offset : index)
+				mxNextCode(mxStack->value.integer ? (txS4)index + offset : (txS4)index)
 			else if (XS_NUMBER_KIND == byte)
-				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? index : index + offset)
+				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index : (txS4)index + offset)
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
-				mxNextCode(c_isEmpty(mxStack->value.string) ? index : index + offset)
+				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index : (txS4)index + offset)
 			else
-				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? index : index + offset)
+				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index : (txS4)index + offset)
 			mxStack++;
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_STATUS_1)
