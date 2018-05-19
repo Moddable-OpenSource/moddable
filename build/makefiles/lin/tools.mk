@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2018  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -125,6 +125,7 @@ MODULES = \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
+	$(MOD_DIR)/bles2gatt.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -186,7 +187,8 @@ COMMANDS = \
 	$(BIN_DIR)/mcrez \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
-	$(BIN_DIR)/wav2maud
+	$(BIN_DIR)/wav2maud \
+	$(BIN_DIR)/bles2gatt
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
@@ -331,6 +333,11 @@ $(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": wav2maud"
 	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
 	chmod +x $(BIN_DIR)/wav2maud
+
+$(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
+	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
+	chmod +x $(BIN_DIR)/bles2gatt
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME).*
