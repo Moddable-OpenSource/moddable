@@ -52,7 +52,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/bt/include \
- 	$(IDF_PATH)/components/bt/bluedroid/api/include
+ 	$(IDF_PATH)/components/bt/bluedroid/api/include \
+ 	$(IDF_PATH)/components/bt/bluedroid/api/include/api
     
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
