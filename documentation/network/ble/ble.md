@@ -209,7 +209,7 @@ The `onConnected` callback function is called when the client connects to a peri
 
 <a id="classdevice"></a>
 ## Class Device
-An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery.
+An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery and close the peripheral connection.
 
 The `Device` class includes the following properties:
 
@@ -220,6 +220,24 @@ The `Device` class includes the following properties:
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 | `discoverAllPrimaryServices` | `function` | A function to initiate full GATT primary service discovery.
 | `discoverPrimaryService` | `function` | A function to initiate discovery of a single GATT primary service.
+
+### readRSSI()
+Use the `readRSSI` function to read the connected peripheral's signal strength.
+
+### onRSSI(device, rssi)
+The `onRSSI` callback function is called when the peripheral signal strength is read.
+
+To read the signal strength of the connected device:
+
+	onConnected(device) {
+		device.readRSSI();
+	}
+	onRSSI(device, rssi) {
+		trace(`device ${device.address} signal strength is ${rssi}\n`);
+	}
+
+### close()
+The `close` function closes the peripheral device connection.
 
 ### discoverAllPrimaryServices()
 Use the `discoverAllPrimaryServices` function to discover all the peripheral's GATT primary services. Discovered services are returned to the `onServices` callback.
