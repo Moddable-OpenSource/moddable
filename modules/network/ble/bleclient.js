@@ -77,7 +77,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 			case "onConnected": {
 				let address = BluetoothAddress.toString(params.address);
 				let ble = this;
-				let client = new Client({ connection:params.connection, ble });
+				let client = new Client({ address, connection:params.connection, ble });
 				let connection = new Connection({ address, client, ble });
 				this.onConnected(client);
 				break;
