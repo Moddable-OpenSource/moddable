@@ -570,8 +570,10 @@ class Rule {
 					var suffix = target.slice(star + 1);
 					target = target.slice(0, star);
 					if (sources instanceof Array) {
-						for (var source of sources)
+						for (var source of sources) {
+							source = tool.resolveSlash(source);
 							this.iterate(target, source, true, suffix, false);
+						}
 					}
 					else
 						this.iterate(target, sources, true, suffix, false);
