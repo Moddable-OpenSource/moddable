@@ -45,22 +45,17 @@ export class Connection {
 		this._disconnect(this.client.connection);
 	}
 	
-	readRSSI() {
-		this._readRSSI(this.client.connection);
-	}
-	
 	_disconnect() @ "xs_gap_connection_disconnect"
-	_readRSSI() @ "xs_gap_connection_read_rssi"
 	
 	callback(event, params) {
 		//trace(`Connection callback ${event}\n`);
 		switch(event) {
 			case "onDisconnected":
+				this.ble.onDisconnected(this.client);
 				forgetConnection(this);
-				this.ble.onDisconnected();
 				break;
 			case "onRSSI":
-				this.ble.onRSSI(rssi);
+				this.ble.onRSSI(this.client, params);
 				break;
 		}
 	}
