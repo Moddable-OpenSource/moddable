@@ -29,6 +29,9 @@ export class Client {
 				case "connection":
 					this.connection = dictionary.connection;
 					break;
+				case "address":
+					this.address = dictionary.address;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;
@@ -51,8 +54,11 @@ export class Client {
 		this._discoverPrimaryServices(this.connection);
 	}
 	
-	onServices() {
+	readRSSI() {
+		this._readRSSI(this.connection);
 	}
+	
+	onServices() {}
 
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
@@ -66,6 +72,8 @@ export class Client {
 		}
 	}
 	
+	_readRSSI() @ "xs_gap_connection_read_rssi"
+
 	callback(event, params) {
 		//trace(`Client callback ${event}\n`);
 		switch(event) {
