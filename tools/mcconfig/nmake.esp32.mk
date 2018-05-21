@@ -50,13 +50,17 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp32\include \
 	-I$(IDF_PATH)\components\freertos \
 	-I$(IDF_PATH)\components\freertos\include \
+	-I$(IDF_PATH)\components\freertos\include\freertos \
 	-I$(IDF_PATH)\components\lwip\include\lwip \
 	-I$(IDF_PATH)\components\lwip\include\lwip\port \
 	-I$(IDF_PATH)\components\mbedtls\include \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\vfs\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
-	-I$(IDF_PATH)\components\tcpip_adapter
+	-I$(IDF_PATH)\components\tcpip_adapter \
+	-I$(IDF_PATH)\components\bt\include \
+	-I$(IDF_PATH)\components\bt\bluedroid\api\include \
+	-I$(IDF_PATH)\components\bt\bluedroid\api\include\api
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
@@ -135,6 +139,7 @@ MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
 PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
 IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
 WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
+BLES2GATT = $(MODDABLE_TOOLS_DIR)\bles2gatt
 XSC = $(MODDABLE_TOOLS_DIR)\xsc
 XSID = $(MODDABLE_TOOLS_DIR)\xsid
 XSL = $(MODDABLE_TOOLS_DIR)\xsl
@@ -193,7 +198,7 @@ LAUNCH = release
 
 .PHONY: all
 
-all: $(LAUNCH)
+all: $(BLE) $(LAUNCH)
 
 PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
 
@@ -252,5 +257,3 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 $(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
-
-
