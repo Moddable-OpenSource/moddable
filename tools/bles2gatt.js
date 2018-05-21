@@ -521,9 +521,9 @@ export default class extends TOOL {
 					if (!path)
 						throw new Error("-o '" + name + "': directory not found!");
 					this.outputPath = path;
-					if (this.outputPath.includes('tmp/esp32') || this.outputPath.includes('tmp\esp32'))
+					if (this.outputPath.includes('tmp/esp32') || this.outputPath.includes('tmp\\esp32'))
 						this.platform = "esp32";
-					else if (this.outputPath.includes('tmp/gecko') || this.outputPath.includes('tmp\gecko'))
+					else if (this.outputPath.includes('tmp/gecko') || this.outputPath.includes('tmp\\gecko'))
 						this.platform = "gecko";
 					else
 						throw new Error("unknown platform");
