@@ -121,6 +121,7 @@ MODULES = \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
+	$(MOD_DIR)\bles2gatt.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -181,8 +182,9 @@ COMMANDS = \
 	$(BIN_DIR)\mcrez.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat \
-	$(BIN_DIR)\wav2maud.bat
-	
+	$(BIN_DIR)\wav2maud.bat \
+	$(BIN_DIR)\bles2gatt.bat
+
 !IF EXISTS($(TOOLS)\mcrun.js)
 COMMANDS = $(COMMANDS) $(BIN_DIR)\mcrun.bat
 MODULES = $(MODULES) $(MOD_DIR)\mcrun.xsb
@@ -369,6 +371,9 @@ $(BIN_DIR)\rle4encode.bat :
 $(BIN_DIR)\wav2maud.bat :
 	@echo # wav2maud.bat
 	echo @$(BIN_DIR)\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
+$(BIN_DIR)\bles2gatt.bat :
+	@echo # bles2gatt.bat
+	echo @$(BIN_DIR)\tools bles2gatt %%* 1> $(BIN_DIR)\bles2gatt.bat
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).*
