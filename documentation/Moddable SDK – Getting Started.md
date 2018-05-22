@@ -54,7 +54,7 @@ This document provides an introduction to getting started building apps with the
  
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.12/esptool-0.4.12-osx.tar.gz). Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp` directory.
+4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.13/esptool-0.4.13-osx.tar.gz). Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp` directory.
 
 5. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
@@ -101,9 +101,21 @@ This document provides an introduction to getting started building apps with the
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
-8. Connect the ESP32 device to your macOS host with a USB cable.
+8. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
 
-9. Verify the setup by building `helloworld` for the `esp32` target:
+	To determine the serial port, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial devices, use the following command in Terminal:
+	
+	```
+	ls /dev/cu.*
+	```
+
+9. Set the `CONFIG_ESPTOOLPY_PORT` in the `%MODDABLE%/build/devices/esp32/xsProj/sdkconfig` file to the ESP32 serial port:
+
+	```
+	CONFIG_ESPTOOLPY_PORT="/dev/cu.SLAB_USBtoUART"
+	```
+
+10. Verify the setup by building `helloworld` for the `esp32` target:
 
 
 	```
