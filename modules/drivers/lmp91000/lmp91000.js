@@ -19,7 +19,9 @@
  */
 
 
-/* TI LMP91000
+/*	TI LMP91000
+	Configurable AFE Potentiostat for Low-Power Chemical Sensing Applications
+	http://www.ti.com/product/LMP91000
 
 	If using multiple LMP91000's, each has an enable pin MENB, active low,
 	which allows communication with a specific sensor.
