@@ -1,0 +1,29 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+		]
+	},
+	"ble":{
+		"*": [
+			"./bleservices/*",
+		],
+	},
+	"resources": {
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-20",
+			"./fonts/OpenSans-full-Semibold-44",
+			"./assets/temp",
+		],
+		"*": "./assets/Bluetooth_FM_Color",
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}
