@@ -658,8 +658,10 @@ XS_CODE_JUMP:
 					}
 				}
 			}
-			mxNextCode(2);
+		#else
+			mxRunDebug(XS_UNKNOWN_ERROR, "no sloppy mode");
 		#endif
+			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_BEGIN_STRICT)
 			mxFrame->flag |= XS_STRICT_FLAG;
@@ -1138,8 +1140,10 @@ XS_CODE_JUMP:
 			mxSaveState;
 			fxNewArgumentsSloppyInstance(the, offset);
 			mxRestoreState;
-			mxNextCode(2);
+		#else
+			mxRunDebug(XS_UNKNOWN_ERROR, "no sloppy mode");
 		#endif
+			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_STRICT)
 			offset = mxRunS1(1);
