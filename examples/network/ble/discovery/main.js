@@ -28,7 +28,7 @@ class Discovery extends BLEClient {
 	onDiscovered(device) {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
 			this.stopScanning();
-			this.connect(device.address);
+			this.connect(device);
 		}
 	}
 	onConnected(device) {
