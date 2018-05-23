@@ -253,7 +253,7 @@ class SensorTag extends BLEClient {
 		if (DEVICE_NAME == device.scanResponse.completeName) {
 			this.sensors = [];
 			this.stopScanning();
-			this.connect(device.address);
+			this.connect(device);
 		}
 	}
 	onConnected(device) {
