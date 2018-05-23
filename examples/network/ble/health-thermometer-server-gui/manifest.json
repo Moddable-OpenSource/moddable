@@ -1,15 +1,18 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/network/ble/manifest_server.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
+			"./htmservice"
 		]
 	},
+	"preload": [
+		"htmservice",
+	],
 	"ble":{
 		"*": [
 			"./bleservices/*",
@@ -17,13 +20,19 @@
 	},
 	"resources": {
 		"*-mask": [
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-20",
-			"./fonts/OpenSans-full-Semibold-44",
-			"./assets/temp",
+			"./assets/dot",
+			"./assets/sm-bt-logo",
+			"./assets/ticks-arc",
+			"./fonts/OpenSans-Regular-72",
+			"./fonts/OpenSans-Regular-18",
 		],
-		"*": "./assets/Bluetooth_FM_Color",
+		"*-color": [
+			"./assets/color-arc",
+		],
 	},
-	"config": {
-		"screen": "ili9341"
-	},
+	"platforms": {
+		"gecko/blue": {
+			"error": "application not supported on this platform"
+		}
+	}
 }
