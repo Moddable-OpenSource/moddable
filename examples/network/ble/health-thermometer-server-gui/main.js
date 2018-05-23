@@ -11,137 +11,115 @@
  *   Mountain View, CA 94042, USA.
  *
  */
- /*
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.temperature_measurement.xml
- */
+import {} from "piu/MC";
+import Timeline from "piu/Timeline";
+import HealthThermometerService from "htmservice";
 
-import BLEServer from "bleserver";
-import Timer from "timer";
-import Poco from "commodetto/Poco";
-import Resource from "Resource";
-import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/parseBMP";
-import parseRLE from "commodetto/parseRLE";
+const WHITE = "white";
 
-class HealthThermometerService extends BLEServer {
-	constructor(render) {
-		super();
-		this.render = render;
-		this.white = render.makeColor(255, 255, 255);
-		this.blue = render.makeColor(0x08, 0x82, 0xFB);
-		this.titleFont = parseBMF(new Resource("OpenSans-Semibold-20.bf4"));
-		this.temperatureFont = parseBMF(new Resource("OpenSans-full-Semibold-44.bf4"));
-		this.tempIcon = parseRLE(new Resource("temp-alpha.bm4"));
-		this.logo = parseBMP(new Resource("Bluetooth_FM_Color-color.bmp"));
-		this.logo.alpha = parseBMP(new Resource("Bluetooth_FM_Color-alpha.bmp"));
-		this.title = "Health Thermometer";
-		this.state = "Advertising...";
-		this.temp = 0;
-		this.drawBackground();
-		this.drawTemperature();
-		this.drawFooter();
+const btIconSkin = new Skin({ texture:new Texture("sm-bt-logo.png"), color:WHITE, x:0, y:0, width:20, height:35 });
+const arcSkin = new Skin({ texture:new Texture("color-arc.png"), x:0, y:0, width:240, height:58 });
+const ticksSkin = new Skin({ texture:new Texture("ticks-arc.png"), color:WHITE, x:0, y:0, width:240, height:48 });
+const dotSkin = new Skin({ texture:new Texture("dot.png"), color:WHITE, x:0, y:0, width:10, height:10 });
+const labelStyle = new Style({ font:"18px Open Sans", color:WHITE, horizontal:"left", vertical:"top" });
+const temperatureStyle = new Style({ font:"72px Open Sans", color:WHITE, horizontal:"center", vertical:"top" });
+
+const DotContent = Content.template($ => ({
+	skin: dotSkin
+}))
+
+class HTMApplicationBehavior extends Behavior {
+	onCreate(application, anchors) {
+		this.anchors = anchors;
+		this.htm = new HealthThermometerService;
+		this.minTemp = 96;
+		this.maxTemp = 104;
+		this.minDegrees = 77;
+		this.maxDegrees = 103;
+		this.radius = 250;
+		this.f = Math.PI / 180;
 	}
-	onReady() {
-		this.timer = null;
-		this.deviceName = "Moddable HTM";
-		this.onDisconnected();
-		this.deploy();
+	onConnected(application) {
+		let anchors = this.anchors;
+		this.reverse = false;
+		anchors.TEMPERATURE.string = "-°";
+		anchors.DOT.visible = true;
+		this.timeline = (new Timeline)
+			.to(anchors.ICON, { x:16, y:12 }, 300, Math.quadEaseOut, 0)
+			.to(anchors.TITLE, { x:45, y:17 }, 300, Math.quadEaseOut, -200)
+			.to(anchors.ARC, { y:72 }, 250, Math.quadEaseOut, 0)
+			.to(anchors.DOT, { y:72 }, 250, Math.quadEaseOut, -100)
+			.to(anchors.TICKS, { y:150 }, 250, Math.quadEaseOut, -100)
+			.to(anchors.TEMPERATURE, { y:188 }, 250, Math.quadEaseOut, -100)
+		application.time = 0;
+		application.duration = this.timeline.duration + 500;
+		application.start();	
 	}
-	onConnected() {
-		this.stopAdvertising();
-	}
-	onDisconnected() {
-		this.stopMeasurements();
-		this.state = "Advertising...";
-		this.temp = 0;
-		this.drawTemperature();
-		this.drawFooter();
-		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["1809","180F"]}
-		});
-	}
-	onCharacteristicNotifyEnabled(characteristic) {
-		let render = this.render;
-		this.state = "Reading...";
-		this.drawFooter();
-		this.startMeasurements(characteristic);
-	}
-	onCharacteristicNotifyDisabled(characteristic) {
-		this.stopMeasurements();
-	}
-	get temperature() {
-		if (98.5 > this.temp)
-			this.temp += 0.1;
-		let flags = 0x01;		// fahrenheit
-		let exponent = 0xFD;	// -1
-		let mantissa = Math.round(this.temp * 1000);
-		let temp = (exponent << 24) | mantissa;		// IEEE-11073 32-bit float
-		let result = [flags, temp & 0xFF, (temp >> 8) & 0xFF, (temp >> 16) & 0xFF, (temp >> 24) & 0xFF];
-		return result;
-	}
-	startMeasurements(characteristic) {
-		this.temp = 95.0;
-		this.timer = Timer.repeat(id => {
-			this.notifyValue(characteristic, this.temperature);
-			this.drawTemperature();
-			if (this.temp > 98.5) {
-				this.state = "Done!";
-				this.drawFooter();
-				this.stopMeasurements();
-			}
-		}, 250);
-	}
-	stopMeasurements() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			this.timer = null;
+	onDisconnected(application) {
+		if ("timeline" in this) {
+			this.reverse = true;
+			application.time = 0;
+			application.start();
 		}
 	}
-	drawBackground() {
-		let render = this.render;
-		let white = this.white;
-		let blue = this.blue;
-		let font = this.titleFont;
-		let tempIcon = this.tempIcon;
-		let logo = this.logo;
-		render.begin();
-			render.fillRectangle(white, 0, 0, render.width, render.height);
-			render.fillRectangle(blue, 0, 0, render.width, font.height);
-			render.drawText(this.title, font, white,
-				(render.width - render.getTextWidth(this.title, font)) >> 1, 0);
-			render.drawMasked(logo, (render.width - logo.width) >> 1, render.height - 120, 0, 0, logo.width, logo.height, logo.alpha, 0, 0);
-		render.end();
+	onTimeChanged(application) {
+		let time = application.time;
+		if (this.reverse) {
+			time = application.duration - time;
+			if (time < 1000)
+				this.anchors.DOT.x = -10;
+		}
+		this.timeline.seekTo(time);
 	}
-	drawFooter() {
-		let render = this.render;
-		let white = this.white;
-		let blue = this.blue;
-		let font = this.titleFont;
-		render.begin(0, render.height - font.height, render.width, font.height);
-			render.fillRectangle(blue, 0, 0, render.width, render.height);
-			render.drawText(this.state, font, white,
-				(render.width - render.getTextWidth(this.state, font)) >> 1, render.height - font.height);
-		render.end();
+	onValue(application, value) {
+		if (value == this.lastValue) return;
+		this.lastValue = value;
+		let temperature = value;
+		let radians = this.tempToRadians(temperature);
+		
+		// map left coordinate between left and right temperature labels
+		let x = Math.cos(radians) * this.radius;
+		let left = (x+56)/(112) * (210-22) + 22;
+		
+		// map top coordinate from (0, 0) based circle to screen
+		// y values for the displayed temperature range are between [243.6, 250]
+		// dot vertical positions are between [130, 150]
+		let y = Math.sin(radians) * this.radius;
+		let top = (y - 243.6)/(250-243.6) * (130-150) + 150;
+		
+		let dot = this.anchors.DOT;
+		dot.moveBy(left - dot.x, top - dot.y);
+		this.anchors.TEMPERATURE.string = value.toFixed(1) + "°";
 	}
-	drawTemperature() {
-		let text;
-		if (this.temp == 0)
-			text = "-.-";
-		else
-			text = this.temp.toFixed(2);
-		text += "°F";
-		let render = this.render;
-		let white = this.white;
-		let blue = this.blue;
-		let font = this.temperatureFont;
-		render.begin(0, 70, render.width, font.height);
-			render.fillRectangle(white, 0, 0, render.width, render.height);
-			render.drawText(text, font, blue,
-				(render.width - render.getTextWidth(text, font)) >> 1, 70);
-		render.end();
+	tempToRadians(temperature) {
+		// angle (a) in degrees for line that passes through (96, 103) and (104, 77):
+		// a = -13/4 * t + 415
+		return (-13./4 * temperature + 415) * this.f;
 	}
-}
+};
 
-let render = new Poco(screen, { rotation:180 });
-let htm = new HealthThermometerService(render);
+let HTMApplication = Application.template($ => ({
+	skin: new Skin({ fill:"black" }),
+	Behavior: HTMApplicationBehavior,
+	active:true,
+	contents: [
+		Content($, { anchor:"ICON", left:110, top:136, skin:btIconSkin }),
+		Label($, { anchor:"TITLE", left:32, top:175, width:180, style:labelStyle, string:"Health Thermometer" }),
+		Container($, {
+			anchor:"ARC", left:0, right:0, top:screen.height, height:86,
+			contents: [
+				Content($, { bottom:0, skin:arcSkin }),
+				Label($, { left:8, top:16, style:labelStyle, string:"96°" }),
+				Label($, { left:102, top:0, style:labelStyle, string:"100°" }),
+				Label($, { left:196, top:16, style:labelStyle, string:"104°" }),
+			]
+		}),
+		DotContent($, { anchor:"DOT", left:-10, top:320 }),
+		Content($, { anchor:"TICKS", left:0, top:320, skin:ticksSkin }),
+		Label($, { anchor:"TEMPERATURE", top:320, style:temperatureStyle }),
+	]
+}));
+
+export default function () {
+	new HTMApplication({}, { touchCount:0 });
+}
