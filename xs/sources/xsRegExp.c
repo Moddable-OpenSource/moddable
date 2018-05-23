@@ -226,7 +226,7 @@ void fx_RegExp(txMachine* the)
 	fxCall(the);
 	mxPullSlot(mxResult);
 #else
-	mxSyntaxError("not built-in");
+	mxUnknownError("not built-in");
 #endif
 }
 

@@ -287,7 +287,7 @@ void fx_Function(txMachine* the)
 		mxPop();
 	}
 #else
-	mxUnknownError("not built-in.");
+	mxUnknownError("not built-in");
 #endif
 }
 
@@ -696,6 +696,6 @@ void fx_AsyncFunction(txMachine* the)
 		mxPop();
 	}
 #else
-	mxUnknownError("not built-in.");
+	mxUnknownError("not built-in");
 #endif
 }
