@@ -101,22 +101,22 @@ class HTMApplicationBehavior extends Behavior {
 let HTMApplication = Application.template($ => ({
 	skin: new Skin({ fill:"black" }),
 	Behavior: HTMApplicationBehavior,
-	active:true,
+	style:labelStyle,
 	contents: [
 		Content($, { anchor:"ICON", left:110, top:136, skin:btIconSkin }),
-		Label($, { anchor:"TITLE", left:32, top:175, width:180, style:labelStyle, string:"Health Thermometer" }),
+		Label($, { anchor:"TITLE", left:32, top:175, width:180, string:"Health Thermometer" }),
 		Container($, {
 			anchor:"ARC", left:0, right:0, top:screen.height, height:86,
 			contents: [
 				Content($, { bottom:0, skin:arcSkin }),
-				Label($, { left:8, top:16, style:labelStyle, string:"96°" }),
-				Label($, { left:102, top:0, style:labelStyle, string:"100°" }),
-				Label($, { left:196, top:16, style:labelStyle, string:"104°" }),
+				Label($, { left:8, top:16, string:"96°" }),
+				Label($, { left:102, top:0, string:"100°" }),
+				Label($, { left:196, top:16, string:"104°" }),
 			]
 		}),
-		DotContent($, { anchor:"DOT", left:-10, top:320 }),
-		Content($, { anchor:"TICKS", left:0, top:320, skin:ticksSkin }),
-		Label($, { anchor:"TEMPERATURE", top:320, style:temperatureStyle }),
+		DotContent($, { anchor:"DOT", left:-10, top:screen.height }),
+		Content($, { anchor:"TICKS", left:0, top:screen.height, skin:ticksSkin }),
+		Label($, { anchor:"TEMPERATURE", top:screen.height, style:temperatureStyle }),
 	]
 }));
 
