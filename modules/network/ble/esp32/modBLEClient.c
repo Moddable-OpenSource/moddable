@@ -615,7 +615,7 @@ static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 	modBLEConnection connection = modBLEConnectionFindByAppID(reg->app_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gattc_open(connection->gattc_if, connection->bda, true);
+	esp_ble_gattc_open(connection->gattc_if, connection->bda, BLE_ADDR_TYPE_PUBLIC, true);
 	xsEndHost(gBLE->the);
 }
 
@@ -829,7 +829,7 @@ static void logGATTCEvent(esp_gattc_cb_event_t event) {
 		case ESP_GATTC_UNREG_FOR_NOTIFY_EVT: modLog("ESP_GATTC_UNREG_FOR_NOTIFY_EVT"); break;
 		case ESP_GATTC_CONNECT_EVT: modLog("ESP_GATTC_CONNECT_EVT"); break;
 		case ESP_GATTC_DISCONNECT_EVT: modLog("ESP_GATTC_DISCONNECT_EVT"); break;
-		case ESP_GATTC_READ_MUTIPLE_EVT: modLog("ESP_GATTC_READ_MUTIPLE_EVT"); break;
+		case ESP_GATTC_READ_MULTIPLE_EVT: modLog("ESP_GATTC_READ_MULTIPLE_EVT"); break;
 		case ESP_GATTC_QUEUE_FULL_EVT: modLog("ESP_GATTC_QUEUE_FULL_EVT"); break;
 	}
 }
