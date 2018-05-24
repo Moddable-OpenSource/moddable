@@ -23,8 +23,8 @@
 			"./assets/dot",
 			"./assets/sm-bt-logo",
 			"./assets/ticks-arc",
-			"./fonts/OpenSans-Regular-72",
-			"./fonts/OpenSans-Regular-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-72"
 		],
 		"*-color": [
 			"./assets/color-arc",
