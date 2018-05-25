@@ -21,8 +21,8 @@ import BLEClient from "bleclient";
 import Timer from "timer";
 
 const DEVICE_NAME = "RGBLightOne";
-const SERVICE_UUID = '1802';
-const CHARACTERISTIC_UUID = '2A06';
+const SERVICE_UUID = 0x1802;
+const CHARACTERISTIC_UUID = 0x2A06;
 
 class Colorific extends BLEClient {
 	onReady() {
@@ -40,13 +40,12 @@ class Colorific extends BLEClient {
 		device.discoverPrimaryService(SERVICE_UUID);
 	}
 	onServices(services) {
-		let service = services.find(service => SERVICE_UUID == service.uuid);
-		if (service)
-			service.discoverCharacteristic(CHARACTERISTIC_UUID);
+		if (services.length)
+			services[0].discoverCharacteristic(CHARACTERISTIC_UUID);
 	}
 	onCharacteristics(characteristics) {
-		let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
-		if (characteristic) {
+		if (characteristics.length) {
+			let characteristic = characteristics[0];
 			this.timer = Timer.repeat(() => {
 				let payload = this.payload;
 				payload[6] = Math.floor(Math.random() * 256);
