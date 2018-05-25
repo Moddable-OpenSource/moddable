@@ -320,9 +320,19 @@ Use the `discoverAllPrimaryServices` function to discover all the peripheral's G
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `string` | Service UUID to discover |
+| `uuid` | `number` or `string` | Service UUID to discover |
 
-Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID.
+Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID. The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
+
+***
+
+#### `findServiceByUUID(uuid)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `uuid` | `number` or `string` | Service UUID to find |
+
+The `findServiceByUUID` function finds and returns the service identified by `uuid`. This function searches the `services` property array.  The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
 
 ***
 
@@ -332,7 +342,7 @@ Use the `discoverPrimaryService` function to discover a single GATT primary serv
 | --- | --- | :--- | 
 | `services` | `array` | An array of `service` objects, or an empty array if no services are discovered. See the section [Class Service](#classservice) for more information. |
 
-The `onServices` callback function is called when service discovery completes.
+The `onServices` callback function is called when service discovery completes. If `findServiceByUUID` was called to find a single service, the `services` array contains the single service found.
 
 To discover all primary services:
 
@@ -348,8 +358,10 @@ onServices(services) {
 To discover a single primary service:	
 
 ```javascript
+const SERVICE_UUID = 0xFF00;
+
 onConnected(device) {
-	device.discoverPrimaryService('FF00');
+	device.discoverPrimaryService(SERVICE_UUID);
 }
 onServices(services) {
 	if (services.length)
@@ -402,9 +414,19 @@ Use the `discoverAllCharacteristics()` function to discover all the service char
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `string` | Characteristic UUID to discover |
+| `uuid` | `number` or `string` | Characteristic UUID to discover |
 
-Use the `discoverCharacteristic` function to discover a single service characteristic by UUID.
+Use the `discoverCharacteristic` function to discover a single service characteristic by UUID. The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
+
+***
+
+#### `findCharacteristicByUUID(uuid)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `uuid` | `number` or `string` | Characteristic UUID to find |
+
+The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.  The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
 
 ***
 
@@ -414,23 +436,17 @@ Use the `discoverCharacteristic` function to discover a single service character
 | --- | --- | :--- | 
 | `characteristics` | `array` | An array of `characteristic` objects, or an empty array if no characteristics are discovered. See the section [Class Characteristic](#classcharacteristic) for more information. |
 
-The `onCharacteristics` callback function is called when characteristic discovery completes.
+The `onCharacteristics` callback function is called when characteristic discovery completes. If `findCharacteristicByUUID` was called to find a single characteristic, the `characteristics` array contains the single characteristic found.
 
 ***
-
-#### `findCharacteristicByUUID(uuid)`
-
-| Argument | Type | Description |
-| --- | --- | :--- | 
-| `uuid` | `string` | Characteristic UUID to find |
-
-The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.
 
 To discover all the characteristics in the [Device Information](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.device_information.xml) service:
 
 ```javascript
+const DEVICE_INFORMATION_SERVICE_UUID = '180A';
+
 onServices(services) {
-	let service = services.find(service => "180A" == service.uuid);
+	let service = services.find(service => DEVICE_INFORMATION_SERVICE_UUID == service.uuid);
 	if (service)
 		service.discoverAllCharacteristics();
 }
@@ -442,18 +458,19 @@ onCharacteristics(characteristics) {
 To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml) characteristic in the [Heart Rate](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) service:
 
 ```javascript
+const HEART_RATE_SERVICE_UUID = 0x180A;
+const HEART_RATE_MEASUREMENT_UUID = 0x2A37;
+
 onConnected(device) {
-	device.discoverPrimaryService('180D');
+	device.discoverPrimaryService(HEART_RATE_SERVICE_UUID);
 }
 onServices(services) {
-	this.hrs = services.find(service => '180D' == service.uuid);
-	if (this.hrs)
-		this.hrs.discoverCharacteristic('2A37');
+	if (services.length)
+		services[0].discoverCharacteristic(HEART_RATE_MEASUREMENT_UUID);
 }
 onCharacteristics(characteristics) {
-	let characteristic = this.hrs.findCharacteristicByUUID('2A37');
-	if (characteristic)
-		trace("Found heart rate measurement characteristic\n");
+	if (characteristics.length)
+		trace(`found heart rate measurement characteristic ${characteristics[0].uuid}\n`);
 }
 ```
 
@@ -491,13 +508,16 @@ The `onDescriptors` callback function is called when descriptor discovery comple
 To discover the [Characteristic Presentation Format Descriptor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.characteristic_presentation_format.xml) for a characteristic with UUID 0xFF00:
 
 ```javascript
+const CHARACTERISTIC_UUID = 'FF00';
+const PRESENTATION_FORMAT_UUID = '2904';
+
 onCharacteristics(characteristics) {
-	let characteristic = characteristics.find(characteristic => 'FF00' == characteristic.uuid);
+	let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
 	if (characteristic)
 		characteristic.discoverAllDescriptors();
 }
 onDescriptors(descriptors) {
-	let descriptor = descriptors.find(descriptor => '2904' == descriptor);
+	let descriptor = descriptors.find(descriptor => PRESENTATION_FORMAT_UUID == descriptor);
 	if (descriptor)
 		trace("found characteristic presentation format descriptor\n");
 }
@@ -527,18 +547,19 @@ The `onCharacteristicNotification` callback function is called when notification
 To enable and receive characteristic value change notifications for the [Battery Level](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.battery_level.xml) characteristic in the [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
 
 ```javascript
+const BATTERY_SERVICE_UUID = 0x180F;
+const BATTERY_LEVEL_UUID = 0x2A19;
+
 onConnected(device) {
-	device.discoverPrimaryService('180F');
+	device.discoverPrimaryService(BATTERY_SERVICE_UUID);
 }
 onServices(services) {
-	let service = services.find(service => '180F' == service.uuid);
-	if (service)
-		service.discoverCharacteristic('2A19');
+	if (services.length)
+		services[0].discoverCharacteristic(BATTERY_LEVEL_UUID);
 }
 onCharacteristics(characteristics) {
-	let characteristic = characteristics.find(characteristic => '2A19' == characteristic.uuid);
-	if (characteristic)
-		characteristic.enableNotifications();
+	if (characteristics.length)
+		characteristics[0].enableNotifications();
 }
 onCharacteristicNotification(characteristic, value) {
 	let level = new Uint8Array(value)[0];
@@ -565,18 +586,19 @@ The `onCharacteristicValue` callback function is called when a characteristic is
 To read the [Device Name](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.device_name.xml) from the [Generic Access Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml):
 
 ```javascript
+const GENERIC_ACCESS_SERVICE_UUID = 0x1800;
+const DEVICE_NAME_UUID = 0x2A00;
+
 onConnected(device) {
-	device.discoverPrimaryService('1800');
+	device.discoverPrimaryService(GENERIC_ACCESS_SERVICE_UUID);
 }
 onServices(services) {
-	let service = services.find(service => '1800' == service.uuid);
-	if (service)
-		service.discoverCharacteristic('2A00');
+	if (services.length)
+		services[0].discoverCharacteristic(DEVICE_NAME_UUID);
 }
 onCharacteristics(characteristics) {
-	let characteristic = characteristics.find(characteristic => '2A00' == characteristic.uuid);
-	if (characteristic)
-		characteristic.readValue();
+	if (characteristics.length)
+		characteristics[0].readValue();
 }
 onCharacteristicValue(characteristic, value) {
 	let name = String.fromArrayBuffer(value);
@@ -597,18 +619,19 @@ Use the `writeWithoutResponse` function to write a characteristic value on deman
 To write the [URI](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.uri.xml) characteristic value in the [HTTP Proxy](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.http_proxy.xml) service:
 
 ```javascript
+const HTTP_PROXY_SERVICE_UUID = 0x1823;
+const URI_UUID = 0x2AB6;
+
 onConnected(device) {
-	device.discoverPrimaryService('1823');
+	device.discoverPrimaryService(HTTP_PROXY_SERVICE_UUID);
 }
 onServices(services) {
-	let service = services.find(service => '1823' == service.uuid);
-	if (service)
-		service.discoverCharacteristic('2AB6');
+	if (services.length)
+		services[0].discoverCharacteristic(URI_UUID);
 }
 onCharacteristics(characteristics) {
-	let characteristic = characteristics.find(characteristic => '2AB6' == characteristic.uuid);
-	if (characteristic)
-		characteristic.writeWithoutResponse(ArrayBuffer.fromString("http://moddable.tech"));
+	if (characteristics.length)
+		characteristics[0].writeWithoutResponse(ArrayBuffer.fromString("http://moddable.tech"));
 }
 ```
 
@@ -641,8 +664,10 @@ Use the `writeValue` function to write a descriptor value.
 To enable characteristic value change notifications by writing 0x0001 to the [Client Characteristic Configuration](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml) descriptor:
 
 ```javascript
+const CCCD_UUID = '2902';
+
 onDescriptors(descriptors) {
-	let descriptor = descriptors.find(descriptor => '2902' == descriptor);
+	let descriptor = descriptors.find(descriptor => CCCD_UUID == descriptor);
 	if (descriptor) {
 		let value = Uint8Array.from(0x01, 0x00);	// little endian
 		descriptor.writeValue(value.buffer);
@@ -1137,7 +1162,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | :---: | :--- |
 | [ble-friend](../../../examples/network/ble/ble-friend)| Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
-| [discovery](../../../examples/network/ble/discovery) | Demonstrates how to perform full service and characteristic discovery.
+| [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
 | [powermate](../../../examples/network/ble/powermate) | Recieves button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
