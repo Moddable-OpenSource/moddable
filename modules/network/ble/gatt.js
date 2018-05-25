@@ -19,6 +19,16 @@
  */
 import {UUID} from "btutils";
 
+function uuidToString(uuid) {
+	if ("number" == typeof uuid) {
+		if (uuid > 0xFFFF)
+			throw new Error("invalid uuid");
+		return ("000" + uuid.toString(16)).substr(-4);
+	}
+	else
+		return uuid.replace(/^0x/, '');
+}
+
 export class Client {
 	constructor(dictionary) {
 		for (let property in dictionary) {
@@ -45,6 +55,7 @@ export class Client {
 	}
 
 	discoverPrimaryService(uuid) {
+		uuid = uuidToString(uuid);
 		this.services.length = 0;
 		this._discoverPrimaryServices(this.connection, UUID.toBuffer(uuid));
 	}
@@ -54,6 +65,11 @@ export class Client {
 		this._discoverPrimaryServices(this.connection);
 	}
 	
+	findServiceByUUID(uuid) {
+		uuid = uuidToString(uuid);
+		return this.services.find(service => uuid == service.uuid);
+	}
+
 	readRSSI() {
 		this._readRSSI(this.connection);
 	}
@@ -132,6 +148,7 @@ export class Service {
 	}
 	
 	discoverCharacteristic(uuid) {
+		uuid = uuidToString(uuid);
 		this.characteristics.length = 0;
 		this._discoverCharacteristics(this.connection, this.start, this.end, UUID.toBuffer(uuid));
 	}
@@ -142,6 +159,7 @@ export class Service {
 	}
 	
 	findCharacteristicByUUID(uuid) {
+		uuid = uuidToString(uuid);
 		return this.characteristics.find(characteristic => uuid == characteristic.uuid);
 	}
 
