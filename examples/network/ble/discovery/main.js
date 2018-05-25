@@ -20,6 +20,8 @@
 import BLEClient from "bleclient";
 
 const DEVICE_NAME = "<YOUR DEVICE NAME>";
+const DEVICE_INFORMATION_SERVICE_UUID = 0x180A;
+const MANUFACTURER_NAME_UUID = 0x2A29;
 
 class Discovery extends BLEClient {
 	onReady() {
@@ -33,17 +35,15 @@ class Discovery extends BLEClient {
 	}
 	onConnected(device) {
 		this.device = device;
-		device.discoverAllPrimaryServices();
+		device.discoverPrimaryService(DEVICE_INFORMATION_SERVICE_UUID);
 	}
 	onServices(services) {
-		let service = services.find(service => "180A" == service.uuid);
-		if (service)
-			service.discoverAllCharacteristics();
+		if (services.length)
+			services[0].discoverCharacteristic(MANUFACTURER_NAME_UUID);
 	}
 	onCharacteristics(characteristics) {
-		let characteristic = characteristics.find(characteristic => "2A29" == characteristic.uuid);
-		if (characteristic)
-			characteristic.readValue();
+		if (characteristics.length)
+			characteristics[0].readValue();
 	}
 	onCharacteristicValue(characteristic, value) {
 		let manufacturer = String.fromArrayBuffer(value);
