@@ -39,6 +39,10 @@
 #include "xs.h"
 #include "mc.defines.h"
 
+#if mxParse
+	#include "xsScript.h"
+#endif
+
 #if ESP32
 	#define rtc_timeval timeval
 	#define rtctime_gettimeofday(a) gettimeofday(a, NULL)
@@ -1040,10 +1044,32 @@ void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 	the->host = C_NULL;
 }
 
+#if mxParse
+txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
+{
+	extern txPreparation* xsPreparation();
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txScript* script = NULL;
+	txPreparation *prep = xsPreparation();
+	fxInitializeParser(parser, the, 16 * 1024, prep->nameModulo);		//@@
+	parser->firstJump = &jump;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+	fxTerminateParser(parser);
+	return script;
+}
+#else
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	return C_NULL;
 }
+#endif
 
 void fxSweepHost(txMachine* the)
 {
