@@ -925,7 +925,7 @@ void fxCoderAdd(txCoder* self, txInteger delta, void* it)
 	self->stackLevel += delta;
 	code->stackLevel = self->stackLevel;
 	if (self->stackLevel < 0)
-		fprintf(stderr, "oops\n");
+		c_fprintf(stderr, "oops\n");		//@@
 }
 
 void fxCoderAddBranch(txCoder* self, txInteger delta, txInteger id, txTargetCode* target)
