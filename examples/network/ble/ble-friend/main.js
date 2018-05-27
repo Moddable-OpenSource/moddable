@@ -23,11 +23,11 @@
 
 import BLEClient from "bleclient";
 import Timer from "timer";
+import {uuid} from "btutils";
 
-const DEVICE_NAME = "UART";
-const SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
-const CHARACTERISTIC_RX_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E';
-const CHARACTERISTIC_TX_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+const SERVICE_UUID = uuid`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`;
+const CHARACTERISTIC_RX_UUID = uuid`6E400002-B5A3-F393-E0A9-E50E24DCCA9E`;
+const CHARACTERISTIC_TX_UUID = uuid`6E400003-B5A3-F393-E0A9-E50E24DCCA9E`;
 
 class BLEFriend extends BLEClient {
 	onReady() {
@@ -45,17 +45,16 @@ class BLEFriend extends BLEClient {
 		device.discoverPrimaryService(SERVICE_UUID);
 	}
 	onServices(services) {
-		let service = services.find(service => SERVICE_UUID == service.uuid);
-		if (service)
-			service.discoverAllCharacteristics();
+		if (services.length)
+			services[0].discoverAllCharacteristics();
 	}
 	onCharacteristics(characteristics) {
 		let rx_characteristic, tx_characteristic;
 		for (let i = 0; i < characteristics.length; ++i) {
 			let characteristic = characteristics[i];
-			if (CHARACTERISTIC_RX_UUID == characteristic.uuid)
+			if (characteristic.uuid.equals(CHARACTERISTIC_RX_UUID))
 				rx_characteristic = characteristic;
-			if (CHARACTERISTIC_TX_UUID == characteristic.uuid)
+			if (characteristic.uuid.equals(CHARACTERISTIC_TX_UUID))
 				tx_characteristic = characteristic;
 		}
 		if (tx_characteristic && rx_characteristic) {
