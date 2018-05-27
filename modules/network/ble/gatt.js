@@ -17,17 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import {UUID} from "btutils";
-
-function uuidToString(uuid) {
-	if ("number" == typeof uuid) {
-		if (uuid > 0xFFFF)
-			throw new Error("invalid uuid");
-		return ("000" + uuid.toString(16)).substr(-4);
-	}
-	else
-		return uuid.replace(/^0x/, '');
-}
+import {Bytes} from "btutils";
 
 export class Client {
 	constructor(dictionary) {
@@ -55,9 +45,8 @@ export class Client {
 	}
 
 	discoverPrimaryService(uuid) {
-		uuid = uuidToString(uuid);
 		this.services.length = 0;
-		this._discoverPrimaryServices(this.connection, UUID.toBuffer(uuid));
+		this._discoverPrimaryServices(this.connection, uuid);
 	}
 
 	discoverAllPrimaryServices() {
@@ -66,8 +55,7 @@ export class Client {
 	}
 	
 	findServiceByUUID(uuid) {
-		uuid = uuidToString(uuid);
-		return this.services.find(service => uuid == service.uuid);
+		return this.services.find(service => uuid.equals(service.uuid));
 	}
 
 	readRSSI() {
@@ -97,7 +85,7 @@ export class Client {
 				if (!params)
 					this.ble.onServices(this.services);
 				else {
-					params.uuid = UUID.toString(params.uuid);
+					params.uuid = new Bytes(params.uuid);
 					params.connection = this.connection;
 					params.ble = this.ble;
 					this.services.push(new Service(params));
@@ -148,9 +136,8 @@ export class Service {
 	}
 	
 	discoverCharacteristic(uuid) {
-		uuid = uuidToString(uuid);
 		this.characteristics.length = 0;
-		this._discoverCharacteristics(this.connection, this.start, this.end, UUID.toBuffer(uuid));
+		this._discoverCharacteristics(this.connection, this.start, this.end, uuid);
 	}
 
 	discoverAllCharacteristics() {
@@ -159,8 +146,7 @@ export class Service {
 	}
 	
 	findCharacteristicByUUID(uuid) {
-		uuid = uuidToString(uuid);
-		return this.characteristics.find(characteristic => uuid == characteristic.uuid);
+		return this.characteristics.find(characteristic => uuid.equals(characteristic.uuid));
 	}
 
 	_discoverCharacteristics() @ "xs_gatt_service_discover_characteristics"
@@ -172,7 +158,7 @@ export class Service {
 				if (!params)
 					this.ble.onCharacteristics(this.characteristics);
 				else {
-					params.uuid = UUID.toString(params.uuid);
+					params.uuid = new Bytes(params.uuid);
 					params.connection = this.connection;
 					params.service = this;
 					params.ble = this.ble;
@@ -248,7 +234,7 @@ export class Characteristic {
 				if (!params)
 					this.ble.onDescriptors(this.descriptors);
 				else {
-					params.uuid = UUID.toString(params.uuid);
+					params.uuid = new Bytes(params.uuid);
 					params.connection = this.connection;
 					params.characteristic = this;
 					this.descriptors.push(new Descriptor(params));

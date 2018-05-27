@@ -64,10 +64,32 @@ static void bytesToHexString(xsMachine *the, char *string, uint8_t *buffer, uint
 	}
 }
 
-void xs_btuuid_toString(xsMachine *the)
+void xs_bytes_set(xsMachine *the)
+{
+	if (xsmcTypeOf(xsArg(0)) == xsStringType) {
+		const char *s = xsmcToString(xsArg(0));
+		hexStringToBytes(the, xsmcToArrayBuffer(xsThis), s, c_strlen(s));
+	}
+	else {
+		c_memmove(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), xsGetArrayBufferLength(xsArg(0)));
+	}
+}
+
+void xs_bytes_equals(xsMachine *the)
 {
 	uint16_t length = xsGetArrayBufferLength(xsArg(0));
-	uint8_t *bytes = xsmcToArrayBuffer(xsArg(0));
+	if (length != xsGetArrayBufferLength(xsThis))
+		xsmcSetFalse(xsResult);
+	else {
+		uint16_t result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
+		xsmcSetBoolean(xsResult, (0 == result));
+	}
+}
+
+void xs_bytes_toString(xsMachine *the)
+{
+	uint16_t length = xsGetArrayBufferLength(xsThis);
+	uint8_t *bytes = xsmcToArrayBuffer(xsThis);
 	char buffer[36];
 	char *p = buffer;
 
@@ -89,27 +111,4 @@ void xs_btuuid_toString(xsMachine *the)
 	}
 	else
 		xsUnknownError("invalid uuid length");
-}
-
-void xs_btuuid_toBuffer(xsMachine *the)
-{
-	const char *uuid = xsmcToString(xsArg(0));
-	uint16_t byteLen, strLen = c_strlen(uuid);
-	uint8_t buffer[16];
-	if (4 == strLen) {
-		hexStringToBytes(the, buffer, uuid, strLen);
-		byteLen = strLen / 2;
-	}
-	else if (36 == strLen) {
-		hexStringToBytes(the, &buffer[0], &uuid[0], 8);
-		hexStringToBytes(the, &buffer[4], &uuid[9], 4);
-		hexStringToBytes(the, &buffer[6], &uuid[14], 4);
-		hexStringToBytes(the, &buffer[8], &uuid[19], 4);
-		hexStringToBytes(the, &buffer[10], &uuid[24], 12);
-		byteLen = 16;
-	}
-	else
-		xsUnknownError("invalid uuid length");
-
-	xsmcSetArrayBuffer(xsResult, buffer, byteLen);
 }

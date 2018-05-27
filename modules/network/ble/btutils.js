@@ -21,30 +21,39 @@
  * Portions based on Kinoma LowPAN Framework: Kinoma Bluetooth 4.2 Stack
  */
 
-import Hex from "hex";
 import GAP from "gap";
 
-export class BluetoothAddress {
-	static toString(buffer) {
-		return Hex.toString(buffer, ':');
+export class Bytes extends ArrayBuffer {
+	constructor(bytes) {
+		let byteLength;
+		if ("string" == typeof bytes)
+			byteLength = bytes.length >> 1;
+		else if (("object" == typeof bytes) && (bytes instanceof ArrayBuffer))
+			byteLength = bytes.byteLength;
+		else
+			throw new Error("unsupported type");
+		super(byteLength);
+		this.set(bytes);
 	}
-	static toBuffer(string) {
-		return Hex.toBuffer(string, ':');
-	}
+	set(bytes) @ "xs_bytes_set"
+	equals(that) @ "xs_bytes_equals"
+	toString() @ "xs_bytes_toString"
 }
-Object.freeze(BluetoothAddress.prototype);
+Object.freeze(Bytes.prototype);
 
-export class UUID {
-	static toString(buffer) @ "xs_btuuid_toString"
-	static toBuffer(string) @ "xs_btuuid_toBuffer"
+function uuid(strings) {
+	return new Bytes(strings[0].split("-").join(""));
 }
-Object.freeze(UUID.prototype);
+
+function address(strings) {
+	return new Bytes(strings[0].split(":").join(""));
+}
 
 function serializeUUID16List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 2);
 	for (let j = 0, i = 0; i < count; ++i) {
-		let uuid = new Uint8Array(UUID.toBuffer(data[i]));
+		let uuid = new Uint8Array(new Bytes(data[i]));
 		result[j++] = uuid[1];
 		result[j++] = uuid[0];
 	}
@@ -55,7 +64,7 @@ function serializeUUID128List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 16);
 	for (let i = 0; i < count; ++i) {
-		let uuid = (new Uint8Array(UUID.toBuffer(data[i]))).reverse();
+		let uuid = (new Uint8Array(new Bytes(data[i]))).reverse();
 		result.set(uuid, i * 16);
 	}
 	return result;
@@ -98,14 +107,14 @@ function serializeServiceData16({uuid, data = null}) {
 function serializeServiceData128({uuid, data = null}) {
 	let length = 16 + (data ? data.length : 0);
 	let result = new Uint8Array(length);
-	result.set((new Uint8Array(UUID.toBuffer(uuid))).reverse(), 0);
+	result.set((new Uint8Array(new Bytes(uuid))).reverse(), 0);
 	if (data)
 		result.set(data, 16);
 	return result;
 }
 
 function serializeAddress(data) {
-	let result = new Uint8Array(BluetoothAddress.toBuffer(data));
+	let result = new Uint8Array(new Bytes(data));
 	return result;
 }
 
@@ -309,6 +318,4 @@ export class Advertisement {
 }
 Object.freeze(Advertisement.prototype);
 
-export default {
-	BluetoothAddress, UUID, Advertisement
-};
+export { uuid, address };

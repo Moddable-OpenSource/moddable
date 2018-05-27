@@ -17,33 +17,28 @@
  */
 
 import BLEClient from "bleclient";
-
-const DEVICE_NAME = 'PowerMate Bluetooth';
-const SERVICE_UUID = '25598CF7-4240-40A6-9910-080F19F91EBC';
-const CHARACTERISTIC_UUID = '9CF53570-DDD9-47F3-BA63-09ACEFC60415';
+import {uuid} from "btutils";
 
 class PowerMate extends BLEClient {
 	onReady() {
 		this.startScanning();
 	}
 	onDiscovered(device) {
-		if (DEVICE_NAME == device.scanResponse.completeName) {
+		if ('PowerMate Bluetooth' == device.scanResponse.completeName) {
 			this.stopScanning();
 			this.connect(device);
 		}
 	}
 	onConnected(device) {
-		device.discoverPrimaryService(SERVICE_UUID);
+		device.discoverPrimaryService(uuid`25598CF7-4240-40A6-9910-080F19F91EBC`);
 	}
 	onServices(services) {
-		let service = services.find(service => SERVICE_UUID == service.uuid);
-		if (service)
-			service.discoverCharacteristic(CHARACTERISTIC_UUID);
+		if (services.length)
+			services[0].discoverCharacteristic(uuid`9CF53570-DDD9-47F3-BA63-09ACEFC60415`);
 	}
 	onCharacteristics(characteristics) {
-		let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
-		if (characteristic)
-			characteristic.enableNotifications();
+		if (characteristics.length)
+			characteristics[0].enableNotifications();
 	}
 	onCharacteristicNotification(characteristic, buffer) {
 		let state, value = new Uint8Array(buffer)[0];
