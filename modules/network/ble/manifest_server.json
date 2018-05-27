@@ -3,15 +3,13 @@
 		"*": [
 			"$(MODULES)/network/ble/bleserver",
 			"$(MODULES)/network/ble/btutils",
-			"$(MODULES)/network/ble/gap",
-			"$(MODULES)/data/hex/*"
+			"$(MODULES)/network/ble/gap"
 		],
 	},
 	"preload": [
 		"bleserver",
 		"btutils",
-		"gap",
-		"hex"
+		"gap"
 	],
 	"defines": {
 		"ble": {
