@@ -36,8 +36,7 @@ export class Bytes extends ArrayBuffer {
 		this.set(bytes);
 	}
 	set(bytes) @ "xs_bytes_set"
-	equals(that) @ "xs_bytes_equals"
-	toString() @ "xs_bytes_toString"
+	equals(bytes) @ "xs_bytes_equals"
 }
 Object.freeze(Bytes.prototype);
 
