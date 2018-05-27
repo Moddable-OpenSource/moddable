@@ -21,8 +21,6 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 
-#define kUUIDSeparator '-'
-
 static void hexStringToBytes(xsMachine *the, uint8_t *buffer, const char *string, uint16_t length)
 {
 	uint8_t c, byte;
@@ -53,17 +51,6 @@ static void hexStringToBytes(xsMachine *the, uint8_t *buffer, const char *string
 	}
 }
 
-static void bytesToHexString(xsMachine *the, char *string, uint8_t *buffer, uint16_t length)
-{
-	uint16_t i;
-	static const char *gHex = "0123456789ABCDEF";
-	for (i = 0; i < length; i++) {
-		uint8_t byte = c_read8(buffer++);
-		*string++ = c_read8(&gHex[byte >> 4]);
-		*string++ = c_read8(&gHex[byte & 0x0F]);
-	}
-}
-
 void xs_bytes_set(xsMachine *the)
 {
 	if (xsmcTypeOf(xsArg(0)) == xsStringType) {
@@ -84,31 +71,4 @@ void xs_bytes_equals(xsMachine *the)
 		uint16_t result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
 		xsmcSetBoolean(xsResult, (0 == result));
 	}
-}
-
-void xs_bytes_toString(xsMachine *the)
-{
-	uint16_t length = xsGetArrayBufferLength(xsThis);
-	uint8_t *bytes = xsmcToArrayBuffer(xsThis);
-	char buffer[36];
-	char *p = buffer;
-
-	if (2 == length) {
-		bytesToHexString(the, p, bytes, 2);
-		xsResult = xsStringBuffer(buffer, 4);
-	}
-	else if (16 == length) {
-		bytesToHexString(the, p, bytes, 4);
-		bytes += 4; p += 8; *p++ = kUUIDSeparator;
-		bytesToHexString(the, p, bytes, 2);
-		bytes += 2; p += 4; *p++ = kUUIDSeparator;
-		bytesToHexString(the, p, bytes, 2);
-		bytes += 2; p += 4; *p++ = kUUIDSeparator;
-		bytesToHexString(the, p, bytes, 2);
-		bytes += 2; p += 4; *p++ = kUUIDSeparator;
-		bytesToHexString(the, p, bytes, 6);
-		xsResult = xsStringBuffer(buffer, 36);
-	}
-	else
-		xsUnknownError("invalid uuid length");
 }
