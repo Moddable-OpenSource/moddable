@@ -18,7 +18,7 @@
 
 import BLEClient from "bleclient";
 import Timer from "timer";
-import {Bytes} from "btutils";
+import {uuid} from "btutils";
 
 const DEVICE_NAME = "SensorTag";
 
@@ -33,19 +33,19 @@ class SensorTagSensor {
 					this.service = dictionary.service;
 					break;
 				case "data":
-					this.data = this.uuid(dictionary.data);
+					this.data = uuid([dictionary.data]);
 					break;
 				case "calibration":
-					this.calibration = this.uuid(dictionary.calibration);
+					this.calibration = uuid([dictionary.calibration]);
 					break;
 				case "configuration":
-					this.configuration = this.uuid(dictionary.configuration);
+					this.configuration = uuid([dictionary.configuration]);
 					break;
 				case "configuration_data":
 					this.configuration_data = dictionary.configuration_data;
 					break;
 				case "period":
-					this.period = this.uuid(dictionary.period);
+					this.period = uuid([dictionary.period]);
 					break;
 				case "period_data":
 					this.period_data = dictionary.period_data;
@@ -81,9 +81,6 @@ class SensorTagSensor {
 	}
 	onValue(buffer) {
 		debugger;
-	}
-	uuid(string) {
-		return new Bytes(string.split("-").join(""));
 	}
 }
 
