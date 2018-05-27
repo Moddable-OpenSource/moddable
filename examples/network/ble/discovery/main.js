@@ -18,10 +18,9 @@
 */
 
 import BLEClient from "bleclient";
+import {uuid} from "btutils";
 
-const DEVICE_NAME = "<YOUR DEVICE NAME>";
-const DEVICE_INFORMATION_SERVICE_UUID = 0x180A;
-const MANUFACTURER_NAME_UUID = 0x2A29;
+const DEVICE_NAME = "<YOUR_DEVICE_NAME>";
 
 class Discovery extends BLEClient {
 	onReady() {
@@ -35,11 +34,11 @@ class Discovery extends BLEClient {
 	}
 	onConnected(device) {
 		this.device = device;
-		device.discoverPrimaryService(DEVICE_INFORMATION_SERVICE_UUID);
+		device.discoverPrimaryService(uuid`180A`);
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(MANUFACTURER_NAME_UUID);
+			services[0].discoverCharacteristic(uuid`2A29`);
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length)
