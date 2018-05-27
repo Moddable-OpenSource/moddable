@@ -20,8 +20,6 @@ import BLEClient from "bleclient";
 import Timer from "timer";
 import {uuid} from "btutils";
 
-const DEVICE_NAME = "SensorTag";
-
 class SensorTagSensor {
 	configure(dictionary) {
 		for (let property in dictionary) {
@@ -33,19 +31,19 @@ class SensorTagSensor {
 					this.service = dictionary.service;
 					break;
 				case "data":
-					this.data = uuid([dictionary.data]);
+					this.data = dictionary.data;
 					break;
 				case "calibration":
-					this.calibration = uuid([dictionary.calibration]);
+					this.calibration = dictionary.calibration;
 					break;
 				case "configuration":
-					this.configuration = uuid([dictionary.configuration]);
+					this.configuration = dictionary.configuration;
 					break;
 				case "configuration_data":
 					this.configuration_data = dictionary.configuration_data;
 					break;
 				case "period":
-					this.period = uuid([dictionary.period]);
+					this.period = dictionary.period;
 					break;
 				case "period_data":
 					this.period_data = dictionary.period_data;
@@ -57,16 +55,16 @@ class SensorTagSensor {
 	initialize() {
 		if (this.configuration) {
 			if (!this.configuration_data)
-				this.configuration_data = [1];	// start measurements
+				this.configuration_data = Uint8Array.of(1);	// start measurements
 			let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-			characteristic.writeWithoutResponse((Uint8Array.from(this.configuration_data)).buffer);
+			characteristic.writeWithoutResponse(this.configuration_data.buffer);
 		}
 		if (this.period) {
 			let characteristic = this.service.findCharacteristicByUUID(this.period);
 			if (characteristic) {
 				if (!this.period_data)
-					this.period_data = [100];	// 1s (10ms * 100) read interval
-				characteristic.writeWithoutResponse((Uint8Array.from(this.period_data)).buffer);
+					this.period_data = Uint8Array.of(100);	// 1s (10ms * 100) read interval
+				characteristic.writeWithoutResponse(this.period_data.buffer);
 			}
 		}
 	}
@@ -131,7 +129,7 @@ class BarometerSensor extends SensorTagSensor {
 	configure(dictionary) {
 		super.configure(dictionary);
 		let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-		characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
+		characteristic.writeWithoutResponse(this.configuration_data.buffer);
 		characteristic = this.service.findCharacteristicByUUID(this.calibration);
 		characteristic.readValue();
 	}
@@ -154,7 +152,7 @@ class BarometerSensor extends SensorTagSensor {
 	}
 	onValue(buffer) {
 		let view = new DataView(buffer);
-		let calibration_data = this.calibration_data = new Array(8);
+		let calibration_data = this.calibration_data = new Uint16Array(8);
 		for (let i = 0; i < 4; ++i)
 			calibration_data[i] = view.getUint16(i * 2, true);
 		for (let i = 4; i < 8; ++i)
@@ -162,8 +160,7 @@ class BarometerSensor extends SensorTagSensor {
 			
 		// enable measurements
 		let ch = this.service.findCharacteristicByUUID(this.configuration);
-		let config = Uint8Array.of(0x01);
-		ch.writeWithoutResponse(config.buffer);
+		ch.writeWithoutResponse(Uint8Array.of(0x01).buffer);
 		
 		// enable notifications
 		ch = this.service.findCharacteristicByUUID(this.data);
@@ -197,55 +194,55 @@ class KeysSensor extends SensorTagSensor {
 }
 
 const SERVICES = {
-	["F000AA00-0451-4000-B000-000000000000"]: {
-		name: "temperature",
+	["temperature"]: {
+		uuid: uuid`F000AA00-0451-4000-B000-000000000000`,
 	    constructor: TemperatureSensor,
-	    data: "F000AA01-0451-4000-B000-000000000000",
-	    configuration: "F000AA02-0451-4000-B000-000000000000",
-	    period: "F000AA03-0451-4000-B000-000000000000",
+	    data: uuid`F000AA01-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA02-0451-4000-B000-000000000000`,
+	    period: uuid`F000AA03-0451-4000-B000-000000000000`,
 	},
-	["F000AA10-0451-4000-B000-000000000000"]: {
-		name: "accelerometer",
+	["accelerometer"]: {
+		uuid: uuid`F000AA10-0451-4000-B000-000000000000`,
 	    constructor: AccelerometerSensor,
-	    data: "F000AA11-0451-4000-B000-000000000000",
-	    configuration: "F000AA12-0451-4000-B000-000000000000",
-	    period: "F000AA13-0451-4000-B000-000000000000",
+	    data: uuid`F000AA11-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA12-0451-4000-B000-000000000000`,
+	    period: uuid`F000AA13-0451-4000-B000-000000000000`,
 	},
-	["F000AA20-0451-4000-B000-000000000000"]: {
-		name: "humidity",
+	["humidity"]: {
+		uuid: uuid`F000AA20-0451-4000-B000-000000000000`,
 	    constructor: HumiditySensor,
-	    data: "F000AA21-0451-4000-B000-000000000000",
-	    configuration: "F000AA22-0451-4000-B000-000000000000",
-	    period: "F000AA23-0451-4000-B000-000000000000",
+	    data: uuid`F000AA21-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA22-0451-4000-B000-000000000000`,
+	    period: uuid`F000AA23-0451-4000-B000-000000000000`,
 	},
-	["F000AA30-0451-4000-B000-000000000000"]: {
-		name: "magnetometer",
+	["magnetometer"]: {
+		uuid: uuid`F000AA30-0451-4000-B000-000000000000`,
 	    constructor: MagnetometerSensor,
-	    data: "F000AA31-0451-4000-B000-000000000000",
-	    configuration: "F000AA32-0451-4000-B000-000000000000",
-	    period: "F000AA33-0451-4000-B000-000000000000",
+	    data: uuid`F000AA31-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA32-0451-4000-B000-000000000000`,
+	    period: uuid`F000AA33-0451-4000-B000-000000000000`,
 	},
-	["F000AA40-0451-4000-B000-000000000000"]: {
-		name: "barometer",
+	["barometer"]: {
+		uuid: uuid`F000AA40-0451-4000-B000-000000000000`,
 	    constructor: BarometerSensor,
-	    data: "F000AA41-0451-4000-B000-000000000000",
-	    configuration: "F000AA42-0451-4000-B000-000000000000",
-		configuration_data: [0x02],
-	    period: "F000AA44-0451-4000-B000-000000000000",
-	    calibration: "F000AA43-0451-4000-B000-000000000000",
+	    data: uuid`F000AA41-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA42-0451-4000-B000-000000000000`,
+		configuration_data: Uint8Array.of(0x02),
+	    period: uuid`F000AA44-0451-4000-B000-000000000000`,
+	    calibration: uuid`F000AA43-0451-4000-B000-000000000000`,
 	},
-	["F000AA50-0451-4000-B000-000000000000"]: {
-		name: "gyroscope",
+	["gyroscope"]: {
+		uuid: uuid`F000AA50-0451-4000-B000-000000000000`,
 	    constructor: GyroscopeSensor,
-	    data: "F000AA51-0451-4000-B000-000000000000",
-	    configuration: "F000AA52-0451-4000-B000-000000000000",
-		configuration_data: [0x07],	// Enable X, Y and Z
-	    period: "F000AA53-0451-4000-B000-000000000000",
+	    data: uuid`F000AA51-0451-4000-B000-000000000000`,
+	    configuration: uuid`F000AA52-0451-4000-B000-000000000000`,
+		configuration_data: Uint8Array.of(0x07),	// Enable X, Y and Z
+	    period: uuid`F000AA53-0451-4000-B000-000000000000`,
 	},
-	["FFE0"]: {
-		name: "keys",
+	["keys"]: {
+		uuid: uuid`FFE0`,
 	    constructor: KeysSensor,
-	    data: "FFE1",
+	    data: uuid`FFE1`,
 	},
 };
 
@@ -254,7 +251,7 @@ class SensorTag extends BLEClient {
 		this.startScanning();
 	}
 	onDiscovered(device) {
-		if (DEVICE_NAME == device.scanResponse.completeName) {
+		if ("SensorTag" == device.scanResponse.completeName) {
 			this.sensors = [];
 			this.stopScanning();
 			this.connect(device);
@@ -265,10 +262,11 @@ class SensorTag extends BLEClient {
 	}
 	onServices(services) {
 		services.forEach(service => {
-			let uuid = service.uuid.toString();
-			if (uuid in SERVICES) {
-				let sensor = Object.assign({service}, SERVICES[uuid]);
-				this.sensors.push(sensor);
+			for (let name in SERVICES) {
+				if (service.uuid.equals(SERVICES[name].uuid)) {
+					let sensor = Object.assign({service}, SERVICES[name], {name});
+					this.sensors.push(sensor);
+				}
 			}
 		});
 		this.index = 0;

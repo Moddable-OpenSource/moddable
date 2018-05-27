@@ -5,8 +5,7 @@
 			"$(MODULES)/network/ble/btutils",
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
-			"$(MODULES)/network/ble/gatt",
-			"$(MODULES)/data/hex/*"
+			"$(MODULES)/network/ble/gatt"
 		],
 	},
 	"preload": [
@@ -15,7 +14,6 @@
 		"connection",
 		"gap",
 		"gatt",
-		"hex"
 	],
 	"defines": {
 		"ble": {
