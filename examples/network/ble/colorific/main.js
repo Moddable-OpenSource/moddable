@@ -19,10 +19,7 @@
 
 import BLEClient from "bleclient";
 import Timer from "timer";
-
-const DEVICE_NAME = "RGBLightOne";
-const SERVICE_UUID = 0x1802;
-const CHARACTERISTIC_UUID = 0x2A06;
+import {uuid} from "btutils";
 
 class Colorific extends BLEClient {
 	onReady() {
@@ -31,17 +28,17 @@ class Colorific extends BLEClient {
 		this.startScanning();
 	}
 	onDiscovered(device) {
-		if (DEVICE_NAME == device.scanResponse.completeName) {
+		if ('RGBLightOne' == device.scanResponse.completeName) {
 			this.stopScanning();
 			this.connect(device);
 		}
 	}
 	onConnected(device) {
-		device.discoverPrimaryService(SERVICE_UUID);
+		device.discoverPrimaryService(uuid`1802`);
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(CHARACTERISTIC_UUID);
+			services[0].discoverCharacteristic(uuid`2A06`);
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length) {

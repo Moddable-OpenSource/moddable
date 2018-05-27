@@ -19,7 +19,7 @@
  */
 
 import GAP from "gap";
-import {BluetoothAddress, Advertisement, UUID} from "btutils";
+import {Advertisement, Bytes} from "btutils";
 
 export class BLEServer @ "xs_ble_server_destructor" {
 	constructor() {
@@ -60,7 +60,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	
 	get localAddress() {
 		let address = this._getLocalAddress();
-		return BluetoothAddress.toString(address);
+		return String.fromArrayBuffer(address);
 	}
 	
 	notifyValue(characteristic, value) {
@@ -145,20 +145,18 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onCharacteristicWritten(params);
 				break;
 			case "onCharacteristicRead": {
-				let value = this.onCharacteristicRead({ uuid:UUID.toString(params.uuid), handle:params.handle, name:params.name });
+				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name });
 				value = this._typedValueToBuffer(params.type, value);
 				return value;
 			}
 			case "onCharacteristicNotifyEnabled":
-				params.uuid = UUID.toString(params.uuid);
 				this.onCharacteristicNotifyEnabled(params);
 				break;
 			case "onCharacteristicNotifyDisabled":
-				params.uuid = UUID.toString(params.uuid);
 				this.onCharacteristicNotifyDisabled(params);
 				break;
 			case "onConnected":
-				this.onConnected({ address:BluetoothAddress.toString(params.address), connection:params.connection });
+				this.onConnected({ address:new Bytes(params.address), connection:params.connection });
 				break;
 			case "onDisconnected":
 				this.onDisconnected(params);

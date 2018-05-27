@@ -21,7 +21,7 @@
 import GAP from "gap";
 import Connection from "connection";
 import {Client} from "gatt";
-import {BluetoothAddress, Advertisement} from "btutils";
+import {Advertisement, Bytes} from "btutils";
 
 export class BLEClient @ "xs_ble_client_destructor" {
 	constructor() {
@@ -32,7 +32,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	close() @ "xs_ble_client_close"
 	
 	connect(params) {
-		this._connect(BluetoothAddress.toBuffer(params.address));
+		this._connect(params.address);
 	}
 	
 	onReady() {}
@@ -69,13 +69,13 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				this.onReady();
 				break;
 			case "onDiscovered": {
-				let address = BluetoothAddress.toString(params.address);
+				let address = new Bytes(params.address);
 				let scanResponse = new Advertisement(params.scanResponse);
 				this.onDiscovered({ address, scanResponse });
 				break;
 			}
 			case "onConnected": {
-				let address = BluetoothAddress.toString(params.address);
+				let address = new Bytes(params.address);
 				let ble = this;
 				let client = new Client({ address, connection:params.connection, ble });
 				let connection = new Connection({ address, client, ble });
