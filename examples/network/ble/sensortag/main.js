@@ -18,6 +18,7 @@
 
 import BLEClient from "bleclient";
 import Timer from "timer";
+import {Bytes} from "btutils";
 
 const DEVICE_NAME = "SensorTag";
 
@@ -32,16 +33,19 @@ class SensorTagSensor {
 					this.service = dictionary.service;
 					break;
 				case "data":
-					this.data = dictionary.data;
+					this.data = this.uuid(dictionary.data);
+					break;
+				case "calibration":
+					this.calibration = this.uuid(dictionary.calibration);
 					break;
 				case "configuration":
-					this.configuration = dictionary.configuration;
+					this.configuration = this.uuid(dictionary.configuration);
 					break;
 				case "configuration_data":
 					this.configuration_data = dictionary.configuration_data;
 					break;
 				case "period":
-					this.period = dictionary.period;
+					this.period = this.uuid(dictionary.period);
 					break;
 				case "period_data":
 					this.period_data = dictionary.period_data;
@@ -77,6 +81,9 @@ class SensorTagSensor {
 	}
 	onValue(buffer) {
 		debugger;
+	}
+	uuid(string) {
+		return new Bytes(string.split("-").join(""));
 	}
 }
 
@@ -128,7 +135,7 @@ class BarometerSensor extends SensorTagSensor {
 		super.configure(dictionary);
 		let characteristic = this.service.findCharacteristicByUUID(this.configuration);
 		characteristic.writeWithoutResponse((new Uint8Array(this.configuration_data)).buffer);
-		characteristic = this.service.findCharacteristicByUUID(dictionary.calibration);
+		characteristic = this.service.findCharacteristicByUUID(this.calibration);
 		characteristic.readValue();
 	}
 	initialize() {
@@ -261,8 +268,9 @@ class SensorTag extends BLEClient {
 	}
 	onServices(services) {
 		services.forEach(service => {
-			if (service.uuid in SERVICES) {
-				let sensor = Object.assign({service}, SERVICES[service.uuid]);
+			let uuid = service.uuid.toString();
+			if (uuid in SERVICES) {
+				let sensor = Object.assign({service}, SERVICES[uuid]);
 				this.sensors.push(sensor);
 			}
 		});
