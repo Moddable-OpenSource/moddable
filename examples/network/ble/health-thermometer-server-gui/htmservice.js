@@ -17,6 +17,7 @@
  */
 
 import BLEServer from "bleserver";
+import {uuid} from "btutils";
 import Timer from "timer";
 
 export default class HealthThermometerService extends BLEServer {
@@ -33,7 +34,7 @@ export default class HealthThermometerService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["1809","180F"]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`1809`, uuid`180F`]}
 		});
 		application.distribute("onDisconnected");
 	}
