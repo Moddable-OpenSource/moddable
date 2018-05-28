@@ -18,6 +18,7 @@
  */
 
 import BLEServer from "bleserver";
+import {uuid} from "btutils";
 
 const URI = "http://www.moddable.com";
 
@@ -27,7 +28,7 @@ const domains = [ '.com/', '.org/', '.edu/', '.net/', '.info/', '.biz/', '.gov/'
 class URIBeacon extends BLEServer {
 	onReady() {
 		this.startAdvertising({
-			advertisingData: {completeUUID16List: ["FED8"], serviceDataUUID16: {uuid: 0xFED8, data: this.encodeData(URI)}}
+			advertisingData: {completeUUID16List: [uuid`FED8`], serviceDataUUID16: {uuid: uuid`FED8`, data: this.encodeData(URI)}}
 		});
 	}
 	encodeData(uri) {

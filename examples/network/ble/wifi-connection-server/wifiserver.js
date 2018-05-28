@@ -13,6 +13,7 @@
  */
 
 import BLEServer from "bleserver";
+import {uuid} from "btutils";
 import WiFi from "wifi";
 import Net from "net";
 
@@ -28,7 +29,7 @@ export default class WiFiServer extends BLEServer {
 	onDisconnected() {
 		this.startAdvertising({
 			advertisingData: {shortName: "Moddable"},
-			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["FF00"]}
+			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
 		});
 	}
 	onCharacteristicWritten(params) {

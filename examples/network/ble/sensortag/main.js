@@ -194,35 +194,35 @@ class KeysSensor extends SensorTagSensor {
 }
 
 const SERVICES = {
-	["temperature"]: {
+	"temperature": {
 		uuid: uuid`F000AA00-0451-4000-B000-000000000000`,
 	    constructor: TemperatureSensor,
 	    data: uuid`F000AA01-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA02-0451-4000-B000-000000000000`,
 	    period: uuid`F000AA03-0451-4000-B000-000000000000`,
 	},
-	["accelerometer"]: {
+	"accelerometer": {
 		uuid: uuid`F000AA10-0451-4000-B000-000000000000`,
 	    constructor: AccelerometerSensor,
 	    data: uuid`F000AA11-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA12-0451-4000-B000-000000000000`,
 	    period: uuid`F000AA13-0451-4000-B000-000000000000`,
 	},
-	["humidity"]: {
+	"humidity": {
 		uuid: uuid`F000AA20-0451-4000-B000-000000000000`,
 	    constructor: HumiditySensor,
 	    data: uuid`F000AA21-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA22-0451-4000-B000-000000000000`,
 	    period: uuid`F000AA23-0451-4000-B000-000000000000`,
 	},
-	["magnetometer"]: {
+	"magnetometer": {
 		uuid: uuid`F000AA30-0451-4000-B000-000000000000`,
 	    constructor: MagnetometerSensor,
 	    data: uuid`F000AA31-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA32-0451-4000-B000-000000000000`,
 	    period: uuid`F000AA33-0451-4000-B000-000000000000`,
 	},
-	["barometer"]: {
+	"barometer": {
 		uuid: uuid`F000AA40-0451-4000-B000-000000000000`,
 	    constructor: BarometerSensor,
 	    data: uuid`F000AA41-0451-4000-B000-000000000000`,
@@ -231,7 +231,7 @@ const SERVICES = {
 	    period: uuid`F000AA44-0451-4000-B000-000000000000`,
 	    calibration: uuid`F000AA43-0451-4000-B000-000000000000`,
 	},
-	["gyroscope"]: {
+	"gyroscope": {
 		uuid: uuid`F000AA50-0451-4000-B000-000000000000`,
 	    constructor: GyroscopeSensor,
 	    data: uuid`F000AA51-0451-4000-B000-000000000000`,
@@ -239,7 +239,7 @@ const SERVICES = {
 		configuration_data: Uint8Array.of(0x07),	// Enable X, Y and Z
 	    period: uuid`F000AA53-0451-4000-B000-000000000000`,
 	},
-	["keys"]: {
+	"keys": {
 		uuid: uuid`FFE0`,
 	    constructor: KeysSensor,
 	    data: uuid`FFE1`,
