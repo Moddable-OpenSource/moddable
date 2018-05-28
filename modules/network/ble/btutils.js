@@ -52,7 +52,7 @@ function serializeUUID16List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 2);
 	for (let j = 0, i = 0; i < count; ++i) {
-		let uuid = new Uint8Array(new Bytes(data[i]));
+		let uuid = new Uint8Array(data[i]);
 		result[j++] = uuid[1];
 		result[j++] = uuid[0];
 	}
@@ -63,7 +63,7 @@ function serializeUUID128List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 16);
 	for (let i = 0; i < count; ++i) {
-		let uuid = (new Uint8Array(new Bytes(data[i]))).reverse();
+		let uuid = (new Uint8Array(data[i])).reverse();
 		result.set(uuid, i * 16);
 	}
 	return result;
@@ -96,8 +96,9 @@ function serializeConnectionInterval({intervalMin, intervalMax}) {
 function serializeServiceData16({uuid, data = null}) {
 	let length = 2 + (data ? data.length : 0);
 	let result = new Uint8Array(length);
-	result[0] = uuid & 0xFF;
-	result[1] = (uuid >> 8) & 0xFF;
+	let a = new Uint8Array(uuid);
+	result[0] = a[1];
+	result[1] = a[0];
 	if (data)
 		result.set(data, 2);
 	return result;
@@ -106,14 +107,14 @@ function serializeServiceData16({uuid, data = null}) {
 function serializeServiceData128({uuid, data = null}) {
 	let length = 16 + (data ? data.length : 0);
 	let result = new Uint8Array(length);
-	result.set((new Uint8Array(new Bytes(uuid))).reverse(), 0);
+	result.set((new Uint8Array(uuid)).reverse(), 0);
 	if (data)
 		result.set(data, 16);
 	return result;
 }
 
 function serializeAddress(data) {
-	let result = new Uint8Array(new Bytes(data));
+	let result = new Uint8Array(data);
 	return result;
 }
 
