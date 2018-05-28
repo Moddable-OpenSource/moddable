@@ -59,8 +59,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	initialize() @ "xs_ble_server_initialize"
 	
 	get localAddress() {
-		let address = this._getLocalAddress();
-		return String.fromArrayBuffer(address);
+		return new Bytes(this._getLocalAddress());
 	}
 	
 	notifyValue(characteristic, value) {
