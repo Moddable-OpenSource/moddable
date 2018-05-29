@@ -42,7 +42,8 @@ XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
 	$(XS_DIR)\includes\xsmc.h \
 	$(XS_DIR)\sources\xsCommon.h \
-	$(XS_DIR)\sources\xsAll.h
+	$(XS_DIR)\sources\xsAll.h \
+	$(XS_DIR)\sources\xsScript.h
 
 XS_OBJECTS = \
 	$(LIB_DIR)\win_xs.o \
@@ -51,6 +52,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
 	$(LIB_DIR)\xsBoolean.o \
+	$(LIB_DIR)\xsCode.o \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
@@ -60,6 +62,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsGenerator.o \
 	$(LIB_DIR)\xsGlobal.o \
 	$(LIB_DIR)\xsJSON.o \
+	$(LIB_DIR)\xsLexical.o \
 	$(LIB_DIR)\xsMapSet.o \
 	$(LIB_DIR)\xsMarshall.o \
 	$(LIB_DIR)\xsMath.o \
@@ -74,8 +77,13 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsProxy.o \
 	$(LIB_DIR)\xsRegExp.o \
 	$(LIB_DIR)\xsRun.o \
+	$(LIB_DIR)\xsScope.o \
+	$(LIB_DIR)\xsScript.o \
+	$(LIB_DIR)\xsSourceMap.o \
 	$(LIB_DIR)\xsString.o \
 	$(LIB_DIR)\xsSymbol.o \
+	$(LIB_DIR)\xsSyntaxical.o \
+	$(LIB_DIR)\xsTree.o \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \

@@ -576,16 +576,14 @@
 	#endif
 #endif
 
-#if defined(mxCompile) || defined(mxLink) || defined(mxParse)
-	#if mxWindows
-		#define C_ENOMEM ERROR_NOT_ENOUGH_MEMORY
-		#define C_EINVAL ERROR_INVALID_DATA
-	#else
-		#include <errno.h>
-		#include <sys/stat.h>
-		#define C_ENOMEM ENOMEM
-		#define C_EINVAL EINVAL
-	#endif
+#if mxWindows
+	#define C_ENOMEM ERROR_NOT_ENOUGH_MEMORY
+	#define C_EINVAL ERROR_INVALID_DATA
+#else
+	#include <errno.h>
+	#include <sys/stat.h>
+	#define C_ENOMEM ENOMEM
+	#define C_EINVAL EINVAL
 #endif
 
 #ifdef mxParse
