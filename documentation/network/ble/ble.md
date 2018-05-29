@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: May 22, 2018
+Revised: May 29, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -20,6 +20,7 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 	* [Class Characteristic](#classcharacteristic)
 	* [Class Descriptor](#classdescriptor)
 	* [Class Advertisement](#classadvertisement)
+	* [Class Bytes](#classbytes)
 * [BLE Server](#bleserver)
 	* [Class BLEServer](#classbleserver)
 	* [GATT Services](#gattservices)
@@ -74,11 +75,12 @@ The following BLE server example subclasses `BLEServer` to advertise the device 
 
 ```javascript
 import BLEServer from "bleserver";
+import {uuid} from "btutils";
 	
 class HealthThermometerService extends BLEServer {
 	onReady() {
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: "Moddable HTM", completeUUID16List: ["1809","180F"]}
+			advertisingData: {flags: 6, completeName: "Moddable HTM", completeUUID16List: [uuid`1809`, uuid`180F`]}
 		});
 	}
 }
@@ -109,8 +111,8 @@ The following code from the [powermate](../../../examples/network/ble/powermate)
 
 ```javascript
 const DEVICE_NAME = 'PowerMate Bluetooth';
-const SERVICE_UUID = '25598CF7-4240-40A6-9910-080F19F91EBC';
-const CHARACTERISTIC_UUID = '9CF53570-DDD9-47F3-BA63-09ACEFC60415';
+const SERVICE_UUID = uuid`25598CF7-4240-40A6-9910-080F19F91EBC`;
+const CHARACTERISTIC_UUID = uuid`9CF53570-DDD9-47F3-BA63-09ACEFC60415`;
 
 class PowerMate extends BLEClient {
 	onReady() {
@@ -126,12 +128,12 @@ class PowerMate extends BLEClient {
 		device.discoverPrimaryService(SERVICE_UUID);
 	}
 	onServices(services) {
-		let service = services.find(service => SERVICE_UUID == service.uuid);
+		let service = services.find(service => service.uuid.equals(SERVICE_UUID));
 		if (service)
 			service.discoverCharacteristic(CHARACTERISTIC_UUID);
 	}
 	onCharacteristics(characteristics) {
-		let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
+		let characteristic = characteristics.find(characteristic => characteristic.uuid.equals(CHARACTERISTIC_UUID));
 		if (characteristic)
 			characteristic.enableNotifications();
 	}
@@ -227,7 +229,7 @@ To connect to a device named "Brian" from the `onDiscovered` callback:
 ```javascript
 onDiscovered(device) {
 	if ("Brian" == 	device.scanResponse.completeName) {
-		this.connect(device.address);
+		this.connect(device);
 	}
 }
 ```
@@ -252,7 +254,7 @@ onDiscovered(device) {
 	this.connect(device);
 }
 onConnected(device) {
-	trace(`Connected to device address ${device.address}\n`);
+	trace("Connected to device\n");
 }
 ```
 
@@ -279,7 +281,7 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | Name | Type | Description |
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
-| `address` | `string` | Bluetooth device address.
+| `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 
 ### Functions 
@@ -305,7 +307,7 @@ onConnected(device) {
 	device.readRSSI();
 }
 onRSSI(device, rssi) {
-	trace(`device ${device.address} signal strength is ${rssi}\n`);
+	trace(`signal strength is ${rssi}\n`);
 }
 ```
 
@@ -320,19 +322,18 @@ Use the `discoverAllPrimaryServices` function to discover all the peripheral's G
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `number` or `string` | Service UUID to discover |
+| `uuid` | `object` | A [Bytes](#classbytes) object containing the UUID to discover |
 
-Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID. The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
-
+Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID.
 ***
 
 #### `findServiceByUUID(uuid)`
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `number` or `string` | Service UUID to find |
+| `uuid` | `object` | A [Bytes](#classbytes) object containing the Service UUID to find |
 
-The `findServiceByUUID` function finds and returns the service identified by `uuid`. This function searches the `services` property array.  The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
+The `findServiceByUUID` function finds and returns the service identified by `uuid`. This function searches the `services` property array.
 
 ***
 
@@ -351,23 +352,24 @@ onConnected(device) {
 	device.discoverAllPrimaryServices();
 }
 onServices(services) {
-	services.forEach( service => trace(`found service ${service.uuid}\n`);
+	trace(`${services.length} services found\n`);
 }
 ```
 
 To discover a single primary service:	
 
 ```javascript
-const SERVICE_UUID = 0xFF00;
+const SERVICE_UUID = uuid`0xFF00`;
 
 onConnected(device) {
 	device.discoverPrimaryService(SERVICE_UUID);
 }
 onServices(services) {
 	if (services.length)
-		trace(`found service ${services[0].uuid}\n`);
+		trace("found service\n");
 }
 ```
+> **Note:** The `uuid` tagged template allows applications to represent UUID values as strings. Refer to the [Bytes](#classbytes) class section for details.
 
 ***
 
@@ -376,7 +378,7 @@ The `close` function terminates the peripheral connection.
 
 ```javascript
 onConnected(device) {
-	trace(`connected to device ${device.address}\n`);
+	trace("connected to device\n");
 	device.close();
 }
 onDisconnected() {
@@ -398,7 +400,7 @@ The `Service` class provides access to a single peripheral GATT service.
 | Name | Type | Description |
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
-| `uuid` | `string` | Service UUID.
+| `uuid` | `object` | Instance of [Bytes](#classbytes) class containing service UUID.
 | `start` | `number` | Starting handle of included characteristics.
 | `end` | `number` | Ending handle of included characteristics.
 | `characteristics` | `array` | Array of service characteristics discovered.
@@ -414,9 +416,9 @@ Use the `discoverAllCharacteristics()` function to discover all the service char
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `number` or `string` | Characteristic UUID to discover |
+| `uuid` | `object` | A [Bytes](#classbytes) object containing the Characteristic UUID to discover |
 
-Use the `discoverCharacteristic` function to discover a single service characteristic by UUID. The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
+Use the `discoverCharacteristic` function to discover a single service characteristic by UUID.
 
 ***
 
@@ -424,9 +426,9 @@ Use the `discoverCharacteristic` function to discover a single service character
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `uuid` | `number` or `string` | Characteristic UUID to find |
+| `uuid` | `object` | A [Bytes](#classbytes) object containing the Characteristic UUID to find |
 
-The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.  The `uuid` argument can be a `number` or `string`. When a `string` is provided, the `'0x'` prefix is optional.
+The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.
 
 ***
 
@@ -443,23 +445,23 @@ The `onCharacteristics` callback function is called when characteristic discover
 To discover all the characteristics in the [Device Information](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.device_information.xml) service:
 
 ```javascript
-const DEVICE_INFORMATION_SERVICE_UUID = '180A';
+const DEVICE_INFORMATION_SERVICE_UUID = uuid`180A`;
 
 onServices(services) {
-	let service = services.find(service => DEVICE_INFORMATION_SERVICE_UUID == service.uuid);
+	let service = services.find(service => service.uuid.equals(DEVICE_INFORMATION_SERVICE_UUID));
 	if (service)
 		service.discoverAllCharacteristics();
 }
 onCharacteristics(characteristics) {
-	characteristics.forEach(characteristic => trace(`found characteristic ${characteristic}\n`));
+	trace(`${characteristics.length} characteristics found\n`);
 }
 ```
 
 To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml) characteristic in the [Heart Rate](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) service:
 
 ```javascript
-const HEART_RATE_SERVICE_UUID = 0x180A;
-const HEART_RATE_MEASUREMENT_UUID = 0x2A37;
+const HEART_RATE_SERVICE_UUID = uuid`180A`;
+const HEART_RATE_MEASUREMENT_UUID = uuid`2A37`;
 
 onConnected(device) {
 	device.discoverPrimaryService(HEART_RATE_SERVICE_UUID);
@@ -470,7 +472,7 @@ onServices(services) {
 }
 onCharacteristics(characteristics) {
 	if (characteristics.length)
-		trace(`found heart rate measurement characteristic ${characteristics[0].uuid}\n`);
+		trace(`found heart rate measurement characteristic\n`);
 }
 ```
 
@@ -485,7 +487,7 @@ The `Characteristic` class provides access to a single service characteristic.
 | Name | Type | Description |
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
-| `uuid` | `string` | Characteristic UUID.
+| `uuid` | `object` | Instance of [Bytes](#classbytes) class containing characteristic UUID.
 | `service` | `object` | `Service` object containing characteristic.
 | `handle` | `number` | Chararacteristic handle.
 | `descriptors` | `array` | Array of characteristic descriptors discovered.
@@ -508,16 +510,16 @@ The `onDescriptors` callback function is called when descriptor discovery comple
 To discover the [Characteristic Presentation Format Descriptor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.characteristic_presentation_format.xml) for a characteristic with UUID 0xFF00:
 
 ```javascript
-const CHARACTERISTIC_UUID = 'FF00';
-const PRESENTATION_FORMAT_UUID = '2904';
+const CHARACTERISTIC_UUID = uuid`FF00`;
+const PRESENTATION_FORMAT_UUID = uuid`2904`;
 
 onCharacteristics(characteristics) {
-	let characteristic = characteristics.find(characteristic => CHARACTERISTIC_UUID == characteristic.uuid);
+	let characteristic = characteristics.find(characteristic => characteristic.uuid.equals(CHARACTERISTIC_UUID));
 	if (characteristic)
 		characteristic.discoverAllDescriptors();
 }
 onDescriptors(descriptors) {
-	let descriptor = descriptors.find(descriptor => PRESENTATION_FORMAT_UUID == descriptor);
+	let descriptor = descriptors.find(descriptor => descriptor.uuid.equals(PRESENTATION_FORMAT_UUID));
 	if (descriptor)
 		trace("found characteristic presentation format descriptor\n");
 }
@@ -547,8 +549,8 @@ The `onCharacteristicNotification` callback function is called when notification
 To enable and receive characteristic value change notifications for the [Battery Level](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.battery_level.xml) characteristic in the [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
 
 ```javascript
-const BATTERY_SERVICE_UUID = 0x180F;
-const BATTERY_LEVEL_UUID = 0x2A19;
+const BATTERY_SERVICE_UUID = uuid`180F`;
+const BATTERY_LEVEL_UUID = uuid`2A19`;
 
 onConnected(device) {
 	device.discoverPrimaryService(BATTERY_SERVICE_UUID);
@@ -586,8 +588,8 @@ The `onCharacteristicValue` callback function is called when a characteristic is
 To read the [Device Name](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.device_name.xml) from the [Generic Access Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml):
 
 ```javascript
-const GENERIC_ACCESS_SERVICE_UUID = 0x1800;
-const DEVICE_NAME_UUID = 0x2A00;
+const GENERIC_ACCESS_SERVICE_UUID = uuid`1800`;
+const DEVICE_NAME_UUID = uuid`2A00`;
 
 onConnected(device) {
 	device.discoverPrimaryService(GENERIC_ACCESS_SERVICE_UUID);
@@ -619,8 +621,8 @@ Use the `writeWithoutResponse` function to write a characteristic value on deman
 To write the [URI](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.uri.xml) characteristic value in the [HTTP Proxy](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.http_proxy.xml) service:
 
 ```javascript
-const HTTP_PROXY_SERVICE_UUID = 0x1823;
-const URI_UUID = 0x2AB6;
+const HTTP_PROXY_SERVICE_UUID = uuid`1823`;
+const URI_UUID = uuid`2AB6`;
 
 onConnected(device) {
 	device.discoverPrimaryService(HTTP_PROXY_SERVICE_UUID);
@@ -646,7 +648,7 @@ The `Descriptor` class provides access to a single characteristic descriptor.
 | Name | Type | Description |
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
-| `uuid` | `string` | Descriptor UUID.
+| `uuid` | `string` | Instance of [Bytes](#classbytes) class containing descriptor UUID.
 | `characteristic` | `object` | `Characteristic` object containing descriptor.
 | `handle` | `number` | Descriptor handle.
 
@@ -664,12 +666,12 @@ Use the `writeValue` function to write a descriptor value.
 To enable characteristic value change notifications by writing 0x0001 to the [Client Characteristic Configuration](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml) descriptor:
 
 ```javascript
-const CCCD_UUID = '2902';
+const CCCD_UUID = uuid`2902`;
 
 onDescriptors(descriptors) {
-	let descriptor = descriptors.find(descriptor => CCCD_UUID == descriptor);
+	let descriptor = descriptors.find(descriptor => descriptor.uuid.equals(CCCD_UUID));
 	if (descriptor) {
-		let value = Uint8Array.from(0x01, 0x00);	// little endian
+		let value = Uint8Array.of(0x01, 0x00);	// little endian
 		descriptor.writeValue(value.buffer);
 	}
 }
@@ -700,7 +702,7 @@ To identify an advertised device with the complete name "Zip":
 onDiscovered(device) {
 	let completeName = device.scanResponse.completeName;
 	if (completeName == "ZIP")
-		trace(`Found ZIP device with address ${device.address}\n`);
+		trace("Found ZIP device\n");
 	}
 }
 ```
@@ -723,6 +725,61 @@ onDiscovered(device) {
 }
 ```
 
+<a id="classbytes"></a>
+## Class Bytes
+
+The `Bytes` class extends `ArrayBuffer`. Applications typically use the provided `uuid` and `address` tagged templates to create a `Bytes` instance from hex strings.
+ 
+#### Constructor Description
+
+#### `Bytes(bytes)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `bytes` | `object` or `string` | The ArrayBuffer `bytes` to set. The bytes can be a String or ArrayBuffer. |
+
+### Functions
+
+#### `address`\``string``
+
+The `address` tagged template is used to convert a Bluetooth address expressed as a hex string to a `Bytes` instance.
+
+```javascript
+import {address} from "btutils";
+
+const DEVICE_ADDRESS = address`66:55:44:33:22:11`;
+```
+
+#### `uuid`\``string``
+
+The `uuid` tagged template is used to convert a Bluetooth UUID expressed as a hex string to a `Bytes` instance.
+
+```javascript
+import {uuid} from "btutils";
+
+const HTM_SERVICE = uuid`1809`;
+const CHARACTERISTIC_RX_UUID = uuid`6E400002-B5A3-F393-E0A9-E50E24DCCA9E`;
+```
+
+#### `equals(buffer)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `buffer` | `object` | The `Bytes` instance to compare. |
+
+The `equals` function returns `true` if the instance ArrayBuffer data equals the data contained in `buffer`.
+ 
+```javascript
+import {uuid} from "btutils";
+
+const HTM_SERVICE = uuid`1809`;
+onServices(services) {
+	let found = services[0].uuid.equals(HTM_SERVICE);
+	if (found)
+		trace("found HTM service\n");
+}
+```
+
 <a id="bleserver"></a>
 ## BLE Server
 A BLE server/peripheral can connect to one BLE client and typically performs the following steps to send notifications to a BLE client:
@@ -740,7 +797,7 @@ onReady() {
 	this.bpm = [0, 60]; // flags, beats per minute
 	this.deploy();
 	this.startAdvertising({
-		advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: ["180D","180F"]}
+		advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: [uuid`180D`, uuid`180F`]}
 	});
 }
 onConnected() {
@@ -809,12 +866,14 @@ let advertiser = new BLEServer;
 ***
 
 #### `localAddress`
-The read-only `localAddress` property accessor function returns the Bluetooth peripheral's local address.
+The read-only `localAddress` property accessor function returns the Bluetooth peripheral's local address as a [Bytes](#classbytes) object.
 
 ```javascript
+import Hex from "hex";
+
 class Advertiser extends BLEServer {
 	onReady() {
-		trace(`device address: ${this.localAddress}\n`);
+		trace(`device address: ${Hex.toString(this.localAddress, ":")}\n`);
 	}
 }
 ```
@@ -848,22 +907,22 @@ The `advertisementData` and `scanResponseData` contain one or more properties co
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `incompleteUUID16List` | `array` | Array of strings corresponding to *Incomplete List of 16 bit Service UUIDs*.
-| `completeUUID16List` | `array ` | Array of strings corresponding to *Complete List of 16 bit Service UUIDs*.
-| `incompleteUUID128List` | `array` | Array of strings corresponding to *Incomplete List of 128 bit Service UUIDs*.
-| `completeUUID128List` | `array` | Array of strings corresponding to *Complete List of 128 bit Service UUIDs*.
+| `incompleteUUID16List` | `array` | Array of UUID objects corresponding to *Incomplete List of 16 bit Service UUIDs*.
+| `completeUUID16List` | `array ` | Array of UUID objects corresponding to *Complete List of 16 bit Service UUIDs*.
+| `incompleteUUID128List` | `array` | Array of UUID objects corresponding to *Incomplete List of 128 bit Service UUIDs*.
+| `completeUUID128List` | `array` | Array of UUID objects corresponding to *Complete List of 128 bit Service UUIDs*.
 | `shortName` | `string` | String corresponding to the *Shortened Local Name*.
 | `completeName` | `string` | String corresponding to the *Complete Local Name*.
 | `manufacturerSpecific` | `object` | Object corresponding to the *Manufacturer Specific Data*. The `identifier` property is a number corresponding to the *Company Identifier Code*. The `data` property is an array of numbers corresponding to additional manufacturer specific data.
 | `txPowerLevel` | `number` | Number corresponding to the *TX Power Level*.
 | `connectionInterval` | `object` | Object corresponding to the *Slave Connection Interval Range*. The `intervalMin` property is a number corresponding to the minimum connection interval value. The `intervalMax` property is a number corresponding to the maximum connection interval value.
-| `solicitationUUID16List` | `array` | Array of strings corresponding to the *List of 16 bit Service Solicitation UUIDs*.
-| `solicitationUUID128List ` | `array` | Array of strings corresponding to the *List of 128 bit Service Solicitation UUIDs*.
-| `serviceDataUUID16` | `array` | Object corresponding to the *Service Data - 16 bit UUID*. The `uuid` property is a string corresponding to the 16-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
-| `serviceDataUUID128` | `array` | Object corresponding to the *Service Data - 128 bit UUID*. The `uuid` property is a string corresponding to the 128-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
+| `solicitationUUID16List` | `array` | Array of UUID objects corresponding to the *List of 16 bit Service Solicitation UUIDs*.
+| `solicitationUUID128List ` | `array` | Array of UUID objects corresponding to the *List of 128 bit Service Solicitation UUIDs*.
+| `serviceDataUUID16` | `array` | Object corresponding to the *Service Data - 16 bit UUID*. The `uuid` property is an object corresponding to the 16-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
+| `serviceDataUUID128` | `array` | Object corresponding to the *Service Data - 128 bit UUID*. The `uuid` property is an object corresponding to the 128-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
 | `appearance` | `number` | Number corresponding to the *Appearance*.
-| `publicAddress` | `string` | String corresponding to the *Public Target Address*.
-| `randomAddress` | `string` | String corresponding to the *Random Target Address*.
+| `publicAddress` | `object` | Address object corresponding to the *Public Target Address*.
+| `randomAddress` | `object` | Address object corresponding to the *Random Target Address*.
 | `advertisingInterval` | `number` | Number corresponding to the *Advertising Interval*.
 | `role` | `number` | Number corresponding to the *LE Role*.
 | `uri` | `string` | String corresponding to the *Uniform Resource Identifier*.
@@ -871,26 +930,32 @@ The `advertisementData` and `scanResponseData` contain one or more properties co
 To advertise a [Health Thermometer Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml) BLE-only connectable device with the complete local name "Thermometer" and one service with UUID 0x1809:
 
 ```javascript
+import {uuid} from "btutils";
+
 this.startAdvertising({
-	advertisingData: {flags: 6, completeName: "Thermometer", completeUUID16List: ["1809"]}
+	advertisingData: {flags: 6, completeName: "Thermometer", completeUUID16List: [uuid`1809`]}
 });
 ```
 
 To advertise a [Heart Rate Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 0x180F:
 
 ```javascript
+import {uuid} from "btutils";
+
 this.startAdvertising({
-	advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: completeUUID16List: ["180D","180F"]}
+	advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: completeUUID16List: [uuid`180D`, uuid`180F`]}
 });
 ```
 
-To advertise a BLE-only non-connectable and limited discoverable device with the complete local name "Moddable HRS" and the short name "Moddable" provided in the scan response:
+To advertise a BLE-only non-connectable and limited discoverable device with the complete local name "Moddable HRS" and the short name "Moddable" and random target address 00:11:22:33:44:55 provided in the scan response:
 
 ```javascript
+import {address} from "btutils";
+
 this.startAdvertising({
 	connectable: false,
 	advertisingData: {flags: 5, completeName: "Moddable HRS"},
-	scanResponseData: {shortName: "Moddable"} 
+	scanResponseData: {shortName: "Moddable", randomAddress: address`00:11:22:33:44:55`} 
 });
 ```
 
@@ -900,9 +965,11 @@ this.startAdvertising({
 Call the `stopAdvertising` function to stop broadcasting Bluetooth advertisements.
 
 ```javascript
+import {uuid} from "btutils";
+
 onReady() {
 	this.startAdvertising({
-		advertisingData: {flags: 6, completeName: "Thermometer Example", completeUUID16List: ["1809"]}
+		advertisingData: {flags: 6, completeName: "Thermometer Example", completeUUID16List: [uuid`1809`]}
 	});
 }
 onConnected(device) {
@@ -916,18 +983,15 @@ onConnected(device) {
 Use the `close` function to terminate a BLE client connection. 
 
 ```javascript
+import {address} from "btutils";
+
 onReady() {
-	this.allowed = ["11:22:33:44:55:66"];
+	this.allowed = address`11:22:33:44:55:66`;
 }
 onConnected(device) {
 	this.stopAdvertising();
-	if (!this.allowed.find(address => address == device.address))
+	if (!device.address.equals(this.allowed))
 		this.close();
-}
-onDisconnected() {
-	this.startAdvertising({
-		advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: ["180D","180F"]}
-	});
 }
 ```
 
@@ -979,7 +1043,7 @@ The `params` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `uuid` | `string` | Characteristic UUID.
+| `uuid` | `object` | Instance of [Bytes](#classbytes) class containing Characteristic UUID.
 | `name` | `string` | Characteristic name defined in the service JSON.
 | `type` | `string` | Characteristic type defined in the service JSON.
 | `handle` | `number` | Characteristic handle.
@@ -1016,7 +1080,7 @@ The `params` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `uuid` | `string` | Characteristic UUID.
+| `uuid` | `string` | Instance of [Bytes](#classbytes) class containing Characteristic UUID.
 | `name` | `string` | Characteristic name defined in the service JSON.
 | `type` | `string` | Characteristic type defined in the service JSON.
 | `handle` | `number` | Characteristic handle.
@@ -1037,7 +1101,7 @@ onCharacteristicRead(params) {
 
 <a id="gattservices"></a>
 ## GATT Services
-GATT services are defined by JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app. The object code lives in Flash memory, significantly reducing the footprint required to deploy GATT services.
+GATT services are defined by JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app.
 
 The JSON file for a service consists of an object with a single `service` property. The `service` property is an object that includes the following top-level properties:
 
@@ -1174,6 +1238,6 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
-| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
+| [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
 | [uri-beacon](../../../examples/network/ble/uri-beacon) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 | [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
