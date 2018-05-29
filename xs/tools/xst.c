@@ -110,7 +110,7 @@ struct sxContext {
 	txSize peakChunksSize;
 	txSize peakHeapCount;
 	txSize peakStackCount;
-	txSize parserTotal;
+	txSize peakParserSize;
 #endif
 };
 
@@ -344,7 +344,7 @@ int main262(int argc, char* argv[])
 	if (argj)
 		fxPrintResult(&context, context.current, 0);
 #ifdef mxInstrument
-	fprintf(stderr, "# parser chunks: %d bytes\n", context.parserTotal);
+	fprintf(stderr, "# parser chunks: %d bytes\n", context.peakParserSize);
 	fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
 	fprintf(stderr, "# heap slots: %lu bytes\n", context.peakHeapCount * sizeof(txSlot));
 	fprintf(stderr, "# stack slots: %lu bytes\n", context.peakStackCount * sizeof(txSlot));
@@ -702,12 +702,14 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	xsCreation _creation = {
 		128 * 1024 * 1024, 	/* initialChunkSize */
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		8 * 1024 * 1024, 		/* initialHeapCount */
-		1 * 1024 * 1024, 		/* incrementalHeapCount */
-		4096, 		/* stackCount */
-		4096*3, 		/* keyCount */
-		1993, 		/* nameModulo */
-		127 		/* symbolModulo */
+		8 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		4096, 				/* stackCount */
+		4096*3, 			/* keyCount */
+		1993, 				/* nameModulo */
+		127,				/* symbolModulo */
+		32 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
@@ -810,7 +812,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 		the->peakChunksSize, 
 		the->peakHeapCount * sizeof(txSlot), 
 		(the->stackTop - the->stackPeak) * sizeof(txSlot),
-		the->parserTotal);
+		the->peakParserSize);
 	c_strcat(message, buffer);
 	if (context->peakChunksSize < the->peakChunksSize)
 		context->peakChunksSize = the->peakChunksSize;
@@ -818,8 +820,8 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 		context->peakHeapCount = the->peakHeapCount;
 	if (context->peakStackCount < (the->stackTop - the->stackPeak))
 		context->peakStackCount = (the->stackTop - the->stackPeak);
-	if (context->parserTotal < the->parserTotal)
-		context->parserTotal = the->parserTotal;
+	if (context->peakParserSize < the->peakParserSize)
+		context->peakParserSize = the->peakParserSize;
 #endif
 	xsEndHost(the);
 	xsDeleteMachine(machine);
