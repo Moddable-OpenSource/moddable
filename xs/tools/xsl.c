@@ -88,10 +88,12 @@ int main(int argc, char* argv[])
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
-		1024,		/* stack count */
-		2048+1024,	/* key count */
-		1993,		/* name modulo */
-		127,		/* symbol modulo */
+		1024,				/* stackCount */
+		2048+1024,			/* keyCount */
+		1993,				/* nameModulo */
+		127,				/* symbolModulo */
+		32 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
 	xsMachine* the = NULL;
@@ -127,7 +129,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-c: no creation");
-				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
+				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
 					&linker->creation.initialChunkSize,
 					&linker->creation.incrementalChunkSize,
 					&linker->creation.initialHeapCount,
@@ -136,6 +138,8 @@ int main(int argc, char* argv[])
 					&linker->creation.keyCount,
 					&linker->creation.nameModulo,
 					&linker->creation.symbolModulo,
+					&linker->creation.parserBufferSize,
+					&linker->creation.parserTableModulo,
 					&linker->creation.staticSize,
 					linker->main);
 				linker->symbolModulo = linker->creation.nameModulo;
@@ -455,7 +459,7 @@ int main(int argc, char* argv[])
 			fprintf(file, ",\n");
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
-			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
+			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
 				linker->creation.initialChunkSize,
 				linker->creation.incrementalChunkSize,
 				linker->creation.initialHeapCount,
@@ -464,6 +468,8 @@ int main(int argc, char* argv[])
 				linker->creation.keyCount,
 				linker->creation.nameModulo,
 				linker->creation.symbolModulo,
+				linker->creation.parserBufferSize,
+				linker->creation.parserTableModulo,
 				linker->creation.staticSize
 			);
 			fprintf(file, "\t\"%s\",\n", linker->main);
