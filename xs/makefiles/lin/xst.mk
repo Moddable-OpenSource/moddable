@@ -48,7 +48,6 @@ C_OPTIONS = \
 	-DmxParse=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
-	-DmxTest=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
