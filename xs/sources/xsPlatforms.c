@@ -36,6 +36,7 @@
  */
 
 #include "xsAll.h"
+#include "xsScript.h"
 
 /* old programming interface defaults to 0 */
 
@@ -77,7 +78,6 @@
 #endif
 
 #ifdef mxParse
-#include "xsScript.h"
 	#if mxUseDefaultFindModule
 		static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
 	#endif
@@ -401,7 +401,7 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 	txString name = NULL;
 	char map[C_PATH_MAX];
 	txScript* script = NULL;
-	fxInitializeParser(parser, the, 32*1024, 1993);
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		parser->path = fxNewParserSymbol(parser, path);
@@ -433,8 +433,9 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 	if (file)
 		fclose(file);
 #ifdef mxInstrument
-	if (the->parserTotal < parser->total)
-		the->parserTotal = parser->total;
+	the->lastParserSize = parser->total;
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
 #endif
 	fxTerminateParser(parser);
 	return script;
@@ -447,12 +448,11 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-#ifdef mxParse
 	txParser _parser;
 	txParser* parser = &_parser;
 	txParserJump jump;
 	txScript* script = NULL;
-	fxInitializeParser(parser, the, 32*1024, 1993);
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		fxParserTree(parser, stream, getter, flags, NULL);
@@ -461,14 +461,12 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 		script = fxParserCode(parser);
 	}
 #ifdef mxInstrument
-	if (the->parserTotal < parser->total)
-		the->parserTotal = parser->total;
+	the->lastParserSize = parser->total;
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
 #endif
 	fxTerminateParser(parser);
 	return script;
-#else
-	return C_NULL;
-#endif
 }
 
 #endif  /* mxUseDefaultParseScript */

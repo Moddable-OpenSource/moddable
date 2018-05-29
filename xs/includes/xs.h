@@ -1120,6 +1120,8 @@ struct xsCreationRecord {
 	xsIntegerValue keyCount;
 	xsIntegerValue nameModulo;
 	xsIntegerValue symbolModulo;
+	xsIntegerValue parserBufferSize;
+	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
 };
 
