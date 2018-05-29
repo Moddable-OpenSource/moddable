@@ -184,6 +184,8 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 		fxJump(the);
 
 	the->cRoot = C_NULL;
+	the->parserBufferSize = theCreation->parserBufferSize;
+	the->parserTableModulo = theCreation->parserTableModulo;
 }
 
 void fxCollect(txMachine* the, txBoolean theFlag)

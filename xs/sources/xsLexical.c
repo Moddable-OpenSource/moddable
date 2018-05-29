@@ -700,9 +700,6 @@ void fxGetNextTokenAux(txParser* parser)
 			parser->line2++;
 			fxGetNextCharacter(parser);
 			parser->crlf2 = 1;
-		#ifdef mxColor
-			parser->startOffset2 = parser->offset;
-		#endif
 			break;
 		case 13:	
 			parser->line2++;
@@ -710,9 +707,6 @@ void fxGetNextTokenAux(txParser* parser)
 			if (parser->character == 10)
 				fxGetNextCharacter(parser);
 			parser->crlf2 = 1;
-		#ifdef mxColor
-			parser->startOffset2 = parser->offset;
-		#endif
 			break;
 			
 		case 11:
@@ -721,9 +715,6 @@ void fxGetNextTokenAux(txParser* parser)
 		case ' ':
 		case '\t':
 			fxGetNextCharacter(parser);
-		#ifdef mxColor
-			parser->startOffset2 = parser->offset;
-		#endif
 			break;
 			
 		case '0':

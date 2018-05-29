@@ -103,6 +103,9 @@ typedef struct {
 	txSlot* (*newGeneratorFunctionInstance)(txMachine*, txID name);
 	txSlot* (*newAsyncGeneratorInstance)(txMachine*);
 	txSlot* (*newAsyncGeneratorFunctionInstance)(txMachine*, txID name);
+	txSlot* (*newArgumentsSloppyInstance)(txMachine*, txIndex count);
+	txSlot* (*newArgumentsStrictInstance)(txMachine*, txIndex count);
+	void (*runEval)(txMachine*);
 	void (*runEvalEnvironment)(txMachine*);
 	void (*runProgramEnvironment)(txMachine*);
 } txDefaults;
@@ -325,6 +328,9 @@ struct sxMachine {
 	txSize peakHeapCount;
 	txSize maximumHeapCount;
 	txSize minimumHeapCount;
+	
+	txSize parserBufferSize;
+	txSize parserTableModulo;
 
 	txBoolean shared;
 	txMachine* sharedMachine;
@@ -361,7 +367,8 @@ struct sxMachine {
 #ifdef mxInstrument
 	txSize garbageCollectionCount;
 	txSize loadedModulesCount;
-	txSize parserTotal;
+	txSize lastParserSize;
+	txSize peakParserSize;
 	txSlot* stackPeak;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
@@ -390,6 +397,8 @@ struct sxCreation {
 	txSize keyCount; /* xs.h */
 	txSize nameModulo; /* xs.h */
 	txSize symbolModulo; /* xs.h */
+	txSize parserBufferSize; /* xs.h */
+	txSize parserTableModulo; /* xs.h */
 	txSize staticSize; /* xs.h */
 };
 
@@ -634,6 +643,7 @@ extern int fxStringCGetter(void*);
 extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
 
 /* xsRun.c */
+extern void fxRunEval(txMachine* the);
 extern void fxRunID(txMachine* the, txSlot* generator, txID theID);
 extern void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _target, txSlot* environment, txSlot* object, txSlot* module);
 extern txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b);

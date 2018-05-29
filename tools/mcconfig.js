@@ -61,6 +61,8 @@ class MakeFile extends MAKEFILE {
 				creation.keys.available, ",", 
 				creation.keys.name, ",", 
 				creation.keys.symbol, ",",
+				creation.parser.buffer, ",",
+				creation.parser.table, ",",
 				creation.static, ",", 
 				creation.main);
 		this.line("");
@@ -806,6 +808,9 @@ export default class extends Tool {
 		if (!creation.keys.available) creation.keys.available = 256;
 		if (!creation.keys.name) creation.keys.name = 127;
 		if (!creation.keys.symbol) creation.keys.symbol = 127;
+		if (!creation.parser) creation.parser = {};
+		if (!creation.parser.buffer) creation.parser.buffer = 32768;
+		if (!creation.parser.table) creation.parser.table = 1993;
 		if (!creation.static) creation.static = 0;
 		if (!creation.main) creation.main = "main";
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator") || (this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {

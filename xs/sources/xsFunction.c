@@ -254,7 +254,6 @@ void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txInteger 
 
 void fx_Function(txMachine* the)
 {	
-#ifdef mxParse
 	txInteger c, i;
 	txStringStream stream;
 	
@@ -286,9 +285,6 @@ void fx_Function(txMachine* the)
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
 		mxPop();
 	}
-#else
-	mxUnknownError("not built-in");
-#endif
 }
 
 void fx_Function_prototype_apply(txMachine* the)
@@ -663,7 +659,6 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 
 void fx_AsyncFunction(txMachine* the)
 {	
-#ifdef mxParse
 	txInteger c, i;
 	txStringStream stream;
 	
@@ -695,7 +690,4 @@ void fx_AsyncFunction(txMachine* the)
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
 		mxPop();
 	}
-#else
-	mxUnknownError("not built-in");
-#endif
 }

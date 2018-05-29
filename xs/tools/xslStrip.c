@@ -271,6 +271,16 @@ void fxStripClass(txLinker* linker, txMachine* the, txID id)
 
 void fxStripDefaults(txLinker* linker, FILE* file)
 {
+	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsLinkerSymbolUsed(linker, mxID(_eval)))
+		fprintf(stderr, "### strip built-ins but call eval!\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_Function)))
+		fprintf(stderr, "### strip built-ins but construct Function!\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_AsyncFunction)))
+		fprintf(stderr, "### strip built-ins but construct AsyncFunction!\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_GeneratorFunction)))
+		fprintf(stderr, "### strip built-ins but construct GeneratorFunction!\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_AsyncGeneratorFunction)))
+		fprintf(stderr, "### strip built-ins but construct AsyncGeneratorFunction!\n");
 	fprintf(file, "const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {\n");
 	if (fxIsCodeUsed(XS_CODE_START_ASYNC)) {
 		fprintf(file, "\tfxNewAsyncInstance,\n");
@@ -296,6 +306,18 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewAsyncGeneratorFunctionInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
+// 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
+// 		fprintf(file, "\tfxNewArgumentsSloppyInstance,\n");
+// 	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_STRICT))
+		fprintf(file, "\tfxNewArgumentsStrictInstance,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_EVAL))
+		fprintf(file, "\tfxRunEval,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_EVAL_ENVIRONMENT))
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
@@ -308,8 +330,14 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");
 	fprintf(file, "\t&gxOrdinaryBehavior,\n");
-	fprintf(file, "\tC_NULL,\n");
-	fprintf(file, "\t&gxArgumentsStrictBehavior,\n");
+// 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
+// 		fprintf(file, "\t&gxArgumentsSloppyBehavior,\n");
+// 	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_STRICT))
+		fprintf(file, "\t&gxArgumentsStrictBehavior,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "\t&gxArrayBehavior,\n");
 	fprintf(file, "\t&gxEnvironmentBehavior,\n");
 	fprintf(file, "\t&gxGlobalBehavior,\n");

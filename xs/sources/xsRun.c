@@ -49,7 +49,6 @@ static txBoolean fxRunDefine(txMachine* the, txSlot* instance, txID id, txIndex 
 static txBoolean fxRunDelete(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunDerived(txMachine* the);
 static void fxRunExtends(txMachine* the);
-static void fxRunEval(txMachine* the);
 static void fxRunForAwaitOf(txMachine* the);
 static void fxRunForOf(txMachine* the);
 static void fxRunIn(txMachine* the);
@@ -1138,7 +1137,7 @@ XS_CODE_JUMP:
 			mxOverflow(1);
 			*mxStack = mxArgumentsSloppyPrototype;
 			mxSaveState;
-			fxNewArgumentsSloppyInstance(the, offset);
+			gxDefaults.newArgumentsSloppyInstance(the, offset);
 			mxRestoreState;
 		#else
 			mxRunDebug(XS_UNKNOWN_ERROR, "no sloppy mode");
@@ -1150,7 +1149,7 @@ XS_CODE_JUMP:
 			mxOverflow(1);
 			*mxStack = mxArgumentsStrictPrototype;
 			mxSaveState;
-			fxNewArgumentsStrictInstance(the, offset);
+			gxDefaults.newArgumentsStrictInstance(the, offset);
 			mxRestoreState;
 			mxNextCode(2);
 			mxBreak;
@@ -3165,14 +3164,14 @@ XS_CODE_JUMP:
 	/* EVAL, PROGRAM & WITH */
 		mxCase(XS_CODE_EVAL)
 			mxSaveState;
-			fxRunEval(the);
+			gxDefaults.runEval(the);
 			mxRestoreState;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_EVAL_ENVIRONMENT)
 			mxNextCode(1);
 			mxSaveState;
-			fxRunEvalEnvironment(the);
+			gxDefaults.runEvalEnvironment(the);
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_EVAL_REFERENCE)
@@ -3220,7 +3219,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_PROGRAM_ENVIRONMENT)
 			mxNextCode(1);
 			mxSaveState;
-			fxRunProgramEnvironment(the);
+			gxDefaults.runProgramEnvironment(the);
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_PROGRAM_REFERENCE)
@@ -3347,7 +3346,6 @@ void fxRunExtends(txMachine* the)
 
 void fxRunEval(txMachine* the)
 {	
-#ifdef mxParse
 	txStringStream aStream;
 	txUnsigned flags;
 	txSlot* function;
@@ -3381,9 +3379,6 @@ void fxRunEval(txMachine* the)
 			the->stack++;
 		}
 	}
-#else
-	mxUnknownError("not built-in");
-#endif
 }
 
 void fxRunForAwaitOf(txMachine* the)

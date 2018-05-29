@@ -136,8 +136,11 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	parser->stream = theStream;
 	parser->getter = theGetter;
 	parser->line = 1;
+#ifdef mxSloppy
 	parser->flags = flags;
-	
+#else	
+	parser->flags = flags | mxStrictFlag;
+#endif	
 	parser->modifier = parser->emptyString;
 	parser->string = parser->emptyString;
 	parser->line2 = 1;

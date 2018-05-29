@@ -511,7 +511,6 @@ void fx_escape(txMachine* the)
 
 void fx_eval(txMachine* the)
 {
-#ifdef mxParse
 	txStringStream aStream;
 
 	if (mxArgc < 1)
@@ -525,9 +524,6 @@ void fx_eval(txMachine* the)
 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
 	mxPullSlot(mxResult);
-#else
-	mxUnknownError("not built-in");
-#endif
 }
 
 void fx_trace(txMachine* the)

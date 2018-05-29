@@ -1817,7 +1817,7 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #ifdef mxInstrument	
-#define xsInstrumentCount 9
+#define xsInstrumentCount 11
 static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",
 	"Chunk available",
@@ -1828,6 +1828,8 @@ static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Garbage collections",
 	"Keys used",
 	"Modules loaded",
+	"Parser used",
+	"Parser peak",
 };
 static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" / ",
@@ -1839,23 +1841,25 @@ static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" times",
 	" keys",
 	" modules",
+	" / ",
+	" bytes",
 };
 
 void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units)
 {
-	txInteger i;
+	txInteger i, j = 0;
 #ifdef mxDebug
 	if (fxIsConnected(the)) {
 		fxEchoStart(the);
 		fxEcho(the, "<instruments>");
-		for (i = 0; i < count; i++) {
+		for (i = 0; i < count; i++, j++) {
 			fxEcho(the, "<instrument name=\"");
 			fxEchoString(the, names[i]);
 			fxEcho(the, "\" value=\"");
 			fxEchoString(the, units[i]);
 			fxEcho(the, "\"/>");
 		}
-		for (i = 0; i < xsInstrumentCount; i++) {
+		for (i = 0; i < xsInstrumentCount; i++, j++) {
 			fxEcho(the, "<instrument name=\"");
 			fxEchoString(the, xsInstrumentNames[i]);
 			fxEcho(the, "\" value=\"");
@@ -1869,11 +1873,15 @@ void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names,
 	}
 #endif
 #ifndef mxNoConsole
-	c_printf("%s", names[0]);
-	for (i = 1; i < count; i++) {
+	j = 0;
+	for (i = 0; i < count; i++, j++) {
+		if (j)
+			c_printf(",");
 		c_printf(",%s", names[i]);
 	}
-	for (i = 0; i < xsInstrumentCount; i++) {
+	for (i = 0; i < xsInstrumentCount; i++, j++) {
+		if (j)
+			c_printf(",");
 		c_printf(",%s", xsInstrumentNames[i]);
 	}
 	c_printf("\n");
@@ -1892,19 +1900,22 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[6] = the->garbageCollectionCount;
 	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
 	xsInstrumentValues[8] = the->loadedModulesCount;
+	xsInstrumentValues[9] = the->lastParserSize;
+	xsInstrumentValues[10] = the->peakParserSize;
 
-	txInteger i;
+	txInteger i, j = 0;
 #ifdef mxDebug
 	if (fxIsConnected(the)) {
 		fxEchoStart(the);
 		fxEcho(the, "<samples>");
-		fxEchoInteger(the, values[0]);
-		for (i = 1; i < count; i++) {
-			fxEcho(the, ",");
+		for (i = 0; i < count; i++, j++) {
+			if (j)
+				fxEcho(the, ",");
 			fxEchoInteger(the, values[i]);
 		}
-		for (i = 0; i < xsInstrumentCount; i++) {
-			fxEcho(the, ",");
+		for (i = 0; i < xsInstrumentCount; i++, j++) {
+			if (j)
+				fxEcho(the, ",");
 			fxEchoInteger(the, xsInstrumentValues[i]);
 		}
 		fxEcho(the, "</samples>");
@@ -1913,12 +1924,16 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	}
 #endif
 #ifndef mxNoConsole
-	c_printf("%d", values[0]);
-	for (i = 1; i < count; i++) {
-		c_printf(",%d", values[i]);
+	j = 0;
+	for (i = 0; i < count; i++, j++) {
+		if (j)
+			c_printf(",");
+		c_printf("%d", values[i]);
 	}
-	for (i = 0; i < xsInstrumentCount; i++) {
-		c_printf(",%d", xsInstrumentValues[i]);
+	for (i = 0; i < xsInstrumentCount; i++, j++) {
+		if (j)
+			c_printf(",");
+		c_printf("%d", xsInstrumentValues[i]);
 	}
 	c_printf("\n");
 #endif
