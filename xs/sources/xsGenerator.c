@@ -248,7 +248,6 @@ txSlot* fxNewGeneratorFunctionInstance(txMachine* the, txID name)
 
 void fx_GeneratorFunction(txMachine* the)
 {	
-#ifdef mxParse
 	txInteger c, i;
 	txStringStream stream;
 	
@@ -280,9 +279,6 @@ void fx_GeneratorFunction(txMachine* the)
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
 		mxPop();
 	}
-#else
-	mxUnknownError("not built-in");
-#endif
 }
 
 void fxAsyncGeneratorRejectAwait(txMachine* the)
@@ -628,7 +624,6 @@ txSlot* fxNewAsyncGeneratorFunctionInstance(txMachine* the, txID name)
 
 void fx_AsyncGeneratorFunction(txMachine* the)
 {	
-#ifdef mxParse
 	txInteger c, i;
 	txStringStream stream;
 	
@@ -660,9 +655,6 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
 		mxPop();
 	}
-#else
-	mxUnknownError("not built-in");
-#endif
 }
 
 void fx_AsyncIterator_asyncIterator(txMachine* the)

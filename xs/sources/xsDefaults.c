@@ -44,6 +44,13 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxNewGeneratorFunctionInstance,
 	fxNewAsyncGeneratorInstance,
 	fxNewAsyncGeneratorFunctionInstance,
+#ifdef mxSloppy
+	fxNewArgumentsSloppyInstance,
+#else
+	C_NULL,
+#endif
+	fxNewArgumentsStrictInstance,
+	fxRunEval,
 	fxRunEvalEnvironment,
 	fxRunProgramEnvironment,
 };
