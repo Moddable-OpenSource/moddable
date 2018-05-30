@@ -132,7 +132,7 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
 
-		ret = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 		if (ret) return;
 		gSPIInited = 1;
 	}
@@ -141,14 +141,16 @@ void modSPIInit(modSPIConfiguration config)
 	memset(&devcfg, 0, sizeof(devcfg));
 	devcfg.clock_speed_hz = config->hz;
 	devcfg.mode = 0;
-	devcfg.spics_io_num = config->cs_pin;		//@@ maybe setting to zero means no CS controlled by SPI?
+	devcfg.spics_io_num = config->cs_pin;		// set to -1 if none
 	devcfg.queue_size = 3;
 	devcfg.pre_cb = NULL;
 	devcfg.post_cb = postTransfer;
 
-	ret = spi_bus_add_device(HSPI_HOST, &devcfg, &config->spi_dev);
-	if (ret)
+	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
+	if (ret) {
 		printf("spi_bus_add_device failed %d\n", ret);
+		return;
+	}
 
 	if (NULL == gConfig) {
 		gSPIData = NULL;
@@ -167,6 +169,7 @@ void modSPIUninit(modSPIConfiguration config)
 	if (config == gConfig)
 		modSPIActivateConfiguration(NULL);
 
+//@@ should only be done on last SPI client closing
 	if (config->spi_dev)
 		spi_bus_remove_device(config->spi_dev);
 
