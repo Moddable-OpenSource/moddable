@@ -36,7 +36,7 @@
 					"dc_pin": 2,
 					"rst_pin": 0,
 					"busy_pin": 5,
-					"spi_port": "#HSPI"
+					"spi_port": "HSPI_HOST"
 				},
 			}
 		},
