@@ -51,6 +51,8 @@
 #endif
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
+static void fxFreezeBuiltIn(txMachine* the);
+static void fxFreezeBuiltIns(txMachine* the);
 static txScript* fxLoadScript(txMachine* the, txString path);
 
 int main(int argc, char* argv[]) 
@@ -282,6 +284,7 @@ int main(int argc, char* argv[])
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
+						fxFreezeBuiltIns(the);
 						xsCollectGarbage();
 					}
 					xsCatch {
@@ -618,6 +621,83 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	}
 	*id = XS_NO_ID;
 	return 0;
+}
+
+void fxFreezeBuiltIn(txMachine* the)
+{
+	mxPushInteger(1);
+	mxPush(mxGlobal);
+	fxGetID(the, mxID(_Object));
+	fxCallID(the, mxID(_freeze));
+	mxPop();
+}
+
+void fxFreezeBuiltIns(txMachine* the)
+{
+	txInteger index;
+	const txTypeDispatch *dispatch;
+
+	mxPush(mxArgumentsSloppyPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxArgumentsStrictPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxArrayBufferPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxArrayIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxArrayPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxAsyncFromSyncIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxAsyncFunctionPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxAsyncGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxAsyncGeneratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxAsyncIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxBooleanPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxDataViewPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
+	mxPush(mxErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxEvalErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxFunctionPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxGeneratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxHostPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxMapEntriesIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxMapKeysIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxMapPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxMapValuesIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxModulePrototype); fxFreezeBuiltIn(the);
+	mxPush(mxNumberPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxObjectPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxPromisePrototype); fxFreezeBuiltIn(the);
+	mxPush(mxProxyPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxRangeErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxReferenceErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxRegExpPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSetEntriesIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSetKeysIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSetPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSetValuesIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSharedArrayBufferPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxStringIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxStringPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSymbolPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxSyntaxErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxTransferPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxTypedArrayPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxTypeErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxURIErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxWeakMapPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxWeakSetPrototype); fxFreezeBuiltIn(the);
+	
+	mxPush(mxGlobal); fxGetID(the, mxID(_Atomics)); fxFreezeBuiltIn(the);
+	mxPush(mxGlobal); fxGetID(the, mxID(_JSON)); fxFreezeBuiltIn(the);
+	mxPush(mxGlobal); fxGetID(the, mxID(_Math)); fxFreezeBuiltIn(the);
+	mxPush(mxGlobal); fxGetID(the, mxID(_Reflect)); fxFreezeBuiltIn(the);
+	
+	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
+		mxPush(mxGlobal); 
+		fxGetID(the, mxID(dispatch->constructorID));
+		fxGetID(the, mxID(_prototype));
+		fxFreezeBuiltIn(the);
+	}
+	
+	mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); fxFreezeBuiltIn(the);
 }
 
 void fxLoadModule(txMachine* the, txID moduleID)
