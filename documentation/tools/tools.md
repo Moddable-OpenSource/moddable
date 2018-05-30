@@ -94,7 +94,7 @@ The first app will take some time to build since all the ESP and XS libraries ne
 
 Of course the ESP needs to be connected to your Mac and **xsbug** needs to run on your Mac for the launch to be successful.
 
-See the [Manifest](./Manifest.md) document for explanations about manifests.
+See the [Manifest](./manifest.md) document for explanations about manifests.
 
 ### Arguments
 
