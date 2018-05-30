@@ -580,16 +580,13 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 
 void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length)
 {
-	uint16_t len = uuid->len;
-	for (uint8_t i = 0; i < len; ++i)
-		buffer[i] = uuid->data[len - 1 - i];
-	*length = len;
+	c_memmove(buffer, uuid->data, uuid->len);
+	*length = uuid->len;
 }
 
 void bufferToUUID(uint8_t *buffer, uuidRecord *uuid, uint16_t length)
 {
-	for (uint8_t i = 0; i < length; ++i)
-		uuid->data[i] = buffer[length - 1 - i];
+	c_memmove(uuid->data, buffer, length);
 	uuid->len = length;
 }
 
