@@ -24,7 +24,7 @@
 import GAP from "gap";
 
 export class Bytes extends ArrayBuffer {
-	constructor(bytes) {
+	constructor(bytes, littleEndian) {
 		let byteLength;
 		if ("string" == typeof bytes)
 			byteLength = bytes.length >> 1;
@@ -33,15 +33,15 @@ export class Bytes extends ArrayBuffer {
 		else
 			throw new Error("unsupported type");
 		super(byteLength);
-		this.set(bytes);
+		this.set(bytes, true === littleEndian);
 	}
-	set(bytes) @ "xs_bytes_set"
+	set(bytes, littleEndian) @ "xs_bytes_set"
 	equals(bytes) @ "xs_bytes_equals"
 }
 Object.freeze(Bytes.prototype);
 
 function uuid(strings) {
-	return new Bytes(strings[0].split("-").join(""));
+	return new Bytes(strings[0].split("-").join(""), true);
 }
 
 function address(strings) {
@@ -51,21 +51,16 @@ function address(strings) {
 function serializeUUID16List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 2);
-	for (let j = 0, i = 0; i < count; ++i) {
-		let uuid = new Uint8Array(data[i]);
-		result[j++] = uuid[1];
-		result[j++] = uuid[0];
-	}
+	for (let i = 0; i < count; ++i)
+		result.set(new Uint8Array(data[i]), i * 2);
 	return result;
 }
 
 function serializeUUID128List(data) {
 	let count = data.length;
 	let result = new Uint8Array(count * 16);
-	for (let i = 0; i < count; ++i) {
-		let uuid = (new Uint8Array(data[i])).reverse();
-		result.set(uuid, i * 16);
-	}
+	for (let i = 0; i < count; ++i)
+		result.set(new Uint8Array(data[i]), i * 16);
 	return result;
 }
 
@@ -96,9 +91,7 @@ function serializeConnectionInterval({intervalMin, intervalMax}) {
 function serializeServiceData16({uuid, data = null}) {
 	let length = 2 + (data ? data.length : 0);
 	let result = new Uint8Array(length);
-	let a = new Uint8Array(uuid);
-	result[0] = a[1];
-	result[1] = a[0];
+	result.set(new Uint8Array(uuid), 0);
 	if (data)
 		result.set(data, 2);
 	return result;
@@ -107,7 +100,7 @@ function serializeServiceData16({uuid, data = null}) {
 function serializeServiceData128({uuid, data = null}) {
 	let length = 16 + (data ? data.length : 0);
 	let result = new Uint8Array(length);
-	result.set((new Uint8Array(uuid)).reverse(), 0);
+	result.set(new Uint8Array(uuid), 0);
 	if (data)
 		result.set(data, 16);
 	return result;
