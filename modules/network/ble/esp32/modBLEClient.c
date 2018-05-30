@@ -532,8 +532,8 @@ void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
 		*length = ESP_UUID_LEN_16;
-		buffer[1] = uuid->uuid.uuid16 & 0xFF;
-		buffer[0] = (uuid->uuid.uuid16 >> 8) & 0xFF;
+		buffer[0] = uuid->uuid.uuid16 & 0xFF;
+		buffer[1] = (uuid->uuid.uuid16 >> 8) & 0xFF;
 	}
 	else if (uuid->len == ESP_UUID_LEN_32) {
 		*length = ESP_UUID_LEN_32;
@@ -544,23 +544,20 @@ void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 	}
 	else {
 		*length = ESP_UUID_LEN_128;
-		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
-			buffer[i] = uuid->uuid.uuid128[ESP_UUID_LEN_128 - 1 - i];
+		c_memmove(buffer, uuid->uuid.uuid128, *length);
 	}
 }
 
 void bufferToUUID(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t length)
 {
 	if (length == ESP_UUID_LEN_16) {
-		uuid->uuid.uuid16 = buffer[1] | (buffer[0] << 8);
+		uuid->uuid.uuid16 = buffer[0] | (buffer[1] << 8);
 	}
 	else if (length == ESP_UUID_LEN_32) {
-		uuid->uuid.uuid32 = buffer[3] | (buffer[2] << 8) | (buffer[1] << 16) | (buffer[0] << 24);
+		uuid->uuid.uuid32 = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
 	}
-	else {
-		for (uint8_t i = 0; i < ESP_UUID_LEN_128; ++i)
-			uuid->uuid.uuid128[i] = buffer[ESP_UUID_LEN_128 - 1 - i];
-	}
+	else
+		c_memmove(uuid->uuid.uuid128, buffer, length);
 	uuid->len = length;
 }
 
