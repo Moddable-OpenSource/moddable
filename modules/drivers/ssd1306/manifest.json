@@ -45,7 +45,7 @@
 				"ssd1306": {
 					"cs_pin": 4,
 					"dc_pin": 2,
-					"spi_port": "#HSPI"
+					"spi_port": "HSPI_HOST"
 				}
 			}
 		}
