@@ -208,12 +208,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	// ArrayBuffer ?
 	fxUnstripCallback(linker, fx_ArrayBuffer);
 	// DataView
-	if (!fxIsLinkerSymbolUsed(linker, mxID(_SharedArrayBuffer)))
-		fxStripClass(linker, the, mxID(_SharedArrayBuffer));
-	// DataView
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_DataView)))
 		fxStripClass(linker, the, mxID(_DataView));
-	// Reflect
+	// Atomics
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_SharedArrayBuffer)))
+		fxStripClass(linker, the, mxID(_SharedArrayBuffer));
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Atomics)))
 		fxStripObject(linker, the, mxID(_Atomics));
 	// JSON
@@ -251,12 +250,15 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Set_prototype_values_next);
 	// constructors
 	fxUnstripCallback(linker, fx_species_get);
-	// eval
-	if (linker->intrinsicFlags[mxEvalIntrinsic])
-		fxUnstripCallback(linker, fx_eval);
 	// object rest/spread
 	if (linker->intrinsicFlags[mxCopyObjectIntrinsic])
 		fxUnstripCallback(linker, fxCopyObject);
+	// parser
+	fxStripCallback(linker, fx_eval);
+	fxStripCallback(linker, fx_Function);
+	fxStripCallback(linker, fx_AsyncFunction);
+	fxStripCallback(linker, fx_GeneratorFunction);
+	fxStripCallback(linker, fx_AsyncGeneratorFunction);
 }
 
 void fxStripClass(txLinker* linker, txMachine* the, txID id)
@@ -271,16 +273,6 @@ void fxStripClass(txLinker* linker, txMachine* the, txID id)
 
 void fxStripDefaults(txLinker* linker, FILE* file)
 {
-	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsLinkerSymbolUsed(linker, mxID(_eval)))
-		fprintf(stderr, "### strip built-ins but call eval!\n");
-	if (fxIsLinkerSymbolUsed(linker, mxID(_Function)))
-		fprintf(stderr, "### strip built-ins but construct Function!\n");
-	if (fxIsLinkerSymbolUsed(linker, mxID(_AsyncFunction)))
-		fprintf(stderr, "### strip built-ins but construct AsyncFunction!\n");
-	if (fxIsLinkerSymbolUsed(linker, mxID(_GeneratorFunction)))
-		fprintf(stderr, "### strip built-ins but construct GeneratorFunction!\n");
-	if (fxIsLinkerSymbolUsed(linker, mxID(_AsyncGeneratorFunction)))
-		fprintf(stderr, "### strip built-ins but construct AsyncGeneratorFunction!\n");
 	fprintf(file, "const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {\n");
 	if (fxIsCodeUsed(XS_CODE_START_ASYNC)) {
 		fprintf(file, "\tfxNewAsyncInstance,\n");
@@ -314,8 +306,12 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewArgumentsStrictInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
-	if (fxIsCodeUsed(XS_CODE_EVAL))
-		fprintf(file, "\tfxRunEval,\n");
+	if (fxIsCodeUsed(XS_CODE_EVAL)) {
+		if (fxIsLinkerSymbolUsed(linker, mxID(_eval)))
+			fprintf(file, "\tfxRunEval,\n");
+		else
+			fprintf(file, "\tfxDeadStrip,\n");
+	}
 	else
 		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_EVAL_ENVIRONMENT))
