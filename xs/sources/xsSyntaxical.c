@@ -314,7 +314,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_YIELD */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME
 };
 
-static txString gxTokenNames[XS_TOKEN_COUNT] = {
+static txString gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_NO_TOKEN */ "",
 	/* XS_TOKEN_ACCESS */ "access",
 	/* XS_TOKEN_ADD */ "+",
