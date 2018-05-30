@@ -51,7 +51,7 @@
 				"xpt2046": {
 					"cs_pin": 18,
 					"touch_pin": 23,
-					"spi_port": "#HSPI",
+					"spi_port": "HSPI_HOST",
 					"raw_left": 141,
 					"raw_right": 1955,
 					"raw_top": 1970,
