@@ -264,7 +264,7 @@ class SensorTag extends BLEClient {
 		services.forEach(service => {
 			for (let name in SERVICES) {
 				if (service.uuid.equals(SERVICES[name].uuid)) {
-					let sensor = Object.assign({service}, SERVICES[name], {name});
+					let sensor = Object.assign(SERVICES[name], {name}, {service});
 					this.sensors.push(sensor);
 				}
 			}

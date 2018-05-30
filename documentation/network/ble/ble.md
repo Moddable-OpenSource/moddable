@@ -728,16 +728,16 @@ onDiscovered(device) {
 <a id="classbytes"></a>
 ## Class Bytes
 
-The `Bytes` class extends `ArrayBuffer`. Applications typically use the provided `uuid` and `address` tagged templates to create a `Bytes` instance from hex strings.
+The private `Bytes` class extends `ArrayBuffer`. Applications typically use the provided `uuid` and `address` tagged templates to create a `Bytes` instance from hex strings.
  
 #### Constructor Description
 
-#### `Bytes(bytes)`
+#### `Bytes(bytes [,littleEndian])`
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `bytes` | `object` or `string` | The ArrayBuffer `bytes` to set. The bytes can be a String or ArrayBuffer. |
-
+| `littleEndian` | `boolean` | When set `true` the contents of the ArrayBuffer are stored in reverse order. Default is `false`.|
 ### Functions
 
 #### `address`\``string``
