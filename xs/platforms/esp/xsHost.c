@@ -1059,7 +1059,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 		script = fxParserCode(parser);
 	}
 #ifdef mxInstrument
-	the->lastParserSize = parser->total;
 	if (the->peakParserSize < parser->total)
 		the->peakParserSize = parser->total;
 #endif
