@@ -35,6 +35,7 @@ typedef void (*modSPIChipSelectCallback)(uint8_t active, modSPIConfiguration con
 struct modSPIConfigurationRecord {
 	spi_device_handle_t			spi_dev;
 	uint8_t						cs_pin;
+	uint8_t						spiPort;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
 };
@@ -46,12 +47,7 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.hz = HZ; \
 	config.cs_pin = CS_PIN; \
 	config.doChipSelect = DOCHIPSELECT; \
-	if (0 != espStrCmp(SPI_PORT, "HSPI")) \
-		xsUnknownError("invalid SPI port");
-
-//	config.spiPort = SPI_PORT; \
-//	config.csPort = CS_PORT; \
-//	config.csPin = CS_PIN; \
+	config.spiPort = SPI_PORT;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);

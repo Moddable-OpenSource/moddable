@@ -33,7 +33,7 @@
 			},
 			"defines": {
 				"destm32s": {
-					"spi_port": "#HSPI"
+					"spi_port": "HSPI_HOST"
 				},
 			}
 		},
