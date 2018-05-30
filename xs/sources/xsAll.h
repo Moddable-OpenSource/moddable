@@ -367,7 +367,6 @@ struct sxMachine {
 #ifdef mxInstrument
 	txSize garbageCollectionCount;
 	txSize loadedModulesCount;
-	txSize lastParserSize;
 	txSize peakParserSize;
 	txSlot* stackPeak;
 	void (*onBreak)(txMachine*, txU1 stop);
