@@ -39,9 +39,7 @@
 #include "xs.h"
 #include "mc.defines.h"
 
-#if mxParse
-	#include "xsScript.h"
-#endif
+#include "xsScript.h"
 
 #if ESP32
 	#define rtc_timeval timeval
@@ -1044,7 +1042,6 @@ void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 	the->host = C_NULL;
 }
 
-#if mxParse
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	extern txPreparation* xsPreparation();
@@ -1053,7 +1050,7 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	txParserJump jump;
 	txScript* script = NULL;
 	txPreparation *prep = xsPreparation();
-	fxInitializeParser(parser, the, 16 * 1024, prep->nameModulo);		//@@
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		fxParserTree(parser, stream, getter, flags, NULL);
@@ -1061,15 +1058,14 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 		fxParserBind(parser);
 		script = fxParserCode(parser);
 	}
+#ifdef mxInstrument
+	the->lastParserSize = parser->total;
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
 	fxTerminateParser(parser);
 	return script;
 }
-#else
-txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
-{
-	return C_NULL;
-}
-#endif
 
 void fxSweepHost(txMachine* the)
 {
@@ -1208,6 +1204,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 	modInstrumentationSet(NetworkBytesWritten, 0);
 	gInstrumentationThe->garbageCollectionCount = 0;
 	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+	gInstrumentationThe->peakParserSize = 0;
 }
 #endif
 

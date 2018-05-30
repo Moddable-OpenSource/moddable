@@ -112,6 +112,7 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/time.c \
 	$(ARDUINO_ESP8266)/umm_malloc/umm_malloc.c \
 	$(ARDUINO_ESP8266)/Schedule.cpp \
+	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
