@@ -21,6 +21,10 @@
 			"name": 53,
 			"symbol": 3,
 		},
+		"parser": {
+			"buffer": 1024,
+			"table": 17,
+		},
 		"main": "main",
 	},
 	"modules": {
