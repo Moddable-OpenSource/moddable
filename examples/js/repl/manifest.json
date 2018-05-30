@@ -1,0 +1,40 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": [
+			  "./main",
+		]
+	},
+	"preload": [
+		"repl",
+	],
+	"strip": [],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"./esp/repl",
+				],
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"./esp/repl",
+				],
+			},
+		},
+		"x-cli-mac": {
+			"modules": {
+				"~": [
+					"$(MODULES)/files/resource/*",
+				],
+				"*": [
+					"./mac/repl",
+				],
+			},
+		},
+	}
+}
