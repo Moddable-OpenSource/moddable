@@ -483,6 +483,8 @@ void ServiceEventInvoke(ServiceEvent event)
 		}
 	}
 	xsEndHost(thread->the);
+	c_free(message->request);
+	message->request = NULL;
 }
 
 void ServiceEventReject(ServiceEvent event)
