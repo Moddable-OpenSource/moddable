@@ -567,7 +567,7 @@ void fxWithNodeDistribute(void* it, txNodeCall call, void* param)
 	(*call)(self->statement, param);
 }
 
-static const txNodeDispatch gxAccessNodeDispatch = {
+static const txNodeDispatch gxAccessNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxAccessNodeBind,
 	fxNodeHoist,
@@ -575,7 +575,7 @@ static const txNodeDispatch gxAccessNodeDispatch = {
 	fxAccessNodeCodeAssign,
 	fxAccessNodeCodeReference
 };
-static const txNodeDispatch gxAndExpressionNodeDispatch = {
+static const txNodeDispatch gxAndExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBinaryExpressionNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -583,7 +583,7 @@ static const txNodeDispatch gxAndExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxArgumentsNodeDispatch = {
+static const txNodeDispatch gxArgumentsNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -591,7 +591,7 @@ static const txNodeDispatch gxArgumentsNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxArrayNodeDispatch = {
+static const txNodeDispatch gxArrayNodeDispatch ICACHE_FLASH_ATTR = {
 	fxArrayNodeDistribute,
 	fxArrayNodeBind,
 	fxNodeHoist,
@@ -599,7 +599,7 @@ static const txNodeDispatch gxArrayNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxArrayBindingNodeDispatch = {
+static const txNodeDispatch gxArrayBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxArrayBindingNodeDistribute,
 	fxArrayBindingNodeBind,
 	fxNodeHoist,
@@ -607,7 +607,7 @@ static const txNodeDispatch gxArrayBindingNodeDispatch = {
 	fxArrayBindingNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxAssignNodeDispatch = {
+static const txNodeDispatch gxAssignNodeDispatch ICACHE_FLASH_ATTR = {
 	fxAssignNodeDistribute,
 	fxAssignNodeBind,
 	fxNodeHoist,
@@ -615,7 +615,7 @@ static const txNodeDispatch gxAssignNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxAwaitNodeDispatch = {
+static const txNodeDispatch gxAwaitNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -623,7 +623,7 @@ static const txNodeDispatch gxAwaitNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxBinaryExpressionNodeDispatch = {
+static const txNodeDispatch gxBinaryExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBinaryExpressionNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -631,7 +631,7 @@ static const txNodeDispatch gxBinaryExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxBindingNodeDispatch = {
+static const txNodeDispatch gxBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBindingDeclareDefineNodeDistribute,
 	fxBindingNodeBind,
 	fxNodeHoist,
@@ -639,7 +639,7 @@ static const txNodeDispatch gxBindingNodeDispatch = {
 	fxBindingNodeCodeAssign,
 	fxBindingNodeCodeReference
 };
-static const txNodeDispatch gxBlockNodeDispatch = {
+static const txNodeDispatch gxBlockNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBlockNodeDistribute,
 	fxBlockNodeBind,
 	fxBlockNodeHoist,
@@ -647,7 +647,7 @@ static const txNodeDispatch gxBlockNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxBodyNodeDispatch = {
+static const txNodeDispatch gxBodyNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBodyNodeDistribute,
 	fxBlockNodeBind,
 	fxBodyNodeHoist,
@@ -655,7 +655,7 @@ static const txNodeDispatch gxBodyNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxBreakContinueNodeDispatch = {
+static const txNodeDispatch gxBreakContinueNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -663,7 +663,7 @@ static const txNodeDispatch gxBreakContinueNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxCallNodeDispatch = {
+static const txNodeDispatch gxCallNodeDispatch ICACHE_FLASH_ATTR = {
 	fxCallNewNodeDistribute,
 	fxNodeBind,
 	fxCallNodeHoist,
@@ -671,7 +671,7 @@ static const txNodeDispatch gxCallNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxCaseNodeDispatch = {
+static const txNodeDispatch gxCaseNodeDispatch ICACHE_FLASH_ATTR = {
 	fxCaseNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -679,7 +679,7 @@ static const txNodeDispatch gxCaseNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxCatchNodeDispatch = {
+static const txNodeDispatch gxCatchNodeDispatch ICACHE_FLASH_ATTR = {
 	fxCatchNodeDistribute,
 	fxCatchNodeBind,
 	fxCatchNodeHoist,
@@ -687,7 +687,7 @@ static const txNodeDispatch gxCatchNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxClassNodeDispatch = {
+static const txNodeDispatch gxClassNodeDispatch ICACHE_FLASH_ATTR = {
 	fxClassNodeDistribute,
 	fxClassNodeBind,
 	fxClassNodeHoist,
@@ -695,7 +695,7 @@ static const txNodeDispatch gxClassNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxCompoundExpressionNodeDispatch = {
+static const txNodeDispatch gxCompoundExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxAssignNodeDistribute,
 	fxCompoundExpressionNodeBind,
 	fxNodeHoist,
@@ -703,7 +703,7 @@ static const txNodeDispatch gxCompoundExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxDebuggerNodeDispatch = {
+static const txNodeDispatch gxDebuggerNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -711,7 +711,7 @@ static const txNodeDispatch gxDebuggerNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxDeclareNodeDispatch = {
+static const txNodeDispatch gxDeclareNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBindingDeclareDefineNodeDistribute,
 	fxDeclareNodeBind,
 	fxDeclareNodeHoist,
@@ -719,7 +719,7 @@ static const txNodeDispatch gxDeclareNodeDispatch = {
 	fxDeclareNodeCodeAssign,
 	fxDeclareNodeCodeReference
 };
-static const txNodeDispatch gxDefineNodeDispatch = {
+static const txNodeDispatch gxDefineNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBindingDeclareDefineNodeDistribute,
 	fxDefineNodeBind,
 	fxDefineNodeHoist,
@@ -727,7 +727,7 @@ static const txNodeDispatch gxDefineNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxDelegateNodeDispatch = {
+static const txNodeDispatch gxDelegateNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxDelegateNodeBind,
 	fxNodeHoist,
@@ -735,7 +735,7 @@ static const txNodeDispatch gxDelegateNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxDeleteNodeDispatch = {
+static const txNodeDispatch gxDeleteNodeDispatch ICACHE_FLASH_ATTR = {
 	fxDeleteNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -743,7 +743,7 @@ static const txNodeDispatch gxDeleteNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxDoNodeDispatch = {
+static const txNodeDispatch gxDoNodeDispatch ICACHE_FLASH_ATTR = {
 	fxDoNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -751,7 +751,7 @@ static const txNodeDispatch gxDoNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxExportNodeDispatch = {
+static const txNodeDispatch gxExportNodeDispatch ICACHE_FLASH_ATTR = {
 	fxExportNodeDistribute,
 	fxExportNodeBind,
 	fxExportNodeHoist,
@@ -759,7 +759,7 @@ static const txNodeDispatch gxExportNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxExpressionsNodeDispatch = {
+static const txNodeDispatch gxExpressionsNodeDispatch ICACHE_FLASH_ATTR = {
 	fxExpressionsNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -767,7 +767,7 @@ static const txNodeDispatch gxExpressionsNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxForNodeDispatch = {
+static const txNodeDispatch gxForNodeDispatch ICACHE_FLASH_ATTR = {
 	fxForNodeDistribute,
 	fxForNodeBind,
 	fxForNodeHoist,
@@ -775,7 +775,7 @@ static const txNodeDispatch gxForNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxForInForOfNodeDispatch = {
+static const txNodeDispatch gxForInForOfNodeDispatch ICACHE_FLASH_ATTR = {
 	fxForInForOfNodeDistribute,
 	fxForInForOfNodeBind,
 	fxForInForOfNodeHoist,
@@ -783,7 +783,7 @@ static const txNodeDispatch gxForInForOfNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxFunctionNodeDispatch = {
+static const txNodeDispatch gxFunctionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxFunctionNodeDistribute,
 	fxFunctionNodeBind,
 	fxFunctionNodeHoist,
@@ -791,7 +791,7 @@ static const txNodeDispatch gxFunctionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxHostNodeDispatch = {
+static const txNodeDispatch gxHostNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxHostNodeBind,
 	fxHostNodeHoist,
@@ -799,7 +799,7 @@ static const txNodeDispatch gxHostNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxIfNodeDispatch = {
+static const txNodeDispatch gxIfNodeDispatch ICACHE_FLASH_ATTR = {
 	fxIfNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -807,7 +807,7 @@ static const txNodeDispatch gxIfNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxImportNodeDispatch = {
+static const txNodeDispatch gxImportNodeDispatch ICACHE_FLASH_ATTR = {
 	fxImportNodeDistribute,
 	fxNodeBind,
 	fxImportNodeHoist,
@@ -815,7 +815,7 @@ static const txNodeDispatch gxImportNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxIncludeNodeDispatch = {
+static const txNodeDispatch gxIncludeNodeDispatch ICACHE_FLASH_ATTR = {
 	fxIncludeNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -823,7 +823,7 @@ static const txNodeDispatch gxIncludeNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxIntegerNodeDispatch = {
+static const txNodeDispatch gxIntegerNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -831,7 +831,7 @@ static const txNodeDispatch gxIntegerNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxLabelNodeDispatch = {
+static const txNodeDispatch gxLabelNodeDispatch ICACHE_FLASH_ATTR = {
 	fxLabelNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -839,7 +839,7 @@ static const txNodeDispatch gxLabelNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxMemberNodeDispatch = {
+static const txNodeDispatch gxMemberNodeDispatch ICACHE_FLASH_ATTR = {
 	fxMemberNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -847,7 +847,7 @@ static const txNodeDispatch gxMemberNodeDispatch = {
 	fxMemberNodeCodeAssign,
 	fxMemberNodeCodeReference
 };
-static const txNodeDispatch gxMemberAtNodeDispatch = {
+static const txNodeDispatch gxMemberAtNodeDispatch ICACHE_FLASH_ATTR = {
 	fxMemberAtNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -855,7 +855,7 @@ static const txNodeDispatch gxMemberAtNodeDispatch = {
 	fxMemberAtNodeCodeAssign,
 	fxMemberAtNodeCodeReference
 };
-static const txNodeDispatch gxModuleNodeDispatch = {
+static const txNodeDispatch gxModuleNodeDispatch ICACHE_FLASH_ATTR = {
 	fxModuleNodeDistribute,
 	fxModuleNodeBind,
 	fxModuleNodeHoist,
@@ -863,7 +863,7 @@ static const txNodeDispatch gxModuleNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxNewNodeDispatch = {
+static const txNodeDispatch gxNewNodeDispatch ICACHE_FLASH_ATTR = {
 	fxCallNewNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -871,7 +871,7 @@ static const txNodeDispatch gxNewNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxNumberNodeDispatch = {
+static const txNodeDispatch gxNumberNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -879,7 +879,7 @@ static const txNodeDispatch gxNumberNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxObjectNodeDispatch = {
+static const txNodeDispatch gxObjectNodeDispatch ICACHE_FLASH_ATTR = {
 	fxObjectNodeDistribute,
 	fxObjectNodeBind,
 	fxNodeHoist,
@@ -887,7 +887,7 @@ static const txNodeDispatch gxObjectNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxObjectBindingNodeDispatch = {
+static const txNodeDispatch gxObjectBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxObjectBindingNodeDistribute,
 	fxObjectBindingNodeBind,
 	fxNodeHoist,
@@ -895,7 +895,7 @@ static const txNodeDispatch gxObjectBindingNodeDispatch = {
 	fxObjectBindingNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxOrExpressionNodeDispatch = {
+static const txNodeDispatch gxOrExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBinaryExpressionNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -903,7 +903,7 @@ static const txNodeDispatch gxOrExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxParamsNodeDispatch = {
+static const txNodeDispatch gxParamsNodeDispatch ICACHE_FLASH_ATTR = {
 	fxParamsNodeDistribute,
 	fxParamsNodeBind,
 	fxNodeHoist,
@@ -911,7 +911,7 @@ static const txNodeDispatch gxParamsNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxParamsBindingNodeDispatch = {
+static const txNodeDispatch gxParamsBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxParamsBindingNodeDistribute,
 	fxParamsBindingNodeBind,
 	fxParamsBindingNodeHoist,
@@ -919,7 +919,7 @@ static const txNodeDispatch gxParamsBindingNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxPostfixExpressionNodeDispatch = {
+static const txNodeDispatch gxPostfixExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPostfixExpressionNodeDistribute,
 	fxPostfixExpressionNodeBind,
 	fxNodeHoist,
@@ -927,7 +927,7 @@ static const txNodeDispatch gxPostfixExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxProgramNodeDispatch = {
+static const txNodeDispatch gxProgramNodeDispatch ICACHE_FLASH_ATTR = {
 	fxProgramNodeDistribute,
 	fxProgramNodeBind,
 	fxProgramNodeHoist,
@@ -935,7 +935,7 @@ static const txNodeDispatch gxProgramNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxPropertyNodeDispatch = {
+static const txNodeDispatch gxPropertyNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPropertyNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -943,7 +943,7 @@ static const txNodeDispatch gxPropertyNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxPropertyAtNodeDispatch = {
+static const txNodeDispatch gxPropertyAtNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPropertyAtNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -951,7 +951,7 @@ static const txNodeDispatch gxPropertyAtNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxPropertyBindingNodeDispatch = {
+static const txNodeDispatch gxPropertyBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPropertyBindingNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -959,7 +959,7 @@ static const txNodeDispatch gxPropertyBindingNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxPropertyBindingAtNodeDispatch = {
+static const txNodeDispatch gxPropertyBindingAtNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPropertyBindingAtNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -967,7 +967,7 @@ static const txNodeDispatch gxPropertyBindingAtNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxQuestionMarkNodeDispatch = {
+static const txNodeDispatch gxQuestionMarkNodeDispatch ICACHE_FLASH_ATTR = {
 	fxQuestionMarkNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -975,7 +975,7 @@ static const txNodeDispatch gxQuestionMarkNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxRegexpNodeDispatch = {
+static const txNodeDispatch gxRegexpNodeDispatch ICACHE_FLASH_ATTR = {
 	fxRegexpNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -983,7 +983,7 @@ static const txNodeDispatch gxRegexpNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxRestBindingNodeDispatch = {
+static const txNodeDispatch gxRestBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxRestBindingNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -991,7 +991,7 @@ static const txNodeDispatch gxRestBindingNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxReturnNodeDispatch = {
+static const txNodeDispatch gxReturnNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -999,7 +999,7 @@ static const txNodeDispatch gxReturnNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxSkipBindingNodeDispatch = {
+static const txNodeDispatch gxSkipBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1007,7 +1007,7 @@ static const txNodeDispatch gxSkipBindingNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxSpecifierNodeDispatch = {
+static const txNodeDispatch gxSpecifierNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1015,7 +1015,7 @@ static const txNodeDispatch gxSpecifierNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxSpreadNodeDispatch = {
+static const txNodeDispatch gxSpreadNodeDispatch ICACHE_FLASH_ATTR = {
 	fxSpreadNodeDistribute,
 	fxSpreadNodeBind,
 	fxNodeHoist,
@@ -1023,7 +1023,7 @@ static const txNodeDispatch gxSpreadNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxStatementNodeDispatch = {
+static const txNodeDispatch gxStatementNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxNodeBind,
 	fxStatementNodeHoist,
@@ -1031,7 +1031,7 @@ static const txNodeDispatch gxStatementNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxStatementsNodeDispatch = {
+static const txNodeDispatch gxStatementsNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementsNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1039,7 +1039,7 @@ static const txNodeDispatch gxStatementsNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxStringNodeDispatch = {
+static const txNodeDispatch gxStringNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1047,7 +1047,7 @@ static const txNodeDispatch gxStringNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxSuperNodeDispatch = {
+static const txNodeDispatch gxSuperNodeDispatch ICACHE_FLASH_ATTR = {
 	fxSuperNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1055,7 +1055,7 @@ static const txNodeDispatch gxSuperNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxSwitchNodeDispatch = {
+static const txNodeDispatch gxSwitchNodeDispatch ICACHE_FLASH_ATTR = {
 	fxSwitchNodeDistribute,
 	fxSwitchNodeBind,
 	fxSwitchNodeHoist,
@@ -1063,7 +1063,7 @@ static const txNodeDispatch gxSwitchNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxTemplateNodeDispatch = {
+static const txNodeDispatch gxTemplateNodeDispatch ICACHE_FLASH_ATTR = {
 	fxTemplateNodeDistribute,
 	fxTemplateNodeBind,
 	fxNodeHoist,
@@ -1071,7 +1071,7 @@ static const txNodeDispatch gxTemplateNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxTemplateItemNodeDispatch = {
+static const txNodeDispatch gxTemplateItemNodeDispatch ICACHE_FLASH_ATTR = {
 	fxTemplateItemNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1079,7 +1079,7 @@ static const txNodeDispatch gxTemplateItemNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxThisNodeDispatch = {
+static const txNodeDispatch gxThisNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1087,7 +1087,7 @@ static const txNodeDispatch gxThisNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxThrowNodeDispatch = {
+static const txNodeDispatch gxThrowNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1095,7 +1095,7 @@ static const txNodeDispatch gxThrowNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxTryNodeDispatch = {
+static const txNodeDispatch gxTryNodeDispatch ICACHE_FLASH_ATTR = {
 	fxTryNodeDistribute,
 	fxTryNodeBind,
 	fxNodeHoist,
@@ -1103,7 +1103,7 @@ static const txNodeDispatch gxTryNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxUnaryExpressionNodeDispatch = {
+static const txNodeDispatch gxUnaryExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxUnaryExpressionNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1111,7 +1111,7 @@ static const txNodeDispatch gxUnaryExpressionNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxUndefinedNodeDispatch = {
+static const txNodeDispatch gxUndefinedNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1119,7 +1119,7 @@ static const txNodeDispatch gxUndefinedNodeDispatch = {
 	fxUndefinedNodeCodeAssign,
 	fxUndefinedNodeCodeReference
 };
-static const txNodeDispatch gxValueNodeDispatch = {
+static const txNodeDispatch gxValueNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1127,7 +1127,7 @@ static const txNodeDispatch gxValueNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxWhileNodeDispatch = {
+static const txNodeDispatch gxWhileNodeDispatch ICACHE_FLASH_ATTR = {
 	fxWhileNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1135,7 +1135,7 @@ static const txNodeDispatch gxWhileNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch gxWithNodeDispatch = {
+static const txNodeDispatch gxWithNodeDispatch ICACHE_FLASH_ATTR = {
 	fxWithNodeDistribute,
 	fxWithNodeBind,
 	fxWithNodeHoist,
@@ -1143,7 +1143,7 @@ static const txNodeDispatch gxWithNodeDispatch = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
-static const txNodeDispatch  gxYieldNodeDispatch = {
+static const txNodeDispatch  gxYieldNodeDispatch ICACHE_FLASH_ATTR = {
 	fxStatementNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
@@ -1152,7 +1152,7 @@ static const txNodeDispatch  gxYieldNodeDispatch = {
 	fxNodeCodeReference
 };
 
-const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] = {
+const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	{ XS_NO_CODE, XS_NO_TOKEN, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_ACCESS, "Access", sizeof(txAccessNode), &gxAccessNodeDispatch },
 	{ XS_CODE_ADD, XS_TOKEN_ADD, "Add", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
