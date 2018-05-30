@@ -34,15 +34,19 @@ export default class WiFiServer extends BLEServer {
 	}
 	onCharacteristicWritten(params) {
 		let value = params.value;
-		if ("SSID" == params.name)
-			this.ssid = value;
-		else if ("password" == params.name)
-			this.password = value;
-		else if ("control" == params.name) {
-			if ((1 == value) && this.ssid) {
-				this.close();
-				this.connectToWiFiNetwork();
-			}
+		switch(params.name) {
+			case "SSID":
+				this.ssid = value;
+				break;
+			case "password":
+				this.password = value;
+				break;
+			case "control":
+				if ((1 == value) && this.ssid) {
+					this.close();
+					this.connectToWiFiNetwork();
+				}
+				break;
 		}
 	}
 	connectToWiFiNetwork() {
