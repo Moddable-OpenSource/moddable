@@ -1817,7 +1817,7 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #ifdef mxInstrument	
-#define xsInstrumentCount 11
+#define xsInstrumentCount 10
 static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",
 	"Chunk available",
@@ -1829,7 +1829,6 @@ static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Keys used",
 	"Modules loaded",
 	"Parser used",
-	"Parser peak",
 };
 static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" / ",
@@ -1841,7 +1840,6 @@ static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" times",
 	" keys",
 	" modules",
-	" / ",
 	" bytes",
 };
 
@@ -1900,8 +1898,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[6] = the->garbageCollectionCount;
 	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
 	xsInstrumentValues[8] = the->loadedModulesCount;
-	xsInstrumentValues[9] = the->lastParserSize;
-	xsInstrumentValues[10] = the->peakParserSize;
+	xsInstrumentValues[9] = the->peakParserSize;
 
 	txInteger i, j = 0;
 #ifdef mxDebug
