@@ -171,10 +171,12 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
 	$(TMP_DIR)/cfeBMF.c.o \
+	$(TMP_DIR)/dvi_adpcm_encode.c.o \
 	$(TMP_DIR)/image2cs.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
-	$(TMP_DIR)/tool.c.o
+	$(TMP_DIR)/tool.c.o \
+	$(TMP_DIR)/wav2maud.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
