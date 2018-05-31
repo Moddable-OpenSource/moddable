@@ -95,16 +95,27 @@
 	#include "tinyi2s.h"
 #endif
 
+#define kIMABytesPerChunk (68)
+#define kIMASamplesPerChunk (129)
+extern int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf);
+
 typedef struct {
-	void	*samples;
-	int		sampleCount;		// 0 means this is a callback or volume command with value of (uintptr_t)samples
-	int		position;			// less than zero if callback, else
-	int		repeat;				// always 1 for callback, negative for infinite
+	void		*samples;
+	int			sampleCount;		// 0 means this is a callback or volume command with value of (uintptr_t)samples
+	int			position;			// less than zero if callback, else
+	int16_t		repeat;				// always 1 for callback, negative for infinite
+	int8_t		sampleFormat;		// kSampleFormat
+	int8_t		reserved;
+	uint16_t	compressedRemaining;
+	uint16_t	compressedTotal;
+	uint8_t		*compressed;
+	uint8_t		*compressedInitial;
 } modAudioQueueElementRecord, *modAudioQueueElement;
 
 typedef struct {
-	uint16_t	volume;				// 8.8 fixed
-	int			elementCount;
+	uint16_t		volume;				// 8.8 fixed
+	int16_t			*decompressed;
+	int				elementCount;
 	modAudioQueueElementRecord	element[MODDEF_AUDIOOUT_QUEUELENGTH];
 } modAudioOutStreamRecord, *modAudioOutStream;
 
@@ -172,10 +183,12 @@ static void updateActiveStreams(modAudioOut out);
 static void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output);
 static void endOfElement(modAudioOut out, modAudioOutStream stream);
 static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
+static int streamDecompressNext(modAudioOutStream stream);
 
 void xs_audioout_destructor(void *data)
 {
 	modAudioOut out = data;
+	int i;
 
 	if (!out)
 		return;
@@ -211,6 +224,10 @@ void xs_audioout_destructor(void *data)
 	if (out->i2sActive)
 		i2s_end();
 #endif
+
+	for (i = 0; i < out->streamCount; i++)
+		if (out->stream[i].decompressed)
+			c_free(out->stream[i].decompressed);
 
 	c_free(out);
 }
@@ -383,6 +400,11 @@ enum {
 	kKindRawSamples = 5,
 };
 
+enum {
+	kSampleFormatUncompressed = 0,
+	kSampleFormatIMA = 1,
+};
+
 void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
@@ -393,6 +415,7 @@ void xs_audioout_enqueue(xsMachine *the)
 	uint16_t sampleRate;
 	uint8_t numChannels;
 	uint8_t bitsPerSample;
+	uint8_t sampleFormat;
 	modAudioQueueElement element;
 
 	xsmcVars(1);
@@ -430,9 +453,12 @@ void xs_audioout_enqueue(xsMachine *the)
 				bitsPerSample = c_read8(buffer + 3);
 				sampleRate = c_read16(buffer + 4);
 				numChannels = c_read8(buffer + 6);
+				sampleFormat = c_read8(buffer + 7);
 				bufferSamples = c_read32(buffer + 8);
 				if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
 					xsUnknownError("format doesn't match output");
+				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat))
+					xsUnknownError("unsupported compression");
 
 				buffer += 12;
 
@@ -445,6 +471,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			else {
 				if (samplesToUse <= 0)
 					xsUnknownError("samplesToUse required");
+
+				sampleFormat = kSampleFormatUncompressed;
 			}
 			
 #if defined(__APPLE__)
@@ -456,16 +484,36 @@ void xs_audioout_enqueue(xsMachine *the)
 #endif
 			
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
-			element->samples = buffer + (sampleOffset * out->bytesPerFrame);
-			element->sampleCount = samplesToUse;
 			element->position = 0;
 			element->repeat = repeat;
+			element->sampleFormat = sampleFormat;
+			if (kSampleFormatUncompressed == sampleFormat) {
+				element->samples = buffer + (sampleOffset * out->bytesPerFrame);
+				element->sampleCount = samplesToUse;
+			}
+			else {		// must be kSampleFormatIMA
+				if (NULL == out->stream[stream].decompressed) {
+					out->stream[stream].decompressed = c_malloc(kIMASamplesPerChunk * sizeof(int16_t));
+					if (NULL == out->stream[stream].decompressed)
+						xsUnknownError("out of memory");
+				}
+				element->samples = out->stream[stream].decompressed;
+				element->sampleCount = kIMASamplesPerChunk;
+				// calculations quantize to chunk boundaries
+				element->compressedInitial = buffer + ((sampleOffset / kIMASamplesPerChunk) * kIMABytesPerChunk);
+				element->compressed = element->compressedInitial;
+				element->compressedTotal = samplesToUse / kIMASamplesPerChunk;
+				element->compressedRemaining = element->compressedTotal;
+			}
 
 		enqueue:
 			out->stream[stream].elementCount += 1;
 
-			if (1 == out->stream[stream].elementCount)
+			if (1 == out->stream[stream].elementCount) {
+				if (kSampleFormatUncompressed != sampleFormat)
+					streamDecompressNext(&out->stream[stream]);
 				updateActiveStreams(out);
+			}
 
 #if defined(__APPLE__)
 			pthread_mutex_unlock(&out->mutex);
@@ -678,8 +726,8 @@ void audioOutLoop(void *pvParameter)
 			if (kStateTerminated == newState)
 				break;
 
-			if (kStateIdle == newState)
-				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
+//			if (kStateIdle == newState)
+//				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
 			continue;
 		}
 
@@ -1035,7 +1083,15 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 {
 	modAudioQueueElement element = stream->element;
 
+	if (element->sampleFormat != kSampleFormatUncompressed) {
+		if (streamDecompressNext(stream))
+			return;
+	}
+
 	element->position = 0;
+	element->compressedRemaining = element->compressedTotal;
+	element->compressed = element->compressedInitial;
+
 	if (element->repeat < 0) {		// infinity... continues until more samples queued
 		int i;
 		for (i = 1; i < stream->elementCount; i++) {
@@ -1076,4 +1132,18 @@ void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume)
 	updateActiveStreams(out);
 }
 
+int streamDecompressNext(modAudioOutStream stream)
+{
+	modAudioQueueElement element = stream->element;
 
+	if (0 == element->compressedRemaining)
+		return 0;
+
+	dvi_adpcm_decode(element->compressed, kIMABytesPerChunk, stream->decompressed);
+
+	element->compressedRemaining -= 1;
+	element->compressed += kIMABytesPerChunk;
+	element->position = 0;
+
+	return 1;
+}
