@@ -382,7 +382,7 @@ export class MakeFile extends FILE {
 			}
 		}
 
-		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025;
+		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025, audioFormat = "uncompressed";
 		let defines = tool.defines;
 		if (defines) {
 			let audioOut = defines.audioOut;
@@ -390,6 +390,7 @@ export class MakeFile extends FILE {
 				if ("bitsPerSample" in audioOut) bitsPerSample = audioOut.bitsPerSample;
 				if ("numChannels" in audioOut) numChannels = audioOut.numChannels;
 				if ("sampleRate" in audioOut) sampleRate = audioOut.sampleRate;
+				if ("format" in audioOut) audioFormat = audioOut.format;
 			}
 		}
 		for (var result of tool.soundFiles) {
@@ -397,7 +398,7 @@ export class MakeFile extends FILE {
 			var target = result.target;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
 			this.echo(tool, "wav2maud ", target);
-			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample);
+			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}
 
 		for (var result of tool.stringFiles)
