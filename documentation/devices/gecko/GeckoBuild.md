@@ -45,15 +45,15 @@ Sleep is another important aspect of the Gecko platform. To achieve low power go
 
 Moddable on Gecko runs on the bare metal. It is very efficient and gives a great deal of control to the developer. However, expertise and time are required to get it right.
 
-Three models of Gecko are supported in the Moddable SDK today, with a fourth under development.
+Four models of Gecko are supported in the Moddable SDK today.
 
 The Giant Gecko is based off of the EFM32 family of devices. Its platform identifier is **gecko/giant**. We've worked with the EFM32GG STK3700 - [Giant Gecko Starter Kit](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit).
 
-The Mighty Gecko is a family of devices that include radio hardware. Its platform identifier is **gecko/mighty**. We've worked with the [EFR32 Mighty Gecko Starter Kit](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit).
+The Mighty Gecko is a family of devices based off of the EFR32 that include radio hardware. Its platform identifier is **gecko/mighty**. We've worked with the [EFR32 Mighty Gecko Starter Kit](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit).
 
-The Thunderboard Sense 2 is a Mighty Gecko based radio device that includes a number of sensors included on the board. Its platform identifier is **gecko/thunderboard2**. [Thunderboard™ Sense 2 IoT Development Kit](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
+The Thunderboard Sense 2 is also a Mighty Gecko based radio device that includes a number of sensors included on the board. Its platform identifier is **gecko/thunderboard2**. [Thunderboard™ Sense 2 IoT Development Kit](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
 
-The Blue Gecko is a Bluetooth focused board. Its port is currently under development. Its platform identifier is **gecko/blue**.
+The Blue Gecko is a Bluetooth focused board based off the EFR32 family of devices. Its platform identifier is **gecko/blue**. We've worked with the [EFR32 Blue Gecko Bluetooth Starter Kit](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit).
 
 ### Development workflow
 
@@ -122,7 +122,7 @@ Device | Example project
 Giant Gecko | `STK3700_powertest`
 Mighty Gecko | `simple_rail_without_hal`, `simple_trx_with_fifo`
 Thunderboard Sense 2 | `soc-thunderboard-sense-2`, `soc-empty`
-
+Blue Gecko | `soc-ibeacon`, `soc-thermometer`
 Build, install and run the sample to become familiar with the process.
 
 > Note: It is necessary to start with an example project with your board connected so that Simplicity Studio will populate the build rules for the project with the appropriate values for your device.
@@ -548,6 +548,8 @@ Copy the particular `main.c` file into your Simplicity Studio's project, replaci
 
 Continue with *__Build xs_gecko.a archive__* above.
 
+### BLE
+The Moddable SDK includes Bluetooth Low Energy (BLE) protocol support for Blue Gecko devices. Our BLE API [documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble.md) includes details for building Blue Gecko BLE apps.
 
 ### Notes and Troubleshooting
 
@@ -728,10 +730,11 @@ PD15 | PUSH_BUTTON1 | Push Button 1
 
 ## Example apps with gecko support
 
-App | Feature | Giant | Mighty | Thunderboard Sense 2
---- | ------- | ----- | ------ | --------------------
-helloworld | xsbug | x | x | x
+App | Feature | Giant | Mighty | Thunderboard Sense 2 | Blue |
+--- | ------- | ----- | ------ | -------------------- | ---- |
+helloworld | xsbug | x | x | x | x
 base/sleep | sleep | x | x | x
+network/ble/* | BLE |  |  |  | x
 drivers/TMP102 | I2C | x | x |
 drivers/HMC5883L | I2C | x | x |
 drivers/ls013b4dn04 | Sharp Memory Display | x | x | x 
