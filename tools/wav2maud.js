@@ -31,7 +31,8 @@ export default class extends TOOL {
 		this.output = {
 			sampleRate: 11025,
 			numChannels: 1,
-			bitsPerSample: 8
+			bitsPerSample: 8,
+			format: "uncompressed"
 		};
 
 		let argc = argv.length;
@@ -78,6 +79,15 @@ export default class extends TOOL {
 					throw new Error("channels must be 1 or 2");
 				break;
 
+			case "-f":
+				argi++;
+				if (argi >= argc)
+					throw new Error("-o: no format!");
+				if (("uncompressed" !== argv[argi]) && ("ima" !== argv[argi]))
+					throw new Error("unknown format!");
+				this.output.format = argv[argi];
+				break;
+
 			default:
 				name = argv[argi];
 				if (this.inputPath)
@@ -95,6 +105,13 @@ export default class extends TOOL {
 
 		if (!this.outputPath)
 			this.outputPath = this.splitPath(this.inputPath).directory;
+
+		if ("ima" === this.output.format) {
+			if (1 !== this.output.numChannels)
+				throw new Error("ima must be mono");
+			if (16 !== this.output.bitsPerSample)
+				throw new Error("ima requires 16-bit samples");
+		}
 
 		let parts = this.splitPath(this.inputPath);
 		parts.extension = ".maud";
@@ -121,12 +138,16 @@ export default class extends TOOL {
 		header.setUint8(3, this.output.bitsPerSample);
 		header.setUint16(4, this.output.sampleRate, true);		// little-endian
 		header.setUint8(6, this.output.numChannels);
-		header.setUint8(7, 0);		// unused
+		header.setUint8(7, ("ima" === this.output.format) ? 1 : 0);		// sample format
 		header.setUint32(8, Math.floor((this.wav.samples / this.wav.sampleRate) * this.output.sampleRate), true)
 		outputFile.writeBuffer(header.buffer);
 
 		let resampled = this.resampler.outputBuffer;
 		let finalSamples = (8 === this.output.bitsPerSample) ? new Int8Array(this.wavSamples.length) : new Int16Array(this.wavSamples.length);
+
+		const imaSamplesPerChunk = 129;
+		let imaBuffer = new Int16Array(imaSamplesPerChunk);
+		imaBuffer.samplesInBuffer = 0;
 
 		while (this.wav.samples) {
 			// get next buffer of samples
@@ -155,12 +176,34 @@ export default class extends TOOL {
 			}
 
 			// output samples
-			let byteLength = use * ((this.output.bitsPerSample * this.output.numChannels) >> 3);
-			outputFile.writeBuffer(finalSamples.buffer.slice(0, byteLength));
+			if ("uncompressed" === this.output.format) {
+				let byteLength = use * ((this.output.bitsPerSample * this.output.numChannels) >> 3);
+				outputFile.writeBuffer(finalSamples.buffer.slice(0, byteLength));
+			}
+			else if ("ima" === this.output.format) {
+				let pos = 0;
+				while (pos < use) {
+					let needed = imaSamplesPerChunk - imaBuffer.samplesInBuffer;
+					if (needed > (use - pos))
+						needed = (use - pos);
+
+					imaBuffer.set(new Int16Array(finalSamples.buffer, pos << 1, needed), imaBuffer.samplesInBuffer);
+
+					imaBuffer.samplesInBuffer += needed;
+					if (imaBuffer.samplesInBuffer < imaSamplesPerChunk)
+						break;
+
+					outputFile.writeBuffer(this.compressIMA(imaBuffer.buffer, imaSamplesPerChunk));
+					imaBuffer.samplesInBuffer = 0;
+					pos += needed;
+				}
+			}
 		}
 
+		// if IMA, may be a partial buffer pending
 		outputFile.close();
 	}
+	compressIMA(samples) @ "Tool_compressIMA";
 }
 
 class WavReader {
