@@ -1,7 +1,7 @@
 # AudioOut
 Copyright 2018 Moddable Tech, Inc.
 
-Revised: March 19, 2018
+Revised: May 31, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -130,7 +130,7 @@ To `enqueue` audio samples with a Moddable Audio header (MAUD), call enqueue wit
 
 	audio.enqueue(0, AuioOut.Samples, buffer);
 
-To `enqueue` a buffer of audio samples with no header call enqueue with a buffer of samples:
+To `enqueue` a buffer of uncompressed audio samples with no header call enqueue with a buffer of samples:
 
 	audio.enqueue(0, AudioOut.RawSamples, buffer);
 
@@ -165,7 +165,7 @@ To change the volume, enqueue a `Volume` command on a stream. The volume command
 Values for the volume command range from 0 for silent, to 256 for full volume.
 
 ## MAUD format
-The `maud` format, "Moddable Audio", is a simple uncompressed audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts samples in the `maud` format. The `wav2maud` tool in the Moddable SDK converts WAV files to `maud` resources.
+The `maud` format, "Moddable Audio", is a simple audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts samples in the `maud` format. The `wav2maud` tool in the Moddable SDK converts WAV files to `maud` resources.
 
 The format has a twelve byte header followed immediately by audio samples.
 
@@ -175,10 +175,12 @@ The format has a twelve byte header followed immediately by audio samples.
 - offset 3 -- bits per sample (8 or 16)
 - offset 4 -- sample rate (between 8000 and 48000, inclusive). 2 bytes, unsigned, little-endian
 - offset 6 -- number of channels (1 or 2)
-- offset 7 -- unused (0)
+- offset 7 -- sample format (0 for uncompressed, 1 for IMA ADPCM)
 - offset 8 -- sample count. 4 bytes, unsigned little-endian
 
 Audio samples immediately follow the header. If there are two channels, the channels are interleaved. 16-bit samples are signed little-endian values. 8-bit samples are signed values.
+
+IMA ADPCM are based on the algorithm described in "Recommended Practices for Enhancing Digital Audio Compatibility in Multimedia Systems" Revision 3.00 from October 21, 1992. Audio compression is approximately 4:1 for 16 bit samples. Only single channel audio is supported. Each compressed chunk contains 129 samples and uses 68 bytes. Chunks are decompressed one at a time, on demand during playback to minimize in-memory buffers.
 
 ## Manifest defines
 The `audioOut` module is be configured at build time.
