@@ -226,6 +226,12 @@
 #ifndef c_malloc
 	#define c_malloc malloc
 #endif
+#ifndef c_free_uint32
+	#define c_free_uint32 free
+#endif
+#ifndef c_malloc_uint32
+	#define c_malloc_uint32 malloc
+#endif
 #ifndef c_qsort
 	#define c_qsort qsort
 #endif
