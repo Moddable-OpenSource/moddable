@@ -1074,6 +1074,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 				current = fxTermCreate(parser, sizeof(txCapture), fxCaptureMeasure);
 				((txCapture*)current)->term = term;
 				((txCapture*)current)->captureIndex = currentIndex;
+				((txCapture*)current)->name[0] = 0;
 				current = fxQuantifierParse(parser, current, currentIndex - 1);
 			}
 		}
