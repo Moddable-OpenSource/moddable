@@ -477,7 +477,8 @@ class XcodeFile extends PrerequisiteFile {
 		parts.fileReferenceID = this.id++;
 		parts.buildFileID = this.id++;
 		if (parts.extension == ".framework") {
-			parts.copyFileID = this.id++;
+			if (folder && folder.indexOf("embed")>=0)
+				parts.copyFileID = this.id++;
 			parts.fileType = "wrapper.framework";
 		}
 		else if (parts.extension == ".bundle") {
@@ -527,7 +528,7 @@ class XcodeFile extends PrerequisiteFile {
 		for (var result of tool.resourcesFiles) {
 			let target = result.target;
 			if (target.indexOf("/") < 0)	
-				this.addResource(tool.resourcesPath + "/" + target);
+				this.addResource(tool.resourcesPath + "/" + target, result.source);
 		}
 		for (var result of tool.resourcesFolders) {
 			this.addResource(tool.resourcesPath + "/" + result, true);
@@ -546,7 +547,10 @@ class XcodeFile extends PrerequisiteFile {
 		this.current = ""
 		this.line("\t\t\t\t\t\"INCLUDE_XSPLATFORM=1\",");
 		this.line("\t\t\t\t\t\"XSPLATFORM=\\\\\\\"ios_xs.h\\\\\\\"\",");
-		this.line("\t\t\t\t\t\"mxDebug=1\",");
+		if (tool.debug) {
+			this.line("\t\t\t\t\t\"mxDebug=1\",");
+			this.line("\t\t\t\t\t\"mxInstrument=1\",");
+		}
 		this.line("\t\t\t\t\t\"mxRun=1\",");
 		this.line("\t\t\t\t\t\"mxParse=1\",");
 		this.line("\t\t\t\t\t\"mxNoFunctionLength=1\",");
@@ -616,7 +620,7 @@ class XcodeFile extends PrerequisiteFile {
 		this.write(file.name);
 		this.write(file.extension);
 		this.line(" */; };");
-		if (file.fileType == "wrapper.framework") {
+		if (file.fileType == "wrapper.framework" && file.copyFileID) {
 			this.write("\t\t");
 			this.writeID(file.copyFileID);
 			this.write(" /* ");
@@ -631,7 +635,7 @@ class XcodeFile extends PrerequisiteFile {
 		}
 	}
 	generatePBXCopyFilesBuildPhase(file) {
-		if (file.fileType == "wrapper.framework") {
+		if (file.fileType == "wrapper.framework" && file.copyFileID) {
 			this.write("\t\t\t\t");
 			this.writeID(file.copyFileID);
 			this.write(" /* ");
