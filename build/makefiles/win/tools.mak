@@ -167,10 +167,12 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoReadJPEG.o \
 	$(TMP_DIR)\commodettoReadPNG.o \
 	$(TMP_DIR)\cfeBMF.o \
+	$(TMP_DIR)\dvi_adpcm_encode.o \
 	$(TMP_DIR)\image2cs.o \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
-	$(TMP_DIR)\tool.o
+	$(TMP_DIR)\tool.o \
+	$(TMP_DIR)\wav2maud.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
