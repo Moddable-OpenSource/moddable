@@ -334,7 +334,7 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 7, &out->task);
+	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 10, &out->task);
 #if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
 	if (!out->buffer32)
