@@ -548,7 +548,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 	instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 	property = fxLastProperty(the, instance);
 	fxNextSlotProperty(the, property, aStack, mxID(_prototype), XS_GET_ONLY);
-	property = mxBehaviorSetProperty(the, fxGetInstance(the, aStack), mxID(_constructor), XS_NO_ID, XS_ANY);
+	property = mxBehaviorSetProperty(the, fxGetInstance(the, aStack), mxID(_constructor), XS_NO_ID, XS_OWN);
 	property->flag = XS_DONT_ENUM_FLAG;
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
