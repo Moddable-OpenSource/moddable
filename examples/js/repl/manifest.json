@@ -5,10 +5,12 @@
 	"modules": {
 		"*": [
 			  "./main",
+			  "./replcore",
 		]
 	},
 	"preload": [
 		"repl",
+		"replcore",
 	],
 	"strip": [],
 	"platforms": {
@@ -36,5 +38,11 @@
 				],
 			},
 		},
+		"mac": {
+			"error": "use build target \"x-cli-mac\" instead of \"mac\""
+		},
+		"...": {
+			"warning": "unsupported target"
+		}
 	}
 }
