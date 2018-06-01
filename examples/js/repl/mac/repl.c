@@ -75,22 +75,30 @@ void xs_repl_eval(txMachine* the)
 #endif
 }
 
-void xs_repl_isDebug(xsMachine *the)
+#include <termios.h>
+
+static struct termios gTIO;
+
+static void restoreTerminal(void)
 {
-#ifdef mxDebug
-	xsResult = xsTrue;
-#else
-	xsResult = xsFalse;
-#endif
+	tcsetattr(STDIN_FILENO, TCSANOW, &gTIO);
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	static txMachine root;
 	int error = 0;
 	txMachine* machine = &root;
 	txPreparation* preparation = xsPreparation();
-	
+	struct termios tio;
+
+	tcgetattr(STDIN_FILENO, &gTIO);
+	tio = gTIO;
+	tio.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &tio);
+
+	atexit(restoreTerminal);
+
 	c_memset(machine, 0, sizeof(txMachine));
 	machine->preparation = preparation;
 	machine->keyArray = preparation->keys;
