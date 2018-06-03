@@ -247,6 +247,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					if (property->value.accessor.setter != slot->value.accessor.setter)
 						return 0;
 				}
+				return 1;
 			}
 			else if ((mask & XS_DONT_SET_FLAG) || (slot->kind != XS_UNINITIALIZED_KIND)) {
 				if (property->kind == XS_ACCESSOR_KIND)
@@ -256,6 +257,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						return 0;
 					if ((slot->kind != XS_UNINITIALIZED_KIND) && !fxIsSameValue(the, property, slot, 0))
 						return 0;
+					return 1;
 				}
 			}
 		}
@@ -498,6 +500,10 @@ void fxOrdinaryOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* ke
 
 txBoolean fxOrdinaryPreventExtensions(txMachine* the, txSlot* instance)
 {
+	if (instance->flag & XS_DONT_PATCH_FLAG)
+		return 1;
+	if (instance->ID >= 0)
+		return 0;
 	instance->flag |= XS_DONT_PATCH_FLAG;
 	return 1;
 }
