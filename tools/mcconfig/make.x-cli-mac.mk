@@ -149,9 +149,6 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 	
-$(RESOURCES_DIR)/main.icns: $(MAIN_DIR)/mac/main.icns
-	cp -rf $< $@
-	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
