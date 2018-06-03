@@ -38,11 +38,24 @@
 				],
 			},
 		},
+		"x-cli-win": {
+			"modules": {
+				"~": [
+					"$(MODULES)/files/resource/*",
+				],
+				"*": [
+					"./win/repl",
+				],
+			},
+		},
 		"mac": {
 			"error": "use build target \"x-cli-mac\" instead of \"mac\""
 		},
+		"win": {
+			"error": "use build target \"x-cli-win\" instead of \"win\""
+		},
 		"...": {
 			"warning": "unsupported target"
-		}
+		},
 	}
 }
