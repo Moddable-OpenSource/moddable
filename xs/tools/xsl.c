@@ -698,6 +698,19 @@ void fxFreezeBuiltIns(txMachine* the)
 	}
 	
 	mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); fxFreezeBuiltIn(the);
+	
+	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
+	
+	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
+	mxPush(mxImportingModules); fxFreezeBuiltIn(the);
+	mxPush(mxLoadingModules); fxFreezeBuiltIn(the);
+	mxPush(mxLoadedModules); fxFreezeBuiltIn(the);
+	mxPush(mxResolvingModules); fxFreezeBuiltIn(the);
+	mxPush(mxRunningModules); fxFreezeBuiltIn(the);
+	mxPush(mxRequiredModules); fxFreezeBuiltIn(the);
+	mxPush(mxModules); fxFreezeBuiltIn(the);
+	mxPush(mxPendingJobs); fxFreezeBuiltIn(the);
+	mxPush(mxRunningJobs); fxFreezeBuiltIn(the);
 }
 
 void fxLoadModule(txMachine* the, txID moduleID)
