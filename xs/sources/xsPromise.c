@@ -57,7 +57,7 @@ void fxBuildPromise(txMachine* the)
 {
 	txSlot* slot;
 	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewPromiseInstance(the));
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_catch), 1, mxID(_catch), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_finally), 1, mxID(_finally_), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_then), 2, mxID(_then), XS_DONT_ENUM_FLAG);
