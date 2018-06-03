@@ -585,17 +585,27 @@ void fx_Object_freeze(txMachine* the)
 			txSlot* instance = slot->value.reference;
 			txSlot* at;
 			txSlot* property;
-			mxBehaviorPreventExtensions(the, instance);
+			if (!mxBehaviorPreventExtensions(the, instance))
+				mxTypeError("extensible object");
 			at = fxNewInstance(the);
 			mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
 			mxPushUndefined();
 			property = the->stack;
 			while ((at = at->next)) {
 				if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
-					if (property->kind != XS_ACCESSOR_KIND) 
+					txFlag mask = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+					if (property->kind == XS_ACCESSOR_KIND) {
+						if (property->value.accessor.getter)
+							mask |= XS_GETTER_FLAG;
+						if (property->value.accessor.setter)
+							mask |= XS_SETTER_FLAG;
+					}
+					else {
+						mask |= XS_DONT_SET_FLAG;
 						property->flag |= XS_DONT_SET_FLAG;
+					}
 					property->flag |= XS_DONT_DELETE_FLAG;
-					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, XS_GET_ONLY);
+					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask);
 				}
 			}
 			mxPop();
@@ -855,7 +865,8 @@ void fx_Object_preventExtensions(txMachine* the)
 		txSlot* slot = mxArgv(0);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			slot = slot->value.reference;
-			mxBehaviorPreventExtensions(the, slot);
+			if (!mxBehaviorPreventExtensions(the, slot))
+				mxTypeError("extensible object");
 		}
 		*mxResult = *mxArgv(0);
 	}
@@ -869,15 +880,26 @@ void fx_Object_seal(txMachine* the)
 			txSlot* instance = slot->value.reference;
 			txSlot* at;
 			txSlot* property;
-			mxBehaviorPreventExtensions(the, instance);
+			if (!mxBehaviorPreventExtensions(the, instance))
+				mxTypeError("extensible object");
 			at = fxNewInstance(the);
 			mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
 			mxPushUndefined();
 			property = the->stack;
 			while ((at = at->next)) {
 				if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
+					txFlag mask = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+					if (property->kind == XS_ACCESSOR_KIND) {
+						if (property->value.accessor.getter)
+							mask |= XS_GETTER_FLAG;
+						if (property->value.accessor.setter)
+							mask |= XS_SETTER_FLAG;
+					}
+					else {
+						mask |= XS_DONT_SET_FLAG;
+					}
 					property->flag |= XS_DONT_DELETE_FLAG;
-					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, XS_GET_ONLY);
+					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask);
 				}
 			}
 			mxPop();
