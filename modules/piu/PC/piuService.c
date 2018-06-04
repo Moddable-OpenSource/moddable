@@ -483,8 +483,6 @@ void ServiceEventInvoke(ServiceEvent event)
 		}
 	}
 	xsEndHost(thread->the);
-	c_free(message->request);
-	message->request = NULL;
 }
 
 void ServiceEventReject(ServiceEvent event)
@@ -506,6 +504,9 @@ void ServiceEventReject(ServiceEvent event)
 			}
 			c_free(message->response);
 		}
+        if (message->request) {
+            c_free(message->request);
+        }
 		xsForget(message->reject);
 		xsForget(message->resolve);
 		c_free(message);
@@ -534,6 +535,9 @@ void ServiceEventResolve(ServiceEvent event)
 			}
 			c_free(message->response);
 		}
+        if (message->request) {
+            c_free(message->request);
+        }
 		xsForget(message->reject);
 		xsForget(message->resolve);
 		c_free(message);
