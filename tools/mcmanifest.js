@@ -95,6 +95,13 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateBLERules(tool) {
+		let role = "none", defines = tool.defines;
+		if (defines && ("ble" in defines)) {
+			if ("server" in defines.ble && true == defines.ble.server)
+				role = "server";
+			else if ("client" in defines.ble && true == defines.ble.client)
+				role = "client";
+		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
 		this.write("mc.bleservices.c:");
@@ -104,6 +111,8 @@ export class MakeFile extends FILE {
 		this.echo(tool, "bles2gatt bleservices");
 		this.write("\t$(BLES2GATT)");
 		this.write(tool.windows ? " $**" : " $^");
+		this.write(" -r ");
+		this.write(role);
 		this.write(" -o $(TMP_DIR)");
 		this.line("");
 		this.line("");
