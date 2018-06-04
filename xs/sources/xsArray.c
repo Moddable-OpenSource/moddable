@@ -737,9 +737,12 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		slot.value.number = array->value.array.length;
 		if (!fxIsPropertyCompatible(the, &slot, descriptor, mask))
 			return 0;
-		if (descriptor->kind != XS_UNINITIALIZED_KIND)
-			result = fxSetArrayLength(the, instance->next, fxCheckArrayLength(the, descriptor));
-		if ((mask & XS_DONT_SET_FLAG) && (descriptor->flag & XS_DONT_SET_FLAG))
+		if (descriptor->kind != XS_UNINITIALIZED_KIND) {
+			txIndex length = fxCheckArrayLength(the, descriptor);
+			if (array->value.array.length != length)
+				result = fxSetArrayLength(the, array, length);
+		}
+		if ((mask & XS_DONT_SET_FLAG) && (descriptor->flag & XS_DONT_SET_FLAG) && !(array->flag & XS_DONT_SET_FLAG))
 			array->flag |= XS_DONT_SET_FLAG;
 		return result;
 	}
