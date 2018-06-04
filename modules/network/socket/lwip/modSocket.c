@@ -30,6 +30,7 @@
 #include "modTimer.h"
 
 #if ESP32
+	#include "esp_wifi.h"
 	typedef int8_t int8;
 	typedef uint8_t uint8;
 	typedef int16_t int16;
@@ -247,10 +248,26 @@ void xs_socket(xsMachine *the)
 		kind = xsmcToString(xsVar(0));
 		if (0 == espStrCmp(kind, "TCP"))
 			;
-		else if (0 == espStrCmp(kind, "UDP"))
+		else if (0 == espStrCmp(kind, "UDP")) {
 			xss->kind = kUDP;
-		else
+			if (xsmcHas(xsArg(0), xsID_multicast)) {
+				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
+				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
+				if (!parseAddress(temp, multicastIP)) {
+					SocketMutexGive();
+					xsUnknownError("invalid multicast IP address");
+				}
+
+				ttl = 1;
+				if (xsmcHas(xsArg(0), xsID_ttl)) {
+					xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
+					ttl = xsmcToInteger(xsVar(0));
+				}
+			}
+		}
+		else {
 			xsUnknownError("invalid socket kind");
+	}
 	}
 
 	// prepare inputs
@@ -312,11 +329,32 @@ void xs_socket(xsMachine *the)
 		tcp_recv(xss->skt, didReceive);
 		tcp_sent(xss->skt, didSend);
 	}
-	else
+	else {
 		udp_recv(xss->udp, (udp_recv_fn)didReceiveUDP, xss);
 
-	if (waiting || (kUDP == xss->kind))
+		if (ttl) {
+			ip_addr_t ifaddr;
+	#if ESP32
+			tcpip_adapter_ip_info_t info;
+			tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &info);
+			ifaddr.u_addr.ip4 = info.ip;
+	#else
+			struct ip_info staIpInfo;
+			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+			ifaddr.addr = staIpInfo.ip.addr;
+	#endif
+			ip_addr_t multicast_addr;
+			IP_ADDR4(&multicast_addr, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
+			igmp_joingroup(&ifaddr, &multicast_addr);
+
+			IP_ADDR4(&(xss->udp)->multicast_ip, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
+			xss->udp->ttl = 1;
+		}
+	}
+
+	if (waiting || (kUDP == xss->kind)) {
 		return;
+	}
 
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
 	err = tcp_connect(xss->skt, &ipaddr, port, didConnect);
