@@ -1,15 +1,18 @@
 {
 	"modules": {
 		"*": [
+			"$(MODULES)/network/ble/modBLE",
 			"$(MODULES)/network/ble/bleserver",
 			"$(MODULES)/network/ble/btutils",
-			"$(MODULES)/network/ble/gap"
+			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/network/ble/smp"
 		],
 	},
 	"preload": [
 		"bleserver",
 		"btutils",
-		"gap"
+		"gap",
+		"smp"
 	],
 	"defines": {
 		"ble": {
@@ -20,27 +23,42 @@
 	"platforms": {
 		"esp32": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/esp32/modBLEServer",
+				"*": [
+					"$(MODULES)/network/ble/esp32/modBLEServer",
+					"$(MODULES)/network/ble/esp32/modBLESMP",
+				]
 			},
 		},
 		"gecko/blue": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/gecko/modBLEServer",
+				"*": [
+					"$(MODULES)/network/ble/gecko/modBLEServer",
+					"$(MODULES)/network/ble/gecko/modBLESMP",
+				]
 			},
 		},
 		"lin": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+				"*": [
+					"$(MODULES)/network/ble/sim/modBLEServer",
+					"$(MODULES)/network/ble/sim/modBLESMP"
+				]
 			}
 		},
 		"mac": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+				"*": [
+					"$(MODULES)/network/ble/sim/modBLEServer",
+					"$(MODULES)/network/ble/sim/modBLESMP"
+				]
 			}
 		},
 		"win": {
 			"modules": {
-				"*": "$(MODULES)/network/ble/sim/modBLEServer",
+				"*": [
+					"$(MODULES)/network/ble/sim/modBLEServer",
+					"$(MODULES)/network/ble/sim/modBLESMP"
+				]
 			}
 		},
 		"...": {
