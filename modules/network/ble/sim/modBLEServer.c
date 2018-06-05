@@ -42,18 +42,6 @@ void xs_ble_server_set_device_name(xsMachine *the)
 {
 }
 
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
-{
-}
-
-void xs_ble_smp_set_security_parameters(xsMachine *the)
-{
-}
-
 void xs_ble_server_start_advertising(xsMachine *the)
 {
 }
