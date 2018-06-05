@@ -67,8 +67,6 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._notifyValue(characteristic.handle, characteristic.notify, value);
 	}
 
-	set passkey() @ "xs_ble_server_set_passkey"
-	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onCharacteristicRead() {}
@@ -76,9 +74,12 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onCharacteristicNotifyDisabled() {}
 	onConnected() {}
 	onDisconnected() {}
+	onPasskeyConfirm() {}
+	onPasskeyDisplay() {}
+	onPasskeyRequested() {}
+	onAuthenticated() {}
 
 	_setDeviceName() @ "xs_ble_server_set_device_name"
-
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
 
@@ -159,6 +160,18 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onDisconnected":
 				this.onDisconnected(params);
+				break;
+			case "onPasskeyConfirm":
+				return this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
+				break;
+			case "onPasskeyDisplay":
+				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });
+				break;
+			case "onPasskeyRequested":
+				return this.onPasskeyRequested({ address:new Bytes(params.address) });
+				break;
+			case "onAuthenticated":
+				return this.onAuthenticated();
 				break;
 		}
 	}

@@ -15,57 +15,28 @@
  * 
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
-#include "xsmc.h"
+const IOCapability = {
+	NoInputNoOutput: 0,
+	DisplayOnly: 1,
+	KeyboardOnly: 2,
+	KeyboardDisplay: 3,
+	DisplayYesNo: 4
+};
+Object.freeze(IOCapability);
 
-void xs_ble_server_initialize(xsMachine *the)
-{
-}
-
-void xs_ble_server_close(xsMachine *the)
-{
-}
-
-void xs_ble_server_destructor(void *data)
-{
-}
-
-void xs_ble_server_get_local_address(xsMachine *the)
-{
-	const uint8_t addr[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
-	xsmcSetArrayBuffer(xsResult, (void*)addr, 6);
-}
-
-void xs_ble_server_set_device_name(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
-{
-}
-
-void xs_ble_smp_set_security_parameters(xsMachine *the)
-{
-}
-
-void xs_ble_server_start_advertising(xsMachine *the)
-{
-}
+export default class SMP {
+	static deleteAllBondings() @ "xs_ble_smp_delete_all_bondings"
+	static deleteBonding(address) @ "xs_ble_smp_delete_bonding"
 	
-void xs_ble_server_stop_advertising(xsMachine *the)
-{
-}
+	static set securityParameters(params) {
+		let {encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput} = params;
+		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
+	}
+	
+	static _setSecurityParameters() @ "xs_ble_smp_set_security_parameters"
+};
+Object.freeze(SMP.prototype);
 
-void xs_ble_server_characteristic_notify_value(xsMachine *the)
-{
-}
-
-void xs_ble_server_deploy(xsMachine *the)
-{
-}
+export {SMP, IOCapability};
