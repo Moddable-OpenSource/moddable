@@ -57,6 +57,18 @@ export class Connection {
 			case "onRSSI":
 				this.ble.onRSSI(this.client, params);
 				break;
+			case "onPasskeyConfirm":
+				return this.ble.onPasskeyConfirm(this.client, params);
+				break;
+			case "onPasskeyDisplay":
+				this.ble.onPasskeyDisplay(this.client, params);
+				break;
+			case "onPasskeyRequested":
+				return this.ble.onPasskeyRequested(this.client, params);
+				break;
+			case "onAuthenticated":
+				return this.ble.onAuthenticated(this.client);
+				break;
 		}
 	}
 };

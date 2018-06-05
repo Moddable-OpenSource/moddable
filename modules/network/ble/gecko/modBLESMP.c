@@ -19,30 +19,12 @@
  */
 
 #include "xsmc.h"
+#include "xsgecko.h"
+#include "mc.xs.h"
+#include "modBLE.h"
 
-void xs_ble_client_initialize(xsMachine *the)
-{
-}
-
-void xs_ble_client_close(xsMachine *the)
-{
-}
-
-void xs_ble_client_destructor(void *data)
-{
-}
-
-void xs_ble_client_start_scanning(xsMachine *the)
-{
-}
-
-void xs_ble_client_stop_scanning(xsMachine *the)
-{
-}
-
-void xs_ble_client_connect(xsMachine *the)
-{
-}
+#include "bg_types.h"
+#include "native_gecko.h"
 
 void xs_ble_smp_delete_bonding(xsMachine *the)
 {
@@ -56,46 +38,3 @@ void xs_ble_smp_set_security_parameters(xsMachine *the)
 {
 }
 
-void xs_gap_connection_initialize(xsMachine *the)
-{
-}
-	
-void xs_gap_connection_disconnect(xsMachine *the)
-{
-}
-
-void xs_gap_connection_read_rssi(xsMachine *the)
-{
-}
-
-void xs_gatt_client_discover_primary_services(xsMachine *the)
-{
-}
-
-void xs_gatt_service_discover_characteristics(xsMachine *the)
-{
-}
-
-void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
-{
-}
-
-void xs_gatt_characteristic_write_without_response(xsMachine *the)
-{
-}
-
-void xs_gatt_characteristic_read_value(xsMachine *the)
-{
-}
-
-void xs_gatt_characteristic_enable_notifications(xsMachine *the)
-{
-}
-
-void xs_gatt_characteristic_disable_notifications(xsMachine *the)
-{
-}
-
-void xs_gatt_descriptor_write_value(xsMachine *the)
-{
-}

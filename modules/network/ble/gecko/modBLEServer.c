@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsgecko.h"
 #include "mc.xs.h"
+#include "modBLE.h"
 #include "modTimer.h"
 
 #include "bg_types.h"
@@ -31,6 +32,11 @@
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
+
+	// security
+	uint8_t encryption;
+	uint8_t bonding;
+	uint8_t mitm;
 
 	modTimer timer;
 	int8_t connection;
@@ -116,10 +122,6 @@ void xs_ble_server_set_device_name(xsMachine *the)
 	gecko_cmd_system_set_device_name(0, strlen(name), (uint8_t*)name);
 }
 
-void xs_ble_server_set_passkey(xsMachine *the)
-{
-}
-
 void xs_ble_server_start_advertising(xsMachine *the)
 {
 	uint16_t intervalMin = xsmcToInteger(xsArg(0));
@@ -152,6 +154,13 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 void xs_ble_server_deploy(xsMachine *the)
 {
 	// server deployed automatically by gecko_stack_init()
+}
+
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+{
+	gBLE->encryption = encryption;
+	gBLE->bonding = bonding;
+	gBLE->mitm = mitm;
 }
 
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
