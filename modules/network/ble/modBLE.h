@@ -18,54 +18,19 @@
  *
  */
 
-#include "xsmc.h"
+#ifndef __mod_ble__
+#define __mod_ble__
 
-void xs_ble_server_initialize(xsMachine *the)
-{
-}
+#include "inttypes.h"
 
-void xs_ble_server_close(xsMachine *the)
-{
-}
+typedef enum {
+	NoInputNoOutput = 0,
+	DisplayOnly,
+	KeyboardOnly,
+	KeyboardDisplay,
+	DisplayYesNo
+} IOCapability;
 
-void xs_ble_server_destructor(void *data)
-{
-}
+extern void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm);
 
-void xs_ble_server_get_local_address(xsMachine *the)
-{
-	const uint8_t addr[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
-	xsmcSetArrayBuffer(xsResult, (void*)addr, 6);
-}
-
-void xs_ble_server_set_device_name(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
-{
-}
-
-void xs_ble_smp_set_security_parameters(xsMachine *the)
-{
-}
-
-void xs_ble_server_start_advertising(xsMachine *the)
-{
-}
-	
-void xs_ble_server_stop_advertising(xsMachine *the)
-{
-}
-
-void xs_ble_server_characteristic_notify_value(xsMachine *the)
-{
-}
-
-void xs_ble_server_deploy(xsMachine *the)
-{
-}
+#endif
