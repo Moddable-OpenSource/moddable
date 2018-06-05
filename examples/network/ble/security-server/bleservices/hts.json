@@ -1,0 +1,14 @@
+{
+	"service": {
+		"uuid": "1809",
+		"characteristics": {
+			"temperature": {
+				"uuid": "2A1C",
+				"maxBytes": 2,
+				"type": "Array",
+				"permissions": "read",
+				"properties": "notify",
+			},
+		}
+	}
+}
