@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsesp.h"
 #include "mc.xs.h"
+#include "modBLE.h"
 
 #include "FreeRTOSConfig.h"
 #include "esp_bt.h"
@@ -50,9 +51,13 @@ typedef struct {
 	// services
 	uint16_t handles[service_count][max_attribute_count];
 	
+	// security
+	uint8_t encryption;
+	uint8_t bonding;
+	uint8_t mitm;
+	
 	// connection
 	esp_bd_addr_t remote_bda;
-	uint32_t passkey;
 	int16_t conn_id;
 	uint16_t app_id;
 	uint8_t terminating;
@@ -147,11 +152,6 @@ void xs_ble_server_set_device_name(xsMachine *the)
 	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
 }
 
-void xs_ble_server_set_passkey(xsMachine *the)
-{
-	gBLE->passkey = xsmcToInteger(xsArg(0));
-}
-
 void xs_ble_server_start_advertising(xsMachine *the)
 {
 	uint32_t intervalMin = xsmcToInteger(xsArg(0));
@@ -202,6 +202,13 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(1 == notify));
 }
 
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+{
+	gBLE->encryption = encryption;
+	gBLE->bonding = bonding;
+	gBLE->mitm = mitm;
+}
+
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
@@ -220,6 +227,61 @@ void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 		*length = ESP_UUID_LEN_128;
 		c_memmove(buffer, uuid->uuid.uuid128, *length);
 	}
+}
+
+static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	xsBeginHost(gBLE->the);
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	xsmcSetInteger(xsVar(2), key_notif->passkey);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	uint8_t confirm;
+	xsBeginHost(gBLE->the);
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	xsmcSetInteger(xsVar(2), key_notif->passkey);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	confirm = xsmcToBoolean(xsResult);
+	xsEndHost(gBLE->the);
+	esp_ble_confirm_reply(gBLE->remote_bda, confirm);
+}
+
+static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_req_t *ble_req = (esp_ble_sec_req_t *)message;
+	uint32_t passkey;
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+	passkey = xsmcToInteger(xsResult);
+	xsEndHost(gBLE->the);
+	esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
+}
+
+static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
+	xsBeginHost(gBLE->the);
+	if (auth_cmpl->success)
+		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsEndHost(gBLE->the);
 }
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -247,9 +309,21 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 				gBLE->scanResponseData = NULL;
 			}
 			break;
-		ESP_GAP_BLE_PASSKEY_REQ_EVT:
-			esp_ble_passkey_reply(gBLE->remote_bda, true, gBLE->passkey);
+		case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.key_notif, sizeof(esp_ble_sec_key_notif_t), gapPasskeyNotifyEvent, NULL);
 			break;
+		case ESP_GAP_BLE_NC_REQ_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.key_notif, sizeof(esp_ble_sec_key_notif_t), gapPasskeyConfirmEvent, NULL);
+			break;
+		case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.ble_req, sizeof(esp_ble_sec_req_t), gapPasskeyRequestEvent, NULL);
+			break;
+		case ESP_GAP_BLE_SEC_REQ_EVT:
+			esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
+     		break;
+     	case ESP_GAP_BLE_AUTH_CMPL_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+     		break;
 		default:
 			break;
     }
@@ -446,6 +520,10 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			}
 			break;
 		case ESP_GATTS_CONNECT_EVT:
+			if (gBLE->encryption) {
+				esp_ble_sec_act_t sec_act = (gBLE->mitm ? ESP_BLE_SEC_ENCRYPT_MITM : ESP_BLE_SEC_ENCRYPT);
+    			esp_ble_set_encryption(param->connect.remote_bda, sec_act);  
+			}
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gatts_connect_evt_param), gattsConnectEvent, NULL);
 			break;
 		case ESP_GATTS_DISCONNECT_EVT:

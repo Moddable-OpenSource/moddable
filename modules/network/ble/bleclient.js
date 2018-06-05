@@ -40,7 +40,12 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onConnected() {}
 	
 	// From Connection object
+	onAuthenticated() {}
 	onDisconnected() {}
+	onPasskeyConfirm() {}
+	onPasskeyDisplay() {}
+	onPasskeyRequested() {}
+	onRSSI() {}
 	
 	// From Client object
 	onServices() {}
@@ -52,6 +57,8 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onCharacteristicValue() {}
 	onCharacteristicNotification() {}
 
+	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
+	
 	startScanning(params) {
 		if (!params) params = {};
 		let {active = true, interval = 0x50, window = 0x30} = params;
@@ -82,6 +89,18 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				this.onConnected(client);
 				break;
 			}
+			case "onPasskeyConfirm":
+				return this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
+				break;
+			case "onPasskeyDisplay":
+				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });
+				break;
+			case "onPasskeyRequested":
+				return this.onPasskeyRequested({ address:new Bytes(params.address) });
+				break;
+			case "onAuthenticated":
+				return this.onAuthenticated();
+				break;
 		}
 	}
 };

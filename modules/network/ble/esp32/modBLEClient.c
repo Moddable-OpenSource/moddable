@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsesp.h"
 #include "mc.xs.h"
+#include "modBLE.h"
 
 #include "FreeRTOSConfig.h"
 #include "esp_bt.h"
@@ -73,6 +74,11 @@ typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
 	
+	// security
+	uint8_t encryption;
+	uint8_t bonding;
+	uint8_t mitm;
+
 	modBLEConnection connections;
 	uint8_t terminating;
 } modBLERecord, *modBLE;
@@ -166,6 +172,12 @@ void xs_ble_client_destructor(void *data)
 	esp_bt_controller_deinit();
 }
 
+void xs_ble_client_set_local_privacy(xsMachine *the)
+{
+	uint8_t enable = xsmcToBoolean(xsArg(0));
+	esp_ble_gap_config_local_privacy(enable);
+}
+
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
@@ -211,6 +223,13 @@ void xs_ble_client_connect(xsMachine *the)
 	
 	// register application client and connect when ESP_GATTC_REG_EVT received
 	esp_ble_gattc_app_register(connection->app_id);
+}
+
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+{
+	gBLE->encryption = encryption;
+	gBLE->bonding = bonding;
+	gBLE->mitm = mitm;
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
@@ -586,6 +605,67 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsEndHost(gBLE->the);
 }
 
+static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	uint8_t confirm;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	xsmcSetInteger(xsVar(2), key_notif->passkey);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	confirm = xsmcToBoolean(xsResult);
+	xsEndHost(gBLE->the);
+	esp_ble_confirm_reply(key_notif->bd_addr, confirm);
+}
+
+static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), key_notif->passkey);
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(1));
+	xsCall2(connection->objConnection, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_sec_req_t *ble_req = (esp_ble_sec_req_t *)message;
+	uint32_t passkey;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByAddress(&ble_req->bd_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsResult = xsCall1(connection->objConnection, xsID_callback, xsString("onPasskeyRequested"));
+	passkey = xsmcToInteger(xsResult);
+	xsEndHost(gBLE->the);
+	esp_ble_passkey_reply(ble_req->bd_addr, true, passkey);
+}
+
+static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByAddress(&auth_cmpl->bd_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (auth_cmpl->success)
+		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsEndHost(gBLE->the);
+}
+
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
 	switch(event) {
@@ -600,6 +680,21 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         	if (ESP_GATT_OK == param->read_rssi_cmpl.status)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read_rssi_cmpl, sizeof(struct ble_read_rssi_cmpl_evt_param), rssiCompleteEvent, gBLE);
         	break;
+		case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.key_notif, sizeof(esp_ble_sec_key_notif_t), gapPasskeyNotifyEvent, NULL);
+			break;
+		case ESP_GAP_BLE_NC_REQ_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.key_notif, sizeof(esp_ble_sec_key_notif_t), gapPasskeyConfirmEvent, NULL);
+			break;
+		case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.ble_req, sizeof(esp_ble_sec_req_t), gapPasskeyRequestEvent, NULL);
+			break;
+     	case ESP_GAP_BLE_AUTH_CMPL_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+     		break;
+		case ESP_GAP_BLE_SEC_REQ_EVT:
+			esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
+     		break;
 		default:
 			break;
     }

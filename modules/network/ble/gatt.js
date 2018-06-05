@@ -62,8 +62,6 @@ export class Client {
 		this._readRSSI(this.connection);
 	}
 	
-	onServices() {}
-
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
 	_disconnect() @ "xs_gap_connection_disconnect"
