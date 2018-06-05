@@ -44,18 +44,6 @@ void xs_ble_client_connect(xsMachine *the)
 {
 }
 
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
-{
-}
-
-void xs_ble_smp_set_security_parameters(xsMachine *the)
-{
-}
-
 void xs_gap_connection_initialize(xsMachine *the)
 {
 }
