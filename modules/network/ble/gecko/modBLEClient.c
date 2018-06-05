@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsgecko.h"
 #include "mc.xs.h"
+#include "modBLE.h"
 #include "modTimer.h"
 
 #include "bg_types.h"
@@ -217,6 +218,10 @@ void xs_ble_client_destructor(void *data)
 	gBLE = NULL;
 }
 
+void xs_ble_client_set_local_privacy(xsMachine *the)
+{
+}
+
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
@@ -253,6 +258,10 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEConnectionAdd(connection);
 	
 	gecko_cmd_le_gap_open(bda, le_gap_address_type_public);
+}
+
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+{
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint8_t conn_id)
