@@ -48,8 +48,9 @@ export default class extends TOOL {
 		this.alpha = true;
 		this.color = true;
 		this.format = 0;
+		this.name = "";
 		this.rotation = 0;
-		this.inputPath = null;
+		this.inputPaths = [];
 		this.outputPath = null;
 		this.temporary = false;
 		var argc = argv.length;
@@ -87,6 +88,15 @@ export default class extends TOOL {
 					throw new Error("-f '" + name + "': unknown format!");
 				this.format = formatValues[name];
 				break;
+			case "-n":
+				argi++;	
+				if (argi >= argc)
+					throw new Error("-n: no name!");
+				name = argv[argi];
+				if (this.name)
+					throw new Error("-n '" + name + "': too many names!");
+				this.name = name;
+				break;
 			case "-o":
 				argi++;	
 				if (argi >= argc)
@@ -113,23 +123,31 @@ export default class extends TOOL {
 				break;
 			default:
 				name = argv[argi];
-				if (this.inputPath)
-					throw new Error("'" + name + "': too many files!");
 				path = this.resolveFilePath(name);
 				if (!path)
 					throw new Error("'" + name + "': file not found!");
-				this.inputPath = path;
+				this.inputPaths.push(path);
 				break;
 			}
 		}
 		if (!this.format) {
 			this.format = 7;
 		}
-		if (!this.inputPath) {
+		if (this.inputPaths.length == 0) {
 			throw new Error("no file!");
 		}
 		if (!this.outputPath)
-			this.outputPath = this.splitPath(this.inputPath).directory;
+			this.outputPath = this.splitPath(this.inputPaths[0]).directory;
+	}
+	checkPNG(png) {
+		let pngChannels = png.channels;
+		if (png.depth != 8)
+			return false;
+		if ((png.channels == 1) && (png.palette)) {
+			png.palette = new Uint8Array(png.palette);
+			return true;
+		}
+		return (png.channels == 2) || (png.channels == 3) || (png.channels == 4);
 	}
 	pad(width, format) {
 		let multiple = 32 / Bitmap.depth(format);
@@ -198,46 +216,136 @@ export default class extends TOOL {
 		}
 		return result;
 	}
-	run() {
-		let pngPath = this.inputPath;
-		let png = new PNG(this.readFileBuffer(pngPath));
-		let pngChannels = png.channels;
-		let pngDepth = png.depth;
+	transferLine(png, buffer, offset) {
+		let pngLine = png.read();
+		let pngOffset = 0;
+		let pngX = 0;
 		let pngWidth = png.width;
-		let pngHeight = png.height;
-		if (((pngChannels != 3) && (pngChannels != 4)) || (pngDepth != 8))
-			throw new Error("'" + pngPath + "': invalid PNG format!");
-		let width, height, pixelFormat = this.format;
-		if ((this.rotation == 0) || (this.rotation == 180)) {
-			width = this.pad(pngWidth, this.alpha ? formatValues.gray16 : pixelFormat);
-			height = pngHeight;
+		if (png.channels == 1) {
+			let palette = png.palette;
+			while (pngX < pngWidth) {
+				let index = 4 * pngLine[pngOffset++];
+				buffer[offset++] = palette[index++];
+				buffer[offset++] = palette[index++];
+				buffer[offset++] = palette[index++];
+				buffer[offset++] = palette[index++];
+				pngX++;
+			}
+		}
+		else if (png.channels == 2) {
+			while (pngX < pngWidth) {
+				let gray = pngLine[pngOffset++];
+				buffer[offset++] = gray;
+				buffer[offset++] = gray;
+				buffer[offset++] = gray;
+				buffer[offset++] = pngLine[pngOffset++];
+				pngX++;
+			}
+		}
+		else if (png.channels == 3) {
+			while (pngX < pngWidth) {
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = 255;
+				pngX++;
+			}
 		}
 		else {
-			width = pngWidth;
-			height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
+			while (pngX < pngWidth) {
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = pngLine[pngOffset++];
+				buffer[offset++] = pngLine[pngOffset++];
+				pngX++;
+			}
 		}
-		let buffer = new Uint8Array(width * height * 4);
-		let offset = 0;
-		let y = 0;
-		while (y < pngHeight) {
-			let pngLine = png.read();
-			let pngOffset = 0;
-			let x = 0;
-			while (x < pngWidth) {
-				buffer[offset++] = pngLine[pngOffset++];
-				buffer[offset++] = pngLine[pngOffset++];
-				buffer[offset++] = pngLine[pngOffset++];
-				buffer[offset++] = (pngChannels == 4) ? pngLine[pngOffset++] : 255;
-				x++;
+	}
+	
+	run() {
+		let inputPaths = this.inputPaths;
+		let c = inputPaths.length;
+		let width, y = 0, height, pixelFormat = this.format;
+		let buffer;
+		if (c == 1) {
+			let pngPath = inputPaths[0];
+			let png = new PNG(this.readFileBuffer(pngPath));
+			if (!this.checkPNG(png))
+				throw new Error("'" + pngPath + "': invalid PNG format!");
+			let pngWidth = png.width;
+			let pngHeight = png.height;
+			if ((this.rotation == 0) || (this.rotation == 180)) {
+				width = this.pad(pngWidth, this.alpha ? formatValues.gray16 : pixelFormat);
+				height = pngHeight;
 			}
-			while (x < width) {
-				buffer[offset++] = 0;
-				buffer[offset++] = 0;
-				buffer[offset++] = 0;
-				buffer[offset++] = 255;
-				x++;
+			else {
+				width = pngWidth;
+				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
 			}
-			y++;
+			buffer = new Uint8Array(width * height * 4);
+			let offset = 0;
+			while (y < pngHeight) {
+				let x = 0;
+				this.transferLine(png, buffer, offset);
+				offset += (pngWidth * 4);
+				x += pngWidth;
+				while (x < width) {
+					buffer[offset++] = 0;
+					buffer[offset++] = 0;
+					buffer[offset++] = 0;
+					buffer[offset++] = 255;
+					x++;
+				}
+				y++;
+			}
+		}
+		else {
+			let pngs = new Array(c).fill();
+			let pngWidth, pngHeight;
+			for (var i = 0; i < c; i++) {
+				let pngPath = inputPaths[i];
+				let png = new PNG(this.readFileBuffer(pngPath));
+				if (!this.checkPNG(png))
+					throw new Error("'" + pngPath + "': invalid PNG format!");
+				if (i == 0) {
+					pngWidth = png.width;
+					pngHeight = png.height;
+				}
+				else {
+					if (pngWidth != png.width)
+						throw new Error("'" + pngPath + "': invalid width!");
+					if (pngHeight != png.height)
+						throw new Error("'" + pngPath + "': invalid height!");
+				}
+				pngs[i] = png;
+			}
+			let stripWidth = pngWidth * i;
+			if ((this.rotation == 0) || (this.rotation == 180)) {
+				width = this.pad(stripWidth, this.alpha ? formatValues.gray16 : pixelFormat);
+				height = pngHeight;
+			}
+			else {
+				width = stripWidth;
+				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
+			}
+			buffer = new Uint8Array(width * height * 4);
+			let offset = 0;
+			while (y < pngHeight) {
+				let x = 0;
+				for (var i = 0; i < c; i++) {
+					this.transferLine(pngs[i], buffer, offset);
+					offset += (pngWidth * 4);
+					x += pngWidth;
+				}
+				while (x < width) {
+					buffer[offset++] = 0;
+					buffer[offset++] = 0;
+					buffer[offset++] = 0;
+					buffer[offset++] = 255;
+					x++;
+				}
+				y++;
+			}
 		}
 		while (y < height) {
 			let x = 0;
@@ -275,7 +383,9 @@ export default class extends TOOL {
 		let bufferLine = new Uint8Array(width * 4);
 
 		if (this.color) {
-			let parts = this.splitPath(this.inputPath);
+			let parts = this.splitPath(inputPaths[0]);
+			if (this.name)
+				parts.name = this.name;
 			parts.directory = this.outputPath;
 			parts.name += "-color";
 			parts.extension = ".bmp";
@@ -291,7 +401,9 @@ export default class extends TOOL {
 		}
 		
 		if (this.alpha) {
-			let parts = this.splitPath(this.inputPath);
+			let parts = this.splitPath(inputPaths[0]);
+			if (this.name)
+				parts.name = this.name;
 			parts.directory = this.outputPath;
 			parts.name += "-alpha";
 			parts.extension = ".bmp";
