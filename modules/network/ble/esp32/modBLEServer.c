@@ -520,10 +520,10 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			}
 			break;
 		case ESP_GATTS_CONNECT_EVT:
-			if (gBLE->encryption) {
-				esp_ble_sec_act_t sec_act = (gBLE->mitm ? ESP_BLE_SEC_ENCRYPT_MITM : ESP_BLE_SEC_ENCRYPT);
-    			esp_ble_set_encryption(param->connect.remote_bda, sec_act);  
-			}
+			if (gBLE->mitm)
+    			esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+    		else if (gBLE->encryption) 
+    			esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT);
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gatts_connect_evt_param), gattsConnectEvent, NULL);
 			break;
 		case ESP_GATTS_DISCONNECT_EVT:
