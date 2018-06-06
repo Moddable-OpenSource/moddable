@@ -28,13 +28,45 @@
 
 void xs_ble_smp_delete_bonding(xsMachine *the)
 {
+	// @@ TBD
 }
 
 void xs_ble_smp_delete_all_bondings(xsMachine *the)
 {
+	gecko_cmd_sm_delete_bondings();
 }
 
 void xs_ble_smp_set_security_parameters(xsMachine *the)
 {
+	uint8_t encryption = xsmcToBoolean(xsArg(0));
+	uint8_t bonding = xsmcToBoolean(xsArg(1));
+	uint8_t mitm = xsmcToBoolean(xsArg(2));
+	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t flags = 0;
+	uint8_t io_capabilities;
+ 	switch(ioCapability) {
+ 		case NoInputNoOutput:
+ 			io_capabilities = sm_io_capability_noinputnooutput;
+ 			break;
+ 		case DisplayOnly:
+ 			io_capabilities = sm_io_capability_displayonly;
+ 			break;
+ 		case KeyboardOnly:
+ 			io_capabilities = sm_io_capability_keyboardonly;
+ 			break;
+ 		case KeyboardDisplay:
+ 			io_capabilities = sm_io_capability_keyboarddisplay;
+ 			break;
+ 		case DisplayYesNo:
+ 			io_capabilities = sm_io_capability_displayyesno;
+ 			break;
+ 	} 	
+ 	
+	if (mitm)
+		flags |= 0x1;
+		
+	gecko_cmd_sm_configure(flags, io_capabilities);
+	
+	setSecurityParameters(encryption, bonding, mitm);
 }
 

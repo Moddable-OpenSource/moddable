@@ -40,6 +40,7 @@ typedef struct {
 
 	modTimer timer;
 	int8_t connection;
+	bd_addr address;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -87,6 +88,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	gecko_bgapi_class_le_gap_init();
 	gecko_bgapi_class_le_connection_init();
 	gecko_bgapi_class_gatt_server_init();
+	gecko_bgapi_class_sm_init();
 
 	gBLE->timer = modTimerAdd(0, 20, bleTimerCallback, NULL, 0);
 }
@@ -161,6 +163,8 @@ void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	if (bonding || (encryption && mitm))
+		gecko_cmd_sm_set_bondable_mode(1);
 }
 
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
@@ -206,7 +210,13 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	if (-1 != gBLE->connection) {
 		goto bail;
 	}
+	
 	gBLE->connection = evt->connection;
+	gBLE->address = evt->address;
+	
+	if (gBLE->encryption || gBLE->mitm)
+		gecko_cmd_sm_increase_security(evt->connection);
+
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), evt->connection);
@@ -226,6 +236,15 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 	gBLE->connection = -1;
 	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 bail:
+	xsEndHost(gBLE->the);
+}
+
+static void leConnectionParametersEvent(struct gecko_msg_le_connection_parameters_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->security_mode > le_connection_mode1_level1) {
+		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	}
 	xsEndHost(gBLE->the);
 }
 
@@ -307,6 +326,64 @@ static void gattServerUserWriteRequest(struct gecko_msg_gatt_server_user_write_r
 	doReadOrWriteRequest(evt, true);
 }
 
+static void smPasskeyDisplayEvent(struct gecko_msg_sm_passkey_display_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), gBLE->address.addr, 6);
+	xsmcSetInteger(xsVar(2), evt->passkey);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void smPasskeyRequestEvent(struct gecko_msg_sm_passkey_request_evt_t *evt)
+{
+	uint32_t passkey;
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), gBLE->address.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+	passkey = xsmcToInteger(xsResult);
+	gecko_cmd_sm_enter_passkey(evt->connection, passkey);
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void smPasskeyConfirmEvent(struct gecko_msg_sm_confirm_passkey_evt_t *evt)
+{
+	uint8_t confirm;
+	xsBeginHost(gBLE->the);
+	if (evt->connection != gBLE->connection)
+		goto bail;
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), gBLE->address.addr, 6);
+	xsmcSetInteger(xsVar(2), evt->passkey);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	confirm = xsmcToBoolean(xsResult);
+	gecko_cmd_sm_passkey_confirm(evt->connection, confirm);
+bail:
+	xsEndHost(gBLE->the);
+}
+
+static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
@@ -327,6 +404,21 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_gatt_server_user_write_request_id:
 			gattServerUserWriteRequest(&evt->data.evt_gatt_server_user_write_request);
+			break;
+		case gecko_evt_sm_passkey_display_id:
+			smPasskeyDisplayEvent(&evt->data.evt_sm_passkey_display);
+			break;
+		case gecko_evt_sm_passkey_request_id:
+			smPasskeyRequestEvent(&evt->data.evt_sm_passkey_request);
+			break;
+		case gecko_evt_sm_confirm_passkey_id:
+			smPasskeyConfirmEvent(&evt->data.evt_sm_confirm_passkey);
+			break;
+		case gecko_evt_le_connection_parameters_id:
+			leConnectionParametersEvent(&evt->data.evt_le_connection_parameters);
+			break;
+		case gecko_evt_sm_bonding_failed_id:
+			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
 			break;
 		default:
 			break;
