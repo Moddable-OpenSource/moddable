@@ -21,7 +21,7 @@ import {uuid} from "btutils";
 
 class PowerMate extends BLEClient {
 	onReady() {
-		this.startScanning();
+		this.onDisconnected();
 	}
 	onDiscovered(device) {
 		if ('PowerMate Bluetooth' == device.scanResponse.completeName) {
