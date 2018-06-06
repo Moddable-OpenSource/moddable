@@ -21,7 +21,7 @@ import {uuid} from "btutils";
 import {SMP, IOCapability} from "smp";
 import Timer from "timer";
 
-class SecureHealthThermometerService extends BLEServer {
+class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
 		this.timer = null;
 		this.deviceName = "Moddable HTM";
@@ -33,6 +33,7 @@ class SecureHealthThermometerService extends BLEServer {
 		this.deploy();
 	}
 	onAuthenticated() {
+		this.authenticated = true;
 		if (this.characteristic)
 			this.startMeasurements();
 	}
@@ -47,22 +48,24 @@ class SecureHealthThermometerService extends BLEServer {
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
 		this.characteristic = characteristic;
+		if (this.authenticated)
+			this.startMeasurements();
 	}
 	onCharacteristicNotifyDisabled(characteristic) {
 		this.stopMeasurements();
 	}
 	onPasskeyConfirm(params) {
 		let passkey = this.passkeyToString(params.passkey);
-		trace(`confirm passkey: ${passkey}\n`);
+		trace(`server confirm passkey: ${passkey}\n`);
 		return true;
 	}
 	onPasskeyDisplay(params) {
 		let passkey = this.passkeyToString(params.passkey);
-		trace(`display passkey: ${passkey}\n`);
+		trace(`server display passkey: ${passkey}\n`);
 	}
 	onPasskeyRequested(params) {
 		let passkey = Math.round(Math.random() * 999999);
-		trace(`requested passkey: ${this.passkeyToString(passkey)}\n`);
+		trace(`server requested passkey: ${this.passkeyToString(passkey)}\n`);
 		return passkey;
 	}
 	get temperature() {
@@ -77,7 +80,8 @@ class SecureHealthThermometerService extends BLEServer {
 	}
 	startMeasurements() {
 		this.timer = Timer.repeat(id => {
-			this.notifyValue(this.characteristic, this.temperature);
+			if (this.characteristic)
+				this.notifyValue(this.characteristic, this.temperature);
 		}, 250);
 	}
 	stopMeasurements() {
@@ -86,7 +90,7 @@ class SecureHealthThermometerService extends BLEServer {
 			this.timer = null;
 		}
 		this.temp = 95.0;
-		this.notified = false;
+		this.authenticated = false;
 		this.characteristic = null;
 	}
 	passkeyToString(passkey) {
@@ -94,4 +98,4 @@ class SecureHealthThermometerService extends BLEServer {
 	}
 }
 
-let shtm = new SecureHealthThermometerService;
+let htm = new SecureHealthThermometerServer;
