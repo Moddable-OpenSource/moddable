@@ -64,7 +64,7 @@
 import Digital from "pins/digital";
 import I2C from "pins/i2c";
 
-const LMP91000_ADDR = 0x48
+export const LMP91000_ADDR = 0x48
 
 const LMP91000_REG_STATUS = 0x00
 const LMP91000_REG_LOCK = 0x01
