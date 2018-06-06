@@ -25,6 +25,7 @@ class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
 		this.timer = null;
 		this.deviceName = "Moddable HTM";
+		//SMP.deleteAllBondings();
 		SMP.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
 		//SMP.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
 		//SMP.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
