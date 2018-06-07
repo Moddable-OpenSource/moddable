@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: May 29, 2018
+Revised: June 6, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -24,6 +24,8 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 * [BLE Server](#bleserver)
 	* [Class BLEServer](#classbleserver)
 	* [GATT Services](#gattservices)
+* [BLE Security](#blesecurity)
+	* [Class SMP](#classsmp)
 * [BLE Apps on ESP32 Platform](#esp32platform)
 * [BLE Apps on Blue Gecko Platform](#geckoplatform)
 * [BLE Example Apps](#exampleapps)
@@ -1149,6 +1151,177 @@ The service is defined as follows:
 	* The characteristic represents an unsigned 8-bit value
 	* The characteristic value is 85 and clients only have permission to read the characteristic
 
+<a id="blesecurity"></a>
+## BLE Security
+
+BLE clients and servers can optionally request link-layer security to protect data transferred between devices. Passkey pairing requires both devices to exchange and confirm the code before establishing a connection. Once the pairing process is complete, the connection and data transferred is encrypted. The BLE Security Manager (SM) defines the methods and protocols for pairing and key distribution.
+
+
+<a id="classsmp"></a>
+## Class SMP
+
+The `SMP` class provides access to BLE Security Manager Protocol features. The `SMP` class is available to both `BLEClient` and `BLEServer` classes.
+
+```javascript
+import SMP from "smp";
+```
+
+### Functions
+
+#### `deleteAllBondings()`
+
+Use the `deleteAllBondings` function to delete all bonding information and encryption keys from persistent storage:
+
+```javascript
+onReady() {
+	SMP.deleteAllBondings();
+}
+```
+***
+
+#### `deleteBonding(address)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `object` | `ArrayBuffer` containing the Bluetooth device address
+
+Use the `deleteBonding` function to delete bonding information for a specific device by address.
+
+```javascript
+onConnected(device) {
+	SMP.deleteBonding(device.address);
+}
+```
+***
+
+#### `securityParameters(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the security configuration.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `encryption` | `boolean` | Optional property to enable encryption. Default is `true`
+| `bonding` | `boolean` | Optional property to enable bonding. Default is `false`
+| `mitm` | `boolean` | Optional property to enable man-in-the-middle (MITM) protection. Default is `false`
+| `ioCapability` | `object` | Optional `IOCapability` instance to configure the device I/O capabilities. Default is `IOCapability.NoInputNoOutput`
+
+The `IOCapability` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `NoInputNoOutput` | `number` | Device has no input or output capabilities
+| `DisplayOnly` | `number` | Device has only output capability
+| `KeyboardOnly` | `number` | Device has only input capability
+| `KeyboardDisplay` | `number` | Device has input and output capabilities
+| `DisplayYesNo` | `number` | Device has output capability and button feedback for a Yes or No response
+
+The `securityParameters` property accessor function is used to configure the device security requirements and I/O capabilities.
+
+To request MITM protection with encryption for a display-only device. The device will display a passkey when requested:
+
+```javascript
+import {SMP, IOCapability} from "smp";
+
+onReady() {
+	SMP.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+}
+```
+
+To request MITM protection with encryption and bonding for a device with both a display and keyboard. The device will request a passkey to be entered and encryption keys will be saved:
+
+```javascript
+import {SMP, IOCapability} from "smp";
+
+onReady() {
+	SMP.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
+}
+```
+
+***
+
+#### `onAuthenticated()`
+
+The `onAuthenticated` callback is called when an authentication procedure completes, i.e. after successful device pairing.
+
+***
+
+#### `onPasskeyConfirm(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the passkey confirmation.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+| `passkey` | `number` | The passkey to confirm
+
+The `onPasskeyConfirm` callback is called when the user needs to confirm a passkey value displayed on a peer device. The callback returns `true` if the passkey was accepted.
+
+```javascript
+onPasskeyConfirm(params) {
+	// display passkey on screen
+	trace(`confirm passkey: ${params.passkey}\n`);
+	return true;	// passkey confirmed by user
+}
+```
+***
+
+#### `onPasskeyDisplay(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the passkey display.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+| `passkey` | `number` | The passkey to display
+
+The `onPasskeyDisplay` callback is called when the device needs to display a passkey.
+
+```javascript
+onPasskeyDisplay(params) {
+	// display passkey on screen
+	trace(`display passkey: ${params.passkey}\n`);
+}
+```
+
+***
+
+#### `onPasskeyRequested(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the passkey to request.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+
+The `onPasskeyRequested` callback is called when the device needs to request a passkey entry. The callback returns a numeric passkey value between 0 and 999,999.
+
+```javascript
+onPasskeyRequested(params) {
+	// display keyboard to enter passkey
+	let passkey = Math.round(Math.random() * 999999);
+	return passkey;
+}
+```
+> **Note:** Passkey values are integers, but must always include six digits. The host application is responsible for padding with leading zeros for display.
+
+***
+
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
 In order to enable the BLE client or server on the ESP32 platform, the [sdkconfig](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig) file must set the following core BLE features:
@@ -1227,8 +1400,9 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [ble-friend](../../../examples/network/ble/ble-friend)| Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
-| [powermate](../../../examples/network/ble/powermate) | Recieves button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
+| [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
+| [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 | [tempo](../../../examples/network/ble/tempo) | Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
 
@@ -1239,5 +1413,6 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
 | [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
+| [security-server](../../../examples/network/ble/security-server) | Demonstrates how to implement a secure health thermometer BLE server using SMP. The `security-server` can connect to the [security-client](../../../examples/network/ble/security-client) app.
 | [uri-beacon](../../../examples/network/ble/uri-beacon) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 | [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
