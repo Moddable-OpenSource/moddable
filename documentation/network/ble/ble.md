@@ -25,7 +25,7 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 	* [Class BLEServer](#classbleserver)
 	* [GATT Services](#gattservices)
 * [BLE Security](#blesecurity)
-	* [Class SMP](#classsmp)
+	* [Class SM](#classsm)
 * [BLE Apps on ESP32 Platform](#esp32platform)
 * [BLE Apps on Blue Gecko Platform](#geckoplatform)
 * [BLE Example Apps](#exampleapps)
@@ -1157,13 +1157,13 @@ The service is defined as follows:
 BLE clients and servers can optionally request link-layer security to protect data transferred between devices. Passkey pairing requires both devices to exchange and confirm the code before establishing a connection. Once the pairing process is complete, the connection and data transferred is encrypted. The BLE Security Manager (SM) defines the methods and protocols for pairing and key distribution.
 
 
-<a id="classsmp"></a>
-## Class SMP
+<a id="classsm"></a>
+## Class SM
 
-The `SMP` class provides access to BLE Security Manager Protocol features. The `SMP` class is available to both `BLEClient` and `BLEServer` classes.
+The `SM` class provides access to BLE Security Manager features. The `SM` class is available to both `BLEClient` and `BLEServer` classes.
 
 ```javascript
-import SMP from "smp";
+import SM from "sm";
 ```
 
 ### Functions
@@ -1174,22 +1174,7 @@ Use the `deleteAllBondings` function to delete all bonding information and encry
 
 ```javascript
 onReady() {
-	SMP.deleteAllBondings();
-}
-```
-***
-
-#### `deleteBonding(address)`
-
-| Argument | Type | Description |
-| --- | --- | :--- | 
-| `address` | `object` | `ArrayBuffer` containing the Bluetooth device address
-
-Use the `deleteBonding` function to delete bonding information for a specific device by address.
-
-```javascript
-onConnected(device) {
-	SMP.deleteBonding(device.address);
+	SM.deleteAllBondings();
 }
 ```
 ***
@@ -1224,20 +1209,20 @@ The `securityParameters` property accessor function is used to configure the dev
 To request MITM protection with encryption for a display-only device. The device will display a passkey when requested:
 
 ```javascript
-import {SMP, IOCapability} from "smp";
+import {SM, IOCapability} from "sm";
 
 onReady() {
-	SMP.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+	SM.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
 }
 ```
 
 To request MITM protection with encryption and bonding for a device with both a display and keyboard. The device will request a passkey to be entered and encryption keys will be saved:
 
 ```javascript
-import {SMP, IOCapability} from "smp";
+import {SM, IOCapability} from "sm";
 
 onReady() {
-	SMP.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
+	SM.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
 }
 ```
 
@@ -1246,6 +1231,14 @@ onReady() {
 #### `onAuthenticated()`
 
 The `onAuthenticated` callback is called when an authentication procedure completes, i.e. after successful device pairing.
+
+```javascript
+import {SM, IOCapability} from "sm";
+
+onAuthenticated() {
+	trace("authentication success\n");
+}
+```
 
 ***
 
