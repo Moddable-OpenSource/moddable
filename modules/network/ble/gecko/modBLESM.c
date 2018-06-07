@@ -26,17 +26,12 @@
 #include "bg_types.h"
 #include "native_gecko.h"
 
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-	// @@ TBD
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
+void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
 	gecko_cmd_sm_delete_bondings();
 }
 
-void xs_ble_smp_set_security_parameters(xsMachine *the)
+void xs_ble_sm_set_security_parameters(xsMachine *the)
 {
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
