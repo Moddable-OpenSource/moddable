@@ -41,6 +41,7 @@ typedef struct {
 	modTimer timer;
 	int8_t connection;
 	bd_addr address;
+	uint8_t bond;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -78,6 +79,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	if (!gBLE)
 		xsUnknownError("no memory");
 	gBLE->connection = -1;
+	gBLE->bond = 0xFF;
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
@@ -213,6 +215,7 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	
 	gBLE->connection = evt->connection;
 	gBLE->address = evt->address;
+	gBLE->bond = evt->bonding;
 	
 	if (gBLE->encryption || gBLE->mitm)
 		gecko_cmd_sm_increase_security(evt->connection);
@@ -234,6 +237,7 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 	if (evt->connection != gBLE->connection)
 		goto bail;
 	gBLE->connection = -1;
+	gBLE->bond = 0xFF;
 	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 bail:
 	xsEndHost(gBLE->the);
@@ -380,8 +384,18 @@ bail:
 
 static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 {
-	xsBeginHost(gBLE->the);
-	xsEndHost(gBLE->the);
+	switch(evt->reason) {
+		case bg_err_smp_pairing_not_supported:
+		case bg_err_bt_pin_or_key_missing:
+			if (0xFF != gBLE->bond) {
+				gecko_cmd_sm_delete_bonding(gBLE->bond);	// remove bond and try again
+				gBLE->bond = 0xFF;
+				gecko_cmd_sm_increase_security(evt->connection);
+			}
+			break;
+		default:
+			break;
+	}
 }
 
 void ble_event_handler(struct gecko_cmd_packet* evt)
