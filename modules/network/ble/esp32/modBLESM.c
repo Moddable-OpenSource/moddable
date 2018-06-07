@@ -29,24 +29,7 @@
 #include "esp_gap_ble_api.h"
 #include "esp_bt_defs.h"
 
-void xs_ble_smp_delete_bonding(xsMachine *the)
-{
-	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-    int dev_num = esp_ble_get_bond_device_num();
-    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)c_malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
-    if (!dev_list)
-		xsUnknownError("no memory");
-    esp_ble_get_bond_device_list(&dev_num, dev_list);
-    for (int i = 0; i < dev_num; i++) {
-		if (0 == c_memcmp(address, dev_list[i].bd_addr, 6)) {
-			esp_ble_remove_bond_device(address);
-			break;
-		}
-	}
-    c_free(dev_list);
-}
-
-void xs_ble_smp_delete_all_bondings(xsMachine *the)
+void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
     int dev_num = esp_ble_get_bond_device_num();
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)c_malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
@@ -58,7 +41,7 @@ void xs_ble_smp_delete_all_bondings(xsMachine *the)
     c_free(dev_list);
 }
 
-void xs_ble_smp_set_security_parameters(xsMachine *the)
+void xs_ble_sm_set_security_parameters(xsMachine *the)
 {
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));

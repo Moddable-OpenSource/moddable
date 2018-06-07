@@ -154,6 +154,7 @@ struct modBLEConnectionRecord {
 
 	int8_t id;
 	bd_addr bda;
+	uint8_t bond;
 	gattProcedure procedureQueue;
 };
 
@@ -163,6 +164,11 @@ typedef struct {
 
 	modTimer timer;
 
+	// security
+	uint8_t encryption;
+	uint8_t bonding;
+	uint8_t mitm;
+	
 	// client connections
 	modBLEConnection connections;
 } modBLERecord, *modBLE;
@@ -254,6 +260,7 @@ void xs_ble_client_connect(xsMachine *the)
 	if (!connection)
 		xsUnknownError("out of memory");
 	connection->id = -1;
+	connection->bond = 0xFF;
 	c_memmove(&connection->bda, &bda, sizeof(bda));
 	modBLEConnectionAdd(connection);
 	
@@ -262,6 +269,11 @@ void xs_ble_client_connect(xsMachine *the)
 
 void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
 {
+	gBLE->encryption = encryption;
+	gBLE->bonding = bonding;
+	gBLE->mitm = mitm;
+	if (bonding || (encryption && mitm))
+		gecko_cmd_sm_set_bondable_mode(1);
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint8_t conn_id)
@@ -652,6 +664,11 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 		goto bail;
 	}
 	connection->id = evt->connection;
+	connection->bond = evt->bonding;
+	
+	if (gBLE->encryption || gBLE->mitm)
+		gecko_cmd_sm_increase_security(evt->connection);
+
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), evt->connection);
@@ -828,6 +845,27 @@ static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_complete
 	xsEndHost(gBLE->the);
 }
 
+static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
+	if (!connection)
+		xsUnknownError("connection not found");
+	switch(evt->reason) {
+		case bg_err_smp_pairing_not_supported:
+		case bg_err_bt_pin_or_key_missing:
+			if (0xFF != connection->bond) {
+				gecko_cmd_sm_delete_bonding(connection->bond);	// remove bond and try again
+				connection->bond = 0xFF;
+				gecko_cmd_sm_increase_security(connection->id);
+			}
+			break;
+		default:
+			break;
+	}
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
@@ -864,6 +902,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_gatt_procedure_completed_id:
 			gattProcedureCompletedEvent(&evt->data.evt_gatt_procedure_completed);
+			break;
+		case gecko_evt_sm_bonding_failed_id:
+			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
 			break;
 		default:
 			break;
