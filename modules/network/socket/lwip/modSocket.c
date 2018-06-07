@@ -24,12 +24,14 @@
 #include "mc.xs.h"			// for xsID_ values
 
 #include "lwip/tcp.h"
+#include "lwip/dns.h"
 #include "lwip/udp.h"
 
 #include "modSocket.h"
 #include "modTimer.h"
 
 #if ESP32
+	#include "lwip/priv/tcpip_priv.h"
 	#include "esp_wifi.h"
 	typedef int8_t int8;
 	typedef uint8_t uint8;
@@ -74,6 +76,7 @@ struct xsSocketRecord {
 	uint8				closed;
 	uint8				kind;
 	uint8				pending;
+	uint8				writeDisabled;
 
 	// above here same as xsListenerRecord
 
@@ -90,6 +93,13 @@ struct xsSocketRecord {
 	uint16				port;
 	uint8				constructed;
 	uint8				remoteCount;
+	uint8				suspended;
+
+	uint8				suspendedError;		// could overload suspended
+	uint8				suspendedDisconnect;
+	uint16				suspendedBufpos;
+	struct pbuf			*suspendedBuf;
+	struct pbuf			*suspendedFragment;
 
 	xsSocketUDPRemoteRecord
 						remote[1];
@@ -110,6 +120,7 @@ struct xsListenerRecord {
 	uint8				closed;
 	uint8				kind;
 	uint8				pending;
+	uint8				writeDisabled;
 
 	// above here same as xsSocketRecord
 
@@ -118,13 +129,10 @@ struct xsListenerRecord {
 
 static xsSocket gSockets;		// N.B. this list contains both sockets and listeners
 
-#define kSocketCallbackExpire (24 * 60 * 60 * 1000)		// close to never
-
 void xs_socket_destructor(void *data);
 
 static void socketSetPending(xsSocket xss, uint8_t pending);
 static void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize);
 
 static void socketMsgConnect(xsSocket xss);
 static void socketMsgDisconnect(xsSocket xss);
@@ -132,7 +140,12 @@ static void socketMsgError(xsSocket xss);
 static void socketMsgDataReceived(xsSocket xss);
 static void socketMsgDataSent(xsSocket xss);
 
-static void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg);
+#if ESP32
+	static void didFindDNS(const char *name, const ip_addr_t *ipaddr, void *arg);
+#else
+	static void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg);
+#endif
+static void didError(void *arg, err_t err);
 static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err);
 static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err);
 static err_t didSend(void *arg, struct tcp_pcb *pcb, u16_t len);
@@ -140,12 +153,207 @@ static void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
 
 static uint8 parseAddress(char *address, uint8 *ip);
 
-//@@ didError
+/*
+	shims to call lwip in its own thread
+*/
+
+#if ESP32
+
+typedef struct {
+	struct tcpip_api_call		call;
+
+	err_t						err;
+	xsSocket					xss;
+	struct tcp_pcb				*tcpPCB;
+	ip_addr_t					*ipaddr;
+	ip_addr_t					addr;
+	u16_t						port;
+	tcp_connected_fn			connected;
+	struct pbuf					*pbuf;
+	const void					*data;
+	u16_t						len;
+	u8_t						flags;
+	char	 					*hostname;
+	dns_found_callback 			found;
+	void						*callback_arg;
+} LwipMsgRecord, *LwipMsg;
+
+static err_t tcp_new_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	msg->tcpPCB = tcp_new();
+	return ERR_OK;
+}
+
+struct tcp_pcb *tcp_new_safe(void)
+{
+	LwipMsgRecord msg;
+	tcpip_api_call(tcp_new_INLWIP, &msg.call);
+	return msg.tcpPCB;
+}
+
+static void tcp_connect_INLWIP(void *ctx)
+{
+	LwipMsg msg = (LwipMsg)ctx;
+	msg->err = tcp_connect(msg->tcpPCB, &msg->addr, msg->port, msg->connected);
+	c_free(msg);
+}
+
+err_t tcp_connect_safe(xsSocket xss, const ip_addr_t *ipaddr, u16_t port, tcp_connected_fn connected)
+{
+	LwipMsg msg = c_malloc(sizeof(LwipMsgRecord));
+	msg->tcpPCB = xss->skt,
+	msg->addr = *ipaddr,
+	msg->port = port,
+	msg->connected = connected,
+	tcpip_callback_with_block(tcp_connect_INLWIP, msg, 0);
+
+	return ERR_OK;
+}
+
+static void pbuf_free_INLWIP(void *ctx)
+{
+	pbuf_free(ctx);
+}
+
+u8_t pbuf_free_safe(struct pbuf *p)
+{
+	tcpip_callback_with_block(pbuf_free_INLWIP, p, 1);
+	return 0;
+}
+
+static err_t tcp_bind_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	msg->err = tcp_bind(msg->tcpPCB, &msg->addr, msg->port);
+	return ERR_OK;
+}
+
+err_t tcp_bind_safe(struct tcp_pcb *tcpPCB, const ip_addr_t *ipaddr, u16_t port)
+{
+	LwipMsgRecord msg = {
+		.tcpPCB = tcpPCB,
+		.addr = *ipaddr,
+		.port = port
+	};
+	tcpip_api_call(tcp_bind_INLWIP, &msg.call);
+	return msg.err;
+}
+
+static void tcp_close_LWIP(void *ctx)
+{
+	tcp_close(ctx);
+}
+
+void tcp_close_safe(struct tcp_pcb *skt)
+{
+	tcpip_callback_with_block(tcp_close_LWIP, skt, 1);
+}
+
+static void tcp_output_LWIP(void *ctx)
+{
+	xsSocket xss = ctx;
+	if (xss->skt)
+		tcp_output(xss->skt);
+}
+
+void tcp_output_safe(xsSocket xss)
+{
+	tcpip_callback_with_block(tcp_output_LWIP, xss, 0);
+}
+
+static err_t tcp_write_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	if (msg->xss->skt)
+		msg->err = tcp_write(msg->xss->skt, msg->data, msg->len, msg->flags);
+	return ERR_OK;
+}
+
+err_t tcp_write_safe(xsSocket xss, const void *data, u16_t len, u8_t flags)
+{
+	LwipMsgRecord msg = {
+		.xss = xss,
+		.data = data,
+		.len = len,
+		.flags = flags
+	};
+	tcpip_api_call(tcp_write_INLWIP, &msg.call);
+	return msg.err;
+}
+
+static void tcp_recved_INLWIP(void *ctx)
+{
+	LwipMsg msg = (LwipMsg)ctx;
+	if (msg->xss->skt)
+		tcp_recved(msg->xss->skt, msg->len);
+	c_free(msg);
+}
+
+void tcp_recved_safe(xsSocket xss, u16_t len)
+{
+	LwipMsg msg = c_malloc(sizeof(LwipMsgRecord));
+	msg->xss = xss;
+	msg->len = len;
+	tcpip_callback_with_block(tcp_recved_INLWIP, msg, 1);
+}
+
+static err_t tcp_listen_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	msg->tcpPCB = tcp_listen(msg->tcpPCB);
+	return ERR_OK;
+}
+
+struct tcp_pcb * tcp_listen_safe(struct tcp_pcb *pcb)
+{
+	LwipMsgRecord msg = {
+		.tcpPCB = pcb,
+	};
+	tcpip_api_call(tcp_listen_INLWIP, &msg.call);
+	return msg.tcpPCB;
+}
+
+
+static void dns_gethostbyname_INLWIP(void *ctx)
+{
+	LwipMsg msg = (LwipMsg)ctx;
+	err_t err = dns_gethostbyname(msg->hostname, &msg->addr, msg->found, msg->callback_arg);
+	if (ERR_INPROGRESS != err)
+		(msg->found)(msg->hostname, (ERR_OK == err) ? &msg->addr : NULL, msg->callback_arg);
+	c_free(msg);
+}
+
+err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_callback found, void *callback_arg)
+{
+	LwipMsg msg = c_malloc(sizeof(LwipMsgRecord) + c_strlen(hostname) + 1);
+	msg->hostname = (char *)(msg + 1);
+	c_strcpy(msg->hostname, hostname);
+	msg->found = found;
+	msg->callback_arg = callback_arg;
+	tcpip_callback_with_block(dns_gethostbyname_INLWIP, msg, 1);
+	return ERR_INPROGRESS;
+}
+
+#else
+	#define tcp_new_safe(xss) tcp_new()
+	#define tcp_bind_safe tcp_bind
+	#define tcp_listen_safe tcp_listen
+	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
+	// for some reason, ESP8266 has a memory leak when using tcp_close instead of tcp_abort
+	#define tcp_close_safe tcp_abort
+	#define tcp_output_safe(xss) tcp_output(xss->skt)
+	#define tcp_write_safe(xss, data, len, flags) tcp_write(xss->skt, data, len, flags)
+	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
+	#define pbuf_free_safe pbuf_free
+	#define dns_gethostbyname_safe dns_gethostbyname
+#endif
 
 static void forgetSocket(xsSocket xss)
 {
 	xsSocket walker, prev = NULL;
 
+	modCriticalSectionBegin();
 	for (walker = gSockets; NULL != walker; prev = walker, walker = walker->next) {
 		if (walker != xss)
 			continue;
@@ -155,10 +363,9 @@ static void forgetSocket(xsSocket xss)
 		else
 			prev->next = walker->next;
 
-		return;
+		break;
 	}
-
-	modLog("unknown socket");
+	modCriticalSectionEnd();
 }
 
 #define socketUpUseCount(the, xss) (xss->useCount += 1)
@@ -184,12 +391,16 @@ void xs_socket(xsMachine *the)
 	unsigned char ip[4];
 	int len, i;
 	unsigned char waiting = 0;
+	unsigned char multicastIP[4];
+	int ttl = 0;
 
 	xsmcVars(1);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
 		xsmcGet(xsVar(0), xsArg(0), xsID_listener);
 		xsl = xsmcGetHostData(xsVar(0));
+
+		modCriticalSectionBegin();
 
 		for (i = 0; i < kListenerPendingSockets; i++) {
 			if (xsl->accept[i]) {
@@ -198,32 +409,32 @@ void xs_socket(xsMachine *the)
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
-				xss->obj = xsThis;
-				xsmcSetHostData(xsThis, xss);
-				xss->constructed = true;
-				socketUpUseCount(the, xss);
-				xsRemember(xss->obj);
-
 				xss->next = gSockets;
 				gSockets = xss;
 
+				modCriticalSectionEnd();
+
+				xss->obj = xsThis;
+				xsmcSetHostData(xsThis, xss);
+				xss->constructed = true;
+				xsRemember(xss->obj);
+
 				socketUpUseCount(the, xss);
 
-				for (j = 0; j < kReadQueueLength; j++) {
-					if (xss->reader[j])
-						socketSetPending(xss, kPendingReceive);
-				}
+				if (xss->reader[0])
+					socketSetPending(xss, kPendingReceive);
 
 				socketDownUseCount(xss->the, xss);
-
 				return;
 			}
 		}
+
+		modCriticalSectionEnd();
 		xsUnknownError("no socket avaiable from listener");
 	}
 
 	// allocate socket
-	xss = calloc(1, sizeof(xsSocketRecord) + (sizeof(xsSocketUDPRemoteRecord) * (kReadQueueLength - 1)));
+	xss = c_calloc(1, sizeof(xsSocketRecord) + (sizeof(xsSocketUDPRemoteRecord) * (kReadQueueLength - 1)));
 	if (!xss)
 		xsUnknownError("no memory for socket record");
 
@@ -234,8 +445,10 @@ void xs_socket(xsMachine *the)
 	xsmcSetHostData(xsThis, xss);
 	xsRemember(xss->obj);
 
+	modCriticalSectionBegin();
 	xss->next = gSockets;
 	gSockets = xss;
+	modCriticalSectionEnd();
 
 	modInstrumentationAdjust(NetworkSockets, 1);
 
@@ -246,17 +459,15 @@ void xs_socket(xsMachine *the)
 
 		xsmcGet(xsVar(0), xsArg(0), xsID_kind);
 		kind = xsmcToString(xsVar(0));
-		if (0 == espStrCmp(kind, "TCP"))
+		if (0 == c_strcmp(kind, "TCP"))
 			;
-		else if (0 == espStrCmp(kind, "UDP")) {
+		else if (0 == c_strcmp(kind, "UDP")) {
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
 				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-				if (!parseAddress(temp, multicastIP)) {
-					SocketMutexGive();
+				if (!parseAddress(temp, multicastIP))
 					xsUnknownError("invalid multicast IP address");
-				}
 
 				ttl = 1;
 				if (xsmcHas(xsArg(0), xsID_ttl)) {
@@ -265,18 +476,67 @@ void xs_socket(xsMachine *the)
 				}
 			}
 		}
-		else {
+		else
 			xsUnknownError("invalid socket kind");
-	}
 	}
 
 	// prepare inputs
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = xsmcToInteger(xsVar(0));
+	}
+
+	xss->port = port;
+	if (kTCP == xss->kind)
+		xss->skt = tcp_new_safe();
+	else
+		xss->udp = udp_new();
+
+	if (!xss->skt && !xss->udp)
+		xsUnknownError("failed to allocate socket");
+
+	if (kTCP == xss->kind)
+		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
+	else
+		err = udp_bind(xss->udp, IP_ADDR_ANY, xss->port);
+	if (err)
+		xsUnknownError("socket bind failed");
+
+	if (kTCP == xss->kind) {
+		tcp_arg(xss->skt, xss);
+		tcp_recv(xss->skt, didReceive);
+		tcp_sent(xss->skt, didSend);
+		tcp_err(xss->skt, didError);
+	}
+	else {
+		udp_recv(xss->udp, (udp_recv_fn)didReceiveUDP, xss);
+
+		if (ttl) {
+			ip_addr_t ifaddr;
+	#if ESP32
+			tcpip_adapter_ip_info_t info;
+			tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &info);
+			ifaddr.u_addr.ip4 = info.ip;
+	#else
+			struct ip_info staIpInfo;
+			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+			ifaddr.addr = staIpInfo.ip.addr;
+	#endif
+			ip_addr_t multicast_addr;
+			IP_ADDR4(&multicast_addr, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
+			igmp_joingroup(&ifaddr, &multicast_addr);
+
+			IP_ADDR4(&(xss->udp)->multicast_ip, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
+			xss->udp->ttl = 1;
+		}
+	}
+
 	if (kTCP == xss->kind) {
 		if (xsmcHas(xsArg(0), xsID_host)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_host);
 			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
 			ip_addr_t resolved;
-			if (ERR_OK == dns_gethostbyname(temp, &resolved, didFindDNS, xss)) {
+			if (ERR_OK == dns_gethostbyname_safe(temp, &resolved, didFindDNS, xss)) {
 #if LWIP_IPV4 && LWIP_IPV6
 				ip[0] = ip4_addr1(&resolved.u_addr.ip4);
 				ip[1] = ip4_addr2(&resolved.u_addr.ip4);
@@ -303,63 +563,13 @@ void xs_socket(xsMachine *the)
 			xsUnknownError("invalid dictionary");
 	}
 
-	if (xsmcHas(xsArg(0), xsID_port)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		port = xsmcToInteger(xsVar(0));
-	}
-
-	xss->port = port;
-	if (kTCP == xss->kind)
-		xss->skt = tcp_new();
-	else
-		xss->udp = udp_new();
-
-	if (!xss->skt && !xss->udp)
-		xsUnknownError("failed to allocate socket");
-
-	if (kTCP == xss->kind)
-		err = tcp_bind(xss->skt, IP_ADDR_ANY, 0);
-	else
-		err = udp_bind(xss->udp, IP_ADDR_ANY, xss->port);
-	if (err)
-		xsUnknownError("socket bind failed");
-
-	if (kTCP == xss->kind) {
-		tcp_arg(xss->skt, xss);
-		tcp_recv(xss->skt, didReceive);
-		tcp_sent(xss->skt, didSend);
-	}
-	else {
-		udp_recv(xss->udp, (udp_recv_fn)didReceiveUDP, xss);
-
-		if (ttl) {
-			ip_addr_t ifaddr;
-	#if ESP32
-			tcpip_adapter_ip_info_t info;
-			tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &info);
-			ifaddr.u_addr.ip4 = info.ip;
-	#else
-			struct ip_info staIpInfo;
-			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
-			ifaddr.addr = staIpInfo.ip.addr;
-	#endif
-			ip_addr_t multicast_addr;
-			IP_ADDR4(&multicast_addr, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
-			igmp_joingroup(&ifaddr, &multicast_addr);
-
-			IP_ADDR4(&(xss->udp)->multicast_ip, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
-			xss->udp->ttl = 1;
-		}
-	}
-
-	if (waiting || (kUDP == xss->kind)) {
+	if (waiting || (kUDP == xss->kind))
 		return;
-	}
 
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
-	err = tcp_connect(xss->skt, &ipaddr, port, didConnect);
+	err = tcp_connect_safe(xss, &ipaddr, port, didConnect);
 	if (err)
-		xsUnknownError("socket connect faileds");
+		xsUnknownError("socket connect failed");
 }
 
 void xs_socket_destructor(void *data)
@@ -369,23 +579,24 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
+	for (i = 0; i < kReadQueueLength - 1; i++) {
+		if (xss->reader[i])
+			pbuf_free_safe(xss->reader[i]);
+	}
+
 	if (xss->skt) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
-		tcp_abort(xss->skt);
+		tcp_err(xss->skt, NULL);
+		tcp_close_safe(xss->skt);
 	}
 
 	if (xss->udp)
-		udp_remove(xss->udp);
-
-	for (i = 0; i < kReadQueueLength - 1; i++) {
-		if (xss->reader[i])
-			pbuf_free(xss->reader[i]);
-	}
+		udp_remove(xss->udp);		//@@
 
 	forgetSocket(xss);
 
-	free(xss);
+	c_free(xss);
 
 	modInstrumentationAdjust(NetworkSockets, -1);
 }
@@ -414,7 +625,7 @@ void xs_socket_read(xsMachine *the)
 	if (NULL == xss)
 		xsUnknownError("read on closed socket");
 
-	if (!xss->buf || (xss->bufpos >= xss->buflen)) {
+	if (!xss->buf || (xss->bufpos >= xss->buflen) || xss->suspended) {
 		if (0 == argc)
 			xsResult = xsInteger(0);
 		return;
@@ -439,9 +650,9 @@ void xs_socket_read(xsMachine *the)
 		else
 		if (xsStringType == limiterType) {
 			char *str = xsmcToString(xsArg(1));
-			char terminator = espRead8(str);
+			char terminator = c_read8(str);
 			if (terminator) {
-				unsigned char *t = strchr(srcData, terminator);
+				unsigned char *t = c_strchr(srcData, terminator);
 				if (t) {
 					uint16 count = (t - srcData) + 1;		// terminator included in result
 					if (count < srcBytes)
@@ -490,7 +701,7 @@ void xs_socket_read(xsMachine *the)
 
 	if (xss->bufpos == xss->buflen) {
 		if (xss->pb)
-			pbuf_free(xss->pb);
+			pbuf_free_safe(xss->pb);
 		xss->pb = NULL;
 
 		xss->bufpos = xss->buflen = 0;
@@ -508,7 +719,7 @@ void xs_socket_write(xsMachine *the)
 	err_t err;
 	unsigned char pass, arg;
 
-	if ((NULL == xss) || !(xss->skt || xss->udp)) {
+	if ((NULL == xss) || !(xss->skt || xss->udp) || xss->writeDisabled) {
 		if (0 == argc) {
 			xsResult = xsInteger(0);
 			return;
@@ -538,7 +749,7 @@ void xs_socket_write(xsMachine *the)
 		p = pbuf_alloc(PBUF_TRANSPORT, needed, PBUF_RAM);
 		memcpy(p->payload, data, needed);
 		err = udp_sendto(xss->udp, p, &dst, port);
-		pbuf_free(p);
+		pbuf_free_safe(p);
 
 		if (ERR_OK != err)
 			xsUnknownError("UDP send failed");
@@ -560,7 +771,7 @@ void xs_socket_write(xsMachine *the)
 
 			if (xsStringType == t) {
 				char *msg = xsmcToString(xsArg(arg));
-				int msgLen = espStrLen(msg);
+				int msgLen = c_strlen(msg);
 				if (0 == pass)
 					needed += msgLen;
 				else {
@@ -571,9 +782,9 @@ void xs_socket_write(xsMachine *the)
 						if (use > sizeof(buffer))
 							use = sizeof(buffer);
 
-						espMemCpy(buffer, msg, use);
+						c_memcpy(buffer, msg, use);
 						do {
-							err = tcp_write(xss->skt, buffer, use, TCP_WRITE_FLAG_COPY);
+							err = tcp_write_safe(xss, buffer, use, TCP_WRITE_FLAG_COPY);
 							if (ERR_OK == err)
 								break;
 
@@ -596,7 +807,7 @@ void xs_socket_write(xsMachine *the)
 				else {
 					unsigned char byte = (unsigned char)xsmcToInteger(xsArg(arg));
 					do {
-						err = tcp_write(xss->skt, &byte, 1, TCP_WRITE_FLAG_COPY);
+						err = tcp_write_safe(xss, &byte, 1, TCP_WRITE_FLAG_COPY);
 						if (ERR_OK == err)
 							break;
 
@@ -618,7 +829,7 @@ void xs_socket_write(xsMachine *the)
 						char *msg = xsmcToArrayBuffer(xsArg(arg));
 
 						do {
-							err = tcp_write(xss->skt, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
+							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
 							if (ERR_OK == err)
 								break;
 
@@ -649,7 +860,7 @@ void xs_socket_write(xsMachine *the)
 						msg = byteOffset + (char *)xsmcToArrayBuffer(tmp);
 
 						do {
-							err = tcp_write(xss->skt, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
+							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
 							if (ERR_OK == err)
 								break;
 
@@ -675,9 +886,48 @@ void xs_socket_write(xsMachine *the)
 
 	xss->outstandingSent += needed;
 
-	err = tcp_output(xss->skt);
-	if (err)
-		xsUnknownError("tcp_output error");
+	if (xss->skt)
+		tcp_output_safe(xss);
+}
+
+void xs_socket_suspend(xsMachine *the)
+{
+	xsSocket xss = xsmcGetHostData(xsThis);
+
+	if (xsmcArgc) {
+		uint8_t suspended = xsmcToBoolean(xsArg(0));
+		if (!suspended) {
+			modLog("resume");
+			socketSetPending(xss, kPendingReceive);
+			if (xss->suspendedError) {
+				modLog("resume - has error");
+				socketSetPending(xss, kPendingError);
+			}
+			if (xss->suspendedDisconnect) {
+				modLog("resume - has disconnect");
+				socketSetPending(xss, kPendingDisconnect);
+			}
+			socketSetPending(xss, kPendingReceive);
+			xss->suspendedError = 0;
+			xss->suspendedDisconnect = 0;
+		}
+		else {
+			modLog("suspend");
+			if (xss->pending & kPendingError) {		//@@ critical section
+				modLog("suspend - pending error");
+				xss->pending &= ~kPendingError;
+				xss->suspendedError = 1;
+			}
+			if (xss->pending & kPendingDisconnect) {		//@@ critical section
+				modLog("suspend - pending disconnect");
+				xss->pending &= ~kPendingDisconnect;
+				xss->suspendedDisconnect = 1;
+			}
+		}
+		xss->suspended = suspended;
+	}
+
+	xsmcSetBoolean(xsResult, xss->suspended);
 }
 
 void socketMsgConnect(xsSocket xss)
@@ -694,6 +944,11 @@ void socketMsgDisconnect(xsSocket xss)
 {
 	xsMachine *the = xss->the;
 
+	if (xss->suspended) {
+		xss->suspendedDisconnect = 1;
+		return;
+	}
+
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
 	xsEndHost(the);
@@ -702,6 +957,11 @@ void socketMsgDisconnect(xsSocket xss)
 void socketMsgError(xsSocket xss)
 {
 	xsMachine *the = xss->the;
+
+	if (xss->suspended) {
+		xss->suspendedError = 1;
+		return;
+	}
 
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));		//@@ report the error value
@@ -712,25 +972,43 @@ void socketMsgDataReceived(xsSocket xss)
 {
 	xsMachine *the = xss->the;
 	unsigned char i, readerCount;
-	uint16_t tot_len;
+	uint16_t tot_len, bufpos = 0;
 	struct pbuf *pb, *walker;
 	uint8_t one = 0;
+
+	if (xss->suspended)
+		return;
 
 	modCriticalSectionBegin();
 	for (readerCount = 0; xss->reader[readerCount] && (readerCount < kReadQueueLength); readerCount++)
 		;
 	modCriticalSectionEnd();
 
-	while (xss->reader[0] && readerCount--) {
-		xsBeginHost(the);
+	if (xss->suspendedBuf) {
+		pb = xss->suspendedBuf;
+		walker = xss->suspendedFragment;
+		bufpos = xss->suspendedBufpos;
+		xss->suspendedBuf = xss->suspendedFragment = NULL;
+		readerCount += 1;
+		goto resumeBuffer;
+	}
 
-		pb = xss->reader[0];
-
+	while (readerCount--) {
 		modCriticalSectionBegin();
+		pb = xss->reader[0];
+		if (!pb) {
+			modCriticalSectionEnd();
+			break;
+		}
+
 		for (i = 0; i < kReadQueueLength - 1; i++)
 			xss->reader[i] = xss->reader[i + 1];
 		xss->reader[kReadQueueLength - 1] = NULL;
 		modCriticalSectionEnd();
+
+		walker = pb;
+resumeBuffer:
+		xsBeginHost(the);
 
 		tot_len = pb->tot_len;
 
@@ -739,14 +1017,22 @@ void socketMsgDataReceived(xsSocket xss)
 			xss->pb = pb;
 		}
 
-		for (walker = pb; walker; walker = walker->next) {
+		for (; walker && !xss->suspended; walker = walker->next) {
 			xss->buf = walker->payload;
-			xss->bufpos = 0;
+			xss->bufpos = bufpos;
 			xss->buflen = walker->len;
+			bufpos = 0;
 
 			xsTry {
-				if (kTCP == xss->kind)
-					xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen));
+				if (kTCP == xss->kind) {
+#if !ESP32
+					system_soft_wdt_stop();		//@@
+#endif
+					xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen - xss->bufpos));
+#if !ESP32
+					system_soft_wdt_restart();		//@@
+#endif
+				}
 				else {
 					ip_addr_t address = xss->remote[0].address;
 					char *out;
@@ -777,19 +1063,36 @@ void socketMsgDataReceived(xsSocket xss)
 				break;
 		}
 
-		if (xss->skt)
-			tcp_recved(xss->skt, tot_len);
-
 		xsEndHost(the);
+
+		if (xss->suspended) {
+			if (xss->bufpos != xss->buflen) {
+				xss->suspendedBuf = pb;
+				xss->suspendedFragment = walker;
+				xss->suspendedBufpos = xss->bufpos;
+			}
+			else if (!one && walker->next) {
+				xss->suspendedBuf = pb;
+				xss->suspendedFragment = walker->next;
+				xss->suspendedBufpos = 0;
+			}
+		}
+
+		if (xss->skt && tot_len && !xss->suspendedBuf)
+			tcp_recved_safe(xss, tot_len);
+
+		xss->buf = NULL;
+
+		if (xss->suspendedBuf)
+			break;
 
 		if (one) {
 			if (xss->pb)
-				pbuf_free(xss->pb);
+				pbuf_free_safe(xss->pb);
+			xss->pb = NULL;
 		}
 		else
-			pbuf_free(pb);
-
-		xss->buf = NULL;
+			pbuf_free_safe(pb);
 	}
 }
 
@@ -802,21 +1105,39 @@ void socketMsgDataSent(xsSocket xss)
 	xsEndHost(the);
 }
 
+
+#if ESP32
+void didFindDNS(const char *name, const ip_addr_t *ipaddr, void *arg)
+#else
 void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg)
+#endif
 {
 	xsSocket xss = arg;
 
 	if (ipaddr)
-		tcp_connect(xss->skt, ipaddr, xss->port, didConnect);
+		tcp_connect_safe(xss, ipaddr, xss->port, didConnect);
 	else
 		socketSetPending(xss, kPendingError);
+}
+
+void didError(void *arg, err_t err)
+{
+	xsSocket xss = arg;
+
+#if ESP32
+	xss->skt = NULL;
+#endif
+	socketSetPending(xss, kPendingError);
 }
 
 err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
 	xsSocket xss = arg;
 
-	socketSetPending(xss, kPendingConnect);
+	if (ERR_OK != err)
+		socketSetPending(xss, kPendingError);
+	else
+		socketSetPending(xss, kPendingConnect);
 
 	return ERR_OK;
 }
@@ -831,31 +1152,46 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (!p) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
+		tcp_err(xss->skt, NULL);
 
-		socketSetPending(xss, kPendingDisconnect);
+		if (xss->suspended)
+			xss->suspendedDisconnect = true;
+		else {
+#if ESP32
+			xss->skt = NULL;			// no close on socket if disconnected.
+#endif
+			socketSetPending(xss, kPendingDisconnect);
+		}
+
 		return ERR_OK;
 	}
 
 	modCriticalSectionBegin();
 	for (i = 0; i < kReadQueueLength; i++) {
-		if (NULL == xss->reader[i])
+		if (NULL == xss->reader[i]) {
+			xss->reader[i] = p;
 			break;
+		}
 	}
+	modCriticalSectionEnd();
 
 	if (kReadQueueLength == i) {
-		modCriticalSectionEnd();
 		modLog("tcp read overflow!");
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		return ERR_MEM;
 	}
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
-	xss->reader[i] = p;
-	modCriticalSectionEnd();
-
-	if (xss->constructed)
-		socketSetPending(xss, err ? kPendingError : kPendingReceive);
+	if (xss->constructed) {
+		if (!xss->suspended) {
+			socketSetPending(xss, err ? kPendingError : kPendingReceive);
+		}
+		else {
+			if (err)
+				xss->suspendedError = true;
+		}
+	}
 
 	return ERR_OK;
 }
@@ -888,7 +1224,7 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	if (kReadQueueLength == i) {
 		modCriticalSectionEnd();
 		modLog("udp read overflow!");
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		return;
 	}
 
@@ -908,7 +1244,7 @@ static uint8 parseAddress(char *address, uint8_t *ip)
 	char *p = address;
 	int i;
 	for (i = 0; i < 3; i++) {
-		char *separator = strchr(p, (i < 3) ? '.' : 0);
+		char *separator = c_strchr(p, (i < 3) ? '.' : 0);
 		if (!separator)
 			return 0;
 		*separator = 0;
@@ -930,7 +1266,7 @@ void xs_listener(xsMachine *the)
 	err_t err;
 
 	// allocate listener
-	xsl = calloc(1, sizeof(xsListenerRecord));
+	xsl = c_calloc(1, sizeof(xsListenerRecord));
 	if (!xsl)
 		xsUnknownError("out of memory");
 
@@ -951,18 +1287,20 @@ void xs_listener(xsMachine *the)
 
 	xsl->kind = kTCPListener;
 
-	xsl->skt = tcp_new();
+	xsl->skt = tcp_new_safe();
 	if (!xsl->skt)
 		xsUnknownError("socket allocation failed");
 
+	modCriticalSectionBegin();
 	xsl->next = (xsListener)gSockets;
 	gSockets = (xsSocket)xsl;
+	modCriticalSectionEnd();
 
-	err = tcp_bind(xsl->skt, IP_ADDR_ANY, port);
+	err = tcp_bind_safe(xsl->skt, IP_ADDR_ANY, port);
 	if (err)
 		xsUnknownError("socket bind");
 
-	xsl->skt = tcp_listen(xsl->skt);
+	xsl->skt = tcp_listen_safe(xsl->skt);
 
 	tcp_arg(xsl->skt, xsl);
 
@@ -978,7 +1316,7 @@ void xs_listener_destructor(void *data)
 
 	if (xsl->skt) {
 		tcp_accept(xsl->skt, NULL);
-		tcp_close(xsl->skt);
+		tcp_close_safe(xsl->skt);
 	}
 
 	for (i = 0; i < kListenerPendingSockets; i++)
@@ -986,7 +1324,7 @@ void xs_listener_destructor(void *data)
 
 	forgetSocket((xsSocket)xsl);
 
-	free(xsl);
+	c_free(xsl);
 
 	modInstrumentationAdjust(NetworkSockets, -1);
 }
@@ -1024,31 +1362,38 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 	xsSocket xss;
 	uint8 i;
 
-	for (i = 0; i < kListenerPendingSockets; i++) {
-		if (NULL == xsl->accept[i])
-			break;
-	}
-	if (kListenerPendingSockets == i) {
-		modLog("tcp accept queue full");
-		tcp_abort(newpcb);
+	xss = c_calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
+	if (!xss) {
+		tcp_close_safe(newpcb);
 		return ERR_MEM;
 	}
 
-	xss = calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
-	if (!xss) return ERR_MEM;
+	tcp_accepted(xsl->skt);
+
+	modCriticalSectionBegin();
+	for (i = 0; i < kListenerPendingSockets; i++) {
+		if (NULL == xsl->accept[i]) {
+			xsl->accept[i] = xss;
+			break;
+		}
+	}
+	modCriticalSectionEnd();
+
+	if (kListenerPendingSockets == i) {
+		modLog("tcp accept queue full");
+		tcp_close(newpcb);
+		c_free(xss);
+		return ERR_MEM;
+	}
 
 	xss->the = xsl->the;
 	xss->skt = newpcb;
+	xss->useCount = 1;
+	xss->kind = kTCP;
 	tcp_arg(xss->skt, xss);
 	tcp_recv(xss->skt, didReceive);
 	tcp_sent(xss->skt, didSend);
-
-	xsl->accept[i] = xss;
-
-	xss->kind = kTCP;
-
-	socketUpUseCount(xsl->the, xsl);
-	tcp_accepted(xsl->skt);
+	tcp_err(xss->skt, didError);
 
 	socketSetPending((xsSocket)xsl, kPendingAcceptListener);
 
@@ -1073,6 +1418,9 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 
 	modCriticalSectionEnd();
 
+	if (xss->pending & (kPendingError | kPendingDisconnect))
+		xss->writeDisabled = true;
+
 	if (doSchedule) {
 		socketUpUseCount(xss->the, xss);
 
@@ -1095,6 +1443,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	if (!pending)
 		return;
 
+	if (xss->closed)
+		goto done;
+
 	if (pending & kPendingReceive)
 		socketMsgDataReceived(xss);
 
@@ -1113,22 +1464,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	if (pending & kPendingAcceptListener)
 		listenerMsgNew((xsListener)xss);
 
+done:
 	socketDownUseCount(xss->the, xss);
 }
-
-void socketsClearPending(modTimer timer, void *refcon, uint32_t refconSize)
-{
-	xsSocket walker = gSockets;
-
-	while (walker) {
-		xsSocket next;
-		socketUpUseCount(walker->the, walker);
-		socketClearPending(walker->the, walker, NULL, 0);
-		next = walker->next;
-		socketDownUseCount(walker->the, walker);
-		walker = next;
-	}
-}
-
-
-
