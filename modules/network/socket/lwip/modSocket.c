@@ -165,6 +165,7 @@ typedef struct {
 	err_t						err;
 	xsSocket					xss;
 	struct tcp_pcb				*tcpPCB;
+	struct udp_pcb				*udpPCB;
 	ip_addr_t					*ipaddr;
 	ip_addr_t					addr;
 	u16_t						port;
@@ -240,17 +241,21 @@ err_t tcp_bind_safe(struct tcp_pcb *tcpPCB, const ip_addr_t *ipaddr, u16_t port)
 	return msg.err;
 }
 
-static void tcp_close_LWIP(void *ctx)
+static err_t tcp_close_INLWIP(struct tcpip_api_call *tcpMsg)
 {
-	tcp_close(ctx);
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	tcp_close(msg->tcpPCB);
 }
 
-void tcp_close_safe(struct tcp_pcb *skt)
+void tcp_close_safe(struct tcp_pcb *tcpPCB)
 {
-	tcpip_callback_with_block(tcp_close_LWIP, skt, 1);
+	LwipMsgRecord msg = {
+		.tcpPCB = tcpPCB,
+	};
+	tcpip_api_call(tcp_close_INLWIP, &msg.call);
 }
 
-static void tcp_output_LWIP(void *ctx)
+static void tcp_output_INLWIP(void *ctx)
 {
 	xsSocket xss = ctx;
 	if (xss->skt)
@@ -259,7 +264,7 @@ static void tcp_output_LWIP(void *ctx)
 
 void tcp_output_safe(xsSocket xss)
 {
-	tcpip_callback_with_block(tcp_output_LWIP, xss, 0);
+	tcpip_callback_with_block(tcp_output_INLWIP, xss, 0);
 }
 
 static err_t tcp_write_INLWIP(struct tcpip_api_call *tcpMsg)
@@ -314,6 +319,73 @@ struct tcp_pcb * tcp_listen_safe(struct tcp_pcb *pcb)
 	return msg.tcpPCB;
 }
 
+static err_t udp_new_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	msg->udpPCB = udp_new();
+	return ERR_OK;
+}
+
+struct udp_pcb *udp_new_safe(void)
+{
+	LwipMsgRecord msg;
+	tcpip_api_call(udp_new_INLWIP, &msg.call);
+	return msg.udpPCB;
+}
+
+static err_t udp_bind_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	msg->err = udp_bind(msg->udpPCB, &msg->addr, msg->port);
+	return ERR_OK;
+}
+
+err_t udp_bind_safe(struct udp_pcb *udpPCB, const ip_addr_t *ipaddr, u16_t port)
+{
+	LwipMsgRecord msg = {
+		.udpPCB = udpPCB,
+		.addr = *ipaddr,
+		.port = port
+	};
+	tcpip_api_call(udp_bind_INLWIP, &msg.call);
+	return msg.err;
+}
+
+static err_t udp_remove_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	udp_remove(msg->udpPCB);
+}
+
+void udp_remove_safe(struct udp_pcb *udpPCB)
+{
+	LwipMsgRecord msg = {
+		.udpPCB = udpPCB,
+	};
+	tcpip_api_call(udp_remove_INLWIP, &msg.call);
+}
+
+static err_t udp_sendto_INLWIP(struct tcpip_api_call *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, msg->len, PBUF_RAM);
+	c_memcpy(p->payload, msg->data, msg->len);
+	msg->err = udp_sendto(msg->udpPCB, p, &msg->addr, msg->port);
+	pbuf_free_safe(p);
+}
+
+void udp_sendto_safe(struct udp_pcb *udpPCB, const void *data, uint16 len, ip_addr_t *dst, uint16_t port, err_t *err)
+{
+	LwipMsgRecord msg = {
+		.udpPCB = udpPCB,
+		.data = data,
+		.len = len,
+		.addr = *dst,
+		.port = port,
+	};
+	tcpip_api_call(udp_sendto_INLWIP, &msg.call);
+	*err = msg.err;
+}
 
 static void dns_gethostbyname_INLWIP(void *ctx)
 {
@@ -336,7 +408,7 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 }
 
 #else
-	#define tcp_new_safe(xss) tcp_new()
+	#define tcp_new_safe tcp_new
 	#define tcp_bind_safe tcp_bind
 	#define tcp_listen_safe tcp_listen
 	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
@@ -345,6 +417,16 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 	#define tcp_output_safe(xss) tcp_output(xss->skt)
 	#define tcp_write_safe(xss, data, len, flags) tcp_write(xss->skt, data, len, flags)
 	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
+	#define udp_new_safe udp_new
+	#define udp_bind_safe udp_bind
+	#define udp_remove_safe udp_remove
+	#define udp_sendto_safe(skt, data, size, dst, port, err) \
+		{ \
+		struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, size, PBUF_RAM); \
+		c_memcpy(p->payload, data, size); \
+		*err = udp_sendto(xss->udp, p, dst, port); \
+		pbuf_free_safe(p); \
+		}
 	#define pbuf_free_safe pbuf_free
 	#define dns_gethostbyname_safe dns_gethostbyname
 #endif
@@ -490,7 +572,7 @@ void xs_socket(xsMachine *the)
 	if (kTCP == xss->kind)
 		xss->skt = tcp_new_safe();
 	else
-		xss->udp = udp_new();
+		xss->udp = udp_new_safe();
 
 	if (!xss->skt && !xss->udp)
 		xsUnknownError("failed to allocate socket");
@@ -498,7 +580,7 @@ void xs_socket(xsMachine *the)
 	if (kTCP == xss->kind)
 		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
 	else
-		err = udp_bind(xss->udp, IP_ADDR_ANY, xss->port);
+		err = udp_bind_safe(xss->udp, IP_ADDR_ANY, xss->port);
 	if (err)
 		xsUnknownError("socket bind failed");
 
@@ -592,7 +674,7 @@ void xs_socket_destructor(void *data)
 	}
 
 	if (xss->udp)
-		udp_remove(xss->udp);		//@@
+		udp_remove_safe(xss->udp);
 
 	forgetSocket(xss);
 
@@ -728,10 +810,9 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->udp) {
-		char temp[64];
+		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
-		struct pbuf *p;
 		uint16 port;
 		ip_addr_t dst;
 
@@ -745,17 +826,11 @@ void xs_socket_write(xsMachine *the)
 
 		needed = xsGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
-
-		p = pbuf_alloc(PBUF_TRANSPORT, needed, PBUF_RAM);
-		memcpy(p->payload, data, needed);
-		err = udp_sendto(xss->udp, p, &dst, port);
-		pbuf_free_safe(p);
-
+		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
 		if (ERR_OK != err)
 			xsUnknownError("UDP send failed");
 
 		modInstrumentationAdjust(NetworkBytesWritten, needed);
-
 		return;
 	}
 
@@ -1364,7 +1439,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	xss = c_calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
 	if (!xss) {
-		tcp_close_safe(newpcb);
+		tcp_close(newpcb);		// not tcp_close_safe since we are in the lwip thread already
 		return ERR_MEM;
 	}
 
@@ -1381,7 +1456,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	if (kListenerPendingSockets == i) {
 		modLog("tcp accept queue full");
-		tcp_close(newpcb);
+		tcp_close(newpcb);		// not tcp_close_safe since we are in the lwip thread already
 		c_free(xss);
 		return ERR_MEM;
 	}
@@ -1440,8 +1515,10 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	modCriticalSectionEnd();
 
-	if (!pending)
-		return;
+	if (!pending) {
+		modLog("socketClearPending called - NOTHING PENDING?");
+		goto done;		// return or done...
+	}
 
 	if (xss->closed)
 		goto done;
