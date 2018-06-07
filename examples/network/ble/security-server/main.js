@@ -18,18 +18,18 @@
 
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
-import {SMP, IOCapability} from "smp";
+import {SM, IOCapability} from "sm";
 import Timer from "timer";
 
 class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
 		this.timer = null;
 		this.deviceName = "Moddable HTM";
-		//SMP.deleteAllBondings();
-		SMP.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
-		//SMP.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
-		//SMP.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
-		//SMP.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
+		SM.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
+		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
+		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
+		//SM.securityParameters = { ioCapability:IOCapability.NoInputNoOutput };
 		this.onDisconnected();
 		this.deploy();
 	}
