@@ -7,7 +7,7 @@
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
 			"$(MODULES)/network/ble/gatt",
-			"$(MODULES)/network/ble/smp"
+			"$(MODULES)/network/ble/sm"
 		],
 	},
 	"preload": [
@@ -16,7 +16,7 @@
 		"connection",
 		"gap",
 		"gatt",
-		"smp"
+		"sm"
 	],
 	"defines": {
 		"ble": {
@@ -29,7 +29,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/ble/esp32/modBLEClient",
-					"$(MODULES)/network/ble/esp32/modBLESMP",
+					"$(MODULES)/network/ble/esp32/modBLESM",
 				]
 			},
 		},
@@ -37,7 +37,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/ble/gecko/modBLEClient",
-					"$(MODULES)/network/ble/gecko/modBLESMP",
+					"$(MODULES)/network/ble/gecko/modBLESM",
 				]
 			},
 		},
@@ -45,7 +45,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESMP"
+					"$(MODULES)/network/ble/sim/modBLESM"
 				]
 			}
 		},
@@ -53,7 +53,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESMP"
+					"$(MODULES)/network/ble/sim/modBLESM"
 				]
 			}
 		},
@@ -61,7 +61,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESMP"
+					"$(MODULES)/network/ble/sim/modBLESM"
 				]
 			}
 		},
