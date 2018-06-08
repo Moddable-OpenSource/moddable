@@ -48,7 +48,7 @@ void xs_net_get(xsMachine *the)
 #else
 		struct ip_info info;
 
-		if (wifi_get_ip_info(STATION_IF, &info)) {
+		if (wifi_get_ip_info((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, &info)) {
 #endif
 			char *out;
 			xsResult = xsStringBuffer(NULL, 4 * 5);
@@ -61,11 +61,13 @@ void xs_net_get(xsMachine *the)
 
 	}
 	else if (0 == espStrCmp(prop, "MAC")) {
-#if ESP32
-		//@@ tcpip_adapter_get_mac not available
-#else
 		uint8_t macaddr[6];
-		if (wifi_get_macaddr(STATION_IF, macaddr)) {
+#if ESP32
+		if (ESP_OK == esp_wifi_get_mac(ESP_IF_WIFI_STA, macaddr))
+#else
+		if (wifi_get_macaddr((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, macaddr))
+#endif
+		{
 			char *out;
 			xsResult = xsStringBuffer(NULL, 18);
 			out = xsToString(xsResult);
@@ -76,7 +78,6 @@ void xs_net_get(xsMachine *the)
 			twoHex(macaddr[4], out); out += 2; *out++ = ':';
 			twoHex(macaddr[5], out); out += 2; *out++ = 0;
 		}
-#endif
 	}
 	else if (0 == espStrCmp(prop, "SSID")) {
 #if ESP32
