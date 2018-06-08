@@ -9,5 +9,12 @@
 			"$(MODULES)/network/http/*"
 		]
 	},
-	"preload": "http"
+	"preload": "http",
+	"platforms": {
+		"esp": {},
+		"esp32": {},
+		"...": {
+			"error": "WiFi unsupported"
+		}
+	}
 }
