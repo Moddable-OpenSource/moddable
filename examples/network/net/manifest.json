@@ -11,6 +11,7 @@
 	"platforms": {
 		"esp": {},
 		"esp32": {},
+		"mac": {},
 		"...": {
 			"error": "Net unsupported"
 		}
