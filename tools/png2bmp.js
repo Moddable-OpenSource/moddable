@@ -265,8 +265,10 @@ export default class extends TOOL {
 	run() {
 		let inputPaths = this.inputPaths;
 		let c = inputPaths.length;
-		let width, y = 0, height, pixelFormat = this.format;
+		let width, height, pixelFormat = this.format;
 		let buffer;
+		let offset = 0;
+		let y = 0;
 		if (c == 1) {
 			let pngPath = inputPaths[0];
 			let png = new PNG(this.readFileBuffer(pngPath));
@@ -283,7 +285,6 @@ export default class extends TOOL {
 				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
 			}
 			buffer = new Uint8Array(width * height * 4);
-			let offset = 0;
 			while (y < pngHeight) {
 				let x = 0;
 				this.transferLine(png, buffer, offset);
@@ -329,7 +330,6 @@ export default class extends TOOL {
 				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
 			}
 			buffer = new Uint8Array(width * height * 4);
-			let offset = 0;
 			while (y < pngHeight) {
 				let x = 0;
 				for (var i = 0; i < c; i++) {
