@@ -7,5 +7,12 @@
 		"*": [
 			"./main",
 		]
+	},
+	"platforms": {
+		"esp": {},
+		"esp32": {},
+		"...": {
+			"error": "Net unsupported"
+		}
 	}
 }
