@@ -1,11 +1,17 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/crypt/tls.json"
 	],
 	"modules": {
 		"*": [
 			"./main"
+		]
+	},
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca107",
 		]
 	},
 }
