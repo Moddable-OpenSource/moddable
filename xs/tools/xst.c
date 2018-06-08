@@ -217,12 +217,14 @@ int main(int argc, char* argv[])
 		xsCreation _creation = {
 			128 * 1024 * 1024, 	/* initialChunkSize */
 			16 * 1024 * 1024, 	/* incrementalChunkSize */
-			8 * 1024 * 1024, 		/* initialHeapCount */
-			1 * 1024 * 1024, 		/* incrementalHeapCount */
-			4096, 		/* stackCount */
-			4096*3, 		/* keyCount */
-			1993, 		/* nameModulo */
-			127 		/* symbolModulo */
+			8 * 1024 * 1024, 	/* initialHeapCount */
+			1 * 1024 * 1024, 	/* incrementalHeapCount */
+			4096, 				/* stackCount */
+			4096*3, 			/* keyCount */
+			1993, 				/* nameModulo */
+			127 				/* symbolModulo */
+			32 * 1024,			/* parserBufferSize */
+			1993,				/* parserTableModulo */
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
@@ -952,12 +954,14 @@ void* fx_agent_start_aux(void* it)
 	xsCreation creation = {
 		16 * 1024 * 1024, 	/* initialChunkSize */
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 		/* initialHeapCount */
-		1 * 1024 * 1024, 		/* incrementalHeapCount */
-		4096, 		/* stackCount */
-		4096*3, 		/* keyCount */
-		1993, 		/* nameModulo */
-		127 		/* symbolModulo */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		4096, 				/* stackCount */
+		4096*3, 			/* keyCount */
+		1993, 				/* nameModulo */
+		127 				/* symbolModulo */
+		32 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
 	};
 	txAgent* agent = it;
 	xsMachine* machine = xsCreateMachine(&creation, "xst-agent", NULL);
