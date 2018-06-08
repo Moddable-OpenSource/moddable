@@ -710,7 +710,7 @@ void xs_socket_read(xsMachine *the)
 	if (!xss->buf || (xss->bufpos >= xss->buflen) || xss->suspended) {
 		if (0 == argc)
 			xsResult = xsInteger(0);
-		return;
+		xsUnknownError("nothing to read");
 	}
 
 	srcData = xss->bufpos + (unsigned char *)xss->buf;
@@ -813,16 +813,13 @@ void xs_socket_write(xsMachine *the)
 		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
-		uint16 port;
+		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
 		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
 		if (!parseAddress(temp, ip))
 			xsUnknownError("invalid IP address");
-
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
-
-		port = xsmcToInteger(xsArg(1));
 
 		needed = xsGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
