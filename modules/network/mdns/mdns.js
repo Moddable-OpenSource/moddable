@@ -45,8 +45,8 @@ class MDNS extends Socket {
 	}
 
 	callback(message, value, address, port) {
-		const header = new Uint16Array(this.read(ArrayBuffer, 12));
-		if (header[1] & 0x8000)
+		const header = new Uint8Array(this.read(ArrayBuffer, 12));
+		if (header[2] & 0x80)
 			return;
 
 		let protocol, local, service;
@@ -103,7 +103,7 @@ class MDNS extends Socket {
 			return;
 
 		// respond
-		let numQuestions = Math.max(header[2], 4);
+		let numQuestions = Math.min((header[4] << 8) | header[5], 4);
 		let mask = 0;
 		while (numQuestions--) {
 			let cType = this.read(Number) << 8;
