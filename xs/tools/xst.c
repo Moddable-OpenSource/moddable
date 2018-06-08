@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
 			4096, 				/* stackCount */
 			4096*3, 			/* keyCount */
 			1993, 				/* nameModulo */
-			127 				/* symbolModulo */
+			127, 				/* symbolModulo */
 			32 * 1024,			/* parserBufferSize */
 			1993,				/* parserTableModulo */
 		};
@@ -959,7 +959,7 @@ void* fx_agent_start_aux(void* it)
 		4096, 				/* stackCount */
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
-		127 				/* symbolModulo */
+		127, 				/* symbolModulo */
 		32 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
