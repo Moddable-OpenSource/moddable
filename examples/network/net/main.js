@@ -14,8 +14,14 @@
 
 import Net from "net";
 
-trace(`IP Address: ${Net.get("IP")}\n`);
-trace(`MAC Address: ${Net.get("MAC")}\n`);
-trace(`SSID: ${Net.get("SSID")}\n`);
-trace(`BSSID: ${Net.get("BSSID")}\n`);
-trace(`RSSI: ${Net.get("RSSI")}\n`);
+function convert(str)
+{
+	return str ? str : "";
+}
+
+
+trace(`IP Address: ${convert(Net.get("IP"))}\n`);
+trace(`MAC Address: ${convert(Net.get("MAC"))}\n`);
+trace(`SSID: ${convert(Net.get("SSID"))}\n`);
+trace(`BSSID: ${convert(Net.get("BSSID"))}\n`);
+trace(`RSSI: ${convert(Net.get("RSSI"))}\n`);
