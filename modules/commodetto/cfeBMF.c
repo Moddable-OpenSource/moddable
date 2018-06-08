@@ -188,7 +188,7 @@ CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine bmf, uint16_t glyphID, uint
 
 	if (!needPixels) {
 		c_memset(glyph, 0, sizeof(*glyph));
-		glyph->advance = c_read16(cc + 16);
+		glyph->advance = (uint8_t)c_read16(cc + 16);
 		return glyph;
 	}
 

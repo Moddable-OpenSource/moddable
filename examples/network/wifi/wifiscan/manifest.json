@@ -20,5 +20,9 @@
 				"*": "$(MODULES)/network/wifi/esp32/*"
 			},
 		},
+		"...": {
+			"error": "WiFi unsupported"
+		}
 	}
 }
+
