@@ -40,6 +40,10 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#ifdef __ets__
+	#include "xsesp.h"
+#endif
+
 #include "commodettoPocoBlit.h"
 
 #include "picojpeg.h"
