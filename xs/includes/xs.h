@@ -1164,10 +1164,10 @@ struct xsCreationRecord {
 
 #ifndef XSLOGEXCEPTION
 	#ifndef __ets__
-		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception arrived in function %s at line %d", __FUNCTION__, __LINE__)
+		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception arrived in function %s at line %d\n", __FUNCTION__, __LINE__)
 	#else
 		// cannoot have __FUNCTION__ as the string is stored in RAM
-		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception")
+		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception\n")
 	#endif
 #endif
 
