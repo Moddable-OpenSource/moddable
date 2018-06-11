@@ -46,7 +46,7 @@ class Connection extends Socket {
 							// process 3-byte command
 							if (253 === this.command) {		// DO request
 								this.write(255, 252, byte, 13, 10);		// WONT response followed by CRLF
-								CLI.execute.call(this, "prompt");	// control C now oever
+								CLI.execute.call(this, "prompt");	// control C now over
 							}
 							delete this.command;
 						}
