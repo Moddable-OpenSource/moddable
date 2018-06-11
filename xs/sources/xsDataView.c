@@ -2242,45 +2242,61 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	#define mxEndianU16_NtoL(a) ((txU2) mxEndian16_Swap(a))
 #endif
 
-static txU2 mxEndian16_Swap(txU2 a)
-{
-	txU2 b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 2; i++)
-		p2[i] = p1[1 - i];
-	return b;
-}
+#if defined(__GNUC__)
+	#define mxEndian16_Swap(a) __builtin_bswap16(a)
+#else
+	static txU2 mxEndian16_Swap(txU2 a)
+	{
+		txU2 b;
+		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+		int i;
+		for (i = 0; i < 2; i++)
+			p2[i] = p1[1 - i];
+		return b;
+	}
+#endif
 
-static txU4 mxEndian32_Swap(txU4 a)
-{
-	txU4 b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 4; i++)
-		p2[i] = p1[3 - i];
-	return b;
-}
+#if defined(__GNUC__)
+	#define mxEndian32_Swap(a) __builtin_bswap32(a)
+#else
+	static txU4 mxEndian32_Swap(txU4 a)
+	{
+		txU4 b;
+		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+		int i;
+		for (i = 0; i < 4; i++)
+			p2[i] = p1[3 - i];
+		return b;
+	}
+#endif
 
-static float mxEndianFloat_Swap(float a)
-{
-	float b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 4; i++)
-		p2[i] = p1[3 - i];
-	return b;
-}
+#if defined(__GNUC__)
+	#define mxEndianFloat_Swap(a) __builtin_bswap32(a)
+#else
+	static float mxEndianFloat_Swap(float a)
+	{
+		float b;
+		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+		int i;
+		for (i = 0; i < 4; i++)
+			p2[i] = p1[3 - i];
+		return b;
+	}
+#endif
 
-static double mxEndianDouble_Swap(double a)
-{
-	double b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 8; i++)
-		p2[i] = p1[7 - i];
-	return b;
-}
+#if defined(__GNUC__)
+	#define mxEndianDouble_Swap(a) __builtin_bswap64(a)
+#else
+	static double mxEndianDouble_Swap(double a)
+	{
+		double b;
+		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+		int i;
+		for (i = 0; i < 8; i++)
+			p2[i] = p1[7 - i];
+		return b;
+	}
+#endif
 
 #define toNative(size, endian) mxEndian##size##_##endian##toN
 #define fromNative(size, endian) mxEndian##size##_Nto##endian
