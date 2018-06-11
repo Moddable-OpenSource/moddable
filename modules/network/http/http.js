@@ -318,6 +318,8 @@ function callback(message, value) {
 function done(error = false) {
 	let data;
 
+	if (6 == this.state) return;
+
 	this.state = 6;
 
 	if (this.response && !error) {
@@ -451,8 +453,9 @@ function server(message, value, etc) {
 						line = line.split(" ");
 						if (line.length < 3)
 							throw new Error("unexpected status format");
-						if ("HTTP/1.1" != line[line.length - 1].trim())
-							throw new Error("HTTP/1.1");
+						const protocol = line[line.length - 1].trim();
+						if (("HTTP/1.1" != protocol) && ("HTTP/1.0" != protocol))		// http 1.0 for hotspot.html
+							throw new Error("bad protocol ID");
 
 						line.length -= 1;		// remove "HTTP/1.1"
 						let method = line.shift();
