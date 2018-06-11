@@ -58,7 +58,6 @@
 	#define mxNoConsole 1
 #endif
 #define mxMisalignedSettersCrash 1
-//#define mxParse 1
 
 #ifndef __XS6PLATFORMMINIMAL__
 
