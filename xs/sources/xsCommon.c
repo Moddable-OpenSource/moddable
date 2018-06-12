@@ -228,7 +228,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_UNWIND_1 */ "unwind",
 	/* XS_CODE_UNWIND_2 */ "unwind_2",
 	/* XS_CODE_VAR_CLOSURE_1 */ "var_closure_1",
-	/* XS_CODE_VAR_CLOSURE */ "var_closure",
+	/* XS_CODE_VAR_CLOSURE_2 */ "var_closure_2",
 	/* XS_CODE_VAR_LOCAL_1 */ "var_local_1",
 	/* XS_CODE_VAR_LOCAL_2 */ "var_local_2",
 	/* XS_CODE_VOID */ "void",
