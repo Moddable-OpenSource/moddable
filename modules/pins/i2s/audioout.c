@@ -17,6 +17,10 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+/*
+	WIN32 implementation modeled on KplAudioWin.c (Apache License, Marvell Semiconductor)
+	https://github.com/Kinoma/kinomajs/blob/master/build/win/Kpl/KplAudioWin.c
+*/
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
@@ -78,6 +82,17 @@
 	#import <AudioUnit/AudioUnit.h>
 	#import <AudioToolbox/AudioToolbox.h>
 	#define kAudioQueueBufferCount (2)
+#elif defined(_WIN32)
+	#define INITGUID
+	#include "windows.h"
+	#include "mmreg.h"
+	#include "dsound.h"
+	#define kAudioQueueBufferCount (2)
+	enum {
+		kStateIdle = 0,
+		kStatePlaying = 1,
+		kStateTerminated = 2
+	};
 #elif ESP32
 	#include "xsesp.h"
 	#include "freertos/FreeRTOS.h"
@@ -140,6 +155,20 @@ typedef struct {
 	pthread_mutex_t			mutex;
 	CFRunLoopTimerRef		callbackTimer;
 	CFRunLoopRef			runLoop;
+#elif defined(_WIN32)
+	HWND					hWnd;
+	LPDIRECTSOUND8			dS;
+	LPDIRECTSOUNDBUFFER8	dSBuffer;
+	HANDLE					hNotify;
+	HANDLE					hEndThread;
+	HANDLE					hNotifyThread;
+	uint32_t				bufferSize;
+	uint32_t				bytesWritten;
+	uint32_t				bufferCount;
+	uint32_t				samplesNeeded;
+	uint8_t					*buffer;
+	CRITICAL_SECTION		cs;
+	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 #elif ESP32
 	SemaphoreHandle_t 		mutex;
 	TaskHandle_t			task;
@@ -171,12 +200,18 @@ static void updateActiveStreams(modAudioOut out);
 	static void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
 	static void queueCallback(modAudioOut out, xsIntegerValue id);
 	static void invokeCallbacks(CFRunLoopTimerRef timer, void *info);
+#elif defined(_WIN32)
+	static LRESULT CALLBACK modAudioWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static DWORD WINAPI directSoundProc(LPVOID lpParameter);
+	static HRESULT createDirectSoundBuffer(modAudioOut out, uint32_t bufferSize, uint32_t bufferCount);
+	static void releaseDirectSoundBuffer(modAudioOut out);
+	static void doRenderSamples(modAudioOut out);
 #elif ESP32
 	static void audioOutLoop(void *pvParameter);
 #elif defined(__ets__)
 	static void doRenderSamples(void *refcon, int16_t *lr, int count);
 #endif
-#if defined(__ets__) || ESP32
+#if defined(__ets__) || ESP32 || defined(_WIN32)
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 	void queueCallback(modAudioOut out, xsIntegerValue id);
 #endif
@@ -210,6 +245,14 @@ void xs_audioout_destructor(void *data)
 	}
 
 	pthread_mutex_destroy(&out->mutex);
+#elif defined(_WIN32)
+	if (NULL != out->dS) {
+		releaseDirectSoundBuffer(out);
+		IDirectSound8_Release(out->dS);
+	}
+	DeleteCriticalSection(&out->cs);
+	DestroyWindow(out->hWnd);
+	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
 	out->state = kStateTerminated;
 	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
@@ -330,6 +373,35 @@ void xs_audioout(xsMachine *the)
 	// 2 buffers, 1/32 of a second each
 	for (i = 0; i < kAudioQueueBufferCount; i++)
 		AudioQueueAllocateBuffer(out->audioQueue, (((out->bitsPerSample * out->numChannels) >> 3) * out->sampleRate) >> 5, &out->buffer[i]);
+#elif defined(_WIN32)
+	LPDIRECTSOUND8 lpDirectSound = NULL;
+	WNDCLASSEX wcex = {0};
+	HRESULT hr;
+
+	out->state = kStateIdle;
+
+	InitializeCriticalSection(&out->cs);
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.lpfnWndProc = modAudioWindowProc;
+	wcex.lpszClassName = "modAudioWindowClass";
+	RegisterClassEx(&wcex);
+	out->hWnd = CreateWindowEx(0, "modAudioWindowClass", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+
+	hr = DirectSoundCreate8(NULL, &lpDirectSound, NULL);
+	if (FAILED(hr))
+		xsUnknownError("can't create output");
+
+	hr = IDirectSound8_SetCooperativeLevel(lpDirectSound, out->hWnd, DSSCL_PRIORITY);
+	if (FAILED(hr))
+		xsUnknownError("can't create output");
+
+	out->dS = lpDirectSound;
+
+	// 2 buffers, 1/8 of a second each
+	hr = createDirectSoundBuffer(out, (out->sampleRate * out->bytesPerFrame) >> 3, kAudioQueueBufferCount);
+	if (FAILED(hr))
+		xsUnknownError("can't create output");
 #elif ESP32
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
@@ -352,7 +424,6 @@ void xs_audioout_close(xsMachine *the)
 void xs_audioout_start(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
-	int i;
 
 #if MODDEF_AUDIOOUT_I2S_PDM
 	out->prevSample = 0;
@@ -360,10 +431,14 @@ void xs_audioout_start(xsMachine *the)
 #endif
 
 #if defined(__APPLE__)
-	for (i = 0; i < kAudioQueueBufferCount; i++)
+	for (int i = 0; i < kAudioQueueBufferCount; i++)
 		audioQueueCallback(out, out->audioQueue, out->buffer[i]);
 
 	AudioQueueStart(out->audioQueue, NULL);
+#elif defined(_WIN32)
+	out->state = kStatePlaying;
+	doRenderSamples(out);
+	IDirectSoundBuffer_Play(out->dSBuffer, 0, 0, DSBPLAY_LOOPING);
 #elif ESP32
 	out->state = kStatePlaying;
 	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
@@ -383,6 +458,9 @@ void xs_audioout_stop(xsMachine *the)
 
 #if defined(__APPLE__)
 	AudioQueueStop(out->audioQueue, true);
+#elif defined(_WIN32)
+	out->state = kStateIdle;
+	IDirectSoundBuffer_Stop(out->dSBuffer);
 #elif ESP32
 	out->state = kStateIdle;
 	xTaskNotify(out->task, kStateIdle, eSetValueWithOverwrite);
@@ -477,6 +555,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			
 #if defined(__APPLE__)
 			pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
 #elif defined(__ets__)
@@ -517,6 +597,8 @@ void xs_audioout_enqueue(xsMachine *the)
 
 #if defined(__APPLE__)
 			pthread_mutex_unlock(&out->mutex);
+#elif defined(_WIN32)
+			LeaveCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreGive(out->mutex);
 			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
@@ -530,6 +612,8 @@ void xs_audioout_enqueue(xsMachine *the)
 
 #if defined(__APPLE__)
 				pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+				EnterCriticalSection(&out->cs);
 #elif ESP32
 				xSemaphoreTake(out->mutex, portMAX_DELAY);
 #elif defined(__ets__)
@@ -547,12 +631,14 @@ void xs_audioout_enqueue(xsMachine *the)
 
 #if defined(__APPLE__)
 				invokeCallbacks(NULL, out);
-#elif ESP || defined(__ets__)
+#elif ESP || defined(__ets__) || defined(_WIN32)
 				deliverCallbacks(the, out, NULL, 0);
 #endif
 
 #if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
+#elif defined(_WIN32)
+				LeaveCriticalSection(&out->cs);
 #elif ESP32
 				xSemaphoreGive(out->mutex);
 #elif defined(__ets__)
@@ -563,6 +649,8 @@ void xs_audioout_enqueue(xsMachine *the)
 		case kKindCallback:
 #if defined(__APPLE__)
 			pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
 #elif defined(__ets__)
@@ -584,6 +672,8 @@ void xs_audioout_enqueue(xsMachine *the)
 
 #if defined(__APPLE__)
 			pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
 #elif defined(__ets__)
@@ -682,6 +772,239 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 	}
 	else
 		printf("audio callback queue full\n");
+}
+
+#elif defined(_WIN32)
+
+HRESULT createDirectSoundBuffer(modAudioOut out, uint32_t bufferSize, uint32_t bufferCount)
+{
+	HRESULT hr = S_OK;
+	DSBUFFERDESC dsbdsc = {0};
+	WAVEFORMATEX format;
+	HANDLE hNotifyEvent = NULL, hEndThread = NULL;
+	LPDIRECTSOUNDBUFFER8 lpDirectSoundBuffer = NULL;
+	DWORD i, threadID;
+	LPDSBPOSITIONNOTIFY aPosNotify = NULL;
+	LPDIRECTSOUNDNOTIFY pDSNotify = NULL;
+	LPDIRECTSOUNDBUFFER lpDsb = NULL;
+
+	format.wFormatTag = WAVE_FORMAT_PCM;
+	format.wBitsPerSample = out->bitsPerSample;
+	format.nChannels = out->numChannels;
+	format.nSamplesPerSec = out->sampleRate;
+	format.nBlockAlign = format.wBitsPerSample / 8 * out->numChannels;
+	format.nAvgBytesPerSec = format.nBlockAlign * format.nSamplesPerSec;
+	format.cbSize = 0;
+
+	hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	hEndThread = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	aPosNotify = c_malloc(sizeof(DSBPOSITIONNOTIFY) * bufferCount);
+	if (!aPosNotify) {
+		hr = ERROR_NOT_ENOUGH_MEMORY;
+		goto bail;
+	}
+
+	out->buffer = c_malloc(bufferSize * bufferCount);
+	if (!out->buffer) {
+		hr = ERROR_NOT_ENOUGH_MEMORY;
+		goto bail;
+	}
+
+	for (i = 0; i < bufferCount; i++) {
+		aPosNotify[i].dwOffset = ((DWORD)bufferSize * i) + (DWORD)bufferSize - 1;
+		aPosNotify[i].hEventNotify = hNotifyEvent;
+	}
+
+	dsbdsc.dwSize = sizeof(dsbdsc);
+	dsbdsc.dwFlags = DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS;
+	dsbdsc.dwBufferBytes = bufferSize * bufferCount;
+	dsbdsc.lpwfxFormat = &format;
+
+	hr = IDirectSound8_CreateSoundBuffer(out->dS, &dsbdsc, &lpDsb, NULL);
+	if (FAILED(hr)) goto bail;
+
+	hr = IDirectSound8_QueryInterface(lpDsb, &IID_IDirectSoundBuffer8, (LPVOID *)&lpDirectSoundBuffer);
+	if (FAILED(hr)) goto bail;
+
+	hr = IDirectSoundBuffer_QueryInterface(lpDsb, &IID_IDirectSoundNotify, (LPVOID *)&pDSNotify);
+	if (FAILED(hr)) goto bail;
+
+	hr = IDirectSoundBuffer_SetCurrentPosition(lpDirectSoundBuffer, 0);
+	if (FAILED(hr)) goto bail;
+
+	hr = IDirectSoundNotify_SetNotificationPositions(pDSNotify, bufferCount, aPosNotify);
+	if (FAILED(hr)) goto bail;
+
+	out->dSBuffer = lpDirectSoundBuffer;
+	out->hNotify = hNotifyEvent;
+	out->hEndThread = hEndThread;
+	out->bufferSize = bufferSize * bufferCount;
+	out->bufferCount = bufferCount;
+	out->samplesNeeded = out->bufferSize / out->bytesPerFrame;
+	out->bytesWritten = 0;
+
+	out->hNotifyThread = CreateThread(NULL, 0, directSoundProc, out, 0, &threadID);
+	if (NULL == out->hNotifyThread) {
+		hr = ERROR_MAX_THRDS_REACHED;
+		goto bail;
+	}
+
+bail:
+	if (FAILED(hr)) {
+		if (lpDirectSoundBuffer)
+			IDirectSoundBuffer_Release(lpDirectSoundBuffer);
+
+		if (hEndThread)
+			CloseHandle(hEndThread);
+
+		if (hNotifyEvent)
+			CloseHandle(hNotifyEvent);
+
+		if (out->hNotifyThread) {
+			SetEvent(out->hNotifyThread);
+			WaitForSingleObject(out->hNotifyThread, INFINITE);
+			out->hNotifyThread = NULL;
+		}
+
+		if (out->buffer) {
+			c_free(out->buffer);
+			out->buffer = NULL;
+		}
+	}
+
+	if (pDSNotify)
+		IDirectSoundNotify_Release(pDSNotify);
+
+	if (lpDsb)
+		IDirectSoundBuffer_Release(lpDsb);
+
+	c_free(aPosNotify);
+
+	return hr;
+}
+
+void releaseDirectSoundBuffer(modAudioOut out)
+{
+	if (NULL != out->dSBuffer)
+		IDirectSoundBuffer_Stop(out->dSBuffer);
+
+	if (out->hEndThread)
+		SetEvent(out->hEndThread);
+
+	if (out->hNotifyThread) {
+		WaitForSingleObject(out->hNotifyThread, INFINITE);
+		CloseHandle(out->hNotifyThread);
+		out->hNotifyThread = NULL;
+	}
+
+	if (NULL != out->dSBuffer) {
+		IDirectSoundBuffer_Release(out->dSBuffer);
+		out->dSBuffer = NULL;
+	}
+
+	if (NULL != out->hNotify) {
+		CloseHandle(out->hNotify);
+		out->hNotify = NULL;
+	}
+
+	if (NULL != out->hEndThread) {
+		CloseHandle(out->hEndThread);
+		out->hEndThread = NULL;
+	}
+
+	if (NULL != out->buffer) {
+		c_free(out->buffer);
+		out->buffer = NULL;
+	}
+}
+
+void doRenderSamples(modAudioOut out)
+{
+	LPBYTE p1, p2;
+	DWORD b1, b2;
+	HRESULT hr;
+	DWORD bytesWritten = out->samplesNeeded * out->bytesPerFrame;
+
+	EnterCriticalSection(&out->cs);
+
+	audioMix(out, out->samplesNeeded, (OUTPUTSAMPLETYPE*)out->buffer);
+
+	hr = IDirectSoundBuffer_Lock(out->dSBuffer, (DWORD)(out->bytesWritten % out->bufferSize), bytesWritten,
+		(LPVOID *)&p1, &b1, (LPVOID *)&p2, &b2, 0);
+	if (FAILED(hr))
+		goto bail;
+
+	if (NULL != p1) {
+		c_memcpy(p1, out->buffer, b1);
+		if (NULL != p2)
+			c_memcpy(p2, b1 + out->buffer, b2);
+		out->bytesWritten += bytesWritten;
+		out->samplesNeeded = 0;
+	}
+
+	IDirectSoundBuffer_Unlock(out->dSBuffer, p1, b1, p2, b2);
+
+bail:
+	LeaveCriticalSection(&out->cs);
+}
+
+LRESULT CALLBACK modAudioWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_CALLBACK: {
+			modAudioOut out = (modAudioOut)lParam;
+			switch (wParam) {
+				case 0:
+					deliverCallbacks(out->the, out, NULL, 0);
+					break;
+				case 1:
+					doRenderSamples(out);
+					break;
+				default:
+					break;
+			}
+			return 0;
+		}
+	}
+	return DefWindowProc(window, message, wParam, lParam);
+}
+
+DWORD WINAPI directSoundProc(LPVOID lpParameter)
+{
+	HANDLE handles[2];
+	modAudioOut out = (modAudioOut)lpParameter;
+	HRESULT hr;
+	DWORD playCursor;
+
+	handles[0] = out->hEndThread;
+	handles[1] = out->hNotify;
+	while (true) {
+		DWORD waitObject = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+		if (WAIT_OBJECT_0 == waitObject)
+			break;
+
+		EnterCriticalSection(&out->cs);
+
+		if (kStatePlaying != out->state) {
+			LeaveCriticalSection(&out->cs);
+			continue;
+		}
+
+		hr = IDirectSoundBuffer_GetCurrentPosition(out->dSBuffer, &playCursor, NULL);
+		if (SUCCEEDED(hr)) {
+			int32_t unplayed = (int32_t)((out->bytesWritten % out->bufferSize) - playCursor);
+			if (unplayed < 0)
+				unplayed += out->bufferSize;
+			out->samplesNeeded = ((out->bufferSize - unplayed) / out->bytesPerFrame);
+		}
+
+		LeaveCriticalSection(&out->cs);
+
+		PostMessage(out->hWnd, WM_CALLBACK, 1, (LPARAM)out);
+	}
+
+	return 1;
 }
 
 #elif ESP32
@@ -831,7 +1154,7 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 }
 #endif
 
-#if defined(__ets__) || ESP32
+#if defined(__ets__) || ESP32 || defined(_WIN32)
 
 void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
@@ -847,6 +1170,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
 #elif defined(__ets__)
 		modCriticalSectionBegin();
+#elif defined(_WIN32)
+		EnterCriticalSection(&out->cs);
 #endif
 		id = out->pendingCallbacks[0];
 
@@ -857,6 +1182,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		xSemaphoreGive(out->mutex);
 #elif defined(__ets__)
 		modCriticalSectionEnd();
+#elif defined(_WIN32)
+		LeaveCriticalSection(&out->cs);
 #endif
 
 		xsmcSetInteger(xsVar(0), id);
@@ -873,7 +1200,11 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 		out->pendingCallbacks[out->pendingCallbackCount++] = id;
 
 		if (1 == out->pendingCallbackCount)
+#if defined(_WIN32)
+			PostMessage(out->hWnd, WM_CALLBACK, 0, (LPARAM)out);
+#else
 			modMessagePostToMachine(out->the, NULL, 0, deliverCallbacks, out);
+#endif
 	}
 	else
 		printf("audio callback queue full\n");
