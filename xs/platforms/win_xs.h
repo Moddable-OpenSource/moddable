@@ -80,5 +80,6 @@
 #define WM_PROMISE WM_USER
 #define WM_SERVICE WM_USER + 1
 #define WM_XSBUG WM_USER + 2
+#define WM_CALLBACK WM_USER + 3
 
 #endif /* __WIN_XS__ */
