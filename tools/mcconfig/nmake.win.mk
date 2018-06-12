@@ -136,7 +136,7 @@ C_FLAGS = $(C_FLAGS) \
 	/W0
 !ENDIF
 
-LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib dsound.lib
 
 LINK_OPTIONS = /incremental:no /machine:I386 /nologo /dll
 !IF "$(DEBUG)"=="1"
