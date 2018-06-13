@@ -90,8 +90,7 @@
 	#define kAudioQueueBufferCount (2)
 	enum {
 		kStateIdle = 0,
-		kStatePlaying = 1,
-		kStateTerminated = 2
+		kStatePlaying = 1
 	};
 #elif ESP32
 	#include "xsesp.h"
@@ -168,7 +167,7 @@ typedef struct {
 	uint32_t				samplesNeeded;
 	uint8_t					*buffer;
 	CRITICAL_SECTION		cs;
-	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
+	uint8_t					state;		// 0 idle, 1 playing
 #elif ESP32
 	SemaphoreHandle_t 		mutex;
 	TaskHandle_t			task;
@@ -246,12 +245,13 @@ void xs_audioout_destructor(void *data)
 
 	pthread_mutex_destroy(&out->mutex);
 #elif defined(_WIN32)
-	if (NULL != out->dS) {
+	if (NULL != out->dSBuffer)
 		releaseDirectSoundBuffer(out);
+	if (NULL != out->dS) 
 		IDirectSound8_Release(out->dS);
-	}
+	if (out->hWnd)
+		DestroyWindow(out->hWnd);
 	DeleteCriticalSection(&out->cs);
-	DestroyWindow(out->hWnd);
 	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
 	out->state = kStateTerminated;
@@ -778,12 +778,11 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 
 HRESULT createDirectSoundBuffer(modAudioOut out, uint32_t bufferSize, uint32_t bufferCount)
 {
-	HRESULT hr = S_OK;
-	DSBUFFERDESC dsbdsc = {0};
+	HRESULT hr;
 	WAVEFORMATEX format;
+	DSBUFFERDESC dsbdsc = { 0 };
 	HANDLE hNotifyEvent = NULL, hEndThread = NULL;
 	LPDIRECTSOUNDBUFFER8 lpDirectSoundBuffer = NULL;
-	DWORD i, threadID;
 	LPDSBPOSITIONNOTIFY aPosNotify = NULL;
 	LPDIRECTSOUNDNOTIFY pDSNotify = NULL;
 	LPDIRECTSOUNDBUFFER lpDsb = NULL;
@@ -811,7 +810,7 @@ HRESULT createDirectSoundBuffer(modAudioOut out, uint32_t bufferSize, uint32_t b
 		goto bail;
 	}
 
-	for (i = 0; i < bufferCount; i++) {
+	for (DWORD i = 0; i < bufferCount; i++) {
 		aPosNotify[i].dwOffset = ((DWORD)bufferSize * i) + (DWORD)bufferSize - 1;
 		aPosNotify[i].hEventNotify = hNotifyEvent;
 	}
@@ -844,7 +843,7 @@ HRESULT createDirectSoundBuffer(modAudioOut out, uint32_t bufferSize, uint32_t b
 	out->samplesNeeded = out->bufferSize / out->bytesPerFrame;
 	out->bytesWritten = 0;
 
-	out->hNotifyThread = CreateThread(NULL, 0, directSoundProc, out, 0, &threadID);
+	out->hNotifyThread = CreateThread(NULL, 0, directSoundProc, out, 0, NULL);
 	if (NULL == out->hNotifyThread) {
 		hr = ERROR_MAX_THRDS_REACHED;
 		goto bail;
@@ -879,7 +878,8 @@ bail:
 	if (lpDsb)
 		IDirectSoundBuffer_Release(lpDsb);
 
-	c_free(aPosNotify);
+	if (aPosNotify)
+		c_free(aPosNotify);
 
 	return hr;
 }
