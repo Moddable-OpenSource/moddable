@@ -62,7 +62,7 @@ The `build` object contains the definition of environment variables that will be
 
 #### `creation`
 
-The `creation` object defines the creation parameters of the XS machine that will run the app. See the [XS in C documentation](../xs/XS\ in\ C.md) for details.
+The `creation` object defines the creation parameters of the XS machine that will run the app. See the [XS in C documentation](../xs/XS%20in%20C.md) for details.
 		
 		"creation": {
 			"static": 32768,
@@ -130,7 +130,7 @@ If you only want to allow certain objects or functions to be stripped, pass in a
 			"fx_RegExp_prototype_get_sticky",
 			"fx_RegExp_prototype_get_unicode",
 			"fx_RegExp",
-		]
+		]
 
 #### `platform `
 
