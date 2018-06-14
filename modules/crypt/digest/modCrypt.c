@@ -125,7 +125,7 @@ static const digestRecord gDigests[] ICACHE_XS6RO_ATTR = {
 		(void *)sha384_update,
 		(void *)sha384_fin
 	},
-	{}
+	{0}
 };
 
 typedef struct xsCryptDigestRecord xsCryptDigestRecord;
