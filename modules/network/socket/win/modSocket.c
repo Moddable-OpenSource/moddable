@@ -39,7 +39,8 @@
 
 #define kTCP (0)
 #define kUDP (1)
-#define kAsyncSelectEvents (FD_READ | FD_WRITE | FD_CONNECT | FD_CLOSE | FD_ACCEPT)
+#define kSocketAsyncSelectEvents (FD_READ | FD_WRITE | FD_CONNECT | FD_CLOSE )
+#define kListenerAsyncSelectEvents (FD_ACCEPT)
 
 typedef struct xsSocketRecord xsSocketRecord;
 typedef xsSocketRecord *xsSocket;
@@ -69,20 +70,24 @@ struct xsSocketRecord {
 typedef struct xsListenerRecord xsListenerRecord;
 typedef xsListenerRecord *xsListener;
 
-#define kListenerPendingSockets (4)
 struct xsListenerRecord {
 	xsListener			next;
 
 	xsMachine			*the;
 	xsSlot				obj;
 
+	SOCKET				skt;
+	HWND				window;
 	xsSocket			pending;
 };
 
 static void createSocketWindow(xsSocket xss);
+static void createListenerWindow(xsListener xsl);
 static DWORD WINAPI hostResolveProc(LPVOID lpParameter);
 static LRESULT CALLBACK modSocketWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK modListenerWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 static int doFlushWrite(xsSocket xss);
+static int doReadSocket(xsMachine *the, xsSocket xss);
 static void doDestructor(xsSocket xss);
 
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
@@ -98,13 +103,9 @@ static void socketDownUseCount(xsMachine *the, xsSocket xss)
 void xs_socket(xsMachine *the)
 {
 	xsSocket xss;
-
 	WSADATA wsaData;
-	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
-		xsUnknownError("create socket failed");
 
 	xsmcVars(1);
-#if 0
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
 		xsmcGet(xsVar(0), xsArg(0), xsID_listener);
@@ -116,12 +117,14 @@ void xs_socket(xsMachine *the)
 		xsmcSetHostData(xsThis, xss);
 		xsRemember(xss->obj);
 
-		xss->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, xss->cfSkt, 0);
-		CFRunLoopAddSource(CFRunLoopGetCurrent(), xss->cfRunLoopSource, kCFRunLoopCommonModes);
+		if (WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents))
+			xsUnknownError("async select failed");
 
 		return;
 	}
-#endif
+
+	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
+		xsUnknownError("winsock initialization failed");
 
 	xss = c_calloc(sizeof(xsSocketRecord), 1);
 	if (!xss)
@@ -168,8 +171,8 @@ void xs_socket(xsMachine *the)
 
 	createSocketWindow(xss);
 
-	if (WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kAsyncSelectEvents))
-		xsUnknownError("create socket failed");
+	if (WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents))
+		xsUnknownError("async select failed");
 
 	if (kUDP == xss->kind)
 		return;
@@ -195,6 +198,18 @@ void createSocketWindow(xsSocket xss)
 	SetWindowLongPtr(xss->window, 0, (LONG)xss);
 }
 
+void createListenerWindow(xsListener xsl)
+{
+	WNDCLASSEX wcex = { 0 };
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbWndExtra = sizeof(xsListener);
+	wcex.lpfnWndProc = modListenerWindowProc;
+	wcex.lpszClassName = "modListenerWindowClass";
+	RegisterClassEx(&wcex);
+	xsl->window = CreateWindowEx(0, wcex.lpszClassName, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+	SetWindowLongPtr(xsl->window, 0, (LONG)xsl);
+}
+
 DWORD WINAPI hostResolveProc(LPVOID lpParameter)
 {
 	xsSocket xss = (xsSocket)lpParameter;
@@ -212,13 +227,39 @@ DWORD WINAPI hostResolveProc(LPVOID lpParameter)
 	return 0;
 }
 
+int doReadSocket(xsMachine *the, xsSocket xss)
+{
+	unsigned char buffer[1024];
+	int count;
+
+	count = recv(xss->skt, buffer, sizeof(buffer), 0);
+	if (count > 0) {
+		modInstrumentationAdjust(NetworkBytesRead, count);
+
+		xss->readBuffer = buffer;
+		xss->readBytes = count;
+
+		xsBeginHost(the);
+		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
+		xsEndHost(the);
+
+		xss->readBuffer = NULL;
+		xss->readBytes = 0;
+	}
+
+	return count;
+}
+
 LRESULT CALLBACK modSocketWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 		case WM_CALLBACK: {
 			if (!WSAGETSELECTERROR(lParam)) {
 				xsSocket xss = (xsSocket)GetWindowLongPtr(window, 0);
+				if (NULL == xss)
+					break;
 				xsMachine *the = xss->the;
+				xss->useCount += 1;
 				switch (WSAGETSELECTEVENT(lParam)) {
 					case FD_CONNECT: {
 						xsBeginHost(the);
@@ -226,40 +267,18 @@ LRESULT CALLBACK modSocketWindowProc(HWND window, UINT message, WPARAM wParam, L
 						xsEndHost(the);
 					} break;
 					case FD_CLOSE: {
+						// read any remaining bytes buffered in socket before notifying disconnect
+						int count;
+						do {
+							count = doReadSocket(the, xss);
+						} while (count > 0);
+
 						xsBeginHost(the);
 						xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
 						xsEndHost(the);
-
-						socketDownUseCount(the, xss);
-						doDestructor(xss);
-						return 0;
-					} break;
-					case FD_ACCEPT: {
 					} break;
 					case FD_READ: {
-						unsigned char buffer[1024];
-						int count = recv(xss->skt, buffer, sizeof(buffer), 0);
-						if (0 == count) {
-							xsBeginHost(the);
-							xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
-							xsEndHost(the);
-
-							socketDownUseCount(the, xss);
-							doDestructor(xss);
-							return 0;
-						}
-
-						modInstrumentationAdjust(NetworkBytesRead, count);
-
-						xss->readBuffer = buffer;
-						xss->readBytes = count;
-
-						xsBeginHost(the);
-						xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
-						xsEndHost(the);
-
-						xss->readBuffer = NULL;
-						xss->readBytes = 0;
+						doReadSocket(the, xss);
 					} break;
 					case FD_WRITE: {
 						if (xss->unreportedSent) {
@@ -269,9 +288,10 @@ LRESULT CALLBACK modSocketWindowProc(HWND window, UINT message, WPARAM wParam, L
 							xsEndHost(the);
 						}
 						else
-							WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kAsyncSelectEvents & ~FD_WRITE);
+							WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents & ~FD_WRITE);
 					} break;
 				}
+				socketDownUseCount(the, xss);
 			}
 		} break;
 	}
@@ -285,6 +305,8 @@ void doDestructor(xsSocket xss)
 
 	if (xss->skt != INVALID_SOCKET) {
 		modInstrumentationAdjust(NetworkSockets, -1);
+		WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, 0);
+		SetWindowLongPtr(xss->window, 0, 0L);
 		closesocket(xss->skt);
 		xss->skt = INVALID_SOCKET;
 		WSACleanup();
@@ -511,7 +533,7 @@ int doFlushWrite(xsSocket xss)
 {
 	int ret;
 
-	WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kAsyncSelectEvents);
+	WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents);
 
 	ret = send(xss->skt, xss->writeBuf, xss->writeBytes, 0);
 	if (ret < 0)
@@ -532,12 +554,86 @@ int doFlushWrite(xsSocket xss)
 // to accept an incoming connection: let incoming = new Socket({listener});
 void xs_listener(xsMachine *the)
 {
+	xsListener xsl;
+	uint16_t port = 0;
+	WSADATA wsaData;
+	struct sockaddr_in address = { 0 };
+
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcVars(1);
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = (uint16_t)xsmcToInteger(xsVar(0));
+	}
+
+	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
+		xsUnknownError("winsock initialization failed");
+
+	xsl = c_calloc(sizeof(xsListenerRecord), 1);
+
+	xsl->skt = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (INVALID_SOCKET == xsl->skt)
+		xsUnknownError("create socket failed");
+
+	xsl->the = the;
+	xsl->obj = xsThis;
+	createListenerWindow(xsl);
+	xsmcSetHostData(xsThis, xsl);
+	xsRemember(xsl->obj);
+
+	int yes = 1;
+	setsockopt(xsl->skt, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes));
+
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(port);
+	if (SOCKET_ERROR == bind(xsl->skt, (PSOCKADDR)&address, sizeof(address)))
+		xsUnknownError("bind socket failed");
+
+	if (WSAAsyncSelect(xsl->skt, xsl->window, WM_CALLBACK, kListenerAsyncSelectEvents))
+		xsUnknownError("async select failed");
+
+	if (SOCKET_ERROR == listen(xsl->skt, SOMAXCONN))
+		xsUnknownError("listen failed");
+}
+
+LRESULT CALLBACK modListenerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_CALLBACK: {
+			if (!WSAGETSELECTERROR(lParam)) {
+				xsListener xsl = (xsListener)GetWindowLongPtr(window, 0);
+				xsMachine *the = xsl->the;
+				switch (WSAGETSELECTEVENT(lParam)) {
+					case FD_ACCEPT: {
+						SOCKET skt = accept(wParam, NULL, NULL);
+						if (INVALID_SOCKET != skt) {
+							xsSocket xss = c_calloc(sizeof(xsSocketRecord), 1);
+							xss->the = xsl->the;
+							xss->useCount = 1;
+							xss->skt = skt;
+							createSocketWindow(xss);
+							xsl->pending = xss;
+
+							xsBeginHost(the);
+							xsCall1(xsl->obj, xsID_callback, xsInteger(kListenerMsgConnect));
+							xsEndHost(the);
+
+							xsl->pending = NULL;
+						}
+					} break;
+				}
+			}
+		} break;
+	}
+	return DefWindowProc(window, message, wParam, lParam);
 }
 
 void xs_listener_destructor(void *data)
 {
 	xsListener xsl = data;
 	if (xsl) {
+		if (xsl->skt != INVALID_SOCKET)
+			closesocket(xsl->skt);
 		c_free(xsl);
 	}
 }
