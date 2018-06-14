@@ -565,7 +565,7 @@ static void listenerCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 
 		xsBeginHost(xsl->the);
 		xsCall1(xsl->obj, xsID_callback, xsInteger(kListenerMsgConnect));
-		xsEndHost();
+		xsEndHost(xsl->the);
 
 		xsl->pending = NULL;
 	}
