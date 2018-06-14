@@ -45,13 +45,21 @@
 		"mac": {
 			"modules": {
 				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/mac/*",
+					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/net/mac/*",
+					"$(MODULES)/network/sntp/*",
+					"$(MODULES)/network/wifi/*",
+					"$(MODULES)/network/wifi/mac/*",
+				],
+			},
+		},
+		"win": {
+			"modules": {
+				"*": [
 						"$(MODULES)/network/socket/*",
-						"$(MODULES)/network/socket/mac/*",
-						"$(MODULES)/network/net/*",
-						"$(MODULES)/network/net/mac/*",
-						"$(MODULES)/network/sntp/*",
-						"$(MODULES)/network/wifi/*",
-						"$(MODULES)/network/wifi/mac/*",
+						"$(MODULES)/network/socket/win/*",
 				],
 			},
 		}
