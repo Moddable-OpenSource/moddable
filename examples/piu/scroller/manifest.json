@@ -3,15 +3,15 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 	],
-	"creation": {
-		"stack": 300,
-	},
 	"modules": {
 		"*": [
 			"./main",
 			"./scroller",
-			]
+		]
 	},
+	"preload": [
+		"scroller",
+	],
 	"resources":{
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
