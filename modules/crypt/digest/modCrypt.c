@@ -976,7 +976,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 
 	resultStart = result;
 	countStart = count;
-	resolveBuffer(the, &xsArg(1), &data, NULL);
+	resolveBuffer(the, &xsResult, &data, NULL);
 
 	if (kCryptModeECB == mode->kind) {
 		while (count >= (uint32_t)blockSize) {
