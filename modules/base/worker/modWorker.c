@@ -174,7 +174,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((4 * 1024) / sizeof(StackType_t))
+		#define kStack ((5 * 1024) / sizeof(StackType_t))
 	#else
 		#define kStack ((6 * 1024) / sizeof(StackType_t))
 	#endif
