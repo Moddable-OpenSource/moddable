@@ -293,6 +293,7 @@ void fxGetNextNumberE(txParser* parser, int parseDot)
 			*p++ = '.';
 	}
 	if ((parser->character == 'e') || (parser->character == 'E')) {
+		int i = 0;
 		*p++ = '0';
 		*p++ = (char)parser->character;
 		fxGetNextCharacter(parser);
@@ -303,7 +304,10 @@ void fxGetNextNumberE(txParser* parser, int parseDot)
 		while (('0' <= parser->character) && (parser->character <= '9')) {
 			*p++ = (char)parser->character;
 			fxGetNextCharacter(parser);
+			i++;
 		}
+		if (i == 0)
+			fxReportParserError(parser, "invalid number");			
 	}
 	*p++ = 0;
 	fxGetNextNumber(parser, fxStringToNumber(parser->dtoa, parser->buffer, 1));
