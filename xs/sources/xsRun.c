@@ -2605,11 +2605,16 @@ XS_CODE_JUMP:
 			if (slot->kind == mxStack->kind) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					#if __has_builtin(__builtin_add_overflow)
-						if (__builtin_add_overflow(slot->value.integer, mxStack->value.integer, &slot->value.integer)) {
+						variable = mxStack;
+						mxPushKind(XS_INTEGER_KIND);
+						if (__builtin_add_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
 							fxToNumber(the, slot);
-							fxToNumber(the, mxStack);
-							slot->value.number += mxStack->value.number;
+							fxToNumber(the, variable);
+							slot->value.number += variable->value.number;
 						}
+						else
+							slot->value.integer = mxStack->value.integer;
+						mxStack++;
 					#else
 						txInteger a = slot->value.integer;
 						txInteger b = mxStack->value.integer;
@@ -2662,13 +2667,27 @@ XS_CODE_JUMP:
 			if (slot->kind == mxStack->kind) {
 				if (slot->kind == XS_INTEGER_KIND) {
 					#if __has_builtin(__builtin_sub_overflow)
-						if (__builtin_sub_overflow(slot->value.integer, mxStack->value.integer, &slot->value.integer)) {
+						variable = mxStack;
+						mxPushKind(XS_INTEGER_KIND);
+						if (__builtin_sub_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
+							fxToNumber(the, slot);
+							fxToNumber(the, variable);
+							slot->value.number -= variable->value.number;
+						}
+						else
+							slot->value.integer = mxStack->value.integer;
+						mxStack++;
+					#else
+						txInteger a = slot->value.integer;
+						txInteger b = -mxStack->value.integer;
+						txInteger c = a + b;
+						if (((a ^ c) & (b ^ c)) < 0) {
 							fxToNumber(the, slot);
 							fxToNumber(the, mxStack);
 							slot->value.number -= mxStack->value.number;
 						}
-					#else
-						slot->value.integer -= mxStack->value.integer; // @@ overflow?
+						else
+							slot->value.integer = c;
 					#endif
 				}
 				else if (slot->kind == XS_NUMBER_KIND)
