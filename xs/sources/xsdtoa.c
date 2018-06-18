@@ -5158,6 +5158,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		if (!word1(&u) && !(word0(&u) & 0xfffff))
 			return nrv_alloc("Infinity", buf, blen, rve, 8 MTb);
 #endif
+		*sign = 0; //NaN doesn't have a sign
 		return nrv_alloc("NaN", buf, blen, rve, 3 MTb);
 		}
 #endif
