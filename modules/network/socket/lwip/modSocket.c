@@ -710,7 +710,9 @@ void xs_socket_read(xsMachine *the)
 	if (!xss->buf || (xss->bufpos >= xss->buflen) || xss->suspended) {
 		if (0 == argc)
 			xsResult = xsInteger(0);
+		else
 		xsUnknownError("nothing to read");
+		return;
 	}
 
 	srcData = xss->bufpos + (unsigned char *)xss->buf;
