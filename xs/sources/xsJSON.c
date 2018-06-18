@@ -856,59 +856,67 @@ again:
 			goto again;
 		}
 		fxStringifyJSONName(the, theStringifier, theFlag);
-		anInstance->flag |= XS_LEVEL_FLAG;
-		if (fxIsArray(the, anInstance)) {
-			fxStringifyJSONChar(the, theStringifier, '[');
-			theStringifier->level++;
-			fxStringifyJSONIndent(the, theStringifier);
-			aFlag = 4;
-			mxPushReference(anInstance);
-			fxGetID(the, mxID(_length));
-			aLength = fxToInteger(the, the->stack);
-			mxPop();
-			for (anIndex = 0; anIndex < aLength; anIndex++) {
-				mxPushReference(anInstance);
-				fxGetID(the, anIndex);
-				mxPushInteger(anIndex);
-				fxStringifyJSONProperty(the, theStringifier, &aFlag);
-			}
-			theStringifier->level--;
-			fxStringifyJSONIndent(the, theStringifier);
-			fxStringifyJSONChar(the, theStringifier, ']');
-		}
-		else {
-			fxStringifyJSONChar(the, theStringifier, '{');
-			theStringifier->level++;
-			fxStringifyJSONIndent(the, theStringifier);
-			aFlag = 2;
-			{
-				txSlot* at;
-				txSlot* property;
-				at = fxNewInstance(the);
-				mxBehaviorOwnKeys(the, anInstance, XS_EACH_NAME_FLAG, at);
-				mxPushUndefined();
-				property = the->stack;
-				while ((at = at->next)) {
-					if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+		{
+			mxTry(the) {
+				anInstance->flag |= XS_LEVEL_FLAG;
+				if (fxIsArray(the, anInstance)) {
+					fxStringifyJSONChar(the, theStringifier, '[');
+					theStringifier->level++;
+					fxStringifyJSONIndent(the, theStringifier);
+					aFlag = 4;
+					mxPushReference(anInstance);
+					fxGetID(the, mxID(_length));
+					aLength = fxToInteger(the, the->stack);
+					mxPop();
+					for (anIndex = 0; anIndex < aLength; anIndex++) {
 						mxPushReference(anInstance);
-						fxGetAll(the, at->value.at.id, at->value.at.index);
-						if (at->value.at.id) {
-							txSlot* key = fxGetKey(the, at->value.at.id);
-							mxPushString(key->value.key.string);
-						}
-						else
-							mxPushInteger((txInteger)at->value.at.index);
+						fxGetID(the, anIndex);
+						mxPushInteger(anIndex);
 						fxStringifyJSONProperty(the, theStringifier, &aFlag);
 					}
+					theStringifier->level--;
+					fxStringifyJSONIndent(the, theStringifier);
+					fxStringifyJSONChar(the, theStringifier, ']');
 				}
-				mxPop();
-				mxPop();
+				else {
+					fxStringifyJSONChar(the, theStringifier, '{');
+					theStringifier->level++;
+					fxStringifyJSONIndent(the, theStringifier);
+					aFlag = 2;
+					{
+						txSlot* at;
+						txSlot* property;
+						at = fxNewInstance(the);
+						mxBehaviorOwnKeys(the, anInstance, XS_EACH_NAME_FLAG, at);
+						mxPushUndefined();
+						property = the->stack;
+						while ((at = at->next)) {
+							if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+								mxPushReference(anInstance);
+								fxGetAll(the, at->value.at.id, at->value.at.index);
+								if (at->value.at.id) {
+									txSlot* key = fxGetKey(the, at->value.at.id);
+									mxPushString(key->value.key.string);
+								}
+								else
+									mxPushInteger((txInteger)at->value.at.index);
+								fxStringifyJSONProperty(the, theStringifier, &aFlag);
+							}
+						}
+						mxPop();
+						mxPop();
+					}
+					theStringifier->level--;
+					fxStringifyJSONIndent(the, theStringifier);
+					fxStringifyJSONChar(the, theStringifier, '}');
+				}
+				anInstance->flag &= ~XS_LEVEL_FLAG;
 			}
-			theStringifier->level--;
-			fxStringifyJSONIndent(the, theStringifier);
-			fxStringifyJSONChar(the, theStringifier, '}');
+			mxCatch(the) {
+				anInstance->flag &= ~XS_LEVEL_FLAG;
+				fxJump(the);
+			}
 		}
-		anInstance->flag &= ~XS_LEVEL_FLAG;
 		break;
 	default:
 		if (*theFlag & 4) {
