@@ -238,6 +238,8 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/win/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/win/*"
 				]
