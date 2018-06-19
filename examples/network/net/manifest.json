@@ -12,6 +12,7 @@
 		"esp": {},
 		"esp32": {},
 		"mac": {},
+		"win": {},
 		"...": {
 			"error": "Net unsupported"
 		}
