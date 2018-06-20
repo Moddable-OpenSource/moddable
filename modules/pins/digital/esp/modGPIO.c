@@ -89,7 +89,7 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 {
 	int result;
 
-	if ((pin > 16) || port) {
+	if ((pin > 17) || port) {
 		config->pin = kUninitializedPin;
 		return -1;
 	}
@@ -125,7 +125,7 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 				else if (mode == kModGPIOInputPullDown)
 					*(volatile uint32_t *)gPixMuxAddr[config->pin] |= 1 << 6;
 			}
-			else {
+			else if (16 == config->pin) {
 				if (kModGPIOInput != mode)
 					return -1;
 
@@ -138,6 +138,10 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 				WRITE_PERI_REG(RTC_GPIO_ENABLE,
 							   READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe);	//out disable
 			}
+			else if (17 == config->pin) {
+				if (kModGPIOInput != mode)
+					return -1;
+			}
 			break;
 
 		case kModGPIOOutput:
@@ -147,7 +151,7 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 				GPIO_INIT_OUTPUT(config->pin, kModGPIOOutputOpenDrain == mode);
 				GPIO_CLEAR(config->pin);
 			}
-			else {
+			else if (16 == config->pin) {
 				if (kModGPIOOutputOpenDrain == mode)
 					return -1;
 
@@ -160,6 +164,8 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 				WRITE_PERI_REG(RTC_GPIO_ENABLE,
 							   (READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe) | (uint32)0x1);	//out enable
 			}
+			else if (17 == config->pin)
+				return -1;
 			break;
 
 		default:
@@ -176,6 +182,9 @@ uint8_t modGPIORead(modGPIOConfiguration config)
 
 	if (16 == config->pin)
 		return READ_PERI_REG(RTC_GPIO_IN_DATA) & 1;
+		
+	if (17 == config->pin)
+		return system_adc_read() >= 512;
 
 	return kModGPIOReadError;
 }
