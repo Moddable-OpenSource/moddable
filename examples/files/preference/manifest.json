@@ -14,15 +14,29 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/esp/*"
-				],
-			},
+				]
+			}
 		},
 		"esp32": {
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/esp32/*"
-				],
-			},
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/mac/*"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/win/*"
+				]
+			}
 		}
 	}
 }
