@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.defines.h"
+#include "mc.xs.h"			// for xsID_ values
 
 #define kKeyRoot "SOFTWARE\\moddable.tech\\"
 
@@ -40,9 +41,7 @@ void xs_preference_delete(xsMachine *the)
 	c_strcat(szSubKey, PIU_DOT_SIGNATURE);
 	c_strcat(szSubKey, "\\");
 	c_strcat(szSubKey, xsmcToString(xsArg(0)));
-	c_strcat(szSubKey, "\\");
-	c_strcat(szSubKey, xsmcToString(xsArg(1)));
-	RegDeleteKey(HKEY_CURRENT_USER, szSubKey);
+	RegDeleteKeyValue(HKEY_CURRENT_USER, szSubKey, xsmcToString(xsArg(1)));
 }
 
 void xs_preference_get(xsMachine *the)
@@ -51,50 +50,51 @@ void xs_preference_get(xsMachine *the)
 	HKEY hKey = NULL;
 	uint8_t *data = NULL;
 	char *name = xsmcToString(xsArg(1));
-	DWORD dwResult;
+	DWORD dwResult, size;
 	c_strcpy(szSubKey, kKeyRoot);
 	c_strcat(szSubKey, PIU_DOT_SIGNATURE);
 	c_strcat(szSubKey, "\\");
 	c_strcat(szSubKey, xsmcToString(xsArg(0)));
 
 	dwResult = RegOpenKeyEx(HKEY_CURRENT_USER, szSubKey, 0, KEY_READ, &hKey);
-	if (ERROR_SUCCESS == dwResult) {
-		DWORD size;
-		dwResult = RegQueryValueEx(hKey, name, 0, NULL, NULL, &size);
-		if (ERROR_SUCCESS == dwResult) {
-			data = c_malloc(size);
-			if (data) {
-				dwResult = RegQueryValueEx(hKey, name, 0, NULL, data, &size);
-				if (ERROR_SUCCESS == dwResult) {
-					uint8_t type = data[0];
-					uint8_t *p = data + 1;
-					switch (type) {
-						case kPrefsTypeBoolean: {
-							xsBooleanValue b;
-							c_memmove(&b, p, sizeof(xsBooleanValue));
-							xsResult = xsBoolean(b);
-						} break;
-						case kPrefsTypeInteger: {
-							xsIntegerValue i;
-							c_memmove(&i, p, sizeof(xsIntegerValue));
-							xsResult = xsInteger(i);
-						} break;
-						case kPrefsTypeNumber: {
-							xsNumberValue n;
-							c_memmove(&n, p, sizeof(xsNumberValue));
-							xsResult = xsNumber(n);
-						} break;
-						case kPrefsTypeString: {
-							xsResult = xsString(p);
-						} break;
-						case kPrefsTypeBuffer: {
-							xsmcSetArrayBuffer(xsResult, p, size - 1);
-						} break;
-					}
-				}
-			}
-		}
+	if (ERROR_SUCCESS != dwResult) goto bail;
+
+	dwResult = RegQueryValueEx(hKey, name, 0, NULL, NULL, &size);
+	if (ERROR_SUCCESS != dwResult) goto bail;
+
+	data = c_malloc(size);
+	if (!data) goto bail;
+
+	dwResult = RegQueryValueEx(hKey, name, 0, NULL, data, &size);
+	if (ERROR_SUCCESS != dwResult) goto bail;
+
+	uint8_t type = data[0];
+	uint8_t *p = data + 1;
+	switch (type) {
+		case kPrefsTypeBoolean: {
+			xsBooleanValue b;
+			c_memmove(&b, p, sizeof(xsBooleanValue));
+			xsResult = xsBoolean(b);
+		} break;
+		case kPrefsTypeInteger: {
+			xsIntegerValue i;
+			c_memmove(&i, p, sizeof(xsIntegerValue));
+			xsResult = xsInteger(i);
+		} break;
+		case kPrefsTypeNumber: {
+			xsNumberValue n;
+			c_memmove(&n, p, sizeof(xsNumberValue));
+			xsResult = xsNumber(n);
+		} break;
+		case kPrefsTypeString: {
+			xsResult = xsString(p);
+		} break;
+		case kPrefsTypeBuffer: {
+			xsmcSetArrayBuffer(xsResult, p, size - 1);
+		} break;
 	}
+
+bail:
 	if (data)
 		c_free(data);
 	if (hKey)
@@ -140,7 +140,32 @@ void xs_preference_set(xsMachine *the)
 
 void xs_preference_keys(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	char szSubKey[1024], szName[64];
+	DWORD dwResult, dwIndex = 0, dwSize = sizeof(szName);
+	HKEY hKey = NULL;
+
+	xsResult = xsNewArray(0);
+
+	c_strcpy(szSubKey, kKeyRoot);
+	c_strcat(szSubKey, PIU_DOT_SIGNATURE);
+	c_strcat(szSubKey, "\\");
+	c_strcat(szSubKey, xsmcToString(xsArg(0)));
+
+	dwResult = RegOpenKeyEx(HKEY_CURRENT_USER, szSubKey, 0, KEY_QUERY_VALUE, &hKey);
+	if (ERROR_SUCCESS != dwResult) goto bail;
+
+	xsmcVars(1);
+	dwResult = RegEnumValue(hKey, dwIndex++, szName, &dwSize, NULL, NULL, NULL, NULL);
+	while (ERROR_SUCCESS == dwResult) {
+		xsVar(0) = xsString(szName);
+		xsCall1(xsResult, xsID_push, xsVar(0));
+		dwSize = sizeof(szName);
+		dwResult = RegEnumValue(hKey, dwIndex++, szName, &dwSize, NULL, NULL, NULL, NULL);
+	}
+
+bail:
+	if (hKey)
+		RegCloseKey(hKey);
 }
 
 static DWORD setPref(xsMachine *the, char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount)
