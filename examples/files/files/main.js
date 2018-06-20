@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,6 +15,7 @@
 import {File, Iterator} from "file";
 
 //const root = "/Users/hoddie/";
+//const root = "c:\\Users\\brianfriedkin\\";
 const root = "/";
 let file;
 
@@ -55,6 +56,7 @@ length = shorts.length;
 trace("Last five shorts: ");
 for (let i = 0; i < length; ++i)
 	trace(shorts[i] + ' ');
+file.close(file)
 trace("\n");
 
 // directory iterator
