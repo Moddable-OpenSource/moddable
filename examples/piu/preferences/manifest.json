@@ -23,7 +23,7 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/*",
-					"$(MODULES)/files/preference/esp/*",
+					"$(MODULES)/files/preference/esp/*"
 				]
 			}
 		},
@@ -31,7 +31,15 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/*",
-					"$(MODULES)/files/preference/mac/*",
+					"$(MODULES)/files/preference/mac/*"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/win/*"
 				]
 			}
 		}
