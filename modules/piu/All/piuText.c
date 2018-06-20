@@ -109,8 +109,8 @@ static void PiuTextEnd(PiuText* self);
 static void PiuTextEndNode(PiuText* self, PiuTextKind kind);
 static void PiuTextFitHorizontally(void* it);
 static void PiuTextFormat(PiuText* self);
-static void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset textOffset);
-static void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx);
+static void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset length, PiuTextOffset textOffset);
+static void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset length);
 static void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y);
 static void PiuTextMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuTextMeasureVertically(void* it);
@@ -590,6 +590,8 @@ void PiuTextDraw(void* it, PiuView* view, PiuRectangle area)
 			step = line->slop << 16;
 			step /= portion;
 		}
+		else
+			toOffset += line->slop;
 		
 		while ((fromOffset < toOffset) && (nodeOffset < nodeLimit)) {
 			switch (KIND(nodeOffset)) {
@@ -731,7 +733,7 @@ void PiuTextFormat(PiuText* self)
 			} break;
 		case piuTextNodeEndBlockKind: {
 			PiuTextNodeEnd nodeEnd = NODE(nodeOffset);
-			PiuTextFormatBlock(self, ctx, piuTextReturn, nodeEnd->parentOffset);
+			PiuTextFormatBlock(self, ctx, piuTextReturn, 0, nodeEnd->parentOffset);
 			marginBottom = (*ctx->blockStyle)->margins.bottom;
 			ctx->blockStyle = ctx->spanStyle = NULL;
 			nodeOffset += sizeof(PiuTextNodeEndRecord);
@@ -761,14 +763,16 @@ void PiuTextFormat(PiuText* self)
 						previousOffset = offset;
 					}
 					if (kind == piuTextEnd) break;
-					PiuTextFormatBlock(self, ctx, kind, textOffset + nextOffset);
+					length = nextOffset - previousOffset;
+					PiuTextFormatBlock(self, ctx, kind, length, textOffset + nextOffset);
 					node = NODE(nodeOffset);
-					if (kind == piuTextSpace) {
-						length = nextOffset - previousOffset;
-						if (length) {
+					if (length) {
+						if (kind == piuTextSpace) {
 							ctx->spaceWidth = PiuFontGetWidth(spanFont, node->string, previousOffset, length);
 							previousOffset = nextOffset;
 						}
+						else if (kind == piuTextReturn)
+							previousOffset = nextOffset;
 					}
 				}
 				offset = nextOffset;
@@ -781,11 +785,11 @@ void PiuTextFormat(PiuText* self)
 	(*self)->textHeight = ctx->y;	
 }
 
-void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset textOffset)
+void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset length, PiuTextOffset textOffset)
 {
 	if (ctx->lineWidth + ctx->spaceWidth + ctx->wordWidth > ctx->blockWidth) {
 		if (ctx->lineWidth > 0)				
-			PiuTextFormatLine(self, ctx);
+			PiuTextFormatLine(self, ctx, piuTextWord, 0);
 		ctx->spaceCount = 0;
 		ctx->spaceSum = 0;
 		ctx->lineOffset = ctx->wordOffset;
@@ -807,7 +811,7 @@ void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kin
 	if ((kind == piuTextReturn) || (ctx->lineWidth > ctx->blockWidth)) { // @@ no cesure
 		ctx->spaceCount = 0;
 		ctx->spaceSum = 0;
-		PiuTextFormatLine(self, ctx);
+		PiuTextFormatLine(self, ctx, kind, length);
 		ctx->lineOffset = textOffset;
 		ctx->lineWidth = 0;
 		ctx->lineAscent = 0;
@@ -820,7 +824,7 @@ void PiuTextFormatBlock(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kin
 	ctx->wordHeight = 0;
 }
 
-void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx)
+void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind, PiuTextOffset length)
 {
 	xsMachine *the = (*self)->the;
 	PiuTextBuffer* lineBuffer = (*self)->lineBuffer;
@@ -833,6 +837,7 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx)
 	PiuTextBufferGrow(the, lineBuffer, sizeof(PiuTextLineRecord));
 	line = LINE(lineOffset);
 	line->textOffset = ctx->lineOffset;
+	
 	switch ((*ctx->blockStyle)->horizontal) {
 	case piuCenter:
 #ifdef piuPC
@@ -855,6 +860,10 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx)
 		line->portion = ctx->spaceCount;
 		line->slop = ctx->blockWidth - (ctx->lineWidth - ctx->spaceSum);
 		break;	
+	}
+	if (kind == piuTextReturn) {
+		line->portion = 0;
+		line->slop = -length;
 	}
 	ascent = ctx->lineAscent;
 	height = ctx->lineHeight;
