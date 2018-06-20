@@ -6,13 +6,18 @@
 	"platforms": {
 		"esp": {
 			"modules": {
-				"*": "$(MODULES)/files/file/esp/*",
-			},
+				"*": "$(MODULES)/files/file/esp/*"
+			}
 		},
 		"mac": {
 			"modules": {
-				"*": "$(MODULES)/files/file/mac/*",
-			},
+				"*": "$(MODULES)/files/file/mac/*"
+			}
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODULES)/files/file/win/*"
+			}
 		},
 		"...": {
 			"error": "File unsupported"
