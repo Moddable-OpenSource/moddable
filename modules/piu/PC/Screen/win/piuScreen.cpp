@@ -58,6 +58,8 @@ static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view
 
 static void fxScreenAbort(txScreen* screen);
 static void fxScreenBufferChanged(txScreen* screen);
+static int fxScreenCreateWorker(txScreen* screen, char* name);
+static void fxScreenDeleteWorker(txScreen* screen, int worker);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
 static void fxScreenStart(txScreen* screen, double interval);
@@ -211,7 +213,9 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->view = self;
     screen->abort = fxScreenAbort;
     screen->bufferChanged = fxScreenBufferChanged;
-    screen->formatChanged = fxScreenFormatChanged;
+	screen->createWorker = fxScreenCreateWorker;
+	screen->deleteWorker = fxScreenDeleteWorker;
+	screen->formatChanged = fxScreenFormatChanged;
     screen->post = fxScreenPost;
     screen->start = fxScreenStart;
     screen->stop = fxScreenStop;
