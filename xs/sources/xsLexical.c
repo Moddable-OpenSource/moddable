@@ -443,7 +443,7 @@ void fxGetNextString(txParser* parser, int c)
 			fxReportParserError(parser, "end of file in string");			
 			break;
 		}
-		else if ((parser->character == 10) || (parser->character == 0x2028) || (parser->character == 0x2029)) {
+		else if (parser->character == 10) {
 			parser->line2++;
 			if (c == '`') {
 				p = fxUTF8Buffer(parser, parser->character, p, q);
@@ -466,6 +466,11 @@ void fxGetNextString(txParser* parser, int c)
 				fxReportParserError(parser, "end of line in string");			
 				break;
 			}
+		}
+		else if ((parser->character == 0x2028) || (parser->character == 0x2029)) {
+			parser->line2++;
+			p = fxUTF8Buffer(parser, parser->character, p, q);
+			fxGetNextCharacter(parser);
 		}
 		else if (parser->character == (txU4)c) {
 			break;
