@@ -1834,316 +1834,323 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 	txStateData* firstState = C_NULL;
 	txInteger from, to, e, f, g;
 	txBoolean result = 0;
-	
-	while (!result && (0 <= start) && (start <= stop)) {
-		txInteger step = (2 + captureCount + 2) * sizeof(txInteger), sequel;
-		txInteger offset = start;
-		c_memset(captures, -1, captureCount * sizeof(txCaptureData));
-		while (step) {
-			txInteger* pointer = (txInteger*)(((txByte*)code) + step);
-			txInteger which = *pointer++;
-			#ifdef mxTrace 
-			{
-				txInteger captureIndex;
-	 			fprintf(stderr, "\n[%d,%d]", start, offset);
-	 			for (captureIndex = 1; captureIndex < captureCount; captureIndex++) 
-		 			fprintf(stderr, " [%d,%d]", captures[captureIndex].from, captures[captureIndex].to);
-		 		fprintf(stderr, " %s", gxStepNames[which]);
- 			}
-			#endif
-			mxSwitch(which) {
-				mxCase(cxMatchStep):
-					capture = captures;
-					capture->from = start;
-					capture->to = offset;
-					step = 0;
-					result = 1;
-					mxBreak;
-				mxCase(cxAssertionStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					assertion = assertions + *pointer;
-					assertion->offset = offset;
-					assertion->firstState = firstState;
-					mxBreak;
-				mxCase(cxAssertionCompletion):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					assertion = assertions + *pointer;
-					offset = assertion->offset;
-					firstState = fxPopStates(the, firstState, assertion->firstState);
-					mxBreak;
-				mxCase(cxAssertionNotStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					assertion = assertions + *pointer++;
-					assertion->offset = offset;
-					assertion->firstState = firstState;
-					sequel = *pointer;
-					firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
-					if (!firstState)
-						return 0;
-					mxBreak;
-				mxCase(cxAssertionNotCompletion):
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					assertion = assertions + *pointer;
-					offset = assertion->offset;
-					firstState = fxPopStates(the, firstState, assertion->firstState);
-					goto mxPopState;
-				mxCase(cxCaptureBackwardStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					capture->to = offset;
-					mxBreak;
-				mxCase(cxCaptureBackwardCompletion):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					capture->from = offset;
-					mxBreak;
-				mxCase(cxCaptureForwardStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					capture->from = offset;
-					mxBreak;
-				mxCase(cxCaptureForwardCompletion):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					capture->to = offset;
-					mxBreak;
-				mxCase(cxCaptureReferenceBackwardStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					from = capture->from;
-					to = capture->to;
-					if ((from >= 0) && (to >= 0)) {
-						e = offset;
-						f = e - (to - from);
-						if (f < 0)
-							goto mxPopState;
-						g = f;
-						while (from < to) {
-							if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
-								goto mxPopState;
-							g = fxFindCharacter(subject, g, 1);
-							from = fxFindCharacter(subject, from, 1);
-						}
-						offset = f;
-					}
-					mxBreak;
-				mxCase(cxCaptureReferenceForwardStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					capture = captures + *pointer;
-					from = capture->from;
-					to = capture->to;
-					if ((from >= 0) && (to >= 0)) {
-						e = offset;
-						f = e + (to - from);
-						if (f > stop)
-							goto mxPopState;
-						g = e;
-						while (from < to) {
-							if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
-								goto mxPopState;
-							g = fxFindCharacter(subject, g, 1);
-							from = fxFindCharacter(subject, from, 1);
-						}
-						offset = f;
-					}
-					mxBreak;
-				mxCase(cxCharSetBackwardStep):
-					step = *pointer++;
-					e = offset;
-					if (e == 0)
-						goto mxPopState;
-					e = fxFindCharacter(subject, e, -1);
-					if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
-						goto mxPopState;
-					offset = e;
-					mxBreak;
-				mxCase(cxCharSetForwardStep):
-					step = *pointer++;
-					e = offset;
-					if (e == stop)
-						goto mxPopState;
-					if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
-						goto mxPopState;
-					e = fxFindCharacter(subject, e, 1);
-					offset = e;
-					mxBreak;
-				mxCase(cxDisjunctionStep):
-					step = *pointer++;
-					sequel = *pointer;
-					firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
-					if (!firstState)
-						return 0;
-					mxBreak;
-				mxCase(cxEmptyStep):
-					step = *pointer;
-					mxBreak;
-				mxCase(cxLineBeginStep):
-					step = *pointer;
-					if (offset == 0)
+	if ((0 <= start) && (start <= stop)) {
+		for (;;) {
+			txInteger step = (2 + captureCount + 2) * sizeof(txInteger), sequel;
+			txInteger offset = start;
+			c_memset(captures, -1, captureCount * sizeof(txCaptureData));
+			while (step) {
+				txInteger* pointer = (txInteger*)(((txByte*)code) + step);
+				txInteger which = *pointer++;
+				#ifdef mxTrace 
+				{
+					txInteger captureIndex;
+					fprintf(stderr, "\n[%d,%d]", start, offset);
+					for (captureIndex = 1; captureIndex < captureCount; captureIndex++) 
+						fprintf(stderr, " [%d,%d]", captures[captureIndex].from, captures[captureIndex].to);
+					fprintf(stderr, " %s", gxStepNames[which]);
+				}
+				#endif
+				mxSwitch(which) {
+					mxCase(cxMatchStep):
+						capture = captures;
+						capture->from = start;
+						capture->to = offset;
+						step = 0;
+						result = 1;
 						mxBreak;
-					if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags)))
+					mxCase(cxAssertionStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						assertion = assertions + *pointer;
+						assertion->offset = offset;
+						assertion->firstState = firstState;
 						mxBreak;
-					goto mxPopState;
-				mxCase(cxLineEndStep):
-					step = *pointer;
-					if (offset == stop)
+					mxCase(cxAssertionCompletion):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						assertion = assertions + *pointer;
+						offset = assertion->offset;
+						firstState = fxPopStates(the, firstState, assertion->firstState);
 						mxBreak;
-					if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, offset, flags)))
-						mxBreak;
-					goto mxPopState;
-				mxCase(cxQuantifierStep):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					quantifier = quantifiers + *pointer++;
-					quantifier->min = *pointer++;
-					quantifier->max = *pointer;
-					quantifier->offset = offset;
-					mxBreak;
-				mxCase(cxQuantifierGreedyLoop):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					quantifier = quantifiers + *pointer++;
-					sequel = *pointer++;
-					from = *pointer++;
-					to = *pointer;
-					#ifdef mxTrace 
-						fprintf(stderr, " min=%d", quantifier->min);
-						if (quantifier->max != 0x7FFFFFFF)
-							fprintf(stderr, " max=%d", quantifier->max);
-					#endif
-					if (quantifier->max == 0) {
-						step = sequel;
-						mxBreak;
-					}
-					else {
-						if (quantifier->min == 0) {
-							firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
-							if (!firstState)
-								return 0;
-						}
-						if (from < to)
-							c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
-					}
-					mxBreak;
-				mxCase(cxQuantifierLazyLoop):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					quantifier = quantifiers + *pointer++;
-					sequel = *pointer++;
-					from = *pointer++;
-					to = *pointer;
-					#ifdef mxTrace 
-						fprintf(stderr, " min=%d", quantifier->min);
-						if (quantifier->max != 0x7FFFFFFF)
-							fprintf(stderr, " max=%d", quantifier->max);
-					#endif
-					if (quantifier->max == 0) {
-						step = sequel;
-						mxBreak;
-					}
-					if (quantifier->min == 0) {
-						firstState = fxPushState(the, firstState, step, offset, captures, captureCount);
+					mxCase(cxAssertionNotStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						assertion = assertions + *pointer++;
+						assertion->offset = offset;
+						assertion->firstState = firstState;
+						sequel = *pointer;
+						firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
 						if (!firstState)
 							return 0;
-						if (from < to)
-							c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
-						step = sequel;
-					}
-					else {
-						if (from < to)
-							c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
-					}
-					mxBreak;
-				mxCase(cxQuantifierCompletion):
-					step = *pointer++;
-					#ifdef mxTrace 
-						fprintf(stderr, " #%d", *pointer);
-					#endif
-					quantifier = quantifiers + *pointer++;
-					sequel = *pointer;
-					if ((quantifier->min == 0) && (quantifier->offset == offset)) {
-						step = sequel;
 						mxBreak;
-					}
-					quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
-					quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : quantifier->max - 1;
-					mxBreak;
-				mxCase(cxWordBreakStep):
-					step = *pointer;
-					if (fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags)) 
-							!= fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags)))
+					mxCase(cxAssertionNotCompletion):
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						assertion = assertions + *pointer;
+						offset = assertion->offset;
+						firstState = fxPopStates(the, firstState, assertion->firstState);
+						goto mxPopState;
+					mxCase(cxCaptureBackwardStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						capture->to = offset;
 						mxBreak;
-					goto mxPopState;
-				mxCase(cxWordContinueStep):
-					step = *pointer;
-					if (fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags)) 
-							== fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags)))
+					mxCase(cxCaptureBackwardCompletion):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						capture->from = offset;
 						mxBreak;
-					goto mxPopState;
+					mxCase(cxCaptureForwardStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						capture->from = offset;
+						mxBreak;
+					mxCase(cxCaptureForwardCompletion):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						capture->to = offset;
+						mxBreak;
+					mxCase(cxCaptureReferenceBackwardStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						from = capture->from;
+						to = capture->to;
+						if ((from >= 0) && (to >= 0)) {
+							e = offset;
+							f = e - (to - from);
+							if (f < 0)
+								goto mxPopState;
+							g = f;
+							while (from < to) {
+								if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
+									goto mxPopState;
+								g = fxFindCharacter(subject, g, 1);
+								from = fxFindCharacter(subject, from, 1);
+							}
+							offset = f;
+						}
+						mxBreak;
+					mxCase(cxCaptureReferenceForwardStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						capture = captures + *pointer;
+						from = capture->from;
+						to = capture->to;
+						if ((from >= 0) && (to >= 0)) {
+							e = offset;
+							f = e + (to - from);
+							if (f > stop)
+								goto mxPopState;
+							g = e;
+							while (from < to) {
+								if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
+									goto mxPopState;
+								g = fxFindCharacter(subject, g, 1);
+								from = fxFindCharacter(subject, from, 1);
+							}
+							offset = f;
+						}
+						mxBreak;
+					mxCase(cxCharSetBackwardStep):
+						step = *pointer++;
+						e = offset;
+						if (e == 0)
+							goto mxPopState;
+						e = fxFindCharacter(subject, e, -1);
+						if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
+							goto mxPopState;
+						offset = e;
+						mxBreak;
+					mxCase(cxCharSetForwardStep):
+						step = *pointer++;
+						e = offset;
+						if (e == stop)
+							goto mxPopState;
+						if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
+							goto mxPopState;
+						e = fxFindCharacter(subject, e, 1);
+						offset = e;
+						mxBreak;
+					mxCase(cxDisjunctionStep):
+						step = *pointer++;
+						sequel = *pointer;
+						firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+						if (!firstState)
+							return 0;
+						mxBreak;
+					mxCase(cxEmptyStep):
+						step = *pointer;
+						mxBreak;
+					mxCase(cxLineBeginStep):
+						step = *pointer;
+						if (offset == 0)
+							mxBreak;
+						if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags)))
+							mxBreak;
+						goto mxPopState;
+					mxCase(cxLineEndStep):
+						step = *pointer;
+						if (offset == stop)
+							mxBreak;
+						if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, offset, flags)))
+							mxBreak;
+						goto mxPopState;
+					mxCase(cxQuantifierStep):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						quantifier = quantifiers + *pointer++;
+						quantifier->min = *pointer++;
+						quantifier->max = *pointer;
+						quantifier->offset = offset;
+						mxBreak;
+					mxCase(cxQuantifierGreedyLoop):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						quantifier = quantifiers + *pointer++;
+						sequel = *pointer++;
+						from = *pointer++;
+						to = *pointer;
+						#ifdef mxTrace 
+							fprintf(stderr, " min=%d", quantifier->min);
+							if (quantifier->max != 0x7FFFFFFF)
+								fprintf(stderr, " max=%d", quantifier->max);
+						#endif
+						if (quantifier->max == 0) {
+							step = sequel;
+							mxBreak;
+						}
+						else {
+							if (quantifier->min == 0) {
+								firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+								if (!firstState)
+									return 0;
+							}
+							if (from < to)
+								c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
+						}
+						mxBreak;
+					mxCase(cxQuantifierLazyLoop):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						quantifier = quantifiers + *pointer++;
+						sequel = *pointer++;
+						from = *pointer++;
+						to = *pointer;
+						#ifdef mxTrace 
+							fprintf(stderr, " min=%d", quantifier->min);
+							if (quantifier->max != 0x7FFFFFFF)
+								fprintf(stderr, " max=%d", quantifier->max);
+						#endif
+						if (quantifier->max == 0) {
+							step = sequel;
+							mxBreak;
+						}
+						if (quantifier->min == 0) {
+							firstState = fxPushState(the, firstState, step, offset, captures, captureCount);
+							if (!firstState)
+								return 0;
+							if (from < to)
+								c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
+							step = sequel;
+						}
+						else {
+							if (from < to)
+								c_memset(captures + from, -1, (to - from) * sizeof(txCaptureData));
+						}
+						mxBreak;
+					mxCase(cxQuantifierCompletion):
+						step = *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d", *pointer);
+						#endif
+						quantifier = quantifiers + *pointer++;
+						sequel = *pointer;
+						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
+							step = sequel;
+							mxBreak;
+						}
+						quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
+						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : quantifier->max - 1;
+						mxBreak;
+					mxCase(cxWordBreakStep):
+						step = *pointer;
+						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags));
+						f = (offset == stop) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags));
+						if (e != f)
+							mxBreak;
+						goto mxPopState;
+					mxCase(cxWordContinueStep):
+						step = *pointer;
+						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags));
+						f = (offset == stop) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags));
+						if (e == f)
+							mxBreak;
+						goto mxPopState;
 				
-				mxPopState:
-					if (!firstState) {
-						step = 0;
+					mxPopState:
+						if (!firstState) {
+							step = 0;
+							mxBreak;
+						}
+						#ifdef mxTrace 
+							fprintf(stderr, " <<<");
+						#endif
+						step = firstState->step;
+						offset = firstState->offset;
+						c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
+						if (firstState->the)
+							firstState = firstState->nextState;
+						else {
+							txStateData* state = firstState;
+							firstState = state->nextState;
+							c_free(state);
+						}
 						mxBreak;
-					}
-					#ifdef mxTrace 
-						fprintf(stderr, " <<<");
-					#endif
-					step = firstState->step;
-					offset = firstState->offset;
-					c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
-					if (firstState->the)
-						firstState = firstState->nextState;
-					else {
-						txStateData* state = firstState;
-						firstState = state->nextState;
-						c_free(state);
-					}
-					mxBreak;
+				}
 			}
+			#ifdef mxTrace
+				fprintf(stderr, "\n###\n");
+			#endif
+			firstState = fxPopStates(the, firstState, C_NULL);
+			if (flags & XS_REGEXP_Y)
+				break;
+			if (result)
+				break;
+			if (start == stop)
+				break;
+			start = fxFindCharacter(subject, start, 1);
 		}
-		#ifdef mxTrace
-			fprintf(stderr, "\n###\n");
-		#endif
-		firstState = fxPopStates(the, firstState, C_NULL);
-		if (flags & XS_REGEXP_Y)
-			break;
-		start = fxFindCharacter(subject, start, 1);
 	}
 	return result;
 }
