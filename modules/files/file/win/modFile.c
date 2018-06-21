@@ -245,15 +245,22 @@ void xs_file_iterator_next(xsMachine *the)
 	iter d = xsmcGetHostData(xsThis);
 
 	while (true) {
+		uint8_t done = false;
+
 		if (NULL == d->hFind) {
 			d->hFind = FindFirstFile(d->path, &d->ffd);
 			if (INVALID_HANDLE_VALUE == d->hFind)
-				return;
+				done = true;
 		}
 		else {
 			DWORD dwResult = FindNextFile(d->hFind, &d->ffd);
 			if (0 == dwResult)
-				return;
+				done = true;
+		}
+		if (done) {
+			xs_file_iterator_destructor(d);
+			xsmcSetHostData(xsThis, NULL);
+			return;
 		}
 		if ((0 == strcmp(d->ffd.cFileName, ".")) ||
 			(0 == strcmp(d->ffd.cFileName, "..")) ||
