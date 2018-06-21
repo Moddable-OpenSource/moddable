@@ -643,14 +643,18 @@ void fxRunFile(txContext* context, char* path)
 			||	!strcmp((char*)node->data.scalar.value, "class-fields")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
-			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
+#ifndef mxRegExpUnicodePropertyEscapes
+ 			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
+#endif
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
 			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
 			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
+			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
+			||	!strcmp((char*)node->data.scalar.value, "Symbol.prototype.description")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -707,7 +711,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
 		8 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		4096, 				/* stackCount */
+		256 * 1024, 		/* stackCount */
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
