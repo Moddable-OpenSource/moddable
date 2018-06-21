@@ -650,6 +650,7 @@ void fxRunFile(txContext* context, char* path)
 			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
+			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
 			) {
 				sloppy = 0;
 				strict = 0;
