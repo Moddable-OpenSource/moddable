@@ -110,7 +110,8 @@ export class MakeFile extends FILE {
 		this.line("");
 		this.echo(tool, "bles2gatt bleservices");
 		this.write("\t$(BLES2GATT)");
-		this.write(tool.windows ? " $**" : " $^");
+		if (tool.bleServicesFiles.length)
+			this.write(tool.windows ? " $**" : " $^");
 		this.write(" -r ");
 		this.write(role);
 		this.write(" -o $(TMP_DIR)");
