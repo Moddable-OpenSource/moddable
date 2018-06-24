@@ -1,0 +1,3 @@
+Use this build command:
+
+> mcconfig -d -m -p gecko/mighty -r 90 -f gray256
