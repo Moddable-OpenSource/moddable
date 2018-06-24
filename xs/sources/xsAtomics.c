@@ -173,10 +173,11 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_isLockFree), 1, mxID(_isLockFree), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_load), 2, mxID(_load), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_or), 3, mxID(_or), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_notify), 3, mxID(_notify), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_store), 3, mxID(_store), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_sub), 3, mxID(_sub), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_wait), 4, mxID(_wait), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_wake), 3, mxID(_wake), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_notify), 4, mxID(_wake), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_xor), 3, mxID(_xor), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Atomics", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Atomics), XS_NO_ID, XS_OWN);
@@ -374,6 +375,16 @@ void fx_Atomics_or(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
+void fx_Atomics_notify(txMachine* the)
+{
+	mxAtomicsDeclarations(1);
+	txInteger count = (mxArgc > 2) ? fxToInteger(the, mxArgv(2)) : 20;
+	if (count < 0)
+		count = 0;
+	mxResult->value.integer = fxWakeSharedChunk(the, host->value.host.data, offset, count);
+	mxResult->kind = XS_INTEGER_KIND;
+}
+
 void fx_Atomics_store(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
@@ -417,16 +428,6 @@ void fx_Atomics_wait(txMachine* the)
 	else
 		mxResult->value.string = "timed-out";
 	mxResult->kind = XS_STRING_X_KIND;
-}
-
-void fx_Atomics_wake(txMachine* the)
-{
-	mxAtomicsDeclarations(1);
-	txInteger count = (mxArgc > 2) ? fxToInteger(the, mxArgv(2)) : 20;
-	if (count < 0)
-		count = 0;
-	mxResult->value.integer = fxWakeSharedChunk(the, host->value.host.data, offset, count);
-	mxResult->kind = XS_INTEGER_KIND;
 }
 
 void fx_Atomics_xor(txMachine* the)
