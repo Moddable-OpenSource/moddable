@@ -1,0 +1,25 @@
+{
+	"modules": {
+		"pins/vdac": "$(BUILD)/devices/gecko/vdac/vdac",
+	},
+	"preload": "pins/vdac",
+	"platforms": {
+		"gecko": {
+			"modules": {
+				"*": "$(BUILD)/devices/gecko/vdac/gecko/*"
+			},
+		},
+		"gecko/mighty": {
+			"defines": {
+				"vdac": {
+					"interface": { "VDAC": 0 },
+					"aref" : { "pin": 1, "port": "gpioPortA", "selection": "vdacRef2V5Ln" },
+					"aout1" : { "pin": 3, "port": "gpioPortA" },
+				},
+			},
+		},
+		"...": {
+			"error": "pins/vdac unsupported"
+		}
+	}
+}
