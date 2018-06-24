@@ -1294,10 +1294,10 @@ mxExport void fx_Atomics_exchange(txMachine* the);
 mxExport void fx_Atomics_isLockFree(txMachine* the);
 mxExport void fx_Atomics_load(txMachine* the);
 mxExport void fx_Atomics_or(txMachine* the);
+mxExport void fx_Atomics_notify(txMachine* the);
 mxExport void fx_Atomics_store(txMachine* the);
 mxExport void fx_Atomics_sub(txMachine* the);
 mxExport void fx_Atomics_wait(txMachine* the);
-mxExport void fx_Atomics_wake(txMachine* the);
 mxExport void fx_Atomics_xor(txMachine* the);
 
 /* xsMapSet.c */
