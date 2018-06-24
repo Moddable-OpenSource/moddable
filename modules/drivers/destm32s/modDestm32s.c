@@ -175,6 +175,10 @@
 
 #elif gecko
 
+#ifndef MODDEF_DESTM32S_CLEAR
+	#define MODDEF_DESTM32S_CLEAR true
+#endif
+
 #define SCREEN_CS_ACTIVE		modGPIOWrite(&sd->cs, 0)
 #define SCREEN_CS_DEACTIVE		modGPIOWrite(&sd->cs, 1)
 #define SCREEN_CS_INIT			modGPIOInit(&sd->cs, MODDEF_DESTM32S_CS_PORT, MODDEF_DESTM32S_CS_PIN, kModGPIOOutput); \
