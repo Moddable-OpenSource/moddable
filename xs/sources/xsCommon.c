@@ -1239,6 +1239,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"new.target",
 	"next",
 	"normalize",
+	"notify",
 	"now",
 	"of",
 	"or",
