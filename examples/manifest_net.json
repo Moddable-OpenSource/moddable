@@ -61,9 +61,10 @@
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/win/*",
 					"$(MODULES)/network/net/*",
-					"$(MODULES)/network/net/win/*"
-				],
-			},
+					"$(MODULES)/network/net/win/*",
+					"$(MODULES)/network/sntp/*"
+				]
+			}
 		}
 	}
 }
