@@ -179,5 +179,6 @@ export default class extends TOOL {
 			file.line("}");
 		}
 		file.close();
-	}
+		let total = this.resources.reduce((total, path) => total + this.getFileSize(path), 0);
+		trace(`Total resource size: ${total} bytes\n`);	}
 }

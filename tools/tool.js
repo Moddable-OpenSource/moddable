@@ -58,6 +58,7 @@ export class TOOL {
 	enumerateDirectory(path) @ "Tool_prototype_enumerateDirectory";
 	execute(command) @ "Tool_prototype_execute";
 	getenv(name) @ "Tool_prototype_getenv";
+	getFileSize(path) @ "Tool_prototype_getFileSize";
 	hash(d, string) @  "Tool_prototype_fsvhash";
 	isDirectoryOrFile(path) @ "Tool_prototype_isDirectoryOrFile"; // -1: directory, 0: none, 1: file
 	joinPath(parts) @ "Tool_prototype_joinPath";
