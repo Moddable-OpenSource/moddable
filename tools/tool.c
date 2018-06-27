@@ -521,6 +521,26 @@ void Tool_prototype_getenv(xsMachine* the)
 		xsResult = xsString(result);
 }
 
+void Tool_prototype_getFileSize(xsMachine* the)
+{
+	char *path = xsToString(xsArg(0));
+	FILE* file = NULL;
+	size_t size;
+	xsTry {
+		file = fopen(path, "rb");
+		xsElseThrow(file);
+		fseek(file, 0, SEEK_END);
+		size = ftell(file);
+		fclose(file);
+		xsResult = xsInteger(size);
+	}
+	xsCatch {
+		if (file)
+			fclose(file);
+		xsThrow(xsException);
+	}
+}
+
 void Tool_prototype_joinPath(xsMachine* the)
 {
 	char path[PATH_MAX];
