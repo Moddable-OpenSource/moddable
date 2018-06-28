@@ -109,6 +109,11 @@ void PiuStyleLookupFont(PiuStyle* self)
 	}
 	char buffer[256];
 	xsStringValue name = xsName((*self)->family);
+	if (!name) {
+		NSFont *systemFont = [NSFont systemFontOfSize:(*self)->size];
+		NSString* string = systemFont.fontName;
+		name = (xsStringValue)[string UTF8String];
+	}
 	if (name)
 		c_strcpy(buffer, name);
 	else
