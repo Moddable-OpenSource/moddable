@@ -1,7 +1,7 @@
 # Networking
 Copyright 2017-2018 Moddable Tech, Inc.
 
-Revised: January 29, 2018
+Revised: June 29, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -563,36 +563,31 @@ The [SNTP](https://en.wikipedia.org/wiki/Network_Time_Protocol#SNTP) class imple
 
 	import SNTP from "sntp";
 
+The SNTP client implementation fail-over mechanism allows additional servers to be queried in case of failure.
+
 ### Retrieving the time
-The following example retrieves the current time value from the NTP server at 216.239.36.15.
+The following example retrieves the current time value from the NTP server at `pool.ntp.org`.
 
 	import SNTP from "sntp";
 	
-	let sntp = new SNTP({address: "216.239.36.15"}, (message, value) => {
-		if (1 == message)
+	new SNTP({host: "pool.ntp.org"}, (message, value) => {
+		if (1 === message)
 			trace(`time value is ${value}\n`);
 	});
 
-The SNTP constructor requires the IP address of a time server. To use a domain name, use `Net.resolve` to resolve the IP address, and then invoke SNTP.
-
-	Net.resolve("pool.ntp.org", (name, address) => {
-		new SNTP({address}, (message, value) => {
-			if (1 == message)
-				trace(`time value is ${value}\n`);
-		});
-	});
+The SNTP constructor requires the host name or IP address of a time server. If a host name is provided, the SNTP client first resolves that to an IP address using `Net.resolve`.
 
 ### constructor(dictionary, callback)
 
-The constructor accepts a dictionary which contains the IP address of the SNTP server as a `String`, and a callback function.
+The constructor accepts a dictionary which contains the host name or IP address of the SNTP server as a `String` in the dictionary's `host` property, and a callback function.
 
 ### callback(message, value)
 
 The `callback` receives the message parameter as a `Number`. The following messages are provided:
 
+- `2` -- Retry. The time has not yet been retrieved and the SNTP client is making an additional request.
 - `1` -- Time retrieved. The `value` parameter is the time in seconds since 1970, appropriate for passing to the Date constructor
-- `-1` -- Unable to retrieve time. The value parameter may contain a `String` with the reason for the failure.
-
+- `-1` -- Unable to retrieve time. The value parameter contains a `String` with the reason for the failure. The callback function may return a `String` with the host name or IP address of another SNTP server to try; otherwise, the SNTP client closes itself and may not be used for additional requests. See the [SNTP example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/network/sntp/main.js) for an implementation of fail-over handling.
 
 ## class DNS
 
