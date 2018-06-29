@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,26 +16,23 @@ import SNTP from "sntp";
 import Time from "time";
 import Timer from "timer";
 
-/*
-	SNTP constructor takes an IP address. If this address used below is not responding, try another.
-	To find a working SNTP server, try "ping pool.ntp.org".
-	To programmatically resolve an SNTP server name to an IP address, use Net.resolve.
-*/
+const hosts = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org"];
 
-
-new SNTP({address: "64.113.44.55"}, (message, value) => {
+new SNTP({host: hosts.shift()}, function(message, value) {
 	switch (message) {
 		case 1:
-			trace(`Received SNTP time stamp ${value}.\n`);
+			trace("Received time ", value, ".\n");
 			Time.set(value);
 			break;
 
 		case 2:
-			trace("No response. Retrying.\n");
+			trace("Retrying.\n");
 			break;
 
 		case -1:
-			trace("Failed.\n");
+			trace("Failed: ", value, "\n");
+			if (hosts.length)
+				return hosts.shift();
 			break;
 	}
 });

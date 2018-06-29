@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,18 +23,38 @@
 */
 
 import {Socket} from "socket";
+import Net from "net";
 import Timer from "timer";
 
 class SNTP extends Socket {
 	constructor(dictionary, callback) {
 		super({kind: "UDP"});
-		this.address = dictionary.address;
 		this.client = callback;
+		this.start(dictionary.host);
+	}
+	start(host) {
+		Net.resolve(host, (host, address) => {
+			if (address) {
+				this.address = address;
+				this.write(address, 123, this.packet());
+				Timer.schedule(this.timer, 5000, 5000);
+			}
+			else
+				this.failed("cannot resolve " + host);
+		});
 
-		this.write(this.address, 123, this.packet());
-
-		this.timer = Timer.repeat(timer.bind(this), 5000);
-		this.count = 5;		// maximum number of retransmits
+		if (this.timer)
+			Timer.schedule(this.timer, 5000 * 10, 5000 * 10);
+		else
+			this.timer = Timer.repeat(timer.bind(this), 5000 * 10);
+		this.count = 5;		// maximum retransmit attempts
+	}
+	failed(message) {
+		let host = this.client(-1, message);
+		if (host)
+			this.start(host);
+		else
+			this.close();
 	}
 
 	close() {
@@ -49,15 +69,15 @@ class SNTP extends Socket {
 			return;
 
 		if (48 !== value)
-			this.client(-1, "unexpected SNTP packet length");
+			this.failed("unexpected SNTP packet length");
 		else
 		if (0x24 !== this.read(Number))
-			this.client(-1, "unexpected SNTP packet first byte");
+			this.failed("unexpected SNTP packet first byte");
 		else {
 			this.read(null, 39);
 			this.client(1, this.toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number)));
+			this.close();
 		}
-		this.close();
 	}
 
 	packet() @ "xs_sntp_packet";
@@ -66,14 +86,11 @@ class SNTP extends Socket {
 
 function timer() {
 	this.count -= 1;
-	if (!this.count) {
-		this.client(-1, "failed to contact sntp server");
-		this.close();
-		return;
-	}
+	if (!this.count)
+		return this.failed("no response from SNTP server");
 
-	this.client(2);		// retrying
 	this.write(this.address, 123, this.packet());
+	this.client(2);		// retrying
 }
 
 Object.freeze(SNTP.prototype);
