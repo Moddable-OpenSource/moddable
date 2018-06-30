@@ -112,6 +112,7 @@ void xs_i2c_write(xsMachine *the)
 	modI2CConfiguration i2c;
 	uint8_t argc = xsmcArgc, i;
 	unsigned char err;
+	uint8_t stop = true;
 	unsigned int len = 0;
 	unsigned char buffer[40];
 
@@ -119,6 +120,10 @@ void xs_i2c_write(xsMachine *the)
 
 	for (i = 0; i < argc; i++) {
 		xsType t = xsmcTypeOf(xsArg(i));
+		if ((xsBooleanType == t) && ((argc - 1) == i)) {
+			stop = xsmcToBoolean(xsArg(i));
+			continue;
+		}
 		if ((xsNumberType == t) || (xsIntegerType == t)) {
 			if ((len + 1) > sizeof(buffer))
 				xsUnknownError("40 byte write limit");
@@ -151,7 +156,7 @@ void xs_i2c_write(xsMachine *the)
 	}
 
 	i2c = xsmcGetHostChunk(xsThis);
-	err = modI2CWrite(i2c, buffer, len, true);
+	err = modI2CWrite(i2c, buffer, len, stop);
 	if (err)
 		xsUnknownError("write failed");
 }

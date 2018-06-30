@@ -21,7 +21,7 @@
 export class I2C @ "xs_i2c_destructor" {
 	constructor(dictionary) @ "xs_i2c";
 	close() @ "xs_i2c_close";
-	read(count, stop) @ "xs_i2c_read";
+	read(count) @ "xs_i2c_read";
 	write() @ "xs_i2c_write";
 }
 Object.freeze(I2C.prototype);

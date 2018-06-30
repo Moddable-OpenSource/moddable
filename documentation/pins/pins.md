@@ -1,7 +1,7 @@
 # Pins
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: February 23, 2018
+Revised: June 30, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -254,9 +254,11 @@ An optional buffer parameter is used to provide an `ArrayBuffer` to be used to s
 	sensor.read(2, bytes.buffer);
 	sensor.read(3, bytes.buffer);
 
-### write(...value)
+### write(...value [, stop])
 
 The `write` function writes up to 34 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes). 
+
+The `write` function accepts an optional final boolean argument, `stop`, which indicates if a stop condition should be sent when the write is complete. If the final argument is not a boolean value, a stop condition is sent.
 
 ## class SMBus
 
