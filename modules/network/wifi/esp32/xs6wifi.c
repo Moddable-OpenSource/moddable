@@ -413,5 +413,79 @@ void initWiFi(void)
 
 void xs_wifi_accessPoint(xsMachine *the)
 {
+    wifi_mode_t mode;
+	wifi_config_t config;
+	wifi_ap_config_t *ap;
+	tcpip_adapter_ip_info_t info;
+	char *str;
+
+	initWiFi();
+	
+	c_memset(&config, 0, sizeof(config));
+	ap = &config.ap;
+	
+	xsmcVars(2);
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
+	str = xsmcToString(xsVar(0));
+	ap->ssid_len = c_strlen(str);
+	if (ap->ssid_len > (sizeof(ap->ssid) - 1))
+		xsUnknownError("ssid too long - 32 bytes max");
+	c_memcpy(ap->ssid, str, ap->ssid_len);
+
+	ap->authmode = WIFI_AUTH_OPEN;
+	if (xsmcHas(xsArg(0), xsID_password)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_password);
+		str = xsmcToString(xsVar(0));
+		if (c_strlen(str) > (sizeof(ap->password) - 1))
+			xsUnknownError("password too long - 64 bytes max");
+		if (c_strlen(str) < 8)
+			xsUnknownError("password too short - 8 bytes min");
+		if (!c_isEmpty(str)) {
+			c_memcpy(ap->password, str, c_strlen(str));
+			ap->authmode = WIFI_AUTH_WPA_WPA2_PSK;
+		}
+	}
+
+	ap->channel = 1;
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		ap->channel = xsmcToInteger(xsVar(0));
+		if ((ap->channel < 1) || (ap->channel > 13))
+			xsUnknownError("invalid channel");
+	}
+
+    ap->ssid_hidden = 0;
+	if (xsmcHas(xsArg(0), xsID_hidden)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
+		ap->ssid_hidden = xsmcTest(xsVar(0));
+	}
+
+    ap->max_connection = 4;
+	if (xsmcHas(xsArg(0), xsID_max)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_max);
+		ap->max_connection = xsmcToInteger(xsVar(0));
+	}
+
+    ap->beacon_interval = 100;
+	if (xsmcHas(xsArg(0), xsID_interval)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_interval);
+		ap->beacon_interval = xsmcToInteger(xsVar(0));
+	}
+
+	esp_wifi_get_mode(&mode);
+	if (WIFI_MODE_AP != mode) {
+		if (ESP_OK != esp_wifi_set_mode(WIFI_MODE_AP))
+			xsUnknownError("esp_wifi_set_mode failed");
+	}
+
+	if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
+		xsUnknownError("esp_wifi_set_config failed");
+	if (ESP_OK != esp_wifi_start())
+		xsUnknownError("esp_wifi_start failed");
+	if (ESP_OK != tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &info))
+		xsUnknownError("tcpip_adapter_get_ip_info failed");
+	if (0 == info.ip.addr)
+        xsUnknownError("IP config bad when starting Wi-Fi AP!\n");
 }
 
