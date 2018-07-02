@@ -954,7 +954,7 @@ void fx_RegExp_prototype_toString(txMachine* the)
 {
 #if mxRegExp
 	fxToInstance(the, mxThis);
-	fxCopyStringC(the, mxResult, "/");
+	fxStringX(the, mxResult, "/");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_source));
 	fxConcatString(the, mxResult, the->stack);

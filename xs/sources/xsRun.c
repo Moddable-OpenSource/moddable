@@ -206,61 +206,41 @@ static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 	}
 	
 #ifdef __ets__
-	#define mxNextCode(OFFSET) { \
-		mxCode += OFFSET; \
-		byte = c_read8(mxCode); \
-	}
-	#define mxSkipCode(OFFSET) { \
-		mxCode += OFFSET; \
-	}
-	#define mxRunS1(OFFSET) ((txS1)c_read8(mxCode + OFFSET))
-	#define mxRunS2(OFFSET) ((txS2)c_read16be(mxCode + OFFSET))
-	#define mxRunS4(OFFSET) ((txS4)c_read32be(mxCode + OFFSET))
-
-	#define mxRunU1(OFFSET) ((txU1)c_read8(mxCode + OFFSET))
-	#define mxRunU2(OFFSET) ((txU2)c_read16be(mxCode + OFFSET))
-
 	#undef mxDecode8
-	#if mxLittleEndian
-		#define mxDecode8(THE_CODE, THE_VALUE) { \
-			txS1* dst = (txS1*)&(THE_VALUE); \
-			dst[7] = mxRunS1(0); \
-			dst[6] = mxRunS1(1); \
-			dst[5] = mxRunS1(2); \
-			dst[4] = mxRunS1(3); \
-			dst[3] = mxRunS1(4); \
-			dst[2] = mxRunS1(5); \
-			dst[1] = mxRunS1(6); \
-			dst[0] = mxRunS1(7); \
-			mxSkipCode(8); \
-		}
-	#else
-		#define mxDecode8(THE_CODE, THE_VALUE)	{ \
-			txS1* dst = (txS1*)&(THE_VALUE); \
-			dst[0] = mxRunS1(0); \
-			dst[1] = mxRunS1(1); \
-			dst[2] = mxRunS1(2); \
-			dst[3] = mxRunS1(3); \
-			dst[4] = mxRunS1(4); \
-			dst[5] = mxRunS1(5); \
-			dst[6] = mxRunS1(6); \
-			dst[7] = mxRunS1(7); \
-			mxSkipCode(8); \
-			}
-	#endif
-#else
-	#define mxNextCode(OFFSET) { \
-		mxCode += OFFSET; \
-		byte = *((txU1*)mxCode); \
-	}
-	#define mxSkipCode(OFFSET) { \
-		mxCode += OFFSET; \
-	}
-	#define mxRunS1(OFFSET) ((txS1*)mxCode)[OFFSET+0]
-	#define mxRunS2(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
-	#define mxRunS4(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 24) | (((txU1*)mxCode)[OFFSET+1] << 16) | (((txU1*)mxCode)[OFFSET+2] << 8) | ((txU1*)mxCode)[OFFSET+3]
 
-	#define mxRunU1(OFFSET) ((txU1*)mxCode)[OFFSET]
+	#define mxDecode8(THE_CODE, THE_VALUE) { \
+		txS1* dst = (txS1*)&(THE_VALUE); \
+		dst[7] = mxRunS1(0); \
+		dst[6] = mxRunS1(1); \
+		dst[5] = mxRunS1(2); \
+		dst[4] = mxRunS1(3); \
+		dst[3] = mxRunS1(4); \
+		dst[2] = mxRunS1(5); \
+		dst[1] = mxRunS1(6); \
+		dst[0] = mxRunS1(7); \
+		mxSkipCode(8); \
+	}
+#endif
+
+#define mxNextCode(OFFSET) { \
+	mxCode += OFFSET; \
+	byte = *((txU1*)mxCode); \
+}
+#define mxSkipCode(OFFSET) { \
+	mxCode += OFFSET; \
+}
+#define mxRunS1(OFFSET) ((txS1*)mxCode)[OFFSET+0]
+#define mxRunS2(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
+#if (defined(__GNUC__) || defined(__llvm__)) && (!defined(__ets__) || ESP32)
+	#define mxRunS4(OFFSET) (__builtin_bswap32(*(txS4 *)&mxCode[OFFSET]))
+#else
+	#define mxRunS4(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 24) | (((txU1*)mxCode)[OFFSET+1] << 16) | (((txU1*)mxCode)[OFFSET+2] << 8) | ((txU1*)mxCode)[OFFSET+3]
+#endif
+
+#define mxRunU1(OFFSET) ((txU1*)mxCode)[OFFSET]
+#if (defined(__GNUC__) || defined(__llvm__)) && (!defined(__ets__) || ESP32)
+	#define mxRunU2(OFFSET) (__builtin_bswap16(*(txU2 *)&mxCode[OFFSET]))
+#else
 	#define mxRunU2(OFFSET) (((txU1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
 #endif
 
