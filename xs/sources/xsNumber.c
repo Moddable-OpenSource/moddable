@@ -418,15 +418,15 @@ void fx_Number_prototype_toString(txMachine* the)
 		switch (c_fpclassify(value)) {
 		case C_FP_INFINITE:
 			if (value < 0)
-				fxCopyStringC(the, mxResult, "-Infinity");
+				fxStringX(the, mxResult, "-Infinity");
 			else
-				fxCopyStringC(the, mxResult, "Infinity");
+				fxStringX(the, mxResult, "Infinity");
 			break;
 		case C_FP_NAN:
-			fxCopyStringC(the, mxResult, "NaN");
+			fxStringX(the, mxResult, "NaN");
 			break;
 		case C_FP_ZERO:
-			fxCopyStringC(the, mxResult, "0");
+			fxStringX(the, mxResult, "0");
 			break;
 		default:
 			*(--string) = 0;

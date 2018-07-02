@@ -273,16 +273,16 @@ txString fxToString(txMachine* the, txSlot* theSlot)
 again:
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:
-		fxCopyStringC(the, theSlot, "undefined");
+		*theSlot = mxUndefinedString;
 		break;
 	case XS_NULL_KIND:
-		fxCopyStringC(the, theSlot, "null");
+		fxStringX(the, theSlot, "null");
 		break;
 	case XS_BOOLEAN_KIND:
 		if (theSlot->value.boolean == 0)
-			fxCopyStringC(the, theSlot, "false");
+			fxStringX(the, theSlot, "false");
 		else
-			fxCopyStringC(the, theSlot, "true");
+			fxStringX(the, theSlot, "true");
 		break;
 	case XS_INTEGER_KIND:
 		fxCopyStringC(the, theSlot, fxIntegerToString(the->dtoa, theSlot->value.integer, aBuffer, sizeof(aBuffer)));
@@ -1303,7 +1303,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));
 			c_memset(the->symbolTable, 0, the->symbolModulo * sizeof(txSlot *));
-			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));
+//			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));
 
 			/* mxGlobal */
 			mxPushUndefined();
@@ -1537,7 +1537,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
 			c_memcpy(the->symbolTable, theMachine->symbolTable, the->symbolModulo * sizeof(txSlot *));
-			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));
+//			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));		//@@ this is not necessary
 			the->keyCount = theMachine->keyIndex + (txID)theCreation->keyCount;
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
