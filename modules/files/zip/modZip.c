@@ -20,9 +20,9 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"
-#include "xsesp.h"
-
-#include "malloc.h"
+#if __ets__
+	#include "xsesp.h"
+#endif
 
 /*
 	zip record declarations based on FskZip.c from KinomaJS
@@ -108,8 +108,8 @@ uint8_t ZipOpen(Zip *zipOut, const uint8_t *data, uint32_t dataSize)
 
 	// scan backwards for the end of central directory by looking for 'P' 'K' 0x05 0x06 signature
 	for (scan = data + dataSize - sizeof(zipEndOfCentralDirectoryRecord); scan >= data; scan -= 1) {
-		if (('P' == espRead8(scan + 0)) && ('K' == espRead8(scan + 1)) &&
-			(0x05 == espRead8(scan + 2)) && (0x06 == espRead8(scan + 3))) {
+		if (('P' == c_read8(scan + 0)) && ('K' == c_read8(scan + 1)) &&
+			(0x05 == c_read8(scan + 2)) && (0x06 == c_read8(scan + 3))) {
 			ecd = (zipEndOfCentralDirectory)scan;
 			break;
 		}
@@ -118,18 +118,18 @@ uint8_t ZipOpen(Zip *zipOut, const uint8_t *data, uint32_t dataSize)
 	if (NULL == ecd)
 		return 0;
 
-	if (0 != espRead16(&ecd->numberOfThisDisk))
+	if (0 != c_read16(&ecd->numberOfThisDisk))
 		return 0;
 
-	cdCount = espRead16(&ecd->centralDirectoryCount);
-	cd = (zipCentralDirectoryFile)(data + espRead32(&ecd->centralDirectoryOffset));
+	cdCount = c_read16(&ecd->centralDirectoryCount);
+	cd = (zipCentralDirectoryFile)(data + c_read32(&ecd->centralDirectoryOffset));
 
 
-	if (('P' != espRead8(((char *)cd) + 0)) || ('K' != espRead8(((char *)cd) + 1)) ||
-		(0x01 != espRead8(((char *)cd) + 2)) || (0x02 != espRead8(((char *)cd) + 3)))
+	if (('P' != c_read8(((char *)cd) + 0)) || ('K' != c_read8(((char *)cd) + 1)) ||
+		(0x01 != c_read8(((char *)cd) + 2)) || (0x02 != c_read8(((char *)cd) + 3)))
 		return 0;
 
-	zip = malloc(sizeof(ZipRecord));
+	zip = c_malloc(sizeof(ZipRecord));
 	if (!zip) return 0;
 
 	zip->data = data;
@@ -146,46 +146,41 @@ void ZipClose(Zip zip)
 {
 	if (!zip) return;
 
-	free(zip);
+	c_free(zip);
 }
 
 uint8_t ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSize)
 {
-	const uint8_t *walker = (const uint8_t *)zip->cd;
+	const char *walker = (const char *)zip->cd;
 	uint32_t i;
-	size_t pathLen = espStrLen(path);
+	size_t pathLen = c_strlen(path);
 
 	for (i = 0; i < zip->cdCount; i++) {
 		zipCentralDirectoryFile item = (zipCentralDirectoryFile)walker;
-		uint16_t fileNameLen = espRead16(&item->fileNameLen);
+		uint16_t fileNameLen = c_read16(&item->fileNameLen);
 
 		if ((fileNameLen == pathLen) &&
-			!espStrNCmp(walker + sizeof(zipCentralDirectoryFileRecord), path, pathLen)) {
-			zipLocalFileHeader lf = (zipLocalFileHeader)(zip->data + espRead32(&item->relativeOffset));
+			!c_strncmp(walker + sizeof(zipCentralDirectoryFileRecord), path, pathLen)) {
+			zipLocalFileHeader lf = (zipLocalFileHeader)(zip->data + c_read32(&item->relativeOffset));
 
-			*data = ((char *)lf) + sizeof(zipLocalFileHeaderRecord) +
-						espRead16(&lf->fileNameLen) + espRead16(&lf->extraFieldLen);
-			*dataSize = espRead32(&lf->compressedSize);
+			*data = ((uint8_t *)lf) + sizeof(zipLocalFileHeaderRecord) +
+						c_read16(&lf->fileNameLen) + c_read16(&lf->extraFieldLen);
+			*dataSize = c_read32(&lf->compressedSize);
 
 			return 1;
 		}
 
 		walker += sizeof(zipCentralDirectoryFileRecord) +
-					fileNameLen + espRead16(&item->extraFieldLen) +
-					espRead16(&item->commentLen);
+					fileNameLen + c_read16(&item->extraFieldLen) +
+					c_read16(&item->commentLen);
 	}
 
 	return 0;
 }
 
 /*
-	XS6 bindings
+	XS bindings
 */
-
-#if 0
-	extern const unsigned int ICACHE_XS6RO_ATTR test_zip_len;
-	extern unsigned char ICACHE_XS6RO_ATTR test_zip[];
-#endif
 
 void xs_zip_destructor(void *data)
 {
@@ -200,11 +195,7 @@ void xs_zip(xsMachine *the)
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(0));
 
-	if (0) {
-//		data = (uint8_t *)test_zip;
-//		dataSize = test_zip_len;
-	}
-	else if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
+	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		data = xsmcToArrayBuffer(xsArg(0));
 		dataSize = xsGetArrayBufferLength(xsArg(0));
 	}
@@ -247,7 +238,7 @@ typedef struct {
 void xs_zip_file_destructor(void *data)
 {
 	if (data)
-		free(data);
+		c_free(data);
 }
 
 void xs_zip_File(xsMachine *the)
@@ -264,7 +255,7 @@ void xs_zip_File(xsMachine *the)
 	if (0 == ZipFindFile(zip, path, &data, &dataSize))
 		xsErrorPrintf("can't find path");
 
-	zf = malloc(sizeof(xsZipFileRecord));
+	zf = c_malloc(sizeof(xsZipFileRecord));
 	if (!zf)
 		xsErrorPrintf("out of memory");
 
@@ -300,7 +291,7 @@ void xs_zip_file_read(xsMachine *the)
 	xsmcGet(xsVar(0), xsGlobal, xsID_String);
 	s2 = &xsVar(0);
 	if (s1->data[2] == s2->data[2])
-		xsResult = xsStringBuffer(zf->data + zf->position, dstLen);
+		xsResult = xsStringBuffer((char *)zf->data + zf->position, dstLen);
 	else
 		xsResult = xsArrayBuffer(zf->data + zf->position, dstLen);
 
@@ -333,12 +324,12 @@ void xs_zip_file_get_position(xsMachine *the)
 
 void xs_zip_file_set_position(xsMachine *the)
 {
-	int position;
+	uint32_t position;
 	xsZipFile zf = xsmcGetHostData(xsThis);
 	if (NULL == zf)
 		xsErrorPrintf("file closed");
 
-	position = xsmcToInteger(xsArg(0));
+	position = (uint32_t)xsmcToInteger(xsArg(0));
 	if (position >= zf->position)
 		xsErrorPrintf("invalid position");
 
@@ -356,7 +347,7 @@ typedef struct {
 void xs_zip_file_iterator_destructor(void *data)
 {
 	if (data)
-		free(data);
+		c_free(data);
 }
 
 void xs_zip_file_Iterator(xsMachine *the)
@@ -369,27 +360,27 @@ void xs_zip_file_Iterator(xsMachine *the)
 	xsmcSet(xsThis, xsID_ZIP, xsArg(0));
 
 	path = xsmcToString(xsArg(1));
-	pathLen = espStrLen(path);
+	pathLen = c_strlen(path);
 
-	if ('/' != espRead8(path + pathLen - 1))
+	if ('/' != c_read8(path + pathLen - 1))
 		xsErrorPrintf("directory path must end with /");
 
-	if ('/' == espRead8(path)) {
+	if ('/' == c_read8(path)) {
 		if (1 != pathLen)
 			xsErrorPrintf("only root directory path can begin with /");
 		path += 1;
 		pathLen -= 1;
 	}
 
-	zfi = malloc(sizeof(xsZipFileIteratorRecord) - 1 + pathLen);
+	zfi = c_malloc(sizeof(xsZipFileIteratorRecord) - 1 + pathLen);
 	if (!zfi)
 		xsErrorPrintf("out of memory");
 
 	zfi->zip = zip;
 	zfi->cdf = zip->cd;
 	zfi->cdRemain = zip->cdCount;
-	zfi->pathLen = espStrLen(path);
-	espMemCpy(zfi->path, path, pathLen + 1);
+	zfi->pathLen = c_strlen(path);
+	c_memcpy(zfi->path, path, pathLen + 1);
 
 	xsmcSetHostData(xsThis, zfi);
 }
@@ -397,33 +388,32 @@ void xs_zip_file_Iterator(xsMachine *the)
 void xs_zip_file_iterator_next(xsMachine *the)
 {
 	xsZipFileIterator zfi = xsmcGetHostData(xsThis);
-	Zip zip = zfi->zip;
 
 	xsmcVars(1);
 	while (zfi->cdRemain) {
 		zipCentralDirectoryFile item = zfi->cdf;
-		uint16_t fileNameLen = espRead16(&item->fileNameLen);
+		uint16_t fileNameLen = c_read16(&item->fileNameLen);
 		char *itemPath = ((char *)item) + sizeof(zipCentralDirectoryFileRecord);
 		uint8_t ok;
 		uint16_t i;
 
 		// skip past this item
 		zfi->cdf = (zipCentralDirectoryFile)(((char *)item) + sizeof(zipCentralDirectoryFileRecord) +
-					fileNameLen + espRead16(&item->extraFieldLen) +
-					espRead16(&item->commentLen));
+					fileNameLen + c_read16(&item->extraFieldLen) +
+					c_read16(&item->commentLen));
 		zfi->cdRemain -= 1;
 
 		// see if there is a hit
 		if (fileNameLen <= zfi->pathLen)
 			continue;
 
-		if (0 != espStrNCmp(itemPath, zfi->path, zfi->pathLen))
+		if (0 != c_strncmp(itemPath, zfi->path, zfi->pathLen))
 			continue;
 
 		itemPath += zfi->pathLen;
 		fileNameLen -= zfi->pathLen;
 
-		if ('/' == espRead8(itemPath + fileNameLen - 1)) {
+		if ('/' == c_read8(itemPath + fileNameLen - 1)) {
 			// directory
 			xsResult = xsmcNewObject();
 			xsmcSetStringBuffer(xsVar(0), itemPath, fileNameLen - 1);
@@ -432,7 +422,7 @@ void xs_zip_file_iterator_next(xsMachine *the)
 		}
 
 		for (i = 0, ok = 1; i < fileNameLen; i++) {
-			if ('/' == espRead8(itemPath + i))
+			if ('/' == c_read8(itemPath + i))
 				ok = 0;
 		}
 		if (!ok) continue;
@@ -441,7 +431,7 @@ void xs_zip_file_iterator_next(xsMachine *the)
 		xsResult = xsmcNewObject();
 		xsmcSetStringBuffer(xsVar(0), itemPath, fileNameLen);
 		xsmcSet(xsResult, xsID_name, xsVar(0));
-		xsmcSetInteger(xsVar(0), espRead32(&item->compressedSize));
+		xsmcSetInteger(xsVar(0), c_read32(&item->compressedSize));
 		xsmcSet(xsResult, xsID_length, xsVar(0));
 		return;
 	}
