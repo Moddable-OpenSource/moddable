@@ -158,16 +158,9 @@ typedef struct {
 	txTypeCallback getter;
 	txTypeCallback setter;
 	txTypeCompare compare;
-#ifndef __ets__
 	txID getID;
 	txID setID;
 	txID constructorID;
-#else
-	// 4-byte aligned, and always read as 32-bits (avoid 16-bit read optimzagtion in gcc)
-	volatile txInteger getID;
-	volatile txInteger setID;
-	volatile txInteger constructorID;
-#endif
 } txTypeDispatch;
 
 typedef struct {
