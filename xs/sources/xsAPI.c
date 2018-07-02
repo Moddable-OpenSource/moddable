@@ -1280,6 +1280,9 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		if (c_setjmp(aJump.buffer) == 0) {
 			txInteger anIndex;
 
+			if (gxDefaults.initializeSharedCluster)
+				gxDefaults.initializeSharedCluster();
+				
 			the->dtoa = fxNew_dtoa(the);
 			the->context = theContext;
 			fxCreateMachinePlatform(the);
@@ -1418,6 +1421,9 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxFree(the);
 			c_free(the);
 			the = NULL;
+			
+			if (gxDefaults.terminateSharedCluster)
+				gxDefaults.terminateSharedCluster();
 		}
 	}
 	return the;
@@ -1502,6 +1508,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			txSlot* aSharedSlot;
 			txSlot* aTemporarySlot;
 			txID anID;
+
+			if (gxDefaults.initializeSharedCluster)
+				gxDefaults.initializeSharedCluster();
 
 			the->dtoa = fxNew_dtoa(the);
 			the->preparation = theMachine->preparation;
