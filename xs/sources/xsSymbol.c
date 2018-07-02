@@ -194,7 +194,7 @@ txSlot* fxCheckSymbol(txMachine* the, txSlot* it)
 void fxSymbolToString(txMachine* the, txSlot* slot)
 {
 	txSlot* key = fxGetKey(the, slot->value.symbol);
-	fxCopyStringC(the, slot, "Symbol(");
+	fxStringX(the, slot, "Symbol(");
 	if (key)
 		fxConcatStringC(the, slot, key->value.string);
 	fxConcatStringC(the, slot, ")");

@@ -131,14 +131,14 @@ void fx_Error_toString(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
 	if (the->stack->kind == XS_UNDEFINED_KIND) 
-		fxCopyStringC(the, the->stack, "Error");
+		fxStringX(the, the->stack, "Error");
 	else	
 		fxToString(the, the->stack);
 	name = the->stack;
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_message));
 	if (the->stack->kind == XS_UNDEFINED_KIND) 
-		fxCopyStringC(the, the->stack, "");
+		*the->stack = mxEmptyString;
 	else	
 		fxToString(the, the->stack);
 	message = the->stack;
@@ -147,7 +147,7 @@ void fx_Error_toString(txMachine* the)
 	else if (c_isEmpty(message->value.string))
 		*mxResult = *name;
 	else {
-		fxCopyStringC(the, mxResult, "");
+		fxStringX(the, mxResult, "");
 		fxConcatString(the, mxResult, name);
 		fxConcatStringC(the, mxResult, ": ");
 		fxConcatString(the, mxResult, message);
