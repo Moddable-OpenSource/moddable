@@ -229,7 +229,6 @@ int main(int argc, char* argv[])
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
 		char path[C_PATH_MAX];
-		fxInitializeSharedCluster();
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
@@ -274,7 +273,6 @@ int main(int argc, char* argv[])
 		}
 		xsEndHost(the);
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 	}
 	return error;
 }
@@ -628,6 +626,12 @@ void fxRunFile(txContext* context, char* path)
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "async")) {
 				async = 1;
+			}
+			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsFalse")) {
+				sloppy = 0;
+				strict = 0;
+				module = 0;
+				pending = 1;
 			}
 			item++;
 		}

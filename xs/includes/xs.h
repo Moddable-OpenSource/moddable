@@ -1238,9 +1238,6 @@ typedef unsigned char xsAttribute;
 #define xsStopProfiling() \
 	fxStopProfiling(the)
 
-#define xsInitializeSharedCluster fxInitializeSharedCluster
-#define xsTerminateSharedCluster fxTerminateSharedCluster
-
 #ifndef __XSALL__
 
 #ifdef __cplusplus
@@ -1382,9 +1379,6 @@ mxImport void fxUnmapArchive(void*);
 mxImport void fxRunLoop(xsMachine*);
 mxImport void fxRunProgram(xsMachine*, xsStringValue);
 mxImport void fxRunModule(xsMachine*, xsStringValue);
-
-mxImport void fxInitializeSharedCluster();
-mxImport void fxTerminateSharedCluster();
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
 mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);

@@ -108,6 +108,8 @@ typedef struct {
 	void (*runEval)(txMachine*);
 	void (*runEvalEnvironment)(txMachine*);
 	void (*runProgramEnvironment)(txMachine*);
+	void (*initializeSharedCluster)();
+	void (*terminateSharedCluster)();
 } txDefaults;
 
 enum {
@@ -594,8 +596,8 @@ extern void fxMarkHost(txMachine* the, txMarkRoot markRoot);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
 extern void fxSweepHost(txMachine* the);
-mxExport void fxInitializeSharedCluster();
-mxExport void fxTerminateSharedCluster();
+extern void fxInitializeSharedCluster();
+extern void fxTerminateSharedCluster();
 extern void* fxCreateSharedChunk(txInteger byteLength);
 extern void fxLockSharedChunk(void* data);
 extern txInteger fxMeasureSharedChunk(void* data);
