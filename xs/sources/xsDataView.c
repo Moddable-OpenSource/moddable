@@ -2242,7 +2242,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	#define mxEndianU16_NtoL(a) ((txU2) mxEndian16_Swap(a))
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__llvm__)
 	#define mxEndian16_Swap(a) __builtin_bswap16(a)
 #else
 	static txU2 mxEndian16_Swap(txU2 a)
@@ -2256,7 +2256,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	}
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__llvm__)
 	#define mxEndian32_Swap(a) __builtin_bswap32(a)
 #else
 	static txU4 mxEndian32_Swap(txU4 a)
@@ -2270,7 +2270,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	}
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__llvm__)
 	#define mxEndianFloat_Swap(a) __builtin_bswap32(a)
 #else
 	static float mxEndianFloat_Swap(float a)
@@ -2284,7 +2284,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	}
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__llvm__)
 	#define mxEndianDouble_Swap(a) __builtin_bswap64(a)
 #else
 	static double mxEndianDouble_Swap(double a)

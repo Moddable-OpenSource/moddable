@@ -399,7 +399,7 @@ void fx_Object_prototype_toString(txMachine* the)
 		tag = "Object";
 		break;
 	}
-	fxCopyStringC(the, mxResult, "[object ");
+	fxStringX(the, mxResult, "[object ");
 	if (instance) {
 		mxPushReference(instance);
 		fxGetID(the, mxID(_Symbol_toStringTag));
