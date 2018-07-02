@@ -681,7 +681,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInte
 				}
 			#elif defined(mxUseFreeRTOSTasks)
 				mxUnlockMutex(&gxSharedCluster->waiterMutex);
-				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICSK((timeout - fxDateNow())));
+				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS((timeout - fxDateNow())));
 				mxLockMutex(&gxSharedCluster->waiterMutex);
 				result = (the->waiterData == address) ? 0 : 1;
 			#else
