@@ -467,9 +467,14 @@ void fx_Atomics_xor(txMachine* the)
 	#define mxWakeCondition(CONDITION) pthread_cond_signal(CONDITION)
 #elif defined(mxUseFreeRTOSTasks)
 	#define mxThreads 1
+
+	#include "FreeRTOS.h"
+	#include "freertos/queue.h"
+	#include "freertos/semphr.h"
+
 	typedef TaskHandle_t txCondition;
 	typedef struct {
-		SemaphoreHandle_t handle;
+		QueueHandle_t handle;
 		StaticSemaphore_t buffer;
 	} txMutex;
 	typedef TaskHandle_t txThread;
