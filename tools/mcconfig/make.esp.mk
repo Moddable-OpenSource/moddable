@@ -218,9 +218,9 @@ OTA_TOOL = $(TOOLS_ROOT)/espota.py
 ESPTOOL = $(ESP_BASE)/esptool/esptool
 
 ifeq ($(HOST_OS),Darwin)
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/debug
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 else
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/debug
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 endif
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
