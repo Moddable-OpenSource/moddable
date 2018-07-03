@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,8 +20,7 @@
 
 import {Socket} from "socket";
 import Net from "net";
-
-// modeled on ESP8266mDNS.cpp
+import Timer from "timer";
 
 const MDNS_TYPE_AAAA = 0x001C;
 const MDNS_TYPE_A = 0x0001;
@@ -47,8 +46,17 @@ class MDNS extends Socket {
 	}
 	add(service) {
 		this.services.push(service);
-		this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service, false));		// remove before adding to clear stale state in clients
-		this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service));
+		this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service, 0, true));		// remove before adding to clear stale state in clients
+		service.timer = Timer.repeat(timer => {
+			this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service));
+			timer.interval *= 2;
+			if (timer.interval > 32000) {
+				Timer.clear(timer);
+				delete service.timer;
+			}
+			else
+				Timer.schedule(timer, timer.interval, timer.interval);
+		}, 1000).interval = 500;
 	}
 	update(service) {
 		const index = this.services.indexOf(service);
@@ -61,102 +69,103 @@ class MDNS extends Socket {
 		if (index < 0) throw new Error("service not found");
 
 		this.services.splice(index, 1);
-		this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service, true));
+		this.write(MDNS_IP, MDNS_PORT, this.reply(0x0F, service, 0, true));
+
+		if (service.timer) {
+			Timer.clear(service.timer);
+			delete service.timer;
+		}
 	}
 
 	callback(message, value, address, port) {
-		const header = new Uint8Array(this.read(ArrayBuffer, 12));
-		if (header[2] & 0x80)
+		const packet = new MDNS.Packet(this.read(ArrayBuffer));
+		if (packet.flags & 0x8000)
 			return;
 
-		let protocol, local, service;
+		let mask = 0, service;
 
-		let hostName = this.read(String, this.read(Number));
-		if ("_" == hostName[0]) {
-			service = hostName.slice(1);
-			hostName = undefined;
-		}
+		for (let i = 0; i < packet.questions; i++) {
+			const question = packet.question(i);
+			const name = question.qname;
 
-		if (hostName && (hostName !== this.hostName) && (this.instanceName !== hostName))
-			return;
+			switch (question.qtype) {
+					// reply to name lookup query
+				case MDNS_TYPE_A:
+					if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
+						mask |= 1;
+					break;
 
-		if (undefined === service) {
-			service = this.read(String, this.read(Number));
-			if ("_" == service[0])
-				service = service.slice(1);
-			else
-			if (LOCAL === service) {
-				if (0 !== this.read(Number))
-					return;
-				protocol = "";
-				local = "";
-			}
-			else
-				service = undefined;
-		}
+				case MDNS_TYPE_PTR:
+					if ((3 !== name.length) || (LOCAL !== name[2])) {
+						if ((4 !== name.length) || ("_services" !== name[0]) || ("_dns-sd" !== name[1]) || ("_udp" !== name[2]) || (LOCAL !== name[3]))
+							break;
 
-		if (undefined === protocol) {
-			protocol = this.read(String, this.read(Number));
-			if ((4 === protocol.length) && ("_" == protocol[0]))
-				protocol = protocol.slice(1);
+						// reply to _services._dns_sd._udp.local query
+						let respond = this.services.length;
+						for (let j = 0; (j < packet.answers) && respond; j++) {
+							let answer = packet.answer(j);
+							if (MDNS_TYPE_PTR !== answer.qtype)
+								continue;
 
-			if (("services" === service) && ("_dns-sd" == protocol)) {
-				this.services.forEach(service => this.write(address, port, this.reply(0x0F, service)));
-				return;
-			}
-		}
+							for (let k = 0; k < this.services.length; k++) {
+								let service = this.services[k];
+								if ((3 !== answer.rdata.length) || (("_" + service.name) !== answer.rdata[0]) ||
+								   (("_" + service.protocol) !== answer.rdata[1]) || (LOCAL !== answer.rdata[2]))
+								   continue;
+								respond -= 1;
+							}
+						}
+						if (respond) {
+							let reply = []
 
-		if (undefined === local) {
-			local = this.read(String, this.read(Number));
-			let temp = this.read(Number);
-			if ((5 === local.length) && (LOCAL === local) && (0 == temp))
-				;
-			else
-				return;
-		}
+							// if responding for any service, respond with all service types
+							for (let k = 0; k < this.services.length; k++) {
+								let service = this.services[k];
+								reply.push(name[0], name[1], name[2], name[3], 0);
 
-		if (service || protocol) {
-			if (service && protocol) {
-				service = this.services.find(item => (item.name === service) && (item.protocol === protocol))
-				if (!service)
-					return;
-			}
-		}
+								const rdataLen = (service.name.length + 1) + (service.protocol.length + 1) + LOCAL.length + 4; // 4 is three label sizes and the terminator
+								reply.push(Uint8Array.of(0, 0x0C, 0, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 
+								reply.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
+							}
+							this.write(address, port, this.serializePacket(packet.id, this.services.length, reply));	// unicast reply seems the norm (?)
+						}
+						break;
+					}
 
-		// respond
-		let numQuestions = (header[4] << 8) | header[5]
-		let mask = 0;
-		while (numQuestions--) {
-			let cType = this.read(Number) << 8;
-			cType |= this.read(Number);
-			if (MDNS_NAME_REF & cType) {
-				cType = this.read(Number) << 8;
-				cType |= this.read(Number);
-			}
-			let cClass = this.read(Number) << 8;
-			cClass |= this.read(Number);
-			if (MDNS_CLASS_IN & cClass) {
-				if (MDNS_TYPE_A === cType) mask |= 1;
-				else if (MDNS_TYPE_SRV === cType) mask |= 3;
-				else if (MDNS_TYPE_TXT === cType) mask |= 4;
-				else if (MDNS_TYPE_PTR === cType) mask |= 0x0F;
-			}
-
-			if (numQuestions > 0) {
-				let temp = this.read(Number) << 8;
-				temp |= this.read(Number);
-				if (0xC00C != temp)
-					numQuestions = 0;
+					// reply to service query
+					this.services.some(item => {
+						if ((("_" + item.name) !== name[0]) || (("_" + item.protocol) !== name[1]))
+							return;
+						service = item;
+						for (let j = 0; (j < packet.answers) && service; j++) {
+							let answer = packet.answer(j);
+							if (MDNS_TYPE_PTR !== answer.qtype)
+							   continue;
+						   if ((3 !== answer.qname.length) || (("_" + service.name) !== answer.qname[0]) ||
+							   (("_" + service.protocol) !== answer.qname[1]) || (LOCAL !== answer.qname[2]))
+							   continue;
+						   if ((4 !== answer.rdata.length) || (this.hostName !== answer.rdata[0]) || (("_" + service.name) !== answer.rdata[1]) ||
+							   (("_" + service.protocol) !== answer.rdata[2]) || (LOCAL !== answer.rdata[3]))
+							   continue;
+						   service = undefined;
+					   }
+						if (service)
+							mask |= 0x0f;
+						return true;
+					});
+					break;
 			}
 		}
 
-		this.write(address, port, this.reply(mask, service));
+		if (mask)
+			this.write(MDNS_IP, port, this.reply(mask, service, packet.id));
 	}
-	reply(mask, service, bye = false) {
+
+	reply(mask, service, id = 0, bye = false) {
 		bye = bye ? 0 : 0xFF;
 		const answerCount = (mask & 1) + ((mask & 2) >> 1) + ((mask & 4) >> 2) + ((mask & 8) >> 3);
-		const packet = [Uint8Array.of(0, 0, 0x84, 0, 0, 0, 0, answerCount, 0, 0, 0, 0)];
+		const packet = [];
 
 		if (8 & mask) {		// PTR
 			packet.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
@@ -207,6 +216,11 @@ class MDNS extends Socket {
 			packet.push(Uint8Array.from(ip.map(value => parseInt(value))));
 		}
 
+		return this.serializePacket(id, answerCount, packet);
+	}
+	serializePacket(id, answerCount, packet) {
+		packet.unshift(Uint8Array.of(id >> 8, id & 255, 0x84, 0, 0, 0, 0, answerCount, 0, 0, 0, 0));
+
 		let position = packet.reduce((position, value) => {
 			const type = typeof value;
 			if ("number" === type)
@@ -239,5 +253,54 @@ class MDNS extends Socket {
 	}
 }
 Object.freeze(MDNS.prototype);
+
+/*
+function dumpPacket(packet)
+{
+	trace("\n", "** packet from ", address, " **\n");
+	trace(" ID: ", packet.id.toString(16), ", FLAGS: ", packet.flags.toString(16), "\n");
+
+	for (let i = 0; i < packet.questions; i++) {
+		let q = packet.question(i);
+		trace("  Q: ");
+		trace(q.qname.join("."), ", ");
+		trace("QTYPE: ", q.qtype.toString(16), ", ");
+		trace("QCLASS: ", q.qclass.toString(16), "\n");
+	}
+
+	for (let i = 0; i < packet.answers; i++) {
+		let a = packet.answer(i);
+		trace("  A: ");
+		trace(a.qname.join("."), ", ");
+		trace("QTYPE: ", a.qtype.toString(16), ", ");
+		trace("QCLASS: ", a.qclass.toString(16), ", ");
+		trace("TTL: ", a.ttl.toString());
+		if (a.rdata) {
+			trace(", ", "RDATA: ");
+			if (Array.isArray(a.rdata))
+				trace(a.rdata.join("."));
+			else if ("object" === typeof a.rdata)
+				trace(JSON.stringify(a.rdata));
+			else
+				trace(a.rdata);
+		}
+		trace("\n");
+	}
+}
+*/
+
+class Packet {
+	constructor(packet) {
+		this.buffer = packet;
+	}
+	get id() @ "xs_mdnspacket_get_id"
+	get flags() @ "xs_mdnspacket_get_flags"
+	get questions() @ "xs_mdnspacket_get_questions"
+	get answers() @ "xs_mdnspacket_get_answers"
+	question(index) @ "xs_mdnspacket_question"
+	answer(index) @ "xs_mdnspacket_answer"
+}
+Object.freeze(Packet.prototype);
+MDNS.Packet = Packet;
 
 export default MDNS;
