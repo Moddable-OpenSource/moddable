@@ -57,7 +57,12 @@
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif
-#define mxMisalignedSettersCrash 1
+#if !ESP32
+	#define mxMisalignedSettersCrash 1
+#else
+	#define mxUseFreeRTOSTasks 1
+	#define mxUseGCCAtomics 1
+#endif
 
 #ifndef __XS6PLATFORMMINIMAL__
 
@@ -136,7 +141,10 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \
 		void *msgQueue; \
-		void *task;
+		void *task; \
+		void* waiterCondition; \
+		void* waiterData; \
+		void* waiterLink;
 #else
 	#define mxMachinePlatform \
 		void* host; \
