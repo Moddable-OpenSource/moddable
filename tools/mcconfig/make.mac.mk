@@ -115,17 +115,17 @@ endif
 
 LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/debug/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/debug/compressbmf
-IMAGE2CS = $(BUILD_DIR)/bin/mac/debug/image2cs
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/debug/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/debug/rle4encode
-WAV2MAUD = $(BUILD_DIR)/bin/mac/debug/wav2maud
-XSC = $(BUILD_DIR)/bin/mac/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
+BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
+COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
+IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
+MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
+MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
+PNG2BMP = $(BUILD_DIR)/bin/mac/release/png2bmp
+RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
+XSC = $(BUILD_DIR)/bin/mac/release/xsc
+XSID = $(BUILD_DIR)/bin/mac/release/xsid
+XSL = $(BUILD_DIR)/bin/mac/release/xsl
 
 VPATH += $(XS_DIRECTORIES)
 
