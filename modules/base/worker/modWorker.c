@@ -233,9 +233,9 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 		xsUnknownError("worker closing");
 
 #if USE_MARSHALL
-	message = xsMarshall(xsArg(0));
-	if (modMessagePostToMachine(worker->the, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-		xsUnknownError("post from instantiator failed");
+		message = xsMarshall(xsArg(0));
+		if (modMessagePostToMachine(worker->the, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
+			xsUnknownError("post from instantiator failed");
 #else
 	xsmcVars(2);
 
@@ -270,9 +270,9 @@ void xs_worker_postfromworker(xsMachine *the)
 	xsmcVars(2);
 
 #if USE_MARSHALL
-	message = xsMarshall(xsArg(0));
-	if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-		xsUnknownError("post from worker failed");
+		message = xsMarshall(xsArg(0));
+		if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
+			xsUnknownError("post from worker failed");
 #else
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		message = xsmcToArrayBuffer(xsArg(0));
@@ -307,15 +307,18 @@ void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, u
 
 	xsBeginHost(the);
 
-	xsmcVars(1);
-
-	xsVar(0) = xsDemarshall(*(char **)message);
+	xsCollectGarbage();
+	xsResult = xsDemarshall(*(char **)message);
 	c_free(*(char **)message);
 
-	if (the == worker->parent)
-		xsCall1(worker->ownerPort, xsID_onmessage, xsVar(0));
+	if (xsmcTest(xsResult)) {
+		if (the == worker->parent)
+			xsCall1(worker->ownerPort, xsID_onmessage, xsResult);
+		else
+			xsCall1(worker->workerPort, xsID_onmessage, xsResult);
+	}
 	else
-		xsCall1(worker->workerPort, xsID_onmessage, xsVar(0));
+		;	//@@ unable to deliver message
 
 	xsEndHost(the);
 }
