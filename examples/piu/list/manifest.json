@@ -1,0 +1,15 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": [
+			"./main",
+			"./lorem",
+		]
+	},
+	"resources":{
+		"*-mask": [
+			"./OpenSans-Regular-20",
+			"./wifi-strip",
+		],
+	},
+}

@@ -1,0 +1,32 @@
+{
+	"modules":{
+		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",
+		"*": [
+			"$(MODULES)/crypt/arith/*",
+			"$(MODULES)/crypt/bin/*",
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/crypt/etc/*",
+			"$(MODULES)/crypt/securesocket/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/hex/*",
+			"$(MODULES)/files/resource/*",
+		],
+	},
+	"preload": [
+		"arith",
+		"rng",
+		"securesocket",
+		"ssl",
+		"ssl/*",
+		"crypt",
+		"base64",
+		"hex",
+		"Resource",
+	],
+	"resources":{
+		"*": [
+			"$(MODULES)/crypt/data/*",
+		]
+	}
+}

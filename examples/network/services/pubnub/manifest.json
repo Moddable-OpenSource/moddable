@@ -1,0 +1,16 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/pubnub/*",
+			"$(MODULES)/base/uuid/*"
+		]
+	},
+	"preload": [
+		"http",
+		"pubnub",
+		"uuid"
+	]
+}

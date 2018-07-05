@@ -1,0 +1,14 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": [
+			"./ne",
+			"./nw",
+			"./se",
+			"./sw",
+		]
+	},
+}
