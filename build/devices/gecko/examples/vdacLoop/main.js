@@ -80,7 +80,6 @@ export default function() {
 		let calcd = (2.5 * measured) / 65536.0;
 
 		display(count, expected, calcd);
-		flip++;
 
 		if (count > max_count)
 			global.dir = -50;
