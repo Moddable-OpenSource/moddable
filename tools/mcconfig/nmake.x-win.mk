@@ -97,6 +97,7 @@ C_DEFINES = \
 	/D XS_ARCHIVE=1 \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
+	/D YAML_DECLARE_STATIC \
 	/D mxRun=1 \
 	/D mxParse=1 \
 	/D mxNoFunctionLength=1 \

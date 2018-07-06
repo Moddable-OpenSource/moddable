@@ -1387,6 +1387,7 @@ extern txSlot* fxNewPromiseAlready(txMachine* the);
 extern txSlot* fxNewPromiseFunction(txMachine* the, txSlot* already, txSlot* promise, txSlot* function);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
 extern void fxRunPromiseJobs(txMachine* the);
+extern void fxQueueJob(txMachine* the, txID id);
 
 /* xsProxy.c */
 extern void fxBuildProxy(txMachine* the);
