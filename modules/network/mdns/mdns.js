@@ -32,6 +32,7 @@ const MDNS_TYPE_PTR = 12;
 const MDNS_TYPE_TXT = 16;
 const MDNS_TYPE_AAAA = 28;
 const MDNS_TYPE_SRV = 33;
+const MDNS_TYPE_NSEC = 47;
 const MDNS_TYPE_ANY = 255;
 
 const MDNS_CLASS_IN = 0x0001;
@@ -118,20 +119,17 @@ class MDNS extends Socket {
 				let service = this.service.split(".");
 				service.forEach(item => question.push(item));
 				question.push(0);
-				question.push(Uint8Array.of(0, MDNS_TYPE_PTR, 0, 1));
+				question.push(Uint8Array.of(0, MDNS_TYPE_PTR, (0 === this.state) ? 0x80 : 0, 1));
 				reply.add(question);
 
 				let answers = 0;
 				for (let i = 0; i < this.length; i++) {
-					if (!this[i].name || !this[i].txt || !this[i].target)
-						continue;		// still waiting for a full response
-
 					let answer = [];
 					service.forEach(item => answer.push(item));
 					answer.push(0);
 
 					// the type, class, ttl and rdata length
-					let rdataLen = ArrayBuffer.fromString(this[i].name).byteLength + 1 + service.reduce((length, item) => ArrayBuffer.fromString(item).byteLength + length + 1, 0) + 1;
+					const rdataLen = ArrayBuffer.fromString(this[i].name).byteLength + 1 + service.reduce((length, item) => ArrayBuffer.fromString(item).byteLength + length + 1, 0) + 1;
 					//@@ fix TTL
 					answer.push(Uint8Array.of(0, 0x0C, 0, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 
@@ -210,6 +208,22 @@ class MDNS extends Socket {
 				delete instance.changed;
 				if (instance.name && instance.txt && instance.target)
 					monitor.callback(monitor.service, instance);
+				else {
+					let question, service, query = new Serializer, questions;
+
+					question = [instance.name];
+					service = monitor.service.split(".");
+					service.forEach(item => question.push(item));
+					question.push(0);
+					question.push(Uint8Array.of(0, MDNS_TYPE_SRV, 0x80, 1));
+					query.add(question);
+
+					question.length -= 1;
+					question.push(Uint8Array.of(0, MDNS_TYPE_TXT, 0x80, 1));
+					query.add(question);
+
+					this.write(MDNS_IP, MDNS_PORT, query.build(0, 2, 0));
+				}
 			});
 		});
 	}
@@ -240,6 +254,11 @@ class MDNS extends Socket {
 							;
 						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
 							mask |= 1;
+						break;
+
+					case MDNS_TYPE_AAAA:
+						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
+							mask |= 32;
 						break;
 
 					case MDNS_TYPE_PTR:
@@ -314,6 +333,7 @@ class MDNS extends Socket {
 	}
 
 	/*
+		32 - NSEC - A ONLY
 		16 - service_ptr
 		8 - PTR
 		4 - TXT
@@ -325,12 +345,23 @@ class MDNS extends Socket {
 		if (build) response = new MDNS.Serializer;
 		bye = bye ? 0 : 0xFF;
 
+		if (32 & mask) {	// NSEC indicating A only
+			let answer = [];
+			answer.push(this.instanceName, LOCAL, 0);
+
+			const rdataLen = (ArrayBuffer.fromString(this.instanceName).byteLength + 1) + (LOCAL.length + 1) + 1 + 6;
+			answer.push(Uint8Array.of(0, MDNS_TYPE_NSEC, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
+			answer.push(this.instanceName, LOCAL, 0);
+			answer.push(Uint8Array.of(0, 4, 0x40, 0, 0, 0));
+			response.add(answer);
+		}
+
 		if (16 & mask) {	// PTR for service discovery
 			let answer = [];
 			answer.push("_services", "_dns-sd", "_udp", LOCAL, 0);
 
 			const rdataLen = (service.name.length + 1) + (service.protocol.length + 1) + LOCAL.length + 4; // 4 is three label sizes and the terminator
-			answer.push(Uint8Array.of(0, 0x0C, 0, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
+			answer.push(Uint8Array.of(0, 0x0C, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 
 			answer.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
 			response.add(answer);
@@ -342,7 +373,7 @@ class MDNS extends Socket {
 
 			// the type, class, ttl and rdata length
 			const rdataLen = ArrayBuffer.fromString(this.instanceName).byteLength + (service.name.length + 1) + (service.protocol.length + 1) + 5 + 5; // 5 is four label sizes and the terminator
-			answer.push(Uint8Array.of(0, 0x0C, 0, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
+			answer.push(Uint8Array.of(0, 0x0C, 0x80, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
 
 			// the RData (ie. "My IOT device._http._tcp.local")
 			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
