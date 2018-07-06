@@ -46,7 +46,6 @@ static void fxBuildPromiseCapability(txMachine* the);
 static void fxCallPromise(txMachine* the);
 static void fxCallPromiseAll(txMachine* the);
 static void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
-static void fxQueueJob(txMachine* the, txID id);
 
 static void fx_Promise_resolveAux(txMachine* the);
 static void fx_Promise_prototype_finallyAux(txMachine* the);
