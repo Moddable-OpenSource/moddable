@@ -5,7 +5,7 @@
 				"*": [
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
@@ -26,7 +26,7 @@
 				"*": [
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
@@ -47,7 +47,7 @@
 				"*": [
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/mac/*",
-					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/mac/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
@@ -60,7 +60,7 @@
 				"*": [
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/win/*",
-					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/win/*",
 					"$(MODULES)/network/sntp/*"
 				]
