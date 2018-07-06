@@ -22,6 +22,8 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#include <string.h>
+
 static void *getPacket(xsMachine *the, uint8_t **end)
 {
 	void *result;
@@ -42,10 +44,9 @@ static void *getQuestionByIndex(xsMachine *the, uint8_t index)
 	uint8_t *position = getPacket(the, &packetEnd);
 	uint16_t questions = (position[4] << 8) | position[5];
 
-	if ((index != 0xff) && (index >= questions)) {
-		modLog("bad index to getQuestionByIndex");
+	if ((index != 0xff) && (index >= questions))
 		return NULL;
-	}
+
 	if (0xff == index)
 		index = questions;
 
@@ -73,13 +74,12 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 {
 	uint8_t *packetEnd;
 	uint8_t *position = getPacket(the, &packetEnd);
-	uint16_t answers = (position[6] << 8) | position[7];
+	uint16_t answers = ((position[6] << 8) | position[7]) + ((position[8] << 8) | position[9]) + ((position[10] << 8) | position[11]);		// including authority and additional records
 	position = getQuestionByIndex(the, 0xff);
 
-	if ((0xff != index) && (index >= answers)) {
-		modLog("bad index to getAnswerByIndex");
+	if ((0xff != index) && (index >= answers))
 		return NULL;
-	}
+
 	if (0xff == index)
 		index = answers;
 
@@ -148,7 +148,7 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 {
 	int offset;
 	uint16_t qtype, qclass;
-	uint8_t tmp[256];
+	char tmp[256];
 
 	if (NULL == position) {
 		xsmcSetNull(xsResult);
@@ -196,10 +196,14 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 				c_memcpy(ip, position, 4);
 				xsVar(1) = xsStringBuffer(NULL, 4 * 5);
 				out = xsmcToString(xsVar(1));
+#ifndef __ets__
+				c_snprintf(out, 4 * 5, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+#else
 				itoa(ip[0], out, 10); out += c_strlen(out); *out++ = '.';
 				itoa(ip[1], out, 10); out += c_strlen(out); *out++ = '.';
 				itoa(ip[2], out, 10); out += c_strlen(out); *out++ = '.';
 				itoa(ip[3], out, 10); out += c_strlen(out); *out = 0;
+#endif
 				xsmcSet(xsVar(0), xsID_rdata, xsVar(1));
 			}
 			else
@@ -208,6 +212,7 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 				xsmcSet(xsVar(0), xsID_rdata, xsVar(1));
 			}
 			else
+#if 0
 			if (0x001C == qtype) {	// AAAA
 				uint8_t ip[16];
 				char *out;
@@ -225,6 +230,7 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 				xsmcSet(xsVar(0), xsID_rdata, xsVar(1));
 			}
 			else
+#endif
 			if (0x0021 == qtype) {	// SRV
 				uint16_t priority = (position[0] << 8) | position[1];
 				uint16_t weight = (position[2] << 8) | position[3];
@@ -294,6 +300,18 @@ void xs_mdnspacket_get_answers(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[6] << 8) | header[7]);
+}
+
+void xs_mdnspacket_get_authorities(xsMachine *the)
+{
+	uint8_t *header = getPacket(the, NULL);
+	xsmcSetInteger(xsResult, (header[8] << 8) | header[9]);
+}
+
+void xs_mdnspacket_get_additionals(xsMachine *the)
+{
+	uint8_t *header = getPacket(the, NULL);
+	xsmcSetInteger(xsResult, (header[8] << 10) | header[11]);
 }
 
 void xs_mdnspacket_question(xsMachine *the)
