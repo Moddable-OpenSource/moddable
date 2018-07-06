@@ -171,6 +171,7 @@ enum {
 	mxStepInCommand,
 	mxStepOutCommand,
 	mxToggleCommand,
+	mxScriptCommand,
 };
 
 static xsHostHooks PiuDebugBehaviorHooks = {
@@ -1183,6 +1184,13 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 		c_strcat(buffer, "<toggle id=\"");
 		c_strcat(buffer, xsToString(xsArg(1)));
 		c_strcat(buffer, "\"/>");
+		break;
+	case mxScriptCommand:
+		c_strcat(buffer, "<script path=\"");
+		c_strcat(buffer, xsToString(xsArg(1)));
+		c_strcat(buffer, "\" line=\"0\"><![CDATA[");
+		c_strcat(buffer, xsToString(xsArg(2)));
+		c_strcat(buffer, "]]></script>");
 		break;
 	}
 	c_strcat(buffer, "\15\12");

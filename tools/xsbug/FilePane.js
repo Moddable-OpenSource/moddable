@@ -243,43 +243,46 @@ export class FolderTableBehavior extends TableBehavior {
 		let depth = data.depth + 1;
 		let iterator = new system.DirectoryIterator(data.path);
 		let formers = data.items;
-		let i = 0;
-		let c = formers.length;
-		let former = (i < c) ? formers[i] : null;
+		let currents = [];
 		let info = iterator.next();
-		let items = [];
-		for (; former || info;) {
-			let name = info ? info.name : null;
-			let order = former ? name ? former.name.compare(name) : -1 : 1;
-			if (order < 0) {
-				i++;
-				former = (i < c) ? formers[i] : null;
-			}
-			else if (order > 0) {
-				let item;
-				if (info.directory) {
-					item = { depth, kind:"folder", name, path:info.path, expanded:false, items:[] };
-				}
-				else {
-					if (name.endsWith(".js") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".xs"))
-						item = { depth, kind:"file", name, path:info.path };
-					else
-						item = { depth, kind:"info", name, path:info.path };
-				}
-				items.push(item);
-				info = iterator.next();
+		while (info) {
+			let name = info.name;
+			let current;
+			if (info.directory) {
+				current = { depth, kind:"folder", name, path:info.path, expanded:false, currents:[] };
 			}
 			else {
-				items.push(former);
-				i++;
-				former = (i < c) ? formers[i] : null;
-				info = iterator.next();
+				if (name.endsWith(".js") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".xs"))
+					current = { depth, kind:"file", name, path:info.path };
+				else
+					current = { depth, kind:"info", name, path:info.path };
+			}
+			currents.push(current);
+			info = iterator.next();
+		}
+		currents.sort((a, b) => a.name.compare(b.name));
+		if (formers) {
+			let i = 0, j = 0;
+			let c = formers.length, d = currents.length;
+			while ((i < c) && (j < d)) {
+				let former = formers[i];
+				let current = currents[j];
+				let order = former.name.compare(current.name);
+				if (order < 0)
+					i++;
+				else if (order > 0)
+					j++;
+				else {
+					currents[j] = former;
+					i++;
+					j++;
+				}
 			}
 		}
-		data.items = items;
+		data.items = currents;
 		column.empty(this.emptyIndex);
 		if (data.expanded) {
-			for (let item of items)
+			for (let item of currents)
 				column.add(new FileKindTemplates[item.kind](item));
 		}
 	}
