@@ -291,10 +291,9 @@ void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef
 	txSerialMachine machine = context;
 	txSerialTool self = machine->tool;
 	CFSocketNativeHandle handle = CFSocketGetNative(socketRef);
-	char buffer[1024];
-	int size = read(handle, buffer, 1024);
+	char buffer[256];
+	int size = read(handle, buffer, 256);
 	if (size > 0) {
-		//fprintf(stderr, "%.*s", size, buffer);
 		char* former = buffer;
 		char* current = buffer;
 		char* limit = buffer + size;
