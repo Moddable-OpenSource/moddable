@@ -3594,6 +3594,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 		mxTry(the) {
 			txSlot* instance;
 			txSlot* property;
+			__JUMP__.code = C_NULL;
 			mxPushUndefined();
 			if (script->symbolsBuffer) {
 				txByte* p = script->symbolsBuffer;

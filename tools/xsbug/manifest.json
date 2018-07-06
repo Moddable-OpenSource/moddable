@@ -36,6 +36,9 @@
 		"*": [
 			"./*",
 		],
+		"yaml/*": [
+			"$(MODDABLE)/xs/tools/yaml/*",
+		],
 	},
 	"preload": [
 		"piu/PC",

@@ -164,6 +164,7 @@ class ApplicationBehavior extends DebugBehavior {
 		application.add(new MainContainer(this));
 		this.doOpenView();
 			
+		this.test262.onPreferencesChanged();
 		this.start();
 		application.updateMenus();
 	}
@@ -448,6 +449,12 @@ class ApplicationBehavior extends DebugBehavior {
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
 					this.automaticInstruments = preferences.automaticInstruments;
+				if ("test262" in preferences) {
+					if ("base" in preferences.test262)
+						this.test262.base = preferences.test262.base;
+					if ("filter" in preferences.test262)
+						this.test262.filter = preferences.test262.filter;
+				}	
 			}
 		}
 		catch(e) {
@@ -474,6 +481,10 @@ class ApplicationBehavior extends DebugBehavior {
 				port: this.port,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
+				test262: {
+					base: this.test262.base,
+					filter: this.test262.filter,
+				},
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);

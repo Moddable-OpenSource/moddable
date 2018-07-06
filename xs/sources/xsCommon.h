@@ -943,6 +943,7 @@ enum {
 	_xor,
 	___dirname,
 	___filename,
+	__xsbug_script_,
 	XS_ID_COUNT
 };
 #ifdef mxFewGlobalsTable

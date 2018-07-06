@@ -721,6 +721,7 @@ void fxScreenAbort(txScreen* screen)
 {
 	ScreenView *screenView = screen->view;
     [screenView performSelectorOnMainThread:@selector(quitMachine) withObject:nil waitUntilDone:NO];
+    [screenView performSelectorOnMainThread:@selector(launchMachine) withObject:nil waitUntilDone:NO];
 }
 
 void fxScreenBufferChanged(txScreen* screen)

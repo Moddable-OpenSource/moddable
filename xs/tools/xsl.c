@@ -284,7 +284,8 @@ int main(int argc, char* argv[])
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
-						fxFreezeBuiltIns(the);
+						if (stripping)
+							fxFreezeBuiltIns(the);
 						xsCollectGarbage();
 					}
 					xsCatch {
