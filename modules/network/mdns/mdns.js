@@ -19,7 +19,9 @@
  */
 
 /*
-	Add NSEC record in Additional Record indicating no AAAA record support - RFC 6762, Section 6.1. Negative Responses
+	To do:
+		 TTL
+		 goodbye
 */
 
 import {Socket} from "socket";
@@ -230,7 +232,7 @@ class MDNS extends Socket {
 
 	callback(message, value, address, port) {
 		const packet = new Parser(this.read(ArrayBuffer))
-		let response;
+		let response = new Array(2);
 
 //		dumpPacket(packet, address);
 
@@ -242,7 +244,7 @@ class MDNS extends Socket {
 
 		for (let h = 0, length = this.services.length ? this.services.length : 1; h < length; h++) {	// always at least one pass, to pick up service-indepdent qtypes
 			const service = this.services[h];
-			let mask = 0;
+			let mask = [0, 0];
 
 			for (let i = 0; i < packet.questions; i++) {
 				const question = packet.question(i);
@@ -253,12 +255,12 @@ class MDNS extends Socket {
 						if (h)
 							;
 						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
-							mask |= 1;
+							mask[question.qclass >> 1] |= 0x01;
 						break;
 
 					case MDNS_TYPE_AAAA:
 						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
-							mask |= 32;
+							mask[question.qclass >> 1] |= 0x20;
 						break;
 
 					case MDNS_TYPE_PTR:
@@ -283,7 +285,7 @@ class MDNS extends Socket {
 								   respond = false;
 								}
 								if (respond)
-									mask |= 0x1f;
+									mask[question.qclass >> 1] |= 0x1F;
 							}
 						}
 						else
@@ -299,7 +301,7 @@ class MDNS extends Socket {
 								   respond = false;
 							}
 							if (respond)
-								mask |= 0x10;
+								mask[question.qclass >> 1] |= 0x10;
 							break;
 						}
 						break;
@@ -310,42 +312,49 @@ class MDNS extends Socket {
 						else
 						if ((4 === name.length) && (LOCAL === name[3]) && (this.hostName === name[0]) &&
 							(("_" + service.name) === name[1]) && (("_" + service.protocol) === name[2]))
-							mask |= 2;		// not checking known answers... seems to never be populated.
+							mask[question.qclass >> 1] |= 0x02;		// not checking known answers... seems to never be populated.
 						break;
 
 					case MDNS_TYPE_ANY:
 						if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName === name[0]))
-							mask |= service ? 0x1f : 1;
+							mask[question.qclass >> 1] |= service ? 0x1F : 0x01;
 						break;
 				}
 			}
 
-			//@@ delay response 20-120 ms
-			if (mask) {
-				if (!response)
-					response = new MDNS.Serializer;
-				this.reply(response, mask, service)
+			if (mask[0]) {
+				if (!response[0])
+					response[0] = new MDNS.Serializer;
+				this.reply(response[0], mask, service)
+			}
+			if (mask[1]) {
+				if (!response[1])
+					response[1] = new MDNS.Serializer;
+				this.reply(response[1], mask, service)
 			}
 		}
 
-		if (response)
-			this.write(MDNS_IP, MDNS_PORT, response.build(packet.id));		// could be unicast
+		//@@ delay response 20-120 ms
+		if (response[0])
+			this.write(MDNS_IP, MDNS_PORT, response[0].build(packet.id));
+		if (response[1])
+			this.write(address, port, response[1].build(packet.id));
 	}
 
 	/*
-		32 - NSEC - A ONLY
-		16 - service_ptr
-		8 - PTR
-		4 - TXT
-		2 - SRV
-		1 - A
+		0x20 - NSEC - A ONLY
+		0x10 - service_ptr
+		0x08 - PTR
+		0x04 - TXT
+		0x02 - SRV
+		0x01 - A
 	 */
 	reply(response, mask, service, bye = false) {
 		let build = response ? false : true;
 		if (build) response = new MDNS.Serializer;
 		bye = bye ? 0 : 0xFF;
 
-		if (32 & mask) {	// NSEC indicating A only
+		if (0x20 & mask) {	// NSEC indicating A only
 			let answer = [];
 			answer.push(this.instanceName, LOCAL, 0);
 
@@ -356,7 +365,7 @@ class MDNS extends Socket {
 			response.add(answer);
 		}
 
-		if (16 & mask) {	// PTR for service discovery
+		if (0x10 & mask) {	// PTR for service discovery
 			let answer = [];
 			answer.push("_services", "_dns-sd", "_udp", LOCAL, 0);
 
@@ -367,7 +376,7 @@ class MDNS extends Socket {
 			response.add(answer);
 		}
 
-		if (8 & mask) {		// PTR
+		if (0x08 & mask) {		// PTR
 			let answer = [];
 			answer.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
 
@@ -380,7 +389,7 @@ class MDNS extends Socket {
 			response.add(answer);
 		}
 
-		if (4 & mask) {	// TXT
+		if (0x04 & mask) {	// TXT
 			let answer = [];
 			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
 
@@ -401,7 +410,7 @@ class MDNS extends Socket {
 			response.add(answer);
 		}
 
-		if (2 & mask) {	// SRV
+		if (0x02 & mask) {	// SRV
 			let answer = [];
 			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
 
@@ -414,7 +423,7 @@ class MDNS extends Socket {
 			response.add(answer);
 		}
 
-		if (1 & mask) {	// A
+		if (0x01 & mask) {	// A
 			let answer = [];
 			answer.push(this.hostName, LOCAL, 0);
 			answer.push(Uint8Array.of(0, 1, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, 4));
