@@ -35,8 +35,6 @@ yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, 
 	return NULL;
 }
 
-const char* harnessPath = "/Users/ps/Projects/test262/harness/";
-
 void test262_getData(xsMachine* the)
 {
 	FILE* file = NULL;

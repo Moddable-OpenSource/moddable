@@ -188,28 +188,28 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
-					name: "TEST262",
+					name: "TABS",
 					items: [
 						{
-							Template: Test262BaseRow,
-							name: "Base",
+							Template: ToggleRow,
+							comment: "Show Messages tab",
+							name: "Messages",
 							get value() {
-								return model.test262.base;
+								return model.visibleTabs[1];
 							},
 							set value(it) {
-								model.test262.base = it;
-								model.test262.onPreferencesChanged();
+								model.showTab(1, it);
 							},
 						},
 						{
-							Template: Test262FilterRow,
-							name: "Filter",
+							Template: ToggleRow,
+							comment: "Show Test262 tab",
+							name: "Test262",
 							get value() {
-								return model.test262.filter;
+								return model.visibleTabs[2];
 							},
 							set value(it) {
-								model.test262.filter = it;
-								model.test262.onPreferencesChanged();
+								model.showTab(2, it);
 							},
 						},
 					],
@@ -421,76 +421,6 @@ var InterfacesRow = Row.template($ => ({
 					label.string = string;	
 				}
 			},
-		}),
-	],
-}));
-
-var Test262BaseRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:preferenceRowSkin, active:true,
-	contents: [
-		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
-		Label($, { width:180, style:preferenceValueStyle, string:$.value }),
-		Container($, {
-			width:80, skin:buttonSkin, active:true, name:"onEnter",
-			Behavior: class extends ButtonBehavior {
-				onEnter(button) {
-					var path = this.data.path;
-					var dictionary = { message:"Locate test262", prompt:"Open" };
-					system.openDirectory(dictionary, path => { 
-						if (path) 
-							button.previous.string = $.value = path;
-					});
-				}
-			},
-			contents: [
-				Label($, { left:0, right:0, style:buttonStyle, string:"Locate..." }),
-			],
-		}),
-	],
-}));
-
-var Test262FilterRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:preferenceRowSkin, active:true,
-	contents: [
-		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
-		Container($, {
-			width:180, height:26,
-			contents: [
-				Field($, { 
-					anchor:"FIELD", left:0, right:0, top:2, bottom:2, skin:fieldScrollerSkin, style:preferenceValueStyle, string:$.value, 
-					Behavior: class extends Behavior {
-						onCreate(field, data) {
-							this.data = data;
-						}
-						onFocused(field) {
-							let button = field.container.next;
-							button.visible = true;
-						}
-						onUnfocused(field) {
-							let button = field.container.next;
-							if (button.state != 2) {
-								button.visible = false;
-								field.string = this.data.value;
-							}
-						}
-					}
-				}),
-			],
-		}),
-		Container($, {
-			width:80, skin:buttonSkin, active:true, visible:false,
-			Behavior: class extends ButtonBehavior {
-				onTap(button) {
-					let field = button.previous.first;
-					this.data.value = field.string;
-					field.focus();
-				}
-			},
-			contents: [
-				Label($, { left:0, right:0, style:buttonStyle, string:"Apply" }),
-			],
 		}),
 	],
 }));
