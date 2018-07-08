@@ -35,8 +35,6 @@
  *       limitations under the License.
  */
 
-import Test262 from "Test262";
-
 export const mxFramesView = 0;
 export const mxLocalsView = 1;
 export const mxGlobalsView = 2;
@@ -111,7 +109,6 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			/(var\()([0-9]+)(\))/,
 		];
 		this.sortingZeros = "0000000000";
-		this.test262 = new Test262;
 	}
 	
 	canAbort() {
@@ -490,11 +487,12 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onBubbled(path, line, id, flags, message) {
 		if (id == "test262")
-			this.behavior.test262.onMessage(this, message);
+			this.behavior.test262Home.onMessage(this, message);
 		else
 			this.behavior.onBubbled(this, path, line, id, flags, message);
 	}
 	onDisconnected() {
+		this.behavior.test262Home.onDisconnected(this);
 		this.behavior.onDisconnected(this);
 	}
 	onFileChanged(path, line) {
