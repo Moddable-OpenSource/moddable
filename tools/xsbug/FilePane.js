@@ -146,7 +146,7 @@ class FileButtonBehavior extends Behavior {
 	}
 };
 
-class FileRowBehavior extends RowBehavior {
+export class FileRowBehavior extends RowBehavior {
 	onCreate(row, data) {
 		super.onCreate(row, data);
 		this.onPathChanged(row, model.path);
@@ -294,7 +294,7 @@ export class FolderTableBehavior extends TableBehavior {
 	}
 };
 
-class FolderRowBehavior extends HeaderBehavior {
+export class FolderRowBehavior extends HeaderBehavior {
 };
 
 class HomeTableBehavior extends FolderTableBehavior {

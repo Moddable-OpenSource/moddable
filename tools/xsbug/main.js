@@ -83,6 +83,11 @@ import {
 	TabsPane,
 } from "TabsPane";
 
+import {
+	Test262Home,
+	Test262Pane,
+} from "Test262Pane";
+
 class Home {
 	constructor(path) {
 		this.depth = 0;
@@ -157,6 +162,10 @@ class ApplicationBehavior extends DebugBehavior {
 			message:null,
 		}
 		
+		this.test262Home = new Test262Home;
+		
+		this.visibleTabs = [ true, true, false ];
+		
 		this.path = undefined;
 		this.state = undefined;
 		
@@ -164,11 +173,10 @@ class ApplicationBehavior extends DebugBehavior {
 		application.add(new MainContainer(this));
 		this.doOpenView();
 			
-		this.test262.onPreferencesChanged();
 		this.start();
 		application.updateMenus();
 	}
-
+	
 	selectMachine(machine, tab = 0) {
 		if ((this.currentMachine != machine) || (this.currentTab != tab)) {
 			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
@@ -181,13 +189,23 @@ class ApplicationBehavior extends DebugBehavior {
 				if ((this.currentMachine) || (this.currentTab != tab)) {
 					if (tab == 0)
 						container.replace(container.first, new FilePane(this));
-					else
+					else if (tab == 1)
 						container.replace(container.first, new MessagePane(this));
+					else
+						container.replace(container.first, new Test262Pane(this));
 				}	
 			}	
 			this.currentMachine = machine
 			this.currentTab = tab
 			application.distribute("onMachineSelected", machine, tab);
+		}
+	}
+	showTab(tab, showIt) {
+		if (this.visibleTabs[tab] != showIt) {
+			if (this.currentTab == tab)
+				this.selectMachine(null, 0);
+			this.visibleTabs[tab] = showIt;
+			application.distribute("onMachinesChanged", this.machines);
 		}
 	}
 
@@ -449,12 +467,10 @@ class ApplicationBehavior extends DebugBehavior {
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
 					this.automaticInstruments = preferences.automaticInstruments;
-				if ("test262" in preferences) {
-					if ("base" in preferences.test262)
-						this.test262.base = preferences.test262.base;
-					if ("filter" in preferences.test262)
-						this.test262.filter = preferences.test262.filter;
-				}	
+				if ("test262Home" in preferences)
+					this.test262Home.fromJSON(preferences.test262Home);
+				if ("visibleTabs" in preferences)
+					this.visibleTabs = preferences.visibleTabs;
 			}
 		}
 		catch(e) {
@@ -481,10 +497,8 @@ class ApplicationBehavior extends DebugBehavior {
 				port: this.port,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
-				test262: {
-					base: this.test262.base,
-					filter: this.test262.filter,
-				},
+				test262Home: this.test262Home,
+				visibleTabs: this.visibleTabs,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
