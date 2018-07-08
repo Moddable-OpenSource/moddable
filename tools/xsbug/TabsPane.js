@@ -43,6 +43,8 @@ import {
 	tabBrokenSkin,
 	tabSkin,
 	tabStyle,
+	tabTest262Skin,
+	tabTest262Style,
 	tabsPaneSkin,
 	buttonsSkin,
 } from "assets";
@@ -62,7 +64,10 @@ class TabsPaneBehavior extends Behavior {
 		let row = scroller.first;
 		row.empty(0);
 		row.add(new BreakpointsTab(null));
-		row.add(new BubblesTab(null));
+		if (model.visibleTabs[1])
+			row.add(new BubblesTab(null));
+		if (model.visibleTabs[2])
+			row.add(new Test262Tab(null));
 		machines.forEach(machine => row.add(new MachineTab(machine)));
 		this.onMeasureHorizontally(layout);
 	}
@@ -129,6 +134,21 @@ class BubblesTabBehavior extends TabBehavior {
 	}
 	select(container) {
 		model.selectMachine(null, 1);
+	}
+};
+
+class Test262TabBehavior extends TabBehavior {
+	isSelected(container) {
+		return (model.currentMachine == null) && (model.currentTab == 2);
+	}
+	onCreate(container) {
+		this.onMachineSelected(container, model.currentMachine, model.currentTab);
+	}
+	onMachineSelected(container, machine, tab) {
+		this.changeState(container, (machine == null) && (tab == 2) ? 0 : 1);
+	}
+	select(container) {
+		model.selectMachine(null, 2);
 	}
 };
 
@@ -208,6 +228,33 @@ var BubblesTab = Container.template($ => ({
 				}
 				onBubblesChanged(label) {
 					label.string = model.bubbles.items.length;
+				}
+			},
+		}),
+	],
+}));
+
+var Test262Tab = Container.template($ => ({
+	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:Test262TabBehavior,
+	contents: [
+		Label($, { 
+			left:5, right:5, height:16, skin:tabTest262Skin, style:tabTest262Style, string:"0",
+			Behavior: class extends Behavior {
+				onCreate(label) {
+					this.onTest262ResultChanged(label);
+				}
+				onTest262FilterChanged(label) {
+					this.onTest262ResultChanged(label);
+				}
+				onTest262PathChanged(label) {
+					this.onTest262ResultChanged(label);
+				}
+				onTest262ResultChanged(label) {
+					let result = model.test262Home.result;
+					label.string = result.failed + result.passed + result.skipped;
+				}
+				onTest262StatusChanged(label) {
+					this.onTest262ResultChanged(label);
 				}
 			},
 		}),
