@@ -255,12 +255,12 @@ class MDNS extends Socket {
 						if (h)
 							;
 						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
-							mask[question.qclass >> 1] |= 0x01;
+							mask[question.qclass >> 15] |= 0x01;
 						break;
 
 					case MDNS_TYPE_AAAA:
 						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
-							mask[question.qclass >> 1] |= 0x20;
+							mask[question.qclass >> 15] |= 0x20;
 						break;
 
 					case MDNS_TYPE_PTR:
@@ -285,7 +285,7 @@ class MDNS extends Socket {
 								   respond = false;
 								}
 								if (respond)
-									mask[question.qclass >> 1] |= 0x1F;
+									mask[question.qclass >> 15] |= 0x1F;
 							}
 						}
 						else
@@ -301,7 +301,7 @@ class MDNS extends Socket {
 								   respond = false;
 							}
 							if (respond)
-								mask[question.qclass >> 1] |= 0x10;
+								mask[question.qclass >> 15] |= 0x10;
 							break;
 						}
 						break;
@@ -312,12 +312,12 @@ class MDNS extends Socket {
 						else
 						if ((4 === name.length) && (LOCAL === name[3]) && (this.hostName === name[0]) &&
 							(("_" + service.name) === name[1]) && (("_" + service.protocol) === name[2]))
-							mask[question.qclass >> 1] |= 0x02;		// not checking known answers... seems to never be populated.
+							mask[question.qclass >> 15] |= 0x02;		// not checking known answers... seems to never be populated.
 						break;
 
 					case MDNS_TYPE_ANY:
 						if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName === name[0]))
-							mask[question.qclass >> 1] |= service ? 0x1F : 0x01;
+							mask[question.qclass >> 15] |= service ? 0x1F : 0x01;
 						break;
 				}
 			}
@@ -325,12 +325,12 @@ class MDNS extends Socket {
 			if (mask[0]) {
 				if (!response[0])
 					response[0] = new MDNS.Serializer;
-				this.reply(response[0], mask, service)
+				this.reply(response[0], mask[0], service)
 			}
 			if (mask[1]) {
 				if (!response[1])
 					response[1] = new MDNS.Serializer;
-				this.reply(response[1], mask, service)
+				this.reply(response[1], mask[1], service)
 			}
 		}
 
