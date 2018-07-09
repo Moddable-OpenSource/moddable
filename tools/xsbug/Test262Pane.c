@@ -35,7 +35,7 @@ yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, 
 	return NULL;
 }
 
-void test262_getData(xsMachine* the)
+void Test262Context_getMetadata(xsMachine* the)
 {
 	FILE* file = NULL;
 	size_t size;
