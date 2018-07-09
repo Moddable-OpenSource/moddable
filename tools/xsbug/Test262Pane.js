@@ -37,6 +37,203 @@
 
 // MODEL
 
+export class Test262Context {
+	constructor() {
+		this.home = {
+			context:this,
+			depth:0,
+			expanded:true,
+			items:[],
+			filter:"",
+			name:"",
+			path:"",
+		},
+		this.machine = null;
+		this.report = {
+			context:this,
+		};
+		this.reset();
+	}
+	editFilter(name) {
+		this.home.filter = system.buildPath(this.home.path, name);
+		this.home.name = name;
+		this.reset();
+		application.distribute("onTest262FilterChanged", this.home.filter);
+	}
+	fail(reason) {
+		let metadata = this.metadata;
+		metadata.expanded = true;
+		metadata.reason = reason;
+		this.report.failed++;
+		this.report.items.push(metadata);
+		application.distribute("onTest262ReportChanged");
+	}
+	fromJSON(json) {
+		this.locate(json.home.path);
+		if (this.home.path) {
+			this.home.expanded = json.home.expanded;
+			this.home.items = json.home.items;
+			this.home.name = json.home.name;
+			this.home.filter = json.home.filter;
+			this.report.expanded = json.report.expanded;
+			this.report.items = json.report.items;
+			this.report.failed = json.report.failed;
+			this.report.passed = json.report.passed;
+			this.report.skipped = json.report.skipped;
+		}
+	}
+	getMetadata(path) @ "Test262Context_getMetadata"
+	locate(path) {
+		this.home.path = path;
+		this.onDirectoryChanged();
+		if (this.home.path) {
+			let directory = system.getPathDirectory(this.home.path);
+			this.directoryNotifier = new system.DirectoryNotifier(directory, path => {
+				this.onDirectoryChanged(path);
+			});
+			application.distribute("onTest262PathChanged");
+		}
+	}
+	onDirectoryChanged() {
+		if (!system.fileExists(this.home.path)) {
+			if (this.directoryNotifier)
+				this.directoryNotifier.close();
+			let home = this.home;
+			home.expanded = false;
+			home.items = [];
+			home.name = "";
+			home.path = "";
+			home.filter = "";
+			this.reset();
+			application.distribute("onTest262PathChanged");
+		}
+	}
+	onDisconnected(machine) {
+		if (this.machine == machine)
+			this.machine = null;
+	}
+	onMessage(machine, message) {
+		if (message == ">") {
+			this.machine = machine;
+			if (this.node)
+				this.step();
+			application.distribute("onTest262StatusChanged");
+		}
+		else if (message == "<") {
+			let metadata = this.metadata;
+			if (metadata) {
+				if (metadata.paths.length) {
+					let path = metadata.paths.shift();
+					machine.doScript(path);
+				}
+				else {
+					if (metadata.negative)
+						this.fail(`Expected ${metadata.negative} but got no errors`);
+					else
+						this.report.passed++;
+					this.machine = null;
+					machine.doAbort();
+				}
+			}
+			else {
+				this.machine = null;
+				machine.doAbort();
+			}
+		}
+		else {
+			let metadata = this.metadata;
+			if (metadata) {
+				if (metadata.paths.length || !metadata.negative)
+					this.fail(message);
+				else if (message.indexOf(metadata.negative) != 0)
+					this.fail(`Expected ${metadata.negative} but got ${message}`);
+				else
+					this.report.passed++;
+			}
+			this.machine = null;
+			machine.doAbort();
+		}
+	}
+	reset() {
+		let report = this.report;
+		report.expanded = false;
+		report.items = [];
+		report.failed = 0;
+		report.passed = 0;
+		report.skipped = 0;
+		this.stop();
+	}
+	selectFilter(path) {
+		this.home.filter = path;
+		this.home.name = path.slice(this.home.path.length + 1);
+		this.reset();
+		application.distribute("onTest262FilterChanged", this.home.filter);
+	}
+	start() {
+		this.reset();
+		this.node = new Test262Node(null, this.home.filter);
+		if (this.machine)
+			this.step();
+		else {
+			system.alert({ 
+				type:"stop",
+				prompt:"xsbug",
+				info:"Launch the test262 app to test...",
+				buttons:["OK"]
+			}, ok => {
+			});
+		}
+		application.distribute("onTest262ReportChanged");
+	}
+	step() {
+		let machine = this.machine;
+		let node = this.node;
+		while (node = node.next()) {
+			let path = node.path;
+			this.metadata = this.getMetadata(path);
+			if (this.metadata.strict) {
+				this.node = node;
+				let directory = system.getPathDirectory(this.home.path);
+				let harness = system.buildPath(directory, "harness");
+				this.metadata.paths = this.metadata.paths.map(name => system.buildPath(harness, name));
+				this.metadata.paths.push(path);
+				this.metadata.path = path;
+				this.report.status = this.metadata.name = path.slice(this.home.path.length + 1);
+				path = this.metadata.paths.shift();
+				machine.doScript(path);
+				return;
+			}
+			this.report.skipped++;
+		}
+		this.stop();
+	}
+	stop() {
+		this.metadata = null;
+		this.node = null;
+		this.report.status = "REPORT";
+	}
+	toJSON() {
+		let home = this.home;
+		let report = this.report;
+		return {
+			home: {
+				expanded: home.expanded,
+				items: home.items,
+				name: home.name,
+				path: home.path,
+				filter: home.filter,
+			},
+			report: {
+				expanded: report.expanded,
+				items: report.items,
+				failed: report.failed,
+				passed: report.passed,
+				skipped: report.skipped,
+			},
+		};
+	}
+}
+
 class Test262Node {
 	constructor(parent, path) {
 		this.parent = parent;
@@ -81,193 +278,11 @@ class Test262Node {
 	}
 }
 
-export class Test262Home {
-	constructor() {
-		this.depth = 0;
-		this.path = "";
-		this.name = "";
-		this.filter = "";
-		this.expanded = false;
-		this.items = [];
-		this.result = {
-			context:this,
-		};
-		this.reset();
-		
-		this.machine = null;
-	}
-	editFilter(name) {
-		this.filter = system.buildPath(this.path, name);
-		this.name = name;
-		this.reset();
-		application.distribute("onTest262FilterChanged", this.filter);
-	}
-	fail(reason) {
-		let metadata = this.metadata;
-		metadata.expanded = true;
-		metadata.reason = reason;
-		this.result.failed++;
-		this.result.items.push(metadata);
-		application.distribute("onTest262ResultChanged");
-	}
-	
-	fromJSON(json) {
-		this.locate(json.path);
-		if (this.path) {
-			this.name = json.name;
-			this.filter = json.filter;
-			this.expanded = json.expanded;
-			this.items = json.items;
-		}
-	}
-	getData(path) @ "test262_getData"
-	locate(path) {
-		this.path = path;
-		this.onDirectoryChanged();
-		if (this.path) {
-			let directory = system.getPathDirectory(this.path);
-			this.directoryNotifier = new system.DirectoryNotifier(directory, path => {
-				this.onDirectoryChanged(path);
-			});
-			application.distribute("onTest262PathChanged");
-		}
-	}
-	onDirectoryChanged() {
-		if (!system.fileExists(this.path)) {
-			if (this.directoryNotifier)
-				this.directoryNotifier.close();
-			this.path = "";
-			this.name = "";
-			this.filter = "";
-			this.expanded = false;
-			this.items = [];
-			this.reset();
-			application.distribute("onTest262PathChanged");
-		}
-	}
-	onDisconnected(machine) {
-		if (this.machine == machine)
-			this.machine = null;
-	}
-	onMessage(machine, message) {
-		if (message == ">") {
-			this.machine = machine;
-			if (this.node)
-				this.step();
-			application.distribute("onTest262StatusChanged");
-		}
-		else if (message == "<") {
-			let metadata = this.metadata;
-			if (metadata) {
-				if (metadata.paths.length) {
-					let path = metadata.paths.shift();
-					machine.doScript(path);
-				}
-				else {
-					if (metadata.negative)
-						this.fail(`Expected ${metadata.negative} but got no errors`);
-					else
-						this.result.passed++;
-					this.machine = null;
-					machine.doAbort();
-				}
-			}
-			else {
-				this.machine = null;
-				machine.doAbort();
-			}
-		}
-		else {
-			let metadata = this.metadata;
-			if (metadata) {
-				if (metadata.paths.length || !metadata.negative)
-					this.fail(message);
-				else if (message.indexOf(metadata.negative) != 0)
-					this.fail(`Expected ${metadata.negative} but got ${message}`);
-				else
-					this.result.passed++;
-			}
-			this.machine = null;
-			machine.doAbort();
-		}
-	}
-	reset() {
-		this.metadata = null;
-		this.node = null;
-		this.result.status = "...";
-		this.result.failed = 0;
-		this.result.passed = 0;
-		this.result.skipped = 0;
-		this.result.expanded = true;
-		this.result.items = [];
-	}
-	selectFilter(path) {
-		this.filter = path;
-		this.name = path.slice(this.path.length + 1);
-		this.reset();
-		application.distribute("onTest262FilterChanged", this.filter);
-	}
-	start() {
-		this.reset();
-		this.node = new Test262Node(null, this.filter);
-		if (this.machine)
-			this.step();
-		else {
-			system.alert({ 
-				type:"stop",
-				prompt:"xsbug",
-				info:"Launch the test262 app to pass tests.",
-				buttons:["OK"]
-			}, ok => {
-			});
-		}
-		application.distribute("onTest262ResultChanged");
-	}
-	step() {
-		let machine = this.machine;
-		let node = this.node;
-		while (node = node.next()) {
-			let path = node.path;
-			this.metadata = this.getData(path);
-			if (this.metadata.strict) {
-				this.node = node;
-				let directory = system.getPathDirectory(this.path);
-				let harness = system.buildPath(directory, "harness");
-				this.metadata.paths = this.metadata.paths.map(name => system.buildPath(harness, name));
-				this.metadata.paths.push(path);
-				this.metadata.path = path;
-				this.result.status = this.metadata.name = path.slice(this.path.length + 1);
-				path = this.metadata.paths.shift();
-				machine.doScript(path);
-				return;
-			}
-			this.result.skipped++;
-		}
-		this.stop();
-	}
-	stop() {
-		this.metadata = null;
-		this.node = null;
-		let result = this.result;
-		result.status = `Failed:${result.failed} Passed:${result.passed} Skipped:${result.skipped}`
-	}
-	toJSON() {
-		return {
-			path: this.path,
-			name: this.name,
-			filter: this.filter,
-			expanded: this.expanded,
-			items: this.items,
-		};
-	}
-}
-
 // ASSETS
 
 import {
 	buttonsSkin,
 	glyphsSkin,
-	waitSkin,
 	
 	headerHeight,
 	rowHeight,
@@ -284,17 +299,14 @@ import {
 	tableRowSkin,
 	tableRowStyle,
 	tableFooterSkin,
+	test262HeaderStyles,
 	
 	buttonSkin,
 	buttonStyle,
 	fileRowSkin,
 	fileRowStyle,
-	infoRowStyle,
-	searchEmptyStyle,
 	resultRowSkin,
-	resultLabelSkin,
 	resultLabelStyle,
-	resultCountStyle,
 	
 	filterTest262Skin,
 } from "assets";
@@ -328,59 +340,40 @@ class Test262PaneBehavior extends Behavior {
 	onTest262PathChanged(container) {
 		let scroller = container.first;
 		let column = scroller.first;
-		let test262Home = this.data.test262Home;
+		let test262Context = this.data.test262Context;
 		column.empty(0);
-		if (test262Home.path) {
-			column.add(new Test262ResultTable(test262Home.result));
-			column.add(new Test262HomeTable(test262Home));
-		}
+		column.add(new Test262ReportTable(test262Context.report));
+		if (test262Context.home.path)
+			column.add(new Test262HomeTable(test262Context.home));
 		else 
-			column.add(new Test262LocateRow(test262Home));
-	}
-	onTest262SelectFilter(container, path) {
-		this.data.test262Home.selectFilter(path);
+			column.add(new Test262LocateRow(test262Context));
 	}
 };
 
-class Test262ResultTableBehavior extends TableBehavior {
-	expand(column, expandIt) {
-		var data = this.data;
-		var header = column.first;
-		data.expanded = expandIt;
-		column.empty(1);
-		if (expandIt) {
-			header.behavior.expand(header, true);
-			column.add(new Test262StatusRow(data));
-			for (let item of data.items)
-				column.add(new Test262FailureTable(item));
-			column.add(new Test262ResultFooter(data));
-		}
-		else {
-			header.behavior.expand(header, false);
-		}
-	}
-	hold(column) {
-		return Test262ResultHeader(this.data, {left:0, right:0, top:0, height:column.first.height});
-	}
-	onCreate(column, data) {
+class Test262HeaderBehavior extends Behavior {
+	onCreate(row, data) {
 		this.data = data;
-		this.expand(column, data.expanded);
 	}
-	onTest262FilterChanged(column) {
-		this.onTest262ResultChanged(column);
+	onTest262FilterChanged(row) {
+		this.onTest262StatusChanged(row);
 	}
-	onTest262ResultChanged(column) {
-		var data = this.data;
-		if (data.expanded) {
-			column.empty(2);
-			for (let item of data.items)
-				column.add(new Test262FailureTable(item));
-			column.add(new Test262ResultFooter(data));
-		}	
+	onTest262ReportChanged(row) {
+		this.onTest262StatusChanged(row);
 	}
-}
+	onTest262StatusChanged(row) {
+		let data = this.data;
+		let label = row.first.next;
+		label.string = data.failed + data.passed + data.skipped;
+		label = label.next.next;
+		label.string = data.failed;
+		label = label.next.next;
+		label.string = data.passed;
+		label = label.next.next;
+		label.string = data.skipped;
+	}
+};
 
-class Test262ResultButtonBehavior extends ButtonBehavior {
+class Test262ButtonBehavior extends ButtonBehavior {
 	onTap(button) {
 		if (button.variant)
 			this.data.context.start();
@@ -392,7 +385,7 @@ class Test262ResultButtonBehavior extends ButtonBehavior {
 	onTest262FilterChanged(button, filter) {
 		this.onTest262StatusChanged(button);
 	}
-	onTest262ResultChanged(button, filter) {
+	onTest262ReportChanged(button, filter) {
 		this.onTest262StatusChanged(button);
 	}
 	onTest262StatusChanged(button) {
@@ -400,14 +393,42 @@ class Test262ResultButtonBehavior extends ButtonBehavior {
 	}
 };
 
-class Test262StatusRowBehavior extends Behavior {
-	onCreate(row, data) {
-		this.data = data;
+class Test262ReportTableBehavior extends TableBehavior {
+	expand(column, expandIt) {
+		var data = this.data;
+		var header = column.first;
+		data.expanded = expandIt;
+		column.empty(1);
+		if (expandIt) {
+			header.behavior.expand(header, true);
+			for (let item of data.items)
+				column.add(new Test262FailureTable(item));
+			column.add(new Test262ReportFooter(data));
+		}
+		else {
+			header.behavior.expand(header, false);
+		}
 	}
-	onTest262FilterChanged(row) {
+	hold(column) {
+		return Test262ReportHeader(this.data, {left:0, right:0, top:0, height:column.first.height});
+	}
+	onCreate(column, data) {
+		this.data = data;
+		this.expand(column, data.expanded);
+	}
+	onTest262FilterChanged(column) {
+		this.onTest262ReportChanged(column);
+	}
+	onTest262ReportChanged(column) {
+		this.expand(column, this.data.expanded);
+	}
+}
+
+class Test262ReportHeaderBehavior extends HeaderBehavior {
+	onTest262FilterChanged(row, filter) {
 		this.onTest262StatusChanged(row);
 	}
-	onTest262ResultChanged(row) {
+	onTest262ReportChanged(row, filter) {
 		this.onTest262StatusChanged(row);
 	}
 	onTest262StatusChanged(row) {
@@ -433,10 +454,6 @@ class Test262FailureTableBehavior extends TableBehavior {
 		this.data = data;
 		this.expand(table, data.expanded);
 	}
-	onSearchResultsComplete(table, data) {
-		if (this.data == data)
-			this.expand(table, data.expanded);
-	}
 };
 
 class Test262FailureHeaderBehavior extends HeaderBehavior {
@@ -452,13 +469,23 @@ class Test262FailureRowBehavior extends RowBehavior {
 	}
 };
 
+class Test262LocateRowBehavior extends RowBehavior {
+	onTap(button) {
+		var dictionary = { message:"Open test262 repository", prompt:"Open" };
+		system.openDirectory(dictionary, path => { 
+			if (path)
+				this.data.locate(system.buildPath(path, "test"));
+		});
+	}
+};
+
 class Test262FilterButtonBehavior extends Behavior {
 	changeState(button, state) {
 		button.state = state;
 	}
 	onCreate(button, data) {
 		this.data = data;
-		this.onTest262FilterChanged(button, model.test262Home.filter);
+		this.onTest262FilterChanged(button, model.test262Context.home.filter);
 	}
 	onMouseEntered(button, x, y) {
 		this.changeState(button, 2);
@@ -605,9 +632,37 @@ class Test262HomeTableBehavior extends Test262FolderTableBehavior {
 		super.onHold(table, holder);
 		data.SELECT_FOCUS.delegate("onRestore");;
 	}
+	onTest262SelectFilter(container, path) {
+		this.data.context.selectFilter(path);
+	}
 };
 
-class Test262HomeHeaderBehavior extends FolderRowBehavior {
+class Test262HomeHeaderBehavior extends HeaderBehavior {
+};
+
+class Test262HomeFieldBehavior extends Behavior {
+	onCreate(field, data) {
+		 this.data = data;
+	}
+	onStringChanged(field) {
+		var data = this.data;
+		this.data.context.editFilter(field.string);
+	}
+	onSave(field) {
+		var data = this.data;
+		field.placeholder = "";
+		field.string = "";
+		data.SELECT_FOCUS = null;
+	}
+	onRestore(field) {
+		var data = this.data;
+		field.placeholder = "SELECT";
+		field.string = this.data.name;
+		data.SELECT_FOCUS = field;
+	}
+	onTest262FilterChanged(field, filter) {
+		field.string = this.data.name;
+	}
 };
 
 // TEMPLATES
@@ -621,7 +676,7 @@ export var Test262Pane = Container.template(function($) { return {
 	Behavior: Test262PaneBehavior,
 	contents: [
 		Scroller($, {
-			left:0, right:0, top:0, bottom:0, active:true, clip:true, Behavior:ScrollerBehavior, 
+			left:0, right:0, top:27, bottom:0, active:true, clip:true, Behavior:ScrollerBehavior, 
 			contents: [
 				Column($, {
 					left:0, right:0, top:0, Behavior:HolderColumnBehavior, 
@@ -634,60 +689,49 @@ export var Test262Pane = Container.template(function($) { return {
 				VerticalScrollbar($, {}),
 			]
 		}),
+		Content($, { left:0, right:0, top:26, height:1, skin:paneSeparatorSkin, }),
+		Test262Header($.test262Context.report, { }),
+		Container($, { left:0, right:0, top:27, bottom:0 }),
 	]
 }});
 
-var Test262LocateRow = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+var Test262Header = Row.template($ => ({
+	left:0, top:0, height:headerHeight,
+	Behavior: Test262HeaderBehavior,
 	contents: [
-		Content($, { width:26 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"TEST262" }),
-		Container($, {
-			width:80, skin:buttonSkin, active:true,
-			Behavior: class extends ButtonBehavior {
-				onTap(button) {
-					var dictionary = { message:"Locate test262", prompt:"Open" };
-					system.openDirectory(dictionary, path => { 
-						if (path)
-							this.data.locate(system.buildPath(path, "test"));
-					});
-				}
-			},
-			contents: [
-				Label($, { left:0, right:0, style:buttonStyle, string:"Locate..." }),
-			],
-		}),
-		Content($, { width:26 }),
+		Content($, { width:26, skin:buttonsSkin, variant:$.node ? 0 : 1, active:true, Behavior:Test262ButtonBehavior }),
+		Label($, { width:40, style:tableHeaderStyle, string:$.failed + $.passed + $.skipped }),
+		Label($, { width:40, style:test262HeaderStyles[0], string:"FAIL" }),
+		Label($, { width:40, style:test262HeaderStyles[1], string:$.failed }),
+		Label($, { width:40, style:test262HeaderStyles[2], string:"PASS" }),
+		Label($, { width:40, style:test262HeaderStyles[3], string:$.passed }),
+		Label($, { width:40, style:test262HeaderStyles[4], string:"SKIP" }),
+		Label($, { width:40, style:test262HeaderStyles[5], string:$.skipped }),
 	],
-}});
+}));
 
-var Test262ResultTable = Column.template(function($) { return {
+
+var Test262ReportTable = Column.template(function($) { return {
 	left:0, right:0, active:true,
-	Behavior: Test262ResultTableBehavior,
+	Behavior: Test262ReportTableBehavior,
 	contents: [
-		Test262ResultHeader($, {}),
+		Test262ReportHeader($, {}),
 	],
 }});
 
-var Test262ResultHeader = Row.template(function($) { return {
+var Test262ReportHeader = Row.template(function($) { return {
 	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
-	Behavior: HeaderBehavior,
+	Behavior: Test262ReportHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
 		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"TEST262" }),
+		Label($, { left:0, right:0, style:tableHeaderStyle, string:$.status }),
 	],
 }});
 
-var Test262StatusRow = Row.template(function($) { return {
-	left:0, right:0, height:26, skin:resultRowSkin,
-	Behavior: Test262StatusRowBehavior,
-	contents: [
-		Content($, { width:26, skin:buttonsSkin, variant:$.context.node ? 0 : 1, active:true, Behavior:Test262ResultButtonBehavior }),
-		Label($, { left:0, style:resultLabelStyle, string:$.status }),
-	],
+var Test262ReportFooter = Row.template(function($) { return {
+	left:0, right:0, height:3, skin:tableFooterSkin,
 }});
-
 
 var Test262FailureTable = Column.template(function($) { return {
 	left:0, right:0, active:true, clip:true,
@@ -716,24 +760,51 @@ var Test262FailureRow = Row.template(function($) { return {
 	],
 }});
 
-var Test262ResultRow = Row.template(function($) { return {
-	left:0, right:0, skin:tableRowSkin, active:true,
-	Behavior: Test262ResultRowBehavior,
+
+var Test262LocateRow = Row.template(function($) { return {
+	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	Behavior: Test262LocateRowBehavior,
 	contents: [
-		Content($, { width:66 }),
-		Column($, {
-			left:0, right:0, 
-			contents: [
-				Label($, { left:0, style:tableRowStyle, string:$.name }),
-				Text($, { left:20, right:0, style:resultLabelStyle, string:$.reason }),
-			],
-		}),
+		Content($, { width:26 }),
+		Label($, { left:0, right:0, style:tableHeaderStyle, string:"REPOSITORY..." }),
 	],
 }});
 
-var Test262ResultFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+
+var Test262FileRow = Row.template(function($) { return {
+	left:0, right:0, height:rowHeight, skin:fileRowSkin, active:true,
+	Behavior: Test262FileRowBehavior,
+	contents: [
+		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
+		Content($, { width:(($.depth - 1) * 20) }),
+		Content($, { width:20 }),
+		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+	],
 }});
+
+var Test262FolderTable = Column.template(function($) { return {
+	left:0, right:0, active:true,
+	Behavior: Test262FolderTableBehavior,
+	contents: [
+		Test262FolderHeader($, {}),
+	],
+}});
+
+var Test262FolderHeader = Row.template(function($) { return {
+	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
+	Behavior: Test262FolderRowBehavior,
+	contents: [
+		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
+		Content($, { width:(($.depth - 1) * 20) }),
+		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
+		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+	],
+}});
+
+var Test262FileKindTemplates = {
+	file: Test262FileRow,
+	folder: Test262FolderTable,
+};
 
 var Test262HomeTable = Column.template(function($) { return {
 	left:0, right:0, active:true,
@@ -760,30 +831,7 @@ var Test262HomeHeader = Row.template(function($) { return {
 					style:findLabelStyle,
 					placeholder:"SELECT",
 					string:$.name,
-					Behavior: class extends Behavior {
-						onCreate(field, data) {
-							 this.data = data;
-						}
-						onStringChanged(field) {
-							var data = this.data;
-							this.data.editFilter(field.string);
-						}
-						onSave(field) {
-							var data = this.data;
-							field.placeholder = "";
-							field.string = "";
-							data.SELECT_FOCUS = null;
-						}
-						onRestore(field) {
-							var data = this.data;
-							field.placeholder = "SELECT";
-							field.string = this.data.name;
-							data.SELECT_FOCUS = field;
-						}
-						onTest262FilterChanged(field, filter) {
-							field.string = this.data.name;
-						}
-					},
+					Behavior: Test262HomeFieldBehavior,
 				}),
 			],
 		}),
@@ -794,38 +842,3 @@ var Test262HomeHeader = Row.template(function($) { return {
 var Test262HomeFooter = Row.template(function($) { return {
 	left:0, right:0, height:3, skin:tableFooterSkin,
 }});
-
-var Test262FolderTable = Column.template(function($) { return {
-	left:0, right:0, active:true,
-	Behavior: Test262FolderTableBehavior,
-	contents: [
-		Test262FolderHeader($, {}),
-	],
-}});
-
-var Test262FolderHeader = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
-	Behavior: Test262FolderRowBehavior,
-	contents: [
-		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
-		Content($, { width:(($.depth - 1) * 20) }),
-		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
-	],
-}});
-
-var Test262FileRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:fileRowSkin, active:true,
-	Behavior: Test262FileRowBehavior,
-	contents: [
-		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
-		Content($, { width:(($.depth - 1) * 20) }),
-		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
-	],
-}});
-
-var Test262FileKindTemplates = {
-	file: Test262FileRow,
-	folder: Test262FolderTable,
-};

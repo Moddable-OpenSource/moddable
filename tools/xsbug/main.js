@@ -84,7 +84,7 @@ import {
 } from "TabsPane";
 
 import {
-	Test262Home,
+	Test262Context,
 	Test262Pane,
 } from "Test262Pane";
 
@@ -162,7 +162,7 @@ class ApplicationBehavior extends DebugBehavior {
 			message:null,
 		}
 		
-		this.test262Home = new Test262Home;
+		this.test262Context = new Test262Context;
 		
 		this.visibleTabs = [ true, true, false ];
 		
@@ -467,8 +467,8 @@ class ApplicationBehavior extends DebugBehavior {
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
 					this.automaticInstruments = preferences.automaticInstruments;
-				if ("test262Home" in preferences)
-					this.test262Home.fromJSON(preferences.test262Home);
+				if ("test262Context" in preferences)
+					this.test262Context.fromJSON(preferences.test262Context);
 				if ("visibleTabs" in preferences)
 					this.visibleTabs = preferences.visibleTabs;
 			}
@@ -497,7 +497,7 @@ class ApplicationBehavior extends DebugBehavior {
 				port: this.port,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
-				test262Home: this.test262Home,
+				test262Context: this.test262Context,
 				visibleTabs: this.visibleTabs,
 			};
 			let string = JSON.stringify(preferences, null, "\t");

@@ -104,9 +104,8 @@ export const tabBreakpointStyle = new Style({ font:"bold 10px", horizontal:"righ
 export const tabBubbleSkin = new Skin({ texture:lineNumberTexture, x:0, y:48, width:48, height:16, tiles: { left:16, right: 16 }, });
 export const tabBubbleStyle = new Style({ font:"bold 10px", horizontal:"right", right:10, color: WHITE });
 export const tabBrokenSkin = new Skin({ texture:lineNumberTexture, x:40, y:0, width:16, height:16 });
-export const tabTest262Skin = new Skin({ texture:lineNumberTexture, x:0, y:64, width:48, height:16, tiles: { left:16, right: 16 }, });
-export const tabTest262Style = new Style({ font:"bold 10px", horizontal:"right", right:5, color: BLACK });
-export const filterTest262Skin = new Skin({ texture:lineNumberTexture, x:0, y:80, width:16, height:16, variants:16, states:16 });
+export const tabTest262Style = new Style({ font:"semibold 12px Open Sans", color:[BLACK, GRAYS[75], GRAYS[75], BLACK], horizontal:"center", left:13, right:13 });
+export const filterTest262Skin = new Skin({ texture:lineNumberTexture, x:0, y:64, width:16, height:16, variants:16, states:16 });
 
 export const paneBackgroundSkin = new Skin({ fill:GRAYS[6] });
 export const paneHeaderSkin = new Skin({ fill:[GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]] });
@@ -119,6 +118,14 @@ export const tableHeaderStyle = new Style({ font:"bold", color:GRAYS[75], horizo
 export const tableFooterSkin = new Skin({ fill:GRAYS[2], stroke:GRAYS[14], borders: { bottom:1 }  });
 export const tableRowSkin = new Skin({ fill:[GRAYS[2], GRAYS[6], GRAYS[10], GRAYS[2]]  });
 export const tableRowStyle = new Style({ color:[BLACK, BLACK, BLACK, WHITE], horizontal:"left" });
+export const test262HeaderStyles = [
+	new Style({ font:"bold", color:CODE_LITERAL, horizontal:"right", right:2 }),
+	new Style({ font:"bold", color:CODE_LITERAL, horizontal:"left", left:2 }),
+	new Style({ font:"bold", color:CODE_COMMENT, horizontal:"right", right:2 }),
+	new Style({ font:"bold", color:CODE_COMMENT, horizontal:"left", left:2 }),
+	new Style({ font:"bold", color:CODE_KEYWORD, horizontal:"right", right:2 }),
+	new Style({ font:"bold", color:CODE_KEYWORD, horizontal:"left", left:2 }),
+];
 
 export const breakpointRowNameStyle = new Style({ color:[BLACK, BLACK, BLACK, WHITE] });
 export const breakpointRowLineStyle = new Style({ font:"light", color:[BLACK, BLACK, BLACK, WHITE] });
