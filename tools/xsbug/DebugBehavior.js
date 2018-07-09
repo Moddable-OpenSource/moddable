@@ -487,12 +487,12 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onBubbled(path, line, id, flags, message) {
 		if (id == "test262")
-			this.behavior.test262Home.onMessage(this, message);
+			this.behavior.test262Context.onMessage(this, message);
 		else
 			this.behavior.onBubbled(this, path, line, id, flags, message);
 	}
 	onDisconnected() {
-		this.behavior.test262Home.onDisconnected(this);
+		this.behavior.test262Context.onDisconnected(this);
 		this.behavior.onDisconnected(this);
 	}
 	onFileChanged(path, line) {
