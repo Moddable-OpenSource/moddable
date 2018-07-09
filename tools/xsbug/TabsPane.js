@@ -43,7 +43,6 @@ import {
 	tabBrokenSkin,
 	tabSkin,
 	tabStyle,
-	tabTest262Skin,
 	tabTest262Style,
 	tabsPaneSkin,
 	buttonsSkin,
@@ -235,29 +234,9 @@ var BubblesTab = Container.template($ => ({
 }));
 
 var Test262Tab = Container.template($ => ({
-	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:Test262TabBehavior,
+	top:0, bottom:0, skin:tabSkin, active:true, Behavior:Test262TabBehavior,
 	contents: [
-		Label($, { 
-			left:5, right:5, height:16, skin:tabTest262Skin, style:tabTest262Style, string:"0",
-			Behavior: class extends Behavior {
-				onCreate(label) {
-					this.onTest262ResultChanged(label);
-				}
-				onTest262FilterChanged(label) {
-					this.onTest262ResultChanged(label);
-				}
-				onTest262PathChanged(label) {
-					this.onTest262ResultChanged(label);
-				}
-				onTest262ResultChanged(label) {
-					let result = model.test262Home.result;
-					label.string = result.failed + result.passed + result.skipped;
-				}
-				onTest262StatusChanged(label) {
-					this.onTest262ResultChanged(label);
-				}
-			},
-		}),
+		Label($, { top:0, bottom:0, style:tabTest262Style, string:"TEST262" }),
 	],
 }));
 
