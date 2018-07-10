@@ -111,7 +111,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\esp \
-	-I$(BUILD_DIR)\devices\esp32
+	-I$(BUILD_DIR)\devices\esp32\xsProj\build\include
 
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -120,6 +120,11 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
+
+PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
+
+SDKCONFIG =\
+	$(PROJ_DIR)\sdkconfig.default
 
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
@@ -200,9 +205,7 @@ LAUNCH = release
 
 .PHONY: all
 
-all: $(BLE) $(LAUNCH)
-
-PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
+all: $(BLE) $(SDKCONFIG) $(LAUNCH)
 
 !IF "$(DEBUG)"=="1"
 C_DEFINES = $(C_DEFINES) -DmxDebug=1
@@ -223,6 +226,20 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 make flash; make monitor"
+
+$(PROJ_DIR)\sdkconfig.default:
+	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
+!IF !EXIST($(PROJ_DIR)\sdkconfig.defaults.prior)
+	echo 1 > $(TMP_DIR)\_s.tmp
+!ELSE
+	-FC $(PROJ_DIR)\sdkconfig.defaults $(PROJ_DIR)\sdkconfig.defaults.prior | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
+!ENDIF
+	set HOME=$(PROJ_DIR)
+	if exist $(TMP_DIR)\_s.tmp (copy $(PROJ_DIR)\sdkconfig.defaults $(PROJ_DIR)\sdkconfig.defaults.prior)
+	if exist $(TMP_DIR)\_s.tmp ($(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Running GENCONFIG...; BATCH_BUILD=1 DEBUG=$(DEBUG) make defconfig")
+	if exist $(TMP_DIR)\_s.tmp (@echo.)
+	if exist $(TMP_DIR)\_s.tmp (@echo Press any key to complete build **after** MinGW x86 console window closes...)
+	if exist $(TMP_DIR)\_s.tmp (pause>nul)
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
