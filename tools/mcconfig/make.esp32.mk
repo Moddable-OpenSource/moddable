@@ -102,9 +102,8 @@ XS_OBJ = \
 XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
-	$(XS_DIR)/sources/pcre \
 	$(XS_DIR)/platforms/esp \
-	$(BUILD_DIR)/devices/esp32
+	$(BUILD_DIR)/devices/esp32/xsProj/build/include
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsesp.h \
@@ -224,8 +223,13 @@ else
 	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); make monitor
 endif
-	
-all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
+
+SDKCONFIG =\
+	$(PROJ_DIR)/sdkconfig.default
+
+.NOTPARALLEL: $(SDKCONFIG)
+
+all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	-rm $(PROJ_DIR)/build/xs_esp32.elf
@@ -234,6 +238,12 @@ all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	touch $(PROJ_DIR)/main/main.c
 	cd $(PROJ_DIR) ; DEBUG=$(DEBUG) make flash
 	$(DO_LAUNCH)
+
+$(PROJ_DIR)/sdkconfig.default:
+	if ! cmp -s "$(PROJ_DIR)/sdkconfig.defaults.prior" "$(PROJ_DIR)/sdkconfig.defaults"; then \
+		cp $(PROJ_DIR)/sdkconfig.defaults $(PROJ_DIR)/sdkconfig.defaults.prior; \
+		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; BATCH_BUILD=1 DEBUG=$(DEBUG) make defconfig; \
+	fi
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -263,7 +273,6 @@ $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
 	
-MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
