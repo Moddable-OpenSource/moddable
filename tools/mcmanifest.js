@@ -90,7 +90,7 @@ export class MakeFile extends FILE {
 		this.write("BLE =");
 		this.write("\\\n\t$(TMP_DIR)");
 		this.write(tool.slash);
-		this.write("mc.bleservices.c");
+		this.write("mc.bleservices");
 		this.line("");
 		this.line("");
 	}
@@ -104,7 +104,7 @@ export class MakeFile extends FILE {
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
-		this.write("mc.bleservices.c:");
+		this.write("mc.bleservices:");
 		for (var result of tool.bleServicesFiles)
 			this.write(` ${result.source}`);
 		this.line("");
