@@ -146,6 +146,7 @@ static void PiuDebugMachineParseString(PiuDebugMachine self, char* theString);
 static void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName);
+static void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* buffer, size_t length);
 
 enum {
 	mxFramesView = 0,
@@ -172,6 +173,7 @@ enum {
 	mxStepOutCommand,
 	mxToggleCommand,
 	mxScriptCommand,
+	mxModuleCommand,
 };
 
 static xsHostHooks PiuDebugBehaviorHooks = {
@@ -1048,6 +1050,10 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "property") == 0) {
 		self->column--;
 	}
+	else if (strcmp(theName, "import") == 0) {
+		xsVar(0) = xsGet(self->itemSlot, xsID_path);
+		(void)xsCall1(self->thisSlot, xsID_onImport, xsVar(0));
+	}
 	self->itemSlot = xsUndefined;
 }
 
@@ -1117,94 +1123,112 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 	static char buffer[16 * 1024];
 	PiuDebugMachine self = xsGetHostData(xsThis);
 	xsIntegerValue c = xsToInteger(xsArgc), i;
-	c_strcpy(buffer, "\15\12");
-	switch (xsToInteger(xsArg(0))) {
-	case mxAbortCommand:
-		c_strcat(buffer, "<abort/>");
-		break;
-	case mxClearAllBreakpoints:
-		c_strcat(buffer, "<clear-all-breakpoints/>");
-		break;
-	case mxClearBreakpoint:
-		c_strcat(buffer, "<clear-breakpoint path=\"");
-		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\" line=\"");
-		c_strcat(buffer, xsToString(xsArg(2)));
-		c_strcat(buffer, "\"/>");
-		break;
-	case mxGoCommand:
-		c_strcat(buffer, "<go/>");
-		xsSet(xsThis, xsID_broken, xsFalse);
-		break;
-	case mxLogoutCommand:
-		c_strcat(buffer, "<logout/>");
-		break;
-	case mxSelectCommand:
-		c_strcat(buffer, "<select id=\"");
-		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\"/>");
-		break;
-	case mxSetAllBreakpointsCommand:
-		c_strcat(buffer, "<set-all-breakpoints>");
-		if ((c > 2) && (xsTest(xsArg(2))))
-			c_strcat(buffer, "<breakpoint path=\"start\" line=\"0\"/>");
-		if ((c > 3) && (xsTest(xsArg(3))))
-			c_strcat(buffer, "<breakpoint path=\"exceptions\" line=\"0\"/>");
-		c = xsToInteger(xsGet(xsArg(1), xsID("length")));
-		for (i = 0; i < c; i++) {
-			xsResult = xsGetAt(xsArg(1), xsInteger(i));
-			c_strcat(buffer, "<breakpoint path=\"");
-			c_strcat(buffer, xsToString(xsGet(xsResult, xsID("path"))));
+	xsIntegerValue command = xsToInteger(xsArg(0));
+	if (command < mxScriptCommand) {
+		c_strcpy(buffer, "\15\12");
+		switch (command) {
+		case mxAbortCommand:
+			c_strcat(buffer, "<abort/>");
+			break;
+		case mxClearAllBreakpoints:
+			c_strcat(buffer, "<clear-all-breakpoints/>");
+			break;
+		case mxClearBreakpoint:
+			c_strcat(buffer, "<clear-breakpoint path=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
 			c_strcat(buffer, "\" line=\"");
-			c_strcat(buffer, xsToString(xsGet(xsResult, xsID("line"))));
+			c_strcat(buffer, xsToString(xsArg(2)));
 			c_strcat(buffer, "\"/>");
+			break;
+		case mxGoCommand:
+			c_strcat(buffer, "<go/>");
+			xsSet(xsThis, xsID_broken, xsFalse);
+			break;
+		case mxLogoutCommand:
+			c_strcat(buffer, "<logout/>");
+			break;
+		case mxSelectCommand:
+			c_strcat(buffer, "<select id=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			c_strcat(buffer, "\"/>");
+			break;
+		case mxSetAllBreakpointsCommand:
+			c_strcat(buffer, "<set-all-breakpoints>");
+			if ((c > 2) && (xsTest(xsArg(2))))
+				c_strcat(buffer, "<breakpoint path=\"start\" line=\"0\"/>");
+			if ((c > 3) && (xsTest(xsArg(3))))
+				c_strcat(buffer, "<breakpoint path=\"exceptions\" line=\"0\"/>");
+			c = xsToInteger(xsGet(xsArg(1), xsID("length")));
+			for (i = 0; i < c; i++) {
+				xsResult = xsGetAt(xsArg(1), xsInteger(i));
+				c_strcat(buffer, "<breakpoint path=\"");
+				c_strcat(buffer, xsToString(xsGet(xsResult, xsID("path"))));
+				c_strcat(buffer, "\" line=\"");
+				c_strcat(buffer, xsToString(xsGet(xsResult, xsID("line"))));
+				c_strcat(buffer, "\"/>");
+			}
+			c_strcat(buffer, "</set-all-breakpoints>");
+			break;
+		case mxSetBreakpointCommand:
+			c_strcat(buffer, "<set-breakpoint path=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			c_strcat(buffer, "\" line=\"");
+			c_strcat(buffer, xsToString(xsArg(2)));
+			c_strcat(buffer, "\"/>");
+			break;
+		case mxStepCommand:
+			c_strcat(buffer, "<step/>");
+			xsSet(xsThis, xsID_broken, xsFalse);
+			break;
+		case mxStepInCommand:
+			c_strcat(buffer, "<step-inside/>");
+			xsSet(xsThis, xsID_broken, xsFalse);
+			break;
+		case mxStepOutCommand:
+			c_strcat(buffer, "<step-outside/>");
+			xsSet(xsThis, xsID_broken, xsFalse);
+			break;
+		case mxToggleCommand:
+			c_strcat(buffer, "<toggle id=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			c_strcat(buffer, "\"/>");
+			break;
 		}
-		c_strcat(buffer, "</set-all-breakpoints>");
-		break;
-	case mxSetBreakpointCommand:
-		c_strcat(buffer, "<set-breakpoint path=\"");
-		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\" line=\"");
-		c_strcat(buffer, xsToString(xsArg(2)));
-		c_strcat(buffer, "\"/>");
-		break;
-	case mxStepCommand:
-		c_strcat(buffer, "<step/>");
-		xsSet(xsThis, xsID_broken, xsFalse);
-		break;
-	case mxStepInCommand:
-		c_strcat(buffer, "<step-inside/>");
-		xsSet(xsThis, xsID_broken, xsFalse);
-		break;
-	case mxStepOutCommand:
-		c_strcat(buffer, "<step-outside/>");
-		xsSet(xsThis, xsID_broken, xsFalse);
-		break;
-	case mxToggleCommand:
-		c_strcat(buffer, "<toggle id=\"");
-		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\"/>");
-		break;
-	case mxScriptCommand:
-		c_strcat(buffer, "<script path=\"");
+		c_strcat(buffer, "\15\12");
+    	//fprintf(stderr, "%s", buffer);
+		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
+	}
+	else {
+		void* data = xsToArrayBuffer(xsArg(2));
+		size_t length = xsGetArrayBufferLength(xsArg(2));
+		if (command == mxModuleCommand)
+			c_strcpy(buffer, "\15\12<module path=\"");
+		else
+			c_strcpy(buffer, "\15\12<script path=\"");
 		c_strcat(buffer, xsToString(xsArg(1)));
 		c_strcat(buffer, "\" line=\"0\"><![CDATA[");
-		c_strcat(buffer, xsToString(xsArg(2)));
-		c_strcat(buffer, "]]></script>");
-		break;
+		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
+		PiuDebugMachine_doCommandAux(the, self, data, length);
+		if (command == mxModuleCommand)
+			c_strcpy(buffer, "]]></module>\15\12");
+		else
+			c_strcpy(buffer, "]]></script>\15\12");
+		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
-	c_strcat(buffer, "\15\12");
-    //fprintf(stderr, "%s", buffer);
+}
+
+void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* buffer, size_t length)
+{
 #if mxLinux
 	{
 		GError* error = NULL;
-		if (g_socket_send(self->socket, buffer, c_strlen(buffer), NULL, &error) == -1) {
+		if (g_socket_send(self->socket, buffer, length, NULL, &error) == -1) {
 			xsUnknownError("g_socket_send: %s", error->message);
 		}
 	}
 #elif mxMacOSX
 again:
-	if (send(CFSocketGetNative(self->socket), buffer, c_strlen(buffer), 0) == -1) {
+	if (send(CFSocketGetNative(self->socket), buffer, length, 0) == -1) {
 		if (errno == EINTR)
 			goto again;
 		else {
@@ -1215,7 +1239,7 @@ again:
 #elif mxWindows
 	if (self->socket != INVALID_SOCKET) {
 	again:
-		int count = send(self->socket, buffer, c_strlen(buffer), 0);
+		int count = send(self->socket, buffer, length, 0);
 		if (count < 0) {
 			if (WSAEWOULDBLOCK == WSAGetLastError()) {
 				WaitMessage();
@@ -1225,8 +1249,6 @@ again:
 	}
 #endif
 }
-
-
 
 
 

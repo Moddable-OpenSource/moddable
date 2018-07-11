@@ -255,6 +255,14 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 		c_strcat(path, name + dot);
 		if (fxFindScript(the, path, &id))
 			return id;
+#else
+	#ifdef mxDebug
+        if (!c_strncmp(path, "xsbug://", 8)) {
+            *slash = 0;
+            c_strcat(path, name + dot);
+            return fxNewNameC(the, path);
+        }
+	#endif
 #endif
 	}
 	if (search) {
@@ -339,6 +347,7 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 
 #if mxUseDefaultLoadModule
 
+extern void fxDebugImport(txMachine* the, txString path);
 void fxLoadModule(txMachine* the, txID moduleID)
 {
 	char path[C_PATH_MAX];
@@ -388,6 +397,13 @@ void fxLoadModule(txMachine* the, txID moduleID)
  		if (script)
  			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
  	}
+#else
+	#ifdef mxDebug
+	{
+		if (!c_strncmp(path, "xsbug://", 8))
+			fxDebugImport(the, path);
+	}
+	#endif
 #endif
 }
 
