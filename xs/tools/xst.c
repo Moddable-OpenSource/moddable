@@ -172,8 +172,8 @@ static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
 
 static void fxQueuePromiseJobsCallback(txJob* job);
-static void fxRunModule(txMachine* the, txString path);
-static void fxRunProgram(txMachine* the, txString path, txUnsigned flags);
+static void fxRunModuleFile(txMachine* the, txString path);
+static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
 
 static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
@@ -259,9 +259,9 @@ int main(int argc, char* argv[])
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
 						if (option == 2) 
-							fxRunModule(the, path);
+							fxRunModuleFile(the, path);
 						else
-							fxRunProgram(the, path, mxProgramFlag | mxDebugFlag);
+							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
 					}
 				}
 				fxRunLoop(the);
@@ -770,24 +770,24 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "sta.js");
-			fxRunProgram(the, buffer, mxProgramFlag | mxDebugFlag);
+			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "assert.js");
-			fxRunProgram(the, buffer, mxProgramFlag | mxDebugFlag);
+			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			if (context->includes) {
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
 					yaml_node_t* node = yaml_document_get_node(context->document, *item);
 					c_strcpy(buffer, context->harnessPath);
 					c_strcat(buffer, (char*)node->data.scalar.value);
-					fxRunProgram(the, buffer, mxProgramFlag | mxDebugFlag);
+					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
 			}
 			if (flags)
-				fxRunProgram(the, path, flags);
+				fxRunProgramFile(the, path, flags);
 			else
-				fxRunModule(the, path);
+				fxRunModuleFile(the, path);
 			fxRunLoop(the);
 			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
@@ -1248,14 +1248,14 @@ void fxRunLoop(txMachine* the)
 	}
 }
 
-void fxRunModule(txMachine* the, txString path)
+void fxRunModuleFile(txMachine* the, txString path)
 {
 	mxPushStringC(path);
 	fxRequireModule(the, XS_NO_ID, the->stack);
 	the->stack++;
 }
 
-void fxRunProgram(txMachine* the, txString path, txUnsigned flags)
+void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 {
 	txScript* script = fxLoadScript(the, path, flags);
 	fxRunScript(the, script, &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);

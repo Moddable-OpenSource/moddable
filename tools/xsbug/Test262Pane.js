@@ -112,6 +112,12 @@ export class Test262Context {
 		if (this.machine == machine)
 			this.machine = null;
 	}
+	onImport(machine, path) {
+		if (system.fileExists(path))
+			machine.doModule(path);
+		else
+			machine.doAbort();
+	}
 	onMessage(machine, message) {
 		if (message == ">") {
 			this.machine = machine;
@@ -122,9 +128,16 @@ export class Test262Context {
 		else if (message == "<") {
 			let metadata = this.metadata;
 			if (metadata) {
-				if (metadata.paths.length) {
+				if (metadata.paths.length > 1) {
 					let path = metadata.paths.shift();
 					machine.doScript(path);
+				}
+				else if (metadata.paths.length > 0) {
+					let path = metadata.paths.shift();
+					if (metadata.module)
+						machine.doModule(path);
+					else
+						machine.doScript(path);
 				}
 				else {
 					if (metadata.negative)
@@ -191,7 +204,7 @@ export class Test262Context {
 		while (node = node.next()) {
 			let path = node.path;
 			this.metadata = this.getMetadata(path);
-			if (this.metadata.strict) {
+			if (this.metadata.strict || this.metadata.module) {
 				this.node = node;
 				let directory = system.getPathDirectory(this.home.path);
 				let harness = system.buildPath(directory, "harness");

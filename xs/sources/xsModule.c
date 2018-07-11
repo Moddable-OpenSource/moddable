@@ -130,6 +130,18 @@ txID fxCurrentModuleID(txMachine* the)
 	return XS_NO_ID;
 }
 
+txBoolean fxIsLoadingModule(txMachine* the, txID moduleID)
+{
+	txSlot** address = &(mxLoadingModules.value.reference->next);
+	txSlot* slot;
+	while ((slot = *address)) {
+		if (slot->ID == moduleID)
+			return 1;
+		address = &(slot->next);
+	}
+	return 0;
+}
+
 txSlot* fxRequireModule(txMachine* the, txID moduleID, txSlot* name)
 {
 	txSlot* module;
@@ -204,6 +216,15 @@ void fxResolveModule(txMachine* the, txID moduleID, txScript* script, void* data
 		}
 		transfer = transfer->next;
 	}
+}
+
+void fxRunModule(txMachine* the, txID moduleID, txScript* script)
+{
+	fxQueueModule(the, moduleID, C_NULL);
+	fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+	fxResolveModules(the);
+	fxRunModules(the);
+	mxImportingModules.value.reference->next = C_NULL;
 }
 
 void fx_require_get_busy(txMachine* the)

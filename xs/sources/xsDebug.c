@@ -130,6 +130,7 @@ enum {
 	XS_CLEAR_BREAKPOINTS_TAG,
 	XS_GO_TAG,
 	XS_LOGOUT_TAG,
+	XS_MODULE_TAG,
 	XS_SCRIPT_TAG,
 	XS_SET_BREAKPOINT_TAG,
 	XS_SET_ALL_BREAKPOINTS_TAG,
@@ -209,6 +210,32 @@ void fxDebugCommand(txMachine* the)
 	}
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
+	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG))
+		fxQueueJob(the, XS_NO_ID);
+}
+
+void fxDebugImport(txMachine* the, txString path)
+{
+	if (!fxIsConnected(the))
+		return;
+	fxEchoStart(the);
+	fxEcho(the, "<import path=\"");
+	fxEcho(the, path + 8);
+	fxEcho(the, "\"/>");
+	fxEchoStop(the);
+	the->debugExit = 0;
+	for (;;) {
+		fxReceive(the);
+		fxDebugParse(the);
+		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 1))
+			break;
+	}
+    if (the->debugTag == XS_MODULE_TAG){
+        /* RESULT */
+        mxPushUndefined();
+        fxRunID(the, C_NULL, XS_NO_ID);
+        mxPop();
+    }
 }
 
 void fxDebugLine(txMachine* the)
@@ -287,8 +314,10 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 void fxDebugParse(txMachine* the)
 {
 	txString string = the->debugBuffer;
+	txString limit = string + the->debugOffset;
 	char c;
-	while ((c = *string++)) {
+	while (string < limit) {
+		c = *string++;
 		switch (the->debugState) {
 		case XS_BODY_STATE:
 			if (c == '<') 
@@ -310,8 +339,6 @@ void fxDebugParse(txMachine* the)
 			else if (c == '\r') 
 				the->debugState = XS_CR_STATE;
 			break;
-			
-			
 			
 		case XS_TAG_STATE:
 			if (c == '/')
@@ -529,6 +556,12 @@ void fxDebugParse(txMachine* the)
 		case XS_CDATA_STATE:
 			if (c == ']') 
 				the->debugState = XS_END_CDATA_STATE_1;
+			else if (c == 0) {
+				fxDebugScriptCDATA(the, 0xF4);
+				fxDebugScriptCDATA(the, 0x90);
+				fxDebugScriptCDATA(the, 0x80);
+				fxDebugScriptCDATA(the, 0x80);
+			}
 			else
 				fxDebugScriptCDATA(the, c);
 			break;
@@ -576,6 +609,8 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_GO_TAG;
 	else if (!c_strcmp(name, "logout"))
 		the->debugTag = XS_LOGOUT_TAG;
+	else if (!c_strcmp(name, "module"))
+		the->debugTag = XS_MODULE_TAG;
 	else if (!c_strcmp(name, "script"))
 		the->debugTag = XS_SCRIPT_TAG;
 	else if (!c_strcmp(name, "select"))
@@ -616,6 +651,7 @@ void fxDebugPopTag(txMachine* the)
 	case XS_LOGOUT_TAG:
 		the->debugExit |= 2;
 		break;
+	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
 		mxPop();
 		mxPop();
@@ -625,10 +661,12 @@ void fxDebugPopTag(txMachine* the)
 		mxPush(mxGlobal);
 		/* FUNCTION */
 		mxPush(mxGlobal);
-		fxGetID(the, mxID(__xsbug_script_));
+		if (the->debugTag == XS_MODULE_TAG)
+			fxGetID(the, fxID(the, "<xsbug:module>"));
+		else
+			fxGetID(the, mxID(__xsbug_script_));
 		/* TARGET */
 		mxPushUndefined();
-		fxQueueJob(the, XS_NO_ID);
 		the->debugExit |= 2;
 		break;
 	case XS_SELECT_TAG:
@@ -677,6 +715,7 @@ void fxDebugPushTag(txMachine* the)
 		fxLogout(the);
 		fxGo(the);
 		break;
+	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
@@ -718,7 +757,7 @@ void fxDebugPushTag(txMachine* the)
 
 void fxDebugScriptCDATA(txMachine* the, char c)
 {
-	if (the->debugTag == XS_SCRIPT_TAG) {
+	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG)) {
 		txString string = the->stack[4].value.string;
 		txInteger size = the->stack[1].value.integer;
 		txInteger offset = the->stack[0].value.integer;
