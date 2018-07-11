@@ -1,7 +1,7 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2018 Moddable Tech, Inc.
 
-Revised: January 31, 2018
+Revised: July 10, 2018
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
@@ -109,10 +109,10 @@ This document provides an introduction to getting started building apps with the
 	ls /dev/cu.*
 	```
 
-9. Set the `CONFIG_ESPTOOLPY_PORT` in the `%MODDABLE%/build/devices/esp32/xsProj/sdkconfig` file to the ESP32 serial port:
+9. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
 
 	```
-	CONFIG_ESPTOOLPY_PORT="/dev/cu.SLAB_USBtoUART"
+	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
 10. Verify the setup by building `helloworld` for the `esp32` target:
@@ -262,18 +262,13 @@ This document provides an introduction to getting started building apps with the
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
-10. Set the `CONFIG_ESPTOOLPY_PORT` in the `%MODDABLE%\build\devices\esp32\xsProj\sdkconfig` file to the ESP32 COM port:
-
-	```
-	CONFIG_ESPTOOLPY_PORT="COM3"
-	```
-11. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+10. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
-	> The mcconfig tool builds the Moddable app and then launches a MINGW32 shell to build the ESP32 firmware and flash the device.
+	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the Developer Command Prompt. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
 
@@ -406,13 +401,14 @@ This document provides an introduction to getting started building apps with the
 	ls /dev
 	```
 	
-10. Set the `CONFIG_ESPTOOLPY_PORT` in the `$MODDABLE/build/devices/esp32/xsProj/sdkconfig` file to the ESP32 USB device path:
+10. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
 
 	```
-	CONFIG_ESPTOOLPY_PORT="/dev/ttyUSB0"
+	UPLOAD_PORT=/dev/ttyUSB0
+	export UPLOAD_PORT
 	```
+
 11. Verify the setup by building `helloworld` for the `esp32` target:
-
 
 	```
 	cd $MODDABLE/examples/helloworld
