@@ -56,6 +56,7 @@ const mxStepInCommand = 9;
 const mxStepOutCommand = 10;
 const mxToggleCommand = 11;
 const mxScriptCommand = 12;
+const mxModuleCommand = 13;
 
 export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	constructor(application) @ "PiuDebugBehaviorCreate"
@@ -473,8 +474,11 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(mxAbortCommand);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
+	doModule(path) {
+		this.doCommand(mxModuleCommand, path, system.readFileBuffer(path));
+	}
 	doScript(path) {
-		this.doCommand(mxScriptCommand, path, system.readFileString(path));
+		this.doCommand(mxScriptCommand, path, system.readFileBuffer(path));
 	}
 	onBroken(path, line, data) {
 		this.broken = true;
@@ -503,6 +507,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	onFrameChanged(name, value) {
 		this.frame = value;
 		this.behavior.onFrameChanged(this, value);
+	}
+	onImport(path) {
+		this.behavior.test262Context.onImport(this, path);
 	}
 	onLogged(path, line, data) {
 		if (path && line) {
