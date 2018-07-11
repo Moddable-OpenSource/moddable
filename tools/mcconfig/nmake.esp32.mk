@@ -30,8 +30,12 @@ BASE_DIR = $(USERPROFILE)
 !ENDIF
 
 MSYS32_BASE = $(BASE_DIR)\msys32
+!IF "$(IDF_PATH)"==""
 IDF_PATH = $(MSYS32_BASE)\home\$(USERNAME)\esp\esp-idf
+!ENDIF
+!IF "$(TOOLS_ROOT)"==""
 TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
+!ENDIF
 
 !IF "$(DEBUG)"=="1"
 LIB_DIR = $(BUILD_DIR)\tmp\esp32\debug\lib
