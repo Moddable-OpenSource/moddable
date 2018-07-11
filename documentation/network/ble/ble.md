@@ -1317,9 +1317,9 @@ onPasskeyRequested(params) {
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
-In order to enable the BLE client or server on the ESP32 platform, the [sdkconfig](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig) file must set the following core BLE features:
+The `mcconfig` command line tool **automatically** configures the required ESP-IDF BLE options required by the host app.
+The [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) configuration file in the Moddable SDK presets the following core BLE options:
 
-	CONFIG_BT_ENABLED=y
 	CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE=0
 	CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI=y
 	CONFIG_BLUEDROID_ENABLED=y
@@ -1330,21 +1330,21 @@ In order to enable the BLE client or server on the ESP32 platform, the [sdkconfi
 	CONFIG_SMP_ENABLE=y
 	CONFIG_BT_RESERVE_DRAM=0x10000
 	
->**Note:** The `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
+When building a BLE client or server app, the `mcconfig` tool enables the ESP-IDF BLE components by setting the corresponding option:
 
-The core features defined above build the core ESP32 BLE firmware, but not the client or server interfaces. To enable only BLE client functionality, set the `CONFIG_GATTC_ENABLE` feature:
+	CONFIG_BT_ENABLED=y
+
+When building a BLE client app, the `CONFIG_GATTC_ENABLE` option is also set:
 
 	CONFIG_GATTC_ENABLE=y
-	CONFIG_GATTS_ENABLE=
-	
-To enable only BLE server functionality, set the `CONFIG_GATTS_ENABLE` feature:
+
+When building a BLE server app, the `CONFIG_GATTS_ENABLE` option is also set:
 
 	CONFIG_GATTS_ENABLE=y
-	CONFIG_GATTC_ENABLE=
-	
-> **Note:** Because both a BLE client and server cannot be enabled on the same device, we recommend setting only the `CONFIG_GATTC_ENABLE` or `CONFIG_GATTS_ENABLE` feature, but not both. This will conserve memory and Flash.
 
-Once the sdkconfig file changes have been made, build the [scanner](../../../examples/network/ble/scanner) BLE app for the ESP32 platform:
+>**Note:** BLE options can be further customized, if necessary, by editing the `sdkconfig.defaults` file before building the host app. For example, the `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
+
+Once any sdkconfig.defaults file changes have been made, build the [scanner](../../../examples/network/ble/scanner) BLE app for the ESP32 platform:
 
 	cd $MODDABLE/examples/network/ble/scanner
 	mcconfig -d -m -p esp32
