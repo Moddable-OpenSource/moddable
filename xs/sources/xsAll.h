@@ -1420,8 +1420,10 @@ extern const txBehavior gxModuleBehavior;
 extern void fxBuildModule(txMachine* the);
 
 extern txID fxCurrentModuleID(txMachine* the);
+extern txBoolean fxIsLoadingModule(txMachine* the, txID moduleID);
 extern txSlot* fxRequireModule(txMachine* the, txID moduleID, txSlot* name);
 extern void fxResolveModule(txMachine* the, txID moduleID, txScript* script, void* data, txDestructor destructor);
+extern void fxRunModule(txMachine* the, txID moduleID, txScript* script);
 extern void fxSetModule(txMachine* the, txID moduleID, txSlot* module);
 
 mxExport void fx_require(txMachine* the);
