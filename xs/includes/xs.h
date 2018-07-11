@@ -1376,9 +1376,6 @@ mxImport void fxStopProfiling(xsMachine*);
 	
 mxImport void* fxMapArchive(const unsigned char *, unsigned long, xsStringValue, xsCallbackAt);
 mxImport void fxUnmapArchive(void*);
-mxImport void fxRunLoop(xsMachine*);
-mxImport void fxRunProgram(xsMachine*, xsStringValue);
-mxImport void fxRunModule(xsMachine*, xsStringValue);
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
 mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);
