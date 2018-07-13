@@ -1374,6 +1374,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildObject(the);
 			fxBuildFunction(the);
 			fxBuildGenerator(the);
+			fxBuildArguments(the);
 			fxBuildArray(the);
 			fxBuildString(the);
 			fxBuildBoolean(the);

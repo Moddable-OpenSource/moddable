@@ -62,6 +62,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
+	$(LIB_DIR)/xsArguments.c.o \
 	$(LIB_DIR)/xsArray.c.o \
 	$(LIB_DIR)/xsAtomics.c.o \
 	$(LIB_DIR)/xsBoolean.c.o \
