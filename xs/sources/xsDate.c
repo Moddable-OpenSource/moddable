@@ -1051,7 +1051,7 @@ void fx_Date_prototype_toPrimitive(txMachine* the)
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
 			fxGetID(the, ids[i]);
-			if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference)) {
+			if (fxIsCallable(the, the->stack)) {
 				fxCall(the);
 				if (mxIsReference(the->stack))
 					the->stack++;
