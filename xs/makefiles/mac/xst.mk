@@ -75,6 +75,7 @@ endif
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
 	$(TMP_DIR)/xsAPI.o \
+	$(TMP_DIR)/xsArguments.o \
 	$(TMP_DIR)/xsArray.o \
 	$(TMP_DIR)/xsAtomics.o \
 	$(TMP_DIR)/xsBoolean.o \
