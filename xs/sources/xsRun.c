@@ -619,7 +619,6 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_BEGIN_SLOPPY)
-		#ifdef mxSloppy
             if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
 				mxSaveState;
 				fxRunConstructor(the);
@@ -637,9 +636,6 @@ XS_CODE_JUMP:
 					}
 				}
 			}
-		#else
-			mxRunDebug(XS_UNKNOWN_ERROR, "no sloppy mode");
-		#endif
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_BEGIN_STRICT)
@@ -1112,16 +1108,12 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_SLOPPY)
-		#ifdef mxSloppy
 			offset = mxRunS1(1);
 			mxOverflow(1);
 			*mxStack = mxArgumentsSloppyPrototype;
 			mxSaveState;
 			gxDefaults.newArgumentsSloppyInstance(the, offset);
 			mxRestoreState;
-		#else
-			mxRunDebug(XS_UNKNOWN_ERROR, "no sloppy mode");
-		#endif
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_STRICT)
