@@ -73,6 +73,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsPlatform.o \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
+	$(LIB_DIR)\xsArguments.o \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
 	$(LIB_DIR)\xsBoolean.o \

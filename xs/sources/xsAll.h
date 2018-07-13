@@ -1047,6 +1047,15 @@ extern void fxBuildRegExp(txMachine* the);
 extern txBoolean fxIsRegExp(txMachine* the, txSlot* slot);
 extern txSlot* fxNewRegExpInstance(txMachine* the);
 
+/* xsArguments.c */
+extern const txBehavior gxArgumentsSloppyBehavior;
+
+extern void fxBuildArguments(txMachine* the);
+
+extern txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count);
+extern txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count);
+mxExport void fxThrowTypeError(txMachine* the);
+
 /* xsArray.c */
 extern const txBehavior gxArrayBehavior;
 
@@ -1098,14 +1107,6 @@ extern void fxConstructArrayEntry(txMachine* the, txSlot* entry);
 extern txBoolean fxIsArray(txMachine* the, txSlot* instance);
 extern txSlot* fxNewArrayInstance(txMachine* the);
 extern txNumber fxToLength(txMachine* the, txSlot* slot);
-
-extern const txBehavior gxArgumentsSloppyBehavior;
-
-extern txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count);
-extern const txBehavior gxArgumentsStrictBehavior;
-
-extern txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count);
-mxExport void fxThrowTypeError(txMachine* the);
 
 /* xsDataView.c */
 extern int fxFloat32Compare(const void* p, const void* q);
