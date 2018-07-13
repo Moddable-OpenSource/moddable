@@ -44,11 +44,7 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxNewGeneratorFunctionInstance,
 	fxNewAsyncGeneratorInstance,
 	fxNewAsyncGeneratorFunctionInstance,
-#ifdef mxSloppy
 	fxNewArgumentsSloppyInstance,
-#else
-	C_NULL,
-#endif
 	fxNewArgumentsStrictInstance,
 	fxRunEval,
 	fxRunEvalEnvironment,
@@ -59,12 +55,8 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
 	&gxOrdinaryBehavior,
-#ifdef mxSloppy
 	&gxArgumentsSloppyBehavior,
-#else
-	C_NULL,
-#endif
-	&gxArgumentsStrictBehavior,
+	&gxOrdinaryBehavior,
 	&gxArrayBehavior,
 	&gxEnvironmentBehavior,
 	&gxGlobalBehavior,

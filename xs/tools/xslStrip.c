@@ -298,9 +298,9 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewAsyncGeneratorFunctionInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
-// 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
-// 		fprintf(file, "\tfxNewArgumentsSloppyInstance,\n");
-// 	else
+	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
+		fprintf(file, "\tfxNewArgumentsSloppyInstance,\n");
+	else
 		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_STRICT))
 		fprintf(file, "\tfxNewArgumentsStrictInstance,\n");
@@ -334,12 +334,12 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");
 	fprintf(file, "\t&gxOrdinaryBehavior,\n");
-// 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
-// 		fprintf(file, "\t&gxArgumentsSloppyBehavior,\n");
-// 	else
+	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
+		fprintf(file, "\t&gxArgumentsSloppyBehavior,\n");
+	else
 		fprintf(file, "\tC_NULL,\n");
 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_STRICT))
-		fprintf(file, "\t&gxArgumentsStrictBehavior,\n");
+		fprintf(file, "\t&gxOrdinaryBehavior,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "\t&gxArrayBehavior,\n");
