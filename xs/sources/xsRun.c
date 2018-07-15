@@ -3072,6 +3072,10 @@ XS_CODE_JUMP:
 				else
 					*mxStack = mxObjectString;
 			}
+		#ifdef mxHostFunctionPrimitive
+			else if (slot->kind == XS_HOST_FUNCTION_KIND)
+				*mxStack = mxFunctionString;
+		#endif
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_VOID)
