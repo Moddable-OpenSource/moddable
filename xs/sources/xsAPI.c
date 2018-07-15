@@ -1554,15 +1554,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			/* mxGlobal */
 			aSharedSlot = theMachine->stackTop[-1].value.reference->next;
 			anIndex = aSharedSlot->value.table.length;
-			fxNewInstance(the);
-			aSlot = the->stack->value.reference;
-			aSlot->next = fxNewSlot(the);
+			aSlot = fxNewGlobalInstance(the);
 			aSlot = aSlot->next;
-			aSlot->value.table.address = (txSlot**)fxNewChunk(the, anIndex * sizeof(txSlot*));
-			aSlot->value.table.length = anIndex;
-			aSlot->kind = XS_GLOBAL_KIND;
-			aSlot->flag = XS_INTERNAL_FLAG;
-			c_memset(aSlot->value.table.address, 0, anIndex * sizeof(txSlot*));
 			aSlotAddress = aSlot->value.table.address;
 			aSharedSlot = aSharedSlot->next;
 			while (aSharedSlot) {
