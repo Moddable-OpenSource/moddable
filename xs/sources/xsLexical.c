@@ -104,8 +104,10 @@ static const txKeyword ICACHE_RODATA_ATTR gxStrictKeywords[XS_STRICT_KEYWORD_COU
 
 static txString fxUTF8Buffer(txParser* parser, txInteger character, txString string, txString limit)
 {
-	if (string + fxUTF8Length(character) > limit)
+	if (string + fxUTF8Length(character) > limit) {
 		fxReportParserError(parser, "buffer overflow");
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	return fxUTF8Encode(string, character);
 } 
 
@@ -512,8 +514,10 @@ void fxGetNextString(txParser* parser, int c)
 		}
 	}	
 	*p = 0;
-	if (p == q)
+	if (p == q) {
 		fxReportParserError(parser, "string overflow");	
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	parser->rawLength2 = p - parser->buffer;
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
 	if (parser->escaped2) {
@@ -525,9 +529,11 @@ void fxGetNextString(txParser* parser, int c)
 		q = p + parser->bufferSize - 1;	
 		s = parser->raw2;
 		while (*s) {
-			if (p == q)
+			if (p == q) {
 				fxReportParserError(parser, "buffer overflow");	
-			else if (*s == '\\') {
+				fxThrowParserError(parser, parser->errorCount);
+			}
+			if (*s == '\\') {
 				s++;
 				switch (*s) {
 				case 10:
@@ -1131,7 +1137,7 @@ void fxGetNextTokenAux(txParser* parser)
 				for (;;) {
 					if (p == q) {
 						fxReportParserError(parser, "identifier overflow");			
-						break;
+						fxThrowParserError(parser, parser->errorCount);
 					}
 					if (fxIsIdentifierNext(parser->character)) {
 						p = fxUTF8Buffer(parser, parser->character, p, q);				
@@ -1335,7 +1341,7 @@ void fxGetNextTokenJSON(txParser* parser)
 				for (;;) {
 					if (p == q) {
 						fxReportParserError(parser, "identifier overflow");			
-						break;
+						fxThrowParserError(parser, parser->errorCount);
 					}
 					*p++ = (char)parser->character;
 					fxGetNextCharacter(parser);
