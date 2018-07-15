@@ -740,6 +740,7 @@ extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
 /* xsGlobal.c */
 extern const txBehavior gxGlobalBehavior;
 extern void fxBuildGlobal(txMachine* the);
+extern txSlot* fxNewGlobalInstance(txMachine* the);
 
 extern txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
 extern txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
