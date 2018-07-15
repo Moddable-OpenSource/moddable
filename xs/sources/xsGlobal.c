@@ -37,7 +37,6 @@
 
 #include "xsAll.h"
 
-static txSlot* fxNewGlobalInstance(txMachine* the);
 static void fx_trace_aux(txMachine* the, txInteger flags);
 
 static const char ICACHE_RODATA_ATTR gxURIEmptySet[128] = {
