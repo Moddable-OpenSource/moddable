@@ -273,6 +273,9 @@ enum {
 	piuStyleMarginRight = 1 << 16,
 	piuStyleMarginBottom = 1 << 17,
 	piuStyleColor = 1 << 18,
+	piuStyleDecoration = 1 << 19,
+	piuStyleUnderline = 1 << 20,
+  piuStyleDecorationBits = piuStyleDecoration | piuStyleUnderline,
 };
 
 struct PiuStyleStruct {
