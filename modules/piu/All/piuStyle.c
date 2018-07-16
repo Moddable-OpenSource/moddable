@@ -267,6 +267,16 @@ void PiuStyleCreate(xsMachine* the)
 			PiuColorsDictionary(the, &xsResult, self->color);
 			self->flags |= piuStyleColor;
 		}
+		if (xsFindString(xsArg(0), xsID_decoration, &string)) {
+			if (!c_strcmp(string, "normal"))
+				self->flags |= piuStyleDecoration;
+      else if (!c_strcmp(string, "underline")) {
+				self->flags |= piuStyleDecoration | piuStyleUnderline;
+        fprintf(stderr, "self->flags %x\n", self->flags);
+      }
+			else
+				xsErrorPrintf("invalid decoration");
+		}
 		if (xsFindString(xsArg(0), xsID_horizontal, &string)) {
 			if (!c_strcmp(string, "center"))
 				self->horizontal = piuCenter;
@@ -485,6 +495,12 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 		(*result)->color[1] = (*self)->color[1];
 		(*result)->color[2] = (*self)->color[2];
 		(*result)->color[3] = (*self)->color[3];
+	}
+	if (flags & piuStyleDecoration) {
+		if (flags & piuStyleUnderline)
+			(*result)->flags |= piuStyleDecorationBits;
+		else
+			(*result)->flags &= ~piuStyleDecorationBits;
 	}
 }
 
