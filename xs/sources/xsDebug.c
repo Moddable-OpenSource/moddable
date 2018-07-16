@@ -941,9 +941,12 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	txSlot* aProperty;
 	txSlot* aSlot;
 	txInteger anIndex;
-	txSlot* aliasInstance;
-	txSlot* aliasProperty;
 
+	if (theInstance->ID >= 0) {
+		txSlot* aliasInstance = the->aliasArray[theInstance->ID];
+		if (aliasInstance)
+			theInstance = aliasInstance;
+	}
 	aParent = theInstance->value.instance.prototype;
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
@@ -1054,20 +1057,9 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			break;
 		}
 	}
-	aliasInstance = (theInstance->ID >= 0) ? the->aliasArray[theInstance->ID] : C_NULL;
 	while (aProperty) {
 		if (aProperty->ID < -1) {
-			aliasProperty = NULL;
-			if (aliasInstance) {
-				aliasProperty = aliasInstance->next;
-				while (aliasProperty) {
-					if (aliasProperty->ID == aProperty->ID)
-						break;
-					aliasProperty = aliasProperty->next;
-				}
-			}
-			if (!aliasProperty)
-				fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
+			fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
 		}
 		else {
 			if (aProperty->kind == XS_ARRAY_KIND) {
@@ -1081,13 +1073,6 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			}
 		}
 		aProperty = aProperty->next;
-	}
-	if (aliasInstance) {
-		aliasProperty = aliasInstance->next;
-		while (aliasProperty) {
-			fxEchoProperty(the, aliasProperty, theList, C_NULL, -1, C_NULL);
-			aliasProperty = aliasProperty->next;
-		}
 	}
 }
 
