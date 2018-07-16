@@ -110,6 +110,8 @@ typedef struct {
 	void (*runProgramEnvironment)(txMachine*);
 	void (*initializeSharedCluster)();
 	void (*terminateSharedCluster)();
+	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
+	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
 } txDefaults;
 
 enum {
@@ -821,6 +823,8 @@ extern txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultProt
 extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
+extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
+extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
 extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txInteger former, txString prefix);
 
 mxExport void fx_AsyncFunction(txMachine* the);
@@ -1885,13 +1889,9 @@ enum {
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)
 #ifdef mxProfile
 #define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
-#ifndef mxNoFunctionLength
 #define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next->next)
-#endif
 #else
-#ifndef mxNoFunctionLength
 #define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next)
-#endif
 #endif
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
