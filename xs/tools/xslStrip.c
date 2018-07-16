@@ -330,6 +330,8 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
 	}
+	fprintf(file, "\tC_NULL,\n");
+	fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");

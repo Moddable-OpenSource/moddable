@@ -598,14 +598,9 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	the->profileID++;
 #endif
 
-#ifndef mxNoFunctionLength
 	/* LENGTH */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	property->ID = mxID(_length);
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = theLength;
-#endif
+	if (gxDefaults.newFunctionLength)
+		property = gxDefaults.newFunctionLength(the, instance, property, theLength);
 
 	/* NAME */
 	if (name != XS_NO_ID)
