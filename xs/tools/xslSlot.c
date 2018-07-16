@@ -216,6 +216,60 @@ void fxLinkerScriptCallback(txMachine* the)
 	mxPop();
 }
 
+txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	if (linker->stripping)
+		return property;
+	property = property->next = fxNewSlot(the);
+	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->ID = mxID(_length);
+	property->kind = XS_INTEGER_KIND;
+	property->value.integer = length;
+	return property;
+}
+
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+{
+	txSlot* property;
+	txSlot* key;
+	txLinker* linker = (txLinker*)(the->context);
+	if (linker->stripping)
+		return C_NULL;
+	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
+	if (property)
+		return property;
+	property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	key = fxGetKey(the, (txID)id);
+	if (key) {
+		txKind kind = mxGetKeySlotKind(key);
+		if (kind == XS_KEY_KIND) {
+			property->kind = XS_STRING_KIND;
+			property->value.string = key->value.key.string;
+		}
+		else if (kind == XS_KEY_X_KIND) {
+			property->kind = XS_STRING_X_KIND;
+			property->value.string = key->value.key.string;
+		}
+		else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
+			property->kind = kind;
+			property->value.string = key->value.string;
+			fxAdornStringC(the, "[", property, "]");
+		}
+		else {
+			property->kind = mxEmptyString.kind;
+			property->value = mxEmptyString.value;
+		}
+	}
+	else {
+		property->kind = mxEmptyString.kind;
+		property->value = mxEmptyString.value;
+	}
+	if (prefix) 
+		fxAdornStringC(the, prefix, property, C_NULL);
+	return property;
+}
+
 txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag)
 {
 	txLinker* linker = (txLinker*)(the->context);
