@@ -2353,10 +2353,9 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceCode(variable);
 			slot->kind = XS_CODE_KIND;
 			slot->value.code.address = scratch.value.code.address;
-#ifndef mxNoFunctionLength
 			slot = mxFunctionInstanceLength(variable);
-			slot->value.integer = *(scratch.value.code.address + 1);
-#endif
+			if (slot && (slot->ID == mxID(_length)))
+				slot->value.integer = *(scratch.value.code.address + 1);
 			mxNextCode(offset);
 			mxBreak;
 		mxCase(XS_CODE_CODE_ARCHIVE_1)
@@ -2375,10 +2374,9 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceCode(variable);
 			slot->kind = XS_CODE_X_KIND;
 			slot->value.code.address = mxCode;
-#ifndef mxNoFunctionLength
 			slot = mxFunctionInstanceLength(variable);
-			slot->value.integer = mxRunS1(1);		// slot->value.integer = *(mxCode + 1);		//@@ should be mxRunU1?
-#endif
+			if (slot && (slot->ID == mxID(_length)))
+				slot->value.integer = mxRunU1(1);
 			mxNextCode(offset);
 			mxBreak;
 
