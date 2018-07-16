@@ -163,14 +163,9 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	the->profileID++;
 #endif
 		
-#ifndef mxNoFunctionLength
 	/* LENGTH */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	property->ID = mxID(_length);
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = 0;
-#endif
+	if (gxDefaults.newFunctionLength)
+		property = gxDefaults.newFunctionLength(the, instance, property, 0);
 		
 	/* NAME */
 	if (name != XS_NO_ID)
@@ -204,23 +199,24 @@ txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultPrototype)
 	return the->stack->value.reference;
 }
 
-void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+#ifndef mxLink
+txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length)
+{
+	property = property->next = fxNewSlot(the);
+	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->ID = mxID(_length);
+	property->kind = XS_INTEGER_KIND;
+	property->value.integer = length;
+	return property;
+}
+
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
 {
 	txSlot* property;
-#ifndef mxNoFunctionName
 	txSlot* key;
-#endif
-	if (instance->flag & XS_MARK_FLAG)
-		return;
-	property = mxFunctionInstanceCode(instance);
-	if ((property->ID == XS_NO_ID) || (property->ID == former))
-		property->ID = (txID)id;
-	else
-		return;
-#ifndef mxNoFunctionName
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
 	if (property)
-		return;
+		return property;
 	property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	key = fxGetKey(the, (txID)id);
 	if (key) {
@@ -249,7 +245,22 @@ void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txInteger 
 	}
 	if (prefix) 
 		fxAdornStringC(the, prefix, property, C_NULL);
+	return property;
+}
 #endif
+
+void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+{
+	txSlot* property;
+	if (instance->flag & XS_MARK_FLAG)
+		return;
+	property = mxFunctionInstanceCode(instance);
+	if ((property->ID == XS_NO_ID) || (property->ID == former))
+		property->ID = (txID)id;
+	else
+		return;
+	if (gxDefaults.newFunctionName)
+		property = gxDefaults.newFunctionName(the, instance, id, former, prefix);
 }
 
 void fx_Function(txMachine* the)
@@ -323,9 +334,7 @@ void fx_Function_prototype_bind(txMachine* the)
 {
 	txSlot* function = fxToInstance(the, mxThis);
 	txSlot* instance;
-#ifndef mxNoFunctionLength
 	txSize length;
-#endif
 	txSlot* slot;
 	txSlot* arguments;
 	txSlot* argument;
@@ -342,7 +351,6 @@ void fx_Function_prototype_bind(txMachine* the)
 	slot->value.callback.address = fx_Function_prototype_bound;
 	slot->value.callback.IDs = C_NULL;
 	
-#ifndef mxNoFunctionLength
 	mxPushSlot(mxThis);
     mxPushUndefined();
 	if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), XS_NO_ID, the->stack)) {
@@ -359,20 +367,23 @@ void fx_Function_prototype_bind(txMachine* the)
 		length = 0;
 	mxPop();
 	slot = mxFunctionInstanceLength(instance);
-	slot->value.integer = length;
-#endif
+	if (slot && (slot->ID == mxID(_length)))
+		slot->value.integer = length;
 
 	slot = fxLastProperty(the, instance);
 	
-#ifndef mxNoFunctionName
-	mxPushStringX("bound ");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
-	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
-		fxConcatString(the, the->stack + 1, the->stack);
+	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND)) {
+		txSize length = c_strlen(the->stack->value.string);
+		txString name = (txString)fxNewChunk(the, 6 + length + 1);
+		c_memcpy(name, "bound ", 6);
+		c_memcpy(name + 6, the->stack->value.string, length + 1);
+		the->stack->value.string = name;
+		the->stack->kind = XS_STRING_KIND;
+		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	}
 	mxPop();
-	slot = fxNextSlotProperty(the, slot, the->stack, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-#endif
 
 	slot = fxNextSlotProperty(the, slot, mxThis, mxID(_boundFunction), XS_GET_ONLY);
 	if (c > 0)
