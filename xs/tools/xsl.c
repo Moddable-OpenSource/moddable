@@ -268,6 +268,7 @@ int main(int argc, char* argv[])
 	
 			linker->base = url;
 			linker->baseLength = c_strlen(url);
+			linker->stripping = stripping || linker->firstStrip;
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
@@ -284,7 +285,7 @@ int main(int argc, char* argv[])
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 							preload = preload->nextPreload;
 						}
-						if (stripping)
+						if (linker->stripping)
 							fxFreezeBuiltIns(the);
 						xsCollectGarbage();
 					}
@@ -387,9 +388,10 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
 			fprintf(file, "mxExport txPreparation* xsPreparation();\n\n");
 		
-			if (stripping || linker->firstStrip)
+			if (linker->stripping) {
 				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
-			fxPrintBuilders(the, file);
+				fxPrintBuilders(the, file);
+			}
 			script = linker->firstScript;
 			while (script) {
 				fxWriteScriptHosts(script, file);
@@ -484,7 +486,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "};\n");
 			fprintf(file, "txPreparation* xsPreparation() { return (txPreparation*)&gxPreparation; }\n\n");
 		
-			if (stripping || linker->firstStrip)
+			if (linker->stripping)
 				fxStripDefaults(linker, file);
 			else
 				fprintf(file, "#include \"xsDefaults.c\"\n\n");

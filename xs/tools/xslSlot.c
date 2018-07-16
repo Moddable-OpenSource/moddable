@@ -250,12 +250,26 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	property = property->next = fxNewSlot(the);
-	property->flag = flag;
-	property->ID = id;
-	property->kind = XS_HOST_FUNCTION_KIND;
-	property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
-	property->value.hostFunction.IDs = (txID*)the->code;
+	txSlot *function, *home = the->stack, *slot;
+	if (linker->stripping) {
+		property = property->next = fxNewSlot(the);
+		property->flag = flag;
+		property->ID = id;
+		property->kind = XS_HOST_FUNCTION_KIND;
+		property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
+		property->value.hostFunction.IDs = (txID*)the->code;
+	}
+	else {
+		function = fxNewHostFunction(the, call, length, id);
+		slot = mxFunctionInstanceHome(function);
+		slot->value.home.object = home->value.reference;
+		property = property->next = fxNewSlot(the);
+		property->flag = flag;
+		property->ID = id;
+		property->kind = the->stack->kind;
+		property->value = the->stack->value;
+		the->stack++;
+	}
 	return property;
 }
 
@@ -287,14 +301,17 @@ txSlot* fxNewHostFunctionGlobal(txMachine* the, txCallback call, txInteger lengt
 
 void fxPrepareInstance(txMachine* the, txSlot* instance)
 {
-	txSlot *property = instance->next;
-	while (property) {
-		if (property->kind != XS_ACCESSOR_KIND) 
-			property->flag |= XS_DONT_SET_FLAG;
-		property->flag |= XS_DONT_DELETE_FLAG;
-		property = property->next;
+	txLinker* linker = (txLinker*)(the->context);
+	if (linker->stripping) {
+		txSlot *property = instance->next;
+		while (property) {
+			if (property->kind != XS_ACCESSOR_KIND) 
+				property->flag |= XS_DONT_SET_FLAG;
+			property->flag |= XS_DONT_DELETE_FLAG;
+			property = property->next;
+		}
+		instance->flag |= XS_DONT_PATCH_FLAG;
 	}
-	instance->flag |= XS_DONT_PATCH_FLAG;
 }
 
 txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
