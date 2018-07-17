@@ -70,7 +70,7 @@ void fxBuildMapSet(txMachine* the)
 	
 	/* MAP */
 	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewMapInstance(the));
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Map_prototype_size), C_NULL, mxID(_size), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_prototype_clear), 0, mxID(_clear), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_prototype_delete), 1, mxID(_delete), XS_DONT_ENUM_FLAG);
@@ -106,7 +106,7 @@ void fxBuildMapSet(txMachine* the)
 	
 	/* SET */
 	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewSetInstance(the));
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Set_prototype_size), C_NULL, mxID(_size), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_add), 1, mxID(_add), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_clear), 0, mxID(_clear), XS_DONT_ENUM_FLAG);
@@ -141,7 +141,7 @@ void fxBuildMapSet(txMachine* the)
 
 	/* WEAK MAP */
 	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewWeakMapInstance(the));
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_delete), 1, mxID(_delete), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_get), 1, mxID(_get), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_has), 1, mxID(_has), XS_DONT_ENUM_FLAG);
@@ -153,7 +153,7 @@ void fxBuildMapSet(txMachine* the)
 	
 	/* WEAK SET */
 	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewWeakSetInstance(the));
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakSet_prototype_add), 1, mxID(_add), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakSet_prototype_delete), 1, mxID(_delete), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakSet_prototype_has), 1, mxID(_has), XS_DONT_ENUM_FLAG);
