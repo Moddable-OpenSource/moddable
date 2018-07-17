@@ -65,7 +65,13 @@ export class Test262Context {
 		metadata.expanded = true;
 		metadata.reason = reason;
 		this.report.failed++;
-		this.report.items.push(metadata);
+		if (this.report.items.length < 100)
+			this.report.items.push(metadata);
+		
+		let log = system.readFileString(this.report.logPath);
+		log += metadata.path + ": " + metadata.reason + "\n";
+		system.writeFileString(this.report.logPath, log);
+		
 		application.distribute("onTest262ReportChanged");
 	}
 	fromJSON(json) {
@@ -77,6 +83,7 @@ export class Test262Context {
 			this.home.filter = json.home.filter;
 			this.report.expanded = json.report.expanded;
 			this.report.items = json.report.items;
+			this.report.logPath = json.report.logPath;
 			this.report.failed = json.report.failed;
 			this.report.passed = json.report.passed;
 			this.report.skipped = json.report.skipped;
@@ -167,14 +174,21 @@ export class Test262Context {
 			machine.doAbort();
 		}
 	}
+	openLog() {
+		if (this.report.logPath)
+			system.launchPath(this.report.logPath);
+	}
 	reset() {
 		let report = this.report;
 		report.expanded = false;
 		report.items = [];
+		report.logPath = "";
 		report.failed = 0;
 		report.passed = 0;
 		report.skipped = 0;
-		this.stop();
+		report.status = "REPORT";
+		this.metadata = null;
+		this.node = null;
 	}
 	selectFilter(path) {
 		this.home.filter = path;
@@ -184,6 +198,10 @@ export class Test262Context {
 	}
 	start() {
 		this.reset();
+		let directory = system.localDirectory;
+		let name = this.home.filter.slice(this.home.path.length + 1).replace(/\/|\\/g, "-");
+		this.report.logPath = system.buildPath(directory, name, "txt");
+		system.writeFileString(this.report.logPath, "");
 		this.node = new Test262Node(null, this.home.filter);
 		if (this.machine)
 			this.step();
@@ -221,6 +239,10 @@ export class Test262Context {
 		this.stop();
 	}
 	stop() {
+		let log = system.readFileString(this.report.logPath);
+		let report = this.report;
+		log = this.home.filter + ": " + (report.failed + report.passed + report.skipped) + " FAIL " + report.failed + " PASS " + report.passed + " SKIP " + report.skipped + "\n\n" + log;
+		system.writeFileString(this.report.logPath, log);
 		this.metadata = null;
 		this.node = null;
 		this.report.status = "REPORT";
@@ -239,6 +261,7 @@ export class Test262Context {
 			report: {
 				expanded: report.expanded,
 				items: report.items,
+				logPath: report.logPath,
 				failed: report.failed,
 				passed: report.passed,
 				skipped: report.skipped,
@@ -350,6 +373,9 @@ class Test262PaneBehavior extends Behavior {
 	onDisplaying(container) {
 		this.onTest262PathChanged(container);
 	}
+	onOpenLog(container) {
+		this.data.test262Context.openLog();
+	}
 	onTest262PathChanged(container) {
 		let scroller = container.first;
 		let column = scroller.first;
@@ -445,7 +471,10 @@ class Test262ReportHeaderBehavior extends HeaderBehavior {
 		this.onTest262StatusChanged(row);
 	}
 	onTest262StatusChanged(row) {
-		row.last.string = this.data.status;
+		row.last.previous.string = this.data.status;
+	}
+	reveal(row, revealIt) {
+		row.last.visible = revealIt;
 	}
 };
 
@@ -739,6 +768,7 @@ var Test262ReportHeader = Row.template(function($) { return {
 		Content($, { width:0 }),
 		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
 		Label($, { left:0, right:0, style:tableHeaderStyle, string:$.status }),
+		Content($, { top:0, skin:buttonsSkin, variant:10, active:true, visible:false, name:"onOpenLog", Behavior:ButtonBehavior }),
 	],
 }});
 
