@@ -891,18 +891,19 @@ typedef struct {
 	txS2 size;
 	txU1 cmask;
 	txU1 cval;
+	txU4 lmask;
 } PiuDebugUTF8Sequence;
 
 void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 {	
 	static PiuDebugUTF8Sequence sequences[] = {
-		{1, 0x80, 0x00},
-		{2, 0xE0, 0xC0},
-		{3, 0xF0, 0xE0},
-		{4, 0xF8, 0xF0},
-		{5, 0xFC, 0xF8},
-		{6, 0xFE, 0xFC},
-		{0, 0, 0},
+		{1, 0x80, 0x00, 0x0000007F},
+		{2, 0xE0, 0xC0, 0x000007FF},
+		{3, 0xF0, 0xE0, 0x0000FFFF},
+		{4, 0xF8, 0xF0, 0x001FFFFF},
+		{5, 0xFC, 0xF8, 0x03FFFFFF},
+		{6, 0xFE, 0xFC, 0x7FFFFFFF},
+		{0, 0, 0, 0},
 	};
 	PiuDebugUTF8Sequence* sequence;
 	txU1* p = (txU1*)theString;
@@ -922,8 +923,15 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 				c = (c << 6) | (d & 0x3F);
 			}
 		}
-		if ((i == s) && (c < 0x110000))
-			p += s;
+		if (i == s) {
+			c &= sequence->lmask;
+			if ((c < 0x0000D800) || ((0x0000DFFF < c) && (c < 0x00110000)))
+				p += s;
+			else {
+                for (i = 0; i < s; i++)
+				    *p++ = '?';
+			}
+		}
 		else {
 			*p = 0;
 			break;
