@@ -30,6 +30,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
+#include "esp_task_wdt.h"
 #include "esp_bt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
@@ -51,7 +52,7 @@
 extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
-static xsMachine *gThe;		// the one XS virtual machine running
+static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -136,6 +137,10 @@ void setup(void)
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
 
 	mc_setup(gThe);
+
+#if CONFIG_TASK_WDT
+	esp_task_wdt_add(NULL);
+#endif
 }
 
 void loop_task(void *pvParameter)

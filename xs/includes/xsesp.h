@@ -226,7 +226,15 @@ double __ieee754_fmod_patch(double x, double y);
 	watchdog timer
 */
 
-#define modWatchDogReset() system_soft_wdt_feed()
+#if !ESP32
+	#define modWatchDogReset() system_soft_wdt_feed()
+#else
+	#if CONFIG_TASK_WDT
+		#define modWatchDogReset() esp_task_wdt_reset()
+	#else
+		#define modWatchDogReset()
+	#endif
+#endif
 
 /*
 	VM
