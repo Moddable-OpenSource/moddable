@@ -29,16 +29,13 @@ import Parser from "dns/parser";
 import Net from "net";
 import Timer from "timer";
 
-const MDNS_TYPE_A = 1;
-const MDNS_TYPE_PTR = 12;
-const MDNS_TYPE_TXT = 16;
-const MDNS_TYPE_AAAA = 28;
-const MDNS_TYPE_SRV = 33;
-const MDNS_TYPE_NSEC = 47;
-const MDNS_TYPE_ANY = 255;
-
-const MDNS_CLASS_IN = 0x0001;
-const MDNS_NAME_REF = 0xC000;
+const DNS_TYPE_A = 1;
+const DNS_TYPE_PTR = 12;
+const DNS_TYPE_TXT = 16;
+const DNS_TYPE_AAAA = 28;
+const DNS_TYPE_SRV = 33;
+const DNS_TYPE_NSEC = 47;
+const DNS_TYPE_ANY = 255;
 
 const MDNS_IP = "224.0.0.251";
 const MDNS_PORT = 5353;
@@ -133,7 +130,7 @@ class MDNS extends Socket {
 				let service = this.service.split(".");
 				service.forEach(item => question.push(item));
 				question.push(0);
-				question.push(Uint8Array.of(0, MDNS_TYPE_PTR, (0 === this.state) ? 0x80 : 0, 1));
+				question.push(Uint8Array.of(0, DNS_TYPE_PTR, (0 === this.state) ? 0x80 : 0, 1));
 				reply.add(question);
 
 				let answers = 0;
@@ -175,14 +172,14 @@ class MDNS extends Socket {
 			let monitor, instance;
 
 			switch (record.qtype) {
-				case MDNS_TYPE_A:
+				case DNS_TYPE_A:
 					if ((this.probing > 0) && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0])) {
 						trace(`probe conflict with ${address}\n`);
 						this.probing = -1;
 						this.probeAttempt += 1;
 					}
 					break;
-				case MDNS_TYPE_PTR:
+				case DNS_TYPE_PTR:
 					service = name.join(".");
 					monitor = this.monitors.find(monitor => monitor.service === service);
 					if (!monitor)
@@ -195,8 +192,8 @@ class MDNS extends Socket {
 					}
 					instance.ttl = record.ttl
 					break;
-				case MDNS_TYPE_SRV:
-				case MDNS_TYPE_TXT:
+				case DNS_TYPE_SRV:
+				case DNS_TYPE_TXT:
 					service = name.slice(1).join(".");
 					monitor = this.monitors.find(monitor => monitor.service === service);
 					if (!monitor)
@@ -206,7 +203,7 @@ class MDNS extends Socket {
 						instance = {name: name[0]};
 						monitor.push(instance);
 					}
-					if (MDNS_TYPE_TXT == record.qtype) {
+					if (DNS_TYPE_TXT == record.qtype) {
 						instance.txt = record.rdata ? record.rdata : [];
 						instance.ttl = record.ttl;
 					}
@@ -236,11 +233,11 @@ class MDNS extends Socket {
 					service = monitor.service.split(".");
 					service.forEach(item => question.push(item));
 					question.push(0);
-					question.push(Uint8Array.of(0, MDNS_TYPE_SRV, 0x80, 1));
+					question.push(Uint8Array.of(0, DNS_TYPE_SRV, 0x80, 1));
 					query.add(question);
 
 					question.length -= 1;
-					question.push(Uint8Array.of(0, MDNS_TYPE_TXT, 0x80, 1));
+					question.push(Uint8Array.of(0, DNS_TYPE_TXT, 0x80, 1));
 					query.add(question);
 
 					this.write(MDNS_IP, MDNS_PORT, query.build(0, 2, 0));
@@ -263,7 +260,7 @@ class MDNS extends Socket {
 
 			for (let i = 0; i < packet.questions; i++) {
 				const question = packet.question(i);
-				if (MDNS_TYPE_ANY !== question.qtype)
+				if (DNS_TYPE_ANY !== question.qtype)
 					continue;
 				if ((this.hostName !== question.qname[0]) || (2 !== question.qname.length) || (LOCAL !== question.qname[1]))
 					continue;
@@ -271,7 +268,7 @@ class MDNS extends Socket {
 				trace(`probe tie-break with ${address}\n`);
 				for (let j = 0; j < packet.authorities; j++) {
 					const authority = packet.authority(j);
-					if (MDNS_TYPE_A !== authority.qtype)
+					if (DNS_TYPE_A !== authority.qtype)
 						continue;
 					if ((this.hostName !== authority.qname[0]) || (2 !== authority.qname.length) || (LOCAL !== authority.qname[1]))
 						continue;
@@ -304,19 +301,19 @@ class MDNS extends Socket {
 				const name = question.qname;
 
 				switch (question.qtype) {
-					case MDNS_TYPE_A:
+					case DNS_TYPE_A:
 						if (h)
 							;
 						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
 							mask[question.qclass >> 15] |= 0x01;
 						break;
 
-					case MDNS_TYPE_AAAA:
+					case DNS_TYPE_AAAA:
 						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
 							mask[question.qclass >> 15] |= 0x20;
 						break;
 
-					case MDNS_TYPE_PTR:
+					case DNS_TYPE_PTR:
 						if (!service)
 							;
 						else
@@ -327,7 +324,7 @@ class MDNS extends Socket {
 
 								for (let j = 0; (j < packet.answers) && respond; j++) {
 									let answer = packet.answer(j);
-									if (MDNS_TYPE_PTR !== answer.qtype)
+									if (DNS_TYPE_PTR !== answer.qtype)
 									   continue;
 								   if ((3 !== answer.qname.length) || (("_" + service.name) !== answer.qname[0]) ||
 									   (("_" + service.protocol) !== answer.qname[1]) || (LOCAL !== answer.qname[2]))
@@ -346,7 +343,7 @@ class MDNS extends Socket {
 							let respond = true;
 							for (let j = 0; (j < packet.answers) && respond; j++) {
 								let answer = packet.answer(j);
-								if (MDNS_TYPE_PTR !== answer.qtype)
+								if (DNS_TYPE_PTR !== answer.qtype)
 									continue;
 
 								if ((3 === answer.rdata.length) && (("_" + service.name) === answer.rdata[0]) &&
@@ -359,7 +356,7 @@ class MDNS extends Socket {
 						}
 						break;
 
-					case MDNS_TYPE_SRV:
+					case DNS_TYPE_SRV:
 						if (!service)
 							;
 						else
@@ -368,7 +365,7 @@ class MDNS extends Socket {
 							mask[question.qclass >> 15] |= 0x02;		// not checking known answers... seems to never be populated.
 						break;
 
-					case MDNS_TYPE_ANY:
+					case DNS_TYPE_ANY:
 						if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName === name[0]))
 							mask[question.qclass >> 15] |= service ? 0x1F : 0x01;
 						break;
@@ -412,7 +409,7 @@ class MDNS extends Socket {
 			answer.push(this.hostName, LOCAL, 0);
 
 			const rdataLen = (ArrayBuffer.fromString(this.hostName).byteLength + 1) + (LOCAL.length + 1) + 1 + 6;
-			answer.push(Uint8Array.of(0, MDNS_TYPE_NSEC, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
+			answer.push(Uint8Array.of(0, DNS_TYPE_NSEC, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 			answer.push(this.hostName, LOCAL, 0);
 			answer.push(Uint8Array.of(0, 4, 0x40, 0, 0, 0));
 			response.add(answer);
@@ -423,7 +420,7 @@ class MDNS extends Socket {
 			answer.push("_services", "_dns-sd", "_udp", LOCAL, 0);
 
 			const rdataLen = (service.name.length + 1) + (service.protocol.length + 1) + LOCAL.length + 4; // 4 is three label sizes and the terminator
-			answer.push(Uint8Array.of(0, MDNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
+			answer.push(Uint8Array.of(0, DNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 
 			answer.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
 			response.add(answer);
@@ -435,7 +432,7 @@ class MDNS extends Socket {
 
 			// the type, class, ttl and rdata length
 			const rdataLen = ArrayBuffer.fromString(this.hostName).byteLength + (service.name.length + 1) + (service.protocol.length + 1) + 5 + 5; // 5 is four label sizes and the terminator
-			answer.push(Uint8Array.of(0, MDNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
+			answer.push(Uint8Array.of(0, DNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
 
 			// the RData (ie. "My IOT device._http._tcp.local")
 			answer.push(this.hostName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
@@ -453,7 +450,7 @@ class MDNS extends Socket {
 					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString().replace("[HOSTNAME]", this.hostName)).byteLength + 1;			//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
 //					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString()).byteLength + 1;			// preferred
 			}
-			answer.push(Uint8Array.of(0, MDNS_TYPE_TXT, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
+			answer.push(Uint8Array.of(0, DNS_TYPE_TXT, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
 
 			if (rdataLen) {
 				for (let property in service.txt)
@@ -471,7 +468,7 @@ class MDNS extends Socket {
 
 			let rdataLen = this.hostName.length + 5 + 3; // 3 is 2 lable size bytes and the terminator
 			rdataLen += 6; // Size of Priority, weight and port
-			answer.push(Uint8Array.of(0, MDNS_TYPE_SRV, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, rdataLen));
+			answer.push(Uint8Array.of(0, DNS_TYPE_SRV, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, rdataLen));
 			answer.push(Uint8Array.of(0, 0, 0, 0, service.port >> 8, service.port & 255));
 
 			answer.push(this.hostName, LOCAL, 0);
@@ -481,7 +478,7 @@ class MDNS extends Socket {
 		if (0x01 & mask) {	// A
 			let answer = [];
 			answer.push(this.hostName, LOCAL, 0);
-			answer.push(Uint8Array.of(0, MDNS_TYPE_A, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, 4));
+			answer.push(Uint8Array.of(0, DNS_TYPE_A, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, 4));
 			// RData
 			const ip = Net.get("IP").split(".");
 			answer.push(Uint8Array.from(ip.map(value => parseInt(value))));
@@ -497,7 +494,7 @@ class MDNS extends Socket {
 	/*
 		 Probe
 			 short delay of 0 to 250 ms.
-			 send MDNS_TYPE_ANY at 0, 250, and 500 ms
+			 send DNS_TYPE_ANY at 0, 250, and 500 ms
 				 the probes SHOULD be sent as "QU" questions with the unicast-response bit set
 				 each host populates the query message's Authority Section with the record that it would be proposing to use, should its probing be successful
 			 if no conflict after 750 ms, we own the name
@@ -536,8 +533,8 @@ class MDNS extends Socket {
 
 			trace(`probe ${this.probing}\n`);
 			const reply = new Serializer;
-			reply.add([this.hostName, LOCAL, 0, Uint8Array.of(0, MDNS_TYPE_ANY, 0x80, 1)]);		// question for MDNS_TYPE_A, unicast response requested
-			this.reply(reply, 0x01);	// authoritative answer for MDNS_TYPE_A
+			reply.add([this.hostName, LOCAL, 0, Uint8Array.of(0, DNS_TYPE_ANY, 0x80, 1)]);		// question for DNS_TYPE_A, unicast response requested
+			this.reply(reply, 0x01);	// authoritative answer for DNS_TYPE_A
 			this.write(MDNS_IP, MDNS_PORT, reply.build(0, 1, 0, 1));
 			this.probing += 1;
 		}, 250, 10);		//@@ random initial delay
