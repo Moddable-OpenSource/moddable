@@ -462,10 +462,18 @@ void workerLoop(void *pvParameter)
 	}
 	modMachineTaskWake(worker->parent);
 
+#if CONFIG_TASK_WDT
+	esp_task_wdt_add(NULL);
+#endif
+
 	while (true) {
 		modTimersExecute();
 		modMessageService(worker->the, modTimersNext());
 	}
+
+#if CONFIG_TASK_WDT
+	esp_task_wdt_delete(NULL);
+#endif
 }
 #endif
 
