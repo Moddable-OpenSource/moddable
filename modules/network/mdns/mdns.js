@@ -50,12 +50,17 @@ class MDNS extends Socket {
 		super({kind: "UDP", port: MDNS_PORT, multicast: MDNS_IP});
 
 		this.hostName = dictionary.hostName;
-		this.instanceName = dictionary.instanceName ? dictionary.instanceName : this.hostName;
 		this.services = [];
 		this.monitors = [];
+
+		if (this.hostName)
+			this.probe();
 	}
 	add(service) {
 		this.services.push(service);
+		if (this.probing)
+			return;
+
 		this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x0F, service, true));		// remove before adding to clear stale state in clients
 		service.timer = Timer.repeat(timer => {
 			this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x1F, service));
@@ -72,7 +77,14 @@ class MDNS extends Socket {
 		const index = this.services.indexOf(service);
 		if (index < 0) throw new Error("service not found");
 
-		this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service));
+//		this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service, true));		// goodbye - RFC 6762 Section 8.4
+
+		let count = 3;
+		Timer.repeat(id => {
+			 this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service));
+			 if (0 == count--)
+				 Timer.clear(id)
+		}, 250, 0);
 	}
 	remove(service) {
 		if ("string" === typeof service) {
@@ -154,7 +166,7 @@ class MDNS extends Socket {
 				break;
 		}
 	}
-	scanPacket(packet) {
+	scanPacket(packet, address) {
 		const answers = packet.answers;
 		let changed;
 		for (let i = 0, length = answers + packet.additionals; i < length; i++) {
@@ -163,6 +175,13 @@ class MDNS extends Socket {
 			let monitor, instance;
 
 			switch (record.qtype) {
+				case MDNS_TYPE_A:
+					if ((this.probing > 0) && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0])) {
+						trace(`probe conflict with ${address}\n`);
+						this.probing = -1;
+						this.probeAttempt += 1;
+					}
+					break;
 				case MDNS_TYPE_PTR:
 					service = name.join(".");
 					monitor = this.monitors.find(monitor => monitor.service === service);
@@ -237,7 +256,41 @@ class MDNS extends Socket {
 //		dumpPacket(packet, address);
 
 		if (packet.answers || packet.additionals)
-			this.scanPacket(packet);
+			this.scanPacket(packet, address);
+
+		if (this.probing) {
+			if (this.probing < 0) return;
+
+			for (let i = 0; i < packet.questions; i++) {
+				const question = packet.question(i);
+				if (MDNS_TYPE_ANY !== question.qtype)
+					continue;
+				if ((this.hostName !== question.qname[0]) || (2 !== question.qname.length) || (LOCAL !== question.qname[1]))
+					continue;
+
+				trace(`probe tie-break with ${address}\n`);
+				for (let j = 0; j < packet.authorities; j++) {
+					const authority = packet.authority(j);
+					if (MDNS_TYPE_A !== authority.qtype)
+						continue;
+					if ((this.hostName !== authority.qname[0]) || (2 !== authority.qname.length) || (LOCAL !== authority.qname[1]))
+						continue;
+					const rdata = authority.rdata.split(".");
+					const ip = Net.get("IP").split(".");
+					trace(`  compare ${rdata} with ${ip}\n`);
+					for (let k = 0; k < 4; k++) {
+						if (parseInt(ip[k]) < parseInt(rdata[k])) {
+							trace(`  we lose\n`);
+							this.probing = -1000;	// try again in one second
+							return;
+						}
+					}
+					trace(`  we win\n`);		// we are lexicographically same or later, so can ignore
+				}
+			}
+
+			return;
+		}
 
 		if (packet.flags & 0x8000)
 			return;
@@ -343,7 +396,7 @@ class MDNS extends Socket {
 
 	/*
 		0x20 - NSEC - A ONLY
-		0x10 - service_ptr
+		0x10 - dns-sd service PTR
 		0x08 - PTR
 		0x04 - TXT
 		0x02 - SRV
@@ -356,11 +409,11 @@ class MDNS extends Socket {
 
 		if (0x20 & mask) {	// NSEC indicating A only
 			let answer = [];
-			answer.push(this.instanceName, LOCAL, 0);
+			answer.push(this.hostName, LOCAL, 0);
 
-			const rdataLen = (ArrayBuffer.fromString(this.instanceName).byteLength + 1) + (LOCAL.length + 1) + 1 + 6;
+			const rdataLen = (ArrayBuffer.fromString(this.hostName).byteLength + 1) + (LOCAL.length + 1) + 1 + 6;
 			answer.push(Uint8Array.of(0, MDNS_TYPE_NSEC, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
-			answer.push(this.instanceName, LOCAL, 0);
+			answer.push(this.hostName, LOCAL, 0);
 			answer.push(Uint8Array.of(0, 4, 0x40, 0, 0, 0));
 			response.add(answer);
 		}
@@ -370,7 +423,7 @@ class MDNS extends Socket {
 			answer.push("_services", "_dns-sd", "_udp", LOCAL, 0);
 
 			const rdataLen = (service.name.length + 1) + (service.protocol.length + 1) + LOCAL.length + 4; // 4 is three label sizes and the terminator
-			answer.push(Uint8Array.of(0, 0x0C, 0x80, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
+			answer.push(Uint8Array.of(0, MDNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11, 0x94, 0, rdataLen));
 
 			answer.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
 			response.add(answer);
@@ -381,29 +434,31 @@ class MDNS extends Socket {
 			answer.push("_" + service.name, "_" + service.protocol, LOCAL, 0);
 
 			// the type, class, ttl and rdata length
-			const rdataLen = ArrayBuffer.fromString(this.instanceName).byteLength + (service.name.length + 1) + (service.protocol.length + 1) + 5 + 5; // 5 is four label sizes and the terminator
-			answer.push(Uint8Array.of(0, 0x0C, 0x80, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
+			const rdataLen = ArrayBuffer.fromString(this.hostName).byteLength + (service.name.length + 1) + (service.protocol.length + 1) + 5 + 5; // 5 is four label sizes and the terminator
+			answer.push(Uint8Array.of(0, MDNS_TYPE_PTR, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen));
 
 			// the RData (ie. "My IOT device._http._tcp.local")
-			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
+			answer.push(this.hostName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
 			response.add(answer);
 		}
 
 		if (0x04 & mask) {	// TXT
 			let answer = [];
-			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
+			answer.push(this.hostName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
 
 			// Send the type, class, ttl and rdata length
 			let rdataLen = 0;
 			if (service.txt) {
 				for (let property in service.txt)
-					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString()).byteLength + 1;
+					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString().replace("[HOSTNAME]", this.hostName)).byteLength + 1;			//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
+//					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString()).byteLength + 1;			// preferred
 			}
-			answer.push(Uint8Array.of(0, 0x10, 0x80, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
+			answer.push(Uint8Array.of(0, MDNS_TYPE_TXT, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
 
 			if (rdataLen) {
 				for (let property in service.txt)
-					answer.push(property + "=" + service.txt[property]);
+					answer.push(property + "=" + service.txt[property].toString().replace("[HOSTNAME]", this.hostName));		//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
+					// answer.push(property + "=" + service.txt[property]);		// preferred
 			}
 			else
 				answer.push(0);		// mDNS requires at least one rdata payload
@@ -412,11 +467,11 @@ class MDNS extends Socket {
 
 		if (0x02 & mask) {	// SRV
 			let answer = [];
-			answer.push(this.instanceName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
+			answer.push(this.hostName, "_" + service.name, "_" + service.protocol, LOCAL, 0);
 
 			let rdataLen = this.hostName.length + 5 + 3; // 3 is 2 lable size bytes and the terminator
 			rdataLen += 6; // Size of Priority, weight and port
-			answer.push(Uint8Array.of(0, 0x21, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, rdataLen));
+			answer.push(Uint8Array.of(0, MDNS_TYPE_SRV, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, rdataLen));
 			answer.push(Uint8Array.of(0, 0, 0, 0, service.port >> 8, service.port & 255));
 
 			answer.push(this.hostName, LOCAL, 0);
@@ -426,7 +481,7 @@ class MDNS extends Socket {
 		if (0x01 & mask) {	// A
 			let answer = [];
 			answer.push(this.hostName, LOCAL, 0);
-			answer.push(Uint8Array.of(0, 1, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, 4));
+			answer.push(Uint8Array.of(0, MDNS_TYPE_A, 0x80, 1, 0, 0, 0 & bye, 0x78 & bye, 0, 4));
 			// RData
 			const ip = Net.get("IP").split(".");
 			answer.push(Uint8Array.from(ip.map(value => parseInt(value))));
@@ -437,6 +492,55 @@ class MDNS extends Socket {
 			return;
 
 		return response.build();
+	}
+
+	/*
+		 Probe
+			 short delay of 0 to 250 ms.
+			 send MDNS_TYPE_ANY at 0, 250, and 500 ms
+				 the probes SHOULD be sent as "QU" questions with the unicast-response bit set
+				 each host populates the query message's Authority Section with the record that it would be proposing to use, should its probing be successful
+			 if no conflict after 750 ms, we own the name
+			 if conflict in that time,
+				 choose new name
+				 start probe again
+			 if tie...
+	*/
+	probe() {
+		this.probing = 1;
+		this.probeAttempt = 1;
+		trace(`probe for ${this.hostName}\n`);
+		Timer.repeat(id => {
+			if (this.probing < 0) {
+				 if (this.probeAttempt > 2)
+					 this.hostName = this.hostName.split("-").pop().join("-");
+				 if (this.probeAttempt >= 2)
+					 this.hostName += "-" + this.probeAttempt;
+				Timer.schedule(id, -this.probing, 250);
+				this.probing = 1;
+				trace(`re-probe for ${this.hostName}\n`);
+			}
+			if (4 === this.probing) {
+				trace(`probe claimed ${this.hostName}\n`);
+
+				Timer.clear(id);
+				delete this.probing;
+				delete this.probeAttempt;
+
+				const services = this.services;
+				this.services = [];
+				services.forEach(service => this.add(service))
+
+				return;
+			}
+
+			trace(`probe ${this.probing}\n`);
+			const reply = new Serializer;
+			reply.add([this.hostName, LOCAL, 0, Uint8Array.of(0, MDNS_TYPE_ANY, 0x80, 1)]);		// question for MDNS_TYPE_A, unicast response requested
+			this.reply(reply, 0x01);	// authoritative answer for MDNS_TYPE_A
+			this.write(MDNS_IP, MDNS_PORT, reply.build(0, 1, 0, 1));
+			this.probing += 1;
+		}, 250, 10);		//@@ random initial delay
 	}
 }
 Object.freeze(MDNS.prototype);
@@ -524,11 +628,11 @@ class Serializer {
 		}
 		this.fragments.push(fragment);
 	}
-	build(id = 0, questions, answers) {
+	build(id = 0, questions, answers, authoritative = 0) {
 		const byteLength = this.fragments.reduce((byteLength, value) => byteLength + value.byteLength, 0);
 		let position = 12;
 		let result = new Uint8Array(byteLength + position);
-		result.set(Uint8Array.of(id >> 8, id & 255, (undefined === questions) ? 0x84 : 0, 0, 0, (undefined === questions) ? 0 : questions, 0, (undefined === answers) ? this.fragments.length : answers, 0, 0, 0, 0), 0);		// header
+		result.set(Uint8Array.of(id >> 8, id & 255, (undefined === questions) ? 0x84 : 0, 0, 0, (undefined === questions) ? 0 : questions, 0, (undefined === answers) ? this.fragments.length : answers, 0, authoritative, 0, 0), 0);		// header
 		this.fragments.forEach(fragment => {
 			result.set(fragment, position);
 			position += fragment.byteLength;
