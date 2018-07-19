@@ -509,8 +509,11 @@ class MDNS extends Socket {
 		trace(`probe for ${this.hostName}\n`);
 		Timer.repeat(id => {
 			if (this.probing < 0) {
-				 if (this.probeAttempt > 2)
-					 this.hostName = this.hostName.split("-").pop().join("-");
+				 if (this.probeAttempt > 2) {
+					 this.hostName = this.hostName.split("-");
+					 this.hostName.pop();
+					 this.hostName = this.hostName.join("-");
+				 }
 				 if (this.probeAttempt >= 2)
 					 this.hostName += "-" + this.probeAttempt;
 				Timer.schedule(id, -this.probing, 250);
