@@ -410,16 +410,8 @@ void fx_Atomics_wait(txMachine* the)
 	txInteger result;
 	if (c_isnan(timeout))
 		timeout = C_INFINITY;
-	else {
-		txNumber now = fxDateNow();
-		timeout += now;
-		if (timeout <= now)
-			timeout = now;
-		else if (timeout > 8.64e15)
-			timeout = C_INFINITY;
-		else
-			timeout = c_trunc(timeout);
-	}
+	else if (timeout < 0)
+		timeout = 0;
 	result = fxWaitSharedChunk(the, host->value.host.data, offset, value, timeout);
 	if (result < 0)
 		mxResult->value.string = "not-equal";
@@ -677,6 +669,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInte
 			else {
 			#if defined(mxUsePOSIXThreads)
 				struct timespec ts;
+				timeout += fxDateNow();
 				ts.tv_sec = c_floor(timeout / 1000);
 				ts.tv_nsec = c_fmod(timeout, 1000) * 1000000;
 				while (the->waiterData == address) {
@@ -686,10 +679,11 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInte
 				}
 			#elif defined(mxUseFreeRTOSTasks)
 				mxUnlockMutex(&gxSharedCluster->waiterMutex);
-				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS((timeout - fxDateNow())));
+				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(timeout));
 				mxLockMutex(&gxSharedCluster->waiterMutex);
 				result = (the->waiterData == address) ? 0 : 1;
 			#else
+				timeout += fxDateNow();
 				while (the->waiterData == address) {
 					result = (SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, (DWORD)(timeout - fxDateNow()))) ? 1 : 0;
 					if (!result)
