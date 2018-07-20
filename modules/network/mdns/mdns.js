@@ -43,17 +43,23 @@ const MDNS_PORT = 5353;
 const LOCAL = "local";
 
 class MDNS extends Socket {
-	constructor(dictionary) {
+	constructor(dictionary, callback) {
 		super({kind: "UDP", port: MDNS_PORT, multicast: MDNS_IP});
 
 		this.hostName = dictionary.hostName;
 		this.services = [];
 		this.monitors = [];
+		this.client = callback ? callback : function() {};
 
-		if (this.hostName)
-			this.probe();
+		if (this.hostName) {
+			this.probing = 1;
+			Timer.set(() => this.probe(), 0);
+		}
 	}
 	add(service) {
+		if (!this.hostName)
+			throw new Error("no hostName");
+
 		this.services.push(service);
 		if (this.probing)
 			return;
@@ -173,7 +179,8 @@ class MDNS extends Socket {
 
 			switch (record.qtype) {
 				case DNS_TYPE_A:
-					if ((this.probing > 0) && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0])) {
+					//@@ if not probing, check to see if name matches and IP is different. If so there is a conflict, revert to probing state...
+					if ((this.probing > 0) && (this.hostName == name[0]) && (2 === name.length) && (LOCAL === name[1])) {
 						trace(`probe conflict with ${address}\n`);
 						this.probing = -1;
 						this.probeAttempt += 1;
@@ -507,6 +514,7 @@ class MDNS extends Socket {
 		this.probing = 1;
 		this.probeAttempt = 1;
 		trace(`probe for ${this.hostName}\n`);
+		this.client(1, "");
 		Timer.repeat(id => {
 			if (this.probing < 0) {
 				 if (this.probeAttempt > 2) {
@@ -529,7 +537,9 @@ class MDNS extends Socket {
 
 				const services = this.services;
 				this.services = [];
-				services.forEach(service => this.add(service))
+				services.forEach(service => this.add(service));
+
+				this.client(1, this.hostName);
 
 				return;
 			}
