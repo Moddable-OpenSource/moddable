@@ -21,7 +21,7 @@
 /*
 	To do:
 		 TTL
-		 goodbye
+		 case-insensitivity?
 */
 
 import {Socket} from "socket";
@@ -517,13 +517,30 @@ class MDNS extends Socket {
 		this.client(1, "");
 		Timer.repeat(id => {
 			if (this.probing < 0) {
-				 if (this.probeAttempt > 2) {
-					 this.hostName = this.hostName.split("-");
-					 this.hostName.pop();
-					 this.hostName = this.hostName.join("-");
+				 let hostName = this.client(2, this.hostName);
+				 if (hostName) {
+					 if ("string" == typeof hostName) {
+						 this.hostName = hostName;
+						 this.probeAttempt = 1;
+					 }
+					 else {
+						Timer.clear(id);
+//						delete this.probing;
+						delete this.probeAttempt;
+						delete this.hostName;	// no hostName claimed, no longer probing
+						this.client(-1);
+						return;
+					 }
 				 }
-				 if (this.probeAttempt >= 2)
-					 this.hostName += "-" + this.probeAttempt;
+				 else {
+					 if (this.probeAttempt > 2) {
+						 hostName = this.hostName.split("-");
+						 hostName.pop();
+						 this.hostName = hostName.join("-");
+					 }
+					 if (this.probeAttempt >= 2)
+						 this.hostName += "-" + this.probeAttempt;
+				}
 				Timer.schedule(id, -this.probing, 250);
 				this.probing = 1;
 				trace(`re-probe for ${this.hostName}\n`);
