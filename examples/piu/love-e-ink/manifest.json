@@ -1,0 +1,45 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/destm32s/*",
+		],
+	},
+	"resources":{
+		"*-mask": [
+			"./eink",
+			"./love",
+			"./moddable",
+		],
+	},
+	"config": {
+		"screen": "destm32s",
+		"touch": ""
+	},
+	"preload": [
+		"destm32s",
+	],
+	"strip": "*",
+	"platforms": {
+		"esp": {
+			"defines": {
+				"destm32s": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"rst_pin": 0,
+					"busy_pin": 5,
+					"spi_port": "#HSPI"
+				},
+			}
+		},
+		"gecko_giant": {
+			"modules": {
+				"setup": "$(BUILD)/devices/gecko/setup/setup-piu-epaper",
+			},
+			"preload": [
+				"setup",
+			],
+		},
+	},
+}

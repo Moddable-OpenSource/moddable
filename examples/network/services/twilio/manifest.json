@@ -1,0 +1,17 @@
+{
+	"include": [
+		"../manifest_net.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/data/base64/*",
+		]
+	},
+	"preload": [
+		"http",
+		"base64"
+	]
+}

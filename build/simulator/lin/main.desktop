@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Screen Test
+Icon=tech-moddable-simulator
+StartupNotify=true
+Exec=/usr/bin/tech-moddable-simulator

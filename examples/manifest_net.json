@@ -1,0 +1,53 @@
+{
+	"include": "manifest_base.json",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*",
+					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/sntp/*",
+					"$(MODULES)/network/wifi/*",
+					"$(MODULES)/network/wifi/esp/*",
+				],
+				"setup": "$(BUILD)/devices/esp/setup/setup",
+			},
+			"preload": [
+				"socket",
+				"setup",
+				"sntp",
+				"wifi",
+				"net"
+			]
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*",
+					"$(MODULES)/network/net/*",
+					"$(MODULES)/network/sntp/*",
+					"$(MODULES)/network/wifi/*",
+					"$(MODULES)/network/wifi/esp32/*",
+				],
+				"setup": "$(BUILD)/devices/esp/setup/setup",
+			},
+			"preload": [
+				"socket",
+				"setup",
+				"sntp",
+				"wifi",
+				"net"
+			]
+		},
+		"mac": {
+			"modules": {
+				"*": [
+						"$(MODULES)/network/socket/*",
+						"$(MODULES)/network/socket/mac/*",
+				],
+			},
+		}
+	}
+}
