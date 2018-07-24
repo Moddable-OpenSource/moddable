@@ -1619,13 +1619,18 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 uint8_t *espFindUnusedFlashStart(void)
 {
 	image_header_t header;
-	section_header_t *section = (section_header_t *)(APP_START_OFFSET + sizeof(image_header_t) + kFlashStart);
-
+	section_header_t section;
+	uint32_t sectionFlashAddress = APP_START_OFFSET + sizeof(image_header_t);
+	
 	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(image_header_t));
-	while (header.num_segments--)
-		section = (section_header_t *)(section->size + (char *)(section + 1));
-
-	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + (int)section) & ~(SPI_FLASH_SEC_SIZE - 1));
+	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+	
+	while (header.num_segments--){
+		sectionFlashAddress += section.size + sizeof(section_header_t);		
+		spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+	}
+	sectionFlashAddress += (uint32_t)kFlashStart;
+	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + sectionFlashAddress) & ~(SPI_FLASH_SEC_SIZE - 1));
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
