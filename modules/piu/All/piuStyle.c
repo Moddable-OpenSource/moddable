@@ -272,7 +272,6 @@ void PiuStyleCreate(xsMachine* the)
 				self->flags |= piuStyleDecoration;
       else if (!c_strcmp(string, "underline")) {
 				self->flags |= piuStyleDecoration | piuStyleUnderline;
-        fprintf(stderr, "self->flags %x\n", self->flags);
       }
 			else
 				xsErrorPrintf("invalid decoration");
