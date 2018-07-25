@@ -23,6 +23,7 @@ ESP32_BASE ?= $(HOME)/esp32
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
+PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/esp32/debug/lib
@@ -99,12 +100,14 @@ XS_OBJ = \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsre.c.o \
-	$(LIB_DIR)/xsmc.c.o
+	$(LIB_DIR)/xsmc.c.o \
+	$(LIB_DIR)/e_pow.c.o
 XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/esp \
-	$(BUILD_DIR)/devices/esp32/xsProj/build/include
+	$(BUILD_DIR)/devices/esp32/xsProj/build/include \
+	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsesp.h \
@@ -259,6 +262,10 @@ $(BIN_DIR)/xs_esp.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.res
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+$(LIB_DIR)/%.c.o: %.c
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
