@@ -426,7 +426,12 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #define c_log10 log10
 #define c_log2 log2
 #define c_nearbyint nearbyint
-#define c_pow pow
+#if ESP32
+	double __ieee754_pow(double x, double y);
+	#define c_pow __ieee754_pow
+#else
+	#define c_pow pow
+#endif
 #if ESP32
 	#define c_rand esp_random
 #else
