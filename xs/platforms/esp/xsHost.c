@@ -1568,11 +1568,27 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
+	uint8_t buffer[8];
+	uint32_t modulesAtomSize, modulesAtomType;
+	uint32_t freeSpace = kModulesInstallStart - (uint32_t)kModulesStart;
+	
+	spiRead((void *)kModulesInstallStart, 0, buffer, 8);
+	modulesAtomSize = c_read32be(buffer);
+	modulesAtomType = c_read32be(buffer + 4);
+	
+	if (modulesAtomType != XS_ATOM_ARCHIVE) return NULL;
+	
+	if (freeSpace < modulesAtomSize){
+		modLog("mod is too large to install");
+		return NULL;
+	}
+
 	if (fxMapArchive(preparation, (void *)kModulesInstallStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
 		return kModulesStart;
 
 	return NULL;
 }
+
 
 #endif
 
