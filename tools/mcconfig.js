@@ -719,19 +719,6 @@ class XcodeFile extends PrerequisiteFile {
 	}
 }
 
-class ESP32SDKConfigFile extends PrerequisiteFile {
-	generate(tool) {
-		let port = tool.getenv("UPLOAD_PORT");
-		if (port) {
-			let option = "CONFIG_ESPTOOLPY_PORT=\"" + port + "\"";
-			if (-1 == this.former.indexOf(option)) {
-				this.current = this.former.replace(/CONFIG_ESPTOOLPY_PORT=.*/, option);
-				this.close();
-			}
-		}
-	}
-}
-
 export default class extends Tool {
 	constructor(argv) {
 		super(argv);
@@ -1091,12 +1078,6 @@ export default class extends Tool {
 				file = new MakeFile(path);
 		}
 		file.generate(this);
-
-		if (this.platform == "esp32") {
-			let sdkconfigPath = this.moddablePath + this.slash + "build" + this.slash + "devices" + this.slash + "esp32" + this.slash + "xsProj" + this.slash + "sdkconfig.defaults";
-			file = new ESP32SDKConfigFile(sdkconfigPath, this);
-			file.generate(this);
-		}
 
 		if (this.make) {
 			if (this.windows)
