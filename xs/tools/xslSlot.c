@@ -601,7 +601,7 @@ void fxPrintNumber(txMachine* the, FILE* file, txNumber value)
 		fprintf(file, "C_NAN");
 		break;
 	default:
-		fprintf(file, "%e", value);
+		fprintf(file, "%.20e", value);
 		break;
 	}
 }
