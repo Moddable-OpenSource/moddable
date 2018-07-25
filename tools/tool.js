@@ -70,6 +70,7 @@ export class TOOL {
 	resolveDirectoryPath(message) @ "Tool_prototype_resolveDirectoryPath";
 	resolveFilePath(message) @ "Tool_prototype_resolveFilePath";
 	resolvePath(message) @ "Tool_prototype_resolvePath";
+	setenv(name, value) @ "Tool_prototype_setenv";
 	splitPath(path) @ "Tool_prototype_splitPath";
 	strlen(string) @  "Tool_prototype_strlen";
 	then() @  "Tool_prototype_then";
