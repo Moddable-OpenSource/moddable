@@ -67,7 +67,7 @@ static txString fxDatePrintDate(txString p, txInteger year, txInteger month, txI
 static txString fxDatePrintDateUTC(txString p, txInteger year, txInteger month, txInteger date);
 static txString fxDatePrintDay(txString p, txInteger day);	
 static txString fxDatePrintTime(txString p, txInteger hours, txInteger minutes, txInteger seconds);	
-static txString fxDatePrintTimezone(txString p);	
+static txString fxDatePrintTimezone(txString p, txInteger offset);	
 static txInteger fxDateSimilarYear(txInteger year);
 static void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt);
 
@@ -160,7 +160,7 @@ void fx_Date(txMachine* the)
 			*p++ = ' ';
 			p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
 			*p++ = ' ';
-			p = fxDatePrintTimezone(p);
+			p = fxDatePrintTimezone(p, (txInteger)dt.offset);
 			*p = 0;
 		}
 		else
@@ -1088,7 +1088,7 @@ void fx_Date_prototype_toString(txMachine* the)
 		*p++ = ' ';
 		p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
 		*p++ = ' ';
-		p = fxDatePrintTimezone(p);
+		p = fxDatePrintTimezone(p, (txInteger)dt.offset);
 		*p = 0;
 	}
 	else
@@ -1105,7 +1105,7 @@ void fx_Date_prototype_toTimeString(txMachine* the)
 		txString p = buffer;
 		p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
 		*p++ = ' ';
-		p = fxDatePrintTimezone(p);
+		p = fxDatePrintTimezone(p, (txInteger)dt.offset);
 		*p = 0;
 	}
 	else
@@ -1343,13 +1343,8 @@ txString fxDatePrintTime(txString p, txInteger hours, txInteger minutes, txInteg
 	return p;
 }
 
-txString fxDatePrintTimezone(txString p)
+txString fxDatePrintTimezone(txString p, txInteger offset)
 {
-	c_timeval tv;
-	struct c_timezone tz;
-	txInteger offset;
-	c_gettimeofday(&tv, &tz);
-	offset = tz.tz_minuteswest;
 	*p++ = 'G';
 	*p++ = 'M';
 	*p++ = 'T';
