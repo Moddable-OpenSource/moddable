@@ -25,6 +25,10 @@ export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
+ifeq ($(MAKEFLAGS_JOBS),)
+	MAKEFLAGS_JOBS = --jobs
+endif
+
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/esp32/debug/lib
 else
@@ -241,13 +245,14 @@ all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	-mkdir $(PROJ_DIR)/build
 	cp $(BIN_DIR)/xs_esp.a $(PROJ_DIR)/build/.
 	touch $(PROJ_DIR)/main/main.c
-	cd $(PROJ_DIR) ; DEBUG=$(DEBUG) make flash
+	cd $(PROJ_DIR) ; DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make flash;
 	$(DO_LAUNCH)
 
 $(PROJ_DIR)/sdkconfig.default:
-	if ! cmp -s "$(PROJ_DIR)/sdkconfig.defaults.prior" "$(PROJ_DIR)/sdkconfig.defaults"; then \
-		cp $(PROJ_DIR)/sdkconfig.defaults $(PROJ_DIR)/sdkconfig.defaults.prior; \
-		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; BATCH_BUILD=1 DEBUG=$(DEBUG) make defconfig; \
+	if ! cmp -s "$(SDKCONFIG_FILE).prior" "$(SDKCONFIG_FILE)"; then \
+		rm $(PROJ_DIR)/sdkconfig; \
+		cp $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior; \
+		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig; \
 	fi
 
 $(LIB_DIR):
@@ -282,6 +287,7 @@ $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
 	
+MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
