@@ -128,7 +128,7 @@ void Test262Context_getMetadata(xsMachine* the)
 			else if (!strcmp((char*)node->data.scalar.value, "async")) {
 				async = 1;
 			}
-			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsFalse")) {
+			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsTrue")) {
 				sloppy = 0;
 				strict = 0;
 				module = 0;
