@@ -712,6 +712,28 @@ void Tool_prototype_resolvePath(xsMachine* the)
 #endif
 }
 
+void Tool_prototype_setenv(xsMachine* the)
+{
+	xsStringValue name = xsToString(xsArg(0));
+	xsStringValue value = xsToString(xsArg(1));
+	xsIntegerValue c = xsToInteger(xsArgc);
+#if mxWindows
+	char *buffer = c_malloc(c_strlen(name) + c_strlen(value) + 2);
+	if (buffer) {
+		c_strcpy(buffer, name);
+		c_strcat(buffer, "=");
+		c_strcat(buffer, value);
+		_putenv(buffer);
+		c_free(buffer);
+	}
+#else
+	xsIntegerValue overwrite = 1;
+	if (c > 2)
+		overwrite = xsToInteger(xsArg(2));
+	setenv(name, value, overwrite);
+#endif
+}
+
 void Tool_prototype_splitPath(xsMachine* the)
 {
 	char *path;
