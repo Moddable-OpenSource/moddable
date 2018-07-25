@@ -337,16 +337,26 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #define c_strtoul strtoul
 	
 /* DATE */
-#define c_tm modTm
-#define c_timeval modTimeVal
-#define c_time_t modTime_t
-#define c_timezone modTimeZone
 
-#define c_gettimeofday modGetTimeOfDay
-#define c_gmtime modGmTime
-#define c_localtime modLocalTime
-#define c_mktime modMkTime
-#define c_strftime modStrfTime
+#if ESP32
+	#define c_tm struct tm
+	#define c_timeval struct timeval
+	#define c_time_t time_t
+	#define c_timezone timezone
+
+	#define c_gettimeofday gettimeofday
+	#define c_mktime mktime
+	#define c_localtime localtime
+#else
+	#define c_tm modTm
+	#define c_timeval modTimeVal
+	#define c_time_t modTime_t
+	#define c_timezone modTimeZone
+
+	#define c_gettimeofday modGetTimeOfDay
+	#define c_mktime modMkTime
+	#define c_localtime modLocalTime
+#endif
 
 /* ERROR */
 	
