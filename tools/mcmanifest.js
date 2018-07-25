@@ -114,6 +114,26 @@ export class MakeFile extends FILE {
 			this.write(tool.windows ? " $**" : " $^");
 		this.write(" -r ");
 		this.write(role);
+		if ("esp32" == tool.platform) {
+			let directory = tool.moddablePath + tool.slash + "build" + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
+			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
+			if (tool.debug) {
+				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
+					sdkconfigFile += ".debug";
+			}
+			else {
+				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
+					sdkconfigFile += ".release";
+			}
+			this.write(" -s ");
+			this.write(sdkconfigFile);
+			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
+			if (tool.windows) {
+				let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
+				tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+			}
+		}
 		this.write(" -o $(TMP_DIR)");
 		this.line("");
 		this.line("");
