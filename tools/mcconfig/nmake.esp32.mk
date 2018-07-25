@@ -223,27 +223,28 @@ debug: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
 	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 make flash; echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 | more"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 | more"
 
 release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
 	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
 	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 make flash; make monitor"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; make monitor"
 
 $(PROJ_DIR)\sdkconfig.default:
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
-!IF !EXIST($(PROJ_DIR)\sdkconfig.defaults.prior)
+!IF !EXIST($(SDKCONFIG_FILE).prior)
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ELSE
-	-FC $(PROJ_DIR)\sdkconfig.defaults $(PROJ_DIR)\sdkconfig.defaults.prior | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
+	-FC $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
 !ENDIF
 	set HOME=$(PROJ_DIR)
-	if exist $(TMP_DIR)\_s.tmp (copy $(PROJ_DIR)\sdkconfig.defaults $(PROJ_DIR)\sdkconfig.defaults.prior)
-	if exist $(TMP_DIR)\_s.tmp ($(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Running GENCONFIG...; BATCH_BUILD=1 DEBUG=$(DEBUG) make defconfig")
+	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
+	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior)
+	if exist $(TMP_DIR)\_s.tmp ($(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Running GENCONFIG...; BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make defconfig")
 	if exist $(TMP_DIR)\_s.tmp (@echo.)
-	if exist $(TMP_DIR)\_s.tmp (@echo Press any key to complete build **after** MinGW x86 console window closes...)
+	if exist $(TMP_DIR)\_s.tmp (@echo Press any key to complete build **after** MinGW x32 console window closes...)
 	if exist $(TMP_DIR)\_s.tmp (pause>nul)
 
 $(LIB_DIR):

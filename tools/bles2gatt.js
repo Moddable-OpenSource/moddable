@@ -32,6 +32,10 @@ class GATTFile {
 };
 
 class ESP32GATTFile extends GATTFile {
+	constructor(dictionary) {
+		super(dictionary);
+		this.sdkconfig = dictionary.sdkconfig;
+	}
 	setConfigOption(sdkconfig, option) {
 		let name = option.name;
 		let value = option.value;
@@ -56,9 +60,7 @@ class ESP32GATTFile extends GATTFile {
 	}
 	generate() {
 		let tool = this.tool;
-		let directory = tool.moddablePath + tool.slash + "build" + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
-		let path = directory + "sdkconfig.defaults";
-		let sdkconfig = tool.readFileString(path);
+		let sdkconfig = tool.readFileString(this.sdkconfig);
 		let changed = false;
 		let options = [];
 		if ("server" == this.role || "client" == this.role) {
@@ -76,6 +78,12 @@ class ESP32GATTFile extends GATTFile {
 		else {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"n" });
 		}
+		let port = tool.getenv("UPLOAD_PORT");
+		if (port) {
+			if (port.charAt(0) != '"')
+				port = `"${port}"`;
+			options.push({ name:"CONFIG_ESPTOOLPY_PORT", value:port});
+		}
 		for (let i = 0; i < options.length; ++i) {
 			let result = this.setConfigOption(sdkconfig, options[i]);
 			if (result.changed) {
@@ -84,7 +92,7 @@ class ESP32GATTFile extends GATTFile {
 			}
 		}
 		if (changed)
-			tool.writeFileString(path, sdkconfig);
+			tool.writeFileString(this.sdkconfig, sdkconfig);
 		
 		let file = this.file;
 		let services = this.services;
@@ -592,6 +600,12 @@ export default class extends TOOL {
 						throw new Error("-r: no role!");
 					this.role = argv[argi];
 					break;
+				case "-s":
+					argi++;	
+					if (argi >= argc)
+						throw new Error("-s: no sdkconfig!");
+					this.sdkconfig = argv[argi];
+					break;
 				default:
 					name = argv[argi];
 					path = this.resolveFilePath(name);
@@ -618,11 +632,14 @@ export default class extends TOOL {
 		this.files.forEach((path, index) => {
 			services = services.concat(JSON.parse(this.readFileString(path)).service);
 		});
+		var dictionary = { tool:this, role, file, services };
 		var gatt;
-		if ("esp32" == this.platform)
-			gatt = new ESP32GATTFile({ tool:this, role, file, services });
+		if ("esp32" == this.platform) {
+			dictionary.sdkconfig = this.sdkconfig;
+			gatt = new ESP32GATTFile(dictionary);
+		}
 		else if ("gecko" == this.platform)
-			gatt = new GeckoGATTFile({ tool:this, role, file, services });
+			gatt = new GeckoGATTFile(dictionary);
 		gatt.generate();
 		file.close();
 	}
