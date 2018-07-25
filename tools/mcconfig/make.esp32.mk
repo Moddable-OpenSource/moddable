@@ -40,6 +40,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/driver/include \
  	$(IDF_PATH)/components/soc/esp32/include \
+ 	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/freertos \
