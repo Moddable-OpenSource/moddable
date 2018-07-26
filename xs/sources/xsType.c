@@ -257,9 +257,7 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 
 txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask) 
 {
-	txSlot* property = instance->next;
-	txBoolean result = 1;
-	property = mxBehaviorGetProperty(the, instance, id, index, XS_OWN);
+	txSlot* property = mxBehaviorGetProperty(the, instance, id, index, XS_OWN);
 	if (property) {
 		if (property->flag & XS_DONT_DELETE_FLAG) {
 			if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
@@ -289,6 +287,13 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						return 0;
 					return 1;
 				}
+			}
+		}
+		if (instance->ID >= 0) {
+			txSlot* alias = the->aliasArray[instance->ID];
+			if (!alias) {
+				alias = fxAliasInstance(the, instance);
+				property = mxBehaviorGetProperty(the, instance, id, index, XS_OWN);
 			}
 		}
 	}
@@ -359,7 +364,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 				property->flag &= ~XS_DONT_SET_FLAG;
 		}
 	}
-	return result;
+	return 1;
 }
 
 
