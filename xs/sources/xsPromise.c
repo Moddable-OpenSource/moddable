@@ -597,7 +597,7 @@ void fx_Promise_all(txMachine* the)
 			iterator = the->stack;
 			index = 0;
 			{
-				txBoolean close;
+				volatile txBoolean close;
 				mxTry(the) {
 					for(;;) {
 						close = 0;
@@ -688,7 +688,7 @@ void fx_Promise_race(txMachine* the)
 			iterator = the->stack;
 			index = 0;
 			{
-				txBoolean close;
+				volatile txBoolean close;
 				mxTry(the) {
 					for(;;) {
 						close = 0;
