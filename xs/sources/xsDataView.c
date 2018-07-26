@@ -687,15 +687,22 @@ void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCallback se
 	txSlot* buffer = view->next;
 	txNumber offset = fxArgToByteOffset(the, 0, 0);
 	int endian = EndianBig;
-	if (mxArgc > 1)
+	txSlot* value;
+	if (mxArgc > 1) {
 		fxToNumber(the, mxArgv(1));
+		mxPushSlot(mxArgv(1));
+	}
+	else
+		mxPushUndefined();
+	value = the->stack;	
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
 	fxCheckArrayBufferDetached(the, buffer);
 	if ((txNumber)view->value.dataView.size < (offset + delta))
 		mxRangeError("out of range byteOffset");
 	offset += (txNumber)view->value.dataView.offset;
-	(*setter)(the, buffer->value.reference->next, (txInteger)offset, (mxArgc < 2) ? &mxUndefined : mxArgv(1), endian);
+	(*setter)(the, buffer->value.reference->next, (txInteger)offset, value, endian);
+	mxPop();
 }
 
 void fx_DataView_prototype_setFloat32(txMachine* the)
@@ -2270,33 +2277,35 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	}
 #endif
 
+static float mxEndianFloat_Swap(float a)
+{
 #if defined(__GNUC__) || defined(__llvm__)
-	#define mxEndianFloat_Swap(a) __builtin_bswap32(a)
+	uint32_t result = __builtin_bswap32(*(uint32_t *)&a);
+	return *(float *)&result;
 #else
-	static float mxEndianFloat_Swap(float a)
-	{
-		float b;
-		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-		int i;
-		for (i = 0; i < 4; i++)
-			p2[i] = p1[3 - i];
-		return b;
-	}
+	float b;
+	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+	int i;
+	for (i = 0; i < 4; i++)
+		p2[i] = p1[3 - i];
+	return b;
 #endif
+}
 
+static double mxEndianDouble_Swap(double a)
+{
 #if defined(__GNUC__) || defined(__llvm__)
-	#define mxEndianDouble_Swap(a) __builtin_bswap64(a)
+	uint64_t result = __builtin_bswap64(*(uint64_t *)&a);
+	return *(double *)&result;
 #else
-	static double mxEndianDouble_Swap(double a)
-	{
-		double b;
-		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-		int i;
-		for (i = 0; i < 8; i++)
-			p2[i] = p1[7 - i];
-		return b;
-	}
+	double b;
+	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+	int i;
+	for (i = 0; i < 8; i++)
+		p2[i] = p1[7 - i];
+	return b;
 #endif
+}
 
 #define toNative(size, endian) mxEndian##size##_##endian##toN
 #define fromNative(size, endian) mxEndian##size##_Nto##endian
