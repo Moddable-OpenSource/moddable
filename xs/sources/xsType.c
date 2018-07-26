@@ -323,7 +323,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 		}
 		if (mask & XS_GETTER_FLAG) {
 			property->value.accessor.getter = slot->value.accessor.getter;
-			if (mxIsFunction(slot->value.accessor.getter)) {
+			if (mxIsFunction(slot->value.accessor.getter) && ((slot->value.accessor.getter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.getter);
 				home->value.home.object = instance;
 				if (id)
@@ -332,7 +332,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 		}
 		if (mask & XS_SETTER_FLAG) {
 			property->value.accessor.setter = slot->value.accessor.setter;
-			if (mxIsFunction(slot->value.accessor.setter)) {
+			if (mxIsFunction(slot->value.accessor.setter) && ((slot->value.accessor.setter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.setter);
 				home->value.home.object = instance;
 				if (id)
@@ -347,7 +347,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			if (slot->kind == XS_REFERENCE_KIND) {
 				txSlot* function = slot->value.reference;
 				if (mxIsFunction(function)) {
-					if (mask & XS_METHOD_FLAG) {
+					if ((mask & XS_METHOD_FLAG) && ((function->flag & XS_MARK_FLAG) == 0)) {
 						txSlot* home = mxFunctionInstanceHome(function);
 						home->value.home.object = instance;
 					}
