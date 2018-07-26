@@ -45,6 +45,9 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp32\instrument\lib
 LIB_DIR = $(BUILD_DIR)\tmp\esp32\release\lib
 !ENDIF
 
+PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
+PROJ_DIR = $(PLATFORM_DIR)\xsProj
+
 INC_DIRS = \
 	-I$(IDF_PATH)\components \
 	-I$(IDF_PATH)\components\heap\include \
@@ -52,6 +55,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\soc\esp32\include \
 	-I$(IDF_PATH)\components\soc\include \
 	-I$(IDF_PATH)\components\esp32\include \
+	-I$(IDF_PATH)/components\soc\esp32\include\soc \
 	-I$(IDF_PATH)\components\freertos \
 	-I$(IDF_PATH)\components\freertos\include \
 	-I$(IDF_PATH)\components\freertos\include\freertos \
@@ -110,13 +114,15 @@ XS_OBJ = \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsre.o \
-	$(LIB_DIR)\xsmc.o
+	$(LIB_DIR)\xsmc.o \
+	$(LIB_DIR)\e_pow.o
 
 XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\esp \
-	-I$(BUILD_DIR)\devices\esp32\xsProj\build\include
+	-I$(BUILD_DIR)\devices\esp32\xsProj\build\include \
+	-I$(PLATFORM_DIR)\lib\pow
 
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -125,8 +131,6 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
-
-PROJ_DIR = $(BUILD_DIR)\devices\esp32\xsProj
 
 SDKCONFIG =\
 	$(PROJ_DIR)\sdkconfig.default
@@ -264,6 +268,10 @@ $(XS_OBJ):$(XS_HEADERS)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
 {$(XS_DIR)\platforms\esp\}.c{$(LIB_DIR)\}.o:
+	@echo # cc $(@F) (strings in flash)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+{$(PLATFORM_DIR)\lib\pow\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
