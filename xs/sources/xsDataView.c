@@ -2546,6 +2546,8 @@ void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot
 		value = 0;
 	else if (value >= 255)
 		value = 255;
+	else if (c_isnan(value))
+		value = 0;
 	else
 		value = c_nearbyint(value);
 	*((txU1*)(data->value.arrayBuffer.address + offset)) = (txU1)value;
