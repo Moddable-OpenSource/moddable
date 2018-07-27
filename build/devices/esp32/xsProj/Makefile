@@ -18,6 +18,7 @@
 #
 
 PROJECT_NAME := xs_esp32
+BUILD_DIR_BASE := $(MODDABLE)/build/tmp/esp32/idf
 
 # COMPONENTS=freertos esp32 newlib esptool_py tcpip_adapter lwip main soc ethernet log driver vfs heap nvs_flash spi_flash bootloader_support app_trace xtensa-debug-module mbedtls wpa_supplicant micro-ecc
 
