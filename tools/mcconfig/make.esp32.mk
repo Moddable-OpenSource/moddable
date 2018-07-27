@@ -249,6 +249,7 @@ all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	$(DO_LAUNCH)
 
 $(PROJ_DIR)/sdkconfig.default:
+	if ! test -s $(PROJ_DIR)/build/; then rm $(SDKCONFIG_FILE).prior; fi
 	if ! cmp -s "$(SDKCONFIG_FILE).prior" "$(SDKCONFIG_FILE)"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
 		cp $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior; \
