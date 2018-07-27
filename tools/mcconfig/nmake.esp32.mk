@@ -238,6 +238,9 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 
 $(PROJ_DIR)\sdkconfig.default:
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
+!IF !EXIST($(PROJ_DIR)\build)
+	echo 1 > $(TMP_DIR)\_s.tmp
+!ENDIF
 !IF !EXIST($(SDKCONFIG_FILE).prior)
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ELSE
