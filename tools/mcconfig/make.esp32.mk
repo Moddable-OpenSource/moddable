@@ -24,6 +24,8 @@ IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
+IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/idf
+
 
 ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs
@@ -111,7 +113,7 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/esp \
-	$(BUILD_DIR)/devices/esp32/xsProj/build/include \
+	$(IDF_BUILD_DIR)/include \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
@@ -241,15 +243,15 @@ SDKCONFIG =\
 all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	-rm $(PROJ_DIR)/build/xs_esp32.elf
-	-mkdir $(PROJ_DIR)/build
-	cp $(BIN_DIR)/xs_esp.a $(PROJ_DIR)/build/.
+	-rm $(IDF_BUILD_DIR)/xs_esp32.elf
+	-mkdir -p $(IDF_BUILD_DIR)
+	cp $(BIN_DIR)/xs_esp.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 	cd $(PROJ_DIR) ; DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make flash;
 	$(DO_LAUNCH)
 
 $(PROJ_DIR)/sdkconfig.default:
-	if ! test -s $(PROJ_DIR)/build/; then rm $(SDKCONFIG_FILE).prior; fi
+	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIG_FILE).prior; fi
 	if ! cmp -s "$(SDKCONFIG_FILE).prior" "$(SDKCONFIG_FILE)"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
 		cp $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior; \
