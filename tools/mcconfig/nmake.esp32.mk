@@ -47,6 +47,7 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp32\release\lib
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
 PROJ_DIR = $(PLATFORM_DIR)\xsProj
+IDF_BUILD_DIR = $(BUILD_DIR)\tmp\esp32\idf
 
 INC_DIRS = \
 	-I$(IDF_PATH)\components \
@@ -121,7 +122,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\esp \
-	-I$(BUILD_DIR)\devices\esp32\xsProj\build\include \
+	-I$(IDF_BUILD_DIR)\include \
 	-I$(PLATFORM_DIR)\lib\pow
 
 XS_HEADERS = \
@@ -223,22 +224,22 @@ C_DEFINES = $(C_DEFINES) -DmxDebug=1
 debug: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
-	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
-	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
+	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
+	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
+	copy $(BIN_DIR)\xs_esp.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 | more"
 
 release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
-	if exist $(PROJ_DIR)\build\xs_esp32.elf del $(PROJ_DIR)\build\xs_esp32.elf
-	if not exist $(PROJ_DIR)\build mkdir $(PROJ_DIR)\build
-	copy $(BIN_DIR)\xs_esp.a $(PROJ_DIR)\build\.
+	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
+	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
+	copy $(BIN_DIR)\xs_esp.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; make monitor"
 
 $(PROJ_DIR)\sdkconfig.default:
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
-!IF !EXIST($(PROJ_DIR)\build)
+!IF !EXIST($(IDF_BUILD_DIR)\)
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
 !IF !EXIST($(SDKCONFIG_FILE).prior)
