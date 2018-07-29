@@ -667,6 +667,12 @@ void fxArrayLengthSetter(txMachine* the)
 		}
 		instance = instance->value.instance.prototype;
 	}
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (!alias)
+			alias = fxAliasInstance(the, instance);
+		array = alias->next;
+	}
 	fxSetArrayLength(the, array, fxCheckArrayLength(the, mxArgv(0)));
     mxResult->value.number = array->value.array.length;
     mxResult->kind = XS_NUMBER_KIND;
@@ -684,6 +690,13 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		slot.value.number = array->value.array.length;
 		if (!fxIsPropertyCompatible(the, &slot, descriptor, mask))
 			return 0;
+		if (instance->ID >= 0) {
+			txSlot* alias = the->aliasArray[instance->ID];
+			if (!alias) {
+				alias = fxAliasInstance(the, instance);
+				array = alias->next;
+			}
+		}
 		if (descriptor->kind != XS_UNINITIALIZED_KIND) {
 			txIndex length = fxCheckArrayLength(the, descriptor);
 			if (array->value.array.length != length)
