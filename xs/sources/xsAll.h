@@ -680,6 +680,7 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
 extern void fxPushSpeciesConstructor(txMachine* the, txSlot* constructor);
 
+extern txSlot* fxAliasInstance(txMachine* the, txSlot* instance);
 extern txSlot* fxNewInstance(txMachine* the);
 extern txSlot* fxToInstance(txMachine* the, txSlot* theSlot);
 extern void fxToPrimitive(txMachine* the, txSlot* theSlot, txBoolean theHint);
