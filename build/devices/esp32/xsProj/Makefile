@@ -20,9 +20,9 @@
 PROJECT_NAME := xs_esp32
 
 ifeq ("$(OS)","Windows_NT")
-BUILD_DIR_BASE := $(realpath $(MODDABLE)/build/tmp/esp32/idf)
+BUILD_DIR_BASE := $(realpath $(IDF_BUILD_DIR))
 else
-BUILD_DIR_BASE := $(MODDABLE)/build/tmp/esp32/idf
+BUILD_DIR_BASE := $(IDF_BUILD_DIR)
 endif
 
 

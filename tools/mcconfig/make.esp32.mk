@@ -24,8 +24,12 @@ IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
-IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/idf
 
+ifeq ($(DEBUG),1)
+	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/debug/idf
+else
+	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/release/idf
+endif
 
 ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs
@@ -232,7 +236,7 @@ ifeq ($(DEBUG),1)
 else
 	KILL_SERIAL_2_XSBUG = 
 	DO_XSBUG = 
-	DO_LAUNCH = cd $(PROJ_DIR); make monitor
+	DO_LAUNCH = cd $(PROJ_DIR); IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make monitor
 endif
 
 SDKCONFIG =\
@@ -247,7 +251,7 @@ all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
 	-mkdir -p $(IDF_BUILD_DIR)
 	cp $(BIN_DIR)/xs_esp.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
-	cd $(PROJ_DIR) ; DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make flash;
+	cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make flash;
 	$(DO_LAUNCH)
 
 $(PROJ_DIR)/sdkconfig.default:
@@ -255,7 +259,7 @@ $(PROJ_DIR)/sdkconfig.default:
 	if ! cmp -s "$(SDKCONFIG_FILE).prior" "$(SDKCONFIG_FILE)"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
 		cp $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior; \
-		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig; \
+		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig; \
 	fi
 
 $(LIB_DIR):
