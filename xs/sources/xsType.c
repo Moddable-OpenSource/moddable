@@ -37,8 +37,6 @@
 
 #include "xsAll.h"
 
-static txSlot* fxAliasInstance(txMachine* the, txSlot* instance);
-
 const txBehavior ICACHE_FLASH_ATTR gxOrdinaryBehavior = {
 	fxOrdinaryGetProperty,
 	fxOrdinarySetProperty,
