@@ -399,6 +399,7 @@ static char* printAddress(char* address){
 	return buffer;
 }
 
+static int gdbMode = 0;
 void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
 {
 	txSerialTool self = context;
@@ -438,6 +439,10 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 				else {
 					dst[-2] = 0;	
 					if (offset > 2) fprintf(stderr, "%s\n", self->buffer);
+					
+					if (TOOLS_BIN && elfPath && strstr(self->buffer, "gdb stub")) {
+						gdbMode = 1;
+					}
 					
 					if (elfPath){
 						char* epc;
@@ -513,6 +518,36 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 				}
 				dst = self->buffer;
 				offset = 0;
+			}
+			else if (gdbMode && (offset == 7)) {
+				char a, b;
+				int match, check, sum;
+				*dst = 0;
+				fprintf(stderr, "%s", self->buffer);
+				match = sscanf(self->buffer, "$T%c%c#%2x", &a, &b, &check);
+				sum = ((int)'T' + (int)a + (int)b) & 255;
+				if ((match == 3) && (check == sum)) {
+					char* args[9];
+					char baud[256];
+					char target[256];
+					sprintf(baud, "set serial baud %d", 115200);
+					sprintf(target, "target remote %s", self->path);
+					args[0] = TOOLS_BIN;
+					args[1] = "-ex";
+					args[2] = baud;
+					args[3] = "-ex";
+					args[4] = target;
+					args[5] = "-ex";
+					args[6] = "interrupt";
+					args[7] = elfPath;
+					args[8] = NULL;
+				
+					fxCloseNetwork(self, 0);
+					fxCloseSerial(self);
+				
+					execvp(args[0], args);
+					exit(0);
+				}
 			}
 		}
 		self->index = offset;
