@@ -18,13 +18,7 @@
 #
 
 PROJECT_NAME := xs_esp32
-
-ifeq ("$(OS)","Windows_NT")
-BUILD_DIR_BASE := $(realpath $(IDF_BUILD_DIR))
-else
 BUILD_DIR_BASE := $(IDF_BUILD_DIR)
-endif
-
 
 # COMPONENTS=freertos esp32 newlib esptool_py tcpip_adapter lwip main soc ethernet log driver vfs heap nvs_flash spi_flash bootloader_support app_trace xtensa-debug-module mbedtls wpa_supplicant micro-ecc
 

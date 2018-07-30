@@ -115,7 +115,7 @@ export class MakeFile extends FILE {
 		this.write(" -r ");
 		this.write(role);
 		if ("esp32" == tool.platform) {
-			let directory = tool.moddablePath + tool.slash + "build" + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+			let directory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
 			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
 			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
 			if (tool.debug) {
@@ -130,6 +130,9 @@ export class MakeFile extends FILE {
 			this.write(sdkconfigFile);
 			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
 			if (tool.windows) {
+				let idfBuildDir = tool.buildPath + "\\tmp\\esp32\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
+				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
 				tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
 			}
