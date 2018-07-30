@@ -196,9 +196,9 @@ CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine bmf, uint16_t glyphID, uint
 	glyph->sy = c_read16(cc + 6);
 	glyph->w = c_read16(cc + 8);
 	glyph->h = c_read16(cc + 10);
-	glyph->dx = c_read16(cc + 12);
-	glyph->dy = c_read16(cc + 14);
-	glyph->advance = c_read16(cc + 16);
+	glyph->dx = (int8_t)c_read16(cc + 12);
+	glyph->dy = (int8_t)c_read16(cc + 14);
+	glyph->advance = (int8_t)c_read16(cc + 16);
 
 	if (bmf->isCompressed) {
 		glyph->format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
