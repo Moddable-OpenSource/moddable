@@ -205,20 +205,27 @@ static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 	}
 	
 #ifdef __ets__
-	#undef mxDecode8
+	#define mxUnalignedAccess 0
+#else
+	#define mxUnalignedAccess 1
+#endif
 
-	#define mxDecode8(THE_CODE, THE_VALUE) { \
-		txS1* dst = (txS1*)&(THE_VALUE); \
-		dst[7] = mxRunS1(0); \
-		dst[6] = mxRunS1(1); \
-		dst[5] = mxRunS1(2); \
-		dst[4] = mxRunS1(3); \
-		dst[3] = mxRunS1(4); \
-		dst[2] = mxRunS1(5); \
-		dst[1] = mxRunS1(6); \
-		dst[0] = mxRunS1(7); \
-		mxSkipCode(8); \
-	}
+#define mxRunS1(OFFSET) ((txS1*)mxCode)[OFFSET]
+#define mxRunU1(OFFSET) ((txU1*)mxCode)[OFFSET]
+#if mxBigEndian
+	#define mxRunS2(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
+	#define mxRunS4(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 24) | (((txU1*)mxCode)[OFFSET+1] << 16) | (((txU1*)mxCode)[OFFSET+2] << 8) | ((txU1*)mxCode)[OFFSET+3]
+	#define mxRunU2(OFFSET) (((txU1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
+#else
+	#if mxUnalignedAccess
+		#define mxRunS2(OFFSET) *((txS2*)(mxCode + OFFSET))
+		#define mxRunS4(OFFSET) *((txS4*)(mxCode + OFFSET))
+		#define mxRunU2(OFFSET) *((txU2*)(mxCode + OFFSET))
+	#else	
+		#define mxRunS2(OFFSET) (((txS1*)mxCode)[OFFSET+1] << 8) | ((txU1*)mxCode)[OFFSET+0]
+		#define mxRunS4(OFFSET) (((txS1*)mxCode)[OFFSET+3] << 24) | (((txU1*)mxCode)[OFFSET+2] << 16) | (((txU1*)mxCode)[OFFSET+1] << 8) | ((txU1*)mxCode)[OFFSET+0]
+		#define mxRunU2(OFFSET) (((txU1*)mxCode)[OFFSET+1] << 8) | ((txU1*)mxCode)[OFFSET+0]
+	#endif
 #endif
 
 #define mxNextCode(OFFSET) { \
@@ -228,20 +235,6 @@ static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 #define mxSkipCode(OFFSET) { \
 	mxCode += OFFSET; \
 }
-#define mxRunS1(OFFSET) ((txS1*)mxCode)[OFFSET+0]
-#define mxRunS2(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
-#if (defined(__GNUC__) || defined(__llvm__)) && (!defined(__ets__) || ESP32)
-	#define mxRunS4(OFFSET) (__builtin_bswap32(*(txS4 *)&mxCode[OFFSET]))
-#else
-	#define mxRunS4(OFFSET) (((txS1*)mxCode)[OFFSET+0] << 24) | (((txU1*)mxCode)[OFFSET+1] << 16) | (((txU1*)mxCode)[OFFSET+2] << 8) | ((txU1*)mxCode)[OFFSET+3]
-#endif
-
-#define mxRunU1(OFFSET) ((txU1*)mxCode)[OFFSET]
-#if (defined(__GNUC__) || defined(__llvm__)) && (!defined(__ets__) || ESP32)
-	#define mxRunU2(OFFSET) (__builtin_bswap16(*(txU2 *)&mxCode[OFFSET]))
-#else
-	#define mxRunU2(OFFSET) (((txU1*)mxCode)[OFFSET+0] << 8) | ((txU1*)mxCode)[OFFSET+1]
-#endif
 
 #ifdef mxTrace
 short gxDoTrace = 1;
@@ -2422,9 +2415,29 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_NUMBER)
 			mxPushKind(XS_NUMBER_KIND);
-			mxCode++;
-			mxDecode8(mxCode, mxStack->value.number);
-			mxNextCode(0);
+			{
+				txByte* number = (txByte*)&(mxStack->value.number);
+			#if mxBigEndian
+				number[7] = mxCode[1];
+				number[6] = mxCode[2];
+				number[5] = mxCode[3];
+				number[4] = mxCode[4];
+				number[3] = mxCode[5];
+				number[2] = mxCode[6];
+				number[1] = mxCode[7];
+				number[0] = mxCode[8];
+			#else
+				number[0] = mxCode[1];
+				number[1] = mxCode[2];
+				number[2] = mxCode[3];
+				number[3] = mxCode[4];
+				number[4] = mxCode[5];
+				number[5] = mxCode[6];
+				number[6] = mxCode[7];
+				number[7] = mxCode[8];
+			#endif
+			}
+			mxNextCode(9);
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceNumber(the, mxStack->value.number);
 #endif
@@ -3589,11 +3602,8 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			mxPushUndefined();
 			if (script->symbolsBuffer) {
 				txByte* p = script->symbolsBuffer;
-				txInteger c = *((txU1*)p), i;
-				p++;
-				c <<= 8;
-				c += *((txU1*)p);
-				p++;
+				txID c, i;
+				mxDecode2(p, c);
 				the->stack->value.callback.address = C_NULL;
 				the->stack->value.callback.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
 				the->stack->kind = XS_CALLBACK_KIND;

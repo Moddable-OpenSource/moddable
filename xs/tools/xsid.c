@@ -111,6 +111,8 @@ int main(int argc, char* argv[])
 	txLink* list = NULL;
 	txLink* link;
 	txByte byte;
+	txID id;
+	txByte* p;
 
 	for (argi = 1; argi < argc; argi++) {
 		if (!strcmp(argv[argi], "-o")) {
@@ -196,7 +198,8 @@ int main(int argc, char* argv[])
 		*to = tmp;
 		offset = data[1];
 	}
-	
+	if (count >= 0x7FFF)
+		fxReportError("not enough symbols");
 	if (output)
 		output = fxRealDirectoryPath(output, outputPath);
 	else
@@ -237,8 +240,10 @@ int main(int argc, char* argv[])
 	size = htonl(size);
 	fwrite(&size, 4, 1, file);
 	fwrite("SYMB", 4, 1, file);
-	count = htons(count);
-	fwrite(&count, 2, 1, file);
+	p = (txByte*)reason;
+	id = (txID)count;
+	mxEncode2(p, id);
+	fwrite(reason, 2, 1, file);
 	link = list;
 	while (link) {
 		fwrite(link->string, link->length + 1, 1, file);
