@@ -622,7 +622,6 @@ txSlot* fxNewHostInstance(txMachine* the)
 		txSlot* prototypeHost = prototype->next;
 		if (prototypeHost && (prototypeHost->kind == XS_HOST_KIND)) {
 			txSlot* instanceHost = instance->next = fxNewSlot(the);
-			instanceHost->ID = XS_NO_ID;
 			instanceHost->flag = XS_INTERNAL_FLAG | (prototypeHost->flag & ~XS_MARK_FLAG);
 			instanceHost->kind = XS_HOST_KIND;
 			instanceHost->value.host.data = C_NULL;
@@ -662,7 +661,6 @@ txSlot* fxNewHostObject(txMachine* the, txDestructor theDestructor)
 	the->stack->kind = XS_REFERENCE_KIND;
 
 	aProperty = anInstance->next = fxNewSlot(the);
-	aProperty->ID = XS_NO_ID;
 	aProperty->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	aProperty->kind = XS_HOST_KIND;
 	aProperty->value.host.data = C_NULL;

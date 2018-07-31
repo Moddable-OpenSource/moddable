@@ -1218,8 +1218,6 @@ txSlot* fx_String_prototype_split_aux(txMachine* the, txSlot* theString, txSlot*
 	theItem->next = fxNewSlot(the);
 	theItem = theItem->next;
 	theItem->next = C_NULL;
-	theItem->ID = XS_NO_ID;
-	theItem->flag = XS_NO_FLAG;
 	if (theStart >= 0) {
 		theItem->value.string = (txString)fxNewChunk(the, theStop + 1);
 		c_memcpy(theItem->value.string, theString->value.string + theStart, theStop);
