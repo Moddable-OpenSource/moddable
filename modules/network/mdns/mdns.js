@@ -20,8 +20,10 @@
 
 /*
 	To do:
-		 TTL
-		 case-insensitivity?
+		 Proper TTL on Answer
+		 Refresh / expire monitored records
+		 case-insensitivity - publish unchanged (uppercase) compare case-insensitive
+		 instance name
 */
 
 import {Socket} from "socket";
@@ -46,12 +48,12 @@ class MDNS extends Socket {
 	constructor(dictionary, callback) {
 		super({kind: "UDP", port: MDNS_PORT, multicast: MDNS_IP});
 
-		this.hostName = dictionary.hostName;
 		this.services = [];
 		this.monitors = [];
 		this.client = callback ? callback : function() {};
 
-		if (this.hostName) {
+		if (dictionary.hostName) {
+			this.hostName = dictionary.hostName;
 			this.probing = 1;
 			Timer.set(() => this.probe(), 0);
 		}
@@ -92,10 +94,10 @@ class MDNS extends Socket {
 	remove(service) {
 		if ("string" === typeof service) {
 			service += ".local";
-			service = this.monitors.indexOf(item => item === service);
+			service = this.monitors.findIndex(item => item.service === service);
 			if (service >= 0) {
 				Timer.clear(this.monitors[service].timer);
-				this.monitors.slice(service, 1);
+				this.monitors.splice(service, 1);
 			}
 		}
 		else {
@@ -232,7 +234,7 @@ class MDNS extends Socket {
 					return;
 				delete instance.changed;
 				if (instance.name && instance.txt && instance.target)
-					monitor.callback(monitor.service, instance);
+					monitor.callback(monitor.service.slice(0, -6), instance);
 				else {
 					let question, service, query = new Serializer, questions;
 
