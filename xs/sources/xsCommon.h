@@ -83,7 +83,7 @@ typedef int (*txPutter)(txString, void*);
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 5
+#define XS_MINOR_VERSION 6
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -406,7 +406,7 @@ mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifie
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
 mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger offset);
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxDecode2(THE_CODE, THE_VALUE)	{ \
 	txS1* src = (txS1*)(THE_CODE); \
 	txS1* dst = (txS1*)&(THE_VALUE) + 1; \
@@ -424,7 +424,7 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 	}
 #endif
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxDecode4(THE_CODE, THE_VALUE)	{ \
 	txS1* src = (THE_CODE); \
 	txS1* dst = (txS1*)&(THE_VALUE) + 3; \
@@ -446,7 +446,7 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 	}
 #endif
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxDecode8(THE_CODE, THE_VALUE)	{ \
 	txS1* src = (THE_CODE); \
 	txS1* dst = (txS1*)&(THE_VALUE) + 7; \
@@ -476,7 +476,7 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 	}
 #endif
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxEncode2(THE_CODE, THE_VALUE)	{ \
 	txByte* dst = (THE_CODE); \
 	txByte* src = (txByte*)&(THE_VALUE) + 1; \
@@ -494,7 +494,7 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 	}
 #endif
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxEncode4(THE_CODE, THE_VALUE)	{ \
 	txByte* dst = (THE_CODE); \
 	txByte* src = (txByte*)&(THE_VALUE) + 3; \
@@ -516,7 +516,7 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 	}
 #endif
 
-#if mxLittleEndian
+#if mxBigEndian
 #define mxEncode8(THE_CODE, THE_VALUE)	{ \
 	txByte* dst = (THE_CODE); \
 	txByte* src = (txByte*)&(THE_VALUE) + 7; \
