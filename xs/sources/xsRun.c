@@ -140,8 +140,7 @@ static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 #define mxPushKind(_KIND) { \
 	mxOverflow(1); \
 	mxStack->next = C_NULL;  \
-	mxStack->flag = XS_NO_FLAG;  \
-	mxStack->kind = _KIND; \
+	mxInitSlotKind(mxStack, _KIND); \
 }
 
 #define mxRunDebug(_ERROR, ...) { \
@@ -1169,17 +1168,17 @@ XS_CODE_JUMP:
 			*mxStack = mxException;
 			mxNextCode(1);
 			mxBreak;
-		mxCase(XS_CODE_CATCH_1)
-			offset = mxRunS1(1);
-			mxNextCode(2);
+		mxCase(XS_CODE_CATCH_4)
+			offset = mxRunS4(1);
+			mxNextCode(5);
 			goto XS_CODE_CATCH;
 		mxCase(XS_CODE_CATCH_2)
 			offset = mxRunS2(1);
 			mxNextCode(3);
 			goto XS_CODE_CATCH;
-		mxCase(XS_CODE_CATCH_4)
-			offset = mxRunS4(1);
-			mxNextCode(5);
+		mxCase(XS_CODE_CATCH_1)
+			offset = mxRunS1(1);
+			mxNextCode(2);
 		XS_CODE_CATCH:
 			jump = c_malloc(sizeof(txJump));
 			if (jump) {
@@ -1255,17 +1254,17 @@ XS_CODE_JUMP:
 			offset = mxRunS4(1);
 			mxNextCode(5 + offset);
 			mxBreak;
-		mxCase(XS_CODE_BRANCH_ELSE_1)
-			offset = mxRunS1(1);
-			index = 2;
+		mxCase(XS_CODE_BRANCH_ELSE_4)
+			offset = mxRunS4(1);
+			index = 5;
 			goto XS_CODE_BRANCH_ELSE;
 		mxCase(XS_CODE_BRANCH_ELSE_2)
 			offset = mxRunS2(1);
 			index = 3;
 			goto XS_CODE_BRANCH_ELSE;
-		mxCase(XS_CODE_BRANCH_ELSE_4)
-			offset = mxRunS4(1);
-			index = 5;
+		mxCase(XS_CODE_BRANCH_ELSE_1)
+			offset = mxRunS1(1);
+			index = 2;
 		XS_CODE_BRANCH_ELSE:
 			byte = mxStack->kind;
 			if (XS_BOOLEAN_KIND == byte)
@@ -1280,17 +1279,17 @@ XS_CODE_JUMP:
 				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index + offset : (txS4)index)
 			mxStack++;
 			mxBreak;
-		mxCase(XS_CODE_BRANCH_IF_1)
-			offset = mxRunS1(1);
-			index = 2;
+		mxCase(XS_CODE_BRANCH_IF_4)
+			offset = mxRunS4(1);
+			index = 5;
 			goto XS_CODE_BRANCH_IF;
 		mxCase(XS_CODE_BRANCH_IF_2)
 			offset = mxRunS2(1);
 			index = 3;
 			goto XS_CODE_BRANCH_IF;
-		mxCase(XS_CODE_BRANCH_IF_4)
-			offset = mxRunS4(1);
-			index = 5;
+		mxCase(XS_CODE_BRANCH_IF_1)
+			offset = mxRunS1(1);
+			index = 2;
 		XS_CODE_BRANCH_IF:
 			byte = mxStack->kind;
 			if (XS_BOOLEAN_KIND == byte)
@@ -1305,17 +1304,17 @@ XS_CODE_JUMP:
 				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index : (txS4)index + offset)
 			mxStack++;
 			mxBreak;
-		mxCase(XS_CODE_BRANCH_STATUS_1)
-			offset = mxRunS1(1);
-			index = 2;
+		mxCase(XS_CODE_BRANCH_STATUS_4)
+			offset = mxRunS4(1);
+			index = 5;
 			goto XS_CODE_BRANCH_STATUS;
 		mxCase(XS_CODE_BRANCH_STATUS_2)
 			offset = mxRunS2(1);
 			index = 3;
 			goto XS_CODE_BRANCH_STATUS;
-		mxCase(XS_CODE_BRANCH_STATUS_4)
-			offset = mxRunS4(1);
-			index = 5;
+		mxCase(XS_CODE_BRANCH_STATUS_1)
+			offset = mxRunS1(1);
+			index = 2;
 		XS_CODE_BRANCH_STATUS:
 			if (the->status & XS_THROW_STATUS) {
 				mxException = *mxStack;
@@ -1354,13 +1353,13 @@ XS_CODE_JUMP:
 			mxBreak;
 
 	/* SCOPE */		
-		mxCase(XS_CODE_CONST_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_CONST_CLOSURE;
 		mxCase(XS_CODE_CONST_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_CONST_CLOSURE;
+		mxCase(XS_CODE_CONST_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_CONST_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1374,13 +1373,13 @@ XS_CODE_JUMP:
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
-		mxCase(XS_CODE_CONST_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_CONST_LOCAL;
 		mxCase(XS_CODE_CONST_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_CONST_LOCAL;
+		mxCase(XS_CODE_CONST_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_CONST_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1393,13 +1392,13 @@ XS_CODE_JUMP:
 			variable->value = mxStack->value;
 			mxBreak;
 						
-		mxCase(XS_CODE_GET_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_GET_CLOSURE;
 		mxCase(XS_CODE_GET_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_GET_CLOSURE;
+		mxCase(XS_CODE_GET_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_GET_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1414,13 +1413,13 @@ XS_CODE_JUMP:
 			mxPushKind(variable->kind);
 			mxStack->value = variable->value;
 			mxBreak;
-		mxCase(XS_CODE_GET_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_GET_LOCAL;
 		mxCase(XS_CODE_GET_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_GET_LOCAL;
+		mxCase(XS_CODE_GET_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_GET_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1435,13 +1434,13 @@ XS_CODE_JUMP:
 			mxStack->value = variable->value;
 			mxBreak;
 			
-		mxCase(XS_CODE_LET_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_LET_CLOSURE;
 		mxCase(XS_CODE_LET_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_LET_CLOSURE;
+		mxCase(XS_CODE_LET_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_LET_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1451,13 +1450,13 @@ XS_CODE_JUMP:
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
-		mxCase(XS_CODE_LET_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_LET_LOCAL;
 		mxCase(XS_CODE_LET_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_LET_LOCAL;
+		mxCase(XS_CODE_LET_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_LET_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1506,19 +1505,17 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, mxFrame - mxScope - 2);
 #endif
-			variable->flag = XS_NO_FLAG;
-			variable->ID = XS_NO_ID;
-			variable->kind = XS_UNDEFINED_KIND;
+			mxInitSlotKind(variable, XS_UNDEFINED_KIND);
 			mxNextCode(1);
 			mxBreak;
 			
-		mxCase(XS_CODE_PULL_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_PULL_CLOSURE;
 		mxCase(XS_CODE_PULL_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_PULL_CLOSURE;
+		mxCase(XS_CODE_PULL_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_PULL_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1535,13 +1532,13 @@ XS_CODE_JUMP:
 			variable->value = mxStack->value;
 			mxStack++;
 			mxBreak;
-		mxCase(XS_CODE_PULL_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_PULL_LOCAL;
 		mxCase(XS_CODE_PULL_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_PULL_LOCAL;
+		mxCase(XS_CODE_PULL_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_PULL_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1556,14 +1553,14 @@ XS_CODE_JUMP:
 			mxStack++;
 			mxBreak;
 			
-		mxCase(XS_CODE_REFRESH_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_REFRESH_CLOSURE;
 		mxCase(XS_CODE_REFRESH_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_REFRESH_CLOSURE:	
+			goto XS_CODE_REFRESH_CLOSURE;
+		mxCase(XS_CODE_REFRESH_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_REFRESH_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
 #endif
@@ -1577,28 +1574,28 @@ XS_CODE_JUMP:
 			slot->value = variable->value.closure->value;
 			variable->value.closure = slot;
 			mxBreak;
-		mxCase(XS_CODE_REFRESH_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_REFRESH_LOCAL;
 		mxCase(XS_CODE_REFRESH_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_REFRESH_LOCAL:	
+			goto XS_CODE_REFRESH_LOCAL;
+		mxCase(XS_CODE_REFRESH_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_REFRESH_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
 #endif
 			variable = mxFrame - index;
 			mxBreak;
 			
-		mxCase(XS_CODE_RESERVE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_RESERVE;
 		mxCase(XS_CODE_RESERVE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_RESERVE:	
+			goto XS_CODE_RESERVE;
+		mxCase(XS_CODE_RESERVE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_RESERVE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
@@ -1606,14 +1603,14 @@ XS_CODE_JUMP:
 			c_memset(mxStack, 0, index * sizeof(txSlot));
 			mxBreak;
 			
-		mxCase(XS_CODE_RESET_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_RESET_CLOSURE;
 		mxCase(XS_CODE_RESET_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_RESET_CLOSURE:	
+			goto XS_CODE_RESET_CLOSURE;
+		mxCase(XS_CODE_RESET_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_RESET_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
@@ -1628,14 +1625,14 @@ XS_CODE_JUMP:
 			variable->kind = XS_UNINITIALIZED_KIND;
 			slot->value.closure = variable;
 			mxBreak;
-		mxCase(XS_CODE_RESET_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_RESET_LOCAL;
 		mxCase(XS_CODE_RESET_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_RESET_LOCAL:	
+			goto XS_CODE_RESET_LOCAL;
+		mxCase(XS_CODE_RESET_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_RESET_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
@@ -1646,13 +1643,13 @@ XS_CODE_JUMP:
 			variable->kind = XS_UNINITIALIZED_KIND;
 			mxBreak;
 			
-		mxCase(XS_CODE_SET_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_SET_CLOSURE;
 		mxCase(XS_CODE_SET_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_SET_CLOSURE;
+		mxCase(XS_CODE_SET_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_SET_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1668,13 +1665,13 @@ XS_CODE_JUMP:
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
-		mxCase(XS_CODE_SET_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_SET_LOCAL;
 		mxCase(XS_CODE_SET_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_SET_LOCAL;
+		mxCase(XS_CODE_SET_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_SET_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1688,13 +1685,13 @@ XS_CODE_JUMP:
 			variable->value = mxStack->value;
 			mxBreak;
 
-		mxCase(XS_CODE_VAR_CLOSURE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_VAR_CLOSURE;
 		mxCase(XS_CODE_VAR_CLOSURE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_VAR_CLOSURE;
+		mxCase(XS_CODE_VAR_CLOSURE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_VAR_CLOSURE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1703,13 +1700,13 @@ XS_CODE_JUMP:
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
-		mxCase(XS_CODE_VAR_LOCAL_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_VAR_LOCAL;
 		mxCase(XS_CODE_VAR_LOCAL_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_VAR_LOCAL;
+		mxCase(XS_CODE_VAR_LOCAL_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_VAR_LOCAL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
@@ -1719,13 +1716,13 @@ XS_CODE_JUMP:
 			variable->value = mxStack->value;
 			mxBreak;
 			
-		mxCase(XS_CODE_UNWIND_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_UNWIND;
 		mxCase(XS_CODE_UNWIND_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
+			goto XS_CODE_UNWIND;
+		mxCase(XS_CODE_UNWIND_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
 		XS_CODE_UNWIND:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
@@ -1736,14 +1733,14 @@ XS_CODE_JUMP:
 				(slot++)->kind = XS_UNDEFINED_KIND;
 			mxBreak;
 			
-		mxCase(XS_CODE_RETRIEVE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_RETRIEVE;
 		mxCase(XS_CODE_RETRIEVE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_RETRIEVE:	
+			goto XS_CODE_RETRIEVE;
+		mxCase(XS_CODE_RETRIEVE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_RETRIEVE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
@@ -1789,14 +1786,14 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 
-		mxCase(XS_CODE_STORE_1)
-			index = mxRunU1(1);
-			mxNextCode(2);
-			goto XS_CODE_STORE;
 		mxCase(XS_CODE_STORE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
-		XS_CODE_STORE:	
+			goto XS_CODE_STORE;
+		mxCase(XS_CODE_STORE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_STORE:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
 #endif
@@ -2333,17 +2330,17 @@ XS_CODE_JUMP:
 			mxRestoreState;
 			mxNextCode(3);
 			mxBreak;
-		mxCase(XS_CODE_CODE_1)
-			offset = mxRunS1(1);
-			mxSkipCode(2);
+		mxCase(XS_CODE_CODE_4)
+			offset = mxRunS4(1);
+			mxSkipCode(5);
 			goto XS_CODE_CODE;
 		mxCase(XS_CODE_CODE_2)
 			offset = mxRunS2(1);
 			mxSkipCode(3);
 			goto XS_CODE_CODE;
-		mxCase(XS_CODE_CODE_4)
-			offset = mxRunS4(1);
-			mxSkipCode(5);
+		mxCase(XS_CODE_CODE_1)
+			offset = mxRunS1(1);
+			mxSkipCode(2);
 		XS_CODE_CODE:
 			mxSaveState;
 			scratch.value.code.address = (txByte*)fxNewChunk(the, (txID)offset);
@@ -2358,17 +2355,17 @@ XS_CODE_JUMP:
 				slot->value.integer = *(scratch.value.code.address + 1);
 			mxNextCode(offset);
 			mxBreak;
-		mxCase(XS_CODE_CODE_ARCHIVE_1)
-			offset = mxRunS1(1);
-			mxSkipCode(2);
+		mxCase(XS_CODE_CODE_ARCHIVE_4)
+			offset = mxRunS4(1);
+			mxSkipCode(5);
 			goto XS_CODE_CODE_ARCHIVE;
 		mxCase(XS_CODE_CODE_ARCHIVE_2)
 			offset = mxRunS2(1);
 			mxSkipCode(3);
 			goto XS_CODE_CODE_ARCHIVE;
-		mxCase(XS_CODE_CODE_ARCHIVE_4)
-			offset = mxRunS4(1);
-			mxSkipCode(5);
+		mxCase(XS_CODE_CODE_ARCHIVE_1)
+			offset = mxRunS1(1);
+			mxSkipCode(2);
 		XS_CODE_CODE_ARCHIVE:
 			variable = mxStack->value.reference;
 			slot = mxFunctionInstanceCode(variable);
@@ -2433,13 +2430,13 @@ XS_CODE_JUMP:
 #endif
 			mxBreak;
 			
-		mxCase(XS_CODE_STRING_1)
-			index = mxRunU1(1);
-			mxSkipCode(2);
-			goto XS_CODE_STRING;
 		mxCase(XS_CODE_STRING_2)
 			index = mxRunU2(1);
 			mxSkipCode(3);
+			goto XS_CODE_STRING;
+		mxCase(XS_CODE_STRING_1)
+			index = mxRunU1(1);
+			mxSkipCode(2);
 		XS_CODE_STRING:
 			mxSaveState;
 			scratch.value.string = (txString)fxNewChunk(the, index);
@@ -2452,13 +2449,13 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceString(the, mxStack->value.string);
 #endif
 			mxBreak;
-		mxCase(XS_CODE_STRING_ARCHIVE_1)
-			index = mxRunU1(1);
-			mxSkipCode(2);
-			goto XS_CODE_STRING_ARCHIVE;
 		mxCase(XS_CODE_STRING_ARCHIVE_2)
 			index = mxRunU2(1);
 			mxSkipCode(3);
+			goto XS_CODE_STRING_ARCHIVE;
+		mxCase(XS_CODE_STRING_ARCHIVE_1)
+			index = mxRunU1(1);
+			mxSkipCode(2);
 		XS_CODE_STRING_ARCHIVE:
 			mxPushKind(XS_STRING_X_KIND);
 			mxStack->value.string = (txString)mxCode;
