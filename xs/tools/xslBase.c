@@ -275,11 +275,8 @@ txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag)
 {
 	txID* symbols = C_NULL;
 	txByte* p = symbolsBuffer;
-	txInteger c = *((txU1*)p), i;
-	p++;
-	c <<= 8;
-	c += *((txU1*)p);
-	p++;
+	txID c, i;
+	mxDecode2(p, c);
 	symbols = fxNewLinkerChunk(linker, c * sizeof(txID*));
 	for (i = 0; i < c; i++) {
 		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag);
