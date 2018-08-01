@@ -18,13 +18,11 @@
  *
  */
 
-#include "xs.h"
+#include "xsPlatform.h"
+#include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-
-#if __ets__
-	#include "xsesp.h"
-#endif
 #include <string.h>
+#include <stdint.h>
 
 // Utility functions for generating byte arrays formatted as various MQTT 3.1.1 messages.
 // See http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html
@@ -63,11 +61,10 @@ typedef enum {
 #define PING_INTERVAL 5
 
 // VLQ is a name someone made up for the ints-as-7-bit-octets-where-high-bit-indicates-more-octets int format
-/* inline */ int to_vlq(uint8_t* buf, int size, uint32_t value) {
-	int i = 0;
+int to_vlq(uint8_t* buf, int size, uint32_t value) {
 	for (int i = 0; value; ++i) {
 		if (i > size)
-			return -1;
+			break;
 		buf[i] = 0x7f & value;
 		value >>= 7;
 		if (value)
@@ -75,6 +72,7 @@ typedef enum {
 		else
 			return (i + 1);
 	}
+	return -1;
 }
 
 /* inline */ size_t from_vlq(uint8_t *buf, uint32_t *n, size_t size) {
@@ -96,15 +94,12 @@ typedef enum {
 	return -1;
 }
 
-/* inline */ uint8_t* mqtt_string(uint8_t *in, size_t len) {
-	uint8_t *out = calloc(1, len + 2);
-	if (!out) {
+/* inline */ void *mqtt_string(char *in, size_t len) {
+	uint8_t *out = c_malloc(len + 2);
+	if (!out)
 		return NULL;
-	}
 	out[0] = (len >> 8) & 0xff;
 	out[1] = len & 0xff;
-	uint8_t buf[32];
-	c_snprintf(buf, 32, "booga %x %x %d\n", out + 2, in, len);
 	c_memcpy(out + 2, in, len);
 	return out;
 }
@@ -119,33 +114,31 @@ void mqtt_connect_msg(xsMachine* the) {
 	};
 	size_t hdr_len = sizeof(hdr);
 	char *str;
-	uint8_t* id, *user = NULL, *password = NULL;
-	size_t id_len, user_len, password_len;
+	uint8_t* id, *user = NULL;
+	size_t id_len, user_len = 0, password_len = 0;
 
-	xsVars(2);
+	xsmcVars(2);
 
 	// ...followed by the client ID (string)
 
-	xsVar(0) = xsGet(xsArg(0), xsID_id);
-	str = xsToString(xsVar(0));
+	xsmcGet(xsVar(0), xsArg(0), xsID_id);
+	str = xsmcToString(xsVar(0));
 	id_len = c_strlen(str);
 	id = mqtt_string(str, id_len);
-	if (!id) {
+	if (!id)
 		xsUnknownError("mqtt: error allocating client ID in connect");
-		return;
-	}
 	id_len += 2;
 
-	if (xsHas(xsArg(0), xsID_user)) {
-		xsVar(0) = xsGet(xsArg(0), xsID_user);
-		str = xsToString(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_user)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_user);
+		str = xsmcToString(xsVar(0));
 		user_len = c_strlen(str);
 		user = mqtt_string(str, user_len);
 		user_len += 2;
 	}
 
-	if (xsHas(xsArg(0), xsID_password)) {
-		xsVar(1) = xsGet(xsArg(0), xsID_password);
+	if (xsmcHas(xsArg(0), xsID_password)) {
+		xsmcGet(xsVar(1), xsArg(0), xsID_password);
 		password_len = xsGetArrayBufferLength(xsVar(1));
 	}
 
@@ -161,7 +154,6 @@ void mqtt_connect_msg(xsMachine* the) {
 		if (id) c_free(id);
 		if (user) c_free(user);
 		xsUnknownError("mqtt: error encoding payload length");
-		return;
 	}
 
 	// don't blow the stack
@@ -169,7 +161,6 @@ void mqtt_connect_msg(xsMachine* the) {
 		if (id) c_free(id);
 		if (user) c_free(user);
 		xsUnknownError("mqtt: payload buffer overflow creating connect message");
-		return;
 	}
 
 	// memcpy the payload fragments into buf
@@ -190,8 +181,7 @@ void mqtt_connect_msg(xsMachine* the) {
 	if (password_len) {
 		buf[count++] = password_len >> 8;
 		buf[count++] = password_len & 0xff;
-		password = xsToArrayBuffer(xsVar(1));
-		c_memcpy(buf + count, password, password_len);
+		xsmcGetArrayBufferData(xsVar(1), 0, buf + count, password_len);
 		count += password_len;
 	}
 
@@ -203,46 +193,32 @@ void mqtt_connect_msg(xsMachine* the) {
 }
 
 void mqtt_publish_msg(xsMachine* the) {
-	uint8_t *topic, *data;
+	char *topic, *data;
 	size_t topic_len, data_len;
 	int id;
 
-	if (xsStringType == xsTypeOf(xsArg(0))) {
-		topic = xsToString(xsArg(0));
-		topic_len = c_strlen(topic);
-		topic = mqtt_string(topic, topic_len);
-		if (!topic) {
-			xsUnknownError("mqtt: error allocating topic in publish");
-			return;
-		}
-		topic_len += 2;
-	} else {
-		xsUnknownError("mqtt: publish topic must be a string");
-		return;
-	}
+	id = 0x0000ffff & xsmcToInteger(xsArg(2));
 
-	if (xsStringType == xsTypeOf(xsArg(1))) {
-		data = xsToString(xsArg(1));
+	topic = xsmcToString(xsArg(0));
+	topic_len = c_strlen(topic);
+	topic = mqtt_string(topic, topic_len);
+	if (!topic)
+		xsUnknownError("mqtt: error allocating topic in publish");
+	topic_len += 2;
+
+	if (xsStringType == xsmcTypeOf(xsArg(1))) {
+		data = xsmcToString(xsArg(1));
 		data_len = c_strlen(data);
 	} else {
-		data = xsToArrayBuffer(xsArg(1));
+		data = xsmcToArrayBuffer(xsArg(1));
 		data_len = xsGetArrayBufferLength(xsArg(1));
 	}
 
-	if (xsIntegerType == xsTypeOf(xsArg(2))) {
-		id = 0x0000ffff & xsToInteger(xsArg(2));
-	} else {
-		if (topic) free(topic);
-		xsUnknownError("mqtt: publish packet id missing or malformed");
-		return;
-	}
-
 	// prep some RAM to copy stuff into. can't use stack here b/c we don't know how big this will be
-	uint8_t* msg = calloc(1, 1 + 4 + topic_len + 2 + data_len); // note: not all of this may be used
+	uint8_t* msg = c_calloc(1, 1 + 4 + topic_len + 2 + data_len); // note: not all of this may be used
 	if (!msg) {
-		if (topic) free(topic);
+		if (topic) c_free(topic);
 		xsUnknownError("mqtt: OOM calloc()ing publish buffer");
-		return;
 	}
 
 	// compute size of message we're about to send
@@ -250,10 +226,9 @@ void mqtt_publish_msg(xsMachine* the) {
 	msg[0] = PUBLISH;
 	count += to_vlq(msg + 1, 100, topic_len + data_len); // would need +2 more if we were QoS > 0
 	if (!count) {
-		if (topic) free(topic);
-		if (msg) free(msg);
+		if (topic) c_free(topic);
+		if (msg) c_free(msg);
 		xsUnknownError("mqtt: error recording publish message length");
-		return;
 	}
 
 	// copy in topic name; note this is in "variable header" which is why it precedes packet ID vs. SUBSCRIBE
@@ -268,39 +243,28 @@ void mqtt_publish_msg(xsMachine* the) {
 	c_memcpy(msg + count, data, data_len);
 	count += data_len;
 
-	// tell XS6 to use msg as the return value.
+	// tell XS to use msg as the return value.
 	xsResult = xsArrayBuffer(msg, count);
-	if (topic) free(topic);
-	if (msg) free(msg);
+	if (topic) c_free(topic);
+	if (msg) c_free(msg);
 }
 
 void mqtt_subscribe_msg(xsMachine* the) {
-	// fetch the topic string, first arg
-	uint8_t *topic;
+	char *topic;
 	size_t topic_len;
-	if (xsStringType == xsTypeOf(xsArg(0))) {
-		topic = xsToString(xsArg(0));
-		topic_len = c_strlen(topic);
-
-		topic = mqtt_string(topic, topic_len);
-
-		if (!topic) {
-			xsUnknownError("mqtt: error allocating topic in subscribe");
-			return;
-		}
-		topic_len += 2;
-	} else {
-		xsUnknownError("mqtt: topic to subscribe to must be a string");
-		return;
-	}
+	int id;
 
 	// fetch the packet ID, second arg
-	int id;
-	if (xsIntegerType == xsTypeOf(xsArg(1))) {
-		id = 0x0000ffff & xsToInteger(xsArg(1));
-	} else {
-		xsUnknownError("mqtt: missing or malformed packet ID");
-	}
+	id = 0x0000ffff & xsmcToInteger(xsArg(1));
+
+	// fetch the topic string, first arg
+	topic = xsmcToString(xsArg(0));
+	topic_len = c_strlen(topic);
+
+	topic = mqtt_string(topic, topic_len);
+	if (!topic)
+		xsUnknownError("mqtt: error allocating topic in subscribe");
+	topic_len += 2;
 
 	// format up the bytes
 	uint8_t msg[512];
@@ -310,15 +274,13 @@ void mqtt_subscribe_msg(xsMachine* the) {
 	// MQTT payload length header is variable length
 	count += to_vlq(msg + 1, 511, topic_len + 3); // 2 bytes for packet ID, 1 byte for QoS at end
 	if (!count) { // i.e. if to_vlq() returned -1 on error
-		if (topic) free(topic);
+		if (topic) c_free(topic);
 		xsUnknownError("mqtt: error encoding payload length");
-		return;
 	}
 
 	if (count + topic_len + 3 > sizeof(msg)) {
-		if (topic) free(topic);
+		if (topic) c_free(topic);
 		xsUnknownError("mqtt: payload buffer overflow creating subscribe message");
-		return;
 	}
 
 	msg[count++] = (uint8_t)(id >> 8);
@@ -329,35 +291,22 @@ void mqtt_subscribe_msg(xsMachine* the) {
 
 	// tell XS6 to use that as the return value.
 	xsResult = xsArrayBuffer(msg, count);
-	if (topic) free(topic);
+	if (topic) c_free(topic);
 }
 
 void mqtt_unsubscribe_msg(xsMachine* the) {
-	uint8_t *topic;
+	char *topic;
 	size_t topic_len;
 	int id;
 
-	if (xsStringType == xsTypeOf(xsArg(0))) {
-		topic = xsToString(xsArg(0));
-		topic_len = c_strlen(topic);
-		topic = mqtt_string(topic, topic_len);
-		if (!topic) {
-			xsUnknownError("mqtt: error allocating topic in unsubscribe");
-			return;
-		}
-		topic_len += 2;
-	} else {
-		xsUnknownError("mqtt: topic to unsubscribe to must be a string");
-		return;
-	}
+	id = 0x0000ffff & xsmcToInteger(xsArg(1));
 
-	if (xsIntegerType == xsTypeOf(xsArg(1))) {
-		id = 0x0000ffff & xsToInteger(xsArg(1));
-	} else {
-		if (topic) free(topic);
-		xsUnknownError("mqtt: missing or malformed packet ID in unsubscribe");
-		return;
-	}
+	topic = xsmcToString(xsArg(0));
+	topic_len = c_strlen(topic);
+	topic = mqtt_string(topic, topic_len);
+	if (!topic)
+		xsUnknownError("mqtt: error allocating topic in unsubscribe");
+	topic_len += 2;
 
 	// set header and add varint/VLQ message length
 	uint8_t msg[512];
@@ -365,9 +314,8 @@ void mqtt_unsubscribe_msg(xsMachine* the) {
 	msg[0] = UNSUBSCRIBE;
 	count += to_vlq(msg + 1, 511, 2 + topic_len);
 	if (!count) {
-		if (topic) free(topic);
+		if (topic) c_free(topic);
 		xsUnknownError("mqtt: error formatting message length in unsubscribe");
-		return;
 	}
 
 	// packet ID; end of variable header
@@ -379,7 +327,7 @@ void mqtt_unsubscribe_msg(xsMachine* the) {
 	count += topic_len;
 
 	xsResult = xsArrayBuffer(msg, count);
-	if (topic) free(topic);
+	if (topic) c_free(topic);
 }
 
 void mqtt_ping_msg(xsMachine* the) {
@@ -393,13 +341,13 @@ void mqtt_close_msg(xsMachine* the) {
 }
 
 void mqtt_decode_msg(xsMachine* the) {
-	uint8_t *msg = xsToArrayBuffer(xsArg(0));
+	uint8_t *msg = xsmcToArrayBuffer(xsArg(0));
 	uint32_t code = msg[0] & 0xf0;
 
-	uint8_t *topic, *data_s, *data_b;
-	size_t topic_len, data_len;
+	size_t topic_len;
 
 	xsResult = xsNewObject();
+	xsmcVars(1);
 
 	uint32_t payload_len;
 	uint8_t *p;
@@ -410,10 +358,8 @@ void mqtt_decode_msg(xsMachine* the) {
 			qos = msg[0] & 0x06;
 			p = (msg + 1);
 			skip = from_vlq(p, &payload_len, xsGetArrayBufferLength(xsArg(0)) - 1);
-			if (skip < 1) {
+ 			if (skip < 1)
 				xsUnknownError("mqtt: malformed publish packet from server");
-				return;
-			}
 			p += skip;
 
 			// decode length of topic (which must be next) from next 2 bytes
@@ -421,7 +367,8 @@ void mqtt_decode_msg(xsMachine* the) {
 			topic_len |= *(p++);
 			payload_len -= 2;
 
-			xsSet(xsResult, xsID("topic"), xsStringBuffer(p, topic_len));
+			xsmcSetStringBuffer(xsVar(0), (char *)p, topic_len);
+			xsmcSet(xsResult, xsID_topic, xsVar(0));
 			p += topic_len;
 			payload_len -= topic_len;
 
@@ -430,15 +377,19 @@ void mqtt_decode_msg(xsMachine* the) {
 				payload_len -= 2;
 			}
 
-			xsSet(xsResult, xsID("data"), xsArrayBuffer(p, payload_len));
-			xsSet(xsResult, xsID("code"), xsInteger(code));
+			xsmcSetArrayBuffer(xsVar(0), p, payload_len);
+			xsmcSet(xsResult, xsID_data, xsVar(0));
+			xsmcSetInteger(xsVar(0), code);
+			xsmcSet(xsResult, xsID_code, xsVar(0));
 
-			return;
+			break;
 
 		case CONNACK: // we surface this just so the ES6 class can see flags set by server
-			xsSet(xsResult, xsID("returnCode"), xsInteger(msg[3]));
-			xsSet(xsResult, xsID("code"), xsInteger(code));
-			return;
+			xsmcSetInteger(xsVar(0), msg[3]);
+			xsmcSet(xsResult, xsID_returnCode, xsVar(0));
+			xsmcSetInteger(xsVar(0), code);
+			xsmcSet(xsResult, xsID_code, xsVar(0));
+			break;
 
 		case PUBACK:
 		case PUBREC:
@@ -449,8 +400,9 @@ void mqtt_decode_msg(xsMachine* the) {
 		case PINGRESP:
 			// we ignore these b/c we only do QoS 0 & don't do callbacks for sub & ping ACKs & such,
 			// but let the caller know they happened anyway
-			xsSet(xsResult, xsID("code"), xsInteger(0));
-			return;
+			xsmcSetInteger(xsVar(0), 0);
+			xsmcSet(xsResult, xsID_code, xsVar(0));
+			break;
 
 		case CONNECT:
 		case PINGREQ:
@@ -459,19 +411,10 @@ void mqtt_decode_msg(xsMachine* the) {
 		case UNSUBSCRIBE:
 			// per spec these are client->server only; we'll never get these
 			xsUnknownError("mqtt: server sent us a client-only message?!");
-			return;
+			break;
 
 		default:
 			xsUnknownError("mqtt: server sent an unrecognized message");
-			return;
+			break;
 	}
 }
-
-void mqtt_array_to_string(xsMachine* the) {
-	if (xsStringType == xsTypeOf(xsArg(0))) {
-		xsResult = xsArg(0);
-	} else {
-		xsResult = xsStringBuffer(xsToArrayBuffer(xsArg(0)), xsGetArrayBufferLength(xsArg(0)));
-	}
-}
-
