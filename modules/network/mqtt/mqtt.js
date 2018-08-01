@@ -32,7 +32,7 @@ import {Client as WSClient} from "websocket";
  *     import {Client} from "mqtt";
  *     let client = new Client({host: hostname, port: port, path: "/", id: "myclient"});
  *     client.onReady = () => { trace('connection up\n'); client.subscribe("/foo"); };
- *     client.onMessage = (t, b) => { trace(`received message on ${t} with body ${Client.asString(b)}\n`); };
+ *     client.onMessage = (t, b) => { trace(`received message on ${t} with body ${String.fromArrayBuffer(b)}\n`); };
  *     client.onClose = () => { trace(`server closed connection\n`); };
  *     client.publish("/foo", "bar");
  *
@@ -130,8 +130,6 @@ export default class Client {
 
 		this.ws_state = 0;
 	}
-
-	static asString(buf) @ "mqtt_array_to_string";
 }
 
 function ws_callback(state, message) {
