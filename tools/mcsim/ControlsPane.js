@@ -139,7 +139,7 @@ class PopupMenuBehavior extends Behavior {
 		let container = layout.first;
 		let scroller = container.first;
 		let size = scroller.first.measure();
-		let y = button.y - ((size.height / data.items.length) * data.selection);
+		let y = Math.max(button.y - ((size.height / data.items.length) * data.selection), 0);
 		let height = Math.min(size.height, application.height - y - 20);
 		container.coordinates = { left:button.x - 15, width:button.width + 30, top:y, height:height + 10 };
 		scroller.coordinates = { left:10, width:button.width + 10, top:0, height:height };
