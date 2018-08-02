@@ -985,6 +985,13 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 			if (fxFindScript(the, path, &id))
 				return id;
 		}
+#if 0
+		*slash = 0;
+		c_strcat(path, name + dot);
+		if (!c_strncmp(path, "xsbug://", 8)) {
+			return fxNewNameC(the, path);
+		}
+#endif
 	}
 	if (search) {
 		c_strcpy(path, preparation->base);
@@ -1035,6 +1042,12 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		c--;
 		script++;
 	}
+	
+#if 0
+	path -= preparation->baseLength;
+	if (!c_strncmp(path, "xsbug://", 8))
+		fxDebugImport(the, path);
+#endif
 }
 
 void fxMarkHost(txMachine* the, txMarkRoot markRoot)
