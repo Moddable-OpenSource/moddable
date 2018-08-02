@@ -270,6 +270,8 @@ void fx_SharedArrayBuffer(txMachine* the)
 	host->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	host->kind = XS_HOST_KIND;
 	host->value.host.data = fxCreateSharedChunk(byteLength);
+	if (!host->value.host.data)
+		mxRangeError("cannot allocate SharedArrayBuffer");
 	host->value.host.variant.destructor = fxReleaseSharedChunk;
 	mxPullSlot(mxResult);
 }
