@@ -748,7 +748,6 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_GET_ONLY); 
 			slot = fxNextSlotProperty(the, slot, &mxGlobal, xsID("global"), XS_GET_ONLY);
 			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
-			slot->flag = XS_GET_ONLY;
 			slot->kind = the->stack->kind;
 			slot->value = the->stack->value;
 			the->stack++;

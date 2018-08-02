@@ -2137,50 +2137,52 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	else {
 		fxPushNULL(parser);
 	}
-	fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
-	for (;;) {
-		txBoolean aStaticFlag;
-		txInteger aPropertyLine = parser->line;
-		txSymbol* aSymbol;
-		txToken aToken0;
-		txToken aToken1;
-		txToken aToken2;
-		txUnsigned flag;
-		if (parser->token == XS_TOKEN_RIGHT_BRACE)
-			break;
-		if (parser->token == XS_TOKEN_STATIC) {
-			fxGetNextToken(parser);
-			aStaticFlag = 1;
-		}
-		else
-			aStaticFlag = 0;
-		fxPropertyName(parser, &aSymbol, &aToken0, &aToken1, &aToken2, &flag);
-		if (aStaticFlag && (aSymbol == parser->prototypeSymbol))
-			fxReportParserError(parser, "invalid static prototype");
-		if (aSymbol == parser->constructorSymbol) {
-            fxPopNode(parser); // symbol
-			if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER)) 
-				fxReportParserError(parser, "invalid constructor");
-			fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | ((heritageFlag) ? mxDerivedFlag : mxBaseFlag));
-            constructor = fxPopNode(parser);
-		}
-		else {
-			if (aToken2 == XS_TOKEN_GENERATOR)
-				fxGeneratorExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | flag);
+	if (parser->token == XS_TOKEN_LEFT_BRACE) {
+		fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
+		for (;;) {
+			txBoolean aStaticFlag;
+			txInteger aPropertyLine = parser->line;
+			txSymbol* aSymbol;
+			txToken aToken0;
+			txToken aToken1;
+			txToken aToken2;
+			txUnsigned flag;
+			if (parser->token == XS_TOKEN_RIGHT_BRACE)
+				break;
+			if (parser->token == XS_TOKEN_STATIC) {
+				fxGetNextToken(parser);
+				aStaticFlag = 1;
+			}
 			else
-				fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | flag);
-			fxPushNodeStruct(parser, 2, aToken1, aPropertyLine);
-			if (aStaticFlag)
-				parser->root->flags |= mxStaticFlag;
-			if (aToken2 == XS_TOKEN_GETTER) 
-				parser->root->flags |= mxGetterFlag;
-			else if (aToken2 == XS_TOKEN_SETTER) 
-				parser->root->flags |= mxSetterFlag;
-			else
-				parser->root->flags |= mxMethodFlag;
-			aCount++;
+				aStaticFlag = 0;
+			fxPropertyName(parser, &aSymbol, &aToken0, &aToken1, &aToken2, &flag);
+			if (aStaticFlag && (aSymbol == parser->prototypeSymbol))
+				fxReportParserError(parser, "invalid static prototype");
+			if (aSymbol == parser->constructorSymbol) {
+				fxPopNode(parser); // symbol
+				if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER)) 
+					fxReportParserError(parser, "invalid constructor");
+				fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | ((heritageFlag) ? mxDerivedFlag : mxBaseFlag));
+				constructor = fxPopNode(parser);
+			}
+			else {
+				if (aToken2 == XS_TOKEN_GENERATOR)
+					fxGeneratorExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | flag);
+				else
+					fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | flag);
+				fxPushNodeStruct(parser, 2, aToken1, aPropertyLine);
+				if (aStaticFlag)
+					parser->root->flags |= mxStaticFlag;
+				if (aToken2 == XS_TOKEN_GETTER) 
+					parser->root->flags |= mxGetterFlag;
+				else if (aToken2 == XS_TOKEN_SETTER) 
+					parser->root->flags |= mxSetterFlag;
+				else
+					parser->root->flags |= mxMethodFlag;
+				aCount++;
+			}
+			fxSemicolon(parser);
 		}
-		fxSemicolon(parser);
 	}
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	fxPushNodeList(parser, aCount);
