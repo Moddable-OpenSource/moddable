@@ -26,8 +26,8 @@ export BUILD_DIR
 all: debug release
 
 debug:
-	make -f xst.mk
+	$(MAKE) -f xst.mk
 
 release:
-	make GOAL=release -f xst.mk
+	$(MAKE) GOAL=release -f xst.mk
 	

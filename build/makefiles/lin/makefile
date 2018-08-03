@@ -25,33 +25,45 @@ export BUILD_DIR
 
 all: debug release
 
-debug:
-	make -f $(XS_DIR)/makefiles/lin/xsc.mk
-	make -f $(XS_DIR)/makefiles/lin/xsid.mk
-	make -f $(XS_DIR)/makefiles/lin/xsl.mk
-	make -f serial2xsbug.mk
-	make -f simulator.mk
-	make -f tools.mk
+xsc-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/lin/xsc.mk
+xsid-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/lin/xsid.mk
+xsl-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/lin/xsl.mk
+serial2xsbug-debug:
+	$(MAKE) -f serial2xsbug.mk
+simulator-debug:
+	$(MAKE) -f simulator.mk
+tools-debug:
+	$(MAKE) -f tools.mk
+debug: xsc-debug xsid-debug xsl-debug serial2xsbug-debug simulator-debug tools-debug
 	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
-	
-release:
-	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsc.mk
-	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsid.mk
-	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsl.mk
-	make GOAL=release -f serial2xsbug.mk
-	make GOAL=release -f simulator.mk
-	make GOAL=release -f tools.mk
+
+xsc-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/lin/xsc.mk
+xsid-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/lin/xsid.mk
+xsl-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/lin/xsl.mk
+serial2xsbug-release:
+	$(MAKE) GOAL=release -f serial2xsbug.mk
+simulator-release:
+	$(MAKE) GOAL=release -f simulator.mk
+tools-release:
+	$(MAKE) GOAL=release -f tools.mk
+release: xsc-release xsid-release xsl-release serial2xsbug-release simulator-release tools-release
 	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
-	
+
 clean:
-	make clean -f $(XS_DIR)/makefiles/lin/xsc.mk
-	make clean -f $(XS_DIR)/makefiles/lin/xsid.mk
-	make clean -f $(XS_DIR)/makefiles/lin/xsl.mk
-	make clean -f serial2xsbug.mk
-	make clean -f simulator.mk
-	make clean -f tools.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/lin/xsc.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/lin/xsid.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/lin/xsl.mk
+	$(MAKE) clean -f serial2xsbug.mk
+	$(MAKE) clean -f simulator.mk
+	$(MAKE) clean -f tools.mk
 	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp
 	
 install:
-	make install -f simulator.mk
-	make install -f $(BUILD_DIR)/tmp/lin/release/xsbug/makefile
+	$(MAKE) install -f simulator.mk
+	$(MAKE) install -f $(BUILD_DIR)/tmp/lin/release/xsbug/makefile
