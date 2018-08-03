@@ -438,7 +438,7 @@ void fx_Atomics_xor(txMachine* the)
 	{
 		return syscall(SYS_futex, addr1, op, val1, timeout, addr2, val3);
 	}
-	static pid_t gettid()
+	pid_t gettid()
 	{
 		return syscall(SYS_gettid);
 	}
