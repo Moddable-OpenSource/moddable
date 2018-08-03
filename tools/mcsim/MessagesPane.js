@@ -55,6 +55,16 @@ class MessagePaneBehavior extends Behavior {
 		if (flag)
 			scroller.scrollTo(0, 0x7FFFFFFF);
 	}
+	doCopy(container) {
+		let content = container.first.first.first;
+		let string = "";
+		while (content) {
+			string += content.first.first.string;
+			string += "\n\n";
+			content = content.next;
+		}
+		system.setClipboardString(string);
+	}
 	formatBuffer(buffer) {
 		let array = new Uint8Array(buffer);
 		let string = "";

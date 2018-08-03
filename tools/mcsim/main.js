@@ -307,6 +307,13 @@ class ApplicationBehavior extends Behavior {
 		this.reloadDevices(application);
 		this.launchScreen();
 	}
+/* EDIT MENU */
+	canCopy() {
+		return true;
+	}
+	doCopy() {
+		this.MESSAGES.delegate("doCopy");
+	}
 /* HELP MENU */
 	canSupport() {
 		return true;
