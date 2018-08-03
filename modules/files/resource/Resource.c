@@ -72,9 +72,8 @@ void Resource_slice(xsMachine *the)
 		end = xsToInteger(xsArg(1));
 		if (end > byteLength)
 			end = byteLength;
-			if (argc > 2)
-				copy = xsTest(xsArg(2));
-
+		if (argc > 2)
+			copy = xsTest(xsArg(2));
 	}
 	else
 		end = byteLength;
