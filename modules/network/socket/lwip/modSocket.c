@@ -56,6 +56,7 @@ typedef xsSocketRecord *xsSocket;
 #define kPendingReceive (1 << 3)
 #define kPendingSent (1 << 4)
 #define kPendingAcceptListener (1 << 5)
+#define kPendingClose (1 << 6)
 
 struct xsSocketUDPRemoteRecord {
 	uint16_t			port;
@@ -73,7 +74,6 @@ struct xsSocketRecord {
 	struct tcp_pcb		*skt;
 
 	int8				useCount;
-	uint8				closed;
 	uint8				kind;
 	uint8				pending;
 	uint8				writeDisabled;
@@ -117,7 +117,6 @@ struct xsListenerRecord {
 	struct tcp_pcb		*skt;
 
 	int8				useCount;
-	uint8				closed;
 	uint8				kind;
 	uint8				pending;
 	uint8				writeDisabled;
@@ -454,13 +453,21 @@ static void forgetSocket(xsSocket xss)
 
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
-	xss->useCount -= 1;
-	if (xss->useCount <= 0) {
-		xsDestructor destructor = xsGetHostDestructor(xss->obj);
-		xsmcSetHostData(xss->obj, NULL);
-		xsForget(xss->obj);
-		(*destructor)(xss);
+	xsDestructor destructor;
+
+	modCriticalSectionBegin();
+	int8 useCount = --xss->useCount;
+	if (useCount > 0) {
+		modCriticalSectionEnd();
+		return;
 	}
+
+	xss->pending |= kPendingClose;
+	modCriticalSectionEnd();
+	destructor = xsGetHostDestructor(xss->obj);
+	xsmcSetHostData(xss->obj, NULL);
+	xsForget(xss->obj);
+	(*destructor)(xss);
 }
 
 void xs_socket(xsMachine *the)
@@ -503,8 +510,14 @@ void xs_socket(xsMachine *the)
 
 				socketUpUseCount(the, xss);
 
-				if (xss->reader[0])
-					socketSetPending(xss, kPendingReceive);
+				if (xss->pending) {
+					uint8_t pending;
+					modCriticalSectionBegin();
+						pending = xss->pending;
+						xss->pending = 0;
+					modCriticalSectionEnd();
+					socketSetPending(xss, pending);
+				}
 
 				socketDownUseCount(xss->the, xss);
 				return;
@@ -690,10 +703,8 @@ void xs_socket_close(xsMachine *the)
 	if (NULL == xss)
 		xsUnknownError("close on closed socket");
 
-	if (!xss->closed) {
-		xss->closed = 1;
-		socketDownUseCount(the, xss);
-	}
+	if (!(xss->pending & kPendingClose))
+		socketSetPending(xss, kPendingClose);
 }
 
 void xs_socket_read(xsMachine *the)
@@ -711,7 +722,7 @@ void xs_socket_read(xsMachine *the)
 		if (0 == argc)
 			xsResult = xsInteger(0);
 		else
-		xsUnknownError("nothing to read");
+			xsUnknownError("nothing to read");
 		return;
 	}
 
@@ -1223,6 +1234,9 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	struct pbuf *walker;
 	uint16 offset;
 
+	if (xss->pending & kPendingClose)
+		return ERR_OK;
+
 	if (!p) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
@@ -1257,14 +1271,11 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
-	if (xss->constructed) {
-		if (!xss->suspended) {
-			socketSetPending(xss, err ? kPendingError : kPendingReceive);
-		}
-		else {
-			if (err)
-				xss->suspendedError = true;
-		}
+	if (!xss->suspended)
+		socketSetPending(xss, err ? kPendingError : kPendingReceive);
+	else {
+		if (err)
+			xss->suspendedError = true;
 	}
 
 	return ERR_OK;
@@ -1407,11 +1418,10 @@ void xs_listener_close(xsMachine *the)
 {
 	xsListener xsl = xsmcGetHostData(xsThis);
 
-	if ((NULL == xsl) || xsl->closed)
+	if ((NULL == xsl) || (xsl->pending & kPendingClose))
 		xsUnknownError("close on closed listener");
 
-	xsl->closed = 1;
-	socketDownUseCount(the, (xsSocket)xsl);
+	socketSetPending((xsSocket)xsl, kPendingClose);
 }
 
 static void listenerMsgNew(xsListener xsl)
@@ -1444,6 +1454,15 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	tcp_accepted(xsl->skt);
 
+	xss->the = xsl->the;
+	xss->skt = newpcb;
+	xss->useCount = 1;
+	xss->kind = kTCP;
+	tcp_arg(xss->skt, xss);
+	tcp_recv(xss->skt, didReceive);
+	tcp_sent(xss->skt, didSend);
+	tcp_err(xss->skt, didError);
+
 	modCriticalSectionBegin();
 	for (i = 0; i < kListenerPendingSockets; i++) {
 		if (NULL == xsl->accept[i]) {
@@ -1460,15 +1479,6 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 		return ERR_MEM;
 	}
 
-	xss->the = xsl->the;
-	xss->skt = newpcb;
-	xss->useCount = 1;
-	xss->kind = kTCP;
-	tcp_arg(xss->skt, xss);
-	tcp_recv(xss->skt, didReceive);
-	tcp_sent(xss->skt, didSend);
-	tcp_err(xss->skt, didError);
-
 	socketSetPending((xsSocket)xsl, kPendingAcceptListener);
 
 	modInstrumentationAdjust(NetworkSockets, 1);
@@ -1482,7 +1492,7 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 
 	modCriticalSectionBegin();
 
-	if ((xss->pending & pending) == pending) {
+	if (((xss->pending & pending) == pending) || (xss->pending & kPendingClose)) {
 		modCriticalSectionEnd();
 		return;
 	}
@@ -1490,16 +1500,17 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 	doSchedule = 0 == xss->pending;
 	xss->pending |= pending;
 
-	modCriticalSectionEnd();
-
 	if (xss->pending & (kPendingError | kPendingDisconnect))
 		xss->writeDisabled = true;
 
-	if (doSchedule) {
+	if (doSchedule && (xss->constructed || (pending & kPendingAcceptListener))) {
 		socketUpUseCount(xss->the, xss);
+		modCriticalSectionEnd();
 
 		modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
 	}
+	else
+		modCriticalSectionEnd();
 }
 
 void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -1510,7 +1521,7 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	modCriticalSectionBegin();
 
 	pending = xss->pending;
-	xss->pending = 0;
+	xss->pending &= kPendingClose;		// don't clear close flag
 
 	modCriticalSectionEnd();
 
@@ -1519,8 +1530,8 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		goto done;		// return or done...
 	}
 
-	if (xss->closed)
-		goto done;
+	if (pending & kPendingClose)
+		socketDownUseCount(xss->the, xss);
 
 	if (pending & kPendingReceive)
 		socketMsgDataReceived(xss);
