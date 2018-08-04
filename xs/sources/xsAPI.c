@@ -1627,6 +1627,36 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 	return the;
 }
 
+txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, txString name, void* context, void* archive)
+{
+	txMachine _root;
+	txMachine* root = &_root;
+	if ((preparation->version[0] != XS_MAJOR_VERSION) || (preparation->version[1] != XS_MINOR_VERSION) || (preparation->version[2] != XS_PATCH_VERSION))
+		return C_NULL;
+	c_memset(root, 0, sizeof(txMachine));
+	root->preparation = preparation;
+	root->archive = archive;
+	root->keyArray = preparation->keys;
+	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
+	root->keyIndex = (txID)preparation->keyCount;
+	root->nameModulo = preparation->nameModulo;
+	root->nameTable = preparation->names;
+	root->symbolModulo = preparation->symbolModulo;
+	root->symbolTable = preparation->symbols;
+
+	root->stack = &preparation->stack[0];
+	root->stackBottom = &preparation->stack[0];
+	root->stackTop = &preparation->stack[preparation->stackCount];
+
+	root->firstHeap = &preparation->heap[0];
+	root->freeHeap = &preparation->heap[preparation->heapCount - 1];
+	root->aliasCount = (txID)preparation->aliasCount;
+	
+	if (!creation)
+		creation = &preparation->creation;
+	return fxCloneMachine(creation, root, name, context);
+}
+
 void fxShareMachine(txMachine* the)
 {
 	if (!(the->shared)) {

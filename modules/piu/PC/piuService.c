@@ -32,8 +32,6 @@
 #include "pthread.h"
 #endif
 
-extern txPreparation* xsPreparation();
-
 typedef struct ServiceThreadStruct ServiceThreadRecord, *ServiceThread;
 typedef struct ServiceEventStruct ServiceEventRecord, *ServiceEvent;
 typedef struct ServiceMessageStruct ServiceMessageRecord, *ServiceMessage;
