@@ -323,6 +323,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "#ifdef __cplusplus\n");
 			fprintf(file, "extern \"C\" {\n");
 			fprintf(file, "#endif\n");
+			fprintf(file, "mxExport void* xsPreparation();\n\n");
 			script = linker->firstScript;
 			while (script) {
 				fxWriteScriptExterns(script, file);
@@ -386,7 +387,6 @@ int main(int argc, char* argv[])
 			fprintf(file, "#define mxScriptsCount %d\n", linker->scriptCount);
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount];\n");		
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
-			fprintf(file, "mxExport txPreparation* xsPreparation();\n\n");
 		
 			if (linker->stripping) {
 				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
@@ -484,7 +484,7 @@ int main(int argc, char* argv[])
 				fprintf(file, ", 0x%.2X", linker->symbolsChecksum[argi]);
 			fprintf(file, " }\n");
 			fprintf(file, "};\n");
-			fprintf(file, "txPreparation* xsPreparation() { return (txPreparation*)&gxPreparation; }\n\n");
+			fprintf(file, "void* xsPreparation() { return (void*)&gxPreparation; }\n\n");
 		
 			if (linker->stripping)
 				fxStripDefaults(linker, file);
