@@ -58,7 +58,6 @@ struct sxWorker {
 };
 
 extern void fxAbortCallback(void *info);
-extern txPreparation* xsPreparation();
 
 static void fxScreenIdle(txScreen* screen);
 static void fxScreenInvoke(txScreen* screen, char* message, int size);
@@ -225,42 +224,11 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 
 void fxScreenLaunch(txScreen* screen)
 {
-	txPreparation* preparation = xsPreparation();
-	txMachine _root;
-	txMachine* root = &_root;
-	if (!preparation) {
-		return;
-	}
-	if ((preparation->version[0] != XS_MAJOR_VERSION) || (preparation->version[1] != XS_MINOR_VERSION) || (preparation->version[2] != XS_PATCH_VERSION)) {
-		//info = [NSString stringWithFormat:@"Require version %d.%d.%d", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION];
-		return;
-	}
-	
-	root->preparation = preparation;
-	if (screen->archive)
-		root->archive = fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite);
-	else
-		root->archive = NULL;
-	root->keyArray = preparation->keys;
-	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
-	root->keyIndex = (txID)preparation->keyCount;
-	root->nameModulo = preparation->nameModulo;
-	root->nameTable = preparation->names;
-	root->symbolModulo = preparation->symbolModulo;
-	root->symbolTable = preparation->symbols;
-	
-	root->stack = &preparation->stack[0];
-	root->stackBottom = &preparation->stack[0];
-	root->stackTop = &preparation->stack[preparation->stackCount];
-	
-	root->firstHeap = &preparation->heap[0];
-	root->freeHeap = &preparation->heap[preparation->heapCount - 1];
-	root->aliasCount = (txID)preparation->aliasCount;
-	
-	screen->machine = fxCloneMachine(&preparation->creation, root, "mc", screen);
-	if (!screen->machine) {
-		return;
-	}
+	void* preparation = xsPreparation();
+	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
+	screen->machine = fxPrepareMachine(NULL, preparation, "mc", screen, archive);
+	if (!screen->machine)
+		return;	
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
