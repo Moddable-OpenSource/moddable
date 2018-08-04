@@ -556,6 +556,7 @@ mxExport const txByte gxNoCode[] ICACHE_FLASH_ATTR;
 mxExport txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext);
 mxExport void fxDeleteMachine(txMachine*);
 mxExport txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext);
+mxExport txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, txString name, void* context, void* archive);
 mxExport void fxShareMachine(txMachine* the);
 
 mxExport txMachine* fxBeginHost(txMachine*);

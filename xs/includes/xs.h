@@ -1131,9 +1131,12 @@ struct xsCreationRecord {
 #define xsDeleteMachine(_THE) \
 	fxDeleteMachine(_THE)
 	
-#define xsCloneMachine(_ALLOCATION,_MACHINE,_NAME,_CONTEXT) \
-	fxCloneMachine(_ALLOCATION, _MACHINE, _NAME, _CONTEXT)
+#define xsCloneMachine(_CREATION,_MACHINE,_NAME,_CONTEXT) \
+	fxCloneMachine(_CREATION, _MACHINE, _NAME, _CONTEXT)
 	
+#define xsPrepareMachine(_CREATION,_PREPARATION,_NAME, _CONTEXT, _ARCHIVE) \
+	fxPrepareMachine(_CREATION, _PREPARATION, _NAME, _CONTEXT, _ARCHIVE)
+
 #define xsShareMachine(_THE) \
 	fxShareMachine(_THE)
 
@@ -1336,6 +1339,7 @@ mxImport void fxReport(xsMachine*, xsStringValue, ...);
 mxImport xsMachine* fxCreateMachine(xsCreation*, xsStringValue, void*);
 mxImport void fxDeleteMachine(xsMachine*);
 mxImport xsMachine* fxCloneMachine(xsCreation*, xsMachine*, xsStringValue, void*);
+mxImport xsMachine* fxPrepareMachine(xsCreation*, void*, xsStringValue, void*, void*);
 mxImport void fxShareMachine(xsMachine*);
 
 mxImport xsMachine* fxBeginHost(xsMachine*);
