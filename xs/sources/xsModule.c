@@ -366,8 +366,8 @@ void fx_require(txMachine* the)
 		while (export) {
 			mxCheck(the, export->kind == XS_EXPORT_KIND);
 			if (export->ID == defaultID) {
-				mxResult->kind = export->value.export.closure->kind;
-				mxResult->value = export->value.export.closure->value;
+				mxResult->kind = export->value.export_.closure->kind;
+				mxResult->value = export->value.export_.closure->value;
 				break;
 			}
 			export = export->next;
@@ -694,17 +694,17 @@ void fxRecurseExports(txMachine* the, txID moduleID, txSlot* circularities, txSl
 							txSlot* ambiguousModule;
 							txSlot* starModule;
 							if (ambiguous->kind == XS_EXPORT_KIND)
-								ambiguousModule = ambiguous->value.export.module;
+								ambiguousModule = ambiguous->value.export_.module;
 							else
-								ambiguousModule = mxTransferClosure(ambiguous)->value.export.module;
+								ambiguousModule = mxTransferClosure(ambiguous)->value.export_.module;
 							if (star->kind == XS_EXPORT_KIND)
-								starModule = star->value.export.module;
+								starModule = star->value.export_.module;
 							else
-								starModule = mxTransferClosure(star)->value.export.module;
+								starModule = mxTransferClosure(star)->value.export_.module;
 							if (ambiguousModule != starModule) {
 								ambiguous->kind = XS_EXPORT_KIND;
-								ambiguous->value.export.closure = C_NULL;
-								ambiguous->value.export.module = C_NULL;
+								ambiguous->value.export_.closure = C_NULL;
+								ambiguous->value.export_.module = C_NULL;
 							}
 						}
 						else {
@@ -812,9 +812,9 @@ void fxResolveModules(txMachine* the)
 				import = mxTransferImport(transfer);
 				if ((from->kind == XS_NULL_KIND) || (import->kind == XS_NULL_KIND)) {
 					closure = mxTransferClosure(transfer);
-					closure->value.export.closure = fxNewSlot(the);
-					closure->value.export.closure->kind = XS_UNINITIALIZED_KIND;
-					closure->value.export.module = module->value.reference;
+					closure->value.export_.closure = fxNewSlot(the);
+					closure->value.export_.closure->kind = XS_UNINITIALIZED_KIND;
+					closure->value.export_.module = module->value.reference;
                     closure->kind = XS_EXPORT_KIND;
 				}
 			}
@@ -871,7 +871,7 @@ void fxResolveModules(txMachine* the)
 					closure->ID = local->value.symbol;
 					closure->flag = export->flag;
 					closure->kind = XS_CLOSURE_KIND;
-					closure->value.closure = export->value.export.closure;
+					closure->value.closure = export->value.export_.closure;
 				}
 				transfer = transfer->next;
 			}
@@ -887,7 +887,7 @@ void fxResolveNamespace(txMachine* the, txID fromID, txSlot* transfer)
 {
 	txSlot* export = mxTransferClosure(transfer);
 	mxCheck(the, export->kind == XS_EXPORT_KIND);
-	export->value.export.closure = fxGetModule(the, fromID);
+	export->value.export_.closure = fxGetModule(the, fromID);
 }
 
 void fxResolveTransfer(txMachine* the, txID fromID, txID importID, txSlot* transfer)
@@ -903,7 +903,7 @@ void fxResolveTransfer(txMachine* the, txID fromID, txID importID, txSlot* trans
 	export = mxBehaviorGetProperty(the, mxModuleExports(module)->value.reference, importID, XS_NO_ID, XS_OWN);
 	if (export) {
 		if (export->kind == XS_EXPORT_KIND) {
-			if (export->value.export.closure == C_NULL) {
+			if (export->value.export_.closure == C_NULL) {
 				txString path = C_NULL;
 				txInteger line = 0;
 			#ifdef mxDebug
@@ -1088,7 +1088,7 @@ txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 		txSlot* property = exports->value.reference->next;
 		while (property) {
 			if (property->ID == id) {
-				property = property->value.export.closure;
+				property = property->value.export_.closure;
 				if (property && (property->kind == XS_UNINITIALIZED_KIND)) {
 					fxIDToString(the, id, the->nameBuffer, sizeof(the->nameBuffer));
 					mxReferenceError("get %s: not initialized yet", the->nameBuffer);
@@ -1128,7 +1128,7 @@ txBoolean fxModuleHasProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		txSlot* property = exports->value.reference->next;
 		while (property) {
 			if (property->ID == id) {
-				property = property->value.export.closure;
+				property = property->value.export_.closure;
 				return property ? 1 : 0;
 			}
 			property = property->next;
@@ -1152,7 +1152,7 @@ void fxModuleOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys
 			txSlot* property = exports->value.reference->next;
 			txSlot* stack = the->stack;
 			while (property) {
-				if (property->value.export.closure) {
+				if (property->value.export_.closure) {
 					txSlot* key = fxGetKey(the, property->ID);
 					mxPushSlot(key);
 					the->stack->ID = key->ID;

@@ -332,7 +332,7 @@ void fx_Atomics_and(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
 	fxPushAtomicsValue(the, 2);
-	(*dispatch->value.typedArray.atomics->and)(the, host, offset, the->stack, 0);
+	(*dispatch->value.typedArray.atomics->and_)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
 
@@ -371,7 +371,7 @@ void fx_Atomics_or(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
 	fxPushAtomicsValue(the, 2);
-	(*dispatch->value.typedArray.atomics->or)(the, host, offset, the->stack, 0);
+	(*dispatch->value.typedArray.atomics->or_)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
 
@@ -426,7 +426,7 @@ void fx_Atomics_xor(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
 	fxPushAtomicsValue(the, 2);
-	(*dispatch->value.typedArray.atomics->xor)(the, host, offset, the->stack, 0);
+	(*dispatch->value.typedArray.atomics->xor_)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
 

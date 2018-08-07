@@ -167,14 +167,14 @@ typedef struct {
 
 typedef struct {
 	txTypeCallback add;
-	txTypeCallback and;
+	txTypeCallback and_;
 	txTypeCallback compareExchange;
 	txTypeCallback exchange;
 	txTypeCallback load;
-	txTypeCallback or;
+	txTypeCallback or_;
 	txTypeCallback store;
 	txTypeCallback sub;
-	txTypeCallback xor;
+	txTypeCallback xor_;
 } txTypeAtomics;
 
 struct sxHostHooks {
@@ -222,7 +222,7 @@ typedef union {
 #endif
 	struct { txSlot* cache; txSlot* instance; } hostInspector;
 	struct { txSlot* slot; txInspectorNameLink* link; } instanceInspector;
-	struct { txSlot* closure; txSlot* module; } export;
+	struct { txSlot* closure; txSlot* module; } export_;
 } txValue;
 
 struct sxBlock {

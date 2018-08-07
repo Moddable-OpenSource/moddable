@@ -607,12 +607,12 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 	case XS_EXPORT_KIND:
-		aSlot = theSlot->value.export.closure;
+		aSlot = theSlot->value.export_.closure;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
 			aSlot->flag |= XS_MARK_FLAG; 
 			fxMarkReference(the, aSlot);
 		}
-		aSlot = theSlot->value.export.module;
+		aSlot = theSlot->value.export_.module;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
@@ -774,12 +774,12 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
 	case XS_EXPORT_KIND:
-		aSlot = theSlot->value.export.closure;
+		aSlot = theSlot->value.export_.closure;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
 			aSlot->flag |= XS_MARK_FLAG; 
 			fxMarkValue(the, aSlot);
 		}
-		aSlot = theSlot->value.export.module;
+		aSlot = theSlot->value.export_.module;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
