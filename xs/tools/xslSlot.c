@@ -431,8 +431,8 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 					slot->value.closure->flag |= XS_DONT_SET_FLAG;
 				}
 				else if (slot->kind == XS_EXPORT_KIND) {
-					if (slot->value.export.closure)
-						slot->value.export.closure->flag |= XS_DONT_SET_FLAG;
+					if (slot->value.export_.closure)
+						slot->value.export_.closure->flag |= XS_DONT_SET_FLAG;
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
@@ -827,10 +827,10 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	case XS_EXPORT_KIND: {
 		fprintf(file, "XS_EXPORT_KIND, ");
 		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .export = { ");
-		fxPrintAddress(the, file, slot->value.export.closure);
+		fprintf(file, "{ .export_ = { ");
+		fxPrintAddress(the, file, slot->value.export_.closure);
 		fprintf(file, ", ");
-		fxPrintAddress(the, file, slot->value.export.module);
+		fxPrintAddress(the, file, slot->value.export_.module);
 		fprintf(file, " } }");
 	} break;
 	case XS_KEY_KIND:
