@@ -58,6 +58,8 @@
 	static void espStartInstrumentation(txMachine* the);
 #endif
 
+extern void* xsPreparationAndCreation(xsCreation **creation);
+
 ICACHE_RAM_ATTR uint8_t espRead8(const void *addr)
 {
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
@@ -634,45 +636,25 @@ int32_t modGetDaylightSavingsOffset(void)
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
-	extern txPreparation* xsPreparation();
-	void *result;
-	txMachine root;
-	txPreparation *prep = xsPreparation();
-	txCreation creation;
+	xsMachine *result;
 	uint8_t *context[2];
+	xsCreation *creationP;
+	void *preparation = xsPreparationAndCreation(&creationP);
+	void *archive;
 
-	if ((prep->version[0] != XS_MAJOR_VERSION) || (prep->version[1] != XS_MINOR_VERSION) || (prep->version[2] != XS_PATCH_VERSION))
-		modLog("version mismatch");
-
-	creation = prep->creation;
-
-	root.preparation = prep;
 #if MODDEF_XS_MODS
-	root.archive = installModules(prep);
-	gHasMods = root.archive != NULL;
+	archive = installModules(prep);
+	gHasMods = NULL != archive;
 #else
-	root.archive = NULL;
+	archive = NULL;
 #endif
-	root.keyArray = prep->keys;
-	root.keyCount = prep->keyCount + prep->creation.keyCount;
-	root.keyIndex = prep->keyCount;
-	root.nameModulo = prep->nameModulo;
-	root.nameTable = prep->names;
-	root.symbolModulo = prep->symbolModulo;
-	root.symbolTable = prep->symbols;
-
-	root.stack = &prep->stack[0];
-	root.stackBottom = &prep->stack[0];
-	root.stackTop = &prep->stack[prep->stackCount];
-
-	root.firstHeap = &prep->heap[0];
-	root.freeHeap = &prep->heap[prep->heapCount - 1];
-	root.aliasCount = prep->aliasCount;
 
 	if (0 == allocation)
-		allocation = creation.staticSize;
+		allocation = creationP->staticSize;
 
 	if (allocation) {
+		xsCreation creation = *creationP;
+
 		if (stackCount)
 			creation.stackCount = stackCount;
 
@@ -686,22 +668,20 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		}
 		context[1] = context[0] + allocation;
 
-		result = fxCloneMachine(&creation, &root, name ? (txString)name : "main", context);
+		result = xsPrepareMachine(&creation, preparation, name ? (txString)name : "main", context, archive);
 		if (NULL == result) {
 			if (context[0])
 				c_free(context[0]);
 			return NULL;
 		}
-
-		((txMachine *)result)->context = NULL;
 	}
 	else {
-		result = fxCloneMachine(&prep->creation, &root, "main", NULL);
+		result = xsPrepareMachine(NULL, preparation, "main", NULL, archive);
 		if (NULL == result)
 			return NULL;
 	}
 
-	((txMachine *)result)->preparation = prep;
+	xsSetContext(result, NULL);
 
 #ifdef mxInstrument
 	espStartInstrumentation(result);
@@ -728,8 +708,7 @@ void setStepDone(xsMachine *the)
 
 void mc_setup(xsMachine *the)
 {
-	extern txPreparation* xsPreparation();
-	txPreparation *preparation = xsPreparation();
+	txPreparation *preparation = xsPreparationAndCreation(NULL);
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 
@@ -1057,12 +1036,10 @@ void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-	extern txPreparation* xsPreparation();
 	txParser _parser;
 	txParser* parser = &_parser;
 	txParserJump jump;
 	txScript* script = NULL;
-	txPreparation *prep = xsPreparation();
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {

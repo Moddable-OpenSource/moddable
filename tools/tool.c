@@ -19,7 +19,6 @@
  */
 
 #include "xsPlatform.h"
-#include "xsAll.h"
 #include "xs.h"
 #include "mc.xs.h"
 
