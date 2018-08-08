@@ -25,29 +25,42 @@ export BUILD_DIR
 
 all: debug release
 
-debug:
-	make -f $(XS_DIR)/makefiles/mac/xsc.mk
-	make -f $(XS_DIR)/makefiles/mac/xsid.mk
-	make -f $(XS_DIR)/makefiles/mac/xsl.mk
-	make -f serial2xsbug.mk
-	make -f simulator.mk
-	make -f tools.mk
+xsc-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/mac/xsc.mk
+xsid-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/mac/xsid.mk
+xsl-debug:
+	$(MAKE) -f $(XS_DIR)/makefiles/mac/xsl.mk
+serial2xsbug-debug:
+	$(MAKE) -f serial2xsbug.mk
+simulator-debug:
+	$(MAKE) -f simulator.mk
+tools-debug:
+	$(MAKE) -f tools.mk
+debug: xsc-debug xsid-debug xsl-debug serial2xsbug-debug simulator-debug tools-debug
 	$(MODDABLE)/build/bin/mac/debug/mcconfig -d -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
-	
-release:
-	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsc.mk
-	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsid.mk
-	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsl.mk
-	make GOAL=release -f serial2xsbug.mk
-	make GOAL=release -f simulator.mk
-	make GOAL=release -f tools.mk
+
+xsc-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/mac/xsc.mk
+xsid-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/mac/xsid.mk
+xsl-release:
+	$(MAKE) GOAL=release -f $(XS_DIR)/makefiles/mac/xsl.mk
+serial2xsbug-release:
+	$(MAKE) GOAL=release -f serial2xsbug.mk
+simulator-release:
+	$(MAKE) GOAL=release -f simulator.mk
+tools-release:
+	$(MAKE) GOAL=release -f tools.mk
+
+release: xsc-release xsid-release xsl-release serial2xsbug-release simulator-release tools-release
 	$(MODDABLE)/build/bin/mac/release/mcconfig -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
 	
 clean:
-	make clean -f $(XS_DIR)/makefiles/mac/xsc.mk
-	make clean -f $(XS_DIR)/makefiles/mac/xsid.mk
-	make clean -f $(XS_DIR)/makefiles/mac/xsl.mk
-	make clean -f serial2xsbug.mk
-	make clean -f simulator.mk
-	make clean -f tools.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/mac/xsc.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/mac/xsid.mk
+	$(MAKE) clean -f $(XS_DIR)/makefiles/mac/xsl.mk
+	$(MAKE) clean -f serial2xsbug.mk
+	$(MAKE) clean -f simulator.mk
+	$(MAKE) clean -f tools.mk
 	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp
