@@ -323,7 +323,8 @@ int main(int argc, char* argv[])
 			fprintf(file, "#ifdef __cplusplus\n");
 			fprintf(file, "extern \"C\" {\n");
 			fprintf(file, "#endif\n");
-			fprintf(file, "mxExport void* xsPreparation();\n\n");
+			fprintf(file, "#define xsPreparation() xsPreparationAndCreation(NULL)\n");
+			fprintf(file, "mxExport void* xsPreparationAndCreation(xsCreation **creation);\n\n");
 			script = linker->firstScript;
 			while (script) {
 				fxWriteScriptExterns(script, file);
@@ -484,8 +485,8 @@ int main(int argc, char* argv[])
 				fprintf(file, ", 0x%.2X", linker->symbolsChecksum[argi]);
 			fprintf(file, " }\n");
 			fprintf(file, "};\n");
-			fprintf(file, "void* xsPreparation() { return (void*)&gxPreparation; }\n\n");
-		
+			fprintf(file, "void* xsPreparationAndCreation(xsCreation **creation) { if (creation) *creation = (xsCreation *)&gxPreparation.creation; return (void*)&gxPreparation; }\n\n");
+
 			if (linker->stripping)
 				fxStripDefaults(linker, file);
 			else
