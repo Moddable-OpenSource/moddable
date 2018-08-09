@@ -751,6 +751,8 @@ void fxWriteCString(FILE* file, txString string)
 	while ((c = *((unsigned char *)string))) {
 		if (c == '\\')
 			fprintf(file, "\\\\");
+		else if (c == '"')
+			fprintf(file, "\\\"");
 		else if ((32 <= c) && (c < 128))
 			fprintf(file, "%c", (char)c);
 		else
