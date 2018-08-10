@@ -307,9 +307,18 @@ export class MakeFile extends FILE {
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
 			else {
 				var source = result.source;
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
+				var sources = result.sources;
+				var manifest = "";
+				var name = "";
+				if (sources) {
+					for (var path of sources)
+						source += " " + path;
+					manifest = "  $(MANIFEST)";
+					name = " -n " + parts.name.slice(0, -6);
+				}
+				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
-				this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation);
+				this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, name);
 			}
 		}
 
@@ -318,6 +327,16 @@ export class MakeFile extends FILE {
 			var target = result.target;
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
 			var clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
+			var sources = result.sources;
+			var manifest = "";
+			var name = "";
+			if (sources) {
+				for (var path of sources)
+					source += " " + path;
+				manifest = "  $(MANIFEST)";
+				name = " -n " + parts.name.slice(0, -6);
+			}
+
 			this.write("$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(target);
@@ -331,7 +350,8 @@ export class MakeFile extends FILE {
 			this.write(formatPath);
 			this.write(" ");
 			this.write(rotationPath);
-			this.line("");
+			this.line(manifest);
+			
 			if (tool.windows)
 				this.write("\t@echo # png2bmp ");
 			else
@@ -357,7 +377,7 @@ export class MakeFile extends FILE {
 				this.write(" -clut ");
 				this.write(clutSource);
 			}
-			this.line("");
+			this.line(name);
 		}
 
 		for (var result of tool.bmpFontFiles) {
@@ -388,9 +408,18 @@ export class MakeFile extends FILE {
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
 			this.echo(tool, "rle4encode ", target);
 			this.line("\t$(RLE4ENCODE) ", bmpSource, " -o $(@D)");
-			this.line(bmpSource, ": ", source, " ", rotationPath);
+			var sources = result.sources;
+			var manifest = "";
+			var name = "";
+			if (sources) {
+				for (var path of sources)
+					source += " " + path;
+				manifest = "  $(MANIFEST)";
+				name = " -n " + parts.name.slice(0, -6);
+			}
+			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t");
+			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t", name);
 		}
 
 		for (var result of tool.imageFiles) {
@@ -512,12 +541,17 @@ class Rule {
 		if (!files.already[source]) {
 			files.already[source] = true;
 			if (include) {
-				if (!files.find(file => file.target == target)) {
+				let result = files.find(file => file.target == target);
+				if (!result) {
 					//this.tool.report(target + " " + source);
 					let result = { target, source };
 					files.push(result);
 					return result;
 				}
+				if (result.sources)
+					result.sources.push(source);
+				else
+					result.sources = [source];
 			}
 		}
 	}
@@ -613,7 +647,12 @@ class Rule {
 						this.iterate(target, sources, true, suffix, false);
 				}
 				else {
-					var suffix = "";
+					var suffix = ""
+					var pipe = target.lastIndexOf("|");
+					if (pipe >= 0) {
+						var suffix = target.slice(pipe + 1);
+						target = target.slice(0, pipe);
+					}
 					if (sources instanceof Array) {
 						for (var source of sources)
 							this.iterate(target, source, true, suffix, true);
