@@ -44,7 +44,7 @@ static txInteger fxGetTypeDispatchIndex(txTypeDispatch* dispatch);
 static void fxPrepareInstance(txMachine* the, txSlot* instance);
 static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
-static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolean dummy);
+static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
 
 txCallback gxFakeCallback = (txCallback)1;
 
@@ -534,7 +534,7 @@ void fxPrintBuilders(txMachine* the, FILE* file)
 	fprintf(file, "};\n\n");
 }
 
-void fxPrintHeap(txMachine* the, FILE* file, txInteger count, txBoolean dummy) 
+void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txLinkerProjection* projection = linker->firstProjection;
@@ -542,8 +542,7 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count, txBoolean dummy)
 	txInteger index = 0;
 	fprintf(file, "/* %.4d */", index);
 	fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_REFERENCE_KIND}, ");
-	if (dummy) fprintf(file, "0, ");
-	fprintf(file, "{ .reference = (txSlot*)&gxHeap[%d] } },\n", (int)count);
+	fprintf(file, ".value = { .reference = (txSlot*)&gxHeap[%d] } },\n", (int)count);
 	index++;
 	while (projection) {
 		slot = projection->heap + 1;
@@ -569,13 +568,13 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count, txBoolean dummy)
 						fprintf(file, "/* %.4d */", index);
 						index++;
 						item->flag |= XS_DEBUG_FLAG;
-						fxPrintSlot(the, file, item, XS_MARK_FLAG, dummy);
+						fxPrintSlot(the, file, item, XS_MARK_FLAG);
 						item++;
 						size--;
 					}
 				}
 				else {
-					fxPrintSlot(the, file, slot, XS_MARK_FLAG, dummy);
+					fxPrintSlot(the, file, slot, XS_MARK_FLAG);
 				}
 			}
 			slot++;
@@ -584,8 +583,7 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count, txBoolean dummy)
 	}	
 	fprintf(file, "/* %.4d */", index);
 	fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_REFERENCE_KIND}, ");
-	if (dummy) fprintf(file, "0, ");
-	fprintf(file, "{ .reference = NULL } }");
+	fprintf(file, ".value = { .reference = NULL } }");
 }
 
 void fxPrintNumber(txMachine* the, FILE* file, txNumber value) 
@@ -606,7 +604,7 @@ void fxPrintNumber(txMachine* the, FILE* file, txNumber value)
 	}
 }
 
-void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolean dummy) 
+void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 {
 	fprintf(file, "\t{ ");
 	if (slot->flag & XS_DEBUG_FLAG) {
@@ -627,139 +625,115 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	switch (slot->kind) {
 	case XS_UNINITIALIZED_KIND: {
 		fprintf(file, ".kind = XS_UNINITIALIZED_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = 0 } ");
+		fprintf(file, ".value = { .number = 0 } ");
 	} break;
 	case XS_UNDEFINED_KIND: {
 		fprintf(file, ".kind = XS_UNDEFINED_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = 0 } ");
+		fprintf(file, ".value = { .number = 0 } ");
 	} break;
 	case XS_NULL_KIND: {
 		fprintf(file, ".kind = XS_NULL_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = 0 } ");
+		fprintf(file, ".value = { .number = 0 } ");
 	} break;
 	case XS_BOOLEAN_KIND: {
 		fprintf(file, ".kind = XS_BOOLEAN_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .boolean = %d } ", slot->value.boolean);
+		fprintf(file, ".value = { .boolean = %d } ", slot->value.boolean);
 	} break;
 	case XS_INTEGER_KIND: {
 		fprintf(file, ".kind = XS_INTEGER_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .integer = %d } ", slot->value.integer);
+		fprintf(file, ".value = { .integer = %d } ", slot->value.integer);
 	} break;
 	case XS_NUMBER_KIND: {
 		fprintf(file, ".kind = XS_NUMBER_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = ");
+		fprintf(file, ".value = { .number = ");
 		fxPrintNumber(the, file, slot->value.number);
 		fprintf(file, " } ");
 	} break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND: {
 		fprintf(file, ".kind = XS_STRING_X_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .string = ");
+		fprintf(file, ".value = { .string = ");
 		fxWriteCString(file, slot->value.string);
 		fprintf(file, " } ");
 	} break;
 	case XS_SYMBOL_KIND: {
 		fprintf(file, ".kind = XS_SYMBOL_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .symbol = %d } ", slot->value.symbol);
+		fprintf(file, ".value = { .symbol = %d } ", slot->value.symbol);
 	} break;
 	case XS_REFERENCE_KIND: {
 		fprintf(file, ".kind = XS_REFERENCE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .reference = ");
+		fprintf(file, ".value = { .reference = ");
 		fxPrintAddress(the, file, slot->value.reference);
 		fprintf(file, " } ");
 	} break;
 	case XS_CLOSURE_KIND: {
 		fprintf(file, ".kind = XS_CLOSURE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .closure = ");
+		fprintf(file, ".value = { .closure = ");
 		fxPrintAddress(the, file, slot->value.closure);
 		fprintf(file, " } ");
 	} break; 
 	case XS_INSTANCE_KIND: {
 		fprintf(file, ".kind = XS_INSTANCE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .instance = { NULL, ");
+		fprintf(file, ".value = { .instance = { NULL, ");
 		fxPrintAddress(the, file, slot->value.instance.prototype);
 		fprintf(file, " } } ");
 	} break;
 	case XS_ARRAY_KIND: {
 		fprintf(file, ".kind = XS_ARRAY_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .array = { NULL, 0 } }");
+		fprintf(file, ".value = { .array = { NULL, 0 } }");
 	} break;
 	case XS_ARRAY_BUFFER_KIND: {
 		fprintf(file, ".kind = XS_ARRAY_BUFFER_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .arrayBuffer = { NULL, 0 } }");
+		fprintf(file, ".value = { .arrayBuffer = { NULL, 0 } }");
 	} break;
 	case XS_CALLBACK_KIND: {
 		fprintf(file, ".kind = XS_CALLBACK_X_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .callback = { %s, NULL } }", fxGetCallbackName(the, slot->value.callback.address));
+		fprintf(file, ".value = { .callback = { %s, NULL } }", fxGetCallbackName(the, slot->value.callback.address));
 	} break;
 	case XS_CODE_KIND:  {
 		fprintf(file, ".kind = XS_CODE_X_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .code = { %s, ", fxGetCodeName(the, slot->value.code.address));
+		fprintf(file, ".value = { .code = { %s, ", fxGetCodeName(the, slot->value.code.address));
 		fxPrintAddress(the, file, slot->value.code.closures);
 		fprintf(file, " } } ");
 	} break;
 	case XS_CODE_X_KIND: {
 		fprintf(file, ".kind = XS_CODE_X_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .code = { %s, ", fxGetCodeName(the, slot->value.code.address));
+		fprintf(file, ".value = { .code = { %s, ", fxGetCodeName(the, slot->value.code.address));
 		fxPrintAddress(the, file, slot->value.code.closures);
 		fprintf(file, " } } ");
 	} break;
 	case XS_DATE_KIND: {
 		fprintf(file, ".kind = XS_DATE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = ");
+		fprintf(file, ".value = { .number = ");
 		fxPrintNumber(the, file, slot->value.number);
 		fprintf(file, " } ");
 	} break;
 	case XS_DATA_VIEW_KIND: {
 		fprintf(file, ".kind = XS_DATA_VIEW_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .dataView = { %d, %d } }", slot->value.dataView.offset, slot->value.dataView.size);
+		fprintf(file, ".value = { .dataView = { %d, %d } }", slot->value.dataView.offset, slot->value.dataView.size);
 	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .table = { (txSlot**)(gxGlobals), %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { (txSlot**)(gxGlobals), %d } }", slot->value.table.length);
 	} break;
 	case XS_HOST_KIND: {
 		fprintf(file, ".kind = XS_HOST_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .host = { NULL, { .destructor = %s } } }", fxGetCallbackName(the, (txCallback)slot->value.host.variant.destructor ));
+		fprintf(file, ".value = { .host = { NULL, { .destructor = %s } } }", fxGetCallbackName(the, (txCallback)slot->value.host.variant.destructor ));
 	} break;
 	case XS_MAP_KIND: {
 		fprintf(file, ".kind = XS_MAP_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
 	} break;
 	case XS_MODULE_KIND: {
 		fprintf(file, ".kind = XS_MODULE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .symbol = %d } ", slot->value.symbol);
+		fprintf(file, ".value = { .symbol = %d } ", slot->value.symbol);
 	} break;
 	case XS_PROMISE_KIND: {
 		fprintf(file, ".kind = XS_PROMISE_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
 	} break;
 	case XS_PROXY_KIND: {
 		fprintf(file, ".kind = XS_PROXY_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .instance = { ");
+		fprintf(file, ".value = { .instance = { ");
 		fxPrintAddress(the, file, slot->value.proxy.handler);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.proxy.target);
@@ -767,32 +741,26 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	} break;
 	case XS_REGEXP_KIND: {
 		fprintf(file, ".kind = XS_REGEXP_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
 	} break;
 	case XS_SET_KIND: {
 		fprintf(file, ".kind = XS_SET_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
 	} break;
 	case XS_TYPED_ARRAY_KIND: {
 		fprintf(file, ".kind = XS_TYPED_ARRAY_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .typedArray = { (txTypeDispatch*)(&gxTypeDispatches[%d]), (txTypeAtomics*)(&gxTypeAtomics[%d]) } }", fxGetTypeDispatchIndex(slot->value.typedArray.dispatch), fxGetTypeAtomicsIndex(slot->value.typedArray.atomics));
+		fprintf(file, ".value = { .typedArray = { (txTypeDispatch*)(&gxTypeDispatches[%d]), (txTypeAtomics*)(&gxTypeAtomics[%d]) } }", fxGetTypeDispatchIndex(slot->value.typedArray.dispatch), fxGetTypeAtomicsIndex(slot->value.typedArray.atomics));
 	} break;
 	case XS_WEAK_MAP_KIND: {
 		fprintf(file, ".kind = XS_WEAK_MAP_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
 	} break;
 	case XS_WEAK_SET_KIND: {
 		fprintf(file, ".kind = XS_WEAK_SET_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
 	} break;
 	case XS_ACCESSOR_KIND: {
 		fprintf(file, ".kind = XS_ACCESSOR_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .accessor = { ");
+		fprintf(file, ".value = { .accessor = { ");
 		fxPrintAddress(the, file, slot->value.accessor.getter);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.accessor.setter);
@@ -800,25 +768,21 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	} break;
 	case XS_AT_KIND: {
 		fprintf(file, ".kind = XS_AT_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .at = { 0x%x, %d } }", slot->value.at.index, slot->value.at.id);
+		fprintf(file, ".value = { .at = { 0x%x, %d } }", slot->value.at.index, slot->value.at.id);
 	} break;
 	case XS_ENTRY_KIND: {
 		fprintf(file, ".kind = XS_ENTRY_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .entry = { ");
+		fprintf(file, ".value = { .entry = { ");
 		fxPrintAddress(the, file, slot->value.entry.slot);
 		fprintf(file, ", 0x%x } }", slot->value.entry.sum);
 	} break;
 	case XS_ERROR_KIND: {
 		fprintf(file, ".kind = XS_ERROR_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .number = 0 } ");
+		fprintf(file, ".value = { .number = 0 } ");
 	} break;
 	case XS_HOME_KIND: {
 		fprintf(file, ".kind = XS_HOME_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .home = { ");
+		fprintf(file, ".value = { .home = { ");
 		fxPrintAddress(the, file, slot->value.home.object);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.home.module);
@@ -826,8 +790,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	} break;
 	case XS_EXPORT_KIND: {
 		fprintf(file, ".kind = XS_EXPORT_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .export = { ");
+		fprintf(file, ".value = { .export = { ");
 		fxPrintAddress(the, file, slot->value.export.closure);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.export.module);
@@ -836,15 +799,13 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	case XS_KEY_KIND:
 	case XS_KEY_X_KIND: {
 		fprintf(file, ".kind = XS_KEY_X_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .key = { ");
+		fprintf(file, ".value = { .key = { ");
 		fxWriteCString(file, slot->value.key.string);
 		fprintf(file, ", 0x%x } }", slot->value.key.sum);
 	} break;
 	case XS_LIST_KIND: {
 		fprintf(file, ".kind = XS_LIST_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .list = { ");
+		fprintf(file, ".value = { .list = { ");
 		fxPrintAddress(the, file, slot->value.list.first);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.list.last);
@@ -852,13 +813,11 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	} break;
 	case XS_STACK_KIND: {
 		fprintf(file, ".kind = XS_STACK_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
 	} break;
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		fprintf(file, ".kind = XS_HOST_FUNCTION_KIND}, ");
-		if (dummy) fprintf(file, "0, ");
-		fprintf(file, "{ .hostFunction = { %s, NULL } }", fxGetBuilderName(the, slot->value.hostFunction.builder));
+		fprintf(file, ".value = { .hostFunction = { %s, NULL } }", fxGetBuilderName(the, slot->value.hostFunction.builder));
 	} break;
 #endif
 	default:
@@ -867,15 +826,15 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag, txBoolea
 	fprintf(file, "},\n");
 }
 
-void fxPrintStack(txMachine* the, FILE* file, txBoolean dummy) 
+void fxPrintStack(txMachine* the, FILE* file)
 {
 	txSlot *slot = the->stack;
 	txSlot *limit = the->stackTop - 1;
 	while (slot < limit) {
-		fxPrintSlot(the, file, slot, XS_NO_FLAG, dummy);
+		fxPrintSlot(the, file, slot, XS_NO_FLAG);
 		slot++;
 	}
-	fxPrintSlot(the, file, slot, XS_NO_FLAG, dummy);
+	fxPrintSlot(the, file, slot, XS_NO_FLAG);
 }
 
 
