@@ -221,8 +221,8 @@ extern void fxWriteStrips(txLinker* linker, FILE* file);
 extern void fxLinkerScriptCallback(txMachine* the);
 extern txInteger fxPrepareHeap(txMachine* the, txBoolean stripping);
 extern void fxPrintBuilders(txMachine* the, FILE* file);
-extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count, txBoolean dummy);
-extern void fxPrintStack(txMachine* the, FILE* file, txBoolean dummy);
+extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count);
+extern void fxPrintStack(txMachine* the, FILE* file);
 extern void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** table);
 
 /* xslStrip.c */

@@ -176,9 +176,6 @@ int main(int argc, char* argv[])
 					stripAddress = &((*stripAddress)->nextStrip);
 				}
 			}
-			else if (!c_strcmp(argv[argi], "-t")) {
-				linker->twice = 1;
-			}
 			else if (!c_strcmp(argv[argi], "-u")) {
 				argi++;
 				if (argi >= argc)
@@ -410,31 +407,13 @@ int main(int argc, char* argv[])
 			}
 			fprintf(file, "\n};\n\n");
 		
-			if (linker->twice) {
-				fprintf(file, "#if (!defined(linux)) && ((defined(__GNUC__) && defined(__LP64__)) || (defined(_MSC_VER) && defined(_M_X64)))\n");
-				fprintf(file, "static const txSlot gxHeap[mxHeapCount] = {\n");
-				fxPrintHeap(the, file, count, 1);
-				fprintf(file, "};\n\n");
-				fprintf(file, "static const txSlot gxStack[mxStackCount] = {\n");
-				fxPrintStack(the, file, 1);
-				fprintf(file, "};\n\n");
-				fprintf(file, "#else\n");
-				fprintf(file, "static const txSlot gxHeap[mxHeapCount] = {\n");
-				fxPrintHeap(the, file, count, 0);
-				fprintf(file, "};\n\n");
-				fprintf(file, "static const txSlot gxStack[mxStackCount] = {\n");
-				fxPrintStack(the, file, 0);
-				fprintf(file, "};\n\n");
-				fprintf(file, "#endif\n");
-			}
-			else {
-				fprintf(file, "static const txSlot gxHeap[mxHeapCount] = {\n");
-				fxPrintHeap(the, file, count, 0);
-				fprintf(file, "};\n\n");
-				fprintf(file, "static const txSlot gxStack[mxStackCount] = {\n");
-				fxPrintStack(the, file, 0);
-				fprintf(file, "};\n\n");
-			}
+			fprintf(file, "static const txSlot gxHeap[mxHeapCount] = {\n");
+			fxPrintHeap(the, file, count);
+			fprintf(file, "};\n\n");
+			fprintf(file, "static const txSlot gxStack[mxStackCount] = {\n");
+			fxPrintStack(the, file);
+			fprintf(file, "};\n\n");
+
 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
 			fprintf(file, "};\n\n");
