@@ -176,7 +176,7 @@ INSTALL_ICON_DIR = /usr/share/icons/hicolor
 INSTALL_ICONS = $(foreach SIZE,32 48 64 96 128 256,$(INSTALL_ICON_DIR)/$(SIZE)x$(SIZE)/apps/$(DASH_SIGNATURE).png)
 
 install: $(INSTALL_BIN_DIR)/$(DASH_SIGNATURE) $(INSTALL_DESKTOP_DIR)/$(DASH_SIGNATURE).desktop $(INSTALL_ICONS)
-	sudo gtk-update-icon-cache -f -t $(INSTALL_ICON_DIR)
+	sudo gtk-update-icon-cache -f $(INSTALL_ICON_DIR)
 
 $(INSTALL_BIN_DIR)/$(DASH_SIGNATURE): $(BIN_DIR)/$(NAME)
 	@echo "#" $(NAME) $(GOAL) ": cp" $(<F)
