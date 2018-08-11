@@ -270,7 +270,7 @@ struct sxSlot {
 	};
 #endif
 #if (!defined(linux)) && ((defined(__GNUC__) && defined(__LP64__)) || (defined(_MSC_VER) && defined(_M_X64)))
-	// Made it alinged and consistent on all platforms
+	// Made it aligned and consistent on all platforms
 	txInteger dummy;
 #endif
 	txValue value;
