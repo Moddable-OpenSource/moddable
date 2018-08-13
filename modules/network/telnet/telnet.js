@@ -37,6 +37,11 @@ class Connection extends Socket {
 					if (this.command) {
 						if (true === this.command) {
 							if (244 === byte) {		// Control C (Interrupt Process)
+								if (this.suspended) {
+									if (true !== this.suspended)
+										this.suspended();
+									delete this.suspended;
+								}
 								this.incoming = "";
 								continue;
 							}
@@ -52,6 +57,8 @@ class Connection extends Socket {
 						}
 						continue;
 					}
+					if (this.suspended)
+						continue;
 					if (13 === byte)
 						continue;
 					if ((8 === byte) || (127 === byte)) {		//@@ is this ever used @@
@@ -62,7 +69,8 @@ class Connection extends Socket {
 					if (10 === byte) {
 						CLI.execute.call(this, this.incoming);
 						this.incoming = "";
-						CLI.execute.call(this, "prompt");
+						if (!this.suspended)
+							CLI.execute.call(this, "prompt");
 						continue;
 					}
 
@@ -77,9 +85,16 @@ class Connection extends Socket {
 		}
 	}
 	// placeholders
-	suspend() {
+	suspend(cancel) {
+		trace("suspend\n");
+		this.suspended = cancel || true;
 	}
 	resume() {
+		trace("resume\n");
+		if (!this.suspended) return;
+
+		delete this.suspended;
+		CLI.execute.call(this, "prompt");
 	}
 }
 Object.freeze(Connection.prototype);
@@ -91,6 +106,7 @@ class Telnet extends Listener {
 	callback() {
 		let socket = new Connection({listener: this});
 		socket.incoming = "";
+		socket.write(255, 251, 1, 255, 251, 3, 255, 252, 34);
 		CLI.execute.call(socket, "welcome");
 		CLI.execute.call(socket, "prompt");
 	}
