@@ -1,0 +1,34 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+	],
+	"modules": {
+		"*": [
+			  "./main",
+			  "$(MODULES)/pins/audioin/*",
+			  "$(MODULES)/network/http/*",
+		],
+	},
+	"defines": {
+		"audioin": {
+			"sampleRate": 8000,
+			"bitsPerSample": 8
+		}
+	},
+	"preload": [
+		"main",
+		"audioin",
+		"http",
+	],
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/audioin/esp32/*",
+			}
+		},
+		"...": {
+			"error": "audioin unsupported"
+		},
+	}
+}
