@@ -1,0 +1,31 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": [
+			  "./main",
+			  "$(MODULES)/pins/audioin/*",
+		],
+	},
+	"defines": {
+		"audioin": {
+			"sampleRate": 22050,
+			"bitsPerSample": 16
+		}
+	},
+	"preload": [
+		"audioin",
+	],
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/audioin/esp32/*",
+			}
+		},
+		"...": {
+			"error": "audioin unsupported"
+		},
+	}
+}
+
