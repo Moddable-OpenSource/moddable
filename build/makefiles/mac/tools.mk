@@ -213,7 +213,8 @@ ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(INSTRUMENTATION) $(COMMODETTO) $(TOOLS) $(TMP_DIR),-I$(dir))
-C_FLAGS = -c -arch i386
+# C_FLAGS = -c -arch i386
+C_FLAGS = -c
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -222,7 +223,8 @@ endif
 
 LIBRARIES = -framework CoreServices
 
-LINK_FLAGS = -arch i386
+# LINK_FLAGS = -arch i386
+LINK_FLAGS =
 
 XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid

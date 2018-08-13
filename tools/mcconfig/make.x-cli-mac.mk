@@ -103,7 +103,8 @@ ifeq ($(INSTRUMENT),1)
 endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
-XS_C_FLAGS = -c -arch i386
+# XS_C_FLAGS = -c -arch i386
+XS_C_FLAGS = -c
 ifeq ($(DEBUG),)
 	XS_C_FLAGS += -D_RELEASE=1 -O3
 else
@@ -114,7 +115,8 @@ C_FLAGS = $(XS_C_FLAGS)
  
 LIBRARIES = -framework CoreFoundation
 
-LINK_FLAGS = -arch i386
+# LINK_FLAGS = -arch i386
+LINK_FLAGS = 
 
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc
 XSID = $(BUILD_DIR)/bin/mac/debug/xsid
