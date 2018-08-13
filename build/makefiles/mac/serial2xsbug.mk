@@ -34,7 +34,8 @@ BIN_DIR = $(BUILD_DIR)/bin/mac/$(GOAL)
 SRC_DIR = $(MODDABLE)/tools/$(NAME)/mac
 TMP_DIR = $(BUILD_DIR)/tmp/mac/$(GOAL)/$(NAME)
 
-MACOS_ARCH ?= -arch i386
+# MACOS_ARCH ?= -arch i386
+MACOS_ARCH ?= 
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
 C_OPTIONS = -fno-common $(MACOS_ARCH) $(MACOS_VERSION_MIN) -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
