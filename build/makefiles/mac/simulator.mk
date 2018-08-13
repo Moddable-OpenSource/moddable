@@ -42,7 +42,8 @@ ICNS = $(SIMULATOR)/mac/main.icns
 PLIST =  $(SIMULATOR)/mac/main.plist
 SCREENS = $(wildcard $(SIMULATOR)/screens/*)
 
-MACOS_ARCH ?= -arch i386
+# MACOS_ARCH ?= -arch i386
+MACOS_ARCH ?=
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
 C_OPTIONS = $(MACOS_ARCH) $(MACOS_VERSION_MIN) -fasm-blocks -fno-common -fvisibility=hidden
