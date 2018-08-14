@@ -22,6 +22,13 @@ import {Socket, Listener} from "socket";
 import CLI from "cli";
 
 class Connection extends Socket {
+	constructor(dictionary) {
+		super(dictionary);
+		this.initialize = Symbol();
+		CLI.distribute.call(this, this.initialize);
+		this.incoming = "";
+		this.write(255, 251, 1, 255, 251, 3, 255, 252, 34);		// character, not line, mode
+	}
 	line(...items) {
 		this.write(...items, "\r\n");
 	}
@@ -86,11 +93,9 @@ class Connection extends Socket {
 	}
 	// placeholders
 	suspend(cancel) {
-		trace("suspend\n");
 		this.suspended = cancel || true;
 	}
 	resume() {
-		trace("resume\n");
 		if (!this.suspended) return;
 
 		delete this.suspended;
@@ -104,9 +109,7 @@ class Telnet extends Listener {
 		super(Object.assign({port: 23}, dictionary));
 	}
 	callback() {
-		let socket = new Connection({listener: this});
-		socket.incoming = "";
-		socket.write(255, 251, 1, 255, 251, 3, 255, 252, 34);
+		const socket = new Connection({listener: this});
 		CLI.execute.call(socket, "welcome");
 		CLI.execute.call(socket, "prompt");
 	}
