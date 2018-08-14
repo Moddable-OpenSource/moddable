@@ -49,7 +49,7 @@ export default class HMAC {
 		if (arr.length > h.blockSize) {
 			// truncate the key
 			h.reset();
-			h.update(key);
+			h.write(key);
 			arr = new Uint8Array(h.close());
 		}
 		var n = h.blockSize;
@@ -69,37 +69,38 @@ export default class HMAC {
 			this.opad[i] = 0x5c;
 		}
 		h.reset();
-		h.update(this.ipad.buffer);
+		h.write(this.ipad.buffer);
 	};
-	update(...items) {
-		items.forEach(item => this.h.update(item));
+	update() {
+		for (let i = 0; i < arguments.length; i++)
+			this.h.write(arguments[i]);
 	};
 	close() {
 		let h = this.h;
 		let digest = h.close();
 		h.reset();
-		h.update(this.opad.buffer);
-		h.update(digest);
+		h.write(this.opad.buffer);
+		h.write(digest);
 		return h.close();
 	};
 	reset() {
 		this.h.reset();
-		this.h.update(this.ipad.buffer);
+		this.h.write(this.ipad.buffer);
 	};
 	process(...items) {
 		this.reset();
-		items.forEach(item => this.h.update(item));
+		items.forEach(item => this.h.write(item));
 		return this.close();
 	};
 	sign(H) {
-		this.update(H);
+		this.write(H);
 		let sig = this.close();
 		if (this.hashLen)
 			sig = sig.slice(0, this.hashLen);
 		return sig;
 	};
 	verify(H, sig) {
-		this.update(H);
+		this.write(H);
 		let t = this.close();
 		return Bin.comp(t, sig, this.hashLen) == 0;
 	};
