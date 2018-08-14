@@ -16,6 +16,7 @@
 	"resources": {
 		"*": [
 			"$(MODULES)/crypt/data/ca56",
+			"$(MODULES)/crypt/data/ca23",
 		]
 	},
 }
