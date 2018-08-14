@@ -222,7 +222,7 @@ class SSLSession {
 		let applicationData = this.applicationData;
 		if (!applicationData || (0 == applicationData.byteLength) || (applicationData.position >= (applicationData.byteLength + applicationData.byteOffset))) {
 			// read at least one packet and just keep it
-			let buf = this.readPacket(s, s.bytesAvailable);
+			let buf = this.readPacket(s, s.read());		// bytesAvailable
 			if (!buf)
 				return applicationData;	// return an empty buffer
 			this.startTrace("unpacketize");
@@ -283,7 +283,9 @@ class SSLSession {
 			packetBuffer.offset = 5;
 		}
 		let need = packetBuffer.length - packetBuffer.offset;
-		if (need > 0) {
+		if (need) {
+			if (!available)
+				return;
 			if (need > available)
 				need = available;
 			let c = s.read(ArrayBuffer, need);
