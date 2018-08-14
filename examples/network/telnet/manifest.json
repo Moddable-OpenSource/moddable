@@ -5,7 +5,6 @@
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODDABLE)/modules/pins/i2c/manifest.json",
-		"$(MODDABLE)/modules/files/file/manifest.json",
 	],
 	"modules": {
 		"*": [
@@ -22,6 +21,9 @@
 	],
 	"platforms":{
 		"esp": {
+			"include": [
+				"$(MODDABLE)/modules/files/file/manifest.json",
+			],
 			"modules": {
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 				"pins/digital": "$(MODULES)/pins/digital/digital",
@@ -35,6 +37,22 @@
 			},
 			"preload": [
 				"file",
+				"pins/*",
+				"cli/*",
+				"commodetto/*",
+			],
+		},
+		"esp32": {
+			"modules": {
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+				"pins/digital": "$(MODULES)/pins/digital/digital",
+				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+				"cli/digital": "$(MODULES)/base/cli/commands/digital",
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/network": "$(MODULES)/base/cli/commands/network",
+				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
+			},
+			"preload": [
 				"pins/*",
 				"cli/*",
 				"commodetto/*",
