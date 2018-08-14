@@ -116,8 +116,12 @@ int setMaxSleep(int sleepLevel);
 static int debuggerLastSleep = 3;
 
 #define blockInterrupts() { NVIC_DisableIRQ(DEBUGGER_RX_IRQ); NVIC_DisableIRQ(DEBUGGER_TX_IRQ); }
+#define blockRxInterrupts() { NVIC_DisableIRQ(DEBUGGER_RX_IRQ); }
+#define blockTxInterrupts() { NVIC_DisableIRQ(DEBUGGER_TX_IRQ); }
 
 #define unblockInterrupts() { NVIC_EnableIRQ(DEBUGGER_RX_IRQ); NVIC_EnableIRQ(DEBUGGER_TX_IRQ); }
+#define unblockRxInterrupts() { NVIC_EnableIRQ(DEBUGGER_RX_IRQ); }
+#define unblockTxInterrupts() { NVIC_EnableIRQ(DEBUGGER_TX_IRQ); }
 
 #if defined(MODDEF_DEBUGGER_INTERFACE_UART) && (MODDEF_DEBUGGER_INTERFACE_UART == 0)
 void UART0_RX_IRQHandler(void)
@@ -206,12 +210,12 @@ void ESP_putc(int c) {
 	while (txBuf.pendingBytes >= BUFFERSIZE)
 		/* wait for space */ ;
 
-blockInterrupts();
+blockTxInterrupts();
 	txBuf.data[txBuf.writeIdx] = c;
 	txBuf.writeIdx = (txBuf.writeIdx + 1) % BUFFERSIZE;
 
 	txBuf.pendingBytes++;
-unblockInterrupts();
+unblockTxInterrupts();
 
 	USART_IntEnable(DEBUGGER_PORT, USART_IF_TXBL);
 	debuggerLastSleep = setMaxSleep(1);
@@ -221,12 +225,12 @@ int ESP_getc(void) {
 	uint8_t ch;
 	if (rxBuf.pendingBytes < 1)
 		return -1;
-blockInterrupts();
+blockRxInterrupts();
 	ch = rxBuf.data[rxBuf.readIdx];
 	rxBuf.readIdx = (rxBuf.readIdx + 1) % BUFFERSIZE;
 
 	rxBuf.pendingBytes--;
-unblockInterrupts();
+unblockRxInterrupts();
 
 	return ch;
 }
