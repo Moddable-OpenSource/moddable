@@ -560,10 +560,10 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 					else
 						fprintf(file, ", {.ID = %d", slot->ID);
 					fprintf(file, ", .flag = 0x%x", slot->flag | XS_MARK_FLAG);
-					fprintf(file, ", .kind = XS_ARRAY_KIND}, { .array = { (txSlot*)&gxHeap[%d], %d } }},\n", (int)index + 1, (int)slot->value.array.length);
+					fprintf(file, ", .kind = XS_ARRAY_KIND}, .value = { .array = { (txSlot*)&gxHeap[%d], %d } }},\n", (int)index + 1, (int)slot->value.array.length);
 					fprintf(file, "/* %.4d */", index);
 					index++;
-					fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = 0x80, .kind = XS_INTEGER_KIND}, { .integer = %d } },\n", (int)(size * sizeof(txSlot))); // fake chunk
+					fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = 0x80, .kind = XS_INTEGER_KIND}, .value = { .integer = %d } },\n", (int)(size * sizeof(txSlot))); // fake chunk
 					while (size) {
 						fprintf(file, "/* %.4d */", index);
 						index++;
