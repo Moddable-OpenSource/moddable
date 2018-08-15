@@ -57,6 +57,7 @@ typedef xsSocketRecord *xsSocket;
 #define kPendingSent (1 << 4)
 #define kPendingAcceptListener (1 << 5)
 #define kPendingClose (1 << 6)
+#define kPendingOutput (1 << 7)
 
 struct xsSocketUDPRemoteRecord {
 	uint16_t			port;
@@ -974,7 +975,7 @@ void xs_socket_write(xsMachine *the)
 	xss->outstandingSent += needed;
 
 	if (xss->skt)
-		tcp_output_safe(xss);
+		socketSetPending(xss, kPendingOutput);
 }
 
 void xs_socket_suspend(xsMachine *the)
@@ -1553,6 +1554,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	if (pending & kPendingSent)
 		socketMsgDataSent(xss);
+
+	if (pending & kPendingOutput)
+		tcp_output_safe(xss);
 
 	if (pending & kPendingConnect)
 		socketMsgConnect(xss);
