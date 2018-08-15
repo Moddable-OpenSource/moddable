@@ -219,7 +219,7 @@ var ControlsMenuItem = Row.template($ => ({
 export var ControlsColumn = Column.template($ => ({ left:0, right:0, top:0 }));
 
 export var Button = Container.template($ => ({
-	width:80, height:30, skin:buttonSkin, active:true,
+	width:80, height:30, skin:buttonSkin, active:("active" in $) ? $.active : true,
 	Behavior: class extends ButtonBehavior {
 		onCreate(container, data) {
 			super.onCreate(container, data);
