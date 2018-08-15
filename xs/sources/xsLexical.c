@@ -189,7 +189,7 @@ void fxGetNextKeyword(txParser* parser)
 		}
 	}
 	if (c_strcmp("await", parser->buffer) == 0) {
-		if ((parser->flags & mxAsyncFlag) || (!(parser->flags & mxProgramFlag))) {
+		if (parser->flags & mxAsyncFlag) {
 			parser->token2 = XS_TOKEN_AWAIT;
 			goto bail;
 		}
