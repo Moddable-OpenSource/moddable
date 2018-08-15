@@ -686,8 +686,10 @@ void xs_socket_destructor(void *data)
 		tcp_close_safe(xss->skt);
 	}
 
-	if (xss->udp)
+	if (xss->udp) {
+		udp_recv(xss->udp, NULL, NULL);
 		udp_remove_safe(xss->udp);
+	}
 
 	forgetSocket(xss);
 
@@ -1209,9 +1211,7 @@ void didError(void *arg, err_t err)
 {
 	xsSocket xss = arg;
 
-#if ESP32
 	xss->skt = NULL;
-#endif
 	socketSetPending(xss, kPendingError);
 }
 
@@ -1307,10 +1307,23 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	}
 
 	if (kReadQueueLength == i) {
+#if 1
+		// ignore oldest
+		modLog("udp receive overflow - ignore earliest");
+		pbuf_free(xss->reader[0]);		// not pbuf_free_safe, because we are in lwip task
+		for (i = 1; i < kReadQueueLength; i++) {
+			xss->reader[i - 1] = xss->reader[i];
+			xss->remote[i - 1] = xss->remote[i];
+		}
+		xss->reader[kReadQueueLength - 1] = NULL;
+		xss->remoteCount += 1;
+#else
+		// ignore most recent
 		modCriticalSectionEnd();
-		modLog("udp read overflow!");
-		pbuf_free_safe(p);
+		modLog("udp receive overflow - ignore latest");
+		pbuf_free(p);		// not pbuf_free_safe, because we are in lwip task
 		return;
+#endif
 	}
 
 	xss->remote[xss->remoteCount].port = remotePort;
@@ -1440,11 +1453,14 @@ static void listenerMsgNew(xsListener xsl)
 	}
 }
 
+//@@ maybe tcp_abort instead of tcp_close here - the netconn code suggests that is correct
 err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 {
 	xsListener xsl = arg;
 	xsSocket xss;
 	uint8 i;
+
+	tcp_accepted(xsl->skt);
 
 	xss = c_calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
 	if (!xss) {
@@ -1452,16 +1468,10 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 		return ERR_MEM;
 	}
 
-	tcp_accepted(xsl->skt);
-
 	xss->the = xsl->the;
 	xss->skt = newpcb;
 	xss->useCount = 1;
 	xss->kind = kTCP;
-	tcp_arg(xss->skt, xss);
-	tcp_recv(xss->skt, didReceive);
-	tcp_sent(xss->skt, didSend);
-	tcp_err(xss->skt, didError);
 
 	modCriticalSectionBegin();
 	for (i = 0; i < kListenerPendingSockets; i++) {
@@ -1478,6 +1488,11 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 		c_free(xss);
 		return ERR_MEM;
 	}
+
+	tcp_arg(xss->skt, xss);
+	tcp_recv(xss->skt, didReceive);
+	tcp_sent(xss->skt, didSend);
+	tcp_err(xss->skt, didError);
 
 	socketSetPending((xsSocket)xsl, kPendingAcceptListener);
 
