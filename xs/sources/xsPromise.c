@@ -421,7 +421,6 @@ void fxResolvePromise(txMachine* the)
 	txSlot* promise = mxThis->value.reference;
 	txSlot* argument = mxArgv(0);
 	txSlot* slot;
-	txSlot* function;
 	txSlot* already;
 	txSlot* result;
 	//fprintf(stderr, "fxResolvePromise %d\n", promise->next->ID);
@@ -432,25 +431,22 @@ void fxResolvePromise(txMachine* the)
 			mxPushSlot(argument);
 			fxGetID(the, mxID(_then));
 			slot = the->stack;
-			if (mxIsReference(slot)) {
-				function = slot->value.reference;
-				if (mxIsFunction(function)) {
-					already = fxNewPromiseAlready(the);
-					fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
-					fxNewPromiseFunction(the, already, promise, mxRejectPromiseFunction.value.reference);
-					/* COUNT */
-					mxPushInteger(2);
-					/* THIS */
-					mxPushSlot(argument);
-					/* FUNCTION */
-					mxPushReference(function);
-					/* TARGET */
-					mxPushUndefined();
-					fxQueueJob(the, XS_NO_ID);
-					mxPop();
-					mxPop();
-					goto bail;
-				}
+			if (fxIsCallable(the, slot)) {
+				already = fxNewPromiseAlready(the);
+				fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
+				fxNewPromiseFunction(the, already, promise, mxRejectPromiseFunction.value.reference);
+				/* COUNT */
+				mxPushInteger(2);
+				/* THIS */
+				mxPushSlot(argument);
+				/* FUNCTION */
+				mxPushSlot(slot);
+				/* TARGET */
+				mxPushUndefined();
+				fxQueueJob(the, XS_NO_ID);
+				mxPop();
+				mxPop();
+				goto bail;
 			}
 			mxPop();
 		}
@@ -502,7 +498,7 @@ void fx_Promise(txMachine* the)
 {
 	txSlot* stack = the->stack;
 	txSlot* promise;
-	txSlot* function;
+	txSlot* argument;
 	txSlot* status;
 	txSlot* already;
 	txSlot* rejectFunction;
@@ -510,10 +506,8 @@ void fx_Promise(txMachine* the)
 		mxTypeError("call: Promise");
 	if (mxArgc < 1)
 		mxTypeError("no executor parameter");
-	if (!mxIsReference(mxArgv(0)))
-		mxTypeError("executor is no object");
-	function = mxArgv(0)->value.reference;
-	if (!mxIsFunction(function))
+	argument = mxArgv(0);
+	if (!fxIsCallable(the, argument))
 		mxTypeError("executor is no function");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxPromisePrototype);
@@ -531,7 +525,7 @@ void fx_Promise(txMachine* the)
 			/* THIS */
 			mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(argument);
 			fxCall(the);
 		}
 		mxCatch(the) {
