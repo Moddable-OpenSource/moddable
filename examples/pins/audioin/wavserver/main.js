@@ -14,8 +14,6 @@
 import AudioIn from "audioin"
 import {Server} from "http"
 
-const BytesPerBuffer = 512;
-
 class WavServer extends Server {
 	callback(message, value) {
 		if (2 == message) {
@@ -84,24 +82,3 @@ export default function () {
 	new WavServer({});
 }
 
-
-/*
-	let input = new AudioIn;
-
-	const sampleCount = 2048;
-
-	while (true) {
-		let samples = new Int16Array(input.read(sampleCount));
-
-		let total = 0;
-		for (let i = 0; i < sampleCount; i++) {
-			const sample = samples[i];
-			if (sample < 0)
-				total -= sample;
-			else
-				total += sample;
-		}
-
-		trace(`Average ${(total / sampleCount) | 0}\n`);
-	}
-*/
