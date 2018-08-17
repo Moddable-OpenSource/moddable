@@ -34,6 +34,13 @@
 	#error unsupported target
 #endif
 
+#ifndef MODDEF_AUDIOIN_SAMPLERATE
+	#define MODDEF_AUDIOIN_SAMPLERATE (8000)
+#endif
+#ifndef MODDEF_AUDIOIN_BITSPERSAMPLE
+	#define MODDEF_AUDIOIN_BITSPERSAMPLE (16)
+#endif
+
 #if ESP32
 	#ifndef MODDEF_AUDIOIN_I2S_NUM
 		#define MODDEF_AUDIOIN_I2S_NUM (0)
@@ -47,25 +54,29 @@
 	#ifndef MODDEF_AUDIOIN_I2S_DATAIN
 		#define MODDEF_AUDIOIN_I2S_DATAIN (27)
 	#endif
-#endif
-
-#ifndef MODDEF_AUDIOIN_SAMPLERATE
-	#define MODDEF_AUDIOIN_SAMPLERATE (8000)
-#endif
-#ifndef MODDEF_AUDIOIN_BITSPERSAMPLE
-	#define MODDEF_AUDIOIN_BITSPERSAMPLE (16)
+	#ifndef MODDEF_AUDIOIN_I2S_ADC
+		#define MODDEF_AUDIOIN_I2S_ADC (0)
+	#endif
 #endif
 
 void xs_audioin_destructor(void *data)
 {
-	if (data)
+	if (data) {
 		i2s_stop(MODDEF_AUDIOIN_I2S_NUM);
+
+#if MODDEF_AUDIOIN_I2S_ADC
+		i2s_adc_disable(MODDEF_AUDIOIN_I2S_NUM);
+#endif
+
+		i2s_driver_uninstall(MODDEF_AUDIOIN_I2S_NUM);
+	}
 }
 
 void xs_audioin(xsMachine *the)
 {
 	esp_err_t err;
 
+#if !MODDEF_AUDIOIN_I2S_ADC
 	i2s_config_t i2s_config = {
 		  mode: (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
 		  sample_rate: MODDEF_AUDIOIN_SAMPLERATE,
@@ -92,6 +103,34 @@ void xs_audioin(xsMachine *the)
 
 	err = i2s_start(MODDEF_AUDIOIN_I2S_NUM);
 	if (err) xsUnknownError("i2s start failed");
+#else
+	i2s_config_t i2s_config = {
+		//@@ playback modes set too!!
+		  mode: (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX  | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN),
+		  sample_rate: MODDEF_AUDIOIN_SAMPLERATE,
+		  bits_per_sample: I2S_BITS_PER_SAMPLE_16BIT,
+		  channel_format: I2S_CHANNEL_FMT_RIGHT_LEFT,
+		  communication_format: I2S_COMM_FORMAT_I2S_MSB,
+		  intr_alloc_flags: 0,
+		  dma_buf_count: 4,
+		  dma_buf_len: 1024
+	};
+
+//	//@@ adc1_config_* may be unnecessary
+	adc1_config_width(ADC_WIDTH_BIT_12);
+	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_0);
+
+	err = i2s_driver_install(MODDEF_AUDIOIN_I2S_NUM, &i2s_config, 0, NULL);
+	if (err) xsUnknownError("driver install failed");
+
+	err = i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_6);
+	if (err) xsUnknownError("set adc mode failed");
+
+	err = i2s_adc_enable(MODDEF_AUDIOIN_I2S_NUM);
+	if (err) xsUnknownError("adc enable failed");
+
+	//@@ note: no i2s_start
+#endif
 
 	xsmcSetHostData(xsThis, (void *)-1);
 }
@@ -121,6 +160,7 @@ void xs_audioin_read(xsMachine *the)
 	xsmcSetArrayBuffer(xsResult, NULL, byteCount);
 	samples = xsmcToArrayBuffer(xsResult);
 
+#if !MODDEF_AUDIOIN_I2S_ADC
 	for (i = 0; i < sampleCount; ) {
 		int32_t buf32[64];
 		int j;
@@ -137,6 +177,24 @@ void xs_audioin_read(xsMachine *the)
 #endif
 		}
 	}
+#else
+	for (i = 0; i < sampleCount; ) {
+		int16_t buf16[64];
+		int j;
+		int need = sampleCount - i;
+		if (need > 64)
+			need = 64;
+
+		i2s_read_bytes(MODDEF_AUDIOIN_I2S_NUM, (void *)buf16, sizeof(buf16), portMAX_DELAY);
+		for (j = 0; j < need; j++) {
+#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
+			samples[i++] = (buf16[j] << 4) ^ 0x8000;
+#else
+			samples[i++] = buf16[j] >> 4;
+#endif
+		}
+	}
+#endif
 }
 
 void xs_audioin_get_sampleRate(xsMachine *the)
