@@ -51,6 +51,12 @@
 	#ifndef MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		#define MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE (16)
 	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_DAC
+		#define MODDEF_AUDIOOUT_I2S_DAC (0)
+	#endif
+	#if MODDEF_AUDIOOUT_I2S_DAC && (16 != MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE)
+			#error must be 16 bit samples
+	#endif
 #endif
 
 #ifndef MODDEF_AUDIOOUT_VOLUME_DIVIDER
@@ -175,7 +181,7 @@ typedef struct {
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
 	uint32_t				buffer[384];
-#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	uint32_t				*buffer32;
 #endif
 #elif defined(__ets__)
@@ -258,7 +264,7 @@ void xs_audioout_destructor(void *data)
 	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
 
 	vSemaphoreDelete(out->mutex);
-#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	if (out->buffer32)
 		heap_caps_free(out->buffer32);
 #endif
@@ -407,7 +413,7 @@ void xs_audioout(xsMachine *the)
 	out->mutex = xSemaphoreCreateMutex();
 
 	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 10, &out->task);
-#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
@@ -1013,12 +1019,13 @@ void audioOutLoop(void *pvParameter)
 	modAudioOut out = pvParameter;
 	uint8_t installed = false;
 
+#if !MODDEF_AUDIOOUT_I2S_DAC
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX,	// Only TX
 		.sample_rate = out->sampleRate,
 		.bits_per_sample = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE,
 #if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
-		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,	// 2-channels
+		.channel_format = (1 == out->numChannels) ? I2S_CHANNEL_FMT_ONLY_LEFT : I2S_CHANNEL_FMT_RIGHT_LEFT,	// 2-channels
 		.communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
 #else
 		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT /* I2S_CHANNEL_FMT_RIGHT_LEFT */,	// 2-channels
@@ -1033,8 +1040,21 @@ void audioOutLoop(void *pvParameter)
 		.bck_io_num = MODDEF_AUDIOOUT_I2S_BCK_PIN,
 		.ws_io_num = MODDEF_AUDIOOUT_I2S_LR_PIN,
 		.data_out_num = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
-		.data_in_num = -1	// unused
+		.data_in_num = I2S_PIN_NO_CHANGE	// unused
 	};
+#else
+	i2s_config_t i2s_config = {
+		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
+		.sample_rate = out->sampleRate,
+		.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+		.communication_format = I2S_COMM_FORMAT_I2S_MSB,
+		.intr_alloc_flags = 0,
+		.dma_buf_count = 2,
+		.dma_buf_len = sizeof(out->buffer) / 2,
+		.use_apll = false
+	};
+#endif
 
 	while (kStateTerminated != out->state) {
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
@@ -1056,7 +1076,11 @@ void audioOutLoop(void *pvParameter)
 
 		if (!installed) {
 			i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
+#if !MODDEF_AUDIOOUT_I2S_DAC
 			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
+#else
+			i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+#endif
 			installed = true;
 		}
 
@@ -1064,7 +1088,17 @@ void audioOutLoop(void *pvParameter)
 		audioMix(out, sizeof(out->buffer) / out->bytesPerFrame, (OUTPUTSAMPLETYPE *)out->buffer);
 		xSemaphoreGive(out->mutex);
 
-#if 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#if MODDEF_AUDIOOUT_I2S_DAC
+		int count = sizeof(out->buffer) / out->bytesPerFrame;
+		int i = count;
+		int16_t *src = (int16_t *)out->buffer;
+		int32_t *dst = out->buffer32;
+
+		while (i--)
+			*dst++ = *src++ ^ 0x8000;
+
+		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
+#elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
