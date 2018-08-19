@@ -219,12 +219,19 @@ var ControlsMenuItem = Row.template($ => ({
 export var ControlsColumn = Column.template($ => ({ left:0, right:0, top:0 }));
 
 export var Button = Container.template($ => ({
-	width:80, height:30, skin:buttonSkin, active:("active" in $) ? $.active : true,
+	width:80, height:30, skin:buttonSkin, active:true,
 	Behavior: class extends ButtonBehavior {
-		onCreate(container, data) {
-			super.onCreate(container, data);
+		activate(container, active) {
+			container.active = active;
+			this.onStateChanged(container);
+		}
+		onDisplaying(container) {
+			let data = this.data;
+			if ("active" in data)
+				this.activate(container, data.active);
 			if ("name" in data)
 				model.DEVICE.first.behavior[data.name] = container;
+			super.onDisplaying(container);
 		}
 		onTouchBegan(container, id, x, y, ticks) {
 			super.onTouchBegan(container, id, x, y, ticks);
@@ -287,14 +294,17 @@ export var PopupRow = Row.template(function($) { return {
 		Container($, { 
 			width:160, height:30, active:true, skin:buttonSkin, variant:1,
 			Behavior: class extends ButtonBehavior {
-				onCreate(container, data) {
-					super.onCreate(container, data);
-					if ("name" in data)
-						model.DEVICE.first.behavior[data.name] = container;
+				activate(container, active) {
+					container.active = active;
+					this.onStateChanged(container);
 				}
 				onDisplaying(container) {
-					super.onDisplaying(container);
 					let data = this.data;
+					if ("active" in data)
+						this.activate(container, data.active);
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
 					this.selection = data.items.findIndex(item => item.value == data.value);
 					container.first.string = data.items[this.selection].title;
 				}
@@ -332,10 +342,24 @@ export var SliderRow = Row.template(function($) { return {
 		HorizontalSlider($, { 
 			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
 			Behavior: class extends HorizontalSliderBehavior {
-				onCreate(container, data) {
-					super.onCreate(container, data);
+				activate(container, active) {
+					var button = container.last;
+					var bar = button.previous;
+					var background = bar.previous;
+					var label = container.next;
+					container.active = active;
+					background.variant = active ? 0 : 1;
+					bar.variant = active ? 0 : 1;
+					button.variant = active ? 0 : 1;
+					label.state = active ? 0 : 1;
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if ("active" in data)
+						this.activate(container, data.active);
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
 				}
 				onValueChanged(container) {
 					let data = this.data;
@@ -358,10 +382,22 @@ export var SwitchRow = Row.template(function($) { return {
 		Switch($, {
 			barSkin: switchBarSkin, buttonSkin: switchButtonSkin,
 			Behavior: class extends SwitchBehavior {
-				onCreate(container, data) {
-					super.onCreate(container, data);
+				activate(container, active) {
+					var bar = container.first;
+					var button = bar.next;
+					var label = container.next;
+					container.active = active;
+					bar.variant = active ? 0 : 1;
+					button.variant = active ? 0 : 1;
+					label.state = active ? 0 : 1;
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if ("active" in data)
+						this.activate(container, data.active);
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
 				}
 				onValueChanged(container) {
 					let data = this.data;
@@ -381,10 +417,11 @@ export var TimerRow = Row.template(function($) { return {
 			this.data = data;
 			if ("interval" in data)
 				row.interval = data.interval;
-			if ("name" in data)
-				model.DEVICE.first.behavior[data.name] = row;
 		}
 		onDisplaying(row) {
+			let data = this.data;
+			if ("name" in data)
+				model.DEVICE.first.behavior[data.name] = row;
 			let container = row.first.next;
 			container.next.string = this.secondsToString(0);
 		}
