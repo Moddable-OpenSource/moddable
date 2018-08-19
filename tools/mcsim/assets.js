@@ -51,7 +51,7 @@ export const applicationStyle = { font:"12px Open Sans" };
 export const controlsScrollerSkin = { fill:GRAYS[2] };
 export const controlRowSkin = { fill:[GRAYS[2], GRAYS[6]] };
 export const controlNameStyle = { color:GRAYS[85], horizontal:"left", left:10 };
-export const controlValueStyle = { font:"light", color:GRAYS[85], horizontal:"left", left:10 };
+export const controlValueStyle = { font:"light", color:[GRAYS[85],GRAYS[19]], horizontal:"left", left:10 };
 
 const dialogTexture = { path:"assets/dialog.png", scale:1 };
 const menuTexture = { path:"assets/menu.png", scale:2 };
@@ -74,12 +74,12 @@ const dotTexture = { path:"assets/dot.png", scale:2 };
 export const dotSkin = { texture:dotTexture, x:0, y:0, width:20, height:30 };
 
 const sliderTexture = { path:"assets/slider.png", scale:2};
-export const sliderBarSkin = { texture:sliderTexture, x:0, y:0, width:60, height:30, left:15, right:15, states:30 };
-export const sliderButtonSkin = { texture:sliderTexture, x:60, y:0, width:30, height:30, states:30 };
+export const sliderBarSkin = { texture:sliderTexture, x:0, y:0, width:60, height:30, left:15, right:15, variants:90, states:30 };
+export const sliderButtonSkin = { texture:sliderTexture, x:60, y:0, width:30, height:30, variants:90, states:30 };
 
 const switchTexture = { path:"assets/switch.png", scale:2 };
-export const switchBarSkin = { texture:switchTexture, x:0, y:0, width:60, height:30, states:30, tiles: { left:20, right:20 }  };
-export const switchButtonSkin = { texture:switchTexture, x:60, y:0, width:30, height:30, states:30 };
+export const switchBarSkin = { texture:switchTexture, x:0, y:0, width:60, height:30, variants:90, states:30, tiles: { left:20, right:20 }  };
+export const switchButtonSkin = { texture:switchTexture, x:60, y:0, width:30, height:30, variants:90, states:30 };
 
 export const paneBackgroundSkin = { fill:GRAYS[6] };
 export const paneBodySkin = { fill:GRAYS[2] };
