@@ -382,7 +382,7 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 // delay of 0 is end of commands
 #define kDelayMS (255)
 
-#define kILI9341RegistersModdableZero \
+#define kILI9341RegistersModdableZero_Start \
 	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
 	0xCF, 3, 0x00, 0xC1, 0X30, \
 	0xE8, 3, 0x85, 0x00, 0x78, \
@@ -400,17 +400,25 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	0xF2, 1, 0x00, \
 	0x26, 1, 0x01, \
 	0xE0, 15, 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00, \
-	0xE1, 15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F, \
+	0xE1, 15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F,
+
+#define kILI9341RegistersModdableZero_Finish \
 	0x11, 0, \
 	0x29, 0, \
 	kDelayMS, 0
 
-#ifndef MODDEF_ILI9341_REGISTERS
-	#define MODDEF_ILI9341_REGISTERS kILI9341RegistersModdableZero
-#endif
 
 static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
+#ifdef MODDEF_ILI9341_REGISTERS_APPEND
+	kILI9341RegistersModdableZero_Start
+	MODDEF_ILI9341_REGISTERS_APPEND
+	kILI9341RegistersModdableZero_Finish
+#elif defined(MODDEF_ILI9341_REGISTERS)
 	MODDEF_ILI9341_REGISTERS
+#else
+	kILI9341RegistersModdableZero_Start
+	kILI9341RegistersModdableZero_Finish
+#endif
 };
 
 void ili9341Init(spiDisplay sd)
