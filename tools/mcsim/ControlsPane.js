@@ -417,6 +417,7 @@ export var TimerRow = Row.template(function($) { return {
 			this.data = data;
 			if ("interval" in data)
 				row.interval = data.interval;
+			this.direction = ("direction" in data) ? data.direction : 1;
 		}
 		onDisplaying(row) {
 			let data = this.data;
@@ -434,10 +435,19 @@ export var TimerRow = Row.template(function($) { return {
 			let data = this.data;
 			let container = row.first.next;
 			let content = container.first;
-			content.width = Math.round(container.width * row.fraction);
-			container.next.string = this.secondsToString(Math.round((row.duration - row.time) / 1000));
+			if (this.direction > 0) {
+				content.width = Math.round(container.width * row.fraction);
+				container.next.string = this.secondsToString(Math.round((row.duration - row.time) / 1000));
+			}
+			else {
+				content.width = Math.round(container.width * (1 - row.fraction));
+				container.next.string = this.secondsToString(Math.round(row.time / 1000));
+			}
 			if ("tick" in data)
 				model.DEVICE.first.delegate(data.tick, data);
+		}
+		reverse() {
+			this.direction = 0 - this.direction;
 		}
 		secondsToString(seconds) {
 			let string = "";
