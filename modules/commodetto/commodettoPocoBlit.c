@@ -3360,7 +3360,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		displayLines -= displayLinesAlt;
 		pixelsAlt = (PocoPixel *)((displayLines * rowBytes) + (char *)pixels);
 		if (3 & (int)pixelsAlt)
-			pixelsAlt = (PocoPixel *)((4 + (int)pixelsAlt) & ~3);
+			pixelsAlt = (PocoPixel *)((4 + (uintptr_t)pixelsAlt) & ~3);
 	}
 	else {
 		displayLinesAlt = 0;
