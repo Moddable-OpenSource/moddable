@@ -56,7 +56,7 @@ rc4_init(rc4_state_t *rc4, const uint8_t *key, uint32_t keysize)
 }
 
 void
-rc4_process(const uint8_t *indata, uint8_t *outdata, unsigned int nbytes, rc4_state_t *rc4)
+rc4_process(const uint8_t *indata, uint8_t *outdata, uint32_t nbytes, rc4_state_t *rc4)
 {
 	const uint8_t *endp = indata + nbytes;
 	uint8_t i, j, t;
