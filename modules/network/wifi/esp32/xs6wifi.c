@@ -321,6 +321,10 @@ void xs_wifi_constructor(xsMachine *the)
 void xs_wifi_close(xsMachine *the)
 {
 	xsWiFi wifi = xsmcGetHostData(xsThis);
+	if (wifi) {
+		if (wifi->haveCallback)
+			xsForget(wifi->obj);
+	}
 	xs_wifi_destructor(wifi);
 	xsmcSetHostData(xsThis, NULL);
 }
@@ -335,10 +339,12 @@ void xs_wifi_set_onNotify(xsMachine *the)
 			xsUnknownError("out of memory");
 		xsmcSetHostData(xsThis, wifi);
 		wifi->the = the;
+		wifi->obj = xsThis;
 	}
 	else if (wifi->haveCallback) {
 		xsmcDelete(xsThis, xsID_callback);
 		wifi->haveCallback = false;
+		xsForget(wifi->obj);
 	}
 
 	if (!xsmcTest(xsArg(0)))
@@ -346,10 +352,11 @@ void xs_wifi_set_onNotify(xsMachine *the)
 
 	wifi->haveCallback = true;
 
+	xsRemember(wifi->obj);
+
 	wifi->next = gWiFi;
 	gWiFi = wifi;
 
-	wifi->obj = xsThis;
 	xsmcSet(xsThis, xsID_callback, xsArg(0));
 
 	xsCall1(wifi->obj, xsID_callback, xsString("init"));		//@@ this should be unnecessary
