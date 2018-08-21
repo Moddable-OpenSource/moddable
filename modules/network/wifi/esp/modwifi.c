@@ -48,7 +48,6 @@ struct wifiScanRecord {
 };
 typedef struct wifiScanRecord wifiScanRecord;
 
-
 static wifiScanRecord *gScan;
 
 void xs_wifi_set_mode(xsMachine *the)
@@ -323,6 +322,10 @@ void xs_wifi_constructor(xsMachine *the)
 void xs_wifi_close(xsMachine *the)
 {
 	xsWiFi wifi = xsmcGetHostData(xsThis);
+	if (wifi) {
+		if (wifi->haveCallback)
+			xsForget(wifi->obj);
+	}
 	xs_wifi_destructor(wifi);
 	xsmcSetHostData(xsThis, NULL);
 }
@@ -337,16 +340,20 @@ void xs_wifi_set_onNotify(xsMachine *the)
 			xsUnknownError("out of memory");
 		xsmcSetHostData(xsThis, wifi);
 		wifi->the = the;
+		wifi->obj = xsThis;
 	}
 	else if (wifi->haveCallback) {
 		xsmcDelete(xsThis, xsID_callback);
 		wifi->haveCallback = false;
+		xsForget(wifi->obj);
 	}
 
 	if (!xsmcTest(xsArg(0)))
 		return;
 
 	wifi->haveCallback = true;
+
+	xsRemember(wifi->obj);
 
 	if (NULL == gWiFi)
 		wifi_set_event_handler_cb(doWiFiEvent);
