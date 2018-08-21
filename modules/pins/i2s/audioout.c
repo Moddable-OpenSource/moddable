@@ -663,7 +663,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			modCriticalSectionBegin();
 #endif
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
-			element->samples = (void *)xsmcToInteger(xsArg(2));
+			element->samples = (void *)(uintptr_t)xsmcToInteger(xsArg(2));
 			element->sampleCount = 0;
 			element->position = -1;
 			element->repeat = 0;		//@@
