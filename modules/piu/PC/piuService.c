@@ -32,6 +32,11 @@
 #include "pthread.h"
 #endif
 
+#ifdef mxInstrument	
+extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units);
+extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values);
+#endif
+
 typedef struct ServiceThreadStruct ServiceThreadRecord, *ServiceThread;
 typedef struct ServiceEventStruct ServiceEventRecord, *ServiceEvent;
 typedef struct ServiceMessageStruct ServiceMessageRecord, *ServiceMessage;
@@ -259,6 +264,9 @@ void ServiceThreadInitialize(void* it, void* context)
     thread->runLoopSource = CFRunLoopSourceCreate(NULL, 0, &runLoopSourceContext);
 	CFRunLoopAddSource(thread->runLoop, thread->runLoopSource, kCFRunLoopDefaultMode);
 #endif
+#if mxInstrument
+	fxDescribeInstrumentation(thread->the, 0, NULL, NULL);
+#endif
 }
 
 txMachine* ServiceThreadMain(void* context)
@@ -341,6 +349,9 @@ void ServiceThreadPerform(void* it)
 		(*callback)(event);
 		event = nextEvent;
 	}	
+#if mxInstrument
+	fxSampleInstrumentation(thread->the, 0, NULL);
+#endif
 #if mxAndroid
 	return 1;
 #elif mxLinux
