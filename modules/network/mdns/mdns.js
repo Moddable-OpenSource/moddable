@@ -82,14 +82,18 @@ class MDNS extends Socket {
 		const index = this.services.indexOf(service);
 		if (index < 0) throw new Error("service not found");
 
-//		this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service, true));		// goodbye - RFC 6762 Section 8.4
+		if (!service.update) {
+			Timer.repeat(id => {
+				this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service));
+				service.update--;
+				if (0 == service.update) {
+					Timer.clear(id)
+					delete service.update;
+				}
+			}, 250, 0);
+		}
+		service.update = 3;
 
-		let count = 3;
-		Timer.repeat(id => {
-			 this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service));
-			 if (0 == count--)
-				 Timer.clear(id)
-		}, 250, 0);
 	}
 	remove(service) {
 		if ("string" === typeof service) {
@@ -455,16 +459,22 @@ class MDNS extends Socket {
 			// Send the type, class, ttl and rdata length
 			let rdataLen = 0;
 			if (service.txt) {
-				for (let property in service.txt)
-					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString().replace("[HOSTNAME]", this.hostName)).byteLength + 1;			//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
+				for (let property in service.txt) {
+					const value = service.txt[property];
+					if (undefined === value) continue;
+					rdataLen += property.length + 1 + ArrayBuffer.fromString(value.toString().replace("[HOSTNAME]", this.hostName)).byteLength + 1;			//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
 //					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString()).byteLength + 1;			// preferred
+				}
 			}
 			answer.push(Uint8Array.of(0, DNS_TYPE_TXT, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
 
 			if (rdataLen) {
-				for (let property in service.txt)
-					answer.push(property + "=" + service.txt[property].toString().replace("[HOSTNAME]", this.hostName));		//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
+				for (let property in service.txt) {
+					const value = service.txt[property];
+					if (undefined === value) continue;
+					answer.push(property + "=" + value.toString().replace("[HOSTNAME]", this.hostName));		//@@ hack to support WebThings mis-use of mDNS TXT as absolute URL instead of using SRV
 					// answer.push(property + "=" + service.txt[property]);		// preferred
+				}
 			}
 			else
 				answer.push(0);		// mDNS requires at least one rdata payload
