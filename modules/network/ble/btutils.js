@@ -285,6 +285,16 @@ export class Advertisement {
 		if (-1 != index)
 			return this._data[index+2];
 	}
+	get completeUUID16List() {
+		let index = this.find(GAP.ADType.COMPLETE_UUID16_LIST);
+		if (-1 != index) 
+			return this._getUUID16ListType(index);
+	}
+	get incompleteUUID16List() {
+		let index = this.find(GAP.ADType.INCOMPLETE_UUID16_LIST);
+		if (-1 != index) 
+			return this._getUUID16ListType(index);
+	}
 	find(type) {
 		let data = this._data;
 		let i = 0, length = data.byteLength;
@@ -324,6 +334,14 @@ export class Advertisement {
 		let adLength = this._data[index];
 		let start = index + 2, end = start + adLength - 1;
 		return String.fromArrayBuffer(this._buffer.slice(start, end));
+	}
+	_getUUID16ListType(index) {
+		let adLength = this._data[index];
+		let count = (adLength - 1) / 2;
+		let uuidList = new Array(count);
+		for (let i = 0, start = index + 2; i < count; ++i, start += 2)
+			uuidList[i] = new Bytes(this._buffer.slice(start, start + 2));
+		return uuidList;
 	}
 }
 Object.freeze(Advertisement.prototype);
