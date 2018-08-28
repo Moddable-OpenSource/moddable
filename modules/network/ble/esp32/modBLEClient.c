@@ -230,6 +230,8 @@ void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	if (mitm)
+		esp_ble_gap_config_local_privacy(true);	// generate random address?
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
@@ -392,10 +394,13 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 		if (argc > 3) {
 			esp_bt_uuid_t uuid;
 			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
-			esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, char_elem_result, &count);
+			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, char_elem_result, &count))
+				count = 0;
 		}
-		else
-			esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0);
+		else {
+			if (ESP_OK != esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0))
+				count = 0;
+		}
 		for (int i = 0; i < count; ++i) {
 			csr.char_elem_result = char_elem_result[i];
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
@@ -491,9 +496,10 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
+	uint16_t auth = xsmcToInteger(xsArg(2));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
+	esp_gatt_auth_req_t auth_req = auth;
 	esp_ble_gattc_read_char(connection->gattc_if, conn_id, handle, auth_req);
 }
 
@@ -524,6 +530,17 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, handle);
+}
+
+void xs_gatt_descriptor_read_value(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	uint16_t auth = xsmcToInteger(xsArg(2));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	esp_gatt_auth_req_t auth_req = auth;
+	esp_ble_gattc_read_char_descr(connection->gattc_if, conn_id, handle, auth_req);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
@@ -578,6 +595,21 @@ void bufferToUUID(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t length)
 	else
 		c_memmove(uuid->uuid.uuid128, buffer, length);
 	uuid->len = length;
+}
+
+static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), gBLE->encryption);
+	xsmcSet(xsVar(0), xsID_encryption, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->bonding);
+	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->mitm);
+	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -669,6 +701,10 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
 	switch(event) {
+		case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
+        	if (ESP_GATT_OK == param->local_privacy_cmpl.status)
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->local_privacy_cmpl, sizeof(struct ble_local_privacy_cmpl_evt_param), localPrivacyCompleteEvent, gBLE);
+			break;
 		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
 			esp_ble_gap_start_scanning(0);			// 0 == scan until explicitly stopped
 			break;
@@ -817,6 +853,12 @@ static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16
 	doCharEvent(the, "onCharacteristicValue", read->conn_id, read->handle, read->value, read->value_len);
 }
 
+static void gattcReadDescEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_read_char_evt_param *read = (struct gattc_read_char_evt_param *)message;
+	doCharEvent(the, "onDescriptorValue", read->conn_id, read->handle, read->value, read->value_len);
+}
+
 static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
@@ -877,6 +919,9 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_READ_CHAR_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, NULL);
+			break;
+		case ESP_GATTC_READ_DESCR_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadDescEvent, NULL);
 			break;
 	}
 }
