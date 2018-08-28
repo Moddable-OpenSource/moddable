@@ -278,10 +278,8 @@ void fx_Enumerator(txMachine* the)
 	txSlot* iterator;
 	txSlot* result;
 	txSlot* slot;
-	txSlot* list;
-	txSlot* item;
-	txSlot* instance;
-	txSlot** address;
+	txSlot* keys;
+	txSlot* visited;
 	
 	mxPush(mxEnumeratorFunction);
 	fxGetID(the, mxID(_prototype));
@@ -293,60 +291,29 @@ void fx_Enumerator(txMachine* the)
 	slot = fxNextBooleanProperty(the, slot, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextSlotProperty(the, iterator, the->stack, mxID(_result), XS_GET_ONLY);
 	mxPop();
-	list = slot->next = fxNewSlot(the);
-	list->flag = XS_GET_ONLY;
-	list->ID = mxID(_iterable);
-	list->kind = mxThis->kind;
-	list->value = mxThis->value;
-	if (!mxIsReference(list))
-		return;	
-	instance = list->value.reference;
-	item = list;
-	mxPushUndefined();
-	result = the->stack;
-	for (;;) {
-		txSlot* at = fxNewInstance(the);
-		mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG, at);
-		address = &at->next;
-		while ((at = *address)) {
-			if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, result)) {
-				slot = list->next;
-				while ((slot)) {
-					if ((at->value.at.id == slot->value.at.id) && (at->value.at.index == slot->value.at.index))
-						break;
-					slot = slot->next;
-				}
-				if (slot)
-					address = &(at->next);
-				else {
-					*address = at->next;
-					item = item->next = at;
-					item->next = C_NULL;
-					item->flag = result->flag;
-				}
-			}
-			else
-				address = &(at->next);
-		}
-		mxPop();
-		if (mxBehaviorGetPrototype(the, instance, result))
-			instance = result->value.reference;
-		else
-			break;
-	}
+	
+	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_GET_ONLY;
+	slot->ID = mxID(_iterable);
+	slot->kind = mxThis->kind;
+	slot->value = mxThis->value;
+	if (!mxIsReference(slot))
+		return;
+		
+	keys = fxNewInstance(the);
+	mxBehaviorOwnKeys(the, slot->value.reference, XS_EACH_NAME_FLAG, keys);
+	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_GET_ONLY;
+	slot->kind = XS_REFERENCE_KIND;
+	slot->value.reference = keys;
 	mxPop();
-	address = &list->next;
-	while ((slot = *address)) {
-		if (slot->flag & XS_DONT_ENUM_FLAG) {
-			*address = slot->next;
-		}
-		else {
-			txID id = slot->value.at.id;
-			txIndex index = slot->value.at.index;
-			fxKeyAt(the, id, index, slot);
-			address = &(slot->next);
-		}
-	}
+	
+	visited = fxNewInstance(the);
+	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_GET_ONLY;
+	slot->kind = XS_REFERENCE_KIND;
+	slot->value.reference = visited;
+	mxPop();
 }
 
 void fx_Enumerator_next(txMachine* the)
@@ -354,17 +321,55 @@ void fx_Enumerator_next(txMachine* the)
 	txSlot* iterator = fxGetInstance(the, mxThis);
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
-	txSlot* index = iterable->next;
-	txSlot* value = result->value.reference->next;
-	txSlot* done = value->next;
-	if (index) {
-		value->kind = index->kind;
-		value->value = index->value;
-		iterable->next = index->next;
+	txSlot* at = C_NULL;
+	if (mxIsReference(iterable)) {
+		txSlot* instance = iterable->value.reference;
+		txSlot* keys = iterable->next;
+		txSlot* visited = keys->next;
+		txSlot* slot;
+		txSlot* former;
+	
+		keys = keys->value.reference;
+		visited = visited->value.reference;
+	
+		mxPushUndefined();
+		slot = the->stack;
+	again:	
+		while ((at = keys->next)) {
+			if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, slot)) {
+				txSlot** address = &(visited->next);
+				while ((former = *address)) {
+					if ((at->value.at.id == former->value.at.id) && (at->value.at.index == former->value.at.index))
+						break;
+					address = &(former->next);
+				}
+				if (!former) {
+					*address = at;
+					keys->next = at->next;
+					at->next = NULL;
+					if (!(slot->flag & XS_DONT_ENUM_FLAG)) {
+						fxKeyAt(the, at->value.at.id, at->value.at.index, result->value.reference->next);
+						break;
+					}
+				}
+				else
+					keys->next = at->next;
+			}
+			else
+				keys->next = at->next;
+		}
+		if (!at) {
+			if (mxBehaviorGetPrototype(the, instance, slot)) {
+				iterable->value.reference = instance = slot->value.reference;
+				mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG, keys);
+				goto again;
+			}
+		}
+		mxPop();
 	}
-	else {
-		value->kind = XS_UNDEFINED_KIND;
-		done->value.boolean = 1;
+	if (!at) {
+		result->value.reference->next->kind = XS_UNDEFINED_KIND;
+		result->value.reference->next->next->value.boolean = 1;
 	}
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;
