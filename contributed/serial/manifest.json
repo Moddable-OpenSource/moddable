@@ -1,0 +1,15 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/serial/esp32/*",
+				"pins/serial": "$(MODULES)/pins/serial/serial"
+			},
+			"preload": "pins/serial"
+		},
+		"...": {
+			"error": "Hardware serial is unsupported"
+		}
+	}
+}
+
