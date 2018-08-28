@@ -26,6 +26,15 @@ const IOCapability = {
 };
 Object.freeze(IOCapability);
 
+const Authorization = {
+	None: 0,
+	NoMITM: 1,
+	MITM: 2,
+	SignedNoMITM: 3,
+	SignedMITM: 4
+};
+Object.freeze(Authorization);
+
 export default class SM {
 	static deleteAllBondings() @ "xs_ble_sm_delete_all_bondings"
 	
@@ -38,4 +47,4 @@ export default class SM {
 };
 Object.freeze(SM.prototype);
 
-export {SM, IOCapability};
+export {SM, IOCapability, Authorization};
