@@ -36,6 +36,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	}
 	
 	onReady() {}
+	onSecurityParameters() {}
 	onDiscovered() {}
 	onConnected() {}
 	
@@ -57,6 +58,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onCharacteristicValue() {}
 	onCharacteristicNotification() {}
 
+	// From Descriptor object
+	onDescriptorValue() {}
+
 	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
 	
 	startScanning(params) {
@@ -74,6 +78,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 		switch(event) {
 			case "onReady":
 				this.onReady();
+				break;
+			case "onSecurityParameters":
+				this.onSecurityParameters(params);
 				break;
 			case "onDiscovered": {
 				let address = new Bytes(params.address);
