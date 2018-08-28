@@ -74,6 +74,20 @@ export class Client {
 		}
 	}
 	
+	_findDescriptorByHandle(handle) {
+		for (let i = 0; i < this.services.length; ++i) {
+			let service = this.services[i];
+			for (let j = 0; j < service.characteristics.length; ++j) {
+				let characteristic = service.characteristics[j];
+				for (let k = 0; k < characteristic.descriptors.length; ++k) {
+					let descriptor = characteristic.descriptors[k];
+					if (handle == descriptor.handle)
+						return descriptor;
+				}
+			}
+		}
+	}
+
 	_readRSSI() @ "xs_gap_connection_read_rssi"
 
 	callback(event, params) {
@@ -99,6 +113,12 @@ export class Client {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic)
 					this.ble.onCharacteristicValue(characteristic, params.value);		
+				break;
+			}
+			case "onDescriptorValue": {
+				let descriptor = this._findDescriptorByHandle(params.handle);
+				if (descriptor)
+					this.ble.onDescriptorValue(descriptor, params.value);		
 				break;
 			}
 		}
@@ -211,8 +231,10 @@ export class Characteristic {
 		this._enableNotifications(this.connection, this.handle);
 	}
 	
-	readValue() {
-		this._readValue(this.connection, this.handle);
+	readValue(auth) {
+		if (auth === undefined)
+			auth = 0;
+		this._readValue(this.connection, this.handle, auth);
 	}
 
 	writeWithoutResponse(value) {
@@ -269,10 +291,17 @@ export class Descriptor {
 		}
 	}
 	
+	readValue(auth) {
+		if (auth === undefined)
+			auth = 0;
+		this._readValue(this.connection, this.handle, auth);
+	}
+
 	writeValue(value) {
 		this._writeValue(this.connection, this.handle, value);
 	}
 	
+	_readValue() @ "xs_gatt_descriptor_read_value"
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
 Object.freeze(Descriptor.prototype);
