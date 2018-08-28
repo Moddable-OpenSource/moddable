@@ -93,6 +93,7 @@ enum {
 	CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID,
 	CMD_GATT_CHARACTERISTIC_WRITE_WITHOUT_RESPONSE_ID,
 	CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID,
+	CMD_GATT_DESCRIPTOR_READ_VALUE_ID
 };
 
 typedef struct {
@@ -274,6 +275,18 @@ void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
 	gBLE->mitm = mitm;
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
+		
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), gBLE->encryption);
+	xsmcSet(xsVar(0), xsID_encryption, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->bonding);
+	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->mitm);
+	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint8_t conn_id)
@@ -386,6 +399,9 @@ static void gattProcedureExecute(gattProcedure procedure)
 			gecko_cmd_gatt_write_descriptor_value(procedure->write_value_param.connection, procedure->write_value_param.handle, procedure->write_value_param.length, procedure->write_value_param.value);
 			c_free(procedure->write_value_param.value);
 			break;
+		case CMD_GATT_DESCRIPTOR_READ_VALUE_ID:
+			gecko_cmd_gatt_read_descriptor_value(procedure->read_value_param.connection, procedure->read_value_param.handle);
+			break;
 		default:
 			procedure->executed = false;	// @@
 			break;
@@ -476,6 +492,7 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 {
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
+	//uint16_t auth = xsmcToInteger(xsArg(2));
 	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
@@ -513,6 +530,21 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	set_notifications(the, xsThis, connection, characteristic, gatt_disable);
+}
+
+void xs_gatt_descriptor_read_value(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t handle = xsmcToInteger(xsArg(1));
+	//uint16_t auth = xsmcToInteger(xsArg(2));
+	gattProcedureRecord procedure = {0};
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	procedure.obj = connection->objClient;
+	procedure.cmd = CMD_GATT_DESCRIPTOR_READ_VALUE_ID;
+	procedure.read_value_param.connection = conn_id;
+	procedure.read_value_param.handle = handle;
+	gattProcedureQueueAndDo(the, connection, &procedure);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
@@ -771,6 +803,22 @@ static void gattDescriptorEvent(struct gecko_msg_gatt_descriptor_evt_t *evt)
 	xsEndHost(gBLE->the);
 }
 
+static void gattDescriptorValueEvent(struct gecko_msg_gatt_descriptor_value_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), evt->value.data, evt->value.len);
+	xsmcSetInteger(xsVar(2), evt->descriptor);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onDescriptorValue"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void gattCharacteristicValueEvent(struct gecko_msg_gatt_characteristic_value_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
@@ -893,6 +941,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_gatt_descriptor_id:
 			gattDescriptorEvent(&evt->data.evt_gatt_descriptor);
+			break;
+		case gecko_evt_gatt_descriptor_value_id:
+			gattDescriptorValueEvent(&evt->data.evt_gatt_descriptor_value);
 			break;
 		case gecko_evt_gatt_characteristic_value_id:
 			if (gatt_read_response == evt->data.evt_gatt_characteristic_value.att_opcode)
