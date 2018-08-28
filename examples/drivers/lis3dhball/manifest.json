@@ -1,0 +1,35 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/commodetto/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/lis3dh/*",
+		],
+	},
+	"preload": [
+		"lis3dh",
+		"pins/i2c",
+	],
+	"resources": {
+		"*": "./ball",
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/esp/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+			},
+			"defines": {
+				"lis3dh": {
+					"i2c_address": 24,
+					"i2c_sda": 5,
+					"i2c_scl": 4
+				}
+			},
+		},
+	}
+}

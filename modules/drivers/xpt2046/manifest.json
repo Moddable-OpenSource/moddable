@@ -1,0 +1,39 @@
+{
+	"defines": {
+		"xpt2046": {
+			"width": 240,
+			"height": 320,
+			"hz": 1000000,
+		}
+	},
+	"preload": "xpt2046",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/drivers/xpt2046/*"
+			},
+			"defines": {
+				"xpt2046": {
+					"old_cs_pin": 5,
+					"cs_pin": 0,
+					"touch_pin": 16,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/xpt2046/*"
+			},
+			"defines": {
+				"xpt2046": {
+					"cs_pin": 18,
+					"touch_pin": 23,
+					"spi_port": "#HSPI",
+					"flipX": 1,
+					"flipY": 1,
+				}
+			}
+		}
+	}
+}

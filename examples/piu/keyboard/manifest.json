@@ -1,0 +1,20 @@
+{
+	"include": [
+		"../all.json",
+		"$(MODULES)/input/keyboard/manifest.json"
+	],
+	"creation":{
+		"stack":350,
+	},
+	"modules": {
+		"*": [
+				"./main",
+			]
+	},
+	"resources":{
+		"*-alpha": [
+			"./fonts/OpenSans-Regular-20",
+			"./fonts/OpenSans-Semibold-18",
+		]
+	},
+}
