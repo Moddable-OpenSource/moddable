@@ -49,6 +49,7 @@ Object.freeze(ReportType);
 
 const Codes40 = [13,27,8,9,32];									// key codes 40 - 44
 const Codes45 = [45,61,91,93,92,35,59,39,96,44,46,47];			// key codes 45 - 56
+const Codes84 = [47,42,45,43,13,49,50,51,52,53,54,55,56,57,48,46];	// key codes 84 - 99
 const ShiftCodes45 = [95,43,123,125,124,126,58,34,126,60,62,63];	// shifted key codes 45 - 56
 const ShiftCodes30 = [33,64,35,36,37,94,38,42,40],				// shifted key codes 30 - 38
 
@@ -93,8 +94,7 @@ class BLEHIDClient extends BLEClient {
 		this.reports = [];
 		for (let i = 0; i < characteristics.length; ++i) {
 			let characteristic = characteristics[i];
-			if (characteristic.uuid.equals(REPORT_CHARACTERISTIC_UUID))
-				this.reports.push(characteristic);
+			this.reports.push(characteristic);
 		}
 		if (this.reports.length) {
 			this.reportIndex = 0;
@@ -156,6 +156,16 @@ class BLEHIDKeyboard extends BLEHIDClient {
 	constructor() {
 		super();
 		this.configure({ reportType:ReportType.INPUT })
+		this.lastKey = 0;
+		this.lastKeyTime = Date.now();
+	}
+	debounce(key) {
+		let now = Date.now();
+		if ((0 == key) || (key == this.lastKey && (now - this.lastKeyTime < 100)))
+			key = 0;
+		this.lastKey = key;
+		this.lastKeyTime = now;
+		return key;
 	}
 	onDeviceConnected() {
 	}
@@ -175,12 +185,12 @@ class BLEHIDKeyboard extends BLEHIDClient {
 	}
 	onReport(report) {
 		// This is the 8 byte HID keyboard report
+		let key = this.debounce(report[2]);
+		if (0 == key) return;
+		
 		let modifier = report[0];
-		let key = report[2];
 		let shift = modifier & (Modifiers.LEFT_SHIFT | Modifiers.RIGHT_SHIFT);
 		let code = 0;
-		
-		if (0 == key) return;
 		
 		if (key >= 4 && key <= 29) {		// a-z
 			key -= 4;
@@ -199,6 +209,10 @@ class BLEHIDKeyboard extends BLEHIDClient {
 		else if (key >= 45 && key <= 56) {
 			key -= 45;
 			code = shift ? ShiftCodes45[key] : Codes45[key];
+		}
+		else if (key >= 84 && key <= 99) {
+			key -= 84;
+			code = Codes84[key];
 		}
 		else {
 			//trace(`unhandled report key ${key}\n`);
