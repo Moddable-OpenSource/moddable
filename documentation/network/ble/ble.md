@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: June 6, 2018
+Revised: August 29, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -573,8 +573,22 @@ onCharacteristicNotification(characteristic, value) {
 
 ***
 
-#### `readValue()`
+#### `readValue([auth])`
 Use the `readValue` function to read a characteristic value on demand.
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `auth` | `number` | Optional `SM.Authorization` applied to the read request. |
+
+The `Authorization` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `None` | `number` | No authorization
+| `NoMITM` | `number` | Unauthenticated encryption
+| `MITM` | `number` | Authenticated encryption
+| `SignedNoMITM` | `number` | Signed unauthenticated encryption
+| `SignedMITM` | `number` | Signed authenticated encryption
 
 ***
 
@@ -657,6 +671,36 @@ The `Descriptor` class provides access to a single characteristic descriptor.
 
 ### Functions
 
+#### `readValue([auth])`
+Use the `readValue` function to read a descriptor value on demand.
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `auth` | `number` | Optional `SM.Authorization` applied to the read request. |
+
+The `Authorization` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `None` | `number` | No authorization
+| `NoMITM` | `number` | Unauthenticated encryption
+| `MITM` | `number` | Authenticated encryption
+| `SignedNoMITM` | `number` | Signed unauthenticated encryption
+| `SignedMITM` | `number` | Signed authenticated encryption
+
+To read a descriptor with unauthenticated encryption:
+
+```javascript
+import {SM, IOCapability, Authorization} from "sm";
+
+const REPORT_REFERENCE_DESCRIPTOR_UUID = uuid`2908`;
+
+onDescriptors(descriptors) {
+	let descriptor = descriptors.find(descriptor => descriptor.uuid.equals(REPORT_REFERENCE_DESCRIPTOR_UUID));
+	if (descriptor)
+		descriptor.readValue(Authorization.NoMITM);
+}
+```
 #### `writeValue(value)`
 
 | Argument | Type | Description |
@@ -1228,6 +1272,28 @@ onReady() {
 
 ***
 
+#### `onSecurityParameters(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Device security properties applied.
+
+The `onSecurityParameters` callback is called after the device security requirements and I/O capabilities have been set.
+
+```javascript
+import {SM, IOCapability} from "sm";
+
+onReady() {
+	SM.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
+}
+
+onSecurityParameters() {
+	this.startScanning();
+}
+```
+
+***
+
 #### `onAuthenticated()`
 
 The `onAuthenticated` callback is called when an authentication procedure completes, i.e. after successful device pairing.
@@ -1393,6 +1459,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [ble-friend](../../../examples/network/ble/ble-friend)| Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
+| [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
