@@ -84,7 +84,7 @@ class MDNS extends Socket {
 
 		if (!service.update) {
 			Timer.repeat(id => {
-				this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04, service));
+				this.write(MDNS_IP, MDNS_PORT, this.reply(null, 0x04 | 0x8000, service));
 				service.update--;
 				if (0 == service.update) {
 					Timer.clear(id)
@@ -405,6 +405,8 @@ class MDNS extends Socket {
 	}
 
 	/*
+
+		0x8000 - CACHE FLUSH TEXT
 		0x20 - NSEC - A ONLY
 		0x10 - dns-sd service PTR
 		0x08 - PTR
@@ -466,7 +468,7 @@ class MDNS extends Socket {
 //					rdataLen += property.length + 1 + ArrayBuffer.fromString(service.txt[property].toString()).byteLength + 1;			// preferred
 				}
 			}
-			answer.push(Uint8Array.of(0, DNS_TYPE_TXT, 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
+			answer.push(Uint8Array.of(0, DNS_TYPE_TXT, (0x8000 & mask) ? 0x80 : 0x00, 1, 0, 0, 0x11 & bye, 0x94 & bye, 0, rdataLen ? rdataLen : 1));
 
 			if (rdataLen) {
 				for (let property in service.txt) {
