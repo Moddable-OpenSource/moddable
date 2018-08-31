@@ -147,9 +147,6 @@ class BLEHIDClient extends BLEClient {
 	onReport() {
 		debugger;
 	}
-	onKeyCode(code) {
-		debugger;
-	}
 }
 
 class BLEHIDKeyboard extends BLEHIDClient {
