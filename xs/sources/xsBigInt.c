@@ -36,6 +36,34 @@
  */
 
 #include "xsAll.h"
+#define bn_context sxMachine
+#include "bn.h"
+
+void *bn_allocbuf(txMachine *the, unsigned int n)
+{
+	return fxNewChunk(the, n);
+}
+
+void bn_freebuf(txMachine *the, void *bufptr)
+{
+}
+
+void bn_throw(txMachine *the, bn_err_t code)
+{
+	switch(code) {
+	case BN_ERR_NOMEM:
+		break;
+	case BN_ERR_DIVIDE_BY_ZERO:
+		mxRangeError("bigint divide by zero");
+		break;
+	case BN_ERR_MISCALCULATION:
+		mxUnknownError("bigint miscalculation");
+		break;
+	default:
+		mxUnknownError("bigint unknwon");
+		break;
+	}
+}
 
 static txSlot* fxCheckBigInt(txMachine* the, txSlot* it);
 
@@ -50,7 +78,7 @@ void fxBuildBigInt(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_prototype_toString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "BigInt", mxID(_BigInt_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextStringXProperty(the, slot, "BigInt", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxBigIntPrototype = *the->stack;
 	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_BigInt), 0, mxID(_BigInt), XS_DONT_ENUM_FLAG));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asIntN), 2, mxID(_asIntN), XS_DONT_ENUM_FLAG);
@@ -64,26 +92,24 @@ void fx_BigInt(txMachine* the)
 		mxTypeError("new BigInt");
 		
 	mxResult->kind = XS_BIGINT_KIND;
-	mxResult->value.bigint = bigint;
 }
 
 void fx_BigInt_asIntN(txMachine* the)
 {
-	if ((mxArgc < 2)
+	if (mxArgc < 2)
 		mxTypeError("no bigint");
-	fxToBigInt(mxArgv(1));
 }
 
 void fx_BigInt_asUintN(txMachine* the)
 {
-	if ((mxArgc < 2)
+	if (mxArgc < 2)
 		mxTypeError("no bigint");
-	fxToBigInt(mxArgv(1));
 }
 
 void fx_BigInt_prototype_toString(txMachine* the)
 {
-	txSlot* slot = fxCheckSymbol(the, mxThis);
+	txSlot* slot = fxCheckBigInt(the, mxThis);
+	txInteger radix;
 	if (!slot) mxTypeError("this is no bigint");
 	if (mxArgc == 0)
 		radix = 10;
@@ -119,17 +145,22 @@ txSlot* fxCheckBigInt(txMachine* the, txSlot* it)
 	return result;
 }
 
-txBigInt fxToBigInt(txMachine* the, txSlot* theSlot)
+void* fxStringToBigInt(txMachine* the, txSlot* theSlot)
+{
+	return NULL;
+}
+
+void* fxToBigInt(txMachine* the, txSlot* theSlot)
 {
 again:
 	switch (theSlot->kind) {
-	case XS_BOOLEAN_KIND: {
-		theSlot->value.bigint = bn_dup(the, (theSlot->value.boolean) ? &gxBigIntOne : &gxBigIntZero);
+	case XS_BOOLEAN_KIND:
+		theSlot->value.bigint = bn_dup(the, (bn_t *)((theSlot->value.boolean) ? &gxBigIntOne : &gxBigIntZero));
 		theSlot->kind = XS_BIGINT_KIND;
 		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
-		theSlot->value.bigint = fxStringToBigInt(the, theSlot->value.string);
+		theSlot->value.bigint = fxStringToBigInt(the, theSlot);
 		if (bn_isNaN(theSlot->value.bigint))
 			mxTypeError("Cannot coerce string to bigint");
 		theSlot->kind = XS_BIGINT_KIND;
@@ -147,12 +178,7 @@ again:
 	return theSlot->value.bigint;
 }
 
-txBigInt64 fxToBigInt64(txMachine* the, txSlot* theSlot)
-{
-	fxToBigInt(the, theSlot);
-}
-
-void fxBigIntBinary(txMachine* the, txByte code, txSlot* left, txSlot* right)
+void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right)
 {
 	if ((left->kind != XS_BIGINT_KIND) && (left->kind != XS_BIGINT_X_KIND))
 		mxTypeError("Cannot coerce left operand to bigint");
@@ -199,9 +225,9 @@ void fxBigIntBinary(txMachine* the, txByte code, txSlot* left, txSlot* right)
 	left->kind = XS_BIGINT_KIND;
 }
 
-txInteger fxBigIntCompare(txMachine* the, txByte code, txSlot* left, txSlot* right)
+txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right)
 {
-	int fpclass;
+	int result;
 	if (bn_isNaN(left->value.bigint))
 		return 0;
 	if (right->kind == XS_STRING_KIND)
@@ -209,13 +235,18 @@ txInteger fxBigIntCompare(txMachine* the, txByte code, txSlot* left, txSlot* rig
 	if ((right->kind == XS_BIGINT_KIND) || (right->kind == XS_BIGINT_X_KIND)) {
 		if (bn_isNaN(right->value.bigint))
 			return 0;
-		return bn_comp(left->value.bigint, right->value.bigint);
+		result = bn_comp(left->value.bigint, right->value.bigint);
+		if (result < 0)
+			return ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_NOT_EQUAL));
+		if (result > 0)
+			return ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL) || (code == XS_CODE_NOT_EQUAL));
+		return ((code == XS_CODE_EQUAL) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_MORE_EQUAL));
 	}
 	fxToNumber(the, right);
-	fpclass = c_fpclassify(right->value.number);
-	if (fpclass == FP_NAN)
+	result = c_fpclassify(right->value.number);
+	if (result == FP_NAN)
 		return 0;
-	if (fpclass == C_FP_INFINITE) {
+	if (result == C_FP_INFINITE) {
 		if ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL))
 			return right->value.number > 0;
 		if ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL))
@@ -225,7 +256,7 @@ txInteger fxBigIntCompare(txMachine* the, txByte code, txSlot* left, txSlot* rig
 	return 0; //@@ compare bigint to number
 }
 
-void fxBigIntUnary(txMachine* the, txByte code, txSlot* left)
+void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left)
 {
 	switch (code) {
 	case XS_CODE_BIT_NOT:
@@ -236,10 +267,10 @@ void fxBigIntUnary(txMachine* the, txByte code, txSlot* left)
 		bn_negate(left->value.bigint);
 		break;
 	case XS_CODE_DECREMENT:
-		left->value.bigint = bn_sub(the, C_NULL, left->value.bigint, &gxBigIntOne);
+		left->value.bigint = bn_sub(the, C_NULL, left->value.bigint, (bn_t *)&gxBigIntOne);
 		break;
 	case XS_CODE_INCREMENT:
-		left->value.bigint = bn_add(the, C_NULL, left->value.bigint, &gxBigIntOne);
+		left->value.bigint = bn_add(the, C_NULL, left->value.bigint, (bn_t *)&gxBigIntOne);
 		break;
 	}
 	left->kind = XS_BIGINT_KIND;

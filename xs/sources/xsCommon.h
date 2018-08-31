@@ -389,6 +389,7 @@ mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLin
 extern void* fxNew_dtoa(void*);
 extern void fxDelete_dtoa(void*);
 mxExport txString fxIntegerToString(void* dtoa, txInteger theValue, txString theBuffer, txSize theSize);
+mxExport txInteger fxNumberToInteger(txNumber theValue);
 mxExport txString fxNumberToString(void* dtoa, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
 mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole);
 
@@ -565,6 +566,7 @@ enum {
 	_AsyncFunction,
 	_AsyncGeneratorFunction,
 	_Atomics,
+	_BigInt,
 	_Boolean,
 	_Chunk,
 	_DataView,
@@ -648,6 +650,8 @@ enum {
 	_append,
 	_apply,
 	_arguments,
+	_asIntN,
+	_asUintN,
 	_asin,
 	_asinh,
 	_assign,

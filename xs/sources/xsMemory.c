@@ -684,6 +684,9 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_STRING_KIND:
 		mxMarkChunk(theSlot->value.string);
 		break;
+	case XS_BIGINT_KIND:
+		mxMarkChunk(theSlot->value.bigint);
+		break;
 	case XS_REFERENCE_KIND:
 		aSlot = theSlot->value.reference;
 		if (!(aSlot->flag & XS_MARK_FLAG))

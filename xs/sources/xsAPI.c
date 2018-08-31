@@ -1345,6 +1345,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushStringX("");
 			/* mxEmptyRegExp */
 			mxPushStringX("(?:)");
+			/* mxBigIntString */
+			mxPushStringX("bigint");
 			/* mxBooleanString */
 			mxPushStringX("boolean");
 			/* mxDefaultString */
