@@ -88,6 +88,7 @@ extern bn_bool bn_sign(bn_t *a);
 extern bn_size bn_wsizeof(bn_t *a);
 extern void bn_negate(bn_t *a);
 extern void bn_copy(bn_t *a, bn_t *b);
+extern bn_t *bn_dup(bn_context_t *ctx, bn_t *a);
 extern int bn_bitsize(bn_t *e);
 extern int bn_comp(bn_t *a, bn_t *b);
 

@@ -150,7 +150,7 @@ bn_copy(bn_t *a, bn_t *b)
 	a->sign = b->sign;
 }
 
-static bn_t *
+bn_t *
 bn_dup(bn_context_t *ctx, bn_t *a)
 {
 	bn_t *r = bn_alloct(ctx, a->size);

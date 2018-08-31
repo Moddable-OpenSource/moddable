@@ -56,7 +56,8 @@ C_OPTIONS = \
 	-I$(SRC_DIR) \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
-	-I$(TMP_DIR)
+	-I$(TMP_DIR) \
+	-I$(MODDABLE)/modules/crypt/arith
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
 endif
@@ -79,6 +80,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsArguments.o \
 	$(TMP_DIR)/xsArray.o \
 	$(TMP_DIR)/xsAtomics.o \
+	$(TMP_DIR)/xsBigInt.o \
 	$(TMP_DIR)/xsBoolean.o \
 	$(TMP_DIR)/xsCode.o \
 	$(TMP_DIR)/xsCommon.o \
@@ -124,9 +126,10 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
-	$(TMP_DIR)/xst.o
+	$(TMP_DIR)/xst.o\
+	$(TMP_DIR)/bn.o
 
-VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
+VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml $(MODDABLE)/modules/crypt/arith
 
 build: $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 

@@ -189,6 +189,7 @@ typedef union {
 	txNumber number;
 	txString string;
 	txID symbol;
+	void* bigint;
 
 	txSlot* reference;
 
@@ -951,6 +952,21 @@ mxExport void fx_Math_trunc(txMachine* the);
 mxExport void fx_Math_toInteger(txMachine* the);
 
 extern void fxBuildMath(txMachine* the);
+extern txNumber fx_pow(txNumber x, txNumber y);
+
+/* xsBigInt.c */
+mxExport void fx_BigInt(txMachine* the);
+mxExport void fx_BigInt_asIntN(txMachine* the);
+mxExport void fx_BigInt_asUintN(txMachine* the);
+mxExport void fx_BigInt_prototype_toString(txMachine* the);
+mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
+
+extern void fxBuildBigInt(txMachine* the);
+extern void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right);
+extern txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right);
+extern void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left);
+extern txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
+extern txBoolean fxToNumericNumber(txMachine* the, txSlot* theSlot);
 
 /* xsDate.c */
 mxExport void fx_Date(txMachine* the);
@@ -1567,33 +1583,35 @@ enum {
 	XS_STRING_KIND, // 5
 	XS_STRING_X_KIND,
 	XS_SYMBOL_KIND,
+	XS_BIGINT_KIND,
+	XS_BIGINT_X_KIND,
 	
-	XS_REFERENCE_KIND,
+	XS_REFERENCE_KIND, //10
 	
 	XS_CLOSURE_KIND, 
-	XS_FRAME_KIND, //10
+	XS_FRAME_KIND,
 
 	XS_INSTANCE_KIND,
 	
 	XS_ARGUMENTS_SLOPPY_KIND,
-	XS_ARGUMENTS_STRICT_KIND,
+	XS_ARGUMENTS_STRICT_KIND, // 15
 	XS_ARRAY_KIND,
-	XS_ARRAY_BUFFER_KIND, // 15
+	XS_ARRAY_BUFFER_KIND,
 	XS_CALLBACK_KIND,
 	XS_CODE_KIND,
-	XS_CODE_X_KIND,
+	XS_CODE_X_KIND, // 20
 	XS_DATE_KIND,
-	XS_DATA_VIEW_KIND, // 20
+	XS_DATA_VIEW_KIND,
 	XS_GLOBAL_KIND,
 	XS_HOST_KIND,
-	XS_MAP_KIND,
+	XS_MAP_KIND, // 25
 	XS_MODULE_KIND,
-	XS_PROMISE_KIND, // 25
+	XS_PROMISE_KIND,
 	XS_PROXY_KIND,
 	XS_REGEXP_KIND,
-	XS_SET_KIND,
+	XS_SET_KIND, // 30
 	XS_TYPED_ARRAY_KIND,
-	XS_WEAK_MAP_KIND, // 30
+	XS_WEAK_MAP_KIND,
 	XS_WEAK_SET_KIND,
 
 	XS_ACCESSOR_KIND,
@@ -1602,9 +1620,9 @@ enum {
 	XS_ERROR_KIND,
 	XS_HOME_KIND,
 	XS_KEY_KIND,
-	XS_KEY_X_KIND,
+	XS_KEY_X_KIND, //40
 	XS_LIST_KIND,
-	XS_STACK_KIND, //40
+	XS_STACK_KIND,
 	XS_VAR_KIND,
 	XS_CALLBACK_X_KIND,
 #ifdef mxHostFunctionPrimitive
@@ -2015,6 +2033,7 @@ enum {
 	mxPromisePrototypeStackIndex,
 	mxProxyPrototypeStackIndex,
 	mxSharedArrayBufferPrototypeStackIndex,
+	mxBigIntPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxEvalFunctionStackIndex,
@@ -2066,6 +2085,7 @@ enum {
 	mxEmptyCodeStackIndex,
 	mxEmptyStringStackIndex,
 	mxEmptyRegExpStackIndex,
+	mxBigIntStringStackIndex,
 	mxBooleanStringStackIndex,
 	mxDefaultStringStackIndex,
 	mxFunctionStringStackIndex,
@@ -2123,10 +2143,12 @@ enum {
 #define mxPromisePrototype the->stackPrototypes[-1 - mxPromisePrototypeStackIndex]
 #define mxProxyPrototype the->stackPrototypes[-1 - mxProxyPrototypeStackIndex]
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
+#define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]
 #define mxEmptyRegExp the->stackPrototypes[-1 - mxEmptyRegExpStackIndex]
+#define mxBigIntString the->stackPrototypes[-1 - mxBigIntStringStackIndex]
 #define mxBooleanString the->stackPrototypes[-1 - mxBooleanStringStackIndex]
 #define mxDefaultString the->stackPrototypes[-1 - mxDefaultStringStackIndex]
 #define mxFunctionString the->stackPrototypes[-1 - mxFunctionStringStackIndex]

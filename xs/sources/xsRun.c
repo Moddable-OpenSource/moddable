@@ -176,20 +176,6 @@ static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 			fxToInteger(the, SLOT); \
 	}
 	
-#define mxToIntegers(X,Y) \
-	if ((XS_INTEGER_KIND != (X)->kind) || ()) { \
-	
-		if ((XS_SYMBOL_KIND < (X)->kind) || (XS_SYMBOL_KIND < (Y)->kind)) { \
-			mxSaveState; \
-			offset = fxToNumeric(the, X) + fxToNumeric(the, Y); \
-			mxRestoreState; \
-		}
-		else
-			
-	}
-	
-	
-	
 #define mxToNumber(SLOT) \
 	if (XS_NUMBER_KIND != (SLOT)->kind) { \
 		if (XS_SYMBOL_KIND <= (SLOT)->kind) { \
@@ -2512,7 +2498,7 @@ XS_CODE_JUMP:
 			}
 			else {
 				mxSaveState;
-				if (fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, mxStack))
 					mxStack->value.integer = ~mxStack->value.integer;
 				else
 					fxBigIntUnary(the, XS_CODE_BIT_NOT, mxStack);
@@ -2545,7 +2531,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_BIT_AND_GENERAL:
 				mxSaveState;
-				if (fxToIntegerX(the, slot) & fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, slot) & fxToNumericInteger(the, mxStack))
 					slot->value.integer &= mxStack->value.integer;
 				else
 					fxBigIntBinary(the, XS_CODE_BIT_AND, slot, mxStack);
@@ -2579,7 +2565,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_BIT_OR_GENERAL:
 				mxSaveState;
-				if (fxToIntegerX(the, slot) & fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, slot) & fxToNumericInteger(the, mxStack))
 					slot->value.integer |= mxStack->value.integer;
 				else
 					fxBigIntBinary(the, XS_CODE_BIT_OR, slot, mxStack);
@@ -2613,7 +2599,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_BIT_XOR_GENERAL:
 				mxSaveState;
-				if (fxToIntegerX(the, slot) & fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, slot) & fxToNumericInteger(the, mxStack))
 					slot->value.integer ^= mxStack->value.integer;
 				else
 					fxBigIntBinary(the, XS_CODE_BIT_XOR, slot, mxStack);
@@ -2648,7 +2634,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_LEFT_SHIFT_GENERAL:
 				mxSaveState;
-				if (fxToIntegerX(the, slot) & fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, slot) & fxToNumericInteger(the, mxStack))
 					slot->value.integer <<= mxStack->value.integer & 0x1f;
 				else
 					fxBigIntBinary(the, XS_CODE_LEFT_SHIFT, slot, mxStack);
@@ -2682,7 +2668,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_SIGNED_RIGHT_SHIFT_GENERAL:
 				mxSaveState;
-				if (fxToIntegerX(the, slot) & fxToIntegerX(the, mxStack))
+				if (fxToNumericInteger(the, slot) & fxToNumericInteger(the, mxStack))
 					slot->value.integer >>= mxStack->value.integer & 0x1f;
 				else
 					fxBigIntBinary(the, XS_CODE_SIGNED_RIGHT_SHIFT, slot, mxStack);
@@ -2693,12 +2679,12 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_UNSIGNED_RIGHT_SHIFT)
 			slot = mxStack + 1;
-			if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND)) && (((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND))) {
+			if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND)) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND))) {
 				fxUnsigned(the, slot, fxToUnsigned(the, slot) >> (fxToUnsigned(the, mxStack) & 0x1F));
 			}
 			else {
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 					fxUnsigned(the, slot, fxToUnsigned(the, slot) >> (fxToUnsigned(the, mxStack) & 0x1F));
 				else
 					fxBigIntBinary(the, XS_CODE_UNSIGNED_RIGHT_SHIFT, slot, mxStack);
@@ -2714,14 +2700,14 @@ XS_CODE_JUMP:
 					mxStack->value.integer = -mxStack->value.integer;
 				else {
 					mxStack->kind = XS_NUMBER_KIND;
-					mxStack->value.number = -fxIntegerToNumber(mxStack->value.number);
+					mxStack->value.number = -((txNumber)(mxStack->value.integer));
 				}
 			}
 			else if (mxStack->kind == XS_NUMBER_KIND)
 				mxStack->value.number = -mxStack->value.number;
 			else {
 				mxSaveState;
-				if (fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, mxStack))
 					mxStack->value.number = -mxStack->value.number;
 				else
 					fxBigIntUnary(the, XS_CODE_MINUS, mxStack);
@@ -2743,7 +2729,7 @@ XS_CODE_JUMP:
 				mxStack->value.number--;
 			else {
 				mxSaveState;
-				if (fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, mxStack))
 					mxStack->value.number--;
 				else
 					fxBigIntUnary(the, XS_CODE_DECREMENT, mxStack);
@@ -2758,7 +2744,7 @@ XS_CODE_JUMP:
 				mxStack->value.number++;
 			else {
 				mxSaveState;
-				if (fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, mxStack))
 					mxStack->value.number++;
 				else
 					fxBigIntUnary(the, XS_CODE_INCREMENT, mxStack);
@@ -2776,7 +2762,7 @@ XS_CODE_JUMP:
 						mxPushKind(XS_INTEGER_KIND);
 						if (__builtin_add_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = fxIntegerToNumber(slot->value.integer) + fxIntegerToNumber(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(variable->value.integer);
 						}
 						else
 							slot->value.integer = mxStack->value.integer;
@@ -2787,7 +2773,7 @@ XS_CODE_JUMP:
 						txInteger c = a + b;
 						if (((a ^ c) & (b ^ c)) < 0) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = fxIntegerToNumber(slot->value.integer) + fxIntegerToNumber(mxStack->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(mxStack->value.integer);
 						}
 						else
 							slot->value.integer = c;
@@ -2795,14 +2781,14 @@ XS_CODE_JUMP:
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxIntegerToNumber(slot->value.integer) + mxStack->value.number;
+					slot->value.number = (txNumber)(slot->value.integer) + mxStack->value.number;
 				}
 				else
 					goto XS_CODE_ADD_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number += fxIntegerToNumber(mxStack->value.integer);
+					slot->value.number += (txNumber)(mxStack->value.integer);
 				else if (mxStack->kind == XS_NUMBER_KIND)
 					slot->value.number += mxStack->value.number;
 				else
@@ -2819,7 +2805,7 @@ XS_CODE_JUMP:
 					fxConcatString(the, slot, mxStack);
 				}
 				else {
-					if (fxToNumberX(the, slot) & fxToNumberX(mxStack))
+					if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 						slot->value.number += mxStack->value.number;
 					else
 						fxBigIntBinary(the, XS_CODE_ADD, slot, mxStack);
@@ -2838,7 +2824,7 @@ XS_CODE_JUMP:
 						mxPushKind(XS_INTEGER_KIND);
 						if (__builtin_sub_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = fxIntegerToNumber(slot->value.integer) - fxIntegerToNumber(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(variable->value.integer);
 						}
 						else
 							slot->value.integer = mxStack->value.integer;
@@ -2849,7 +2835,7 @@ XS_CODE_JUMP:
 						txInteger c = a + b;
 						if (((a ^ c) & (b ^ c)) < 0) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = fxIntegerToNumber(slot->value.integer) - fxIntegerToNumber(mxStack->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
 						}
 						else
 							slot->value.integer = c;
@@ -2857,14 +2843,14 @@ XS_CODE_JUMP:
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxIntegerToNumber(slot->value.integer) - mxStack->value.number;
+					slot->value.number = (txNumber)(slot->value.integer) - mxStack->value.number;
 				}
 				else
 					goto XS_CODE_SUBTRACT_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number -= fxIntegerToNumber(mxStack->value.integer);
+					slot->value.number -= (txNumber)(mxStack->value.integer);
 				else if (mxStack->kind == XS_NUMBER_KIND)
 					slot->value.number -= mxStack->value.number;
 				else
@@ -2873,7 +2859,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_SUBTRACT_GENERAL:
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(mxStack))
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 					slot->value.number -= mxStack->value.number;
 				else
 					fxBigIntBinary(the, XS_CODE_SUBTRACT, slot, mxStack);
@@ -2888,18 +2874,18 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxIntegerToNumber(slot->value.integer) / fxIntegerToNumber(mxStack->value.integer);
+					slot->value.number = (txNumber)(slot->value.integer) / (txNumber)(mxStack->value.integer);
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxIntegerToNumber(slot->value.integer) / mxStack->value.number;
+					slot->value.number = (txNumber)(slot->value.integer) / mxStack->value.number;
 				}
 				else
 					goto XS_CODE_DIVIDE_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number /= fxIntegerToNumber(mxStack->value.integer);
+					slot->value.number /= (txNumber)(mxStack->value.integer);
 				else if (mxStack->kind == XS_NUMBER_KIND)
 					slot->value.number /= mxStack->value.number;
 				else
@@ -2908,7 +2894,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_DIVIDE_GENERAL:
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 					slot->value.number /= mxStack->value.number;
 				else
 					fxBigIntBinary(the, XS_CODE_DIVIDE, slot, mxStack);
@@ -2922,28 +2908,28 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxExponentiation(fxIntegerToNumber(slot->value.integer), fxIntegerToNumber(mxStack->value.integer));
+					slot->value.number = fx_pow((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxExponentiation(fxIntegerToNumber(slot->value.integer), mxStack->value.number);
+					slot->value.number = fx_pow((txNumber)(slot->value.integer), mxStack->value.number);
 				}
 				else
 					goto XS_CODE_EXPONENTIATION_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number = fxExponentiation(slot->value.number, fxIntegerToNumber(mxStack->value.integer));
+					slot->value.number = fx_pow(slot->value.number, (txNumber)(mxStack->value.integer));
 				else if (mxStack->kind == XS_NUMBER_KIND)
-					slot->value.number = fxExponentiation(slot->value.number, mxStack->value.number);
+					slot->value.number = fx_pow(slot->value.number, mxStack->value.number);
 				else
 					goto XS_CODE_EXPONENTIATION_GENERAL;
 			}
 			else {
 		XS_CODE_EXPONENTIATION_GENERAL:
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(the, mxStack))
-					slot->value.number = fxExponentiation(slot->value.number, mxStack->value.number);
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
+					slot->value.number = fx_pow(slot->value.number, mxStack->value.number);
 				else
 					fxBigIntBinary(the, XS_CODE_EXPONENTIATION, slot, mxStack);
 				mxRestoreState;
@@ -2960,26 +2946,26 @@ XS_CODE_JUMP:
 						mxPushKind(XS_INTEGER_KIND);
 						if (__builtin_mul_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = fxIntegerToNumber(slot->value.integer) * fxIntegerToNumber(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(variable->value.integer);
 						}
 						else
 							slot->value.integer = mxStack->value.integer;
 						mxStack++;
 					#else
 						slot->kind = XS_NUMBER_KIND;
-						slot->value.number = fxIntegerToNumber(slot->value.integer) * fxIntegerToNumber(mxStack->value.integer);
+						slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
 					#endif
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = fxIntegerToNumber(slot->value.integer) * mxStack->value.number;
+					slot->value.number = (txNumber)(slot->value.integer) * mxStack->value.number;
 				}
 				else
 					goto XS_CODE_MULTIPLY_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number *= fxIntegerToNumber(mxStack->value.integer);
+					slot->value.number *= (txNumber)(mxStack->value.integer);
 				else if (mxStack->kind == XS_NUMBER_KIND)
 					slot->value.number *= mxStack->value.number;
 				else
@@ -2988,7 +2974,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_MULTIPLY_GENERAL:
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(mxStack))
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 					slot->value.number *= mxStack->value.number;
 				else
 					fxBigIntBinary(the, XS_CODE_MULTIPLY, slot, mxStack);
@@ -3005,19 +2991,19 @@ XS_CODE_JUMP:
 						slot->value.integer %= mxStack->value.integer;
 					else {
 						slot->kind = XS_NUMBER_KIND;
-						slot->value.number = c_fmod(fxIntegerToNumber(slot->value.integer), fxIntegerToNumber(mxStack->value.integer));
+						slot->value.number = c_fmod((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
 					}
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
-					slot->value.number = c_fmod(fxIntegerToNumber(slot->value.integer), mxStack->value.number);
+					slot->value.number = c_fmod((txNumber)(slot->value.integer), mxStack->value.number);
 				}
 				else
 					goto XS_CODE_MODULO_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.number = c_fmod(slot->value.number, fxIntegerToNumber(mxStack->value.integer));
+					slot->value.number = c_fmod(slot->value.number, (txNumber)(mxStack->value.integer));
 				else if (mxStack->kind == XS_NUMBER_KIND)
 					slot->value.number = c_fmod(slot->value.number, mxStack->value.number);
 				else
@@ -3026,7 +3012,7 @@ XS_CODE_JUMP:
 			else {
 		XS_CODE_MODULO_GENERAL:
 				mxSaveState;
-				if (fxToNumberX(the, slot) & fxToNumberX(the, mxStack))
+				if (fxToNumericNumber(the, slot) & fxToNumericNumber(the, mxStack))
 					slot->value.number = c_fmod(slot->value.number, mxStack->value.number);
 				else
 					fxBigIntBinary(the, XS_CODE_MODULO, slot, mxStack);
@@ -3047,13 +3033,13 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND)
 					offset = slot->value.integer < mxStack->value.integer;
 				else if (mxStack->kind == XS_NUMBER_KIND) 
-					offset = (!c_isnan(mxStack->value.number)) && (fxIntegerToNumber(slot->value.integer) < mxStack->value.number);
+					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) < mxStack->value.number);
 				else
 					goto XS_CODE_LESS_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					offset = (!c_isnan(slot->value.number)) && (slot->value.number < fxIntegerToNumber(mxStack->value.integer));
+					offset = (!c_isnan(slot->value.number)) && (slot->value.number < (txNumber)(mxStack->value.integer));
 				else if (mxStack->kind == XS_NUMBER_KIND) 
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number < mxStack->value.number);
 				else
@@ -3066,13 +3052,13 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) < 0;
-				else if (slot->kind == XS_BIGINT_KIND)
+				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = fxBigIntCompare(the, XS_CODE_LESS, slot, mxStack);
-				else if (mxStack->kind == XS_BIGINT_KIND)
+				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
 					offset = fxBigIntCompare(the, XS_CODE_MORE_EQUAL, mxStack, slot);
 				else {
-					fxToNumber(slot);
-					fxToNumber(mxStack);
+					fxToNumber(the, slot);
+					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number < mxStack->value.number);
 				}
 				mxRestoreState;
@@ -3084,23 +3070,39 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_LESS_EQUAL)
 			slot = mxStack + 1;
-			if ((slot->kind == XS_INTEGER_KIND) && (mxStack->kind == XS_INTEGER_KIND))
-				offset = slot->value.integer <= mxStack->value.integer;
-			else if ((slot->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_NUMBER_KIND))
-				goto XS_CODE_LESS_EQUAL_ALL;
+			if (slot->kind == XS_INTEGER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = slot->value.integer <= mxStack->value.integer;
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) <= mxStack->value.number);
+				else
+					goto XS_CODE_LESS_EQUAL_GENERAL;
+			}
+			else if (slot->kind == XS_NUMBER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = (!c_isnan(slot->value.number)) && (slot->value.number <= (txNumber)(mxStack->value.integer));
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number <= mxStack->value.number);
+				else
+					goto XS_CODE_LESS_EQUAL_GENERAL;
+			}
 			else {
+		XS_CODE_LESS_EQUAL_GENERAL:
 				mxSaveState; 
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
-				mxRestoreState;
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) <= 0;
+				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_LESS_EQUAL, slot, mxStack);
+				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_MORE, mxStack, slot);
 				else {
-			XS_CODE_LESS_EQUAL_ALL:
-					mxToNumber(slot);
-					mxToNumber(mxStack);
+					fxToNumber(the, slot);
+					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number <= mxStack->value.number);
 				}
+				mxRestoreState;
 			}
 			slot->kind = XS_BOOLEAN_KIND;
 			slot->value.boolean = offset;
@@ -3109,23 +3111,39 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_MORE)
 			slot = mxStack + 1;
-			if ((slot->kind == XS_INTEGER_KIND) && (mxStack->kind == XS_INTEGER_KIND))
-				offset = slot->value.integer > mxStack->value.integer;
-			else if ((slot->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_NUMBER_KIND))
-				goto XS_CODE_MORE_ALL;
+			if (slot->kind == XS_INTEGER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = slot->value.integer > mxStack->value.integer;
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) > mxStack->value.number);
+				else
+					goto XS_CODE_MORE_GENERAL;
+			}
+			else if (slot->kind == XS_NUMBER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = (!c_isnan(slot->value.number)) && (slot->value.number > (txNumber)(mxStack->value.integer));
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number > mxStack->value.number);
+				else
+					goto XS_CODE_MORE_GENERAL;
+			}
 			else {
+		XS_CODE_MORE_GENERAL:
 				mxSaveState; 
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
-				mxRestoreState;
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) > 0;
+				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_MORE, slot, mxStack);
+				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_LESS_EQUAL, mxStack, slot);
 				else {
-			XS_CODE_MORE_ALL:
-					mxToNumber(slot);
-					mxToNumber(mxStack);
+					fxToNumber(the, slot);
+					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number > mxStack->value.number);
 				}
+				mxRestoreState;
 			}
 			slot->kind = XS_BOOLEAN_KIND;
 			slot->value.boolean = offset;
@@ -3134,23 +3152,39 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_MORE_EQUAL)
 			slot = mxStack + 1;
-			if ((slot->kind == XS_INTEGER_KIND) && (mxStack->kind == XS_INTEGER_KIND))
-				offset = slot->value.integer >= mxStack->value.integer;
-			else if ((slot->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_NUMBER_KIND))
-				goto XS_CODE_MORE_EQUAL_ALL;
+			if (slot->kind == XS_INTEGER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = slot->value.integer >= mxStack->value.integer;
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) >= mxStack->value.number);
+				else
+					goto XS_CODE_MORE_EQUAL_GENERAL;
+			}
+			else if (slot->kind == XS_NUMBER_KIND) {
+				if (mxStack->kind == XS_INTEGER_KIND)
+					offset = (!c_isnan(slot->value.number)) && (slot->value.number >= (txNumber)(mxStack->value.integer));
+				else if (mxStack->kind == XS_NUMBER_KIND) 
+					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number >= mxStack->value.number);
+				else
+					goto XS_CODE_MORE_EQUAL_GENERAL;
+			}
 			else {
+		XS_CODE_MORE_EQUAL_GENERAL:
 				mxSaveState; 
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
-				mxRestoreState;
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) >= 0;
+				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_MORE_EQUAL, slot, mxStack);
+				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
+					offset = fxBigIntCompare(the, XS_CODE_LESS, mxStack, slot);
 				else {
-			XS_CODE_MORE_EQUAL_ALL:
-					mxToNumber(slot);
-					mxToNumber(mxStack);
+					fxToNumber(the, slot);
+					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number >= mxStack->value.number);
 				}
+				mxRestoreState;
 			}
 			slot->kind = XS_BOOLEAN_KIND;
 			slot->value.boolean = offset;
@@ -3181,8 +3215,8 @@ XS_CODE_JUMP:
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder == mxStack->value.hostFunction.builder;
 			#endif
- 				else if (XS_BIGINT_KIND == slot->kind)
-					offset = fxBigIntCompare(the, slot, mxStack) == 0;
+ 				else if ((XS_BIGINT_KIND == slot->kind) || (XS_BIGINT_X_KIND == slot->kind))
+					offset = fxBigIntCompare(the, XS_CODE_EQUAL, slot, mxStack);
 				else
                     offset = 0;
 			}
@@ -3207,14 +3241,6 @@ XS_CODE_JUMP:
 					fxToNumber(the, slot);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
-				else if ((slot->kind == XS_BIGINT_KIND) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
-					fxToBigInt(the, mxStack); 
-					goto XS_CODE_EQUAL_AGAIN;
-				}
-				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && (mxStack->kind == XS_BIGINT_KIND)) {
-					fxToBigInt(the, slot);
-					goto XS_CODE_EQUAL_AGAIN;
-				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
 					fxToNumber(the, slot);
 					goto XS_CODE_EQUAL_AGAIN;
@@ -3223,23 +3249,27 @@ XS_CODE_JUMP:
 					fxToNumber(the, mxStack);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
-				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND)) && mxIsReference(mxStack)) {
+				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
 					mxSaveState;
 					fxToPrimitive(the, mxStack, XS_NO_HINT);
 					mxRestoreState;
 					goto XS_CODE_EQUAL_AGAIN;
 				}
-				else if (mxIsReference(slot) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND || (mxStack->kind == XS_BIGINT_KIND)) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND) || (mxStack->kind == XS_SYMBOL_KIND))) {
+				else if (mxIsReference(slot) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND) || (mxStack->kind == XS_SYMBOL_KIND) || (mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))) {
 					mxSaveState;
 					fxToPrimitive(the, slot, XS_NO_HINT);
 					mxRestoreState;
 					goto XS_CODE_EQUAL_AGAIN;
 				}
-				else if ((XS_BIGINT_KIND == slot->kind) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND))) {
-					offset = fxBigIntCompare(the, slot, mxStack) == 0;
+				else if (((XS_BIGINT_KIND == slot->kind) || (XS_BIGINT_X_KIND == slot->kind)) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
+					mxSaveState;
+					offset = fxBigIntCompare(the, XS_CODE_EQUAL, slot, mxStack);
+					mxRestoreState;
 				}
-				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND)) && (XS_BIGINT_KIND == mxStack->kind)) {
-					offset = fxBigIntCompare(the, slot, mxStack) == 0;
+				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_BIGINT_KIND == mxStack->kind) || (XS_BIGINT_X_KIND == mxStack->kind))) {
+					mxSaveState;
+					offset = fxBigIntCompare(the, XS_CODE_EQUAL, mxStack, slot);
+					mxRestoreState;
 				}
                 else
                     offset = 0;
@@ -3274,8 +3304,8 @@ XS_CODE_JUMP:
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder != mxStack->value.hostFunction.builder;
 			#endif
- 				else if (XS_BIGINT_KIND == slot->kind)
-					offset = fxBigIntCompare(the, slot, mxStack) != 0;
+ 				else if ((XS_BIGINT_KIND == slot->kind) || (XS_BIGINT_X_KIND == slot->kind))
+					offset = fxBigIntCompare(the, XS_CODE_NOT_EQUAL, slot, mxStack);
                 else
                 	offset = 1;
 			}
@@ -3300,18 +3330,6 @@ XS_CODE_JUMP:
 					fxToNumber(the, mxStack); 
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
-				else if ((slot->kind == XS_BIGINT_KIND) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
-					mxSaveState;
-					fxToBigInt(the, mxStack); 
-					mxRestoreState;
-					goto XS_CODE_NOT_EQUAL_AGAIN;
-				}
-				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && (mxStack->kind == XS_BIGINT_KIND)) {
-					mxSaveState;
-					fxToBigInt(the, slot);
-					mxRestoreState;
-					goto XS_CODE_NOT_EQUAL_AGAIN;
-				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
 					fxToNumber(the, slot);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
@@ -3320,23 +3338,27 @@ XS_CODE_JUMP:
 					fxToNumber(the, mxStack);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
-				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND)) && mxIsReference(mxStack)) {
+				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
 					mxSaveState;
 					fxToPrimitive(the, mxStack, XS_NO_HINT);
 					mxRestoreState;
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
-				else if (mxIsReference(slot) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND) || (mxStack->kind == XS_SYMBOL_KIND))) {
+				else if (mxIsReference(slot) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND) || (mxStack->kind == XS_SYMBOL_KIND) || (mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))) {
 					mxSaveState;
 					fxToPrimitive(the, slot, XS_NO_HINT);
 					mxRestoreState;
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
- 				else if ((XS_BIGINT_KIND == slot->kind) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND))) {
-					offset = fxBigIntCompare(the, slot, mxStack) != 0;
+				else if (((XS_BIGINT_KIND == slot->kind) || (XS_BIGINT_X_KIND == slot->kind)) && ((mxStack->kind == XS_INTEGER_KIND) || (mxStack->kind == XS_NUMBER_KIND) || (mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
+					mxSaveState;
+					offset = fxBigIntCompare(the, XS_CODE_NOT_EQUAL, slot, mxStack);
+					mxRestoreState;
 				}
-				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND)) && (XS_BIGINT_KIND == mxStack->kind)) {
-					offset = fxBigIntCompare(the, slot, mxStack) != 0;
+				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_BIGINT_KIND == mxStack->kind) || (XS_BIGINT_X_KIND == mxStack->kind))) {
+					mxSaveState;
+					offset = fxBigIntCompare(the, XS_CODE_NOT_EQUAL, mxStack, slot);
+					mxRestoreState;
 				}
                	else
             		offset = 1;
@@ -3404,12 +3426,12 @@ XS_CODE_JUMP:
 				*mxStack = mxBooleanString;
 			else if ((XS_INTEGER_KIND == byte) || (XS_NUMBER_KIND == byte))
 				*mxStack = mxNumberString;
-			else if (XS_BIGINT_KIND == byte)
-				*mxStack = mxBigintString;
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
 				*mxStack = mxStringString;
 			else if (XS_SYMBOL_KIND == byte)
 				*mxStack = mxSymbolString;
+			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte))
+				*mxStack = mxBigIntString;
 			else if (XS_REFERENCE_KIND == byte) {
 				slot = fxGetInstance(the, mxStack);
 				if (fxIsFunction(the, slot))
@@ -3606,27 +3628,6 @@ void fxRunBase(txMachine* the)
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: class");
 	fxRunConstructor(the);
-}
-
-void fxRunCompare(txMachine* the, txSlot* x, txSlot* y)
-{
-	fxToPrimitive(the, x, XS_NUMBER_HINT); 
-	fxToPrimitive(the, y, XS_NUMBER_HINT); 
-	if (((x->kind == XS_STRING_KIND) || (x->kind == XS_STRING_X_KIND)) && ((y->kind == XS_STRING_KIND) || (y->kind == XS_STRING_X_KIND)))
-		offset = c_strcmp(x->value.string, y->value.string);
-	else if (x->kind == XS_BIGINT_KIND) {
-		fxToNumericBigInt(y);
-		offset = fxBigIntCompare(the, x, y);
-	}
-	else if (mxStack->kind == XS_BIGINT_KIND) {
-		fxToNumericBigInt(x);
-		offset = fxBigIntCompare(the, x, y);
-	}
-	else {
-		fxToNumber(x);
-		fxToNumber(y);
-		offset = (!c_isnan(x->value.number)) && (!c_isnan(y->value.number)) && (x->value.number < y->value.number);
-	}
 }
 
 void fxRunConstructor(txMachine* the)

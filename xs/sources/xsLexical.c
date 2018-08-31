@@ -254,19 +254,33 @@ void fxGetNextNumber(txParser* parser, txNumber theNumber)
 void fxGetNextNumberB(txParser* parser)
 {
 	txNumber aNumber = 0;
+	txString p = parser->buffer;
+	txString q = p + parser->bufferSize;
 	int c, i = 0;
 	for (;;) {
 		fxGetNextCharacter(parser);
 		c = parser->character;
-		if (('0' <= c) && (c <= '1'))
+		if (('0' <= c) && (c <= '1')) {
 			aNumber = (aNumber * 2) + (c - '0');
+			if (p < q) *p++ = (char)c;
+		}
 		else
 			break;
 		i++;
 	}
 	if (i == 0)
-		fxReportParserError(parser, "invalid number");			
-	fxGetNextNumber(parser, aNumber);
+		fxReportParserError(parser, "invalid number");	
+	if (c == 'n') {
+		if (p == q) {
+			fxReportParserError(parser, "number overflow");	
+			fxThrowParserError(parser, parser->errorCount);
+		}
+		fxGetNextCharacter(parser);
+		*p = 0;
+		fxStringToBigInt(C_NULL, parser->buffer, 2);
+	}
+	else		
+		fxGetNextNumber(parser, aNumber);
 }
 
 void fxGetNextNumberE(txParser* parser, int parseDot)
@@ -296,6 +310,8 @@ void fxGetNextNumberE(txParser* parser, int parseDot)
 	}
 	if ((parser->character == 'e') || (parser->character == 'E')) {
 		int i = 0;
+		if (!parseDot)
+			*p++ = '.';
 		*p++ = '0';
 		*p++ = (char)parser->character;
 		fxGetNextCharacter(parser);
@@ -317,12 +333,17 @@ void fxGetNextNumberE(txParser* parser, int parseDot)
 
 void fxGetNextNumberO(txParser* parser, int c, int i)
 {
+	int legacy = i;
 	txNumber aNumber = c - '0';
+	txString p = parser->buffer;
+	txString q = p + parser->bufferSize;
 	for (;;) {
 		fxGetNextCharacter(parser);
 		c = parser->character;
-		if (('0' <= c) && (c <= '7'))
+		if (('0' <= c) && (c <= '7')) {
 			aNumber = (aNumber * 8) + (c - '0');
+			if (p < q) *p++ = (char)c;
+		}
 		else
 			break;
 		i++;
@@ -330,28 +351,57 @@ void fxGetNextNumberO(txParser* parser, int c, int i)
 	if (i == 0)
 		fxReportParserError(parser, "invalid number");			
 	fxGetNextNumber(parser, aNumber);
+	if ((legacy == 0) && (c == 'n')) {
+		if (p == q) {
+			fxReportParserError(parser, "number overflow");	
+			fxThrowParserError(parser, parser->errorCount);
+		}
+		fxGetNextCharacter(parser);
+		*p = 0;
+		fxStringToBigInt(C_NULL, parser->buffer, 8);
+	}
+	else		
+		fxGetNextNumber(parser, aNumber);
 }
 
 void fxGetNextNumberX(txParser* parser)
 {
 	txNumber aNumber = 0;
+	txString p = parser->buffer;
+	txString q = p + parser->bufferSize;
 	int c, i = 0;
 	for (;;) {
 		fxGetNextCharacter(parser);
 		c = parser->character;
-		if (('0' <= c) && (c <= '9'))
+		if (('0' <= c) && (c <= '9')) {
 			aNumber = (aNumber * 16) + (c - '0');
-		else if (('a' <= c) && (c <= 'f'))
+			if (p < q) *p++ = (char)c;
+		}
+		else if (('a' <= c) && (c <= 'f')) {
 			aNumber = (aNumber * 16) + (10 + c - 'a');
-		else if (('A' <= c) && (c <= 'F'))
+			if (p < q) *p++ = (char)c;
+		}
+		else if (('A' <= c) && (c <= 'F')) {
 			aNumber = (aNumber * 16) + (10 + c - 'A');
+			if (p < q) *p++ = (char)c;
+		}
 		else
 			break;
 		i++;
 	}
 	if (i == 0)
 		fxReportParserError(parser, "invalid number");			
-	fxGetNextNumber(parser, aNumber);
+	if (c == 'n') {
+		if (p == q) {
+			fxReportParserError(parser, "number overflow");	
+			fxThrowParserError(parser, parser->errorCount);
+		}
+		fxGetNextCharacter(parser);
+		*p = 0;
+		fxStringToBigInt(C_NULL, parser->buffer, 16);
+	}
+	else		
+		fxGetNextNumber(parser, aNumber);
 }
 
 void fxGetNextRegExp(txParser* parser, txU4 c)
