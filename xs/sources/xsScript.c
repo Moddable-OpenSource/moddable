@@ -235,12 +235,15 @@ void fxReportLineReferenceError(txParser* parser, txInteger line, txString theFo
 	parser->errorCount++;
 	if (!parser->errorSymbol)
 		parser->errorSymbol = parser->ReferenceErrorSymbol;
-	c_va_start(arguments, theFormat);
 	if (!parser->errorMessage) {
-		if (parser->buffer != theFormat)
+		if (parser->buffer != theFormat) {
+			c_va_start(arguments, theFormat);
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
+			c_va_end(arguments);
+		}
 		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
 	}
+	c_va_start(arguments, theFormat);
 	(*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
 	c_va_end(arguments);
 }
@@ -251,12 +254,15 @@ void fxReportLineError(txParser* parser, txInteger line, txString theFormat, ...
 	parser->errorCount++;
 	if (!parser->errorSymbol)
 		parser->errorSymbol = parser->SyntaxErrorSymbol;
-	c_va_start(arguments, theFormat);
 	if (!parser->errorMessage) {
-		if (parser->buffer != theFormat)
+		if (parser->buffer != theFormat) {
+			c_va_start(arguments, theFormat);
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
+			c_va_end(arguments);
+		}
 		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
 	}
+	c_va_start(arguments, theFormat);
 	(*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
 	c_va_end(arguments);
 }
