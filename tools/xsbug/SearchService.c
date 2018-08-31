@@ -183,23 +183,27 @@ void PiuCodeSearchDirectory(xsMachine* the, KprCodeSearch self)
 		CFStringRef path = CFURLCopyFileSystemPath(fileURL, kCFURLPOSIXPathStyle);
 		CFStringRef name = CFURLCopyLastPathComponent(fileURL);
 		if (CFStringHasSuffix(name, CFSTR(".js"))) {
-			int fd = open(CFStringGetCStringPtr(path, kCFStringEncodingUTF8), O_RDONLY);
-			if (fd >= 0) {
-				struct stat statbuf;
-				xsIntegerValue size;
-				fstat(fd, &statbuf);
-				size = statbuf.st_size;
-				if (size > 0) {
-					xsStringValue string = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-					if (string != MAP_FAILED) {
-						xsVar(XS_FILE) = xsUndefined;
-						xsVar(XS_NAME) = xsString(CFStringGetCStringPtr(name, kCFStringEncodingUTF8));
-						xsVar(XS_PATH) = xsString(CFStringGetCStringPtr(path, kCFStringEncodingUTF8));
- 						PiuCodeSearchData(the, self, string, size);
-						munmap(string, size);
+			char PATH[1024];
+			char NAME[1024];
+			if (CFStringGetCString(path, PATH, sizeof(PATH), kCFStringEncodingUTF8) && CFStringGetCString(name, NAME, sizeof(NAME), kCFStringEncodingUTF8)) {
+				int fd = open(PATH, O_RDONLY);
+				if (fd >= 0) {
+					struct stat statbuf;
+					xsIntegerValue size;
+					fstat(fd, &statbuf);
+					size = statbuf.st_size;
+					if (size > 0) {
+						xsStringValue string = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+						if (string != MAP_FAILED) {
+							xsVar(XS_FILE) = xsUndefined;
+							xsVar(XS_NAME) = xsString(NAME);
+							xsVar(XS_PATH) = xsString(PATH);
+							PiuCodeSearchData(the, self, string, size);
+							munmap(string, size);
+						}
 					}
+					close(fd);
 				}
-				close(fd);
 			}
 		}
 		CFRelease(name);
