@@ -375,18 +375,21 @@ void fx_Math_min(txMachine* the)
 	}
 }
 
+txNumber fx_pow(txNumber x, txNumber y)
+{
+	if (!c_isfinite(y) && (c_fabs(x) == 1.0))
+		return C_NAN;
+	return c_pow(x, y);
+}
+
 void fx_Math_pow(txMachine* the)
 {
-	txNumber x, y, r;
+	txNumber x, y;
 	mxNanResultIfNoArg2;
 	x = fxToNumber(the, mxArgv(0));
 	y = fxToNumber(the, mxArgv(1));
 	mxResult->kind = XS_NUMBER_KIND;
-	if (!c_isfinite(y) && (c_fabs(x) == 1.0))
-		r = C_NAN;
-	else
-		r = c_pow(x, y);
-	mxResult->value.number = r;
+	mxResult->value.number = fx_pow(x, y);
 }
 
 void fx_Math_random(txMachine* the)

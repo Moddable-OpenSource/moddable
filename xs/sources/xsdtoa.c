@@ -6367,6 +6367,20 @@ txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, tx
 	return theBuffer;
 }
 
+txInteger fxNumberToInteger(txNumber theValue)
+{
+	if (c_fpclassify(theValue) == C_FP_NORMAL) {
+		#define MODULO 4294967296.0
+		txNumber aNumber = c_fmod(c_trunc(theValue), MODULO);
+		if (aNumber >= MODULO / 2)
+			aNumber -= MODULO;
+		else if (aNumber < -MODULO / 2)
+			aNumber += MODULO;
+		return (txInteger)aNumber;
+	}
+	return 0;	
+}
+
 txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision)
 {
 	ThInfo DTOA;
