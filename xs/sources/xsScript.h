@@ -54,6 +54,7 @@ typedef struct sxParserChunk txParserChunk;
 typedef struct sxParserJump txParserJump;
 
 typedef struct sxByteCode txByteCode;
+typedef struct sxBigIntCode txBigIntCode;
 typedef struct sxBranchCode txBranchCode;
 typedef struct sxFlagCode txFlagCode;
 typedef struct sxIndexCode txIndexCode;
@@ -170,6 +171,12 @@ typedef struct {
 	txNode* reference;
 	txNode* value;
 } txAssignNode;
+
+struct sxBigIntNode {
+	mxNodePart;
+	txInteger size;
+	txUnsigned* value;
+};
 
 typedef struct {
 	mxNodePart;
@@ -577,6 +584,8 @@ struct sxParser {
 	int line;
 	int crlf;
 	int escaped;
+	txUnsigned* bigint;
+	txInteger bigintSize;
 	txInteger integer;
 	txInteger modifierLength;
 	txString modifier;
@@ -591,6 +600,8 @@ struct sxParser {
 	int line2;
 	int crlf2;
 	int escaped2;
+	txUnsigned* bigint2;
+	txInteger bigintSize2;
 	txInteger integer2;
 	txInteger modifierLength2;
 	txString modifier2;
@@ -690,6 +701,7 @@ enum {
 	XS_TOKEN_ARROW,
 	XS_TOKEN_ASSIGN,
 	XS_TOKEN_AWAIT,
+	XS_TOKEN_BIGINT,
 	XS_TOKEN_BINDING,
 	XS_TOKEN_BIT_AND,
 	XS_TOKEN_BIT_AND_ASSIGN,
@@ -1005,6 +1017,7 @@ extern void fxArrayNodeCode(void* it, void* param);
 extern void fxArrayBindingNodeCodeAssign(void* it, void* param); 
 extern void fxAssignNodeCode(void* it, void* param); 
 extern void fxAwaitNodeCode(void* it, void* param); 
+extern void fxBigIntNodeCode(void* it, void* param); 
 extern void fxBinaryExpressionNodeCode(void* it, void* param); 
 extern void fxBindingNodeCode(void* it, void* param);
 extern void fxBindingNodeCodeAssign(void* it, void* param); 
