@@ -241,6 +241,16 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 			mxDecode2(p, index);
 			p += index;
 		}
+		else if (-4 == offset) {
+			p++;
+			index = *((txU1*)p);
+			p += 1 + (index * 4);
+		}
+		else if (-8 == offset) {
+			p++;
+			mxDecode2(p, index);
+			p += index * 4;
+		}
 	}
 }
 

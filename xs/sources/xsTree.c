@@ -619,6 +619,14 @@ static const txNodeDispatch gxAwaitNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
+static const txNodeDispatch gxBigIntNodeDispatch ICACHE_FLASH_ATTR = {
+	fxNodeDistribute,
+	fxNodeBind,
+	fxNodeHoist,
+	fxBigIntNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeReference
+};
 static const txNodeDispatch gxBinaryExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxBinaryExpressionNodeDistribute,
 	fxNodeBind,
@@ -1163,6 +1171,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_ARROW, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_ASSIGN, "Assign", sizeof(txAssignNode), &gxAssignNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_AWAIT, "Await", sizeof(txStatementNode), &gxAwaitNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_BIGINT, "BigInt", sizeof(txBigIntNode), &gxBigIntNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_BINDING, "Binding", sizeof(txBindingNode), &gxBindingNodeDispatch },
 	{ XS_CODE_BIT_AND, XS_TOKEN_BIT_AND, "BitAnd", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_CODE_BIT_AND, XS_TOKEN_BIT_AND_ASSIGN, "BitAndAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },

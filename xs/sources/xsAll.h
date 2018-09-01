@@ -1744,6 +1744,11 @@ enum {
 	mxInitSlotKind(the->stack, (THE_SLOT)->kind), \
 	the->stack->value = (THE_SLOT)->value)
 
+#define mxPushBigInt(THE_BIGINT) \
+	(fxOverflow(the, -1, C_NULL, 0), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_BIGINT_KIND), \
+	the->stack->value.bigint = (THE_BIGINT))
 #define mxPushBoolean(THE_BOOLEAN) \
 	(fxOverflow(the, -1, C_NULL, 0), \
 	(--the->stack)->next = C_NULL, \

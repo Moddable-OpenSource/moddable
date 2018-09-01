@@ -339,6 +339,8 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_BEGIN_STRICT,
 		&&XS_CODE_BEGIN_STRICT_BASE,
 		&&XS_CODE_BEGIN_STRICT_DERIVED,
+		&&XS_CODE_BIGINT_1,
+		&&XS_CODE_BIGINT_2,
 		&&XS_CODE_BIT_AND,
 		&&XS_CODE_BIT_NOT,
 		&&XS_CODE_BIT_OR,
@@ -2487,6 +2489,19 @@ XS_CODE_JUMP:
 			mxNextCode(3);
 			mxBreak;
 			
+		mxCase(XS_CODE_BIGINT_2)
+			index = mxRunU2(1);
+			mxSkipCode(3);
+			goto XS_CODE_BIGINT;
+		mxCase(XS_CODE_BIGINT_1)
+			index = mxRunU1(1);
+			mxSkipCode(2);
+		XS_CODE_BIGINT:
+			mxSaveState;
+			fxBigIntDecode(the, index);
+			mxRestoreState;
+			mxBreak;
+			
 
 	/* EXPRESSIONS */ 
 		mxCase(XS_CODE_BIT_NOT)
@@ -3945,6 +3960,16 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 			p++;
 			mxDecode2(p, index);
 			p += index;
+		}
+		else if (-4 == offset) {
+			p++;
+			index = *((txU1*)p);
+			p += 1 + (index * 4);
+		}
+		else if (-8 == offset) {
+			p++;
+			mxDecode2(p, index);
+			p += index * 4;
 		}
 		//fprintf(stderr, "\n");
 	}

@@ -145,6 +145,10 @@ txSlot* fxCheckBigInt(txMachine* the, txSlot* it)
 	return result;
 }
 
+void fxNewBigInt(txMachine* the, tx)
+{
+}
+
 void* fxStringToBigInt(txMachine* the, txSlot* theSlot)
 {
 	return NULL;
@@ -254,6 +258,17 @@ txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right
 		return 0;
 	}
 	return 0; //@@ compare bigint to number
+}
+
+void fxBigIntDecode(txMachine* the, txSize n)
+{
+	txSize size = n * 4;
+	bn_t result = fxNewChunk(the, sizeof(bn_t) + ((n-1) * sizeof(bn_word));
+	result->sign = 0;
+	result->size = n;
+	c_memcpy(&(result.data[0]), the->code, size);
+	the->code += size;
+	mxPushBigInt(result);
 }
 
 void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left)
