@@ -41,6 +41,7 @@ static txBoolean fxIsKeyword(txParser* parser, txSymbol* keyword);
 static void fxMatchToken(txParser* parser, txToken theToken);
 static txNode* fxPopNode(txParser* parser);
 static void fxPushNode(txParser* parser, txNode* node);
+static void fxPushBigIntNode(txParser* parser, void* value, txInteger line);
 static void fxPushIndexNode(txParser* parser, txIndex value, txInteger line);
 static void fxPushIntegerNode(txParser* parser, txInteger value, txInteger line);
 static void fxPushNodeStruct(txParser* parser, txInteger count, txToken token, txInteger line);
@@ -168,6 +169,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_ARROW */ 0,
 	/* XS_TOKEN_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_AWAIT */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_UNARY_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
+	/* XS_TOKEN_BIGINT */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION,
 	/* XS_TOKEN_BINDING */ 0,
 	/* XS_TOKEN_BIT_AND */ 0,
 	/* XS_TOKEN_BIT_AND_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
@@ -329,6 +331,7 @@ static txString gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_ARROW */ "=>",
 	/* XS_TOKEN_ASSIGN */ "=",
 	/* XS_TOKEN_AWAIT */ "await",
+	/* XS_TOKEN_BIGINT */ "bigint",
 	/* XS_TOKEN_BINDING */ "binding",
 	/* XS_TOKEN_BIT_AND */ "&",
 	/* XS_TOKEN_BIT_AND_ASSIGN */ "&=",
@@ -507,6 +510,18 @@ void fxPushNode(txParser* parser, txNode* node)
 	node->next = parser->root;
 	parser->root = (txNode*)node;
 	parser->nodeCount++;
+}
+
+void fxPushBigIntNode(txParser* parser, txInteger size, txUnsigned* value, txInteger line)
+{
+	txStringNode* node = fxNewParserChunk(parser, sizeof(txBigIntNode));
+	node->description = &gxTokenDescriptions[XS_TOKEN_BIGINT];
+	node->path = parser->path;
+	node->line = line;
+	node->flags = 0;
+	node->size = size;
+	node->value = value;
+	fxPushNode(parser, (txNode*)node);
 }
 
 void fxPushIndexNode(txParser* parser, txIndex value, txInteger line)

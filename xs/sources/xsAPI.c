@@ -2141,7 +2141,7 @@ void fxMapperMapIDs(txMapper* self)
 {
 	register const txS1* bytes = gxCodeSizes;
 	txS1 offset;
-	txU2 index;
+	txU4 index;
 	while (self->bufferOffset < self->bufferCode) {
 		//fprintf(stderr, "%s", gxCodeNames[*((txU1*)p)]);
 		offset = (txS1)c_read8(bytes + fxMapperRead1(self));
@@ -2156,6 +2156,14 @@ void fxMapperMapIDs(txMapper* self)
 		else if (-2 == offset) {
 			index = fxMapperRead2(self); 
 			fxMapperSkip(self, index);
+		}
+		else if (-4 == offset) {
+			index = fxMapperRead1(self);
+			fxMapperSkip(self, index * 4);
+		}
+		else if (-8 == offset) {
+			index = fxMapperRead2(self); 
+			fxMapperSkip(self, index * 4);
 		}
 		//fprintf(stderr, "\n");
 	}
