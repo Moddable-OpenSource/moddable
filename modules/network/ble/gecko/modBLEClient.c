@@ -492,7 +492,12 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 {
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	//uint16_t auth = xsmcToInteger(xsArg(2));
+#if 0
+	uint16_t auth = 0;
+	uint16_t argc = xsmcArgc;
+	if (argc > 2)
+		auth = xsmcToInteger(xsArg(2));
+#endif
 	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
@@ -536,7 +541,12 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	//uint16_t auth = xsmcToInteger(xsArg(2));
+#if 0
+	uint16_t auth = 0;
+	uint16_t argc = xsmcArgc;
+	if (argc > 2)
+		auth = xsmcToInteger(xsArg(2));
+#endif
 	gattProcedureRecord procedure = {0};
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
