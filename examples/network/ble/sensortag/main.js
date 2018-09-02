@@ -157,7 +157,7 @@ class BarometerSensor extends SensorTagSensor {
 			calibration_data[i] = view.getUint16(i * 2, true);
 		for (let i = 4; i < 8; ++i)
 			calibration_data[i] = view.getUint16(i * 2, true);
-			
+
 		// enable measurements
 		let ch = this.service.findCharacteristicByUUID(this.configuration);
 		ch.writeWithoutResponse(Uint8Array.of(0x01).buffer);
@@ -258,6 +258,7 @@ class SensorTag extends BLEClient {
 		}
 	}
 	onConnected(device) {
+		trace(`discovering services\n`);
 		device.discoverAllPrimaryServices();
 	}
 	onServices(services) {
@@ -269,10 +270,12 @@ class SensorTag extends BLEClient {
 				}
 			}
 		});
+		trace(`found ${this.sensors.length} sensor services\n`);
 		this.index = 0;
 		this.sensors[0].service.discoverAllCharacteristics();
 	}
 	onCharacteristics(characteristics) {
+		trace(`found ${characteristics.length} characteristics for sensor service ${this.sensors[this.index].name}\n`);
 		if (++this.index == this.sensors.length) {
 			this.index = 0;
 			this.startMeasurements(this.index);
