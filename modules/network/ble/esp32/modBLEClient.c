@@ -494,9 +494,14 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 
 void xs_gatt_characteristic_read_value(xsMachine *the)
 {
+	uint16_t argc = xsmcArgc;
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	uint16_t auth = xsmcToInteger(xsArg(2));
+	uint16_t auth = 0;
+	
+	if (argc > 2)
+		auth = xsmcToInteger(xsArg(2));
+
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	esp_gatt_auth_req_t auth_req = auth;
@@ -534,9 +539,14 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 
 void xs_gatt_descriptor_read_value(xsMachine *the)
 {
+	uint16_t argc = xsmcArgc;
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	uint16_t auth = xsmcToInteger(xsArg(2));
+	uint16_t auth = 0;
+	
+	if (argc > 2)
+		auth = xsmcToInteger(xsArg(2));
+		
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	esp_gatt_auth_req_t auth_req = auth;
