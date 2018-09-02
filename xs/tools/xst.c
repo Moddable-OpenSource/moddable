@@ -151,6 +151,7 @@ static int fxStringEndsWith(const char *string, const char *suffix);
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
 static void fx_agent_leaving(xsMachine* the);
+static void fx_agent_monotonicNow(xsMachine* the);
 static void fx_agent_receiveBroadcast(xsMachine* the);
 static void fx_agent_report(xsMachine* the);
 static void fx_agent_sleep(xsMachine* the);
@@ -285,6 +286,8 @@ int main262(int argc, char* argv[])
 	int error = 0;
 	int argi = 1;
 	int argj = 0;
+	c_timeval from;
+	c_timeval to;
 	
 	c_memset(&context, 0, sizeof(txContext));
 	
@@ -314,6 +317,7 @@ int main262(int argc, char* argv[])
 	context.current = NULL;
 	fxPushResult(&context, "");
 	
+	c_gettimeofday(&from, NULL);
 	for (argi = 1; argi < argc; argi++) {
 		if (argv[argi][0] == '-')
 			continue;
@@ -341,14 +345,20 @@ int main262(int argc, char* argv[])
 			error = 1;
 		}
 	}
-	if (argj)
+	c_gettimeofday(&to, NULL);
+	if (argj) {
+		int seconds = to.tv_sec - from.tv_sec;
+		int minutes = seconds / 60;
+		int hours = minutes / 60;
+		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
 		fxPrintResult(&context, context.current, 0);
-#ifdef mxInstrument
-	fprintf(stderr, "# parser chunks: %d bytes\n", context.peakParserSize);
-	fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
-	fprintf(stderr, "# heap slots: %lu bytes\n", context.peakHeapCount * sizeof(txSlot));
-	fprintf(stderr, "# stack slots: %lu bytes\n", context.peakStackCount * sizeof(txSlot));
-#endif
+	#ifdef mxInstrument
+		fprintf(stderr, "# parser chunks: %d bytes\n", context.peakParserSize);
+		fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
+		fprintf(stderr, "# heap slots: %lu bytes\n", context.peakHeapCount * sizeof(txSlot));
+		fprintf(stderr, "# stack slots: %lu bytes\n", context.peakStackCount * sizeof(txSlot));
+	#endif
+	}
 	return error;
 }
 
@@ -734,18 +744,18 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			txSlot* slot;
 
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_GET_ONLY); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG); 
 			
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
 			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
-			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_GET_ONLY); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextSlotProperty(the, slot, &mxGlobal, xsID("global"), XS_GET_ONLY);
 			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
 			slot->kind = the->stack->kind;
@@ -888,6 +898,13 @@ void fx_agent_leaving(xsMachine* the)
 {
 }
 
+void fx_agent_monotonicNow(xsMachine* the)
+{
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+    xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
+}
+
 void fx_agent_receiveBroadcast(xsMachine* the)
 {
     fxLockMutex(&(gxAgentCluster.dataMutex));
@@ -981,10 +998,11 @@ void* fx_agent_start_aux(void* it)
 			txStringCStream stream;
 			
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_leaving, 0, xsID("leaving"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_receiveBroadcast, 1, xsID("receiveBroadcast"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_report, 1, xsID("report"), XS_GET_ONLY); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_GET_ONLY); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_leaving, 0, xsID("leaving"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_monotonicNow, 0, xsID("monotonicNow"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_receiveBroadcast, 1, xsID("receiveBroadcast"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_report, 1, xsID("report"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
 			fxSetHostData(the, the->stack, agent);
 			
 			mxPush(mxObjectPrototype);
