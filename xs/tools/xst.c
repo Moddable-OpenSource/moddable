@@ -622,9 +622,13 @@ void fxRunFile(txContext* context, char* path)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (!strcmp((char*)node->data.scalar.value, "onlyStrict")) {
 				sloppy = 0;
+				strict = 1;
+				module = 0;
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "noStrict")) {
+				sloppy = 1;
 				strict = 0;
+				module = 0;
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "module")) {
 				sloppy = 0;
@@ -632,7 +636,9 @@ void fxRunFile(txContext* context, char* path)
 				module = 1;
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "raw")) {
+				sloppy = 1;
 				strict = 0;
+				module = 0;
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "async")) {
 				async = 1;
@@ -677,6 +683,14 @@ void fxRunFile(txContext* context, char* path)
 			}
 			item++;
 		}
+	}
+
+	// take forever because of utf8 from/to unicode offsets
+	if (c_strstr(path, "built-ins/RegExp/CharacterClassEscapes")) {
+		sloppy = 0;
+		strict = 0;
+		module = 0;
+		pending = 1;
 	}
 
 	if (sloppy) {
