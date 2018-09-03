@@ -4,12 +4,10 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 	],
 	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/network/dns/*",
-		]
+		"*": "./main",
+		"dns/server": "$(MODULES)/network/dns/*",
 	},
 	"preload": [
-		"dns"
+		"dns/server"
 	]
 }
