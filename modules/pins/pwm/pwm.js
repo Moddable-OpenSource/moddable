@@ -18,8 +18,10 @@
  *
  */
 
-export class PWM {
-	static write(pin, value, frequency) @ "xs_pwm_write";
+export class PWM @ "xs_pwm_destructor" {
+	constructor(dictionary) @ "xs_pwm";// {pin: 12} or {port: "foo", pin: 13}
+	close() @ "xs_pwm_close";
+	write(value) @ "xs_pwm_write";
 };
 Object.freeze(PWM.prototype);
 

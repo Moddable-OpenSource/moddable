@@ -18,26 +18,49 @@
  *
  */
 
-#include "xs.h"
+#include "xsmc.h"
 #include "xsesp.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "Arduino.h"
-#include "modGPIO.h"
-#include "modI2C.h"
 
-/*
-	PWM
-*/
+void xs_pwm_destructor(void *data)
+{
+	uintptr_t gpio = (uintptr_t)data;
+
+	if (gpio == (uintptr_t)-1)
+		return;
+
+	analogWrite(gpio, 0);
+}
+
+void xs_pwm(xsMachine *the)
+{
+	int gpio;
+
+	xsmcSetHostData(xsThis, (void *)(uintptr_t)-1);
+
+	xsmcVars(1);
+	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+	gpio = xsmcToInteger(xsVar(0));
+
+	if (xsmcHas(xsArg(0), xsID_port))
+		xsUnknownError("no port - esp");
+
+	xsmcSetHostData(xsThis, (void *)(uintptr_t)gpio);
+}
+
+void xs_pwm_close(xsMachine *the)
+{
+	xs_pwm_destructor(xsmcGetHostData(xsThis));
+	xsmcSetHostData(xsThis, (void *)(uintptr_t)-1);
+}
 
 void xs_pwm_write(xsMachine *the)
 {
-	int pin = xsToInteger(xsArg(0));
-	int value = xsToInteger(xsArg(1));	// 0 to 1023... enforced by modulo in analogWrite implementation
-	uint8 argc = xsToInteger(xsArgc);
-	if (argc > 2){
-		int frequency = xsToInteger(xsArg(2));
-		analogWriteFreq(frequency);
-	}
-	analogWrite(pin, value);
+	uintptr_t gpio = (uintptr_t)xsmcGetHostData(xsThis);
+	int value = xsmcToInteger(xsArg(0));	// 0 to 1023... enforced by modulo in analogWrite implementation
+
+	analogWrite(gpio, value);
 }
+
