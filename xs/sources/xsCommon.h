@@ -409,6 +409,19 @@ mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifie
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
 mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger offset);
 
+/* xsBigInt.c */
+
+extern void fxBigIntEncode(txByte* code, void *it, txSize size);
+extern txSize fxBigIntMaximum(txInteger length);
+extern txSize fxBigIntMaximumB(txInteger length);
+extern txSize fxBigIntMaximumO(txInteger length);
+extern txSize fxBigIntMaximumX(txInteger length);
+extern txSize fxBigIntMeasure(void *it);
+extern void fxBigIntParse(void *it, txString string, txInteger length, txInteger sign);
+extern void fxBigIntParseB(void *it, txString string, txInteger length);
+extern void fxBigIntParseO(void *it, txString string, txInteger length);
+extern void fxBigIntParseX(void *it, txString string, txInteger length);
+
 #if mxBigEndian
 #define mxDecode2(THE_CODE, THE_VALUE)	{ \
 	txS1* src = (txS1*)(THE_CODE); \

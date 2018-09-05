@@ -512,7 +512,7 @@ bn_mul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 	return(rr);
 }
 
-static bn_t *
+bn_t *
 bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b)
 {
 	int i, n;

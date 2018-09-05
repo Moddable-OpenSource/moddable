@@ -172,11 +172,10 @@ typedef struct {
 	txNode* value;
 } txAssignNode;
 
-struct sxBigIntNode {
+typedef struct {
 	mxNodePart;
-	txInteger size;
-	txUnsigned* value;
-};
+	void* value;
+} txBigIntNode;
 
 typedef struct {
 	mxNodePart;
@@ -585,7 +584,6 @@ struct sxParser {
 	int crlf;
 	int escaped;
 	txUnsigned* bigint;
-	txInteger bigintSize;
 	txInteger integer;
 	txInteger modifierLength;
 	txString modifier;
@@ -601,7 +599,6 @@ struct sxParser {
 	int crlf2;
 	int escaped2;
 	txUnsigned* bigint2;
-	txInteger bigintSize2;
 	txInteger integer2;
 	txInteger modifierLength2;
 	txString modifier2;
