@@ -276,8 +276,8 @@ void fxGetNextNumberB(txParser* parser)
 	q = parser->buffer;
 	if (c == 'n') {
 		fxGetNextCharacter(parser);
-		parser->bigint2 = fxNewParserChunk(parser, fxBigIntMaximumB(p - q));
-		fxBigIntParseB(parser->bigint2, q, p - q);
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumB(p - q));
+		fxBigIntParseB(&parser->bigint2, q, p - q);
 		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {
@@ -344,8 +344,8 @@ void fxGetNextNumberE(txParser* parser, int dot)
 	if (c == 'n') {
 		fxGetNextCharacter(parser);
 		if (dot == 0) {
-			parser->bigint2 = fxNewParserChunk(parser, fxBigIntMaximum(p - q));
-			fxBigIntParse(parser->bigint2, q, p - q, 0);
+			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximum(p - q));
+			fxBigIntParse(&parser->bigint2, q, p - q, 0);
 			parser->token2 = XS_TOKEN_BIGINT;
 		}
 		else
@@ -382,8 +382,8 @@ void fxGetNextNumberO(txParser* parser, int c, int i)
 	if (c == 'n') {
 		fxGetNextCharacter(parser);
 		if (legacy == 0) {
-			parser->bigint2 = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
-			fxBigIntParseO(parser->bigint2, q, p - q);
+			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
+			fxBigIntParseO(&parser->bigint2, q, p - q);
 			parser->token2 = XS_TOKEN_BIGINT;
 		}
 		else
@@ -421,8 +421,8 @@ void fxGetNextNumberX(txParser* parser)
 	q = parser->buffer;
 	if (c == 'n') {
 		fxGetNextCharacter(parser);
-		parser->bigint2 = fxNewParserChunk(parser, fxBigIntMaximumX(p - q));
-		fxBigIntParseX(parser->bigint2, q, p - q);
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumX(p - q));
+		fxBigIntParseX(&parser->bigint2, q, p - q);
 		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {
@@ -780,7 +780,9 @@ void fxGetNextTokenAux(txParser* parser)
 	txU4 t = 0;
 	parser->crlf2 = 0;
 	parser->escaped2 = 0;
-	parser->bigint2 = C_NULL;
+	parser->bigint2.data = C_NULL;
+	parser->bigint2.size = 0;
+	parser->bigint2.sign = 0;
 	parser->integer2 = 0;
 	parser->modifierLength2 = 0;
 	parser->modifier2 = parser->emptyString;

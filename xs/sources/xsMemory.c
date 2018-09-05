@@ -685,7 +685,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		mxMarkChunk(theSlot->value.string);
 		break;
 	case XS_BIGINT_KIND:
-		mxMarkChunk(theSlot->value.bigint);
+		mxMarkChunk(theSlot->value.bigint.data);
 		break;
 	case XS_REFERENCE_KIND:
 		aSlot = theSlot->value.reference;
@@ -1263,6 +1263,9 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 	switch (theSlot->kind) {
 	case XS_STRING_KIND:
 		mxSweepChunk(theSlot->value.string, txString);
+		break;
+	case XS_BIGINT_KIND:
+		mxSweepChunk(theSlot->value.bigint.data, txU4*);
 		break;
 
 	case XS_ARGUMENTS_SLOPPY_KIND:

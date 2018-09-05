@@ -2498,10 +2498,8 @@ XS_CODE_JUMP:
 			mxSkipCode(2);
 		XS_CODE_BIGINT:
 			mxSaveState;
-			scratch.value.bigint = fxBigIntDecode(the, index);
+			fxBigIntDecode(the, index);
 			mxRestoreState;
-			mxPushKind(XS_BIGINT_KIND);
-			mxStack->value.bigint = scratch.value.bigint;
 			mxNextCode(index);
 			mxBreak;
 
