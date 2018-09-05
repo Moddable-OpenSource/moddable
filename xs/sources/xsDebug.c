@@ -36,7 +36,6 @@
  */
 
 #include "xsAll.h"
-#include "bn.h"
 
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 char lastDebugStr[256];
@@ -54,7 +53,7 @@ static void fxDebugPushTag(txMachine* the);
 static void fxDebugScriptCDATA(txMachine* the, char c);
 static void fxEcho(txMachine* the, txString theString);
 static void fxEchoAddress(txMachine* the, txSlot* theSlot);
-static void fxEchoBigInt(txMachine* the, void* it);
+static void fxEchoBigInt(txMachine* the, txBigInt* bigint);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
 static void fxEchoFormat(txMachine* the, txString theFormat, c_va_list theArguments);
@@ -838,10 +837,9 @@ void fxEchoAddress(txMachine* the, txSlot* theSlot)
 	fxEcho(the, "\"");
 }
 
-void fxEchoBigInt(txMachine* the, void* it)
+void fxEchoBigInt(txMachine* the, txBigInt* bigint)
 {
-	bn_t* bn = it;
-	int i = bn->size - 1;
+	int i = bigint->size - 1;
 	if (i < 0) {
 		fxEchoCharacter(the, 'N');
 		fxEchoCharacter(the, 'a');
@@ -849,13 +847,13 @@ void fxEchoBigInt(txMachine* the, void* it)
 	}
 	else {
 		int echo = 0;
-		if (bn->sign)
+		if (bigint->sign)
 			fxEchoCharacter(the, '-');
 		fxEchoCharacter(the, '0');
 		fxEchoCharacter(the, 'x');
 		while (i >= 0) {
-			bn_word value = bn->data[i];
-			bn_word mask = 0xF;
+			txU4 value = bigint->data[i];
+			txU4 mask = 0xF;
 			int shift = 28;
 			while (shift >= 0) {
 				char digit = c_read8(gxHexaDigits + ((value & (mask << shift)) >> shift));
@@ -1259,7 +1257,7 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		case XS_BIGINT_KIND:
 		case XS_BIGINT_X_KIND:
 			fxEcho(the, " value=\"");
-			fxEchoBigInt(the, theProperty->value.bigint);
+			fxEchoBigInt(the, &theProperty->value.bigint);
 			fxEcho(the, "\"/>");
 			break;
 		case XS_DATE_KIND:

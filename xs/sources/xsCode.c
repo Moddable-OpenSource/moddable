@@ -50,8 +50,7 @@ struct sxByteCode {
 	
 struct sxBigIntCode {
 	mxByteCodePart;
-	txInteger size;
-	txUnsigned* bigint;
+	txBigInt bigint;
 };
 	
 struct sxBranchCode {
@@ -125,7 +124,7 @@ struct sxCoder {
 };
 
 static void fxCoderAdd(txCoder* self, txInteger delta, void* it);
-static void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txUnsigned* bigint);
+static void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txBigInt* bigint);
 static void fxCoderAddBranch(txCoder* self, txInteger delta, txInteger id, txTargetCode* target);
 static void fxCoderAddByte(txCoder* self, txInteger delta, txInteger id);
 static void fxCoderAddFlag(txCoder* self, txInteger delta, txInteger id, txFlag flag);
@@ -285,7 +284,7 @@ txScript* fxParserCode(txParser* parser)
 				size += 2;
 			break;
 		case XS_CODE_BIGINT_1:
-			value = fxBigIntMeasure(((txBigIntCode*)code)->bigint);
+			value = fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			if (value > 255) {
 				code->id += 1;
 				size += 3;
@@ -487,10 +486,10 @@ txScript* fxParserCode(txParser* parser)
 			size += 3 + ((txStringCode*)code)->length;
 			break;
 		case XS_CODE_BIGINT_1:
-			size += 2 + fxBigIntMeasure(((txBigIntCode*)code)->bigint);
+			size += 2 + fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			break;
 		case XS_CODE_BIGINT_2:
-			size += 3 + fxBigIntMeasure(((txBigIntCode*)code)->bigint);
+			size += 3 + fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			break;
 			
 		case XS_CODE_HOST:
@@ -699,14 +698,14 @@ txScript* fxParserCode(txParser* parser)
 			p += u2;
 			break;
 		case XS_CODE_BIGINT_1:
-			u1 = (txU1)fxBigIntMeasure(((txBigIntCode*)code)->bigint);
+			u1 = (txU1)fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			*((txU1*)p++) = u1;
-			fxBigIntEncode(p, ((txBigIntCode*)code)->bigint, u1);
+			fxBigIntEncode(p, &((txBigIntCode*)code)->bigint, u1);
 			p += u1;
 			break;
 		case XS_CODE_BIGINT_2:
-			u2 = (txU2)fxBigIntMeasure(((txBigIntCode*)code)->bigint);
-			fxBigIntEncode(p, ((txBigIntCode*)code)->bigint, u2);
+			u2 = (txU2)fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
+			fxBigIntEncode(p, &((txBigIntCode*)code)->bigint, u2);
 			p += u2;
 			break;
 			
@@ -881,7 +880,7 @@ txScript* fxParserCode(txParser* parser)
 			break;
 		case XS_CODE_BIGINT_1:
 		case XS_CODE_BIGINT_2:
-			fprintf(stderr, "%s %d\n", gxCodeNames[code->id], fxBigIntMeasure(((txBigIntCode*)code)->bigint));
+			fprintf(stderr, "%s %d\n", gxCodeNames[code->id], fxBigIntMeasure(&((txBigIntCode*)code)->bigint));
 			break;
 			
 		case XS_CODE_HOST:
@@ -966,12 +965,12 @@ void fxCoderAdd(txCoder* self, txInteger delta, void* it)
 		c_fprintf(stderr, "oops\n");		//@@
 }
 
-void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txUnsigned* bigint)
+void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txBigInt* bigint)
 {
 	txBigIntCode* code = fxNewParserChunkClear(self->parser, sizeof(txBigIntCode));
 	fxCoderAdd(self, delta, code);
 	code->id = id;
-	code->bigint = bigint;
+	code->bigint = *bigint;
 }
 
 void fxCoderAddBranch(txCoder* self, txInteger delta, txInteger id, txTargetCode* target)
@@ -2073,7 +2072,7 @@ void fxAwaitNodeCode(void* it, void* param)
 void fxBigIntNodeCode(void* it, void* param) 
 {
 	txBigIntNode* self = it;
-	fxCoderAddBigInt(param, 1, XS_CODE_BIGINT_1, self->value);
+	fxCoderAddBigInt(param, 1, XS_CODE_BIGINT_1, &self->value);
 }
 
 void fxBinaryExpressionNodeCode(void* it, void* param) 
