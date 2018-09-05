@@ -512,14 +512,13 @@ void fxPushNode(txParser* parser, txNode* node)
 	parser->nodeCount++;
 }
 
-void fxPushBigIntNode(txParser* parser, txInteger size, txUnsigned* value, txInteger line)
+void fxPushBigIntNode(txParser* parser, void* value, txInteger line)
 {
-	txStringNode* node = fxNewParserChunk(parser, sizeof(txBigIntNode));
+	txBigIntNode* node = fxNewParserChunk(parser, sizeof(txBigIntNode));
 	node->description = &gxTokenDescriptions[XS_TOKEN_BIGINT];
 	node->path = parser->path;
 	node->line = line;
 	node->flags = 0;
-	node->size = size;
 	node->value = value;
 	fxPushNode(parser, (txNode*)node);
 }
@@ -1904,6 +1903,10 @@ void fxLiteralExpression(txParser* parser)
 		break;
 	case XS_TOKEN_NUMBER:
 		fxPushNumberNode(parser, parser->number, aLine);
+		fxGetNextToken(parser);
+		break;
+	case XS_TOKEN_BIGINT:
+		fxPushBigIntNode(parser, parser->bigint, aLine);
 		fxGetNextToken(parser);
 		break;
 	case XS_TOKEN_DIVIDE_ASSIGN:

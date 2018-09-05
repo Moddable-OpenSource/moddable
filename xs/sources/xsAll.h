@@ -964,9 +964,11 @@ mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
 extern void fxBuildBigInt(txMachine* the);
 extern void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right);
 extern txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right);
+extern void* fxBigIntDecode(txMachine* the, txSize size);
 extern void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left);
 extern txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 extern txBoolean fxToNumericNumber(txMachine* the, txSlot* theSlot);
+extern void* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole);
 
 /* xsDate.c */
 mxExport void fx_Date(txMachine* the);

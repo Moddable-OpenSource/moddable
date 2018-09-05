@@ -36,6 +36,7 @@
  */
 
 #include "xsAll.h"
+#include "bn.h"
 
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 char lastDebugStr[256];
@@ -53,6 +54,7 @@ static void fxDebugPushTag(txMachine* the);
 static void fxDebugScriptCDATA(txMachine* the, char c);
 static void fxEcho(txMachine* the, txString theString);
 static void fxEchoAddress(txMachine* the, txSlot* theSlot);
+static void fxEchoBigInt(txMachine* the, void* it);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
 static void fxEchoFormat(txMachine* the, txString theFormat, c_va_list theArguments);
@@ -836,6 +838,41 @@ void fxEchoAddress(txMachine* the, txSlot* theSlot)
 	fxEcho(the, "\"");
 }
 
+void fxEchoBigInt(txMachine* the, void* it)
+{
+	bn_t* bn = it;
+	int i = bn->size - 1;
+	if (i < 0) {
+		fxEchoCharacter(the, 'N');
+		fxEchoCharacter(the, 'a');
+		fxEchoCharacter(the, 'N');
+	}
+	else {
+		int echo = 0;
+		if (bn->sign)
+			fxEchoCharacter(the, '-');
+		fxEchoCharacter(the, '0');
+		fxEchoCharacter(the, 'x');
+		while (i >= 0) {
+			bn_word value = bn->data[i];
+			bn_word mask = 0xF;
+			int shift = 28;
+			while (shift >= 0) {
+				char digit = c_read8(gxHexaDigits + ((value & (mask << shift)) >> shift));
+				if (echo || (digit != '0')) {
+					echo = 1;
+					fxEchoCharacter(the, digit);
+				}
+				shift -= 4;
+			}
+			i--;
+		}
+		if (!echo)
+			fxEchoCharacter(the, '0');
+		fxEchoCharacter(the, 'n');
+	}
+}
+
 void fxEchoCharacter(txMachine* the, char theCharacter)
 {
 	char c[2];
@@ -984,6 +1021,11 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			break;
 		case XS_NUMBER_KIND:
 			fxEchoProperty(the, aProperty, theList, "(number)", -1, C_NULL);
+			aProperty = aProperty->next;
+			break;
+		case XS_BIGINT_KIND:
+		case XS_BIGINT_X_KIND:
+			fxEchoProperty(the, aProperty, theList, "(bigint)", -1, C_NULL);
 			aProperty = aProperty->next;
 			break;
 		case XS_DATA_VIEW_KIND:
@@ -1212,6 +1254,12 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		case XS_NUMBER_KIND:
 			fxEcho(the, " value=\"");
 			fxEchoNumber(the, theProperty->value.number);
+			fxEcho(the, "\"/>");
+			break;
+		case XS_BIGINT_KIND:
+		case XS_BIGINT_X_KIND:
+			fxEcho(the, " value=\"");
+			fxEchoBigInt(the, theProperty->value.bigint);
 			fxEcho(the, "\"/>");
 			break;
 		case XS_DATE_KIND:

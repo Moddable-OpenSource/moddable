@@ -1374,6 +1374,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildString(the);
 			fxBuildBoolean(the);
 			fxBuildNumber(the);
+			fxBuildBigInt(the);
 			fxBuildDate(the);
 			fxBuildMath(the);
 			fxBuildRegExp(the);
@@ -2156,14 +2157,6 @@ void fxMapperMapIDs(txMapper* self)
 		else if (-2 == offset) {
 			index = fxMapperRead2(self); 
 			fxMapperSkip(self, index);
-		}
-		else if (-4 == offset) {
-			index = fxMapperRead1(self);
-			fxMapperSkip(self, index * 4);
-		}
-		else if (-8 == offset) {
-			index = fxMapperRead2(self); 
-			fxMapperSkip(self, index * 4);
 		}
 		//fprintf(stderr, "\n");
 	}

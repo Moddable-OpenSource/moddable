@@ -2498,10 +2498,12 @@ XS_CODE_JUMP:
 			mxSkipCode(2);
 		XS_CODE_BIGINT:
 			mxSaveState;
-			fxBigIntDecode(the, index);
+			scratch.value.bigint = fxBigIntDecode(the, index);
 			mxRestoreState;
+			mxPushKind(XS_BIGINT_KIND);
+			mxStack->value.bigint = scratch.value.bigint;
+			mxNextCode(index);
 			mxBreak;
-			
 
 	/* EXPRESSIONS */ 
 		mxCase(XS_CODE_BIT_NOT)
@@ -3960,16 +3962,6 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 			p++;
 			mxDecode2(p, index);
 			p += index;
-		}
-		else if (-4 == offset) {
-			p++;
-			index = *((txU1*)p);
-			p += 1 + (index * 4);
-		}
-		else if (-8 == offset) {
-			p++;
-			mxDecode2(p, index);
-			p += index * 4;
 		}
 		//fprintf(stderr, "\n");
 	}
