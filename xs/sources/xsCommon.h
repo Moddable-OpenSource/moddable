@@ -70,6 +70,12 @@ typedef txU4 txUnsigned;
 typedef int (*txGetter)(void*);
 typedef int (*txPutter)(txString, void*);
 
+typedef struct {
+	txU4* data;
+	txU2 size;
+	txU1 sign;
+} txBigInt;
+
 #define XS_ATOM_ARCHIVE 0x58535F41 /* 'XS_A' */
 #define XS_ATOM_BINARY 0x58535F42 /* 'XS_B' */
 #define XS_ATOM_CHECKSUM 0x43484B53 /* 'CHKS' */
@@ -411,16 +417,16 @@ mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, tx
 
 /* xsBigInt.c */
 
-extern void fxBigIntEncode(txByte* code, void *it, txSize size);
+extern void fxBigIntEncode(txByte* code, txBigInt* bigint, txSize size);
 extern txSize fxBigIntMaximum(txInteger length);
 extern txSize fxBigIntMaximumB(txInteger length);
 extern txSize fxBigIntMaximumO(txInteger length);
 extern txSize fxBigIntMaximumX(txInteger length);
-extern txSize fxBigIntMeasure(void *it);
-extern void fxBigIntParse(void *it, txString string, txInteger length, txInteger sign);
-extern void fxBigIntParseB(void *it, txString string, txInteger length);
-extern void fxBigIntParseO(void *it, txString string, txInteger length);
-extern void fxBigIntParseX(void *it, txString string, txInteger length);
+extern txSize fxBigIntMeasure(txBigInt* bigint);
+extern void fxBigIntParse(txBigInt* bigint, txString string, txInteger length, txInteger sign);
+extern void fxBigIntParseB(txBigInt* bigint, txString string, txInteger length);
+extern void fxBigIntParseO(txBigInt* bigint, txString string, txInteger length);
+extern void fxBigIntParseX(txBigInt* bigint, txString string, txInteger length);
 
 #if mxBigEndian
 #define mxDecode2(THE_CODE, THE_VALUE)	{ \

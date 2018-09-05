@@ -293,6 +293,10 @@ again:
 	case XS_SYMBOL_KIND:
 		mxTypeError("Cannot coerce symbol to string");
 		break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		fxToInstance(the, theSlot);
+		goto again;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		break;
