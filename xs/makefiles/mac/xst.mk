@@ -57,8 +57,7 @@ C_OPTIONS = \
 	-I$(SRC_DIR) \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
-	-I$(TMP_DIR) \
-	-I$(MODDABLE)/modules/crypt/arith
+	-I$(TMP_DIR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
 endif
@@ -127,10 +126,9 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
-	$(TMP_DIR)/xst.o\
-	$(TMP_DIR)/bn.o
+	$(TMP_DIR)/xst.o
 
-VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml $(MODDABLE)/modules/crypt/arith
+VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
 
 build: $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
