@@ -101,6 +101,7 @@ extern bn_t *bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
 extern bn_t *bn_add(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
 extern bn_t *bn_sub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
 extern bn_t *bn_mul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
+extern bn_t *bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b);
 extern bn_t *bn_square(bn_context_t *ctx, bn_t *r, bn_t *a);
 extern bn_t *bn_div(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r);
 extern bn_t *bn_mod(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
