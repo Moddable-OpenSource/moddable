@@ -27,14 +27,16 @@ const DNS = {
 		SRV: 33,
 		OPT: 41,
 		NSEC: 47,
-		ANY: 255
+		ANY: 255,
 	},
 	OPCODE: {
 		QUERY: 0,
 		UPDATE: 5,
 	},
 	CLASS: {
-		IN: 1
+		IN: 1,
+		NONE: 254,
+		ANY: 255,
 	},
 	SECTION: {
 		QUESTION: 0,
