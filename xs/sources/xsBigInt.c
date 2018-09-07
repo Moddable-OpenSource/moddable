@@ -71,7 +71,9 @@ static int bn_bitsize(bn_t *e);
 static int bn_comp(bn_t *a, bn_t *b);
 
 static bn_t *bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
+static bn_t *bn_ulsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
 static bn_t *bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
+static bn_t *bn_ulsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
 static bn_t *bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
 static bn_t *bn_or(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
 static bn_t *bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
@@ -80,9 +82,9 @@ static bn_t *bn_add(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
 static bn_t *bn_sub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
 static bn_t *bn_mul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
 static bn_t *bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b);
-static bn_t *bn_square(bn_context_t *ctx, bn_t *r, bn_t *a);
 static bn_t *bn_div(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r);
 static bn_t *bn_mod(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
+static bn_t *bn_rem(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
 
 void fxBigIntEncode(txByte* code, txBigInt* bigint, txSize size)
 {
@@ -158,7 +160,7 @@ void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
 	while (length) {
 		char c = *p++;
 		digit.data[0] = c - '0';
-		bn_add(NULL, bigint, bn_lsl(NULL, bigint, bigint, 1), &digit);
+		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 1), &digit);
 		length--;
 	}
 }
@@ -173,7 +175,7 @@ void fxBigIntParseO(txBigInt* bigint, txString p, txInteger length)
 	while (length) {
 		char c = *p++;
 		digit.data[0] = c - '0';
-		bn_add(NULL, bigint, bn_lsl(NULL, bigint, bigint, 3), &digit);
+		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 3), &digit);
 		length--;
 	}
 }
@@ -193,17 +195,12 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 			digit.data[0] = 10 + c - 'a';
 		else
 			digit.data[0] = 10 + c - 'A';
-		bn_add(NULL, bigint, bn_lsl(NULL, bigint, bigint, 4), &digit);
+		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 4), &digit);
 		length--;
 	}
 }
 
 #ifdef mxRun
-
-void *bn_allocbuf(txMachine *the, unsigned int n)
-{
-	return fxNewChunk(the, n);
-}
 
 void bn_freebuf(txMachine *the, void *bufptr)
 {
@@ -316,9 +313,9 @@ void fx_BigInt_asIntN(txMachine* the)
 	txBigInt* result;
 	if (mxArgc < 2)
 		mxTypeError("no bigint");
-	bits = bn_lsl(the, C_NULL, (bn_t *)&gxBigIntOne, index);
+	bits = bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index);
 	result = bn_mod(the, C_NULL, fxToBigInt(the, mxArgv(1)), bits);
-	if (index && bn_comp(result, bn_lsl(the, C_NULL, (bn_t *)&gxBigIntOne, index - 1)) >= 0)
+	if (index && bn_comp(result, bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index - 1)) >= 0)
 		result = bn_sub(the, C_NULL, result, bits);
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
@@ -330,7 +327,7 @@ void fx_BigInt_asUintN(txMachine* the)
 	if (mxArgc < 2)
 		mxTypeError("no bigint");
 	fxToBigInt(the, mxArgv(1));
-	mxResult->value.bigint = *bn_mod(the, C_NULL, &mxArgv(1)->value.bigint, bn_lsl(the, C_NULL, (bn_t *)&gxBigIntOne, index));
+	mxResult->value.bigint = *bn_mod(the, C_NULL, &mxArgv(1)->value.bigint, bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index));
 	mxResult->kind = XS_BIGINT_KIND;
 }
 
@@ -412,7 +409,7 @@ void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right)
 		left->value.bigint = *bn_lsr(the, C_NULL, &left->value.bigint, right->value.bigint.data[0]); //@@
 		break;
 	case XS_CODE_UNSIGNED_RIGHT_SHIFT:
-		left->value.bigint = *bn_lsr(the, C_NULL, &left->value.bigint, right->value.bigint.data[0]); //@@
+		mxTypeError("bigint >>> bigint");
 		break;
 	case XS_CODE_ADD:
 		left->value.bigint = *bn_add(the, C_NULL, &left->value.bigint, &right->value.bigint);
@@ -421,7 +418,7 @@ void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right)
 		left->value.bigint = *bn_sub(the, C_NULL, &left->value.bigint, &right->value.bigint);
 		break;
 	case XS_CODE_EXPONENTIATION:
-		left->value.bigint = *bn_mul(the, C_NULL, &left->value.bigint, &right->value.bigint); //@@
+		mxTypeError("bigint ** bigint");
 		break;
 	case XS_CODE_MULTIPLY:
 		left->value.bigint = *bn_mul(the, C_NULL, &left->value.bigint, &right->value.bigint);
@@ -430,7 +427,7 @@ void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right)
 		left->value.bigint = *bn_div(the, C_NULL, &left->value.bigint, &right->value.bigint, C_NULL); //@@
 		break;
 	case XS_CODE_MODULO:
-		left->value.bigint = *bn_mod(the, C_NULL, &left->value.bigint, &right->value.bigint);//@@
+		left->value.bigint = *bn_rem(the, C_NULL, &left->value.bigint, &right->value.bigint);//@@
 		break;
 	}
 	left->kind = XS_BIGINT_KIND;
@@ -444,28 +441,28 @@ txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right
 		return 0;
 	if (right->kind == XS_STRING_KIND)
 		fxStringToBigInt(the, right, 0);
-	if ((right->kind == XS_BIGINT_KIND) || (right->kind == XS_BIGINT_X_KIND)) {
-		if (bn_isNaN(&right->value.bigint))
+	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND)) {
+		fxToNumber(the, right);
+		result = c_fpclassify(right->value.number);
+		if (result == FP_NAN)
 			return 0;
-		result = bn_comp(&left->value.bigint, &right->value.bigint);
-		if (result < 0)
-			return ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_NOT_EQUAL));
-		if (result > 0)
-			return ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL) || (code == XS_CODE_NOT_EQUAL));
-		return ((code == XS_CODE_EQUAL) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_MORE_EQUAL));
+		if (result == C_FP_INFINITE) {
+			if ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL))
+				return right->value.number > 0;
+			if ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL))
+				return right->value.number < 0;
+			return 0;
+		}
+		fxNumberToBigInt(the, right);
 	}
-	fxToNumber(the, right);
-	result = c_fpclassify(right->value.number);
-	if (result == FP_NAN)
+	if (bn_isNaN(&right->value.bigint))
 		return 0;
-	if (result == C_FP_INFINITE) {
-		if ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL))
-			return right->value.number > 0;
-		if ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL))
-			return right->value.number < 0;
-		return 0;
-	}
-	return 0; //@@ compare bigint to number
+	result = bn_comp(&left->value.bigint, &right->value.bigint);
+	if (result < 0)
+		return ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_NOT_EQUAL));
+	if (result > 0)
+		return ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL) || (code == XS_CODE_NOT_EQUAL));
+	return ((code == XS_CODE_EQUAL) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_MORE_EQUAL));
 }
 
 void fxBigIntDecode(txMachine* the, txSize size)
@@ -736,8 +733,10 @@ bn_memmove(void *dst, const void *src, unsigned int n)
 }
 
 static bn_t *
-bn_alloct(txMachine *the, unsigned int n)
+bn_alloct(bn_context_t *ctx, unsigned int n)
 {
+#ifdef mxRun
+	txMachine* the = ctx;
 	txBigInt* bigint;
 	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
@@ -746,6 +745,18 @@ bn_alloct(txMachine *the, unsigned int n)
 	bigint->sign = 0;
 	the->stack->kind = XS_BIGINT_KIND;
 	return bigint;
+#else
+	return NULL;
+#endif
+}
+
+static void bn_freet(bn_context_t *ctx, bn_t *bigint)
+{
+#ifdef mxRun
+	txMachine* the = ctx;
+	if (bigint == &the->stack->value.bigint)
+		mxPop();
+#endif
 }
 
 int
@@ -855,7 +866,7 @@ bn_comp(bn_t *a, bn_t *b)
  */
 
 bn_t *
-bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+bn_ulsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
 {
 	unsigned int wsz, bsz;
 	int n;
@@ -886,7 +897,15 @@ bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
 }
 
 bn_t *
-bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+{
+	r = bn_ulsl(ctx, r, a, sw);
+	r->sign = a->sign;
+	return(r);
+}
+
+bn_t *
+bn_ulsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
 {
 	int wsz, bsz;
 	int i, n;
@@ -917,10 +936,24 @@ bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
 }
 
 bn_t *
-bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
+bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+{
+	if (a->sign) {
+		a->sign = 0;
+		r = bn_add(ctx, r, bn_ulsr(ctx, NULL, a, sw), (bn_t *)&gxBigIntOne);
+		r->sign = 1;
+		return(r);
+	}
+	return bn_ulsr(ctx, r, a, sw);
+}
+
+// binary bitwise operators
+// negative operands algorithms inspired by GMP
+
+bn_t *
+bn_uxor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 {
 	int i;
-
 	if (a->size < b->size) {
 		bn_t *t = b;
 		b = a;
@@ -936,12 +969,56 @@ bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 }
 
 bn_t *
+bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
+{
+	bn_t *t;
+	if (a->sign) {
+		if (b->sign)
+			goto XOR_MINUS_MINUS;
+		t = a;
+		a = b;
+		b = t;	
+		goto XOR_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto XOR_PLUS_MINUS;
+	return bn_uxor(ctx, r, a, b);
+XOR_PLUS_MINUS:
+    /* Operand 2 negative, so will be the result.
+       -(OP1 ^ (-OP2)) = -(OP1 ^ ~(OP2 - 1)) == ~(OP1 ^ ~(OP2 - 1)) + 1 == (OP1 ^ (OP2 - 1)) + 1      */
+	b->sign = 0;
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	r = bn_add(ctx, r, bn_uxor(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
+	r->sign = 1;
+	return(r);
+XOR_MINUS_MINUS:
+// (-OP1) ^ (-OP2) == ~(OP1 - 1) ^ ~(OP2 - 1) == (OP1 - 1) ^ (OP2 - 1)
+	
+	a->sign = 0;
+	b->sign = 0;
+	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	return bn_uxor(ctx, r, a, b);
+}
+
+bn_t *
 bn_or(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 {
 	int i;
-
+	bn_t *t;
+	if (a->sign) {
+		if (b->sign)
+			goto OR_MINUS_MINUS;
+		t = a;
+		a = b;
+		b = t;	
+		goto OR_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto OR_PLUS_MINUS;
+// OR_PLUS_PLUS		
 	if (a->size < b->size) {
-		bn_t *t = b;
+		t = b;
 		b = a;
 		a = t;
 	}
@@ -952,13 +1029,57 @@ bn_or(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 	for (; i < a->size; i++)
 		r->data[i] = a->data[i];
 	return(r);
+OR_PLUS_MINUS:
+    /* Operand 2 negative, so will be the result.
+       -(OP1 | (-OP2)) = -(OP1 | ~(OP2 - 1)) =
+       = ~(OP1 | ~(OP2 - 1)) + 1 =
+       = (~OP1 & (OP2 - 1)) + 1      */
+	b->sign = 0;
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	t = bn_alloct(ctx, b->size);
+    if (a->size < b->size) {
+		for (i = 0; i < a->size; i++)
+			t->data[i] = ~a->data[i] & b->data[i];
+		for (; i < b->size; i++)
+			t->data[i] = b->data[i];
+	}
+	else {
+		for (i = 0; i < b->size; i++)
+			t->data[i] = ~a->data[i] & b->data[i];
+	}
+	r = bn_add(ctx, r, t, (bn_t *)&gxBigIntOne);
+	r->sign = 1;
+	return(r);
+OR_MINUS_MINUS:
+	  /* Both operands are negative, so will be the result.
+	     -((-OP1) | (-OP2)) = -(~(OP1 - 1) | ~(OP2 - 1)) =
+	     = ~(~(OP1 - 1) | ~(OP2 - 1)) + 1 =
+	     = ((OP1 - 1) & (OP2 - 1)) + 1      */
+	a->sign = 0;
+	b->sign = 0;
+	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	r = bn_add(ctx, r, bn_and(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
+	r->sign = 1;
+	return(r);
 }
 
-bn_t *
+static bn_t *
 bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 {
 	int i;
-
+	bn_t *t;
+	if (a->sign) {
+		if (b->sign)
+			goto AND_MINUS_MINUS;
+		t = a;
+		a = b;
+		b = t;	
+		goto AND_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto AND_PLUS_MINUS;
+// AND_PLUS_PLUS		
 	if (a->size > b->size) {
 		bn_t *t = b;
 		b = a;
@@ -968,6 +1089,38 @@ bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 		r = bn_alloct(ctx, a->size);
 	for (i = 0; i < a->size; i++)
 		r->data[i] = a->data[i] & b->data[i];
+	return(r);
+AND_PLUS_MINUS:
+    /* OP1 is positive and zero-extended,
+       OP2 is negative and ones-extended.
+       The result will be positive.
+       OP1 & -OP2 = OP1 & ~(OP2 - 1).  */
+	b->sign = 0;
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	if (r == NULL)
+		r = bn_alloct(ctx, a->size);
+    if (a->size > b->size) {
+		for (i = 0; i < b->size; i++)
+			r->data[i] = a->data[i] & ~b->data[i];
+		for (; i < a->size; i++)
+			r->data[i] = a->data[i];
+    }
+    else {
+		for (i = 0; i < a->size; i++)
+			r->data[i] = a->data[i] & ~b->data[i];
+    }
+	return(r);
+AND_MINUS_MINUS:
+  /* Both operands are negative, so will be the result.
+	 -((-OP1) & (-OP2)) = -(~(OP1 - 1) & ~(OP2 - 1)) =
+	 = ~(~(OP1 - 1) & ~(OP2 - 1)) + 1 =
+	 = ((OP1 - 1) | (OP2 - 1)) + 1      */
+	a->sign = 0;
+	b->sign = 0;
+	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
+	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
+	r = bn_add(ctx, r, bn_or(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
+	r->sign = 1;
 	return(r);
 }
 
@@ -1184,54 +1337,6 @@ bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b)
 	return(r);
 }
 
-bn_t *
-bn_square(bn_context_t *ctx, bn_t *r, bn_t *a)
-{
-	int i, j, t;
-	bn_word *ap, *rp;
-	bn_dword uv, t1, t2, t3, ai;
-	bn_word c, cc;
-	bn_word overflow = 0;	/* overflow flag of 'u' */
-
-	if (r == NULL)
-		r = bn_alloct(ctx, a->size * 2);
-	bn_fill0(r);
-	t = a->size;
-	ap = a->data;
-	rp = r->data;
-
-	for (i = 0; i < t - 1; i++) {
-		uv = (bn_dword)ap[i] * ap[i] + rp[i * 2];
-		rp[i * 2] = bn_low_word(uv);
-		c = bn_high_word(uv);
-		cc = 0;
-		ai = ap[i];
-		for (j = i + 1; j < t; j++) {
-			int k = i + j;
-			t1 = ai * ap[j];
-			t2 = t1 + c + ((bn_dword)cc << bn_wordsize);	/* 'cc:c' must be <= 2(b-1) so no overflow here */
-			t3 = t1 + t2;
-			uv = t3 + rp[k];
-			cc = t3 < t1 || uv < t3;
-			c = (bn_word)bn_high_word(uv);
-			rp[k] = bn_low_word(uv);
-		}
-		c += overflow;
-		rp[i + t] = c;		/* c = u */
-		overflow = cc || c < overflow;
-	}
-	/* the last loop */
-	uv = (bn_dword)ap[i] * ap[i] + rp[i * 2];
-	rp[i * 2] = bn_low_word(uv);
-	rp[i + t] = bn_high_word(uv) + overflow;
-
-	/* remove leading 0s */
-	for (i = 2*t; --i > 0 && rp[i] == 0;)
-		;
-	r->size = i + 1;
-	return(r);
-}
-
 static void
 bn_makepoly(bn_t *r, bn_t *a, int t)
 {
@@ -1312,8 +1417,8 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 
 	/* normalize */
 	sw = bn_ffs(b);
-	nb = bn_lsl(ctx, NULL, b, sw);
-	na = bn_lsl(ctx, NULL, a, sw);
+	nb = bn_ulsl(ctx, NULL, b, sw);
+	na = bn_ulsl(ctx, NULL, a, sw);
 	t = nb->size - 1;	/* the size must not change from 'b' */
 	n = na->size - 1;
 
@@ -1323,7 +1428,7 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 
 	/* process the most significant word */
 	qp = &q->data[q->size - 1];
-	tb = bn_lsl(ctx, NULL, nb, (n - t) * bn_wordsize);	/* y*b^n */
+	tb = bn_ulsl(ctx, NULL, nb, (n - t) * bn_wordsize);	/* y*b^n */
 	if (bn_ucomp(na, tb) >= 0) {
 		(*qp)++;
 		bn_sub(ctx, na, na, tb);
@@ -1356,7 +1461,7 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 			--tq;
 
 		/* next x */
-		bn_lsr(ctx, tb, tb, bn_wordsize);
+		bn_ulsr(ctx, tb, tb, bn_wordsize);
 		bn_usub(ctx, na, na, bn_umul1(ctx, tb3, tb, tq));
 		if (na->sign) {
 			bn_add(ctx, na, na, tb);
@@ -1365,7 +1470,7 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 		*--qp = tq;
 	}
 	if (r != NULL)
-		*r = bn_lsr(ctx, *r, na, sw);
+		*r = bn_ulsr(ctx, *r, na, sw);
 	/* remove leading 0s from q */
 	for (i = q->size; --i > 0 && q->data[i] == 0;)
 		;
@@ -1398,12 +1503,15 @@ bn_mod(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 	return(r);
 }
 
-int
-bn_inc(bn_t *a, bn_word d)
+bn_t *
+bn_rem(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
 {
-	bn_word t[1];
-
-	t[0] = d;
-	return bn_uadd_prim(a->data, t, a->data, 1, a->size);
+	bn_t *q = bn_udiv(ctx, NULL, a, b, &r);
+	if (a->sign) {
+		if (!bn_iszero(r))
+            r->sign = !r->sign;
+	}
+	bn_freet(ctx, q);
+	return(r);
 }
 
