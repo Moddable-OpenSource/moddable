@@ -56,10 +56,10 @@ export default class Client {
 
 		this.host = params.host;
 
-		// set default callbacks to be overridden by caller
-		this.onReady = function() {};
-		this.onMessage = function() {};
-		this.onClose = function() {};
+//		// set default callbacks to be overridden by caller
+//		this.onReady = function() {};
+//		this.onMessage = function() {};
+//		this.onClose = function() {};
 
 		this.port = params.port ? params.port : 80;
 		this.path = params.path ? params.path : null; // includes query string
