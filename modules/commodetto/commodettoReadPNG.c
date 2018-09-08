@@ -34,6 +34,7 @@
 		Modeled on FskPngDecode.c (Apache License, Marvell Semiconductor)
 */
 
+#include "xsPlatform.h"
 #include "xs.h"
 #include "mc.xs.h"			// for xsID_ values
 
@@ -164,7 +165,7 @@ static void paethFilter(uint8_t *pix, uint8_t *prev, uint32_t width, uint8_t bpp
 
 typedef void (*PNG_Filter)(uint8_t *pix, uint8_t* prev, uint32_t width, uint8_t bpp);
 
-PNG_Filter gFilters[5] = {
+const PNG_Filter gFilters[5] ICACHE_RODATA_ATTR = {
 	emptyFilter,
 	subFilter,
 	upFilter,
@@ -266,7 +267,7 @@ void xs_PNG_constructor(xsMachine *the)
 				*(uint32_t *)png->scanLine = 0;
 				*(uint32_t *)png->prevScanLine = 0;
 #else
-				need to implement clear of kScanLineSlop
+				@@ need to implement clear of kScanLineSlop
 #endif
 
 				png->zlib.zalloc = zAlloc;
