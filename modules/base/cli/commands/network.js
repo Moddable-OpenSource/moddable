@@ -74,15 +74,24 @@ CLI.install(function(command, parts) {
 			break;
 
 		case "scan":
-			this.line("SSID".padEnd(32), "Security".padEnd(20), "RSSI".padEnd(10), "Channel".padEnd(10), "Hidden".padEnd(10));
 			let cancel = false;
+			let header = false;
 			WiFi.scan({hidden: true}, ap => {
 				if (cancel)
 					return;
-				if (ap)
+				if (ap) {
+					if (!header) {
+						this.more = true;
+						this.line("SSID".padEnd(32), "Security".padEnd(20), "RSSI".padEnd(10), "Channel".padEnd(10), "Hidden".padEnd(10));
+						header = true;
+					}
 					this.line(ap.ssid.padEnd(32), (ap.authentication || "").padEnd(20), ap.rssi.toString().padEnd(10), ap.channel.toString().padEnd(10), ap.hidden.toString());
-				else
+				}
+				else {
 					this.resume();
+					this.more = false;
+				}
+
 			});
 			this.suspend(() => cancel = true);
 			break;
