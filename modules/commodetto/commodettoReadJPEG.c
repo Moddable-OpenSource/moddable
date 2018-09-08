@@ -36,6 +36,7 @@
 
 #include "stdlib.h"
 #include "string.h"
+#include "xsPlatform.h"
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
@@ -47,8 +48,7 @@
 #include "commodettoPocoBlit.h"
 
 #include "picojpeg.h"
-
-#include "picojpeg.c"		//@@
+#include "picojpeg.c"
 
 typedef void (*convertto)(void *jpeg, CommodettoBitmap cb, PocoPixel *pixels);
 
