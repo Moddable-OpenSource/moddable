@@ -26,12 +26,12 @@ const instruments = [
 	"Poco Display List Used",
 	"Piu Command List Used",
 	"System Free Memory",
-	"XS6 Slot Heap Used",
-	"XS6 Chunk Heap Used",
-	"XS6 Keys Used",
-	"XS6 Garbage Collection Count",
-	"XS6 Modules Loaded",
-	"XS6 Stack Used",
+	"XS Slot Heap Used",
+	"XS Chunk Heap Used",
+	"XS Keys Used",
+	"XS Garbage Collection Count",
+	"XS Modules Loaded",
+	"XS Stack Used",
 ];
 
 for (let i = 1; i < 17; i++)
