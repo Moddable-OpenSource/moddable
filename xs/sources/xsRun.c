@@ -250,7 +250,7 @@ static void fxTraceCode(txMachine* the, txU1 theCode)
 static void fxTraceID(txMachine* the, txInteger id) 
 {
 	if (id >= 0)
-		fprintf(stderr, " [%ld]", id);
+		fprintf(stderr, " [%ld]", (long)id);
 	else {	
 		char* key = fxGetKeyName(the, id);
 		if (key)
@@ -267,7 +267,7 @@ static void fxTraceIndex(txMachine* the, txU2 theIndex)
 
 static void fxTraceInteger(txMachine* the, txInteger theInteger) 
 {
-	fprintf(stderr, " %ld", theInteger);
+	fprintf(stderr, " %ld", (long)theInteger);
 }
 
 static void fxTraceNumber(txMachine* the, txNumber theNumber) 
