@@ -39,11 +39,15 @@ const CLI = {
 					this.line(`Unknown command: ${command}`);
 			}
 			else
-				CLI.handlers.forEach(handler => handler.call(this, command, parts));
+				CLI.distribute.call(this, command, parts);
 		}
 		catch (e) {
 			this.line(e.toString());
 		}
+	},
+
+	distribute(command, parts) {
+		CLI.handlers.forEach(handler => handler.call(this, command, parts));
 	},
 
 	split(line) {
