@@ -566,7 +566,12 @@ function server(message, value, etc) {
 				socket.write.apply(socket, parts);
 
 				this.state = 8;
-				return;
+
+				if (this.body && (true !== this.body)) {
+					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
+					if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
+						return;
+				}
 			}
 			if (8 === this.state) {
 				let body = this.body;
