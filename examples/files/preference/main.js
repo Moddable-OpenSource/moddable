@@ -32,4 +32,10 @@ else
 	trace("(not found)\n");
 trace(Preference.get(domain, "spaces in name") + "\n");
 
+Preference.delete(domain, "boolean");
+Preference.delete(domain, "integer");
+Preference.delete(domain, "string");
+Preference.delete(domain, "arraybuffer");
+Preference.delete(domain, "spaces in name");
+
 trace("done\n");
