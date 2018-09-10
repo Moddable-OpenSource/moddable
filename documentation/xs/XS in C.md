@@ -484,10 +484,9 @@ Creates an `ArrayBuffer` instance initialized from the provided data
 
 ***
 
-Use the `xsGetArrayBufferLength` macro to get the `ArrayBuffer` length.
+**`xsIntegerValue xsGetArrayBufferLength(xsSlot theSlot)`**<BR>
+**`xsIntegerValue xsmcGetArrayBufferLength(xsSlot theSlot)`**
 
-**`xsIntegerValue xsGetArrayBufferLength(xsSlot theSlot)`**
- 
 | Arguments | Description |
 | --- | :-- |
 | `theSlot` | The `ArrayBuffer` slot
