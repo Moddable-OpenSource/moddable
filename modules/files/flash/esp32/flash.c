@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsesp.h"
+#include "mc.xs.h"			// for xsID_ values
 
 #include "esp_partition.h"
 
@@ -45,8 +46,11 @@ void xs_flash(xsMachine *the)
 			if (!flash.partition)
 				xsUnknownError("can't find xs partition");
 		}
-		else
-			xsUnknownError("unknown partition");
+		else {
+			flash.partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partition);
+			if (!flash.partition)
+			xsUnknownError("can't find xs partition");
+		}
 
 		flash.partitionByteLength = flash.partition->size;
 	}
@@ -91,6 +95,23 @@ void xs_flash_write(xsMachine *the)
 	void *buffer = xsmcToArrayBuffer(xsArg(2));
 	if (ESP_OK != esp_partition_write(flash->partition, offset, buffer, byteLength))
 		xsUnknownError("write failed");
+}
+
+void xs_flash_map(xsMachine *the)
+{
+	modFlash flash = xsmcGetHostChunk(xsThis);
+	const void *partitionAddress;
+	spi_flash_mmap_handle_t handle;
+
+	if (ESP_OK != esp_partition_mmap(flash->partition, 0, flash->partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+		xsUnknownError("map failed");
+
+	xsmcVars(1);
+
+	xsResult = xsNewHostObject(NULL);
+	xsmcSetHostData(xsResult, (void *)partitionAddress);
+	xsmcSetInteger(xsVar(0), flash->partition->size);
+	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 }
 
 void xs_flash_byteLength(xsMachine *the)
