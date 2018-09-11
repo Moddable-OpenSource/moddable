@@ -152,6 +152,11 @@ void xs_flash_write(xsMachine *the)
 		xsUnknownError("write fail");
 }
 
+void xs_flash_map(xsMachine *the)
+{
+	xsUnknownError("unsupported");
+}
+
 void xs_flash_byteLength(xsMachine *the)
 {
 	modFlash flash = xsmcGetHostChunk(xsThis);
