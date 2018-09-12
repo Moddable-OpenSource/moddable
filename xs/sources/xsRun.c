@@ -2728,7 +2728,7 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_DECREMENT)
-			if (mxStack->kind == XS_INTEGER_KIND)
+			if ((mxStack->kind == XS_INTEGER_KIND) && (mxStack->value.integer != -2147483647)) {
 				mxStack->value.integer--;
 			else if (mxStack->kind == XS_NUMBER_KIND)
 				mxStack->value.number--;
@@ -2741,9 +2741,11 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_INCREMENT)
-			if (mxStack->kind == XS_INTEGER_KIND)
+			if ((mxStack->kind == XS_INTEGER_KIND) && (mxStack->value.integer != 2147483647)) {
 				mxStack->value.integer++;
-			else if (mxStack->kind == XS_NUMBER_KIND)
+			}
+			else {
+				mxToNumber(mxStack);
 				mxStack->value.number++;
 			else {
 				mxSaveState;
