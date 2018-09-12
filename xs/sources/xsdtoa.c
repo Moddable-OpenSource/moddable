@@ -6538,12 +6538,14 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			}
 		}
 		else {
-			theSize -= (stop - start) + decpt;
+			theSize -= (stop - start);
 			if (theSize < 0) goto error;
 			while (start < stop) {
 				*result++ = *start++;
 				decpt--;
 			}
+            theSize -= decpt;
+            if (theSize < 0) goto error;
 			while (decpt > 0) {
 				*result++ = '0';
 				decpt--;
