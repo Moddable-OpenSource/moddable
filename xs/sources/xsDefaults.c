@@ -91,3 +91,24 @@ const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {
 	{ fxUint32Add, fxUint32And, fxUint32CompareExchange, fxUint32Exchange, fxUint32Load, fxUint32Or, fxUint32Store, fxUint32Sub, fxUint32Xor },
 	{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL }
 };
+
+const txTypeBigInt ICACHE_FLASH_ATTR gxTypeBigInt = {
+	fxBigIntCompare,
+	fxBigIntDecode,
+	fxBigInt_add,
+	fxBigInt_and,
+	fxBigInt_dec,
+	fxBigInt_div,
+	fxBigInt_exp,
+	fxBigInt_inc,
+	fxBigInt_lsl,
+	fxBigInt_lsr,
+	fxBigInt_mul,
+	fxBigInt_neg,
+	fxBigInt_nop,
+	fxBigInt_not,
+	fxBigInt_or,
+	fxBigInt_rem,
+	fxBigInt_sub,
+	fxBigInt_xor,
+};

@@ -177,6 +177,33 @@ typedef struct {
 	txTypeCallback xor;
 } txTypeAtomics;
 
+typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
+typedef txBoolean (*txBigIntCompare)(txMachine*, txU1 less, txU1 equal, txU1 more, txSlot*, txSlot*);
+typedef void (*txBigIntDecode)(txMachine*, txSize);
+typedef txBigInt* (*txBigIntUnary)(txMachine*, txBigInt* r, txBigInt* a);
+
+typedef struct {
+	txBigIntCompare compare;
+	txBigIntDecode decode;
+	txBigIntBinary _add;
+	txBigIntBinary _and;
+	txBigIntUnary _dec;
+	txBigIntBinary _div;
+	txBigIntBinary _exp;
+	txBigIntUnary _inc;
+	txBigIntBinary _lsl;
+	txBigIntBinary _lsr;
+	txBigIntBinary _mul;
+	txBigIntUnary _neg;
+	txBigIntBinary _nop;
+	txBigIntUnary _not;
+	txBigIntBinary _or;
+	txBigIntBinary _rem;
+	txBigIntBinary _sub;
+	txBigIntBinary _xor;
+} txTypeBigInt;
+
+
 struct sxHostHooks {
 	txDestructor destructor;
 	txMarker marker;
@@ -637,6 +664,7 @@ extern void fxWriteProfileFile(txMachine* the, void* theBuffer, txInteger theSiz
 /* xsDefaults.c */
 extern const txDefaults gxDefaults;
 extern const txBehavior* gxBehaviors[];
+extern const txTypeBigInt gxTypeBigInt;
 
 /* xsAll.c */
 extern txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix);
@@ -963,12 +991,38 @@ mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
 
 extern void fxBuildBigInt(txMachine* the);
 extern txSlot* fxNewBigIntInstance(txMachine* the, txSlot* slot);
-extern void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right);
-extern txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right);
+extern txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
-extern void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left);
-extern txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
-extern txBoolean fxToNumericNumber(txMachine* the, txSlot* theSlot);
+
+mxExport void fxBigInt(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
+mxExport void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
+mxExport txBigInt* fxToBigInt(txMachine* the, txSlot* slot, txFlag strict);
+
+mxExport txBigInt* fxBigInt_add(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_and(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_dec(txMachine* the, txBigInt* r, txBigInt* a);
+mxExport txBigInt* fxBigInt_div(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_exp(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_inc(txMachine* the, txBigInt* r, txBigInt* a);
+mxExport txBigInt* fxBigInt_lsl(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_lsr(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_mul(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_neg(txMachine* the, txBigInt* r, txBigInt* a);
+mxExport txBigInt* fxBigInt_nop(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_not(txMachine* the, txBigInt* r, txBigInt* a);
+mxExport txBigInt* fxBigInt_or(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_rem(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_sub(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_xor(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+
+mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU2 size);
+mxExport void fxBigInt_free(txMachine* the, txBigInt*);
+
+mxExport int fxBigInt_comp(txBigInt* a, txBigInt* b);
+mxExport void fxBigInt_copy(txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_mod(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
+mxExport txBigInt* fxBigInt_sqr(txMachine* the, txBigInt* r, txBigInt* a);
+
 
 /* xsDate.c */
 mxExport void fx_Date(txMachine* the);
