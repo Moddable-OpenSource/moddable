@@ -183,6 +183,12 @@
 #ifndef txU4
 	typedef uint32_t txU4;
 #endif
+#ifndef txS8
+	typedef int64_t txS8;
+#endif
+#ifndef txU8
+	typedef uint64_t txU8;
+#endif
 
 #ifndef c_tolower
 	#define c_tolower tolower
