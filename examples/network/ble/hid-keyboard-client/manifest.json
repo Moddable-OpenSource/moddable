@@ -6,6 +6,8 @@
 	"modules": {
 		"*": [
 			"./main",
+			"./hidclient",
+			"./hidkeyboard",
 		]
 	},
 }
