@@ -35,65 +35,85 @@
  *       limitations under the License.
  */
 
+#include "xsAll.h"
 
-#ifdef mxRun
-	#include "xsAll.h"
-	#define bn_context sxMachine
-#else
-	#include "xsCommon.h"
-#endif
+static int fxBigInt_iszero(txBigInt *a);
+static int fxBigInt_isNaN(txBigInt *a);
+static txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a);
+static int fxBigInt_bitsize(txBigInt *e);
 
-typedef unsigned long long bn_dword;
-typedef unsigned int bn_word;
-typedef unsigned char bn_bool;
-typedef unsigned short bn_size;
-typedef unsigned char bn_byte;
+static int fxBigInt_ucomp(txBigInt *a, txBigInt *b);
 
-typedef txBigInt bn_t;
+static txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
+static txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
+static txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
 
-typedef enum {
-	BN_ERR_NONE,
-	BN_ERR_NOMEM,
-	BN_ERR_DIVIDE_BY_ZERO,
-	BN_ERR_MISCALCULATION,
-} bn_err_t;
+static txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
+static txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
 
-typedef struct bn_context bn_context_t;
+static txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
+static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
 
-static int bn_iszero(bn_t *a);
-static int bn_isNaN(bn_t *a);
-static bn_bool bn_sign(bn_t *a);
-static bn_size bn_wsizeof(bn_t *a);
-static void bn_negate(bn_t *a);
-static void bn_copy(bn_t *a, bn_t *b);
-static bn_t *bn_dup(bn_context_t *ctx, bn_t *a);
-static int bn_bitsize(bn_t *e);
-static int bn_comp(bn_t *a, bn_t *b);
+static txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
+static txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b);
+static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r);
 
-static bn_t *bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
-static bn_t *bn_ulsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
-static bn_t *bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
-static bn_t *bn_ulsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw);
-static bn_t *bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
-static bn_t *bn_or(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
-static bn_t *bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
+// BYTE CODE
 
-static bn_t *bn_add(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
-static bn_t *bn_sub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
-static bn_t *bn_mul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb);
-static bn_t *bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b);
-static bn_t *bn_div(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r);
-static bn_t *bn_mod(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
-static bn_t *bn_rem(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b);
+txSize fxBigIntMeasure(txBigInt* bigint)
+{
+	return bigint->size * sizeof(txU4);
+}
 
 void fxBigIntEncode(txByte* code, txBigInt* bigint, txSize size)
 {
 #if mxBigEndian
-	#error
+	{
+		txS1* src = (txS1*)bigint->data;
+		txS1* dst = (txS1*)code;
+		while (size) {
+			dst[3] = *src++;
+			dst[2] = *src++;
+			dst[1] = *src++;
+			dst[0] = *src++;
+			dst += 4;
+			size--;
+		}
+	}
 #else
 	c_memcpy(code, bigint->data, size);
 #endif
 }
+
+#ifdef mxRun
+void fxBigIntDecode(txMachine* the, txSize size)
+{
+	txBigInt* bigint;
+	mxPushUndefined();
+	bigint = &the->stack->value.bigint;
+	bigint->data = fxNewChunk(the, size);
+	bigint->size = size >> 2;
+	bigint->sign = 0;
+#if mxBigEndian
+	{
+		txS1* src = (txS1*)the->code;
+		txS1* dst = (txS1*)bigint->data;
+		while (size) {
+			dst[3] = *src++;
+			dst[2] = *src++;
+			dst[1] = *src++;
+			dst[0] = *src++;
+			dst += 4;
+			size--;
+		}
+	}
+#else
+	c_memcpy(bigint->data, the->code, size);
+#endif	
+	the->stack->kind = XS_BIGINT_KIND;
+}
+#endif
+
 
 txSize fxBigIntMaximum(txInteger length)
 {
@@ -115,36 +135,17 @@ txSize fxBigIntMaximumX(txInteger length)
 	return sizeof(txU4) * (1 + ((length * 4) / 32));
 }
 
-txSize fxBigIntMeasure(txBigInt* bigint)
-{
-	return bigint->size * sizeof(txU4);
-}
-
-
-void printbn(bn_t* result)
-{
-	int i = result->size - 1;	
-	if (result->sign)
-		fprintf(stderr, "-");
-	fprintf(stderr, "0x");
-	while (i >= 0) {
-		fprintf(stderr, "%8.8X", result->data[i]);
-		i--;
-	}
-	fprintf(stderr, "n\n");
-}
-
 void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sign)
 {
 	txU4 data[1] = { 0 };
-	bn_t digit = { .sign=0, .size=1, .data=data };
+	txBigInt digit = { .sign=0, .size=1, .data=data };
 	bigint->sign = 0;
 	bigint->size = 1;
 	bigint->data[0] = 0;
 	while (length) {
 		char c = *p++;
-		digit.data[0] = c - '0';
-		bn_add(NULL, bigint, bn_umul1(NULL, bigint, bigint, 10), &digit);
+		data[0] = c - '0';
+		fxBigInt_uadd(NULL, bigint, fxBigInt_umul1(NULL, bigint, bigint, 10), &digit);
 		length--;
 	}
 	bigint->sign = sign;
@@ -153,14 +154,14 @@ void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sig
 void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
 {
 	txU4 data[1] = { 0 };
-	bn_t digit = { .sign=0, .size=1, .data=data };
+	txBigInt digit = { .sign=0, .size=1, .data=data };
 	bigint->sign = 0;
 	bigint->size = 1;
 	bigint->data[0] = 0;
 	while (length) {
 		char c = *p++;
-		digit.data[0] = c - '0';
-		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 1), &digit);
+		data[0] = c - '0';
+		fxBigInt_uadd(NULL, bigint, fxBigInt_ulsl1(NULL, bigint, bigint, 1), &digit);
 		length--;
 	}
 }
@@ -168,14 +169,14 @@ void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
 void fxBigIntParseO(txBigInt* bigint, txString p, txInteger length)
 {
 	txU4 data[1] = { 0 };
-	bn_t digit = { .sign=0, .size=1, .data=data };
+	txBigInt digit = { .sign=0, .size=1, .data=data };
 	bigint->sign = 0;
 	bigint->size = 1;
 	bigint->data[0] = 0;
 	while (length) {
 		char c = *p++;
-		digit.data[0] = c - '0';
-		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 3), &digit);
+		data[0] = c - '0';
+		fxBigInt_uadd(NULL, bigint, fxBigInt_ulsl1(NULL, bigint, bigint, 3), &digit);
 		length--;
 	}
 }
@@ -183,57 +184,35 @@ void fxBigIntParseO(txBigInt* bigint, txString p, txInteger length)
 void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 {
 	txU4 data[1] = { 0 };
-	bn_t digit = { .sign=0, .size=1, .data=data };
+	txBigInt digit = { .sign=0, .size=1, .data=data };
 	bigint->sign = 0;
 	bigint->size = 1;
 	bigint->data[0] = 0;
 	while (length) {
 		char c = *p++;
 		if (('0' <= c) && (c <= '9'))
-			digit.data[0] = c - '0';
+			data[0] = c - '0';
 		else if (('a' <= c) && (c <= 'f'))
-			digit.data[0] = 10 + c - 'a';
+			data[0] = 10 + c - 'a';
 		else
-			digit.data[0] = 10 + c - 'A';
-		bn_add(NULL, bigint, bn_ulsl(NULL, bigint, bigint, 4), &digit);
+			data[0] = 10 + c - 'A';
+		fxBigInt_uadd(NULL, bigint, fxBigInt_ulsl1(NULL, bigint, bigint, 4), &digit);
 		length--;
 	}
 }
 
 #ifdef mxRun
 
-void bn_freebuf(txMachine *the, void *bufptr)
-{
-}
-
-void bn_throw(txMachine *the, bn_err_t code)
-{
-	switch(code) {
-	case BN_ERR_NOMEM:
-		break;
-	case BN_ERR_DIVIDE_BY_ZERO:
-		mxRangeError("bigint divide by zero");
-		break;
-	case BN_ERR_MISCALCULATION:
-		mxUnknownError("bigint miscalculation");
-		break;
-	default:
-		mxUnknownError("bigint unknwon");
-		break;
-	}
-}
-
 static txSlot* fxCheckBigInt(txMachine* the, txSlot* it);
 static txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot);
 static txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot);
 static txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole);
-static txBigInt* fxToBigInt(txMachine* the, txSlot* theSlot);
 
 const txU4 gxDataOne[1] = { 1 };
 const txU4 gxDataZero[1] = { 0 };
-const bn_t gxBigIntNaN = { .sign=0, .size=0, .data=(txU4*)gxDataZero };
-const bn_t gxBigIntOne = { .sign=0, .size=1, .data=(txU4*)gxDataOne };
-const bn_t gxBigIntZero = { .sign=0, .size=1, .data=(txU4*)gxDataZero };
+const txBigInt gxBigIntNaN = { .sign=0, .size=0, .data=(txU4*)gxDataZero };
+const txBigInt gxBigIntOne = { .sign=0, .size=1, .data=(txU4*)gxDataOne };
+const txBigInt gxBigIntZero = { .sign=0, .size=1, .data=(txU4*)gxDataZero };
 
 void fxBuildBigInt(txMachine* the)
 {
@@ -282,53 +261,75 @@ void fx_BigInt(txMachine* the)
 		fxIntegerToBigInt(the, mxResult);
 	}
 	else
-		fxToBigInt(the, mxResult);
+		fxToBigInt(the, mxResult, 1);
 }
 
-txNumber fxToIndex(txMachine* the, txSlot* slot)
+txNumber fx_BigInt_asAux(txMachine* the)
 {
 	txNumber value, index;
-	if (slot->kind == XS_UNDEFINED_KIND)
-		return 0;
-	value = fxToNumber(the, slot);
-	if (c_isnan(value))
-		return 0;
-	value = c_trunc(value);
-	if (value < 0)
-		mxRangeError("out of range index");
-	index = value;
-	if (index <= 0)
+	if (mxArgc < 1)
 		index = 0;
-	else if (index > C_MAX_SAFE_INTEGER)
-		index = C_MAX_SAFE_INTEGER;
-	if (value != index)
-		mxRangeError("out of range index");
+	else {
+		if (mxArgv(0)->kind == XS_UNDEFINED_KIND)
+			index = 0;
+		else {
+			value = fxToNumber(the, mxArgv(0));
+			if (c_isnan(value))
+				index = 0;
+			else {
+				value = c_trunc(value);
+				if (value < 0)
+					mxRangeError("out of range index");
+				index = value;
+				if (index <= 0)
+					index = 0;
+				else if (index > C_MAX_SAFE_INTEGER)
+					index = C_MAX_SAFE_INTEGER;
+				if (value != index)
+					mxRangeError("out of range index");
+			}
+		}
+	}
+	if (mxArgc < 2)
+		mxTypeError("no bigint");
 	return index;
 }
 
 void fx_BigInt_asIntN(txMachine* the)
 {
-	txInteger index = (mxArgc < 1) ? 0 : (txInteger)fxToIndex(the, mxArgv(0));
-	txBigInt* bits;
-	txBigInt* result;
-	if (mxArgc < 2)
-		mxTypeError("no bigint");
-	bits = bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index);
-	result = bn_mod(the, C_NULL, fxToBigInt(the, mxArgv(1)), bits);
-	if (index && bn_comp(result, bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index - 1)) >= 0)
-		result = bn_sub(the, C_NULL, result, bits);
+	txInteger index = (txInteger)fx_BigInt_asAux(the);
+	txBigInt* arg = fxToBigInt(the, mxArgv(1), 1);
+	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
+	txBigInt* mask = fxBigInt_usub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
+	txBigInt* result = fxBigInt_uand(the, C_NULL, arg, mask);
+	if ((arg->sign) && !fxBigInt_iszero(result))
+		result = fxBigInt_usub(the, C_NULL, bits, result);
+	if (index && fxBigInt_comp(result, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index - 1)) >= 0)
+		result = fxBigInt_sub(the, C_NULL, result, bits);
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
+// 	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
+// 	txBigInt* result = fxBigInt_mod(the, C_NULL, fxToBigInt(the, mxArgv(1), 1), bits);
+// 	if (index && fxBigInt_comp(result, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index - 1)) >= 0)
+// 		result = fxBigInt_sub(the, C_NULL, result, bits);
+// 	mxResult->value.bigint = *result;
+// 	mxResult->kind = XS_BIGINT_KIND;
 }
 
 void fx_BigInt_asUintN(txMachine* the)
 {
-	txInteger index = (mxArgc < 1) ? 0 : (txInteger)fxToIndex(the, mxArgv(0));
-	if (mxArgc < 2)
-		mxTypeError("no bigint");
-	fxToBigInt(the, mxArgv(1));
-	mxResult->value.bigint = *bn_mod(the, C_NULL, &mxArgv(1)->value.bigint, bn_ulsl(the, C_NULL, (bn_t *)&gxBigIntOne, index));
+	txInteger index = (txInteger)fx_BigInt_asAux(the);
+	txBigInt* arg = fxToBigInt(the, mxArgv(1), 1);
+	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
+	txBigInt* mask = fxBigInt_sub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
+	txBigInt* result = fxBigInt_uand(the, C_NULL, arg, mask);
+	if ((arg->sign) && !fxBigInt_iszero(result))
+		result = fxBigInt_usub(the, C_NULL, bits, result);
+	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
+// 	fxToBigInt(the, mxArgv(1), 1);
+// 	mxResult->value.bigint = *fxBigInt_mod(the, C_NULL, &mxArgv(1)->value.bigint, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index));
+// 	mxResult->kind = XS_BIGINT_KIND;
 }
 
 void fx_BigInt_prototype_toString(txMachine* the)
@@ -367,11 +368,11 @@ void fx_BigInt_prototype_toString(txMachine* the)
 	mxResult->value.string[--offset] = 0;
 	do {
 		txBigInt* remainder = NULL;
-		slot->value.bigint = *bn_div(the, C_NULL, &slot->value.bigint, &radix, &remainder);
+		slot->value.bigint = *fxBigInt_udiv(the, C_NULL, &slot->value.bigint, &radix, &remainder);
 		mxResult->value.string[--offset] = c_read8(gxDigits + remainder->data[0]);
 		the->stack = stack;
 	}
-	while (!bn_iszero(&slot->value.bigint));
+	while (!fxBigInt_iszero(&slot->value.bigint));
 	if (minus)
 		mxResult->value.string[--offset] = '-';
 		
@@ -386,140 +387,20 @@ void fx_BigInt_prototype_valueOf(txMachine* the)
 	mxResult->value = slot->value;
 }
 
-void fxBigIntBinary(txMachine* the, txU1 code, txSlot* left, txSlot* right)
+void fxBigInt(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data)
 {
-	if ((left->kind != XS_BIGINT_KIND) && (left->kind != XS_BIGINT_X_KIND))
-		mxTypeError("Cannot coerce left operand to bigint");
-	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND))
-		mxTypeError("Cannot coerce right operand to bigint");
-	switch (code) {
-	case XS_CODE_BIT_AND:
-		left->value.bigint = *bn_and(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_BIT_OR:
-		left->value.bigint = *bn_or(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_BIT_XOR:
-		left->value.bigint = *bn_xor(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_LEFT_SHIFT:
-		left->value.bigint = *bn_lsl(the, C_NULL, &left->value.bigint, right->value.bigint.data[0]); //@@
-		break;
-	case XS_CODE_SIGNED_RIGHT_SHIFT:
-		left->value.bigint = *bn_lsr(the, C_NULL, &left->value.bigint, right->value.bigint.data[0]); //@@
-		break;
-	case XS_CODE_UNSIGNED_RIGHT_SHIFT:
-		mxTypeError("bigint >>> bigint");
-		break;
-	case XS_CODE_ADD:
-		left->value.bigint = *bn_add(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_SUBTRACT:
-		left->value.bigint = *bn_sub(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_EXPONENTIATION:
-		mxTypeError("bigint ** bigint");
-		break;
-	case XS_CODE_MULTIPLY:
-		left->value.bigint = *bn_mul(the, C_NULL, &left->value.bigint, &right->value.bigint);
-		break;
-	case XS_CODE_DIVIDE:
-		left->value.bigint = *bn_div(the, C_NULL, &left->value.bigint, &right->value.bigint, C_NULL); //@@
-		break;
-	case XS_CODE_MODULO:
-		left->value.bigint = *bn_rem(the, C_NULL, &left->value.bigint, &right->value.bigint);//@@
-		break;
-	}
-	left->kind = XS_BIGINT_KIND;
-	the->stack = right;
+	txBigInt* bigint = fxBigInt_alloc(the, size);
+	c_memcpy(bigint->data, data, size * sizeof(txU4));
+	bigint->sign = sign;
+	mxPullSlot(slot);
 }
 
-txBoolean fxBigIntCompare(txMachine* the, txU1 code, txSlot* left, txSlot* right)
+void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data)
 {
-	int result;
-	if (bn_isNaN(&left->value.bigint))
-		return 0;
-	if (right->kind == XS_STRING_KIND)
-		fxStringToBigInt(the, right, 0);
-	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND)) {
-		fxToNumber(the, right);
-		result = c_fpclassify(right->value.number);
-		if (result == FP_NAN)
-			return 0;
-		if (result == C_FP_INFINITE) {
-			if ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL))
-				return right->value.number > 0;
-			if ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL))
-				return right->value.number < 0;
-			return 0;
-		}
-		fxNumberToBigInt(the, right);
-	}
-	if (bn_isNaN(&right->value.bigint))
-		return 0;
-	result = bn_comp(&left->value.bigint, &right->value.bigint);
-	if (result < 0)
-		return ((code == XS_CODE_LESS) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_NOT_EQUAL));
-	if (result > 0)
-		return ((code == XS_CODE_MORE) || (code == XS_CODE_MORE_EQUAL) || (code == XS_CODE_NOT_EQUAL));
-	return ((code == XS_CODE_EQUAL) || (code == XS_CODE_LESS_EQUAL) || (code == XS_CODE_MORE_EQUAL));
-}
-
-void fxBigIntDecode(txMachine* the, txSize size)
-{
-	txBigInt* bigint;
-	mxPushUndefined();
-	bigint = &the->stack->value.bigint;
-	bigint->data = fxNewChunk(the, size);
-#if mxBigEndian
-	#error
-#else
-	c_memcpy(bigint->data, the->code, size);
-#endif	
-	bigint->size = size >> 2;
-	bigint->sign = 0;
-	the->stack->kind = XS_BIGINT_KIND;
-}
-
-void fxBigIntUnary(txMachine* the, txU1 code, txSlot* left)
-{
-	switch (code) {
-	case XS_CODE_BIT_NOT:
-		//@@
-		break;
-	case XS_CODE_MINUS:
-		left->value.bigint = *bn_dup(the, &left->value.bigint);
-		bn_negate(&left->value.bigint);
-		break;
-	case XS_CODE_DECREMENT:
-		left->value.bigint = *bn_sub(the, C_NULL, &left->value.bigint, (bn_t *)&gxBigIntOne);
-		break;
-	case XS_CODE_INCREMENT:
-		left->value.bigint = *bn_add(the, C_NULL, &left->value.bigint, (bn_t *)&gxBigIntOne);
-		break;
-	}
-	left->kind = XS_BIGINT_KIND;
-	the->stack = left;
-}
-
-txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot)
-{
-	if (theSlot->kind == XS_REFERENCE_KIND)
-		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
-	if ((theSlot->kind == XS_BIGINT_KIND) || (theSlot->kind == XS_BIGINT_X_KIND))
-		return 0;
-	fxToInteger(the, theSlot);
-	return 1;
-}
-
-txBoolean fxToNumericNumber(txMachine* the, txSlot* theSlot)
-{
-	if (theSlot->kind == XS_REFERENCE_KIND)
-		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
-	if ((theSlot->kind == XS_BIGINT_KIND) || (theSlot->kind == XS_BIGINT_X_KIND))
-		return 0;
-	fxToNumber(the, theSlot);
-	return 1;
+	slot->value.bigint.data = data;
+	slot->value.bigint.size = size;
+	slot->value.bigint.sign = sign;
+	slot->kind = XS_BIGINT_X_KIND;
 }
 
 txSlot* fxCheckBigInt(txMachine* the, txSlot* it)
@@ -536,17 +417,48 @@ txSlot* fxCheckBigInt(txMachine* the, txSlot* it)
 	return result;
 }
 
+txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSlot* left, txSlot* right)
+{
+	int result;
+	if (fxBigInt_isNaN(&left->value.bigint))
+		return 0;
+	if (right->kind == XS_STRING_KIND)
+		fxStringToBigInt(the, right, 0);
+	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND)) {
+		fxToNumber(the, right);
+		result = c_fpclassify(right->value.number);
+		if (result == FP_NAN)
+			return 0;
+		if (result == C_FP_INFINITE) {
+			if (less)
+				return right->value.number > 0;
+			if (more)
+				return right->value.number < 0;
+			return 0;
+		}
+		fxNumberToBigInt(the, right);
+	}
+	if (fxBigInt_isNaN(&right->value.bigint))
+		return 0;
+	result = fxBigInt_comp(&left->value.bigint, &right->value.bigint);
+	if (result < 0)
+		return less;
+	if (result > 0)
+		return more;
+	return equal;
+}
+
 txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot)
 {
 	txInteger integer = slot->value.integer;
 	txBigInt* bigint = &slot->value.bigint;
-	bn_bool sign = 0;
+	txU1 sign = 0;
 	if (integer < 0) {
 		integer = -integer;
 		sign = 1;
 	}
 	bigint->data = fxNewChunk(the, sizeof(txU4));
-	bigint->data[0] = (bn_word)integer;
+	bigint->data[0] = (txU4)integer;
 	bigint->sign = sign;
 	bigint->size = 1;
 	slot->kind = XS_BIGINT_KIND;
@@ -557,15 +469,15 @@ txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot)
 {
 	int64_t integer = (int64_t)slot->value.number;
 	txBigInt* bigint = &slot->value.bigint;
-	bn_bool sign = 0;
+	txU1 sign = 0;
 	if (integer < 0) {
 		integer = -integer;
 		sign = 1;
 	}
 	if (integer > 0x00000000FFFFFFFFll) {
 		bigint->data = fxNewChunk(the, 2 * sizeof(txU4));
-		bigint->data[0] = (bn_word)(integer);
-		bigint->data[1] = (bn_word)(integer >> 32);
+		bigint->data[0] = (txU4)(integer);
+		bigint->data[1] = (txU4)(integer >> 32);
 		bigint->size = 2;
 		bigint->sign = sign;
 	}
@@ -650,38 +562,51 @@ bail:
 	return &slot->value.bigint;
 }
 
-txBigInt* fxToBigInt(txMachine* the, txSlot* theSlot)
+txBigInt* fxToBigInt(txMachine* the, txSlot* slot, txFlag strict)
 {
 again:
-	switch (theSlot->kind) {
+	switch (slot->kind) {
 	case XS_BOOLEAN_KIND:
-		theSlot->value.bigint = *bn_dup(the, (bn_t *)((theSlot->value.boolean) ? &gxBigIntOne : &gxBigIntZero));
-		theSlot->kind = XS_BIGINT_KIND;
+		slot->value.bigint = *fxBigInt_dup(the, (txBigInt *)((slot->value.boolean) ? &gxBigIntOne : &gxBigIntZero));
+		slot->kind = XS_BIGINT_KIND;
+		break;
+	case XS_INTEGER_KIND:
+		if (strict)
+			mxSyntaxError("Cannot coerce number to bigint");
+		fxIntegerToBigInt(the, slot);	
+		break;
+	case XS_NUMBER_KIND:
+		if (strict)
+			mxSyntaxError("Cannot coerce number to bigint");
+		fxNumberToBigInt(the, slot);	
 		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
-		fxStringToBigInt(the, theSlot, 1);
-		if (bn_isNaN(&theSlot->value.bigint))
+		fxStringToBigInt(the, slot, 1);
+		if (fxBigInt_isNaN(&slot->value.bigint))
 			mxSyntaxError("Cannot coerce string to bigint");
 		break;
 	case XS_BIGINT_KIND:
 	case XS_BIGINT_X_KIND:
 		break;
+	case XS_SYMBOL_KIND:
+		mxTypeError("Cannot coerce symbol to bigint");
+		break;
 	case XS_REFERENCE_KIND:
-		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
+		fxToPrimitive(the, slot, XS_NUMBER_HINT);
 		goto again;
 	default:
 		mxTypeError("Cannot coerce to bigint");
 		break;
 	}
-	return &theSlot->value.bigint;
+	return &slot->value.bigint;
 }
 
 #endif
 
-#define bn_high_word(x)		((bn_word)((x) >> 32))
-#define bn_low_word(x)		((bn_word)(x))
-#define bn_wordsize		(sizeof(bn_word) * 8)
+#define mxBigIntHighWord(x)		((txU4)((x) >> 32))
+#define mxBigIntLowWord(x)		((txU4)(x))
+#define mxBigIntWordSize		(sizeof(txU4) * 8)
 
 #ifndef howmany
 #define howmany(x, y)	(((x) + (y) - 1) / (y))
@@ -693,55 +618,14 @@ again:
 #define MIN(a, b)	((a) <= (b) ? (a) : (b))
 #endif
 
-static void
-bn_memset(void *data, int c, unsigned int n)
-{
-	unsigned char *p = data;
-
-	while (n-- != 0)
-		*p++ = c;
-}
-
-static void
-bn_memcpy(void *dst, const void *src, unsigned int n)
-{
-	unsigned char *p1 = dst;
-	const unsigned char *p2 = src;
-
-	while (n-- != 0)
-		*p1++ = *p2++;
-}
-
-static void
-bn_memmove(void *dst, const void *src, unsigned int n)
-{
-	unsigned char *p1;
-	const unsigned char *p2;
-
-	if (src >= dst) {
-		p1 = dst;
-		p2 = src;
-		while (n-- != 0)
-			*p1++ = *p2++;
-	}
-	else {
-		p1 = (unsigned char *)dst + n;
-		p2 = (unsigned char *)src + n;
-		while (n-- != 0)
-			*--p1 = *--p2;
-	}
-}
-
-static bn_t *
-bn_alloct(bn_context_t *ctx, unsigned int n)
+txBigInt *fxBigInt_alloc(txMachine* the, txU2 size)
 {
 #ifdef mxRun
-	txMachine* the = ctx;
 	txBigInt* bigint;
 	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
-	bigint->data = fxNewChunk(the, n * sizeof(bn_word));
-	bigint->size = n;
+	bigint->data = fxNewChunk(the, (txU4)size * sizeof(txU4));
+	bigint->size = size;
 	bigint->sign = 0;
 	the->stack->kind = XS_BIGINT_KIND;
 	return bigint;
@@ -750,94 +634,27 @@ bn_alloct(bn_context_t *ctx, unsigned int n)
 #endif
 }
 
-static void bn_freet(bn_context_t *ctx, bn_t *bigint)
+void fxBigInt_free(txMachine* the, txBigInt *bigint)
 {
 #ifdef mxRun
-	txMachine* the = ctx;
 	if (bigint == &the->stack->value.bigint)
 		mxPop();
+// 	else
+// 		fprintf(stderr, "oops\n");
 #endif
 }
 
-int
-bn_iszero(bn_t *a)
+int fxBigInt_comp(txBigInt *a, txBigInt *b)
 {
-	return(a->size == 1 && a->data[0] == 0);
+	if (a->sign != b->sign)
+		return(a->sign ? -1: 1);
+	else if (a->sign)
+		return(fxBigInt_ucomp(b, a));
+	else
+		return(fxBigInt_ucomp(a, b));
 }
 
-int
-bn_isNaN(bn_t *a)
-{
-	return(a->size == 0);
-}
-
-bn_bool
-bn_sign(bn_t *a)
-{
-	return(a->sign);
-}
-
-bn_size
-bn_wsizeof(bn_t *a)
-{
-	return(a->size);
-}
-
-void
-bn_negate(bn_t *a)
-{
-	a->sign = !a->sign;
-}
-
-static void
-bn_fill0(bn_t *r)
-{
-	bn_memset(r->data, 0, r->size * sizeof(bn_word));
-}
-
-void
-bn_copy(bn_t *a, bn_t *b)
-{
-	bn_memcpy(a->data, b->data, b->size * sizeof(bn_word));
-	a->size = b->size;
-	a->sign = b->sign;
-}
-
-bn_t *
-bn_dup(bn_context_t *ctx, bn_t *a)
-{
-	bn_t *r = bn_alloct(ctx, a->size);
-
-	bn_copy(r, a);
-	return(r);
-}
-
-static int
-bn_ffs(bn_t *a)
-{
-	int i;
-	bn_word w = a->data[a->size - 1];
-
-	for (i = 0; i < (int)bn_wordsize && !(w & ((bn_word)1 << (bn_wordsize - 1 - i))); i++)
-		;
-	return(i);
-}
-
-int
-bn_bitsize(bn_t *e)
-{
-	return(e->size * bn_wordsize - bn_ffs(e));
-}
-
-static int
-bn_isset(bn_t *e, unsigned int i)
-{
-	bn_word w = e->data[i / bn_wordsize];
-	return((w & ((bn_word)1 << (i % bn_wordsize))) != 0);
-}
-
-static int
-bn_ucomp(bn_t *a, bn_t *b)
+int fxBigInt_ucomp(txBigInt *a, txBigInt *b)
 {
 	int i;
 
@@ -850,42 +667,314 @@ bn_ucomp(bn_t *a, bn_t *b)
 	return(0);
 }
 
-int
-bn_comp(bn_t *a, bn_t *b)
+int fxBigInt_iszero(txBigInt *a)
 {
-	if (a->sign != b->sign)
-		return(a->sign ? -1: 1);
-	else if (a->sign)
-		return(bn_ucomp(b, a));
-	else
-		return(bn_ucomp(a, b));
+	return(a->size == 1 && a->data[0] == 0);
+}
+
+int fxBigInt_isNaN(txBigInt *a)
+{
+	return(a->size == 0);
+}
+
+static void
+fxBigInt_fill0(txBigInt *r)
+{
+	c_memset(r->data, 0, r->size * sizeof(txU4));
+}
+
+void fxBigInt_copy(txBigInt *a, txBigInt *b)
+{
+	c_memcpy(a->data, b->data, b->size * sizeof(txU4));
+	a->size = b->size;
+	a->sign = b->sign;
+}
+
+txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a)
+{
+	txBigInt *r = fxBigInt_alloc(the, a->size);
+	fxBigInt_copy(r, a);
+	return(r);
+}
+
+static int
+fxBigInt_ffs(txBigInt *a)
+{
+	int i;
+	txU4 w = a->data[a->size - 1];
+
+	for (i = 0; i < (int)mxBigIntWordSize && !(w & ((txU4)1 << (mxBigIntWordSize - 1 - i))); i++)
+		;
+	return(i);
+}
+
+int
+fxBigInt_bitsize(txBigInt *a)
+{
+	int i = a->size;
+	txU4 w;
+	while (i > 0) {
+		i--;
+		w = a->data[i];
+		if (w) {
+			int c = __builtin_clz(w);
+			return (i * mxBigIntWordSize) + mxBigIntWordSize - c;
+		}
+	}
+	return 0;
+}
+
+int
+fxBigInt_bitsize2(txBigInt *e)
+{
+	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
+}
+
+static int fxBigInt_isset(txBigInt *e, txU4 i)
+{
+	txU4 w = e->data[i / mxBigIntWordSize];
+	return((w & ((txU4)1 << (i % mxBigIntWordSize))) != 0);
 }
 
 /*
  * bitwise operations
  */
 
-bn_t *
-bn_ulsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+txBigInt *fxBigInt_not(txMachine* the, txBigInt *r, txBigInt *a)
 {
-	unsigned int wsz, bsz;
+	if (a->sign)
+		r = fxBigInt_usub(the, r, a, (txBigInt *)&gxBigIntOne);
+	else {
+		r = fxBigInt_uadd(the, r, a, (txBigInt *)&gxBigIntOne);
+		r->sign = 1;
+	}
+	return(r);
+}
+
+txBigInt *fxBigInt_and(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	txBigInt *aa, *bb;
+	int i;
+	if (a->sign) {
+		if (b->sign)
+			goto AND_MINUS_MINUS;
+		aa = a;
+		a = b;
+		b = aa;	
+		goto AND_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto AND_PLUS_MINUS;
+	return fxBigInt_uand(the, r, a, b);
+AND_PLUS_MINUS:
+// GMP: OP1 & -OP2 == OP1 & ~(OP2 - 1)
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+    if (a->size > bb->size) {
+		for (i = 0; i < bb->size; i++)
+			r->data[i] = a->data[i] & ~bb->data[i];
+		for (; i < a->size; i++)
+			r->data[i] = a->data[i];
+    }
+    else {
+		for (i = 0; i < a->size; i++)
+			r->data[i] = a->data[i] & ~bb->data[i];
+    }
+    fxBigInt_free(the, bb);
+	return(r);
+AND_MINUS_MINUS:
+// GMP: -((-OP1) & (-OP2)) = -(~(OP1 - 1) & ~(OP2 - 1)) == ~(~(OP1 - 1) & ~(OP2 - 1)) + 1 == ((OP1 - 1) | (OP2 - 1)) + 1
+	if (r == NULL)
+		r = fxBigInt_alloc(the, MAX(a->size, b->size) + 1);
+	aa = fxBigInt_usub(the, NULL, a, (txBigInt *)&gxBigIntOne);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+	r = fxBigInt_uor(the, r, aa, bb);
+	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+	r->sign = 1;
+	fxBigInt_free(the, bb);
+	fxBigInt_free(the, aa);
+	return(r);
+}
+
+txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	int i;
+	if (a->size > b->size) {
+		txBigInt *t = b;
+		b = a;
+		a = t;
+	}
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size);
+	else
+		r->size = a->size;
+	for (i = 0; i < a->size; i++)
+		r->data[i] = a->data[i] & b->data[i];
+	return(r);
+}
+
+txBigInt *fxBigInt_or(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	txBigInt *aa, *bb;
+	int i;
+	if (a->sign) {
+		if (b->sign)
+			goto OR_MINUS_MINUS;
+		aa = a;
+		a = b;
+		b = aa;	
+		goto OR_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto OR_PLUS_MINUS;
+	return fxBigInt_uor(the, r, a, b);
+OR_PLUS_MINUS:
+// GMP: -(OP1 | (-OP2)) = -(OP1 | ~(OP2 - 1)) == ~(OP1 | ~(OP2 - 1)) + 1 == (~OP1 & (OP2 - 1)) + 1
+	if (r == NULL)
+		r = fxBigInt_alloc(the, b->size + 1);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+    if (a->size < bb->size) {
+		for (i = 0; i < a->size; i++)
+			r->data[i] = ~a->data[i] & bb->data[i];
+		for (; i < bb->size; i++)
+			r->data[i] = bb->data[i];
+	}
+	else {
+		for (i = 0; i < bb->size; i++)
+			r->data[i] = ~a->data[i] & bb->data[i];
+	}
+	r->size = bb->size;
+	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+	r->sign = 1;
+	fxBigInt_free(the, bb);
+	return(r);
+OR_MINUS_MINUS:
+// GMP: -((-OP1) | (-OP2)) = -(~(OP1 - 1) | ~(OP2 - 1)) == ~(~(OP1 - 1) | ~(OP2 - 1)) + 1 = = ((OP1 - 1) & (OP2 - 1)) + 1
+	if (r == NULL)
+		r = fxBigInt_alloc(the, MIN(a->size, b->size) + 1);
+	aa = fxBigInt_usub(the, NULL, a, (txBigInt *)&gxBigIntOne);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+	r = fxBigInt_uand(the, r, aa, bb);
+	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+	r->sign = 1;
+	fxBigInt_free(the, bb);
+	fxBigInt_free(the, aa);
+	return(r);
+}
+
+txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	int i;
+	if (a->size < b->size) {
+		txBigInt *t = b;
+		b = a;
+		a = t;
+	}
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size);
+	else
+		r->size = a->size;
+	for (i = 0; i < b->size; i++)
+		r->data[i] = a->data[i] | b->data[i];
+	for (; i < a->size; i++)
+		r->data[i] = a->data[i];
+	return(r);
+}
+
+txBigInt *fxBigInt_xor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	txBigInt *aa, *bb;
+	if (a->sign) {
+		if (b->sign)
+			goto XOR_MINUS_MINUS;
+		aa = a;
+		a = b;
+		b = aa;	
+		goto XOR_PLUS_MINUS;
+	}
+	if (b->sign)
+		goto XOR_PLUS_MINUS;
+	return fxBigInt_uxor(the, r, a, b);
+XOR_PLUS_MINUS:
+// GMP: -(OP1 ^ (-OP2)) == -(OP1 ^ ~(OP2 - 1)) == ~(OP1 ^ ~(OP2 - 1)) + 1 == (OP1 ^ (OP2 - 1)) + 1
+	if (r == NULL)
+		r = fxBigInt_alloc(the, MAX(a->size, b->size) + 1);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+	r = fxBigInt_uxor(the, r, a, bb);
+	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+	r->sign = 1;
+	fxBigInt_free(the, bb);
+	return(r);
+XOR_MINUS_MINUS:
+// GMP: (-OP1) ^ (-OP2) == ~(OP1 - 1) ^ ~(OP2 - 1) == (OP1 - 1) ^ (OP2 - 1)
+	if (r == NULL)
+		r = fxBigInt_alloc(the, MAX(a->size, b->size));
+	aa = fxBigInt_usub(the, NULL, a, (txBigInt *)&gxBigIntOne);
+	bb = fxBigInt_usub(the, NULL, b, (txBigInt *)&gxBigIntOne);
+	r = fxBigInt_uxor(the, r, aa, bb);
+	fxBigInt_free(the, bb);
+	fxBigInt_free(the, aa);
+	return(r);
+}
+
+txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	int i;
+	if (a->size < b->size) {
+		txBigInt *t = b;
+		b = a;
+		a = t;
+	}
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size);
+	else
+		r->size = a->size;
+	for (i = 0; i < b->size; i++)
+		r->data[i] = a->data[i] ^ b->data[i];
+	for (; i < a->size; i++)
+		r->data[i] = a->data[i];
+	return(r);
+}
+
+txBigInt *fxBigInt_lsl(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	if (b->sign) {
+		if (a->sign) {
+			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
+			r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+			r->sign = 1;
+		}
+		else
+			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
+	}
+	else {
+		r = fxBigInt_ulsl1(the, r, a, b->data[0]);
+		r->sign = a->sign;
+	}
+	return(r);
+}
+
+txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
+{
+	txU4 wsz, bsz;
 	int n;
 
 	/* 'r' can be the same as 'a' */
 	/* assume 'r' is large enough if 'r' is present */
 	if (r == NULL)
-		r = bn_alloct(ctx, a->size + howmany(sw, bn_wordsize));
-	wsz = sw / bn_wordsize;
-	bsz = sw % bn_wordsize;
+		r = fxBigInt_alloc(the, a->size + howmany(sw, mxBigIntWordSize));
+	wsz = sw / mxBigIntWordSize;
+	bsz = sw % mxBigIntWordSize;
 	if (bsz == 0) {
-		bn_memmove(&r->data[wsz], a->data, a->size * sizeof(bn_word));
-		bn_memset(r->data, 0, wsz * sizeof(bn_word));
+		c_memmove(&r->data[wsz], a->data, a->size * sizeof(txU4));
+		c_memset(r->data, 0, wsz * sizeof(txU4));
 		r->size = a->size + wsz;
 	}
 	else {
-		r->data[a->size + wsz] = a->data[a->size - 1] >> (bn_wordsize - bsz);
+		r->data[a->size + wsz] = a->data[a->size - 1] >> (mxBigIntWordSize - bsz);
 		for (n = a->size; --n >= 1;)
-			r->data[n + wsz] = (a->data[n] << bsz) | (a->data[n - 1] >> (bn_wordsize - bsz));
+			r->data[n + wsz] = (a->data[n] << bsz) | (a->data[n - 1] >> (mxBigIntWordSize - bsz));
 		r->data[wsz] = a->data[0] << bsz;
 		/* clear the remaining part */
 		for (n = wsz; --n >= 0;)
@@ -896,242 +985,117 @@ bn_ulsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
 	return(r);
 }
 
-bn_t *
-bn_lsl(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+txBigInt *fxBigInt_lsr(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-	r = bn_ulsl(ctx, r, a, sw);
-	r->sign = a->sign;
+	if (b->sign) {
+		r = fxBigInt_ulsl1(the, r, a, b->data[0]);
+		r->sign = a->sign;
+	}
+	else {
+		if (a->sign) {
+			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
+			r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+			r->sign = 1;
+		}
+		else
+			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
+	}
 	return(r);
 }
 
-bn_t *
-bn_ulsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
 {
 	int wsz, bsz;
 	int i, n;
 
-	wsz = sw / bn_wordsize;
-	bsz = sw % bn_wordsize;
+	wsz = sw / mxBigIntWordSize;
+	bsz = sw % mxBigIntWordSize;
 	n = a->size - wsz;
 	if (n <= 0) {
-		if (r == NULL) r = bn_alloct(ctx, 1);
+		if (r == NULL) r = fxBigInt_alloc(the, 1);
 		r->size = 1;
 		r->data[0] = 0;
 		return(r);
 	}
 	/* 'r' can be the same as 'a' */
 	if (r == NULL)
-		r = bn_alloct(ctx, n);
+		r = fxBigInt_alloc(the, n);
 	if (bsz == 0) {
-		bn_memmove(r->data, &a->data[wsz], n * sizeof(bn_word));
+		c_memmove(r->data, &a->data[wsz], n * sizeof(txU4));
 		r->size = n;
 	}
 	else {
 		for (i = 0; i < n - 1; i++)
-			r->data[i] = (a->data[i + wsz] >> bsz) | (a->data[i + wsz + 1] << (bn_wordsize - bsz));
+			r->data[i] = (a->data[i + wsz] >> bsz) | (a->data[i + wsz + 1] << (mxBigIntWordSize - bsz));
 		r->data[i] = a->data[i + wsz] >> bsz;
 		r->size = (n > 1 && r->data[n - 1] == 0) ? n - 1: n;
 	}
 	return(r);
 }
 
-bn_t *
-bn_lsr(bn_context_t *ctx, bn_t *r, bn_t *a, unsigned int sw)
+txBigInt *fxBigInt_nop(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-	if (a->sign) {
-		a->sign = 0;
-		r = bn_add(ctx, r, bn_ulsr(ctx, NULL, a, sw), (bn_t *)&gxBigIntOne);
-		r->sign = 1;
-		return(r);
-	}
-	return bn_ulsr(ctx, r, a, sw);
-}
-
-// binary bitwise operators
-// negative operands algorithms inspired by GMP
-
-bn_t *
-bn_uxor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	int i;
-	if (a->size < b->size) {
-		bn_t *t = b;
-		b = a;
-		a = t;
-	}
-	if (r == NULL)
-		r = bn_alloct(ctx, a->size);
-	for (i = 0; i < b->size; i++)
-		r->data[i] = a->data[i] ^ b->data[i];
-	for (; i < a->size; i++)
-		r->data[i] = a->data[i];
-	return(r);
-}
-
-bn_t *
-bn_xor(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	bn_t *t;
-	if (a->sign) {
-		if (b->sign)
-			goto XOR_MINUS_MINUS;
-		t = a;
-		a = b;
-		b = t;	
-		goto XOR_PLUS_MINUS;
-	}
-	if (b->sign)
-		goto XOR_PLUS_MINUS;
-	return bn_uxor(ctx, r, a, b);
-XOR_PLUS_MINUS:
-    /* Operand 2 negative, so will be the result.
-       -(OP1 ^ (-OP2)) = -(OP1 ^ ~(OP2 - 1)) == ~(OP1 ^ ~(OP2 - 1)) + 1 == (OP1 ^ (OP2 - 1)) + 1      */
-	b->sign = 0;
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	r = bn_add(ctx, r, bn_uxor(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
-	r->sign = 1;
-	return(r);
-XOR_MINUS_MINUS:
-// (-OP1) ^ (-OP2) == ~(OP1 - 1) ^ ~(OP2 - 1) == (OP1 - 1) ^ (OP2 - 1)
-	
-	a->sign = 0;
-	b->sign = 0;
-	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	return bn_uxor(ctx, r, a, b);
-}
-
-bn_t *
-bn_or(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	int i;
-	bn_t *t;
-	if (a->sign) {
-		if (b->sign)
-			goto OR_MINUS_MINUS;
-		t = a;
-		a = b;
-		b = t;	
-		goto OR_PLUS_MINUS;
-	}
-	if (b->sign)
-		goto OR_PLUS_MINUS;
-// OR_PLUS_PLUS		
-	if (a->size < b->size) {
-		t = b;
-		b = a;
-		a = t;
-	}
-	if (r == NULL)
-		r = bn_alloct(ctx, a->size);
-	for (i = 0; i < b->size; i++)
-		r->data[i] = a->data[i] | b->data[i];
-	for (; i < a->size; i++)
-		r->data[i] = a->data[i];
-	return(r);
-OR_PLUS_MINUS:
-    /* Operand 2 negative, so will be the result.
-       -(OP1 | (-OP2)) = -(OP1 | ~(OP2 - 1)) =
-       = ~(OP1 | ~(OP2 - 1)) + 1 =
-       = (~OP1 & (OP2 - 1)) + 1      */
-	b->sign = 0;
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	t = bn_alloct(ctx, b->size);
-    if (a->size < b->size) {
-		for (i = 0; i < a->size; i++)
-			t->data[i] = ~a->data[i] & b->data[i];
-		for (; i < b->size; i++)
-			t->data[i] = b->data[i];
-	}
-	else {
-		for (i = 0; i < b->size; i++)
-			t->data[i] = ~a->data[i] & b->data[i];
-	}
-	r = bn_add(ctx, r, t, (bn_t *)&gxBigIntOne);
-	r->sign = 1;
-	return(r);
-OR_MINUS_MINUS:
-	  /* Both operands are negative, so will be the result.
-	     -((-OP1) | (-OP2)) = -(~(OP1 - 1) | ~(OP2 - 1)) =
-	     = ~(~(OP1 - 1) | ~(OP2 - 1)) + 1 =
-	     = ((OP1 - 1) & (OP2 - 1)) + 1      */
-	a->sign = 0;
-	b->sign = 0;
-	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	r = bn_add(ctx, r, bn_and(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
-	r->sign = 1;
-	return(r);
-}
-
-static bn_t *
-bn_and(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	int i;
-	bn_t *t;
-	if (a->sign) {
-		if (b->sign)
-			goto AND_MINUS_MINUS;
-		t = a;
-		a = b;
-		b = t;	
-		goto AND_PLUS_MINUS;
-	}
-	if (b->sign)
-		goto AND_PLUS_MINUS;
-// AND_PLUS_PLUS		
-	if (a->size > b->size) {
-		bn_t *t = b;
-		b = a;
-		a = t;
-	}
-	if (r == NULL)
-		r = bn_alloct(ctx, a->size);
-	for (i = 0; i < a->size; i++)
-		r->data[i] = a->data[i] & b->data[i];
-	return(r);
-AND_PLUS_MINUS:
-    /* OP1 is positive and zero-extended,
-       OP2 is negative and ones-extended.
-       The result will be positive.
-       OP1 & -OP2 = OP1 & ~(OP2 - 1).  */
-	b->sign = 0;
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	if (r == NULL)
-		r = bn_alloct(ctx, a->size);
-    if (a->size > b->size) {
-		for (i = 0; i < b->size; i++)
-			r->data[i] = a->data[i] & ~b->data[i];
-		for (; i < a->size; i++)
-			r->data[i] = a->data[i];
-    }
-    else {
-		for (i = 0; i < a->size; i++)
-			r->data[i] = a->data[i] & ~b->data[i];
-    }
-	return(r);
-AND_MINUS_MINUS:
-  /* Both operands are negative, so will be the result.
-	 -((-OP1) & (-OP2)) = -(~(OP1 - 1) & ~(OP2 - 1)) =
-	 = ~(~(OP1 - 1) & ~(OP2 - 1)) + 1 =
-	 = ((OP1 - 1) | (OP2 - 1)) + 1      */
-	a->sign = 0;
-	b->sign = 0;
-	a = bn_sub(ctx, NULL, a, (bn_t *)&gxBigIntOne);
-	b = bn_sub(ctx, NULL, b, (bn_t *)&gxBigIntOne);
-	r = bn_add(ctx, r, bn_or(ctx, NULL, a, b), (bn_t *)&gxBigIntOne);
-	r->sign = 1;
-	return(r);
+	mxTypeError("no such operation");
 }
 
 /*
- * arith on Z
+ * arithmetic
  */
 
-static int
-bn_uadd_prim(bn_word *rp, bn_word *ap, bn_word *bp, int an, int bn)
+txBigInt *fxBigInt_add(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
-	bn_word a, b, t, r, c = 0;
+	if ((aa->sign ^ bb->sign) == 0) {
+		rr = fxBigInt_uadd(the, rr, aa, bb);
+		if (aa->sign)
+			rr->sign = 1;
+	}
+	else {
+		if (!aa->sign)
+			rr = fxBigInt_usub(the, rr, aa, bb);
+		else
+			rr = fxBigInt_usub(the, rr, bb, aa);
+	}
+	return(rr);
+}
+
+txBigInt *fxBigInt_dec(txMachine* the, txBigInt *r, txBigInt *a)
+{
+	return fxBigInt_sub(the, r, a, (txBigInt *)&gxBigIntOne);
+}
+
+txBigInt *fxBigInt_inc(txMachine* the, txBigInt *r, txBigInt *a)
+{
+	return fxBigInt_add(the, r, a, (txBigInt *)&gxBigIntOne);
+}
+
+txBigInt *fxBigInt_neg(txMachine* the, txBigInt *r, txBigInt *a)
+{
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size);
+	fxBigInt_copy(r, a);
+	r->sign = !a->sign;
+	return(r);
+}
+
+txBigInt *fxBigInt_sub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
+{
+	if ((aa->sign ^ bb->sign) == 0) {
+		if (!aa->sign)
+			rr = fxBigInt_usub(the, rr, aa, bb);
+		else
+			rr = fxBigInt_usub(the, rr, bb, aa);
+	}
+	else {
+		txU1 sign = aa->sign;	/* could be replaced if rr=aa */
+		rr = fxBigInt_uadd(the, rr, aa, bb);
+		rr->sign = sign;
+	}
+	return(rr);
+}
+
+static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
+{
+	txU4 a, b, t, r, c = 0;
 	int i;
 
 	for (i = 0; i < an; i++) {
@@ -1150,10 +1114,9 @@ bn_uadd_prim(bn_word *rp, bn_word *ap, bn_word *bp, int an, int bn)
 	return(c);
 }
 
-static bn_t *
-bn_uadd(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
+txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
-	bn_t *x, *y;
+	txBigInt *x, *y;
 	int c;
 
 	if (aa->size < bb->size) {
@@ -1165,8 +1128,8 @@ bn_uadd(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 		y = aa;
 	}
 	if (rr == NULL)
-		rr = bn_alloct(ctx, y->size + 1);
-	c = bn_uadd_prim(rr->data, x->data, y->data, x->size, y->size);
+		rr = fxBigInt_alloc(the, y->size + 1);
+	c = fxBigInt_uadd_prim(rr->data, x->data, y->data, x->size, y->size);
 	/* CAUTION: rr may equals aa or bb. do not touch until here */
 	rr->size = y->size;
 	rr->sign = 0;
@@ -1175,20 +1138,19 @@ bn_uadd(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 	return(rr);
 }
 
-static bn_t *
-bn_usub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
+static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
 	int i, n;
-	bn_word a, b, r, t;
-	bn_word *ap, *bp, *rp;
-	unsigned int c = 0;
+	txU4 a, b, r, t;
+	txU4 *ap, *bp, *rp;
+	txU4 c = 0;
 
 	if (rr == NULL)
-		rr = bn_alloct(ctx, MAX(aa->size, bb->size));
+		rr = fxBigInt_alloc(the, MAX(aa->size, bb->size));
 	rr->sign = (aa->size < bb->size ||
-		    (aa->size == bb->size && bn_ucomp(aa, bb) < 0));
+		    (aa->size == bb->size && fxBigInt_ucomp(aa, bb) < 0));
 	if (rr->sign) {
-		bn_t *tt = aa;
+		txBigInt *tt = aa;
 		aa = bb;
 		bb = tt;
 	}
@@ -1229,65 +1191,38 @@ bn_usub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 	return(rr);
 }
 
-bn_t *
-bn_add(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
+txBigInt *fxBigInt_mul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
-	if ((aa->sign ^ bb->sign) == 0) {
-		rr = bn_uadd(ctx, rr, aa, bb);
-		if (aa->sign)
-			rr->sign = 1;
-	}
-	else {
-		if (!aa->sign)
-			rr = bn_usub(ctx, rr, aa, bb);
-		else
-			rr = bn_usub(ctx, rr, bb, aa);
-	}
+	rr = fxBigInt_umul(the, rr, aa, bb);
+	if (aa->sign != bb->sign)
+		rr->sign = 1;
 	return(rr);
 }
 
-bn_t *
-bn_sub(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
+txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
-	if ((aa->sign ^ bb->sign) == 0) {
-		if (!aa->sign)
-			rr = bn_usub(ctx, rr, aa, bb);
-		else
-			rr = bn_usub(ctx, rr, bb, aa);
-	}
-	else {
-		bn_bool sign = aa->sign;	/* could be replaced if rr=aa */
-		rr = bn_uadd(ctx, rr, aa, bb);
-		rr->sign = sign;
-	}
-	return(rr);
-}
-
-static bn_t *
-bn_umul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
-{
-	bn_dword a, b, r;
-	bn_word *ap, *bp, *rp;
-	bn_word c = 0;
+	txU8 a, b, r;
+	txU4 *ap, *bp, *rp;
+	txU4 c = 0;
 	int i, j, n, m;
 
 	if (rr == NULL)
-		rr = bn_alloct(ctx, aa->size + bb->size);
-	bn_fill0(rr);
+		rr = fxBigInt_alloc(the, aa->size + bb->size);
+	fxBigInt_fill0(rr);
 	ap = aa->data;
 	bp = bb->data;
 	rp = rr->data;
 	n = bb->size;
 	for (i = 0, j = 0; i < n; i++) {
-		b = (bn_dword)bp[i];
+		b = (txU8)bp[i];
 		c = 0;
 		m = aa->size;
 		for (j = 0; j < m; j++) {
-			a = (bn_dword)ap[j];
+			a = (txU8)ap[j];
 			r = a * b + c;
-			r += (bn_dword)rp[i + j];
-			rp[i + j] = bn_low_word(r);
-			c = bn_high_word(r);
+			r += (txU8)rp[i + j];
+			rp[i + j] = mxBigIntLowWord(r);
+			c = mxBigIntHighWord(r);
 		}
 		rp[i + j] = c;
 	}
@@ -1298,33 +1233,23 @@ bn_umul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 	return(rr);
 }
 
-bn_t *
-bn_mul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
-{
-	rr = bn_umul(ctx, rr, aa, bb);
-	if (aa->sign != bb->sign)
-		rr->sign = 1;
-	return(rr);
-}
-
-bn_t *
-bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b)
+txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b)
 {
 	int i, n;
-	bn_word c = 0;
-	bn_word *ap, *rp;
-	bn_dword wa, wr;
+	txU4 c = 0;
+	txU4 *ap, *rp;
+	txU8 wa, wr;
 
 	if (r == NULL)
-		r = bn_alloct(ctx, a->size + 1);
+		r = fxBigInt_alloc(the, a->size + 1);
 	ap = a->data;
 	rp = r->data;
 	n = a->size;
 	for (i = 0; i < n; i++) {
-		wa = (bn_dword)ap[i];
+		wa = (txU8)ap[i];
 		wr = wa * b + c;
-		c = bn_high_word(wr);
-		rp[i] = bn_low_word(wr);
+		c = mxBigIntHighWord(wr);
+		rp[i] = mxBigIntLowWord(wr);
 	}
 	if (c != 0)
 		rp[i] = c;
@@ -1337,11 +1262,147 @@ bn_umul1(bn_context_t *ctx, bn_t *r, bn_t *a, bn_word b)
 	return(r);
 }
 
-static void
-bn_makepoly(bn_t *r, bn_t *a, int t)
+txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	if (b->sign) {
+		if (r == NULL)
+			r = fxBigInt_alloc(the, 1);
+		else {
+			r->size = 1;
+			r->sign = 0;
+		}
+		r->data[0] = 0;
+	}
+	else if (fxBigInt_iszero(b)) {
+		if (r == NULL)
+			r = fxBigInt_alloc(the, 1);
+		else {
+			r->size = 1;
+			r->sign = 0;
+		}
+		r->data[0] = 1;
+	}
+	else {
+		int i = fxBigInt_bitsize(b) - 1;
+		int odd = fxBigInt_isset(b, i);
+		txU4 c = fxBigInt_bitsize(a);
+		txBigInt *t = fxBigInt_umul1(the, NULL, b, c);
+		t = fxBigInt_ulsr1(the, t, t, 5);
+		c = 1 + t->data[0]; //@@
+		fxBigInt_free(the, t);
+        if (r == NULL)
+			r = fxBigInt_alloc(the, c);
+   		t = fxBigInt_alloc(the, c);
+      	fxBigInt_copy(r, a);
+		while (i > 0) {
+            i--;
+			t = fxBigInt_sqr(the, t, r);
+			if ((odd = fxBigInt_isset(b, i))) {
+				r->size = c;
+				r = fxBigInt_umul(the, r, t, a);
+			}
+			else {
+				txBigInt u = *r;
+				*r = *t;
+				*t = u;
+			}
+			t->size = c;
+		}
+		r->sign = a->sign & odd;
+		fxBigInt_free(the, t);
+	}
+	return(r);
+}
+
+txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
+{
+	int i, j, t;
+	txU4 *ap, *rp;
+	txU8 uv, t1, t2, t3, ai;
+	txU4 c, cc;
+	txU4 overflow = 0;	/* overflow flag of 'u' */
+
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->size * 2);
+	fxBigInt_fill0(r);
+	t = a->size;
+	ap = a->data;
+	rp = r->data;
+
+	for (i = 0; i < t - 1; i++) {
+		uv = (txU8)ap[i] * ap[i] + rp[i * 2];
+		rp[i * 2] = mxBigIntLowWord(uv);
+		c = mxBigIntHighWord(uv);
+		cc = 0;
+		ai = ap[i];
+		for (j = i + 1; j < t; j++) {
+			int k = i + j;
+			t1 = ai * ap[j];
+			t2 = t1 + c + ((txU8)cc << mxBigIntWordSize);	/* 'cc:c' must be <= 2(b-1) so no overflow here */
+			t3 = t1 + t2;
+			uv = t3 + rp[k];
+			cc = t3 < t1 || uv < t3;
+			c = (txU4)mxBigIntHighWord(uv);
+			rp[k] = mxBigIntLowWord(uv);
+		}
+		c += overflow;
+		rp[i + t] = c;		/* c = u */
+		overflow = cc || c < overflow;
+	}
+	/* the last loop */
+	uv = (txU8)ap[i] * ap[i] + rp[i * 2];
+	rp[i * 2] = mxBigIntLowWord(uv);
+	rp[i + t] = mxBigIntHighWord(uv) + overflow;
+
+	/* remove leading 0s */
+	for (i = 2*t; --i > 0 && rp[i] == 0;)
+		;
+	r->size = i + 1;
+	return(r);
+}
+
+txBigInt *fxBigInt_div(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b)
+{
+	q = fxBigInt_udiv(the, q, a, b, C_NULL);
+	if (a->sign)
+		q->sign = !q->sign;
+	if (b->sign)
+		q->sign = !q->sign;
+	return(q);
+}
+
+txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	txBigInt *q;
+	if (r == NULL)
+		r = fxBigInt_alloc(the, a->sign ? b->size : MIN(a->size, b->size));
+	q = fxBigInt_udiv(the, NULL, a, b, &r);
+	if (a->sign) {
+		if (!fxBigInt_iszero(r))
+			r = fxBigInt_sub(the, r, b, r);
+	}
+	fxBigInt_free(the, q);
+	return(r);
+}
+
+txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
+{
+	txBigInt *q;
+	if (r == NULL)
+		r = fxBigInt_alloc(the, MIN(a->size, b->size));
+	q = fxBigInt_udiv(the, NULL, a, b, &r);
+	if (a->sign) {
+		if (!fxBigInt_iszero(r))
+            r->sign = !r->sign;
+	}
+	fxBigInt_free(the, q);
+	return(r);
+}
+
+static void fxBigInt_makepoly(txBigInt *r, txBigInt *a, int t)
 {
 	int n;
-	bn_word *rp, *ap;
+	txU4 *rp, *ap;
 
 	/* make up a polynomial a_t*b^n + a_{t-1}*b^{n-1} + ... */
 	n = r->size;
@@ -1354,16 +1415,16 @@ bn_makepoly(bn_t *r, bn_t *a, int t)
 }
 
 #if BN_NO_ULDIVMOD
-static bn_dword
-div64_32(bn_dword a, bn_word b)
+static txU8
+div64_32(txU8 a, txU4 b)
 {
-	bn_word high = (bn_word)(a >> 32);
-	bn_dword r = 0, bb = b, d = 1;
+	txU4 high = (txU4)(a >> 32);
+	txU8 r = 0, bb = b, d = 1;
 
 	if (high >= b) {
 		high /= b;
-		r = (bn_dword)high << 32;
-		a -= (bn_dword)(high * b) << 32;
+		r = (txU8)high << 32;
+		a -= (txU8)(high * b) << 32;
 	}
 	while ((long long)bb > 0 && bb < a) {
 		bb += bb;
@@ -1381,18 +1442,17 @@ div64_32(bn_dword a, bn_word b)
 }
 #endif
 
-static bn_t *
-bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
+static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r)
 {
 	int sw;
-	bn_t *nb, *na, *tb, *a2, *b2, *tb2, *tb3;
+	txBigInt *nb, *na, *tb, *a2, *b2, *tb2, *tb3;
 	int i, n, t;
-	bn_word *qp, *ap, *bp;
-#define mk_dword(p, i)	(((bn_dword)(p)[i] << bn_wordsize) | (p)[i - 1])
+	txU4 *qp, *ap, *bp;
+#define mk_dword(p, i)	(((txU8)(p)[i] << mxBigIntWordSize) | (p)[i - 1])
 
-	if (bn_ucomp(a, b) < 0) {
+	if (fxBigInt_ucomp(a, b) < 0) {
 		if (q == NULL) {
-			q = bn_alloct(ctx, 1);
+			q = fxBigInt_alloc(the, 1);
 		}
 		else {
 			q->sign = 0;
@@ -1401,9 +1461,9 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 		q->data[0] = 0;
 		if (r != NULL) {
 			if (*r == NULL)
-				*r = bn_dup(ctx, a);
+				*r = fxBigInt_dup(the, a);
 			else
-				bn_copy(*r, a);
+				fxBigInt_copy(*r, a);
 			(*r)->sign = 0;
 		}
 		return(q);
@@ -1411,107 +1471,78 @@ bn_udiv(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
 
 	/* CAUTION: if q is present, it must take account of normalization */
 	if (q == NULL)
-		q = bn_alloct(ctx, a->size - b->size + 2);
+		q = fxBigInt_alloc(the, a->size - b->size + 2);
 	if (r != NULL && *r == NULL)
-		*r = bn_alloct(ctx, b->size);
+		*r = fxBigInt_alloc(the, b->size);
 
 	/* normalize */
-	sw = bn_ffs(b);
-	nb = bn_ulsl(ctx, NULL, b, sw);
-	na = bn_ulsl(ctx, NULL, a, sw);
+	sw = fxBigInt_ffs(b);
+	nb = fxBigInt_ulsl1(the, NULL, b, sw);
+	na = fxBigInt_ulsl1(the, NULL, a, sw);
 	t = nb->size - 1;	/* the size must not change from 'b' */
 	n = na->size - 1;
 
 	/* adjust size of q */
 	q->size = na->size - nb->size + 1;
-	bn_fill0(q);	/* set 0 to quotient */
+	fxBigInt_fill0(q);	/* set 0 to quotient */
 
 	/* process the most significant word */
 	qp = &q->data[q->size - 1];
-	tb = bn_ulsl(ctx, NULL, nb, (n - t) * bn_wordsize);	/* y*b^n */
-	if (bn_ucomp(na, tb) >= 0) {
+	tb = fxBigInt_ulsl1(the, NULL, nb, (n - t) * mxBigIntWordSize);	/* y*b^n */
+	if (fxBigInt_ucomp(na, tb) >= 0) {
 		(*qp)++;
-		bn_sub(ctx, na, na, tb);
+		fxBigInt_sub(the, na, na, tb);
 		/* since nomalization done, must be na < tb here */
 	}
 
 	/* prepare the constant for the adjustment: y_t*b + y_{t-1} */
-	b2 = bn_alloct(ctx, 2);
-	bn_makepoly(b2, nb, t);
+	b2 = fxBigInt_alloc(the, 2);
+	fxBigInt_makepoly(b2, nb, t);
 	/* and allocate for temporary buffer */
-	a2 = bn_alloct(ctx, 3);
-	tb2 = bn_alloct(ctx, 3);
-	tb3 = bn_alloct(ctx, tb->size + 1);
+	a2 = fxBigInt_alloc(the, 3);
+	tb2 = fxBigInt_alloc(the, 3);
+	tb3 = fxBigInt_alloc(the, tb->size + 1);
 
 	ap = na->data;
 	bp = nb->data;
 	for (i = n; i >= t + 1; --i) {
-		bn_word tq;
+		txU4 tq;
 
 		/* the first estimate */
 #if BN_NO_ULDIVMOD
-		tq = (ap[i] == bp[t]) ? ~(bn_word)0: (bn_word)div64_32(mk_dword(ap, i), bp[t]);
+		tq = (ap[i] == bp[t]) ? ~(txU4)0: (txU4)div64_32(mk_dword(ap, i), bp[t]);
 #else
-		tq = (ap[i] == bp[t]) ? ~(bn_word)0: (bn_word)(mk_dword(ap, i) / bp[t]);
+		tq = (ap[i] == bp[t]) ? ~(txU4)0: (txU4)(mk_dword(ap, i) / bp[t]);
 #endif
 
 		/* adjust */
-		bn_makepoly(a2, na, i);
-		while (bn_ucomp(bn_umul1(ctx, tb2, b2, tq), a2) > 0)
+		fxBigInt_makepoly(a2, na, i);
+		while (fxBigInt_ucomp(fxBigInt_umul1(the, tb2, b2, tq), a2) > 0)
 			--tq;
 
 		/* next x */
-		bn_ulsr(ctx, tb, tb, bn_wordsize);
-		bn_usub(ctx, na, na, bn_umul1(ctx, tb3, tb, tq));
+		fxBigInt_ulsr1(the, tb, tb, mxBigIntWordSize);
+		fxBigInt_usub(the, na, na, fxBigInt_umul1(the, tb3, tb, tq));
 		if (na->sign) {
-			bn_add(ctx, na, na, tb);
+			fxBigInt_add(the, na, na, tb);
 			--tq;
 		}
 		*--qp = tq;
 	}
 	if (r != NULL)
-		*r = bn_ulsr(ctx, *r, na, sw);
+		*r = fxBigInt_ulsr1(the, *r, na, sw);
 	/* remove leading 0s from q */
 	for (i = q->size; --i > 0 && q->data[i] == 0;)
 		;
 	q->size = i + 1;
-	bn_freebuf(ctx, nb);
+	
+	fxBigInt_free(the, tb3);
+	fxBigInt_free(the, tb2);
+	fxBigInt_free(the, a2);
+	fxBigInt_free(the, b2);
+	fxBigInt_free(the, tb);
+	fxBigInt_free(the, na);
+	fxBigInt_free(the, nb);
 	return(q);
-}
-
-bn_t *
-bn_div(bn_context_t *ctx, bn_t *q, bn_t *a, bn_t *b, bn_t **r)
-{
-	q = bn_udiv(ctx, q, a, b, r);
-	if (a->sign) {
-		q->sign = !q->sign;
-		if (r && !bn_iszero(*r)) {
-			bn_sub(ctx, *r, b, *r);
-//             (*r)->sign = !(*r)->sign;
-		}
-	}
-	if (b->sign)
-		q->sign = !q->sign;
-	return(q);
-}
-
-bn_t *
-bn_mod(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	(void)bn_div(ctx, NULL, a, b, &r);
-	/* cannot deallocate 'q' here */
-	return(r);
-}
-
-bn_t *
-bn_rem(bn_context_t *ctx, bn_t *r, bn_t *a, bn_t *b)
-{
-	bn_t *q = bn_udiv(ctx, NULL, a, b, &r);
-	if (a->sign) {
-		if (!bn_iszero(r))
-            r->sign = !r->sign;
-	}
-	bn_freet(ctx, q);
-	return(r);
 }
 
