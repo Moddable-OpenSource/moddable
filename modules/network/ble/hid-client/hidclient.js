@@ -32,15 +32,27 @@ const ReportType = {
 };
 Object.freeze(ReportType);
 
+const UsageID = {
+	POINTER: 1,
+	MOUSE: 2,
+	JOYSTICK: 4,
+	GAMEPAD: 5,
+	KEYBOARD: 6,
+	KEYPAD: 7
+};
+Object.freeze(UsageID);
+
 class BLEHIDClient extends BLEClient {
 	constructor() {
 		super();
 		this.HID_SERVICE_UUID = uuid`1812`;
 		this.REPORT_CHARACTERISTIC_UUID = uuid`2A4D`;
+		this.REPORT_MAP_CHARACTERISTIC_UUID = uuid`2A4B`;
 		this.REPORT_REFERENCE_DESCRIPTOR_UUID = uuid`2908`;
 	}
 	configure(params) {
 		this.reportTypes = params.reportTypes;
+		this.usageID = params.usageID;
 	}
 	onReady() {
 		SM.securityParameters = { mitm:true };
@@ -73,16 +85,36 @@ class BLEHIDClient extends BLEClient {
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(this.REPORT_CHARACTERISTIC_UUID);
+			services[0].discoverCharacteristic(this.REPORT_MAP_CHARACTERISTIC_UUID);
 	}
 	onCharacteristics(characteristics) {
 		let count = characteristics.length;
 		if (0 == count) return;
 		
-		this.reports = new Array(count);
-		characteristics.forEach((characteristic, index) => this.reports[index] = { characteristic, reportType:0 })
+		this.reports = [];
+		for (let i = 0; i < count; ++i) {
+			let characteristic = characteristics[i];
+			if (characteristic.uuid.equals(this.REPORT_MAP_CHARACTERISTIC_UUID)) {
+				characteristic.readValue(Authorization.NoMITM);
+				return;
+			}
+			else if (characteristic.uuid.equals(this.REPORT_CHARACTERISTIC_UUID)) {
+				this.reports.push({ characteristic, reportType:0 });
+			}
+		}
 		this.reportIndex = 0;
 		this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
+	}
+	onCharacteristicValue(characteristic, buffer) {
+		let bytes = new Uint8Array(buffer);
+		let usageID = bytes[3];
+		if (usageID == this.usageID) {
+			characteristic.service.discoverCharacteristic(this.REPORT_CHARACTERISTIC_UUID);
+		}
+		else {
+			// wrong hid device!
+			// @@ disconnect from this device
+		}
 	}
 	onDescriptors(descriptors) {
 		let descriptor = descriptors.find(descriptor => descriptor.uuid.equals(this.REPORT_REFERENCE_DESCRIPTOR_UUID));
@@ -123,5 +155,5 @@ class BLEHIDClient extends BLEClient {
 	}
 }
 
-export {BLEHIDClient as default, BLEHIDClient, ReportType};
+export {BLEHIDClient as default, BLEHIDClient, ReportType, UsageID};
 
