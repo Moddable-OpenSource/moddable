@@ -25,7 +25,6 @@ import BLEClient from "bleclient";
 import {uuid} from "btutils";
 import {SM, IOCapability, Authorization} from "sm";
 
-
 const ReportType = {
 	INPUT: 0x01,
 	OUTPUT: 0x02,
@@ -36,7 +35,6 @@ Object.freeze(ReportType);
 class BLEHIDClient extends BLEClient {
 	constructor() {
 		super();
-
 		this.HID_SERVICE_UUID = uuid`1812`;
 		this.REPORT_CHARACTERISTIC_UUID = uuid`2A4D`;
 		this.REPORT_REFERENCE_DESCRIPTOR_UUID = uuid`2908`;
@@ -105,8 +103,10 @@ class BLEHIDClient extends BLEClient {
 						matched.push(report);
 				});
 			});
-			if (matched.length)
-				this.onDeviceReady(matched);
+			if (matched.length) {
+				this.onDeviceReports(matched);
+				this.onDeviceReady();
+			}
 		}		
 	}
 	onDeviceConnected() {
@@ -116,6 +116,9 @@ class BLEHIDClient extends BLEClient {
 		debugger;
 	}
 	onDeviceReady() {
+		debugger;
+	}
+	onDeviceReports(reports) {
 		debugger;
 	}
 }

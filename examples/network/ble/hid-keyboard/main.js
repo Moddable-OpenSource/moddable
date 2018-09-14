@@ -30,7 +30,14 @@ class TerminalKeyboard extends BLEHIDKeyboard {
 		if (code >= 32 && code <= 126)
 			; // trace(String.fromCharCode(code))
 		else if (code == 13)
-			trace("\n>");
+			trace("\n> ");
+	}
+	onDeviceConnected() {
+		trace("Pairing keyboard...\n")
+	}
+	onDeviceReady() {
+		trace("Pairing complete.\n");
+		trace("\n> ");
 	}
 }
 
