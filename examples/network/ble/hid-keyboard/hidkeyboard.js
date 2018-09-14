@@ -66,17 +66,14 @@ class BLEHIDKeyboard extends BLEHIDClient {
 	onCharacteristicNotification(characteristic, buffer) {
 		this.onReportData(new Uint8Array(buffer));
 	}
-	onDeviceConnected() {
-	}
 	onDeviceDisconnected() {
-		trace("\nKeyboard disconnected.\n");
 		this.lastKeyCount = 0;
-		this.lastKey = 0;
-		this.lastModifier = 0;
+		this.lastKeys = new Uint8Array(6);
+		this.keys = new Uint8Array(6);
 		this.indicators = 0;
 		this.outputReportCharacteristic = null;
 	}
-	onDeviceReady(reports) {
+	onDeviceReports(reports) {
 		let enabledNotifications = false;
 		reports.forEach(report => {
 			if (ReportType.OUTPUT == report.reportType)
@@ -86,102 +83,98 @@ class BLEHIDKeyboard extends BLEHIDClient {
 				report.characteristic.enableNotifications();
 			}
 		});
-		trace("Keyboard ready.\n\n");
-		trace(">");
-	}
-	onCharCode(code) {
 	}
 	onReportData(report) {
 		// This is the 8 byte HID keyboard report
 		//trace(report.join(' ') + '\n');
 		//return;
-		
+		let i, j, found, key;
 		let keyCount = 0;
-		for (let i = 2; i < 8; ++i) {
-			if (0 != report[i])
-				++keyCount;
-			else
+		for (i = 2; i < 8; ++i) {
+			let key = report[i];
+			if (0 == key)
 				break;
+			for (j = 0, found = false; j < this.lastKeyCount; ++j) {
+				if (this.lastKeys[j] == key) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				this.keys[keyCount++] = key;
 		}
 		
-		if (keyCount < this.lastKeyCount) {
-			// one of multiple keys was released - skip it
-			this.lastKeyCount = keyCount;
-			return;
-		}
-		else if (0 == report[2]) {
-			// key release - skip it
-			return;
-		}
-
-		let key = report[2];
+		this.lastKeyCount = i - 2;
+		for (i = 0; i < this.lastKeyCount; ++i)
+			this.lastKeys[i] = report[2 + i];
+		
+		/**	
+		if (keyCount)
+			trace("take: " + this.keys.slice(0, keyCount).join(' ') + "\n");
+		else
+			trace("take: none\n");
+		**/
 		let modifier = report[0];
 		
-		if (this.lastKey == key && this.lastModifier != modifier) {
-			// release of modifier key - skip it
-			this.lastModifier = modifier;
-			return;
-		}
+		for (i = 0; i < keyCount; ++i) {
+			let shift = this.capsLock || (modifier & (Modifiers.LEFT_SHIFT | Modifiers.RIGHT_SHIFT));
+			let code = 0;
+			let escape;
 		
-		let shift = this.capsLock || (modifier & (Modifiers.LEFT_SHIFT | Modifiers.RIGHT_SHIFT));
-		let code = 0;
-		let escape;
-		
-		if (key >= 4 && key <= 29) {		// a-z
-			key -= 4;
-			code = shift ? key + 65 : key + 97;
-		}
-		else if (key >= 30 && key <= 38) {	// 1-9
-			key -= 30;
-			code = shift ? ShiftCodes30[key] : key + 49;
-		}
-		else if (key == 39)
-			code = shift ? 41 : 48;			// ) or 0
-		else if (key >= 40 && key <= 44) {
-			key -= 40;
-			code = Codes40[key];
-		}
-		else if (key >= 45 && key <= 56) {	// - to /
-			key -= 45;
-			code = shift ? ShiftCodes45[key] : Codes45[key];
-		}
-		else if (key == 57) {				// caps lock
-			this.indicators ^= Indicators.CAPS_LOCK;
-			this.updateIndicators();
-		}
-		else if (key == 71) {				// scroll lock
-			this.indicators ^= Indicators.SCROLL_LOCK;
-			this.updateIndicators();
-		}
-		if ((79 <= key) && (key <= 82)) {	// arrow keys
-			key -= 79;
-			code = Codes79[key];
-			escape = true;
-		}
-		else if (key == 83) {				// num lock
-			this.indicators ^= Indicators.NUM_LOCK;
-			this.updateIndicators();
-		}
-		else if (key >= 84 && key <= 88) {	// keypad / to keypad enter
-			key -= 84;
-			code = Codes84[key];
-		}
-		else if (key >= 89 && key <= 99) {	// keypad 1 to keypad .
-			key -= 89;
-			code = this.numLock ? NumLockCodes89[key] : Codes89[key];
-		}
-		else {
-			//trace(`unhandled report key ${key}\n`);
-		}
-		if (0 != code) {
-			if (escape)
-				this.onCharCode(27);
-			this.onCharCode(code);
-		}
+			key = this.keys[i];
 			
-		this.lastKeyCount = keyCount;
-		this.lastKey = report[2];
-		this.lastModifier = modifier;
+			if (key >= 4 && key <= 29) {		// a-z
+				key -= 4;
+				code = shift ? key + 65 : key + 97;
+			}
+			else if (key >= 30 && key <= 38) {	// 1-9
+				key -= 30;
+				code = shift ? ShiftCodes30[key] : key + 49;
+			}
+			else if (key == 39)
+				code = shift ? 41 : 48;			// ) or 0
+			else if (key >= 40 && key <= 44) {
+				key -= 40;
+				code = Codes40[key];
+			}
+			else if (key >= 45 && key <= 56) {	// - to /
+				key -= 45;
+				code = shift ? ShiftCodes45[key] : Codes45[key];
+			}
+			else if (key == 57) {				// caps lock
+				this.indicators ^= Indicators.CAPS_LOCK;
+				this.updateIndicators();
+			}
+			else if (key == 71) {				// scroll lock
+				this.indicators ^= Indicators.SCROLL_LOCK;
+				this.updateIndicators();
+			}
+			if ((79 <= key) && (key <= 82)) {	// arrow keys
+				key -= 79;
+				code = Codes79[key];
+				escape = true;
+			}
+			else if (key == 83) {				// num lock
+				this.indicators ^= Indicators.NUM_LOCK;
+				this.updateIndicators();
+			}
+			else if (key >= 84 && key <= 88) {	// keypad / to keypad enter
+				key -= 84;
+				code = Codes84[key];
+			}
+			else if (key >= 89 && key <= 99) {	// keypad 1 to keypad .
+				key -= 89;
+				code = this.numLock ? NumLockCodes89[key] : Codes89[key];
+			}
+			else {
+				//trace(`unhandled report key ${key}\n`);
+			}
+			if (0 != code) {
+				if (escape)
+					this.onCharCode(27);
+				this.onCharCode(code);
+			}
+		}
 	}
 	updateIndicators() {
 		if (this.outputReportCharacteristic)
