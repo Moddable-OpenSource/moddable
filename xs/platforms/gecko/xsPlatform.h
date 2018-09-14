@@ -76,7 +76,8 @@ typedef int16_t txS2;
 typedef uint16_t txU2;
 typedef int32_t txS4;
 typedef uint32_t txU4;
-
+typedef int64_t txS8;
+typedef uint64_t txU8;
 
 typedef int txSocket;
 #define mxNoSocket NULL
