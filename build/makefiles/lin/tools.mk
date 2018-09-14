@@ -61,6 +61,7 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsArguments.c.o \
 	$(LIB_DIR)/xsArray.c.o \
 	$(LIB_DIR)/xsAtomics.c.o \
+	$(LIB_DIR)/xsBigInt.c.o \
 	$(LIB_DIR)/xsBoolean.c.o \
 	$(LIB_DIR)/xsCode.c.o \
 	$(LIB_DIR)/xsCommon.c.o \

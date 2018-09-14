@@ -215,6 +215,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, mxID(_SharedArrayBuffer));
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Atomics)))
 		fxStripObject(linker, the, mxID(_Atomics));
+	// BigInt
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_BigInt)) && !fxIsCodeUsed(XS_CODE_BIGINT_1) && !fxIsCodeUsed(XS_CODE_BIGINT_2))
+		fxStripClass(linker, the, mxID(_BigInt));
 	// JSON
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
 		fxStripObject(linker, the, mxID(_JSON));
@@ -423,6 +426,53 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	else
 		fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },\n");
 	fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL }\n");
+	fprintf(file, "};\n\n");
+	
+	fprintf(file, "const txTypeBigInt ICACHE_FLASH_ATTR gxTypeBigInt = {\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_BigInt)) || fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2)) {
+		fprintf(file, "\tfxBigIntCompare,\n");
+		fprintf(file, "\tfxBigIntDecode,\n");
+		fprintf(file, "\tfxBigIntInstantiate,\n");
+		fprintf(file, "\tfxBigIntStringify,\n");
+		fprintf(file, "\tfxBigInt_add,\n");
+		fprintf(file, "\tfxBigInt_and,\n");
+		fprintf(file, "\tfxBigInt_dec,\n");
+		fprintf(file, "\tfxBigInt_div,\n");
+		fprintf(file, "\tfxBigInt_exp,\n");
+		fprintf(file, "\tfxBigInt_inc,\n");
+		fprintf(file, "\tfxBigInt_lsl,\n");
+		fprintf(file, "\tfxBigInt_lsr,\n");
+		fprintf(file, "\tfxBigInt_mul,\n");
+		fprintf(file, "\tfxBigInt_neg,\n");
+		fprintf(file, "\tfxBigInt_nop,\n");
+		fprintf(file, "\tfxBigInt_not,\n");
+		fprintf(file, "\tfxBigInt_or,\n");
+		fprintf(file, "\tfxBigInt_rem,\n");
+		fprintf(file, "\tfxBigInt_sub,\n");
+		fprintf(file, "\tfxBigInt_xor,\n");
+	}
+	else {
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+	}
 	fprintf(file, "};\n\n");
 }
 
