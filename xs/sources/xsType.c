@@ -149,11 +149,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		mxPullSlot(theSlot);
 		break;
 	case XS_BIGINT_KIND:
-		mxPush(mxBigIntPrototype);
-		anInstance = fxNewBigIntInstance(the, theSlot);
-		if (the->frame->flag & XS_STRICT_FLAG)
-			anInstance->flag |= XS_DONT_PATCH_FLAG;
-		mxPullSlot(theSlot);
+		anInstance = gxTypeBigInt.instantiate(the, theSlot);
 		break;
 	case XS_REFERENCE_KIND:
 		anInstance = theSlot->value.reference;

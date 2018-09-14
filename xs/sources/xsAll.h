@@ -153,7 +153,7 @@ typedef struct {
 #define mxSortThreshold 4
 #define mxSortStackSize 8 * sizeof(txUnsigned)
 
-#define mxTypeArrayCount 9
+#define mxTypeArrayCount 11
 
 typedef struct {
 	txInteger size;
@@ -180,11 +180,15 @@ typedef struct {
 typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
 typedef txBoolean (*txBigIntCompare)(txMachine*, txU1 less, txU1 equal, txU1 more, txSlot*, txSlot*);
 typedef void (*txBigIntDecode)(txMachine*, txSize);
+typedef txSlot* (*txBigIntInstantiate)(txMachine* the, txSlot* slot);
+typedef void (*txBigIntStringify)(txMachine* the, txSlot* slot, txU4 radix);
 typedef txBigInt* (*txBigIntUnary)(txMachine*, txBigInt* r, txBigInt* a);
 
 typedef struct {
 	txBigIntCompare compare;
 	txBigIntDecode decode;
+	txBigIntInstantiate instantiate;
+	txBigIntStringify stringify;
 	txBigIntBinary _add;
 	txBigIntBinary _and;
 	txBigIntUnary _dec;
@@ -990,13 +994,16 @@ mxExport void fx_BigInt_prototype_toString(txMachine* the);
 mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
 
 extern void fxBuildBigInt(txMachine* the);
-extern txSlot* fxNewBigIntInstance(txMachine* the, txSlot* slot);
 extern txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
+extern txSlot* fxBigIntInstantiate(txMachine* the, txSlot* slot);
+extern void fxBigIntStringify(txMachine* the, txSlot* slot, txU4 radix);
 
 mxExport void fxBigInt(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport txBigInt* fxToBigInt(txMachine* the, txSlot* slot, txFlag strict);
+mxExport txS8 fxToBigInt64(txMachine* the, txSlot* slot);
+mxExport txU8 fxToBigUint64(txMachine* the, txSlot* slot);
 
 mxExport txBigInt* fxBigInt_add(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_and(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
@@ -1204,6 +1211,12 @@ extern txSlot* fxNewArrayInstance(txMachine* the);
 extern txNumber fxToLength(txMachine* the, txSlot* slot);
 
 /* xsDataView.c */
+extern int fxBigInt64Compare(const void* p, const void* q);
+extern void fxBigInt64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+extern void fxBigInt64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+extern int fxBigUint64Compare(const void* p, const void* q);
+extern void fxBigUint64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+extern void fxBigUint64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern int fxFloat32Compare(const void* p, const void* q);
 extern void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
@@ -1249,6 +1262,8 @@ mxExport void fx_DataView(txMachine* the);
 mxExport void fx_DataView_prototype_buffer_get(txMachine* the);
 mxExport void fx_DataView_prototype_byteLength_get(txMachine* the);
 mxExport void fx_DataView_prototype_byteOffset_get(txMachine* the);
+mxExport void fx_DataView_prototype_getBigInt64(txMachine* the);
+mxExport void fx_DataView_prototype_getBigUint64(txMachine* the);
 mxExport void fx_DataView_prototype_getFloat32(txMachine* the);
 mxExport void fx_DataView_prototype_getFloat64(txMachine* the);
 mxExport void fx_DataView_prototype_getInt8(txMachine* the);
@@ -1257,6 +1272,8 @@ mxExport void fx_DataView_prototype_getInt32(txMachine* the);
 mxExport void fx_DataView_prototype_getUint8(txMachine* the);
 mxExport void fx_DataView_prototype_getUint16(txMachine* the);
 mxExport void fx_DataView_prototype_getUint32(txMachine* the);
+mxExport void fx_DataView_prototype_setBigInt64(txMachine* the);
+mxExport void fx_DataView_prototype_setBigUint64(txMachine* the);
 mxExport void fx_DataView_prototype_setFloat32(txMachine* the);
 mxExport void fx_DataView_prototype_setFloat64(txMachine* the);
 mxExport void fx_DataView_prototype_setInt8(txMachine* the);

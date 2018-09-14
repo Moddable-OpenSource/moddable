@@ -74,16 +74,17 @@ LIBRARIES = -lm -ldl
 LINK_OPTIONS = -rdynamic
 
 OBJECTS = \
-	$(TMP_DIR)/xsdtoa.o \
-	$(TMP_DIR)/xsre.o \
+	$(TMP_DIR)/xsBigInt.o \
+	$(TMP_DIR)/xsCode.o \
 	$(TMP_DIR)/xsCommon.o \
-	$(TMP_DIR)/xsScript.o \
+	$(TMP_DIR)/xsdtoa.o \
 	$(TMP_DIR)/xsLexical.o \
+	$(TMP_DIR)/xsre.o \
+	$(TMP_DIR)/xsScope.o \
+	$(TMP_DIR)/xsScript.o \
+	$(TMP_DIR)/xsSourceMap.o \
 	$(TMP_DIR)/xsSyntaxical.o \
 	$(TMP_DIR)/xsTree.o \
-	$(TMP_DIR)/xsSourceMap.o \
-	$(TMP_DIR)/xsScope.o \
-	$(TMP_DIR)/xsCode.o \
 	$(TMP_DIR)/xsc.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR)

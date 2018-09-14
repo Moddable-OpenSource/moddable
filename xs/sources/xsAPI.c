@@ -107,6 +107,15 @@ txBoolean fxToBoolean(txMachine* the, txSlot* theSlot)
 			break;
 		}
 		break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		if ((theSlot->value.bigint.size == 1) && (theSlot->value.bigint.data[0] == 0))
+			theSlot->value.boolean = 0;
+		else
+			theSlot->value.boolean = 1;
+		theSlot->kind = XS_BOOLEAN_KIND;
+		
+		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_BOOLEAN_KIND;
@@ -295,8 +304,8 @@ again:
 		break;
 	case XS_BIGINT_KIND:
 	case XS_BIGINT_X_KIND:
-		fxToInstance(the, theSlot);
-		goto again;
+		gxTypeBigInt.stringify(the, theSlot, 0);
+		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		break;
