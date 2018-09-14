@@ -22,7 +22,7 @@
  https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
 */
 
-import {BLEHIDClient, ReportType} from "hidclient";
+import {BLEHIDClient, ReportType, UsageID} from "hidclient";
 
 const Modifiers = {
 	LEFT_CONTROL: 0x01,
@@ -60,7 +60,7 @@ const NumLockCodes89 = [49,50,51,52,53,54,55,56,57,48,46];			// num lock key cod
 class BLEHIDKeyboard extends BLEHIDClient {
 	constructor() {
 		super();
-		this.configure({ reportTypes:[ReportType.INPUT, ReportType.OUTPUT] });
+		this.configure({ usageID: UsageID.KEYBOARD, reportTypes:[ReportType.INPUT, ReportType.OUTPUT] });
 		this.onDeviceDisconnected();
 	}
 	onCharacteristicNotification(characteristic, buffer) {
