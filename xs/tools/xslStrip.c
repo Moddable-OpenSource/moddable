@@ -360,45 +360,61 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txTypeDispatch ICACHE_FLASH_ATTR gxTypeDispatches[mxTypeArrayCount] = {\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_BigInt64Array)))
+		fprintf(file, "\t{ 4, fxBigInt64Getter, fxBigInt64Setter, fxBigIntCoerce, fxBigInt64Compare, _getBigInt64, _setBigInt64, _BigInt64Array },\n");
+	else
+		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL,, C_NULL, _getBigInt64, _setBigInt64, _BigInt64Array },\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_BigUint64Array)))
+		fprintf(file, "\t{ 4, fxBigUint64Getter, fxBigUint64Setter, fxBigIntCoerce, fxBigUint64Compare, _getBigUint64, _setBigUint64, _BigUint64Array },\n");
+	else
+		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL,, C_NULL, _getBigUint64, _setBigUint64, _BigUint64Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Float32Array)))
-		fprintf(file, "\t{ 4, fxFloat32Getter, fxFloat32Setter, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },\n");
+		fprintf(file, "\t{ 4, fxFloat32Getter, fxFloat32Setter, fxNumberCoerce, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },\n");
 	else
-		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL, _getFloat32, _setFloat32, _Float32Array },\n");
+		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL,, C_NULL, _getFloat32, _setFloat32, _Float32Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Float64Array)))
-		fprintf(file, "\t{ 8, fxFloat64Getter, fxFloat64Setter, fxFloat64Compare, _getFloat64, _setFloat64, _Float64Array },\n");
+		fprintf(file, "\t{ 8, fxFloat64Getter, fxFloat64Setter, fxNumberCoerce, fxFloat64Compare, _getFloat64, _setFloat64, _Float64Array },\n");
 	else
-		fprintf(file, "\t{ 8, C_NULL, C_NULL, C_NULL, _getFloat64, _setFloat64, _Float64Array },\n");
+		fprintf(file, "\t{ 8, C_NULL, C_NULL, C_NULL,, C_NULL, _getFloat64, _setFloat64, _Float64Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Int8Array)))
-		fprintf(file, "\t{ 1, fxInt8Getter, fxInt8Setter, fxInt8Compare, _getInt8, _setInt8, _Int8Array },\n");
+		fprintf(file, "\t{ 1, fxInt8Getter, fxInt8Setter, fxNumberCoerce, fxInt8Compare, _getInt8, _setInt8, _Int8Array },\n");
 	else
-		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL, _getInt8, _setInt8, _Int8Array },\n");
+		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL,, C_NULL, _getInt8, _setInt8, _Int8Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Int16Array)))
-		fprintf(file, "\t{ 2, fxInt16Getter, fxInt16Setter, fxInt16Compare, _getInt16, _setInt16, _Int16Array },\n");
+		fprintf(file, "\t{ 2, fxInt16Getter, fxInt16Setter, fxNumberCoerce, fxInt16Compare, _getInt16, _setInt16, _Int16Array },\n");
 	else
-		fprintf(file, "\t{ 2, C_NULL, C_NULL, C_NULL, _getInt16, _setInt16, _Int16Array },\n");
+		fprintf(file, "\t{ 2, C_NULL, C_NULL, C_NULL,, C_NULL, _getInt16, _setInt16, _Int16Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Int32Array)))
-		fprintf(file, "\t{ 4, fxInt32Getter, fxInt32Setter, fxInt32Compare, _getInt32, _setInt32, _Int32Array },\n");
+		fprintf(file, "\t{ 4, fxInt32Getter, fxInt32Setter, fxNumberCoerce, fxInt32Compare, _getInt32, _setInt32, _Int32Array },\n");
 	else
-		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL, _getInt32, _setInt32, _Int32Array },\n");
+		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL,, C_NULL, _getInt32, _setInt32, _Int32Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint8Array)))
-		fprintf(file, "\t{ 1, fxUint8Getter, fxUint8Setter, fxUint8Compare, _getUint8, _setUint8, _Uint8Array },\n");
+		fprintf(file, "\t{ 1, fxUint8Getter, fxUint8Setter, fxNumberCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8Array },\n");
 	else
-		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL, _getUint8, _setUint8, _Uint8Array },\n");
+		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL,, C_NULL, _getUint8, _setUint8, _Uint8Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint16Array)))
-		fprintf(file, "\t{ 2, fxUint16Getter, fxUint16Setter, fxUint16Compare, _getUint16, _setUint16, _Uint16Array },\n");
+		fprintf(file, "\t{ 2, fxUint16Getter, fxUint16Setter, fxNumberCoerce, fxUint16Compare, _getUint16, _setUint16, _Uint16Array },\n");
 	else
-		fprintf(file, "\t{ 2, C_NULL, C_NULL, C_NULL, _getUint16, _setUint16, _Uint16Array },\n");
+		fprintf(file, "\t{ 2, C_NULL, C_NULL, C_NULL,, C_NULL, _getUint16, _setUint16, _Uint16Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint32Array)))
-		fprintf(file, "\t{ 4, fxUint32Getter, fxUint32Setter, fxUint32Compare, _getUint32, _setUint32, _Uint32Array },\n");
+		fprintf(file, "\t{ 4, fxUint32Getter, fxUint32Setter, fxNumberCoerce, fxUint32Compare, _getUint32, _setUint32, _Uint32Array },\n");
 	else
-		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL, _getUint32, _setUint32, _Uint32Array },\n");
+		fprintf(file, "\t{ 4, C_NULL, C_NULL, C_NULL,, C_NULL, _getUint32, _setUint32, _Uint32Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint8ClampedArray)))
-		fprintf(file, "\t{ 1, fxUint8Getter, fxUint8ClampedSetter, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
+		fprintf(file, "\t{ 1, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
 	else
-		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
+		fprintf(file, "\t{ 1, C_NULL, C_NULL, C_NULL,, C_NULL, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
 	fprintf(file, "};\n\n");
 	
 	fprintf(file, "const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_Atomics)) && fxIsLinkerSymbolUsed(linker, mxID(_BigInt64Array)))
+		fprintf(file, "\t{ fxInt64Add, fxInt64And, fxInt64CompareExchange, fxInt64Exchange, fxInt64Load, fxInt64Or, fxInt64Store, fxInt64Sub, fxInt64Xor },\n");
+	else
+		fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },\n");
+	if (fxIsLinkerSymbolUsed(linker, mxID(_Atomics)) && fxIsLinkerSymbolUsed(linker, mxID(_BigUint64Array)))
+		fprintf(file, "\t{ fxUint64Add, fxUint64And, fxUint64CompareExchange, fxUint64Exchange, fxUint64Load, fxUint64Or, fxUint64Store, fxUint64Sub, fxUint64Xor },\n");
+	else
+		fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },\n");
 	fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },\n");
 	fprintf(file, "\t{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Atomics)) && fxIsLinkerSymbolUsed(linker, mxID(_Int8Array)))
@@ -432,8 +448,9 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	if (fxIsLinkerSymbolUsed(linker, mxID(_BigInt)) || fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2)) {
 		fprintf(file, "\tfxBigIntCompare,\n");
 		fprintf(file, "\tfxBigIntDecode,\n");
-		fprintf(file, "\tfxBigIntInstantiate,\n");
-		fprintf(file, "\tfxBigIntStringify,\n");
+		fprintf(file, "\tfxBigIntToInstance,\n");
+		fprintf(file, "\tfxBigIntToNumber,\n");
+		fprintf(file, "\tfxBigintToString,\n");
 		fprintf(file, "\tfxBigInt_add,\n");
 		fprintf(file, "\tfxBigInt_and,\n");
 		fprintf(file, "\tfxBigInt_dec,\n");
