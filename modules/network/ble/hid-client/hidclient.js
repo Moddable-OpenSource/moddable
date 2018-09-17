@@ -49,6 +49,7 @@ class BLEHIDClient extends BLEClient {
 		this.REPORT_CHARACTERISTIC_UUID = uuid`2A4D`;
 		this.REPORT_MAP_CHARACTERISTIC_UUID = uuid`2A4B`;
 		this.REPORT_REFERENCE_DESCRIPTOR_UUID = uuid`2908`;
+		this.connecting = false;
 	}
 	configure(params) {
 		this.reportTypes = params.reportTypes;
@@ -61,6 +62,8 @@ class BLEHIDClient extends BLEClient {
 		this.startScanning();
 	}
 	onDiscovered(device) {
+		if (this.connecting)
+			return;
 		let found = false;
 		let uuids = device.scanResponse.completeUUID16List;
 		if (uuids)
@@ -72,6 +75,7 @@ class BLEHIDClient extends BLEClient {
 		}
 		if (found) {
 			this.stopScanning();
+			this.connecting = true;
 			this.connect(device);
 		}
 	}
@@ -81,6 +85,7 @@ class BLEHIDClient extends BLEClient {
 	}
 	onDisconnected() {
 		this.onDeviceDisconnected();
+		this.connecting = false;
 		this.startScanning();
 	}
 	onServices(services) {
