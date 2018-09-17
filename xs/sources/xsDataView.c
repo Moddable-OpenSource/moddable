@@ -694,7 +694,7 @@ void fx_DataView_prototype_getUint32(txMachine* the)
 	fx_DataView_prototype_get(the, 4, fxUint32Getter);
 }
 
-void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCallback setter)
+void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCoerce coercer, txTypeCallback setter)
 {
 	txSlot* instance = fxCheckDataViewInstance(the, mxThis);
 	txSlot* view = instance->next;
@@ -707,12 +707,7 @@ void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCallback se
 	else
 		mxPushUndefined();
 	value = the->stack;	
-	if (delta < 0) {
-		delta = -delta;
-		fxToBigInt(the, value, 1);
-	}
-	else
-		fxToNumber(the,value);
+	(*coercer)(the, value);
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
 	fxCheckArrayBufferDetached(the, buffer);
@@ -725,57 +720,57 @@ void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCallback se
 
 void fx_DataView_prototype_setBigInt64(txMachine* the)
 {
-	fx_DataView_prototype_set(the, -8, fxBigInt64Setter);
+	fx_DataView_prototype_set(the, 8, fxBigIntCoerce, fxBigInt64Setter);
 }
 
 void fx_DataView_prototype_setBigUint64(txMachine* the)
 {
-	fx_DataView_prototype_set(the, -8, fxBigUint64Setter);
+	fx_DataView_prototype_set(the, 8, fxBigIntCoerce, fxBigUint64Setter);
 }
 
 void fx_DataView_prototype_setFloat32(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 4, fxFloat32Setter);
+	fx_DataView_prototype_set(the, 4, fxNumberCoerce, fxFloat32Setter);
 }
 
 void fx_DataView_prototype_setFloat64(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 8, fxFloat64Setter);
+	fx_DataView_prototype_set(the, 8, fxNumberCoerce, fxFloat64Setter);
 }
 
 void fx_DataView_prototype_setInt8(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 1, fxInt8Setter);
+	fx_DataView_prototype_set(the, 1, fxNumberCoerce, fxInt8Setter);
 }
 
 void fx_DataView_prototype_setInt16(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 2, fxInt16Setter);
+	fx_DataView_prototype_set(the, 2, fxNumberCoerce, fxInt16Setter);
 }
 
 void fx_DataView_prototype_setInt32(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 4, fxInt32Setter);
+	fx_DataView_prototype_set(the, 4, fxNumberCoerce, fxInt32Setter);
 }
 
 void fx_DataView_prototype_setUint8(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 1, fxUint8Setter);
+	fx_DataView_prototype_set(the, 1, fxNumberCoerce, fxUint8Setter);
 }
 
 void fx_DataView_prototype_setUint16(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 2, fxUint16Setter);
+	fx_DataView_prototype_set(the, 2, fxNumberCoerce, fxUint16Setter);
 }
 
 void fx_DataView_prototype_setUint32(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 4, fxUint32Setter);
+	fx_DataView_prototype_set(the, 4, fxNumberCoerce, fxUint32Setter);
 }
 
 void fx_DataView_prototype_setUint8Clamped(txMachine* the)
 {
-	fx_DataView_prototype_set(the, 1, fxUint8ClampedSetter);
+	fx_DataView_prototype_set(the, 1, fxNumberCoerce, fxUint8ClampedSetter);
 }
 
 
@@ -842,7 +837,7 @@ void fxTypedArraySetter(txMachine* the)
 		txIndex length = view->value.dataView.size / delta;
 		txIndex index = the->scratch.value.at.index;
 		txSlot* slot = mxArgv(0);
-		fxToNumber(the, slot);
+		dispatch->value.typedArray.dispatch->coerce(the, slot);
 		data = fxCheckArrayBufferDetached(the, buffer);
 		if (index < length) {
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + delta * index, slot, EndianNative);
@@ -870,7 +865,7 @@ txBoolean fxTypedArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID i
 			return 0;
 		if (slot->kind != XS_UNINITIALIZED_KIND) {
 			txSlot* data;
-			fxToNumber(the, slot);
+			dispatch->value.typedArray.dispatch->coerce(the, slot);
 			data = fxCheckArrayBufferDetached(the, buffer);
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + delta * index, slot, EndianNative);
 		}
@@ -990,7 +985,7 @@ txBoolean fxTypedArraySetPropertyValue(txMachine* the, txSlot* instance, txID id
 		txSlot* data = C_NULL;
 		txInteger delta = dispatch->value.typedArray.dispatch->size;
 		txIndex length = view->value.dataView.size / delta;
-		fxToNumber(the, value);
+		dispatch->value.typedArray.dispatch->coerce(the, value);
 		data = fxCheckArrayBufferDetached(the, buffer);
 		if (index < length) {
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + delta * index, value, EndianNative);
@@ -1565,6 +1560,7 @@ void fx_TypedArray_prototype_fill(txMachine* the)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
+	(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
 	while (start < end) {
 		(*dispatch->value.typedArray.dispatch->setter)(the, data, start, the->stack, EndianNative);
 		start += delta;
@@ -2380,30 +2376,13 @@ int fxBigInt64Compare(const void* p, const void* q)
 void fxBigInt64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
 	txS8 value;
-	txU1 sign = 0;
 #ifdef mxMisalignedSettersCrash
 	value = c_read32(data->value.arrayBuffer.address + offset);
 #else
 	value = *((txS8*)(data->value.arrayBuffer.address + offset));
 #endif
 	value = IMPORT(S64);
-	if (value < 0) {
-		value = -value;
-		sign = 1;
-	}
-	if (value > 0x00000000FFFFFFFFll) {
-		slot->value.bigint.data = fxNewChunk(the, 2 * sizeof(txU4));
-		slot->value.bigint.data[0] = (txU4)(value);
-		slot->value.bigint.data[1] = (txU4)(value >> 32);
-		slot->value.bigint.size = 2;
-	}
-	else {
-		slot->value.bigint.data = fxNewChunk(the, sizeof(txU4));
-		slot->value.bigint.data[0] = (txU4)value;
-		slot->value.bigint.size = 1;
-	}
-    slot->value.bigint.sign = sign;
-	slot->kind = XS_BIGINT_KIND;
+	fxFromBigInt64(the, slot, value);
 }
 
 void fxBigInt64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
@@ -2433,19 +2412,7 @@ void fxBigUint64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* s
 	value = *((txU8*)(data->value.arrayBuffer.address + offset));
 #endif
 	value = IMPORT(U64);
-	if (value > 0x00000000FFFFFFFFll) {
-		slot->value.bigint.data = fxNewChunk(the, 2 * sizeof(txU4));
-		slot->value.bigint.data[0] = (txU4)(value);
-		slot->value.bigint.data[1] = (txU4)(value >> 32);
-		slot->value.bigint.size = 2;
-	}
-	else {
-		slot->value.bigint.data = fxNewChunk(the, sizeof(txU4));
-		slot->value.bigint.data[0] = (txU4)value;
-		slot->value.bigint.size = 1;
-	}
-    slot->value.bigint.sign = 0;
-	slot->kind = XS_BIGINT_KIND;
+	fxFromBigUint64(the, slot, value);
 }
 
 void fxBigUint64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)

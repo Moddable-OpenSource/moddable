@@ -23,7 +23,7 @@
 static txInteger fxCheckAtomicsIndex(txMachine* the, txInteger index, txInteger length);
 static txSlot* fxCheckAtomicsTypedArray(txMachine* the, txBoolean onlyInt32);
 static txSlot* fxCheckSharedArrayBuffer(txMachine* the, txSlot* slot, txString which);
-static void fxPushAtomicsValue(txMachine* the, int i);
+static void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer);
 
 #define mxAtomicsHead0(TYPE,TO) \
 	TYPE result = 0; \
@@ -67,6 +67,12 @@ static void fxPushAtomicsValue(txMachine* the, int i);
 #define mxAtomicsTail() \
 	slot->kind = XS_INTEGER_KIND; \
 	slot->value.integer = result
+
+#define mxAtomicsTailBigInt64() \
+	fxFromBigInt64(the, slot, result)
+
+#define mxAtomicsTailBigUint64() \
+	fxFromBigUint64(the, slot, result)
 	
 #define mxAtomicsTailOverflow() \
 	if (result <= 0x7FFFFFFF) { \
@@ -90,65 +96,83 @@ static void fxPushAtomicsValue(txMachine* the, int i);
 void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
 void fxInt16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
 void fxInt32Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
+void fxInt64Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsAdd(); mxAtomicsTailBigInt64(); }
 void fxUint8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsAdd(); mxAtomicsTail(); }
 void fxUint16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsAdd(); mxAtomicsTail(); }
 void fxUint32Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsAdd(); mxAtomicsTailOverflow(); }
+void fxUint64Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsAdd(); mxAtomicsTailBigUint64(); }
 
 void fxInt8And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAnd(); mxAtomicsTail(); }
 void fxInt16And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsAnd(); mxAtomicsTail(); }
 void fxInt32And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsAnd(); mxAtomicsTail(); }
+void fxInt64And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsAnd(); mxAtomicsTailBigInt64(); }
 void fxUint8And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsAnd(); mxAtomicsTail(); }
 void fxUint16And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsAnd(); mxAtomicsTail(); }
 void fxUint32And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsAnd(); mxAtomicsTailOverflow(); }
+void fxUint64And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsAnd(); mxAtomicsTailBigUint64(); }
 
 void fxInt8CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txS1, fxToInteger); mxAtomicsCompareExchange(); mxAtomicsTail(); }
 void fxInt16CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txS2, fxToInteger); mxAtomicsCompareExchange(); mxAtomicsTail(); }
 void fxInt32CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txS4, fxToInteger); mxAtomicsCompareExchange(); mxAtomicsTail(); }
+void fxInt64CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txS8, fxToBigInt64); mxAtomicsCompareExchange(); mxAtomicsTailBigInt64(); }
 void fxUint8CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txU1, fxToUnsigned); mxAtomicsCompareExchange(); mxAtomicsTail(); }
 void fxUint16CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txU2, fxToUnsigned); mxAtomicsCompareExchange(); mxAtomicsTail(); }
 void fxUint32CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txU4, fxToUnsigned); mxAtomicsCompareExchange(); mxAtomicsTailOverflow(); }
+void fxUint64CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead2(txU8, fxToBigUint64); mxAtomicsCompareExchange(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsExchange(); mxAtomicsTail(); }
 void fxInt16Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsExchange(); mxAtomicsTail(); }
 void fxInt32Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsExchange(); mxAtomicsTail(); }
+void fxInt64Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsExchange(); mxAtomicsTailBigInt64(); }
 void fxUint8Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsExchange(); mxAtomicsTail(); }
 void fxUint16Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsExchange(); mxAtomicsTail(); }
 void fxUint32Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsExchange(); mxAtomicsTailOverflow(); }
+void fxUint64Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsExchange(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txS1, fxToInteger); mxAtomicsLoad(); mxAtomicsTail(); }
 void fxInt16Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txS2, fxToInteger); mxAtomicsLoad(); mxAtomicsTail(); }
 void fxInt32Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txS4, fxToInteger); mxAtomicsLoad(); mxAtomicsTail(); }
+void fxInt64Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txS8, fxToBigInt64); mxAtomicsLoad(); mxAtomicsTailBigInt64(); }
 void fxUint8Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txU1, fxToUnsigned); mxAtomicsLoad(); mxAtomicsTail(); }
 void fxUint16Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txU2, fxToUnsigned); mxAtomicsLoad(); mxAtomicsTail(); }
 void fxUint32Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txU4, fxToUnsigned); mxAtomicsLoad(); mxAtomicsTailOverflow(); }
+void fxUint64Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead0(txU8, fxToBigUint64); mxAtomicsLoad(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsOr(); mxAtomicsTail(); }
 void fxInt16Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsOr(); mxAtomicsTail(); }
 void fxInt32Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsOr(); mxAtomicsTail(); }
+void fxInt64Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsOr(); mxAtomicsTailBigInt64(); }
 void fxUint8Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsOr(); mxAtomicsTail(); }
 void fxUint16Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsOr(); mxAtomicsTail(); }
 void fxUint32Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsOr(); mxAtomicsTailOverflow(); }
+void fxUint64Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsOr(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsStore(); mxAtomicsTail(); }
 void fxInt16Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsStore(); mxAtomicsTail(); }
 void fxInt32Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsStore(); mxAtomicsTail(); }
+void fxInt64Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsStore(); mxAtomicsTailBigInt64(); }
 void fxUint8Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsStore(); mxAtomicsTail(); }
 void fxUint16Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsStore(); mxAtomicsTail(); }
 void fxUint32Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsStore(); mxAtomicsTailOverflow(); }
+void fxUint64Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsStore(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsSub(); mxAtomicsTail(); }
 void fxInt16Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsSub(); mxAtomicsTail(); }
 void fxInt32Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsSub(); mxAtomicsTail(); }
+void fxInt64Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsSub(); mxAtomicsTailBigInt64(); }
 void fxUint8Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsSub(); mxAtomicsTail(); }
 void fxUint16Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsSub(); mxAtomicsTail(); }
 void fxUint32Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsSub(); mxAtomicsTailOverflow(); }
+void fxUint64Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsSub(); mxAtomicsTailBigUint64(); }
 
 void fxInt8Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsXor(); mxAtomicsTail(); }
 void fxInt16Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsXor(); mxAtomicsTail(); }
 void fxInt32Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS4, fxToInteger); mxAtomicsXor(); mxAtomicsTail(); }
+void fxInt64Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS8, fxToBigInt64); mxAtomicsXor(); mxAtomicsTailBigInt64(); }
 void fxUint8Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU1, fxToUnsigned); mxAtomicsXor(); mxAtomicsTail(); }
 void fxUint16Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU2, fxToUnsigned); mxAtomicsXor(); mxAtomicsTail(); }
 void fxUint32Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU4, fxToUnsigned); mxAtomicsXor(); mxAtomicsTailOverflow(); }
+void fxUint64Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txU8, fxToBigUint64); mxAtomicsXor(); mxAtomicsTailBigUint64(); }
 
 void fxBuildAtomics(txMachine* the)
 {
@@ -202,21 +226,23 @@ txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
 txSlot* fxCheckAtomicsTypedArray(txMachine* the, txBoolean onlyInt32)
 {
 	txSlot* slot = (mxArgc > 0) ? mxArgv(0) : C_NULL;
+	txID id;
 	if ((!slot) || (!mxIsReference(slot)))
 		mxTypeError("typedArray is no object");
 	slot = slot->value.reference->next;
 	if ((!slot) || ((slot->kind != XS_TYPED_ARRAY_KIND)))
 		mxTypeError("typedArray is no TypedArray");
+	id = slot->value.typedArray.dispatch->constructorID;
 	if (onlyInt32) {
-		if (slot->value.typedArray.dispatch->constructorID != _Int32Array)
+		if ((id != _Int32Array) && (id != _BigInt64Array))
 			mxTypeError("typedArray is no Int32Array");
 	}
 	else {
-		if (slot->value.typedArray.dispatch->constructorID == _Float32Array)
+		if (id == _Float32Array)
 			mxTypeError("typedArray is Float32Array");
-		else if (slot->value.typedArray.dispatch->constructorID == _Float64Array)
+		else if (id == _Float64Array)
 			mxTypeError("typedArray is Float64Array");
-		else if (slot->value.typedArray.dispatch->constructorID == _Uint8ClampedArray)
+		else if (id == _Uint8ClampedArray)
 			mxTypeError("typedArray is Uint8ClampedArray");
 	}
 	return slot;
@@ -232,21 +258,34 @@ txSlot* fxCheckSharedArrayBuffer(txMachine* the, txSlot* slot, txString which)
 	return slot;
 }
 
-void fxPushAtomicsValue(txMachine* the, int i)
+void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer)
 {
-	if (mxArgc > i) {
-		txSlot* slot = mxArgv(i);
-		if (slot->kind == XS_INTEGER_KIND)
-			mxPushSlot(slot);
-		else {
-			txNumber value = c_trunc(fxToNumber(the, slot)); 
-			if (c_isnan(value))
-				value = 0;
-			mxPushNumber(value);
-		}
-	}
+	txSlot* slot;
+	if (mxArgc > i)
+		mxPushSlot(mxArgv(i));
 	else
-		mxPushInteger(0);
+		mxPushUndefined();
+	slot = the->stack;
+	(*coercer)(the, the->stack);
+	if (slot->kind == XS_NUMBER_KIND) {
+		txNumber value = c_trunc(slot->value.number); 
+		if (c_isnan(value))
+			value = 0;
+		slot->value.number = value;
+	}
+// 	if (mxArgc > i) {
+// 		txSlot* slot = mxArgv(i);
+// 		if (slot->kind == XS_INTEGER_KIND)
+// 			mxPushSlot(slot);
+// 		else {
+// 			txNumber value = c_trunc(fxToNumber(the, slot)); 
+// 			if (c_isnan(value))
+// 				value = 0;
+// 			mxPushNumber(value);
+// 		}
+// 	}
+// 	else
+// 		mxPushInteger(0);
 }
 
 
@@ -325,7 +364,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 void fx_Atomics_add(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->add)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -333,7 +372,7 @@ void fx_Atomics_add(txMachine* the)
 void fx_Atomics_and(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->and)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -341,8 +380,8 @@ void fx_Atomics_and(txMachine* the)
 void fx_Atomics_compareExchange(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
-	fxPushAtomicsValue(the, 3);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 3, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->compareExchange)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 	mxPop();
@@ -351,7 +390,7 @@ void fx_Atomics_compareExchange(txMachine* the)
 void fx_Atomics_exchange(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->exchange)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -372,7 +411,7 @@ void fx_Atomics_load(txMachine* the)
 void fx_Atomics_or(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->or)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -390,7 +429,7 @@ void fx_Atomics_notify(txMachine* the)
 void fx_Atomics_store(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	*mxResult = *the->stack;
 	(*dispatch->value.typedArray.atomics->store)(the, host, offset, the->stack, 0);
 	mxPop();
@@ -399,7 +438,7 @@ void fx_Atomics_store(txMachine* the)
 void fx_Atomics_sub(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->sub)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -427,7 +466,7 @@ void fx_Atomics_wait(txMachine* the)
 void fx_Atomics_xor(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
 	(*dispatch->value.typedArray.atomics->xor)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }

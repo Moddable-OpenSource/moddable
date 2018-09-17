@@ -792,25 +792,25 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	txInteger aFlag;
 	txIndex aLength, anIndex;
 	
-	if (mxIsReference(aValue)) {
-		anInstance = fxGetInstance(the, aValue);
+	if (mxIsReference(aValue) || mxIsBigInt(aValue)) {
+		mxPushSlot(aValue);
+		anInstance = the->stack;
+		fxToInstance(the, the->stack);
 		if (anInstance->flag & XS_LEVEL_FLAG)
 			mxTypeError("cyclic value");
 		mxPushSlot(aKey);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
-		mxPushSlot(aValue);
+		mxPushSlot(anInstance);
 		/* FUNCTION */
-		mxPushSlot(aValue);
+		mxPushSlot(anInstance);
 		fxGetID(the, mxID(_toJSON));
 		if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))  {
 			fxCall(the);
 			mxPullSlot(aValue);
 		}
-		else {
-			the->stack = aKey;
-		}
+		the->stack = aKey;
 	}
 	else
 		anInstance = C_NULL;
@@ -848,6 +848,10 @@ again:
 	case XS_STRING_X_KIND:
 		fxStringifyJSONName(the, theStringifier, theFlag);
 		fxStringifyJSONString(the, theStringifier, aValue->value.string);
+		break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		mxTypeError("stringify bigint");
 		break;
 	case XS_REFERENCE_KIND:
 		anInstance = fxGetInstance(the, aValue);

@@ -513,6 +513,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_THROW,
 		&&XS_CODE_THROW_STATUS,
 		&&XS_CODE_TO_INSTANCE,
+		&&XS_CODE_TO_NUMERIC,
 		&&XS_CODE_TRANSFER,
 		&&XS_CODE_TRUE,
 		&&XS_CODE_TYPEOF,
@@ -2727,6 +2728,14 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 			
+		mxCase(XS_CODE_TO_NUMERIC)
+			if ((mxStack->kind != XS_INTEGER_KIND) && (mxStack->kind != XS_NUMBER_KIND)) {
+				mxSaveState;
+				fxToNumericNumber(the, mxStack);
+				mxRestoreState;
+			}
+			mxNextCode(1);
+			mxBreak;
 		mxCase(XS_CODE_DECREMENT)
 			if (mxStack->kind == XS_INTEGER_KIND)
 				mxStack->value.integer--;
@@ -3835,6 +3844,8 @@ txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 			result = c_strcmp(a->value.string, b->value.string) == 0;
 		else if (XS_SYMBOL_KIND == a->kind)
 			result = a->value.symbol == b->value.symbol;
+		else if ((XS_BIGINT_KIND == a->kind) || (XS_BIGINT_X_KIND == a->kind))
+			result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 		else if (XS_REFERENCE_KIND == a->kind)
 			result = a->value.reference == b->value.reference;
 	}
@@ -3846,6 +3857,10 @@ txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 		result = c_strcmp(a->value.string, b->value.string) == 0;
 	else if ((XS_STRING_X_KIND == a->kind) && (XS_STRING_KIND == b->kind))
 		result = c_strcmp(a->value.string, b->value.string) == 0;
+	else if ((XS_BIGINT_KIND == a->kind) && (XS_BIGINT_X_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
+	else if ((XS_BIGINT_X_KIND == a->kind) && (XS_BIGINT_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 	return result;
 }
 
@@ -3865,6 +3880,8 @@ txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero)
 			result = c_strcmp(a->value.string, b->value.string) == 0;
 		else if (XS_SYMBOL_KIND == a->kind)
 			result = a->value.symbol == b->value.symbol;
+		else if ((XS_BIGINT_KIND == a->kind) || (XS_BIGINT_X_KIND == a->kind))
+			result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 		else if (XS_REFERENCE_KIND == a->kind)
 			result = a->value.reference == b->value.reference;
 	}
@@ -3880,6 +3897,10 @@ txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero)
 		result = c_strcmp(a->value.string, b->value.string) == 0;
 	else if ((XS_STRING_X_KIND == a->kind) && (XS_STRING_KIND == b->kind))
 		result = c_strcmp(a->value.string, b->value.string) == 0;
+	else if ((XS_BIGINT_KIND == a->kind) && (XS_BIGINT_X_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
+	else if ((XS_BIGINT_X_KIND == a->kind) && (XS_BIGINT_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 	return result;
 }
 
