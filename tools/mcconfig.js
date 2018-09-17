@@ -360,8 +360,10 @@ class CMakeListsFile extends PrerequisiteFile {
 		this.line("target_compile_definitions(tech-moddable-piu PUBLIC");
 		this.line("\tINCLUDE_XSPLATFORM=1");
 		this.line("\tXSPLATFORM=\"android_xs.h\"");
-		if (tool.debug)
+		if (tool.debug) {
 			this.line("\tmxDebug=1");
+			this.line("\tmxInstrument=1");
+		}
 		this.line("\tmxRun=1");
 		this.line("\tmxParse=1");
 		this.line("\tmxNoFunctionLength=1");
