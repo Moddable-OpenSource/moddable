@@ -96,6 +96,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				this.onConnected(client);
 				break;
 			}
+			case "onDisconnected":
+				this.onDisconnected(params);
+				break;
 			case "onPasskeyConfirm":
 				return this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
 				break;

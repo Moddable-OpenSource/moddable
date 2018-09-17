@@ -37,9 +37,22 @@
 #if LOG_GATTC
 	#define LOG_GATTC_EVENT(event) logGATTCEvent(event)
 	#define LOG_GATTC_MSG(msg) modLog(msg)
+	#define LOG_GATTC_INT(i) modLogInt(i)
 #else
 	#define LOG_GATTC_EVENT(event)
 	#define LOG_GATTC_MSG(msg)
+	#define LOG_GATTC_INT(i)
+#endif
+
+#define LOG_GAP 0
+#if LOG_GAP
+	#define LOG_GAP_EVENT(event) logGAPEvent(event)
+	#define LOG_GAP_MSG(msg) modLog(msg)
+	#define LOG_GAP_INT(i) modLogInt(i)
+#else
+	#define LOG_GAP_EVENT(event)
+	#define LOG_GAP_MSG(msg)
+	#define LOG_GAP_INT(i)
 #endif
 
 typedef struct modBLENotificationRecord modBLENotificationRecord;
@@ -96,9 +109,10 @@ static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 static void bufferToUUID(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t length);
 
 static void logGATTCEvent(esp_gattc_cb_event_t event);
+static void logGAPEvent(esp_gap_ble_cb_event_t event);
 
 static modBLE gBLE = NULL;
-static int gAPP_ID = 0;
+static int gAPP_ID = 1;
 
 void xs_ble_client_initialize(xsMachine *the)
 {
@@ -710,10 +724,18 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+	LOG_GAP_EVENT(event);
+
 	switch(event) {
 		case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
         	if (ESP_GATT_OK == param->local_privacy_cmpl.status)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->local_privacy_cmpl, sizeof(struct ble_local_privacy_cmpl_evt_param), localPrivacyCompleteEvent, gBLE);
+#if LOG_GAP
+			else {
+				LOG_GATTC_MSG("ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT failed, status =");
+				LOG_GATTC_INT(param->local_privacy_cmpl.status);
+			}
+#endif
 			break;
 		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
 			esp_ble_gap_start_scanning(0);			// 0 == scan until explicitly stopped
@@ -725,6 +747,12 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT:
         	if (ESP_GATT_OK == param->read_rssi_cmpl.status)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read_rssi_cmpl, sizeof(struct ble_read_rssi_cmpl_evt_param), rssiCompleteEvent, gBLE);
+#if LOG_GAP
+			else {
+				LOG_GATTC_MSG("ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT failed, status =");
+				LOG_GATTC_INT(param->read_rssi_cmpl.status);
+			}
+#endif
         	break;
 		case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.key_notif, sizeof(esp_ble_sec_key_notif_t), gapPasskeyNotifyEvent, NULL);
@@ -736,7 +764,14 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.ble_req, sizeof(esp_ble_sec_req_t), gapPasskeyRequestEvent, NULL);
 			break;
      	case ESP_GAP_BLE_AUTH_CMPL_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+			if (param->ble_security.auth_cmpl.success)
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+#if LOG_GAP
+			else {
+				LOG_GATTC_MSG("ESP_GAP_BLE_AUTH_CMPL_EVT failed, status =");
+				LOG_GATTC_INT(param->ble_security.auth_cmpl.fail_reason);
+			}
+#endif
      		break;
 		case ESP_GAP_BLE_SEC_REQ_EVT:
 			esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
@@ -744,6 +779,38 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 		default:
 			break;
     }
+}
+
+static void logGAPEvent(esp_gap_ble_cb_event_t event) {
+	switch(event) {
+		case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RESULT_EVT: modLog("ESP_GAP_BLE_SCAN_RESULT_EVT"); break;
+		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_START_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_AUTH_CMPL_EVT: modLog("ESP_GAP_BLE_AUTH_CMPL_EVT"); break;
+		case ESP_GAP_BLE_KEY_EVT: modLog("ESP_GAP_BLE_KEY_EVT"); break;
+		case ESP_GAP_BLE_SEC_REQ_EVT: modLog("ESP_GAP_BLE_SEC_REQ_EVT"); break;
+		case ESP_GAP_BLE_PASSKEY_NOTIF_EVT: modLog("ESP_GAP_BLE_PASSKEY_NOTIF_EVT"); break;
+		case ESP_GAP_BLE_PASSKEY_REQ_EVT: modLog("ESP_GAP_BLE_PASSKEY_REQ_EVT"); break;
+		case ESP_GAP_BLE_OOB_REQ_EVT: modLog("ESP_GAP_BLE_OOB_REQ_EVT"); break;
+		case ESP_GAP_BLE_LOCAL_IR_EVT: modLog("ESP_GAP_BLE_LOCAL_IR_EVT"); break;
+		case ESP_GAP_BLE_LOCAL_ER_EVT: modLog("ESP_GAP_BLE_LOCAL_ER_EVT"); break;
+		case ESP_GAP_BLE_NC_REQ_EVT: modLog("ESP_GAP_BLE_NC_REQ_EVT"); break;
+		case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT: modLog("ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT"); break;
+		case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT: modLog("ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT"); break;
+		case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT: modLog("ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: modLog("ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT: modLog("ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT: modLog("ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT"); break;
+	}
 }
 
 static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -765,19 +832,32 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	if (!connection)
 		xsUnknownError("connection not found");
 		
-	// Ignore duplicate connection events
-	if (-1 != connection->conn_id) {
-		LOG_GATTC_MSG("Ignoring duplicate connect event");
-		goto bail;
+	if (ESP_GATT_OK == open->status) {
+		if (-1 != connection->conn_id) {
+			LOG_GATTC_MSG("Ignoring duplicate connect event");
+			goto bail;
+		}
+		connection->conn_id = open->conn_id;
+		xsmcVars(3);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetInteger(xsVar(1), open->conn_id);
+		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+		xsmcSetArrayBuffer(xsVar(2), open->remote_bda, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(2));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
-	connection->conn_id = open->conn_id;
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetInteger(xsVar(1), open->conn_id);
-	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), open->remote_bda, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+	else {
+#if LOG_GATTC
+		LOG_GATTC_MSG("ESP_GATTC_OPEN_EVT failed, status =");
+		LOG_GATTC_INT(open->status);
+#endif
+		if (ESP_GATT_IF_NONE != connection->gattc_if)
+			esp_ble_gattc_app_unregister(connection->gattc_if);
+		modBLEConnectionRemove(connection);
+		if (gAPP_ID > 1)
+			--gAPP_ID;
+		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
+	}
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -793,6 +873,7 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		LOG_GATTC_MSG("Ignoring duplicate disconnect event");
 		goto bail;
 	}	
+	
 	esp_ble_gattc_app_unregister(connection->gattc_if);
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), close->conn_id);
@@ -848,6 +929,7 @@ static void doCharEvent(void *the, const char *callback, uint16_t conn_id, uint1
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsCall2(connection->objClient, xsID_callback, xsString(callback), xsVar(0));
+	c_free(value);
 	xsEndHost(gBLE->the);
 }
 
@@ -860,13 +942,8 @@ static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t
 static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_read_char_evt_param *read = (struct gattc_read_char_evt_param *)message;
-	doCharEvent(the, "onCharacteristicValue", read->conn_id, read->handle, read->value, read->value_len);
-}
-
-static void gattcReadDescEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	struct gattc_read_char_evt_param *read = (struct gattc_read_char_evt_param *)message;
-	doCharEvent(the, "onDescriptorValue", read->conn_id, read->handle, read->value, read->value_len);
+	uint32_t event = (uint32_t)refcon;
+	doCharEvent(the, ESP_GATTC_READ_CHAR_EVT == event ? "onCharacteristicValue" : "onDescriptorValue", read->conn_id, read->handle, read->value, read->value_len);
 }
 
 static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -898,17 +975,38 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 				if (connection)
 					connection->gattc_if = gattc_if;
 				modCriticalSectionEnd();
+#if LOG_GATTC
+				if (!connection)
+					LOG_GATTC_MSG("ESP_GATTC_REG_EVT failed to find connection");
+#endif
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg, sizeof(struct gattc_reg_evt_param), gattcRegisterEvent, NULL);
         	}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_REG_EVT failed, status =");
+				LOG_GATTC_INT(param->reg.status);
+			}
+#endif
         	break;
     	case ESP_GATTC_OPEN_EVT:
-        	if (param->open.status == ESP_GATT_OK)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->open, sizeof(struct gattc_open_evt_param), gattcOpenEvent, NULL);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->open, sizeof(struct gattc_open_evt_param), gattcOpenEvent, NULL);
     		break;
     	case ESP_GATTC_CLOSE_EVT:
         	if (param->close.status == ESP_GATT_OK)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->close, sizeof(struct gattc_close_evt_param), gattcCloseEvent, NULL);
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_CLOSE_EVT failed, reason =");
+				LOG_GATTC_INT(param->close.reason);
+			}
+#endif
     		break;
+    	case ESP_GATTC_DISCONNECT_EVT:
+#if LOG_GATTC
+ 			LOG_GATTC_MSG("ESP_GATTC_DISCONNECT_EVT, reason =");
+			LOG_GATTC_INT(param->disconnect.reason);
+#endif
+   			break;
 		case ESP_GATTC_SEARCH_RES_EVT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->search_res, sizeof(struct gattc_search_res_evt_param), gattcSearchResultEvent, NULL);
 			break;
@@ -922,16 +1020,40 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
  				modCriticalSectionEnd();
  				if (connection)
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg_for_notify, sizeof(struct gattc_reg_for_notify_evt_param), gattcRegisterNotifyEvent, connection);
+#if LOG_GATTC
+				else
+					LOG_GATTC_MSG("ESP_GATTC_REG_FOR_NOTIFY_EVT failed to find connection");
+#endif
 			}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_REG_FOR_NOTIFY_EVT failed, status =");
+				LOG_GATTC_INT(param->reg_for_notify.status);
+			}
+#endif
 			break;
 		case ESP_GATTC_NOTIFY_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, NULL);
+			if (param->notify.value_len) {
+				uint8_t *value = c_malloc(param->notify.value_len);
+				if (NULL != value) {
+					struct gattc_notify_evt_param notify = param->notify;
+					c_memmove(value, param->notify.value, param->notify.value_len);
+					notify.value = value;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&notify, sizeof(struct gattc_notify_evt_param), gattcNotifyEvent, NULL);
+				}
+			}
 			break;
 		case ESP_GATTC_READ_CHAR_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, NULL);
-			break;
 		case ESP_GATTC_READ_DESCR_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read, sizeof(struct gattc_read_char_evt_param), gattcReadDescEvent, NULL);
+			if (param->read.value_len) {
+				uint8_t *value = c_malloc(param->read.value_len);
+				if (NULL != value) {
+					struct gattc_read_char_evt_param read = param->read;
+					c_memmove(value, param->read.value, param->read.value_len);
+					read.value = value;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, (void*)event);
+				}
+			}
 			break;
 	}
 }

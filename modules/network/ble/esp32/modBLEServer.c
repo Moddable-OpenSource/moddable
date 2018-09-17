@@ -37,6 +37,24 @@
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
+#define LOG_GATTS 0
+#if LOG_GATTS
+	#define LOG_GATTS_EVENT(event) logGATTSEvent(event)
+	#define LOG_GATTS_MSG(msg) modLog(msg)
+#else
+	#define LOG_GATTS_EVENT(event)
+	#define LOG_GATTS_MSG(msg)
+#endif
+
+#define LOG_GAP 0
+#if LOG_GAP
+	#define LOG_GAP_EVENT(event) logGAPEvent(event)
+	#define LOG_GAP_MSG(msg) modLog(msg)
+#else
+	#define LOG_GAP_EVENT(event)
+	#define LOG_GAP_MSG(msg)
+#endif
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -68,8 +86,11 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 
 static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
 
+static void logGATTSEvent(esp_gatts_cb_event_t event);
+static void logGAPEvent(esp_gap_ble_cb_event_t event);
+
 static modBLE gBLE = NULL;
-static int gAPP_ID = 0;
+static int gAPP_ID = 1;
 
 void xs_ble_server_initialize(xsMachine *the)
 {
@@ -286,6 +307,8 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+	LOG_GAP_EVENT(event);
+
 	if (!gBLE || gBLE->terminating) return;
 
 	switch(event) {
@@ -327,6 +350,38 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 		default:
 			break;
     }
+}
+
+static void logGAPEvent(esp_gap_ble_cb_event_t event) {
+	switch(event) {
+		case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RESULT_EVT: modLog("ESP_GAP_BLE_SCAN_RESULT_EVT"); break;
+		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_START_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_AUTH_CMPL_EVT: modLog("ESP_GAP_BLE_AUTH_CMPL_EVT"); break;
+		case ESP_GAP_BLE_KEY_EVT: modLog("ESP_GAP_BLE_KEY_EVT"); break;
+		case ESP_GAP_BLE_SEC_REQ_EVT: modLog("ESP_GAP_BLE_SEC_REQ_EVT"); break;
+		case ESP_GAP_BLE_PASSKEY_NOTIF_EVT: modLog("ESP_GAP_BLE_PASSKEY_NOTIF_EVT"); break;
+		case ESP_GAP_BLE_PASSKEY_REQ_EVT: modLog("ESP_GAP_BLE_PASSKEY_REQ_EVT"); break;
+		case ESP_GAP_BLE_OOB_REQ_EVT: modLog("ESP_GAP_BLE_OOB_REQ_EVT"); break;
+		case ESP_GAP_BLE_LOCAL_IR_EVT: modLog("ESP_GAP_BLE_LOCAL_IR_EVT"); break;
+		case ESP_GAP_BLE_LOCAL_ER_EVT: modLog("ESP_GAP_BLE_LOCAL_ER_EVT"); break;
+		case ESP_GAP_BLE_NC_REQ_EVT: modLog("ESP_GAP_BLE_NC_REQ_EVT"); break;
+		case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT: modLog("ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT: modLog("ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT: modLog("ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT"); break;
+		case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT: modLog("ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT"); break;
+		case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT: modLog("ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: modLog("ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: modLog("ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT: modLog("ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT"); break;
+		case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT: modLog("ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT"); break;
+	}
 }
 
 void xs_ble_server_deploy(xsMachine *the)
@@ -499,6 +554,8 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 {
 	uint8_t *value;
 	
+	LOG_GATTS_EVENT(event);
+	
 	if (!gBLE || gBLE->terminating) return;
 	
 	switch(event) {
@@ -543,5 +600,34 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
 			}
 			break;
+	}
+}
+
+static void logGATTSEvent(esp_gatts_cb_event_t event) {
+	switch(event) {
+		case ESP_GATTS_REG_EVT: modLog("ESP_GATTS_REG_EVT"); break;
+		case ESP_GATTS_READ_EVT: modLog("ESP_GATTS_READ_EVT"); break;
+		case ESP_GATTS_WRITE_EVT: modLog("ESP_GATTS_WRITE_EVT"); break;
+		case ESP_GATTS_EXEC_WRITE_EVT: modLog("ESP_GATTS_EXEC_WRITE_EVT"); break;
+		case ESP_GATTS_MTU_EVT: modLog("ESP_GATTS_MTU_EVT"); break;
+		case ESP_GATTS_CONF_EVT: modLog("ESP_GATTS_CONF_EVT"); break;
+		case ESP_GATTS_UNREG_EVT: modLog("ESP_GATTS_UNREG_EVT"); break;
+		case ESP_GATTS_CREATE_EVT: modLog("ESP_GATTS_CREATE_EVT"); break;
+		case ESP_GATTS_ADD_INCL_SRVC_EVT: modLog("ESP_GATTS_ADD_INCL_SRVC_EVT"); break;
+		case ESP_GATTS_ADD_CHAR_EVT: modLog("ESP_GATTS_ADD_CHAR_EVT"); break;
+		case ESP_GATTS_ADD_CHAR_DESCR_EVT: modLog("ESP_GATTS_ADD_CHAR_DESCR_EVT"); break;
+		case ESP_GATTS_DELETE_EVT: modLog("ESP_GATTS_DELETE_EVT"); break;
+		case ESP_GATTS_START_EVT: modLog("ESP_GATTS_START_EVT"); break;
+		case ESP_GATTS_STOP_EVT: modLog("ESP_GATTS_STOP_EVT"); break;
+		case ESP_GATTS_CONNECT_EVT: modLog("ESP_GATTS_CONNECT_EVT"); break;
+		case ESP_GATTS_DISCONNECT_EVT: modLog("ESP_GATTS_DISCONNECT_EVT"); break;
+		case ESP_GATTS_OPEN_EVT: modLog("ESP_GATTS_OPEN_EVT"); break;
+		case ESP_GATTS_CANCEL_OPEN_EVT: modLog("ESP_GATTS_CANCEL_OPEN_EVT"); break;
+		case ESP_GATTS_CLOSE_EVT: modLog("ESP_GATTS_CLOSE_EVT"); break;
+		case ESP_GATTS_LISTEN_EVT: modLog("ESP_GATTS_LISTEN_EVT"); break;
+		case ESP_GATTS_CONGEST_EVT: modLog("ESP_GATTS_CONGEST_EVT"); break;
+		case ESP_GATTS_RESPONSE_EVT: modLog("ESP_GATTS_RESPONSE_EVT"); break;
+		case ESP_GATTS_CREAT_ATTR_TAB_EVT: modLog("ESP_GATTS_CREAT_ATTR_TAB_EVT"); break;
+		case ESP_GATTS_SET_ATTR_VAL_EVT: modLog("ESP_GATTS_SET_ATTR_VAL_EVT"); break;
 	}
 }
