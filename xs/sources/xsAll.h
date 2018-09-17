@@ -77,6 +77,7 @@ typedef void (*txStep)(txMachine*, txSlot*, txID, txIndex, txSlot*);
 typedef void (*txSweepRoot)(txMachine*, txSlot*);
 typedef void (*txSweeper)(txMachine*, void*, txSweepRoot);
 typedef void (*txTypeCallback)(txMachine*, txSlot*, txInteger, txSlot*, int);
+typedef void (*txTypeCoerce)(txMachine*, txSlot*);
 typedef int (*txTypeCompare)(const void*, const void*);
 typedef void (*txTypeOperator)(txMachine*, txSlot*, txInteger, txSlot*, int, int);
 
@@ -159,6 +160,7 @@ typedef struct {
 	txInteger size;
 	txTypeCallback getter;
 	txTypeCallback setter;
+	txTypeCoerce coerce;
 	txTypeCompare compare;
 	txID getID;
 	txID setID;
@@ -178,17 +180,19 @@ typedef struct {
 } txTypeAtomics;
 
 typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
-typedef txBoolean (*txBigIntCompare)(txMachine*, txU1 less, txU1 equal, txU1 more, txSlot*, txSlot*);
+typedef txBoolean (*txBigIntCompare)(txMachine*, txBoolean less, txBoolean equal, txBoolean more, txSlot*, txSlot*);
 typedef void (*txBigIntDecode)(txMachine*, txSize);
-typedef txSlot* (*txBigIntInstantiate)(txMachine* the, txSlot* slot);
-typedef void (*txBigIntStringify)(txMachine* the, txSlot* slot, txU4 radix);
+typedef txSlot* (*txBigIntToInstance)(txMachine* the, txSlot* slot);
+typedef void (*txBigintToString)(txMachine* the, txSlot* slot, txU4 radix);
+typedef txNumber (*txBigIntToNumber)(txMachine* the, txSlot* slot);
 typedef txBigInt* (*txBigIntUnary)(txMachine*, txBigInt* r, txBigInt* a);
 
 typedef struct {
 	txBigIntCompare compare;
 	txBigIntDecode decode;
-	txBigIntInstantiate instantiate;
-	txBigIntStringify stringify;
+	txBigIntToInstance toInstance;
+	txBigIntToNumber toNumber;
+	txBigintToString toString;
 	txBigIntBinary _add;
 	txBigIntBinary _and;
 	txBigIntUnary _dec;
@@ -944,6 +948,7 @@ mxExport void fx_Number_prototype_valueOf(txMachine* the);
 
 extern void fxBuildNumber(txMachine* the);
 extern txSlot* fxNewNumberInstance(txMachine* the);
+extern void fxNumberCoerce(txMachine* the, txSlot* slot);
 
 /* xsMath.c */
 mxExport void fx_Math_abs(txMachine* the);
@@ -994,15 +999,19 @@ mxExport void fx_BigInt_prototype_toString(txMachine* the);
 mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
 
 extern void fxBuildBigInt(txMachine* the);
-extern txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSlot* left, txSlot* right);
+extern void fxBigIntCoerce(txMachine* the, txSlot* slot);
+extern txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
-extern txSlot* fxBigIntInstantiate(txMachine* the, txSlot* slot);
-extern void fxBigIntStringify(txMachine* the, txSlot* slot, txU4 radix);
+extern txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot);
+extern void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix);
+extern txNumber fxBigIntToNumber(txMachine* the, txSlot* slot);
 
 mxExport void fxBigInt(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport txBigInt* fxToBigInt(txMachine* the, txSlot* slot, txFlag strict);
+mxExport void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 value);
 mxExport txS8 fxToBigInt64(txMachine* the, txSlot* slot);
+mxExport void fxFromBigUint64(txMachine* the, txSlot* slot, txU8 value);
 mxExport txU8 fxToBigUint64(txMachine* the, txSlot* slot);
 
 mxExport txBigInt* fxBigInt_add(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
@@ -1329,65 +1338,83 @@ extern void fxBuildDataView(txMachine* the);
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64And(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64CompareExchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Exchange(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Load(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Or(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Store(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Sub(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 extern void fxInt8Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt32Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxInt64Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint16Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+extern void fxUint64Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 
 mxExport const txTypeAtomics gxTypeAtomics[];
 extern void fxBuildAtomics(txMachine* the);
@@ -1776,6 +1803,8 @@ enum {
 	((THE_SLOT)->kind == XS_UNDEFINED_KIND)
 #define mxIsNull(THE_SLOT) \
 	((THE_SLOT)->kind == XS_NULL_KIND)
+#define mxIsBigInt(THE_SLOT) \
+	(((THE_SLOT)->kind == XS_BIGINT_KIND) || ((THE_SLOT)->kind == XS_BIGINT_X_KIND))
 #define mxIsReference(THE_SLOT) \
 	((THE_SLOT)->kind == XS_REFERENCE_KIND)
 #define mxIsFunction(THE_SLOT) \

@@ -1729,7 +1729,7 @@ void fxAccessNodeCodePostfix(void* it, void* param, txPostfixExpressionNode* com
 		fxCoderAddIndex(param, 1, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_GET_CLOSURE_1 : XS_CODE_GET_LOCAL_1, declaration->index);
 	if (!(compound->flags & mxExpressionNoValue)) {
 		value = fxCoderUseTemporaryVariable(param);
-		fxCoderAddByte(param, 0, XS_CODE_PLUS);
+		fxCoderAddByte(param, 0, XS_CODE_TO_NUMERIC);
 		fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, value);
 	}
 	fxCoderAddByte(param, 0, compound->description->code);
@@ -3047,7 +3047,7 @@ void fxMemberNodeCodePostfix(void* it, void* param, txPostfixExpressionNode* com
 	fxCoderAddSymbol(param, 0, (self->reference->flags & mxSuperFlag) ? XS_CODE_GET_SUPER : XS_CODE_GET_PROPERTY, self->symbol);
 	if (!(compound->flags & mxExpressionNoValue)) {
 		value = fxCoderUseTemporaryVariable(param);
-		fxCoderAddByte(param, 0, XS_CODE_PLUS);
+		fxCoderAddByte(param, 0, XS_CODE_TO_NUMERIC);
 		fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, value);
 	}
 	fxCoderAddByte(param, 0, compound->description->code);
@@ -3117,7 +3117,7 @@ void fxMemberAtNodeCodePostfix(void* it, void* param, txPostfixExpressionNode* c
 	fxCoderAddByte(param, -1, (self->reference->flags & mxSuperFlag) ? XS_CODE_GET_SUPER_AT : XS_CODE_GET_PROPERTY_AT);
 	if (!(compound->flags & mxExpressionNoValue)) {
 		value = fxCoderUseTemporaryVariable(param);
-		fxCoderAddByte(param, 0, XS_CODE_PLUS);
+		fxCoderAddByte(param, 0, XS_CODE_TO_NUMERIC);
 		fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, value);
 	}
 	fxCoderAddByte(param, 0, compound->description->code);

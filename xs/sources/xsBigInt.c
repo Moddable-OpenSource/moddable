@@ -211,7 +211,7 @@ void fx_BigInt_prototype_toString(txMachine* the)
 			mxRangeError("invalid radix");
 	}
 	mxPushSlot(slot);
-	fxBigIntStringify(the, the->stack, radix);
+	fxBigintToString(the, the->stack, radix);
 	mxPullSlot(mxResult);
 }
 
@@ -253,7 +253,12 @@ txSlot* fxBigIntCheck(txMachine* the, txSlot* it)
 	return result;
 }
 
-txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSlot* left, txSlot* right)
+void fxBigIntCoerce(txMachine* the, txSlot* slot)
+{
+	fxToBigInt(the, slot, 1);
+}
+
+txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right)
 {
 	int result;
 	if (mxBigIntIsNaN(&left->value.bigint))
@@ -279,9 +284,11 @@ txBoolean fxBigIntCompare(txMachine* the, txU1 less, txU1 equal, txU1 more, txSl
 	result = fxBigInt_comp(&left->value.bigint, &right->value.bigint);
 	if (result < 0)
 		return less;
-	if (result > 0)
-		return more;
-	return equal;
+    if (result > 0)
+        return more;
+    if (result == 0)
+        return equal;
+	return 0;
 }
 
 void fxBigIntDecode(txMachine* the, txSize size)
@@ -334,7 +341,7 @@ void fxBigIntEncode(txByte* code, txBigInt* bigint, txSize size)
 }
 
 #ifdef mxRun
-txSlot* fxBigIntInstantiate(txMachine* the, txSlot* slot)
+txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot)
 {
 	txSlot* instance;
 	txSlot* internal;
@@ -444,7 +451,7 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 
 #ifdef mxRun
 
-void fxBigIntStringify(txMachine* the, txSlot* slot, txU4 radix)
+void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 {
 	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	txU4 data[1] = { 10 };
@@ -482,6 +489,21 @@ void fxBigIntStringify(txMachine* the, txSlot* slot, txU4 radix)
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
 	
 	mxPop();
+}
+
+txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
+{
+	txBigInt* bigint = &slot->value.bigint;
+	txNumber base = c_pow(2, 32);
+	txNumber number = 0;
+	int i;
+	for (i = bigint->size; --i >= 0;)
+		number = (number * base) + bigint->data[i];
+	if (bigint->sign)
+		number = -number;
+	slot->value.number = number;
+	slot->kind = XS_NUMBER_KIND;
+	return number;
 }
 
 txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot)
@@ -608,12 +630,12 @@ again:
 		break;
 	case XS_INTEGER_KIND:
 		if (strict)
-			mxSyntaxError("Cannot coerce number to bigint");
+			mxTypeError("Cannot coerce number to bigint");
 		fxIntegerToBigInt(the, slot);	
 		break;
 	case XS_NUMBER_KIND:
 		if (strict)
-			mxSyntaxError("Cannot coerce number to bigint");
+			mxTypeError("Cannot coerce number to bigint");
 		fxNumberToBigInt(the, slot);	
 		break;
 	case XS_STRING_KIND:
@@ -654,6 +676,45 @@ txU8 fxToBigUint64(txMachine* the, txSlot* slot)
 		result = 0xFFFFFFFFFFFFFFFFll - result;
 	}
 	return result;
+}
+
+void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 value)
+{
+	txU1 sign = 0;
+	if (value < 0) {
+		value = -value;
+		sign = 1;
+	}
+	if (value > 0x00000000FFFFFFFFll) {
+		slot->value.bigint.data = fxNewChunk(the, 2 * sizeof(txU4));
+		slot->value.bigint.data[0] = (txU4)(value);
+		slot->value.bigint.data[1] = (txU4)(value >> 32);
+		slot->value.bigint.size = 2;
+	}
+	else {
+		slot->value.bigint.data = fxNewChunk(the, sizeof(txU4));
+		slot->value.bigint.data[0] = (txU4)value;
+		slot->value.bigint.size = 1;
+	}
+    slot->value.bigint.sign = sign;
+	slot->kind = XS_BIGINT_KIND;
+}
+
+void fxFromBigUint64(txMachine* the, txSlot* slot, txU8 value)
+{
+	if (value > 0x00000000FFFFFFFFll) {
+		slot->value.bigint.data = fxNewChunk(the, 2 * sizeof(txU4));
+		slot->value.bigint.data[0] = (txU4)(value);
+		slot->value.bigint.data[1] = (txU4)(value >> 32);
+		slot->value.bigint.size = 2;
+	}
+	else {
+		slot->value.bigint.data = fxNewChunk(the, sizeof(txU4));
+		slot->value.bigint.data[0] = (txU4)value;
+		slot->value.bigint.size = 1;
+	}
+    slot->value.bigint.sign = 0;
+	slot->kind = XS_BIGINT_KIND;
 }
 
 #endif

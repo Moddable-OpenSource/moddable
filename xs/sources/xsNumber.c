@@ -90,6 +90,11 @@ txSlot* fxNewNumberInstance(txMachine* the)
 	return instance;
 }
 
+void fxNumberCoerce(txMachine* the, txSlot* slot)
+{
+	fxToNumber(the, slot);
+}
+
 void fx_isFinite(txMachine* the)
 {
 	int fpclass;
@@ -208,7 +213,16 @@ void fx_parseInt(txMachine* the)
 
 void fx_Number(txMachine* the)
 {
-	txNumber value = (mxArgc > 0) ? fxToNumber(the, mxArgv(0)) : 0;
+	txNumber value = 0;
+	if (mxArgc > 0) {
+		txSlot* slot = mxArgv(0);
+		if (slot->kind == XS_REFERENCE_KIND)
+			fxToPrimitive(the, slot, XS_NUMBER_HINT);
+		if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
+			value = fxBigIntToNumber(the, slot);
+		else
+			value = fxToNumber(the, slot);
+	}
 	if (mxIsUndefined(mxTarget)) {
         mxResult->kind = XS_NUMBER_KIND;
         mxResult->value.number = value;
