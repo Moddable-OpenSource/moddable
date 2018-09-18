@@ -361,18 +361,17 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 }
 
 typedef struct {
-	esp_gattc_char_elem_t char_elem_result;
 	xsSlot obj;
+	uint16_t count;
+	esp_gattc_char_elem_t char_elem_result[1];
 } characteristicSearchRecord;
 
 static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	characteristicSearchRecord *csr = (characteristicSearchRecord*)message;
-	esp_gattc_char_elem_t *char_elem = &csr->char_elem_result;
+	characteristicSearchRecord *csr = (characteristicSearchRecord*)refcon;
 	xsBeginHost(gBLE->the);
-	if (csr->char_elem_result.char_handle == 0)
-		xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));	// procedure complete
-	else {
+	for (int i = 0; i < csr->count; ++i) {
+		esp_gattc_char_elem_t *char_elem = &csr->char_elem_result[i];
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &char_elem->uuid, &length);
@@ -386,6 +385,8 @@ static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
 		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	}
+	xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
+	c_free(csr);
 	xsEndHost(gBLE->the);
 }
 
@@ -396,48 +397,52 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
 	uint16_t count = 0;
-	characteristicSearchRecord csr;
+	characteristicSearchRecord *csr;
+	uint16_t length;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	csr.obj = xsThis;
 	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count);
 	if (count > 0) {
-		esp_gattc_char_elem_t *char_elem_result = c_malloc(sizeof(esp_gattc_char_elem_t) * count);
-		if (!char_elem_result)
+		uint16_t length = sizeof(characteristicSearchRecord) + (sizeof(esp_gattc_char_elem_t) * count);
+		characteristicSearchRecord *csr = c_malloc(length);
+		if (!csr)
 			xsUnknownError("out of memory");
 		if (argc > 3) {
 			esp_bt_uuid_t uuid;
 			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
-			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, char_elem_result, &count))
+			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, &csr->char_elem_result[0], &count))
 				count = 0;
 		}
 		else {
-			if (ESP_OK != esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, char_elem_result, &count, 0))
+			if (ESP_OK != esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, &csr->char_elem_result[0], &count, 0))
 				count = 0;
 		}
-		for (int i = 0; i < count; ++i) {
-			csr.char_elem_result = char_elem_result[i];
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
+		if (0 != count) {
+			csr->obj = xsThis;
+			csr->count = count;
+			modMessagePostToMachine(gBLE->the, NULL, 0, charSearchResultEvent, csr);
 		}
-		c_free(char_elem_result);
+		else {
+			c_free(csr);
+			xsCall1(xsThis, xsID_callback, xsString("onCharacteristic"));
+		}
 	}
-	csr.char_elem_result.char_handle = 0;
-	modMessagePostToMachine(gBLE->the, (uint8_t*)&csr, sizeof(csr), charSearchResultEvent, NULL);
+	else
+		xsCall1(xsThis, xsID_callback, xsString("onCharacteristic"));
 }
 
 typedef struct {
-	esp_gattc_descr_elem_t descr_elem_result;
 	xsSlot obj;
+	uint16_t count;
+	esp_gattc_descr_elem_t descr_elem_result[1];
 } descriptorSearchRecord;
 
 static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	descriptorSearchRecord *dsr = (descriptorSearchRecord*)message;
-	esp_gattc_descr_elem_t *descr_elem = &dsr->descr_elem_result;
+	descriptorSearchRecord *dsr = (descriptorSearchRecord*)refcon;
 	xsBeginHost(gBLE->the);
-	if (dsr->descr_elem_result.handle == 0)
-		xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));	// procedure complete
-	else {
+	for (int i = 0; i < dsr->count; ++i) {
+		esp_gattc_descr_elem_t *descr_elem = &dsr->descr_elem_result[i];
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &descr_elem->uuid, &length);
@@ -449,6 +454,8 @@ static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	}
+	xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
+	c_free(dsr);
 	xsEndHost(gBLE->the);
 }
 
@@ -457,25 +464,30 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
     uint16_t count = 0;
-	descriptorSearchRecord dsr;
+	descriptorSearchRecord *dsr;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	dsr.obj = xsThis;
 	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count);
 	if (count > 0) {
-		xsmcVars(3);
-		esp_gattc_descr_elem_t *descr_elem_result = c_malloc(sizeof(esp_gattc_descr_elem_t) * count);
-		if (!descr_elem_result)
+		uint16_t length = sizeof(descriptorSearchRecord) + (sizeof(esp_gattc_descr_elem_t) * count);
+		descriptorSearchRecord *dsr = c_malloc(length);
+		if (!dsr)
 			xsUnknownError("out of memory");
-		esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, descr_elem_result, &count, 0);
-		for (int i = 0; i < count; ++i) {
-			dsr.descr_elem_result = descr_elem_result[i];
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&dsr, sizeof(dsr), descSearchResultEvent, NULL);
+		xsmcVars(3);
+		if (ESP_OK != esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, &dsr->descr_elem_result[0], &count, 0))
+			count = 0;
+		if (0 != count) {
+			dsr->obj = xsThis;
+			dsr->count = count;
+			modMessagePostToMachine(gBLE->the, NULL, 0, descSearchResultEvent, dsr);
 		}
-		c_free(descr_elem_result);
+		else {
+			c_free(dsr);
+			xsCall1(xsThis, xsID_callback, xsString("onDescriptor"));
+		}
 	}
-	dsr.descr_elem_result.handle = 0;
-	modMessagePostToMachine(gBLE->the, (uint8_t*)&dsr, sizeof(dsr), descSearchResultEvent, NULL);
+	else
+		xsCall1(xsThis, xsID_callback, xsString("onDescriptor"));
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
