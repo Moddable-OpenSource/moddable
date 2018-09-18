@@ -12,6 +12,7 @@
  *
  */
 /*
+ https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=309012&_ga=2.38842976.279320072.1537230968-1286694985.1517851833
  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.human_interface_device.xml
  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.report.xml
  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.report_reference.xml

@@ -48,24 +48,38 @@ class BLEHIDMouse extends BLEHIDClient {
 		let buttons = report[0];
 		let x = report[1];
 		let y = report[2];
+		let up = 0;
+		let down = 0;
 		if (buttons != this.buttons) {
-			let up = 0;
-			let down = 0;
-			this.buttons = buttons;
+			let mask = 0x1;
+			for (let i = 0; i < 3; ++i) {
+				if ((buttons & mask) != (this.buttons & mask)) {
+					if (buttons & mask)
+						down |= mask;
+					else
+						up |= mask;
+				}
+				mask <<= 1;
+			}
 		}
-		if (x != this.x || y != this.y) {
-			this.x = x;
-			this.y = y;
-			this.onMoved(x, y);
+		if (down != 0)
+			this.onButtonDown(x, y, down);
+		else if (up != 0)
+			this.onButtonUp(x, y, up);
+		else if (x != 0 || y != 0) {
+			this.onMoved(x, y, buttons);
 		}
+		this.x = x;
+		this.y = y;
+		this.buttons = buttons;
 	}
-	onButtonDown(buttons) {
+	onButtonDown(x, y, buttons) {
 		debugger;
 	}
-	onButtonUp(buttons) {
+	onButtonUp(x, y, buttons) {
 		debugger;
 	}
-	onMoved(x, y) {
+	onMoved(x, y, buttons) {
 		debugger;
 	}
 }

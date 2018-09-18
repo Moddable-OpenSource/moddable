@@ -30,24 +30,25 @@ class Mouse extends BLEHIDMouse {
 	}
 	onDeviceReady() {
 		trace("Pairing complete.\n");
+		this.onMoved(0, 0, 0);
 	}
-	onButtonDown(buttons) {
+	onButtonDown(x, y, buttons) {
 		if (buttons & 0x01)
-			trace(`button 0 down\n`);
+			trace(`x: ${x}, y: ${y}, button 0 down\n`);
 		if (buttons & 0x02)
-			trace(`button 1 down\n`);
+			trace(`x: ${x}, y: ${y}, button 1 down\n`);
 		if (buttons & 0x04)
-			trace(`button 2 down\n`);
+			trace(`x: ${x}, y: ${y}, button 2 down\n`);
 	}
-	onButtonUp(buttons) {
-		if (!(buttons & 0x01))
-			trace(`button 0 up\n`);
-		if (!(buttons & 0x02))
-			trace(`button 1 up\n`);
-		if (!(buttons & 0x04))
-			trace(`button 2 up\n`);
+	onButtonUp(x, y, buttons) {
+		if (buttons & 0x01)
+			trace(`x: ${x}, y: ${y}, button 0 up\n`);
+		if (buttons & 0x02)
+			trace(`x: ${x}, y: ${y}, button 1 up\n`);
+		if (buttons & 0x04)
+			trace(`x: ${x}, y: ${y}, button 2 up\n`);
 	}
-	onMoved(x, y) {
+	onMoved(x, y, buttons) {
 		trace(`x: ${x}, y: ${y}\n`);
 	}
 }
