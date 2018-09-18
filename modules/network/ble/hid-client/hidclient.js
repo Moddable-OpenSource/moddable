@@ -115,6 +115,7 @@ class BLEHIDClient extends BLEClient {
 		let bytes = new Uint8Array(buffer);
 		let usageID = bytes[3];
 		if (usageID == this.usageID) {
+			this.onDeviceReportMap(buffer);
 			characteristic.service.discoverCharacteristic(this.REPORT_CHARACTERISTIC_UUID);
 		}
 		else {
@@ -154,6 +155,9 @@ class BLEHIDClient extends BLEClient {
 		debugger;
 	}
 	onDeviceReady() {
+		debugger;
+	}
+	onDeviceReportMap(buffer) {
 		debugger;
 	}
 	onDeviceReports(reports) {
