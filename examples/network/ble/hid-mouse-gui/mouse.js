@@ -30,27 +30,17 @@ class Mouse extends BLEHIDMouse {
 	}
 	onDeviceReady() {
 		trace("Pairing complete.\n");
-		this.onMoved(0, 0, 0);
+		application.distribute("onMouseConnected");
 	}
 	onButtonDown(x, y, buttons) {
-		if (buttons & 0x01)
-			trace(`x: ${x}, y: ${y}, button 0 down\n`);
-		else if (buttons & 0x02)
-			trace(`x: ${x}, y: ${y}, button 1 down\n`);
-		else if (buttons & 0x04)
-			trace(`x: ${x}, y: ${y}, button 2 down\n`);
+		application.distribute("onMouseDown", x, y, buttons);
 	}
 	onButtonUp(x, y, buttons) {
-		if (buttons & 0x01)
-			trace(`x: ${x}, y: ${y}, button 0 up\n`);
-		else if (buttons & 0x02)
-			trace(`x: ${x}, y: ${y}, button 1 up\n`);
-		else if (buttons & 0x04)
-			trace(`x: ${x}, y: ${y}, button 2 up\n`);
+		application.distribute("onMouseUp", x, y, buttons);
 	}
 	onMoved(x, y, buttons) {
-		trace(`x: ${x}, y: ${y}\n`);
+		application.distribute("onMouseMoved", x, y, buttons);
 	}
 }
 
-let mouse = new Mouse;
+export default Mouse;
