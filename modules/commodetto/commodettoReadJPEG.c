@@ -269,6 +269,31 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			}
 		}
 	}
+	else if (PJPG_YH2V1 == jpeg->scanType) {
+		unsigned char *r, *g, *b;
+		uint8_t jMaxLeft, jMaxRight;
+		int j;
+
+		if (jpeg->mcuWidth == outWidth) {
+			jMaxLeft = 8;
+			jMaxRight = 72;
+		}
+		else if (outWidth <= 8) {
+			jMaxLeft = outWidth;
+			jMaxRight = 0;
+		} else {
+			jMaxLeft = 8;
+			jMaxRight = 56 + outWidth;
+		}
+
+		r = jpeg->r, g = jpeg->g, b = jpeg->b;
+		for (i = (outHeight >= 8) ? 8 : outHeight; i > 0; i--, r += 8, g += 8, b += 8) {
+			for (j = 0; j < jMaxLeft; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+			for (j = 64; j < jMaxRight; j++)
+				*pixels++ =	makePixel(r[j], g[j], b[j]);
+		}
+	}
 	else if (PJPG_YH2V2 == jpeg->scanType) {
 		unsigned char *r, *g, *b;
 		uint8_t jMaxLeft, jMaxRight;
@@ -322,6 +347,8 @@ void convertto_16and8(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			}
 		}
 	}
+	else
+		modLog("unimplemented scan type");
 }
 #endif
 
@@ -441,6 +468,8 @@ void convertto_4(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixels)
 			}
 		}
 	}
+	else
+		modLog("unimplemented scan type");
 }
 #endif
 
@@ -540,6 +569,8 @@ void convertto_24(JPEG jpeg, CommodettoBitmap cb, PocoPixel *pixelsIn)
 			}
 		}
 	}
+	else
+		modLog("unimplemented scan type");
 }
 
 uint8_t tryInitialize(xsMachine *the, JPEG jpeg)
