@@ -31,35 +31,40 @@ class BLEHIDMouse extends BLEHIDClient {
 		this.onDeviceDisconnected();
 	}
 	onCharacteristicNotification(characteristic, buffer) {
-		this.onReportData(new Int8Array(buffer));
+		this.onReportData(new DataView(buffer));
 	}
 	onDeviceDisconnected() {
 		this.buttons = 0;
-		this.x = this.y = -1;
+	}
+	onDeviceReportMap(buffer) {
+		// @@ TBD - parse report map for mouse data payload format
 	}
 	onDeviceReports(reports) {
 		if (reports.length)
 			reports[0].characteristic.enableNotifications();
 	}
-	onReportData(report) {
-		// This is the 3 byte HID mouse report
+	onReportData(view) {
+		// This is the HID mouse report
 		//trace(report.join(' ') + '\n');
 		//return;
-		let buttons = report[0];
-		let x = report[1];
-		let y = report[2];
+		
+		// This example assumes the following payload format:
+		// byte 0: buttons - 1 bit per button
+		// bytes 1 - 2: 16-bit little endian X relative value
+		// bytes 3 - 4: 16-bit little endian Y relative value
+		let buttons = view.getUint8(0);
+		let x = view.getInt16(1, true);
+		let y = view.getInt16(3, true);
 		let up = 0;
 		let down = 0;
 		if (buttons != this.buttons) {
-			let mask = 0x1;
-			for (let i = 0; i < 3; ++i) {
+			for (let i = 0, mask = 0x1; i < 8; ++i, mask <<= 1) {
 				if ((buttons & mask) != (this.buttons & mask)) {
 					if (buttons & mask)
 						down |= mask;
 					else
 						up |= mask;
 				}
-				mask <<= 1;
 			}
 		}
 		if (down != 0)
@@ -69,8 +74,6 @@ class BLEHIDMouse extends BLEHIDClient {
 		else if (x != 0 || y != 0) {
 			this.onMoved(x, y, buttons);
 		}
-		this.x = x;
-		this.y = y;
 		this.buttons = buttons;
 	}
 	onButtonDown(x, y, buttons) {

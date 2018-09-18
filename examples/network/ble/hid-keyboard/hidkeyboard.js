@@ -73,6 +73,8 @@ class BLEHIDKeyboard extends BLEHIDClient {
 		this.indicators = 0;
 		this.outputReportCharacteristic = null;
 	}
+	onDeviceReportMap(buffer) {
+	}
 	onDeviceReports(reports) {
 		let enabledNotifications = false;
 		reports.forEach(report => {

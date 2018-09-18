@@ -6,7 +6,7 @@
 	"modules": {
 		"*": [
 			"./main",
-			"./hidmouse",
+			"./hidmouse"
 		]
 	},
 }
