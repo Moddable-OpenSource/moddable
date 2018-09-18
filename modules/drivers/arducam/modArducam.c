@@ -38,10 +38,27 @@
 #include "modI2C.h"
 #include "modGPIO.h"
 #include "stdlib.h"
+#include "mc.defines.h"
 
 #include <ets_sys.h>
 #include <osapi.h>
 #include "mc.xs.h"			// for xsID_ values
+
+#ifndef MODDEF_ARDUCAM_HZ
+	#define MODDEF_ARDUCAM_HZ (12000000)
+#endif
+#ifndef MODDEF_ARDUCAM_I2C_SDA
+	#define MODDEF_ARDUCAM_I2C_SDA (4)
+#endif
+#ifndef MODDEF_ARDUCAM_I2C_SCL
+	#define MODDEF_ARDUCAM_I2C_SCL (5)
+#endif
+#ifndef MODDEF_ILI9341_CS_PORT
+	#define MODDEF_ILI9341_CS_PORT NULL
+#endif
+#ifndef MODDEF_ILI9341_CS_PIN
+	#define MODDEF_ILI9341_CS_PIN (16)
+#endif
 
 struct sensor_reg8 {
 	uint8_t reg;
@@ -120,15 +137,15 @@ void xs_arducam(xsMachine *the)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, ac);
 
-	ac->spiConfig.hz = 16000000;
+	ac->spiConfig.hz = MODDEF_ARDUCAM_HZ;
 	ac->spiConfig.doChipSelect = arducamChipSelect;
 
 	/*
 		I2C set-up first
 	*/
 
-	ac->i2cConfig.sda = 4;
-	ac->i2cConfig.scl = 5;
+	ac->i2cConfig.sda = MODDEF_ARDUCAM_I2C_SDA;
+	ac->i2cConfig.scl = MODDEF_ARDUCAM_I2C_SCL;
 	ac->i2cConfig.address = 0x30;				// OV2640 (ArcuCAM sources use 0x60 and then shift down by 1)
 	modI2CInit(&ac->i2cConfig);
 
@@ -203,7 +220,7 @@ void xs_arducam(xsMachine *the)
 		SPI set-up second
 	*/
 
-	modGPIOInit(&ac->csPin, NULL, 16, kModGPIOOutput);
+	modGPIOInit(&ac->csPin, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput);
 
 	modSPIInit(&ac->spiConfig);
 
@@ -251,7 +268,7 @@ void xs_arducam_read(xsMachine *the)
 	int argc = xsmcArgc;
 	int i;
 	uint8_t data[4];
-	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	uint8_t *buffer;
 	int bufferSize = xsGetArrayBufferLength(xsArg(0));
 	int readSize;
 
@@ -265,6 +282,8 @@ void xs_arducam_read(xsMachine *the)
 
 	if (readSize > ac->bytesAvailable)
 		readSize = ac->bytesAvailable;
+
+	buffer = xsmcToArrayBuffer(xsArg(0));
 
 #if 0
 	if (ac->skipFirst) {
@@ -288,20 +307,23 @@ void xs_arducam_read(xsMachine *the)
 	}
 
 	for (i = 0; i < readSize; ) {
+		uint32_t temp32[64 / 4];
+		uint8_t *temp8 = (uint8_t *)temp32;
 		int use = readSize - i;
 		if (use > 64) use = 64;
 
-		modSPITxRx(&ac->spiConfig, buffer, use);
+		modSPITxRx(&ac->spiConfig, temp8, use);
 
 		if (ac->swap16) {
 			uint8_t j;
 			for (j = 0; j < use; j+= 2) {
-				uint8_t temp = buffer[j];
-				buffer[j] = buffer[j + 1];
-				buffer[j + 1] = temp;
+				uint8_t temp = temp8[j];
+				temp8[j] = temp8[j + 1];
+				temp8[j + 1] = temp;
 			}
 		}
 
+		c_memcpy(buffer, temp8, use);
 		buffer += use;
 		i += use;
 	}
