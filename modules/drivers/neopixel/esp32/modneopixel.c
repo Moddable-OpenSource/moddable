@@ -64,7 +64,7 @@ void xs_neopixel(xsMachine *the)
 
 	xsmcVars(1);
 #ifdef MODDEF_NEOPIXEL_LENGTH
-	length = MODDEF_NEOPIXEL_LENGTH
+	length = MODDEF_NEOPIXEL_LENGTH;
 #else
 	xsmcGet(xsVar(0), xsArg(0), xsID_length);
 	length = xsmcToInteger(xsVar(0));
@@ -108,7 +108,7 @@ void xs_neopixel(xsMachine *the)
 	px = &np->px;
 	px->pixels = (void *)np->pixels;
 	px->pixel_count = length;
-    px->brightness = 0x40;
+	px->brightness = 0x40;
 	c_strcpy(px->color_order, order);
 
 	shift = wstype ? 24 : 16;
@@ -134,22 +134,22 @@ void xs_neopixel(xsMachine *the)
 	px->timings.space.level0 = 1;
 	px->timings.mark.duration0 = 12;
 
-    if (wstype == 1) {
-    	px->nbits = 32;
-    	px->timings.mark.duration1 = 12;
-    	px->timings.space.duration0 = 6;
-    	px->timings.space.duration1 = 18;
-    	px->timings.reset.duration0 = 900;
-    	px->timings.reset.duration1 = 900;
-    }
-    else {
-    	px->nbits = 24;
-    	px->timings.mark.duration1 = 14;
-    	px->timings.space.duration0 = 7;
-    	px->timings.space.duration1 = 16;
-    	px->timings.reset.duration0 = 600;
-    	px->timings.reset.duration1 = 600;
-    }
+	if (1 == wstype) {
+		px->nbits = 32;
+		px->timings.mark.duration1 = 12;
+		px->timings.space.duration0 = 6;
+		px->timings.space.duration1 = 18;
+		px->timings.reset.duration0 = 900;
+		px->timings.reset.duration1 = 900;
+	}
+	else {
+		px->nbits = 24;
+		px->timings.mark.duration1 = 14;
+		px->timings.space.duration0 = 7;
+		px->timings.space.duration1 = 16;
+		px->timings.reset.duration0 = 600;
+		px->timings.reset.duration1 = 600;
+	}
 
 	np_show(px, MODDEF_NEOPIXEL_RMT_CHANNEL);	// pixels are all zero
 }
