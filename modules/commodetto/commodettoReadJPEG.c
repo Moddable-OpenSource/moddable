@@ -43,6 +43,8 @@
 
 #ifdef __ets__
 	#include "xsesp.h"
+#else
+	#define modLog(msg)
 #endif
 
 #include "commodettoPocoBlit.h"
