@@ -66,6 +66,13 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
+
+We need the v3.0rc1 version:
+
+	```
+	cd ESP8266_RTOS_SDK
+	git checkout v3.0-rc1
+	```
 	
 8. Connect the ESP8266 to your computer with a USB cable.
 
