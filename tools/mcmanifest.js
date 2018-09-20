@@ -358,7 +358,7 @@ export class MakeFile extends FILE {
 			this.write(" ");
 			this.write(rotationPath);
 			this.line(manifest);
-			
+
 			if (tool.windows)
 				this.write("\t@echo # png2bmp ");
 			else
@@ -1075,7 +1075,12 @@ export class Tool extends TOOL {
 		while (parts.length) {
 			let partial = parts.join("/");
 			for (let n in platforms) {
-				if (partial === n)
+				if (n.endsWith("/*")) {
+					let head = n.slice(0, -1);
+					if (partial.startsWith(head))
+						return platforms[n];
+				}
+				else if (partial === n)
 					return platforms[n];
 			}
 			parts.length -= 1;
@@ -1294,3 +1299,4 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.ble);
 	}
 }
+
