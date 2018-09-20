@@ -824,7 +824,6 @@ export default class extends Tool {
 				else
 					this.format = "rgb565le";
 			}
-			let foo = formatStrings[this.format];
 			config.format = formatStrings[this.format];
 
 			if (undefined === this.rotation) {
