@@ -2589,11 +2589,11 @@ void fxForInForOfNodeCode(void* it, void* param)
 	result = fxCoderUseTemporaryVariable(param);
 	selector = fxCoderUseTemporaryVariable(coder);
 	_return = fxCoderUseTemporaryVariable(coder);
+	fxScopeCodingBlock(self->scope, param);
 	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
 	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
 	coder->returnTarget = fxCoderAliasTargets(param, coder->returnTarget);
 
-	fxScopeCodingBlock(self->scope, param);
 	fxScopeCodeDefineNodes(self->scope, param);
 	if (coder->programFlag) {
 		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
