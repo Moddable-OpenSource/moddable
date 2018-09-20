@@ -387,7 +387,14 @@ void fxReceive(txMachine* the)
 		the->reader = NULL;
 	}
 	else {
+		uint32_t timeout = modMilliseconds() + 2000;
+
 		while (true) {
+			if (timeout < modMilliseconds()) {
+				fxDisconnect(the);
+				break;
+			}
+
 			fxReceiveLoop();
 			if (the->debugFragments) {
 				DebugFragment f;

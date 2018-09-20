@@ -199,10 +199,8 @@ void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine)
 
 void fxDebugCommand(txMachine* the)
 {
-	if (!fxIsConnected(the))
-		return;
 	the->debugExit = 0;
-	for (;;) {
+	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
 		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 0))
