@@ -21,18 +21,6 @@
 				]
 			},
 			"preload": "preference",
-			"defines": {
-				"xpt2046": {
-					"old_cs_pin": 5,
-					"cs_pin": 0,
-					"touch_pin": 16,
-					"spi_port": "#HSPI",
-					"raw_left": 1941,
-					"raw_right": 107,
-					"raw_top": 1980,
-					"raw_bottom": 186,
-				}
-			}
 		},
 		"esp32": {
 			"include": [
@@ -47,17 +35,6 @@
 				]
 			},
 			"preload": "preference",
-			"defines": {
-				"xpt2046": {
-					"cs_pin": 18,
-					"touch_pin": 23,
-					"spi_port": "HSPI_HOST",
-					"raw_left": 141,
-					"raw_right": 1955,
-					"raw_top": 1970,
-					"raw_bottom": 158,
-				}
-			}
 		},
 		"gecko": {
 			"include": [

@@ -17,7 +17,7 @@
  */
 
 import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/parseBMP";
+import parseBMP from "commodetto/ParseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 

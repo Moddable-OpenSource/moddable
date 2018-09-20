@@ -1,0 +1,47 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*",
+
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*",
+
+			"$(MODULES)/drivers/wm8978/*",
+			"$(MODULES)/pins/audioin/*",
+			"$(MODULES)/pins/audioin/esp32/*",
+		],
+		"setup/target": "./setup-target",
+	},
+	"preload": [
+		"neopixel",
+		"monitor",
+		"wm8978",
+		"audioin",
+		"setup/target",
+	],
+	"config": {
+		"WM8978": {"address": 26, "sda": 19, "scl": 18, "hz": 100000},
+	},
+	"defines": {
+		"neopixel": {
+			"length": 19,
+			"pin": 22,
+			"order": "#RGB",
+			"rmt_channel": "RMT_CHANNEL_0",
+		},
+		"audioin": {
+			"sampleRate": 8000,
+			"bitsPerSample": 8,
+			"i2s": {
+				"bck_pin": 33,
+				"lr_in": 25,
+				"datain_pin": 27,
+			}
+		}
+	}
+}

@@ -245,20 +245,24 @@ void xs_SSD1306(xsMachine *the)
 #endif
 #elif MODDEF_SSD1306_I2C
 	#ifdef MODDEF_SSD1306_SDA_PIN
-		ssd->config.i2c.sda = MODDEF_SSD1306_SDA;
+		ssd->config.i2c.sda = MODDEF_SSD1306_SDA_PIN;
 	#else
 		xsmcGet(xsVar(0), xsArg(0), xsID_sda);
 		ssd->config.i2c.sda = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
 	#endif
 	#ifdef MODDEF_SSD1306_SCL_PIN
-		ssd->config.i2c.scl = MODDEF_SSD1306_SCL_PIN
+		ssd->config.i2c.scl = MODDEF_SSD1306_SCL_PIN;
 	#else
 		xsmcGet(xsVar(0), xsArg(0), xsID_scl);
 		ssd->config.i2c.scl = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? -1 : xsmcToInteger(xsVar(0));
 	#endif
 
+#ifdef MODDEF_SSD1306_ADDRESS
+	ssd->config.i2c.address = MODDEF_SSD1306_ADDRESS;
+#else
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
-	ssd->config.i2c.address = (xsUndefinedType == xsmcTypeOf(xsVar(0))) ? MODDEF_SSD1306_ADDRESS : (uint8_t)xsmcToInteger(xsVar(0));
+	ssd->config.i2c.address = (uint8_t)xsmcToInteger(xsVar(0);
+#endif
 	ssd->config.i2c.hz = MODDEF_SSD1306_HZ;
 	modI2CInit(&ssd->config.i2c);
 

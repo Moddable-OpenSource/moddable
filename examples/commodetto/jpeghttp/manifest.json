@@ -3,7 +3,6 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -18,7 +17,4 @@
 		"http",
 		"main",
 	],
-	"config": {
-		"screen": "ili9341"
-	},
 }

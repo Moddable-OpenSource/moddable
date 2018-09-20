@@ -1,0 +1,31 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*",
+
+			"$(MODULES)/pins/audioin/*",
+			"$(MODULES)/pins/audioin/esp32/*",
+		],
+		"setup/target": "./setup-target",
+	},
+	"preload": [
+		"monitor",
+		"audioin",
+		"setup/target",
+	],
+	"defines": {
+		"audioin": {
+			"sampleRate": 8000,
+			"bitsPerSample": 8,
+			"i2s": {
+				"bck_pin": 32,
+				"lr_in": 33,
+				"datain_pin": 27,
+			}
+		}
+	}
+}
