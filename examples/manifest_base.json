@@ -40,58 +40,10 @@
 	"strip": "*",
 	"platforms": {
 		"esp": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/esp/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mc/*",
-				]
-			},
-			"preload": [
-				"time",
-				"timer",
-			],
-			"recipes": {
-				"strings-in-flash": [
-					"commodetto*",
-					"piu*",
-					"Resource*",
-					"mod*",
-					"i2c*",
-					"digital*",
-				],
-				"c++11": [
-					"*.cc.o",
-					"*.cpp.o",
-				],
-			},
-			"defines": {
-				"i2c": {
-					"sda_pin": 5,
-					"scl_pin": 4
-				}
-			}
+			"include": "$(BUILD)/devices/esp/manifest.json"
 		},
 		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/esp/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mc/*",
-				]
-			},
-			"preload": [
-				"time",
-				"timer",
-			],
-			"defines": {
-				"i2c": {
-					"sda_pin": 21,
-					"scl_pin": 22
-				}
-			}
+			"include": "$(BUILD)/devices/esp32/manifest.json"
 		},
 		"gecko": {
 			"modules": {

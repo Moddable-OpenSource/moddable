@@ -3,7 +3,6 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"*": "./main",
@@ -13,6 +12,5 @@
 	},
 	"config": {
 		"sntp": "pool.ntp.org",
-		"screen": "ili9341"
 	},
 }
