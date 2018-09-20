@@ -275,7 +275,7 @@ $(SDKCONFIG):
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
 	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR))
 	if exist $(TMP_DIR)\_s.tmp ($(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Running GENCONFIG...; BATCH_BUILD=1 DEBUG=$(DEBUG) IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make defconfig")
-	if exist (copy $(PROJ_DIR)\sdkconfig.old $(SDKCONFIGPATH)\sdkconfig.old)
+	if exist $(PROJ_DIR)\sdkconfig.old (copy $(PROJ_DIR)\sdkconfig.old $(SDKCONFIGPATH)\sdkconfig.old)
 	if exist $(TMP_DIR)\_s.tmp (@echo.)
 	if exist $(TMP_DIR)\_s.tmp (@echo Press any key to complete build **after** MinGW x32 console window closes...)
 	if exist $(TMP_DIR)\_s.tmp (pause>nul)
