@@ -387,10 +387,11 @@ void fxReceive(txMachine* the)
 		the->reader = NULL;
 	}
 	else {
-		uint32_t timeout = modMilliseconds() + 2000;
+		static uint8_t forever = 0;
+		uint32_t timeout = forever ? 0 : (modMilliseconds() + 2000);
 
 		while (true) {
-			if (timeout < modMilliseconds()) {
+			if (timeout && (timeout < modMilliseconds())) {
 				fxDisconnect(the);
 				break;
 			}
@@ -410,6 +411,7 @@ void fxReceive(txMachine* the)
 				break;
 			}
 		}
+		forever = 1;
 	}
 
 bail:
