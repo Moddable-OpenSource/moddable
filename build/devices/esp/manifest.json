@@ -1,0 +1,33 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/esp/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*",
+		]
+	},
+	"preload": [
+		"time",
+		"timer",
+	],
+	"recipes": {
+		"strings-in-flash": [
+			"commodetto*",
+			"piu*",
+			"Resource*",
+			"mod*",
+			"i2c*",
+			"digital*",
+		],
+		"c++11": [
+			"*.cc.o",
+			"*.cpp.o",
+		],
+	},
+	"platforms": {
+		"esp/*": {
+			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+}

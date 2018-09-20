@@ -1,0 +1,31 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "xpt2046",
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 5,
+			"scl_pin": 4
+		},
+		"ili9341": {
+			"hz": 40000000,
+			"cs_pin": 15,
+			"dc_pin": 2,
+			"spi_port": "#HSPI"
+		},
+		"xpt2046": {
+			"cs_pin": 0,
+			"touch_pin": 16,
+			"spi_port": "#HSPI",
+			"raw_left": 1941,
+			"raw_right": 107,
+			"raw_top": 1980,
+			"raw_bottom": 186,
+		}
+	}
+}

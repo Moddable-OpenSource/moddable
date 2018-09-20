@@ -14,7 +14,6 @@
 
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
