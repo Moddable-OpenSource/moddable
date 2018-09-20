@@ -1,0 +1,19 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/esp/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*",
+		]
+	},
+	"preload": [
+		"time",
+		"timer",
+	],
+	"platforms": {
+		"esp32/*": {
+			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+}
