@@ -19,10 +19,11 @@
 
 PROJECT_NAME := xs_esp32
 BUILD_DIR_BASE := $(IDF_BUILD_DIR)
+DEBUGGER_SPEED ?= 921600
 
 # COMPONENTS=freertos esp32 newlib esptool_py tcpip_adapter lwip main soc ethernet log driver vfs heap nvs_flash spi_flash bootloader_support app_trace xtensa-debug-module mbedtls wpa_supplicant micro-ecc
 
-CFLAGS += -Wno-unused-value
+CFLAGS += -Wno-unused-value -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 
 include $(IDF_PATH)/make/project.mk
 

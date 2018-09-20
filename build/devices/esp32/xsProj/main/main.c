@@ -49,6 +49,10 @@
 
 #include "xsPlatform.h"
 
+#ifndef DEBUGGER_SPEED
+	#define DEBUGGER_SPEED 921600
+#endif
+
 extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
@@ -105,7 +109,7 @@ void setup(void)
 	esp_err_t err;
 	uart_config_t uartConfig;
 #ifdef mxDebug
-	uartConfig.baud_rate = 921600;
+	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
 	uartConfig.baud_rate = 115200;
 #endif
