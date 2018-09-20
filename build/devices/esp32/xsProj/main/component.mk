@@ -23,5 +23,5 @@ endif
 
 COMPONENT_EXTRA_INCLUDES += $(MODDABLE)/xs/platforms/esp $(MODDABLE)/xs/includes $(MODDABLE)/modules/base/instrumentation
 
-COMPONENT_ADD_LDFLAGS += $(BUILD_DIR_BASE)/xs_esp.a
+COMPONENT_ADD_LDFLAGS += $(BUILD_DIR_BASE)/xs_esp32.a
 
