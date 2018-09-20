@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -731,15 +731,14 @@ export default class extends Tool {
 		else
 			prefix = "make.";
 
-		let parts = this.platform.split("/");
-		if (parts[1])
-			path += parts[0] + "/" + prefix + parts[1] + ".mk";
-		else
-			path += prefix + parts[0] + ".mk";
+		path += prefix + this.platform + ".mk";
+			
 		path = this.resolveFilePath(path);
-		if (!path)
-			throw new Error("unknown platform!");
-		this.fragmentPath = path;
+		if (!path) {
+//			throw new Error("unknown platform!");
+		}
+		else
+			this.fragmentPath = path;
 	}
 	createDirectories(path, first, last) {
 		this.createDirectory(path);
@@ -755,11 +754,10 @@ export default class extends Tool {
 			this.createDirectory(path);
 		}
 		else {
-			let parts = platform.split("/");
-			path += this.slash + parts[0];
+			path += this.slash + this.platform;
 			this.createDirectory(path);
-			if (parts.length > 1) {
-				path += this.slash + parts[1];
+			if (this.subplatform) {
+				path += this.slash + this.subplatform;
 				this.createDirectory(path);
 			}
 		}
@@ -812,8 +810,34 @@ export default class extends Tool {
 	filterConfig(config) {
 		this.mergeProperties(config, this.config);
 		if (this.format) {
-			config.format = formatStrings[this.format];	
-			config.rotation = this.rotation;
+			if ("UNDEFINED" === this.format) {
+				if (undefined !== config.format) {
+					for (let property in formatStrings) {
+						if (formatStrings[property] == config.format) {
+							this.format = property;
+							break;
+						}
+					}
+					if ("UNDEFINED" === this.format)
+						throw new Error(`invalid format: ${config.format}`);
+				}
+				else
+					this.format = "rgb565le";
+			}
+			let foo = formatStrings[this.format];
+			config.format = formatStrings[this.format];
+
+			if (undefined === this.rotation) {
+				if (undefined !== config.rotation) {
+					if ((0 !== config.rotation) && (90 !== config.rotation) && (180 !== config.rotation) && (270 !== config.rotation))
+						throw new Error(`invalid rotation: ${config.rotation}`);
+					this.rotation = config.rotation;
+				}
+				else
+					config.rotation = this.rotation = 0;
+			}
+			else
+				config.rotation = this.rotation;
 		}
 		this.config = config;
 	}
@@ -985,6 +1009,11 @@ export default class extends Tool {
 		this.environment.DASH_SIGNATURE = signature.join("-");
 		this.environment.DOT_SIGNATURE = signature.join(".");
 		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
+
+		if (this.platform == "esp32") {
+			if (undefined === this.environment.SDKCONFIGPATH)
+				this.environment.SDKCONFIGPATH = this.buildPath + this.slash + "devices" + this.slash + "esp32" + this.slash + "xsProj";
+		}
 		
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator")) {
 			var mainPath = this.binPath, path, file;

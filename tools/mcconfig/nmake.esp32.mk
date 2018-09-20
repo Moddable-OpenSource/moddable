@@ -25,6 +25,14 @@ HOST_OS = win
 !CMDSWITCHES +S
 !ENDIF
 
+!IF "$(UPLOAD_SPEED)"==""
+UPLOAD_SPEED = 921600
+!ENDIF
+!IF "$(DEBUGGER_SPEED)"==""
+DEBUGGER_SPEED = 460800
+!ENDIF
+
+
 !IF "$(BASE_DIR)"==""
 BASE_DIR = $(USERPROFILE)
 !ENDIF
@@ -38,21 +46,22 @@ TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp32\debug\lib
+LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp32\instrument\lib
+LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\esp32\release\lib
+LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-IDF_BUILD_DIR = $(BUILD_DIR)\tmp\esp32\debug\idf
+IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\idf
+PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\xsProj
 !ELSE
-IDF_BUILD_DIR = $(BUILD_DIR)\tmp\esp32\release\idf
+IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\idf
+PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\xsProj
 !ENDIF
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
-PROJ_DIR = $(PLATFORM_DIR)\xsProj
 
 INC_DIRS = \
 	-I$(IDF_PATH)\components \
@@ -138,8 +147,11 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 
-SDKCONFIG =\
-	$(PROJ_DIR)\sdkconfig.default
+!IF "$(SDKCONFIGPATH)"==""
+SDKCONFIGPATH = $(PROJ_DIR)
+!ENDIF
+SDKCONFIG = $(SDKCONFIGPATH)\sdkconfig.default
+SDKCONFIGPRIOR = $(SDKCONFIGPATH)\sdkconfig.default.prior
 
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
@@ -214,48 +226,56 @@ CPP_FLAGS = $(C_COMMON_FLAGS)
 
 !IF "$(DEBUG)"=="1"
 LAUNCH = debug
+C_DEFINES = $(C_DEFINES) -DmxDebug=1
 !ELSE
 LAUNCH = release
 !ENDIF
 
-.PHONY: all
+PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj
+PROJ_DIR_FILES = \
+	$(PROJ_DIR)\main\main.c	\
+	$(PROJ_DIR)\main\component.mk	\
+	$(PROJ_DIR)\partitions.csv \
+	$(PROJ_DIR)\Makefile
 
-all: $(BLE) $(SDKCONFIG) $(LAUNCH)
+.PHONY: all projDir
 
-!IF "$(DEBUG)"=="1"
-C_DEFINES = $(C_DEFINES) -DmxDebug=1
-!ENDIF
+all: projDir $(BLE) $(SDKCONFIG) $(LAUNCH)
 
-debug: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
+debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
-	copy $(BIN_DIR)\xs_esp.a $(IDF_BUILD_DIR)\.
+	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 | more"
+	@echo "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
 
-release: $(LIB_DIR) $(BIN_DIR)\xs_esp.a
+release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
-	copy $(BIN_DIR)\xs_esp.a $(IDF_BUILD_DIR)\.
+	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash monitor;"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); make monitor;"
 
-$(PROJ_DIR)\sdkconfig.default:
+$(SDKCONFIG):
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
-!IF !EXIST($(IDF_BUILD_DIR)\)
+!IF !EXIST($(SDKCONFIGPRIOR))
+	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
+	@echo "# no .prior - try current"
+!ENDIF
+!if !EXIST($(IDF_BUILD_DIR)\)
+	if exist $(SDKCONFIGPRIOR) del $(SDKCONFIGPRIOR)
+	@echo "# no idf_build_dir - remove .prior"
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
-!IF !EXIST($(SDKCONFIG_FILE).prior)
-	echo 1 > $(TMP_DIR)\_s.tmp
-!ELSE
-	-FC $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
-!ENDIF
+	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
-	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior)
+	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR))
 	if exist $(TMP_DIR)\_s.tmp ($(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Running GENCONFIG...; BATCH_BUILD=1 DEBUG=$(DEBUG) IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make defconfig")
+	if exist (copy $(PROJ_DIR)\sdkconfig.old $(SDKCONFIGPATH)\sdkconfig.old)
 	if exist $(TMP_DIR)\_s.tmp (@echo.)
 	if exist $(TMP_DIR)\_s.tmp (@echo Press any key to complete build **after** MinGW x32 console window closes...)
 	if exist $(TMP_DIR)\_s.tmp (pause>nul)
@@ -264,12 +284,29 @@ $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
-$(BIN_DIR)\xs_esp.a: $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
-	@echo # ld xs_esp.bin
+$(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+	@echo # ld xs_esp32.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
-	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
+	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp32.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
+
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES)
+
+$(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
+	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+
+$(PROJ_DIR)\main\main.c: $(PROJ_DIR_TEMPLATE)\main\main.c
+	copy $? $@
+
+$(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
+	copy $? $@
+
+$(PROJ_DIR)\partitions.csv: $(PROJ_DIR_TEMPLATE)\partitions.csv
+	copy $? $@
+
+$(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
+	copy $? $@
 
 $(XS_OBJ):$(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:

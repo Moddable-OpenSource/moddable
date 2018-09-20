@@ -19,6 +19,9 @@
 
 HOST_OS := $(shell uname)
 
+UPLOAD_SPEED ?= 921600
+DEBUGGER_SPEED ?= 460800
+
 ESP32_BASE ?= $(HOME)/esp32
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
@@ -26,9 +29,11 @@ TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 ifeq ($(DEBUG),1)
-	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/debug/idf
+	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/idf
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/xsProj
 else
-	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/esp32/release/idf
+	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/idf
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/xsProj
 endif
 
 ifeq ($(MAKEFLAGS_JOBS),)
@@ -36,12 +41,12 @@ ifeq ($(MAKEFLAGS_JOBS),)
 endif
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/esp32/debug/lib
+	LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/lib
 else
 	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/esp32/instrument/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/lib
 	else
-		LIB_DIR = $(BUILD_DIR)/tmp/esp32/release/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/lib
 	endif
 endif
 
@@ -221,57 +226,91 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 
-PROJ_DIR = $(BUILD_DIR)/devices/esp32/xsProj
+PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj
+PROJ_DIR_FILES = \
+	$(PROJ_DIR)/main/main.c \
+	$(PROJ_DIR)/main/component.mk \
+	$(PROJ_DIR)/partitions.csv \
+	$(PROJ_DIR)/Makefile
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` 921600 8N1 $(IDF_BUILD_DIR)/xs_esp32.elf $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
+		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1 $(IDF_BUILD_DIR)/xs_esp32.elf $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_LAUNCH = bash -c "serial2xsbug `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'` 921600 8N1"
+		DO_LAUNCH = bash -c "serial2xsbug `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1"
 	endif
 else
 	KILL_SERIAL_2_XSBUG = 
 	DO_XSBUG = 
-	DO_LAUNCH = cd $(PROJ_DIR); IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make monitor
+	DO_LAUNCH = cd $(PROJ_DIR); IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
 endif
 
-SDKCONFIG =\
-	$(PROJ_DIR)/sdkconfig.default
+SDKCONFIGPATH ?= $(PROJ_DIR)
+SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.default
+SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.default.prior
 
 .NOTPARALLEL: $(SDKCONFIG)
 
-all: $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp.a
+all: projDir $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	-rm $(IDF_BUILD_DIR)/xs_esp32.elf
+	-rm $(BIN_DIR)/xs_esp32.elf
 	-mkdir -p $(IDF_BUILD_DIR)
-	cp $(BIN_DIR)/xs_esp.a $(IDF_BUILD_DIR)/.
+	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
-	cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make flash;
+	cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash;
+	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
 	$(DO_LAUNCH)
 
-$(PROJ_DIR)/sdkconfig.default:
-	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIG_FILE).prior; fi
-	if ! cmp -s "$(SDKCONFIG_FILE).prior" "$(SDKCONFIG_FILE)"; then \
+$(SDKCONFIG):
+	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); echo "# no .prior try current"; fi
+	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIGPRIOR); echo "# no idf_build_dir - remove .prior"; fi
+	if ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" ; then \
+		echo "# prior is different from sdkconfig_file"; fi 
+	if ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
+		echo "# sdkconfig is different from sdkconfig.old"; fi 
+	if ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" \
+		|| ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
-		cp $(SDKCONFIG_FILE) $(SDKCONFIG_FILE).prior; \
+		cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); \
 		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig; \
+		mv $(PROJ_DIR)/sdkconfig.old $(SDKCONFIGPATH)/sdkconfig.old;  \
 	fi
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
-$(BIN_DIR)/xs_esp.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
-	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_esp.a $^ $(LIB_DIR)/buildinfo.c.o
+	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_esp32.a $^ $(LIB_DIR)/buildinfo.c.o
+
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES)
+
+$(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
+	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+
+$(PROJ_DIR)/main/main.c: $(PROJ_DIR_TEMPLATE)/main/main.c
+	cp -f $? $@
+
+$(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
+	cp -f $? $@
+
+$(PROJ_DIR)/partitions.csv: $(PROJ_DIR_TEMPLATE)/partitions.csv
+	cp -f $? $@
+
+$(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
+	cp -f $? $@
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c

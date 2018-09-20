@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -58,6 +58,11 @@ export class MakeFile extends FILE {
 	}
 	generate(tool) {
 		this.generateDefinitions(tool)
+		if (tool.environment)				// override default .mk file
+			if (tool.environment.MAKE_FRAGMENT)
+				tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
+		if (undefined === tool.fragmentPath)
+			throw new Error("unknown platform: MAKE_FRAGMENT not found!");
 		this.write(tool.readFileString(tool.fragmentPath));
 		this.line("");
 		this.generateRules(tool)
@@ -115,7 +120,7 @@ export class MakeFile extends FILE {
 		this.write(" -r ");
 		this.write(role);
 		if ("esp32" == tool.platform) {
-			let directory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
 			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
 			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
 			if (tool.debug) {
@@ -130,11 +135,13 @@ export class MakeFile extends FILE {
 			this.write(sdkconfigFile);
 			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
 			if (tool.windows) {
-				let idfBuildDir = tool.buildPath + "\\tmp\\esp32\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
 				tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+				let binDirMinGW = tool.binPath.replace(/\\/g, "/");
+				tool.setenv("BIN_DIR_MINGW", binDirMinGW);
 			}
 		}
 		this.write(" -o $(TMP_DIR)");
@@ -889,7 +896,7 @@ export class Tool extends TOOL {
 		this.manifestPath = null;
 		this.outputPath = null;
 		this.platform = null;
-		this.rotation = 0;
+		this.rotation = undefined;
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
@@ -946,12 +953,25 @@ export class Tool extends TOOL {
 				if (this.platform)
 					throw new Error("-p '" + name + "': too many platforms!");
 				name = name.toLowerCase();
-				this.platform = name;
+				this.fullplatform = name;
+				this.environment.FULLPLATFORM = name;
+				this.environment.PLATFORMPATH = "";
+				let parts = name.split("/");
+				if (parts[1]) {
+					this.subplatform = parts[1];
+					this.environment.SUBPLATFORM = parts[1];
+					this.environment.PLATFORMPATH = this.slash + parts[1];
+				}
+				this.platform = parts[0];
+				this.environment.PLATFORM = parts[0];
+				this.environment.PLATFORMPATH = parts[0] + this.environment.PLATFORMPATH;
 				break;
 			case "-r":
 				argi++;
 				if (argi >= argc)
 					throw new Error("-r: no rotation!");
+				if (undefined !== this.rotation)
+					throw new Error("-r '" + name + "': too many rotations!");
 				name = parseInt(argv[argi]);
 				if ((name != 0) && (name != 90) && (name != 180) && (name != 270))
 					throw new Error("-r: " + name + ": invalid rotation!");
@@ -977,6 +997,13 @@ export class Tool extends TOOL {
 				break;
 			}
 		}
+		if (!this.fullplatform) {
+			this.fullplatform = this.platform = this.currentPlatform;
+			this.environment.PLATFORM = this.platform;
+			this.environment.FULLPLATFORM = this.platform;
+			this.environment.PLATFORMPATH = this.platform;
+		}
+
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);
 			this.currentDirectory = this.mainPath = parts.directory;
@@ -1003,7 +1030,7 @@ export class Tool extends TOOL {
 		if (this.platform.startsWith("x-"))
 			this.format = null;
 		else if (!this.format)
-			this.format = "rgb565le";
+			this.format = "UNDEFINED";
 		if (this.platform == "mac")
 			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
 		else if (this.platform == "win")
@@ -1067,17 +1094,9 @@ export class Tool extends TOOL {
 		this.currentDirectory = manifest.directory;
 		this.mergePlatform(all, manifest);
 
-		let parts = this.platform.split("/");		// subplatform
 		if ("platforms" in manifest) {
 			let platforms = manifest.platforms;
-			let platform;
-
-			if (parts[1]) {
-				platform = this.matchPlatform(platforms, parts[0], true);
-				if (platform)
-					this.mergePlatform(all, platform);
-			}
-			platform = this.matchPlatform(platforms, this.platform, false);
+			let platform = this.matchPlatform(platforms, this.fullplatform, false);
 			if (platform)
 				this.mergePlatform(all, platform);
 			delete manifest.platforms;
@@ -1143,22 +1162,7 @@ export class Tool extends TOOL {
 		this.parseBuild(manifest);
 		if ("platforms" in manifest) {
 			let platforms = manifest.platforms;
-			let parts = this.platform.split("/");		// subplatform
-			if (parts[1]) {
-				let platform = this.matchPlatform(platforms, parts[0], true);
-				if (platform) {
-					this.parseBuild(platform);
-					platformInclude = platform.include;
-					if (platformInclude) {
-						if (!("include" in manifest))
-							manifest.include = platformInclude;
-						else
-							manifest.include = manifest.include.concat(manifest.include, platformInclude);
-					}
-				}
-			}
-
-			let platform = this.matchPlatform(platforms, this.platform, false);
+			let platform = this.matchPlatform(platforms, this.fullplatform, false);
 			if (platform) {
 				this.parseBuild(platform);
 				platformInclude = platform.include;
