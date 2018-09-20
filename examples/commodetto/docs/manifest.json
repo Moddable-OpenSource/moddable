@@ -2,7 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"*": "./main",
@@ -26,8 +25,5 @@
 			"./OpenSans-BoldItalic-52",
 		]
 
-	},
-	"config": {
-		"screen": "ili9341"
 	},
 }
