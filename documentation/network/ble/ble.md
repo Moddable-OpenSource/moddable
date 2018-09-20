@@ -1163,8 +1163,8 @@ Each item in the `characteristics` object contains the following properties:
 | `uuid` | `string` | Characteristic UUID.
 | `maxBytes` | `number` | Maximum number of bytes required to store the characteristic value.
 | `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `String`, `Uint8`, `Uint16` and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` class automatically converts characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`.
-| `permissions` | `string` | Characteristic permissions. Supported permissions include `read` and `write`.
-| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `notify` and `indicate`.
+| `permissions` | `string` | Characteristic permissions. Supported permissions include `read` and `write`. Multiple permissions can be specified by comma-separating permission strings.
+| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
 | `value` | `array`, `string`, or `number` | Optional characteristic value. The `BLEServer` class automatically converts the value specified here to the type specified by the `type` property.
 
 Characteristics that include a `value` property are considered static. The `BLEServer` class automatically responds to read requests for static characteristic values, further reducing the script code required to host a GATT service.
@@ -1460,6 +1460,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
 | [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
+| [hid-mouse](../../../examples/network/ble/hid-mouse) | Demonstrates how to connect to a BLE mouse that implements the HID over GATT profile.
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
