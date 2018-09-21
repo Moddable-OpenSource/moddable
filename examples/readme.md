@@ -48,6 +48,7 @@ The `-p` command line option specifies the target platform you are building for:
 - `-p lin`: Linux target
 - `-p esp`: ESP8266 device target
 - `-p esp32`: ESP32 device target
+- `-p gecko/blue`: SiLabs Blue Gecko
 - `-p gecko/giant`: SiLabs Giant Gecko
 - `-p gecko/mighty`: SiLabs Mighty Gecko
 - `-p gecko/thunderboard2`: SiLabs Thunderboard Sense 2
