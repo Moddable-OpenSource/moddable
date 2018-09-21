@@ -451,6 +451,21 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 
 #ifdef mxRun
 
+txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
+{
+	txBigInt* bigint = &slot->value.bigint;
+	txNumber base = c_pow(2, 32);
+	txNumber number = 0;
+	int i;
+	for (i = bigint->size; --i >= 0;)
+		number = (number * base) + bigint->data[i];
+	if (bigint->sign)
+		number = -number;
+	slot->value.number = number;
+	slot->kind = XS_NUMBER_KIND;
+	return number;
+}
+
 void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 {
 	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -491,19 +506,22 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	mxPop();
 }
 
-txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
+txS8 fxToBigInt64(txMachine* the, txSlot* slot)
 {
-	txBigInt* bigint = &slot->value.bigint;
-	txNumber base = c_pow(2, 32);
-	txNumber number = 0;
-	int i;
-	for (i = bigint->size; --i >= 0;)
-		number = (number * base) + bigint->data[i];
-	if (bigint->sign)
-		number = -number;
-	slot->value.number = number;
-	slot->kind = XS_NUMBER_KIND;
-	return number;
+	return (txS8)fxToBigUint64(the, slot);
+}
+
+txU8 fxToBigUint64(txMachine* the, txSlot* slot)
+{
+	txBigInt* bigint = fxToBigInt(the, slot, 1);
+	txU8 result = bigint->data[0];
+	if (bigint->size > 1)
+		result |= (txU8)(bigint->data[1]) << 32;
+	if (bigint->sign && result) {
+		result--;
+		result = 0xFFFFFFFFFFFFFFFFll - result;
+	}
+	return result;
 }
 
 txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot)
@@ -658,24 +676,6 @@ again:
 		break;
 	}
 	return &slot->value.bigint;
-}
-
-txS8 fxToBigInt64(txMachine* the, txSlot* slot)
-{
-	return (txS8)fxToBigUint64(the, slot);
-}
-
-txU8 fxToBigUint64(txMachine* the, txSlot* slot)
-{
-	txBigInt* bigint = fxToBigInt(the, slot, 1);
-	txU8 result = bigint->data[0];
-	if (bigint->size > 1)
-		result |= (txU8)(bigint->data[1]) << 32;
-	if (bigint->sign && result) {
-		result--;
-		result = 0xFFFFFFFFFFFFFFFFll - result;
-	}
-	return result;
 }
 
 void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 value)

@@ -80,6 +80,7 @@ typedef void (*txTypeCallback)(txMachine*, txSlot*, txInteger, txSlot*, int);
 typedef void (*txTypeCoerce)(txMachine*, txSlot*);
 typedef int (*txTypeCompare)(const void*, const void*);
 typedef void (*txTypeOperator)(txMachine*, txSlot*, txInteger, txSlot*, int, int);
+typedef txInteger (*txTypeWait)(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, txNumber timeout);
 
 typedef void (*txBehaviorCall)(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments);
 typedef void (*txBehaviorConstruct)(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target);
@@ -177,6 +178,7 @@ typedef struct {
 	txTypeCallback store;
 	txTypeCallback sub;
 	txTypeCallback xor;
+	txTypeWait wait;
 } txTypeAtomics;
 
 typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
@@ -648,12 +650,14 @@ extern void fxInitializeSharedCluster();
 extern void fxTerminateSharedCluster();
 extern void* fxCreateSharedChunk(txInteger byteLength);
 extern void fxLockSharedChunk(void* data);
+extern void fxLinkSharedChunk(txMachine* the);
 extern txInteger fxMeasureSharedChunk(void* data);
+extern txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger offset, txInteger count);
 extern void fxReleaseSharedChunk(void* data);
 extern void* fxRetainSharedChunk(void* data);
+extern void fxUnlinkSharedChunk(txMachine* the);
 extern void fxUnlockSharedChunk(void* data);
-extern txInteger fxWaitSharedChunk(txMachine* the, void* data, txInteger offset, txInteger value, txNumber timeout);
-extern txInteger fxWakeSharedChunk(txMachine* the, void* data, txInteger offset, txInteger count);
+extern txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout);
 #ifdef mxDebug
 extern void fxAbort(txMachine* the);
 extern void fxConnect(txMachine* the);
@@ -1003,16 +1007,16 @@ extern void fxBigIntCoerce(txMachine* the, txSlot* slot);
 extern txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
 extern txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot);
-extern void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix);
 extern txNumber fxBigIntToNumber(txMachine* the, txSlot* slot);
+extern void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix);
+extern txS8 fxToBigInt64(txMachine* the, txSlot* slot);
+extern txU8 fxToBigUint64(txMachine* the, txSlot* slot);
 
 mxExport void fxBigInt(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data);
 mxExport txBigInt* fxToBigInt(txMachine* the, txSlot* slot, txFlag strict);
 mxExport void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 value);
-mxExport txS8 fxToBigInt64(txMachine* the, txSlot* slot);
 mxExport void fxFromBigUint64(txMachine* the, txSlot* slot, txU8 value);
-mxExport txU8 fxToBigUint64(txMachine* the, txSlot* slot);
 
 mxExport txBigInt* fxBigInt_add(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_and(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
@@ -1415,6 +1419,9 @@ extern void fxUint8Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* s
 extern void fxUint16Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint32Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxUint64Xor(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
+
+extern txInteger fxInt32Wait(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, txNumber timeout);
+extern txInteger fxInt64Wait(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, txNumber timeout);
 
 mxExport const txTypeAtomics gxTypeAtomics[];
 extern void fxBuildAtomics(txMachine* the);
