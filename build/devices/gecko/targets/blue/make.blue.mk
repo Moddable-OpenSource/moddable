@@ -19,20 +19,34 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
+# BlueGecko WSTK
+PLATFORM_NAME = blue
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
 
-# Thunderboard	(BRD4160A)
-PLATFORM_NAME = thunderboard
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v1.0
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG1_BRD4160A/config
-HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG1P/Include
-HWPART = EFR32MG1P132F256GM48
+ifeq ("x$(GECKO_BOARD)", "x")
+	GECKO_BOARD=BRD4104A
+endif
+ifeq ("x$(GECKO_PART)", "x")
+	GECKO_PART=EFR32BG13P632F512GM48
+endif
+
+# (BRD4104A) -- 64kB ram, 512kB flash
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG13_$(GECKO_BOARD)/config
+HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG13P/Include
+HWPART = $(GECKO_PART)
+
+# (BRD4100A) -- 32kB ram, 256kB flash
+# HWKIT = $(SDK_BASE)/hardware/kit/EFR32BG1_BRD4100A/config
+# HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32BG1P/Include
+# HWPART = EFR32BG1P232F256GM48
+
 HWCPU = cortex-m4
 HW_DEBUG_OPT= -O0
 HW_OPT = -Os
 # DEV_C_FLAGS = -fno-short-enums
 DEV_C_FLAGS = 
 
-C_DEFINES += -DuseRTCC
+C_DEFINES += -DuseRTCC -DBLUE_GECKO=1
 
-include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
+include $(BUILD)/devices/gecko/targets/make.gecko_common.mk
 
