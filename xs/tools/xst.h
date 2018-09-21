@@ -69,30 +69,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#if mxLinux
-	#include <fcntl.h>
-	#include <arpa/inet.h>
-	#include <netdb.h>
-	#include <linux/futex.h>
-	#include <sys/syscall.h>
-	#include <unistd.h>
-	typedef int txSocket;
-	#define mxNoSocket -1
-	#define mxUseGCCAtomics 1
-	#define mxUseLinuxFutex 1
-	#define mxMachinePlatform \
-		txSocket connection; \
-		void* host;
-#elif mxWindows
+#if mxWindows
 	#include <winsock2.h>
 	typedef SOCKET txSocket;
 	#define mxNoSocket INVALID_SOCKET
-	#define mxMachinePlatform \
-		txSocket connection; \
-		void* host; \
-		void* waiterCondition; \
-		void* waiterData; \
-		txMachine* waiterLink;
 #else
 	#include <fcntl.h>
 	#include <arpa/inet.h>
@@ -103,13 +83,13 @@
 	#define mxNoSocket -1
 	#define mxUseGCCAtomics 1
 	#define mxUsePOSIXThreads 1
-	#define mxMachinePlatform \
-		txSocket connection; \
-		void* host; \
-		void* waiterCondition; \
-		void* waiterData; \
-		txMachine* waiterLink;
 #endif
+#define mxMachinePlatform \
+	txSocket connection; \
+	void* host; \
+	void* waiterCondition; \
+	void* waiterData; \
+	txMachine* waiterLink;
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
