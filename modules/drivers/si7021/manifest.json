@@ -19,33 +19,5 @@
 				],
 			},
 		},
-		"gecko/mighty": {
-			"defines": {
-				"si7021": {
-					"hz": 1000000,
-					"addr": "0x40",
-					"device_id": "0x15",
-					"enable": { "pin": 10, "port": "gpioPortB" },
-				},
-			},
-		},
-		"gecko/thunderboard2": {
-			"defines": {
-				"i2c": {
-					"interface": { "I2C": 1 },
-					"sda": { "pin": 4, "port": "gpioPortC", "location": 17 },
-					"scl": { "pin": 5, "port": "gpioPortC", "location": 17 },
-				},
-				"si7021": {
-					"hz": 1000000,
-					"addr": "0x40",
-					"device_id": "0x15",
-					"enable": { "pin": 9, "port": "gpioPortF" },
-				},
-			},
-		},
-		"...": {
-			"error": "si7021 unsupported"
-		},
 	},
 }

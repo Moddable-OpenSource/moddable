@@ -19,27 +19,24 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
-# ThunderBoard Sense 2 (BRD4166A)
-PLATFORM_NAME = thunderboard2
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
+# Giant Gecko starter kit
+PLATFORM_NAME = giant
+SDK_BASE = $(BASE)/sdks/exx32/v5.0.0.0
 ifeq ("x$(GECKO_BOARD)", "x")
-    GECKO_BOARD=BRD4166A
+    GECKO_BOARD=STK3700
 endif
 ifeq ("x$(GECKO_PART)", "x")
-    GECKO_PART=EFR32MG12P332F1024GL125
+    GECKO_PART=EFM32GG990F1024
 endif
+HWKIT = $(SDK_BASE)/hardware/kit/EFM32GG_$(GECKO_BOARD)/config
+HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFM32GG/Include 
 HWPART = $(GECKO_PART)
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_$(GECKO_BOARD)/config
-HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
-HWCPU = cortex-m4
-DEV_C_FLAGS = \
-	-mfpu=fpv4-sp-d16	\
-	-mfloat-abi=softfp
-
+HWCPU = cortex-m3
 HW_DEBUG_OPT = -O0
 HW_OPT = -O3
+DEV_C_FLAGS =
 
-C_DEFINES += -DuseRTCC=1 -DTHUNDERBOARD2=1
+C_DEFINES += -DuseBURTC=1 -DGIANT_GECKO=1
 
-include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
+include $(BUILD)/devices/gecko/targets/make.gecko_common.mk
 

@@ -20,34 +20,4 @@
 		"ili9341",
 		"commodetto/Bitmap",
 	],
-	"platforms": {
-		"gecko/giant": {
-			"defines": {
-				"ili9341": {
-					"hz": 40000000,
-					"cs": { "pin": 3, "port": "gpioPortD", },
-					"dc": { "pin": 4, "port": "gpioPortC", },
-					"rst": { "pin": 3, "port": "gpioPortC", },
-				}
-			},
-		},
-		"gecko/mighty": {
-			"defines": {
-				"ili9341": {
-					"hz": 40000000,
-					"cs": { "pin": 9, "port": "gpioPortA", },
-					"dc": { "pin": 6, "port": "gpioPortB", },
-				}
-			},
-		},
-		"gecko/thunderboard2": {
-			"defines": {
-				"ili9341": {
-					"hz": 40000000,
-					"cs": { "pin": 5, "port": "gpioPortA", },
-					"dc": { "pin": 6, "port": "gpioPortF", },
-				}
-			},
-		},
-	},
 }
