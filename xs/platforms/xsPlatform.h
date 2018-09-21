@@ -47,7 +47,7 @@
 #define mxWindows 0
 
 #ifndef XSPLATFORM
-	/* for XS tools only: xsc, xsid, xsl and xst on Linux, macOS or Windows */
+	/* for XS tools only: xsc, xsid, xsl on Linux, macOS or Windows */
 	#if defined(_MSC_VER)
 		#if defined(_M_IX86) || defined(_M_X64)
 			#undef mxWindows
@@ -92,27 +92,19 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#include <time.h>
-	#if mxLinux
+	#if mxWindows
+		#include <winsock2.h>
+	#else 
 		#include <arpa/inet.h>
-		#include <linux/futex.h>
-		#include <sys/syscall.h>
+		#include <pthread.h>
 		#include <unistd.h>
 		#define mxUseGCCAtomics 1
-		#define mxUseLinuxFutex 1
-		#define mxMachinePlatform
-	#else 
-		#if mxWindows
-			#include <winsock2.h>
-		#else
-			#include <pthread.h>
-			#define mxUseGCCAtomics 1
-			#define mxUsePOSIXThreads 1
-		#endif
-		#define mxMachinePlatform \
-			void* waiterCondition; \
-			void* waiterData; \
-			txMachine* waiterLink;
+		#define mxUsePOSIXThreads 1
 	#endif
+	#define mxMachinePlatform \
+		void* waiterCondition; \
+		void* waiterData; \
+		txMachine* waiterLink;
 	#define mxUseDefaultDebug 1
 	#define mxUseDefaultMachinePlatform 1
 	#define mxUseDefaultBuildKeys 1

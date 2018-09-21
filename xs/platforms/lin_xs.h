@@ -54,12 +54,11 @@
 
 #include <errno.h>
 #include <gio/gio.h>
-#include <linux/futex.h>
-#include <sys/syscall.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #define mxUseGCCAtomics 1
-#define mxUseLinuxFutex 1
+#define mxUsePOSIXThreads 1
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
@@ -74,5 +73,8 @@
 	void* host; \
 	GSocket* socket; \
 	GSource* source;
+	void* waiterCondition; \
+	void* waiterData; \
+	txMachine* waiterLink;
 
 #endif /* __LINUX_XS__ */
