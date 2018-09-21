@@ -113,7 +113,10 @@ export class MakeFile extends FILE {
 		for (var result of tool.bleServicesFiles)
 			this.write(` ${result.source}`);
 		this.line("");
-		this.echo(tool, "bles2gatt bleservices");
+		if (tool.bleServicesFiles.length) {
+			this.echo(tool, "bles2gatt bleservices");
+			this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/modBLEServer.c`);
+		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
 			this.write(tool.windows ? " $**" : " $^");
