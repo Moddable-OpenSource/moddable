@@ -19,24 +19,24 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
-# Giant Gecko starter kit
-PLATFORM_NAME = giant
-SDK_BASE = $(BASE)/sdks/exx32/v5.0.0.0
+# Mighty Gecko radio test (BRD4162A)
+PLATFORM_NAME = mighty
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
 ifeq ("x$(GECKO_BOARD)", "x")
-    GECKO_BOARD=STK3700
+	GECKO_BOARD=BRD4162A
 endif
 ifeq ("x$(GECKO_PART)", "x")
-    GECKO_PART=EFM32GG990F1024
+	GECKO_PART=EFR32MG12P332F1024GL125
 endif
-HWKIT = $(SDK_BASE)/hardware/kit/EFM32GG_$(GECKO_BOARD)/config
-HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFM32GG/Include 
 HWPART = $(GECKO_PART)
-HWCPU = cortex-m3
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_$(GECKO_BOARD)/config
+HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
+HWCPU = cortex-m4
+DEV_C_FLAGS =
 HW_DEBUG_OPT = -O0
 HW_OPT = -O3
-DEV_C_FLAGS =
 
-C_DEFINES += -DuseBURTC=1 -DGIANT_GECKO=1
 
-include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
+C_DEFINES += -DuseRTCC=1 -DMIGHTY_GECKO=1
 
+include $(BUILD)/devices/gecko/targets/make.gecko_common.mk

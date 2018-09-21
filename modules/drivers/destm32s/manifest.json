@@ -40,41 +40,5 @@
 				},
 			}
 		},
-		"gecko/giant": {
-			"defines": {
-				"destm32s": {
-					"hz": 5000000,
-					"cs": { "pin": 3, "port": "gpioPortD", },
-					"dc": { "pin": 3, "port": "gpioPortC", },
-					"rst": { "pin": 0, "port": "gpioPortC", },
-					"busy": { "pin": 4, "port": "gpioPortC", },
-					"spi_port": 1,
-				}
-			},
-		},
-		"gecko/mighty": {
-			"defines": {
-				"destm32s": {
-					"hz": 5000000,
-					"cs": { "pin": 9, "port": "gpioPortA", },
-					"dc": { "pin": 9, "port": "gpioPortD", },
-					"rst": { "pin": 8, "port": "gpioPortD", },
-					"busy": { "pin": 10, "port": "gpioPortD", },
-					"spi_port": 2,
-				}
-			},
-		},
-		"gecko/thunderboard2": {
-			"defines": {
-				"destm32s": {
-					"hz": 5000000,
-					"cs": { "pin": 5, "port": "gpioPortA", },
-					"dc": { "pin": 6, "port": "gpioPortF", },
-					"busy": { "pin": 5, "port": "gpioPortF", },
-					"rst": { "pin": 7, "port": "gpioPortA", },
-					"spi_port": 2,
-				}
-			},
-		},
 	}
 }

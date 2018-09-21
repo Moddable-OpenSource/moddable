@@ -1,0 +1,23 @@
+{
+
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/esp/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*",
+		]
+	},
+	"preload": [
+		"time",
+		"timer",
+	],
+	"platforms": {
+		"gecko/*": {
+			"build": {
+				"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk",
+			},
+			"include": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+}

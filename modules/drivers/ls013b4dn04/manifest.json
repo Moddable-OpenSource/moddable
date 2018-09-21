@@ -54,19 +54,5 @@
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 		},
-		"gecko/mighty": {
-			"defines": {
-				"ls013b4dn04": {
-					"cs": { "pin": 3, "port": "gpioPortD" },
-				}
-			}
-		},
-		"gecko/giant": {
-			"defines": {
-				"ls013b4dn04": {
-					"cs": { "pin": 3, "port": "gpioPortD" },
-				}
-			}
-		},
 	}
 }
