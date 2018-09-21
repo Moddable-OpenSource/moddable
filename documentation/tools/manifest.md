@@ -249,6 +249,16 @@ The third pass generates make variables and rules for matched files:
 
 The generated make file contains the generated variables, then the make fragment corresponding to the goal of the build, then the generated rules.
 
-You will find the make fragments and the make recipes in `$(MODDABLE)/tools/mcconfig`. It is the make fragments that define the compiler options, the linker options, the libraries, etc.
+You will find the default make fragments and the make recipes in `$(MODDABLE)/tools/mcconfig`. It is the make fragments that define the compiler options, the linker options, the libraries, etc.
 
-If a platform also has a sub-platform, it's make fragments will be contained in `$(MODDABLE)/tools/mcconfig/`_platform_`/`_subplatform_.
+The make fragment can be specified in a platform's `"build"` section.
+
+	"platforms": {
+		"gecko/*": {
+			"build": {
+				"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk",
+			}
+			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+
