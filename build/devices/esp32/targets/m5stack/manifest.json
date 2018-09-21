@@ -1,0 +1,56 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+	],
+	"config": {
+		"screen": "ili9341",
+		"rotation": 90,
+		"touch": "",
+	},
+	"defines": {
+		"spi": {
+			"mosi_pin": 23,
+			"miso_pin": 19,
+			"sck_pin": 18
+		},
+		"ili9341": {
+			"hz": 40000000,
+			"cs_pin": 14,
+			"dc_pin": 27,
+			"rst_pin": 33,
+			"spi_port": "VSPI_HOST",
+			"backlight_pin": 32,
+			"backlight_on": 1,
+			"registers_append": [
+				"0x36, 1, 0xA8,",
+			],
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 11025,
+			"volume_divider": 1,
+			"i2s": {
+				"DAC": 1,
+				"bitsPerSample": 16,
+			}
+		}
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*",
+		],
+		"pins/i2s": "$(MODULES)/pins/i2s/*",
+		"setup/target": "./setup-target",
+	},
+	"preload": [
+		"monitor",
+		"pins/i2s",
+		"setup/target",
+	],
+	"resources": {
+		"*": "./assets/bflatmajor",
+	},
+}
+
