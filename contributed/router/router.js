@@ -73,23 +73,23 @@ class Router {
     route(path, method, handler){
         path = path.toLowerCase();
         method = method.toUpperCase();
-        this.routes[path] = this.routes[path] || {}
-        this.routes[path][method] = handler
+        this.routes[path] = this.routes[path] || {};
+        this.routes[path][method] = handler;
     }
     post(path, handler){
-        this.route(path, 'post', handler)
+        this.route(path, 'post', handler);
     }
     get(path, handler){
-        this.route(path, 'get', handler)
+        this.route(path, 'get', handler);
     }
     handle(request, response){
         this.log('handle', request.path, request.method);
         if ((request.path in this.routes) && (request.method in this.routes[request.path])){
-            this.routes[request.path][request.method](request, response)
+            this.routes[request.path][request.method](request, response);
         } else {
-            response.status(500)
+            response.status(500);
         }
     }
 }
 
-export default Router
+export default Router;

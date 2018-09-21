@@ -7,7 +7,7 @@
 		"*": [
 			"./main",
 			"$(MODULES)/network/http/*",
-			"$(MODULES)/network/router/*",
+			"$(MODDABLE)/contributed/router/*",
 		]
 	},
 	"preload": [
