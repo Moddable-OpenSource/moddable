@@ -2,7 +2,7 @@
 
 Copyright 2017-2018 Moddable Tech, Inc.
 
-Revised: May 4, 2018
+Revised: September 21, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -40,7 +40,7 @@ The `include` array lists other manifests to include. Most apps have many common
 
 - `manifest_net.json` is for applications that use Wi-Fi. It includes Socket, Net, SNTP, and Wi-Fi modules. It does not include specific networking protocols like HTTP and MQTT.
 
-- `manifest_piu.json` is for applications that use the [Piu application framework](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md). It includes all the modules needed to use Piu, as well as the `ili9341` screen driver and `xpt2046` touch driver.
+- `manifest_piu.json` is for applications that use the [Piu application framework](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md). It includes all the modules needed to use Piu. The screen and touch drivers are provided elsewhere, typically by the manifest of the target device itself, to allow the Piu manifest to be device independent.
 
 The `modules` and `resources` objects contain the module and resources that are specific to the balls app. 
 
@@ -52,62 +52,61 @@ Now let us look at one of the included manifests: `manifest_base.json`. It is qu
 
 The `build` object contains the definition of environment variables that will be used to build paths by the rest of the manifest. Notice that the manifest can access shell environment variables like `MODDABLE`.
 
-	{
-		"build": {
-			"BUILD": "$(MODDABLE)/build",
-			"MODULES": "$(MODDABLE)/modules",
-			"COMMODETTO": "$(MODULES)/commodetto",
-			"PIU": "$(MODULES)/piu",
-		},
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"COMMODETTO": "$(MODULES)/commodetto",
+		"PIU": "$(MODULES)/piu",
+	},
 
 #### `creation`
 
 The `creation` object defines the creation parameters of the XS machine that will run the app. See the [XS in C documentation](../xs/XS%20in%20C.md) for details.
 		
-		"creation": {
-			"static": 32768,
-			"chunk": {
-				"initial": 1536,
-				"incremental": 512,
-			},
-			"heap": {
-				"initial": 512,
-				"incremental": 64,
-			},
-			"stack": 256,
-			"keys": {
-				"available": 32,
-				"name": 53,
-				"symbol": 3,
-			},
-			"main": "main",
+	"creation": {
+		"static": 32768,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512,
 		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64,
+		},
+		"stack": 256,
+		"keys": {
+			"available": 32,
+			"name": 53,
+			"symbol": 3,
+		},
+		"main": "main",
+	},
 		
 #### `modules`
 
 The `modules` object describes the necessary modules on all platforms.
 
-		"modules": {
-			"*": [
-				"$(MODULES)/files/resource/*",
-				"$(MODULES)/base/instrumentation/*",
-			],
-		},
+	"modules": {
+		"*": [
+			"$(MODULES)/files/resource/*",
+			"$(MODULES)/base/instrumentation/*",
+		],
+	},
 
 #### `preload`
 
 The `preload` array lists the modules preloaded in the read-only XS virtual machine that will be cloned to run the app.
 		
-		"preload": [
-			"Resource",
-			"instrumentation",
-		],
+	"preload": [
+		"Resource",
+		"instrumentation",
+	],
 
 #### `strip`
 
 The `strip` object specifies which built-in objects and functions of the JavaScript language may/may not be removed by the XS linker.
 
-		"strip": "*",
+	"strip": "*",
 		
 `"*"` means anything unused by the application can be stripped.
 
@@ -134,58 +133,44 @@ If you only want to allow certain objects or functions to be stripped, pass in a
 
 #### `platform `
 
-The `platform` object has one property by platform or sub-platform. Objects in a sub-platform are merged with platform objects. Each platform can have a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when such platform is the goal of the build.
+The `platform` object has one property by platform or sub-platform. Objects in a matching platform/sub-platform are merged with platform objects. Each platform can have an `include` array, a `modules` object, a `preload` array, a `resources` object, a `defines` object and a `recipes` object that will be used only when such platform is the goal of the build. The `esp`, `esp32`, and `gecko` platforms below include an external manifest, whereas the `mac` platform is directly inline.
 		
-		"platforms": {
-			"esp": {
-				"modules": {
-					"*": [
-						"$(MODULES)/base/time/*",
-						"$(MODULES)/base/time/esp/*",
-						"$(MODULES)/base/timer/*",
-						"$(MODULES)/base/timer/mc/*",
-					]
-				},
-				"preload": [
-					"time",
-					"timer",
+	"platforms": {
+		"esp": {
+			"include": "$(BUILD)/devices/esp/manifest.json"
+		},
+		"esp32": {
+			"include": "$(BUILD)/devices/esp32/manifest.json"
+		},
+		"gecko": {
+			"include": "$(BUILD)/devices/gecko/manifest.json"
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mac/*",
 				],
-				"recipes": {
-					"strings-in-flash": [
-						"commodetto*",
-						"piu*",
-						"Resource*",
-						"mod*",
-						"i2c*",
-						"digital*",
-					],
-					"c++11": [
-						"*.cc.o",
-						"*.cpp.o",
-					],
-				},
-				"defines": {
-					"i2c": {
-						"sda_pin": 5,
-						"scl_pin": 4
-					}
-				}
 			},
+		},
 
 The "`...`" platform identifier is a fallback, if no matching platform is found. This is useful for errors and warnings.
 
-		"platforms":{
-			"esp": {
-				/* modules and resources for ESP8266 go here */
-			},
-			"esp32": {
-				"warning": "module XYZ not fully tested on esp32",
-				/* modules and resources for ESP32 go here */
-			},
-			"..." {
-				"error": "module XYZ supported",
-			}
+	"platforms":{
+		"esp": {
+			/* modules and resources for ESP8266 go here */
+		},
+		"esp32": {
+			"warning": "module XYZ not fully tested on esp32",
+			/* modules and resources for ESP32 go here */
+		},
+		"..." {
+			"error": "module XYZ supported",
 		}
+	}
 
 ### Sub-platforms
 
@@ -218,7 +203,15 @@ In the segment below, the `timer` module is specified for all `gecko` platforms.
                 },
              },
           },
-          			
+          
+The `SUBPLATFORM` variable is automatically defined by `mcconfig`. A wildcard is a available to match on sub-platforms. The `SUBPLATFORM` variable and wildcard match used together simplify inclusion of sub-platform manifests:
+
+	"platforms": {
+		"esp32/*": {
+			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+
 ## Reference
 
 **mcconfig** processes a manifest in three passes.
