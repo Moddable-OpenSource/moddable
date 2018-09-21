@@ -1,0 +1,59 @@
+{
+	"platforms": {
+		"gecko/blue": {
+			"config": {
+				"screen": "",
+				"touch": "",
+				"led1": 	{ "pin": 4, "port": "gpioPortF" },
+				"led2": 	{ "pin": 5, "port": "gpioPortF" },
+				"button1":	{ "pin": 6, "port": "gpioPortF" },
+				"button2":	{ "pin": 7, "port": "gpioPortF" },
+			},
+			"defines": {
+				"sleep": {
+					"idleLevel": 3,
+					"retention": { "memory": false, "gpio": false },
+					"wakeup": { "pin": 7, "port": "gpioPortF", "level": 0, "register": "GPIO_EXTILEVEL_EM4WU1" },
+				},
+				"debugger": {
+					"interface": { "USART": 1},
+					"location": 19,
+					"tx": { "pin": 11, "port": "gpioPortD" },
+					"rx": { "pin": 12, "port": "gpioPortD" },
+				},
+				"spi": {
+					"interface": { "USART": 2 },
+					"location": 1,
+					"miso": { "pin": 6, "port": "gpioPortA" },
+					"mosi": { "pin": 7, "port": "gpioPortA" },
+					"sck": { "pin": 8, "port": "gpioPortA" },
+				},
+				"i2c": {
+					"interface": { "I2C": 0 },
+					"sda": { "pin": 11, "port": "gpioPortC", "location" : 16 },
+					"scl": { "pin": 10, "port": "gpioPortC", "location" : 14 },
+				},
+				"ili9341": {
+					"hz": 40000000,
+					"cs": { "pin": 9, "port": "gpioPortA", },
+					"dc": { "pin": 6, "port": "gpioPortB", },
+				},
+                "modbus": {
+                    "interface": { "UART": 2},
+					"location": 1,
+					"baud": 38400,
+                    "config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
+                    "use485": 2,
+                    "tx": { "pin": 6, "port": "gpioPortA" },
+                    "rx": { "pin": 7, "port": "gpioPortA" },
+                    "rts": { "pin": 8, "port": "gpioPortA" },
+                    "tx_indicator": { "pin": 4, "port": "gpioPortF" },
+                },
+				"xpt2046": {
+                    "cs":	 { "pin": 9, "port": "gpioPortD" },
+                    "touch": { "pin": 8, "port": "gpioPortD" },
+				}
+			}
+		},
+	},
+}

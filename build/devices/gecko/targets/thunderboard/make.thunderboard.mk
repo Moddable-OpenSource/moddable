@@ -19,25 +19,20 @@
 
 BASE = /Applications/Simplicity?Studio.app/Contents/Eclipse/developer
 
-# Mighty Gecko radio test (BRD4162A)
-PLATFORM_NAME = mighty
-SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v2.2
-ifeq ("x$(GECKO_BOARD)", "x")
-	GECKO_BOARD=BRD4162A
-endif
-ifeq ("x$(GECKO_PART)", "x")
-	GECKO_PART=EFR32MG12P332F1024GL125
-endif
-HWPART = $(GECKO_PART)
-HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG12_$(GECKO_BOARD)/config
-HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG12P/Include
+
+# Thunderboard	(BRD4160A)
+PLATFORM_NAME = thunderboard
+SDK_BASE = $(BASE)/sdks/gecko_sdk_suite/v1.0
+HWKIT = $(SDK_BASE)/hardware/kit/EFR32MG1_BRD4160A/config
+HWINC = $(SDK_BASE)/platform/Device/SiliconLabs/EFR32MG1P/Include
+HWPART = EFR32MG1P132F256GM48
 HWCPU = cortex-m4
-DEV_C_FLAGS =
-HW_DEBUG_OPT = -O0
-HW_OPT = -O3
+HW_DEBUG_OPT= -O0
+HW_OPT = -Os
+# DEV_C_FLAGS = -fno-short-enums
+DEV_C_FLAGS = 
 
+C_DEFINES += -DuseRTCC
 
-C_DEFINES += -DuseRTCC=1 -DMIGHTY_GECKO=1
-
-include $(MODDABLE)/tools/mcconfig/gecko/make.gecko_common.mk
+include $(BUILD)/devices/gecko/targets/make.gecko_common.mk
 

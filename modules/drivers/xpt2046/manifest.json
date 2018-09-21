@@ -58,29 +58,5 @@
 				}
 			}
 		},
-		"gecko/giant": {
-			"defines": {
-				"xpt2046": {
-					"cs": { "pin": "6", "port": "gpioPortC" },
-					"touch": { "pin": "0", "port": "gpioPortC" },
-				}
-			}
-		},
-		"gecko/mighty": {
-			"defines": {
-				"xpt2046": {
-					"cs": { "pin": "9", "port": "gpioPortD" },
-					"touch": { "pin": "8", "port": "gpioPortD" },
-				}
-			}
-		},
-		"gecko/thunderboard2": {
-			"defines": {
-				"xpt2046": {
-					"cs": { "pin": "5", "port": "gpioPortA" },
-					"touch": { "pin": "5", "port": "gpioPortF" },
-				}
-			}
-		}
 	}
 }

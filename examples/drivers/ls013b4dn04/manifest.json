@@ -49,27 +49,10 @@
 				"sleep",
 			],
 		},
-		"gecko/mighty": {
-			"defines": {
-				"ls013b4dn04": {
-					"cs": { "pin": 9, "port": "gpioPortA" },
-				},
-			},
-		},
-		"gecko/thunderboard2": {
-			"defines": {
-				"ls013b4dn04": {
-					"cs": { "pin": 9, "port": "gpioPortA" },
-				},
-			},
-		},
 		"gecko/giant": {
 			"defines": {
 				"sleep": {
 					"retention": { "memory": true },
-				},
-				"ls013b4dn04": {
-					"cs": { "pin": 3, "port": "gpioPortD" },
 				},
 			},
 		},
