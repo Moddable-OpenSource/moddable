@@ -1842,7 +1842,7 @@ void fxBuildArchiveKeys(txMachine* the)
 		if (p) {
 			txID c, i;
 			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE  + sizeof(Atom);
-			c = (txID)c_read16be(p);
+			c = (txID)c_read16(p);
 			p += 2;
 			for (i = 0; i < c; i++) {
 				fxNewNameX(the, (txString)p);
@@ -2103,34 +2103,34 @@ bail:
 
 void fxMapperMapID(txMapper* self)
 {
-	txU1* high;
 	txU1* low;
+	txU1* high;
 	txID id;
 	if (self->bufferOffset == self->bufferSize)
 		fxMapperStep(self);
-	high = self->buffer + self->bufferOffset;
+	low = self->buffer + self->bufferOffset;
 	self->bufferOffset++;
 	
 	if (self->bufferOffset == self->bufferSize) {
 		self->read(self->src, self->offset, self->scratch, 1);
-		low = self->scratch;
+		high = self->scratch;
 	}
 	else
-		low = self->buffer + self->bufferOffset;
+		high = self->buffer + self->bufferOffset;
 	
 	id = (*high << 8) | *low;
 	if (id != XS_NO_ID) {
 		id &= 0x7FFF;
 		id = self->ids[id];
 	}
-	*high = id >> 8;
+	*low = id & 0x00FF;
 	self->dirty = 1;
 	
 	if (self->bufferOffset == self->bufferSize) {
 		fxMapperStep(self);
-		low = self->buffer;
+		high = self->buffer;
 	}
-	*low = id & 0x00FF;
+	*high = id >> 8;
 	self->dirty = 1;
 	self->bufferOffset++;
 }
@@ -2172,8 +2172,8 @@ txU1 fxMapperRead1(txMapper* self)
 txU2 fxMapperRead2(txMapper* self)
 {
 	txU2 result;
-	result = fxMapperRead1(self) << 8;
-	result |= fxMapperRead1(self);
+	result = fxMapperRead1(self);
+	result |= fxMapperRead1(self) << 8;
 	return result;
 }
 
