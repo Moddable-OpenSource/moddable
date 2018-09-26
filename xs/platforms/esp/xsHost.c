@@ -643,7 +643,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	void *archive;
 
 #if MODDEF_XS_MODS
-	archive = installModules(prep);
+	archive = installModules(preparation);
 	gHasMods = NULL != archive;
 #else
 	archive = NULL;
