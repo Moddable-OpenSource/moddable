@@ -22,6 +22,9 @@ import config from "mc/config";
 import Time from "time";
 import Timer from "timer";
 
+if (!config.screen)
+	throw new Error("no screen configured");
+
 class Screen extends require(config.screen) {
 	start(interval) {
 		this.timer = Timer.repeat(() => {
