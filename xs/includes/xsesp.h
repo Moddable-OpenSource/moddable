@@ -145,7 +145,7 @@ extern uint8_t ESP_isReadable(void);
 
 #if ESP32
 	extern uint32_t modMilliseconds(void);
-	#define modMicroseconds() (uint32_t)(modMilliseconds() * 1000)		//@@
+	#define modMicroseconds() (uint32_t)(esp_timer_get_time())
 
 	#define modDelayMilliseconds(ms) vTaskDelay(ms)
 	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
