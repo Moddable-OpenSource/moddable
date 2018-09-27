@@ -404,6 +404,10 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target)
 	txSlot* address = array->value.array.address;
 	txSlot* chunk = C_NULL;
 	txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
+	if (target > (0x7FFFFFFF / sizeof(txSlot))) {
+		fxReport(the, "# too big array\n");
+		fxJump(the);
+	}
 	if (size != target) {
 		if (array->flag & XS_DONT_SET_FLAG)
 			mxTypeError("set length: not writable");

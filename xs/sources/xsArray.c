@@ -1969,8 +1969,8 @@ void fx_Array_prototype_sort(txMachine* the)
 				i = lo + 1;
 				j = hi - 1;
 				do {
-					while (COMPARE(i) < 0) i++;
-					while (COMPARE(j) > 0) j--;
+					while ((COMPARE(i) < 0) && (i <= j)) i++;
+					while ((COMPARE(j) > 0) && (i <= j)) j--;
 					if (i < j) {
 						PUSH(i);
 						MOVE(j, i);
