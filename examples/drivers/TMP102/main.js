@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,24 +12,29 @@
  *
  */
 
-import I2C from "pins/i2c";
+import TMP102 from "tmp102";
 import Timer from "timer";
+import Digital from "pins/digital";
+import Monitor from "pins/digital/monitor";
 
-let sensor = new I2C({address: 0x48});
+const sensor = new TMP102;
+sensor.configure({
+	alert: {
+		above: sensor.sample().temperature + 1,
+	},
+	hz: 4,
+});
 
-Timer.set(id => {
-	// SMB readWord - write address, read data: S Addr Wr [A] Comm [A] S Addr Rd [A] [DataLow] A [DataHigh] NA P
-	sensor.write(0);			// set address 0
-	let value = sensor.read(2);	// read two bytes
+let last, alert;
+Timer.repeat(id => {
+	let value = sensor.sample().temperature;
+	if (value !== last) {
+		trace(`Celsius temperature: ${value}\n`);
+		last = value;
+	}
+}, 100);
 
-	// calculate degrees celsius from two data bytes
-	value = (value[0] << 4) | (value[1] >> 4);
-	if (value & 0x800) {
-	    value -= 1;
-	    value = ~value & 0xFFF;
-        value = -value;
-    }
-    value *= 0.0625;
-
-	trace(`Celsius temperature: ${value}\n`);
-}, 333, true);
+(new Monitor({pin: 13, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling})).onChanged = function() {
+	trace(`Alert: ${this.read()}\n`);
+	sensor.configure({alert: {}});	// disable alerts
+}
