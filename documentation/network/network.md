@@ -1,7 +1,7 @@
 # Networking
 Copyright 2017-2018 Moddable Tech, Inc.
 
-Revised: June 29, 2018
+Revised: September 28, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -589,11 +589,94 @@ The `callback` receives the message parameter as a `Number`. The following messa
 - `1` -- Time retrieved. The `value` parameter is the time in seconds since 1970, appropriate for passing to the Date constructor
 - `-1` -- Unable to retrieve time. The value parameter contains a `String` with the reason for the failure. The callback function may return a `String` with the host name or IP address of another SNTP server to try; otherwise, the SNTP client closes itself and may not be used for additional requests. See the [SNTP example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/network/sntp/main.js) for an implementation of fail-over handling.
 
-## class DNS
+## class DNS constants
 
-The DNS class implements a simple DNS server.
+The DNS module contains constants that are useful when implementing code that interacts directly with the DNS protocol. It is used by the DNS Parser, DNS Serializer, and mDNS implementation.
 
 	import DNS from "dns";
+	
+`DNS.RR` contains constants for resource record types, such as `DNS.RR.PTR`. `DNS.OPCODE` contains values for `DNS.OPCODE.QUERY` and `DNS.OPCODE.UPDATE`. `DNS.CLASS` contains values for `DNS.CLASS.IN`, `DNS.CLASS.NONE`, and `DNS.CLASS.ANY`. `DNS.SECTION` contains values that include `DNS.QUESTION` and `DNS.ANSWER`.
+
+## class DNS Parser
+
+The DNS Parser class extracts JavaScript objects from a binary DNS record.
+
+	import Parser from "dns/parser";
+
+The DNS parser class parses and returns a single resource record at a time to minimize memory use.
+
+### Parsing a DNS packet
+
+DNS packets are typically received as UDP packets. The `Socket` object provides each DNS packet in an `ArrayBuffer`. The follow example creates a DNS parser instance for an `ArrayBuffer`:
+
+	let packet = new Parser(dnsPacket);
+
+The `Parser` constructor does not validate the packet. If the packet is invalid, errors will be reported when extracting records from it.
+
+### Reading header fields
+
+The parser instance has properties for the `id` and `flags` fields in the DNS packet:
+
+	let id = packet.id;
+	let flags = packet.flags;
+	
+### Determining the number of records
+
+The parser instance has properties that provide the number of resource records in each section.
+
+	let total = packet.questions + packet.answers +
+					packet.authorities + packet.additionals;
+
+### Retrieving a resource record
+
+A JavaScript object containing a single resource record is retrieved by calling the function corresponding to the resource record's section. The following example retrieves the second question resource record (indices start at 0):
+
+	let rr = packet.question(1);
+
+There are also `answers`, `authorities`, and `additionals` functions.
+
+### new Parser(buffer)
+
+The DNS Parser constructor is initialized with an ArrayBuffer containing a single DNS packet.
+
+No validation is performed by the constructor. Errors, if any, are reported when extracting resource records.
+
+### questions(index)
+Returns the question resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of question records in the packet. 
+
+### answers(index)
+Returns the answer resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of answer records in the packet. 
+
+### authorities(index)
+Returns the authority resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of authority records in the packet. 
+
+### additionals(index)
+Returns the additional resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of additional records in the packet. 
+
+## class DNS Serializer
+
+The DNS Serializer class implements a DNS record serializer.
+
+	import Serializer from "dns/serializer";
+
+### Building a DNS query
+
+The following example uses the DNS Serializer to create a DNS packet querying for an A record for the "example.com" domain:
+
+		let serializer = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
+		serializer.add(DNS.SECTION.QUESTION, "example.com", DNS.RR.A, DNS.CLASS.IN);
+		buffer = serializer.build();
+
+The `build` function returns a DNS packet suitable for sending using the `write` function of the `Socket` class.
+
+> **This section is incomplete**
+
+
+## class DNS Server
+
+The DNS Server class implements a simple DNS server.
+
+	import Server from "dnsserver";
 
 The server is indicated for use in devices in Wi-Fi access point mode that wish to act as a captive portal. The DNS server is used to direct look-ups for certain domains to an IP address, typically the device running the DNS server.
 
@@ -601,7 +684,7 @@ The server is indicated for use in devices in Wi-Fi access point mode that wish 
 
 The following example redirects all DNS look-ups to the IP address of the device running the server.
 
-	new DNS((message, value) => {
+	new Server((message, value) => {
 		if (1 == message)
 			return Net.get("IP");
 	})
@@ -610,18 +693,119 @@ The following example redirects all DNS look-ups to the IP address of the device
 
 The following example redirects all DNS look-ups for "example.com" to the IP address of the device running the server. All other look-ups are ignored.
 
-	new DNS((message, value) => {
+	new Server((message, value) => {
 		if ((1 == message) && ("example.com" == value))
 			return Net.get("IP");
 	})
 
-### new DNS(callback)
+### new Server(callback)
 
 The DNS server constructor takes a single argument, a function to call when a look-up request is received. The callback receives two arguments. The first, `message`, is set to 1 when a look-up is performed. The second argument, `value`, is set to the name to be resolved when a look-up request is made.
 
 ### close()
 
 When the DNS server is no longer needed, call `close` to terminate it and free its resources.
+
+## class MDNS
+
+The MDNS class implements services for working with mDNS discovery and services. It includes claiming `.local` names, advertising mDNS service availability, and scanning for available mDNS services.
+
+	import MDNS from "mdns";
+	
+### Claiming a local name
+
+The following example shows how to claim the name "mydevice" on the local network.
+
+	const mdns = new MDNS({hostName: "mydevice"});
+
+The claiming process takes some time, usually under one second. Claiming the name may not succeed because the name may already be in use. An optional callback function provides status on the claim:
+	
+	const mdns = new MDNS({hostName: "mydevice"}, function(message, value) {
+		switch (message) {
+			case 1:
+				trace(`MDNS - claimed hostname is "${value}"\n`);
+				break;
+			case 2:
+				trace(`MDNS - failed to claim "${value}", try next\n`);
+				break;
+			default:
+				if (message < 0)
+					trace("MDNS - failed to claim, give up\n");
+				break;
+		}
+	});
+
+### Advertising an mDNS service
+
+The following example announces the availability of an http service on the current host.
+
+	mdns.add({
+		name: "http",
+		protocol: "tcp",
+		port: 80,
+		txt: {
+			url: `/index.html`,
+		}
+	});
+
+### Scanning for mDNS services
+
+The following example continuously scans for http services available on the local network:
+
+	mdns.monitor("_http._tcp", (service, instance) => {
+		trace(`Found ${service}: ${instance.name}\n`);
+	});
+
+
+### new MDNS(dictionary [, callback]);
+
+The MDNS constructor takes a dictionary to configure the mDNS instance and an optional `callback` to receive information about the instance status.
+
+If the dictionary contains a `hostName` property, the MDNS instance will attempt to claim the name in the `.local` domain on the active network connection. The optional callback function receives information on the claiming process:
+
+	callback(message, value)
+	
+The following messages are defined:
+
+(1) Probing. If `value` is an empty string, claiming is underway; otherwise `value` contains the claimed name.
+
+(2) Conflict found. The result of the callback function determines what happens next. If the result is undefined, a new name will be created automatically and the claiming process continues. If a string is returned, the claiming process continues with the string used as the target hostname. Returning true causes the claiming process to end.
+
+(Any negative number) - error. Claiming process terminated.
+
+The `hostName` is not required to monitor for available mDNS services.
+
+### monitor(serviceType, callback)
+
+The `monitor` function continuously scans the network for mDNS services of the type indicated by the `serviceType` parameter. The callback function is invoked for each unique service instance found:
+
+	callback(service, instance)
+	
+The instance argument to the callback contains `name`, `protocol`, `port`, and `txt` properties describing the service. The callback is also invoked when the service announces changes to its TXT resource record.
+
+### add(service)
+
+The `add` function registers an mDNS service description to be advertised. The service record contains the following properties:
+
+- `name` - the service's name (e.g. "http")
+- `protocol` - the service's protocol (e.g. "tcp" or "udp")
+- `port` - the service's port
+- `txt` - an an optional JavaScript object with name value pairs used to populate the TXT resource record of the service
+
+`add` may only be called after the hostname claiming process has completed successfullyy.
+
+### update(service)
+
+The `update` function tells the MDNS implementation that the contents of the TXT record have changed. This causes the new TXT record to be announced to the local network. The `service` object passed must be the same object provided to `add`.
+
+### remove(service) or remove(serviceType)
+
+The `remove` function is used both to unregisters the service and to cancel monitoring for a service type.
+
+To unregister a service, pass the service description. This announces to the network that it is no longer available. The `service` object passed must be the same object provided to `add`.
+
+To cancel monitoring for a service type, pass the name of the service type.
+
 
 ## class Telnet
 
