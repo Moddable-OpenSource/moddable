@@ -1,0 +1,27 @@
+{
+	"include": "$(MODULES)/pins/digital/manifest.json",
+	"modules": {
+		"pins/digital/monitor": "$(MODULES)/pins/digital/monitor/*",
+	},
+	"preload": "pins/digital/monitor",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/esp/*",
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/esp32/*",
+			},
+		},
+		"gecko": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/gecko/*",
+			},
+		},
+		"...": {
+			"error": "pins/digital unsupported"
+		}
+	}
+}
