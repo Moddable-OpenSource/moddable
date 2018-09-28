@@ -22,14 +22,14 @@ class Parser {
 	constructor(packet) {
 		this.buffer = packet;
 	}
-	get id() @ "xs_mdnspacket_get_id"
-	get flags() @ "xs_mdnspacket_get_flags"
-	get questions() @ "xs_mdnspacket_get_questions"
-	get answers() @ "xs_mdnspacket_get_answers"
-	get authorities() @ "xs_mdnspacket_get_authorities"
-	get additionals() @ "xs_mdnspacket_get_additionals"
-	question(index) @ "xs_mdnspacket_question"
-	answer(index) @ "xs_mdnspacket_answer"
+	get id() @ "xs_dnspacket_get_id"
+	get flags() @ "xs_dnspacket_get_flags"
+	get questions() @ "xs_dnspacket_get_questions"
+	get answers() @ "xs_dnspacket_get_answers"
+	get authorities() @ "xs_dnspacket_get_authorities"
+	get additionals() @ "xs_dnspacket_get_additionals"
+	question(index) @ "xs_dnspacket_question"
+	answer(index) @ "xs_dnspacket_answer"
 	authority(index) {
 		return this.answer(this.answers + index);
 	}
