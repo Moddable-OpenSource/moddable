@@ -1,0 +1,29 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/network/webthings/manifest.json",
+	],
+	"modules": {
+		"~": [
+			"$(BUILD)/devices/esp/setup/network",
+		],
+		"*": [
+			"./main",
+			"./assets",
+		],
+	},
+	"preload": [
+		"main",
+		"assets",
+	],
+	"resources":{
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
+			"./assets/led_on-disc-mask",
+			"./assets/switch_off-mask",
+			"./assets/switch_on-glyph-mask",
+		],
+	},
+}
