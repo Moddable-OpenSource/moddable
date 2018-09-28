@@ -1,0 +1,33 @@
+{
+	"config": {
+		"ssid": "YOUR_WIFI_SSID_HERE",
+		"password": "YOUR_WIFI_PASSWORD_HERE"
+	},
+	"creation":{
+		"stack":390,
+	},
+	"modules": {
+		"~": [
+			"$(MODULES)/network/net/net",
+		],
+		"*": [
+			"./webthings",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/mdns/*",
+			"$(MODULES)/network/dns/moddnsparser",
+		],
+		"net": "$(MODULES)/network/net/netmdns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+	},
+	"preload": [
+		"http",
+		"mdns",
+		"net",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"webthings",
+	],
+}
