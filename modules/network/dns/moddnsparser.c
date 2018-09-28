@@ -278,48 +278,48 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 	xsResult = xsVar(0);
 }
 
-void xs_mdnspacket_get_id(xsMachine *the)
+void xs_dnspacket_get_id(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[0] << 8) | header[1]);
 }
 
-void xs_mdnspacket_get_flags(xsMachine *the)
+void xs_dnspacket_get_flags(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[2] << 8) | header[3]);
 }
 
-void xs_mdnspacket_get_questions(xsMachine *the)
+void xs_dnspacket_get_questions(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[4] << 8) | header[5]);
 }
 
-void xs_mdnspacket_get_answers(xsMachine *the)
+void xs_dnspacket_get_answers(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[6] << 8) | header[7]);
 }
 
-void xs_mdnspacket_get_authorities(xsMachine *the)
+void xs_dnspacket_get_authorities(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[8] << 8) | header[9]);
 }
 
-void xs_mdnspacket_get_additionals(xsMachine *the)
+void xs_dnspacket_get_additionals(xsMachine *the)
 {
 	uint8_t *header = getPacket(the, NULL);
 	xsmcSetInteger(xsResult, (header[8] << 10) | header[11]);
 }
 
-void xs_mdnspacket_question(xsMachine *the)
+void xs_dnspacket_question(xsMachine *the)
 {
 	parseQuestionOrAnswer(the, getQuestionByIndex(the, xsmcToInteger(xsArg(0))), false);
 }
 
-void xs_mdnspacket_answer(xsMachine *the)
+void xs_dnspacket_answer(xsMachine *the)
 {
 	parseQuestionOrAnswer(the, getAnswerByIndex(the, xsmcToInteger(xsArg(0))), true);
 }
