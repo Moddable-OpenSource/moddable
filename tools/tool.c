@@ -537,6 +537,7 @@ void Tool_prototype_readFileString(xsMachine* the)
 	char *path = xsToString(xsArg(0));
 	FILE* file = NULL;
 	size_t size;
+	xsStringValue string;
 	xsTry {
 		file = fopen(path, "r");
 		xsElseThrow(file);
@@ -544,7 +545,9 @@ void Tool_prototype_readFileString(xsMachine* the)
 		size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		xsResult = xsStringBuffer(NULL, size);
-		size = fread(xsToString(xsResult), 1, size, file);	
+		string = xsToString(xsResult);
+		size = fread(string, 1, size, file);
+		string[size] = 0;
 		fclose(file);
 	}
 	xsCatch {
