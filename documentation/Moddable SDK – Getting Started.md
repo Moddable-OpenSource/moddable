@@ -1,7 +1,7 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2018 Moddable Tech, Inc.
 
-Revised: July 10, 2018
+Revised: September 28, 2018
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
@@ -67,7 +67,7 @@ This document provides an introduction to getting started building apps with the
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-We need the v3.0rc1 version:
+	We need the v3.0rc1 version:
 
 	```
 	cd ESP8266_RTOS_SDK
@@ -82,7 +82,14 @@ We need the v3.0rc1 version:
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp
 	```
+	
+	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
 
+	```
+	cd ${MODDABLE}/examples/piu/balls
+	mcconfig -d -m -p esp/moddable_zero
+	```
+	
 ### ESP32 setup
 
 1. Complete "Host environment setup" for macOS.
@@ -130,7 +137,14 @@ We need the v3.0rc1 version:
 	mcconfig -d -m -p esp32
 	```
 	
-> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
+	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
+
+	```
+	cd ${MODDABLE}/examples/piu/balls
+	mcconfig -d -m -p esp32/moddable_zero
+	```
+	
+	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 ## Windows
 
@@ -222,6 +236,13 @@ We need the v3.0rc1 version:
 	mcconfig -d -m -p esp
 	```
 	
+	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
+
+	```
+	cd %MODDABLE%\examples\piu\balls
+	mcconfig -d -m -p esp/moddable_zero
+	```
+	
 ### ESP32 setup
 
 1. Complete "Host environment setup" for Windows.
@@ -275,6 +296,14 @@ We need the v3.0rc1 version:
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
+	
+	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
+
+	```
+	cd %MODDABLE%\examples\piu\balls
+	mcconfig -d -m -p esp32/moddable_zero
+	```
+	
 	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the Developer Command Prompt. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
@@ -366,11 +395,20 @@ We need the v3.0rc1 version:
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp
 	```
+	
+	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
 
-> The ESP8266 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP8266, add your user to the `dialout` group:
-> 
+	```
+	cd $MODDABLE/examples/piu/balls
+	mcconfig -d -m -p esp/moddable_zero
+	```
+
+	> The ESP8266 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP8266, add your user to the `dialout` group:
+	> 
+	```
 	sudo adduser <username> dialout 
 	sudo reboot
+	```
 
 ### ESP32 setup
 
@@ -421,14 +459,22 @@ We need the v3.0rc1 version:
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp32
 	```
-	
 
-> The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
-> 
+	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
+
+	```
+	cd ${MODDABLE}/examples/piu/balls
+	mcconfig -d -m -p esp32/moddable_zero
+	```
+
+	> The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
+	> 
+	```
 	sudo adduser <username> dialout 
 	sudo reboot
+	```
 
-> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
+	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 ## Debugging applications
 
