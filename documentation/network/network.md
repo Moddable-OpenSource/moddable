@@ -608,7 +608,6 @@ The DNS parser class parses and returns a single resource record at a time to mi
 > **Note**: The DNS Parser is a low level class used to build higher level services, such as mDNS.
 
 ### Parsing a DNS packet
-
 DNS packets are typically received as UDP packets. The `Socket` object provides each DNS packet in an `ArrayBuffer`. The follow example creates a DNS parser instance for an `ArrayBuffer`:
 
 	let packet = new Parser(dnsPacket);
@@ -623,14 +622,12 @@ The parser instance has properties for the `id` and `flags` fields in the DNS pa
 	let flags = packet.flags;
 	
 ### Determining the number of records
-
 The parser instance has properties that provide the number of resource records in each section.
 
 	let total = packet.questions + packet.answers +
 					packet.authorities + packet.additionals;
 
-### Retrieving a resource record
-
+### Extracting a resource record
 A JavaScript object containing a single resource record is retrieved by calling the function corresponding to the resource record's section. The following example retrieves the second question resource record (indices start at 0):
 
 	let rr = packet.question(1);
@@ -638,7 +635,6 @@ A JavaScript object containing a single resource record is retrieved by calling 
 There are also `answers`, `authorities`, and `additionals` functions.
 
 ### new Parser(buffer)
-
 The DNS Parser constructor is initialized with an ArrayBuffer containing a single DNS packet.
 
 No validation is performed by the constructor. Errors, if any, are reported when extracting resource records.
@@ -743,7 +739,7 @@ When the DNS server is no longer needed, call `close` to terminate it and free i
 
 ## class MDNS
 
-The MDNS class implements services for working with mDNS discovery and services. It includes claiming `.local` names, advertising mDNS service availability, and scanning for available mDNS services.
+The MDNS class implements services for working with [Multicast DNS](https://tools.ietf.org/html/rfc6762) discovery and services. It includes claiming `.local` names, advertising mDNS service availability, and scanning for available mDNS services.
 
 	import MDNS from "mdns";
 	
@@ -772,7 +768,7 @@ The claiming process takes some time, usually under one second. Claiming the nam
 
 ### Advertising an mDNS service
 
-The following example announces the availability of an http service on the current host.
+The following example announces the availability of an `_http._tcp` service on port 80 of the current host.
 
 	mdns.add({
 		name: "http",
@@ -783,9 +779,9 @@ The following example announces the availability of an http service on the curre
 		}
 	});
 
-### Scanning for mDNS services
+### Discovering mDNS services
 
-The following example continuously scans for http services available on the local network:
+The following example continuously monitors for `_http._tcp` services available on the local network:
 
 	mdns.monitor("_http._tcp", (service, instance) => {
 		trace(`Found ${service}: ${instance.name}\n`);
@@ -802,11 +798,9 @@ If the dictionary contains a `hostName` property, the MDNS instance will attempt
 	
 The following messages are defined:
 
-(1) Probing. If `value` is an empty string, claiming is underway; otherwise `value` contains the claimed name.
-
-(2) Conflict found. The result of the callback function determines what happens next. If the result is undefined, a new name will be created automatically and the claiming process continues. If a string is returned, the claiming process continues with the string used as the target hostname. Returning true causes the claiming process to end.
-
-(Any negative number) - error. Claiming process terminated.
+* `probing` (1) - If `value` is an empty string, claiming is underway; when probing is successful, `value` contains the claimed name.
+* `conflict` (2) - The attempt to claim the requested name discovered another device already using the name. The result of the callback function determines what happens next. If the result is undefined, a new name is created automatically and the claiming process continues. If a string is returned, the claiming process continues with the string used as the candidate hostname. Returning true causes the claiming process to end without having claimed a name.
+* `error` (Any negative number) - Claiming process terminated.
 
 The `hostName` is not required to monitor for available mDNS services.
 
