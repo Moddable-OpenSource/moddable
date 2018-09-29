@@ -108,6 +108,33 @@ int main(int argc, char* argv[])
 	
 	fxInitializeLinker(linker);
 	if (c_setjmp(linker->jmp_buf) == 0) {
+		if ((argc == 2) && (c_strcmp(argv[1], "args.txt") == 0)) {
+			txString buffer;
+			txString string;
+			char c;
+			file = fopen(argv[1], "r");
+			mxThrowElse(file);
+			fseek(file, 0, SEEK_END);
+			size = ftell(file);
+			fseek(file, 0, SEEK_SET);
+			buffer = fxNewLinkerChunk(linker, size + 1);
+			size = fread(buffer, 1, size, file);
+			buffer[size] = 0;
+			fclose(file);
+			string = buffer;
+			argc = 1;
+			while ((c = *string++)) {
+				if (isspace(c))
+					argc++;
+			}
+			argv = fxNewLinkerChunk(linker, argc * sizeof(char*));
+			for (string = buffer, argc = 1; ; string = NULL, argc++) {
+				txString token = strtok(string, " \f\n\r\t\v");
+				if (token == NULL)
+					break;
+				argv[argc] = token;
+			}
+		}
 		c_strcpy(name, "mc");
 		includeAddress = &(linker->firstInclude);
 		preloadAddress = &(linker->firstPreload);
