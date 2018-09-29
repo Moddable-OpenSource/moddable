@@ -177,7 +177,9 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	$(XSL) <<args.txt 
+-b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+<<
 
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c $(HEADERS)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.resources.c /Fo$@
