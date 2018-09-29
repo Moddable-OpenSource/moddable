@@ -603,7 +603,9 @@ The DNS Parser class extracts JavaScript objects from a binary DNS record.
 
 	import Parser from "dns/parser";
 
-The DNS parser class parses and returns a single resource record at a time to minimize memory use.
+The DNS parser class parses and returns a single resource record at a time to minimize memory use. It has parsers for the resource data of A, AAAA, PTR, SRV, TXT resource record types.
+
+> **Note**: The DNS Parser is a low level class used to build higher level services, such as mDNS.
 
 ### Parsing a DNS packet
 
@@ -642,16 +644,16 @@ The DNS Parser constructor is initialized with an ArrayBuffer containing a singl
 No validation is performed by the constructor. Errors, if any, are reported when extracting resource records.
 
 ### questions(index)
-Returns the question resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of question records in the packet. 
+Returns the question resource record corresponding to the index argument. Indices are numbered from 0. Returns `null` if index is greater than number of question records in the packet. 
 
 ### answers(index)
-Returns the answer resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of answer records in the packet. 
+Returns the answer resource record corresponding to the index argument. Indices are numbered from 0. Returns `null` if index is greater than number of answer records in the packet. 
 
 ### authorities(index)
-Returns the authority resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of authority records in the packet. 
+Returns the authority resource record corresponding to the index argument. Indices are numbered from 0. Returns `null` if index is greater than number of authority records in the packet.
 
 ### additionals(index)
-Returns the additional resource record corresponding to the index argument. Indices are number from 0. Returns `null` if index is greater than number of additional records in the packet. 
+Returns the additional resource record corresponding to the index argument. Indices are numbered from 0. Returns `null` if index is greater than number of additional records in the packet. 
 
 ## class DNS Serializer
 
@@ -659,24 +661,57 @@ The DNS Serializer class implements a DNS record serializer.
 
 	import Serializer from "dns/serializer";
 
+The DNS Serializer class is able to serialize A, NSEC, PTR, SRV, and TXT resource record types. Clients may perform their own serialization of other resource record types and provide the result to the DNS Serializer class to include in the generated DNS packet.
+
+> **Note**: The DNS Serializer is a low level class used to build higher level services, such as mDNS.
+
 ### Building a DNS query
 
 The following example uses the DNS Serializer to create a DNS packet querying for an A record for the "example.com" domain:
 
-		let serializer = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
-		serializer.add(DNS.SECTION.QUESTION, "example.com", DNS.RR.A, DNS.CLASS.IN);
-		buffer = serializer.build();
+	import DNS from "dns";
+
+	let serializer = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
+	serializer.add(DNS.SECTION.QUESTION, "example.com", DNS.RR.A, DNS.CLASS.IN);
+	let buffer = serializer.build();
 
 The `build` function returns a DNS packet suitable for sending using the `write` function of the `Socket` class.
 
-> **This section is incomplete**
+### new Serializer(dictionary)
+The DNS Serializer constructor accepts a dictionary with properties to configure the DNS packet to be created. By default the following properties are defined
 
+- `opcode` - The numeric value of the `opcode` header field, for example `DNS.OPCODE.QUERY`.  
+- `query` - A boolean that indicates whether this packet contains a query or response. Defaults to `true`.
+- `authoritative` - A boolean indicating the value of the `authoritative` bit in the header. Defaults to `false`.
+- `id` - A numeric value for the ID field. Defaults to 0.
+
+### add(section, name, type, clss, ttl, ...)
+The `add` function adds a resource record to be serialized into the DNS packet. The first five arguments to `add` are the same for all resource records.
+
+- `section` - The section to add this resource record to, `DNS.SECTION.ANSWER`.
+- `name` - A string containing the DNS QNAME.
+- `type` - A number representing the resource record type, e.g. `DNS.RR.A`.
+- `clss` - A number containing the resource record class field value, typically `DNS.CLASS.IN`.
+- `ttl` - A number containing the time-to-live value in seconds for this resource record.
+
+The optional `data` argument is used to build the resource data portion of the resource record. If not present, the resource data is empty. If it is an `ArrayBuffer`, its contents are used for the resource data. The `data` argument is interpreted these resource record types:
+
+- `A` - A string containing the IP address.
+- `NSEC` - A dictionary with two keys. The first is `next` containing a string with the next hostname value. The second is a Uint8Array containing the bit-mask.
+- `PTR` - A string with the PTR value.
+- `SRV` - A dictionary with four keys. The `priority`, `weight`, and `port` fields are numbers with the value of the corresponding field. The `target` property is a string containing the name of the target. 
+- `TXT` - A dictionary of key / value pairs for the TXT record. The property name is the key. Only string values are supported at this time.
+
+### build()
+The `build` function generates a DNS packet based on the previous calls to the serializer instance. The packet is returned as an `ArrayBuffer`.
+
+> **Note**: The current implementation does not compress QNAMES, resulting in a larger DNS packet than necessary.
 
 ## class DNS Server
 
 The DNS Server class implements a simple DNS server.
 
-	import Server from "dnsserver";
+	import Server from "dns/server";
 
 The server is indicated for use in devices in Wi-Fi access point mode that wish to act as a captive portal. The DNS server is used to direct look-ups for certain domains to an IP address, typically the device running the DNS server.
 
