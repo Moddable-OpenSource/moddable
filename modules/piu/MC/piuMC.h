@@ -19,6 +19,7 @@
  */
 
 #include "piuAll.h"
+#include "commodettoFontEngine.h"
 
 typedef struct PiuGlyphStruct PiuGlyphRecord, *PiuGlyph;
 typedef struct PiuDieStruct PiuDieRecord, *PiuDie;
@@ -26,6 +27,21 @@ typedef struct PiuImageStruct PiuImageRecord, *PiuImage;
 typedef struct PiuRegionStruct PiuRegionRecord, *PiuRegion;
 
 // PiuFont.c
+
+struct PiuFontStruct {
+	PiuHandlePart;
+	xsMachine* the;
+	PiuFont* next;
+	PiuFlags flags;
+	xsIndex family;
+	PiuCoordinate size;
+	PiuCoordinate weight;
+	uint8_t *buffer;
+	size_t bufferSize;
+	PiuDimension height;
+	PiuDimension ascent;
+	PiuTexture* texture;
+};
 
 #define PiuGlyphPart \
 	uint16_t advance; \
@@ -45,6 +61,8 @@ struct PiuGlyphStruct {
 extern PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPixels);
 extern void PiuFontListLockCache(xsMachine* the);
 extern void PiuFontListUnlockCache(xsMachine* the);
+
+extern CommodettoFontEngine gCFE;
 
 // PiuTexture.c
 
