@@ -819,9 +819,9 @@ The `add` function registers an mDNS service description to be advertised. The s
 - `name` - the service's name (e.g. "http")
 - `protocol` - the service's protocol (e.g. "tcp" or "udp")
 - `port` - the service's port
-- `txt` - an an optional JavaScript object with name value pairs used to populate the TXT resource record of the service
+- `txt` - an an optional JavaScript object with name value pairs to populate the TXT resource record of the service
 
-`add` may only be called after the hostname claiming process has completed successfullyy.
+`add` may only be called after the hostname claiming process has completed successfully.
 
 ### update(service)
 
@@ -829,9 +829,9 @@ The `update` function tells the MDNS implementation that the contents of the TXT
 
 ### remove(service) or remove(serviceType)
 
-The `remove` function is used both to unregisters the service and to cancel monitoring for a service type.
+The `remove` function is used both to unregister the service and to cancel monitoring for a service type.
 
-To unregister a service, pass the service description. This announces to the network that it is no longer available. The `service` object passed must be the same object provided to `add`.
+To unregister a service, pass the service description. This announces to the network that it is no longer available. The `service` object must be the same object provided to `add`.
 
 To cancel monitoring for a service type, pass the name of the service type.
 
