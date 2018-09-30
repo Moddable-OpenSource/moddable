@@ -19,28 +19,12 @@
  */
 
 #include "piuMC.h"
-#include "commodettoFontEngine.h"
 #include "mc.defines.h"
-
-struct PiuFontStruct {
-	PiuHandlePart;
-	xsMachine* the;
-	PiuFont* next;
-	PiuFlags flags;
-	xsIndex family;
-	PiuCoordinate size;
-	PiuCoordinate weight;
-	uint8_t *buffer;
-	size_t bufferSize;
-	PiuDimension height;
-	PiuDimension ascent;
-	PiuTexture* texture;
-};
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static CommodettoFontEngine gCFE = NULL;
+CommodettoFontEngine gCFE = NULL;
 
 static xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 	PiuFontDelete,
@@ -157,12 +141,14 @@ void PiuFontNew(xsMachine* the)
 
 void PiuFontListLockCache(xsMachine* the)
 {
-	CFELockCache(gCFE, 1);
+	if (gCFE)
+		CFELockCache(gCFE, 1);
 }
 
 void PiuFontListUnlockCache(xsMachine* the)
 {
-	CFELockCache(gCFE, 0);
+	if (gCFE)
+		CFELockCache(gCFE, 0);
 }
 
 void PiuStyleLookupFont(PiuStyle* self)
