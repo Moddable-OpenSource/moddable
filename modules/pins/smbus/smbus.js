@@ -31,10 +31,10 @@ export default class SMBus extends I2C {
 		super.write(register);				// set address
 		return super.read(1)[0];				// read one byte
 	}
-	readWord(register) {
+	readWord(register, endian) {
 		super.write(register);				// set address
 		let value = super.read(2);			// read two bytes
-		return value[0] | (value[1] << 8);
+		return endian ? (value[1] | (value[0] << 8)) : (value[0] | (value[1] << 8));
 	}
 	readBlock(register, count, buffer) {
 		super.write(register);				// set address
@@ -43,8 +43,11 @@ export default class SMBus extends I2C {
 	writeByte(register, value) {
 		super.write(register, value & 255);
 	}
-	writeWord(register, value) {
-		super.write(register, value & 255, (value >> 8) & 255);
+	writeWord(register, value, endian) {
+		if (endian)
+			super.write(register, (value >> 8) & 255, value & 255);
+		else
+			super.write(register, value & 255, (value >> 8) & 255);
 	}
 	writeBlock(register, ...value) {
 		super.write(register, ...value);
