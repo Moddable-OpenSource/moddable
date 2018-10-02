@@ -931,7 +931,7 @@ Use the `deploy` function to deploy all the server GATT services. Deployed servi
 
 ***
 
-#### startAdvertising(params)
+#### `startAdvertising(params)`
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -1023,31 +1023,6 @@ onConnected(device) {
 }
 ```
 
-***
-
-#### `close()`
-Use the `close` function to terminate a BLE client connection. 
-
-```javascript
-import {address} from "btutils";
-
-onReady() {
-	this.allowed = address`11:22:33:44:55:66`;
-}
-onConnected(device) {
-	this.stopAdvertising();
-	if (!device.address.equals(this.allowed))
-		this.close();
-}
-```
-
-***
-
-#### `onDisconnected()`
-The `onDisconnected` callback function is called when the connection is closed.
-
-***
-
 #### `notifyValue(characteristic, value)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
@@ -1080,7 +1055,7 @@ The `onCharacteristicNotifyEnabled` callback function is called when a client en
  
 ***
 
-#### onCharacteristicWritten(params)
+#### `onCharacteristicWritten(params)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `params` | `object` | Properties associated with the characteristic value written.
@@ -1117,7 +1092,7 @@ onCharacteristicWritten(params) {
 
 ***
 
-#### onCharacteristicRead(params)
+#### `onCharacteristicRead(params)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `params` | `object` | Properties associated with the characteristic value read.
@@ -1144,6 +1119,43 @@ onCharacteristicRead(params) {
 		return this.status;
 }
 ```
+***
+
+#### `disconnect()`
+Use the `disconnect` function to terminate the BLE client connection. 
+
+```javascript
+import {address} from "btutils";
+
+onReady() {
+	this.allowed = address`11:22:33:44:55:66`;
+}
+onConnected(device) {
+	this.stopAdvertising();
+	if (!device.address.equals(this.allowed))
+		this.disconnect();
+}
+onDisconnected(device) {
+	trace("device disconnected\n");
+}
+```
+
+***
+
+#### `onDisconnected()`
+The `onDisconnected` callback function is called when the connection is closed.
+
+***
+
+#### `close()`
+Use the `close` function to terminate any BLE client connection and release all BLE resources.
+
+```javascript
+onDisconnected(device) {
+	this.close();
+}
+```
+***
 
 <a id="gattservices"></a>
 ## GATT Services

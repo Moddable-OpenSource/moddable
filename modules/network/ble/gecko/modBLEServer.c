@@ -42,6 +42,7 @@ typedef struct {
 	int8_t connection;
 	bd_addr address;
 	uint8_t bond;
+	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -104,11 +105,21 @@ void xs_ble_server_close(xsMachine *the)
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
-		modTimerRemove(ble->timer);
-		c_free(ble);
-	}
+	if (!ble) return;
+	
+	ble->terminating = true;
+	if (-1 != ble->connection)
+		gecko_cmd_le_connection_close(ble->connection);
+	modTimerRemove(ble->timer);
+	c_free(ble);
+
 	gBLE = NULL;
+}
+
+void xs_ble_server_disconnect(xsMachine *the)
+{
+	if (-1 != gBLE->connection)
+		gecko_cmd_le_connection_close(gBLE->connection);
 }
 
 void xs_ble_server_get_local_address(xsMachine *the)
@@ -157,7 +168,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
-	// server deployed automatically by gecko_stack_init()
+	// server and services deployed automatically by gecko_stack_init()
 }
 
 void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
@@ -238,7 +249,13 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 		goto bail;
 	gBLE->connection = -1;
 	gBLE->bond = 0xFF;
-	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), evt->connection);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(2), gBLE->address.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -400,6 +417,8 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
+	if (!gBLE || gBLE->terminating) return;
+
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
 			systemBootEvent(&evt->data.evt_system_boot);
