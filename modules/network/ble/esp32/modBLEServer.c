@@ -164,6 +164,12 @@ void xs_ble_server_destructor(void *data)
 	esp_bt_controller_deinit();
 }
 
+void xs_ble_server_disconnect(xsMachine *the)
+{
+	if (-1 != gBLE->conn_id)
+		esp_ble_gatts_close(gBLE->gatts_if, gBLE->conn_id);
+}
+
 void xs_ble_server_get_local_address(xsMachine *the)
 {
 	const uint8_t *addr = (const uint8_t *)esp_bt_dev_get_address();
@@ -459,7 +465,13 @@ static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint
 	if (disconnect->conn_id != gBLE->conn_id)
 		goto bail;
 	gBLE->conn_id = -1;
-	xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), disconnect->conn_id);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(2), disconnect->remote_bda, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
