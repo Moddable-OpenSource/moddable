@@ -41,9 +41,11 @@
 #if LOG_GATTS
 	#define LOG_GATTS_EVENT(event) logGATTSEvent(event)
 	#define LOG_GATTS_MSG(msg) modLog(msg)
+	#define LOG_GATTS_INT(i) modLogInt(i)
 #else
 	#define LOG_GATTS_EVENT(event)
 	#define LOG_GATTS_MSG(msg)
+	#define LOG_GATTS_INT(i)
 #endif
 
 #define LOG_GAP 0
@@ -220,7 +222,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
-	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(1 == notify));
+	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(0 == notify));
 }
 
 void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
@@ -386,12 +388,45 @@ static void logGAPEvent(esp_gap_ble_cb_event_t event) {
 
 void xs_ble_server_deploy(xsMachine *the)
 {
-	for (uint16_t i = 0; i < service_count; ++i)
-		esp_ble_gatts_create_attr_tab(gatt_db[i], gBLE->gatts_if, attribute_counts[i], i);
+	for (uint16_t i = 0; i < service_count; ++i) {
+		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
+		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
+		if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
+			continue;	// ESP-IDF doesn't want apps registering gap service
+		esp_ble_gatts_create_attr_tab(gatts_attr_db, gBLE->gatts_if, attribute_counts[i], i);
+	}
 }
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+
+	// Set device name and appearance from app GAP service when available
+	char *device_name = NULL;
+	uint16_t appearance = 0;
+	for (uint16_t i = 0; i < service_count; ++i) {
+		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
+		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
+		if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1]) {
+			for (uint16_t j = 1; j < attribute_counts[i]; ++j) {
+				att_desc = &gatts_attr_db[j].att_desc;
+				if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A00 == *(uint16_t*)att_desc->uuid_p) {
+					device_name = c_calloc(1, att_desc->length + 1);
+					c_memmove(device_name, att_desc->value, att_desc->length);
+				}
+				if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A01 == *(uint16_t*)att_desc->uuid_p) {
+					appearance = att_desc->value[1] << 8 | att_desc->value[0];
+				}
+			}
+			if (NULL != device_name) {
+				esp_ble_gap_set_device_name(device_name);
+				c_free(device_name);
+			}
+			if (0 != appearance)
+				esp_ble_gap_config_local_icon(appearance);
+			break;
+		}
+	}
+
 	// Stack is ready
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
@@ -429,11 +464,11 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
-static const esp_attr_desc_t *handleToAttDesc(uint16_t handle) {
+static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j])
-				return &gatt_db[i][j].att_desc;
+				return &gatt_db[i][j];
 		}
 	}
 	return NULL;
@@ -459,14 +494,24 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	esp_bt_uuid_t uuid;
 	uint8_t buffer[ESP_UUID_LEN_128];
 	uint16_t uuid_length;
-	const esp_attr_desc_t *att_desc = handleToAttDesc(read->handle);
-	const char_name_table *char_name = handleToCharName(read->handle);
-	if (NULL == att_desc) return;
+	const esp_gatts_attr_db_t *att;
+	const esp_attr_desc_t *att_desc;
+	const char_name_table *char_name;
+	
+	att = handleToAtt(read->handle);
+	if (NULL == att) return;
+	
+	if (ESP_GATT_AUTO_RSP == att->attr_control.auto_rsp) return;
+	
+	att_desc = &att->att_desc;
+	char_name = handleToCharName(read->handle);
+
 	xsBeginHost(gBLE->the);
 	xsmcVars(5);
 	uuid.len = att_desc->uuid_length;
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuidToBuffer(buffer, &uuid, &uuid_length);
+	
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSetInteger(xsVar(2), read->handle);
@@ -503,16 +548,24 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	uint8_t buffer[ESP_UUID_LEN_128];
 	uint16_t uuid_length;
 	uint8_t notify = 0xFF;
-	const esp_attr_desc_t *att_desc = handleToAttDesc(write->handle);
-	const char_name_table *char_name = handleToCharName(write->handle);
-	if (NULL == att_desc) goto bail;
+	const esp_gatts_attr_db_t *att;
+	const esp_attr_desc_t *att_desc;
+	const char_name_table *char_name;
+	
+	att = handleToAtt(write->handle);
+	if (NULL == att) return;
+	
+	att_desc = &att->att_desc;
+	char_name = handleToCharName(write->handle);
+
 	if (write->need_rsp)
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
 	xsmcVars(6);
 	if (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len) {
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
-			att_desc = handleToAttDesc(write->handle - 1);
+			att = handleToAtt(write->handle - 1);
+			att_desc = &att->att_desc;
 			char_name = handleToCharName(write->handle - 1);
 			notify = (uint8_t)descr_value;
 		}
@@ -600,6 +653,20 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
 			}
 			break;
+#if LOG_GATTS
+		case ESP_GATTS_START_EVT:
+			if (param->start.status != ESP_GATT_OK) {
+				LOG_GATTS_MSG("ESP_GATTS_START_EVT failed, status =");
+				LOG_GATTS_INT(param->start.status);
+			}
+			break;
+    	case ESP_GATTS_CONF_EVT:
+			if (param->conf.status != ESP_GATT_OK) {
+				LOG_GATTS_MSG("ESP_GATTS_CONF_EVT failed, status =");
+				LOG_GATTS_INT(param->conf.status);
+			}
+        	break;
+#endif
 	}
 }
 
