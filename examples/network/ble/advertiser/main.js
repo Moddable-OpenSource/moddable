@@ -14,16 +14,29 @@
 
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
+import Timer from "timer";
 
 class Advertiser extends BLEServer {
 	onReady() {
-		this.deviceName = "Moddable Device";
-		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: "Thermometer Example", completeUUID16List: [uuid`1809`]}
-		});
+		this.deviceName = "Advertiser Example";
+		this.timer = null;
+		this.onDisconnected();
 	}
 	onConnected(connection) {
 		this.stopAdvertising();
+		this.timer = Timer.set(() => {
+			this.timer = null;
+			this.disconnect();
+		}, 8000);
+	}
+	onDisconnected(connection) {
+		if (this.timer) {
+			Timer.clear(this.timer);
+			this.timer = null;
+		}
+		this.startAdvertising({
+			advertisingData: {flags: 6, completeName: "Advertiser Example", completeUUID16List: [uuid`1809`]}
+		});
 	}
 }
 	
