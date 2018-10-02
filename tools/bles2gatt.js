@@ -134,6 +134,7 @@ class ESP32GATTFile extends GATTFile {
 		var maxAttributeCount = 0;
 		var attributeCounts = new Array(services.length);
 		var characteristicIndex = 0;
+		var descriptorIndex = 0;
 		services.forEach((service, index) => {
 			let attributeCount = 1;
 			let characteristics = service.characteristics;
@@ -145,47 +146,40 @@ class ESP32GATTFile extends GATTFile {
 					++attributeCount;
 					characteristic._notify = true;
 				}
+				if ("descriptors" in characteristic) {
+					attributeCount += Object.keys(characteristic.descriptors).length;
+					characteristic._descriptors = true;
+				}
 			}
 			if (attributeCount > maxAttributeCount)
 				maxAttributeCount = attributeCount;
 			attributeCounts[index] = attributeCount;
-			if (4 == service.uuid.length)
-				file.line(`static const uint16_t service_uuid${index} = 0x${service.uuid};`);
-			else {
-				file.write(`static const uint8_t service_uuid${index}[16] = { `);
-				file.write(buffer2hexlist(uuid128toBuffer(service.uuid)));
-				file.write(" };");
-				file.line("");
-			}
+			this.writeAttributeUUID(file, service, index, "service");
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
-				let uuid = characteristic.uuid;
-				if (4 == uuid.length)
-					file.line(`static const uint16_t char_uuid${characteristicIndex} = 0x${characteristic.uuid};`);
-				else if (36 == uuid.length) {
-					file.write(`static const uint8_t char_uuid${characteristicIndex}[16] = { `);
-					file.write(buffer2hexlist(uuid128toBuffer(uuid)));
-					file.write(" };");
-					file.line("");
-				}
-				else
-					throw new Error("unsupported UUID length");
+				this.writeAttributeUUID(file, characteristic, characteristicIndex, "char");
 				if ("value" in characteristic) {
-					let buffer = typedValueToBuffer(characteristic.type, characteristic.value);
-					characteristic._length = buffer.byteLength;
-					file.write(`static const uint8_t char_value${characteristicIndex}[${buffer.byteLength}] = { `);
-					file.write(buffer2hexlist(buffer));
-					file.write(" };");
-					file.line("");
+					this.writeAttributeValue(file, characteristic, characteristicIndex, "char");
 				}
 				if (characteristic._notify) {
 					file.line(`static const uint8_t char_ccc${characteristicIndex}[2] = { 0x00, 0x00 };`);
+				}
+				if ("descriptors" in characteristic) {
+					for (let key2 in characteristic.descriptors) {
+						let descriptor = characteristic.descriptors[key2];
+						this.writeAttributeUUID(file, descriptor, descriptorIndex, "desc");
+						if ("value" in descriptor) {
+							this.writeAttributeValue(file, descriptor, descriptorIndex, "desc");
+						}
+						++descriptorIndex;
+					}
 				}
 				++characteristicIndex;
 			}
 			file.line("");
 		});
 		characteristicIndex = 0;
+		descriptorIndex = 0;
 		
 		file.line(`#define service_count ${services.length}`);
 		file.line(`#define max_attribute_count ${maxAttributeCount}`);
@@ -247,6 +241,33 @@ class ESP32GATTFile extends GATTFile {
 					file.line(`\t\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(char_ccc${characteristicIndex}), (uint8_t*)char_ccc${characteristicIndex}}`);
 					file.line("\t\t},");
 					++attributeIndex;
+				}
+				
+				// other characteristic descriptors
+				if (characteristic._descriptors) {
+					for (let key2 in characteristic.descriptors) {
+						let descriptor = characteristic.descriptors[key2];
+						permissions = this.parsePermissions(descriptor.permissions.split(","));
+						esp_uuid_len = (4 == descriptor.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
+						file.line("\t\t[", attributeIndex, "] = {");
+						if ("value" in descriptor)
+							file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
+						else {
+							let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
+							char_name.type = descriptor.type ? descriptor.type: "";
+							char_names.push(char_name);
+							file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
+						}
+						file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&desc_uuid${descriptorIndex}, ${permissions}, ${descriptor.maxBytes}, `);
+						if ("value" in descriptor)
+							file.write(`${descriptor._length}, (uint8_t*)&desc_value${descriptorIndex}}`);
+						else
+							file.write("0, NULL}");
+						file.line("");
+						file.line("\t\t},");
+						++descriptorIndex;
+						++attributeIndex;
+					}
 				}
 				++characteristicIndex;
 			}
@@ -318,6 +339,27 @@ class ESP32GATTFile extends GATTFile {
 			}
 		});
 		return perms.join("|");
+	}
+	writeAttributeValue(file, attribute, index, prefix) {
+		let buffer = typedValueToBuffer(attribute.type, attribute.value);
+		attribute._length = buffer.byteLength;
+		file.write(`static const uint8_t ${prefix}_value${index}[${buffer.byteLength}] = { `);
+		file.write(buffer2hexlist(buffer));
+		file.write(" };");
+		file.line("");
+	}
+	writeAttributeUUID(file, attribute, index, prefix) {
+		let uuid = attribute.uuid;
+		if (4 == uuid.length)
+			file.line(`static const uint16_t ${prefix}_uuid${index} = 0x${uuid};`);
+		else if (36 == uuid.length) {
+			file.write(`static const uint8_t ${prefix}_uuid${index}[16] = { `);
+			file.write(buffer2hexlist(uuid128toBuffer(uuid)));
+			file.write(" };");
+			file.line("");
+		}
+		else
+			throw new Error("unsupported UUID length");
 	}
 };
 
