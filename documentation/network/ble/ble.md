@@ -1142,8 +1142,24 @@ onDisconnected(device) {
 
 ***
 
-#### `onDisconnected()`
-The `onDisconnected` callback function is called when the connection is closed.
+#### `onConnected(device)`
+
+| Name | Type | Description |
+| --- | --- | :--- |
+| `connection` | `number` | Connection identifier.
+| `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
+
+The `onConnected` callback function is called when a client connects to the `BLEServer`.
+
+***
+
+#### `onDisconnected(device)`
+| Name | Type | Description |
+| --- | --- | :--- |
+| `connection` | `number` | Connection identifier.
+| `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
+
+The `onDisconnected` callback function is called when the client connection is closed.
 
 ***
 
