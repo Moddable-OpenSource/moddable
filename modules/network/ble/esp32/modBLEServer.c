@@ -37,6 +37,8 @@
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
+#define DEVICE_FRIENDLY_NAME "Moddable"
+
 #define LOG_GATTS 0
 #if LOG_GATTS
 	#define LOG_GATTS_EVENT(event) logGATTSEvent(event)
@@ -408,7 +410,8 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 
 	// Set device name and appearance from app GAP service when available
 	char *device_name = NULL;
-	uint16_t appearance = 0;
+	uint16_t appearance = 128;	// generic computer
+	
 	for (uint16_t i = 0; i < service_count; ++i) {
 		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
 		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
@@ -423,15 +426,17 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 					appearance = att_desc->value[1] << 8 | att_desc->value[0];
 				}
 			}
-			if (NULL != device_name) {
-				esp_ble_gap_set_device_name(device_name);
-				c_free(device_name);
-			}
-			if (0 != appearance)
-				esp_ble_gap_config_local_icon(appearance);
 			break;
 		}
 	}
+	
+	esp_ble_gap_config_local_icon(appearance);
+	if (NULL != device_name) {
+		esp_ble_gap_set_device_name(device_name);
+		c_free(device_name);
+	}
+	else
+		esp_ble_gap_set_device_name(DEVICE_FRIENDLY_NAME);
 
 	// Stack is ready
 	xsBeginHost(gBLE->the);
