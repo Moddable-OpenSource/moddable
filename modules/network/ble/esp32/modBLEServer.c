@@ -513,6 +513,20 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	att = handleToAtt(read->handle);
 	if (NULL == att) return;
 	
+#if LOG_GATTS
+	att_desc = &att->att_desc;
+	char_name = handleToCharName(read->handle);
+	if (char_name) {
+		xsTrace("reading characteristic "); xsTrace(char_name); xsTrace("\n");
+	}
+	else {
+		uuid.len = att_desc->uuid_length;
+		c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
+		uuidToBuffer(buffer, &uuid, &uuid_length);
+		modLog("reading characteristic"); modLogHex(buffer[1]); modLogHex(buffer[0]);
+	}
+#endif
+
 	if (ESP_GATT_AUTO_RSP == att->attr_control.auto_rsp) return;
 	
 	att_desc = &att->att_desc;
@@ -569,6 +583,18 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(write->handle);
+
+#if LOG_GATTS
+	if (char_name) {
+		xsTrace("writing characteristic "); xsTrace(char_name); xsTrace("\n");
+	}
+	else {
+		uuid.len = att_desc->uuid_length;
+		c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
+		uuidToBuffer(buffer, &uuid, &uuid_length);
+		modLog("writing characteristic"); modLogHex(buffer[1]); modLogHex(buffer[0]);
+	}
+#endif
 
 	if (write->need_rsp)
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
