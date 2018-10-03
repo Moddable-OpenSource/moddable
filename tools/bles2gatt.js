@@ -128,7 +128,10 @@ class ESP32GATTFile extends GATTFile {
 		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
 		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
 		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
+		file.line("static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
 		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
+		file.line("static const uint8_t char_prop_read_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
+		file.line("static const uint8_t char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
 		file.line("");
 		
 		var maxAttributeCount = 0;
@@ -286,6 +289,7 @@ class ESP32GATTFile extends GATTFile {
 	}
 	parseProperties(properties) {
 		const ESP_GATT_CHAR_PROP_BIT_READ = (1 << 1);
+		const ESP_GATT_CHAR_PROP_BIT_WRITE_NR = (1 << 2);
 		const ESP_GATT_CHAR_PROP_BIT_WRITE = (1 << 3);
 		const ESP_GATT_CHAR_PROP_BIT_NOTIFY = (1 << 4);
 		const ESP_GATT_CHAR_PROP_BIT_INDICATE = (1 << 5);
@@ -297,6 +301,9 @@ class ESP32GATTFile extends GATTFile {
 					break;
 				case "write":
 					props |= ESP_GATT_CHAR_PROP_BIT_WRITE;
+					break;
+				case "writeNoResponse":
+					props |= ESP_GATT_CHAR_PROP_BIT_WRITE_NR;
 					break;
 				case "notify":
 					props |= ESP_GATT_CHAR_PROP_BIT_NOTIFY;
@@ -312,6 +319,8 @@ class ESP32GATTFile extends GATTFile {
 			props = "char_prop_read";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
 			props = "char_prop_write";
+		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
+			props = "char_prop_write_nr";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_NOTIFY)
 			props = "char_prop_notify";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE))
@@ -320,6 +329,10 @@ class ESP32GATTFile extends GATTFile {
 			props = "char_prop_read_notify";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
 			props = "char_prop_read_indicate";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
+			props = "char_prop_read_write_nr";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
+			props = "char_prop_read_write_write_nr";
 		else
 			throw new Error("unsupported property combination");
 		return props;
@@ -331,8 +344,14 @@ class ESP32GATTFile extends GATTFile {
 				case "read":
 					perms.push("ESP_GATT_PERM_READ");
 					break;
+				case "readEncrypted":
+					perms.push("ESP_GATT_PERM_READ_ENCRYPTED");
+					break;
 				case "write":
 					perms.push("ESP_GATT_PERM_WRITE");
+					break;
+				case "writeEncrypted":
+					perms.push("ESP_GATT_PERM_WRITE_ENCRYPTED");
 					break;
 				default:
 					throw new Error("unsupported permission");
