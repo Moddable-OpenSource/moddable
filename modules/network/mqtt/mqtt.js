@@ -19,6 +19,7 @@
  */
 
 import {Client as WSClient} from "websocket";
+import {Socket} from "socket";
 
 /*
  * Implements a basic MQTT client. Upon creation of a client instance, provides methods for
@@ -75,9 +76,9 @@ export default class Client {
 			this.ws.callback = ws_callback.bind(this);
 		} else {
 			if (params.Socket)
-				this.ws = new (params.Socket)({host: params.host, port: this.port, secure: params.secure});
+				this.ws = new (params.Socket)({host: params.host, port, secure: params.secure});
 			else
-				this.ws = new Socket({host: params.host, port: this.port});
+				this.ws = new Socket({host: params.host, port});
 			this.ws.callback = socket_callback.bind(this);
 		}
 	}
@@ -85,21 +86,21 @@ export default class Client {
 	publish(topic, msg) {
 		if (this.state < 2)
 			throw new Error("cannot publish to closed connection");
-		msg = MQTTHelper.to_publish_msg(topic, msg, this.packet_id++);
+		msg = to_publish_msg(topic, msg, this.packet_id++);
 		this.ws.write(msg);
 	}
 
 	subscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		let msg = MQTTHelper.to_subscribe_msg(topic, this.packet_id++);
+		let msg = to_subscribe_msg(topic, this.packet_id++);
 		this.ws.write(msg);
 	}
 
 	unsubscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		let msg = MQTTHelper.to_unsubscribe_msg(topic, this.packet_id++);
+		let msg = to_unsubscribe_msg(topic, this.packet_id++);
 		this.ws.write(msg);
 	}
 
@@ -107,14 +108,14 @@ export default class Client {
 		if (this.state < 2)
 			throw new Error("cannot ping on closed connection");
 
-		let msg = MQTTHelper.new_ping_message
+		let msg = new_ping_message
 		this.ws.write(msg);
 		// currently we ignore pongs; can add an onPingResponse() callback w/ code in ws_callback if useful
 	}
 
 	close() {
 		if (this.ws) {
-			let msg = MQTTHelper.new_close_msg();
+			let msg = new_close_msg();
 			this.ws.write(msg); // just shoot it out there, don't worry about ACKs
 			this.ws.close();
 			delete this.ws;
@@ -136,12 +137,12 @@ function ws_callback(state, message) {
 		case 2: // websocket handshake complete
 			// at this point we need to begin the MQTT protocol handshake
 			this.state = 1;
-			this.ws.write(MQTTHelper.to_connect_msg(this.connect));
+			this.ws.write(to_connect_msg(this.connect));
 			delete this.connect;
 			break;
 
 		case 3: // message received
-			let msg = MQTTHelper.decode_msg(message);
+			let msg = decode_msg(message);
 			if (this.state == 1) {
 				if (msg.code != CONNACK) {
 					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
@@ -185,13 +186,13 @@ function socket_callback(state, message) {
 		case 1: // socket connected
 			// at this point we need to begin the MQTT protocol handshake
 			this.state = 1;
-			this.ws.write(MQTTHelper.to_connect_msg(this.connect));
+			this.ws.write(to_connect_msg(this.connect));
 			delete this.connect;
 			break;
 
 		case 2: // message received
 			message = this.ws.read(ArrayBuffer);
-			let msg = MQTTHelper.decode_msg(message);
+			let msg = decode_msg(message);
 			if (this.state == 1) {
 				if (msg.code != CONNACK) {
 					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
@@ -233,15 +234,14 @@ function socket_callback(state, message) {
 	}
 }
 
-class MQTTHelper {
-	// byte-formatting helper functions
-	static to_connect_msg(client_id) @ "mqtt_connect_msg";
-	static to_publish_msg(topic, payload) @ "mqtt_publish_msg";
-	static to_subscribe_msg(topic) @ "mqtt_subscribe_msg";
-	static to_unsubscribe_msg(topic) @ "mqtt_unsubscribe_msg";
-	static new_ping_msg() @ "mqtt_ping_msg";
-	static new_close_msg() @ "mqtt_close_msg";
+// byte-formatting helper functions
+function to_connect_msg(client_id) @ "mqtt_connect_msg";
+function to_publish_msg(topic, payload) @ "mqtt_publish_msg";
+function to_subscribe_msg(topic) @ "mqtt_subscribe_msg";
+function to_unsubscribe_msg(topic) @ "mqtt_unsubscribe_msg";
+function new_ping_msg() @ "mqtt_ping_msg";
+function new_close_msg() @ "mqtt_close_msg";
 
-	// byte-decoding helper functions
-	static decode_msg() @ "mqtt_decode_msg";
-}
+// byte-decoding helper functions
+function decode_msg() @ "mqtt_decode_msg";
+
