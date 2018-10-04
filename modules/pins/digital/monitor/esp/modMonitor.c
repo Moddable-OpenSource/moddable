@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsesp.h"
+#include "modGPIO.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "ets_sys.h"
 
@@ -78,7 +79,8 @@ void xs_digital_monitor_destructor(void *data)
 void xs_digital_monitor(xsMachine *the)
 {
 	modDigitalMonitor monitor;
-	int pin, edge;
+	int pin, edge, mode = kModGPIOInput;
+	modGPIOConfigurationRecord config;
 
 	xsmcVars(1);
 
@@ -98,6 +100,11 @@ void xs_digital_monitor(xsMachine *the)
 	if ((edge < 1) || (edge > 3))
 		xsUnknownError("invalid edge");
 
+	if (xsmcHas(xsArg(0), xsID_mode)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_mode);
+		mode = xsmcToInteger(xsVar(0));
+	}
+
 	monitor = c_malloc(sizeof(modDigitalMonitorRecord));
 	if (!monitor)
 		xsUnknownError("no memory");
@@ -113,6 +120,9 @@ void xs_digital_monitor(xsMachine *the)
 	xsRemember(monitor->obj);
 
 	xsmcSetHostData(xsThis, monitor);
+
+	config.pin = (uint8_t)pin;
+	modGPIOSetMode(&config, mode);
 
 	modCriticalSectionBegin();
 
