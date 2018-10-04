@@ -64,9 +64,9 @@ class TMP102 extends SMBus {
 	sample() {
 		let value = super.readWord(0);		// 13-bits
 		value = ((value & 0x00FF) << 5) | ((value & 0xFF00) >> 11);
-		if (value & 0x800) {
+		if (value & 0x1000) {
 			value -= 1;
-			value = ~value & 0xFFF;
+			value = ~value & 0x1FFF;
 			value = -value;
 		}
 		return {temperature: value * 0.0625};
