@@ -54,66 +54,58 @@ export default class Client {
 		if (params.password)
 			this.connect.password = params.password;
 
-		this.host = params.host;
-
 //		// set default callbacks to be overridden by caller
 //		this.onReady = function() {};
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
 
-		this.port = params.port ? params.port : 80;
-		this.path = params.path ? params.path : null; // includes query string
+		const port = params.port ? params.port : 80;
+		const path = params.path ? params.path : null; // includes query string
 
-		this.ws_state = 0;
+		this.state = 0;
 
 		this.packet_id = 1;
 
 		if (this.path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
 			if (params.Socket)
-				this.ws = new WSClient({host: this.host, port: this.port, path: this.path, protocol: "mqtt", Socket: params.Socket, secure: params.secure});
+				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt", Socket: params.Socket, secure: params.secure});
 			else
-				this.ws = new WSClient({host: this.host, port: this.port, path: this.path, protocol: "mqtt"});
+				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt"});
 			this.ws.callback = ws_callback.bind(this);
 		} else {
-			throw new Error("native MQTT not yet implemented; use websockets");
-			// TODO: implement MQTT native mode
-			/* something like...
-			this.socket = new Socket({...});
-			this.socket.callback = socket_callback.bind(this);
-			*/
-			// also need the usual read/write loops for socket, etc.
+			if (params.Socket)
+				this.ws = new (params.Socket)({host: params.host, port: this.port, secure: params.secure});
+			else
+				this.ws = new Socket({host: params.host, port: this.port});
+			this.ws.callback = socket_callback.bind(this);
 		}
 	}
 
 	publish(topic, msg) {
-		if (this.ws_state < 2) {
+		if (this.state < 2)
 			throw new Error("cannot publish to closed connection");
-		}
 		msg = MQTTHelper.to_publish_msg(topic, msg, this.packet_id++);
 		this.ws.write(msg);
 	}
 
 	subscribe(topic) {
-		if (this.ws_state < 2) {
+		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		}
 		let msg = MQTTHelper.to_subscribe_msg(topic, this.packet_id++);
 		this.ws.write(msg);
 	}
 
 	unsubscribe(topic) {
-		if (this.ws_state < 2) {
+		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		}
 		let msg = MQTTHelper.to_unsubscribe_msg(topic, this.packet_id++);
 		this.ws.write(msg);
 	}
 
 	ping() {
-		if (this.ws_state < 2) {
+		if (this.state < 2)
 			throw new Error("cannot ping on closed connection");
-		}
 
 		let msg = MQTTHelper.new_ping_message
 		this.ws.write(msg);
@@ -128,14 +120,14 @@ export default class Client {
 			delete this.ws;
 		}
 
-		this.ws_state = 0;
+		this.state = 0;
 	}
 }
 
-function ws_callback(state, message) {
-	const CONNACK = 0x20;
-	const PUBLISH = 0x30;
+const CONNACK = 0x20;
+const PUBLISH = 0x30;
 
+function ws_callback(state, message) {
 	switch (state) {
 		case 1: // socket connected
 			// we don't care about this, we only care when websocket handshake is done
@@ -143,14 +135,14 @@ function ws_callback(state, message) {
 
 		case 2: // websocket handshake complete
 			// at this point we need to begin the MQTT protocol handshake
-			this.ws_state = 1;
-			let bytes = MQTTHelper.to_connect_msg(this.connect);
-			this.ws.write(bytes);
+			this.state = 1;
+			this.ws.write(MQTTHelper.to_connect_msg(this.connect));
+			delete this.connect;
 			break;
 
 		case 3: // message received
 			let msg = MQTTHelper.decode_msg(message);
-			if (this.ws_state == 1) {
+			if (this.state == 1) {
 				if (msg.code != CONNACK) {
 					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
 					break;
@@ -160,7 +152,7 @@ function ws_callback(state, message) {
 					throw new Error("server rejected request with code " + msg.returnCode);
 				}
 
-				this.ws_state = 2;
+				this.state = 2;
 				this.onReady();
 				break;
 			}
@@ -174,7 +166,7 @@ function ws_callback(state, message) {
 						trace(`received unhandled or no-op message type '${msg.code}'\n`);
 					break;
 			}
-		  
+
 			break;
 
 		case 4: // websocket closed
@@ -183,7 +175,60 @@ function ws_callback(state, message) {
 			break;
 
 		default:
-			trace(`ERROR: unrecognized websocket state %{state}\n`);
+			trace(`ERROR: unhandled websocket state ${state}\n`);
+			break;
+	}
+}
+
+function socket_callback(state, message) {
+	switch (state) {
+		case 1: // socket connected
+			// at this point we need to begin the MQTT protocol handshake
+			this.state = 1;
+			this.ws.write(MQTTHelper.to_connect_msg(this.connect));
+			delete this.connect;
+			break;
+
+		case 2: // message received
+			message = this.ws.read(ArrayBuffer);
+			let msg = MQTTHelper.decode_msg(message);
+			if (this.state == 1) {
+				if (msg.code != CONNACK) {
+					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
+					break;
+				}
+
+				if (msg.returnCode) {
+					throw new Error("server rejected request with code " + msg.returnCode);
+				}
+
+				this.state = 2;
+				this.onReady();
+				break;
+			}
+
+			switch (msg.code) {
+				case PUBLISH:
+					this.onMessage(msg.topic, msg.data);
+					break;
+				default:
+					if (msg.code)
+						trace(`received unhandled or no-op message type '${msg.code}'\n`);
+					break;
+			}
+
+			break;
+
+		case 3: // ready to send
+			break;
+
+		default:
+			if (state < 0) {
+				this.onClose();
+				delete this.ws;
+			}
+			else
+				trace(`ERROR: unhandled socket state ${state}\n`);
 			break;
 	}
 }
