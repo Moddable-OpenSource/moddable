@@ -20,7 +20,6 @@
 
 import { FILE, TOOL } from "tool";
 
-
 class GATTFile {
 	constructor(dictionary) {
 		this.tool = dictionary.tool;
@@ -577,6 +576,7 @@ class GeckoGATTFile extends GATTFile {
 	}
 	parseProperties(properties) {
 		const gatt_char_prop_read = 0x02;
+		const gatt_char_prop_writenoresp  = 0x04;
 		const gatt_char_prop_write = 0x08;
 		const gatt_char_prop_notify = 0x10;
 		const gatt_char_prop_indicate = 0x20;
@@ -588,6 +588,9 @@ class GeckoGATTFile extends GATTFile {
 					break;
 				case "write":
 					props |= gatt_char_prop_write;
+					break;
+				case "writeNoResponse":
+					props |= gatt_char_prop_writenoresp;
 					break;
 				case "notify":
 					props |= gatt_char_prop_notify;
@@ -605,6 +608,8 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_att_perm_readable = 0x0001;
 		const gatt_att_perm_writable = 0x0002;
 		const gatt_att_perm_write_no_response = 0x0004;
+		const gatt_att_perm_encrypted_read = 0x0010;
+		const gatt_att_perm_encrypted_write = 0x0100;
 		const gatt_att_perm_discoverable = 0x0800;
 		let perms = gatt_att_perm_discoverable;
 		permissions.forEach(p => {
@@ -612,8 +617,14 @@ class GeckoGATTFile extends GATTFile {
 				case "read":
 					perms |= gatt_att_perm_readable;
 					break;
+				case "readEncrypted":
+					perms |= gatt_att_perm_encrypted_read;
+					break;
 				case "write":
 					perms |= gatt_att_perm_writable;
+					break;
+				case "writeEncrypted":
+					perms |= gatt_att_perm_encrypted_write;
 					break;
 				default:
 					throw new Error("unsupported permission");
