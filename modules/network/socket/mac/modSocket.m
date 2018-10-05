@@ -216,6 +216,12 @@ void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *er
 	xsSocket xss = info;
 
 	CFArrayRef cfArray = CFHostGetAddressing(cfHost, NULL);
+	if (NULL == cfArray) {	// failed to resolve
+		xsBeginHost(xss->the);
+			xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));
+		xsEndHost(xss->the);
+		return;
+	}
 	NSData *address = CFArrayGetValueAtIndex(cfArray, CFArrayGetCount(cfArray) - 1);
 
 	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
@@ -226,8 +232,12 @@ void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *er
 	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
 	addr.sin_port = htons(xss->port);
 
-	if (CFSocketConnectToAddress(xss->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)-1))
-		; //@@ xsUnknownError("can't connect");
+	CFSocketError err = CFSocketConnectToAddress(xss->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)10000);
+	if (err) {
+		xsBeginHost(xss->the);
+			xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));
+		xsEndHost(xss->the);
+	}
 }
 
 static void doDestructor(xsSocket xss)
