@@ -31,6 +31,6 @@ typedef enum {
 	DisplayYesNo
 } IOCapability;
 
-extern void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm);
+extern void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
 #endif

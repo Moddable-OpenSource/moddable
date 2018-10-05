@@ -82,7 +82,7 @@ void xs_ble_sm_set_security_parameters(xsMachine *the)
 			auth_req = (mitm ? ESP_LE_AUTH_REQ_MITM : ESP_LE_AUTH_NO_BOND);
 	}
 	
-	setSecurityParameters(encryption, bonding, mitm);
+	setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	
  	esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
  	esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));

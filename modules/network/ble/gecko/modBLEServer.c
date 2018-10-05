@@ -171,7 +171,7 @@ void xs_ble_server_deploy(xsMachine *the)
 	// server and services deployed automatically by gecko_stack_init()
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
