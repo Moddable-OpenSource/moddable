@@ -62,6 +62,6 @@ void xs_ble_sm_set_security_parameters(xsMachine *the)
 		
 	gecko_cmd_sm_configure(flags, io_capabilities);
 	
-	setSecurityParameters(encryption, bonding, mitm);
+	setSecurityParameters(encryption, bonding, mitm, ioCapability);
 }
 

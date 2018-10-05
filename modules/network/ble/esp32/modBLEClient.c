@@ -239,7 +239,7 @@ void xs_ble_client_connect(xsMachine *the)
 	esp_ble_gattc_app_register(connection->app_id);
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;

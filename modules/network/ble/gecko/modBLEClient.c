@@ -268,7 +268,7 @@ void xs_ble_client_connect(xsMachine *the)
 	gecko_cmd_le_gap_open(bda, le_gap_address_type_public);
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;

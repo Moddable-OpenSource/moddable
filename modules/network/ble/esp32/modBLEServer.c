@@ -233,7 +233,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(0 == notify));
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm)
+void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
