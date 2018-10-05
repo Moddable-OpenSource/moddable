@@ -110,7 +110,7 @@ void mqtt_connect_msg(xsMachine* the) {
 		0x00,0x04,'M','Q','T','T',		// protocol name MQTT
 		0x04,							// protocol level 4
 		0x02,							// flags : CleanSession
-		0x00, 0x00						// no keepalive -- never drop on inactivity
+		0x7f, 0x7f						// no keepalive -- never drop on inactivity		//@@ WTF
 	};
 	size_t hdr_len = sizeof(hdr);
 	char *str;
@@ -143,7 +143,9 @@ void mqtt_connect_msg(xsMachine* the) {
 	}
 
 	// now we know how long our payload will be, so prepare the final buffer
-	size_t payload_len = hdr_len + id_len + user_len + (password_len + 2);
+	size_t payload_len = hdr_len + id_len + user_len;
+	if (password_len)
+		payload_len += password_len + 2;
 	uint8_t buf[512];
 	size_t count = 1;
 	buf[0] = CONNECT;
