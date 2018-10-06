@@ -39,6 +39,7 @@
 #include <string.h>
 #include "bn.h"
 #include "kcl_arith.h"
+#include "mc.defines.h"
 
 #ifndef howmany
 #define howmany(x, y)	(((x) + (y) - 1) / (y))
@@ -408,7 +409,11 @@ kcl_int_free(kcl_int_t *ai)
 /*
  * arithmetics on Z
  */
-#define BN_BUFSIZE	3200
+#ifndef MODDEF_KCL_BN_BUFSIZE
+	#define BN_BUFSIZE	3200
+#else
+	#define BN_BUFSIZE MODDEF_KCL_BN_BUFSIZE
+#endif
 
 struct bn_context {
 	struct bn_buf {
