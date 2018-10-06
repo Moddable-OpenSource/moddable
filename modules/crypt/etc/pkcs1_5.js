@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
 import Arith from "arith";
 import Bin from "bin";
 import RSA from "rsa";
