@@ -46,9 +46,10 @@ export class Digest @ "xs_crypt_Digest_destructor" {
 	reset() @ "xs_crypt_Digest_reset";
 	get blockSize() @ "xs_crypt_Digest_get_blockSize";
 	get outputSize() @ "xs_crypt_Digest_get_outputSize";
-	process(data) {
+	process() {
 		this.reset();
-		this.write(data);
+		for (let i = 0; i < arguments.length; i++)
+			this.write(arguments[i]);
 		return this.close();
 	}
 	update(data) {
