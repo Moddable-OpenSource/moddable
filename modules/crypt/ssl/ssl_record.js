@@ -109,15 +109,15 @@ let recordProtocol = {
 		name: "tlsCipherText",
 		calculateMac(hmac, seqNum, type, version, content) {
 			hmac.reset();
-			var c = seqNum.toChunk();
-			var tmps = new SSLStream();
-			for (var i = 0, len = 8 - c.byteLength; i < len; i++)
-				tmps.writeChar(0);
-			tmps.writeChunk(c);
-			tmps.writeChar(type);
-			tmps.writeChars(version, 2);
-			tmps.writeChars(content.byteLength, 2);
-			hmac.update(tmps.getChunk());
+			seqNum = seqNum.toChunk();
+			let stream = new SSLStream();
+			for (let len = 8 - seqNum.byteLength; len > 0; len--)
+				stream.writeChar(0);
+			stream.writeChunk(seqNum);
+			stream.writeChar(type);
+			stream.writeChars(version, 2);
+			stream.writeChars(content.byteLength, 2);
+			hmac.update(stream.getChunk());
 			hmac.update(content);
 			return hmac.close();
 		},
@@ -184,54 +184,57 @@ let recordProtocol = {
 		},
 		packetize(session, type, fragment) {
 			session.traceProtocol(this);
-			var cipher = session.connectionEnd ? session.clientCipher : session.serverCipher;
+			let cipher = session.connectionEnd ? session.clientCipher : session.serverCipher;
+			let stream;
 			if (cipher) {
 				switch (session.chosenCipher.encryptionMode) {
 				case NONE:
-				case CBC:
-					var mac = this.calculateMac(cipher.hmac, session.writeSeqNum, type, session.protocolVersion, fragment);
-					var blksz = session.chosenCipher.cipherBlockSize, iv;
-					var tmps = new SSLStream();
-					tmps.writeChunk(fragment);
-					tmps.writeChunk(mac);
+				case CBC: {
+					let mac = this.calculateMac(cipher.hmac, session.writeSeqNum, type, session.protocolVersion, fragment);
+					let blksz = session.chosenCipher.cipherBlockSize, iv;
+					let stream = new SSLStream();
+					stream.writeChunk(fragment);
+					stream.writeChunk(mac);
 					if (blksz) {
-						var length = tmps.bytesWritten + 1;
-						var padSize = length % blksz;
+						let length = stream.bytesWritten + 1;
+						let padSize = length % blksz;
 						if (padSize > 0)
 							padSize = blksz - padSize;
-						for (var i = 0; i < padSize; i++)
-							tmps.writeChar(padSize);
-						tmps.writeChar(padSize);
+						for (let i = 0; i < padSize; i++)
+							stream.writeChar(padSize);
+						stream.writeChar(padSize);
 					}
 					if (session.protocolVersion >= 0x302 && blksz) { // 3.2 or higher && block cipher
 						iv = RNG.get(blksz);
 						cipher.enc.setIV(iv);
 					}
-					fragment = cipher.enc.encrypt(tmps.getChunk());
+					fragment = cipher.enc.encrypt(stream.getChunk());
 					if (iv)
 						fragment = iv.concat(fragment);
+					}
 					break;
-				case GCM:
+				case GCM: {
 					let explicit_nonce = cipher.nonce.toChunk(session.chosenCipher.ivSize);
 					cipher.nonce.inc();
 					let nonce = cipher.iv.concat(explicit_nonce);
 					let additional_data = this.aeadAdditionalData(session.writeSeqNum, type, session.protocolVersion, fragment.byteLength);
 					fragment = cipher.enc.process(fragment, null, nonce, additional_data, true);
 					fragment = explicit_nonce.concat(fragment);
+					}
 					break;
 				}
 				session.writeSeqNum.inc();
 			}
-			var s = new SSLStream();
-			s.writeChar(type);
-			s.writeChars(session.protocolVersion, 2);
-			s.writeChars(fragment.byteLength, 2);
-			s.writeChunk(fragment);
-			return s.getChunk();
+			stream = new SSLStream();
+			stream.writeChar(type);
+			stream.writeChars(session.protocolVersion, 2);
+			stream.writeChars(fragment.byteLength, 2);
+			stream.writeChunk(fragment);
+			return stream.getChunk();
 		},
 	},
 };
 
-Object.freeze(recordProtocol);
+Object.freeze(recordProtocol, true);
 
 export default recordProtocol;
