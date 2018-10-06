@@ -49,49 +49,9 @@ const maxFragmentSize = 16384	// maximum record layer framgment size (not a pack
 
 class SSLSession {
 	constructor(options = {}) {
-		if ('protocolVersion' in options) {
-			let version = options.protocolVersion;
-			switch (typeof version) {
-				case 'string':
-					switch (version) {
-						case 'tls1':
-						case 'tls1.0':
-							version = 0x0301;
-							break;
-						case 'tls1.1':
-							version = 0x0302;
-							break;
-						case 'tls1.2':
-							version = 0x0303;
-							break;
-						default:
-							throw new Error("SSL: protocolVersion: not supported");
-							break;
-					}
-					break;
-
-				case 'number':
-					if (version < minProtocolVersion) {
-						switch (version) {
-							case 1.0:
-								version = 0x0301;
-								break;
-							case 1.1:
-								version = 0x0302;
-								break;
-							case 1.2:
-								version = 0x0303;
-								break;
-							case 0:
-								break;
-							default:
-								throw new Error("SSL: protocolVersion: not supported");
-								break;
-						}
-					}
-					break;
-			}
-			options.protocolVersion = version;
+		if (options.protocolVersion) {
+			if ((options.protocolVersion < minProtocolVersion) || (options.protocolVersion > maxProtocolVersion))
+				throw new Error("SSL: protocolVersion: not supported");
 		}
 		if ('serverName' in options) {
 			options.tls_server_name = options.serverName;
