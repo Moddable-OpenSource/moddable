@@ -293,7 +293,7 @@ void xs_socket_read(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 	xsType dstType;
 	int argc = xsmcArgc;
-	uint16_t srcBytes;
+	int32_t srcBytes;
 	unsigned char *srcData;
 
 	if ((NULL == xss) || xss->done)
@@ -492,7 +492,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 		unsigned char buffer[1024];
 		int count = read(xss->skt, buffer, sizeof(buffer));
 
-		if (0 == count) {
+		if (count <= 0) {
 			xsBeginHost(the);
 				xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
 			xsEndHost(the);
