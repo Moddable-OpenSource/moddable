@@ -43,6 +43,7 @@ import Bin from "bin";
 import Arith from "arith";
 import RNG from "rng";
 import PKCS1_5 from "pkcs1_5";
+import DSA from "dsa";
 import {Digest} from "crypt";
 import X509 from "x509";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
@@ -539,30 +540,30 @@ let handshakeProtocol = {
 				switch (hash_algo) {
 				default:
 				case this.none: break;
-				case this.md5: hash = Crypt.MD5; break;
-				case this.sha1: hash = Crypt.SHA1; break;
-				case this.sha224: hash = Crypt.SHA224; break;
-				case this.sha256: hash = Crypt.SHA256; break;
-				case this.sha384: hash = Crypt.SHA384; break;
-				case this.sha512: hash = Crypt.SHA512; break;
+				case this.md5: hash = new Digest("MD5"); break;
+				case this.sha1: hash = new Digest("SHA1");; break;
+				case this.sha224: hash = new Digest("SHA224"); break;
+				case this.sha256: hash = new Digest("SHA256"); break;
+				case this.sha384: hash = new Digest("SHA384"); break;
+				case this.sha512: hash = new Digest("SHA512"); break;
 				}
+				let key = session.certificateManager.getKey(session.peerCert), v;
 				switch (sig_algo) {
 				default:
 				case this.anonymous: break;
-				case this.rsa: pk = Crypt.PKCS1_5; break;
-				case this.dsa: pk = Crypt.DSA; break;
+				case this.rsa: v = new PKCS1_5(key, false, []); break;
+				case this.dsa: pk = new DSA(key, false); break;
 				case this.ecdsa: pk = Crypt.ECDSA; break;
 				}
-				if (hash && pk && sig) {
-					let H = (new hash()).process(session.clientRandom, session.serverRandom, tbs.getChunk());
-					let key = session.certificateManager.getKey(session.peerCert);
-					let v = new pk(key, false, [] /* any oid for PKCS1_5 */);
+				if (hash && v && sig) {
+					let H = hash.process(session.clientRandom, session.serverRandom, tbs.getChunk());
+//					let v = new pk(key, false, [] /* any oid for PKCS1_5 */);
 					if (!v.verify(H, sig)) {
 						// should send an alert, probably...
 						throw new Error("SSL: serverKeyExchange: failed to verify signature");
 					}
 				}
-				hash = pk = sig = tbs = null;
+				hash = v = sig = tbs = null;
 				break;
 			case RSA:
 				// no server key exchange info
@@ -892,13 +893,6 @@ let handshakeProtocol = {
 	},
 };
 
-Object.freeze(handshakeProtocol);
-
-let names = Object.getOwnPropertyNames(handshakeProtocol);
-for (let name of names) {
-	let property = handshakeProtocol[name];
-	if ("object" == typeof property)
-		Object.freeze(property);
-}
+Object.freeze(handshakeProtocol, true);
 
 export default handshakeProtocol;
