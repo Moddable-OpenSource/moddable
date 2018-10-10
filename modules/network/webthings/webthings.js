@@ -170,6 +170,6 @@ class WebThings {
 		}
 	}
 }
-Object.freeze(WebThing.prototype);
+Object.freeze(WebThings.prototype);
 
 export {WebThings, WebThing};
