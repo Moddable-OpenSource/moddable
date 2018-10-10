@@ -110,7 +110,7 @@ void mqtt_connect_msg(xsMachine* the) {
 		0x00,0x04,'M','Q','T','T',		// protocol name MQTT
 		0x04,							// protocol level 4
 		0x02,							// flags : CleanSession
-		0x7f, 0x7f						// no keepalive -- never drop on inactivity		//@@ WTF
+		0x00, 0x00						// no keepalive -- never drop on inactivity
 	};
 	size_t hdr_len = sizeof(hdr);
 	char *str;
