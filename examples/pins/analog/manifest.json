@@ -10,7 +10,7 @@
 	},
 	"resources":{
 		"*-mask": [
-			"./myFont",
+			"$(MODDABLE)/examples/assets/fonts/myFont",
 	   ],
 	},
 	"config": {
