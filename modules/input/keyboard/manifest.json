@@ -1,0 +1,17 @@
+{
+  "modules":{
+    "*": [
+      "./keyboard"
+    ]
+  },
+  "preload": [
+		"keyboard"
+	],
+  "resources":{
+    "*-alpha":[
+		"./assets/num-keys",
+		"./assets/shift-arrow",
+		"./assets/delete-arrow"
+    ]
+  }
+}

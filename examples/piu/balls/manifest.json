@@ -1,0 +1,12 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": [
+			"./main",
+			"./balls",
+		]
+	},
+}

@@ -1,0 +1,44 @@
+{
+	"defines": {
+		"ili9341": {
+			"width": 240,
+			"height": 320,
+			"hz": 40000000,
+			"flipX": false,
+			"flipY": false,
+		}
+	},
+	"preload": "ili9341",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/drivers/ili9341/*",
+					"$(MODULES)/pins/digital/esp/*",
+					"$(MODULES)/pins/spi/esp/*",
+				]
+			},
+			"defines": {
+				"ili9341": {
+					"old_cs_pin": 4,
+					"cs_pin": 15,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/ili9341/*"
+			},
+			"defines": {
+				"ili9341": {
+					"hz": 40000000,
+					"cs_pin": 15,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		}
+	}
+}

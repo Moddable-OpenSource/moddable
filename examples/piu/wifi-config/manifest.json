@@ -1,0 +1,49 @@
+{
+	"include": [
+		"../all.json",
+		"$(MODULES)/input/keyboard/manifest.json"
+	],
+	"creation":{
+		"stack":350,
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./login",
+			"./network-list",
+			"./connection-error",
+			"./connecting",
+			"./assets",
+			"./scroller",
+			"./spinner",
+			"$(MODULES)/network/wifi/*",
+			"$(MODULES)/base/debug/*",
+		]
+	},
+	"preload": [
+		"pins",
+		"login",
+		"network-list",
+		"connection-error",
+		"connecting",
+		"assets",
+		"scroller",
+		"spinner",
+		"wifi",
+		"debug"
+	],
+	"resources":{
+		"*-alpha": [
+			"./fonts/OpenSans-Regular-20",
+			"./fonts/OpenSans-Semibold-18",
+			"./fonts/OpenSans-Semibold-16",
+			"./assets/header-arrow",
+			"./assets/wifi-strip",
+			"./assets/down-arrow-mask",
+			"./assets/up-arrow-mask"
+		],
+		"*": [
+			"./assets/page-1",
+		]
+	},
+}

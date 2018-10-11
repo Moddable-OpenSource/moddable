@@ -1,0 +1,18 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*": [
+			"./main",
+		],
+		"*-mask": [
+			"./heart",
+			"./strip",
+		],
+		"*-color": [
+			"./js-logo",
+		],
+	},
+}

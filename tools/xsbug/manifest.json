@@ -1,0 +1,76 @@
+{
+	"build": {
+		"MODULES": "$(MODDABLE)/modules",
+		"PIU": "$(MODULES)/piu",
+	},
+	"creation": {
+		"chunk": {
+			"initial":1048576,
+			"incremental":1048576,
+		},
+		"heap": {
+			"initial":65536,
+			"incremental":65536,
+		},
+		"stack":2048,
+		"keys": {
+			"available":16386,
+			"name":1993,
+			"symbol":127,
+		},
+		"main":"main",
+	},
+	"data": {
+		"*": [
+		],
+	},
+	"modules": {
+		"~": [
+		],
+		"piu/*": [
+			"$(PIU)/All/piu*",
+			"$(PIU)/PC/piu*",
+			"$(PIU)/PC/Code/piu*",
+			"$(PIU)/PC/Common/piu*",
+		],
+		"*": [
+			"./*",
+		],
+	},
+	"preload": [
+		"piu/PC",
+	],
+	"resources": {
+		"assets/*": "./assets/*",
+		"fonts/*": "./fonts/*",
+	},
+	"platforms":{
+		"x-lin": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/lin/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+		"x-mac": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/mac/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+		"x-win": {
+			"modules": {
+				"piu/*": [
+					"$(PIU)/PC/win/piu*",
+				],
+			},
+			"preload": [
+			],
+		},
+	},
+}

@@ -1,0 +1,358 @@
+/*
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and  
+ * permission notice:  
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
+ */
+
+#include "xsPlatform.h"
+#include "fips46.h"
+
+static const uint16_t bytebit[] ICACHE_XS6RO2_ATTR = {
+	/*01, 02, 04, 010, 020, 040, 0100, 0200,*/	/* parity is MSB */
+	0200, 0100, 040, 020, 010, 04, 02, 01,	/* parity is LSB */
+};
+
+static const uint32_t bigbyte[] ICACHE_XS6RO2_ATTR = {
+	0x800000L,	0x400000L,	0x200000L,	0x100000L,
+	0x80000L,	0x40000L,	0x20000L,	0x10000L,
+	0x8000L,	0x4000L,	0x2000L,	0x1000L,
+	0x800L, 	0x400L, 	0x200L, 	0x100L,
+	0x80L,		0x40L,		0x20L,		0x10L,
+	0x8L,		0x4L,		0x2L,		0x1L,
+};
+
+static const uint8_t pc1[56] ICACHE_XS6RO2_ATTR = {
+	56, 48, 40, 32, 24, 16,  8,	 0, 57, 49, 41, 33, 25, 17,
+	 9,  1, 58, 50, 42, 34, 26,	18, 10,  2, 59, 51, 43, 35,
+	62, 54, 46, 38, 30, 22, 14,	 6, 61, 53, 45, 37, 29, 21,
+	13,  5, 60, 52, 44, 36, 28,	20, 12,  4, 27, 19, 11,  3,
+};
+
+static const uint8_t totrot[16] ICACHE_XS6RO2_ATTR = {
+	1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28,
+};
+
+static const uint8_t pc2[48] ICACHE_XS6RO2_ATTR = {
+	13, 16, 10, 23,  0,  4,  2, 27, 14,  5, 20,  9,
+	22, 18, 11,  3, 25,  7, 15,  6, 26, 19, 12,  1,
+	40, 51, 30, 36, 46, 54, 29, 39, 50, 44, 32, 47,
+	43, 48, 38, 55, 33, 52, 45, 41, 49, 35, 28, 31,
+};
+
+static uint32_t SP1[64] ICACHE_XS6RO_ATTR = {
+	0x01010400L, 0x00000000L, 0x00010000L, 0x01010404L,
+	0x01010004L, 0x00010404L, 0x00000004L, 0x00010000L,
+	0x00000400L, 0x01010400L, 0x01010404L, 0x00000400L,
+	0x01000404L, 0x01010004L, 0x01000000L, 0x00000004L,
+	0x00000404L, 0x01000400L, 0x01000400L, 0x00010400L,
+	0x00010400L, 0x01010000L, 0x01010000L, 0x01000404L,
+	0x00010004L, 0x01000004L, 0x01000004L, 0x00010004L,
+	0x00000000L, 0x00000404L, 0x00010404L, 0x01000000L,
+	0x00010000L, 0x01010404L, 0x00000004L, 0x01010000L,
+	0x01010400L, 0x01000000L, 0x01000000L, 0x00000400L,
+	0x01010004L, 0x00010000L, 0x00010400L, 0x01000004L,
+	0x00000400L, 0x00000004L, 0x01000404L, 0x00010404L,
+	0x01010404L, 0x00010004L, 0x01010000L, 0x01000404L,
+	0x01000004L, 0x00000404L, 0x00010404L, 0x01010400L,
+	0x00000404L, 0x01000400L, 0x01000400L, 0x00000000L,
+	0x00010004L, 0x00010400L, 0x00000000L, 0x01010004L,
+};
+
+static uint32_t SP2[64] ICACHE_XS6RO_ATTR = {
+	0x80108020L, 0x80008000L, 0x00008000L, 0x00108020L,
+	0x00100000L, 0x00000020L, 0x80100020L, 0x80008020L,
+	0x80000020L, 0x80108020L, 0x80108000L, 0x80000000L,
+	0x80008000L, 0x00100000L, 0x00000020L, 0x80100020L,
+	0x00108000L, 0x00100020L, 0x80008020L, 0x00000000L,
+	0x80000000L, 0x00008000L, 0x00108020L, 0x80100000L,
+	0x00100020L, 0x80000020L, 0x00000000L, 0x00108000L,
+	0x00008020L, 0x80108000L, 0x80100000L, 0x00008020L,
+	0x00000000L, 0x00108020L, 0x80100020L, 0x00100000L,
+	0x80008020L, 0x80100000L, 0x80108000L, 0x00008000L,
+	0x80100000L, 0x80008000L, 0x00000020L, 0x80108020L,
+	0x00108020L, 0x00000020L, 0x00008000L, 0x80000000L,
+	0x00008020L, 0x80108000L, 0x00100000L, 0x80000020L,
+	0x00100020L, 0x80008020L, 0x80000020L, 0x00100020L,
+	0x00108000L, 0x00000000L, 0x80008000L, 0x00008020L,
+	0x80000000L, 0x80100020L, 0x80108020L, 0x00108000L,
+};
+
+static uint32_t SP3[64] ICACHE_XS6RO_ATTR = {
+	0x00000208L, 0x08020200L, 0x00000000L, 0x08020008L,
+	0x08000200L, 0x00000000L, 0x00020208L, 0x08000200L,
+	0x00020008L, 0x08000008L, 0x08000008L, 0x00020000L,
+	0x08020208L, 0x00020008L, 0x08020000L, 0x00000208L,
+	0x08000000L, 0x00000008L, 0x08020200L, 0x00000200L,
+	0x00020200L, 0x08020000L, 0x08020008L, 0x00020208L,
+	0x08000208L, 0x00020200L, 0x00020000L, 0x08000208L,
+	0x00000008L, 0x08020208L, 0x00000200L, 0x08000000L,
+	0x08020200L, 0x08000000L, 0x00020008L, 0x00000208L,
+	0x00020000L, 0x08020200L, 0x08000200L, 0x00000000L,
+	0x00000200L, 0x00020008L, 0x08020208L, 0x08000200L,
+	0x08000008L, 0x00000200L, 0x00000000L, 0x08020008L,
+	0x08000208L, 0x00020000L, 0x08000000L, 0x08020208L,
+	0x00000008L, 0x00020208L, 0x00020200L, 0x08000008L,
+	0x08020000L, 0x08000208L, 0x00000208L, 0x08020000L,
+	0x00020208L, 0x00000008L, 0x08020008L, 0x00020200L,
+};
+
+static uint32_t SP4[64] ICACHE_XS6RO_ATTR = {
+	0x00802001L, 0x00002081L, 0x00002081L, 0x00000080L,
+	0x00802080L, 0x00800081L, 0x00800001L, 0x00002001L,
+	0x00000000L, 0x00802000L, 0x00802000L, 0x00802081L,
+	0x00000081L, 0x00000000L, 0x00800080L, 0x00800001L,
+	0x00000001L, 0x00002000L, 0x00800000L, 0x00802001L,
+	0x00000080L, 0x00800000L, 0x00002001L, 0x00002080L,
+	0x00800081L, 0x00000001L, 0x00002080L, 0x00800080L,
+	0x00002000L, 0x00802080L, 0x00802081L, 0x00000081L,
+	0x00800080L, 0x00800001L, 0x00802000L, 0x00802081L,
+	0x00000081L, 0x00000000L, 0x00000000L, 0x00802000L,
+	0x00002080L, 0x00800080L, 0x00800081L, 0x00000001L,
+	0x00802001L, 0x00002081L, 0x00002081L, 0x00000080L,
+	0x00802081L, 0x00000081L, 0x00000001L, 0x00002000L,
+	0x00800001L, 0x00002001L, 0x00802080L, 0x00800081L,
+	0x00002001L, 0x00002080L, 0x00800000L, 0x00802001L,
+	0x00000080L, 0x00800000L, 0x00002000L, 0x00802080L,
+};
+
+static uint32_t SP5[64] ICACHE_XS6RO_ATTR = {
+	0x00000100L, 0x02080100L, 0x02080000L, 0x42000100L,
+	0x00080000L, 0x00000100L, 0x40000000L, 0x02080000L,
+	0x40080100L, 0x00080000L, 0x02000100L, 0x40080100L,
+	0x42000100L, 0x42080000L, 0x00080100L, 0x40000000L,
+	0x02000000L, 0x40080000L, 0x40080000L, 0x00000000L,
+	0x40000100L, 0x42080100L, 0x42080100L, 0x02000100L,
+	0x42080000L, 0x40000100L, 0x00000000L, 0x42000000L,
+	0x02080100L, 0x02000000L, 0x42000000L, 0x00080100L,
+	0x00080000L, 0x42000100L, 0x00000100L, 0x02000000L,
+	0x40000000L, 0x02080000L, 0x42000100L, 0x40080100L,
+	0x02000100L, 0x40000000L, 0x42080000L, 0x02080100L,
+	0x40080100L, 0x00000100L, 0x02000000L, 0x42080000L,
+	0x42080100L, 0x00080100L, 0x42000000L, 0x42080100L,
+	0x02080000L, 0x00000000L, 0x40080000L, 0x42000000L,
+	0x00080100L, 0x02000100L, 0x40000100L, 0x00080000L,
+	0x00000000L, 0x40080000L, 0x02080100L, 0x40000100L,
+};
+
+static uint32_t SP6[64] ICACHE_XS6RO_ATTR = {
+	0x20000010L, 0x20400000L, 0x00004000L, 0x20404010L,
+	0x20400000L, 0x00000010L, 0x20404010L, 0x00400000L,
+	0x20004000L, 0x00404010L, 0x00400000L, 0x20000010L,
+	0x00400010L, 0x20004000L, 0x20000000L, 0x00004010L,
+	0x00000000L, 0x00400010L, 0x20004010L, 0x00004000L,
+	0x00404000L, 0x20004010L, 0x00000010L, 0x20400010L,
+	0x20400010L, 0x00000000L, 0x00404010L, 0x20404000L,
+	0x00004010L, 0x00404000L, 0x20404000L, 0x20000000L,
+	0x20004000L, 0x00000010L, 0x20400010L, 0x00404000L,
+	0x20404010L, 0x00400000L, 0x00004010L, 0x20000010L,
+	0x00400000L, 0x20004000L, 0x20000000L, 0x00004010L,
+	0x20000010L, 0x20404010L, 0x00404000L, 0x20400000L,
+	0x00404010L, 0x20404000L, 0x00000000L, 0x20400010L,
+	0x00000010L, 0x00004000L, 0x20400000L, 0x00404010L,
+	0x00004000L, 0x00400010L, 0x20004010L, 0x00000000L,
+	0x20404000L, 0x20000000L, 0x00400010L, 0x20004010L,
+};
+
+static uint32_t SP7[64] ICACHE_XS6RO_ATTR = {
+	0x00200000L, 0x04200002L, 0x04000802L, 0x00000000L,
+	0x00000800L, 0x04000802L, 0x00200802L, 0x04200800L,
+	0x04200802L, 0x00200000L, 0x00000000L, 0x04000002L,
+	0x00000002L, 0x04000000L, 0x04200002L, 0x00000802L,
+	0x04000800L, 0x00200802L, 0x00200002L, 0x04000800L,
+	0x04000002L, 0x04200000L, 0x04200800L, 0x00200002L,
+	0x04200000L, 0x00000800L, 0x00000802L, 0x04200802L,
+	0x00200800L, 0x00000002L, 0x04000000L, 0x00200800L,
+	0x04000000L, 0x00200800L, 0x00200000L, 0x04000802L,
+	0x04000802L, 0x04200002L, 0x04200002L, 0x00000002L,
+	0x00200002L, 0x04000000L, 0x04000800L, 0x00200000L,
+	0x04200800L, 0x00000802L, 0x00200802L, 0x04200800L,
+	0x00000802L, 0x04000002L, 0x04200802L, 0x04200000L,
+	0x00200800L, 0x00000000L, 0x00000002L, 0x04200802L,
+	0x00000000L, 0x00200802L, 0x04200000L, 0x00000800L,
+	0x04000002L, 0x04000800L, 0x00000800L, 0x00200002L,
+};
+
+static uint32_t SP8[64] ICACHE_XS6RO_ATTR = {
+	0x10001040L, 0x00001000L, 0x00040000L, 0x10041040L,
+	0x10000000L, 0x10001040L, 0x00000040L, 0x10000000L,
+	0x00040040L, 0x10040000L, 0x10041040L, 0x00041000L,
+	0x10041000L, 0x00041040L, 0x00001000L, 0x00000040L,
+	0x10040000L, 0x10000040L, 0x10001000L, 0x00001040L,
+	0x00041000L, 0x00040040L, 0x10040040L, 0x10041000L,
+	0x00001040L, 0x00000000L, 0x00000000L, 0x10040040L,
+	0x10000040L, 0x10001000L, 0x00041040L, 0x00040000L,
+	0x00041040L, 0x00040000L, 0x10041000L, 0x00001000L,
+	0x00000040L, 0x10040040L, 0x00001000L, 0x00041040L,
+	0x10001000L, 0x00000040L, 0x10000040L, 0x10040000L,
+	0x10040040L, 0x10000000L, 0x00040000L, 0x10001040L,
+	0x00000000L, 0x10041040L, 0x00040040L, 0x10000040L,
+	0x10040000L, 0x10001000L, 0x10001040L, 0x00000000L,
+	0x10041040L, 0x00041000L, 0x00041000L, 0x00001040L,
+	0x00001040L, 0x00040040L, 0x10000000L, 0x10041000L,
+};
+
+void
+des_keysched(const uint8_t *key, enum des_cipher_direction direction, des_subkey subkey)
+{
+	int i, j, l, m, n;
+	uint8_t pc1m[56], pcr[56];
+	uint32_t kn[32];
+
+	for (i = 0; i < 56; i++) {
+		l = c_read8(&pc1[i]);
+		m = l & 07;
+		pc1m[i] = (key[l >> 3] & c_read16(&bytebit[m])) ? 1 : 0;
+	}
+	for (i = 0; i < 16; i++) {
+		m = (direction == des_cipher_decryption) ? (15 - i) : i;
+		m <<= 1;
+		n = m + 1;
+		kn[m] = kn[n] = 0L;
+		l = c_read8(&totrot[i]);
+		for (j = 0; j < 28; j++, l++)
+			pcr[j] = (l < 28) ? pc1m[l] : pc1m[l - 28];
+		for (; j < 56; j++, l++)
+			pcr[j] = (l < 56) ? pc1m[l] : pc1m[l - 28];
+		for (j = 0; j < 24; j++) {
+			if (pcr[c_read8(&pc2[j])]) kn[m] |= bigbyte[j];
+			if (pcr[c_read8(&pc2[j+24])]) kn[n] |= bigbyte[j];
+		}
+	}
+
+	for (i = 0; i < 32;) {
+		uint32_t r0 = kn[i++];
+		uint32_t r1 = kn[i++];
+		uint32_t w;
+		w = (r0 & 0x00fc0000) << 6;
+		w |= (r0 & 0x00000fc0) << 10;
+		w |= (r1 & 0x00fc0000) >> 10;
+		w |= (r1 & 0x00000fc0) >> 6;
+		*subkey++ = w;
+		w = (r0 & 0x0003f000) << 12;
+		w |= (r0 & 0x0000003f) << 16;
+		w |= (r1 & 0x0003f000) >> 4;
+		w |= (r1 & 0x0000003f);
+		*subkey++ = w;
+	}
+}
+
+void
+des_process(const uint8_t *in, uint8_t *out, des_subkey subkey)
+{
+	uint32_t L, R, w, f;
+	int i;
+
+	L = *in++ << 24;
+	L |= *in++ << 16;
+	L |= *in++ << 8;
+	L |= *in++;
+	R = *in++ << 24;
+	R |= *in++ << 16;
+	R |= *in++ << 8;
+	R |= *in;
+
+	/* IP */
+	w = ((L >> 4) ^ R) & 0x0f0f0f0f;
+	R ^= w;
+	L ^= w << 4;
+	w = ((L >> 16) ^ R) & 0x0000ffff;
+	R ^= w;
+	L ^= w << 16;
+	w = ((R >> 2) ^ L) & 0x33333333;
+	L ^= w;
+	R ^= w << 2;
+	w = ((R >> 8) ^ L) & 0x00ff00ff;
+	L ^= w;
+	R ^= w << 8;
+	R = (R << 1) | (R >> 31);
+	w = (L ^ R) & 0xaaaaaaaa;
+	L ^= w;
+	R ^= w;
+	L = (L << 1) | (L >> 31);
+
+	for (i = 0; i < 8; i++) {
+		w = (R << 28) | (R >> 4);
+		w ^= *subkey++;
+		f = SP7[w & 0x3f];
+		f |= SP5[(w >> 8) & 0x3f];
+		f |= SP3[(w >> 16) & 0x3f];
+		f |= SP1[(w >> 24) & 0x3f];
+		w = R ^ *subkey++;
+		f |= SP8[w & 0x3f];
+		f |= SP6[(w >> 8) & 0x3f];
+		f |= SP4[(w >> 16) & 0x3f];
+		f |= SP2[(w >> 24) & 0x3f];
+		L ^= f;
+		w = (L << 28) | (L >> 4);
+		w ^= *subkey++;
+		f = SP7[w & 0x3f];
+		f |= SP5[(w >> 8) & 0x3f];
+		f |= SP3[(w >> 16) & 0x3f];
+		f |= SP1[(w >> 24) & 0x3f];
+		w = L ^ *subkey++;
+		f |= SP8[w & 0x3f];
+		f |= SP6[(w >> 8) & 0x3f];
+		f |= SP4[(w >> 16) & 0x3f];
+		f |= SP2[(w >> 24) & 0x3f];
+		R ^= f;
+	}
+
+	/* IP^{-1} */
+	R = (R << 31) | (R >> 1);
+	w = (L ^ R) & 0xaaaaaaaa;
+	L ^= w;
+	R ^= w;
+	L = (L << 31) | (L >> 1);
+	w = ((L >> 8) ^ R) & 0x00ff00ffL;
+	R ^= w;
+	L ^= (w << 8);
+	w = ((L >> 2) ^ R) & 0x33333333;
+	R ^= w;
+	L ^= (w << 2);
+	w = ((R >> 16) ^ L) & 0x0000ffff;
+	L ^= w;
+	R ^= (w << 16);
+	w = ((R >> 4) ^ L) & 0x0f0f0f0f;
+	L ^= w;
+	R ^= w << 4;
+
+	*out++ = R >> 24;
+	*out++ = R >> 16;
+	*out++ = R >> 8;
+	*out++ = R;
+	*out++ = L >> 24;
+	*out++ = L >> 16;
+	*out++ = L >> 8;
+	*out = L;
+}
