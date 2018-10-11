@@ -120,30 +120,6 @@ class AppBehavior extends Behavior {
 		let things = this.things = new WebThings(mdns);
 		things.add(Outlet);
 	}
-	onControllerUpdate(application, controllers) {
-		let mdns = this.mdns;
-		mdns.remove("_http._tcp");
-		mdns.monitor("_http._tcp", (service, instance) => {
-			let name = instance.name;
-			let map = controllers[name];
-			if (map == undefined) return;
-			if (instance.txt.length == 0) return;
-			let txt, txtKey, equal, key, value;
-			for (let i in instance.txt) {
-				txt = instance.txt[i];
-				equal = txt.indexOf("=");
-				txtKey = txt.substring(0, equal);
-				key = map[txtKey];
-				if (key != undefined) {
-					value = txt.substring(equal+1);
-					if (value == "true") value = true;
-					else value = false;
-					application.distribute("stateChanged", key, value);
-				}
-			}
-		});
-		return true;
-	}
 	stateChanged(container, property, state) {
 		this.things.things[0].instance[property] = state;
 	}
