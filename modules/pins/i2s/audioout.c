@@ -412,7 +412,7 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 1024, out, 10, &out->task);
+	xTaskCreate(audioOutLoop, "audioOut", 2048, out, 10, &out->task);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
 	if (!out->buffer32)
@@ -1061,6 +1061,9 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (installed) {
+#if MODDEF_AUDIOOUT_I2S_DAC
+				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+#endif
 				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
 				installed = false;
 			}
