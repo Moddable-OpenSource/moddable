@@ -232,13 +232,18 @@ LAUNCH = release
 !ENDIF
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj
+
+!IF "$(PARTITIONS_FILE)"==""
+PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)/partitions.csv
+!ENDIF
+
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
 	$(PROJ_DIR)\main\component.mk	\
 	$(PROJ_DIR)\partitions.csv \
 	$(PROJ_DIR)\Makefile
 
-.PHONY: all projDir
+.PHONY: all
 
 all: projDir $(BLE) $(SDKCONFIG) $(LAUNCH)
 
@@ -291,18 +296,19 @@ $(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TM
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
 	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp32.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
 	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+	copy $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
+
+$(PROJ_DIR)\partitions.csv: $(PARTITIONS_FILE)
+	copy $? $@
 
 $(PROJ_DIR)\main\main.c: $(PROJ_DIR_TEMPLATE)\main\main.c
 	copy $? $@
 
 $(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
-	copy $? $@
-
-$(PROJ_DIR)\partitions.csv: $(PROJ_DIR_TEMPLATE)\partitions.csv
 	copy $? $@
 
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
