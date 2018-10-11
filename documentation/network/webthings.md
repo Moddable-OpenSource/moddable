@@ -1,14 +1,14 @@
 # Web Things
 Copyright 2018 Moddable Tech, Inc.
 
-Revised: September 30, 2018
+Revised: October 10, 2018
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Introduction
 The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that  implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products. 
 
-In the goals of Mozilla's Web Thing API effort we hear echoes of Moddable's own goals of creating an open environment of IoT products that put the user in control. Consequently, at Moddable have begun experimenting with the Web Thing API. One result of that work is a set of simple JavaScript classes for building devices compatible with the Web Thing API. The classes have been successfully used on ESP8266 and ESP32 hardware with the Mozilla gateway.
+In the goals of Mozilla's Web Thing API effort we hear echoes of Moddable's own goals of creating an open environment of IoT products that put the user in control. Consequently, at Moddable we have begun experimenting with the Web Thing API. One result of that work is a set of simple JavaScript classes for building devices compatible with the Web Thing API. The classes have been successfully used on ESP8266 and ESP32 hardware with the Mozilla gateway.
 
 The [draft Web Thing API specification](https://iot.mozilla.org/wot/) is available from Mozilla. The Moddable classes implements a subset of the protocol. Some details:
 
@@ -16,6 +16,8 @@ The [draft Web Thing API specification](https://iot.mozilla.org/wot/) is availab
 - Actions and events are not supported
 - The HTTP server always uses port 80
 - WebSockets are not supported
+
+The Moddable classes implement optional publishing of selected properties of a  WebThing in the mDNS TXT record to speed notification of changes to interested devices. The classes also implement optional binding of a WebThings properties to a property published by another WebThing. The binding is performed using the `controller` property.
 
 The Web of Things [gateway software](https://iot.mozilla.org/gateway/) is available from Mozilla. We run the gateway on a Raspberry Pi at the Moddable office.
 
@@ -52,11 +54,14 @@ static get description() {
 			on: {
 				type: "boolean",
 				description: "light state",
+				txt: "o",
 			}
 		}
 	}
 }
 ```
+
+The optional `txt` property on the `on` property tells the `WebThing` class that the value of the `on` property should be included in the mDNS TXT resource record for this `WebThing` subclass. The name of the property in the TXT resource record is `o` in this example. Often TXT resource records use abbreviated names to save space. Including properties in the TXT resource record allows devices to be notified of changes in the property using mDNS multicast broadcasts.
 
 The constructor of the `Light` class must invoke the superclass of its super-class. After that, it performs any initialization necessary. In this example, the `Light` initializes its state to false, indicating that the light is initially off when the device starts up.
 
@@ -76,8 +81,11 @@ get on() {
 set on(state) {
 	this.state = state;
 	Digital.write(2, state ? 0 : 1);
+	this.changed();
 }
 ```
+
+The call to `this.changed()` tells the WebThing base class that the property value has been modified. The call triggers an mDNS update to the TXT resource record, such as the `on` property in the example device description above.
 
 ### Announcing a Web Thing
 
@@ -128,5 +136,5 @@ When a request is received to retrieve the value of a `WebThing` property, the c
 ### set property()
 When a request is received to set the value of a `WebThing` property, the corresponding setter is invoked on the `WebThing` instance. For example, if a thermostat device has a "temperature" property, the "set temperature()" setter is called.
 
-
-<!-- ### changed() -->
+### changed()
+A WebThing subclass calls `changed` to indicate that one or more property values been modified. It is usually called from a setter. Properties published by including the optional `txt` property in the device description are updated only after changed is called.
