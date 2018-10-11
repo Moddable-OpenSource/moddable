@@ -27,7 +27,7 @@ const ThingHeaders = [	"content-type", "application/json",
 class WebThing {
 	constructor(host) {
 		this.host = host;
-		this.controllers = {};
+		this.controllers = [];
 	}
 	changed() {
 		const thing = this.host.things.find(thing => this === thing.instance);
@@ -35,11 +35,13 @@ class WebThing {
 			this.host.mdns.update(thing.service);
 	}
     set controller(data) {
-    	let keys = Object.keys(data);
-    	for (let key of keys) {
-    		this.controllers[key] = data[key];
+		const thing = this.host.things.find(thing => this === thing.instance);
+    	for (let i=0; i<data.length; i++) {
+    		let item = data[i];
+    		if (item.property === undefined || item.remote === undefined || item.txt === undefined) data.splice(i, 1);
+    		if (thing.description.properties[item.property] === undefined) data.splice(i, 1);
     	}
-		if (application) application.distribute("onControllerUpdate", this.controllers);
+    	this.controllers = data;
     }
     get controller() {
     	return this.controllers;
@@ -47,12 +49,65 @@ class WebThing {
 }
 Object.freeze(WebThing.prototype);
 
+
 class WebThings {
 	constructor(mdns) {
 		this.mdns = mdns;
 		this.things = [];
 		this.server = new Server({port: 80});
 		this.server.callback = this.callback.bind(this);
+		mdns.monitor("_http._tcp", (service, instance) => {
+			let txt = instance.txt;
+			if ((txt.length === 0) || (txt[0].indexOf("webthing") == -1)) return;
+			let name = instance.name;
+			this.things.forEach(thing => {
+				let properties = Object.keys(thing.description.properties);
+				let bools = properties.filter(prop => {
+					let isControlled = false;
+					for (let item of thing.instance.controller) {
+						if ((name === item.remote) && (prop === item.property)) isControlled = true;
+					}
+					return (thing.description.properties[prop].type === "boolean") && isControlled;
+				});
+				let item, equal, key, value;
+				for (let i=2; i<txt.length; i++) {	// first 2 items are webthings=true and description url
+					item = instance.txt[i];
+					equal = item.indexOf("=");
+					key = item.substring(0, equal);
+					value = item.substring(equal+1);
+					let controllers = thing.instance.controller;
+					controllers.forEach(item => {
+						if ((name === item.remote) && (key === item.txt)){
+							let property = item.property;
+							let type = thing.description.properties[property];
+							if (type) {
+								type = type.type;
+								switch(type) {
+									case "boolean":
+										thing.instance[property] = true;
+										bools.splice(bools.indexOf(property), 1);
+										break;
+									case "number":
+									case "integer":
+										thing.instance[property] = parseInt(value);
+										break;
+									case "object":
+									case "array":
+										thing.instance[property] = JSON.parse(value);
+										break;
+									default:
+										thing.instance[property] = value;
+										break;
+								}
+							}
+						}
+					});
+				}
+				for (let prop of bools) {
+					thing.instance[prop] = false;
+				}
+			});
+		});
 	}
 	add(WebThing, ...args) {
 		const description = WebThing.description;
