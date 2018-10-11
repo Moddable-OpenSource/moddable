@@ -252,12 +252,14 @@ else
 endif
 
 SDKCONFIGPATH ?= $(PROJ_DIR)
-SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.default
-SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.default.prior
+SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
+SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.defaults.prior
+SDKCONFIG_H=$(IDF_BUILD_DIR)/include/sdkconfig.h
 
-.NOTPARALLEL: $(SDKCONFIG)
 
-all: projDir $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+.NOTPARALLEL: $(SDKCONFIG_H)
+
+all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
@@ -271,14 +273,11 @@ all: projDir $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
 	$(DO_LAUNCH)
 
-$(SDKCONFIG):
-	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); echo "# no .prior try current"; fi
-	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIGPRIOR); echo "# no idf_build_dir - remove .prior"; fi
-	if ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" ; then \
-		echo "# prior is different from sdkconfig_file"; fi 
-	if ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
-		echo "# sdkconfig is different from sdkconfig.old"; fi 
-	if ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" \
+$(SDKCONFIG_H): $(SDKCONFIG_FILE)
+	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); fi
+	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIGPRIOR); fi
+	if ! test -s $(SDKCONFIG_H) \
+		|| ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" \
 		|| ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
 		cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); \
@@ -315,7 +314,7 @@ $(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
 $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 	cp -f $? $@
 
-$(XS_OBJ): $(XS_HEADERS)
+$(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
