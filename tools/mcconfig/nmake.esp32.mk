@@ -150,8 +150,9 @@ XS_HEADERS = \
 !IF "$(SDKCONFIGPATH)"==""
 SDKCONFIGPATH = $(PROJ_DIR)
 !ENDIF
-SDKCONFIG = $(SDKCONFIGPATH)\sdkconfig.default
-SDKCONFIGPRIOR = $(SDKCONFIGPATH)\sdkconfig.default.prior
+SDKCONFIG = $(SDKCONFIGPATH)\sdkconfig.defaults
+SDKCONFIGPRIOR = $(SDKCONFIGPATH)\sdkconfig.defaults.prior
+SDKCONFIG_H = $(IDF_BUILD_DIR)\include\sdkconfig.h
 
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
@@ -234,7 +235,7 @@ LAUNCH = release
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj
 
 !IF "$(PARTITIONS_FILE)"==""
-PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)/partitions.csv
+PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 !ENDIF
 
 PROJ_DIR_FILES = \
@@ -245,7 +246,7 @@ PROJ_DIR_FILES = \
 
 .PHONY: all
 
-all: projDir $(BLE) $(SDKCONFIG) $(LAUNCH)
+all: projDir $(BLE) $(SDKCONFIG_H) $(LAUNCH)
 
 debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
@@ -264,7 +265,7 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); make monitor;"
 
-$(SDKCONFIG):
+$(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
 !IF !EXIST($(SDKCONFIGPRIOR))
 	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
@@ -275,6 +276,10 @@ $(SDKCONFIG):
 	@echo "# no idf_build_dir - remove .prior"
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
+!if !EXIST($(SDKCONFIG_H)\)
+	@echo "# no sdkconfig.h - generate it"
+	echo 1 > $(TMP_DIR)\_s.tmp
+!endif
 	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
@@ -300,7 +305,7 @@ projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
 	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
-	copy $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
+	copy $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv
 
 $(PROJ_DIR)\partitions.csv: $(PARTITIONS_FILE)
 	copy $? $@
@@ -314,7 +319,7 @@ $(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
 	copy $? $@
 
-$(XS_OBJ):$(XS_HEADERS)
+$(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
