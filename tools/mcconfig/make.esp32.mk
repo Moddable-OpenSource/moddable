@@ -226,6 +226,8 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 
+PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
+
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)/main/main.c \
@@ -258,9 +260,9 @@ SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.default.prior
 all: projDir $(BLE) $(SDKCONFIG) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	-rm $(IDF_BUILD_DIR)/xs_esp32.elf
-	-rm $(BIN_DIR)/xs_esp32.elf
-	-mkdir -p $(IDF_BUILD_DIR)
+	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
+	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
+	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 	cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash;
@@ -295,18 +297,19 @@ $(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.r
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_esp32.a $^ $(LIB_DIR)/buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
+
+$(PROJ_DIR)/partitions.csv: $(PARTITIONS_FILE)
+	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $? $@
 
 $(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
-	cp -f $? $@
-
-$(PROJ_DIR)/partitions.csv: $(PROJ_DIR_TEMPLATE)/partitions.csv
 	cp -f $? $@
 
 $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
