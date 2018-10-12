@@ -597,8 +597,10 @@ void xs_socket(xsMachine *the)
 		xss->skt = tcp_new_safe();
 	else if (kUDP == xss->kind)
 		xss->udp = udp_new_safe();
-	else if (kRAW == xss->kind)
-		xss->raw = raw_new(IP_PROTO_ICMP);		//@@ configure
+	else if (kRAW == xss->kind) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_protocol);
+		xss->raw = raw_new(xsmcToInteger(xsVar(0)));
+	}
 
 	if (!xss->skt && !xss->udp && !xss->raw)
 		xsUnknownError("failed to allocate socket");
