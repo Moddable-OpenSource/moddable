@@ -26,6 +26,7 @@
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
 #include "lwip/udp.h"
+#include "lwip/raw.h"
 
 #include "modSocket.h"
 #include "modTimer.h"
@@ -48,7 +49,8 @@ typedef xsSocketRecord *xsSocket;
 
 #define kTCP (0)
 #define kUDP (1)
-#define kTCPListener (2)
+#define kRAW (2)
+#define kTCPListener (3)
 
 #define kPendingConnect (1 << 0)
 #define kPendingError (1 << 1)
@@ -82,6 +84,7 @@ struct xsSocketRecord {
 	// above here same as xsListenerRecord
 
 	struct udp_pcb		*udp;
+	struct raw_pcb		*raw;
 
 	struct pbuf			*reader[kReadQueueLength];
 
@@ -150,6 +153,11 @@ static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err);
 static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err);
 static err_t didSend(void *arg, struct tcp_pcb *pcb, u16_t len);
 static void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
+#if ESP32
+	static u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr);
+#else
+	static u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr);
+#endif
 
 static uint8 parseAddress(char *address, uint8 *ip);
 
@@ -572,6 +580,8 @@ void xs_socket(xsMachine *the)
 				}
 			}
 		}
+		else if (0 == c_strcmp(kind, "RAW"))
+			xss->kind = kRAW;
 		else
 			xsUnknownError("invalid socket kind");
 	}
@@ -585,16 +595,20 @@ void xs_socket(xsMachine *the)
 	xss->port = port;
 	if (kTCP == xss->kind)
 		xss->skt = tcp_new_safe();
-	else
+	else if (kUDP == xss->kind)
 		xss->udp = udp_new_safe();
+	else if (kRAW == xss->kind)
+		xss->raw = raw_new(IP_PROTO_ICMP);		//@@ configure
 
-	if (!xss->skt && !xss->udp)
+	if (!xss->skt && !xss->udp && !xss->raw)
 		xsUnknownError("failed to allocate socket");
 
 	if (kTCP == xss->kind)
 		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
-	else
+	else if (kUDP == xss->kind)
 		err = udp_bind_safe(xss->udp, IP_ADDR_ANY, xss->port);
+	else if (kRAW == xss->kind)
+		err = raw_bind(xss->raw, IP_ADDR_ANY);
 	if (err)
 		xsUnknownError("socket bind failed");
 
@@ -604,7 +618,7 @@ void xs_socket(xsMachine *the)
 		tcp_sent(xss->skt, didSend);
 		tcp_err(xss->skt, didError);
 	}
-	else {
+	else if (kUDP == xss->kind) {
 		udp_recv(xss->udp, (udp_recv_fn)didReceiveUDP, xss);
 
 		if (ttl) {
@@ -626,6 +640,8 @@ void xs_socket(xsMachine *the)
 			xss->udp->ttl = 1;
 		}
 	}
+	else if (kRAW == xss->kind)
+		raw_recv(xss->raw, didReceiveRAW, xss);
 
 	if (kTCP == xss->kind) {
 		if (xsmcHas(xsArg(0), xsID_host)) {
@@ -659,7 +675,7 @@ void xs_socket(xsMachine *the)
 			xsUnknownError("invalid dictionary");
 	}
 
-	if (waiting || (kUDP == xss->kind))
+	if (waiting || (kUDP == xss->kind) || (kRAW == xss->kind))
 		return;
 
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
@@ -690,6 +706,11 @@ void xs_socket_destructor(void *data)
 	if (xss->udp) {
 		udp_recv(xss->udp, NULL, NULL);
 		udp_remove_safe(xss->udp);
+	}
+
+	if (xss->raw) {
+		raw_recv(xss->raw, NULL, NULL);
+		raw_remove(xss->raw);
 	}
 
 	forgetSocket(xss);
@@ -817,7 +838,7 @@ void xs_socket_write(xsMachine *the)
 	err_t err;
 	unsigned char pass, arg;
 
-	if ((NULL == xss) || !(xss->skt || xss->udp) || xss->writeDisabled) {
+	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
 		if (0 == argc) {
 			xsResult = xsInteger(0);
 			return;
@@ -842,6 +863,33 @@ void xs_socket_write(xsMachine *the)
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
 		if (ERR_OK != err)
 			xsUnknownError("UDP send failed");
+
+		modInstrumentationAdjust(NetworkBytesWritten, needed);
+		return;
+	}
+
+	if (xss->raw) {
+		char temp[16];
+		uint8 ip[4];
+		unsigned char *data;
+		ip_addr_t dst;
+		struct pbuf *p;
+
+		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
+		if (!parseAddress(temp, ip))
+			xsUnknownError("invalid IP address");
+		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
+
+		needed = xsGetArrayBufferLength(xsArg(1));
+		data = xsmcToArrayBuffer(xsArg(1));
+		p = pbuf_alloc(PBUF_IP, (u16_t)needed, PBUF_RAM);
+		if (!p)
+			xsUnknownError("no buffer");
+		c_memcpy(p->payload, data, needed);
+		err = raw_sendto(xss->raw, p, &dst);
+		pbuf_free(p);
+		if (ERR_OK != err)
+			xsUnknownError("RAW send failed");
 
 		modInstrumentationAdjust(NetworkBytesWritten, needed);
 		return;
@@ -1112,7 +1160,7 @@ resumeBuffer:
 			bufpos = 0;
 
 			xsTry {
-				if (kTCP == xss->kind) {
+				if ((kTCP == xss->kind) || (kRAW == xss->kind)) {
 #if !ESP32
 					system_soft_wdt_stop();		//@@
 #endif
@@ -1336,6 +1384,17 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	modCriticalSectionEnd();
 
 	socketSetPending(xss, kPendingReceive);
+}
+
+#if ESP32
+u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)
+#else
+u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr)
+#endif
+{
+	ip_addr_t remoteAddr = {0};
+	didReceiveUDP(arg, (struct udp_pcb *)pcb, p, &remoteAddr, 0);
+	return 1;
 }
 
 static uint8 parseAddress(char *address, uint8_t *ip)
