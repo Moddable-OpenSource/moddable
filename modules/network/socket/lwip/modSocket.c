@@ -29,7 +29,6 @@
 #include "lwip/raw.h"
 
 #include "modSocket.h"
-#include "modTimer.h"
 
 #if ESP32
 	#include "lwip/priv/tcpip_priv.h"
@@ -874,7 +873,7 @@ void xs_socket_write(xsMachine *the)
 		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
-		ip_addr_t dst;
+		ip_addr_t dst = {0};
 		struct pbuf *p;
 
 		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
@@ -884,7 +883,7 @@ void xs_socket_write(xsMachine *the)
 
 		needed = xsGetArrayBufferLength(xsArg(1));
 		data = xsmcToArrayBuffer(xsArg(1));
-		p = pbuf_alloc(PBUF_IP, (u16_t)needed, PBUF_RAM);
+		p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)needed, PBUF_RAM);
 		if (!p)
 			xsUnknownError("no buffer");
 		c_memcpy(p->payload, data, needed);
@@ -1189,12 +1188,14 @@ resumeBuffer:
 					itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
 #endif
 					xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(xss->remote[0].port));
-
-					xss->remoteCount -= 1;
-					c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 				}
 			}
 			xsCatch {
+			}
+
+			if ((kUDP == xss->kind) || (kRAW == xss->kind)) {
+				xss->remoteCount -= 1;
+				c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 			}
 
 			if (one)
@@ -1367,7 +1368,8 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 			xss->remote[i - 1] = xss->remote[i];
 		}
 		xss->reader[kReadQueueLength - 1] = NULL;
-		xss->remoteCount += 1;
+		xss->remoteCount -= 1;
+		i = kReadQueueLength - 1;
 #else
 		// ignore most recent
 		modCriticalSectionEnd();
@@ -1394,8 +1396,7 @@ u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr
 u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr)
 #endif
 {
-	ip_addr_t remoteAddr = {0};
-	didReceiveUDP(arg, (struct udp_pcb *)pcb, p, &remoteAddr, 0);
+	didReceiveUDP(arg, (struct udp_pcb *)pcb, p, addr, 0);
 	return 1;
 }
 
