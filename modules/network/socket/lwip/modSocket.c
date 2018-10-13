@@ -1161,7 +1161,7 @@ resumeBuffer:
 			bufpos = 0;
 
 			xsTry {
-				if ((kTCP == xss->kind) || (kRAW == xss->kind)) {
+				if (kTCP == xss->kind) {
 #if !ESP32
 					system_soft_wdt_stop();		//@@
 #endif
@@ -1187,13 +1187,16 @@ resumeBuffer:
 					itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
 					itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
 #endif
-					xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(xss->remote[0].port));
+					if (kUDP == xss->kind)
+						xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(xss->remote[0].port));
+					else
+						xsCall3(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult);
 				}
 			}
 			xsCatch {
 			}
 
-			if ((kUDP == xss->kind) || (kRAW == xss->kind)) {
+			if (kTCP != xss->kind) {
 				xss->remoteCount -= 1;
 				c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 			}
