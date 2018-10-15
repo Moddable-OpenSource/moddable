@@ -14,6 +14,7 @@
 	"resources": {
 		"*": [
 			"./assets/chicago12",
+			"./assets/sanfrancisco",
 		]
 	},
 }
