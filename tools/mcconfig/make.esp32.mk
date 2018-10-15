@@ -61,6 +61,9 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
+ 	$(IDF_PATH)/components/lwip/lwip/src/include \
+ 	$(IDF_PATH)/components/lwip/port/esp32/include \
+ 	$(IDF_PATH)/components/lwip/include/apps \
  	$(IDF_PATH)/components/lwip/include/lwip \
  	$(IDF_PATH)/components/lwip/include/lwip/port \
  	$(IDF_PATH)/components/mbedtls/include \

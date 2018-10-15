@@ -167,7 +167,7 @@ static uint8 parseAddress(char *address, uint8 *ip);
 #if ESP32
 
 typedef struct {
-	struct tcpip_api_call		call;
+	struct tcpip_api_call_data	call;
 
 	err_t						err;
 	xsSocket					xss;
@@ -186,7 +186,7 @@ typedef struct {
 	void						*callback_arg;
 } LwipMsgRecord, *LwipMsg;
 
-static err_t tcp_new_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t tcp_new_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	msg->tcpPCB = tcp_new();
@@ -230,7 +230,7 @@ u8_t pbuf_free_safe(struct pbuf *p)
 	return 0;
 }
 
-static err_t tcp_bind_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t tcp_bind_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	msg->err = tcp_bind(msg->tcpPCB, &msg->addr, msg->port);
@@ -248,7 +248,7 @@ err_t tcp_bind_safe(struct tcp_pcb *tcpPCB, const ip_addr_t *ipaddr, u16_t port)
 	return msg.err;
 }
 
-static err_t tcp_close_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t tcp_close_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	tcp_close(msg->tcpPCB);
@@ -274,7 +274,7 @@ void tcp_output_safe(xsSocket xss)
 	tcpip_callback_with_block(tcp_output_INLWIP, xss, 0);
 }
 
-static err_t tcp_write_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t tcp_write_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	if (msg->xss->skt)
@@ -310,7 +310,7 @@ void tcp_recved_safe(xsSocket xss, u16_t len)
 	tcpip_callback_with_block(tcp_recved_INLWIP, msg, 1);
 }
 
-static err_t tcp_listen_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t tcp_listen_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	msg->tcpPCB = tcp_listen(msg->tcpPCB);
@@ -326,7 +326,7 @@ struct tcp_pcb * tcp_listen_safe(struct tcp_pcb *pcb)
 	return msg.tcpPCB;
 }
 
-static err_t udp_new_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t udp_new_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	msg->udpPCB = udp_new();
@@ -340,7 +340,7 @@ struct udp_pcb *udp_new_safe(void)
 	return msg.udpPCB;
 }
 
-static err_t udp_bind_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t udp_bind_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	msg->err = udp_bind(msg->udpPCB, &msg->addr, msg->port);
@@ -358,7 +358,7 @@ err_t udp_bind_safe(struct udp_pcb *udpPCB, const ip_addr_t *ipaddr, u16_t port)
 	return msg.err;
 }
 
-static err_t udp_remove_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t udp_remove_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	udp_remove(msg->udpPCB);
@@ -372,7 +372,7 @@ void udp_remove_safe(struct udp_pcb *udpPCB)
 	tcpip_api_call(udp_remove_INLWIP, &msg.call);
 }
 
-static err_t udp_sendto_INLWIP(struct tcpip_api_call *tcpMsg)
+static err_t udp_sendto_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
 	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, msg->len, PBUF_RAM);
