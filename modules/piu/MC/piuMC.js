@@ -20,7 +20,7 @@
 
 import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/ParseBMP";
-import parseRLE from "commodetto/ParseRLE";
+import ParseRLE from "commodetto/ParseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
@@ -49,7 +49,7 @@ export class Texture @ "PiuTextureDelete" {
 			let name = it.slice(0, -4);
 			path = name + "-alpha.bm4";
 			if (Resource.exists(path)) {
-				alphaBitmap = parseRLE(new Resource(path));
+				alphaBitmap = ParseRLE(new Resource(path));
 			}
 			else {
 				path = name + "-alpha.bmp";
