@@ -108,14 +108,35 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	```
+		
+7. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
+
+	```
+	export IDF_PATH="/Users/<user>/esp32/esp-idf"
+	```
+
+	> Note: Close and reopen the Terminal window to enable the `IDF_PATH` environment variable.
 	
-7. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
+8. Install the Python `pip` package management system:
+
+	```
+	cd ~/esp32
+	sudo easy_install pip
+	```
+	
+9. Install the required Python packages:
+
+	```
+	python -m pip install --user -r $IDF_PATH/requirements.txt
+	```
+
+10. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
 
 	```
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
-8. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
+11. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
 
 	To determine the serial port, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial devices, use the following command in Terminal:
 	
@@ -123,13 +144,13 @@ This document provides an introduction to getting started building apps with the
 	ls /dev/cu.*
 	```
 
-9. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
+12. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
 
 	```
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
-10. Verify the setup by building `helloworld` for the `esp32` target:
+13. Verify the setup by building `helloworld` for the `esp32` target:
 
 
 	```
@@ -145,6 +166,16 @@ This document provides an introduction to getting started building apps with the
 	```
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
+
+	> If you encounter SSL certificate errors while building the ESP-IDF, you may need to install Python 2.7 and the required packages manually:
+	>
+	```
+	brew install python
+	brew install python@2
+	pip install future
+	pip install pyserial
+	pip install cryptography
+	```
 
 ## Windows
 
@@ -430,30 +461,51 @@ This document provides an introduction to getting started building apps with the
 6. Install the packages required to compile with the `ESP-IDF`:
 
 	```
-	sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial 
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial 
 	```
-7. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
+	
+7. Set the `IDF_PATH` environment variable in your `~/.bashrc` to the `esp-idf` directory:
+
+	```
+	IDF_PATH=~/esp32/esp-idf
+	export IDF_PATH
+	```
+
+8. Install the Python `pip` package management system:
+
+	```
+	cd ~/esp32
+	sudo easy_install pip
+	```
+	
+9. Install the required Python packages:
+
+	```
+	python -m pip install --user -r $IDF_PATH/requirements.txt
+	```
+
+10. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
 
 	```
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
-8. Connect the ESP32 device to your Linux host with a USB cable.
+11. Connect the ESP32 device to your Linux host with a USB cable.
 
-9. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
+12. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
 
 	```
 	ls /dev
 	```
 	
-10. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
+13. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
 
 	```
 	UPLOAD_PORT=/dev/ttyUSB0
 	export UPLOAD_PORT
 	```
 
-11. Verify the setup by building `helloworld` for the `esp32` target:
+14. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd $MODDABLE/examples/helloworld
