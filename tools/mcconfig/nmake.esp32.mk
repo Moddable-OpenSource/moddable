@@ -269,20 +269,18 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); make monitor;"
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
+	echo "# SDKCONFIG_FILE is $(SDKCONFIG_FILE)"
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
 !IF !EXIST($(SDKCONFIGPRIOR))
 	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
 	@echo "# no .prior - try current"
 !ENDIF
-!if !EXIST($(IDF_BUILD_DIR)\)
+!IF !EXIST($(IDF_BUILD_DIR)\)
 	if exist $(SDKCONFIGPRIOR) del $(SDKCONFIGPRIOR)
 	@echo "# no idf_build_dir - remove .prior"
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
-!if !EXIST($(SDKCONFIG_H)\)
-	@echo "# no sdkconfig.h - generate it"
-	echo 1 > $(TMP_DIR)\_s.tmp
-!endif
+	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else (echo "# no sdkconfig.h - generate it - $(SDKCONFIG_H)" ; echo 1 > $(TMP_DIR)\_s.tmp )
 	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
