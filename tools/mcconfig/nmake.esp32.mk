@@ -268,18 +268,15 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); make monitor;"
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
-	echo "# SDKCONFIG_FILE is $(SDKCONFIG_FILE)"
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
 !IF !EXIST($(SDKCONFIGPRIOR))
 	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
-	@echo "# no .prior - try current"
 !ENDIF
 !IF !EXIST($(IDF_BUILD_DIR)\)
 	if exist $(SDKCONFIGPRIOR) del $(SDKCONFIGPRIOR)
-	@echo "# no idf_build_dir - remove .prior"
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
-	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else (echo "# no sdkconfig.h - generate it - $(SDKCONFIG_H)" ; echo 1 > $(TMP_DIR)\_s.tmp )
+	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else ( echo 1 > $(TMP_DIR)\_s.tmp )
 	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
@@ -294,7 +291,7 @@ $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
-$(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+$(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
 	@echo # ld xs_esp32.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
@@ -319,7 +316,7 @@ $(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
 	copy $? $@
 
-$(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
+$(XS_OBJ): $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
