@@ -145,7 +145,7 @@ This allows the build system to find the appropriate register definition files, 
 
 ### Get Moddable Open Source
 
-Follow the macOS [Host environment setup](../../Moddable SDK – Getting Started.md) section of the Moddable Getting Started guide.
+Follow the macOS [Host environment setup](../../Moddable SDK%20-%20Getting%20Started.md) section of the Moddable Getting Started guide.
 
 ### Build xs_gecko.a archive
 
