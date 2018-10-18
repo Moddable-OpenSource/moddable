@@ -58,6 +58,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/esp32/include \
+ 	$(IDF_PATH)/components/esp_ringbuf/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
