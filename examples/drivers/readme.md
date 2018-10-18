@@ -8,7 +8,7 @@ Revised: December 6, 2017
 
 These examples demonstrate how to use the Moddable SDK to write drivers and applications that interface with a variety of components. This document provides a brief description of each example and components supported.
 
-> **Note**: This document assumes you have installed the Moddable SDK on your development machine. The [Getting Started](documentation/Moddable%20SDK%20–%20Getting%20Started.md) document describes how to install the SDK.
+> **Note**: This document assumes you have installed the Moddable SDK on your development machine. The [Getting Started](../../documentation/Moddable%20SDK%20-%20Getting%20Started.md) document describes how to install the SDK.
 
 ### [arducamframeserver](./arducamframeserver)
 
