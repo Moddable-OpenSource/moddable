@@ -108,7 +108,14 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	```
-		
+
+	Use the v3.1 version:
+
+	```
+	cd esp-idf
+	git checkout release/v3.1
+	```
+
 7. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
 
 	```
@@ -300,7 +307,14 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	```
-	
+
+	Use the v3.1 version:
+
+	```
+	cd esp-idf
+	git checkout release/v3.1
+	```
+
 6. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
 
 	```
@@ -458,6 +472,13 @@ This document provides an introduction to getting started building apps with the
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	```
 	
+	Use the v3.1 version:
+
+	```
+	cd esp-idf
+	git checkout release/v3.1
+	```
+
 6. Install the packages required to compile with the `ESP-IDF`:
 
 	```
