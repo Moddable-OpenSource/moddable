@@ -70,7 +70,8 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\soc\esp32\include \
 	-I$(IDF_PATH)\components\soc\include \
 	-I$(IDF_PATH)\components\esp32\include \
-	-I$(IDF_PATH)/components\soc\esp32\include\soc \
+	-I$(IDF_PATH)\components\esp_ringbuf\include \
+	-I$(IDF_PATH)\components\soc\esp32\include\soc \
 	-I$(IDF_PATH)\components\freertos \
 	-I$(IDF_PATH)\components\freertos\include \
 	-I$(IDF_PATH)\components\freertos\include\freertos \
