@@ -90,7 +90,7 @@ class Ping extends Socket {
 		let icmp_seq = (values[6] << 8) + values[7];
 		let isValid = Ping.validate_checksum(identifier, icmp_seq, checksum);
 		if (isValid) {
-			this.client(1, value: value-20, {address, icmp_seq});
+			this.client(1, value-20, {address, icmp_seq});
 		} else {
 			this.failed("Invalid checksum for icmp_seq "+icmp_seq);
 		}
