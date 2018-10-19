@@ -38,8 +38,10 @@ class WebThing {
 		const thing = this.host.things.find(thing => this === thing.instance);
     	for (let i=0; i<data.length; i++) {
     		let item = data[i];
-    		if (item.property === undefined || item.remote === undefined || item.txt === undefined) data.splice(i, 1);
-    		if (thing.description.properties[item.property] === undefined) data.splice(i, 1);
+    		if (item.property === undefined || item.remote === undefined || item.txt === undefined || thing.description.properties[item.property] === undefined) {
+    			data.splice(i, 1);
+    			i--;
+    		}
     	}
     	this.controllers = data;
     }
@@ -56,9 +58,8 @@ class WebThings {
 		this.things = [];
 		this.server = new Server({port: 80});
 		this.server.callback = this.callback.bind(this);
-		mdns.monitor("_http._tcp", (service, instance) => {
+		mdns.monitor("_webthing._tcp", (service, instance) => {
 			let txt = instance.txt;
-			if ((txt.length === 0) || (txt[0].indexOf("webthing") == -1)) return;
 			let name = instance.name;
 			this.things.forEach(thing => {
 				let properties = Object.keys(thing.description.properties);
@@ -70,7 +71,7 @@ class WebThings {
 					return (thing.description.properties[prop].type === "boolean") && isControlled;
 				});
 				let item, equal, key, value;
-				for (let i=2; i<txt.length; i++) {	// first 2 items are webthings=true and description url
+				for (let i=1; i<txt.length; i++) {	// first item is description url
 					item = instance.txt[i];
 					equal = item.indexOf("=");
 					key = item.substring(0, equal);
@@ -121,12 +122,11 @@ class WebThings {
 			description,
 			instance: new WebThing(this, ...args),
 			service: {
-				name: "http",
+				name: "webthing",
 				protocol: "tcp",
 				port: 80,
 				txt: {
-					webthing: true,
-					url: `http://[HOSTNAME].local/thng/desc/${description.name}`.replace("[HOSTNAME]", this.mdns.hostName),
+					path: `/thng/desc/${description.name}`,
 				}
 			}
 		}
