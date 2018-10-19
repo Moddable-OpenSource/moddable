@@ -192,7 +192,7 @@ class AdvertisementSerializer {
 	static solicitationUUID16List(param) {
 		return {
 			type: GAP.ADType.SOLICITATION_UUID16_LIST,
-			data: [data & 0xFF, (data >> 8) & 0xFF]
+			data: serializeUUID16List(param)
 		};
 	}
 	static solicitationUUID128List(param) {
