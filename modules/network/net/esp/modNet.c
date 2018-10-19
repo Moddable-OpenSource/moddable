@@ -43,10 +43,10 @@ void xs_net_get(xsMachine *the)
 	if (0 == espStrCmp(prop, "IP")) {
 #if ESP32
 		wifi_mode_t mode;
-		tcpip_adapter_ip_info_t info;
-		
+		tcpip_adapter_ip_info_t info = {0};
+
 		esp_wifi_get_mode(&mode);
-		if (ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) {
+		if ((ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;
 
