@@ -853,3 +853,22 @@ The `Telnet` constructor takes a single argument, a dictionary. The dictionary h
 ### close()
 
 When the Telnet server is no longer needed, call `close` to terminate it and free its resources.
+
+## class Ping
+
+The Ping class implements the ping networking utility.
+
+### new Ping(dictionary)
+
+The `Ping` constructor takes a single argument, a dictionary. 
+
+The dictionary must contain the following properties:
+
+- `host`: the host to ping
+- `id`: the identifier of the ping process; this should be unique for each `Ping` instance
+
+The dictionary may optionally contain an `interval` parameter, which sets the interval between pings, in milliseconds. If none is specified, the default is 5000, or 5 seconds.
+
+### close()
+
+To stop pinging the host, call the `close` function.
