@@ -1,7 +1,7 @@
 # Networking
 Copyright 2017-2018 Moddable Tech, Inc.
 
-Revised: September 28, 2018
+Revised: October 19, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -50,6 +50,8 @@ By default a new socket uses TCP. The socket kind can be set in the dictionary:
 	let tcp = new Socket({host: "moddable.tech", port: 1234, kind: "TCP"});
 
 	let udp = new Socket({port: 123, kind: "UDP"});
+
+	let raw = new Socket({kind: "RAW", protocol: 1});
 
 To accept a new connection request from a `Listener`, specify the `listener` property in the dictionary:
 
@@ -121,6 +123,10 @@ For a UDP socket, the first two parameters are the IP address and port to transm
 
 	socket.write("1.2.3.4", 1234, packet);
 	
+For a RAW socket, the firs parameter is IP address to transmit the packet to. The second parameter is the data to transmit as an `ArrayBuffer`:
+
+	socket.write("1.2.3.4", packet);
+
 It is more efficient to make a single `write` call with several parameters instead of multiple calls to `write`. 
 
 ### callback(message [, value])
@@ -858,9 +864,20 @@ When the Telnet server is no longer needed, call `close` to terminate it and fre
 
 The Ping class implements the ping networking utility.
 
-### new Ping(dictionary)
+	import Ping from "ping";
 
-The `Ping` constructor takes a single argument, a dictionary. 
+### Ping a server
+The following example pings the server at `example.com`, tracing the results to the console.
+
+	let ping = new Ping({host: "example.com", id: 1, interval: 1000},
+		(message, value, etc) => {
+		if (1 == message)
+			trace(`${value} bytes from ${etc.address}: icmp_seq=${etc.icmp_seq}\n`);
+	}
+
+### new Ping(dictionary, callback)
+
+The `Ping` constructor takes two arguments, a dictionary and a callback function.
 
 The dictionary must contain the following properties:
 
