@@ -69,9 +69,9 @@ static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 		xsCallFunction1(xsReference(ts->callback), xsGlobal, xsAccess(ts->self));
 	xsEndHost(the);
 
-	if (0 == modTimerGetSecondInterval(timer)) {
-		xsForget(ts->self);
+	if (ts->callback && (0 == modTimerGetSecondInterval(timer))) {
 		xsmcSetHostData(ts->self, NULL);
+		xsForget(ts->self);
 	}
 }
 
@@ -90,7 +90,7 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 
 	xsmcSetHostData(ts.self, timer);
 	xsSetHostHooks(ts.self, &modTimerHooks);
-	xsResult = ts.self;
+	xsResult = ts.self;		//@@ fxAccess
 }
 
 void xs_timer_set(xsMachine *the)
@@ -138,7 +138,7 @@ void xs_timer_clear(xsMachine *the)
 	xsForget(ts->self);
 	ts->callback = NULL;
 	modTimerRemove(timer);
-	xsmcSetHostData(ts->self, NULL);
+	xsmcSetHostData(xsArg(0), NULL);
 }
 
 void xs_timer_delay(xsMachine *the)
