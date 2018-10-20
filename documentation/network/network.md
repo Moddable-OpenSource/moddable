@@ -867,7 +867,7 @@ The Ping class implements the ping networking utility.
 	import Ping from "ping";
 
 ### Ping a server
-The following example pings the server at `example.com`, tracing the results to the console.
+The following example pings the server at `example.com` every 1000ms, tracing the results to the console.
 
 	let ping = new Ping({host: "example.com", id: 1, interval: 1000},
 		(message, value, etc) => {
@@ -885,6 +885,12 @@ The dictionary must contain the following properties:
 - `id`: the identifier of the ping process; this should be unique for each `Ping` instance
 
 The dictionary may optionally contain an `interval` parameter, which sets the interval between pings, in milliseconds. If none is specified, the default is 5000, or 5 seconds.
+
+The user receives status information through the callback function. The callback receives messages and, for some messages, a data value and additional information in the `etc` parameter.  Positive `message` values indicate normal operation and negative `message` values indicate an error.
+ 
+* `error` (-1): An error occured and the host is no longer being pinged.
+* `success` (1): The host responded to the echo request with an echo reply.
+* `timeout` (2): The host did not respond.
 
 ### close()
 
