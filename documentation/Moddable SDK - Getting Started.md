@@ -11,35 +11,40 @@ This document provides an introduction to getting started building apps with the
 
 > The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer.
 
-1. Download and install [Xcode](https://developer.apple.com/xcode/). Launch Xcode to install additional command line components when prompted. 
+1. Download and install [Xcode](https://developer.apple.com/xcode/). Launch Xcode to install additional command line components when prompted.
 
-2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Create a `Projects` directory in your home directory at `~/Projects` for the Moddable SDK repository.
+
+	> Note: The Moddable SDK repository can be downloaded to any directory. These setup instructions assume the Moddable SDK is downloaded to the `~/Projects` directory.
+	
+3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
+	cd ~/Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-3. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory and edit the `PATH` environment variable in your `~/.profile` to include the build directory:
+4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory and edit the `PATH` environment variable in your `~/.profile` to include the build directory:
 
 	```
 	export MODDABLE="/Users/<user>/Projects/moddable"
 	export PATH="${MODDABLE}/build/bin/mac/release:$PATH"
 	```
 	
-4. Build the Moddable command line tools, simulator, and debugger from the command line:
+5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd ${MODDABLE}/build/makefiles/mac
 	make
 	```
 	
-5. Launch the `xsbug` debugger from the command line:
+6. Launch the `xsbug` debugger from the command line:
 
 	```
 	open ${MODDABLE}/build/bin/mac/release/xsbug.app
 	```
 
-6. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
+7. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```
 	cd ${MODDABLE}/examples/helloworld
@@ -192,19 +197,24 @@ This document provides an introduction to getting started building apps with the
 
 1. Download [Microsoft Visual Studio 2017 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option and install. 
 
-2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Create a `Projects` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for the Moddable SDK repository.
+
+	> Note: The Moddable SDK repository can be downloaded to any directory. These setup instructions assume the Moddable SDK is downloaded to the `%USERPROFILE%` directory.
+
+3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
+	cd C:\Users\<user>\Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-3. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
+4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
 
 	```
 	set MODDABLE=C:\Users\<user>\Projects\moddable
 	```
 	
-4. Edit the system `PATH` environment variable to include the build directory:
+5. Edit the system `PATH` environment variable to include the build directory:
 
 	```
 	%MODDABLE%\build\bin\win\release
@@ -212,20 +222,20 @@ This document provides an introduction to getting started building apps with the
 	
 	> Environment variables should be set from the System Control Panel. The steps required vary depending on the Windows OS version.
 	
-4. Launch the "Developer Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
+6. Launch the "Developer Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd %MODDABLE%\build\makefiles\win
 	build
 	```
 	
-5. Launch the `xsbug` debugger from the command line:
+7. Launch the `xsbug` debugger from the command line:
 
 	```
 	xsbug
 	```
 	
-6. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
+8. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
@@ -365,33 +375,38 @@ This document provides an introduction to getting started building apps with the
 	sudo apt-get install libgtk-3-dev
 	```
 	
-2. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
+2. Create a `Projects` directory in your home directory at `~/Projects` for the Moddable SDK repository.
+
+	> Note: The Moddable SDK repository can be downloaded to any directory. These setup instructions assume the Moddable SDK is downloaded to the `~/Projects` directory.
+
+3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```
+	cd ~/Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-3. Setup the `MODDABLE` environment variable in your `~/.bashrc` file to point at your local Moddable SDK repository directory:
+4. Setup the `MODDABLE` environment variable in your `~/.bashrc` file to point at your local Moddable SDK repository directory:
 
 	```
 	MODDABLE=~/Projects/moddable
 	export MODDABLE
 	```
 	
-4. Build the Moddable command line tools, simulator, and debugger from the command line:
+5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd $MODDABLE/build/makefiles/lin
 	make
 	```
 	
-5. Update the `PATH` environment variable in your `~/.bashrc` to include the tools directory:
+6. Update the `PATH` environment variable in your `~/.bashrc` to include the tools directory:
 
 	```
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
 
-6. Install the Screen Test desktop simulator and xsbug debugger applications:
+7. Install the Screen Test desktop simulator and xsbug debugger applications:
 
 	```
 	cd $MODDABLE/build/makefiles/lin
@@ -400,13 +415,13 @@ This document provides an introduction to getting started building apps with the
 
 	When prompted, enter your `sudo` password to copy the application's desktop, executable and icon files into the standard `/usr/share/applications`, `/usr/bin`, and `/usr/share/icon/hicolor` directories.
 	
-7. Launch the xsbug debugger:
+8. Launch the xsbug debugger:
 
 	```
 	xsbug
 	```
 	
-8. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
+9. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```
 	cd $MODDABLE/examples/helloworld
