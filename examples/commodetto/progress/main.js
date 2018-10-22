@@ -18,7 +18,7 @@
 
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
-import ParseRLE from "commodetto/ParseRLE";
+import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
@@ -31,7 +31,7 @@ const backgroundColor = render.makeColor(0, 0, 0);
 
 let titleFont = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
 let progressFont = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
-let spinner = ParseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
+let spinner = parseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
 
 const title = "Progress!";
 const headerHeight = 30;

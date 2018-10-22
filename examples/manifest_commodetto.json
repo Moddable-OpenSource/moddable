@@ -1,8 +1,8 @@
 {
 	"modules": {
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
-		"commodetto/ParseBMP": "$(COMMODETTO)/commodettoParseBMP",
-		"commodetto/ParseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
