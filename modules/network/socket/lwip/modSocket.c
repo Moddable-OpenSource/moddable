@@ -164,7 +164,8 @@ static uint8 parseAddress(char *address, uint8 *ip);
 	shims to call lwip in its own thread
 */
 
-#if ESP32
+#if 0 && ESP32
+// This is incompatible with 3.1 ESP IDF. Not sure why. Corrupts TCP socket, but not UDP or RAW.
 
 typedef struct {
 	struct tcpip_api_call_data	call;
