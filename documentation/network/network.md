@@ -123,7 +123,7 @@ For a UDP socket, the first two parameters are the IP address and port to transm
 
 	socket.write("1.2.3.4", 1234, packet);
 	
-For a RAW socket, the firs parameter is IP address to transmit the packet to. The second parameter is the data to transmit as an `ArrayBuffer`:
+For a RAW socket, the first parameter is IP address to transmit the packet to. The second parameter is the data to transmit as an `ArrayBuffer`:
 
 	socket.write("1.2.3.4", packet);
 
