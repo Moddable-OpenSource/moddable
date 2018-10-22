@@ -18,17 +18,17 @@
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
-import {SM, IOCapability} from "sm";
+import {IOCapability} from "sm";
 
 const HTM_SERVICE_UUID = uuid`1809`;
 const TEMPERATURE_CHARACTERISTIC_UUID = uuid`2A1C`;
 
 class SecureHealthThermometerClient extends BLEClient {
 	onReady() {
-		SM.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
-		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
-		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
-		//SM.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
+		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
+		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
+		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
 		this.onDisconnected();
 	}
 	onDiscovered(device) {

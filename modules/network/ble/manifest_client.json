@@ -30,6 +30,7 @@
 				"*": [
 					"$(MODULES)/network/ble/esp32/modBLEClient",
 					"$(MODULES)/network/ble/esp32/modBLESM",
+					"$(MODULES)/network/ble/esp32/modBLECommon",
 				]
 			},
 		},
