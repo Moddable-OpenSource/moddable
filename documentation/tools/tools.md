@@ -117,7 +117,7 @@ See the [Manifest](./manifest.md) document for explanations about manifests.
 Moddable apps do not require a file system. Assets are accessed as resources, thanks to the `Resource` module.
 
 	import Resource from "Resource";
-	import parseBMP from "commodetto/ParseBMP";
+	import parseBMP from "commodetto/parseBMP";
 	let bitmap = parseBMP(new Resource("balls-color.bmp"));
 
 Notice that most assets are used directly from flash storage.

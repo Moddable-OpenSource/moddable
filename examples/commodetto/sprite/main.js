@@ -13,7 +13,7 @@
  */
 
 import Timer from "timer";
-import ParseRLE from "commodetto/ParseRLE";
+import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
@@ -22,7 +22,7 @@ let render = new Poco(screen);
 let backgroundColor = render.makeColor(0, 0, 0);
 let spinnerColor = render.makeColor(49, 101, 173);
 
-let sprite = ParseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
+let sprite = parseRLE(new Resource("spinner-strip-80px-24cell-blue-alpha.bm4"));
 
 let spriteWidth = sprite.width / 24;
 let spriteHeight = sprite.height;
