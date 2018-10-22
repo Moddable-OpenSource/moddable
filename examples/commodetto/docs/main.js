@@ -13,7 +13,7 @@
  */
 
 import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/ParseBMP";
+import parseBMP from "commodetto/parseBMP";
 import BufferOut from "commodetto/BufferOut";
 import Bitmap from "commodetto/Bitmap";
 import JPEG from "commodetto/readJPEG";
