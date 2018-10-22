@@ -489,30 +489,61 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	xss->useCount += 1;
 
 	if (cbType & kCFSocketReadCallBack) {
-		unsigned char buffer[1024];
-		int count = read(xss->skt, buffer, sizeof(buffer));
+		unsigned char buffer[2048];
+		int count;
 
-		if (count <= 0) {
+
+		if (kTCP == xss->kind) {
+			count = read(xss->skt, buffer, sizeof(buffer));
+
+			if (count <= 0) {
+				xsBeginHost(the);
+					xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+				xsEndHost(the);
+
+				socketDownUseCount(the, xss);
+				doDestructor(xss);
+				return;
+			}
+
+			modInstrumentationAdjust(NetworkBytesRead, count);
+
+			xss->readBuffer = buffer;
+			xss->readBytes = count;
+
 			xsBeginHost(the);
-				xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+				xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
 			xsEndHost(the);
 
-			socketDownUseCount(the, xss);
-			doDestructor(xss);
-			return;
+			xss->readBuffer = NULL;
+			xss->readBytes = 0;
+		}
+		else {
+			struct sockaddr_in srcAddr;
+			socklen_t srcAddrLen = sizeof(srcAddr);
+			char srcAddrStr[INET_ADDRSTRLEN];
+
+			count = recvfrom(xss->skt, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr *)&srcAddr, &srcAddrLen);
+
+			if (count <= 0)
+				return;
+
+			modInstrumentationAdjust(NetworkBytesRead, count);
+
+			xss->readBuffer = buffer;
+			xss->readBytes = count;
+
+			inet_ntop(srcAddr.sin_family, &srcAddr.sin_addr, srcAddrStr, sizeof(srcAddrStr));
+
+			xsBeginHost(the);
+				xsmcSetString(xsResult, srcAddrStr);
+				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(srcAddr.sin_port));		//@@ port
+			xsEndHost(the);
+
+			xss->readBuffer = NULL;
+			xss->readBytes = 0;
 		}
 
-		modInstrumentationAdjust(NetworkBytesRead, count);
-
-		xss->readBuffer = buffer;
-		xss->readBytes = count;
-
-		xsBeginHost(the);
-			xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
-		xsEndHost(the);
-
-		xss->readBuffer = NULL;
-		xss->readBytes = 0;
 	}
 
 	if (cbType & kCFSocketConnectCallBack) {
