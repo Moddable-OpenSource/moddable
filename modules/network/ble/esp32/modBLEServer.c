@@ -22,6 +22,7 @@
 #include "xsesp.h"
 #include "mc.xs.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 
 #include "FreeRTOSConfig.h"
 #include "esp_bt.h"
@@ -112,15 +113,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
-	esp_err_t err;
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	err = esp_bt_controller_init(&bt_cfg);
-	if (ESP_OK == err)
-		err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-	if (ESP_OK == err)
-		err = esp_bluedroid_init();
-	if (ESP_OK == err)
-		err = esp_bluedroid_enable();
+	esp_err_t err = modBLEPlatformInitialize();
 
 	// Register callbacks
 	if (ESP_OK == err)
@@ -152,6 +145,8 @@ void xs_ble_server_destructor(void *data)
 	for (uint16_t i = 0; i < service_count; ++i)
 		if (ble->handles[i][0])
 			esp_ble_gatts_delete_service(ble->handles[i][0]);
+	if (-1 != ble->conn_id)
+		esp_ble_gatts_close(ble->gatts_if, ble->conn_id);
 	esp_ble_gatts_app_unregister(ble->gatts_if);
 	if (ble->advertisingData)
 		c_free(ble->advertisingData);
@@ -160,10 +155,7 @@ void xs_ble_server_destructor(void *data)
 	c_free(ble);
 	gBLE = NULL;
 	
-	esp_bluedroid_disable();
-	esp_bluedroid_deinit();
-	esp_bt_controller_disable();
-	esp_bt_controller_deinit();
+	modBLEPlatformTerminate();
 }
 
 void xs_ble_server_disconnect(xsMachine *the)
@@ -233,11 +225,18 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(0 == notify));
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+void xs_ble_server_set_security_parameters(xsMachine *the)
 {
+	uint8_t encryption = xsmcToBoolean(xsArg(0));
+	uint8_t bonding = xsmcToBoolean(xsArg(1));
+	uint8_t mitm = xsmcToBoolean(xsArg(2));
+	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+
+	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
 }
 
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
@@ -310,8 +309,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
 	xsBeginHost(gBLE->the);
-	if (auth_cmpl->success)
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 	xsEndHost(gBLE->the);
 }
 
@@ -355,7 +353,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 			esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
      		break;
      	case ESP_GAP_BLE_AUTH_CMPL_EVT:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+			if (param->ble_security.auth_cmpl.success)
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
      		break;
 		default:
 			break;
