@@ -30,7 +30,7 @@
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
-import {SM, IOCapability, Authorization} from "sm";
+import {Authorization} from "sm";
 
 const ReportType = {
 	INPUT: 0x01,
@@ -63,7 +63,7 @@ class BLEHIDClient extends BLEClient {
 		this.usageID = params.usageID;
 	}
 	onReady() {
-		SM.securityParameters = { mitm:true };
+		this.securityParameters = { mitm:true };
 	}
 	onSecurityParameters(params) {
 		this.startScanning();
