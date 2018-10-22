@@ -26,6 +26,7 @@
 				"*": [
 					"$(MODULES)/network/ble/esp32/modBLEServer",
 					"$(MODULES)/network/ble/esp32/modBLESM",
+					"$(MODULES)/network/ble/esp32/modBLECommon",
 				]
 			},
 		},
