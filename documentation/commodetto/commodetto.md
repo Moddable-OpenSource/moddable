@@ -527,7 +527,7 @@ By default, BMP files are stored with the bottom line of the bitmap first in the
 The `parseBMP` function creates a bitmap from an `ArrayBuffer` or `HostBuffer` containing BMP data. It performs validation to confirm that the file format is supported, and throws an exception if it detects an unsupported variant of BMP.
 
 ```javascript
-import parseBMP from "commodetto/ParseBMP";
+import parseBMP from "commodetto/parseBMP";
 
 let bmpData = new Resource("image.bmp");
 let bitmap = parseBMP(bmpData)
@@ -674,7 +674,7 @@ The `parseBMF` function prepares the BMFont binary metrics file for use with a `
 
 ```javascript
 import parseBMF from "commodetto/parseBMF";
-import parseBMP from "commodetto/ParseBMP";
+import parseBMP from "commodetto/parseBMP";
 
 let palatino36 = parseBMF(new Resource("palatino36.fnt"));
 palatino36.bitmap = parseBMP(new Resource("palatino36.bmp");
