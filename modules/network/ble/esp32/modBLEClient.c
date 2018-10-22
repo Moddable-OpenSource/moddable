@@ -22,6 +22,7 @@
 #include "xsesp.h"
 #include "mc.xs.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 
 #include "FreeRTOSConfig.h"
 #include "esp_bt.h"
@@ -127,15 +128,7 @@ void xs_ble_client_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
-	esp_err_t err;
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	err = esp_bt_controller_init(&bt_cfg);
-	if (ESP_OK == err)
-		err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-	if (ESP_OK == err)
-		err = esp_bluedroid_init();
-	if (ESP_OK == err)
-		err = esp_bluedroid_enable();
+	esp_err_t err = modBLEPlatformInitialize();
 
 	// Register callbacks
 	if (ESP_OK == err)
@@ -180,10 +173,8 @@ void xs_ble_client_destructor(void *data)
 	}
 	c_free(ble);
 	gBLE = NULL;
-	esp_bluedroid_disable();
-	esp_bluedroid_deinit();
-	esp_bt_controller_disable();
-	esp_bt_controller_deinit();
+
+	modBLEPlatformTerminate();
 }
 
 void xs_ble_client_set_local_privacy(xsMachine *the)
@@ -239,13 +230,21 @@ void xs_ble_client_connect(xsMachine *the)
 	esp_ble_gattc_app_register(connection->app_id);
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+void xs_ble_client_set_security_parameters(xsMachine *the)
 {
+	uint8_t encryption = xsmcToBoolean(xsArg(0));
+	uint8_t bonding = xsmcToBoolean(xsArg(1));
+	uint8_t mitm = xsmcToBoolean(xsArg(2));
+	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+
+	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+
 	if (mitm)
-		esp_ble_gap_config_local_privacy(true);	// generate random address?
+		esp_ble_gap_config_local_privacy(true);	// generate random address
 }
 
 modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
@@ -729,8 +728,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	modBLEConnection connection = modBLEConnectionFindByAddress(&auth_cmpl->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
-	if (auth_cmpl->success)
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 	xsEndHost(gBLE->the);
 }
 
@@ -738,14 +736,17 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 {
 	LOG_GAP_EVENT(event);
 
+	if (!gBLE || gBLE->terminating)
+		return;
+
 	switch(event) {
 		case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
         	if (ESP_GATT_OK == param->local_privacy_cmpl.status)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->local_privacy_cmpl, sizeof(struct ble_local_privacy_cmpl_evt_param), localPrivacyCompleteEvent, gBLE);
 #if LOG_GAP
 			else {
-				LOG_GATTC_MSG("ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT failed, status =");
-				LOG_GATTC_INT(param->local_privacy_cmpl.status);
+				LOG_GAP_MSG("ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT failed, status =");
+				LOG_GAP_INT(param->local_privacy_cmpl.status);
 			}
 #endif
 			break;
@@ -761,8 +762,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->read_rssi_cmpl, sizeof(struct ble_read_rssi_cmpl_evt_param), rssiCompleteEvent, gBLE);
 #if LOG_GAP
 			else {
-				LOG_GATTC_MSG("ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT failed, status =");
-				LOG_GATTC_INT(param->read_rssi_cmpl.status);
+				LOG_GAP_MSG("ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT failed, status =");
+				LOG_GAP_INT(param->read_rssi_cmpl.status);
 			}
 #endif
         	break;
@@ -780,8 +781,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
 #if LOG_GAP
 			else {
-				LOG_GATTC_MSG("ESP_GAP_BLE_AUTH_CMPL_EVT failed, status =");
-				LOG_GATTC_INT(param->ble_security.auth_cmpl.fail_reason);
+				LOG_GAP_MSG("ESP_GAP_BLE_AUTH_CMPL_EVT failed, status =");
+				LOG_GAP_INT(param->ble_security.auth_cmpl.fail_reason);
 			}
 #endif
      		break;
@@ -979,6 +980,8 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 
 	LOG_GATTC_EVENT(event);
 	
+	if (!gBLE || gBLE->terminating) return;
+
     switch (event) {
 		case ESP_GATTC_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {

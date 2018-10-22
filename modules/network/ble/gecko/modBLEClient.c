@@ -268,14 +268,22 @@ void xs_ble_client_connect(xsMachine *the)
 	gecko_cmd_le_gap_open(bda, le_gap_address_type_public);
 }
 
-void setSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+void xs_ble_client_set_security_parameters(xsMachine *the)
 {
+	uint8_t encryption = xsmcToBoolean(xsArg(0));
+	uint8_t bonding = xsmcToBoolean(xsArg(1));
+	uint8_t mitm = xsmcToBoolean(xsArg(2));
+	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+
+	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
-		
+
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();

@@ -23,7 +23,8 @@ import { FILE, TOOL } from "tool";
 class GATTFile {
 	constructor(dictionary) {
 		this.tool = dictionary.tool;
-		this.role = dictionary.role;
+		this.client = dictionary.client;
+		this.server = dictionary.server;
 		this.file = dictionary.file;
 		this.services = dictionary.services;
 	}
@@ -62,16 +63,16 @@ class ESP32GATTFile extends GATTFile {
 		let sdkconfig = tool.readFileString(this.sdkconfig);
 		let changed = false;
 		let options = [];
-		if ("server" == this.role || "client" == this.role) {
+		if (this.client || this.server) {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"y" });
 			options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
-			if ("server" == this.role) {
+			if (this.server) {
 				options.push({ name:"CONFIG_GATTS_ENABLE", value:"y" });
-				options.push({ name:"CONFIG_GATTC_ENABLE", value:"n" });
+				options.push({ name:"CONFIG_GATTC_ENABLE", value: (this.client ? "y" : "n") });
 			}
-			else {
-				options.push({ name:"CONFIG_GATTS_ENABLE", value:"n" });
+			if (this.client) {
 				options.push({ name:"CONFIG_GATTC_ENABLE", value:"y" });
+				options.push({ name:"CONFIG_GATTS_ENABLE", value: (this.server ? "y" : "n") });
 			}
 		}
 		else {
@@ -644,7 +645,7 @@ export default class extends TOOL {
 		this.outputPath = null;
 		this.files = [];
 		var argc = argv.length;
-		var name, path, role;
+		var name, path;
 		for (var argi = 1; argi < argc; argi++) {
 			var option = argv[argi];
 			switch (option) {
@@ -666,11 +667,11 @@ export default class extends TOOL {
 					else
 						throw new Error("unknown platform");
 					break;
-				case "-r":
-					argi++;	
-					if (argi >= argc)
-						throw new Error("-r: no role!");
-					this.role = argv[argi];
+				case "-c":
+					this.client = true;
+					break;
+				case "-v":
+					this.server = true;
 					break;
 				case "-s":
 					argi++;	
@@ -693,18 +694,15 @@ export default class extends TOOL {
 			this.outputPath = this.currentDirectory;
 		if (!this.platform)
 			this.platform = this.currentPlatform;
-		if (!this.role)
-			this.role = "none";
 	}
 	run() {
 		var path = this.joinPath({directory: this.outputPath, name:this.name});
 		var file = new FILE(path);
-		var role = this.role;
 		var services = [];
 		this.files.forEach((path, index) => {
 			services = services.concat(JSON.parse(this.readFileString(path)).service);
 		});
-		var dictionary = { tool:this, role, file, services };
+		var dictionary = { tool:this, client:this.client, server:this.server, file, services };
 		var gatt;
 		if ("esp32" == this.platform) {
 			dictionary.sdkconfig = this.sdkconfig;

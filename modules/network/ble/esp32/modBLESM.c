@@ -41,12 +41,8 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
     c_free(dev_list);
 }
 
-void xs_ble_sm_set_security_parameters(xsMachine *the)
+void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
-	uint8_t encryption = xsmcToBoolean(xsArg(0));
-	uint8_t bonding = xsmcToBoolean(xsArg(1));
-	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
 	uint8_t key_size = 16;
 	uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
 	uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
@@ -81,8 +77,6 @@ void xs_ble_sm_set_security_parameters(xsMachine *the)
 		else
 			auth_req = (mitm ? ESP_LE_AUTH_REQ_MITM : ESP_LE_AUTH_NO_BOND);
 	}
-	
-	setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	
  	esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
  	esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));

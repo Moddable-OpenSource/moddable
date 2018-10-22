@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: August 29, 2018
+Revised: October 22, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -270,9 +270,42 @@ onConnected(device) {
 
 The `onConnected` callback function is called when the client connects to a target peripheral `device`.
 
-> **Note:** The `BLEClient` object hosts all callbacks for classes used with `BLEClient`.
+***
+
+#### `securityParameters`
+
+BLE clients can optionally request link-layer security to protect data transferred between devices. The `securityParameters` property accessor function is used to configure the device security requirements and I/O capabilities.
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `encryption` | `boolean` | Optional property to enable encryption. Default is `true`
+| `bonding` | `boolean` | Optional property to enable bonding. Default is `false`
+| `mitm` | `boolean` | Optional property to enable man-in-the-middle (MITM) protection. Default is `false`
+| `ioCapability` | `object` | Optional `IOCapability` instance to configure the device I/O capabilities. Default is `IOCapability.NoInputNoOutput`. See the section [Class SM](#classsm) for more information.
+
+To request MITM protection with encryption for a display-only device. The device will display a passkey when requested:
+
+```javascript
+import {IOCapability} from "sm";
+
+onReady() {
+	this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+}
+```
+
+To request MITM protection with encryption and bonding for a device with both a display and keyboard. The device will request a passkey to be entered and encryption keys will be saved:
+
+```javascript
+import {IOCapability} from "sm";
+
+onReady() {
+	this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
+}
+```
 
 ***
+
+> **Note:** The `BLEClient` object hosts all callbacks for classes used with `BLEClient`.
 
 <a id="classdevice"></a>
 ## Class Device
@@ -926,6 +959,39 @@ class Advertiser extends BLEServer {
 
 ***
 
+#### `securityParameters`
+
+BLE servers can optionally request link-layer security to protect data transferred between devices. The `securityParameters` property accessor function is used to configure the device security requirements and I/O capabilities.
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `encryption` | `boolean` | Optional property to enable encryption. Default is `true`
+| `bonding` | `boolean` | Optional property to enable bonding. Default is `false`
+| `mitm` | `boolean` | Optional property to enable man-in-the-middle (MITM) protection. Default is `false`
+| `ioCapability` | `object` | Optional `IOCapability` instance to configure the device I/O capabilities. Default is `IOCapability.NoInputNoOutput`. See the section [Class SM](#classsm) for more information.
+
+To request MITM protection with encryption for a display-only device. The device will display a passkey when requested:
+
+```javascript
+import {IOCapability} from "sm";
+
+onReady() {
+	this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+}
+```
+
+To request MITM protection with encryption and bonding for a device with both a display and keyboard. The device will request a passkey to be entered and encryption keys will be saved:
+
+```javascript
+import {IOCapability} from "sm";
+
+onReady() {
+	this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
+}
+```
+
+***
+
 #### `deploy()`
 Use the `deploy` function to deploy all the server GATT services. Deployed services can be browsed by BLE clients. GATT services are defined in JSON files and described in the [`GATT Services`](#gattservices) section below.
 
@@ -1226,16 +1292,32 @@ The service is defined as follows:
 <a id="blesecurity"></a>
 ## BLE Security
 
-BLE clients and servers can optionally request link-layer security to protect data transferred between devices. Passkey pairing requires both devices to exchange and confirm the code before establishing a connection. Once the pairing process is complete, the connection and data transferred is encrypted. The BLE Security Manager (SM) defines the methods and protocols for pairing and key distribution.
+BLE clients and servers use the `securityParameters` property accessor to optionally request link-layer security to protect data transferred between devices. Passkey pairing requires both devices to exchange and confirm the code before establishing a connection. Once the pairing process is complete, the connection and data transferred is encrypted. The BLE Security Manager (SM) defines the methods and protocols for pairing and key distribution.
 
 
 <a id="classsm"></a>
 ## Class SM
 
-The `SM` class provides access to BLE Security Manager features. The `SM` class is available to both `BLEClient` and `BLEServer` classes.
+The `SM` class provides objects used to configure BLE client and server security requirements and device capabilities. The `SM` class is available to both `BLEClient` and `BLEServer` classes. The security callback functions defined here are hosted by the `BLEClient` and `BLEServer` classes.
+
+The `IOCapability` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `NoInputNoOutput` | `number` | Device has no input or output capabilities
+| `DisplayOnly` | `number` | Device has only output capability
+| `KeyboardOnly` | `number` | Device has only input capability
+| `KeyboardDisplay` | `number` | Device has input and output capabilities
+| `DisplayYesNo` | `number` | Device has output capability and button feedback for a Yes or No response
+
+To request MITM protection with encryption on a keyboard device:
 
 ```javascript
-import SM from "sm";
+import {IOCapability} from "sm";
+
+onReady() {
+	this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
+}
 ```
 
 ### Functions
@@ -1249,56 +1331,6 @@ onReady() {
 	SM.deleteAllBondings();
 }
 ```
-***
-
-#### `securityParameters(params)`
-
-| Argument | Type | Description |
-| --- | --- | :--- | 
-| `params` | `object` | Properties associated with the security configuration.
-
-The `params` object contains the following properties:
-
-| Property | Type | Description |
-| --- | --- | :--- |
-| `encryption` | `boolean` | Optional property to enable encryption. Default is `true`
-| `bonding` | `boolean` | Optional property to enable bonding. Default is `false`
-| `mitm` | `boolean` | Optional property to enable man-in-the-middle (MITM) protection. Default is `false`
-| `ioCapability` | `object` | Optional `IOCapability` instance to configure the device I/O capabilities. Default is `IOCapability.NoInputNoOutput`
-
-The `IOCapability` object contains the following properties:
-
-| Property | Type | Description |
-| --- | --- | :--- |
-| `NoInputNoOutput` | `number` | Device has no input or output capabilities
-| `DisplayOnly` | `number` | Device has only output capability
-| `KeyboardOnly` | `number` | Device has only input capability
-| `KeyboardDisplay` | `number` | Device has input and output capabilities
-| `DisplayYesNo` | `number` | Device has output capability and button feedback for a Yes or No response
-
-The `securityParameters` property accessor function is used to configure the device security requirements and I/O capabilities.
-
-To request MITM protection with encryption for a display-only device. The device will display a passkey when requested:
-
-```javascript
-import {SM, IOCapability} from "sm";
-
-onReady() {
-	SM.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
-}
-```
-
-To request MITM protection with encryption and bonding for a device with both a display and keyboard. The device will request a passkey to be entered and encryption keys will be saved:
-
-```javascript
-import {SM, IOCapability} from "sm";
-
-onReady() {
-	SM.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
-}
-```
-
-***
 
 #### `onSecurityParameters(params)`
 
@@ -1309,12 +1341,11 @@ onReady() {
 The `onSecurityParameters` callback is called after the device security requirements and I/O capabilities have been set.
 
 ```javascript
-import {SM, IOCapability} from "sm";
+import {IOCapability} from "sm";
 
 onReady() {
-	SM.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
+	this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
 }
-
 onSecurityParameters() {
 	this.startScanning();
 }
@@ -1327,8 +1358,6 @@ onSecurityParameters() {
 The `onAuthenticated` callback is called when an authentication procedure completes, i.e. after successful device pairing.
 
 ```javascript
-import {SM, IOCapability} from "sm";
-
 onAuthenticated() {
 	trace("authentication success\n");
 }
@@ -1489,6 +1518,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
 | [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
 | [hid-mouse](../../../examples/network/ble/hid-mouse) | Demonstrates how to connect to a BLE mouse that implements the HID over GATT profile.
+| [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.current_time.xml).
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.

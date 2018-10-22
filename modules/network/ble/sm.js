@@ -36,14 +36,7 @@ const Authorization = {
 Object.freeze(Authorization);
 
 export default class SM {
-	static deleteAllBondings() @ "xs_ble_sm_delete_all_bondings"
-	
-	static set securityParameters(params) {
-		let {encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput} = params;
-		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
-	}
-	
-	static _setSecurityParameters() @ "xs_ble_sm_set_security_parameters"
+	static deleteAllBondings() @ "xs_ble_sm_delete_all_bondings"	
 };
 Object.freeze(SM.prototype);
 

@@ -20,6 +20,7 @@
 
 import GAP from "gap";
 import {Advertisement, Bytes} from "btutils";
+import {IOCapability} from "sm";
 
 export class BLEServer @ "xs_ble_server_destructor" {
 	constructor() {
@@ -33,6 +34,10 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	}
 	get deviceName() {
 		return this.device_name;
+	}
+	set securityParameters(params) {
+		let {encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput} = params;
+		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
 		let {fast = true, connectable = true, discoverable = true, scanResponseData = null, advertisingData} = params;
@@ -87,6 +92,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 
 	_getLocalAddress() @ "xs_ble_server_get_local_address"
 	
+	_setSecurityParameters() @ "xs_ble_server_set_security_parameters"
+
 	_typedValueToBuffer(type, value) {
 		let buffer;
 		switch(type) {

@@ -22,6 +22,7 @@ import GAP from "gap";
 import Connection from "connection";
 import {Client} from "gatt";
 import {Advertisement, Bytes} from "btutils";
+import {IOCapability} from "sm";
 
 export class BLEClient @ "xs_ble_client_destructor" {
 	constructor() {
@@ -63,6 +64,11 @@ export class BLEClient @ "xs_ble_client_destructor" {
 
 	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
 	
+	set securityParameters(params) {
+		let {encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput} = params;
+		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
+	}
+	
 	startScanning(params) {
 		if (!params) params = {};
 		let {active = true, interval = 0x50, window = 0x30} = params;
@@ -72,6 +78,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	
 	_connect() @ "xs_ble_client_connect"
 	_startScanning() @ "xs_ble_client_start_scanning"
+	_setSecurityParameters() @ "xs_ble_client_set_security_parameters"
 	
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);

@@ -100,12 +100,14 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateBLERules(tool) {
-		let role = "none", defines = tool.defines;
+		let defines = tool.defines;
+		let client = false;
+		let server = false;
 		if (defines && ("ble" in defines)) {
 			if ("server" in defines.ble && true == defines.ble.server)
-				role = "server";
-			else if ("client" in defines.ble && true == defines.ble.client)
-				role = "client";
+				server = true;
+			if ("client" in defines.ble && true == defines.ble.client)
+				client = true;
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -123,8 +125,10 @@ export class MakeFile extends FILE {
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
 			this.write(tool.windows ? " $**" : " $^");
-		this.write(" -r ");
-		this.write(role);
+		if (client)
+			this.write(" -c");
+		if (server)
+			this.write(" -v");
 		if ("esp32" == tool.platform) {
 			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
 			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
