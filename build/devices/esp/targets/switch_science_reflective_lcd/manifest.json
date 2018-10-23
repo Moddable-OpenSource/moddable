@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODULES)/drivers/lpm013m126a/manifest.json",
+	],
+	"config": {
+		"screen": "lpm013m126a",
+		"touch": "",
+		"format": "RGB332",
+	},
+}

@@ -22,9 +22,13 @@
 #include "xsesp.h"
 #include "mc.defines.h"
 
-#include "modSPI.h"
+#if MODDEF_SSD1306_SPI
+	#include "modSPI.h"
+#endif
 #include "modGPIO.h"
-#include "modI2C.h"
+#if MODDEF_SSD1306_I2C
+	#include "modI2C.h"
+ #endif
 
 #include "commodettoPixelsOut.h"
 

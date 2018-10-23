@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODULES)/drivers/destm32s/manifest.json",
+	],
+	"config": {
+		"screen": "destm32s",
+		"touch": "",
+		"format": "Gray256",
+	},
+	"defines": {
+		"destm32s": {
+			"width": 122,
+			"height": 250,
+		}
+	}
+}
