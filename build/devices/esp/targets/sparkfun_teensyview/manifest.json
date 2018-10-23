@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ssd1306/manifest_spi.json",
+	],
+	"config": {
+		"screen": "ssd1306",
+		"touch": "",
+		"format": "Gray256",
+	},
+	"defines": {
+		"ssd1306": {
+			"dither": true,
+		}
+	},
+}

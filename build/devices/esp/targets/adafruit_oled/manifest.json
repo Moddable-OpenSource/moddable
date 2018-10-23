@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODULES)/drivers/ssd1351/manifest.json",
+	],
+	"config": {
+		"screen": "ssd1351",
+		"touch": "",
+		"format": "RGB565LE",
+	},
+}

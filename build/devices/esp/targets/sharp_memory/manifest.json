@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
+	],
+	"config": {
+		"screen": "ls013b4dn04",
+		"touch": "",
+		"format": "Gray256",
+	},
+	"defines": {
+		"ls013b4dn04": {
+			"width": 400,
+			"height": 240,
+			"cs_pin": 4,
+			"spi_port": "#HSPI",
+		}
+	}
+}
