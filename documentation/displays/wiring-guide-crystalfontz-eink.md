@@ -3,7 +3,7 @@
 Copyright 2018 Moddable Tech, Inc.  
 Revised: October 23, 2018
 
-<img src="images/eink-display.jpeg" height=350>
+<img src="./images/eink-display.jpeg" height=350>
 
 ## Specs
 
@@ -13,7 +13,7 @@ Revised: October 23, 2018
 | **Size**  | 2.9" 128x296 
 | **Type** | EPD (Electronic Paper Displays)
 | **Interface** | SPI
-| **Drivers** | video [destm32s](../../documentation/drivers/destm32s/destm32s.md), No touch
+| **Drivers** | video [destm32s](../../documentation/drivers/destm32s/destm32s.md), no touch
 | **Availability** | [128x296 ePaper Display](https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink)
 | **Description** | This is a TFT active matrix electrophoretic display (ePaper/E-Ink) with 1-bit white/black full display capabilities.<BR><BR>One benefit of this display is very low power consumption. The only time you need to provide power to this ePaper module is while updating the display. Once the image is displayed you can remove the power source and the display will continue to display the image appropriately.<BR><BR>We used the destm32s adaptor board to interface with the display. See: Crystalfontz part CFAP128296C0-E1-1 on the [display product](https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink) page.
 
@@ -26,7 +26,7 @@ cd $MODDABLE/examples/piu/love-e-ink/
 mcconfig -d -m -p esp/crystalfontz_monochrome_epaper -r 270
 ```
 
-## ESP8266 Pinout
+## ESP8266 pinout
 
 | eInk Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
