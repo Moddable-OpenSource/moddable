@@ -144,6 +144,11 @@ int16_t CFEGetKerningOffset(CommodettoFontEngine tf, uint32_t unicode1, uint32_t
 	return 0;
 }
 
+int CFEShape(CommodettoFontEngine tf, const char *utf8In, int32_t byteLengthIn, char *utf8Out, int32_t byteLengthOut)
+{
+	return -1;
+}
+
 void CFELayoutRun(CommodettoFontEngine tf, const char *utf8, int32_t byteLength, CFERun run, int32_t runLength, int32_t width)
 {
 	const char *utf8End = utf8 + byteLength;
