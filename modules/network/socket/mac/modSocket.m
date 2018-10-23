@@ -174,6 +174,47 @@ void xs_socket(xsMachine *the)
 
 	fcntl(xss->skt, F_SETFL, O_NONBLOCK | fcntl(xss->skt, F_GETFL, 0));
 
+	if ((kUDP == xss->kind) && xsmcHas(xsArg(0), xsID_multicast)) {
+		struct ip_mreq imr;
+		struct sockaddr_in address;
+		char ip[64];
+		int ttl = 1;
+		int flag = 1;
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
+		xsmcToStringBuffer(xsVar(0), ip, sizeof(ip));
+
+		if (xsmcHas(xsArg(0), xsID_ttl)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
+			ttl = xsmcToInteger(xsVar(0));
+		}
+
+		if (setsockopt(xss->skt, SOL_SOCKET, SO_BROADCAST, (const void *)&flag, sizeof(flag)) < 0)
+			return;		//@@
+
+		if (setsockopt(xss->skt, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
+			return;
+
+		// join group
+		imr.imr_multiaddr.s_addr = inet_addr(ip);
+		if (~0 != *(int *)&imr.imr_multiaddr.s_addr) {
+			imr.imr_interface.s_addr = htonl(INADDR_ANY);
+			int foo = setsockopt(xss->skt, IPPROTO_IP, IP_ADD_MEMBERSHIP, &imr, sizeof(imr));
+			if (foo == -1) {
+				foo = errno;
+				return;		//@@
+			}
+		}
+
+
+		// bind
+		address.sin_family      = AF_INET;
+		address.sin_port        = -1;		//@@
+		address.sin_addr.s_addr = 0; // Want to receive multicasts AND unicasts on this socket
+		if (0 != bind(xss->skt, (struct sockaddr *) &address, sizeof(address)))
+			return;		//@@
+	}
+
 	xss->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, xss->cfSkt, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), xss->cfRunLoopSource, kCFRunLoopCommonModes);
 
