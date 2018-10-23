@@ -3,7 +3,7 @@
 Copyright 2018 Moddable Tech, Inc.  
 Revised: October 23, 2018
 
-<img src="images/adafruit-oled.jpg" height=225>
+<img src="./images/adafruit-oled.jpg" height=225>
 
 ## Specs
 

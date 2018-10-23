@@ -3,7 +3,7 @@
 Copyright 2018 Moddable Tech, Inc.  
 Revised: October 23, 2018
 
-<img src="images/spi-touch-display.jpg" height=250>
+<img src="./images/spi-touch-display.jpg" height=250>
 
 ## Specs
 
