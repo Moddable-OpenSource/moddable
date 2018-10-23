@@ -75,9 +75,6 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\freertos \
 	-I$(IDF_PATH)\components\freertos\include \
 	-I$(IDF_PATH)\components\freertos\include\freertos \
-	-I$(IDF_PATH)\components\lwip\lwip\src\include \
-	-I$(IDF_PATH)\components\lwip\port\esp32\include \
-	-I$(IDF_PATH)\components\lwip\include\apps \
 	-I$(IDF_PATH)\components\lwip\include\lwip \
 	-I$(IDF_PATH)\components\lwip\include\lwip\port \
 	-I$(IDF_PATH)\components\mbedtls\include \
