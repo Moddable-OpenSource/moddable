@@ -4,8 +4,8 @@
 			"width": 128,
 			"height": 32,
 			"dither": false,
-			"spi": true,
-			"i2c": false,
+			"spi": false,
+			"i2c": true,
 		}
 	},
 	"preload": [
@@ -17,7 +17,6 @@
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/i2c/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/ssd1306/*",
@@ -25,9 +24,9 @@
 			},
 			"defines": {
 				"ssd1306": {
-					"cs_pin": 4,
-					"dc_pin": 2,
-					"spi_port": "#HSPI"
+					"scl_pin": 4,
+					"sda_pin": 5,
+					"address": "0x3c",
 				}
 			}
 		},
@@ -35,7 +34,6 @@
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/i2c/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/ssd1306/*",
@@ -43,9 +41,9 @@
 			},
 			"defines": {
 				"ssd1306": {
-					"cs_pin": 4,
-					"dc_pin": 2,
-					"spi_port": "HSPI_HOST"
+					"scl_pin": 4,
+					"sda_pin": 5,
+					"address": "0x3c",
 				}
 			}
 		}
