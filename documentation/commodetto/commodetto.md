@@ -1,7 +1,7 @@
 # Commodetto
 Copyright 2016-2017 Moddable Tech, Inc.
 
-Revised: November 26, 2017
+Revised: October 22, 2018
 
 Commodetto is a graphics library designed to bring modern user interface rendering to devices powered by a resource-constrained microcontroller. For many applications, Commodetto needs only a few kilobytes of RAM, including the assets for rendering the user interface.
 

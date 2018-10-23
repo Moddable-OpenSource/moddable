@@ -2,7 +2,7 @@
 
 Copyright 2017 Moddable Tech, Inc.
 
-Revised: October 6, 2017
+Revised: October 22, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
