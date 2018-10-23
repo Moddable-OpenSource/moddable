@@ -63,6 +63,7 @@ CFEGlyph CFEGetGlyphFromUnicode(CommodettoFontEngine cfe, uint32_t unicode, uint
 int16_t CFEGetKerningOffset(CommodettoFontEngine cfe, uint32_t unicode1, uint32_t unicode2);
 
 void CFELayoutRun(CommodettoFontEngine cfe, const char *utf8, int32_t byteLength, CFERun run, int32_t runLength, int32_t width);
+int CFEShape(CommodettoFontEngine cfe, const char *utf8In, int32_t byteLengthIn, char *utf8Out, int32_t byteLengthOut);
 
 void CFEGetOutlineFromUnicode(CommodettoFontEngine cfe, uint32_t unicode, uint8_t **outline, uint32_t *outlineSize);
 void CFERenderOutline(CommodettoFontEngine cfe, uint8_t *outline, uint32_t outlineSize, double scaleX, double scaleY, CFEGlyph glyph);
