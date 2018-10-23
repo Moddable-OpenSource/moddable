@@ -1,0 +1,51 @@
+{
+	"defines": {
+		"ssd1306": {
+			"width": 128,
+			"height": 32,
+			"dither": false,
+			"spi": true,
+			"i2c": false,
+		}
+	},
+	"preload": [
+		"ssd1306",
+		"commodetto/Bitmap",
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ssd1306/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ssd1306": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "#HSPI"
+				}
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json",
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ssd1306/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+			},
+			"defines": {
+				"ssd1306": {
+					"cs_pin": 4,
+					"dc_pin": 2,
+					"spi_port": "HSPI_HOST"
+				}
+			}
+		}
+	}
+}
