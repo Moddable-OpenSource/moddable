@@ -3,7 +3,7 @@
 Copyright 2018 Moddable Tech, Inc.  
 Revised: October 23, 2018
 
-<img src="./images/Sharp_Memory_LCD_LS027B7DH01.jpg" height=275>
+![](./images/Sharp_Memory_LCD_LS027B7DH01.jpg)
 
 ## Specs
 
