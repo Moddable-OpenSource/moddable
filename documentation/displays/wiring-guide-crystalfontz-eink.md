@@ -3,7 +3,7 @@
 Copyright 2018 Moddable Tech, Inc.  
 Revised: October 23, 2018
 
-<img src="./images/eink-display.jpeg" height=350>
+![](./images/eink-display.jpeg)
 
 ## Specs
 
