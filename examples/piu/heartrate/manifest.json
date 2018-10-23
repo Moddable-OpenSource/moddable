@@ -6,20 +6,11 @@
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/lpm013m126a/*",
 		]
 	},
 	"resources":{
 		"*-alpha": [
 			"./digits",
-			"./graph",
 		],
 	},
-	"platforms": {
-		"esp/rgb332": {
-			"modules": {
-				"screen": "$(BUILD)/devices/esp/lpm013m126a/rgb332/screen",
-			},
-		},
-	}
 }

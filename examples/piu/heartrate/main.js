@@ -18,18 +18,16 @@ const GRAPH_INTERVAL = 2000;	// Changes how frequently a bar is added to the gra
 const MAX_RATE = 210;			// Max heart rate value
 const MIN_RATE = 40;			// Min heart rate value
 
-/* Skins and styles */
 const GRAPH_COLORS = ["#0000FF", "#00FFFF", "#00FF00"];
 const TEXT_COLOR = "#FFFFFF";
 const BACKGROUND_COLOR = "#000000";
 
 const digitsTexture = new Texture("digits.png");
 
-/* UI templates */
 const GraphLine = Port.template($ => ({
 	bottom: 0, height: $.barHeight, left: 0, width:16,
 	Behavior: class extends Behavior {
-		onCreate(port) {
+		onCreate(port, data) {
 			this.data = {remainder: $.remainder, fullBars: $.fullBars};
 			this.state = 0;
 			port.interval = 650;
@@ -65,34 +63,41 @@ const GraphLine = Port.template($ => ({
 }));
 
 const GraphContainer = Row.template($ => ({
-	bottom:0, height: 64, left: 0, right:0,
+	anchor: "GRAPH", bottom:0, height: 64, 
 	Behavior: class extends Behavior {
-		onCreate(content) {
-			content.interval = GRAPH_INTERVAL;
-			content.time = 0;
-			content.start();
+		onCreate(row, data) {
+			this.data = data;
+		}
+		onDisplaying(row) {
+			row.interval = GRAPH_INTERVAL;
+			row.time = 0;
+			row.start();
 			for (let i = 0; i < 11; i++) {
 				let dummyLine = new GraphLine({barHeight: 2, fullBars: 0, remainder: 2});
-				content.add(dummyLine);
+				row.add(dummyLine);
 				dummyLine.delegate("onStopFlickering");
 			}
+			// row.distribute("onStopFlickering");
 		}
-		onTimeChanged(content) {
-			let rate = application.first.delegate("getRate");
-			let barHeight = Math.round((rate-MIN_RATE)/(MAX_RATE-MIN_RATE)*content.height);
+		onTimeChanged(row) {
+			let rate = this.data["DIGITS"].delegate("getRate");
+			let barHeight = Math.round((rate-MIN_RATE)/(MAX_RATE-MIN_RATE)*row.height);
 			let fullBars = Math.floor(barHeight / 12);
 			let remainder = barHeight % 12;
-			content.remove(content.first)
-			content.last.delegate("onStopFlickering")
-			content.add(new GraphLine({barHeight, fullBars, remainder}))
+			row.remove(row.first)
+			row.last.delegate("onStopFlickering")
+			row.add(new GraphLine({barHeight, fullBars, remainder}))
 			application.purge();
 		}
 	}
 }))
 
 const DigitContainer = Port.template($ => ({
-	top:0, width:128, height:112,
+	anchor: "DIGITS", top:0, width:128, height:112,
 	Behavior: class extends Behavior {
+		onCreate(port, data) {
+			this.data = data;
+		}
 		onChangeRate(port, rate) {
 			this.rate = rate;
 			port.invalidate();
@@ -113,23 +118,27 @@ const DigitContainer = Port.template($ => ({
 			return this.rate;
 		}
 	}
-}))
+}));
 
-/* Application set-up */
-export default new Application(null, { 
-	commandListLength:4096, displayListLength:4096, touchCount:0, skin: new Skin({ fill: BACKGROUND_COLOR }),
+const HeartRateApp = Application.template($ => ({
+	skin: new Skin({ fill: BACKGROUND_COLOR }),
 	contents: [
-		new DigitContainer,
-		new GraphContainer
+		new DigitContainer($),
+		new GraphContainer($),
 	],
 	Behavior: class extends Behavior {
-		onCreate(application) {
+		onCreate(application, data) {
+			this.data = data;
+		}
+		onDisplaying(application) {
 			application.interval = 2000;
 			application.start();
 		}
 		onTimeChanged(application) {
 			 let randomHeartRate = Math.floor(Math.random() * (MAX_RATE - MIN_RATE + 1)) + MIN_RATE;
-			 application.first.delegate("onChangeRate", randomHeartRate);
+			 this.data["DIGITS"].delegate("onChangeRate", randomHeartRate);
 		}
 	}
-});
+}))
+
+export default new HeartRateApp({}, { commandListLength:4096, displayListLength:4096, touchCount:0 });

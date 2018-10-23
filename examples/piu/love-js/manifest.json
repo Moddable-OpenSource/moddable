@@ -7,9 +7,6 @@
 		"*": "./main",
 	},
 	"resources":{
-		"*": [
-			"./main",
-		],
 		"*-mask": [
 			"./heart",
 			"./strip",

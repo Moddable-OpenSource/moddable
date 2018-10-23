@@ -1,41 +1,32 @@
-# Wiring Guides for Moddable supported SPI displays
+# Crystalfontz ePaper Display Wiring Guide
 
 Copyright 2018 Moddable Tech, Inc.  
-Revised: January 2, 2018
+Revised: October 23, 2018
 
+<img src="images/eink-display.jpeg" height=350>
 
-## Crystalfontz ePaper display
-**Part:** CFAP128296C0-0290  
-[Datasheet] (https://www.crystalfontz.com/products/document/3660/CFAP128296C0-0290DatasheetReleaseDate2017-08-14.pdf)
+## Specs
 
-**Size:**  2.9" 128x296 
+| | |
+| :---: | :--- |
+| **Part** | CFAP128296C0-0290 ([datasheet](https://www.crystalfontz.com/products/document/3660/CFAP128296C0-0290DatasheetReleaseDate2017-08-14.pdf))
+| **Size**  | 2.9" 128x296 
+| **Type** | EPD (Electronic Paper Displays)
+| **Interface** | SPI
+| **Drivers** | video [destm32s](../../documentation/drivers/destm32s/destm32s.md), No touch
+| **Availability** | [128x296 ePaper Display](https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink)
+| **Description** | This is a TFT active matrix electrophoretic display (ePaper/E-Ink) with 1-bit white/black full display capabilities.<BR><BR>One benefit of this display is very low power consumption. The only time you need to provide power to this ePaper module is while updating the display. Once the image is displayed you can remove the power source and the display will continue to display the image appropriately.<BR><BR>We used the destm32s adaptor board to interface with the display. See: Crystalfontz part CFAP128296C0-E1-1 on the [display product](https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink) page.
 
-**Type:** EPD (Electronic Paper Displays)
+## Moddable example code
 
-**Interface:** SPI
-
-**Drivers:** video [destm32s](../../documentation/drivers/destm32s/destm32s.md), No touch
-
-**Availability:** [128x296 ePaper Display] (https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink)
-
-**Description:** This is a TFT active matrix electrophoretic display (ePaper/E-Ink) with 1-bit white/black full display capabilities.
-
-One benefit of this display is very low power consumption. The only time you need to provide power to this ePaper module is while updating the display. Once the image is displayed you can remove the power source and the display will continue to display the image appropriately.
-
-We used the destm32s adaptor board to interface with the display. See: Crystalfontz part CFAP128296C0-E1-1 on the [display product](https://www.crystalfontz.com/product/cfap128296c00290-128x296-epaper-display-eink) page.
-
-
-![Generic SPI Display](images/eink-display.jpeg)
-
-**Moddable Sample code:** The Piu example [love-e-ink](../../examples/piu/love-e-ink/) is good for testing this display. The build command below includes the -d, debug flag.
+The [love-e-ink](../../examples/piu/love-e-ink/) example is good for testing this display. To run a debug build, use the following build command:
 
 ```
-cd $MODDABLE/examples/piu/love-e-ink
-mcconfig -d -m -p esp -f gray256 -r 270  
+cd $MODDABLE/examples/piu/love-e-ink/
+mcconfig -d -m -p esp/crystalfontz_monochrome_epaper -r 270
 ```
 
-
-**ESP8266 Pinout:**
+## ESP8266 Pinout
 
 | eInk Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |

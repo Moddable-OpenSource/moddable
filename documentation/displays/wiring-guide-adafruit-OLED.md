@@ -1,35 +1,33 @@
-# Wiring Guides for Moddable supported SPI displays
+# Adafruit OLED Display Wiring Guide
 
 Copyright 2018 Moddable Tech, Inc.  
-Revised: January 2, 2018
+Revised: October 23, 2018
 
+<img src="images/adafruit-oled.jpg" height=225>
 
-## Adafruit OLED display
-**Part:** Adafruit Product ID: 1431 
+## Specs
 
-**Size:** 1.5", 128 × 128
-
-**Type:** OLED
-
-**Interface:** SPI
-
-**Drivers:** video [SSD1351](../../documentation/drivers/ssd1351/ssd1351.md), No touch
-
-**Availability:** [1.5" OLED Breakout Board] (https://www.adafruit.com/product/1431)
-
-**Description:** Excellent color, small OLED.
+| | |
+| :---: | :--- |
+| **Part** | Adafruit Product ID: 1431 
+| **Size** | 1.5", 128 × 128
+| **Type** | OLED
+| **Interface** | SPI
+| **Drivers** | video [SSD1351](../../documentation/drivers/ssd1351/ssd1351.md), no touch
+| **Availability** | [1.5" OLED Breakout Board](https://www.adafruit.com/product/1431)
+| **Description** | Excellent color, small OLED.
  
-![Generic SPI Display](images/adafruit-oled.jpg)
 
-**Moddable Sample code:** The Piu example [transitions](../../examples/piu/transitions/) is good for testing this display. The build command below includes the -d, debug flag.
+## Moddable example code
+
+The [countdown](../../examples/piu/countdown/) example is good for testing this display. To run a debug build, use the following build command:
 
 ```
-cd $MODDABLE/examples/piu/transitions
-mcconfig -d -m -r 0 -f rgb332 -p esp screen=ssd1351 touch="" 
+cd $MODDABLE/examples/piu/countdown
+mcconfig -d -m -p esp/adafruit_oled
 ```
 
-
-**ESP8266 Pinout:**
+## ESP8266 pinout
 
 | Adafruit OLED | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |

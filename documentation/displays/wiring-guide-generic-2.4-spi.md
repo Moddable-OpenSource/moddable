@@ -1,33 +1,33 @@
-# Wiring Guides for Moddable supported SPI displays
+# Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - ESP8266
 
 Copyright 2018 Moddable Tech, Inc.  
-Revised: January 2, 2018
+Revised: October 23, 2018
 
+<img src="images/spi-touch-display.jpg" height=250>
 
-## Generic 2.4" & 2.8" displays (with resistive touch)
-**Size:** 2.4" & 2.8", 320 x 240
+## Specs
 
-**Type:** TFT LCD
+| | |
+| :---: | :--- |
+| **Size** | 2.4" & 2.8", 320 x 240
+| **Type** | TFT LCD
+| **Interface** | SPI
+| **Drivers** | video [ILI9341](../../documentation/drivers/ili9341/ili9341.md), touch XPT2046
+| **Availability** | [Generic SPI Displays on eBay](https://www.ebay.com/sch/i.html?_odkw=spi+display+2.4&_osacat=0&_from=R40&_trksid=p2045573.m570.l1313.TR0.TRC0.H0.Xspi+display+2.4+touch.TRS0&_nkw=spi+display+2.4+touch&_sacat=0)
+| **Description** | These inexpensive displays are available on eBay and other resources. <BR><BR>Note: They are available in touch and non-touch versions which appear very similar.
 
-**Interface:** SPI
+> At this time Moddable sample code does not include display SD card support.
 
-**Drivers:** video [ILI9341](../../documentation/drivers/ili9341/ili9341.md), touch XPT2046
+## Moddable example code
 
-**Availability:** [Generic SPI Displays on eBay] (https://www.ebay.com/sch/i.html?_odkw=spi+display+2.4&_osacat=0&_from=R40&_trksid=p2045573.m570.l1313.TR0.TRC0.H0.Xspi+display+2.4+touch.TRS0&_nkw=spi+display+2.4+touch&_sacat=0)
-
-**Description:** These inexpensive displays are available on eBay and other resources. Note: They are available in touch and non-touch versions which appear very similar.
-
-![Generic SPI Display](images/spi-touch-display.jpg)
-
-**Moddable Sample code:** The Piu example [Drag](../../examples/piu/drag/) is good for testing this display. The build command below includes the -d, debug flag.
+The [drag](../../examples/piu/drag/) example is good for testing this display.  To run a debug build, use the following build command:
 
 ```
 cd $MODDABLE/examples/piu/drag
-mcconfig -d -m -r 0 -f rgb565le -p esp screen=ili9341 touch=xpt2046  
+mcconfig -d -m -p esp/moddable_zero
 ```
-At this time Moddable sample code does not include display SD card support.
 
-**ESP8266 Pinout:**
+## ESP8266 Pinout
 
 | ILI9341 Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
