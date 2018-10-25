@@ -247,6 +247,15 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 		esp_ble_gap_config_local_privacy(true);	// generate random address
 }
 
+void xs_ble_client_passkey_reply(xsMachine *the)
+{
+	esp_bd_addr_t bda;
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t confirm = xsmcToBoolean(xsArg(1));
+	c_memmove(&bda, address, sizeof(bda));
+	esp_ble_confirm_reply(bda, confirm);
+}
+
 modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
 {
 	modBLEConnection walker;
@@ -675,7 +684,6 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
-	uint8_t confirm;
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
 	if (!connection)
@@ -687,9 +695,7 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
-	confirm = xsmcToBoolean(xsResult);
 	xsEndHost(gBLE->the);
-	esp_ble_confirm_reply(key_notif->bd_addr, confirm);
 }
 
 static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)

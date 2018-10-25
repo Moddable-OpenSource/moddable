@@ -64,7 +64,7 @@ class SecureHealthThermometerClient extends BLEClient {
 	onPasskeyConfirm(params) {
 		let passkey = this.passkeyToString(params.passkey);
 		trace(`client confirm passkey: ${passkey}\n`);
-		return true;
+		this.passkeyReply(params.address, true);
 	}
 	onPasskeyDisplay(params) {
 		let passkey = this.passkeyToString(params.passkey);
