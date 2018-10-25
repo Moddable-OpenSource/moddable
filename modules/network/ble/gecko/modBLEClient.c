@@ -297,6 +297,19 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	xsEndHost(gBLE->the);
 }
 
+void xs_ble_client_passkey_reply(xsMachine *the)
+{
+	bd_addr bda;
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t confirm = xsmcToBoolean(xsArg(1));
+	bufferToAddress(address, &bda);
+	
+	modBLEConnection connection = modBLEConnectionFindByAddress(&bda);
+	if (!connection) return;
+	
+	gecko_cmd_sm_passkey_confirm(connection->id, confirm);
+}
+
 modBLEConnection modBLEConnectionFindByConnectionID(uint8_t conn_id)
 {
 	modBLEConnection walker;
