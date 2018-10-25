@@ -12,7 +12,7 @@
 			"./settings"
 		],
 		"*-mask": [
-			"./OpenSans-Regular-24",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-24",
 		],
 	}
 }

@@ -16,7 +16,7 @@ import {} from "piu/MC";
 
 const blackSkin = new Skin({ fill:"black" });
 const labelSkin = new Skin({ fill:"black", stroke:"white", top:1 });
-const labelStyle = new Style({ font:"myFont", color:"white" });
+const labelStyle = new Style({ font:"OpenSans-Semibold-16", color:"white" });
 let counter = 0;
 
 let SpiralContainer = Container.template($ => ({

@@ -168,6 +168,10 @@ let NeonApplication = Application.template($ => ({
 			this.flag = false;
 			application.first.delegate("onDisplayed");
 		}
+		onDisplaying(application) {
+			if (application.height != 240 || application.width != 320)
+				trace("WARNING: This application was designed to run on a 320x240 screen.\n");
+		}
 		onLightsFinished(application) {
 			let title = this.flag ? new NeonEnglishTitle({}) : new NeonJapaneseTitle({});
 			application.run(new WipeTransition(750, Math.quadEaseOut, "center"), application.first, title);

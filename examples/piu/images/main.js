@@ -46,6 +46,10 @@ let ImageApplication = Application.template($ => ({
 			this.index = 0;
 			application.add(new ImageContainer(this.index));
 		}
+		onDisplaying(application) {
+			if (application.height != 240 || application.width != 320)
+				trace("WARNING: This application was designed to run on a 320x240 screen.\n");
+		}
 		onStep(application) {
 			this.index++;
 			if (this.index >= paths.length)

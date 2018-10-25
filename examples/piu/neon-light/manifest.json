@@ -11,7 +11,19 @@
 			"./shinjuku",
 		],
 		"*-mask": [
-			"./myFont",
+			"$(MODDABLE)/examples/assets/fonts/myFont",
 		],
 	},
+	"platforms": {
+		"esp/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+		"esp32/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+	}
 }

@@ -14,10 +14,8 @@
 
 import {} from "piu/MC";
 
-/* Skins, styles, & textures */
 const whiteSkin = new Skin({ fill:"white" });
 
-/* UI templates */
 const DOWN = 0;
 const RIGHT = 1;
 const UP = 2;
@@ -25,7 +23,7 @@ const LEFT = 3;
 const PAUSE = 4;
 
 const LoadingIcon = Port.template($ => ({
-  top: $.top, left: $.left, height: $.squareSize*5, width: $.squareSize*5,
+  height: $.squareSize*5, width: $.squareSize*5,
   Behavior: class extends Behavior {
     onCreate(port, data) {
       this.data = data;
@@ -88,10 +86,10 @@ const LoadingIcon = Port.template($ => ({
   }
 }))
 
-/* Application set-up */
 export default new Application({}, {
-  left: 0, top: 0, width: 320, height:240, skin: whiteSkin, contents: [
-    new LoadingIcon({ top: 70, left: 110, squareSize: 20, frequency: 1000, color: [ 230, 0.74, 0.38 ] }) // ~#192eab
+  skin: whiteSkin, 
+  contents: [
+    new LoadingIcon({ squareSize: 20, frequency: 1000, color: [ 230, 0.74, 0.38 ] }) // ~#192eab
   ],
 });
 

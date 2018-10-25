@@ -10,7 +10,7 @@
 		"*-color": [
 		],
 		"*-mask": [
-			"./myFont",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16"
 		],
 	},
 }

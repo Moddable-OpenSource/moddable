@@ -21,4 +21,16 @@
 			"$(MODDABLE)/examples/assets/images/screen2",
 		],
 	},
+	"platforms": {
+		"esp/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+		"esp32/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+	}
 }
