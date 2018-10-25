@@ -72,6 +72,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._notifyValue(characteristic.handle, characteristic.notify, value);
 	}
 	
+	passkeyReply() @ "xs_ble_server_passkey_reply"
+	
 	disconnect() @ "xs_ble_server_disconnect"
 
 	onReady() {}
@@ -175,7 +177,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onDisconnected({ address:new Bytes(params.address), connection:params.connection });
 				break;
 			case "onPasskeyConfirm":
-				return this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
+				this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
 				break;
 			case "onPasskeyDisplay":
 				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });

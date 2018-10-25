@@ -58,7 +58,7 @@ export class Connection {
 				this.ble.onRSSI(this.client, params);
 				break;
 			case "onPasskeyConfirm":
-				return this.ble.onPasskeyConfirm(this.client, params);
+				this.ble.onPasskeyConfirm(this.client, params);
 				break;
 			case "onPasskeyDisplay":
 				this.ble.onPasskeyDisplay(this.client, params);

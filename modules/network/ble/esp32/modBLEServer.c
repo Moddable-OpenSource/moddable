@@ -239,6 +239,15 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
 }
 
+void xs_ble_server_passkey_reply(xsMachine *the)
+{
+	esp_bd_addr_t bda;
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t confirm = xsmcToBoolean(xsArg(1));
+	c_memmove(&bda, address, sizeof(bda));
+	esp_ble_confirm_reply(bda, confirm);
+}
+
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 {
 	if (uuid->len == ESP_UUID_LEN_16) {
@@ -284,10 +293,8 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
-	confirm = xsmcToBoolean(xsResult);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
 	xsEndHost(gBLE->the);
-	esp_ble_confirm_reply(gBLE->remote_bda, confirm);
 }
 
 static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)

@@ -188,6 +188,14 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 		gecko_cmd_sm_set_bondable_mode(1);
 }
 
+void xs_ble_server_passkey_reply(xsMachine *the)
+{
+	//uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t confirm = xsmcToBoolean(xsArg(1));
+
+	gecko_cmd_sm_passkey_confirm(gBLE->connection, confirm);
+}
+
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
 {
 	for (uint8_t i = 0; i < 6; ++i)
@@ -390,7 +398,6 @@ bail:
 
 static void smPasskeyConfirmEvent(struct gecko_msg_sm_confirm_passkey_evt_t *evt)
 {
-	uint8_t confirm;
 	xsBeginHost(gBLE->the);
 	if (evt->connection != gBLE->connection)
 		goto bail;
@@ -400,9 +407,7 @@ static void smPasskeyConfirmEvent(struct gecko_msg_sm_confirm_passkey_evt_t *evt
 	xsmcSetInteger(xsVar(2), evt->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
-	confirm = xsmcToBoolean(xsResult);
-	gecko_cmd_sm_passkey_confirm(evt->connection, confirm);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }

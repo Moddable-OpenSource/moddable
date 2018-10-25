@@ -76,6 +76,8 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	}
 	stopScanning() @ "xs_ble_client_stop_scanning"
 	
+	passkeyReply() @ "xs_ble_client_passkey_reply"
+
 	_connect() @ "xs_ble_client_connect"
 	_startScanning() @ "xs_ble_client_start_scanning"
 	_setSecurityParameters() @ "xs_ble_client_set_security_parameters"
@@ -107,7 +109,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				this.onDisconnected(params);
 				break;
 			case "onPasskeyConfirm":
-				return this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
+				this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
 				break;
 			case "onPasskeyDisplay":
 				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });
