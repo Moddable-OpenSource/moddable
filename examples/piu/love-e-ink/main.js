@@ -65,12 +65,17 @@ let steps = [
 ];
 
 let LoveApplication = Application.template($ => ({
+	top: 0, bottom: 0, left: 0, right: 0,
 	Behavior: class extends Behavior {
 		onCreate(application, anchors) {
 			this.anchors = anchors;
 			application.interval = 250;
 			application.start();
 			this.index = 0;
+		}
+		onDisplaying(application) {
+			if (application.height != 128 || application.width != 296)
+				trace("WARNING: This application was designed to run on a 296x128 screen.\n");
 		}
 		onTimeChanged(application) {
 			let count = steps.length;
