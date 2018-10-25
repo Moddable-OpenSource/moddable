@@ -19,7 +19,7 @@ import WipeTransition from "piu/WipeTransition";
 
 const whiteSkin = new Skin({ fill:"white" });
 const labelSkin = new Skin({ fill:"black", stroke:"white", top:1 });
-const labelStyle = new Style({ font:"myFont", color:"black" });
+const labelStyle = new Style({ font:"semibold 16px Open Sans", color:"black" });
 const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 }),
 const teamStrings = [
 	"moddable", 
@@ -105,6 +105,10 @@ let BarsApplication = Application.template($ => ({
 			this.index = 0;
 			application.add(new BarsContainer(this.index));
 			application.first.delegate("onDisplayed");
+		}
+		onDisplaying(application) {
+			if (application.height != 240 || application.width != 320)
+				trace("WARNING: This application was designed to run on a 320x240 screen.\n");
 		}
 		onStep(application) {
 			this.index++;
