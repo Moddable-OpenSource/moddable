@@ -2,7 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/drivers/destm32s/manifest.json",
 	],
 	"modules": {
 		"*": "./main",
@@ -14,8 +13,11 @@
 			"./moddable",
 		],
 	},
-	"config": {
-		"screen": "destm32s",
-		"touch": ""
-	},
+	"platforms": {
+		"esp/crystalfontz_monochrome_epaper": {
+			"config": {
+				"rotation": 270,
+			},
+		},
+	}
 }

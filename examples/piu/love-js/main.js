@@ -63,6 +63,10 @@ let LoveApplication = Application.template($ => ({
 			application.duration = this.timeline.duration + 500;
 			application.start();
 		}
+		onDisplaying(application) {
+			if (application.width != 128 || application.height != 128)
+				trace("WARNING: This application was designed to run on a 128x128 screen.\n");
+		}
 		onFinished(application) {
 			this.reverse = !this.reverse;
 			application.time = 0;

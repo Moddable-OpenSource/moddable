@@ -1,7 +1,7 @@
 {
 	"include": [
-				"$(MODDABLE)/examples/manifest_base.json",
-				"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
 	],
 	"modules": {
 		"*": "./main",
@@ -11,7 +11,19 @@
 			"./team",
 		],
 		"*-mask": [
-			"./myFont",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16",
 		],
 	},
+	"platforms": {
+		"esp/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+		"esp32/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+	}
 }
