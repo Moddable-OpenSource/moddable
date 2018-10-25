@@ -9,8 +9,8 @@
 	},
 	"modules": {
 		"*": [
-				"./main",
-			]
+			"./main",
+		]
 	},
 	"resources":{
 		"*-alpha": [
@@ -18,4 +18,16 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
 		]
 	},
+	"platforms": {
+		"esp/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+		"esp32/moddable_zero": {
+			"config": {
+				"rotation": 90,
+			},
+		},
+	}
 }

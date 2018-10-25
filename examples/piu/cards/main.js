@@ -84,6 +84,10 @@ let CardApplication = Application.template($ => ({
 			application.duration = this.timeline.duration + 500;
 			application.start();	
 		}
+		onDisplaying(application) {
+			if (application.height != 320 || application.width != 240)
+				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
+		}
 		onFinished(application) {
 			this.reverse = !this.reverse;
 			if (!this.reverse) {
