@@ -195,6 +195,8 @@ enum {
 	xsStringType,
 	xsStringXType,
 	xsSymbolType,
+	xsBigIntType,
+	xsBigIntXType,
 	xsReferenceType
 };
 typedef char xsType;
