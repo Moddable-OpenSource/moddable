@@ -58,7 +58,7 @@ class SecureHealthThermometerServer extends BLEServer {
 	onPasskeyConfirm(params) {
 		let passkey = this.passkeyToString(params.passkey);
 		trace(`server confirm passkey: ${passkey}\n`);
-		return true;
+		this.passkeyReply(params.address, true);
 	}
 	onPasskeyDisplay(params) {
 		let passkey = this.passkeyToString(params.passkey);
