@@ -8,7 +8,7 @@ Revised: November 22, 2016
 
 ## Introduction
 
-To get animations on a screen connected to a micro-controller by a serial interface (SPI), the game is to minimize the number of pixels that change from frame to frame.
+To get animations on a screen connected to a microcontroller by a serial interface (SPI), the game is to minimize the number of pixels that change from frame to frame.
 
 > FYI, here is what is happening at every frame when changes in the appearance or the layout invalidate and update the screen:
 > 
