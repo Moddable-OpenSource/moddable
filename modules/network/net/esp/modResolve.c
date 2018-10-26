@@ -26,46 +26,85 @@
 
 #include "lwip/tcp.h"
 
-typedef struct {
+typedef struct xsNetResolveRecord xsNetResolveRecord;
+typedef xsNetResolveRecord *xsNetResolve;
+
+struct xsNetResolveRecord {
+	xsNetResolve	next;
 	xsSlot			callback;
 	xsMachine		*the;
 	ip_addr_t		ipaddr;
+	uint8_t			started;
 	uint8_t			resolved;
 	char			name[1];
-} xsNetResolveRecord, *xsNetResolve;
+};
 
 static void didResolve(const char *name, ip_addr_t *ipaddr, void *arg);
 static void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void resolveNext(void);
+
+static xsNetResolve gResolve;
 
 void xs_net_resolve(xsMachine *the)
 {
 	xsNetResolve nr;
 	char *name = xsToString(xsArg(0));
 	int nameLen = espStrLen(name);
-	err_t err;
 
 	nr = malloc(sizeof(xsNetResolveRecord) + nameLen);
 	if (!nr)
 		xsUnknownError("out of memory");
 
+	nr->next = NULL;
 	nr->the = the;
 	nr->callback = xsArg(1);
 	xsRemember(nr->callback);
+	nr->started = 0;
 	nr->resolved = 0;
 
 	xsToStringBuffer(xsArg(0), nr->name, nameLen + 1);
+
+	modCriticalSectionBegin();
+
+	if (NULL == gResolve)
+		gResolve = nr;
+	else {
+		xsNetResolve walker = gResolve;
+		while (walker->next)
+			walker = walker->next;
+		walker->next = nr;
+	}
+
+	modCriticalSectionEnd();
+
+	resolveNext();
+}
+
+void resolveNext(void)
+{
+	xsNetResolve nr;
+	err_t err;
+
+	modCriticalSectionBegin();
+		nr = gResolve;
+		if (nr) {
+			if (nr->started)
+				nr = NULL;
+			else
+				nr->started = 1;
+		}
+	modCriticalSectionEnd();
+	if (!nr) return;
+
 	err = dns_gethostbyname(nr->name, &nr->ipaddr, didResolve, nr);
 	if (ERR_OK == err) {
 		nr->resolved = 1;
-		modMessagePostToMachine(the, NULL, 0, resolvedImmediate, nr);
+		modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 	}
 	else if (ERR_INPROGRESS == err)
 		;
-	else {
-		xsForget(nr->callback);
-		free(nr);
-		xsUnknownError("dns request failed");
-	}
+	else
+		modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 }
 
 void didResolve(const char *name, ip_addr_t *ipaddr, void *arg)
@@ -108,6 +147,12 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 
 	xsEndHost(the);
 
+	modCriticalSectionBegin();
+		gResolve = nr->next;
+	modCriticalSectionEnd();
+
 	xsForget(nr->callback);
 	free(nr);
+
+	resolveNext();
 }
