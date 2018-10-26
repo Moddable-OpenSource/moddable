@@ -19,9 +19,9 @@ As much as practical, the Moddable SDK is implemented in JavaScript. Portions of
 A significant part of building efficient software for microcontrollers occurs at build time. The Moddable SDK contains many tools and options for the build process. Take time to learn about these to get the best results.
 
 ## Getting started
-The Moddable SDK is intended for use with micro-controller hardware. It includes simulators that run on macOS, Linux, and Windows. These are a great way to get started, and invaluable as development accelerators.
+The Moddable SDK is intended for use with microcontroller hardware. It includes simulators that run on macOS, Linux, and Windows. These are a great way to get started, and invaluable as development accelerators.
 
-The [Getting Started](documentation/Moddable%20SDK%20–%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for the ESP8266 and ESP32 microcontrollers.
+The [Getting Started](documentation/Moddable%20SDK%20-%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for the ESP8266 and ESP32 microcontrollers.
 
 Build and configuration instructions for the Silicon Labs Gecko devices is at [Gecko Build](documentation/devices/gecko/GeckoBuild.md).
 
