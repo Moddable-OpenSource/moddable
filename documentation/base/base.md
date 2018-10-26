@@ -124,7 +124,7 @@ The UUID module provides a single function to generate a [UUID](https://en.wikip
 
 	import UUID from "uuid";
 
-> **Note**: Generating a truly unique UUID requires that the device running this function have a unique MAC address and the valid time. Neither of these is guaranteed on all micro-controllers. For production software release, check your device configuration.
+> **Note**: Generating a truly unique UUID requires that the device running this function have a unique MAC address and the valid time. Neither of these is guaranteed on all microcontrollers. For production software release, check your device configuration.
 
 ### UUID()
 
