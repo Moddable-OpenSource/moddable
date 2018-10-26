@@ -163,7 +163,15 @@ class MDNS extends Socket {
 						trace(`probe conflict with ${address}\n`);
 						this.probing = -1;
 						this.probeAttempt += 1;
+						break;
 					}
+					name = name.join(".");
+					this.monitors.forEach(monitor => {
+						monitor.forEach(instance => {
+						if (instance.target === name)
+							instance.address = record.rdata;
+						});
+					});
 					break;
 				case DNS.RR.PTR:
 					service = name.join(".");
@@ -189,7 +197,7 @@ class MDNS extends Socket {
 						instance = {name: name[0]};
 						monitor.push(instance);
 					}
-					if (DNS.RR.TXT == record.qtype) {
+					if (DNS.RR.TXT === record.qtype) {
 						instance.txt = record.rdata ? record.rdata : [];
 						instance.ttl = record.ttl;
 					}
@@ -210,11 +218,13 @@ class MDNS extends Socket {
 				if (!instance.changed)
 					return;
 				delete instance.changed;
-				if (instance.name && instance.txt && instance.target)
+				if (instance.name && instance.txt && instance.target && instance.address)
 					monitor.callback(monitor.service.slice(0, -6), instance);
 				else {
 					let query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
+					if (instance.target)
+						query.add(DNS.SECTION.QUESTION, instance.target, DNS.RR.A, DNS.CLASS.IN | MDNS.UNICAST);
 					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.SRV, DNS.CLASS.IN | MDNS.UNICAST);
 					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.TXT, DNS.CLASS.IN | MDNS.UNICAST);
 
