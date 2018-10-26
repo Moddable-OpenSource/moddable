@@ -470,13 +470,13 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 {
 	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	txU4 data[1] = { 10 };
-	txBigInt quotient = { .sign=0, .size=1, .data=data };
+	txBigInt divider = { .sign=0, .size=1, .data=data };
 	txSize length, offset;
 	txBoolean minus = 0;
 	txSlot* result = slot;
 	
 	if (radix)
-		quotient.data[0] = radix;
+		divider.data[0] = radix;
 	mxPushSlot(slot);
 	slot = the->stack;
 	
@@ -493,8 +493,9 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	result->value.string[--offset] = 0;
 	do {
 		txBigInt* remainder = NULL;
-		slot->value.bigint = *fxBigInt_udiv(the, C_NULL, &slot->value.bigint, &quotient, &remainder);
+		txBigInt* quotient = fxBigInt_udiv(the, C_NULL, &slot->value.bigint, &divider, &remainder);
 		result->value.string[--offset] = c_read8(gxDigits + remainder->data[0]);
+		slot->value.bigint = *quotient;
 		the->stack = slot;
 	}
 	while (!fxBigInt_iszero(&slot->value.bigint));
@@ -1586,10 +1587,9 @@ static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigIn
 	fxBigInt_fill0(q);	/* set 0 to quotient */
 
 	/* process the most significant word */
-	qp = &q->data[q->size - 1];
 	tb = fxBigInt_ulsl1(the, NULL, nb, (n - t) * mxBigIntWordSize);	/* y*b^n */
 	if (fxBigInt_ucomp(na, tb) >= 0) {
-		(*qp)++;
+		q->data[q->size - 1]++;
 		fxBigInt_sub(the, na, na, tb);
 		/* since nomalization done, must be na < tb here */
 	}
@@ -1602,6 +1602,7 @@ static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigIn
 	tb2 = fxBigInt_alloc(the, 3);
 	tb3 = fxBigInt_alloc(the, tb->size + 1);
 
+	qp = &q->data[q->size - 1];
 	ap = na->data;
 	bp = nb->data;
 	for (i = n; i >= t + 1; --i) {
