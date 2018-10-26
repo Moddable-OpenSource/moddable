@@ -14,9 +14,9 @@ Historically, XS used one interface file, `xsPlatform.h` splitting the implement
 
 Further, an XS machine had many ways to find and load modules and programs: from JS files, from stand alone compiled XSB files with or without companion DLL or SO files, and from a linked XSA file with a companion DLL or SO file... The XS platform was in charge of providing such options. 
 
-When we started working on micro-controllers, the main inspiration for XS platforms was the adhoc platform abstraction for command line tools, which was the most complex version.
+When we started working on microcontrollers, the main inspiration for XS platforms was the adhoc platform abstraction for command line tools, which was the most complex version.
 
-Today the XS runtime has been significantly streamlined, especially on micro-controllers. XS machines are always cloned from a read-only machine prepared by the XS linker. There are only modules, byte coded by the XS compiler. Modules are either preloaded or prepared to be loaded and unloaded at runtime. 
+Today the XS runtime has been significantly streamlined, especially on microcontrollers. XS machines are always cloned from a read-only machine prepared by the XS linker. There are only modules, byte coded by the XS compiler. Modules are either preloaded or prepared to be loaded and unloaded at runtime. 
 
 Consequently, it is now much simpler to build an XS platform. This document describes the necessary interface and implementation files.
 
@@ -278,7 +278,7 @@ If the platform supports the creation of XS machines from scratch, `fxBuildKeys`
 
 XS machines use two heaps: the chunks heap and the slots heap. 
 
-Chunks are blocks of variable size that the garbage collector can move to compact memory. XS stores strings, buffers, arrays, etc into chunks. On micro-controllers without a dedicated memory management unit, chunks are also useful to store any kind of data. For instance Piu uses chunks to store its containment hierarchy.
+Chunks are blocks of variable size that the garbage collector can move to compact memory. XS stores strings, buffers, arrays, etc into chunks. On microcontrollers without a dedicated memory management unit, chunks are also useful to store any kind of data. For instance Piu uses chunks to store its containment hierarchy.
 
 Slots are blocks of fixed size (four times the size of a pointer) that never move. XS maintains a list of free slots, slots are allocated from the list and freed into the list by the garbage collector.
 
@@ -292,7 +292,7 @@ XS calls `fxAllocateChunks` to get a system memory block for chunks. Usually imp
 
 XS throws an exception if `fxAllocateChunks` returns NULL.
 
-XS checks if the result of `fxAllocateChunks` is contiguous to `the->firstBlock` so micro-controllers can grow the chunks heap without fragmenting system memory.
+XS checks if the result of `fxAllocateChunks` is contiguous to `the->firstBlock` so microcontrollers can grow the chunks heap without fragmenting system memory.
 
 --
 
@@ -338,7 +338,7 @@ XS calls `fxSweepHost` at the end of a garbage collection.
 
 ### Modules
 
-On platforms that support several ways to get modules, the implementation of `fxFindModule` and `fxLoadModule` can be complex. On micro-controllers, where all modules are prepared or preloaded, the implementation of `fxFindModule`and `fxLoadModule` can be simple enough, as demonstrated by the code snippets here under.
+On platforms that support several ways to get modules, the implementation of `fxFindModule` and `fxLoadModule` can be complex. On microcontrollers, where all modules are prepared or preloaded, the implementation of `fxFindModule`and `fxLoadModule` can be simple enough, as demonstrated by the code snippets here under.
 
 --
 
@@ -356,7 +356,7 @@ A module identifier is a unique `txID`, but the platform defines the format of i
 
 The platform defines also how the importing or requiring module identifier and the imported or required module name are merged. The usual convention is based on absolute (`/*`), relative (`./*`, `../*`) or search (*) paths.
 
-Finding modules can involve looking for various kinds of files, using a set of preferred locations, etc.  But on micro-controllers, all modules modules are prepared and ready to be found:
+Finding modules can involve looking for various kinds of files, using a set of preferred locations, etc.  But on microcontrollers, all modules modules are prepared and ready to be found:
 
 	txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	{
@@ -447,7 +447,7 @@ Finding modules can involve looking for various kinds of files, using a set of p
 
 XS calls `fxLoadModule` to tell the platform to prepare the byte codes, keys and host functions of a module. When ready, the platform  must call `fxResolveModule` with a `txScript` structure that references the byte codes, keys and host functions of the module.
 
-Preparing modules can involve reading and mapping files, parsing, scoping and byte coding scripts, loading dynamic libraries, etc. But on micro-controllers, all `txScript` structures are available and ready to be used:
+Preparing modules can involve reading and mapping files, parsing, scoping and byte coding scripts, loading dynamic libraries, etc. But on microcontrollers, all `txScript` structures are available and ready to be used:
 
 	void fxLoadModule(txMachine* the, txID moduleID)
 	{

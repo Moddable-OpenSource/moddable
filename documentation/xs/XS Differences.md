@@ -20,7 +20,7 @@ These constraints have consequences. This document highlights key differences be
 ## Spare runtime resources
 Embedded platforms do not exist alone. You need a computer to develop applications for them. Therefore, you should prepare in advance of execution, at *compile* time, everything you can in order to spare *run*-time resources. 
 
-On the web, JavaScript engines currently execute scripts and modules from their source code. For microcontrollers, the XS compiler transforms modules source code into byte code on your computer, so the XS engine on the micro-controller only has to execute byte code.
+On the web, JavaScript engines currently execute scripts and modules from their source code. For microcontrollers, the XS compiler transforms modules source code into byte code on your computer, so the XS engine on the microcontroller only has to execute byte code.
 
 At Moddable, we generalized this approach beyond scripts to all kinds of assets. Fonts, movies, pictures, sounds, and textures are always encoded on your computer into the most practical format for the specific hardware target.
 
@@ -45,7 +45,7 @@ The benefits are significant:
 - Since almost nothing is ever copied from ROM to RAM, your application runs with a small amount of RAM.
 - Since everything is ready in ROM, your application boots instantaneously. 
 
-> The XS linker cannot preload a module with a body that calls a native function that is only available on the micro-controller. Typically there will be only one module like that to start your application.
+> The XS linker cannot preload a module with a body that calls a native function that is only available on the microcontroller. Typically there will be only one module like that to start your application.
 
 ## Freeze most objects
 But what happens when applications want to modify objects that the XS linker prepared in ROM?

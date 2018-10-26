@@ -9,7 +9,7 @@ Warning: These notes are preliminary. Omissions and errors are likely. If you en
 
 ## Objective
 
-To develop frameworks for micro-controllers with XS, the most significant constraint is RAM. 
+To develop frameworks for microcontrollers with XS, the most significant constraint is RAM. 
 
 The XS linker prepares most classes, prototypes, functions and byte codes to be accessed straightly from ROM. All the ECMAScript 2017 features, and most modules composing the frameworks are there, instantaneously available and requiring just a few KB of RAM.
 
@@ -57,6 +57,6 @@ C based objects implement host `HOOKS`, which are XS garbage collector callbacks
 
 ## Example
 
-Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on micro-controllers using the *Commodetto* graphics library. 
+Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on microcontrollers using the *Commodetto* graphics library. 
 
 
