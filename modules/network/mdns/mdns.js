@@ -20,10 +20,11 @@
 
 /*
 	To do:
-		 Proper TTL on Answer
-		 Refresh / expire monitored records
-		 case-insensitivity - publish unchanged (uppercase) compare case-insensitive
-		 instance name
+		Proper TTL on Answer
+		Refresh / expire monitored records
+		case-insensitivity - publish unchanged (uppercase) compare case-insensitive
+		instance name
+		unicast reponse only to addresses on same subnet
 */
 
 import {Socket} from "socket";
@@ -37,7 +38,7 @@ const LOCAL = "local";
 const TTL = 4500;
 
 class MDNS extends Socket {
-	constructor(dictionary, callback) {
+	constructor(dictionary = {}, callback) {
 		super({kind: "UDP", port: MDNS.PORT, multicast: MDNS.IP});
 
 		this.services = [];
@@ -219,7 +220,7 @@ class MDNS extends Socket {
 					return;
 				delete instance.changed;
 				if (instance.name && instance.txt && instance.target && instance.address)
-					monitor.callback(monitor.service.slice(0, -6), instance);
+					monitor.callback.call(this, monitor.service.slice(0, -6), instance);
 				else {
 					let query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
