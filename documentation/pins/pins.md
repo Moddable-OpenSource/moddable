@@ -14,7 +14,7 @@ Revised: October 26, 2018
 * [I2C](#i2c)
 * [SMBus](#smbus)
 * [Servo](#servo)
-* [SPI](spi)
+* [SPI](#spi)
 
 <a id="digital"></a>
 ## class Digital
