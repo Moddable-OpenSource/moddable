@@ -134,30 +134,30 @@ export const supportedCipherSuites = [
 		hashSize: 32,
 		encryptionMode: CBC,
 	},
-	{
-		// TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
-		value: [0x00, 0x67],
-		isExportable: false,
-		keyExchangeAlgorithm: DHE_RSA,
-		cipherAlgorithm: AES,
-		cipherKeySize: 16,
-		cipherBlockSize: 16,
-		hashAlgorithm: SHA256,
-		hashSize: 32,
-		encryptionMode: CBC,
-	},
-	{
-		// TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
-		value: [0x00, 0x6b],
-		isExportable: false,
-		keyExchangeAlgorithm: DHE_RSA,
-		cipherAlgorithm: AES,
-		cipherKeySize: 32,
-		cipherBlockSize: 16,
-		hashAlgorithm: SHA256,
-		hashSize: 32,
-		encryptionMode: CBC,
-	},
+//	{
+//		// TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+//		value: [0x00, 0x67],
+//		isExportable: false,
+//		keyExchangeAlgorithm: DHE_RSA,
+//		cipherAlgorithm: AES,
+//		cipherKeySize: 16,
+//		cipherBlockSize: 16,
+//		hashAlgorithm: SHA256,
+//		hashSize: 32,
+//		encryptionMode: CBC,
+//	},
+//	{
+//		// TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+//		value: [0x00, 0x6b],
+//		isExportable: false,
+//		keyExchangeAlgorithm: DHE_RSA,
+//		cipherAlgorithm: AES,
+//		cipherKeySize: 32,
+//		cipherBlockSize: 16,
+//		hashAlgorithm: SHA256,
+//		hashSize: 32,
+//		encryptionMode: CBC,
+//	},
 //	{
 //		// TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 (RFC 5288)
 //		value: [0x00, 0x9e],
