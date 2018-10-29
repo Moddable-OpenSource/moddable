@@ -1,0 +1,26 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+		],
+		"pins/pwm": "$(MODULES)/pins/pwm/pwm",
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/pwm/esp/*",
+			},
+			"config": {
+				"r_pin": 12,
+				"g_pin": 13,
+				"b_pin": 14,
+			},
+		},
+		"...": {
+			"error": "Platform not supported"
+		},
+	}
+}
