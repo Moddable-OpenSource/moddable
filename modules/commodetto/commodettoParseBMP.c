@@ -40,10 +40,10 @@ void xs_parseBMP(xsMachine *the)
 	if ((66 != c_read8(bytes + 0)) || (77 != c_read8(bytes + 1)))		// "BM"
 		xsUnknownError("invalid BMP");
 
-	uint32_t offset = c_read8(bytes + 10) | (c_read8(bytes + 11) << 8) | (c_read8(bytes + 12) << 16)| (c_read8(bytes + 13) << 24);
+	uint32_t offset = c_read8(bytes + 10) | (c_read8(bytes + 11) << 8) | (c_read8(bytes + 12) << 16) | (c_read8(bytes + 13) << 24);
 	uint16_t size = c_read8(bytes + 14) | (c_read8(bytes + 15) << 8);		// biSize
-	uint32_t width = c_read8(bytes + 18) | (c_read8(bytes + 19) << 8) | (c_read8(bytes + 20) << 16)| (c_read8(bytes + 21) << 24);
-	uint32_t height = c_read8(bytes + 22) | (c_read8(bytes + 23) << 8) | (c_read8(bytes + 24) << 16)| (c_read8(bytes + 25) << 24);
+	uint32_t width = c_read8(bytes + 18) | (c_read8(bytes + 19) << 8) | (c_read8(bytes + 20) << 16) | (c_read8(bytes + 21) << 24);
+	uint32_t height = c_read8(bytes + 22) | (c_read8(bytes + 23) << 8) | (c_read8(bytes + 24) << 16) | ((uint32_t)c_read8(bytes + 25) << 24);
 	if (c_read8(bytes + 25) & 0x80) {	// negative value... ouch. means BMP is upside down.
 		height = ~height;
 		height += 1;
