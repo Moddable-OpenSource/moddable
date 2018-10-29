@@ -148,11 +148,11 @@ void PiuLocals_get(xsMachine* the)
 			d = (int32_t)PiuLocalsHash((uint32_t)d, (uint8_t*)string) % c;
 		else
 			return;
-	#if mxDebug
+//	#if mxDebug
 		offset = c_read32(seeds + 1 + c + 1 + d);
   		if (c_strcmp((xsStringValue)seeds + offset, string))
   			return;
-	#endif
+//	#endif
   		offset = c_read32(results + 1 + d);
   		string = (xsStringValue)results + offset;
   		fxStringX(the, &xsResult, string);
