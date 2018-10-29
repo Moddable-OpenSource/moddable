@@ -40,7 +40,7 @@ if (undefined != config.button1_pin) {
 	else
 		monitor1 = new Monitor({pin: config.button1_pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 	monitor1.onChanged = function() {
-		trace("Button 1, ", this.read(), " times\n");
+		trace(`Button 1: state: ${this.read()}, changed ${this.rises + this.falls} times\n`);
 	}
 }
 
@@ -50,7 +50,7 @@ if (undefined != config.button2_pin) {
 	else
 		monitor2 = new Monitor({pin: config.button2_pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 	monitor2.onChanged = function() {
-		trace("Button 2, ", this.read(), " times\n");
+		trace(`Button 2: state: ${this.read()}, changed ${this.rises + this.falls} times\n`);
 	}
 }
 
