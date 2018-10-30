@@ -760,8 +760,10 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 			esp_ble_gap_start_scanning(0);			// 0 == scan until explicitly stopped
 			break;
 		case ESP_GAP_BLE_SCAN_RESULT_EVT:
-			if (ESP_GAP_SEARCH_INQ_RES_EVT == param->scan_rst.search_evt)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->scan_rst, sizeof(struct ble_scan_result_evt_param), scanResultEvent, gBLE);
+			if (ESP_GAP_SEARCH_INQ_RES_EVT == param->scan_rst.search_evt) {
+				if (param->scan_rst.adv_data_len + param->scan_rst.scan_rsp_len > 0)
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->scan_rst, sizeof(struct ble_scan_result_evt_param), scanResultEvent, gBLE);
+			}
             break;
         case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT:
         	if (ESP_GATT_OK == param->read_rssi_cmpl.status)
