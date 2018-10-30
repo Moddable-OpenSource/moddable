@@ -979,7 +979,28 @@ static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, 
 	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connection->gattc_if, connection->conn_id, reg_for_notify->handle, uuid, &result, &count)) {
 		uint16_t notify_en = 1;
 		esp_ble_gattc_write_char_descr(connection->gattc_if, connection->conn_id, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+	
+		xsBeginHost(gBLE->the);
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetInteger(xsVar(1), reg_for_notify->handle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+		xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotificationEnabled"), xsVar(0));
+		xsEndHost(gBLE->the);
 	}
+}
+
+static void gattcUnregisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_unreg_for_notify_evt_param *unreg_for_notify = (struct gattc_unreg_for_notify_evt_param *)message;
+    modBLEConnection connection = (modBLEConnection)refcon;
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), unreg_for_notify->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
@@ -1052,6 +1073,25 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			else {
 				LOG_GATTC_MSG("ESP_GATTC_REG_FOR_NOTIFY_EVT failed, status =");
 				LOG_GATTC_INT(param->reg_for_notify.status);
+			}
+#endif
+			break;
+		case ESP_GATTC_UNREG_FOR_NOTIFY_EVT:
+			if (param->unreg_for_notify.status == ESP_GATT_OK) {
+ 				modCriticalSectionBegin();
+				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
+ 				modCriticalSectionEnd();
+ 				if (connection)
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->unreg_for_notify, sizeof(struct gattc_unreg_for_notify_evt_param), gattcUnregisterNotifyEvent, connection);
+#if LOG_GATTC
+				else
+					LOG_GATTC_MSG("ESP_GATTC_UNREG_FOR_NOTIFY_EVT failed to find connection");
+#endif
+			}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_UNREG_FOR_NOTIFY_EVT failed, status =");
+				LOG_GATTC_INT(param->unreg_for_notify.status);
 			}
 #endif
 			break;

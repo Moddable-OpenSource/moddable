@@ -103,6 +103,18 @@ export class Client {
 					this.services.push(new Service(params));
 				}
 				break;
+			case "onCharacteristicNotificationEnabled": {
+				let characteristic = this._findCharacteristicByHandle(params.handle);
+				if (characteristic)
+					this.ble.onCharacteristicNotificationEnabled(characteristic);		
+				break;
+			}
+			case "onCharacteristicNotificationDisabled": {
+				let characteristic = this._findCharacteristicByHandle(params.handle);
+				if (characteristic)
+					this.ble.onCharacteristicNotificationDisabled(characteristic);		
+				break;
+			}
 			case "onCharacteristicNotification": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic)

@@ -58,6 +58,8 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	// From Characteristic object
 	onCharacteristicValue() {}
 	onCharacteristicNotification() {}
+	onCharacteristicNotificationEnabled() {}
+	onCharacteristicNotificationDisabled() {}
 
 	// From Descriptor object
 	onDescriptorValue() {}
