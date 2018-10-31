@@ -484,7 +484,7 @@ export class MakeFile extends FILE {
 			this.line("$(RESOURCES_DIR)", tool.slash, result.target, ": ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
 		this.write("$(RESOURCES_DIR)");
 		this.write(tool.slash);
-		this.write("locals.mhi:");
+		this.write("locals.mhi: $(HEADERS)");
 		for (var result of tool.stringFiles) {
 			this.write(" ");
 			this.write(result.source);
@@ -492,8 +492,11 @@ export class MakeFile extends FILE {
 		this.line("");
 		this.echo(tool, "mclocal strings");
 		this.write("\t$(MCLOCAL)");
-		this.write(tool.windows ? " $**" : " $^");
-		if (tool.debug)
+		for (var result of tool.stringFiles) {
+			this.write(" ");
+			this.write(result.source);
+		}
+		if (!defines || !defines.locals || !defines.locals.all)
 			this.write(" -d");
 		if (tool.format)
 			this.write(" -s");
