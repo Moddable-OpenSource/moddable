@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-18 Moddable Tech, Inc.
 
-Revised: October 22, 2018
+Revised: October 30, 2018
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -567,8 +567,28 @@ Use the `enableNotifications` function to enable characteristic value change not
 
 ***
 
+#### `onCharacteristicNotificationEnabled(characteristic)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `characteristic` | `object` | A `characteristic` object. |
+
+The `onCharacteristicNotificationEnabled` callback function is called when notifications have been enabled for the `characteristic`.
+
+***
+
 #### `disableNotifications()`
 Use the `disableNotifications` function to disable characteristic value change notifications.
+
+***
+
+#### `onCharacteristicNotificationDisabled(characteristic)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `characteristic` | `object` | A `characteristic` object. |
+
+The `onCharacteristicNotificationDisabled` callback function is called when notifications have been disabled for the `characteristic`.
 
 ***
 
