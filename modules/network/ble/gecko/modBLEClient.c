@@ -906,11 +906,21 @@ static void gattProcedureCompletedEvent(struct gecko_msg_gatt_procedure_complete
 		case CMD_GATT_DISCOVER_DESCRIPTORS_ID:
 			xsCall1(procedure->obj, xsID_callback, xsString("onDescriptor"));
 			break;
+		case CMD_GATT_CHARACTERISTIC_SET_NOTIFICATION_ID: {
+			xsmcVars(2);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetInteger(xsVar(1), procedure->notification_param.characteristic);
+			xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+			xsCall2(procedure->obj, xsID_callback,
+				procedure->notification_param.flags == gatt_notification ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"),
+				xsVar(0));
+			break;
+		}
 		default:
 			break;
 	}
-	c_free(procedure);
-		
+    c_free(procedure);
+    	
 	// execute all queued procedures that don't generate completion events
 	while ((NULL != connection->procedureQueue) && !connection->procedureQueue->executed) {
 		procedure = connection->procedureQueue;
