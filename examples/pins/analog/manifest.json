@@ -2,7 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/pins/analog/manifest.json",
 	],
 	"modules": {
@@ -12,8 +11,5 @@
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/myFont",
 	   ],
-	},
-	"config": {
-		"screen": "ili9341"
 	},
 }
