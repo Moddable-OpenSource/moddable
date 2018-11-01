@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -80,15 +80,15 @@ class ApplicationBehavior extends Behavior {
 				global.monitor = new WiFi(nextScreenData, message => {
 					trace("message: "+message+"\n");
 					if (message == "gotIP"){
-					  	Net.resolve("pool.ntp.org", (name, address) => {
-							if (!address) {
+					  	Net.resolve("pool.ntp.org", (name, host) => {
+							if (!host) {
 								trace("Unable to resolve sntp host\n");
 								application.delegate("doNext", "CONNECTION_ERROR", nextScreenData);
 								return;
 							}
-							trace(`resolved ${name} to ${address}\n`);
+							trace(`resolved ${name} to ${host}\n`);
 							global.application.behavior.timeout = Date.now() + 10000;
-							global.monitor = new SNTP({address}, (message, value) => {
+							global.monitor = new SNTP({host}, (message, value) => {
 								if (1 == message) {
 									Time.set(value);
 									delete global.application.behavior.timeout;

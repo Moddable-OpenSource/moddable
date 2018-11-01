@@ -16,17 +16,35 @@
 	"modules": {
 		"*": [
 			"./main",
+			"$(MODULES)/network/websocket/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
 			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/data/base64/*",
-			"$(MODULES)/network/websocket/*",
-			"$(MODULES)/network/wifi/*",
-		],
+		]
 	},
+	"preload": [
+		"websocket",
+		"base64",
+		"digest",
+		"logical"
+	],
 	"resources":{
 		"*-alpha": [
 			"./fonts/OpenSans-Regular-20",
 			"./fonts/OpenSans-Semibold-18",
 		]
+	},
+	"platforms": {
+		"esp": {
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32": {
+			"config": {
+				"rotation": 90
+			}
+		}
 	},
 }

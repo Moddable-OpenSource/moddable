@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,11 +13,7 @@
  */
 
 import {} from "piu/MC";
-
-import {
-  Request
-} from "http";
-
+import { Request } from "http";
 import Timeline from "piu/Timeline";
 
 const APPID = "94de4cda19a2ba07d3fa6450eb80f091";
@@ -33,7 +29,6 @@ const SUNRAIN = 5;
 const TORNADO = 6;
 const DARKCLOUD = 7;
 
-/* Skins, styles, & textures */
 const WHITE = "#E7DFDD";
 const BLACK = "#3b3a36";
 const ORANGE = [21, 0.36];	//"#AD7252";
@@ -48,9 +43,12 @@ const OpenSans52 = new Style({ font: "normal normal normal 52px Open Sans" });
 const OpenSans20 = new Style({ font: "semibold 20px Open Sans", color: "#6DB14E" });
 const OpenSans28 = new Style({ font: "semibold 28px Open Sans" });
 
-/* UI templates */
+function titleCase(str) {
+	return str.split(' ').map(i => i[0].toUpperCase() + i.substring(1)).join(' ')
+}
+
 const AnimatedText = Port.template($ => ({
-	name: $.name, top: $.top, height: $.height, left: 240, width:240,
+	left: 240, width:240,
 	Behavior: class extends Behavior {
 		onCreate(port, data) {
 			this.string = data.string;
@@ -90,22 +88,25 @@ const AnimatedText = Port.template($ => ({
 }));
 
 let MainCol = Column.template($ => ({
-	left:0, top:0, right: 0, bottom: 0, skin: blackSkin, contents:[
-		new AnimatedText({ name: "city", top: 18, height: 38, string: $.city, style: OpenSans28, color: GREEN }),
-		new AnimatedText({ name: "temp", top: -4, height: 58, string: $.temp, style: OpenSans52, color: BLUE }),
-		Content($, {name: "icon", left:285, width: 150, top: 10, height:150, skin: iconSkin, variant: $.icon}),
-		new AnimatedText({ name: "condition", top: 3, height: 26, string: $.condition, style: OpenSans20, color: ORANGE }),	
+	left:0, top:0, right: 0, bottom: 0, 
+	skin: blackSkin,
+	contents:[
+		new AnimatedText({ string: $.city, style: OpenSans28, color: GREEN }, { name: "city", top: 18, height: 38, }),
+		new AnimatedText({ string: $.temp, style: OpenSans52, color: BLUE }, { name: "temp", top: -4, height: 58, }),
+		Content($, { name: "icon", left:285, width: 150, top: 10, height:150, skin: iconSkin, variant: $.icon }),
+		new AnimatedText({ string: $.condition, style: OpenSans20, color: ORANGE }, { name: "condition", top: 3, height: 26, }),	
 	],
 	Behavior: class extends Behavior {
 		onCreate(content, data) {
+			this.data = data;
 			this.transitioningIn = 1;
 		}
 		onDisplaying(column) {
 			this.timeline = (new Timeline)
-				.to(column.first, { x:0 }, 500, Math.quadEaseOut, 0)
-				.to(column.first.next, { x:0 }, 500, Math.quadEaseOut, -450)
-				.to(column.first.next.next, { x:45 }, 500, Math.quadEaseOut, -450)
-				.to(column.last, { x:0 }, 500, Math.quadEaseOut, -450)
+				.to(column.content("city"), { x:0 }, 500, Math.quadEaseOut, 0)
+				.to(column.content("temp"), { x:0 }, 500, Math.quadEaseOut, -450)
+				.to(column.content("icon"), { x:45 }, 500, Math.quadEaseOut, -450)
+				.to(column.content("condition"), { x:0 }, 500, Math.quadEaseOut, -450)
 			column.duration = this.timeline.duration;
 			column.time = 0;
 			column.start();
@@ -123,10 +124,10 @@ let MainCol = Column.template($ => ({
 		}
 		onTransitionOut(column) {
 			this.timeline = (new Timeline)
-				.to(column.first, { x:-240 }, 400, Math.quadEaseIn, 0)
-				.to(column.first.next, { x:-240 }, 400, Math.quadEaseIn, -280)
-				.to(column.first.next.next, { x:-285 }, 400, Math.quadEaseIn, -280)
-				.to(column.last, { x:-240 }, 400, Math.quadEaseIn, -280)
+				.to(column.content("city"), { x:-240 }, 400, Math.quadEaseIn, 0)
+				.to(column.content("temp"), { x:-240 }, 400, Math.quadEaseIn, -280)
+				.to(column.content("icon"), { x:-285 }, 400, Math.quadEaseIn, -280)
+				.to(column.content("condition"), { x:-240 }, 400, Math.quadEaseIn, -280)
 			column.duration = this.timeline.duration;
 			column.time = 0;
 			column.start();
@@ -134,88 +135,89 @@ let MainCol = Column.template($ => ({
 	}
 }));
 
-/* Application set-up */
-export default new Application(null, {
-	Behavior: class extends Behavior {
-	  onCreate(application) {
-	  	application.add(Label(null, {
-	  		left: 0, right: 0, top: 0, bottom: 0, skin: blackSkin, 
-	  		style: OpenSans20, string: "Loading...",
-	  		Behavior: class extends Behavior {
-	  			onTransitionOut(label) {
-	  				application.defer("onAddNextScreen");
-	  			}
-	  		}
-	  	}))
-		this.zipIndex = 0;
-		let zip = zips[this.zipIndex];
-		this.getWeatherData(application, zip); 
-		application.interval = 8000;
-		application.start();
-	  }
-	  onTimeChanged(application) {
-		if (++this.zipIndex >= zips.length) this.zipIndex = 0;
-		let zip = zips[this.zipIndex];
-		this.getWeatherData(application, zip);     
-	  }
-	  getWeatherData(application, zip) {
-		let request = new Request({
-		  host: "api.openweathermap.org",
-		  path: `/data/2.5/weather?zip=${zip},${country}&appid=${APPID}&units=imperial`,
-		  response: String
-		});
-		request.callback = function(message, value) {
-		  if (5 == message) {
-		  	value = JSON.parse(value);
-			let icon = value.weather[0].icon.substring(0,2);
-			let toDraw = 0;
-			switch (icon){
-			  case "01":
-				toDraw = SUN;
-				break;
-			  case "02":
-				toDraw = PARTIAL;
-				break;
-			  case "03":
-				toDraw = CLOUD;
-				break;
-			  case "04":
-				toDraw = DARKCLOUD;
-				break;
-			  case "09":
-				toDraw = RAIN;
-				break;
-			  case "10":
-				toDraw = SUNRAIN;
-				break;
-			  case "11":
-				toDraw = TORNADO;
-				break;
-			  case "13":
-				toDraw = SNOW;
-				break;
-			  default:
-				toDraw = TORNADO;
-				break;
+const WeatherApp = Application.template($ => ({
+	contents: [
+		Label($, {
+			left: 0, right: 0, top: 0, bottom: 0, 
+			skin: blackSkin, style: OpenSans20, string: "Loading...",
+			Behavior: class extends Behavior {
+				onTransitionOut(label) {
+					application.defer("onAddNextScreen");
+				}
 			}
-			application.behavior.nextScreenData = {
-			  city: value.name,
-			  temp: value.main.temp + " F",
-			  condition: titleCase(value.weather[0].description),
-			  icon: toDraw
-			};
-			application.first.delegate("onTransitionOut");
-		  }
+		}),
+	],
+	Behavior: class extends Behavior {
+	  	onCreate(application, data) {
+	  		this.data = data;
+			this.zipIndex = 0;
+			let zip = zips[this.zipIndex];
+			this.getWeatherData(application, zip); 
+			application.interval = 8000;
+			application.start();
+	  	}
+		onDisplaying(application) {
+			if (application.height != 320 || application.width != 240)
+				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
 		}
-	  }
-	  onAddNextScreen(application) {
-	  	application.empty();
-	  	application.purge();
-	  	application.add(new MainCol(this.nextScreenData));
-	  }
+		onTimeChanged(application) {
+			if (++this.zipIndex >= zips.length) this.zipIndex = 0;
+			let zip = zips[this.zipIndex];
+			this.getWeatherData(application, zip);     
+		}
+		getWeatherData(application, zip) {
+			let request = new Request({
+				host: "api.openweathermap.org",
+				path: `/data/2.5/weather?zip=${zip},${country}&appid=${APPID}&units=imperial`,
+				response: String
+			});
+			request.callback = (message, value) => {
+				if (5 == message) {
+					value = JSON.parse(value);
+					let icon = value.weather[0].icon.substring(0,2);
+					let toDraw;
+					switch (icon){
+						case "01":
+							toDraw = SUN;
+							break;
+						case "02":
+							toDraw = PARTIAL;
+							break;
+						case "03":
+							toDraw = CLOUD;
+							break;
+						case "04":
+							toDraw = DARKCLOUD;
+							break;
+						case "09":
+							toDraw = RAIN;
+							break;
+						case "10":
+							toDraw = SUNRAIN;
+							break;
+						case "11":
+							toDraw = TORNADO;
+							break;
+						case "13":
+							toDraw = SNOW;
+							break;
+						default:
+							toDraw = TORNADO;
+							break;
+					}
+					this.data.city = value.name,
+					this.data.temp = value.main.temp + " F",
+					this.data.condition = titleCase(value.weather[0].description),
+					this.data.icon = toDraw
+					application.first.delegate("onTransitionOut");
+				}
+			}
+		}
+		onAddNextScreen(application) {
+			application.empty();
+			application.add(new MainCol(this.data));
+		}
 	},
-});
+}));
 
-function titleCase(str) {
-	return str.split(' ').map(i => i[0].toUpperCase() + i.substring(1)).join(' ')
-}
+export default new WeatherApp({});

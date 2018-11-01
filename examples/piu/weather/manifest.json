@@ -8,19 +8,17 @@
 		"*": [
 			"./main",
 			"$(MODULES)/network/http/*",
-			"$(MODULES)/network/socket/*",
 		]
 	},
 	"preload": [
 		"http",
-		"socket"
 	],
 	"resources":{
 		"*-alpha": [
 			"./assets/icons-alpha",
-			"./fonts/OpenSans-Regular-52",
-			"./fonts/OpenSans-Semibold-20",
-			"./fonts/OpenSans-Semibold-28",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-52",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-20",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 		],
 	},
 }

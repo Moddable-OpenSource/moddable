@@ -3,30 +3,38 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/drivers/ssd1306/manifest.json",
 	],
-	"config": {
-		"screen": "ssd1306",
-		"touch": "",
-	},
 	"modules": {
 		"*": [
 			"./main",
+			"$(MODULES)/network/websocket/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
 			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/data/base64/*",
-			"$(MODULES)/network/websocket/*",
-		],
+		]
 	},
 	"preload": [
-		"base64",
-		"crypt",
 		"websocket",
+		"base64",
+		"digest",
+		"logical"
 	],
 	"resources":{
 		"*-alpha": [
 			"./OpenSans-Semibold-28",
 		],
 	},
-	"strip":"*",
+	"platforms": {
+		"esp": {
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32": {
+			"config": {
+				"rotation": 90
+			}
+		}
+	},
 }

@@ -3,6 +3,9 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 	],
+	"creation":{
+		"stack":350,
+	},
 	"modules": {
 		"*": [
 			"./main",

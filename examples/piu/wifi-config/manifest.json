@@ -18,13 +18,11 @@
 			"./main",
 			"./wifi-screens",
 			"./assets",
-			"./scroller",
 		]
 	},
 	"preload": [
 		"wifi-screens",
 		"assets",
-		"scroller",
 	],
 	"platforms": {
 		"mac": {
@@ -41,6 +39,16 @@
 					"$(MODULES)/network/wifi/*"
 				],
 				"wifi": "./simulator/wifisim"
+			}
+		},
+		"esp": {
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32": {
+			"config": {
+				"rotation": 90
 			}
 		}
 	},
