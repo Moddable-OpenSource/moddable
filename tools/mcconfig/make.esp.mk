@@ -269,10 +269,10 @@ C_FLAGS_NODATASECTION = -c -Os -g -Wpointer-arith -Wno-implicit-function-declara
 CPP_FLAGS ?= -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions=4 -std=c++11 -MMD -ffunction-sections
 S_FLAGS ?= -c -g -x assembler-with-cpp -MMD
 ifeq ($(ESP_SDK_RELEASE),esp8266-2.4.0)
-LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
+LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_erase_sector -Wl,-wrap,spi_flash_read
 LD_STD_LIBS ?= -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
 else
-LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
+LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_erase_sector -Wl,-wrap,register_chipv6_phy
 LD_STD_LIBS ?= -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls
 endif
 # stdc++ used in later versions of esp8266 Arduino
