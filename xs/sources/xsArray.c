@@ -340,6 +340,8 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			the->stack += 2;
 		}
 	}
+	if (result == 0)
+		result = (b->next > a->next) ? -1 : (b->next < a->next) ? 1 : 0;
 	return result;
 }
 
@@ -1924,6 +1926,7 @@ void fx_Array_prototype_sort(txMachine* the)
 	#define COMPARE(INDEX) \
 		fxCompareArrayItem(the, function, array, INDEX)
 	#define COPY \
+		to->next = from->next; \
 		to->ID = from->ID; \
 		to->kind = from->kind; \
 		to->value = from->value
