@@ -1,0 +1,45 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/network/ble/ams-client/manifest.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*"
+		],
+		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+	},
+	"resources": {
+		"*-mask": [
+			"./note",
+			"./pause",
+			"./play",
+			"./previous",
+			"./next",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18",
+		],
+		"*": [
+			"$(MODULES)/crypt/data/ca107",
+			"$(MODULES)/crypt/data/ca109",
+		]
+	},
+	"creation": {
+		"static":53000,
+		"keys": {
+			"available":8000,
+			"name":1993,
+			"symbol":127,
+		},
+	},
+	"platforms": {
+		"gecko/blue": {
+			"error": "application not supported on this platform"
+		}
+	}
+}
