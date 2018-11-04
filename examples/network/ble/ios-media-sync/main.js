@@ -25,7 +25,7 @@
 	https://github.com/Kinoma/KPR-examples/blob/master/media-player/src/assets/media-transport-controls.png
 */
 
-import {AMSAuthenticator, AMSClient, PlaybackState} from "amsclient";
+import {AMSAuthenticator, AMSClient, PlaybackState, RemoteCommandID} from "amsclient";
 import Time from "time";
 import Timer from "timer";
 import Poco from "commodetto/Poco";
@@ -304,15 +304,11 @@ class AMSPlayerClient extends AMSClient {
 			render.end();
 			this.button = null;
 			if ("previous" == id)
-				this.previousTrack();
+				this.remoteCommand(RemoteCommandID.PreviousTrack);
 			else if ("next" == id)
-				this.nextTrack();
-			else if ("playpause" == id) {
-				if (this.playing)
-					this.pause();
-				else
-					this.play();
-			}
+				this.remoteCommand(RemoteCommandID.NextTrack);
+			else if ("playpause" == id)
+				this.remoteCommand(this.playing ? RemoteCommandID.Pause : RemoteCommandID.Play);
 		}
 	}
 	contains(x, y) {
