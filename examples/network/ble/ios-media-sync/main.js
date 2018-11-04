@@ -25,7 +25,7 @@
 	https://github.com/Kinoma/KPR-examples/blob/master/media-player/src/assets/media-transport-controls.png
 */
 
-import {AMSAuthenticator, AMSClient, PlaybackState} from "ams";
+import {AMSAuthenticator, AMSClient, PlaybackState} from "amsclient";
 import Time from "time";
 import Timer from "timer";
 import Poco from "commodetto/Poco";
@@ -89,7 +89,7 @@ class Rectangle {
 	}
 }
 
-class AppleMediaServiceMonitor {
+class AppleMediaServiceClient {
 	constructor(render) {
 		this.render = render;
 	}
@@ -97,11 +97,11 @@ class AppleMediaServiceMonitor {
 		this.server = new AMSAuthenticator(this);
 	}
 	onAuthenticated(device) {
-		this.client = new AppleMediaServiceClient(this.render, device);
+		this.client = new AMSPlayerClient(this.render, device);
 	}
 }
 
-class AppleMediaServiceClient extends AMSClient {
+class AMSPlayerClient extends AMSClient {
 	constructor(render, device) {
 		super(device);
 		this.render = render;
@@ -394,5 +394,5 @@ render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 render.end();
 
-let monitor = new AppleMediaServiceMonitor(render);
-monitor.start();
+let client = new AppleMediaServiceClient(render);
+client.start();
