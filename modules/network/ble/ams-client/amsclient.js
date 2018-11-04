@@ -166,9 +166,8 @@ class AMSClient extends BLEClient {
 				this._title_ = value;
 			else if (TrackAttributeID.Duration == attributeID)
 				this._duration_ = parseFloat(value);
-			if (this._artist_ && this._album_ && this._title_ && this._duration_) {
+			if (this._artist_ && this._album_ && this._title_ && this._duration_)
 				this.onTrackChanged(this._artist_, this._album_, this._title_, this._duration_);
-			}
 		}
 		else if (EntityID.Player == entityID) {
 			let parts = value.split(',');
@@ -186,7 +185,7 @@ class AMSClient extends BLEClient {
 		let command = Uint8Array.of(RemoteCommandID.PreviousTrack);
 		this.remoteCommandCharacteristic.writeWithoutResponse(command.buffer);
 	}
-	play () {
+	play() {
 		let command = Uint8Array.of(RemoteCommandID.Play);
 		this.remoteCommandCharacteristic.writeWithoutResponse(command.buffer);
 	}
