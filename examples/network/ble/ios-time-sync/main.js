@@ -16,7 +16,7 @@
 	Launch the example and connect to the Moddable Zero from your iPhone Bluetooth settings.
 	After synchronizing the time over BLE, the current time and date will be displayed on the LCD.
 	
-	mcconfig -d -m -p esp32/moddable_zero -r 270
+	mcconfig -d -m -p esp32/moddable_zero
 
 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.current_time.xml
 */
@@ -43,9 +43,9 @@ class TimeSyncClient {
 	}
 	onTimeRead(date) {    
 		Time.set(date);
+		this.displayTime();
 		this.server.close();
 		this.client.close();
-		this.displayTime();
 	}
 	displayTime() {
 		let timer = Timer.repeat(() => {
