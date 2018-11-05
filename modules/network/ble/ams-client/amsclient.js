@@ -80,6 +80,28 @@ const PlaybackState = {
 }
 Object.freeze(PlaybackState);
 
+const QueueAttributeID = {
+	Index: 0,
+	Count: 1,
+	ShuffleMode: 2,
+	RepeatMode: 3,
+}
+Object.freeze(QueueAttributeID);
+
+const ShuffleMode = {
+	Off: 0,
+	One: 1,
+	All: 2,
+}
+Object.freeze(ShuffleMode);
+
+const RepeatMode = {
+	Off: 0,
+	One: 1,
+	All: 2,
+}
+Object.freeze(RepeatMode);
+
 class AMSAuthenticator extends BLEServer {
 	constructor(client) {
 		super();
@@ -153,27 +175,23 @@ class AMSClient extends BLEClient {
 	}
 	onCharacteristicNotification(characteristic, buffer) {
 		if (characteristic.uuid.equals(this.ENTITY_UPDATE_CHARACTERISTIC_UUID)) {
-			let view = new DataView(buffer, 0, 3);
-			let entityID = view.getUint8(0);
-			let attributeID = view.getUint8(1);
-			let entityUpdateFlags = view.getUint8(2);
+			let entityUpdate = new Uint8Array(buffer);
+			let entityID = entityUpdate[0];
+			let attributeID = entityUpdate[1];
+			let flags = entityUpdate[2];
 			let value = String.fromArrayBuffer(buffer.slice(3));
 		
 			if (EntityID.Track == entityID) {
-				if (TrackAttributeID.Artist == attributeID) {
-					this._artist_ = value;
-					this._album_ = null;
-					this._title_ = null;
-					this._duration_ = null;
-				}
+				if (TrackAttributeID.Artist == attributeID)
+					this._nextTrack = { artist:value };
 				else if (TrackAttributeID.Album == attributeID)
-					this._album_ = value;
+					this._nextTrack.album = value;
 				else if (TrackAttributeID.Title == attributeID)
-					this._title_ = value;
+					this._nextTrack.title = value;
 				else if (TrackAttributeID.Duration == attributeID)
-					this._duration_ = parseFloat(value);
-				if (this._artist_ && this._album_ && this._title_ && this._duration_)
-					this.onTrackChanged(this._artist_, this._album_, this._title_, this._duration_);
+					this._nextTrack.duration = parseFloat(value);
+				if (4 == Object.keys(this._nextTrack).length)
+					this.onTrackChanged(this._nextTrack.artist, this._nextTrack.album, this._nextTrack.title, this._nextTrack.duration);
 			}
 			else if (EntityID.Player == entityID) {
 				let parts = value.split(',');
@@ -198,4 +216,4 @@ class AMSClient extends BLEClient {
 }
 Object.freeze(AMSClient.prototype);
 
-export {AMSAuthenticator, AMSClient, RemoteCommandID, PlaybackState};
+export {AMSAuthenticator, AMSClient, RemoteCommandID, PlaybackState, QueueAttributeID, ShuffleMode, RepeatMode};
