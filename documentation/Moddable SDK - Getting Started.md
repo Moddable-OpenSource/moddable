@@ -5,8 +5,27 @@ Revised: September 28, 2018
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
+## Table of Contents
+
+* [macOS](#mac)
+	* [Host environment setup](#host-mac)
+	* [ESP8266 (Moddable Zero)](#esp8266-mac)
+	* [ESP32](#esp32-mac)
+* [Windows](#windows)
+	* [Host environment setup](#host-windows)
+	* [ESP8266 (Moddable Zero)](#esp8266-windows)
+	* [ESP32](#esp32-windows)
+* [Linux](#linux)
+	* [Host environment setup](#host-linux)
+	* [ESP8266 (Moddable Zero)](#esp8266-linux)
+	* [ESP32](#esp32-linux)
+* [Debugging applications](#debugging-applications)
+* [ESP8266 Arduino version 2.4](#arduino-version)
+
+<a id="mac"></a>
 ## macOS
 
+<a id="host-mac"></a>
 ### Host environment setup
 
 > The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer.
@@ -50,10 +69,11 @@ This document provides an introduction to getting started building apps with the
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
- 
+
+<a id="esp8266-mac"></a>
 ### ESP8266 (Moddable Zero) setup
 
-1. Complete "Host environment setup" for macOS.
+1. Complete ["Host environment setup"](#host-mac) for macOS.
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
@@ -94,10 +114,11 @@ This document provides an introduction to getting started building apps with the
 	cd ${MODDABLE}/examples/piu/balls
 	mcconfig -d -m -p esp/moddable_zero
 	```
-	
+
+<a id="esp32-mac"></a>
 ### ESP32 setup
 
-1. Complete "Host environment setup" for macOS.
+1. Complete ["Host environment setup"](#host-mac) for macOS.
 
 2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
@@ -190,8 +211,10 @@ This document provides an introduction to getting started building apps with the
 	pip install cryptography
 	```
 
+<a id="windows"></a>
 ## Windows
 
+<a id="host-windows"></a>
 #### Host environment setup
 
 > The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
@@ -242,10 +265,11 @@ This document provides an introduction to getting started building apps with the
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p win
 	```
-	
+
+<a id="esp8266-windows"></a>
 ### ESP8266 (Moddable Zero) setup
 
-1. Complete "Host environment setup" for Windows.
+1. Complete ["Host environment setup"](#host-windows) for Windows.
 
 2. Create an `esp` directory in your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>`.
  
@@ -291,10 +315,11 @@ This document provides an introduction to getting started building apps with the
 	cd %MODDABLE%\examples\piu\balls
 	mcconfig -d -m -p esp/moddable_zero
 	```
-	
+
+<a id="esp32-windows"></a>	
 ### ESP32 setup
 
-1. Complete "Host environment setup" for Windows.
+1. Complete ["Host environment setup"](#host-windows) for Windows.
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
@@ -365,8 +390,10 @@ This document provides an introduction to getting started building apps with the
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
 
+<a id="linux"></a>
 ## Linux
 
+<a id="host-linux"></a>
 ### Host environment setup
 
 > The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry Pi Desktop (32-bit) operating systems. These setup instructions assume that a GCC toolchain has already been installed.
@@ -429,10 +456,11 @@ This document provides an introduction to getting started building apps with the
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p lin
 	```
-	
+
+<a id="esp8266-linux"></a>
 ### ESP8266 (Moddable Zero) setup
 
-1. Complete "Host environment setup" for Linux.
+1. Complete ["Host environment setup"](#host-linux) for Linux.
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
@@ -472,9 +500,10 @@ This document provides an introduction to getting started building apps with the
 	sudo reboot
 	```
 
+<a id="esp32-linux"></a>
 ### ESP32 setup
 
-1. Complete "Host environment setup" for Linux.
+1. Complete ["Host environment setup"](#host-linux) for Linux.
 
 2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
@@ -567,13 +596,14 @@ This document provides an introduction to getting started building apps with the
 
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
+<a id="debugging-applications"></a>
 ## Debugging applications
 
 The `xsbug` JavaScript source level debugger is built as part of the Moddable SDK build described above. `xsbug` is a full featured debugger that supports debugging modules and applications for [XS platforms](xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
 For additional details on `xsbug` please refer to the [xsbug](xs/xsbug.md) document.
 
-
+<a id="arduino-version"></a>
 ## ESP8266 Arduino version 2.4
 
 The Moddable SDK on ESP8266 is hosted by the [ESP8266 core for Arduino](https://github.com/esp8266/Arduino). The Moddable SDK uses version 2.3. Version 2.4 is supported as well. At this time, we do not recommend using version 2.4 as it requires more ROM and more RAM without providing significant benefits for most uses of the Moddable SDK. The team responsible for ESP8266 core for Arduino is aware of [these](https://github.com/esp8266/Arduino/issues/3740) [issues](https://github.com/esp8266/Arduino/issues/4089) and actively working to address them.
