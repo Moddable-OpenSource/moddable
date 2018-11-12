@@ -161,11 +161,13 @@ class AMSClient extends BLEClient {
 		});
 		if (this.remoteCommandCharacteristic)
 			this.remoteCommandCharacteristic.enableNotifications();
-		if (this.entityUpdateCharacteristic)
-			this.entityUpdateCharacteristic.enableNotifications();
 	}
 	onCharacteristicNotificationEnabled(characteristic) {
-		if (characteristic.uuid.equals(this.ENTITY_UPDATE_CHARACTERISTIC_UUID)) {
+		if (characteristic.uuid.equals(this.REMOTE_COMMAND_CHARACTERISTIC_UUID)) {
+			if (this.entityUpdateCharacteristic)
+				this.entityUpdateCharacteristic.enableNotifications();
+		}
+		else if (characteristic.uuid.equals(this.ENTITY_UPDATE_CHARACTERISTIC_UUID)) {
 			let update;
 			update = Uint8Array.of(EntityID.Track, TrackAttributeID.Artist, TrackAttributeID.Album, TrackAttributeID.Title, TrackAttributeID.Duration);
 			characteristic.writeWithoutResponse(update.buffer);
