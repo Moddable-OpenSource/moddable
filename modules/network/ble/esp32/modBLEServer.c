@@ -285,7 +285,6 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
-	uint8_t confirm;
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
