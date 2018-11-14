@@ -69,8 +69,10 @@ class Ping extends Socket {
 		this.close();
 	}
 	close() {
-		Timer.clear(this.timer);
-		delete this.timer;
+		if (this.timer) {
+			Timer.clear(this.timer);
+			delete this.timer;
+		}
 		super.close();
 	}
 	callback(message, value, address) {
