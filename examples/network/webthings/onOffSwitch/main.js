@@ -20,33 +20,33 @@ import ASSETS from "assets";
 const HOSTNAMES = ["modSwitch", "anotherModSwitch"];
 
 class OnOffSwitch extends WebThing {
-    constructor(host) {
-        super(host);
-        this.state = true;
+	constructor(host) {
+		super(host);
+		this.state = true;
 	}
-    get on() {
-        return this.state;
-    }
-    set on(state) {
-    	if (this.state == state) return;
-        this.state = state;
+	get on() {
+		return this.state;
+	}
+	set on(state) {
+		if (this.state == state) return;
+		this.state = state;
 		this.changed();
 		application.distribute("onSwitchUpdate", state);
-    }
-    static get description() { 
-    	return {
-    		"@context": "https://iot.mozilla.org/schemas",
+	}
+	static get description() { 
+		return {
+			"@context": "https://iot.mozilla.org/schemas",
 			"@type": ["OnOffSwitch"],
 			name: "switch",
-		    type: "onOffSwitch",
-		    description: "On/off switch",
-		    properties: {
-		        on: {
-		            type: "boolean",
-		            description: "switch state",
-		            txt: "on"
-		        }
-		    }
+			type: "onOffSwitch",
+			description: "On/off switch",
+			properties: {
+				on: {
+					type: "boolean",
+					description: "switch state",
+					txt: "on"
+				}
+			}
 		}
 	}
 }
