@@ -1811,6 +1811,11 @@ void fxReport(txMachine* the, txString theFormat, ...)
 	c_va_start(arguments, theFormat);
 	fxVReport(the, theFormat, arguments);
 	c_va_end(arguments);
+#ifndef mxNoConsole
+	c_va_start(arguments, theFormat);
+	c_vprintf(theFormat, arguments);
+	c_va_end(arguments);
+#endif
 }
 
 void fxReportException(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...)
@@ -1820,6 +1825,20 @@ void fxReportException(txMachine* the, txString thePath, txInteger theLine, txSt
 	c_va_start(arguments, theFormat);
 	fxVReportException(the, thePath, theLine, theFormat, arguments);
 	c_va_end(arguments);
+#ifndef mxNoConsole
+	if (thePath && theLine)
+#if mxWindows
+		printf("%s(%d): exception: ", thePath, (int)theLine);
+#else
+		c_printf("%s:%d: exception: ", thePath, (int)theLine);
+#endif
+	else
+		c_printf("# exception: ");
+	c_va_start(arguments, theFormat);
+	c_vprintf(theFormat, arguments);
+	c_va_end(arguments);
+	c_printf("!\n");
+#endif
 }
 
 void fxReportError(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...)
@@ -1829,6 +1848,20 @@ void fxReportError(txMachine* the, txString thePath, txInteger theLine, txString
 	c_va_start(arguments, theFormat);
 	fxVReportError(the, thePath, theLine, theFormat, arguments);
 	c_va_end(arguments);
+#ifndef mxNoConsole
+	if (thePath && theLine)
+#if mxWindows
+		printf("%s(%d): error: ", thePath, (int)theLine);
+#else
+		c_printf("%s:%d: error: ", thePath, (int)theLine);
+#endif
+	else
+		c_printf("# error: ");
+	c_va_start(arguments, theFormat);
+	c_vprintf(theFormat, arguments);
+	c_va_end(arguments);
+	c_printf("!\n");
+#endif
 }
 
 void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...)
@@ -1838,6 +1871,20 @@ void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txStri
 	c_va_start(arguments, theFormat);
 	fxVReportWarning(the, thePath, theLine, theFormat, arguments);
 	c_va_end(arguments);
+#ifndef mxNoConsole
+	if (thePath && theLine)
+#if mxWindows
+		printf("%s(%d): warning: ", thePath, (int)theLine);
+#else
+		c_printf("%s:%d: warning: ", thePath, (int)theLine);
+#endif
+	else
+		c_printf("# warning: ");
+	c_va_start(arguments, theFormat);
+	c_vprintf(theFormat, arguments);
+	c_va_end(arguments);
+	c_printf("!\n");
+#endif
 }
 
 void fxVReport(void* console, txString theFormat, c_va_list theArguments)
@@ -1851,9 +1898,6 @@ void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 		fxEcho(the, "</log>");
 		fxEchoStop(the);
 	}
-#endif
-#ifndef mxNoConsole
-	c_vprintf(theFormat, theArguments);
 #endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	memmove(lastDebugStr, synergyDebugStr, 256);
@@ -1875,18 +1919,6 @@ void fxVReportException(void* console, txString thePath, txInteger theLine, txSt
 		fxEcho(the, "!\n</log>");
 		fxEchoStop(the);
 	}
-#endif
-#ifndef mxNoConsole
-	if (thePath && theLine)
-#if mxWindows
-		printf("%s(%d): exception: ", thePath, (int)theLine);
-#else
-		c_printf("%s:%d: exception: ", thePath, (int)theLine);
-#endif
-	else
-		c_printf("# exception: ");
-	c_vprintf(theFormat, theArguments);
-	c_printf("!\n");
 #endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)
@@ -1913,18 +1945,6 @@ void fxVReportError(void* console, txString thePath, txInteger theLine, txString
 		fxEchoStop(the);
 	}
 #endif
-#ifndef mxNoConsole
-	if (thePath && theLine)
-#if mxWindows
-		printf("%s(%d): error: ", thePath, (int)theLine);
-#else
-		c_printf("%s:%d: error: ", thePath, (int)theLine);
-#endif
-	else
-		c_printf("# error: ");
-	c_vprintf(theFormat, theArguments);
-	c_printf("!\n");
-#endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)
 		sprintf(synergyDebugStr, "%s:%d: error: ", thePath, (int)theLine);
@@ -1948,18 +1968,6 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 		fxEcho(the, "!\n</log>");
 		fxEchoStop(the);
 	}
-#endif
-#ifndef mxNoConsole
-	if (thePath && theLine)
-#if mxWindows
-		printf("%s(%d): warning: ", thePath, (int)theLine);
-#else
-		c_printf("%s:%d: warning: ", thePath, (int)theLine);
-#endif
-	else
-		c_printf("# warning: ");
-	c_vprintf(theFormat, theArguments);
-	c_printf("!\n");
 #endif
 #if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
 	if (thePath && theLine)
