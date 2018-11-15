@@ -22,21 +22,21 @@ const OpenSans28 = Style.template({ color: [WHITE, MOZILLA_BLUE], font: "semibol
 
 const CircleTexture = Texture.template({ path:"led_on-disc-mask.png" });
 const CircleSkin = Skin.template({ 
-  Texture: CircleTexture,
-  color: [MOZILLA_BLUE, WHITE],
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: CircleTexture,
+	color: [MOZILLA_BLUE, WHITE],
+	x: 0, y: 0, width: 128, height: 128 
 });
 const SwitchOnTexture = Texture.template({ path:"switch_on-glyph-mask.png" });
 const SwitchOnSkin = Skin.template({ 
-  Texture: SwitchOnTexture,
-  color: MOZILLA_BLUE,
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: SwitchOnTexture,
+	color: MOZILLA_BLUE,
+	x: 0, y: 0, width: 128, height: 128 
 });
 const SwitchOffTexture = Texture.template({ path:"switch_off-mask.png" });
 const SwitchOffSkin = Skin.template({ 
-  Texture: SwitchOffTexture,
-  color: WHITE,
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: SwitchOffTexture,
+	color: WHITE,
+	x: 0, y: 0, width: 128, height: 128 
 });
 
 const Switch = Container.template($ => ({ 
@@ -90,7 +90,7 @@ const SwitchScreen = Container.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: MozillaBlueSkin,
 	contents: [
 		Label($, { top: 30, height: 35, left: 0, right: 0, Style: OpenSans28, string: $ }),
-	 	new Switch($),
+		new Switch($),
 	],
 	Behavior: SwitchScreenBehavior
 }));

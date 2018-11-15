@@ -76,8 +76,8 @@ const OutletScreen = Container.template($ => ({
 		Row($, {
 			top: 30, bottom: 0,
 			contents: [
-			 	new Plug($, { anchor: "left", name: "left", right: 15 }),
-			 	new Plug($, { anchor: "right", name: "right",  }),
+				new Plug($, { anchor: "left", name: "left", right: 15 }),
+				new Plug($, { anchor: "right", name: "right",  }),
 			]
 		})
 	],
