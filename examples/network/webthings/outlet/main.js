@@ -20,45 +20,45 @@ import ASSETS from "assets";
 const HOSTNAMES = ["modOutlet", "anotherModOutlet"];
 
 class Outlet extends WebThing {
-    constructor(host) {
-        super(host);
-        this.l = true;
-        this.r = true;
-    }
-    get left() {
-        return this.l;
-    }
-    set left(state) {
-    	if (this.l == state) return;
-        this.l = state;
+	constructor(host) {
+		super(host);
+		this.l = true;
+		this.r = true;
+	}
+	get left() {
+		return this.l;
+	}
+	set left(state) {
+		if (this.l == state) return;
+		this.l = state;
 		this.changed();
 		application.distribute("updateIcon", "left", state);
-    }
-    get right() {
-        return this.r;
-    }
-    set right(state) {
-    	if (this.r == state) return;
-        this.r = state;
+	}
+	get right() {
+		return this.r;
+	}
+	set right(state) {
+		if (this.r == state) return;
+		this.r = state;
 		this.changed();
 		application.distribute("updateIcon", "right", state);
-    }
-    static get description() { 
-    	return {
+	}
+	static get description() { 
+		return {
 			name: "outlet",
-		    description: "Outlet with 2 plugs",
-		    properties: {
-		        left: {
-		            type: "boolean",
-		            description: "left outlet state",
-		            txt: "left"
-		        },
-		        right: {
-		            type: "boolean",
-		            description: "right outlet state",
-		            txt: "right"
-		        }
-		    }
+			description: "Outlet with 2 plugs",
+			properties: {
+				left: {
+					type: "boolean",
+					description: "left outlet state",
+					txt: "left"
+				},
+				right: {
+					type: "boolean",
+					description: "right outlet state",
+					txt: "right"
+				}
+			}
 		}
 	}
 }
