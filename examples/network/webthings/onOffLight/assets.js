@@ -22,21 +22,21 @@ const OpenSans28 = Style.template({ color: [WHITE, MOZILLA_BLUE], font: "semibol
 
 const CircleTexture = Texture.template({ path:"led_on-disc-mask.png" });
 const CircleSkin = Skin.template({ 
-  Texture: CircleTexture,
-  color: [MOZILLA_BLUE, WHITE],
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: CircleTexture,
+	color: [MOZILLA_BLUE, WHITE],
+	x: 0, y: 0, width: 128, height: 128 
 });
 const LightOnTexture = Texture.template({ path:"led_on-glyph-mask.png" });
 const LightOnSkin = Skin.template({ 
-  Texture: LightOnTexture,
-  color: MOZILLA_BLUE,
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: LightOnTexture,
+	color: MOZILLA_BLUE,
+	x: 0, y: 0, width: 128, height: 128 
 });
 const LightOffTexture = Texture.template({ path:"led_off-mask.png" });
 const LightOffSkin = Skin.template({ 
-  Texture: LightOffTexture,
-  color: WHITE,
-  x: 0, y: 0, width: 128, height: 128 
+	Texture: LightOffTexture,
+	color: WHITE,
+	x: 0, y: 0, width: 128, height: 128 
 });
 
 class LightBehavior extends Behavior {
@@ -88,7 +88,7 @@ const LightScreen = Container.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: MozillaBlueSkin,
 	contents: [
 		Label($, { top: 30, height: 35, left: 0, right: 0, Style: OpenSans28, string: $ }),
-	 	new Light($),
+		new Light($),
 	],
 	Behavior: LightScreenBehavior
 }));
