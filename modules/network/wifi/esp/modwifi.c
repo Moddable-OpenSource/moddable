@@ -113,6 +113,7 @@ void xs_wifi_connect(xsMachine *the)
 	struct station_config config;
 	char *str;
 	int argc = xsmcArgc;
+	int channel = -1;
 
 	if (STATION_IDLE != wifi_station_get_connect_status())
 		wifi_station_disconnect();
@@ -147,9 +148,17 @@ void xs_wifi_connect(xsMachine *the)
 		config.bssid_set = 1;
 	}
 
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		channel = xsmcToInteger(xsVar(0));
+	}
+
 	wifi_set_opmode_current(STATION_MODE);
 
 	wifi_station_set_config_current(&config);
+
+	if (channel >= 0)
+		wifi_set_channel(channel);
 
 	wifi_station_connect();		// may not always be necessary
 }
