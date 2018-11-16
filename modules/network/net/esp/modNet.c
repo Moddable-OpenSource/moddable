@@ -124,4 +124,15 @@ void xs_net_get(xsMachine *the)
 		xsResult = xsInteger(wifi_station_get_rssi());
 #endif
 	}
+	else if (0 == espStrCmp(prop, "CHANNEL")) {
+#if ESP32
+		uint8_t primary;
+		wifi_second_chan_t second;
+
+		if (ESP_OK == esp_wifi_get_channel(&primary, &second))
+			xsResult = xsInteger(primary);
+#else
+		xsResult = xsInteger(wifi_get_channel());
+#endif
+	}
 }
