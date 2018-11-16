@@ -391,7 +391,8 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #if ESP32
 	#define C_RAND_MAX UINT32_MAX
 #else
-	#define C_RAND_MAX RAND_MAX
+//	#define C_RAND_MAX RAND_MAX
+	#define C_RAND_MAX (0xFFFFFFFF)
 #endif
 
 #define c_acos acos
@@ -435,7 +436,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #if ESP32
 	#define c_rand esp_random
 #else
-	#define c_rand rand
+	#define c_rand() (*(volatile uint32_t *)0x3FF20E44)
 #endif
 #define c_round round
 #define c_signbit signbit
