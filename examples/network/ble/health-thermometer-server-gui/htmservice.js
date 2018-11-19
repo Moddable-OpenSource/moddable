@@ -22,7 +22,6 @@ import Timer from "timer";
 
 export default class HealthThermometerService extends BLEServer {
 	onReady() {
-		this.timer = null;
 		this.deviceName = "Moddable HTM";
 		this.onDisconnected();
 		this.deploy();
@@ -63,7 +62,7 @@ export default class HealthThermometerService extends BLEServer {
 	stopMeasurements() {
 		if (this.timer) {
 			Timer.clear(this.timer);
-			this.timer = null;
+			delete this.timer;
 		}
 		this.temp = 95.9;
 	}
