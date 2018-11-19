@@ -126,6 +126,7 @@ MODULES = \
 	$(MOD_DIR)/tool.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
+	$(MOD_DIR)/xsopt.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -140,7 +141,8 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi
+	$(TMP_DIR)/tool.c.xsi \
+	$(TMP_DIR)/xsopt.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -177,7 +179,8 @@ OBJECTS = \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/wav2maud.c.o
+	$(TMP_DIR)/wav2maud.c.o \
+	$(TMP_DIR)/xsopt.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -191,6 +194,7 @@ COMMANDS = \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
 	$(BIN_DIR)/bles2gatt \
+	$(BIN_DIR)/xsopt \
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
@@ -342,6 +346,11 @@ $(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
 	chmod +x $(BIN_DIR)/bles2gatt
+
+$(BIN_DIR)/xsopt: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": xsopt"
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools xsopt "$$@"' > $(BIN_DIR)/xsopt
+	chmod +x $(BIN_DIR)/xsopt
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/mac/debug/$(NAME).*
