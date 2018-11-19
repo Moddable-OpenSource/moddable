@@ -175,7 +175,7 @@ class AMSPlayerClient extends AMSClient {
 		if (5 == message) {
 			this.request.close();
 			delete this.request;
-			let entries = JSON.parse(value);
+			let entries = JSON.parse(value, ["resultCount","results","collectionName","artworkUrl100"]);
 			if (entries.resultCount > 0) {
 				let result = entries.results.find(entry => {
 					return (entry.collectionName.startsWith(this.album) && ("artworkUrl100" in entry))

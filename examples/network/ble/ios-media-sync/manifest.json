@@ -31,11 +31,6 @@
 	},
 	"creation": {
 		"static":53000,
-		"keys": {
-			"available":8000,
-			"name":1993,
-			"symbol":127,
-		},
 	},
 	"platforms": {
 		"gecko/blue": {
