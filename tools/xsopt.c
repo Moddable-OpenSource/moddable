@@ -46,19 +46,19 @@
 		((void)((_ASSERTION) || (fxThrowMessage(the,NULL,0,XS_UNKNOWN_ERROR,"%s",strerror(errno)), 1)))
 #endif
 
-typedef txInteger (*txCodeReader)(xsMachine* the, txU1 id, txU1* p);
+typedef txS1* (*txCodeReader)(xsMachine* the, txU1 id, txS1* p);
 typedef txS1* (*txCodeWriter)(xsMachine* the, txU1 id, txS1* p);
 
-static txInteger fxReadCode(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeKey(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeNumber(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeS1(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeS2(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeS4(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeString1(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeString2(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeU1(xsMachine* the, txU1 id, txU1* p);
-static txInteger fxReadCodeU2(xsMachine* the, txU1 id, txU1* p);
+static txS1* fxReadCode(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeKey(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeNumber(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeS1(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeS2(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeS4(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeString1(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeString2(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeU1(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeU2(xsMachine* the, txU1 id, txS1* p);
 static void fxReadCodes(xsMachine* the, void* buffer, txSize size);
 static void fxReadHosts(xsMachine* the, void* buffer, txSize size);
 static void fxReadKeys(xsMachine* the, void* buffer, txSize size);
@@ -877,15 +877,16 @@ const txCodeWriter gxCodeWriters[XS_CODE_COUNT] = {
 	/* XS_CODE_YIELD */ fxWriteCode,
 };
 
-txInteger fxReadCode(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCode(xsMachine* the, txU1 id, txS1* p)
 {
 	xsVar(2) = xsNew0(xsArg(1), gxCodeConstructors[id]);
-	return 1;
+	return p;
 }
 
-txInteger fxReadCodeKey(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeKey(xsMachine* the, txU1 id, txS1* p)
 {
-	txID param = *((txID*)(p + 1));
+	txID param;
+	mxDecode2(p, param);
 	if (param != XS_NO_ID) {
 		param &= 0x7FFF;
 		xsVar(3) = xsGetAt(xsVar(0), xsInteger(param));
@@ -893,87 +894,83 @@ txInteger fxReadCodeKey(xsMachine* the, txU1 id, txU1* p)
 	else
 		xsVar(3) = xsNull;
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsVar(3));
-	return 3;
+	return p;
 }
 
-txInteger fxReadCodeNumber(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeNumber(xsMachine* the, txU1 id, txS1* p)
 {
-	xsNumberValue param;
-	txByte* number = (txByte*)&param;
-	number[0] = p[1];
-	number[1] = p[2];
-	number[2] = p[3];
-	number[3] = p[4];
-	number[4] = p[5];
-	number[5] = p[6];
-	number[6] = p[7];
-	number[7] = p[8];
+	txNumber param;
+	mxDecode8(p, param);
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsNumber(param));
-	return 9;
+	return p;
 }
 
-txInteger fxReadCodeS1(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeS1(xsMachine* the, txU1 id, txS1* p)
 {
-	txS1 param = *((txS1*)(p + 1));
+	txS1 param = *p++;
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsInteger(param));
-	return 2;
+	return p;
 }
 
-txInteger fxReadCodeS2(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeS2(xsMachine* the, txU1 id, txS1* p)
 {
-	txS2 param = *((txS2*)(p + 1));
+	txS2 param;
+	mxDecode2(p, param);
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsInteger(param));
-	return 3;
+	return p;
 }
 
-txInteger fxReadCodeS4(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeS4(xsMachine* the, txU1 id, txS1* p)
 {
-	txS4 param = *((txS4*)(p + 1));
+	txS4 param;
+	mxDecode4(p, param);
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsInteger(param));
-	return 5;
+	return p;
 }
 
-txInteger fxReadCodeString1(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeString1(xsMachine* the, txU1 id, txS1* p)
 {
-	txU1 param = *((txU1*)(p + 1));
-	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsString(p + 2));
-	return 2 + param;
+	txU1 param = *((txU1*)p++);
+	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsString(p));
+	return p + param;
 }
 
-txInteger fxReadCodeString2(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeString2(xsMachine* the, txU1 id, txS1* p)
 {
-	txU2 param = *((txU2*)(p + 1));
-	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsString(p + 3));
-	return 3 + param;
+	txU2 param;
+	mxDecode2(p, param);
+	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsString(p));
+	return p + param;
 }
 
-txInteger fxReadCodeU1(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeU1(xsMachine* the, txU1 id, txS1* p)
 {
-	txU1 param = *((txU1*)(p + 1));
+	txU1 param = *((txU1*)p++);
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsInteger(param));
-	return 2;
+	return p;
 }
 
-txInteger fxReadCodeU2(xsMachine* the, txU1 id, txU1* p)
+txS1* fxReadCodeU2(xsMachine* the, txU1 id, txS1* p)
 {
-	txU2 param = *((txU2*)(p + 1));
+	txU2 param;
+	mxDecode2(p, param);
 	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsInteger(param));
-	return 3;
+	return p;
 }
 
 void fxReadCodes(xsMachine* the, void* buffer, txSize size)
 {
+	txS1* p = buffer;
+	txS1* q = p + size;
 	txInteger offset = 0;
-	txU1* p = buffer;
-	txU1* q = p + size;
 	while (p < q) {
-		txU1 id = *p;
-		size = (*gxCodeReaders[id])(the, id, p);
-		//fprintf(stderr, "%s %d\n", gxCodeNames[id], size);
+		txS1* r = p;
+		txU1 id = *((txU1*)p++);
+		p = (*gxCodeReaders[id])(the, id, p);
+		//fprintf(stderr, "%s %d\n", gxCodeNames[id], r - p);
 		xsSet(xsVar(2), xsID_offset, xsInteger(offset));
 		xsCall1(xsThis, xsID_append, xsVar(2));
-		offset += size;
-		p += size;
+		offset += p - r;
 	}
 }
 
@@ -997,7 +994,7 @@ void fxReadHosts(xsMachine* the, void* buffer, txSize size)
 		xsVar(5) = xsNew3(xsArg(1), xsID_Host, xsVar(2), xsVar(3), xsVar(4));
 		xsSetAt(xsVar(1), xsInteger(i), xsVar(5));
 	}
-	xsSet(xsThis, xsID_keys, xsVar(1));
+	xsSet(xsThis, xsID_hosts, xsVar(1));
 }
 
 void fxReadKeys(xsMachine* the, void* buffer, txSize size)
@@ -1107,10 +1104,10 @@ void fxWriteCodes(xsMachine* the, txS1* p)
 {
 	xsVar(0) = xsGet(xsThis, xsID_first);
 	while (xsTest(xsVar(0))) {
+		//txS1* r = p;
 		txU1 id = (txU1)xsToInteger(xsGet(xsVar(0), xsID_id));
-		//txS1* q = p;
 		p = (*gxCodeWriters[id])(the, id, p);
-		//fprintf(stderr, "%s %d\n", gxCodeNames[id], p - q);
+		//fprintf(stderr, "%s %d\n", gxCodeNames[id], p - r);
 		xsVar(0) = xsGet(xsVar(0), xsID_next);
 	}
 }
@@ -1126,7 +1123,7 @@ void fxWriteHosts(xsMachine* the, txS1* p)
 	for (i = 0; i < c; i++) {
 		xsVar(1) = xsGetAt(xsVar(0), xsInteger(i));
 		if (xsTest(xsGet(xsVar(1), xsID_usage))) {
-			*p = (txS1)xsToInteger(xsGet(xsVar(1), xsID_arity));
+			*p++ = (txS1)xsToInteger(xsGet(xsVar(1), xsID_arity));
 			xsVar(2) = xsGet(xsVar(1), xsID_key);
 			if (xsTest(xsVar(2)))
 				index = (txID)xsToInteger(xsGet(xsVar(2), xsID_index));
