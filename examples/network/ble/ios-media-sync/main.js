@@ -105,13 +105,7 @@ class AMSPlayerClient extends AMSClient {
 	constructor(render, device) {
 		super(device);
 		this.render = render;
-		this.title = this.artist = this.album = "";
-		this.button = null;
-		this.buttonTimer = null;
-		this.playbackTimer = null;
-		this.textTickerTimer = null;
 		this.tickers = [];
-		this.request = null;
 		this.playing = false;
 		this.elapsed = 0;
 		this.duration = 0;
@@ -180,7 +174,7 @@ class AMSPlayerClient extends AMSClient {
 	fetchAlbumURICallback(message, value, etc) {
 		if (5 == message) {
 			this.request.close();
-			this.request = null;
+			delete this.request;
 			let entries = JSON.parse(value);
 			if (entries.resultCount > 0) {
 				let result = entries.results.find(entry => {
@@ -196,7 +190,7 @@ class AMSPlayerClient extends AMSClient {
 		else if (message < 0) {
 			trace("fetch URI failed!\n");
 			this.request.close();
-			this.request = null;
+			delete this.request;
 		}
 	}
 	fetchAlbumArt(url) {
@@ -213,14 +207,14 @@ class AMSPlayerClient extends AMSClient {
 	fetchAlbumArtCallback(message, value, etc) {
 		if (5 == message) {
 			this.request.close();
-			this.request = null;
+			delete this.request;
 			//trace(`length = ${value.byteLength}\n`);
 			this.drawAlbumArt(value);
 		}
 		else if (message < 0) {
 			trace("fetch album art failed!\n");
 			this.request.close();
-			this.request = null;
+			delete this.request;
 		}
 	}
 	onPlaybackInfoChanged(state, rate, elapsed) {
@@ -237,7 +231,7 @@ class AMSPlayerClient extends AMSClient {
 			this.startPlaybackTimer();
 		else if (this.playbackTimer) {
 			Timer.clear(this.playbackTimer);
-			this.playbackTimer = null;
+			delete this.playbackTimer;
 		}
 	}
 	onTrackChanged(artist, album, title, duration) {
@@ -246,11 +240,11 @@ class AMSPlayerClient extends AMSClient {
 			return;
 		if (this.request) {
 			this.request.close();
-			this.request = null;
+			delete this.request;
 		}
 		if (this.textTickerTimer) {
 			Timer.clear(this.textTickerTimer);
-			this.textTickerTimer = null;
+			delete this.textTickerTimer;
 		}
 		let render = this.render;
 		let tickers = this.tickers;
@@ -302,7 +296,7 @@ class AMSPlayerClient extends AMSClient {
 				render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 				render.drawGray(bitmap, white, button.x, button.y);
 			render.end();
-			this.button = null;
+			delete this.button;
 			if ("previous" == id)
 				this.remoteCommand(RemoteCommandID.PreviousTrack);
 			else if ("next" == id)
