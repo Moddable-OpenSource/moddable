@@ -718,7 +718,7 @@ export default class extends TOOL {
 		
 		this.keysCount = 0;
 		this.keysSize = 2;
-		this.keys.forEach(host => host.serialize(this));
+		this.keys.forEach(key => key.serialize(this));
 
 		this.codesSize = 0;
 		code = this.first;
@@ -726,6 +726,7 @@ export default class extends TOOL {
 			code.serialize3(this);
 			code = code.next;
 		}
+		
 		if (this.verbose) {
 			code = this.first;
 			while (code) {
