@@ -23,7 +23,6 @@ import {uuid} from "btutils";
 
 class Colorific extends BLEClient {
 	onReady() {
-		this.timer = null;
 		this.payload = Uint8Array.of(0x58, 0x01, 0x03, 0x01, 0x10, 0x00, 0xFF, 0xFF, 0xFF);
 		this.startScanning();
 	}
@@ -55,7 +54,7 @@ class Colorific extends BLEClient {
 	onDisconnected() {
 		if (this.timer) {
 			Timer.clear(this.timer);
-			this.timer = null;
+			delete this.timer;
 		}
 		this.startScanning();
 	}

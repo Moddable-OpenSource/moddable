@@ -58,7 +58,6 @@ let DragApplication = Application.template($ => ({
 	Behavior: class extends Behavior {
 		onCreate(applicaton) {
 			this.mouse = new Mouse;
-			this.target = null;
 		}
 		onMouseConnected(application) {
 			this.draggers = application.first.first;
@@ -85,7 +84,7 @@ let DragApplication = Application.template($ => ({
 			if (content && (content == this.target)) {
 				content.delegate("onTouchEnded", 0, position.x, position.y);
 			}
-			this.target = null;
+			delete this.target;
 		}
 		onMouseMoved(application, x, y, buttons) {
 			this.doMoveTo(this.pointer, x, y);

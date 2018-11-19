@@ -25,7 +25,6 @@ import Timer from "timer";
 
 class HeartRateService extends BLEServer {
 	onReady() {
-		this.timer = null;
 		this.deviceName = "Moddable HRM";
 		this.onDisconnected();
 		this.deploy();
@@ -63,7 +62,7 @@ class HeartRateService extends BLEServer {
 	stopMeasurements() {
 		if (this.timer) {
 			Timer.clear(this.timer);
-			this.timer = null;
+			delete this.timer;
 		}
 		this.bpm = [0, 60]; // flags, beats per minute
 	}

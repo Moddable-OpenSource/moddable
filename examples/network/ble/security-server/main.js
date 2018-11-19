@@ -23,7 +23,6 @@ import Timer from "timer";
 
 class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
-		this.timer = null;
 		this.deviceName = "Moddable HTM";
 		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
@@ -88,11 +87,11 @@ class SecureHealthThermometerServer extends BLEServer {
 	stopMeasurements() {
 		if (this.timer) {
 			Timer.clear(this.timer);
-			this.timer = null;
+			delete this.timer;
 		}
+		delete this.characteristic;
 		this.temp = 95.0;
 		this.authenticated = false;
-		this.characteristic = null;
 	}
 	passkeyToString(passkey) {
 		return passkey.toString().padStart(6, "0");
