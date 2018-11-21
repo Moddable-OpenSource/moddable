@@ -144,6 +144,7 @@ void xs_wifi_connect(xsMachine *the)
 	char *str;
 	int argc = xsmcToInteger(xsArgc);
 	wifi_mode_t mode;
+	int channel = -1;
 
 	initWiFi();
 
@@ -180,6 +181,11 @@ void xs_wifi_connect(xsMachine *the)
 		config.sta.bssid_set = 1;
 	}
 
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		channel = xsmcToInteger(xsVar(0));
+	}
+
 	esp_wifi_get_mode(&mode);
 	if (WIFI_MODE_STA != mode)
 		esp_wifi_set_mode(WIFI_MODE_STA);
@@ -189,6 +195,9 @@ void xs_wifi_connect(xsMachine *the)
 
 	esp_wifi_set_config(WIFI_IF_STA, &config);
 
+	if (channel >= 0)
+		esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+		
 	if (0 != esp_wifi_connect())
 		xsUnknownError("esp_wifi_connect failed");
 }
