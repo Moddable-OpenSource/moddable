@@ -107,10 +107,10 @@ void xs_net_get(xsMachine *the)
 			xsResult = xsStringBuffer(NULL, 18);
 			out = xsToString(xsResult);
 			twoHex(config.bssid[0], out); out += 2; *out++ = ':';
-			twoHex(config.bssid[1], out); out += 2; *out++ = '.';
-			twoHex(config.bssid[2], out); out += 2; *out++ = '.';
-			twoHex(config.bssid[3], out); out += 2; *out++ = '.';
-			twoHex(config.bssid[4], out); out += 2; *out++ = '.';
+			twoHex(config.bssid[1], out); out += 2; *out++ = ':';
+			twoHex(config.bssid[2], out); out += 2; *out++ = ':';
+			twoHex(config.bssid[3], out); out += 2; *out++ = ':';
+			twoHex(config.bssid[4], out); out += 2; *out++ = ':';
 			twoHex(config.bssid[5], out); out += 2; *out++ = 0;
 		}
 	}
