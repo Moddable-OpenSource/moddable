@@ -55,9 +55,11 @@
 #if LOG_GAP
 	#define LOG_GAP_EVENT(event) logGAPEvent(event)
 	#define LOG_GAP_MSG(msg) modLog(msg)
+	#define LOG_GAP_INT(i) modLogInt(i)
 #else
 	#define LOG_GAP_EVENT(event)
 	#define LOG_GAP_MSG(msg)
+	#define LOG_GAP_INT(i)
 #endif
 
 typedef struct {
@@ -122,6 +124,7 @@ void xs_ble_server_initialize(xsMachine *the)
 		err = esp_ble_gap_register_callback(gap_event_handler);
 	if (ESP_OK == err)
 		err = esp_ble_gatts_app_register(gBLE->app_id);
+
 	if (ESP_OK != err)
 		xsUnknownError("ble initialization failed");
 }
@@ -361,6 +364,12 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
      	case ESP_GAP_BLE_AUTH_CMPL_EVT:
 			if (param->ble_security.auth_cmpl.success)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->ble_security.auth_cmpl, sizeof(esp_ble_auth_cmpl_t), gapAuthCompleteEvent, NULL);
+#if LOG_GAP
+			else {
+				LOG_GAP_MSG("ESP_GAP_BLE_AUTH_CMPL_EVT failed, status =");
+				LOG_GAP_INT(param->ble_security.auth_cmpl.fail_reason);
+			}
+#endif
      		break;
 		default:
 			break;
