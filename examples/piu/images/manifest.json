@@ -1,0 +1,21 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*" : [
+			"$(MODDABLE)/examples/assets/images/keaton",
+		],
+		"*-image": [
+			"$(MODDABLE)/examples/assets/images/robby",
+			"$(MODDABLE)/examples/assets/images/twins",
+		],
+		"*-image(100)": [
+			"$(MODDABLE)/examples/assets/images/screen1",
+		],
+		"*-image(40)": [
+			"$(MODDABLE)/examples/assets/images/screen2",
+		],
+	},
+}

@@ -1,0 +1,24 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/wifi/*",
+		]
+	},
+	"preload": [
+		"wifi"
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/network/wifi/esp/*"
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/network/wifi/esp32/*"
+			},
+		},
+	}
+}

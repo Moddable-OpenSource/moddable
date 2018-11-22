@@ -1,0 +1,39 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": "./main",
+	},
+	"platforms":{
+		"esp": {
+			"modules": {
+				"pins/digital": "$(MODULES)/pins/digital/digital",
+				"*": [
+					"$(MODULES)/pins/digital/esp/*",
+				],
+			},
+			"preload": [
+				"pins/*",
+			],
+		},
+		"gecko": {
+			"modules": {
+				"*": [
+					"$(BUILD)/devices/gecko/pins/*",
+				],
+			},
+			"preload": [
+				"pins",
+			],
+		},
+		"apollo": {
+			"modules": {
+				"*": [
+					"$(BUILD)/devices/apollo/pins/*",
+				],
+			},
+			"preload": [
+				"pins",
+			],
+		},
+	}
+}

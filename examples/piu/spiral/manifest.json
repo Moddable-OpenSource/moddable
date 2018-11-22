@@ -1,0 +1,13 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": "./main",
+	},
+	"resources":{
+		"*-color": [
+		],
+		"*-mask": [
+			"./myFont",
+		],
+	},
+}
