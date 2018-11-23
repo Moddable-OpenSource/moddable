@@ -157,16 +157,16 @@ void xs_wifi_connect(xsMachine *the)
 	c_memset(&config, 0, sizeof(config));
 
 	xsmcVars(2);
-	if (xsmcHas(xsArg(0), xsID_ssid)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
-		str = xsmcToString(xsVar(0));
-		if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
-			xsUnknownError("ssid too long - 32 bytes max");
-		espMemCpy(config.sta.ssid, str, espStrLen(str));
-	}
+	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
+	if (!xsmcTest(xsVar(0)))
+		xsUnknownError("ssid required");
+	str = xsmcToString(xsVar(0));
+	if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
+		xsUnknownError("ssid too long - 32 bytes max");
+	espMemCpy(config.sta.ssid, str, espStrLen(str));
 
-	if (xsmcHas(xsArg(0), xsID_password)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	if (xsmcTest(xsVar(0))) {
 		str = xsmcToString(xsVar(0));
 		if (espStrLen(str) > (sizeof(config.sta.password) - 1))
 			xsUnknownError("password too long - 64 bytes max");
