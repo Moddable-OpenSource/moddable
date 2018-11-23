@@ -645,10 +645,15 @@ void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offse
 	CFAttributedStringReplaceString(attributedString, CFRangeMake(0, 0), string);
 	CFAttributedStringSetAttribute(attributedString, range, kCTFontAttributeName, (*font)->fref);
 	CFAttributedStringSetAttribute(attributedString, range, kCTForegroundColorAttributeName, (*self)->color);
-    CTLineRef line = CTLineCreateWithAttributedString(attributedString);
-    CGContextSetTextPosition(context, x, y + (*font)->ascent);
-    CTLineDraw(line, context);
-    CFRelease(line);
+	if ((*font)->flags & piuStyleUnderline) {
+		SInt32 underlineType = kCTUnderlineStyleSingle;
+		CFNumberRef underline = CFNumberCreate(NULL, kCFNumberSInt32Type, &underlineType);
+		CFAttributedStringSetAttribute(attributedString, range, kCTUnderlineStyleAttributeName, underline);
+	}
+  CTLineRef line = CTLineCreateWithAttributedString(attributedString);
+  CGContextSetTextPosition(context, x, y + (*font)->ascent);
+  CTLineDraw(line, context);
+  CFRelease(line);
  	CFRelease(attributedString);
  	CFRelease(string);
 }

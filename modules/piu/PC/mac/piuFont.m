@@ -101,7 +101,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 		if (((*font)->family == (*self)->family)
 				&& ((*font)->size == (*self)->size)
 				&& ((*font)->weight == (*self)->weight)
-				&& ((*font)->flags == ((*self)->flags & piuStyleBits))) {
+				&& ((*font)->flags == ((*self)->flags & (piuStyleBits | piuStyleDecorationBits)))) {
 			(*self)->font = font;
 			return;
 		}
@@ -141,8 +141,14 @@ void PiuStyleLookupFont(PiuStyle* self)
 	
 	CFStringRef string = CFStringCreateWithBytesNoCopy(NULL, (uint8_t*)buffer, c_strlen(buffer), kCFStringEncodingUTF8, false, kCFAllocatorNull);
 	CTFontDescriptorRef descriptor = CTFontDescriptorCreateWithNameAndSize(string, (*self)->size);
-	CTFontRef fref = CTFontCreateWithFontDescriptor(descriptor, 0.0, NULL);
-	CFRelease(descriptor);
+  
+  CTFontRef fref = CTFontCreateWithFontDescriptor(descriptor, 0.0, NULL);
+  if ((*self)->flags & piuStyleItalicBit) {
+  	CTFontRef frefItalic = CTFontCreateCopyWithSymbolicTraits(fref, 0.0, NULL, kCTFontItalicTrait, kCTFontItalicTrait);
+  	CFRelease(fref);
+  	fref = frefItalic;
+  }
+  CFRelease(descriptor);
 	CFRelease(string);
 	
 	CGFloat ascent = CTFontGetAscent(fref);
@@ -154,7 +160,7 @@ void PiuStyleLookupFont(PiuStyle* self)
     (*font)->next = (*fontList)->first;
     (*fontList)->first = font;
 	
-	(*font)->flags = (*self)->flags & piuStyleBits;
+  (*font)->flags = (*self)->flags & (piuStyleBits | piuStyleDecorationBits);
 	(*font)->family = (*self)->family;
 	(*font)->size = (*self)->size;
 	(*font)->weight = (*self)->weight;
