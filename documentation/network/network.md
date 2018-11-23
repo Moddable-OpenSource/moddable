@@ -728,14 +728,14 @@ import WiFi from "wifi";
 
 The `WiFi` constructor takes a single argument, a dictionary of initialization parameters. The constructor begins the process of establishing a connection. 
 
-The dictionary contains either `ssid` or `bssid` properties indicating the base station to connect to, and an optional `password`.
+The dictionary always contains the required `ssid` property with the name of the base station to connect to. The optional `password` property is included when the base station requires a password. When the optional `bssid` property is included, it may accelerate connecting to Wi-Fi on device targets that support it.
 
-The connection process is asynchronous and may be monitored using the callback function. 
+The connection process is asynchronous and may be monitored using the callback function.
 
 The following example begins the process of connecting to a Wi-Fi access point and waits for the connection to succeed with an IP address being assigned to the device.
 
 ```js
-let monitor = new WiFi({ssid: "Free Wi-Fi", password: "secret"}, msg => {
+let monitor = new WiFi({ssid: "My Wi-Fi", password: "secret"}, msg => {
 	switch (msg) {
 		case "connect":
 			break; // still waiting for IP address
@@ -746,6 +746,12 @@ let monitor = new WiFi({ssid: "Free Wi-Fi", password: "secret"}, msg => {
 			break;  // connection lost
 	}
 });
+```
+
+The following example initiates a connection to a Wi-Fi access point with no password. Because there is no callback function to monitor connection progress, polling on `WiFi.status` is necessary to determine when the connection is ready.
+
+```js
+let monitor = new WiFi({ssid: "Open Wi-Fi"});
 ```
 
 ### `close()`
