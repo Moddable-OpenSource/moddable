@@ -250,6 +250,17 @@ function callback(message, value) {
 			if (undefined !== this.chunk) {
 				// chunked response
 				while (value) {
+					if ("number" === typeof this.line) {
+						// skip CR/LF at end of last chunk length
+						const skip = Math.min(this.line, value);
+						socket.read(null, skip);
+						this.line -= skip;
+						value -= skip;
+						if (this.line)
+							break;
+						delete this.line;
+						continue;
+					}
 					if (0 === this.chunk) {
 						let line = socket.read(String, "\n");
 						if (this.line) {
@@ -285,15 +296,8 @@ function callback(message, value) {
 
 					value = socket.read();
 
-					if (0 === this.chunk) {
-						// should be two more bytes to read (CR/LF).... @@ need to be in read buffer... or will fail
-						if (13 !== socket.read(Number))
-							throw new Error("expected CR");
-						if (10 !== socket.read(Number))
-							throw new Error("expected LF");
-
-						value -= 2;
-					}
+					if (0 === this.chunk)
+						this.line = 2;	// should be two more bytes to read (CR/LF)... skip them when they become available
 				}
 			}
 			else if (undefined !== this.total) {
