@@ -102,6 +102,7 @@ export class Request {
 			this.socket.close();
 		delete this.socket;
 		delete this.buffers;
+		this.state = 11;
 	}
 };
 
@@ -186,13 +187,13 @@ function callback(message, value) {
 			status = status.split(" ");
 			if (status.length < 3)
 				throw new Error("unexpected status format");
-			this.callback(1, parseInt(status[1]));
-
 			this.state = 4;			// advance to receiving response headers state
-			this.line = undefined;	// no header line fragment yet
+			delete this.line;		// no header line fragment yet
 
 			this.total = undefined;		// total number of bytes expected (content-length)
 			this.chunk = undefined;		// bytes remaining in this chunk (undefined if not chunked)
+
+			this.callback(1, parseInt(status[1]));
 		}
 
 		if (4 === this.state) {		// receiving response headers
@@ -203,7 +204,7 @@ function callback(message, value) {
 
 				if (this.line) {
 					line = this.line + line;
-					this.line = undefined;
+					delete this.line;
 				}
 
 				if (10 !== line.charCodeAt(line.length - 1)) {		// partial header line, accumulate and wait for more
@@ -220,8 +221,13 @@ function callback(message, value) {
 						this.buffers = [];	// array to hold response fragments
 
 					value = socket.read();	// number of bytes available
-					if (0 == value)
+					if (0 == value) {
+						if (0 === this.total) {
+							delete this.total;
+							done.call(this);
+						}
 						return;
+					}
 
 					break;
 				}
@@ -245,8 +251,16 @@ function callback(message, value) {
 				// chunked response
 				while (value) {
 					if (0 === this.chunk) {
-						// read chunk length @@ will fail if chunk length spans two read buffers
 						let line = socket.read(String, "\n");
+						if (this.line) {
+							line = this.line + line;
+							delete this.line;
+						}
+						if (line[line.length - 1] !== "\n") {
+							this.line = line;
+							this.chunk = 0;
+							break;
+						}
 						line = line.trim();		// removing training CR/LF etc.
 						this.chunk = parseInt(line, 16);
 						if (0 === this.chunk) {
@@ -258,13 +272,15 @@ function callback(message, value) {
 					}
 
 					let count = Math.min(this.chunk, value);
-					if (this.response) {
-						this.buffers.push(socket.read(this.response, count));
-						this.chunk -= count;
-					}
-					else {
-						this.callback(4, count);
-						this.read(null);		// skip whatever the callback didn't read
+					if (count) {
+						if (this.response) {
+							this.buffers.push(socket.read(this.response, count));
+							this.chunk -= count;
+						}
+						else {
+							this.callback(4, count);
+							this.read(null);		// skip whatever the callback didn't read
+						}
 					}
 
 					value = socket.read();
@@ -412,11 +428,10 @@ function server(message, value, etc) {
 
 					if (this.line) {
 						line = this.line + line;
-						this.line = undefined;
+						delete this.line;
 					}
 
 					if (10 != line.charCodeAt(line.length - 1)) {		// partial header line, accumulate and wait for more
-	trace("partial header!!\n");		//@@ untested
 						this.line = line;
 						return;
 					}
@@ -606,7 +621,6 @@ function server(message, value, etc) {
 			if (10 === this.state) {
 				this.callback(10);
 				this.close();
-				this.state = 11;
 			}
 		}
 	}
@@ -617,7 +631,6 @@ function server(message, value, etc) {
 
 	if (-1 === message) {		// disconnected
 		this.close();
-		this.state = 11;
 		this.callback(-1);
 	}
 }
