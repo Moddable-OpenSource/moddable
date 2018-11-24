@@ -233,6 +233,16 @@ void xs_socket(xsMachine *the)
 		cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
 		CFRelease(host);
 	}
+	else if (xsmcHas(xsArg(0), xsID_address)) {
+		char *str;
+		CFStringRef host;
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_address);
+		str = xsmcToString(xsVar(0));
+		host = CFStringCreateWithCString(NULL, (const char *)str, kCFStringEncodingUTF8);
+		cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
+		CFRelease(host);
+	}
 	else
 		xsUnknownError("host required in dictionary");
 
@@ -367,7 +377,7 @@ void xs_socket_read(xsMachine *the)
 			char *str = xsmcToString(xsArg(1));
 			char terminator = c_read8(str);
 			if (terminator) {
-				unsigned char *t = (unsigned char *)c_strchr((char *)srcData, terminator);
+				unsigned char *t = (unsigned char *)memchr((char *)srcData, terminator, srcBytes);
 				if (t) {
 					uint16_t count = (t - srcData) + 1;		// terminator included in result
 					if (count < srcBytes)
@@ -446,6 +456,9 @@ void xs_socket_write(xsMachine *the)
 		int result = sendto(xss->skt, buf, len, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
 		if (result < 0)
 			xsUnknownError("sendto failed");
+
+		modInstrumentationAdjust(NetworkBytesWritten, len);
+
 		return;
 	}
 
@@ -533,13 +546,12 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 		unsigned char buffer[2048];
 		int count;
 
-
 		if (kTCP == xss->kind) {
 			count = read(xss->skt, buffer, sizeof(buffer));
 
 			if (count <= 0) {
 				xsBeginHost(the);
-					xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+					xsCall1(xss->obj, xsID_callback, (count < 0) ? xsInteger(kSocketMsgError) : xsInteger(kSocketMsgDisconnect));
 				xsEndHost(the);
 
 				socketDownUseCount(the, xss);
