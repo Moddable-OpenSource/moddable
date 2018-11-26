@@ -1,14 +1,86 @@
 import {TOOL, FILE} from "tool";
 
+const unknown = {
+	toString() {
+		return '?';
+	}
+};
+
+class Local {
+	constructor(key, value) {
+		this.key = key;
+		this.value = value;
+	}
+	getValue() {
+		return this.value;
+	}
+	reportParam(tool) {
+		if (this.key)
+			return this.key.param;
+		return '?';
+	}
+	setValue(value) {
+		this.value = value;;
+	}
+}
+
+class Closure extends Local {
+	constructor(key, value) {
+		super(key, value);
+		this.reference = null;
+	}
+	getValue() {
+		if (this.reference)
+			return this.reference.getValue();
+		return this.value;
+	}
+	reportParam(tool) {
+		if (this.reference)
+			return this.reference.reportParam(tool);
+		if (this.key)
+			return this.key.param;
+		return '?';
+	}
+	setValue(value) {
+		if (this.reference)
+			this.reference.setValue(value);
+		else
+			this.value = value;;
+	}
+}
+
+class Transfer {
+	constructor(key, _import, _from, _exports) {
+		this.key = key;
+		this.value = undefined;
+		this._import = _import;
+		this._from = _from;
+		this._exports = _exports;
+	}
+	getValue() {
+		return this.value;
+	}
+	reportParam(tool) {
+		if (this.key)
+			return this.key.param;
+		return '?';
+	}
+	setValue(value) {
+		this.value = value;;
+	}
+}
+
 class Code {
 	constructor(param) {
 		this.param = param;
 		this.previous = null;
 		this.next = null;
-		this.tag = null;
 	}
-	index(tool) {
-		this.tag = tool.tag++;
+	bind(tool) {
+		return this.next;
+	}
+	evaluate(tool) {
+		return this.bind(tool);
 	}
 	optimize(tool) {
 		return this.next;
@@ -41,9 +113,16 @@ class Code {
 		if (offset < 10)
 			result += " ";
 		result += offset;
+		result += " [";
+		let level = this.level;
+		if (level < 100)
+			result += " ";
+		if (level < 10)
+			result += " ";
+		result += level;
+		result += "] ";
 		for (let tab = 0; tab < tabs; tab++)
 			result += "    ";
-		result += " ";
 		result += this.name;
 		let param = this.reportParam(tool);
 		if (param !== undefined) {
@@ -112,7 +191,114 @@ class BranchCode extends Code {
 	}
 }
 
+class BinaryCode extends Code {
+	bind(tool) {
+		tool.popStack();
+		return this.next;
+	}
+	compute(left, right) {
+		return unknown;
+	}
+	evaluate(tool) {
+		let right = tool.popStack();
+		let left = tool.popStack();
+		if ((left !== unknown) || (right !== unknown))
+			tool.pushStack(this.compute(left, right));
+		else
+			tool.pushStack(unknown);
+		return this.next;
+	}
+}
+
+class UnaryCode extends Code {
+	bind(tool) {
+		return this.next;
+	}
+	compute(value) {
+		return unknown;
+	}
+	evaluate(tool) {
+		let right = tool.popStack();
+		let value = tool.popStack();
+		if (value !== unknown)
+			tool.pushStack(this.compute(value));
+		else
+			tool.pushStack(unknown);
+		return this.next;
+	}
+}
+
+class UnknownCode extends Code {
+	bind(tool) {
+		tool.pushStack(unknown);
+		return this.next;
+	}
+}
+
+class CallCode extends UnknownCode {
+	bind(tool) {
+		tool.popStack();
+		tool.popStack();
+		let length = tool.popStack();
+		while (length > 0) {
+			tool.popStack();
+			length--;
+		}
+		tool.popStack();
+		return super.bind(tool);
+	}
+}
+
 class CodeCode extends BranchCode {
+	bind(tool) {
+		let formerFunction = tool.currentFunctiom;
+		let formerFrameIndex = tool.frameIndex;
+		let formerScopeIndex = tool.scopeIndex;
+		let formerStackIndex = tool.stackIndex;
+		
+		tool.currentFunction = tool.getStack(0);
+		tool.pushStack(undefined); // frame;
+		tool.frameIndex = tool.stackIndex;
+		tool.pushStack(undefined); // environment;
+		tool.scopeIndex = tool.stackIndex;
+		let code = this.next;
+		let target = this.target;
+		while (code != target) {
+			code.level = formerStackIndex - tool.stackIndex;
+			code = code.bind(tool);
+		}
+		
+		tool.stackIndex = formerStackIndex;
+		tool.scopeIndex = formerScopeIndex;
+		tool.frameIndex = formerFrameIndex;
+		tool.currentFunctiom = formerFunction;
+		
+		return target;
+	}
+	evaluate(tool) {
+		let formerFunction = tool.currentFunctiom;
+		let formerFrameIndex = tool.frameIndex;
+		let formerScopeIndex = tool.scopeIndex;
+		let formerStackIndex = tool.stackIndex;
+		
+		tool.currentFunction = tool.getStack(0);
+		tool.pushStack(undefined); // frame;
+		tool.frameIndex = tool.stackIndex;
+		tool.pushStack(undefined); // environment;
+		tool.scopeIndex = tool.stackIndex;
+		let code = this.next;
+		let target = this.target;
+		while (code != target) {
+			code = code.evaluate(tool);
+		}
+		
+		tool.stackIndex = formerStackIndex;
+		tool.scopeIndex = formerScopeIndex;
+		tool.frameIndex = formerFrameIndex;
+		tool.currentFunctiom = formerFunction;
+		
+		return target;
+	}
 	report(tool, tabs) {
 		super.report(tool, tabs);
 		let code = this.next;
@@ -141,23 +327,6 @@ class HostCode extends Code {
 	}
 }
 
-class IntegerCode extends Code {
-	serialize1(tool) {
-		let param = this.param;
-		if ((param < -32768) || (param > 32767)) {
-			this.id += 2;
-			this.size = 5;
-		}
-		else if ((param < -128) || (param > 127)) {
-			this.id += 1;
-			this.size = 3;
-		}
-		else
-			this.size = 2;
-		super.serialize1(tool);
-	}
-}
-
 class KeyCode extends Code {
 	reportParam(tool) {
 		let param = this.param;
@@ -170,6 +339,14 @@ class KeyCode extends Code {
 		if (param)
 			param.usage++;
 		super.serialize1(tool);
+	}
+}
+
+class FunctionCode extends KeyCode {
+	bind(tool) {
+		tool.pushStack(this);
+		this.closures = [];
+		return this.next;
 	}
 }
 
@@ -190,7 +367,37 @@ class StackCode extends Code {
 	}
 }
 
+class ClosureCode extends StackCode {
+	bind(tool) {
+		this.closure = tool.getScope(this.param);
+		return this.next;
+	}
+	reportParam(tool) {
+		let result = "" + this.param;
+		if (this.closure)
+			result += " (" + this.closure.reportParam() + ")";
+		return result;
+	}
+}
+
+class LocalCode extends StackCode {
+	bind(tool) {
+		this.local = tool.getScope(this.param);
+		return this.next;
+	}
+	reportParam(tool) {
+		let result = "" + this.param;
+		if (this.local)
+			result += " (" + this.local.reportParam() + ")";
+		return result;
+	}
+}
+
 class StringCode extends Code {
+	bind(tool) {
+		tool.pushStack(this.param);
+		return this.next;
+	}
 	reportParam(tool) {
 		return '"' + this.param + '"';
 	}
@@ -246,21 +453,28 @@ class Key {
 }
 
 const constructors = {
-	ADD: class extends Code {
+	ADD: class extends BinaryCode {
+		compute(left, right) {
+			return left + right;
+		}
 	},
-	ARGUMENT: class extends Code {
+	ARGUMENT: class extends UnknownCode {
 	},
-	ARGUMENTS: class extends Code {
+	ARGUMENTS: class extends UnknownCode {
 	},
-	ARGUMENTS_SLOPPY: class extends Code {
+	ARGUMENTS_SLOPPY: class extends UnknownCode {
 	},
-	ARGUMENTS_STRICT: class extends Code {
+	ARGUMENTS_STRICT: class extends UnknownCode {
 	},
 	ARRAY: class extends Code {
+		bind(tool) {
+			tool.pushStack([]);
+			return this.next;
+		}
 	},
-	ASYNC_FUNCTION: class extends KeyCode {
+	ASYNC_FUNCTION: class extends FunctionCode {
 	},
-	ASYNC_GENERATOR_FUNCTION: class extends KeyCode {
+	ASYNC_GENERATOR_FUNCTION: class extends FunctionCode {
 	},
 	AT: class extends Code {
 	},
@@ -274,13 +488,25 @@ const constructors = {
 	},
 	BEGIN_STRICT_DERIVED: class extends Code {
 	},
-	BIT_AND: class extends Code {
+	BIT_AND: class extends BinaryCode {
+		compute(left, right) {
+			return left & right;
+		}
 	},
-	BIT_NOT: class extends Code {
+	BIT_NOT: class extends UnaryCode {
+		compute(value) {
+			return ~value;
+		}
 	},
-	BIT_OR: class extends Code {
+	BIT_OR: class extends BinaryCode {
+		compute(left, right) {
+			return left | right;
+		}
 	},
-	BIT_XOR: class extends Code {
+	BIT_XOR: class extends BinaryCode {
+		compute(left, right) {
+			return left ^ right;
+		}
 	},
 	BRANCH: class extends BranchCode {
 		optimize(tool) {
@@ -294,50 +520,101 @@ const constructors = {
 		}
 	},
 	BRANCH_ELSE: class extends BranchCode {
+		bind(tool) {
+			this.value = tool.popStack();
+			return this.next;
+		}
+		reportParam(tool) {
+			let result = super.reportParam(tool);
+			if (this.value !== unknown)
+				result += " " + this.value
+			return result;
+		}
 	},
 	BRANCH_IF: class extends BranchCode {
+		bind(tool) {
+			this.value = tool.popStack();
+			return this.next;
+		}
 	},
 	BRANCH_STATUS: class extends BranchCode {
 	},
-	CALL: class extends Code {
+	CALL: class extends CallCode {
 	},
-	CALL_TAIL: class extends Code {
+	CALL_TAIL: class extends CallCode {
 	},
 	CATCH: class extends BranchCode {
 	},
 	CHECK_INSTANCE: class extends Code {
 	},
 	CLASS: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			tool.popStack();
+			tool.popStack();
+			return this.next;
+		}
 	},
 	CODE: class extends CodeCode {
 	},
 	CODE_ARCHIVE: class extends CodeCode {
 	},
-	CONST_CLOSURE: class extends StackCode {
+	CONST_CLOSURE: class extends ClosureCode {
+		evaluate(tool) {
+			this.closure.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	CONST_LOCAL: class extends StackCode {
+	CONST_LOCAL: class extends LocalCode {
+		evaluate(tool) {
+			this.local.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	CONSTRUCTOR_FUNCTION: class extends KeyCode {
+	CONSTRUCTOR_FUNCTION: class extends FunctionCode {
 	},
-	CURRENT: class extends Code {
+	CURRENT: class extends UnknownCode {
 	},
 	DEBUGGER: class extends Code {
 	},
-	DECREMENT: class extends Code {
+	DECREMENT: class extends UnaryCode {
+		compute(value) {
+			return value--;
+		}
 	},
 	DELETE_PROPERTY: class extends KeyCode {
 	},
 	DELETE_PROPERTY_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	DELETE_SUPER: class extends KeyCode {
 	},
 	DELETE_SUPER_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
-	DIVIDE: class extends Code {
+	DIVIDE: class extends BinaryCode {
+		compute(left, right) {
+			return left / right;
+		}
 	},
 	DUB: class extends Code {
+		bind(tool) {
+			tool.pushStack(tool.getStack(0));
+			return this.next;
+		}
 	},
 	DUB_AT: class extends Code {
+		bind(tool) {
+			tool.pushStack(tool.getStack(1));
+			tool.pushStack(tool.getStack(0));
+			return this.next;
+		}
 	},
 	END: class extends EndCode {
 	},
@@ -348,22 +625,48 @@ const constructors = {
 	END_DERIVED: class extends EndCode {
 	},
 	ENVIRONMENT: class extends Code {
+		bind(tool) {
+			tool.pushStack(tool.getStack(0).closures);
+			return this.next;
+		}
 	},
-	EQUAL: class extends Code {
+	EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left == right;
+		}
 	},
 	EVAL: class extends Code {
+		bind(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	EVAL_ENVIRONMENT: class extends Code {
 	},
 	EVAL_REFERENCE: class extends KeyCode {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
 	EXCEPTION: class extends Code {
 	},
-	EXPONENTIATION: class extends Code {
+	EXPONENTIATION: class extends BinaryCode {
+		compute(left, right) {
+			return left ** right;
+		}
 	},
 	EXTEND: class extends Code {
+		bind(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	FALSE: class extends Code {
+		bind(tool) {
+			tool.pushStack(false);
+			return this.next;
+		}
 	},
 	FILE: class extends KeyCode {
 	},
@@ -373,115 +676,345 @@ const constructors = {
 	},
 	FOR_OF: class extends Code {
 	},
-	FUNCTION: class extends KeyCode {
+	FUNCTION: class extends FunctionCode {
 	},
-	GENERATOR_FUNCTION: class extends KeyCode {
+	GENERATOR_FUNCTION: class extends FunctionCode {
 	},
-	GET_CLOSURE: class extends StackCode {
+	GET_CLOSURE: class extends ClosureCode {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return super.bind(tool);
+		}
+		evaluate(tool) {
+			tool.pushStack(this.closure.getValue());
+			return this.next;
+		}
 	},
-	GET_LOCAL: class extends StackCode {
+	GET_LOCAL: class extends LocalCode {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return super.bind(tool);
+		}
+		evaluate(tool) {
+			tool.pushStack(this.local.getValue());
+			return this.next;
+		}
 	},
 	GET_PROPERTY: class extends KeyCode {
 	},
 	GET_PROPERTY_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	GET_SUPER: class extends KeyCode {
 	},
 	GET_SUPER_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	GET_THIS: class extends Code {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
 	GET_VARIABLE: class extends KeyCode {
 	},
 	GLOBAL: class extends Code {
+		bind(tool) {
+			tool.pushStack(undefined);
+			return this.next;
+		}
 	},
 	HOST: class extends HostCode {
+		bind(tool) {
+			tool.pushStack(this.param);
+			return this.next;
+		}
 	},
-	IN: class extends Code {
+	IN: class extends BinaryCode {
+		compute(left, right) {
+			return left in right;
+		}
 	},
-	INCREMENT: class extends Code {
+	INCREMENT: class extends UnaryCode {
+		compute(value) {
+			return value++;
+		}
 	},
-	INSTANCEOF: class extends Code {
+	INSTANCEOF: class extends BinaryCode {
+		compute(left, right) {
+			return left instanceof right;
+		}
 	},
 	INSTANTIATE: class extends Code {
+		bind(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
-	INTEGER: class extends IntegerCode {
+	INTEGER: class extends Code {
+		bind(tool) {
+			tool.pushStack(this.param);
+			return this.next;
+		}
+		serialize1(tool) {
+			let param = this.param;
+			if ((param < -32768) || (param > 32767)) {
+				this.id += 2;
+				this.size = 5;
+			}
+			else if ((param < -128) || (param > 127)) {
+				this.id += 1;
+				this.size = 3;
+			}
+			else
+				this.size = 2;
+			super.serialize1(tool);
+		}
 	},
 	INTRINSIC: class extends Code {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
-	LEFT_SHIFT: class extends Code {
+	LEFT_SHIFT: class extends BinaryCode {
+		compute(left, right) {
+			return left << right;
+		}
 	},
-	LESS: class extends Code {
+	LESS: class extends BinaryCode {
+		compute(left, right) {
+			return left < right;
+		}
 	},
-	LESS_EQUAL: class extends Code {
+	LESS_EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left <= right;
+		}
 	},
-	LET_CLOSURE: class extends StackCode {
+	LET_CLOSURE: class extends ClosureCode {
+		evaluate(tool) {
+			this.closure.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	LET_LOCAL: class extends StackCode {
+	LET_LOCAL: class extends LocalCode {
+		evaluate(tool) {
+			this.local.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
 	LINE: class extends Code {
 	},
-	MINUS: class extends Code {
+	MINUS: class extends UnaryCode {
+		compute(value) {
+			return -value;
+		}
 	},
 	MODULE: class extends Code {
+		bind(tool) {
+			let length = tool.getStack(0);
+			let closures = tool.getStack(length).closures;
+			for (let index = 0; index < length - 1; index++) {
+				let closure = closures[index];
+				let transfer = tool.getStack(length - 1 - index);
+				if (closure)
+					closure.reference = transfer;
+			}
+			while (length > 0) {
+				tool.popStack();
+				length--;
+			}
+			return this.next;
+		}
 	},
-	MODULO: class extends Code {
+	MODULO: class extends BinaryCode {
+		compute(left, right) {
+			return left % right;
+		}
 	},
-	MORE: class extends Code {
+	MORE: class extends BinaryCode {
+		compute(left, right) {
+			return left > right;
+		}
 	},
-	MORE_EQUAL: class extends Code {
+	MORE_EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left >= right;
+		}
 	},
-	MULTIPLY: class extends Code {
+	MULTIPLY: class extends BinaryCode {
+		compute(left, right) {
+			return left * right;
+		}
 	},
 	NAME: class extends KeyCode {
 	},
-	NEW: class extends Code {
+	NEW: class extends UnknownCode {
+		bind(tool) {
+			tool.popStack();
+			let length = tool.popStack();
+			while (length > 0) {
+				tool.popStack();
+				length--;
+			}
+			tool.popStack();
+			return super.bind(tool);
+		}
 	},
 	NEW_CLOSURE: class extends KeyCode {
+		bind(tool) {
+			tool.scopeIndex--;
+			tool.stack[tool.scopeIndex] = new Closure(this.param, undefined);
+			this.index = tool.frameIndex - tool.scopeIndex;
+			return this.next;
+		}
+		reportParam(tool) {
+			return super.reportParam(tool) + " (" + this.index + ")";
+		}
 	},
 	NEW_LOCAL: class extends KeyCode {
+		bind(tool) {
+			tool.scopeIndex--;
+			tool.stack[tool.scopeIndex] = new Local(this.param, undefined);
+			this.index = tool.frameIndex - tool.scopeIndex;
+			return this.next;
+		}
+		reportParam(tool) {
+			return super.reportParam(tool) + " (" + this.index + ")";
+		}
 	},
 	NEW_PROPERTY: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			tool.popStack();
+			tool.popStack();
+			return this.next;
+		}
 	},
 	NEW_TEMPORARY: class extends Code {
+		bind(tool) {
+			tool.scopeIndex--;
+			tool.stack[tool.scopeIndex] = new Local(null, undefined);
+			this.index = tool.frameIndex - tool.scopeIndex;
+			return this.next;
+		}
+		reportParam(tool) {
+			return "(" + this.index + ")";
+		}
 	},
-	NOT: class extends Code {
+	NOT: class extends UnaryCode {
+		compute(value) {
+			return !value;
+		}
 	},
-	NOT_EQUAL: class extends Code {
+	NOT_EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left != right;
+		}
 	},
 	NULL: class extends Code {
+		bind(tool) {
+			tool.pushStack(null);
+			return this.next;
+		}
 	},
 	NUMBER: class extends Code {
+		bind(tool) {
+			tool.pushStack(this.param);
+			return this.next;
+		}
 	},
 	OBJECT: class extends Code {
+		bind(tool) {
+			tool.pushStack({});
+			return this.next;
+		}
 	},
-	PLUS: class extends Code {
+	PLUS: class extends UnaryCode {
+		compute(value) {
+			return +value;
+		}
 	},
 	POP: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	PROGRAM_ENVIRONMENT: class extends Code {
 	},
 	PROGRAM_REFERENCE: class extends KeyCode {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
-	PULL_CLOSURE: class extends StackCode {
+	PULL_CLOSURE: class extends ClosureCode {
+		bind(tool) {
+			tool.popStack();
+			return super.bind(tool);
+		}
+		evaluate(tool) {
+			this.closure.setValue(tool.popStack());
+			return this.next;
+		}
 	},
-	PULL_LOCAL: class extends StackCode {
+	PULL_LOCAL: class extends LocalCode {
+		bind(tool) {
+			tool.popStack();
+			return super.bind(tool);
+		}
+		evaluate(tool) {
+			this.local.setValue(tool.popStack());
+			return this.next;
+		}
 	},
-	REFRESH_CLOSURE: class extends StackCode {
+	REFRESH_CLOSURE: class extends ClosureCode {
 	},
-	REFRESH_LOCAL: class extends StackCode {
+	REFRESH_LOCAL: class extends LocalCode {
 	},
 	RESERVE: class extends StackCode {
+		bind(tool) {
+			let length = this.param;
+			while (length > 0) {
+				tool.pushStack(undefined);
+				length--;
+			}
+			return this.next;
+		}
 	},
-	RESET_CLOSURE: class extends StackCode {
+	RESET_CLOSURE: class extends ClosureCode {
 	},
-	RESET_LOCAL: class extends StackCode {
+	RESET_LOCAL: class extends LocalCode {
 	},
 	RESULT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	RETHROW: class extends Code {
 	},
 	RETRIEVE: class extends StackCode {
+		bind(tool) {
+			let param = this.param;
+			let closures = tool.currentFunction.closures; 
+			closures.length = param;
+			let index = 0;
+			while (index < param) {
+				tool.scopeIndex--;
+				tool.stack[tool.scopeIndex] = closures[index] = new Closure(null, undefined);
+				index++;
+			}
+			return this.next;
+		}
 	},
 	RETRIEVE_TARGET: class extends Code {
 	},
@@ -489,23 +1022,56 @@ const constructors = {
 	},
 	RETURN: class extends Code {
 	},
-	SET_CLOSURE: class extends StackCode {
+	SET_CLOSURE: class extends ClosureCode {
+		evaluate(tool) {
+			this.closure.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	SET_LOCAL: class extends StackCode {
+	SET_LOCAL: class extends LocalCode {
+		evaluate(tool) {
+			this.local.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
 	SET_PROPERTY: class extends KeyCode {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	SET_PROPERTY_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			tool.popStack();
+			return this.next;
+		}
 	},
 	SET_SUPER: class extends KeyCode {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	SET_SUPER_AT: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			tool.popStack();
+			return this.next;
+		}
 	},
 	SET_THIS: class extends Code {
 	},
 	SET_VARIABLE: class extends KeyCode {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
-	SIGNED_RIGHT_SHIFT: class extends Code {
+	SIGNED_RIGHT_SHIFT: class extends BinaryCode {
+		compute(left, right) {
+			return left >> right;
+		}
 	},
 	START_ASYNC: class extends Code {
 	},
@@ -513,57 +1079,139 @@ const constructors = {
 	},
 	START_GENERATOR: class extends Code {
 	},
-	STORE: class extends StackCode {
+	STORE: class extends LocalCode {
+		bind(tool) {
+			let closures = tool.getStack(0);
+			let closure = tool.getScope(this.param);
+			let index = 0;
+			while (closures[index].reference)
+				index++;
+			closures[index].reference = closure;
+			this.local = closure;
+			return this.next;
+		}
 	},
 	STORE_ARROW: class extends Code {
 	},
-	STRICT_EQUAL: class extends Code {
+	STRICT_EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left === right;
+		}
 	},
-	STRICT_NOT_EQUAL: class extends Code {
+	STRICT_NOT_EQUAL: class extends BinaryCode {
+		compute(left, right) {
+			return left !== right;
+		}
 	},
 	STRING: class extends StringCode {
 	},
 	STRING_ARCHIVE: class extends StringCode {
 	},
-	SUBTRACT: class extends Code {
+	SUBTRACT: class extends BinaryCode {
+		compute(left, right) {
+			return left - right;
+		}
 	},
 	SUPER: class extends Code {
 	},
 	SWAP: class extends Code {
+		bind(tool) {
+			let right = tool.popStack();
+			let left = tool.popStack();
+			tool.pushStack(right);
+			tool.pushStack(left);
+		}
 	},
 	SYMBOL: class extends KeyCode {
+		bind(tool) {
+			tool.pushStack(this.param);
+			return this.next;
+		}
 	},
-	TARGET: class extends Code {
+	TARGET: class extends UnknownCode {
 	},
 	TEMPLATE: class extends Code {
 	},
 	THIS: class extends Code {
+		bind(tool) {
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
 	THROW: class extends Code {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 	},
 	THROW_STATUS: class extends Code {
 	},
 	TO_INSTANCE: class extends Code {
 	},
 	TRANSFER: class extends Code {
+		bind(tool) {
+			let length = tool.popStack();
+			let _exports = [];
+			while (length > 3) {
+				_exports.push(tool.popStack());
+				length--;
+			}
+			let _import = tool.popStack();
+			let _from = tool.popStack();
+			let key = tool.popStack();
+			let transfer = new Transfer(key, _import, _from, _exports);
+			tool.pushStack(transfer);
+			return this.next;
+		}
 	},
 	TRUE: class extends Code {
+		bind(tool) {
+			tool.pushStack(true);
+			return this.next;
+		}
 	},
 	TYPEOF: class extends Code {
 	},
 	UNCATCH: class extends Code {
 	},
 	UNDEFINED: class extends Code {
+		bind(tool) {
+			tool.pushStack(undefined);
+			return this.next;
+		}
 	},
-	UNSIGNED_RIGHT_SHIFT: class extends Code {
+	UNSIGNED_RIGHT_SHIFT: class extends BinaryCode {
+		compute(left, right) {
+			return left >>> right;
+		}
 	},
 	UNWIND: class extends StackCode {
+		bind(tool) {
+			let index = this.param;
+			while (index > 0) {
+				tool.stack[tool.scopeIndex] = undefined;
+				tool.scopeIndex++;
+				index--;
+			}
+			return this.next;
+		}
 	},
-	VAR_CLOSURE: class extends StackCode {
+	VAR_CLOSURE: class extends ClosureCode {
+		evaluate(tool) {
+			this.closure.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	VAR_LOCAL: class extends StackCode {
+	VAR_LOCAL: class extends LocalCode {
+		evaluate(tool) {
+			this.local.setValue(tool.getStack(0));
+			return this.next;
+		}
 	},
-	VOID: class extends Code {
+	VOID: class extends UnaryCode {
+		compute(value) {
+			return undefined;
+		}
 	},
 	WITH: class extends Code {
 	},
@@ -643,6 +1291,29 @@ export default class extends TOOL {
 			this.first = code;;
 		this.last = code;
 	}
+	bind() {
+		this.stack = new Array(1024).fill();
+		this.frameIndex = this.scopeIndex = this.stackIndex = 1024;
+		let code = this.first;
+		while (code) {
+			code.level = 1024 - this.stackIndex;
+			code = code.bind(this);
+		}
+	}
+	evaluate() {
+		this.stack = new Array(1024).fill();
+		this.frameIndex = this.scopeIndex = this.stackIndex = 1024;
+		let code = this.first;
+		while (code) {
+			code = code.evaluate(this);
+		}
+	}
+	getScope(at) {
+		return this.stack[this.frameIndex - at];
+	}
+	getStack(at) {
+		return this.stack[this.stackIndex + at];
+	}
 	optimize() {
 		let code = this.first;
 		while (code) {
@@ -661,6 +1332,16 @@ export default class extends TOOL {
 		}
 	}
 	prepare(constructors) @ "xsopt_prepare";
+	
+	popStack() {
+		let result = this.stack[this.stackIndex];
+		this.stackIndex++;
+		return result;
+	}
+	pushStack(slot) {
+		this.stackIndex--;
+		this.stack[this.stackIndex] = slot;
+	}
 	read(path, constructors) @ "xsopt_read";
 	remove(code) {
 		let previous = code.previous;
@@ -689,6 +1370,8 @@ export default class extends TOOL {
 	run() {
 		let code;
 		this.parse(this.inputPath);
+		this.bind();
+		this.evaluate();
 		if (this.optimization)
 			this.optimize();
 		this.serialize(this.outputPath);
@@ -735,6 +1418,12 @@ export default class extends TOOL {
 		}
 		
 		this.write(path);
+	}
+	setScope(at, slot) {
+		this.stack[this.frameIndex - at] = slot;
+	}
+	setStack(at, slot) {
+		this.stack[this.stackIndex + at] = slot;
 	}
 	write(path) @ "xsopt_write";
 
