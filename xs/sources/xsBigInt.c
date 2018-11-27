@@ -44,31 +44,6 @@ static txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot);
 static txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole);
 #endif
 
-static int fxBigInt_iszero(txBigInt *a);
-static txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a);
-static int fxBigInt_bitsize(txBigInt *e);
-
-static int fxBigInt_ucomp(txBigInt *a, txBigInt *b);
-
-static txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-static txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-static txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-
-static txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
-static txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
-
-static txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-
-static txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-static txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b);
-static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r);
-
-#define mxBigIntIsNaN(x) ((x)->size == 0)
-#define mxBigIntHighWord(x)		((txU4)((x) >> 32))
-#define mxBigIntLowWord(x)		((txU4)(x))
-#define mxBigIntWordSize		(sizeof(txU4) * 8)
-
 #ifndef howmany
 #define howmany(x, y)	(((x) + (y) - 1) / (y))
 #endif
@@ -774,7 +749,7 @@ int fxBigInt_iszero(txBigInt *a)
 	return(a->size == 1 && a->data[0] == 0);
 }
 
-static void
+void
 fxBigInt_fill0(txBigInt *r)
 {
 	c_memset(r->data, 0, r->size * sizeof(txU4));
@@ -794,7 +769,7 @@ txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a)
 	return(r);
 }
 
-static int
+int
 fxBigInt_ffs(txBigInt *a)
 {
 	int i;
@@ -827,7 +802,7 @@ fxBigInt_bitsize2(txBigInt *e)
 	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
 }
 
-static int fxBigInt_isset(txBigInt *e, txU4 i)
+int fxBigInt_isset(txBigInt *e, txU4 i)
 {
 	txU4 w = e->data[i / mxBigIntWordSize];
 	return((w & ((txU4)1 << (i % mxBigIntWordSize))) != 0);
@@ -1238,7 +1213,7 @@ txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	return(rr);
 }
 
-static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
+txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
 	int i, n;
 	txU4 a, b, r, t;
@@ -1330,6 +1305,7 @@ txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	for (n = i + j; --n > 0 && rp[n] == 0;)
 		;
 	rr->size = n + 1;
+	rr->sign = 0;
 	return(rr);
 }
 
@@ -1542,7 +1518,7 @@ div64_32(txU8 a, txU4 b)
 }
 #endif
 
-static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r)
+txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r)
 {
 	int sw;
 	txBigInt *nb, *na, *tb, *a2, *b2, *tb2, *tb3;

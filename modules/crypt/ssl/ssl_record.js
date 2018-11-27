@@ -43,6 +43,7 @@ import Crypt from "crypt";
 import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";
+import Arith from "arith";
 
 let recordProtocol = {
 	name: "recordProtocol",
@@ -123,14 +124,12 @@ let recordProtocol = {
 		},
 		aeadAdditionalData(seqNum, type, version, len) {
 			let tmps = new SSLStream();
-			let c = seqNum.toChunk();
-			for (let i = 0, len = 8 - c.byteLength; i < len; i++)
-				tmps.writeChar(0);
+			let c = seqNum.toChunk(8);
 			tmps.writeChunk(c);
 			tmps.writeChar(type);
 			tmps.writeChars(version, 2);
 			tmps.writeChars(len, 2);
-			return tmps.getChunk();
+			return tmps.readChunk(tmps.bytesAvailable);
 		},
 		unpacketize(session, s) {
 			session.traceProtocol(this);
@@ -167,12 +166,12 @@ let recordProtocol = {
 					fragmentLen -= session.chosenCipher.ivSize;
 					nonce = cipher.iv.concat(nonce);
 					fragment = s.readChunk(fragmentLen);
-					s.close();
 					let additional_data = this.aeadAdditionalData(session.readSeqNum, type, version, fragmentLen - cipher.enc.tagLength);
 					if (!(fragment = cipher.enc.process(fragment, null, nonce, additional_data, false))) {
 						// @@ should send an alert
 						throw new Error("SSL: recordProtocol auth failed");
 					}
+					fragment = new Uint8Array(fragment);
 					break;
 				}
 				session.readSeqNum.inc();

@@ -35,76 +35,62 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
+import {Mode, GHASH} from "crypt";
 import Arith from "arith";
-import BER from "ber";
+import Bin from "bin";
 
-export default class PKCS1 {
-	static I2OSP(I, l) {
-		var c = I.toChunk();
-		if (l && l > c.byteLength) {
-			// prepend 0
-			var d = l - c.byteLength;
-			var t = new Uint8Array(d);
-			for (var i = 0; i < d; i++)	// just in case
-				t[i] = 0x00;
-			c = t.buffer.concat(c);
-		}
-		return c;
+export default class GCM {
+	constructor(cipher, tagLength = 16) {
+		this.block = cipher;
+		this.ctr = new Mode("CTR", this.block);
+		this.tagLength = tagLength;
 	};
-	static sIS2SP(sI, l) {
-		if (!l) {
-			l = 4;
-			var c = new Uint8Array(l);
-			var skip = true;
-			var i = 0;
-			while (--l >= 0) {
-				var x;
-				if ((x = (sI >>> (l*8))) != 0 || !skip) {
-					c[i++] = x & 0xff;
-					skip = false;
-				}
-			}
-			if (i == 0)
-				c[i++] = 0;
-			c = c.slice(0, i);
+	init(iv, aad) {
+		let h = this.block.encrypt(new ArrayBuffer(this.block.blockSize));
+		this.ghash = new GHASH(h, aad);
+		if (iv.byteLength == 12) {
+			let one = new DataView(new ArrayBuffer(4));
+			one.setUint32(0, 1);	// big endian
+			iv = iv.concat(one.buffer);
 		}
 		else {
-			// l must be <= 4
-			var c = new new Uint8Array(l);
-			var i = 0;
-			while (--l >= 0)
-				c[i++] = (sI >>> (l*8)) & 0xff;
+			let ghash = new GHASH(h);
+			iv = ghash.process(iv);
 		}
-		return c.buffer;
+		this.y0 = iv;
+		// start with y1
+		let y1 = new Arith.Integer(iv);
+		y1.inc();
+		this.ctr.setIV(y1.toChunk());
+	}
+	encrypt(data, buf) {
+		buf = this.ctr.encrypt(data, buf);
+		this.ghash.update(buf);
+		return buf;
 	};
-	static OS2IP(OS) {
-		return new Arith.Integer(OS);
+	decrypt(data, buf) {
+		this.ghash.update(data);
+		return this.ctr.decrypt(data, buf);
 	};
-	static randint(max, z) {
-		var i = new Arith.Integer(Crypt.rng(max.sizeof()));
-		while (i.comp(max) >= 0)
-			i = z.lsr(i, 1);
-		return i;
+	close() {
+		let t = this.ghash.close();
+		return Bin.xor(t, this.block.encrypt(this.y0));
 	};
-	static parse(buf, privFlag) {
-		// currently RSA only
-		var key = {};
-		var ber = new BER(buf);
-		if (ber.getTag() != 0x30)	// SEQUENCE
-			throw new Error("PKCS1: not a sequence");
-		ber.getLength();	// skip the sequence length
-		ber.getInteger();	// ignore the first INTEGER
-		key.modulus = ber.getInteger();
-		key.exponent = ber.getInteger();
-		if (privFlag) {
-			key.privExponent = ber.getInteger();
-			key.prim1 = ber.getInteger();
-			key.prim2 = ber.getInteger();
-			key.exponent1 = ber.getInteger();
-			key.exponent2 = ber.getInteger();
-			key.coefficient = ber.getInteger();
+	process(data, buf, iv, aad, encFlag) {
+		if (encFlag) {
+			this.init(iv, aad);
+			buf = this.encrypt(data, buf);
+			let tag = this.close();
+			if (tag.byteLength > this.tagLength)
+				tag = tag.slice(0, this.tagLength);
+			return buf.concat(tag);
 		}
-		return key;
+		else {
+			this.init(iv, aad);
+			buf = this.decrypt(data.slice(0, data.byteLength - this.tagLength), buf);
+			let tag = this.close();
+			if (Bin.comp(tag, data.slice(data.byteLength - this.tagLength), this.tagLength) == 0)
+				return buf;
+		}
 	};
 };

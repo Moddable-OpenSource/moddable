@@ -35,76 +35,67 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
-import Arith from "arith";
-import BER from "ber";
+import Integer from "arith2_int";
 
-export default class PKCS1 {
-	static I2OSP(I, l) {
-		var c = I.toChunk();
-		if (l && l > c.byteLength) {
-			// prepend 0
-			var d = l - c.byteLength;
-			var t = new Uint8Array(d);
-			for (var i = 0; i < d; i++)	// just in case
-				t[i] = 0x00;
-			c = t.buffer.concat(c);
-		}
-		return c;
+export default class Module {
+	constructor(z, m) {
+		this.m = m.value;
 	};
-	static sIS2SP(sI, l) {
-		if (!l) {
-			l = 4;
-			var c = new Uint8Array(l);
-			var skip = true;
-			var i = 0;
-			while (--l >= 0) {
-				var x;
-				if ((x = (sI >>> (l*8))) != 0 || !skip) {
-					c[i++] = x & 0xff;
-					skip = false;
-				}
-			}
-			if (i == 0)
-				c[i++] = 0;
-			c = c.slice(0, i);
-		}
-		else {
-			// l must be <= 4
-			var c = new new Uint8Array(l);
-			var i = 0;
-			while (--l >= 0)
-				c[i++] = (sI >>> (l*8)) & 0xff;
-		}
-		return c.buffer;
-	};
-	static OS2IP(OS) {
-		return new Arith.Integer(OS);
-	};
-	static randint(max, z) {
-		var i = new Arith.Integer(Crypt.rng(max.sizeof()));
-		while (i.comp(max) >= 0)
-			i = z.lsr(i, 1);
-		return i;
-	};
-	static parse(buf, privFlag) {
-		// currently RSA only
-		var key = {};
-		var ber = new BER(buf);
-		if (ber.getTag() != 0x30)	// SEQUENCE
-			throw new Error("PKCS1: not a sequence");
-		ber.getLength();	// skip the sequence length
-		ber.getInteger();	// ignore the first INTEGER
-		key.modulus = ber.getInteger();
-		key.exponent = ber.getInteger();
-		if (privFlag) {
-			key.privExponent = ber.getInteger();
-			key.prim1 = ber.getInteger();
-			key.prim2 = ber.getInteger();
-			key.exponent1 = ber.getInteger();
-			key.exponent2 = ber.getInteger();
-			key.coefficient = ber.getInteger();
-		}
-		return key;
-	};
+	add(a, b) {
+		return new Integer((a.value + b.value) % this.m);
+	}
+	inv(a) {
+		return new Integer(this.m - a.value);
+	}
+	sub(a, b) {
+		let c = (a.value - b.value) % this.m;
+		return new Integer(c >= 0n ? c : c + this.m);
+	}
+	mul(a, b) {
+		return new Integer((a.value * b.value) % this.m);
+	}
+	square(a) {
+		return new Integer((a.value * a.value) % this.m);
+	}
+	mulinv(a) {
+		return new Integer(this._mulinv_general(a.value, this.m));
+	}
+	_mulinv_general(a, m) @ "xs_mod2_mulinv_general";
+	_mulinv_euclid(a, m) @ "xs_mod2_mulinv_euclid";
+	_mulinv_euclid2(a, m) {
+		let m0 = m; 
+		let y = 0n, x = 1n;
+
+		if (m == 1n)
+			return 0n;
+		
+		while (a > 1n) {
+			// q is quotient 
+			let q = a / m; 
+			let t = m; 
+			
+			// m is remainder now, process same as 
+			// Euclid's algo 
+			m = a % m, a = t; 
+			t = y; 
+			
+			// Update y and x 
+			y = x - q * y; 
+			x = t; 
+		} 
+		
+		// Make x positive 
+		if (x < 0n)
+			x += m0;
+		return x;
+  	}
+	exp(a, e) {
+		return new Integer(this._exp(a.value, e.value, this.m));
+	}
+	_exp(a, e, m) @ "xs_mod2_exp";
+	mod(a) {
+		return new Integer(a.value % this.m);
+	}
 };
+
+Object.freeze(Module.prototype);
