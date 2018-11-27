@@ -13,7 +13,18 @@
  */
 
 import {BlockCipher, StreamCipher, Mode} from "crypt";
-import Hex from "hex";
+import GCM from "gcm";
+import Arith from "arith";
+import Bin from "bin";
+
+let Hex = {
+	toBuffer(s) {
+		return (new Arith.Integer("0x" + s)).toChunk(s.length / 2);
+	},
+	toString(b) {
+		return (new Arith.Integer(b)).toString(16, b.byteLength * 2);
+	},
+};
 
 testCipherMode("ECB", "decrypt", new BlockCipher("DES", ArrayBuffer.fromString("ABCDEFGH")), undefined, undefined, Hex.toBuffer("5BD7DE165BB69D60D04399DDAD80227B"), ArrayBuffer.fromString("0123456789abcdef"));
 testCipherMode("ECB", "encrypt", new BlockCipher("DES", ArrayBuffer.fromString("ABCDEFGH")), undefined, undefined, ArrayBuffer.fromString("0123456789abcdef"), Hex.toBuffer("5BD7DE165BB69D60D04399DDAD80227B"));
@@ -42,17 +53,37 @@ testBlockCipher("AES", "ABCDEFGHIJKLMNOP", "0123456789ABCDEF", "5AD42F600746B101
 testStreamCipher("RC4", "ABCDEFGH", "01234567", undefined, 0, "EFB6FFCB07AEB5A3");
 testStreamCipher("ChaCha", new ArrayBuffer(32), new ArrayBuffer(64), new ArrayBuffer(12), 0, "76B8E0ADA0F13D90405D6AE55386BD28BDD219B8A08DED1AA836EFCC8B770DC7DA41597C5157488D7724E03FB8D84A376A43B8F41518A11CC387B669B2EE6586");
 
+testCipherMode("GCM", "encrypt", new BlockCipher("AES", Hex.toBuffer("00000000000000000000000000000000")), Hex.toBuffer("000000000000000000000000"), undefined, new ArrayBuffer(), Hex.toBuffer("58e2fccefa7e3061367f1d57a4e7455a"));
+// testCipherMode("GCM", "decrypt", new BlockCipher("AES", Hex.toBuffer("00000000000000000000000000000000")), Hex.toBuffer("000000000000000000000000"), undefined, Hex.toBuffer("58e2fccefa7e3061367f1d57a4e7455a"), new ArrayBuffer());	// ArrayBuffer can't be empty??
+
+let cipher = new BlockCipher("AES", Hex.toBuffer("feffe9928665731c6d6a8f9467308308"));
+let iv = Hex.toBuffer("cafebabefacedbaddecaf888");
+let aad = Hex.toBuffer("feedfacedeadbeeffeedfacedeadbeefabaddad2");
+let tag = Hex.toBuffer("5bc94fbc3221a5db94fae95ae7121a47");
+let plain = Hex.toBuffer("d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b39");
+let cipherText = Hex.toBuffer("42831ec2217774244b7221b784d0d49ce3aa212f2c02a4e035c17e2329aca12e21d514b25466931c7d8f6a5aac84aa051ba30b396a0aac973d58e091");
+testCipherMode("GCM", "encrypt", cipher, iv, aad, plain, cipherText.concat(tag));
+testCipherMode("GCM", "decrypt", cipher, iv, aad, cipherText.concat(tag), plain);
+
+
+
 function testCipherMode(name, direction, cipher, iv, padding, data, expected)
 {
-	let mode = new Mode(name, cipher, iv, padding);
+	let mode, result;
+	if (name == "GCM") {
+		mode = new GCM(cipher);
+		result = mode.process(data, undefined, iv, padding /* AAD */, direction == "encrypt");
+	}
+	else {
+		mode = new Mode(name, cipher, iv, padding);
+		result = mode[direction](data);
+	}
 
-	let result = mode[direction](data);
-
-	result = Hex.toString(result);
-	expected = Hex.toString(expected);
-
-	if (result != expected)
+	if (Bin.comp(result, expected) != 0) {
 		trace(`${name}.${direction} FAIL\n`);
+		trace("result = " + Hex.toString(result) + "\n");
+		trace("expected = " + Hex.toString(expected) + "\n");
+	}
 	else
 		trace(`${name}.${direction} pass\n`);
 }
@@ -60,11 +91,23 @@ function testCipherMode(name, direction, cipher, iv, padding, data, expected)
 function testBlockCipher(name, keyStr, plain, expected)
 {
 	let key = ("string" == typeof keyStr) ? ArrayBuffer.fromString(keyStr) : keyStr;
+	expected = Hex.toBuffer(expected);
 
 	let result = (new BlockCipher(name, key)).encrypt(plain + "");
 
-	if (Hex.toString(result) != expected)
+	if (Bin.comp(result, expected) != 0)
 		trace(`${name} FAIL\n`);
+	else
+		trace(`${name} pass\n`);
+
+	plain = ArrayBuffer.fromString(plain);
+	result = (new BlockCipher(name, key)).decrypt(result)
+	
+	if (Bin.comp(result, plain) != 0) {
+		trace(`${name} FAIL\n`);
+		trace("result = " + Hex.toString(result) + "\n");
+		trace("plain = " + Hex.toString(plain) + "\n");
+	}
 	else
 		trace(`${name} pass\n`);
 }

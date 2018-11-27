@@ -1043,6 +1043,28 @@ mxExport void fxBigInt_copy(txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_mod(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_sqr(txMachine* the, txBigInt* r, txBigInt* a);
 
+mxExport int fxBigInt_iszero(txBigInt *a);
+mxExport txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a);
+mxExport int fxBigInt_bitsize(txBigInt *e);
+
+mxExport int fxBigInt_ucomp(txBigInt *a, txBigInt *b);
+
+mxExport txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
+mxExport txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
+mxExport txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
+
+mxExport txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
+mxExport txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
+
+mxExport txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
+mxExport txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
+
+mxExport txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
+mxExport txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b);
+mxExport txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r);
+
+mxExport int fxBigInt_isset(txBigInt *e, txU4 i);
+mxExport void fxBigInt_fill0(txBigInt *r);
 
 /* xsDate.c */
 mxExport void fx_Date(txMachine* the);

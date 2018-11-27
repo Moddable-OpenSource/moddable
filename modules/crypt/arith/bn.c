@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+#include <stdio.h>
 #include "bn.h"
 #ifndef NULL
 #define NULL	((void *)0)
@@ -500,6 +501,7 @@ bn_umul(bn_context_t *ctx, bn_t *rr, bn_t *aa, bn_t *bb)
 	for (n = i + j; --n > 0 && rp[n] == 0;)
 		;
 	rr->size = n + 1;
+	rr->sign = 0;
 	return(rr);
 }
 
@@ -1083,6 +1085,48 @@ top:
 	else
 		goto top;
 	bn_freebuf(mod->ctx, u);
+	return(r);
+}
+
+bn_t *
+bn_mod_mulinv_euclid(bn_mod_t *mod, bn_t *r, bn_t *a)
+//bn_mod_mulinv(bn_mod_t *mod, bn_t *r, bn_t *a)
+{
+	bn_t *x, *y, *b, *m, *q, *t, *t1;
+	unsigned int sz;
+
+	if (bn_isNaN(a) || bn_iszero(a))
+		bn_throw(mod->ctx, BN_ERR_DIVIDE_BY_ZERO);
+	if (r == NULL)
+		r = bn_alloct(mod->ctx, mod->m->size);
+	sz = MAX(a->size, mod->m->size) + 1;
+	x = bn_alloct(mod->ctx, sz);
+	x->size = 1;
+	x->data[0] = 1;
+	y = bn_alloct(mod->ctx, sz);
+	y->size = 1;
+	y->data[0] = 0;
+	q = bn_alloct(mod->ctx, sz);
+	t = bn_alloct(mod->ctx, sz);
+	t1 = bn_alloct(mod->ctx, sz);
+	b = bn_alloct(mod->ctx, sz);
+	bn_copy(b, a);
+	m = bn_dup(mod->ctx, mod->m);
+	while (b->size > 1 || (b->size == 1 && b->data[0] > 1)) {
+		fprintf(stderr, "mulinv[1]: a = %d, m = %d, x = %d, y = %d\n", b->data[0], m->data[0], (x->sign ? -x->data[0] : x->data[0]), (y->sign ? -y->data[0] : y->data[0]));
+		bn_div(mod->ctx, q, b, m, &t);
+		bn_copy(b, m);
+		bn_copy(m, t);
+		bn_copy(t, y);
+		bn_mul(mod->ctx, t1, q, y);
+		bn_sub(mod->ctx, y, x, t1);
+		fprintf(stderr, "  %d - %d = %d\n", (x->sign ? -x->data[0] : x->data[0]), (t1->sign ? -t1->data[0] : t1->data[0]), (y->sign ? -y->data[0] : y->data[0]));
+		bn_copy(x, t);
+	}
+	if (x->sign)
+		bn_add(mod->ctx, x, x, mod->m);
+	bn_copy(r, x);
+	bn_freebuf(mod->ctx, x);
 	return(r);
 }
 

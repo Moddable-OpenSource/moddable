@@ -36,75 +36,73 @@
  */
 
 import Crypt from "crypt";
+import PKCS1 from "pkcs1";
 import Arith from "arith";
-import BER from "ber";
 
-export default class PKCS1 {
-	static I2OSP(I, l) {
-		var c = I.toChunk();
-		if (l && l > c.byteLength) {
-			// prepend 0
-			var d = l - c.byteLength;
-			var t = new Uint8Array(d);
-			for (var i = 0; i < d; i++)	// just in case
-				t[i] = 0x00;
-			c = t.buffer.concat(c);
-		}
-		return c;
+export default class ECDSA {
+	constructor(key, priv) {
+		this.u = priv ? key.du: key.Qu;
+		this.G = key.G;
+		this.orderSize = key.n.sizeof();
+		this.z = new Arith.Z();
+		this.n = new Arith.Module(this.z, key.n);
+		this.m = new Arith.Module(this.z, key.p);
+		this.ec = new Arith.EC(key.a, key.b, this.m);
+		this.k = key.k;		// just for the debugging purpose
 	};
-	static sIS2SP(sI, l) {
-		if (!l) {
-			l = 4;
-			var c = new Uint8Array(l);
-			var skip = true;
-			var i = 0;
-			while (--l >= 0) {
-				var x;
-				if ((x = (sI >>> (l*8))) != 0 || !skip) {
-					c[i++] = x & 0xff;
-					skip = false;
-				}
-			}
-			if (i == 0)
-				c[i++] = 0;
-			c = c.slice(0, i);
-		}
-		else {
-			// l must be <= 4
-			var c = new new Uint8Array(l);
-			var i = 0;
-			while (--l >= 0)
-				c[i++] = (sI >>> (l*8)) & 0xff;
-		}
-		return c.buffer;
+	_sign(H) {
+		// (r, s) = (k*G, (e + du*r) / k)
+		var ec = this.ec;
+		var du = this.u;
+		var G = this.G;
+		var n = this.n;
+		var e = new Arith.Integer(H);
+		do {
+			var k = this.k;
+			if (!k)
+				var k = this.randint(n.m, this.z);
+			var R = ec.mul(G, k);
+			var r = R.X;
+			var s = n.mul(n.add(e, n.mul(du, r)), n.mulinv(k));
+		} while (s.isZero());
+		var sig = new Object;
+		sig.r = r;
+		sig.s = s;
+		return sig;
 	};
-	static OS2IP(OS) {
-		return new Arith.Integer(OS);
+	sign(H) {
+		var sig = this._sign(H);
+		var os = new ArrayBuffer();
+		var l = this.orderSize;
+		return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
+	};
+	_verify(H, r, s) {
+		// u1 = e / s
+		// u2 = r / s
+		// R = u1*G + u2*Qu
+		// result = R.x == r
+		var ec = this.ec;
+		var Qu = this.u;
+		var G = this.G;
+		var n = this.n;
+		var e = new Arith.Integer(H);
+		var s_inv = n.mulinv(s);
+		var u1 = n.mul(e, s_inv);
+		var u2 = n.mul(r, s_inv);
+		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
+		var R = ec.mul2(G, u1, Qu, u2);
+		return R.X.comp(r) == 0;
+	};
+	verify(H, sig) {
+		var l = this.orderSize;
+		var r = PKCS1.OS2IP(sig.slice(0, l));
+		var s = PKCS1.OS2IP(sig.slice(l, l*2));
+		return this._verify(H, r, s);
 	};
 	static randint(max, z) {
 		var i = new Arith.Integer(Crypt.rng(max.sizeof()));
 		while (i.comp(max) >= 0)
 			i = z.lsr(i, 1);
 		return i;
-	};
-	static parse(buf, privFlag) {
-		// currently RSA only
-		var key = {};
-		var ber = new BER(buf);
-		if (ber.getTag() != 0x30)	// SEQUENCE
-			throw new Error("PKCS1: not a sequence");
-		ber.getLength();	// skip the sequence length
-		ber.getInteger();	// ignore the first INTEGER
-		key.modulus = ber.getInteger();
-		key.exponent = ber.getInteger();
-		if (privFlag) {
-			key.privExponent = ber.getInteger();
-			key.prim1 = ber.getInteger();
-			key.prim2 = ber.getInteger();
-			key.exponent1 = ber.getInteger();
-			key.exponent2 = ber.getInteger();
-			key.coefficient = ber.getInteger();
-		}
-		return key;
 	};
 };

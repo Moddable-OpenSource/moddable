@@ -41,6 +41,7 @@
 
 #include "fips180.h"
 #include "rfc1321.h"
+#include "ghash.h"
 
 #include "kcl_symmetric.h"
 
@@ -124,6 +125,15 @@ static const digestRecord gDigests[] ICACHE_XS6RO_ATTR = {
 		(void *)sha384_create,
 		(void *)sha384_update,
 		(void *)sha384_fin
+	},
+	{
+		"GHASH",
+		sizeof(struct ghash),
+		GHASH_DGSTSIZE,
+		GHASH_BLKSIZE,
+		(void *)ghash_create,
+		(void *)ghash_update,
+		(void *)ghash_fin
 	},
 	{0}
 };
@@ -958,7 +968,11 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	uint32_t count, countStart;
 	uint8_t *data, *result, *resultStart;
 
-	if ((KCL_DIRECTION_DECRYPTION != cipher->direction) && (kCryptModeCTR != mode->kind))
+	if (kCryptModeCTR == mode->kind) {
+		if (KCL_DIRECTION_ENCRYPTION != cipher->direction)
+			xs_crypt_cipher_setDirection(cipher, KCL_DIRECTION_ENCRYPTION);
+	}
+	else if (KCL_DIRECTION_DECRYPTION != cipher->direction)
 		xs_crypt_cipher_setDirection(cipher, KCL_DIRECTION_DECRYPTION);
 
 	resolveBuffer(the, &xsArg(0), &data, &count);
@@ -1129,3 +1143,33 @@ void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count
 	}
 }
 
+/*
+ * GHASH specific part
+ */
+void
+xs_ghash_init(xsMachine *the)
+{
+	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
+	ghash_t *ghash = (ghash_t *)cd->ctx;
+	int ac = xsmcToInteger(xsArgc);
+	size_t len;
+
+	len = xsGetArrayBufferLength(xsArg(0));
+	if (len > sizeof(ghash->h))
+		len = sizeof(ghash->h);
+	c_memcpy(&ghash->h, xsmcToArrayBuffer(xsArg(0)), len);
+	ghash_fix128(&ghash->h);
+	if (ac > 1 && xsmcTest(xsArg(1))) {
+		void *aad = xsmcToArrayBuffer(xsArg(1));
+		len = xsGetArrayBufferLength(xsArg(1));
+		c_memset(&ghash->y, 0, sizeof(ghash->y));
+		ghash_update(ghash, aad, len);
+		c_memcpy(&ghash->y0, &ghash->y, sizeof(ghash->y));
+		ghash->aad_len = len;
+	}
+	else {
+		c_memset(&ghash->y0, 0, sizeof(ghash->y0));
+		ghash->aad_len = 0;
+	}
+	ghash_create(ghash);
+}

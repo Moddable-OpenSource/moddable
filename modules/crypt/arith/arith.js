@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+/*
 import Integer from "arith_int";
 import EC from "arith_ec";
 import ECPoint from "arith_ecp";
@@ -42,8 +43,18 @@ import Ed from "arith_ed";
 import Module from "arith_mod";
 import Mont from "arith_mont";
 import Z from "arith_z";
+*/
+
+import Integer from "arith2_int";
+import EC from "arith2_ec";
+import ECPoint from "arith2_ecp";
+import Module from "arith2_mod";
+import Mont from "arith2_mont";
+import Z from "arith2_z";
+let Ed;
 
 let Arith = {EC, ECPoint, Ed, Integer, Module, Mont, Z};
+
 Object.freeze(Arith);
 
 export default Arith;
