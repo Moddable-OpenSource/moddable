@@ -76,6 +76,11 @@ typedef struct {
 	txU1 sign;
 } txBigInt;
 
+#define mxBigIntIsNaN(x) ((x)->size == 0)
+#define mxBigIntHighWord(x)		((txU4)((x) >> 32))
+#define mxBigIntLowWord(x)		((txU4)(x))
+#define mxBigIntWordSize		(sizeof(txU4) * 8)
+
 #define XS_ATOM_ARCHIVE 0x58535F41 /* 'XS_A' */
 #define XS_ATOM_BINARY 0x58535F42 /* 'XS_B' */
 #define XS_ATOM_CHECKSUM 0x43484B53 /* 'CHKS' */

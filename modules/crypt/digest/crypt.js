@@ -57,6 +57,14 @@ export class Digest @ "xs_crypt_Digest_destructor" {
 	}
 };
 
+export class GHASH extends Digest {
+	constructor(h, aad) {
+		super("GHASH");
+		this._init(h, aad);
+	};
+	_init(h, aad) @ "xs_ghash_init";
+};
+
 export class BlockCipher @ "xs_crypt_cipher_destructor" {
 	constructor(cipher, key) @ "xs_crypt_cipher_constructor";
 	encrypt(data, result) @ "xs_crypt_cipher_encrypt";
@@ -81,4 +89,4 @@ export class Mode @ "xs_crypt_mode_delete" {
 	set eof() @ "xs_crypt_mode_set_eof";
 };
 
-export default {Digest, BlockCipher, Mode, StreamCipher};
+export default {Digest, BlockCipher, Mode, StreamCipher, GHASH};

@@ -46,7 +46,7 @@ import PKCS1_5 from "pkcs1_5";
 import DSA from "dsa";
 import {Digest} from "crypt";
 import X509 from "x509";
-import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
+import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
 
 const hello_request = 0;
 const client_hello = 1;
@@ -74,10 +74,21 @@ const extension_type = {
 	tls_trusted_ca_keys: 3,
 	tls_trusted_hmac: 4,
 	tls_status_request: 5,
+	tls_elliptic_curves: 10,
+	tls_ec_point_formats: 11,
 	tls_signature_algorithms: 13,
 	tls_application_layer_protocol_negotiation: 16,
 };
 Object.freeze(extension_type);
+
+const named_curves = {
+	secp256r1: 23,
+	secp384r1: 24,
+	secp521r1: 25,
+	x25519: 29,
+	x448: 30,
+};
+Object.freeze(named_curves);
 
 function handshakeDigestUpdate(session, data)
 {
@@ -151,7 +162,8 @@ let handshakeProtocol = {
 			protocol = this.finished;
 			break;
 		default:
-			throw new Error("SSL: handshake: unknown type");
+			let p = tbuf[0];
+			throw new Error("SSL: handshake: unknown type: " + p);
 			break;
 		}
 		protocol.unpacketize(session, body ? new SSLStream(body) : undefined);
@@ -331,6 +343,8 @@ let handshakeProtocol = {
 				// TLS extensions
 				//
 				let es = new SSLStream();
+				session.options.tls_elliptic_curves = [named_curves.secp256r1];
+				session.options.tls_ec_point_formats = [0];	// uncompressed
 				for (let i in session.options) {
 					if (!(i in extension_type))
 						continue;
@@ -386,6 +400,20 @@ let handshakeProtocol = {
 							es.writeString(name);
 						}
 						}
+						break;
+					case extension_type.tls_elliptic_curves:
+						es.writeChars(type, 2);
+						es.writeChars(ext.length * 2 + 2, 2);
+						es.writeChars(ext.length * 2, 2);
+						for (let j = 0; j < ext.length; j++)
+							es.writeChars(ext[j], 2);
+						break;
+					case extension_type.tls_ec_point_formats:
+						es.writeChars(type, 2);
+						es.writeChars(ext.length + 1, 2);
+						es.writeChars(ext.length, 1);
+						for (let j = 0; j < ext.length; j++)
+							es.writeChars(ext[j], 1);
 						break;
 					default:
 						// not supported yet
@@ -511,32 +539,57 @@ let handshakeProtocol = {
 		rsa: 1,
 		dsa: 2,
 		ecdsa: 3,
+		ed25519: 7,
+		ed448: 8,
 		
 		unpacketize(session, s) {
 			session.traceProtocol(this);
 			switch (session.chosenCipher.keyExchangeAlgorithm) {
 			case DHE_DSS:
 			case DHE_RSA:
+			case ECDHE_RSA:
 				let tbs = new SSLStream();
 				let dhparams = {};
-				let n = s.readChars(2);
-				tbs.writeChars(n, 2);
-				dhparams.dh_p = s.readChunk(n);
-				tbs.writeChunk(dhparams.dh_p);
-				n = s.readChars(2);
-				tbs.writeChars(n, 2);
-				dhparams.dh_g = s.readChunk(n);
-				tbs.writeChunk(dhparams.dh_g);
-				n = s.readChars(2);
-				tbs.writeChars(n, 2);
-				dhparams.dh_Ys = s.readChunk(n);
-				tbs.writeChunk(dhparams.dh_Ys);
+				if (session.chosenCipher.keyExchangeAlgorithm == ECDHE_RSA) {
+					// ServerECDHParams
+					//	ECParameters
+					//		ECCurveType
+					let curve_type = s.readChars(1);
+					if (curve_type != 3)	// named_curve
+						throw new Error("SSL: invalid curve type");
+					//		NamedCurve
+					tbs.writeChars(curve_type, 1)
+					let named_curve = s.readChars(2);
+					if (!session.options.tls_elliptic_curves.includes(named_curve))
+						throw new Error("SSL: unsupported curve");
+					dhparams.named_curve = named_curve;
+					tbs.writeChars(named_curve, 2);
+					//	ECPoint
+					let n = s.readChars(1);
+					tbs.writeChars(n, 1);
+					let ecpoint = s.readChunk(n);
+					tbs.writeChunk(ecpoint);
+					dhparams.dh_Ys = ecpoint;
+				} else {	// DHE_DSS / DHE_RSA
+					let n = s.readChars(2);
+					tbs.writeChars(n, 2);
+					dhparams.dh_p = s.readChunk(n);
+					tbs.writeChunk(dhparams.dh_p);
+					n = s.readChars(2);
+					tbs.writeChars(n, 2);
+					dhparams.dh_g = s.readChunk(n);
+					tbs.writeChunk(dhparams.dh_g);
+					n = s.readChars(2);
+					tbs.writeChars(n, 2);
+					dhparams.dh_Ys = s.readChunk(n);
+					tbs.writeChunk(dhparams.dh_Ys);
+				}
 				session.dhparams = dhparams;
 				let hash_algo = s.readChar();
 				let sig_algo = s.readChar();
-				n = s.readChars(2);
+				let n = s.readChars(2);
 				let sig = s.readChunk(n);
-				let hash, pk;
+				let hash, v;
 				switch (hash_algo) {
 				default:
 				case this.none: break;
@@ -817,6 +870,22 @@ let handshakeProtocol = {
 				y = new Arith.Integer(dh.dh_Ys);
 				y = mod.exp(y, x);
 				preMasterSecret = y.toChunk();
+				break;
+			case ECDHE_RSA:
+				if (!session.dhparams)
+					throw new Error("SSL: clientKeyExchange: no DH params");
+				for (let name in named_curves) {
+					if (named_curves[name] == session.dhparams.named_curve) {
+						let curve = new Curve(name);
+						let x = RNG.get(curve.orderSize);
+						let Yc = curve.dh(x);
+						s.writeChars(Yc.byteLength, 1);
+						s.writeChunk(Yc);
+						let y = curve.dh(x, session.dhparams.dh_Ys);
+						preMasterSecret = curve.Z(y);
+						break;
+					}
+				}
 				break;
 			default:
 				throw new Error("SSL: clientKeyExchange: unsupported algorithm");
