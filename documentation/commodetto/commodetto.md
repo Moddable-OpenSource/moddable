@@ -1,31 +1,63 @@
 # Commodetto
-Copyright 2016-2017 Moddable Tech, Inc.
 
-Revised: October 22, 2018
+Copyright 2016-2018 Moddable Tech, Inc.<BR>
+Revised: November 26, 2018
+
+## About This Document
 
 Commodetto is a graphics library designed to bring modern user interface rendering to devices powered by a resource-constrained microcontroller. For many applications, Commodetto needs only a few kilobytes of RAM, including the assets for rendering the user interface.
 
-## Overview
+This document provides a high-level overview of the parts of Commodetto, information about asset format requirements for assets included in Commodetto applications, and details on the objects that define the Commodetto JavaScript API.
+
+## Table of Contents
+
+* [Overview of Commodetto](#overview)
+	* [Native Data Types](#native-data-types)
+	* [Host Buffers](#host-buffers)
+* [Bitmap Operations](#bitmap-operations)
+	* [Bitmap Class](#bitmap-class)
+	* [PixelsOut Class](#pixelsout-class)
+	* [SPIOut Class](#"spiout-class)
+	* [BufferOut Class](#bufferout-class)
+	* [BMPOut Class](#bmpout-class)
+	* [RLE4Out Class](#rle4out-class)
+	* [ColorCellOut Class](#colorcellout-class)
+* [Asset Parsing](#asset-parsing)
+	* [BMP](#bmp)
+	* [JPEG](#jpeg)
+	* [PNG](#png)
+	* [BMFont](#bmfont)
+* [Rendering](#rendering)	
+	* [Render class](#render-class)
+* [Pixel format conversion](#pixel-format-conversion)
+	* [Convert Class](#convert-class)
+* [Odds and Ends](#odds-and-ends)
+
+<a id="overview"></a>
+## Overview of Commodetto
+
 Commodetto consists of several parts:
 
-* A lightweight Poco rendering engine--a display list renderer able to efficiently render a single scanline at a time, eliminating the need for a frame buffer
+* A lightweight [Poco rendering engine](./poco.md)--a display list renderer able to efficiently render a single scanline at a time, eliminating the need for a frame buffer
 * Asset loaders for working with common file formats
 * Pixel outputs for delivering rendered pixels to displays and files
 * A JavaScript API for all features
 
 Every part of Commodetto is a module, making it straightforward to deploy only necessary modules, add new modules, and replace existing modules. Even the rendering capabilities are a module, enabling integration of specialized rendering modules.
 
-The Poco rendering engine contains only the most essential rendering operations: fill or blend a rectangle with a solid color, plus a small set of bitmap drawing operations, including copy, pattern fill, and alpha blend. Text is implemented externally to the rendering engine using Poco bitmap rendering operations, which enables integration of different engines for glyph generation, text layout, and text measurement.
+The **Poco rendering engine** contains only the most essential rendering operations: fill or blend a rectangle with a solid color, plus a small set of bitmap drawing operations, including copy, pattern fill, and alpha blend. Text is implemented externally to the rendering engine using Poco bitmap rendering operations, which enables integration of different engines for glyph generation, text layout, and text measurement.
 
-Asset loaders prepare graphical assets, such as photos, user interface elements, and fonts, for rendering. Commodetto includes asset loaders for BMP images, JPEG photos, PNG images, BMFont fonts. Additional asset loader modules may be added. The asset loaders enable many types of assets to be rendered directly from flash storage (for example, ROM) without having to be loaded into RAM.
+**Asset loaders** prepare graphical assets, such as photos, user interface elements, and fonts, for rendering. Commodetto includes asset loaders for BMP images, JPEG photos, PNG images, BMFont fonts. Additional asset loader modules may be added. The asset loaders enable many types of assets to be rendered directly from flash storage (for example, ROM) without having to be loaded into RAM.
 
-Pixel outputs deliver rendered pixels to their destination. Commodetto includes modules to write to files and in-memory bitmaps. Modules may be added to send the pixels to a display over the transports supported by the host device, including SPI, I<sup>2</sup>C, serial, and memory-mapped ports.
+**Pixel outputs** deliver rendered pixels to their destination. Commodetto includes modules to write to files and in-memory bitmaps. Modules may be added to send the pixels to a display over the transports supported by the host device, including SPI, I<sup>2</sup>C, serial, and memory-mapped ports.
 
+<a id="native-data-types"></a>
 ### Native Data Types
 
 Commodetto data types include pixel, coordinate, dimension, and bitmap. These types are described below along with the enumeration that defines pixel formats.
 
 #### Pixel Type
+
 To run well on resource-constrained hardware, Commodetto makes simplifying assumptions. One assumption is that only a single output pixel format is supported in a given deployment. A general-purpose graphics library needs to support many different output pixel formats to be compatible with the many different displays and file formats in use. Commodetto assumes the device it is deployed to connects to a single type of screen; this assumption reduces the code size and some runtime overhead.
 
 Commodetto has the ability to support different pixel formats, with the choice of the pixel format to use set at compile time. Changing the output pixel format--for example, to use a different screen--simply requires recompiling Commodetto with a different output pixel format configured.
@@ -38,12 +70,14 @@ The pixel format is determined at build time by the value of the C #define `kCom
 typedef uint16_t CommodettoPixel;
 ```
 
+***
+
 #### Pixel Formats
 Commodetto supports multiple source pixel formats at the same time. This allows for efficient storage and rendering of different kinds of assets.
 
 The output pixel format is always one of the supported source pixel formats. In addition, source pixel formats of 1-bit monochrome and 4-bit gray are always supported.
 
-The `CommodettoBitmapFormat` enumeration defines the pixel formats. A subset if pixel formats are supported in each deployment.
+The `CommodettoBitmapFormat` enumeration defines the pixel formats. A subset of pixel formats are supported in each deployment.
 
 ```c
 typedef enum {
@@ -62,16 +96,20 @@ typedef enum {
 } CommodettoBitmapFormat;
 ```
 
-* **kCommodettoBitmapDefault** -- The output pixel format. The format varies depending on the value of `kCommodettoBitmapFormat` when Commodetto is built.
-* **kCommodettoBitmapMonochrome** -- Pixels are 1-bit data, packed into bytes in which the high bit of the byte is the leftmost pixel.
-* **kCommodettoBitmapGray16** -- Pixels are 4-bit data, where 0 represents white, 15 represents black, and the values in between are proportionally interpolated gray levels. The pixels are packed into bytes in which the high nybble is the leftmost pixel.
-* **kCommodettoBitmapGray16 | kCommodettoBitmapPacked** -- Pixels are the same as in `kCommodettoBitmapGray16`, and compressed using a weighted RLE algorithm.
-* **kCommodettoBitmapGray256** - Pixels are 8-bit data, where 0 represents white, 255 represents black, and the values in between are proportionally interpolated gray levels. 
-* **kCommodettoBitmapRGB332** - Pixels are 8-bit data, with packed RGB values. The high three bits are red, followed by three bits of green, and two bits of blue.
-* **kCommodettoBitmapRGB565LE** - Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in little-endian byte order.
-* **kCommodettoBitmapRGB565BE** - Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in big-endian byte order.
-* **kCommodettoBitmap24RGB** - Pixels are three 8-bit values, in the order of red, green, blue.
-* **kCommodettoBitmap24RGBA** - Pixels are four 8-bit values, in the order of red, green, blue, alpha.
+| Format | Description |
+| :---: | :--- |
+| kCommodettoBitmapDefault | The output pixel format. The format varies depending on the value of `kCommodettoBitmapFormat` when Commodetto is built.
+|  kCommodettoBitmapMonochrome | Pixels are 1-bit data, packed into bytes in which the high bit of the byte is the leftmost pixel.
+| kCommodettoBitmapGray16 | Pixels are 4-bit data, where 0 represents white, 15 represents black, and the values in between are proportionally interpolated gray levels. The pixels are packed into bytes in which the high nybble is the leftmost pixel.
+| kCommodettoBitmapGray16 \| kCommodettoBitmapPacked | Pixels are the same as in `kCommodettoBitmapGray16`, and compressed using a weighted RLE algorithm.
+| kCommodettoBitmapGray256 | Pixels are 8-bit data, where 0 represents white, 255 represents black, and the values in between are proportionally interpolated gray levels. 
+| kCommodettoBitmapRGB332 | Pixels are 8-bit data, with packed RGB values. The high three bits are red, followed by three bits of green, and two bits of blue.
+| kCommodettoBitmapRGB565LE | Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in little-endian byte order.
+| kCommodettoBitmapRGB565BE | Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in big-endian byte order.
+| kCommodettoBitmap24RGB | Pixels are three 8-bit values, in the order of red, green, blue.
+| kCommodettoBitmap24RGBA | Pixels are four 8-bit values, in the order of red, green, blue, alpha.
+
+***
 
 #### Coordinate Type
 
@@ -85,6 +123,8 @@ The coordinate type is signed to enable applications to render objects that over
 
 For devices with very small displays (128 pixels or fewer in each dimension), `CommodettoCoordinate` may be redefined as an 8-bit value--for example, `int8_t`--to reduce memory requirements. When doing this, application code must take care not to use coordinates smaller than -128 or larger than 127, or the results will be unpredictable.
 
+***
+
 #### Dimension Type
 
 `CommodettoDimension` is the type used to specify dimensions.
@@ -97,19 +137,21 @@ The dimension type is unsigned, as Commodetto assigns no meaning to a negative w
 
 `CommodettoDimension` may be redefined as `uint8_t` on devices with very small displays (256 pixels in each dimension) to reduce memory use. When doing this, application code must take care not to specify dimensions larger than 255 pixels.
 
+***
+
 #### Bitmap Type
 
 The `CommodettoBitmap` structure defines a bitmap.
 
 ```c
 typedef struct {
-	CommodettoDimension		w;
-	CommodettoDimension		h;
+	CommodettoDimension	w;
+	CommodettoDimension	h;
 	CommodettoBitmapFormat	format;
-	int8_t					havePointer;
+	int8_t			havePointer;
 	union {
-		void				*data;
-		int32_t				offset;
+		void		*data;
+		int32_t		offset;
 	} bits;
 } CommodettoBitmapRecord, *CommodettoBitmap;
 ```
@@ -131,6 +173,9 @@ unsigned char *buffer = xsToArrayBuffer(xsArg(0));
 CommodettoPixel *pixels = (CommodettoPixel *)(bitmap.bits.offset + buffer);
 ```
 
+***
+
+<a id="host-buffers"></a>
 ### Host Buffers
 
 The built-in `ArrayBuffer` object is the standard way to store and manipulate binary data in JavaScript. Commodetto supports storing the pixels of assets in an `ArrayBuffer`. However, the JavaScript standard effectively requires an `ArrayBuffer` to reside in RAM. Because many embedded devices have limited RAM but relatively generous ROM (flash memory), it is desirable to use assets directly from ROM without first moving them to RAM.
@@ -141,15 +186,19 @@ In the Moddable SDK, the `Resource` constructor is a way to create a `HostBuffer
 
 > **Note:** The Commodetto and Poco JavaScript-to-C bindings support using a `HostBuffer` anywhere an `ArrayBuffer` is allowed; however, some JavaScript-to-C bindings do not accept a `HostBuffer` in place of an `ArrayBuffer` and so throw an exception.
 
+***
+
+<a id="bitmap-operations"></a>
 ## Bitmap Operations
 
-This section describes the classes used to operate on bitmaps: `Bitmap`, `PixelsOut,` and four subclasses of `PixelsOut`.
+This section describes the classes used to operate on bitmaps: `Bitmap`, `PixelsOut`, and four subclasses of `PixelsOut`.
 
+<a id="bitmap-class"></a>
 ### Bitmap Class
 
 The Commodetto `Bitmap` object contains the three pieces of information needed to render a bitmap: the bitmap dimensions, the format of the pixels in the bitmap, and a reference to the pixel data. The following example creates a `Bitmap` object with 16-bit pixels stored in an `ArrayBuffer`.
 
-```c
+```js
 import Bitmap from "commodetto/Bitmap";
 
 let width = 40, height = 30;
@@ -159,7 +208,7 @@ let bitmap = new Bitmap(width, height, Bitmap.RGB565LE, pixels, 0);
 
 The pixels for a `Bitmap` object are often stored in a `HostBuffer`, to minimize use of RAM. For example, `Resource` creates a `HostBuffer` corresponding to the following resource:
 
-```c
+```js
 let pixels = new Resource("pixels.dat");
 let bitmap = new Bitmap(width, height, Bitmap.RGB565LE, pixels, 0);
 ```
@@ -170,27 +219,27 @@ let bitmap = new Bitmap(width, height, Bitmap.RGB565LE, pixels, 0);
 
 The `Bitmap` constructor takes the following arguments:
 
-* `width` -- number indicating width of bitmap in pixels
-* `height` -- number indicating height of bitmap in pixels
-* `format` -- type of pixels in bitmap, taken from `Bitmap` static properties (for example, `Bitmap.RGB565LE` or `Bitmap.Gray16`)
-* `buffer` -- `ArrayBuffer` or `HostBuffer` containing pixel data for bitmap
-* `offset` -- number indicating offset in bytes from start of `buffer` to pixel data
+| Argument | Description |
+| :---: | :--- |
+| `width` | number indicating width of bitmap in pixels
+| `height` | number indicating height of bitmap in pixels
+| `format` | type of pixels in bitmap, taken from `Bitmap` static properties (for example, `Bitmap.RGB565LE` or `Bitmap.Gray16`)
+| `buffer` | `ArrayBuffer` or `HostBuffer` containing pixel data for bitmap
+| `offset` | number indicating offset in bytes from start of `buffer` to pixel data
 
 All properties of a bitmap are fixed at the time it is constructed and cannot be changed after that.
 
+***
+
 #### Properties
 
-##### `width`
+| Name | Type | Read-only | Description |
+| :---: | :---: | :---: | :--- |
+| `width` | `Number` | ✓ | The width in pixels of the bitmap.
+| `height` | `Number` | ✓ | The height in pixels of the bitmap.
+| `format` | `Number` | ✓ | Returns the pixel format of pixels of the bitmap.
 
-Returns the width in pixels of the bitmap. This property is read-only.
-
-##### `height`
-
-Returns the height in pixels of the bitmap. This property is read-only.
-
-##### `format`
-
-Returns the pixel format of pixels of the bitmap. This property is read-only.
+***
 
 #### Static Functions
 
@@ -198,56 +247,33 @@ Returns the pixel format of pixels of the bitmap. This property is read-only.
 
 Returns the number of bits per pixel for the specified pixel format.
 
-	Bitmap.depth(Bitmap.RGB565LE);		// returns 16
-	Bitmap.depth(Bitmap.Monochrome);	// returns 1
-	Bitmap.depth(Bitmap.Gray256);		// returns 8
+```js
+Bitmap.depth(Bitmap.RGB565LE);		// returns 16
+Bitmap.depth(Bitmap.Monochrome);	// returns 1
+Bitmap.depth(Bitmap.Gray256);		// returns 8
+```
+
+***
 
 #### Static Properties
 
-##### `Bitmap.Default`
+| Name | Description |
+| :---: | :--- |
+| `Bitmap.Default` | A constant corresponding to the value of `kCommodettoBitmapDefault`
+| `Bitmap.RLE` |A constant corresponding to the value of `kCommodettoBitmapPacked`
+| `Bitmap.Monochrome` | A constant corresponding to the value of `kCommodettoBitmapMonochrome`
+| `Bitmap.Gray16` | A constant corresponding to the value of `kCommodettoBitmapGray16`
+| `Bitmap.Gray256` | A constant corresponding to the value of `kCommodettoBitmapGray256`
+| `Bitmap.RGB332` | A constant corresponding to the value of `kCommodettoBitmapRGB332`
+| `Bitmap.RGB565LE` | A constant corresponding to the value of `kCommodettoBitmapRGB565LE`
+| `Bitmap.RGB565BE` | A constant corresponding to the value of `kCommodettoBitmapRGB565BE`
+| `Bitmap.RGB24` | A constant corresponding to the value of `kCommodettoBitmapRGB24`
+| `Bitmap.RGBA32` | A constant corresponding to the value of `kCommodettoBitmapRGBA32`
+| `Bitmap.CLUT16` | A constant corresponding to the value of `kCommodettoBitmapCLUT16`
 
-A constant corresponding to the value of `kCommodettoBitmapDefault`
+***
 
-##### `Bitmap.RLE`
-
-A constant corresponding to the value of `kCommodettoBitmapPacked`
-
-##### `Bitmap.Monochrome`
-
-A constant corresponding to the value of `kCommodettoBitmapMonochrome`
-
-##### `Bitmap.Gray16`
-
-A constant corresponding to the value of `kCommodettoBitmapGray16`
-
-##### `Bitmap.Gray256`
-
-A constant corresponding to the value of `kCommodettoBitmapGray256`
-
-##### `Bitmap.RGB332`
-
-A constant corresponding to the value of `kCommodettoBitmapRGB332`
-
-##### `Bitmap.RGB565LE`
-
-A constant corresponding to the value of `kCommodettoBitmapRGB565LE`
-
-##### `Bitmap.RGB565BE`
-
-A constant corresponding to the value of `kCommodettoBitmapRGB565BE`
-
-##### `Bitmap.RGB24`
-
-A constant corresponding to the value of `kCommodettoBitmapRGB24`
-
-##### `Bitmap.RGBA32`
-
-A constant corresponding to the value of `kCommodettoBitmapRGBA32`
-
-##### `Bitmap.CLUT16`
-
-A constant corresponding to the value of `kCommodettoBitmapCLUT16`
-
+<a id="pixelsout-class"></a>
 ### PixelsOut Class
 
 The `PixelsOut` class is an abstract base class used to output pixels. It is overridden by these other classes to output to different destinations:
@@ -316,9 +342,11 @@ class PixelsOut {
 
 The `PixelsOut` constructor takes a single argument: a dictionary of property names and values. The `PixelsOut` base class defines three properties that are defined for all subclasses of `PixelsOut`: 
 
-* `width` -- number specifying width of output in pixels
-* `height` -- number specifying height of output in pixels
-* `pixelFormat` -- string specifying format of output pixels (for example, `Bitmap.RGB565BE` for 16-bit 565 little-endian pixels and `Bitmap.RGB565BE` for 16-bit 565 big-endian pixels)
+| Name | Description |
+| :---: | :--- |
+| `width` | number specifying width of output in pixels
+| `height` | number specifying height of output in pixels
+| `pixelFormat` | string specifying format of output pixels (for example, `Bitmap.RGB565BE` for 16-bit 565 little-endian pixels and `Bitmap.RGB565BE` for 16-bit 565 big-endian pixels)
 
 Subclasses define additional properties in their dictionary as needed.
 
@@ -330,13 +358,19 @@ let out = new PixelsOut({width: 120, height: 160, pixelFormat: Bitmap.RGB565BE})
 
 > **Note:** The `width`, `height`, and `pixelFormat` properties of a `PixelsOut` object are fixed at the time the object is created and cannot be changed. In general, all properties included in the dictionary provided to the constructor should be considered read-only to keep the implementation of the `PixelsOut` subclasses simple. However, subclasses of `PixelsOut` may choose to provide ways to modify some properties.
 
+***
+
 ##### `begin(x, y, width, height)`
 
 The `begin` function starts the delivery of a frame to the output. The `x` and `y` arguments indicate the top-left corner of the frame; the `width` and `height` arguments, the size of the frame. The area contained by the arguments to the `begin` function must fit entirely within the dimensions provided to the constructor in its dictionary.
 
+***
+
 ##### `end()`
 
 The `end` function indicates that delivery of the current frame to the output is complete. Calling `end` is required for proper output of the frame.
+
+***
 
 <a id="PixelsOut-continue"></a>
 ##### `continue(x, y, width, height)`
@@ -360,6 +394,8 @@ For some outputs--for example, `BufferOut`--there is no difference. For others--
 
 > **Note:** Not all `PixelsOut` subclasses implement `continue`. If it is not supported, an exception is thrown. The subclass descriptions that follow indicate if `continue` is supported.
 
+***
+
 ##### `send(pixels, offset = 0, count = pixels.byteLength - offset)`
 
 The `send` function transmits pixels to the output. The `pixels` argument is an `ArrayBuffer` or `HostBuffer` containing the pixels. The `offset` argument is the offset (in bytes) at which the pixels begin in the buffer, and `count` is the number of bytes to transmit from the buffer.
@@ -373,7 +409,9 @@ out.send(pixels, 2, 2)	// Send 2nd pixel in buffer
 
 >**Note:** The `offset` and `count` arguments are in units of bytes, not pixels.
 
-#### `adaptInvalid(r)`
+***
+
+##### `adaptInvalid(r)`
 
 The `adaptInvalid` function takes a rectangle argument specifying an area inside the `PixelsOut` area and modifies the rectangle as needed to make it a valid update area for the PixelsOut. The `adaptInvalid` function is necessary because some display controllers are only able to update the display in certain quanta. For example, one display requires that the x coordinate and width are even numbers, another display can only update complete horizontal scan lines, and another updates the entire display even if only a single pixel changed.
 
@@ -381,6 +419,8 @@ The `adaptInvalid` function takes a rectangle argument specifying an area inside
 	pixelsOut.adaptInvalid(r);
 	pixelsOut.begin(r.x, r.y, r.w, r.h);
 	...
+
+***
 
 ##### `pixelsToBytes(count)`
 
@@ -390,41 +430,33 @@ The `pixelsToBytes` function calculates the number of bytes required to store th
 let buffer = new ArrayBuffer(out.pixelsToBytes(width));
 ```
 
+***
 
 #### Properties
 
-##### `width`
+| Name | Type | Read-only | Description |
+| :---: | :---: | :---: | :--- |
+| `width` | `Number` | ✓ | The width of the `PixelsOut` instance in pixels.
+|`height` | `Number` | ✓ | The height of the `PixelsOut` instance in pixels.
+| `pixelFormat` | `Number` | ✓ | The format of the pixels of the `PixelsOut` instance.
+`async` | `Boolean` | ✓ | Returns true if the PixelsOut supports asynchronous rendering. This means  pixels passed to `send` are not copied, and must remain unchanged through the completion of the next call to `send` or `end`.
+| `c_dispatch` |  | ✓ | Optionally returns a pointer to a `HostBuffer` that contains a native `PixelsOutDispatchRecord`. Returns undefined if no native dispatch table is available. The native `PixelsOutDispatchRecord` allows native code to call the `PixelsOut`'s `begin`, `send`, `continue`, `end`, and `adaptInvalid` functions directly, without going through the XS virtual machine. The native dispatch table is strictly an optimization and provides only functionality in the JavaScript API.
+| `clut` |  |  | (Not documented yet)
 
-Returns the width of the `PixelsOut` instance in pixels. This property is read-only.
+***
 
-##### `height`
-
-Returns the height of the `PixelsOut` instance in pixels. This property is read-only.
-
-##### `pixelFormat`
-
-Returns the format of the pixels of the `PixelsOut` instance. This property is read-only.
-
-##### `async`
-
-Returns true if the PixelsOut supports asynchronous rendering. This means  pixels passed to `send` are not copied, and must remain unchanged through the completion of the next call to `send` or `end`.
-
-##### `c_dispatch`
-
-Optionally returns a pointer to a `HostBuffer` that contains a native `PixelsOutDispatchRecord`. Returns undefined if no native dispatch table is available. The native `PixelsOutDispatchRecord` allows native code to call the `PixelsOut`'s `begin`, `send`, `continue`, `end`, and `adaptInvalid` functions directly, without going through the XS virtual machine. The native dispatch table is strictly an optimization and provides only functionality in the JavaScript API.
-
-##### `clut`
-
-(Not documented yet)
-
+<a id="spiout-class"></a>
 ### SPIOut Class
 
 The `SPIOut` subclass of `PixelsOut` is a placeholder for an implementation of a `PixelsOut` instance that sends pixels to a display connected over SPI.
 
 ```javascript
-class SPIOut extends PixelsOut;
+class SPIOut extends PixelsOut
 ```
 
+***
+
+<a id="bufferout-class"></a>
 ### BufferOut Class
 
 `BufferOut` is a subclass of `PixelsOut` that implements an offscreen in-memory bitmap. 
@@ -453,12 +485,14 @@ let bitmap = offscreen.bitmap;
 
 #### Properties
 
-##### `bitmap`
+| Name | Type | Read-only | Description |
+| :---: | :---: | :---: | :--- |
+| `bitmap ` | `Bitmap` | ✓ | Returns a `Bitmap` instance to access the pixels of the `BufferOut` instance.
 
-Returns a `Bitmap` instance to access the pixels of the `BufferOut` instance. This property is read-only.
+***
 
+<a id="bmpout-class"></a>
 ### BMPOut Class
-
 
 `BMPOut` is a subclass of `PixelsOut` that receives pixels and writes them in a BMP file in the following formats: `Bitmap.Gray16`, `Bitmap.Gray256`, `Bitmap.RGB565LE`, `Bitmap.RGB332`, and `Bitmap.CLUT16`. The `BMPOut` implementation writes pixels to the file incrementally, so it can create files larger than available free memory.
 
@@ -466,6 +500,9 @@ Returns a `Bitmap` instance to access the pixels of the `BufferOut` instance. Th
 
 > **Note:** The width multiplied by the bit-depth of the BMP file must be a multiple of 32.
 
+***
+
+<a id="rle4out-class"></a>
 ### RLE4Out Class
 
 `RLE4Out` is a subclass of `PixelsOut` that receives pixels in `Bitmap.Gray16` format and packs them into an RLE-encoded bitmap.
@@ -484,10 +521,13 @@ The `RLE4Out` class does not implement the optional `continue` function.
 
 #### Properties
 
-##### `bitmap`
+| Name | Type | Read-only | Description |
+| :---: | :---: | :---: | :--- |
+| `bitmap ` | `Bitmap` | ✓ | Returns a `Bitmap` instance to access the pixels of the `RLE4Out` instance.
 
-Returns a `Bitmap` instance to access the pixels of the `RLE4Out` instance. This property is read-only.
+***
 
+<a id="colorcellout-class"></a>
 ### ColorCellOut Class
 
 `ColorCellOut` is a subclass of `PixelsOut` that receives pixels in `Bitmap.RGB565LE` format and compresses them using a modified version of the [ColorCell](https://en.wikipedia.org/wiki/Color_Cell_Compression) image compression algorithm. ColorCell was widely used in the early 90's, primarily in the [Apple Video](https://en.wikipedia.org/wiki/Apple_Video) algorithm.
@@ -500,16 +540,20 @@ The `begin` function takes an optional 5th parameter, a dictionary of compressio
 
 #### Properties
 
-##### `bitmap`
+| Name | Type | Read-only | Description |
+| :---: | :---: | :---: | :--- |
+| `bitmap ` | `Bitmap` | ✓ | Returns a `Bitmap` instance to access the pixels of the `ColorCellOut ` instance.
 
-Returns a `Bitmap` instance to access the pixels of the `ColorCellOut ` instance. This property is read-only.
+***
 
+<a id="asset-parsing"></a>
 ## Asset Parsing
 
 Building a user interface for a display requires visual assets--icons, bitmaps, photos, fonts, and so on. There are many commonly used file formats for storing these assets, some of which work well on constrained devices. Commodetto includes functions to use several common asset file formats directly; however, Commodetto does not support all features of these file formats. Graphic designers creating assets for use with Commodetto need to be aware of the asset format requirements.
 
 > **Note:** For optimal render performance and minimum storage size, it is beneficial to convert assets to the preferred format of the target device at build time.
 
+<a id="bmp"></a>
 ### BMP
 
 The [BMP](https://msdn.microsoft.com/en-us/library/dd183391.aspx) file format was created by Microsoft for use on Windows. It is a flexible container for uncompressed pixels of various formats. The format is unambiguously documented and well supported by graphic tools. BMP is the preferred format for uncompressed bitmaps in Commodetto. The Commodetto BMP file parser supports the following variants of BMP:
@@ -534,6 +578,9 @@ let bitmap = parseBMP(bmpData)
 trace(`Bitmap width ${bitmap.width}, height ${bitmap.height}\n`);
 ```
 
+***
+
+<a id="jpeg"></a>
 ### JPEG
 
 The JPEG file format is the most common format for storing photos. Many resource-constrained devices have the performance to decompress JPEG images, though not all have the memory to store the result. Commodetto provides a way to render a JPEG image to an output, even if the decompressed JPEG image cannot fit into memory.
@@ -578,26 +625,37 @@ The preceding sections explain how to decode a JPEG image when the full compress
 
 To use the JPEG decoder in streaming mode, call the constructor with no arguments:
 
-	let decoder = new JPEG();
+```javascript
+let decoder = new JPEG();
+```
 
 As data arrives, push `ArrayBuffer` containing the data to the decoder:
 
-	decoder.push(buffer);
+```javascript
+decoder.push(buffer);
+```
 
 After the final buffer arrives, call `push` with parameters to indicate the end of the data stream. Failure to do this may result in blocks missing from the bottom of the image:
 
-	decoder.push();
+```javascript
+decoder.push();
+```
 
 The JPEG decoder `ready` property indicates blocks are available to be read. The first time the `ready` property returns true also indicates that the JPEG header has been successfully parsed and the JPEG `width` and `height` properties have been initialized.
 
-	decoder.push(buffer);
-	while (decoder.ready) {
-		let block = decoder.read();
-		// render block
-	}
+```javascript
+decoder.push(buffer);
+while (decoder.ready) {
+	let block = decoder.read();
+	// render block
+}
+```
 
 > **Note:** Commodetto uses the excellent public domain [picojpeg](https://code.google.com/archive/p/picojpeg/) decoder, which is optimized to minimize memory use. Some quality and performance are sacrificed, but the results are generally quite good. Small changes have been made to picojpeg to eliminate compiler warnings; those changes are included in the Moddable SDK source code distribution.
 
+***
+
+<a id="png"></a>
 ### PNG
 
 The PNG image format is commonly used for the assets of user interface elements such as buttons and sliders. Because the PNG file format is heavily compressed, PNG images must be decompressed to a `BufferOut` instance for use. Also because of the compression used in PNG, a significant amount of memory is required for decompressing the image. Nonetheless, because PNG is so common in user interface work, Commodetto implements a PNG module for use on devices and scenarios where it is practical.
@@ -635,28 +693,30 @@ let alpha = bitmap.mask;
 
 The PNG decoder also implements a progressive decoding mode to return a single scanline of decompressed data at a time. The scanline is raw data from the PNG decoder, with no pixel transformations applied. The following example converts a 24-bit (RGB) or 32-bit (RGBA) PNG image to a 16-bit BMP.
 
-	let png = new PNG(new Resource("image.png"));
-	let width = png.width, height = png.height;
-	trace(`width ${width}, height ${height}, channels ${png.channels}, depth ${png.depth}, bpp ${png.channels * png.depth}\n`);
+```js
+let png = new PNG(new Resource("image.png"));
+let width = png.width, height = png.height;
+trace(`width ${width}, height ${height}, channels ${png.channels}, depth ${png.depth}, bpp ${png.channels * png.depth}\n`);
 
-	if ((8 != png.depth) || ((3 != png.channels) && (4 != png.channels)))
-		throw new Error("unsupported PNG variant");
+if ((8 != png.depth) || ((3 != png.channels) && (4 != png.channels)))
+	throw new Error("unsupported PNG variant");
 
-	let bmp = new BMPOut({width: width, height: height, pixelFormat: Bitmap.RGB565LE, path: "image.bmp"});
-	bmp.begin(0, 0, width, height);
+let bmp = new BMPOut({width: width, height: height, pixelFormat: Bitmap.RGB565LE, path: "image.bmp"});
+bmp.begin(0, 0, width, height);
 
-	let scan16 = new Uint16Array(width);
-	for (let i = 0; i < height; i++) {
-		let scanLine = png.read();
-		for (let j = 0, offset = 0; j < width; j++, offset += png.channels) {
-			let r = scanLine[offset    ];
-			let g = scanLine[offset + 1];
-			let b = scanLine[offset + 2];
-			scan16[j] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-		}
-		bmp.send(scan16.buffer);
+let scan16 = new Uint16Array(width);
+for (let i = 0; i < height; i++) {
+	let scanLine = png.read();
+	for (let j = 0, offset = 0; j < width; j++, offset += png.channels) {
+		let r = scanLine[offset    ];
+		let g = scanLine[offset + 1];
+		let b = scanLine[offset + 2];
+		scan16[j] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
 	}
-	bmp.end();
+	bmp.send(scan16.buffer);
+}
+bmp.end();
+```
 
 In addition to the `width` and `height` properties, the PNG instance contains `depth` and `channels` properties based on the content of the PNG image.
 
@@ -664,6 +724,9 @@ The PNG decoder uses up to 45 KB of memory while decoding an image. This amount 
 
 > **Note:** Commodetto uses the public domain [miniz](https://github.com/richgel999/miniz/) library to decompress the [zlib](http://www.zlib.net/manual.html) data contained in PNG images. The PNG parsing is partially based on the Apache-licensed [`FskPNGDecodeExtension.c`](https://github.com/Kinoma/kinomajs/blob/master/extensions/FskPNGDecode/sources/FskPNGDecodeExtension.c) from KinomaJS, with significant simplifications.
 
+***
+
+<a id="bmfont"></a>
 ### BMFont
 
 [BMFont](http://www.angelcode.com/products/bmfont/) is a format for storing bitmap fonts. It is widely used to embed distinctive fonts in games in a format that is efficiently rendered using OpenGL. BMFont is well designed and straightforward to support. Commodetto uses BMFont to store both anti-aliased and multicolor fonts. In addition, BMFont has good tool support--in particular the excellent [Glyph Designer](https://71squared.com/glyphdesigner), which converts macOS fonts to a Commodetto-compatible BMFont.
@@ -688,9 +751,12 @@ For anti-aliased text, the BMP file containing the glyph atlas bitmap must be in
 
 Commodetto extends the BMFont format with RLE compressed glyphs. Glyphs are individually compressed using the `RLE4Out` class. The Moddable SDK tool `compressbmf` performs the compression.  The tool also appends the compressed glyphs to the `.fnt` metrics file, storing a single font's metrics and glyph data in a single file.
 
+***
+
+<a id="rendering"></a>
 ## Rendering
 
-Commodetto is designed to support multiple rendering engines. The initial engine is Poco, a small bitmap-based scanline renderer. A renderer knows how to draw pixels and relies on a `PixelsOut` instance to output those pixels, whether to a display, an offscreen buffer, or a file.
+Commodetto is designed to support multiple rendering engines. The initial engine is [Poco](./poco.md), a small bitmap-based scanline renderer. A renderer knows how to draw pixels and relies on a `PixelsOut` instance to output those pixels, whether to a display, an offscreen buffer, or a file.
 
 When a renderer is created, it is bound to an output. For example, to render to a BMP file:
 
@@ -716,7 +782,10 @@ let render = new Poco(display);
 
 The Poco renderer documentation describes its rendering operations with examples of common uses.
 
-### Render Class
+***
+
+<a id="render-class"></a>
+### Render class
 
 The `Render` class is a abstract base class used to generate pixels. It is overridden by specific rendering engines, such as Poco. The `Render` class has only four functions, which manage the rendering process but do no rendering themselves. The specific rendering operations available are defined by subclasses of `Render`.
 
@@ -741,6 +810,8 @@ render.end();
 ##### `constructor(pixelsOut, dictionary)`
 
 The `Render` constructor takes two arguments: the `PixelsOut` instance the `Render` object sends pixels to for output, and a dictionary to configure rendering options. All dictionary properties are defined by the subclasses of `Render`.
+
+***
 
 ##### `begin(x, y, width, height)`
 
@@ -776,11 +847,15 @@ is equivalent to this:
 render.begin(x, y, render.width - x, render.height - y);
 ```
 
+***
+
 ##### `end()`
 
 The `end` function completes the rendering of a frame. All pending rendering operations are completed by this function.
 
 > **Note:** For a display list renderer, such as Poco, all rendering occurs during the execution of `end`. Consequently, the display is not updated immediately following drawing calls.
+
+***
 
 ##### `continue(x, y, width, height)`
 
@@ -808,52 +883,73 @@ render.continue(300, 0, 20, 20);
 render.end();
 ```
 
+***
+
 ##### `adaptInvalid(r)`
 
 The renderer's `adaptInvalid` function is used to adjust the update area defined by the `r` argument to the update area constraints of the `PixelsOut` used for rendering. The renderer's implementation of `adaptInvalid` invokes the `PixelsOut`'s `adaptInvalid` function, taking renderer features into consideration, most notably rotation.
 
-	let r = renderer.rectangle(x, y, w, h);
-	renderer.adaptInvalid(r);
-	renderer.begin(r.x, r.y, r.w, r.h);
-	...
+```javascript
+let r = renderer.rectangle(x, y, w, h);
+renderer.adaptInvalid(r);
+renderer.begin(r.x, r.y, r.w, r.h);
+...
+```
 
 Applications written to work with a single display controller should be able to safely ignore `adaptInvalid` by applying its constraints themselves. Code written to work with more than a single display controller will likely need to use `adaptInvalid` for reliable updates to subsections of the display.
 
 The Piu user interface framework calls `adaptInvalid` when necessary, so application scripts don't need to call it directly.
 
+***
+
+<a id="pixel-format-conversion"></a>
 ## Pixel format conversion
 
 Commodetto provides a pixel format conversion capability intended primarily for use in tools that process images running on a computer. They are used, for example, by the `image2cs` and `png2bmp` tools in the Moddable SDK. The converters are small and efficient, and so may also be used in deployments to microcontrollers.
 
+<a id="convert-class"></a>
 ### Convert class
 
 The `Convert` class converts between two pixel formats supported by Commodetto. The conversions are implemented in native code and so run more quickly than they would if written in JavaScript.
 
-	import Convert from "commodetto/Convert";
+```js
+import Convert from "commodetto/Convert";
+```
 
-The `Convert` class operations on an array of pixels. The concepts of Bitmap and row bytes (or stride) are not part of the API. Instead, they must be handled by the code that calls the `Convert` class.
+The `Convert` class operates on an array of pixels. The concepts of Bitmap and row bytes (or stride) are not part of the API. Instead, they must be handled by the code that calls the `Convert` class.
 
-#### constructor(src, dst)
+#### `constructor(src, dst)`
 
 The constructor accepts two pixel formats, the source and destination formats.
 
 The following instantiates a converter to convert pixels from RGB565LE to Gray256.
 
-	let converter = new Convert(Bitmap.RGB565LE, Bitmap.Gray256);
+```js
+let converter = new Convert(Bitmap.RGB565LE, Bitmap.Gray256);
+```
 
-#### convert(src, dst)
+***
+
+#### `convert(src, dst)`
 
 The convert function performs a pixel conversion. The `src` argument is the input pixels in the format specified in the constructor. The input pixels are stored either in an `ArrayBuffer` or a `HostBuffer`. The `dst` argument is where the output pixels will be returned. It must be an `ArrayBuffer`.
 
-	converter.convert(inputPixels, outputPixels);
+```js
+converter.convert(inputPixels, outputPixels);
+```
 
-The caller of convert is responsible for allocating a large enough output buffer. The Bitmap.depth function is useful for this calculation.
+The caller of convert is responsible for allocating a large enough output buffer. The `Bitmap.depth` function is useful for this calculation.
 
-	let outputPixelFormat = Bitmap.Gray256;
-	let inputPixelCount = 240;
-	let outputBufferSize = ((Bitmap.depth(outputPixelFormat) * inputPixelCount) + 7) >> 3;
-	let outputPixels = new ArrayBuffer(outputBufferSize);
+```js
+let outputPixelFormat = Bitmap.Gray256;
+let inputPixelCount = 240;
+let outputBufferSize = ((Bitmap.depth(outputPixelFormat) * inputPixelCount) + 7) >> 3;
+let outputPixels = new ArrayBuffer(outputBufferSize);
+```
 
+***
+
+<a id="odds-and-ends"></a>
 ## Odds and Ends
 
 ### Target Hardware
@@ -870,6 +966,8 @@ The primary design constraint for Commodetto is to render a modern user interfac
 If a more capable processor is available, Commodetto gets better. More memory allows for more offscreen bitmaps and more complex scenes. More CPU speed allows for greater use of computationally demanding graphics operations. More flash storage allows for more assets to be stored. Hardware graphics acceleration allows for faster rendering of more complex screens.
 
 Commodetto runs on any target hardware that supports the XS JavaScript engine. Commodetto is written in ANSI C, with only a handful of calls to external functions (`memcpy`, `malloc`, and `free`). The core Poco renderer allocates no memory.
+
+***
 
 ### About the Name "Commodetto"
 

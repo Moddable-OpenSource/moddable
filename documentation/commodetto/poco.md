@@ -1,11 +1,43 @@
 # Poco
-Copyright 2016-2017 Moddable Tech, Inc.
+Copyright 2016-2018 Moddable Tech, Inc.<BR>
+Revised: November 26, 2018
 
-Revised: November 26, 2017
+## About This Document
 
 This document describes the Poco renderer, starting with a set of examples that introduce many of the main concepts of working with Poco. Following the examples is the reference for Poco, which fully describes each function call.
 
+## Table of Contents
+
+* [Examples](#examples)
+	* [Rectangle](#rectangle)
+	* [Origin](#origin)
+	* [Clip](#clip)
+	* [Monochrome Bitmap](#monochrome-bitmap)
+	* [Color Bitmap](#color-bitmap)
+	* [Pattern](#pattern)
+	* [Gray Bitmap](#gray-bitmap)
+	* [Offscreen Bitmap](#offscreen-bitmap)
+	* [Alpha](#alpha)
+	* [JPEG](#jpeg)
+	* [Text](#text)
+* [Pixel formats](#pixel-formats)
+	* [Destination pixel formats](#destination-pixel-formats)
+	* [Display pixel format](#display-pixel-format)
+	* [Source bitmap pixel formats](#source-bitmap-pixel-formats)
+	* [Compressed pixel formats](#compressed-pixel-formats)
+* [Immediate mode rendering](#immediate-mode-rendering)
+* [Rotation](#rotation)
+* [JavaScript API Reference](#javascript-api-reference)
+	* [Functions](#js-functions)
+	* [Properties](#js-properties)
+* [C API Reference](#c-api-reference)
+	* [Data structures](#c-data-structures)
+	* [Functions](#c-functions)
+* [Odds and Ends](#odds-and-ends)
+
+<a id="examples"></a>
 ## Examples
+
 These examples illustrate working with the Poco renderer. They all use the JavaScript API, and they also use asset loaders and other capabilities of Commodetto.
 
 To keep the following examples concise and focused, the code makes several assumptions:
@@ -34,6 +66,9 @@ To keep the following examples concise and focused, the code makes several assum
 
 Each example includes the image rendered by the code. The images are scaled 150% here to make them easier to see; this scaling causes some blurring and introduces some jaggedness that is not in the actual image.
 
+***
+
+<a id="rectangle"></a>
 ### Rectangle
 
 This example fills `screen` with gray pixels, covers the left half with red pixels, and then uses a 50% blending level (128) to draw blue pixels over the middle half of the screen.
@@ -46,6 +81,9 @@ poco.blendRectangle(blue, 128, poco.width / 4, 0, poco.width / 2, poco.height);
 
 <img src="../assets/poco/fillrectangle.png" width="180" height="135"/>
 
+***
+
+<a id="origin"></a>
 ### Origin
 
 This example shows how to move the drawing origin. Poco maintains an origin stack that is pushed when the origin changes and popped when `origin` is called with no arguments. Each change to the origin offsets the previous origin. The origin stack is convenient for building container-based user interfaces.
@@ -74,6 +112,9 @@ poco.origin();
 
 <img src="../assets/poco/origin.png" width="180" height="135"/>
 
+***
+
+<a id="clip"></a>
 ### Clip
 
 This example shows how to use the drawing clip. Poco maintains a clip stack that is pushed when the clip changes and popped when `clip` is called with no arguments. Each change intersects the clip with the previous clip. The clip stack is convenient for building container-based user interfaces.
@@ -98,6 +139,9 @@ poco.fillRectangle(black, 34, 0, 2, poco.height);
 
 <img src="../assets/poco/clip.png" width="180" height="135"/>
 
+***
+
+<a id="monochrome-bitmap"></a>
 ### Monochrome Bitmap
 
 This example draws a monochrome bitmap (in which all pixels are either black or white) of an envelope. It shows how to control the color of the foreground and background pixels, as well as whether each is drawn. The bitmap is stored in a 1-bit BMP file with dimensions of 32 x 23.
@@ -114,6 +158,9 @@ poco.drawMonochrome(envelope, undefined, blue, 74, 55);
 
 <img src="../assets/poco/monochrome.png" width="180" height="135"/>
 
+***
+
+<a id="color-bitmap"></a>
 ### Color Bitmap
 
 This example draws a color bitmap image of a face in two ways using `drawBitmap`: on the left side of the screen, it draws the full image; on the right side, it draws only the eyes and mouth, using the optional source rectangle parameters of `drawBitmap`.
@@ -134,6 +181,9 @@ poco.drawBitmap(image, x + 15, y + 56, 15, 56, 16, 6);   // mouth
 ```
 <img src="../assets/poco/bitmap.png" width="180" height="135"/>
 
+***
+
+<a id="pattern"></a>
 ### Pattern
 
 This examples uses `fillPattern` to draw a single 30-pixel-square pattern in two ways: first the entire pattern is used to fill the screen; then a 7-pixel-square area of the pattern is used to fill the center part of the screen.
@@ -148,6 +198,9 @@ poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 
 <img src="../assets/poco/pattern.png" width="180" height="135"/>
 
+***
+
+<a id="gray-bitmap"></a>
 ### Gray Bitmap
 
 This example uses `drawGray` to draw a 16-level gray image in several colors. `drawGray` treats the pixel values as alpha blending levels, blending the specified color with the background. 
@@ -169,6 +222,9 @@ poco.drawGray(image, red, 70 + 2, 47 + 2);
 
 <img src="../assets/poco/gray.png" width="180" height="135"/>
 
+***
+
+<a id="offscreen-bitmap"></a>
 ### Offscreen Bitmap
 
 This example uses `BufferOut` to create an offscreen bitmap, fills the bitmap with a series of inset squares, and then uses the offscreen bitmap as a pattern to fill the screen. It uses two instances of `Poco`: the first to draw to the offscreen bitmap and the second to draw to the screen.
@@ -193,6 +249,9 @@ poco.fillPattern(offscreen.bitmap, 0, 0, poco.width, poco.height);
 
 <img src="../assets/poco/offscreen.png" width="180" height="135"/>
 
+***
+
+<a id="alpha"></a>
 ### Alpha
 
 This example shows how to draw a bitmap through an alpha mask. The bitmap to draw and the mask are in separate bitmaps, enabling an image to be drawn using more than one alpha mask. The example draws one bitmap through both a circle and a square mask, and also draws the original image and mask.
@@ -217,6 +276,9 @@ poco.drawMasked(girl, 80, 47, 0, 0,
 
 <img src="../assets/poco/alpha.png" width="180" height="135"/>
 
+***
+
+<a id="jpeg"></a>
 ### JPEG
 
 These two examples show different methods for working with JPEG images. The first example decompresses the full JPEG into a bitmap in memory and then renders the bitmap to the screen. The call to `trace` shows how to access the bitmap's width and height.
@@ -245,6 +307,9 @@ When complete, each approach generates the same result.
 
 <img src="../assets/poco/jpeg.png" width="180" height="135"/>
 
+***
+
+<a id="text"></a>
 ### Text
 
 Poco supports the BMPFont format for fonts used to rendering text. BMFont is a gray or color font used in games for anti-aliased fonts. A BMFont consists of two files: the font metrics and the font image. 
@@ -330,8 +395,12 @@ This is a section of the `OpenSans-BoldItalic-52-alpha.bmp` file, which contains
 
 <img src="../assets/poco/text_opensans_mask.png"/>
 
+***
+
+<a id="pixel-formats"></a>
 ## Pixel formats
 
+<a id="destination-pixel-formats"></a>
 ### Destination pixel formats
 Poco renders to the following pixel formats:
 
@@ -343,12 +412,15 @@ Poco renders to the following pixel formats:
 
 To keep the size of the code deployed to the target device small, Poco is configured at build time to render only one of these pixel formats.
 
+<a id="display-pixel-format"></a>
 ### Display pixel format
 For displays that require a different output format, the display driver is responsible for converting between a supported rendering format and the hardware required format. For example, many common LCD controllers require 16-bit RGB565 big-endian pixels. The display drivers for these controllers accept Poco rendered 16-bit RGB565 little-endian pixels and convert them to big-endian while transmitting to the LCD controller. Similarly, many displays are monochrome (1-bit). Their display driver accept pixels rendered in 4-bit or 8-bit gray and converts them to 1-bit for the monochrome display.
 
+<a id="source-bitmap-pixel-formats"></a>
 ### Source bitmap pixel formats
 Poco supports 1-bit monochrome and 4-bit gray bitmaps as sources for rendering to all pixel formats. In addition, the configured destination pixel format is always supported as a source format. For example, when the rendering pixel format is 16-bit RGB565 little-endian, supported source pixel formats are 1-bit monochrome, 4-bit gray, and 16-bit RGB565 little-endian.
 
+<a id="compressed-pixel-formats"></a>
 ### Compressed pixel formats
 Poco implements support for two compressed pixel formats.
 
@@ -356,11 +428,17 @@ The first is a weighted run-length compression of 4-bit gray bitmaps. These are 
 
 The second is a variant of the ColorCell algorithm used to compress full color images. These are not referenced by the `CommodettoBitmap` and `PocoBitmap` data structures, but treated as an image file in the same way as BMP, PNG, and JPEG. ColorCell images use 16-bit RGB565 little-endian pixels and consequently may only be rendered to 16-bit RGB565 little-endian destinations.
 
+***
+
+<a id="immediate-mode-rendering"></a>
 ## Immediate mode rendering
 By default, Poco is a scanline display list renderer. That means it stores all the drawing commands and then renders them all at once when all drawing commands for a given frame have been queued. When used with a display that has full frame buffers stored in memory accessible to Poco and is double buffered (e.g. has two frame buffers it flips between), scanline display list rendering is less efficient than immediate mode rendering, which executes each drawing command as it is received.
 
 Poco optionally supports immediate mode rendering. To enable this support, define `kPocoFrameBuffer` to 1 when building Poco, and use `PocoDrawingBeginFrameBuffer`/`PocoDrawingEndFrameBuffer` in place of `PocoDrawingBegin`/`PocoDrawingEnd` in the C code. No changes are required to JavaScript code to use immediate mode.
 
+***
+
+<a id="rotation"></a>
 ## Rotation
 Poco provides support for rendering to a `PixelsOut` at 0, 90, 180, or 270 degree rotations. This support allows use of a display in any orientation, independent of the natural scan order of the hardware.
 
@@ -368,15 +446,21 @@ The rotation is selected at build time, not run time, by defining `kPocoRotation
 
 This approach to rotation allows rendering of rotated output at the same performance level as unrotated images, and without requiring an intermediate bitmap buffer.
 
+***
+
+<a id="javascript-api-reference"></a>
 ## JavaScript API Reference
 
 Poco is a renderer, a subclass of the Commodetto `Render` class.
 
-	class Poco extends Render;
+```javascript
+class Poco extends Render
+```
 
+<a id="js-functions"></a>
 ### Functions
 
-##### `constructor(pixelsOut, dictionary)`
+#### `constructor(pixelsOut, dictionary)`
 
 Poco extends the `Render` dictionary with the `displayListLength` property, which specifies the size of the display list buffer in bytes. Applications typically use the default display list length. Poco detects when a drawing operation would overflow the display list, ignores the drawing operation, and throws an exception when `end` is called.
 
@@ -387,7 +471,9 @@ let screen = ... // SPIOut instance
 let poco = new Poco(screen, {displayListLength: 4096});
 ```
 
-##### `clip(x, y, width, height)`
+***
+
+#### `clip(x, y, width, height)`
 
 Poco maintains a clip rectangle that is applied to all drawing operations.
 
@@ -401,11 +487,11 @@ poco.clip();
 The clip stack holds several clips, as follows:
 
 ```javascript
-poco.begin();				// Clip is entire PixelsOut area
+poco.begin();			// Clip is entire PixelsOut area
 poco.clip(10, 10, 10, 10);	// Clip is {x: 10, y: 10, w: 10, h: 10}
 poco.clip(0, 0, 15, 15);	// Clip is {x: 10, y: 10, w: 5, h: 5}
-poco.clip();				// Clip is {x: 10, y: 10, w: 10, h: 10}
-poco.clip()					// Clip is entire PixelsOut area
+poco.clip();			// Clip is {x: 10, y: 10, w: 10, h: 10}
+poco.clip()			// Clip is entire PixelsOut area
 poco.end();
 ```
 
@@ -413,7 +499,9 @@ If the clip stack overflows or underflows, an exception is thrown from `end`. Th
 
 > **Note:** `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
-##### `origin(x, y)`
+***
+
+#### `origin(x, y)`
 
 Poco maintains an origin that is applied to all drawing operations. 
 
@@ -421,7 +509,7 @@ When `begin` is called, the origin is set to `{x: 0, y: 0}`. Poco maintains an o
 
 ```javascript
 poco.begin();			// Origin is {x: 0, y: 0}
-poco.origin(10, 10);	// Origin is {x: 10, y: 10}
+poco.origin(10, 10);		// Origin is {x: 10, y: 10}
 poco.origin(5, 5);		// Origin is {x: 15, y: 15}
 poco.origin();			// Origin is {x: 10, y: 10}
 poco.origin();			// Origin is {x: 0, y: 0}
@@ -432,7 +520,9 @@ If the origin stack overflows or underflows, an exception is thrown from `end`. 
 
 > **Note:** Changing the origin does not change the clip rectangle. Note too that `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
-##### `makeColor(r, g, b)`
+***
+
+#### `makeColor(r, g, b)`
 
 The `makeColor` function takes red, green, and blue values from 0 to 255 and returns the corresponding pixel value. The returned pixel is in the format of the `PixelsOut` instance bound to the `Poco` instance.
 
@@ -447,7 +537,9 @@ let gray = poco.makeColor(127, 127, 127);
 
 Many rendering functions take a color as an argument. Use `makeColor` to calculate the color to avoid a dependency on the pixel format.
 
-##### `fillRectangle(color, x, y, width, height)`
+***
+
+#### `fillRectangle(color, x, y, width, height)`
 
 The `fillRectangle` function fills the area specified by the `x`, `y`, `width`, and `height` arguments with the specified color.
 
@@ -455,7 +547,9 @@ The `fillRectangle` function fills the area specified by the `x`, `y`, `width`, 
 poco.fillRectangle(green, 10, 20, 40, 40);
 ```
 
-##### `blendRectangle(color, blend, x, y, width, height)`
+***
+
+#### `blendRectangle(color, blend, x, y, width, height)`
 
 The `blendRectangle` function blends the specified color with the pixels in the area specified by the `x`, `y`, `width`, and `height` arguments. The `blend` argument determines the level of blending, from a value of 0 for transparent to a value of 255 for opaque.
 
@@ -467,7 +561,9 @@ for (let blend = 15, y = 0; blend < 256; blend += 16, y += 1)
 	poco.blendRectangle(green, blend, 0, y, pixelsOut.width, 1);
 ```
 
-##### `drawPixel(color, x, y)`
+***
+
+#### `drawPixel(color, x, y)`
 
 The `drawPixel` function draws a single pixel of the specified color at the location specified by the `x` and `y` arguments.
 
@@ -477,7 +573,9 @@ poco.drawPixel(poco.makeColor(0, 0, 127), 5, 5);
 
 > **Note:** Making many calls to `drawPixel` in a single frame can quickly fill the display list.
 
-##### `drawBitmap(bits, x, y, sx, sy, sw, sh)`
+***
+
+#### `drawBitmap(bits, x, y, sx, sy, sw, sh)`
 
 The `drawBitmap` function draws all or part of a bitmap with pixels of type `Bitmap.Default`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The following code draws the entire image at location `{x: 10, y: 5}`.
 
@@ -494,7 +592,9 @@ The following code draws the bottom half of the bitmap at location `{x: 0, y: 0}
 poco.drawBitmap(image, 0, 0, 0, image.height / 2, image.width, image.height / 2);
 ```
 
-##### `drawMonochrome(monochrome, fore, back, x, y, sx, sy, sw, sh)`
+***
+
+#### `drawMonochrome(monochrome, fore, back, x, y, sx, sy, sw, sh)`
 
 The `drawMonochrome` function draws all or part of a bitmap with pixels of type `Bitmap.Monochrome`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments.
 
@@ -513,7 +613,9 @@ poco.drawMonochrome(icon, undefined, red, 0, 5);  // only background pixels in r
 
 The optional `sx`, `sy`, `sw`, and `sh` arguments specify the area of the bitmap to draw. If they are omitted, the entire bitmap is drawn.
 
-##### `drawGray(bits, color, x, y, sx, sy, sw, sh[, blend])`
+***
+
+#### `drawGray(bits, color, x, y, sx, sy, sw, sh[, blend])`
 
 The `drawGray` function draws all or part of a bitmap with pixels of type `Bitmap.Gray16`. The bitmap is specified by the `bits` argument, and the location to draw the bitmap is specified by the `x` and `y` arguments. The pixels of the bitmap are treated as alpha values and are blended with the background. The `color` argument specifies the color to apply when blending.
 
@@ -521,7 +623,9 @@ The optional `sx`, `sy`, `sw`, and `sh` arguments specify the area of the bitmap
 
 The optional `blend` argument applies an additional blend level to all pixels in the bitmap prior to blending with the background. The `blend` value ranges from 0 for transparent to 255 for opaque.
 
-##### `drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy[, blend])`
+***
+
+#### `drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy[, blend])`
 
 The `drawMasked` function uses two bitmaps--an image and the alpha channel--to alpha-blend the image through the mask onto the destination. The image, specified by the `bits` argument, is in `Bitmap.Default` format. The alpha channel, specified by the `mask` argument, is in `Bitmap.Gray16` format.
 
@@ -544,7 +648,9 @@ Storing the alpha channel separately from the image is unusual, and has benefits
 
 The optional `blend` argument applies an additional blend level to all pixels in the alpha channel bitmap prior to blending with the background. The `blend` value ranges from 0 for transparent to 255 for opaque.
 
-##### `fillPattern(bits, x, y, w, h [, sx, sx, sx, sh])`
+***
+
+#### `fillPattern(bits, x, y, w, h [, sx, sx, sx, sh])`
 
 The `fillPattern` function fills an area by repeatedly drawing all or part of a bitmap with pixels of type `Bitmap.Default`. The bitmap is specified by the `bits` argument. The location of the area to fill is specified by the `x` and `y` arguments, and the dimensions of the area are specified by the `w` and `h` arguments.
 
@@ -559,7 +665,9 @@ The optional `sx`, `sy`, `sw`, and `sh` arguments specify the area of the bitmap
 poco.fillPattern(pattern, 10, 10, 90, 90, 0, 0, 8, 8);
 ```
 
-##### `drawText(text, font, color, x, y[, width])`
+***
+
+#### `drawText(text, font, color, x, y[, width])`
 
 The `drawText` function draws the `text` string using the BMFont in the `font` argument. The text is drawn in the color of the `color` argument at the location of the `x` and `y` arguments. Text is drawn using top-left alignment.
 
@@ -576,7 +684,9 @@ Characters in the text string that are not part of the font are ignored.
 
 To draw full-color text with anti-aliased edges, use a BMFont with a bitmap in `Bitmap.Default` format. In place of the `color` argument, pass a mask bitmap in the `Bitmap.Gray16` format. The mask must be at least as large as the BMFont's glyph atlas. When each glyph is drawn, the pixels in the mask image corresponding to the glyph in the font image are used to alpha-blend each glyph with the destination.
 
-##### `getTextWidth(text, font)`
+***
+
+#### `getTextWidth(text, font)`
 
 The `getTextWidth` function calculates the width in pixels of the `text` string when rendered using `font`.
 
@@ -592,26 +702,37 @@ The height of the font is available in the `font.height` property.
 
 Characters in the text string that are not part of the font are not rendered.
 
-##### `drawFrame(frame, dictionary, x, y)`
+***
+
+#### `drawFrame(frame, dictionary, x, y)`
 
 The `drawFrame` function renders the ColorCell compressed image referenced by the `frame` argument at the location specified by the `x` and `y` arguments. The `dictionary` argument is an `Object` that contains width and height properties that indicate the source dimensions of the image.
 
+***
+
+<a id="js-properties"></a>
 ### Properties
 
 #### `height`
 
 The logical height in pixels of the Poco instance after rotation is applied. When rotation is 0 or 180, this is equal to the `PixelsOut` instance's height; when rotation is 90 or 270, it is equal to the `PixelsOut` instance's width.
 
+***
+
 #### `width`
 
 The logical width in pixels of the Poco instance after rotation is applied. When rotation is 0 or 180, this is equal to the `PixelsOut` instance's width; when rotation is 90 or 270, it is equal to the `PixelsOut` instance's height.
 
+***
+
+<a id="c-api-reference"></a>
 ## C API Reference
 
 The Poco C API is a low-level rendering engine. It is based on a display list, meaning that all drawing calls are queued to a list prior to rendering. A display list enables the renderer to generate as little as a single scanline of fully composed output at a time, minimizing memory use by eliminating the need for a frame buffer in the memory of the application processor.
 
 The Poco C API may be used independently of Commodetto and its JavaScript API. It makes no allocations and almost no external calls (only to `memcpy`), relying on the caller to provide memory.
 
+<a id="c-data-structures"></a>
 ### Data Structures
 
 <a id="poco-record"></a>
@@ -621,38 +742,52 @@ The Poco C API may be used independently of Commodetto and its JavaScript API. I
 
 The following fields in `PocoRecord` are public and can be accessed by users of the library. Poco expects these fields to be initialized by the users of the library before the first call to Poco is made. 
 
-* `width` -- width of output in pixels
-* `height` -- height of output in pixels
-* `displayList` -- pointer to start of memory for display list
-* `displayListEnd` -- pointer to end of memory for display list
-* `pixelsLength` -- size in bytes of pixels array
+| Field | Description |
+| :---: | :--- |
+| `width` | width of output in pixels
+| `height` | height of output in pixels
+| `displayList` | pointer to start of memory for display list
+| `displayListEnd` | pointer to end of memory for display list
+| `pixelsLength` | size in bytes of pixels array
 
 The following fields are available to read from the `PocoRecord` structure between calls to `PocoDrawingBegin` and `PocoDrawingEnd`:
 
-* `xOrigin` -- *x* coordinate of drawing origin
-* `yOrigin` -- *y* coordinate of drawing origin
-* `x` -- *x* coordinate of drawing clip
-* `y` -- *y* coordinate of drawing clip
-* `w` -- width of drawing clip
-* `h` -- height of drawing clip
-* `xMax` -- right coordinate of drawing clip, `x + w`
-* `yMax` -- bottom coordinate of drawing clip, `y + h`
+| Field | Description |
+| :---: | :--- |
+| `xOrigin` | *x* coordinate of drawing origin
+| `yOrigin` | *y* coordinate of drawing origin
+| `x` | *x* coordinate of drawing clip
+| `y` | *y* coordinate of drawing clip
+| `w` | width of drawing clip
+| `h` | height of drawing clip
+| `xMax` | right coordinate of drawing clip, `x + w`
+| `yMax` | bottom coordinate of drawing clip, `y + h`
+
+***
 
 ##### `PocoCoordinate`
 
-`PocoCoordinate` is a signed integer value. When used in Commodetto, it is aliased to `CommodettoCoordinate`. See the description of `CommodettoCoordinate` in the Commodetto documentation for additional information.
+`PocoCoordinate` is a signed integer value. When used in Commodetto, it is aliased to `CommodettoCoordinate`. See the description of `CommodettoCoordinate` in the [Commodetto documentation](./commodetto.md) for additional information.
+
+***
 
 ##### `PocoDimension`
 
-`PocoDimension` is an unsigned integer value. When used in Commodetto, it is aliased to `CommodettoDimension`. See the description of `CommodettoDimension` in the Commodetto documentation for additional information.
+`PocoDimension` is an unsigned integer value. When used in Commodetto, it is aliased to `CommodettoDimension`. See the description of `CommodettoDimension` in the [Commodetto documentation](./commodetto.md) for additional information.
+
+***
 
 ##### `PocoPixel`
 
-`PocoPixel` is an integer value. When used in Commodetto, it is aliased to `CommodettoPixel`. See the description of `CommodettoPixel` in the Commodetto documentation for additional information.
+`PocoPixel` is an integer value. When used in Commodetto, it is aliased to `CommodettoPixel`. See the description of `CommodettoPixel` in the [Commodetto documentation](./commodetto.md) for additional information.
+
+***
 
 ##### `PocoBitmapFormat`
 
-`PocoBitmapFormat` is an integer value. When used in Commodetto, it is aliased to `CommodettoBitmapFormat`. See the description of `CommodettoBitmapFormat` in the Commodetto documentation for additional information.
+`PocoBitmapFormat` is an integer value. When used in Commodetto, it is aliased to `CommodettoBitmapFormat`. See the description of `CommodettoBitmapFormat` in the [Commodetto documentation](./commodetto.md) for additional information.
+
+***
 
 ##### `PocoRectangle`
 
@@ -666,6 +801,8 @@ typedef struct {
 	PocoDimension	h;
 } PocoRectangleRecord, *PocoRectangle;
 ```
+
+***
 
 ##### `PocoBitmap`
 
@@ -684,6 +821,9 @@ The pixels are organized left to right, top to bottom, with no padding between r
 
 > **Note:** Unlike `CommodettoBitmap`, `PocoBitmap` does not have an option to store an offset in place of the pixels pointer.
 
+***
+
+<a id="c-functions"></a>
 ### Functions
 
 Before calls to Poco can be made, a `PocoRecord` structure must be allocated and initialized. See [`PocoRecord`](#poco-record) for details.
@@ -698,6 +838,8 @@ PocoPixel PocoMakeColor(Poco poco, uint8_t r, uint8_t g, uint8_t b);
 
 > **Note:** In the current implementation the poco parameter is unused because Poco is always built with support for only a single output pixel format.
 
+***
+
 ##### `PocoDrawingBegin`
 
 ```c
@@ -708,6 +850,8 @@ void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y,
 `PocoDrawingBegin` begins the rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. Calls to draw can only be made between calls to `PocoDrawingBegin` and `PocoDrawingEnd`.
 
 > **Important:** The caller of `PocoDrawingBegin` is responsible for ensuring that the drawing calls cover all pixels in the update area. Poco does not maintain the previous frame. Any pixels that are not drawn will contain unpredictable values.
+
+***
 
 ##### `PocoDrawingEnd`
 
@@ -729,6 +873,8 @@ If an error occurs, adding commands to the display list as the result of drawing
 * 2 -- clip and origin stack overflow
 * 3 -- clip and origin stack underflow or out-of-sequence pop
 
+***
+
 ##### `PocoRectangleFill`
 
 ```c
@@ -738,6 +884,8 @@ void PocoRectangleFill(Poco poco, PocoPixel color, uint8_t blend,
 
 `PocoRectangleFill` fills the area defined by the `x`, `y`, `w`, and `h` arguments as specified by `color`. If the level specified by `blend` is `kPocoOpaque` (255), the color is drawn over with the background without blending; for other blending levels the color is blended proportionally with the background.
 
+***
+
 ##### `PocoPixelDraw`
 
 ```c
@@ -746,6 +894,8 @@ void PocoPixelDraw(Poco poco, PocoPixel color,
 ```
 
 `PocoPixelDraw` renders a single pixel at the location specified by `x` and `y` in the specified color.
+
+***
 
 ##### `PocoBitmapDraw`
 
@@ -757,6 +907,8 @@ PocoCommand PocoBitmapDraw(Poco poco, PocoBitmap bits,
 ```
 
 `PocoBitmapDraw` renders all or part of the bitmap `bits`, of type `kCommodettoBitmapDefault`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render.
+
+***
 
 ##### `PocoMonochromeBitmapDraw`
 
@@ -788,6 +940,8 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits,
 
 `PocoGrayBitmapDraw` renders all or part of bitmap `bits`, of type `kCommodettoBitmapGray16`, at the location specified by `x` and `y`. The `sx`, `sy`, `sw`, and `sh` arguments define the area of the bitmap to render. The pixels of the bitmap are treated as alpha blending levels and are used to blend the `color` argument with the background pixels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
 
+***
+
 ##### `PocoBitmapDrawMasked`
 
 ```c
@@ -799,6 +953,8 @@ void PocoBitmapDrawMasked(Poco poco, PocoBitmap bits, uint8_t blend,
 ```
 
 `PocoBitmapDrawMasked` renders the pixels of bitmap `bits`, of type `kCommodettoBitmapDefault`, enclosed by `sx`, `sy`, `sw`, and `sh` at the location specified by `x` and `y`. The pixels are drawn using the corresponding pixels of the bitmap `mask`, of type `kCommodettoBitmapGray16`, enclosed by `mask_x`, `mask_y`, `sw`, and `sh` as alpha blending levels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
+
+***
 
 ##### `PocoBitmapPattern`
 
@@ -812,6 +968,8 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits,
 
 `PocoBitmapPattern ` fills the area enclosed by the `x`, `y`, `w`, and `h` arguments with repeating copies of the area of the bitmap `bits` enclosed by the `sx`, `sy`, `sw`, and `sh` arguments. The bitmap must be of type `kCommodettoBitmapDefault`.
 
+***
+
 ##### `PocoDrawFrame`
 
 ```c
@@ -823,6 +981,8 @@ void PocoDrawFrame(Poco poco,
 
 `PocoDrawFrame` renders a compressed image stored in the Moddable variant of the ColorCell algorithm. The image to render is pointed to by the `data` argument with a byte count specified by the `dataSize` argument. The image is rendered at the location specified by the `x` and `y` arguments. The source dimensions (unclipped size) of the compressed image are given by the `w` and `h` arguments.
 
+***
+
 ##### `PocoClipPush`
 
 ```c
@@ -832,6 +992,8 @@ void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y,
 
 `PocoClipPush` pushes the current clip area on the stack and then replaces the current clip with the intersection of the current clip and the area enclosed by the `x`, `y`, `w`, and `h` arguments.
 
+***
+
 ##### `PocoClipPop`
 
 ```c
@@ -839,6 +1001,8 @@ void PocoClipPop(Poco poco);
 ```
 
 `PocoClipPop` pops the clip from the stack and replaces the current clip with the popped value.
+
+***
 
 ##### `PocoOriginPush`
 
@@ -848,6 +1012,7 @@ void PocoOriginPush(Poco poco, PocoCoordinate x, PocoCoordinate y);
 
 `PocoOriginPush` pushes the current origin on the stack and then offsets the current origin by the `x` and `y` arguments.
 
+***
 
 ##### `PocoOriginPop`
 
@@ -856,6 +1021,8 @@ void PocoOriginPop(Poco poco);
 ```
 
 `PocoOriginPop` pops the origin from the stack and replaces the current origin with the popped value.
+
+***
 
 ##### `PocoDrawingBeginFrameBuffer`
 
@@ -867,6 +1034,8 @@ void PocoDrawingBeginFrameBuffer(Poco poco, PocoCoordinate x, PocoCoordinate y,
 
 `PocoDrawingBeginFrameBuffer ` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to first scan line of output pixels. The `rowBytes` parameters is the stride in bytes between scanlines.
 
+***
+
 ##### `PocoDrawingEndFrameBuffer`
 
 ```c
@@ -875,6 +1044,9 @@ int PocoDrawingEndFrameBuffer(Poco poco;
 
 `PocoDrawingEndFrameBuffer ` indicates that all drawing is complete for the current frame.
 
+***
+
+<a id="odds-and-ends"></a>
 ## Odds and Ends
 
 ### Relationship to Commodetto
