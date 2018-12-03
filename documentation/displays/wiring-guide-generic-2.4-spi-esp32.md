@@ -26,7 +26,7 @@ cd $MODDABLE/examples/piu/drag
 mcconfig -d -m -p esp32/moddable_zero
 ```
 
-## ESP8266 Pinout
+## ESP32 Pinout
 
 | ILI9341 Display | ESP32 | 
 | --- | --- |
