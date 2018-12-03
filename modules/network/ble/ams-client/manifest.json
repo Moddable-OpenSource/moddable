@@ -9,6 +9,9 @@
 			"./amsclient",
 		],
 	},
+	"preload": [
+		"amsclient",
+	],
 	"platforms": {
 		"gecko/blue": {
 			"error": "application not supported on this platform"
