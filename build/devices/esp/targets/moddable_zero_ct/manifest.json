@@ -9,8 +9,8 @@
 	},
 	"defines": {
 		"i2c": {
-			"sda_pin": 4,
-			"scl_pin": 5
+			"sda_pin": 5,
+			"scl_pin": 4
 		},
 		"ili9341": {
 			"hz": 40000000,
