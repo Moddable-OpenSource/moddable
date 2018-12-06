@@ -831,10 +831,8 @@ void xs_socket_read(xsMachine *the)
 			xss->bufpos = xss->buflen = 0;
 			xss->buf = NULL;
 
-			if (xss->reader[0]) {
-				modLog("READ - schedule next readable");
+			if (xss->reader[0])
 				socketSetPending(xss, kPendingReceive);
-			}
 			else if (xss->suspendedDisconnect)
 				socketSetPending(xss, kPendingDisconnect);
 		}
