@@ -91,6 +91,7 @@ struct xsSocketRecord {
 
 	unsigned char		*buf;
 	struct pbuf			*pb;
+	struct pbuf			*pbWalker;
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
@@ -820,12 +821,23 @@ void xs_socket_read(xsMachine *the)
 	xss->bufpos += srcBytes;
 
 	if (xss->bufpos == xss->buflen) {
-		if (xss->pb)
+		if (xss->pbWalker->next)
+			socketSetPending(xss, kPendingReceive);
+		else {
 			pbuf_free_safe(xss->pb);
-		xss->pb = NULL;
+			xss->pb = NULL;
+			xss->pbWalker = NULL;
 
-		xss->bufpos = xss->buflen = 0;
-		xss->buf = NULL;
+			xss->bufpos = xss->buflen = 0;
+			xss->buf = NULL;
+
+			if (xss->reader[0]) {
+				modLog("READ - schedule next readable");
+				socketSetPending(xss, kPendingReceive);
+			}
+			else if (xss->suspendedDisconnect)
+				socketSetPending(xss, kPendingDisconnect);
+		}
 	}
 }
 
@@ -1108,134 +1120,94 @@ void socketMsgError(xsSocket xss)
 void socketMsgDataReceived(xsSocket xss)
 {
 	xsMachine *the = xss->the;
-	unsigned char i, readerCount;
-	uint16_t tot_len, bufpos = 0;
-	struct pbuf *pb, *walker;
-	uint8_t one = 0;
+	struct pbuf *pb;
+	uint8_t i;
 
-	if (xss->suspended)
-		return;
+	if (xss->buflen && (xss->bufpos < xss->buflen))
+		return;		// haven't finished reading current pbuf
+
+	if (xss->pb) {
+		if (xss->pbWalker->next) {
+			xss->pbWalker = xss->pbWalker->next;
+
+			xss->buf = xss->pbWalker->payload;
+			xss->bufpos = 0;
+			xss->buflen = xss->pbWalker->len;
+
+			goto callback;
+		}
+
+		pbuf_free_safe(xss->pb);
+		xss->pb = NULL;
+		xss->pbWalker = NULL;
+		xss->buflen = 0;
+	}
 
 	modCriticalSectionBegin();
-	for (readerCount = 0; xss->reader[readerCount] && (readerCount < kReadQueueLength); readerCount++)
-		;
+
+	pb = xss->reader[0];
+	if (NULL == pb) {
+		modCriticalSectionEnd();		// no more to read
+		return;
+	}
+
+	for (i = 0; i < kReadQueueLength - 1; i++)
+		xss->reader[i] = xss->reader[i + 1];
+	xss->reader[kReadQueueLength - 1] = NULL;
+
 	modCriticalSectionEnd();
 
-	if (xss->suspendedBuf) {
-		pb = xss->suspendedBuf;
-		walker = xss->suspendedFragment;
-		bufpos = xss->suspendedBufpos;
-		xss->suspendedBuf = xss->suspendedFragment = NULL;
-		readerCount += 1;
-		goto resumeBuffer;
+	xss->pb = pb;
+	xss->pbWalker = pb;
+	xss->buf = pb->payload;
+	xss->bufpos = 0;
+	xss->buflen = pb->len;
+
+	if (kTCP == xss->kind)
+		tcp_recved_safe(xss, pb->tot_len);
+
+callback:
+	xsBeginHost(the);
+
+	if (kTCP == xss->kind) {
+
+#if !ESP32
+		system_soft_wdt_stop();		//@@
+#endif
+		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen));
+#if !ESP32
+		system_soft_wdt_restart();		//@@
+#endif
 	}
+	else {
+		ip_addr_t address = xss->remote[0].address;
+		char *out;
+		uint16_t port = xss->remote[0].port;
 
-	while (readerCount--) {
-		modCriticalSectionBegin();
-		pb = xss->reader[0];
-		if (!pb) {
-			modCriticalSectionEnd();
-			break;
-		}
-
-		for (i = 0; i < kReadQueueLength - 1; i++)
-			xss->reader[i] = xss->reader[i + 1];
-		xss->reader[kReadQueueLength - 1] = NULL;
-		modCriticalSectionEnd();
-
-		walker = pb;
-resumeBuffer:
-		xsBeginHost(the);
-
-		tot_len = pb->tot_len;
-
-		if (NULL == pb->next) {
-			one = 1;
-			xss->pb = pb;
-		}
-
-		for (; walker && !xss->suspended; walker = walker->next) {
-			xss->buf = walker->payload;
-			xss->bufpos = bufpos;
-			xss->buflen = walker->len;
-			bufpos = 0;
-
-			xsTry {
-				if (kTCP == xss->kind) {
-#if !ESP32
-					system_soft_wdt_stop();		//@@
-#endif
-					xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen - xss->bufpos));
-#if !ESP32
-					system_soft_wdt_restart();		//@@
-#endif
-				}
-				else {
-					ip_addr_t address = xss->remote[0].address;
-					char *out;
-
-					xsResult = xsStringBuffer(NULL, 4 * 5);
-					out = xsmcToString(xsResult);
+		xsResult = xsStringBuffer(NULL, 4 * 5);
+		out = xsmcToString(xsResult);
 #if LWIP_IPV4 && LWIP_IPV6
-					itoa(ip4_addr1(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr2(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr3(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr4(&address.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
+		itoa(ip4_addr1(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr2(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr3(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr4(&address.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
 #else
-					itoa(ip4_addr1(&address), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr2(&address), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
-					itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
+		itoa(ip4_addr1(&address), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr2(&address), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
 #endif
-					if (kUDP == xss->kind)
-						xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(xss->remote[0].port));
-					else
-						xsCall3(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult);
-				}
-			}
-			xsCatch {
-			}
 
-			if (kTCP != xss->kind) {
-				xss->remoteCount -= 1;
-				c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
-			}
+		xss->remoteCount -= 1;
+		c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 
-			if (one)
-				break;
-		}
-
-		xsEndHost(the);
-
-		if (xss->suspended) {
-			if (xss->bufpos != xss->buflen) {
-				xss->suspendedBuf = pb;
-				xss->suspendedFragment = walker;
-				xss->suspendedBufpos = xss->bufpos;
-			}
-			else if (!one && walker->next) {
-				xss->suspendedBuf = pb;
-				xss->suspendedFragment = walker->next;
-				xss->suspendedBufpos = 0;
-			}
-		}
-
-		if (xss->skt && tot_len && !xss->suspendedBuf)
-			tcp_recved_safe(xss, tot_len);
-
-		xss->buf = NULL;
-
-		if (xss->suspendedBuf)
-			break;
-
-		if (one) {
-			if (xss->pb)
-				pbuf_free_safe(xss->pb);
-			xss->pb = NULL;
-		}
+		if (kUDP == xss->kind)
+			xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(port));
 		else
-			pbuf_free_safe(pb);
+			xsCall3(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult);
 	}
+
+	xsEndHost(the);
 }
 
 void socketMsgDataSent(xsSocket xss)
@@ -1266,7 +1238,7 @@ void didError(void *arg, err_t err)
 {
 	xsSocket xss = arg;
 
-	xss->skt = NULL;
+	xss->skt = NULL;		// "pcb is already freed when this callback is called"
 	socketSetPending(xss, kPendingError);
 }
 
@@ -1303,7 +1275,10 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
-			socketSetPending(xss, kPendingDisconnect);
+			if (xss->reader[0] || xss->buflen)
+				xss->suspendedDisconnect = true;
+			else
+				socketSetPending(xss, kPendingDisconnect);
 		}
 
 		return ERR_OK;
@@ -1321,6 +1296,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (kReadQueueLength == i) {
 		modLog("tcp read overflow!");
 		pbuf_free_safe(p);
+		socketSetPending(xss, kPendingError);		//@@ test
 		return ERR_MEM;
 	}
 
