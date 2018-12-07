@@ -169,8 +169,8 @@ class MDNS extends Socket {
 					name = name.join(".");
 					this.monitors.forEach(monitor => {
 						monitor.forEach(instance => {
-						if (instance.target === name)
-							instance.address = record.rdata;
+							if (instance.target === name)
+								instance.address = record.rdata;
 						});
 					});
 					break;
@@ -199,15 +199,30 @@ class MDNS extends Socket {
 						monitor.push(instance);
 					}
 					if (DNS.RR.TXT === record.qtype) {
-						instance.txt = record.rdata ? record.rdata : [];
-						instance.ttl = record.ttl;
+						const txt = record.rdata ? record.rdata : [];
+						if (!instance.txt || (instance.txt.length !== txt.length)) {
+							instance.txt = txt;
+							instance.changed = changed = true;
+						}
+						else {
+							for (let i = 0, length = txt.length; i < txt.length; ++i) {
+								if (txt[i] === instance.txt[i])
+									continue;
+								instance.txt = txt;
+								instance.changed = changed = true;
+								break;
+							}
+						}
 					}
 					else {
-						instance.port = record.rdata.port;
-						instance.target = record.rdata.target.join(".");
-						instance.ttl = record.ttl;
+						const target = record.rdata.target.join(".");
+						if ((instance.port !== record.rdata.port) || (instance.target !== target)) {
+							instance.port = record.rdata.port;
+							instance.target = target;
+							instance.changed = changed = true;
+						}
 					}
-					instance.changed = changed = true;
+					instance.ttl = record.ttl;
 					break;
 			}
 		}
