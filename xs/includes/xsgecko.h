@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "malloc.h"
+#include "em_core.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,8 +52,9 @@ extern uint32_t gecko_milliseconds();
 /*
 	critical section
 */
-#define modCriticalSectionBegin()
-#define modCriticalSectionEnd()
+#define modCriticalSectionDeclare	CORE_DECLARE_IRQ_STATE
+#define modCriticalSectionBegin()	CORE_ENTER_ATOMIC()
+#define modCriticalSectionEnd()		CORE_EXIT_ATOMIC()
 
 /*
 	date and time
