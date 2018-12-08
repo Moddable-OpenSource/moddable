@@ -73,6 +73,7 @@ static modWorker gWorkers;
 
 void xs_worker_destructor(void *data)
 {
+	modCriticalSectionDelcare;
 	modWorker worker = data;
 
 	if (worker) {
@@ -109,6 +110,7 @@ void xs_worker_destructor(void *data)
 
 static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 {
+	modCriticalSectionDeclare;
 	modWorker worker;
 	char *module = xsmcToString(xsArg(0));
 
