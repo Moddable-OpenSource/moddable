@@ -49,6 +49,7 @@ static uint8_t gMonitorCallbackPending;
 
 void xs_digital_monitor_destructor(void *data)
 {
+	modCriticalSectionDeclare;
 	modDigitalMonitor monitor = data;
 	uint8_t activeMonitors = 0;
 	if (NULL == monitor)
@@ -82,6 +83,7 @@ void xs_digital_monitor_destructor(void *data)
 
 void xs_digital_monitor(xsMachine *the)
 {
+	modCriticalSectionDeclare;
 	modDigitalMonitor monitor;
 	int pin, port, edge, mode = kModGPIOInput;
 

@@ -166,9 +166,11 @@ extern int modTimersNext(void);
 */
 
 #if !ESP32
+	#define modCriticalSectionDeclare
 	#define modCriticalSectionBegin() noInterrupts()
 	#define modCriticalSectionEnd() interrupts()
 #else
+	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
 	#define modCriticalSectionBegin() vTaskEnterCritical(&gCriticalMux)
 	#define modCriticalSectionEnd() vTaskExitCritical(&gCriticalMux)
