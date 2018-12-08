@@ -68,6 +68,7 @@ static modTimer gTimers = NULL;
 
 void modTimersExecute(void)
 {
+	modCriticalSectionDeclare;
 	int now = modMilliseconds();
 	modTimer walker;
 #if MOD_TASKS
@@ -115,6 +116,7 @@ void modTimersExecute(void)
 
 int modTimersNext(void)
 {
+	modCriticalSectionDeclare;
 	int next = 60 * 60 * 1000;		// an hour
 	int now = modMilliseconds();
 	modTimer walker;
@@ -151,6 +153,7 @@ int modTimersNext(void)
 
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
+	modCriticalSectionDeclare;
 	modTimer timer;
 
 	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
@@ -189,6 +192,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 
 void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 {
+	modCriticalSectionDeclare;
 	modCriticalSectionBegin();
 	timer->triggerTime = modMilliseconds() + firstInterval;
 	timer->repeatInterval = secondInterval;
@@ -207,6 +211,7 @@ void *modTimerGetRefcon(modTimer timer)
 
 void modTimerRemove(modTimer timer)
 {
+	modCriticalSectionDeclare;
 	modTimer walker, prev = NULL;
 
 	modCriticalSectionBegin();

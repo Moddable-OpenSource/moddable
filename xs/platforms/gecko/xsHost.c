@@ -695,6 +695,7 @@ static modMessage gMessageQueue;
 
 static void appendMessage(modMessage msg)
 {
+	modCriticalSectionDeclare;
 	msg->next = NULL;
 	msg->marked = 0;
 
@@ -737,6 +738,7 @@ static modMessageRecord gMessagePool[kMessagePoolCount];
 
 int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
 {
+	modCriticalSectionDeclare;
 	modMessage msg;
 	uint8_t i;
 
@@ -768,6 +770,7 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 
 int modMessageService(void)
 {
+	modCriticalSectionDeclare;
 	modMessage msg = gMessageQueue;
 	while (msg) {
 		msg->marked = 1;
