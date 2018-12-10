@@ -21,7 +21,7 @@
 		"esp": {
 			"defines": {
 				"destm32s": {
-					"cs_pin": 4,
+					"cs_pin": 15,
 					"dc_pin": 2,
 					"rst_pin": 0,
 					"busy_pin": 5,
