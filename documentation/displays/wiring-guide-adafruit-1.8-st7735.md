@@ -1,7 +1,7 @@
 # Adafruit 1.8" ST7735 Wiring Guide
 
 Copyright 2018 Moddable Tech, Inc.  
-Revised: January 2, 2018
+Revised: December 10, 2018
 
 ![Generic SPI Display](images/adafruit-st7735-1.8.jpg)
 
