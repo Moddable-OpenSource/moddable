@@ -1079,7 +1079,9 @@ static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)"Files",
 	(char *)"Poco display list used",
 	(char *)"Piu command List used",
+#if ESP32
 	(char *)"SPI flash erases",
+#endif
 	(char *)"System bytes free",
 };
 
@@ -1093,7 +1095,9 @@ static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)" files",
 	(char *)" bytes",
 	(char *)" bytes",
+#if ESP32
 	(char *)" sectors",
+#endif
 	(char *)" bytes",
 };
 
@@ -1193,7 +1197,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+#if ESP32
 	modInstrumentationSet(SPIFlashErases, 0);
+#endif
 	gInstrumentationThe->garbageCollectionCount = 0;
 	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
 	gInstrumentationThe->peakParserSize = 0;
@@ -1461,23 +1467,16 @@ void modMachineTaskUninit(xsMachine *the)
 }
 #endif
 
-
 #if ESP32
 esp_err_t __wrap_spi_flash_erase_sector(size_t sector)
-#else
-SpiFlashOpResult ICACHE_RAM_ATTR __wrap_spi_flash_erase_sector(uint16 sector)
-#endif
 {
-#if ESP32
 	extern esp_err_t __real_spi_flash_erase_sector(size_t sector);
-#else
-	extern SpiFlashOpResult __real_spi_flash_erase_sector(uint16 sector);
-#endif
 #ifdef mxInstrument
 	modInstrumentationAdjust(SPIFlashErases, +1);
 #endif
 	return __real_spi_flash_erase_sector(sector);
 }
+#endif
 
 /*
 	promises
