@@ -268,10 +268,10 @@ CPP_FLAGS = -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-r
 S_FLAGS = -c -g -x assembler-with-cpp -MMD
 
 !IF "$(ESP_SDK_RELEASE)"=="esp8266-2.4.0"
-LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read -Wl,-wrap,spi_flash_erase_sector
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
 !ELSE
-LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy -Wl,-wrap,spi_flash_erase_sector
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls -lstdc++
 !ENDIF
 
