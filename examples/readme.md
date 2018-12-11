@@ -60,8 +60,10 @@ The `-p` command line option specifies the target platform/subplatform you are b
 | esp | ESP8266 device target
 | esp/moddable_zero | [Moddable Zero](http://www.moddable.com/moddable-zero.php) device target
 | esp/adafruit_oled | [Adafruit OLED display + ESP8266](../documentation/displays/wiring-guide-adafruit-OLED.md)
+| esp/adafruit_st7735 | [Adafruit 1.8" ST7735 display + ESP8266](../documentation/displays/wiring-guide-adafruit-1.8-st7735.md)
 | esp/crystalfontz\_monochrome\_epaper | [Crystalfontz monochrome ePaper display + ESP8266](../documentation/displays/wiring-guide-crystalfontz-eink.md)
 | esp/sharp_memory | [2.7" Sharp Memory display + ESP8266](../documentation/displays/wiring-guide-sharp-memory-2.7-spi.md)
+| esp/sharp\_memory\_square | [1.3" Sharp Memory Display + ESP8266](../documentation/displays/wiring-guide-sharp-memory-1.3-spi.md)
 | esp/sparkfun_teensyview | [SparkFun TeensyView + ESP8266](../documentation/displays/wiring-guide-sparkFun-teensyview-spi.md)
 | esp/switch\_science\_reflective\_lcd | [Switch Science reflective LCD display + ESP8266](../documentation/displays/wiring-guide-switch-science-LCD.md)
 | esp/buydisplay_ctp | [BuyDisplay 2.8" CTP display + ESP8266](../documentation/displays/wiring-guide-generic-2.8-CPT-spi.md)
