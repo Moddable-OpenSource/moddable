@@ -1585,29 +1585,29 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		goto done;		// return or done...
 	}
 
-	if (pending & kPendingClose)
-		socketDownUseCount(xss->the, xss);
-
-	if (pending & kPendingReceive)
+	if ((pending & kPendingReceive) && !(xss->pending & kPendingClose))
 		socketMsgDataReceived(xss);
 
-	if (pending & kPendingSent)
+	if ((pending & kPendingSent) && !(xss->pending & kPendingClose))
 		socketMsgDataSent(xss);
 
-	if (pending & kPendingOutput)
+	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
 		tcp_output_safe(xss);
 
-	if (pending & kPendingConnect)
+	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
 		socketMsgConnect(xss);
 
-	if (pending & kPendingDisconnect)
+	if ((pending & kPendingDisconnect) && !(xss->pending & kPendingClose))
 		socketMsgDisconnect(xss);
 
-	if (pending & kPendingError)
+	if ((pending & kPendingError) && !(xss->pending & kPendingClose))
 		socketMsgError(xss);
 
-	if (pending & kPendingAcceptListener)
+	if ((pending & kPendingAcceptListener) && !(xss->pending & kPendingClose))
 		listenerMsgNew((xsListener)xss);
+
+	if (pending & kPendingClose)
+		socketDownUseCount(xss->the, xss);
 
 done:
 	socketDownUseCount(xss->the, xss);
