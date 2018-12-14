@@ -60,9 +60,11 @@ export class Request {
 		this.path = dictionary.path ? dictionary.path : "/";
 		this.host = dictionary.host ? dictionary.host : dictionary.address;
 		this.headers = dictionary.headers;
-		this.body = dictionary.body;
+		if (dictionary.body)
+			this.body = dictionary.body;
 		this.state = 0;
-		this.response = dictionary.response;
+		if (dictionary.response)
+			this.response = dictionary.response;
 
 		if (!dictionary.port) dictionary.port = 80;		//@@ maybe eliminate default port, require it to be handled by higher layers
 		if (dictionary.Socket)
@@ -102,6 +104,7 @@ export class Request {
 			this.socket.close();
 		delete this.socket;
 		delete this.buffers;
+		delete this.callback;
 		this.state = 11;
 	}
 };
@@ -359,8 +362,12 @@ function done(error = false) {
 		delete this.response;
 	}
 
-	this.callback(error ? -2 : 5, data);
-	this.close();
+	try {
+		this.callback(error ? -2 : 5, data);
+	}
+	finally {
+		this.close();
+	}
 }
 
 /*
@@ -606,7 +613,7 @@ function server(message, value, etc) {
 				else {
 					if (1 & this.flags) {
 						socket.write(body);				//@@ assume it all fits... not always true
-						this.body = undefined;			// one shot
+						delete this.body;			// one shot
 					}
 					else if (2 & this.flags) {
 						socket.write(count.toString(16).toUpperCase(), "\r\n", body, "\r\n");
@@ -623,8 +630,12 @@ function server(message, value, etc) {
 				}
 			}
 			if (10 === this.state) {
-				this.callback(10);
-				this.close();
+				try {
+					this.callback(10);
+				}
+				finally {
+					this.close();
+				}
 			}
 		}
 	}
@@ -634,8 +645,12 @@ function server(message, value, etc) {
 	}
 
 	if (-1 === message) {		// disconnected
-		this.close();
-		this.callback(-1);
+		try {
+			this.callback(-1);
+		}
+		finally {
+			this.close();
+		}
 	}
 }
 
