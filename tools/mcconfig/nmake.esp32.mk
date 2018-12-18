@@ -267,6 +267,7 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
+	if exist $(TMP_DIR)\_fc.tmp del $(TMP_DIR)\_fc.tmp
 !IF !EXIST($(SDKCONFIGPRIOR))
 	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
 !ENDIF
@@ -275,7 +276,8 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
 	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else ( echo 1 > $(TMP_DIR)\_s.tmp )
-	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
+	-if exist $(SDKCONFIGPRIOR) (fc $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) > $(TMP_DIR)\_fc.tmp)
+	-if exist $(TMP_DIR)\_fc.tmp ((find "CONFIG_" $(TMP_DIR)\_fc.tmp > nul) && echo 1 > $(TMP_DIR)\_s.tmp )
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
 	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR))
