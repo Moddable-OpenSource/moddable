@@ -448,6 +448,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	if (fxIsLinkerSymbolUsed(linker, mxID(_BigInt)) || fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2)) {
 		fprintf(file, "\tfxBigIntCompare,\n");
 		fprintf(file, "\tfxBigIntDecode,\n");
+		fprintf(file, "\tfxBigintToArrayBuffer,\n");
 		fprintf(file, "\tfxBigIntToInstance,\n");
 		fprintf(file, "\tfxBigIntToNumber,\n");
 		fprintf(file, "\tfxBigintToString,\n");
@@ -469,6 +470,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxBigInt_xor,\n");
 	}
 	else {
+		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
