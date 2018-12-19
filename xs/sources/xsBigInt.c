@@ -77,6 +77,7 @@ void fxBuildBigInt(txMachine* the)
 	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_BigInt), 1, mxID(_BigInt), XS_DONT_ENUM_FLAG));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asIntN), 2, mxID(_asIntN), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asUintN), 2, mxID(_asUintN), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_fromArrayBuffer), 1, mxID(_fromArrayBuffer), XS_DONT_ENUM_FLAG);
 	the->stack++;
 }
 
@@ -168,6 +169,66 @@ void fx_BigInt_asUintN(txMachine* the)
 // 	fxToBigInt(the, mxArgv(1), 1);
 // 	mxResult->value.bigint = *fxBigInt_mod(the, C_NULL, &mxArgv(1)->value.bigint, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index));
 // 	mxResult->kind = XS_BIGINT_KIND;
+}
+
+void fx_BigInt_fromArrayBuffer(txMachine* the)
+{
+	txSlot* slot;
+	txSlot* arrayBuffer = C_NULL;
+	txBoolean sign = 0;
+	int endian = EndianBig;
+	txInteger length;
+	txBigInt* bigint;
+	txU1 *src, *dst;
+	if (mxArgc < 1)
+		mxTypeError("no argument");
+	slot = mxArgv(0);
+	if (slot->kind == XS_REFERENCE_KIND) {
+		slot = slot->value.reference->next;
+		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
+			arrayBuffer = slot;
+	}
+	if (!arrayBuffer)
+		mxTypeError("argument is no ArrayBuffer instance");
+	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
+		sign = 1;
+	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
+		endian = EndianLittle;
+	length = arrayBuffer->value.arrayBuffer.length;
+	if (length == 0) {
+		mxResult->value.bigint = gxBigIntNaN;
+		mxResult->kind = XS_BIGINT_X_KIND;
+		return;
+	}
+	if (sign)
+		length--;
+	bigint = fxBigInt_alloc(the, howmany(length, sizeof(txU4)));
+	bigint->data[bigint->size - 1] = 0;
+	src = (txU1*)(arrayBuffer->value.arrayBuffer.address);
+	dst = (txU1*)(bigint->data);
+	if (sign)
+		bigint->sign = *src++;
+#if mxBigEndian
+	if (endian != EndianLittle) {
+#else
+	if (endian != EndianBig) {
+#endif	
+		c_memcpy(dst, src, length);
+	}
+	else {
+		dst += length;
+		while (length > 0) {
+			dst--;
+			*dst = *src;
+			src++;
+			length--;
+		}
+	}
+	length = bigint->size - 1;
+	while (bigint->data[length] == 0)
+		length--;
+	bigint->size = length + 1;
+	mxPullSlot(mxResult);
 }
 
 void fx_BigInt_prototype_toString(txMachine* the)
@@ -425,6 +486,38 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 }
 
 #ifdef mxRun
+
+void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int endian)
+{
+	txBigInt* bigint = fxToBigInt(the, slot, 1);
+	txU4 length = howmany(fxBigInt_bitsize(bigint), 8);
+	txU1 *src, *dst;
+	if (sign)
+		length++;
+	fxConstructArrayBufferResult(the, mxThis, length);
+	src = (txU1*)(bigint->data);
+	dst = (txU1*)(mxResult->value.reference->next->value.arrayBuffer.address);
+	if (sign) {
+		*dst++ = bigint->sign;
+		length--;
+	}
+#if mxBigEndian
+	if (endian != EndianLittle) {
+#else
+	if (endian != EndianBig) {
+#endif	
+		c_memcpy(dst, src, length);
+	}
+	else {
+		src += length;
+		while (length > 0) {
+			src--;
+			*dst = *src;
+			dst++;
+			length--;
+		}
+	}
+}
 
 txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 {
