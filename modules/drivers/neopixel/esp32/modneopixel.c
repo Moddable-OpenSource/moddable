@@ -62,7 +62,7 @@ void xs_neopixel(xsMachine *the)
 	char *order;
 	uint8_t shift;
 
-	xsmcVars(1);
+	xsmcVars(3);
 #ifdef MODDEF_NEOPIXEL_LENGTH
 	length = MODDEF_NEOPIXEL_LENGTH;
 #else
@@ -130,25 +130,56 @@ void xs_neopixel(xsMachine *the)
 		shift -= 8;
 	}
 
-	px->timings.mark.level0 = 1;
-	px->timings.space.level0 = 1;
-	px->timings.mark.duration0 = 12;
+	px->nbits = (1 == wstype) ? 32 : 24;
+	if (xsmcHas(xsArg(0), xsID_timing)) {
+		uint8_t i;
 
-	if (1 == wstype) {
-		px->nbits = 32;
-		px->timings.mark.duration1 = 12;
-		px->timings.space.duration0 = 6;
-		px->timings.space.duration1 = 18;
-		px->timings.reset.duration0 = 900;
-		px->timings.reset.duration1 = 900;
+		xsmcGet(xsVar(0), xsArg(0), xsID_timing);
+		for (i = 0; i < 3; i++) {
+			bit_timing_t *bt;
+
+			if (0 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_mark);
+				bt = &px->timings.mark;
+			}
+			else if (1 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_reset);
+				bt = &px->timings.reset;
+			}
+			else if (2 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_space);
+				bt = &px->timings.space;
+			}
+
+			xsmcGet(xsVar(2), xsVar(1), xsID_level0);
+			bt->level0 = xsmcToInteger(xsVar(2));
+			xsmcGet(xsVar(2), xsVar(1), xsID_level1);
+			bt->level1 = xsmcToInteger(xsVar(2));
+			xsmcGet(xsVar(2), xsVar(1), xsID_duration0);
+			bt->duration0 = xsmcToInteger(xsVar(2));
+			xsmcGet(xsVar(2), xsVar(1), xsID_duration1);
+			bt->duration1 = xsmcToInteger(xsVar(2));
+		}
 	}
 	else {
-		px->nbits = 24;
-		px->timings.mark.duration1 = 14;
-		px->timings.space.duration0 = 7;
-		px->timings.space.duration1 = 16;
-		px->timings.reset.duration0 = 600;
-		px->timings.reset.duration1 = 600;
+		px->timings.mark.level0 = 1;
+		px->timings.space.level0 = 1;
+		px->timings.mark.duration0 = 12;
+
+		if (1 == wstype) {
+			px->timings.mark.duration1 = 12;
+			px->timings.space.duration0 = 6;
+			px->timings.space.duration1 = 18;
+			px->timings.reset.duration0 = 900;
+			px->timings.reset.duration1 = 900;
+		}
+		else {
+			px->timings.mark.duration1 = 14;
+			px->timings.space.duration0 = 7;
+			px->timings.space.duration1 = 16;
+			px->timings.reset.duration0 = 600;
+			px->timings.reset.duration1 = 600;
+		}
 	}
 
 	np_show(px, MODDEF_NEOPIXEL_RMT_CHANNEL);	// pixels are all zero
