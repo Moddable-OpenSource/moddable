@@ -1159,6 +1159,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"freeze",
 	"from",
 	"fromArrayBuffer",
+	"fromBigInt",
 	"fromCharCode",
 	"fromCodePoint",
 	"fromString",

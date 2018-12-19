@@ -184,6 +184,7 @@ typedef struct {
 typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
 typedef txBoolean (*txBigIntCompare)(txMachine*, txBoolean less, txBoolean equal, txBoolean more, txSlot*, txSlot*);
 typedef void (*txBigIntDecode)(txMachine*, txSize);
+typedef void (*txBigIntToArrayBuffer)(txMachine* the, txSlot* slot, txBoolean sign, int endian);
 typedef txSlot* (*txBigIntToInstance)(txMachine* the, txSlot* slot);
 typedef void (*txBigintToString)(txMachine* the, txSlot* slot, txU4 radix);
 typedef txNumber (*txBigIntToNumber)(txMachine* the, txSlot* slot);
@@ -192,6 +193,7 @@ typedef txBigInt* (*txBigIntUnary)(txMachine*, txBigInt* r, txBigInt* a);
 typedef struct {
 	txBigIntCompare compare;
 	txBigIntDecode decode;
+	txBigIntToArrayBuffer toArrayBuffer;
 	txBigIntToInstance toInstance;
 	txBigIntToNumber toNumber;
 	txBigintToString toString;
@@ -999,6 +1001,7 @@ extern txNumber fx_pow(txNumber x, txNumber y);
 mxExport void fx_BigInt(txMachine* the);
 mxExport void fx_BigInt_asIntN(txMachine* the);
 mxExport void fx_BigInt_asUintN(txMachine* the);
+mxExport void fx_BigInt_fromArrayBuffer(txMachine* the);
 mxExport void fx_BigInt_prototype_toString(txMachine* the);
 mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
 
@@ -1006,6 +1009,7 @@ extern void fxBuildBigInt(txMachine* the);
 extern void fxBigIntCoerce(txMachine* the, txSlot* slot);
 extern txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
+extern void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int endian);
 extern txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot);
 extern txNumber fxBigIntToNumber(txMachine* the, txSlot* slot);
 extern void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix);
@@ -1246,6 +1250,13 @@ extern txSlot* fxNewArrayInstance(txMachine* the);
 extern txNumber fxToLength(txMachine* the, txSlot* slot);
 
 /* xsDataView.c */
+
+enum {
+	EndianNative = 0,
+	EndianLittle = 1,
+	EndianBig = 2
+};
+
 extern int fxBigInt64Compare(const void* p, const void* q);
 extern void fxBigInt64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxBigInt64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
@@ -1285,8 +1296,8 @@ mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteO
 mxExport void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger byteLength);
 mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
 
-
 mxExport void fx_ArrayBuffer(txMachine* the);
+mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
@@ -1359,6 +1370,7 @@ mxExport void fx_TypedArray_prototype_toStringTag_get(txMachine* the);
 mxExport void fx_TypedArray_prototype_values(txMachine* the);
 
 extern void fxBuildDataView(txMachine* the);
+extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);

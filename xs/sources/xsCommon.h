@@ -757,6 +757,7 @@ enum {
 	_freeze,
 	_from,
 	_fromArrayBuffer,
+	_fromBigInt,
 	_fromCharCode,
 	_fromCodePoint,
 	_fromString,

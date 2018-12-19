@@ -42,7 +42,6 @@ static txSlot* fxArgToInstance(txMachine* the, txInteger i);
 static txBoolean fxCheckLength(txMachine* the, txSlot* slot, txInteger* index);
 
 static txSlot* fxCheckArrayBufferInstance(txMachine* the, txSlot* slot);
-static void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 static txSlot* fxNewArrayBufferInstance(txMachine* the);
 
 static txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot);
@@ -83,12 +82,6 @@ const txBehavior ICACHE_FLASH_ATTR gxTypedArrayBehavior = {
 	fxOrdinaryPreventExtensions,
 	fxTypedArraySetPropertyValue,
 	fxOrdinarySetPrototype,
-};
-
-enum {
-	EndianNative = 0,
-	EndianLittle = 1,
-	EndianBig = 2
 };
 
 void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
@@ -193,6 +186,7 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextStringXProperty(the, slot, "ArrayBuffer", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxArrayBufferPrototype = *the->stack;
 	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_ArrayBuffer), 1, mxID(_ArrayBuffer), XS_DONT_ENUM_FLAG));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromBigInt), 1, mxID(_fromBigInt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromString), 1, mxID(_fromString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_isView), 1, mxID(_isView), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
@@ -438,6 +432,24 @@ void fx_ArrayBuffer(txMachine* the)
 	arrayBuffer->value.arrayBuffer.length = (txInteger)fxArgToByteLength(the, 0, 0);
 	arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, arrayBuffer->value.arrayBuffer.length);
 	c_memset(arrayBuffer->value.arrayBuffer.address, 0, arrayBuffer->value.arrayBuffer.length);
+}
+
+void fx_ArrayBuffer_fromBigInt(txMachine* the)
+{
+	txBoolean sign = 0;
+	int endian = EndianBig;
+	if (mxArgc < 1)
+		mxTypeError("no argument");
+	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
+		sign = 1;
+	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
+		endian = EndianLittle;
+	if (gxTypeBigInt.toArrayBuffer) {
+		gxTypeBigInt.toArrayBuffer(the, mxArgv(0), sign, endian);
+	}
+	else {
+		mxUnknownError("not built-in");
+	}
 }
 
 void fx_ArrayBuffer_fromString(txMachine* the)

@@ -99,6 +99,7 @@ const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {
 const txTypeBigInt ICACHE_FLASH_ATTR gxTypeBigInt = {
 	fxBigIntCompare,
 	fxBigIntDecode,
+	fxBigintToArrayBuffer,
 	fxBigIntToInstance,
 	fxBigIntToNumber,
 	fxBigintToString,
