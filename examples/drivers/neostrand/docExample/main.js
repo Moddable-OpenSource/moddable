@@ -18,9 +18,9 @@ import Monitor from "pins/digital/monitor";
 import { NeoStrand, NeoStrandEffect } from "neostrand";
 
 const Timing_WS2812B = {
-    mark:  { level0: 1, duration0: 18,  level1: 0, duration1: 7, },
-    space: { level0: 1, duration0: 7,   level1: 0, duration1: 18, },
-    reset: { level0: 0, duration0: 600, level1: 0, duration1: 600 }};
+    mark:  { level0: 1, duration0: 900,  level1: 0, duration1: 350, },
+    space: { level0: 1, duration0: 350,   level1: 0, duration1: 900, },
+    reset: { level0: 0, duration0: 100, level1: 0, duration1: 100 }};
 
 const LEN = 144;
 const strand = new NeoStrand({length: LEN, pin: 22, order: "RGB", timing: Timing_WS2812B});
@@ -118,5 +118,6 @@ class RandomColor extends NeoStrandEffect {
 	}
 }
 
-manySchemes.push( [ new RandomColor( { strand } ) ]);
+let randomColorScheme = [ new RandomColor({ strand }) ];
+manySchemes.push( randomColorScheme );
 
