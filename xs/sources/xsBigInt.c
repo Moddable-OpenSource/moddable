@@ -487,11 +487,17 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 
 #ifdef mxRun
 
-void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int endian)
+void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txU4 minBytes, txBoolean sign, int endian)
 {
 	txBigInt* bigint = fxToBigInt(the, slot, 1);
 	txU4 length = howmany(fxBigInt_bitsize(bigint), 8);
+	int prepend = 0;
 	txU1 *src, *dst;
+	if (length == 0)
+		length = 1;
+	prepend = minBytes - length;
+	if (length < minBytes)
+		length = minBytes;
 	if (sign)
 		length++;
 	fxConstructArrayBufferResult(the, mxThis, length);
@@ -500,6 +506,11 @@ void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int end
 	if (sign) {
 		*dst++ = bigint->sign;
 		length--;
+	}
+	if (prepend > 0 && endian == EndianBig) {
+		length -= prepend;
+		while (--prepend >= 0)
+			*dst++ = 0;
 	}
 #if mxBigEndian
 	if (endian != EndianLittle) {
@@ -516,6 +527,10 @@ void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int end
 			dst++;
 			length--;
 		}
+	}
+	if (prepend > 0 && endian == EndianLittle) {
+		while (--prepend >= 0)
+			*dst++ = 0;
 	}
 }
 
