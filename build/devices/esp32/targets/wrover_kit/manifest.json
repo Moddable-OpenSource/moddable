@@ -1,0 +1,25 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+	},
+	"defines": {
+		"spi": {
+			"miso_pin": 25,
+			"mosi_pin": 23,
+			"sck_pin": 19
+		},
+		"ili9341": {
+			"hz": 20000000,
+			"cs_pin": 22,
+			"dc_pin": 21,
+			"rst_pin": 18,
+			"spi_port": "HSPI_HOST",
+			"backlight_pin": 5,
+			"backlight_on": 0,
+		},
+	}
+}
