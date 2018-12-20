@@ -62,11 +62,14 @@ export default class Integer {
 		}
 	};
 
-	fromChunk(sign, lsb) @ "xs_integer2_fromChunk";
-	toChunk(minBytes, signess) {
-		return this._toChunk(this.value, minBytes, signess);
+	fromChunk(chunk, sign, lsb) {
+		if (chunk instanceof Uint8Array)
+			chunk = chunk.buffer;
+		return BigInt.fromArrayBuffer(chunk, sign, lsb);
 	}
-	_toChunk(a, minBytes, signess) @ "xs_integer2_toChunk";
+	toChunk(minBytes, signess, lsb) {
+		return ArrayBuffer.fromBigInt(this.value, minBytes, signess, lsb);
+	}
 	toNumber() {
 		return BigInt.asIntN(32, this.value);
 	}
