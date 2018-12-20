@@ -33,6 +33,27 @@ NeoStrand is subclass of NeoPixel, so we use the same constructor dictionary to 
 const strand = new NeoStrand({length: 50, pin: 22, order: "RGB"});
 ```
 
+> Note: if you notice flicker, you may have to adjust the timing for your strip. Check your specification sheet. The durations are in 50ns increments. **NeoPixel** has been extended to allow custom timings.
+>
+```
+const Timing_WS2811 = {
+    mark:  { level0: 1, duration0: 800,  level1: 0, duration1: 450, },
+    space: { level0: 1, duration0: 400,   level1: 0, duration1: 800, },
+    reset: { level0: 0, duration0: 30000, level1: 0, duration1: 30000, } };
+>
+const strand = new NeoStrand({length: 50, pin: 22, order: "RGB",
+							  timing: Timing_WS2812B});
+```
+
+&nbsp;
+
+> Note: You may want to tone down your lights during development so you don't blind yourself.
+> 
+> ```js
+> strand.brightness(10);
+> ```
+> This diminishes your color range, so use with care. The default brightness is *64* and maximum is 255.
+
 ### Schemes
 
 A scheme is a set of effects to apply to a strand. A scheme has one or more effects applied in the specified order. Setting the new scheme takes effect immediately, even if the strand is already running.
@@ -99,11 +120,12 @@ A [list of built-in effects](#builtin) can be found later in this document.
 | Parameter | default | range | description |
 |---|---|---|---|
 strand | (none) | | The NeoStrand to which this effect applied
-start | 0 | [0..strand.length] | index of first pixel of effect
-end | strand.length | [0..strand.length] | index of last pixel of effect
-duration | 1000 | | (ms) duration of one cycle of the effect
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect 
+start | `0` | [0..strand.length] | The index of the first pixel of effect
+end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
+size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
+duration | `1000` | | The duration of one complete cycle of the effect, in ms
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+loop | `1` | [0, 1] | Set to 1 to loop the effect
 
 `start` and `end` define the span of pixels that this effect will operate on. `duration` is the length of one cycle of the effect.
 
@@ -131,10 +153,12 @@ activate(effect) {
 
 set effectValue(value) {
     for (let i=this.start; i<this.end; i++) {
-        if (0 == (i % this.size))
-            this.color = this.strand.makeRGB(Math.random() * this.max, Math.random() * this.max, Math.random() * this.max);
-            this.strand.set(i, this.color, this.start, this.end);
-        }
+    	//
+    	// For each pixel in the segment, perform the pixel operations
+    	// value will be in the range [ 0, effect.dur ] or whatever
+    	// range the effect specifies when it creates the timeline
+    	// in activate().
+    	// ...
     }
 }
 ```
@@ -168,11 +192,12 @@ A `sizeA` and `sizeB` parameters define the pattern. For example { sizeA: 1, siz
 | Parameter | default | range | description |
 |---|---|---|---|
 strand | (none) | | The NeoStrand to which this effect applied
-start | 0 | [0..strand.length] | index of first pixel of effect
-end | strand.length | [0..strand.length] | index of last pixel of effect
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect 
-duration | 1000 | | (ms) time of one complete cycle of the pattern
+start | `0` | [0..strand.length] | The index of the first pixel of effect
+end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
+size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
+duration | 1000 | | time of one complete cycle of the pattern, in ms
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+loop | `1` | [0, 1] | Set to 1 to loop the effect
 sizeA | 1 | [1..strand.length] | number of pixels in the A part of pattern
 sizeB | 3 | [1..strand.length] | number of pixels in the B part of pattern
 rgbA | { r: 0, g: 0, b: 0x13 } | | RGB A color elements
@@ -188,12 +213,12 @@ The `HueSpan` effect is a smooth fade between colors. Like a color-wheel, it cyc
 | Parameter | default | range | description |
 |---|---|---|---|
 strand | (none) | | The NeoStrand to which this effect is applied
-start | 0 | [0..strand.length] | index of first pixel of effect
-end | strand.length | [0..strand.length] | index of last pixel of effect
-size | \<strand.length\> | [0..strand.length] | length of one hue cycle (in pixels)
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect
-duration | 1000 | | (ms) time of one complete color wheel cycle
+start | `0` | [0..strand.length] | The index of the first pixel of effect
+end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
+size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
+duration | 1000 | | time of one complete cycle of the color wheel, in ms
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+loop | `1` | [0, 1] | Set to 1 to loop the effect
 speed | 1.0 | | speed multiplier
 position | 0 | [0..1] | starting HSV hue position
 saturation | 1.0 | [0..1] | HSV saturation
@@ -210,13 +235,12 @@ The `Sine` effect varys a color component in a sine wave fashion.
 | Parameter | default | range | description |
 |---|---|---|---|
 strand | (none) | | The NeoStrand to which this effect is applied
-start | 0 | [0..strand.length] | index of first pixel of effect
-end | strand.length | [0..strand.length] | index of last pixel of effect
-amplitude | 1 | [0..1] | amount of change (y axis multiplier)
-size | \<strand.length\> | [1..strand.length] | length of one cycle (0-2π radians) (in pixels)
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect 
-duration | 1000 | | (ms) time of one complete sine cycle
+start | `0` | [0..strand.length] | The index of the first pixel of effect
+end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
+size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
+duration | 1000 | | time of one complete sine cycle, in ms
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+loop | `1` | [0, 1] | Set to 1 to loop the effect
 speed | 1.0 | | speed multiplier
 loop | 1 | [0, 1] | loop the effect
 position | 0 | [0..1] | starting x position
@@ -233,14 +257,13 @@ The `Pulse` effect sets `size` number of pixels at a location and then moves it 
 | Parameter | default | range | description |
 |---|---|---|---|
 strand | (none) | | The NeoStrand to which this effect is applied
-start | 0 | [0..strand.length] | index of first pixel of effect
-end | strand.length | [0..strand.length] | index of last pixel of effect
-size | 3 | [1..strand.length] | (pixels) size of a pulse
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect 
-direction | 0 | [-1, 0, 1] | direction of effect 
+start | `0` | [0..strand.length] | The index of the first pixel of effect
+end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
+size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
+duration | 3000 | | time of one pulse cycle, in ms
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+loop | `1` | [0, 1] | Set to 1 to loop the effect
 position | "random" | [-strand.length..strand.length] | index of the pulse starting pixel<br>negative numbers are off-strand and okay<br>"random" picks a random starting location
-duration | 3000 | | (ms) time of one pulse cycle
 mode | 1 | [-1, 0, 1] | **1** to add, **-1** to subtract, or **0** set the pixel color
 fade | 0.2 | [0..1] | how quickly tails fade
 rgb | { r: 0x80, g: 0x80, b: 0x80 } | | RGB color elements
@@ -269,87 +292,8 @@ The `Dim` effect reduces the color for each pixel in the span over over the `dur
 strand | (none) | | The NeoStrand to which this effect is applied
 start | 0 | [0..strand.length] | index of first pixel of effect
 end | strand.length | [0..strand.length] | index of last pixel of effect
-duration | 1000 | | (ms) time to reduce a full-brightness pixel to off
+duration | 1000 | | time to reduce a full-brightness pixel to off, in ms
 
-
-<!--
-<a id="ease"></a>
-### Ease
-
-The `Ease` effect uses the easing equations to move a pixel.
-
-A `size` and `sizeB` parameters define the pattern. For example { sizeA: 1, sizeB: 3 } will produce the repeating pattern:  [ A, B, B, B, A, B, B, B, A ... ]
-
-| Parameter | default | range | description |
-|---|---|---|---|
-strand | (none) | | The NeoStrand to which this effect is applied
-start | (none) | [0..strand.length] | index of the first pixel of effect
-end | (none) | [0..strand.length] | index of the last pixel of effect
-size | 3 | [1..strand.length] | (pixels) size of a pulse
-reverse | 0 | [0, 1] | reverse effect 
-loop | 1 | [0, 1] | loop the effect
-direction | 0 | [-1, 1] | direction of effect 
-easing | null | | easing equation to use, null uses a linear easing function
-rgb | { r: 0x80, g: 0x80, b: 0x80 } | | RGB color elements
-
-
-<a id="bounce"></a>
-### Bounce
-
-The `Bounce` effect bounces a small segment (ball) of pixels back and forth, erasing (setting to black) the pixel in the front and back of the ball.
-
-| Parameter | default | description |
-|---|---|---|
-strand | (none) | The NeoStrand to which this effect is applied
-start | (none) | index of the first pixel of effect
-end | (none) | index of the last pixel of effect
-size | 3 | number of pixels of the 'ball'
-first | \<start\> | index of the pulse starting pixel<br>negative numbers are off-strand and okay<br>"random" picks a random starting location
-direction | 1 | starting direction of travel (1 or -1)
-speed | 1.0 | number of pixels traveled per iteration
-r, g, b | 0xff (white) | RGB color elements
-
-
-<a id="sparkle"></a>
-### Sparkle
-
-The `Sparkle` effect applies a varying color value to a small segment of pixels. The pixels lighten and darken the color while gradually fading.
-
-| Parameter | default | description |
-|---|---|---|
-strand | (none) | The NeoStrand to which this effect is applied
-start | (none) | index of the first pixel of effect
-end | (none) | index of the last pixel of effect
-size | 5 | number of pixels of the sparkle
-range | 100 | [0-255] how quickly the pixels fade (random from 0-range)
-decay | 15 | [0-255] how quickly the overall sparkle fades
-next | 500 | time (ms) between new sparkle locations
-r, g, b | 0xff (white) | RGB color elements
-
-
-<a id="fire"></a>
-### Fire
-
-The `Fire` effect. Adapted from [Fire2012](https://blog.kriegsman.org/2014/04/04/fire2012-an-open-source-fire-simulation-for-arduino-and-leds/).
-
-Fire is affected by three parameters. The first `cooling` controls how fast the flame cools down. More cooling means shorter flames. The recommended values are between 20 and 100.
-
-The second `sparking` controls the chance (out of 255) that a spark will ignite. A higher value makes the fire more active. The recommended values are between 50 and 200.
-
-The third `delay` controls the speed of fire activity. A higher value makes the flame flicker more slowly. The recommended values are between 0 and 20.
-
-
-| Parameter | default | description |
-|---|---|---|
-strand | (none) | The NeoStrand to which this effect is applied
-start | (none) | index of the first pixel of effect
-end | (none) | index of the last pixel of effect
-direction | 1 | starting direction of travel (1 or -1)
-cooling | 55 | [0-255] number of pixels of the sparkle
-sparking | 120 | [0-255] number of pixels of the sparkle
-delay | 15 | time (ms) between actions
-
--->
 
 ## Making a custom effect
 
@@ -364,7 +308,7 @@ Let's make a random color effect. It will set `size` pixels to a random color, c
 strand | (none) | | The NeoStrand to which this effect is applied
 start | 0 | [0..strand.length] | index of first pixel of effect
 end | strand.length | [0..strand.length] | index of last pixel of effect
-duration | 1000 | | (ms) time between color changes
+duration | 1000 | | length time between color changes, in ms
 size | 5 | [0..strand.length] | size of each color
 max | 127 | [0..255] | maximium value of random RGB component
 
@@ -405,5 +349,22 @@ class RandomColor extends NeoStrandEffect {
 Then create and add the effect your scheme list and give it a try.
 
 ```js
-	schemes.push( [ new RandomColor( {  strand } ) ]);
+let randomColorScheme = [ new RandomColor({ strand }) ];
+manySchemes.push( randomColorScheme );
+```
+
+## Timing
+
+Timing specifications for the various driver chips of the LEDs are included for reference below. 
+
+```js
+const Timing_WS2812B = {
+    mark:  { level0: 1, duration0: 900,   level1: 0, duration1: 350, },
+    space: { level0: 1, duration0: 350,   level1: 0, duration1: 900, },
+    reset: { level0: 0, duration0: 30000, level1: 0, duration1: 30000, } };
+
+const Timing_WS2811 = {
+    mark:  { level0: 1, duration0: 800,   level1: 0, duration1: 450, },
+    space: { level0: 1, duration0: 400,   level1: 0, duration1: 800, },
+    reset: { level0: 0, duration0: 30000, level1: 0, duration1: 30000, } };
 ```
