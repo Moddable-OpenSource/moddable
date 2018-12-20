@@ -192,7 +192,7 @@ class Marquee extends NeoStrandEffect {
 			this.rgbA = this.strand.makeRGB(c.r, c.g, c.b);
 		}
 		else
-			this.rgbA = this.strand.makeRGB(0, 0, 0x13);
+			this.rgbA = this.strand.makeRGB(0, 0, 0x80);
 
 		if (dictionary.rgbB) {
 			let c = dictionary.rgbB;

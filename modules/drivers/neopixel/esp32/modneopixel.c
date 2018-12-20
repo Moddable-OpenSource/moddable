@@ -156,9 +156,9 @@ void xs_neopixel(xsMachine *the)
 			xsmcGet(xsVar(2), xsVar(1), xsID_level1);
 			bt->level1 = xsmcToInteger(xsVar(2));
 			xsmcGet(xsVar(2), xsVar(1), xsID_duration0);
-			bt->duration0 = xsmcToInteger(xsVar(2));
+			bt->duration0 = xsmcToInteger(xsVar(2)) / RMT_PERIOD_NS;
 			xsmcGet(xsVar(2), xsVar(1), xsID_duration1);
-			bt->duration1 = xsmcToInteger(xsVar(2));
+			bt->duration1 = xsmcToInteger(xsVar(2)) / RMT_PERIOD_NS;
 		}
 	}
 	else {
