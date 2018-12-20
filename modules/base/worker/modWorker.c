@@ -73,7 +73,7 @@ static modWorker gWorkers;
 
 void xs_worker_destructor(void *data)
 {
-	modCriticalSectionDelcare;
+	modCriticalSectionDeclare;
 	modWorker worker = data;
 
 	if (worker) {
