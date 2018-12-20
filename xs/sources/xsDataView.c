@@ -436,16 +436,19 @@ void fx_ArrayBuffer(txMachine* the)
 
 void fx_ArrayBuffer_fromBigInt(txMachine* the)
 {
+	txU4 minBytes = 0;
 	txBoolean sign = 0;
 	int endian = EndianBig;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
-	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
-		sign = 1;
+	if (mxArgc > 1)
+		minBytes = fxToInteger(the, mxArgv(1));
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
+		sign = 1;
+	if ((mxArgc > 3) && fxToBoolean(the, mxArgv(3)))
 		endian = EndianLittle;
 	if (gxTypeBigInt.toArrayBuffer) {
-		gxTypeBigInt.toArrayBuffer(the, mxArgv(0), sign, endian);
+		gxTypeBigInt.toArrayBuffer(the, mxArgv(0), minBytes, sign, endian);
 	}
 	else {
 		mxUnknownError("not built-in");

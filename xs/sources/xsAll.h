@@ -184,7 +184,7 @@ typedef struct {
 typedef txBigInt* (*txBigIntBinary)(txMachine*, txBigInt* r, txBigInt* a, txBigInt* b);
 typedef txBoolean (*txBigIntCompare)(txMachine*, txBoolean less, txBoolean equal, txBoolean more, txSlot*, txSlot*);
 typedef void (*txBigIntDecode)(txMachine*, txSize);
-typedef void (*txBigIntToArrayBuffer)(txMachine* the, txSlot* slot, txBoolean sign, int endian);
+typedef void (*txBigIntToArrayBuffer)(txMachine* the, txSlot* slot, txU4 minBytes, txBoolean sign, int endian);
 typedef txSlot* (*txBigIntToInstance)(txMachine* the, txSlot* slot);
 typedef void (*txBigintToString)(txMachine* the, txSlot* slot, txU4 radix);
 typedef txNumber (*txBigIntToNumber)(txMachine* the, txSlot* slot);
@@ -1009,7 +1009,7 @@ extern void fxBuildBigInt(txMachine* the);
 extern void fxBigIntCoerce(txMachine* the, txSlot* slot);
 extern txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right);
 extern void fxBigIntDecode(txMachine* the, txSize size);
-extern void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txBoolean sign, int endian);
+extern void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txU4 minBytes, txBoolean sign, int endian);
 extern txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot);
 extern txNumber fxBigIntToNumber(txMachine* the, txSlot* slot);
 extern void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix);
