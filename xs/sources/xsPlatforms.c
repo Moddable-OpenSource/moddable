@@ -71,8 +71,6 @@
 	#define mxUseDefaultDebug 0
 #endif
 
-#ifndef mxLink
-
 #if mxUseDefaultFindModule
 	static txBoolean fxFindPreparation(txMachine* the, txString path, txID* id);
 #endif
@@ -86,8 +84,6 @@
 	#endif
 #endif
 
-#endif /* mxLink*/
-
 #if mxUseDefaultMachinePlatform
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -99,8 +95,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 }
 
 #endif /* mxUseDefaultMachinePlatform */
-
-#ifndef mxLink
 
 #if mxUseDefaultBuildKeys
 
@@ -120,8 +114,6 @@ void fxBuildKeys(txMachine* the)
 }
 
 #endif	/* mxUseDefaultBuildKeys */ 
-
-#endif
 
 
 #if mxUseDefaultChunkAllocation
@@ -166,8 +158,6 @@ void fxSweepHost(txMachine* the)
 
 #endif /* mxUseDefaultHostCollection */ 
 
-
-#ifndef mxLink
 
 #if mxUseDefaultFindModule
 
@@ -484,8 +474,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 }
 
 #endif  /* mxUseDefaultParseScript */
-
-#endif /* mxLink */
 
 #if mxUseDefaultQueuePromiseJobs
 

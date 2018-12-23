@@ -42,9 +42,7 @@ extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 #else
 	#include <dirent.h>
 	#include <pthread.h>
-	#include <signal.h>
 	#include <sys/stat.h>
-	#include <unistd.h>
 	typedef pthread_cond_t txCondition;
 	typedef pthread_mutex_t txMutex;
 	#define fxCreateCondition(CONDITION) pthread_cond_init(CONDITION,NULL)

@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
   	txString separator = NULL;
   	txBoolean stripping = 0;
   	txBoolean archiving = 0;
+  	txBoolean optimizing = 0;
 #if mxWindows
 	txString url = "\\";
 #else
@@ -142,7 +143,10 @@ int main(int argc, char* argv[])
 		scriptAddress = &(linker->firstScript);
 		stripAddress = &(linker->firstStrip);
 		for (argi = 1; argi < argc; argi++) {
-			if (!c_strcmp(argv[argi], "-a")) {
+			if (!c_strcmp(argv[argi], "-1")) {
+				optimizing = 1;
+			}
+			else if (!c_strcmp(argv[argi], "-a")) {
 				archiving = 1;
 				linker->symbolModulo = creation->nameModulo;
 			}
@@ -320,7 +324,6 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-
 			if (stripping)
 				fxStripCallbacks(linker, the);
 			else
@@ -330,8 +333,50 @@ int main(int argc, char* argv[])
 				fxStripName(linker, strip->name);
 				strip = strip->nextStrip;
 			}
-	
 			count = fxPrepareHeap(the, stripping || linker->firstStrip);
+			
+			if (optimizing) {
+				linker->realm = the;
+				fxOptimize(linker);
+				linker->realm = NULL;
+				xsDeleteMachine(the);
+				linker->firstProjection = NULL;
+				the = xsCreateMachine(creation, "xsl", linker);
+				mxThrowElse(the);
+				xsBeginHost(the);
+				{
+					xsVars(2);
+					{
+						xsTry {
+							preload = linker->firstPreload;
+							while (preload) {
+								fxSlashPath(preload->name, mxSeparator, url[0]);
+								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
+								preload = preload->nextPreload;
+							}
+							if (linker->stripping)
+								fxFreezeBuiltIns(the);
+							xsCollectGarbage();
+						}
+						xsCatch {
+							xsStringValue message = xsToString(xsException);
+							fxReportLinkerError(linker, "%s", message);
+						}
+					}
+				}
+				xsEndHost(the);
+				if (stripping)
+					fxStripCallbacks(linker, the);
+				else
+					fxUnstripCallbacks(linker);
+				strip = linker->firstStrip;
+				while (strip) {
+					fxStripName(linker, strip->name);
+					strip = strip->nextStrip;
+				}
+				count = fxPrepareHeap(the, stripping || linker->firstStrip);
+			}
+
 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
 	
 			c_strcpy(path, output);
@@ -764,5 +809,207 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 {
 	return C_NULL;
 }
+
+/* DEBUG */
+
+void fxCreateMachinePlatform(txMachine* the)
+{
+#ifdef mxDebug
+	the->connection = mxNoSocket;
+#endif
+	the->host = NULL;
+	the->fakeCallback = (txCallback)1;
+}
+
+void fxDeleteMachinePlatform(txMachine* the)
+{
+}
+
+#ifdef mxDebug
+
+void fxAbort(txMachine* the)
+{
+	c_exit(0);
+}
+
+void fxConnect(txMachine* the)
+{
+	char name[256];
+	char* colon;
+	int port;
+	struct sockaddr_in address;
+#if mxWindows
+	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
+#else
+	colon = getenv("XSBUG_HOST");
+	if ((colon) && (c_strlen(colon) + 1 < sizeof(name))) {
+		c_strcpy(name, colon);
+#endif		
+		colon = strchr(name, ':');
+		if (colon == NULL)
+			port = 5002;
+		else {
+			*colon = 0;
+			colon++;
+			port = strtol(colon, NULL, 10);
+		}
+	}
+	else {
+		strcpy(name, "localhost");
+		port = 5002;
+	}
+	memset(&address, 0, sizeof(address));
+  	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = inet_addr(name);
+	if (address.sin_addr.s_addr == INADDR_NONE) {
+		struct hostent *host = gethostbyname(name);
+		if (!host)
+			return;
+		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+	}
+  	address.sin_port = htons(port);
+#if mxWindows
+{  	
+	WSADATA wsaData;
+	unsigned long flag;
+	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
+		return;
+	the->connection = socket(AF_INET, SOCK_STREAM, 0);
+	if (the->connection == INVALID_SOCKET)
+		return;
+  	flag = 1;
+  	ioctlsocket(the->connection, FIONBIO, &flag);
+	if (connect(the->connection, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR) {
+		if (WSAEWOULDBLOCK == WSAGetLastError()) {
+			fd_set fds;
+			struct timeval timeout = { 2, 0 }; // 2 seconds, 0 micro-seconds
+			FD_ZERO(&fds);
+			FD_SET(the->connection, &fds);
+			if (select(0, NULL, &fds, NULL, &timeout) == 0)
+				goto bail;
+			if (!FD_ISSET(the->connection, &fds))
+				goto bail;
+		}
+		else
+			goto bail;
+	}
+ 	flag = 0;
+ 	ioctlsocket(the->connection, FIONBIO, &flag);
+}
+#else
+{  	
+	int	flag;
+	the->connection = socket(AF_INET, SOCK_STREAM, 0);
+	if (the->connection <= 0)
+		goto bail;
+	signal(SIGPIPE, SIG_IGN);
+#if mxMacOSX
+	{
+		int set = 1;
+		setsockopt(the->connection, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+	}
+#endif
+	flag = fcntl(the->connection, F_GETFL, 0);
+	fcntl(the->connection, F_SETFL, flag | O_NONBLOCK);
+	if (connect(the->connection, (struct sockaddr*)&address, sizeof(address)) < 0) {
+    	 if (errno == EINPROGRESS) { 
+			fd_set fds;
+			struct timeval timeout = { 2, 0 }; // 2 seconds, 0 micro-seconds
+			int error = 0;
+			unsigned int length = sizeof(error);
+			FD_ZERO(&fds);
+			FD_SET(the->connection, &fds);
+			if (select(the->connection + 1, NULL, &fds, NULL, &timeout) == 0)
+				goto bail;
+			if (!FD_ISSET(the->connection, &fds))
+				goto bail;
+			if (getsockopt(the->connection, SOL_SOCKET, SO_ERROR, &error, &length) < 0)
+				goto bail;
+			if (error)
+				goto bail;
+		}
+		else
+			goto bail;
+	}
+	fcntl(the->connection, F_SETFL, flag);
+	signal(SIGPIPE, SIG_DFL);
+}
+#endif
+	return;
+bail:
+	fxDisconnect(the);
+}
+
+void fxDisconnect(txMachine* the)
+{
+#if mxWindows
+	if (the->connection != INVALID_SOCKET) {
+		closesocket(the->connection);
+		the->connection = INVALID_SOCKET;
+	}
+	WSACleanup();
+#else
+	if (the->connection >= 0) {
+		close(the->connection);
+		the->connection = -1;
+	}
+#endif
+}
+
+txBoolean fxIsConnected(txMachine* the)
+{
+	return (the->connection != mxNoSocket) ? 1 : 0;
+}
+
+txBoolean fxIsReadable(txMachine* the)
+{
+	return 0;
+}
+
+void fxReceive(txMachine* the)
+{
+	int count;
+	if (the->connection != mxNoSocket) {
+#if mxWindows
+		count = recv(the->connection, the->debugBuffer, sizeof(the->debugBuffer) - 1, 0);
+		if (count < 0)
+			fxDisconnect(the);
+		else
+			the->debugOffset = count;
+#else
+	again:
+		count = read(the->connection, the->debugBuffer, sizeof(the->debugBuffer) - 1);
+		if (count < 0) {
+			if (errno == EINTR)
+				goto again;
+			else
+				fxDisconnect(the);
+		}
+		else
+			the->debugOffset = count;
+#endif
+	}
+	the->debugBuffer[the->debugOffset] = 0;
+}
+
+void fxSend(txMachine* the, txBoolean more)
+{
+	if (the->connection != mxNoSocket) {
+#if mxWindows
+		if (send(the->connection, the->echoBuffer, the->echoOffset, 0) <= 0)
+			fxDisconnect(the);
+#else
+	again:
+		if (write(the->connection, the->echoBuffer, the->echoOffset) <= 0) {
+			if (errno == EINTR)
+				goto again;
+			else
+				fxDisconnect(the);
+		}
+#endif
+	}
+}
+
+#endif /* mxDebug */
 
 
