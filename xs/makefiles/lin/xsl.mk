@@ -47,6 +47,8 @@ endif
 XS_DIR ?= $(realpath ../..)
 BUILD_DIR ?= $(realpath ../../../build)
 
+XSC =  $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
+
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
 PLT_DIR = $(XS_DIR)/platforms
@@ -55,6 +57,8 @@ TLS_DIR = $(XS_DIR)/tools
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 C_OPTIONS =\
+	-DINCLUDE_XSPLATFORM \
+	-DXSPLATFORM=\"xslOpt.h\" \
 	-fno-common\
 	-I$(INC_DIR)\
 	-I$(PLT_DIR) \
@@ -63,7 +67,11 @@ C_OPTIONS =\
 	-I$(TMP_DIR)\
 	-DmxLink=1
 	-DmxRun=1
-C_OPTIONS += -DmxNoFunctionLength=1 -DmxNoFunctionName=1 -DmxHostFunctionPrimitive=1 -DmxFewGlobalsTable=1
+C_OPTIONS +=\
+	-DmxNoFunctionLength=1\
+	-DmxNoFunctionName=1\
+	-DmxHostFunctionPrimitive=1\
+	-DmxFewGlobalsTable=1
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -112,6 +120,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsdtoa.o \
 	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xslBase.o \
+	$(TMP_DIR)/xslOpt.o \
 	$(TMP_DIR)/xslSlot.o \
 	$(TMP_DIR)/xslStrip.o \
 	$(TMP_DIR)/xsl.o
@@ -126,17 +135,27 @@ $(TMP_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/$(NAME): $(OBJECTS)
+$(BIN_DIR)/$(NAME): $(TMP_DIR)/xslOpt.xs.o $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
+	$(CC) $(LINK_OPTIONS) $(TMP_DIR)/xslOpt.xs.o $(OBJECTS) $(LIBRARIES) -o $@
 	
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(TLS_DIR)/xsl.h
+$(OBJECTS): $(TLS_DIR)/xslOpt.h
+$(TMP_DIR)/xslOpt.o: $(TMP_DIR)/xslOpt.xs.c
+
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@
+	
+$(TMP_DIR)/xslOpt.xs.o:	 $(TMP_DIR)/xslOpt.xs.c $(PLT_DIR)/xsPlatform.h $(SRC_DIR)/xsCommon.h $(SRC_DIR)/xsAll.h $(TLS_DIR)/xsl.h $(TLS_DIR)/xslOpt.h
+	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
+	$(CC) $< $(C_OPTIONS) -c -o $@
+
+$(TMP_DIR)/xslOpt.xs.c: $(TLS_DIR)/xslOpt.js
+	$(XSC) $< -c -d -o $(TMP_DIR) -p 
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME)

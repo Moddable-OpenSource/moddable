@@ -1,6 +1,7 @@
-import {TOOL, FILE} from "tool";
-
 const unknown = {
+	getValue() {
+		return this;
+	},
 	toString() {
 		return '?';
 	}
@@ -16,11 +17,11 @@ class Local {
 	}
 	reportParam(tool) {
 		if (this.key)
-			return this.key.param;
+			return tool.keyString(this.key);
 		return '?';
 	}
 	setValue(value) {
-		this.value = value;;
+		this.value = value;
 	}
 }
 
@@ -38,7 +39,7 @@ class Closure extends Local {
 		if (this.reference)
 			return this.reference.reportParam(tool);
 		if (this.key)
-			return this.key.param;
+			return tool.keyString(this.key);
 		return '?';
 	}
 	setValue(value) {
@@ -52,7 +53,15 @@ class Closure extends Local {
 class Transfer {
 	constructor(key, _import, _from, _exports) {
 		this.key = key;
-		this.value = undefined;
+		this.value = unknown;
+		if (_from) {
+			let module = tool.getModule(_from);
+			if (module) {
+				let key = tool.keyString(_import);
+				if (key in module)
+					this.value = module[key];
+			}
+		}
 		this._import = _import;
 		this._from = _from;
 		this._exports = _exports;
@@ -61,9 +70,7 @@ class Transfer {
 		return this.value;
 	}
 	reportParam(tool) {
-		if (this.key)
-			return this.key.param;
-		return '?';
+		return tool.keyString(this.key);
 	}
 	setValue(value) {
 		this.value = value;;
@@ -75,6 +82,8 @@ class Code {
 		this.param = param;
 		this.previous = null;
 		this.next = null;
+		this.stackLevel = 0;
+		this.scopeLevel = 0;
 	}
 	bind(tool) {
 		return this.next;
@@ -114,12 +123,19 @@ class Code {
 			result += " ";
 		result += offset;
 		result += " [";
-		let level = this.level;
-		if (level < 100)
+		let stackLevel = this.stackLevel;
+		if (stackLevel < 100)
 			result += " ";
-		if (level < 10)
+		if (stackLevel < 10)
 			result += " ";
-		result += level;
+		result += stackLevel;
+			result += " ";
+		let scopeLevel = this.scopeLevel;
+		if (scopeLevel < 100)
+			result += " ";
+		if (scopeLevel < 10)
+			result += " ";
+		result += scopeLevel;
 		result += "] ";
 		for (let tab = 0; tab < tabs; tab++)
 			result += "    ";
@@ -218,7 +234,6 @@ class UnaryCode extends Code {
 		return unknown;
 	}
 	evaluate(tool) {
-		let right = tool.popStack();
 		let value = tool.popStack();
 		if (value !== unknown)
 			tool.pushStack(this.compute(value));
@@ -244,7 +259,6 @@ class CallCode extends UnknownCode {
 			tool.popStack();
 			length--;
 		}
-		tool.popStack();
 		return super.bind(tool);
 	}
 }
@@ -264,7 +278,8 @@ class CodeCode extends BranchCode {
 		let code = this.next;
 		let target = this.target;
 		while (code != target) {
-			code.level = formerStackIndex - tool.stackIndex;
+			code.stackLevel = formerStackIndex - tool.stackIndex;
+			code.scopeLevel = formerStackIndex - tool.scopeIndex;
 			code = code.bind(tool);
 		}
 		
@@ -315,37 +330,25 @@ class EndCode extends Code {
 }
 
 class HostCode extends Code {
-	parse(tool) {
-		this.param = tool.hosts[this.param];
-	}
 	reportParam(tool) {
-		return this.param.param;
-	}
-	serialize1(tool) {
-		this.param.usage++;
-		super.serialize1(tool);
+		return tool.hosts[this.param].param;
 	}
 }
 
 class KeyCode extends Code {
 	reportParam(tool) {
-		let param = this.param;
-		if (param)
-			return param.param;
-		return '?';
-	}
-	serialize1(tool) {
-		let param = this.param;
-		if (param)
-			param.usage++;
-		super.serialize1(tool);
+		return tool.keyString(this.param);
 	}
 }
 
 class FunctionCode extends KeyCode {
 	bind(tool) {
-		tool.pushStack(this);
 		this.closures = [];
+		tool.pushStack(this);
+		return this.next;
+	}
+	evaluate(tool) {
+		tool.pushStack(this);
 		return this.next;
 	}
 }
@@ -372,10 +375,15 @@ class ClosureCode extends StackCode {
 		this.closure = tool.getScope(this.param);
 		return this.next;
 	}
+	evaluate(tool) {
+		return this.next;
+	}
 	reportParam(tool) {
 		let result = "" + this.param;
-		if (this.closure)
-			result += " (" + this.closure.reportParam() + ")";
+		if (this.closure && (this.closure instanceof Closure))
+			result += " (" + this.closure.reportParam(tool) + ")";
+		else
+			result += " (@@@@)";
 		return result;
 	}
 }
@@ -385,10 +393,15 @@ class LocalCode extends StackCode {
 		this.local = tool.getScope(this.param);
 		return this.next;
 	}
+	evaluate(tool) {
+		return this.next;
+	}
 	reportParam(tool) {
 		let result = "" + this.param;
-		if (this.local)
-			result += " (" + this.local.reportParam() + ")";
+		if (this.local && (this.local instanceof Local))
+			result += " (" + this.local.reportParam(tool) + ")";
+		else
+			result += " (@@@@)";
 		return result;
 	}
 }
@@ -422,33 +435,6 @@ class Host {
 		this.arity = arity;
 		this.key = key;
 		this.param = param;
-		this.usage = 0;
-	}
-	serialize(tool) {
-		if (this.usage) {
-			this.index = tool.hostsCount;
-			this.size = tool.strlen(this.param) + 1;
-			let key = this.key;
-			if (key)
-				key.usage++;
-			tool.hostsCount++;
-			tool.hostsSize += 3 + this.size;
-		}
-	}
-}
-
-class Key {
-	constructor(param) {
-		this.param = param;
-		this.usage = 0;
-	}
-	serialize(tool) {
-		if (this.usage) {
-			this.index = tool.keysCount;
-			this.size = tool.strlen(this.param) + 1;
-			tool.keysCount++;
-			tool.keysSize += this.size;
-		}
 	}
 }
 
@@ -466,11 +452,7 @@ const constructors = {
 	},
 	ARGUMENTS_STRICT: class extends UnknownCode {
 	},
-	ARRAY: class extends Code {
-		bind(tool) {
-			tool.pushStack([]);
-			return this.next;
-		}
+	ARRAY: class extends UnknownCode {
 	},
 	ASYNC_FUNCTION: class extends FunctionCode {
 	},
@@ -511,17 +493,55 @@ const constructors = {
 	BRANCH: class extends BranchCode {
 		optimize(tool) {
 			if (this.target == this.next) {
+				tool.count(0);
 				tool.remove(this);
 			}
 			else if (this.target instanceof EndCode) {
+				tool.count(0);
 				tool.replace(this, new this.target.constructor());
 			}
 			return this.next;
 		}
 	},
 	BRANCH_ELSE: class extends BranchCode {
-		bind(tool) {
+		evaluate(tool) {
 			this.value = tool.popStack();
+			return this.next;
+		}
+		optimize(tool) {
+			if (this.value !== unknown) {
+				tool.count(1);
+				let pop = new constructors.POP();
+				tool.replace(this, pop);
+				if (!this.value) {
+					pop.next = this.target;
+					return this.target;
+				}
+			}
+			return this.next;
+		}
+		reportParam(tool) {
+			let result = super.reportParam(tool);
+			if (this.value !== unknown)
+				result += " ***"
+			return result;
+		}
+	},
+	BRANCH_IF: class extends BranchCode {
+		evaluate(tool) {
+			this.value = tool.popStack();
+			return this.next;
+		}
+		optimize(tool) {
+			if (this.value !== unknown) {
+				tool.count(2);
+				let pop = new constructors.POP();
+				tool.replace(this, pop);
+				if (this.value) {
+					pop.next = this.target;
+					return this.target;
+				}
+			}
 			return this.next;
 		}
 		reportParam(tool) {
@@ -529,12 +549,6 @@ const constructors = {
 			if (this.value !== unknown)
 				result += " " + this.value
 			return result;
-		}
-	},
-	BRANCH_IF: class extends BranchCode {
-		bind(tool) {
-			this.value = tool.popStack();
-			return this.next;
 		}
 	},
 	BRANCH_STATUS: class extends BranchCode {
@@ -583,18 +597,36 @@ const constructors = {
 		}
 	},
 	DELETE_PROPERTY: class extends KeyCode {
+		evaluate(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	DELETE_PROPERTY_AT: class extends Code {
 		bind(tool) {
 			tool.popStack();
 			return this.next;
 		}
+		evaluate(tool) {
+			tool.popStack();
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	DELETE_SUPER: class extends KeyCode {
+		evaluate(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	DELETE_SUPER_AT: class extends Code {
 		bind(tool) {
 			tool.popStack();
+			return this.next;
+		}
+		evaluate(tool) {
+			tool.popStack();
+			tool.setStack(0, unknown);
 			return this.next;
 		}
 	},
@@ -626,7 +658,10 @@ const constructors = {
 	},
 	ENVIRONMENT: class extends Code {
 		bind(tool) {
-			tool.pushStack(tool.getStack(0).closures);
+			if (tool.getStack(0))
+				tool.pushStack(tool.getStack(0).closures);
+			else
+				tool.pushStack(null);
 			return this.next;
 		}
 	},
@@ -649,18 +684,14 @@ const constructors = {
 			return this.next;
 		}
 	},
-	EXCEPTION: class extends Code {
+	EXCEPTION: class extends UnknownCode {
 	},
 	EXPONENTIATION: class extends BinaryCode {
 		compute(left, right) {
 			return left ** right;
 		}
 	},
-	EXTEND: class extends Code {
-		bind(tool) {
-			tool.setStack(0, unknown);
-			return this.next;
-		}
+	EXTEND: class extends UnknownCode {
 	},
 	FALSE: class extends Code {
 		bind(tool) {
@@ -687,7 +718,7 @@ const constructors = {
 		}
 		evaluate(tool) {
 			tool.pushStack(this.closure.getValue());
-			return this.next;
+			return super.evaluate(tool);
 		}
 	},
 	GET_LOCAL: class extends LocalCode {
@@ -697,22 +728,56 @@ const constructors = {
 		}
 		evaluate(tool) {
 			tool.pushStack(this.local.getValue());
-			return this.next;
+			return super.evaluate(tool);
 		}
 	},
 	GET_PROPERTY: class extends KeyCode {
+		evaluate(tool) {
+			let value = tool.popStack();
+			if (value !== unknown) {
+				if (value instanceof Object) {
+					if (Object.isFrozen(value)) {
+						let key = tool.keyString(this.param);
+						let descriptor = Object.getOwnPropertyDescriptor(value, key);
+						if (descriptor && descriptor.value) {
+							tool.pushStack(descriptor.value);
+							return this.next;
+						}
+					}
+				}
+			}
+			tool.pushStack(unknown);
+			return this.next;
+		}
 	},
 	GET_PROPERTY_AT: class extends Code {
 		bind(tool) {
-			tool.popStack();
+			let key = tool.popStack();
+			let value = tool.popStack();
+			if ((key !== unknown) && (value !== unknown)) {
+				if ((typeof key == "string") && (value instanceof Object)) {
+					if (Object.isFrozen(value)) {
+						if (key in value) {
+							tool.pushStack(value[key]);
+							return this.next;
+						}
+					}
+				}
+			}
+			tool.pushStack(unknown);
 			return this.next;
 		}
 	},
 	GET_SUPER: class extends KeyCode {
+		evaluate(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	GET_SUPER_AT: class extends Code {
 		bind(tool) {
 			tool.popStack();
+			tool.setStack(0, unknown);
 			return this.next;
 		}
 	},
@@ -723,10 +788,14 @@ const constructors = {
 		}
 	},
 	GET_VARIABLE: class extends KeyCode {
+		evaluate(tool) {
+			tool.setStack(0, unknown);
+			return this.next;
+		}
 	},
 	GLOBAL: class extends Code {
 		bind(tool) {
-			tool.pushStack(undefined);
+			tool.pushStack(unknown);
 			return this.next;
 		}
 	},
@@ -799,16 +868,8 @@ const constructors = {
 		}
 	},
 	LET_CLOSURE: class extends ClosureCode {
-		evaluate(tool) {
-			this.closure.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	LET_LOCAL: class extends LocalCode {
-		evaluate(tool) {
-			this.local.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	LINE: class extends Code {
 	},
@@ -831,6 +892,9 @@ const constructors = {
 				tool.popStack();
 				length--;
 			}
+			return this.next;
+		}
+		evaluate(tool) {
 			return this.next;
 		}
 	},
@@ -864,15 +928,19 @@ const constructors = {
 				tool.popStack();
 				length--;
 			}
-			tool.popStack();
 			return super.bind(tool);
 		}
 	},
 	NEW_CLOSURE: class extends KeyCode {
 		bind(tool) {
 			tool.scopeIndex--;
-			tool.stack[tool.scopeIndex] = new Closure(this.param, undefined);
+			this.closure = tool.stack[tool.scopeIndex] = new Closure(this.param, unknown);
 			this.index = tool.frameIndex - tool.scopeIndex;
+			return this.next;
+		}
+		evaluate(tool) {
+			tool.scopeIndex--;
+			tool.stack[tool.scopeIndex] = this.closure;
 			return this.next;
 		}
 		reportParam(tool) {
@@ -882,8 +950,13 @@ const constructors = {
 	NEW_LOCAL: class extends KeyCode {
 		bind(tool) {
 			tool.scopeIndex--;
-			tool.stack[tool.scopeIndex] = new Local(this.param, undefined);
+			this.local = tool.stack[tool.scopeIndex] = new Local(this.param, unknown);
 			this.index = tool.frameIndex - tool.scopeIndex;
+			return this.next;
+		}
+		evaluate(tool) {
+			tool.scopeIndex--;
+			tool.stack[tool.scopeIndex] = this.local;
 			return this.next;
 		}
 		reportParam(tool) {
@@ -931,11 +1004,7 @@ const constructors = {
 			return this.next;
 		}
 	},
-	OBJECT: class extends Code {
-		bind(tool) {
-			tool.pushStack({});
-			return this.next;
-		}
+	OBJECT: class extends UnknownCode {
 	},
 	PLUS: class extends UnaryCode {
 		compute(value) {
@@ -962,8 +1031,8 @@ const constructors = {
 			return super.bind(tool);
 		}
 		evaluate(tool) {
-			this.closure.setValue(tool.popStack());
-			return this.next;
+			tool.popStack();
+			return super.evaluate(tool);
 		}
 	},
 	PULL_LOCAL: class extends LocalCode {
@@ -972,8 +1041,8 @@ const constructors = {
 			return super.bind(tool);
 		}
 		evaluate(tool) {
-			this.local.setValue(tool.popStack());
-			return this.next;
+			tool.popStack();
+			return super.evaluate(tool);
 		}
 	},
 	REFRESH_CLOSURE: class extends ClosureCode {
@@ -1015,6 +1084,18 @@ const constructors = {
 			}
 			return this.next;
 		}
+		evaluate(tool) {
+			let param = this.param;
+			let closures = tool.currentFunction.closures; 
+			closures.length = param;
+			let index = 0;
+			while (index < param) {
+				tool.scopeIndex--;
+				tool.stack[tool.scopeIndex] = closures[index];
+				index++;
+			}
+			return this.next;
+		}
 	},
 	RETRIEVE_TARGET: class extends Code {
 	},
@@ -1023,16 +1104,8 @@ const constructors = {
 	RETURN: class extends Code {
 	},
 	SET_CLOSURE: class extends ClosureCode {
-		evaluate(tool) {
-			this.closure.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	SET_LOCAL: class extends LocalCode {
-		evaluate(tool) {
-			this.local.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	SET_PROPERTY: class extends KeyCode {
 		bind(tool) {
@@ -1079,15 +1152,17 @@ const constructors = {
 	},
 	START_GENERATOR: class extends Code {
 	},
-	STORE: class extends LocalCode {
+	STORE: class extends ClosureCode {
 		bind(tool) {
 			let closures = tool.getStack(0);
-			let closure = tool.getScope(this.param);
-			let index = 0;
-			while (closures[index].reference)
-				index++;
-			closures[index].reference = closure;
-			this.local = closure;
+			if (closures) {
+				let closure = tool.getScope(this.param);
+				let index = 0;
+				while (closures[index].reference)
+					index++;
+				closures[index].reference = closure;
+				this.closure = closure;
+			}
 			return this.next;
 		}
 	},
@@ -1132,11 +1207,7 @@ const constructors = {
 	},
 	TEMPLATE: class extends Code {
 	},
-	THIS: class extends Code {
-		bind(tool) {
-			tool.pushStack(unknown);
-			return this.next;
-		}
+	THIS: class extends UnknownCode {
 	},
 	THROW: class extends Code {
 		bind(tool) {
@@ -1186,27 +1257,10 @@ const constructors = {
 		}
 	},
 	UNWIND: class extends StackCode {
-		bind(tool) {
-			let index = this.param;
-			while (index > 0) {
-				tool.stack[tool.scopeIndex] = undefined;
-				tool.scopeIndex++;
-				index--;
-			}
-			return this.next;
-		}
 	},
 	VAR_CLOSURE: class extends ClosureCode {
-		evaluate(tool) {
-			this.closure.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	VAR_LOCAL: class extends LocalCode {
-		evaluate(tool) {
-			this.local.setValue(tool.getStack(0));
-			return this.next;
-		}
 	},
 	VOID: class extends UnaryCode {
 		compute(value) {
@@ -1220,66 +1274,15 @@ const constructors = {
 	YIELD: class extends Code {
 	},
 	Host,
-	Key,
 }
 
-export default class extends TOOL {
-	constructor(argv) {
-		super(argv);
-		this.hosts = null;
-		this.keys = null;
-		this.prepare(constructors);
-		
-		this.inputPath = "";
-		this.optimization = 1;
-		this.outputPath = "";
+class Tool {
+	constructor() {
+		this.optimizeBranch = 0;
+		this.optimizeBranchIf = 0;
+		this.optimizeBranchElse = 0;
 		this.verbose = false;
-		
-		let argc = argv.length;
-		for (let argi = 1; argi < argc; argi++) {
-			let option = argv[argi], name, path;
-			switch (option) {
-			case "-o":
-				argi++;
-				if (argi >= argc)
-					throw new Error("-o: no directory!");
-				name = argv[argi];
-				if (this.outputPath)
-					throw new Error("-o '" + name + "': too many directories!");
-				path = this.resolveDirectoryPath(name);
-				if (!path)
-					throw new Error("-o '" + name + "': directory not found!");
-				this.outputPath = path;
-				break;
-			case "-0":
-				this.optimization = 0;
-				break;
-			case "-1":
-				this.optimization = 1;
-				break;
-			case "-v":
-				this.verbose = true;
-				break;
-			default:
-				name = argv[argi];
-				if (this.inputPath)
-					throw new Error("'" + name + "': too many files!");
-				path = this.resolveFilePath(name);
-				if (!path)
-					throw new Error("'" + name + "': file not found!");
-				this.inputPath = path;
-				break;
-			}
-		}
-		if (!this.inputPath)
-			throw new Error("no file!");
-		if (this.outputPath) {
-			let parts = this.splitPath(this.inputPath);
-			parts.directory = this.outputPath;
-			this.outputPath = this.joinPath(parts);
-		}
-		else
-			this.outputPath = this.inputPath;
+		this.prepare(constructors);
 	}
 	append(code) {
 		let last = this.last;
@@ -1296,7 +1299,8 @@ export default class extends TOOL {
 		this.frameIndex = this.scopeIndex = this.stackIndex = 1024;
 		let code = this.first;
 		while (code) {
-			code.level = 1024 - this.stackIndex;
+			code.stackLevel = 1024 - this.stackIndex;
+			code.scopeLevel = 1024 - this.scopeIndex;
 			code = code.bind(this);
 		}
 	}
@@ -1308,6 +1312,9 @@ export default class extends TOOL {
 			code = code.evaluate(this);
 		}
 	}
+	keyString(key) @ "Tool_prototype_keyString";
+	getModule(_from) @ "Tool_prototype_getModule";
+	getPath() @ "Tool_prototype_getPath";
 	getScope(at) {
 		return this.stack[this.frameIndex - at];
 	}
@@ -1321,17 +1328,17 @@ export default class extends TOOL {
 		}
 	}
 	parse(path) {
-		let code;
+		this.hosts = null;
 		this.first = null;
 		this.last = null;
 		this.read(path, constructors);
-		code = this.first;
+		let code = this.first;
 		while (code) {
 			code.parse(this);
 			code = code.next;
 		}
 	}
-	prepare(constructors) @ "xsopt_prepare";
+	prepare(constructors) @ "Tool_prototype_prepare";
 	
 	popStack() {
 		let result = this.stack[this.stackIndex];
@@ -1342,7 +1349,7 @@ export default class extends TOOL {
 		this.stackIndex--;
 		this.stack[this.stackIndex] = slot;
 	}
-	read(path, constructors) @ "xsopt_read";
+	read(path, constructors) @ "Tool_prototype_read";
 	remove(code) {
 		let previous = code.previous;
 		let next = code.next;
@@ -1366,16 +1373,10 @@ export default class extends TOOL {
 			next.previous = by;
 		else
 			this.last = by;
-	}
-	run() {
-		let code;
-		this.parse(this.inputPath);
-		this.bind();
-		this.evaluate();
-		if (this.optimization)
-			this.optimize();
-		this.serialize(this.outputPath);
-	}
+		by.stackLevel = code.stackLevel;
+		by.scopeLevel = code.scopeLevel;
+	}	
+	report(s) @ "Tool_prototype_report"
 	serialize(path) {
 		let code;
 		this.codesDelta = 0;
@@ -1390,19 +1391,7 @@ export default class extends TOOL {
 		while (code) {
 			code.serialize2(this);
 			code = code.next;
-		}
-		
-		this.hostsCount = 0;
-		this.hostsSize = 0;
-		if (this.hosts) {
-			this.hostsSize += 2;
-			this.hosts.forEach(host => host.serialize(this));
-		}
-		
-		this.keysCount = 0;
-		this.keysSize = 2;
-		this.keys.forEach(key => key.serialize(this));
-
+		}		
 		this.codesSize = 0;
 		code = this.first;
 		while (code) {
@@ -1425,9 +1414,16 @@ export default class extends TOOL {
 	setStack(at, slot) {
 		this.stack[this.stackIndex + at] = slot;
 	}
-	write(path) @ "xsopt_write";
-
+	strlen(string) @ "Tool_prototype_strlen";
+	write(path) @ "Tool_prototype_write";
+	count(which) @ "Tool_prototype_count";
 }
 
+let tool = new Tool();
+tool.parse();
+tool.bind();
+tool.evaluate();
+tool.optimize();
+tool.serialize();
 
-
+let prototype;

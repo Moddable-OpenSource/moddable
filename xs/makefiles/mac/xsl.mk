@@ -47,6 +47,8 @@ endif
 XS_DIR ?= $(realpath ../..)
 BUILD_DIR ?= $(realpath ../../../build)
 
+XSC =  $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
+
 BIN_DIR = $(BUILD_DIR)/bin/mac/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
 PLT_DIR = $(XS_DIR)/platforms
@@ -62,6 +64,8 @@ C_OPTIONS =\
 	-fno-common\
 	$(MACOS_ARCH)\
 	$(MACOS_VERSION_MIN)\
+	-DINCLUDE_XSPLATFORM \
+	-DXSPLATFORM=\"xslOpt.h\" \
 	-I$(INC_DIR)\
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR)\
@@ -128,6 +132,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsdtoa.o \
 	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xslBase.o \
+	$(TMP_DIR)/xslOpt.o \
 	$(TMP_DIR)/xslSlot.o \
 	$(TMP_DIR)/xslStrip.o \
 	$(TMP_DIR)/xsl.o
@@ -142,17 +147,27 @@ $(TMP_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/$(NAME): $(OBJECTS)
+$(BIN_DIR)/$(NAME): $(TMP_DIR)/xslOpt.xs.o $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
+	$(CC) $(LINK_OPTIONS) $(TMP_DIR)/xslOpt.xs.o $(LIBRARIES) $(OBJECTS) -o $@
 	
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(TLS_DIR)/xsl.h
+$(OBJECTS): $(TLS_DIR)/xslOpt.h
+$(TMP_DIR)/xslOpt.o: $(TMP_DIR)/xslOpt.xs.c
+
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@
+
+$(TMP_DIR)/xslOpt.xs.o:	 $(TMP_DIR)/xslOpt.xs.c $(PLT_DIR)/xsPlatform.h $(SRC_DIR)/xsCommon.h $(SRC_DIR)/xsAll.h $(TLS_DIR)/xsl.h $(TLS_DIR)/xslOpt.h
+	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
+	$(CC) $< $(C_OPTIONS) -c -o $@
+
+$(TMP_DIR)/xslOpt.xs.c: $(TLS_DIR)/xslOpt.js
+	$(XSC) $< -c -d -o $(TMP_DIR) -p 
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/mac/debug/$(NAME)
