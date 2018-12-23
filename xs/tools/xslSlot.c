@@ -46,8 +46,6 @@ static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
 
-txCallback gxFakeCallback = (txCallback)1;
-
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
 {
 	txLinker* linker = xsGetContext(the);
@@ -182,11 +180,11 @@ void fxLinkerScriptCallback(txMachine* the)
 				linkerScript->callbackNames = fxNewLinkerChunk(linker, c * sizeof(txCallbackName));
 				linkerScript->hostsCount = c;
 				for (i = 0; i < c; i++) {
-					txCallback callback = gxFakeCallback;
+					txCallback callback = the->fakeCallback;
 					txHostFunctionBuilder* builder = &linkerScript->builders[i];
 					txCallbackName* callbackName = &linkerScript->callbackNames[i];
 					txS1 length = *p++;
-					gxFakeCallback = (txCallback)(((txU1*)gxFakeCallback) + 1);
+					the->fakeCallback = (txCallback)(((txU1*)the->fakeCallback) + 1);
 					mxDecode2(p, id);
 					builder->callback = callback;
 					builder->length = length;

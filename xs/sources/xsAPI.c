@@ -1441,8 +1441,10 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 void fxDeleteMachine(txMachine* the)
 {
 	txSlot* aSlot;
+#ifndef mxLink
 	txSlot* bSlot;
 	txSlot* cSlot;
+#endif
 
 	if (!(the->shared)) {
 	#ifdef mxProfile
@@ -1461,6 +1463,7 @@ void fxDeleteMachine(txMachine* the)
 		aSlot->flag |= XS_MARK_FLAG;
 		aSlot = aSlot->next;
 	}
+#ifndef mxLink
 	aSlot = the->firstHeap;
 	while (aSlot) {
 		bSlot = aSlot + 1;
@@ -1478,6 +1481,7 @@ void fxDeleteMachine(txMachine* the)
 		}
 		aSlot = aSlot->next;
 	}
+#endif
 	fxDelete_dtoa(the->dtoa);
 	if (!(the->shared)) {
 	#ifdef mxProfile

@@ -48,6 +48,8 @@ XS_DIR = ..\..
 BUILD_DIR = ..\..\..\build
 !ENDIF
 
+XSC = $(BUILD_DIR)\bin\win\$(GOAL)\xsc
+
 BIN_DIR = $(BUILD_DIR)\bin\win\$(GOAL)
 INC_DIR = $(XS_DIR)\includes
 PLT_DIR = $(XS_DIR)\platforms
@@ -60,6 +62,8 @@ C_OPTIONS = \
 	/D _CONSOLE \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
+	/D INCLUDE_XSPLATFORM \
+	/D XSPLATFORM=\"xslOpt.h\" \
 	/D mxLink=1 \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
@@ -69,6 +73,7 @@ C_OPTIONS = \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
+	/I$(TMP_DIR) \
 	/nologo \
 	/Zp1 
 !IF "$(GOAL)"=="debug"
@@ -132,6 +137,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsdtoa.o \
 	$(TMP_DIR)\xsre.o \
 	$(TMP_DIR)\xslBase.o \
+	$(TMP_DIR)\xslOpt.o \
 	$(TMP_DIR)\xslSlot.o \
 	$(TMP_DIR)\xslStrip.o \
 	$(TMP_DIR)\xsl.o
@@ -144,10 +150,11 @@ $(TMP_DIR) :
 $(BIN_DIR) :
 	if not exist $(BIN_DIR)\$(NULL) mkdir $(BIN_DIR)
 
-$(BIN_DIR)\$(NAME).exe : $(OBJECTS)
+$(BIN_DIR)\$(NAME).exe : $(TMP_DIR)\xslOpt.xs.o $(OBJECTS)
 	link \
 		$(LINK_OPTIONS) \
 		$(LIBRARIES) \
+		$(TMP_DIR)\xslOpt.xs.o \
 		$(OBJECTS) \
 		/implib:$(TMP_DIR)\$(NAME).lib \
 		/out:$(BIN_DIR)\$(NAME).exe
@@ -156,10 +163,20 @@ $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(TLS_DIR)\xsl.h
+$(OBJECTS) : $(TLS_DIR)\xslOpt.h
+$(TMP_DIR)/xslOpt.o: $(TMP_DIR)/xslOpt.xs.c
+
 {$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TLS_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
+	
+$(TMP_DIR)\xslOpt.xs.o:	 $(TMP_DIR)\xslOpt.xs.c $(PLT_DIR)\xsPlatform.h $(SRC_DIR)\xsCommon.h $(SRC_DIR)\xsAll.h $(TLS_DIR)\xsl.h $(TLS_DIR)\xslOpt.h
+	cl $(TMP_DIR)\xslOpt.xs.c $(C_OPTIONS) /Fo$@
+
+$(TMP_DIR)\xslOpt.xs.c: $(TLS_DIR)\xslOpt.js
+	$(XSC) $(TLS_DIR)\xslOpt.js -c -d -o $(TMP_DIR) -p 
+
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

@@ -82,6 +82,8 @@ struct sxLinker {
 	
 	txLinkerResource* firstResource;
 	
+	txMachine* realm;
+	txLinkerScript* currentScript;
 	txLinkerScript* firstScript;
 	txID scriptCount;
 	txID hostsCount;
@@ -216,6 +218,9 @@ extern void fxWriteScriptHosts(txLinkerScript* script, FILE* file);
 extern void fxWriteScriptRecord(txLinkerScript* script, FILE* file);
 extern void fxWriteSymbols(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteStrips(txLinker* linker, FILE* file);
+
+/* xslOpt.c */
+extern void fxOptimize(txLinker* linker);
 
 /* xslSlot.c */
 extern void fxLinkerScriptCallback(txMachine* the);
