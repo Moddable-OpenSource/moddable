@@ -231,7 +231,7 @@ This document provides an introduction to getting started building apps with the
 	cd C:\Users\<user>\Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
-    If you use `git` to download, Windows native binary is recommended (refer to [this issue](https://github.com/Moddable-OpenSource/moddable/issues/110)).
+    Note: If you use `git` to download, Windows native binary is recommended (refer to [this issue](https://github.com/Moddable-OpenSource/moddable/issues/110)).
 
 4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
 
@@ -344,6 +344,8 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	```
+	Note: If you see errors when `git clone` is executed, please try again after executing `autorebase.bat` in `%USERPROFILE%\msys32\`.
+
 
 	Use the v3.1 version:
 
