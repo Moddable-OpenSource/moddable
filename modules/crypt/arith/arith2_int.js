@@ -62,13 +62,56 @@ export default class Integer {
 		}
 	};
 
+	_fromChunk(chunk, sign, lsb) @ "xs_integer2_fromChunk"
 	fromChunk(chunk, sign, lsb) {
-		if (chunk instanceof Uint8Array)
-			chunk = chunk.buffer;
-		return BigInt.fromArrayBuffer(chunk, sign, lsb);
+		let a = this._fromChunk(chunk, sign, lsb);
+		if (chunk instanceof Uint8Array) {
+			let offset = chunk.byteOffset;
+			chunk = chunk.buffer.slice(offset, offset + chunk.byteLength);
+		}
+		trace("# fromChunk\n");
+		this.traceArrayBuffer(chunk);
+		let b = BigInt.fromArrayBuffer(chunk, sign, lsb);
+		trace(a.toString(16) + "\n");
+		trace(b.toString(16) + "\n");
+		trace("# " + (a == b) + "\n");
+		return a;
 	}
+	_toChunk(minBytes, signess, lsb) @ "xs_integer2_toChunk"
 	toChunk(minBytes, signess, lsb) {
-		return ArrayBuffer.fromBigInt(this.value, minBytes, signess, lsb);
+		let a = this._toChunk(this.value, minBytes, signess, lsb);
+		let b = ArrayBuffer.fromBigInt(this.value, minBytes, signess, lsb);
+		trace("# toChunk\n");
+		trace(this.value.toString(16) + "\n");
+		this.traceArrayBuffer(a);
+		this.traceArrayBuffer(b);
+		trace("# " + this.equalsArrayBuffer(a, b) + "\n");
+		return a;
+	}
+	equalsArrayBuffer(ab0, ab1) {
+		let a0 = new Uint8Array(ab0);
+		let a1 = new Uint8Array(ab1);
+		let c = a0.length;
+		if (c != a1.length)
+			return false;
+		for (let i = 0; i < c; i++) {
+			if (a0[i] != a1[i])
+				return false;
+		}
+		return true;
+	}
+	traceArrayBuffer(ab) {
+		let a = new Uint8Array(ab);
+		let c = a.length;
+		let s = "";
+		for (let i = 0; i < c; i++) {
+			let x = a[i];
+			if (x < 16)
+				s += '0';
+			s += x.toString(16);
+		}
+		s += "\n";
+		trace(s);
 	}
 	toNumber() {
 		return BigInt.asIntN(32, this.value);
