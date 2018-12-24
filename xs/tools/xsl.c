@@ -341,6 +341,13 @@ int main(int argc, char* argv[])
 				linker->realm = NULL;
 				xsDeleteMachine(the);
 				linker->firstProjection = NULL;
+				script = linker->firstScript;
+				while (script) {
+					script->builders = C_NULL;
+					script->callbackNames = C_NULL;
+					script->hostsCount = 0;
+					script = script->nextScript;
+				}
 				the = xsCreateMachine(creation, "xsl", linker);
 				mxThrowElse(the);
 				xsBeginHost(the);
