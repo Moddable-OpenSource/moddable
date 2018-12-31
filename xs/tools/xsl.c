@@ -340,6 +340,10 @@ int main(int argc, char* argv[])
 				fxOptimize(linker);
 				linker->realm = NULL;
 				xsDeleteMachine(the);
+				linker->firstCallback = NULL;
+				linker->firstBuilder = NULL;
+				linker->lastBuilder = NULL;
+				linker->builderCount = 0;
 				linker->firstProjection = NULL;
 				script = linker->firstScript;
 				while (script) {

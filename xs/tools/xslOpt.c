@@ -1130,6 +1130,8 @@ void Tool_prototype_write(xsMachine* the)
 	gxCodeSize += script->codeSize;
 	gxOptCodeSize += size;
 	fprintf(stderr, "%d/%d\n", script->codeSize - size, script->codeSize);
+	script->codeBuffer = buffer;
+	script->codeSize = size;
 }
 
 void Tool_prototype_count(xsMachine* the)
