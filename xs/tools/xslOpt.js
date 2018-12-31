@@ -218,7 +218,7 @@ class BinaryCode extends Code {
 	evaluate(tool) {
 		let right = tool.popStack();
 		let left = tool.popStack();
-		if ((left !== unknown) || (right !== unknown))
+		if ((left !== unknown) && (right !== unknown))
 			tool.pushStack(this.compute(left, right));
 		else
 			tool.pushStack(unknown);
