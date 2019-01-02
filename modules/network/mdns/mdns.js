@@ -58,6 +58,8 @@ class MDNS extends Socket {
 		if (this.probing)
 			throw new Error("not ready");
 
+		if (!service.txt)
+			service.txt = {};
 		this.services.push(service);
 
 		this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x1F | 0x8000, service, true));		// remove before adding to clear stale state in clients
