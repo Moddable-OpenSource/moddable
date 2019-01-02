@@ -974,7 +974,7 @@ const constructors = {
 	NEW_TEMPORARY: class extends Code {
 		bind(tool) {
 			tool.scopeIndex--;
-			tool.stack[tool.scopeIndex] = new Local(null, undefined);
+			tool.stack[tool.scopeIndex] = new Local(null, unknown);
 			this.index = tool.frameIndex - tool.scopeIndex;
 			return this.next;
 		}
@@ -1281,7 +1281,7 @@ class Tool {
 		this.optimizeBranch = 0;
 		this.optimizeBranchIf = 0;
 		this.optimizeBranchElse = 0;
-		this.verbose = false;
+		this.verbose = false; //this.getPath() == "?.xsb";
 		this.prepare(constructors);
 	}
 	append(code) {
