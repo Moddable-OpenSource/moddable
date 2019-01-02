@@ -363,110 +363,115 @@ int main(int argc, char* argv[])
 		fxParserHoist(parser);
 		fxParserBind(parser);
 		script = fxParserCode(parser);
-		
-		if (rename) {
-			name = rename;
+		if (parser->errorCount > 0) {
+			fprintf(stderr, "### %d error(s)\n", parser->errorCount);
+			parser->error = C_EINVAL;
 		}
 		else {
-			name = strrchr(input, mxSeparator);
-			name++;
-			dot = strrchr(name, '.');
-			*dot = 0;
- 		}
-		if (embed) {
- 	 		strcpy(path, output);
- 	 		strcat(path, name);
-			strcat(path, ".xsb");
-			file = fopen(path, "wb");
-			mxParserThrowElse(file);
+			if (rename) {
+				name = rename;
+			}
+			else {
+				name = strrchr(input, mxSeparator);
+				name++;
+				dot = strrchr(name, '.');
+				*dot = 0;
+			}
+			if (embed) {
+				strcpy(path, output);
+				strcat(path, name);
+				strcat(path, ".xsb");
+				file = fopen(path, "wb");
+				mxParserThrowElse(file);
 		
-			size = 8 + 8 + 4 + 8 + script->symbolsSize + 8 + script->codeSize;
-			if (script->hostsBuffer)
-				size += 8 + script->hostsSize;
-			size = htonl(size);
-			mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
-			mxParserThrowElse(fwrite("XS_B", 4, 1, file) == 1);
-		
-			size = 8 + 4;
-			size = htonl(size);
-			mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
-			mxParserThrowElse(fwrite("VERS", 4, 1, file) == 1);
-			byte = XS_MAJOR_VERSION;
-			mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
-			byte = XS_MINOR_VERSION;
-			mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
-			byte = XS_PATCH_VERSION;
-			mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
-			byte = (script->hostsBuffer) ? -1 : 0;
-			mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
-		
-			size = 8 + script->symbolsSize;
-			size = htonl(size);
-			mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
-			mxParserThrowElse(fwrite("SYMB", 4, 1, file) == 1);
-			mxParserThrowElse(fwrite(script->symbolsBuffer, script->symbolsSize, 1, file) == 1);
-		
-			size = 8 + script->codeSize;
-			size = htonl(size);
-			mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
-			mxParserThrowElse(fwrite("CODE", 4, 1, file) == 1);
-			mxParserThrowElse(fwrite(script->codeBuffer, script->codeSize, 1, file) == 1);
-		
-			if (script->hostsBuffer) {
-				size = 8 + script->hostsSize;
+				size = 8 + 8 + 4 + 8 + script->symbolsSize + 8 + script->codeSize;
+				if (script->hostsBuffer)
+					size += 8 + script->hostsSize;
 				size = htonl(size);
 				mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
-				mxParserThrowElse(fwrite("HOST", 4, 1, file) == 1);
-				mxParserThrowElse(fwrite(script->hostsBuffer, script->hostsSize, 1, file) == 1);
-			}
-			fclose(file);
-			file = NULL;
-		}
-		else {
-			strcpy(path, temporary);
-			strcat(path, name);
-			strcat(path, ".xs.h");
-			file = fopen(path, "w");
-			mxParserThrowElse(file);
-			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
-			fprintf(file, "#include <xsAll.h>\n");
-			fprintf(file, "#include <xs.h>\n\n");
-			fprintf(file, "extern txScript xsScript;\n\n");
-			if (script->hostsBuffer) {
-				fxWriteExterns(script, file);
-				fprintf(file, "\n");
-			}
-			fxWriteIDs(script, file);
-			fprintf(file, "\n");
-			fclose(file);
-			file = NULL;
+				mxParserThrowElse(fwrite("XS_B", 4, 1, file) == 1);
 		
-			strcpy(path, temporary);
-			strcat(path, name);
-			strcat(path, ".xs.c");
-			file = fopen(path, "w");
-			mxParserThrowElse(file);
-			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
-			fprintf(file, "#include \"%s.xs.h\"\n\n", name);
-			if (script->hostsBuffer) {
-				fxWriteHosts(script, file);
+				size = 8 + 4;
+				size = htonl(size);
+				mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
+				mxParserThrowElse(fwrite("VERS", 4, 1, file) == 1);
+				byte = XS_MAJOR_VERSION;
+				mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
+				byte = XS_MINOR_VERSION;
+				mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
+				byte = XS_PATCH_VERSION;
+				mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
+				byte = (script->hostsBuffer) ? -1 : 0;
+				mxParserThrowElse(fwrite(&byte, 1, 1, file) == 1);
+		
+				size = 8 + script->symbolsSize;
+				size = htonl(size);
+				mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
+				mxParserThrowElse(fwrite("SYMB", 4, 1, file) == 1);
+				mxParserThrowElse(fwrite(script->symbolsBuffer, script->symbolsSize, 1, file) == 1);
+		
+				size = 8 + script->codeSize;
+				size = htonl(size);
+				mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
+				mxParserThrowElse(fwrite("CODE", 4, 1, file) == 1);
+				mxParserThrowElse(fwrite(script->codeBuffer, script->codeSize, 1, file) == 1);
+		
+				if (script->hostsBuffer) {
+					size = 8 + script->hostsSize;
+					size = htonl(size);
+					mxParserThrowElse(fwrite(&size, 4, 1, file) == 1);
+					mxParserThrowElse(fwrite("HOST", 4, 1, file) == 1);
+					mxParserThrowElse(fwrite(script->hostsBuffer, script->hostsSize, 1, file) == 1);
+				}
+				fclose(file);
+				file = NULL;
 			}
-			fxWriteBuffer(script, file, "xsSymbols", (txU1*)script->symbolsBuffer, script->symbolsSize);
-			fxWriteBuffer(script, file, "xsCode", (txU1*)script->codeBuffer, script->codeSize);
-			fprintf(file, "txScript xsScript = { ");
-			if (script->hostsBuffer)
-				fprintf(file, "xsHostModule, ");
-			else
+			else {
+				strcpy(path, temporary);
+				strcat(path, name);
+				strcat(path, ".xs.h");
+				file = fopen(path, "w");
+				mxParserThrowElse(file);
+				fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
+				fprintf(file, "#include <xsAll.h>\n");
+				fprintf(file, "#include <xs.h>\n\n");
+				fprintf(file, "extern txScript xsScript;\n\n");
+				if (script->hostsBuffer) {
+					fxWriteExterns(script, file);
+					fprintf(file, "\n");
+				}
+				fxWriteIDs(script, file);
+				fprintf(file, "\n");
+				fclose(file);
+				file = NULL;
+		
+				strcpy(path, temporary);
+				strcat(path, name);
+				strcat(path, ".xs.c");
+				file = fopen(path, "w");
+				mxParserThrowElse(file);
+				fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
+				fprintf(file, "#include \"%s.xs.h\"\n\n", name);
+				if (script->hostsBuffer) {
+					fxWriteHosts(script, file);
+				}
+				fxWriteBuffer(script, file, "xsSymbols", (txU1*)script->symbolsBuffer, script->symbolsSize);
+				fxWriteBuffer(script, file, "xsCode", (txU1*)script->codeBuffer, script->codeSize);
+				fprintf(file, "txScript xsScript = { ");
+				if (script->hostsBuffer)
+					fprintf(file, "xsHostModule, ");
+				else
+					fprintf(file, "NULL, ");
+				fprintf(file, "xsSymbols, %d, ", script->symbolsSize);
+				fprintf(file, "xsCode, %d, ", script->codeSize);
+				fprintf(file, "NULL, 0, ");
 				fprintf(file, "NULL, ");
-			fprintf(file, "xsSymbols, %d, ", script->symbolsSize);
-			fprintf(file, "xsCode, %d, ", script->codeSize);
-			fprintf(file, "NULL, 0, ");
-			fprintf(file, "NULL, ");
-			fprintf(file, "{ XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, 0 } ");
-			fprintf(file, " };\n\n");
+				fprintf(file, "{ XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, 0 } ");
+				fprintf(file, " };\n\n");
 			
-			fclose(file);
-			file = NULL;
+				fclose(file);
+				file = NULL;
+			}
 		}
 	}
 	else {
@@ -480,12 +485,6 @@ int main(int argc, char* argv[])
 		#endif
 		}
 	}
-	if (parser->errorCount > 0) {
-		fprintf(stderr, "### %d error(s)\n", parser->errorCount);
-		parser->error = C_EINVAL;
-	}
-	else if (parser->warningCount > 0)
-		fprintf(stderr, "### %d warning(s)\n", parser->warningCount);
 	fxDeleteScript(script);
 	if (file)
 		fclose(file);
