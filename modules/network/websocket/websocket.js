@@ -268,7 +268,7 @@ trace("partial header!!\n");		//@@ untested
 }
 
 export class Server {
-	constructor(dictionary) {
+	constructor(dictionary = {}) {
 		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
 		this.listener.callback = listener => {
 			let socket = new Socket({listener: this.listener});
