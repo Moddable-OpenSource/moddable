@@ -30,6 +30,11 @@ extern "C" {
 
 	extern void fx_putc(void *refcon, char c);
 	extern void mc_setup(xsMachine *the);
+	extern void __wrap_espconn_init(void);
+}
+
+void __wrap_espconn_init(void)
+{
 }
 
 /*
