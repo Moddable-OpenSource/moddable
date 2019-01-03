@@ -84,6 +84,7 @@ class Code {
 		this.next = null;
 		this.stackLevel = 0;
 		this.scopeLevel = 0;
+		this.targetLevel = 0;
 	}
 	bind(tool) {
 		return this.next;
@@ -129,7 +130,14 @@ class Code {
 		if (stackLevel < 10)
 			result += " ";
 		result += stackLevel;
+		result += " ";
+		let targetLevel = this.targetLevel;
+		if (targetLevel < 100)
 			result += " ";
+		if (targetLevel < 10)
+			result += " ";
+		result += targetLevel;
+		result += " ";
 		let scopeLevel = this.scopeLevel;
 		if (scopeLevel < 100)
 			result += " ";
@@ -154,6 +162,9 @@ class Code {
 }
 
 class BranchCode extends Code {
+	evaluate(tool) {
+		return this.next;
+	}
 	parse(tool) {
 		let param = this.param;
 		let offset = this.next.offset + param;
@@ -278,8 +289,10 @@ class CodeCode extends BranchCode {
 		let code = this.next;
 		let target = this.target;
 		while (code != target) {
-			code.stackLevel = formerStackIndex - tool.stackIndex;
+			code.stackLevel = formerStackIndex - tool.stackIndex;	
 			code.scopeLevel = formerStackIndex - tool.scopeIndex;
+			if (code.targetLevel == 0)
+				code.targetLevel = code.stackLevel;
 			code = code.bind(tool);
 		}
 		
@@ -304,6 +317,10 @@ class CodeCode extends BranchCode {
 		let code = this.next;
 		let target = this.target;
 		while (code != target) {
+			let stackLevel = code.stackLevel;
+			let targetLevel = code.targetLevel;
+			if (targetLevel != stackLevel)
+				tool.setStack(0, unknown);
 			code = code.evaluate(tool);
 		}
 		
@@ -491,6 +508,10 @@ const constructors = {
 		}
 	},
 	BRANCH: class extends BranchCode {
+		bind(tool) {
+			this.target.targetLevel = this.stackLevel;
+			return this.next;
+		}
 		optimize(tool) {
 			if (this.target == this.next) {
 				tool.count(0);
@@ -504,6 +525,10 @@ const constructors = {
 		}
 	},
 	BRANCH_ELSE: class extends BranchCode {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 		evaluate(tool) {
 			this.value = tool.popStack();
 			return this.next;
@@ -528,6 +553,10 @@ const constructors = {
 		}
 	},
 	BRANCH_IF: class extends BranchCode {
+		bind(tool) {
+			tool.popStack();
+			return this.next;
+		}
 		evaluate(tool) {
 			this.value = tool.popStack();
 			return this.next;
@@ -1281,7 +1310,7 @@ class Tool {
 		this.optimizeBranch = 0;
 		this.optimizeBranchIf = 0;
 		this.optimizeBranchElse = 0;
-		this.verbose = false; //this.getPath() == "?.xsb";
+		this.verbose = false; // this.getPath() == "main.xsb";
 		this.prepare(constructors);
 	}
 	append(code) {
@@ -1301,6 +1330,8 @@ class Tool {
 		while (code) {
 			code.stackLevel = 1024 - this.stackIndex;
 			code.scopeLevel = 1024 - this.scopeIndex;
+			if (code.targetLevel == 0)
+				code.targetLevel = code.stackLevel;
 			code = code.bind(this);
 		}
 	}
