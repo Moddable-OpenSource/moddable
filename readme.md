@@ -37,7 +37,7 @@ There is also Bluetooth Low Energy (BLE) protocol support, enabling both BLE per
 
 Two APIs for building modern user interfaces are available:
 
-- **Commodetto**, a bitmap graphics library that provides a 2D graphics API. Commodetto includes with the lightweight **Poco** rendering engine, a display list renderer able to efficiently render a single scanline at a time, saving consider memory by eliminating the need for a frame buffer.
+- **Commodetto**, a bitmap graphics library that provides a 2D graphics API. Commodetto includes the lightweight **Poco** rendering engine, a display list renderer able to efficiently render a single scanline at a time, saving considerable memory by eliminating the need for a frame buffer.
 - **Piu**, a user interface framework built on top of Commodetto. Piu is an object-based framework that makes it easier to create complex, responsive layouts.
 
 The Moddable SDK also includes command line tools for image format conversion, image compression, image rotation, font compression, and more. The build system automatically makes use of these tools.
@@ -88,7 +88,7 @@ The **documentation**, **examples**, and **modules** directories share a common 
 
 ## Supported Hardware
 
-![Moddable Zero](http://www.moddable.com/images/moddable-zero-sm.jpg)
+![Moddable Zero](./documentation/assets/moddable/moddable-zero-sm.jpg)
 
 **Moddable Zero** is a prototype hardware module that consists of a touch screen paired with an ESP8266 microcontroller. Most of our example apps run on Moddable Zero, making it the easiest way for developers to experiment with the Moddable SDK on inexpensive hardware. You can read more and order your own Moddable Zero [here](http://www.moddable.com/moddable-zero.php).
 
@@ -100,7 +100,7 @@ See the **Target platforms** section of the [readme.md](examples/readme.md) docu
 
 ## Displays
 
-<img src="http://blog.moddable.com/blog/wp-content/uploads/2018/02/screens-post-sm-1.jpg" alt="Displays" height="150">
+![Displays](./documentation/assets/moddable/displays.jpg)
 
 We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) folder. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) folder.
 

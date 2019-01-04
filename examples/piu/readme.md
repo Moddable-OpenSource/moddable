@@ -1,0 +1,221 @@
+# Moddable SDK - Piu Examples
+
+These examples demonstrate how to use features of the [Piu user interface framework](../../documentation/piu/piu.md). Piu is an object-based framework that makes it easier to create complex, responsive layouts.
+
+Most of the examples are designed for a QVGA (320x240) screen, but many feature responsive layouts that work on a variety of screen sizes. All of the examples in this folder run on the desktop simulator with the exception of the `one-line` and `one-line-keyboard` examples.
+
+This document provides a brief description of each example and a preview of each app running on the desktop simulator. If you are looking for an example that demonstrates how to use a specific feature, see the list below. Keep in mind that this list provides only a few recommendations and is not a complete list of examples that use each feature.
+
+- **Images:** <a href="#images">`images`</a>, <a href="#balls">`balls`</a>, <a href="#neon-light">`neon-light`</a>
+- **Text:** <a href="#text">`text`</a>, <a href="#cards">`cards`</a>, <a href="#localization">`localization`</a>
+- **Animation:** <a href="#easing-equations">`easing-equations`</a>, <a href="#transitions">`transitions`</a>, <a href="#timeline">`timeline`</a>
+- **Touch input:** <a href="#drag">`drag`</a>, <a href="#keyboard">`keyboard`</a>, <a href="#map-puzzle">`map-puzzle`</a>
+- **Scrolling content:** <a href="#scroller">`scroller`</a>, <a href="#list">`list`</a>
+- **Networking:** <a href="#wifi-config">`wifi-config`</a>, <a href="#weather-and-mini-weather">`weather` and `mini-weather`</a>, <a href="#one-line-and-one-line-keyboard">`one-line` and `one-line-keyboard`</a>
+
+***
+
+### `balls`
+
+![](http://www.moddable.com/assets/piu-gifs/balls.gif)
+
+The `balls` example shows a full frame rate animation of bouncing balls on the screen. It is not designed for a specific screen size so it is useful for testing displays.
+
+***
+
+### `bars`
+
+![](http://www.moddable.com/assets/piu-gifs/bars.gif)
+
+The `bars` example renders black and white images and uses the Piu `Port` object to draw bars. It also shows how to use the `Timeline` and `Transition` objects, which are two distinct ways of creating animations.
+
+***
+
+### `cards`
+
+![](http://www.moddable.com/assets/piu-gifs/cards.gif)
+
+The `cards` example uses the Piu `Timeline` object to animate Moddable employees' business cards.
+
+***
+
+<!--
+### `clut`
+
+***
+-->
+
+### `countdown`
+
+![](http://www.moddable.com/assets/piu-gifs/countdown.gif)
+
+The `countdown` example counts down to a date specified in the code.  The numbers and text subtly fade between different colors.
+
+***
+
+### `drag` and `drag-color`
+
+![](http://www.moddable.com/assets/piu-gifs/drag.gif) ![](http://www.moddable.com/assets/piu-gifs/drag-color.gif)
+
+The `drag` and `drag-color` examples are great for testing touch on displays. You can move the objects by touching them and dragging across the screen. Multitouch is supported.
+
+***
+
+### `easing-equations`
+
+![](http://www.moddable.com/assets/piu-gifs/easing-equations.gif)
+
+The `easing-equations` example demonstrates the use of the easing equations built into the Moddable SDK along with the Piu `Timeline` object for creating animations. Easing equations are useful for creating smooth, natural-looking animations.
+
+***
+
+### `heartrate`
+
+![](http://www.moddable.com/assets/piu-gifs/heartrate.gif)
+
+The `heartrate` example generates a random number each second and displays it as part of a sample UI for a heartrate monitor.
+
+***
+
+### `images`
+
+![](http://www.moddable.com/assets/piu-gifs/images.gif)
+
+The `images` example demonstrates how to render GIFs, JPEGs, and PNGs.
+
+***
+
+### `keyboard`
+
+![](http://www.moddable.com/assets/piu-gifs/keyboard.gif)
+
+The `keyboard` example demonstrates the use of the keyboard module to create an on-screen keyboard for a touch screen. The keyboard module may be used on many screen sizes.
+
+***
+
+### `list`
+
+![](http://www.moddable.com/assets/piu-gifs/list.gif)
+
+The `list` example uses a Piu `Port` object to create a scrolling list of items that may be tapped. 
+
+***
+
+### `localization`
+
+![](http://www.moddable.com/assets/piu-gifs/localization.gif)
+
+The `localization` example translates text on the screen to the language selected. You can read more about how localization is implemented in the Moddable SDK [here](../..//documentation/piu/localization.md).
+
+***
+
+### `love-e-ink`
+
+![](http://www.moddable.com/assets/piu-gifs/love-e-ink.gif)
+
+The `love-e-ink` example is designed for the 128x296 Crystalfontz ePaper display. It updates small portions of the screen at a time and displays the message "Moddable ♥ Eink."
+
+***
+
+### `love-js`
+
+![](http://www.moddable.com/assets/piu-gifs/love-js.gif)
+
+The `love-js` example is designed for a 128x128 pixel screen. It plays an animation of three different images to display the message "Moddable ♥ JavaScript."
+
+***
+
+### `map-puzzle`
+
+![](http://www.moddable.com/assets/piu-gifs/map-puzzle.gif)
+
+The `map-puzzle` example implements a simple puzzle for a touch screen. Move pieces of the puzzle by touching them while dragging across the screen.
+
+***
+
+### `neon-light`
+
+![](http://www.moddable.com/assets/piu-gifs/neon-light.gif)
+
+The `neon-light` example displays English and Japanese text over a colorful, animated background.
+
+***
+
+### `one-line` and `one-line-keyboard`
+
+
+![](http://www.moddable.com/assets/piu-gifs/one-line.gif)  ![](http://www.moddable.com/assets/piu-gifs/one-line-keyboard.gif)
+
+The `one-line` and `one-line-keyboard` examples are designed to work together. The `one-line` example opens a WebSocket server and displays its IP address on screen. The `one-line-keyboard` example opens a WebSocket client that connects to the `one-line` server and sends user-inputted text for it to display.
+
+***
+
+<!--
+### `preferences`
+
+***
+-->
+
+### `scroller`
+
+![](http://www.moddable.com/assets/piu-gifs/scroller.gif)
+
+The `scroller` example shows how to create vertical and horizontal scrolling content. Tap the title bar to toggle between the two directions. 
+
+***
+
+### `spinner`
+
+![](http://www.moddable.com/assets/piu-gifs/spinner.gif)
+
+The `spinner` example implements a simple spinning animation, useful for loading screens.
+
+***
+
+### `spiral`
+
+![](http://www.moddable.com/assets/piu-gifs/spiral.gif)
+
+The `spiral` example uses a Piu `Port` object to draw spirals of random sizes on the screen.
+
+***
+
+### `text`
+
+![](http://www.moddable.com/assets/piu-gifs/text.gif)
+
+The `text` example uses the Piu `Text` object to render a variety of text styles with different sizes, colors, and alignments.
+
+***
+
+### `timeline`
+
+![](http://www.moddable.com/assets/piu-gifs/timeline.gif)
+
+The `timeline` example demonstrates the use of the `to`, `from`, and `on` functions of the Piu `Timeline` object. Tap an option to see an animation that uses the corresponding function.
+
+***
+
+### `transitions`
+
+![](http://www.moddable.com/assets/piu-gifs/transitions.gif)
+
+The `transitions example demonstrates the use of the Piu comb and wipe transitions. These are useful for creating full screen transitions.
+
+***
+
+### `weather` and `mini-weather`
+
+![](http://www.moddable.com/assets/piu-gifs/weather.gif)
+
+The `weather` and `mini-weather` examples display the weather forecast for five different cities. Forecasts are retrieved by sending HTTP requests to a cloud service.
+
+***
+
+### `wifi-config`
+
+![](http://www.moddable.com/assets/piu-gifs/wifi-config.gif)
+
+The `wifi-config` example allows the user to configure the Wi-Fi network by selecting from a list of available networks. The on-screen keyboard is used to enter the password for secure networks.
+
+***
