@@ -396,7 +396,8 @@ txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
-	txSlot* array;
+	txFlag flag = 1;
+	txSlot* array = C_NULL;
 	mxPushNumber(length);
 	mxPushInteger(1);
 	if (fxIsArray(the, instance)) {
@@ -412,13 +413,18 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 		mxPushUndefined();
 	if (the->stack->kind == XS_UNDEFINED_KIND)
 		*the->stack = mxArrayConstructor;
-	if (!mxIsReference(the->stack) || !mxIsConstructor(the->stack->value.reference))
+	else if (mxIsReference(the->stack) && mxIsConstructor(the->stack->value.reference)) {
+		if (the->stack->value.reference != mxArrayConstructor.value.reference)
+			flag = 0;
+	}
+	else
 		mxTypeError("invalid constructor");
 	fxNew(the);
 	mxPullSlot(mxResult);
-	array = fxCheckArray(the, mxResult);
-	if (array && length)
-		fxSetIndexSize(the, array, (txIndex)length);
+	if (flag) {
+		array = mxResult->value.reference->next;
+		fxSetIndexSize(the, array, length);
+	}
 	return array;
 }
 
