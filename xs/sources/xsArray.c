@@ -423,7 +423,7 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	mxPullSlot(mxResult);
 	if (flag) {
 		array = mxResult->value.reference->next;
-		fxSetIndexSize(the, array, length);
+		fxSetIndexSize(the, array, (txIndex)length);
 	}
 	return array;
 }
