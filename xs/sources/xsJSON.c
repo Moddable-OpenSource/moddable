@@ -816,6 +816,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 		anInstance = C_NULL;
 	if (theStringifier->replacer) {
 		mxPushSlot(aKey);
+		fxToString(the, the->stack);
 		mxPushSlot(aValue);
 		/* COUNT */
 		mxPushInteger(2);
