@@ -446,6 +446,12 @@ int main(int argc, char* argv[])
 			fprintf(file, "#endif\n");
 
 			fprintf(file, "#define mxAliasCount %d\n", the->aliasCount);
+			if (linker->bigintSize) {
+				fprintf(file, "#define mxBigIntCount %d\n", (int)linker->bigintSize);
+				fprintf(file, "static const txU4 gxBigIntData[mxBigIntCount];\n");
+				linker->bigintData = fxNewLinkerChunk(linker, linker->bigintSize * sizeof(txU4));
+				linker->bigintSize = 0;
+			}
 			fprintf(file, "#define mxHeapCount %d\n", (int)count);
 			fprintf(file, "static const txSlot gxHeap[mxHeapCount];\n");
 			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
@@ -496,7 +502,19 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txSlot gxStack[mxStackCount] = {\n");
 			fxPrintStack(the, file);
 			fprintf(file, "};\n\n");
-
+			if (linker->bigintSize) {
+				count = 0;
+				fprintf(file, "static const txU4 gxBigIntData[mxBigIntCount] = {");
+				while (count < linker->bigintSize) {
+					if (count % 8)
+						fprintf(file, " ");
+					else
+						fprintf(file, "\n\t");
+					fprintf(file, "0x%8.8X,", linker->bigintData[count]);
+					count++;
+				}
+				fprintf(file, "\n};\n\n");
+			}
 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
 			fprintf(file, "};\n\n");
