@@ -149,6 +149,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		mxPullSlot(theSlot);
 		break;
 	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
 		anInstance = gxTypeBigInt.toInstance(the, theSlot);
 		break;
 	case XS_REFERENCE_KIND:
