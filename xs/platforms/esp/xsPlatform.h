@@ -129,13 +129,13 @@ typedef struct DebugFragmentRecord DebugFragmentRecord;
 typedef struct DebugFragmentRecord *DebugFragment;
 
 /* machine */
+#define kDebugReaderCount (8)
 #if ESP32
 	#define mxMachinePlatform \
 		void* host; \
 		txSocket connection; \
-		void* reader; \
-		txBoolean debugOnReceive; \
-		txBoolean pendingSendBytes; \
+		void* readers[kDebugReaderCount]; \
+		uint16_t readerOffset; \
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
 		DebugFragment debugFragments; \
@@ -151,9 +151,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	#define mxMachinePlatform \
 		void* host; \
 		txSocket connection; \
-		void* reader; \
-		txBoolean debugOnReceive; \
-		txBoolean pendingSendBytes; \
+		void* readers[kDebugReaderCount]; \
+		uint16_t readerOffset; \
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
 		DebugFragment debugFragments; \
