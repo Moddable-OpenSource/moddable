@@ -100,6 +100,9 @@ struct sxLinker {
 	txU1 symbolsChecksum[16];
 	txSize symbolsSize;
 	
+	txU4* bigintData;
+	txSize bigintSize;
+	
 	txString base;
 	txSize baseLength;
 	

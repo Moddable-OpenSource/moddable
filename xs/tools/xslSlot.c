@@ -460,6 +460,9 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 							fxPrepareInstance(the, slot);
 					}
 				}
+				else if (slot->kind == XS_BIGINT_KIND) {
+					linker->bigintSize += slot->value.bigint.size;
+				}
 			}
 			slot++;
 		}
@@ -604,6 +607,7 @@ void fxPrintNumber(txMachine* the, FILE* file, txNumber value)
 
 void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 {
+	txLinker* linker = (txLinker*)(the->context);
 	fprintf(file, "\t{ ");
 	if (slot->flag & XS_DEBUG_FLAG) {
 		slot->flag &= ~XS_DEBUG_FLAG;
@@ -657,6 +661,17 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	case XS_SYMBOL_KIND: {
 		fprintf(file, ".kind = XS_SYMBOL_KIND}, ");
 		fprintf(file, ".value = { .symbol = %d } ", slot->value.symbol);
+	} break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND: {
+		fprintf(file, ".kind = XS_BIGINT_X_KIND}, ");
+		fprintf(file, ".value = { .bigint = { ");
+		fprintf(file, ".data = (txU4*)&gxBigIntData[%d], ", linker->bigintSize);
+		fprintf(file, ".size = %d, ", slot->value.bigint.size);
+		fprintf(file, ".sign = %d, ", slot->value.bigint.sign);
+		fprintf(file, " } } ");
+		c_memcpy(linker->bigintData + linker->bigintSize, slot->value.bigint.data, slot->value.bigint.size * sizeof(txU4));
+		linker->bigintSize += slot->value.bigint.size;
 	} break;
 	case XS_REFERENCE_KIND: {
 		fprintf(file, ".kind = XS_REFERENCE_KIND}, ");

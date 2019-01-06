@@ -278,12 +278,12 @@ void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data)
 txSlot* fxBigIntCheck(txMachine* the, txSlot* it)
 {
 	txSlot* result = C_NULL;
-	if (it->kind == XS_BIGINT_KIND)
+	if ((it->kind == XS_BIGINT_KIND) || (it->kind == XS_BIGINT_X_KIND))
 		result = it;
 	else if (it->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = it->value.reference;
 		it = instance->next;
-		if ((it) && (it->flag & XS_INTERNAL_FLAG) && (it->kind == XS_BIGINT_KIND))
+		if ((it) && (it->flag & XS_INTERNAL_FLAG) && ((it->kind == XS_BIGINT_KIND) || (it->kind == XS_BIGINT_X_KIND)))
 			result = it;
 	}
 	return result;
