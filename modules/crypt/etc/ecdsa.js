@@ -37,17 +37,16 @@
 
 import Crypt from "crypt";
 import PKCS1 from "pkcs1";
-import Arith from "arith";
+import Mont from "mont";
+import EC from "ec";
 
 export default class ECDSA {
 	constructor(key, priv) {
 		this.u = priv ? key.du: key.Qu;
 		this.G = key.G;
-		this.orderSize = key.n.sizeof();
-		this.z = new Arith.Z();
-		this.n = new Arith.Module(this.z, key.n);
-		this.m = new Arith.Module(this.z, key.p);
-		this.ec = new Arith.EC(key.a, key.b, this.m);
+		this.orderSize = (BigInt.bitLength(key.n) + 7) >>> 3;
+		this.n = new Mont({m: key.n});
+		this.ec = new EC(key.a, key.b, key.p);
 		this.k = key.k;		// just for the debugging purpose
 	};
 	_sign(H) {
@@ -56,15 +55,15 @@ export default class ECDSA {
 		var du = this.u;
 		var G = this.G;
 		var n = this.n;
-		var e = new Arith.Integer(H);
+		var e = BigInt.fromArrayBuffer(H);
 		do {
 			var k = this.k;
 			if (!k)
-				var k = this.randint(n.m, this.z);
+				var k = this.randint(n.m);
 			var R = ec.mul(G, k);
 			var r = R.X;
 			var s = n.mul(n.add(e, n.mul(du, r)), n.mulinv(k));
-		} while (s.isZero());
+		} while (s == 0);
 		var sig = new Object;
 		sig.r = r;
 		sig.s = s;
@@ -85,7 +84,7 @@ export default class ECDSA {
 		var Qu = this.u;
 		var G = this.G;
 		var n = this.n;
-		var e = new Arith.Integer(H);
+		var e = BigInt.fromArrayBuffer(H);
 		var s_inv = n.mulinv(s);
 		var u1 = n.mul(e, s_inv);
 		var u2 = n.mul(r, s_inv);
@@ -99,10 +98,10 @@ export default class ECDSA {
 		var s = PKCS1.OS2IP(sig.slice(l, l*2));
 		return this._verify(H, r, s);
 	};
-	static randint(max, z) {
-		var i = new Arith.Integer(Crypt.rng(max.sizeof()));
-		while (i.comp(max) >= 0)
-			i = z.lsr(i, 1);
+	static randint(max) {
+		var i = BigInt.fromArrayBuffer(Crypt.rng(BigInt.bitLength(max) >>> 3));
+		while (i >= max)
+			i >>>= 1;
 		return i;
 	};
 };

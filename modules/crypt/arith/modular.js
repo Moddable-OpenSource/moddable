@@ -35,22 +35,38 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
-
-export default class EC @ "xs_ec_destructor" {
-	constructor(a, b, m) {
-		this.a = a;
-		this.b = b;
+export default class Modular {
+	constructor(m) {
 		this.m = m;
-		this._proto_ecpoint = Arith.ECPoint.prototype;
-		this._proto_int = Arith.Integer.prototype;
-		this._init();
 	};
-	inv(a) @ "xs_ec_inv";
-	add(a, b) @ "xs_ec_add";
-	mul(a, k) @ "xs_ec_mul";
-	mul2(a1, k1, a2, k2) @ "xs_ec_mul2";
-	_init() @ "xs_ec_init";
+	add(a, b) {
+		return a + b % this.m;
+	}
+	inv(a) {
+		return this.m - a;
+	}
+	sub(a, b) {
+		let c = (a - b) % this.m;
+		return c >= 0n ? c : c + this.m;
+	}
+	mul(a, b) {
+		return a * b % this.m;
+	}
+	square(a) {
+		return a * a % this.m;	// can be optimized
+	}
+	mulinv(a) {
+		return this._mulinv_general(a, this.m);
+	}
+	_mulinv_general(a, m) @ "xs_mod2_mulinv_general";
+	_mulinv_euclid(a, m) @ "xs_mod2_mulinv_euclid";
+	exp(a, e) {
+		return this._exp(a, e, this.m);
+	}
+	_exp(a, e, m) @ "xs_mod2_exp";
+	mod(a) {
+		return a % this.m;
+	}
 };
 
-Object.freeze(EC.prototype);
+Object.freeze(Modular.prototype);

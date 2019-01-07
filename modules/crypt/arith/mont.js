@@ -35,41 +35,27 @@
  *       limitations under the License.
  */
 
-import Integer from "arith2_int";
+import Modular from "modular";
 
-export default class ECPoint {
-	constructor(x, y, identity = false) {
-		this.x = x.valueOf();
-		this.y = y.valueOf();
-		this.identity = identity;
-	};
-	get X() {
-		return new Integer(this.x);
+let Mont = class extends Modular {
+	constructor(dict) {
+		super(dict.m);
+		this.method = (undefined === dict.method) ? this.LR : dict.method;
+		this.sw_param = dict.sw_param;
 	}
-	get Y() {
-		return new Integer(this.y);
+	exp(a, e) {
+		if (this.method == this.LR)
+			return this._exp_LR(a, e, this.m);
+		else
+			return this._exp_SW(a, e, this.m, this.sw_param);
 	}
-	set X(x) {
-		this.x = x.valueOf();
-	}
-	set Y(y) {
-		this.y = y.valueOf();
-	}
-	isZero() {
-		return this.identify;
-	};
-	toString() {
-		return this.x + "," + this.y;
-	}
-	static serialize(o) {
-		o.toString();
-	};
-	static parse(txt) {
-		var a = txt.split(",");
-		if (a.length == 2) {
-			return new ECPoint(new Integer(a[0]), new Integer(a[1]));
-		}
-	};
+	_exp_LR(a, e, m) @ "xs_mont2_exp_LR";
+	_exp_SW(a, e, m, sw_param) @ "xs_mont2_exp_SW";
 };
 
-Object.freeze(ECPoint.prototype);
+Mont.prototype.LR = 0;
+Mont.prototype.SW = 1;
+
+Object.freeze(Mont.prototype);
+
+export default Mont;

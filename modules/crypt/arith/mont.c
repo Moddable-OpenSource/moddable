@@ -35,25 +35,39 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
+#include "xsPlatform.h"
+#include "xsmc.h"
+#include "xsBigIntEx.h"
 
-export default class Module @ "xs_mod_destructor" {
-	constructor(z, m) {
-		this._proto_int = Arith.Integer.prototype;
-		this.z = z || new Arith.Z();
-		this.m = m;
-		this._init(this.z, m);
-	};
-	add(a, b) @ "xs_mod_add";
-	inv(a) @ "xs_mod_inv";
-	sub(a, b) @ "xs_mod_sub";
-	mul(a, b) @ "xs_mod_mul";
-	square(a) @ "xs_mod_square";
-	mulinv(a) @ "xs_mod_mulinv";
-	exp(a, e) @ "xs_mod_exp";
-	exp2(a1, e1, a2, e2) @ "xs_mod_exp2";
-	mod(a) @ "xs_mod_mod";
-	_init(z, m) @ "xs_mod_init";
-};
+extern txBigInt *fxBigInt_mont_exp_LR(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m);
+extern txBigInt *fxBigInt_mont_exp_SW(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m, int param);
 
-Object.freeze(Module.prototype);
+void
+xs_mont2_exp_LR(xsMachine *the)
+{
+	txBigInt *a, *e, *m, *r;
+
+	if (xsmcArgc < 3)
+		return;
+	a = xsmcToBigInt(xsArg(0));
+	e = xsmcToBigInt(xsArg(1));
+	m = xsmcToBigInt(xsArg(2));
+	r = fxBigInt_mont_exp_LR(the, NULL, a, e, m);
+	xsmcSetBigInt(xsResult, r);
+}
+
+void
+xs_mont2_exp_SW(xsMachine *the)
+{
+	txBigInt *a, *e, *m, *r;
+	int param;
+
+	if (xsmcArgc < 4)
+		return;
+	a = xsmcToBigInt(xsArg(0));
+	e = xsmcToBigInt(xsArg(1));
+	m = xsmcToBigInt(xsArg(2));
+	param = xsmcToInteger(xsArg(3));
+	r = fxBigInt_mont_exp_SW(the, NULL, a, e, m, param);
+	xsmcSetBigInt(xsResult, r);
+}

@@ -36,7 +36,6 @@
  */
 
 import {Mode, GHASH} from "crypt";
-import Arith from "arith";
 import Bin from "bin";
 
 export default class GCM {
@@ -59,9 +58,9 @@ export default class GCM {
 		}
 		this.y0 = iv;
 		// start with y1
-		let y1 = new Arith.Integer(iv);
-		y1.inc();
-		this.ctr.setIV(y1.toChunk());
+		let y1 = BigInt.fromArrayBuffer(iv);
+		y1++;
+		this.ctr.setIV(ArrayBuffer.fromBigInt(y1));
 	}
 	encrypt(data, buf) {
 		buf = this.ctr.encrypt(data, buf);

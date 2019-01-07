@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+#include "xsPlatform.h"
 #include "xs.h"		/* for mxLittleEndian */
 #include "ghash.h"
 
@@ -139,7 +140,7 @@ ghash_create(ghash_t *ghash)
 }
 
 void
-ghash_fin(ghash_t *ghash, uint8 *result)
+ghash_fin(ghash_t *ghash, uint8_t *result)
 {
 	uint128_t l;
 

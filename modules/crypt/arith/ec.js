@@ -35,9 +35,32 @@
  *       limitations under the License.
  */
 
-#include "xsPlatform.h"
-#include "xs.h"
+import ECPoint from "ecp";
 
-#define crypt_malloc	c_malloc
-#define crypt_free	c_free
-extern void crypt_rng(void *buf, size_t sz);
+export default class EC {
+	constructor(a, b, m) {
+		this.a = a;
+		this.b = b;
+		this.m = m;
+	};
+	inv(p) {
+		return new ECPoint(this.m - p.y(), p.x, p.identity);
+	}
+	add(a, b) {
+		let r = this._add(a, b);
+		return new ECPoint(r.x, r.y, r.identity);
+	}
+	_add(a, b) @ "xs_ec2_add";
+	mul(a, k) {
+		let r = this._mul(a, k);
+		return new ECPoint(r.x, r.y, r.identity);
+	}
+	_mul(a, k) @ "xs_ec2_mul";
+	mul2(a1, k1, a2, k2) {
+		let r = this._mul2(a1, k1, a2, k2);
+		return new ECPoint(r.x, r.y, r.identity);
+	}
+	_mul2(a1, k1, a2, k2) @ "xs_ec2_mul2";
+};
+
+Object.freeze(EC.prototype);

@@ -35,56 +35,50 @@
  *       limitations under the License.
  */
 
-import Integer from "arith2_int";
+#include "xsPlatform.h"
+#include "xsmc.h"
+#include "xsBigIntEx.h"
 
-export default class Z {
-	constructor() {
-	};
-	add(a, b) {
-		return new Integer(a.value + b.value);
-	}
-	sub(a, b) {
-		return new Integer(a.value - b.value);
-	}
-	mul(a, b) {
-		return new Integer(a.value * b.value);
-	}
-	div2(a, b) {
-		return {q: new Integer(a.value / b.value), r: new Integer(a.value % b.value)};
-	}
-	div(a, b) {
-		return new Integer(a.value / b.value);
-	}
-	mod(a, b) {
-		return new Integer(a.value % b.value);
-	}
-	square(a) {
-		return new Integer(a.value * a.value);
-	}
-	xor(a, b) {
-		return new Integer(a.value ^ b.value);
-	}
-	or(a, b) {
-		return new Integer(a.value | b.value);
-	}
-	and(a, b) {
-		return new Integer(a.value & b.value);
-	}
-	lsl(a, b) {
-		return new Integer(a.value << b.value);
-	}
-	lsr(a, b) {
-		return new Integer(a.value >>> b.value);
-	}
-	inc(a, d) {
-		return new Integer(a.value + BigInt(d));
-	};
-	toString(i, radix) {
-		return i.value.toString(radix);
-	}
-	toInteger(digits, radix) {
-		return new Integer(BigInt(radix == 16 ? "0x" + digits : digits));
-	}
-};
+extern txBigInt *fxBigInt_mod_mulinv_general(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
+extern txBigInt *fxBigInt_mod_mulinv_euclid(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
+extern txBigInt *fxBigInt_mod_exp_LR(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m);
 
-Object.freeze(Z.prototype);
+void
+xs_mod2_mulinv_general(xsMachine *the)
+{
+	txBigInt *a, *m, *r;
+
+	if (xsmcArgc < 2)
+		return;
+	a = xsmcToBigInt(xsArg(0));
+	m = xsmcToBigInt(xsArg(1));
+	r = fxBigInt_mod_mulinv_general(the, NULL, a, m);
+	xsmcSetBigInt(xsResult, r);
+}
+
+void
+xs_mod2_mulinv_euclid(xsMachine *the)
+{
+	txBigInt *a, *m, *r;
+
+	if (xsmcArgc < 2)
+		return;
+	a = xsmcToBigInt(xsArg(0));
+	m = xsmcToBigInt(xsArg(1));
+	r = fxBigInt_mod_mulinv_euclid(the, NULL, a, m);
+	xsmcSetBigInt(xsResult, r);
+}
+
+void
+xs_mod2_exp(xsMachine *the)
+{
+	txBigInt *a, *e, *m, *r;
+
+	if (xsmcArgc < 3)
+		return;
+	a = xsmcToBigInt(xsArg(0));
+	e = xsmcToBigInt(xsArg(1));
+	m = xsmcToBigInt(xsArg(2));
+	r = fxBigInt_mod_exp_LR(the, NULL, a, e, m);
+	xsmcSetBigInt(xsResult, r);
+}

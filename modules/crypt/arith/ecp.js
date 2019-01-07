@@ -35,31 +35,39 @@
  *       limitations under the License.
  */
 
-import Integer from "arith2_int";
-import Module from "arith2_mod";
-
-let Mont = class extends Module {
-	constructor(dict) {
-		super(dict.z, dict.m);
-		this.method = (undefined === dict.method) ? this.LR : dict.method;
-		this.sw_param = dict.sw_param;
+export default class ECPoint {
+	constructor(x, y, identity = false) {
+		this.x = x;
+		this.y = y;
+		this.identity = identity;
+	};
+	get X() {
+		return this.x;
 	}
-	exp(a, e) {
-		if (this.method == this.LR)
-			return new Integer(this._exp_LR(a.value, e.value, this.m));
-		else
-			return new Integer(this._exp_SW(a.value, e.value, this.m, this.sw_param));
+	get Y() {
+		return this.y;
 	}
-	_exp_LR(a, e, m) @ "xs_mont2_exp_LR";
-	_exp_SW(a, e, m, sw_param) @ "xs_mont2_exp_SW";
-	mulinv(a) {
-		return new Integer(this._mulinv_euclid(a.value, this.m));
+	set X(x) {
+		this.x = x;
 	}
+	set Y(y) {
+		this.y = y;
+	}
+	isZero() {
+		return this.identify;
+	};
+	toString() {
+		return this.x + "," + this.y;
+	}
+	static serialize(o) {
+		o.toString();
+	};
+	static parse(txt) {
+		var a = txt.split(",");
+		if (a.length == 2) {
+			return new ECPoint(a[0], a[1]);
+		}
+	};
 };
 
-Mont.prototype.LR = 0;
-Mont.prototype.SW = 1;
-
-Object.freeze(Mont.prototype);
-
-export default Mont;
+Object.freeze(ECPoint.prototype);

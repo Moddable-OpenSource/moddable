@@ -36,7 +36,6 @@
  */
 
 import Crypt from "crypt";
-import Arith from "arith";
 
 function howmany(x, y)
 {
