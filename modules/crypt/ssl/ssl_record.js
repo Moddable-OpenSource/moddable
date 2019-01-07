@@ -39,7 +39,6 @@ import handshakeProtocol from "ssl/handshake";
 import changeCipherSpec from "ssl/changecipher";
 import SSLStream from "ssl/stream";
 import SSLAlert from "ssl/alert";
-import Crypt from "crypt";
 import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";

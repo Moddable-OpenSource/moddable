@@ -200,10 +200,6 @@ export const supportedCipherSuites = [
 //	},
 ];
 
-Object.freeze(supportedCipherSuites);
-for (let i = 0; i < supportedCipherSuites.length; i++) {
-	Object.freeze(supportedCipherSuites[i]);
-	Object.freeze(supportedCipherSuites[i].value);
-}
+Object.freeze(supportedCipherSuites, true);
 
 export default supportedCipherSuites;

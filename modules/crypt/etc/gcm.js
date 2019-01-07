@@ -93,3 +93,5 @@ export default class GCM {
 		}
 	};
 };
+
+Object.freeze(GCM.prototype);

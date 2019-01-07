@@ -54,7 +54,7 @@ export default class ECPoint {
 		this.y = y;
 	}
 	isZero() {
-		return this.identify;
+		return this.identity;
 	};
 	toString() {
 		return this.x + "," + this.y;
@@ -63,8 +63,8 @@ export default class ECPoint {
 		o.toString();
 	};
 	static parse(txt) {
-		var a = txt.split(",");
-		if (a.length == 2) {
+		let a = txt.split(",");
+		if (2 === a.length) {
 			return new ECPoint(a[0], a[1]);
 		}
 	};

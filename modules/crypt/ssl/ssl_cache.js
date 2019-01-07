@@ -56,8 +56,8 @@ export default {
 		this.secret = secret;
 	},
 	deleteSessionID(id) {
-		this.host = undefined;
-		this.id = undefined;
-		this.secret = undefined;
+		delete this.host;
+		delete this.id;
+		delete this.secret;
 	}
 };

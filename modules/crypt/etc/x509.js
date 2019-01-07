@@ -39,7 +39,7 @@ import BER from "ber";
 
 let X509 = {
 	decode(buf) {
-		var ber = new BER(buf);
+		let ber = new BER(buf);
 		if (ber.getTag() != 0x30)
 			throw new Error("x509: malformed input");
 		ber.getLength();
@@ -51,8 +51,8 @@ let X509 = {
 		};
 	},
 	decodeTBS(buf) {
-		var tbs = {};
-		var ber = new BER(buf);
+		let tbs = {};
+		let ber = new BER(buf);
 		if (ber.getTag() != 0x30)
 			throw new Error("x509: malfromed TBS");
 		ber.getLength();
@@ -69,19 +69,19 @@ let X509 = {
 		return tbs;
 	},
 	getSPK(buf) {
-		var spki = this._decodeSPKI(buf);
+		let spki = this._decodeSPKI(buf);
 		if (!spki)
 			throw new Error("x509: no SPKI");
-		var ber = new BER(spki);
+		let ber = new BER(spki);
 		if (ber.getTag() == 0x30) {
 			ber.getLength();
 			if (ber.getTag() == 0x30) {
-				var len = ber.getLength();
-				var endp = ber.i + len;
-				var algo = ber.getObjectIdentifier();
+				let len = ber.getLength();
+				let endp = ber.i + len;
+				let algo = ber.getObjectIdentifier();
 				if (ber.i < endp)
 					ber.next();	// OPTIONAL: parameters -- NULL for RSA
-				var spk = ber.getBitString();
+				let spk = ber.getBitString();
 				if (spk)
 					spk.algo = algo;
 				return spk;
@@ -89,9 +89,9 @@ let X509 = {
 		}
 	},
 	decodeSPKI(buf) {
-		var spk = this.getSPK(buf);
+		let spk = this.getSPK(buf);
 		if (spk) {
-			var ber = new BER(spk);
+			let ber = new BER(spk);
 			switch (spk.algo.toString()) {
 			case [1, 2, 840, 113549, 1, 1, 1].toString():
 			case [1, 3, 14, 3, 2, 11].toString():
@@ -113,25 +113,25 @@ let X509 = {
 		throw new Error("x509: bad SPKI");
 	},
 	decodeSKI(buf) {
-		var ski = this.decodeExtension(buf, [2, 5, 29, 14]);
+		let ski = this.decodeExtension(buf, [2, 5, 29, 14]);
 		if (ski) {
 			// must be a OCTET STRING
-			var ber = new BER(ski);
+			let ber = new BER(ski);
 			return ber.getOctetString()
 		}
 		// make up SKI by SHA1(SPK)
-		var spk = this.getSPK(buf);
+		let spk = this.getSPK(buf);
 		if (!spk)
 			throw new Error("x509: no SPK!?");
 		return (new Crypt.SHA1()).process(spk);
 	},
 	decodeAKI(buf) {
-		var aki = this.decodeExtension(buf, [2, 5, 29, 35]);
+		let aki = this.decodeExtension(buf, [2, 5, 29, 35]);
 		if (aki) {
-			var ber = new BER(aki);
+			let ber = new BER(aki);
 			ber.getTag();	// SEQUENCE
-			var len = ber.getLength();
-			var endp = ber.i + len;
+			let len = ber.getLength();
+			let endp = ber.i + len;
 			while (ber.i < endp) {
 				if ((ber.getTag() & 0x1f) == 0) {
 					len = ber.getLength();

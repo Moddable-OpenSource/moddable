@@ -35,7 +35,7 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
+import RNG from "rng";
 import BER from "ber";
 
 export default class PKCS1 {
@@ -85,7 +85,7 @@ export default class PKCS1 {
 		return BigInt.fromArrayBuffer(OS);
 	};
 	static randint(max, z) {
-		var i = BigInt.fromArrayBuffer(Crypt.rng(BigInt.bitLength(max) >>> 3));
+		var i = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(max) >>> 3));
 		while (i >= max)
 			i >>>= 1;
 		return i;
@@ -111,3 +111,5 @@ export default class PKCS1 {
 		return key;
 	};
 };
+
+Object.freeze(PKCS1.prototype);

@@ -89,3 +89,5 @@ export default class DSA {
 		return(this._verify(H, r, s));
 	};
 };
+
+Object.freeze(DSA.prototype);

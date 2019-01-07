@@ -44,7 +44,7 @@ export default class EC {
 		this.m = m;
 	};
 	inv(p) {
-		return new ECPoint(this.m - p.y(), p.x, p.identity);
+		return new ECPoint(this.m - p.y, p.x, p.identity);
 	}
 	add(a, b) {
 		let r = this._add(a, b);

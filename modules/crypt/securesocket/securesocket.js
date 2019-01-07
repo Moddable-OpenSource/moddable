@@ -144,5 +144,6 @@ class SecureSocket {
 		delete this.data;
 	};
 };
+Object.freeze(SecureSocket.prototype);
 
 export default SecureSocket;
