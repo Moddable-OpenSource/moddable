@@ -1,12 +1,12 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
 	"modules": {
 		"*": [
-			"./main",
-			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/crypt/arith/*",
-			"$(MODULES)/crypt/etc/*",
+			"./main"
 		]
 	},
 }

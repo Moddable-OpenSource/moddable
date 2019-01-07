@@ -12,7 +12,8 @@
  *
  */
 
-import Arith from "arith";
+import ECPoint from "ecp";
+import EC from "ec";
 import RNG from "rng";
 import ECDSA from "ecdsa";
 import {Digest} from "crypt";
@@ -41,30 +42,29 @@ let ks = "0xA6E3C57DD01ABE90086538398355DD4C3B17AA873382B0F24D6129493D8AAD60";
 let rs = "0xEFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716";
 let ss = "0xF7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8";
 
-let m = new Arith.Integer(ms);
-let a = new Arith.Integer(as);
-let b = new Arith.Integer(bs);
-let Gx = new Arith.Integer(Gxs);
-let Gy = new Arith.Integer(Gys);
-let n = new Arith.Integer(ns);
-let X = new Arith.Integer(Xs);
-let k = new Arith.Integer(ks);
-let r = new Arith.Integer(rs);
-let s = new Arith.Integer(ss);
+let m = BigInt(ms);
+let a = BigInt(as);
+let b = BigInt(bs);
+let Gx = BigInt(Gxs);
+let Gy = BigInt(Gys);
+let n = BigInt(ns);
+let X = BigInt(Xs);
+let k = BigInt(ks);
+let r = BigInt(rs);
+let s = BigInt(ss);
 
-let G = new Arith.ECPoint(Gx, Gy);
-let ec = new Arith.EC(a, b, new Arith.Module(new Arith.Z(), m));
+let G = new ECPoint(Gx, Gy);
+let ec = new EC(a, b, m);
 let P = ec.mul(G, X);
-if (P.X.comp(new Arith.Integer(Uxs)) != 0 ||
-    P.Y.comp(new Arith.Integer(Uys)) != 0)
+if (P.X != BigInt(Uxs) || P.Y != BigInt(Uys))
 	trace("ec.mul failed!\n");
 
 let curve = new Curve("secp256r1");
-let Ps = curve.dh(X);
-trace("curve.dh: " + (new Arith.Integer(Ps)).toString(16) + "\n");
+let Ps = curve.dh(ArrayBuffer.fromBigInt(X));
+trace("curve.dh: " + (BigInt.fromArrayBuffer(Ps)).toString(16) + "\n");
 let Z = curve.Z(Ps);
-if ((new Arith.Integer(Z)).comp(new Arith.Integer(Uxs)) != 0)
-	trace("cuve.dh failed: " + (new Arith.Integer(Z)).toString(16) + "\n");
+if (BigInt.fromArrayBuffer(Z) != BigInt(Uxs))
+	trace("cuve.dh failed: " + (BigInt(Z)).toString(16) + "\n");
 
 let key = {
 	G: G,
@@ -81,12 +81,14 @@ let ecdsa = new ECDSA(key, true);
 let digest = new Digest("SHA256");
 let H = digest.process(message);
 let sig = ecdsa.sign(H);
-trace("sig: " + (new Arith.Integer(sig)).toString(16) + "\n")
-let l = n.sizeof();
-if (r.comp(new Arith.Integer(sig.slice(0, l))) == 0 &&
-    s.comp(new Arith.Integer(sig.slice(l, l*2))) == 0)
+trace("sig: " + (BigInt.fromArrayBuffer(sig)).toString(16) + "\n")
+let l = (BigInt.bitLength(n) + 7) >>> 3;
+
+if (r == BigInt.fromArrayBuffer(sig.slice(0, l)) &&
+    s == BigInt.fromArrayBuffer(sig.slice(l, l*2)))
 	trace("ecdsa: succeeded\n");
-else
+else {
 	trace("ecdsa: failed!\n");
-
-
+	trace("r = " + r.toString(16) + "\n");
+	trace("s = " + s.toString(16) + "\n");
+}
