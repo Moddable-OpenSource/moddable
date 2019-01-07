@@ -37,14 +37,14 @@
 
 import Modular from "modular";
 
-let Mont = class extends Modular {
+class Mont extends Modular {
 	constructor(dict) {
 		super(dict.m);
 		this.method = (undefined === dict.method) ? this.LR : dict.method;
 		this.sw_param = dict.sw_param;
 	}
 	exp(a, e) {
-		if (this.method == this.LR)
+		if (this.method === this.LR)
 			return this._exp_LR(a, e, this.m);
 		else
 			return this._exp_SW(a, e, this.m, this.sw_param);

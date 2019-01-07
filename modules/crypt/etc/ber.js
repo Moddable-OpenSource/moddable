@@ -437,3 +437,5 @@ export default class BER {
 		return res;
 	};
 };
+
+Object.freeze(BER.prototype);

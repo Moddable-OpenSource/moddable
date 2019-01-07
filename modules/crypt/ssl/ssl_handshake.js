@@ -67,7 +67,7 @@ const MD5 = 1;
 const SHA1 = 2;
 const SHA256 = 4;
 
-const extension_type = {
+const extension_type = Object.freeze({
 	tls_server_name: 0,
 	tls_max_fragment_length: 1,
 	tls_client_certification_url: 2,
@@ -78,17 +78,15 @@ const extension_type = {
 	tls_ec_point_formats: 11,
 	tls_signature_algorithms: 13,
 	tls_application_layer_protocol_negotiation: 16,
-};
-Object.freeze(extension_type);
+});
 
-const named_curves = {
+const named_curves = Object.freeze({
 	secp256r1: 23,
 	secp384r1: 24,
 	secp521r1: 25,
 	x25519: 29,
 	x448: 30,
-};
-Object.freeze(named_curves);
+});
 
 function handshakeDigestUpdate(session, data)
 {

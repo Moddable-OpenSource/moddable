@@ -162,3 +162,5 @@ export default class PKCS1_5 {
 		return M;
 	};
 };
+
+Object.freeze(PKCS1_5.prototype);

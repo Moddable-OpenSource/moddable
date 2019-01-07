@@ -95,8 +95,6 @@ xs_ec2_add(xsMachine *the)
 	txECPoint r, p1, p2;
 	int i = 0;
 
-	if (xsmcArgc < 2)
-		return;
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
 	get_ecp(the, &p1, &xsArg(0), &i);
@@ -114,8 +112,6 @@ xs_ec2_mul(xsMachine *the)
 	txBigInt *k;
 	int i = 0;
 
-	if (xsmcArgc < 2)
-		return;
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
 	get_ecp(the, &p, &xsArg(0), &i);
@@ -133,8 +129,6 @@ xs_ec2_mul2(xsMachine *the)
 	txBigInt *k1, *k2;
 	int i = 0;
 
-	if (xsmcArgc < 4)
-		return;
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
 	get_ecp(the, &p1, &xsArg(0), &i);

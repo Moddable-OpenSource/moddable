@@ -35,7 +35,7 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
+import RNG from "rng";
 import PKCS1 from "pkcs1";
 import Mont from "mont";
 import EC from "ec";
@@ -99,9 +99,10 @@ export default class ECDSA {
 		return this._verify(H, r, s);
 	};
 	static randint(max) {
-		var i = BigInt.fromArrayBuffer(Crypt.rng(BigInt.bitLength(max) >>> 3));
+		var i = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(max) >>> 3));
 		while (i >= max)
 			i >>>= 1;
 		return i;
 	};
 };
+Object.freeze(ECDSA.prototype);

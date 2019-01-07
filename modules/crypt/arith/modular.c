@@ -48,8 +48,6 @@ xs_mod2_mulinv_general(xsMachine *the)
 {
 	txBigInt *a, *m, *r;
 
-	if (xsmcArgc < 2)
-		return;
 	a = xsmcToBigInt(xsArg(0));
 	m = xsmcToBigInt(xsArg(1));
 	r = fxBigInt_mod_mulinv_general(the, NULL, a, m);
@@ -61,8 +59,6 @@ xs_mod2_mulinv_euclid(xsMachine *the)
 {
 	txBigInt *a, *m, *r;
 
-	if (xsmcArgc < 2)
-		return;
 	a = xsmcToBigInt(xsArg(0));
 	m = xsmcToBigInt(xsArg(1));
 	r = fxBigInt_mod_mulinv_euclid(the, NULL, a, m);
@@ -74,8 +70,6 @@ xs_mod2_exp(xsMachine *the)
 {
 	txBigInt *a, *e, *m, *r;
 
-	if (xsmcArgc < 3)
-		return;
 	a = xsmcToBigInt(xsArg(0));
 	e = xsmcToBigInt(xsArg(1));
 	m = xsmcToBigInt(xsArg(2));

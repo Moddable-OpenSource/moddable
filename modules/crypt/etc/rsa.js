@@ -74,3 +74,5 @@ export default class RSA {
 		return this.orderSize;
 	};
 };
+
+Object.freeze(RSA.prototype);

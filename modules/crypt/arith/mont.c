@@ -47,8 +47,6 @@ xs_mont2_exp_LR(xsMachine *the)
 {
 	txBigInt *a, *e, *m, *r;
 
-	if (xsmcArgc < 3)
-		return;
 	a = xsmcToBigInt(xsArg(0));
 	e = xsmcToBigInt(xsArg(1));
 	m = xsmcToBigInt(xsArg(2));
@@ -62,8 +60,6 @@ xs_mont2_exp_SW(xsMachine *the)
 	txBigInt *a, *e, *m, *r;
 	int param;
 
-	if (xsmcArgc < 4)
-		return;
 	a = xsmcToBigInt(xsArg(0));
 	e = xsmcToBigInt(xsArg(1));
 	m = xsmcToBigInt(xsArg(2));

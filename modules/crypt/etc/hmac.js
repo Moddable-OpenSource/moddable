@@ -105,3 +105,5 @@ export default class HMAC {
 		return Bin.comp(t, sig, this.hashLen) == 0;
 	};
 };
+
+Object.freeze(HMAC.prototype);
