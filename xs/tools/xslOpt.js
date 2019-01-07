@@ -836,7 +836,12 @@ const constructors = {
 	},
 	IN: class extends BinaryCode {
 		compute(left, right) {
-			return left in right;
+			if ((typeof left == "string") && (right instanceof Object)) {
+				if (Object.isFrozen(right)) {
+					return left in right;
+				}
+			}
+			return unknown;
 		}
 	},
 	INCREMENT: class extends UnaryCode {
