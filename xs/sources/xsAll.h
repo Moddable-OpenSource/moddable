@@ -1001,6 +1001,7 @@ extern txNumber fx_pow(txNumber x, txNumber y);
 mxExport void fx_BigInt(txMachine* the);
 mxExport void fx_BigInt_asIntN(txMachine* the);
 mxExport void fx_BigInt_asUintN(txMachine* the);
+mxExport void fx_BigInt_bitLength(txMachine* the);
 mxExport void fx_BigInt_fromArrayBuffer(txMachine* the);
 mxExport void fx_BigInt_prototype_toString(txMachine* the);
 mxExport void fx_BigInt_prototype_valueOf(txMachine* the);
