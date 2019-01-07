@@ -77,6 +77,7 @@ void fxBuildBigInt(txMachine* the)
 	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_BigInt), 1, mxID(_BigInt), XS_DONT_ENUM_FLAG));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asIntN), 2, mxID(_asIntN), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asUintN), 2, mxID(_asUintN), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_bitLength), 1, mxID(_bitLength), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_fromArrayBuffer), 1, mxID(_fromArrayBuffer), XS_DONT_ENUM_FLAG);
 	the->stack++;
 }
@@ -169,6 +170,13 @@ void fx_BigInt_asUintN(txMachine* the)
 // 	fxToBigInt(the, mxArgv(1), 1);
 // 	mxResult->value.bigint = *fxBigInt_mod(the, C_NULL, &mxArgv(1)->value.bigint, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index));
 // 	mxResult->kind = XS_BIGINT_KIND;
+}
+
+void fx_BigInt_bitLength(txMachine *the)
+{
+	txBigInt* arg = fxToBigInt(the, mxArgv(0), 1);
+	mxResult->value.integer = fxBigInt_bitsize(arg);;
+	mxResult->kind = XS_INTEGER_KIND;
 }
 
 void fx_BigInt_fromArrayBuffer(txMachine* the)
