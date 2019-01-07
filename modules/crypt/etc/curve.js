@@ -35,9 +35,9 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
+import EC from "ec";
+import ECPoint from "ecp";
 
-/*
 const curves = {
 	secp256r1: {
 		m: 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFn,
@@ -48,43 +48,31 @@ const curves = {
 		n: 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551n,
 	},
 };
-*/
-const curves = {
-	secp256r1: {
-		m: "0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF",
-		a: "0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC",
-		b: "0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
-		Gx: "0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
-		Gy: "0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
-		n: "0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
-	},
-};
-Object.freeze(curves);
+Object.freeze(curves, true);
 
 export default class Curve {
 	constructor(name) {
 		if (!(name in curves))
 			return;
 		let curve = curves[name];
-		this.G = new Arith.ECPoint(new Arith.Integer(curve.Gx), new Arith.Integer(curve.Gy));
-		this.ec = new Arith.EC(new Arith.Integer(curve.a), new Arith.Integer(curve.b), new Arith.Module(new Arith.Z(), new Arith.Integer(curve.m)));
-		this.n = new Arith.Integer(curve.n);
+		this.G = new ECPoint(curve.Gx, curve.Gy);
+		this.ec = new EC(curve.a, curve.b, curve.m);
+		this.n = curve.n;
 	};
 	dh(x, P) {
 		let G;
 		if (P) {
 			if (P.byteLength != this.orderSize * 2 + 1)
 				return;
-			
 			let x = P.slice(1, this.orderSize + 1);
 			let y = P.slice(this.orderSize + 1, this.orderSize * 2 + 1);
-			G = new Arith.ECPoint(new Arith.Integer(x), new Arith.Integer(y));
+			G = new ECPoint(BigInt.fromArrayBuffer(x), BigInt.fromArrayBuffer(y));
 		}
 		else
 			G = this.G;
-		P = this.ec.mul(G, new Arith.Integer(x));
-		let xs = P.X.toChunk(this.orderSize);
-		let ys = P.Y.toChunk(this.orderSize);
+		P = this.ec.mul(G, BigInt.fromArrayBuffer(x));
+		let xs = ArrayBuffer.fromBigInt(P.X, this.orderSize);
+		let ys = ArrayBuffer.fromBigInt(P.Y, this.orderSize);
 		let a = new Uint8Array(this.orderSize * 2 + 1);
 		a[0] = 0x04;	// uncompressed
 		a.set((new Uint8Array(xs)), 1);
@@ -92,7 +80,8 @@ export default class Curve {
 		return a.buffer;
 	};
 	get orderSize() {
-		return this.n.sizeof();
+		let n = BigInt.bitLength(this.n);
+		return (n + 7) >>> 3;
 	};
 	Z(P) {
 		return P.slice(1, this.orderSize + 1);

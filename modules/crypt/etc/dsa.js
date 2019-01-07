@@ -36,14 +36,14 @@
  */
 
 import Crypt from "crypt";
+import Mont from "mont"
 
 export default class DSA {
 	constructor(key, priv) {
 		this.x = priv ? key.x : key.y;
 		this.g = key.g;
-		this.z = new Arith.Z();
-		this.p = new Arith.Module(this.z, key.p);
-		this.q = new Arith.Module(this.z, key.q);
+		this.p = new Mont({m: key.p, method: Mont.SW});
+		this.q = new Mont({m: key.q, method: Mont.SW});
 	};
 	_sign(H) {
 		// r = (g^k mod p) mod q
@@ -54,7 +54,7 @@ export default class DSA {
 		var x = this.x;
 		var k = this.randint(q.m, this.z);
 		var r = q.mod(p.exp(g, k));
-		var H = new Arith.Integer(H);
+		var H = BigInt.fromArrayBuffer(H);
 		var s = q.mul(q.mulinv(k), q.add(H, q.mul(x, r)));
 		var sig = new Object;
 		sig.r = r;
@@ -76,7 +76,7 @@ export default class DSA {
 		var g = this.g;
 		var y = this.x;		// as the public key
 		var w = q.mulinv(s);
-		var h = new Arith.Integer(H);
+		var h = BigInt.fromArrayBuffer(H);
 		var u1 = q.mul(h, w);
 		var u2 = q.mul(r, w);
 		var v = q.mod(p.exp2(g, u1, y, u2));

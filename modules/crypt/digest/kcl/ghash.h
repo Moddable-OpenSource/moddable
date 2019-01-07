@@ -36,6 +36,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define GHASH_BLKSIZE	(128/8)
 #define GHASH_DGSTSIZE	(128/8)
@@ -55,5 +56,5 @@ typedef struct ghash {
 
 extern void ghash_create(ghash_t *ghash);
 extern void ghash_update(ghash_t *ghash, const void *data, size_t sz);
-extern void ghash_fin(ghash_t *ghash, uint8 *result);
+extern void ghash_fin(ghash_t *ghash, uint8_t *result);
 extern void ghash_fix128(uint128_t *v);

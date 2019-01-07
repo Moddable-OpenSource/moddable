@@ -35,6 +35,18 @@
  *       limitations under the License.
  */
 
+#ifndef __XSALL__
+typedef void txBigInt;
+typedef xsBooleanValue txBoolean;
+
+extern void fxBigInt_setBigInt(xsSlot *slot, txBigInt *a);
+
+#define _OVERHEAD	(sizeof(void *) * 2)
+#define xsmcToBigInt(_SLOT)	(txBigInt *)(((char *)&(_SLOT)) + _OVERHEAD)
+#define xsmcBigInt(a)	(xsSlot *)(((char *)(a)) - _OVERHEAD)
+#define xsmcSetBigInt(_SLOT, a)	fxBigInt_setBigInt(&_SLOT, a)
+#endif
+
 typedef struct sxECParam {
 	txBigInt *a;
 	txBigInt *b;

@@ -41,7 +41,6 @@ import changeCipherSpec from "ssl/changecipher";
 import SSLAlert from "ssl/alert";
 import cacheManager from "ssl/cache";
 import CertificateManager from "ssl/cert";
-import Arith from "arith";
 import Bin from "bin";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
@@ -110,7 +109,7 @@ class SSLSession {
 			}
 			else {
 				// assign a new one
-				this.serverSessionID = (new Arith.Integer(((new Date()).valueOf()).toString())).toChunk();
+				this.serverSessionID = ArrayBuffer.fromBigInt(BigInt(((new Date()).valueOf()).toString()));
 				this.doProtocol(s, handshakeProtocol.serverHello);
 				// S -> C: Certificate   (always -- i.e. not support anonymous auth.)
 				let certs = this.certificateManager.getCerts();
@@ -322,7 +321,7 @@ class SSLSession {
 		case SHA384:	hash = "SHA384"; break;
 		}
 		trace("FINISHED: " + algo + "-" + enc + "-" + mode + "-" + hash + "\n");
-		debugger;
+//		debugger;
 	}
 };
 

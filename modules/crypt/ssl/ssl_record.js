@@ -43,7 +43,6 @@ import Crypt from "crypt";
 import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";
-import Arith from "arith";
 
 let recordProtocol = {
 	name: "recordProtocol",
@@ -110,7 +109,7 @@ let recordProtocol = {
 		name: "tlsCipherText",
 		calculateMac(hmac, seqNum, type, version, content) {
 			hmac.reset();
-			seqNum = seqNum.toChunk();
+			seqNum = ArrayBuffer.fromBigInt(seqNum);
 			let stream = new SSLStream();
 			for (let len = 8 - seqNum.byteLength; len > 0; len--)
 				stream.writeChar(0);
@@ -124,7 +123,7 @@ let recordProtocol = {
 		},
 		aeadAdditionalData(seqNum, type, version, len) {
 			let tmps = new SSLStream();
-			let c = seqNum.toChunk(8);
+			let c = ArrayBuffer.fromBigInt(seqNum, 8);
 			tmps.writeChunk(c);
 			tmps.writeChar(type);
 			tmps.writeChars(version, 2);
@@ -174,7 +173,7 @@ let recordProtocol = {
 					fragment = new Uint8Array(fragment);
 					break;
 				}
-				session.readSeqNum.inc();
+				session.readSeqNum++;
 			}
 			else
 				fragment = s.readChunk(fragmentLen, true);
@@ -213,8 +212,8 @@ let recordProtocol = {
 					}
 					break;
 				case GCM: {
-					let explicit_nonce = cipher.nonce.toChunk(session.chosenCipher.ivSize);
-					cipher.nonce.inc();
+					let explicit_nonce = ArrayBuffer.fromBigInt(cipher.nonce, session.chosenCipher.ivSize);
+					cipher.nonce++;
 					let nonce = cipher.iv.concat(explicit_nonce);
 					let additional_data = this.aeadAdditionalData(session.writeSeqNum, type, session.protocolVersion, fragment.byteLength);
 					fragment = cipher.enc.process(fragment, null, nonce, additional_data, true);
@@ -222,7 +221,7 @@ let recordProtocol = {
 					}
 					break;
 				}
-				session.writeSeqNum.inc();
+				session.writeSeqNum++;
 			}
 			stream = new SSLStream();
 			stream.writeChar(type);

@@ -39,7 +39,6 @@ import PRF from "ssl/prf";
 import HMAC from "hmac";
 import SSLStream from "ssl/stream";
 import {BlockCipher, Digest, Mode, StreamCipher} from "crypt";
-import Arith from "arith";
 import {AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 import Gcm from "gcm";
 
@@ -82,7 +81,7 @@ function setupSub(o, cipher)
 		break;
 	case GCM:
 		o.enc = new Gcm(enc);
-		o.nonce = new Arith.Integer(1);
+		o.nonce = BigInt(1);
 		break;
 	default:
 		o.enc = enc;

@@ -35,31 +35,31 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
+import Modular from "modular";
+import Mont from "mont";
 
 export default class RSA {
 	constructor(e, m, p, q, dp, dq, C2) {
-		var esize = e.sizeof();
-		let z = new Arith.Z();
-		this.z = z;
-		if (esize > 4 && p && !p.isNaN() && q && !q.isNaN()) {
+		if (BigInt.bitLength(e) > 17 && p && q) {
 			// use CRT
-			this.dp = dp && !dp.isNaN() ? dp : z.mod(e, z.inc(p, -1));
-			this.dq = dq && !dq.isNaN() ? dq : z.mod(e, z.inc(q, -1));
-			this.mp = new Arith.Mont({z: z, m: p});
-			this.mq = new Arith.Mont({z: z, m: q});
-			this.C2 = C2 && !C2.isNaN() ? C2 : this.mp.mulinv(q);	// (C2 = q^-1 mod p) according to PKCS8
+			this.dp = dp ? dp : e % (p - 1);
+			this.dq = dq ? dq : e % (q - 1);
+			this.mp = new Mont({m: p, method: Mont.SW});
+			this.mq = new Mont({m: q, method: Mont.SW});
+			this.C2 = C2 ? C2 : this.mp.mulinv(q);	// (C2 = q^-1 mod p) according to PKCS8
 			this.p = p;
 			this.q = q;
-			this.order = m ? m.sizeof() : z.mul(p, q).sizeof();
+			if (!m)
+				m = z.mul(p, q);
 		}
 		else {
-			if (!m && p && !p.isNaN() && q && !q.isNaN())
+			if (!m && p && q)
 				m = z.mul(p, q);
-			this.mn = new Arith.Module(z, m, esize <= 4 ? 2: 0);	// use the simple LR method in the case of small exponent (i.e public key)
+			this.mn = new Modular(m);
 			this.e = e;
-			this.order = m.sizeof();
 		}
+		let n = BigInt.bitLength(m);
+		this.orderSize = (n + 7) >>> 3;
 	};
 	process(c) {
 		if (this.mn)
@@ -68,9 +68,9 @@ export default class RSA {
 		let v1 = this.mq.exp(c, this.dq);
 		let v2 = this.mp.exp(c, this.dp);
 		let u = this.mp.mul(this.C2, this.mp.sub(v2, v1));
-		return this.z.add(v1, this.z.mul(u, this.q));
+		return v1 + (u * this.q);
 	};
 	get modulusSize() {
-		return this.order;
+		return this.orderSize;
 	};
 };

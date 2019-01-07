@@ -35,8 +35,10 @@
  *       limitations under the License.
  */
 
-#include "crypt.h"
+#include "xsPlatform.h"
 #include "xsmc.h"
+#include <stdint.h>
+#include <stddef.h>
 
 static uint8_t rng_state[256];
 static uint8_t rng_inited = 0;

@@ -38,9 +38,9 @@
 import recordProtocol from "ssl/record";
 import SSLStream from "ssl/stream";
 import supportedCipherSuites from "ssl/ciphersuites";
+import Mont from "mont";
 import PRF from "ssl/prf";
 import Bin from "bin";
-import Arith from "arith";
 import RNG from "rng";
 import PKCS1_5 from "pkcs1_5";
 import DSA from "dsa";
@@ -639,18 +639,18 @@ let handshakeProtocol = {
 			case DH_ANON:
 				let s = new SSLStream();
 				let dh = session.certificateManager.getDH();
-				let mod = new Arith.Mont({z: new Arith.Z(), m: dh.p});
-				dh.x = new Arith.Integer(RNG.get(dh.p.sizeof()));
+				let mod = new Mont({m: dh.p, method: Mont.SW});
+				dh.x = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(dh.p) >>> 3));
 				let y = mod.exp(dh.g, dh.x);
 				let tbs = new SSLStream(), c;
 				// server DH params
-				c = dh.p.toChunk();
+				c = ArrayBuffer.fromBigInt(dh.p);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
-				c = dh.g.toChunk();
+				c = ArrayBuffer.fromBigInt(dh.g);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
-				c = y.toChunk();
+				c = ArrayBuffer.fromBigInt(y);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
 				s.writeChunk(tbs.getChunk());
@@ -822,10 +822,10 @@ let handshakeProtocol = {
 			case DH_RSA:
 				// implicit DH is not supported
 				let dh = session.dh;
-				let y = new Arith.Integer(cipher);
-				let mod = new Arith.Mont({z: new Arith.Z(), m: dh.p});
+				let y = BigInt.fromArrayBuffer(cipher);
+				let mod = new Mont({m: dh.p, method: Mont.SW});
 				y = mod.exp(y, dh.x);
-				preMasterSecret = y.toChunk();
+				preMasterSecret = ArrayBuffer.fromBigInt(y);
 				break;
 			default:
 				throw new Error("SSL: clientKeyExchange: unsupported algorithm");
@@ -859,17 +859,17 @@ let handshakeProtocol = {
 					throw new Error("SSL: clientKeyExchange: no DH params");
 				let dh = session.dhparams;
 				let r = RNG.get(dh.dh_p.byteLength);
-				let x = new Arith.Integer(r);
-				let g = new Arith.Integer(dh.dh_g);
-				let p = new Arith.Integer(dh.dh_p);
-				let mod = new Arith.Mont({z: new Arith.Z(), m: p});
+				let x = BigInt.fromArrayBuffer(r);
+				let g = BigInt.fromArrayBuffer(dh.dh_g);
+				let p = BigInt.fromArrayBuffer(dh.dh_p);
+				let mod = new Mont({m: p, method: Mont.SW});
 				let y = mod.exp(g, x);
-				let Yc = y.toChunk();
+				let Yc = ArrayBuffer.fromBigInt(y);
 				s.writeChars(Yc.byteLength, 2);
 				s.writeChunk(Yc);
-				y = new Arith.Integer(dh.dh_Ys);
+				y = BigInt.fromArrayBuffer(dh.dh_Ys);
 				y = mod.exp(y, x);
-				preMasterSecret = y.toChunk();
+				preMasterSecret = ArrayBuffer.fromBigInt(y);
 				break;
 			case ECDHE_RSA:
 				if (!session.dhparams)

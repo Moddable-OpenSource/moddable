@@ -37,7 +37,6 @@
 
 #include "xsPlatform.h"
 #include "xsmc.h"
-#include "arith2_common.h"
 #include "xsBigIntEx.h"
 #include "mc.xs.h"
 
