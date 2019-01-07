@@ -12,8 +12,10 @@
  *
  */
 
-//import Arith from "arith";
-import Arith from "arith2";
+import Modular from "modular";
+import Mont from "mont"
+import EC from "ec";
+import ECPoint from "ecp";
 import RNG from "rng";
 import ECDSA from "ecdsa";
 import {Digest} from "crypt";
@@ -26,20 +28,19 @@ let es = "0x12bb1c1f0e682befbc092ed035247431264ebee06ab8ac3efffc1b9d081a672cec2c
 
 let rs = "0xbb587b89e740bed6c638c01c9c49bb5971db62af6928a78fcd755be5a7e0c1fcfe1479bffa9961d8f9477ee413fc452b411dd675489db2e28f881098cd3b6494cf50670dd7ba3c64afd24909f9033d22ad5e1cf818d761a4cce22076a2c41aca1165ba09f39dfeec10b179754dab8f2f1c4e2fa51e9f0ccc1de47b9a2cfe57c3098a0647e9938104ec9e4c8b3f1a63e5e784c20a26b4df204964f74dcca925ad085fd2faa8be97ca7c0685015a68beb6b0e8c54cedcbe531faa29bfb272bf7a27494b46a2e68cdc4a6f7d6bc767caeca453c920a5f124463dd15e79512f91ecb9e7ce9da367e7f67b8d7d05b34c3f4c91128f6ced8c07f5dcb10317a910957c1"
 
-let p = new Arith.Integer(ps);
+let p = BigInt(ps);
 //let es = RNG.get(2048/8);
 //let Ms = RNG.get(2048/8);
-let e = new Arith.Integer(es);
-let M = new Arith.Integer(Ms);
-let r = new Arith.Integer(rs);
+let e = BigInt(es);
+let M = BigInt(Ms);
+let r = BigInt(rs);
 
 trace("p = " + p.toString(16) + "\n");
 trace("M = " + M.toString(16) + "\n");
 trace("e = " + e.toString(16) + "\n");
 
-let z = new Arith.Z();
-let mod = new Arith.Module(z, p);
-let mont = new Arith.Mont({z: z, m: p, method: Arith.Mont.SW});
+let mod = new Modular(p);
+let mont = new Mont({m: p, method: Mont.SW});
 
 let x
 let t1 = new Date();
@@ -67,7 +68,7 @@ while (--n >= 0) {
 }
 t2 = new Date();
 trace("mod.exp: " + (t2 - t1) + "\n");
-if (r.comp(x) != 0)
+if (r != x)
 	trace("failed!\n");
 
 t1 = new Date();
@@ -77,7 +78,7 @@ while (--n >= 0) {
 }
 t2 = new Date();
 trace("mont.exp: " + (t2 - t1) + "\n");
-if (r.comp(x) != 0)
+if (r != x)
 	trace("failed!\n");
 
 //
@@ -96,15 +97,15 @@ let Uys = "0x7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299";
 let message = "sample";
 let ks = "0x5FA81C63109BADB88C1F367B47DA606DA28CAD69AA22C4FE6AD7DF73A7173AA5";
 
-let m = new Arith.Integer(ms);
-let a = new Arith.Integer(as);
-let b = new Arith.Integer(bs);
-let Gx = new Arith.Integer(Gxs);
-let Gy = new Arith.Integer(Gys);
-let X = new Arith.Integer(Xs);
+let m = BigInt(ms);
+let a = BigInt(as);
+let b = BigInt(bs);
+let Gx = BigInt(Gxs);
+let Gy = BigInt(Gys);
+let X = BigInt(Xs);
 
-let G = new Arith.ECPoint(Gx, Gy);
-let ec = new Arith.EC(a, b, new Arith.Module(new Arith.Z(), m));
+let G = new ECPoint(Gx, Gy);
+let ec = new EC(a, b, m);
 
 t1 = new Date();
 n = 10;
@@ -113,6 +114,5 @@ while (--n >= 0)
 	P = ec.mul(G, X);
 t2 = new Date();
 trace("ec.mul: " + (t2 - t1) + "\n");
-if (P.X.comp(new Arith.Integer(Uxs)) != 0 ||
-    P.Y.comp(new Arith.Integer(Uys)) != 0)
+if (P.X != BigInt(Uxs) || P.Y != BigInt(Uys))
 	trace("ec.mul failed!\n");

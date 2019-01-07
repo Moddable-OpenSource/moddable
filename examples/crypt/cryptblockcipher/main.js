@@ -14,15 +14,14 @@
 
 import {BlockCipher, StreamCipher, Mode} from "crypt";
 import GCM from "gcm";
-import Arith from "arith";
 import Bin from "bin";
 
 let Hex = {
 	toBuffer(s) {
-		return (new Arith.Integer("0x" + s)).toChunk(s.length / 2);
+		return ArrayBuffer.fromBigInt(BigInt("0x" + s), s.length / 2);
 	},
 	toString(b) {
-		return (new Arith.Integer(b)).toString(16, b.byteLength * 2);
+		return BigInt.fromArrayBuffer(b).toString(16);
 	},
 };
 
