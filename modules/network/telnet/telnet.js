@@ -86,8 +86,10 @@ class Connection extends Socket {
 				break;
 
 			default:
-				if (message < 0)
+				if (message < 0) {
 					trace("connection lost\n");
+					this.close();
+				}
 				break;
 		}
 	}
