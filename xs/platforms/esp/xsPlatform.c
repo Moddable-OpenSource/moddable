@@ -283,11 +283,6 @@ void fxConnect(txMachine* the)
 		return;
 	}
 
-#if !ESP32
-	extern void espConnectToWiFi(void);
-	espConnectToWiFi();
-#endif
-
 	modLog("  fxConnect - ENTER");
 
 	pcb = tcp_new();
