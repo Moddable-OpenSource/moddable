@@ -56,7 +56,7 @@ class WebThings {
 	constructor(mdns) {
 		this.mdns = mdns;
 		this.things = [];
-		this.server = new Server({port: 80});
+		this.server = new Server;
 		this.server.callback = this.callback.bind(this);
 		mdns.monitor("_webthing._tcp", (service, instance) => {
 			let txt = instance.txt;
@@ -146,7 +146,7 @@ class WebThings {
 			if ("boolean" === property.type) {
 				if (undefined === prev)
 					prev = false;
-				else if ("" == prev)
+				else if ("" === prev)
 					prev = true;
 				if (value !== prev) {
 					if (value)
