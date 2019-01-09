@@ -173,7 +173,7 @@ const WeatherApp = Application.template($ => ({
 			});
 			request.callback = (message, value) => {
 				if (5 == message) {
-					value = JSON.parse(value);
+					value = JSON.parse(value, ["main", "name", "temp", "weather", "icon"]);
 					let icon = value.weather[0].icon.substring(0,2);
 					let toDraw;
 					switch (icon){
@@ -207,7 +207,7 @@ const WeatherApp = Application.template($ => ({
 					}
 					this.data.city = value.name,
 					this.data.temp = value.main.temp + " F",
-					this.data.condition = titleCase(value.weather[0].description),
+					this.data.condition = titleCase(value.weather[0].main),
 					this.data.icon = toDraw
 					application.first.delegate("onTransitionOut");
 				}
