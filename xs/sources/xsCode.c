@@ -291,7 +291,7 @@ txScript* fxParserCode(txParser* parser)
 			}
 			else
 				size += 2;
-			size += value * 4;
+			size += value;
 			break;
 			
 		case XS_CODE_CONST_CLOSURE_1:
