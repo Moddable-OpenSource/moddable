@@ -414,17 +414,17 @@ txSize fxBigIntMaximum(txInteger length)
 
 txSize fxBigIntMaximumB(txInteger length)
 {
-	return sizeof(txU4) * (1 + (length / 32));
+	return sizeof(txU4) * (1 + howmany(1, mxBigIntWordSize) + (length / 32));
 }
 
 txSize fxBigIntMaximumO(txInteger length)
 {
-	return sizeof(txU4) * (1 + ((length * 3) / 32));
+	return sizeof(txU4) * (1 + howmany(3, mxBigIntWordSize) + ((length * 3) / 32));
 }
 
 txSize fxBigIntMaximumX(txInteger length)
 {
-	return sizeof(txU4) * (1 + ((length * 4) / 32));
+	return sizeof(txU4) * (1 + howmany(4, mxBigIntWordSize) + ((length * 4) / 32));
 }
 
 void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sign)
@@ -592,7 +592,6 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	while (!fxBigInt_iszero(&slot->value.bigint));
 	if (minus)
 		result->value.string[--offset] = '-';
-		
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
 	
 	mxPop();
