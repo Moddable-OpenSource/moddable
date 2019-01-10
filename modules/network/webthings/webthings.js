@@ -110,6 +110,12 @@ class WebThings {
 			});
 		});
 	}
+	close () {
+		if (this.server)
+			this.server.close();
+		delete this.server;
+		delete this.things;
+	}
 	add(WebThing, ...args) {
 		const description = WebThing.description;
 		description.properties.controller = {
