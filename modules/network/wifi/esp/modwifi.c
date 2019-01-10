@@ -64,9 +64,10 @@ void xs_wifi_get_mode(xsMachine *the)
 void xs_wifi_scan(xsMachine *the)
 {
 	struct scan_config config;
+	uint8 mode = wifi_get_opmode();
 
-	if (STATION_MODE != wifi_get_opmode())
-		xsUnknownError("can only scan in STATION_MODE");
+	if ((STATION_MODE != mode) && (STATIONAP_MODE != mode))
+		xsUnknownError("can't scan");
 
 	if (gScan)
 		xsUnknownError("unfinished wifi scan pending");
@@ -272,6 +273,29 @@ struct xsWiFiRecord {
 
 static xsWiFi gWiFi;
 
+void initVariantXXXX(void)
+{
+	struct ip_info info;
+
+	wifi_station_dhcpc_stop();
+	wifi_softap_dhcps_stop();
+
+	IP4_ADDR(&info.ip, 10, 0, 1, 32);
+	IP4_ADDR(&info.gw, 10, 0, 1, 1);
+	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
+
+	wifi_set_ip_info(STATION_IF, &info);
+
+	ip_addr_t d;
+	IP4_ADDR(&d, 8, 8, 8, 8);
+	dns_setserver(0, &d);
+	IP4_ADDR(&d, 8, 8, 4, 4);
+	dns_setserver(1, &d);
+
+	//	wifi_station_dhcpc_start();
+}
+
+
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsWiFi wifi = refcon;
@@ -380,6 +404,7 @@ void xs_wifi_accessPoint(xsMachine *the)
     struct softap_config config;
 	char *str;
 	int ret;
+	uint8 station = 0;
 
 	c_memset(&config, 0, sizeof(config));
 
@@ -432,8 +457,13 @@ void xs_wifi_accessPoint(xsMachine *the)
 		config.beacon_interval = xsmcToInteger(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_station)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_station);
+		station = xsmcToBoolean(xsVar(0));
+	}
+
 	ETS_UART_INTR_DISABLE();
-	ret = wifi_set_opmode_current(SOFTAP_MODE);
+	ret = wifi_set_opmode_current(station ? STATIONAP_MODE : SOFTAP_MODE);
 	ETS_UART_INTR_ENABLE();
 	if (!ret)
 		xsUnknownError("wifi_set_opmode_current failed");
