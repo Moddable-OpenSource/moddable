@@ -1,0 +1,47 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/files/preference/*"
+		]
+	},
+	"preload": [
+		"preference"
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/esp/*"
+				]
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/esp32/*"
+				]
+			}
+		},
+		"gecko": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/gecko/*"
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/mac/*"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/win/*"
+				]
+			}
+		}
+	}
+}
