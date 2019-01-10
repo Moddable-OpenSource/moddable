@@ -1454,7 +1454,7 @@ void xs_listener_destructor(void *data)
 
 	if (xsl->skt) {
 		tcp_accept(xsl->skt, NULL);
-		tcp_close_safe(xsl->skt);
+		tcp_close(xsl->skt);
 	}
 
 	for (i = 0; i < kListenerPendingSockets; i++)
