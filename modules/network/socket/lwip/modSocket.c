@@ -79,6 +79,7 @@ struct xsSocketRecord {
 	uint8				kind;
 	uint8				pending;
 	uint8				writeDisabled;
+	uint8				constructed;
 
 	// above here same as xsListenerRecord
 
@@ -95,7 +96,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				constructed;
 	uint8				remoteCount;
 	uint8				suspended;
 
@@ -124,6 +124,7 @@ struct xsListenerRecord {
 	uint8				kind;
 	uint8				pending;
 	uint8				writeDisabled;
+	uint8				constructed;
 
 	// above here same as xsSocketRecord
 
@@ -1424,6 +1425,7 @@ void xs_listener(xsMachine *the)
 	xsRemember(xsl->obj);
 
 	xsl->kind = kTCPListener;
+	xsl->constructed = true;
 
 	xsl->skt = tcp_new_safe();
 	if (!xsl->skt)
