@@ -36,6 +36,33 @@ void twoHex(uint8_t value, char *out)
 	*out++ = espRead8(gHex + (value & 15));
 }
 
+uint8_t getNIF(xsMachine *the)
+{
+	uint8_t wantsAP = 0, wantsStation = 0;
+
+	if (xsToInteger(xsArgc) > 1) {
+		wantsAP = 0 == c_strcmp(xsToString(xsArg(1)), "ap");
+		wantsStation = 0 == c_strcmp(xsToString(xsArg(1)), "station");
+	}
+
+#if ESP32
+	//@@
+#else
+	uint8 mode = wifi_get_opmode();
+	if (wantsStation && ((STATION_MODE == mode) || (STATIONAP_MODE == mode)))
+		return STATION_IF;
+	if (wantsAP && ((SOFTAP_MODE == mode) || (STATIONAP_MODE == mode)))
+		return SOFTAP_IF;
+	if (wantsAP || wantsStation)
+		return ~0;
+	if (SOFTAP_MODE == mode)
+		return SOFTAP_IF;
+	if (STATION_MODE == mode)
+		return STATION_IF;
+	return 255;
+#endif
+}
+
 void xs_net_get(xsMachine *the)
 {
 	const char *prop = xsToString(xsArg(0));
@@ -49,8 +76,12 @@ void xs_net_get(xsMachine *the)
 		if ((ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;
+		uint8_t nif = getNIF(the);
 
-		if (wifi_get_ip_info((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, &info)) {
+		if (255 == nif)
+			return;
+
+		if (wifi_get_ip_info(nif, &info)) {
 #endif
 			char *out;
 			xsResult = xsStringBuffer(NULL, 4 * 5);
@@ -67,7 +98,7 @@ void xs_net_get(xsMachine *the)
 #if ESP32
 		if (ESP_OK == esp_wifi_get_mac(ESP_IF_WIFI_STA, macaddr))
 #else
-		if (wifi_get_macaddr((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, macaddr))
+		if (wifi_get_macaddr(getNIF(the), macaddr))
 #endif
 		{
 			char *out;
