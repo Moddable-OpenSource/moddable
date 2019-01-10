@@ -16,7 +16,7 @@
 	
 ### Windows 
 
-	cd $MODDABLE/xs/makefiles/win
+	cd %MODDABLE%\xs\makefiles\win
 	build
 
 ## Download
