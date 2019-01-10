@@ -57,7 +57,8 @@ class WebThings {
 		this.mdns = mdns;
 		this.things = [];
 		this.server = new Server;
-		this.server.callback = this.callback.bind(this);
+		this.server.callback = this.http;
+		this.server.webThings = this;
 		mdns.monitor("_webthing._tcp", (service, instance) => {
 			let txt = instance.txt;
 			let name = instance.name;
@@ -169,9 +170,17 @@ class WebThings {
 		}
 		return changed;
 	}
-	callback(message, value, etc) {
+	http(message, value, etc) {
+		const webThings = this.server.webThings;
+
+		if (this.delegate)
+			return webThings.callback.call(this, message, value, etc);
+
 		switch (message) {
 			case 2:
+				this.delegate = webThings.callback && !value.startsWith("/thng/");
+				if (this.delegate)
+					return webThings.callback.call(this, message, value, etc);
 				this.path = value;
 				this.method = etc;
 				break;
@@ -184,12 +193,13 @@ class WebThings {
 				break;
 
 			case 8: {
+				const things = webThings.things;
 				let body;
 
 				switch (this.method) {
 					case "GET":
 						if (this.path.startsWith("/thng/desc/")) {
-							this.things.forEach(thing => {
+							things.forEach(thing => {
 								if (this.path.slice("/thng/desc/".length) === thing.description.name)
 									body = thing.description;
 							});
@@ -198,19 +208,19 @@ class WebThings {
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							this.things.forEach(thing => {
+							things.forEach(thing => {
 								if (name === thing.description.name)
 									body = {[property]: thing.instance[property]};
 							});
 						}
 						else
-								body = {error: "invalid path"};
+							body = {error: "invalid path"};
 						break;
 					case "PUT":
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							this.things.forEach(thing => {
+							things.forEach(thing => {
 								if (name === thing.description.name) {
 									thing.instance[property] = this.JSON[property];
 									body = {[property]: thing.instance[property]};
