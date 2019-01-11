@@ -72,9 +72,9 @@
 #define mxMachinePlatform \
 	void* host; \
 	GSocket* socket; \
-	GSource* source;
+	GSource* source; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink;
+	void* waiterLink;
 
 #endif /* __LINUX_XS__ */
