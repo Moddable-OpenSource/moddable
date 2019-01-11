@@ -30,6 +30,8 @@ class WebThing {
 		this.controllers = [];
 	}
 	changed() {
+		if (!this.host.mdns)
+			return;
 		const thing = this.host.things.find(thing => this === thing.instance);
 		if (this.host.updateTXT(thing))
 			this.host.mdns.update(thing.service);
@@ -51,7 +53,6 @@ class WebThing {
 }
 Object.freeze(WebThing.prototype);
 
-
 class WebThings {
 	constructor(mdns) {
 		this.mdns = mdns;
@@ -59,6 +60,8 @@ class WebThings {
 		this.server = new Server;
 		this.server.callback = this.http;
 		this.server.webThings = this;
+		if (!mdns)
+			return;
 		mdns.monitor("_webthing._tcp", (service, instance) => {
 			let txt = instance.txt;
 			let name = instance.name;
@@ -139,7 +142,8 @@ class WebThings {
 		}
 		this.things.push(thing);
 		this.updateTXT(thing);
-		this.mdns.add(thing.service);
+		if (this.mdns)
+			this.mdns.add(thing.service);
 
 		return thing.instance;
 	}
