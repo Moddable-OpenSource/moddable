@@ -734,6 +734,32 @@ void xs_socket_close(xsMachine *the)
 		socketSetPending(xss, kPendingClose);
 }
 
+void xs_socket_get(xsMachine *the)
+{
+	xsSocket xss = xsmcGetHostData(xsThis);
+	const char *name = xsmcToString(xsArg(0));
+
+	if (0 == c_strcmp(name, "REMOTE_IP")) {
+		char *out;
+		ip_addr_t remote_ip = xss->skt->remote_ip;
+
+		xsResult = xsStringBuffer(NULL, 4 * 5);
+		out = xsmcToString(xsResult);
+
+	#if LWIP_IPV4 && LWIP_IPV6
+		itoa(ip4_addr1(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr2(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr3(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr4(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
+	#else
+		itoa(ip4_addr1(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr2(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr3(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
+		itoa(ip4_addr4(&remote_ip), out, 10); out += strlen(out); *out = 0;
+	#endif
+	}
+}
+
 void xs_socket_read(xsMachine *the)
 {
 	xsSocket xss = xsmcGetHostData(xsThis);
