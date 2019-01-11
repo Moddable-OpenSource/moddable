@@ -607,6 +607,7 @@ void* fxCreateSharedChunk(txInteger size)
 void fxLinkSharedChunk(txMachine* the)
 {
 	if (gxSharedCluster && (gxSharedCluster->mainThread != mxCurrentThread())) {
+#if mxThreads
 		txMachine** machineAddress;
 		txMachine* machine;
 		mxLockMutex(&gxSharedCluster->waiterMutex);
@@ -614,6 +615,7 @@ void fxLinkSharedChunk(txMachine* the)
 		while ((machine = *machineAddress))
 			machineAddress = (txMachine**)&machine->waiterLink;
 		*machineAddress = the;
+#endif
 	}
 	else {
 		mxTypeError("main thread cannot wait");
@@ -694,6 +696,7 @@ void fxUnlockSharedChunk(void* data)
 
 void fxUnlinkSharedChunk(txMachine* the)
 {
+#if mxThreads
 	txMachine** machineAddress;
 	txMachine* machine;
 	machineAddress = &gxSharedCluster->waiterLink;
@@ -706,11 +709,13 @@ void fxUnlinkSharedChunk(txMachine* the)
 		machineAddress = (txMachine**)&machine->waiterLink;
 	}
 	mxUnlockMutex(&gxSharedCluster->waiterMutex);
+#endif
 }
 
 txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 {
-	txInteger result;;
+	txInteger result = 1;
+#if mxThreads
 	txCondition condition;
 	mxCreateCondition(&condition);
 	the->waiterCondition = &condition;
@@ -719,7 +724,6 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 	#if defined(mxUsePOSIXThreads)
 		while (the->waiterData == address)
 			pthread_cond_wait(&condition, &gxSharedCluster->waiterMutex);
-		result = 1;
 	#elif defined(mxUseFreeRTOSTasks)
 		mxUnlockMutex(&gxSharedCluster->waiterMutex);
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -728,7 +732,6 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 		while (the->waiterData == address)
 			SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, INFINITE);
 	#endif
-		result = 1;
 	}
 	else {
 	#if defined(mxUsePOSIXThreads)
@@ -757,6 +760,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 	}
 	the->waiterCondition = C_NULL;
 	mxDeleteCondition(&condition);
+#endif
 	return result;
 }
 
