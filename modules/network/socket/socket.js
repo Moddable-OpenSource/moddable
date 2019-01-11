@@ -29,6 +29,7 @@ export class Socket @ "xs_socket_destructor" {
 	write() @ "xs_socket_write";
 
 	close() @ "xs_socket_close";
+	get(name) @ "xs_socket_get";
 
 	// callback()		// connected, error/disconnected, read ready (bytes ready), write ready (bytes can write)
 };
