@@ -25,7 +25,7 @@ class Connection extends Socket {
 	constructor(dictionary) {
 		super(dictionary);
 		this.initialize = Symbol();
-		CLI.distribute.call(this, this.initialize);
+		CLI.distribute.call(this, this.initialize, {remote: super.get("REMOTE_IP")});
 		this.incoming = "";
 		this.write(255, 251, 1, 255, 251, 3, 255, 252, 34);		// character, not line, mode
 	}
