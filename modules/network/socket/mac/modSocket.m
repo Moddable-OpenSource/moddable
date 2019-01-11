@@ -339,6 +339,10 @@ void xs_socket_close(xsMachine *the)
 	socketDownUseCount(the, xss);
 }
 
+void xs_socket_get(xsMachine *the)
+{
+}
+
 void xs_socket_read(xsMachine *the)
 {
 	xsSocket xss = xsmcGetHostData(xsThis);
