@@ -51,6 +51,15 @@ class MDNS extends Socket {
 			Timer.set(() => this.probe(), 0);
 		}
 	}
+	close() {
+		while (this.services.length)
+			this.remove(this.services[0]);
+
+		while (this.monitors.length)
+			this.remove(this.monitors[0].service.substring(0, this.monitors[0].service.length - 6));
+
+		super.close();
+	}
 	add(service) {
 		if (!this.hostName)
 			throw new Error("no hostName");
