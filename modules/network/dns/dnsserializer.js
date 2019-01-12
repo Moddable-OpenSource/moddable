@@ -31,6 +31,7 @@ class Serializer {
 
 				case DNS.RR.NSEC:
 					let next = data.next.split(".").map(item => ArrayBuffer.fromString(item));
+					next.push(new ArrayBuffer(0));		// trailing 0
 					d = new Uint8Array(next.reduce((value, item) => value + item.byteLength + 1, data.bitmaps.byteLength));
 					let offset = next.reduce((offset, item) => {
 						d[offset] = item.byteLength;
