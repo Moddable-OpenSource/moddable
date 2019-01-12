@@ -81,7 +81,8 @@ class MDNS extends Socket {
 			}
 			else
 				Timer.schedule(timer, timer.interval, timer.interval);
-		}, 500).interval = 500;
+		}, 500);
+		service.timer.interval = 500;
 	}
 	update(service) {
 		const index = this.services.indexOf(service);
