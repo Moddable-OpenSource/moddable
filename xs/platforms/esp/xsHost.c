@@ -635,6 +635,13 @@ int32_t modGetDaylightSavingsOffset(void)
 	static uint8_t gHasMods;
 #endif
 
+void modPrelaunch(void)
+{
+#if MODDEF_STARTUP_DELAYMS
+	modDelayMilliseconds(MODDEF_STARTUP_DELAYMS);
+#endif
+}
+
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
 	xsMachine *result;

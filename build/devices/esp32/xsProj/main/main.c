@@ -200,6 +200,8 @@ uint8_t ESP_isReadable() {
 }
 
 void app_main() {
+	modPrelaunch();
+
 	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 
 	nvs_flash_init();
