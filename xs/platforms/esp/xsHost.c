@@ -55,7 +55,8 @@
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
-	static void espStartInstrumentation(txMachine* the);
+	void espInitInstrumentation(txMachine *the);
+	void espDescribeInstrumentation(txMachine *the);
 #endif
 
 extern void* xsPreparationAndCreation(xsCreation **creation);
@@ -684,7 +685,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	xsSetContext(result, NULL);
 
 #ifdef mxInstrument
-	espStartInstrumentation(result);
+	espInitInstrumentation(result);
 #endif
 
 	return result;
@@ -1156,12 +1157,9 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 	else
 		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
 }
-
-void espStartInstrumentation(txMachine *the)
+	
+void espInitInstrumentation(txMachine *the)
 {
-	if ((NULL == the->connection) || gInstrumentationThe)
-		return;
-
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -1172,12 +1170,15 @@ void espStartInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
 
-	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
-
 	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
 	gInstrumentationThe = the;
 
 	the->onBreak = espDebugBreak;
+}
+
+void espDescribeInstrumentation(txMachine *the)
+{
+	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
 }
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)

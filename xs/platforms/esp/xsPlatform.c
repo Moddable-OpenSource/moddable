@@ -50,6 +50,10 @@
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
+#ifdef mxInstrument
+	extern void espDescribeInstrumentation(txMachine *the);
+#endif
+
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 
 #if defined (mxDebug) && ESP32
@@ -275,7 +279,7 @@ void fxConnect(txMachine* the)
 
 		the->connection = kSerialConnection;
 
-		return;
+		goto connected;
 	}
 
 	if (0 == gXSBUG[0]) {
@@ -317,7 +321,12 @@ void fxConnect(txMachine* the)
 		modLog("  fxConnect - couldn't connect");
 	}
 
-    modLog("  fxConnect - EXIT");
+connected:
+#ifdef mxInstrument
+	espDescribeInstrumentation(the);
+#endif
+    xmodLog("  fxConnect - EXIT");
+	return;
 }
 
 void fxDisconnect(txMachine* the)
