@@ -132,6 +132,12 @@ extern void ESP_putc(int c);
 #define xmodLogHex(msg)
 
 /*
+	start-up
+*/
+
+extern void modPrelaunch(void);
+
+/*
 	serial
 */
 
