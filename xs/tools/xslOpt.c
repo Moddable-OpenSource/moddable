@@ -13,6 +13,8 @@ typedef txS1* (*txCodeReader)(xsMachine* the, txU1 id, txS1* p);
 typedef txS1* (*txCodeWriter)(xsMachine* the, txU1 id, txS1* p);
 
 static txS1* fxReadCode(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeBigInt1(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxReadCodeBigInt2(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxReadCodeKey(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxReadCodeNumber(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxReadCodeS1(xsMachine* the, txU1 id, txS1* p);
@@ -26,6 +28,8 @@ static void fxReadCodes(xsMachine* the, void* buffer, txSize size);
 static void fxReadHosts(xsMachine* the, void* buffer, txSize size);
 
 static txS1* fxWriteCode(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxWriteCodeBigInt1(xsMachine* the, txU1 id, txS1* p);
+static txS1* fxWriteCodeBigInt2(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxWriteCodeKey(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxWriteCodeNumber(xsMachine* the, txU1 id, txS1* p);
 static txS1* fxWriteCodeS1(xsMachine* the, txU1 id, txS1* p);
@@ -55,6 +59,8 @@ const txInteger gxCodeIDs[XS_CODE_COUNT] = {
 	/* XS_CODE_BEGIN_STRICT */ XS_CODE_BEGIN_STRICT,
 	/* XS_CODE_BEGIN_STRICT_BASE */ XS_CODE_BEGIN_STRICT_BASE,
 	/* XS_CODE_BEGIN_STRICT_DERIVED */ XS_CODE_BEGIN_STRICT_DERIVED,
+	/* XS_CODE_BIGINT_1 */ XS_CODE_BIGINT_1,
+	/* XS_CODE_BIGINT_2 */ XS_CODE_BIGINT_1,
 	/* XS_CODE_BIT_AND */ XS_CODE_BIT_AND,
 	/* XS_CODE_BIT_NOT */ XS_CODE_BIT_NOT,
 	/* XS_CODE_BIT_OR */ XS_CODE_BIT_OR,
@@ -221,6 +227,7 @@ const txInteger gxCodeIDs[XS_CODE_COUNT] = {
 	/* XS_CODE_THROW */ XS_CODE_THROW,
 	/* XS_CODE_THROW_STATUS */ XS_CODE_THROW_STATUS,
 	/* XS_CODE_TO_INSTANCE */ XS_CODE_TO_INSTANCE,
+	/* XS_CODE_TO_NUMERIC */ XS_CODE_TO_NUMERIC,
 	/* XS_CODE_TRANSFER */ XS_CODE_TRANSFER,
 	/* XS_CODE_TRUE */ XS_CODE_TRUE,
 	/* XS_CODE_TYPEOF */ XS_CODE_TYPEOF,
@@ -255,6 +262,8 @@ const txCodeReader gxCodeReaders[XS_CODE_COUNT] = {
 	/* XS_CODE_BEGIN_STRICT */ fxReadCodeS1,
 	/* XS_CODE_BEGIN_STRICT_BASE */ fxReadCodeS1,
 	/* XS_CODE_BEGIN_STRICT_DERIVED */ fxReadCodeS1,
+	/* XS_CODE_BIGINT_1 */ fxReadCodeBigInt1,
+	/* XS_CODE_BIGINT_2 */ fxReadCodeBigInt2,
 	/* XS_CODE_BIT_AND */ fxReadCode,
 	/* XS_CODE_BIT_NOT */ fxReadCode,
 	/* XS_CODE_BIT_OR */ fxReadCode,
@@ -421,6 +430,7 @@ const txCodeReader gxCodeReaders[XS_CODE_COUNT] = {
 	/* XS_CODE_THROW */ fxReadCode,
 	/* XS_CODE_THROW_STATUS */ fxReadCode,
 	/* XS_CODE_TO_INSTANCE */ fxReadCode,
+	/* XS_CODE_TO_NUMERIC */ fxReadCode,
 	/* XS_CODE_TRANSFER */ fxReadCode,
 	/* XS_CODE_TRUE */ fxReadCode,
 	/* XS_CODE_TYPEOF */ fxReadCode,
@@ -455,6 +465,8 @@ const txCodeWriter gxCodeWriters[XS_CODE_COUNT] = {
 	/* XS_CODE_BEGIN_STRICT */ fxWriteCodeS1,
 	/* XS_CODE_BEGIN_STRICT_BASE */ fxWriteCodeS1,
 	/* XS_CODE_BEGIN_STRICT_DERIVED */ fxWriteCodeS1,
+	/* XS_CODE_BIGINT_1 */ fxWriteCodeBigInt1,
+	/* XS_CODE_BIGINT_2 */ fxWriteCodeBigInt2,
 	/* XS_CODE_BIT_AND */ fxWriteCode,
 	/* XS_CODE_BIT_NOT */ fxWriteCode,
 	/* XS_CODE_BIT_OR */ fxWriteCode,
@@ -621,6 +633,7 @@ const txCodeWriter gxCodeWriters[XS_CODE_COUNT] = {
 	/* XS_CODE_THROW */ fxWriteCode,
 	/* XS_CODE_THROW_STATUS */ fxWriteCode,
 	/* XS_CODE_TO_INSTANCE */ fxWriteCode,
+	/* XS_CODE_TO_NUMERIC */ fxWriteCode,
 	/* XS_CODE_TRANSFER */ fxWriteCode,
 	/* XS_CODE_TRUE */ fxWriteCode,
 	/* XS_CODE_TYPEOF */ fxWriteCode,
@@ -643,6 +656,31 @@ txS1* fxReadCode(xsMachine* the, txU1 id, txS1* p)
 {
 	xsVar(2) = xsNew0(xsArg(1), gxCodeConstructors[id]);
 	return p;
+}
+
+txS1* fxReadCodeBigInt1(xsMachine* the, txU1 id, txS1* p)
+{
+	txByte* code = the->code;
+	txU1 param = *((txU1*)p++);
+	the->code = p;
+	fxBigIntDecode(the, param);
+	the->code = code;
+	mxPullSlot(mxVarv(3));
+	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsVar(3));
+	return p + param;
+}
+
+txS1* fxReadCodeBigInt2(xsMachine* the, txU1 id, txS1* p)
+{
+	txByte* code = the->code;
+	txU2 param;
+	mxDecode2(p, param);
+	the->code = p;
+	fxBigIntDecode(the, param);
+	the->code = code;
+	mxPullSlot(mxVarv(3));
+	xsVar(2) = xsNew1(xsArg(1), gxCodeConstructors[id], xsVar(3));
+	return p + param;
 }
 
 txS1* fxReadCodeKey(xsMachine* the, txU1 id, txS1* p)
@@ -754,6 +792,34 @@ txS1* fxWriteCode(xsMachine* the, txU1 id, txS1* p)
 	return p;
 }
 
+txS1* fxWriteCodeBigInt1(xsMachine* the, txU1 id, txS1* p)
+{
+	txBigInt* bigint;
+	txU1 u1;
+	xsVar(1) = xsGet(xsVar(0), xsID_param);
+	bigint = fxToBigInt(the, mxVarv(1), 1);
+	u1 = (txU1)fxBigIntMeasure(bigint);
+	*((txU1*)p++) = id;
+	*((txU1*)p++) = u1;
+	fxBigIntEncode(p, bigint, u1);
+	p += u1;
+	return p;
+}
+
+txS1* fxWriteCodeBigInt2(xsMachine* the, txU1 id, txS1* p)
+{
+	txBigInt* bigint;
+	txU2 u2;
+	xsVar(1) = xsGet(xsVar(0), xsID_param);
+	bigint = fxToBigInt(the, mxVarv(1), 1);
+	u2 = (txU2)fxBigIntMeasure(bigint);
+	*((txU1*)p++) = id;
+	mxEncode2(p, u2);
+	fxBigIntEncode(p, bigint, u2);
+	p += u2;
+	return p;
+}
+
 txS1* fxWriteCodeKey(xsMachine* the, txU1 id, txS1* p)
 {
 	txID index = (txID)xsToInteger(xsGet(xsVar(0), xsID_param));
@@ -795,7 +861,6 @@ txS1* fxWriteCodeS4(xsMachine* the, txU1 id, txS1* p)
 }
 
 txS1* fxWriteCodeString1(xsMachine* the, txU1 id, txS1* p)
-
 {
 	txU1 u1 = (txU1)(xsToInteger(xsGet(xsVar(0), xsID_size)) - 2);
 	*((txU1*)p++) = id;
@@ -876,6 +941,13 @@ void Tool_prototype_keyString(xsMachine* the)
 		xsResult = xsString("?");
 }
 
+void Tool_prototype_measureBigInt(xsMachine* the)
+{
+	txBigInt* bigint = fxToBigInt(the, mxArgv(0), 1);
+	xsIntegerValue result = fxBigIntMeasure(bigint);
+	xsResult = xsInteger(result);
+}
+
 void Tool_prototype_prepare(xsMachine* the)
 {
 	txInteger i, j, k;
@@ -895,6 +967,8 @@ void Tool_prototype_prepare(xsMachine* the)
 	gxCodeConstructors[XS_CODE_BEGIN_STRICT] = xsID_BEGIN_STRICT;
 	gxCodeConstructors[XS_CODE_BEGIN_STRICT_BASE] = xsID_BEGIN_STRICT_BASE;
 	gxCodeConstructors[XS_CODE_BEGIN_STRICT_DERIVED] = xsID_BEGIN_STRICT_DERIVED;
+	gxCodeConstructors[XS_CODE_BIGINT_1] = xsID_BIGINT;
+	gxCodeConstructors[XS_CODE_BIGINT_2] = xsID_BIGINT;
 	gxCodeConstructors[XS_CODE_BIT_AND] = xsID_BIT_AND;
 	gxCodeConstructors[XS_CODE_BIT_NOT] = xsID_BIT_NOT;
 	gxCodeConstructors[XS_CODE_BIT_OR] = xsID_BIT_OR;
@@ -1061,6 +1135,7 @@ void Tool_prototype_prepare(xsMachine* the)
 	gxCodeConstructors[XS_CODE_THROW] = xsID_THROW;
 	gxCodeConstructors[XS_CODE_THROW_STATUS] = xsID_THROW_STATUS;
 	gxCodeConstructors[XS_CODE_TO_INSTANCE] = xsID_TO_INSTANCE;
+	gxCodeConstructors[XS_CODE_TO_NUMERIC] = xsID_TO_NUMERIC;
 	gxCodeConstructors[XS_CODE_TRANSFER] = xsID_TRANSFER;
 	gxCodeConstructors[XS_CODE_TRUE] = xsID_TRUE;
 	gxCodeConstructors[XS_CODE_TYPEOF] = xsID_TYPEOF;
