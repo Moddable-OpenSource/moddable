@@ -53,7 +53,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_BEGIN_STRICT */ "begin_strict",
 	/* XS_CODE_BEGIN_STRICT_BASE */ "begin_strict_base",
 	/* XS_CODE_BEGIN_STRICT_DERIVED */ "begin_strict_derived",
-	/* XS_CODE_BIGINT_1 */ "bigint_1",
+	/* XS_CODE_BIGINT_1 */ "bigint",
 	/* XS_CODE_BIGINT_2 */ "bigint_2",
 	/* XS_CODE_BIT_AND */ "bit_and",
 	/* XS_CODE_BIT_NOT */ "bit_not",
