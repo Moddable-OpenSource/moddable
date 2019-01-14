@@ -86,12 +86,16 @@ class Connection extends Socket {
 				break;
 
 			default:
-				if (message < 0) {
-					trace("connection lost\n");
+				if (message < 0)
 					this.close();
-				}
 				break;
 		}
+	}
+	close() {
+		super.close();
+		let index = this.listener.connections.findIndex(item => item === this);
+		if (index >= 0)
+			this.listener.connections.splice(index, 1);
 	}
 	// placeholders
 	suspend(cancel) {
@@ -109,9 +113,15 @@ Object.freeze(Connection.prototype);
 class Telnet extends Listener {
 	constructor(dictionary = {}) {
 		super(Object.assign({port: 23}, dictionary));
+		this.connections = [];
+	}
+	close() {
+		this.connections.forEach(connection => connection.close());
 	}
 	callback() {
 		const socket = new Connection({listener: this});
+		socket.listener = this;
+		this.connections.push(socket);
 		CLI.execute.call(socket, "welcome");
 		CLI.execute.call(socket, "prompt");
 	}
