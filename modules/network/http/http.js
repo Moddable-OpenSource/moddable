@@ -405,6 +405,7 @@ function done(error = false) {
 
 export class Server {
 	constructor(dictionary = {}) {
+		this.connections = [];
 		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
 		this.listener.callback = listener => {
 			let socket = new Socket({listener: this.listener});
@@ -413,11 +414,14 @@ export class Server {
 			request.server = this;					// associate server with request
 			request.state = 1;						// already connected socket
 			request.callback = this.callback;		// transfer server.callback to request.callback
+			this.connections.push(request);
 			request.callback(1);					// tell app we have a new connection
 		};
 	}
 
 	close() {
+		this.connections.forEach(request => {trace("close http server request\n"); request.close();});
+		delete this.connections;
 		this.listener.close();
 		delete this.listener;
 	}
@@ -634,6 +638,7 @@ function server(message, value, etc) {
 					this.callback(10);
 				}
 				finally {
+					this.server.connections.splice(this.server.connections.indexOf(this), 1);
 					this.close();
 				}
 			}
@@ -649,6 +654,7 @@ function server(message, value, etc) {
 			this.callback(-1);
 		}
 		finally {
+			this.server.connections.splice(this.server.connections.indexOf(this), 1);
 			this.close();
 		}
 	}
