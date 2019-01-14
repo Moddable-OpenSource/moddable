@@ -487,6 +487,29 @@ const constructors = {
 	},
 	BEGIN_STRICT_DERIVED: class extends Code {
 	},
+	BIGINT: class extends Code {
+		bind(tool) {
+			tool.pushStack(this.param);
+			return this.next;
+		}
+		reportParam(tool) {
+			return this.param + 'n';
+		}
+		serialize1(tool) {
+			let param = tool.measureBigInt(this.param);
+			if (param > 65535) {
+				this.id += 2;
+				this.size = 5 + param;
+			}
+			else if (param > 255) {
+				this.id += 1;
+				this.size = 3 + param;
+			}
+			else
+				this.size = 2 + param;
+			super.serialize1(tool);
+		}
+	},
 	BIT_AND: class extends BinaryCode {
 		compute(left, right) {
 			return left & right;
@@ -1253,6 +1276,8 @@ const constructors = {
 	},
 	TO_INSTANCE: class extends Code {
 	},
+	TO_NUMERIC: class extends Code {
+	},
 	TRANSFER: class extends Code {
 		bind(tool) {
 			let length = tool.popStack();
@@ -1357,6 +1382,7 @@ class Tool {
 	getStack(at) {
 		return this.stack[this.stackIndex + at];
 	}
+	measureBigInt(it) @ "Tool_prototype_measureBigInt"
 	optimize() {
 		let code = this.first;
 		while (code) {
@@ -1374,7 +1400,7 @@ class Tool {
 			code = code.next;
 		}
 	}
-	prepare(constructors) @ "Tool_prototype_prepare";
+	prepare(constructors) @ "Tool_prototype_prepare"
 	
 	popStack() {
 		let result = this.stack[this.stackIndex];
@@ -1385,7 +1411,7 @@ class Tool {
 		this.stackIndex--;
 		this.stack[this.stackIndex] = slot;
 	}
-	read(path, constructors) @ "Tool_prototype_read";
+	read(path, constructors) @ "Tool_prototype_read"
 	remove(code) {
 		let previous = code.previous;
 		let next = code.next;
