@@ -117,6 +117,7 @@ class Telnet extends Listener {
 	}
 	close() {
 		this.connections.forEach(connection => connection.close());
+		super.close();
 	}
 	callback() {
 		const socket = new Connection({listener: this});
