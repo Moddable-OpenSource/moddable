@@ -505,11 +505,9 @@ This document provides an introduction to getting started building apps with the
 
 2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-3. Download the [esptool](https://github.com/igrr/esptool-ck/releases) compatible with your Linux host. Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp32` directory.
+3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-4. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
-
-5. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
@@ -524,54 +522,54 @@ This document provides an introduction to getting started building apps with the
 	git submodule update
 	```
 
-6. Install the packages required to compile with the `ESP-IDF`:
+5. Install the packages required to compile with the `ESP-IDF`:
 
 	```
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial 
 	```
 	
-7. Set the `IDF_PATH` environment variable in your `~/.bashrc` to the `esp-idf` directory:
+6. Set the `IDF_PATH` environment variable in your `~/.bashrc` to the `esp-idf` directory:
 
 	```
 	IDF_PATH=~/esp32/esp-idf
 	export IDF_PATH
 	```
 
-8. Install the Python `pip` package management system:
+7. Install the Python `pip` package management system:
 
 	```
 	cd ~/esp32
 	sudo easy_install pip
 	```
 	
-9. Install the required Python packages:
+8. Install the required Python packages:
 
 	```
 	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
 	```
 
-10. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
+9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
 
 	```
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
-11. Connect the ESP32 device to your Linux host with a USB cable.
+10. Connect the ESP32 device to your Linux host with a USB cable.
 
-12. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
+11. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
 
 	```
 	ls /dev
 	```
 	
-13. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
+12. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
 
 	```
 	UPLOAD_PORT=/dev/ttyUSB0
 	export UPLOAD_PORT
 	```
 
-14. Verify the setup by building `helloworld` for the `esp32` target:
+13. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd $MODDABLE/examples/helloworld
