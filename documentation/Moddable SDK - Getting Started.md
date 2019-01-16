@@ -1,7 +1,7 @@
 # Moddable SDK – Getting Started
-Copyright 2016-2018 Moddable Tech, Inc.
+Copyright 2016-2019 Moddable Tech, Inc.
 
-Revised: September 28, 2018
+Revised: January 16, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
 
@@ -124,11 +124,9 @@ This document provides an introduction to getting started building apps with the
 
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.12/esptool-0.4.12-osx.tar.gz). Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp32` directory.
+4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-5. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
-
-6. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
@@ -143,7 +141,7 @@ This document provides an introduction to getting started building apps with the
 	git submodule update
 	```
 
-7. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
+6. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
 
 	```
 	export IDF_PATH="/Users/<user>/esp32/esp-idf"
@@ -151,26 +149,26 @@ This document provides an introduction to getting started building apps with the
 
 	> Note: Close and reopen the Terminal window to enable the `IDF_PATH` environment variable.
 	
-8. Install the Python `pip` package management system:
+7. Install the Python `pip` package management system:
 
 	```
 	cd ~/esp32
 	sudo easy_install pip
 	```
 	
-9. Install the required Python packages:
+8. Install the required Python packages:
 
 	```
 	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
 	```
 
-10. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
+9. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
 
 	```
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
-11. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
+10. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
 
 	To determine the serial port, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial devices, use the following command in Terminal:
 	
@@ -178,13 +176,13 @@ This document provides an introduction to getting started building apps with the
 	ls /dev/cu.*
 	```
 
-12. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
+11. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
 
 	```
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
-13. Verify the setup by building `helloworld` for the `esp32` target:
+12. Verify the setup by building `helloworld` for the `esp32` target:
 
 
 	```
@@ -275,7 +273,7 @@ This document provides an introduction to getting started building apps with the
  
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.12/esptool-0.4.12-win32.zip). Unzip the archive and copy the `esptool.exe` executable from the `esptool-0.4.12-win32` directory into the `esp` directory.
+4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.13/esptool-0.4.13-win32.zip). Unzip the archive and copy the `esptool.exe` executable from the `esptool-0.4.13-win32` directory into the `esp` directory.
 
 5. Download and unzip the [Cygwin toolchain support package](http://www.moddable.tech/private/cygwin.win32.zip). Copy the `cygwin` directory into the `esp` directory.
 	
