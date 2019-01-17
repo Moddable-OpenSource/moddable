@@ -40,14 +40,13 @@ global.CLUT = CLUT;
 
 export class Texture @ "PiuTextureDelete" {
 	constructor(it) {
-		let path;
 		let alphaBitmap;
 		let colorBitmap;
 		if (typeof(it) == "object")
 			it = it.path;
 		if (it.endsWith(".png")) {
 			let name = it.slice(0, -4);
-			path = name + "-alpha.bm4";
+			let path = name + "-alpha.bm4";
 			if (Resource.exists(path)) {
 				alphaBitmap = parseRLE(new Resource(path));
 			}
@@ -76,15 +75,14 @@ export class Texture @ "PiuTextureDelete" {
 	get height() @ "PiuTexture_get_height"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let texture;
-			if (map)
-				texture = map.get(it);
+			if (global.assetMap)
+				texture = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!texture) {
 				texture = new Texture(it);
-				map.set(it, texture);
+				assetMap.set(it, texture);
 			}
 			return texture;
 		}

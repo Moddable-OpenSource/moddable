@@ -56,15 +56,14 @@ export class Skin @ "PiuSkinDelete" {
 	get height() @ "PiuSkin_get_height"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let skin;
-			if (map)
-				skin = map.get(it);
+			if (global.assetMap)
+				skin = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!skin) {
 				skin = new Skin(it);
-				map.set(it, skin);
+				assetMap.set(it, skin);
 			}
 			return skin;
 		}
@@ -96,15 +95,14 @@ export class Style @ "PiuStyleDelete" {
 	measure(string) @ "PiuStyle_measure"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let style;
-			if (map)
-				style = map.get(it);
+			if (global.assetMap)
+				style = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!style) {
 				style = new Style(it);
-				map.set(it, style);
+				assetMap.set(it, style);
 			}
 			return style;
 		}
