@@ -47,7 +47,5 @@ export default function parseRLE(buffer) {
 function parse() @ "xs_parseRLE";
 
 export default function (buffer) {
-	let bitmap = new Bitmap(1, 1, Bitmap.Default, buffer, 0);
-	parse(buffer, bitmap);
-	return bitmap;
+	return parse(buffer, new Bitmap(1, 1, Bitmap.Default, buffer, 0));
 }
