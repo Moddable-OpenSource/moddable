@@ -163,8 +163,8 @@ class MDNS extends Socket {
 	}
 	scanPacket(packet, address) {
 		const answers = packet.answers;
-		let changed;
-		for (let i = 0, length = answers + packet.additionals; i < length; i++) {
+		let changed, i, j, length;
+		for (i = 0, length = answers + packet.additionals; i < length; i++) {
 			const record = (i < answers) ? packet.answer(i) : packet.additional(i - answers);
 			let name = record.qname, service;
 			let monitor, instance;
@@ -217,8 +217,8 @@ class MDNS extends Socket {
 							instance.changed = changed = true;
 						}
 						else {
-							for (let i = 0, length = txt.length; i < txt.length; ++i) {
-								if (txt[i] === instance.txt[i])
+							for (j = 0; j < txt.length; ++j) {
+								if (txt[j] === instance.txt[j])
 									continue;
 								instance.txt = txt;
 								instance.changed = changed = true;
@@ -241,10 +241,12 @@ class MDNS extends Socket {
 		if (!changed)
 			return;
 
-		this.monitors.forEach(monitor => {
-			monitor.forEach(instance => {
+		for (i = 0; i < this.monitors.length; i++) {
+			const monitor = this.monitors[i];
+			for (j = 0; j < monitor.length; j++) {
+				const instance = monitor[j];
 				if (!instance.changed)
-					return;
+					continue;
 				delete instance.changed;
 				if (instance.name && instance.txt && instance.target && instance.address)
 					monitor.callback.call(this, monitor.service.slice(0, -6), instance);
@@ -258,8 +260,8 @@ class MDNS extends Socket {
 
 					this.write(MDNS.IP, MDNS.PORT, query.build());
 				}
-			});
-		});
+			}
+		}
 	}
 
 	callback(message, value, address, port) {

@@ -65,7 +65,8 @@ class WebThings {
 		mdns.monitor("_webthing._tcp", (service, instance) => {
 			let txt = instance.txt;
 			let name = instance.name;
-			this.things.forEach(thing => {
+			for (let j = 0; j < this.things.length; j++) {
+				const thing = this.things[j];
 				let properties = Object.keys(thing.description.properties);
 				let bools = properties.filter(prop => {
 					let isControlled = false;
@@ -80,8 +81,8 @@ class WebThings {
 					equal = item.indexOf("=");
 					key = item.substring(0, equal);
 					value = item.substring(equal+1);
-					let controllers = thing.instance.controller;
-					controllers.forEach(item => {
+					for (let k = 0; k < thing.instance.controller.length; k++) {
+						const item = thing.instance.controller[k];
 						if ((name === item.remote) && (key === item.txt)){
 							let property = item.property;
 							let type = thing.description.properties[property];
@@ -106,12 +107,12 @@ class WebThings {
 								}
 							}
 						}
-					});
+					}
 				}
 				for (let prop of bools) {
 					thing.instance[prop] = false;
 				}
-			});
+			}
 		});
 	}
 	close () {
