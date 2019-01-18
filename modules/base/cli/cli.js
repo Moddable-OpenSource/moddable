@@ -35,7 +35,10 @@ const CLI = {
 
 			let command = parts.shift().toLowerCase();
 			if ("help" !== command) {
-				if (!CLI.handlers.some(handler => handler.call(this, command, parts)))
+				let found;
+				for (let i = CLI.handlers.length - 1; !found && (i >= 0); i--)
+					found = CLI.handlers[i].call(this, command, parts);
+				if (!found)
 					this.line(`Unknown command: ${command}`);
 			}
 			else
