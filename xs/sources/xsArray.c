@@ -1888,14 +1888,13 @@ void fx_Array_prototype_some(txMachine* the)
 
 void fx_Array_prototype_sort(txMachine* the)
 {
+#define mxArraySize(ARRAY) (((ARRAY)->value.array.address) ? (((txChunk*)(((txByte*)((ARRAY)->value.array.address)) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0)
 	txSlot* array = fxCheckArray(the, mxThis);
 	txSlot* function = C_NULL;
  	txNumber LENGTH;
- 	txIndex index, length;
+ 	txIndex index, length, size;
 	txSlot* instance = C_NULL;
-	txSlot* cache;
     txSlot* item;
-    txBoolean flag;
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
 		if (slot->kind != XS_UNDEFINED_KIND) {
@@ -1906,21 +1905,22 @@ void fx_Array_prototype_sort(txMachine* the)
 				mxTypeError("compare is no function");
 		}
 	}
+again:
 	if (!array) {
 		LENGTH = fxGetArrayLength(the, mxThis);
 		if (LENGTH > 0xFFFFFFFF)
 			mxRangeError("array overflow");
 		mxPush(mxArrayPrototype);
 		instance = fxNewArrayInstance(the);
-		cache = instance->next;
-		item = cache;
+		array = instance->next;
+		item = array;
         index = 0;
 		while (index < LENGTH) {
 			mxPushSlot(mxThis);
 			if (fxHasIndex(the, index)) {
 				item->next = fxNewSlot(the);
 				item = item->next;
-				cache->value.array.length++;
+				array->value.array.length++;
 				mxPushSlot(mxThis);
 				fxGetIndex(the, index);
 				mxPullSlot(item);
@@ -1929,35 +1929,33 @@ void fx_Array_prototype_sort(txMachine* the)
 		}
 		fxCacheArray(the, instance);
 	}
-	else {
-		mxPushUndefined();
-		cache = the->stack;
-		cache->kind = array->kind;
-		cache->value = array->value;
-	}
-	flag = the->collectFlag;
-	the->collectFlag &= ~XS_COLLECTING_FLAG;
-	length = cache->value.array.length;
+	length = array->value.array.length;
+	size = mxArraySize(array);
 	/* like GCC qsort */
+	#define CHECK \
+		if (size != mxArraySize(array)) { \
+			array = C_NULL; \
+			goto again; \
+		}
 	#define COMPARE(INDEX) \
-		fxCompareArrayItem(the, function, cache, INDEX)
+		fxCompareArrayItem(the, function, array, INDEX)
 	#define COPY \
 		to->next = from->next; \
 		to->ID = from->ID; \
 		to->kind = from->kind; \
 		to->value = from->value
 	#define MOVE(FROM,TO) \
-		from = cache->value.array.address + (FROM); \
-		to = cache->value.array.address + (TO); \
+		from = array->value.array.address + (FROM); \
+		to = array->value.array.address + (TO); \
 		COPY
 	#define PUSH(INDEX) \
-		from = cache->value.array.address + (INDEX); \
+		from = array->value.array.address + (INDEX); \
 		mxPushUndefined(); \
 		to = the->stack; \
 		COPY
 	#define PULL(INDEX) \
 		from = the->stack++; \
-		to = cache->value.array.address + (INDEX); \
+		to = array->value.array.address + (INDEX); \
 		COPY
 	if (length > 0) {
 		txIndex i, j;
@@ -1971,25 +1969,34 @@ void fx_Array_prototype_sort(txMachine* the)
 				txIndex mid = lo + ((hi - lo) >> 1);
 				PUSH(mid);
 				if (COMPARE(lo) > 0) {
+					CHECK;
 					MOVE(lo, mid);
 					PULL(lo);
 					PUSH(mid);
 				}
+				else
+					CHECK;
 				if (COMPARE(hi) < 0) {
+					CHECK;
 					MOVE(hi, mid);
 					PULL(hi);
 					PUSH(mid);
 					if (COMPARE(lo) > 0) {
+						CHECK;
 						MOVE(lo, mid);
 						PULL(lo);
 						PUSH(mid);
 					}
+					else
+						CHECK;
 				}
+				else
+					CHECK;
 				i = lo + 1;
 				j = hi - 1;
 				do {
-					while ((COMPARE(i) < 0) && (i <= j)) i++;
-					while ((COMPARE(j) > 0) && (i <= j)) j--;
+					while ((COMPARE(i) < 0) && (i <= j)) { CHECK; i++; }
+					while ((COMPARE(j) > 0) && (i <= j)) { CHECK; j--; }
 					if (i < j) {
 						PUSH(i);
 						MOVE(j, i);
@@ -2033,16 +2040,16 @@ void fx_Array_prototype_sort(txMachine* the)
 		for (i = 1; i < length; i++) {
 			PUSH(i);
 			for (j = i; (j > 0) && (COMPARE(j - 1) > 0); j--) {
+				CHECK;
 				MOVE(j - 1, j);
 			}	
 			PULL(j);
 		}
 	}
-	the->collectFlag = flag;
-	if (instance || (array->value.array.address != cache->value.array.address)) {
+	if (instance) {
 		index = 0;
 		while (index < length) {
-			item = cache->value.array.address + index;
+			item = array->value.array.address + index;
 			mxPushSlot(item);
 			mxPushSlot(mxThis);
 			fxSetIndex(the, index);
@@ -2054,10 +2061,10 @@ void fx_Array_prototype_sort(txMachine* the)
 			fxDeleteIndex(the, index);
 			index++;
 		}
+		mxPop();
 	}
 	else
 		fxIndexArray(the, array);
-	mxPop();
 	mxResult->kind = mxThis->kind;
 	mxResult->value = mxThis->value;
 }
