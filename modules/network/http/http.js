@@ -554,6 +554,8 @@ function server(message, value, etc) {
 		}
 
 		if (3 === message) {		// space available to write
+			let first;
+
 			if (7 === this.state) {
 				let response = this.callback(8);		// prepare response
 
@@ -587,7 +589,6 @@ function server(message, value, etc) {
 						if (this.body)
 							count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
 						parts.push("content-length: ", count.toString(), "\r\n");
-						this.offset = 0;		// byte offset into this.body
 					}
 				}
 				else
@@ -596,6 +597,7 @@ function server(message, value, etc) {
 				socket.write.apply(socket, parts);
 
 				this.state = 8;
+				first = true;
 
 				if (this.body && (true !== this.body)) {
 					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
@@ -612,8 +614,10 @@ function server(message, value, etc) {
 				if (undefined !== body)
 					count = ("string" === typeof body) ? body.length : body.byteLength;
 
-				if (0 === count)
-					this.state = 9;		// done
+				if (0 === count) {
+					if (!first)
+						this.state = 9;		// done
+				}
 				else {
 					if (1 & this.flags) {
 						socket.write(body);				//@@ assume it all fits... not always true
