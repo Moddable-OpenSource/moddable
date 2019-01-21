@@ -88,18 +88,22 @@ class MDNS extends Socket {
 		const index = this.services.indexOf(service);
 		if (index < 0) throw new Error("service not found");
 
-		if (!service.update) {
-			Timer.repeat(id => {
+		if (!service.updater) {
+			service.updater = Timer.set(updater => {
 				this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x04 | 0x8000, service));
-				service.update--;
-				if (0 == service.update) {
-					Timer.clear(id)
+				updater.interval += 250;
+				if (1500 >= service.update) {
+					Timer.clear(updater);
+					delete service.updater;
 					delete service.update;
 				}
-			}, 250, 0);
+				else
+					Timer.schedule(updater, updater.interval, 250);
+			}, 0, 250);
 		}
-		service.update = 3;
-
+		else
+			Timer.schedule(service.updater, 0, 250);
+		service.updater.interval = 0;
 	}
 	remove(service) {
 		if ("string" === typeof service) {
