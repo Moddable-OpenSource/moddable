@@ -16,6 +16,7 @@ import config from "mc/config";
 import WiFi from "wifi";
 import MDNS from "mdns";
 import ASSETS from "assets";
+import Timer from "timer";
 
 const HOSTNAMES = ["modThermostat", "anotherModThermostat"];
 
@@ -120,8 +121,10 @@ class AppBehavior extends Behavior {
 	onHostname(application, value) {
 		trace(`Got hostname ${value}.\n`);
 		this.data.hostname = value;
-		application.remove(application.first);
-		application.add(new ASSETS.ThermostatScreen(this.data));
+		Timer.set(() => {
+			application.remove(application.first);
+			application.add(new ASSETS.ThermostatScreen(this.data));
+		}, 0);
 		let mdns = this.mdns;
 		let things = this.things = new WebThings(mdns);
 		things.add(Thermostat);

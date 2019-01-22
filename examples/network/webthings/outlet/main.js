@@ -16,6 +16,7 @@ import config from "mc/config";
 import WiFi from "wifi";
 import MDNS from "mdns";
 import ASSETS from "assets";
+import Timer from "timer";
 
 const HOSTNAMES = ["modOutlet", "anotherModOutlet"];
 
@@ -114,11 +115,13 @@ class AppBehavior extends Behavior {
 	}
 	onHostname(application, value) {
 		trace(`Got hostname ${value}.\n`);
-		application.remove(application.first);
-		application.add(new ASSETS.OutletScreen(value));
 		let mdns = this.mdns;
 		let things = this.things = new WebThings(mdns);
 		things.add(Outlet);
+		Timer.set(() => {
+			application.remove(application.first);
+			application.add(new ASSETS.OutletScreen(value));
+		}, 0);
 	}
 	stateChanged(container, property, state) {
 		this.things.things[0].instance[property] = state;
