@@ -3,9 +3,6 @@
 		"ssid": "YOUR_WIFI_SSID_HERE",
 		"password": "YOUR_WIFI_PASSWORD_HERE"
 	},
-	"creation":{
-		"stack":390,
-	},
 	"modules": {
 		"~": [
 			"$(MODULES)/network/net/net",
