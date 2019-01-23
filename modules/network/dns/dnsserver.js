@@ -47,6 +47,9 @@ class Server extends Socket {
 					part += String.fromCharCode(request[index++]);
 				name.push(part);
 			}
+			let type = (request[index] << 8) | request[index + 1];
+			if (1 !== type)
+				return;		// only reply to A
 
 			let result = this.client(1, name.join("."));
 			if (result) {
@@ -75,7 +78,7 @@ class Server extends Socket {
 
 				result = result.split(".");
 				for (let i = 0; i < 4; i++)
-					response[index++] = result[i];
+					response[index++] = parseInt(result[i]);
 
 				this.write(address, port, response.buffer);
 			}
