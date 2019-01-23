@@ -87,31 +87,31 @@ class WebThings {
 							let property = item.property;
 							let type = thing.description.properties[property];
 							if (type) {
-								type = type.type;
-								switch(type) {
+								switch(type.type) {
 									case "boolean":
-										thing.instance[property] = true;
+										value = true;
 										bools.splice(bools.indexOf(property), 1);
 										break;
 									case "number":
 									case "integer":
-										thing.instance[property] = parseInt(value);
+										value = ("number" === type.type) ? parseFloat(value) : parseInt(value);
+					 					if ((undefined !== type.minimum) && (value < type.minimum))
+											value = type.minimum;
+					 					if ((undefined !== type.maximum) && (value > type.maximum))
+											value = type.maximum;
 										break;
 									case "object":
 									case "array":
-										thing.instance[property] = JSON.parse(value);
-										break;
-									default:
-										thing.instance[property] = value;
+										value = JSON.parse(value);
 										break;
 								}
+								thing.instance[property] = value;
 							}
 						}
 					}
 				}
-				for (let prop of bools) {
+				for (let prop of bools)
 					thing.instance[prop] = false;
-				}
 			}
 		});
 	}
