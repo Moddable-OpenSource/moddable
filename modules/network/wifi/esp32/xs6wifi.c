@@ -414,6 +414,7 @@ void initWiFi(void)
 
 	if (-1 == gWiFiState) {
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
 		tcpip_adapter_init();
 		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
 		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
