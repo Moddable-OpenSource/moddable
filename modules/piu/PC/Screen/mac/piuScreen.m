@@ -106,10 +106,10 @@ struct PiuScreenMessageStruct {
 }
 - (void)drawRect:(NSRect)rect {
 	CGRect bounds = NSRectToCGRect(self.bounds);
-	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] CGContext];
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
-    CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big, provider, nil, NO, kCGRenderingIntentDefault);
+    CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
 	CGContextDrawImage(context, bounds, image);
 	CGImageRelease(image);
 	CGDataProviderRelease(provider);
