@@ -1,15 +1,32 @@
 {
+	"build": {
+		"SERIAL": "$(MODDABLE)/examples/experimental/serial",
+	},
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"modules": {
+		"serial": "$(SERIAL)/serial",
+	},
+	"preload": "serial",
 	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(SERIAL)/esp/*",
+			},
+		},
 		"esp32": {
 			"modules": {
-				"*": "$(MODULES)/pins/serial/esp32/*",
-				"pins/serial": "$(MODULES)/pins/serial/serial"
+				"*": "$(SERIAL)/esp32/*",
 			},
-			"preload": "pins/serial"
+		},
+		"gecko": {
+			"modules": {
+				"*": "$(SERIAL)/gecko/*",
+			},
 		},
 		"...": {
-			"error": "Hardware serial is unsupported"
-		}
-	}
+			"error": "seial unsupported"
+		},
+	},
 }
-
