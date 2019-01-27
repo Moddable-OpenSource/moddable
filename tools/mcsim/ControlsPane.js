@@ -418,6 +418,11 @@ export var SwitchRow = Row.template(function($) { return {
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
 				}
+				onDataChanged(container) {
+					let data = this.data;
+					this.changeOffset(container, data.value ? this.size : 0);
+					container.next.string = data.value ? data.on : data.off;
+				}
 				onValueChanged(container) {
 					let data = this.data;
 					container.next.string = data.value ? data.on : data.off;
