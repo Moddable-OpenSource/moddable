@@ -58,9 +58,8 @@ typedef enum {
 	DISCONNECT  = 0xE0,
 } msg_type;
 
-#define PING_INTERVAL 5
-
 // VLQ is a name someone made up for the ints-as-7-bit-octets-where-high-bit-indicates-more-octets int format
+//@@ rewrite to match specification!
 int to_vlq(uint8_t* buf, int size, uint32_t value) {
 	for (int i = 0; value; ++i) {
 		if (i > size)
@@ -76,18 +75,17 @@ int to_vlq(uint8_t* buf, int size, uint32_t value) {
 }
 
 /* inline */ size_t from_vlq(uint8_t *buf, uint32_t *n, size_t size) {
+	int multiplier = 1, i = 0;
 	*n = 0;
-	size = size > 4 ? 4 : size;
-
-	for (size_t i = 1; i <= size;) {
-		*n |= ((*buf) & 0x7f);
-		if ((*buf) & 0x80) {
-			*n <<= 7;
-			buf++;
-			i++;
-		} else {
+	while (size--) {
+		uint8_t encodedByte = *buf++;
+		*n += (encodedByte & 0x7F) * multiplier;
+		multiplier *= 128;
+		if (multiplier > (128 * 128 * 128))
+			break;
+		i += 1;
+		if (0 == (encodedByte & 0x80))
 			return i;
-		}
 	}
 
 	*n = 0;
@@ -369,8 +367,13 @@ void mqtt_decode_msg(xsMachine* the) {
 			topic_len |= *(p++);
 			payload_len -= 2;
 
-			xsmcSetStringBuffer(xsVar(0), (char *)p, topic_len);
+			int offset = p - (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+			xsmcSetStringBuffer(xsVar(0), NULL, topic_len);
+			p = offset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+			c_memcpy(xsmcToString(xsVar(0)), p, topic_len);
 			xsmcSet(xsResult, xsID_topic, xsVar(0));
+
+			p = offset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
 			p += topic_len;
 			payload_len -= topic_len;
 
@@ -379,7 +382,10 @@ void mqtt_decode_msg(xsMachine* the) {
 				payload_len -= 2;
 			}
 
-			xsmcSetArrayBuffer(xsVar(0), p, payload_len);
+			offset = p - (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+			xsmcSetArrayBuffer(xsVar(0), NULL, payload_len);
+			p = offset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+			c_memcpy(xsmcToArrayBuffer(xsVar(0)), p, payload_len);
 			xsmcSet(xsResult, xsID_data, xsVar(0));
 			xsmcSetInteger(xsVar(0), code);
 			xsmcSet(xsResult, xsID_code, xsVar(0));
