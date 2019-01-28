@@ -975,7 +975,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	else if (KCL_DIRECTION_DECRYPTION != cipher->direction)
 		xs_crypt_cipher_setDirection(cipher, KCL_DIRECTION_DECRYPTION);
 
-	resolveBuffer(the, &xsArg(0), &data, &count);
+	resolveBuffer(the, &xsArg(0), NULL, &count);
 	if ((argc > 1) && xsmcTest(xsArg(1))) {
 		uint32_t dstCount;
 		resolveBuffer(the, &xsArg(1), &result, &dstCount);
@@ -986,11 +986,11 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	else {
 		xsResult = xsArrayBuffer(NULL, count);
 		result = xsmcToArrayBuffer(xsResult);
-		resolveBuffer(the, &xsArg(0), &data, NULL);
 	}
 
 	resultStart = result;
 	countStart = count;
+	resolveBuffer(the, &xsArg(0), &data, NULL);
 
 	if (kCryptModeECB == mode->kind) {
 		while (count >= (uint32_t)blockSize) {

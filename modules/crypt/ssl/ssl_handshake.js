@@ -44,6 +44,8 @@ import Bin from "bin";
 import RNG from "rng";
 import PKCS1_5 from "pkcs1_5";
 import DSA from "dsa";
+import ECDSA from "ecdsa";
+import Curve from "curve";
 import {Digest} from "crypt";
 import X509 from "x509";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
@@ -598,17 +600,16 @@ let handshakeProtocol = {
 				case this.sha384: hash = new Digest("SHA384"); break;
 				case this.sha512: hash = new Digest("SHA512"); break;
 				}
-				let key = session.certificateManager.getKey(session.peerCert), v;
+				let key = session.certificateManager.getKey(session.peerCert);
 				switch (sig_algo) {
 				default:
 				case this.anonymous: break;
 				case this.rsa: v = new PKCS1_5(key, false, []); break;
-				case this.dsa: pk = new DSA(key, false); break;
-				case this.ecdsa: pk = Crypt.ECDSA; break;
+				case this.dsa: v = new DSA(key, false); break;
+				case this.ecdsa: v = new ECDSA(key, false); break;
 				}
 				if (hash && v && sig) {
 					let H = hash.process(session.clientRandom, session.serverRandom, tbs.getChunk());
-//					let v = new pk(key, false, [] /* any oid for PKCS1_5 */);
 					if (!v.verify(H, sig)) {
 						// should send an alert, probably...
 						throw new Error("SSL: serverKeyExchange: failed to verify signature");

@@ -69,22 +69,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#if mxLinux
-	#include <fcntl.h>
-	#include <arpa/inet.h>
-	#include <netdb.h>
-	#include <linux/futex.h>
-	#include <signal.h>
-	#include <sys/syscall.h>
-	#include <unistd.h>
-	typedef int txSocket;
-	#define mxNoSocket -1
-	#define mxUseGCCAtomics 1
-	#define mxUseLinuxFutex 1
-	#define mxMachinePlatform \
-		txSocket connection; \
-		void* host;
-#elif mxWindows
+
+#if mxWindows
 	#include <winsock2.h>
 	typedef SOCKET txSocket;
 	#define mxNoSocket INVALID_SOCKET

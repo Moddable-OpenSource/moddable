@@ -5,7 +5,10 @@
 			"./main",
 			"$(MODULES)/crypt/digest/*",
 			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/data/hex/*",
+			"$(MODULES)/crypt/arith/*",
+			"$(MODULES)/crypt/etc/*",
+			"$(MODULES)/crypt/bin/*",
+			"$(MODULES)/data/base64/*",
 		]
 	},
 }

@@ -574,7 +574,6 @@ void fxRunFile(txContext* context, char* path)
 	int sloppy = 1;
 	int strict = 1;
 	int module = 0;
-	int async = 0;
 	int pending = 0;
 	char message[1024];
 	
@@ -637,9 +636,6 @@ void fxRunFile(txContext* context, char* path)
 				sloppy = 1;
 				strict = 0;
 				module = 0;
-			}
-			else if (!strcmp((char*)node->data.scalar.value, "async")) {
-				async = 1;
 			}
 			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsTrue")) {
 				sloppy = 0;
