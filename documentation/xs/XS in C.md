@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2018  Moddable Tech, Inc.
+ | Copyright (c) 2016-2019  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  | 
@@ -37,7 +37,7 @@
 
 # XS in C
 
-Revised: March 27, 2018  
+Revised: January 28, 2019  
 **See end of document for [copyright and license](#license)**
 
 ## About This Document
@@ -83,7 +83,7 @@ In the XS runtime, the *slot* is a fundamental storage unit. A slot is an opaque
 <a id="slot-types"></a>
 ### Slot types
 
-There are nine types of slots:
+There are eleven types of slots:
 
 	enum {
 		xsUndefinedType,
@@ -94,11 +94,13 @@ There are nine types of slots:
 		xsStringType,
 		xsStringXType,
 		xsSymbolType,
+		xsBigIntType,
+		xsBigIntXType,
 		xsReferenceType 
 	}
 	typedef char xsType;
  
-The undefined, null, boolean, number, string, and symbol slots correspond to the ECMAScript primitive types. The reference slot corresponds to the ECMAScript `reference` type. The integer and stringx slots are optimizations that are unobservable by scripts. The integer slot is equivalent to the number slot, but allowing floating point operations to be bypassed. The stringx slot is equivalent to the string slot, but uses a string in place (e.g. in ROM) without making a copy.
+The undefined, null, boolean, number, string, symbol, and bigint slots correspond to the ECMAScript primitive types. The reference slot corresponds to the ECMAScript `reference` type. The integer, stringx and bigintx slots are optimizations that are unobservable by scripts. The integer slot is equivalent to the number slot, but allowing floating point operations to be bypassed. The stringx slot is equivalent to the string slot, but uses a string in place (e.g. in ROM) without making a copy. The bigintx slot is equivalent to the bigint slot, but uses a bigint in place (e.g. in ROM) without making a copy.
 
 ##### In ECMAScript:
 
@@ -147,6 +149,8 @@ switch(typeof arguments[0]) {
 	/* StringX is a string */
 	case "string": break;
 	case "symbol": break;
+	/* BigIntX is a bigint */
+	case "bigint": break;
 	case "object": break;
 	case "function": break;
 }	
@@ -163,6 +167,7 @@ switch(xsTypeOf(xsArg(0))) {
 	case xsNumberType: break;
 	case xsStringType: break;
 	case xsSymbolType: break;
+	case xsBigIntType: break;
 	case xsReferenceType: break;  /* Objects and functions are references. */
 }		
 ```
