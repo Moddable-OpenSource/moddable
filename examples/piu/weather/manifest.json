@@ -1,0 +1,22 @@
+{
+	"include": "../all.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/socket/*",
+		]
+	},
+	"preload": [
+		"http",
+		"socket"
+	],
+	"resources":{
+		"*-alpha": [
+			"./assets/icons-alpha",
+			"./fonts/OpenSans-Regular-52",
+			"./fonts/OpenSans-Semibold-20",
+			"./fonts/OpenSans-Semibold-28",
+		],
+	},
+}
