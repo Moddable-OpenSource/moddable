@@ -10,7 +10,7 @@
 	"modules": {
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
-			"$(MODDABLE)/examples/experimental/neostrand/*",
+			"$(MODULES)/drivers/neostrand/*",
 			"./main",
 		],
 		"piu/Timeline": "$(MODULES)/piu/All/piuTimeline",

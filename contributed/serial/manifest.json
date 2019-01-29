@@ -1,6 +1,6 @@
 {
 	"build": {
-		"SERIAL": "$(MODDABLE)/examples/experimental/serial",
+		"SERIAL": "$(MODDABLE)/contributed/serial",
 	},
 	"include": [
 		"$(MODULES)/pins/digital/manifest.json",
