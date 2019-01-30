@@ -42,7 +42,7 @@
 #define SWAP64(v)	((v >> 56) | ((v >> 40) & 0xff00) | ((v >> 24) & 0xff0000) | ((v >> 8) & 0xff000000) | ((v << 8) & 0xff00000000) | ((v << 24) & 0xff0000000000) | ((v << 40) & 0xff000000000000) | ((v << 56) & 0xff00000000000000))
 
 void
-ghash_fix128(uint128_t *v)
+_ghash_fix128(uint128_t *v)
 {
 #if mxLittleEndian
 	uint64_t t;
@@ -111,7 +111,7 @@ ghash_mul(const uint128_t *x, const uint128_t *y, uint128_t *z)
 }
 
 void
-ghash_update(ghash_t *ghash, const void *data, size_t sz)
+_ghash_update(ghash_t *ghash, const void *data, size_t sz)
 {
 	const uint8_t *p = data;
 	uint128_t c;
@@ -124,7 +124,7 @@ ghash_update(ghash_t *ghash, const void *data, size_t sz)
 		else if (len < sizeof(uint128_t))
 			c_memset(&c, 0, sizeof(uint128_t));
 		c_memcpy(&c, p, len);
-		ghash_fix128(&c);
+		_ghash_fix128(&c);
 		xor128(&ghash->y, &c);
 		ghash_mul(&ghash->y, &ghash->h, &ghash->y);
 		p += len;
@@ -133,14 +133,14 @@ ghash_update(ghash_t *ghash, const void *data, size_t sz)
 }
 
 void
-ghash_create(ghash_t *ghash)
+_ghash_create(ghash_t *ghash)
 {
 	c_memcpy(&ghash->y, &ghash->y0, sizeof(ghash->y));
 	ghash->len = 0;
 }
 
 void
-ghash_fin(ghash_t *ghash, uint8_t *result)
+_ghash_fin(ghash_t *ghash, uint8_t *result)
 {
 	uint128_t l;
 
@@ -154,6 +154,6 @@ ghash_fin(ghash_t *ghash, uint8_t *result)
 #endif
 	xor128(&ghash->y, &l);
 	ghash_mul(&ghash->y, &ghash->h, &ghash->y);
-	ghash_fix128(&ghash->y);
+	_ghash_fix128(&ghash->y);
 	c_memcpy(result, &ghash->y, GHASH_DGSTSIZE);
 }

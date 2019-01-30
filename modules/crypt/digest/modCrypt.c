@@ -131,9 +131,9 @@ static const digestRecord gDigests[] ICACHE_XS6RO_ATTR = {
 		sizeof(struct ghash),
 		GHASH_DGSTSIZE,
 		GHASH_BLKSIZE,
-		(void *)ghash_create,
-		(void *)ghash_update,
-		(void *)ghash_fin
+		(void *)_ghash_create,
+		(void *)_ghash_update,
+		(void *)_ghash_fin
 	},
 	{0}
 };
@@ -1158,12 +1158,12 @@ xs_ghash_init(xsMachine *the)
 	if (len > sizeof(ghash->h))
 		len = sizeof(ghash->h);
 	c_memcpy(&ghash->h, xsmcToArrayBuffer(xsArg(0)), len);
-	ghash_fix128(&ghash->h);
+	_ghash_fix128(&ghash->h);
 	if (ac > 1 && xsmcTest(xsArg(1))) {
 		void *aad = xsmcToArrayBuffer(xsArg(1));
 		len = xsGetArrayBufferLength(xsArg(1));
 		c_memset(&ghash->y, 0, sizeof(ghash->y));
-		ghash_update(ghash, aad, len);
+		_ghash_update(ghash, aad, len);
 		c_memcpy(&ghash->y0, &ghash->y, sizeof(ghash->y));
 		ghash->aad_len = len;
 	}
@@ -1171,5 +1171,5 @@ xs_ghash_init(xsMachine *the)
 		c_memset(&ghash->y0, 0, sizeof(ghash->y0));
 		ghash->aad_len = 0;
 	}
-	ghash_create(ghash);
+	_ghash_create(ghash);
 }
