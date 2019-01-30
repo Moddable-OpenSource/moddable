@@ -933,7 +933,9 @@ void fxConnect(txMachine* the)
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection <= 0)
 		goto bail;
+	#ifndef EMSCRIPTEN
 	signal(SIGPIPE, SIG_IGN);
+	#endif 
 #if mxMacOSX
 	{
 		int set = 1;
@@ -963,7 +965,9 @@ void fxConnect(txMachine* the)
 			goto bail;
 	}
 	fcntl(the->connection, F_SETFL, flag);
+	#ifndef EMSCRIPTEN
 	signal(SIGPIPE, SIG_DFL);
+	#endif 
 }
 #endif
 	return;
