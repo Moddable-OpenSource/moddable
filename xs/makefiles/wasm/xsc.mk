@@ -69,7 +69,7 @@ C_OPTIONS =\
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -Oz
 endif
 
 LIBRARIES = -lm -ldl
@@ -81,6 +81,9 @@ LINK_OPTIONS =\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
 	-s "EXTRA_EXPORTED_RUNTIME_METHODS=['FS']"
+ifeq ($(GOAL),release)
+	LINK_OPTIONS += -Oz --closure 1
+endif
 
 OBJECTS = \
 	$(TMP_DIR)/xsBigInt.o \
@@ -115,10 +118,10 @@ $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsScript.h
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ":" $(CC) $(<F)
-	$(CC) $< $(C_OPTIONS) -c -o $@
+	$(CC)  $< $(C_OPTIONS) -c -o $@ 
 
 clean:
-	rm -rf $(BUILD_DIR)/bin/wasm/debug/$(NAME)
-	rm -rf $(BUILD_DIR)/bin/wasm/release/$(NAME)
+	rm -rf $(BUILD_DIR)/bin/wasm/debug/$(NAME).{js,wasm}
+	rm -rf $(BUILD_DIR)/bin/wasm/release/$(NAME).{js,wasm}
 	rm -rf $(BUILD_DIR)/tmp/wasm/debug/$(NAME)
 	rm -rf $(BUILD_DIR)/tmp/wasm/release/$(NAME)

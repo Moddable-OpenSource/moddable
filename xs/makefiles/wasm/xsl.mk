@@ -65,7 +65,7 @@ C_OPTIONS +=\
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -Oz
 endif
 
 LIBRARIES = -ldl -lm
@@ -77,6 +77,9 @@ LINK_OPTIONS =\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
 	-s "EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ALLOC_NORMAL','ALLOC_STACK','ALLOC_STATIC','ALLOC_DYNAMIC','ALLOC_NONE']"
+ifeq ($(GOAL),release)
+	LINK_OPTIONS += -Oz --closure 1
+endif
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
@@ -154,8 +157,8 @@ $(TMP_DIR)/xslOpt.xs.c: $(TLS_DIR)/xslOpt.js
 	$(XSC) $< -c -d -o $(TMP_DIR) -p 
 
 clean:
-	rm -rf $(BUILD_DIR)/bin/wasm/debug/$(NAME)
-	rm -rf $(BUILD_DIR)/bin/wasm/release/$(NAME)
+	rm -rf $(BUILD_DIR)/bin/wasm/debug/$(NAME).{js,wasm}
+	rm -rf $(BUILD_DIR)/bin/wasm/release/$(NAME).{js,wasm}
 	rm -rf $(BUILD_DIR)/tmp/wasm/debug/$(NAME)
 	rm -rf $(BUILD_DIR)/tmp/wasm/release/$(NAME)
 
