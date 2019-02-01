@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2019  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -294,7 +294,7 @@ MEM_USAGE = \
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
-	
+
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		LAUNCH = debugmac
@@ -305,29 +305,51 @@ else
 	LAUNCH = release
 endif
 
-.PHONY: all	
+
+ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)/components/esp8266/firmware
+ESP_BOOTLOADER_BIN = $(ESP_FIRMWARE_DIR)/boot_v1.7.bin
+ESP_DATA_DEFAULT_BIN = $(ESP_FIRMWARE_DIR)/esp_init_data_default.bin
+
+ifeq ($(FLASH_SIZE),1M)
+	ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0xFC000
+endif
+ifeq ($(FLASH_SIZE),4M)
+	ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0x3FC000
+endif
+
+ESPTOOL_FLASH_OPT = \
+	--flash_freq $(FLASH_SPEED)m \
+	--flash_mode dout \
+	--flash_size $(FLASH_SIZE)B \
+	0x0000 $(ESP_BOOTLOADER_BIN) \
+	0x1000 $(BIN_DIR)/main.bin \
+	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
+
+UPLOAD_TO_ESP = esptool.py -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
+
+.PHONY: all
 
 all: $(LAUNCH)
 
 debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
+	$(UPLOAD_TO_ESP)
 	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) 921600 8N1
 
 debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
+	$(UPLOAD_TO_ESP)
 	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 921600 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
-	
+
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	
+	$(UPLOAD_TO_ESP)
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
-	
+
 $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld main.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.cpp
@@ -335,7 +357,8 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)/buildinfo.cpp -o $(LIB_DIR)/buildinfo.cpp.o
 	$(LD) $(LD_FLAGS) -Wl,--start-group $^ $(LIB_DIR)/buildinfo.cpp $(LD_STD_LIBS) -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)/main.elf
 	$(TOOLS_BIN)/xtensa-lx106-elf-objdump -t $(TMP_DIR)/main.elf > $(BIN_DIR)/main.sym
-	$(ESPTOOL) -eo $(ARDUINO_ROOT)/bootloaders/eboot/eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)/main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
+#	$(ESPTOOL) -eo $(ARDUINO_ROOT)/bootloaders/eboot/eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)/main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
+	esptool.py --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)/main.elf
 	@echo "# Versions"
 	@echo "#  ESP:   $(ESP_SDK_RELEASE)"
 	@echo "#  XS:    $(XS_GIT_VERSION)"
@@ -363,12 +386,11 @@ $(LIB_DIR)/%.cpp.o: %.cpp
 	@echo "# cpp" $(<F)
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
 
-	
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
-	
+
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
@@ -376,7 +398,7 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
-	
+
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
