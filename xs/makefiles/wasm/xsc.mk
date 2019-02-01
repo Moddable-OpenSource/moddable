@@ -76,6 +76,7 @@ LIBRARIES = -lm -ldl
 
 LINK_OPTIONS =\
 	-rdynamic\
+	-s ENVIRONMENT=worker\
 	-s EXPORT_NAME=$(NAME)\
 	-s MODULARIZE=1\
 	-s INVOKE_RUN=0\
