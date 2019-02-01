@@ -63,6 +63,7 @@ class Thermostat extends WebThing {
 					maximum: 100,
 					unit: "fahrenheit",
 					txt: "actual",
+					"readOnly": true,
 				}
 			}		
 		}
@@ -77,7 +78,7 @@ class AppBehavior extends Behavior {
 		let wifiData = {};
 		if (config.ssid == "YOUR_WIFI_SSID_HERE") {
 			application.first.string = "Error: no Wi-Fi credentials";
-			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in $MODDABLE/modules/network/webthings/manifest.json\n");
+			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in manifest.json\n");
 			return;
 		} else {
 			wifiData.ssid = config.ssid;

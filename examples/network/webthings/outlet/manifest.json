@@ -8,6 +8,10 @@
 	"creation":{
 		"static": 35840,
 	},
+	"config": {
+		"ssid": "YOUR_WIFI_SSID_HERE",
+		"password": "YOUR_WIFI_PASSWORD_HERE"
+	},
 	"modules": {
 		"~": [
 			"$(BUILD)/devices/esp/setup/network",
