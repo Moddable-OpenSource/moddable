@@ -112,7 +112,6 @@ class MDNS extends Socket {
 			if (service >= 0) {
 				callback = this.monitors[service].callbacks.findIndex(item => item === callback);
 				if (callback < 0) throw new Error("callback not found");
-				callback.closed = true;
 				this.monitors[service].callbacks.splice(callback, 1);
 				if (0 === this.monitors[service].callbacks.length) {
 					this.monitors[service].close = true;
@@ -145,10 +144,8 @@ class MDNS extends Socket {
 				return;
 
 			Timer.set(() => {
-				for (let i = 0; i < monitor.length; i++) {
-					if (!callback.closed)
-						callback.call(this, monitor.service.slice(0, -6), monitor[i]);
-				}
+				for (let i = 0; i < monitor.length; i++)
+					callback.call(this, monitor.service.slice(0, -6), monitor[i]);
 			}, 0);
 		}
 		else {
@@ -280,7 +277,7 @@ class MDNS extends Socket {
 					for (let k = 0; k < callbacks.length; k++) {
 						const callback = callbacks[k];
 
-						if (callback.closed)
+						if (monitor.callbacks.indexOf(callback) < 0)		// expensive check to see if callback was closed
 							continue;
 
 						try {
