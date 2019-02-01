@@ -40,7 +40,9 @@ class WebThing {
 		const thing = this.host.things.find(thing => this === thing.instance);
     	for (let i=0; i<data.length; i++) {
     		let item = data[i];
-    		if (item.property === undefined || item.remote === undefined || item.txt === undefined || thing.description.properties[item.property] === undefined) {
+    		if (!item.property || !item.remote || !item.txt ||
+				!thing.description.properties[item.property] ||
+				thing.description.properties[item.property].readOnly) {
     			data.splice(i, 1);
     			i--;
     		}
@@ -151,18 +153,24 @@ class WebThings {
 				switch (this.method) {
 					case "GET":
 						if (this.path.startsWith("/thng/desc/")) {
-							things.forEach(thing => {
-								if (this.path.slice("/thng/desc/".length) === thing.description.name)
-									body = thing.description;
+							things.some(thing => {
+								if (this.path.slice("/thng/desc/".length) !== thing.description.name)
+									return;
+
+								body = thing.description;
+								return true;
 							});
 						}
 						else
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							things.forEach(thing => {
-								if (name === thing.description.name)
-									body = {[property]: thing.instance[property]};
+							things.some(thing => {
+								if (name !== thing.description.name)
+									return;
+
+								body = {[property]: thing.instance[property]};
+								return true;
 							});
 						}
 						else
@@ -172,11 +180,17 @@ class WebThings {
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							things.forEach(thing => {
-								if (name === thing.description.name) {
+							things.some(thing => {
+								if (name !== thing.description.name)
+									return;
+
+								if (thing.description.properties[property].readOnly)
+									body = {[property]: thing.instance[property], error: "readOnly"};
+								else {
 									thing.instance[property] = this.JSON[property];
 									body = {[property]: thing.instance[property]};
 								}
+								return true;
 							});
 						}
 						else 
