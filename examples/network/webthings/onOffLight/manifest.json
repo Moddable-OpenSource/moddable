@@ -5,6 +5,10 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/network/webthings/manifest.json",
 	],
+	"config": {
+		"ssid": "YOUR_WIFI_SSID_HERE",
+		"password": "YOUR_WIFI_PASSWORD_HERE"
+	},
 	"modules": {
 		"~": [
 			"$(BUILD)/devices/esp/setup/network",
