@@ -1,8 +1,4 @@
 {
-	"config": {
-		"ssid": "YOUR_WIFI_SSID_HERE",
-		"password": "YOUR_WIFI_PASSWORD_HERE"
-	},
 	"modules": {
 		"~": [
 			"$(MODULES)/network/net/net",
