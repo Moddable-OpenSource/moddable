@@ -46,6 +46,7 @@ class WebThing {
     		}
     	}
     	this.controllers = data;
+		this.host.monitor();
     }
     get controller() {
     	return this.controllers;
@@ -60,60 +61,6 @@ class WebThings {
 		this.server = new Server;
 		this.server.callback = this.http;
 		this.server.webThings = this;
-		if (!mdns)
-			return;
-		mdns.monitor("_webthing._tcp", (service, instance) => {
-			let txt = instance.txt;
-			let name = instance.name;
-			for (let j = 0; j < this.things.length; j++) {
-				const thing = this.things[j];
-				let properties = Object.keys(thing.description.properties);
-				let bools = properties.filter(prop => {
-					let isControlled = false;
-					for (let item of thing.instance.controller) {
-						if ((name === item.remote) && (prop === item.property)) isControlled = true;
-					}
-					return (thing.description.properties[prop].type === "boolean") && isControlled;
-				});
-				let item, equal, key, value;
-				for (let i=1; i<txt.length; i++) {	// first item is description url
-					item = instance.txt[i];
-					equal = item.indexOf("=");
-					key = item.substring(0, equal);
-					value = item.substring(equal+1);
-					for (let k = 0; k < thing.instance.controller.length; k++) {
-						const item = thing.instance.controller[k];
-						if ((name === item.remote) && (key === item.txt)){
-							let property = item.property;
-							let type = thing.description.properties[property];
-							if (type) {
-								switch(type.type) {
-									case "boolean":
-										value = true;
-										bools.splice(bools.indexOf(property), 1);
-										break;
-									case "number":
-									case "integer":
-										value = ("number" === type.type) ? parseFloat(value) : parseInt(value);
-					 					if ((undefined !== type.minimum) && (value < type.minimum))
-											value = type.minimum;
-					 					if ((undefined !== type.maximum) && (value > type.maximum))
-											value = type.maximum;
-										break;
-									case "object":
-									case "array":
-										value = JSON.parse(value);
-										break;
-								}
-								thing.instance[property] = value;
-							}
-						}
-					}
-				}
-				for (let prop of bools)
-					thing.instance[prop] = false;
-			}
-		});
 	}
 	close () {
 		if (this.server)
@@ -243,6 +190,73 @@ class WebThings {
 				return {headers: ThingHeaders, body: JSON.stringify(body)};
 				}
 				break;
+		}
+	}
+	monitor() {
+		const enable = this.mdns && this.things.some(thing => 0 !== thing.instance.controllers.length);
+
+		if (enable === (undefined !== this._watch))
+			return;
+
+		if (enable) {
+			this._watch = this.watch.bind(this);
+			this.mdns.monitor("_webthing._tcp", this._watch);
+		}
+		else {
+			this.mdns.remove("_webthing._tcp", this._watch);
+			delete this._watch;
+		}
+	}
+	watch(service, instance) {
+		let txt = instance.txt;
+		let name = instance.name;
+		for (let j = 0; j < this.things.length; j++) {
+			const thing = this.things[j];
+			let properties = Object.keys(thing.description.properties);
+			let bools = properties.filter(prop => {
+				let isControlled = false;
+				for (let item of thing.instance.controller) {
+					if ((name === item.remote) && (prop === item.property)) isControlled = true;
+				}
+				return (thing.description.properties[prop].type === "boolean") && isControlled;
+			});
+			let item, equal, key, value;
+			for (let i=1; i<txt.length; i++) {	// first item is description url
+				item = instance.txt[i];
+				equal = item.indexOf("=");
+				key = item.substring(0, equal);
+				value = item.substring(equal+1);
+				for (let k = 0; k < thing.instance.controller.length; k++) {
+					const item = thing.instance.controller[k];
+					if ((name === item.remote) && (key === item.txt)){
+						let property = item.property;
+						let type = thing.description.properties[property];
+						if (type) {
+							switch(type.type) {
+								case "boolean":
+									value = true;
+									bools.splice(bools.indexOf(property), 1);
+									break;
+								case "number":
+								case "integer":
+									value = ("number" === type.type) ? parseFloat(value) : parseInt(value);
+									if ((undefined !== type.minimum) && (value < type.minimum))
+										value = type.minimum;
+									if ((undefined !== type.maximum) && (value > type.maximum))
+										value = type.maximum;
+									break;
+								case "object":
+								case "array":
+									value = JSON.parse(value);
+									break;
+							}
+							thing.instance[property] = value;
+						}
+					}
+				}
+			}
+			for (let prop of bools)
+				thing.instance[prop] = false;
 		}
 	}
 }
