@@ -281,26 +281,40 @@ This document provides an introduction to getting started building apps with the
 
 7. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `esp` directory.
 
-8. Connect the ESP8266 to your computer with a USB cable.
+8. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
-9. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+	```
+	cd C:\Users\<user>\esp
+	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
+	```
+
+	We need the v3.0rc1 version:
+
+	```
+	cd ESP8266_RTOS_SDK
+	git checkout v3.0-rc1
+	```
+
+9. Connect the ESP8266 to your computer with a USB cable.
+
+10. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-10. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
+11. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
 
 	```
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
 	```
 
-11. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
+12. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
 
 	```
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
-12. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
+13. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
@@ -474,7 +488,14 @@ This document provides an introduction to getting started building apps with the
 	cd ~/esp
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
-	
+
+	We need the v3.0rc1 version:
+
+	```
+	cd ESP8266_RTOS_SDK
+	git checkout v3.0-rc1
+	```
+
 7. Connect the ESP8266 to your computer with a USB cable.
 
 8. Verify the setup by building `helloworld` for the `esp` target:
