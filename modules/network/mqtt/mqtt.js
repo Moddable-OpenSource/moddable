@@ -37,8 +37,7 @@ import {Socket} from "socket";
  *     client.onClose = () => { trace(`server closed connection\n`); };
  *     client.publish("/foo", "bar");
  *
- * See mqtt.c for details on exactly which MQTT features are supported. In general, this
- * implementation is QoS 0 only.
+ * This implementation is QoS 0 only.
  */
 
 export default class Client {
@@ -64,6 +63,7 @@ export default class Client {
 		const path = params.path ? params.path : null; // includes query string
 
 		this.state = 0;
+		this.parse = {state: 0};
 
 		this.packet_id = 1;
 
@@ -83,40 +83,315 @@ export default class Client {
 		}
 	}
 
-	publish(topic, msg) {
+	publish(topic, data) {
 		if (this.state < 2)
 			throw new Error("cannot publish to closed connection");
-		msg = to_publish_msg(topic, msg, this.packet_id++);
-		this.ws.write(msg);
+
+		++this.packet_id;
+
+		topic = makeStringBuffer(topic);
+		if (!(data instanceof ArrayBuffer))
+			data = ArrayBuffer.fromString(data);
+		data = new Uint8Array(data);
+		let payload = topic.length + data.length + 0;
+
+		let length = 1;	// PUBLISH
+		length += getRemainingLength(payload);
+		length += payload;
+
+		let msg = new Uint8Array(length), position = 0;
+		msg[position++] = 0x30;		// PUBLISH
+		position = writeRemainingLength(payload, msg, position);
+		msg.set(topic, position); position += topic.length;
+		// packetID goes here if QoS > 0 (unimplemented)
+		msg.set(data, position); position += data.length;
+
+		this.ws.write(msg.buffer);
 	}
 
 	subscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		let msg = to_subscribe_msg(topic, this.packet_id++);
-		this.ws.write(msg);
+
+		++this.packet_id;
+
+		topic = makeStringBuffer(topic);
+		let payload = topic.length + 1 + 2;
+
+		let length = 1;	// SUBSCRIBE
+		length += getRemainingLength(payload);
+		length += payload;
+
+		let msg = new Uint8Array(length), position = 0;
+		msg[position++] = 0x82;		// SUBSCRIBE + flag
+		position = writeRemainingLength(payload, msg, position);
+		msg[position++] = (this.packet_id >> 8) & 0xFF;
+		msg[position++] = this.packet_id & 0xFF;
+		msg.set(topic, position); position += topic.length;
+		// trailing 0 for QoS already in buffer
+
+		this.ws.write(msg.buffer);
 	}
 
 	unsubscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
-		let msg = to_unsubscribe_msg(topic, this.packet_id++);
-		this.ws.write(msg);
+
+		++this.packet_id;
+
+		topic = makeStringBuffer(topic);
+		let payload = topic.length + 2;
+
+		let length = 1;	// UBSUBSCRIBE
+		length += getRemainingLength(payload);
+		length += payload;
+
+		let msg = new Uint8Array(length), position = 0;
+		msg[position++] = 0xA2;		// UNSUBSCRIBE + flag
+		position = writeRemainingLength(payload, msg, position);
+		msg[position++] = (this.packet_id >> 8) & 0xFF;
+		msg[position++] = this.packet_id & 0xFF;
+		msg.set(topic, position); position += topic.length;
+
+		this.ws.write(msg.buffer);
 	}
 
 	ping() {
 		if (this.state < 2)
 			throw new Error("cannot ping on closed connection");
 
-		let msg = new_ping_message
-		this.ws.write(msg);
+		this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);
 		// currently we ignore pongs; can add an onPingResponse() callback w/ code in ws_callback if useful
+	}
+
+	received(buffer) {
+		let length = buffer.byteLength, position = 0;
+		buffer = new Uint8Array(buffer);
+		let parse = this.parse;
+		while (position < length) {
+			switch (parse.state) {
+				case 0:
+					parse.flags = buffer[position] & 0x0F;
+					parse.code = buffer[position] & 0xF0;
+					if ((0x00 === parse.code) || (0xF0 === parse.code))
+						throw new Error("invalid code");
+
+					position += 1;
+					parse.state = 1;
+					break;
+
+				// remaining length
+				case 1:
+					parse.state = buffer[position] & 0x80 ? 2 : parse.code;
+					parse.length = buffer[position++] & 0x7F;
+					break;
+
+				case 2:
+					parse.state = buffer[position] & 0x80 ? 3 : parse.code;
+					parse.length += (buffer[position++] & 0x7F) << 7;
+					break;
+
+				case 3:
+					parse.state = buffer[position] & 0x80 ? 4 : parse.code;
+					parse.length += (buffer[position++] & 0x7F) << 14;
+					break;
+
+				case 4:
+					if (buffer[position] & 0x80)
+						throw new Error("bad data");
+					parse.length += (buffer[position++] & 0x7F) << 21;
+					parse.state = parse.code;
+					break;
+
+				// PUBLISH
+				case 0x30:
+					parse.topic = buffer[position++] << 8;
+					parse.state = 0x31;
+					break;
+
+				case 0x31:
+					parse.topic = buffer[position++];
+					parse.length -= parse.topic + 2;
+					if (0 === parse.topic)
+						throw new Error("empty topic - ?!?");
+					parse.topic = new Uint8Array(parse.topic);
+					parse.topic.position = 0;
+					parse.state = 0x32;
+					break;
+
+				case 0x32:		// optimization: consume as many bytes as possible
+					parse.topic[parse.topic.position++] = buffer[position++];
+					if (parse.topic.position === parse.topic.length) {
+						parse.topic = String.fromArrayBuffer(parse.topic.buffer);
+						parse.state = 0x33;
+					}
+					else
+						break;
+
+				case 0x33:
+					parse.state = (parse.flags & 0x06) ? 0x34 : 0x36;
+					if (0x34 !== parse.state)
+						break;
+
+				case 0x34:
+				case 0x35:
+					position += 1;
+					parse.length -= 1;
+					parse.state += 1;
+					if (0x36 !== parse.state)
+						break;
+
+				case 0x36:
+					parse.payload = new Uint8Array(parse.length);
+					parse.payload.position = 0;
+					parse.state = 0x37;
+					// fall through
+
+				case 0x37:
+					if (parse.length) {
+						let use = parse.payload.length - parse.payload.position;
+						if (use > (length - position))
+							use = length - position;
+						parse.payload.set(new Uint8Array(buffer.buffer, position, use), parse.payload.position);
+						parse.payload.position += use;
+						position += use;
+					}
+					if (parse.payload.position === parse.payload.length) {
+						parse.payload = parse.payload.buffer;
+						this.dispatch(parse);
+						parse = this.parse = {state: 0};
+					}
+					break;
+
+				// CONNACK
+				case 0x20:
+					if (2 !== parse.length)
+						throw new Error("unexpected length");
+					position += 1;	// connect acknowledge flags
+					parse.length -= 1;
+					parse.state = 0x21;
+					break;
+
+				case 0x21:
+					parse.returnCode = buffer[position];
+					parse.state = 0x22;
+					// fall through
+
+				case 0x22:
+					position += 1;
+					parse.length -= 1;
+					if (0 === parse.length) {
+						this.dispatch(parse);
+						parse = this.parse = {state: 0};
+					}
+					break;
+
+				// PUBACK, PUBREC, PUBREL, PUBCOMP, SUBACK, UNSUBACK
+				case 0x40:
+				case 0x50:
+				case 0x60:
+				case 0x70:
+				case 0x90:
+				case 0xB0:		// MSB packet ID
+					parse.id = buffer[position] << 8;
+					position += 1;
+					parse.length -= 1;
+					parse.state = 0x91;
+					break;
+
+				case 0x91:		// LSB packet ID
+					parse.id |= buffer[position];
+					parse.state = 0x92;
+					// fall through
+
+				case 0x92:		// ignore remaining bytes
+					position += 1;
+					parse.length -= 1;
+					if (0 === parse.length)
+						parse = this.parse = {state: 0};		// not dispatched
+					break;
+
+				case 0xD0:	// PINGRESP (ignored - N.B. this will not trigger until first byte of next message receievd... could be a problem if this feature is used)
+					parse = this.parse = {state: 0};
+					break;
+
+				default:
+					throw new Error("bad parse state");
+			}
+		}
+	}
+	connected() {
+		const header = Uint8Array.of(
+			0x00, 0x04,
+			'M'.charCodeAt(),'Q'.charCodeAt(),'T'.charCodeAt(),'T'.charCodeAt(),		// protocol name MQTT
+			0x04,							// protocol level 4
+			0x02,							// flags : CleanSession
+			0x00, 0x00						// no keepalive -- never drop on inactivity
+		);
+		const id = makeStringBuffer(this.connect.id);
+		const user = makeStringBuffer(this.connect.user);
+		const password = makeStringBuffer(this.connect.password);
+		const payload = header.length + id.length + user.length + password.length
+
+		let length = 1;	// CONNECT
+		length += getRemainingLength(payload);
+		length += payload;
+
+		let msg = new Uint8Array(length), position = 0;
+		msg[position++] = 0x10;
+		position = writeRemainingLength(payload, msg, position);
+
+		msg.set(header, position);
+		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0);
+		position += header.length;
+
+		msg.set(id, position); position += id.length;
+		msg.set(user, position); position += user.length;
+		msg.set(password, position); position += password.length;
+
+		delete this.connect;
+		return msg.buffer;
+	}
+	dispatch(msg) {
+		if (1 === this.state) {
+			if (msg.code != CONNACK) {
+				trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
+				return;
+			}
+
+			if (msg.returnCode) {
+				trace(`server rejected mqtt request with code ${msg.returnCode}\n`);
+				return;
+			}
+
+			this.state = 2;
+			try {
+				this.onReady();
+			}
+			catch {
+			}
+			return;
+		}
+
+		switch (msg.code) {
+			case PUBLISH:
+				try {
+					this.onMessage(msg.topic, msg.payload);
+				}
+				catch {
+				}
+				break;
+			default:
+				if (msg.code)
+					trace(`received unhandled or no-op message type '${msg.code}'\n`);
+				break;
+		}
+
 	}
 
 	close() {
 		if (this.ws) {
-			let msg = new_close_msg();
-			this.ws.write(msg); // just shoot it out there, don't worry about ACKs
+			this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
 			this.ws.close();
 			delete this.ws;
 		}
@@ -137,37 +412,11 @@ function ws_callback(state, message) {
 		case 2: // websocket handshake complete
 			// at this point we need to begin the MQTT protocol handshake
 			this.state = 1;
-			this.ws.write(to_connect_msg(this.connect));
-			delete this.connect;
+			this.ws.write(this.connected());
 			break;
 
 		case 3: // message received
-			let msg = decode_msg(message);
-			if (this.state == 1) {
-				if (msg.code != CONNACK) {
-					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
-					break;
-				}
-
-				if (msg.returnCode) {
-					throw new Error("server rejected request with code " + msg.returnCode);
-				}
-
-				this.state = 2;
-				this.onReady();
-				break;
-			}
-
-			switch (msg.code) {
-				case PUBLISH:
-					this.onMessage(msg.topic, msg.data);
-					break;
-				default:
-					if (msg.code)
-						trace(`received unhandled or no-op message type '${msg.code}'\n`);
-					break;
-			}
-
+			this.received(message);
 			break;
 
 		case 4: // websocket closed
@@ -186,44 +435,17 @@ function socket_callback(state, message) {
 		case 1: // socket connected
 			// at this point we need to begin the MQTT protocol handshake
 			this.state = 1;
-			this.ws.write(to_connect_msg(this.connect));
-			delete this.connect;
+			this.ws.write(this.connected());
 			break;
 
-		case 2: // message received
-			message = this.ws.read(ArrayBuffer);
-			let msg = decode_msg(message);
-			if (this.state == 1) {
-				if (msg.code != CONNACK) {
-					trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
-					break;
-				}
-
-				if (msg.returnCode) {
-					throw new Error("server rejected request with code " + msg.returnCode);
-				}
-
-				this.state = 2;
-				this.onReady();
-				break;
-			}
-
-			switch (msg.code) {
-				case PUBLISH:
-					this.onMessage(msg.topic, msg.data);
-					break;
-				default:
-					if (msg.code)
-						trace(`received unhandled or no-op message type '${msg.code}'\n`);
-					break;
-			}
-
+		case 2: // data received
+			this.received(this.ws.read(ArrayBuffer));
 			break;
 
 		case 3: // ready to send
 			break;
 
-		default:
+		default:	
 			if (state < 0) {
 				this.onClose();
 				delete this.ws;
@@ -234,14 +456,50 @@ function socket_callback(state, message) {
 	}
 }
 
-// byte-formatting helper functions
-function to_connect_msg(client_id) @ "mqtt_connect_msg";
-function to_publish_msg(topic, payload) @ "mqtt_publish_msg";
-function to_subscribe_msg(topic) @ "mqtt_subscribe_msg";
-function to_unsubscribe_msg(topic) @ "mqtt_unsubscribe_msg";
-function new_ping_msg() @ "mqtt_ping_msg";
-function new_close_msg() @ "mqtt_close_msg";
+function makeStringBuffer(string)
+{
+	if (undefined === string)
+		return new Uint8Array(0);
 
-// byte-decoding helper functions
-function decode_msg() @ "mqtt_decode_msg";
+	if (!(string instanceof ArrayBuffer))
+		string = ArrayBuffer.fromString(string);
+	string = new Uint8Array(string);
+	let result = new Uint8Array(string.length + 2);
+	result[0] = string.length >> 8;
+	result[1] = string.length & 0xFF;
+	result.set(string, 2)
 
+	return result;
+}
+
+function getRemainingLength(length) {
+	if (length < 128)
+		return 1;
+	else if (length < 16384)
+		return 2;
+	else if (length < 2097152)
+		return 3;
+	return 4;
+}
+
+function writeRemainingLength(length, buffer, position) {
+	if (length < 128)
+		buffer[position++] = length;
+	else if (length < 16384) {
+		buffer[position++] = 0x80 | (length & 0x7F);
+		buffer[position++] = length >> 7;
+	}
+	else if (length < 2097152) {
+		buffer[position++] = 0x80 | (length & 0x7F);
+		buffer[position++] = 0x80 | ((length >> 7) & 0x7F)
+		buffer[position++] = length >> 14;
+	}
+	else {
+		buffer[position++] = 0x80 | (length & 0x7F);
+		buffer[position++] = 0x80 | ((length >> 7) & 0x7F)
+		buffer[position++] = 0x80 | ((length >> 14) & 0x7F)
+		buffer[position++] = length >> 21;
+	}
+
+	return position;
+}
