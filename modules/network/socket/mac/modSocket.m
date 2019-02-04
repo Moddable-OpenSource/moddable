@@ -147,16 +147,15 @@ void xs_socket(xsMachine *the)
 		else
 			xsUnknownError("invalid socket kind");
 	}
-
 	CFSocketContext socketCtxt = {0, xss, NULL, NULL, NULL};
-	if (kTCP == xss->kind) {
-		if (xsmcHas(xsArg(0), xsID_port)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_port);
-			xss->port = xsmcToInteger(xsVar(0));
-		}
-		else
-			xsUnknownError("port required in dictionary");
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		xss->port = xsmcToInteger(xsVar(0));
+	}
+	else
+		xsUnknownError("port required in dictionary");
 
+	if (kTCP == xss->kind) {
 		xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
 	}
 	else
@@ -191,6 +190,10 @@ void xs_socket(xsMachine *the)
 
 		if (setsockopt(xss->skt, SOL_SOCKET, SO_BROADCAST, (const void *)&flag, sizeof(flag)) < 0)
 			return;		//@@
+        if (setsockopt(xss->skt, SOL_SOCKET, SO_REUSEPORT, (const void *)&flag, sizeof(flag)) < 0)
+			return;		//@@
+		u_char loop = 0;
+		setsockopt(xss->skt, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
 
 		if (setsockopt(xss->skt, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
 			return;
@@ -209,8 +212,8 @@ void xs_socket(xsMachine *the)
 
 		// bind
 		address.sin_family      = AF_INET;
-		address.sin_port        = -1;		//@@
-		address.sin_addr.s_addr = 0; // Want to receive multicasts AND unicasts on this socket
+		address.sin_port        = htons(xss->port);		//@@
+		address.sin_addr.s_addr = htonl(INADDR_ANY); // Want to receive multicasts AND unicasts on this socket
 		if (0 != bind(xss->skt, (struct sockaddr *) &address, sizeof(address)))
 			return;		//@@
 	}
@@ -594,7 +597,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 
 			xsBeginHost(the);
 				xsmcSetString(xsResult, srcAddrStr);
-				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(srcAddr.sin_port));		//@@ port
+				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(ntohs(srcAddr.sin_port)));		//@@ port
 			xsEndHost(the);
 
 			xss->readBuffer = NULL;
