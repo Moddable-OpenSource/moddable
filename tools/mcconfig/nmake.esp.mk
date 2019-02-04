@@ -100,7 +100,9 @@ XS_OBJ = \
 	$(LIB_DIR)\xsArguments.o \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
+	$(LIB_DIR)\xsBigInt.o \
 	$(LIB_DIR)\xsBoolean.o \
+	$(LIB_DIR)\xsCode.o \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
@@ -110,6 +112,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsGenerator.o \
 	$(LIB_DIR)\xsGlobal.o \
 	$(LIB_DIR)\xsJSON.o \
+	$(LIB_DIR)\xsLexical.o \
 	$(LIB_DIR)\xsMapSet.o \
 	$(LIB_DIR)\xsMarshall.o \
 	$(LIB_DIR)\xsMath.o \
@@ -117,16 +120,24 @@ XS_OBJ = \
 	$(LIB_DIR)\xsModule.o \
 	$(LIB_DIR)\xsNumber.o \
 	$(LIB_DIR)\xsObject.o \
+	$(LIB_DIR)\xsPlatforms.o \
+	$(LIB_DIR)\xsProfile.o \
 	$(LIB_DIR)\xsPromise.o \
 	$(LIB_DIR)\xsProperty.o \
 	$(LIB_DIR)\xsProxy.o \
 	$(LIB_DIR)\xsRegExp.o \
 	$(LIB_DIR)\xsRun.o \
+	$(LIB_DIR)\xsScope.o \
+	$(LIB_DIR)\xsScript.o \
+	$(LIB_DIR)\xsSourceMap.o \
 	$(LIB_DIR)\xsString.o \
 	$(LIB_DIR)\xsSymbol.o \
+	$(LIB_DIR)\xsSyntaxical.o \
+	$(LIB_DIR)\xsTree.o \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
-	$(LIB_DIR)\xsmc.o
+	$(LIB_DIR)\xsmc.o \
+	$(LIB_DIR)\xsre.o
 XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
@@ -137,6 +148,7 @@ XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
 	$(XS_DIR)\includes\xsesp.h \
 	$(XS_DIR)\includes\xsmc.h \
+	$(XS_DIR)\sources\xsScript.h \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
@@ -313,7 +325,6 @@ ESPTOOL_FLASH_OPT = \
 
 UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
 
-
 .PHONY: all	
 
 APP_ARCHIVE = $(BIN_DIR)\libxsar.a
@@ -431,11 +442,9 @@ $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
-
 $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 	@echo # cc $(@F)
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
-
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
