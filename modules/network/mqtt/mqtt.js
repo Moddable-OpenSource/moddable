@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -59,7 +59,6 @@ export default class Client {
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
 
-		const port = params.port ? params.port : 80;
 		const path = params.path ? params.path : null; // includes query string
 
 		this.state = 0;
@@ -69,12 +68,14 @@ export default class Client {
 
 		if (this.path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
+			const port = params.port ? params.port : 80;
 			if (params.Socket)
 				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt", Socket: params.Socket, secure: params.secure});
 			else
 				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt"});
 			this.ws.callback = ws_callback.bind(this);
 		} else {
+			const port = params.port ? params.port : 1883;
 			if (params.Socket)
 				this.ws = new (params.Socket)({host: params.host, port, secure: params.secure});
 			else
