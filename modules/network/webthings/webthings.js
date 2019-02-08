@@ -37,12 +37,12 @@ class WebThing {
 			this.host.mdns.update(thing.service);
 	}
     set controller(data) {
-		const thing = this.host.things.find(thing => this === thing.instance);
+		const description = this.constructor.description;
     	for (let i=0; i<data.length; i++) {
     		let item = data[i];
     		if (!item.property || !item.remote || !item.txt ||
-				!thing.description.properties[item.property] ||
-				thing.description.properties[item.property].readOnly) {
+				!description.properties[item.property] ||
+				description.properties[item.property].readOnly) {
     			data.splice(i, 1);
     			i--;
     		}
@@ -92,8 +92,10 @@ class WebThings {
 		}
 		this.things.push(thing);
 		this.updateTXT(thing);
-		if (this.mdns)
+		if (this.mdns) {
+			this.monitor();
 			this.mdns.add(thing.service);
+		}
 
 		return thing.instance;
 	}
@@ -229,7 +231,7 @@ class WebThings {
 			let properties = Object.keys(thing.description.properties);
 			let bools = properties.filter(prop => {
 				let isControlled = false;
-				for (let item of thing.instance.controller) {
+				for (let item of thing.instance.controllers) {
 					if ((name === item.remote) && (prop === item.property)) isControlled = true;
 				}
 				return (thing.description.properties[prop].type === "boolean") && isControlled;
@@ -240,8 +242,8 @@ class WebThings {
 				equal = item.indexOf("=");
 				key = item.substring(0, equal);
 				value = item.substring(equal+1);
-				for (let k = 0; k < thing.instance.controller.length; k++) {
-					const item = thing.instance.controller[k];
+				for (let k = 0; k < thing.instance.controllers.length; k++) {
+					const item = thing.instance.controllers[k];
 					if ((name === item.remote) && (key === item.txt)){
 						let property = item.property;
 						let type = thing.description.properties[property];
