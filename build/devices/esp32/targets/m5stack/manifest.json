@@ -23,6 +23,7 @@
 			"backlight_on": 1,
 			"registers_append": [
 				"0x36, 1, 0xA8,",
+				"0xFF, 30,",
 			],
 		},
 		"audioOut": {
