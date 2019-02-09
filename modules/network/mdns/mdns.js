@@ -92,7 +92,7 @@ class MDNS extends Socket {
 			service.updater = Timer.set(updater => {
 				this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x04 | 0x8000, service));
 				updater.interval += 250;
-				if (1500 >= service.update) {
+				if (updater.interval >= 1500) {
 					Timer.clear(updater);
 					delete service.updater;
 					delete service.update;
