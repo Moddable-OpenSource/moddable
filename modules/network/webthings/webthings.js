@@ -58,7 +58,8 @@ Object.freeze(WebThing.prototype);
 
 class WebThings {
 	constructor(mdns) {
-		this.mdns = mdns;
+		if (mdns)
+			this.mdns = mdns;
 		this.things = [];
 		this.server = new Server;
 		this.server.callback = this.http;
@@ -209,7 +210,7 @@ class WebThings {
 		}
 	}
 	monitor() {
-		const enable = this.mdns && this.things.some(thing => 0 !== thing.instance.controllers.length);
+		const enable = (this.mdns ? true : false) && this.things.some(thing => 0 !== thing.instance.controllers.length);
 
 		if (enable === (undefined !== this._watch))
 			return;
