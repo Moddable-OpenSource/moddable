@@ -30,6 +30,8 @@
 
 #include "modSocket.h"
 
+extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+
 #if ESP32
 	#include "lwip/priv/tcpip_priv.h"
 	#include "esp_wifi.h"
@@ -67,7 +69,7 @@ struct xsSocketUDPRemoteRecord {
 typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
-#define kReadQueueLength (8)
+#define kReadQueueLength (6)
 struct xsSocketRecord {
 	xsSocket			next;
 	xsMachine			*the;
@@ -422,7 +424,7 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 	#define tcp_listen_safe tcp_listen
 	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
 	// for some reason, ESP8266 has a memory leak when using tcp_close instead of tcp_abort
-	#define tcp_close_safe tcp_abort
+	#define tcp_close_safe tcp_close
 	#define tcp_output_safe(xss) tcp_output(xss->skt)
 	#define tcp_write_safe(xss, data, len, flags) tcp_write(xss->skt, data, len, flags)
 	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
@@ -694,7 +696,7 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	for (i = 0; i < kReadQueueLength - 1; i++) {
+	for (i = 0; i < kReadQueueLength; i++) {
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);
 	}
@@ -899,8 +901,10 @@ void xs_socket_write(xsMachine *the)
 		needed = xsGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
-		if (ERR_OK != err)
+		if (ERR_OK != err) {
+			xsLog("UDP send error %d\n", err);
 			xsUnknownError("UDP send failed");
+		}
 
 		modInstrumentationAdjust(NetworkBytesWritten, needed);
 		return;
@@ -1286,6 +1290,11 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	struct pbuf *walker;
 	uint16 offset;
 
+	if (fxInNetworkDebugLoop(xss->the)) {
+		modLog("refuse TCP");
+		return ERR_MEM;
+	}
+
 	if (xss->pending & kPendingClose)
 		return ERR_OK;
 
@@ -1318,12 +1327,8 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	}
 	modCriticalSectionEnd();
 
-	if (kReadQueueLength == i) {
-		modLog("tcp read overflow!");
-		pbuf_free_safe(p);
-		socketSetPending(xss, kPendingError);		//@@ test
-		return ERR_MEM;
-	}
+	if (kReadQueueLength == i)
+		return ERR_MEM;			// no space. return error so lwip will redeliver later
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
@@ -1354,6 +1359,12 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 {
 	xsSocket xss = arg;
 	unsigned char i;
+
+	if (fxInNetworkDebugLoop(xss->the)) {
+		modLog("drop UDP");
+		pbuf_free(p);
+		return;
+	}
 
 	modCriticalSectionBegin();
 
