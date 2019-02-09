@@ -138,6 +138,7 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		uint16_t readerOffset; \
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
+		txBoolean DEBUG_LOOP; \
 		DebugFragment debugFragments; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
@@ -155,6 +156,7 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		uint16_t readerOffset; \
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
+		txBoolean DEBUG_LOOP; \
 		DebugFragment debugFragments; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \

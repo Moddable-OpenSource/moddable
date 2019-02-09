@@ -96,6 +96,15 @@ void fxDeleteMachinePlatform(txMachine* the)
 	modMachineTaskUninit(the);
 }
 
+uint8_t fxInNetworkDebugLoop(txMachine *the)
+{
+#ifdef mxDebug
+	return the->DEBUG_LOOP && the->connection && (kSerialConnection != the->connection);
+#else
+	return 0;
+#endif
+}
+
 void fx_putc(void *refcon, char c)
 {
 	txMachine* the = refcon;
@@ -395,6 +404,7 @@ void fxReceive(txMachine* the)
 		struct pbuf *p;
 		uint16_t use;
 
+		modWatchDogReset();
 		if (NULL == the->readers[0]) {
 			modDelayMilliseconds(10);
 			return;
@@ -406,8 +416,8 @@ void fxReceive(txMachine* the)
 
 		mxDebugMutexTake();
 			use = p->len - the->readerOffset;
-			if (use > (sizeof(the->debugBuffer) - 1))
-				use = sizeof(the->debugBuffer) - 1;
+			if (use > sizeof(the->debugBuffer))
+				use = sizeof(the->debugBuffer);
 
 			c_memmove(the->debugBuffer, the->readerOffset + (char *)p->payload, use);
 			the->debugOffset = use;
@@ -454,14 +464,6 @@ void fxReceive(txMachine* the)
 		}
 		forever = 1;
 	}
-
-bail:
-	the->debugBuffer[the->debugOffset] = 0;
-
-//	if (the->debugOffset) {
-//		modLog("  fxReceive - EXIT with:");
-//		modLogVar(the->debugBuffer);
-//	}
 }
 
 void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -493,8 +495,8 @@ void fxReceiveLoop(void)
 	static txMachine* current = NULL;
 	static uint8_t state = 0;
 	static uint32_t value = 0;
-	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
 	static uint8_t bufferedBytes = 0;
+	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
 
 	mxDebugMutexTake();
 
@@ -607,6 +609,7 @@ void fxSend(txMachine* the, txBoolean more)
 			if (0 == available) {
 				xmodLog("  fxSend - need to wait");
 				tcp_output(pcb);
+				modWatchDogReset();
 				modDelayMilliseconds(10);
 				continue;
 			}
@@ -615,7 +618,8 @@ void fxSend(txMachine* the, txBoolean more)
 				available = length;
 
 			while (true) {
-				err = tcp_write(pcb, bytes, available, TCP_WRITE_FLAG_COPY);
+				modWatchDogReset();
+				err = tcp_write(pcb, bytes, available, more ? TCP_WRITE_FLAG_MORE : 0);
 				if (ERR_MEM == err) {
 					xmodLog("  fxSend - wait for send memory:");
 					tcp_output(pcb);
@@ -632,6 +636,8 @@ void fxSend(txMachine* the, txBoolean more)
 			length -= available;
 			bytes += available;
 		}
+		if (!more)
+			tcp_output(pcb);
 	}
 	else {
 		char *c = the->echoBuffer;
