@@ -189,7 +189,6 @@ static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16
 
 void fxAbort(txMachine* the)
 {
-	fxDisconnect(the);
 	c_exit(0);
 }
 
@@ -217,8 +216,13 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
     xmodLog("  didReceive - ENTER");
 
 	if (NULL == p) {
-		modLog("  didReceive - CONNECTION LOST");
-		the->connection = NULL;		//@@ fxDisconnect?
+		xmodLog("  didReceive - CONNECTION LOST");
+		if (the->connection) {
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
+			tcp_close(the->connection);
+			the->connection = NULL;
+		}
 		return ERR_OK;
 	}
 
@@ -256,9 +260,14 @@ static void didError(void *arg, err_t err)
 {
 	txMachine* the = arg;
 
-	modLog("XSBUG SOCKET ERROR!!!!!");
-	modLogInt(err);
-	the->connection = NULL;
+	the->connection = NULL;		// "pcb is already freed when this callback is called"
+}
+
+static void didErrorConnect(void *arg, err_t err)
+{
+	txMachine* the = arg;
+
+	the->connection = (void *)-1;
 }
 
 void fxConnect(txMachine* the)
@@ -271,6 +280,19 @@ void fxConnect(txMachine* the)
 	struct ip_addr ipaddr;
 #endif
 	extern unsigned char gXSBUG[4];
+	int count;
+
+	the->connection = NULL;
+	c_memset(the->readers, 0, sizeof(the->readers));
+	the->readerOffset = 0;
+	the->inPrintf =
+	the->debugNotifyOutstanding =
+	the->DEBUG_LOOP = 0;
+	while (the->debugFragments) {
+		void *tmp = the->debugFragments;
+		the->debugFragments = the->debugFragments->next;
+		c_free(tmp);
+	}
 
 	if (isSerialIP(gXSBUG)) {
 		static txBoolean once;
@@ -306,7 +328,10 @@ void fxConnect(txMachine* the)
 	if (!pcb) return;
 
 	err = tcp_bind(pcb, IP_ADDR_ANY, 0);
-	if (err) return;
+	if (err) {
+		tcp_close(pcb);
+		return;
+	}
 
 #if ESP32
 	IP4_ADDR(ip_2_ip4(&ipaddr), gXSBUG[0], gXSBUG[1], gXSBUG[2], gXSBUG[3]);
@@ -316,24 +341,32 @@ void fxConnect(txMachine* the)
 
 	tcp_arg(pcb, the);
 	tcp_recv(pcb, didReceive);
-	tcp_err(pcb, didError);
+	tcp_err(pcb, didErrorConnect);
 //	tcp_nagle_disable(pcb);
 
     modLog("  fxConnect - connect to XSBUG");
 	err = tcp_connect(pcb, &ipaddr, 5002, didConnect);
 	if (err) {
+		tcp_close(pcb);
 		modLog("  fxConnect - tcp_connect ERROR");
 		return;
 	}
 
-	while (!the->connection)
+	count = 0;
+	while (!the->connection && (count++ < 500))		// 5 seconds, then surrender
 		modDelayMilliseconds(10);
 
-	if ((txSocket)-1 == the->connection) {
-		the->connection = NULL;
+	if (!the->connection || ((txSocket)-1 == the->connection)) {
 		modLog("  fxConnect - couldn't connect");
+		if (NULL == the->connection) {		// timeout.
+			tcp_err(pcb, NULL);
+			tcp_close(pcb);
+		}
+		the->connection = NULL;
+		return;
 	}
 
+	tcp_err(pcb, didError);
 connected:
 #ifdef mxInstrument
 	espDescribeInstrumentation(the);
@@ -355,8 +388,9 @@ void fxDisconnect(txMachine* the)
 				}
 			}
 			the->readerOffset = 0;
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
 			tcp_close((struct tcp_pcb *)the->connection);
-			modDelayMilliseconds(100);		// time for FIN packet to be sent
 		}
 		else {
 			fx_putpi(the, '-', true);
