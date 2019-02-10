@@ -140,6 +140,8 @@ void xs_socket_destructor(void *data);
 static void socketSetPending(xsSocket xss, uint8_t pending);
 static void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void configureSocketTCP(xsMachine *the, xsSocket xss);
+
 static void socketMsgConnect(xsSocket xss);
 static void socketMsgDisconnect(xsSocket xss);
 static void socketMsgError(xsSocket xss);
@@ -495,7 +497,7 @@ void xs_socket(xsMachine *the)
 	unsigned char multicastIP[4];
 	int ttl = 0;
 
-	xsmcVars(1);
+	xsmcVars(2);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
 		xsmcGet(xsVar(0), xsArg(0), xsID_listener);
@@ -519,6 +521,8 @@ void xs_socket(xsMachine *the)
 				xsmcSetHostData(xsThis, xss);
 				xss->constructed = true;
 				xsRemember(xss->obj);
+
+				configureSocketTCP(the, xss);
 
 				socketUpUseCount(the, xss);
 
@@ -682,6 +686,8 @@ void xs_socket(xsMachine *the)
 
 	if (waiting || (kUDP == xss->kind) || (kRAW == xss->kind))
 		return;
+
+	configureSocketTCP(the, xss);
 
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
 	err = tcp_connect_safe(xss, &ipaddr, port, didConnect);
@@ -1106,6 +1112,30 @@ void xs_socket_suspend(xsMachine *the)
 	}
 
 	xsmcSetBoolean(xsResult, xss->suspended);
+}
+
+void configureSocketTCP(xsMachine *the, xsSocket xss)
+{
+	xsmcGet(xsVar(0), xsArg(0), xsID_keepalive);
+	if (xsmcTest(xsVar(0))) {
+		xsmcGet(xsVar(1), xsVar(0), xsID_enable);
+		if (xsmcTest(xsVar(1))) {
+			xss->skt->so_options |= SOF_KEEPALIVE;
+
+			if (xsmcHas(xsVar(0), xsID_idle)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_idle);
+				xss->skt->keep_idle = xsmcToInteger(xsVar(1));
+			}
+			if (xsmcHas(xsVar(0), xsID_interval)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_interval);
+				xss->skt->keep_intvl = xsmcToInteger(xsVar(1));
+			}
+			if (xsmcHas(xsVar(0), xsID_count)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_count);
+				xss->skt->keep_cnt = xsmcToInteger(xsVar(1));
+			}
+		}
+	}
 }
 
 void socketMsgConnect(xsSocket xss)
