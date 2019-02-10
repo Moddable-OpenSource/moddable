@@ -87,11 +87,13 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+#ifdef mxDebug
 	while (the->debugFragments) {
 		DebugFragment next = the->debugFragments->next;
 		c_free(the->debugFragments);
 		the->debugFragments = next;
 	}
+#endif
 
 	modMachineTaskUninit(the);
 }
@@ -107,6 +109,7 @@ uint8_t fxInNetworkDebugLoop(txMachine *the)
 
 void fx_putc(void *refcon, char c)
 {
+#ifdef mxDebug
 	txMachine* the = refcon;
 
 	if (the->inPrintf) {
@@ -143,6 +146,7 @@ void fx_putc(void *refcon, char c)
 			}
 		}
 	}
+#endif
 
 	ESP_putc(c);
 }
