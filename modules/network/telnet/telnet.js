@@ -23,7 +23,7 @@ import CLI from "cli";
 
 class Connection extends Socket {
 	constructor(dictionary) {
-		super(dictionary);
+		super({...dictionary, keepalive: {enable: true, idle: 60 * 1000, interval: 30 * 1000, count: 4}});
 		this.initialize = Symbol();
 		CLI.distribute.call(this, this.initialize, {remote: super.get("REMOTE_IP")});
 		this.incoming = "";
