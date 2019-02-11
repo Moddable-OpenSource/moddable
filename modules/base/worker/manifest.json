@@ -9,7 +9,7 @@
 		"esp32": {
 		},
 		"...": {
-			"error": "Worker unsupported"
+			"error": "Worker module unsupported"
 		}
 	}
 }

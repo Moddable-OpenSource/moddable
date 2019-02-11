@@ -14,7 +14,7 @@
 		"esp": {},
 		"esp32": {},
 		"...": {
-			"error": "WiFi unsupported"
+			"error": "WiFi module unsupported"
 		}
 	}
 }

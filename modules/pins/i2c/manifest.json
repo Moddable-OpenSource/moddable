@@ -22,7 +22,7 @@
 			"preload": "pins/i2c",
 		},
 		"...": {
-			"error": "pins/i2c unsupported"
+			"error": "pins/i2c module unsupported"
 		}
 	}
 }

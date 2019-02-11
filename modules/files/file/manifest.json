@@ -20,7 +20,7 @@
 			}
 		},
 		"...": {
-			"error": "File unsupported"
+			"error": "File module unsupported"
 		}
 	}
 }

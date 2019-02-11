@@ -14,7 +14,7 @@
 		"mac": {},
 		"win": {},
 		"...": {
-			"error": "Net unsupported"
+			"error": "Net module unsupported"
 		}
 	}
 }

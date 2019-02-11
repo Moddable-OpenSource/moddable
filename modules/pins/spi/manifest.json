@@ -16,7 +16,7 @@
 			},
 		},
 		"...": {
-			"error": "pins/spi unsupported"
+			"error": "pins/spi module unsupported"
 		}
 	}
 }
