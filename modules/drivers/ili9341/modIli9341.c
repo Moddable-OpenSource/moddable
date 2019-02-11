@@ -459,6 +459,8 @@ void ili9341Init(spiDisplay sd)
 			cmds += count;
 		}
 	}
+
+	sd->firstFrame = true;
 }
 
 void ili9341ChipSelect(uint8_t active, modSPIConfiguration config)
