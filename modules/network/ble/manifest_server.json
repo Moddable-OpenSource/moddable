@@ -63,7 +63,7 @@
 			}
 		},
 		"...": {
-			"error": "ble unsupported"
+			"error": "BLE modules unsupported"
 		}
 	}
 }

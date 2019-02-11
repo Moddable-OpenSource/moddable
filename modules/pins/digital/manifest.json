@@ -20,7 +20,7 @@
 			},
 		},
 		"...": {
-			"error": "pins/digital unsupported"
+			"error": "pins/digital module unsupported"
 		}
 	}
 }

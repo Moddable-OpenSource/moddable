@@ -20,7 +20,7 @@
 			},
 		},
 		"...": {
-			"error": "pins/analog unsupported"
+			"error": "pins/analog module unsupported"
 		}
 	}
 }

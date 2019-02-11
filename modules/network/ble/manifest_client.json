@@ -67,7 +67,7 @@
 			}
 		},
 		"...": {
-			"error": "ble unsupported"
+			"error": "BLUE modules unsupported"
 		}
 	}
 }
