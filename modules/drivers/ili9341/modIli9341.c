@@ -110,8 +110,8 @@ typedef struct {
 #endif
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOConfigurationRecord	backlight;
-	uint8_t						backlightOn;
 #endif
+	uint8_t						firstFrame;
 } spiDisplayRecord, *spiDisplay;
 
 static void ili9341ChipSelect(uint8_t active, modSPIConfiguration config);
@@ -383,6 +383,8 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 #define kDelayMS (255)
 
 #define kILI9341RegistersModdableZero_Start \
+	0x01, 0, \
+	kDelayMS, 5, \
 	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
 	0xCF, 3, 0x00, 0xC1, 0X30, \
 	0xE8, 3, 0x85, 0x00, 0x78, \
@@ -403,8 +405,6 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	0xE1, 15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F,
 
 #define kILI9341RegistersModdableZero_Finish \
-	0x11, 0, \
-	0x29, 0, \
 	kDelayMS, 0
 
 
@@ -440,7 +440,6 @@ void ili9341Init(spiDisplay sd)
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
 	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);
-	sd->backlightOn = 0;		// start off in case there's garbage in frame buffer
 #endif
 
 	cmds = gInit;
@@ -502,14 +501,18 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 void ili9341End(void *refcon)
 {
-#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	spiDisplay sd = refcon;
 
-	if (!sd->backlightOn) {
+	if (sd->firstFrame) {
+		sd->firstFrame = false;
+
+		ili9341Command(sd, 0x11, NULL, 0);
+		ili9341Command(sd, 0x29, NULL, 0);
+
+#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 		modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_ON);
-		sd->backlightOn = 1;
-	}
 #endif
+	}
 }
 
 void ili9341AdaptInvalid(void *refcon, CommodettoRectangle invalid)
