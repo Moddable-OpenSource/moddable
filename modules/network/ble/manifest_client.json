@@ -67,7 +67,7 @@
 			}
 		},
 		"...": {
-			"error": "BLUE modules unsupported"
+			"error": "BLE modules unsupported"
 		}
 	}
 }
