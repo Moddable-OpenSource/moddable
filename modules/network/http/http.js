@@ -243,8 +243,13 @@ function callback(message, value) {
 				if ("content-length" === name)
 					this.total = parseInt(data);
 				else if ("transfer-encoding" === name) {
-					if ("chunked" === data.toLowerCase())
+					data = data.toLowerCase();
+					if ("chunked" === data)
 						this.chunk = 0;
+					else if ("identity" === data)
+						;
+					else
+						return done.call(this);
 				}
 			}
 		}
