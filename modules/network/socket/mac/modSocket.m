@@ -94,7 +94,7 @@ static void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamEr
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
 	xss->useCount -= 1;
-	if (xss->useCount <= 0) {
+	if ((xss->useCount <= 0) && !xss->done) {
 		xsDestructor destructor = xsGetHostDestructor(xss->obj);
 		xsmcSetHostData(xss->obj, NULL);
 		(*destructor)(xss);
@@ -152,10 +152,10 @@ void xs_socket(xsMachine *the)
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
 		xss->port = xsmcToInteger(xsVar(0));
 	}
-	else
-		xsUnknownError("port required in dictionary");
 
 	if (kTCP == xss->kind) {
+		if (!xss->port)
+			xsUnknownError("port required");
 		xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
 	}
 	else
@@ -546,6 +546,9 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 {
 	xsSocket xss = info;
 	xsMachine *the = xss->the;
+
+	if (-1 == xss->skt)
+		return;		// closed socket
 
 	xss->useCount += 1;
 
