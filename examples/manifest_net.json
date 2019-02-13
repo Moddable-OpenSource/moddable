@@ -19,7 +19,7 @@
 				"sntp",
 				"wifi",
 				"net"
-			]
+			],
 		},
 		"esp32": {
 			"modules": {
@@ -40,7 +40,7 @@
 				"sntp",
 				"wifi",
 				"net"
-			]
+			],
 		},
 		"mac": {
 			"modules": {
@@ -54,6 +54,12 @@
 					"$(MODULES)/network/wifi/mac/*",
 				],
 			},
+			"preload": [
+				"socket",
+				"sntp",
+				"wifi",
+				"net"
+			],
 		},
 		"win": {
 			"modules": {
@@ -64,7 +70,10 @@
 					"$(MODULES)/network/net/win/*",
 					"$(MODULES)/network/sntp/*"
 				]
-			}
+			},
+		},
+		"...": {
+			"error": "manifest_net - unsupported platform"
 		}
 	}
 }
