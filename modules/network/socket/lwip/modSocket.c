@@ -1320,7 +1320,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	struct pbuf *walker;
 	uint16 offset;
 
-	if (fxInNetworkDebugLoop(xss->the)) {
+	if (p && fxInNetworkDebugLoop(xss->the)) {
 		modLog("refuse TCP");
 		return ERR_MEM;
 	}
