@@ -293,6 +293,9 @@ class SSLSession {
 			trace("ALERT! (" + this.alert.level + ", " + htis.alert.description + "\n");
 			return;
 		}
+		if (undefined === this.traceLevel)
+			return;
+
 		let algo = "";
 		switch (this.chosenCipher.keyExchangeAlgorithm) {
 		case RSA:	algo = "RSA"; break;
@@ -321,7 +324,6 @@ class SSLSession {
 		case SHA384:	hash = "SHA384"; break;
 		}
 		trace("FINISHED: " + algo + "-" + enc + "-" + mode + "-" + hash + "\n");
-//		debugger;
 	}
 };
 

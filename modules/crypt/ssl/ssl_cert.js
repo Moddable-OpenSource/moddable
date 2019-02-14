@@ -94,14 +94,28 @@ class CertificateManager {
 		var i = this.getIndex(fname, target);
 		if (i < 0)
 			return;	// undefined
-		return X509.decodeSPKI(getResource("ca" + i + ".der"));
+		let data = getResource("ca" + i + ".der");
+		let validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
+		let now = Date.now();
+		if (!((validity.from < now) && (now < validity.to))) {
+			trace("date validation failed on certificate resource\n");
+			return;
+		}
+		return X509.decodeSPKI(data);
 	};
 	verify(certs) {
-		let length = certs.length - 1;
+		let length = certs.length - 1, x509, validity, now = Date.now();
 
 		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
 		for (let i = 0; i < length; i++) {
-			if (!this._verify(X509.decodeSPKI(certs[i + 1]), X509.decode(certs[i])))
+			x509 = X509.decode(certs[i]);
+			validity = X509.decodeTBS(x509.tbs).validity;
+			if (!((validity.from < now) && (now < validity.to))) {
+				trace("date validation failed on received certificate\n");
+				return false;
+			}
+
+			if (!this._verify(X509.decodeSPKI(certs[i + 1]), x509))
 				return false;
 
 			let aki = X509.decodeAKI(certs[i + 1]);
@@ -120,7 +134,11 @@ class CertificateManager {
 				// else fall thru
 		}
 
-		let x509 = X509.decode(certs[length]);
+		x509 = X509.decode(certs[length]);
+		validity = X509.decodeTBS(x509.tbs).validity;
+		if (!((validity.from < now) && (now < validity.to)))
+			throw new Error("date validation failed");
+
 		let spki = this.findCert("ca.ski", X509.decodeAKI(certs[length]));
 		if (spki && this._verify(spki, x509))
 			return true;
@@ -186,6 +204,10 @@ class CertificateManager {
 		return (new pk(spki, false, [] /* any oid */)).verify(H, sig);
 	};
 	register(cert) {
+		let validity = X509.decodeTBS(X509.decode(new Uint8Array(cert)).tbs).validity, now = Date.now();
+		if (!((validity.from < now) && (now < validity.to)))
+			throw new Error("date validation failed");
+
 		this.registeredCerts.push(cert);
 	};
 	getDH() {

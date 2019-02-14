@@ -1129,7 +1129,10 @@ void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count
 			byteOffset = xsmcToInteger(tmp);
 
 			xsmcGet(tmp, *slot, xsID_buffer);
-			*data = byteOffset + (uint8_t *)xsmcToArrayBuffer(tmp);
+			if (xsmcIsInstanceOf(tmp, xsArrayBufferPrototype))
+				*data = byteOffset + (uint8_t *)xsmcToArrayBuffer(tmp);
+			else
+				*data = byteOffset + (uint8_t *)xsmcGetHostData(tmp);
 		}
 	}
 	else {	// host buffer
