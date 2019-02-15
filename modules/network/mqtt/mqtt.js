@@ -20,6 +20,7 @@
 
 import {Client as WSClient} from "websocket";
 import {Socket} from "socket";
+import Timer from "timer";
 
 /*
  * Implements a basic MQTT client. Upon creation of a client instance, provides methods for
@@ -41,54 +42,56 @@ import {Socket} from "socket";
  */
 
 export default class Client {
-	constructor(params) {
-		if (!params.id)
+	constructor(dictionary) {
+		if (!dictionary.id)
 			throw new Error("parameter id is required");
 
-		if (!params.host)
+		if (!dictionary.host)
 			throw new Error("parameter host is required");
 
-		this.connect = {id: params.id};
-		if (params.user)
-			this.connect.user = params.user;
-		if (params.password)
-			this.connect.password = params.password;
+		this.connect = {id: dictionary.id};
+		if (dictionary.user)
+			this.connect.user = dictionary.user;
+		if (dictionary.password)
+			this.connect.password = dictionary.password;
 
 //		// set default callbacks to be overridden by caller
 //		this.onReady = function() {};
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
 
-		const path = params.path ? params.path : null; // includes query string
+		const path = dictionary.path ? dictionary.path : null; // includes query string
 
 		this.state = 0;
 		this.parse = {state: 0};
 
-		this.packet_id = 1;
+		this.packet = 1;
+
+		if (dictionary.timeout)
+			this.timeout = dictionary.timeout;
 
 		if (this.path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
-			const port = params.port ? params.port : 80;
-			if (params.Socket)
-				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt", Socket: params.Socket, secure: params.secure});
+			const port = dictionary.port ? dictionary.port : 80;
+			if (dictionary.Socket)
+				this.ws = new WSClient({host: dictionary.host, port, path, protocol: "mqtt", Socket: dictionary.Socket, secure: dictionary.secure});
 			else
-				this.ws = new WSClient({host: params.host, port, path, protocol: "mqtt"});
+				this.ws = new WSClient({host: dictionary.host, port, path, protocol: "mqtt"});
 			this.ws.callback = ws_callback.bind(this);
 		} else {
-			const port = params.port ? params.port : 1883;
-			if (params.Socket)
-				this.ws = new (params.Socket)({host: params.host, port, secure: params.secure});
+			const port = dictionary.port ? dictionary.port : 1883;
+			if (dictionary.Socket)
+				this.ws = new (dictionary.Socket)({host: dictionary.host, port, secure: dictionary.secure});
 			else
-				this.ws = new Socket({host: params.host, port});
+				this.ws = new Socket({host: dictionary.host, port});
 			this.ws.callback = socket_callback.bind(this);
 		}
 	}
-
 	publish(topic, data) {
 		if (this.state < 2)
 			throw new Error("cannot publish to closed connection");
 
-		++this.packet_id;
+		++this.packet;
 
 		topic = makeStringBuffer(topic);
 		if (!(data instanceof ArrayBuffer))
@@ -109,12 +112,11 @@ export default class Client {
 
 		this.ws.write(msg.buffer);
 	}
-
 	subscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
 
-		++this.packet_id;
+		++this.packet;
 
 		topic = makeStringBuffer(topic);
 		let payload = topic.length + 1 + 2;
@@ -126,19 +128,18 @@ export default class Client {
 		let msg = new Uint8Array(length), position = 0;
 		msg[position++] = 0x82;		// SUBSCRIBE + flag
 		position = writeRemainingLength(payload, msg, position);
-		msg[position++] = (this.packet_id >> 8) & 0xFF;
-		msg[position++] = this.packet_id & 0xFF;
+		msg[position++] = (this.packet >> 8) & 0xFF;
+		msg[position++] = this.packet & 0xFF;
 		msg.set(topic, position); position += topic.length;
 		// trailing 0 for QoS already in buffer
 
 		this.ws.write(msg.buffer);
 	}
-
 	unsubscribe(topic) {
 		if (this.state < 2)
 			throw new Error("cannot subscribe to closed connection");
 
-		++this.packet_id;
+		++this.packet;
 
 		topic = makeStringBuffer(topic);
 		let payload = topic.length + 2;
@@ -150,21 +151,12 @@ export default class Client {
 		let msg = new Uint8Array(length), position = 0;
 		msg[position++] = 0xA2;		// UNSUBSCRIBE + flag
 		position = writeRemainingLength(payload, msg, position);
-		msg[position++] = (this.packet_id >> 8) & 0xFF;
-		msg[position++] = this.packet_id & 0xFF;
+		msg[position++] = (this.packet >> 8) & 0xFF;
+		msg[position++] = this.packet & 0xFF;
 		msg.set(topic, position); position += topic.length;
 
 		this.ws.write(msg.buffer);
 	}
-
-	ping() {
-		if (this.state < 2)
-			throw new Error("cannot ping on closed connection");
-
-		this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);
-		// currently we ignore pongs; can add an onPingResponse() callback w/ code in ws_callback if useful
-	}
-
 	received(buffer) {
 		let length = buffer.byteLength, position = 0;
 		buffer = new Uint8Array(buffer);
@@ -312,7 +304,7 @@ export default class Client {
 						parse = this.parse = {state: 0};		// not dispatched
 					break;
 
-				case 0xD0:	// PINGRESP (ignored - N.B. this will not trigger until first byte of next message receievd... could be a problem if this feature is used)
+				case 0xD0:	// PINGRESP (ignored - N.B. this will not trigger until first byte of next message received)
 					parse = this.parse = {state: 0};
 					break;
 
@@ -320,14 +312,18 @@ export default class Client {
 					throw new Error("bad parse state");
 			}
 		}
+
+		if (this.timer)
+			this.last = Date.now();
 	}
 	connected() {
+		const timeout = Math.floor(((this.timeout || 0) + 999) / 1000);
 		const header = Uint8Array.of(
 			0x00, 0x04,
 			'M'.charCodeAt(),'Q'.charCodeAt(),'T'.charCodeAt(),'T'.charCodeAt(),		// protocol name MQTT
-			0x04,							// protocol level 4
-			0x02,							// flags : CleanSession
-			0x00, 0x00						// no keepalive -- never drop on inactivity
+			0x04,									// protocol level 4
+			0x02,									// flags : CleanSession
+			(timeout >> 8) & 0xFF, timeout & 0xFF	// keepalive in seconds
 		);
 		const id = makeStringBuffer(this.connect.id);
 		const user = makeStringBuffer(this.connect.user);
@@ -349,6 +345,11 @@ export default class Client {
 		msg.set(id, position); position += id.length;
 		msg.set(user, position); position += user.length;
 		msg.set(password, position); position += password.length;
+
+		if (timeout) {
+			this.timer = Timer.repeat(this.keepalive.bind(this), this.timeout / 4);
+			this.last = Date.now();
+		}
 
 		delete this.connect;
 		return msg.buffer;
@@ -389,8 +390,11 @@ export default class Client {
 		}
 
 	}
-
 	close() {
+		if (this.timer)
+			Timer.clear(this.timer);
+		delete this.timer;
+
 		if (this.ws) {
 			this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
 			this.ws.close();
@@ -398,6 +402,21 @@ export default class Client {
 		}
 
 		this.state = 0;
+	}
+	keepalive() {
+		if (!this.timer)
+			return;
+
+		let now = Date.now();
+		if ((this.last + this.timeout) > now)
+			return;		// received data within the timeout interval
+
+		if ((this.last + (this.timeout + (this.timeout >> 1))) > now)
+			this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+		else {	// timed out after 1.5x waiting
+			this.onClose();
+			this.close();
+		}
 	}
 }
 
@@ -417,12 +436,12 @@ function ws_callback(state, message) {
 			break;
 
 		case 3: // message received
-			this.received(message);
-			break;
+			return this.received(message);
 
 		case 4: // websocket closed
 			this.onClose();
 			delete this.ws;
+			this.close();
 			break;
 
 		default:
@@ -440,8 +459,7 @@ function socket_callback(state, message) {
 			break;
 
 		case 2: // data received
-			this.received(this.ws.read(ArrayBuffer));
-			break;
+			return this.received(this.ws.read(ArrayBuffer));
 
 		case 3: // ready to send
 			break;
@@ -450,6 +468,7 @@ function socket_callback(state, message) {
 			if (state < 0) {
 				this.onClose();
 				delete this.ws;
+				this.close();
 			}
 			else
 				trace(`ERROR: unhandled socket state ${state}\n`);
@@ -457,8 +476,7 @@ function socket_callback(state, message) {
 	}
 }
 
-function makeStringBuffer(string)
-{
+function makeStringBuffer(string) {
 	if (undefined === string)
 		return new Uint8Array(0);
 
