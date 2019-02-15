@@ -72,9 +72,8 @@ export class PubNub {
 			else if (Array.isArray(data)) {
 				timetoken = data[1].toString();
 				if (this.timetoken) {
-					data[0].forEach(payload => {
-						let message = ((typeof payload === "object") ? payload.message || payload.text : payload).toString();
-						this.announceMessage({ actualChannel:null, message, subscribedChannel:channel, timetoken });
+					data[0].forEach(message => {
+						this.announceMessage({ actualChannel: null, message, subscribedChannel: channel, timetoken });
 					});
 				}
 				else {
