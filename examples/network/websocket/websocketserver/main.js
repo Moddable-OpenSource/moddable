@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,11 +13,9 @@
  */
 
 import {Server} from "websocket"
-import Net from "net";
 
 let server = new Server({port:80});
-server.callback = function (message, value)
-{
+server.callback = function (message, value) {
 	switch (message) {
 		case 1:
 			trace("main.js: socket connect.\n");
@@ -37,5 +35,3 @@ server.callback = function (message, value)
 			break;
 	}
 }
-
-trace(`web socket server ready at ${Net.get("IP")}\n`);

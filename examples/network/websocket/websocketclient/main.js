@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,8 +16,7 @@ import {Client} from "websocket"
 
 let ws = new Client({host: "echo.websocket.org"});
 
-ws.callback = function(message, value)
-{
+ws.callback = function(message, value) {
 	switch (message) {
 		case 1:
 			trace("socket connect\n");
