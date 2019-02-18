@@ -50,23 +50,19 @@ import {Socket, Listener} from "socket";
 
 export class Request {
 	constructor(dictionary) {
-		if (dictionary.socket) {
-			this.socket = dictionary.socket;
-			return;
-		}
+		dictionary = Object.assign({port: 80, method: "GET", path: "/"}, dictionary);
 
-		// port, host, address, path (everything after port), method (default GET), headers, body, response
-		this.method = dictionary.method ? dictionary.method : "GET";
-		this.path = dictionary.path ? dictionary.path : "/";
-		this.host = dictionary.host ? dictionary.host : dictionary.address;
-		this.headers = dictionary.headers;
+		this.method = dictionary.method;
+		this.path = dictionary.path;
+		this.host = dictionary.host ? dictionary.host : (dictionary.address + ":" + dictionary.port);
+		if (dictionary.headers)
+			this.headers = dictionary.headers;
 		if (dictionary.body)
 			this.body = dictionary.body;
-		this.state = 0;
 		if (dictionary.response)
 			this.response = dictionary.response;
+		this.state = 0;
 
-		if (!dictionary.port) dictionary.port = 80;		//@@ maybe eliminate default port, require it to be handled by higher layers
 		if (dictionary.Socket)
 			this.socket = new dictionary.Socket(Object.assign({}, dictionary.Socket, dictionary));
 		else
