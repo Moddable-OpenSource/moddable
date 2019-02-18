@@ -613,6 +613,7 @@ void xs_socket(xsMachine *the)
 		xsUnknownError("failed to allocate socket");
 
 	if (kTCP == xss->kind)
+		xss->skt->so_options |= SOF_REUSEADDR;
 		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
 	else if (kUDP == xss->kind)
 		err = udp_bind_safe(xss->udp, IP_ADDR_ANY, xss->port);
