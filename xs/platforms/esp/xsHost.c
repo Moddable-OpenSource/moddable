@@ -758,7 +758,8 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate chunk !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for chunk !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -785,7 +786,8 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate slots !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for slots !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -829,6 +831,11 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 			the->firstBlock->limit = the->firstBlock->current;
 		}
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
+	}
+
+	if (!result) {
+		fxReport(the, "# can't make memory for slots\n");
+		xsDebugger();
 	}
 
 	return result;
@@ -1658,14 +1665,13 @@ uint8_t *espFindUnusedFlashStart(void)
 	image_header_t header;
 	section_header_t section;
 	uint32_t sectionFlashAddress = APP_START_OFFSET + sizeof(image_header_t);
-	
+
 	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(image_header_t));
 	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
-	
-	while (header.num_segments--){
-		sectionFlashAddress += section.size + sizeof(section_header_t);		
-		spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
-	}
+
+	sectionFlashAddress += section.size + sizeof(section_header_t);
+	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+
 	sectionFlashAddress += (uint32_t)kFlashStart;
 	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + sectionFlashAddress) & ~(SPI_FLASH_SEC_SIZE - 1));
 }
