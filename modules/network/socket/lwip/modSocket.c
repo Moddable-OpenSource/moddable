@@ -522,6 +522,7 @@ void xs_socket(xsMachine *the)
 				xss->constructed = true;
 				xsRemember(xss->obj);
 
+				xss->skt->so_options |= SOF_REUSEADDR;
 				configureSocketTCP(the, xss);
 
 				socketUpUseCount(the, xss);
@@ -612,9 +613,10 @@ void xs_socket(xsMachine *the)
 	if (!xss->skt && !xss->udp && !xss->raw)
 		xsUnknownError("failed to allocate socket");
 
-	if (kTCP == xss->kind)
+	if (kTCP == xss->kind) {
 		xss->skt->so_options |= SOF_REUSEADDR;
 		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
+	}
 	else if (kUDP == xss->kind)
 		err = udp_bind_safe(xss->udp, IP_ADDR_ANY, xss->port);
 	else if (kRAW == xss->kind)
@@ -1504,7 +1506,21 @@ void xs_listener(xsMachine *the)
 	gSockets = (xsSocket)xsl;
 	modCriticalSectionEnd();
 
-	err = tcp_bind_safe(xsl->skt, IP_ADDR_ANY, port);
+	ip_addr_t address = *(IP_ADDR_ANY);
+	if (xsmcHas(xsArg(0), xsID_address)) {
+		char temp[DNS_MAX_NAME_LENGTH];
+		uint8_t ip[4];
+		xsmcGet(xsVar(0), xsArg(0), xsID_address);
+		if (xsmcTest(xsVar(0))) {
+			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
+			if (!parseAddress(temp, ip))
+				xsUnknownError("invalid IP address");
+			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
+		}
+	}
+
+	xsl->skt->so_options |= SOF_REUSEADDR;
+	err = tcp_bind_safe(xsl->skt, &address, port);
 	if (err)
 		xsUnknownError("socket bind");
 
