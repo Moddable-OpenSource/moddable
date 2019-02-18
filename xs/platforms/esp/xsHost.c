@@ -1157,14 +1157,17 @@ static modTimer gInstrumentationTimer;
 void espDebugBreak(txMachine* the, uint8_t stop)
 {
 	if (stop) {
+		the->DEBUG_LOOP = 1;
 		fxCollectGarbage(the);
 		the->garbageCollectionCount -= 1;
 		espSampleInstrumentation(NULL, NULL, 0);
 	}
-	else
+	else {
+		the->DEBUG_LOOP = 0;
 		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
+	}
 }
-	
+
 void espInitInstrumentation(txMachine *the)
 {
 	modInstrumentationInit();
