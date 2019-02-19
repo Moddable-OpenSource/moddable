@@ -1660,20 +1660,50 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 #if !ESP32
 #include "flash_utils.h"
 
+// declarations from rboot.h
+// standard rom header
+typedef struct {
+	// general rom header
+	uint8 magic;
+	uint8 count;
+	uint8 flags1;
+	uint8 flags2;
+	void* entry;
+} rom_header;
+
+typedef struct {
+	// general rom header
+	uint8 magic;
+	uint8 count; // second magic for new header
+	uint8 flags1;
+	uint8 flags2;
+	uint32 entry;
+	// new type rom, lib header
+	uint32 add; // zero
+	uint32 len; // length of irom section
+} rom_header_new;
+
 uint8_t *espFindUnusedFlashStart(void)
 {
-	image_header_t header;
-	section_header_t section;
-	uint32_t sectionFlashAddress = APP_START_OFFSET + sizeof(image_header_t);
+	rom_header_new header;
+	uint32_t pos = APP_START_OFFSET;
+	uint8_t i, count;
 
-	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(image_header_t));
-	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(rom_header_new));
+	pos += header.len + sizeof(rom_header_new);
 
-	sectionFlashAddress += section.size + sizeof(section_header_t);
-	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(rom_header));
+	count = header.count;
+	pos += sizeof(rom_header);
 
-	sectionFlashAddress += (uint32_t)kFlashStart;
-	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + sectionFlashAddress) & ~(SPI_FLASH_SEC_SIZE - 1));
+	for (i = 0; i < count; i++) {
+		section_header_t section;
+		spi_flash_read(pos, (void *)&section, sizeof(section_header_t));
+		pos += section.size + sizeof(section_header_t);
+	}
+
+	pos += (uint32_t)kFlashStart;
+	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + pos) & ~(SPI_FLASH_SEC_SIZE - 1));
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
