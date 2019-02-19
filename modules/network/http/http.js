@@ -50,6 +50,11 @@ import {Socket, Listener} from "socket";
 
 export class Request {
 	constructor(dictionary) {
+		if (dictionary.socket) {
+			this.socket = dictionary.socket;		// server re-using Request
+			return;
+		}
+
 		dictionary = Object.assign({port: 80, method: "GET", path: "/"}, dictionary);
 
 		this.method = dictionary.method;
