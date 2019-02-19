@@ -412,7 +412,8 @@ function done(error = false) {
 export class Server {
 	constructor(dictionary = {}) {
 		this.connections = [];
-		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
+		dictionary = Object.assign({port: 80}, dictionary);
+		this.listener = new Listener(dictionary);
 		this.listener.callback = listener => {
 			let socket = new Socket({listener: this.listener});
 			let request = new Request({socket});	// request class will work to receive request body
