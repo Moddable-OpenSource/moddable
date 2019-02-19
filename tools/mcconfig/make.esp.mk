@@ -217,7 +217,6 @@ CPP = $(TOOLS_BIN)/xtensa-lx106-elf-g++
 LD  = $(CC)
 AR  = $(TOOLS_BIN)/xtensa-lx106-elf-ar
 OTA_TOOL = $(TOOLS_ROOT)/espota.py
-ESPTOOL = $(ESP_BASE)/esptool/esptool
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -357,7 +356,6 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)/buildinfo.cpp -o $(LIB_DIR)/buildinfo.cpp.o
 	$(LD) $(LD_FLAGS) -Wl,--start-group $^ $(LIB_DIR)/buildinfo.cpp $(LD_STD_LIBS) -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)/main.elf
 	$(TOOLS_BIN)/xtensa-lx106-elf-objdump -t $(TMP_DIR)/main.elf > $(BIN_DIR)/main.sym
-#	$(ESPTOOL) -eo $(ARDUINO_ROOT)/bootloaders/eboot/eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)/main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
 	esptool.py --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)/main.elf
 	@echo "# Versions"
 	@echo "#  ESP:   $(ESP_SDK_RELEASE)"
