@@ -57,11 +57,11 @@ class WebThing {
 Object.freeze(WebThing.prototype);
 
 class WebThings {
-	constructor(mdns) {
+	constructor(mdns, dictionary = {}) {
 		if (mdns)
 			this.mdns = mdns;
 		this.things = [];
-		this.server = new Server;
+		this.server = new Server(dictionary.server);
 		this.server.callback = this.http;
 		this.server.webThings = this;
 	}
