@@ -419,6 +419,7 @@ export default class Client {
 		}
 	}
 }
+Object.freeze(Client.prototype);
 
 const CONNACK = 0x20;
 const PUBLISH = 0x30;
