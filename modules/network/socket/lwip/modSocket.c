@@ -955,14 +955,75 @@ void xs_socket_write(xsMachine *the)
 	for (pass = 0; pass < 2; pass++ ) {
 		for (arg = 0; arg < argc; arg++) {
 			xsType t = xsmcTypeOf(xsArg(arg));
+			unsigned char byte;
 
-			if (xsStringType == t) {
-				char *msg = xsmcToString(xsArg(arg));
-				int msgLen = c_strlen(msg);
-				if (0 == pass)
-					needed += msgLen;
+			if ((xsStringXType == t) || (xsStringType == t)) {
+				msg = xsmcToString(xsArg(arg));
+				msgLen = c_strlen(msg);
+			}
+			else if ((xsNumberType == t) || (xsIntegerType == t)) {
+				msgLen = 1;
+				if (pass) {
+					byte = (unsigned char)xsmcToInteger(xsArg(arg));
+					msg = &byte;
+				}
+			}
+			else if (xsReferenceType == t) {
+				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
+					msgLen = xsGetArrayBufferLength(xsArg(arg));
+					if (pass)
+						msg = xsmcToArrayBuffer(xsArg(arg));
+				}
+				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
+					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
+					msgLen = xsmcToInteger(xsResult);
+					if (pass) {
+						int byteOffset;
+
+						xsmcGet(xsResult, xsArg(arg), xsID_byteOffset);
+						byteOffset = xsmcToInteger(xsResult);
+
+						xsmcGet(xsResult, xsArg(arg), xsID_buffer);
+						msg = byteOffset + (char *)xsmcToArrayBuffer(xsResult);
+					}
+				}
+				else if (xsmcHas(xsArg(arg), xsID_byteLength)) {	// host data
+					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
+					msgLen = xsmcToInteger(xsResult);
+					if (pass)
+						msg = xsmcGetHostData(xsArg(arg));
+				}
+				else
+					xsUnknownError("unsupported type for write");
+			}
+			else
+				xsUnknownError("unsupported type for write");
+
+			if (0 == pass)
+				needed += msgLen;
+			else {
+#if !ESP32
+				uint8_t inFlash = (void *)msg >= (void *)kFlashStart;
+#else
+				uint8_t inFlash = false;
+#endif
+
+				if (!inFlash) {
+					while (msgLen) {
+						err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);
+						if (ERR_OK == err)
+							break;
+
+						if (ERR_MEM != err) {
+							socketSetPending(xss, kPendingError);
+							return;
+						}
+
+						modDelayMilliseconds(25);
+					}
+				}
 				else {
-					// pull string through a temporary buffer, as it may be in ROM
+					// pull buffer through a temporary buffer
 					while (msgLen) {
 						char buffer[128];
 						int use = msgLen;
@@ -988,83 +1049,6 @@ void xs_socket_write(xsMachine *the)
 					}
 				}
 			}
-			else if ((xsNumberType == t) || (xsIntegerType == t)) {
-				if (0 == pass)
-					needed += 1;
-				else {
-					unsigned char byte = (unsigned char)xsmcToInteger(xsArg(arg));
-					do {
-						err = tcp_write_safe(xss, &byte, 1, TCP_WRITE_FLAG_COPY);
-						if (ERR_OK == err)
-							break;
-
-						if (ERR_MEM != err) {
-							socketSetPending(xss, kPendingError);
-							return;
-						}
-
-						modDelayMilliseconds(25);
-					} while (true);
-				}
-			}
-			else if (xsReferenceType == t) {
-				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsGetArrayBufferLength(xsArg(arg));
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						char *msg = xsmcToArrayBuffer(xsArg(arg));
-
-						do {
-							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
-							if (ERR_OK == err)
-								break;
-
-							if (ERR_MEM != err) {
-								socketSetPending(xss, kPendingError);
-								return;
-							}
-
-							modDelayMilliseconds(25);
-						} while (true);
-					}
-				}
-				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
-					int msgLen, byteOffset;
-
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						xsSlot tmp;
-						char *msg;
-
-						xsmcGet(tmp, xsArg(arg), xsID_byteOffset);
-						byteOffset = xsmcToInteger(tmp);
-
-						xsmcGet(tmp, xsArg(arg), xsID_buffer);
-						msg = byteOffset + (char *)xsmcToArrayBuffer(tmp);
-
-						do {
-							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
-							if (ERR_OK == err)
-								break;
-
-							if (ERR_MEM != err) {
-								socketSetPending(xss, kPendingError);
-								return;
-							}
-
-							modDelayMilliseconds(25);
-						} while (true);
-					}
-				}
-				else
-					xsUnknownError("unsupported type for write");
-			}
-			else
-				xsUnknownError("unsupported type for write");
 		}
 
 		if ((0 == pass) && (needed > available))
