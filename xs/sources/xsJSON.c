@@ -901,7 +901,10 @@ again:
 								fxGetAll(the, at->value.at.id, at->value.at.index);
 								if (at->value.at.id) {
 									txSlot* key = fxGetKey(the, at->value.at.id);
-									mxPushString(key->value.key.string);
+									if (mxGetKeySlotKind(key) == XS_KEY_KIND)
+										mxPushString(key->value.key.string);
+									else
+										mxPushStringX(key->value.key.string);
 								}
 								else
 									mxPushInteger((txInteger)at->value.at.index);
