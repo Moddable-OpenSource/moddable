@@ -131,9 +131,9 @@ static const digestRecord gDigests[] ICACHE_XS6RO_ATTR = {
 		sizeof(struct ghash),
 		GHASH_DGSTSIZE,
 		GHASH_BLKSIZE,
-		(void *)ghash_create,
-		(void *)ghash_update,
-		(void *)ghash_fin
+		(void *)_ghash_create,
+		(void *)_ghash_update,
+		(void *)_ghash_fin
 	},
 	{0}
 };
@@ -975,7 +975,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	else if (KCL_DIRECTION_DECRYPTION != cipher->direction)
 		xs_crypt_cipher_setDirection(cipher, KCL_DIRECTION_DECRYPTION);
 
-	resolveBuffer(the, &xsArg(0), &data, &count);
+	resolveBuffer(the, &xsArg(0), NULL, &count);
 	if ((argc > 1) && xsmcTest(xsArg(1))) {
 		uint32_t dstCount;
 		resolveBuffer(the, &xsArg(1), &result, &dstCount);
@@ -986,11 +986,11 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	else {
 		xsResult = xsArrayBuffer(NULL, count);
 		result = xsmcToArrayBuffer(xsResult);
-		resolveBuffer(the, &xsArg(0), &data, NULL);
 	}
 
 	resultStart = result;
 	countStart = count;
+	resolveBuffer(the, &xsArg(0), &data, NULL);
 
 	if (kCryptModeECB == mode->kind) {
 		while (count >= (uint32_t)blockSize) {
@@ -1129,7 +1129,10 @@ void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count
 			byteOffset = xsmcToInteger(tmp);
 
 			xsmcGet(tmp, *slot, xsID_buffer);
-			*data = byteOffset + (uint8_t *)xsmcToArrayBuffer(tmp);
+			if (xsmcIsInstanceOf(tmp, xsArrayBufferPrototype))
+				*data = byteOffset + (uint8_t *)xsmcToArrayBuffer(tmp);
+			else
+				*data = byteOffset + (uint8_t *)xsmcGetHostData(tmp);
 		}
 	}
 	else {	// host buffer
@@ -1158,12 +1161,12 @@ xs_ghash_init(xsMachine *the)
 	if (len > sizeof(ghash->h))
 		len = sizeof(ghash->h);
 	c_memcpy(&ghash->h, xsmcToArrayBuffer(xsArg(0)), len);
-	ghash_fix128(&ghash->h);
+	_ghash_fix128(&ghash->h);
 	if (ac > 1 && xsmcTest(xsArg(1))) {
 		void *aad = xsmcToArrayBuffer(xsArg(1));
 		len = xsGetArrayBufferLength(xsArg(1));
 		c_memset(&ghash->y, 0, sizeof(ghash->y));
-		ghash_update(ghash, aad, len);
+		_ghash_update(ghash, aad, len);
 		c_memcpy(&ghash->y0, &ghash->y, sizeof(ghash->y));
 		ghash->aad_len = len;
 	}
@@ -1171,5 +1174,5 @@ xs_ghash_init(xsMachine *the)
 		c_memset(&ghash->y0, 0, sizeof(ghash->y0));
 		ghash->aad_len = 0;
 	}
-	ghash_create(ghash);
+	_ghash_create(ghash);
 }

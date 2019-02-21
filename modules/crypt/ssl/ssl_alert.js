@@ -76,14 +76,14 @@ let alert = {
 
 	unpacketize(session, fragment) {
 		session.traceProtocol(this);
-		var s = new SSLStream(fragment);
+		let s = new SSLStream(fragment);
 		session.alert = {level: s.readChar(), description: s.readChar()};
 		if (session.alert.description != close_notify)
 			throw new Error("SSL: alert: " + session.alert.level + ", " + session.alert.description);
 	},
 	packetize(session, level, description) {
 		session.traceProtocol(this);
-		var s = new SSLStream();
+		let s = new SSLStream();
 		s.writeChar(level);
 		s.writeChar(description);
 		return recordProtocol.packetize(session, recordProtocol.alert, s.getChunk());

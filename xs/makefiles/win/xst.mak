@@ -85,6 +85,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsArguments.o \
 	$(TMP_DIR)\xsArray.o \
 	$(TMP_DIR)\xsAtomics.o \
+	$(TMP_DIR)\xsBigInt.o \
 	$(TMP_DIR)\xsBoolean.o \
 	$(TMP_DIR)\xsCode.o \
 	$(TMP_DIR)\xsCommon.o \

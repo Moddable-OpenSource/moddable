@@ -38,12 +38,14 @@
 import recordProtocol from "ssl/record";
 import SSLStream from "ssl/stream";
 import supportedCipherSuites from "ssl/ciphersuites";
+import Mont from "mont";
 import PRF from "ssl/prf";
 import Bin from "bin";
-import Arith from "arith";
 import RNG from "rng";
 import PKCS1_5 from "pkcs1_5";
 import DSA from "dsa";
+import ECDSA from "ecdsa";
+import Curve from "curve";
 import {Digest} from "crypt";
 import X509 from "x509";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
@@ -67,7 +69,7 @@ const MD5 = 1;
 const SHA1 = 2;
 const SHA256 = 4;
 
-const extension_type = {
+const extension_type = Object.freeze({
 	tls_server_name: 0,
 	tls_max_fragment_length: 1,
 	tls_client_certification_url: 2,
@@ -78,17 +80,15 @@ const extension_type = {
 	tls_ec_point_formats: 11,
 	tls_signature_algorithms: 13,
 	tls_application_layer_protocol_negotiation: 16,
-};
-Object.freeze(extension_type);
+});
 
-const named_curves = {
+const named_curves = Object.freeze({
 	secp256r1: 23,
 	secp384r1: 24,
 	secp521r1: 25,
 	x25519: 29,
 	x448: 30,
-};
-Object.freeze(named_curves);
+});
 
 function handshakeDigestUpdate(session, data)
 {
@@ -600,17 +600,16 @@ let handshakeProtocol = {
 				case this.sha384: hash = new Digest("SHA384"); break;
 				case this.sha512: hash = new Digest("SHA512"); break;
 				}
-				let key = session.certificateManager.getKey(session.peerCert), v;
+				let key = session.certificateManager.getKey(session.peerCert);
 				switch (sig_algo) {
 				default:
 				case this.anonymous: break;
 				case this.rsa: v = new PKCS1_5(key, false, []); break;
-				case this.dsa: pk = new DSA(key, false); break;
-				case this.ecdsa: pk = Crypt.ECDSA; break;
+				case this.dsa: v = new DSA(key, false); break;
+				case this.ecdsa: v = new ECDSA(key, false); break;
 				}
 				if (hash && v && sig) {
 					let H = hash.process(session.clientRandom, session.serverRandom, tbs.getChunk());
-//					let v = new pk(key, false, [] /* any oid for PKCS1_5 */);
 					if (!v.verify(H, sig)) {
 						// should send an alert, probably...
 						throw new Error("SSL: serverKeyExchange: failed to verify signature");
@@ -639,18 +638,18 @@ let handshakeProtocol = {
 			case DH_ANON:
 				let s = new SSLStream();
 				let dh = session.certificateManager.getDH();
-				let mod = new Arith.Mont({z: new Arith.Z(), m: dh.p});
-				dh.x = new Arith.Integer(RNG.get(dh.p.sizeof()));
+				let mod = new Mont({m: dh.p, method: Mont.SW});
+				dh.x = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(dh.p) >>> 3));
 				let y = mod.exp(dh.g, dh.x);
 				let tbs = new SSLStream(), c;
 				// server DH params
-				c = dh.p.toChunk();
+				c = ArrayBuffer.fromBigInt(dh.p);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
-				c = dh.g.toChunk();
+				c = ArrayBuffer.fromBigInt(dh.g);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
-				c = y.toChunk();
+				c = ArrayBuffer.fromBigInt(y);
 				tbs.writeChars(c.byteLength, 2);
 				tbs.writeChunk(c);
 				s.writeChunk(tbs.getChunk());
@@ -822,10 +821,10 @@ let handshakeProtocol = {
 			case DH_RSA:
 				// implicit DH is not supported
 				let dh = session.dh;
-				let y = new Arith.Integer(cipher);
-				let mod = new Arith.Mont({z: new Arith.Z(), m: dh.p});
+				let y = BigInt.fromArrayBuffer(cipher);
+				let mod = new Mont({m: dh.p, method: Mont.SW});
 				y = mod.exp(y, dh.x);
-				preMasterSecret = y.toChunk();
+				preMasterSecret = ArrayBuffer.fromBigInt(y);
 				break;
 			default:
 				throw new Error("SSL: clientKeyExchange: unsupported algorithm");
@@ -859,17 +858,17 @@ let handshakeProtocol = {
 					throw new Error("SSL: clientKeyExchange: no DH params");
 				let dh = session.dhparams;
 				let r = RNG.get(dh.dh_p.byteLength);
-				let x = new Arith.Integer(r);
-				let g = new Arith.Integer(dh.dh_g);
-				let p = new Arith.Integer(dh.dh_p);
-				let mod = new Arith.Mont({z: new Arith.Z(), m: p});
+				let x = BigInt.fromArrayBuffer(r);
+				let g = BigInt.fromArrayBuffer(dh.dh_g);
+				let p = BigInt.fromArrayBuffer(dh.dh_p);
+				let mod = new Mont({m: p, method: Mont.SW});
 				let y = mod.exp(g, x);
-				let Yc = y.toChunk();
+				let Yc = ArrayBuffer.fromBigInt(y);
 				s.writeChars(Yc.byteLength, 2);
 				s.writeChunk(Yc);
-				y = new Arith.Integer(dh.dh_Ys);
+				y = BigInt.fromArrayBuffer(dh.dh_Ys);
 				y = mod.exp(y, x);
-				preMasterSecret = y.toChunk();
+				preMasterSecret = ArrayBuffer.fromBigInt(y);
 				break;
 			case ECDHE_RSA:
 				if (!session.dhparams)
