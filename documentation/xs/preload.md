@@ -149,7 +149,7 @@ Following the preload build phase, the XS linker freezes the following:
 The result of this step generates a runtime environment with some characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know that built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
 
 ## Module Global State
-Sometimes modules need to maintain information that for their entire lifetime, independent of a given class instance. These properties are created when the module executes. The following revision of `CountingLog` shares a single counter across all instances.
+Sometimes modules need to maintain information for their entire lifetime, independent of a given class instance. These properties are created when the module executes. The following revision of `CountingLog` shares a single counter across all instances.
 
 	let count = 1;
 
@@ -308,7 +308,7 @@ A better approach is to create a simple class to instantiate from the exported f
 	}
 
 ## Pre-calculating During Preload
-Because microcontrollers are relatively slow in performance, a common optimization technique is to use tables of pre-calculated values to minimize the complex calculations that need to be performed on the microcontroller. The values are typically calculated by another program and then entered into data structure such as an array.
+Because microcontrollers are relatively slow in performance, a common optimization technique is to use tables of pre-calculated values to minimize the complex calculations that need to be performed on the microcontroller. The values are typically calculated by another program and then entered into a data structure such as an array.
 
 For example, the floating square root function is relatively complex and so is a good candidate for optimization when used in performance critical situations. The following example, contrived for simplicity, uses an array containing the square roots of the integers from 0 to 10 as a look-up table.
 
