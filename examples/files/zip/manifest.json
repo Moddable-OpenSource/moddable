@@ -1,0 +1,17 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/files/zip/*",
+		]
+	},
+	"resources": {
+		"*": [
+			"./test"
+		],
+	},
+	"preload": [
+		"zip"
+	]
+}

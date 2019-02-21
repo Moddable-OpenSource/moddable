@@ -1,0 +1,32 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/telnet/*",
+		],
+		"cli": "$(MODULES)/base/cli/cli",
+	},
+	"preload": [
+		"main",
+		"telnet",
+		"cli",
+	],
+	"platforms":{
+		"esp": {
+			"modules": {
+				"pins/digital": "$(MODULES)/pins/digital/digital",
+				"cli/digital": "$(MODULES)/base/cli/commands/digital",
+				"cli/esp": "$(MODULES)/base/cli/commands/esp/esp",
+				"cli/network": "$(MODULES)/base/cli/commands/network",
+				"*": [
+					"$(MODULES)/pins/digital/esp/*",
+				],
+			},
+			"preload": [
+				"pins/*",
+				"cli/*",
+			],
+		},
+	}
+}

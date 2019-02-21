@@ -1,0 +1,32 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/lis3dh/*",
+		],
+		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+	},
+	"preload": [
+		"lis3dh",
+		"pins/i2c",
+	],
+	"defines": {
+		"lis3dh": {
+			"i2c_address": 24
+		}
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/esp/*",
+			},
+			"defines": {
+				"lis3dh": {
+					"i2c_sda": 5,
+					"i2c_scl": 4
+				}
+			},
+		},
+	}
+}

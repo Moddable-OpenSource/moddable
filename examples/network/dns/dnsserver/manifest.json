@@ -1,0 +1,12 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/dns/*",
+		]
+	},
+	"preload": [
+		"dns"
+	]
+}

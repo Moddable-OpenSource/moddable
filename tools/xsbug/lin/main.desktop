@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=xsbug
+Icon=tech-moddable-xsbug
+StartupNotify=true
+Exec=/usr/bin/tech-moddable-xsbug
