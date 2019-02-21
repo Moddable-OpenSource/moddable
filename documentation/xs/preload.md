@@ -13,7 +13,7 @@ Preloading of modules is a unique feature of the XS JavaScript engine. Preloadin
 Not all modules can be preloaded because not all operations may be performed on the build machine - for example, initializing a Digital pin or connecting to a Wi-FI network. Most of the modules in the Moddable SDK are designed and implemented to support preloading. This  document explains more about the preload feature of XS, how to use it in your projects, and how to apply it to your own modules.
 
 ## Specifying Modules to Preload
-A project's build manifest, usually a file named `manifest.json`, lists the modules to include together with [many other options](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md). A list of modules to preload is one optional parts of the manifest.
+A project's build manifest, usually a file named `manifest.json`, lists the modules to include together with [many other options](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md). A list of modules to preload is one optional part of the manifest.
 
 	"modules": {
 		"*": [
@@ -56,7 +56,7 @@ Here's another example module, one that imports `CountingLog` and extends it to 
 	
 	export default CountingDateLog;
 
-When `CountingDateLog` imports `DateLog`, the import is resolved, which takes some time and uses some memory to keep track of the import. By preloading `CountingDateLog` the import statement is executed at build time, which allows this memory to be kept in flash memory instead of RAM.
+When `CountingDateLog` imports `CountingLog`, the import is resolved, which takes some time and uses some memory to keep track of the import. By preloading `CountingDateLog` the import statement is executed at build time, which allows this memory to be kept in flash memory instead of RAM.
 
 Note that when `CountingDateLog` is preloaded, `CountingLog` is also preloaded whether or not it is included in the manifest's `preload` array. Consequently, if a module is to be preloaded, all the modules that it preloads must also support preloading.
 
@@ -149,7 +149,7 @@ Following the preload build phase, the XS linker freezes the following:
 The result of this step generates a runtime environment with some characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know that built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
 
 ## Module Global State
-Sometimes modules need to maintain information that for their entire lifetime, independent of a given class instance. These properties are created when the module executes. The following revision of `CountingLog` that shares a single counter across all instances.
+Sometimes modules need to maintain information that for their entire lifetime, independent of a given class instance. These properties are created when the module executes. The following revision of `CountingLog` shares a single counter across all instances.
 
 	let count = 1;
 
@@ -234,7 +234,7 @@ Here is a partial list of objects which cannot be stored in flash memory:
 
 In the future XS may support storing additional built-in objects in flash memory.
 
-These objects cannot be stored in flash. However, they maybe used at during preload as long as they do not need to be stored. The following examples uses the `Date` object to save the time when the module is loaded in a static property of the class.
+These objects cannot be stored in flash. However, they maybe used during preload as long as they do not need to be stored. The following examples uses the `Date` object to save the time when the module is loaded in a static property of the class.
 
 	class Stamped {
 	}
@@ -256,7 +256,7 @@ The `require` function is used to load modules on-demand, whereas the `import` s
 Note: The `require` function is supported in XS for convenience, though it is not part of the JavaScript language. It is not widely used in XS modules at this time. The functionality enabled by the `require` function is in the process of being standardized as the `import` function. 
 
 ## Preloading `main`
-The `main` module is the first application script executed. To do its work, the `main` module usually imports other modules. The `main` module of a project is often the only module that is not set to preload. This is done for convenience, and for small projects, like examples in the Moddable SDK, it is often not a problem. The application's `main` module invariably invoking native functions, to connect to Wi-Fi, display an image, or toggle a digital pin. As noted above native functions cannot be called during preload.
+The `main` module is the first application script executed. To do its work, the `main` module usually imports other modules. The `main` module of a project is often the only module that is not set to preload. This is done for convenience, and for small projects, like examples in the Moddable SDK, it is often not a problem. The application's `main` module invariably invokes native functions, to connect to Wi-Fi, display an image, or toggle a digital pin. As noted above native functions cannot be called during preload.
 
 Here's a trivial example of an application that turns on one LED using a Digital pin at start-up and sets a repeating timer to toggle the state of another LED.
 
@@ -359,7 +359,7 @@ In the image below, the Instruments shows one module is loaded at the time of br
 Preloading of modules is a unique feature of the XS JavaScript engine to enable more efficient use of the limited RAM and performance of microcontrollers. It is widely supported by the modules provided in the Moddable SDK, so developers benefit from preloading even if they don't understand it fully. By understanding the preload mechanism, developers can realize its benefits for their own code. Those benefits include:
 
 - Faster start-up time by moving initialization code from the microcontroller to build machine
-- Increased free memory for their project code by moving objects created during initialization to flash (ROM) memory.
+- Increased free memory for their project code by moving objects created during initialization to flash (ROM) memory
 - Nearly instant importing of modules
 - More errors caught at build time
 - Simplification of embedded look-up tables and data structures using pre-calculation techniques
