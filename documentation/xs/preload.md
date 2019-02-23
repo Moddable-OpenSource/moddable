@@ -2,7 +2,7 @@
 
 Copyright 2019 Moddable Tech, Inc.
 
-Revised: February 20, 20109
+Revised: February 23, 20109
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
 
@@ -138,7 +138,7 @@ Freezing objects is more common using XS than in other JavaScript environments. 
 	];
 	Object.freeze(Colors, 1);
 
-Because this extension is not part of the JavaScript language, care should be taken to only use it in code that is intended for exclusive use by the XS engine. If equivalent functionality becomes available in a standard way, XS will move to use that mechanism exclusively.
+Because this extension is not part of the JavaScript language, care should be taken to only use it in code that is intended for exclusive use by the XS engine. If equivalent functionality becomes available in a standard way such as [`harden`](https://github.com/Agoric/Harden), XS will move to use that mechanism exclusively.
 
 ### Automatic Freezing of Built-ins
 Following the preload build phase, the XS linker freezes the following:
@@ -146,10 +146,10 @@ Following the preload build phase, the XS linker freezes the following:
 - The prototypes of built-in objects -- e.g. `Object`, `Math`, `Date`, `Proxy`, etc -- are frozen.
 - All functions, both built-in and part of preloaded modules. This include class constructors.
 
-The result of this step generates a runtime environment with some characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know that built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
+The result of this step generates a runtime environment with characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know the built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
 
 ## Module Global State
-Sometimes modules need to maintain information for their entire lifetime, independent of a given class instance. These properties are created when the module executes. The following revision of `CountingLog` shares a single counter across all instances.
+Sometimes modules need to maintain information for their entire lifetime, independent of a single class instance. These variables are part of the module's closure, lexically scoped to the module's body. They are created when the module executes. The following revision of `CountingLog` shares a single counter variable across all instances.
 
 	let count = 1;
 
@@ -162,7 +162,9 @@ Sometimes modules need to maintain information for their entire lifetime, indepe
 	
 	export default CountingLog;
 
-When this module is preloaded, the value of the `count` property is frozen as part of the module's closure. An exception is thrown on any attempt to modify it. The mechanism XS uses to allow modification of objects stored in ROM does not work here. It is possible to have modifiable module globals by making them objects. The following example shows how.
+In the current implementation of XS, when this module is preloaded, the value of the `count` property is frozen as part of the module's closure. An exception is thrown on any attempt to modify it. The mechanism XS used to allow modification of objects stored in ROM does not work here. That module global variables declared with `let` behave like variables declared with `const` is a limitation of the XS preload implementation. In a future update, it may be addressed. Until then, there are other techniques available as part of the JavaScript standard that allow a module to maintain private, modifiable global state.
+
+It is possible to have modifiable module global variables by making them objects. The following example shows how.
 
 	let state = {
 		count = 1,
@@ -178,6 +180,21 @@ When this module is preloaded, the value of the `count` property is frozen as pa
 	export default CountingLog;
 
 Because the object stored in `state` has not been frozen, it may be modified at runtime. The `state` object may, of course, be used to store additional properties with the consequence that modules written in this way often need only one module global to maintain their private state. 
+
+Another way for a module to maintain modifiable private state is using the global scope with a symbol.
+
+	const countSymbol = Symbol("count");
+	global[countSymbol] = 0;
+
+	class CountingLog {
+		log(msg) {
+			trace(`${global[countSymbol]++}: ${msg}\n`);
+		}
+	}
+
+Note that this uses `global` to access the global scope, a name in flux in the JavaScript standards process.
+
+Finally, use `const` to declare module variables that are not intended to be modified at runtime. This conveys the intended use of the variable for when the XS preload mechanism allows variables declared with `let` to be modified.
 
 ## What Cannot be Preloaded
 Preloading occurs on the build machine, not the target device. That limits the operations that may be performed during preload. 
@@ -220,6 +237,7 @@ Many of the basic JavaScript types and objects may be created at build time allo
 - Object
 - Function
 - class
+- Symbol
 
 Here is a partial list of objects which cannot be stored in flash memory:
 
@@ -287,7 +305,6 @@ In the Moddable SDK runtime, if the `main` module returns a function, that funct
 
 A better approach is to create a simple class to instantiate from the exported function. This structures the code more cleanly and any needed state, such as `toggle` in the above example, is part of the instance state accessed using `this`.
 
-	
 	import Digital from "pins/digital:
 
 	class App {
@@ -369,3 +386,5 @@ Preloading of modules is a unique feature of the XS JavaScript engine to enable 
 This document was created in response to a [request](https://twitter.com/moddabletech/status/1086084032008413184) on Twitter from @hori__hiro.
 
 An initial draft of this document was written by Lizzie Prader, who helped edit this document.
+
+The use of terminology at the start of the Module Global State section in the initial posting was imprecise. Thank you to Allen Wirfs-Brock for suggesting improvements.
