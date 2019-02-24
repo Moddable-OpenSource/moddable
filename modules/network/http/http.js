@@ -2,17 +2,17 @@
  * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -22,7 +22,7 @@
 	http
 */
 
-import {Socket, Listener} from "socket";
+import { Socket, Listener } from 'socket';
 
 /*
 	Client
@@ -49,325 +49,323 @@ import {Socket, Listener} from "socket";
 */
 
 export class Request {
-	constructor(dictionary) {
-		if (dictionary.socket) {
-			this.socket = dictionary.socket;
-			return;
-		}
+  constructor(dictionary) {
+    if (dictionary.socket) {
+      this.socket = dictionary.socket; // server re-using Request
+      return;
+    }
 
-		// port, host, address, path (everything after port), method (default GET), headers, body, response
-		this.method = dictionary.method ? dictionary.method : "GET";
-		this.path = dictionary.path ? dictionary.path : "/";
-		this.host = dictionary.host ? dictionary.host : dictionary.address;
-		this.headers = dictionary.headers;
-		if (dictionary.body)
-			this.body = dictionary.body;
-		this.state = 0;
-		if (dictionary.response)
-			this.response = dictionary.response;
+    dictionary = Object.assign(
+      { port: 80, method: 'GET', path: '/' },
+      dictionary
+    );
 
-		if (!dictionary.port) dictionary.port = 80;		//@@ maybe eliminate default port, require it to be handled by higher layers
-		if (dictionary.Socket)
-			this.socket = new dictionary.Socket(Object.assign({}, dictionary.Socket, dictionary));
-		else
-			this.socket = new Socket(dictionary);
-		this.socket.callback = callback.bind(this);
-	}
+    this.method = dictionary.method;
+    this.path = dictionary.path;
+    this.host = dictionary.host
+      ? dictionary.host
+      : dictionary.address + ':' + dictionary.port;
+    if (dictionary.headers) this.headers = dictionary.headers;
+    if (dictionary.body) this.body = dictionary.body;
+    if (dictionary.response) this.response = dictionary.response;
+    this.state = 0;
 
-	read(type, limit) {
-		if (undefined !== this.chunk) {
-			if (undefined === limit)
-				limit = this.chunk;
-			else if (typeof limit !== "number")	//@@ number
-				throw new Error("http limit only supports number");
+    if (dictionary.Socket)
+      this.socket = new dictionary.Socket(
+        Object.assign({}, dictionary.Socket, dictionary)
+      );
+    else this.socket = new Socket(dictionary);
+    this.socket.callback = callback.bind(this);
+  }
 
-			if (type === Number)
-				limit = 1;
-			else if (limit > this.chunk)
-				limit = this.chunk;
+  read(type, limit) {
+    if (undefined !== this.chunk) {
+      if (undefined === limit) limit = this.chunk;
+      else if (typeof limit !== 'number')
+        //@@ number
+        throw new Error('http limit only supports number');
 
-			let read = this.socket.read();
-			if (read < limit)
-				limit = read;
+      if (type === Number) limit = 1;
+      else if (limit > this.chunk) limit = this.chunk;
 
-			if (0 === limit)
-				return;
+      let read = this.socket.read();
+      if (read < limit) limit = read;
 
-			this.chunk -= limit;
-		}
+      if (0 === limit) return;
 
-		return this.socket.read(type, limit);
-	}
+      this.chunk -= limit;
+    }
 
-	close() {
-		if (this.socket)
-			this.socket.close();
-		delete this.socket;
-		delete this.buffers;
-		delete this.callback;
-		this.state = 11;
-	}
-};
+    return this.socket.read(type, limit);
+  }
+
+  close() {
+    if (this.socket) this.socket.close();
+    delete this.socket;
+    delete this.buffers;
+    delete this.callback;
+    this.state = 11;
+  }
+}
 
 function callback(message, value) {
-	let socket = this.socket;
+  let socket = this.socket;
 
-	if (1 === message) {	// connected
-		if (0 !== this.state)
-			throw new Error("socket connected but http not in connecting state");
+  if (1 === message) {
+    // connected
+    if (0 !== this.state)
+      throw new Error('socket connected but http not in connecting state');
 
-		this.state = 1;		// advance to sending request headers state
+    this.state = 1; // advance to sending request headers state
 
-		let parts = [];
-		parts.push(this.method, " ", this.path, " HTTP/1.1\r\n");
-			//@@ Date: would be nice here...
-		parts.push("Host: ", this.host, "\r\n");
-		parts.push("Connection: close\r\n");
+    let parts = [];
+    parts.push(this.method, ' ', this.path, ' HTTP/1.1\r\n');
+    //@@ Date: would be nice here...
+    parts.push('Host: ', this.host, '\r\n');
+    parts.push('Connection: close\r\n');
 
-		let length;
-		for (let i = 0; i < (this.headers ? this.headers.length : 0); i += 2) {
-			let name = this.headers[i].toString();
-			parts.push(name, ": ", this.headers[i + 1].toString(), "\r\n");
-			if ("content-length" === name.toLowerCase())
-				length = true;
-		}
+    let length;
+    for (let i = 0; i < (this.headers ? this.headers.length : 0); i += 2) {
+      let name = this.headers[i].toString();
+      parts.push(name, ': ', this.headers[i + 1].toString(), '\r\n');
+      if ('content-length' === name.toLowerCase()) length = true;
+    }
 
-		if (this.body && (true !== this.body) && !length) {
-			let length = (this.body instanceof ArrayBuffer) ? this.body.byteLength : this.body.length;
-			parts.push("content-length: ", length.toString(), "\r\n");
-		}
+    if (this.body && true !== this.body && !length) {
+      let length =
+        this.body instanceof ArrayBuffer
+          ? this.body.byteLength
+          : this.body.length;
+      parts.push('content-length: ', length.toString(), '\r\n');
+    }
 
-		parts.push("\r\n");
-		socket.write.apply(socket, parts);
+    parts.push('\r\n');
+    socket.write.apply(socket, parts);
 
-		delete this.method;
-		delete this.path;
-		delete this.host;
-		delete this.headers;
+    delete this.method;
+    delete this.path;
+    delete this.host;
+    delete this.headers;
 
-		if (undefined === this.body) {
-			this.state = 3;		// advance to receiving status state
-			return;
-		}
+    if (undefined === this.body) {
+      this.state = 3; // advance to receiving status state
+      return;
+    }
 
-		this.state = 2;			// begin to transmit request body immediately, if possbile
-		message = 3;
-	}
+    this.state = 2; // begin to transmit request body immediately, if possbile
+    message = 3;
+  }
 
-	if (3 === message) {	// safe to write more data
-		if (2 === this.state) {
-			if (true === this.body) {
-				let body = this.callback(0, socket.write());
-				if (undefined !== body) {
-					socket.write(body);
-					return;
-				}
-			}
-			else
-				socket.write(this.body);
+  if (3 === message) {
+    // safe to write more data
+    if (2 === this.state) {
+      if (true === this.body) {
+        let body = this.callback(0, socket.write());
+        if (undefined !== body) {
+          socket.write(body);
+          return;
+        }
+      } else socket.write(this.body);
 
-			delete this.body;
-			this.state = 3;		// advance to receiving status state
-			return;
-		}
-	}
+      delete this.body;
+      this.state = 3; // advance to receiving status state
+      return;
+    }
+  }
 
-	if (2 === message) {			// data available to read
-		if (3 === this.state) {				// receiving status
-			let status = socket.read(String, "\n");		// read up to the end of the line
-			if (this.line)
-				status = this.line + status;
+  if (2 === message) {
+    // data available to read
+    if (3 === this.state) {
+      // receiving status
+      let status = socket.read(String, '\n'); // read up to the end of the line
+      if (this.line) status = this.line + status;
 
-			if ((10 !== status.charCodeAt(status.length - 1)) || (13 !== status.charCodeAt(status.length - 2))) {
-				if (socket.read())
-					throw new Error("didn't receive full status line!?!");
+      if (
+        10 !== status.charCodeAt(status.length - 1) ||
+        13 !== status.charCodeAt(status.length - 2)
+      ) {
+        if (socket.read())
+          throw new Error("didn't receive full status line!?!");
 
-				this.line = status;
-				return;
-			}
+        this.line = status;
+        return;
+      }
 
-			// parse status line:  HTTP/1.1 200 OK
-			status = status.split(" ");
-			if (status.length < 3)
-				throw new Error("unexpected status format");
-			this.state = 4;			// advance to receiving response headers state
-			delete this.line;		// no header line fragment yet
+      // parse status line:  HTTP/1.1 200 OK
+      status = status.split(' ');
+      if (status.length < 3) throw new Error('unexpected status format');
+      this.state = 4; // advance to receiving response headers state
+      delete this.line; // no header line fragment yet
 
-			this.total = undefined;		// total number of bytes expected (content-length)
-			this.chunk = undefined;		// bytes remaining in this chunk (undefined if not chunked)
+      this.total = undefined; // total number of bytes expected (content-length)
+      this.chunk = undefined; // bytes remaining in this chunk (undefined if not chunked)
 
-			this.callback(1, parseInt(status[1]));
-		}
+      this.callback(1, parseInt(status[1]));
+    }
 
-		if (4 === this.state) {		// receiving response headers
-			while (true) {
-				let line = socket.read(String, "\n");
-				if (!line)
-					return;			// out of data. wait for more.
+    if (4 === this.state) {
+      // receiving response headers
+      while (true) {
+        let line = socket.read(String, '\n');
+        if (!line) return; // out of data. wait for more.
 
-				if (this.line) {
-					line = this.line + line;
-					delete this.line;
-				}
+        if (this.line) {
+          line = this.line + line;
+          delete this.line;
+        }
 
-				if (10 !== line.charCodeAt(line.length - 1)) {		// partial header line, accumulate and wait for more
-					this.line = line;
-					return;
-				}
+        if (10 !== line.charCodeAt(line.length - 1)) {
+          // partial header line, accumulate and wait for more
+          this.line = line;
+          return;
+        }
 
-				if ("\r\n" === line) {		// empty line is end of headers
-					this.callback(3);		// all response headers received
-					delete this.line;
-					this.state = 5;			// advance to receiving response headers state
+        if ('\r\n' === line) {
+          // empty line is end of headers
+          this.callback(3); // all response headers received
+          delete this.line;
+          this.state = 5; // advance to receiving response headers state
 
-					if (this.response)
-						this.buffers = [];	// array to hold response fragments
+          if (this.response) this.buffers = []; // array to hold response fragments
 
-					value = socket.read();	// number of bytes available
-					if (0 == value) {
-						if (0 === this.total) {
-							delete this.total;
-							done.call(this);
-						}
-						return;
-					}
+          value = socket.read(); // number of bytes available
+          if (0 == value) {
+            if (0 === this.total) {
+              delete this.total;
+              done.call(this);
+            }
+            return;
+          }
 
-					break;
-				}
+          break;
+        }
 
-				let position = line.indexOf(":");
-				let name = line.substring(0, position).trim().toLowerCase();
-				let data = line.substring(position + 1).trim();
-				this.callback(2, name, data);		// one received header
+        let position = line.indexOf(':');
+        let name = line
+          .substring(0, position)
+          .trim()
+          .toLowerCase();
+        let data = line.substring(position + 1).trim();
+        this.callback(2, name, data); // one received header
 
-				if ("content-length" === name)
-					this.total = parseInt(data);
-				else if ("transfer-encoding" === name) {
-					if ("chunked" === data.toLowerCase())
-						this.chunk = 0;
-				}
-			}
-		}
+        if ('content-length' === name) this.total = parseInt(data);
+        else if ('transfer-encoding' === name) {
+          data = data.toLowerCase();
+          if ('chunked' === data) this.chunk = 0;
+          else if ('identity' === data);
+          else return done.call(this);
+        }
+      }
+    }
 
-		if (5 === this.state) {		// receiving response body
-			if (undefined !== this.chunk) {
-				// chunked response
-				while (value) {
-					if ("number" === typeof this.line) {
-						// skip CR/LF at end of last chunk length
-						const skip = Math.min(this.line, value);
-						socket.read(null, skip);
-						this.line -= skip;
-						value -= skip;
-						if (this.line)
-							break;
-						delete this.line;
-						continue;
-					}
-					if (0 === this.chunk) {
-						let line = socket.read(String, "\n");
-						if (this.line) {
-							line = this.line + line;
-							delete this.line;
-						}
-						if (line[line.length - 1] !== "\n") {
-							this.line = line;
-							this.chunk = 0;
-							break;
-						}
-						line = line.trim();		// removing training CR/LF etc.
-						this.chunk = parseInt(line, 16);
-						if (0 === this.chunk) {
-							delete this.chunk;
-							done.call(this);
-							break;
-						}
-						value = socket.read();
-					}
+    if (5 === this.state) {
+      // receiving response body
+      if (undefined !== this.chunk) {
+        // chunked response
+        while (value) {
+          if ('number' === typeof this.line) {
+            // skip CR/LF at end of last chunk length
+            const skip = Math.min(this.line, value);
+            socket.read(null, skip);
+            this.line -= skip;
+            value -= skip;
+            if (this.line) break;
+            delete this.line;
+            continue;
+          }
+          if (0 === this.chunk) {
+            let line = socket.read(String, '\n');
+            if (this.line) {
+              line = this.line + line;
+              delete this.line;
+            }
+            if (line[line.length - 1] !== '\n') {
+              this.line = line;
+              this.chunk = 0;
+              break;
+            }
+            line = line.trim(); // removing training CR/LF etc.
+            this.chunk = parseInt(line, 16);
+            if (0 === this.chunk) {
+              delete this.chunk;
+              done.call(this);
+              break;
+            }
+            value = socket.read();
+          }
 
-					let count = Math.min(this.chunk, value);
-					if (count) {
-						if (this.response) {
-							this.buffers.push(socket.read(this.response, count));
-							this.chunk -= count;
-						}
-						else {
-							this.callback(4, count);
-							this.read(null);		// skip whatever the callback didn't read
-						}
-					}
+          let count = Math.min(this.chunk, value);
+          if (count) {
+            if (this.response) {
+              this.buffers.push(socket.read(this.response, count));
+              this.chunk -= count;
+            } else {
+              this.callback(4, count);
+              this.read(null); // skip whatever the callback didn't read
+            }
+          }
 
-					value = socket.read();
+          value = socket.read();
 
-					if (0 === this.chunk)
-						this.line = 2;	// should be two more bytes to read (CR/LF)... skip them when they become available
-				}
-			}
-			else if (undefined !== this.total) {
-				// content length
-				let count = Math.min(this.total, value);
-				this.total -= count;
-				if (this.response)
-					this.buffers.push(socket.read(this.response, count));
-				else
-					this.callback(4, count);
-				if (0 === this.total) {
-					delete this.total;
-					done.call(this);
-				}
-			}
-			else {
-				// read until connection closed
-				if (this.response)
-					this.buffers.push(socket.read(this.response));
-				else
-					this.callback(4, socket.read());
-			}
-		}
-	}
+          if (0 === this.chunk) this.line = 2; // should be two more bytes to read (CR/LF)... skip them when they become available
+        }
+      } else if (undefined !== this.total) {
+        // content length
+        let count = Math.min(this.total, value);
+        this.total -= count;
+        if (this.response) this.buffers.push(socket.read(this.response, count));
+        else this.callback(4, count);
+        if (0 === this.total) {
+          delete this.total;
+          done.call(this);
+        }
+      } else {
+        // read until connection closed
+        if (this.response) this.buffers.push(socket.read(this.response));
+        else this.callback(4, socket.read());
+      }
+    }
+  }
 
-	if (message < 0) {		// disconnected (or other error)
-		let error = true;
-		if (5 === this.state) {
-			if (0 === this.total)
-				error = false;
-			else if ((undefined === this.total) && (undefined === this.chunk))	// end of data - no content-length and no chunk
-				error = false;
-		}
-		done.call(this, error);
-	}
+  if (message < 0) {
+    // disconnected (or other error)
+    let error = true;
+    if (5 === this.state) {
+      if (0 === this.total) error = false;
+      else if (undefined === this.total && undefined === this.chunk)
+        // end of data - no content-length and no chunk
+        error = false;
+    }
+    done.call(this, error);
+  }
 }
 
 function done(error = false) {
-	let data;
+  let data;
 
-	if (6 == this.state) return;
+  if (6 == this.state) return;
 
-	this.state = 6;
+  this.state = 6;
 
-	if (this.response && !error) {
-		if (String === this.response)
-			data = this.buffers.join("");
-		else if (ArrayBuffer === this.response) {
-			if (0 === this.buffers.length)
-				data = new ArrayBuffer();
-			else if (1 === this.buffers.length)
-				data = this.buffers[0];
-			else {
-				data = this.buffers.shift();
-				data = data.concat.apply(data, this.buffers);
-			}
-		}
-		delete this.buffers;
-		delete this.response;
-	}
+  if (this.response && !error) {
+    if (String === this.response) data = this.buffers.join('');
+    else if (ArrayBuffer === this.response) {
+      if (0 === this.buffers.length) data = new ArrayBuffer();
+      else if (1 === this.buffers.length) data = this.buffers[0];
+      else {
+        data = this.buffers.shift();
+        data = data.concat.apply(data, this.buffers);
+      }
+    }
+    delete this.buffers;
+    delete this.response;
+  }
 
-	try {
-		this.callback(error ? -2 : 5, data);
-	}
-	finally {
-		this.close();
-	}
+  try {
+    this.callback(error ? -2 : 5, data);
+  } finally {
+    this.close();
+  }
 }
 
 /*
@@ -404,269 +402,284 @@ function done(error = false) {
 */
 
 export class Server {
-	constructor(dictionary = {}) {
-		this.connections = [];
-		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
-		this.listener.callback = listener => {
-			let socket = new Socket({listener: this.listener});
-			let request = new Request({socket});	// request class will work to receive request body
-			socket.callback = server.bind(request);
-			request.server = this;					// associate server with request
-			request.state = 1;						// already connected socket
-			request.callback = this.callback;		// transfer server.callback to request.callback
-			this.connections.push(request);
-			request.callback(1);					// tell app we have a new connection
-		};
-	}
+  constructor(dictionary = {}) {
+    this.connections = [];
+    dictionary = Object.assign({ port: 80 }, dictionary);
+    this.listener = new Listener(dictionary);
+    this.listener.callback = listener => {
+      let socket = new Socket({ listener: this.listener });
+      let request = new Request({ socket }); // request class will work to receive request body
+      socket.callback = server.bind(request);
+      request.server = this; // associate server with request
+      request.state = 1; // already connected socket
+      request.callback = this.callback; // transfer server.callback to request.callback
+      this.connections.push(request);
+      request.callback(1); // tell app we have a new connection
+    };
+  }
 
-	close() {
-		this.connections.forEach(request => {trace("close http server request\n"); request.close();});
-		delete this.connections;
-		this.listener.close();
-		delete this.listener;
-	}
+  close() {
+    this.connections.forEach(request => {
+      trace('close http server request\n');
+      request.close();
+    });
+    delete this.connections;
+    this.listener.close();
+    delete this.listener;
+  }
 }
 
 function server(message, value, etc) {
-	let socket = this.socket;
-	if (!socket) return;
+  let socket = this.socket;
+  if (!socket) return;
 
-//	trace(`HTTP SERVER SOCKET MSG ${message} in state ${this.state}\n`);
+  //	trace(`HTTP SERVER SOCKET MSG ${message} in state ${this.state}\n`);
 
-	try {
-		if (2 === message) {
-			if ((1 == this.state) || (2 == this.state)) {
-				while (true) {
-					let line = socket.read(String, "\n");
-					if (!line)
-						return;			// out of data. wait for more.
+  try {
+    if (2 === message) {
+      if (1 == this.state || 2 == this.state) {
+        while (true) {
+          let line = socket.read(String, '\n');
+          if (!line) return; // out of data. wait for more.
 
-					if (this.line) {
-						line = this.line + line;
-						delete this.line;
-					}
+          if (this.line) {
+            line = this.line + line;
+            delete this.line;
+          }
 
-					if (10 != line.charCodeAt(line.length - 1)) {		// partial header line, accumulate and wait for more
-						this.line = line;
-						return;
-					}
+          if (10 != line.charCodeAt(line.length - 1)) {
+            // partial header line, accumulate and wait for more
+            this.line = line;
+            return;
+          }
 
-					if ("\r\n" == line) {		// empty line is end of headers
-						delete this.line;
+          if ('\r\n' == line) {
+            // empty line is end of headers
+            delete this.line;
 
-						let request = this.callback(4);		// headers complete... let's see what to do with the request body
-						if (false === request)
-							delete this.total;				// ignore request body and just send response
+            let request = this.callback(4); // headers complete... let's see what to do with the request body
+            if (false === request) delete this.total; // ignore request body and just send response
 
-						if (undefined !== this.total) {
-							// start to receive request body
-							this.state = 5;
+            if (undefined !== this.total) {
+              // start to receive request body
+              this.state = 5;
 
-							if (undefined !== request)
-								this.request = request;
+              if (undefined !== request) this.request = request;
 
-							if (true !== this.request)
-								this.buffers = [];
+              if (true !== this.request) this.buffers = [];
 
-							value = socket.read();
-						}
-						else {
-							this.state = 7;		// send response headers
-							message = 3;
-							value = socket.write();
-						}
-						break;
-					}
+              value = socket.read();
+            } else {
+              this.state = 7; // send response headers
+              message = 3;
+              value = socket.write();
+            }
+            break;
+          }
 
-					if (1 === this.state) {
-						// parse status line: GET / HTTP/1.1
-						line = line.split(" ");
-						if (line.length < 3)
-							throw new Error("unexpected status format");
-						const protocol = line[line.length - 1].trim();
-						if (("HTTP/1.1" != protocol) && ("HTTP/1.0" != protocol))		// http 1.0 for hotspot.html
-							throw new Error("bad protocol ID");
+          if (1 === this.state) {
+            // parse status line: GET / HTTP/1.1
+            line = line.split(' ');
+            if (line.length < 3) throw new Error('unexpected status format');
+            const protocol = line[line.length - 1].trim();
+            if ('HTTP/1.1' != protocol && 'HTTP/1.0' != protocol)
+              // http 1.0 for hotspot.html
+              throw new Error('bad protocol ID');
 
-						line.length -= 1;		// remove "HTTP/1.1"
-						let method = line.shift();
-						let path = line.join(" ");	// re-aassemble path
-						this.callback(2, path, method);
+            line.length -= 1; // remove "HTTP/1.1"
+            let method = line.shift();
+            let path = line.join(' '); // re-aassemble path
+            this.callback(2, path, method);
 
-						this.total = undefined;
-						this.state = 2;
-					}
-					else if (2 === this.state) {
-						let position = line.indexOf(":");
-						let name = line.substring(0, position).trim().toLowerCase();
-						let data = line.substring(position + 1).trim();
+            this.total = undefined;
+            this.state = 2;
+          } else if (2 === this.state) {
+            let position = line.indexOf(':');
+            let name = line
+              .substring(0, position)
+              .trim()
+              .toLowerCase();
+            let data = line.substring(position + 1).trim();
 
-						if ("content-length" === name) {
-							let length = parseInt(data);
-							if (length)
-								this.total = length;
-						}
-						if ("transfer-encoding" === name) {
-							if ("chunked" === data.toLowerCase())
-								throw new Error("chunked request body not implemented");
-						}
+            if ('content-length' === name) {
+              let length = parseInt(data);
+              if (length) this.total = length;
+            }
+            if ('transfer-encoding' === name) {
+              if ('chunked' === data.toLowerCase())
+                throw new Error('chunked request body not implemented');
+            }
 
-						this.callback(3, name, data);
-					}
-				}
-			}
-			if (5 === this.state) {		// fragment of request body
-				let count = Math.min(value, this.total);
-				if (0 === count) return;
-				this.total -= count;
+            this.callback(3, name, data);
+          }
+        }
+      }
+      if (5 === this.state) {
+        // fragment of request body
+        let count = Math.min(value, this.total);
+        if (0 === count) return;
+        this.total -= count;
 
-				if (true === this.request)
-					this.callback(5, socket.read());	// callback reads the data
-				else
-					this.buffers.push(socket.read(this.request, count));		// http server reads the data
+        if (true === this.request) this.callback(5, socket.read());
+        // callback reads the data
+        else this.buffers.push(socket.read(this.request, count)); // http server reads the data
 
-				if (0 === this.total) {		// received complete request body
-					let data;
-					if (String === this.request)
-						data = this.buffers.join("");
-					else if (ArrayBuffer === this.request) {
-						if (0 === this.buffers.length)
-							data = new ArrayBuffer();
-						else if (1 === this.buffers.length)
-							data = this.buffers[0];
-						else {
-							data = this.buffers.shift();
-							data = data.concat.apply(data, this.buffers);
-						}
-					}
+        if (0 === this.total) {
+          // received complete request body
+          let data;
+          if (String === this.request) data = this.buffers.join('');
+          else if (ArrayBuffer === this.request) {
+            if (0 === this.buffers.length) data = new ArrayBuffer();
+            else if (1 === this.buffers.length) data = this.buffers[0];
+            else {
+              data = this.buffers.shift();
+              data = data.concat.apply(data, this.buffers);
+            }
+          }
 
-					delete this.buffers;
-					delete this.request;
-					delete this.total;
+          delete this.buffers;
+          delete this.request;
+          delete this.total;
 
-					this.state = 7;
+          this.state = 7;
 
-					this.callback(6, data);		// end of request body
+          this.callback(6, data); // end of request body
 
-					message = 3;
-					value = socket.write();
-				}
-			}
-		}
+          message = 3;
+          value = socket.write();
+        }
+      }
+    }
 
-		if (3 === message) {		// space available to write
-			let first;
+    if (3 === message) {
+      // space available to write
+      let first;
 
-			if (7 === this.state) {
-				let response = this.callback(8);		// prepare response
+      if (7 === this.state) {
+        let response = this.callback(8); // prepare response
 
-				let parts = [];
-				let status = (!response || (undefined === response.status)) ? 200 : response.status;
-				let message = (!response || (undefined === response.reason)) ? reason(status) : response.reason.toString();
-				parts.push("HTTP/1.1 ", status.toString(), " ", message, "\r\n",
-							"connection: ", "close\r\n");
+        let parts = [];
+        let status =
+          !response || undefined === response.status ? 200 : response.status;
+        let message =
+          !response || undefined === response.reason
+            ? reason(status)
+            : response.reason.toString();
+        parts.push(
+          'HTTP/1.1 ',
+          status.toString(),
+          ' ',
+          message,
+          '\r\n',
+          'connection: ',
+          'close\r\n'
+        );
 
-				if (response) {
-					let byteLength;
+        if (response) {
+          let byteLength;
 
-					for (let i = 0, headers = response.headers; headers && (i < headers.length); i += 2) {
-						parts.push(headers[i], ": ", headers[i + 1].toString(), "\r\n");
-						if ("content-length" == headers[i].toLowerCase())
-							byteLength = parseInt(headers[i + 1]);
-					}
+          for (
+            let i = 0, headers = response.headers;
+            headers && i < headers.length;
+            i += 2
+          ) {
+            parts.push(headers[i], ': ', headers[i + 1].toString(), '\r\n');
+            if ('content-length' == headers[i].toLowerCase())
+              byteLength = parseInt(headers[i + 1]);
+          }
 
-					this.body = response.body;
-					if (true === response.body) {
-						if (undefined === byteLength) {
-							this.flags = 2;
-							parts.push("transfer-encoding: chunked\r\n");
-						}
-						else
-							this.flags = 4;
-					}
-					else {
-						this.flags = 1;
-						let count = 0;
-						if (this.body)
-							count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
-						parts.push("content-length: ", count.toString(), "\r\n");
-					}
-				}
-				else
-					parts.push("content-length: 0\r\n");
-				parts.push("\r\n");
-				socket.write.apply(socket, parts);
+          this.body = response.body;
+          if (true === response.body) {
+            if (undefined === byteLength) {
+              this.flags = 2;
+              parts.push('transfer-encoding: chunked\r\n');
+            } else this.flags = 4;
+          } else {
+            this.flags = 1;
+            let count = 0;
+            if (this.body)
+              count =
+                'string' === typeof this.body
+                  ? this.body.length
+                  : this.body.byteLength; //@@ utf-8 hell
+            parts.push('content-length: ', count.toString(), '\r\n');
+          }
+        } else parts.push('content-length: 0\r\n');
+        parts.push('\r\n');
+        socket.write.apply(socket, parts);
 
-				this.state = 8;
-				first = true;
+        this.state = 8;
+        first = true;
 
-				if (this.body && (true !== this.body)) {
-					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
-					if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
-						return;
-				}
-			}
-			if (8 === this.state) {
-				let body = this.body;
-				if (true === body)
-					body = this.callback(9, socket.write() - ((2 & this.flags) ? 8 : 0));		// account for chunk overhead
+        if (this.body && true !== this.body) {
+          let count =
+            'string' === typeof this.body
+              ? this.body.length
+              : this.body.byteLength;
+          if (count > socket.write() - (2 & this.flags ? 8 : 0)) return;
+        }
+      }
+      if (8 === this.state) {
+        let body = this.body;
+        if (true === body)
+          body = this.callback(9, socket.write() - (2 & this.flags ? 8 : 0)); // account for chunk overhead
 
-				let count = 0;
-				if (undefined !== body)
-					count = ("string" === typeof body) ? body.length : body.byteLength;
+        let count = 0;
+        if (undefined !== body)
+          count = 'string' === typeof body ? body.length : body.byteLength;
 
-				if (0 === count) {
-					if (!first)
-						this.state = 9;		// done
-				}
-				else {
-					if (1 & this.flags) {
-						socket.write(body);				//@@ assume it all fits... not always true
-						delete this.body;			// one shot
-					}
-					else if (2 & this.flags) {
-						socket.write(count.toString(16).toUpperCase(), "\r\n", body, "\r\n");
-					}
-					else if (4 & this.flags)
-						socket.write(body);
-				}
-			}
-			if (9 === this.state) {
-				this.state = 10;
-				if (2 & this.flags) {
-					socket.write("0\r\n\r\n");
-					return;
-				}
-			}
-			if (10 === this.state) {
-				try {
-					this.callback(10);
-				}
-				finally {
-					this.server.connections.splice(this.server.connections.indexOf(this), 1);
-					this.close();
-				}
-			}
-		}
-	}
+        if (0 === count) {
+          if (!first) this.state = 9; // done
+        } else {
+          if (1 & this.flags) {
+            socket.write(body); //@@ assume it all fits... not always true
+            delete this.body; // one shot
+          } else if (2 & this.flags) {
+            socket.write(
+              count.toString(16).toUpperCase(),
+              '\r\n',
+              body,
+              '\r\n'
+            );
+          } else if (4 & this.flags) socket.write(body);
+        }
+      }
+      if (9 === this.state) {
+        this.state = 10;
+        if (2 & this.flags) {
+          socket.write('0\r\n\r\n');
+          return;
+        }
+      }
+      if (10 === this.state) {
+        try {
+          this.callback(10);
+        } finally {
+          this.server.connections.splice(
+            this.server.connections.indexOf(this),
+            1
+          );
+          this.close();
+        }
+      }
+    }
+  } catch (e) {
+    message = -1; // close connection on error
+  }
 
-	catch (e) {
-		message = -1;			// close connection on error
-	}
-
-	if (-1 === message) {		// disconnected
-		try {
-			this.callback(-1);
-		}
-		finally {
-			this.server.connections.splice(this.server.connections.indexOf(this), 1);
-			this.close();
-		}
-	}
+  if (-1 === message) {
+    // disconnected
+    try {
+      this.callback(-1);
+    } finally {
+      this.server.connections.splice(this.server.connections.indexOf(this), 1);
+      this.close();
+    }
+  }
 }
 
-function reason(status)
-{
-	let message = `
+function reason(status) {
+  let message = `
 100 Continue
 101 Switching Protocols
 200 OK
@@ -709,12 +722,12 @@ function reason(status)
 504 Gateway Timeout
 505 HTTP Version Not Supported
 `;
-	let index = message.indexOf(`\n${status} `);
-	if (index < 0) return "OK";
-	return message.substring(index + 5, message.indexOf("\n", index + 1));
+  let index = message.indexOf(`\n${status} `);
+  if (index < 0) return 'OK';
+  return message.substring(index + 5, message.indexOf('\n', index + 1));
 }
 
 export default {
-	Request,
-	Server
+  Request,
+  Server
 };

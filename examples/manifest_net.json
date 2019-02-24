@@ -1,70 +1,62 @@
 {
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp/*",
-				],
-				"setup/network": "$(BUILD)/devices/esp/setup/network",
-			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"wifi",
-				"net"
-			]
-		},
-		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp32/*",
-				],
-				"setup/network": "$(BUILD)/devices/esp/setup/network",
-			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"wifi",
-				"net"
-			]
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/mac/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/mac/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/mac/*",
-				],
-			},
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/win/*",
-					"$(MODULES)/network/sntp/*"
-				]
-			}
-		}
-	}
+  "platforms": {
+    "esp": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/socket/*",
+          "$(MODULES)/network/socket/lwip/*",
+          "$(MODULES)/network/net/net",
+          "$(MODULES)/network/net/esp/*",
+          "$(MODULES)/network/sntp/*",
+          "$(MODULES)/network/wifi/*",
+          "$(MODULES)/network/wifi/esp/*"
+        ],
+        "setup/network": "$(BUILD)/devices/esp/setup/network"
+      },
+      "preload": ["socket", "setup/network", "sntp", "wifi", "net"]
+    },
+    "esp32": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/socket/*",
+          "$(MODULES)/network/socket/lwip/*",
+          "$(MODULES)/network/net/net",
+          "$(MODULES)/network/net/esp/*",
+          "$(MODULES)/network/sntp/*",
+          "$(MODULES)/network/wifi/*",
+          "$(MODULES)/network/wifi/esp32/*"
+        ],
+        "setup/network": "$(BUILD)/devices/esp/setup/network"
+      },
+      "preload": ["socket", "setup/network", "sntp", "wifi", "net"]
+    },
+    "mac": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/socket/*",
+          "$(MODULES)/network/socket/mac/*",
+          "$(MODULES)/network/net/net",
+          "$(MODULES)/network/net/mac/*",
+          "$(MODULES)/network/sntp/*",
+          "$(MODULES)/network/wifi/*",
+          "$(MODULES)/network/wifi/mac/*"
+        ]
+      },
+      "preload": ["socket", "sntp", "wifi", "net"]
+    },
+    "win": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/socket/*",
+          "$(MODULES)/network/socket/win/*",
+          "$(MODULES)/network/net/net",
+          "$(MODULES)/network/net/win/*",
+          "$(MODULES)/network/sntp/*"
+        ]
+      }
+    },
+    "...": {
+      "error": "manifest_net - unsupported platform"
+    }
+  }
 }

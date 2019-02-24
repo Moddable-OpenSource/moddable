@@ -135,7 +135,7 @@ void setup(void)
 		printf("uart_driver_install err %d\n", err);
 
 #ifdef mxDebug
-	xTaskCreate(debug_task, "debug", 768 / sizeof(StackType_t), NULL, 8, NULL);
+	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), NULL, 8, NULL);
 #endif
 
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
@@ -210,9 +210,9 @@ void app_main() {
 #endif
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((5 * 1024) / sizeof(StackType_t))
+		#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#else
-		#define kStack ((7 * 1024) / sizeof(StackType_t))
+		#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
 
     xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);

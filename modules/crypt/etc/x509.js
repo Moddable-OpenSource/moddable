@@ -54,7 +54,7 @@ let X509 = {
 		let tbs = {};
 		let ber = new BER(buf);
 		if (ber.getTag() != 0x30)
-			throw new Error("x509: malfromed TBS");
+			throw new Error("x509: malformed TBS");
 		ber.getLength();
 		if (ber.peek() & 0x80) {
 			ber.skip(1);
@@ -63,12 +63,21 @@ let X509 = {
 		tbs.serialNumber = ber.next();
 		tbs.signature = ber.next();
 		tbs.issuer = ber.next();
-		tbs.validity = ber.next();
+
+		let validity = new BER(ber.next());
+		if (validity.getTag() != 0x30)
+			throw new Error("x509: malformed TBS");
+		validity.getLength();
+		let from = validity.next();
+		let to = validity.next();
+		from = parseDate(String.fromArrayBuffer(from.buffer.slice(from.byteOffset + 2, from.byteOffset + 2 + from.length - 2)));
+		to = parseDate(String.fromArrayBuffer(to.buffer.slice(to.byteOffset + 2, to.byteOffset + 2 + to.length - 2)));
+		tbs.validity = {from, to};
 		tbs.subject = ber.next();
 		tbs.subjectPublicKeyInfo = ber.next();
 		return tbs;
 	},
-	getSPK(buf) {
+	getSPK(buf) {		// Subject Public Key Info
 		let spki = this._decodeSPKI(buf);
 		if (!spki)
 			throw new Error("x509: no SPKI");
@@ -144,7 +153,27 @@ let X509 = {
 	_decodeSPKI(buf) @ "xs_x509_decodeSPKI",
 	decodeExtension(buf, extid) @ "xs_x509_decodeExtension",
 };
-
 Object.freeze(X509);
+
+function parseDate(date) {
+	if (!date.endsWith("Z"))
+		throw new Error("unexpected timezone");
+
+	let parts = [];
+	if (13 === date.length) {
+		for (let i = 0; (i + 1) < date.length; i += 2)
+			parts.push(parseInt(date.substring(i, i + 2)));
+		parts[0] += (parts[0] < 50) ? 2000 : 1900;
+	}
+	else if (15 === date.length) {
+		parse.push(parseInt(date.substring(0, 4)));
+		for (let i = 4; (i + 1) < date.length; i += 2)
+			parts.push(parseInt(date.substring(i, i + 2)));
+	}
+	else
+		throw new Error("unexpected date");
+	parts[1] -= 1;
+	return Date.UTC.apply(null, parts);
+}
 
 export default X509;

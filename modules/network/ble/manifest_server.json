@@ -1,69 +1,64 @@
 {
-	"modules": {
-		"*": [
-			"$(MODULES)/network/ble/modBLE",
-			"$(MODULES)/network/ble/bleserver",
-			"$(MODULES)/network/ble/btutils",
-			"$(MODULES)/network/ble/gap",
-			"$(MODULES)/network/ble/sm"
-		],
-	},
-	"preload": [
-		"bleserver",
-		"btutils",
-		"gap",
-		"sm"
-	],
-	"defines": {
-		"ble": {
-			"server": true,
-			"max_connections": 1
-		}
-	},
-	"platforms": {
-		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/esp32/modBLEServer",
-					"$(MODULES)/network/ble/esp32/modBLESM",
-					"$(MODULES)/network/ble/esp32/modBLECommon",
-				]
-			},
-		},
-		"gecko/blue": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/gecko/modBLEServer",
-					"$(MODULES)/network/ble/gecko/modBLESM",
-				]
-			},
-		},
-		"lin": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEServer",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEServer",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEServer",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"...": {
-			"error": "ble unsupported"
-		}
-	}
+  "modules": {
+    "*": [
+      "$(MODULES)/network/ble/modBLE",
+      "$(MODULES)/network/ble/bleserver",
+      "$(MODULES)/network/ble/btutils",
+      "$(MODULES)/network/ble/gap",
+      "$(MODULES)/network/ble/sm"
+    ]
+  },
+  "preload": ["bleserver", "btutils", "gap", "sm"],
+  "defines": {
+    "ble": {
+      "server": true,
+      "max_connections": 1
+    }
+  },
+  "platforms": {
+    "esp32": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/ble/esp32/modBLEServer",
+          "$(MODULES)/network/ble/esp32/modBLESM",
+          "$(MODULES)/network/ble/esp32/modBLECommon"
+        ]
+      }
+    },
+    "gecko/blue": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/ble/gecko/modBLEServer",
+          "$(MODULES)/network/ble/gecko/modBLESM"
+        ]
+      }
+    },
+    "lin": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/ble/sim/modBLEServer",
+          "$(MODULES)/network/ble/sim/modBLESM"
+        ]
+      }
+    },
+    "mac": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/ble/sim/modBLEServer",
+          "$(MODULES)/network/ble/sim/modBLESM"
+        ]
+      }
+    },
+    "win": {
+      "modules": {
+        "*": [
+          "$(MODULES)/network/ble/sim/modBLEServer",
+          "$(MODULES)/network/ble/sim/modBLESM"
+        ]
+      }
+    },
+    "...": {
+      "error": "BLE modules unsupported"
+    }
+  }
 }

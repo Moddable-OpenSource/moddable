@@ -1,12 +1,23 @@
 # Web Things
-Copyright 2018 Moddable Tech, Inc.
 
-Revised: October 10, 2018
+Copyright 2018-2019 Moddable Tech, Inc.<BR>
+Revised: February 6, 2019
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
+## Table of Contents
+
+- [Introduction](#introduction)
+  _ [Implementing a Light using the WebThing class](#implementing-a-light)
+  _ [Announcing a Web Thing](#announcing-a-webthing)
+- [class WebThings](#webthings)
+- [class WebThing](#webthing)
+
+<a id="introduction"></a>
+
 ## Introduction
-The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that  implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products. 
+
+The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products.
 
 In the goals of Mozilla's Web Thing API effort we hear echoes of Moddable's own goals of creating an open environment of IoT products that put the user in control. Consequently, at Moddable we have begun experimenting with the Web Thing API. One result of that work is a set of simple JavaScript classes for building devices compatible with the Web Thing API. The classes have been successfully used on ESP8266 and ESP32 hardware with the Mozilla gateway.
 
@@ -17,27 +28,56 @@ The [draft Web Thing API specification](https://iot.mozilla.org/wot/) is availab
 - The HTTP server always uses port 80
 - WebSockets are not supported
 
-The Moddable classes implement optional publishing of selected properties of a  WebThing in the mDNS TXT record to speed notification of changes to interested devices. The classes also implement optional binding of a WebThings properties to a property published by another WebThing. The binding is performed using the `controller` property.
+The Moddable classes implement optional publishing of selected properties of a WebThing in the mDNS TXT record to speed notification of changes to interested devices. The classes also implement optional binding of a WebThings properties to a property published by another WebThing. The binding is performed using the `controller` property.
 
 The Web of Things [gateway software](https://iot.mozilla.org/gateway/) is available from Mozilla. We run the gateway on a Raspberry Pi at the Moddable office.
 
 The Moddable SDK repository on GitHub contains the [WebThings implementation](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/network/webthings) and several [example device implementations](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/webthings).
 
-This documentation describes how to implement a `WebThing` subclass to be used with the `WebThings` host. The `WebThing` class is a base class to be subclassed by specific implementations. It contains no device specific capabilities. 
+This documentation describes how to implement a `WebThing` subclass to be used with the `WebThings` host. The `WebThing` class is a base class to be subclassed by specific implementations. It contains no device specific capabilities.
+
+<a id="implementing-a-light"></a>
 
 ### Implementing a Light using the WebThing class
 
 A Web Thing is a subclass of the `WebThing` class contained in the `WebThings` module.
 
 ```js
-import {WebThings, WebThing} from "webthings";
+import { WebThings, WebThing } from 'webthings';
 ```
 
-The following code subclasses `WebThing` to define a simple `Light` device which can be turned on and off remotely by the gateway using the Web Thing API.
+The following code subclasses `WebThing` to define a simple `OnOffLight` device which can be turned on and off remotely by the gateway using the Web Thing API.
 
 ```js
-class Light extends WebThing {
-	// ...implementation goes here
+class OnOffLight extends WebThing {
+  constructor(host) {
+    super(host);
+    this.state = true;
+  }
+  get on() {
+    return this.state;
+  }
+  set on(state) {
+    if (state == this.state) return;
+    this.state = state;
+    this.changed();
+    // light specific implementation details here
+  }
+  static get description() {
+    return {
+      '@context': 'https://iot.mozilla.org/schemas',
+      '@type': ['Light', 'OnOffSwitch'],
+      name: 'light',
+      description: 'On/off light',
+      properties: {
+        on: {
+          type: 'boolean',
+          description: 'light state',
+          txt: 'on'
+        }
+      }
+    };
+  }
 }
 ```
 
@@ -105,36 +145,45 @@ const mdns = new MDNS({hostName: "my light"}, (message, value) => {
 The mDNS name claiming process must be completed before the `WebThings` host can be instantiated. The code above waits for the claiming process to complete successfully, then instantiates the `WebThings` host, and finally registers the `Light` by passing its constructor.
 
 ## class WebThings
+
 The `WebThings` class is a host for one or more `WebThing` devices. It provides the mDNS and HTTP services used for the device and gateway to communicate.
 
 ```js
-import {WebThings, WebThing} from "webthings";
+import { WebThings, WebThing } from 'webthings';
 ```
 
 ### constructor(mdns)
+
 The `WebThings` constructor takes an mDNS instance as an argument. This is a required parameter. The mDNS instance must have completed the claiming process before being passed to the constructor.
 
 ### add(constructor [, ...args])
+
 The `add` function registers a subclass of `WebThing`. The constructor argument is a constructor of the `WebThing` subclass to be added. It will be instantiated with `new` by the `WebThings` host. Any additional arguments passed to `add` are passed to the `WebThing` constructor following the `host` argument. This can be useful when initializing a `WebThing` subclass.
 
 ## class WebThing
-The `WebThing` class is subclassed to create implementations of specific Web Things. 
+
+The `WebThing` class is subclassed to create implementations of specific Web Things.
 
 ```js
-import {WebThings, WebThing} from "webthings";
+import { WebThings, WebThing } from 'webthings';
 ```
 
 ### constructor(host [, ...args])
+
 The constructor of a `WebThing` is invoked by the `WebThings` host when the `WebThing` subclass is added to the host. It must call the constructor of its super class with the `host` parameter. Any additional arguments passed to the `add` function of the `WebThings` class are passed to this constructor as `...args`.
 
 ### static get description()
+
 The static getter for the description property returns the device description. The device description is defined in the draft Web Thing API specification from Mozilla. Its use here omits the `href` properties as they are automatically assigned by the `WebThings` host.
 
 ### get property()
+
 When a request is received to retrieve the value of a `WebThing` property, the corresponding getter is invoked on the `WebThing` instance. For example, if a thermostat device has a "temperature" property, the "get temperature()" getter is called.
 
 ### set property()
+
 When a request is received to set the value of a `WebThing` property, the corresponding setter is invoked on the `WebThing` instance. For example, if a thermostat device has a "temperature" property, the "set temperature()" setter is called.
 
 ### changed()
+
 A WebThing subclass calls `changed` to indicate that one or more property values been modified. It is usually called from a setter. Properties published by including the optional `txt` property in the device description are updated only after changed is called.

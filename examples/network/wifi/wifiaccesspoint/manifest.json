@@ -1,20 +1,17 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
-	],
-	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/network/http/*"
-		]
-	},
-	"preload": "http",
-	"platforms": {
-		"esp": {},
-		"esp32": {},
-		"...": {
-			"error": "WiFi unsupported"
-		}
-	}
+  "include": [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODDABLE)/examples/manifest_net.json"
+  ],
+  "modules": {
+    "*": ["./main", "$(MODULES)/network/http/*"]
+  },
+  "preload": "http",
+  "platforms": {
+    "esp": {},
+    "esp32": {},
+    "...": {
+      "error": "WiFi module unsupported"
+    }
+  }
 }

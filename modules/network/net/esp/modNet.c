@@ -72,7 +72,9 @@ void xs_net_get(xsMachine *the)
 		wifi_mode_t mode;
 		tcpip_adapter_ip_info_t info = {0};
 
-		esp_wifi_get_mode(&mode);
+		if ((ESP_OK != esp_wifi_get_mode(&mode)) || (WIFI_MODE_NULL == mode))
+			return;
+
 		if ((ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;

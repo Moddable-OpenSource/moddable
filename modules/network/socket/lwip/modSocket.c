@@ -30,6 +30,8 @@
 
 #include "modSocket.h"
 
+extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+
 #if ESP32
 	#include "lwip/priv/tcpip_priv.h"
 	#include "esp_wifi.h"
@@ -67,7 +69,7 @@ struct xsSocketUDPRemoteRecord {
 typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
-#define kReadQueueLength (8)
+#define kReadQueueLength (6)
 struct xsSocketRecord {
 	xsSocket			next;
 	xsMachine			*the;
@@ -137,6 +139,8 @@ void xs_socket_destructor(void *data);
 
 static void socketSetPending(xsSocket xss, uint8_t pending);
 static void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
+static void configureSocketTCP(xsMachine *the, xsSocket xss);
 
 static void socketMsgConnect(xsSocket xss);
 static void socketMsgDisconnect(xsSocket xss);
@@ -422,7 +426,7 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 	#define tcp_listen_safe tcp_listen
 	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
 	// for some reason, ESP8266 has a memory leak when using tcp_close instead of tcp_abort
-	#define tcp_close_safe tcp_abort
+	#define tcp_close_safe tcp_close
 	#define tcp_output_safe(xss) tcp_output(xss->skt)
 	#define tcp_write_safe(xss, data, len, flags) tcp_write(xss->skt, data, len, flags)
 	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
@@ -493,7 +497,7 @@ void xs_socket(xsMachine *the)
 	unsigned char multicastIP[4];
 	int ttl = 0;
 
-	xsmcVars(1);
+	xsmcVars(2);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
 		xsmcGet(xsVar(0), xsArg(0), xsID_listener);
@@ -517,6 +521,9 @@ void xs_socket(xsMachine *the)
 				xsmcSetHostData(xsThis, xss);
 				xss->constructed = true;
 				xsRemember(xss->obj);
+
+				xss->skt->so_options |= SOF_REUSEADDR;
+				configureSocketTCP(the, xss);
 
 				socketUpUseCount(the, xss);
 
@@ -606,8 +613,10 @@ void xs_socket(xsMachine *the)
 	if (!xss->skt && !xss->udp && !xss->raw)
 		xsUnknownError("failed to allocate socket");
 
-	if (kTCP == xss->kind)
+	if (kTCP == xss->kind) {
+		xss->skt->so_options |= SOF_REUSEADDR;
 		err = tcp_bind_safe(xss->skt, IP_ADDR_ANY, 0);
+	}
 	else if (kUDP == xss->kind)
 		err = udp_bind_safe(xss->udp, IP_ADDR_ANY, xss->port);
 	else if (kRAW == xss->kind)
@@ -681,6 +690,8 @@ void xs_socket(xsMachine *the)
 	if (waiting || (kUDP == xss->kind) || (kRAW == xss->kind))
 		return;
 
+	configureSocketTCP(the, xss);
+
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
 	err = tcp_connect_safe(xss, &ipaddr, port, didConnect);
 	if (err)
@@ -694,7 +705,7 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	for (i = 0; i < kReadQueueLength - 1; i++) {
+	for (i = 0; i < kReadQueueLength; i++) {
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);
 	}
@@ -899,8 +910,10 @@ void xs_socket_write(xsMachine *the)
 		needed = xsGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
-		if (ERR_OK != err)
+		if (ERR_OK != err) {
+			xsLog("UDP send error %d\n", err);
 			xsUnknownError("UDP send failed");
+		}
 
 		modInstrumentationAdjust(NetworkBytesWritten, needed);
 		return;
@@ -942,14 +955,75 @@ void xs_socket_write(xsMachine *the)
 	for (pass = 0; pass < 2; pass++ ) {
 		for (arg = 0; arg < argc; arg++) {
 			xsType t = xsmcTypeOf(xsArg(arg));
+			unsigned char byte;
 
-			if (xsStringType == t) {
-				char *msg = xsmcToString(xsArg(arg));
-				int msgLen = c_strlen(msg);
-				if (0 == pass)
-					needed += msgLen;
+			if ((xsStringXType == t) || (xsStringType == t)) {
+				msg = xsmcToString(xsArg(arg));
+				msgLen = c_strlen(msg);
+			}
+			else if ((xsNumberType == t) || (xsIntegerType == t)) {
+				msgLen = 1;
+				if (pass) {
+					byte = (unsigned char)xsmcToInteger(xsArg(arg));
+					msg = &byte;
+				}
+			}
+			else if (xsReferenceType == t) {
+				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
+					msgLen = xsGetArrayBufferLength(xsArg(arg));
+					if (pass)
+						msg = xsmcToArrayBuffer(xsArg(arg));
+				}
+				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
+					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
+					msgLen = xsmcToInteger(xsResult);
+					if (pass) {
+						int byteOffset;
+
+						xsmcGet(xsResult, xsArg(arg), xsID_byteOffset);
+						byteOffset = xsmcToInteger(xsResult);
+
+						xsmcGet(xsResult, xsArg(arg), xsID_buffer);
+						msg = byteOffset + (char *)xsmcToArrayBuffer(xsResult);
+					}
+				}
+				else if (xsmcHas(xsArg(arg), xsID_byteLength)) {	// host data
+					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
+					msgLen = xsmcToInteger(xsResult);
+					if (pass)
+						msg = xsmcGetHostData(xsArg(arg));
+				}
+				else
+					xsUnknownError("unsupported type for write");
+			}
+			else
+				xsUnknownError("unsupported type for write");
+
+			if (0 == pass)
+				needed += msgLen;
+			else {
+#if !ESP32
+				uint8_t inFlash = (void *)msg >= (void *)kFlashStart;
+#else
+				uint8_t inFlash = false;
+#endif
+
+				if (!inFlash) {
+					while (msgLen) {
+						err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);
+						if (ERR_OK == err)
+							break;
+
+						if (ERR_MEM != err) {
+							socketSetPending(xss, kPendingError);
+							return;
+						}
+
+						modDelayMilliseconds(25);
+					}
+				}
 				else {
-					// pull string through a temporary buffer, as it may be in ROM
+					// pull buffer through a temporary buffer
 					while (msgLen) {
 						char buffer[128];
 						int use = msgLen;
@@ -975,83 +1049,6 @@ void xs_socket_write(xsMachine *the)
 					}
 				}
 			}
-			else if ((xsNumberType == t) || (xsIntegerType == t)) {
-				if (0 == pass)
-					needed += 1;
-				else {
-					unsigned char byte = (unsigned char)xsmcToInteger(xsArg(arg));
-					do {
-						err = tcp_write_safe(xss, &byte, 1, TCP_WRITE_FLAG_COPY);
-						if (ERR_OK == err)
-							break;
-
-						if (ERR_MEM != err) {
-							socketSetPending(xss, kPendingError);
-							return;
-						}
-
-						modDelayMilliseconds(25);
-					} while (true);
-				}
-			}
-			else if (xsReferenceType == t) {
-				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsGetArrayBufferLength(xsArg(arg));
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						char *msg = xsmcToArrayBuffer(xsArg(arg));
-
-						do {
-							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
-							if (ERR_OK == err)
-								break;
-
-							if (ERR_MEM != err) {
-								socketSetPending(xss, kPendingError);
-								return;
-							}
-
-							modDelayMilliseconds(25);
-						} while (true);
-					}
-				}
-				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
-					int msgLen, byteOffset;
-
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						xsSlot tmp;
-						char *msg;
-
-						xsmcGet(tmp, xsArg(arg), xsID_byteOffset);
-						byteOffset = xsmcToInteger(tmp);
-
-						xsmcGet(tmp, xsArg(arg), xsID_buffer);
-						msg = byteOffset + (char *)xsmcToArrayBuffer(tmp);
-
-						do {
-							err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);		// this assumes data is in RAM
-							if (ERR_OK == err)
-								break;
-
-							if (ERR_MEM != err) {
-								socketSetPending(xss, kPendingError);
-								return;
-							}
-
-							modDelayMilliseconds(25);
-						} while (true);
-					}
-				}
-				else
-					xsUnknownError("unsupported type for write");
-			}
-			else
-				xsUnknownError("unsupported type for write");
 		}
 
 		if ((0 == pass) && (needed > available))
@@ -1102,6 +1099,30 @@ void xs_socket_suspend(xsMachine *the)
 	}
 
 	xsmcSetBoolean(xsResult, xss->suspended);
+}
+
+void configureSocketTCP(xsMachine *the, xsSocket xss)
+{
+	xsmcGet(xsVar(0), xsArg(0), xsID_keepalive);
+	if (xsmcTest(xsVar(0))) {
+		xsmcGet(xsVar(1), xsVar(0), xsID_enable);
+		if (xsmcTest(xsVar(1))) {
+			xss->skt->so_options |= SOF_KEEPALIVE;
+
+			if (xsmcHas(xsVar(0), xsID_idle)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_idle);
+				xss->skt->keep_idle = xsmcToInteger(xsVar(1));
+			}
+			if (xsmcHas(xsVar(0), xsID_interval)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_interval);
+				xss->skt->keep_intvl = xsmcToInteger(xsVar(1));
+			}
+			if (xsmcHas(xsVar(0), xsID_count)) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_count);
+				xss->skt->keep_cnt = xsmcToInteger(xsVar(1));
+			}
+		}
+	}
 }
 
 void socketMsgConnect(xsSocket xss)
@@ -1286,6 +1307,11 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	struct pbuf *walker;
 	uint16 offset;
 
+	if (p && fxInNetworkDebugLoop(xss->the)) {
+		modLog("refuse TCP");
+		return ERR_MEM;
+	}
+
 	if (xss->pending & kPendingClose)
 		return ERR_OK;
 
@@ -1318,12 +1344,8 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	}
 	modCriticalSectionEnd();
 
-	if (kReadQueueLength == i) {
-		modLog("tcp read overflow!");
-		pbuf_free_safe(p);
-		socketSetPending(xss, kPendingError);		//@@ test
-		return ERR_MEM;
-	}
+	if (kReadQueueLength == i)
+		return ERR_MEM;			// no space. return error so lwip will redeliver later
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
@@ -1354,6 +1376,12 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 {
 	xsSocket xss = arg;
 	unsigned char i;
+
+	if (fxInNetworkDebugLoop(xss->the)) {
+		modLog("drop UDP");
+		pbuf_free(p);
+		return;
+	}
 
 	modCriticalSectionBegin();
 
@@ -1462,7 +1490,21 @@ void xs_listener(xsMachine *the)
 	gSockets = (xsSocket)xsl;
 	modCriticalSectionEnd();
 
-	err = tcp_bind_safe(xsl->skt, IP_ADDR_ANY, port);
+	ip_addr_t address = *(IP_ADDR_ANY);
+	if (xsmcHas(xsArg(0), xsID_address)) {
+		char temp[DNS_MAX_NAME_LENGTH];
+		uint8_t ip[4];
+		xsmcGet(xsVar(0), xsArg(0), xsID_address);
+		if (xsmcTest(xsVar(0))) {
+			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
+			if (!parseAddress(temp, ip))
+				xsUnknownError("invalid IP address");
+			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
+		}
+	}
+
+	xsl->skt->so_options |= SOF_REUSEADDR;
+	err = tcp_bind_safe(xsl->skt, &address, port);
 	if (err)
 		xsUnknownError("socket bind");
 

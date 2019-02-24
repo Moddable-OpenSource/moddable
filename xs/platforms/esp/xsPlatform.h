@@ -129,16 +129,25 @@ typedef struct DebugFragmentRecord DebugFragmentRecord;
 typedef struct DebugFragmentRecord *DebugFragment;
 
 /* machine */
+
 #define kDebugReaderCount (8)
-#if ESP32
-	#define mxMachinePlatform \
-		void* host; \
+
+#ifdef mxDebug
+	#define mxMachineDebug \
 		txSocket connection; \
 		void* readers[kDebugReaderCount]; \
 		uint16_t readerOffset; \
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
-		DebugFragment debugFragments; \
+		txBoolean DEBUG_LOOP; \
+		DebugFragment debugFragments;
+#else
+	#define mxMachineDebug
+#endif
+
+#if ESP32
+	#define mxMachinePlatform \
+		void* host; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \
@@ -146,19 +155,15 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		void *task; \
 		void* waiterCondition; \
 		void* waiterData; \
-		void* waiterLink;
+		void* waiterLink; \
+		mxMachineDebug
 #else
 	#define mxMachinePlatform \
 		void* host; \
-		txSocket connection; \
-		void* readers[kDebugReaderCount]; \
-		uint16_t readerOffset; \
-		txBoolean inPrintf; \
-		txBoolean debugNotifyOutstanding; \
-		DebugFragment debugFragments; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
-		uint8_t *heap_pend;
+		uint8_t *heap_pend; \
+		mxMachineDebug
 #endif
 
 #ifdef __cplusplus

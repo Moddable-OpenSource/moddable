@@ -34,6 +34,8 @@ class SNTP extends Socket {
 	}
 	start(host) {
 		Net.resolve(host, (host, address) => {
+			if (!this.timer) return;	// resolution completed after SNTP closed
+
 			if (address) {
 				this.address = address;
 				this.write(address, 123, this.packet());

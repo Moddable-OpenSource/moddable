@@ -1,26 +1,26 @@
 {
-	"modules": {
-		"*": "$(MODULES)/files/file/*",
-	},
-	"preload": "file",
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/files/file/esp/*"
-			}
-		},
-		"mac": {
-			"modules": {
-				"*": "$(MODULES)/files/file/mac/*"
-			}
-		},
-		"win": {
-			"modules": {
-				"*": "$(MODULES)/files/file/win/*"
-			}
-		},
-		"...": {
-			"error": "File unsupported"
-		}
-	}
+  "modules": {
+    "*": "$(MODULES)/files/file/*"
+  },
+  "preload": "file",
+  "platforms": {
+    "esp": {
+      "modules": {
+        "*": "$(MODULES)/files/file/esp/*"
+      }
+    },
+    "mac": {
+      "modules": {
+        "*": "$(MODULES)/files/file/mac/*"
+      }
+    },
+    "win": {
+      "modules": {
+        "*": "$(MODULES)/files/file/win/*"
+      }
+    },
+    "...": {
+      "error": "File module unsupported"
+    }
+  }
 }

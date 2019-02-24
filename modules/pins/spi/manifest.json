@@ -1,22 +1,22 @@
 {
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/pins/spi/esp/*",
-			},
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODULES)/pins/spi/esp32/*",
-			},
-		},
-		"gecko": {
-			"modules": {
-				"*": "$(MODULES)/pins/spi/gecko/*",
-			},
-		},
-		"...": {
-			"error": "pins/spi unsupported"
-		}
-	}
+  "platforms": {
+    "esp": {
+      "modules": {
+        "*": "$(MODULES)/pins/spi/esp/*"
+      }
+    },
+    "esp32": {
+      "modules": {
+        "*": "$(MODULES)/pins/spi/esp32/*"
+      }
+    },
+    "gecko": {
+      "modules": {
+        "*": "$(MODULES)/pins/spi/gecko/*"
+      }
+    },
+    "...": {
+      "error": "pins/spi module unsupported"
+    }
+  }
 }

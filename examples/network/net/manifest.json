@@ -1,20 +1,18 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
-	],
-	"modules": {
-		"*": [
-			"./main",
-		]
-	},
-	"platforms": {
-		"esp": {},
-		"esp32": {},
-		"mac": {},
-		"win": {},
-		"...": {
-			"error": "Net unsupported"
-		}
-	}
+  "include": [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODDABLE)/examples/manifest_net.json"
+  ],
+  "modules": {
+    "*": ["./main"]
+  },
+  "platforms": {
+    "esp": {},
+    "esp32": {},
+    "mac": {},
+    "win": {},
+    "...": {
+      "error": "Net module unsupported"
+    }
+  }
 }

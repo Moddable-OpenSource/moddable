@@ -37,7 +37,7 @@
 			#error unknown Microsoft compiler
 		#endif
 	#elif defined(__GNUC__) 
-		#if defined(__i386__) || defined(i386) || defined(intel) || defined(arm) || defined(__arm__) || defined(__k8__) || defined(__x86_64__) || defined(__aarch64__) || defined(EMSCRIPTEN)
+		#if defined(__i386__) || defined(i386) || defined(intel) || defined(arm) || defined(__arm__) || defined(__k8__) || defined(__x86_64__) || defined(__aarch64__)
 			#undef mxLittleEndian
 			#define mxLittleEndian 1
 			#if defined(__linux__) || defined(linux)

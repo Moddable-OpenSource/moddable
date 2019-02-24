@@ -87,17 +87,29 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+#ifdef mxDebug
 	while (the->debugFragments) {
 		DebugFragment next = the->debugFragments->next;
 		c_free(the->debugFragments);
 		the->debugFragments = next;
 	}
+#endif
 
 	modMachineTaskUninit(the);
 }
 
+uint8_t fxInNetworkDebugLoop(txMachine *the)
+{
+#ifdef mxDebug
+	return the->DEBUG_LOOP && the->connection && (kSerialConnection != the->connection);
+#else
+	return 0;
+#endif
+}
+
 void fx_putc(void *refcon, char c)
 {
+#ifdef mxDebug
 	txMachine* the = refcon;
 
 	if (the->inPrintf) {
@@ -134,6 +146,7 @@ void fx_putc(void *refcon, char c)
 			}
 		}
 	}
+#endif
 
 	ESP_putc(c);
 }
@@ -176,7 +189,6 @@ static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16
 
 void fxAbort(txMachine* the)
 {
-	fxDisconnect(the);
 	c_exit(0);
 }
 
@@ -204,8 +216,13 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
     xmodLog("  didReceive - ENTER");
 
 	if (NULL == p) {
-		modLog("  didReceive - CONNECTION LOST");
-		the->connection = NULL;		//@@ fxDisconnect?
+		xmodLog("  didReceive - CONNECTION LOST");
+		if (the->connection) {
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
+			tcp_close(the->connection);
+			the->connection = NULL;
+		}
 		return ERR_OK;
 	}
 
@@ -243,9 +260,14 @@ static void didError(void *arg, err_t err)
 {
 	txMachine* the = arg;
 
-	modLog("XSBUG SOCKET ERROR!!!!!");
-	modLogInt(err);
-	the->connection = NULL;
+	the->connection = NULL;		// "pcb is already freed when this callback is called"
+}
+
+static void didErrorConnect(void *arg, err_t err)
+{
+	txMachine* the = arg;
+
+	the->connection = (void *)-1;
 }
 
 void fxConnect(txMachine* the)
@@ -258,6 +280,19 @@ void fxConnect(txMachine* the)
 	struct ip_addr ipaddr;
 #endif
 	extern unsigned char gXSBUG[4];
+	int count;
+
+	the->connection = NULL;
+	c_memset(the->readers, 0, sizeof(the->readers));
+	the->readerOffset = 0;
+	the->inPrintf =
+	the->debugNotifyOutstanding =
+	the->DEBUG_LOOP = 0;
+	while (the->debugFragments) {
+		void *tmp = the->debugFragments;
+		the->debugFragments = the->debugFragments->next;
+		c_free(tmp);
+	}
 
 	if (isSerialIP(gXSBUG)) {
 		static txBoolean once;
@@ -293,7 +328,10 @@ void fxConnect(txMachine* the)
 	if (!pcb) return;
 
 	err = tcp_bind(pcb, IP_ADDR_ANY, 0);
-	if (err) return;
+	if (err) {
+		tcp_close(pcb);
+		return;
+	}
 
 #if ESP32
 	IP4_ADDR(ip_2_ip4(&ipaddr), gXSBUG[0], gXSBUG[1], gXSBUG[2], gXSBUG[3]);
@@ -303,24 +341,32 @@ void fxConnect(txMachine* the)
 
 	tcp_arg(pcb, the);
 	tcp_recv(pcb, didReceive);
-	tcp_err(pcb, didError);
+	tcp_err(pcb, didErrorConnect);
 //	tcp_nagle_disable(pcb);
 
     modLog("  fxConnect - connect to XSBUG");
 	err = tcp_connect(pcb, &ipaddr, 5002, didConnect);
 	if (err) {
+		tcp_close(pcb);
 		modLog("  fxConnect - tcp_connect ERROR");
 		return;
 	}
 
-	while (!the->connection)
+	count = 0;
+	while (!the->connection && (count++ < 500))		// 5 seconds, then surrender
 		modDelayMilliseconds(10);
 
-	if ((txSocket)-1 == the->connection) {
-		the->connection = NULL;
+	if (!the->connection || ((txSocket)-1 == the->connection)) {
 		modLog("  fxConnect - couldn't connect");
+		if (NULL == the->connection) {		// timeout.
+			tcp_err(pcb, NULL);
+			tcp_close(pcb);
+		}
+		the->connection = NULL;
+		return;
 	}
 
+	tcp_err(pcb, didError);
 connected:
 #ifdef mxInstrument
 	espDescribeInstrumentation(the);
@@ -342,8 +388,9 @@ void fxDisconnect(txMachine* the)
 				}
 			}
 			the->readerOffset = 0;
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
 			tcp_close((struct tcp_pcb *)the->connection);
-			modDelayMilliseconds(100);		// time for FIN packet to be sent
 		}
 		else {
 			fx_putpi(the, '-', true);
@@ -395,6 +442,7 @@ void fxReceive(txMachine* the)
 		struct pbuf *p;
 		uint16_t use;
 
+		modWatchDogReset();
 		if (NULL == the->readers[0]) {
 			modDelayMilliseconds(10);
 			return;
@@ -406,8 +454,8 @@ void fxReceive(txMachine* the)
 
 		mxDebugMutexTake();
 			use = p->len - the->readerOffset;
-			if (use > (sizeof(the->debugBuffer) - 1))
-				use = sizeof(the->debugBuffer) - 1;
+			if (use > sizeof(the->debugBuffer))
+				use = sizeof(the->debugBuffer);
 
 			c_memmove(the->debugBuffer, the->readerOffset + (char *)p->payload, use);
 			the->debugOffset = use;
@@ -454,14 +502,6 @@ void fxReceive(txMachine* the)
 		}
 		forever = 1;
 	}
-
-bail:
-	the->debugBuffer[the->debugOffset] = 0;
-
-//	if (the->debugOffset) {
-//		modLog("  fxReceive - EXIT with:");
-//		modLogVar(the->debugBuffer);
-//	}
 }
 
 void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -493,8 +533,8 @@ void fxReceiveLoop(void)
 	static txMachine* current = NULL;
 	static uint8_t state = 0;
 	static uint32_t value = 0;
-	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
 	static uint8_t bufferedBytes = 0;
+	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
 
 	mxDebugMutexTake();
 
@@ -607,6 +647,7 @@ void fxSend(txMachine* the, txBoolean more)
 			if (0 == available) {
 				xmodLog("  fxSend - need to wait");
 				tcp_output(pcb);
+				modWatchDogReset();
 				modDelayMilliseconds(10);
 				continue;
 			}
@@ -615,7 +656,8 @@ void fxSend(txMachine* the, txBoolean more)
 				available = length;
 
 			while (true) {
-				err = tcp_write(pcb, bytes, available, TCP_WRITE_FLAG_COPY);
+				modWatchDogReset();
+				err = tcp_write(pcb, bytes, available, more ? TCP_WRITE_FLAG_MORE : 0);
 				if (ERR_MEM == err) {
 					xmodLog("  fxSend - wait for send memory:");
 					tcp_output(pcb);
@@ -632,6 +674,8 @@ void fxSend(txMachine* the, txBoolean more)
 			length -= available;
 			bytes += available;
 		}
+		if (!more)
+			tcp_output(pcb);
 	}
 	else {
 		char *c = the->echoBuffer;

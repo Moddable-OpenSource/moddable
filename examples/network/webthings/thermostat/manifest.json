@@ -1,34 +1,27 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/network/webthings/manifest.json",
-	],
-	"modules": {
-		"~": [
-			"$(BUILD)/devices/esp/setup/network",
-		],
-		"*": [
-			"./main",
-			"./assets",
-		],
-	},
-	"preload": [
-		"main",
-		"assets",
-	],
-	"resources":{
-		"*": [
-			"./assets/fan",
-			"./assets/flame",
-		],
-		"*-alpha": [
-			"./fonts/OpenSans-36-numbers",
-			"./fonts/open-sans-reg-20-degree",
-			"./fonts/open-sans-light-num-100",
-			"./assets/down-arrow-mask",
-			"./assets/up-arrow-mask",
-		],
-	},
+  "include": [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODDABLE)/examples/manifest_net.json",
+    "$(MODDABLE)/examples/manifest_piu.json",
+    "$(MODDABLE)/modules/network/webthings/manifest.json"
+  ],
+  "config": {
+    "ssid": "YOUR_WIFI_SSID_HERE",
+    "password": "YOUR_WIFI_PASSWORD_HERE"
+  },
+  "modules": {
+    "~": ["$(BUILD)/devices/esp/setup/network"],
+    "*": ["./main", "./assets"]
+  },
+  "preload": ["main", "assets"],
+  "resources": {
+    "*": ["./assets/fan", "./assets/flame"],
+    "*-alpha": [
+      "./fonts/OpenSans-36-numbers",
+      "./fonts/open-sans-reg-20-degree",
+      "./fonts/open-sans-light-num-100",
+      "./assets/down-arrow-mask",
+      "./assets/up-arrow-mask"
+    ]
+  }
 }

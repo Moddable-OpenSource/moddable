@@ -39,6 +39,7 @@
 
 #define XS_MAX_INDEX ((2 << 28) - 2)
 #define mxPop() (the->stack++)
+#define mxArraySize(ARRAY) (((ARRAY)->value.array.address) ? (((txChunk*)(((txByte*)((ARRAY)->value.array.address)) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0)
 
 static txIndex fxCheckArrayLength(txMachine* the, txSlot* slot);
 static txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item);
@@ -1092,28 +1093,22 @@ void fx_Array_prototype_concat(txMachine* the)
 void fx_Array_prototype_copyWithin(txMachine* the)
 {
 	txSlot* array = fxCheckArray(the, mxThis);
-	if (array) {
-		txIndex length = array->value.array.length;
-		txIndex to = (txIndex)fxArgToIndex(the, 0, 0, length);
-		txIndex from = (txIndex)fxArgToIndex(the, 1, 0, length);
-		txIndex final = (txIndex)fxArgToIndex(the, 2, length, length);
-		txIndex count = (final > from) ? final - from : 0;
-		if (count > length - to)
-			count = length - to;
+	txNumber length, to, from, final, count;
+	length = (array) ? array->value.array.length : fxGetArrayLength(the, mxThis);
+	to = fxArgToIndex(the, 0, 0, length);
+	from = fxArgToIndex(the, 1, 0, length);
+	final = fxArgToIndex(the, 2, length, length);
+	count = (final > from) ? final - from : 0;
+	if (count > length - to)
+		count = length - to;
+	if (array && ((txIndex)length == mxArraySize(array))) {
 		if (count > 0) {
-			c_memmove(array->value.array.address + to, array->value.array.address + from, count * sizeof(txSlot));
+			c_memmove(array->value.array.address + (txIndex)to, array->value.array.address + (txIndex)from, (txIndex)count * sizeof(txSlot));
 			fxIndexArray(the, array);
 		}
 	}
 	else {
-		txNumber length = fxGetArrayLength(the, mxThis);
-		txNumber to = fxArgToIndex(the, 0, 0, length);
-		txNumber from = fxArgToIndex(the, 1, 0, length);
-		txNumber final = fxArgToIndex(the, 2, length, length);
-		txNumber count = (final > from) ? final - from : 0;
 		txNumber direction;
-		if (count > length - to)
-			count = length - to;
 		if ((from < to) && (to < from + count)) {
 			direction = -1;
 			from += count - 1;
@@ -1888,7 +1883,6 @@ void fx_Array_prototype_some(txMachine* the)
 
 void fx_Array_prototype_sort(txMachine* the)
 {
-#define mxArraySize(ARRAY) (((ARRAY)->value.array.address) ? (((txChunk*)(((txByte*)((ARRAY)->value.array.address)) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0)
 	txSlot* array = fxCheckArray(the, mxThis);
 	txSlot* function = C_NULL;
  	txNumber LENGTH;

@@ -37,15 +37,18 @@ class WebThing {
 			this.host.mdns.update(thing.service);
 	}
     set controller(data) {
-		const thing = this.host.things.find(thing => this === thing.instance);
+		const description = this.constructor.description;
     	for (let i=0; i<data.length; i++) {
     		let item = data[i];
-    		if (item.property === undefined || item.remote === undefined || item.txt === undefined || thing.description.properties[item.property] === undefined) {
+    		if (!item.property || !item.remote || !item.txt ||
+				!description.properties[item.property] ||
+				description.properties[item.property].readOnly) {
     			data.splice(i, 1);
     			i--;
     		}
     	}
     	this.controllers = data;
+		this.host.monitor();
     }
     get controller() {
     	return this.controllers;
@@ -54,66 +57,13 @@ class WebThing {
 Object.freeze(WebThing.prototype);
 
 class WebThings {
-	constructor(mdns) {
-		this.mdns = mdns;
+	constructor(mdns, dictionary = {}) {
+		if (mdns)
+			this.mdns = mdns;
 		this.things = [];
-		this.server = new Server;
+		this.server = new Server(dictionary.server);
 		this.server.callback = this.http;
 		this.server.webThings = this;
-		if (!mdns)
-			return;
-		mdns.monitor("_webthing._tcp", (service, instance) => {
-			let txt = instance.txt;
-			let name = instance.name;
-			for (let j = 0; j < this.things.length; j++) {
-				const thing = this.things[j];
-				let properties = Object.keys(thing.description.properties);
-				let bools = properties.filter(prop => {
-					let isControlled = false;
-					for (let item of thing.instance.controller) {
-						if ((name === item.remote) && (prop === item.property)) isControlled = true;
-					}
-					return (thing.description.properties[prop].type === "boolean") && isControlled;
-				});
-				let item, equal, key, value;
-				for (let i=1; i<txt.length; i++) {	// first item is description url
-					item = instance.txt[i];
-					equal = item.indexOf("=");
-					key = item.substring(0, equal);
-					value = item.substring(equal+1);
-					for (let k = 0; k < thing.instance.controller.length; k++) {
-						const item = thing.instance.controller[k];
-						if ((name === item.remote) && (key === item.txt)){
-							let property = item.property;
-							let type = thing.description.properties[property];
-							if (type) {
-								switch(type.type) {
-									case "boolean":
-										value = true;
-										bools.splice(bools.indexOf(property), 1);
-										break;
-									case "number":
-									case "integer":
-										value = ("number" === type.type) ? parseFloat(value) : parseInt(value);
-					 					if ((undefined !== type.minimum) && (value < type.minimum))
-											value = type.minimum;
-					 					if ((undefined !== type.maximum) && (value > type.maximum))
-											value = type.maximum;
-										break;
-									case "object":
-									case "array":
-										value = JSON.parse(value);
-										break;
-								}
-								thing.instance[property] = value;
-							}
-						}
-					}
-				}
-				for (let prop of bools)
-					thing.instance[prop] = false;
-			}
-		});
 	}
 	close () {
 		if (this.server)
@@ -143,8 +93,10 @@ class WebThings {
 		}
 		this.things.push(thing);
 		this.updateTXT(thing);
-		if (this.mdns)
+		if (this.mdns) {
+			this.monitor();
 			this.mdns.add(thing.service);
+		}
 
 		return thing.instance;
 	}
@@ -204,18 +156,24 @@ class WebThings {
 				switch (this.method) {
 					case "GET":
 						if (this.path.startsWith("/thng/desc/")) {
-							things.forEach(thing => {
-								if (this.path.slice("/thng/desc/".length) === thing.description.name)
-									body = thing.description;
+							things.some(thing => {
+								if (this.path.slice("/thng/desc/".length) !== thing.description.name)
+									return;
+
+								body = thing.description;
+								return true;
 							});
 						}
 						else
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							things.forEach(thing => {
-								if (name === thing.description.name)
-									body = {[property]: thing.instance[property]};
+							things.some(thing => {
+								if (name !== thing.description.name)
+									return;
+
+								body = {[property]: thing.instance[property]};
+								return true;
 							});
 						}
 						else
@@ -225,11 +183,17 @@ class WebThings {
 						if (this.path.startsWith("/thng/prop/")) {
 							const parts = this.path.split("/");
 							const name = parts[3], property = parts[4];
-							things.forEach(thing => {
-								if (name === thing.description.name) {
+							things.some(thing => {
+								if (name !== thing.description.name)
+									return;
+
+								if (thing.description.properties[property].readOnly)
+									body = {[property]: thing.instance[property], error: "readOnly"};
+								else {
 									thing.instance[property] = this.JSON[property];
 									body = {[property]: thing.instance[property]};
 								}
+								return true;
 							});
 						}
 						else 
@@ -243,6 +207,73 @@ class WebThings {
 				return {headers: ThingHeaders, body: JSON.stringify(body)};
 				}
 				break;
+		}
+	}
+	monitor() {
+		const enable = (this.mdns ? true : false) && this.things.some(thing => 0 !== thing.instance.controllers.length);
+
+		if (enable === (undefined !== this._watch))
+			return;
+
+		if (enable) {
+			this._watch = this.watch.bind(this);
+			this.mdns.monitor("_webthing._tcp", this._watch);
+		}
+		else {
+			this.mdns.remove("_webthing._tcp", this._watch);
+			delete this._watch;
+		}
+	}
+	watch(service, instance) {
+		let txt = instance.txt;
+		let name = instance.name;
+		for (let j = 0; j < this.things.length; j++) {
+			const thing = this.things[j];
+			let properties = Object.keys(thing.description.properties);
+			let bools = properties.filter(prop => {
+				let isControlled = false;
+				for (let item of thing.instance.controllers) {
+					if ((name === item.remote) && (prop === item.property)) isControlled = true;
+				}
+				return (thing.description.properties[prop].type === "boolean") && isControlled;
+			});
+			let item, equal, key, value;
+			for (let i=1; i<txt.length; i++) {	// first item is description url
+				item = instance.txt[i];
+				equal = item.indexOf("=");
+				key = item.substring(0, equal);
+				value = item.substring(equal+1);
+				for (let k = 0; k < thing.instance.controllers.length; k++) {
+					const item = thing.instance.controllers[k];
+					if ((name === item.remote) && (key === item.txt)){
+						let property = item.property;
+						let type = thing.description.properties[property];
+						if (type) {
+							switch(type.type) {
+								case "boolean":
+									value = true;
+									bools.splice(bools.indexOf(property), 1);
+									break;
+								case "number":
+								case "integer":
+									value = ("number" === type.type) ? parseFloat(value) : parseInt(value);
+									if ((undefined !== type.minimum) && (value < type.minimum))
+										value = type.minimum;
+									if ((undefined !== type.maximum) && (value > type.maximum))
+										value = type.maximum;
+									break;
+								case "object":
+								case "array":
+									value = JSON.parse(value);
+									break;
+							}
+							thing.instance[property] = value;
+						}
+					}
+				}
+			}
+			for (let prop of bools)
+				thing.instance[prop] = false;
 		}
 	}
 }
