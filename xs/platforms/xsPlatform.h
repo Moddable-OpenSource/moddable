@@ -271,6 +271,14 @@
 	#define c_fprintf fprintf
 #endif
 
+#ifndef c_signal
+	#ifdef EMSCRIPTEN
+		#define c_signal(signum, handler)
+	#else
+		#define c_signal signal
+	#endif
+#endif
+
 /* DATE */
 
 #ifndef c_time_t

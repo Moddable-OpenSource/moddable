@@ -36,6 +36,9 @@
  */
 
 #include "xsScript.h"
+#ifdef EMSCRIPTEN
+	#include "netinet/in.h"
+#endif
 
 typedef struct {
 	txString strings[5];

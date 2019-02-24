@@ -931,7 +931,7 @@ void fxConnect(txMachine* the)
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection <= 0)
 		goto bail;
-	signal(SIGPIPE, SIG_IGN);
+	c_signal(SIGPIPE, SIG_IGN);
 #if mxMacOSX
 	{
 		int set = 1;
@@ -961,7 +961,7 @@ void fxConnect(txMachine* the)
 			goto bail;
 	}
 	fcntl(the->connection, F_SETFL, flag);
-	signal(SIGPIPE, SIG_DFL);
+	c_signal(SIGPIPE, SIG_DFL);
 }
 #endif
 	return;

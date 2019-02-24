@@ -20,39 +20,43 @@
 
 #ifndef __XSLOPT__
 #define __XSLOPT__
-
-#if defined(_MSC_VER)
-	#if defined(_M_IX86) || defined(_M_X64)
-		#undef mxLittleEndian
-		#define mxLittleEndian 1
-		#undef mxWindows
-		#define mxWindows 1
-		#define mxExport extern
-		#define mxImport extern
-		#define XS_FUNCTION_NORETURN
-	#else 
-		#error unknown Microsoft compiler
-	#endif
-#elif defined(__GNUC__) 
-	#if defined(__i386__) || defined(i386) || defined(intel) || defined(arm) || defined(__arm__) || defined(__k8__) || defined(__x86_64__) || defined(__aarch64__)
-		#undef mxLittleEndian
-		#define mxLittleEndian 1
-		#if defined(__linux__) || defined(linux)
-			#undef mxLinux
-			#define mxLinux 1
-		#else
-			#undef mxMacOSX
-			#define mxMacOSX 1
+#ifdef EMSCRIPTEN
+	#undef mxLinux
+	#define mxLinux 1
+#else
+	#if defined(_MSC_VER)
+		#if defined(_M_IX86) || defined(_M_X64)
+			#undef mxLittleEndian
+			#define mxLittleEndian 1
+			#undef mxWindows
+			#define mxWindows 1
+			#define mxExport extern
+			#define mxImport extern
+			#define XS_FUNCTION_NORETURN
+		#else 
+			#error unknown Microsoft compiler
 		#endif
-		#define mxExport extern
-		#define mxImport extern
-		#define XS_FUNCTION_NORETURN __attribute__((noreturn))
+	#elif defined(__GNUC__) 
+		#if defined(__i386__) || defined(i386) || defined(intel) || defined(arm) || defined(__arm__) || defined(__k8__) || defined(__x86_64__) || defined(__aarch64__) || defined(EMSCRIPTEN)
+			#undef mxLittleEndian
+			#define mxLittleEndian 1
+			#if defined(__linux__) || defined(linux)
+				#undef mxLinux
+				#define mxLinux 1
+			#else
+				#undef mxMacOSX
+				#define mxMacOSX 1
+			#endif
+			#define mxExport extern
+			#define mxImport extern
+			#define XS_FUNCTION_NORETURN __attribute__((noreturn))
+		#else 
+			#error unknown GNU compiler
+		#endif
 	#else 
-		#error unknown GNU compiler
+		#error unknown compiler
 	#endif
-#else 
-	#error unknown compiler
-#endif
+#endif 
 
 #if mxWindows
 	#define _USE_MATH_DEFINES
