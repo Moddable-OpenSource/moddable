@@ -12,12 +12,24 @@
  *
  */
 
-import {File, Iterator} from "file";
+import {File, Iterator, System} from "file";
 
 //const root = "/Users/hoddie/";
 //const root = "c:\\Users\\brianfriedkin\\";
-const root = "/";
+
+// For ESP32 use this because the entry in the partition table under
+// $MODDABLE/build/devices/esp32/xsProj/uses this name for the SPIFFS partition, and the partition name must
+// be used as (virtual) "directory" name
+const root = "/spiffs/";
+
 let file;
+
+try {
+	const info = System.info();
+	trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
+} catch (ignore) {
+	// Do nothing
+}
 
 // writing/reading strings
 file = new File(root + "test.txt", true);
@@ -71,6 +83,15 @@ while (item = iterator.next()) {
 }
 trace("\n");
 
-File.delete(root + "test.txt");
-File.delete(root + "preferences.json");
-File.delete(root + "test.bin");
+try {
+	const info = System.info();
+	trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
+} catch (ignore) {
+	// Do nothing
+}
+
+for (const file of ["test.txt", "preferences.json", "test.bin"]) {
+	if (!File.delete(root + file)) {
+		trace('Failed to delete file ' + file);
+	}
+}
