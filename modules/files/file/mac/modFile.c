@@ -53,7 +53,7 @@ void xs_File(xsMachine *the)
 	file = fopen(path, write ? "rb+" : "rb");
 	if (NULL == file) {
 		if (write)
-			file = fopen(path, write ? "ab+" : "rb");
+			file = fopen(path, "ab+");
 		if (NULL == file)
 			xsUnknownError("file not found");
 	}
