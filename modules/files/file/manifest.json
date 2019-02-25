@@ -9,6 +9,16 @@
 				"*": "$(MODULES)/files/file/esp/*"
 			}
 		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/files/file/esp32/*"
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"

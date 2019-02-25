@@ -72,6 +72,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
+	$(IDF_PATH)/components/log/include \
+	$(IDF_PATH)/components/spiffs/include \
 	$(IDF_PATH)/components/newlib/include \
 	$(IDF_PATH)/components/newlib/platform_include
     
