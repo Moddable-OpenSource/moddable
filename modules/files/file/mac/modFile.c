@@ -151,6 +151,7 @@ void xs_file_get_length(xsMachine *the)
 	int fno;
 
 	fno = fileno(file);
+    fflush(file);
 	fstat(fno, &buf);
 	xsResult = xsInteger(buf.st_size);
 }
