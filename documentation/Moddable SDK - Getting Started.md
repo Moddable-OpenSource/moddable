@@ -79,13 +79,11 @@ This document provides an introduction to getting started building apps with the
  
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.13/esptool-0.4.13-osx.tar.gz). Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp` directory.
+4. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
-5. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+5. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
-6. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
-
-7. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
+6. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
 	```
 	cd ~/esp
@@ -99,9 +97,9 @@ This document provides an introduction to getting started building apps with the
 	git checkout v3.0-rc1
 	```
 	
-8. Connect the ESP8266 to your computer with a USB cable.
+7. Connect the ESP8266 to your computer with a USB cable.
 
-9. Verify the setup by building `helloworld` for the `esp` target:
+8. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd ${MODDABLE}/examples/helloworld
@@ -476,13 +474,11 @@ This document provides an introduction to getting started building apps with the
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
-3. Download the [esptool](https://github.com/igrr/esptool-ck/releases) compatible with your Linux host. Untar the package and rename the directory `esptool`. Copy the `esptool` directory into the `~/esp` directory.
+3. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
-4. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+4. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
-5. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
-
-6. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
+5. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
 	```
 	cd ~/esp
@@ -496,9 +492,9 @@ This document provides an introduction to getting started building apps with the
 	git checkout v3.0-rc1
 	```
 
-7. Connect the ESP8266 to your computer with a USB cable.
+6. Connect the ESP8266 to your computer with a USB cable.
 
-8. Verify the setup by building `helloworld` for the `esp` target:
+7. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd $MODDABLE/examples/helloworld

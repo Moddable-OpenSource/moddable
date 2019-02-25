@@ -217,6 +217,7 @@ CPP = $(TOOLS_BIN)/xtensa-lx106-elf-g++
 LD  = $(CC)
 AR  = $(TOOLS_BIN)/xtensa-lx106-elf-ar
 OTA_TOOL = $(TOOLS_ROOT)/espota.py
+ESPTOOL = $(ESPRESSIF_SDK_ROOT)/components/esptool_py/esptool/esptool.py
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -324,7 +325,7 @@ ESPTOOL_FLASH_OPT = \
 	0x1000 $(BIN_DIR)/main.bin \
 	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
 
-UPLOAD_TO_ESP = esptool.py -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
+UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
 
 .PHONY: all
 
@@ -356,7 +357,7 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)/buildinfo.cpp -o $(LIB_DIR)/buildinfo.cpp.o
 	$(LD) $(LD_FLAGS) -Wl,--start-group $^ $(LIB_DIR)/buildinfo.cpp $(LD_STD_LIBS) -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)/main.elf
 	$(TOOLS_BIN)/xtensa-lx106-elf-objdump -t $(TMP_DIR)/main.elf > $(BIN_DIR)/main.sym
-	esptool.py --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)/main.elf
+	$(ESPTOOL) --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)/main.elf
 	@echo "# Versions"
 	@echo "#  ESP:   $(ESP_SDK_RELEASE)"
 	@echo "#  XS:    $(XS_GIT_VERSION)"
