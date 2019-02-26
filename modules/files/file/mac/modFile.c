@@ -139,7 +139,7 @@ void xs_file_close(xsMachine *the)
 {
 	void *data = xsmcGetHostData(xsThis);
 	FILE *file = ((FILE*)data);
-	xs_file_destructor((void *)((int)file));
+	xs_file_destructor((void *)((uintptr_t)file));
 	xsmcSetHostData(xsThis, (void *)NULL);
 }
 
