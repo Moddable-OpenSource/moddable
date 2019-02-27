@@ -895,6 +895,13 @@ fxBigInt_ffs(txBigInt *a)
 	return(i);
 }
 
+#if mxWindows
+int
+fxBigInt_bitsize(txBigInt *e)
+{
+	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
+}
+#else
 int
 fxBigInt_bitsize(txBigInt *a)
 {
@@ -910,12 +917,7 @@ fxBigInt_bitsize(txBigInt *a)
 	}
 	return 0;
 }
-
-int
-fxBigInt_bitsize2(txBigInt *e)
-{
-	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
-}
+#endif
 
 int fxBigInt_isset(txBigInt *e, txU4 i)
 {
@@ -1368,7 +1370,7 @@ txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	else {
 		n = bb->size;
 		for (; i < n; i++) {
-			t = -bp[i];
+			t = 0 - bp[i];
 			r = t - c;
 			rp[i] = r;
 			c = r > t;

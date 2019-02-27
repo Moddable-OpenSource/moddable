@@ -138,7 +138,7 @@ extern const txTypeDispatch gxTypeDispatches[];
 txInteger fxGetTypeDispatchIndex(txTypeDispatch* dispatch) 
 {
 	txInteger i = 0;
-	while (i < 9) {
+	while (i < mxTypeArrayCount) {
 		if (dispatch == &gxTypeDispatches[i])
 			return i;
 		i++;
@@ -151,7 +151,7 @@ extern const txTypeAtomics gxTypeAtomics[];
 txInteger fxGetTypeAtomicsIndex(txTypeAtomics* atomics) 
 {
 	txInteger i = 0;
-	while (i < 9) {
+	while (i < mxTypeArrayCount) {
 		if (atomics == &gxTypeAtomics[i])
 			return i;
 		i++;

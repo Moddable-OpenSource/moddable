@@ -333,6 +333,7 @@ int main(int argc, char* argv[])
 				fxStripName(linker, strip->name);
 				strip = strip->nextStrip;
 			}
+			linker->bigintSize = 0;
 			count = fxPrepareHeap(the, stripping || linker->firstStrip);
 			
 			if (optimizing) {
@@ -385,6 +386,7 @@ int main(int argc, char* argv[])
 					fxStripName(linker, strip->name);
 					strip = strip->nextStrip;
 				}
+				linker->bigintSize = 0;
 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
 			}
 

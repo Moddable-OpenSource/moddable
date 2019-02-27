@@ -134,58 +134,84 @@ export const supportedCipherSuites = [
 		hashSize: 32,
 		encryptionMode: CBC,
 	},
-//	{
-//		// TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
-//		value: [0x00, 0x67],
-//		isExportable: false,
-//		keyExchangeAlgorithm: DHE_RSA,
-//		cipherAlgorithm: AES,
-//		cipherKeySize: 16,
-//		cipherBlockSize: 16,
-//		hashAlgorithm: SHA256,
-//		hashSize: 32,
-//		encryptionMode: CBC,
-//	},
-//	{
-//		// TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
-//		value: [0x00, 0x6b],
-//		isExportable: false,
-//		keyExchangeAlgorithm: DHE_RSA,
-//		cipherAlgorithm: AES,
-//		cipherKeySize: 32,
-//		cipherBlockSize: 16,
-//		hashAlgorithm: SHA256,
-//		hashSize: 32,
-//		encryptionMode: CBC,
-//	},
-//	{
-//		// TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 (RFC 5288)
-//		value: [0x00, 0x9e],
-//		isExportable: false,
-//		keyExchangeAlgorithm: DHE_RSA,
-//		cipherAlgorithm: AES,
-//		cipherKeySize: 16,
-//		cipherBlockSize: 16,
-//		hashAlgorithm: SHA256,
-//		hashSize: 32,
-//		encryptionMode: GCM,
-//		ivSize: 8,	// explicit nonce size
-//		saltSize: 4,	// implicit part
-//	},
-//	{
-//		// TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 (RFC 5288)
-//		value: [0x00, 0x9f],
-//		isExportable: false,
-//		keyExchangeAlgorithm: DHE_RSA,
-//		cipherAlgorithm: AES,
-//		cipherKeySize: 32,
-//		cipherBlockSize: 16,
-//		hashAlgorithm: SHA384,
-//		hashSize: 48,
-//		encryptionMode: GCM,
-//		ivSize: 8,	// explicit nonce size
-//		saltSize: 4,	// implicit part
-//	},
+	{
+		// TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+		value: [0x00, 0x67],
+		isExportable: false,
+		keyExchangeAlgorithm: DHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 16,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA256,
+		hashSize: 32,
+		encryptionMode: CBC,
+	},
+	{
+		// TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+		value: [0x00, 0x6b],
+		isExportable: false,
+		keyExchangeAlgorithm: DHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 32,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA256,
+		hashSize: 32,
+		encryptionMode: CBC,
+	},
+	{
+		// TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 (RFC 5288)
+		value: [0x00, 0x9e],
+		isExportable: false,
+		keyExchangeAlgorithm: DHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 16,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA256,
+		hashSize: 32,
+		encryptionMode: GCM,
+		ivSize: 8,	// explicit nonce size
+		saltSize: 4,	// implicit part
+	},
+	{
+		// TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 (RFC 5288)
+		value: [0x00, 0x9f],
+		isExportable: false,
+		keyExchangeAlgorithm: DHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 32,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA384,
+		hashSize: 48,
+		encryptionMode: GCM,
+		ivSize: 8,	// explicit nonce size
+		saltSize: 4,	// implicit part
+	},
+	{
+		// TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 (RFC844, 5289)
+		value: [0xc0, 0x27],
+		isExportable: false,
+		keyExchangeAlgorithm: ECDHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 16,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA256,
+		hashSize: 32,
+		encryptionMode: CBC,
+	},
+	{
+		// TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (RFC 8422)
+		value: [0xc0, 0x2f],
+		isExportable: false,
+		keyExchangeAlgorithm: ECDHE_RSA,
+		cipherAlgorithm: AES,
+		cipherKeySize: 16,
+		cipherBlockSize: 16,
+		hashAlgorithm: SHA256,
+		hashSize: 32,
+		encryptionMode: GCM,
+		ivSize: 8,	// explicit nonce size
+		saltSize: 4,	// implicit part
+	},
 //	{
 //		// TLS_NULL_WITH_NULL_NULL
 //		value: [0x00, 0x00],

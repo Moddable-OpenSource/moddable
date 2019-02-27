@@ -2733,8 +2733,15 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_DECREMENT)
-			if (mxStack->kind == XS_INTEGER_KIND)
-				mxStack->value.integer--;
+			if (mxStack->kind == XS_INTEGER_KIND) {
+				if (mxStack->value.integer != -2147483647)
+					mxStack->value.integer--;
+				else {
+					mxStack->kind = XS_NUMBER_KIND;
+					mxStack->value.number = mxStack->value.integer;
+					mxStack->value.number--;
+				}
+			}
 			else if (mxStack->kind == XS_NUMBER_KIND)
 				mxStack->value.number--;
 			else {
@@ -2746,8 +2753,15 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_INCREMENT)
-			if ((mxStack->kind == XS_INTEGER_KIND) && (mxStack->value.integer != 2147483647)) {
-				mxStack->value.integer++;
+			if (mxStack->kind == XS_INTEGER_KIND) {
+				if (mxStack->value.integer != 2147483647)
+					mxStack->value.integer++;
+				else {
+					mxStack->kind = XS_NUMBER_KIND;
+					mxStack->value.number = mxStack->value.integer;
+					mxStack->value.number++;
+				}
+			}
 			else if (mxStack->kind == XS_NUMBER_KIND)
 				mxStack->value.number++;
 			else {

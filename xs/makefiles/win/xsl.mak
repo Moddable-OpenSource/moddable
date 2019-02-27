@@ -65,6 +65,7 @@ C_OPTIONS = \
 	/D INCLUDE_XSPLATFORM \
 	/D XSPLATFORM=\"xslOpt.h\" \
 	/D mxLink=1 \
+	/D mxRun=1 \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
