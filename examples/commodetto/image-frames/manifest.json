@@ -1,0 +1,16 @@
+{
+	"include": [
+		"../manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+		"commodetto/readStream": "$(COMMODETTO)/commodettoReadStream",
+	},
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/images/cell-flag",
+	},
+	"config": {
+		"screen": "ili9341"
+	},
+}
