@@ -19,6 +19,11 @@
 				"*": "$(MODULES)/files/file/win/*"
 			}
 		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			}
+		},
 		"...": {
 			"error": "File module unsupported"
 		}

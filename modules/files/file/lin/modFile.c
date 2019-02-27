@@ -21,17 +21,17 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#include "xsmc.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define PATH_MAX 1024
-
 typedef struct {
-	HANDLE hFind;
-	WIN32_FIND_DATA ffd;
+	DIR *dir;
 	char path[1];
 } iteratorRecord, *iter;
 
@@ -52,7 +52,7 @@ void xs_File(xsMachine *the)
 	file = fopen(path, write ? "rb+" : "rb");
 	if (NULL == file) {
 		if (write)
-			file = fopen(path, "ab+");
+			file = fopen(path, "wb+");
 		if (NULL == file)
 			xsUnknownError("file not found");
 	}
@@ -72,7 +72,7 @@ void xs_file_read(xsMachine *the)
 	int fno;
 	int32_t position = ftell(file);
 
-	fno = _fileno(file);
+	fno = fileno(file);
 	fstat(fno, &buf);
 	if ((-1 == dstLen) || (buf.st_size < (position + dstLen))) {
 		if (position >= buf.st_size)
@@ -141,7 +141,7 @@ void xs_file_close(xsMachine *the)
 {
 	void *data = xsmcGetHostData(xsThis);
 	FILE *file = ((FILE*)data);
-	xs_file_destructor((void *)((int)file));
+	xs_file_destructor((void *)((uintptr_t)file));
 	xsmcSetHostData(xsThis, (void *)NULL);
 }
 
@@ -152,7 +152,7 @@ void xs_file_get_length(xsMachine *the)
 	struct stat buf;
 	int fno;
 
-	fno = _fileno(file);
+	fno = fileno(file);
 	fstat(fno, &buf);
 	xsResult = xsInteger(buf.st_size);
 }
@@ -179,7 +179,7 @@ void xs_file_delete(xsMachine *the)
 	int32_t result;
 
 	xsmcToStringBuffer(xsArg(0), path, PATH_MAX);
-	result = _unlink(path);
+	result = unlink(path);
 
 	xsResult = xsBoolean(result == 0);
 }
@@ -214,8 +214,8 @@ void xs_file_iterator_destructor(void *data)
 	iter d = data;
 
 	if (d) {
-		if ((NULL != d->hFind) && (INVALID_HANDLE_VALUE != d->hFind))
-			FindClose(d->hFind);
+		if (d->dir)
+			closedir(d->dir);
 		free(d);
 	}
 }
@@ -231,50 +231,43 @@ void xs_File_Iterator(xsMachine *the)
 	if (i == 0) {
 		xsUnknownError("no directory to iterate on");
 	}
-	d = calloc(1, sizeof(iteratorRecord) + i + 3);
+	d = calloc(1, sizeof(iteratorRecord) + i + 2);
 	strcpy(d->path, p);
-	if (p[i - 1] != '\\')
-		d->path[i] = '\\';
-	strcat(d->path, "*");
+	if (p[i-1] != '/')
+		d->path[i] = '/';
 
+	if (NULL == (d->dir = opendir(d->path)))
+		xsUnknownError("failed to open directory");
 	xsmcSetHostData(xsThis, d);
 }
 
 void xs_file_iterator_next(xsMachine *the)
 {
 	iter d = xsmcGetHostData(xsThis);
+	struct dirent *de;
+	struct stat buf;
+	char path[PATH_MAX];
 
-	while (true) {
-		uint8_t done = false;
+	if (!d || !d->dir) return;
 
-		if (NULL == d->hFind) {
-			d->hFind = FindFirstFile(d->path, &d->ffd);
-			if (INVALID_HANDLE_VALUE == d->hFind)
-				done = true;
-		}
-		else {
-			DWORD dwResult = FindNextFile(d->hFind, &d->ffd);
-			if (0 == dwResult)
-				done = true;
-		}
-		if (done) {
+	do {
+		if (NULL == (de = readdir(d->dir))) {
 			xs_file_iterator_destructor(d);
 			xsmcSetHostData(xsThis, NULL);
 			return;
 		}
-		if ((0 == strcmp(d->ffd.cFileName, ".")) ||
-			(0 == strcmp(d->ffd.cFileName, "..")) ||
-			(0 != (FILE_ATTRIBUTE_HIDDEN & d->ffd.dwFileAttributes)))
-			continue;
-		break;
-	}
+	} while ((DT_DIR != de->d_type) && (DT_REG != de->d_type));
+
 	xsResult = xsmcNewObject();
 	xsmcVars(1);
-	xsmcSetString(xsVar(0), d->ffd.cFileName);
+	xsmcSetString(xsVar(0), de->d_name);
 	xsmcSet(xsResult, xsID_name, xsVar(0));
 
-	if (!(d->ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-		xsmcSetInteger(xsVar(0), d->ffd.nFileSizeLow);	// @@
+	sprintf(path, "%s%s", d->path, de->d_name);
+	if (DT_REG == de->d_type) {
+		if (-1 == stat(path, &buf))
+			fprintf(stderr, "stat %s returns errno: %d\n", path, errno);
+		xsmcSetInteger(xsVar(0), buf.st_size);
 		xsmcSet(xsResult, xsID_length, xsVar(0));
 	}
 }
