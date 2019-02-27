@@ -19,6 +19,7 @@
  */
 
 #include "xsmc.h"
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "xsmc.h"
@@ -37,8 +38,10 @@ typedef struct {
 
 void xs_file_destructor(void *data)
 {
-	if (data && ((uintptr_t)-1 != (uintptr_t)data))
+	if (data && ((uintptr_t)-1 != (uintptr_t)data)) {
 		fclose((FILE *)data);
+		modInstrumentationAdjust(Files, -1);
+	}
 }
 
 void xs_File(xsMachine *the)
@@ -57,6 +60,8 @@ void xs_File(xsMachine *the)
 			xsUnknownError("file not found");
 	}
 	xsmcSetHostData(xsThis, (void *)((uintptr_t)file));
+
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_file_read(xsMachine *the)
