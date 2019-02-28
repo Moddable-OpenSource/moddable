@@ -2167,6 +2167,8 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			txUnsigned flag;
 			if (parser->token == XS_TOKEN_RIGHT_BRACE)
 				break;
+			if (parser->token == XS_TOKEN_SEMICOLON)
+				fxGetNextToken(parser);
 			if (parser->token == XS_TOKEN_STATIC) {
 				fxGetNextToken(parser);
 				aStaticFlag = 1;
@@ -2199,7 +2201,6 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 					parser->root->flags |= mxMethodFlag;
 				aCount++;
 			}
-			fxSemicolon(parser);
 		}
 	}
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);

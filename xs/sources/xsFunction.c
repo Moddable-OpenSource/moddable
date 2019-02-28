@@ -279,12 +279,12 @@ void fx_Function(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
@@ -519,13 +519,13 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 void fx_Function_prototype_toString(txMachine* the)
 {	
 	fxCheckFunctionInstance(the, mxThis);
-	mxPushStringX("@ \"");
+	mxPushStringX("function ");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
 	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 		fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
-	mxPushStringX("\"");
+	mxPushStringX(" (){[native code]}");
 	fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
 	mxPullSlot(mxResult);
@@ -684,12 +684,12 @@ void fx_AsyncFunction(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);

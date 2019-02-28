@@ -1308,6 +1308,45 @@ void fx_Array_prototype_findIndex(txMachine* the)
 	}
 }
 
+// void fx_Array_prototype_flat(txMachine* the)
+// {
+// 	txNumber length = fxGetArrayLength(the, mxThis);
+// 	txNumber depth = 1;
+// 	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0)))
+// 		depth = fxToInteger(the, mxArgv(0));
+// 	fxCreateArraySpecies(the, 0);
+// 	fx_Array_prototype_flatAux(the, mxThis, length, 0, depth);
+// 	
+// }
+// 
+// txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex length, txIndex start, txIndex depth)
+// {
+// 	txSlot* item;
+// 	txIndex index = 0;
+// 	while (index < length) {
+// 		mxPushSlot(source);
+// 		if (fxHasIndex(the, index)) {
+// 			mxPushSlot(source);
+// 			fxGetIndex(the, index);
+// 			item = the->stack;
+// 			if ((depth > 0) && mxIsReference(item) && fxIsArray(fxToInstance(item))) {
+// 				mxPushSlot(item);
+// 				fxGetID(the, mxID(_length));
+// 				itemLength = (txIndex)fxToLength(the, the->stack);
+// 				mxPop();
+// 				start = fx_Array_prototype_flatAux(the, item, itemLength, start, depth - 1);
+// 			}
+// 			else {
+// 				mxPushSlot(mxResult);
+// 				fxDefineIndex(the, start, 0, XS_GET_ONLY);
+// 				start++;
+// 			}
+// 		}
+// 		index++;
+// 	}
+// 	return resultLength;
+// }
+
 void fx_Array_prototype_forEach(txMachine* the)
 {
 	txIndex length = fxGetArrayLimit(the, mxThis);

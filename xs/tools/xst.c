@@ -656,18 +656,23 @@ void fxRunFile(txContext* context, char* path)
 			if (!strcmp((char*)node->data.scalar.value, "class-fields")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
+			||	!strcmp((char*)node->data.scalar.value, "class-methods-private")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-fields-private")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-fields-public")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-methods-private")
+			||	!strcmp((char*)node->data.scalar.value, "dynamic-import")
+			||	!strcmp((char*)node->data.scalar.value, "globalThis")
+			||	!strcmp((char*)node->data.scalar.value, "hashbang")
+			||	!strcmp((char*)node->data.scalar.value, "export-star-as-namespace-from-module")
+			||	!strcmp((char*)node->data.scalar.value, "import.meta")
+			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
 			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
-			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
-			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.prototype.description")
 			) {
 				sloppy = 0;
 				strict = 0;

@@ -58,6 +58,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperty), 3, mxID(_defineProperty), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_entries), 1, mxID(_entries), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_freeze), 1, mxID(_freeze), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_fromEntries), 1, mxID(_fromEntries), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertyDescriptor), 2, mxID(_getOwnPropertyDescriptor), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertyDescriptors), 1, mxID(_getOwnPropertyDescriptors), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertyNames), 1, mxID(_getOwnPropertyNames), XS_DONT_ENUM_FLAG);
@@ -638,6 +639,53 @@ void fx_Object_freeze(txMachine* the)
 		}
 		*mxResult = *mxArgv(0);
 	}
+}
+
+void fx_Object_fromEntries(txMachine* the)
+{
+	txSlot *instance, *iterator, *result, *value, *at, *function;
+	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
+		mxTypeError("invalid iterable");
+	mxPush(mxObjectPrototype);
+	instance = fxNewObjectInstance(the);
+	mxPullSlot(mxResult);
+	mxCallID(mxArgv(0), mxID(_Symbol_iterator), 0);
+	iterator = the->stack;
+	for (;;) {
+		mxCallID(iterator, mxID(_next), 0);
+		result = the->stack;
+		mxGetID(result, mxID(_done));
+		if (fxToBoolean(the, the->stack))
+			break;
+		the->stack++;
+		mxGetID(result, mxID(_value));
+		value = the->stack;
+		{
+			mxTry(the) {
+				if (value->kind != XS_REFERENCE_KIND)
+					mxTypeError("item is no object");
+				mxGetID(value, 0);
+				mxGetID(value, 1);
+				at = fxAt(the, the->stack + 1);
+				mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
+				the->stack++;
+				the->stack++;
+				the->stack++;
+				the->stack++;
+			}
+			mxCatch(the) {
+				mxGetID(iterator, mxID(_return));
+				function = the->stack;	
+				if (!mxIsUndefined(function)) {
+					mxCall(function, iterator, 0);
+					the->stack++;
+				}
+				the->stack++;
+				fxJump(the);
+			}
+		}
+	}
+	the->stack++;
 }
 
 void fx_Object_getOwnPropertyDescriptor(txMachine* the)
