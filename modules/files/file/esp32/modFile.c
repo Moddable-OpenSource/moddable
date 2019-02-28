@@ -76,7 +76,7 @@ void xs_File(xsMachine *the)
         if (write)
             file = fopen(path, "wb+");
         if (NULL == file)
-            xsUnknownError("file not found: %s [write: %u, path: %s]", strerror(errno), write, path);
+            xsUnknownError("file not found");
     }
     xsmcSetHostData(xsThis, (void *)((uintptr_t)file));
 
