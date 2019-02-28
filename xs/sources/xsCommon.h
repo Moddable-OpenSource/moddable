@@ -752,6 +752,8 @@ enum {
 	_find,
 	_findIndex,
 	_flags,
+	_flat,
+	_flatMap,
 	_floor,
 	_for,
 	_forEach,

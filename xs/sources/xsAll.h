@@ -1222,6 +1222,8 @@ mxExport void fx_Array_prototype_fill(txMachine* the);
 mxExport void fx_Array_prototype_filter(txMachine* the);
 mxExport void fx_Array_prototype_find(txMachine* the);
 mxExport void fx_Array_prototype_findIndex(txMachine* the);
+mxExport void fx_Array_prototype_flat(txMachine* the);
+mxExport void fx_Array_prototype_flatMap(txMachine* the);
 mxExport void fx_Array_prototype_forEach(txMachine* the);
 mxExport void fx_Array_prototype_includes(txMachine* the);
 mxExport void fx_Array_prototype_indexOf(txMachine* the);

@@ -669,8 +669,6 @@ void fxRunFile(txContext* context, char* path)
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
 			) {

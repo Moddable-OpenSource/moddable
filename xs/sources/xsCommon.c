@@ -1154,6 +1154,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"find",
 	"findIndex",
 	"flags",
+	"flat",
+	"flatMap",
 	"floor",
 	"for",
 	"forEach",
