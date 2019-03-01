@@ -1,4 +1,11 @@
 {
+	"platforms":{
+		"esp32": {
+			"build": {
+				"PARTITIONS_FILE": "$(MODDABLE)/examples/files/files/partitions.csv",
+			},
+		},
+	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/files/file/manifest.json",

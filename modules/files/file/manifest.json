@@ -9,6 +9,11 @@
 				"*": "$(MODULES)/files/file/esp/*"
 			}
 		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/files/file/esp32/*"
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"
