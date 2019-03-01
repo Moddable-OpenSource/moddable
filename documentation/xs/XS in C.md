@@ -1614,7 +1614,7 @@ As shown in the following example, the `xsTry` and `xsCatch` macros are used tog
 <a id="errors"></a>
 ### Errors
 
-Exceptions may be thrown by C callbacks. C callbacks are often provide the interface between scripts and systems. Many system calls can fail, and they have a way to return an error to the application which can be propegated as an exception.
+Exceptions may be thrown by C callbacks. C callbacks are often provide the interface between scripts and systems. Many system calls can fail, and they have a way to return an error to the application which can be propagated as an exception.
 
 For specific errors, the XS runtime provides error types and prototypes.
 
