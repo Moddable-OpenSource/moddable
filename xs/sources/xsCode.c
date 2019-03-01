@@ -705,6 +705,7 @@ txScript* fxParserCode(txParser* parser)
 			break;
 		case XS_CODE_BIGINT_2:
 			u2 = (txU2)fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
+            mxEncode2(p, u2);
 			fxBigIntEncode(p, &((txBigIntCode*)code)->bigint, u2);
 			p += u2;
 			break;

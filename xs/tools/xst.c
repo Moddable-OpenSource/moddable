@@ -647,7 +647,7 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// @@ skip test cases beyond 8th...
+	// @@ skip test cases beyond 2019...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;

@@ -68,6 +68,7 @@ static txString fxDatePrintDateUTC(txString p, txInteger year, txInteger month, 
 static txString fxDatePrintDay(txString p, txInteger day);	
 static txString fxDatePrintTime(txString p, txInteger hours, txInteger minutes, txInteger seconds);	
 static txString fxDatePrintTimezone(txString p, txInteger offset);	
+static txString fxDatePrintYear(txString p, txInteger value);	
 static txInteger fxDateSimilarYear(txInteger year);
 static void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt);
 
@@ -309,7 +310,7 @@ void fx_Date_parse(txMachine* the)
 	dt.minutes = -1;
 	dt.hours = -1;
 	dt.date = -1;
-	dt.month = 0;
+	dt.month = -1;
 	dt.year = -1;
 	dt.milliseconds = -1;
 	aComment = 0;
@@ -756,7 +757,7 @@ void fx_Date_prototype_getTimezoneOffset(txMachine* the)
 	txDateTime dt;
 	txSlot* slot = fxDateCheck(the);
 	if (fx_Date_prototype_get_aux(the, &dt, 0, slot)) {
-		mxResult->value.integer = dt.offset;
+		mxResult->value.integer = 0 - dt.offset;
 		mxResult->kind = XS_INTEGER_KIND;
 	}
 }
@@ -987,7 +988,7 @@ void fx_Date_prototype_toISOString(txMachine* the)
 	txSlot* slot = fxDateCheck(the);
 	if (fx_Date_prototype_get_aux(the, &dt, 1, slot)) {
 		txString p = buffer;
-		p = fxDatePrint4Digits(p, (txInteger)dt.year);
+		p = fxDatePrintYear(p, (txInteger)dt.year);
 		*p++ = '-';
 		p = fxDatePrint2Digits(p, (txInteger)dt.month + 1);
 		*p++ = '-';
@@ -1311,7 +1312,7 @@ txString fxDatePrintDate(txString p, txInteger year, txInteger month, txInteger 
 	*p++ = ' ';
 	p = fxDatePrint2Digits(p, date);
 	*p++ = ' ';
-	p = fxDatePrint4Digits(p, year);
+	p = fxDatePrintYear(p, year);
 	return p;
 }
 
@@ -1322,7 +1323,7 @@ txString fxDatePrintDateUTC(txString p, txInteger year, txInteger month, txInteg
 	c_strcpy(p, gxMonthNames[month]);
 	p += 3;
 	*p++ = ' ';
-	p = fxDatePrint4Digits(p, year);
+	p = fxDatePrintYear(p, year);
 	return p;
 }
 
@@ -1357,6 +1358,23 @@ txString fxDatePrintTimezone(txString p, txInteger offset)
 	p = fxDatePrint2Digits(p, offset / 60);
 	p = fxDatePrint2Digits(p, offset % 60);
 	return p;
+}
+
+txString fxDatePrintYear(txString p, txInteger value)
+{
+	if ((value < 0) || (9999 < value)) {
+		if (value < 0) {
+			*p++ = '-';
+			value = -value;
+		}
+		else
+			*p++ = '+';
+		*p++ = '0' + value / 100000;
+		value %= 100000;
+		*p++ = '0' + value / 10000;
+		value %= 10000;
+	}
+	return fxDatePrint4Digits(p, value);
 }
 
 txInteger fxDateSimilarYear(txInteger year)
@@ -1438,7 +1456,7 @@ void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt)
 		dt->date = tm.tm_mday;
 		dt->month = tm.tm_mon;
 		dt->year = tm.tm_year + 1900 + year - similar;
-		dt->offset = (txInteger)c_trunc((former - fxDateMerge(dt, 1)) / 60000.0);
+		dt->offset = (txInteger)c_trunc((fxDateMerge(dt, 1) - former) / 60000.0);
 	}
 }
 

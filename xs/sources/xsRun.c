@@ -3063,7 +3063,7 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 0, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
-					offset = gxTypeBigInt.compare(the, 0, 1, 1, mxStack, slot);
+					offset = gxTypeBigInt.compare(the, 0, 0, 1, mxStack, slot);
 				else {
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
@@ -3104,7 +3104,7 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 1, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
-					offset = gxTypeBigInt.compare(the, 0, 0, 1, mxStack, slot);
+					offset = gxTypeBigInt.compare(the, 0, 1, 1, mxStack, slot);
 				else {
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
@@ -3145,7 +3145,7 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 0, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
-					offset = gxTypeBigInt.compare(the, 1, 1, 0, mxStack, slot);
+					offset = gxTypeBigInt.compare(the, 1, 0, 0, mxStack, slot);
 				else {
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
@@ -3186,7 +3186,7 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 1, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
-					offset = gxTypeBigInt.compare(the, 1, 0, 0, mxStack, slot);
+					offset = gxTypeBigInt.compare(the, 1, 1, 0, mxStack, slot);
 				else {
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
