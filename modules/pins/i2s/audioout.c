@@ -62,6 +62,26 @@
 			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
 		#endif
 	#endif
+#elif qca4020
+	#define checkError(ret, msg) if (ret) { modLog(msg); modLogInt(ret); }
+
+//	#define AUDIO_THREAD_PRIO			10
+	#define AUDIO_THREAD_PRIO			20
+	#define AUDIO_THREAD_STACK_SIZE		2048
+
+	#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
+		#define MODDEF_AUDIOOUT_I2S_BCK_PIN (28)
+	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_LR_PIN
+		#define MODDEF_AUDIOOUT_I2S_LR_PIN (49)
+	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_DATAOUT_PIN
+		#define MODDEF_AUDIOOUT_I2S_DATAOUT_PIN (30)
+	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+		#define MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE (16)
+	#endif
+
 #endif
 
 #ifndef MODDEF_AUDIOOUT_VOLUME_DIVIDER
@@ -115,6 +135,30 @@
 		kStatePlaying = 1,
 		kStateTerminated = 2
 	};
+#elif qca4020
+	#include "xsqca4020.h"
+	#include "qapi_status.h"
+	#include "qapi_i2s.h"
+
+	#include "qurt_error.h"
+	#include "qurt_signal.h"
+	#include "qurt_thread.h"
+	#include "qurt_mutex.h"
+
+	#include "FreeRTOS.h"
+	#include "task.h"
+	#include "semphr.h"
+	
+	enum {
+		kStateIdle 			= 0x0,
+		kStatePlaying		= 0x1,
+		kStateTerminated	= 0x2,
+//		kStateThreadCreated = 0x40000000,
+//		kStateThreadDestroyed = 0x80000000,
+	};
+
+	static qurt_signal_t			gAudioOutSignal;
+
 #elif defined(__ets__)
 	#include "xsesp.h"
 	#include "tinyi2s.h"
@@ -189,6 +233,17 @@ typedef struct {
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	uint32_t				*buffer32;
 #endif
+#elif qca4020
+	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
+	qurt_mutex_t			mutex;
+	TaskHandle_t			task;
+
+	uint32_t				buffer[64];
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	uint32_t				*buffer32;
+#endif
+	qapi_I2S_Handle			i2s_handle;
+//	qurt_thread_t			thread;
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
@@ -218,10 +273,12 @@ static void updateActiveStreams(modAudioOut out);
 	static void doRenderSamples(modAudioOut out);
 #elif ESP32
 	static void audioOutLoop(void *pvParameter);
+#elif qca4020
+	static void audioOutLoop(void *pvParameter);
 #elif defined(__ets__)
 	static void doRenderSamples(void *refcon, int16_t *lr, int count);
 #endif
-#if defined(__ets__) || ESP32 || defined(_WIN32)
+#if defined(__ets__) || ESP32 || defined(_WIN32) || qca4020
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 	void queueCallback(modAudioOut out, xsIntegerValue id);
 #endif
@@ -270,6 +327,25 @@ void xs_audioout_destructor(void *data)
 
 	vSemaphoreDelete(out->mutex);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
+	if (out->buffer32)
+		heap_caps_free(out->buffer32);
+#endif
+
+#elif qca4020
+	out->state = kStateTerminated;
+	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
+#if 0
+	qurt_signal_set(&gAudioOutSignal, kStateTerminated);
+
+	{
+		uint32_t attr = QURT_SIGNAL_ATTR_WAIT_ANY | QURT_SIGNAL_ATTR_CLEAR_MASK;
+		qurt_signal_wait(&gAudioOutSignal, kStateThreadDestroyed, attr);
+	}
+	qurt_signal_delete(&gAudioOutSignal);
+#endif
+
+	qurt_mutex_delete(&out->mutex);
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 	if (out->buffer32)
 		heap_caps_free(out->buffer32);
 #endif
@@ -423,6 +499,41 @@ void xs_audioout(xsMachine *the)
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
 #endif
+#elif qca4020
+
+	out->state = kStateIdle;
+	qurt_mutex_create(&out->mutex);
+	qurt_signal_create(&gAudioOutSignal);
+	xTaskCreate(audioOutLoop, "audioOut", 2048, out, AUDIO_THREAD_PRIO, &out->task);
+
+#if 0
+	{
+		qurt_thread_attr_t attr;
+		uint8_t ret;
+		qurt_thread_attr_init(&attr);
+		qurt_thread_attr_set_name(&attr, "audioOut");
+		qurt_thread_attr_set_priority(&attr, AUDIO_THREAD_PRIO);
+		qurt_thread_attr_set_stack_size(&attr, AUDIO_THREAD_STACK_SIZE);
+		ret = qurt_thread_create(&out->thread, &attr, audioOutLoop, out);
+		checkError(ret, "qurt_thread_create");
+
+if (0) {  // 		if (QURT_EOK == ret) {
+			uint32_t attr;
+			attr = QURT_SIGNAL_ATTR_WAIT_ANY | QURT_SIGNAL_ATTR_CLEAR_MASK;
+modLog("waiting for audioOutLoop to start");
+			if (QURT_EOK != qurt_signal_wait(&gAudioOutSignal, kStateThreadCreated, attr)) {
+				// wait for it to start
+			}
+modLog("audioOutLoop started");
+		}
+	}
+#endif
+
+#if 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	out->buffer32 = c_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
+	if (!out->buffer32)
+		xsUnknownError("out of memory");
+#endif
 #endif
 }
 
@@ -453,6 +564,9 @@ void xs_audioout_start(xsMachine *the)
 #elif ESP32
 	out->state = kStatePlaying;
 	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
+#elif qca4020
+	out->state = kStatePlaying;
+	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
 #elif defined(__ets__)
 	#if MODDEF_AUDIOOUT_I2S_PDM
 		i2s_begin(doRenderSamples, out, out->sampleRate * (MODDEF_AUDIOOUT_I2S_PDM >> 5));
@@ -475,6 +589,9 @@ void xs_audioout_stop(xsMachine *the)
 #elif ESP32
 	out->state = kStateIdle;
 	xTaskNotify(out->task, kStateIdle, eSetValueWithOverwrite);
+#elif qca4020
+	out->state = kStateIdle;
+	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
 #elif defined(__ets__)
 	i2s_end();
 	out->i2sActive = false;
@@ -570,6 +687,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif qca4020
+			qurt_mutex_lock(&out->mutex);
 #elif defined(__ets__)
 			modCriticalSectionBegin();
 #endif
@@ -613,6 +732,9 @@ void xs_audioout_enqueue(xsMachine *the)
 #elif ESP32
 			xSemaphoreGive(out->mutex);
 			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
+#elif qca4020
+			qurt_mutex_unlock(&out->mutex);
+			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
 #elif defined(__ets__)
 			modCriticalSectionEnd();
 #endif
@@ -627,6 +749,8 @@ void xs_audioout_enqueue(xsMachine *the)
 				EnterCriticalSection(&out->cs);
 #elif ESP32
 				xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif qca4020
+				qurt_mutex_lock(&out->mutex);
 #elif defined(__ets__)
 				modCriticalSectionBegin();
 #endif
@@ -652,6 +776,8 @@ void xs_audioout_enqueue(xsMachine *the)
 				LeaveCriticalSection(&out->cs);
 #elif ESP32
 				xSemaphoreGive(out->mutex);
+#elif qca4020
+				qurt_mutex_unlock(&out->mutex);
 #elif defined(__ets__)
 				modCriticalSectionEnd();
 #endif
@@ -664,6 +790,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif qca4020
+			qurt_mutex_lock(&out->mutex);
 #elif defined(__ets__)
 			modCriticalSectionBegin();
 #endif
@@ -687,6 +815,8 @@ void xs_audioout_enqueue(xsMachine *the)
 			EnterCriticalSection(&out->cs);
 #elif ESP32
 			xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif qca4020
+			qurt_mutex_lock(&out->mutex);
 #elif defined(__ets__)
 			modCriticalSectionBegin();
 #endif
@@ -1147,6 +1277,119 @@ void audioOutLoop(void *pvParameter)
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
 
+#elif qca4020
+
+static void audioOutLoop(void *pvParameter)
+{
+	modAudioOut out = (modAudioOut)pvParameter;
+	uint8_t installed = false;
+	qapi_I2S_Instance_e inst;
+	qapi_I2S_Channel_Config_t i2s_config;
+	qapi_Status_t ret;
+	uint32_t amtSent;
+
+	i2s_config.num_Rx_Desc = 0;
+	i2s_config.num_Tx_Desc = 4;
+		// .dma_buf_len = sizeof(out->buffer) / out->bytesPerFrame,		// dma_buf_len is in frames, not bytes
+	i2s_config.buf_Size = 64;
+	switch (out->sampleRate) {
+		case 8000: i2s_config.freq = QAPI_I2S_FREQ_8_KHZ_E; break;
+		case 16000: i2s_config.freq = QAPI_I2S_FREQ_16_KHZ_E; break;
+		case 32000: i2s_config.freq = QAPI_I2S_FREQ_32_KHZ_E; break;
+		case 44100: i2s_config.freq = QAPI_I2S_FREQ_44_1_KHZ_E; break;
+		case 48000: i2s_config.freq = QAPI_I2S_FREQ_48_KHZ_E; break;
+		default:
+			modLog("Bad I2S freq");
+	}
+	i2s_config.data_Word_Size = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE;
+	i2s_config.i2s_Word_Size = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE;
+	i2s_config.mic_Word_Size = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE;
+	i2s_config.mode = __QAPI_I2S_MODE_MASTER;
+	if (out->numChannels == 2)
+		i2s_config.mode |= __QAPI_I2S_MODE_STEREO;
+	i2s_config.mode |= __QAPI_I2S_MODE_DIR_OUTPUT;
+	i2s_config.port = 0;
+	i2s_config.clk_Src_Cfg = QAPI_I2S_CLK_SRC_PLL_E;
+
+
+//	qurt_signal_set(&gAudioOutSignal, kStateThreadCreated);
+
+	while (kStateTerminated != out->state) {
+		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
+			uint32_t newState;
+			uint32_t trigger, attr;
+
+			if (installed) {
+				ret = qapi_I2S_Deinit(out->i2s_handle);
+				checkError(ret, "qapi_I2S_Deinit");
+				installed = false;
+			}
+
+#if 0
+			attr = QURT_SIGNAL_ATTR_WAIT_ANY;
+			trigger = 0xffffffff;
+modLog("audioOutLoop: wait for signal");
+			qurt_signal_wait_timed(&gAudioOutSignal, trigger, attr, &newState, QURT_TIME_WAIT_FOREVER);
+#endif
+
+modLog("audioOutLoop: wait for signal");
+			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
+			if (kStateTerminated == newState)
+				break;
+
+//				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
+			continue;
+		}
+
+		if (!installed) {
+modLog("audioOutLoop: init I2S");
+			inst = QAPI_I2S_INSTANCE_001_E;
+			ret = qapi_I2S_Init(inst, &i2s_config, (void**)&out->i2s_handle);
+			checkError(ret, "qapi_I2S_Init");
+
+			ret = qapi_I2S_Open(out->i2s_handle);
+			checkError(ret, "qapi_I2S_Open");
+
+			installed = true;
+		}
+
+		qurt_mutex_lock(&out->mutex);
+		audioMix(out, i2s_config.buf_Size / (MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE / 8), (OUTPUTSAMPLETYPE *)out->buffer);
+		qurt_mutex_unlock(&out->mutex);
+
+#if 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	checkError(i2s_config.buf_Size, "sent data:");
+		ret = qapi_I2S_Send_Data(out->i2s_handle, out->buffer, i2s_config.buf_Size, &amtSent);
+		checkError(ret, "qapi_I2S_Send_Data");
+#elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+		int count = sizeof(out->buffer) / out->bytesPerFrame;
+		int i = count;
+		int16_t *src = (int16_t *)out->buffer;
+		int32_t *dst = out->buffer32;
+
+		while (i--)
+			*dst++ = *src++ << 16;
+
+		ret = qapi_I2S_Send_Data(out->i2s_handle, out->buffer32, count * out->bytesPerFrame * 2, &amtSent);
+		checkError(ret, "qapi_I2S_Send_Data");
+#else
+	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#endif
+	}
+
+	if (installed) {
+		ret = qapi_I2S_Close(out->i2s_handle);
+		checkError(ret, "qapi_I2S_Close");
+modLog("audioOutLoop: I2S deinit");
+		ret = qapi_I2S_Deinit(out->i2s_handle);
+		checkError(ret, "qapi_I2S_Deinit");
+	}
+//	qurt_signal_set(&gAudioOutSignal, kStateThreadDestroyed);
+
+//	qurt_thread_stop();
+	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
+}
+
 #elif defined(__ets__)
 
 void doRenderSamples(void *refcon, int16_t *lr, int count)
@@ -1213,7 +1456,7 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 }
 #endif
 
-#if defined(__ets__) || ESP32 || defined(_WIN32)
+#if defined(__ets__) || ESP32 || defined(_WIN32) || qca4020
 
 void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
@@ -1227,6 +1470,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 
 #if ESP32
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif qca4020
+		qurt_mutex_lock(&out->mutex);
 #elif defined(__ets__)
 		modCriticalSectionBegin();
 #elif defined(_WIN32)
@@ -1239,6 +1484,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
 #if ESP32
 		xSemaphoreGive(out->mutex);
+#elif qca4020
+		qurt_mutex_unlock(&out->mutex);
 #elif defined(__ets__)
 		modCriticalSectionEnd();
 #elif defined(_WIN32)

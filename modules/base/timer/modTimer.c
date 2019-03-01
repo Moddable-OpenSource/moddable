@@ -24,9 +24,12 @@
 #include "modTimer.h"
 #if __ets__ || defined(ESP32)
 	#include "xsesp.h"
-#elif gecko
+#elif defined(gecko)
 	#include "xsgecko.h"
-	#include "xsPlatform.h"
+#elif defined(qca4020)
+	#include "xsqca4020.h"
+#else
+	#error unsupported platform
 #endif
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);

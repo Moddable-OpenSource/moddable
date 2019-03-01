@@ -35,11 +35,16 @@
 #elif defined(apollo)
 	#include "xsapollo.h"
 	#include "xsPlatform.h"
-#else	// synergy
+#elif defined(qca4020)
+	#include "xsqca4020.h"
+	#include "xsPlatform.h"
+#elif defined(synergy)
 	#include <sys/types.h>
 	#include "xssynergy.h"
 	#include "xsPlatform.h"
 	#include <string.h>
+#else
+	#error unknown platform
 #endif
 
 #include "modInstrumentation.h"

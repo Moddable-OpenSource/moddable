@@ -21,13 +21,23 @@
 
 #include "xsmc.h"
 
-#include "xsesp.h"
+#if __ets__
+	#include "xsesp.h"
+#elif qca4020
+	#include "xsqca4020.h"
+	#include "xsPlatform.h"
+#endif
+
 #include "mc.xs.h"			// for xsID_ values
 
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 
+	static void workerLoop(void *pvParameter);
+#elif qca4020
+	#include "FreeRTOS.h"
+	#include "task.h"
 	static void workerLoop(void *pvParameter);
 #endif
 
@@ -44,7 +54,7 @@ struct modWorkerRecord {
 	uint32_t				slotCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
-#if ESP32
+#if ESP32 || qca4020
 	TaskHandle_t			task;
 #endif
 	char						module[1];
@@ -79,7 +89,7 @@ void xs_worker_destructor(void *data)
 	if (worker) {
 		modWorker walker, prev;
 
-#if ESP32
+#if ESP32 || qca4020
 		if (worker->task) {
 			vTaskDelete(worker->task);
 			worker->task = NULL;
@@ -183,6 +193,17 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 8, &worker->task);
+
+	modMachineTaskWait(the);
+#elif qca4020
+	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
+		#define kStack ((9 * 1024) / sizeof(StackType_t))
+	#else
+		#define kStack ((10 * 1024) / sizeof(StackType_t))
+	#endif
+
+	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
+	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
 
 	modMachineTaskWait(the);
 #else
@@ -452,7 +473,7 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 	xs_worker_destructor(worker);
 }
 
-#if ESP32
+#if ESP32 || qca4020
 
 void workerLoop(void *pvParameter)
 {
@@ -471,6 +492,9 @@ void workerLoop(void *pvParameter)
 	while (true) {
 		modTimersExecute();
 		modMessageService(worker->the, modTimersNext());
+#if qca4020
+		qca4020_watchdog();
+#endif
 	}
 
 #if CONFIG_TASK_WDT

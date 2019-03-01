@@ -20,12 +20,24 @@
 
 
 #include "xsmc.h"
-#if _RENESAS_SYNERGY_
-	#include "xssynergy.h"
-#elif gecko
-	#include "xsgecko.h"
+#if ESP32 || __ets__
+    #include "xsesp.h"
+#elif __ZEPHYR__
+    #include "modTimer.h"
+#elif defined(gecko)
+    #include "xsgecko.h"
+#elif defined(apollo)
+    #include "xsapollo.h"
+#elif defined(qca4020)
+    #include "xsqca4020.h"
+#elif defined(synergy)
+    #include <sys/types.h>
+    #include "xssynergy.h"
+    #include <string.h>
+#elif defined(linux)
+    #include "xslinux.h"
 #else
-	#include "xsesp.h"
+    #error unknown platform
 #endif
 
 void xs_time_set(xsMachine *the)

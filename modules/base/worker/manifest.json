@@ -8,6 +8,8 @@
 		},
 		"esp32": {
 		},
+		"qca4020": {
+		},
 		"...": {
 			"error": "Worker module unsupported"
 		}

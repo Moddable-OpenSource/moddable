@@ -24,6 +24,13 @@
 				]
 			}
 		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/qca4020/*"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [

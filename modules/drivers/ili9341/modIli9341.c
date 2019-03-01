@@ -28,9 +28,14 @@
 #elif defined(gecko)
 	#include "xsgecko.h"
 	#include "xsPlatform.h"
-#else
-	#include "xslinux.h"
+#elif defined(qca4020)
+	#include "xsqca4020.h"
 	#include "xsPlatform.h"
+//#else
+//	#include "xslinux.h"
+//	#include "xsPlatform.h"
+#else
+	#error unsupported platform
 #endif
 
 #include "commodettoBitmap.h"
@@ -72,6 +77,9 @@
 #else
 	#define MODDEF_ILI9341_BACKLIGHT_OFF (1)
 #endif
+#ifndef MODDEF_ILI9341_SPI_PORT
+	#define MODDEF_ILI9341_SPI_PORT NULL
+#endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
 	#define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
@@ -79,6 +87,7 @@
 	#define SCREEN_CS_INIT		modGPIOInit(&sd->cs, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput); \
 			SCREEN_CS_DEACTIVE
 #else
+	#define MODDEF_ILI9341_CS_PIN	NULL
 	#define SCREEN_CS_ACTIVE
 	#define SCREEN_CS_DEACTIVE
 	#define SCREEN_CS_INIT

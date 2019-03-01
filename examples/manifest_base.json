@@ -48,6 +48,9 @@
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
 		},
+		"qca4020": {
+			"include": "$(BUILD)/devices/qca4020/manifest.json"
+		},
 		"lin": {
 			"modules": {
 				"*": [

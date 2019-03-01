@@ -42,5 +42,11 @@
 			},
 			"preload": "setup/piu"
 		},
+		"qca4020": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/qca4020/setup/piu",
+			},
+			"preload": "setup/piu"
+		},
 	}
 }

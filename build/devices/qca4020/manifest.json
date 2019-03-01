@@ -1,0 +1,22 @@
+{
+	"build": {
+		"MAKE_FRAGMENT": "$(BUILD)/devices/qca4020/make.qca4020.mk"
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/esp/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*",
+		]
+	},
+	"preload": [
+		"time",
+		"timer",
+	],
+	"platforms": {
+		"qca4020/*": {
+			"include": "$(BUILD)/devices/qca4020/targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+}

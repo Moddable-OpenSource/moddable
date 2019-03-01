@@ -72,6 +72,27 @@
 				]
 			},
 		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/qca4020/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/qca4020/*",
+					"$(MODULES)/network/sntp/*",
+					"$(MODULES)/network/wifi/*",
+					"$(MODULES)/network/wifi/qca4020/*",
+				],
+				"setup/network": "$(BUILD)/devices/qca4020/setup/network",
+			},
+			"preload": [
+				"socket",
+				"setup/network",
+				"sntp",
+				"wifi",
+				"net"
+			]
+		}	
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}

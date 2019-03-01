@@ -38,6 +38,14 @@
 				]
 			},
 		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/ble/qca4020/modBLEServer",
+					"$(MODULES)/network/ble/qca4020/modBLESM",
+				]
+			},
+		},
 		"lin": {
 			"modules": {
 				"*": [

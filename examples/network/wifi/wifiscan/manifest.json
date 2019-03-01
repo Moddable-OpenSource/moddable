@@ -20,6 +20,11 @@
 				"*": "$(MODULES)/network/wifi/esp32/*"
 			},
 		},
+		"qca4020": {
+			"modules": {
+				"*": "$(MODULES)/network/wifi/qca4020/*"
+			},
+		},
 		"...": {
 			"error": "WiFi module unsupported"
 		}

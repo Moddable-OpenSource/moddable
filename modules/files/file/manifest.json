@@ -29,6 +29,11 @@
 				"*": "$(MODULES)/files/file/lin/*"
 			}
 		},
+		"qca4020": {
+			"modules": {
+				"*": "$(MODULES)/files/file/qca4020/*"
+			}
+		},
 		"...": {
 			"error": "File module unsupported"
 		}
