@@ -2315,6 +2315,7 @@ void fxClassNodeCode(void* it, void* param)
 	}
 	if (self->scope) {
 		txDeclareNode* declaration = self->scope->firstDeclareNode;
+		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
 		fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
 		fxScopeCoded(self->scope, param);
 	}
