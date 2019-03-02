@@ -2122,6 +2122,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	txUnsigned flags = parser->flags;
+	parser->flags |= mxStrictFlag;
 	fxMatchToken(parser, XS_TOKEN_CLASS);
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxPushSymbol(parser, parser->symbol);
@@ -2131,7 +2132,6 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	}
 	else
 		fxPushNULL(parser);
-	parser->flags |= mxStrictFlag;
 	if (parser->token == XS_TOKEN_EXTENDS) {
 		fxGetNextToken(parser);
 		fxCallExpression(parser);
@@ -2165,10 +2165,10 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			txToken aToken1;
 			txToken aToken2;
 			txUnsigned flag;
-			if (parser->token == XS_TOKEN_RIGHT_BRACE)
-				break;
 			if (parser->token == XS_TOKEN_SEMICOLON)
 				fxGetNextToken(parser);
+			if (parser->token == XS_TOKEN_RIGHT_BRACE)
+				break;
 			if (parser->token == XS_TOKEN_STATIC) {
 				fxGetNextToken(parser);
 				aStaticFlag = 1;
@@ -2178,9 +2178,9 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			fxPropertyName(parser, &aSymbol, &aToken0, &aToken1, &aToken2, &flag);
 			if (aStaticFlag && (aSymbol == parser->prototypeSymbol))
 				fxReportParserError(parser, "invalid static prototype");
-			if (aSymbol == parser->constructorSymbol) {
+			if ((aStaticFlag == 0) && (aSymbol == parser->constructorSymbol)) {
 				fxPopNode(parser); // symbol
-				if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER)) 
+				if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER) || (flag & mxAsyncFlag)) 
 					fxReportParserError(parser, "invalid constructor");
 				fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | ((heritageFlag) ? mxDerivedFlag : mxBaseFlag));
 				constructor = fxPopNode(parser);
