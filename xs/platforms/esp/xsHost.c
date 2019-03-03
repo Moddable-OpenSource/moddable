@@ -1234,6 +1234,121 @@ uint32_t modMilliseconds(void)
 #endif
 
 /*
+	64-bit atomics
+*/
+
+bool __atomic_compare_exchange_8(txU8 *ptr, txU8 *expected, txU8 desired, bool weak, int success_memorder, int failure_memorder)
+{
+	modCriticalSectionBegin();
+
+	bool result;
+	if (*ptr == *expected) {
+		*ptr = desired;
+		result = true;
+	}
+	else {
+		*expected = *ptr;
+		result = false;
+	}
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_load_8(txU8 *ptr, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_add_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result + val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_and_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result & val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_exchange_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_or_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result | val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+void __atomic_store_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	*ptr = val;
+
+	modCriticalSectionEnd();
+}
+
+txU8 __atomic_fetch_sub_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result - val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_xor_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result ^ val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+/*
 	messages
 */
 
