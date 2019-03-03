@@ -121,17 +121,19 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
 
 LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 
-BUILDCLUT = $(BUILD_DIR)/bin/lin/debug/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/lin/debug/compressbmf
-IMAGE2CS = $(BUILD_DIR)/bin/lin/debug/image2cs
-MCLOCAL = $(BUILD_DIR)/bin/lin/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/lin/debug/png2bmp
-RLE4ENCODE = $(BUILD_DIR)/bin/lin/debug/rle4encode
-WAV2MAUD = $(BUILD_DIR)/bin/lin/debug/wav2maud
-XSC = $(BUILD_DIR)/bin/lin/debug/xsc
-XSID = $(BUILD_DIR)/bin/lin/debug/xsid
-XSL = $(BUILD_DIR)/bin/lin/debug/xsl
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
+WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
+BLES2GATT = $(MODDABLE_TOOLS_DIR)/bles2gatt
+XSC = $(MODDABLE_TOOLS_DIR)/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 VPATH += $(XS_DIRECTORIES)
 
