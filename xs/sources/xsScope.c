@@ -404,14 +404,14 @@ void fxCatchNodeHoist(void* it, void* param)
 		fxNodeDispatchHoist(self->parameter, param);
 		self->statementScope = fxScopeNew(param, it, XS_TOKEN_BLOCK);
 		fxNodeDispatchHoist(self->statement, param);
-		node = self->statementScope->firstDeclareNode;
-		while (node) {
-			if (fxScopeGetDeclareNode(self->scope, node->symbol))
-				fxReportLineError(hoister->parser, node->line, "duplicate variable %s", node->symbol->string);
-			node = node->nextDeclareNode;
-		}
 		fxScopeHoisted(self->statementScope, param);
 		fxScopeHoisted(self->scope, param);
+		node = self->statementScope->firstDeclareNode;
+		while (node) {
+		   if (fxScopeGetDeclareNode(self->scope, node->symbol))
+			   fxReportLineError(hoister->parser, node->line, "duplicate variable %s", node->symbol->string);
+		   node = node->nextDeclareNode;
+		}
 	}
 	else {
 		self->statementScope = fxScopeNew(param, it, XS_TOKEN_BLOCK);
@@ -448,7 +448,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 	if (self->description->token == XS_TOKEN_ARG) {
 		node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
 		if (node) {
-			if ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & (mxArrowFlag | mxAsyncFlag | mxNotSimpleParametersFlag | mxStrictFlag)))
+			if ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & (mxArrowFlag | mxAsyncFlag | mxMethodFlag | mxNotSimpleParametersFlag | mxStrictFlag)))
 				fxReportLineError(hoister->parser, self->line, "duplicate argument %s", self->symbol->string);
 		}
 		else {
@@ -492,8 +492,11 @@ void fxDeclareNodeHoist(void* it, void* param)
 			node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
 			if (!node || ((node->description->token != XS_TOKEN_ARG) && (node->description->token != XS_TOKEN_VAR)))
 				fxScopeAddDeclareNode(hoister->bodyScope, self);
-			if (hoister->scope != hoister->bodyScope)
-				fxScopeAddDeclareNode(hoister->scope, fxDeclareNodeNew(hoister->parser, XS_NO_TOKEN, self->symbol));
+			scope = hoister->scope;
+			while (scope != hoister->bodyScope) {
+				fxScopeAddDeclareNode(scope, fxDeclareNodeNew(hoister->parser, XS_NO_TOKEN, self->symbol));
+				scope = scope->scope;
+			}
 		}
 	}
 	if (self->initializer)

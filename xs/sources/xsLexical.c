@@ -1107,15 +1107,17 @@ void fxGetNextTokenAux(txParser* parser)
 						fxReportParserError(parser, "end of file in comment");			
 						break;
 					}
-					else if (parser->character == 10) {
+					else if ((parser->character == 10) || (parser->character == 0x2028) || (parser->character == 0x2029)) {
 						parser->line2++;
 						fxGetNextCharacter(parser);
+						parser->crlf2 = 1;
 					}
 					else if (parser->character == 13) {
 						parser->line2++;
 						fxGetNextCharacter(parser);
 						if (parser->character == 10)
 							fxGetNextCharacter(parser);
+						parser->crlf2 = 1;
 					}
 					else if (parser->character == '*') {
 						fxGetNextCharacter(parser);

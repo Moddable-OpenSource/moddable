@@ -2287,11 +2287,9 @@ void fxClassNodeCode(void* it, void* param)
 	fxCoderAddByte(param, 0, XS_CODE_TO_INSTANCE);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, constructor);
 	fxCoderAddByte(param, -3, XS_CODE_CLASS);
-	if (self->symbol) {
-		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+	if (self->symbol)
 		fxCoderAddSymbol(param, 0, XS_CODE_NAME, self->symbol);
-		fxCoderAddByte(param, -1, XS_CODE_POP);
-	}
 	while (item) {
 		txNode* value;
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, (item->flags & mxStaticFlag) ? constructor : prototype);
@@ -2317,7 +2315,6 @@ void fxClassNodeCode(void* it, void* param)
 	}
 	if (self->scope) {
 		txDeclareNode* declaration = self->scope->firstDeclareNode;
-		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
 		fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
 		fxScopeCoded(self->scope, param);
 	}

@@ -661,8 +661,11 @@ void fxModule(txParser* parser)
 			fxReportParserError(parser, "invalid yield");
 			fxGetNextToken(parser);
 		}
-		else
+		else {
+			parser->flags |= mxAsyncFlag;
 			fxStatement(parser, 1);
+			parser->flags &= ~mxAsyncFlag;
+		}
 	}
 	aCount = parser->nodeCount - aCount;
 	if (aCount > 1) {
