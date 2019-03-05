@@ -383,8 +383,6 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 #define kDelayMS (255)
 
 #define kILI9341RegistersModdableZero_Start \
-	0x01, 0, \
-	kDelayMS, 5, \
 	0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02, \
 	0xCF, 3, 0x00, 0xC1, 0X30, \
 	0xE8, 3, 0x85, 0x00, 0x78, \
