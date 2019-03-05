@@ -752,17 +752,20 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	{
 		xsTry {
 			txSlot* slot;
+			txSlot* agent;
 
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
+			
+			agent = the->stack;
 			
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
+			slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
 			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
@@ -770,8 +773,6 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
 			slot->kind = the->stack->kind;
 			slot->value = the->stack->value;
-			the->stack++;
-			
 			the->stack++;
 		
 			fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
@@ -802,7 +803,15 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
+				
+				mxPushSlot(agent);
+				fxGetID(the, xsID("broadcast"));
+				mxPushSlot(agent);
+				fxSetID(the, xsID("safeBroadcast"));
+				mxPop();
 			}
+			the->stack++;
+			
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
@@ -871,6 +880,10 @@ int fxStringEndsWith(const char *string, const char *suffix)
 
 void fx_agent_broadcast(xsMachine* the)
 {
+	if (xsIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
+		xsArg(0) = xsGet(xsArg(0), xsID("buffer"));
+	}
+
     fxLockMutex(&(gxAgentCluster.dataMutex));
 	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
