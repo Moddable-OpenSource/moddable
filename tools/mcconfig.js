@@ -343,7 +343,7 @@ class CMakeListsFile extends PrerequisiteFile {
 		this.line("cmake_minimum_required(VERSION 3.4.1)");
 		this.line("");
 		this.line("add_library(tech-moddable-piu SHARED");
-		this.line("\t", tool.xsPath, "/platforms/android_xs.c");
+		this.line("\t", tool.moddablePath, "/../moddableprojects/xs/platforms/android_xs.c");
 		var names = tool.enumerateDirectory(tool.xsPath + "/sources");
 		var c = names.length;
 		for (var i = 0; i < c; i++) {
@@ -375,6 +375,7 @@ class CMakeListsFile extends PrerequisiteFile {
 		this.line("target_include_directories(tech-moddable-piu PUBLIC");
 		this.line("\t", tool.xsPath, "/includes");
 		this.line("\t", tool.xsPath, "/platforms");
+		this.line("\t", tool.moddablePath, "/../moddableprojects/xs/platforms");
 		this.line("\t", tool.xsPath, "/sources");
 		for (var folder of tool.cFolders) {
 			this.line("\t", folder);
@@ -507,7 +508,7 @@ class XcodeFile extends PrerequisiteFile {
 		this.sources = [];
 		
 		this.id = 1;
-		this.addSource(tool.xsPath + "/platforms/ios_xs.c");
+		this.addSource(tool.moddablePath + "/../moddableprojects/xs/platforms/ios_xs.c");
 		var names = tool.enumerateDirectory(tool.xsPath + "/sources");
 		var c = names.length;
 		for (var i = 0; i < c; i++) {
@@ -545,7 +546,7 @@ class XcodeFile extends PrerequisiteFile {
 
 		this.addResource(tool.mainPath + "/ios/Assets.xcassets", true);
 	
-		var path = tool.moddablePath + "/modules/piu/PC/ios/support/Xcode.txt";
+		var path = tool.moddablePath + "/../moddableprojects/modules/piu/PC/ios/support/Xcode.txt";
 		var template = tool.readFileString(path);
 		
 		template = template.replace(/#DEVELOPMENT_TEAM#/g, tool.environment.DEVELOPMENT_TEAM);
@@ -579,6 +580,7 @@ class XcodeFile extends PrerequisiteFile {
 		this.current = ""
 		this.line("\t\t\t\t\t", tool.xsPath, "/includes,");
 		this.line("\t\t\t\t\t", tool.xsPath, "/platforms,");
+		this.line("\t\t\t\t\t", tool.moddablePath, "/../moddableprojects/xs/platforms,");
 		this.line("\t\t\t\t\t", tool.xsPath, "/sources,");
 		for (var folder of tool.cFolders) {
 			this.line("\t\t\t\t\t", folder, ",");
