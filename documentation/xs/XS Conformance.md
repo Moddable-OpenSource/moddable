@@ -6,10 +6,6 @@ Revised: March 19, 2018
 
 ## Caveat
 
-#### Function Code
-
-XS does not store the source code of functions so `Function.prototype.toString` always fails.
-
 #### Realm
 
 XS supports one realm by virtual machine. Tests that expect `$262.createRealm` to return a new realm fail.
@@ -69,27 +65,28 @@ To pass some tests, clone [test262](https://github.com/tc39/test262.git) and cha
 
 After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-document/) based on [proposals](https://github.com/tc39/proposals). Each proposal has a maturity stage. At stage 4, proposals are finished and will be published in the following edition of the specifications.
 
-The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped proposals at the end of this document.
+The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.8%** of the language tests (`26747/26786`) and **99.4%** of the built-ins tests (`25695/25849`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.8%** of the language tests (`27410/27453`) and **99.4%** of the built-ins tests (`25695/25849`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     99% 26747/26786 (556) language
-        100% 231/231 arguments-object
+     99% 27410/27453 (4741) language
+        100% 339/339 (60) arguments-object
             100% 40/40 mapped
             100% 8/8 unmapped
         100% 202/202 asi
-        100% 222/222 block-scope
+        100% 284/284 block-scope
             100% 30/30 leave
             100% 4/4 return-from
             100% 30/30 shadowing
-            100% 158/158 syntax
+            100% 220/220 syntax
                 100% 16/16 for-in
                 100% 9/9 function-declarations
-                100% 127/127 redeclaration
+                100% 189/189 redeclaration
                 100% 6/6 redeclaration-global
-        100% 38/38 comments
+        100% 46/46 (26) comments
+              0% 0/0 (26) hashbang
         100% 90/90 computed-property-names
             100% 6/6 basics
             100% 52/52 class
@@ -104,108 +101,180 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`26747/26786`) a
         100% 30/30 destructuring
             100% 30/30 binding
                 100% 24/24 syntax
-        100% 54/54 directive-prologue
-         99% 254/256 eval-code
-            100% 140/140 direct
+        100% 62/62 directive-prologue
+         99% 253/255 eval-code
+            100% 139/139 direct
              98% 114/116 indirect
         100% 3/3 export
-         99% 11691/11715 (291) expressions
-            100% 83/83 (6) addition
+         99% 12036/12064 (2551) expressions
+            100% 95/95 addition
             100% 104/104 array
-            100% 525/525 arrow-function
+            100% 527/527 arrow-function
                 100% 10/10 arrow
+                100% 360/360 dstr
                 100% 77/77 syntax
                     100% 43/43 early-errors
              99% 572/577 assignment
                 100% 6/6 destructuring
-            100% 81/81 async-arrow-function
+                100% 479/479 dstr
+            100% 92/92 async-arrow-function
             100% 113/113 async-function
-            100% 1154/1154 async-generator
-            100% 30/30 await
-            100% 47/47 (6) bitwise-and
-            100% 28/28 (2) bitwise-not
-            100% 47/47 (6) bitwise-or
-            100% 47/47 (6) bitwise-xor
+            100% 1140/1140 async-generator
+                100% 720/720 dstr
+            100% 42/42 await
+            100% 59/59 bitwise-and
+            100% 32/32 bitwise-not
+            100% 59/59 bitwise-or
+            100% 59/59 bitwise-xor
              98% 176/179 call
-            100% 2892/2892 (160) class
+            100% 2956/2956 (1977) class
+                100% 36/36 accessor-name-inst
+                100% 36/36 accessor-name-static
+                100% 180/180 async-gen-method
+                100% 180/180 async-gen-method-static
+                100% 36/36 async-method
+                100% 36/36 async-method-static
+                100% 2160/2160 (780) dstr
+                100% 62/62 (1196) elements
+                      0% 0/0 (79) async-gen-private-method
+                      0% 0/0 (79) async-gen-private-method-static
+                      0% 0/0 (6) async-private-method
+                      0% 0/0 (6) async-private-method-static
+                      0% 0/0 (6) evaluation-error
+                      0% 0/0 (11) gen-private-method
+                      0% 0/0 (11) gen-private-method-static
+                      0% 0/0 (20) private-accessor-name
+                      0% 0/0 (5) private-methods
+                    100% 62/62 (201) syntax
+                        100% 50/50 (185) early-errors
+                              0% 0/0 (96) delete
+                              0% 0/0 (28) invalid-names
+                        100% 12/12 (16) valid
+                100% 44/44 gen-method
+                100% 44/44 gen-method-static
+                100% 24/24 method
+                100% 24/24 method-static
             100% 11/11 comma
-            100% 703/703 compound-assignment
+             99% 701/703 compound-assignment
             100% 10/10 concatenation
             100% 40/40 conditional
-            100% 93/93 delete
-            100% 71/71 (6) division
-            100% 59/59 (8) does-not-equals
-            100% 77/77 (8) equals
-            100% 74/74 (7) exponentiation
-             99% 438/439 function
-             99% 507/508 generators
-            100% 81/81 (4) greater-than
-            100% 73/73 (4) greater-than-or-equal
+            100% 85/85 delete
+            100% 83/83 division
+            100% 75/75 does-not-equals
+              0% 0/0 (535) dynamic-import
+                  0% 0/0 (28) assignment-expression
+                  0% 0/0 (112) catch
+                  0% 0/0 (67) namespace
+                  0% 0/0 (188) syntax
+                      0% 0/0 (122) invalid
+                      0% 0/0 (66) valid
+                  0% 0/0 (108) usage
+            100% 93/93 equals
+            100% 88/88 exponentiation
+             99% 438/439 (4) function
+                100% 360/360 dstr
+                  0% 0/0 (4) early-errors
+             99% 509/510 generators
+                100% 360/360 dstr
+            100% 97/97 greater-than
+            100% 85/85 greater-than-or-equal
             100% 16/16 grouping
+              0% 0/0 (22) import.meta
+                  0% 0/0 (18) syntax
             100% 27/27 in
             100% 85/85 instanceof
-            100% 77/77 (6) left-shift
-            100% 73/73 (4) less-than
-            100% 83/83 (4) less-than-or-equal
+            100% 89/89 left-shift
+            100% 89/89 less-than
+            100% 93/93 less-than-or-equal
             100% 34/34 logical-and
-            100% 36/36 (1) logical-not
+            100% 38/38 logical-not
             100% 34/34 logical-or
-             96% 63/65 (6) modulus
-            100% 67/67 (5) multiplication
+             97% 75/77 modulus
+            100% 77/77 multiplication
             100% 110/110 new
             100% 26/26 new.target
-             99% 1723/1725 object
-                100% 453/453 method-definition
-            100% 62/62 (1) postfix-decrement
-            100% 62/62 (1) postfix-increment
-            100% 55/55 (1) prefix-decrement
-            100% 54/54 (1) prefix-increment
+             99% 1719/1721 (12) object
+                100% 1080/1080 dstr
+                100% 447/447 (12) method-definition
+            100% 64/64 postfix-decrement
+            100% 64/64 postfix-increment
+            100% 57/57 prefix-decrement
+            100% 56/56 prefix-increment
             100% 42/42 property-accessors
             100% 2/2 relational
-            100% 61/61 (6) right-shift
-            100% 43/43 (8) strict-does-not-equals
-            100% 43/43 (8) strict-equals
-            100% 65/65 (5) subtraction
+            100% 73/73 right-shift
+            100% 59/59 strict-does-not-equals
+            100% 59/59 strict-equals
+            100% 75/75 subtraction
              98% 160/162 super
-             82% 38/46 tagged-template
+             79% 38/48 tagged-template
             100% 106/106 (1) template-literal
             100% 9/9 this
-            100% 28/28 (1) typeof
-            100% 24/24 (2) unary-minus
-            100% 32/32 (1) unary-plus
-            100% 77/77 (6) unsigned-right-shift
+            100% 30/30 typeof
+            100% 28/28 unary-minus
+            100% 34/34 unary-plus
+            100% 89/89 unsigned-right-shift
             100% 18/18 void
             100% 119/119 yield
          99% 285/287 function-code
         100% 85/85 future-reserved-words
-        100% 65/65 global-code
+        100% 65/65 (4) global-code
         100% 19/19 identifier-resolution
         100% 283/283 (1) identifiers
         100% 4/4 import
         100% 50/50 keywords
-        100% 118/118 line-terminators
-         99% 483/484 (61) literals
-              0% 0/0 (6) bigint
+        100% 82/82 line-terminators
+         99% 615/616 (55) literals
+            100% 12/12 bigint
             100% 4/4 boolean
             100% 4/4 null
-            100% 172/172 (52) numeric
-            100% 178/178 (1) regexp
-             99% 125/126 (2) string
-        100% 273/273 (9) module-code
-            100% 34/34 namespace
-                100% 32/32 internals
+            100% 174/174 (52) numeric
+            100% 316/316 (1) regexp
+                100% 116/116 named-groups
+             99% 105/106 (2) string
+        100% 267/267 (25) module-code
+            100% 34/34 (2) namespace
+                100% 32/32 (2) internals
         100% 22/22 punctuators
         100% 53/53 reserved-words
         100% 22/22 rest-parameters
           0% 0/2 source-text
-         99% 11865/11873 (194) statements
+         99% 11908/11916 (2019) statements
             100% 107/107 async-function
-            100% 552/552 async-generator
-            100% 30/30 block
+            100% 546/546 async-generator
+                100% 360/360 dstr
+            100% 30/30 (4) block
+                  0% 0/0 (4) early-errors
             100% 38/38 break
-             99% 3304/3306 (194) class
+             99% 3340/3342 (2011) class
+                100% 36/36 accessor-name-inst
+                100% 36/36 accessor-name-static
                 100% 4/4 arguments
-                100% 122/122 definition
+                100% 180/180 async-gen-method
+                100% 180/180 async-gen-method-static
+                100% 36/36 async-method
+                100% 36/36 async-method-static
+                100% 124/124 definition
+                100% 2160/2160 (780) dstr
+                100% 62/62 (1229) elements
+                      0% 0/0 (79) async-gen-private-method
+                      0% 0/0 (79) async-gen-private-method-static
+                      0% 0/0 (6) async-private-method
+                      0% 0/0 (6) async-private-method-static
+                      0% 0/0 (6) evaluation-error
+                      0% 0/0 (11) gen-private-method
+                      0% 0/0 (11) gen-private-method-static
+                      0% 0/0 (20) private-accessor-name
+                      0% 0/0 (5) private-methods
+                    100% 62/62 (201) syntax
+                        100% 50/50 (185) early-errors
+                              0% 0/0 (96) delete
+                              0% 0/0 (28) invalid-names
+                        100% 12/12 (16) valid
+                100% 44/44 gen-method
+                100% 44/44 gen-method-static
+                100% 24/24 method
+                100% 24/24 method-static
                 100% 12/12 name-binding
                 100% 4/4 strict-mode
                  98% 190/192 subclass
@@ -231,10 +300,11 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`26747/26786`) a
                         100% 4/4 TypedArray
                         100% 4/4 WeakMap
                         100% 4/4 WeakSet
-                100% 14/14 super
-                100% 58/58 syntax
-                    100% 36/36 early-errors
+                100% 16/16 super
+                100% 26/26 syntax
+                    100% 4/4 early-errors
             100% 261/261 const
+                100% 180/180 dstr
                 100% 50/50 syntax
             100% 44/44 continue
             100% 4/4 debugger
@@ -242,22 +312,31 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`26747/26786`) a
             100% 4/4 empty
             100% 6/6 expression
             100% 734/734 for
+                100% 552/552 dstr
             100% 2389/2389 for-await-of
-            100% 172/172 for-in
+            100% 178/178 for-in
+                100% 41/41 dstr
              99% 1326/1330 for-of
-            100% 745/745 function
-            100% 482/482 generators
+                100% 1031/1031 dstr
+            100% 745/745 (4) function
+                100% 360/360 dstr
+                  0% 0/0 (4) early-errors
+            100% 484/484 generators
+                100% 360/360 dstr
             100% 123/123 if
             100% 35/35 labeled
-            100% 281/281 let
-                100% 64/64 syntax
+            100% 277/277 let
+                100% 180/180 dstr
+                100% 60/60 syntax
             100% 31/31 return
             100% 204/204 switch
                 100% 127/127 syntax
                     100% 127/127 redeclaration
             100% 28/28 throw
              99% 369/370 try
-            100% 282/282 variable
+                100% 180/180 dstr
+            100% 291/291 variable
+                100% 180/180 dstr
             100% 72/72 while
              99% 172/173 with
         100% 211/211 types
@@ -934,6 +1013,10 @@ When calling a member property, XS evaluates parameters before the member proper
 
 One realm.
 
+	language/expressions/compound-assignment/mod-whitespace.js
+	
+XS optimizes modulus for integer values, which fails for -1 % -1 == -0.
+
 	language/expressions/function/scope-name-var-open-non-strict.js (sloppy)
 	language/expressions/generators/scope-name-var-open-non-strict.js (sloppy)
 
@@ -952,8 +1035,10 @@ In object initializers, if property values are functions, the implementation mus
 When calling `super`, XS evaluates parameters before `super`.
 
 	language/expressions/tagged-template/cache-different-functions-same-site.js
+	language/expressions/tagged-template/cache-eval-inner-function.js
 	language/expressions/tagged-template/cache-same-site-top-level.js
 	language/expressions/tagged-template/cache-same-site.js
+	language/expressions/tagged-template/template-object-template-map.js
 
 No tagged templates cache.
 
@@ -962,7 +1047,7 @@ No tagged templates cache.
 	
 When calling a member, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
 
-	language/literals/string/7.8.4-1-s.js (sloppy)
+	language/literals/string/legacy-octal-escape-sequence-prologue-strict.js (sloppy)
 
 Strings with octal escape sequences are a lexical error in strict mode but in sloppy mode if "use strict" follows the string, it is too late for a lexical error...
 
@@ -1000,10 +1085,7 @@ Code points vs code units.
 	built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.js
 	
 One realm.
-	
-	built-ins/Function/prototype/toString/*	
-No source code.	
-	
+		
 	built-ins/RegExp/dotall/with-dotall.js
 	built-ins/RegExp/dotall/without-dotall.js
 	built-ins/RegExp/prototype/Symbol.match/builtin-infer-unicode.js
@@ -1036,15 +1118,21 @@ One realm.
 	
 Code points vs code units.	
 	
-### Skipped proposals
+### Skipped cases
 
-	Array.prototype.flatMap
-	BigInt
-	String.prototype.trimEnd
-	String.prototype.trimStart
+	class-fields
 	class-fields-private
 	class-fields-public
+	class-methods-private
+	class-static-fields-private
+	class-static-fields-public
+	class-static-methods-private
+	dynamic-import
+	globalThis
+	hashbang
+	export-star-as-namespace-from-module
+	import.meta
 	numeric-separator-literal
-	regexp-unicode-property-escapes
-	string-trimming
+	String.prototype.matchAll
+	Symbol.matchAll
 
