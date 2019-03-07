@@ -94,7 +94,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 7
+#define XS_MINOR_VERSION 8
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -731,6 +731,7 @@ enum {
 	_defineProperty,
 	_delete,
 	_deleteProperty,
+	_description,
 	_done,
 	_dotAll,
 	_eachDown,
@@ -751,6 +752,8 @@ enum {
 	_find,
 	_findIndex,
 	_flags,
+	_flat,
+	_flatMap,
 	_floor,
 	_for,
 	_forEach,
@@ -761,6 +764,7 @@ enum {
 	_fromBigInt,
 	_fromCharCode,
 	_fromCodePoint,
+	_fromEntries,
 	_fromString,
 	_fround,
 	_function,
@@ -967,6 +971,8 @@ enum {
 	_toUpperCase,
 	_transfers,
 	_trim,
+	_trimEnd,
+	_trimStart,
 	_trunc,
 	_unicode,
 	_unscopables,

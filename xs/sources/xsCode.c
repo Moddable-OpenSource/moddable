@@ -705,6 +705,7 @@ txScript* fxParserCode(txParser* parser)
 			break;
 		case XS_CODE_BIGINT_2:
 			u2 = (txU2)fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
+            mxEncode2(p, u2);
 			fxBigIntEncode(p, &((txBigIntCode*)code)->bigint, u2);
 			p += u2;
 			break;
@@ -2286,7 +2287,9 @@ void fxClassNodeCode(void* it, void* param)
 	fxCoderAddByte(param, 0, XS_CODE_TO_INSTANCE);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, constructor);
 	fxCoderAddByte(param, -3, XS_CODE_CLASS);
-	
+	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+	if (self->symbol)
+		fxCoderAddSymbol(param, 0, XS_CODE_NAME, self->symbol);
 	while (item) {
 		txNode* value;
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, (item->flags & mxStaticFlag) ? constructor : prototype);
@@ -2310,9 +2313,6 @@ void fxClassNodeCode(void* it, void* param)
 		fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, flag);
 		item = item->next;
 	}
-	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
-	if (self->symbol)
-		fxCoderAddSymbol(param, 0, XS_CODE_NAME, self->symbol);
 	if (self->scope) {
 		txDeclareNode* declaration = self->scope->firstDeclareNode;
 		fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);

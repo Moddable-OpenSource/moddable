@@ -54,6 +54,7 @@ static void fxMoveThisItem(txMachine* the, txNumber from, txNumber to);
 static void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index);
 static txBoolean fxSetArrayLength(txMachine* the, txSlot* array, txIndex target);
 static void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index);
+static txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex length, txIndex start, txIndex depth, txSlot* function);
 
 static txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
 static txBoolean fxArrayDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
@@ -107,6 +108,8 @@ void fxBuildArray(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_filter), 1, mxID(_filter), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_find), 1, mxID(_find), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_findIndex), 1, mxID(_findIndex), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_flat), 0, mxID(_flat), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_flatMap), 1, mxID(_flatMap), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_forEach), 1, mxID(_forEach), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_includes), 1, mxID(_includes), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_indexOf), 1, mxID(_indexOf), XS_DONT_ENUM_FLAG);
@@ -138,6 +141,8 @@ void fxBuildArray(txMachine* the)
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_fill), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_copyWithin), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_entries), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flat), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flatMap), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_includes), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_keys), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_values), XS_NO_FLAG);
@@ -1306,6 +1311,73 @@ void fx_Array_prototype_findIndex(txMachine* the)
 		}
 		index++;
 	}
+}
+
+void fx_Array_prototype_flat(txMachine* the)
+{
+	txIndex length, depth = 1;
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_length));
+	length = (txIndex)fxToLength(the, the->stack);
+	mxPop();
+	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0)))
+		depth = (txIndex)fxToLength(the, mxArgv(0));
+	fxCreateArraySpecies(the, 0);
+	fx_Array_prototype_flatAux(the, mxThis, length, 0, depth, C_NULL);
+}
+
+txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex length, txIndex start, txIndex depth, txSlot* function)
+{
+	txSlot* item;
+	txIndex index = 0;
+	while (index < length) {
+		mxPushSlot(source);
+		if (fxHasIndex(the, index)) {
+			/* ARG0 */
+			mxPushSlot(source);
+			fxGetIndex(the, index);
+			if (function) {
+				/* ARG1 */
+				mxPushUnsigned(index);
+				/* ARG2 */
+				mxPushSlot(mxThis);
+				/* ARGC */
+				mxPushInteger(3);
+				/* THIS */
+				if (mxArgc > 1)
+					mxPushSlot(mxArgv(1));
+				else
+					mxPushUndefined();
+				/* FUNCTION */
+				mxPushReference(function);
+				fxCall(the);
+			}
+			item = the->stack;
+			if ((depth > 0) && mxIsReference(item) && fxIsArray(the, fxToInstance(the, item))) {
+				txIndex itemLength;
+				mxPushSlot(item);
+				fxGetID(the, mxID(_length));
+				itemLength = (txIndex)fxToLength(the, the->stack);
+				mxPop();
+				start = fx_Array_prototype_flatAux(the, item, itemLength, start, depth - 1, C_NULL);
+			}
+			else {
+				mxPushSlot(mxResult);
+				fxDefineIndex(the, start, 0, XS_GET_ONLY);
+				start++;
+			}
+		}
+		index++;
+	}
+	return start;
+}
+
+void fx_Array_prototype_flatMap(txMachine* the)
+{
+	txIndex length = (txIndex)fxGetArrayLength(the, mxThis);
+	txSlot* function = fxArgToCallback(the, 0);
+	fxCreateArraySpecies(the, 0);
+	fx_Array_prototype_flatAux(the, mxThis, length, 0, 1, function);
 }
 
 void fx_Array_prototype_forEach(txMachine* the)

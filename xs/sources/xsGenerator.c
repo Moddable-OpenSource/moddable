@@ -262,12 +262,12 @@ void fx_GeneratorFunction(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
@@ -640,12 +640,12 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);

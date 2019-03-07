@@ -661,8 +661,11 @@ void fxModule(txParser* parser)
 			fxReportParserError(parser, "invalid yield");
 			fxGetNextToken(parser);
 		}
-		else
+		else {
+			parser->flags |= mxAsyncFlag;
 			fxStatement(parser, 1);
+			parser->flags &= ~mxAsyncFlag;
+		}
 	}
 	aCount = parser->nodeCount - aCount;
 	if (aCount > 1) {
@@ -792,13 +795,14 @@ void fxExport(txParser* parser)
 			fxReportParserError(parser, "missing identifier");
 		break;
 	case XS_TOKEN_FUNCTION:
+	again2:
 		fxGetNextToken(parser);
 		if (parser->token == XS_TOKEN_MULTIPLY) {
 			fxGetNextToken(parser);
-			fxGeneratorExpression(parser, line, &symbol, 0);
+			fxGeneratorExpression(parser, line, &symbol, flag);
 		}
 		else
-			fxFunctionExpression(parser, line, &symbol, 0);
+			fxFunctionExpression(parser, line, &symbol, flag);
 		if (symbol) {
 			fxPushSymbol(parser, symbol);
 			fxSwapNodes(parser);
@@ -879,6 +883,14 @@ void fxExport(txParser* parser)
 		fxSemicolon(parser);
 		break;
 	default:
+		if ((parser->token == XS_TOKEN_IDENTIFIER) && (parser->symbol == parser->asyncSymbol) && (!parser->escaped)) {
+			fxGetNextToken2(parser);
+			if ((!parser->crlf2) && (parser->token2 == XS_TOKEN_FUNCTION)) {
+				fxGetNextToken(parser);
+				flag = mxAsyncFlag;
+				goto again2;					
+			}
+		}
 		fxReportParserError(parser, "invalid export %s", gxTokenNames[parser->token]);
 		fxGetNextToken(parser);
 		break;
@@ -2122,6 +2134,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	txUnsigned flags = parser->flags;
+	parser->flags |= mxStrictFlag;
 	fxMatchToken(parser, XS_TOKEN_CLASS);
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxPushSymbol(parser, parser->symbol);
@@ -2131,7 +2144,6 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	}
 	else
 		fxPushNULL(parser);
-	parser->flags |= mxStrictFlag;
 	if (parser->token == XS_TOKEN_EXTENDS) {
 		fxGetNextToken(parser);
 		fxCallExpression(parser);
@@ -2165,6 +2177,8 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			txToken aToken1;
 			txToken aToken2;
 			txUnsigned flag;
+			if (parser->token == XS_TOKEN_SEMICOLON)
+				fxGetNextToken(parser);
 			if (parser->token == XS_TOKEN_RIGHT_BRACE)
 				break;
 			if (parser->token == XS_TOKEN_STATIC) {
@@ -2176,9 +2190,9 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			fxPropertyName(parser, &aSymbol, &aToken0, &aToken1, &aToken2, &flag);
 			if (aStaticFlag && (aSymbol == parser->prototypeSymbol))
 				fxReportParserError(parser, "invalid static prototype");
-			if (aSymbol == parser->constructorSymbol) {
+			if ((aStaticFlag == 0) && (aSymbol == parser->constructorSymbol)) {
 				fxPopNode(parser); // symbol
-				if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER)) 
+				if (constructor || aStaticFlag || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER) || (flag & mxAsyncFlag)) 
 					fxReportParserError(parser, "invalid constructor");
 				fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | ((heritageFlag) ? mxDerivedFlag : mxBaseFlag));
 				constructor = fxPopNode(parser);
@@ -2199,7 +2213,6 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 					parser->root->flags |= mxMethodFlag;
 				aCount++;
 			}
-			fxSemicolon(parser);
 		}
 	}
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);

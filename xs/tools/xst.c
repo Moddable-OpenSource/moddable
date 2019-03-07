@@ -647,7 +647,7 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// @@ skip test cases beyond 8th...
+	// @@ skip test cases beyond 2019...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
@@ -656,18 +656,21 @@ void fxRunFile(txContext* context, char* path)
 			if (!strcmp((char*)node->data.scalar.value, "class-fields")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
 			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
+			||	!strcmp((char*)node->data.scalar.value, "class-methods-private")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-fields-private")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-fields-public")
+			||	!strcmp((char*)node->data.scalar.value, "class-static-methods-private")
+			||	!strcmp((char*)node->data.scalar.value, "dynamic-import")
+			||	!strcmp((char*)node->data.scalar.value, "globalThis")
+			||	!strcmp((char*)node->data.scalar.value, "hashbang")
+			||	!strcmp((char*)node->data.scalar.value, "export-star-as-namespace-from-module")
+			||	!strcmp((char*)node->data.scalar.value, "import.meta")
+			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
-			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
-			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.prototype.description")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -749,17 +752,20 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	{
 		xsTry {
 			txSlot* slot;
+			txSlot* agent;
 
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
+			
+			agent = the->stack;
 			
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
+			slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
 			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
@@ -767,8 +773,6 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
 			slot->kind = the->stack->kind;
 			slot->value = the->stack->value;
-			the->stack++;
-			
 			the->stack++;
 		
 			fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
@@ -799,7 +803,15 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
+				
+				mxPushSlot(agent);
+				fxGetID(the, xsID("broadcast"));
+				mxPushSlot(agent);
+				fxSetID(the, xsID("safeBroadcast"));
+				mxPop();
 			}
+			the->stack++;
+			
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
@@ -868,6 +880,10 @@ int fxStringEndsWith(const char *string, const char *suffix)
 
 void fx_agent_broadcast(xsMachine* the)
 {
+	if (xsIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
+		xsArg(0) = xsGet(xsArg(0), xsID("buffer"));
+	}
+
     fxLockMutex(&(gxAgentCluster.dataMutex));
 	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
