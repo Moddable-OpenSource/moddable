@@ -1480,10 +1480,11 @@ txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b)
 
 txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-	if (b->sign) {
+#ifdef mxRun
+	if (b->sign)
 		mxRangeError("negative exponent");
-	}
-	else if (fxBigInt_iszero(b)) {
+#endif
+	if (fxBigInt_iszero(b)) {
 		if (r == NULL)
 			r = fxBigInt_alloc(the, 1);
 		else {
@@ -1573,8 +1574,10 @@ txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
 
 txBigInt *fxBigInt_div(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b)
 {
+#ifdef mxRun
 	if (fxBigInt_iszero(b))
 		mxRangeError("zero divider");
+#endif
 	q = fxBigInt_udiv(the, q, a, b, C_NULL);
 	if (!fxBigInt_iszero(q)) {
 		if (a->sign)
@@ -1602,8 +1605,10 @@ txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
 	txBigInt *q;
+#ifdef mxRun
 	if (fxBigInt_iszero(b))
 		mxRangeError("zero divider");
+#endif
 	if (r == NULL)
 		r = fxBigInt_alloc(the, MIN(a->size, b->size));
 	q = fxBigInt_udiv(the, NULL, a, b, &r);
