@@ -301,6 +301,7 @@ void fx_Date_parse(txMachine* the)
 	txInteger aValue;
 	txInteger aLength;
 	txInteger i;
+	txInteger yearSign = 1;
 		
 	if (mxArgc < 1)
 		goto fail;
@@ -344,8 +345,6 @@ void fx_Date_parse(txMachine* the)
 			
 		else if ((c == '-') | (c == '+')) {
             txInteger aSign;
-			if ((aDelta != 0) && (aDelta != -1))
-				goto fail;
 			if (c == '-')	
 				aSign = -1;
 			else
@@ -353,23 +352,46 @@ void fx_Date_parse(txMachine* the)
 			c = c_read8(aString++);
 			if (('0' <= c) && (c <= '9')) {
 				aValue = fx_Date_parse_number(&c, &aString);
-				if (c == ':') {
-					aDelta = 60 * aValue;
+				if (c == '-') {
+					if (dt.year >= 0)
+						goto fail;
+					dt.year = aValue;
+					yearSign = aSign;
 					c = c_read8(aString++);
 					if (('0' <= c) && (c <= '9')) {
-						aDelta += fx_Date_parse_number(&c, &aString);
+						dt.month = fx_Date_parse_number(&c, &aString) - 1;
+						if (c == '-') {
+							c = c_read8(aString++);
+							if (('0' <= c) && (c <= '9'))
+								dt.date = fx_Date_parse_number(&c, &aString);
+							else
+								dt.date = 1;
+						}
 					}
+					else
+						dt.month = 0;
 				}
 				else {
-					if (aValue < 24)
-						aDelta = aValue * 60;
-					else
-						aDelta = (aValue % 100) + ((aValue / 100) * 60);
+					if ((aDelta != 0) && (aDelta != -1))
+						goto fail;
+					if (c == ':') {
+						aDelta = 60 * aValue;
+						c = c_read8(aString++);
+						if (('0' <= c) && (c <= '9')) {
+							aDelta += fx_Date_parse_number(&c, &aString);
+						}
+					}
+					else {
+						if (aValue < 24)
+							aDelta = aValue * 60;
+						else
+							aDelta = (aValue % 100) + ((aValue / 100) * 60);
+					}
+					aDelta *= aSign;
 				}
 			}
 			else
 				goto fail;
-			aDelta *= aSign;
 		}		
 		else if (('0' <= c) && (c <= '9')) {
 			aValue = fx_Date_parse_number(&c, &aString);
@@ -519,8 +541,8 @@ void fx_Date_parse(txMachine* the)
 		else
 			goto fail;
 	}
-	if (dt.year < 0)
-		goto fail;
+   if (dt.year < 0)
+       goto fail;
 	if (dt.month < 0)
 		dt.month = 0;
 	if (dt.date < 0)
@@ -535,6 +557,7 @@ void fx_Date_parse(txMachine* the)
         dt.seconds = 0;
     if (dt.milliseconds < 0)
         dt.milliseconds = 0;
+    dt.year *= yearSign;
 	mxResult->value.number = fxDateMerge(&dt, (aDelta != -1) ? 1 : 0);
 	if (aDelta != -1)
 		mxResult->value.number -= (txNumber)aDelta * 60000.0;

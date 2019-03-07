@@ -1831,7 +1831,7 @@ void fx_TypedArray_prototype_map(txMachine* the)
 			fxCallTypedArrayItem(the, function, dispatch, view, data, index, C_NULL);
 			if (resultData->value.arrayBuffer.address == C_NULL)
 				mxTypeError("detached buffer");
-			(*dispatch->value.typedArray.dispatch->setter)(the, resultData, resultView->value.dataView.offset + (index * resultDispatch->value.typedArray.dispatch->size), the->stack, EndianNative);
+			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultData, resultView->value.dataView.offset + (index * resultDispatch->value.typedArray.dispatch->size), the->stack, EndianNative);
 			the->stack++;
 			index++;
 		}

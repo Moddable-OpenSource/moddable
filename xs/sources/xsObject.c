@@ -326,6 +326,11 @@ void fx_Object_prototype_toString(txMachine* the)
 		instance = mxSymbolPrototype.value.reference;
 		tag = "Symbol";
 		break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		instance = mxBigIntPrototype.value.reference;
+		tag = "BigInt";
+		break;
 	case XS_REFERENCE_KIND:
 		instance = mxThis->value.reference;
 		if (fxIsArray(the, instance))
@@ -364,6 +369,10 @@ void fx_Object_prototype_toString(txMachine* the)
 					case XS_STRING_KIND:
 					case XS_STRING_X_KIND:
 						tag = "String";
+						break;
+					case XS_BIGINT_KIND:
+					case XS_BIGINT_X_KIND:
+						tag = "BigInt";
 						break;
 					case XS_PROXY_KIND:
 						while ((target = slot->value.proxy.target)) {

@@ -1085,6 +1085,24 @@ Code points vs code units.
 	built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.js
 	
 One realm.
+
+	built-ins/Function/prototype/toString/method-computed-property-name.js
+
+Invalid test.
+
+	built-ins/JSON/stringify/bigint-tojson-receiver.js
+
+When calling a member, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
+
+	built-ins/RegExp/prototype/dotAll/cross-realm.js
+	built-ins/RegExp/prototype/global/cross-realm.js
+	built-ins/RegExp/prototype/ignoreCase/cross-realm.js
+	built-ins/RegExp/prototype/multiline/cross-realm.js
+	built-ins/RegExp/prototype/source/cross-realm.js 
+	built-ins/RegExp/prototype/sticky/cross-realm.js
+	built-ins/RegExp/prototype/unicode/cross-realm.js
+	
+One realm.
 		
 	built-ins/RegExp/dotall/with-dotall.js
 	built-ins/RegExp/dotall/without-dotall.js
@@ -1112,6 +1130,10 @@ Code points vs code units.
 	
 One realm.
 
+	built-ins/TypedArray/stability.js
+	
+Sorting typed arrays is unstable.	
+	
 ### Annex B
 
 	annexB/built-ins/String/prototype/substr/surrogate-pairs.js
