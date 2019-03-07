@@ -1374,7 +1374,7 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 
 void fx_Array_prototype_flatMap(txMachine* the)
 {
-	txNumber length = fxGetArrayLength(the, mxThis);
+	txIndex length = (txIndex)fxGetArrayLength(the, mxThis);
 	txSlot* function = fxArgToCallback(the, 0);
 	fxCreateArraySpecies(the, 0);
 	fx_Array_prototype_flatAux(the, mxThis, length, 0, 1, function);
