@@ -418,6 +418,7 @@ void initWiFi(void)
 		tcpip_adapter_init();
 		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
 		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+		esp_wifi_set_mode(WIFI_MODE_NULL);
 		gWiFiState = 0;
 	}
 
