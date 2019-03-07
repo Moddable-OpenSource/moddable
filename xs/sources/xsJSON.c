@@ -285,7 +285,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			theParser->number = fxStringToNumber(the->dtoa, the->nameBuffer, 0);
 			theParser->integer = (txInteger)theParser->number;
 			number = theParser->integer;
-			if (theParser->number == number)
+			if ((theParser->number == number) && (theParser->number != -0))
 				theParser->token = XS_JSON_TOKEN_INTEGER;
 			else
 				theParser->token = XS_JSON_TOKEN_NUMBER;
