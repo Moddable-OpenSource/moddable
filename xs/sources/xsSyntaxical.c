@@ -795,13 +795,14 @@ void fxExport(txParser* parser)
 			fxReportParserError(parser, "missing identifier");
 		break;
 	case XS_TOKEN_FUNCTION:
+	again2:
 		fxGetNextToken(parser);
 		if (parser->token == XS_TOKEN_MULTIPLY) {
 			fxGetNextToken(parser);
-			fxGeneratorExpression(parser, line, &symbol, 0);
+			fxGeneratorExpression(parser, line, &symbol, flag);
 		}
 		else
-			fxFunctionExpression(parser, line, &symbol, 0);
+			fxFunctionExpression(parser, line, &symbol, flag);
 		if (symbol) {
 			fxPushSymbol(parser, symbol);
 			fxSwapNodes(parser);
@@ -882,6 +883,14 @@ void fxExport(txParser* parser)
 		fxSemicolon(parser);
 		break;
 	default:
+		if ((parser->token == XS_TOKEN_IDENTIFIER) && (parser->symbol == parser->asyncSymbol) && (!parser->escaped)) {
+			fxGetNextToken2(parser);
+			if ((!parser->crlf2) && (parser->token2 == XS_TOKEN_FUNCTION)) {
+				fxGetNextToken(parser);
+				flag = mxAsyncFlag;
+				goto again2;					
+			}
+		}
 		fxReportParserError(parser, "invalid export %s", gxTokenNames[parser->token]);
 		fxGetNextToken(parser);
 		break;
