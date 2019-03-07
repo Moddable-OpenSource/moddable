@@ -329,7 +329,7 @@ void fx_Object_prototype_toString(txMachine* the)
 	case XS_BIGINT_KIND:
 	case XS_BIGINT_X_KIND:
 		instance = mxBigIntPrototype.value.reference;
-		tag = "BigInt";
+		tag = "Object";
 		break;
 	case XS_REFERENCE_KIND:
 		instance = mxThis->value.reference;
@@ -372,7 +372,7 @@ void fx_Object_prototype_toString(txMachine* the)
 						break;
 					case XS_BIGINT_KIND:
 					case XS_BIGINT_X_KIND:
-						tag = "BigInt";
+						tag = "Object";
 						break;
 					case XS_PROXY_KIND:
 						while ((target = slot->value.proxy.target)) {
