@@ -140,6 +140,7 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		txBoolean inPrintf; \
 		txBoolean debugNotifyOutstanding; \
 		txBoolean DEBUG_LOOP; \
+		uint8_t debugConnectionVerified; \
 		DebugFragment debugFragments;
 #else
 	#define mxMachineDebug

@@ -691,10 +691,6 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	xsSetContext(result, NULL);
 
-#ifdef mxInstrument
-	espInitInstrumentation(result);
-#endif
-
 	return result;
 }
 
@@ -719,6 +715,10 @@ void mc_setup(xsMachine *the)
 	txPreparation *preparation = xsPreparationAndCreation(NULL);
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
+
+#ifdef mxInstrument
+	espInitInstrumentation(the);
+#endif
 
 	gSetupPending = 1;
 

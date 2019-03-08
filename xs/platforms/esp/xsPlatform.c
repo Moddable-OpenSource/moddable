@@ -124,6 +124,7 @@ void fx_putc(void *refcon, char c)
 					if (!c) break;
 					ESP_putc(c);
 				}
+				mxDebugMutexGive();
 			}
 			the->inPrintf = false;
 			return;
@@ -135,6 +136,8 @@ void fx_putc(void *refcon, char c)
 
 		the->inPrintf = true;
 		if (kSerialConnection == the->connection) {
+			mxDebugMutexTake();
+
 			// write xsbug log header
 			static const char *xsbugHeader = "<xsbug><log>";
 			const char *cp = xsbugHeader;
@@ -394,6 +397,7 @@ void fxDisconnect(txMachine* the)
 		}
 		else {
 			fx_putpi(the, '-', true);
+			the->debugConnectionVerified = 0;
 			//@@ clear debug fragments?
 		}
 		the->connection = NULL;
@@ -476,8 +480,7 @@ void fxReceive(txMachine* the)
 		mxDebugMutexGive();
 	}
 	else {
-		static uint8_t forever = 0;
-		uint32_t timeout = forever ? 0 : (modMilliseconds() + 2000);
+		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
 		while (true) {
 			if (timeout && (timeout < modMilliseconds())) {
@@ -500,7 +503,7 @@ void fxReceive(txMachine* the)
 				break;
 			}
 		}
-		forever = 1;
+		the->debugConnectionVerified = 1;
 	}
 }
 
@@ -678,13 +681,17 @@ void fxSend(txMachine* the, txBoolean more)
 			tcp_output(pcb);
 	}
 	else {
-		char *c = the->echoBuffer;
-		txInteger count = the->echoOffset;
+		char *c;
+		txInteger count;
+
 		if (!the->inPrintf) {
 			mxDebugMutexTake();
 			fx_putpi(the, '.', false);
 		}
 		the->inPrintf = more;
+
+		c = the->echoBuffer;
+		count = the->echoOffset;
 		while (count--)
 			ESP_putc(*c++);
 
