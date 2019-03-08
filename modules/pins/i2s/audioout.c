@@ -412,7 +412,7 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 4096, out, 10, &out->task);		// 2048 should be sufficient, this is defensive
+	xTaskCreate(audioOutLoop, "audioOut", 2048 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
 	if (!out->buffer32)
@@ -1017,7 +1017,7 @@ DWORD WINAPI directSoundProc(LPVOID lpParameter)
 void audioOutLoop(void *pvParameter)
 {
 	modAudioOut out = pvParameter;
-	uint8_t installed = false;
+	uint8_t installed = false, stopped = true;
 
 #if !MODDEF_AUDIOOUT_I2S_DAC
 	i2s_config_t i2s_config = {
@@ -1060,13 +1060,17 @@ void audioOutLoop(void *pvParameter)
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
 
-			if (installed) {
-#if MODDEF_AUDIOOUT_I2S_DAC
-				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
-#endif
-				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
-				installed = false;
+			if (!stopped) {
+				i2s_stop(MODDEF_AUDIOOUT_I2S_NUM);
+				stopped = true;
 			}
+//			if (installed) {
+//#if MODDEF_AUDIOOUT_I2S_DAC
+//				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+//#endif
+//				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+//				installed = false;
+//			}
 
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 			if (kStateTerminated == newState)
@@ -1085,6 +1089,11 @@ void audioOutLoop(void *pvParameter)
 			i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
 #endif
 			installed = true;
+			stopped = false;
+		}
+		else if (stopped) {
+			stopped = false;
+			i2s_start(MODDEF_AUDIOOUT_I2S_NUM);
 		}
 
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
