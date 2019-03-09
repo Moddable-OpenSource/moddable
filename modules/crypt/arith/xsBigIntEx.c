@@ -47,6 +47,12 @@
 #ifndef MIN
 #define MIN(a, b)	((a) <= (b) ? (a) : (b))
 #endif
+#ifndef true
+#define true (1)
+#endif
+#ifndef false
+#define false (0)
+#endif
 
 /*
  * common functions
