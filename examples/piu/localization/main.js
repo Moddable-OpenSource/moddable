@@ -122,7 +122,7 @@ let LocalizationApplication = Application.template($ => ({
 }));
 
 export default function () {
-	new LocalizationApplication(null, { touchCount:1 });
+	new LocalizationApplication(null, { touchCount:1, displayListLength: 2048 });
 }
 
 
