@@ -1122,7 +1122,7 @@ void PiuCLUT_get_colors(xsMachine* the)
 	xsSet(xsResult, xsID_length, xsInteger(16));
 	xsCall0(xsResult, xsID_fill);
 	while (i < 16) {
-		uint16_t src = *clut;
+		uint16_t src = c_read8(clut);
 		uint8_t r = src >> 11;
 		uint8_t g = (src >> 5) & 0x3F;
 		uint8_t b = src & 0x1F;
