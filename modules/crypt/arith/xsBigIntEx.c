@@ -47,12 +47,6 @@
 #ifndef MIN
 #define MIN(a, b)	((a) <= (b) ? (a) : (b))
 #endif
-#ifndef true
-#define true (1)
-#endif
-#ifndef false
-#define false (0)
-#endif
 
 /*
  * common functions
@@ -547,11 +541,11 @@ void fxBigInt_ec_double(txMachine *the, txECPoint *r, txECPoint *a, txECParam *e
 	txBigInt *t1, *t2, *t3, *t4, *t5, *t6, *lambda, *rx, *ry;
 
 	if (a->identity || fxBigInt_iszero(a->y)) {
-		r->identity = true;
+		r->identity = 1;
 		return;
 	}
 
-	r->identity = false;
+	r->identity = 0;
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
@@ -629,12 +623,12 @@ void fxBigInt_ec_add(txMachine *the, txECPoint *r, txECPoint *a, txECPoint *b, t
 			return;
 		}
 		else {
-			r->identity = true;
+			r->identity = 1;
 			return;
 		}
 	}
 
-	r->identity = false;
+	r->identity = 0;
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
@@ -681,7 +675,7 @@ void fxBigInt_ec_mul(txMachine *the, txECPoint *r, txECPoint *a, txBigInt *k, tx
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-	r->identity = true;
+	r->identity = 1;
 	for (i = fxBigInt_bitsize(k); --i >= 0;) {
 		fxBigInt_ec_double(the, r, r, ec);
 		if (fxBigInt_isset(k, i))
@@ -701,7 +695,7 @@ void fxBigInt_ec_mul2(txMachine *the, txECPoint *r, txECPoint *a1, txBigInt *k1,
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-	r->identity = true;
+	r->identity = 1;
 
 	G[1] = a1;
 	G[2] = a2;
