@@ -163,6 +163,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	else {
 		fxUnstripCallback(linker, fx_Map_prototype_entries);
 		fxUnstripCallback(linker, fx_Map_prototype_entries_next);
+		fxUnstripCallback(linker, fx_Map_prototype_set);
 		if (fxIsLinkerSymbolUsed(linker, mxID(_keys))) {
 			fxUnstripCallback(linker, fx_Map_prototype_keys);
 			fxUnstripCallback(linker, fx_Map_prototype_keys_next);
@@ -180,6 +181,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripInstance(linker, the, mxSetValuesIteratorPrototype.value.reference);
 	}
 	else {
+		fxUnstripCallback(linker, fx_Set_prototype_add);
 		if (fxIsLinkerSymbolUsed(linker, mxID(_entries))) {
 			fxUnstripCallback(linker, fx_Set_prototype_entries);
 			fxUnstripCallback(linker, fx_Set_prototype_entries_next);
