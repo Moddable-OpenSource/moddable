@@ -1374,7 +1374,7 @@ void fxGetNextTokenJSON(txParser* parser)
 				fxGetNextCharacter(parser);
 				c = parser->character;
 				if ((('0' <= c) && (c <= '9')) || (c == 'e') || (c == 'E'))
-					fxGetNextNumberE(parser, 0);
+					fxGetNextNumberE(parser, 1);
 				else {
 					parser->number2 = 0;
 					parser->token2 = XS_TOKEN_NUMBER;
@@ -1407,7 +1407,7 @@ void fxGetNextTokenJSON(txParser* parser)
 		case '8':
 		case '9':
 		case '-':	
-			fxGetNextNumberE(parser, 1);
+			fxGetNextNumberE(parser, 0);
 			break;
 		case ',':
 			parser->token2 = XS_TOKEN_COMMA;
