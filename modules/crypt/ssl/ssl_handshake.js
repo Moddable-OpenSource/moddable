@@ -491,10 +491,9 @@ let handshakeProtocol = {
 				certs.push(s.readChunk(certSize, true));
 				ttlSize -= certSize + 3;
 			}
-			if ((undefined === session.options.verify) || session.options.verify) {
-				if (!session.certificateManager.verify(certs, session.options))
-					throw new Error("SSL: certificate: auth err");
-			}
+			if (!session.certificateManager.verify(certs))
+				throw new Error("SSL: certificate: auth err");
+
 /*
 			if (session.options.verifyHost) {
 				if (!this.verifyHost(session, certs[0]))

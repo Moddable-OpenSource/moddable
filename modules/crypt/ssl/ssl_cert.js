@@ -48,6 +48,7 @@ import PKCS8 from "pkcs8"
 class CertificateManager {
 	constructor(options) {
 		this.registeredCerts = [];
+		this.options = options;
 		if (options.certificate)
 			this.register(options.certificate);
 	};
@@ -95,15 +96,21 @@ class CertificateManager {
 		if (i < 0)
 			return;	// undefined
 		let data = getResource("ca" + i + ".der");
-		let validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
-		let now = Date.now();
-		if (!((validity.from < now) && (now < validity.to))) {
-			trace("date validation failed on certificate resource\n");
-			return;
+		if ((undefined === this.options.verify) || this.options.verify) {
+			let validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
+			let now = Date.now();
+			if (!((validity.from < now) && (now < validity.to))) {
+				trace("date validation failed on certificate resource\n");
+				return;
+			}
 		}
+
 		return X509.decodeSPKI(data);
 	};
 	verify(certs) {
+		if (false === this.options.verify)
+			return true;
+
 		let length = certs.length - 1, x509, validity, now = Date.now();
 
 		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
@@ -204,9 +211,11 @@ class CertificateManager {
 		return (new pk(spki, false, [] /* any oid */)).verify(H, sig);
 	};
 	register(cert) {
-		let validity = X509.decodeTBS(X509.decode(new Uint8Array(cert)).tbs).validity, now = Date.now();
-		if (!((validity.from < now) && (now < validity.to)))
-			throw new Error("date validation failed");
+		if ((undefined === this.options.verify) || this.options.verify) {
+			let validity = X509.decodeTBS(X509.decode(new Uint8Array(cert)).tbs).validity, now = Date.now();
+			if (!((validity.from < now) && (now < validity.to)))
+				throw new Error("date validation failed");
+		}
 
 		this.registeredCerts.push(cert);
 	};
