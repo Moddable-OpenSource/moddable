@@ -12,7 +12,7 @@
 		"screen": "ili9341",
 		"touch": "",
 
-		"rotation": 270,
+		"rotation": 0,
 		"format": "RGB565LE",
 		"autobacklight": false,
 
