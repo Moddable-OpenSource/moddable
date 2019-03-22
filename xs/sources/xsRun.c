@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-//#define mxTrace 1
+#define mxTrace 1
 //#define mxTraceCall 1
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
@@ -3553,38 +3553,49 @@ XS_CODE_JUMP:
 			variable = mxFrameEnvironment;
 			if (variable->kind == XS_REFERENCE_KIND) {
 				variable = variable->value.reference;
-		XS_CODE_EVAL_REFERENCE_AGAIN:
-				slot = variable->next;
-				if (slot->kind == XS_REFERENCE_KIND) {
-					slot = slot->value.reference;
-					mxSaveState;
-					index = fxIsScopableSlot(the, slot, (txID)offset);
-					mxRestoreState;
-					if (index) {
-						if (XS_CODE_GET_VARIABLE == byte) {
-							mxNextCode(3);
-							if ((XS_CODE_CALL == byte) || (XS_CODE_CALL_TAIL == byte)) {
-								mxStack->kind = XS_REFERENCE_KIND;
-								mxStack->value.reference = slot;
+				while (variable->value.instance.prototype) {
+					slot = variable->next;
+					if (slot->kind == XS_REFERENCE_KIND) {
+						slot = slot->value.reference;
+						mxSaveState;
+						index = fxIsScopableSlot(the, slot, (txID)offset);
+						mxRestoreState;
+						if (index) {
+							if (XS_CODE_GET_VARIABLE == byte) {
+								mxNextCode(3);
+								if ((XS_CODE_CALL == byte) || (XS_CODE_CALL_TAIL == byte)) {
+									mxStack->kind = XS_REFERENCE_KIND;
+									mxStack->value.reference = slot;
+								}
+								mxNextCode(-3);
 							}
-							mxNextCode(-3);
+							mxPushKind(XS_REFERENCE_KIND);
+							mxStack->value.reference = slot;
+							mxBreak;
 						}
+					}
+					else if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
 						mxPushKind(XS_REFERENCE_KIND);
-						mxStack->value.reference = slot;
+						mxStack->value.reference = variable;
 						mxBreak;
 					}
+					variable = variable->value.instance.prototype;
 				}
-				else if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
+				if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
 					mxPushKind(XS_REFERENCE_KIND);
 					mxStack->value.reference = variable;
 					mxBreak;
 				}
-				variable = variable->value.instance.prototype;
-				if (variable)
-					goto XS_CODE_EVAL_REFERENCE_AGAIN;
+				variable = variable->next;
+				if (variable->kind == XS_REFERENCE_KIND)
+					variable = variable->value.reference;
+				else
+					variable = mxGlobal.value.reference;
 			}
+			else
+				variable = mxGlobal.value.reference;
 			mxPushKind(XS_REFERENCE_KIND);
-			mxStack->value.reference = mxGlobal.value.reference;
+			mxStack->value.reference = variable;
 			mxBreak;
 		mxCase(XS_CODE_PROGRAM_ENVIRONMENT)
 			mxNextCode(1);
@@ -3598,14 +3609,26 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 		#endif
 			mxNextCode(3);
-			variable = mxClosures.value.reference;
-			if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
-				mxPushKind(XS_REFERENCE_KIND);
-				mxStack->value.reference = variable;
-				mxBreak;
+			variable = mxFrameEnvironment;
+			if (variable->kind == XS_REFERENCE_KIND) {
+				variable = variable->value.reference;
+				while ((slot = variable->value.instance.prototype))
+					variable = slot;
+				if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
+					mxPushKind(XS_REFERENCE_KIND);
+					mxStack->value.reference = variable;
+					mxBreak;
+				}
+				variable = variable->next;
+				if (variable->kind == XS_REFERENCE_KIND)
+					variable = variable->value.reference;
+				else
+					variable = mxGlobal.value.reference;
 			}
+			else
+				variable = mxGlobal.value.reference;
 			mxPushKind(XS_REFERENCE_KIND);
-			mxStack->value.reference = mxGlobal.value.reference;
+			mxStack->value.reference = variable;
 			mxBreak;
 		mxCase(XS_CODE_WITH)
 			variable = mxFrameEnvironment;

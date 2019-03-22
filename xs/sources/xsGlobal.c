@@ -168,6 +168,16 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxCopyObject), 0, XS_NO_ID);
 	mxCopyObjectFunction = *the->stack;
 	the->stack++;
+	
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Realm_prototype_get_global), C_NULL, mxID(_global), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_prototype_evaluateExpr), 1, mxID(_evaluateExpr), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_prototype_evaluateProgram), 1, mxID(_evaluateProgram), XS_DONT_ENUM_FLAG);
+	mxRealmPrototype = *the->stack;
+	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Realm), 1, mxID(_Realm), XS_DONT_ENUM_FLAG));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_makeCompartment), 1, mxID(_makeCompartment), XS_DONT_ENUM_FLAG);
+	the->stack++;
 }
 
 txSlot* fxNewGlobalInstance(txMachine* the)
@@ -811,3 +821,46 @@ void fxEncodeURI(txMachine* the, txString theSet)
 	}
 	*dst = 0;
 }
+
+void fx_Realm(txMachine* the)
+{
+}
+
+void fx_Realm_makeCompartment(txMachine* the)
+{
+	txSlot* slot;
+	mxPush(mxRealmPrototype);
+	slot = fxNewObjectInstance(the);
+	slot = slot->next = fxNewSlot(the);
+	fxNewInstance(the);
+	fxNewEnvironmentInstance(the, slot);
+	mxPullSlot(slot);
+	mxPullSlot(mxResult);
+}
+
+void fx_Realm_prototype_get_global(txMachine* the)
+{
+	txSlot* slot = fxToInstance(the, mxThis);
+	slot = slot->next;
+	slot = slot->value.reference;
+	slot = slot->next;
+	mxResult->kind = slot->kind;
+	mxResult->value = slot->value;
+}
+
+void fx_Realm_prototype_evaluateExpr(txMachine* the)
+{
+}
+
+void fx_Realm_prototype_evaluateProgram(txMachine* the)
+{
+	txStringStream stream;
+	txSlot* slot = fxToInstance(the, mxThis);
+	slot = slot->next;
+	stream.slot = mxArgv(0);
+	stream.offset = 0;
+	stream.size = c_strlen(stream.slot->value.string);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxDebugFlag), C_NULL, C_NULL, slot->value.reference, C_NULL, C_NULL);
+	mxPullSlot(mxResult);
+}
+

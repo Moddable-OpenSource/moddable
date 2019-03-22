@@ -830,6 +830,13 @@ extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
+mxExport void fx_Realm(txMachine* the);
+mxExport void fx_Realm_makeCompartment(txMachine* the);
+mxExport void fx_Realm_prototype_get_global(txMachine* the);
+mxExport void fx_Realm_prototype_evaluateExpr(txMachine* the);
+mxExport void fx_Realm_prototype_evaluateProgram(txMachine* the);
+
+
 /* xsObject.c */
 mxExport void fxCopyObject(txMachine* the);
 mxExport void fx_Object(txMachine* the);
@@ -2189,6 +2196,7 @@ enum {
 	mxProxyPrototypeStackIndex,
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
+	mxRealmPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxEvalFunctionStackIndex,
@@ -2299,6 +2307,7 @@ enum {
 #define mxProxyPrototype the->stackPrototypes[-1 - mxProxyPrototypeStackIndex]
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
 #define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
+#define mxRealmPrototype the->stackPrototypes[-1 - mxRealmPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]

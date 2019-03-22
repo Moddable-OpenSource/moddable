@@ -1103,14 +1103,28 @@ void fxRunEvalEnvironment(txMachine* the)
 
 void fxRunProgramEnvironment(txMachine* the)
 {
-	txSlot* environment = mxClosures.value.reference;
-	txSlot* global = mxGlobal.value.reference;
+	txSlot* environment = (the->frame - 1);
+	txSlot* global = C_NULL;
 	txSlot* top = the->frame - 2;
 	txSlot* middle = C_NULL;
 	txSlot* bottom = the->scope;
 	txSlot* slot;
 	txSlot* property;
 	slot = top;
+	
+	if (environment->kind == XS_REFERENCE_KIND) {
+		environment = environment->value.reference;
+		global = environment->next;
+		if (global->kind == XS_REFERENCE_KIND)
+			global = global->value.reference;
+		else
+			global = mxGlobal.value.reference;
+	}
+	else {
+		environment = mxClosures.value.reference;
+		global = mxGlobal.value.reference;
+	}
+	
 	while (slot >= bottom) {
 		if (slot->kind == XS_CLOSURE_KIND) {
 			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);

@@ -314,6 +314,8 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 				self->closureNodeCount++;
 				access->declaration = closureNode;
 			}
+			else
+				self->node->flags |= mxProgramFlag;
 		}
 	}
 	else if (self->token == XS_TOKEN_PROGRAM) {
