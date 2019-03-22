@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+===============================================================================
+Copyright (c) 2015-2018 Qualcomm Technologies, Inc.
+All Rights Reserved.
+===============================================================================
+-->
+<!--
+Copyright (c) 2018 Qualcomm Technologies, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below)
+provided that the following conditions are met:
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote products derived
+from this software without specific prior written permission.
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<tns:secimage xmlns:tns="http://www.qualcomm.com/secimage"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.qualcomm.com/secimage ../xsd/secimage.xsd">
+
+    <!-- This is for QCA4020 target -->
+    <metadata>
+        <chipset>4020</chipset>
+        <version>2.0</version>
+    </metadata>
+
+    <!--
+       See documentation on general_properties below.
+    -->
+    <general_properties>
+        <selected_signer>local_v2</selected_signer>
+        <selected_encryptor></selected_encryptor>
+        <selected_cert_config>qc_presigned_certs</selected_cert_config>
+        <cass_capability>secboot_sha2_root</cass_capability>
+
+        <key_size>2048</key_size>
+        <exponent>257</exponent>
+
+        <mrc_index>0</mrc_index>
+        <num_root_certs>1</num_root_certs>
+
+        <msm_part>0x000160E1</msm_part>
+        <oem_id>0x0000</oem_id>
+        <model_id>0x0000</model_id>
+        <debug>0x0000000000000002</debug>
+
+        <max_cert_size>2048</max_cert_size>
+        <num_certs_in_certchain>3</num_certs_in_certchain>
+
+        <revocation_enablement>0x0000000000000000</revocation_enablement>
+        <activation_enablement>0x0000000000000000</activation_enablement>
+
+		
+		<soc_hw_version>0x40030000</soc_hw_version> 
+		<in_use_soc_hw_version>1</in_use_soc_hw_version> 		
+    </general_properties>
+
+    <!--
+        ***general_properties***
+
+        The default properties for all images. These properties maybe overridden
+        per image in the 'images' section below as needed.
+
+        Supported signer are:
+        local: use local signer with test keys
+        csms: generate tosign file for csms upload (first run)
+              package csms output zip to form signed image (second run)
+        cass: use cass signer with production key
+
+        Supported encryptor are:
+        ssd_encryption: legacy encryption for OTA, supports MBN and ELF images.
+        unified_encryption_2_0: supports ELF images. Image must be signed to encrypt
+
+        Capability selected the signing key used. Currently,
+        the following two capabilities are supported. OEM IDs
+        are restricted to 0 or 1.
+
+        OEM may obtain additional capabilities from CASS support.
+
+        secboot_sha2_root : Use SHA256 signed root cert.
+                            Same as the CSMS SHA256 signed root cert.
+        secboot_sha1_root : Use SHA1 signed root cert.
+                            Same as the CSMS SHA1 signed root cert.
+
+        If SHA256 is selected, the PK_HASH_IN_FUSE needs to be blown,
+        and the ROOT CERT HASH below needs to be blown in OEM PK HASH:
+        7be49b72f9e4337223ccb84d6eccca4e61ce16e3602ac2008cb18b75babe6d09
+
+        msm_part: jtag_id for signing. (in hex)
+        oem_id: oem_id for signing. (in hex)
+        model_id: model_id for signing. (in hex)
+        debug: debug_id for signing. (in hex)
+        exponent: exponent value used in attestation key generation.
+
+        max_cert_size: Maximum size (in bytes) of one certificate.
+        key_size: Size (in bits) of the key used for signing.
+        num_certs_in_certchain: Number of certificates in the certificate chain.
+        num_root_certs: Number of root certificates in the certificate chain.
+    -->
+
+    <parsegen>
+        <!--
+        Parsegen information by default will be read from parsegen_config.xml.
+        Additional image_id's can be included here or existing image_id's may be overwritten
+        to be generated with the default image_ids.
+        -->
+    </parsegen>
+
+    <!-- Signing configurations used by secimage. -->
+    <signing>
+        <signer_attributes>
+            <!--
+                Use of CASS signer will require additional license agreement
+                and contract. Hardware token is required for access.
+            -->
+            <cass_signer_attributes>
+                <!--
+                    keystore_type: PKCS11 (hardware token)
+                    token_password: User will be prompted if password
+                                    is an empty string
+                    token_driver_home: Safenet driver location
+                -->
+                <user_identity>
+                    <keystore_type>PKCS11</keystore_type>
+                    <token_password></token_password>
+                    <token_driver_home>
+                        <windows>C:/WINDOWS/SYSTEM32/eTpkcs11.dll</windows>
+                        <linux>/usr/lib/libeTPkcs11.so</linux>
+                    </token_driver_home>
+                </user_identity>
+            </cass_signer_attributes>
+        </signer_attributes>
+    </signing>
+
+    <post_process>
+        <pil_splitter>$(META_BUILD)/common/tools/misc/pil-splitter.py</pil_splitter>
+    </post_process>
+
+    <data_provisioning>
+        <base_path>./../../../../../sectools/resources/data_prov_assets/</base_path>
+    </data_provisioning>
+
+    <images_list>
+        <image sign_id="m4" name="output/Quartz.elf" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000000</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="kf" name="kf.mbn" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000001</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="m0" name="../../../../../bin/cortex-m0/threadx/IOE_RAM_IMG_BRNTRI.elf" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000002</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="m4_golden" name="m4_golden.mbn" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000003</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="kf_golden" name="kf_golden.mbn" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000004</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="m0_golden" name="m0_golden.mbn" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000005</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="otp_patch_update" name="otp_patch_update.mbn" image_type="elf_has_ht">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000006</sw_id>
+            </general_properties_overrides>
+        </image>
+
+        <image sign_id="vir_addr_check" image_type="elf_vir_addr">
+            <general_properties_overrides>
+                <sw_id>0x0000000000000000</sw_id>
+            </general_properties_overrides>
+        </image>
+    </images_list>
+
+</tns:secimage>
