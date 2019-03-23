@@ -26,7 +26,6 @@ SDK_BASE = $(BASE)
 DEV_C_FLAGS = -Dqca4020
 HWCPU = cortex-m4
 FP_OPTS = -mfloat-abi=soft
-# FP_OPTS = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 HW_DEBUG_OPT = -O0 $(FP_OPTS)
 HW_OPT = -O2 $(FP_OPTS)
 
@@ -225,10 +224,6 @@ $(BIN_DIR)/xs_qca4020.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_qca4020.a $^ $(LIB_DIR)/buildinfo.c.o
 
-#	$(foreach file,$^ $(LIB_DIR)/buildinfo.c.o, $(file) $(cr) >> $(BIN_DIR)/filelist)
-#	echo $^ $(LIB_DIR)/buildinfo.c.o > $(BIN_DIR)/filelist
-#C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(call qs,$(dir)))
-
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# cc" $(<F) "(strings in flash)"
@@ -246,6 +241,7 @@ $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 	$(TOOLS_BIN)/$(TOOLS_PREFIX)-objcopy --rename-section .data.gxKeys=.rodata.gxKeys --rename-section .data.gxNames=.rodata.gxNames --rename-section .data.gxGlobals=.rodata.gxGlobals $@.unmapped $@
+
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)

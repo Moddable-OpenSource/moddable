@@ -41,10 +41,7 @@ static int debuggerSetup = 0;
 
 #include "xsmain.h"
 
-//#define DEBUG_THREAD_PRIO		8
-//#define DEBUG_THREAD_PRIO		(10)
-#define DEBUG_THREAD_PRIO		(20)		// (19)
-//#define DEBUG_THREAD_STACK_SIZE	3072
+#define DEBUG_THREAD_PRIO		(20)
 #define DEBUG_THREAD_STACK_SIZE	2048
 
 #define RCV_BUFFER_SIZE				(128)
@@ -95,10 +92,7 @@ static debuggerStruct_t	debugger;
 
 static void debuggerRxCB(uint32_t size, void *ref);
 static void debuggerTxCB(uint32_t size, void *ref);
-//void debugger_write(const char *buf, int len);
 int debugger_write_a(const char *buf, int len);
-//int ESP_getc(void);
-//void ESP_putc(int c);
 void setupDebugger();
 
 //---------
@@ -175,7 +169,6 @@ static void debug_task(void *pvParameter)
 			}
 		}
 
-//		qca4020_watchdog();
 		if (DEBUGGER_EVENT_MASK_RX1 & curSignals) {
 			qurt_signal_clear(&(debugger.event), DEBUGGER_EVENT_MASK_RX1);
 
@@ -196,12 +189,6 @@ static void debug_task(void *pvParameter)
 		// fxReceiveLoop has Watchdog reset
 		if (gRxBuf.pendingBytes)
 			qurt_signal_set(&gMainSignal, kSIG_SERVICE_DEBUGGER);	
-#if 0
-		while (gRxBuf.pendingBytes) {
-			fxReceiveLoop();
-		}
-#endif
-
 	}
 }
 
@@ -229,7 +216,6 @@ int debugger_write_a(const char *buf, int len) {
 }
 
 void debugger_write(const char *buf, int len) {
-#if 1
 	while (len) {
 		int amt;
 		amt = debugger_write_a(buf, len);
@@ -241,24 +227,6 @@ void debugger_write(const char *buf, int len) {
 			modDelayMilliseconds(1);
 		}
 	}
-#else
-	modCriticalSectionBegin();
-	while (len--) {
-		while (gTxBuf.pendingBytes >= CIRC_BUF_SIZE) {
-    		int         ret;
-		    uint32_t    attr;
-			modCriticalSectionEnd();
-			attr = QURT_SIGNAL_ATTR_WAIT_ANY | QURT_SIGNAL_ATTR_CLEAR_MASK;
-			ret = qurt_signal_wait(&(debugger.event), DEBUGGER_EVENT_MASK_TX, attr);
-			modCriticalSectionBegin();
-		}
-		gTxBuf.data[gTxBuf.writeIdx] = *buf++;
-		gTxBuf.writeIdx = (gTxBuf.writeIdx + 1) % CIRC_BUF_SIZE;
-		gTxBuf.pendingBytes++;
-	}
-	modCriticalSectionEnd();
-	qurt_signal_set(&(debugger.event), DEBUGGER_EVENT_MASK_TX);
-#endif
 }
 
 void modLog_transmit(const char *msg)
@@ -282,25 +250,13 @@ void modLog_transmit(const char *msg)
 }
 
 void ESP_putc(int c) {
-#if 0
-//	while (gTxBuf.pendingBytes >= CIRC_BUF_SIZE)
-//		yield();
-	if (gTxBuf.pendingBytes >= CIRC_BUF_SIZE)
-		gTxBuf.overflow = 1;
-	modCriticalSectionBegin();
-	gTxBuf.data[gTxBuf.writeIdx] = c;
-	gTxBuf.writeIdx = (gTxBuf.writeIdx + 1) % CIRC_BUF_SIZE;
-	gTxBuf.pendingBytes++;
-	modCriticalSectionEnd();
-	qurt_signal_set(&(debugger.event), DEBUGGER_EVENT_MASK_TX);
-#else
 	char ch = c;
 	debugger_write(&ch, 1);
-#endif
 }
 
 int ESP_getc(void) {
 	int ch;
+	
 	if (gRxBuf.pendingBytes < 1)
 		return -1;
 
@@ -311,7 +267,6 @@ int ESP_getc(void) {
 	gRxBuf.pendingBytes--;
 	modCriticalSectionEnd();
 
-//	qurt_signal_set(&(debugger.event), DEBUGGER_EVENT_MASK_RX);
 	return ch;
 }
 
@@ -344,7 +299,7 @@ static void debuggerRxCB(uint32_t size, void *ref) {
 
 static void debuggerTxCB(uint32_t size, void *ref) {
 	modCriticalSectionBegin();
-debugger.txReallySent += size;
+	debugger.txReallySent += size;
 	gPendingTx -= size;
 	gTxBuf.readIdx = (gTxBuf.readIdx + size) % CIRC_BUF_SIZE;
 	gTxBuf.pendingBytes -= size;

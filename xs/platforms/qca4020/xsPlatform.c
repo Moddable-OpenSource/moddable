@@ -45,8 +45,6 @@
 	extern void espDescribeInstrumentation(txMachine *the);
 #endif
 
-int debugger_write_a(const char *buf, uint32_t len);
-
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void*)0x87654321)
 
@@ -92,11 +90,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 	modMachineTaskUninit(the);
 }
 
-#if 0
-void fx_putc(void *unused, char c) {
-	ESP_putc(c);
-}
-#else
 void fx_putc(void *refcon, char c)
 {
     txMachine* the = refcon;
@@ -106,16 +99,7 @@ void fx_putc(void *refcon, char c)
             if ((txSocket)kSerialConnection == the->connection) {
                 // write xsbug log trailer
                 const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
-#if 1
 				debugger_write(xsbugTrailer, c_strlen(xsbugTrailer));
-#else
-                const char *cp = xsbugTrailer;
-                while (true) {
-                    char c = c_read8(cp++);
-                    if (!c) break;
-                    ESP_putc(c);
-                }
-#endif
             }
             the->inPrintf = false;
             return;
@@ -130,22 +114,12 @@ void fx_putc(void *refcon, char c)
             // write xsbug log header
             static const char *xsbugHeader = "<xsbug><log>";
 			fx_putpi(the, '.', true);
-#if 1
 			debugger_write(xsbugHeader, c_strlen(xsbugHeader));
-#else
-            const char *cp = xsbugHeader;
-            while (true) {
-                char c = c_read8(cp++);
-                if (!c) break;
-                ESP_putc(c);
-            }
-#endif
         }
     }
 
     ESP_putc(c);
 }
-#endif
 
 void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 {
@@ -153,37 +127,18 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     static const char *xsbugHeaderEnd = "?>";
     static const char *gHex = "0123456789ABCDEF";
     signed char i;
-#if 1
+
 	debugger_write(xsbugHeaderStart, c_strlen(xsbugHeaderStart));
-#else
-    const char *cp = xsbugHeaderStart;
-    while (true) {
-        char c = c_read8(cp++);
-        if (!c) break;
-        ESP_putc(c);
-    }
-#endif
 
     ESP_putc(separator);
 
     for (i = 7; i >= 0; i--)
         ESP_putc(c_read8(gHex + ((((uintptr_t)the) >> (i << 2)) & 0x0F)));
 
-#if 1
 	debugger_write(xsbugHeaderEnd, c_strlen(xsbugHeaderEnd));
-#else
-    cp = xsbugHeaderEnd;
-    while (true) {
-        char c = c_read8(cp++);
-        if (!c) break;
-        ESP_putc(c);
-    }
-#endif
 
     if (trailingcrlf) {
 		debugger_write("\r\n", 2);
-//        ESP_putc('\r');
-//     ESP_putc('\n');
     }
 }
 
@@ -208,18 +163,7 @@ void fxConnect(txMachine* the)
 		if (!once) {
 			static const char *piReset = "<?xs-00000000?>\r\n";
 
-//			modDelayMilliseconds(250);
-
-#if 1
 			debugger_write(piReset, c_strlen(piReset));
-#else
-			const char *cp = piReset;
-			while (true) {
-				char c = c_read8(cp++);
-				if (!c) break;
-				ESP_putc(c);
-			}
-#endif
 
 			once = true;
 		}
@@ -251,8 +195,6 @@ txBoolean fxIsConnected(txMachine* the)
 txBoolean fxIsReadable(txMachine* the)
 {
 	if ((txSocket)kSerialConnection == the->connection) {
-//@@?
-//			fxReceiveLoop();
 		return NULL != the->debugFragments;
 	}
 
@@ -315,7 +257,6 @@ void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t mess
 	}
 }
 
-uint32_t gIter = 0;
 void fxReceiveLoop(void)
 {
 	static const char *piBegin = "\r\n<?xs.";
@@ -327,7 +268,7 @@ void fxReceiveLoop(void)
 	static uint8_t bufferedBytes = 0;
 
 	qca4020_watchdog();
-gIter++;
+
 	mxDebugMutexTake();
 
 	while (true) {
@@ -421,7 +362,6 @@ gIter++;
 
 void fxSend(txMachine* the, txBoolean more)
 {
-#if 1
 	if ((txSocket)kSerialConnection == the->connection) {
 		char *c = the->echoBuffer;
 		txInteger count = the->echoOffset;
@@ -435,22 +375,6 @@ void fxSend(txMachine* the, txBoolean more)
 		if (!more)
 			mxDebugMutexGive();
 	}
-#else
-	if ((txSocket)kSerialConnection == the->connection) {
-		char *c = the->echoBuffer;
-		txInteger count = the->echoOffset;
-		if (!the->inPrintf) {
-			mxDebugMutexTake();
-			fx_putpi(the, '.', false);
-		}
-		the->inPrintf = more;
-		while (count--)
-			ESP_putc(*c++);
-
-		if (!more)
-			mxDebugMutexGive();
-	}
-#endif
 }
 
 #endif /* mxDebug */

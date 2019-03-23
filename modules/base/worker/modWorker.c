@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,7 +17,6 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 
 #include "xsmc.h"
 
@@ -57,7 +56,7 @@ struct modWorkerRecord {
 #if ESP32 || qca4020
 	TaskHandle_t			task;
 #endif
-	char						module[1];
+	char					module[1];
 };
 
 typedef struct modWorkerRecord modWorkerRecord;

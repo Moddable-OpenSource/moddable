@@ -1,3 +1,5 @@
+#ifndef __XSMAIN__
+#define __XSMAIN__
 
 #include <stdio.h>
 #include "qapi_types.h"
@@ -9,4 +11,6 @@
 #define kSIG_SERVICE_DEBUGGER	0x00000004
 
 extern qurt_signal_t gMainSignal;
+
+#endif
 

@@ -33,13 +33,10 @@
 #include "qurt_thread.h"
 
 #define xsMain_THREAD_PRIORITY		(20)
-// #define xsMain_THREAD_STACK_SIZE	(1024 * 14)
 #define xsMain_THREAD_STACK_SIZE	(1024 * 20)
 
 
 xsMachine *gThe = NULL;        // the one XS6 virtual machine running
-
-//uint8_t triggerDebugCommand(xsMachine *the);
 
 xsCallback xsHostModuleAt(xsIndex i)
 {

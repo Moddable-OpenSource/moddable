@@ -25,7 +25,6 @@
 #include "qurt_error.h"
 #include "qurt_thread.h"
 
-//#define RESOLVER_THREAD_PRIORITY	9
 #define RESOLVER_THREAD_PRIORITY	19
 #define RESOLVER_THREAD_STACK_SIZE	2048
 

@@ -128,17 +128,10 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void *waiterData;		\
 	void *waiterLink;
 
-//	void* readers[kDebugReaderCount]; \
-//	uint16_t readerOffset; \
-
 #endif /* __XS6PLATFORMMINIMAL__ */
 
 int ESP_getc(void);
 void ESP_putc(int c);
-
-extern void qca4020_delay(uint32_t ms);
-extern uint32_t qca4020_milliseconds();
-extern void qca4020_watchdog();
 
 #define delay(x)            qca4020_delay(x)
 

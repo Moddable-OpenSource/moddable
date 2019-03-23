@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,6 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
 #include "xsmc.h"
 #include "xsqca4020.h"
 #include "mc.xs.h"
@@ -30,7 +31,6 @@
 #include "qurt_thread.h"
 #include "qurt_signal.h"
 
-//#define PING_THREAD_PRIORITY	9
 #define PING_THREAD_PRIORITY	19
 #define PING_THREAD_STACK_SIZE	2048
 
