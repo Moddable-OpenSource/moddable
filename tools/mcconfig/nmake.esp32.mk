@@ -98,6 +98,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsArguments.o \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
+	$(LIB_DIR)\xsBigInt.o \
 	$(LIB_DIR)\xsBoolean.o \
 	$(LIB_DIR)\xsCode.o \
 	$(LIB_DIR)\xsCommon.o \
