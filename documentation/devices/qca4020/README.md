@@ -30,6 +30,8 @@ This document describes how to set up and build Moddable applications for the Qu
   * [Launch gdb](#launch-gdb)
   * [Boot to App](#boot-to-app)
 * [Notes and troubleshooting](#notes-and-troubleshooting)
+* [Example apps with qca4020 support](#example-apps-with-qca4020-support)
+
 * [Reference Documentation](#reference-documentation)
 
 
@@ -394,6 +396,32 @@ The board will boot into the app instead of waiting for `gdb`.
 * The lower USB port provides JTAG connection (`/dev/ttyUSB0` for JTAG and `/dev/ttyUSB1` for serial output (and `xsbug`)
 
 
+## Example apps with qca4020 support
+
+App | Feature 
+--- | ------- 
+helloworld | xsbug 
+timers | timers
+files | files
+preference | preferences
+networkpromises | promises
+network/ble/colorific | BLE 
+network/ble/colorific | BLE 
+network/ble/heart-rate-monitor | BLE
+network/ble/security-server |
+network/ble/wifi-connection-server |
+httpgetjson | http, json parsing
+httpserver | http server
+network/ping | 
+socketreadwrite | network socket demonstration
+wifiaccesspoint | configure device to act as an access point
+wifiscan | scan for SSIDs
+httpsgetstreaming | https
+piu/balls | animation on ili9341
+piu/cards | animation on ili9341
+images | animation, image decompress
+mini-weather | piu application to fetch weather conditions
+text | text rendering
 
 ### Reference Documentation
 
