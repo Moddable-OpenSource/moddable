@@ -23,4 +23,7 @@
 			"$(MODULES)/crypt/data/ca170",
 		]
 	},
+	"config": {
+		"sntp": "pool.ntp.org",
+	},
 }

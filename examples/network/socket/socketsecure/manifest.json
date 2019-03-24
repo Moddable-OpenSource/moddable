@@ -16,4 +16,7 @@
 			"$(MODULES)/crypt/data/ca23",
 		]
 	},
+	"config": {
+		"sntp": "pool.ntp.org",
+	},
 }

@@ -31,6 +31,9 @@
 	"creation": {
 		"static":53000,
 	},
+	"config": {
+		"sntp": "pool.ntp.org",
+	},
 	"platforms": {
 		"gecko/blue": {
 			"error": "application not supported on this platform"

@@ -14,5 +14,8 @@
 	"preload": [
 		"http",
 		"base64"
-	]
+	],
+	"config": {
+		"sntp": "pool.ntp.org",
+	},
 }
