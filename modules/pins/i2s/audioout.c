@@ -55,7 +55,12 @@
 		#define MODDEF_AUDIOOUT_I2S_DAC (0)
 	#endif
 	#if MODDEF_AUDIOOUT_I2S_DAC && (16 != MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE)
-			#error must be 16 bit samples
+		#error must be 16 bit samples
+	#endif
+	#if MODDEF_AUDIOOUT_I2S_DAC
+		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
+			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
+		#endif
 	#endif
 #endif
 
@@ -1061,7 +1066,11 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (!stopped) {
+#if MODDEF_AUDIOOUT_I2S_DAC
+				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+#else
 				i2s_stop(MODDEF_AUDIOOUT_I2S_NUM);
+#endif
 				stopped = true;
 			}
 //			if (installed) {
@@ -1086,14 +1095,18 @@ void audioOutLoop(void *pvParameter)
 #if !MODDEF_AUDIOOUT_I2S_DAC
 			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
 #else
-			i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
 #endif
 			installed = true;
 			stopped = false;
 		}
 		else if (stopped) {
 			stopped = false;
+#if !MODDEF_AUDIOOUT_I2S_DAC
 			i2s_start(MODDEF_AUDIOOUT_I2S_NUM);
+#else
+			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
+#endif
 		}
 
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
