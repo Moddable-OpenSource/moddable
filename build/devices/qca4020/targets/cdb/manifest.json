@@ -21,23 +21,6 @@
 		"gpio_test_b_pin": 25,
 	},
 	"defines": {
-		"win": {
-			"node": 6,
-			"uart": {
-				"baudrate": 38400,
-				"port": "QAPI_UART_HS_PORT_E",
-				"rxd_pin": 20,
-				"txd_pin": 19
-			}
-		},
-		"audioOut": {
-			"i2s": {
-				"bck_pin": 28,
-				"lr_pin": 49,
-				"dataout_pin": 30,
-				"bitsPerSample": 16
-			}
-		},
 		"spi": {
 			"mosi_pin": 26,
 			"miso_pin": 27,
