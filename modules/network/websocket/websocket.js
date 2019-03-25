@@ -45,6 +45,7 @@ import {Digest} from "crypt";
 		2 - websocket handshake complete
 		3 - message received
 		4 - closed
+		5 - sub-protocol(s) (client only)
 */
 
 export class Client {
@@ -328,11 +329,20 @@ trace("partial header!!\n");		//@@ untested
 					delete this.key;
 					sha1.write("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 
-					socket.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
-								"Connection: Upgrade\r\n",
-								"Upgrade: websocket\r\n",
-								"Sec-WebSocket-Accept: ", Base64.encode(sha1.close()), "\r\n",
-								"\r\n");
+					let response = [
+						"HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
+						"Connection: Upgrade\r\n",
+						"Upgrade: websocket\r\n",
+						"Sec-WebSocket-Accept: ", Base64.encode(sha1.close()), "\r\n",
+					]
+
+					if (this.protocol) {
+						response.push("Sec-WebSocket-Protocol: ", this.protocol, "\r\n");
+						delete this.protocol;
+					}
+					response.push("\r\n");
+
+					socket.write.apply(socket, response);
 
 					this.callback(2);		// websocket handshake complete
 
@@ -374,6 +384,14 @@ trace("partial header!!\n");		//@@ untested
 					else if ("sec-websocket-key" === name) {
 						this.flags |= 8;
 						this.key = data;
+					}
+					else if ("sec-websocket-protocol" === name) {
+						data = data.split(",");
+						for (let i = 0; i < data.length; ++i)
+							data[i] = data[i].trim().toLowerCase();
+						const protocol = this.callback(5, data);
+						if (protocol)
+							this.protocol = protocol;
 					}
 				}
 			}
