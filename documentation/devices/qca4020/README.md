@@ -1,4 +1,4 @@
-# QCA 4020
+# QCA4020
 
 ## About This Document
 
@@ -15,7 +15,7 @@ This document describes how to set up and build Moddable applications for the Qu
   * [ARM Toolchain setup](#arm-toolchain-setup)
 * SDK Setup
   * [FreeRTOS Setup](#freertos-setup)
-  * [Build qurt](#build-qurt)
+  * [Build QuRT](#build-qurt)
   * [Build FreeRTOS](#build-freertos)
   * [Install OpenOCD](#openocd)
   * [Modify device configuration for debugging](#change-device-configuration-for-debugging)
@@ -37,48 +37,47 @@ This document describes how to set up and build Moddable applications for the Qu
 
 ## About QCA4020
 
-The Qualcomm QCA4020 is a processor from Qualcomm that incorporates bluetooth, wifi in a low-powered ARM based device.
+The Qualcomm QCA4020 is an low-powered ARM-based SoC with Bluetooth and Wi-Fi support.
 
-You will need to have a [Qualcomm Developer Network][devNet] account to download the SDK. Moddable supports version 3.x.
+A [Qualcomm Developer Network][devNet] account is required to download the Qualcomm QCA4020 SDK. Moddable supports SDK version 3.x.
 
-Moddable uses FreeRTOS on the QCA4020. Development was done for a CDB development board using a Linux host build platform.
+Moddable supports FreeRTOS on the QCA4020 Customer Development Board (CDB) using a Linux host build platform.
 
-The platform `-p qca4020/cdb` is used to designate the CDB  development board powered by the QCA4020.
-
+The build platform `-p qca4020/cdb` is used to target the CDB development board powered by the QCA4020.
 
 ## Development workflow
 
-After the initial setup, there are two major steps to build a Moddable application for the QCA4020.
+After the initial host setup, there are four major steps to build and deploy a Moddable application for the QCA4020.
 
-First, the ECMAScript application, assets, modules and XS runtime are built into an archive using Moddable's `mcconfig` tool. This produces a `xs_qca4020.a` archive file.
+1. The application, assets, modules and XS runtime are built into an archive using the `mcconfig` tool. This produces a `xs_qca4020.a` archive file.
 
-Then, you will build the small launcher application which includes the `xs_qca4020.a` archive and the Qualcomm libraries.
+2. Build the small launcher application which includes the `xs_qca4020.a` archive and the Qualcomm libraries.
 
-Then you will flash the application to the board.
+3. Flash the application to the board.
 
-To debug, you will start `xsbug` to debug your ECMAScript application. You may also need to launch gdb to debug the native portion of your application.
+4. Use `gdb` to launch and debug the native portion of your application. Use `xsbug` to debug your ECMAScript application. 
 
 ## Getting Started
 
 ### Linux Host environment setup
 
-> The Moddable SDK has been tested on 16.04 LTS (64-bit), 18.04.1 (64-bit) and Raspberry Pi Desktop (32-bit) operating systems. These setup instructions assume that a GCC toolchain has already been installed.
+> The Moddable SDK has been tested on 16.04 LTS (64-bit), 18.04.1 (64-bit) and Raspberry Pi Desktop (32-bit) operating systems. These setup instructions assume that a host GCC toolchain has already been installed.
 
 Set up the Linux environment as described in the [Moddable SDK - Getting Started][modStart] guide.
 
-#### Get the QCA4020 SDK
+#### Download the QCA4020 SDK
 
-Get the [Qualcomm QCA4020 SDK version 3.0][sdk3] from the Qualcomm Developer Network's [Tools & Resources - QCA4020][tools] page.
+Download the [Qualcomm QCA4020 SDK version 3.0][sdk3] from the Qualcomm Developer Network's [Tools & Resources - QCA4020][tools] page.
 
 Decompress the SDK file into a ```~/qualcomm``` directory making
 
 	/home/<user>/qualcomm/qca4020
 
-It should contain the directory ```target/```.
+The `qca4020` directory should contain a `target/` subdirectory.
 
 #### Environment variables
 
-Set some environment variables:
+Export required build environment variables:
 
 	export SDK=/home/<user>/qualcomm/qca4020/target
 	export CHIPSET_VARIANT=qca4020
@@ -86,21 +85,23 @@ Set some environment variables:
 	export BOARD_VARIANT=cdb
 	export QCA_GCC_ROOT=/usr/local/bin/gcc-arm-none-eabi-6-2017-q2-update
 
-Add the path: `/home/user/qualcomm/qca4020/target/bin/cortex-m4` directory to the `PATH` environment variable:
+Update the `PATH` environment variable to include the SDK `cortex-m4` target directory:
 
 	export PATH=$PATH:$SDK/bin/cortex-m4
 	
-#### ARM Toolchain setup
+#### Arm toolchain setup
 
-Get version 6.2 of the GNU embedded toolchain for ARM-based processors from the [Arm Developer Site][armdevsite] 
+<!-- BSF: I think the download link below should point to the exact toolchain archive we want developers to download.
+MDK: I do too. Good idea. -->
+Download [version 6.2 (Linux, 64-bit)][armtoolslink] of the GNU embedded toolchain for ARM-based processors from the [Arm Developer Site][armdevsite] 
 
-Add the path of the toolchain binaries to the `PATH` environment variable depending on where you installed it.
+Update the `PATH` environment variable to include the toolchain installation path:
 
 	export PATH=$PATH:/usr/local/bin/gcc-arm-none-eabi-6-2017-q2-update/bin/
 
 ###### Ref: [B] Development Kit User Guide - section 3.2
 
-#### FreeRTOS Setup
+#### FreeRTOS setup
 
 Download **FreeRTOS**:
 
@@ -109,7 +110,7 @@ Download **FreeRTOS**:
 	cd FreeRTOS
 	git checkout v8.2.1
 
-Dowload the **qurt** interface layer:
+Download the **QuRT** RTOS abstraction layer:
 
 	cd ~/qualcomm
 	git clone https://source.codeaurora.org/external/quartz/ioe/qurt
@@ -121,7 +122,7 @@ Dowload the **qurt** interface layer:
 	
 ##### Configure FreeRTOS
 
-The FreeRTOS configuration file can be found at
+The FreeRTOS configuration file is located here:
 
 ```
 ~/qualcomm/FreeRTOS/1.0/FreeRTOS/Demo/QUARTZ/FreeRTOSConfig.h
@@ -134,21 +135,21 @@ Change the following config values:
 
 > Note: If you change the ```configTOTAL_HEAP_SIZE ```, you will need to change ```RTOS_HEAP_SIZE``` in the **DefaultTemplateLinkerScript.ld** as described below. You will also need to rebuild **qurt** and **FreeRTOS** and copy them into the proper place, also described below.
 
-To assist in development, you may want to enable two additional configuration values to identify stack overflow and out of memory conditions.
+To assist in development, you may want to enable two additional configuration values to trigger 'C' callbacks for stack overflow and out of memory conditions.
 
-To trigger `vApplicationStackOverflowHook()` in `$MODDABLE/build/devices/qca4020/xsProj/src/main.c` on a stack overflow, change the following config value:
+To trigger the `vApplicationStackOverflowHook()` callback in `$MODDABLE/build/devices/qca4020/xsProj/src/main.c` on a stack overflow, change the following config value:
 
 	#define configCHECK_FOR_STACK_OVERFLOW  2
 
-To trigger `vApplicationMallocFailedHook()` when memory allocation fails, change the following config value:
+To trigger the `vApplicationMallocFailedHook()` callback when memory allocation fails, change the following config value:
 		
 	#define configUSE_MALLOC_FAILED_HOOK    1
 
-#### Build qurt
+#### Build QuRT
 
 ###### Ref: [B] Development Kit User Guide - section 3.8
 
-Build the **qurt** adapter layer for FreeRTOS and copy it into place:
+Build the **QuRT** RTOS abstraction layer and copy the libraries into place:
 
     cd ~/qualcomm/qurt/FreeRTOS/2.0
     make all
@@ -156,7 +157,7 @@ Build the **qurt** adapter layer for FreeRTOS and copy it into place:
 
 #### Build FreeRTOS
 
-Build FreeRTOS and copy it into place:
+Build the FreeRTOS library and copy into place:
 
     cd ~/qualcomm/FreeRTOS/1.0/FreeRTOS/Demo/QUARTZ
     make all
@@ -166,16 +167,16 @@ Build FreeRTOS and copy it into place:
 
 ###### Ref: [B] Development Kit User Guide - section 3.7.2.1
 
-[OpenOCD](http://openocd.org) is used to flash the binary to the QCA4020. It needs to be built with the ```--enable-ftdi``` option.
+[OpenOCD](http://openocd.org) is used to flash the binary to the QCA4020. 
 
-[Download openocd-0.10.0](https://sourceforge.net/projects/openocd/files/openocd/0.10.0/) and build. The location doesn't matter.
+[Download openocd-0.10.0](https://sourceforge.net/projects/openocd/files/openocd/0.10.0/) and build with the `--enable-ftdi` option. The location doesn't matter.
 
 	cd open-ocd-0.10.0
 	./configure --enable-ftdi
 	make install
 
-> Note: If there is an error `libusb-1.x not found...` you can fix by installing `libusb-dev`.
->
+> Note: If there is an error `libusb-1.x not found...` install the `libusb-dev` package.
+
 	sudo apt-get install libusb-1.0-0.dev
 	
 #### Change device configuration for debugging
@@ -194,7 +195,7 @@ to
 		<props ... > 0 </props>
 
 
-Disable watchdog so it doesn't die in `err_jettison_core` when you're doing something in `xsbug`. Same file as above:
+Disable the watchdog so the application doesn't terminate in `err_jettison_core` while using `xsbug`. Same file as above:
 
 Change:
 
@@ -209,15 +210,15 @@ to
 
 ### Adjust Link Map
 
-A link map is used to specify where in memory the different components of your application will go. 
+The link map specifies where in memory the different components of your application will go. 
 
 The QCA4020 allocates RAM to read-only memory (instructions and data), and read-write memory for each of the different operating modes of the chip. Moddable apps run primarily in the Full Operating Mode (***FOM***).
 
-The QCA4020 also has flash memory that can be used to store data and code. Moddable stores resources, XS bytecode and static variables in flash. Application object code runs out of XIP (execute in place) memory.
+The QCA4020 also has flash memory that can be used to store data and code. Moddable stores resources, XS bytecode and static variables in flash. Application object code runs out of execute-in-place (***XIP***) memory.
 
-We will need to adjust some values in the link map to give us more data space in RAM, and to move read-only data to flash.
+We adjust link map values to give us more data space in RAM, and to move read-only data to flash.
 
-In the file `MODDABLE/build/devices/qca4020/xsProj/src/export/DevCfg_master_devcfg_out_cdb.xml` do the following:
+In the file `MODDABLE/build/devices/qca4020/xsProj/src/export/DevCfg_master_devcfg_out_cdb.xml` change the following:
 
 Disable **DEP** (data execution prevention) by setting the property value to 0:
 
@@ -263,37 +264,36 @@ Change the `RAM_FOM_APPS_RO_MEMORY` and `RAM_FOM_APPS_DATA_MEMORY` origin and le
 
 ### Stack
 
-You may change the stack size of the XS task.
+If you encounter stack overflows, the stack size of the XS task can be increased by changing `xsMain_THREAD_STACK_SIZE` in `$MODDABLE/build/devices/qca4020/base/xsmain.c`.
 
 > Note: When `configCHECK_FOR_STACK_OVERFLOW` is set to **2** in **FreeRTOSConfig.h**, the `vApplicationStackOverflowHook()` error handler is invoked.
 
 > `vApplicationStackOverflowHook()` is found in `$MODDABLE/build/devices/qca4020/xsProj/src/main.c`
-
-If you're running into stack overflows, you can change the define `xsMain_THREAD_STACK_SIZE` in: `$MODDABLE/build/devices/qca4020/base/xsmain.c`.
-
 
 
 ## Linux build and Deploy
 
 ### Build Linux tools and Moddable app
 
-Build Moddable tools for linux (if you haven't already):
+Build Moddable tools for Linux (if you haven't already):
 
 	cd $MODDABLE/build/makefiles/lin
 	make
 
-Build a Moddable app:
+Build the Moddable `helloworld` app:
 
 	cd $MODDABLE/examples/helloworld
-	mcconfig -d -m -p qca4020
+	mcconfig -d -m -p qca4020/cdb
 	
-> This creates a library `xs_qca4020.a` that contains the app and its assets and the xs runtime.
+> The `mcconfig` tool builds the application and generates the `xs_qca4020.a` archive, which contains the app, any assets and the XS runtime.
 
-You will need to set some environment variables:
+You will need to set some environment variables to configure the stub application build:
 
 	export APP_NAME=helloworld
 	export DEBUG=1
 	
+> Note: The `APP_NAME` environment variable value must match the name of the application being built.
+
 Build the stub application to link in the qca4020 libraries and *main.c*.
 	
 	cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
@@ -306,7 +306,7 @@ Build the stub application to link in the qca4020 libraries and *main.c*.
 
 #### Ensure the jumpers are configured properly:
 
-![Jumper Diagram](assets/QCA4020CDB-SPI.png)
+![Jumper Diagram](./assets/QCA4020CDB-SPI.png)
 
 Make sure jumper is on J31 1&2 and reset the board. If J31 is removed, the board will boot directly into the app.
 
@@ -335,7 +335,7 @@ Go to project build directory and run the flash tool:
 	cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
 	sh flash_openocd.sh
 	
-> Note: the flash tool starts **openocd** and leaves it running. This is good as we will need it running later for gdb.
+> Note: the flash tool starts **openocd** and leaves it running. This is helpful as we will need it running later for gdb.
 
 
 ### Debugging
@@ -347,28 +347,34 @@ In another terminal window, launch `xsbug` and `serial2xsbug`:
     xsbug &
     serial2xsbug /dev/ttyUSB1 115200 8N1
 
-> `xsbug` is used to debug the ECMAScript side of your application. `serial2xsbug` connects the output from the qca4020 and sends it to `xsbug`.
+> `xsbug` is used to debug the ECMAScript side of your application. `serial2xsbug` provides a serial to network socket bridge between the QCA4020 CDB and the `xsbug` debugger.
      
 #### Launch gdb
 
-Go to the project build directory and run gdb:
+Go to the project build directory and launch `gdb`:
 
     cd $MODDABLE/customers/qualcomm/baseapp/build/gcc
     arm-none-eabi-gdb -x v2/quartzcdb.gdbinit
 
-> `gdb` is used to debug the native C portion of your application.
+> `gdb` is used to debug the native 'C' portion of your application.
 
-A considerable amount of output will appear on the screen. At the `(gdb)` prompt type `c` to continue three times to launch the app. You can also set breakpoints, view source and variables, etc.
+A considerable amount of output will appear on the screen. At the `(gdb)` prompt type `c` to continue three times to launch the app. You can also set breakpoints, view source and variables, etc...
 
 `xsbug` will show the connection is made and the application should start.
 
+You can now run and debug your application.
+
 #### Boot to App
 
+If you would like to boot directly to your application without having to launch and use `gdb`:
+
+<!-- BSF: without using gdb or using gdb? (see below)
+	  MDK: added line above. -->
 Disconnect jumper on J31 between pins 1 & 2 and reset the board.
 
 The board will boot into the app instead of waiting for `gdb`.
 
-> Note: if you have a debug build, your application will still try to connect to `xsbug` at startup. If it can not connect, it will proceed to launch. You can continue to debug your application without using `gdb`.
+> Note: if you have a debug build, your application will still try to connect to `xsbug` at startup. If it cannot connect, it will proceed to launch. You can continue to debug your application without using `gdb`.
 
 
 ### Notes and troubleshooting
@@ -377,7 +383,7 @@ The board will boot into the app instead of waiting for `gdb`.
 
 * Use bash aliases or other scripts to make your life easier. For example:
 
-	`alias killocd='killall openocd' `
+	`alias killocd='killall openocd'`
 	`alias doocd='killall openocd; openocd -f qca402x_openocd.cfg'`
 	`alias dogdb='arm-none-eabi-gdb -x v2/quartzcdb.gdbinit'`
 
@@ -400,28 +406,51 @@ The board will boot into the app instead of waiting for `gdb`.
 
 App | Feature 
 --- | ------- 
-helloworld | xsbug 
-timers | timers
-files | files
-preference | preferences
-networkpromises | promises
-network/ble/colorific | BLE 
-network/ble/colorific | BLE 
-network/ble/heart-rate-monitor | BLE
-network/ble/security-server |
-network/ble/wifi-connection-server |
-httpgetjson | http, json parsing
-httpserver | http server
-network/ping | 
-socketreadwrite | network socket demonstration
-wifiaccesspoint | configure device to act as an access point
-wifiscan | scan for SSIDs
-httpsgetstreaming | https
-piu/balls | animation on ili9341
-piu/cards | animation on ili9341
-images | animation, image decompress
-mini-weather | piu application to fetch weather conditions
-text | text rendering
+[helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug 
+[timers](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/base/timers) | timers
+[files](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/files/files) | file I/O
+[preference](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/files/preference) | persistent preferences
+[networkpromises](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/js/networkpromises) | Asynchronous network operations using JavaScript promises
+[network/ble/advertiser](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/advertiser) | BLE advertiser
+[network/ble/colorific](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/colorific) | BLE client
+[network/ble/discovery](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/discovery) | BLE service/characteristic discovery
+[network/ble/heart-rate-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) | BLE peripheral
+[network/ble/security-client](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/security-server) | BLE client encryption and pairing
+[network/ble/security-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/security-server) | BLE peripheral encryption and pairing
+[network/ble/wifi-connection-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/wifi-connection-server) | Wi-Fi access point connection via BLE
+[httpgetjson](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/http/httpgetjson) | HTTP client, JSON parsing
+[httpserver](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/http/httpserver) | HTTP server
+[httpsgetstreaming](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/http/httpsgetstreaming) | streaming secure HTTP client
+[network/ping](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ping) | network ping
+[socketreadwrite](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/socket/socketreadwrite) | network socket read/write
+[wifiaccesspoint](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/wifi/wifiaccesspoint) | configure device to act as an access point
+[wifiscan](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/wifi/wifiscan) | scan for SSIDs
+[piu/balls](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/balls) | animation on ili9341
+[piu/cards](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/cards) | animation on ili9341
+[images](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/images) | animation, image decompression
+[mini-weather](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/mini-weather) | Piu application to fetch weather conditions
+[text](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/text) | text rendering
+
+<!-- BSF: added display wiring below
+	  MDK: added DC and the corrected image from above -->
+### CDB20 SPI display wiring for ILI9341 display driver
+
+The following pinout table and image describe the connections required to support a SPI display on the `CDB20` board.
+
+| Screen pin | CDB20 header / pin number| GPIO
+| --- | --- | :--- |
+| `SDO (MISO)` | `J5 / 8` | 27
+| `LED (3.3V)` | `J1 / 4` | N/A
+| `SCK` | `J5 / 4` | 25
+| `SDI (MOSI)` | `J5 / 6` |  26
+| `RESET` | `J5 / 19` | 13
+| `CS` | `J5 / 2` | 24
+| `DC` | `J5 / 8` | 11
+| `GND` | `J5 / 40` | N/A
+| `VCC` | `J1 / 4` | N/A
+
+![Jumper Diagram](	assets/QCA4020CDB-SPI.png)
+
 
 ### Reference Documentation
 
@@ -435,11 +464,25 @@ Contains the API Documentation
 
 [B] [Development Kit User Guide][B]
 
-Describes setting up the SDK, development environment, how to flash and debug. Also describes Board Jumper settings.
+Describes setting up the SDK, development environment, how to flash and debug. Also describes board jumper settings.
 
 [C] [QCA402x (CDB2x) Programmers Guide][C]
 
 Contains an overview, networking features, programming model, memory model, etc. GPIO configuration and interfaces
+
+### Reference Sites
+
+[Qualcomm Developer Network][devNet]
+
+[QCA4020 SDK v3][sdk3]
+
+[QCA4020 Tools][tools]
+
+[Arm Developer GNU-RM Downloads][armdevsite]
+
+[gcc-arm-none-eabi version 6.2 (Linux, 64-bit)][armtoolslink]
+
+[Moddable Getting Started Guide][modstart]
 
 [A]: https://developer.qualcomm.com/download/qca4020-qca4024/qca402x-qapi-specification.pdf
 [B]: https://developer.qualcomm.com/download/qca4020-qca4024/qca402x-cdb2x-development-kit-user-guide.pdf
@@ -448,4 +491,5 @@ Contains an overview, networking features, programming model, memory model, etc.
 [sdk3]:https://developer.qualcomm.com/download/qca4020-qca4024/qca4020or11-qca-oem-sdkcdb.zip
 [tools]:https://developer.qualcomm.com/hardware/qca4020-qca4024/tools-qca4020
 [armdevsite]:https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+[armtoolslink]:https://developer.arm.com/-/media/Files/downloads/gnu-rm/6-2017q2/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 [modstart]: https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md
