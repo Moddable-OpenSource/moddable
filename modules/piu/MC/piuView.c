@@ -1067,9 +1067,12 @@ void PiuApplication_set_rotation(xsMachine* the)
 {
 	PiuApplication* self = PIU(Application, xsThis);
 	PiuView* view = (*self)->view;
+	Poco poco = (*view)->poco;
 	xsVars(1);
 	xsVar(0) = xsReference((*view)->screen);
 	xsSet(xsVar(0), xsID_rotation, xsArg(0));
+	poco->width = xsToInteger(xsGet(xsVar(0), xsID_width));
+	poco->height = xsToInteger(xsGet(xsVar(0), xsID_height));
 	PiuApplicationResize(self);
 }
 
