@@ -9,28 +9,28 @@ This document describes how to set up and build Moddable applications for the Qu
 * [About QCA4020](#about-qca4020)
 * [Development workflow](#development-workflow)
 * [Getting Started](#getting-started)
-  * [Linux Host environment setup](#linux-host-environment-setup)
-  * [Install the QCA4020 SDK](#get-the-qca4020-sdk)
-  * [Set Environment Variables](#environment-variables)
+  * [Linux host environment setup](#linux-host-environment-setup)
+  * [Install the QCA4020 SDK](#install-the-qca4020-sdk)
+  * [Set environment variables](#environment-variables)
   * [ARM Toolchain setup](#arm-toolchain-setup)
-* SDK Setup
+* [SDK Setup](#sdk-setup)
   * [FreeRTOS Setup](#freertos-setup)
   * [Build QuRT](#build-qurt)
   * [Build FreeRTOS](#build-freertos)
-  * [Install OpenOCD](#openocd)
-  * [Modify device configuration for debugging](#change-device-configuration-for-debugging)
-  * [Adjust Link Map](#adjust-link-map)
+  * [Install OpenOCD](#install-openocd)
+  * [Modify device configuration for debugging](#modify-device-configuration-for-debugging)
+  * [Adjust link map](#adjust-link-map)
   * [Adjust stack size](#adjust-stack-size)
 * [Linux Build and Deploy](#linux-build-and-deploy)
-  * [Build Moddable Tools for Linux](#build-linux-tools)
-  * [Build Moddable App](#build-moddable-app)
+  * [Build Moddable tools for Linux](#build-moddable-tools-for-linux)
+  * [Build Moddable app](#build-moddable-app)
   * [Flash to device](#flash-to-device)
 * [Debugging](#debugging)
   * [Start xsbug](#start-xsbug)
   * [Launch gdb](#launch-gdb)
   * [Boot to app](#boot-to-app)
 * [Notes and troubleshooting](#notes-and-troubleshooting)
-* [Example apps with qca4020 support](#example-apps-with-qca4020-support)
+* [Example apps with QCA4020 support](#example-apps-with-qca4020-support)
 
 * [Reference Documentation](#reference-documentation)
 
@@ -59,7 +59,7 @@ After the initial host setup, there are four major steps to build and deploy a M
 
 ## Getting Started
 
-### Linux Host environment setup
+### Linux host environment setup
 
 > The Moddable SDK has been tested on 16.04 LTS (64-bit), 18.04.1 (64-bit) and Raspberry Pi Desktop (32-bit) operating systems. These setup instructions assume that a host GCC toolchain has already been installed.
 
@@ -71,7 +71,7 @@ Download the [Qualcomm QCA4020 SDK version 3.0][sdk3] from the Qualcomm Develope
 
 Decompress the SDK file into a `~/qualcomm` directory making:
 
-```
+```text
 /home/<user>/qualcomm/qca4020
 ```
 	
@@ -81,17 +81,17 @@ The `qca4020` directory should contain a `target/` subdirectory.
 
 Export required build environment variables:
 
-```
+```text
 export SDK=/home/<user>/qualcomm/qca4020/target
 export CHIPSET_VARIANT=qca4020
 export RTOS=freertos
 export BOARD_VARIANT=cdb
 export QCA_GCC_ROOT=/usr/local/bin/gcc-arm-none-eabi-6-2017-q2-update
 ```
-	
+
 Update the `PATH` environment variable to include the SDK `cortex-m4` target directory:
 
-```
+```text
 export PATH=$PATH:$SDK/bin/cortex-m4
 ```
 
@@ -101,7 +101,7 @@ Download [version 6.2 (Linux, 64-bit)][armtoolslink] of the GNU embedded toolcha
 
 Update the `PATH` environment variable to include the toolchain installation path:
 
-```
+```text
 export PATH=$PATH:/usr/local/bin/gcc-arm-none-eabi-6-2017-q2-update/bin/
 ```
 
@@ -111,7 +111,7 @@ export PATH=$PATH:/usr/local/bin/gcc-arm-none-eabi-6-2017-q2-update/bin/
 
 Download **FreeRTOS**:
 
-```
+```text
 cd ~/qualcomm
 git clone https://source.codeaurora.org/external/quartz/FreeRTOS
 cd FreeRTOS
@@ -120,14 +120,14 @@ git checkout v8.2.1
 
 Download the **QuRT** RTOS abstraction layer:
 
-```
+```text
 cd ~/qualcomm
 git clone https://source.codeaurora.org/external/quartz/ioe/qurt
 ```
 
 > Note: You may get an warning here. Continue.
 	
-```
+```text
 cd qurt
 git checkout v2.0
 ```
@@ -136,13 +136,13 @@ git checkout v2.0
 
 The FreeRTOS configuration file is located here:
 
-```
+```text
 ~/qualcomm/FreeRTOS/1.0/FreeRTOS/Demo/QUARTZ/FreeRTOSConfig.h
 ```
 
 Change the following config values:
 
-```
+```text
 #define configTICK_RATE_HZ        ( ( TickType_t )  1000)
 #define configTOTAL_HEAP_SIZE     ( ( size_t ) 0x13000) )
 ```
@@ -153,13 +153,13 @@ To assist in development, you may want to enable two additional configuration va
 
 To trigger the `vApplicationStackOverflowHook()` callback in `$MODDABLE/build/devices/qca4020/xsProj/src/main.c` on a stack overflow, change the following config value:
 
-```
+```text
 #define configCHECK_FOR_STACK_OVERFLOW  2
 ```
 
 To trigger the `vApplicationMallocFailedHook()` callback when memory allocation fails, change the following config value:
 		
-```
+```text
 #define configUSE_MALLOC_FAILED_HOOK    1
 ```
 
@@ -169,7 +169,7 @@ To trigger the `vApplicationMallocFailedHook()` callback when memory allocation 
 
 Build the **QuRT** RTOS abstraction layer and copy the libraries into place:
 
-```
+```text
 cd ~/qualcomm/qurt/FreeRTOS/2.0
 make all
 cp output/qurt*.lib ~/qualcomm/qca4020/target/lib/cortex-m4IPT/freertos/
@@ -179,7 +179,7 @@ cp output/qurt*.lib ~/qualcomm/qca4020/target/lib/cortex-m4IPT/freertos/
 
 Build the FreeRTOS library and copy into place:
 
-```
+```text
 cd ~/qualcomm/FreeRTOS/1.0/FreeRTOS/Demo/QUARTZ
 make all
 cp output/free_rtos.lib ~/qualcomm/qca4020/target/lib/cortex-m4IPT/freertos/
@@ -191,9 +191,9 @@ cp output/free_rtos.lib ~/qualcomm/qca4020/target/lib/cortex-m4IPT/freertos/
 
 [OpenOCD](http://openocd.org) is used to flash the binary to the QCA4020. 
 
-[Download openocd-0.10.0](https://sourceforge.net/projects/openocd/files/openocd/0.10.0/) and build with the `--enable-ftdi` option. The location doesn't matter.
+Download [openocd-0.10.0](https://sourceforge.net/projects/openocd/files/openocd/0.10.0/) and build with the `--enable-ftdi` option. The location doesn't matter.
 
-```
+```text
 cd open-ocd-0.10.0
 ./configure --enable-ftdi
 make install
@@ -201,7 +201,7 @@ make install
 
 > Note: If there is an error `libusb-1.x not found...` install the `libusb-dev` package.
 
-```
+```text
 sudo apt-get install libusb-1.0-0.dev
 ```
 
@@ -213,14 +213,14 @@ Make sure system sleep is disabled so that JTAG can connect on boot:
 
 In the file `$MODDABLE/build/devices/qca4020/xsProj/src/export/DevCfg_master_devcfg_out_cdb.xml` change:
 
-```
+```text
 <driver name="Sleep"> ...
 	<props id="0x2" oem_configurable="false" type="0x00000002"> 1 </props>
 ```
 
 to:
 
-```
+```text
 <props ... > 0 </props>
 ```
 
@@ -228,20 +228,20 @@ Disable the watchdog so the application doesn't terminate in `err_jettison_core`
 
 Change:
 
-```
+```text
 <props name="dog_hal_disable" type="0x00000002”> 0 </props>
 ```
 
 to:
 
-```
+```text
 <props name="dog_hal_disable" type="0x00000002”> 1 </props>
 ```
     
 > Note: you will want to re-enable the watchdog before shipping.
 
 
-### Adjust Link Map
+### Adjust link map
 
 The link map specifies where in memory the different components of your application will go. 
 
@@ -255,7 +255,7 @@ In the file `MODDABLE/build/devices/qca4020/xsProj/src/export/DevCfg_master_devc
 
 Disable **DEP** (data execution prevention) by setting the property value to 0:
 
-```
+```text
 <props id="1" id_name="PLATFORM DEP ENABLE" oem_configurable="true" helptext="Enable or disable data execution prevention." type="0x00000002">
 	0
 </props>
@@ -269,7 +269,7 @@ In the file `~/qualcomm/qca4020/target/bin/cortex-m4/freertos/DefaultTemplateLin
 
 Make sure `RTOS_HEAP_SIZE` has the same value as the define `configTOTAL_HEAP_SIZE` in **FreeRTOSConfig.h** described above.
 
-```
+```text
 RTOS_HEAP_SIZE = 0x13000;
 ```
 
@@ -281,7 +281,7 @@ RTOS_HEAP_SIZE = 0x13000;
 
 Move your application's static data into flash (XIP):
 
-```
+```text
 XIP_OEM_RO_REGION :
 {
 	*(XIP_OEM_RO_SECTION)
@@ -289,7 +289,7 @@ XIP_OEM_RO_REGION :
 
 After this, add:
 
-```
+```text
 	*(.flash*)
 	*(.flash.rodata*)
 ```
@@ -300,7 +300,7 @@ After this, add:
 
 Change the `RAM_FOM_APPS_RO_MEMORY` and `RAM_FOM_APPS_DATA_MEMORY` origin and length values:
 
-```
+```text
 RAM_FOM_APPS_RO_MEMORY   (RX) : ORIGIN = 0x10046000, LENGTH = 0x0a000
 RAM_FOM_APPS_DATA_MEMORY (W)  : ORIGIN = 0x10050000, LENGTH = 0x40000
 ```
@@ -320,7 +320,7 @@ If you encounter stack overflows, the stack size of the XS task can be increased
 
 Build Moddable tools for Linux (if you haven't already):
 
-```
+```text
 cd $MODDABLE/build/makefiles/lin
 make
 ```
@@ -329,7 +329,7 @@ make
 
 Build the Moddable `helloworld` app:
 
-```
+```text
 cd $MODDABLE/examples/helloworld
 mcconfig -d -m -p qca4020/cdb
 ```
@@ -338,7 +338,7 @@ mcconfig -d -m -p qca4020/cdb
 
 You will need to set some environment variables to configure the stub application build:
 
-```
+```text
 export APP_NAME=helloworld
 export DEBUG=1
 ```
@@ -347,7 +347,7 @@ export DEBUG=1
 
 Build the stub application to link in the qca4020 libraries and *main.c*.
 	
-```
+```text
 cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
 make
 ```
@@ -363,7 +363,7 @@ make
 
 Make sure jumper is on J31 1&2 and reset the board. If J31 is removed, the board will boot directly into the app.
 
-```
+```text
 Pin Configuration for JTAG GPIO 53:50
 
 To use JTAG3 (which doesn't conflict with SPI):
@@ -387,7 +387,7 @@ The development board should be connected and powered on. The lower USB port is 
 
 Navigate to the project build directory and run the flash tool:
 
-```
+```text
 cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
 sh flash_openocd.sh
 ```
@@ -401,7 +401,7 @@ sh flash_openocd.sh
 
 In another terminal window, launch `xsbug` and `serial2xsbug`:
 
-```
+```text
 xsbug &
 serial2xsbug /dev/ttyUSB1 115200 8N1
 ```
@@ -412,8 +412,8 @@ serial2xsbug /dev/ttyUSB1 115200 8N1
 
 Navigate to the project build directory and launch `gdb`:
 
-```
-cd $MODDABLE/customers/qualcomm/baseapp/build/gcc
+```text
+cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
 arm-none-eabi-gdb -x v2/quartzcdb.gdbinit
 ```
 
@@ -442,7 +442,7 @@ The board will boot into the app instead of waiting for `gdb`.
 
 * Use bash aliases or other scripts to make your life easier. For example:
 
-```
+```text
 	alias killocd='killall openocd'
 	alias doocd='killall openocd; openocd -f qca402x_openocd.cfg'
 	alias dogdb='arm-none-eabi-gdb -x v2/quartzcdb.gdbinit'
@@ -454,7 +454,7 @@ The board will boot into the app instead of waiting for `gdb`.
 
    - You may also need to kill and restart openocd
 
-```
+```text
 		killall openocd; openocd -f qca402x_openocd.cfg
 ```
 
