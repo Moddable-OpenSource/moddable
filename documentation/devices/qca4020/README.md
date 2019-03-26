@@ -91,8 +91,6 @@ Update the `PATH` environment variable to include the SDK `cortex-m4` target dir
 	
 #### Arm toolchain setup
 
-<!-- BSF: I think the download link below should point to the exact toolchain archive we want developers to download.
-MDK: I do too. Good idea. -->
 Download [version 6.2 (Linux, 64-bit)][armtoolslink] of the GNU embedded toolchain for ARM-based processors from the [Arm Developer Site][armdevsite] 
 
 Update the `PATH` environment variable to include the toolchain installation path:
@@ -368,8 +366,6 @@ You can now run and debug your application.
 
 If you would like to boot directly to your application without having to launch and use `gdb`:
 
-<!-- BSF: without using gdb or using gdb? (see below)
-	  MDK: added line above. -->
 Disconnect jumper on J31 between pins 1 & 2 and reset the board.
 
 The board will boot into the app instead of waiting for `gdb`.
@@ -431,8 +427,6 @@ App | Feature
 [mini-weather](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/mini-weather) | Piu application to fetch weather conditions
 [text](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/text) | text rendering
 
-<!-- BSF: added display wiring below
-	  MDK: added DC and the corrected image from above -->
 ### CDB20 SPI display wiring for ILI9341 display driver
 
 The following pinout table and image describe the connections required to support a SPI display on the `CDB20` board.
