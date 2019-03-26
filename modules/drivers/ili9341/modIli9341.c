@@ -112,6 +112,8 @@ typedef struct {
 	modGPIOConfigurationRecord	backlight;
 #endif
 	uint8_t						firstFrame;
+	uint8_t						memoryAccessControl;	// register 36h initialization value
+	uint8_t						rotation;				// 0, 1, 2, 3 => 0, 90, 180, 270
 } spiDisplayRecord, *spiDisplay;
 
 static void ili9341ChipSelect(uint8_t active, modSPIConfiguration config);
@@ -287,12 +289,14 @@ void xs_ILI9341_get_pixelFormat(xsMachine *the)
 
 void xs_ILI9341_get_width(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_ILI9341_WIDTH);
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_ILI9341_HEIGHT : MODDEF_ILI9341_WIDTH);
 }
 
 void xs_ILI9341_get_height(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_ILI9341_HEIGHT);
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_ILI9341_WIDTH : MODDEF_ILI9341_HEIGHT);
 }
 
 void xs_ILI9341_get_clut(xsMachine *the)
@@ -321,6 +325,26 @@ void xs_ILI9341_set_clut(xsMachine *the)
 void xs_ILI9341_get_c_dispatch(xsMachine *the)
 {
 	xsResult = xsThis;
+}
+
+void xs_ILI9341_get_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, sd->rotation * 90);
+}
+
+void xs_ILI9341_set_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	int32_t rotation = xsmcToInteger(xsArg(0));
+	uint8_t value;
+	static const uint8_t masks[] ICACHE_RODATA_ATTR = {0x00, 0x60, 0xc0, 0xa0};
+	if ((0 != rotation) && (90 != rotation) && (180 != rotation) && (270 != rotation))
+		xsRangeError("invalid rotation");
+
+	sd->rotation = (uint8_t)(rotation / 90);
+	value = sd->memoryAccessControl ^ c_read8(masks + sd->rotation);
+	ili9341Command(sd, 0x36, &value, 1);
 }
 
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
@@ -450,6 +474,8 @@ void ili9341Init(spiDisplay sd)
 			modDelayMilliseconds(ms);
 		}
 		else {
+			if (0x36 == cmd)
+				sd->memoryAccessControl = c_read8(cmds + 1);
 			uint8_t count = c_read8(cmds++);
 			if (count)
 				c_memcpy(data, cmds, count);
