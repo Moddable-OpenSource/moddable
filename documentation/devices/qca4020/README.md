@@ -423,6 +423,8 @@ A considerable amount of output will appear on the screen. At the `(gdb)` prompt
 
 `xsbug` will show the connection is made and the application should start.
 
+![xsbug running helloworld](./assets/xsbug_started.png)
+
 You can now run and debug your application.
 
 #### Boot to app
