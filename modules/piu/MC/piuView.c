@@ -1054,6 +1054,25 @@ void PiuApplication_set_clut(xsMachine* the)
 #endif
 }
 
+void PiuApplication_get_rotation(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuView* view = (*self)->view;
+	xsVars(1);
+	xsVar(0) = xsReference((*view)->screen);
+	xsResult = xsGet(xsVar(0), xsID_rotation);
+}
+
+void PiuApplication_set_rotation(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuView* view = (*self)->view;
+	xsVars(1);
+	xsVar(0) = xsReference((*view)->screen);
+	xsSet(xsVar(0), xsID_rotation, xsArg(0));
+	PiuApplicationResize(self);
+}
+
 void PiuApplication_keyDown(xsMachine* the) 
 {
 	PiuApplication* self = PIU(Application, xsThis);

@@ -86,9 +86,11 @@ static void screen_set_clut(xsMachine* the);
 static void screen_start(xsMachine* the);
 static void screen_stop(xsMachine* the);
 static void screen_get_pixelFormat(xsMachine* the);
+static void screen_get_rotation(xsMachine* the);
 static void screen_get_width(xsMachine* the);
 static void screen_get_height(xsMachine* the);
 static void screen_set_pixelFormat(xsMachine* the);
+static void screen_set_rotation(xsMachine* the);
 #if kPocoFrameBuffer
 static void screen_get_frameBuffer(xsMachine* the);
 #endif
@@ -276,6 +278,10 @@ void fxScreenLaunch(txScreen* screen)
 		xsDefine(xsVar(0), xsID_pixelFormat, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_set_pixelFormat, 0);
 		xsDefine(xsVar(0), xsID_pixelFormat, xsVar(1), xsIsSetter);
+		xsVar(1) = xsNewHostFunction(screen_get_rotation , 0);
+		xsDefine(xsVar(0), xsID_rotation, xsVar(1), xsIsGetter);
+		xsVar(1) = xsNewHostFunction(screen_set_rotation , 0);
+		xsDefine(xsVar(0), xsID_rotation, xsVar(1), xsIsSetter);
 		xsVar(1) = xsNewHostFunction(screen_get_width, 0);
 		xsDefine(xsVar(0), xsID_width, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_get_height, 0);
@@ -724,6 +730,12 @@ void screen_get_pixelFormat(xsMachine* the)
 	xsResult = xsInteger(gxPixelFormats[screen->pixelFormat].commodettoFormat);
 }
 
+void screen_get_rotation(xsMachine* the)
+{
+	txScreen* screen = xsGetHostData(xsThis);
+	xsResult = xsInteger(screen->rotation);	
+}
+
 void screen_get_width(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
@@ -766,6 +778,12 @@ void screen_set_pixelFormat(xsMachine* the)
 	screen->frameBufferLength = screen->height * ((screen->width * gxPixelFormats[screen->pixelFormat].bitsPerPixel) >> 3);
 	screen->frameBuffer = malloc(screen->frameBufferLength);
 #endif
+}
+
+void screen_set_rotation(xsMachine* the)
+{
+	txScreen* screen = xsGetHostData(xsThis);
+	screen->rotation = xsToInteger(xsArg(0));
 }
 
 #if kPocoFrameBuffer

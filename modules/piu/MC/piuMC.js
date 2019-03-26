@@ -133,8 +133,10 @@ var application = {
 	_create($, it) @ "PiuApplication_create",
 	
 	get clut() @ "PiuApplication_get_clut",
+	get rotation() @ "PiuApplication_get_rotation",
 	
 	set clut(it) @ "PiuApplication_set_clut",
+	set rotation(it) @ "PiuApplication_set_rotation",
 	
 	animateColors(colors) @ "PiuApplication_animateColors",
 	keyDown(key) @ "PiuApplication_keyDown",

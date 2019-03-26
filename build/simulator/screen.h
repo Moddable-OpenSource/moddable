@@ -57,6 +57,7 @@ struct sxScreen {
 	int flags;
 	long instrumentTime;
 	int pixelFormat;
+	int rotation;
 	int width;
 	int height;
 	uint16_t *clut;
