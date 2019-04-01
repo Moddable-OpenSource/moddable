@@ -246,6 +246,7 @@ void dotstarSend_16LE(PocoPixel *pixels, int byteLength, void *refcon)
 	spiDisplay sd = refcon;
 	uint8_t *brightness = sd->brightness;
 
+	if (byteLength < 0) byteLength = -byteLength;
 	while (byteLength > 0) {
 		uint8_t buffer[16 * 4];
 		uint8_t *bgr = buffer;

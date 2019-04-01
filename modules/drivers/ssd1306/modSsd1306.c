@@ -434,6 +434,7 @@ void ssd1306Send(PocoPixel *pixels, int byteLength, void *refcon)
 	modSPIFlush();
 #endif
 
+	if (byteLength < 0) byteLength = -byteLength;
 	lines = (uint8_t)(byteLength / ssd->width);
 	pixel = ssd->pixel;
 	while (lines--) {

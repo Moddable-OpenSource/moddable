@@ -160,6 +160,7 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 	int lines, size;
 	uint8_t flags, *toSend;
 
+	if (count < 0) count = -count;
 	modSPIActivateConfiguration(NULL);
 	lines = (int)(count / MODDEF_LS013B4DN04_WIDTH);
 	size = 2 + (ls->bytesPerLine * lines);

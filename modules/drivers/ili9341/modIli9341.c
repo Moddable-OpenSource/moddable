@@ -352,41 +352,47 @@ void xs_ILI9341_set_rotation(xsMachine *the)
 void ili9341Send_16LE(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxSwap16(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxSwap16(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
 // caller provides big-endian pixels, transfer directly to display
 void ili9341Send_16BE(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITx(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITx(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapGray256
 // caller provides 8-bit gray pixels, convert for  display
 void ili9341Send_Gray256(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxGray256To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxGray256To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapRGB332
 // caller provides 332 RGB pixels, convert for  display
 void ili9341Send_RGB332(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxRGB332To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxRGB332To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapGray16
 // caller provides 4-bit gray pixels, convert for  display
 void ili9341Send_Gray16(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxGray16To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxGray16To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 // caller provides 4-bit CLUT pixels, convert for  display
 void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
 	modSPITxCLUT16To16BE(&sd->spiConfig, (void *)pixels, byteLength, (uint16_t *)(sd->clut + ((16 * 16 * 16) + (16 * 2))));
 }
 #endif

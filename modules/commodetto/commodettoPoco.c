@@ -202,7 +202,7 @@ static void pixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	Poco poco = xsmcGetHostDataPoco(xsThis);		//@@ eliminate this call
 
 	xsmcSetInteger(xsVar(1), (char *)pixels - (char *)poco->pixels);		// offset
-	xsmcSetInteger(xsVar(2), byteLength);
+	xsmcSetInteger(xsVar(2), (byteLength < 0) ? -byteLength : byteLength);
 	xsCall3(xsVar(0), xsID_send, xsVar(3), xsVar(1), xsVar(2));
 }
 

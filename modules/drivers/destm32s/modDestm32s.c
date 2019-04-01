@@ -279,7 +279,6 @@ static void destm32sEnd_bw1r(void *refcon);
 static void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon);
 static void destm32sSend_2g1r(PocoPixel *pixels, int byteLength, void *refcon);
 static void destm32sSend_bw1r(PocoPixel *pixels, int byteLength, void *refcon);
-static void destm32sSend(PocoPixel *pixels, int byteLength, void *refcon);
 static void destm32sAdaptInvalid(void *refcon, CommodettoRectangle r);
 
 static const PixelsOutDispatchRecord gPixelsOutDispatch_cfap122250a00213 ICACHE_RODATA_ATTR = {
@@ -510,7 +509,7 @@ void xs_destm32s_get_c_dispatch(xsMachine *the)
 
 // caller provides 8-bit gray pixels. convert to 1-bit.
 // pixels  written into 1-bit buffer in reverse order
-static void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
+void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
 	CommodettoDimension updateWidth = sd->updateWidth;
@@ -518,6 +517,7 @@ static void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 	uint8_t spaceInOutput = 0;
 	uint8_t *mono = NULL;
 
+	if (byteLength < 0) byteLength = -byteLength;
 	for ( ; 0 != byteLength; byteLength -= updateWidth) {
 		PocoPixel *nextPixels = pixels + updateWidth;
 		int16_t i = updateBytes - 1, remain = updateWidth;
@@ -900,6 +900,7 @@ void destm32sSend_2g1r(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
 
+	if (byteLength < 0) byteLength = -byteLength;
 	while (byteLength > 0) {
 		uint8_t i;
 		uint8_t bits[(104 * 2) / 8];		// 26 bytes
@@ -1084,6 +1085,7 @@ void destm32sSend_bw1r(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
 
+	if (byteLength < 0) byteLength = -byteLength;
 	while (byteLength > 0) {
 		uint8_t i;
 		uint8_t bits[MODDEF_DESTM32S_WIDTH / 8];

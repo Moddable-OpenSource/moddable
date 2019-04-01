@@ -323,7 +323,7 @@ void xs_ssd1351_get_c_dispatch(xsMachine *the)
 void ssd1351Send_16LE(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxSwap16(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPITxSwap16(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #endif
 

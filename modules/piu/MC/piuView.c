@@ -807,6 +807,7 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	PiuView* self = refCon;
 	xsMachine *the = (*self)->the;
 	Poco poco = (*self)->poco;
+	if (byteLength < 0) byteLength = -byteLength;
 	xsCallFunction3((*self)->_send, xsReference((*self)->screen), xsReference((*self)->pixels), xsInteger((char *)pixels - (char *)poco->pixels), xsInteger(byteLength));
 }
 

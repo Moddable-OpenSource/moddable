@@ -464,6 +464,9 @@ static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t c
 	}
 
 	modSPIStartSend();
+
+	if (config->sync)
+		modSPIFlush();
 }
 
 void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)

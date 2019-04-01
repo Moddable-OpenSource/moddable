@@ -259,6 +259,7 @@ void lpm013m126aSend(PocoPixel *data, int count, void *refcon)
 	int size;
 	uint8_t *out;
 
+	if (count < 0) count = -count;
 	modSPIActivateConfiguration(NULL);
 
 	lines = count / MODDEF_LPM013M126A_WIDTH;
