@@ -1,0 +1,21 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/arducam/*",
+			"$(MODULES)/network/http/*"
+		],
+	},
+	"preload": [
+		"arducam",
+		"http",
+	],
+}
