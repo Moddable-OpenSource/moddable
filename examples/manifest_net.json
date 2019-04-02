@@ -92,7 +92,7 @@
 				"wifi",
 				"net"
 			]
-		},
+		},	
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}

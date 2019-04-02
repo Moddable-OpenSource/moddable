@@ -73,5 +73,6 @@ extern void modSPITxGray256To16BE(modSPIConfiguration config, uint8_t *data, uin
 extern void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPIFlush(void);
 extern void modSPIActivateConfiguration(modSPIConfiguration config);
+#define modSPISetSync(config, _sync)
 
 #endif
