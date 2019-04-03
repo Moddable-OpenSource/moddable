@@ -28,8 +28,6 @@
 	#include "xsgecko.h"
 #elif defined(qca4020)
 	#include "xsqca4020.h"
-#else
-	#error unsupported platform
 #endif
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
