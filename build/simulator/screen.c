@@ -236,6 +236,7 @@ void fxScreenLaunch(txScreen* screen)
 	screen->invoke = fxScreenInvoke;
 	screen->quit = fxScreenQuit;
 	screen->touch = fxScreenTouch;
+	screen->rotation = -1;
 #ifdef mxInstrument
 	modInstrumentationInit();
 	((txMachine*)(screen->machine))->onBreak = debugBreak;
@@ -733,7 +734,8 @@ void screen_get_pixelFormat(xsMachine* the)
 void screen_get_rotation(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
-	xsResult = xsInteger(screen->rotation);	
+	if (screen->rotation > 0)
+		xsResult = xsInteger(screen->rotation);	
 }
 
 void screen_get_width(xsMachine* the)
