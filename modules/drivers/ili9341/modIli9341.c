@@ -31,9 +31,6 @@
 #elif defined(qca4020)
 	#include "xsqca4020.h"
 	#include "xsPlatform.h"
-//#else
-//	#include "xslinux.h"
-//	#include "xsPlatform.h"
 #else
 	#error unsupported platform
 #endif
