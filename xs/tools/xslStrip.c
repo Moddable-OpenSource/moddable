@@ -228,6 +228,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, mxID(_Promise));
 	}
 	else {
+		fxUnstripCallback(linker, fx_Promise);
 		fxUnstripCallback(linker, fx_Promise_prototype_then);
 		fxUnstripCallback(linker, fx_Promise_resolve);
 		fxUnstripCallback(linker, fxOnRejectedPromise);
