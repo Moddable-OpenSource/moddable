@@ -95,9 +95,15 @@ export class Client {
 		else
 			throw new Error("message too long");
 	}
-
+	detach() {
+		const socket = this.socket;
+		delete this.socket.callback;
+		delete this.socket;
+		return socket;
+	}
 	close() {
-		this.socket.close();
+		if (this.socket)
+			this.socket.close();
 		delete this.socket;
 	}
 };
