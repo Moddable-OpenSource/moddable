@@ -1682,3 +1682,10 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 done:
 	socketDownUseCount(xss->the, xss);
 }
+
+void *modSocketGetLWIP(xsMachine *the, xsSlot *slot)
+{
+	xsSocket xss = xsmcGetHostData(*slot);
+	return xss->skt;
+}
+
