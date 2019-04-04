@@ -550,7 +550,8 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	xsSocket xss = info;
 	xsMachine *the = xss->the;
 
-	xss->useCount += 1;
+	if (xss->done)
+		return;
 
 	if (cbType & kCFSocketReadCallBack) {
 		unsigned char buffer[2048];

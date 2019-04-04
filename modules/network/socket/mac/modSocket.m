@@ -547,7 +547,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	xsSocket xss = info;
 	xsMachine *the = xss->the;
 
-	if (-1 == xss->skt)
+	if ((-1 == xss->skt) || xss->done)
 		return;		// closed socket
 
 	xss->useCount += 1;
