@@ -259,11 +259,16 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (linker->intrinsicFlags[mxCopyObjectIntrinsic])
 		fxUnstripCallback(linker, fxCopyObject);
 	// parser
-	fxStripCallback(linker, fx_eval);
-	fxStripCallback(linker, fx_Function);
-	fxStripCallback(linker, fx_AsyncFunction);
-	fxStripCallback(linker, fx_GeneratorFunction);
-	fxStripCallback(linker, fx_AsyncGeneratorFunction);
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_eval)))
+		fxStripCallback(linker, fx_eval);
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_Function)))
+		fxStripCallback(linker, fx_Function);
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_AsyncFunction)))
+		fxStripCallback(linker, fx_AsyncFunction);
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_GeneratorFunction)))
+		fxStripCallback(linker, fx_GeneratorFunction);
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_AsyncGeneratorFunction)))
+		fxStripCallback(linker, fx_AsyncGeneratorFunction);
 }
 
 void fxStripClass(txLinker* linker, txMachine* the, txID id)
