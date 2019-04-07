@@ -270,28 +270,28 @@ void tcp_close_safe(struct tcp_pcb *tcpPCB)
 
 static void tcp_output_INLWIP(void *ctx)
 {
-	xsSocket xss = ctx;
-	if (xss->skt)
-		tcp_output(xss->skt);
+	struct tcp_pcb *tcpPCB = ctx;
+	if (tcpPCB)
+		tcp_output(tcpPCB);
 }
 
-void tcp_output_safe(xsSocket xss)
+void tcp_output_safe(struct tcp_pcb *tcpPCB)
 {
-	tcpip_callback_with_block(tcp_output_INLWIP, xss, 0);
+	tcpip_callback_with_block(tcp_output_INLWIP, tcpPCB, 0);
 }
 
 static err_t tcp_write_INLWIP(struct tcpip_api_call *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;
-	if (msg->xss->skt)
-		msg->err = tcp_write(msg->xss->skt, msg->data, msg->len, msg->flags);
+	if (msg->tcpPCB)
+		msg->err = tcp_write(msg->tcpPCB, msg->data, msg->len, msg->flags);
 	return ERR_OK;
 }
 
-err_t tcp_write_safe(xsSocket xss, const void *data, u16_t len, u8_t flags)
+err_t tcp_write_safe(struct tcp_pcb *tcpPCB, const void *data, u16_t len, u8_t flags)
 {
 	LwipMsgRecord msg = {
-		.xss = xss,
+		.tcpPCB = tcpPCB,
 		.data = data,
 		.len = len,
 		.flags = flags
@@ -427,8 +427,8 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
 	// for some reason, ESP8266 has a memory leak when using tcp_close instead of tcp_abort
 	#define tcp_close_safe tcp_close
-	#define tcp_output_safe(xss) tcp_output(xss->skt)
-	#define tcp_write_safe(xss, data, len, flags) tcp_write(xss->skt, data, len, flags)
+	#define tcp_output_safe tcp_output
+	#define tcp_write_safe tcp_write
 	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
 	#define udp_new_safe udp_new
 	#define udp_bind_safe udp_bind
@@ -463,7 +463,12 @@ static void forgetSocket(xsSocket xss)
 	modCriticalSectionEnd();
 }
 
-#define socketUpUseCount(the, xss) (xss->useCount += 1)
+static void socketUpUseCount(xsMachine *the, xsSocket xss)
+{
+	modCriticalSectionBegin();
+	xss->useCount += 1;
+	modCriticalSectionEnd();
+}
 
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
@@ -1010,7 +1015,7 @@ void xs_socket_write(xsMachine *the)
 
 				if (!inFlash) {
 					while (msgLen) {
-						err = tcp_write_safe(xss, msg, msgLen, TCP_WRITE_FLAG_COPY);
+						err = tcp_write_safe(xss->skt, msg, msgLen, TCP_WRITE_FLAG_COPY);
 						if (ERR_OK == err)
 							break;
 
@@ -1032,7 +1037,7 @@ void xs_socket_write(xsMachine *the)
 
 						c_memcpy(buffer, msg, use);
 						do {
-							err = tcp_write_safe(xss, buffer, use, TCP_WRITE_FLAG_COPY);
+							err = tcp_write_safe(xss->skt, buffer, use, TCP_WRITE_FLAG_COPY);
 							if (ERR_OK == err)
 								break;
 
@@ -1329,7 +1334,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 			if (xss->reader[0] || xss->buflen)
 				xss->suspendedDisconnect = true;
 			else
-				socketSetPending(xss, kPendingDisconnect);
+				socketSetPending(xss, kPendingDisconnect | kPendingClose);
 		}
 
 		return ERR_OK;
@@ -1662,7 +1667,7 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		socketMsgDataSent(xss);
 
 	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
-		tcp_output_safe(xss);
+		tcp_output_safe(xss->skt);
 
 	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
 		socketMsgConnect(xss);
