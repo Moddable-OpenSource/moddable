@@ -1364,7 +1364,7 @@ struct modMessageRecord {
 	uint16_t			length;
 };
 
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+int modMessagePostToMachineWithTimeout(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon, int waitMS)
 {
 	modMessageRecord msg;
 
@@ -1380,9 +1380,15 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
+	if (pdTRUE == xQueueSend(the->msgQueue, &msg, (waitMS < 0) ? portMAX_DELAY : waitMS))		// in theory should unit convert MS to ticks
+		return 0;
 
-	return 0;
+//	modLog("post - TIMED OUT");
+
+	if (msg.message)
+		c_free(msg.message);
+
+	return -2;
 }
 
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
@@ -1504,7 +1510,7 @@ static void appendMessage(modMessage msg)
 	modCriticalSectionEnd();
 }
 
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+int modMessagePostToMachineWithTimeout(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon, int waitMS)
 {
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
 	if (!msg) return -1;
@@ -1802,16 +1808,18 @@ uint8_t *espFindUnusedFlashStart(void)
 {
 	rom_header_new header;
 	uint32_t pos = APP_START_OFFSET;
-	uint8_t i, count;
 
-	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(rom_header_new));
+	spi_flash_read(pos, (void *)&header, sizeof(rom_header_new));
+	if ((0xea != header.magic) || (4 != header.count)) {
+		modLog("unrecognized boot loader");
+		return NULL;
+	}
+
 	pos += header.len + sizeof(rom_header_new);
+	spi_flash_read(pos, (void *)&header, sizeof(rom_header));
 
-	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(rom_header));
-	count = header.count;
 	pos += sizeof(rom_header);
-
-	for (i = 0; i < count; i++) {
+	while (header.count--) {
 		section_header_t section;
 		spi_flash_read(pos, (void *)&section, sizeof(section_header_t));
 		pos += section.size + sizeof(section_header_t);
