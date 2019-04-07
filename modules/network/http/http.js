@@ -426,9 +426,11 @@ export class Server {
 		};
 	}
 
-	close() {
-		this.connections.forEach(request => {trace("close http server request\n"); request.close();});
-		delete this.connections;
+	close(connections = true) {
+		if (connections) {
+			this.connections.forEach(request => {trace("close http server request\n"); request.close();});
+			delete this.connections;
+		}
 		this.listener.close();
 		delete this.listener;
 	}
