@@ -1,7 +1,7 @@
 # BLE
-Copyright 2017-18 Moddable Tech, Inc.
+Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: October 30, 2018
+Revised: April 6, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -883,18 +883,16 @@ onServices(services) {
 ## BLE Server
 A BLE server/peripheral can connect to one BLE client and typically performs the following steps to send notifications to a BLE client:
 
-1. Deploy services
-2. Start advertising so that clients can discover the peripheral
-3. Establish a connection with a client
-4. Accept characteristic value change notification request(s)
-5. Notify characteristic value changes.
+1. Start advertising so that clients can discover the peripheral
+2. Establish a connection with a client
+3. Accept characteristic value change notification request(s)
+4. Notify characteristic value changes.
 
 The following abbreviated code from the [heart-rate-server](../../../examples/network/ble/heart-rate-server) example app shows a typical server flow:
 
 ```javascript
 onReady() {
 	this.bpm = [0, 60]; // flags, beats per minute
-	this.deploy();
 	this.startAdvertising({
 		advertisingData: {flags: 6, completeName: "Moddable HRS", completeUUID16List: [uuid`180D`, uuid`180F`]}
 	});
@@ -922,7 +920,7 @@ startMeasurements(characteristic) {
 }
 ```
 
-A BLE server is fundamentally asynchronous and results are always delivered to the `BLEServer` class callback methods, e.g. `onReady`, `onConnected`, etc. above. The following sections describe the `BLEServer` class, properties, and callbacks.
+GATT services are automatically deployed by the BLE server when launched. A BLE server is fundamentally asynchronous and results are always delivered to the `BLEServer` class callback methods, e.g. `onReady`, `onConnected`, etc. above. The following sections describe the `BLEServer` class, properties, and callbacks.
 
 <a id="classbleserver"></a>
 ## Class BLEServer
@@ -1009,11 +1007,6 @@ onReady() {
 	this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.KeyboardDisplay };
 }
 ```
-
-***
-
-#### `deploy()`
-Use the `deploy` function to deploy all the server GATT services. Deployed services can be browsed by BLE clients. GATT services are defined in JSON files and described in the [`GATT Services`](#gattservices) section below.
 
 ***
 
@@ -1277,8 +1270,8 @@ Each item in the `characteristics` object contains the following properties:
 | `uuid` | `string` | Characteristic UUID.
 | `maxBytes` | `number` | Maximum number of bytes required to store the characteristic value.
 | `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `String`, `Uint8`, `Uint16` and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` class automatically converts characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`.
-| `permissions` | `string` | Characteristic permissions. Supported permissions include `read` and `write`. Multiple permissions can be specified by comma-separating permission strings.
-| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
+| `permissions` | `string` | Characteristic permissions. Supported permissions include `read`, `readEncrypted`, `write`, and `writeEncrypted`. Multiple permissions can be specified by comma-separating permission strings.
+| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `writeNoResponse`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
 | `value` | `array`, `string`, or `number` | Optional characteristic value. The `BLEServer` class automatically converts the value specified here to the type specified by the `type` property.
 
 Characteristics that include a `value` property are considered static. The `BLEServer` class automatically responds to read requests for static characteristic values, further reducing the script code required to host a GATT service.
@@ -1538,6 +1531,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
 | [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
 | [hid-mouse](../../../examples/network/ble/hid-mouse) | Demonstrates how to connect to a BLE mouse that implements the HID over GATT profile.
+| [ios-media-sync](../../../examples/network/ble/ios-media-sync) | [Commodetto](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/commodetto.md) app that demonstrates how to implement an [Apple Media Service](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html#//apple_ref/doc/uid/TP40014716-CH1-SW48) client.
 | [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.current_time.xml).
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.

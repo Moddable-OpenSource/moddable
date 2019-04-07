@@ -21,7 +21,6 @@ export default class WiFiServer extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable Device";
 		this.onDisconnected();
-		this.deploy();
 	}
 	onConnected() {
 		this.stopAdvertising();

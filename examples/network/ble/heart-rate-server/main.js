@@ -27,7 +27,6 @@ class HeartRateService extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable HRM";
 		this.onDisconnected();
-		this.deploy();
 	}
 	onConnected() {
 		this.stopAdvertising();

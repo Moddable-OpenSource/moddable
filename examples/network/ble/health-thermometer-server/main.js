@@ -24,7 +24,6 @@ class HealthThermometerService extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable HTM";
 		this.onDisconnected();
-		this.deploy();
 	}
 	onConnected() {
 		this.stopAdvertising();
