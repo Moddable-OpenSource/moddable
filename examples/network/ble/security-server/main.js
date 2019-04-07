@@ -30,7 +30,6 @@ class SecureHealthThermometerServer extends BLEServer {
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
 		//this.securityParameters = { ioCapability:IOCapability.NoInputNoOutput };
 		this.onDisconnected();
-		this.deploy();
 	}
 	onAuthenticated() {
 		this.authenticated = true;

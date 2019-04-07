@@ -60,7 +60,6 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._startAdvertising(interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
-	deploy() @ "xs_ble_server_deploy"
 	initialize() @ "xs_ble_server_initialize"
 	
 	get localAddress() {
@@ -88,6 +87,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyRequested() {}
 	onAuthenticated() {}
 
+	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
@@ -154,6 +154,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		switch(event) {
 			case "onReady":
 				this.onReady();
+				this._deploy();
 				break;
 			case "onCharacteristicWritten":
 				params.value = this._typedBufferToValue(params.type, params.value);

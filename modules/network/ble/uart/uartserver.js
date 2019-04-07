@@ -37,7 +37,6 @@ class UARTServer extends BLEServer {
 	}
 	onReady() {
 		this.onDisconnected();
-		this.deploy();
 	}
 	onConnected() {
 		this.stopAdvertising();
