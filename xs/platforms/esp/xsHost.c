@@ -1364,7 +1364,7 @@ struct modMessageRecord {
 	uint16_t			length;
 };
 
-int modMessagePostToMachineWithTimeout(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon, int waitMS)
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessageRecord msg;
 
@@ -1380,15 +1380,9 @@ int modMessagePostToMachineWithTimeout(xsMachine *the, uint8_t *message, uint16_
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-	if (pdTRUE == xQueueSend(the->msgQueue, &msg, (waitMS < 0) ? portMAX_DELAY : waitMS))		// in theory should unit convert MS to ticks
-		return 0;
+	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
 
-//	modLog("post - TIMED OUT");
-
-	if (msg.message)
-		c_free(msg.message);
-
-	return -2;
+	return 0;
 }
 
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
@@ -1510,7 +1504,7 @@ static void appendMessage(modMessage msg)
 	modCriticalSectionEnd();
 }
 
-int modMessagePostToMachineWithTimeout(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon, int waitMS)
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
 	if (!msg) return -1;
