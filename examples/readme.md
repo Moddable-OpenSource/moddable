@@ -1,9 +1,7 @@
 # Moddable SDK - Examples
 
 Copyright 2018 Moddable Tech, Inc.<BR>
-Revised: October 26, 2018
-
-<!-- Last edit: 10/26/18 LP -->
+Revised: April 8, 2019
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -78,6 +76,7 @@ The `-p` command line option specifies the target platform/subplatform you are b
 | gecko/giant | [SiLabs Giant Gecko](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit)
 | gecko/mighty | [SiLabs Mighty Gecko](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit)
 | gecko/thunderboard2 | [SiLabs Thunderboard Sense 2](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
+| qca4020/cdb | [Qualcomm QCA4020 CDB](https://developer.qualcomm.com/hardware/qca4020-qca4024)
 
 For example, to build a release app that targets Moddable Zero:
 

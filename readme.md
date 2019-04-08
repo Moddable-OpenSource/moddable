@@ -1,7 +1,7 @@
 # Moddable SDK
 
 Copyright 2017-2018 Moddable Tech, Inc.<BR>
-Revised: December 28, 2018
+Revised: April 8, 2019
 
 ## Modern software development for microcontrollers
 
@@ -94,7 +94,7 @@ The **documentation**, **examples**, and **modules** directories share a common 
 
 ![Platforms](./documentation/assets/moddable/platforms.png)
 
-The Moddable SDK also includes support for the ESP8266 and ESP32 by Espressif, and four models of Gecko by Silicon Labs.
+The Moddable SDK also includes support for the ESP8266 and ESP32 by Espressif, four models of Gecko by Silicon Labs, and the QCA4020 CDB by Qualcomm.
 
 See the **Target platforms** section of the [readme.md](examples/readme.md) document in the examples folder for a full list of supported platforms.
 
