@@ -41,15 +41,15 @@ export default class SMBus extends I2C {
 		return buffer ? super.read(count, buffer) : super.read(count);
 	}
 	writeByte(register, value) {
-		super.write(register, value & 255);
+		return super.write(register, value & 255);
 	}
 	writeWord(register, value, endian) {
 		if (endian)
-			super.write(register, (value >> 8) & 255, value & 255);
+			return super.write(register, (value >> 8) & 255, value & 255);
 		else
-			super.write(register, value & 255, (value >> 8) & 255);
+			return super.write(register, value & 255, (value >> 8) & 255);
 	}
 	writeBlock(register, ...value) {
-		super.write(register, ...value);
+		return super.write(register, ...value);
 	}
 }
