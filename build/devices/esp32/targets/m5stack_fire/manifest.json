@@ -77,6 +77,7 @@
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
 			"$(MODULES)/drivers/mpu6050/*",
+			"$(MODULES)/drivers/mag3110/*"
 			
 		],
 		"pins/i2s": "$(MODULES)/pins/i2s/*",
@@ -89,6 +90,7 @@
 		"pins/i2s",
 		"setup/target",
 		"mpu6050",
+		"mag3110",
 		"pins/smbus"
 	],
 	"resources": {

@@ -8,6 +8,7 @@ import Resource from "Resource";
 
 import Timer from "timer";
 import MPU6050 from "mpu6050";
+import MAG3110 from "mag3110";
 
 import config from "mc/config";
 
@@ -35,12 +36,17 @@ export default function (done) {
 	//@@ microphone
 
 	state.accelerometerGyro = new MPU6050;
+	state.magnetometer = new MAG3110;
 
 	global.accelerometer = {
 		onreading: nop
 	}
 
 	global.gyro = {
+		onreading: nop
+	}
+
+	global.magnetometer = {
 		onreading: nop
 	}
 
@@ -74,6 +80,16 @@ export default function (done) {
 		}, frequency);
 	}
 
+	magnetometer.start = function (frequency) {
+		magnetometer.stop();
+		state.magTimerID = Timer.repeat(id => {
+			const sample = state.magnetometer.sample();
+			if (sample) {
+				magnetometer.onreading(sample);
+			}
+		}, frequency);
+	}
+
 	accelerometer.stop = function(){
 		if (undefined !== state.accelerometerTimerID)
 			Timer.clear(state.accelerometerTimerID);
@@ -84,6 +100,12 @@ export default function (done) {
 		if (undefined !== state.gyroTimerID)
 			Timer.clear(state.gyroTimerID);
 		delete state.gyroTimerID;
+	}
+
+	magnetometer.stop = function () {
+		if (undefined !== state.magTimerID)
+			Timer.clear(state.magTimerID);
+		delete state.magTimerID;
 	}
 	
 	if (config.autorotate && global.Application){
