@@ -30,7 +30,9 @@
 
 #include "modSocket.h"
 
-extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+#ifdef mxDebug
+	extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+#endif
 
 #if ESP32
 	#include "lwip/priv/tcpip_priv.h"
@@ -1312,10 +1314,12 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	struct pbuf *walker;
 	uint16 offset;
 
+#ifdef mxDebug
 	if (p && fxInNetworkDebugLoop(xss->the)) {
 		modLog("refuse TCP");
 		return ERR_MEM;
 	}
+#endif
 
 	if (xss->pending & kPendingClose)
 		return ERR_OK;
@@ -1382,11 +1386,13 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	xsSocket xss = arg;
 	unsigned char i;
 
+#ifdef mxDebug
 	if (fxInNetworkDebugLoop(xss->the)) {
 		modLog("drop UDP");
 		pbuf_free(p);
 		return;
 	}
+#endif
 
 	modCriticalSectionBegin();
 
@@ -1480,7 +1486,7 @@ void xs_listener(xsMachine *the)
 
 	xsl->obj = xsThis;
 	xsl->the = the;
-	socketUpUseCount(the, xsl);
+	socketUpUseCount(the, (xsSocket)xsl);
 	xsRemember(xsl->obj);
 
 	xsl->kind = kTCPListener;
@@ -1577,11 +1583,16 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	tcp_accepted(xsl->skt);
 
-	xss = c_calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
-	if (!xss) {
-		tcp_close(newpcb);		// not tcp_close_safe since we are in the lwip thread already
-		return ERR_MEM;
+#ifdef mxDebug
+	if (fxInNetworkDebugLoop(xsl->the)) {
+		modLog("refuse incoming connection while in debugger");
+		return ERR_ABRT;		// lwip will close
 	}
+#endif
+
+	xss = c_calloc(1, sizeof(xsSocketRecord) - sizeof(xsSocketUDPRemoteRecord));
+	if (!xss)
+		return ERR_ABRT;		// lwip will close
 
 	xss->the = xsl->the;
 	xss->skt = newpcb;
@@ -1599,9 +1610,8 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 
 	if (kListenerPendingSockets == i) {
 		modLog("tcp accept queue full");
-		tcp_close(newpcb);		// not tcp_close_safe since we are in the lwip thread already
 		c_free(xss);
-		return ERR_MEM;
+		return ERR_ABRT;		// lwip will close
 	}
 
 	tcp_arg(xss->skt, xss);
