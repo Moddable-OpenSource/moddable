@@ -223,7 +223,7 @@ void fxDebugImport(txMachine* the, txString path)
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
 	the->debugExit = 0;
-	for (;;) {
+	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
 		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 1))
@@ -295,7 +295,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	fxEchoStop(the);
 
 	the->debugExit = 0;
-	for (;;) {
+	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
 		if ((the->debugState == XS_LF_STATE) && (the->debugExit > 1))
