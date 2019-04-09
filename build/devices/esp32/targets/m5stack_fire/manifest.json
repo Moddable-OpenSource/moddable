@@ -1,13 +1,18 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/pins/i2c/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
-		"rotation": 90,
 		"touch": "",
+		"autorotate": 300
 	},
 	"defines": {
+		"i2c":{
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
 		"spi": {
 			"mosi_pin": 23,
 			"miso_pin": 19,
@@ -47,15 +52,20 @@
 			"$(MODULES)/drivers/neopixel/esp32/*",
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
+			"$(MODULES)/drivers/mpu6050/*",
+			
 		],
 		"pins/i2s": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"neopixel",
 		"monitor",
 		"pins/i2s",
 		"setup/target",
+		"mpu6050",
+		"pins/smbus"
 	],
 	"resources": {
 		"*": "./assets/bflatmajor",
