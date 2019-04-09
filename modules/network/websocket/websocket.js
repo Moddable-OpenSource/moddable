@@ -303,8 +303,6 @@ function server(message, value, etc) {
 
 	if (!socket) return;
 
-	trace(`WS SERVER SOCKET MSG ${message} in state ${this.state}\n`);
-
 	if (2 == message) {
 		if ((1 == this.state) || (2 == this.state)) {
 			while (true) {
