@@ -39,9 +39,9 @@
 
 static txFlag fxIsLinkerSymbolUsed(txLinker* linker, txID id);
 static void fxStripCallback(txLinker* linker, txCallback which);
-static void fxStripClass(txLinker* linker, txMachine* the, txID id);
-static void fxStripInstance(txLinker* linker, txMachine* the, txSlot* instance);
-static void fxStripObject(txLinker* linker, txMachine* the, txID id);
+static void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot);
+static void fxStripInstance(txLinker* linker, txMachine* the, txSlot* slot);
+static void fxStripObject(txLinker* linker, txMachine* the, txSlot* slot);
 static void fxUnstripCallback(txLinker* linker, txCallback which);
 static void fxUseSymbol(txLinker* linker, txID id);
 
@@ -91,10 +91,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	// Number?
 	// Math
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Math)))
-		fxStripObject(linker, the, mxID(_Math));
+		fxStripObject(linker, the, &mxMathObject);
 	// Date
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Date)))
-		fxStripClass(linker, the, mxID(_Date));
+		fxStripClass(linker, the, &mxDateConstructor);
 	// String
 	fxUnstripCallback(linker, fxStringAccessorGetter);
 	fxUnstripCallback(linker, fxStringAccessorSetter);
@@ -119,7 +119,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	else {
 		if (!match && !search) {
-			fxStripClass(linker, the, mxID(_RegExp));
+			fxStripClass(linker, the, &mxRegExpConstructor);
 		}
 	}
 	if (match) {
@@ -149,7 +149,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_TypedArray_prototype_values);
 	// Map
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Map))) {
-		fxStripClass(linker, the, mxID(_Map));
+		fxStripClass(linker, the, &mxMapConstructor);
 		fxStripInstance(linker, the, mxMapEntriesIteratorPrototype.value.reference);
 		fxStripInstance(linker, the, mxMapKeysIteratorPrototype.value.reference);
 		fxStripInstance(linker, the, mxMapValuesIteratorPrototype.value.reference);
@@ -169,7 +169,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	// Set
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Set))) {
-		fxStripClass(linker, the, mxID(_Set));
+		fxStripClass(linker, the, &mxSetConstructor);
 		fxStripInstance(linker, the, mxSetEntriesIteratorPrototype.value.reference);
 		fxStripInstance(linker, the, mxSetKeysIteratorPrototype.value.reference);
 		fxStripInstance(linker, the, mxSetValuesIteratorPrototype.value.reference);
@@ -185,10 +185,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	// WeakMap
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_WeakMap)))
-		fxStripClass(linker, the, mxID(_WeakMap));
+		fxStripClass(linker, the, &mxWeakMapConstructor);
 	// WeakSet
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_WeakSet)))
-		fxStripClass(linker, the, mxID(_WeakSet));
+		fxStripClass(linker, the, &mxWeakSetConstructor);
 	// Iterator ?
 	if (!fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF))
 		fxStripInstance(linker, the, mxAsyncFromSyncIteratorPrototype.value.reference);
@@ -205,21 +205,21 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_ArrayBuffer);
 	// DataView
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_DataView)))
-		fxStripClass(linker, the, mxID(_DataView));
+		fxStripClass(linker, the, &mxDataViewConstructor);
 	// Atomics
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_SharedArrayBuffer)))
-		fxStripClass(linker, the, mxID(_SharedArrayBuffer));
+		fxStripClass(linker, the, &mxSharedArrayBufferConstructor);
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Atomics)))
-		fxStripObject(linker, the, mxID(_Atomics));
+		fxStripObject(linker, the, &mxAtomicsObject);
 	// BigInt
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_BigInt)) && !fxIsCodeUsed(XS_CODE_BIGINT_1) && !fxIsCodeUsed(XS_CODE_BIGINT_2))
-		fxStripClass(linker, the, mxID(_BigInt));
+		fxStripClass(linker, the, &mxBigIntConstructor);
 	// JSON
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
-		fxStripObject(linker, the, mxID(_JSON));
+		fxStripObject(linker, the, &mxJSONObject);
 	// Promise
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Promise)) && !fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION) && !fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION)) {
-		fxStripClass(linker, the, mxID(_Promise));
+		fxStripClass(linker, the, &mxPromiseConstructor);
 	}
 	else {
 		fxUnstripCallback(linker, fx_Promise);
@@ -232,10 +232,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	// Reflect
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Reflect)))
-		fxStripObject(linker, the, mxID(_Reflect));
+		fxStripObject(linker, the, &mxReflectObject);
 	// Proxy
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Proxy)))
-		fxStripObject(linker, the, mxID(_Proxy));
+		fxStripObject(linker, the, &mxProxyConstructor);
 	else {
 		fxUnstripCallback(linker, fxProxyGetter);
 		fxUnstripCallback(linker, fxProxySetter);
@@ -244,7 +244,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Module);
 	fxUnstripCallback(linker, fx_Transfer);
 	fxUnstripCallback(linker, fx_require);
-	fxUnstripCallback(linker, fx_require_weak);
 	fxUnstripCallback(linker, fx_Set_prototype_add);
 	fxUnstripCallback(linker, fx_Set_prototype_values);
 	fxUnstripCallback(linker, fx_Set_prototype_values_next);
@@ -266,10 +265,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripCallback(linker, fx_AsyncGeneratorFunction);
 }
 
-void fxStripClass(txLinker* linker, txMachine* the, txID id)
+void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)
 {
-	mxPush(mxGlobal);
-	fxGetID(the, id);
+	mxPushSlot(slot);
 	fxStripInstance(linker, the, the->stack->value.reference);
 	fxGetID(the, mxID(_prototype));
 	fxStripInstance(linker, the, the->stack->value.reference);
@@ -523,10 +521,9 @@ void fxStripName(txLinker* linker, txString name)
 		linkerCallback->flag = 0;
 }
 
-void fxStripObject(txLinker* linker, txMachine* the, txID id)
+void fxStripObject(txLinker* linker, txMachine* the, txSlot* slot)
 {
-	mxPush(mxGlobal);
-	fxGetID(the, id);
+	mxPushSlot(slot);
 	fxStripInstance(linker, the, the->stack->value.reference);
 	mxPop();
 }

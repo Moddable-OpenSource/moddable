@@ -338,7 +338,7 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 #if mxUseDefaultLoadModule
 
 extern void fxDebugImport(txMachine* the, txString path);
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	char path[C_PATH_MAX];
 	txByte* code;
@@ -359,7 +359,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		script.version[1] = XS_MINOR_VERSION;
 		script.version[2] = XS_PATCH_VERSION;
 		script.version[3] = 0;
-		fxResolveModule(the, moduleID, &script, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &script, C_NULL, C_NULL);
 	}
 	else {
  		txPreparation* preparation = the->preparation;
@@ -368,7 +368,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 			txScript* script = preparation->scripts;
 			while (c > 0) {
 				if (!c_strcmp(path + preparation->baseLength, script->path)) {
-					fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+					fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 					return;
 				}
 				c--;
@@ -385,7 +385,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	#endif
  		txScript* script = fxLoadScript(the, path, flags);
  		if (script)
- 			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+ 			fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
  	}
 #else
 	#ifdef mxDebug

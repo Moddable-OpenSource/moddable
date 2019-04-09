@@ -62,7 +62,7 @@ void fxBuildPromise(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_prototype_then), 2, mxID(_then), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Promise", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPromisePrototype = *the->stack;
-	slot = fxNewHostConstructorGlobal(the, mxCallback(fx_Promise), 1, mxID(_Promise), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Promise), 1, mxID(_Promise));
 	mxPromiseConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_all), 1, mxID(_all), XS_DONT_ENUM_FLAG);
@@ -83,29 +83,6 @@ void fxBuildPromise(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxResolvePromise), 1, XS_NO_ID);
 	mxResolvePromiseFunction = *the->stack;
 	the->stack++;
-}
-
-void fxPushSpeciesConstructor(txMachine* the, txSlot* constructor)
-{
-	mxPushSlot(mxThis);
-	fxGetID(the, mxID(_constructor));
-	if (mxIsUndefined(the->stack)) {
-		mxPop();
-		mxPushSlot(constructor);
-		return;
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
-	fxGetID(the, mxID(_Symbol_species));
-	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
-		mxPop();
-		mxPushSlot(constructor);
-		return;
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
 }
 
 txSlot* fxNewPromiseInstance(txMachine* the)
@@ -859,7 +836,9 @@ void fx_Promise_prototype_finally(txMachine* the)
 {
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	fxPushSpeciesConstructor(the, &mxPromiseConstructor);
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_constructor));
+	fxToSpeciesConstructor(the, &mxPromiseConstructor);
 	if (mxArgc > 0) {
 		if (mxIsReference(mxArgv(0)) && mxIsCallable(mxArgv(0)->value.reference)) {
 			txSlot* function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
@@ -980,7 +959,9 @@ void fx_Promise_prototype_then(txMachine* the)
 	capability = fxNewHostFunction(the, fxBuildPromiseCapability, 2, XS_NO_ID);
 	mxPushReference(capability);
 	mxPushInteger(1);
-	fxPushSpeciesConstructor(the, &mxPromiseConstructor);
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_constructor));
+	fxToSpeciesConstructor(the, &mxPromiseConstructor);
 	fxNew(the);
 	mxPullSlot(mxResult);
 	fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);

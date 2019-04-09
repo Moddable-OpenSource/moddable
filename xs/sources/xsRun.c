@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-#define mxTrace 1
+//#define mxTrace 1
 //#define mxTraceCall 1
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
@@ -625,7 +625,7 @@ XS_CODE_JUMP:
 				index = mxFrameThis->kind;
 				if (index < XS_REFERENCE_KIND) {
 					if ((index == XS_UNDEFINED_KIND) || (index == XS_NULL_KIND))
-						*mxFrameThis = mxGlobal;
+						fxGlobal(the, mxFrameThis);
 					else {
 						mxSaveState;
 						fxToInstance(the, mxFrameThis);
@@ -2183,8 +2183,8 @@ XS_CODE_JUMP:
             mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_GLOBAL)
-			mxPushKind(XS_REFERENCE_KIND);
-			mxStack->value.reference = mxGlobal.value.reference;
+			mxPushKind(XS_UNDEFINED_KIND);
+			fxGlobal(the, mxStack);
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_HOST)
@@ -3586,16 +3586,12 @@ XS_CODE_JUMP:
 					mxStack->value.reference = variable;
 					mxBreak;
 				}
-				variable = variable->next;
-				if (variable->kind == XS_REFERENCE_KIND)
-					variable = variable->value.reference;
-				else
-					variable = mxGlobal.value.reference;
 			}
-			else
-				variable = mxGlobal.value.reference;
 			mxPushKind(XS_REFERENCE_KIND);
-			mxStack->value.reference = variable;
+			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+			variable = mxModuleInstanceInternal(variable)->value.module.realm;
+			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
 			mxBreak;
 		mxCase(XS_CODE_PROGRAM_ENVIRONMENT)
 			mxNextCode(1);
@@ -3619,16 +3615,12 @@ XS_CODE_JUMP:
 					mxStack->value.reference = variable;
 					mxBreak;
 				}
-				variable = variable->next;
-				if (variable->kind == XS_REFERENCE_KIND)
-					variable = variable->value.reference;
-				else
-					variable = mxGlobal.value.reference;
 			}
-			else
-				variable = mxGlobal.value.reference;
 			mxPushKind(XS_REFERENCE_KIND);
-			mxStack->value.reference = variable;
+			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+			variable = mxModuleInstanceInternal(variable)->value.module.realm;
+			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
 			mxBreak;
 		mxCase(XS_CODE_WITH)
 			variable = mxFrameEnvironment;
@@ -3766,7 +3758,7 @@ void fxRunEval(txMachine* the)
 				closures = closures->value.reference;
 			else
 				closures = C_NULL;
-			fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, flags), mxThis, mxTarget, closures, home->value.home.object, C_NULL);
+			fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, flags), mxThis, mxTarget, closures, home->value.home.object, home->value.home.module);
 			aStream.slot->kind = the->stack->kind;
 			aStream.slot->value = the->stack->value;
 			the->stack++;
@@ -4099,10 +4091,10 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				/* ARGC */
 				mxPushInteger(0);
 				/* THIS */
-				if (module)
-					mxPushReference(module);
+				if (_this)
+					mxPushSlot(_this);
 				else
-					mxPush(mxGlobal);
+					mxPushUndefined();
 				the->stack->ID = XS_NO_ID;
 				/* FUNCTION */
 				mxPush(mxFunctionPrototype);
@@ -4122,10 +4114,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			else {
 				mxPushUndefined();
 			}
-			if (module)
-				mxPullSlot(mxModuleInstanceHosts(module));
-			else
-				mxPull(mxHosts);
+			mxPull(mxHosts);
 			the->stack++;
 
 			/* ARGC */
@@ -4156,14 +4145,10 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 
 			mxPushUndefined();
 			mxPull(mxHosts);
-			if (!module)
-				fxGlobalDeleteProperty(the, mxGlobal.value.reference, mxID(0), XS_NO_ID);		
 			if (script->symbolsBuffer)
 				fxDeleteScript(script);
 		}
 		mxCatch(the) {
-			if (!module)
-				fxGlobalDeleteProperty(the, mxGlobal.value.reference, mxID(0), XS_NO_ID);		
 			if (script->symbolsBuffer)
 				fxDeleteScript(script);
 			fxJump(the);

@@ -307,15 +307,16 @@ int main(int argc, char* argv[])
 				xsVars(2);
 				{
 					xsTry {
+                            xsCollectGarbage();
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
+                            xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
 						if (linker->stripping)
 							fxFreezeBuiltIns(the);
-						xsCollectGarbage();
 					}
 					xsCatch {
 						xsStringValue message = xsToString(xsException);
@@ -390,7 +391,7 @@ int main(int argc, char* argv[])
 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
 			}
 
-			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
+// 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
 	
 			c_strcpy(path, output);
 			c_strcat(path, name);
@@ -435,7 +436,7 @@ int main(int argc, char* argv[])
 			
 			
 			file = fopen(path, "w");
-			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! */\n\n");
+			fprintf(file, "/* XS GENERATED FILE; DO NOT EDIT! %d */\n\n", ___proto__);
 			//fprintf(file, "#pragma GCC diagnostic ignored \"-Wincompatible-pointer-types-discards-qualifiers\"\n");
 
 			fprintf(file, "#include \"xsPlatform.h\"\n");
@@ -464,8 +465,8 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txSlot* gxNames[mxNamesCount];\n");
 			fprintf(file, "#define mxSymbolsCount %d\n", the->symbolModulo);
 			fprintf(file, "static const txSlot* gxSymbols[mxSymbolsCount];\n");
-			fprintf(file, "#define mxGlobalsCount %d\n", (int)globalCount);
-			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount];\n");
+// 			fprintf(file, "#define mxGlobalsCount %d\n", (int)globalCount);
+// 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount];\n");
 			script = linker->firstScript;
 			while (script) {
 				if (script->hostsBuffer)
@@ -517,9 +518,9 @@ int main(int argc, char* argv[])
 				}
 				fprintf(file, "\n};\n\n");
 			}
-			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
-			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
-			fprintf(file, "};\n\n");
+// 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
+// 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
+// 			fprintf(file, "};\n\n");
 			fprintf(file, "static const txSlot* gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->keyIndex, the->keyArray);
 			fprintf(file, "};\n\n");
@@ -712,8 +713,7 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 void fxFreezeBuiltIn(txMachine* the)
 {
 	mxPushInteger(1);
-	mxPush(mxGlobal);
-	fxGetID(the, mxID(_Object));
+	mxPush(mxObjectConstructor);
 	fxCallID(the, mxID(_freeze));
 	mxPop();
 }
@@ -722,6 +722,12 @@ void fxFreezeBuiltIns(txMachine* the)
 {
 	txInteger index;
 	const txTypeDispatch *dispatch;
+	txSlot* realm;
+	
+	mxPush(mxAtomicsObject); fxFreezeBuiltIn(the);
+	mxPush(mxJSONObject); fxFreezeBuiltIn(the);
+	mxPush(mxMathObject); fxFreezeBuiltIn(the);
+	mxPush(mxReflectObject); fxFreezeBuiltIn(the);
 
 	mxPush(mxArgumentsSloppyPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxArgumentsStrictPrototype); fxFreezeBuiltIn(the);
@@ -771,14 +777,8 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxWeakMapPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxWeakSetPrototype); fxFreezeBuiltIn(the);
 	
-	mxPush(mxGlobal); fxGetID(the, mxID(_Atomics)); fxFreezeBuiltIn(the);
-	mxPush(mxGlobal); fxGetID(the, mxID(_JSON)); fxFreezeBuiltIn(the);
-	mxPush(mxGlobal); fxGetID(the, mxID(_Math)); fxFreezeBuiltIn(the);
-	mxPush(mxGlobal); fxGetID(the, mxID(_Reflect)); fxFreezeBuiltIn(the);
-	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
-		mxPush(mxGlobal); 
-		fxGetID(the, mxID(dispatch->constructorID));
+		mxPush(the->stackPrototypes[-1 - dispatch->constructorID]);
 		fxGetID(the, mxID(_prototype));
 		fxFreezeBuiltIn(the);
 	}
@@ -787,26 +787,31 @@ void fxFreezeBuiltIns(txMachine* the)
 	
 	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
 	
-	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
-	mxPush(mxImportingModules); fxFreezeBuiltIn(the);
-	mxPush(mxLoadingModules); fxFreezeBuiltIn(the);
-	mxPush(mxLoadedModules); fxFreezeBuiltIn(the);
-	mxPush(mxResolvingModules); fxFreezeBuiltIn(the);
-	mxPush(mxRunningModules); fxFreezeBuiltIn(the);
-	mxPush(mxRequiredModules); fxFreezeBuiltIn(the);
-	mxPush(mxModules); fxFreezeBuiltIn(the);
 	mxPush(mxPendingJobs); fxFreezeBuiltIn(the);
 	mxPush(mxRunningJobs); fxFreezeBuiltIn(the);
+	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
+	mxPush(mxProgram); fxFreezeBuiltIn(the);
+	
+	realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	mxPushReference(realm); fxFreezeBuiltIn(the);
+	mxPushSlot(mxRealmGlobal(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxRealmClosures(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxImportingModules(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxLoadingModules(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxLoadedModules(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxResolvingModules(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxRunningModules(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxRequiredModules(realm)); fxFreezeBuiltIn(the);
 }
 
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txSlot* key = fxGetKey(the, moduleID);
  	char buffer[C_PATH_MAX];
  	txString path = buffer;
  	c_strcpy(path, key->value.key.string);
  	txScript* script = fxLoadScript(the, path);
-	fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+	fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 }
 
 txScript* fxLoadScript(txMachine* the, txString path)

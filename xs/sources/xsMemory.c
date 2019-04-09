@@ -471,7 +471,6 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anIndex--;
 	}
 	
-	(*theMarker)(the, &mxGlobal);
 	anArray = the->aliasArray;
 	anIndex = the->aliasCount;
 	while (anIndex) {
@@ -603,6 +602,11 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		aSlot = theSlot->value.home.module;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkReference);
+		break;
+	case XS_MODULE_KIND:
+		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
@@ -773,6 +777,11 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		aSlot = theSlot->value.home.module;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
+	case XS_MODULE_KIND:
+		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;

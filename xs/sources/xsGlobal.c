@@ -116,34 +116,36 @@ void fxBuildGlobal(txMachine* the)
 	fxNewFunctionInstance(the, XS_NO_ID);
 	mxPull(mxFunctionPrototype);
 	
-	fxNewGlobalInstance(the);
-	mxPull(mxGlobal);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_isFinite), 1, mxID(_isFinite), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_isNaN), 1, mxID(_isNaN), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_parseFloat), 1, mxID(_parseFloat), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_parseInt), 2, mxID(_parseInt), XS_DONT_ENUM_FLAG);
-	slot = fxLastProperty(the, fxNewHostFunctionGlobal(the, mxCallback(fx_trace), 1, mxID(_trace), XS_DONT_ENUM_FLAG));
+	fxBuildHostFunction(the, mxCallback(fx_isFinite), 1, mxID(_isFinite));
+	mxPull(mxIsFiniteFunction);
+	fxBuildHostFunction(the, mxCallback(fx_isNaN), 1, mxID(_isNaN));
+	mxPull(mxIsNaNFunction);
+	fxBuildHostFunction(the, mxCallback(fx_parseFloat), 1, mxID(_parseFloat));
+	mxPull(mxParseFloatFunction);
+	fxBuildHostFunction(the, mxCallback(fx_parseInt), 2, mxID(_parseInt));
+	mxPull(mxParseIntFunction);
+	fxBuildHostFunction(the, mxCallback(fx_decodeURI), 1, mxID(_decodeURI));
+	mxPull(mxDecodeURIFunction);
+	fxBuildHostFunction(the, mxCallback(fx_decodeURIComponent), 1, mxID(_decodeURIComponent));
+	mxPull(mxDecodeURIComponentFunction);
+	fxBuildHostFunction(the, mxCallback(fx_encodeURI), 1, mxID(_encodeURI));
+	mxPull(mxEncodeURIFunction);
+	fxBuildHostFunction(the, mxCallback(fx_encodeURIComponent), 1, mxID(_encodeURIComponent));
+	mxPull(mxEncodeURIComponentFunction);
+	fxBuildHostFunction(the, mxCallback(fx_escape), 1, mxID(_escape));
+	mxPull(mxEscapeFunction);
+	fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
+	mxPull(mxEvalFunction);
+	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
+	mxPull(mxUnescapeFunction);
+	
+	slot = fxBuildHostFunction(the, mxCallback(fx_trace), 1, mxID(_trace));
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_center), 1, mxID(_center), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_left), 1, mxID(_left), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_right), 1, mxID(_right), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_decodeURI), 1, mxID(_decodeURI), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_decodeURIComponent), 1, mxID(_decodeURIComponent), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_encodeURI), 1, mxID(_encodeURI), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_encodeURIComponent), 1, mxID(_encodeURIComponent), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_escape), 1, mxID(_escape), XS_DONT_ENUM_FLAG);
-	fxNewHostFunctionGlobal(the, mxCallback(fx_unescape), 1, mxID(_unescape), XS_DONT_ENUM_FLAG);
-	
-	slot = fxNewHostFunctionGlobal(the, mxCallback(fx_eval), 1, mxID(_eval), XS_DONT_ENUM_FLAG);
-	mxEvalFunction.value.reference = slot;
-	mxEvalFunction.kind = XS_REFERENCE_KIND;
+    mxPull(mxTraceFunction);
 
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_global), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = mxGlobal.kind;
-	slot->value = mxGlobal.value;
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_undefined), XS_NO_ID, XS_OWN);
-	slot->flag = XS_GET_ONLY;
-	
 	mxPush(mxObjectPrototype);
 	slot = fxNewObjectInstance(the);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
@@ -175,7 +177,9 @@ void fxBuildGlobal(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_prototype_evaluateExpr), 1, mxID(_evaluateExpr), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_prototype_evaluateProgram), 1, mxID(_evaluateProgram), XS_DONT_ENUM_FLAG);
 	mxRealmPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Realm), 1, mxID(_Realm), XS_DONT_ENUM_FLAG));
+	slot = fxNewHostConstructor(the, mxCallback(fx_Realm), 1, mxID(_Realm));
+	mxRealmConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Realm_makeCompartment), 1, mxID(_makeCompartment), XS_DONT_ENUM_FLAG);
 	the->stack++;
 }
@@ -204,30 +208,6 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 	property->kind = XS_GLOBAL_KIND;
 	return instance;
 }
-
-#ifndef mxLink
-txSlot* fxNewHostConstructorGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txSlot *function, *property;
-	function = fxNewHostConstructor(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
-}
-
-txSlot* fxNewHostFunctionGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txSlot *function, *property;
-	function = fxNewHostFunction(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
-}
-#endif
 
 txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot)
 {
@@ -526,6 +506,8 @@ void fx_escape(txMachine* the)
 void fx_eval(txMachine* the)
 {
 	txStringStream aStream;
+	txSlot* module = fxCurrentModule(the);
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
 
 	if (mxArgc < 1)
 		return;
@@ -536,7 +518,7 @@ void fx_eval(txMachine* the)
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
-	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
 }
 
@@ -822,30 +804,80 @@ void fxEncodeURI(txMachine* the, txString theSet)
 	*dst = 0;
 }
 
+
+txSlot* fxNewProgramInstance(txMachine* the)
+{
+	txSlot* global = the->stack;
+	txSlot* program = fxNewInstance(the);
+	txSlot* realm = fxNewInstance(the);
+	txSlot* slot;
+	/* mxRealmGlobal */
+	slot = fxNextSlotProperty(the, realm, global, XS_NO_ID, XS_GET_ONLY);
+	/* mxRealmClosures */
+	mxPushUndefined();
+	slot = fxNextReferenceProperty(the, slot, fxNewEnvironmentInstance(the, C_NULL), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxImportingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadedModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxResolvingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRunningModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRequiredModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	
+	slot = program->next = fxNewSlot(the);
+	slot->kind = XS_MODULE_KIND;
+	slot->value.module.realm = realm;
+	slot->value.module.id = XS_NO_ID;
+	mxPop();
+	
+	global->value.reference = program;
+	mxPop();
+	return program;
+}
+
 void fx_Realm(txMachine* the)
 {
 }
 
 void fx_Realm_makeCompartment(txMachine* the)
 {
+	txSlot* realm;
 	txSlot* slot;
+	txID id;
 	mxPush(mxRealmPrototype);
-	slot = fxNewObjectInstance(the);
-	slot = slot->next = fxNewSlot(the);
-	fxNewInstance(the);
-	fxNewEnvironmentInstance(the, slot);
-	mxPullSlot(slot);
+	realm = fxNewObjectInstance(the);
+	
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	for (id = _Array; id < ___proto__; id++)
+		slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+	slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_GET_ONLY);
+	
+	slot = fxNextReferenceProperty(the, realm, fxNewProgramInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
 	mxPullSlot(mxResult);
 }
 
 void fx_Realm_prototype_get_global(txMachine* the)
 {
 	txSlot* slot = fxToInstance(the, mxThis);
-	slot = slot->next;
-	slot = slot->value.reference;
-	slot = slot->next;
-	mxResult->kind = slot->kind;
-	mxResult->value = slot->value;
+	txSlot* module = slot->next->value.reference;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
+	txSlot* global = mxRealmGlobal(realm);
+	mxResult->kind = global->kind;
+	mxResult->value = global->value;
 }
 
 void fx_Realm_prototype_evaluateExpr(txMachine* the)
@@ -856,11 +888,12 @@ void fx_Realm_prototype_evaluateProgram(txMachine* the)
 {
 	txStringStream stream;
 	txSlot* slot = fxToInstance(the, mxThis);
-	slot = slot->next;
+	txSlot* module = slot->next->value.reference;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
 	stream.slot = mxArgv(0);
 	stream.offset = 0;
 	stream.size = c_strlen(stream.slot->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxDebugFlag), C_NULL, C_NULL, slot->value.reference, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
 }
 

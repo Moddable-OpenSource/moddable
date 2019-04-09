@@ -210,6 +210,25 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 	}
 }
 
+void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
+{
+	if (mxIsUndefined(the->stack)) {
+		mxPop();
+		mxPushSlot(constructor);
+		return;
+	}
+	if (!mxIsReference(the->stack)) {
+		mxTypeError("no constructor");
+	}
+	fxGetID(the, mxID(_Symbol_species));
+	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+		mxPop();
+		mxPushSlot(constructor);
+		return;
+	}
+	if (!mxIsReference(the->stack) || !mxIsConstructor(the->stack->value.reference))
+		mxTypeError("no constructor");
+}
 
 void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments)
 {
@@ -924,7 +943,7 @@ txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
 	instance->flag = XS_EXOTIC_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
-	instance->value.instance.prototype = (environment->kind == XS_REFERENCE_KIND) ? environment->value.reference : C_NULL;
+	instance->value.instance.prototype = (environment && (environment->kind == XS_REFERENCE_KIND)) ? environment->value.reference : C_NULL;
 	mxPushReference(instance);
 	slot = instance->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG;
@@ -1016,7 +1035,10 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 void fxRunEvalEnvironment(txMachine* the)
 {
-	txSlot* global = mxGlobal.value.reference;
+	txSlot* function = (the->frame + 3);
+	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
 	txSlot* top = the->frame - 2;
 	txSlot* bottom = the->scope;
 	txSlot* slot;
@@ -1103,28 +1125,17 @@ void fxRunEvalEnvironment(txMachine* the)
 
 void fxRunProgramEnvironment(txMachine* the)
 {
-	txSlot* environment = (the->frame - 1);
-	txSlot* global = C_NULL;
+	txSlot* function = (the->frame + 3);
+	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
+	txSlot* environment = mxRealmClosures(realm)->value.reference;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
 	txSlot* top = the->frame - 2;
 	txSlot* middle = C_NULL;
 	txSlot* bottom = the->scope;
 	txSlot* slot;
 	txSlot* property;
 	slot = top;
-	
-	if (environment->kind == XS_REFERENCE_KIND) {
-		environment = environment->value.reference;
-		global = environment->next;
-		if (global->kind == XS_REFERENCE_KIND)
-			global = global->value.reference;
-		else
-			global = mxGlobal.value.reference;
-	}
-	else {
-		environment = mxClosures.value.reference;
-		global = mxGlobal.value.reference;
-	}
-	
 	while (slot >= bottom) {
 		if (slot->kind == XS_CLOSURE_KIND) {
 			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);

@@ -297,7 +297,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -17
+#define prototypesStackIndex -76
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -844,7 +844,9 @@ typedef short xsIndex;
 	
 /* Globals */
 
-#define xsGlobal (the->stackTop[-1])
+#define xsGlobal \
+	(fxGlobal(the, &the->scratch), \
+	the->scratch)
 
 /* Host Constructors, Functions and Objects */
 
@@ -1285,6 +1287,7 @@ mxImport xsBooleanValue fxIsInstanceOf(xsMachine*);
 mxImport void fxArrayCacheBegin(xsMachine*, xsSlot*);
 mxImport void fxArrayCacheEnd(xsMachine*, xsSlot*);
 mxImport void fxArrayCacheItem(xsMachine*, xsSlot*, xsSlot*);
+mxImport void fxGlobal(xsMachine*, xsSlot*);
 
 mxImport void fxBuildHosts(xsMachine*, xsIntegerValue, xsHostBuilder*);
 mxImport void fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);

@@ -45,21 +45,20 @@ txSlot* fxLastProperty(txMachine* the, txSlot* slot)
 	return slot;
 }
 
-#ifndef mxLink
 txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag)
 {
 	txSlot *getter = NULL, *setter = NULL, *home = the->stack, *slot;
 	if (get) {
-		getter = fxNewHostFunction(the, get, 0, XS_NO_ID);
+		getter = fxBuildHostFunction(the, get, 0, id);
 		slot = mxFunctionInstanceHome(getter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, XS_NO_ID, "get ");
+		fxRenameFunction(the, getter, id, id, "get ");
 	}
 	if (set) {
-		setter = fxNewHostFunction(the, set, 1, XS_NO_ID);
+		setter = fxBuildHostFunction(the, set, 1, id);
 		slot = mxFunctionInstanceHome(setter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, XS_NO_ID, "set ");
+		fxRenameFunction(the, setter, id, id, "set ");
 	}
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
@@ -74,6 +73,7 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 	return property;
 }
 
+#ifndef mxLink
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txSlot *function, *home = the->stack, *slot;

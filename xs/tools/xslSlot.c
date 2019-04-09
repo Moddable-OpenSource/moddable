@@ -46,6 +46,20 @@ static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
 
+txSlot* fxBuildHostConstructor(txMachine* the, txCallback call, txInteger length, txInteger id)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	fxNewLinkerBuilder(linker, call, length, id);
+	return fxNewHostConstructor(the, call, length, id);
+}
+
+txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, txInteger id)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	fxNewLinkerBuilder(linker, call, length, id);
+	return fxNewHostFunction(the, call, length, id);
+}
+
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
 {
 	txLinker* linker = xsGetContext(the);
@@ -164,7 +178,7 @@ void fxLinkerScriptCallback(txMachine* the)
 {
 	txLinker* linker = xsGetContext(the);
     txSlot* slot = mxModuleInternal(mxThis);
-    txSlot* key = fxGetKey(the, slot->value.symbol);
+    txSlot* key = fxGetKey(the, slot->value.module.id);
     txString path = key->value.key.string + linker->baseLength;
 	txLinkerScript* linkerScript = linker->firstScript;
 	mxPush(mxArrayPrototype);
@@ -268,37 +282,6 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	return property;
 }
 
-txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *getter = NULL, *setter = NULL, *home = the->stack, *slot;
-	if (get) {
-		fxNewLinkerBuilder(linker, get, 0, id);
-		getter = fxNewHostFunction(the, get, 0, XS_NO_ID);
-		slot = mxFunctionInstanceHome(getter);
-		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, XS_NO_ID, "get ");
-	}
-	if (set) {
-		fxNewLinkerBuilder(linker, set, 1, id);
-		setter = fxNewHostFunction(the, set, 1, XS_NO_ID);
-		slot = mxFunctionInstanceHome(setter);
-		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, XS_NO_ID, "set ");
-	}
-	property = property->next = fxNewSlot(the);
-	property->flag = flag;
-	property->ID = id;
-	property->kind = XS_ACCESSOR_KIND;
-	property->value.accessor.getter = getter;
-	property->value.accessor.setter = setter;
-	if (set)
-		the->stack++;
-	if (get)
-		the->stack++;
-	return property;
-}
-
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txLinker* linker = (txLinker*)(the->context);
@@ -323,32 +306,6 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 		the->stack++;
 	}
 	return property;
-}
-
-txSlot* fxNewHostConstructorGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *function, *property;
-	fxNewLinkerBuilder(linker, call, length, id);
-	function = fxNewHostConstructor(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
-}
-
-txSlot* fxNewHostFunctionGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *function, *property;
-	fxNewLinkerBuilder(linker, call, length, id);
-	function = fxNewHostFunction(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
 }
 
 void fxPrepareInstance(txMachine* the, txSlot* instance)
@@ -452,8 +409,11 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 								}
 							}
 						}
-						else if (property->kind == XS_MODULE_KIND)
+						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
+							if (property->value.module.id != XS_NO_ID)
+								property->value.module.realm = C_NULL;
+						}
 						else if (property->kind == XS_EXPORT_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
@@ -739,7 +699,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_MODULE_KIND: {
 		fprintf(file, ".kind = XS_MODULE_KIND}, ");
-		fprintf(file, ".value = { .symbol = %d } ", slot->value.symbol);
+		fprintf(file, ".value = { .module = { ");
+		fxPrintAddress(the, file, slot->value.module.realm);
+		fprintf(file, ", %d } }", slot->value.module.id);
 	} break;
 	case XS_PROMISE_KIND: {
 		fprintf(file, ".kind = XS_PROMISE_KIND}, ");

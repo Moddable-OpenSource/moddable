@@ -518,6 +518,26 @@ void fxArrayCacheItem(txMachine* the, txSlot* reference, txSlot* item)
 	array->value.array.length++;
 }
 
+void fxGlobal(txMachine* the, txSlot* theSlot)
+{
+	txSlot* frame = the->frame;
+	txSlot* result = C_NULL;
+	if (frame && (!(frame->flag & XS_C_FLAG))) {
+		txSlot* function = frame + 3;
+		if (mxIsReference(function)) {
+			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+			result = mxModuleInstanceInternal(module)->value.module.realm;
+		}
+//        else
+//            fxDebugger(the, NULL, 0);
+	}
+	if (!result)
+		result = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	result = mxRealmGlobal(result);
+	theSlot->value = result->value;
+	theSlot->kind = result->kind;
+}
+
 /* Host Constructors, Functions and Objects */
 
 void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* builder)
@@ -1284,6 +1304,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		the->firstJump = &aJump;
 		if (c_setjmp(aJump.buffer) == 0) {
 			txInteger anIndex;
+			txSlot* slot;
 
 			if (gxDefaults.initializeSharedCluster)
 				gxDefaults.initializeSharedCluster();
@@ -1310,29 +1331,13 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			c_memset(the->symbolTable, 0, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));
 
-			/* mxGlobal */
+			/* mxProgram */
 			mxPushUndefined();
 			/* mxException */
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
-			/* mxClosures */
-			mxPushUndefined();
 			/* mxModulePaths */
-			mxPushUndefined();
-			/* mxImportingModules */
-			fxNewInstance(the);
-			/* mxLoadingModules */
-			fxNewInstance(the);
-			/* mxLoadedModules */
-			fxNewInstance(the);
-			/* mxResolvingModules */
-			fxNewInstance(the);
-			/* mxRunningModules */
-			fxNewInstance(the);
-			/* mxRequiredModules */
-			fxNewInstance(the);
-			/* mxModules */
 			mxPushUndefined();
 			/* mxPendingJobs */
 			fxNewInstance(the);
@@ -1345,7 +1350,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			/* mxInstanceInspectors */
 			mxPushList();
 
-			for (anIndex = mxObjectPrototypeStackIndex; anIndex < mxEmptyCodeStackIndex; anIndex++)
+			for (anIndex = mxInstanceInspectorsStackIndex + 1; anIndex < mxEmptyCodeStackIndex; anIndex++)
 				mxPushUndefined();
 
 			/* mxEmptyCode */
@@ -1400,17 +1405,21 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildMapSet(the);
 			fxBuildModule(the);
 
-			mxPushUndefined();
-			fxNewEnvironmentInstance(the, &mxClosures);
-			mxPull(mxClosures);
-
 			mxPush(mxSetPrototype);
 			fxNewSetInstance(the);
 			mxPull(mxModulePaths);
 			
 			mxPush(mxObjectPrototype);
-			fxNewWeakSetInstance(the);
-			mxPull(mxModules);
+			slot = fxLastProperty(the, fxNewObjectInstance(the));
+			for (anIndex = _Array; anIndex < ___proto__; anIndex++) {
+				if (anIndex == _undefined)
+					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - anIndex], mxID(anIndex), XS_GET_ONLY);
+				else
+					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - anIndex], mxID(anIndex), XS_DONT_ENUM_FLAG);
+			}
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
+			fxNewProgramInstance(the);
+			mxPull(mxProgram);
 
             the->collectFlag = XS_COLLECTING_FLAG;
 			
@@ -1515,12 +1524,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 		aJump.flag = 0;
 		the->firstJump = &aJump;
 		if (c_setjmp(aJump.buffer) == 0) {
-			txInteger anIndex;
-			txSlot* aSlot;
-			txSlot** aSlotAddress;
-			txSlot* aSharedSlot;
-			txSlot* aTemporarySlot;
-			txID anID;
+			txSlot* sharedSlot;
+			txSlot* sharedRealm;
+			txSlot* slot;
 
 			if (gxDefaults.initializeSharedCluster)
 				gxDefaults.initializeSharedCluster();
@@ -1546,8 +1552,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 
 			fxAllocate(the, theCreation);
 
-			the->stackPrototypes = theMachine->stackTop;
-
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
 			c_memcpy(the->symbolTable, theMachine->symbolTable, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));		//@@ this is not necessary
@@ -1563,45 +1567,13 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				fxJump(the);
 			c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
 
-			/* mxGlobal */
-			aSharedSlot = theMachine->stackTop[-1].value.reference->next;
-			anIndex = aSharedSlot->value.table.length;
-			aSlot = fxNewGlobalInstance(the);
-			aSlot = aSlot->next;
-			aSlotAddress = aSlot->value.table.address;
-			aSharedSlot = aSharedSlot->next;
-			while (aSharedSlot) {
-				aSlot->next = aTemporarySlot = fxDuplicateSlot(the, aSharedSlot);
-				anID = aTemporarySlot->ID;
-				if (anID == mxID(_global))
-					aTemporarySlot->value.reference = the->stack->value.reference;
-				anID &= 0x7FFF;
-				if (anID < anIndex)
-					aSlotAddress[anID] = aTemporarySlot;
-				aSharedSlot = aSharedSlot->next;
-				aSlot = aSlot->next;
-			}
+			/* mxProgram */
+			mxPushUndefined();
 			/* mxException */
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
-			/* mxClosures */
-			mxPushUndefined();
 			/* mxModulePaths */
-			mxPushUndefined();
-			/* mxImportingModules */
-			fxNewInstance(the);
-			/* mxLoadingModules */
-			fxNewInstance(the);
-			/* mxLoadedModules */
-			fxNewInstance(the);
-			/* mxResolvingModules */
-			fxNewInstance(the);
-			/* mxRunningModules */
-			fxNewInstance(the);
-			/* mxRequiredModules */
-			fxNewInstance(the);
-			/* mxModules */
 			mxPushUndefined();
 			/* mxPendingJobs */
 			fxNewInstance(the);
@@ -1613,20 +1585,28 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushList();
 			/* mxInstanceInspectors */
 			mxPushList();
-			
-			mxPushUndefined();
-			fxNewEnvironmentInstance(the, &mxClosures);
-			mxPull(mxClosures);
+
+			the->stackPrototypes = theMachine->stackTop;
 
 			mxPush(mxSetPrototype);
 			fxNewSetInstance(the);
 			mxPull(mxModulePaths);
 			
+			sharedSlot = theMachine->stackTop[-1].value.reference;
+			sharedRealm = mxModuleInstanceInternal(sharedSlot)->value.module.realm;
+			sharedSlot = mxRealmGlobal(sharedRealm)->value.reference;
+			sharedSlot = sharedSlot->next;
 			mxPush(mxObjectPrototype);
-			fxNewWeakSetInstance(the);
-			mxPull(mxModules);
-			
-			the->sharedModules = theMachine->stackTop[-1 - mxRequiredModulesStackIndex].value.reference->next;
+			slot = fxLastProperty(the, fxNewObjectInstance(the));
+			while (sharedSlot) {
+				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
+				if (slot->ID == mxID(_global))
+					slot->value.reference = the->stack->value.reference;
+				sharedSlot = sharedSlot->next;
+			}
+			fxNewProgramInstance(the);
+			mxPull(mxProgram);
+			the->sharedModules = mxRequiredModules(sharedRealm)->value.reference->next;
 			
 			the->collectFlag = XS_COLLECTING_FLAG;
 
@@ -1766,7 +1746,7 @@ txMachine* fxBeginHost(txMachine* the)
 	/* ARGC */
 	mxPushInteger(0);
 	/* THIS */
-	mxPush(mxGlobal);
+	mxPushUndefined();
 	/* FUNCTION */
 	mxPushUndefined();
 	/* TARGET */

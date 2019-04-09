@@ -438,7 +438,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
     return XS_NO_ID;
 }
 
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
@@ -465,14 +465,14 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		aScript.version[2] = XS_PATCH_VERSION;
 		aScript.version[3] = 0;
 
-		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &aScript, C_NULL, C_NULL);
 		return;
 	}
 #endif
     
 	while (c > 0) {
 		if (!c_strcmp(path, script->path)) {
-			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+			fxResolveModule(the,realm,  moduleID, script, C_NULL, C_NULL);
 			return;
 		}
 		c--;

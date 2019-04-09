@@ -70,6 +70,8 @@ static void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList,
 static void fxEchoStart(txMachine* the);
 static void fxEchoStop(txMachine* the);
 static void fxEchoString(txMachine* the, txString theString);
+static txSlot* fxFindFrame(txMachine* the);
+static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
@@ -657,9 +659,10 @@ void fxDebugPopTag(txMachine* the)
 		/* COUNT */
 		mxPushInteger(3);
 		/* THIS */
-		mxPush(mxGlobal);
+		mxPushUndefined();
 		/* FUNCTION */
-		mxPush(mxGlobal);
+		mxPushUndefined();
+		fxGlobal(the, the->stack);
 		if (the->debugTag == XS_MODULE_TAG)
 			fxGetID(the, fxID(the, "<xsbug:module>"));
 		else
@@ -727,6 +730,8 @@ void fxDebugPushTag(txMachine* the)
 		fxSelect(the, (txSlot*)the->idValue);
 		fxEchoStart(the);
 		fxListLocal(the);
+		fxListGlobal(the);
+		fxListModules(the);
 		fxEchoStop(the);
 		break;
 	case XS_SET_ALL_BREAKPOINTS_TAG:
@@ -1115,7 +1120,7 @@ void fxEchoModule(txMachine* the, txSlot* module, txInspectorNameList* list)
 		fxEchoFlags(the, "+", exports->flag);
 	fxEcho(the, " name=\"");
 	slot = mxModuleInternal(module);
-	fxEcho(the, fxGetKeyName(the, slot->value.symbol));
+	fxEcho(the, fxGetKeyName(the, slot->value.module.id));
 	fxEcho(the, "\"");
 	fxEchoAddress(the, module);
 	if (instanceInspector) {
@@ -1526,6 +1531,33 @@ void fxEchoString(txMachine* the, txString theString)
 	the->echoOffset = dst - start;
 }
 
+txSlot* fxFindFrame(txMachine* the)
+{
+	txSlot* frame = the->frame;
+	while (frame) {
+		if (frame->flag & XS_DEBUG_FLAG)
+			break;
+		frame = frame->next;
+	}
+	return frame;
+}
+
+txSlot* fxFindRealm(txMachine* the)
+{
+	txSlot* frame = fxFindFrame(the);
+	txSlot* realm = C_NULL;
+	if (frame && (!(frame->flag & XS_C_FLAG))) {
+		txSlot* function = frame + 3;
+		if (mxIsReference(function)) {
+			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+			realm = mxModuleInstanceInternal(module)->value.module.realm;
+		}
+	}
+	if (!realm)
+		realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	return realm;
+}
+
 void fxGo(txMachine* the)
 {
 	txSlot* aSlot = the->frame;
@@ -1557,11 +1589,12 @@ void fxListFrames(txMachine* the)
 void fxListGlobal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* aProperty = mxGlobal.value.reference->next->next;
+	txSlot* realm = fxFindRealm(the);
+	txSlot* slot = mxRealmGlobal(realm)->value.reference->next;
 	fxEcho(the, "<global>");
-	while (aProperty) {
-		fxEchoProperty(the, aProperty, &aList, C_NULL, -1, C_NULL);
-		aProperty = aProperty->next;
+	while (slot) {
+		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
+		slot = slot->next;
 	}
 	fxEcho(the, "</global>");
 }
@@ -1569,12 +1602,7 @@ void fxListGlobal(txMachine* the)
 void fxListLocal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* frame  = the->frame;
-	while (frame) {
-		if (frame->flag & XS_DEBUG_FLAG)
-			break;
-		frame = frame->next;
-	}
+	txSlot* frame = fxFindFrame(the);
 	if (!frame) // @@
 		return;
 	fxEcho(the, "<local");
@@ -1626,20 +1654,12 @@ void fxListLocal(txMachine* the)
 void fxListModules(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* table = mxModules.value.reference->next;
-	txSlot** address = table->value.table.address;
-	txInteger modulo = table->value.table.length;
-	txSlot* module;
+	txSlot* realm = fxFindRealm(the);
+	txSlot* module = mxRequiredModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
-	while (modulo) {
-		txSlot* entry = *address;
-		while (entry) {
-			module = entry->value.entry.slot;
-			fxEchoModule(the, module, &aList);
-			entry = entry->next;
-		}
-		address++;
-		modulo--;
+	while (module) {
+		fxEchoModule(the, module, &aList);
+		module = module->next;
 	}
 	module = the->sharedModules;
 	while (module) {

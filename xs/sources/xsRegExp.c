@@ -66,7 +66,9 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_sticky), C_NULL, mxID(_sticky), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_unicode), C_NULL, mxID(_unicode), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxRegExpPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_RegExp), 2, mxID(_RegExp), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_RegExp), 2, mxID(_RegExp));
+	mxRegExpConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
 	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID);
@@ -806,26 +808,7 @@ void fx_RegExp_prototype_split(txMachine* the)
 	
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
-	if (the->stack->kind == XS_UNDEFINED_KIND) {
-		*the->stack = mxGlobal;
-		fxGetID(the, mxID(_RegExp));
-	}
-	else if (the->stack->kind != XS_REFERENCE_KIND) {
-		mxTypeError("this.constructor is no object");
-	}
-	else {
-		fxGetID(the, mxID(_Symbol_species));
-		if ((the->stack->kind == XS_UNDEFINED_KIND) || (the->stack->kind == XS_NULL_KIND)) {
-			*the->stack = mxGlobal;
-			fxGetID(the, mxID(_RegExp));
-		}
-		if (the->stack->kind != XS_REFERENCE_KIND) {
-			mxTypeError("this.constructor[Symbol.species] is no object");
-		}
-		else if (!mxIsFunction(the->stack->value.reference)) {
-			mxTypeError("this.constructor[Symbol.species] is no function");
-		} 
-	}
+	fxToSpeciesConstructor(the, &mxRegExpConstructor);
 	constructor = the->stack;	
 	
 	mxPushSlot(mxThis);

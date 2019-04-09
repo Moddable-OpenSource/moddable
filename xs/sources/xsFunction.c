@@ -68,15 +68,17 @@ void fxBuildFunction(txMachine* the)
 	slot->value.accessor.getter = function;
 	slot->value.accessor.setter = function;
 	slot = fxNextSlotProperty(the, slot, &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	constructor = fxNewHostConstructorGlobal(the, mxCallback(fx_Function), 1, mxID(_Function), XS_DONT_ENUM_FLAG);
+	constructor = fxBuildHostConstructor(the, mxCallback(fx_Function), 1, mxID(_Function));
+	mxFunctionConstructor = *the->stack;
 	the->stack++;
 	
 	mxPush(mxFunctionPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "AsyncFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncFunctionPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
 	slot->value.instance.prototype = constructor;
+	mxAsyncFunctionConstructor = *the->stack;
 	the->stack++;
 	slot = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
@@ -288,7 +290,7 @@ void fx_Function(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, fxCurrentModule(the));
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -707,7 +709,7 @@ void fx_AsyncFunction(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, fxCurrentModule(the));
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);

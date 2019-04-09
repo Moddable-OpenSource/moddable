@@ -232,20 +232,18 @@ int main(int argc, char* argv[])
 		xsBeginHost(machine);
 		{
 			xsTry {
-				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_createRealmException, 1, xsID("createRealm"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-				the->stack++;
+				txSlot* slot;
+				mxPushUndefined();
+				fxGlobal(the, the->stack);
+				slot = fxLastProperty(the, fxToInstance(the, the->stack));
+				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_createRealmException, 1, xsID("createRealm"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
+				slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+				mxPop();
 
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
@@ -753,40 +751,39 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 		xsTry {
 			txSlot* slot;
 			txSlot* agent;
-
+			txSlot* global;
+			
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
-			
 			agent = the->stack;
 			
+			mxPushUndefined();
+			fxGlobal(the, the->stack);
+			global = the->stack;
+
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
 			slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
 			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextSlotProperty(the, slot, &mxGlobal, xsID("global"), XS_GET_ONLY);
-			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
-			slot->kind = the->stack->kind;
-			slot->value = the->stack->value;
-			the->stack++;
-		
-			fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_done, 1, xsID("$DONE"), XS_DONT_ENUM_FLAG);
-			the->stack++;
+			slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
+
+			slot = fxLastProperty(the, fxToInstance(the, global));
+			slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_GET_ONLY);
+			slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+			slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
+			slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
+			slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
+			slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+			slot = fxNextHostFunctionProperty(the, slot, fx_done, 1, xsID("$DONE"), XS_DONT_ENUM_FLAG);
+			
+			mxPop();
+			mxPop();
 
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "sta.js");
@@ -810,7 +807,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				fxSetID(the, xsID("safeBroadcast"));
 				mxPop();
 			}
-			the->stack++;
+			mxPop();
 			
 			if (flags)
 				fxRunProgramFile(the, path, flags);
@@ -1022,7 +1019,12 @@ void* fx_agent_start_aux(void* it)
 	{
 		xsTry {
 			txSlot* slot;
+			txSlot* global;
 			txStringCStream stream;
+			
+			mxPushUndefined();
+			fxGlobal(the, the->stack);
+			global = the->stack;
 			
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_leaving, 0, xsID("leaving"), XS_DONT_ENUM_FLAG); 
@@ -1035,18 +1037,18 @@ void* fx_agent_start_aux(void* it)
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
 			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
-			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
-			slot->flag = XS_GET_ONLY;
-			slot->kind = the->stack->kind;
-			slot->value = the->stack->value;
-			mxPop();
 			
+			slot = fxLastProperty(the, fxToInstance(the, global));
+			slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_GET_ONLY);
+			
+			mxPop();
+			mxPop();
 			mxPop();
 			
 			stream.buffer = agent->script;
 			stream.offset = 0;
 			stream.size = agent->scriptLength;
-			fxRunScript(the, fxParseScript(the, &stream, fxStringCGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, C_NULL);
+			fxRunScript(the, fxParseScript(the, &stream, fxStringCGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, mxProgram.value.reference);
 		}
 		xsCatch {
 		}
@@ -1117,11 +1119,12 @@ void fx_done(xsMachine* the)
 
 void fx_evalScript(xsMachine* the)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txStringStream aStream;
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
-	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }
 
@@ -1294,15 +1297,17 @@ void fxRunLoop(txMachine* the)
 
 void fxRunModuleFile(txMachine* the, txString path)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRequireModule(the, XS_NO_ID, the->stack);
+	fxRequireModule(the, realm, XS_NO_ID, the->stack);
 	the->stack++;
 }
 
 void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txScript* script = fxLoadScript(the, path, flags);
-	fxRunScript(the, script, &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }
 

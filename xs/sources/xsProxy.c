@@ -88,8 +88,9 @@ void fxBuildProxy(txMachine* the)
 	mxPull(mxProxyAccessor);
 	the->stack += 2;
 	
-	slot = fxNewHostFunctionGlobal(the, mxCallback(fx_Proxy), 2, mxID(_Proxy), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostFunction(the, mxCallback(fx_Proxy), 2, mxID(_Proxy));
 	slot->flag |= XS_CAN_CONSTRUCT_FLAG;
+	mxProxyConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Proxy_revocable), 2, mxID(_revocable), XS_DONT_ENUM_FLAG);
 	the->stack++;
@@ -110,11 +111,7 @@ void fxBuildProxy(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Reflect_set), 3, mxID(_set), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Reflect_setPrototypeOf), 2, mxID(_setPrototypeOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Reflect", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Reflect), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxReflectObject);
 }
 
 txSlot* fxNewProxyInstance(txMachine* the)

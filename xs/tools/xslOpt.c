@@ -910,12 +910,13 @@ void fxWriteCodes(xsMachine* the, txS1* p)
 
 void Tool_prototype_getModule(xsMachine* the)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txLinker* linker = xsGetContext(the);
 	txLinkerScript* script = linker->currentScript;
 	char buffer[1024];
 	c_strcpy(buffer, linker->base);
 	c_strcat(buffer, script->path);
-	txSlot* module = fxRequireModule(the, xsID(buffer), mxArgv(0));
+	txSlot* module = fxRequireModule(the, realm, xsID(buffer), mxArgv(0));
 	if (module) {
 		mxResult->kind = module->kind;
 		mxResult->value = module->value;
@@ -1243,6 +1244,7 @@ static void fxOptimizeScript(txLinker* linker, txLinkerScript* linkerScript)
 		xsVars(2);
 		{
 			xsTry {
+				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 				txScript* script = c_malloc(sizeof(txScript));
 				xsAssert(script != NULL);
 				c_memcpy(script, &xsScript, sizeof(txScript));
@@ -1254,7 +1256,7 @@ static void fxOptimizeScript(txLinker* linker, txLinkerScript* linkerScript)
 				c_memcpy(script->codeBuffer, xsScript.codeBuffer, xsScript.codeSize);
 				
 				linker->currentScript = linkerScript;
-				fxRunScript(the, script, &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+				fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 				mxPullSlot(mxResult);
 				linker->currentScript = NULL;
 			}
