@@ -1702,6 +1702,14 @@ done:
 void *modSocketGetLWIP(xsMachine *the, xsSlot *slot)
 {
 	xsSocket xss = xsmcGetHostData(*slot);
-	return xss->skt;
+	struct tcp_pcb *skt = xss->skt;
+	if (skt) {
+		socketSetPending(xss, kPendingDisconnect | kPendingClose);
+		xss->skt = NULL;
+		tcp_recv(skt, NULL);
+		tcp_sent(skt, NULL);
+		tcp_err(skt, NULL);
+	}
+	return skt;
 }
 
