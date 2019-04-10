@@ -427,8 +427,8 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 	#define tcp_bind_safe tcp_bind
 	#define tcp_listen_safe tcp_listen
 	#define tcp_connect_safe(xss, ipaddr, port, connected) tcp_connect(xss->skt, ipaddr, port, connected)
-	// for some reason, ESP8266 has a memory leak when using tcp_close instead of tcp_abort
-	#define tcp_close_safe tcp_close
+	// ESP8266 has a sort-of memory leak when using tcp_close without tcp_abort (see https://github.com/esp8266/Arduino/issues/230)
+	#define tcp_close_safe(pb) {tcp_close(pb); tcp_abort(pb);}
 	#define tcp_output_safe tcp_output
 	#define tcp_write_safe tcp_write
 	#define tcp_recved_safe(xss, len) tcp_recved(xss->skt, len)
@@ -1332,9 +1332,10 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
-#if ESP32
+#ifndef __ets__
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
+
 			if (xss->reader[0] || xss->buflen)
 				xss->suspendedDisconnect = true;
 			else
