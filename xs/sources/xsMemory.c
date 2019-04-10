@@ -474,9 +474,12 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 	anArray = the->aliasArray;
 	anIndex = the->aliasCount;
 	while (anIndex) {
-		if ((aSlot = *anArray))
-			if (!(aSlot->flag & XS_MARK_FLAG))
-				fxMarkInstance(the, aSlot, theMarker);
+		if ((aSlot = *anArray)) {
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				(*theMarker)(the, aSlot);
+				aSlot->flag |= XS_MARK_FLAG;
+			}
+		}
 		anArray++;
 		anIndex--;
 	}

@@ -1595,15 +1595,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			sharedSlot = theMachine->stackTop[-1].value.reference;
 			sharedRealm = mxModuleInstanceInternal(sharedSlot)->value.module.realm;
 			sharedSlot = mxRealmGlobal(sharedRealm)->value.reference;
-			sharedSlot = sharedSlot->next;
-			mxPush(mxObjectPrototype);
-			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			while (sharedSlot) {
-				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
-				if (slot->ID == mxID(_global))
-					slot->value.reference = the->stack->value.reference;
-				sharedSlot = sharedSlot->next;
-			}
+			slot = fxAliasInstance(the, sharedSlot);
+			mxPushReference(slot);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
 			the->sharedModules = mxRequiredModules(sharedRealm)->value.reference->next;

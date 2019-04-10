@@ -1366,7 +1366,7 @@ XS_CODE_JUMP:
 			variable = slot->value.closure;
 			if (variable->kind >= 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: already initialized", slot->ID);
-			slot->flag |= XS_DONT_SET_FLAG;
+			slot->flag |= XS_DONT_SET_FLAG; //@@
 			variable->flag |= XS_DONT_SET_FLAG;
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
@@ -1408,6 +1408,12 @@ XS_CODE_JUMP:
 			variable = slot->value.closure;
 			if (variable->kind < 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", slot->ID);
+			offset = variable->ID;
+			if (offset >= 0) {
+				slot = the->aliasArray[offset];
+				if (slot)
+					variable = slot;
+			}	
 			mxPushKind(variable->kind);
 			mxStack->value = variable->value;
 			mxBreak;
@@ -1478,7 +1484,6 @@ XS_CODE_JUMP:
 			variable = fxNewSlot(the);
 			mxRestoreState;
 			slot->flag |= XS_DONT_DELETE_FLAG;
-			slot->ID = (txID)offset;
 			slot->kind = XS_CLOSURE_KIND;
 			slot->value.closure = variable;
 			variable->ID = (txID)offset;
@@ -1519,13 +1524,23 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
 #endif
 			slot = mxFrame - index;
-			if (slot->flag & XS_DONT_SET_FLAG)
+			if (slot->flag & XS_DONT_SET_FLAG) // import
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
 			variable = slot->value.closure;
 			if (variable->kind < 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+			offset = variable->ID;
+			if (offset >= 0) {
+				variable = the->aliasArray[offset];
+				if (!variable) {
+					mxSaveState;
+					variable = fxNewSlot(the);
+					mxRestoreState;
+					the->aliasArray[offset] = variable;
+				}
+			}	
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxStack++;
@@ -1567,7 +1582,6 @@ XS_CODE_JUMP:
 			slot = fxNewSlot(the);
 			mxRestoreState;
 			slot->flag = variable->value.closure->flag;
-			slot->ID = variable->value.closure->ID;
 			slot->kind = variable->value.closure->kind;
 			slot->value = variable->value.closure->value;
 			variable->value.closure = slot;
@@ -1614,12 +1628,9 @@ XS_CODE_JUMP:
 #endif
 			slot = mxFrame - index;
 			variable = slot->value.closure;
-//			if (variable->flag & XS_DONT_SET_FLAG)
-//				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
 			mxSaveState;
 			variable = fxNewSlot(the);
 			mxRestoreState;
-			variable->ID = slot->value.closure->ID;
 			variable->kind = XS_UNINITIALIZED_KIND;
 			slot->value.closure = variable;
 			mxBreak;
@@ -1635,8 +1646,6 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
 			variable = mxFrame - index;
-//			if (variable->flag & XS_DONT_SET_FLAG)
-//				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", variable->ID);
 			variable->flag = XS_NO_FLAG;
 			variable->kind = XS_UNINITIALIZED_KIND;
 			mxBreak;
@@ -1653,13 +1662,23 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceIndex(the, index - 2);
 #endif
 			slot = mxFrame - index;
-			if (slot->flag & XS_DONT_SET_FLAG)
+			if (slot->flag & XS_DONT_SET_FLAG) // import
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
 			variable = slot->value.closure;
 			if (variable->kind < 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+			offset = variable->ID;
+			if (offset >= 0) {
+				variable = the->aliasArray[offset];
+				if (!variable) {
+					mxSaveState;
+					variable = fxNewSlot(the);
+					mxRestoreState;
+					the->aliasArray[offset] = variable;
+				}
+			}	
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;

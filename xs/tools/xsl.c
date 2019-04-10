@@ -739,6 +739,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxAsyncGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxAsyncGeneratorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxAsyncIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxBigIntPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxBooleanPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxDataViewPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
@@ -759,6 +760,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxPromisePrototype); fxFreezeBuiltIn(the);
 	mxPush(mxProxyPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxRangeErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxRealmPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxReferenceErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxRegExpPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxSetEntriesIteratorPrototype); fxFreezeBuiltIn(the);

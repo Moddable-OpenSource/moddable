@@ -1159,8 +1159,14 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txSlot* instance;
 	char buffer[256];
 	txString name;
-	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND))
+	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
+		if (theProperty->ID >= 0) {
+			txSlot* slot = the->aliasArray[theProperty->ID];
+			if (slot)
+				theProperty = slot;
+		}
+	}
 	if (theProperty->kind == XS_REFERENCE_KIND) {
  		instance = fxGetInstance(the, theProperty);
 		if (instance)

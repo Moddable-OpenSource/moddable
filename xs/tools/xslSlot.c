@@ -382,13 +382,6 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 					}
 					slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 				}
-				else if (slot->kind == XS_CLOSURE_KIND) {
-					slot->value.closure->flag |= XS_DONT_SET_FLAG;
-				}
-				else if (slot->kind == XS_EXPORT_KIND) {
-					if (slot->value.export.closure)
-						slot->value.export.closure->flag |= XS_DONT_SET_FLAG;
-				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
 					if (property) {
@@ -397,7 +390,7 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
 							if (stripping) {
-								if (slot->flag & (XS_BASE_FLAG | XS_DERIVED_FLAG)) {
+								if (slot->flag & XS_CAN_CONSTRUCT_FLAG /*(XS_BASE_FLAG | XS_DERIVED_FLAG)*/) {
 									property = property->next;
 									while (property) {
 										if ((property->ID == mxID(_prototype)) && (property->kind == XS_REFERENCE_KIND)) {
@@ -409,11 +402,8 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 								}
 							}
 						}
-						else if (property->kind == XS_MODULE_KIND) {
+						else if (property->kind == XS_MODULE_KIND)
 							fxPrepareInstance(the, slot);
-							if (property->value.module.id != XS_NO_ID)
-								property->value.module.realm = C_NULL;
-						}
 						else if (property->kind == XS_EXPORT_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
@@ -429,6 +419,10 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 		heap = heap->next;
 	}
 	index++;
+	
+	slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	slot = mxRealmGlobal(slot)->value.reference;
+	slot->flag &= ~XS_DONT_PATCH_FLAG;
 	
 	heap = the->firstHeap;
 	while (heap) {
@@ -459,6 +453,35 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 		}
 		heap = heap->next;
 	}
+	
+	heap = the->firstHeap;
+	while (heap) {
+		slot = heap + 1;
+		limit = heap->value.reference;
+		while (slot < limit) {
+			if (!(slot->flag & XS_MARK_FLAG)) {
+				if (slot->kind == XS_CLOSURE_KIND) {
+					txSlot* closure = slot->value.closure;
+					if (closure->kind == XS_REFERENCE_KIND) {
+						txSlot* internal = closure->value.reference->next;
+						if (internal && ((internal->kind == XS_CALLBACK_KIND) || (internal->kind == XS_CALLBACK_X_KIND) || (internal->kind == XS_CODE_KIND) || (internal->kind == XS_CODE_X_KIND))) {
+							closure->flag |= XS_DONT_SET_FLAG;
+						}
+					}
+					if (closure->flag & XS_DONT_SET_FLAG)
+						closure->flag |= XS_DONT_DELETE_FLAG;
+					else {
+						if (closure->ID == XS_NO_ID)
+							closure->ID = aliasCount++;
+						slot->flag &= ~XS_DONT_SET_FLAG;
+					}
+				}
+			}
+			slot++;
+		}
+		heap = heap->next;
+	}
+	
 	the->aliasCount = aliasCount;
 	
 	return index;
