@@ -631,6 +631,7 @@ function server(message, value, etc) {
 					if (1 & this.flags) {
 						socket.write(body);				//@@ assume it all fits... not always true
 						delete this.body;			// one shot
+						this.state = 10;
 					}
 					else if (2 & this.flags) {
 						socket.write(count.toString(16).toUpperCase(), "\r\n", body, "\r\n");
