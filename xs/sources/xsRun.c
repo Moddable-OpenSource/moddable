@@ -1627,7 +1627,6 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
 			slot = mxFrame - index;
-			variable = slot->value.closure;
 			mxSaveState;
 			variable = fxNewSlot(the);
 			mxRestoreState;
