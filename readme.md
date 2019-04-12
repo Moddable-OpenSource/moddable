@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2018 Moddable Tech, Inc.<BR>
-Revised: April 8, 2019
+Copyright 2017-2019 Moddable Tech, Inc.<BR>
+Revised: April 12, 2019
 
 ## Modern software development for microcontrollers
 
