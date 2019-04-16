@@ -15,7 +15,7 @@
 import {File, Iterator, System} from "file";
 import config from "mc/config";
 
-const root = config.fs.root;
+const root = config.file.root;
 
 let file;
 

@@ -9,7 +9,7 @@
 				"*": "$(MODULES)/files/file/esp/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "/spiffs/"
 				}
 			}
@@ -19,7 +19,7 @@
 				"*": "$(MODULES)/files/file/esp32/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "/spiffs/"
 				}
 			}
@@ -29,7 +29,7 @@
 				"*": "$(MODULES)/files/file/mac/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "/Users/Shared/"
 				}
 			}
@@ -39,7 +39,7 @@
 				"*": "$(MODULES)/files/file/win/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "./"
 				}
 			}
@@ -49,7 +49,7 @@
 				"*": "$(MODULES)/files/file/lin/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "/tmp/"
 				}
 			}
@@ -59,7 +59,7 @@
 				"*": "$(MODULES)/files/file/qca4020/*"
 			},
 			"config": {
-				"fs": {
+				"file": {
 					"root": "/spinor/"
 				}
 			}
