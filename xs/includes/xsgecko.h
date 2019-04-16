@@ -37,6 +37,17 @@ void xs_setup();
 void xs_loop();
 
 /*
+	link locations
+*/
+#define ICACHE_FLASH_ATTR
+#define ICACHE_STORE_ATTR
+#define ICACHE_RODATA_ATTR
+#define ICACHE_RAM_ATTR	
+#define ICACHE_XS6RO_ATTR
+#define ICACHE_XS6RO2_ATTR
+#define ICACHE_XS6STRING_ATTR
+
+/*
     timer
 */
 extern void modTimersExecute(void);

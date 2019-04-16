@@ -295,14 +295,6 @@ typedef struct tm c_tm;
 #define c_strstr strstr
 #define c_strrchr strrchr
 
-#define ICACHE_FLASH_ATTR
-#define ICACHE_STORE_ATTR
-#define ICACHE_RODATA_ATTR
-#define ICACHE_RAM_ATTR	
-#define ICACHE_XS6RO_ATTR
-#define ICACHE_XS6RO2_ATTR
-#define ICACHE_XS6STRING_ATTR
-
 #define espRead8(POINTER) *((txU1*)POINTER)
 #define mxGetKeySlotID(SLOT) (SLOT)->ID
 #define mxGetKeySlotKind(SLOT) (SLOT)->kind
