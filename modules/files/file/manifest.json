@@ -7,31 +7,61 @@
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/files/file/esp/*"
+			},
+			"config": {
+				"fs": {
+					"root": "/spiffs/"
+				}
 			}
 		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/files/file/esp32/*"
+			},
+			"config": {
+				"fs": {
+					"root": "/spiffs/"
+				}
 			}
 		},
 		"mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"
+			},
+			"config": {
+				"fs": {
+					"root": "/Users/Shared/"
+				}
 			}
 		},
 		"win": {
 			"modules": {
 				"*": "$(MODULES)/files/file/win/*"
+			},
+			"config": {
+				"fs": {
+					"root": "./"
+				}
 			}
 		},
 		"lin": {
 			"modules": {
 				"*": "$(MODULES)/files/file/lin/*"
+			},
+			"config": {
+				"fs": {
+					"root": "/tmp/"
+				}
 			}
 		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/files/file/qca4020/*"
+			},
+			"config": {
+				"fs": {
+					"root": "/spinor/"
+				}
 			}
 		},
 		"...": {

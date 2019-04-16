@@ -13,12 +13,10 @@
  */
 
 import {File, Iterator, System} from "file";
+import config from "mc/config";
 
-//const root = "/Users/hoddie/";
-//const root = "c:\\Users\\brianfriedkin\\";
-//const root = "/spiffs/";	// ESP8266, ESP32
-//const root = "/spinor/";	// QCA4020
-const root = "/";
+const root = config.fs.root;
+
 let file;
 
 // writing/reading strings
