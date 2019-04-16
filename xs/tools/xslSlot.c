@@ -43,6 +43,7 @@ static txString fxGetCodeName(txMachine* the, txByte* which);
 static txInteger fxGetTypeDispatchIndex(txTypeDispatch* dispatch);
 static void fxPrepareInstance(txMachine* the, txSlot* instance);
 static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
+static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
 
@@ -512,7 +513,9 @@ void fxPrintBuilders(txMachine* the, FILE* file)
 	fprintf(file, "static const xsHostBuilder gxBuilders[%d] = {\n", linker->builderCount);
 	while (linkerBuilder) {
 		txString name = fxGetCallbackName(the, linkerBuilder->host.callback);
-		fprintf(file, "\t{ %s, %d, %d },\n", name, linkerBuilder->host.length, linkerBuilder->host.id);
+		fprintf(file, "\t{ %s, %d, ", name, linkerBuilder->host.length);
+		fxPrintID(the, file, linkerBuilder->host.id);
+		fprintf(file, " },\n");
 		linkerBuilder = linkerBuilder->nextBuilder;
 	}
 	fprintf(file, "};\n\n");
@@ -539,10 +542,8 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 					txInteger size = (txInteger)fxGetIndexSize(the, slot);
 					fprintf(file, "\t{ ");
 					fxPrintAddress(the, file, slot->next);
-					if (slot->ID == XS_NO_ID)
-						fprintf(file, ", {.ID = XS_NO_ID");
-					else
-						fprintf(file, ", {.ID = %d", slot->ID);
+					fprintf(file, ", {.ID = ");
+					fxPrintID(the, file, slot->ID);
 					fprintf(file, ", .flag = 0x%x", slot->flag | XS_MARK_FLAG);
 					fprintf(file, ", .kind = XS_ARRAY_KIND}, .value = { .array = { (txSlot*)&gxHeap[%d], %d } }},\n", (int)index + 1, (int)slot->value.array.length);
 					fprintf(file, "/* %.4d */", index);
@@ -568,6 +569,26 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 	fprintf(file, "/* %.4d */", index);
 	fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_REFERENCE_KIND}, ");
 	fprintf(file, ".value = { .reference = NULL } }");
+}
+
+void fxPrintID(txMachine* the, FILE* file, txID id) 
+{
+	txLinker* linker = (txLinker*)(the->context);
+	if (id == XS_NO_ID)
+		fprintf(file, "XS_NO_ID");
+	else if (id < 0) {
+		char* string = fxGetKeyName(the, id);
+		if (string) {
+			if (fxIsCIdentifier(linker, string))
+				fprintf(file, "xsID_%s", string);
+			else
+				fprintf(file, "%d /* %s */", id, string);
+		}
+		else
+			fprintf(file, "%d /* ? */", id);
+	}
+	else
+		fprintf(file, "%d", id);
 }
 
 void fxPrintNumber(txMachine* the, FILE* file, txNumber value) 
@@ -599,10 +620,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	else
 		fxPrintAddress(the, file, slot->next);
 	fprintf(file, ", {.ID = ");
-	if (slot->ID == XS_NO_ID)
-		fprintf(file, "XS_NO_ID, ");
-	else
-		fprintf(file, "%d, ", slot->ID);
+	fxPrintID(the, file, slot->ID);
+	fprintf(file, ", ");
 	if (slot->kind == 	XS_INSTANCE_KIND)
 		fprintf(file, ".flag = 0x%x, ", slot->flag | flag | XS_DONT_MARSHALL_FLAG);
 	else

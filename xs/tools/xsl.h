@@ -196,6 +196,7 @@ extern void fxDefaultSymbols(txLinker* linker);
 extern txLinkerCallback* fxGetLinkerCallbackByAddress(txLinker* linker, txCallback which);
 extern txLinkerCallback* fxGetLinkerCallbackByName(txLinker* linker, txString name);
 extern void fxInitializeLinker(txLinker* linker);
+extern txBoolean fxIsCIdentifier(txLinker* linker, txString string);
 extern txBoolean fxIsCodeUsed(txU1 code);
 extern void fxMapScript(txLinker* linker, txLinkerScript* script);
 extern txHostFunctionBuilder* fxNewLinkerBuilder(txLinker* linker, txCallback callback, txInteger length, txID id);

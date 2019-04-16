@@ -32,6 +32,12 @@
 #define NSWindowStyleMaskResizable NSResizableWindowMask
 #endif
 
+#ifndef MAC_OS_X_VERSION_10_14
+#define NSControlStateValueOn NSOnState
+#define NSControlStateValueOff NSOffState
+#define NSPasteboardTypeString NSStringPboardType
+#endif
+
 #define piuPC 1
 typedef int32_t PiuCoordinate;
 typedef int32_t PiuDimension;

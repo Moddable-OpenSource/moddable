@@ -49,7 +49,6 @@ struct sxMD5 {
 	uint8_t buf[MD5_BLKSIZE];
 };
 
-static txBoolean fxIsCIdentifier(txLinker* linker, txString string);
 static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);

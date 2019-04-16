@@ -115,7 +115,7 @@
 		result = PiuApplicationCanMenu(piuApplication, tag);
 		if (result & piuMenuTitled)
 			[item setTitle:[NSString stringWithUTF8String:xsToString(xsGet(xsResult, xsID_title))]];
-		[item setState:((result & piuMenuChecked) ? NSOnState : NSOffState)];
+		[item setState:((result & piuMenuChecked) ? NSControlStateValueOn : NSControlStateValueOff)];
 		xsEndHost(machine);
 		return (result & piuMenuEnabled) ? YES : NO;
     }
@@ -181,7 +181,11 @@
 		{
 			PiuApplication* application = (*piuView)->application;
 			PiuApplicationAdjust(application);
+#ifndef MAC_OS_X_VERSION_10_14
 			(*piuView)->context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+#else
+			(*piuView)->context = [[NSGraphicsContext currentContext] CGContext];
+#endif
 			(*(*application)->dispatch->update)(application, piuView, &area);
 			(*piuView)->context = NULL;
 		}
@@ -465,7 +469,7 @@ void PiuViewCreate(xsMachine* the)
  	[nsWindow setAcceptsMouseMovedEvents:YES];
 	[nsWindow setContentView:nsView];
     [nsWindow setDelegate:(id<NSWindowDelegate>)[[NSApplication sharedApplication] delegate]];
-    [nsWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType,nil]];
+    [nsWindow registerForDraggedTypes:[NSArray arrayWithObjects:@"NSFilenamesPboardType",nil]];
     if (![nsWindow setFrameUsingName:@"PiuWindow"])
         [nsWindow cascadeTopLeftFromPoint:NSMakePoint(20, 20)];
 	[nsWindow setFrameAutosaveName:@"PiuWindow"]; 
@@ -887,7 +891,7 @@ void PiuCursors_get_resizeRow(xsMachine* the)
 void PiuSystem_getClipboardString(xsMachine* the)
 {
 	NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
-	NSString* string = [pasteboard stringForType:NSStringPboardType];
+	NSString* string = [pasteboard stringForType:NSPasteboardTypeString];
 	xsResult = xsString([string UTF8String]);
 }
 
@@ -895,8 +899,8 @@ void PiuSystem_setClipboardString(xsMachine* the)
 {
 	NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
 	NSString* string = [NSString stringWithUTF8String:xsToString(xsArg(0))];
-	[pasteboard declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
-	[pasteboard setString:string forType:NSStringPboardType];
+	[pasteboard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
+	[pasteboard setString:string forType:NSPasteboardTypeString];
 }
 
 void PiuSystem_launchPath(xsMachine* the)
