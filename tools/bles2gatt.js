@@ -345,24 +345,35 @@ class ESP32GATTFile extends GATTFile {
 	}
 	parsePermissions(permissions) {
 		let perms = [];
+		let readPerms = 0;
+		let writePerms = 0;
 		permissions.forEach(p => {
 			switch(p.trim()) {
 				case "read":
+					++readPerms;
 					perms.push("ESP_GATT_PERM_READ");
 					break;
 				case "readEncrypted":
+					++readPerms;
 					perms.push("ESP_GATT_PERM_READ_ENCRYPTED");
 					break;
 				case "write":
+					++writePerms;
 					perms.push("ESP_GATT_PERM_WRITE");
 					break;
 				case "writeEncrypted":
+					++writePerms;
 					perms.push("ESP_GATT_PERM_WRITE_ENCRYPTED");
 					break;
 				default:
 					throw new Error("unsupported permission");
 			}
 		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
+			
 		return perms.join("|");
 	}
 	writeAttributeValue(file, attribute, index, prefix) {
@@ -623,20 +634,34 @@ class QCA4020GATTFile extends GATTFile {
 	}
 	parsePermissions(permissions) {
 		let perms = [];
+		let readPerms = 0;
+		let writePerms = 0;
 		permissions.forEach(p => {
 			switch(p.trim()) {
 				case "read":
+					++readPerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE");
+					break;
 				case "readEncrypted":
+					++readPerms;
 					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE");
 					break;
 				case "write":
+					++writePerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_WRITABLE");
+					break;
 				case "writeEncrypted":
+					++writePerms;
 					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_WRITABLE");
 					break;
 				default:
 					throw new Error("unsupported permission");
 			}
 		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
 		return perms.join('|');
 	}
 	isEncrypted(characteristic) {
@@ -876,24 +901,34 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_att_perm_encrypted_write = 0x0100;
 		const gatt_att_perm_discoverable = 0x0800;
 		let perms = gatt_att_perm_discoverable;
+		let readPerms = 0;
+		let writePerms = 0;
 		permissions.forEach(p => {
 			switch(p.trim()) {
 				case "read":
+					++readPerms;
 					perms |= gatt_att_perm_readable;
 					break;
 				case "readEncrypted":
+					++readPerms;
 					perms |= gatt_att_perm_encrypted_read;
 					break;
 				case "write":
+					++writePerms;
 					perms |= gatt_att_perm_writable;
 					break;
 				case "writeEncrypted":
+					++writePerms;
 					perms |= gatt_att_perm_encrypted_write;
 					break;
 				default:
 					throw new Error("unsupported permission");
 			}
 		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
 		return perms;
 	}
 };
