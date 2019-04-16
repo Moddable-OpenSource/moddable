@@ -18,9 +18,9 @@ import SecureSocket from "securesocket";
 let request = new Request({host: "www.howsmyssl.com", path: "/a/check", response: String,
 						  port: 443, Socket: SecureSocket, secure: {protocolVersion: 0x303} });
 request.callback = function(message, value, etc) {
-	if (2 == message)
+	if (Request.header === message)
 		trace(`${value}: ${etc}\n`);
-	else if (5 == message) {
+	else if (Request.responseComplete === message) {
 		let result = JSON.parse(value);
 		trace("Rating: " + result.rating + "\n");
 	}

@@ -17,10 +17,10 @@ import BMPSpooler from "bmpSpooler"
 
 const width = 120, height = 160;
 
-let server = new Server({port: 8080});
+let server = new Server({port: 80});
 server.callback = function(message, value)
 {
-	if (8 == message) {
+	if (Server.prepareResponse == message) {
 		this.spooler = new BMPSpooler(width, height, (render, width, height) => {
 			render.fillRectangle(render.makeColor(255, 0, 0), 0, 0, width, height);
 			render.fillRectangle(render.makeColor(0, 255, 0), 16, 16, width - 32, height - 32);
@@ -29,6 +29,6 @@ server.callback = function(message, value)
 		return {headers: ["Content-Type", "image/bmp", "Content-Length", this.spooler.byteLength], body: true};
 	}
 
-	if (9 == message)
+	if (Server.responseFragment == message)
 		return this.spooler.get(value);
 }

@@ -24,7 +24,7 @@ let request = new Request({	host: "api.openweathermap.org",
 
 request.callback = function(message, value)
 {
-	if (5 == message) {
+	if (Request.responseComplete === message) {
 		value = JSON.parse(value, ["main", "name", "temp", "weather"]);
 		trace(`The temperature in ${value.name} is ${value.main.temp} F.\n`);
 		trace(`The weather condition is ${value.weather[0].main}.\n`);

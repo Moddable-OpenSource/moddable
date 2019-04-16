@@ -19,8 +19,8 @@ let request = new Request({host: "www.mozilla.org", path: "/", response: String,
 		port: 443, Socket: SecureSocket});
 request.callback = function(message, value, etc)
 {
-	if (2 == message)
+	if (Request.header === message)
 		trace(`${value}: ${etc}\n`);
-	else if (5 == message)
+	else if (Request.responseComplete === message)
 		trace(value + "\n");
 }

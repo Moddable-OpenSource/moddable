@@ -17,13 +17,13 @@ import {Server} from "http"
 let server = new Server({});
 server.callback = function(message, value)
 {
-	if (2 == message)
+	if (Server.status === message)
 		this.path = value;
 
-	if (8 == message)
+	if (Server.prepareResponse === message)
 		return {headers: ["Content-type", "text/plain"], body: true};
 
-	if (9 == message) {
+	if (Server.responseFragment === message) {
 		let i = Math.round(Math.random() * 20);
 		if (0 == i)
 			return;

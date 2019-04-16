@@ -18,20 +18,20 @@ import Net from "net";
 
 (new Server({})).callback = function(message, value) {
 	switch (message) {
-		case 2:								// request status received
+		case Server.status:					// request status received
 			let path = value;				// file path is HTTP path
 			File.delete(path);
 			this.file = new File(path, true);
 			break;
 
-		case 4:								// prepare for request body
+		case Server.headersComplete:		// prepare for request body
 			return true;					// provide request body in fragments
 	
-		case 5:								// request body fragment
+		case Server.requestFragment:		// request body fragment
 			this.file.write(this.read(ArrayBuffer));
 			break;
 
-		case 6:								// request body received
+		case Server.requestComplete:		// request body received
 			this.file.close();
 			break;
 	}

@@ -23,7 +23,7 @@ let request = new Request({	host: "httpbin.org",
 
 request.callback = function(message, value)
 {
-	if (5 == message) {
+	if (Request.responseComplete == message) {
 		value = JSON.parse(value);
 		value = JSON.parse(value.data);
 		trace(`name: ${value.name}\n`);
