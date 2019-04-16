@@ -109,6 +109,14 @@ export class Request {
 		this.state = 11;
 	}
 };
+Request.requestFragment = 0;
+Request.status = 1;
+Request.header = 2;
+Request.headersComplete = 3;
+Request.responseFragment = 4;
+Request.responseComplete = 5;
+Request.error = -2;
+Object.freeze(Request.prototype);
 
 function callback(message, value) {
 	let socket = this.socket;
@@ -435,6 +443,17 @@ export class Server {
 		delete this.listener;
 	}
 }
+Server.connection = 1;
+Server.status = 2;
+Server.header = 3;
+Server.headersComplete = 4;
+Server.requestFragment = 5;
+Server.requestComplete = 6;
+Server.prepareResponse = 8;
+Server.responseFragment = 9;
+Server.responseComplete = 10;
+Server.error = -1;
+Object.freeze(Server.prototype);
 
 function server(message, value, etc) {
 	let socket = this.socket;
