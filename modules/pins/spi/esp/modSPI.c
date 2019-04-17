@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -87,8 +87,6 @@ void modSPIInit(modSPIConfiguration config)
 		ETS_SPI_INTR_ATTACH(spiTxInterrupt, NULL);
 		ETS_SPI_INTR_ENABLE();
 	}
-	else
-		modSPIFlush();
 
 	if (80000000 == config->hz) {
 		#define hspi_enable_80Mhz()	 WRITE_PERI_REG(PERIPHS_IO_MUX, 0x305)
@@ -97,8 +95,6 @@ void modSPIInit(modSPIConfiguration config)
 	}
 	else
 		config->reserved = frequencyToSPIClock(config->hz);
-
-	(config->doChipSelect)(0, config);
 }
 
 void modSPIUninit(modSPIConfiguration config)

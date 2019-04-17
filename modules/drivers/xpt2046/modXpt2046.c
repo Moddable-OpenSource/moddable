@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -117,6 +117,7 @@ void xs_XPT2046(xsMachine *the)
 			MODDEF_XPT2046_CS_PORT, MODDEF_XPT2046_CS_PIN, xpt2046ChipSelect);
 
 	modGPIOInit(&xpt->csPin, MODDEF_XPT2046_CS_PORT, MODDEF_XPT2046_CS_PIN, kModGPIOOutput);
+	modGPIOWrite(&xpt->csPin, 1);
 	modGPIOInit(&xpt->touchPin, MODDEF_XPT2046_TOUCH_PORT, MODDEF_XPT2046_TOUCH_PIN, kModGPIOInput);
 	modSPIInit(&xpt->spiConfig);
 
