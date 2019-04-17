@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -135,6 +135,8 @@ void modSPIInit(modSPIConfiguration config)
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 		if (ret) return;
 		gSPIInited = 1;
+		gSPIData = NULL;
+		gSPIDataCount = -1;
 	}
 
 	spi_device_interface_config_t devcfg;
@@ -151,17 +153,6 @@ void modSPIInit(modSPIConfiguration config)
 		printf("spi_bus_add_device failed %d\n", ret);
 		return;
 	}
-
-	if (NULL == gConfig) {
-		gSPIData = NULL;
-		gSPIDataCount = -1;
-
-		gConfig = config;
-	}
-	else
-		modSPIFlush();
-
-	(config->doChipSelect)(0, config);
 }
 
 void modSPIUninit(modSPIConfiguration config)

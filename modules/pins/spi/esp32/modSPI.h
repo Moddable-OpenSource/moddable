@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,7 +34,7 @@ typedef void (*modSPIChipSelectCallback)(uint8_t active, modSPIConfiguration con
 
 struct modSPIConfigurationRecord {
 	spi_device_handle_t			spi_dev;
-	uint8_t						cs_pin;
+	int8_t						cs_pin;
 	uint8_t						spiPort;
 	uint8_t						sync;
 	uint32_t					hz;
