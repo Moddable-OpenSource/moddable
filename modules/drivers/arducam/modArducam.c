@@ -218,6 +218,7 @@ void xs_arducam(xsMachine *the)
 	*/
 
 	modGPIOInit(&ac->csPin, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput);
+	arducamChipSelect(false, ac);
 
 	modSPIInit(&ac->spiConfig);
 
