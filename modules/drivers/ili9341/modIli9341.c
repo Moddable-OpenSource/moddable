@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -211,7 +211,7 @@ void xs_ILI9341(xsMachine *the)
 	xsmcSetHostData(xsThis, sd);
 
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
-			MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, ili9341ChipSelect);
+			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
@@ -406,10 +406,11 @@ void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count)
 {
 	modSPIFlush();
-   	SCREEN_DC_COMMAND;
+	modSPIActivateConfiguration(NULL);
+	SCREEN_DC_COMMAND;
    	modSPITxRx(&sd->spiConfig, &command, 1);		// could use modSPITx, but modSPITxRx is synchronous and callers rely on that
-
-    if (count) {
+	   
+	if (count) {
     	SCREEN_DC_DATA;
         modSPITxRx(&sd->spiConfig, (uint8_t *)data, count);
     }
