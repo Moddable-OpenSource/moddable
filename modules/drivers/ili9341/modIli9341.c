@@ -124,7 +124,7 @@ typedef struct {
 
 static void ili9341ChipSelect(uint8_t active, modSPIConfiguration config);
 
-static void ili9341Init(spiDisplay sd);
+/* static */ void ili9341Init(spiDisplay sd);
 static void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count);
 
 static void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
