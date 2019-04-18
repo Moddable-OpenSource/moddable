@@ -136,6 +136,7 @@ void fxBuildGlobal(txMachine* the)
 	mxPull(mxEscapeFunction);
 	fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
 	mxPull(mxEvalFunction);
+	mxEvalIntrinsic = mxEvalFunction;
 	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
 	mxPull(mxUnescapeFunction);
 	

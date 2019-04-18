@@ -1861,6 +1861,9 @@ XS_CODE_JUMP:
 	/* PROPERTIES */	
 		mxCase(XS_CODE_INTRINSIC)
 			offset = mxRunS2(1);
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceIndex(the, offset);
+#endif
 			mxNextCode(3);
 			mxOverflow(1);
 			*mxStack = mxIntrinsics[-offset];
