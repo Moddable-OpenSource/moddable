@@ -92,6 +92,9 @@ void xs_socket(xsMachine *the)
 	xsSocket xss;
 	WSADATA wsaData;
 
+	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
+		xsUnknownError("winsock initialization failed");
+
 	xsmcVars(1);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
@@ -107,11 +110,10 @@ void xs_socket(xsMachine *the)
 		if (WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents))
 			xsUnknownError("async select failed");
 
+		modInstrumentationAdjust(NetworkSockets, 1);
+
 		return;
 	}
-
-	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
-		xsUnknownError("winsock initialization failed");
 
 	xss = c_calloc(sizeof(xsSocketRecord), 1);
 	if (!xss)
@@ -293,7 +295,7 @@ void doDestructor(xsSocket xss)
 	if (xss->skt != INVALID_SOCKET) {
 		modInstrumentationAdjust(NetworkSockets, -1);
 		WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, 0);
-		SetWindowLongPtr(xss->window, 0, 0L);
+		DestroyWindow(xss->window);
 		closesocket(xss->skt);
 		xss->skt = INVALID_SOCKET;
 		WSACleanup();
@@ -585,6 +587,8 @@ void xs_listener(xsMachine *the)
 
 	if (SOCKET_ERROR == listen(xsl->skt, SOMAXCONN))
 		xsUnknownError("listen failed");
+
+	modInstrumentationAdjust(NetworkSockets, 1);
 }
 
 LRESULT CALLBACK modListenerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
@@ -623,6 +627,7 @@ void xs_listener_destructor(void *data)
 {
 	xsListener xsl = data;
 	if (xsl) {
+		DestroyWindow(xsl->window);
 		if (xsl->skt != INVALID_SOCKET)
 			closesocket(xsl->skt);
 		c_free(xsl);
