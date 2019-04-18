@@ -22,7 +22,7 @@
 #include "xsAll.h"
 #include "mc.xs.h"
 
-extern txPreparation* xsPreparation();
+extern txPreparation* xsPreparation;
 
 void fxAbort(xsMachine* the)
 {
