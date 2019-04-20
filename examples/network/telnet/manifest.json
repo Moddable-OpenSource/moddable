@@ -2,9 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODDABLE)/modules/pins/i2c/manifest.json",
 	],
 	"modules": {
 		"*": [
