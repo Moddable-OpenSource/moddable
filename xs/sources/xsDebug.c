@@ -1649,7 +1649,7 @@ void fxListLocal(txMachine* the)
 			txSlot* aSlot = frame - 1;
 			while (aSlot > aScope) {
 				aSlot--;
-				if (aSlot->ID)
+				if ((aSlot->ID) || ((aSlot->kind == XS_CLOSURE_KIND) && (aSlot->value.closure->ID)))
 					fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
 			}
 		}

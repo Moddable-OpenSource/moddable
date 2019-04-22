@@ -321,7 +321,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
-	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
+	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT) || fxIsLinkerSymbolUsed(linker, mxID(_evaluateProgram)))
 		fprintf(file, "\tfxRunProgramEnvironment,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");

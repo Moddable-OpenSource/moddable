@@ -1484,9 +1484,9 @@ XS_CODE_JUMP:
 			variable = fxNewSlot(the);
 			mxRestoreState;
 			slot->flag |= XS_DONT_DELETE_FLAG;
+			slot->ID = (txID)offset;
 			slot->kind = XS_CLOSURE_KIND;
 			slot->value.closure = variable;
-			variable->ID = (txID)offset;
 			variable->kind = XS_UNINITIALIZED_KIND;
 			mxBreak;
 		mxCase(XS_CODE_NEW_LOCAL)
