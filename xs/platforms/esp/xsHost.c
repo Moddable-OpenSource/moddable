@@ -1368,6 +1368,17 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 {
 	modMessageRecord msg;
 
+#ifdef mxDebug
+	if (0xffff == messageLength) {
+		msg.message = NULL;
+		msg.callback = callback;
+		msg.refcon = refcon;
+		msg.length = 0;
+		xQueueSendToFront(the->msgQueue, &msg, portMAX_DELAY);
+		return 0;
+	}
+#endif
+
 	if (message && messageLength) {
 		msg.message = c_malloc(messageLength);
 		if (!msg.message) return -1;
@@ -1379,8 +1390,17 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
-
-	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
+#ifdef mxDebug
+	do {
+		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {		// keep one entry free for debugger
+			xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+			break;
+		}
+		vTaskDelay(5);
+	} while (1);
+#else
+	xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+#endif
 
 	return 0;
 }
@@ -1395,7 +1415,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-	xQueueSendFromISR(the->msgQueue, &msg, &ignore);
+	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
 
 	return 0;
 }
@@ -1506,6 +1526,11 @@ static void appendMessage(modMessage msg)
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
+#ifdef mxDebug
+	if (0xffff == messageLength)
+		messageLength = 0;
+#endif
+
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
 	if (!msg) return -1;
 
