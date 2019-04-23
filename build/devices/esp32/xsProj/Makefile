@@ -25,7 +25,7 @@ DEBUGGER_SPEED ?= 921600
 
 CFLAGS += -Wno-unused-value -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 
-EXTRA_LDFLAGS ?= -Wl,--wrap=spi_flash_erase_sector
+EXTRA_LDFLAGS ?= -Wl,--wrap=spi_flash_erase_sector -Wl,--wrap=spi_flash_erase_range
 
 include $(IDF_PATH)/make/project.mk
 

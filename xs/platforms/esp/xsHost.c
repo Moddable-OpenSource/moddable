@@ -1634,6 +1634,16 @@ esp_err_t __wrap_spi_flash_erase_sector(size_t sector)
 #endif
 	return __real_spi_flash_erase_sector(sector);
 }
+
+esp_err_t __wrap_spi_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+	extern esp_err_t __real_spi_flash_erase_range(uint32_t start_addr, uint32_t size);
+#ifdef mxInstrument
+	modInstrumentationAdjust(SPIFlashErases, (size / SPI_FLASH_SEC_SIZE));
+#endif
+	return __real_spi_flash_erase_range(start_addr, size);
+}
+
 #endif
 
 /*
