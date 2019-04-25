@@ -94,7 +94,7 @@
 		"pins/smbus"
 	],
 	"resources": {
-		"*": "./assets/bflatmajor",
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
 	},
 }
 

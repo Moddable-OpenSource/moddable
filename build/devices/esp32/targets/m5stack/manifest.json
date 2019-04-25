@@ -74,7 +74,7 @@
 		"setup/target",
 	],
 	"resources": {
-		"*": "./assets/bflatmajor",
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
 	},
 }
 
