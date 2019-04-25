@@ -1,0 +1,33 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/onewire/*",
+			"./main",
+		],
+	},
+	"preload": "onewire",
+	"defines": {
+		"onewire": {
+			"rmt_rx_channel": "RMT_CHANNEL_2",
+			"rmt_tx_channel": "RMT_CHANNEL_3",
+		},	
+	},
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/esp32/*",
+			},
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/win/*",
+			},
+		},
+		"...": {
+			"error": "unsupported platform"
+		},
+	}
+}
