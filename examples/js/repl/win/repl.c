@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,7 +22,7 @@
 #include "xsAll.h"
 #include "mc.xs.h"
 
-extern txPreparation* xsPreparation();
+extern txPreparation* xsPreparation;
 
 void fxAbort(xsMachine* the)
 {

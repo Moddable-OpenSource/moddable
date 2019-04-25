@@ -61,12 +61,12 @@ void xs_File(xsMachine *the)
 {
     int argc = xsmcArgc;
     FILE *file;
-	char path[SPIFFS_OBJ_NAME_LEN];
+	char *path;
     uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));
 
     startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	path = xsmcToString(xsArg(0));
     file = fopen(path, write ? "rb+" : "rb");
     if (NULL == file) {
         if (write)
@@ -131,32 +131,30 @@ void xs_file_write(xsMachine *the)
     for (i = 0; i < argc; i++) {
         uint8_t *src;
         int32_t srcLen;
+		int type = xsmcTypeOf(xsArg(i));
+		uint8_t temp;
 
-        if (xsStringType == xsmcTypeOf(xsArg(i))) {
-            src = (uint8_t *)xsmcToString(xsArg(i));
-            srcLen = strlen((char *)src);
-        }
+		if (xsStringType == type) {
+			src = xsmcToString(xsArg(i));
+			srcLen = strlen(src);
+		}
+		else if ((xsIntegerType == type) || (xsNumberType == type)) {
+			temp = (uint8_t)xsmcToInteger(xsArg(i));
+			src = &temp;
+			srcLen = 1;
+		}
         else {
             src = xsmcToArrayBuffer(xsArg(i));
             srcLen = xsGetArrayBufferLength(xsArg(i));
         }
 
-        while (srcLen) {	// spool through RAM for data in flash
-            unsigned char *buffer[128];
-            int use = (srcLen <= (int)sizeof(buffer)) ? srcLen : 128;
-
-            memcpy(buffer, src, use);
-            src += use;
-            srcLen -= use;
-
-            result = fwrite(buffer, 1, use, file);
-            if (result != use)
-                xsUnknownError("file write failed");
-            result = fflush(file);
-			if (0 != result)
-				xsUnknownError("file flush failed");
-        }
+		result = fwrite(src, 1, srcLen, file);
+		if (result != srcLen)
+			xsUnknownError("file write failed");
     }
+	result = fflush(file);
+	if (0 != result)
+		xsUnknownError("file flush failed");
 }
 
 void xs_file_close(xsMachine *the)
@@ -197,12 +195,12 @@ void xs_file_set_position(xsMachine *the)
 
 void xs_file_delete(xsMachine *the)
 {
-    char path[SPIFFS_OBJ_NAME_LEN];
+    char *path;
     int32_t result;
 
     startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	path = xsmcToString(xsArg(0));
     result = unlink(path);
 
 	stopSPIFFS();
@@ -212,13 +210,13 @@ void xs_file_delete(xsMachine *the)
 
 void xs_file_exists(xsMachine *the)
 {
-    char path[SPIFFS_OBJ_NAME_LEN];
+    char *path;
     struct stat buf;
     int32_t result;
 
     startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	path = xsmcToString(xsArg(0));
     result = stat(path, &buf);
 
 	stopSPIFFS();
@@ -228,14 +226,14 @@ void xs_file_exists(xsMachine *the)
 
 void xs_file_rename(xsMachine *the)
 {
-	char path[SPIFFS_OBJ_NAME_LEN];
+	char *path;
 	char name[SPIFFS_OBJ_NAME_LEN];
     int32_t result;
 
     startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
-	xsmcToStringBuffer(xsArg(1), name, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(1), name, SPIFFS_OBJ_NAME_LEN);
+	path = xsmcToString(xsArg(0));
     result = rename(path, name);
 
 	stopSPIFFS();
@@ -276,6 +274,7 @@ void xs_File_Iterator(xsMachine *the)
         d->path[i] = '/';
 
     if (NULL == (d->dir = opendir(d->path))) {
+    	free(d);
     	stopSPIFFS();
         xsUnknownError("failed to open directory");
     }

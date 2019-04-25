@@ -113,10 +113,17 @@ void xs_file_write(xsMachine *the)
 	for (i = 0; i < argc; i++) {
 		unsigned char *src;
 		s32_t srcLen;
+		int type = xsmcTypeOf(xsArg(i));
+		uint8_t temp;
 
-		if (xsStringType == xsmcTypeOf(xsArg(i))) {
+		if (xsStringType == type) {
 			src = xsmcToString(xsArg(i));
-			srcLen = espStrLen(src);
+			srcLen = c_strlen(src);
+		}
+		else if ((xsIntegerType == type) || (xsNumberType == type)) {
+			temp = (uint8_t)xsmcToInteger(xsArg(i));
+			src = &temp;
+			srcLen = 1;
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
@@ -127,7 +134,7 @@ void xs_file_write(xsMachine *the)
 			unsigned char *buffer[128];
 			int use = (srcLen <= sizeof(buffer)) ? srcLen : 128;
 
-			espMemCpy(buffer, src, use);
+			c_memcpy(buffer, src, use);
 			src += use;
 			srcLen -= use;
 

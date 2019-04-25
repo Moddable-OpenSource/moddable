@@ -29,11 +29,11 @@ const status = ["idle", "connecting", "wrong password", "no ap found", "connect 
 CLI.install(function(command, parts) {
 	switch (command) {
 		case "net":
-			this.line(`  IP Address: ${Net.get("IP")}`);
-			this.line(`  SSID: ${Net.get("SSID")}`);
-			this.line(`  BSSID: ${Net.get("BSSID")}`);
-			this.line(`  RSSI: ${Net.get("RSSI")}`);
-			this.line(`  MAC Address: ${Net.get("MAC")}`);
+			this.line(`  IP Address: ${Net.get("IP") || "(undefined)"}`);
+			this.line(`  SSID: ${Net.get("SSID") || "(undefined)"}`);
+			this.line(`  BSSID: ${Net.get("BSSID") || "(undefined)"}`);
+			this.line(`  RSSI: ${Net.get("RSSI") || "(undefined)"}`);
+			this.line(`  MAC Address: ${Net.get("MAC") || "(undefined)"}`);
 			this.line(`  Connection status: ${status[WiFi.status]}`);
 			break;
 

@@ -244,7 +244,7 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
 	if (NULL == p) {
 		if (!the->debugNotifyOutstanding) {
 			the->debugNotifyOutstanding = true;
-			modMessagePostToMachine(the, NULL, 0, doDebugCommand, the);
+			modMessagePostToMachine(the, NULL, 0xffff, doDebugCommand, the);
 		}
 	}
 	else {
@@ -621,7 +621,7 @@ void fxReceiveLoop(void)
 				}
 				if (!current->debugNotifyOutstanding) {
 					current->debugNotifyOutstanding = true;
-					modMessagePostToMachine(current, NULL, 0, doDebugCommand, current);
+					modMessagePostToMachine(current, NULL, 0xffff, doDebugCommand, current);
 				}
 				bufferedBytes = 0;
 			}
