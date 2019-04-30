@@ -97,46 +97,80 @@ void xs_onewire_read(xsMachine *the)
   }
   else
   {
+
+    /* Example reads to mock DS18s20
+0 28CC2E230500006B:24.1875 read 9: 800115097FFF10107D
+1 283260DC04000001:24 read 9: 800115097FFF10107D
+0 28CC2E230500006B:24.375 read 9: 7A0115097FFF0610B0
+1 283260DC04000001:23.625 read 9: 860115097FFF0A10E5
+0 28CC2E230500006B:24.375 read 9: 7A0115097FFF0610B0
+1 283260DC04000001:23.625 read 9: 860115097FFF0A10E5
+0 28CC2E230500006B:24.375 read 9: 790115097FFF0710B1
+1 283260DC04000001:23.5625 read 9: 850115097FFF0B10E4
+0 28CC2E230500006B:24.3125 read 9: 7A0115097FFF0610B0
+*/
     int count = xsmcToInteger(xsArg(0));
     xsResult = xsArrayBuffer(NULL, count);
     uint8_t *buffer = xsmcToArrayBuffer(xsResult);
-    buffer[1] = 66;
-    buffer[2] = 67;
-    //size = fread(xsToArrayBuffer(xsResult), 1, size, file);
+
+  // hack as 24.1875c ->  800115097FFF10107D
+    buffer[0] = 0x80;
+    buffer[1] = 0x01;
+    buffer[2] = 0x15;
+    buffer[3] = 0x09;
+    buffer[4] = 0x7F;
+    buffer[5] = 0xFF;
+    buffer[6] = 0x10;
+    buffer[7] = 0x10;
+    buffer[8] = 0x7D; // Calc as CRC ?
   }
 }
 
 void xs_onewire_write(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
-  int value = xsmcToInteger(xsArg(0));
-  if (value < 0)
-    value = 0;
-  else if (value > 255)
-    value = 255;
+  uint8_t value = xsmcToInteger(xsArg(0));
+  if ((value < 0) || (value > 255))
+    xsRangeError("bad value");
   onewire->val = value;
 }
 
 void xs_onewire_select(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
-  xsTrace("xs_onewire_select: ");
-  //xsTrace(xsmcToString(xsArg(0)));xsTrace("\n");
 }
 
 void xs_onewire_search(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  xsmcVars(2);
-  xsVar(0) = xsNewArray(0);
+
+  xsmcVars(1);
+  xsResult = xsNewArray(0);
+
+  uint8_t buffer[] = {0x28, 0xCA, 0x00, 0xA9, 0x04, 0x00, 0x00, 0xEA};
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
+
+  buffer[6] = 0x78;
+  buffer[3] = 0x92;
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
+}
+
+void xs_onewire_search2(xsMachine *the)
+{
+  modOneWire onewire = xsmcGetHostData(xsThis);
+
+  //xsmcVars(2);
+  //xsVar(0) = xsNewArray(0);
 
   uint8_t buffer[] = {0x28, 0xCA, 0x00, 0xA9, 0x04, 0x00, 0x00, 0xEA};
 
-  xsCall1(xsVar(0), xsID_push, xsArrayBuffer(buffer, 8));
+  xsmcVars(1);
+  xsResult = xsNewArray(0);
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
   buffer[6] = 0x78;
   buffer[3] = 0x92;
-  xsCall1(xsVar(0), xsID_push, xsArrayBuffer(buffer, 8));
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
 
   xsResult = xsVar(0);
 }

@@ -27,11 +27,15 @@ trace( devices.map( x => OneWire.hex(x) + '\n' ) );
 
 import DS18X20 from "DS18X20";
 
-//let sensor = new DS18X20(ow, devices[0]);
-let sensor = new DS18X20(ow);
+let sensor = new DS18X20({bus:ow});
 
 // echo ROM code
-trace( sensor.toString(),'\n');
+trace( 'Found first:',sensor.toString(),'\n');
+
+sensor = new DS18X20({bus:ow, index: 1});
+
+// echo ROM code
+trace( 'Found 2nd:',sensor.toString(),'\n');
 
 // test callback on temperature conversion
 function gotTemp( t ) {
@@ -42,7 +46,7 @@ sensor.getTemp(gotTemp);
 let res=sensor.resolution;
 trace( "res Before:",res,'\n');
 
-sensor.resolution=7;
+sensor.resolution=9;
 res=sensor.resolution;
 trace( "res - should be 9 :",res,'\n');
 
@@ -59,15 +63,14 @@ alarms=sensor.searchAlarm();
 trace( 'Alarms > 21:',alarms.length,'\n');
 
 var sensors = ow.search().map(function (device) {
-  return new DS18X20(ow, device);
+  return new DS18X20({bus:ow, id:device, digits:1});
 });
 
 function readTemps() {
 
   sensors.forEach(function (sensor, index) {
     let t = sensor.temp;
-    trace(index, ' ', sensors[index].toString(), ':', t, '\n');
-    //t.toFixed(2);
+    trace(index, ' ', sensors[index].toString(), ': ', t, '\n');
   });
 }
 
