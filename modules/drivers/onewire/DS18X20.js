@@ -13,19 +13,7 @@
  *
  */
 
-/*
-  To do:
-  Close and destructor -> What if close not called?
-  slots seems to increase then decrease - ramp...
-  constructor - dictionary?  pass number of decimal places for .toFixed?
- */
-
-/*
-connect(new OneWire(pin)) - use the first found DS18X20 device
-connect(new OneWire(pin), n) - use the nth DS18X20 device
-connect(new OneWire(pin), rom) - use the DS18X20 device with the given rom
-*/
-import Timer from "timer";
+ import Timer from "timer";
 import OneWire from "onewire";
 
 // Family code
@@ -33,19 +21,26 @@ const DS18B20 = 0x28;
 const DS18S20 = 0x10;
 
 export class DS18X20 {
-  constructor(oneWire, device) {
-    this.bus = oneWire;
-    if (device === undefined) {
-      this.rom = this.bus.search()[0];
+
+  constructor(dictionary) {
+    if (dictionary.bus) {
+      this.bus = dictionary.bus;
     } else {
-      if (parseInt(device).toString() == device && device >= 0 && device <= 126) {
-        this.rom = this.bus.search()[device];
-      } else {
-        // Check is an ArrayBuffer ?
-        this.rom = device;
-      }
+      throw new Error("Onewire bus expected");
     }
-    if (!this.rom) throw new Error("No DS18X20 found");
+    if (dictionary.index && dictionary.index >= 0 && dictionary.index <= 126) {
+      this.rom = this.bus.search()[dictionary.index];
+    }
+    if (dictionary.id) {
+      this.rom = dictionary.id;
+    }
+    // default to first device
+    if (!this.rom) {
+      this.rom = this.bus.search()[0];
+    }
+    if ( dictionary.digits) {
+      this.digits=dictionary.digits;
+    }
   }
 
   // return hex version of the ROM
@@ -57,18 +52,16 @@ export class DS18X20 {
     return new DataView(this.rom).getInt8();
   }
 
-  /** For internal use - read the scratchpad region */
+  // internal use
   get scratchpad() {
     let b = this.bus;
     b.select(this.rom);
-    b.write(0xBE); // Read scratchpd
+    b.write(0xBE); // Read scratchpad
     let buffer = b.read(9);
     return new Uint8Array(buffer);
   }
 
-  /** For internal use - write to the scratchpad region */
-
-  // Does not seem to be working? setting res bits to 9
+   // internal use
   set scratchpad(bytes) {
     let b = this.bus;
     b.reset();
@@ -86,8 +79,9 @@ export class DS18X20 {
       This setting is stored in device's EEPROM so it persists even after the sensor loses power. */
   set resolution(bits) {
     let spad = this.scratchpad;
-    if (bits < 9) bits = 9;
-    if (bits > 12) bits = 12;
+    if (bits < 9 || bits > 12) {
+      throw new Error("resolution 9-12 bits");
+    }
     bits = [0x1F, 0x3F, 0x5F, 0x7F][bits - 9];
     this.scratchpad = [spad[2], spad[3], bits];
   }
@@ -111,10 +105,11 @@ export class DS18X20 {
     let s = this.scratchpad;
     let temp = null;
 
-    //if (OneWire.crc(s.buffer, 8) == s[8]) {
+    // if (OneWire.crc(s.buffer, 8) == s[8]) {
     if (this.bus.crc(s.buffer, 8) == s[8]) {
       temp = new DataView(s.buffer).getInt16(0, true);
       temp = temp / ((this.family == DS18S20) ? 2 : 16);
+      if ( this.digits ) temp=temp.toFixed(this.digits );
     }
     return temp;
   }
@@ -142,14 +137,12 @@ export class DS18X20 {
   }
 
   /** Return a list of all DS18X20 sensors with their alarms set */
-  // Untested
   searchAlarm() {
     return this.bus.search(0xEC);
   }
 
   /** Set alarm low and high values in whole degrees C
     If the temperature goes below lo or above hi the alarm will be set. */
-  // Untested
   setAlarm(lo, hi) {
     lo--; // DS18X20 alarms if (temp<=lo || temp>hi), but we want (temp<lo || temp>hi)
     // change to signed byte
