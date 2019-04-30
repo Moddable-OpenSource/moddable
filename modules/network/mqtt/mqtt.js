@@ -28,8 +28,7 @@ import Timer from "timer";
  * want to. Currently provides callbacks only for connection-ready, messages received on subscribed
  * channels, and closing.
  *
- * Currently supports only MQTT over websockets; native/direct connections are not currently
- * supported.
+ * Supports MQTT over websockets and direct socket connections
  *
  *     import {Client} from "mqtt";
  *     let client = new Client({host: hostname, port: port, path: "/", id: "myclient"});
@@ -365,8 +364,7 @@ export default class Client {
 
 			this.state = 2;
 			try {
-				if (this.onReady)
-					this.onReady();
+				this.onReady();
 			}
 			catch {
 			}
