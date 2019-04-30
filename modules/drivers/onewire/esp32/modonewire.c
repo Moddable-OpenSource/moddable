@@ -37,7 +37,6 @@
 
 typedef struct
 {
-  xsMachine *the;
   xsSlot obj;
   uint8_t pin;
   owb_rmt_driver_info rmt_driver_info;
@@ -49,7 +48,6 @@ void xs_onewire_destructor(void *data)
   modOneWire onewire = data;
   if (NULL == onewire)
     return;
-  // should this be in close???
   owb_uninitialize(onewire->owb);
   c_free(onewire);
 }
@@ -71,7 +69,6 @@ void xs_onewire(xsMachine *the)
   xsmcGet(xsVar(0), xsArg(0), xsID_pin);
   pin = xsmcToInteger(xsVar(0));
 
-  onewire->the = the;
   onewire->obj = xsThis;
   onewire->pin = pin;
 
@@ -96,7 +93,7 @@ void xs_onewire_read(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  int argc = xsmcToInteger(xsArgc);
+  int argc = xsmcArgc;
 
   if (argc == 0) // Read a byte
   {
@@ -117,10 +114,8 @@ void xs_onewire_write(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
   uint8_t value = xsmcToInteger(xsArg(0));
-  if (value < 0)
-    value = 0;
-  else if (value > 255)
-    value = 255;
+  if ((value < 0) || (value > 255))
+    xsRangeError("bad value");
   owb_write_byte(onewire->owb, value);
 }
 
@@ -142,14 +137,13 @@ void xs_onewire_search(xsMachine *the)
   bool found = false;
   owb_search_first(onewire->owb, &search_state, &found);
   xsmcVars(1);
-  xsVar(0) = xsNewArray(0);
+  xsResult = xsNewArray(0);
 
   while (found)
   {
-    xsCall1(xsVar(0), xsID_push, xsArrayBuffer(&search_state.rom_code.bytes,8));
+    xsCall1(xsResult, xsID_push, xsArrayBuffer(&search_state.rom_code.bytes, 8));
     owb_search_next(onewire->owb, &search_state, &found);
   }
-  xsResult = xsVar(0);
 }
 
 void xs_onewire_reset(xsMachine *the)
@@ -157,15 +151,16 @@ void xs_onewire_reset(xsMachine *the)
   modOneWire onewire = xsmcGetHostData(xsThis);
   bool present = false;
   owb_reset(onewire->owb, &present);
-  xsmcSetInteger(xsResult, present);
-}
+  xsmcSetBoolean(xsResult, present);
+} 
 
 void xs_onewire_crc(xsMachine *the)
 {
   uint8_t crc = 0;
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
   uint8_t len = xsGetArrayBufferLength(xsArg(0));
-  int argc = xsmcToInteger(xsArgc);
+  int argc = xsmcArgc;
+  ;
   if (argc > 1)
   {
     size_t arg_len = xsmcToInteger(xsArg(1));
