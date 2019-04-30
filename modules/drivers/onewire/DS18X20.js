@@ -26,10 +26,11 @@ connect(new OneWire(pin), n) - use the nth DS18X20 device
 connect(new OneWire(pin), rom) - use the DS18X20 device with the given rom
 */
 import Timer from "timer";
+import OneWire from "onewire";
 
 // Family code
-const DS18B20=0x28;
-const DS18S20=0x10;
+const DS18B20 = 0x28;
+const DS18S20 = 0x10;
 
 export class DS18X20 {
   constructor(oneWire, device) {
@@ -49,7 +50,7 @@ export class DS18X20 {
 
   // return hex version of the ROM
   toString() {
-    return BigInt.fromArrayBuffer(this.rom).toString(16);
+    return OneWire.hex(this.rom);
   }
 
   get family() {
@@ -62,7 +63,6 @@ export class DS18X20 {
     b.select(this.rom);
     b.write(0xBE); // Read scratchpd
     let buffer = b.read(9);
-    //trace( BigInt.fromArrayBuffer(buffer).toString(16),'\n');
     return new Uint8Array(buffer);
   }
 
@@ -110,6 +110,8 @@ export class DS18X20 {
   get read() {
     let s = this.scratchpad;
     let temp = null;
+
+    //if (OneWire.crc(s.buffer, 8) == s[8]) {
     if (this.bus.crc(s.buffer, 8) == s[8]) {
       temp = new DataView(s.buffer).getInt16(0, true);
       temp = temp / ((this.family == DS18S20) ? 2 : 16);
@@ -133,7 +135,7 @@ export class DS18X20 {
       11: 375,
       12: 750
     };
-    let wait=max_conversion_ms[this.resolution];
+    let wait = max_conversion_ms[this.resolution];
     Timer.set(id => {
       callback(this.read);
     }, wait);

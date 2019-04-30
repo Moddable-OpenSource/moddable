@@ -39,16 +39,19 @@ class OneWire @ "xs_onewire_destructor" {
   reset() @ "xs_onewire_reset";
 
   // Calculate CRC
-  crc() @ "xs_onewire_crc";
+  //static
+  crc(buffer) @ "xs_onewire_crc";
+
+  // hex string version of the rom
+  static hex(buffer) {
+    let result = "";
+    (new Uint8Array(buffer)).forEach(i => result += i.toString(16).padStart(2, 0));
+    return result;
+  }
 
   // skip a ROM
   skip() {
-    xs_onewire_write(0xCC);
-  }
-
-  // hex version of the rom
-  rom(buffer) {
-    return BigInt.fromArrayBuffer(buffer).toString(16);
+    this.write(0xCC);
   }
 
 }

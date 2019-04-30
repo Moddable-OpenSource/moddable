@@ -23,7 +23,7 @@ const ow = new OneWire({
 let devices = ow.search(); // search returns an array of device IDs
 
 trace('found ',devices.length, '\n' );
-trace( devices.map( x => ow.rom(x) + '\n' ) );
+trace( devices.map( x => OneWire.hex(x) + '\n' ) );
 
 import DS18X20 from "DS18X20";
 
