@@ -61,10 +61,11 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	esptool.py write_flash --flash_mode dio 0x100000 $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1
 	
 release: $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	esptool.py --before default_reset --after hard_reset write_flash 0x100000 $(ARCHIVE)
 
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)

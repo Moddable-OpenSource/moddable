@@ -54,15 +54,12 @@ void fxAbort(xsMachine* the)
 	exit(1);
 }
 
-#ifdef XSTOOLS
 extern int mainXSA(int argc, char* argv[]) ;
 extern int mainXSC(int argc, char* argv[]) ;
-#endif
 
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-#ifdef XSTOOLS
 	if (!strcmp(argv[1], "xsa")) {
 		error = mainXSA(argc - 1, &argv[1]);
 	}
@@ -70,7 +67,6 @@ int main(int argc, char* argv[])
 		error = mainXSC(argc - 1, &argv[1]);
 	}
 	else {
-#endif
 		xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);
 		xsBeginHost(machine);
 		{
@@ -110,9 +106,7 @@ int main(int argc, char* argv[])
 			execvp(then[0], then);
 		#endif
 		}
-#ifdef XSTOOLS
 	}
-#endif
 	return error;
 }
 
