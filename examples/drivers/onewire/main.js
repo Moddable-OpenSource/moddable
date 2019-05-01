@@ -54,14 +54,6 @@ sensor.resolution=12;
 res=sensor.resolution;
 trace( "res - should be 12 :",res,'\n');
 
-let alarms=sensor.searchAlarm();
-trace( 'Alarms:',alarms.length,'\n')
-
-sensor.setAlarm(10,21);
-
-alarms=sensor.searchAlarm();
-trace( 'Alarms > 21:',alarms.length,'\n');
-
 var sensors = ow.search().map(function (device) {
   return new DS18X20({bus:ow, id:device, digits:1});
 });

@@ -13,7 +13,7 @@
  *
  */
 
- import Timer from "timer";
+import Timer from "timer";
 import OneWire from "onewire";
 
 // Family code
@@ -105,8 +105,7 @@ export class DS18X20 {
     let s = this.scratchpad;
     let temp = null;
 
-    // if (OneWire.crc(s.buffer, 8) == s[8]) {
-    if (this.bus.crc(s.buffer, 8) == s[8]) {
+    if (OneWire.crc(s.buffer, 8) == s[8]) {
       temp = new DataView(s.buffer).getInt16(0, true);
       temp = temp / ((this.family == DS18S20) ? 2 : 16);
       if ( this.digits ) temp=temp.toFixed(this.digits );
@@ -135,22 +134,6 @@ export class DS18X20 {
       callback(this.read);
     }, wait);
   }
-
-  /** Return a list of all DS18X20 sensors with their alarms set */
-  searchAlarm() {
-    return this.bus.search(0xEC);
-  }
-
-  /** Set alarm low and high values in whole degrees C
-    If the temperature goes below lo or above hi the alarm will be set. */
-  setAlarm(lo, hi) {
-    lo--; // DS18X20 alarms if (temp<=lo || temp>hi), but we want (temp<lo || temp>hi)
-    // change to signed byte
-    if (lo < 0) lo += 256;
-    if (hi < 0) hi += 256;
-    let spad = this.scratchpad;
-    this.scratchpad = [hi, lo, spad[4]];
-  };
 
 }
 
