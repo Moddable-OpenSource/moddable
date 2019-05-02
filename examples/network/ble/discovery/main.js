@@ -20,7 +20,7 @@
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
 
-const DEVICE_NAME = "SensorTag";
+const DEVICE_NAME = "<YOUR DEVICE NAME>";
 
 class Discovery extends BLEClient {
 	onReady() {
