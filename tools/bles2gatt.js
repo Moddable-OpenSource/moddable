@@ -146,6 +146,10 @@ class ESP32GATTFile extends GATTFile {
 			attributeCount += (Object.keys(characteristics).length * 2);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
 				let properties = characteristic.properties;
 				if (properties.includes("notify") || properties.includes("indicate")) {
 					++attributeCount;
@@ -220,6 +224,11 @@ class ESP32GATTFile extends GATTFile {
 				++attributeIndex;
 
 				// characteristic value
+				let maxBytes;
+				if (this.server && !this.client)
+					maxBytes = characteristic.maxBytes;
+				else
+					maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 				let esp_uuid_len = (4 == characteristic.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 				file.line("\t\t[", attributeIndex, "] = {");
 				if ("value" in characteristic)
@@ -230,7 +239,7 @@ class ESP32GATTFile extends GATTFile {
 					char_names.push(char_name);
 					file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 				}
-				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${characteristic.maxBytes}, `);
+				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${maxBytes}, `);
 				if ("value" in characteristic)
 					file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
 				else
@@ -437,6 +446,10 @@ class QCA4020GATTFile extends GATTFile {
 			attributeCount += (Object.keys(characteristics).length * 2);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
 				let properties = characteristic.properties;
 				if (properties.includes("notify") || properties.includes("indicate")) {
 					++attributeCount;
@@ -505,16 +518,21 @@ class QCA4020GATTFile extends GATTFile {
 					}
 				}
 				else {
+					let maxBytes;
+					if (this.server && !this.client)
+						maxBytes = characteristic.maxBytes;
+					else
+						maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 					if (4 == uuid.length) {
 						file.write(`static qapi_BLE_GATT_Characteristic_Value_16_Entry_t char_value${characteristicIndex} = {{`);
 						file.write(buffer2hexlist(uuid16toBuffer(parseInt(uuid, 16))));
-						file.write(`}, ${characteristic.maxBytes}, NULL`);
+						file.write(`}, ${maxBytes}, NULL`);
 						file.write(" };");
 					}
 					else {
 						file.write(`static qapi_BLE_GATT_Characteristic_Value_128_Entry_t char_value${characteristicIndex} = {{`);
 						file.write(buffer2hexlist(uuid128toBuffer(uuid)));
-						file.write(`}, ${characteristic.maxBytes}, NULL`);
+						file.write(`}, ${maxBytes}, NULL`);
 						file.write(" };");					
 					}
 				}
@@ -711,6 +729,10 @@ class GeckoGATTFile extends GATTFile {
 			attributes_max += (length * 2);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
 				if (!characteristic.hasOwnProperty("value"))
 					attributes_dynamic_max += 1;
 				uuidtable_16_map.push('0x' + characteristic.uuid);
@@ -775,7 +797,11 @@ class GeckoGATTFile extends GATTFile {
 				++field_index;
 
 				// characteristic value
-				let maxBytes = characteristic.maxBytes;
+				let maxBytes;
+				if (this.server && !this.client)
+					maxBytes = characteristic.maxBytes;
+				else
+					maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 				if (characteristic.hasOwnProperty("value")) {
 					buffer = typedValueToBuffer(characteristic.type, characteristic.value);
 					file.write(`uint8_t bg_gattdb_data_attribute_field_${field_index}_data[${maxBytes}] = {`);

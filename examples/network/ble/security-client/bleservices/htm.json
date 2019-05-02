@@ -1,0 +1,11 @@
+{
+	"service": {
+		"uuid": "1809",
+		"characteristics": {
+			"temperature": {
+				"uuid": "2A1C",
+				"type": "Uint8Array",
+			},
+		}
+	}
+}

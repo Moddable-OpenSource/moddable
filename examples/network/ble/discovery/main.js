@@ -20,7 +20,7 @@
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
 
-const DEVICE_NAME = "<YOUR_DEVICE_NAME>";
+const DEVICE_NAME = "SensorTag";
 
 class Discovery extends BLEClient {
 	onReady() {
@@ -45,8 +45,7 @@ class Discovery extends BLEClient {
 			characteristics[0].readValue();
 	}
 	onCharacteristicValue(characteristic, value) {
-		let manufacturer = String.fromArrayBuffer(value);
-		trace(`Manufacturer: ${manufacturer}\n`);
+		trace(`${characteristic.name}: ${value}\n`);
 		this.device.close();
 	}
 	onDisconnected() {

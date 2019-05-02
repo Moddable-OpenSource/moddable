@@ -1,0 +1,15 @@
+{
+	"service": {
+		"uuid": "1805",
+		"characteristics": {
+			"current_time": {
+				"uuid": "2a2b",
+				"type": "Uint8Array",
+			},
+			"local_time_info": {
+				"uuid": "2a0f",
+				"type": "Uint8Array",
+			},
+		}
+	}
+}

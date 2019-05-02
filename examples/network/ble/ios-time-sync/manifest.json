@@ -17,6 +17,11 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
 		]
 	},
+	"ble":{
+		"*": [
+			"./bleservices/*",
+		],
+	},
 	"platforms": {
 		"esp32": {
 			"config": {

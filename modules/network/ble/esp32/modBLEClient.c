@@ -34,6 +34,8 @@
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
 
+#include "mc.bleservices.c"
+
 #define LOG_GATTC 0
 #if LOG_GATTC
 	#define LOG_GATTC_EVENT(event) logGATTCEvent(event)
@@ -79,6 +81,9 @@ struct modBLEConnectionRecord {
 	esp_gatt_if_t gattc_if;
 	int16_t conn_id;
 	uint16_t app_id;
+	
+	// char_name_table handles
+	uint16_t handles[char_name_count];
 	
 	// registered notifications
 	modBLENotification notifications;
@@ -368,7 +373,33 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
+static int modBLEConnectionSaveAttHandle(modBLEConnection connection, esp_bt_uuid_t *uuid, uint16_t handle)
+{
+	int result = -1;
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+			const esp_gatts_attr_db_t *att_db = &gatt_db[service_index][att_index];
+			const esp_attr_desc_t *att_desc = &att_db->att_desc;
+			if (att_desc->uuid_length == uuid->len) {
+				if (0 == c_memcmp(att_desc->uuid_p, &uuid->uuid.uuid16, att_desc->uuid_length)) {
+					for (int k = 0; k < char_name_count; ++k) {
+						const char_name_table *char_name = &char_names[k];
+						if (service_index == char_name->service_index && att_index == char_name->att_index) {
+							connection->handles[k] = handle;
+							result = k;
+							goto bail;
+						}
+					}
+				}
+			}
+		}
+	}
+bail:
+	return result;
+}
+
 typedef struct {
+	modBLEConnection connection;
 	xsSlot obj;
 	uint16_t count;
 	esp_gattc_char_elem_t char_elem_result[1];
@@ -377,9 +408,11 @@ typedef struct {
 static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	characteristicSearchRecord *csr = (characteristicSearchRecord*)refcon;
+	
 	xsBeginHost(gBLE->the);
 	for (int i = 0; i < csr->count; ++i) {
 		esp_gattc_char_elem_t *char_elem = &csr->char_elem_result[i];
+		int index = modBLEConnectionSaveAttHandle(csr->connection, &char_elem->uuid, char_elem->char_handle);
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &char_elem->uuid, &length);
@@ -391,6 +424,12 @@ static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	}
 	xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
@@ -426,6 +465,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 				count = 0;
 		}
 		if (0 != count) {
+			csr->connection = connection;
 			csr->obj = xsThis;
 			csr->count = count;
 			modMessagePostToMachine(gBLE->the, NULL, 0, charSearchResultEvent, csr);
@@ -440,6 +480,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 }
 
 typedef struct {
+	modBLEConnection connection;
 	xsSlot obj;
 	uint16_t count;
 	esp_gattc_descr_elem_t descr_elem_result[1];
@@ -451,6 +492,7 @@ static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 	xsBeginHost(gBLE->the);
 	for (int i = 0; i < dsr->count; ++i) {
 		esp_gattc_descr_elem_t *descr_elem = &dsr->descr_elem_result[i];
+		int index = modBLEConnectionSaveAttHandle(dsr->connection, &descr_elem->uuid, descr_elem->handle);
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &descr_elem->uuid, &length);
@@ -460,6 +502,12 @@ static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 		xsmcSetInteger(xsVar(2), descr_elem->handle);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	}
 	xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
@@ -485,6 +533,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 		if (ESP_OK != esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, &dsr->descr_elem_result[0], &count, 0))
 			count = 0;
 		if (0 != count) {
+			dsr->connection = connection;
 			dsr->obj = xsThis;
 			dsr->count = count;
 			modMessagePostToMachine(gBLE->the, NULL, 0, descSearchResultEvent, dsr);
