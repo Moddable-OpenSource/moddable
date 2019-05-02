@@ -113,6 +113,12 @@ This document provides an introduction to getting started building apps with the
 	mcconfig -d -m -p esp/moddable_zero
 	```
 
+9. Install additional necessary packages 
+
+	```
+	pip install --user pyserial
+	```
+	
 <a id="esp32-mac"></a>
 ### ESP32 setup
 
