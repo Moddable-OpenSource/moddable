@@ -70,7 +70,12 @@ class ToDoFile extends FILE {
 		super(path)
 	}
 	generate(tool) {
-		this.generateRules(tool)
+		let lines = [];
+		this.generateModulesRules(tool, lines);
+		this.generateResourcesRules(tool, lines);
+		this.generateArchiveRule(tool, lines);
+		let string = JSON.stringify(lines, null, "\t");
+		this.write(string);
 		this.close();
 	}
 	generateArchiveRule(tool, lines) {
@@ -80,7 +85,7 @@ class ToDoFile extends FILE {
 		line.push(tool.modulesPath);
 		line.push("-o");
 		line.push(tool.binPath);
-		line.push("-r ");
+		line.push("-r");
 		line.push(tool.environment.NAME);
 		for (var result of tool.jsFiles) {
 			line.push(tool.modulesPath + tool.slash + result.target);
@@ -123,16 +128,10 @@ class ToDoFile extends FILE {
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
-			let line = [];
-			line.push("xsc");
+			let line = ["xsc"];
 			if (tool.debug)
 				line.push("-d");
-			line.push("-e");
-			line.push(source);
-			line.push("-o");
-			line.push(tool.modulesPath);
-			line.push("-r");
-			line.push(targetParts.name);
+			line.push("-e", source, "-o", tool.modulesPath, "-r", targetParts.name);
 			lines.push(line);
 		}
 	}
@@ -140,13 +139,10 @@ class ToDoFile extends FILE {
 		for (var result of tool.resourcesFiles) {
 			var source = result.source;
 			var target = tool.resourcesPath + tool.slash + result.target;
-			let line = [];
-			line.push("cp");
-			if (tool.isDirectoryOrFile(source) < 0) {
+			let line = ["cp"];
+			if (tool.isDirectoryOrFile(source) < 0)
 				line.push("-r");
-			}
-			line.push(source);
-			line.push(target);
+			line.push(source, target);
 			lines.push(line);
 		}
 
@@ -154,12 +150,7 @@ class ToDoFile extends FILE {
 			for (var result of tool.clutFiles) {
 				var source = result.source;
 				var target = result.target;
-				let line = [];
-				line.push("buildclut");
-				line.push(source);
-				line.push("-o");
-				this.line(tool.resourcesPath);
-				lines.push(line);
+				lines.push(["buildclut", source, "-o", tool.resourcesPath]);
 			}
 		}
 
@@ -170,21 +161,15 @@ class ToDoFile extends FILE {
 			var source = result.source;
 			var target = result.target;
 			parts = tool.splitPath(target);
-			let line = [];
-			line.push("png2bmp");
+			let line = ["png2bmp"];
 			line.push(source);
 			var sources = result.sources;
 			if (sources) {
 				for (var path of sources)
 					line.push(path);
-				line.push("-n");
-				line.push(parts.name.slice(0, -6));
+				line.push("-n", parts.name.slice(0, -6));
 			}
-			line.push("-a");
-			line.push("-o");
-			line.push(tool.resourcesPath);
-			line.push("-r");
-			line.push(tool.rotation);
+			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation);
 			lines.push(line);
 		}
 
@@ -196,27 +181,18 @@ class ToDoFile extends FILE {
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
 			var clutSource = result.clutName ? tool.resourcesPath + tool.slash + result.clutName + ".cct" : null;
 			var sources = result.sources;
-			let line = [];
-			line.push("png2bmp");
+			let line = ["png2bmp"];
 			line.push(source);
 			if (sources) {
 				for (var path of sources)
 					line.push(path);
-				line.push("-n");
-				line.push(parts.name.slice(0, -6));
+				line.push("-n", parts.name.slice(0, -6));
 			}
-			line.push("-f");
-			line.push(tool.format);
-			line.push("-o");
-			line.push(tool.resourcesPath);
-			line.push("-r");
-			line.push(tool.rotation);
+			line.push("-f", tool.format, "-o", tool.resourcesPath, "-r", tool.rotation);
 			if (!alphaTarget)
 				line.push("-c");
-			if (clutSource) {
-				line.push("-clut");
-				line.push(clutSource);
-			}
+			if (clutSource)
+				line.push("-clut", clutSource);
 			lines.push(line);
 		}
 
@@ -230,25 +206,11 @@ class ToDoFile extends FILE {
 			parts = tool.splitPath(target);
 			var bmpTarget = parts.name + "-alpha.bmp";
 			var bmpSource = tool.resourcesPath + tool.slash + bmpTarget;
-			let line = [];
-			line.push("png2bmp ");
-			line.push(pngSource);
-			line.push("-a");
-			line.push("-o");
-			line.push(tool.resourcesPath);
-			line.push("-r");
-			line.push(tool.rotation);
-			line.push("-t");
+			let line = ["png2bmp"];
+			line.push(pngSource, "-a", "-o", tool.resourcesPath, "-r", tool.rotation, "-t");
 			lines.push(line);
-			line = [];
-			line.push("compressbmf ";
-			line.push(source);
-			line.push("-i");
-			line.push(bmpSource);
-			line.push("-o");
-			line.push(tool.resourcesPath);
-			line.push("-r");
-			line.push(tool.rotation);
+			line = ["compressbmf"];
+			line.push(source, "-i", bmpSource, "-o", tool.resourcesPath, "-r", tool.rotation);
 			lines.push(line);
 		}
 
@@ -260,15 +222,16 @@ class ToDoFile extends FILE {
 			var bmpTarget = parts.name + ".bmp";
 			var bmpSource = tool.resourcesPath + tool.slash + bmpTarget;
 			var sources = result.sources;
-			var name = "";
+			let line = ["png2bmp"];
+			line.push(source);
 			if (sources) {
 				for (var path of sources)
-					source += " " + path;
-				name = " -n " + parts.name.slice(0, -6);
+					line.push(path);
+				line.push("-n", parts.name.slice(0, -6));
 			}
-			this.line("png2bmp ", source, " -a -o ", tool.resourcesPath, " -r ", tool.rotation, " -t", name);
-			
-			this.line("rle4encode ", bmpSource, " -o ", tool.resourcesPath);
+			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation, "-t", name);
+			lines.push(line);
+			lines.push(["rle4encode ", bmpSource, "-o", tool.resourcesPath]);
 		}
 
 		for (var result of tool.imageFiles) {
@@ -276,11 +239,11 @@ class ToDoFile extends FILE {
 			var target = result.target;
 			if (result.quality !== undefined) {
 				var temporary = target + result.quality;
-				this.line("image2cs ", source, " -o ", tool.resourcesPath, " -q ", result.quality, " -r ", tool.rotation);
-				this.line("cp ", tool.resourcesPath + tool.slash + temporary, " ", tool.resourcesPath + tool.slash + result.target);
+				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-q", result.quality, "-r", tool.rotation]);
+				lines.push(["cp", tool.resourcesPath + tool.slash + temporary, tool.resourcesPath + tool.slash + result.target]);
 			}
 			else {
-				this.line("image2cs ", source, " -o ", tool.resourcesPath, " -r ", tool.rotation);
+				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-r", tool.rotation]);
 			}
 		}
 
@@ -298,25 +261,19 @@ class ToDoFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("wav2maud ", source, " -o ", tool.resourcesPath, " -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
+			lines.push(["wav2maud", source, "-o", tool.resourcesPath, "-r", sampleRate, "-c", numChannels, "-s", bitsPerSample, "-f", audioFormat]);
 		}
 		if (tool.stringFiles.length) {
-			this.write("mclocal");
-			for (var result of tool.stringFiles) {
-				this.write(" ");
-				this.write(result.source);
-			}
+			let line = ["mclocal"];
+			for (var result of tool.stringFiles)
+				line.push(result.source);
 			if (!defines || !defines.locals || !defines.locals.all)
-				this.write(" -d");
+				line.push("-d");
 			if (tool.format)
-				this.write(" -s");
-			this.line(" -o ", tool.resourcesPath);
+				line.push("-s");
+			line.push("-o", tool.resourcesPath);
+			lines.push(line);
 		}
-	}
-	generateRules(tool) {
-		this.generateModulesRules(tool);
-		this.generateResourcesRules(tool);
-		
 	}
 }
 
