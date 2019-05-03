@@ -26,8 +26,8 @@ NAME = tools
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
-PKGCONFIG = $(shell which pkg-config)
 
+CC = emcc
 XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
@@ -35,9 +35,9 @@ COMMODETTO = $(MODDABLE)/modules/commodetto
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
-BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
-LIB_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/lib
-TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
+BIN_DIR = $(BUILD_DIR)/bin/wasm/$(GOAL)
+LIB_DIR = $(BUILD_DIR)/tmp/wasm/$(GOAL)/lib
+TMP_DIR = $(BUILD_DIR)/tmp/wasm/$(GOAL)/$(NAME)
 MOD_DIR = $(TMP_DIR)/modules
 
 XS_DIRECTORIES = \
@@ -45,9 +45,9 @@ XS_DIRECTORIES = \
 	$(XS_DIR)/platforms \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/tools
-
+	
 XS_HEADERS = \
-	$(XS_DIR)/platforms/lin_xs.h \
+	$(XS_DIR)/platforms/wasm_xs.h \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
@@ -56,7 +56,7 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsScript.h
 	
 XS_OBJECTS = \
-	$(LIB_DIR)/lin_xs.c.o \
+	$(LIB_DIR)/wasm_xs.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -185,29 +185,15 @@ OBJECTS = \
 	$(TMP_DIR)/tool.c.o \
 	$(TMP_DIR)/wav2maud.c.o
 
-COMMANDS = \
-	$(BIN_DIR)/buildclut \
-	$(BIN_DIR)/colorcellencode \
-	$(BIN_DIR)/compressbmf \
-	$(BIN_DIR)/image2cs \
-	$(BIN_DIR)/mclocal \
-	$(BIN_DIR)/mcconfig \
-	$(BIN_DIR)/mcrez \
-	$(BIN_DIR)/png2bmp \
-	$(BIN_DIR)/rle4encode \
-	$(BIN_DIR)/wav2maud \
-	$(BIN_DIR)/bles2gatt
-
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
   MODULES += $(MOD_DIR)/mcrun.xsb
-  COMMANDS += $(BIN_DIR)/mcrun
 endif 
-	
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
-	-DXSPLATFORM=\"lin_xs.h\" \
+	-DXSPLATFORM=\"wasm_xs.h\" \
 	-DXSTOOLS=1 \
 	-DmxRun=1 \
 	-DmxParse=1 \
@@ -219,28 +205,43 @@ ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(INSTRUMENTATION) $(COMMODETTO) $(TOOLS) $(TMP_DIR),-I$(dir))
-C_FLAGS = -fPIC -shared -c  $(shell $(PKGCONFIG) --cflags gio-2.0)
+# C_FLAGS = -c -arch i386
+C_FLAGS = -c
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
 	C_FLAGS += -D_RELEASE=1 -O3
 endif
 
-LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
+LIBRARIES = -ldl -lm
 
-LINK_FLAGS = -fPIC
+# LINK_FLAGS = -arch i386
+LINK_FLAGS =\
+	-s ENVIRONMENT=web\
+	-s ALLOW_MEMORY_GROWTH=1\
+	-s MODULARIZE=1\
+	-s EXPORT_ES6=1\
+	-s EXPORT_NAME=$(NAME)\
+	-s INVOKE_RUN=0\
+	-s FORCE_FILESYSTEM=1\
+	-s ERROR_ON_UNDEFINED_SYMBOLS=0\
+	-s "BINARYEN_TRAP_MODE='clamp'"\
+	-s "EXTRA_EXPORTED_RUNTIME_METHODS=['FS', 'cwrap', 'ccall', 'ALLOC_NORMAL','ALLOC_STACK','ALLOC_DYNAMIC','ALLOC_NONE']"
+ifeq ($(GOAL),release)
+	LINK_OPTIONS += -Oz
+endif
 
-XSC = $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
-XSID = $(BUILD_DIR)/bin/lin/$(GOAL)/xsid
-XSL = $(BUILD_DIR)/bin/lin/$(GOAL)/xsl
-
+XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
+XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid
+XSL = $(BUILD_DIR)/bin/mac/$(GOAL)/xsl
+	
 VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(TOOLS)
 
-build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS)
+build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
-
+	
 $(TMP_DIR):
 	mkdir -p $(TMP_DIR)
 	
@@ -252,10 +253,10 @@ $(MOD_DIR)/commodetto:
 	
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
-	
+
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_FLAGS) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o $(LIBRARIES) -o $@
+	$(CC) $(LINK_FLAGS) $(LIBRARIES) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o -o $@.js
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
@@ -265,18 +266,18 @@ $(LIB_DIR)/%.c.o: %.c
 $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
-
+	
 $(TMP_DIR)/mc.xs.c: $(MODULES)
 	@echo "#" $(NAME) $(GOAL) ": xsl modules"
 	$(XSL) -b $(MOD_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 
 $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
-	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
+	$(XSC) $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
 
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
-	$(BIN_DIR)/xsc -c -d -e $< -o $(MOD_DIR)
+	$(XSC) -c -d -e $< -o $(MOD_DIR)
 
 $(OBJECTS): $(XS_HEADERS) $(HEADERS) | $(TMP_DIR)/mc.xs.c
 $(TMP_DIR)/%.c.o: %.c
@@ -287,69 +288,8 @@ $(TMP_DIR)/%.c.xsi: %.c
 	@echo "#" $(NAME) $(GOAL) ": xsid" $(<F)
 	$(XSID) $< -o $(TMP_DIR)
 
-$(BIN_DIR)/buildclut: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
-	chmod +x $(BIN_DIR)/buildclut
-
-$(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
-	chmod +x $(BIN_DIR)/colorcellencode
-
-$(BIN_DIR)/compressbmf: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
-	chmod +x $(BIN_DIR)/compressbmf
-
-$(BIN_DIR)/image2cs: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
-	chmod +x $(BIN_DIR)/image2cs
-
-$(BIN_DIR)/mcconfig: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
-	chmod +x $(BIN_DIR)/mcconfig
-
-$(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
-	chmod +x $(BIN_DIR)/mclocal
-
-$(BIN_DIR)/mcrez: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
-	chmod +x $(BIN_DIR)/mcrez
-
-$(BIN_DIR)/mcrun: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
-	chmod +x $(BIN_DIR)/mcrun
-
-$(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
-	chmod +x $(BIN_DIR)/png2bmp
-
-$(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
-	chmod +x $(BIN_DIR)/rle4encode
-
-$(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": wav2maud"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
-	chmod +x $(BIN_DIR)/wav2maud
-
-$(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
-	chmod +x $(BIN_DIR)/bles2gatt
-
 clean:
-	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME).*
-	rm -rf $(BUILD_DIR)/bin/lin/release/$(NAME).*
-	rm -rf $(BUILD_DIR)/tmp/lin/debug/$(NAME)
-	rm -rf $(BUILD_DIR)/tmp/lin/release/$(NAME)
-
+	rm -rf $(BUILD_DIR)/bin/wasm/debug/$(NAME).*
+	rm -rf $(BUILD_DIR)/bin/wasm/release/$(NAME).*
+	rm -rf $(BUILD_DIR)/tmp/wasm/debug/$(NAME)
+	rm -rf $(BUILD_DIR)/tmp/wasm/release/$(NAME)

@@ -42,7 +42,8 @@ MOD_DIR = $(TMP_DIR)/modules
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
-	$(XS_DIR)/sources
+	$(XS_DIR)/sources \
+	$(XS_DIR)/tools
 	
 XS_HEADERS = \
 	$(XS_DIR)/platforms/mac_xs.h \
@@ -97,7 +98,10 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsmc.c.o \
-	$(LIB_DIR)/xsre.c.o
+	$(LIB_DIR)/xsre.c.o \
+	$(LIB_DIR)/xsa.c.o \
+	$(LIB_DIR)/xsc.c.o \
+	$(LIB_DIR)/xslBase.c.o
 
 MODULES = \
 	$(MOD_DIR)/commodetto/Bitmap.xsb \

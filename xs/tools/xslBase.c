@@ -55,6 +55,7 @@ static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
 static txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
 static txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
+static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);
 static void md5_fin(txMD5 *s, uint8_t *dgst);
@@ -566,6 +567,12 @@ txString fxRealFilePath(txLinker* linker, txString path)
 	}
 #endif
 	return NULL;
+}
+
+void fxReferenceLinkerSymbol(txLinker* linker, txID id)
+{
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	linkerSymbol->flag |= 1;
 }
 
 void fxReportLinkerError(txLinker* linker, txString theFormat, ...)

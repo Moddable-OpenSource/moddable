@@ -94,7 +94,10 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \
-	$(LIB_DIR)\xsre.o
+	$(LIB_DIR)\xsre.o \
+	$(LIB_DIR)\xsa.c.o \
+	$(LIB_DIR)\xsc.c.o \
+	$(LIB_DIR)\xslBase.c.o
 
 MODULES = \
 	$(MOD_DIR)\commodetto\Bitmap.xsb \
@@ -275,6 +278,8 @@ $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
 	cl $(C_OPTIONS) $< /Fo$@
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
+	cl $(C_OPTIONS) $< /Fo$@
+{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.o:
 	cl $(C_OPTIONS) $< /Fo$@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)

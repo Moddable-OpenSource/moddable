@@ -895,10 +895,16 @@ class ResourcesRule extends Rule {
 export class Tool extends TOOL {
 	constructor(argv) {
 		super(argv);
-		this.moddablePath = this.getenv("MODDABLE");
-		if (!this.moddablePath)
-			throw new Error("MODDABLE: variable not found!");
-
+		if (this.currentPlatform == "wasm") {
+			this.moddablePath = "/moddable";
+			this.createDirectory(this.moddablePath);
+			this.createDirectory(this.moddablePath + "/build");
+		}
+		else {
+			this.moddablePath = this.getenv("MODDABLE");
+			if (!this.moddablePath)
+				throw new Error("MODDABLE: variable not found!");
+		}
 		this.config = {};
 		this.debug = false;
 		this.environment = { "MODDABLE": this.moddablePath }

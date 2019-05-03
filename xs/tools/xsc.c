@@ -55,6 +55,8 @@ static void fxWriteExterns(txScript* script, FILE* file);
 static void fxWriteHosts(txScript* script, FILE* file);
 static void fxWriteIDs(txScript* script, FILE* file);
 
+#ifndef XSTOOLS
+
 void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 {
 	vfprintf(stderr, theFormat, theArguments);
@@ -89,6 +91,8 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 	vfprintf(stderr, theFormat, theArguments);
 	fprintf(stderr, "!\n");
 }
+
+#endif
 
 txString fxCombinePath(txParser* parser, txString base, txString name)
 {
@@ -268,7 +272,12 @@ void fxWriteIDs(txScript* script, FILE* file)
 	}
 }
 
+#ifdef XSTOOLS
+extern int mainXSC(int argc, char* argv[]) ;
+int mainXSC(int argc, char* argv[]) 
+#else
 int main(int argc, char* argv[]) 
+#endif
 {
 	int argi;
 	char path[C_PATH_MAX];
