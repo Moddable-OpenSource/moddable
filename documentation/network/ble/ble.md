@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: April 6, 2019
+Revised: May 3, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -525,6 +525,8 @@ The `Characteristic` class provides access to a single service characteristic.
 | `uuid` | `object` | Instance of [Bytes](#classbytes) class containing characteristic UUID.
 | `service` | `object` | `Service` object containing characteristic.
 | `handle` | `number` | Chararacteristic handle.
+| `name` | `string` | Characteristic name defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
+| `type` | `string` | Characteristic type defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `descriptors` | `array` | Array of characteristic descriptors discovered.
 
 ### Functions
@@ -597,7 +599,7 @@ The `onCharacteristicNotificationDisabled` callback function is called when noti
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `characteristic` | `object` | A `characteristic` object. |
-| `value` | `ArrayBuffer` | The `characteristic` value. |
+| `value` | `varies` | The `characteristic` value. The value is automatically converted to the `type` defined in the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
 The `onCharacteristicNotification` callback function is called when notifications are enabled and the peripheral notifies the characteristic value.
 
@@ -650,7 +652,7 @@ The `Authorization` object contains the following properties:
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `characteristic` | `object` | A `characteristic` object. |
-| `value` | `ArrayBuffer` | The `characteristic` value. |
+| `value` | `varies` | The `characteristic` value read. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
 The `onCharacteristicValue` callback function is called when a characteristic is read by the `readValue` function.
 
@@ -683,7 +685,7 @@ onCharacteristicValue(characteristic, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `ArrayBuffer` | The `characteristic` value to write. |
+| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
 Use the `writeWithoutResponse` function to write a characteristic value on demand.
 
@@ -720,7 +722,8 @@ The `Descriptor` class provides access to a single characteristic descriptor.
 | `uuid` | `string` | Instance of [Bytes](#classbytes) class containing descriptor UUID.
 | `characteristic` | `object` | `Characteristic` object containing descriptor.
 | `handle` | `number` | Descriptor handle.
-
+| `name` | `string` | Descriptor name defined in the optional service JSON. When the descriptor is not defined in the service JSON, this property is `undefined`.
+| `type` | `string` | Descriptor type defined in the optional service JSON. When the descriptor is not defined in the service JSON, this property is `undefined`.
 
 ### Functions
 
@@ -748,7 +751,7 @@ The `Authorization` object contains the following properties:
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `descriptor ` | `object` | A `descriptor` object. |
-| `value` | `ArrayBuffer` | The `descriptor` value. |
+| `value` | `varies` | The `descriptor` value read. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
 The `onDescriptorValue` callback function is called when a descriptor is read by the `readValue` function.
 
@@ -772,7 +775,7 @@ onDescriptorValue(descriptor, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `ArrayBuffer` | The descriptor value to write. |
+| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
 Use the `writeValue` function to write a descriptor value.
 
@@ -1120,7 +1123,7 @@ onConnected(device) {
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `characteristic` | `object` | The `characteristic` object to notify. |
-| `value` | `ArrayBuffer` | The `characteristic` notification `value`. |
+| `value` | `varies` | The `characteristic` notification value. The value is automatically converted from the `type` defined in the service JSON. |
 
 Call the `notifyValue` function to send a characteristic value change notification to the connected client.
 
@@ -1148,12 +1151,13 @@ The `onCharacteristicNotifyEnabled` callback function is called when a client en
  
 ***
 
-#### `onCharacteristicWritten(params)`
+#### `onCharacteristicWritten(characteristic, value)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `params` | `object` | Properties associated with the characteristic value written.
+| `characteristic` | `object` | The `characteristic` object written.
+| `value` | `varies` | The value written. The value is automatically converted to the `type` defined in the service JSON.
 
-The `params` object contains the following properties:
+The `characteristic` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -1161,20 +1165,18 @@ The `params` object contains the following properties:
 | `name` | `string` | Characteristic name defined in the service JSON.
 | `type` | `string` | Characteristic type defined in the service JSON.
 | `handle` | `number` | Characteristic handle.
-| `value` | `varies` | The value written. The value is automatically converted to the `type` defined in the service JSON.
 
 The `onCharacteristicWritten` callback is called when a client writes a service characteristic value on demand. The `BLEServer` application is responsible for handling the write request.
 
 The following abbreviated example from the [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) example shows how characteristic write requests are handled. The `SSID` and `password` characteristics are strings and the `control` characteristic is a numeric value. When the BLE client writes the value 1 to the `control` characteristic, the app closes the client connection and initiates a WiFi connection:
 
 ```javascript
-onCharacteristicWritten(params) {
-	let value = params.value;
-	if ("SSID" == params.name)
+onCharacteristicWritten(characteristic, value) {
+	if ("SSID" == characteristic.name)
 		this.ssid = value;
-	else if ("password" == params.name)
+	else if ("password" == characteristic.name)
 		this.password = value;
-	else if ("control" == params.name) {
+	else if ("control" == characteristic.name) {
 		if ((1 == value) && this.ssid) {
 			this.close();
 			this.connectToWiFiNetwork(this.ssid, this.password);
@@ -1185,12 +1187,12 @@ onCharacteristicWritten(params) {
 
 ***
 
-#### `onCharacteristicRead(params)`
+#### `onCharacteristicRead(characteristic)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `params` | `object` | Properties associated with the characteristic value read.
+| `characteristic ` | `object` | The characteristic object being read.
 
-The `params` object contains the following properties:
+The `characteristic` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
@@ -1207,8 +1209,8 @@ To respond to a read request corresponding to a numeric "status" characteristic:
 onReady() {
 	this.status = 10;
 }
-onCharacteristicRead(params) {
-	if ("status" == params.name)
+onCharacteristicRead(characteristic) {
+	if ("status" == characteristic.name)
 		return this.status;
 }
 ```
@@ -1268,7 +1270,7 @@ onDisconnected(device) {
 
 <a id="gattservices"></a>
 ## GATT Services
-GATT services are defined by JSON files located in a BLE server project's `bleservices` directory. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app.
+GATT services are defined by JSON files located in a BLE server or client project's `bleservices` directory. The JSON files are optional for BLE clients. Each JSON file defines a single service with one or more characteristics. The JSON is automatically converted to platform-specific native code by the Moddable `mcconfig` command line tool and the compiled object code is linked to the app.
 
 The JSON file for a service consists of an object with a single `service` property. The `service` property is an object that includes the following top-level properties:
 
@@ -1277,13 +1279,13 @@ The JSON file for a service consists of an object with a single `service` proper
 | `uuid` | `string` | Service UUID.
 | `characteristics` | `object` | An object with details about the service characteristic(s). Each key corresponds to a characteristic name.
 
-Each item in the `characteristics` object contains the following properties:
+Each item in the `characteristics` object contains the following properties. Note that only the `uuid` and `type` properties are required for BLE client applications that include GATT services JSON files:
 
-| Property | Type | Description |
-| --- | --- | :--- |
-| `uuid` | `string` | Characteristic UUID.
+| Property | Type | Description | Required by BLE client |
+| --- | --- | --- | :--- |
+| `uuid` | `string` | Characteristic UUID. | Y
 | `maxBytes` | `number` | Maximum number of bytes required to store the characteristic value.
-| `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `String`, `Uint8`, `Uint16` and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` class automatically converts characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`.
+| `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `ArrayBuffer`, `String`, `Uint8`, `Uint8Array`, `Uint16`, and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` and `BLEClient` classes automatically convert characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`. | Y
 | `permissions` | `string` | Characteristic permissions. Supported permissions include `read`, `readEncrypted`, `write`, and `writeEncrypted`. Multiple permissions can be specified by comma-separating permission strings, but only one of read/readEncrypted and write/writeEncrypted can be specified for each characteristic.
 | `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `writeNoResponse`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
 | `value` | `array`, `string`, or `number` | Optional characteristic value. The `BLEServer` class automatically converts the value specified here to the type specified by the `type` property.
