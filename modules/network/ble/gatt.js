@@ -17,7 +17,8 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import {Bytes} from "btutils";
+
+import {Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
 
 export class Client {
 	constructor(dictionary) {
@@ -117,20 +118,26 @@ export class Client {
 			}
 			case "onCharacteristicNotification": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
+				if (characteristic) {
+					params.value = typedBufferToValue(characteristic.type, params.value);
 					this.ble.onCharacteristicNotification(characteristic, params.value);		
+				}
 				break;
 			}
 			case "onCharacteristicValue": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
+				if (characteristic) {
+					params.value = typedBufferToValue(characteristic.type, params.value);
 					this.ble.onCharacteristicValue(characteristic, params.value);		
+				}
 				break;
 			}
 			case "onDescriptorValue": {
 				let descriptor = this._findDescriptorByHandle(params.handle);
-				if (descriptor)
+				if (descriptor) {
+					params.value = typedBufferToValue(descriptor.type, params.value);
 					this.ble.onDescriptorValue(descriptor, params.value);		
+				}
 				break;
 			}
 		}
@@ -222,6 +229,12 @@ export class Characteristic {
 				case "properties":
 					this.properties = dictionary.properties;
 					break;
+				case "type":
+					this.type = dictionary.type;
+					break;
+				case "name":
+					this.name = dictionary.name;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;
@@ -250,6 +263,7 @@ export class Characteristic {
 	}
 
 	writeWithoutResponse(value) {
+		value = typedValueToBuffer(this.type, value);
 		this._writeWithoutResponse(this.connection, this.handle, value);
 	}
 	
@@ -296,6 +310,12 @@ export class Descriptor {
 				case "characteristic":
 					this.characteristic = dictionary.characteristic;
 					break;
+				case "type":
+					this.type = dictionary.type;
+					break;
+				case "name":
+					this.name = dictionary.name;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;
@@ -310,6 +330,7 @@ export class Descriptor {
 	}
 
 	writeValue(value) {
+		value = typedValueToBuffer(this.type, value);
 		this._writeValue(this.connection, this.handle, value);
 	}
 	

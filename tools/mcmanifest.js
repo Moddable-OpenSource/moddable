@@ -118,9 +118,9 @@ export class MakeFile extends FILE {
 		if (tool.bleServicesFiles.length) {
 			this.echo(tool, "bles2gatt bleservices");
 			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/modBLEServer.c`);
+				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
 			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/modBLEServer.c`);
+				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)

@@ -1,0 +1,11 @@
+{
+	"service": {
+		"uuid": "1802",
+		"characteristics": {
+			"level": {
+				"uuid": "2A06",
+				"type": "Uint8Array",
+			},
+		}
+	}
+}

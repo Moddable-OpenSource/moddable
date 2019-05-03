@@ -40,6 +40,64 @@
 
 import GAP from "gap";
 
+export function typedValueToBuffer(type, value) {
+	let buffer;
+	switch(type) {
+		case "Array":
+		case "Uint8Array":
+			buffer = new Uint8Array(value).buffer;
+			break;
+		case "String":
+			buffer = ArrayBuffer.fromString(value);
+			break;
+		case "Uint8":
+			buffer = Uint8Array.of(value & 0xFF).buffer;
+			break;
+		case "Int16":
+		case "Uint16":
+			buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
+			break;
+		case "Uint32":
+			buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF).buffer;
+			break;
+		case "ArrayBuffer":
+		default:
+			buffer = value;
+			break;
+	}
+	return buffer;
+}
+
+export function typedBufferToValue(type, buffer) {
+	let value;
+	switch(type) {
+		case "Array":
+		case "Uint8Array":
+			value = new Uint8Array(buffer);
+			break;
+		case "String":
+			value = String.fromArrayBuffer(buffer);
+			break;
+		case "Uint8":
+			value = new Uint8Array(buffer)[0] & 0xFF;
+			break;
+		case "Int16":
+			value = (new DataView(buffer)).getInt16(0, true);
+			break;
+		case "Uint16":
+			value = (new DataView(buffer)).getUint16(0, true);
+			break;
+		case "Uint32":
+			value = (new DataView(buffer)).getUint32(0, true);
+			break;
+		case "ArrayBuffer":
+		default:
+			value = buffer;
+			break;
+	}
+	return value;
+}
+
 export class Bytes extends ArrayBuffer {
 	constructor(bytes, littleEndian) {
 		let byteLength;

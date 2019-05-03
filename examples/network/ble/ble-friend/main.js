@@ -66,7 +66,7 @@ class BLEFriend extends BLEClient {
 		}
 	}
 	onCharacteristicNotification(characteristic, value) {
-		trace(String.fromArrayBuffer(value));
+		trace(value);
 	}
 }
 

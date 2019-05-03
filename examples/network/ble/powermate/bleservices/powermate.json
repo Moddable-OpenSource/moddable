@@ -1,0 +1,11 @@
+{
+	"service": {
+		"uuid": "25598CF7-4240-40A6-9910-080F19F91EBC",
+		"characteristics": {
+			"knob": {
+				"uuid": "9CF53570-DDD9-47F3-BA63-09ACEFC60415",
+				"type": "Uint8",
+			},
+		}
+	}
+}

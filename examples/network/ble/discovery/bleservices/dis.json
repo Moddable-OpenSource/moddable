@@ -1,0 +1,11 @@
+{
+	"service": {
+		"uuid": "180A",
+		"characteristics": {
+			"manufacturer": {
+				"uuid": "2A29",
+				"type": "String",
+			},
+		}
+	}
+}

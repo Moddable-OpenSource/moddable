@@ -65,6 +65,8 @@ GATT_HEADER(const struct bg_gattdb_def bg_gattdb_data)={
     .enabled_caps=0xffff,
 };
 
+#include "mc.bleservices.c"
+
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MODDEF_BLE_MAX_CONNECTIONS)];
 
 static const gecko_configuration_t config = {
@@ -157,6 +159,8 @@ struct modBLEConnectionRecord {
 	bd_addr bda;
 	uint8_t bond;
 	gattProcedure procedureQueue;
+	
+	uint16_t handles[char_name_count];
 };
 
 typedef struct {
@@ -686,6 +690,23 @@ static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
 		bda->addr[i] = buffer[5 - i];
 }
 
+static int modBLEConnectionSaveAttHandle(modBLEConnection connection, uint8_t *uuid, uint16_t uuid_length, uint16_t handle)
+{
+	int result = -1;
+	for (int i = 0; i < char_name_count; ++i) {
+		if (uuid_length == char_names[i].uuid_length) {
+			if (0 == c_memcmp(char_names[i].uuid, uuid, uuid_length)) {
+				connection->handles[i] = handle;
+				result = i;
+				goto bail;
+			}
+		}
+	}
+
+bail:
+	return result;
+}
+
 void bleTimerCallback(modTimer timer, void *refcon, int refconSize)
 {
     struct gecko_cmd_packet* evt = gecko_peek_event();
@@ -800,6 +821,7 @@ static void gattCharacteristicEvent(struct gecko_msg_gatt_characteristic_evt_t *
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
 	if (!connection)
 		xsUnknownError("connection not found");
+	int index = modBLEConnectionSaveAttHandle(connection, evt->uuid.data, evt->uuid.len, evt->characteristic);
 	xsmcVars(4);
 	uint8_t buffer[16];
 	uint16_t buffer_length;
@@ -811,6 +833,12 @@ static void gattCharacteristicEvent(struct gecko_msg_gatt_characteristic_evt_t *
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+	if (-1 != index) {
+		xsmcSetString(xsVar(2), (char*)char_names[index].name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(2), (char*)char_names[index].type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(2));
+	}
 	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
@@ -821,6 +849,7 @@ static void gattDescriptorEvent(struct gecko_msg_gatt_descriptor_evt_t *evt)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
 	if (!connection)
 		xsUnknownError("connection not found");
+	int index = modBLEConnectionSaveAttHandle(connection, evt->uuid.data, evt->uuid.len, evt->descriptor);
 	xsmcVars(3);
 	uint8_t buffer[16];
 	uint16_t buffer_length;
@@ -830,6 +859,12 @@ static void gattDescriptorEvent(struct gecko_msg_gatt_descriptor_evt_t *evt)
 	xsmcSetInteger(xsVar(2), evt->descriptor);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	if (-1 != index) {
+		xsmcSetString(xsVar(2), (char*)char_names[index].name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(2), (char*)char_names[index].type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(2));
+	}
 	xsCall2(connection->procedureQueue->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	xsEndHost(gBLE->the);
 }

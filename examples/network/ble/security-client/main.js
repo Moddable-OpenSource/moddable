@@ -51,15 +51,14 @@ class SecureHealthThermometerClient extends BLEClient {
 		if (characteristics.length)
 			characteristics[0].enableNotifications();
 	}
-	onCharacteristicNotification(characteristic, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let units = bytes[0];
-		let temp = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
+	onCharacteristicNotification(characteristic, value) {
+		let units = value[0];
+		let temp = value[1] | (value[2] << 8) | (value[3] << 16) | (value[4] << 24);
 		let exponent = (temp >> 24) & 0xFF;
 		exponent = exponent & 0x80 ? -(~exponent + 257): exponent;
 		let mantissa = temp & 0xFFFFFF;
-		let value = (mantissa * Math.pow(10, exponent)).toFixed(2);
-		trace(`${value}\n`);
+		let temperature = (mantissa * Math.pow(10, exponent)).toFixed(2);
+		trace(`${temperature}\n`);
 	}
 	onPasskeyConfirm(params) {
 		let passkey = this.passkeyToString(params.passkey);

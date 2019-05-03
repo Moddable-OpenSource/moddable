@@ -117,11 +117,10 @@ class BLEHIDClient extends BLEClient {
 		this.reportIndex = 0;
 		this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
 	}
-	onCharacteristicValue(characteristic, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let usageID = bytes[3];
+	onCharacteristicValue(characteristic, value) {
+		let usageID = value[3];
 		if (usageID == this.usageID) {
-			this.onDeviceReportMap(buffer);
+			this.onDeviceReportMap(value);
 			characteristic.service.discoverCharacteristic(this.REPORT_CHARACTERISTIC_UUID);
 		}
 		else {
@@ -134,9 +133,8 @@ class BLEHIDClient extends BLEClient {
 		if (descriptor)
 			descriptor.readValue(Authorization.NoMITM);
 	}
-	onDescriptorValue(descriptor, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let reportType = bytes[1];
+	onDescriptorValue(descriptor, value) {
+		let reportType = value[1];
 		this.reports[this.reportIndex].reportType = reportType;
 		if (++this.reportIndex < this.reports.length)
 			this.reports[this.reportIndex].characteristic.discoverAllDescriptors();

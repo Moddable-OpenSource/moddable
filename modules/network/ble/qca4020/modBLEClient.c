@@ -27,6 +27,8 @@
 #define QAPI_USE_BLE
 #include "qapi.h"
 
+#include "mc.bleservices.c"
+
 #pragma GCC diagnostic ignored "-Wswitch"	// disable warning on missing switch case values
 
 #define LOG_GATTC 0
@@ -106,6 +108,9 @@ struct modBLEConnectionRecord {
 	uint16_t EDIV;
 
 	uint32_t passkey;
+
+	// char_name_table handles
+	uint16_t handles[char_name_count];
 
 	// pending procedure
 	GATTProcedureRecord procedure;
@@ -751,6 +756,37 @@ static void bufferToAddress(uint8_t *buffer, qapi_BLE_BD_ADDR_t *BD_ADDR)
 	BD_ADDR->BD_ADDR0 = buffer[5];
 }
 
+static int modBLEConnectionSaveAttHandle(modBLEConnection connection, qapi_BLE_GATT_UUID_t *uuid, uint16_t handle)
+{
+	int result = -1;
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+			const qapi_BLE_GATT_Service_Attribute_Entry_t *att_entry = &ServiceTable[service_index][att_index];
+			if (QAPI_BLE_AET_CHARACTERISTIC_VALUE_128_E == att_entry->Attribute_Entry_Type || QAPI_BLE_AET_CHARACTERISTIC_VALUE_16_E == att_entry->Attribute_Entry_Type) {
+				uint8_t equal;
+				if (QAPI_BLE_AET_CHARACTERISTIC_VALUE_128_E == att_entry->Attribute_Entry_Type)
+					equal = (0 == c_memcmp(att_entry->Attribute_Value, &uuid->UUID.UUID_128, 16));
+				else
+					equal = (0 == c_memcmp(att_entry->Attribute_Value, &uuid->UUID.UUID_16, 4));
+				if (equal) {
+					for (int k = 0; k < char_name_count; ++k) {
+						const char_name_table *char_name = &char_names[k];
+						if (service_index == char_name->service_index && att_index == char_name->att_index) {
+							connection->handles[k] = handle;
+							result = k;
+							break;
+						}
+					}
+					goto bail;
+				}
+			}
+		}
+	}
+	
+bail:
+	return result;
+}
+
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
@@ -866,16 +902,23 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 	if (!connection)
 		xsUnknownError("connection not found");
 		
-	xsmcVars(4);
+	xsmcVars(3);
 
 	for (i = 0; i < characteristicInfo->NumberOfDescriptors; ++i) {
 		qapi_BLE_GATT_Characteristic_Descriptor_Information_t *descriptorInfo = &characteristicInfo->DescriptorList[i];
+		int index = modBLEConnectionSaveAttHandle(connection, &descriptorInfo->Characteristic_Descriptor_UUID, descriptorInfo->Characteristic_Descriptor_Handle);
 		xsVar(0) = xsmcNewObject();
 		uuidToBuffer(&descriptorInfo->Characteristic_Descriptor_UUID, buffer, &length);
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
 		xsmcSetInteger(xsVar(2), descriptorInfo->Characteristic_Descriptor_Handle);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(connection->procedure.obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	}
 	c_free(characteristicInfo->DescriptorList);
@@ -917,6 +960,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID))
 				continue;
 		}
+		int index = modBLEConnectionSaveAttHandle(connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
 		uuidToBuffer(&characteristic->CharacteristicValue.CharacteristicUUID, buffer, &length);
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
 		xsmcSetInteger(xsVar(2), characteristic->CharacteristicValue.CharacteristicValueHandle);
@@ -924,6 +968,12 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(connection->procedure.obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	}
 		

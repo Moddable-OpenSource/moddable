@@ -70,7 +70,7 @@ class CTSClient extends BLEClient {
 			characteristics[0].readValue();
 	}
 	onCharacteristicValue(characteristic, value) {
-		let current_date_time = new Uint8Array(value);
+		let current_date_time = value;
 		let year = (current_date_time[1] << 8) | current_date_time[0];
 		let month = current_date_time[2];
 		let day = current_date_time[3];
