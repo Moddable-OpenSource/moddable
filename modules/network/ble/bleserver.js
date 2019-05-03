@@ -103,12 +103,13 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onReady();
 				this._deploy();
 				break;
-			case "onCharacteristicWritten":
-				params.value = typedBufferToValue(params.type, params.value);
-				this.onCharacteristicWritten(params);
+			case "onCharacteristicWritten": {
+				let value = typedBufferToValue(params.type, params.value);
+				this.onCharacteristicWritten({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type }, value);
 				break;
+			}
 			case "onCharacteristicRead": {
-				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name });
+				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
 				value = typedValueToBuffer(params.type, value);
 				return value;
 			}

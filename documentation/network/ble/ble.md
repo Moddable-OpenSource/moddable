@@ -741,6 +741,17 @@ The `Authorization` object contains the following properties:
 | `SignedNoMITM` | `number` | Signed unauthenticated encryption
 | `SignedMITM` | `number` | Signed authenticated encryption
 
+***
+
+#### `onDescriptorValue(descriptor, value)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `descriptor ` | `object` | A `descriptor` object. |
+| `value` | `ArrayBuffer` | The `descriptor` value. |
+
+The `onDescriptorValue` callback function is called when a descriptor is read by the `readValue` function.
+
 To read a descriptor with unauthenticated encryption:
 
 ```javascript
@@ -752,6 +763,9 @@ onDescriptors(descriptors) {
 	let descriptor = descriptors.find(descriptor => descriptor.uuid.equals(REPORT_REFERENCE_DESCRIPTOR_UUID));
 	if (descriptor)
 		descriptor.readValue(Authorization.NoMITM);
+}
+onDescriptorValue(descriptor, value) {
+	let report = new Uint8Array(value);
 }
 ```
 #### `writeValue(value)`
