@@ -2156,8 +2156,9 @@ enum {
 
 
 enum {
-	mxProgramStackIndex,
+	mxGlobalStackIndex,
 	mxExceptionStackIndex,
+	mxProgramStackIndex,
 	mxHostsStackIndex,
 
 	mxModulePathsStackIndex,
@@ -2257,8 +2258,9 @@ enum {
 	mxStackIndexCount
 };
 
-#define mxProgram the->stackTop[-1 - mxProgramStackIndex]
+#define mxGlobal the->stackTop[-1 - mxGlobalStackIndex]
 #define mxException the->stackTop[-1 - mxExceptionStackIndex]
+#define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
 #define mxModulePaths the->stackTop[-1 - mxModulePathsStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]

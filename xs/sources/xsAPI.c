@@ -1331,9 +1331,11 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			c_memset(the->symbolTable, 0, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));
 
-			/* mxProgram */
+			/* mxGlobal */
 			mxPushUndefined();
 			/* mxException */
+			mxPushUndefined();
+			/* mxProgram */
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
@@ -1420,6 +1422,10 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
+			slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			slot = mxRealmGlobal(slot);
+			mxGlobal.value = slot->value;
+			mxGlobal.kind = slot->kind;
 
             the->collectFlag = XS_COLLECTING_FLAG;
 			
@@ -1567,9 +1573,11 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				fxJump(the);
 			c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
 
-			/* mxProgram */
+			/* mxGlobal */
 			mxPushUndefined();
 			/* mxException */
+			mxPushUndefined();
+			/* mxProgram */
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
@@ -1592,13 +1600,18 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxNewSetInstance(the);
 			mxPull(mxModulePaths);
 			
-			sharedSlot = theMachine->stackTop[-1].value.reference;
+			sharedSlot = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference;
 			sharedRealm = mxModuleInstanceInternal(sharedSlot)->value.module.realm;
 			sharedSlot = mxRealmGlobal(sharedRealm)->value.reference;
 			slot = fxAliasInstance(the, sharedSlot);
 			mxPushReference(slot);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
+			slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			slot = mxRealmGlobal(slot);
+			mxGlobal.value = slot->value;
+			mxGlobal.kind = slot->kind;
+			
 			the->sharedModules = mxRequiredModules(sharedRealm)->value.reference->next;
 			
 			the->collectFlag = XS_COLLECTING_FLAG;

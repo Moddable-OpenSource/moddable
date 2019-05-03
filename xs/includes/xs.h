@@ -844,9 +844,7 @@ typedef short xsIndex;
 	
 /* Globals */
 
-#define xsGlobal \
-	(fxGlobal(the, &the->scratch), \
-	the->scratch)
+#define xsGlobal (the->stackTop[-1])
 
 /* Host Constructors, Functions and Objects */
 
