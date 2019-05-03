@@ -60,7 +60,6 @@ extern int mainXSC(int argc, char* argv[]) ;
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-					fprintf(stderr, "### %s %s\n", argv[0], argv[1]);
 	if (!strcmp(argv[1], "xsa")) {
 		error = mainXSA(argc - 1, &argv[1]);
 	}
@@ -676,13 +675,9 @@ void Tool_prototype_resolveFilePath(xsMachine* the)
 	}
 #else
 	struct stat a_stat;
-	fprintf(stderr, "%s\n", path);
 	if (realpath(path, buffer) != NULL) {
-		fprintf(stderr, "%s\n", buffer);
 		if (stat(path, &a_stat) == 0) {
-			fprintf(stderr, "%s\n", buffer);
 			if (S_ISREG(a_stat.st_mode)) {
-				fprintf(stderr, "%s\n", buffer);
 				xsResult = xsString(buffer);
 			}
 		}

@@ -169,7 +169,7 @@ class ToDoFile extends FILE {
 					line.push(path);
 				line.push("-n", parts.name.slice(0, -6));
 			}
-			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation);
+			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			lines.push(line);
 		}
 
@@ -188,7 +188,7 @@ class ToDoFile extends FILE {
 					line.push(path);
 				line.push("-n", parts.name.slice(0, -6));
 			}
-			line.push("-f", tool.format, "-o", tool.resourcesPath, "-r", tool.rotation);
+			line.push("-f", tool.format, "-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			if (!alphaTarget)
 				line.push("-c");
 			if (clutSource)
@@ -207,10 +207,10 @@ class ToDoFile extends FILE {
 			var bmpTarget = parts.name + "-alpha.bmp";
 			var bmpSource = tool.resourcesPath + tool.slash + bmpTarget;
 			let line = ["png2bmp"];
-			line.push(pngSource, "-a", "-o", tool.resourcesPath, "-r", tool.rotation, "-t");
+			line.push(pngSource, "-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString(), "-t");
 			lines.push(line);
 			line = ["compressbmf"];
-			line.push(source, "-i", bmpSource, "-o", tool.resourcesPath, "-r", tool.rotation);
+			line.push(source, "-i", bmpSource, "-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			lines.push(line);
 		}
 
@@ -229,7 +229,7 @@ class ToDoFile extends FILE {
 					line.push(path);
 				line.push("-n", parts.name.slice(0, -6));
 			}
-			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation, "-t", name);
+			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString(), "-t", name);
 			lines.push(line);
 			lines.push(["rle4encode ", bmpSource, "-o", tool.resourcesPath]);
 		}
@@ -239,11 +239,11 @@ class ToDoFile extends FILE {
 			var target = result.target;
 			if (result.quality !== undefined) {
 				var temporary = target + result.quality;
-				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-q", result.quality, "-r", tool.rotation]);
+				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-q", result.quality, "-r", tool.rotation.toString()]);
 				lines.push(["cp", tool.resourcesPath + tool.slash + temporary, tool.resourcesPath + tool.slash + result.target]);
 			}
 			else {
-				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-r", tool.rotation]);
+				lines.push(["image2cs", source, "-o", tool.resourcesPath, "-r", tool.rotation.toString()]);
 			}
 		}
 
@@ -261,7 +261,7 @@ class ToDoFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			lines.push(["wav2maud", source, "-o", tool.resourcesPath, "-r", sampleRate, "-c", numChannels, "-s", bitsPerSample, "-f", audioFormat]);
+			lines.push(["wav2maud", source, "-o", tool.resourcesPath, "-r", sampleRate.toString(), "-c", numChannels.toString(), "-s", bitsPerSample.toString(), "-f", audioFormat]);
 		}
 		if (tool.stringFiles.length) {
 			let line = ["mclocal"];
