@@ -97,9 +97,15 @@ This document provides an introduction to getting started building apps with the
 	git checkout v3.0-rc1
 	```
 	
-7. Connect the ESP8266 to your computer with a USB cable.
+7. Install the required Python packages: 
 
-8. Verify the setup by building `helloworld` for the `esp` target:
+	```
+	pip install --user pyserial
+	```
+	
+8. Connect the ESP8266 to your computer with a USB cable.
+
+9. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd ${MODDABLE}/examples/helloworld
@@ -113,12 +119,6 @@ This document provides an introduction to getting started building apps with the
 	mcconfig -d -m -p esp/moddable_zero
 	```
 
-9. Install additional necessary packages 
-
-	```
-	pip install --user pyserial
-	```
-	
 <a id="esp32-mac"></a>
 ### ESP32 setup
 
