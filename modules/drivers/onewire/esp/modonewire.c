@@ -24,23 +24,17 @@
 #include "mc.xs.h" // for xsID_ values
 #include "mc.defines.h"
 
+#include "modGPIO.h"
+
 #include "owb.h"
-#include "owb_rmt.h"
-
-#ifndef MODDEF_ONEWIRE_RMT_TX_CHANNEL
-#define MODDEF_ONEWIRE_RMT_TX_CHANNEL (RMT_CHANNEL_3)
-#endif
-
-#ifndef MODDEF_ONEWIRE_RMT_RX_CHANNEL
-#define MODDEF_ONEWIRE_RMT_RX_CHANNEL (RMT_CHANNEL_2)
-#endif
+#include "owb_gpio.h"
 
 typedef struct
 {
   xsSlot obj;
   uint8_t pin;
-  owb_rmt_driver_info rmt_driver_info;
   OneWireBus *owb;
+  owb_gpio_driver_info driver_info;
 } modOneWireRecord, *modOneWire;
 
 void xs_onewire_destructor(void *data)
@@ -74,8 +68,8 @@ void xs_onewire(xsMachine *the)
 
   xsRemember(onewire->obj);
 
-  // Create a 1-Wire bus, using the RMT timeslot driver
-  onewire->owb = owb_rmt_initialize(&onewire->rmt_driver_info, onewire->pin, MODDEF_ONEWIRE_RMT_TX_CHANNEL, MODDEF_ONEWIRE_RMT_RX_CHANNEL);
+  //   // Create a 1-Wire bus, using the GPIO driver
+  onewire->owb = owb_gpio_initialize(&onewire->driver_info, onewire->pin);
   owb_use_crc(onewire->owb, true); // enable CRC check for ROM code
 
   xsmcSetHostData(xsThis, onewire);
@@ -152,7 +146,7 @@ void xs_onewire_reset(xsMachine *the)
   bool present = false;
   owb_reset(onewire->owb, &present);
   xsmcSetBoolean(xsResult, present);
-}
+} 
 
 void xs_onewire_crc(xsMachine *the)
 {
