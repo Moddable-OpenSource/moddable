@@ -29,6 +29,8 @@
 // maybe use task event group flags for this like all the samples?
 int8_t gWiFiState = -1;	// -1 = uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 
+#define SYSTEM_EVENT_STA_CHANGED_IP (SYSTEM_EVENT_MAX + 1)
+
 static void initWiFi(void);
 
 struct wifiScanRecord {
@@ -291,6 +293,7 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 		case SYSTEM_EVENT_STA_CONNECTED:		msg = "connect"; break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:		msg = "disconnect"; break;
 		case SYSTEM_EVENT_STA_GOT_IP:			msg = "gotIP"; break;
+		case SYSTEM_EVENT_STA_CHANGED_IP:		msg = "changedIP"; break;
 		default: return;
 	}
 
@@ -375,8 +378,9 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 {
 	wifi_config_t wifi_config;
 	xsWiFi walker;
+	system_event_id_t event_id = event->event_id;
 
-    switch (event->event_id) {
+    switch (event_id) {
 		case SYSTEM_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
 				gWiFiState = 3;
@@ -389,6 +393,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			gWiFiState = 4;
 			break;
 		case SYSTEM_EVENT_STA_GOT_IP:
+			if (event->event_info.got_ip.ip_changed)
+				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
 			gWiFiState = 5;
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -396,7 +402,7 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
-				modMessagePostToMachine(gScan->the, (uint8_t *)&event->event_id, sizeof(event->event_id), reportScan, NULL);
+				modMessagePostToMachine(gScan->the, (uint8_t *)&event_id, sizeof(event_id), reportScan, NULL);
 			return ESP_OK;
 		default:
 			return ESP_OK;
