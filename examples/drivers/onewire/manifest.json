@@ -4,6 +4,7 @@
 	],
 	"modules": {
 		"*": [
+
 			"$(MODULES)/drivers/onewire/*",
 			"./main",
 		],
@@ -13,18 +14,41 @@
 		"onewire": {
 			"rmt_rx_channel": "RMT_CHANNEL_2",
 			"rmt_tx_channel": "RMT_CHANNEL_3",
-		},	
+		},
 	},
 	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+			],			
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/esp/*",
+			},
+			"config": {
+				"onewire": {
+					"pin": "12"
+				}
+			}
+		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/drivers/onewire/esp32/*",
 			},
+			"config": {
+				"onewire": {
+					"pin": "23"
+				}
+			}
 		},
 		"win": {
 			"modules": {
 				"*": "$(MODULES)/drivers/onewire/win/*",
 			},
+			"config": {
+				"onewire": {
+					"pin": "1"
+				}
+			}
 		},
 		"...": {
 			"error": "unsupported platform"

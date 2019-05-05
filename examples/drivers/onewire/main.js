@@ -13,11 +13,24 @@
  *
  */
 
-import OneWire from "onewire";
 import Timer from "timer";
+import config from "mc/config";
+import OneWire from "onewire";
+import DS18X20 from "DS18X20";
+
+// ESP8266 NodemCU D6 = GPIO12
+
+/*
+import Digital from "pins/digital";
+let count = 0;
+Timer.repeat(() => {
+	trace(`repeat ${++count} \n`);
+	Digital.write(config.onewire.pin, ~count & 1);
+}, 500);
+*/
 
 const ow = new OneWire({
-  pin: 23
+  pin: config.onewire.pin
 });
 
 let devices = ow.search(); // search returns an array of device IDs
@@ -25,7 +38,7 @@ let devices = ow.search(); // search returns an array of device IDs
 trace('found ',devices.length, '\n' );
 trace( devices.map( x => OneWire.hex(x) + '\n' ) );
 
-import DS18X20 from "DS18X20";
+if ( devices.length ) {
 
 let sensor = new DS18X20({bus:ow});
 
@@ -69,3 +82,6 @@ function readTemps() {
 readTemps();
 
 Timer.repeat(readTemps, 5000);
+
+}
+
