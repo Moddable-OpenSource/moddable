@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: May 3, 2019
+Revised: May 6, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -1285,7 +1285,7 @@ Each item in the `characteristics` object contains the following properties. Not
 | --- | --- | --- | :--- |
 | `uuid` | `string` | Characteristic UUID. | Y
 | `maxBytes` | `number` | Maximum number of bytes required to store the characteristic value.
-| `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `ArrayBuffer`, `String`, `Uint8`, `Uint8Array`, `Uint16`, and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` and `BLEClient` classes automatically convert characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`. | Y
+| `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `ArrayBuffer`, `String`, `Uint8`, `Uint8Array`, `Int8Array`, `Int16Array`, `Uint16`, `Uint16Array`, and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` and `BLEClient` classes automatically convert characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`. | Y
 | `permissions` | `string` | Characteristic permissions. Supported permissions include `read`, `readEncrypted`, `write`, and `writeEncrypted`. Multiple permissions can be specified by comma-separating permission strings, but only one of read/readEncrypted and write/writeEncrypted can be specified for each characteristic.
 | `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `writeNoResponse`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
 | `value` | `array`, `string`, or `number` | Optional characteristic value. The `BLEServer` class automatically converts the value specified here to the type specified by the `type` property.
