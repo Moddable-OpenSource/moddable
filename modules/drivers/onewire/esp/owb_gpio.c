@@ -54,8 +54,8 @@ ESP32
 
 // Use for now... sort later...
 
-modGPIOConfigurationRecord config;
-
+    modGPIOConfigurationRecord config;
+    int gpin;
 /// @cond ignore
 struct _OneWireBus_Timing
 {
@@ -94,6 +94,7 @@ static owb_status _reset(const OneWireBus * bus, bool * is_present)
 
     owb_gpio_driver_info *i = info_from_bus(bus);
 
+    modGPIOInit(&config, NULL, gpin, kModGPIOOutput);
     modGPIOSetMode(&config, kModGPIOOutput);
     ets_delay_us(bus->timing->G);
     modGPIOWrite(&config, 0);  // Drive DQ low
@@ -128,11 +129,12 @@ static void _write_bit(const OneWireBus * bus, int bit)
     int delay2 = bit ? bus->timing->B : bus->timing->D;
     owb_gpio_driver_info *i = info_from_bus(bus);
 
+    modGPIOInit(&config, NULL, gpin, kModGPIOOutput);
     
-    modCriticalSectionBegin();
-
     modGPIOSetMode(&config, kModGPIOOutput);
+    
     modGPIOWrite(&config, 0);  // Drive DQ low
+    modCriticalSectionBegin();
     ets_delay_us(delay1);
     modGPIOWrite(&config, 1);  // Release the bus
     ets_delay_us(delay2);
@@ -149,10 +151,12 @@ static int _read_bit(const OneWireBus * bus)
     int result = 0;
     owb_gpio_driver_info *i = info_from_bus(bus);
 
-    modCriticalSectionBegin();
-
+    
+    modGPIOInit(&config, NULL, gpin, kModGPIOOutput);
     modGPIOSetMode(&config, kModGPIOOutput);
     modGPIOWrite(&config, 0);  // Drive DQ low
+    
+    modCriticalSectionBegin();
     ets_delay_us(bus->timing->A);
     modGPIOSetMode(&config, kModGPIOInput); // Release the bus
     modGPIOWrite(&config, 1);  // Reset the output level for the next output
@@ -211,8 +215,6 @@ static owb_status _read_bits(const OneWireBus * bus, uint8_t *out, int number_of
 
 static owb_status _uninitialize(const OneWireBus * bus)
 {
-    // Nothing to do here for this driver_info
-
     modGPIOUninit(&config);
     return OWB_STATUS_OK;
 }
@@ -232,12 +234,11 @@ OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int pin)
     driver_info->bus.timing = &_StandardTiming;
 
 //https://github.com/Moddable-OpenSource/moddable/blob/26bb48a3857976b2be9a1087376914d4fa79c705/modules/pins/digital/digital.c#L121
-
+    gpin=pin;
     if (modGPIOInit(&config, NULL, pin, kModGPIOOutput)) {
-		//xsUnknownError("can't init pin");
+        return NULL;
     }
 	modGPIOWrite(&config, 1 );
-	//modGPIOUninit(&config);
 
     return &(driver_info->bus);
 }

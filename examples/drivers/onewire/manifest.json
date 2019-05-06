@@ -9,7 +9,10 @@
 			"./main",
 		],
 	},
-	"preload": "onewire",
+	"preload": [
+		"onewire",
+		"DS18X20"
+	],
 	"defines": {
 		"onewire": {
 			"rmt_rx_channel": "RMT_CHANNEL_2",
@@ -20,7 +23,7 @@
 		"esp": {
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
-			],			
+			],
 			"modules": {
 				"*": "$(MODULES)/drivers/onewire/esp/*",
 			},
@@ -36,7 +39,7 @@
 			},
 			"config": {
 				"onewire": {
-					"pin": "23"
+					"pin": "16"
 				}
 			}
 		},
