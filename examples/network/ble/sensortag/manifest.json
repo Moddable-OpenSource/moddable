@@ -8,6 +8,11 @@
 			"./main"
 		]
 	},
+	"ble":{
+		"*": [
+			"./bleservices/*",
+		],
+	},
 	"creation": {
 		"static": 37500
 	}

@@ -47,6 +47,15 @@ export function typedValueToBuffer(type, value) {
 		case "Uint8Array":
 			buffer = new Uint8Array(value).buffer;
 			break;
+		case "Int8Array":
+			buffer = new Int8Array(value).buffer;
+			break;
+		case "Int16Array":
+			buffer = new Int16Array(value).buffer;
+			break;
+		case "Uint16Array":
+			buffer = new Uint16Array(value).buffer;
+			break;
 		case "String":
 			buffer = ArrayBuffer.fromString(value);
 			break;
@@ -74,6 +83,15 @@ export function typedBufferToValue(type, buffer) {
 		case "Array":
 		case "Uint8Array":
 			value = new Uint8Array(buffer);
+			break;
+		case "Int8Array":
+			value = new Int8Array(buffer);
+			break;
+		case "Int16Array":
+			value = new Int16Array(buffer);
+			break;
+		case "Uint16Array":
+			value = new Uint16Array(buffer);
 			break;
 		case "String":
 			value = String.fromArrayBuffer(buffer);
