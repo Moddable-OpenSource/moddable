@@ -20,7 +20,7 @@
 class OneWire @ "xs_onewire_destructor" {
   constructor(dictionary) @ "xs_onewire";
 
-  // Remove and just use destructor???
+  // Free resources
   close() @ "xs_onewire_close";
 
   // The byte that was read, or a Uint8Array if count was specified and >=0
@@ -34,6 +34,9 @@ class OneWire @ "xs_onewire_destructor" {
 
   // An array of devices that were found
   search() @ "xs_onewire_search";
+
+  // Checks if id is present on bus
+  isPresent(id) @ "xs_onewire_isPresent";
 
   // Reset the bus - returns True is a device was present
   reset() @ "xs_onewire_reset";

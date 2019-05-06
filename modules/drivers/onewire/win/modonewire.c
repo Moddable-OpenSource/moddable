@@ -104,6 +104,25 @@ void xs_onewire_search(xsMachine *the)
   xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
 }
 
+void xs_onewire_isPresent(xsMachine *the)
+{
+  modOneWire onewire = xsmcGetHostData(xsThis);
+
+  uint8_t *id;
+
+  if (8 != xsGetArrayBufferLength(xsArg(0)))
+    xsUnknownError("invalid id");
+
+  id = xsmcToArrayBuffer(xsArg(0));
+
+  if (0 == rand() % 2)
+  {
+    xsResult = xsTrue;
+    return;
+  }
+  xsResult = xsFalse;
+}
+
 void xs_onewire_reset(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);

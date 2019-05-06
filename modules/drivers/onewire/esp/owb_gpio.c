@@ -24,10 +24,6 @@
  * SOFTWARE.
  */
 
-/**
- * @file
- */
-
 #include <stddef.h>
 #include <stdbool.h>
 #include <inttypes.h>
@@ -43,31 +39,22 @@ ESP32
 #include "driver/gpio.h"
 */
 
-// cloned modules/pins/digital/esp/modGPIO.h - how to avoid this?
-#include "modGPIO.h"
+#include "xsmc.h"
 
-#ifdef __ets__
+#if ESP32 || __ets__
 	#include "xsesp.h"
 
-// https://github.com/esp8266/Arduino/issues/615#issuecomment-126971169
-
-//#define xt_rsil(level) (__extension__({uint32_t state; __asm__ __volatile__("rsil %0," __STRINGIFY(level) : "=a" (state)); state;}))
-//#define xt_wsr_ps(state)  __asm__ __volatile__("wsr %0,ps; isync" :: "a" (state) : "memory")
-
-//#define interrupts   ets_intr_unlock
-//#define noInterrupts ets_intr_lock
-
-//#define interrupts() xt_rsil(0)
-//#define noInterrupts() xt_rsil(15)    
+#else
+	#error unknown platform    
 #endif
 
 #include "modGPIO.h"
 #include "owb.h"
 #include "owb_gpio.h"
 
-void noInterrupts() {};
-void interrupts() {};
+// Use for now... sort later...
 
+modGPIOConfigurationRecord config;
 
 /// @cond ignore
 struct _OneWireBus_Timing
@@ -107,25 +94,25 @@ static owb_status _reset(const OneWireBus * bus, bool * is_present)
 
     owb_gpio_driver_info *i = info_from_bus(bus);
 
-    modGPIOSetMode(i->config, kModGPIOOutput);
+    modGPIOSetMode(&config, kModGPIOOutput);
     ets_delay_us(bus->timing->G);
-    modGPIOWrite(i->config, 0);  // Drive DQ low
+    modGPIOWrite(&config, 0);  // Drive DQ low
     ets_delay_us(bus->timing->H);
-    modGPIOSetMode(i->config, kModGPIOInput); // Release the bus
-    modGPIOWrite(i->config, 1);  // Reset the output level for the next output
+    modGPIOSetMode(&config, kModGPIOInput); // Release the bus
+    modGPIOWrite(&config, 1);  // Reset the output level for the next output
     ets_delay_us(bus->timing->I);
 
-    int level1 = modGPIORead(i->config);
+    int level1 = modGPIORead(&config);
 
     ets_delay_us(bus->timing->J);   // Complete the reset sequence recovery
 
-    int level2 = modGPIORead(i->config);
+    int level2 = modGPIORead(&config);
 
     modCriticalSectionEnd();
 
     present = (level1 == 0) && (level2 == 1);   // Sample for presence pulse from slave
 
-    *is_present = present;
+    //*is_present = present;
 
     return OWB_STATUS_OK;
 }
@@ -144,10 +131,10 @@ static void _write_bit(const OneWireBus * bus, int bit)
     
     modCriticalSectionBegin();
 
-    modGPIOSetMode(i->config, kModGPIOOutput);
-    modGPIOWrite(i->config, 0);  // Drive DQ low
+    modGPIOSetMode(&config, kModGPIOOutput);
+    modGPIOWrite(&config, 0);  // Drive DQ low
     ets_delay_us(delay1);
-    modGPIOWrite(i->config, 1);  // Release the bus
+    modGPIOWrite(&config, 1);  // Release the bus
     ets_delay_us(delay2);
 
     modCriticalSectionEnd();
@@ -164,14 +151,14 @@ static int _read_bit(const OneWireBus * bus)
 
     modCriticalSectionBegin();
 
-    modGPIOSetMode(i->config, kModGPIOOutput);
-    modGPIOWrite(i->config, 0);  // Drive DQ low
+    modGPIOSetMode(&config, kModGPIOOutput);
+    modGPIOWrite(&config, 0);  // Drive DQ low
     ets_delay_us(bus->timing->A);
-    modGPIOSetMode(i->config, kModGPIOInput); // Release the bus
-    modGPIOWrite(i->config, 1);  // Reset the output level for the next output
+    modGPIOSetMode(&config, kModGPIOInput); // Release the bus
+    modGPIOWrite(&config, 1);  // Reset the output level for the next output
     ets_delay_us(bus->timing->E);
 
-    int level = modGPIORead(i->config);
+    int level = modGPIORead(&config);
 
     ets_delay_us(bus->timing->F);   // Complete the timeslot and 10us recovery
 
@@ -225,6 +212,8 @@ static owb_status _read_bits(const OneWireBus * bus, uint8_t *out, int number_of
 static owb_status _uninitialize(const OneWireBus * bus)
 {
     // Nothing to do here for this driver_info
+
+    modGPIOUninit(&config);
     return OWB_STATUS_OK;
 }
 
@@ -237,11 +226,18 @@ static const struct owb_driver gpio_function_table =
     .read_bits = _read_bits
 };
 
-OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int gpio)
+OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int pin)
 {
-    driver_info->config->pin = gpio;
     driver_info->bus.driver = &gpio_function_table;
     driver_info->bus.timing = &_StandardTiming;
+
+//https://github.com/Moddable-OpenSource/moddable/blob/26bb48a3857976b2be9a1087376914d4fa79c705/modules/pins/digital/digital.c#L121
+
+    if (modGPIOInit(&config, NULL, pin, kModGPIOOutput)) {
+		//xsUnknownError("can't init pin");
+    }
+	modGPIOWrite(&config, 1 );
+	//modGPIOUninit(&config);
 
     return &(driver_info->bus);
 }
