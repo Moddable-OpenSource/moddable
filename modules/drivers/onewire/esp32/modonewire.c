@@ -146,6 +146,33 @@ void xs_onewire_search(xsMachine *the)
   }
 }
 
+void xs_onewire_isPresent(xsMachine *the)
+{
+  modOneWire onewire = xsmcGetHostData(xsThis);
+
+  OneWireBus_SearchState search_state = {0};
+  bool found = false;
+  uint8_t *id;
+
+  if (8 != xsGetArrayBufferLength(xsArg(0)))
+    xsUnknownError("invalid id");
+
+  id = xsmcToArrayBuffer(xsArg(0));
+
+  owb_search_first(onewire->owb, &search_state, &found);
+  while (found)
+  {
+    if (0 == memcmp(search_state.rom_code.bytes, id, 8))
+    {
+      xsResult = xsTrue;
+      return;
+    }
+    owb_search_next(onewire->owb, &search_state, &found);
+  }
+
+  xsResult = xsFalse;
+}
+
 void xs_onewire_reset(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);

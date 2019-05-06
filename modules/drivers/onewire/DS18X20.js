@@ -20,70 +20,77 @@ import OneWire from "onewire";
 const DS18B20 = 0x28;
 const DS18S20 = 0x10;
 
+
+const max_conversion_ms = {
+  8: 100, // Hack for simulator
+  9: 94,
+  10: 188,
+  11: 375,
+  12: 750
+};
+Object.freeze(max_conversion_ms);
+
 export class DS18X20 {
 
   constructor(dictionary) {
-    if (dictionary.bus) {
-      this.bus = dictionary.bus;
-    } else {
-      throw new Error("Onewire bus expected");
+    if (!dictionary.bus) {
+      throw new Error("OneWire bus required");
     }
-    if (dictionary.index && dictionary.index >= 0 && dictionary.index <= 126) {
-      this.rom = this.bus.search()[dictionary.index];
-    }
+    this.bus = dictionary.bus;
+
     if (dictionary.id) {
-      this.rom = dictionary.id;
+      this.id = dictionary.id;
+    } else if ((undefined !== dictionary.index) && (dictionary.index >= 0) && (dictionary.index <= 126)) {
+      this.id = this.bus.search()[dictionary.index];
+    } else {
+      this.id = this.bus.search()[0]; // default to first device
     }
-    // default to first device
-    if (!this.rom) {
-      this.rom = this.bus.search()[0];
-    }
-    if ( dictionary.digits) {
-      this.digits=dictionary.digits;
+    if (!this.id) {
+      throw new Error("no device");
     }
   }
 
   // return hex version of the ROM
   toString() {
-    return OneWire.hex(this.rom);
+    return OneWire.hex(this.id);
   }
 
   get family() {
-    return new DataView(this.rom).getInt8();
+    return (new Int8Array(this.id))[0];
   }
 
   // internal use
   get scratchpad() {
-    let b = this.bus;
-    b.select(this.rom);
-    b.write(0xBE); // Read scratchpad
-    let buffer = b.read(9);
+    const bus = this.bus;
+    bus.select(this.id);
+    bus.write(0xBE); // Read scratchpad
+    let buffer = bus.read(9);
     return new Uint8Array(buffer);
   }
 
-   // internal use
+  // internal use
   set scratchpad(bytes) {
-    let b = this.bus;
-    b.reset();
-    b.select(this.rom);
-    b.write(0x4E); // Write scratchpad
-    bytes.forEach(function (byte) {
-      b.write(byte);
-    });
-    b.select(this.rom);
-    b.write(0x48); // Copy to scratch pad
-    b.reset();
+    const bus = this.bus;
+    bus.reset();
+    bus.select(this.id);
+    bus.write(0x4E); // Write scratchpad
+    for (let i = 0, length = bytes.length; i < length; i++) {
+      bus.write(bytes[i]);
+    }
+    bus.select(this.id);
+    bus.write(0x48); // Copy to scratch pad
+    bus.reset();
   }
 
   /** Set the sensor resolution in bits 9-12.
       This setting is stored in device's EEPROM so it persists even after the sensor loses power. */
   set resolution(bits) {
-    let spad = this.scratchpad;
     if (bits < 9 || bits > 12) {
       throw new Error("resolution 9-12 bits");
     }
     bits = [0x1F, 0x3F, 0x5F, 0x7F][bits - 9];
-    this.scratchpad = [spad[2], spad[3], bits];
+    const scratchpad = this.scratchpad;
+    this.scratchpad = [scratchpad[2], scratchpad[3], bits];
   }
 
   /** Return the resolution in bits 9-12 */
@@ -93,23 +100,23 @@ export class DS18X20 {
 
   /** Return true if this device is still connected to the OneWire Bus */
   get present() {
-    return this.bus.search().indexOf(this.rom) !== -1;
+    return this.bus.isPresent(this.id);
   }
 
-  get temp() {
-    return this.getTemp();
+  get temperature() {
+    return this.getTemperature();
   }
 
   // Read the conversion back, checking crc for valid result
-  get read() {
-    let s = this.scratchpad;
-    let temp = null;
+  get _read() {
+    const scratchpad = this.scratchpad;
 
-    if (OneWire.crc(s.buffer, 8) == s[8]) {
-      temp = new DataView(s.buffer).getInt16(0, true);
-      temp = temp / ((this.family == DS18S20) ? 2 : 16);
-      if ( this.digits ) temp=temp.toFixed(this.digits );
+    if (OneWire.crc(scratchpad.buffer, 8) !== scratchpad[8]) {
+      return;
     }
+    let temp = scratchpad[0] | (scratchpad[1] << 8);
+    temp = temp / ((this.family === DS18S20) ? 2 : 16);
+
     return temp;
   }
 
@@ -118,21 +125,14 @@ export class DS18X20 {
    * Otherwise the last temperature read is returned. The first value will be invalid.
    * If the CRC fails null is returned.
    */
-  getTemp(callback) {
-    this.bus.select(this.rom);
+  getTemperature(callback) {
+    this.bus.select(this.id);
     this.bus.write(0x44, true); // Start conversion
-    if (!callback) return this.read; // if no callback, read now - we'll get the last temperature 
-    let max_conversion_ms = {
-      8: 100, // Hack for simulator
-      9: 94,
-      10: 188,
-      11: 375,
-      12: 750
-    };
-    let wait = max_conversion_ms[this.resolution];
-    Timer.set(id => {
-      callback(this.read);
-    }, wait);
+    if (!callback) return this._read; // if no callback, read now - we'll get the last temperature
+
+    Timer.set(() => {
+      callback(this._read);
+    }, max_conversion_ms[this.resolution]); //@@jph this always retreives the resolution. necessary? Or can that be cached?
   }
 
 }
