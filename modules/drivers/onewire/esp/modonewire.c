@@ -53,8 +53,6 @@ void xs_onewire(xsMachine *the)
 
   xsmcVars(1);
 
-  xsTrace("con onewire\n");
-
   if (!xsmcHas(xsArg(0), xsID_pin))
     xsUnknownError("pin missing");
 
@@ -78,19 +76,6 @@ void xs_onewire(xsMachine *the)
   owb_use_crc(onewire->owb, true); // enable CRC check for ROM code
 
   xsmcSetHostData(xsThis, onewire);
-
-/*
-
-	modGPIOConfigurationRecord config;
-
-	if (modGPIOInit(&config, NULL, pin, kModGPIOOutput))
-		xsUnknownError("can't init pin");
-
-	modGPIOWrite(&config, 1);
-	modGPIOUninit(&config);
-
-  */
-  xsTrace("Done con onewire\n");
 }
 
 void xs_onewire_close(xsMachine *the)
@@ -120,7 +105,6 @@ void xs_onewire_read(xsMachine *the)
     uint8_t *buffer = xsmcToArrayBuffer(xsResult);
     owb_read_bytes(onewire->owb, (uint8_t *)buffer, count);
   }
-  xsTrace( "xs_onewire_read");
 }
 
 void xs_onewire_write(xsMachine *the)
@@ -130,7 +114,6 @@ void xs_onewire_write(xsMachine *the)
   if ((value < 0) || (value > 255))
     xsRangeError("bad value");
   owb_write_byte(onewire->owb, value);
-  xsTrace( "xs_onewire_write");
 }
 
 void xs_onewire_select(xsMachine *the)
@@ -193,9 +176,6 @@ void xs_onewire_reset(xsMachine *the)
   bool present = false;
   owb_reset(onewire->owb, &present);
   xsmcSetBoolean(xsResult, present);
-  xsTrace( "xs_onewire_reset");
-
-
 } 
 
 void xs_onewire_crc(xsMachine *the)
@@ -204,7 +184,7 @@ void xs_onewire_crc(xsMachine *the)
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
   uint8_t len = xsGetArrayBufferLength(xsArg(0));
   int argc = xsmcArgc;
-  ;
+  
   if (argc > 1)
   {
     size_t arg_len = xsmcToInteger(xsArg(1));

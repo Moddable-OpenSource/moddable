@@ -187,7 +187,7 @@ void xs_onewire_crc(xsMachine *the)
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
   uint8_t len = xsGetArrayBufferLength(xsArg(0));
   int argc = xsmcArgc;
-  ;
+  
   if (argc > 1)
   {
     size_t arg_len = xsmcToInteger(xsArg(1));
