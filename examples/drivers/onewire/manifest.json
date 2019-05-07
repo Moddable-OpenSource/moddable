@@ -29,7 +29,7 @@
 			},
 			"config": {
 				"onewire": {
-					"pin": "12"
+					"pin": "4"
 				}
 			}
 		},
