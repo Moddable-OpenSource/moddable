@@ -1420,12 +1420,11 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - anIndex], mxID(anIndex), XS_DONT_ENUM_FLAG);
 			}
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
+			mxGlobal.value = the->stack->value;
+			mxGlobal.kind = the->stack->kind;
+			fxNewRealmInstance(the);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
-			slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-			slot = mxRealmGlobal(slot);
-			mxGlobal.value = slot->value;
-			mxGlobal.kind = slot->kind;
 
             the->collectFlag = XS_COLLECTING_FLAG;
 			
@@ -1605,12 +1604,11 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			sharedSlot = mxRealmGlobal(sharedRealm)->value.reference;
 			slot = fxAliasInstance(the, sharedSlot);
 			mxPushReference(slot);
+			mxGlobal.value = the->stack->value;
+			mxGlobal.kind = the->stack->kind;
+			fxNewRealmInstance(the);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
-			slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-			slot = mxRealmGlobal(slot);
-			mxGlobal.value = slot->value;
-			mxGlobal.kind = slot->kind;
 			
 			the->sharedModules = mxRequiredModules(sharedRealm)->value.reference->next;
 			

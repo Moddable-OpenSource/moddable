@@ -244,13 +244,14 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Module);
 	fxUnstripCallback(linker, fx_Transfer);
 	fxUnstripCallback(linker, fx_require);
+	fxUnstripCallback(linker, fx_Compartment);
 	fxUnstripCallback(linker, fx_Set_prototype_add);
 	fxUnstripCallback(linker, fx_Set_prototype_values);
 	fxUnstripCallback(linker, fx_Set_prototype_values_next);
 	// constructors
 	fxUnstripCallback(linker, fx_species_get);
 	// object rest/spread
-	if (linker->intrinsicFlags[mxCopyObjectIntrinsic])
+	if (linker->intrinsicFlags[mxCopyObjectIntrinsic] || fxIsLinkerSymbolUsed(linker, mxID(_Compartment)))
 		fxUnstripCallback(linker, fxCopyObject);
 	// parser
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_eval)))
@@ -321,7 +322,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
-	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT) || fxIsLinkerSymbolUsed(linker, mxID(_evaluateProgram)))
+	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
 		fprintf(file, "\tfxRunProgramEnvironment,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");

@@ -112,6 +112,12 @@ void fxBuildModule(txMachine* the)
 	mxTransferPrototype = *the->stack;
 	fxNewHostConstructor(the, mxCallback(fx_Transfer), 1, XS_NO_ID);
 	mxPull(mxTransferConstructor);
+
+	mxPush(mxObjectPrototype);
+	fxNewObjectInstance(the);
+	mxCompartmentPrototype = *the->stack;
+	slot = fxNewHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
+	mxPull(mxCompartmentConstructor);
 }
 
 txSlot* fxCurrentModule(txMachine* the)
@@ -1104,5 +1110,70 @@ txBoolean fxModuleSetPrototype(txMachine* the, txSlot* instance, txSlot* prototy
 	return (prototype->kind == XS_NULL_KIND) ? 1 : 0;
 }
 
+void fx_Compartment(txMachine* the)
+{
+	txSlot* instance = C_NULL;
+	txSlot* global = C_NULL;
+	txSlot* slot;
+	txID id;
+	txSlot* realm = C_NULL;
+	txSlot* module = C_NULL;
+	
+	mxTry(the) {
+		if (the->sharedMachine == C_NULL)
+			mxTypeError("no compartments");
+		if (mxIsUndefined(mxTarget))
+			mxTypeError("call Compartment");
+		mxPushSlot(mxTarget);
+		fxGetPrototypeFromConstructor(the, &mxCompartmentPrototype);
+		instance = fxNewObjectInstance(the);
+		mxPullSlot(mxResult);
+			
+		if (mxArgc == 0)
+			mxSyntaxError("no module specifier");
+		fxToString(the, mxArgv(0));
+		
+		mxPush(mxObjectPrototype);
+		global = fxNewObjectInstance(the);
+		slot = fxLastProperty(the, global);
+		for (id = _Array; id < ___proto__; id++) {
+			if (id == _undefined)
+				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+			else
+				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+		}
+		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
+		if (mxArgc > 1) {
+			mxPushSlot(mxArgv(1));
+			mxPushInteger(2);
+			mxPushUndefined();
+			mxPush(mxCopyObjectFunction);
+			fxCall(the);
+		}
+
+		realm = fxNewRealmInstance(the);
+		
+		the->requireFlag |= XS_REQUIRE_FLAG;
+		module = fxRequireModule(the, realm, XS_NO_ID, mxArgv(0));
+		the->requireFlag &= ~XS_REQUIRE_FLAG;
+		
+		slot = fxLastProperty(the, instance);
+		slot = fxNextReferenceProperty(the, slot, realm, XS_NO_ID, XS_GET_ONLY);
+		slot = fxNextReferenceProperty(the, slot, global, mxID(_global), XS_GET_ONLY);
+		slot = fxNextSlotProperty(the, slot, module, mxID(_exports), XS_GET_ONLY);
+		
+		mxPop();
+	}
+	mxCatch(the) {
+		if (the->requireFlag & XS_REQUIRE_FLAG) {
+			mxImportingModules(realm)->value.reference->next = C_NULL;
+			mxLoadingModules(realm)->value.reference->next = C_NULL;
+			mxLoadedModules(realm)->value.reference->next = C_NULL;
+			mxResolvingModules(realm)->value.reference->next = C_NULL;
+			the->requireFlag &= ~XS_REQUIRE_FLAG;
+		}
+		fxJump(the);
+	}
+}
 
 

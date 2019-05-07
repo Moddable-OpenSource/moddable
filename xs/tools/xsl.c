@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
 				xsVars(2);
 				{
 					xsTry {
-                            xsCollectGarbage();
+                         xsCollectGarbage();
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
@@ -315,8 +315,9 @@ int main(int argc, char* argv[])
                             xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
-						if (linker->stripping)
+						if (linker->stripping) {
 							fxFreezeBuiltIns(the);
+						}
 					}
 					xsCatch {
 						xsStringValue message = xsToString(xsException);
@@ -741,6 +742,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxAsyncIteratorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxBigIntPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxBooleanPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxCompartmentPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxDataViewPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
 	mxPush(mxErrorPrototype); fxFreezeBuiltIn(the);
@@ -760,7 +762,6 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxPromisePrototype); fxFreezeBuiltIn(the);
 	mxPush(mxProxyPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxRangeErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxRealmPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxReferenceErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxRegExpPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxSetEntriesIteratorPrototype); fxFreezeBuiltIn(the);
@@ -789,14 +790,14 @@ void fxFreezeBuiltIns(txMachine* the)
 	
 	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
 	
+	mxPush(mxProgram); fxFreezeBuiltIn(the);
+
+	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
 	mxPush(mxPendingJobs); fxFreezeBuiltIn(the);
 	mxPush(mxRunningJobs); fxFreezeBuiltIn(the);
-	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
-	mxPush(mxProgram); fxFreezeBuiltIn(the);
 	
 	realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 	mxPushReference(realm); fxFreezeBuiltIn(the);
-	mxPushSlot(mxRealmGlobal(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxRealmClosures(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxImportingModules(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxLoadingModules(realm)); fxFreezeBuiltIn(the);

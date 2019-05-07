@@ -1215,3 +1215,49 @@ void fxRunProgramEnvironment(txMachine* the)
 	mxPop();
 	the->stack = the->scope = middle + 1;
 }
+
+
+txSlot* fxNewRealmInstance(txMachine* the)
+{
+	txSlot* global = the->stack;
+	txSlot* realm = fxNewInstance(the);
+	txSlot* slot;
+	/* mxRealmGlobal */
+	slot = fxNextSlotProperty(the, realm, global, XS_NO_ID, XS_GET_ONLY);
+	/* mxRealmClosures */
+	mxPushUndefined();
+	slot = fxNextReferenceProperty(the, slot, fxNewEnvironmentInstance(the, C_NULL), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxImportingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadedModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxResolvingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRunningModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRequiredModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	global->value.reference = realm;
+	return realm;
+}
+
+txSlot* fxNewProgramInstance(txMachine* the)
+{
+	txSlot* realm = the->stack;
+	txSlot* program = fxNewInstance(the);
+	txSlot* slot = program->next = fxNewSlot(the);
+	slot->kind = XS_MODULE_KIND;
+	slot->value.module.realm = realm->value.reference;
+	slot->value.module.id = XS_NO_ID;
+	realm->value.reference = program;
+	return program;
+}

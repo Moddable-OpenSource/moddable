@@ -773,6 +773,9 @@ extern txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment);
 extern void fxRunEvalEnvironment(txMachine* the);
 extern void fxRunProgramEnvironment(txMachine* the);
 
+extern txSlot* fxNewRealmInstance(txMachine* the);
+extern txSlot* fxNewProgramInstance(txMachine* the);
+
 /* xsProperty.c */
 extern txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag);
 extern txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag);
@@ -829,14 +832,6 @@ extern void fxCloseIterator(txMachine* the, txSlot* iterator);
 extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
-
-extern txSlot* fxNewProgramInstance(txMachine* the);
-mxExport void fx_Realm(txMachine* the);
-mxExport void fx_Realm_makeCompartment(txMachine* the);
-mxExport void fx_Realm_prototype_get_global(txMachine* the);
-mxExport void fx_Realm_prototype_evaluateExpr(txMachine* the);
-mxExport void fx_Realm_prototype_evaluateProgram(txMachine* the);
-
 
 /* xsObject.c */
 mxExport void fxCopyObject(txMachine* the);
@@ -1629,6 +1624,8 @@ mxExport void fx_require_resolve(txMachine* the);
 mxExport void fx_Module(txMachine* the);
 mxExport void fx_Transfer(txMachine* the);
 
+mxExport void fx_Compartment(txMachine* the);
+
 /* xsProfile.c */
 #ifdef mxProfile
 extern void fxBeginFunction(txMachine* the, txSlot* function);
@@ -2196,7 +2193,7 @@ enum {
 	mxProxyPrototypeStackIndex,
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
-	mxRealmPrototypeStackIndex,
+	mxCompartmentPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxEvalIntrinsicStackIndex,
@@ -2278,7 +2275,7 @@ enum {
 #define mxBigInt64ArrayConstructor the->stackPrototypes[-1 - _BigInt64Array]
 #define mxBigUint64ArrayConstructor the->stackPrototypes[-1 - _BigUint64Array]
 #define mxBooleanConstructor the->stackPrototypes[-1 - _Boolean]
-#define mxChunkConstructor the->stackPrototypes[-1 - _Chunk]
+#define mxCompartmentConstructor the->stackPrototypes[-1 - _Compartment]
 #define mxDataViewConstructor the->stackPrototypes[-1 - _DataView]
 #define mxDateConstructor the->stackPrototypes[-1 - _Date]
 #define mxErrorConstructor the->stackPrototypes[-1 - _Error]
@@ -2300,7 +2297,6 @@ enum {
 #define mxPromiseConstructor the->stackPrototypes[-1 - _Promise]
 #define mxProxyConstructor the->stackPrototypes[-1 - _Proxy]
 #define mxRangeErrorConstructor the->stackPrototypes[-1 - _RangeError]
-#define mxRealmConstructor the->stackPrototypes[-1 - _Realm]
 #define mxReferenceErrorConstructor the->stackPrototypes[-1 - _ReferenceError]
 #define mxReflectObject the->stackPrototypes[-1 - _Reflect]
 #define mxRegExpConstructor the->stackPrototypes[-1 - _RegExp]
@@ -2361,7 +2357,7 @@ enum {
 #define mxProxyPrototype the->stackPrototypes[-1 - mxProxyPrototypeStackIndex]
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
 #define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
-#define mxRealmPrototype the->stackPrototypes[-1 - mxRealmPrototypeStackIndex]
+#define mxCompartmentPrototype the->stackPrototypes[-1 - mxCompartmentPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]
