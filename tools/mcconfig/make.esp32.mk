@@ -62,8 +62,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
- 	$(IDF_PATH)/components/lwip/include/lwip \
- 	$(IDF_PATH)/components/lwip/include/lwip/port \
+ 	$(IDF_PATH)/components/lwip/lwip/src/include \
+ 	$(IDF_PATH)/components/lwip/port/esp32/include \
  	$(IDF_PATH)/components/mbedtls/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/vfs/include \
@@ -75,8 +75,14 @@ INC_DIRS = \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/log/include \
- 	$(IDF_PATH)/components/spiffs/include
-    
+ 	$(IDF_PATH)/components/spiffs/include \
+ 	$(IDF_PATH)/components/nimble/port/include \
+ 	$(IDF_PATH)/components/nimble/esp-hci/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
+        
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
