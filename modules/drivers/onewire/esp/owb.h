@@ -65,6 +65,7 @@ typedef struct
     bool use_crc;                               ///< True if CRC checks are to be used when retrieving information from a device on the bus
 
     const struct owb_driver *driver;
+    modGPIOConfiguration config; ///< Value of the GPIO connected to the 1-Wire bus
 } OneWireBus;
 
 /**
