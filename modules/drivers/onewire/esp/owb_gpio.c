@@ -52,10 +52,8 @@ ESP32
 #include "owb.h"
 #include "owb_gpio.h"
 
-// Use for now... sort later...
-
-    modGPIOConfigurationRecord config;
-    int gpin;
+// Use for now... sort later... Need to allocate
+static modGPIOConfigurationRecord config;
 
 /// @cond ignore
 struct _OneWireBus_Timing
@@ -95,21 +93,21 @@ static owb_status _reset(const OneWireBus * bus, bool * is_present)
 
     owb_gpio_driver_info *i = info_from_bus(bus);
 
-    modGPIOSetMode(&config, kModGPIOOutput);
+    modGPIOSetMode(bus->config, kModGPIOOutput);
 
-    modGPIOWrite(&config, 1); // NEW
+    modGPIOWrite(bus->config, 1); // NEW
     ets_delay_us(bus->timing->G);
-    modGPIOWrite(&config, 0);  // Drive DQ low
+    modGPIOWrite(bus->config, 0);  // Drive DQ low
     ets_delay_us(bus->timing->H);
-    modGPIOSetMode(&config, kModGPIOInput); // Release the bus
-    modGPIOWrite(&config, 1);  // Reset the output level for the next output
+    modGPIOSetMode(bus->config, kModGPIOInput); // Release the bus
+    modGPIOWrite(bus->config, 1);  // Reset the output level for the next output
     ets_delay_us(bus->timing->I);
 
-    int level1 = modGPIORead(&config);
+    int level1 = modGPIORead(bus->config);
 
     ets_delay_us(bus->timing->J);   // Complete the reset sequence recovery
 
-    int level2 = modGPIORead(&config);
+    int level2 = modGPIORead(bus->config);
 
     modCriticalSectionEnd();
 
@@ -131,12 +129,12 @@ static void _write_bit(const OneWireBus * bus, int bit)
     int delay2 = bit ? bus->timing->B : bus->timing->D;
     owb_gpio_driver_info *i = info_from_bus(bus);
 
-    modGPIOSetMode(&config, kModGPIOOutput);
+    modGPIOSetMode(bus->config, kModGPIOOutput);
     
-    modGPIOWrite(&config, 0);  // Drive DQ low
+    modGPIOWrite(bus->config, 0);  // Drive DQ low
     modCriticalSectionBegin();
     ets_delay_us(delay1);
-    modGPIOWrite(&config, 1);  // Release the bus
+    modGPIOWrite(bus->config, 1);  // Release the bus
     ets_delay_us(delay2);
 
     modCriticalSectionEnd();
@@ -151,16 +149,16 @@ static int _read_bit(const OneWireBus * bus)
     int result = 0;
     owb_gpio_driver_info *i = info_from_bus(bus);
 
-    modGPIOSetMode(&config, kModGPIOOutput);
-    modGPIOWrite(&config, 0);  // Drive DQ low
+    modGPIOSetMode(bus->config, kModGPIOOutput);
+    modGPIOWrite(bus->config, 0);  // Drive DQ low
 
     modCriticalSectionBegin();
     ets_delay_us(bus->timing->A);
-    modGPIOSetMode(&config, kModGPIOInput); // Release the bus
-    modGPIOWrite(&config, 1);  // Reset the output level for the next output
+    modGPIOSetMode(bus->config, kModGPIOInput); // Release the bus
+    modGPIOWrite(bus->config, 1);  // Reset the output level for the next output
     ets_delay_us(bus->timing->E);
 
-    int level = modGPIORead(&config);
+    int level = modGPIORead(bus->config);
 
     ets_delay_us(bus->timing->F);   // Complete the timeslot and 10us recovery
 
@@ -213,7 +211,7 @@ static owb_status _read_bits(const OneWireBus * bus, uint8_t *out, int number_of
 
 static owb_status _uninitialize(const OneWireBus * bus)
 {
-    modGPIOUninit(&config);
+    modGPIOUninit(bus->config);
     return OWB_STATUS_OK;
 }
 
@@ -230,9 +228,11 @@ OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int pin)
 {
     driver_info->bus.driver = &gpio_function_table;
     driver_info->bus.timing = &_StandardTiming;
+    driver_info->bus.config  = &config;
 
 //https://github.com/Moddable-OpenSource/moddable/blob/26bb48a3857976b2be9a1087376914d4fa79c705/modules/pins/digital/digital.c#L121
-    if (modGPIOInit(&config, NULL, pin, kModGPIOOutput)) {
+    //if (modGPIOInit(bus->config, NULL, pin, kModGPIOOutput)) {
+    if (modGPIOInit(driver_info->bus.config , NULL, pin, kModGPIOOutput)) {
         return NULL;
     }
 
