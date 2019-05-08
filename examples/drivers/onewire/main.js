@@ -22,6 +22,18 @@ const bus = new OneWire({
   pin: config.onewire.pin
 });
 
+
+import Digital from "pins/digital";
+let count = 0;
+
+function echo() {
+    //trace('echo....\n');
+    Digital.write(16, count & 1);
+    count++;
+}
+
+Timer.repeat(echo, 500);
+
 let devices = bus.search(); // search returns an array of device IDs
 
 trace('found ', devices.length, '\n');
@@ -79,12 +91,15 @@ if (devices.length) {
 
     sensors.forEach(function (sensor, index) {
       let t = sensor.temperature;
-      trace(index, ' ', sensors[index], ': ', t.toFixed(2), '\n');
+      trace(index, ' ');
+      trace(sensors[index]);
+      //     trace( ': ', t.toFixed(2), '\n');
+      trace( ': ', t, '\n');
     });
   }
 
   readTemps();
 
-  Timer.repeat(readTemps, 5000);
+  Timer.repeat(readTemps, 1000);
 
 } 
