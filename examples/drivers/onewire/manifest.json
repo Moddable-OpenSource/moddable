@@ -1,6 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/digital/manifest.json"			
 	],
 	"modules": {
 		"*": [
@@ -22,10 +23,14 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
+                "$(MODDABLE)/examples/manifest_base.json",
+				"$(MODDABLE)/examples/manifest_net.json",
+				"$(MODULES)/pins/digital/manifest.json"				
 			],
 			"modules": {
-				"*": "$(MODULES)/drivers/onewire/esp/*",
+				"*": [
+					"$(MODULES)/drivers/onewire/esp/*",
+				],
 			},
 			"config": {
 				"onewire": {

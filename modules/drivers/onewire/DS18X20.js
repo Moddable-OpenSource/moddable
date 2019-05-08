@@ -112,7 +112,7 @@ export class DS18X20 {
     const scratchpad = this.scratchpad;
 
     if (OneWire.crc(scratchpad.buffer, 8) !== scratchpad[8]) {
-      return;
+      return null;
     }
     let temp = scratchpad[0] | (scratchpad[1] << 8);
     temp = temp / ((this.family === DS18S20) ? 2 : 16);

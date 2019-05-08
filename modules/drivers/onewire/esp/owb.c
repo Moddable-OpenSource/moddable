@@ -34,7 +34,15 @@
 #include <stdlib.h>
 
 #include "modGPIO.h"
-#include "tinyprintf.h"
+
+
+/*
+root@office-pc:/mnt/c/Users/rhys/Projects/moddable/build/tmp/esp/debug/onewire# addr2line -e main.elf 0x402303d3 3ffee090:  3fff5abc 3fff803c 40262ebd 4021d1ac
+/cygdrive/c/Users/rhys/Projects/moddable/examples/drivers/onewire/C:\Users\rhys\Projects\moddable\build\devices\esp\lib\tinyprintf/tinyprintf.c:500
+500:   data->dest[data->num_chars++] = c;
+*/
+
+//#include "tinyprintf.h"
 
 #include "owb.h"
 #include "owb_gpio.h"
@@ -314,8 +322,8 @@ owb_status owb_read_rom(const OneWireBus * bus, OneWireBus_ROMCode *rom_code)
             {
                 status = OWB_STATUS_OK;
             }
-            char rom_code_s[OWB_ROM_CODE_STRING_LENGTH];
-            owb_string_from_rom_code(*rom_code, rom_code_s, sizeof(rom_code_s));
+            //char rom_code_s[OWB_ROM_CODE_STRING_LENGTH];
+            //owb_string_from_rom_code(*rom_code, rom_code_s, sizeof(rom_code_s));
             // ("rom_code %s", rom_code_s);
         }
         else
