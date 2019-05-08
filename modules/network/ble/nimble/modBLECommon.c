@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,19 +21,24 @@
 #include "xsesp.h"
 #include "modBLECommon.h"
 
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-
 static int16_t useCount = 0;
 
 int modBLEPlatformInitialize(void)
 {
 	if (0 != useCount++)
 		return 0;
+
+	esp_err_t err = esp_nimble_hci_and_controller_init();
+	if (ESP_OK == err)
+		nimble_port_init();
+	
+	return err;
 }
 
 int modBLEPlatformTerminate(void)
 {
 	if (0 != --useCount)
 		return 0;
+		
+	// @@ There doesn't seem to be any nimble terminate APIs
 }

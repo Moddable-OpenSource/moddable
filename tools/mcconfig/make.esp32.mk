@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2019  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -76,12 +76,12 @@ INC_DIRS = \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/spiffs/include \
- 	$(IDF_PATH)/components/nimble/port/include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
- 	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
- 	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
+ 	$(IDF_PATH)/components/nimble/port/include \
         
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
