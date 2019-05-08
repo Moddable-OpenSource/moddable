@@ -44,6 +44,7 @@
 #define mxiOS 0
 #define mxLinux 0
 #define mxMacOSX 0
+#define mxWasm 0
 #define mxWindows 0
 
 #ifndef XSPLATFORM

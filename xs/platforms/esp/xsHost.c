@@ -1161,6 +1161,7 @@ static int32_t modInstrumentationStackRemain(void)
 
 static modTimer gInstrumentationTimer;
 
+#ifdef mxDebug
 void espDebugBreak(txMachine* the, uint8_t stop)
 {
 	if (stop) {
@@ -1174,6 +1175,7 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
 	}
 }
+#endif
 
 void espInitInstrumentation(txMachine *the)
 {
@@ -1190,7 +1192,9 @@ void espInitInstrumentation(txMachine *the)
 	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
 	gInstrumentationThe = the;
 
+#ifdef mxDebug
 	the->onBreak = espDebugBreak;
+#endif
 }
 
 void espDescribeInstrumentation(txMachine *the)

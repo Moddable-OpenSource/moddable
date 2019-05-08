@@ -55,16 +55,16 @@ class SensorTagSensor {
 	initialize() {
 		if (this.configuration) {
 			if (!this.configuration_data)
-				this.configuration_data = Uint8Array.of(1);	// start measurements
+				this.configuration_data = 1;	// start measurements
 			let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-			characteristic.writeWithoutResponse(this.configuration_data.buffer);
+			characteristic.writeWithoutResponse(this.configuration_data);
 		}
 		if (this.period) {
 			let characteristic = this.service.findCharacteristicByUUID(this.period);
 			if (characteristic) {
 				if (!this.period_data)
-					this.period_data = Uint8Array.of(100);	// 1s (10ms * 100) read interval
-				characteristic.writeWithoutResponse(this.period_data.buffer);
+					this.period_data = 100;	// 1s (10ms * 100) read interval
+				characteristic.writeWithoutResponse(this.period_data);
 			}
 		}
 	}
@@ -74,37 +74,33 @@ class SensorTagSensor {
 			characteristic.enableNotifications();
 		}
 	}
-	onNotification(buffer) {
+	onNotification(value) {
 		debugger;
 	}
-	onValue(buffer) {
+	onValue(value) {
 		debugger;
 	}
 }
 
 class TemperatureSensor extends SensorTagSensor {
-	onNotification(buffer) {
-		let view = new DataView(buffer);
-		let value = view.getUint16(2, true);
-		let temperature = ((value / 128.0) * 1.8 + 32).toFixed(1) + ' ˚F';
+	onNotification(value) {
+		let temperature = ((value[1] / 128.0) * 1.8 + 32).toFixed(1) + ' ˚F';
 		trace(`[${this.name}] ${temperature}\n`);
 	}
 }
 
 class AccelerometerSensor extends SensorTagSensor {
-	onNotification(buffer) {
-		let view = new DataView(buffer);
-		let x = (view.getInt8(0) / 64).toFixed(2) + ' g';
-		let y = (view.getInt8(1) / 64).toFixed(2) + ' g';
-		let z = (view.getInt8(2) / 64).toFixed(2) + ' g';
+	onNotification(value) {
+		let x = (value[0] / 64).toFixed(2) + ' g';
+		let y = (value[1] / 64).toFixed(2) + ' g';
+		let z = (value[2] / 64).toFixed(2) + ' g';
 		trace(`[${this.name}] x: ${x} y: ${y} z: ${z}\n`);
 	}
 }
 
 class HumiditySensor extends SensorTagSensor {
-	onNotification(buffer) {
-		let view = new DataView(buffer);
-		let rawH = view.getUint16(2, true) & ~0x0003;
+	onNotification(value) {
+		let rawH = value[1] & ~0x0003;
 		let humidity = (-6.0 + 125.0/65536 * rawH).toFixed(1) + ' %';
 		trace(`[${this.name}] ${humidity}\n`);
 	}
@@ -115,12 +111,11 @@ class MagnetometerSensor extends SensorTagSensor {
 		this.c = 2000 / 65536;
 		super.configure(dictionary);
 	}
-	onNotification(buffer) {
-		let view = new DataView(buffer);
+	onNotification(value) {
 		let c = this.c;
-		let x = (view.getInt16(0, true) * c).toFixed(2) + ' uT';
-		let y = (view.getInt16(2, true) * c).toFixed(2) + ' uT';
-		let z = (view.getInt16(4, true) * c).toFixed(2) + ' uT';
+		let x = (value[0] * c).toFixed(2) + ' uT';
+		let y = (value[1] * c).toFixed(2) + ' uT';
+		let z = (value[2] * c).toFixed(2) + ' uT';
 		trace(`[${this.name}] x: ${x} y: ${y} z: ${z}\n`);
 	}
 }
@@ -129,7 +124,7 @@ class BarometerSensor extends SensorTagSensor {
 	configure(dictionary) {
 		super.configure(dictionary);
 		let characteristic = this.service.findCharacteristicByUUID(this.configuration);
-		characteristic.writeWithoutResponse(this.configuration_data.buffer);
+		characteristic.writeWithoutResponse(this.configuration_data);
 		characteristic = this.service.findCharacteristicByUUID(this.calibration);
 		characteristic.readValue();
 	}
@@ -150,17 +145,12 @@ class BarometerSensor extends SensorTagSensor {
 		let pressure = (p_a / 100).toFixed(1) + ' hPa';
 		trace(`[${this.name}] pressure: ${pressure}\n`);
 	}
-	onValue(buffer) {
-		let view = new DataView(buffer);
-		let calibration_data = this.calibration_data = new Uint16Array(8);
-		for (let i = 0; i < 4; ++i)
-			calibration_data[i] = view.getUint16(i * 2, true);
-		for (let i = 4; i < 8; ++i)
-			calibration_data[i] = view.getUint16(i * 2, true);
+	onValue(value) {
+		this.calibration_data = value;
 
 		// enable measurements
 		let ch = this.service.findCharacteristicByUUID(this.configuration);
-		ch.writeWithoutResponse(Uint8Array.of(0x01).buffer);
+		ch.writeWithoutResponse(1);
 		
 		// enable notifications
 		ch = this.service.findCharacteristicByUUID(this.data);
@@ -174,19 +164,17 @@ class GyroscopeSensor extends SensorTagSensor {
 		this.c = 500 / 65536;
 		super.configure(dictionary);
 	}
-	onNotification(buffer) {
-		let view = new DataView(buffer);
+	onNotification(value) {
 		let c = this.c;
-		let x = (view.getInt16(0, true) * c).toFixed(2) + ' ˚/s';
-		let y = (view.getInt16(2, true) * c).toFixed(2) + ' ˚/s';
-		let z = (view.getInt16(4, true) * c).toFixed(2) + ' ˚/s';
+		let x = (value[0] * c).toFixed(2) + ' ˚/s';
+		let y = (value[1] * c).toFixed(2) + ' ˚/s';
+		let z = (value[2] * c).toFixed(2) + ' ˚/s';
 		trace(`[${this.name}] x: ${x} y: ${y} z: ${z}\n`);
 	}
 }
 
 class KeysSensor extends SensorTagSensor {
-	onNotification(buffer) {
-		let value = new Uint8Array(buffer)[0];
+	onNotification(value) {
 		let right = (value & 1 ? 'pressed' : 'off');
 		let left = (value & 2 ? 'pressed' : 'off');
 		trace(`[${this.name}] left: ${left} right: ${right}\n`);
@@ -227,7 +215,7 @@ const SERVICES = {
 	    constructor: BarometerSensor,
 	    data: uuid`F000AA41-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA42-0451-4000-B000-000000000000`,
-		configuration_data: Uint8Array.of(0x02),
+		configuration_data: 0x02,
 	    period: uuid`F000AA44-0451-4000-B000-000000000000`,
 	    calibration: uuid`F000AA43-0451-4000-B000-000000000000`,
 	},
@@ -236,7 +224,7 @@ const SERVICES = {
 	    constructor: GyroscopeSensor,
 	    data: uuid`F000AA51-0451-4000-B000-000000000000`,
 	    configuration: uuid`F000AA52-0451-4000-B000-000000000000`,
-		configuration_data: Uint8Array.of(0x07),	// Enable X, Y and Z
+		configuration_data: 0x07,	// Enable X, Y and Z
 	    period: uuid`F000AA53-0451-4000-B000-000000000000`,
 	},
 	"keys": {
@@ -283,23 +271,23 @@ class SensorTag extends BLEClient {
 		else
 			this.sensors[this.index].service.discoverAllCharacteristics();
 	}
-	onCharacteristicValue(characteristic, buffer) {
+	onCharacteristicValue(characteristic, value) {
 		let sensors = this.sensors;
 		for (let i = 0; i < sensors.length; ++i) {
 			let sensor = sensors[i];
 			if (sensor.service.findCharacteristicByUUID(characteristic.uuid)) {
-				sensor.driver.onValue.call(sensor.driver, buffer);
+				sensor.driver.onValue.call(sensor.driver, value);
 				break;
 			}
 		}
 	}
-	onCharacteristicNotification(characteristic, buffer) {
+	onCharacteristicNotification(characteristic, value) {
 		let sensors = this.sensors;
 		let i = 0;
 		for (; i < sensors.length; ++i) {
 			let sensor = sensors[i];
 			if (sensor.service.findCharacteristicByUUID(characteristic.uuid)) {
-				sensor.driver.onNotification.call(sensor.driver, buffer);
+				sensor.driver.onNotification.call(sensor.driver, value);
 				break;
 			}
 		}

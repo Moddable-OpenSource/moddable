@@ -47,10 +47,10 @@ class UARTServer extends BLEServer {
 			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID128List: [uuid`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`]}
 		});
 	}
-	onCharacteristicWritten(params) {
-		this.onRX(params);
+	onCharacteristicWritten(characteristic, value) {
+		this.onRX(value);
 	}
-	onRX(params) {
+	onRX(value) {
 	}
 }
 Object.freeze(UARTServer.prototoype);

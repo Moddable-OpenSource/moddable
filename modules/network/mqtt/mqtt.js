@@ -28,8 +28,7 @@ import Timer from "timer";
  * want to. Currently provides callbacks only for connection-ready, messages received on subscribed
  * channels, and closing.
  *
- * Currently supports only MQTT over websockets; native/direct connections are not currently
- * supported.
+ * Supports MQTT over websockets and direct socket connections
  *
  *     import {Client} from "mqtt";
  *     let client = new Client({host: hostname, port: port, path: "/", id: "myclient"});
@@ -167,7 +166,7 @@ export default class Client {
 					parse.flags = buffer[position] & 0x0F;
 					parse.code = buffer[position] & 0xF0;
 					if ((0x00 === parse.code) || (0xF0 === parse.code))
-						throw new Error("invalid code");
+						return this.fail("invalid code");
 
 					position += 1;
 					parse.state = 1;
@@ -191,7 +190,7 @@ export default class Client {
 
 				case 4:
 					if (buffer[position] & 0x80)
-						throw new Error("bad data");
+						return this.fail("bad data");
 					parse.length += (buffer[position++] & 0x7F) << 21;
 					parse.state = parse.code;
 					break;
@@ -206,7 +205,7 @@ export default class Client {
 					parse.topic = buffer[position++];
 					parse.length -= parse.topic + 2;
 					if (0 === parse.topic)
-						throw new Error("empty topic - ?!?");
+						return this.fail("empty topic");
 					parse.topic = new Uint8Array(parse.topic);
 					parse.topic.position = 0;
 					parse.state = 0x32;
@@ -259,7 +258,7 @@ export default class Client {
 				// CONNACK
 				case 0x20:
 					if (2 !== parse.length)
-						throw new Error("unexpected length");
+						return this.fail("unexpected length");
 					position += 1;	// connect acknowledge flags
 					parse.length -= 1;
 					parse.state = 0x21;
@@ -309,7 +308,8 @@ export default class Client {
 					break;
 
 				default:
-					throw new Error("bad parse state");
+					this.fail("bad parse state");
+					break;
 			}
 		}
 
@@ -356,15 +356,11 @@ export default class Client {
 	}
 	dispatch(msg) {
 		if (1 === this.state) {
-			if (msg.code != CONNACK) {
-				trace(`WARNING: received message type '${flag}' when expecting CONNACK\n`);
-				return;
-			}
+			if (msg.code !== CONNACK)
+				return this.fail(`received message type '${flag}' when expecting CONNACK`);
 
-			if (msg.returnCode) {
-				trace(`server rejected mqtt request with code ${msg.returnCode}\n`);
-				return;
-			}
+			if (msg.returnCode)
+				return this.fail(`server rejected mqtt request with code ${msg.returnCode}`);
 
 			this.state = 2;
 			try {
@@ -385,7 +381,7 @@ export default class Client {
 				break;
 			default:
 				if (msg.code)
-					trace(`received unhandled or no-op message type '${msg.code}'\n`);
+					this.fail(`received unhandled or no-op message type '${msg.code}'`);
 				break;
 		}
 
@@ -413,10 +409,14 @@ export default class Client {
 
 		if ((this.last + (this.timeout + (this.timeout >> 1))) > now)
 			this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
-		else {	// timed out after 1.5x waiting
+		else
+			this.fail("time out"); // timed out after 1.5x waiting
+	}
+	fail(msg = "") {
+		trace("MQTT FAIL: ", msg, "\n");
+		if (this.onClose)
 			this.onClose();
-			this.close();
-		}
+		this.close();
 	}
 }
 Object.freeze(Client.prototype);
@@ -440,13 +440,13 @@ function ws_callback(state, message) {
 			return this.received(message);
 
 		case 4: // websocket closed
-			this.onClose();
 			delete this.ws;
+			this.onClose();
 			this.close();
 			break;
 
 		default:
-			trace(`ERROR: unhandled websocket state ${state}\n`);
+			this.fail(`unhandled websocket state ${state}`);
 			break;
 	}
 }
@@ -467,12 +467,11 @@ function socket_callback(state, message) {
 
 		default:	
 			if (state < 0) {
-				this.onClose();
 				delete this.ws;
-				this.close();
+				this.fail(`socket error ${state}`);
 			}
 			else
-				trace(`ERROR: unhandled socket state ${state}\n`);
+				this.fail(`unhandled socket state ${state}`);
 			break;
 	}
 }

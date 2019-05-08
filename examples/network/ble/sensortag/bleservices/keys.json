@@ -1,0 +1,11 @@
+{
+	"service": {
+		"uuid": "FFE0",
+		"characteristics": {
+			"keys": {
+				"uuid": "FFE1",
+				"type": "Uint8",
+			},
+		}
+	}
+}

@@ -317,6 +317,8 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
+	if (!gBLE)
+		return;
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 	xsEndHost(gBLE->the);

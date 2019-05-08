@@ -9,4 +9,9 @@
 			"./hidkeyboard",
 		]
 	},
+	"ble":{
+		"*": [
+			"./bleservices/*",
+		],
+	},
 }

@@ -166,7 +166,7 @@ function callback(message, value) {
 	if (3 === message) {	// safe to write more data
 		if (2 === this.state) {
 			if (true === this.body) {
-				let body = this.callback(0, socket.write());
+				let body = this.callback(Request.requestFragment, socket.write());
 				if (undefined !== body) {
 					socket.write(body);
 					return;
@@ -205,7 +205,7 @@ function callback(message, value) {
 			this.total = undefined;		// total number of bytes expected (content-length)
 			this.chunk = undefined;		// bytes remaining in this chunk (undefined if not chunked)
 
-			this.callback(1, parseInt(status[1]));
+			this.callback(Request.status, parseInt(status[1]));
 		}
 
 		if (4 === this.state) {		// receiving response headers
@@ -224,10 +224,10 @@ function callback(message, value) {
 					return;
 				}
 
-				if ("\r\n" === line) {		// empty line is end of headers
-					this.callback(3);		// all response headers received
+				if ("\r\n" === line) {							// empty line is end of headers
+					this.callback(Request.headersComplete);		// all response headers received
 					delete this.line;
-					this.state = 5;			// advance to receiving response headers state
+					this.state = 5;								// advance to receiving response headers state
 
 					if (this.response)
 						this.buffers = [];	// array to hold response fragments
@@ -247,7 +247,7 @@ function callback(message, value) {
 				let position = line.indexOf(":");
 				let name = line.substring(0, position).trim().toLowerCase();
 				let data = line.substring(position + 1).trim();
-				this.callback(2, name, data);		// one received header
+				this.callback(Request.header, name, data);		// one received header
 
 				if ("content-length" === name)
 					this.total = parseInt(data);
@@ -306,7 +306,7 @@ function callback(message, value) {
 							this.chunk -= count;
 						}
 						else {
-							this.callback(4, count);
+							this.callback(Request.responseFragment, count);
 							this.read(null);		// skip whatever the callback didn't read
 						}
 					}
@@ -324,7 +324,7 @@ function callback(message, value) {
 				if (this.response)
 					this.buffers.push(socket.read(this.response, count));
 				else
-					this.callback(4, count);
+					this.callback(Request.responseFragment, count);
 				if (0 === this.total) {
 					delete this.total;
 					done.call(this);
@@ -335,7 +335,7 @@ function callback(message, value) {
 				if (this.response)
 					this.buffers.push(socket.read(this.response));
 				else
-					this.callback(4, socket.read());
+					this.callback(Request.responseFragment, socket.read());
 			}
 		}
 	}
@@ -377,7 +377,7 @@ function done(error = false) {
 	}
 
 	try {
-		this.callback(error ? -2 : 5, data);
+		this.callback(error ? Request.error : Request.responseComplete, data);
 	}
 	finally {
 		this.close();
@@ -430,7 +430,7 @@ export class Server {
 			request.state = 1;						// already connected socket
 			request.callback = this.callback;		// transfer server.callback to request.callback
 			this.connections.push(request);
-			request.callback(1);					// tell app we have a new connection
+			request.callback(Server.connection);	// tell app we have a new connection
 		};
 	}
 
@@ -482,7 +482,7 @@ function server(message, value, etc) {
 					if ("\r\n" == line) {		// empty line is end of headers
 						delete this.line;
 
-						let request = this.callback(4);		// headers complete... let's see what to do with the request body
+						let request = this.callback(Server.headersComplete);		// headers complete... let's see what to do with the request body
 						if (false === request)
 							delete this.total;				// ignore request body and just send response
 
@@ -518,7 +518,7 @@ function server(message, value, etc) {
 						line.length -= 1;		// remove "HTTP/1.1"
 						let method = line.shift();
 						let path = line.join(" ");	// re-aassemble path
-						this.callback(2, path, method);
+						this.callback(Server.status, path, method);
 
 						this.total = undefined;
 						this.state = 2;
@@ -538,7 +538,7 @@ function server(message, value, etc) {
 								throw new Error("chunked request body not implemented");
 						}
 
-						this.callback(3, name, data);
+						this.callback(Server.header, name, data);
 					}
 				}
 			}
@@ -548,7 +548,7 @@ function server(message, value, etc) {
 				this.total -= count;
 
 				if (true === this.request)
-					this.callback(5, socket.read());	// callback reads the data
+					this.callback(Server.requestFragment, socket.read());	// callback reads the data
 				else
 					this.buffers.push(socket.read(this.request, count));		// http server reads the data
 
@@ -573,7 +573,7 @@ function server(message, value, etc) {
 
 					this.state = 7;
 
-					this.callback(6, data);		// end of request body
+					this.callback(Server.requestComplete, data);		// end of request body
 
 					message = 3;
 					value = socket.write();
@@ -585,7 +585,7 @@ function server(message, value, etc) {
 			let first;
 
 			if (7 === this.state) {
-				let response = this.callback(8);		// prepare response
+				let response = this.callback(Server.prepareResponse);		// prepare response
 
 				let parts = [];
 				let status = (!response || (undefined === response.status)) ? 200 : response.status;
@@ -636,7 +636,7 @@ function server(message, value, etc) {
 			if (8 === this.state) {
 				let body = this.body;
 				if (true === body)
-					body = this.callback(9, socket.write() - ((2 & this.flags) ? 8 : 0));		// account for chunk overhead
+					body = this.callback(Server.responseFragment, socket.write() - ((2 & this.flags) ? 8 : 0));		// account for chunk overhead
 
 				let count = 0;
 				if (undefined !== body)
@@ -668,7 +668,7 @@ function server(message, value, etc) {
 			}
 			if (10 === this.state) {
 				try {
-					this.callback(10);
+					this.callback(Server.responseComplete);
 				}
 				finally {
 					this.server.connections.splice(this.server.connections.indexOf(this), 1);
@@ -684,7 +684,7 @@ function server(message, value, etc) {
 
 	if (-1 === message) {		// disconnected
 		try {
-			this.callback(-1);
+			this.callback(Server.error);
 		}
 		finally {
 			this.server.connections.splice(this.server.connections.indexOf(this), 1);

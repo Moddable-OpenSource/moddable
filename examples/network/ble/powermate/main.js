@@ -40,8 +40,8 @@ class PowerMate extends BLEClient {
 		if (characteristics.length)
 			characteristics[0].enableNotifications();
 	}
-	onCharacteristicNotification(characteristic, buffer) {
-		let state, value = new Uint8Array(buffer)[0];
+	onCharacteristicNotification(characteristic, value) {
+		let state;
 		if (104 == value)
 			state = "right";
 		else if (103 == value)
@@ -52,7 +52,7 @@ class PowerMate extends BLEClient {
 			state = "hold";
 		else
 			state = "idle";
-		trace(`state: ${state}\n`);
+		trace(`${characteristic.name} state: ${state}\n`);
 	}
 	onDisconnected() {
 		this.startScanning();

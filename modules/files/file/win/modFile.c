@@ -294,5 +294,23 @@ void xs_file_system_config(xsMachine *the)
 
 void xs_file_system_info(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	ULARGE_INTEGER freeSpace, totalSpace;
+	ULONG usedSpace;
+	GetDiskFreeSpaceEx(NULL, &freeSpace, &totalSpace, NULL);
+	xsResult = xsmcNewObject();
+	xsmcVars(1);
+
+	// Stub implementation when values are > 32 bits
+	if (0 == freeSpace.HighPart && 0 == totalSpace.HighPart) {
+		usedSpace = totalSpace.LowPart - freeSpace.LowPart;
+		xsmcSetInteger(xsVar(0), totalSpace.LowPart);
+		xsmcSet(xsResult, xsID_total, xsVar(0));
+	}
+	else {
+		usedSpace = -1;
+		xsmcSetInteger(xsVar(0), -1);
+		xsmcSet(xsResult, xsID_total, xsVar(0));
+	}
+	xsmcSetInteger(xsVar(0), usedSpace);
+	xsmcSet(xsResult, xsID_used, xsVar(0));
 }

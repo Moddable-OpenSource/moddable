@@ -18,16 +18,16 @@ let ws = new Client({host: "echo.websocket.org"});
 
 ws.callback = function(message, value) {
 	switch (message) {
-		case 1:
+		case Client.connect:
 			trace("socket connect\n");
 			break;
 
-		case 2:
+		case Client.handshake:
 			trace("websocket handshake success\n");
 			this.write(JSON.stringify({count: 1, toggle: true}));
 			break;
 
-		case 3:
+		case Client.receive:
 			trace(`websocket message received: ${value}\n`);
 			value = JSON.parse(value);
 			value.count += 1;
@@ -36,7 +36,7 @@ ws.callback = function(message, value) {
 			this.write(JSON.stringify(value));
 			break;
 
-		case 4:
+		case Client.disconnect:
 			trace("websocket close\n");
 			break;
 	}

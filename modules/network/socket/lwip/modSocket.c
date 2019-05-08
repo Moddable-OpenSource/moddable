@@ -472,7 +472,7 @@ static void socketUpUseCount(xsMachine *the, xsSocket xss)
 	modCriticalSectionEnd();
 }
 
-static void socketDownUseCount(xsMachine *the, xsSocket xss)
+static int socketDownUseCount(xsMachine *the, xsSocket xss)
 {
 	xsDestructor destructor;
 
@@ -480,7 +480,7 @@ static void socketDownUseCount(xsMachine *the, xsSocket xss)
 	int8 useCount = --xss->useCount;
 	if (useCount > 0) {
 		modCriticalSectionEnd();
-		return;
+		return 0;
 	}
 
 	xss->pending |= kPendingClose;
@@ -489,6 +489,7 @@ static void socketDownUseCount(xsMachine *the, xsSocket xss)
 	xsmcSetHostData(xss->obj, NULL);
 	xsForget(xss->obj);
 	(*destructor)(xss);
+	return 1;
 }
 
 void xs_socket(xsMachine *the)
@@ -514,8 +515,6 @@ void xs_socket(xsMachine *the)
 
 		for (i = 0; i < kListenerPendingSockets; i++) {
 			if (xsl->accept[i]) {
-				uint8 j;
-
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
@@ -531,6 +530,8 @@ void xs_socket(xsMachine *the)
 
 				xss->skt->so_options |= SOF_REUSEADDR;
 				configureSocketTCP(the, xss);
+
+				tcp_recv(xss->skt, didReceive);
 
 				socketUpUseCount(the, xss);
 
@@ -712,11 +713,6 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	for (i = 0; i < kReadQueueLength; i++) {
-		if (xss->reader[i])
-			pbuf_free_safe(xss->reader[i]);
-	}
-
 	if (xss->skt) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
@@ -732,6 +728,11 @@ void xs_socket_destructor(void *data)
 	if (xss->raw) {
 		raw_recv(xss->raw, NULL, NULL);
 		raw_remove(xss->raw);
+	}
+
+	for (i = 0; i < kReadQueueLength; i++) {
+		if (xss->reader[i])
+			pbuf_free_safe(xss->reader[i]);
 	}
 
 	forgetSocket(xss);
@@ -899,7 +900,8 @@ void xs_socket_write(xsMachine *the)
 			xsResult = xsInteger(0);
 			return;
 		}
-		xsUnknownError("write on closed socket");
+		xsTrace("write on closed socket\n");
+		return;
 	}
 
 	if (xss->udp) {
@@ -1332,7 +1334,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
-#ifndef __ets__
+#if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
 
@@ -1575,7 +1577,11 @@ static void listenerMsgNew(xsListener xsl)
 	}
 }
 
-//@@ maybe tcp_abort instead of tcp_close here - the netconn code suggests that is correct
+static err_t didReceiveWait(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
+{
+	return ERR_MEM;
+}
+
 err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 {
 	xsListener xsl = arg;
@@ -1616,7 +1622,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 	}
 
 	tcp_arg(xss->skt, xss);
-	tcp_recv(xss->skt, didReceive);
+	tcp_recv(xss->skt, didReceiveWait);
 	tcp_sent(xss->skt, didSend);
 	tcp_err(xss->skt, didError);
 
@@ -1692,8 +1698,10 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	if ((pending & kPendingAcceptListener) && !(xss->pending & kPendingClose))
 		listenerMsgNew((xsListener)xss);
 
-	if (pending & kPendingClose)
-		socketDownUseCount(xss->the, xss);
+	if (pending & kPendingClose) {
+		if (socketDownUseCount(xss->the, xss))
+			return;
+	}
 
 done:
 	socketDownUseCount(xss->the, xss);

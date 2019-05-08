@@ -118,9 +118,9 @@ export class MakeFile extends FILE {
 		if (tool.bleServicesFiles.length) {
 			this.echo(tool, "bles2gatt bleservices");
 			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/modBLEServer.c`);
+				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
 			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/modBLEServer.c`);
+				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
@@ -895,10 +895,16 @@ class ResourcesRule extends Rule {
 export class Tool extends TOOL {
 	constructor(argv) {
 		super(argv);
-		this.moddablePath = this.getenv("MODDABLE");
-		if (!this.moddablePath)
-			throw new Error("MODDABLE: variable not found!");
-
+		if (this.currentPlatform == "wasm") {
+			this.moddablePath = "/moddable";
+			this.createDirectory(this.moddablePath);
+			this.createDirectory(this.moddablePath + "/build");
+		}
+		else {
+			this.moddablePath = this.getenv("MODDABLE");
+			if (!this.moddablePath)
+				throw new Error("MODDABLE: variable not found!");
+		}
 		this.config = {};
 		this.debug = false;
 		this.environment = { "MODDABLE": this.moddablePath }
