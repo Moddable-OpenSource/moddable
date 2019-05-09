@@ -8,6 +8,7 @@
 		"username": "YOUR_USERNAME_HERE",
 		"feedKey": "YOUR_FEED_KEY_HERE",
 		"AIOKey": "YOUR_AIO_KEY_HERE",
+		"sntp": "pool.ntp.org",		
 	},
 	"modules": {
 		"*": [
@@ -22,8 +23,5 @@
 		"*": [
 			"$(MODULES)/crypt/data/ca170",
 		]
-	},
-	"config": {
-		"sntp": "pool.ntp.org",
 	},
 }
