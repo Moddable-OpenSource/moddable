@@ -21,14 +21,36 @@
 #include "xsesp.h"
 #include "modBLECommon.h"
 
+#include "nimble/ble.h"
+#include "host/ble_hs.h"
+#include "esp_bt.h"
+#include "esp_nimble_hci.h"
+
 static int16_t useCount = 0;
+
+static esp_err_t _esp_nimble_hci_and_controller_init(void)
+{
+    esp_err_t ret;
+
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
+    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+        return ret;
+    }
+
+    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BLE)) != ESP_OK) {
+        return ret;
+    }
+
+    return esp_nimble_hci_init();
+}
 
 int modBLEPlatformInitialize(void)
 {
 	if (0 != useCount++)
 		return 0;
 
-	esp_err_t err = esp_nimble_hci_and_controller_init();
+	esp_err_t err = _esp_nimble_hci_and_controller_init();
 	if (ESP_OK == err)
 		nimble_port_init();
 	

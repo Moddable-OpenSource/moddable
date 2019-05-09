@@ -21,7 +21,8 @@
 	"defines": {
 		"ble": {
 			"client": true,
-			"max_connections": 2
+			"max_connections": 2,
+			"nimble": true
 		}
 	},
 	"platforms": {

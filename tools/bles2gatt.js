@@ -25,6 +25,7 @@ class GATTFile {
 		this.tool = dictionary.tool;
 		this.client = dictionary.client;
 		this.server = dictionary.server;
+		this.nimble = dictionary.nimble;
 		this.file = dictionary.file;
 		this.services = dictionary.services;
 	}
@@ -65,14 +66,21 @@ class ESP32GATTFile extends GATTFile {
 		let options = [];
 		if (this.client || this.server) {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"y" });
-			options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
-			if (this.server) {
-				options.push({ name:"CONFIG_GATTS_ENABLE", value:"y" });
-				options.push({ name:"CONFIG_GATTC_ENABLE", value: (this.client ? "y" : "n") });
+			if (this.nimble) {
+				options.push({ name:"CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY", value:"y" });
+				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"y" });
+				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"n" });
 			}
-			if (this.client) {
-				options.push({ name:"CONFIG_GATTC_ENABLE", value:"y" });
-				options.push({ name:"CONFIG_GATTS_ENABLE", value: (this.server ? "y" : "n") });
+			else {
+				options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
+				if (this.server) {
+					options.push({ name:"CONFIG_GATTS_ENABLE", value:"y" });
+					options.push({ name:"CONFIG_GATTC_ENABLE", value: (this.client ? "y" : "n") });
+				}
+				if (this.client) {
+					options.push({ name:"CONFIG_GATTC_ENABLE", value:"y" });
+					options.push({ name:"CONFIG_GATTS_ENABLE", value: (this.server ? "y" : "n") });
+				}
 			}
 		}
 		else {
@@ -1019,6 +1027,9 @@ export default class extends TOOL {
 				case "-v":
 					this.server = true;
 					break;
+				case "-n":
+					this.nimble = true;
+					break;
 				case "-s":
 					argi++;	
 					if (argi >= argc)
@@ -1048,11 +1059,14 @@ export default class extends TOOL {
 		this.files.forEach((path, index) => {
 			services = services.concat(JSON.parse(this.readFileString(path)).service);
 		});
-		var dictionary = { tool:this, client:this.client, server:this.server, file, services };
+		var dictionary = { tool:this, client:this.client, server:this.server, nimble:this.nimble, file, services };
 		var gatt;
 		if ("esp32" == this.platform) {
 			dictionary.sdkconfig = this.sdkconfig;
-			gatt = new ESP32GATTFile(dictionary);
+			if (this.nimble)	// @@
+				gatt = new ESP32GATTFile(dictionary);
+			else
+				gatt = new ESP32GATTFile(dictionary);
 		}
 		else if ("gecko" == this.platform)
 			gatt = new GeckoGATTFile(dictionary);

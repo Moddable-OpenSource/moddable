@@ -103,11 +103,14 @@ export class MakeFile extends FILE {
 		let defines = tool.defines;
 		let client = false;
 		let server = false;
+		let nimble = false;
 		if (defines && ("ble" in defines)) {
 			if ("server" in defines.ble && true == defines.ble.server)
 				server = true;
 			if ("client" in defines.ble && true == defines.ble.client)
 				client = true;
+			if ("nimble" in defines.ble && true == defines.ble.nimble)
+				nimble = true;
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -129,6 +132,8 @@ export class MakeFile extends FILE {
 			this.write(" -c");
 		if (server)
 			this.write(" -v");
+		if (nimble)
+			this.write(" -n");
 		if ("esp32" == tool.platform) {
 			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
 			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
