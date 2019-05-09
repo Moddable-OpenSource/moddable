@@ -31,17 +31,6 @@
 
 //#include "mc.bleservices.c"
 
-#define LOG_GATTC 0
-#if LOG_GATTC
-	#define LOG_GATTC_EVENT(event) logGATTCEvent(event)
-	#define LOG_GATTC_MSG(msg) modLog(msg)
-	#define LOG_GATTC_INT(i) modLogInt(i)
-#else
-	#define LOG_GATTC_EVENT(event)
-	#define LOG_GATTC_MSG(msg)
-	#define LOG_GATTC_INT(i)
-#endif
-
 #define LOG_GAP 0
 #if LOG_GAP
 	#define LOG_GAP_EVENT(event) logGAPEvent(event)
@@ -74,9 +63,6 @@ struct modBLEConnectionRecord {
 	int16_t		conn_id;
 	
 	// char_name_table handles
-	
-	// registered notifications
-	modBLENotification notifications;
 };
 
 typedef struct {
@@ -99,6 +85,14 @@ typedef struct {
 	uint8_t isCharacteristic;
 	uint8_t data[1];
 } attributeReadDataRecord, *attributeReadData;
+
+typedef struct {
+	uint8_t isNotification;
+	uint16_t conn_id;
+	uint16_t handle;
+	uint16_t length;
+	uint8_t data[1];
+} attributeNotificationRecord, *attributeNotification;
 
 typedef struct {
 	uint16_t conn_id;
@@ -128,8 +122,8 @@ static void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length)
 
 static void nimble_host_task(void *param);
 static void ble_host_task(void *param);
-static void on_reset(int reason);
-static void on_sync(void);
+static void nimble_on_reset(int reason);
+static void nimble_on_sync(void);
 
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg);
@@ -154,13 +148,12 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
-	// Initialize platform Bluetooth modules
 	esp_err_t err = modBLEPlatformInitialize();
 	if (ESP_OK != err)
 		xsUnknownError("ble initialization failed");
 
-	ble_hs_cfg.reset_cb = on_reset;
-	ble_hs_cfg.sync_cb = on_sync;
+	ble_hs_cfg.reset_cb = nimble_on_reset;
+	ble_hs_cfg.sync_cb = nimble_on_sync;
 
 	nimble_port_freertos_init(ble_host_task);
 }
@@ -296,14 +289,14 @@ void ble_host_task(void *param)
 	nimble_host_task(param);
 }
 
-void on_reset(int reason)
+void nimble_on_reset(int reason)
 {
 	// fatal controller reset - all connections have been closed
 	if (gBLE)
 		xs_ble_client_close(gBLE->the);
 }
 
-void on_sync(void)
+void nimble_on_sync(void)
 {
 	ble_hs_util_ensure_addr(0);
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
@@ -609,7 +602,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		
 	if (-1 != desc->conn_handle) {
 		if (-1 != connection->conn_id) {
-			LOG_GATTC_MSG("Ignoring duplicate connect event");
+			LOG_GAP_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
 		connection->conn_id = desc->conn_handle;
@@ -622,9 +615,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
-#if LOG_GATTC
-		LOG_GATTC_MSG("BLE_GAP_EVENT_CONNECT failed");
-#endif
+		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
 		modBLEConnectionRemove(connection);
 		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 	}
@@ -640,7 +631,7 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	
 	// ignore multiple disconnects on same connection
 	if (!connection) {
-		LOG_GATTC_MSG("Ignoring duplicate disconnect event");
+		LOG_GAP_MSG("Ignoring duplicate disconnect event");
 		goto bail;
 	}	
 	
@@ -783,6 +774,24 @@ static void notificationEnabledEvent(void *the, void *refcon, uint8_t *message, 
 	xsEndHost(gBLE->the);
 }
 
+static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	attributeNotification notification = (attributeNotification)refcon;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(notification->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), notification->data, notification->length);
+	xsmcSetInteger(xsVar(2), notification->handle);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+	c_free(notification);
+	xsEndHost(gBLE->the);
+}
+
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg)
 {
 	int rc = 0;
@@ -919,6 +928,19 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 		case BLE_GAP_EVENT_DISCONNECT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&event->disconnect.conn, sizeof(event->disconnect.conn), disconnectEvent, NULL);
 			break;
+		case BLE_GAP_EVENT_NOTIFY_RX: {
+			uint16_t length = sizeof(attributeNotificationRecord) + event->notify_rx.om->om_len;
+			attributeNotification notification = (attributeNotification)c_malloc(length);
+			if (NULL != notification) {
+				notification->isNotification = !event->notify_rx.indication;
+				notification->conn_id = event->notify_rx.conn_handle;
+				notification->handle = event->notify_rx.attr_handle;
+				notification->length = event->notify_rx.om->om_len;
+				c_memmove(notification->data, event->notify_rx.om->om_data, event->notify_rx.om->om_len);
+				modMessagePostToMachine(gBLE->the, NULL, 0, notificationEvent, notification);
+			}
+			break;
+		}
 		default:
 			break;
     }

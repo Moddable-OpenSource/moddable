@@ -25,9 +25,9 @@
 		"esp32": {
 			"modules": {
 				"*": [
-					"$(MODULES)/network/ble/esp32/modBLEServer",
-					"$(MODULES)/network/ble/esp32/modBLESM",
-					"$(MODULES)/network/ble/esp32/modBLECommon",
+					"$(MODULES)/network/ble/nimble/modBLEServer",
+					"$(MODULES)/network/ble/nimble/modBLESM",
+					"$(MODULES)/network/ble/nimble/modBLECommon",
 				]
 			},
 		},
