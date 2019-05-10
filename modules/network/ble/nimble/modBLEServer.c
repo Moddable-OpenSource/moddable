@@ -30,7 +30,7 @@
 #include "esp_nimble_hci.h"
 #include "services/gap/ble_svc_gap.h"
 
-//#include "mc.bleservices.c"
+#include "mc.bleservices.c"
 
 #define DEVICE_FRIENDLY_NAME "Moddable"
 
@@ -101,6 +101,16 @@ void xs_ble_server_initialize(xsMachine *the)
 	ble_svc_gap_init();
 	ble_svc_gatt_init();
 
+	if (0 != service_count) {
+		int rc;
+		rc = ble_gatts_count_cfg(gatt_svr_svcs);
+		if (0 != rc)
+			xsUnknownError("ble invalid services definition");
+		rc = ble_gatts_add_svcs(gatt_svr_svcs);
+		if (0 != rc)
+			xsUnknownError("ble failed to add services");
+	}
+
 	ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
 	ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
 
@@ -123,6 +133,10 @@ void xs_ble_server_destructor(void *data)
 	if (!ble) return;
 	
 	ble->terminating = true;
+	if (-1 != ble->conn_id)
+		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
+	if (0 != service_count)
+		ble_gatts_reset();
 	c_free(ble);
 	gBLE = NULL;
 	
@@ -176,6 +190,13 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
+	struct os_mbuf *om;
+
+	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), sizeof(xsGetArrayBufferLength(xsArg(2))));
+	if (notify)
+		ble_gattc_notify_custom(gBLE->conn_id, handle, om);
+	else
+		ble_gattc_indicate_custom(gBLE->conn_id, handle, om);
 }
 
 void xs_ble_server_set_security_parameters(xsMachine *the)
@@ -198,6 +219,13 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+	int rc;
+	rc = ble_gatts_count_cfg(gatt_svr_svcs);
+	if (0 != rc)
+		xsUnknownError("invalid services definition");
+	rc = ble_gatts_add_svcs(gatt_svr_svcs);
+	if (0 != rc)
+		xsUnknownError("failed to add services");
 }
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -338,6 +366,10 @@ void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length)
 		*length = 16;
 		c_memmove(buffer, uuid->u128.value, *length);
 	}
+}
+
+static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
 }
 
 void logGAPEvent(struct ble_gap_event *event) {

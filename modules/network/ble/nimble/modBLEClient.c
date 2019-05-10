@@ -29,7 +29,7 @@
 #include "host/ble_uuid.h"
 #include "esp_nimble_hci.h"
 
-//#include "mc.bleservices.c"
+#include "mc.bleservices.c"
 
 #define LOG_GAP 0
 #if LOG_GAP
@@ -41,13 +41,6 @@
 	#define LOG_GAP_MSG(msg)
 	#define LOG_GAP_INT(i)
 #endif
-
-typedef struct modBLENotificationRecord modBLENotificationRecord;
-typedef modBLENotificationRecord *modBLENotification;
-
-struct modBLENotificationRecord {
-	struct modBLENotificationRecord *next;
-};
 
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
 typedef modBLEConnectionRecord *modBLEConnection;
@@ -63,6 +56,7 @@ struct modBLEConnectionRecord {
 	int16_t		conn_id;
 	
 	// char_name_table handles
+	uint16_t handles[char_name_count];
 };
 
 typedef struct {
@@ -341,11 +335,6 @@ void modBLEConnectionRemove(modBLEConnection connection)
 				gBLE->connections = walker->next;
 			else
 				prev->next = walker->next;
-			while (connection->notifications) {
-				modBLENotification notification = connection->notifications;
-				connection->notifications = notification->next;
-				c_free(notification);
-			}
 			c_free(connection);
 			break;
 		}
@@ -402,13 +391,6 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	else {
 		ble_gattc_disc_all_svcs(conn_id, nimble_service_event, NULL);
 	}
-}
-
-static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t *uuid, uint16_t handle)
-{
-	int result = -1;
-bail:
-	return result;
 }
 
 void xs_gatt_service_discover_characteristics(xsMachine *the)
@@ -571,6 +553,29 @@ void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length)
 	}
 }
 
+static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_any_t *uuid, uint16_t handle)
+{
+	int result = -1;
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+			const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+			if (0 == ble_uuid_cmp((const ble_uuid_t*)uuid, (const ble_uuid_t*)characteristic->uuid)) {
+				for (int k = 0; k < char_name_count; ++k) {
+					const char_name_table *char_name = &char_names[k];
+					if (service_index == char_name->service_index && att_index == char_name->att_index) {
+						connection->handles[k] = handle;
+						result = k;
+						goto bail;
+					}
+				}
+			}
+		}
+	}
+bail:
+	return result;
+}
+
 static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 }
@@ -696,6 +701,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 	if (0 != csr->chr.val_handle) {
 		uint16_t length;
 		uint8_t buffer[16];
+		int index = modBLEConnectionSaveAttHandle(connection, &csr->chr.uuid, csr->chr.val_handle);
 		uuidToBuffer(buffer, &csr->chr.uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
@@ -705,6 +711,12 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	}
 	else {
@@ -724,6 +736,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 	if (0 != dsr->dsc.handle) {
 		uint16_t length;
 		uint8_t buffer[16];
+		int index = modBLEConnectionSaveAttHandle(connection, &dsr->dsc.uuid, dsr->dsc.handle);
 		uuidToBuffer(buffer, &dsr->dsc.uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
@@ -731,6 +744,12 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 		xsmcSetInteger(xsVar(2), dsr->dsc.handle);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		if (-1 != index) {
+			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+			xsmcSet(xsVar(0), xsID_name, xsVar(2));
+			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+		}
 		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	}
 	else {
