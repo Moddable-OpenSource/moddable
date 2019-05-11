@@ -22,18 +22,6 @@ const bus = new OneWire({
   pin: config.onewire.pin
 });
 
-
-import Digital from "pins/digital";
-let count = 0;
-
-function echo() {
-    //trace('echo....\n');
-    Digital.write(16, count & 1);
-    count++;
-}
-
-Timer.repeat(echo, 500);
-
 let devices = bus.search(); // search returns an array of device IDs
 
 trace('found ', devices.length, '\n');

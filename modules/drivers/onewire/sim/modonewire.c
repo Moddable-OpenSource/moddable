@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
- * Copyright (c) 2019  Wilberforce
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -24,23 +23,11 @@
 #include "mc.xs.h" // for xsID_ values
 #include "mc.defines.h"
 
-#include "owb.h"
-#include "owb_rmt.h"
-
-#ifndef MODDEF_ONEWIRE_RMT_TX_CHANNEL
-#define MODDEF_ONEWIRE_RMT_TX_CHANNEL (RMT_CHANNEL_3)
-#endif
-
-#ifndef MODDEF_ONEWIRE_RMT_RX_CHANNEL
-#define MODDEF_ONEWIRE_RMT_RX_CHANNEL (RMT_CHANNEL_2)
-#endif
-
 typedef struct
 {
   xsSlot obj;
   uint8_t pin;
-  owb_rmt_driver_info rmt_driver_info;
-  OneWireBus *owb;
+  uint8_t val;
 } modOneWireRecord, *modOneWire;
 
 void xs_onewire_destructor(void *data)
@@ -48,7 +35,6 @@ void xs_onewire_destructor(void *data)
   modOneWire onewire = data;
   if (NULL == onewire)
     return;
-  owb_uninitialize(onewire->owb);
   c_free(onewire);
 }
 
@@ -68,15 +54,13 @@ void xs_onewire(xsMachine *the)
 
   xsmcGet(xsVar(0), xsArg(0), xsID_pin);
   pin = xsmcToInteger(xsVar(0));
-
   onewire->obj = xsThis;
   onewire->pin = pin;
+  onewire->val = 100;
+
+  // owb_rmt_initialize
 
   xsRemember(onewire->obj);
-
-  // Create a 1-Wire bus, using the RMT timeslot driver
-  onewire->owb = owb_rmt_initialize(&onewire->rmt_driver_info, onewire->pin, MODDEF_ONEWIRE_RMT_TX_CHANNEL, MODDEF_ONEWIRE_RMT_RX_CHANNEL);
-  owb_use_crc(onewire->owb, true); // enable CRC check for ROM code
 
   xsmcSetHostData(xsThis, onewire);
 }
@@ -89,69 +73,39 @@ void xs_onewire_close(xsMachine *the)
   xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_onewire_read(xsMachine *the)
-{
-  modOneWire onewire = xsmcGetHostData(xsThis);
-
-  int argc = xsmcArgc;
-
-  if (argc == 0) // Read a byte
-  {
-    uint8_t value = 0;
-    owb_read_byte(onewire->owb, &value);
-    xsmcSetInteger(xsResult, value);
-  }
-  else
-  {
-    int count = xsmcToInteger(xsArg(0));
-    xsResult = xsArrayBuffer(NULL, count);
-    uint8_t *buffer = xsmcToArrayBuffer(xsResult);
-    owb_read_bytes(onewire->owb, (uint8_t *)buffer, count);
-  }
-}
-
 void xs_onewire_write(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
   uint8_t value = xsmcToInteger(xsArg(0));
   if ((value < 0) || (value > 255))
     xsRangeError("bad value");
-  owb_write_byte(onewire->owb, value);
+  onewire->val = value;
 }
 
 void xs_onewire_select(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
-  OneWireBus_ROMCode *rom_code = xsmcToArrayBuffer(xsArg(0));
-  bool present = false;
-  owb_reset(onewire->owb, &present);
-  owb_write_byte(onewire->owb, OWB_ROM_MATCH);
-  owb_write_rom_code(onewire->owb, *rom_code);
 }
 
 void xs_onewire_search(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  OneWireBus_SearchState search_state = {0};
-  bool found = false;
-  owb_search_first(onewire->owb, &search_state, &found);
   xsmcVars(1);
   xsResult = xsNewArray(0);
 
-  while (found)
-  {
-    xsCall1(xsResult, xsID_push, xsArrayBuffer(&search_state.rom_code.bytes, 8));
-    owb_search_next(onewire->owb, &search_state, &found);
-  }
+  uint8_t buffer[] = {0x28, 0xCA, 0x00, 0xA9, 0x04, 0x00, 0x00, 0xEA};
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
+
+  buffer[6] = 0x78;
+  buffer[3] = 0x92;
+  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
 }
 
 void xs_onewire_isPresent(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  OneWireBus_SearchState search_state = {0};
-  bool found = false;
   uint8_t *id;
 
   if (8 != xsGetArrayBufferLength(xsArg(0)))
@@ -159,26 +113,44 @@ void xs_onewire_isPresent(xsMachine *the)
 
   id = xsmcToArrayBuffer(xsArg(0));
 
-  owb_search_first(onewire->owb, &search_state, &found);
-  while (found)
+  if (0 == rand() % 2)
   {
-    if (0 == memcmp(search_state.rom_code.bytes, id, 8))
-    {
-      xsResult = xsTrue;
-      return;
-    }
-    owb_search_next(onewire->owb, &search_state, &found);
+    xsResult = xsTrue;
+    return;
   }
-
   xsResult = xsFalse;
 }
 
 void xs_onewire_reset(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
-  bool present = false;
-  owb_reset(onewire->owb, &present);
-  xsmcSetBoolean(xsResult, present);
+  onewire->val = 0;
+  xsmcSetInteger(xsResult, 1);
+}
+
+/**
+ * @brief 1-Wire 8-bit CRC lookup.
+ * @param[in] crc Starting CRC value. Pass in prior CRC to accumulate.
+ * @param[in] data Byte to feed into CRC.
+ * @return Resultant CRC value.
+  Dow-CRC using polynomial X^8 + X^5 + X^4 + X^0
+ Tiny 2x16 entry CRC table created by Arjen Lentz
+ See http://lentz.com.au/blog/calculating-crc-with-a-tiny-32-entry-lookup-table
+ */
+static const uint8_t dscrc2x16_table[] = {
+	0x00, 0x5E, 0xBC, 0xE2, 0x61, 0x3F, 0xDD, 0x83,
+	0xC2, 0x9C, 0x7E, 0x20, 0xA3, 0xFD, 0x1F, 0x41,
+	0x00, 0x9D, 0x23, 0xBE, 0x46, 0xDB, 0x65, 0xF8,
+	0x8C, 0x11, 0xAF, 0x32, 0xCA, 0x57, 0xE9, 0x74
+};
+
+static uint8_t _calc_crc_block(uint8_t crc, const uint8_t *buffer, size_t len)
+{
+	while (len--) {
+		crc = *buffer++ ^ crc;  // just re-using crc as intermediate
+		crc = (dscrc2x16_table[crc & 0x0f]) ^ (dscrc2x16_table[16 + ((crc >> 4) & 0x0f)]);
+	}
+  return crc;
 }
 
 void xs_onewire_crc(xsMachine *the)
@@ -190,11 +162,47 @@ void xs_onewire_crc(xsMachine *the)
   
   if (argc > 1)
   {
-    size_t arg_len = xsmcToInteger(xsArg(1));
+    uint8_t arg_len = xsmcToInteger(xsArg(1));
     if (arg_len < len)
       len = arg_len;
   }
 
-  crc = owb_crc8_bytes(crc, src, len);
+  crc = _calc_crc_block(crc, src, len);
   xsmcSetInteger(xsResult, crc);
+}
+
+void xs_onewire_read(xsMachine *the)
+{
+  modOneWire onewire = xsmcGetHostData(xsThis);
+
+  int argc = xsmcToInteger(xsArgc);
+  if (argc == 0)
+  {
+
+    int count = 1;
+    xsmcSetInteger(xsResult, count);
+  }
+  else
+  {
+
+    /* Example reads to mock DS18s20
+28CC2E230500006B:24.1875 read 9: 800115097FFF10107D
+28CC2E230500006B:24.375 read 9: 7A0115097FFF0610B0
+
+*/
+    int count = xsmcToInteger(xsArg(0));
+    xsResult = xsArrayBuffer(NULL, count);
+    uint8_t *buffer = xsmcToArrayBuffer(xsResult);
+
+    // hack as 24.1875c ->  800115097FFF10107D
+    buffer[0] = 0x75 + rand() % 10;
+    buffer[1] = 0x01;
+    buffer[2] = 0x15;
+    buffer[3] = 0x09;
+    buffer[4] = 0x7F;
+    buffer[5] = 0xFF;
+    buffer[6] = 0x10;
+    buffer[7] = 0x10;
+    buffer[8] = _calc_crc_block(0, buffer, 8);
+  }
 }

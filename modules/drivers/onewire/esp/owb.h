@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2017 David Antliff
  * Copyright (c) 2017 Chris Morgan <chmorgan@gmail.com>
+ * Copyright (c) 2019/05/11  Wilberforce for use in Moddable SDK
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#include "modGPIO.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -251,17 +254,6 @@ owb_status owb_search_first(const OneWireBus * bus, OneWireBus_SearchState * sta
  * @return status
  */
 owb_status owb_search_next(const OneWireBus * bus, OneWireBus_SearchState * state, bool *found_device);
-
-/**
- * @brief Create a string representation of a ROM code, most significant byte (CRC8) first.
- * @param[in] rom_code The ROM code to convert to string representation.
- * @param[out] buffer The destination for the string representation. It will be null terminated.
- * @param[in] len The length of the buffer in bytes. 64-bit ROM codes require 16 characters
- *                to represent as a string, plus a null terminator, for 17 bytes.
- *                See OWB_ROM_CODE_STRING_LENGTH.
- * @return pointer to the byte beyond the last byte written
- */
-char * owb_string_from_rom_code(OneWireBus_ROMCode rom_code, char * buffer, size_t len);
 
 #include "owb_gpio.h"
 

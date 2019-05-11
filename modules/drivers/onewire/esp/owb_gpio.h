@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2017 David Antliff
  * Copyright (c) 2017 Chris Morgan <chmorgan@gmail.com>
+ * Copyright (c) 2019/05/11  Wilberforce for use in Moddable SDK
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +37,7 @@ extern "C" {
 typedef struct
 {
     //int gpio;         ///< Value of the GPIO connected to the 1-Wire bus
-    modGPIOConfiguration config; ///< Value of the GPIO connected to the 1-Wire bus
+    //modGPIOConfiguration config; ///< Value of the GPIO connected to the 1-Wire bus
     OneWireBus bus;   ///< OneWireBus instance
 } owb_gpio_driver_info;
 
