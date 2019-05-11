@@ -53,6 +53,7 @@ typedef struct {
 	ble_addr_t	bda;
 	
 	// services
+	uint16_t handles[service_count][max_attribute_count];
 	
 	// security
 	uint8_t encryption;
@@ -65,7 +66,24 @@ typedef struct {
 	uint8_t terminating;
 } modBLERecord, *modBLE;
 
+typedef struct {
+	uint16_t conn_id;
+	uint16_t handle;
+	uint16_t length;
+	ble_uuid_any_t uuid;
+	uint8_t isCharacteristic;
+	uint8_t data[1];
+} attributeDataRecord, *attributeData;
+
+typedef struct {
+	uint8_t notify;
+	uint16_t conn_id;
+	uint16_t handle;
+	ble_uuid_any_t uuid;
+} notificationStateRecord, *notificationState;
+
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
+static const char_name_table *handleToCharName(uint16_t handle);
 
 static void logGAPEvent(struct ble_gap_event *event);
 
@@ -73,6 +91,7 @@ static void nimble_host_task(void *param);
 static void ble_host_task(void *param);
 static void nimble_on_reset(int reason);
 static void nimble_on_sync(void);
+static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg);
 
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
 
@@ -97,22 +116,9 @@ void xs_ble_server_initialize(xsMachine *the)
 
 	ble_hs_cfg.reset_cb = nimble_on_reset;
 	ble_hs_cfg.sync_cb = nimble_on_sync;
+	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 
-	ble_svc_gap_init();
 	ble_svc_gatt_init();
-
-	if (0 != service_count) {
-		int rc;
-		rc = ble_gatts_count_cfg(gatt_svr_svcs);
-		if (0 != rc)
-			xsUnknownError("ble invalid services definition");
-		rc = ble_gatts_add_svcs(gatt_svr_svcs);
-		if (0 != rc)
-			xsUnknownError("ble failed to add services");
-	}
-
-	ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
-	ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
 
 	nimble_port_freertos_init(ble_host_task);
 }
@@ -219,23 +225,44 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
-	int rc;
-	rc = ble_gatts_count_cfg(gatt_svr_svcs);
-	if (0 != rc)
-		xsUnknownError("invalid services definition");
-	rc = ble_gatts_add_svcs(gatt_svr_svcs);
-	if (0 != rc)
-		xsUnknownError("failed to add services");
+	// services deployed from readyEvent(), since stack requires deploy before advertising
 }
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	char *device_name = NULL;
+	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
+	uint8_t hasGAP = false;
 
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
-	// Set device name and appearance from app GAP service when available
+	if (0 != service_count) {
+		// Set device name and appearance from app GAP service when available
+		for (int service_index = 0; service_index < service_count; ++service_index) {
+			const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+			if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
+				hasGAP = true;
+				break;
+			}
+		}
+		
+		int rc = ble_gatts_reset();
+		if (0 == rc) {
+			if (!hasGAP) {
+				ble_svc_gap_init();
+				ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
+				ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
+			}
+		}
+		if (0 == rc)
+			rc = ble_gatts_count_cfg(gatt_svr_svcs);
+		if (0 == rc)
+			rc = ble_gatts_add_svcs(gatt_svr_svcs);
+		if (0 == rc)
+			rc = ble_gatts_start();
+		if (0 != rc)
+			xsUnknownError("failed to start services");
+	}
 
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
@@ -292,6 +319,66 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void writeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	attributeData value = (attributeData)refcon;
+	uint8_t buffer[16];
+	uint16_t length;
+	const char_name_table *char_name = handleToCharName(value->handle);
+	
+	xsBeginHost(gBLE->the);
+
+	xsmcVars(4);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), buffer, length);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
+	xsmcSetInteger(xsVar(2), value->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(3), value->data, value->length);
+	xsmcSet(xsVar(0), xsID_value, xsVar(3));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+
+	c_free(value);
+	xsEndHost(gBLE->the);
+}
+
+static void notificationStateEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	notificationState state = (notificationState)refcon;
+	xsBeginHost(gBLE->the);
+	if (state->conn_id != gBLE->conn_id)
+		goto bail;
+	char_name_table *char_name = (char_name_table *)handleToCharName(state->handle);
+	xsmcVars(6);
+	xsVar(0) = xsmcNewObject();
+	// @@
+	//uint16_t buffer_length;
+	//uint8_t buffer[16];
+	//uuidToBuffer(&uuid->type, buffer, &buffer_length);
+	//xsmcSetArrayBuffer(xsVar(1), buffer, buffer_length);
+	//xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	if (char_name) {
+		xsmcSetString(xsVar(2), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(2));
+		xsmcSetString(xsVar(3), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(3));
+	}
+	xsmcSetInteger(xsVar(4), state->handle);
+	xsmcSetInteger(xsVar(5), state->notify);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(4));
+	xsmcSet(xsVar(0), xsID_notify, xsVar(5));
+	xsCall2(gBLE->obj, xsID_callback, xsString(state->notify ? "onCharacteristicNotifyEnabled" : "onCharacteristicNotifyDisabled"), xsVar(0));
+bail:
+	c_free(state);
+	xsEndHost(gBLE->the);
+}
+
 void nimble_host_task(void *param)
 {
 	nimble_port_run();
@@ -313,6 +400,52 @@ void nimble_on_sync(void)
 {
 	ble_hs_util_ensure_addr(0);
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
+}
+
+static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
+{
+	int service_index, att_index;
+	
+	switch (ctxt->op) {
+		case BLE_GATT_REGISTER_OP_CHR: {
+			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
+			const struct ble_gatt_chr_def *chr_def = ctxt->chr.chr_def;
+			for (service_index = 0; service_index < service_count; ++service_index) {
+				const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+				if (0 == ble_uuid_cmp((const ble_uuid_t*)svc_def->uuid, (const ble_uuid_t*)service->uuid)) {
+					for (att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+						const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+						if (0 == ble_uuid_cmp((const ble_uuid_t*)chr_def->uuid, (const ble_uuid_t*)characteristic->uuid)) {
+							gBLE->handles[service_index][att_index] = ctxt->chr.val_handle;
+							return;
+						}
+					}
+				}
+			}
+			break;
+		}
+#if 0	// @@ TBD
+		case BLE_GATT_REGISTER_OP_DSC: {
+			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
+			const struct ble_gatt_dsc_def *dsc_def = ctxt->dsc.dsc_def;
+			for (service_index = 0; service_index < service_count; ++service_index) {
+				const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+				if (0 == ble_uuid_cmp((const ble_uuid_t*)svc_def->uuid, (const ble_uuid_t*)service->uuid)) {
+					for (att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+						const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+						if (0 == ble_uuid_cmp((const ble_uuid_t*)chr_def->uuid, (const ble_uuid_t*)characteristic->uuid)) {
+							gBLE->handles[service_index][att_index] = ctxt->chr.val_handle;
+							return;
+						}
+					}
+				}
+			}
+			break;
+		}
+#endif
+		default:
+			break;
+	}
 }
 
 static int nimble_gap_event(struct ble_gap_event *event, void *arg)
@@ -340,6 +473,16 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 		case BLE_GAP_EVENT_DISCONNECT:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&event->disconnect.conn, sizeof(event->disconnect.conn), disconnectEvent, NULL);
 			break;
+		case BLE_GAP_EVENT_SUBSCRIBE: {
+			notificationState state = c_malloc(sizeof(notificationStateRecord));
+			if (NULL != state) {
+				state->notify = event->subscribe.cur_notify;
+				state->conn_id = event->subscribe.conn_handle;
+				state->handle = event->subscribe.attr_handle;
+				modMessagePostToMachine(gBLE->the, NULL, 0, notificationStateEvent, state);
+			}
+			break;
+		}
 		default:
 			break;
     }
@@ -368,8 +511,44 @@ void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length)
 	}
 }
 
+static const char_name_table *handleToCharName(uint16_t handle) {
+	for (uint16_t i = 0; i < service_count; ++i) {
+		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
+			if (handle == gBLE->handles[i][j]) {
+				for (uint16_t k = 0; k < char_name_count; ++k) {
+					if (char_names[k].service_index == i && char_names[k].att_index == j)
+						return &char_names[k];
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+	switch (ctxt->op) {
+        case BLE_GATT_ACCESS_OP_READ_CHR:
+        	break;
+		case BLE_GATT_ACCESS_OP_WRITE_CHR: {
+			uint8_t *data;
+			uint16_t length = sizeof(attributeDataRecord) + ctxt->om->om_len;
+			attributeData value = c_malloc(length);
+			if (NULL != value) {
+				value->isCharacteristic = 1;
+				value->conn_id = conn_handle;
+				value->handle = attr_handle;
+				value->length = ctxt->om->om_len;
+				// @@ fix me - need to copy entire uuid
+				//value->uuid = *ctxt->chr->uuid;
+				c_memmove(value->data, ctxt->om->om_data, ctxt->om->om_len);
+				modMessagePostToMachine(gBLE->the, NULL, 0, writeEvent, (void*)value);
+			}
+			break;
+		}
+	}
+
+	return 0;
 }
 
 void logGAPEvent(struct ble_gap_event *event) {

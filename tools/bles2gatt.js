@@ -73,6 +73,8 @@ class ESP32GATTFile extends GATTFile {
 			}
 			else {
 				options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
+				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"y" });
+				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"n" });
 				if (this.server) {
 					options.push({ name:"CONFIG_GATTS_ENABLE", value:"y" });
 					options.push({ name:"CONFIG_GATTC_ENABLE", value: (this.client ? "y" : "n") });
