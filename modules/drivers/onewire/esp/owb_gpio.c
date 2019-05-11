@@ -1,9 +1,9 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Wilberforce - port to Moddable
  * Copyright (c) 2017 David Antliff
  * Copyright (c) 2017 Chris Morgan <chmorgan@gmail.com>
+ * Copyright (c) 2019/05/11  Wilberforce for use in Moddable SDK
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,15 +29,6 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
-
-/*
-ESP32
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_log.h"
-#include "sdkconfig.h"
-#include "driver/gpio.h"
-*/
 
 #include "xsmc.h"
 
@@ -212,6 +203,7 @@ static owb_status _read_bits(const OneWireBus * bus, uint8_t *out, int number_of
 static owb_status _uninitialize(const OneWireBus * bus)
 {
     modGPIOUninit(bus->config);
+    c_free(bus->config);
     return OWB_STATUS_OK;
 }
 
@@ -228,10 +220,11 @@ OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int pin)
 {
     driver_info->bus.driver = &gpio_function_table;
     driver_info->bus.timing = &_StandardTiming;
-    driver_info->bus.config  = &config;
 
-//https://github.com/Moddable-OpenSource/moddable/blob/26bb48a3857976b2be9a1087376914d4fa79c705/modules/pins/digital/digital.c#L121
-    //if (modGPIOInit(bus->config, NULL, pin, kModGPIOOutput)) {
+    driver_info->bus.config = c_malloc(sizeof(modGPIOConfigurationRecord));
+    if ( driver_info->bus.config == NULL ) {
+        return NULL;
+    }
     if (modGPIOInit(driver_info->bus.config , NULL, pin, kModGPIOOutput)) {
         return NULL;
     }

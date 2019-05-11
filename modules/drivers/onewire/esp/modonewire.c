@@ -29,12 +29,38 @@
 #include "owb.h"
 #include "owb_gpio.h"
 
+#ifdef ESP32
+
+#include "owb_rmt.h"
+
+#ifndef MODDEF_ONEWIRE_RMT_TX_CHANNEL
+#define MODDEF_ONEWIRE_RMT_TX_CHANNEL (RMT_CHANNEL_3)
+#endif
+
+#ifndef MODDEF_ONEWIRE_RMT_RX_CHANNEL
+#define MODDEF_ONEWIRE_RMT_RX_CHANNEL (RMT_CHANNEL_2)
+#endif
+
+#define MODDEF_ONEWIRE_DRIVER_RMT RMT
+
+#else
+#define MODDEF_ONEWIRE_DRIVER_GPIO GPIO
+#endif
+
 typedef struct
 {
   xsSlot obj;
   uint8_t pin;
+
   OneWireBus *owb;
+
+#ifdef MODDEF_ONEWIRE_DRIVER_GPIO 
   owb_gpio_driver_info driver_info;
+#endif
+#ifdef MODDEF_ONEWIRE_DRIVER_RMT
+  owb_rmt_driver_info driver_info;
+#endif
+
 } modOneWireRecord, *modOneWire;
 
 void xs_onewire_destructor(void *data)
@@ -68,9 +94,14 @@ void xs_onewire(xsMachine *the)
 
   xsRemember(onewire->obj);
 
-  //   // Create a 1-Wire bus, using the GPIO driver
+#ifdef MODDEF_ONEWIRE_DRIVER_GPIO
   onewire->owb = owb_gpio_initialize(&onewire->driver_info, onewire->pin);
-  if ( onewire->owb == NULL ) {
+#endif
+#ifdef MODDEF_ONEWIRE_DRIVER_RMT
+  onewire->owb = owb_rmt_initialize(&onewire->driver_info, onewire->pin, MODDEF_ONEWIRE_RMT_TX_CHANNEL, MODDEF_ONEWIRE_RMT_RX_CHANNEL);
+#endif
+  if (onewire->owb == NULL)
+  {
     xsUnknownError("can't init pin");
   }
   owb_use_crc(onewire->owb, true); // enable CRC check for ROM code
@@ -176,7 +207,7 @@ void xs_onewire_reset(xsMachine *the)
   bool present = false;
   owb_reset(onewire->owb, &present);
   xsmcSetBoolean(xsResult, present);
-} 
+}
 
 void xs_onewire_crc(xsMachine *the)
 {
@@ -184,7 +215,7 @@ void xs_onewire_crc(xsMachine *the)
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
   uint8_t len = xsGetArrayBufferLength(xsArg(0));
   int argc = xsmcArgc;
-  
+
   if (argc > 1)
   {
     size_t arg_len = xsmcToInteger(xsArg(1));
