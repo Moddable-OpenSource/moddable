@@ -53,7 +53,6 @@ static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
 static txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
-static txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
 static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);

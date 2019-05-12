@@ -1619,6 +1619,7 @@ extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* 
 
 mxExport void fx_require(txMachine* the);
 mxExport void fx_require_get_cache(txMachine* the);
+mxExport void fx_require_get_map(txMachine* the);
 mxExport void fx_require_get_uri(txMachine* the);
 mxExport void fx_require_resolve(txMachine* the);
 mxExport void fx_Module(txMachine* the);
@@ -2084,12 +2085,13 @@ enum {
 
 #define mxRealmGlobal(REALM)		((REALM)->next)
 #define mxRealmClosures(REALM)		((REALM)->next->next)
-#define mxImportingModules(REALM)	((REALM)->next->next->next)
-#define mxLoadingModules(REALM)		((REALM)->next->next->next->next)
-#define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next)
-#define mxResolvingModules(REALM)	((REALM)->next->next->next->next->next->next)
-#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next)
-#define mxRequiredModules(REALM)	((REALM)->next->next->next->next->next->next->next->next)
+#define mxAvailableModules(REALM)	((REALM)->next->next->next)
+#define mxImportingModules(REALM)	((REALM)->next->next->next->next)
+#define mxLoadingModules(REALM)		((REALM)->next->next->next->next->next)
+#define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next->next)
+#define mxResolvingModules(REALM)	((REALM)->next->next->next->next->next->next->next)
+#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
+#define mxRequiredModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,

@@ -302,12 +302,29 @@ int main(int argc, char* argv[])
 			creation->symbolModulo = linker->creation.symbolModulo;
 			the = xsCreateMachine(creation, "xsl", linker);
 			mxThrowElse(the);
+			
+			
 			xsBeginHost(the);
 			{
 				xsVars(2);
 				{
 					xsTry {
-                         xsCollectGarbage();
+						{
+							txSlot* slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+							slot = mxAvailableModules(slot)->value.reference;
+							script = linker->firstScript;
+							while (script) {
+								c_strcpy(path, linker->base);
+								c_strcat(path, script->path);
+								fxNewLinkerSymbol(linker, path, 0);
+								slot = slot->next = fxNewSlot(the);
+								slot->ID = fxNewNameC(the, path);
+								fxStringBuffer(the, slot, script->path, script->pathSize - 5);
+								script = script->nextScript;
+							}
+						}
+					
+						xsCollectGarbage();
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
@@ -799,6 +816,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 	mxPushReference(realm); fxFreezeBuiltIn(the);
 	mxPushSlot(mxRealmClosures(realm)); fxFreezeBuiltIn(the);
+	mxPushSlot(mxAvailableModules(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxImportingModules(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxLoadingModules(realm)); fxFreezeBuiltIn(the);
 	mxPushSlot(mxLoadedModules(realm)); fxFreezeBuiltIn(the);

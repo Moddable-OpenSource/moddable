@@ -1422,6 +1422,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
+			fxNewInstance(the);
 			fxNewRealmInstance(the);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
@@ -1606,6 +1607,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushReference(slot);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
+			sharedSlot = mxAvailableModules(sharedRealm)->value.reference;
+			mxPushReference(sharedSlot);
 			fxNewRealmInstance(the);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);

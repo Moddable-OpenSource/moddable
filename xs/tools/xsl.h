@@ -207,6 +207,7 @@ extern txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name);
 extern txLinkerResource* fxNewLinkerResource(txLinker* linker, txString path, FILE** fileAddress);
 extern txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAddress);
 extern txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name);
+extern txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
 extern void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddress);
 extern txString fxRealDirectoryPath(txLinker* linker, txString path);
 extern txString fxRealFilePath(txLinker* linker, txString path);

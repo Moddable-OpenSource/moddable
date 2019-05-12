@@ -1219,7 +1219,8 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
-	txSlot* global = the->stack;
+	txSlot* global = the->stack + 1;
+	txSlot* filter = the->stack;
 	txSlot* realm = fxNewInstance(the);
 	txSlot* slot;
 	/* mxRealmGlobal */
@@ -1227,6 +1228,9 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxRealmClosures */
 	mxPushUndefined();
 	slot = fxNextReferenceProperty(the, slot, fxNewEnvironmentInstance(the, C_NULL), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxAvailableModules */
+	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxImportingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
@@ -1247,6 +1251,7 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	global->value.reference = realm;
+	mxPop(); // filter
 	return realm;
 }
 
