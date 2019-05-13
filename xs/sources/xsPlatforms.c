@@ -256,18 +256,13 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 	}
 	if (search) {
-#ifdef mxParse
-		txSlot *iterator, *result;
-#endif
 		if (preparation) {
 			txSlot* slot = mxAvailableModules(realm);
-			if (!mxIsUndefined(slot)) {
-				slot = slot->value.reference->next;
-				while (slot) {
-					if (!c_strcmp(slot->value.string, name))
-						return slot->ID;
-					slot = slot->next;
-				}
+            slot = slot->value.reference->next;
+			while (slot) {
+				if (!c_strcmp(slot->value.string, name))
+					return slot->ID;
+				slot = slot->next;
 			}
 			c_strcpy(path, preparation->base);
 			c_strcat(path, name);
@@ -275,23 +270,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			if (fxFindPreparation(the, realm, path, &id))
 				return id;
 		}
-#ifdef mxParse
-		mxCallID(&mxModulePaths, mxID(_Symbol_iterator), 0);
-		iterator = the->stack;
-		for (;;) {
-			mxCallID(iterator, mxID(_next), 0);
-			result = the->stack;
-			mxGetID(result, mxID(_done));
-			if (fxToBoolean(the, the->stack))
-				break;
-			the->stack++;
-			mxGetID(result, mxID(_value));
-			fxToStringBuffer(the, the->stack++, path, sizeof(path));
- 			c_strcat(path, name);
-			if (fxFindScript(the, path, &id))
-				return id;
-		}
-#endif
 	}
 	return XS_NO_ID;
 }
@@ -320,16 +298,11 @@ txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* 
 		}
 	}
 	*id = fxNewNameC(the, path);
-	slot = mxAvailableModules(realm);
-	if (mxIsUndefined(slot))
-		return 1;
-	else {
-		slot = slot->value.reference->next;
-		while (slot) {
-			if (slot->ID == *id)
-				return 1;
-			slot = slot->next;
-		}
+	slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->ID == *id)
+			return 1;
+		slot = slot->next;
 	}
 	*id = XS_NO_ID;
 	return 0;

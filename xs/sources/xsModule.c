@@ -313,6 +313,7 @@ void fx_require_get_map(txMachine* the)
 	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
 	txSlot* source = mxAvailableModules(realm)->value.reference;
 	txSlot* target;
+	if (!realm) realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 	mxPush(mxObjectPrototype);
 	target = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
@@ -386,6 +387,7 @@ void fx_require_resolve(txMachine* the)
 	txSlot* realm = internal->value.module.realm;
 	txID moduleID;
 	txSlot* key;
+	if (!realm) realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 	if (mxArgc == 0)
 		mxSyntaxError("no module id");
 	fxToString(the, mxArgv(0));

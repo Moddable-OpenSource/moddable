@@ -1217,10 +1217,6 @@ typedef unsigned char xsAttribute;
 	fxArrayCacheItem(the, the->stack + 1, the->stack), \
 	the->stack += 2)
 
-#define xsModulePaths() \
-	(fxModulePaths(the), \
-	fxPop())
-
 #define xsDemarshall(_DATA) \
 	(fxDemarshall(the, (_DATA), 0), \
 	fxPop())
@@ -1375,7 +1371,6 @@ mxImport xsNumberValue fxStringToNumber(xsMachine*, xsStringValue theString, uns
 
 mxImport void fxDemarshall(xsMachine*, void*, xsBooleanValue);
 mxImport void* fxMarshall(xsMachine*, xsBooleanValue);
-mxImport void fxModulePaths(xsMachine*);
 
 mxImport xsBooleanValue fxIsProfiling(xsMachine*);
 mxImport void fxStartProfiling(xsMachine*);

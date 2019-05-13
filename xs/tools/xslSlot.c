@@ -403,8 +403,9 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 								}
 							}
 						}
-						else if (property->kind == XS_MODULE_KIND)
+						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
+						}
 						else if (property->kind == XS_EXPORT_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
@@ -420,10 +421,6 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 		heap = heap->next;
 	}
 	index++;
-	
-	slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-	slot = mxRealmGlobal(slot)->value.reference;
-	slot->flag &= ~XS_DONT_PATCH_FLAG;
 	
 	heap = the->firstHeap;
 	while (heap) {
@@ -577,15 +574,20 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 	if (id == XS_NO_ID)
 		fprintf(file, "XS_NO_ID");
 	else if (id < 0) {
-		char* string = fxGetKeyName(the, id);
-		if (string) {
-			if (fxIsCIdentifier(linker, string))
-				fprintf(file, "xsID_%s", string);
+		txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+		if (linkerSymbol) {
+			if (fxIsCIdentifier(linker, linkerSymbol->string))
+				fprintf(file, "xsID_%s", linkerSymbol->string);
 			else
-				fprintf(file, "%d /* %s */", id, string);
+				fprintf(file, "%d /* %s */", id, linkerSymbol->string);
 		}
-		else
-			fprintf(file, "%d /* ? */", id);
+		else {
+			char* string = fxGetKeyName(the, id);
+			if (string)
+				fprintf(file, "%d /* %s */", id, string);
+			else
+				fprintf(file, "%d /* ? */", id);
+		}
 	}
 	else
 		fprintf(file, "%d", id);

@@ -1231,7 +1231,6 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	mxPop();
 	/* mxAvailableModules */
 	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
-	mxPop();
 	/* mxImportingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
@@ -1251,7 +1250,8 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	global->value.reference = realm;
-	mxPop(); // filter
+    mxPop();
+    mxPop();
 	return realm;
 }
 
@@ -1264,5 +1264,6 @@ txSlot* fxNewProgramInstance(txMachine* the)
 	slot->value.module.realm = realm->value.reference;
 	slot->value.module.id = XS_NO_ID;
 	realm->value.reference = program;
+    mxPop();
 	return program;
 }

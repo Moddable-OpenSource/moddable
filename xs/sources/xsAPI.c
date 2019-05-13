@@ -1340,8 +1340,6 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
-			/* mxModulePaths */
-			mxPushUndefined();
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1407,10 +1405,6 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildProxy(the);
 			fxBuildMapSet(the);
 			fxBuildModule(the);
-
-			mxPush(mxSetPrototype);
-			fxNewSetInstance(the);
-			mxPull(mxModulePaths);
 			
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -1532,7 +1526,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 		the->firstJump = &aJump;
 		if (c_setjmp(aJump.buffer) == 0) {
 			txSlot* sharedSlot;
-			txSlot* sharedRealm;
 			txSlot* slot;
 
 			if (gxDefaults.initializeSharedCluster)
@@ -1582,8 +1575,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushUndefined();
 			/* mxHosts */
 			mxPushUndefined();
-			/* mxModulePaths */
-			mxPushUndefined();
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1596,14 +1587,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushList();
 
 			the->stackPrototypes = theMachine->stackTop;
-
-			mxPush(mxSetPrototype);
-			fxNewSetInstance(the);
-			mxPull(mxModulePaths);
 			
-			sharedSlot = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference;
-			sharedRealm = mxModuleInstanceInternal(sharedSlot)->value.module.realm;
-			sharedSlot = mxRealmGlobal(sharedRealm)->value.reference;
+			sharedSlot = theMachine->stackTop[-1 - mxGlobalStackIndex].value.reference;
 			slot = fxAliasInstance(the, sharedSlot);
 			mxPushReference(slot);
 			mxGlobal.value = the->stack->value;
@@ -1613,7 +1598,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
 			
-			the->sharedModules = mxRequiredModules(sharedRealm)->value.reference->next;
+			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			
 			the->collectFlag = XS_COLLECTING_FLAG;
 
@@ -1794,11 +1779,6 @@ void fxEndHost(txMachine* the)
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
-}
-
-void fxModulePaths(txMachine* the)
-{
-	mxPush(mxModulePaths);
 }
 
 typedef struct {

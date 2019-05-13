@@ -101,7 +101,6 @@ int main(int argc, char* argv[])
 	xsCreation* creation = &_creation;
 	xsMachine* the = NULL;
 	txInteger count;
-	txInteger globalCount;
 	
 	txBoolean incremental = 0;
 	struct c_stat headerStat;
@@ -317,6 +316,22 @@ int main(int argc, char* argv[])
                             xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
+						{
+							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+							txSlot* modules = mxRequiredModules(realm)->value.reference;
+							txSlot* module = modules->next;
+							while (module) {
+								mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+								module = module->next;
+							}
+							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+							mxProgram.value.reference = modules; //@@
+							mxPendingJobs = mxUndefined;
+							mxRunningJobs = mxUndefined;
+							mxBreakpoints = mxUndefined;
+							mxHostInspectors = mxUndefined;
+							mxInstanceInspectors = mxUndefined;
+						}
 						if (linker->stripping) {
 							fxFreezeBuiltIns(the);
 						}
@@ -369,6 +384,24 @@ int main(int argc, char* argv[])
 								fxSlashPath(preload->name, mxSeparator, url[0]);
 								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
 								preload = preload->nextPreload;
+							}
+							{
+								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+								txSlot* modules = mxRequiredModules(realm)->value.reference;
+								txSlot* module = modules->next;
+									fprintf(stderr, "%p %p %p\n", realm, modules, module);
+								while (module) {
+								fprintf(stderr, "%p\n", module);
+									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+									module = modules->next;
+								}
+								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+								mxProgram.value.reference = modules; //@@
+								mxPendingJobs = mxUndefined;
+								mxRunningJobs = mxUndefined;
+								mxBreakpoints = mxUndefined;
+								mxHostInspectors = mxUndefined;
+								mxInstanceInspectors = mxUndefined;
 							}
 							if (linker->stripping)
 								fxFreezeBuiltIns(the);
@@ -725,7 +758,6 @@ void fxFreezeBuiltIns(txMachine* the)
 {
 	txInteger index;
 	const txTypeDispatch *dispatch;
-	txSlot* realm;
 	
 	mxPush(mxAtomicsObject); fxFreezeBuiltIn(the);
 	mxPush(mxJSONObject); fxFreezeBuiltIn(the);
@@ -792,22 +824,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	
 	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
 	
-	mxPush(mxProgram); fxFreezeBuiltIn(the);
-
-	mxPush(mxModulePaths); fxFreezeBuiltIn(the);
-	mxPush(mxPendingJobs); fxFreezeBuiltIn(the);
-	mxPush(mxRunningJobs); fxFreezeBuiltIn(the);
-	
-	realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-	mxPushReference(realm); fxFreezeBuiltIn(the);
-	mxPushSlot(mxRealmClosures(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxAvailableModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxImportingModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxLoadingModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxLoadedModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxResolvingModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxRunningModules(realm)); fxFreezeBuiltIn(the);
-	mxPushSlot(mxRequiredModules(realm)); fxFreezeBuiltIn(the);
+	mxPush(mxProgram); fxFreezeBuiltIn(the); //@@
 }
 
 void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)

@@ -612,7 +612,6 @@ mxExport void fxAccess(txMachine*, txSlot*);
 
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
-mxExport void fxModulePaths(txMachine* the);
 
 mxExport void fxBuildArchiveKeys(txMachine* the);
 mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
@@ -2160,7 +2159,6 @@ enum {
 	mxProgramStackIndex,
 	mxHostsStackIndex,
 
-	mxModulePathsStackIndex,
 	mxPendingJobsStackIndex,
 	mxRunningJobsStackIndex,
 	mxBreakpointsStackIndex,
@@ -2261,7 +2259,6 @@ enum {
 #define mxException the->stackTop[-1 - mxExceptionStackIndex]
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
-#define mxModulePaths the->stackTop[-1 - mxModulePathsStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]
 #define mxRunningJobs the->stackTop[-1 - mxRunningJobsStackIndex]
 #define mxBreakpoints the->stackTop[-1 - mxBreakpointsStackIndex]
