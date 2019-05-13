@@ -35,12 +35,6 @@
  *       limitations under the License.
  */
 
-#define xsBuildKeys(THE) fxBuildKeys(THE)
-#define xsFindModule(THE,ID,NAME) fxFindModule(THE,ID,NAME)
-#define xsLoadModule(THE,ID) fxLoadModule(THE,ID)
-#define xsQueuePromiseJobs(THE) fxQueuePromiseJobs(THE)
-#define xsParseScript(THE,STREAM,GETTER,FLAGS) fxParseScript(THE,STREAM,GETTER,FLAGS)
-
 #include "xsAll.h"
 #include "xs.h"
 

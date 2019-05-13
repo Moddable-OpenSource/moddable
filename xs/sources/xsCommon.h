@@ -745,7 +745,7 @@ enum {
 	_exec,
 	_exp,
 	_expm1,
-	_exports,
+	_export,
 	_fill,
 	_filter,
 	_finally_,

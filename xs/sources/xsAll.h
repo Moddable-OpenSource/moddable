@@ -642,7 +642,7 @@ extern txSlot* fxAllocateSlots(txMachine* the, txSize theCount);
 extern void fxBuildKeys(txMachine* the);
 extern void fxCreateMachinePlatform(txMachine* the);
 extern void fxDeleteMachinePlatform(txMachine* the);
-extern txID fxFindModule(txMachine* the, txID moduleID, txSlot* name);
+extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxFreeChunks(txMachine* the, void* theChunks);
 extern void fxFreeSlots(txMachine* the, void* theSlots);
 extern void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID);

@@ -72,7 +72,7 @@
 #endif
 
 #if mxUseDefaultFindModule
-	static txBoolean fxFindPreparation(txMachine* the, txString path, txID* id);
+	static txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id);
 #endif
 
 #ifdef mxParse
@@ -161,7 +161,7 @@ void fxSweepHost(txMachine* the)
 
 #if mxUseDefaultFindModule
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
 	char name[C_PATH_MAX];
@@ -210,7 +210,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 			c_strcpy(path, preparation->base);
 			c_strcat(path, name + 1);
 			c_strcat(path, ".xsb");
-			if (fxFindPreparation(the, path, &id))
+			if (fxFindPreparation(the, realm, path, &id))
 				return id;
 		}
 #ifdef mxParse
@@ -236,7 +236,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 				*slash = 0;
 				c_strcat(path, name + dot);
 				c_strcat(path, ".xsb");
-				if (fxFindPreparation(the, path, &id))
+				if (fxFindPreparation(the, realm, path, &id))
 					return id;
 			}
 		}
@@ -260,10 +260,19 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 		txSlot *iterator, *result;
 #endif
 		if (preparation) {
+			txSlot* slot = mxAvailableModules(realm);
+			if (!mxIsUndefined(slot)) {
+				slot = slot->value.reference->next;
+				while (slot) {
+					if (!c_strcmp(slot->value.string, name))
+						return slot->ID;
+					slot = slot->next;
+				}
+			}
 			c_strcpy(path, preparation->base);
 			c_strcat(path, name);
 			c_strcat(path, ".xsb");
-			if (fxFindPreparation(the, path, &id))
+			if (fxFindPreparation(the, realm, path, &id))
 				return id;
 		}
 #ifdef mxParse
@@ -287,10 +296,11 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	return XS_NO_ID;
 }
 
-txBoolean fxFindPreparation(txMachine* the, txString path, txID* id)
+txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id)
 {
 	txSize size;
 	txByte* code = fxGetArchiveCode(the, path, &size);
+	txSlot* slot;
 	if (!code) {
 		txPreparation* preparation = the->preparation;
 		txInteger c = preparation->scriptCount;
@@ -310,7 +320,19 @@ txBoolean fxFindPreparation(txMachine* the, txString path, txID* id)
 		}
 	}
 	*id = fxNewNameC(the, path);
-	return 1;
+	slot = mxAvailableModules(realm);
+	if (mxIsUndefined(slot))
+		return 1;
+	else {
+		slot = slot->value.reference->next;
+		while (slot) {
+			if (slot->ID == *id)
+				return 1;
+			slot = slot->next;
+		}
+	}
+	*id = XS_NO_ID;
+	return 0;
 }
 
 #ifdef mxParse

@@ -928,7 +928,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 }
 #endif
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
 	char name[PATH_MAX];

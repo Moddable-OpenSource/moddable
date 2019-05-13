@@ -44,6 +44,7 @@
 #define	XS_PROFILE_COUNT (256 * 1024)
 
 static txSlot* fxCheckHostObject(txMachine* the, txSlot* it);
+static void fxBuildModuleMap(txMachine* the);
 
 #ifdef mxFrequency
 static void fxReportFrequency(txMachine* the);
@@ -1607,8 +1608,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushReference(slot);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			sharedSlot = mxAvailableModules(sharedRealm)->value.reference;
-			mxPushReference(sharedSlot);
+			fxBuildModuleMap(the);
 			fxNewRealmInstance(the);
 			fxNewProgramInstance(the);
 			mxPull(mxProgram);
@@ -1853,6 +1853,51 @@ void fxBuildArchiveKeys(txMachine* the)
 			for (i = 0; i < c; i++) {
 				fxNewNameX(the, (txString)p);
 				p += c_strlen((txString)p) + 1;
+			}
+		}
+	}
+}
+
+void fxBuildModuleMap(txMachine* the)
+{
+	txSlot* target = fxNewInstance(the);
+	txPreparation* preparation = the->preparation;
+	if (preparation) {
+		char path[C_PATH_MAX];
+		txInteger c = preparation->scriptCount;
+		txScript* script = preparation->scripts;
+		c_memcpy(path, preparation->base, preparation->baseLength);
+		while (c > 0) {
+			target = target->next = fxNewSlot(the);
+			c_strcpy(path + preparation->baseLength, script->path);
+			target->ID = fxNewNameC(the, path);
+			fxStringBuffer(the, target, script->path, c_strlen(script->path) - 4);
+			c--;
+			script++;
+		}
+		if (the->archive) {
+			txU1* p = the->archive;
+			txU1* q;
+			txU4 atomSize;
+			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+			// SYMB
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// MODS
+			atomSize = c_read32be(p);
+			q = p + atomSize;
+			p += sizeof(Atom);
+			while (p < q) {
+				// PATH
+				atomSize = c_read32be(p);
+				target = target->next = fxNewSlot(the);
+				c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
+				target->ID = fxNewNameC(the, path);
+				fxStringBuffer(the, target, path + preparation->baseLength, atomSize - sizeof(Atom) - 5);
+				p += atomSize;
+				// CODE
+				atomSize = c_read32be(p);
+				p += atomSize;
 			}
 		}
 	}

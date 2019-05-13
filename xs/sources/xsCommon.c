@@ -1147,7 +1147,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"exec",
 	"exp",
 	"expm1",
-	"exports",
+	"export",
 	"fill",
 	"filter",
 	"finally",

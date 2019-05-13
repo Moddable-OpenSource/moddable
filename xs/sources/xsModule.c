@@ -43,7 +43,6 @@
 
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
 static void fxImportModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
-static txID fxMapModule(txMachine* the, txSlot* realm, txSlot* name);
 static void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module);
 
 static txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
@@ -170,11 +169,7 @@ txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID)
 txSlot* fxRequireModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name)
 {
 	txSlot* module;
-#ifndef mxLink
-	moduleID = fxMapModule(the, realm, name);
-	if (moduleID == XS_NO_ID)
-#endif
-		moduleID = fxFindModule(the, moduleID, name);
+	moduleID = fxFindModule(the, realm, moduleID, name);
 	if (moduleID == XS_NO_ID) {
 		fxToStringBuffer(the, name, the->nameBuffer, sizeof(the->nameBuffer));
 		mxReferenceError("module \"%s\" not found", the->nameBuffer);
@@ -316,11 +311,12 @@ void fx_require_get_map(txMachine* the)
 {
 	txSlot* module = fxCurrentModule(the);
 	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
-	txSlot* source = mxAvailableModules(realm)->value.reference->next;
+	txSlot* source = mxAvailableModules(realm)->value.reference;
 	txSlot* target;
 	mxPush(mxObjectPrototype);
 	target = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
+	source = source->next;
 	while (source) {
 		mxPushSlot(source);
 		fxAt(the, the->stack);
@@ -386,12 +382,14 @@ void fx_require(txMachine* the)
 
 void fx_require_resolve(txMachine* the)
 {
+	txSlot* internal = mxModuleInstanceInternal(fxCurrentModule(the));
+	txSlot* realm = internal->value.module.realm;
 	txID moduleID;
 	txSlot* key;
 	if (mxArgc == 0)
 		mxSyntaxError("no module id");
 	fxToString(the, mxArgv(0));
-	moduleID = fxFindModule(the, fxCurrentModuleID(the), mxArgv(0));
+	moduleID = fxFindModule(the, realm, internal->value.module.id, mxArgv(0));
 	if (moduleID == XS_NO_ID)
 		return;
 	key = fxGetKey(the, moduleID);
@@ -477,11 +475,7 @@ txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 void fxImportModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name)
 {
 	txSlot* module;
-#ifndef mxLink
-	moduleID = fxMapModule(the, realm, name);
-	if (moduleID == XS_NO_ID)
-#endif
-		moduleID = fxFindModule(the, moduleID, name);
+	moduleID = fxFindModule(the, realm, moduleID, name);
 	if (moduleID == XS_NO_ID)
 		return;
 	module = fxGetModule(the, realm, moduleID);
@@ -509,24 +503,6 @@ void fxImportModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name)
 		#endif
 		fxLoadModule(the, realm, module->ID);
 	}
-}
-
-txID fxMapModule(txMachine* the, txSlot* realm, txSlot* slot)
-{
-	txString name = fxToString(the, slot);
-	if (name[0] == '/') return XS_NO_ID;
-	if ((name[0] == '.') && (name[1] == '/')) return XS_NO_ID;
-	if ((name[0] == '.') && (name[1] == '.') && (name[2] == '/')) return XS_NO_ID;
-#if mxWindows
-	if (('A' <= name[0]) && (name[0] <= 'Z') && (name[1] == ':') && (name[2] == '\\')) return XS_NO_ID;
-#endif
-	slot = mxAvailableModules(realm)->value.reference->next;
-	while (slot) {
-		if (!c_strcmp(slot->value.string, name))
-			return slot->ID;
-		slot = slot->next;
-	}
-	return XS_NO_ID;
 }
 
 void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module)
@@ -1246,7 +1222,7 @@ void fx_Compartment(txMachine* the)
 		slot = fxLastProperty(the, instance);
 		slot = fxNextReferenceProperty(the, slot, realm, XS_NO_ID, XS_GET_ONLY);
 		slot = fxNextReferenceProperty(the, slot, global, mxID(_global), XS_GET_ONLY);
-		slot = fxNextSlotProperty(the, slot, module, mxID(_exports), XS_GET_ONLY);
+		slot = fxNextSlotProperty(the, slot, module, mxID(_export), XS_GET_ONLY);
 		
 		mxPop();
 	}

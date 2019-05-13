@@ -309,21 +309,6 @@ int main(int argc, char* argv[])
 				xsVars(2);
 				{
 					xsTry {
-						{
-							txSlot* slot = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-							slot = mxAvailableModules(slot)->value.reference;
-							script = linker->firstScript;
-							while (script) {
-								c_strcpy(path, linker->base);
-								c_strcat(path, script->path);
-								fxNewLinkerSymbol(linker, path, 0);
-								slot = slot->next = fxNewSlot(the);
-								slot->ID = fxNewNameC(the, path);
-								fxStringBuffer(the, slot, script->path, script->pathSize - 5);
-								script = script->nextScript;
-							}
-						}
-					
 						xsCollectGarbage();
 						preload = linker->firstPreload;
 						while (preload) {
@@ -639,7 +624,7 @@ void fxBuildKeys(txMachine* the)
 
 /* MODULES */
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	char name[C_PATH_MAX];
