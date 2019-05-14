@@ -45,6 +45,17 @@
 	#define LOG_GAP_INT(i)
 #endif
 
+#define LOG_GATT 0
+#if LOG_GATT
+	#define LOG_GATT_EVENT(event) logGATTEvent(event)
+	#define LOG_GATT_MSG(msg) modLog(msg)
+	#define LOG_GATT_INT(i) modLogInt(i)
+#else
+	#define LOG_GATT_EVENT(event)
+	#define LOG_GATT_MSG(msg)
+	#define LOG_GATT_INT(i)
+#endif
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -86,6 +97,7 @@ static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length
 static const char_name_table *handleToCharName(uint16_t handle);
 
 static void logGAPEvent(struct ble_gap_event *event);
+static void logGATTEvent(uint8_t op);
 
 static void nimble_host_task(void *param);
 static void ble_host_task(void *param);
@@ -330,6 +342,7 @@ static void writeEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 
 	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
+	uuidToBuffer(buffer, &value->uuid, &length);
 	xsmcSetArrayBuffer(xsVar(1), buffer, length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	if (char_name) {
@@ -406,6 +419,9 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
 	int service_index, att_index;
 	
+	if (!gBLE || gBLE->terminating)
+		return;
+
 	switch (ctxt->op) {
 		case BLE_GATT_REGISTER_OP_CHR: {
 			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
@@ -424,7 +440,7 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 			}
 			break;
 		}
-#if 0	// @@ TBD
+#if 0
 		case BLE_GATT_REGISTER_OP_DSC: {
 			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
 			const struct ble_gatt_dsc_def *dsc_def = ctxt->dsc.dsc_def;
@@ -527,6 +543,11 @@ static const char_name_table *handleToCharName(uint16_t handle) {
 
 static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+	LOG_GATT_EVENT(ctxt->op);
+	
+	if (!gBLE || gBLE->terminating)
+		goto bail;
+
 	switch (ctxt->op) {
         case BLE_GATT_ACCESS_OP_READ_CHR:
         	break;
@@ -539,15 +560,15 @@ static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t a
 				value->conn_id = conn_handle;
 				value->handle = attr_handle;
 				value->length = ctxt->om->om_len;
-				// @@ fix me - need to copy entire uuid
-				//value->uuid = *ctxt->chr->uuid;
 				c_memmove(value->data, ctxt->om->om_data, ctxt->om->om_len);
+				ble_uuid_copy(&value->uuid, ctxt->chr->uuid);
 				modMessagePostToMachine(gBLE->the, NULL, 0, writeEvent, (void*)value);
 			}
 			break;
 		}
 	}
 
+bail:
 	return 0;
 }
 
@@ -572,5 +593,15 @@ void logGAPEvent(struct ble_gap_event *event) {
 		case BLE_GAP_EVENT_REPEAT_PAIRING: modLog("BLE_GAP_EVENT_REPEAT_PAIRING"); break;
 		case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE: modLog("BLE_GAP_EVENT_PHY_UPDATE_COMPLETE"); break;
 		case BLE_GAP_EVENT_EXT_DISC: modLog("BLE_GAP_EVENT_EXT_DISC"); break;
+	}
+}
+
+void logGATTEvent(uint8_t op)
+{
+	switch(op) {
+		case BLE_GATT_ACCESS_OP_READ_CHR: modLog("BLE_GATT_ACCESS_OP_READ_CHR"); break;
+		case BLE_GATT_ACCESS_OP_WRITE_CHR: modLog("BLE_GATT_ACCESS_OP_WRITE_CHR"); break;
+		case BLE_GATT_ACCESS_OP_READ_DSC: modLog("BLE_GATT_ACCESS_OP_READ_DSC"); break;
+		case BLE_GATT_ACCESS_OP_WRITE_DSC: modLog("BLE_GATT_ACCESS_OP_WRITE_DSC"); break;
 	}
 }
