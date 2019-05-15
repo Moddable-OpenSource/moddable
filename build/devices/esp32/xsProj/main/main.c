@@ -204,7 +204,7 @@ void app_main() {
 
 	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 
-	nvs_flash_init();
+	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
