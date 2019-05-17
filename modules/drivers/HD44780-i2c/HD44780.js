@@ -66,6 +66,10 @@ const LCD = {
 	CURSOROFF: 0x00,
 	BLINKON: 0x01,
 	BLINKOFF: 0x00,
+	//BLOCKON: 0x80
+	//BLOCKOFF: 0x00
+	
+	
 
 	//# flags for display/cursor shift
 	DISPLAYMOVE: 0x08,
