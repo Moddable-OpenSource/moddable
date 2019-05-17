@@ -26,59 +26,64 @@
 import I2C from "pins/i2c";
 import Timer from "timer";
 
-let displayPorts = {
+const displayPorts = {
 	RS: 0x01,
 	E: 0x04,
 	D4: 0x10,
 	D5: 0x20,
 	D6: 0x40,
 	D7: 0x80,
+	backlight: 0x08,
+	//RW: 0x20 not used
+};
+
+Object.freeze(displayPorts);
+
+const LCD = {
 
 	CHR: 1,
 	CMD: 0,
+	
+	CLEARDISPLAY: 0x01,
+	RETURNHOME: 0x02,
+	ENTRYMODESET: 0x04,
+	DISPLAYCONTROL: 0x08,
+	CURSORSHIFT: 0x10,
+	FUNCTIONSET: 0x20,
+	SETCGRAMADDR: 0x40,
+	SETDDRAMADDR: 0x80,
 
-	backlight: 0x08,
-	RW: 0x20 // not used
+	//# flags for display entry mode
+	ENTRYRIGHT: 0x00,
+	ENTRYLEFT: 0x02,
+	ENTRYSHIFTINCREMENT: 0x01,
+	ENTRYSHIFTDECREMENT: 0x00,
+
+	//# flags for display on/off control
+	DISPLAYON: 0x04,
+	DISPLAYOFF: 0x00,
+	CURSORON: 0x02,
+	CURSOROFF: 0x00,
+	BLINKON: 0x01,
+	BLINKOFF: 0x00,
+
+	//# flags for display/cursor shift
+	DISPLAYMOVE: 0x08,
+	CURSORMOVE: 0x00,
+	MOVERIGHT: 0x04,
+	MOVELEFT: 0x00,
+
+	//# flags for function set
+	_8BITMODE: 0x10,
+	_4BITMODE: 0x00,
+	_2LINE: 0x08,
+	_1LINE: 0x00,
+	_5x10DOTS: 0x04,
+	_5x8DOTS: 0x00,
 };
 
-var LCD = {};
+Object.freeze(LCD);
 
-LCD.CLEARDISPLAY = 0x01;
-LCD.RETURNHOME = 0x02;
-LCD.ENTRYMODESET = 0x04;
-LCD.DISPLAYCONTROL = 0x08;
-LCD.CURSORSHIFT = 0x10;
-LCD.FUNCTIONSET = 0x20;
-LCD.SETCGRAMADDR = 0x40;
-LCD.SETDDRAMADDR = 0x80;
-
-//# flags for display entry mode
-LCD.ENTRYRIGHT = 0x00;
-LCD.ENTRYLEFT = 0x02;
-LCD.ENTRYSHIFTINCREMENT = 0x01;
-LCD.ENTRYSHIFTDECREMENT = 0x00;
-
-//# flags for display on/off control
-LCD.DISPLAYON = 0x04;
-LCD.DISPLAYOFF = 0x00;
-LCD.CURSORON = 0x02;
-LCD.CURSOROFF = 0x00;
-LCD.BLINKON = 0x01;
-LCD.BLINKOFF = 0x00;
-
-//# flags for display/cursor shift
-LCD.DISPLAYMOVE = 0x08;
-LCD.CURSORMOVE = 0x00;
-LCD.MOVERIGHT = 0x04;
-LCD.MOVELEFT = 0x00;
-
-//# flags for function set
-LCD._8BITMODE = 0x10;
-LCD._4BITMODE = 0x00;
-LCD._2LINE = 0x08;
-LCD._1LINE = 0x00;
-LCD._5x10DOTS = 0x04;
-LCD._5x8DOTS = 0x00;
 
 class HD44780 extends I2C {
 	constructor(dictionary) {
@@ -86,24 +91,24 @@ class HD44780 extends I2C {
 		super(Object.assign({
 			address: 0x27
 		}, dictionary));
-		
+
 		// Backlight state - default on
-		this.backlight=displayPorts.backlight;		
+		this.backlight = displayPorts.backlight;
 
-		this.write4(0x30, displayPorts.CMD); //initialization
+		this.write4(0x30, LCD.CMD); //initialization
 		Timer.delay(200);
-		this.write4(0x30, displayPorts.CMD); //initialization
+		this.write4(0x30, LCD.CMD); //initialization
 		Timer.delay(100);
-		this.write4(0x30, displayPorts.CMD); //initialization
+		this.write4(0x30, LCD.CMD); //initialization
 		Timer.delay(100);
-		this.write4(LCD.FUNCTIONSET | LCD._4BITMODE | LCD._2LINE | LCD._5x10DOTS, displayPorts.CMD); //4 bit - 2 line 5x7 matrix
+		this.write4(LCD.FUNCTIONSET | LCD._4BITMODE | LCD._2LINE | LCD._5x10DOTS, LCD.CMD); //4 bit - 2 line 5x7 matrix
 
 		Timer.delay(10);
-		this.write8(LCD.DISPLAYCONTROL | LCD.DISPLAYON, displayPorts.CMD); //turn cursor off 0x0E to enable cursor
+		this.write8(LCD.DISPLAYCONTROL | LCD.DISPLAYON, LCD.CMD); //turn cursor off 0x0E to enable cursor
 		Timer.delay(10);
-		this.write8(LCD.ENTRYMODESET | LCD.ENTRYLEFT, displayPorts.CMD); //shift cursor right
+		this.write8(LCD.ENTRYMODESET | LCD.ENTRYLEFT, LCD.CMD); //shift cursor right
 		Timer.delay(10);
-		this.write8(LCD.CLEARDISPLAY, displayPorts.CMD); // LCD clear
+		this.write8(LCD.CLEARDISPLAY, LCD.CMD); // LCD clear
 		Timer.delay(10);
 	}
 
@@ -113,7 +118,7 @@ class HD44780 extends I2C {
 		Timer.delay(1);
 		this.write(msb | displayPorts.E | cmd);
 		Timer.delay(1);
-		this.write(msb | cmd );
+		this.write(msb | cmd);
 		Timer.delay(1);
 	}
 
@@ -125,35 +130,35 @@ class HD44780 extends I2C {
 	// print text
 	print(str) {
 		for (var i = 0; i < str.length; i++) {
-			this.write8(str.charCodeAt(i), displayPorts.CHR);
+			this.write8(str.charCodeAt(i), LCD.CHR);
 		}
 		return this;
 	}
 	// clear screen
 	clear() {
-		return this.write8(LCD.CLEARDISPLAY, displayPorts.CMD);
+		return this.write8(LCD.CLEARDISPLAY, LCD.CMD);
 	}
 
 	// flashing block for the current cursor, or underline
 	cursor(block) {
-		return this.write8(block ? 0x0F : 0x0E, displayPorts.CMD);
+		return this.write8(block ? 0x0F : 0x0E, LCD.CMD);
 	}
 	// set cursor pos, top left = 0,0
 	setCursor(x, y) {
 		var l = [0x00, 0x40, 0x14, 0x54];
 		let bits = (l[y] + x);
-		return this.write8(LCD.SETDDRAMADDR | bits, displayPorts.CMD);
+		return this.write8(LCD.SETDDRAMADDR | bits, LCD.CMD);
 	}
 	// set special character 0..7, data is an array(8) of bytes, and then return to home addr
 	createChar(ch, data) {
-		this.write8(LCD.SETCGRAMADDR | ((ch & 7) << 3),  displayPorts.CMD);
-		for (var i = 0; i < 8; i++) 
-			this.write8(data[i], displayPorts.CHR);
+		this.write8(LCD.SETCGRAMADDR | ((ch & 7) << 3), LCD.CMD);
+		for (var i = 0; i < 8; i++)
+			this.write8(data[i], LCD.CHR);
 		return this;
 	}
 
 	blink(state) {
-		return this.write8(LCD.DISPLAYCONTROL | LCD.DISPLAYON | LCD.CURSORON | state ? LCD.BLINKON : LCD.BLINKOFF, displayPorts.CMD);
+		return this.write8(LCD.DISPLAYCONTROL | LCD.DISPLAYON | LCD.CURSORON | state ? LCD.BLINKON : LCD.BLINKOFF, LCD.CMD);
 	}
 
 	setBacklight(val) {
@@ -162,11 +167,12 @@ class HD44780 extends I2C {
 		} else {
 			this.backlight = 0x00;
 		}
-		return this.write8(LCD.DISPLAYCONTROL, displayPorts.CMD);
+		return this.write8(LCD.DISPLAYCONTROL, LCD.CMD);
 	}
 }
+Object.freeze(HD44780.prototype);
 
 export {
 	HD44780 as
-	default, HD44780
+	default, HD44780, LCD
 };
