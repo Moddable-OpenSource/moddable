@@ -636,7 +636,6 @@ enum {
 	_encodeURI,
 	_encodeURIComponent,
 	_escape,
-	_eval,
 	_isFinite,
 	_isNaN,
 	_parseFloat,
@@ -651,6 +650,7 @@ enum {
 	_Compartment,
 	_Function,
 	_GeneratorFunction,
+	_eval,
 	_require,
 	
 	___proto__,
