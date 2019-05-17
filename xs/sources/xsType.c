@@ -74,6 +74,23 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	return alias;
 }
 
+txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
+{
+	txSlot* result;
+	txSlot* from;
+	txSlot* to;
+	result = fxNewInstance(the);
+	result->value.instance.garbage = C_NULL;
+	result->value.instance.prototype = instance->value.instance.prototype;
+	from = instance->next;
+	to = result;
+	while (from) {
+		to = to->next = fxDuplicateSlot(the, from);
+		from = from->next;
+	}
+	return alias;
+}
+
 txSlot* fxGetInstance(txMachine* the, txSlot* theSlot)
 {
 	if (theSlot->kind == XS_REFERENCE_KIND)
@@ -1257,13 +1274,10 @@ txSlot* fxNewRealmInstance(txMachine* the)
 
 txSlot* fxNewProgramInstance(txMachine* the)
 {
-	txSlot* realm = the->stack;
 	txSlot* program = fxNewInstance(the);
 	txSlot* slot = program->next = fxNewSlot(the);
 	slot->kind = XS_MODULE_KIND;
-	slot->value.module.realm = realm->value.reference;
+	slot->value.module.realm = C_NULL;
 	slot->value.module.id = XS_NO_ID;
-	realm->value.reference = program;
-    mxPop();
 	return program;
 }

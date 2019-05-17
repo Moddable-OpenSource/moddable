@@ -1160,14 +1160,20 @@ void fx_Compartment(txMachine* the)
 			mxSyntaxError("no module specifier");
 		fxToString(the, mxArgv(0));
 		
+		program = fxNewProgramInstance(the);
+		
 		mxPush(mxObjectPrototype);
 		global = fxNewObjectInstance(the);
 		slot = fxLastProperty(the, global);
-		for (id = _Array; id < ___proto__; id++) {
-			if (id == _undefined)
-				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
-			else
-				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+		for (id = _Array; id < _undefined; id++)
+			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+		for (; id < _AsyncFunction; id++)
+			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+		for (; id < ___proto__; id++) {
+			txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
+			mxFunctionInstanceHome(instance)->value.home.module = program;
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_GET_ONLY);
+			mxPop();
 		}
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 		if (mxArgc > 1) {
@@ -1177,6 +1183,7 @@ void fx_Compartment(txMachine* the)
 			mxPush(mxCopyObjectFunction);
 			fxCall(the);
 		}
+		
 		if (mxArgc > 2) {
 			txSlot* target;
 			txSlot* source;
@@ -1215,18 +1222,19 @@ void fx_Compartment(txMachine* the)
 			mxPushReference(filter);
 		}
 
-		realm = fxNewRealmInstance(the);
+		mxModuleInstanceInternal(program)->value.module.realm = realm = fxNewRealmInstance(the);
 		
 		the->requireFlag |= XS_REQUIRE_FLAG;
 		module = fxRequireModule(the, realm, XS_NO_ID, mxArgv(0));
 		the->requireFlag &= ~XS_REQUIRE_FLAG;
 		
 		slot = fxLastProperty(the, instance);
-		slot = fxNextReferenceProperty(the, slot, realm, XS_NO_ID, XS_GET_ONLY);
+		slot = fxNextReferenceProperty(the, slot, program, XS_NO_ID, XS_GET_ONLY);
 		slot = fxNextReferenceProperty(the, slot, global, mxID(_global), XS_GET_ONLY);
 		slot = fxNextSlotProperty(the, slot, module, mxID(_export), XS_GET_ONLY);
 		
-		mxPop();
+		mxPop(); // realm
+		mxPop(); // program
 	}
 	mxCatch(the) {
 		if (the->requireFlag & XS_REQUIRE_FLAG) {

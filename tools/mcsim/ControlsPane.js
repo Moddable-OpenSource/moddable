@@ -82,7 +82,7 @@ class ControlsHeaderBehavior extends Behavior {
 		if (model.devices.length > 1) { 
 			let data = {
 				button: row,
-				items: model.devices.map((device, index) => ({ title:device.title, index })),
+				items: model.devices.map((device, index) => ({ title:device.export.default.title, index })),
 			};
 			data.items.splice(model.deviceIndex, 1);
 			application.add(new ControlsMenu(data));
