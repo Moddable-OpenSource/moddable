@@ -30,8 +30,10 @@
 			],
 		},
 		"ft6206": {
+			"threshold": 36,
+			"dy": 0,
 			"flipX": false,
 			"flipY": false,
-		}
+		},
 	}
 }
