@@ -132,6 +132,9 @@
 #ifndef MODDEF_DESTM32S_CLEAR
 	#define MODDEF_DESTM32S_CLEAR true
 #endif
+#ifndef MODDEF_DESTM32S_MODDABLE_THREE
+	#define MODDEF_DESTM32S_MODDABLE_THREE 0
+#endif
 
 #define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
 #define SCREEN_CS_DEACTIVE	modGPIOWrite(&sd->cs, 1)
@@ -581,9 +584,72 @@ void destm32sCommand(spiDisplay sd, uint8_t command, const uint8_t *data, uint16
 	modSPIActivateConfiguration(NULL);
 }
 
+#if MODDEF_DESTM32S_MODDABLE_THREE
+
 void destm32sInit_bw(spiDisplay sd)
 {
-	uint8_t data[4];
+	uint8_t data[4] __attribute__((aligned(4)));
+
+	destm32sWait(sd);
+    destm32sCommand(sd, 0x12, NULL, 0);	// soft reset
+	destm32sWait(sd);
+
+	data[0] = 0x54;
+    destm32sCommand(sd, 0x74, data, 1); //set analog block control
+	data[0] = 0x3B;
+    destm32sCommand(sd, 0x7E, data, 1); //set digital block control
+
+	// Panel configuration, Gate selection for 2.13 inch
+	data[0] = (250 - 1) & 0x00FF;
+	data[1] = (250 - 1) >> 8;
+	data[2] = 0x00;
+    destm32sCommand(sd, 0x01, data, 3);
+
+	// X decrease, Y decrease (sic)
+	data[0] = 0x01; // Ram data entry mode
+    destm32sCommand(sd, 0x11, data, 1);
+
+	// X decrease, Y decrease
+	data[0] = 0xd7;
+	data[1] = 0xd6;
+	data[2] = 0x9d;
+	destm32sCommand(sd, 0x0c, data, 3);
+
+	data[0] = 0x03;
+    destm32sCommand(sd, 0x3C, data, 1); //BorderWavefrom
+
+	// VCOM setting
+	data[0] = 0xa8;
+    destm32sCommand(sd, 0x2c, data, 1);
+
+	data[0] = 0x15;
+    destm32sCommand(sd, 0x03, data, 1);
+
+	data[0] = 0x41;
+	data[1] = 0xA8;
+	data[2] = 0x32;
+    destm32sCommand(sd, 0x04, data, 3);
+
+	data[0] = 0x30;
+    destm32sCommand(sd, 0x3A, data, 1);
+
+	data[0] = 0x0A;
+    destm32sCommand(sd, 0x3B, data, 1);
+
+//	//dummy line per gate
+//	data[0] = 0x1a;
+//    destm32sCommand(sd, 0x3a, data, 1);
+//
+//	// Gate time setting
+//	data[0] = 0x08;	 // 2us per line
+//    destm32sCommand(sd, 0x3b, data, 1);
+}
+
+#else
+
+void destm32sInit_bw(spiDisplay sd)
+{
+	uint8_t data[4] __attribute__((aligned(4)));
 
 	// Panel configuration, Gate selection for 2.13 inch
 	data[0] = (250 - 1) & 0x00FF;
@@ -613,6 +679,7 @@ void destm32sInit_bw(spiDisplay sd)
 	data[0] = 0x01; // Ram data entry mode
     destm32sCommand(sd, 0x11, data, 1);
 }
+#endif
 
 void destm32sChipSelect(uint8_t active, modSPIConfiguration config)
 {
@@ -624,6 +691,40 @@ void destm32sChipSelect(uint8_t active, modSPIConfiguration config)
 		SCREEN_CS_DEACTIVE;
 }
 
+#if MODDEF_DESTM32S_MODDABLE_THREE
+static const uint8_t LUT_Full_Update[] ICACHE_RODATA_ATTR __attribute__((aligned(4))) = {
+0x80,0x60,0x40,0x00,0x00,0x00,0x00,             //LUT0: BB:     VS 0 ~7
+0x10,0x60,0x20,0x00,0x00,0x00,0x00,             //LUT1: BW:     VS 0 ~7
+0x80,0x60,0x40,0x00,0x00,0x00,0x00,             //LUT2: WB:     VS 0 ~7
+0x10,0x60,0x20,0x00,0x00,0x00,0x00,             //LUT3: WW:     VS 0 ~7
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT4: VCOM:   VS 0 ~7
+
+0x03,0x03,0x00,0x00,0x02,                       // TP0 A~D RP0
+0x09,0x09,0x00,0x00,0x02,                       // TP1 A~D RP1
+0x03,0x03,0x00,0x00,0x02,                       // TP2 A~D RP2
+0x00,0x00,0x00,0x00,0x00,                       // TP3 A~D RP3
+0x00,0x00,0x00,0x00,0x00,                       // TP4 A~D RP4
+0x00,0x00,0x00,0x00,0x00,                       // TP5 A~D RP5
+0x00,0x00,0x00,0x00,0x00,                       // TP6 A~D RP6
+
+};
+
+static const uint8_t LUT_Partial_Update[] ICACHE_RODATA_ATTR __attribute__((aligned(4))) = {
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT0: BB:     VS 0 ~7
+0x80,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT1: BW:     VS 0 ~7
+0x40,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT2: WB:     VS 0 ~7
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT3: WW:     VS 0 ~7
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,             //LUT4: VCOM:   VS 0 ~7
+
+0x0A,0x00,0x00,0x00,0x00,                       // TP0 A~D RP0
+0x00,0x00,0x00,0x00,0x00,                       // TP1 A~D RP1
+0x00,0x00,0x00,0x00,0x00,                       // TP2 A~D RP2
+0x00,0x00,0x00,0x00,0x00,                       // TP3 A~D RP3
+0x00,0x00,0x00,0x00,0x00,                       // TP4 A~D RP4
+0x00,0x00,0x00,0x00,0x00,                       // TP5 A~D RP5
+0x00,0x00,0x00,0x00,0x00,                       // TP6 A~D RP6
+};
+#else
 static const uint8_t LUT_Full_Update[] ICACHE_RODATA_ATTR __attribute__((aligned(4))) = {
 	0x22, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x11,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -637,11 +738,11 @@ static const uint8_t LUT_Partial_Update[] ICACHE_RODATA_ATTR __attribute__((alig
 	0x0F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00
 };
-
+#endif
 void destm32sBegin_bw(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
 {
 	spiDisplay sd = refcon;
-	uint8_t data[2];
+	uint8_t data[2] __attribute__((aligned(4)));
 	uint16_t byteWidth = (w + 7) >> 3;
 	uint16_t yStart, yEnd;
 
@@ -655,10 +756,32 @@ void destm32sBegin_bw(void *refcon, CommodettoCoordinate x, CommodettoCoordinate
 	}
 	else {
 		// partial update
+#if MODDEF_DESTM32S_MODDABLE_THREE
+		if (2 != sd->lastLUT) {
+			char d[1] __attribute__((aligned(4)));
+
+			d[0] = 0x26;
+			destm32sCommand(sd, 0x2c, d, 1);
+
+			destm32sCommand(sd, 0x32, LUT_Partial_Update, sizeof(LUT_Partial_Update));
+			sd->lastLUT = 2;
+
+			char data[] __attribute__((aligned(4))) = {0, 0, 0, 0, 0x40, 0, 0} ;
+			destm32sCommand(sd, 0x37, data, sizeof(data));
+			data[0] = 0xc0;
+			destm32sCommand(sd, 0x22, data, 1);
+			destm32sCommand(sd, 0x20, NULL, 0);
+			destm32sWait(sd);
+
+			data[0] = 0x01;
+			destm32sCommand(sd, 0x3C, data, 1); //BorderWavefrom
+		}
+#else
 		if (2 != sd->lastLUT) {
 			destm32sCommand(sd, 0x32, LUT_Partial_Update, sizeof(LUT_Partial_Update));
 			sd->lastLUT = 2;
 		}
+#endif
 		sd->full = 0;
 	}
 
@@ -716,6 +839,34 @@ void destm32sContinue(void *refcon)
 	//@@ multiple update areas allowed for a single update cycle?
 }
 
+#if MODDEF_DESTM32S_MODDABLE_THREE
+void destm32sEnd_bw(void *refcon)
+{
+	spiDisplay sd = refcon;
+	uint8_t data[4] __attribute__((aligned(4)));
+
+	modSPIActivateConfiguration(NULL);
+
+	data[0] = 0x0C;
+	destm32sCommand(sd, 0x22, data, 1);
+
+	destm32sCommand(sd, 0x20, NULL, 0);
+	destm32sWait(sd);
+	destm32sCommand(sd, 0xff, NULL, 0);
+
+	if (sd->full || sd->doPowerOff) {
+		destm32sWait(sd);	// wait until not busy
+		// power off
+		data[0] = 0x03;
+		destm32sCommand(sd, 0x22, data, 1);
+		destm32sCommand(sd, 0x20, NULL, 0);
+
+		sd->powered = 0;
+
+		destm32sWait(sd);	// wait for power off to complete
+	}
+}
+#else
 void destm32sEnd_bw(void *refcon)
 {
 	spiDisplay sd = refcon;
@@ -741,6 +892,7 @@ void destm32sEnd_bw(void *refcon)
 		destm32sWait(sd);	// wait for power off to complete
 	}
 }
+#endif
 
 void destm32sAdaptInvalid(void *refcon, CommodettoRectangle invalid)
 {
