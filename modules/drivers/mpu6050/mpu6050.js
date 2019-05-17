@@ -155,7 +155,7 @@ class Gyro_Accelerometer extends SMBHold {
             calcLength(value) {
                 let len = 0;
                 for(let i in value) {
-                    switch(typeof(i)) {
+                    switch(typeof(value[i])) {
                         case "number":
                             len++;
                             break;
