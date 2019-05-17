@@ -152,7 +152,7 @@ class Gyro_Accelerometer extends SMBHold {
                 this.config = dictionary;
             }
 
-            calcLength(...value) {
+            calcLength(value) {
                 let len = 0;
                 for(let i in value) {
                     switch(typeof(i)) {
