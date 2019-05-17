@@ -250,8 +250,8 @@ typedef struct {
 	modGPIOConfigurationRecord	busy;
 
 	uint32_t					alignNext;		// force bufferA and bufferB to be long aligned (required by SPI)
-	uint8_t						bufferA[256];	// max 256 because 
-	uint8_t						bufferB[256];	// spaceInOutput is uint8_t
+	uint8_t						bufferA[256];
+	uint8_t						bufferB[256];
 
 	char						*redP;
 	uint8_t						red[(MODDEF_DESTM32S_WIDTH / 8) * MODDEF_DESTM32S_HEIGHT];
@@ -514,7 +514,7 @@ void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 	spiDisplay sd = refcon;
 	CommodettoDimension updateWidth = sd->updateWidth;
 	uint16_t updateBytes = (updateWidth + 7) >> 3;
-	uint8_t spaceInOutput = 0;
+	uint16_t spaceInOutput = 0;
 	uint8_t *mono = NULL;
 
 	if (byteLength < 0) byteLength = -byteLength;
