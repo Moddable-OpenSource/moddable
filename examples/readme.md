@@ -1,7 +1,7 @@
 # Moddable SDK - Examples
 
-Copyright 2018 Moddable Tech, Inc.<BR>
-Revised: April 8, 2019
+Copyright 2018-2019 Moddable Tech, Inc.<BR>
+Revised: May 17, 2019
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -57,6 +57,9 @@ The `-p` command line option specifies the target platform/subplatform you are b
 | lin | Linux target
 | esp | ESP8266 device target
 | esp/moddable_zero | [Moddable Zero](http://www.moddable.com/moddable-zero.php) device target
+| esp/moddable_one | [Moddable One](../documentation/devices/moddable-one.md) device target
+| esp32/moddable_two | [Moddable Two](../documentation/devices/moddable-two.md) device target
+| esp/moddable_three | [Moddable Three](../documentation/devices/moddable-three.md) device target
 | esp/adafruit_oled | [Adafruit OLED display + ESP8266](../documentation/displays/wiring-guide-adafruit-OLED.md)
 | esp/adafruit_st7735 | [Adafruit 1.8" ST7735 display + ESP8266](../documentation/displays/wiring-guide-adafruit-1.8-st7735.md)
 | esp/crystalfontz\_monochrome\_epaper | [Crystalfontz monochrome ePaper display + ESP8266](../documentation/displays/wiring-guide-crystalfontz-eink.md)
@@ -78,9 +81,9 @@ The `-p` command line option specifies the target platform/subplatform you are b
 | gecko/thunderboard2 | [SiLabs Thunderboard Sense 2](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
 | qca4020/cdb | [Qualcomm QCA4020 CDB](https://developer.qualcomm.com/hardware/qca4020-qca4024)
 
-For example, to build a release app that targets Moddable Zero:
+For example, to build a release app that targets Moddable One:
 
-	mcconfig -m -p esp/moddable_zero
+	mcconfig -m -p esp/moddable_one
 	
 To build a debug app that targets ESP32 devices:
 
@@ -114,10 +117,10 @@ Some example apps are designed to render on a rotated screen. Use the `-r` comma
 - `-r 180`: 180 degree rotation
 - `-r 270`: 270 degree rotation
 
-For example, the `rotated` app is designed to run at 90 degree rotation. To build a debug version for the [ESP32 device with a generic QVGA display](../documentation/displays/wiring-guide-generic-2.4-spi-esp32.md):
+For example, the `rotated` app is designed to run at 90 degree rotation. To build a debug version for [Moddable Two](../documentation/devices/moddable-two.md):
 
 	cd $MODDABLE/examples/commodetto/rotated
-	mcconfig -d -m -r 90 -p esp32/moddable_zero
+	mcconfig -d -m -r 90 -p esp32/moddable_two
 
 
 To build the `progress` app to run at 180 degrees rotation on the host platform:
