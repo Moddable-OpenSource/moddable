@@ -83,7 +83,7 @@ void xs_net_get(xsMachine *the)
 		if (255 == nif)
 			return;
 
-		if (wifi_get_ip_info(nif, &info)) {
+		if (wifi_get_ip_info(nif, &info) && (ip4_addr1(&info.ip) || ip4_addr2(&info.ip) || ip4_addr3(&info.ip) || ip4_addr4(&info.ip))) {
 #endif
 			char *out;
 			xsResult = xsStringBuffer(NULL, 4 * 5);
