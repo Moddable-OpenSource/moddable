@@ -124,11 +124,6 @@ void xs_wifi_scan(xsMachine *the)
 	qapi_WLAN_Start_Scan(deviceId, &scan_params, QAPI_WLAN_BUFFER_SCAN_RESULTS_NON_BLOCKING_E);
 }
 
-void xs_wifi_status(xsMachine *the)
-{
-	xsmcSetInteger(xsResult, gWiFiStatus);
-}
-
 void xs_wifi_connect(xsMachine *the)
 {
 	char *str;
