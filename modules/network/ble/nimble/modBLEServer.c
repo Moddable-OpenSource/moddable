@@ -26,6 +26,7 @@
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
+#include "host/ble_store.h"
 #include "host/ble_uuid.h"
 #include "esp_nimble_hci.h"
 #include "services/gap/ble_svc_gap.h"
@@ -129,6 +130,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	ble_hs_cfg.reset_cb = nimble_on_reset;
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
+	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
 	ble_svc_gatt_init();
 
@@ -233,6 +235,13 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 
 void xs_ble_server_passkey_reply(xsMachine *the)
 {
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	if (0 == c_memcmp(address, gBLE->remote_bda.val, 6)) {
+		struct ble_sm_io pkey = {0};
+		pkey.action = BLE_SM_IOACT_NUMCMP;
+		pkey.numcmp_accept = xsmcToBoolean(xsArg(1));
+		ble_sm_inject_io(gBLE->conn_id, &pkey);
+	}
 }
 
 void xs_ble_server_deploy(xsMachine *the)
@@ -392,6 +401,48 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	struct ble_sm_io pkey = {0};
+	
+	pkey.action = event->passkey.params.action;
+	
+	if (event->passkey.conn_handle != gBLE->conn_id)
+		return;
+		
+	xsBeginHost(gBLE->the);
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+
+    if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
+    	pkey.passkey = (c_rand() % 999999) + 1;
+		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSetInteger(xsVar(2), pkey.passkey);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+	}
+    else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
+		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		pkey.passkey = xsmcToInteger(xsResult);
+		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+	}
+	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
+		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	}
+	
+bail:
+	xsEndHost(gBLE->the);
+}
+
 void nimble_host_task(void *param)
 {
 	nimble_port_run();
@@ -499,6 +550,18 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 			}
 			break;
 		}
+		case BLE_GAP_EVENT_REPEAT_PAIRING: {
+			struct ble_gap_conn_desc desc;
+			
+			// delete old bond and accept new link
+			if (0 == ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc))
+				ble_store_util_delete_peer(&desc.peer_id_addr);
+				
+			return BLE_GAP_REPEAT_PAIRING_RETRY;
+		}
+		case BLE_GAP_EVENT_PASSKEY_ACTION:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), passkeyEvent, NULL);
+			break;
 		default:
 			break;
     }
