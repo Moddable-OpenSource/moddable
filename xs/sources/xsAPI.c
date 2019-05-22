@@ -1875,7 +1875,7 @@ void fxBuildModuleMap(txMachine* the)
 				c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
 				target->value.symbol = fxNewNameC(the, path);
 				target->kind = XS_SYMBOL_KIND;
-				path[atomSize - sizeof(Atom) - 5] = 0;
+				path[atomSize - sizeof(Atom) - 4] = 0;
 				target->ID = fxNewNameC(the, path + preparation->baseLength);
 				p += atomSize;
 				// CODE
