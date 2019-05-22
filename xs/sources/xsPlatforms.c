@@ -260,8 +260,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			txSlot* slot = mxAvailableModules(realm);
             slot = slot->value.reference->next;
 			while (slot) {
-				if (!c_strcmp(slot->value.string, name))
-					return slot->ID;
+				txSlot* key = fxGetKey(the, slot->ID);
+				if (key && !c_strcmp(key->value.key.string, name))
+					return slot->value.symbol;
 				slot = slot->next;
 			}
 			c_strcpy(path, preparation->base);
@@ -300,7 +301,7 @@ txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* 
 	*id = fxNewNameC(the, path);
 	slot = mxAvailableModules(realm)->value.reference->next;
 	while (slot) {
-		if (slot->ID == *id)
+		if (slot->value.symbol == *id)
 			return 1;
 		slot = slot->next;
 	}

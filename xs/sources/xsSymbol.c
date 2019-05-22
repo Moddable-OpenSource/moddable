@@ -160,7 +160,7 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 	txSlot* slot = fxCheckSymbol(the, mxThis);
 	if (!slot) mxTypeError("this is no symbol");
 	slot = fxGetKey(the, slot->value.symbol);
-	if (slot) {
+	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))) {
 		mxResult->kind = slot->kind;
 		mxResult->value = slot->value;
 	}
@@ -209,7 +209,7 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 {
 	txSlot* key = fxGetKey(the, slot->value.symbol);
 	fxStringX(the, slot, "Symbol(");
-	if (key)
+	if (key && ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)))
 		fxConcatStringC(the, slot, key->value.string);
 	fxConcatStringC(the, slot, ")");
 }

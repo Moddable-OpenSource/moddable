@@ -317,6 +317,21 @@ int main(int argc, char* argv[])
 							preload = preload->nextPreload;
 						}
 						{
+							txSlot* property;
+							property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+							property->kind = mxThrowTypeErrorFunction.kind;
+							property->value = mxThrowTypeErrorFunction.value;
+							property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+							property->kind = mxThrowTypeErrorFunction.kind;
+							property->value = mxThrowTypeErrorFunction.value;
+							property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+							property->kind = mxThrowTypeErrorFunction.kind;
+							property->value = mxThrowTypeErrorFunction.value;
+							property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+							property->kind = mxThrowTypeErrorFunction.kind;
+							property->value = mxThrowTypeErrorFunction.value;
+						}
+						{
 							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 							txSlot* modules = mxRequiredModules(realm)->value.reference;
 							txSlot* module = modules->next;
@@ -334,6 +349,8 @@ int main(int argc, char* argv[])
 						}
 						if (linker->stripping) {
 							fxFreezeBuiltIns(the);
+							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
+							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
 						}
 					}
 					xsCatch {
@@ -355,77 +372,77 @@ int main(int argc, char* argv[])
 			linker->bigintSize = 0;
 			count = fxPrepareHeap(the, stripping || linker->firstStrip);
 			
-			if (optimizing) {
-				linker->realm = the;
-				fxOptimize(linker);
-				linker->realm = NULL;
-				xsDeleteMachine(the);
-				linker->firstCallback = NULL;
-				linker->firstBuilder = NULL;
-				linker->lastBuilder = NULL;
-				linker->builderCount = 0;
-				linker->firstProjection = NULL;
-				script = linker->firstScript;
-				while (script) {
-					script->builders = C_NULL;
-					script->callbackNames = C_NULL;
-					script->hostsCount = 0;
-					script = script->nextScript;
-				}
-				the = xsCreateMachine(creation, "xsl", linker);
-				mxThrowElse(the);
-				xsBeginHost(the);
-				{
-					xsVars(2);
-					{
-						xsTry {
-							preload = linker->firstPreload;
-							while (preload) {
-								fxSlashPath(preload->name, mxSeparator, url[0]);
-								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
-								preload = preload->nextPreload;
-							}
-							{
-								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-								txSlot* modules = mxRequiredModules(realm)->value.reference;
-								txSlot* module = modules->next;
-									fprintf(stderr, "%p %p %p\n", realm, modules, module);
-								while (module) {
-								fprintf(stderr, "%p\n", module);
-									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-									module = modules->next;
-								}
-								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-								mxProgram.value.reference = modules; //@@
-								mxPendingJobs = mxUndefined;
-								mxRunningJobs = mxUndefined;
-								mxBreakpoints = mxUndefined;
-								mxHostInspectors = mxUndefined;
-								mxInstanceInspectors = mxUndefined;
-							}
-							if (linker->stripping)
-								fxFreezeBuiltIns(the);
-							xsCollectGarbage();
-						}
-						xsCatch {
-							xsStringValue message = xsToString(xsException);
-							fxReportLinkerError(linker, "%s", message);
-						}
-					}
-				}
-				xsEndHost(the);
-				if (stripping)
-					fxStripCallbacks(linker, the);
-				else
-					fxUnstripCallbacks(linker);
-				strip = linker->firstStrip;
-				while (strip) {
-					fxStripName(linker, strip->name);
-					strip = strip->nextStrip;
-				}
-				linker->bigintSize = 0;
-				count = fxPrepareHeap(the, stripping || linker->firstStrip);
-			}
+// 			if (optimizing) {
+// 				linker->realm = the;
+// 				fxOptimize(linker);
+// 				linker->realm = NULL;
+// 				xsDeleteMachine(the);
+// 				linker->firstCallback = NULL;
+// 				linker->firstBuilder = NULL;
+// 				linker->lastBuilder = NULL;
+// 				linker->builderCount = 0;
+// 				linker->firstProjection = NULL;
+// 				script = linker->firstScript;
+// 				while (script) {
+// 					script->builders = C_NULL;
+// 					script->callbackNames = C_NULL;
+// 					script->hostsCount = 0;
+// 					script = script->nextScript;
+// 				}
+// 				the = xsCreateMachine(creation, "xsl", linker);
+// 				mxThrowElse(the);
+// 				xsBeginHost(the);
+// 				{
+// 					xsVars(2);
+// 					{
+// 						xsTry {
+// 							preload = linker->firstPreload;
+// 							while (preload) {
+// 								fxSlashPath(preload->name, mxSeparator, url[0]);
+// 								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
+// 								preload = preload->nextPreload;
+// 							}
+// 							{
+// 								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+// 								txSlot* modules = mxRequiredModules(realm)->value.reference;
+// 								txSlot* module = modules->next;
+// 									fprintf(stderr, "%p %p %p\n", realm, modules, module);
+// 								while (module) {
+// 								fprintf(stderr, "%p\n", module);
+// 									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+// 									module = modules->next;
+// 								}
+// 								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+// 								mxProgram.value.reference = modules; //@@
+// 								mxPendingJobs = mxUndefined;
+// 								mxRunningJobs = mxUndefined;
+// 								mxBreakpoints = mxUndefined;
+// 								mxHostInspectors = mxUndefined;
+// 								mxInstanceInspectors = mxUndefined;
+// 							}
+// 							if (linker->stripping)
+// 								fxFreezeBuiltIns(the);
+// 							xsCollectGarbage();
+// 						}
+// 						xsCatch {
+// 							xsStringValue message = xsToString(xsException);
+// 							fxReportLinkerError(linker, "%s", message);
+// 						}
+// 					}
+// 				}
+// 				xsEndHost(the);
+// 				if (stripping)
+// 					fxStripCallbacks(linker, the);
+// 				else
+// 					fxUnstripCallbacks(linker);
+// 				strip = linker->firstStrip;
+// 				while (strip) {
+// 					fxStripName(linker, strip->name);
+// 					strip = strip->nextStrip;
+// 				}
+// 				linker->bigintSize = 0;
+// 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
+// 			}
 
 // 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
 	
@@ -819,12 +836,12 @@ void fxFreezeBuiltIns(txMachine* the)
 		fxGetID(the, mxID(_prototype));
 		fxFreezeBuiltIn(the);
 	}
-	
 	mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); fxFreezeBuiltIn(the);
 	
 	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
 	
 	mxPush(mxProgram); fxFreezeBuiltIn(the); //@@
+	
 }
 
 void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)

@@ -80,6 +80,7 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 	txSlot* from;
 	txSlot* to;
 	result = fxNewInstance(the);
+	result->flag = instance->flag & ~XS_MARK_FLAG;
 	result->value.instance.garbage = C_NULL;
 	result->value.instance.prototype = instance->value.instance.prototype;
 	from = instance->next;
@@ -88,7 +89,7 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 		to = to->next = fxDuplicateSlot(the, from);
 		from = from->next;
 	}
-	return alias;
+	return result;
 }
 
 txSlot* fxGetInstance(txMachine* the, txSlot* theSlot)

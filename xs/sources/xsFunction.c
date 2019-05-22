@@ -269,6 +269,8 @@ void fx_Function(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -290,7 +292,7 @@ void fx_Function(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, fxCurrentModule(the));
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -688,6 +690,8 @@ void fx_AsyncFunction(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -709,7 +713,7 @@ void fx_AsyncFunction(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, fxCurrentModule(the));
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);

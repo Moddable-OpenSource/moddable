@@ -741,6 +741,7 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
 
 extern txSlot* fxAliasInstance(txMachine* the, txSlot* instance);
+extern txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance);
 extern txSlot* fxNewInstance(txMachine* the);
 extern txSlot* fxToInstance(txMachine* the, txSlot* theSlot);
 extern void fxToPrimitive(txMachine* the, txSlot* theSlot, txBoolean theHint);
@@ -1609,8 +1610,6 @@ extern const txBehavior gxModuleBehavior;
 
 extern void fxBuildModule(txMachine* the);
 
-extern txSlot* fxCurrentModule(txMachine* the);
-extern txID fxCurrentModuleID(txMachine* the);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
 extern txSlot* fxRequireModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
@@ -1618,13 +1617,13 @@ extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* 
 
 mxExport void fx_require(txMachine* the);
 mxExport void fx_require_get_cache(txMachine* the);
-mxExport void fx_require_get_map(txMachine* the);
 mxExport void fx_require_get_uri(txMachine* the);
 mxExport void fx_require_resolve(txMachine* the);
 mxExport void fx_Module(txMachine* the);
 mxExport void fx_Transfer(txMachine* the);
 
 mxExport void fx_Compartment(txMachine* the);
+mxExport void fx_Compartment_get_modles(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile

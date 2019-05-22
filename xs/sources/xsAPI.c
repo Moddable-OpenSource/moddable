@@ -1594,7 +1594,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
 			fxBuildModuleMap(the);
-			fxNewRealmInstance(the);
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
 			
@@ -1850,8 +1849,10 @@ void fxBuildModuleMap(txMachine* the)
 		while (c > 0) {
 			target = target->next = fxNewSlot(the);
 			c_strcpy(path + preparation->baseLength, script->path);
-			target->ID = fxNewNameC(the, path);
-			fxStringBuffer(the, target, script->path, c_strlen(script->path) - 4);
+			target->value.symbol = fxNewNameC(the, path);
+			target->kind = XS_SYMBOL_KIND;
+			path[c_strlen(path) - 4] = 0;
+			target->ID = fxNewNameC(the, path + preparation->baseLength);
 			c--;
 			script++;
 		}
@@ -1872,8 +1873,10 @@ void fxBuildModuleMap(txMachine* the)
 				atomSize = c_read32be(p);
 				target = target->next = fxNewSlot(the);
 				c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
-				target->ID = fxNewNameC(the, path);
-				fxStringBuffer(the, target, path + preparation->baseLength, atomSize - sizeof(Atom) - 5);
+				target->value.symbol = fxNewNameC(the, path);
+				target->kind = XS_SYMBOL_KIND;
+				path[atomSize - sizeof(Atom) - 5] = 0;
+				target->ID = fxNewNameC(the, path + preparation->baseLength);
 				p += atomSize;
 				// CODE
 				atomSize = c_read32be(p);

@@ -1215,10 +1215,10 @@ void fxSweep(txMachine* the)
 					else if (bSlot->value.host.variant.destructor)
 						(*(bSlot->value.host.variant.destructor))(bSlot->value.host.data);
 				}
-				if (bSlot->kind == XS_MODULE_KIND) {
-					char* name = fxGetKeyName(the, bSlot->value.module.id);
-					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);
-				}
+// 				if (bSlot->kind == XS_MODULE_KIND) {
+// 					char* name = fxGetKeyName(the, bSlot->value.module.id);
+// 					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);
+// 				}
 			#if mxInstrument
 				if (bSlot->kind == XS_MODULE_KIND)
 					the->loadedModulesCount--;

@@ -161,7 +161,7 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID);
 	mxThrowTypeErrorFunction = *the->stack;
 	slot = the->stack->value.reference;
-	slot->flag |= XS_DONT_PATCH_FLAG;
+	slot->flag |= XS_CAN_CONSTRUCT_FLAG | XS_DONT_PATCH_FLAG;
 	slot = slot->next;
 	while (slot) {
 		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
@@ -495,9 +495,11 @@ void fx_escape(txMachine* the)
 void fx_eval(txMachine* the)
 {
 	txStringStream aStream;
-	txSlot* module = fxCurrentModule(the);
-	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
-
+	txSlot* realm;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
+	
+	realm = mxModuleInstanceInternal(module)->value.module.realm;
 	if (mxArgc < 1)
 		return;
 	if (!mxIsStringPrimitive(mxArgv(0))) {
