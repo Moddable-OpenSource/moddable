@@ -1842,7 +1842,7 @@ void fxBuildModuleMap(txMachine* the)
 	txSlot* target = fxNewInstance(the);
 	txPreparation* preparation = the->preparation;
 	if (preparation) {
-		char path[C_PATH_MAX];
+		char* path = the->nameBuffer;
 		txInteger c = preparation->scriptCount;
 		txScript* script = preparation->scripts;
 		c_memcpy(path, preparation->base, preparation->baseLength);

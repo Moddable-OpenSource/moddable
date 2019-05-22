@@ -265,11 +265,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 					return slot->value.symbol;
 				slot = slot->next;
 			}
-			c_strcpy(path, preparation->base);
-			c_strcat(path, name);
-			c_strcat(path, ".xsb");
-			if (fxFindPreparation(the, realm, path, &id))
-				return id;
 		}
 	}
 	return XS_NO_ID;
@@ -277,32 +272,13 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 
 txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id)
 {
-	txSize size;
-	txByte* code = fxGetArchiveCode(the, path, &size);
-	txSlot* slot;
-	if (!code) {
-		txPreparation* preparation = the->preparation;
-		txInteger c = preparation->scriptCount;
-		txScript* script = preparation->scripts;
-		path += preparation->baseLength;
-		while (c > 0) {
-			if (!c_strcmp(path, script->path)) {
-				path -= preparation->baseLength;
-				break;
-			}
-			c--;
-			script++;
-		}
-		if (c == 0) {
-			*id = XS_NO_ID;
-			return 0;
-		}
-	}
-	*id = fxNewNameC(the, path);
-	slot = mxAvailableModules(realm)->value.reference->next;
+	txID result = fxFindName(the, path);
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
 	while (slot) {
-		if (slot->value.symbol == *id)
+		if (slot->value.symbol == result) {
+			*id = result;
 			return 1;
+		}
 		slot = slot->next;
 	}
 	*id = XS_NO_ID;

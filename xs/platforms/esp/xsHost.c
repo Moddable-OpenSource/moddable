@@ -870,21 +870,16 @@ void fxBuildKeys(txMachine* the)
 {
 }
 
-static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
+static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID* id)
 {
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	path += preparation->baseLength;
-	c_strcat(path, ".xsb");
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			path -= preparation->baseLength;
-			*id = fxNewNameC(the, path);
+	txID result = fxFindName(the, path);
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == result) {
+			*id = result;
 			return 1;
 		}
-		c--;
-		script++;
+		slot = slot->next;
 	}
 	*id = XS_NO_ID;
 	return 0;
@@ -939,15 +934,15 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-#if MODDEF_XS_MODS
-	if (findMod(the, name, NULL)) {
-		c_strcpy(path, "/");
-		c_strcat(path, name);
-		c_strcat(path, ".xsb");
-		return fxNewNameC(the, path);
-	}
-#endif
-
+// #if MODDEF_XS_MODS
+// 	if (findMod(the, name, NULL)) {
+// 		c_strcpy(path, "/");
+// 		c_strcat(path, name);
+// 		c_strcat(path, ".xsb");
+// 		return fxNewNameC(the, path);
+// 	}
+// #endif
+// 
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
 	}	
@@ -966,7 +961,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (absolute) {
 		c_strcpy(path, preparation->base);
 		c_strcat(path, name + 1);
-		if (fxFindScript(the, path, &id))
+		if (fxFindScript(the, realm, path, &id))
 			return id;
 	}
 	if (relative && (moduleID != XS_NO_ID)) {
@@ -985,7 +980,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
 			*slash = 0;
 			c_strcat(path, name + dot);
-			if (fxFindScript(the, path, &id))
+			if (fxFindScript(the, realm, path, &id))
 				return id;
 		}
 #if 0
@@ -997,10 +992,14 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 	}
 	if (search) {
-		c_strcpy(path, preparation->base);
-		c_strcat(path, name);
-		if (fxFindScript(the, path, &id))
-			return id;
+		txSlot* slot = mxAvailableModules(realm);
+		slot = slot->value.reference->next;
+		while (slot) {
+			txSlot* key = fxGetKey(the, slot->ID);
+			if (key && !c_strcmp(key->value.key.string, name))
+				return slot->value.symbol;
+			slot = slot->next;
+		}
 	}
 	return XS_NO_ID;
 }

@@ -1623,7 +1623,7 @@ mxExport void fx_Module(txMachine* the);
 mxExport void fx_Transfer(txMachine* the);
 
 mxExport void fx_Compartment(txMachine* the);
-mxExport void fx_Compartment_get_modles(txMachine* the);
+mxExport void fx_Compartment_get_map(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
