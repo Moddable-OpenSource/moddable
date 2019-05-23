@@ -69,6 +69,11 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
     	ble_hs_cfg.sm_their_key_dist = 1;
  	}
     ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
-    ble_hs_cfg.sm_sc = encryption ? 1 : 0;
+    
+	// https://github.com/espressif/esp-idf/issues/3532
+    // Enabling LE 4.2 secure connections in the app leads to pairing requests to be ignored
+	// The ble_gap_security_initiate() function called from the server does not
+	// trigger the pairing request.
+	//ble_hs_cfg.sm_sc = 1;
 }
 

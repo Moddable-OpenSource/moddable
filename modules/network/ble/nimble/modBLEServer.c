@@ -132,7 +132,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-	ble_svc_gatt_init();
+    ble_store_ram_init();
 
 	nimble_port_freertos_init(ble_host_task);
 }
@@ -212,7 +212,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	uint16_t notify = xsmcToInteger(xsArg(1));
 	struct os_mbuf *om;
 
-	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), sizeof(xsGetArrayBufferLength(xsArg(2))));
+	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
 	if (notify)
 		ble_gattc_notify_custom(gBLE->conn_id, handle, om);
 	else
@@ -249,41 +249,47 @@ void xs_ble_server_deploy(xsMachine *the)
 	// services deployed from readyEvent(), since stack requires deploy before advertising
 }
 
-static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+static void deployServices(xsMachine *the)
 {
 	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
 	uint8_t hasGAP = false;
 
+	if (0 == service_count)
+		return;
+		
+	// Set device name and appearance from app GAP service when available
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+		if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
+			hasGAP = true;
+			break;
+		}
+	}
+	
+	int rc = ble_gatts_reset();
+	if (0 == rc) {
+		if (!hasGAP) {
+			ble_svc_gap_init();
+			ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
+			ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
+		}
+	}
+	if (0 == rc)
+		rc = ble_gatts_count_cfg(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_add_svcs(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_start();
+	if (0 != rc)
+		xsUnknownError("failed to start services");
+}
+
+static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
-	if (0 != service_count) {
-		// Set device name and appearance from app GAP service when available
-		for (int service_index = 0; service_index < service_count; ++service_index) {
-			const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
-			if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
-				hasGAP = true;
-				break;
-			}
-		}
-		
-		int rc = ble_gatts_reset();
-		if (0 == rc) {
-			if (!hasGAP) {
-				ble_svc_gap_init();
-				ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
-				ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
-			}
-		}
-		if (0 == rc)
-			rc = ble_gatts_count_cfg(gatt_svr_svcs);
-		if (0 == rc)
-			rc = ble_gatts_add_svcs(gatt_svr_svcs);
-		if (0 == rc)
-			rc = ble_gatts_start();
-		if (0 != rc)
-			xsUnknownError("failed to start services");
-	}
+	deployServices(the);
 
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
@@ -443,6 +449,22 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	if (0 == event->enc_change.status) {
+		struct ble_gap_conn_desc desc;
+        int rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+        if (0 == rc) {
+        	if (desc.sec_state.encrypted) {
+				xsBeginHost(gBLE->the);
+				xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+				xsEndHost(gBLE->the);
+        	}
+        }
+	}
+}
+
 void nimble_host_task(void *param)
 {
 	nimble_port_run();
@@ -529,6 +551,8 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 		case BLE_GAP_EVENT_CONNECT:
 			if (event->connect.status == 0) {
 				if (0 == ble_gap_conn_find(event->connect.conn_handle, &desc)) {
+					if (gBLE->mitm || gBLE->encryption)
+						ble_gap_security_initiate(desc.conn_handle);
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
 					goto bail;
 				}
@@ -548,6 +572,10 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 				state->handle = event->subscribe.attr_handle;
 				modMessagePostToMachine(gBLE->the, NULL, 0, notificationStateEvent, state);
 			}
+			break;
+		}
+		case BLE_GAP_EVENT_ENC_CHANGE: {
+			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), encryptionChangeEvent, NULL);
 			break;
 		}
 		case BLE_GAP_EVENT_REPEAT_PAIRING: {
@@ -613,6 +641,7 @@ static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t a
 
 	switch (ctxt->op) {
         case BLE_GATT_ACCESS_OP_READ_CHR:
+        	// @@
         	break;
 		case BLE_GATT_ACCESS_OP_WRITE_CHR: {
 			uint8_t *data;
