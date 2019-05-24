@@ -811,6 +811,64 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsEndHost(gBLE->the);
 }
 
+static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	struct ble_sm_io pkey = {0};
+	
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(event->passkey.conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+		
+	pkey.action = event->passkey.params.action;
+	
+	xsBeginHost(gBLE->the);
+	xsmcVars(3);
+	xsVar(0) = xsmcNewObject();
+
+    if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
+    	pkey.passkey = (c_rand() % 999999) + 1;
+		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetInteger(xsVar(2), pkey.passkey);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+	}
+    else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
+		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		pkey.passkey = xsmcToInteger(xsResult);
+		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+	}
+	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
+		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	}
+	
+	xsEndHost(gBLE->the);
+}
+
+static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	if (0 == event->enc_change.status) {
+		struct ble_gap_conn_desc desc;
+        int rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+        if (0 == rc) {
+        	if (desc.sec_state.encrypted) {
+				xsBeginHost(gBLE->the);
+				xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+				xsEndHost(gBLE->the);
+        	}
+        }
+	}
+}
+
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg)
 {
 	int rc = 0;
@@ -960,6 +1018,18 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 			}
 			break;
 		}
+		case BLE_GAP_EVENT_ENC_CHANGE:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), encryptionChangeEvent, NULL);
+			break;
+		case BLE_GAP_EVENT_REPEAT_PAIRING:
+			// delete old bond and accept new link
+			if (0 == ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc))
+				ble_store_util_delete_peer(&desc.peer_id_addr);
+			return BLE_GAP_REPEAT_PAIRING_RETRY;
+			break;
+		case BLE_GAP_EVENT_PASSKEY_ACTION:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), passkeyEvent, NULL);
+			break;
 		default:
 			break;
     }

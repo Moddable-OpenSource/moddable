@@ -132,7 +132,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-    ble_store_ram_init();
+   // ble_store_ram_init();
 
 	nimble_port_freertos_init(ble_host_task);
 }
@@ -415,7 +415,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	pkey.action = event->passkey.params.action;
 	
 	if (event->passkey.conn_handle != gBLE->conn_id)
-		return;
+		xsUnknownError("connection not found");
 		
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
@@ -574,19 +574,15 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 			}
 			break;
 		}
-		case BLE_GAP_EVENT_ENC_CHANGE: {
+		case BLE_GAP_EVENT_ENC_CHANGE:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), encryptionChangeEvent, NULL);
 			break;
-		}
-		case BLE_GAP_EVENT_REPEAT_PAIRING: {
-			struct ble_gap_conn_desc desc;
-			
+		case BLE_GAP_EVENT_REPEAT_PAIRING:
 			// delete old bond and accept new link
 			if (0 == ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc))
 				ble_store_util_delete_peer(&desc.peer_id_addr);
-				
 			return BLE_GAP_REPEAT_PAIRING_RETRY;
-		}
+			break;
 		case BLE_GAP_EVENT_PASSKEY_ACTION:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), passkeyEvent, NULL);
 			break;
