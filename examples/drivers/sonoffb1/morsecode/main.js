@@ -86,7 +86,6 @@ for (let i = 0; i < message.length; i++) {
 const light = new MY92x1;
 const brightness = 16;
 const interval = 125;
-const color = [brightness, brightness, 0, 0, 0, 0];
 
 let position = -1;
 let value = 0;
