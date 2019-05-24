@@ -17,7 +17,7 @@ import Timer from "timer";
 
 const light = new MY92x1;
 const brightness = 16;
-const interval = 5 * 1000;		// ten seconds
+const interval = 10 * 1000;		// ten seconds
 
 light.write(brightness, 0, 0, 0, 0, 0); // warm
 
