@@ -310,20 +310,14 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewArgumentsStrictInstance,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
-	if (fxIsCodeUsed(XS_CODE_EVAL)) {
-		if (fxIsLinkerSymbolUsed(linker, mxID(_eval))) {
-			fprintf(file, "\tfxRunEval,\n");
-			fprintf(file, "\tfxRunEvalEnvironment,\n");
-		}
-		else {
-			fprintf(file, "\tfxDeadStrip,\n");
-			fprintf(file, "\tC_NULL,\n");
-		}
-	}
-	else {
+	if (fxIsCodeUsed(XS_CODE_EVAL))
+		fprintf(file, "\tfxRunEval,\n");
+	else
+		fprintf(file, "\tfxDeadStrip,\n");
+	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsLinkerSymbolUsed(linker, mxID(_eval)))
+		fprintf(file, "\tfxRunEvalEnvironment,\n");
+	else
 		fprintf(file, "\tC_NULL,\n");
-		fprintf(file, "\tC_NULL,\n");
-	}
 	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
 		fprintf(file, "\tfxRunProgramEnvironment,\n");
 	else

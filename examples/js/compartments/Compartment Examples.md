@@ -290,18 +290,18 @@ Each compartment has its own `Function` constructor and its own `eval` function.
 
 For instance in the *Separate Globals* example here above, the `increment` function:
 
-	global.increment = function() {
+	globalThis.increment = function() {
 	    return x++;
 	}
 
 can be replaced by:
 
-	global.increment = new Function("return x++");
+	globalThis.increment = new Function("return x++");
 	
 or by:
 	
-	global.increment = function() {
-	    return eval("x++");
+	globalThis.increment = function() {
+	    return (1,eval)("x++");
 	}
 
 without changing the observed behavior.
