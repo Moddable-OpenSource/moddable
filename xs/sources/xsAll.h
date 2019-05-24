@@ -2266,8 +2266,6 @@ enum {
 
 #define mxArrayConstructor the->stackPrototypes[-1 - _Array]
 #define mxArrayBufferConstructor the->stackPrototypes[-1 - _ArrayBuffer]
-#define mxAsyncFunctionConstructor the->stackPrototypes[-1 - _AsyncFunction]
-#define mxAsyncGeneratorFunctionConstructor the->stackPrototypes[-1 - _AsyncGeneratorFunction]
 #define mxAtomicsObject the->stackPrototypes[-1 - _Atomics]
 #define mxBigIntConstructor the->stackPrototypes[-1 - _BigInt]
 #define mxBigInt64ArrayConstructor the->stackPrototypes[-1 - _BigInt64Array]
@@ -2281,7 +2279,6 @@ enum {
 #define mxFloat32ArrayConstructor the->stackPrototypes[-1 - _Float32Array]
 #define mxFloat64ArrayConstructor the->stackPrototypes[-1 - _Float64Array]
 #define mxFunctionConstructor the->stackPrototypes[-1 - _Function]
-#define mxGeneratorFunctionConstructor the->stackPrototypes[-1 - _GeneratorFunction]
 #define mxInfinity the->stackPrototypes[-1 - _Infinity]
 #define mxInt16ArrayConstructor the->stackPrototypes[-1 - _Int16Array]
 #define mxInt32ArrayConstructor the->stackPrototypes[-1 - _Int32Array]

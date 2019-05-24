@@ -78,7 +78,6 @@ void fxBuildFunction(txMachine* the)
 	mxAsyncFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
 	slot->value.instance.prototype = constructor;
-	mxAsyncFunctionConstructor = *the->stack;
 	the->stack++;
 	slot = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;

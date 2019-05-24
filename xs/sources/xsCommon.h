@@ -645,15 +645,15 @@ enum {
 	
 	_undefined,
 	
-	_AsyncFunction,
-	_AsyncGeneratorFunction,
 	_Compartment,
 	_Function,
-	_GeneratorFunction,
 	_eval,
 	_require,
 	
 	___proto__,
+	_AsyncFunction,
+	_AsyncGeneratorFunction,
+	_GeneratorFunction,
 	_BYTES_PER_ELEMENT,
 	_E,
 	_EPSILON,
@@ -808,6 +808,7 @@ enum {
 	_getUint8Clamped,
 	_getYear,
 	_global,
+	_globalThis,
 	_groups,
 	_has,
 	_hasInstance,

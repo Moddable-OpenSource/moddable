@@ -1047,15 +1047,15 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	
 	"undefined",
 	
-	"AsyncFunction",
-	"AsyncGeneratorFunction",
 	"Compartment",
 	"Function",
-	"GeneratorFunction",
 	"eval",
 	"require",
 	
 	"__proto__",
+	"AsyncFunction",
+	"AsyncGeneratorFunction",
+	"GeneratorFunction",
 	"BYTES_PER_ELEMENT",
 	"E",
 	"EPSILON",
@@ -1210,6 +1210,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"getUint8Clamped",
 	"getYear",
 	"global",
+	"globalThis",
 	"groups",
 	"has",
 	"hasInstance",

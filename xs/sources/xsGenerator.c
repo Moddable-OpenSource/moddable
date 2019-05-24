@@ -60,7 +60,6 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxNextStringXProperty(the, slot, "GeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_GeneratorFunction), 1, mxID(_GeneratorFunction));
-	mxGeneratorFunctionConstructor = *the->stack;
 	the->stack++;
 	
 	slot = mxBehaviorGetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
@@ -86,7 +85,6 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxNextStringXProperty(the, slot, "AsyncGeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncGeneratorFunction), 1, mxID(_AsyncGeneratorFunction));
-	mxAsyncGeneratorFunctionConstructor = *the->stack;
 	the->stack++;
 
 	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
