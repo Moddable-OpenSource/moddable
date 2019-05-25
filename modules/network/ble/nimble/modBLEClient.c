@@ -23,6 +23,7 @@
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
+#include "modTimer.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
@@ -70,6 +71,8 @@ typedef struct {
 
 	modBLEConnection connections;
 	uint8_t terminating;
+	
+	modTimer smTimer;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -243,6 +246,22 @@ void xs_ble_client_connect(xsMachine *the)
 	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
 }
 
+void smTimerCallback(modTimer timer, void *refcon, int refconSize)
+{
+	modTimerRemove(timer);
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), gBLE->encryption);
+	xsmcSet(xsVar(0), xsID_encryption, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->bonding);
+	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->mitm);
+	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void xs_ble_client_set_security_parameters(xsMachine *the)
 {
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
@@ -256,14 +275,28 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 
 	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
 
-//	if (mitm)
-//		esp_ble_gap_config_local_privacy(true);	// generate random address
+	if (mitm) {	// generate random address
+		ble_addr_t addr;
+		ble_hs_id_gen_rnd(1, &addr);
+		ble_hs_id_set_rnd(addr.val);
+		
+		gBLE->smTimer = modTimerAdd(20, 0, smTimerCallback, NULL, 0);
+	}
 }
 
 void xs_ble_client_passkey_reply(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint8_t confirm = xsmcToBoolean(xsArg(1));
+	modBLEConnection connection;
+	for (connection = gBLE->connections; NULL != connection; connection = connection->next)
+		if (0 == c_memcmp(address, &connection->bda.val, 6))
+			break;
+	if (!connection)
+		xsUnknownError("connection not found");
+	struct ble_sm_io pkey = {0};
+	pkey.action = BLE_SM_IOACT_NUMCMP;
+	pkey.numcmp_accept = xsmcToBoolean(xsArg(1));
+	ble_sm_inject_io(connection->conn_id, &pkey);
 }
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -576,10 +609,6 @@ bail:
 	return result;
 }
 
-static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-}
-
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_disc_desc *disc = (struct ble_gap_disc_desc *)message;
@@ -646,22 +675,6 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
-}
-
-static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-}
-
-static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-}
-
-static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-}
-
-static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
 }
 
 static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -994,6 +1007,8 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 		case BLE_GAP_EVENT_CONNECT:
 			if (event->connect.status == 0) {
 				if (0 == ble_gap_conn_find(event->connect.conn_handle, &desc)) {
+					if (gBLE->mitm || gBLE->encryption)
+						ble_gap_security_initiate(desc.conn_handle);
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
 					goto bail;
 				}
