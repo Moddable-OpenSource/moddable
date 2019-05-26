@@ -302,18 +302,26 @@ int main(int argc, char* argv[])
 			the = xsCreateMachine(creation, "xsl", linker);
 			mxThrowElse(the);
 			
-			
 			xsBeginHost(the);
 			{
 				xsVars(2);
 				{
 					xsTry {
 						xsCollectGarbage();
+						c_strcpy(path, linker->base);
+						script = linker->firstScript;
+						while (script) {
+							c_strcpy(path + linker->baseLength, script->path);
+							fxNewNameC(the, path);
+							path[linker->baseLength + script->pathSize - 5] = 0;
+							fxNewNameC(the, path + linker->baseLength);
+							script = script->nextScript;
+						}
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
 							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
-                            xsCollectGarbage();
+							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
 						{
