@@ -1920,15 +1920,17 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
+	ets_isr_mask(FLASH_INT_MASK);
+
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 
 		if (size <= toAlign)
-			return 1;
+			goto bail;
 
 		src += toAlign;
 		offset += toAlign;
@@ -1943,7 +1945,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
 				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, use))
-					return 0;
+					goto fail;
 
 				toAlign -= use;
 				src += use;
@@ -1952,7 +1954,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		}
 		else {
 			if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)src, toAlign))
-				return 0;
+				goto fail;
 			src += toAlign;
 			offset += toAlign;
 		}
@@ -1962,10 +1964,16 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 	}
 
+bail:
+	ets_isr_unmask(FLASH_INT_MASK);
 	return 1;
+
+fail:
+	ets_isr_unmask(FLASH_INT_MASK);
+	return 0;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
@@ -1976,8 +1984,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	offset /= SPI_FLASH_SEC_SIZE;
 	size /= SPI_FLASH_SEC_SIZE;
 	while (size--) {
+		int err;
+
 		optimistic_yield(10000);
-		if (SPI_FLASH_RESULT_OK != spi_flash_erase_sector(offset++))
+    	ets_isr_mask(FLASH_INT_MASK);
+    	err = spi_flash_erase_sector(offset++);
+    	ets_isr_unmask(FLASH_INT_MASK);
+		if (SPI_FLASH_RESULT_OK != err)
 			return 0;
 	}
 
