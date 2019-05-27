@@ -42,7 +42,10 @@
 		"esp": {
 			"include": "$(BUILD)/devices/esp/manifest.json",
 			"modules": {
-				"*": "$(MODULES)/files/preference/esp/*"
+				"*": [
+					"$(MODULES)/files/preference/esp/*",
+					"$(MODULES)/network/socket/lwip/modLwipSafe",
+				],
 			},
 		},
 		"esp32": {
