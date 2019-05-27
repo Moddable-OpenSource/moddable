@@ -144,6 +144,7 @@ extern void modPrelaunch(void);
 extern int ESP_getc(void);
 extern void ESP_putc(int c);
 extern uint8_t ESP_isReadable(void);
+extern uint8_t ESP_setBaud(int baud);
 
 /*
 	timer
