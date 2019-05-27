@@ -139,7 +139,7 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/mc.so $(DATA)
+all: $(LIB_DIR) $(BIN_DIR)/mc.so
 	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 	
 $(LIB_DIR):
@@ -166,9 +166,9 @@ $(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
 	@echo "# cc" $(<F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
