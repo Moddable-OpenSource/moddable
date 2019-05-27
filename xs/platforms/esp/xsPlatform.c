@@ -68,11 +68,13 @@ static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
 
 	#define mxDebugMutexTake() xSemaphoreTake(gDebugMutex, portMAX_DELAY)
 	#define mxDebugMutexGive() xSemaphoreGive(gDebugMutex)
+	#define mxDebugMutexAllocated() (NULL != gDebugMutex)
 
 	static int fx_vprintf(const char *str, va_list list);
 #else
 	#define mxDebugMutexTake()
 	#define mxDebugMutexGive()
+	#define mxDebugMutexAllocated() (true)
 #endif
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -684,6 +686,9 @@ void fxReceiveLoop(void)
 	static uint32_t value = 0;
 	static uint8_t bufferedBytes = 0;
 	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
+
+	if (!mxDebugMutexAllocated())
+		return;
 
 	mxDebugMutexTake();
 
