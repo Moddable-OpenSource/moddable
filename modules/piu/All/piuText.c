@@ -555,24 +555,27 @@ void PiuTextDraw(void* it, PiuView* view, PiuRectangle area)
 	PiuCoordinate clipTop = area->y;
 	PiuCoordinate clipBottom = clipTop + area->height;
 	PiuTextLink* link = NULL;
+	PiuTextLine previousLine, line = NULL, nextLine = LINE(lineOffset);
+	xsIntegerValue top, bottom;
 	
 	PiuContentDraw(it, view, area);
 	while (lineOffset < lineLimit) {
-		PiuTextLine line = LINE(lineOffset);
-		
-		if (line->top >= clipBottom)
-			break;
+		previousLine = line;
+		line = nextLine;
 		lineOffset += sizeof(PiuTextLineRecord);
-		if (line->bottom <= clipTop)
+		nextLine = (lineOffset < lineLimit) ? LINE(lineOffset) : NULL;
+		
+		top = (previousLine) ? previousLine->top : line->top;
+		bottom = (nextLine) ? nextLine->bottom : line->bottom;
+		
+		if (top >= clipBottom)
+			break;
+			
+		if (bottom <= clipTop)
 			continue;
 		
 		fromOffset = line->textOffset;
-		if (lineOffset < lineLimit) {
-			PiuTextLine nextLine = LINE(lineOffset);
-			toOffset = nextLine->textOffset;
-		}
-		else
-			toOffset = (*self)->textOffset;
+		toOffset = (nextLine) ? nextLine->textOffset : (*self)->textOffset;
 		
 		base = line->base;
 		
@@ -894,13 +897,18 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 	xsIntegerValue step;
 	PiuCoordinate lineLeft = 0;
 	PiuCoordinate lineRight = 0;
+	PiuTextLine previousLine, line = NULL, nextLine = LINE(lineOffset);
+
 	void* link = NULL;
 	if (!((*self)->flags & piuActive))
 		return NULL;
 	if ((x < 0) || (y < 0) || (x >= (*self)->bounds.width) || (y >= (*self)->bounds.height))
 		return NULL;
 	while (lineOffset < lineLimit) {
-		PiuTextLine line = LINE(lineOffset);
+		previousLine = line;
+		line = nextLine;
+		lineOffset += sizeof(PiuTextLineRecord);
+		nextLine = (lineOffset < lineLimit) ? LINE(lineOffset) : NULL;
 		
 		if (y < line->top)
 			break;
@@ -909,13 +917,7 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 			continue;
 		
 		fromOffset = line->textOffset;
-		if (lineOffset < lineLimit) {
-			PiuTextLine nextLine = LINE(lineOffset);
-			toOffset = nextLine->textOffset;
-		}
-		else {
-			toOffset = (*self)->textOffset;
-		}
+		toOffset = (nextLine) ? nextLine->textOffset : (*self)->textOffset;
 		
 		lineLeft = line->x;
 		portion = line->portion;
