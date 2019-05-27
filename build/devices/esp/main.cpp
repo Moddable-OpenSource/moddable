@@ -31,6 +31,7 @@ extern "C" {
 	extern void fx_putc(void *refcon, char c);
 	extern void mc_setup(xsMachine *the);
 	extern void __wrap_espconn_init(void);
+	extern uint8_t uart_set_baud(uart_t* uart, int baudrate);
 }
 
 void __wrap_espconn_init(void)
@@ -133,4 +134,8 @@ int ESP_getc(void)
 uint8_t ESP_isReadable()
 {
 	return uart_rx_available(gUART);
+}
+
+uint8_t ESP_setBaud(int baud) {
+	return uart_set_baud(gUART, baud);
 }

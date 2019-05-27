@@ -199,6 +199,11 @@ uint8_t ESP_isReadable() {
 	return s > 0;
 }
 
+uint8_t ESP_setBaud(int baud) {
+	uart_wait_tx_done(USE_UART, 5 * 1000);
+	return ESP_OK == uart_set_baudrate(USE_UART, baud);
+}
+
 void app_main() {
 	modPrelaunch();
 
