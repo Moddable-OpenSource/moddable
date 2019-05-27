@@ -40,10 +40,16 @@
 	"strip": "*",
 	"platforms": {
 		"esp": {
-			"include": "$(BUILD)/devices/esp/manifest.json"
+			"include": "$(BUILD)/devices/esp/manifest.json",
+			"modules": {
+				"*": "$(MODULES)/files/preference/esp/*"
+			},
 		},
 		"esp32": {
-			"include": "$(BUILD)/devices/esp32/manifest.json"
+			"include": "$(BUILD)/devices/esp32/manifest.json",
+			"modules": {
+				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
+			},
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
