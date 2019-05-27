@@ -119,16 +119,19 @@ void tcp_close_safe(struct tcp_pcb *tcpPCB)
 	tcpip_api_call(tcp_close_INLWIP, &msg.call);
 }
 
-static void tcp_output_INLWIP(void *ctx)
+static err_t tcp_output_INLWIP(struct tcpip_api_call *tcpMsg)
 {
-	struct tcp_pcb *tcpPCB = ctx;
-	if (tcpPCB)
-		tcp_output(tcpPCB);
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	tcp_output(msg->tcpPCB);
+	return ERR_OK;
 }
 
 void tcp_output_safe(struct tcp_pcb *tcpPCB)
 {
-	tcpip_callback_with_block(tcp_output_INLWIP, tcpPCB, 0);
+	LwipMsgRecord msg = {
+		.tcpPCB = tcpPCB,
+	};
+	tcpip_api_call(tcp_output_INLWIP, &msg.call);
 }
 
 static err_t tcp_write_INLWIP(struct tcpip_api_call *tcpMsg)
