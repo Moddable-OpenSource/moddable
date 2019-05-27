@@ -41,6 +41,7 @@
 #define mxBufferSize 32 * 1024
 #define mxTagSize 17
 #define mxTrace 0
+#define mxTraceCommands 0
 
 typedef struct txSerialDescriptionStruct txSerialDescriptionRecord, *txSerialDescription;
 typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
@@ -698,7 +699,9 @@ void fxInitializeTarget(txSerialTool self)
 
 	// run command
 	if (!strcmp("uninstall", gCmd)) {
+#if mxTraceCommands
 		fprintf(stderr, "### uninstall\n");
+#endif
 
 		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 		fxWriteSerial(self, out, strlen(out));
@@ -711,11 +714,15 @@ void fxInitializeTarget(txSerialTool self)
 		fxWriteSerial(self, out, out[1] + 2);
 	}
 	else if (!strcmp("install", gCmd)) {
+#if mxTraceCommands
 		fprintf(stderr, "### install\n");
+#endif
 		fxInstallFragment(self, 0);
 	}
 	else if (!strcmp("load", gCmd)) {
+#if mxTraceCommands
 		fprintf(stderr, "### load '%s'\n", gModuleName);
+#endif
 
 		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 		fxWriteSerial(self, out, strlen(out));
@@ -730,7 +737,6 @@ void fxInitializeTarget(txSerialTool self)
 		fxWriteSerial(self, out, out[1] + 2);
 	}
 
-	fprintf(stderr, "### cmd exit\n");
 	gCmd = NULL;
 }
 
@@ -740,10 +746,14 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 	uint16_t resultId = (buffer[1] << 8) | buffer[2];
 	uint16_t resultCode = (buffer[3] << 8) | buffer[4];
 
+#if mxTraceCommands
 	fprintf(stderr, "### fxCommandReceived\n");
+#endif
 
 	if (0xff02 == resultId) {	// uninstall
+#if mxTraceCommands
 		fprintf(stderr, "### uninstalled\n");
+#endif
 		fxRestart(self);
 		usleep(50000);
 		return;
@@ -754,7 +764,9 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		return;
 	}
 	if (0xe8 == (resultId >> 8)) {	// install complete
+#if mxTraceCommands
 		fprintf(stderr, "### install complete\n");
+#endif
 		fclose(gInstallFD);
 		gInstallFD = NULL;
 		fxRestart(self);
@@ -762,18 +774,21 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		return;
 	}
 
-
 	if (resultCode)
 		fprintf(stderr, "### remote operation failed with resultCode %d\n", resultCode);
+#if mxTraceCommands
 	else
 		fprintf(stderr, "### remote operation SUCCESS with resultCode %d\n", resultCode);
+#endif
 }
 
 void fxRestart(txSerialTool self)
 {
 	int fd = CFSocketGetNative(self->serialSocket), flags;
 
+#if mxTraceCommands
 	fprintf(stderr, "### fxRestart\n");
+#endif
 
 	ioctl(fd, TIOCMGET, &flags);
 	flags |= TIOCM_RTS;
@@ -794,7 +809,9 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 	char out[32];
 	struct tm *tm;
 
+#if mxTraceCommands
 	fprintf(stderr, "### set time\n");
+#endif
 
 	gettimeofday(&tv, NULL);
 	time = tv.tv_sec;
@@ -844,14 +861,18 @@ void fxInstallFragment(txSerialTool self, uint32_t offset)
 	fseek(gInstallFD, offset, SEEK_SET);
 	use = fread(out + 9, 1, use, gInstallFD);
 	if (0 == use) {
+#if mxTraceCommands
 		fprintf(stderr, "### update install header\n");
+#endif
 		offset = kInstallInitialFragmentSize;
 		fseek(gInstallFD, offset, SEEK_SET);
 		use = fread(out + 9, 1, kInstallSkipFragmentSize, gInstallFD);
 		id = 0xe8;
 	}
 
-fprintf(stderr, "### install fragment @ %d size %d\n", offset, use);
+#if mxTraceCommands
+	fprintf(stderr, "### install fragment @ %d size %d\n", offset, use);
+#endif
 
 	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 	fxWriteSerial(self, preamble, strlen(preamble));
