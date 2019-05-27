@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2019  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,7 +17,6 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ESP_BASE ?= $(HOME)/esp
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 URL ?= "~"
 
@@ -52,11 +51,10 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	esptool.py write_flash --flash_mode dio 0x100000 $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE) -load mod
 	
 release: $(ARCHIVE)
-	esptool.py --before default_reset --after hard_reset write_flash 0x100000 $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE) -load mod
 
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)

@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -94,6 +95,23 @@ static void fxUnregisterSerial(void *refCon, io_service_t service, natural_t mes
 static void fxWriteNetwork(txSerialTool self, void *buffer, int size);
 static void fxWriteSerial(txSerialTool self, void *buffer, int size);
 
+#define kInstallInitialFragmentSize (4)
+#define kInstallSkipFragmentSize (4)
+#define kInstallFragmentSize (512)
+
+static void fxInitializeTarget(txSerialTool self);
+static void fxCommandReceived(txSerialTool self, void *buffer, int size);
+static void fxRestart(txSerialTool self);
+static void fxSetTime(txSerialTool self, txSerialMachine machine);
+static void fxInstallFragment(txSerialTool self, uint32_t offset);
+
+static uint8_t gReset = true;
+static char *gCmd = NULL;
+static char *gModuleName = NULL;
+static FILE *gInstallFD = 0;
+static uint8_t gBinaryState = 0;
+static uint16_t gBinaryLength;
+
 void fxCloseNetwork(txSerialTool self, uint32_t value)
 {
 	txSerialMachine* link = &(self->firstMachine);
@@ -147,6 +165,8 @@ uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value)
 	c = *p++;
 	if (c == '.')
 		*flag = 1;
+	else if (c == '#')
+		*flag = 2;
 	else if (c == '-')
 		*flag = 0;
 	else
@@ -272,7 +292,7 @@ void fxOpenSerial(txSerialTool self)
         fprintf(stderr, "Error setting tty attributes %s - %s(%d).\n", self->path, strerror(errno), errno);
         return;
     }
-    speed_t speed = self->baud; // Set 74880 baud
+    speed_t speed = self->baud;
     if (ioctl(fd, IOSSIOSPEED, &speed) == -1) {
         fprintf(stderr, "Error calling ioctl(..., IOSSIOSPEED, ...) %s - %s(%d).\n", self->path, strerror(errno), errno);
     }
@@ -284,6 +304,8 @@ void fxOpenSerial(txSerialTool self)
 	self->serialSocket = CFSocketCreateWithNative(kCFAllocatorDefault, fd, kCFSocketReadCallBack, fxReadSerial, &context);
 	self->serialSource = CFSocketCreateRunLoopSource(NULL, self->serialSocket, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->serialSource, kCFRunLoopCommonModes);
+
+	fxRestart(self);
 }
 
 void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
@@ -424,16 +446,41 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 			}
 			*dst++ = *src++;
 			offset++;
+			if (gBinaryState) {
+				if (1 == gBinaryState) {
+					gBinaryLength = dst[-1] << 8;
+					gBinaryState = 2;
+				}
+				else if (2 == gBinaryState) {
+					gBinaryLength |= dst[-1];
+					gBinaryState = 3;
+				}
+				if ((3 == gBinaryState) && ((2 + gBinaryLength) == (dst - self->buffer))) {
+					fxCommandReceived(self, self->buffer + 2, size - 2);
+
+					dst = self->buffer;
+					offset = 0;
+					gBinaryState = 0;
+				}
+			}
+			else
 			if ((offset >= 2) && (dst[-2] == 13) && (dst[-1] == 10)) {
 				uint8_t flag;
 				uint32_t value;
 				if ((offset >= mxTagSize) && fxMatchProcessingInstruction(dst - mxTagSize, &flag, &value)) {
-					if (flag)
+					if (flag) {
 						self->currentMachine = fxOpenNetwork(self, value);
-					else
+						gBinaryState = 2 == flag;
+					}
+					else {
 						fxCloseNetwork(self, value);
+						gReset = 0 == value;
+					}
 				}
 				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
+					if (gReset)
+						fxInitializeTarget(self);
+
 					fxWriteNetwork(self, self->buffer, offset);
 				}
 				else {
@@ -617,6 +664,211 @@ void fxWriteSerial(txSerialTool self, void *buffer, int size)
 	}
 }
 
+void fxInitializeTarget(txSerialTool self)
+{
+	char out[64];
+
+	gReset = false;
+
+#if 0
+	{
+		#define BAUD (115200 * 4)
+		char machine[32];
+		sprintf(machine, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+
+		fxWriteSerial(self, machine, strlen(machine));
+		// 2 bytes of  length followed by 7 bytes of payload
+		uint8_t command[] = {0, 7, 8, 0, 0, (BAUD >> 24) & 255, (BAUD >> 16) & 255, (BAUD >> 8) & 255, BAUD & 255};
+		fxWriteSerial(self, command, sizeof(command));
+		tcdrain(CFSocketGetNative(self->serialSocket));
+		usleep(200000);		//@@ why?
+		speed_t speed = BAUD;
+		if (-1 == ioctl(CFSocketGetNative(self->serialSocket), IOSSIOSPEED, &speed))
+			fprintf(stderr, "set speed failed\n");
+	}
+#endif
+
+	fxSetTime(self, self->currentMachine);
+
+	if (!gCmd) {
+		if (!gModuleName)
+			return;
+		gCmd = "load";
+	}
+
+	// run command
+	if (!strcmp("uninstall", gCmd)) {
+		fprintf(stderr, "### uninstall\n");
+
+		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+		fxWriteSerial(self, out, strlen(out));
+
+		out[0] = 0;
+		out[1] = 3;		// length
+		out[2] = 2;		// uninstall cmd
+		out[3] = 0xff;
+		out[4] = 2;
+		fxWriteSerial(self, out, out[1] + 2);
+	}
+	else if (!strcmp("install", gCmd)) {
+		fprintf(stderr, "### install\n");
+		fxInstallFragment(self, 0);
+	}
+	else if (!strcmp("load", gCmd)) {
+		fprintf(stderr, "### load '%s'\n", gModuleName);
+
+		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+		fxWriteSerial(self, out, strlen(out));
+
+		memset(out, 0, sizeof(out));
+		out[0] = 0;
+		out[1] = 3 + strlen(gModuleName) + 1;		// length
+		out[2] = 10;		// run cmd
+		out[3] = 0;
+		out[4] = 0;
+		strcpy(out + 5, gModuleName);
+		fxWriteSerial(self, out, out[1] + 2);
+	}
+
+	fprintf(stderr, "### cmd exit\n");
+	gCmd = NULL;
+}
+
+void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
+{
+	uint8_t *buffer = bufferIn;
+	uint16_t resultId = (buffer[1] << 8) | buffer[2];
+	uint16_t resultCode = (buffer[3] << 8) | buffer[4];
+
+	fprintf(stderr, "### fxCommandReceived\n");
+
+	if (0xff02 == resultId) {	// uninstall
+		fprintf(stderr, "### uninstalled\n");
+		fxRestart(self);
+		usleep(50000);
+		return;
+	}
+
+	if (0xe0 == (resultId >> 8)) {	// installed fragment
+		fxInstallFragment(self, kInstallInitialFragmentSize + kInstallSkipFragmentSize + ((resultId & 255) * kInstallFragmentSize));
+		return;
+	}
+	if (0xe8 == (resultId >> 8)) {	// install complete
+		fprintf(stderr, "### install complete\n");
+		fclose(gInstallFD);
+		gInstallFD = NULL;
+		fxRestart(self);
+		usleep(50000);
+		return;
+	}
+
+
+	if (resultCode)
+		fprintf(stderr, "### remote operation failed with resultCode %d\n", resultCode);
+	else
+		fprintf(stderr, "### remote operation SUCCESS with resultCode %d\n", resultCode);
+}
+
+void fxRestart(txSerialTool self)
+{
+	int fd = CFSocketGetNative(self->serialSocket), flags;
+
+	fprintf(stderr, "### fxRestart\n");
+
+	ioctl(fd, TIOCMGET, &flags);
+	flags |= TIOCM_RTS;
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+
+	usleep(5000);
+
+	flags &= ~TIOCM_RTS;
+	ioctl(fd, TIOCMSET, &flags);
+}
+
+void fxSetTime(txSerialTool self, txSerialMachine machine)
+{
+	struct timeval tv;
+	time_t time;
+	int dst = 0;
+	char out[32];
+	struct tm *tm;
+
+	fprintf(stderr, "### set time\n");
+
+	gettimeofday(&tv, NULL);
+	time = tv.tv_sec;
+	tm = localtime(&time);
+	if (tm->tm_isdst) {
+		dst = 60 * 60;
+		tm->tm_gmtoff -= dst;
+	}
+
+	sprintf(out, "\r\n<?xs#%8.8X?>", machine->value);
+	fxWriteSerial(self, out, strlen(out));
+
+	out[0] = 0;
+	out[1] = 15;	// length
+	out[2] = 9;		// set time
+	out[3] = 0;
+	out[4] = 0;
+	out[5] = (time >> 24) & 255;
+	out[6] = (time >> 16) & 255;
+	out[7] = (time >> 8) & 255;
+	out[8] = time & 255;
+	out[9] = (tm->tm_gmtoff >> 24) & 255;
+	out[10] = (tm->tm_gmtoff >> 16) & 255;
+	out[11] = (tm->tm_gmtoff >> 8) & 255;
+	out[12] = tm->tm_gmtoff & 255;
+	out[13] = (dst >> 24) & 255;
+	out[14] = (dst >> 16) & 255;
+	out[15] = (dst >> 8) & 255;
+	out[16] = dst & 255;
+	fxWriteSerial(self, out, 17);
+}
+
+// erases first block and writes kInstallFragmentSize bytes of header
+// skips kInstallSkipFragmentSize bytes
+// writes remaining for data
+// backs up to offset kInstallFragmentSize and writes the kInstallSkipFragmentSize bytes skipped
+// this ensures that the mod header is only valid if all bytes are received
+//@@ add GET MOD SPACE
+//@@ add GET VERSION
+void fxInstallFragment(txSerialTool self, uint32_t offset)
+{
+	char preamble[32];
+	char out[kInstallFragmentSize + 16];
+	int use = (0 == offset) ? kInstallInitialFragmentSize : kInstallFragmentSize;
+	uint8_t id = 0xe0;
+
+	fseek(gInstallFD, offset, SEEK_SET);
+	use = fread(out + 9, 1, use, gInstallFD);
+	if (0 == use) {
+		fprintf(stderr, "### update install header\n");
+		offset = kInstallInitialFragmentSize;
+		fseek(gInstallFD, offset, SEEK_SET);
+		use = fread(out + 9, 1, kInstallSkipFragmentSize, gInstallFD);
+		id = 0xe8;
+	}
+
+fprintf(stderr, "### install fragment @ %d size %d\n", offset, use);
+
+	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+	fxWriteSerial(self, preamble, strlen(preamble));
+
+	out[0] = ((use + 7) >> 8) & 0xff;		// length high
+	out[1] = (use + 7) & 0xff;		// length low
+	out[2] = 3;		// install cmd
+	out[3] = id;	// id high
+	out[4] = (0 == offset) ? 0 : (1 + (offset - kInstallInitialFragmentSize) / kInstallFragmentSize);
+	out[5] = (offset >> 24) & 255;
+	out[6] = (offset >> 16) & 255;
+	out[7] = (offset >> 8) & 255;
+	out[8] = offset & 255;
+
+	fxWriteSerial(self, out, use + 4 + 5);
+}
+
 void fxSignalHandler(int s) {
 	   exit(1); 
 }
@@ -625,6 +877,7 @@ int main(int argc, char* argv[])
 {
 	txSerialToolRecord tool;
 	txSerialTool self = &tool;
+	int i;
 	memset(&tool, 0, sizeof(tool));
 	
 	if (argc < 4) {
@@ -638,17 +891,37 @@ int main(int argc, char* argv[])
 	self->stop = argv[3][2] - '0';
 	self->host = "localhost";
 	self->port = 5002;
-	if (argc >= 5){
-		elfPath = argv[4];
-	}else{
-		elfPath = NULL;
+	TOOLS_BIN = NULL;
+	elfPath = NULL;
+	gCmd = NULL;
+
+	for (i = 4; i < argc; i++) {
+		if (!strcmp(argv[i], "-elf") && ((i + 1) < argc)) {
+			elfPath = argv[++i];
+		}
+		else if (!strcmp(argv[i], "-bin") && ((i + 1) < argc)) {
+			TOOLS_BIN = argv[++i];
+		}
+		else if (!strcmp(argv[i], "-uninstall") && !gCmd) {
+			gCmd = argv[i] + 1;
+		}
+		else if (!strcmp(argv[i], "-install") && !gCmd && ((i + 1) < argc)) {
+			gCmd = argv[i++] + 1;
+			gInstallFD = fopen(argv[i], "rb");
+			if (!gInstallFD) {
+				fprintf(stderr, "### can't open '%s'\n", argv[i]);
+				return 1;
+			}
+		}
+		else if (!strcmp(argv[i], "-load") && !gModuleName && ((i + 1) < argc)) {
+			gModuleName = argv[++i];
+		}
+		else {
+			fprintf(stderr, "### unexpected option '%s'\n", argv[i]);
+			return 1;
+		}
 	}
-	if (argc >= 6){
-		TOOLS_BIN = argv[5];
-	}else{
-		TOOLS_BIN = NULL;
-	}
-	
+
     CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
 	self->notificationPort = IONotificationPortCreate(kIOMasterPortDefault);
     CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(self->notificationPort);

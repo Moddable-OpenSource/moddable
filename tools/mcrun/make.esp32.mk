@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2019  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,10 +17,6 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ESP32_BASE ?= $(HOME)/esp32
-IDF_PATH ?= $(ESP32_BASE)/esp-idf
-export IDF_PATH
-ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 
 BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
@@ -46,13 +42,10 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(ESPTOOL) --port $(UPLOAD_PORT) --after no_reset erase_region 0x3D0000 0x010000
-	$(ESPTOOL) --port $(UPLOAD_PORT) write_flash 0x3D0000 $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE) -load mod
 
 release: $(ARCHIVE)
-	$(ESPTOOL) --port $(UPLOAD_PORT) --after no_reset erase_region 0x3D0000 0x010000
-	$(ESPTOOL) --port $(UPLOAD_PORT) write_flash 0x3D0000 $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE) -load mod
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
