@@ -1694,6 +1694,7 @@ static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = dst;
+//@@ this erase seems wrong... unless offset is always a sector boundary?
 	int result = esp_partition_erase_range(partition, (uintptr_t)offset, (size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1));
 	if (ESP_OK != result)
 		return 0;
