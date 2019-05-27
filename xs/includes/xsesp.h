@@ -256,6 +256,8 @@ double __ieee754_fmod_patch(double x, double y);
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
 #endif
 
+void modLoadModule(void *the, const char *name);
+
 /*
 	debugging
 */

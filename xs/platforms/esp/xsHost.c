@@ -50,6 +50,8 @@
 	#include "Arduino.h"
 	#include "rtctime.h"
 	#include "spi_flash.h"
+
+	#define FLASH_INT_MASK (((2 << 8) | 0x3A))
 #endif
 
 #ifdef mxInstrument
@@ -696,18 +698,25 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 static uint16_t gSetupPending = 0;
 
+void modLoadModule(void *theIn, const char *name)
+{
+	xsMachine *the = theIn;
+
+	xsBeginHost(the);
+		xsResult = xsGet(xsGlobal, mxID(_require));
+		xsResult = xsCall1(xsResult, mxID(_weak), xsString(name));
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
+
 void setStepDone(xsMachine *the)
 {
 	gSetupPending -= 1;
 	if (gSetupPending)
 		return;
 
-	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, mxID(_require));
-		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
+	modLoadModule(the, "main");
 }
 
 void mc_setup(xsMachine *the)
@@ -1719,8 +1728,6 @@ void *installModules(txPreparation *preparation)
 }
 
 #else /* ESP8266 */
-
-static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
 
 extern uint8_t _XSMOD_start;
 extern uint8_t _XSMOD_end;
