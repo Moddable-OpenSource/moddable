@@ -106,7 +106,8 @@ static void fxRestart(txSerialTool self);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
 static void fxInstallFragment(txSerialTool self, uint32_t offset);
 
-static uint8_t gReset = true;
+static uint8_t gReset = false;
+static uint8_t gRestarting = false;
 static char *gCmd = NULL;
 static char *gModuleName = NULL;
 static FILE *gInstallFD = 0;
@@ -242,6 +243,7 @@ void fxOpenSerial(txSerialTool self)
 	int fd = -1;
 	struct termios options;
 	CFSocketContext context;
+	static uint8_t first = true;
 
     fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd == -1) {
@@ -306,7 +308,10 @@ void fxOpenSerial(txSerialTool self)
 	self->serialSource = CFSocketCreateRunLoopSource(NULL, self->serialSocket, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->serialSource, kCFRunLoopCommonModes);
 
-	fxRestart(self);
+	if (first) {
+		first = false;
+		fxRestart(self);
+	}
 }
 
 void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
@@ -472,10 +477,14 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 					if (flag) {
 						self->currentMachine = fxOpenNetwork(self, value);
 						gBinaryState = 2 == flag;
+
+						if (gRestarting)
+							fxRestart(self);
 					}
 					else {
 						fxCloseNetwork(self, value);
 						gReset = 0 == value;
+						gRestarting = false;
 					}
 				}
 				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
@@ -790,6 +799,18 @@ void fxRestart(txSerialTool self)
 	fprintf(stderr, "### fxRestart\n");
 #endif
 
+	if (self->currentMachine) {	// send a software restart request for boards with no RTS to toggle
+		char out[32];
+
+		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+		fxWriteSerial(self, out, strlen(out));
+
+		out[0] = 0;
+		out[1] = 1;	// length
+		out[2] = 1;		// restart
+		fxWriteSerial(self, out, 3);
+	}
+
 	ioctl(fd, TIOCMGET, &flags);
 	flags |= TIOCM_RTS;
 	flags &= ~TIOCM_DTR;
@@ -799,6 +820,8 @@ void fxRestart(txSerialTool self)
 
 	flags &= ~TIOCM_RTS;
 	ioctl(fd, TIOCMSET, &flags);
+
+	gRestarting = true;
 }
 
 void fxSetTime(txSerialTool self, txSerialMachine machine)
