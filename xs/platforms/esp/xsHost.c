@@ -50,6 +50,8 @@
 	#include "Arduino.h"
 	#include "rtctime.h"
 	#include "spi_flash.h"
+
+	#define FLASH_INT_MASK (((2 << 8) | 0x3A))
 #endif
 
 #ifdef mxInstrument
@@ -696,18 +698,25 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 static uint16_t gSetupPending = 0;
 
+void modLoadModule(void *theIn, const char *name)
+{
+	xsMachine *the = theIn;
+
+	xsBeginHost(the);
+		xsResult = xsGet(xsGlobal, mxID(_require));
+		xsResult = xsCall1(xsResult, mxID(_weak), xsString(name));
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
+
 void setStepDone(xsMachine *the)
 {
 	gSetupPending -= 1;
 	if (gSetupPending)
 		return;
 
-	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, mxID(_require));
-		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
+	modLoadModule(the, "main");
 }
 
 void mc_setup(xsMachine *the)
@@ -1685,6 +1694,7 @@ static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = dst;
+//@@ this erase seems wrong... unless offset is always a sector boundary?
 	int result = esp_partition_erase_range(partition, (uintptr_t)offset, (size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1));
 	if (ESP_OK != result)
 		return 0;
@@ -1720,14 +1730,6 @@ void *installModules(txPreparation *preparation)
 
 #else /* ESP8266 */
 
-static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
-
-extern uint8_t _XSMOD_start;
-extern uint8_t _XSMOD_end;
-
-#define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
-#define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
-
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
@@ -1737,7 +1739,7 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	offset += (uintptr_t)dst;
 
-	if ((offset + SPI_FLASH_SEC_SIZE) > (uintptr_t)kModulesInstallStart)
+	if ((offset + SPI_FLASH_SEC_SIZE) > (uintptr_t)kModulesEnd)
 		return 0;		// attempted write beyond end of available space
 
 	if (!(offset & (SPI_FLASH_SEC_SIZE - 1))) {		// if offset is at start of a sector, erase that sector
@@ -1750,27 +1752,11 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
-	uint8_t buffer[8];
-	uint32_t modulesAtomSize, modulesAtomType;
-	uint32_t freeSpace = kModulesInstallStart - (uint32_t)kModulesStart;
-	
-	spiRead((void *)kModulesInstallStart, 0, buffer, 8);
-	modulesAtomSize = c_read32be(buffer);
-	modulesAtomType = c_read32be(buffer + 4);
-	
-	if (modulesAtomType != XS_ATOM_ARCHIVE) return NULL;
-	
-	if (freeSpace < modulesAtomSize){
-		modLog("mod is too large to install");
-		return NULL;
-	}
-
-	if (fxMapArchive(preparation, (void *)kModulesInstallStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
+	if (fxMapArchive(preparation, (void *)kModulesStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
 		return kModulesStart;
 
 	return NULL;
 }
-
 
 #endif
 
@@ -1920,15 +1906,17 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
+	ets_isr_mask(FLASH_INT_MASK);
+
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 
 		if (size <= toAlign)
-			return 1;
+			goto bail;
 
 		src += toAlign;
 		offset += toAlign;
@@ -1943,7 +1931,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
 				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, use))
-					return 0;
+					goto fail;
 
 				toAlign -= use;
 				src += use;
@@ -1952,7 +1940,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		}
 		else {
 			if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)src, toAlign))
-				return 0;
+				goto fail;
 			src += toAlign;
 			offset += toAlign;
 		}
@@ -1962,10 +1950,16 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 	}
 
+bail:
+	ets_isr_unmask(FLASH_INT_MASK);
 	return 1;
+
+fail:
+	ets_isr_unmask(FLASH_INT_MASK);
+	return 0;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
@@ -1976,8 +1970,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	offset /= SPI_FLASH_SEC_SIZE;
 	size /= SPI_FLASH_SEC_SIZE;
 	while (size--) {
+		int err;
+
 		optimistic_yield(10000);
-		if (SPI_FLASH_RESULT_OK != spi_flash_erase_sector(offset++))
+    	ets_isr_mask(FLASH_INT_MASK);
+    	err = spi_flash_erase_sector(offset++);
+    	ets_isr_unmask(FLASH_INT_MASK);
+		if (SPI_FLASH_RESULT_OK != err)
 			return 0;
 	}
 

@@ -1,7 +1,4 @@
-/* Flash Split for !M chips */
-/* sketch 1019KB */
-/* spiffs 3052KB */
-/* eeprom 20KB */
+/* Flash Split for 1M chips */
 
 MEMORY
 {
@@ -11,8 +8,6 @@ MEMORY
   irom0_0_seg :                         org = 0x40201010, len = 0xf9ff0
 }
 
-PROVIDE ( _XSMOD_start = 0 );
-PROVIDE ( _XSMOD_end = 0 );
 PROVIDE ( _MODPREF_start = 0x402FB000 );
 PROVIDE ( _MODPREF_end = 0x402FD000 );
 PROVIDE ( _SPIFFS_start = 0x402FB000 );

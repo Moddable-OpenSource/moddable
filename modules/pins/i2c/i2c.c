@@ -154,6 +154,14 @@ void xs_i2c_write(xsMachine *the)
 			len += l;
 			continue;
 		}
+		if (xsmcIsInstanceOf(xsArg(i), xsArrayBufferPrototype)) {
+			int l = xsGetArrayBufferLength(xsArg(i));
+			if ((len + l) > sizeof(buffer))
+				xsUnknownError("40 byte write limit");
+			c_memmove(buffer + len, xsmcToArrayBuffer(xsArg(i)), l);
+			len += l;
+			continue;
+		}
 
 		{	// assume some kind of array (Array, Uint8Array, etc) (@@ use .buffer if present)
 			int l;

@@ -16,7 +16,7 @@ This document provides a brief description of each example and a preview of each
 
 ### `cfe8x8`
 
-<img src="http://www.moddable.com/assets/commodetto-gifs/cfe8x8.gif" width=180>
+<img src="https://www.moddable.com/assets/commodetto-gifs/cfe8x8.gif" width=180>
 
 The `cfe8x8` example demonstrates how to use a simple embedded 8 x 8 bitmap font. This is the simplest example of implementing a new Commodetto Font Engine.
 
@@ -24,7 +24,7 @@ The `cfe8x8` example demonstrates how to use a simple embedded 8 x 8 bitmap font
 
 ### `cfeNFNT`
 
-<img src="http://www.moddable.com/assets/commodetto-gifs/cfeNFNT.gif" width=180>
+<img src="https://www.moddable.com/assets/commodetto-gifs/cfeNFNT.gif" width=180>
 
 The `cfeNFNT` example renders text using an NFNT font resource, the bitmap font format of the original Macintosh. Includes an Commodetto Font Engine. for NFNT.
 
@@ -32,7 +32,7 @@ The `cfeNFNT` example renders text using an NFNT font resource, the bitmap font 
 
 ### `clip`
 
-![](http://www.moddable.com/assets/commodetto-gifs/clipped.png)
+![](https://www.moddable.com/assets/commodetto-gifs/clipped.png)
 
 The `clip` example shows how to use the drawing clip. The clip stack is maintained by the Poco rendering engine.
 
@@ -40,7 +40,7 @@ The `clip` example shows how to use the drawing clip. The clip stack is maintain
 
 ### `clock`
 
-![](http://www.moddable.com/assets/commodetto-gifs/clock.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/clock.gif)
 
 The `clock` example shows a simple on screen clock with a blinking colon. It demonstrates how to center text to build an application that works on any screen size.
 
@@ -48,7 +48,7 @@ The `clock` example shows a simple on screen clock with a blinking colon. It dem
 
 ### `docs`
 
-![](http://www.moddable.com/assets/commodetto-gifs/docs.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/docs.gif)
 
 The `docs` example includes all of the examples in the [Poco documentation](../../documentation/commodetto/poco.md).
 
@@ -56,7 +56,7 @@ The `docs` example includes all of the examples in the [Poco documentation](../.
 
 ### `image-frames`
 
-![](http://www.moddable.com/assets/commodetto-gifs/image-frames.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/image-frames.gif)
 
 The `image-frames` example shows an animated flag. It demonstrates how to render a gif.
 
@@ -64,7 +64,7 @@ The `image-frames` example shows an animated flag. It demonstrates how to render
 
 ### `jpeghttp` and `jpegstream`
 
-![](http://www.moddable.com/assets/commodetto-gifs/jpeghttp.gif) ![](http://www.moddable.com/assets/commodetto-gifs/jpegstream.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/jpeghttp.gif) ![](https://www.moddable.com/assets/commodetto-gifs/jpegstream.gif)
 
 The `jpeghttp` and `jpegstream` examples fetch images from moddable.com and display them on screen. These examples run on the ESP8266, which doesn't have enough memory to hold the compressed JPEG images. Async/await is used to decode and render the JPEG images as they arrive, allowing the application to overcome the RAM limits.
 
@@ -78,7 +78,7 @@ The `mini-drag` example is great for testing touch on displays. You can move the
 
 ### `origin`
 
-![](http://www.moddable.com/assets/commodetto-gifs/origin.png)
+![](https://www.moddable.com/assets/commodetto-gifs/origin.png)
 
 The `origin` example demonstrates the use of the Poco drawing origin stack.
 
@@ -86,7 +86,7 @@ The `origin` example demonstrates the use of the Poco drawing origin stack.
 
 ### `progress`
 
-![](http://www.moddable.com/assets/commodetto-gifs/progress.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/progress.gif)
 
 The `progress` example displays high frame rate animations of progress bars and a spinner, all of which are useful for loading screens.
 
@@ -94,7 +94,7 @@ The `progress` example displays high frame rate animations of progress bars and 
 
 ### `rotated`
 
-![](http://www.moddable.com/assets/commodetto-gifs/rotated.png)
+![](https://www.moddable.com/assets/commodetto-gifs/rotated.png)
 
 The `rotated` example demonstrates how to define the rotation of the screen. This example rotates 90 degrees; 0, 180, and 270 degree rotation is also supported. 
 
@@ -102,7 +102,7 @@ The `rotated` example demonstrates how to define the rotation of the screen. Thi
 
 ### `sprite`
 
-![](http://www.moddable.com/assets/commodetto-gifs/sprite.gif)
+![](https://www.moddable.com/assets/commodetto-gifs/sprite.gif)
 
 The `sprite` example displays a simple spinning animation, useful for loading screens. It demonstrates how to cycle through different portions of a single image to create an animated sprite.
 
@@ -110,7 +110,7 @@ The `sprite` example displays a simple spinning animation, useful for loading sc
 
 ### `text-ticker`
 
-<img src="http://www.moddable.com/assets/commodetto-gifs/text-ticker.gif" width=180>
+<img src="https://www.moddable.com/assets/commodetto-gifs/text-ticker.gif" width=180>
 
 The `text-ticker` example displays the message "Greetings from Moddable..." animated in a loop.
 
@@ -118,7 +118,7 @@ The `text-ticker` example displays the message "Greetings from Moddable..." anim
 
 ### `text`
 
-<img src="http://www.moddable.com/assets/commodetto-gifs/text.png" width=180>
+<img src="https://www.moddable.com/assets/commodetto-gifs/text.png" width=180>
 
 The `text` example demonstrates different truncation and alignment options for rendering text.
 

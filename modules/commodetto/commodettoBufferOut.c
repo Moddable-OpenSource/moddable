@@ -72,7 +72,10 @@ void xs_BufferOut_init(xsMachine *the)
 	bo->pixelFormat = (CommodettoBitmapFormat)xsmcToInteger(xsArg(2));
 	bo->depth = CommodettoBitmapGetDepth(bo->pixelFormat);
 
-	xsVar(0) = xsArrayBuffer(NULL, pixelsToBytes(bo->width) * bo->height);
+	if (xsmcTest(xsArg(3)))
+		xsVar(0) = xsArg(3);
+	else
+		xsVar(0) = xsArrayBuffer(NULL, pixelsToBytes(bo->width) * bo->height);
 	xsmcSet(xsThis, xsID_buffer, xsVar(0));
 }
 
@@ -121,7 +124,10 @@ void xs_BufferOut_send(xsMachine *the)
 	}
 
 	xsmcGet(xsVar(0), xsThis, xsID_buffer);
-	header = xsmcToArrayBuffer(xsVar(0));
+	if (xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype))
+		header = xsmcToArrayBuffer(xsVar(0));
+	else
+		header = xsmcGetHostData(xsVar(0));
 	dst = (char *)header;
 
 	offsetOut = bo->offset;

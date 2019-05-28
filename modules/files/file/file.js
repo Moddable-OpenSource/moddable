@@ -42,6 +42,17 @@ export class File @ "xs_file_destructor" {
 export class Iterator @ "xs_file_iterator_destructor" {
 	constructor(path) @ "xs_File_Iterator";
 	next() @ "xs_file_iterator_next";
+
+	[Symbol.iterator]() {
+		return {
+			iterator: this,
+			next() {
+				const result = {value: this.iterator.next()};
+				result.done = undefined === result.value;
+				return result;
+			}
+		};
+	}
 };
 
 export class System {

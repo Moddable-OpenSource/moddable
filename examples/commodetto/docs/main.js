@@ -160,7 +160,7 @@ function alpha() {
 function jpeg() {
 	if (0) {
 		/* requires more memory than many MCUs have free */
-		let piano = loadJPEG(new Resource("piano.dat"));
+		let piano = loadJPEG(new Resource("piano.jpg"));
 		trace(`width ${piano.width}, height ${piano.height}\n`);
 
 		poco.begin()
@@ -173,7 +173,7 @@ function jpeg() {
 			poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 		poco.end();
 
-		let jpeg = new JPEG(new Resource("piano.dat"));
+		let jpeg = new JPEG(new Resource("piano.jpg"));
 		let block;
 		while (block = jpeg.read()) {
 			poco.begin(block.x, block.y, block.width, block.height);

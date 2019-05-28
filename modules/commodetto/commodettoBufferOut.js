@@ -30,7 +30,7 @@ import Bitmap from "Bitmap";
 
 export default class BufferOut @ "xs_BufferOut_destructor"{
 	constructor(dictionary) {
-		this.init(dictionary.width, dictionary.height, dictionary.pixelFormat);
+		this.init(dictionary.width, dictionary.height, dictionary.pixelFormat, dictionary.buffer);
 		this.bitmap = new Bitmap(dictionary.width, dictionary.height, dictionary.pixelFormat, this.buffer, 0);
 	}
 	init(width, height, pixelFormat) @ "xs_BufferOut_init"

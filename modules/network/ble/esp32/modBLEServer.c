@@ -80,6 +80,7 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	uint8_t iocap;
 	
 	// connection
 	esp_bd_addr_t remote_bda;
@@ -233,13 +234,21 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t iocap = xsmcToInteger(xsArg(3));
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+//	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -308,10 +317,14 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-	passkey = xsmcToInteger(xsResult);
+	if (gBLE->iocap == KeyboardOnly)
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		passkey = xsmcToInteger(xsResult);
+		esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
+	}
 	xsEndHost(gBLE->the);
-	esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
 }
 
 static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)

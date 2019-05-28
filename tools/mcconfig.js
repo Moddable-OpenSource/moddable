@@ -1077,9 +1077,7 @@ export default class extends Tool {
 			file.generate(this);
 			file = new RotationFile(this.tmpPath + this.slash + "mc.rotation.h", this);
 			file.generate(this);
-			this.dataPath = this.tmpPath + this.slash + "data";
-			this.createDirectory(this.dataPath);
-			this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
 			this.createDirectory(this.resourcesPath);
 		}
 		for (var folder of this.dataFolders)

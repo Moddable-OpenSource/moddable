@@ -102,13 +102,6 @@ void xs_wifi_scan(xsMachine *the)
 	xsRemember(gScan->callback);
 }
 
-void xs_wifi_status(xsMachine *the)
-{
-	station_status_t status = wifi_station_get_connect_status();
-
-	xsmcSetInteger(xsResult, (int)status);
-}
-
 void xs_wifi_connect(xsMachine *the)
 {
 	struct station_config config;

@@ -144,6 +144,7 @@ extern void modPrelaunch(void);
 extern int ESP_getc(void);
 extern void ESP_putc(int c);
 extern uint8_t ESP_isReadable(void);
+extern uint8_t ESP_setBaud(int baud);
 
 /*
 	timer
@@ -255,6 +256,8 @@ double __ieee754_fmod_patch(double x, double y);
 #else
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
 #endif
+
+void modLoadModule(void *the, const char *name);
 
 /*
 	debugging

@@ -157,7 +157,7 @@ XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
-all: $(LIB_DIR) $(BIN_DIR)\mc.dll $(DATA)
+all: $(LIB_DIR) $(BIN_DIR)\mc.dll
 	start $(SIMULATOR) $(BIN_DIR)\mc.dll
 
 $(LIB_DIR) :
@@ -185,8 +185,8 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c $(HEADERS)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.resources.c /Fo$@
 
-$(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) <<args.txt
-$(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+$(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 <<

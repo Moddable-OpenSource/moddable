@@ -39,7 +39,6 @@ export default class WiFi @ "xs_wifi_destructor" {
 	static scan(dictionary, callback) @ "xs_wifi_scan";
 	static connect(dictionary) @ "xs_wifi_connect";		// no arguments to disconnect
 	static accessPoint(dictionary) @ "xs_wifi_accessPoint";
-	static get status() @ "xs_wifi_status";
 	static disconnect() {WiFi.connect();}
 }
 
