@@ -42,10 +42,10 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE) -load mod
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
 
 release: $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE) -load mod
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
