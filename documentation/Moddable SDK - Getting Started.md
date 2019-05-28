@@ -452,7 +452,9 @@ Additional getting started guides are available for the following devices:
 	MODDABLE=~/Projects/moddable
 	export MODDABLE
 	```
-	
+
+	Restart your command-line shell before you continue.
+
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
@@ -465,6 +467,8 @@ Additional getting started guides are available for the following devices:
 	```
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
+
+	Restart your command-line shell before you continue.
 
 7. Install the Screen Test desktop simulator and xsbug debugger applications:
 
