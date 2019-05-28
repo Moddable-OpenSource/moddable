@@ -37,6 +37,7 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	uint8_t iocap;
 
 	modTimer timer;
 	int8_t connection;
@@ -176,16 +177,24 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t iocap = xsmcToInteger(xsArg(3));
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
 
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+//	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	gecko_cmd_sm_enter_passkey(gBLE->connection, passkey);
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -389,9 +398,13 @@ static void smPasskeyRequestEvent(struct gecko_msg_sm_passkey_request_evt_t *evt
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), gBLE->address.addr, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-	passkey = xsmcToInteger(xsResult);
-	gecko_cmd_sm_enter_passkey(evt->connection, passkey);
+	if (gBLE->iocap == KeyboardOnly)
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		passkey = xsmcToInteger(xsResult);
+		gecko_cmd_sm_enter_passkey(evt->connection, passkey);
+	}
 bail:
 	xsEndHost(gBLE->the);
 }

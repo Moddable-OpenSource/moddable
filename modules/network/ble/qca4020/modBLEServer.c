@@ -119,7 +119,7 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
-	uint16_t ioCapability;
+	uint8_t iocap;
 	qapi_BLE_Encryption_Key_t ER;	// encryption root key
 	qapi_BLE_Encryption_Key_t IR;	// identity root key
 	qapi_BLE_Encryption_Key_t DHK;
@@ -348,20 +348,31 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t iocap = xsmcToInteger(xsArg(3));
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
-	gBLE->ioCapability = ioCapability;
+	gBLE->iocap = iocap;
 	
 	qapi_BLE_GAP_LE_Set_Pairability_Mode(gBLE->stackID,
 		encryption ? QAPI_BLE_LPM_PAIRABLE_MODE_ENABLE_EXTENDED_EVENTS_E : QAPI_BLE_LPM_PAIRABLE_MODE_E);
 		
-	configurePairingCapabilities(encryption, bonding, mitm, ioCapability, &gBLE->pairingCapabilities);
+	configurePairingCapabilities(encryption, bonding, mitm, iocap, &gBLE->pairingCapabilities);
 	generateEncryptionKeys(gBLE->stackID, &gBLE->ER, &gBLE->IR, &gBLE->DHK, &gBLE->IRK);
 		
 	qapi_BLE_GAP_LE_Register_Remote_Authentication(gBLE->stackID, GAP_LE_Event_Callback, 0L);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
+	//uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type = QAPI_BLE_LAR_PASSKEY_E;
+	GAP_LE_Authentication_Response_Information.Authentication_Data_Length = sizeof(uint32_t);
+	GAP_LE_Authentication_Response_Information.Authentication_Data.Passkey = passkey;											
+	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, gBLE->connection.bd_addr, &GAP_LE_Authentication_Response_Information);									
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -674,14 +685,17 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	addressToBuffer(gBLE->connection.bd_addr, buffer);
 	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-	passkey = xsmcToInteger(xsResult);
+	if (gBLE->iocap == KeyboardOnly)
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		passkey = xsmcToInteger(xsResult);
+		GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type  = QAPI_BLE_LAR_PASSKEY_E;
+		GAP_LE_Authentication_Response_Information.Authentication_Data_Length  = (uint8_t)(sizeof(uint32_t));
+		GAP_LE_Authentication_Response_Information.Authentication_Data.Passkey = passkey;
+		qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, gBLE->connection.bd_addr, &GAP_LE_Authentication_Response_Information);
+	}
 	xsEndHost(gBLE->the);
-	
-	GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type  = QAPI_BLE_LAR_PASSKEY_E;
-	GAP_LE_Authentication_Response_Information.Authentication_Data_Length  = (uint8_t)(sizeof(uint32_t));
-	GAP_LE_Authentication_Response_Information.Authentication_Data.Passkey = passkey;
-	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, gBLE->connection.bd_addr, &GAP_LE_Authentication_Response_Information);
 }
 
 static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -831,7 +845,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 						case QAPI_BLE_LAT_EXTENDED_PAIRING_REQUEST_E:
 							GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type = QAPI_BLE_LAR_PAIRING_CAPABILITIES_E;
 							GAP_LE_Authentication_Response_Information.Authentication_Data_Length = QAPI_BLE_GAP_LE_EXTENDED_PAIRING_CAPABILITIES_SIZE;
-							configurePairingCapabilities(gBLE->encryption, gBLE->bonding, gBLE->mitm, gBLE->ioCapability, &(GAP_LE_Authentication_Response_Information.Authentication_Data.Extended_Pairing_Capabilities));
+							configurePairingCapabilities(gBLE->encryption, gBLE->bonding, gBLE->mitm, gBLE->iocap, &(GAP_LE_Authentication_Response_Information.Authentication_Data.Extended_Pairing_Capabilities));
 							if (QAPI_BLE_BTPS_ERROR_SECURE_CONNECTIONS_NOT_SUPPORTED == qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, Authentication_Event_Data->BD_ADDR, &GAP_LE_Authentication_Response_Information)) {
 								GAP_LE_Authentication_Response_Information.Authentication_Data.Extended_Pairing_Capabilities.Flags &= ~QAPI_BLE_GAP_LE_EXTENDED_PAIRING_CAPABILITIES_FLAGS_SECURE_CONNECTIONS;
 								qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, Authentication_Event_Data->BD_ADDR, &GAP_LE_Authentication_Response_Information);
