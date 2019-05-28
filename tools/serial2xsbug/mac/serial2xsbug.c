@@ -2,17 +2,17 @@
  * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
- * 
+ *
  *   The Moddable SDK Tools is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Tools is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -57,6 +57,7 @@ struct txSerialMachineStruct {
 	txSerialTool tool;
 	txSerialMachine nextMachine;
 	uint32_t value;
+	uint8_t suppress;
 	char tag[mxTagSize + 1];
 	CFSocketRef networkSocket;
 	CFRunLoopSourceRef networkSource;
@@ -65,7 +66,7 @@ struct txSerialMachineStruct {
 struct txSerialToolStruct {
 	IONotificationPortRef notificationPort;
 	io_iterator_t ioIterator;
-	
+
 	char* path;
 	int baud;
 	int data;
@@ -73,12 +74,12 @@ struct txSerialToolStruct {
 	int stop;
 	CFSocketRef serialSocket;
 	CFRunLoopSourceRef serialSource;
-	
+
 	char* host;
 	int port;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
-	
+
 	int index;
 	int state;
 	char buffer[mxBufferSize + 1];
@@ -100,7 +101,7 @@ static void fxWriteSerial(txSerialTool self, void *buffer, int size);
 #define kInstallSkipFragmentSize (4)
 #define kInstallFragmentSize (512)
 
-static void fxInitializeTarget(txSerialTool self);
+static int fxInitializeTarget(txSerialTool self);
 static void fxCommandReceived(txSerialTool self, void *buffer, int size);
 static void fxRestart(txSerialTool self);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
@@ -205,7 +206,7 @@ txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
 		CFSocketContext context;
 		struct hostent *host;
 		struct sockaddr_in address;
-		
+
 		machine = calloc(sizeof(txSerialMachineRecord), 1);
 		if (!machine) {
 			fprintf(stderr, "Error allocating machine - %s(%d).\n", strerror(errno), errno);
@@ -250,7 +251,7 @@ void fxOpenSerial(txSerialTool self)
         fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
         return;
     }
-    
+
     if (ioctl(fd, TIOCEXCL) == -1) {
         fprintf(stderr, "Error setting TIOCEXCL on %s - %s(%d).\n", self->path, strerror(errno), errno);
         return;
@@ -260,7 +261,7 @@ void fxOpenSerial(txSerialTool self)
 
     options.c_cc[VMIN] = 0;
     options.c_cc[VTIME] = 10;
-    
+
 	// baud rate
     //cfsetspeed(&options, getBaud(baud));
 	// bits per character
@@ -301,7 +302,7 @@ void fxOpenSerial(txSerialTool self)
     }
     memset(self->buffer, 0, sizeof(self->buffer));
     self->index = 0;
-	
+
 	memset(&context, 0, sizeof(CFSocketContext));
 	context.info = (void*)self;
 	self->serialSocket = CFSocketCreateWithNative(kCFAllocatorDefault, fd, kCFSocketReadCallBack, fxReadSerial, &context);
@@ -321,6 +322,8 @@ void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef
 	CFSocketNativeHandle handle = CFSocketGetNative(socketRef);
 	char buffer[256];
 	int size = read(handle, buffer, 256);
+	if (machine->suppress)
+		return;
 	if (size > 0) {
 		char* former = buffer;
 		char* current = buffer;
@@ -402,7 +405,7 @@ static void systemCommand(char* command, char **buffer){
 		}
 		pclose(fp);
 	}
-		
+
 	*buffer = out;
 }
 
@@ -410,7 +413,7 @@ static char* printAddress(char* address){
 	char* commandPart = "/xtensa-lx106-elf-addr2line -aipfC -e ";
 	char command[2000] = {0};
 	char* buffer;
-	
+
 	strcat(command, TOOLS_BIN);
 	strcat(command, commandPart);
 	strcat(command, elfPath);
@@ -488,29 +491,30 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 					}
 				}
 				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
-					if (gReset)
-						fxInitializeTarget(self);
-
+					if (gReset) {
+						if (fxInitializeTarget(self))
+							self->currentMachine->suppress = true;
+					}
 					fxWriteNetwork(self, self->buffer, offset);
 				}
 				else {
-					dst[-2] = 0;	
+					dst[-2] = 0;
 					if (offset > 2) fprintf(stderr, "%s\n", self->buffer);
-					
+
 					if (TOOLS_BIN && elfPath && strstr(self->buffer, "gdb stub")) {
 						gdbMode = 1;
 					}
-					
+
 					if (elfPath){
 						char* epc;
 						char* exception;
-						
+
 						//Exception Reason
 						exception = strstr(self->buffer, "Exception (");
 						if (exception){
 							sscanf(self->buffer, "Exception (%d):", &gExceptionNumber);
 						}
-						
+
 						//Exception Program Counter
 						epc = strstr(self->buffer, "epc1=0x");
 						if (epc){
@@ -519,8 +523,8 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 								epc1Address[8] = 0;
 								gEPC1Buffer = printAddress(epc1Address);
 						}
-					}	
-					
+					}
+
 					if (self->state == 0) {
 						if (!strcmp(self->buffer, ">>>stack>>>")) {
 							gStackIndex = 0;
@@ -531,24 +535,24 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 						if (!strcmp(self->buffer, "<<<stack<<<")) {
 							if (elfPath && gStackIndex) {
 								int i;
-								
+
 								if (gExceptionNumber != -1){
 									int exceptionNum = gExceptionNumber;
 									if (exceptionNum >= 32 && exceptionNum <= 39) exceptionNum = 32;
 									if (exceptionNum > 39) exceptionNum = 31;
-									
+
 									fprintf(stderr, "\n# EXCEPTION DESCRIPTION\n");
 									fprintf(stderr, "# Exception %d %s\n", gExceptionNumber, gExceptionList[gExceptionNumber]);
 									gExceptionNumber = -1;
 								}
-								
+
 								if (gEPC1Buffer){
 									fprintf(stderr, "\n# EXCEPTION LOCATION\n");
 									fprintf(stderr, "# %s\n", gEPC1Buffer);
 									free(gEPC1Buffer);
 									gEPC1Buffer = NULL;
 								}
-								
+
 								fprintf(stderr, "\n# CALLS\n");
 								for (i = 0; i < gStackIndex; i++) {
 									fprintf(stderr, "# %s\n", gStackBuffers[i]);
@@ -598,10 +602,10 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 					args[6] = "interrupt";
 					args[7] = elfPath;
 					args[8] = NULL;
-				
+
 					fxCloseNetwork(self, 0);
 					fxCloseSerial(self);
-				
+
 					execvp(args[0], args);
 					exit(0);
 				}
@@ -631,7 +635,7 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 			if (description) {
 				description->tool = self;
 				CFStringGetCString(typeRef, &description->path[0], maxSize + 1, kCFStringEncodingUTF8);
-				if (!strcmp(self->path, description->path) 
+				if (!strcmp(self->path, description->path)
 						&& IOServiceAddInterestNotification(self->notificationPort, usbDevice, kIOGeneralInterest, fxUnregisterSerial, description, &description->notification) == KERN_SUCCESS) {
 					fxOpenSerial(self);
 				}
@@ -653,7 +657,7 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 void fxWriteNetwork(txSerialTool self, void *buffer, int size)
 {
 	txSerialMachine machine = self->currentMachine;
-	if (machine) {
+	if (machine && !machine->suppress) {
 		size = write(CFSocketGetNative(machine->networkSocket), buffer, size);
 		if (size < 0) {
 			fprintf(stderr, "Error writing network - %s(%d).\n", strerror(errno), errno);
@@ -674,7 +678,7 @@ void fxWriteSerial(txSerialTool self, void *buffer, int size)
 	}
 }
 
-void fxInitializeTarget(txSerialTool self)
+int fxInitializeTarget(txSerialTool self)
 {
 	char out[64];
 
@@ -702,7 +706,7 @@ void fxInitializeTarget(txSerialTool self)
 
 	if (!gCmd) {
 		if (!gModuleName)
-			return;
+			return 0;
 		gCmd = "load";
 	}
 
@@ -727,6 +731,9 @@ void fxInitializeTarget(txSerialTool self)
 		fprintf(stderr, "### install\n");
 #endif
 		fxInstallFragment(self, 0);
+
+		gCmd = NULL;
+		return 1;
 	}
 	else if (!strcmp("load", gCmd)) {
 #if mxTraceCommands
@@ -747,6 +754,7 @@ void fxInitializeTarget(txSerialTool self)
 	}
 
 	gCmd = NULL;
+	return 0;
 }
 
 void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
@@ -914,16 +922,16 @@ void fxInstallFragment(txSerialTool self, uint32_t offset)
 }
 
 void fxSignalHandler(int s) {
-	   exit(1); 
+	   exit(1);
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	txSerialToolRecord tool;
 	txSerialTool self = &tool;
 	int i;
 	memset(&tool, 0, sizeof(tool));
-	
+
 	if (argc < 4) {
 		fprintf(stderr, "### serial2xsbug <port name> <baud rate> <data bits><parity><stop bits>\n");
 		return 1;
@@ -972,10 +980,10 @@ int main(int argc, char* argv[])
     CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
 	IOServiceAddMatchingNotification(self->notificationPort, kIOPublishNotification, matchingDict, fxRegisterSerial, self, &self->ioIterator);
 	fxRegisterSerial(self, self->ioIterator);
-	
+
 	signal(SIGINT, fxSignalHandler);
 
 	CFRunLoopRun();
-	
+
 	return 0;
 }
