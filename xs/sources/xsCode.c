@@ -2944,6 +2944,18 @@ void fxImportNodeCode(void* it, void* param)
 {
 }
 
+void fxImportCallNodeCode(void* it, void* param)
+{
+	txStatementNode* self = it;
+	fxNodeDispatchCode(self->expression, param);
+	fxCoderAddByte(param, 0, XS_CODE_IMPORT);
+}
+
+void fxImportMetaNodeCode(void* it, void* param)
+{
+	fxCoderAddByte(param, 1, XS_CODE_IMPORT_META);
+}
+
 void fxIncludeNodeCode(void* it, void* param) 
 {
 	txIncludeNode* self = it;

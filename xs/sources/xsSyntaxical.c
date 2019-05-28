@@ -94,7 +94,7 @@ static void fxPrefixExpression(txParser* parser);
 static void fxPostfixExpression(txParser* parser);
 static void fxCallExpression(txParser* parser);
 
-static void fxLiteralExpression(txParser* parser);
+static void fxLiteralExpression(txParser* parser, txUnsigned flag);
 static void fxArrayExpression(txParser* parser);
 static void fxArrowExpression(txParser* parser, txUnsigned flag);
 static void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol);
@@ -224,7 +224,9 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_IDENTIFIER */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_BEGIN_BINDING | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_IF */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_IMPLEMENTS */ XS_TOKEN_IDENTIFIER_NAME,
-	/* XS_TOKEN_IMPORT */ XS_TOKEN_IDENTIFIER_NAME | XS_TOKEN_IDENTIFIER_NAME,
+	/* XS_TOKEN_IMPORT */ XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
+	/* XS_TOKEN_IMPORT_CALL */ 0,
+	/* XS_TOKEN_IMPORT_META */ 0,
 	/* XS_TOKEN_IN */ XS_TOKEN_RELATIONAL_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_INCLUDE */ 0,
 	/* XS_TOKEN_INCREMENT */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_PREFIX_EXPRESSION | XS_TOKEN_POSTFIX_EXPRESSION,
@@ -387,6 +389,8 @@ static txString gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_IF */ "if",
 	/* XS_TOKEN_IMPLEMENTS */ "implements",
 	/* XS_TOKEN_IMPORT */ "import",
+	/* XS_TOKEN_IMPORT_CALL */ "import",
+	/* XS_TOKEN_IMPORT_META */ "import.meta",
 	/* XS_TOKEN_IN */ "in",
 	/* XS_TOKEN_INCLUDE */ "include",
 	/* XS_TOKEN_INCREMENT */ "++",
@@ -651,8 +655,16 @@ void fxModule(txParser* parser)
 	while ((parser->token != XS_TOKEN_EOF) && (parser->token != XS_TOKEN_RIGHT_BRACE)) {
 		if (parser->token == XS_TOKEN_EXPORT)
 			fxExport(parser);
-		else if (parser->token == XS_TOKEN_IMPORT)
-			fxImport(parser);
+		else if (parser->token == XS_TOKEN_IMPORT) {
+			fxGetNextToken2(parser);
+			if ((parser->token2 == XS_TOKEN_DOT) || (parser->token2 == XS_TOKEN_LEFT_PARENTHESIS)) {
+				parser->flags |= mxAsyncFlag;
+				fxStatement(parser, 1);
+				parser->flags &= ~mxAsyncFlag;
+			}
+			else
+				fxImport(parser);
+		}
 		else if (parser->token == XS_TOKEN_RETURN) {
 			fxReportParserError(parser, "invalid return");
 			fxGetNextToken(parser);
@@ -1822,7 +1834,7 @@ void fxPostfixExpression(txParser* parser)
 
 void fxCallExpression(txParser* parser)
 {
-	fxLiteralExpression(parser);
+	fxLiteralExpression(parser, 0);
 	for (;;) {
 		txInteger aLine = parser->line;
 		if (parser->token == XS_TOKEN_DOT) {
@@ -1864,7 +1876,7 @@ void fxCallExpression(txParser* parser)
 	} 
 }
 
-void fxLiteralExpression(txParser* parser)
+void fxLiteralExpression(txParser* parser, txUnsigned flag)
 {
 	int escaped;
 	txSymbol* aSymbol;
@@ -1877,6 +1889,29 @@ void fxLiteralExpression(txParser* parser)
 	case XS_TOKEN_FALSE:
 		fxPushNodeStruct(parser, 0, parser->token, aLine);
 		fxGetNextToken(parser);
+		break;
+	case XS_TOKEN_IMPORT:
+		fxGetNextToken(parser);
+		if (!flag && (parser->token == XS_TOKEN_LEFT_PARENTHESIS)) {
+			fxGetNextToken(parser);
+			fxAssignmentExpression(parser);
+			fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
+			fxPushNodeStruct(parser, 1, XS_TOKEN_IMPORT_CALL, aLine);
+		}
+		else if (parser->token == XS_TOKEN_DOT) {
+			fxGetNextToken(parser);
+			if ((parser->token == XS_TOKEN_IDENTIFIER) && (parser->symbol == parser->metaSymbol) && (!parser->escaped)) {	
+				fxGetNextToken(parser);
+				if (parser->flags & mxProgramFlag)
+					fxReportParserError(parser, "invalid import.meta");
+				else
+					fxPushNodeStruct(parser, 0, XS_TOKEN_IMPORT_META, aLine);
+			}
+			else
+				fxReportParserError(parser, "invalid import.");
+		}
+		else
+			fxReportParserError(parser, "invalid import");
 		break;
 	case XS_TOKEN_SUPER:
 		fxGetNextToken(parser);
@@ -2391,7 +2426,7 @@ void fxNewExpression(txParser* parser)
 			fxReportParserError(parser, "missing target");
 		return;
 	}
-	fxLiteralExpression(parser);
+	fxLiteralExpression(parser, 1);
 	for (;;) {
 		txInteger aMemberLine = parser->line;
 		if (parser->token == XS_TOKEN_DOT) {

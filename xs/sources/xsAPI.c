@@ -1409,7 +1409,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPush(mxObjectPrototype);
 			
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			for (id = _Array; id < _undefined; id++)
+			for (id = _Array; id < _Infinity; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			for (; id < _Compartment; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);

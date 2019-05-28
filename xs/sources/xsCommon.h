@@ -94,7 +94,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 8
-#define XS_MINOR_VERSION 9
+#define XS_MINOR_VERSION 10
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -225,6 +225,8 @@ enum {
 	XS_CODE_GET_VARIABLE,
 	XS_CODE_GLOBAL,
 	XS_CODE_HOST,
+	XS_CODE_IMPORT,
+	XS_CODE_IMPORT_META,
 	XS_CODE_IN,
 	XS_CODE_INCREMENT,
 	XS_CODE_INSTANCEOF,
@@ -588,6 +590,7 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
+	
 	_Array,
 	_ArrayBuffer,
 	_Atomics,
@@ -601,14 +604,12 @@ enum {
 	_EvalError,
 	_Float32Array,
 	_Float64Array,
-	_Infinity,
 	_Int16Array,
 	_Int32Array,
 	_Int8Array,
 	_JSON,
 	_Map,
 	_Math,
-	_NaN,
 	_Number,
 	_Object,
 	_Promise,
@@ -643,6 +644,8 @@ enum {
 	_trace,
 	_unescape,
 	
+	_Infinity,
+	_NaN,
 	_undefined,
 	
 	_Compartment,

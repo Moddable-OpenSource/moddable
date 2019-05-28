@@ -418,6 +418,8 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_GET_VARIABLE,
 		&&XS_CODE_GLOBAL,
 		&&XS_CODE_HOST,
+		&&XS_CODE_IMPORT,
+		&&XS_CODE_IMPORT_META,
 		&&XS_CODE_IN,
 		&&XS_CODE_INCREMENT,
 		&&XS_CODE_INSTANCEOF,
@@ -3520,6 +3522,19 @@ XS_CODE_JUMP:
 			mxBreak;
 
 	/* MODULE */		
+		mxCase(XS_CODE_IMPORT)
+			mxSaveState;
+			gxDefaults.runImport(the);
+			mxRestoreState;
+			mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_IMPORT_META)
+			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
+			slot = mxModuleInstanceExports(variable->value.home.module)->next;
+			mxPushKind(XS_REFERENCE_KIND);
+			mxStack->value.reference = slot->value.reference;
+			mxNextCode(1);
+			mxBreak;
 		mxCase(XS_CODE_TRANSFER)
 			mxSkipCode(1);
 			slot = mxTransferConstructor.value.reference;
@@ -3574,7 +3589,8 @@ XS_CODE_JUMP:
 			variable = mxFrameEnvironment;
 			if (variable->kind == XS_REFERENCE_KIND) {
 				variable = variable->value.reference;
-				while (variable->value.instance.prototype) {
+		XS_CODE_EVAL_REFERENCE_AGAIN:
+				if (variable->value.instance.prototype) {
 					slot = variable->next;
 					if (slot->kind == XS_REFERENCE_KIND) {
 						slot = slot->value.reference;
@@ -3601,6 +3617,7 @@ XS_CODE_JUMP:
 						mxBreak;
 					}
 					variable = variable->value.instance.prototype;
+					goto XS_CODE_EVAL_REFERENCE_AGAIN;
 				}
 				if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
 					mxPushKind(XS_REFERENCE_KIND);

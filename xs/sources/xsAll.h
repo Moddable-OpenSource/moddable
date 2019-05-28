@@ -114,6 +114,7 @@ typedef struct {
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
+	void (*runImport)(txMachine*);
 } txDefaults;
 
 enum {
@@ -1614,6 +1615,7 @@ extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID)
 extern txSlot* fxRequireModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
+extern void fxRunImport(txMachine* the);
 
 mxExport void fx_require(txMachine* the);
 mxExport void fx_require_get_cache(txMachine* the);

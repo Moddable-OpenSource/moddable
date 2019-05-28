@@ -212,6 +212,57 @@ void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* scr
 	}
 }
 
+void fxRunImport(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	txSlot* promise;
+	txSlot* status;
+	txSlot* already;
+	txSlot* resolveFunction;
+	txSlot* rejectFunction;
+	fxBeginHost(the);
+	if (!module) module = mxProgram.value.reference;
+	mxPush(mxPromisePrototype);
+	promise = fxNewPromiseInstance(the);
+	status = mxPromiseStatus(promise);
+	status->value.integer = mxPendingStatus;
+	already = fxNewPromiseAlready(the);
+	resolveFunction = fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
+	rejectFunction = fxNewPromiseFunction(the, already, promise, mxRejectPromiseFunction.value.reference);
+	{
+		mxTry(the) {
+			txSlot* internal = mxModuleInstanceInternal(module);
+			fxToString(the, stack);
+			the->requireFlag |= XS_REQUIRE_FLAG;
+			module = fxRequireModule(the, internal->value.module.realm, internal->value.module.id, stack);
+			the->requireFlag &= ~XS_REQUIRE_FLAG;
+			mxPushSlot(module);
+			/* COUNT */
+			mxPushInteger(1);
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPushReference(resolveFunction);
+			fxCall(the);
+		}
+		mxCatch(the) {
+			mxPush(mxException);
+			/* COUNT */
+			mxPushInteger(1);
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPushReference(rejectFunction);
+			fxCall(the);
+		}
+	}
+	fxEndHost(the);
+	stack->value.reference = promise;
+	stack->kind = XS_REFERENCE_KIND;
+	the->stack = stack;
+}
+
 void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script)
 {
 	fxQueueModule(the, realm, moduleID, C_NULL);
@@ -902,21 +953,35 @@ void fxRunModules(txMachine* the, txSlot* realm)
 	mxResolvingModules(realm)->value.reference->next = C_NULL;
 	while (module) {
 		txSlot* function = mxModuleFunction(module);
+		mxPushSlot(mxModuleHosts(module));
+		mxPull(mxHosts);
+		{
+			txSlot* key = fxGetKey(the, mxModuleInternal(module)->value.module.id);
+			txSlot* meta = mxModuleExports(module)->next = fxNewSlot(the);
+			txSlot* slot = meta->value.reference = fxNewInstance(the);
+			if (key) {
+				slot = slot->next = fxNewSlot(the);
+				slot->value.string = key->value.key.string;
+				if (key->kind == XS_KEY_KIND)
+					slot->kind = XS_STRING_KIND;
+				else
+					slot->kind = XS_STRING_X_KIND;
+				slot->ID = mxID(_uri);
+			}
+			meta->kind = XS_REFERENCE_KIND;
+		}
 		if (function->kind == XS_REFERENCE_KIND) {
 			#if mxReport
 				fxReport(the, "# Running module \"%s\"\n", fxGetKeyName(the, module->ID));
 			#endif
-			mxPushSlot(mxModuleHosts(module));
-			mxPull(mxHosts);
 			mxPushInteger(0);
 			mxPushUndefined();
 			mxPushSlot(function);
 			fxCall(the);
 			the->stack++;
-			mxPushUndefined();
-			mxPull(mxHosts);
 		}
-		mxModuleExports(module)->next = C_NULL;
+		mxPushUndefined();
+		mxPull(mxHosts);
 		module = module->next;
 	}
 	the->stack++;
@@ -1133,14 +1198,14 @@ void fx_Compartment(txMachine* the)
 		mxPush(mxObjectPrototype);
 		global = fxNewObjectInstance(the);
 		slot = fxLastProperty(the, global);
-		for (id = _Array; id < _undefined; id++)
+		for (id = _Array; id < _Infinity; id++)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 		for (; id < _Compartment; id++)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
-		for (; id < ___proto__; id++) {
+		for (; id < _require; id++) {
 			txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
 			mxFunctionInstanceHome(instance)->value.home.module = program;
-			slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_GET_ONLY);
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_DONT_ENUM_FLAG);
 			mxPop();
 		}
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);

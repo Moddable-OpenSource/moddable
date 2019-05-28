@@ -89,6 +89,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->InfinitySymbol = fxNewParserSymbol(parser, "Infinity");
 	parser->lengthSymbol = fxNewParserSymbol(parser, "length");
 	parser->letSymbol = fxNewParserSymbol(parser, "let");
+	parser->metaSymbol = fxNewParserSymbol(parser, "meta");
 	parser->moduleSymbol = fxNewParserSymbol(parser, "module");
 	parser->nameSymbol = fxNewParserSymbol(parser, "name");
 	parser->NaNSymbol = fxNewParserSymbol(parser, "NaN");

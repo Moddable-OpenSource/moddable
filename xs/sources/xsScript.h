@@ -653,6 +653,7 @@ struct sxParser {
 	txSymbol* InfinitySymbol;
 	txSymbol* lengthSymbol;
 	txSymbol* letSymbol;
+	txSymbol* metaSymbol;
 	txSymbol* moduleSymbol;
 	txSymbol* nameSymbol;
 	txSymbol* NaNSymbol;
@@ -754,6 +755,8 @@ enum {
 	XS_TOKEN_IF,
 	XS_TOKEN_IMPLEMENTS,
 	XS_TOKEN_IMPORT,
+	XS_TOKEN_IMPORT_CALL,
+	XS_TOKEN_IMPORT_META,
 	XS_TOKEN_IN,
 	XS_TOKEN_INCLUDE,
 	XS_TOKEN_INCREMENT,
@@ -1042,6 +1045,8 @@ extern void fxHostNodeCode(void* it, void* param);
 extern void fxIfNodeCode(void* it, void* param); 
 extern void fxIncludeNodeCode(void* it, void* param);
 extern void fxImportNodeCode(void* it, void* param); 
+extern void fxImportCallNodeCode(void* it, void* param); 
+extern void fxImportMetaNodeCode(void* it, void* param); 
 extern void fxIntegerNodeCode(void* it, void* param); 
 extern void fxLabelNodeCode(void* it, void* param); 
 extern void fxMemberNodeCode(void* it, void* param); 

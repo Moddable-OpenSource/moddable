@@ -819,6 +819,22 @@ static const txNodeDispatch gxImportNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
+static const txNodeDispatch gxImportCallNodeDispatch ICACHE_FLASH_ATTR = {
+	fxStatementNodeDistribute,
+	fxNodeBind,
+	fxNodeHoist,
+	fxImportCallNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeReference
+};
+static const txNodeDispatch gxImportMetaNodeDispatch ICACHE_FLASH_ATTR = {
+	fxNodeDistribute,
+	fxNodeBind,
+	fxNodeHoist,
+	fxImportMetaNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeReference
+};
 static const txNodeDispatch gxIncludeNodeDispatch ICACHE_FLASH_ATTR = {
 	fxIncludeNodeDistribute,
 	fxNodeBind,
@@ -1227,6 +1243,8 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_IF, "If", sizeof(txIfNode), &gxIfNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_IMPLEMENTS, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_IMPORT, "Import", sizeof(txImportNode), &gxImportNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_IMPORT_CALL, "ImportCall", sizeof(txStatementNode), &gxImportCallNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_IMPORT_META, "ImportMeta", sizeof(txNode), &gxImportMetaNodeDispatch },
 	{ XS_CODE_IN, XS_TOKEN_IN, "In", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_INCLUDE, "include", sizeof(txIncludeNode), &gxIncludeNodeDispatch },
 	{ XS_CODE_INCREMENT, XS_TOKEN_INCREMENT, "Increment", sizeof(txPostfixExpressionNode), &gxPostfixExpressionNodeDispatch },
