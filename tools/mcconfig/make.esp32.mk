@@ -83,6 +83,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/nimble/port/include \
+ 	$(IDF_PATH)/components/bootloader_support/include \
         
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \

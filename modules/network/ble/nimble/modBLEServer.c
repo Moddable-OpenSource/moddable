@@ -71,6 +71,7 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	uint8_t iocap;
 	
 	// connection
 	int16_t conn_id;
@@ -224,13 +225,26 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t iocap = xsmcToInteger(xsArg(3));
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	if (0 == c_memcmp(address, gBLE->remote_bda.val, 6)) {
+		struct ble_sm_io pkey = {0};
+		pkey.action = BLE_SM_IOACT_INPUT;
+		pkey.passkey = passkey;
+		ble_sm_inject_io(gBLE->conn_id, &pkey);
+	}
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -433,9 +447,13 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
 		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
-		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-		pkey.passkey = xsmcToInteger(xsResult);
-		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+		if (gBLE->iocap == KeyboardOnly)
+			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+		else {
+			xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+			pkey.passkey = xsmcToInteger(xsResult);
+			ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+		}
 	}
 	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
 		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
