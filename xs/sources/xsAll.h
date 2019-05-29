@@ -534,7 +534,6 @@ mxExport txBoolean fxIsInstanceOf(txMachine*);
 mxExport void fxArrayCacheBegin(txMachine*, txSlot*);
 mxExport void fxArrayCacheEnd(txMachine*, txSlot*);
 mxExport void fxArrayCacheItem(txMachine*, txSlot*, txSlot*);
-mxExport void fxGlobal(txMachine*, txSlot*);
 
 mxExport void fxBuildHosts(txMachine*, txInteger, const txHostFunctionBuilder*);
 mxExport txSlot* fxNewHostConstructor(txMachine*, txCallback, txInteger, txInteger);

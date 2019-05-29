@@ -233,8 +233,7 @@ int main(int argc, char* argv[])
 		{
 			xsTry {
 				txSlot* slot;
-				mxPushUndefined();
-				fxGlobal(the, the->stack);
+				mxPush(mxGlobal);
 				slot = fxLastProperty(the, fxToInstance(the, the->stack));
 				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
 				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
@@ -758,8 +757,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
 			agent = the->stack;
 			
-			mxPushUndefined();
-			fxGlobal(the, the->stack);
+			mxPush(mxGlobal);
 			global = the->stack;
 
 			mxPush(mxObjectPrototype);
@@ -1019,8 +1017,7 @@ void* fx_agent_start_aux(void* it)
 			txSlot* global;
 			txStringCStream stream;
 			
-			mxPushUndefined();
-			fxGlobal(the, the->stack);
+			mxPush(mxGlobal);
 			global = the->stack;
 			
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));

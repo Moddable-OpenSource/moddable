@@ -661,8 +661,7 @@ void fxDebugPopTag(txMachine* the)
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
-		mxPushUndefined();
-		fxGlobal(the, the->stack);
+		mxPush(mxGlobal);
 		if (the->debugTag == XS_MODULE_TAG)
 			fxGetID(the, fxID(the, "<xsbug:module>"));
 		else

@@ -1281,7 +1281,6 @@ mxImport xsBooleanValue fxIsInstanceOf(xsMachine*);
 mxImport void fxArrayCacheBegin(xsMachine*, xsSlot*);
 mxImport void fxArrayCacheEnd(xsMachine*, xsSlot*);
 mxImport void fxArrayCacheItem(xsMachine*, xsSlot*, xsSlot*);
-mxImport void fxGlobal(xsMachine*, xsSlot*);
 
 mxImport void fxBuildHosts(xsMachine*, xsIntegerValue, xsHostBuilder*);
 mxImport void fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);

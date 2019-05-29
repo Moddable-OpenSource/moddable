@@ -626,8 +626,13 @@ XS_CODE_JUMP:
 			else {
 				index = mxFrameThis->kind;
 				if (index < XS_REFERENCE_KIND) {
-					if ((index == XS_UNDEFINED_KIND) || (index == XS_NULL_KIND))
-						fxGlobal(the, mxFrameThis);
+					if ((index == XS_UNDEFINED_KIND) || (index == XS_NULL_KIND)) {
+						mxFrameThis->kind = XS_REFERENCE_KIND;
+						variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+						variable = mxModuleInstanceInternal(variable)->value.module.realm;
+						if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+						mxFrameThis->value.reference = mxRealmGlobal(variable)->value.reference;
+					}
 					else {
 						mxSaveState;
 						fxToInstance(the, mxFrameThis);
@@ -2206,8 +2211,11 @@ XS_CODE_JUMP:
             mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_GLOBAL)
-			mxPushKind(XS_UNDEFINED_KIND);
-			fxGlobal(the, mxStack);
+			mxPushKind(XS_REFERENCE_KIND);
+			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+			variable = mxModuleInstanceInternal(variable)->value.module.realm;
+			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_HOST)

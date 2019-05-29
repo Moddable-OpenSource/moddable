@@ -519,26 +519,6 @@ void fxArrayCacheItem(txMachine* the, txSlot* reference, txSlot* item)
 	array->value.array.length++;
 }
 
-void fxGlobal(txMachine* the, txSlot* theSlot)
-{
-	txSlot* frame = the->frame;
-	txSlot* result = C_NULL;
-	if (frame && (!(frame->flag & XS_C_FLAG))) {
-		txSlot* function = frame + 3;
-		if (mxIsReference(function)) {
-			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
-			result = mxModuleInstanceInternal(module)->value.module.realm;
-		}
-//        else
-//            fxDebugger(the, NULL, 0);
-	}
-	if (!result)
-		result = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-	result = mxRealmGlobal(result);
-	theSlot->value = result->value;
-	theSlot->kind = result->kind;
-}
-
 /* Host Constructors, Functions and Objects */
 
 void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* builder)

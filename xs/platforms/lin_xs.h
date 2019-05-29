@@ -52,6 +52,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <gio/gio.h>
 #include <pthread.h>
