@@ -218,7 +218,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
 		fxStripObject(linker, the, &mxJSONObject);
 	// Promise
-	if (!fxIsLinkerSymbolUsed(linker, mxID(_Promise)) && !fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION) && !fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION)) {
+	if (!fxIsLinkerSymbolUsed(linker, mxID(_Promise)) && !fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION) && !fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) && !fxIsCodeUsed(XS_CODE_IMPORT)) {
 		fxStripClass(linker, the, &mxPromiseConstructor);
 	}
 	else {
