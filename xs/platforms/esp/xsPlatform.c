@@ -45,7 +45,6 @@
 	#include "rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
-	#include "app_update/include/esp_ota_ops.h"
 #else
 	#include "tinyprintf.h"
 	#include "spi_flash.h"
@@ -990,8 +989,6 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				resultCode = -1;
 #else
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
-//			flash.partitionByteLength = &_XSMOD_end - &_XSMOD_start;		//@@
-
 			if (!modSPIWrite(offset, sizeof(erase), erase))
 				resultCode = -1;
 #endif
@@ -1015,6 +1012,11 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 #else
 			// check for overflow...
+			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
+				resultCode = -1;
+				break;
+			}
+
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
 			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
@@ -1100,46 +1102,6 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 		}
 		break;
-
-		case 7: {
-#if ESP32
-			uint32_t offset = c_read32be(cmd);
-			cmd += 4, cmdLen -= 4;
-
-			if (0 == offset) {
-				uint32_t size = c_read32be(cmd);
-				cmd += 4, cmdLen -= 4;
-
-				if (the->otaHandle)
-					esp_ota_end(the->otaHandle);
-				the->otaHandle = 0;
-
-				the->otaPartition = (void *)esp_ota_get_next_update_partition(NULL);
-				esp_ota_begin(the->otaPartition, (0 == size) ? OTA_SIZE_UNKNOWN : size, &the->otaHandle);
-			}
-			if (!the->otaHandle) {
-				resultCode = -1;
-				goto bail;
-			}
-
-			if (~0 == offset) {
-				if (ESP_OK != esp_ota_end(the->otaHandle)) {
-					the->otaHandle = 0;
-					resultCode = -1;
-					goto bail;
-				}
-				the->otaHandle = 0;
-
-				if (ESP_OK != esp_ota_set_boot_partition(the->otaPartition))
-					resultCode = -1;
-				goto bail;
-			}
-
-			if (ESP_OK != esp_ota_write(the->otaHandle, cmd, cmdLen))
-				resultCode = -1;
-#endif
-			}
-			break;
 
 		case 8:
 			baud = c_read32be(cmd);
