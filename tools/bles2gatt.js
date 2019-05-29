@@ -499,6 +499,8 @@ class NimBLEGATTFile extends ESP32GATTFile {
 					file.write(" };");
 					file.line("");
 				}
+				if (this.server)
+					file.line(`static uint16_t service${index}_chr${characteristicIndex}_handle;`);
 					
 				let char_name = { service_index:index, att_index:characteristicIndex, name:key };
 				char_name.type = characteristic.type ? characteristic.type: "";
@@ -577,7 +579,11 @@ class NimBLEGATTFile extends ESP32GATTFile {
 				else
 					file.line("\t\t\t\t.access_cb = NULL,");
 				let flags = this.parseAccess(characteristic.permissions.split(","), characteristic.properties.split(","));
-				file.line(`\t\t\t\t.flags = ${flags}`);
+				file.line(`\t\t\t\t.flags = ${flags},`);
+				if (this.server) {
+					file.line(`\t\t\t\t.arg = NULL,`);
+					file.line(`\t\t\t\t.val_handle = &service${index}_chr${characteristicIndex}_handle,`);
+				}
 				file.line("\t\t\t},")
 				++characteristicIndex;
 			}

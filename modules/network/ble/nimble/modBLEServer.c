@@ -67,6 +67,9 @@ typedef struct {
 	// services
 	uint16_t handles[service_count][max_attribute_count];
 	
+	// requests
+	void *pending;
+	
 	// security
 	uint8_t encryption;
 	uint8_t bonding;
@@ -95,8 +98,14 @@ typedef struct {
 	ble_uuid_any_t uuid;
 } notificationStateRecord, *notificationState;
 
+typedef struct {
+	uint16_t length;
+	uint8_t data[1];
+} readDataRequestRecord, *readDataRequest;
+
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static const char_name_table *handleToCharName(uint16_t handle);
+static const ble_uuid16_t *handleToUUID(uint16_t handle);
 
 static void logGAPEvent(struct ble_gap_event *event);
 static void logGATTEvent(uint8_t op);
@@ -390,21 +399,65 @@ static void writeEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsEndHost(gBLE->the);
 }
 
+static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gatt_access_ctxt *ctxt = (struct ble_gatt_access_ctxt *)refcon;
+	const struct ble_gatt_chr_def *chr = (const struct ble_gatt_chr_def *)ctxt->chr;
+	const ble_uuid_t *uuid = chr->uuid;
+	const char_name_table *char_name;
+	uint8_t buffer[16];
+	uint16_t uuid_length;
+	
+	char_name = handleToCharName(*chr->val_handle);
+	uuidToBuffer(buffer, (ble_uuid_any_t *)chr->uuid, &uuid_length);
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(5);
+
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+	xsmcSetInteger(xsVar(2), *chr->val_handle);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+	if (char_name) {
+		xsmcSetString(xsVar(3), (char*)char_name->name);
+		xsmcSet(xsVar(0), xsID_name, xsVar(3));
+		xsmcSetString(xsVar(4), (char*)char_name->type);
+		xsmcSet(xsVar(0), xsID_type, xsVar(4));
+	}
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
+	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
+		readDataRequest data = c_malloc(sizeof(readDataRequestRecord) + xsGetArrayBufferLength(xsResult));
+		if (NULL == data)
+			gBLE->pending = (void*)-1L;
+		else {
+			data->length = xsGetArrayBufferLength(xsResult);
+			c_memmove(data->data, xsmcToArrayBuffer(xsResult), data->length);
+			gBLE->pending = data;
+		}
+	}
+	else
+		gBLE->pending = (void*)-1L;
+
+	xsEndHost(gBLE->the);
+}
+
 static void notificationStateEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	notificationState state = (notificationState)refcon;
 	xsBeginHost(gBLE->the);
 	if (state->conn_id != gBLE->conn_id)
 		goto bail;
+	uint16_t uuid_length;
+	uint8_t buffer[16];
 	char_name_table *char_name = (char_name_table *)handleToCharName(state->handle);
+	const ble_uuid16_t *uuid = handleToUUID(state->handle);
+	
 	xsmcVars(6);
 	xsVar(0) = xsmcNewObject();
-	// @@
-	//uint16_t buffer_length;
-	//uint8_t buffer[16];
-	//uuidToBuffer(&uuid->type, buffer, &buffer_length);
-	//xsmcSetArrayBuffer(xsVar(1), buffer, buffer_length);
-	//xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+	uuidToBuffer(buffer, (ble_uuid_any_t *)uuid, &uuid_length);
+	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	if (char_name) {
 		xsmcSetString(xsVar(2), (char*)char_name->name);
 		xsmcSet(xsVar(0), xsID_name, xsVar(2));
@@ -632,7 +685,7 @@ void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length)
 	}
 }
 
-static const char_name_table *handleToCharName(uint16_t handle) {
+const char_name_table *handleToCharName(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j]) {
@@ -646,7 +699,19 @@ static const char_name_table *handleToCharName(uint16_t handle) {
 	return NULL;
 }
 
-static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+const ble_uuid16_t *handleToUUID(uint16_t handle) {
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+			const struct ble_gatt_chr_def *chr_def = &service->characteristics[att_index];
+			if (handle == *chr_def->val_handle)
+				return (ble_uuid16_t *)chr_def->uuid;
+		}
+	}
+	return NULL;
+}
+
+int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	LOG_GATT_EVENT(ctxt->op);
 	
@@ -654,9 +719,23 @@ static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t a
 		goto bail;
 
 	switch (ctxt->op) {
-        case BLE_GATT_ACCESS_OP_READ_CHR:
-        	// @@
+        case BLE_GATT_ACCESS_OP_READ_CHR: {
+        	// The read request must be satisfied from this task.
+        	gBLE->pending = NULL;
+        	modMessagePostToMachine(gBLE->the, NULL, 0, readEvent, (void*)ctxt);
+        	while (NULL == gBLE->pending) {
+        		modDelayMilliseconds(5);
+        	}
+        	if ((void*)-1L == gBLE->pending)
+        		return BLE_ATT_ERR_INSUFFICIENT_RES;
+        	else {
+        		readDataRequest data = (readDataRequest)gBLE->pending;
+        		os_mbuf_append(ctxt->om, data->data, data->length);
+        		c_free(data);
+        	}
+        	return 0;
         	break;
+        }
 		case BLE_GATT_ACCESS_OP_WRITE_CHR: {
 			uint8_t *data;
 			uint16_t length = sizeof(attributeDataRecord) + ctxt->om->om_len;
