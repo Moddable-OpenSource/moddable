@@ -23,6 +23,7 @@
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
+#include "modTimer.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
@@ -30,6 +31,7 @@
 #include "host/ble_uuid.h"
 #include "esp_nimble_hci.h"
 #include "services/gap/ble_svc_gap.h"
+#include "nimble/nimble_port.h"
 
 #include "mc.bleservices.c"
 
@@ -57,6 +59,9 @@
 	#define LOG_GATT_INT(i)
 #endif
 
+// https://github.com/espressif/esp-idf/issues/3555
+#define USE_EVENT_TIMER 0
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -80,6 +85,10 @@ typedef struct {
 	int16_t conn_id;
 	ble_addr_t remote_bda;
 	uint8_t terminating;
+	
+#if USE_EVENT_TIMER
+	modTimer timer;
+#endif
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -118,6 +127,10 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg);
 
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
 
+#if USE_EVENT_TIMER
+static void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize);
+#endif
+
 static modBLE gBLE = NULL;
 
 void xs_ble_server_initialize(xsMachine *the)
@@ -144,7 +157,11 @@ void xs_ble_server_initialize(xsMachine *the)
 
    // ble_store_ram_init();
 
+#if USE_EVENT_TIMER
+	gBLE->timer = modTimerAdd(0, 20, ble_event_timer_callback, NULL, 0);
+#else
 	nimble_port_freertos_init(ble_host_task);
+#endif
 }
 
 void xs_ble_server_close(xsMachine *the)
@@ -559,6 +576,17 @@ void nimble_on_sync(void)
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
 }
 
+#if USE_EVENT_TIMER
+void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize)
+{
+	struct ble_npl_eventq *eventq = nimble_port_get_dflt_eventq();
+	struct ble_npl_event *ev;
+	ev = ble_npl_eventq_get(eventq, 0);
+	if (NULL != ev)
+    	ble_npl_event_run(ev);
+}
+#endif
+
 static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
 	int service_index, att_index;
@@ -722,10 +750,14 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
         case BLE_GATT_ACCESS_OP_READ_CHR: {
         	// The read request must be satisfied from this task.
         	gBLE->pending = NULL;
+#if !USE_EVENT_TIMER
         	modMessagePostToMachine(gBLE->the, NULL, 0, readEvent, (void*)ctxt);
         	while (NULL == gBLE->pending) {
         		modDelayMilliseconds(5);
         	}
+#else
+			readEvent(gBLE->the, ctxt, NULL, 0);
+#endif
         	if ((void*)-1L == gBLE->pending)
         		return BLE_ATT_ERR_INSUFFICIENT_RES;
         	else {
