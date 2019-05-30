@@ -224,6 +224,7 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
 	ble_addr_t addr;
 	uint8_t own_addr_type;
 
@@ -232,7 +233,7 @@ void xs_ble_client_connect(xsMachine *the)
 	
 	ble_gap_disc_cancel();
 	
-	addr.type = BLE_ADDR_PUBLIC;
+	addr.type = addressType;
 	c_memmove(&addr.val, address, 6);
 		
 	// Add a new connection record to be filled as the connection completes
@@ -461,6 +462,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	if (NULL != dsr) {
 		dsr->conn_id = conn_id;
 		dsr->obj = xsThis;
+		// @@ The ending handle needs to be the last handle in the characteristic
 		ble_gattc_disc_all_dscs(conn_id, handle, 0xFFFF, nimble_descriptor_event, dsr);
 	}
 }
@@ -615,12 +617,14 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	uint8_t *data = (uint8_t*)refcon;
 	
 	xsBeginHost(gBLE->the);
-	xsmcVars(3);
+	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), data, disc->length_data);
 	xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
+	xsmcSetInteger(xsVar(3), disc->addr.type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	c_free(data);
 	xsEndHost(gBLE->the);
@@ -749,7 +753,9 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 	if (0 != dsr->dsc.handle) {
 		uint16_t length;
 		uint8_t buffer[16];
-		int index = modBLEConnectionSaveAttHandle(connection, &dsr->dsc.uuid, dsr->dsc.handle);
+		// @@ The bles2gatt tool needs to process descriptors in order to call modBLEConnectionSaveAttHandle()
+		//int index = modBLEConnectionSaveAttHandle(connection, &dsr->dsc.uuid, dsr->dsc.handle);
+		int index = -1;
 		uuidToBuffer(buffer, &dsr->dsc.uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
