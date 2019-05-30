@@ -40,6 +40,11 @@
 
 #define XS_ATOM_INCREMENTAL 0x58535F49 /* 'XS_I' */
 
+enum {
+	XS_STRIP_IMPLICIT_FLAG = 1,
+	XS_STRIP_EXPLICIT_FLAG,
+};
+
 typedef struct sxLinker txLinker;
 typedef struct sxLinkerBuilder txLinkerBuilder;
 typedef struct sxLinkerCallback txLinkerCallback;
@@ -83,6 +88,7 @@ struct sxLinker {
 	txID hostsCount;
 	
 	txLinkerStrip* firstStrip;
+	txFlag stripFlag;
 	
 	txSize symbolModulo;
 	txLinkerSymbol** symbolTable;
@@ -103,7 +109,6 @@ struct sxLinker {
 	txCreation creation;
 	
 	txFlag intrinsicFlags[mxIntrinsicCount];
-	txFlag stripping;
 
 	char main[1024];
 };
@@ -182,6 +187,18 @@ struct sxLinkerSymbol {
 };
 
 /* xslBase.c */
+extern void fx_BigInt64Array(txMachine* the);
+extern void fx_BigUint64Array(txMachine* the);
+extern void fx_Float32Array(txMachine* the);
+extern void fx_Float64Array(txMachine* the);
+extern void fx_Int8Array(txMachine* the);
+extern void fx_Int16Array(txMachine* the);
+extern void fx_Int32Array(txMachine* the);
+extern void fx_Uint8Array(txMachine* the);
+extern void fx_Uint16Array(txMachine* the);
+extern void fx_Uint32Array(txMachine* the);
+extern void fx_Uint8ClampedArray(txMachine* the);
+
 extern void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength);
 extern void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInteger baseLength);
 extern void fxBufferPaths(txLinker* linker);
@@ -208,6 +225,8 @@ extern txString fxRealFilePath(txLinker* linker, txString path);
 extern void fxReportLinkerError(txLinker* linker, txString theFormat, ...);
 extern void fxSlashPath(txString path, char from, char to);
 extern void fxTerminateLinker(txLinker* linker);
+extern void fxUnuseCode(txU1 code);
+extern void fxUseCodes();
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteCString(FILE* file, txString string);
 extern void fxWriteDefines(txLinker* linker, FILE* file);
@@ -233,7 +252,6 @@ extern void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** tab
 extern void fxStripCallbacks(txLinker* linker, txMachine* the);
 extern void fxStripDefaults(txLinker* linker, FILE* file);
 extern void fxStripName(txLinker* linker, txString name);
-extern void fxUnstripCallbacks(txLinker* linker);
 
 #define mxAssert(_ASSERTION) { if (!(_ASSERTION)) { fprintf(stderr, "### '%s': invalid file\n", path); linker->error = C_EINVAL; c_longjmp(linker->jmp_buf, 1); } }
 #define mxThrowElse(_ASSERTION) { if (!(_ASSERTION)) { linker->error = errno; c_longjmp(linker->jmp_buf, 1); } }

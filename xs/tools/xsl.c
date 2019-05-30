@@ -69,7 +69,6 @@ int main(int argc, char* argv[])
   	txString input = NULL;
   	txString output = NULL;
   	txString separator = NULL;
-  	txBoolean stripping = 0;
   	txBoolean archiving = 0;
   	txBoolean optimizing = 0;
 #if mxWindows
@@ -84,7 +83,6 @@ int main(int argc, char* argv[])
 	txLinkerPreload* preload;
 	txLinkerResource* resource;
 	txLinkerScript* script;
-	txLinkerStrip* strip;
 	FILE* file = NULL;
 	xsCreation _creation = {
 		128 * 1024 * 1024, 	/* initialChunkSize */
@@ -200,8 +198,9 @@ int main(int argc, char* argv[])
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-s: no symbol");
 				if (!c_strcmp(argv[argi], "*"))
-					stripping = 1;
+					linker->stripFlag |= XS_STRIP_IMPLICIT_FLAG;
 				else {
+					linker->stripFlag |= XS_STRIP_EXPLICIT_FLAG;
 					*stripAddress = fxNewLinkerStrip(linker, argv[argi]);
 					stripAddress = &((*stripAddress)->nextStrip);
 				}
@@ -295,7 +294,6 @@ int main(int argc, char* argv[])
 	
 			linker->base = url;
 			linker->baseLength = c_strlen(url);
-			linker->stripping = stripping || linker->firstStrip;
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
@@ -355,7 +353,7 @@ int main(int argc, char* argv[])
 							mxHostInspectors = mxUndefined;
 							mxInstanceInspectors = mxUndefined;
 						}
-						if (linker->stripping) {
+						if (linker->stripFlag) {
 							fxFreezeBuiltIns(the);
 							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
 							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
@@ -368,17 +366,12 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-			if (stripping)
+			
+			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
-			else
-				fxUnstripCallbacks(linker);
-			strip = linker->firstStrip;
-			while (strip) {
-				fxStripName(linker, strip->name);
-				strip = strip->nextStrip;
-			}
+			
 			linker->bigintSize = 0;
-			count = fxPrepareHeap(the, stripping || linker->firstStrip);
+			count = fxPrepareHeap(the, linker->stripFlag);
 			
 // 			if (optimizing) {
 // 				linker->realm = the;
@@ -539,7 +532,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount];\n");		
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
 		
-			if (linker->stripping) {
+			if (linker->stripFlag) {
 				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
 				fxPrintBuilders(the, file);
 			}
@@ -631,7 +624,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "};\n");
 			fprintf(file, "void* xsPreparationAndCreation(xsCreation **creation) { if (creation) *creation = (xsCreation *)&gxPreparation.creation; return (void*)&gxPreparation; }\n\n");
 
-			if (linker->stripping)
+			if (linker->stripFlag)
 				fxStripDefaults(linker, file);
 			else
 				fprintf(file, "#include \"xsDefaults.c\"\n\n");

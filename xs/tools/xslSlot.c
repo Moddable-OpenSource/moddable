@@ -232,7 +232,7 @@ void fxLinkerScriptCallback(txMachine* the)
 txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping)
+	if (linker->stripFlag)
 		return property;
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
@@ -247,7 +247,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	txSlot* property;
 	txSlot* key;
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping)
+	if (linker->stripFlag)
 		return C_NULL;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
 	if (property)
@@ -287,7 +287,7 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txSlot *function, *home = the->stack, *slot;
-	if (linker->stripping) {
+	if (linker->stripFlag) {
 		property = property->next = fxNewSlot(the);
 		property->flag = flag;
 		property->ID = id;
@@ -312,7 +312,7 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 void fxPrepareInstance(txMachine* the, txSlot* instance)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping) {
+	if (linker->stripFlag) {
 		txSlot *property = instance->next;
 		while (property) {
 			if (property->kind != XS_ACCESSOR_KIND) 
@@ -324,7 +324,7 @@ void fxPrepareInstance(txMachine* the, txSlot* instance)
 	}
 }
 
-txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
+txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txID aliasCount = 0;
@@ -390,7 +390,7 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
-							if (stripping) {
+							if (stripFlag) {
 								if (slot->flag & XS_CAN_CONSTRUCT_FLAG /*(XS_BASE_FLAG | XS_DERIVED_FLAG)*/) {
 									property = property->next;
 									while (property) {
