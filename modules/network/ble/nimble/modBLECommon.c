@@ -30,19 +30,16 @@ static int16_t useCount = 0;
 
 static esp_err_t _esp_nimble_hci_and_controller_init(void)
 {
-    esp_err_t ret;
-
+    esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
-    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        return ret;
-    }
+	err = esp_bt_controller_init(&bt_cfg);
+	if (ESP_OK == err)
+		err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+	if (ESP_OK == err)
+		err = esp_nimble_hci_init();
 
-    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BLE)) != ESP_OK) {
-        return ret;
-    }
-
-    return esp_nimble_hci_init();
+    return err;
 }
 
 int modBLEPlatformInitialize(void)
@@ -63,4 +60,5 @@ int modBLEPlatformTerminate(void)
 		return 0;
 		
 	// @@ There doesn't seem to be any nimble terminate APIs
+	// https://github.com/espressif/esp-idf/issues/3475
 }

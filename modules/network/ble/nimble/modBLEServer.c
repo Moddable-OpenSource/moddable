@@ -73,7 +73,8 @@ typedef struct {
 	uint16_t handles[service_count][max_attribute_count];
 	
 	// requests
-	void *pending;
+	uint8_t requestPending;
+	void *requestResult;
 	
 	// security
 	uint8_t encryption;
@@ -445,18 +446,15 @@ static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messag
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
 	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
 		readDataRequest data = c_malloc(sizeof(readDataRequestRecord) + xsGetArrayBufferLength(xsResult));
-		if (NULL == data)
-			gBLE->pending = (void*)-1L;
-		else {
+		if (NULL != data) {
 			data->length = xsGetArrayBufferLength(xsResult);
 			c_memmove(data->data, xsmcToArrayBuffer(xsResult), data->length);
-			gBLE->pending = data;
+			gBLE->requestResult = data;
 		}
 	}
-	else
-		gBLE->pending = (void*)-1L;
 
 	xsEndHost(gBLE->the);
+	gBLE->requestPending = false;
 }
 
 static void notificationStateEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -582,8 +580,10 @@ void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize)
 	struct ble_npl_eventq *eventq = nimble_port_get_dflt_eventq();
 	struct ble_npl_event *ev;
 	ev = ble_npl_eventq_get(eventq, 0);
-	if (NULL != ev)
+	while (NULL != ev) {
     	ble_npl_event_run(ev);
+		ev = ble_npl_eventq_get(eventq, 0);
+	}
 }
 #endif
 
@@ -612,25 +612,6 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 			}
 			break;
 		}
-#if 0
-		case BLE_GATT_REGISTER_OP_DSC: {
-			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
-			const struct ble_gatt_dsc_def *dsc_def = ctxt->dsc.dsc_def;
-			for (service_index = 0; service_index < service_count; ++service_index) {
-				const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
-				if (0 == ble_uuid_cmp((const ble_uuid_t*)svc_def->uuid, (const ble_uuid_t*)service->uuid)) {
-					for (att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
-						const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
-						if (0 == ble_uuid_cmp((const ble_uuid_t*)chr_def->uuid, (const ble_uuid_t*)characteristic->uuid)) {
-							gBLE->handles[service_index][att_index] = ctxt->chr.val_handle;
-							return;
-						}
-					}
-				}
-			}
-			break;
-		}
-#endif
 		default:
 			break;
 	}
@@ -749,19 +730,20 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
 	switch (ctxt->op) {
         case BLE_GATT_ACCESS_OP_READ_CHR: {
         	// The read request must be satisfied from this task.
-        	gBLE->pending = NULL;
+        	gBLE->requestPending = true;
+        	gBLE->requestResult = NULL;
 #if !USE_EVENT_TIMER
         	modMessagePostToMachine(gBLE->the, NULL, 0, readEvent, (void*)ctxt);
-        	while (NULL == gBLE->pending) {
+        	while (gBLE->requestPending) {
         		modDelayMilliseconds(5);
         	}
 #else
 			readEvent(gBLE->the, ctxt, NULL, 0);
 #endif
-        	if ((void*)-1L == gBLE->pending)
+        	if (NULL == gBLE->requestResult)
         		return BLE_ATT_ERR_INSUFFICIENT_RES;
         	else {
-        		readDataRequest data = (readDataRequest)gBLE->pending;
+        		readDataRequest data = (readDataRequest)gBLE->requestResult;
         		os_mbuf_append(ctxt->om, data->data, data->length);
         		c_free(data);
         	}
@@ -773,7 +755,7 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
 			uint16_t length = sizeof(attributeDataRecord) + ctxt->om->om_len;
 			attributeData value = c_malloc(length);
 			if (NULL != value) {
-				value->isCharacteristic = 1;
+				value->isCharacteristic = (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR);
 				value->conn_id = conn_handle;
 				value->handle = attr_handle;
 				value->length = ctxt->om->om_len;
