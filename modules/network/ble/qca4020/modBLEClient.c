@@ -288,6 +288,7 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
 	qapi_BLE_BD_ADDR_t bd_addr;
 	int result;
 
@@ -317,7 +318,7 @@ void xs_ble_client_connect(xsMachine *the)
 		gBLE->scanInterval,
 		gBLE->scanWindow,
 		QAPI_BLE_FP_NO_FILTER_E,
-		QAPI_BLE_LAT_PUBLIC_E,	// remote address type
+		addressType,			// remote address type
 		&bd_addr,				// remote address
 		QAPI_BLE_LAT_PUBLIC_E,	// local address type
 		&gBLE->connectionParams,
@@ -849,13 +850,15 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 	}
 	
 	xsBeginHost(gBLE->the);
-	xsmcVars(3);
+	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), result->Raw_Report_Data, result->Raw_Report_Length);
 	addressToBuffer(result->BD_ADDR, buffer);
 	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
+	xsmcSetInteger(xsVar(3), result->Address_Type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	c_free(result->Raw_Report_Data);
 	xsEndHost(gBLE->the);

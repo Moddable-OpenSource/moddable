@@ -103,10 +103,16 @@ GAP.ADFlag = {
 	LE_BR_EDR_CONTROLLER: 0x08,
 	LE_BR_EDR_HOST: 0x10,
 };
-
+GAP.AddressType = {
+	PUBLIC: 0,
+	RANDOM: 1,
+	RPA_PUBLIC: 2,
+	RPA_RANDOM: 3
+};
 Object.freeze(GAP);
 Object.freeze(GAP.ADFlag);
 Object.freeze(GAP.ADType);
+Object.freeze(GAP.AddressType);
 Object.freeze(GAP.ADV_FAST_INTERVAL1);
 Object.freeze(GAP.ADV_FAST_INTERVAL2);
 Object.freeze(GAP.ADV_SLOW_INTERVAL);

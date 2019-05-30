@@ -157,6 +157,7 @@ struct modBLEConnectionRecord {
 
 	int8_t id;
 	bd_addr bda;
+	uint8_t bdaType;
 	uint8_t bond;
 	gattProcedure procedureQueue;
 	
@@ -251,6 +252,7 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
 	bd_addr bda;
 
 	bufferToAddress(address, &bda);
@@ -267,9 +269,10 @@ void xs_ble_client_connect(xsMachine *the)
 	connection->id = -1;
 	connection->bond = 0xFF;
 	c_memmove(&connection->bda, &bda, sizeof(bda));
+	connection->bdaType = addressType;
 	modBLEConnectionAdd(connection);
 	
-	gecko_cmd_le_gap_open(bda, le_gap_address_type_public);
+	gecko_cmd_le_gap_open(bda, addressType);
 }
 
 void xs_ble_client_set_security_parameters(xsMachine *the)
@@ -725,13 +728,15 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 {
 	xsBeginHost(gBLE->the);
 	uint8_t addr[6];
-	xsmcVars(3);
+	xsmcVars(4);
 	addressToBuffer(&evt->address, addr);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), evt->data.data, evt->data.len);
 	xsmcSetArrayBuffer(xsVar(2), addr, 6);
+	xsmcSetInteger(xsVar(3), evt->address_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }

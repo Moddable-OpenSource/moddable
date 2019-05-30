@@ -78,6 +78,7 @@ struct modBLEConnectionRecord {
 	xsSlot		objClient;
 
 	esp_bd_addr_t bda;
+	uint8_t bdaType;
 	esp_gatt_if_t gattc_if;
 	int16_t conn_id;
 	uint16_t app_id;
@@ -211,6 +212,7 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
 	esp_bd_addr_t bda;
 
 	c_memmove(&bda, address, sizeof(bda));
@@ -229,6 +231,7 @@ void xs_ble_client_connect(xsMachine *the)
 	connection->app_id = gAPP_ID++;
 	connection->gattc_if = ESP_GATT_IF_NONE;
 	c_memmove(&connection->bda, &bda, sizeof(bda));
+	connection->bdaType = addressType;
 	modBLEConnectionAdd(connection);
 	
 	// register application client and connect when ESP_GATTC_REG_EVT received
@@ -709,12 +712,14 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 {
 	struct ble_scan_result_evt_param *scan_rst = (struct ble_scan_result_evt_param *)message;
 	xsBeginHost(gBLE->the);
-	xsmcVars(3);
+	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), scan_rst->ble_adv, scan_rst->adv_data_len + scan_rst->scan_rsp_len);
 	xsmcSetArrayBuffer(xsVar(2), scan_rst->bda, 6);
+	xsmcSetInteger(xsVar(3), scan_rst->ble_addr_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
@@ -890,7 +895,7 @@ static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 	modBLEConnection connection = modBLEConnectionFindByAppID(reg->app_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gattc_open(connection->gattc_if, connection->bda, BLE_ADDR_TYPE_PUBLIC, true);
+	esp_ble_gattc_open(connection->gattc_if, connection->bda, connection->bdaType, true);
 	xsEndHost(gBLE->the);
 }
 
