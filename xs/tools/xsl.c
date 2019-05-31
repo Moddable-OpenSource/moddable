@@ -369,6 +369,8 @@ int main(int argc, char* argv[])
 			
 			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
+			else
+				fxUnstripCallbacks(linker);
 			
 			linker->bigintSize = 0;
 			count = fxPrepareHeap(the, linker->stripFlag);

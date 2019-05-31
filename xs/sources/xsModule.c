@@ -1202,7 +1202,7 @@ void fx_Compartment(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 		for (; id < _Compartment; id++)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
-		for (; id < _require; id++) {
+		for (; id < ___proto__; id++) {
 			txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
 			mxFunctionInstanceHome(instance)->value.home.module = program;
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_DONT_ENUM_FLAG);

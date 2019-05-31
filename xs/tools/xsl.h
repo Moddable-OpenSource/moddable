@@ -252,6 +252,7 @@ extern void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** tab
 extern void fxStripCallbacks(txLinker* linker, txMachine* the);
 extern void fxStripDefaults(txLinker* linker, FILE* file);
 extern void fxStripName(txLinker* linker, txString name);
+extern void fxUnstripCallbacks(txLinker* linker);
 
 #define mxAssert(_ASSERTION) { if (!(_ASSERTION)) { fprintf(stderr, "### '%s': invalid file\n", path); linker->error = C_EINVAL; c_longjmp(linker->jmp_buf, 1); } }
 #define mxThrowElse(_ASSERTION) { if (!(_ASSERTION)) { linker->error = errno; c_longjmp(linker->jmp_buf, 1); } }

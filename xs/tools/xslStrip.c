@@ -70,7 +70,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 {
 	txLinkerStrip* linkerStrip;
 	txLinkerBuilder* linkerBuilder;
-	txLinkerCallback* linkerCallback;
 	txID id;
 	char buffer[1024];
 	
@@ -82,11 +81,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			linker->symbolArray[id]->flag = 1;
 			id++;
 		}
-		linkerCallback = linker->firstCallback;
-		while (linkerCallback) {
-			linkerCallback->flag = 1;
-			linkerCallback = linkerCallback->nextCallback;
-		}
+		fxUnstripCallbacks(linker);
 	}
 	else {
 		linkerBuilder = linker->firstBuilder;
@@ -677,6 +672,15 @@ void fxUnstripCallback(txLinker* linker, txCallback which)
 	txLinkerCallback* linkerCallback = fxGetLinkerCallbackByAddress(linker, which);
 	if (linkerCallback)
 		linkerCallback->flag = 1;
+}
+
+void fxUnstripCallbacks(txLinker* linker)
+{
+	txLinkerCallback* linkerCallback = linker->firstCallback;
+	while (linkerCallback) {
+		linkerCallback->flag = 1;
+		linkerCallback = linkerCallback->nextCallback;
+	}
 }
 
 void fxUnuseSymbol(txLinker* linker, txID id)
