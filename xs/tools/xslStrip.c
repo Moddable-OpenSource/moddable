@@ -266,7 +266,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_TypedArray_prototype_join);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_values);
 	fxUnstripCallback(linker, fx_require);
-	fxUnstripCallback(linker, fx_species_get);
 	
 	fxUnstripCallback(linker, fxArrayLengthGetter);
 	fxUnstripCallback(linker, fxArrayLengthSetter);
@@ -387,6 +386,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, &mxWeakMapConstructor);
 	if (fxIsCallbackStripped(linker, fx_WeakSet))
 		fxStripClass(linker, the, &mxWeakSetConstructor);
+		
+	fxUnstripCallback(linker, fx_species_get); //@@
 }
 
 void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)
