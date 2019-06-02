@@ -73,6 +73,7 @@ static void fxEchoString(txMachine* the, txString theString);
 static txSlot* fxFindFrame(txMachine* the);
 static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
+static txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
 static void fxListLocal(txMachine* the);
@@ -1666,12 +1667,26 @@ void fxListModules(txMachine* the)
 		fxEchoModule(the, module, &aList);
 		module = module->next;
 	}
+	
 	module = the->sharedModules;
 	while (module) {
-		fxEchoModule(the, module, &aList);
+		if (fxIsModuleAvailable(the, realm, module))
+			fxEchoModule(the, module, &aList);
 		module = module->next;
 	}
 	fxEcho(the, "</grammar>");
+}
+
+txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module)
+{
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == mxModuleInternal(module)->value.module.id) {
+			return 1;
+		}
+		slot = slot->next;
+	}
+	return 0;
 }
 
 void fxLogin(txMachine* the)

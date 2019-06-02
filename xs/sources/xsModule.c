@@ -43,6 +43,7 @@
 
 static txSlot* fxCurrentModule(txMachine* the);
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
+static txSlot* fxGetSharedModule(txMachine* the, txSlot* realm, txID moduleID);
 static void fxImportModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 static void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module);
 
@@ -480,7 +481,12 @@ txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 	txSlot* result = mxBehaviorGetProperty(the, mxRequiredModules(realm)->value.reference, moduleID, XS_NO_ID, XS_OWN);
 	if (result)
 		return result;
-	result = the->sharedModules;
+	return fxGetSharedModule(the, realm, moduleID);
+}
+
+txSlot* fxGetSharedModule(txMachine* the, txSlot* realm, txID moduleID)
+{
+	txSlot* result = the->sharedModules;
 	while (result) {
 		if (result->ID == moduleID)
 			return result;
@@ -1184,14 +1190,14 @@ void fx_Compartment(txMachine* the)
 			mxTypeError("no compartments");
 		if (mxIsUndefined(mxTarget))
 			mxTypeError("call Compartment");
+		if (mxArgc == 0)
+			mxSyntaxError("no module specifier");
+			
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxCompartmentPrototype);
 		instance = fxNewObjectInstance(the);
 		mxPullSlot(mxResult);
 			
-		if (mxArgc == 0)
-			mxSyntaxError("no module specifier");
-		fxToString(the, mxArgv(0));
 		
 		program = fxNewProgramInstance(the);
 		
@@ -1263,6 +1269,8 @@ void fx_Compartment(txMachine* the)
 		the->requireFlag |= XS_REQUIRE_FLAG;
 		module = fxRequireModule(the, realm, XS_NO_ID, mxArgv(0));
 		the->requireFlag &= ~XS_REQUIRE_FLAG;
+		if (realm != mxModuleInternal(module)->value.module.realm)
+			mxTypeError("shared module");
 		
 		slot = fxLastProperty(the, instance);
 		slot = fxNextReferenceProperty(the, slot, program, XS_NO_ID, XS_GET_ONLY);
