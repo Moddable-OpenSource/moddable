@@ -522,34 +522,45 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		file.line("");
 		
 		if (this.server) {
-			file.line("static int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);");
+			file.line("int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);");
 			file.line("");
-			file.line("static int gatt_svr_chr_static_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)");
-			file.line("{");
-			file.line("\tconst ble_uuid_t *uuid;");
-			file.line("\tint rc;");
-			file.line("");
-			file.line("\tuuid = ctxt->chr->uuid;");
-			file.line("");
+			let hasStaticCharacteristicValues = false;
 			services.forEach((service, index) => {
-				characteristicIndex = 0;
-				let attributeCount = 1;
 				let characteristics = service.characteristics;
 				for (let key in characteristics) {
 					let characteristic = characteristics[key];
-					if ("value" in characteristic) {
-						file.line(`\tif (ble_uuid_cmp(uuid, &service${index}_chr${characteristicIndex}_uuid.u) == 0) {`);
-						file.line(`\t\trc = os_mbuf_append(ctxt->om, service${index}_chr${characteristicIndex}_value, sizeof(service${index}_chr${characteristicIndex}_value));`);
-						file.line("\t\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
-						file.line("\t}");
-					}
-					++characteristicIndex;
+					if ("value" in characteristic)
+						hasStaticCharacteristicValues = true;
 				}
 			});
-			file.line("");
-			file.line("\treturn BLE_ATT_ERR_UNLIKELY;");
-			file.line("}");
-			file.line("");
+			if (hasStaticCharacteristicValues) {
+				file.line("static int gatt_svr_chr_static_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)");
+				file.line("{");
+				file.line("\tconst ble_uuid_t *uuid;");
+				file.line("\tint rc;");
+				file.line("");
+				file.line("\tuuid = ctxt->chr->uuid;");
+				file.line("");
+				services.forEach((service, index) => {
+					characteristicIndex = 0;
+					let attributeCount = 1;
+					let characteristics = service.characteristics;
+					for (let key in characteristics) {
+						let characteristic = characteristics[key];
+						if ("value" in characteristic) {
+							file.line(`\tif (ble_uuid_cmp(uuid, &service${index}_chr${characteristicIndex}_uuid.u) == 0) {`);
+							file.line(`\t\trc = os_mbuf_append(ctxt->om, service${index}_chr${characteristicIndex}_value, sizeof(service${index}_chr${characteristicIndex}_value));`);
+							file.line("\t\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
+							file.line("\t}");
+						}
+						++characteristicIndex;
+					}
+				});
+				file.line("");
+				file.line("\treturn BLE_ATT_ERR_UNLIKELY;");
+				file.line("}");
+				file.line("");
+			}
 		}
 
 		characteristicIndex = 0;

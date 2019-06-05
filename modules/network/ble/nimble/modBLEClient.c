@@ -117,9 +117,6 @@ static modBLEConnection modBLEConnectionFindByAddress(ble_addr_t *bda);
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length);
 
-static void nimble_host_task(void *param);
-static void ble_host_task(void *param);
-static void nimble_on_reset(int reason);
 static void nimble_on_sync(void);
 
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
@@ -128,6 +125,8 @@ static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_ga
 static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_def_handle, const struct ble_gatt_dsc *dsc, void *arg);
 static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
 static int nimble_subscribe_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
+
+static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
 
@@ -145,14 +144,11 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
+	ble_hs_cfg.sync_cb = nimble_on_sync;
+
 	esp_err_t err = modBLEPlatformInitialize();
 	if (ESP_OK != err)
 		xsUnknownError("ble initialization failed");
-
-	ble_hs_cfg.reset_cb = nimble_on_reset;
-	ble_hs_cfg.sync_cb = nimble_on_sync;
-
-	nimble_port_freertos_init(ble_host_task);
 }
 
 void xs_ble_client_close(xsMachine *the)
@@ -226,7 +222,6 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	ble_addr_t addr;
-	uint8_t own_addr_type;
 
 	// Ignore duplicate connection attempts
 	if (ble_gap_conn_active()) return;
@@ -244,7 +239,15 @@ void xs_ble_client_connect(xsMachine *the)
 	c_memmove(&connection->bda, &addr, sizeof(addr));
 	modBLEConnectionAdd(connection);
 	
-	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
+	int rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
+
+	// The BLE_HS_EDONE result code is returned if the server already established a connection.
+	if (BLE_HS_EDONE == rc) {
+		struct ble_gap_conn_desc desc;
+		if (0 == ble_gap_conn_find_by_addr(&addr, &desc)) {
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
+		}
+	}
 }
 
 void smTimerCallback(modTimer timer, void *refcon, int refconSize)
@@ -307,19 +310,8 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsEndHost(gBLE->the);
 }
 
-void nimble_host_task(void *param)
+void ble_client_on_reset(int reason)
 {
-	nimble_port_run();
-}
-
-void ble_host_task(void *param)
-{
-	nimble_host_task(param);
-}
-
-void nimble_on_reset(int reason)
-{
-	// fatal controller reset - all connections have been closed
 	if (gBLE)
 		xs_ble_client_close(gBLE->the);
 }
@@ -644,12 +636,14 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 			goto bail;
 		}
 		connection->conn_id = desc->conn_handle;
-		xsmcVars(3);
+		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
@@ -875,6 +869,10 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	
+	if (!gBLE)
+		return;
+		
 	if (0 == event->enc_change.status) {
 		struct ble_gap_conn_desc desc;
         int rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);

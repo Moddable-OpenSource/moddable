@@ -23,7 +23,6 @@
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
-#include "modTimer.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
@@ -59,9 +58,6 @@
 	#define LOG_GATT_INT(i)
 #endif
 
-// https://github.com/espressif/esp-idf/issues/3555
-#define USE_EVENT_TIMER 0
-
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -86,10 +82,6 @@ typedef struct {
 	int16_t conn_id;
 	ble_addr_t remote_bda;
 	uint8_t terminating;
-	
-#if USE_EVENT_TIMER
-	modTimer timer;
-#endif
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -120,17 +112,9 @@ static const ble_uuid16_t *handleToUUID(uint16_t handle);
 static void logGAPEvent(struct ble_gap_event *event);
 static void logGATTEvent(uint8_t op);
 
-static void nimble_host_task(void *param);
-static void ble_host_task(void *param);
-static void nimble_on_reset(int reason);
 static void nimble_on_sync(void);
 static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg);
-
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
-
-#if USE_EVENT_TIMER
-static void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize);
-#endif
 
 static modBLE gBLE = NULL;
 
@@ -147,22 +131,16 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	xsRemember(gBLE->obj);
 	
-	esp_err_t err = modBLEPlatformInitialize();
-	if (ESP_OK != err)
-		xsUnknownError("ble initialization failed");
+	// @@ Function doesn't seem to be available in nimble/preview branch.
+	// ble_store_ram_init();
 
-	ble_hs_cfg.reset_cb = nimble_on_reset;
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-   // ble_store_ram_init();
-
-#if USE_EVENT_TIMER
-	gBLE->timer = modTimerAdd(0, 20, ble_event_timer_callback, NULL, 0);
-#else
-	nimble_port_freertos_init(ble_host_task);
-#endif
+	esp_err_t err = modBLEPlatformInitialize();
+	if (ESP_OK != err)
+		xsUnknownError("ble initialization failed");
 }
 
 void xs_ble_server_close(xsMachine *the)
@@ -348,12 +326,14 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		}
 		gBLE->conn_id = desc->conn_handle;
 		gBLE->remote_bda = desc->peer_id_addr;
-		xsmcVars(3);
+		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
@@ -538,6 +518,10 @@ bail:
 static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	
+	if (!gBLE)
+		return;
+		
 	if (0 == event->enc_change.status) {
 		struct ble_gap_conn_desc desc;
         int rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
@@ -551,19 +535,8 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
 	}
 }
 
-void nimble_host_task(void *param)
+void ble_server_on_reset(int reason)
 {
-	nimble_port_run();
-}
-
-void ble_host_task(void *param)
-{
-	nimble_host_task(param);
-}
-
-void nimble_on_reset(int reason)
-{
-	// fatal controller reset - all connections have been closed
 	if (gBLE)
 		xs_ble_server_close(gBLE->the);
 }
@@ -573,19 +546,6 @@ void nimble_on_sync(void)
 	ble_hs_util_ensure_addr(0);
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
 }
-
-#if USE_EVENT_TIMER
-void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize)
-{
-	struct ble_npl_eventq *eventq = nimble_port_get_dflt_eventq();
-	struct ble_npl_event *ev;
-	ev = ble_npl_eventq_get(eventq, 0);
-	while (NULL != ev) {
-    	ble_npl_event_run(ev);
-		ev = ble_npl_eventq_get(eventq, 0);
-	}
-}
-#endif
 
 static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {

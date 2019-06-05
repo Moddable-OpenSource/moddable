@@ -122,7 +122,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onCharacteristicNotifyDisabled(params);
 				break;
 			case "onConnected":
-				this.onConnected({ address:new Bytes(params.address), connection:params.connection });
+				this.onConnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
 				break;
 			case "onDisconnected":
 				this.onDisconnected({ address:new Bytes(params.address), connection:params.connection });
