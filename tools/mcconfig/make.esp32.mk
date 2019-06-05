@@ -52,30 +52,25 @@ endif
 
 INC_DIRS = \
  	$(IDF_PATH)/components \
-	$(IDF_PATH)/components/heap/include \
- 	$(IDF_PATH)/components/driver/include \
- 	$(IDF_PATH)/components/soc/esp32/include \
- 	$(IDF_PATH)/components/soc/esp32/include/soc \
- 	$(IDF_PATH)/components/soc/include \
- 	$(IDF_PATH)/components/esp32/include \
- 	$(IDF_PATH)/components/esp_ringbuf/include \
- 	$(IDF_PATH)/components/freertos \
- 	$(IDF_PATH)/components/freertos/include \
- 	$(IDF_PATH)/components/freertos/include/freertos \
- 	$(IDF_PATH)/components/lwip/lwip/src/include \
- 	$(IDF_PATH)/components/lwip/port/esp32/include \
- 	$(IDF_PATH)/components/mbedtls/include \
- 	$(IDF_PATH)/components/spi_flash/include \
- 	$(IDF_PATH)/components/vfs/include \
- 	$(IDF_PATH)/components/tcpip_adapter/include \
- 	$(IDF_PATH)/components/tcpip_adapter \
+ 	$(IDF_PATH)/components/bootloader_support/include \
  	$(IDF_PATH)/components/bt/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
+ 	$(IDF_PATH)/components/driver/include \
+ 	$(IDF_PATH)/components/esp_event/include \
+ 	$(IDF_PATH)/components/esp_ringbuf/include \
+ 	$(IDF_PATH)/components/esp32/include \
+ 	$(IDF_PATH)/components/freertos \
+ 	$(IDF_PATH)/components/freertos/include \
+ 	$(IDF_PATH)/components/freertos/include/freertos \
+	$(IDF_PATH)/components/heap/include \
+ 	$(IDF_PATH)/components/log/include \
+ 	$(IDF_PATH)/components/lwip/include/apps \
+ 	$(IDF_PATH)/components/lwip/lwip/src/include \
+ 	$(IDF_PATH)/components/lwip/port/esp32/include \
+ 	$(IDF_PATH)/components/mbedtls/include \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
- 	$(IDF_PATH)/components/log/include \
- 	$(IDF_PATH)/components/spiffs/include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
@@ -83,7 +78,14 @@ INC_DIRS = \
  	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/nimble/port/include \
- 	$(IDF_PATH)/components/bootloader_support/include \
+ 	$(IDF_PATH)/components/soc/esp32/include \
+ 	$(IDF_PATH)/components/soc/esp32/include/soc \
+ 	$(IDF_PATH)/components/soc/include \
+ 	$(IDF_PATH)/components/spiffs/include \
+ 	$(IDF_PATH)/components/spi_flash/include \
+ 	$(IDF_PATH)/components/tcpip_adapter/include \
+ 	$(IDF_PATH)/components/tcpip_adapter \
+ 	$(IDF_PATH)/components/vfs/include
         
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
