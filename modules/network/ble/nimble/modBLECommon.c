@@ -64,6 +64,7 @@ static void nimble_on_reset(int reason)
 static void nimble_host_task(void *param)
 {
 	nimble_port_run();
+	nimble_port_freertos_deinit();
 }
 
 static void ble_host_task(void *param)
@@ -113,14 +114,16 @@ int modBLEPlatformTerminate(void)
 	if (0 != --useCount)
 		return 0;
 		
-	// @@ There doesn't seem to be any nimble terminate APIs
-	// https://github.com/espressif/esp-idf/issues/3475
-	//ble_hs_shutdown(0);
-	
 #if USE_EVENT_TIMER
 	if (NULL != gTimer) {
 		modTimerRemove(gTimer);
 		gTimer = NULL;
 	}
 #endif
+
+	int rc = nimble_port_stop();
+	if (0 == rc) {
+		nimble_port_deinit();
+		esp_nimble_hci_and_controller_deinit();
+	}
 }
