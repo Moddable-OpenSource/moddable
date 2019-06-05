@@ -239,15 +239,16 @@ void xs_ble_client_connect(xsMachine *the)
 	c_memmove(&connection->bda, &addr, sizeof(addr));
 	modBLEConnectionAdd(connection);
 	
-	int rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
-
-	// The BLE_HS_EDONE result code is returned if the server already established a connection.
-	if (BLE_HS_EDONE == rc) {
-		struct ble_gap_conn_desc desc;
-		if (0 == ble_gap_conn_find_by_addr(&addr, &desc)) {
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
-		}
+	// Check if there has already been a connection established with this peer.
+	// This can happen if a BLEServer instance connects prior to the BLEClient instance.
+	// If so, skip the connection request below.
+	struct ble_gap_conn_desc desc;
+	if (0 == ble_gap_conn_find_by_addr(&addr, &desc)) {
+		modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
+		return;
 	}
+
+	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
 }
 
 void smTimerCallback(modTimer timer, void *refcon, int refconSize)
