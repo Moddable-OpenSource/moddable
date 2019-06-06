@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: May 6, 2019
+Revised: June 5, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -1361,6 +1361,44 @@ onReady() {
 }
 ```
 
+***
+
+#### `passkeyInput(address, value)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+| `value` | `number` | passkey value input
+
+Call the `passkeyInput` function from the `onPasskeyInput` callback function to provide an input passkey value:
+
+```javascript
+onPasskeyInput(params) {
+	let passkeyValue = 123456;
+	this.passkeyInput(params.address, passkeyValue);
+}
+```
+
+***
+
+#### `passkeyReply(address, result)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+| `result` | `boolean` | Set `true` to confirm passkey value, `false` otherwise
+
+Call the `passkeyReply` function from the `onPasskeyConfirm` callback function to confirm the passkey displayed by the peer device:
+
+```javascript
+onPasskeyConfirm(params) {
+	// passkey is valid
+	this.passkeyReply(params.address, true);
+}
+```
+
+***
+
 #### `onSecurityParameters(params)`
 
 | Argument | Type | Description |
@@ -1407,13 +1445,14 @@ The `params` object contains the following properties:
 | `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
 | `passkey` | `number` | The passkey to confirm
 
-The `onPasskeyConfirm` callback is called when the user needs to confirm a passkey value displayed on a peer device. The callback returns `true` if the passkey was accepted.
+The `onPasskeyConfirm` callback is called when the user needs to confirm a passkey value displayed on a peer device. The callback calls `passkeyReply` passing `true` or `false` to confirm the passkey value.
 
 ```javascript
 onPasskeyConfirm(params) {
-	// display passkey on screen
 	trace(`confirm passkey: ${params.passkey}\n`);
-	return true;	// passkey confirmed by user
+	
+	// passkey is valid
+	this.passkeyReply(params.address, true);
 }
 ```
 ***
@@ -1437,6 +1476,30 @@ The `onPasskeyDisplay` callback is called when the device needs to display a pas
 onPasskeyDisplay(params) {
 	// display passkey on screen
 	trace(`display passkey: ${params.passkey}\n`);
+}
+```
+
+***
+
+#### `onPasskeyInput(params)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the passkey input.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+
+The `onPasskeyInput` callback is called when the device needs to input the passkey displayed by the peer device. The `inputPasskey` function is called to return the input passkey value.
+
+```javascript
+onPasskeyInput(params) {
+	// display keyboard to enter passkey displayed by peer
+	//let passkey = 123456;
+	this.passkeyInput(params.address, passkey);
 }
 ```
 
