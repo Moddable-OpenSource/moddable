@@ -104,6 +104,16 @@ typedef struct {
 } descriptorSearchRecord;
 
 typedef struct {
+	uint16_t conn_id;
+	xsSlot obj;
+	struct ble_gatt_chr chr;
+	uint16_t characteristicStartHandle;
+	uint16_t serviceStartHandle;
+	uint16_t serviceEndHandle;
+	uint16_t characteristicEndHandle;
+} descriptorHandleSearchRecord;
+
+typedef struct {
 	uint8_t enable;
 	uint16_t conn_id;
 	uint16_t handle;
@@ -122,6 +132,7 @@ static void nimble_on_sync(void);
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg);
 static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg);
+static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg);
 static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_def_handle, const struct ble_gatt_dsc *dsc, void *arg);
 static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
 static int nimble_subscribe_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
@@ -449,14 +460,24 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	descriptorSearchRecord *dsr;
+	descriptorHandleSearchRecord *dsr;
 	if (!connection) return;
-	dsr = c_malloc(sizeof(descriptorSearchRecord));
+	dsr = c_calloc(1, sizeof(descriptorHandleSearchRecord));
+	
 	if (NULL != dsr) {
+		xsmcVars(2);
 		dsr->conn_id = conn_id;
 		dsr->obj = xsThis;
-		// @@ The ending handle needs to be the last handle in the characteristic
-		ble_gattc_disc_all_dscs(conn_id, handle, 0xFFFF, nimble_descriptor_event, dsr);
+		xsmcGet(xsVar(0), xsThis, xsID_handle);
+		dsr->characteristicStartHandle = xsmcToInteger(xsVar(0));
+		xsmcGet(xsVar(0), xsThis, xsID_service);
+		xsmcGet(xsVar(1), xsVar(0), xsID_start);
+		dsr->serviceStartHandle = xsmcToInteger(xsVar(1));
+		xsmcGet(xsVar(1), xsVar(0), xsID_end);
+		dsr->serviceEndHandle = xsmcToInteger(xsVar(1));
+		
+		// discover all service characteristics to find last handle in this characteristic
+		ble_gattc_disc_all_chrs(conn_id, dsr->serviceStartHandle, dsr->serviceEndHandle, nimble_characteristic_handle_event, dsr);
 	}
 }
 
@@ -738,14 +759,39 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 	xsEndHost(gBLE->the);
 }
 
-static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+static void characteristicHandleDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	descriptorSearchRecord *dsr = (descriptorSearchRecord *)refcon;
+	descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord *)refcon;
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
+	if (0 != dsr->chr.val_handle) {
+		if (0 == dsr->characteristicEndHandle && dsr->chr.val_handle > dsr->characteristicStartHandle) {
+			dsr->characteristicEndHandle = dsr->chr.val_handle;
+		}
+	}
+	else {
+		descriptorSearchRecord *dsr2 = c_calloc(1, sizeof(descriptorSearchRecord));
+		dsr2->conn_id = dsr->conn_id;
+		dsr2->obj = dsr->obj;
+		if (0 == dsr->characteristicEndHandle)
+			dsr->characteristicEndHandle = dsr->serviceEndHandle - 1;
+		ble_gattc_disc_all_dscs(dsr->conn_id, dsr->characteristicStartHandle, dsr->characteristicEndHandle, nimble_descriptor_event, dsr2);
+		c_free(dsr);
+	}
+	xsEndHost(gBLE->the);
+}
+
+static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	descriptorSearchRecord *dsr = (descriptorSearchRecord *)refcon;
+	xsBeginHost(gBLE->the);
 	if (0 != dsr->dsc.handle) {
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+			
 		uint16_t length;
 		uint8_t buffer[16];
 		// @@ The bles2gatt tool needs to process descriptors in order to call modBLEConnectionSaveAttHandle()
@@ -932,6 +978,32 @@ static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_ga
 
     if (rc != 0)
 		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, (void*)csr);
+
+    return rc;
+}
+
+static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
+{
+	int rc = 0;
+	descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord*)arg;
+	
+	dsr->chr.val_handle = 0;
+	
+    switch (error->status) {
+		case 0:
+			dsr->chr = *chr;
+			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
+        	break;
+    	case BLE_HS_EDONE:
+			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
+			break;
+    	default:
+        	rc = error->status;
+        	break;
+    }
+
+    if (rc != 0)
+		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
 
     return rc;
 }
