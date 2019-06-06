@@ -94,19 +94,11 @@ typedef struct {
 typedef struct {
 	uint16_t conn_id;
 	xsSlot obj;
-	struct ble_gatt_chr chr;
-} characteristicSearchRecord;
+} attributeSearchRecord;
 
 typedef struct {
 	uint16_t conn_id;
 	xsSlot obj;
-	struct ble_gatt_dsc dsc;
-} descriptorSearchRecord;
-
-typedef struct {
-	uint16_t conn_id;
-	xsSlot obj;
-	struct ble_gatt_chr chr;
 	uint16_t characteristicStartHandle;
 	uint16_t serviceStartHandle;
 	uint16_t serviceEndHandle;
@@ -178,7 +170,7 @@ void xs_ble_client_destructor(void *data)
 	if (!ble) return;
 	
 	ble->terminating = true;
-	modBLEConnection connections = ble->connections, next;
+	modBLEConnection connections = ble->connections;
 	while (connections != NULL) {
 		modBLEConnection connection = connections;
 		connections = connections->next;
@@ -437,10 +429,10 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
-	characteristicSearchRecord *csr;
+	attributeSearchRecord *csr;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	csr = c_malloc(sizeof(characteristicSearchRecord));
+	csr = c_malloc(sizeof(attributeSearchRecord));
 	if (NULL != csr) {
 		csr->conn_id = conn_id;
 		csr->obj = xsThis;
@@ -726,21 +718,25 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 
 static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	characteristicSearchRecord *csr = (characteristicSearchRecord *)refcon;
+	attributeSearchRecord *csr = (attributeSearchRecord *)refcon;
+	struct ble_gatt_chr *chr = (struct ble_gatt_chr *)message;
+	
 	xsBeginHost(gBLE->the);
+	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(csr->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	if (0 != csr->chr.val_handle) {
+		
+	if (NULL != chr) {
 		uint16_t length;
 		uint8_t buffer[16];
-		int index = modBLEConnectionSaveAttHandle(connection, &csr->chr.uuid, csr->chr.val_handle);
-		uuidToBuffer(buffer, &csr->chr.uuid, &length);
+		int index = modBLEConnectionSaveAttHandle(connection, &chr->uuid, chr->val_handle);
+		uuidToBuffer(buffer, &chr->uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), csr->chr.val_handle);
-		xsmcSetInteger(xsVar(3), csr->chr.properties);
+		xsmcSetInteger(xsVar(2), chr->val_handle);
+		xsmcSetInteger(xsVar(3), chr->properties);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
@@ -756,52 +752,61 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 		xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
 		c_free(csr);
 	}
+	
 	xsEndHost(gBLE->the);
 }
 
 static void characteristicHandleDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord *)refcon;
+	struct ble_gatt_chr *chr = (struct ble_gatt_chr *)message;
+	
 	xsBeginHost(gBLE->the);
+	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	if (0 != dsr->chr.val_handle) {
-		if (0 == dsr->characteristicEndHandle && dsr->chr.val_handle > dsr->characteristicStartHandle) {
-			dsr->characteristicEndHandle = dsr->chr.val_handle;
-		}
+		
+	if (NULL != chr) {
+		if (chr->def_handle > dsr->characteristicStartHandle && 0 == dsr->characteristicEndHandle)
+			dsr->characteristicEndHandle = chr->def_handle - 1;
 	}
 	else {
-		descriptorSearchRecord *dsr2 = c_calloc(1, sizeof(descriptorSearchRecord));
+		if (0 == dsr->characteristicEndHandle)
+			dsr->characteristicEndHandle = dsr->serviceEndHandle;
+			
+		attributeSearchRecord *dsr2 = c_calloc(1, sizeof(attributeSearchRecord));
 		dsr2->conn_id = dsr->conn_id;
 		dsr2->obj = dsr->obj;
-		if (0 == dsr->characteristicEndHandle)
-			dsr->characteristicEndHandle = dsr->serviceEndHandle - 1;
 		ble_gattc_disc_all_dscs(dsr->conn_id, dsr->characteristicStartHandle, dsr->characteristicEndHandle, nimble_descriptor_event, dsr2);
 		c_free(dsr);
 	}
+	
 	xsEndHost(gBLE->the);
 }
 
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	descriptorSearchRecord *dsr = (descriptorSearchRecord *)refcon;
+	attributeSearchRecord *dsr = (attributeSearchRecord *)refcon;
+	struct ble_gatt_dsc *dsc = (struct ble_gatt_dsc *)message;
+	
 	xsBeginHost(gBLE->the);
-	if (0 != dsr->dsc.handle) {
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
-		if (!connection)
-			xsUnknownError("connection not found");
+	
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
 			
+	if (NULL != dsc) {
 		uint16_t length;
 		uint8_t buffer[16];
 		// @@ The bles2gatt tool needs to process descriptors in order to call modBLEConnectionSaveAttHandle()
 		//int index = modBLEConnectionSaveAttHandle(connection, &dsr->dsc.uuid, dsr->dsc.handle);
 		int index = -1;
-		uuidToBuffer(buffer, &dsr->dsc.uuid, &length);
+		uuidToBuffer(buffer, &dsc->uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), dsr->dsc.handle);
+		xsmcSetInteger(xsVar(2), dsc->handle);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		if (-1 != index) {
@@ -959,17 +964,13 @@ static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_erro
 static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
 {
 	int rc = 0;
-	characteristicSearchRecord *csr = (characteristicSearchRecord*)arg;
-	
-	csr->chr.val_handle = 0;
 	
     switch (error->status) {
 		case 0:
-			csr->chr = *chr;
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, (void*)csr);
+			modMessagePostToMachine(gBLE->the, (void*)chr, sizeof(struct ble_gatt_chr), characteristicDiscoveryEvent, arg);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, (void*)csr);
+			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, arg);
 			break;
     	default:
         	rc = error->status;
@@ -977,7 +978,7 @@ static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_ga
     }
 
     if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, (void*)csr);
+		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, arg);
 
     return rc;
 }
@@ -985,17 +986,13 @@ static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_ga
 static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
 {
 	int rc = 0;
-	descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord*)arg;
-	
-	dsr->chr.val_handle = 0;
 	
     switch (error->status) {
 		case 0:
-			dsr->chr = *chr;
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
+			modMessagePostToMachine(gBLE->the, (void*)chr, sizeof(struct ble_gatt_chr), characteristicHandleDiscoveryEvent, arg);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
+			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, arg);
 			break;
     	default:
         	rc = error->status;
@@ -1003,7 +1000,7 @@ static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct
     }
 
     if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, (void*)dsr);
+		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, arg);
 
     return rc;
 }
@@ -1011,17 +1008,13 @@ static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct
 static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_def_handle, const struct ble_gatt_dsc *dsc, void *arg)
 {
 	int rc = 0;
-	descriptorSearchRecord *dsr = (descriptorSearchRecord*)arg;
-	
-	dsr->dsc.handle = 0;
 	
     switch (error->status) {
 		case 0:
-			dsr->dsc = *dsc;
-			modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, (void*)dsr);
+			modMessagePostToMachine(gBLE->the, (void*)dsc, sizeof(struct ble_gatt_dsc), descriptorDiscoveryEvent, arg);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, (void*)dsr);
+			modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, arg);
 			break;
     	default:
         	rc = error->status;
@@ -1029,7 +1022,7 @@ static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_e
     }
 
     if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, (void*)dsr);
+		modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, arg);
 
 bail:
     return rc;
