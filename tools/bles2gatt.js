@@ -214,6 +214,11 @@ class ESP32GATTFile extends GATTFile {
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
 				
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
+
 				// characteristic declaration
 				let properties = this.parseProperties(characteristic.properties.split(","));
 				let permissions = this.parsePermissions(characteristic.permissions.split(","));
@@ -261,6 +266,12 @@ class ESP32GATTFile extends GATTFile {
 				if (characteristic._descriptors) {
 					for (let key2 in characteristic.descriptors) {
 						let descriptor = characteristic.descriptors[key2];
+						if ((undefined === descriptor.permissions) && this.client)
+							descriptor.permissions = "read";
+						if ((undefined === descriptor.properties) && this.client)
+							descriptor.properties = "read";
+						if ((undefined === descriptor.maxBytes) && this.client)
+							descriptor.maxBytes = 2;
 						permissions = this.parsePermissions(descriptor.permissions.split(","));
 						esp_uuid_len = (4 == descriptor.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 						file.line("\t\t[", attributeIndex, "] = {");
