@@ -68,6 +68,8 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
 		ble_hs_cfg.sm_our_key_dist = 1;
     	ble_hs_cfg.sm_their_key_dist = 1;
  	}
+ 	else
+ 		ble_hs_cfg.sm_bonding = 0;
     ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
 	ble_hs_cfg.sm_sc = 1;
 }

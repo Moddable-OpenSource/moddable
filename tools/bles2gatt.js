@@ -466,6 +466,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		var descriptorIndex = 0;
 		services.forEach((service, index) => {
 			characteristicIndex = 0;
+			attributeIndex = 0;
 			let attributeCount = 0;
 			let characteristics = service.characteristics;
 			attributeCount += (Object.keys(characteristics).length);
@@ -510,14 +511,46 @@ class NimBLEGATTFile extends ESP32GATTFile {
 					file.write(" };");
 					file.line("");
 				}
+				if (characteristic._descriptors) {
+					descriptorIndex = 0;
+					let descriptors = characteristic.descriptors;
+					for (let key2 in descriptors) {
+						let descriptor = descriptors[key2];
+						if (4 == descriptor.uuid.length) {
+							file.write(`static const ble_uuid16_t service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_uuid = BLE_UUID16_INIT(`);
+							file.write(`0x${descriptor.uuid}`);
+							file.write(");");
+
+						}
+						else {
+							file.write(`static const ble_uuid128_t service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_uuid = BLE_UUID128_INIT(`);
+							file.write(buffer2hexlist(uuid128toBuffer(descriptor.uuid)));
+							file.write(");");
+						}
+						file.line("");
+						++descriptorIndex;
+					}
+				}
 				if (this.server)
 					file.line(`static uint16_t service${index}_chr${characteristicIndex}_handle;`);
 					
-				let char_name = { service_index:index, att_index:characteristicIndex, name:key };
+				let char_name = { service_index:index, att_index:attributeIndex, name:key };
 				char_name.type = characteristic.type ? characteristic.type: "";
 				char_names.push(char_name);
 				
 				++characteristicIndex;
+				++attributeIndex;
+
+				if (characteristic._descriptors) {
+					let descriptors = characteristic.descriptors;
+					for (let key2 in descriptors) {						
+						let descriptor = descriptors[key2];
+						let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
+						char_name.type = descriptor.type ? descriptor.type: "";
+						char_names.push(char_name);
+						++attributeIndex;
+					}
+				}
 			}
 			file.line("");
 			if (attributeCount > maxAttributeCount)
@@ -574,12 +607,10 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			}
 		}
 
-		characteristicIndex = 0;
-		descriptorIndex = 0;
-		
 		file.line(`static const struct ble_gatt_svc_def gatt_svr_svcs[] = {`);
 		services.forEach((service, index) => {
 			characteristicIndex = 0;
+			descriptorIndex = 0;
 			file.line("\t{");
 			
 			file.line(`\t\t// Service ${service.uuid}`);
@@ -606,7 +637,38 @@ class NimBLEGATTFile extends ESP32GATTFile {
 					file.line(`\t\t\t\t.arg = NULL,`);
 					file.line(`\t\t\t\t.val_handle = &service${index}_chr${characteristicIndex}_handle,`);
 				}
-				file.line("\t\t\t},")
+				
+				if (characteristic._descriptors) {
+					file.line("\t\t\t\t.descriptors = (struct ble_gatt_dsc_def[])");
+					file.line("\t\t\t\t{");
+					let descriptors = characteristic.descriptors;
+					for (let key2 in descriptors) {
+						let descriptor = descriptors[key2];
+						if ((undefined === descriptor.permissions) && this.client)
+							descriptor.permissions = "read";
+						if ((undefined === descriptor.properties) && this.client)
+							descriptor.properties = "read";
+						file.line("\t\t\t\t\t{")
+						file.line(`\t\t\t\t\t\t.uuid = &service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_uuid.u,`);
+						if (this.server) {
+							if ("value" in descriptor)
+								file.line("\t\t\t\t\t\t.access_cb = gatt_svr_chr_static_value_access_cb,");
+							else
+								file.line("\t\t\t\t\t\t.access_cb = gatt_svr_chr_dynamic_value_access_cb,");
+						}
+						else
+							file.line("\t\t\t\t\t\t.access_cb = NULL,");
+						let flags = this.parseAccess(descriptor.permissions.split(","), descriptor.properties.split(","));
+						file.line(`\t\t\t\t\t\t.att_flags = ${flags},`);
+						file.line("\t\t\t\t\t},")
+						++descriptorIndex;
+					}
+					file.line("\t\t\t\t\t{")
+					file.line("\t\t\t\t\t\t0,")
+					file.line("\t\t\t\t\t},")
+					file.line("\t\t\t\t}");
+				}
+				file.line("\t\t\t},");
 				++characteristicIndex;
 			}
 			file.line("\t\t\t{")

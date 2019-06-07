@@ -55,9 +55,6 @@ struct modBLEConnectionRecord {
 
 	ble_addr_t	bda;
 	int16_t		conn_id;
-	
-	// char_name_table handles
-	uint16_t handles[char_name_count];
 };
 
 typedef struct {
@@ -68,6 +65,7 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	uint8_t iocap;
 
 	modBLEConnection connections;
 	uint8_t terminating;
@@ -280,6 +278,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = ioCapability;
 
 	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
 
@@ -594,27 +593,42 @@ void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length)
 	}
 }
 
-static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_any_t *uuid, uint16_t handle)
+static const char_name_table *uuidToCharName(ble_uuid_any_t *uuid)
 {
-	int result = -1;
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
+		int characteristic_index = 0;
 		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
-			const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+			const struct ble_gatt_chr_def *characteristic = &service->characteristics[characteristic_index];
 			if (0 == ble_uuid_cmp((const ble_uuid_t*)uuid, (const ble_uuid_t*)characteristic->uuid)) {
 				for (int k = 0; k < char_name_count; ++k) {
 					const char_name_table *char_name = &char_names[k];
 					if (service_index == char_name->service_index && att_index == char_name->att_index) {
-						connection->handles[k] = handle;
-						result = k;
-						goto bail;
+						return char_name;
 					}
 				}
 			}
+			else if (NULL != characteristic->descriptors) {
+				uint16_t descriptor_index = 0;
+				const struct ble_gatt_dsc_def *descriptor = &characteristic->descriptors[descriptor_index];
+				while (NULL != descriptor->uuid) {
+					if (0 == ble_uuid_cmp((const ble_uuid_t*)uuid, (const ble_uuid_t*)descriptor->uuid)) {
+						for (int k = 0; k < char_name_count; ++k) {
+							const char_name_table *char_name = &char_names[k];
+							if (service_index == char_name->service_index && att_index == char_name->att_index) {
+								return char_name;
+							}
+						}
+					}
+					++att_index;
+					descriptor = &characteristic->descriptors[++descriptor_index];
+				}
+			}
+			++characteristic_index;
 		}
 	}
 bail:
-	return result;
+	return NULL;
 }
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -730,7 +744,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 	if (NULL != chr) {
 		uint16_t length;
 		uint8_t buffer[16];
-		int index = modBLEConnectionSaveAttHandle(connection, &chr->uuid, chr->val_handle);
+		const char_name_table *char_name = uuidToCharName(&chr->uuid);
 		uuidToBuffer(buffer, &chr->uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
@@ -740,10 +754,10 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-		if (-1 != index) {
-			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+		if (NULL != char_name) {
+			xsmcSetString(xsVar(2), (char*)char_name->name);
 			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSetString(xsVar(2), (char*)char_name->type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
 		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
@@ -799,9 +813,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 	if (NULL != dsc) {
 		uint16_t length;
 		uint8_t buffer[16];
-		// @@ The bles2gatt tool needs to process descriptors in order to call modBLEConnectionSaveAttHandle()
-		//int index = modBLEConnectionSaveAttHandle(connection, &dsr->dsc.uuid, dsr->dsc.handle);
-		int index = -1;
+		const char_name_table *char_name = uuidToCharName(&dsc->uuid);
 		uuidToBuffer(buffer, &dsc->uuid, &length);
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
@@ -809,10 +821,10 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 		xsmcSetInteger(xsVar(2), dsc->handle);
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		if (-1 != index) {
-			xsmcSetString(xsVar(2), (char*)char_names[index].name);
+		if (NULL != char_name) {
+			xsmcSetString(xsVar(2), (char*)char_name->name);
 			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_names[index].type);
+			xsmcSetString(xsVar(2), (char*)char_name->type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
 		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
@@ -903,9 +915,13 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
 		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
-		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-		pkey.passkey = xsmcToInteger(xsResult);
-		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+		if (gBLE->iocap == KeyboardOnly)
+			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+		else {
+			xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+			pkey.passkey = xsmcToInteger(xsResult);
+			ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+		}
 	}
 	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
 		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);

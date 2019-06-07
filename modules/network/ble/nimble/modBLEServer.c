@@ -131,9 +131,6 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	xsRemember(gBLE->obj);
 	
-	// @@ Function doesn't seem to be available in nimble/preview branch.
-	// ble_store_ram_init();
-
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
@@ -688,6 +685,7 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
 		goto bail;
 
 	switch (ctxt->op) {
+		case BLE_GATT_ACCESS_OP_READ_DSC:
         case BLE_GATT_ACCESS_OP_READ_CHR: {
         	// The read request must be satisfied from this task.
         	gBLE->requestPending = true;
@@ -710,6 +708,7 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
         	return 0;
         	break;
         }
+        case BLE_GATT_ACCESS_OP_WRITE_DSC:
 		case BLE_GATT_ACCESS_OP_WRITE_CHR: {
 			uint8_t *data;
 			uint16_t length = sizeof(attributeDataRecord) + ctxt->om->om_len;

@@ -119,11 +119,20 @@ export class MakeFile extends FILE {
 			this.write(` ${result.source}`);
 		this.line("");
 		if (tool.bleServicesFiles.length) {
+			let platform = (nimble ? 'nimble' : tool.platform);
 			this.echo(tool, "bles2gatt bleservices");
-			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
-			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
+			if (server) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+			}
+			if (client) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+			}
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
