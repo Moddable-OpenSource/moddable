@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
-							xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
+							xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
 							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}

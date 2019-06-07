@@ -618,6 +618,8 @@ mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
 mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
 mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
+mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
+
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
 mxExport void _xsNewObject(txMachine *the, txSlot *res);
@@ -1616,10 +1618,6 @@ extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScri
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern void fxRunImport(txMachine* the);
 
-mxExport void fx_require(txMachine* the);
-mxExport void fx_require_get_cache(txMachine* the);
-mxExport void fx_require_get_uri(txMachine* the);
-mxExport void fx_require_resolve(txMachine* the);
 mxExport void fx_Module(txMachine* the);
 mxExport void fx_Transfer(txMachine* the);
 
@@ -1662,6 +1660,9 @@ enum {
 	XS_NO_FLAG = 0,
 	XS_REQUIRE_FLAG = 1,
 	XS_REQUIRE_WEAK_FLAG = 2,
+	
+	XS_IMPORT_NAMESPACE = 0,
+	XS_IMPORT_DEFAULT = 1,
 	
 	XS_OWN = 0,
 	XS_ANY = 1,
@@ -2320,7 +2321,6 @@ enum {
 #define mxIsNaNFunction the->stackPrototypes[-1 - _isNaN]
 #define mxParseFloatFunction the->stackPrototypes[-1 - _parseFloat]
 #define mxParseIntFunction the->stackPrototypes[-1 - _parseInt]
-#define mxRequireFunction the->stackPrototypes[-1 - _require]
 #define mxTraceFunction the->stackPrototypes[-1 - _trace]
 #define mxUndefined the->stackPrototypes[-1 - _undefined]
 #define mxUnescapeFunction the->stackPrototypes[-1 - _unescape]

@@ -439,8 +439,7 @@ int workerStart(modWorker worker)
 			xsmcSet(xsVar(0), xsID_close, xsVar(1));
 		}
 
-		xsmcGet(xsVar(0), xsGlobal, xsID_require);
-		xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(worker->module));
+		xsVar(0) = xsAwaitImport(worker->module, XS_IMPORT_DEFAULT);
 		if (xsmcTest(xsVar(0)) && xsmcIsInstanceOf(xsVar(0), xsFunctionPrototype))
 			xsCallFunction0(xsVar(0), xsGlobal);
 

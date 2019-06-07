@@ -24,3 +24,15 @@ export default class Resource @ "Resource_destructor" {
 	slice(begin, end) @ "Resource_slice";
 }
 Object.freeze(Resource.prototype);
+
+function require_awaitImport(specifier) @ "require_awaitImport";
+function require(specifier) {
+	return require_awaitImport(specifier);
+}
+Object.defineProperties(require, {
+	cache: { get: function() { debugger; } },
+	resolve: { value: function() { debugger; } },
+	uri: { get: function() { debugger; } },
+	weak: { value: function(specifier) { return require_awaitImport(specifier); } },
+});
+global.require = Object.freeze(require);

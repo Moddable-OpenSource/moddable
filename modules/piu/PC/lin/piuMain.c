@@ -112,7 +112,7 @@ static void gtk_piu_application_startup(GApplication *app)
 	xsMachine* machine = gtkApplication->machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
-		xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));
+		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		gtkApplication->piuApplication = PIU(Application, xsResult);
 		xsCollectGarbage();
 	}

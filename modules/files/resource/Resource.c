@@ -86,3 +86,14 @@ void Resource_slice(xsMachine *the)
 		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
 	}
 }
+
+void require_awaitImport(xsMachine *the)
+{
+	xsTrace("require ");
+	xsTrace(xsToString(xsArg(0)));
+	xsTrace("\n");
+	fxPush(xsArg(0));
+	fxAwaitImport(the, XS_IMPORT_DEFAULT);
+	xsResult = fxPop();
+}
+

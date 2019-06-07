@@ -407,8 +407,7 @@ void ServiceEventCreate(ServiceEvent event)
 	{
 		xsVars(4);
 		xsTry {
-			xsVar(0) = xsGet(xsGlobal, xsID_require);
-			xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(proxy->name));
+			xsVar(0) = xsAwaitImport(proxy->name, XS_IMPORT_DEFAULT);
 			if (proxy->reverse) {
 				xsVar(1) = xsNewHostFunction(ServiceProxyInvoke, 4);
 				xsVar(2) = xsGet(xsGlobal, xsID_Service);

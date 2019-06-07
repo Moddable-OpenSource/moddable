@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 						for (argi = 1; argi < argc; argi++) {
 							xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
 						}
-						xsVar(1) = xsCall1(xsGlobal, xsID_require, xsString(argv[1]));
+						xsVar(1) = xsAwaitImport(argv[1], XS_IMPORT_DEFAULT);
 						fxPush(xsVar(0));
 						fxPushCount(the, 1);
 						fxPush(xsVar(1));

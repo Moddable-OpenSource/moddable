@@ -165,7 +165,7 @@ global.Application = Application;
 
 class View @ "PiuViewDelete" {
 	constructor(application, it) {
-		let screen = global.screen ? global.screen : require("screen");
+		let screen = global.screen;
 		it.rotation = this.rotation;
 		if (screen.pixelFormat == Bitmap.CLUT16)
 			screen.clut = new Resource("main.cct");

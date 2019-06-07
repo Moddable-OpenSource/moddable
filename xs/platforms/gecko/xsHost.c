@@ -164,8 +164,7 @@ void setStepDone(xsMachine *the)
 		return;
 
 	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, mxID(_require));
-		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
+		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
 	xsEndHost(the);
@@ -182,7 +181,6 @@ void mc_setup(xsMachine *the)
 	xsBeginHost(the);
 		xsVars(2);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
-		xsVar(1) = xsGet(xsGlobal, mxID(_require));
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
@@ -194,7 +192,7 @@ void mc_setup(xsMachine *the)
 				if (dot)
 					*dot = 0;
 
-				xsResult = xsCall1(xsVar(1), mxID(_weak), xsString(path));
+				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
 					xsCallFunction1(xsResult, xsGlobal, xsVar(0));

@@ -297,7 +297,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -72
+#define prototypesStackIndex -71
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -1240,6 +1240,20 @@ typedef unsigned char xsAttribute;
 	fxStopProfiling(the)
 
 #ifndef __XSALL__
+	enum {
+		XS_IMPORT_NAMESPACE = 0,
+		XS_IMPORT_DEFAULT = 1,
+	};
+#endif
+
+#define xsAwaitImport(_NAME,_FLAG) \
+	(xsOverflow(-1), \
+	fxStringX(the, --the->stack, (xsStringValue)_NAME), \
+	fxAwaitImport(the, _FLAG), \
+	fxPop())
+
+
+#ifndef __XSALL__
 
 #ifdef __cplusplus
 extern "C" {
@@ -1258,8 +1272,10 @@ mxImport void fxNumber(xsMachine*, xsSlot*, xsNumberValue);
 mxImport xsNumberValue fxToNumber(xsMachine*, xsSlot*);
 mxImport void fxString(xsMachine*, xsSlot*, xsStringValue);
 mxImport void fxStringBuffer(xsMachine*, xsSlot*, xsStringValue, xsIntegerValue);
+mxImport void fxStringX(xsMachine*, xsSlot*, xsStringValue);
 mxImport xsStringValue fxToString(xsMachine*, xsSlot*);
 mxImport xsStringValue fxToStringBuffer(xsMachine*, xsSlot*, xsStringValue, xsIntegerValue);
+mxImport xsStringValue fxToStringX(xsMachine*, xsSlot*);
 mxImport void fxUnsigned(xsMachine*, xsSlot*, xsUnsignedValue);
 mxImport xsUnsignedValue fxToUnsigned(xsMachine*, xsSlot*);
 
@@ -1377,6 +1393,7 @@ mxImport void fxStopProfiling(xsMachine*);
 	
 mxImport void* fxMapArchive(const unsigned char *, unsigned long, xsStringValue, xsCallbackAt);
 mxImport void fxUnmapArchive(void*);
+mxImport void fxAwaitImport(xsMachine*, xsBooleanValue);
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
 mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);

@@ -265,7 +265,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Transfer);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_join);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_values);
-	fxUnstripCallback(linker, fx_require);
 	
 	fxUnstripCallback(linker, fxArrayLengthGetter);
 	fxUnstripCallback(linker, fxArrayLengthSetter);
