@@ -9,4 +9,9 @@
 			"./hidmouse"
 		]
 	},
+	"ble":{
+		"*": [
+			"./bleservices/*",
+		],
+	},
 }

@@ -1,0 +1,21 @@
+{
+	"service": {
+		"uuid": "1812",
+		"characteristics": {
+			"report_map": {
+				"uuid": "2A4B",
+				"type": "Uint8Array",
+			},
+			"report": {
+				"uuid": "2A4D",
+				"type": "Uint8Array",
+				"descriptors": {
+					"reference": {
+						"uuid": "2908",
+						"type": "Uint8Array"
+					}
+				}
+			},
+		}
+	}
+}
