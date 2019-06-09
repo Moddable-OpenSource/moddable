@@ -503,10 +503,10 @@ class MDNS extends Socket {
 		this.probing = 1;
 		this.probeAttempt = 1;
 		trace(`probe for ${this.hostName}\n`);
-		this.client(1, "");
+		this.client(MDNS.hostName, "");
 		Timer.repeat(id => {
 			if (this.probing < 0) {
-				 let hostName = this.client(2, this.hostName);
+				 let hostName = this.client(MDNS.retry, this.hostName);
 				 if (hostName) {
 					 if ("string" == typeof hostName) {
 						 this.hostName = hostName;
@@ -517,7 +517,7 @@ class MDNS extends Socket {
 //						delete this.probing;
 						delete this.probeAttempt;
 						delete this.hostName;	// no hostName claimed, no longer probing
-						this.client(-1);
+						this.client(MDNS.error);
 						return;
 					 }
 				 }
@@ -541,7 +541,7 @@ class MDNS extends Socket {
 				delete this.probing;
 				delete this.probeAttempt;
 
-				this.client(1, this.hostName);
+				this.client(MDNS.hostName, this.hostName);
 
 				return;
 			}
@@ -559,6 +559,10 @@ MDNS.IP = "224.0.0.251";
 MDNS.PORT = 5353;
 MDNS.FLUSH = 0x8000;
 MDNS.UNICAST = 0x8000;
+
+MDNS.hostName = 1;
+MDNS.retry = 2;
+MDNS.error = -1;
 
 Object.freeze(MDNS.prototype);
 
