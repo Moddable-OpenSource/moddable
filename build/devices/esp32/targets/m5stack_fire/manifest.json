@@ -80,14 +80,14 @@
 			"$(MODULES)/drivers/mag3110/*"
 			
 		],
-		"pins/i2s": "$(MODULES)/pins/i2s/*",
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"neopixel",
 		"monitor",
-		"pins/i2s",
+		"pins/audioout",
 		"setup/target",
 		"mpu6050",
 		"mag3110",

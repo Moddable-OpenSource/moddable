@@ -1,7 +1,7 @@
 import Digital from "pins/digital";
 import Monitor from "monitor";
 
-import AudioOut from "pins/i2s";
+import AudioOut from "pins/audioout";
 import Resource from "Resource";
 
 export default function (done) {

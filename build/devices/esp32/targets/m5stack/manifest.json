@@ -65,12 +65,12 @@
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
 		],
-		"pins/i2s": "$(MODULES)/pins/i2s/*",
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
 	},
 	"preload": [
 		"monitor",
-		"pins/i2s",
+		"pins/audioout",
 		"setup/target",
 	],
 	"resources": {
