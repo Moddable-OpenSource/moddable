@@ -1561,7 +1561,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	return 0;
 }
 
-#define kMessagePoolCount (2)
+#define kMessagePoolCount (4)
 static modMessageRecord gMessagePool[kMessagePoolCount];
 
 int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
