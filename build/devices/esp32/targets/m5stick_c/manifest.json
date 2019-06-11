@@ -3,28 +3,27 @@
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
 	],
 	"config": {
-		"screen": "ili9341",
+		"screen": "st7735",
 		"touch": "",
 	},
 	"defines": {
 		"spi": {
 			"mosi_pin": 15,
-			"miso_pin": 14,
 			"clk_pin": 13
 		},
 		"ili9341": {
-			"hz": 20000000,
+			"hz": 40000000,
 			"width": 80,
 			"height": 160,
 			"cs_pin": 5,
 			"dc_pin": 23,
 			"rst_pin": 18,
-			"spi_port": "HSPI_HOST",
+			"spi_port": "#HSPI",
 			"registers": [
                  "0x01, 0,",
                  "kDelayMS, 150,",
                  "0x11, 0,",
-                 "kDelayMS, 255,",
+                 "kDelayMS, 500,",
                  "0xB1, 3, 0x01, 0x2C, 0x2D,",
                  "0xB2, 3, 0x01, 0x2C, 0x2D,",
                  "0xB3, 6, 0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D,",
