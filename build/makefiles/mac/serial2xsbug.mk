@@ -31,14 +31,14 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 BIN_DIR = $(BUILD_DIR)/bin/mac/$(GOAL)
-SRC_DIR = $(MODDABLE)/tools/$(NAME)/mac
+SRC_DIR = $(MODDABLE)/tools/$(NAME)
 TMP_DIR = $(BUILD_DIR)/tmp/mac/$(GOAL)/$(NAME)
 
 # MACOS_ARCH ?= -arch i386
 MACOS_ARCH ?= 
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
-C_OPTIONS = -fno-common $(MACOS_ARCH) $(MACOS_VERSION_MIN) -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
+C_OPTIONS = -DmxMacOSX=1 -fno-common $(MACOS_ARCH) $(MACOS_VERSION_MIN) -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
 endif
@@ -56,7 +56,8 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 OBJECTS = \
-	$(TMP_DIR)/serial2xsbug.o
+	$(TMP_DIR)/serial2xsbug.o \
+	$(TMP_DIR)/serial2xsbug_mac.o
 	
 VPATH += $(SRC_DIR)
 	
@@ -72,6 +73,8 @@ $(BIN_DIR)/$(NAME): $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
 	$(CC) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
 	
+$(OBJECTS): $(SRC_DIR)/serial2xsbug.h
+
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@

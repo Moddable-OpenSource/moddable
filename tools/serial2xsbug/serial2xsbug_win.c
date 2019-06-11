@@ -18,88 +18,13 @@
  *
  */
 
-#define _USE_MATH_DEFINES
-#define WIN32_LEAN_AND_MEAN
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include "serial2xsbug.h"
 
-#include <ctype.h>
-#include <float.h>
-#include <math.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <winsock2.h>
-
-#define mxBufferSize 32 * 1024
-#define mxMachinesCount 10
-#define mxNetworkBufferSize 1024
-#define mxSerialBufferSize 1024
-#define mxTagSize 17
-#define mxTrace 0
-
-typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
-typedef struct txSerialToolStruct txSerialToolRecord, *txSerialTool;
-
-struct txSerialMachineStruct {
-	txSerialTool tool;
-	txSerialMachine nextMachine;
-	uint32_t value;
-	SOCKET networkConnection;
-	HANDLE networkEvent;
-	WSAOVERLAPPED networkOverlapped;
-	WSABUF networkBuf;
-	char networkBuffer[mxNetworkBufferSize];
-	char tag[mxTagSize + 1];
-};
-
-struct txSerialToolStruct {
-	jmp_buf _jmp_buf;
-	char* file;
-	int line;
-	DWORD error;
-	
-	HANDLE signalEvent;
-	
-	char* path;
-	int baud;
-	int data;
-	int parity;
-	int stop;
-	HANDLE serialConnection;
-	HANDLE serialEvent;
-	OVERLAPPED serialOverlapped;
-	char serialBuffer[mxSerialBufferSize];
-	
-	char* host;
-	int port;
-	DWORD count;
-	HANDLE events[2 + mxMachinesCount];
-	txSerialMachine firstMachine;
-	txSerialMachine currentMachine;
-	
-	int index;
-	int state;
-	char buffer[mxBufferSize];
-};
-
-
-static void fxCloseNetwork(txSerialTool self, uint32_t value);
-static void fxCloseSerial(txSerialTool self);
 static void fxCountMachines(txSerialTool self);
-static BOOL fxMatchProcessingInstruction(char* p, BOOL* flag, uint32_t* value);
-static txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value);
-static void fxOpenSerial(txSerialTool self);
 static void fxReadNetwork(txSerialMachine machine, DWORD size);
 static DWORD fxReadNetworkAux(txSerialMachine machine);
 static void fxReadSerial(txSerialTool self, DWORD size);
 static DWORD fxReadSerialAux(txSerialTool self);
-static void fxWriteNetwork(txSerialTool self, char* buffer, DWORD size);
-static void fxWriteSerial(txSerialTool self, char* buffer, DWORD size);
 
 #define mxThrowError(_ERROR) (self->file=__FILE__, self->line=__LINE__, self->error=_ERROR, longjmp(self->_jmp_buf, 1))
 #define mxThrowElse(_ASSERTION) { if (!(_ASSERTION)) { self->file=__FILE__; self->line=__LINE__; self->error = GetLastError(); longjmp(self->_jmp_buf, 1); } }
@@ -110,23 +35,20 @@ void fxCloseNetwork(txSerialTool self, uint32_t value)
 	txSerialMachine* link = &(self->firstMachine);
 	txSerialMachine machine;
 	while ((machine = *link)) {
-		if (machine->value == value)
-			break;
-		link = &(machine->nextMachine);
+		if ((machine->value == value) || (0 == value)) {
+			*link = machine->nextMachine;
+			if (self->currentMachine == machine)
+				self->currentMachine = NULL;
+			CloseHandle(machine->networkOverlapped.hEvent);
+			CloseHandle(machine->networkEvent);
+			if (machine->networkConnection != INVALID_SOCKET)
+				closesocket(machine->networkConnection);
+			free(machine);
+		}
+		else
+			link = &(machine->nextMachine);
 	}
-	if (machine) {
-		*link = machine->nextMachine;
-		if (self->currentMachine == machine)
-			self->currentMachine = NULL;
-		
-		CloseHandle(machine->networkOverlapped.hEvent);
-		CloseHandle(machine->networkEvent);
-		if (machine->networkConnection != INVALID_SOCKET)
-			closesocket(machine->networkConnection);
-		free(machine);
-		
-		fxCountMachines(self);
-	}
+	fxCountMachines(self);
 }
 
 void fxCloseSerial(txSerialTool self)
@@ -146,44 +68,6 @@ void fxCountMachines(txSerialTool self)
 		self->count++;
 		machine = machine->nextMachine;
 	}
-}
-
-BOOL fxMatchProcessingInstruction(char* p, BOOL* flag, uint32_t* value)
-{
-	char c;
-	int i;
-	if (*p++ != '<')
-		return 0;
-	if (*p++ != '?')
-		return 0;
-	if (*p++ != 'x')
-		return 0;
-	if (*p++ != 's')
-		return 0;
-	c = *p++;
-	if (c == '.')
-		*flag = 1;
-	else if (c == '-')
-		*flag = 0;
-	else
-		return 0;
-	*value = 0;
-	for (i = 0; i < 8; i++) {
-		c = *p++;
-		if (('0' <= c) && (c <= '9'))
-			*value = (*value * 16) + (c - '0');
-		else if (('a' <= c) && (c <= 'f'))
-			*value = (*value * 16) + (10 + c - 'a');
-		else if (('A' <= c) && (c <= 'F'))
-			*value = (*value * 16) + (10 + c - 'A');
-		else
-			return 0;
-	}
-	if (*p++ != '?')
-		return 0;
-	if (*p++ != '>')
-		return 0;
-	return 1;
 }
 
 txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
@@ -303,28 +187,14 @@ void fxOpenSerial(txSerialTool self)
 	self->serialOverlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	mxThrowElse(self->serialOverlapped.hEvent);
 	fxReadSerial(self, fxReadSerialAux(self));
+	
+	fxRestart(self);
 }
 
 void fxReadNetwork(txSerialMachine machine, DWORD size)
 {
-	txSerialTool self = machine->tool;
 	while (size > 0) {
-		char* former = machine->networkBuffer;
-		char* current = former;
-		char* limit = former + size;
-		int offset;
-		while (current < limit) {
-			offset = current - former;
-			if ((offset >= 3) && (current[-3] == 13) && (current[-2] == 10) && (current[-1] == '<')) {
-				fxWriteSerial(self, former, offset);
-				fxWriteSerial(self, machine->tag, mxTagSize);
-				former = current;
-			}
-			current++;
-		}
-		offset = limit - former;
-		if (offset)
-			fxWriteSerial(self, former, offset);
+		fxReadNetworkBuffer(machine, machine->networkBuffer, (int)size);
 		WSAResetEvent(machine->networkOverlapped.hEvent);
 		size = fxReadNetworkAux(machine);
 	}
@@ -345,45 +215,7 @@ DWORD fxReadNetworkAux(txSerialMachine machine)
 void fxReadSerial(txSerialTool self, DWORD size)
 {
 	while (size > 0) {
-		char* src = self->serialBuffer;
-		char* srcLimit = src + size;
-		int offset = self->index;
-		char* dst = self->buffer + offset;
-		char* dstLimit = self->buffer + mxBufferSize;
-#if mxTrace
-		fprintf(stderr, "%.*s", size, src);
-#endif
-		while (src < srcLimit) {
-			if (dst == dstLimit) {
-				fxWriteNetwork(self, self->buffer, mxBufferSize - mxTagSize);
-				memmove(self->buffer, dstLimit - mxTagSize, mxTagSize);
-				dst = self->buffer + mxTagSize;
-				offset = mxTagSize;
-			}
-			*dst++ = *src++;
-			offset++;
-			if ((offset >= 2) && (dst[-2] == 13) && (dst[-1] == 10)) {
-				BOOL flag;
-				uint32_t value;
-				if ((offset >= mxTagSize) && fxMatchProcessingInstruction(dst - mxTagSize, &flag, &value)) {
-					if (flag)
-						self->currentMachine = fxOpenNetwork(self, value);
-					else
-						fxCloseNetwork(self, value);
-				}
-				else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
-					fxWriteNetwork(self, self->buffer, offset);
-				}
-				else {
-					dst[-2] = 0;	
-					if (offset > 2) fprintf(stderr, "%s\n", self->buffer);
-				}
-				dst = self->buffer;
-				offset = 0;
-			}
-		}
-		self->index = offset;
-		
+		fxReadSerialBuffer(self, self->serialBuffer, (int)size);
 		size = fxReadSerialAux(self);
 	}
 }
@@ -399,28 +231,31 @@ DWORD fxReadSerialAux(txSerialTool self)
 	return size;
 }
 
-void fxWriteNetwork(txSerialTool self, char* buffer, DWORD size)
+void fxRestartSerial(txSerialTool self)
 {
-	txSerialMachine machine = self->currentMachine;
-	if (machine) {
-		WSAOVERLAPPED overlapped;
-		WSABUF buf;
-		DWORD offset, flags;
-		WSAResetEvent(machine->networkEvent);
-		memset(&overlapped, 0, sizeof(overlapped));
-		overlapped.hEvent = machine->networkEvent;
-		buf.len = size;
-		buf.buf = buffer;
-		if (WSASend(machine->networkConnection, &buf, 1, &offset, 0, &overlapped, NULL) == SOCKET_ERROR) {
-			DWORD error = WSAGetLastError();
-			if (error != WSA_IO_PENDING) mxThrowError(error);
-			mxThrowElse(WaitForSingleObject(overlapped.hEvent, INFINITE) == 0);
-			mxWSAThrowElse(WSAGetOverlappedResult(machine->networkConnection, &overlapped, &offset, FALSE, &flags));
-		}
+	//??
+}
+
+void fxWriteNetwork(txSerialMachine machine, char* buffer, int size)
+{
+	txSerialTool self = machine->tool;
+	WSAOVERLAPPED overlapped;
+	WSABUF buf;
+	DWORD offset, flags;
+	WSAResetEvent(machine->networkEvent);
+	memset(&overlapped, 0, sizeof(overlapped));
+	overlapped.hEvent = machine->networkEvent;
+	buf.len = (DWORD)size;
+	buf.buf = buffer;
+	if (WSASend(machine->networkConnection, &buf, 1, &offset, 0, &overlapped, NULL) == SOCKET_ERROR) {
+		DWORD error = WSAGetLastError();
+		if (error != WSA_IO_PENDING) mxThrowError(error);
+		mxThrowElse(WaitForSingleObject(overlapped.hEvent, INFINITE) == 0);
+		mxWSAThrowElse(WSAGetOverlappedResult(machine->networkConnection, &overlapped, &offset, FALSE, &flags));
 	}
 }
 
-void fxWriteSerial(txSerialTool self, char* buffer, DWORD size)
+void fxWriteSerial(txSerialTool self, char* buffer, int size)
 {
 	OVERLAPPED overlapped;
 	DWORD offset;
@@ -430,7 +265,7 @@ void fxWriteSerial(txSerialTool self, char* buffer, DWORD size)
 	ResetEvent(self->serialEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->serialEvent;
-	if (!WriteFile(self->serialConnection, buffer, size, &offset, &overlapped)) {
+	if (!WriteFile(self->serialConnection, buffer, (DWORD)size, &offset, &overlapped)) {
 		DWORD error = GetLastError();
 		if (error != ERROR_IO_PENDING) mxThrowError(error);
 		mxThrowElse(WaitForSingleObject(overlapped.hEvent, INFINITE) == 0);
@@ -440,36 +275,24 @@ void fxWriteSerial(txSerialTool self, char* buffer, DWORD size)
 
 static txSerialToolRecord tool;
 
-void fxSignalHandler(int s)
+static void fxSignalHandler(int s)
 {
 	txSerialTool self = &tool;
-	SetEvent(self->events[10]);
+	SetEvent(self->events[10]); //@@
 }
 
 int main(int argc, char* argv[]) 
 {
-	int result = 0;
 	txSerialTool self = &tool;
 	char path[256];
 	DWORD size, flags;
-
-	if (argc < 4) {
-		fprintf(stderr, "### serial2xsbug <port name> <baud rate> <data bits><parity><stop bits>\n");
-		return 1;
-	}
-	memset(&tool, 0, sizeof(tool));
+	int result = fxArguments(self, argc, argv);
+	if (result)
+		return result;
 	strcpy(path, "\\\\.\\");
-	strcat(path, argv[1]);
+	strcat(path, self->path);
 	self->path = path;
-	self->baud = atoi(argv[2]);
-	self->data = argv[3][0] - '0';
-	self->parity = argv[3][1];
-	self->stop = argv[3][2] - '0';
 	self->serialConnection = INVALID_HANDLE_VALUE;
-
-	self->host = "localhost";
-	self->port = 5002;
-	
 	if (setjmp(self->_jmp_buf) == 0) {
 		WSADATA wsaData;
 		self->error = WSAStartup(0x202, &wsaData);

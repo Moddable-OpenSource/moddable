@@ -31,10 +31,10 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
-SRC_DIR = $(MODDABLE)/tools/$(NAME)/lin
+SRC_DIR = $(MODDABLE)/tools/$(NAME)
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
-C_OPTIONS = -fno-common -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
+C_OPTIONS = -DmxLinux=1 -fno-common -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -45,7 +45,8 @@ LIBRARIES =
 LINK_OPTIONS =
 
 OBJECTS = \
-	$(TMP_DIR)/serial2xsbug.o
+	$(TMP_DIR)/serial2xsbug.o \
+	$(TMP_DIR)/serial2xsbug_lin.o
 	
 VPATH += $(SRC_DIR)
 	
@@ -60,7 +61,9 @@ $(BIN_DIR):
 $(BIN_DIR)/$(NAME): $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
 	$(CC) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
-	
+
+$(OBJECTS): $(SRC_DIR)/serial2xsbug.h
+
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@

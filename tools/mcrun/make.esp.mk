@@ -17,19 +17,28 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ifeq ($(HOST_OS),Darwin)
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+else
+UPLOAD_PORT ?= /dev/ttyUSB0
+endif
 URL ?= "~"
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
-IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
-MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/release/png2bmp
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
-SERIAL2XSBUG = $(MODDABLE)/build/bin/mac/release/serial2xsbug
-XSC = $(MODDABLE)/build/bin/mac/release/xsc
-XSL = $(MODDABLE)/build/bin/mac/release/xsl
+ifeq ($(HOST_OS),Darwin)
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+endif
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
+SERIAL2XSBUG = $(MODDABLE_TOOLS_DIR)/serial2xsbug
+XSC = $(MODDABLE_TOOLS_DIR)/xsc
+XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 ARCHIVE = $(BIN_DIR)/$(NAME).xsa
 
