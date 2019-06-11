@@ -44,7 +44,7 @@ export default class WiFi @ "xs_wifi_destructor" {
 
 WiFi.gotIP = "gotIP";
 WiFi.lostIP = "lostIP";
-WiFi.connect = "connect";
-WiFi.disconnect = "disconnect";
+//WiFi.connect = "connect";
+//WiFi.disconnect = "disconnect";
 
 Object.freeze(WiFi.prototype);
