@@ -293,9 +293,6 @@ uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value)
 }
 
 static void systemCommand(char* command, char **buffer){
-#if mxWindows
-	*buffer = NULL;
-#else
 	char line[1024];
 	FILE *fp = NULL;
 	char *out = calloc(1, 1);
@@ -310,7 +307,6 @@ static void systemCommand(char* command, char **buffer){
 	}
 
 	*buffer = out;
-#endif
 }
 
 static char* printAddress(char* address){
@@ -530,10 +526,7 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 
 				fxCloseNetwork(self, 0);
 				fxCloseSerial(self);
-#if mxWindows
-#else
 				execvp(args[0], args);
-#endif
 				exit(0);
 			}
 		}

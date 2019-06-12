@@ -74,6 +74,9 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <winsock2.h>
+#define execvp(COMMAND, ARGV) _execvp(COMMAND, ARGV)
+#define popen(COMMAND, MODE) _popen(COMMAND, MODE)
+#define pclose(PIPE) _pclose(PIPE)
 #define usleep(MICRO) Sleep(MICRO / 1000)
 #else
 #error unknown platform

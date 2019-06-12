@@ -154,6 +154,7 @@ void fxOpenSerial(txSerialTool self)
 		term.c_ospeed = self->baud;
 		ioctl(self->serialConnection, TCSETS2, &tio2);
 	}
+	usleep(5000);
 	fxRestart(self);
 }
 
