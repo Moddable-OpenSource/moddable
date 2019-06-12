@@ -74,7 +74,7 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <winsock2.h>
-#define usleep Sleep
+#define usleep(MICRO) Sleep(MICRO / 1000)
 #else
 #error unknown platform
 #endif

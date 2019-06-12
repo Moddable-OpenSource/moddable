@@ -231,27 +231,12 @@ DWORD fxReadSerialAux(txSerialTool self)
 	return size;
 }
 
-static void printLastError() {
-	char buffer[2048];
-	DWORD error = GetLastError();
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, sizeof(buffer), NULL);
-	fprintf(stderr, "# %s\n", buffer);
-}
 void fxRestartSerial(txSerialTool self)
 {
-	if (!EscapeCommFunction(self->serialConnection, SETRTS)) {
-		fprintf(stderr, "SETRTS ");
-		printLastError();;
-	}
-	if (!EscapeCommFunction(self->serialConnection, CLRDTR)) {
-		fprintf(stderr, "CLRDTR ");
-		printLastError();;
-	}
-	usleep(5000);
-	if (!EscapeCommFunction(self->serialConnection, CLRRTS)) {
-		fprintf(stderr, "CLRRTS ");
-		printLastError();;
-	}
+	mxThrowElse(EscapeCommFunction(self->serialConnection, SETRTS) != 0);
+	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRDTR) != 0);
+	Sleep(5);
+	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRRTS) != 0);
 }
 
 void fxWriteNetwork(txSerialMachine machine, char* buffer, int size)
