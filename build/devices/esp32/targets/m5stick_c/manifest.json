@@ -9,10 +9,10 @@
 	"defines": {
 		"spi": {
 			"mosi_pin": 15,
-			"clk_pin": 13
+			"sck_pin": 13
 		},
 		"ili9341": {
-			"hz": 40000000,
+			"hz": 20000000,
 			"width": 80,
 			"height": 160,
 			"cs_pin": 5,
