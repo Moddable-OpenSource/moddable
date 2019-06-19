@@ -77,6 +77,12 @@
 #ifndef MODDEF_ILI9341_SPI_PORT
 	#define MODDEF_ILI9341_SPI_PORT NULL
 #endif
+#ifndef MODDEF_ILI9341_COLUMN_OFFSET
+	#define MODDEF_ILI9341_COLUMN_OFFSET 0
+#endif
+#ifndef MODDEF_ILI9341_ROW_OFFSET
+	#define MODDEF_ILI9341_ROW_OFFSET 0
+#endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
 	#define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
@@ -210,6 +216,8 @@ void xs_ILI9341(xsMachine *the)
 
 	xsmcSetHostData(xsThis, sd);
 
+	modLog("spiconfig");
+	modLogInt(MODDEF_ILI9341_SPI_PORT);
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
 			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
 
@@ -516,8 +524,8 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	uint8_t data[4];
 	uint16_t xMin, xMax, yMin, yMax;
 
-	xMin = x;
-	yMin = y;
+	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
+	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 
