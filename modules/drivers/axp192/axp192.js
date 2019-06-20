@@ -30,6 +30,6 @@ export default class AXP192 extends I2C {
 	 */
 	setBrightness(brightness) {
 		const b = (brightness & 0x0f) << 4;
-		this.write(0x38, b);
+		this.write(0x28, b);
 	}
 }
