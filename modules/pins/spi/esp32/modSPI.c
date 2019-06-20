@@ -147,6 +147,8 @@ void modSPIInit(modSPIConfiguration config)
 	devcfg.queue_size = 3;
 	devcfg.pre_cb = NULL;
 	devcfg.post_cb = postTransfer;
+	devcfg.input_delay_ns = config->miso_delay;
+
 
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {

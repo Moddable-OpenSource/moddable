@@ -199,12 +199,17 @@ uint8_t ESP_isReadable() {
 	return s > 0;
 }
 
+uint8_t ESP_setBaud(int baud) {
+	uart_wait_tx_done(USE_UART, 5 * 1000);
+	return ESP_OK == uart_set_baudrate(USE_UART, baud);
+}
+
 void app_main() {
 	modPrelaunch();
 
 	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 
-	nvs_flash_init();
+	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif

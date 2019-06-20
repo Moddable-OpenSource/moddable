@@ -19,11 +19,15 @@
 			"./mask_circle",
 			"./mask_square",
 			"./girl",
-			"./piano",
 			"./palatino_36",
 			"./OpenSans-SemiboldItalic-18",
 			"./OpenSans-BoldItalic-52",
 		]
 
+	},
+	"data": {
+		"*": [
+			"./piano",
+		],
 	},
 }

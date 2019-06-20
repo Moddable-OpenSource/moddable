@@ -37,6 +37,7 @@ struct modSPIConfigurationRecord {
 	int8_t						cs_pin;
 	uint8_t						spiPort;
 	uint8_t						sync;
+	uint8_t						miso_delay;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
 };

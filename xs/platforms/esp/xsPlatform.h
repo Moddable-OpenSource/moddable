@@ -122,7 +122,9 @@ extern void fx_putc(void *refcon, char c);
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
-	uint8_t count;
+	uint16_t count;
+	uint8_t binary;
+	uint8_t pad;
 	uint8_t bytes[1];
 };
 typedef struct DebugFragmentRecord DebugFragmentRecord;
@@ -141,6 +143,15 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		txBoolean debugNotifyOutstanding; \
 		txBoolean DEBUG_LOOP; \
 		uint8_t debugConnectionVerified; \
+		uint8_t wsState; \
+		uint8_t	wsFin; \
+		uint16_t wsLength; \
+		uint16_t wsSendStart; \
+		uint8_t wsMask[4]; \
+		uint8_t *wsCmd; \
+		uint8_t *wsCmdPtr; \
+		uintptr_t /* esp_ota_handle_t */	otaHandle; \
+		void /* esp_partition_t */	*otaPartition; \
 		DebugFragment debugFragments;
 #else
 	#define mxMachineDebug

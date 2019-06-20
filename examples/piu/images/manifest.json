@@ -22,12 +22,12 @@
 		],
 	},
 	"platforms": {
-		"esp/moddable_zero": {
+		"esp": {
 			"config": {
 				"rotation": 90,
 			},
 		},
-		"esp32/moddable_zero": {
+		"esp32": {
 			"config": {
 				"rotation": 90,
 			},

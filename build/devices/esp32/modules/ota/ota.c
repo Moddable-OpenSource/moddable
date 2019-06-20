@@ -94,6 +94,4 @@ void xs_ota_complete(xsMachine *the)
 	err = esp_ota_set_boot_partition(ota->partition);
 	if (ESP_OK != err)
 		xsUnknownError("can't change boot partition");
-
-	esp_restart();		//@@ perhaps do elsewhere
 }

@@ -1,7 +1,7 @@
 # Moddable SDK
 
 Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: April 12, 2019
+Revised: May 17, 2019
 
 ## Modern software development for microcontrollers
 
@@ -58,7 +58,7 @@ Similar to other debuggers, `xsbug` supports setting breakpoints, browsing sourc
 
 ### Step 1: Set up your host environment
 
-The [Getting Started](documentation/Moddable%20SDK%20-%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for Moddable Zero and the ESP8266 and ESP32 microcontrollers.
+The [Getting Started](documentation/Moddable%20SDK%20-%20Getting%20Started.md) document provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building the example applications for Moddable hardware modules and the ESP8266 and ESP32 microcontrollers.
 
 Build and configuration instructions for the Silicon Labs Gecko devices is at [Gecko Build](documentation/devices/gecko/GeckoBuild.md).
 
@@ -88,9 +88,13 @@ The **documentation**, **examples**, and **modules** directories share a common 
 
 ## Supported Hardware
 
-![Moddable Zero](./documentation/assets/moddable/moddable-zero-sm.jpg)
+![Moddable hardware](./documentation/assets/moddable/moddable-hardware.png)
 
-**Moddable Zero** is a prototype hardware module that consists of a touch screen paired with an ESP8266 microcontroller. Most of our example apps run on Moddable Zero, making it the easiest way for developers to experiment with the Moddable SDK on inexpensive hardware. You can read more and order your own Moddable Zero [here](http://www.moddable.com/moddable-zero.php).
+**Moddable One**, **Moddable Two**, and **Moddable Three** are hardware modules that make it easy for developers to explore the Moddable SDK with inexpensive hardware. A Getting Started guide is available for each device:
+
+- [Moddable One](./documentation/devices/moddable-one.md)
+- [Moddable Two](./documentation/devices/moddable-two.md)
+- [Moddable Three](./documentation/devices/moddable-three.md)
 
 ![Platforms](./documentation/assets/moddable/platforms.png)
 

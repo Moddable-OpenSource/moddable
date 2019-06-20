@@ -19,5 +19,10 @@
 				"rotation": 270,
 			},
 		},
+		"esp/moddable_three": {
+			"config": {
+				"rotation": 270,
+			},
+		},
 	}
 }

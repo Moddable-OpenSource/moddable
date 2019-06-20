@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/my92x1/*",
+		],
+	},
+	"preload": [
+		"my92x1",
+	],
+}

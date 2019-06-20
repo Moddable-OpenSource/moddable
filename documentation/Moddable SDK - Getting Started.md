@@ -1,26 +1,41 @@
 # Moddable SDK – Getting Started
-Copyright 2016-2019 Moddable Tech, Inc.
+Copyright 2016-2019 Moddable Tech, Inc.<BR>
+Revised: May 21, 2019
 
-Revised: January 16, 2019
-
-This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use xsbug, the JavaScript source code debugger.
+This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
 ## Table of Contents
 
+* [Overview](#overview)
 * [macOS](#mac)
 	* [Host environment setup](#host-mac)
-	* [ESP8266 (Moddable Zero)](#esp8266-mac)
+	* [ESP8266](#esp8266-mac)
 	* [ESP32](#esp32-mac)
 * [Windows](#windows)
 	* [Host environment setup](#host-windows)
-	* [ESP8266 (Moddable Zero)](#esp8266-windows)
+	* [ESP8266](#esp8266-windows)
 	* [ESP32](#esp32-windows)
 * [Linux](#linux)
 	* [Host environment setup](#host-linux)
-	* [ESP8266 (Moddable Zero)](#esp8266-linux)
+	* [ESP8266](#esp8266-linux)
 	* [ESP32](#esp32-linux)
 * [Debugging applications](#debugging-applications)
 * [ESP8266 Arduino version 2.4](#arduino-version)
+
+<a id="overview"></a>
+## Overview
+
+Before you can build applications, you need to set up your host environment and install the required drivers and development tools for your target device. Fo example, if you want to build applications for Moddable One using a Mac, you'll need to follow the macOS host environment and ESP8266 setup instructions below.
+
+A full list of supported target devices is available in the **Target platforms** section of the [examples readme](https://github.com/Moddable-OpenSource/moddable/tree/public/examples).
+
+Additional getting started guides are available for the following devices:
+
+- [Moddable One](./devices/moddable-one.md)
+- [Moddable Two](./devices/moddable-two.md)
+- [Moddable Three](./devices/moddable-three.md)
+- [Silicon Labs Gecko devices](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
+- [Qualcomm QCA4020](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/qca4020/README.md)
 
 <a id="mac"></a>
 ## macOS

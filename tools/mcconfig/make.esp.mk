@@ -341,7 +341,7 @@ debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(UPLOAD_TO_ESP)
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 921600 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
+	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 921600 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(UPLOAD_TO_ESP)
@@ -394,9 +394,9 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
 
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

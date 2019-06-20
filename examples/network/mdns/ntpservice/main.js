@@ -60,7 +60,7 @@ class SNTP extends Socket {
 const timeService = {name: "ntp", protocol: "udp", port: 123, txt: {}};
 
 const mdns = new MDNS({hostName: "time"}, function(message, value) {
-	if ((1 == message) && value) {
+	if ((MDNS.hostName === message) && value) {
 		timeService.txt.now = timeInMinutes();
 		this.add(timeService);
 

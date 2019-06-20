@@ -191,6 +191,13 @@ void uart_write_char(uart_t* uart, char c)
 	return uart;
 }
 
+uint8_t uart_set_baud(uart_t* uart, int baudrate)
+{
+	while((USS(UART_NR) >> USTXC) > 0);
+	USD(UART_NR) = (ESP8266_CLOCK / baudrate);
+	return 1;
+}
+
 void uart_uninit(uart_t* uart)
 {
 	if (!uart)

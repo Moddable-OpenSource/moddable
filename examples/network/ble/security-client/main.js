@@ -69,6 +69,11 @@ class SecureHealthThermometerClient extends BLEClient {
 		let passkey = this.passkeyToString(params.passkey);
 		trace(`client display passkey: ${passkey}\n`);
 	}
+	onPasskeyInput(params) {
+		trace(`client input passkey displayed by peer\n`);
+		//let passkey = 0;
+		//this.passkeyInput(params.address, passkey);
+	}
 	onPasskeyRequested(params) {
 		let passkey = Math.round(Math.random() * 999999);
 		trace(`client requested passkey: ${this.passkeyToString(passkey)}\n`);

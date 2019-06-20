@@ -812,26 +812,15 @@ void fxEcho(txMachine* the, txString theString)
 
 void fxEchoAddress(txMachine* the, txSlot* theSlot)
 {
-	unsigned long aValue = (unsigned long)theSlot;
-	unsigned long aMask = 0xF;
+	uintptr_t aValue = (uintptr_t)theSlot;
 	int aShift;
 
 	fxEcho(the, " value=\"@");
 	aShift = (8 * sizeof(aValue)) - 4;
 	while (aShift >= 0) {
-		fxEchoCharacter(the, c_read8(gxHexaDigits + ((aValue & aMask << aShift) >> aShift)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((aValue >> aShift) & 0x0F)));
 		aShift -= 4;
 	}
-	/*
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0xF0000000) >> 28]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x0F000000) >> 24]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x00F00000) >> 20]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x000F0000) >> 16]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x0000F000) >> 12]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x00000F00) >> 8]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x000000F0) >> 4]);
-	fxEchoCharacter(the, gxHexaDigits[(aValue & 0x0000000F)]);
-	*/
 	fxEcho(the, "\"");
 }
 

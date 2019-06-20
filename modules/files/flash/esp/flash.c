@@ -51,14 +51,7 @@ void xs_flash(xsMachine *the)
 			flash.partitionStart = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 			flash.partitionByteLength = kModulesByteLength;
 		}
-		else if (0 == c_strcmp(partition, "xs_stage")) {
-			extern uint8_t _XSMOD_start;
-			extern uint8_t _XSMOD_end;
-
-			flash.partitionStart = (uintptr_t)&_XSMOD_start - (uintptr_t)kFlashStart;
-			flash.partitionByteLength = &_XSMOD_end - &_XSMOD_start;		//@@
-		}
-		else if (0 == c_strcmp(partition, "spiffs")) {
+		else if (0 == c_strcmp(partition, "storage")) {
 			extern uint8_t _SPIFFS_start;
 			extern uint8_t _SPIFFS_end;
 

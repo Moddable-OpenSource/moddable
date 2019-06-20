@@ -1,7 +1,7 @@
 # Networking
 
-Copyright 2017-2018 Moddable Tech, Inc.<BR>
-Revised: November 6, 2018
+Copyright 2017-2019 Moddable Tech, Inc.<BR>
+Revised: May 21, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -748,7 +748,7 @@ let monitor = new WiFi({ssid: "My Wi-Fi", password: "secret"}, msg => {
 });
 ```
 
-The following example initiates a connection to a Wi-Fi access point with no password. Because there is no callback function to monitor connection progress, polling on `WiFi.status` is necessary to determine when the connection is ready.
+The following example initiates a connection to a Wi-Fi access point with no password. Because there is no callback function to monitor connection progress, polling is necessary to determine when the connection is ready. Poll by getting the IP address of the device using the `Net` class. When there is no connection, the results is `undefined`.
 
 ```js
 let monitor = new WiFi({ssid: "Open Wi-Fi"});
@@ -790,26 +790,6 @@ The Wi-Fi scan runs for a fixed period of time, approximately two seconds. Durin
 
 ***
 
-### `status` property
-
-The `status` property returns an integer indicating the current state of the Wi-Fi connection.
-
-| `status` | Description |
-| :---: | :--- |
-| 0 | Idle |
-| 1 | Connecting |
-| 2 | Password not accepted by access point |
-| 3 | Specified access point not found |
-| 4 | Connection attempt failed |
-| 5 | Connection established |
-
-```js
-if (WiFi.status === 5)
-	trace("Connected to Wi-Fi\n");
-```
-
-***
-
 ### `mode` property
 
 The `mode` property is set to 1 for station mode (e.g. device acts as Wi-Fi client) and 2 for access point mode (e.g. device acts as Wi-Fi base station).
@@ -818,7 +798,7 @@ The `mode` property is set to 1 for station mode (e.g. device acts as Wi-Fi clie
 
 ### `static connect(dictionary)`
 
-The `connect` function begins the process of establishing a connection. The connection process is asynchronous and may be monitored by polling `WiFi.status` or by creating a new WiFi instance. The dictionary contains either `ssid` or `bssid` properties indicating the base station to connect to, and an optional `password`.
+The `connect` function begins the process of establishing a connection. The connection process is asynchronous and may be monitored by polling `Net.get("IP")` or by creating a new WiFi instance. The dictionary contains either `ssid` or `bssid` properties indicating the base station to connect to, and an optional `password`.
 
 ```js
 WiFi.connect({ssid: "Moddable", password: "1234"});
@@ -1319,7 +1299,7 @@ The user receives status information through the callback function. The callback
 
 | `message` | Description |
 | :---: | :--- |
-| -1 | **error:** An error occured and the host is no longer being pinged.
+| -1 | **error:** An error occurred and the host is no longer being pinged.
 | 1 | **success:** The host responded to the echo request with an echo reply.
 | 2 | **timeout:** The host did not respond.
 

@@ -42,7 +42,7 @@ void xs_net_get(xsMachine *the)
 		const char *devName;
  		if (QAPI_OK == qapi_Net_Get_Wlan_Dev_Name(deviceId, &devName)) {
  			uint32_t addr;
-			if (QAPI_OK == qapi_Net_IPv4_Config(devName, QAPI_NET_IPV4CFG_QUERY_E, &addr, NULL, NULL)) {
+			if ((QAPI_OK == qapi_Net_IPv4_Config(devName, QAPI_NET_IPV4CFG_QUERY_E, &addr, NULL, NULL)) && (0 != addr)) {
 				xsResult = xsStringBuffer(NULL, 4 * 5);
 		        inet_ntop(AF_INET, &addr, xsToString(xsResult), 20);
 			}

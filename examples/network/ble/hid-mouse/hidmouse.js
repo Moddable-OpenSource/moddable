@@ -30,8 +30,8 @@ class BLEHIDMouse extends BLEHIDClient {
 		this.configure({ usageID: UsageID.MOUSE, reportTypes:[ReportType.INPUT] });
 		this.onDeviceDisconnected();
 	}
-	onCharacteristicNotification(characteristic, buffer) {
-		this.onReportData(new DataView(buffer));
+	onCharacteristicNotification(characteristic, value) {
+		this.onReportData(new DataView(value.buffer));
 	}
 	onDeviceDisconnected() {
 		this.buttons = 0;

@@ -95,9 +95,9 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \
 	$(LIB_DIR)\xsre.o \
-	$(LIB_DIR)\xsa.c.o \
-	$(LIB_DIR)\xsc.c.o \
-	$(LIB_DIR)\xslBase.c.o
+	$(LIB_DIR)\xsa.o \
+	$(LIB_DIR)\xsc.o \
+	$(LIB_DIR)\xslBase.o
 
 MODULES = \
 	$(MOD_DIR)\commodetto\Bitmap.xsb \
