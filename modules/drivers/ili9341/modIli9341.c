@@ -216,8 +216,6 @@ void xs_ILI9341(xsMachine *the)
 
 	xsmcSetHostData(xsThis, sd);
 
-	modLog("spiconfig");
-	modLogInt(MODDEF_ILI9341_SPI_PORT);
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
 			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
 
