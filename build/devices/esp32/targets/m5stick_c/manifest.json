@@ -1,6 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
 	],
 	"config": {
 		"screen": "st7735",
