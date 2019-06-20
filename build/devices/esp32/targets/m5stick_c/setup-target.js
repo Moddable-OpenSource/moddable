@@ -1,5 +1,6 @@
 import Digital from "pins/digital";
 import Monitor from "monitor";
+import AXP192 from "axp192";
 
 export default function (done) {
 	global.button = {
@@ -8,6 +9,12 @@ export default function (done) {
 	};
 	button.a.onChanged = button.b.onChanged = nop;
 
+	global.power = new AXP192({
+		sda: 21,
+		scl: 22,
+		address: 0x34
+	});
+
 	//@@ microphone
 
 	done();
@@ -15,4 +22,3 @@ export default function (done) {
 
 function nop() {
 }
-
