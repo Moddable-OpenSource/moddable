@@ -12,12 +12,14 @@
 			"sck_pin": 13
 		},
 		"ili9341": {
-			"hz": 20000000,
+			"hz": 27000000,
 			"width": 80,
 			"height": 160,
 			"cs_pin": 5,
 			"dc_pin": 23,
 			"rst_pin": 18,
+			"column_offset": 26,
+			"row_offset": 1,
 			"spi_port": "VSPI_HOST",
 			"registers": [
                  "0x01, 0,",
