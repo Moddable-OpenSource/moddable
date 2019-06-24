@@ -299,7 +299,7 @@ More detailed getting started guides are available for the following devices:
 	
 	> Environment variables should be set from the System Control Panel. The steps required vary depending on the Windows OS version.
 	
-6. Launch the "Developer Command Prompt for VS 2017" command line console. Choose "x86 Native Tools Command Prompt". Build the Moddable command line tools, simulator, and debugger from the command line:
+6. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd %MODDABLE%\build\makefiles\win
