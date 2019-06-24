@@ -350,28 +350,41 @@ More detailed getting started guides are available for the following devices:
 	git checkout v3.0-rc1
 	```
 
-9. Install [Python](https://www.python.org/downloads/windows/) and [pySerial](https://pyserial.readthedocs.io/en/latest/pyserial.html).
+9. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
 
-9. Connect the ESP8266 to your computer with a USB cable.
+10. Edit the system `PATH` environment variable to include the Python directories:
 
-10. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+	```
+	C:\Python27
+	C:\Python27\Scripts
+	```
+
+11. Open a "Command Prompt" window and install the `pyserial` Python Serial Port Extension:
+
+	```
+	pip install pyserial
+	```
+	
+12. Connect the ESP8266 to your computer with a USB cable.
+
+13. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-11. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
+14. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
 
 	```
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
 	```
 
-12. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
+15. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
 
 	```
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
-13. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
+14. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
