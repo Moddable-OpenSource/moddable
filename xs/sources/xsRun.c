@@ -480,6 +480,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_RETURN,
 		&&XS_CODE_SET_CLOSURE_1,
 		&&XS_CODE_SET_CLOSURE_2,
+		&&XS_CODE_SET_HOME,
 		&&XS_CODE_SET_LOCAL_1,
 		&&XS_CODE_SET_LOCAL_2,
 		&&XS_CODE_SET_PROPERTY,
@@ -1887,6 +1888,11 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_AT)
 			mxToInstance(mxStack + 1);
+			if (mxStack->kind == XS_REFERENCE_KIND) {
+				mxSaveState;
+				fxToPrimitive(the, mxStack, XS_STRING_HINT);
+				mxRestoreState;
+			}
 			if ((mxStack->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, mxStack->value.integer, &(scratch.value.at.index))) {
 				mxStack->kind = XS_AT_KIND;
 				mxStack->value.at.id = 0;
@@ -2358,6 +2364,12 @@ XS_CODE_JUMP:
 			fxRenameFunction(the, mxStack->value.reference, (txID)offset, XS_NO_ID, C_NULL);
 			mxRestoreState;
 			mxNextCode(3);
+			mxBreak;
+		mxCase(XS_CODE_SET_HOME)
+			slot = mxFunctionInstanceHome((mxStack + 1)->value.reference);
+			slot->value.home.object = mxStack->value.reference;
+			mxStack++;
+			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_CODE_4)
 			offset = mxRunS4(1);

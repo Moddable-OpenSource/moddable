@@ -62,6 +62,7 @@ static void fxDeleteNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxDoNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxExportNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxExpressionsNodeDistribute(void* it, txNodeCall call, void* param);
+static void fxFieldNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxFunctionNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxForNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxForInForOfNodeDistribute(void* it, txNodeCall call, void* param);
@@ -136,7 +137,7 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	parser->stream = theStream;
 	parser->getter = theGetter;
 	parser->line = 1;
-	parser->flags = flags;
+	parser->flags = flags & ~mxEvalFlag;
 	parser->modifier = parser->emptyString;
 	parser->string = parser->emptyString;
 	parser->line2 = 1;
@@ -155,6 +156,7 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 		fxGetNextToken(parser);
 		fxModule(parser);
 	}
+	parser->flags |= flags & mxEvalFlag;
 	
 #ifdef mxTreePrint
 	fxTreePrint(parser, parser->root);
@@ -196,6 +198,13 @@ txDefineNode* fxDefineNodeNew(txParser* parser, txToken token, txSymbol* symbol)
 	txDefineNode* node = fxNewParserChunkClear(parser, sizeof(txDefineNode));
 	node->description = &gxTokenDescriptions[token];
 	node->symbol = symbol;
+	return node;
+}
+
+txFieldNode* fxFieldNodeNew(txParser* parser, txToken token)
+{
+	txFieldNode* node = fxNewParserChunkClear(parser, sizeof(txFieldNode));
+	node->description = &gxTokenDescriptions[token];
 	return node;
 }
 
@@ -287,6 +296,10 @@ void fxClassNodeDistribute(void* it, txNodeCall call, void* param)
 		(*call)(self->heritage, param);
 	(*call)(self->constructor, param);
 	fxNodeListDistribute(self->items, call, param);
+	if (self->constructorFields)
+		(*call)(self->constructorFields, param);
+	if (self->instanceFields)
+		(*call)(self->instanceFields, param);
 }
 
 void fxCatchNodeDistribute(void* it, txNodeCall call, void* param)
@@ -320,6 +333,12 @@ void fxExpressionsNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txExpressionsNode* self = it;
 	fxNodeListDistribute(self->items, call, param);
+}
+
+void fxFieldNodeDistribute(void* it, txNodeCall call, void* param)
+{
+	txFieldNode* self = it;
+	(*call)(self->value, param);
 }
 
 void fxForNodeDistribute(void* it, txNodeCall call, void* param)
@@ -443,14 +462,16 @@ void fxProgramNodeDistribute(void* it, txNodeCall call, void* param)
 void fxPropertyNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txPropertyNode* self = it;
-	(*call)(self->value, param);
+	if (self->value)
+		(*call)(self->value, param);
 }
 
 void fxPropertyAtNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txPropertyAtNode* self = it;
 	(*call)(self->at, param);
-	(*call)(self->value, param);
+	if (self->value)
+		(*call)(self->value, param);
 }
 
 void fxPropertyBindingNodeDistribute(void* it, txNodeCall call, void* param)
@@ -771,6 +792,14 @@ static const txNodeDispatch gxExpressionsNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeAssign,
 	fxNodeCodeReference
 };
+static const txNodeDispatch gxFieldNodeDispatch ICACHE_FLASH_ATTR = {
+	fxFieldNodeDistribute,
+	fxFieldNodeBind,
+	fxNodeHoist,
+	fxFieldNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeReference
+};
 static const txNodeDispatch gxForNodeDispatch ICACHE_FLASH_ATTR = {
 	fxForNodeDistribute,
 	fxForNodeBind,
@@ -1069,7 +1098,7 @@ static const txNodeDispatch gxStringNodeDispatch ICACHE_FLASH_ATTR = {
 };
 static const txNodeDispatch gxSuperNodeDispatch ICACHE_FLASH_ATTR = {
 	fxSuperNodeDistribute,
-	fxNodeBind,
+	fxSuperNodeBind,
 	fxNodeHoist,
 	fxSuperNodeCode,
 	fxNodeCodeAssign,
@@ -1230,6 +1259,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_EXPRESSIONS, "Expressions", sizeof(txExpressionsNode), &gxExpressionsNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_EXTENDS, "", 0, NULL },
 	{ XS_CODE_FALSE, XS_TOKEN_FALSE, "False", sizeof(txNode), &gxValueNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_FIELD, "Field", sizeof(txFieldNode), &gxFieldNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_FINALLY, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_FOR, "For", sizeof(txForNode), &gxForNodeDispatch },
 	{ XS_CODE_FOR_AWAIT_OF, XS_TOKEN_FOR_AWAIT_OF, "ForAwaitOf", sizeof(txForInForOfNode), &gxForInForOfNodeDispatch },
@@ -1417,6 +1447,8 @@ void fxNodePrintTree(void* it, void* param)
 			fprintf(stderr, " base");
 		if (node->flags & mxDerivedFlag)
 			fprintf(stderr, " derived");
+		if (node->flags & mxEvalFlag)
+			fprintf(stderr, " eval");
 		if (node->flags & mxTargetFlag)
 			fprintf(stderr, " function");
 		if (node->flags & mxGeneratorFlag)

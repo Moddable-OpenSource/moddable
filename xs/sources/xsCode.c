@@ -121,6 +121,7 @@ struct sxCoder {
 	txInteger line;
 	txBoolean programFlag;
 	txBoolean evalFlag;
+	txClassNode* fields;
 };
 
 static void fxCoderAdd(txCoder* self, txInteger delta, void* it);
@@ -782,7 +783,11 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_SUPER:
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
-			fprintf(stderr, "%s %s\n", gxCodeNames[code->id], ((txSymbolCode*)code)->symbol ? ((txSymbolCode*)code)->symbol->string : "?");
+			symbol = ((txSymbolCode*)code)->symbol;
+			if (symbol && symbol->string)
+				fprintf(stderr, "%s %s\n", gxCodeNames[code->id], symbol->string);
+			else
+				fprintf(stderr, "%s ?\n", gxCodeNames[code->id]);
 			break;
 		
 		case XS_CODE_NEW_PROPERTY:
@@ -2262,12 +2267,13 @@ void fxClassNodeCode(void* it, void* param)
 {
 	txClassNode* self = it;
 	txCoder* coder = param;
+	txClassNode* former = coder->fields;
 	txFlag flag;
 	txInteger prototype = fxCoderUseTemporaryVariable(coder);
 	txInteger constructor = fxCoderUseTemporaryVariable(coder);
+	txDeclareNode* declaration = self->scope->firstDeclareNode;
 	txNode* item = self->items->first;
-	if (self->scope)
-		fxScopeCodingBlock(self->scope, param);
+	fxScopeCodingBlock(self->scope, param);
 	if (self->heritage) {
 		if (self->heritage->description->token == XS_TOKEN_HOST) {
 			fxCoderAddByte(param, 1, XS_CODE_NULL);
@@ -2283,7 +2289,11 @@ void fxClassNodeCode(void* it, void* param)
 		fxCoderAddByte(param, 1, XS_CODE_OBJECT);
 	}
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, prototype);
+	
+	coder->fields = self;
 	fxNodeDispatchCode(self->constructor, param);
+	coder->fields = former;
+	
 	fxCoderAddByte(param, 0, XS_CODE_TO_INSTANCE);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, constructor);
 	fxCoderAddByte(param, -3, XS_CODE_CLASS);
@@ -2292,32 +2302,62 @@ void fxClassNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 0, XS_CODE_NAME, self->symbol);
 	while (item) {
 		txNode* value;
-		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, (item->flags & mxStaticFlag) ? constructor : prototype);
-		if (item->description->token == XS_TOKEN_PROPERTY) {
-			fxCoderAddSymbol(param, 1, XS_CODE_SYMBOL, ((txPropertyNode*)item)->symbol);
-			value = ((txPropertyNode*)item)->value;
+		if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+			if (item->flags & mxStaticFlag)
+				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+			else
+				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, prototype);
+			if (item->description->token == XS_TOKEN_PROPERTY) {
+				fxCoderAddSymbol(param, 1, XS_CODE_SYMBOL, ((txPropertyNode*)item)->symbol);
+				value = ((txPropertyNode*)item)->value;
+			}
+			else {
+				fxNodeDispatchCode(((txPropertyAtNode*)item)->at, param);
+				value = ((txPropertyAtNode*)item)->value;
+			}
+			fxCoderAddByte(param, 0, XS_CODE_AT);
+			fxNodeDispatchCode(value, param);
+			flag = XS_DONT_ENUM_FLAG;
+			if (item->flags & mxMethodFlag)
+				flag |= XS_METHOD_FLAG;
+			else if (item->flags & mxGetterFlag)
+				flag |= XS_GETTER_FLAG;
+			else if (item->flags & mxSetterFlag)
+				flag |= XS_SETTER_FLAG;
+			fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, flag);
 		}
 		else {
-			fxNodeDispatchCode(((txPropertyAtNode*)item)->at, param);
-			value = ((txPropertyAtNode*)item)->value;
+			if (item->description->token == XS_TOKEN_PROPERTY_AT) {
+				fxNodeDispatchCode(((txPropertyAtNode*)item)->at, param);
+				fxCoderAddByte(param, 0, XS_CODE_AT);
+				fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
+				fxCoderAddByte(param, -1, XS_CODE_POP);
+				declaration = declaration->nextDeclareNode;
+			}
 		}
-		fxCoderAddByte(param, 0, XS_CODE_AT);
-		fxNodeDispatchCode(value, param);
-		flag = XS_DONT_ENUM_FLAG;
-		if (item->flags & mxMethodFlag)
-			flag |= XS_METHOD_FLAG;
-		else if (item->flags & mxGetterFlag)
-			flag |= XS_GETTER_FLAG;
-		else if (item->flags & mxSetterFlag)
-			flag |= XS_SETTER_FLAG;
-		fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, flag);
 		item = item->next;
 	}
-	if (self->scope) {
-		txDeclareNode* declaration = self->scope->firstDeclareNode;
+	if (self->symbol) {
 		fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
-		fxScopeCoded(self->scope, param);
+		declaration = declaration->nextDeclareNode;
 	}
+	if (self->constructorFields) {
+		fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
+		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+		fxNodeDispatchCode(self->constructorFields, param);
+		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, constructor);
+		fxCoderAddByte(param, -1, XS_CODE_SET_HOME);
+		fxCoderAddByte(param, -2, XS_CODE_CALL);
+		fxCoderAddByte(param, -1, XS_CODE_POP);
+	}
+	if (self->instanceFields) {
+		fxNodeDispatchCode(self->instanceFields, param);
+		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, prototype);
+		fxCoderAddByte(param, -1, XS_CODE_SET_HOME);
+		fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
+		fxCoderAddByte(param, -1, XS_CODE_POP);
+	}
+	fxScopeCoded(self->scope, param);
 	fxCoderUnuseTemporaryVariables(coder, 2);
 }
 
@@ -2580,6 +2620,21 @@ void fxExpressionsNodeCode(void* it, void* param)
 	}
 }
 
+void fxFieldNodeCode(void* it, void* param) 
+{
+	txFieldNode* self = it;
+	txNode* item = self->item;
+	fxCoderAddByte(param, 1, XS_CODE_THIS);
+	if (item->description->token == XS_TOKEN_PROPERTY) {
+		fxCoderAddSymbol(param, 1, XS_CODE_SYMBOL, ((txPropertyNode*)item)->symbol);
+		fxCoderAddByte(param, 0, XS_CODE_AT);
+	}
+	else
+		fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, ((txPropertyAtNode*)item)->access->declaration->index);
+	fxNodeDispatchCode(self->value, param);
+	fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, 0);
+}
+
 void fxForNodeCode(void* it, void* param) 
 {
 	txForNode* self = it;
@@ -2823,6 +2878,15 @@ void fxFunctionNodeCode(void* it, void* param)
 	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
 	fxScopeCodingParams(self->scope, param);
+	if (self->flags & mxBaseFlag) {
+		if (coder->fields->access) {
+			fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
+			fxCoderAddByte(param, 1, XS_CODE_THIS);
+			fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, coder->fields->access->declaration->index);
+			fxCoderAddByte(param, -2, XS_CODE_CALL);
+			fxCoderAddByte(param, -1, XS_CODE_POP);
+		}
+	}
 	if ((self->flags & mxAsyncFlag) && !(self->flags & mxGeneratorFlag))
 		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 	fxNodeDispatchCode(self->params, param);
@@ -2960,6 +3024,34 @@ void fxIncludeNodeCode(void* it, void* param)
 {
 	txIncludeNode* self = it;
 	fxNodeDispatchCode(self->body, param);
+}
+
+void fxInstanceFieldsNodeCode(void* it, void* param) 
+{
+	txCoder* coder = param;
+	txClassNode* self = coder->fields;
+	txNode* item = self->items->first;
+	while (item) {
+		if (!(item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag))) {
+			txNode* value;
+			if (self->heritage)
+				fxCoderAddByte(param, 1, XS_CODE_GET_THIS);
+			else
+				fxCoderAddByte(param, 1, XS_CODE_THIS);
+			if (item->description->token == XS_TOKEN_PROPERTY) {
+				fxCoderAddSymbol(param, 1, XS_CODE_SYMBOL, ((txPropertyNode*)item)->symbol);
+				value = ((txPropertyNode*)item)->value;
+			}
+			else {
+				fxNodeDispatchCode(((txPropertyAtNode*)item)->at, param);
+				value = ((txPropertyAtNode*)item)->value;
+			}
+			fxCoderAddByte(param, 0, XS_CODE_AT);
+			fxNodeDispatchCode(value, param);
+			fxCoderAddFlag(param, -3, XS_CODE_NEW_PROPERTY, 0);
+		}
+		item = item->next;
+	}
 }
 
 void fxIntegerNodeCode(void* it, void* param) 
@@ -3620,9 +3712,17 @@ void fxStringNodeCode(void* it, void* param)
 void fxSuperNodeCode(void* it, void* param)
 {
 	txSuperNode* self = it;
+	txCoder* coder = param;
 	txInteger c = fxParamsNodeCode(self->params, param);
 	fxCoderAddByte(param, 0 - c, XS_CODE_SUPER);
 	fxCoderAddByte(param, 0, XS_CODE_SET_THIS);
+	if (coder->fields->access) {
+		fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
+		fxCoderAddByte(param, 1, XS_CODE_GET_THIS);
+		fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, coder->fields->access->declaration->index);
+		fxCoderAddByte(param, -2, XS_CODE_CALL);
+		fxCoderAddByte(param, -1, XS_CODE_POP);
+	}
 }
 
 void fxSwitchNodeCode(void* it, void* param) 
