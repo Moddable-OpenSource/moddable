@@ -48,7 +48,12 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp\release\lib
 !ENDIF
 
 # serial port configuration
+!IF "$(UPLOAD_SPEED)"==""
 UPLOAD_SPEED = 921600
+!ENDIF
+!IF "$(DEBUGGER_SPEED)"==""
+DEBUGGER_SPEED = 921600
+!ENDIF
 !IF "$(UPLOAD_PORT)"==""
 UPLOAD_PORT = com8
 !ENDIF
@@ -264,7 +269,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
 !IF "$(DEBUG)"=="1"
-C_DEFINES = $(C_DEFINES) -DmxDebug=1
+C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 !ENDIF
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -336,7 +341,8 @@ debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	$(UPLOAD_TO_ESP)
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 921600 8N1 -elf $(TMP_DIR)\main.elf
+	@echo # using DEBUGGER_SPEED $(DEBUGGER_SPEED)
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	$(UPLOAD_TO_ESP)
