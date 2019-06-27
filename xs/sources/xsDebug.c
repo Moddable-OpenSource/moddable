@@ -1103,6 +1103,81 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 					item++;
 				}
 			}
+// 			if (aProperty->kind == XS_PRIVATE_KIND) {
+// 				char buffer[128] = "";
+// 				txInteger length;
+// 				txSlot* check = aProperty->value.private.check;
+// 				txSlot* item = aProperty->value.private.first;
+// 				fxBufferFunctionName(the, buffer, sizeof(buffer), check, "");
+// 				length = c_strlen(buffer);
+// 				while (item) {
+// 					fxIDToString(the, item->ID, &buffer[length], sizeof(buffer) - length);
+// 					fxEchoProperty(the, item, theList, buffer, -1, C_NULL);
+// 					item = item->next;
+// 				}
+// 			}
+			if (aProperty->kind == XS_PRIVATE_KIND) {
+				txSlot* instanceInspector = fxToInstanceInspector(the, aProperty);
+				char buffer[128] = "(";
+				txSlot* check = aProperty->value.private.check;
+				txSlot* item = aProperty->value.private.first;
+				fxBufferFunctionName(the, &buffer[1], sizeof(buffer) - 1, check, ")");
+				fxEcho(the, "<property");
+				if (instanceInspector) {
+					if (instanceInspector->value.instanceInspector.link)
+						fxEchoFlags(the, " ", aProperty->flag);
+					else
+						fxEchoFlags(the, "-", aProperty->flag);
+				}
+				else
+					fxEchoFlags(the, "+", aProperty->flag);
+				fxEcho(the, " name=\"");
+				fxEchoString(the, buffer);
+				fxEcho(the, "\"");
+				if (instanceInspector) {
+					if (instanceInspector->value.instanceInspector.link) {
+						txInspectorNameLink* link = theList->first;
+						fxEcho(the, " value=\"");
+						while (link) {
+							fxEchoString(the, link->name);
+							if (link == instanceInspector->value.instanceInspector.link)
+								break;
+							fxEcho(the, ".");
+							link = link->next;
+						}
+						fxEcho(the, "\"/>");
+					}
+					else {
+						txInspectorNameLink link;
+						link.previous = theList->last;
+						link.next = C_NULL;
+						link.name = buffer;
+						if (theList->first)
+							theList->last->next = &link;
+						else
+							theList->first = &link;
+						theList->last = &link;
+						instanceInspector->value.instanceInspector.link = &link;
+						fxEchoAddress(the, aProperty);
+						fxEcho(the, ">");
+						while (item) {
+							fxEchoProperty(the, item, theList, C_NULL, -1, C_NULL);
+							item = item->next;
+						}
+						fxEcho(the, "</property>");
+						instanceInspector->value.instanceInspector.link = C_NULL;
+						if (link.previous)
+							link.previous->next = C_NULL;
+						else
+							theList->first = C_NULL;
+						theList->last = link.previous;
+					}
+				}
+				else {
+					fxEchoAddress(the, aProperty);
+					fxEcho(the, "/>");
+				}
+			}
 		}
 		aProperty = aProperty->next;
 	}
@@ -1647,10 +1722,29 @@ void fxListLocal(txMachine* the)
 		}
 		if (aScope) {
 			txSlot* aSlot = frame - 1;
+			txInteger id;
 			while (aSlot > aScope) {
 				aSlot--;
-				if ((aSlot->ID) || ((aSlot->kind == XS_CLOSURE_KIND) && (aSlot->value.closure->ID)))
-					fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+				id = aSlot->ID;
+				if (id < 0) {
+					id &= 0x7FFF;
+					if (id < the->keyCount) {
+						txSlot* key;
+						if (id < the->keyOffset)
+							key = the->keyArrayHost[id];
+						else
+							key = the->keyArray[id - the->keyOffset];
+						if (key) {
+							txKind kind = mxGetKeySlotKind(key);
+							if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
+								 if (key->value.key.string[0] != '#')
+									fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+							}
+							else
+								fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+						}
+					}
+				}
 			}
 		}
 	}
