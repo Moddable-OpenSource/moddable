@@ -90,6 +90,7 @@ typedef struct {
 	txNodeCall hoist;
 	txNodeCall code;
 	txNodeCall codeAssign;
+	txNodeCall codeDelete;
 	txNodeCall codeReference;
 } txNodeDispatch;
 
@@ -403,6 +404,22 @@ typedef struct {
 
 typedef struct {
 	mxNodePart;
+	// mxAccessNodePart
+	txSymbol* symbol;
+	txNode* reference;
+	txDeclareNode* declaration;
+} txPrivateMemberNode;
+
+typedef struct {
+	mxNodePart;
+	txSymbol* symbol;
+	txNode* value;
+	txAccessNode* access;
+	txAccessNode* valueAccess;
+} txPrivatePropertyNode;
+
+typedef struct {
+	mxNodePart;
 	txNode* body;
 	txScope* scope;
 	txInteger scopeCount;
@@ -670,6 +687,7 @@ struct sxParser {
 	txSymbol* nextSymbol;
 	txSymbol* newTargetSymbol;
 	txSymbol* ofSymbol;
+	txSymbol* privateConstructorSymbol;
 	txSymbol* prototypeSymbol;
 	txSymbol* rawSymbol;
 	txSymbol* ReferenceErrorSymbol;
@@ -807,6 +825,9 @@ enum {
 	XS_TOKEN_PARAMS_BINDING,
 	XS_TOKEN_PLUS,
 	XS_TOKEN_PRIVATE,
+	XS_TOKEN_PRIVATE_IDENTIFIER,
+	XS_TOKEN_PRIVATE_MEMBER,
+	XS_TOKEN_PRIVATE_PROPERTY,
 	XS_TOKEN_PROGRAM,
 	XS_TOKEN_PROPERTY,
 	XS_TOKEN_PROPERTY_AT,
@@ -868,7 +889,7 @@ enum {
 	/* mxStrictFlag = 1 << 4, */
 	/* mxSuperFlag = 1 << 5, */
 	/* mxTargetFlag = 1 << 6, */
-	mxParserFlags = mxCFlag | mxDebugFlag | mxEvalFlag | mxProgramFlag,
+	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
 
 	mxArgumentsFlag = 1 << 7,
 	mxArrowFlag = 1 << 8,
@@ -1002,6 +1023,7 @@ extern void fxParamsNodeBind(void* it, void* param);
 extern void fxParamsBindingNodeBind(void* it, void* param);
 extern void fxParamsBindingNodeHoist(void* it, void* param);
 extern void fxPostfixExpressionNodeBind(void* it, void* param);
+extern void fxPrivateMemberNodeBind(void* it, void* param);
 extern void fxProgramNodeBind(void* it, void* param); 
 extern void fxProgramNodeHoist(void* it, void* param); 
 extern void fxSpreadNodeBind(void* it, void* param);
@@ -1020,10 +1042,12 @@ extern txScript* fxParserCode(txParser* parser);
 
 extern void fxNodeCode(void* it, void* param); 
 extern void fxNodeCodeAssign(void* it, void* param); 
+extern void fxNodeCodeDelete(void* it, void* param);
 extern void fxNodeCodeReference(void* it, void* param); 
 
 extern void fxAccessNodeCode(void* it, void* param); 
 extern void fxAccessNodeCodeAssign(void* it, void* param); 
+extern void fxAccessNodeCodeDelete(void* it, void* param);
 extern void fxAccessNodeCodeReference(void* it, void* param); 
 extern void fxAndExpressionNodeCode(void* it, void* param); 
 extern void fxArgumentsNodeCode(void* it, void* param);
@@ -1052,6 +1076,7 @@ extern void fxDeleteNodeCode(void* it, void* param);
 extern void fxDoNodeCode(void* it, void* param); 
 extern void fxExportNodeCode(void* it, void* param); 
 extern void fxExpressionsNodeCode(void* it, void* param); 
+extern void fxExpressionsNodeCodeDelete(void* it, void* param);
 extern void fxFieldNodeCode(void* it, void* param); 
 extern void fxForNodeCode(void* it, void* param); 
 extern void fxForInForOfNodeCode(void* it, void* param); 
@@ -1062,14 +1087,15 @@ extern void fxIncludeNodeCode(void* it, void* param);
 extern void fxImportNodeCode(void* it, void* param); 
 extern void fxImportCallNodeCode(void* it, void* param); 
 extern void fxImportMetaNodeCode(void* it, void* param); 
-extern void fxInstanceFieldsNodeCode(void* it, void* param); 
 extern void fxIntegerNodeCode(void* it, void* param); 
 extern void fxLabelNodeCode(void* it, void* param); 
 extern void fxMemberNodeCode(void* it, void* param); 
 extern void fxMemberNodeCodeAssign(void* it, void* param); 
+extern void fxMemberNodeCodeDelete(void* it, void* param);
 extern void fxMemberNodeCodeReference(void* it, void* param); 
 extern void fxMemberAtNodeCode(void* it, void* param); 
 extern void fxMemberAtNodeCodeAssign(void* it, void* param); 
+extern void fxMemberAtNodeCodeDelete(void* it, void* param);
 extern void fxMemberAtNodeCodeReference(void* it, void* param); 
 extern void fxModuleNodeCode(void* it, void* param); 
 extern void fxNewNodeCode(void* it, void* param); 
@@ -1079,6 +1105,10 @@ extern void fxObjectBindingNodeCodeAssign(void* it, void* param);
 extern void fxOrExpressionNodeCode(void* it, void* param); 
 extern void fxParamsBindingNodeCode(void* it, void* param); 
 extern void fxPostfixExpressionNodeCode(void* it, void* param); 
+extern void fxPrivateMemberNodeCode(void* it, void* param); 
+extern void fxPrivateMemberNodeCodeAssign(void* it, void* param); 
+extern void fxPrivateMemberNodeCodeDelete(void* it, void* param);
+extern void fxPrivateMemberNodeCodeReference(void* it, void* param); 
 extern void fxProgramNodeCode(void* it, void* param); 
 extern void fxQuestionMarkNodeCode(void* it, void* param); 
 extern void fxRegexpNodeCode(void* it, void* param);
@@ -1094,6 +1124,7 @@ extern void fxThrowNodeCode(void* it, void* param);
 extern void fxTryNodeCode(void* it, void* param); 
 extern void fxUnaryExpressionNodeCode(void* it, void* param);
 extern void fxUndefinedNodeCodeAssign(void* it, void* param);
+extern void fxUndefinedNodeCodeDelete(void* it, void* param);
 extern void fxUndefinedNodeCodeReference(void* it, void* param);
 extern void fxValueNodeCode(void* it, void* param);
 extern void fxWhileNodeCode(void* it, void* param); 

@@ -1224,6 +1224,10 @@ void fxGetNextTokenAux(txParser* parser)
 		default:
 			p = parser->buffer;
 			q = p + parser->bufferSize - 1;
+			if (parser->character == '#') {
+				*p++ = '#';
+				fxGetNextCharacter(parser);
+			}
 			if (fxIsIdentifierFirst(parser->character)) {
 				p = fxUTF8Buffer(parser, parser->character, p, q);				
 				fxGetNextCharacter(parser);
@@ -1260,7 +1264,13 @@ void fxGetNextTokenAux(txParser* parser)
 					}
 					else {
 						*p = 0;
-						fxGetNextKeyword(parser);
+						if (parser->buffer[0] == '#') {
+							parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
+							parser->token2 = XS_TOKEN_PRIVATE_IDENTIFIER;
+						}
+						else {
+							fxGetNextKeyword(parser);
+						}
 						break;
 					}
 				}

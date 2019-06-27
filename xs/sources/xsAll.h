@@ -265,6 +265,7 @@ typedef union {
 	struct { txSlot* cache; txSlot* instance; } hostInspector;
 	struct { txSlot* slot; txInspectorNameLink* link; } instanceInspector;
 	struct { txSlot* closure; txSlot* module; } export;
+	struct { txSlot* check; txSlot* first; } private;
 } txValue;
 
 struct sxBlock {
@@ -804,6 +805,10 @@ extern txSlot* fxGetIndexProperty(txMachine* the, txSlot* array, txIndex index);
 extern txIndex fxGetIndexSize(txMachine* the, txSlot* array);
 extern txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIndex index);
 extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
+
+extern txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
+extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag);
+extern txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag);
 
 /* xsGlobal.c */
 extern const txBehavior gxGlobalBehavior;
@@ -1773,6 +1778,7 @@ enum {
 	XS_KEY_KIND,
 	XS_KEY_X_KIND, //40
 	XS_LIST_KIND,
+	XS_PRIVATE_KIND,
 	XS_STACK_KIND,
 	XS_VAR_KIND,
 	XS_CALLBACK_X_KIND,

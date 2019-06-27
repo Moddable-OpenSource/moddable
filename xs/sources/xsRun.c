@@ -45,7 +45,7 @@
 extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
 static void fxRunBase(txMachine* the);
 static void fxRunConstructor(txMachine* the);
-static txBoolean fxRunDefine(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
+static txBoolean fxRunDefine(txMachine* the, txSlot* instance, txSlot* check, txID id, txIndex index, txSlot* slot, txFlag mask);
 static txBoolean fxRunDelete(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunDerived(txMachine* the);
 static void fxRunExtends(txMachine* the);
@@ -410,6 +410,8 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_GET_CLOSURE_2,
 		&&XS_CODE_GET_LOCAL_1,
 		&&XS_CODE_GET_LOCAL_2,
+		&&XS_CODE_GET_PRIVATE_1,
+		&&XS_CODE_GET_PRIVATE_2,
 		&&XS_CODE_GET_PROPERTY,
 		&&XS_CODE_GET_PROPERTY_AT,
 		&&XS_CODE_GET_SUPER,
@@ -446,7 +448,10 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_NEW,
 		&&XS_CODE_NEW_CLOSURE,
 		&&XS_CODE_NEW_LOCAL,
+		&&XS_CODE_NEW_PRIVATE_1,
+		&&XS_CODE_NEW_PRIVATE_2,
 		&&XS_CODE_NEW_PROPERTY,
+		&&XS_CODE_NEW_PROPERTY_AT,
 		&&XS_CODE_NEW_TEMPORARY,
 		&&XS_CODE_NOT,
 		&&XS_CODE_NOT_EQUAL,
@@ -483,6 +488,8 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_SET_HOME,
 		&&XS_CODE_SET_LOCAL_1,
 		&&XS_CODE_SET_LOCAL_2,
+		&&XS_CODE_SET_PRIVATE_1,
+		&&XS_CODE_SET_PRIVATE_2,
 		&&XS_CODE_SET_PROPERTY,
 		&&XS_CODE_SET_PROPERTY_AT,
 		&&XS_CODE_SET_SUPER,
@@ -945,7 +952,7 @@ XS_CODE_JUMP:
  			
 		mxCase(XS_CODE_START_ASYNC_GENERATOR)
 			mxSkipCode(1);
-             if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
+            if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
 				mxRunDebug(XS_TYPE_ERROR, "new async generator");
 			slot = mxBehaviorGetProperty(the, mxFrameFunction->value.reference, mxID(_prototype), XS_NO_ID, XS_ANY);
 			mxPushKind(slot->kind);
@@ -1995,6 +2002,26 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_TYPE_ERROR, "get super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
 			goto XS_CODE_GET_ALL;
+			
+		mxCase(XS_CODE_GET_PRIVATE_2)
+			index = mxRunU2(1);
+			mxNextCode(3);
+			goto XS_CODE_GET_PRIVATE;
+		mxCase(XS_CODE_GET_PRIVATE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_GET_PRIVATE:
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceIndex(the, index - 2);
+#endif
+			slot = (mxFrame - index);
+			mxToInstance(mxStack);
+			offset = slot->ID;
+			index = XS_NO_ID;
+			slot = fxGetPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset, XS_ANY);
+			if (!slot)
+				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
+			goto XS_CODE_GET_ALL;
 		mxCase(XS_CODE_GET_PROPERTY_AT)
 			variable = (mxStack + 1)->value.reference;
 			offset = mxStack->value.at.id;
@@ -2042,14 +2069,40 @@ XS_CODE_JUMP:
 			mxStack->value = slot->value;
 			mxBreak;
 			
-		mxCase(XS_CODE_NEW_PROPERTY)
-			byte = mxRunU1(1);
-			variable = (mxStack + 2)->value.reference;
+		mxCase(XS_CODE_NEW_PRIVATE_2)
+			index = mxRunU2(1);
+			mxNextCode(3);
+			goto XS_CODE_NEW_PRIVATE;
+		mxCase(XS_CODE_NEW_PRIVATE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_NEW_PRIVATE:
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceIndex(the, index - 2);
+#endif
+			slot = (mxFrame - index);
+			mxToInstance(mxStack + 1);
+			offset = slot->ID;
+			index = XS_NO_ID;
+			slot = slot->value.closure->value.reference;
+			goto XS_CODE_NEW_PROPERTY_ALL;
+		mxCase(XS_CODE_NEW_PROPERTY_AT)
+			mxToInstance(mxStack + 2);
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
-#ifdef mxTrace
-			if (gxDoTrace) fxTraceID(the, (txID)offset);
-#endif
+			slot = C_NULL;
+			*(mxStack + 1) = *mxStack;
+			mxStack++;
+			mxNextCode(1);
+			goto XS_CODE_NEW_PROPERTY_ALL;
+		mxCase(XS_CODE_NEW_PROPERTY)
+			mxToInstance(mxStack + 1);
+			offset = mxRunS2(1);
+			index = XS_NO_ID;
+			slot = C_NULL;
+			mxNextCode(3);
+		XS_CODE_NEW_PROPERTY_ALL:
+			byte = mxRunU1(1);
 			mxSaveState;
 			if (byte & XS_GETTER_FLAG) {
 				mxStack->value.accessor.getter = fxToInstance(the, mxStack);
@@ -2062,14 +2115,14 @@ XS_CODE_JUMP:
 				mxStack->kind = XS_ACCESSOR_KIND;
 			}
 			mxStack->flag = byte & XS_GET_ONLY;
-			index = fxRunDefine(the, variable, (txID)offset, index, mxStack, byte | XS_GET_ONLY);
+			index = fxRunDefine(the, variable, slot, (txID)offset, index, mxStack, byte | XS_GET_ONLY);
 			mxRestoreState;
-			mxStack += 3;
+			mxStack += 2;
 			if (!index)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", (txID)offset);
 			mxNextCode(2);
 			mxBreak;
-		
+			
 		mxCase(XS_CODE_SET_VARIABLE)
 			mxToInstance(mxStack + 1);
 			offset = mxRunS2(1);
@@ -2107,6 +2160,25 @@ XS_CODE_JUMP:
 				slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_OWN);
 				mxRestoreState;
 			}
+			goto XS_CODE_SET_ALL;
+		mxCase(XS_CODE_SET_PRIVATE_2)
+			index = mxRunU2(1);
+			mxNextCode(3);
+			goto XS_CODE_SET_PRIVATE;
+		mxCase(XS_CODE_SET_PRIVATE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_SET_PRIVATE:
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceIndex(the, index - 2);
+#endif
+			slot = (mxFrame - index);
+			mxToInstance(mxStack + 1);
+			offset = slot->ID;
+			index = XS_NO_ID;
+			slot = fxSetPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset, XS_ANY);
+			if (!slot)
+				mxRunDebugID(XS_TYPE_ERROR, "set %s: undefined private property", (txID)offset);
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_PROPERTY_AT)
 			variable = (mxStack + 2)->value.reference;
@@ -2194,7 +2266,7 @@ XS_CODE_JUMP:
 			mxFunctionInstanceHome(variable)->value.home.object = slot->value.reference;
 			mxSaveState;
 			slot->flag = XS_GET_ONLY;
-			fxRunDefine(the, variable, mxID(_prototype), XS_NO_ID, slot, XS_GET_ONLY);
+			fxRunDefine(the, variable, C_NULL, mxID(_prototype), XS_NO_ID, slot, XS_GET_ONLY);
 			slot = mxBehaviorSetProperty(the, slot->value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 			mxRestoreState;
 			slot->flag |= XS_DONT_ENUM_FLAG;
@@ -3727,13 +3799,18 @@ void fxRunConstructor(txMachine* the)
 	mxPullSlot(mxThis);
 }
 
-txBoolean fxRunDefine(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask) 
+txBoolean fxRunDefine(txMachine* the, txSlot* instance, txSlot* check, txID id, txIndex index, txSlot* slot, txFlag mask) 
 {
 	txBoolean result;
-	fxBeginHost(the);
-	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
-	result = mxBehaviorDefineOwnProperty(the, instance, id, index, slot, mask);
-	fxEndHost(the);
+	if (check) {
+		result = fxDefinePrivateProperty(the, instance, check, id, slot, mask);
+	}
+	else {
+		fxBeginHost(the);
+		mxCheck(the, instance->kind == XS_INSTANCE_KIND);
+		result = mxBehaviorDefineOwnProperty(the, instance, id, index, slot, mask);
+		fxEndHost(the);
+	}
 	return result;
 }
 

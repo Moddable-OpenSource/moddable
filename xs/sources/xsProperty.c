@@ -434,8 +434,148 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target)
 	}
 }
 
+txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask) 
+{
+    txSlot** address;
+    txSlot* property;
+	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+		else
+			instance = fxAliasInstance(the, instance); //@@
+	}
+	address = &(instance->next);
+	while ((property = *address)) {
+		if (property->kind == XS_PRIVATE_KIND) {
+			if (property->value.private.check == check) {
+				break;
+			}
+		}
+		address = &(property->next);
+	}
+	if (!property) {
+		*address = property = fxNewSlot(the);
+        property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+        property->kind = XS_PRIVATE_KIND;
+        property->value.private.check = check;
+		property->value.private.first = C_NULL;
+	}
+	address = &(property->value.private.first);
+	while ((property = *address)) {
+		if (property->ID == id)
+			break;
+		address = &(property->next);
+	}
+	if (mask & XS_ACCESSOR_FLAG) {
+		if (property) {
+			if (property->kind != XS_ACCESSOR_KIND)
+				return 0;
+		}
+		else {
+			*address = property = fxNewSlot(the);
+			property->ID = id;
+			property->kind = XS_ACCESSOR_KIND;
+			property->value.accessor.getter = C_NULL;
+			property->value.accessor.setter = C_NULL;
+		}
+		if (mask & XS_GETTER_FLAG) {
+			txSlot* function = property->value.accessor.getter = slot->value.accessor.getter;
+			txSlot* home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+			fxRenameFunction(the, function, id, mxID(_get), "get ");
+		}
+		else {
+			txSlot* function = property->value.accessor.setter = slot->value.accessor.setter;
+			txSlot* home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+			fxRenameFunction(the, function, id, mxID(_set), "set ");
+		}
+	}
+	else {
+		if (property)
+			return 0;
+		*address = property = fxNewSlot(the);
+        property->ID = id;
+        property->kind = slot->kind;
+		property->value = slot->value;
+		if ((mask & XS_METHOD_FLAG) && ((slot->value.reference->flag & XS_MARK_FLAG) == 0)) {
+			txSlot* function = property->value.reference;
+			txSlot* home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+			fxRenameFunction(the, function, id, mxID(_value), C_NULL);
+        	property->flag = XS_DONT_SET_FLAG;
+		}
+	}
+	return 1;
+}
 
+txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag) 
+{
+    txSlot* result;
+	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+	}
+	result = instance->next;
+	while (result) {
+		if (result->kind == XS_PRIVATE_KIND) {
+			if (result->value.private.check == check)
+				break;
+		}
+		result = result->next;
+	}
+	if (result) {
+		result = result->value.private.first;
+		while (result) {
+			if (result->ID == id)
+				break;
+			result = result->next;
+		}
+	}
+	if (result) {
+		if ((result->kind == XS_ACCESSOR_KIND) && (result->value.accessor.getter == C_NULL))
+			result = C_NULL;
+	}
+	return result;
+}
 
+txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag) 
+{
+    txSlot* result;
+	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+	}
+	result = instance->next;
+	while (result) {
+		if (result->kind == XS_PRIVATE_KIND) {
+			if (result->value.private.check == check)
+				break;
+		}
+		result = result->next;
+	}
+	if (result) {
+		result = result->value.private.first;
+		while (result) {
+			if (result->ID == id)
+				break;
+			result = result->next;
+		}
+	}
+	if (result) {
+		if ((result->kind == XS_ACCESSOR_KIND) && (result->value.accessor.setter == C_NULL))
+			result = C_NULL;
+		else if (result->flag & XS_DONT_SET_FLAG)
+			result = C_NULL;
+	}
+	return result;
+}
 
 
 

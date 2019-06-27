@@ -96,6 +96,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->nextSymbol = fxNewParserSymbol(parser, "next");
 	parser->newTargetSymbol = fxNewParserSymbol(parser, "new.target");
 	parser->ofSymbol = fxNewParserSymbol(parser, "of");
+	parser->privateConstructorSymbol = fxNewParserSymbol(parser, "#constructor");
 	parser->prototypeSymbol = fxNewParserSymbol(parser, "prototype");
 	parser->rawSymbol = fxNewParserSymbol(parser, "raw");
 	parser->ReferenceErrorSymbol = fxNewParserSymbol(parser, "ReferenceError");

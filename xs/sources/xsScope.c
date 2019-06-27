@@ -88,6 +88,8 @@ static void fxMemberNodeBindCompound(void* it, void* param, txAssignNode* compou
 static void fxMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 static void fxMemberAtNodeBindCompound(void* it, void* param, txAssignNode* compound);
 static void fxMemberAtNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
+static void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound);
+static void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 
 void fxParserBind(txParser* parser)
 {
@@ -345,7 +347,6 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 	}
 }
 
-
 void fxNodeHoist(void* it, void* param) 
 {
 	txNode* node = it;
@@ -428,20 +429,43 @@ void fxClassNodeHoist(void* it, void* param)
 	txHoister* hoister = param;
 	txClassNode* former = hoister->fields;
 	txNode* item = self->items->first;
-	self->scope = fxScopeNew(hoister, it, XS_TOKEN_BLOCK);
 	if (self->heritage)
 		fxNodeDispatchHoist(self->heritage, param);
+	self->scope = fxScopeNew(hoister, it, XS_TOKEN_BLOCK);
 	while (item) {
-		if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+		if (item->description->token == XS_TOKEN_PROPERTY) {
 		}
-		else {
-			if (item->description->token == XS_TOKEN_PROPERTY_AT) {
+		else if (item->description->token == XS_TOKEN_PROPERTY_AT) {
+			if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+			}
+			else {
 				txSymbol* symbol = fxNewParserChunkClear(hoister->parser, sizeof(txSymbol));
 				txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
 				symbol->ID = -1;
 				node->flags |= mxDeclareNodeClosureFlag;
 				fxScopeAddDeclareNode(self->scope, node);
 				((txPropertyAtNode*)item)->access = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+			}
+		}
+		else {
+			txSymbol* symbol = ((txPrivatePropertyNode*)item)->symbol;
+			txDeclareNode* node = fxScopeGetDeclareNode(self->scope, symbol);
+			if (node) {
+                txUnsigned flags = (node->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag)) ^ (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
+				if ((flags != (mxGetterFlag | mxSetterFlag)))
+					fxReportLineError(hoister->parser, item->line, "duplicate %s", symbol->string);
+			}
+			node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+			node->flags |= mxDeclareNodeClosureFlag | (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
+			fxScopeAddDeclareNode(self->scope, node);
+			((txPrivatePropertyNode*)item)->access = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+			if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+				txSymbol* symbol = fxNewParserChunkClear(hoister->parser, sizeof(txSymbol));
+				txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+				symbol->ID = -1;
+				node->flags |= mxDeclareNodeClosureFlag;
+				fxScopeAddDeclareNode(self->scope, node);
+				((txPrivatePropertyNode*)item)->valueAccess = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
 			}
 		}
 		item = item->next;
@@ -461,12 +485,12 @@ void fxClassNodeHoist(void* it, void* param)
 	}
 	hoister->fields = self;
 	fxNodeDispatchHoist(self->constructor, param);
-	hoister->fields = former;
 	fxNodeListDistribute(self->items, fxNodeDispatchHoist, param);
 	if (self->constructorFields)
 		fxNodeDispatchHoist(self->constructorFields, param);
 	if (self->instanceFields)
 		fxNodeDispatchHoist(self->instanceFields, param);
+	hoister->fields = former;
 	fxScopeHoisted(self->scope, param);
 }
 
@@ -888,17 +912,17 @@ void fxClassNodeBind(void* it, void* param)
 	txBinder* binder = param;
 	txClassNode* former = binder->fields;
 	fxBinderPushVariables(param, 2);
-	fxScopeBinding(self->scope, param);
 	if (self->heritage)
 		fxNodeDispatchBind(self->heritage, param);
+	fxScopeBinding(self->scope, param);
 	binder->fields = self;
 	fxNodeDispatchBind(self->constructor, param);
-	binder->fields = former;
 	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
 	if (self->constructorFields)
 		fxNodeDispatchBind(self->constructorFields, param);
 	if (self->instanceFields)
 		fxNodeDispatchBind(self->instanceFields, param);
+	binder->fields = former;
 	fxScopeBound(self->scope, param);
 	fxBinderPopVariables(param, 2);
 }
@@ -910,6 +934,7 @@ void fxCompoundExpressionNodeBind(void* it, void* param)
 	case XS_TOKEN_ACCESS: fxAccessNodeBindCompound(self->reference, param, self); break;
 	case XS_TOKEN_MEMBER: fxMemberNodeBindCompound(self->reference, param, self); break;
 	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindCompound(self->reference, param, self); break;
+	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindCompound(self->reference, param, self); break;
 	}
 }
 
@@ -974,7 +999,13 @@ void fxFieldNodeBind(void* it, void* param)
 	txNode* item = self->item;
 	if (item->description->token == XS_TOKEN_PROPERTY_AT)
 		fxScopeLookup(binder->scope, ((txPropertyAtNode*)item)->access, 0);
-	fxNodeDispatchBind(self->value, param);
+	else if (item->description->token == XS_TOKEN_PRIVATE_PROPERTY) {
+		if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag))
+			fxScopeLookup(binder->scope, ((txPrivatePropertyNode*)item)->valueAccess, 0);
+		fxScopeLookup(binder->scope, ((txPrivatePropertyNode*)item)->access, 0);
+	}
+	if (self->value)
+		fxNodeDispatchBind(self->value, param);
 }
 
 void fxForNodeBind(void* it, void* param) 
@@ -1198,7 +1229,33 @@ void fxPostfixExpressionNodeBind(void* it, void* param)
 	case XS_TOKEN_ACCESS: fxAccessNodeBindPostfix(self->left, param, self); break;
 	case XS_TOKEN_MEMBER: fxMemberNodeBindPostfix(self->left, param, self); break;
 	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindPostfix(self->left, param, self); break;
+	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindPostfix(self->left, param, self); break;
 	}
+}
+
+void fxPrivateMemberNodeBind(void* it, void* param) 
+{
+	txBinder* binder = param;
+	txPrivateMemberNode* self = it;
+	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
+	if (!self->declaration)
+		fxReportLineError(binder->parser, self->line, "invalid private identifier");
+	fxNodeDispatchBind(self->reference, param);
+}
+
+void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound) 
+{
+	txPrivateMemberNode* self = it;
+	fxNodeDispatchBind(self->reference, param);
+	fxNodeDispatchBind(compound->value, param);
+}
+
+void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
+{
+	txPrivateMemberNode* self = it;
+	fxNodeDispatchBind(self->reference, param);
+	fxBinderPushVariables(param, 1);
+	fxBinderPopVariables(param, 1);
 }
 
 void fxProgramNodeBind(void* it, void* param) 
