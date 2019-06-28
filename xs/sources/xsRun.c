@@ -395,6 +395,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_EQUAL,
 		&&XS_CODE_EVAL,
 		&&XS_CODE_EVAL_ENVIRONMENT,
+		&&XS_CODE_EVAL_PRIVATE,
 		&&XS_CODE_EVAL_REFERENCE,
 		&&XS_CODE_EXCEPTION,
 		&&XS_CODE_EXPONENTIATION,
@@ -3671,6 +3672,26 @@ XS_CODE_JUMP:
 			mxSaveState;
 			gxDefaults.runEvalEnvironment(the);
 			mxRestoreState;
+			mxBreak;
+		mxCase(XS_CODE_EVAL_PRIVATE)
+			offset = mxRunS2(1);
+			mxNextCode(3);
+			variable = mxFrameEnvironment;
+			if (variable->kind == XS_REFERENCE_KIND) {
+				variable = variable->value.reference;
+		XS_CODE_EVAL_PRIVATE_AGAIN:
+				if (variable) {
+					slot = mxBehaviorGetProperty(the, variable, (txID)offset, XS_NO_ID, XS_OWN);
+					if (slot) {
+						mxPushKind(slot->kind);
+						mxStack->value = slot->value;
+						mxBreak;
+					}
+					variable = variable->value.instance.prototype;
+					goto XS_CODE_EVAL_PRIVATE_AGAIN;
+				}
+			}
+			mxRunDebugID(XS_SYNTAX_ERROR, "eval %s: undefined private property", (txID)offset);
 			mxBreak;
 		mxCase(XS_CODE_EVAL_REFERENCE)
 			offset = mxRunS2(1);

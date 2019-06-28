@@ -237,6 +237,7 @@ typedef struct {
 	txNode* constructorFields;
 	txNode* instanceFields;
 	txNode* constructor;
+	txScope* symbolScope;
 	txScope* scope;
 	txAccessNode* access;
 } txClassNode;
