@@ -69,6 +69,14 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	to = alias;
 	while (from) {
 		to = to->next = fxDuplicateSlot(the, from);
+		if (to->kind == XS_PRIVATE_KIND) {
+			txSlot** address = &to->value.private.first;
+			txSlot* slot;
+			while ((slot = *address)) {
+				*address = slot = fxDuplicateSlot(the, slot);
+				address = &slot->next;
+			}
+		}
 		from = from->next;
 	}
 	return alias;

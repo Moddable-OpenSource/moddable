@@ -2233,7 +2233,7 @@ XS_CODE_JUMP:
 				*(mxStack) = *(mxStack + 5);
 				goto XS_CODE_CALL_ALL;
 			}
-			if (slot->flag & XS_DONT_SET_FLAG) {
+			if (slot->flag & (XS_DONT_SET_FLAG | XS_MARK_FLAG)) {
 				if (mxFrame->flag & XS_STRICT_FLAG) {
 					mxRunDebugID(XS_TYPE_ERROR, "set %s: not writable", (txID)offset);
 				}

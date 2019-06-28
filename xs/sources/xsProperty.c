@@ -439,13 +439,6 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
     txSlot** address;
     txSlot* property;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
-	if (instance->ID >= 0) {
-		txSlot* alias = the->aliasArray[instance->ID];
-		if (alias)
-			instance = alias;
-		else
-			instance = fxAliasInstance(the, instance); //@@
-	}
 	address = &(instance->next);
 	while ((property = *address)) {
 		if (property->kind == XS_PRIVATE_KIND) {
@@ -551,6 +544,8 @@ txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
+		else
+			instance = fxAliasInstance(the, instance);
 	}
 	result = instance->next;
 	while (result) {
