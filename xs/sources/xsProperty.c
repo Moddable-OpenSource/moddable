@@ -504,7 +504,7 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	return 1;
 }
 
-txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag) 
+txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id) 
 {
     txSlot* result;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
@@ -536,7 +536,7 @@ txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 	return result;
 }
 
-txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag) 
+txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id) 
 {
     txSlot* result;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);

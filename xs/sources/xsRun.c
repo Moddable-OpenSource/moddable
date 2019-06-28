@@ -2019,7 +2019,7 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack);
 			offset = slot->ID;
 			index = XS_NO_ID;
-			slot = fxGetPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset, XS_ANY);
+			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
 			goto XS_CODE_GET_ALL;
@@ -2177,7 +2177,7 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack + 1);
 			offset = slot->ID;
 			index = XS_NO_ID;
-			slot = fxSetPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset, XS_ANY);
+			slot = gxDefaults.setPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: undefined private property", (txID)offset);
 			goto XS_CODE_SET_ALL;
@@ -3824,7 +3824,7 @@ txBoolean fxRunDefine(txMachine* the, txSlot* instance, txSlot* check, txID id, 
 {
 	txBoolean result;
 	if (check) {
-		result = fxDefinePrivateProperty(the, instance, check, id, slot, mask);
+		result = gxDefaults.definePrivateProperty(the, instance, check, id, slot, mask);
 	}
 	else {
 		fxBeginHost(the);

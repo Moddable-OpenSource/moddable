@@ -474,6 +474,18 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxRunImport,\n");
 	else
 		fprintf(file, "\tfxDeadStrip,\n");
+	if (fxIsCodeUsed(XS_CODE_NEW_PRIVATE_1) || fxIsCodeUsed(XS_CODE_NEW_PRIVATE_2))
+		fprintf(file, "\tfxDefinePrivateProperty,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_GET_PRIVATE_1) || fxIsCodeUsed(XS_CODE_GET_PRIVATE_2))
+		fprintf(file, "\tfxGetPrivateProperty,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCodeUsed(XS_CODE_SET_PRIVATE_1) || fxIsCodeUsed(XS_CODE_SET_PRIVATE_2))
+		fprintf(file, "\tfxSetPrivateProperty,\n");
+	else
+		fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");

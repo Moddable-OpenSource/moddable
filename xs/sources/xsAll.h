@@ -114,7 +114,10 @@ typedef struct {
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
-	void (*runImport)(txMachine*);
+    void (*runImport)(txMachine*);
+	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
+	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
+	txSlot* (*setPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 } txDefaults;
 
 enum {
@@ -807,8 +810,8 @@ extern txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* arra
 extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
 
 extern txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
-extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag);
-extern txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txFlag flag);
+extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
+extern txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
 
 /* xsGlobal.c */
 extern const txBehavior gxGlobalBehavior;

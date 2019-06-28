@@ -54,6 +54,9 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxNewFunctionLength,
 	fxNewFunctionName,
 	fxRunImport,
+	fxDefinePrivateProperty,
+	fxGetPrivateProperty,
+	fxSetPrivateProperty,
 };
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
