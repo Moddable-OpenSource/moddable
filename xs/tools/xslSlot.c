@@ -830,6 +830,14 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fxPrintAddress(the, file, slot->value.list.last);
 		fprintf(file, " } }");
 	} break;
+	case XS_PRIVATE_KIND: {
+		fprintf(file, ".kind = XS_PRIVATE_KIND}, ");
+		fprintf(file, ".value = { .private = { ");
+		fxPrintAddress(the, file, slot->value.private.check);
+		fprintf(file, ", ");
+		fxPrintAddress(the, file, slot->value.private.first);
+		fprintf(file, " } }");
+	} break;
 	case XS_STACK_KIND: {
 		fprintf(file, ".kind = XS_STACK_KIND}, ");
 	} break;
