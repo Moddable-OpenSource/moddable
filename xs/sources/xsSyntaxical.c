@@ -1872,6 +1872,12 @@ void fxCallExpression(txParser* parser)
 			fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
 		}
 		else if (parser->token == XS_TOKEN_LEFT_PARENTHESIS) {
+			if (parser->root->description->token == XS_TOKEN_ACCESS) {
+				txAccessNode* access = (txAccessNode*)parser->root;
+				if (access->symbol == parser->evalSymbol) {
+					parser->flags |= mxEvalFlag;
+				}
+			}
 			fxParameters(parser);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
 		}
@@ -2030,8 +2036,6 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 		}
 		if (aSymbol == parser->argumentsSymbol)
 			parser->flags |= mxArgumentsFlag;
-		if (aSymbol == parser->evalSymbol)
-			parser->flags |= mxEvalFlag;
 		fxPushSymbol(parser, aSymbol);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_ACCESS, aLine);
 		break;
