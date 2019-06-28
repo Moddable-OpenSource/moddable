@@ -300,10 +300,10 @@ void fxClassNodeDistribute(void* it, txNodeCall call, void* param)
 		(*call)(self->heritage, param);
 	(*call)(self->constructor, param);
 	fxNodeListDistribute(self->items, call, param);
-	if (self->constructorFields)
-		(*call)(self->constructorFields, param);
-	if (self->instanceFields)
-		(*call)(self->instanceFields, param);
+	if (self->constructorInit)
+		(*call)(self->constructorInit, param);
+	if (self->instanceInit)
+		(*call)(self->instanceInit, param);
 }
 
 void fxCatchNodeDistribute(void* it, txNodeCall call, void* param)

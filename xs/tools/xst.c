@@ -650,14 +650,19 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "hashbang")
-			||	!strcmp((char*)node->data.scalar.value, "export-star-as-namespace-from-module")
+			if (!strcmp((char*)node->data.scalar.value, "export-star-as-namespace-from-module")
+			||	!strcmp((char*)node->data.scalar.value, "hashbang")
+			||	!strcmp((char*)node->data.scalar.value, "host-gc-required")
 			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
+			||	!strcmp((char*)node->data.scalar.value, "proxy-missing-checks")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
+			||	!strcmp((char*)node->data.scalar.value, "FinalizationGroup")
+			||	!strcmp((char*)node->data.scalar.value, "Promise.allSettled")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
+			||	!strcmp((char*)node->data.scalar.value, "WeakRef")
 			) {
 				sloppy = 0;
 				strict = 0;

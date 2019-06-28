@@ -2187,8 +2187,8 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	txUnsigned flags = parser->flags;
-	txInteger constructorFieldsCount = 0;
-	txInteger instanceFieldsCount = 0;
+	txInteger constructorInitCount = 0;
+	txInteger instanceInitCount = 0;
 	parser->flags |= mxStrictFlag;
 	fxMatchToken(parser, XS_TOKEN_CLASS);
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
@@ -2271,9 +2271,9 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				parser->root->flags |= flag & (mxStaticFlag | mxGetterFlag | mxSetterFlag | mxMethodFlag);
 				if (aToken1 == XS_TOKEN_PRIVATE_PROPERTY) {
 					if (aStaticFlag)
-						constructorFieldsCount++;
+						constructorInitCount++;
 					else
-						instanceFieldsCount++;
+						instanceInitCount++;
 				}
 				aCount++;
 			}
@@ -2299,10 +2299,10 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				fxPushNodeStruct(parser, 2, aToken1, aPropertyLine);
 				if (aStaticFlag) {
 					parser->root->flags |= mxStaticFlag;
-					constructorFieldsCount++;
+					constructorInitCount++;
 				}
 				else
-					instanceFieldsCount++;
+					instanceInitCount++;
 				fxSemicolon(parser);
 				aCount++;
 			}
@@ -2311,21 +2311,21 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	fxPushNodeList(parser, aCount);
 	
-	if (constructorFieldsCount || instanceFieldsCount) {
+	if (constructorInitCount || instanceInitCount) {
 		txNode* first = ((txNodeList*)(parser->root))->first;
-		txNodeList* constructorFieldsList = C_NULL;
-		txNode** constructorFieldsAddress = C_NULL;
-		txNodeList* instanceFieldsList = C_NULL;
-		txNode** instanceFieldsAddress = C_NULL;
+		txNodeList* constructorInitList = C_NULL;
+		txNode** constructorInitAddress = C_NULL;
+		txNodeList* instanceInitList = C_NULL;
+		txNode** instanceInitAddress = C_NULL;
 		txNode* item;
-		if (constructorFieldsCount) {
+		if (constructorInitCount) {
 			fxPushNULL(parser);
 			fxPushNodeList(parser, 0);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
 			fxPushNodeList(parser, 0);
-			constructorFieldsList = (txNodeList*)(parser->root);
-			constructorFieldsList->length = constructorFieldsCount;
-			constructorFieldsAddress = &(((txNodeList*)(parser->root))->first);
+			constructorInitList = (txNodeList*)(parser->root);
+			constructorInitList->length = constructorInitCount;
+			constructorInitAddress = &(((txNodeList*)(parser->root))->first);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, aLine);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
@@ -2333,14 +2333,14 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 		}
 		else 
 			fxPushNULL(parser);
-		if (instanceFieldsCount) {
+		if (instanceInitCount) {
 			fxPushNULL(parser);
 			fxPushNodeList(parser, 0);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
 			fxPushNodeList(parser, 0);
-			instanceFieldsList = (txNodeList*)(parser->root);
-			instanceFieldsList->length = instanceFieldsCount;
-			instanceFieldsAddress = &(((txNodeList*)(parser->root))->first);
+			instanceInitList = (txNodeList*)(parser->root);
+			instanceInitList->length = instanceInitCount;
+			instanceInitAddress = &(((txNodeList*)(parser->root))->first);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, aLine);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
@@ -2355,12 +2355,12 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 					txFieldNode* field = fxFieldNodeNew(parser, XS_TOKEN_FIELD);
 					field->item = item;
 					if (item->flags & mxStaticFlag) {
-						*constructorFieldsAddress = (txNode*)field;
-						constructorFieldsAddress = &field->next;
+						*constructorInitAddress = (txNode*)field;
+						constructorInitAddress = &field->next;
 					}
 					else {
-						*instanceFieldsAddress = (txNode*)field;
-						instanceFieldsAddress = &field->next;
+						*instanceInitAddress = (txNode*)field;
+						instanceInitAddress = &field->next;
 					}
 				}
 			}
@@ -2386,12 +2386,12 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 					((txPrivatePropertyNode*)item)->value = C_NULL;
 				}
 				if (item->flags & mxStaticFlag) {
-					*constructorFieldsAddress = (txNode*)field;
-					constructorFieldsAddress = &field->next;
+					*constructorInitAddress = (txNode*)field;
+					constructorInitAddress = &field->next;
 				}
 				else {
-					*instanceFieldsAddress = (txNode*)field;
-					instanceFieldsAddress = &field->next;
+					*instanceInitAddress = (txNode*)field;
+					instanceInitAddress = &field->next;
 				}
 			}
 			item = item->next;

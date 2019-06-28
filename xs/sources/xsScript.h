@@ -234,12 +234,12 @@ typedef struct {
 	txSymbol* symbol;
 	txNode* heritage;
 	txNodeList* items;
-	txNode* constructorFields;
-	txNode* instanceFields;
+	txNode* constructorInit;
+	txNode* instanceInit;
 	txNode* constructor;
 	txScope* symbolScope;
 	txScope* scope;
-	txAccessNode* access;
+	txAccessNode* instanceInitAccess;
 } txClassNode;
 
 struct sxDeclareNode {
@@ -415,7 +415,7 @@ typedef struct {
 	mxNodePart;
 	txSymbol* symbol;
 	txNode* value;
-	txAccessNode* access;
+	txAccessNode* symbolAccess;
 	txAccessNode* valueAccess;
 } txPrivatePropertyNode;
 
@@ -437,7 +437,7 @@ typedef struct {
 	mxNodePart;
 	txNode* at;
 	txNode* value;
-	txAccessNode* access;
+	txAccessNode* atAccess;
 } txPropertyAtNode;
 
 typedef struct {
