@@ -633,7 +633,6 @@ void fxExportNodeHoist(void* it, void* param)
 			node->importSpecifier = specifier;
 			fxScopeAddDeclareNode(hoister->scope, node);
 		}
-		return;
 	}
 	if (self->specifiers && self->specifiers->length) {
 		txSpecifierNode* specifier = (txSpecifierNode*)self->specifiers->first;

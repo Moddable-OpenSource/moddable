@@ -683,15 +683,24 @@ void fxResolveModules(txMachine* the, txSlot* realm)
 		transfer = mxModuleTransfers(module)->value.reference->next;
 		while (transfer) {
 			local = mxTransferLocal(transfer);
+			from = mxTransferFrom(transfer);
+			import = mxTransferImport(transfer);
 			if (local->kind != XS_NULL_KIND) {
-				from = mxTransferFrom(transfer);
-				import = mxTransferImport(transfer);
 				if ((from->kind == XS_NULL_KIND) || (import->kind == XS_NULL_KIND)) {
 					closure = mxTransferClosure(transfer);
 					closure->value.export.closure = fxNewSlot(the);
 					closure->value.export.closure->kind = XS_UNINITIALIZED_KIND;
 					closure->value.export.module = module->value.reference;
-                    closure->kind = XS_EXPORT_KIND;
+                	closure->kind = XS_EXPORT_KIND;
+				}
+			}
+			else {
+				if ((from->kind != XS_NULL_KIND) && (import->kind == XS_NULL_KIND)) {
+					closure = mxTransferClosure(transfer);
+					closure->value.export.closure = fxNewSlot(the);
+					closure->value.export.closure->kind = XS_UNINITIALIZED_KIND;
+					closure->value.export.module = module->value.reference;
+                	closure->kind = XS_EXPORT_KIND;
 				}
 			}
 			transfer = transfer->next;

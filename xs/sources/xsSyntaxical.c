@@ -711,12 +711,25 @@ void fxExport(txParser* parser)
 	fxMatchToken(parser, XS_TOKEN_EXPORT);
 	switch (parser->token) {
 	case XS_TOKEN_MULTIPLY:
+		fxPushNULL(parser);
 		fxGetNextToken(parser);
+		if (fxIsKeyword(parser, parser->asSymbol)) {
+			fxGetNextToken(parser);
+			if (gxTokenFlags[parser->token] & XS_TOKEN_IDENTIFIER_NAME) {
+				fxPushSymbol(parser, parser->symbol);
+				fxGetNextToken(parser);
+			}
+			else {
+				fxPushNULL(parser);
+				fxReportParserError(parser, "missing identifier");
+			}
+		}
+		else {
+			fxPushNULL(parser);
+		}
 		if (fxIsKeyword(parser, parser->fromSymbol)) {
 			fxGetNextToken(parser);
 			if (parser->token == XS_TOKEN_STRING) {
-				fxPushNULL(parser);
-				fxPushNULL(parser);
 				fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, line);
 				fxPushNodeList(parser, 1);
 				fxPushStringNode(parser, parser->stringLength, parser->string, line);
