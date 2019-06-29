@@ -1677,6 +1677,11 @@ void fxListGlobal(txMachine* the)
 		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
 		slot = slot->next;
 	}
+	slot = mxRealmClosures(realm)->value.reference->next->next;
+	while (slot) {
+		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
+		slot = slot->next;
+	}
 	fxEcho(the, "</global>");
 }
 

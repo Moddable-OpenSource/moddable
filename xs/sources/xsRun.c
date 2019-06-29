@@ -3756,21 +3756,16 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 		#endif
 			mxNextCode(3);
-			variable = mxFrameEnvironment;
-			if (variable->kind == XS_REFERENCE_KIND) {
-				variable = variable->value.reference;
-				while ((slot = variable->value.instance.prototype))
-					variable = slot;
-				if (mxBehaviorHasProperty(the, variable, (txID)offset, XS_NO_ID)) {
-					mxPushKind(XS_REFERENCE_KIND);
-					mxStack->value.reference = variable;
-					mxBreak;
-				}
-			}
+            variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+            variable = mxModuleInstanceInternal(variable)->value.module.realm;
+            if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+            slot = mxRealmClosures(variable)->value.reference;
+            if (mxBehaviorHasProperty(the, slot, (txID)offset, XS_NO_ID)) {
+                mxPushKind(XS_REFERENCE_KIND);
+                mxStack->value.reference = slot;
+                mxBreak;
+            }
 			mxPushKind(XS_REFERENCE_KIND);
-			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
-			variable = mxModuleInstanceInternal(variable)->value.module.realm;
-			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
 			mxBreak;
 		mxCase(XS_CODE_WITH)
