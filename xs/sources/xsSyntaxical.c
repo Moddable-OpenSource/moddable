@@ -1349,9 +1349,20 @@ void fxForStatement(txParser* parser)
 		}
 		else {
 			aToken = parser->root->description->token;
-			if ((aToken != XS_TOKEN_CONST) && (aToken != XS_TOKEN_LET) && (aToken != XS_TOKEN_VAR) && (aToken != XS_TOKEN_ARRAY_BINDING) && (aToken != XS_TOKEN_OBJECT_BINDING)) {
-				fxReportParserError(parser, "no reference %s", gxTokenNames[aToken]);
+			if ((aToken == XS_TOKEN_CONST) || (aToken == XS_TOKEN_LET) || (aToken == XS_TOKEN_VAR)) {
+				if (((txDeclareNode*)(parser->root))->initializer)
+					fxReportParserError(parser, "invalid %s initializer", gxTokenNames[aToken]);
 			}
+			else if (aToken == XS_TOKEN_ARRAY_BINDING) {
+				if (((txArrayBindingNode*)(parser->root))->initializer)
+					fxReportParserError(parser, "invalid array binding initializer");
+			}
+			else if (aToken == XS_TOKEN_OBJECT_BINDING) {
+				if (((txObjectBindingNode*)(parser->root))->initializer)
+					fxReportParserError(parser, "invalid object binding initializer");
+			}
+			else
+				fxReportParserError(parser, "no reference %s", gxTokenNames[aToken]);
 		}
 		aToken = parser->token;
 		fxGetNextToken(parser);
@@ -1621,7 +1632,7 @@ void fxAssignmentExpression(txParser* parser)
 			txToken aToken = parser->token;
 			txInteger aLine = parser->line;
 			if (!fxCheckReference(parser, aToken)) 
-				fxReportReferenceError(parser, "no reference");
+				fxReportParserError(parser, "no reference");
 			fxGetNextToken(parser);
 			fxAssignmentExpression(parser);
 			fxPushNodeStruct(parser, 2, aToken, aLine);
@@ -1795,7 +1806,7 @@ void fxUnaryExpression(txParser* parser)
 			//	fxReportParserError(parser, "no reference (strict mode)");
 			//}
 			if (!fxCheckReference(parser, aToken)) 
-				fxReportReferenceError(parser, "no reference");
+				fxReportParserError(parser, "no reference");
 			fxPushNodeStruct(parser, 1, aToken, aLine);
 		}
 		else if (aToken == XS_TOKEN_AWAIT) {
@@ -1821,7 +1832,7 @@ void fxPrefixExpression(txParser* parser)
 		fxGetNextToken(parser);
 		fxPrefixExpression(parser);
 		if (!fxCheckReference(parser, aToken)) 
-			fxReportReferenceError(parser, "no reference");
+			fxReportParserError(parser, "no reference");
 		fxPushNodeStruct(parser, 1, aToken, aLine);
 		parser->root->flags = mxExpressionNoValue;
 	}
@@ -1834,7 +1845,7 @@ void fxPostfixExpression(txParser* parser)
 	fxCallExpression(parser);
 	if ((!parser->crlf) && (gxTokenFlags[parser->token] & XS_TOKEN_POSTFIX_EXPRESSION)) {
 		if (!fxCheckReference(parser, parser->token)) 
-			fxReportReferenceError(parser, "no reference");
+			fxReportParserError(parser, "no reference");
 		fxPushNodeStruct(parser, 1, parser->token, parser->line);
 		fxGetNextToken(parser);
 	}
