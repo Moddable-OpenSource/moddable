@@ -1260,15 +1260,13 @@ void fxPrivateMemberNodeBind(void* it, void* param)
 
 void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound) 
 {
-	txPrivateMemberNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
+	fxPrivateMemberNodeBind(it, param);
 	fxNodeDispatchBind(compound->value, param);
 }
 
 void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
 {
-	txPrivateMemberNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
+	fxPrivateMemberNodeBind(it, param);
 	fxBinderPushVariables(param, 1);
 	fxBinderPopVariables(param, 1);
 }
