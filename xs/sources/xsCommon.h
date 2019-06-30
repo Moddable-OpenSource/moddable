@@ -600,7 +600,6 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
-	
 	_Array,
 	_ArrayBuffer,
 	_Atomics,
@@ -653,15 +652,12 @@ enum {
 	_parseInt,
 	_trace,
 	_unescape,
-	
 	_Infinity,
 	_NaN,
 	_undefined,
-	
 	_Compartment,
 	_Function,
 	_eval,
-	
 	___proto__,
 	_AsyncFunction,
 	_AsyncGeneratorFunction,

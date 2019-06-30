@@ -2994,7 +2994,7 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddByte(param, 1, XS_CODE_DUB);
 		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
 		fxCoderAddSymbol(param, -2, XS_CODE_NEW_PROPERTY, coder->parser->callerSymbol);
-		fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
+		fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_DONT_ENUM_FLAG);
 	}
 	
 	coder->returnTarget = returnTarget;

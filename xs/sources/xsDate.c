@@ -1394,10 +1394,14 @@ txString fxDatePrintYear(txString p, txInteger value)
 		}
 		else
 			*p++ = '+';
-		*p++ = '0' + value / 100000;
-		value %= 100000;
-		*p++ = '0' + value / 10000;
-		value %= 10000;
+		if (99999 < value) {
+			*p++ = '0' + value / 100000;
+			value %= 100000;
+		}
+		if (9999 < value) {
+			*p++ = '0' + value / 10000;
+			value %= 10000;
+		}
 	}
 	return fxDatePrint4Digits(p, value);
 }
