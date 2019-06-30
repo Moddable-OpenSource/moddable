@@ -178,7 +178,7 @@ Additional getting started guides are available for the following devices:
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
@@ -583,7 +583,7 @@ Additional getting started guides are available for the following devices:
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
