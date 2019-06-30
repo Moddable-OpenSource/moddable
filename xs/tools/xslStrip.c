@@ -331,9 +331,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	{
 		txFlag match = fxIsCallbackStripped(linker, fx_String_prototype_match);
+		txFlag matchAll = fxIsCallbackStripped(linker, fx_String_prototype_matchAll);
 		txFlag search = fxIsCallbackStripped(linker, fx_String_prototype_search);
 		if (fxIsCallbackStripped(linker, fx_RegExp)) {
-			if (match && search)
+			if (match && matchAll && search)
 				fxStripClass(linker, the, &mxRegExpConstructor);
 		}
 		else {
@@ -358,6 +359,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
 			fxUnstripCallback(linker, fx_RegExp_prototype_match);
+			fxUnstripCallback(linker, fx_RegExp_prototype_exec);
+		}
+		if (!matchAll) {
+			fxUnstripCallback(linker, fxInitializeRegExp);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
+			fxUnstripCallback(linker, fx_RegExp_prototype_matchAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_exec);
 		}
 		if (!search) {
