@@ -316,6 +316,8 @@ txBoolean fxProxyDeleteProperty(txMachine* the, txSlot* instance, txID id, txInd
 			if (mxBehaviorGetOwnProperty(the, target->value.reference, id, index, the->stack)) {
 				if (the->stack->flag & XS_DONT_DELETE_FLAG)
 					mxTypeError("(proxy).deleteProperty: true for non-configurable property");
+				if (!mxBehaviorIsExtensible(the, target->value.reference))
+					mxTypeError("(proxy).deleteProperty: true for non-extensible object");
 			}
 			mxPop();
 		}

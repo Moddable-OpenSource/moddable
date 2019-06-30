@@ -653,7 +653,6 @@ void fxRunFile(txContext* context, char* path)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (!strcmp((char*)node->data.scalar.value, "hashbang")
 			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
-			||	!strcmp((char*)node->data.scalar.value, "proxy-missing-checks")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
