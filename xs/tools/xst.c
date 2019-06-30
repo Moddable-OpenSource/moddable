@@ -164,6 +164,7 @@ extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
 static void fx_createRealmException(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
+static void fx_gc(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_print(xsMachine* the);
@@ -762,6 +763,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 			slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
 			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
+			slot = fxNextHostFunctionProperty(the, slot, fx_gc, 1, xsID("gc"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
 			slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
 
@@ -1106,6 +1108,11 @@ void fx_detachArrayBuffer(xsMachine* the)
 
 void fx_done(xsMachine* the)
 {
+}
+
+void fx_gc(xsMachine* the)
+{
+	xsCollectGarbage();
 }
 
 void fx_evalScript(xsMachine* the)
