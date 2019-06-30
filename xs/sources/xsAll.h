@@ -1572,6 +1572,7 @@ extern txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the);
 /* xsPromise.c */
 mxExport void fx_Promise(txMachine* the);
 mxExport void fx_Promise_all(txMachine* the);
+mxExport void fx_Promise_allSettled(txMachine* the);
 mxExport void fx_Promise_race(txMachine* the);
 mxExport void fx_Promise_reject(txMachine* the);
 mxExport void fx_Promise_resolve(txMachine* the);

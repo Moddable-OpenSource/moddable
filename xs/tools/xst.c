@@ -659,7 +659,6 @@ void fxRunFile(txContext* context, char* path)
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
 			||	!strcmp((char*)node->data.scalar.value, "FinalizationGroup")
-			||	!strcmp((char*)node->data.scalar.value, "Promise.allSettled")
 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
 			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
 			||	!strcmp((char*)node->data.scalar.value, "WeakRef")
