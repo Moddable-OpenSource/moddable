@@ -2251,6 +2251,7 @@ enum {
 
 	mxHookInstanceIndex,
 	
+	mxExecuteRegExpFunctionIndex,
 	mxInitializeRegExpFunctionIndex,
 	mxArrayIteratorFunctionIndex,
 
@@ -2424,6 +2425,7 @@ enum {
 #define mxThrowTypeErrorFunction the->stackPrototypes[-1 - mxThrowTypeErrorFunctionStackIndex]
 
 #define mxHookInstance the->stackPrototypes[-1 - mxHookInstanceIndex]
+#define  mxExecuteRegExpFunction the->stackPrototypes[-1 - mxExecuteRegExpFunctionIndex]
 #define  mxInitializeRegExpFunction the->stackPrototypes[-1 - mxInitializeRegExpFunctionIndex]
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
 

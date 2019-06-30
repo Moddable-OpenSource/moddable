@@ -51,6 +51,8 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_compile), 0, mxID(_compile), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_exec), 1, mxID(_exec), XS_DONT_ENUM_FLAG);
+	mxExecuteRegExpFunction.kind = slot->kind;
+	mxExecuteRegExpFunction.value = slot->value;
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_match), 1, mxID(_Symbol_match), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_matchAll), 1, mxID(_Symbol_matchAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_replace), 2, mxID(_Symbol_replace), XS_DONT_ENUM_FLAG);
@@ -77,7 +79,7 @@ void fxBuildRegExp(txMachine* the)
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_matchAll_next), 0, mxID(_next), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_matchAll_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "RegExp String Iterator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPull(mxRegExpStringIteratorPrototype);
 
@@ -104,9 +106,8 @@ void fxExecuteRegExp(txMachine* the, txSlot* regexp, txSlot* argument)
 	mxPushSlot(regexp);
 	fxGetID(the, mxID(_exec));
 	if ((the->stack->kind != XS_REFERENCE_KIND) || (!mxIsFunction(the->stack->value.reference))) {
-		mxPop();
-		mxPush(mxRegExpPrototype);
-		fxGetID(the, mxID(_exec));
+		the->stack->kind = mxExecuteRegExpFunction.kind;
+		the->stack->value = mxExecuteRegExpFunction.value;
 	}
 	fxCall(the);
 	if ((the->stack->kind != XS_NULL_KIND) && (the->stack->kind != XS_REFERENCE_KIND))
@@ -661,6 +662,7 @@ void fx_RegExp_prototype_matchAll_next(txMachine* the)
 		if (match->kind == XS_NULL_KIND) {
 			value->kind = XS_UNDEFINED_KIND;
 			done->value.boolean = 1;
+            complete->value.boolean = 1;
 		}
 		else if (global->value.boolean) {
 			mxPushSlot(match);
