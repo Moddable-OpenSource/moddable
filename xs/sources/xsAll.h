@@ -1155,6 +1155,7 @@ mxExport void fx_String_prototype_includes(txMachine* the);
 mxExport void fx_String_prototype_indexOf(txMachine* the);
 mxExport void fx_String_prototype_lastIndexOf(txMachine* the);
 mxExport void fx_String_prototype_match(txMachine* the);
+mxExport void fx_String_prototype_matchAll(txMachine* the);
 mxExport void fx_String_prototype_normalize(txMachine* the);
 mxExport void fx_String_prototype_padEnd(txMachine* the);
 mxExport void fx_String_prototype_padStart(txMachine* the);
@@ -1195,6 +1196,8 @@ mxExport void fx_RegExp_prototype_get_unicode(txMachine* the);
 mxExport void fx_RegExp_prototype_compile(txMachine* the);
 mxExport void fx_RegExp_prototype_exec(txMachine* the);
 mxExport void fx_RegExp_prototype_match(txMachine* the);
+mxExport void fx_RegExp_prototype_matchAll(txMachine* the);
+mxExport void fx_RegExp_prototype_matchAll_next(txMachine* the);
 mxExport void fx_RegExp_prototype_replace(txMachine* the);
 mxExport void fx_RegExp_prototype_search(txMachine* the);
 mxExport void fx_RegExp_prototype_split(txMachine* the);
@@ -2231,6 +2234,7 @@ enum {
 	mxMapEntriesIteratorPrototypeStackIndex,
 	mxMapKeysIteratorPrototypeStackIndex,
 	mxMapValuesIteratorPrototypeStackIndex,
+	mxRegExpStringIteratorPrototypeStackIndex,
 	mxSetEntriesIteratorPrototypeStackIndex,
 	mxSetKeysIteratorPrototypeStackIndex,
 	mxSetValuesIteratorPrototypeStackIndex,
@@ -2404,6 +2408,7 @@ enum {
 #define mxMapEntriesIteratorPrototype the->stackPrototypes[-1 - mxMapEntriesIteratorPrototypeStackIndex]
 #define mxMapKeysIteratorPrototype the->stackPrototypes[-1 - mxMapKeysIteratorPrototypeStackIndex]
 #define mxMapValuesIteratorPrototype the->stackPrototypes[-1 - mxMapValuesIteratorPrototypeStackIndex]
+#define mxRegExpStringIteratorPrototype the->stackPrototypes[-1 - mxRegExpStringIteratorPrototypeStackIndex]
 #define mxSetEntriesIteratorPrototype the->stackPrototypes[-1 - mxSetEntriesIteratorPrototypeStackIndex]
 #define mxSetKeysIteratorPrototype the->stackPrototypes[-1 - mxSetKeysIteratorPrototypeStackIndex]
 #define mxSetValuesIteratorPrototype the->stackPrototypes[-1 - mxSetValuesIteratorPrototypeStackIndex]

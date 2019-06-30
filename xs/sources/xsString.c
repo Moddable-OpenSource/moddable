@@ -128,6 +128,7 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_match), 1, mxID(_match), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_matchAll), 1, mxID(_matchAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_search), 1, mxID(_search), XS_DONT_ENUM_FLAG);
 	mxStringPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_String), 1, mxID(_String));
@@ -801,6 +802,42 @@ void fx_String_prototype_match(txMachine* the)
 	mxPush(mxInitializeRegExpFunction);
 	fxCall(the);
 	fxCallID(the, mxID(_Symbol_match));
+	mxPullSlot(mxResult);
+}
+
+void fx_String_prototype_matchAll(txMachine* the)
+{	
+	txSlot* regexp = C_NULL;
+
+	fxCoerceToString(the, mxThis);
+	mxPushSlot(mxThis);
+	mxPushInteger(1);
+	if (mxArgc > 0) {
+		regexp = mxArgv(0);
+		if (mxIsReference(regexp)) {
+			mxPushSlot(regexp);
+			mxPushSlot(regexp);
+			fxGetID(the, mxID(_Symbol_matchAll));
+			if (!mxIsUndefined(the->stack) && !mxIsNull(the->stack)) {
+				fxCall(the);
+				mxPullSlot(mxResult);
+				return;
+			}
+			mxPop();
+			mxPop();
+		}
+	}	
+	if (regexp)
+		mxPushSlot(regexp);
+	else
+		mxPushUndefined();
+	mxPushStringX("g");
+	mxPushInteger(2);
+	mxPush(mxRegExpPrototype);
+	fxNewRegExpInstance(the);
+	mxPush(mxInitializeRegExpFunction);
+	fxCall(the);
+	fxCallID(the, mxID(_Symbol_matchAll));
 	mxPullSlot(mxResult);
 }
 

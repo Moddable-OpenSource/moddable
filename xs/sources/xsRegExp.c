@@ -52,6 +52,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_compile), 0, mxID(_compile), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_exec), 1, mxID(_exec), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_match), 1, mxID(_Symbol_match), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_matchAll), 1, mxID(_Symbol_matchAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_replace), 2, mxID(_Symbol_replace), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_search), 1, mxID(_Symbol_search), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_split), 2, mxID(_Symbol_split), XS_DONT_ENUM_FLAG);
@@ -73,6 +74,13 @@ void fxBuildRegExp(txMachine* the)
 	the->stack++;
 	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID);
 	mxInitializeRegExpFunction = *the->stack;
+	
+	mxPush(mxIteratorPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_prototype_matchAll_next), 0, mxID(_next), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "RegExp String Iterator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxPull(mxRegExpStringIteratorPrototype);
+
 	the->stack++;
 }
 
@@ -571,6 +579,116 @@ void fx_RegExp_prototype_match(txMachine* the)
 		mxPullSlot(mxResult);
 	}
 	mxPop();
+#endif
+}
+
+void fx_RegExp_prototype_matchAll(txMachine* the)
+{
+#if mxRegExp
+	txSlot* argument;
+	txSlot* constructor;
+	txBoolean global = 0;
+	txSlot* matcher;
+	txSlot* iterator;
+	txSlot* result;
+	txSlot* property;
+	
+	if (!mxIsReference(mxThis))
+		mxTypeError("this is no object");
+	if (mxArgc == 0)
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	argument = the->stack;
+	fxToString(the, argument);
+	
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_constructor));
+	fxToSpeciesConstructor(the, &mxRegExpConstructor);
+	constructor = the->stack;
+	
+	mxPushSlot(mxThis);
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_flags));
+	if (c_strchr(fxToString(the, the->stack), 'g'))
+		global = 1;
+	mxPushInteger(2);
+	mxPushSlot(constructor);
+	fxNew(the);	
+	matcher = the->stack;
+	
+	mxPushSlot(mxThis);
+	fxGetID(the, mxID(_lastIndex));
+	fxToInteger(the, the->stack);
+	mxPushSlot(matcher);
+	fxSetID(the, mxID(_lastIndex));
+	
+	mxPush(mxRegExpStringIteratorPrototype);
+	iterator = fxNewObjectInstance(the);
+	mxPush(mxObjectPrototype);
+	result = fxNewObjectInstance(the);
+	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	property = fxNextSlotProperty(the, iterator, the->stack, mxID(_result), XS_GET_ONLY);
+	mxPop();
+	property = fxNextSlotProperty(the, property, matcher, mxID(_iterable), XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, argument, mxID(_index), XS_GET_ONLY);
+	property = fxNextBooleanProperty(the, property, global, XS_NO_ID, XS_GET_ONLY);
+	property = fxNextBooleanProperty(the, property, 0, XS_NO_ID, XS_GET_ONLY);
+	mxPullSlot(mxResult);
+#endif
+}
+
+void fx_RegExp_prototype_matchAll_next(txMachine* the)
+{
+#if mxRegExp
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* result = iterator->next;
+	txSlot* value = result->value.reference->next;
+	txSlot* done = value->next;
+	txSlot* matcher = result->next;
+	txSlot* argument = matcher->next;
+	txSlot* global = argument->next;
+	txSlot* complete = global->next;
+	txSlot* match;
+	if (complete->value.boolean) {
+		value->kind = XS_UNDEFINED_KIND;
+		done->value.boolean = 1;
+	}
+	else {
+		fxExecuteRegExp(the, matcher, argument);
+		match = the->stack;
+		if (match->kind == XS_NULL_KIND) {
+			value->kind = XS_UNDEFINED_KIND;
+			done->value.boolean = 1;
+		}
+		else if (global->value.boolean) {
+			mxPushSlot(match);
+			fxGetID(the, 0);
+			fxToString(the, the->stack);
+			if (c_isEmpty(the->stack->value.string)) {
+				mxPushSlot(matcher);
+				fxGetID(the, mxID(_lastIndex));
+				fxToInteger(the, the->stack);
+				the->stack->value.integer++;
+				mxPushSlot(matcher);
+				fxSetID(the, mxID(_lastIndex));
+				mxPop();
+			}
+			mxPop();
+			value->kind = match->kind;
+			value->value = match->value;
+			done->value.boolean = 0;
+		}
+		else {
+			value->kind = match->kind;
+			value->value = match->value;
+			done->value.boolean = 0;
+			complete->value.boolean = 1;
+		}
+	}
+	mxResult->kind = result->kind;
+	mxResult->value = result->value;
 #endif
 }
 
