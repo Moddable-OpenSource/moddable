@@ -932,10 +932,6 @@ txBoolean fxIsPropertyCompatible(txMachine* the, txSlot* property, txSlot* slot,
 				if ((slot->kind != XS_UNINITIALIZED_KIND) && !fxIsSameValue(the, property, slot, 0))
 					return 0;
 			}
-			else {
-				if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG))
-					return 0;
-			}
 		}
 	}
 	return 1;

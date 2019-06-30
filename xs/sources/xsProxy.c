@@ -270,6 +270,10 @@ txBoolean fxProxyDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 						if (!(the->stack->flag & XS_DONT_DELETE_FLAG))
 							mxTypeError("(proxy).defineProperty: true with non-configurable descriptor for configurable property");
 					}
+					if (the->stack->flag & XS_DONT_DELETE_FLAG) {
+						if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG) && !(the->stack->flag & XS_DONT_SET_FLAG))
+							mxTypeError("(proxy).defineProperty: true with non-writable descriptor for non-configurable writable property");
+					}
 				}
 				else
 					mxTypeError("(proxy).defineProperty: true with incompatible descriptor for existent property");
@@ -383,6 +387,10 @@ txBoolean fxProxyGetOwnProperty(txMachine* the, txSlot* instance, txID id, txInd
 					if ((mask & XS_DONT_DELETE_FLAG) && (slot->flag & XS_DONT_DELETE_FLAG)) {
 						if (!(the->stack->flag & XS_DONT_DELETE_FLAG))
 							mxTypeError("(proxy).getOwnPropertyDescriptor: non-configurable descriptor for configurable property");
+					}
+					if (the->stack->flag & XS_DONT_DELETE_FLAG) {
+						if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG) && !(the->stack->flag & XS_DONT_SET_FLAG))
+							mxTypeError("(proxy).getOwnPropertyDescriptor: true with non-writable descriptor for non-configurable writable property");
 					}
 				}
 				else
