@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: June 21, 2019
+Revised: July 1, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -221,7 +221,7 @@ More detailed getting started guides are available for the following devices:
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
@@ -621,7 +621,7 @@ More detailed getting started guides are available for the following devices:
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
