@@ -423,7 +423,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
 			symbol = ((txSymbolCode*)code)->symbol;
-			if (symbol)
+			if (symbol && symbol->string)
 				symbol->usage++;
 			size += 3;
 			break;
@@ -529,8 +529,8 @@ txScript* fxParserCode(txParser* parser)
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
-			symbol->ID = id;
 			if (symbol->usage) {
+				symbol->ID = id;
 				id++;
 				total += symbol->length;
 			}
@@ -606,7 +606,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
 			symbol = ((txSymbolCode*)code)->symbol;
-			if (symbol)
+			if (symbol && symbol->string)
 				s2 = (txS2)symbol->ID;
 			else
 				s2 = -1;
@@ -2698,7 +2698,7 @@ void fxFieldNodeCode(void* it, void* param)
 			fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, ((txPrivatePropertyNode*)item)->valueAccess->declaration->index);
 		else
 			fxNodeDispatchCode(self->value, param);
-		fxCoderAddFlag(param, -2, XS_CODE_NEW_PRIVATE_1, ((txPrivatePropertyNode*)item)->symbolAccess->declaration->index);
+		fxCoderAddIndex(param, -2, XS_CODE_NEW_PRIVATE_1, ((txPrivatePropertyNode*)item)->symbolAccess->declaration->index);
 		if (item->flags & mxMethodFlag)
 			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_METHOD_FLAG);
 		else if (item->flags & mxGetterFlag)

@@ -39,11 +39,11 @@
 
 void fxDisposeParserChunks(txParser* parser)
 {
-	txParserChunk* block = parser->first;
-	while (block) {
-		txParserChunk* next = block->next;
+	txParserChunk** address = &parser->first;
+	txParserChunk* block;
+	while ((block = *address)) {
+		*address = block->next;
 		c_free(block);
-		block = next;
 	}
 }
 
