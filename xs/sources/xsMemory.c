@@ -650,7 +650,9 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;
 		
 	case XS_PRIVATE_KIND:
-		fxMarkInstance(the, theSlot->value.private.check, fxMarkReference);
+		aSlot = theSlot->value.private.check;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkReference);
 		aSlot = theSlot->value.private.first;
 		while (aSlot) {
 			aSlot->flag |= XS_MARK_FLAG;
@@ -826,7 +828,9 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		break;
 		
 	case XS_PRIVATE_KIND:
-		fxMarkInstance(the, theSlot->value.private.check, fxMarkValue);
+		aSlot = theSlot->value.private.check;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkValue);
 		aSlot = theSlot->value.private.first;
 		while (aSlot) {
 			aSlot->flag |= XS_MARK_FLAG;
