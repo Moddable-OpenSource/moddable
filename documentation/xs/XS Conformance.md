@@ -67,11 +67,11 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) and **99.8%** of the built-ins tests (`29471/29533 `). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) and **99.8%** of the built-ins tests (`29519/29581`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     99% 36861/36922 (86) language
+     99% 37010/37071 language
         100% 459/459 arguments-object
             100% 40/40 mapped
             100% 8/8 unmapped
@@ -85,8 +85,8 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
                 100% 9/9 function-declarations
                 100% 189/189 redeclaration
                 100% 6/6 redeclaration-global
-        100% 46/46 (29) comments
-              0% 0/0 (29) hashbang
+        100% 81/81 comments
+            100% 35/35 hashbang
         100% 90/90 computed-property-names
             100% 6/6 basics
             100% 52/52 class
@@ -106,7 +106,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
             100% 139/139 direct
              98% 114/116 indirect
         100% 3/3 export
-         99% 17136/17174 (1) expressions
+         99% 17138/17176 expressions
             100% 95/95 addition
             100% 104/104 array
             100% 527/527 arrow-function
@@ -208,7 +208,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
             100% 75/75 subtraction
              98% 164/166 super
              79% 38/48 tagged-template
-            100% 106/106 (1) template-literal
+            100% 108/108 template-literal
             100% 9/9 this
             100% 30/30 typeof
             100% 28/28 unary-minus
@@ -220,18 +220,18 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
         100% 85/85 future-reserved-words
         100% 73/73 global-code
         100% 19/19 identifier-resolution
-        100% 287/287 (1) identifiers
+        100% 289/289 identifiers
         100% 4/4 import
         100% 50/50 keywords
         100% 82/82 line-terminators
-         99% 602/603 (55) literals
+         99% 712/713 literals
             100% 12/12 bigint
             100% 4/4 boolean
             100% 4/4 null
-            100% 167/167 (52) numeric
-            100% 310/310 (1) regexp
+            100% 271/271 numeric
+            100% 312/312 regexp
                 100% 116/116 named-groups
-             99% 105/106 (2) string
+             99% 109/110 string
         100% 292/292 module-code
             100% 36/36 namespace
                 100% 34/34 internals
@@ -352,7 +352,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
 
 ### Built-ins
 
-     99% 29471/29533 (162) built-ins
+     99% 29519/29581 (138) built-ins
          99% 5193/5205 Array
             100% 8/8 Symbol.species
             100% 80/80 from
@@ -724,8 +724,8 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
             100% 18/18 preventExtensions
             100% 34/34 set
             100% 26/26 setPrototypeOf
-         99% 2762/2788 (24) RegExp
-              0% 0/0 (24) CharacterClassEscapes
+         99% 2810/2836 RegExp
+            100% 48/48 CharacterClassEscapes
             100% 8/8 Symbol.species
              50% 4/8 dotall
             100% 34/34 lookBehind
@@ -750,7 +750,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
                 100% 14/14 toString
                  87% 14/16 unicode
         100% 34/34 RegExpStringIteratorPrototype
-             100% 30/30 next
+            100% 30/30 next
         100% 374/374 Set
             100% 8/8 Symbol.species
             100% 326/326 prototype
@@ -1006,7 +1006,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`36861/36922`) a
         100% 84/84 (15) parseFloat
         100% 118/118 parseInt
         100% 12/12 undefined
-       
+               
 ### Annex B
 
         100% 12/12 annexB/built-ins/Date/prototype/getYear
@@ -1196,8 +1196,6 @@ Code points vs code units.
 	
 ### Skipped cases
 
-	hashbang
-	numeric-separator-literal
 	FinalizationGroup
 	WeakRef
 
