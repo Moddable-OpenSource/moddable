@@ -381,10 +381,10 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 	txScript* script = NULL;
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
+	file = fopen(path, "r");
 	if (c_setjmp(jump.jmp_buf) == 0) {
-		parser->path = fxNewParserSymbol(parser, path);
-		file = fopen(path, "r");
 		mxParserThrowElse(file);
+		parser->path = fxNewParserSymbol(parser, path);
 		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
 		fclose(file);
 		file = NULL;

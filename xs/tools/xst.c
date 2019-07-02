@@ -651,7 +651,8 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
+			if (!strcmp((char*)node->data.scalar.value, "hashbang")
+			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -665,14 +666,6 @@ void fxRunFile(txContext* context, char* path)
 			}
 			item++;
 		}
-	}
-
-	// take forever because of utf8 from/to unicode offsets
-	if (c_strstr(path, "built-ins/RegExp/CharacterClassEscapes")) {
-		sloppy = 0;
-		strict = 0;
-		module = 0;
-		pending = 1;
 	}
 
 	if (sloppy) {
