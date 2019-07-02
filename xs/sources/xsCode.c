@@ -57,11 +57,6 @@ struct sxBranchCode {
 	mxByteCodePart;
 	txTargetCode* target;
 };
-
-struct sxFlagCode {
-	mxByteCodePart;
-	txFlag flag;
-};
 	
 struct sxIndexCode {
 	mxByteCodePart;
@@ -128,7 +123,6 @@ static void fxCoderAdd(txCoder* self, txInteger delta, void* it);
 static void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txBigInt* bigint);
 static void fxCoderAddBranch(txCoder* self, txInteger delta, txInteger id, txTargetCode* target);
 static void fxCoderAddByte(txCoder* self, txInteger delta, txInteger id);
-static void fxCoderAddFlag(txCoder* self, txInteger delta, txInteger id, txFlag flag);
 static void fxCoderAddIndex(txCoder* self, txInteger delta, txInteger id, txInteger index);
 static void fxCoderAddInteger(txCoder* self, txInteger delta, txInteger id, txInteger integer);
 static void fxCoderAddLine(txCoder* self, txInteger delta, txInteger id, txNode* node);
@@ -993,14 +987,6 @@ void fxCoderAddByte(txCoder* self, txInteger delta, txInteger id)
 	txByteCode* code = fxNewParserChunkClear(self->parser, sizeof(txByteCode));
 	fxCoderAdd(self, delta, code);
 	code->id = id;
-}
-
-void fxCoderAddFlag(txCoder* self, txInteger delta, txInteger id, txFlag flag)
-{
-	txFlagCode* code = fxNewParserChunkClear(self->parser, sizeof(txFlagCode));
-	fxCoderAdd(self, delta, code);
-	code->id = id;
-	code->flag = flag;
 }
 
 void fxCoderAddIndex(txCoder* self, txInteger delta, txInteger id, txInteger index)

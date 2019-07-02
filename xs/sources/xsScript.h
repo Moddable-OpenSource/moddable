@@ -56,7 +56,6 @@ typedef struct sxParserJump txParserJump;
 typedef struct sxByteCode txByteCode;
 typedef struct sxBigIntCode txBigIntCode;
 typedef struct sxBranchCode txBranchCode;
-typedef struct sxFlagCode txFlagCode;
 typedef struct sxIndexCode txIndexCode;
 typedef struct sxIntegerCode txIntegerCode;
 typedef struct sxNumberCode txNumberCode;
