@@ -147,15 +147,25 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	parser->root = NULL;
 	
 	parser->flags &= ~mxEvalFlag;
-	if (parser->flags & mxProgramFlag) {
+	if (!(parser->flags & mxProgramFlag))
+		parser->flags |= mxStrictFlag;
+	fxGetNextCharacter(parser);
+	if (parser->character == '#') {
 		fxGetNextCharacter(parser);
-		fxGetNextToken(parser);
+		if (parser->character == '!') {
+			fxGetNextCharacter(parser);
+			while ((parser->character != (txU4)C_EOF) && (parser->character != 10) && (parser->character != 13) && (parser->character != 0x2028) && (parser->character != 0x2029)) {
+				fxGetNextCharacter(parser);
+			}	
+		}
+		else
+			fxReportParserError(parser, "invalid character %d", parser->character);
+	}
+	fxGetNextToken(parser);
+	if (parser->flags & mxProgramFlag) {
 		fxProgram(parser);
 	}
 	else {
-		parser->flags |= mxStrictFlag;
-		fxGetNextCharacter(parser);
-		fxGetNextToken(parser);
 		fxModule(parser);
 	}
 	parser->flags &= ~mxEvalFlag;
