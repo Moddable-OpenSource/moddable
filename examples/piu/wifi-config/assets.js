@@ -23,9 +23,9 @@ const LightestGraySkin = Skin.template({ fill: LIGHTEST_GRAY });
 const SeparatorGraySkin = Skin.template({ fill: SEPARATOR_GRAY }); 
 const LightBlueSkin = Skin.template({ fill: LIGHT_BLUE });
 
-const OpenSans16 = Style.template({ font: "semibold 16px Open Sans", vertical: "middle" });
+const OpenSans16 = Style.template({ font: "semibold 16px Open Sans", vertical: "middle", horizontal: "center" });
 const OpenSans18 = Style.template({ font: "semibold 18px Open Sans", vertical: "middle" });
-const OpenSans20 = Style.template({ font: "20px Open Sans", vertical: "middle" });
+const OpenSans20 = Style.template({ font: "20px Open Sans", vertical: "middle", horizontal: "left" });
 const BlackStyle = Style.template({ color: BLACK });
 const WhiteStyle = Style.template({ color: WHITE });
 const CenterStyle = Style.template({ horizontal: "center" });
