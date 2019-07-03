@@ -32,7 +32,7 @@
 					"$(MODULES)/network/wifi/*",
 					"$(MODULES)/network/wifi/esp32/*",
 				],
-				"setup/network": "$(BUILD)/devices/esp/setup/network",
+				"setup/network": "$(BUILD)/devices/esp32/setup/network",
 			},
 			"preload": [
 				"socket",
