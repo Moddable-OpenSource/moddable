@@ -494,12 +494,14 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
         property->kind = slot->kind;
 		property->value = slot->value;
 		if ((mask & XS_METHOD_FLAG) && ((slot->value.reference->flag & XS_MARK_FLAG) == 0)) {
-			txSlot* function = property->value.reference;
-			txSlot* home = mxFunctionInstanceHome(function);
-			home->value.home.object = instance;
-			fxRenameFunction(the, function, id, mxID(_value), C_NULL);
-        	property->flag = XS_DONT_SET_FLAG;
-		}
+            if (property->kind == XS_REFERENCE_KIND) {
+                txSlot* function = property->value.reference;
+                txSlot* home = mxFunctionInstanceHome(function);
+                home->value.home.object = instance;
+                fxRenameFunction(the, function, id, mxID(_value), C_NULL);
+                property->flag = XS_DONT_SET_FLAG;
+            }
+        }
 	}
 	return 1;
 }
