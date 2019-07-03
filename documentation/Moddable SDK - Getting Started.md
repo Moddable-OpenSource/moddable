@@ -384,7 +384,7 @@ More detailed getting started guides are available for the following devices:
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
-14. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
+14. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
@@ -447,14 +447,14 @@ More detailed getting started guides are available for the following devices:
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
-10. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+10. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
 	
-	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the Developer Command Prompt. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
+	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the command line console. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
 
