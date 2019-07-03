@@ -58,7 +58,8 @@ class SoundAppBehavior extends Behavior {
 	}
 	onDisplaying(application) {
 		let data = this.data;
-		if (button) { // M5Stack
+		if (undefined !== global.button) { // M5Stack
+			let button = global.button;
 			button.a.onChanged = function() {
 				if (this.read()) {
 					application.delegate("volumeDown");

@@ -43,6 +43,8 @@
 				}
 			},
 		},
+		"mac": {},
+		"win": {},
 		"...": {
 			"error": "Platform not supported"
 		},
