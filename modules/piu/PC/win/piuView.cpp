@@ -99,7 +99,17 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 		(*piuView)->window = window;
 		HKEY key;
 		DWORD size = 4;
-		if (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\moddable.tech\\Screen Test\\window", 0, KEY_READ, &key) == ERROR_SUCCESS) {
+		char szSubKey[1024];
+		char title[64];
+		c_strcpy(szSubKey, "SOFTWARE\\moddable.tech\\");
+		title[0] = 0;
+		GetWindowText(window, title, sizeof(title));
+		if (0 != c_strlen(title))
+			c_strcat(szSubKey, title);
+		else
+			c_strcat(szSubKey, "Screen Test");
+		c_strcat(szSubKey, "\\window");
+		if (RegOpenKeyEx(HKEY_CURRENT_USER, szSubKey, 0, KEY_READ, &key) == ERROR_SUCCESS) {
 			WINDOWPLACEMENT placement;
 			placement.length = sizeof(WINDOWPLACEMENT);
 			placement.flags = 0;
@@ -136,7 +146,17 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 	case WM_CLOSE: {
 		PiuView* piuView = (PiuView*)GetWindowLongPtr(window, 0);
 		HKEY key;
-		if (RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\moddable.tech\\Screen Test\\window", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &key, NULL) == ERROR_SUCCESS) {
+		char szSubKey[1024];
+		char title[64];
+		c_strcpy(szSubKey, "SOFTWARE\\moddable.tech\\");
+		title[0] = 0;
+		GetWindowText(window, title, sizeof(title));
+		if (0 != c_strlen(title))
+			c_strcat(szSubKey, title);
+		else
+			c_strcat(szSubKey, "Screen Test");
+		c_strcat(szSubKey, "\\window");
+		if (RegCreateKeyEx(HKEY_CURRENT_USER, szSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &key, NULL) == ERROR_SUCCESS) {
 			WINDOWPLACEMENT placement;
 			placement.length = sizeof(WINDOWPLACEMENT);
 			GetWindowPlacement(window, &placement);
