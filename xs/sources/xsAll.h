@@ -744,10 +744,10 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 
 /* xsType.c */
 
-extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
-
 extern txSlot* fxAliasInstance(txMachine* the, txSlot* instance);
 extern txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance);
+extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
+extern txSlot* fxGetPrototype(txMachine* the, txSlot* instance);
 extern txSlot* fxNewInstance(txMachine* the);
 extern txSlot* fxToInstance(txMachine* the, txSlot* theSlot);
 extern void fxToPrimitive(txMachine* the, txSlot* theSlot, txBoolean theHint);

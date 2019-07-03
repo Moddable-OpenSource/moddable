@@ -170,7 +170,7 @@ void fxStringAccessorGetter(txMachine* the)
 			if (string->ID == XS_STRING_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (id == mxID(_length)) {
 		mxResult->value.integer = string->value.key.sum;

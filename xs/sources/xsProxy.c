@@ -170,7 +170,7 @@ void fxProxyGetter(txMachine* the)
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txID id = the->scratch.value.at.id;
@@ -185,7 +185,7 @@ void fxProxySetter(txMachine* the)
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txID id = the->scratch.value.at.id;

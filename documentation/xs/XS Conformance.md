@@ -2,7 +2,7 @@
 
 Copyright 2016-2019 Moddable Tech, Inc.
 
-Revised: June 30, 2019
+Revised: July 3, 2019
 
 ## Caveat
 
@@ -67,7 +67,7 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) and **99.8%** of the built-ins tests (`29519/29581`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) and **99.8%** of the built-ins tests (`29607/29671`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
@@ -352,7 +352,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) a
 
 ### Built-ins
 
-     99% 29519/29581 (138) built-ins
+     99% 29607/29671 (93) built-ins
          99% 5193/5205 Array
             100% 8/8 Symbol.species
             100% 80/80 from
@@ -414,7 +414,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) a
             100% 32/32 throw
         100% 8/8 AsyncIteratorPrototype
             100% 8/8 Symbol.asyncIterator
-        100% 446/446 (7) Atomics
+         99% 444/446 (7) Atomics
             100% 24/24 add
                 100% 6/6 bigint
             100% 24/24 and
@@ -435,8 +435,8 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) a
                 100% 6/6 bigint
             100% 24/24 sub
                 100% 6/6 bigint
-            100% 132/132 (7) wait
-                100% 46/46 (2) bigint
+             98% 130/132 (7) wait
+                 97% 45/46 (2) bigint
             100% 24/24 xor
                 100% 6/6 bigint
         100% 134/134 BigInt
@@ -634,7 +634,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) a
                 100% 10/10 prototype
             100% 24/24 URIError
                 100% 10/10 prototype
-        100% 502/502 (30) Number
+        100% 562/562 Number
             100% 6/6 MAX_VALUE
             100% 6/6 MIN_VALUE
             100% 8/8 NEGATIVE_INFINITY
@@ -1003,10 +1003,10 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`37010/37071`) a
         100% 58/58 global
         100% 32/32 isFinite
         100% 32/32 isNaN
-        100% 84/84 (15) parseFloat
+        100% 114/114 parseFloat
         100% 118/118 parseInt
         100% 12/12 undefined
-               
+                       
 ### Annex B
 
         100% 12/12 annexB/built-ins/Date/prototype/getYear

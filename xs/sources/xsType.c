@@ -107,6 +107,19 @@ txSlot* fxGetInstance(txMachine* the, txSlot* theSlot)
 	return C_NULL;
 }
 
+txSlot* fxGetPrototype(txMachine* the, txSlot* instance)
+{
+	txSlot* prototype = instance->value.instance.prototype;
+	if (prototype) {
+		if (prototype->ID >= 0) {
+			txSlot* alias = the->aliasArray[prototype->ID];
+			if (alias)
+				prototype = alias;
+		}
+	}
+	return prototype;
+}
+
 txSlot* fxNewInstance(txMachine* the)
 {
 	txSlot* instance = fxNewSlot(the);
@@ -491,7 +504,7 @@ again:
 		}		
 	}
 	if (flag) {
-		txSlot* prototype = instance->value.instance.prototype;
+		txSlot* prototype = fxGetPrototype(the, instance);
 		if (prototype) {
 			if (prototype->flag & XS_EXOTIC_FLAG)
 				return mxBehaviorGetProperty(the, prototype, id, index, flag);
@@ -547,7 +560,7 @@ txBoolean fxOrdinaryGetPrototype(txMachine* the, txSlot* instance, txSlot* resul
 		if (alias)
 			instance = alias;
 	}
-	prototype = instance->value.instance.prototype;
+	prototype = fxGetPrototype(the, instance);
 	if (prototype) {
 		result->kind = XS_REFERENCE_KIND;
 		result->value.reference = prototype;
@@ -655,7 +668,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		}		
 	}
 	if (flag) {
-		txSlot* prototype = instance->value.instance.prototype;
+		txSlot* prototype = fxGetPrototype(the, instance);
 		if (prototype) {
 			result = mxBehaviorGetProperty(the, prototype, id, index, flag);
 			if (result) {
@@ -753,7 +766,7 @@ txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 		while (slot) {
 			if (instance == slot) 
 				return 0;
-			slot = slot->value.instance.prototype;
+			slot = fxGetPrototype(the, slot);
 		}
 		if (instance->ID >= 0)
 			instance = fxAliasInstance(the, instance);

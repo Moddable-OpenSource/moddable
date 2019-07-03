@@ -792,7 +792,7 @@ void fxTypedArrayGetter(txMachine* the)
 			if (dispatch->ID == XS_TYPED_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txSlot* view = dispatch->next;
@@ -817,7 +817,7 @@ void fxTypedArraySetter(txMachine* the)
 			if (dispatch->ID == XS_TYPED_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txSlot* view = dispatch->next;

@@ -974,7 +974,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		if (aliasInstance)
 			theInstance = aliasInstance;
 	}
-	aParent = theInstance->value.instance.prototype;
+	aParent = fxGetPrototype(the, theInstance);
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
 	aProperty = theInstance->next;
@@ -1439,7 +1439,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 					}
 					aParentProperty = aParentProperty->next;
 				}
-				aParent = aParent->value.instance.prototype;
+				aParent = fxGetPrototype(the, aParent);
 			}
 		}
 		cache = hostInspector->value.hostInspector.cache;

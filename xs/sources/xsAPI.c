@@ -471,7 +471,7 @@ txBoolean fxIsInstanceOf(txMachine* the)
 				result = 1;
 				break;
 			}
-			theInstance = theInstance->value.instance.prototype;
+			theInstance = fxGetPrototype(the, theInstance);
 		}
 	}
 	return result;

@@ -54,6 +54,7 @@ static void fxRunForOf(txMachine* the);
 static void fxRunIn(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
+static txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
@@ -1998,7 +1999,7 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceHome(mxFrameFunction->value.reference);
 			if (!slot->value.home.object)
 				mxRunDebugID(XS_TYPE_ERROR, "get super %s: no home", (txID)offset);
-			slot = slot->value.home.object->value.instance.prototype;
+			slot = fxGetPrototype(the, slot->value.home.object);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "get super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
@@ -2152,7 +2153,7 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceHome(mxFrameFunction->value.reference);
 			if (!slot->value.home.object)
 				mxRunDebugID(XS_TYPE_ERROR, "set super %s: no home", (txID)offset);
-			slot = slot->value.home.object->value.instance.prototype;
+			slot = fxGetPrototype(the, slot->value.home.object);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "set super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
@@ -2343,7 +2344,7 @@ XS_CODE_JUMP:
 			mxSkipCode(1);
 			slot = mxFunctionInstanceHome(mxFrameFunction->value.reference);
 			slot = mxBehaviorGetProperty(the, slot->value.home.object, mxID(_constructor), XS_NO_ID, XS_ANY);
-			slot = slot->value.reference->value.instance.prototype;
+			slot = fxGetPrototype(the, slot->value.reference);
             if (!mxIsConstructor(slot))
 				mxRunDebug(XS_TYPE_ERROR, "super: no constructor");
 			/* THIS */
@@ -3334,7 +3335,7 @@ XS_CODE_JUMP:
 				else if (XS_SYMBOL_KIND == slot->kind)
 					offset = slot->value.symbol == mxStack->value.symbol;
 				else if (XS_REFERENCE_KIND == slot->kind)
-					offset = slot->value.reference == mxStack->value.reference;
+					offset = fxIsSameReference(the, slot, mxStack);
 			#ifdef mxHostFunctionPrimitive
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder == mxStack->value.hostFunction.builder;
@@ -3423,7 +3424,7 @@ XS_CODE_JUMP:
 				else if (XS_SYMBOL_KIND == slot->kind)
 					offset = slot->value.symbol != mxStack->value.symbol;
 				else if (XS_REFERENCE_KIND == slot->kind)
-					offset = slot->value.reference != mxStack->value.reference;
+					offset = !fxIsSameReference(the, slot, mxStack);
 			#ifdef mxHostFunctionPrimitive
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder != mxStack->value.hostFunction.builder;
@@ -4004,6 +4005,31 @@ void fxRunProxy(txMachine* the, txSlot* instance)
 	the->stack++;
 }
 
+txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
+{	
+	a = a->value.reference;
+	b = b->value.reference;
+	if (a == b)
+		return 1;
+	if (a->ID >= 0) {
+		txSlot* alias = the->aliasArray[a->ID];
+		if (alias) {
+			a = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	if (b->ID >= 0) {
+		txSlot* alias = the->aliasArray[b->ID];
+		if (alias) {
+			b = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 {	
 	txBoolean result = 0;
@@ -4023,7 +4049,7 @@ txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 		else if ((XS_BIGINT_KIND == a->kind) || (XS_BIGINT_X_KIND == a->kind))
 			result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 		else if (XS_REFERENCE_KIND == a->kind)
-			result = a->value.reference == b->value.reference;
+			result = fxIsSameReference(the, a, b);
 	}
 	else if ((XS_INTEGER_KIND == a->kind) && (XS_NUMBER_KIND == b->kind))
 		result = (!c_isnan(b->value.number)) && ((txNumber)(a->value.integer) == b->value.number);
@@ -4059,7 +4085,7 @@ txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero)
 		else if ((XS_BIGINT_KIND == a->kind) || (XS_BIGINT_X_KIND == a->kind))
 			result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 		else if (XS_REFERENCE_KIND == a->kind)
-			result = a->value.reference == b->value.reference;
+			result = fxIsSameReference(the, a, b);
 	}
 	else if ((XS_INTEGER_KIND == a->kind) && (XS_NUMBER_KIND == b->kind)) {
 		txNumber aNumber = a->value.integer;

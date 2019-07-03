@@ -98,6 +98,9 @@ struct sxAgentCluster {
 };
 
 struct sxContext {
+#ifdef mxTestSharedMachine
+	txMachine* shared;
+#endif
 	char harnessPath[C_PATH_MAX];
 	int testPathLength;
 	txResult* current;
@@ -215,9 +218,9 @@ int main(int argc, char* argv[])
 		error = main262(argc, argv);
 	else {
 		xsCreation _creation = {
-			128 * 1024 * 1024, 	/* initialChunkSize */
+			16 * 1024 * 1024, 	/* initialChunkSize */
 			16 * 1024 * 1024, 	/* incrementalChunkSize */
-			8 * 1024 * 1024, 	/* initialHeapCount */
+			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			4096, 				/* stackCount */
 			4096*3, 			/* keyCount */
@@ -276,6 +279,21 @@ int main(int argc, char* argv[])
 
 int main262(int argc, char* argv[]) 
 {
+#ifdef mxTestSharedMachine
+	xsCreation _creation = {
+		16 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		4096, 				/* stackCount */
+		4096*3, 			/* keyCount */
+		1993, 				/* nameModulo */
+		127, 				/* symbolModulo */
+		32 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
+	};
+	xsCreation* creation = &_creation;
+#endif
 	txContext context;
 	char separator[2];
 	char path[C_PATH_MAX];
@@ -293,6 +311,11 @@ int main262(int argc, char* argv[])
 	fxCreateCondition(&(gxAgentCluster.dataCondition));
 	fxCreateMutex(&(gxAgentCluster.dataMutex));
 	fxCreateMutex(&(gxAgentCluster.reportMutex));
+
+#ifdef mxTestSharedMachine
+	context.shared = fxCreateMachine(creation, "xsr", NULL);
+	fxShareMachine(context.shared);
+#endif
 
 	separator[0] = mxSeparator;
 	separator[1] = 0;
@@ -708,9 +731,9 @@ bail:
 int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message)
 {
 	xsCreation _creation = {
-		128 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* initialChunkSize */
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		8 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
 		4096*3, 			/* keyCount */
@@ -724,7 +747,11 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	char buffer[C_PATH_MAX];
 	int success = 0;
 	fxInitializeSharedCluster();
+#ifdef mxTestSharedMachine
+	machine = xsCloneMachine(creation, context->shared, "xst", NULL);
+#else
 	machine = xsCreateMachine(creation, "xst", NULL);
+#endif
 	xsBeginHost(machine);
 	{
 		xsTry {

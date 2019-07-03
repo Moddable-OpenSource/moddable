@@ -663,7 +663,12 @@ void fxArrayLengthGetter(txMachine* the)
 			if (array->ID == XS_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
+	}
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			array = alias->next;
 	}
 	mxResult->value.number = array->value.array.length;
 	mxResult->kind = XS_NUMBER_KIND;
@@ -679,7 +684,7 @@ void fxArrayLengthSetter(txMachine* the)
 			if (array->ID == XS_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance->ID >= 0) {
 		txSlot* alias = the->aliasArray[instance->ID];

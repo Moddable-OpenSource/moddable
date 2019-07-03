@@ -521,6 +521,11 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 	}
 	if (!prototype)
 		mxTypeError("prototype is no object");
+	if (prototype->ID >= 0) {
+		txSlot* alias = the->aliasArray[prototype->ID];
+		if (alias)
+			prototype = alias;
+	}
 	mxPushNull();
 	while (mxBehaviorGetPrototype(the, instance, the->stack)) {
 		instance = the->stack->value.reference;
