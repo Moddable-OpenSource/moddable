@@ -75,6 +75,7 @@ class ApplicationBehavior extends Behavior {
 		global.model = this;
   		application.interval = 100;
 		
+		this.keys = {};
 		this.orientation = false;
 		this.horizontalDividerCurrent = 320;
 		this.horizontalDividerStatus = true;
@@ -120,7 +121,16 @@ class ApplicationBehavior extends Behavior {
 			this.selectDevice(application, -1);
 		this.launchScreen();
 	}
-
+	onKeyDown(application, key) {
+		if (this.keys[key])
+			return;
+		this.keys[key] = true;
+		this.DEVICE.first.delegate("onKeyDown", key);
+	}
+	onKeyUp(application, key) {
+		this.keys[key] = false;
+		this.DEVICE.first.delegate("onKeyUp", key);
+	}
 	launchScreen() {
 		if (this.screenPath) {
 			system.copyFile(this.screenPath, this.localScreenPath);
