@@ -73,7 +73,10 @@ const KeyboardApp = Application.template($ => ({
 				theString += key;
 			}
 			if (PASSWORDMODE && theString.length > 0) {
-				if (timerID) Timer.clear(timerID);
+				if (undefined !== timerID) {
+					Timer.clear(timerID);
+					timerID = undefined;
+				}
 				if (key != BACKSPACE) {
 					this.data["LABEL"].string = "*".repeat(theString.length - 1) + theString.charAt(theString.length - 1);
 					timerID = Timer.set(id => {timerID = undefined; application.first.first.string = "*".repeat(theString.length);}, 500);
