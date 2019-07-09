@@ -336,14 +336,14 @@ debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 	$(UPLOAD_TO_ESP)
-	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
 	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 
 debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(UPLOAD_TO_ESP)
-	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
 	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
