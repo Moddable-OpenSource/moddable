@@ -28,6 +28,10 @@ export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
+unexport LDFLAGS
+unexport LD_LIBRARY_PATH
+unexport CPPFLAGS
+
 ifeq ($(DEBUG),1)
 	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/idf
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/xsProj
