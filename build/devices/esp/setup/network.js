@@ -32,7 +32,7 @@ export default function (done) {
 		return done();
 	}
 
-	let monitor = new WiFi({ssid: config.ssid, password: config.password}, function(msg) {
+	let monitor = new WiFi({ssid: config.ssid, password: config.password}, function(msg, code) {
 	   switch (msg) {
 		   case "gotIP":
 				trace(`IP address ${Net.get("IP")}\n`);
@@ -59,7 +59,7 @@ export default function (done) {
 				break;
 
 			case "disconnect":
-				trace("Wi-Fi disconnected\n");
+				trace((-1 === code) ? "Wi-Fi password rejected\n" : "Wi-Fi disconnected\n");
 				break;
 		}
 	});
