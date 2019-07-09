@@ -28,6 +28,7 @@
 
 // maybe use task event group flags for this like all the samples?
 int8_t gWiFiState = -1;	// -1 = uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
+int8_t gDisconnectReason = 0;		// -1 = password rejected
 
 #define SYSTEM_EVENT_STA_CHANGED_IP (SYSTEM_EVENT_MAX + 1)
 
@@ -290,7 +291,12 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+		if (SYSTEM_EVENT_STA_DISCONNECTED != event_id)
+			xsCall1(wifi->obj, xsID_callback, xsString(msg));
+		else {
+			xsmcSetInteger(xsResult, gDisconnectReason);
+			xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
+		}
 	xsEndHost(the);
 }
 
@@ -389,9 +395,16 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
 			gWiFiState = 5;
 			break;
-		case SYSTEM_EVENT_STA_DISCONNECTED:
+		case SYSTEM_EVENT_STA_DISCONNECTED: {
+			uint8_t reason = event->event_info.disconnected.reason;
+			gDisconnectReason =	(WIFI_REASON_MIC_FAILURE == reason) ||
+								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
+								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
+								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
+								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason);
+			if (gDisconnectReason) gDisconnectReason = -1;
 			gWiFiState = 2;
-			break;
+			} break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
 				modMessagePostToMachine(gScan->the, (uint8_t *)&event_id, sizeof(event_id), reportScan, NULL);
