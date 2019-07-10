@@ -1,7 +1,7 @@
 # Files
 
-Copyright 2017-2018 Moddable Tech, Inc.<BR>
-Revised: November 6, 2018
+Copyright 2017-2019 Moddable Tech, Inc.<BR>
+Revised: July 9, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -476,4 +476,4 @@ for (let key of wifiKeys)
 <a id="flash"></a>
 ## class Flash
 
-This class is experimental and not yet documented.
+This class is not yet documented.
