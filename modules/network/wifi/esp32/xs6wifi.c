@@ -77,8 +77,8 @@ void xs_wifi_scan(xsMachine *the)
 	initWiFi();
 
 	esp_wifi_get_mode(&mode);
-	if (WIFI_MODE_STA != mode)
-		xsUnknownError("can't scan in WIFI_MODE_STA");
+	if (WIFI_MODE_AP == mode)
+		xsUnknownError("can't scan in WIFI_MODE_AP");
 
 	if (0 == xsmcArgc) {
 		// clear gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
