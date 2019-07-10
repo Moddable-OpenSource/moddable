@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,20 +15,11 @@
 import {} from "piu/MC";
 import { Request } from "http";
 import Timeline from "piu/Timeline";
-import Timer from "timer";
 
 const APPID = "94de4cda19a2ba07d3fa6450eb80f091";
 const country = "us";
 const zips = ["94025", "64015", "92014", "93901", "73301"];
-
-const CLOUD = 0;
-const SUN = 1;
-const SNOW = 2;
-const RAIN = 3;
-const PARTIAL = 4;
-const SUNRAIN = 5;
-const TORNADO = 6;
-const DARKCLOUD = 7;
+const icons = ["03", "01", "13", "09", "02", "10", "11", "04"];
 
 const WHITE = "#E7DFDD";
 const BLACK = "#202020";
@@ -41,7 +32,7 @@ const iconSkin = new Skin({
 	x: 0, y: 0, width: 150, height: 150, variants: 150, states: 0,
 });
 
-const OpenSans52 = new Style({ font: "normal normal normal 52px Open Sans" });
+const OpenSans52 = new Style({ font: "52px Open Sans" });
 const OpenSans28 = new Style({ font: "semibold 28px Open Sans", color: WHITE });
 
 function titleCase(str) {
@@ -98,7 +89,6 @@ class MainColBehavior extends Behavior {
 	onFinished(column) {
 		if (this.transitioningIn) {
 			this.transitioningIn = false;
-			column.distribute("onStartFlash");	
 		} else {
 			application.defer("onAddNextScreen");
 		}
@@ -128,75 +118,48 @@ const MainCol = Column.template($ => ({
 }));
 
 class WeatherAppBehavior extends Behavior {
-	  	onCreate(application, data) {
-	  		this.data = data;
-	  	}
-		onDisplaying(application) {
-			if (application.height != 320 || application.width != 240)
-				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
-			this.zipIndex = 0;
-			this.getWeatherData(application, zips[this.zipIndex]); 
-		}
-		getWeatherData(application, zip) {
-			let request = new Request({
-				host: "api.openweathermap.org",
-				path: `/data/2.5/weather?zip=${zip},${country}&appid=${APPID}&units=imperial`,
-				response: String
-			});
-			request.callback = (message, value) => {
-				if (5 == message) {
-					value = JSON.parse(value, ["main", "name", "temp", "weather", "icon"]);
-					let icon = value.weather[0].icon.substring(0,2);
-					let toDraw;
-					switch (icon){
-						case "01":
-							toDraw = SUN;
-							break;
-						case "02":
-							toDraw = PARTIAL;
-							break;
-						case "03":
-							toDraw = CLOUD;
-							break;
-						case "04":
-							toDraw = DARKCLOUD;
-							break;
-						case "09":
-							toDraw = RAIN;
-							break;
-						case "10":
-							toDraw = SUNRAIN;
-							break;
-						case "11":
-							toDraw = TORNADO;
-							break;
-						case "13":
-							toDraw = SNOW;
-							break;
-						default:
-							toDraw = TORNADO;
-							break;
-					}
-					this.data.city = value.name,
-					this.data.temp = Math.round(value.main.temp) + " F",
-					this.data.condition = titleCase(value.weather[0].main),
-					this.data.icon = toDraw
-					application.first.delegate("onTransitionOut");
-					Timer.set(() => {
-						this.getNext(application);
-					}, 5000);
-				}
+	onCreate(application, data) {
+		this.data = data;
+		application.duration = 5000;
+	}
+	onDisplaying(application) {
+		if (application.height != 320 || application.width != 240)
+			trace("WARNING: This application was designed to run on a 240x320 screen.\n");
+		this.zipIndex = 0;
+		this.getWeatherData(application, zips[this.zipIndex]); 
+	}
+	onFinished(application) {
+		if (++this.zipIndex >= zips.length) this.zipIndex = 0;
+		let zip = zips[this.zipIndex];
+		this.getWeatherData(application, zip);     
+	}
+	getWeatherData(application, zip) {
+		let request = new Request({
+			host: "api.openweathermap.org",
+			path: `/data/2.5/weather?zip=${zip},${country}&appid=${APPID}&units=imperial`,
+			response: String
+		});
+		request.callback = (message, value) => {
+			if (Request.responseComplete == message) {
+				value = JSON.parse(value, ["main", "name", "temp", "weather", "icon"]);
+				let iconID = value.weather[0].icon.substring(0,2);
+				let icon = icons.findIndex(element => element == iconID);
+				if (-1 == icon)
+					icon = 1;	// clear
+				this.data.city = value.name,
+				this.data.temp = Math.round(value.main.temp) + " F",
+				this.data.condition = titleCase(value.weather[0].main),
+				this.data.icon = icon;
+				application.first.delegate("onTransitionOut");
+				application.time = 0;
+				application.start();
 			}
 		}
-		getNext(application) {
-			if (++this.zipIndex >= zips.length) this.zipIndex = 0;
-			let zip = zips[this.zipIndex];
-			this.getWeatherData(application, zip);     
-		}
-		onAddNextScreen(application) {
-			application.empty();
-			application.add(new MainCol(this.data));
-		}
+	}
+	onAddNextScreen(application) {
+		application.empty();
+		application.add(new MainCol(this.data));
+	}
 }
 
 const WeatherApp = Application.template($ => ({
