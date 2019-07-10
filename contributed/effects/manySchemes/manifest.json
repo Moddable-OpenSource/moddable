@@ -21,7 +21,7 @@
 		"piu/Timeline",
 	],
     "platforms": {
-	        "esp32": {
+	    "esp32": {
             "modules": {
                 "*": "$(MODULES)/drivers/neopixel/esp32/*",
             },
