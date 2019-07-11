@@ -17,6 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+HOST_OS := $(shell uname)
 ifeq ($(HOST_OS),Darwin)
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 else
