@@ -423,7 +423,7 @@ export class Server {
 		dictionary = Object.assign({port: 80}, dictionary);
 		this.listener = new Listener(dictionary);
 		this.listener.callback = listener => {
-			let socket = new Socket({listener: this.listener});
+			let socket = new Socket({listener: this.listener, noDelay: true});
 			let request = new Request({socket});	// request class will work to receive request body
 			socket.callback = server.bind(request);
 			request.server = this;					// associate server with request
@@ -436,7 +436,14 @@ export class Server {
 
 	close(connections = true) {
 		if (connections) {
-			this.connections.forEach(request => {trace("close http server request\n"); request.close();});
+			this.connections.forEach(request => {
+				try {
+					trace("close http server request\n");
+					request.close();
+				}
+				catch {
+				}
+			});
 			delete this.connections;
 		}
 		this.listener.close();
