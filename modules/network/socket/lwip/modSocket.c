@@ -223,7 +223,6 @@ void xs_socket(xsMachine *the)
 	char temp[DNS_MAX_NAME_LENGTH];
 	unsigned char ip[4];
 	int len, i;
-	unsigned char waiting = 0;
 	unsigned char multicastIP[4];
 	int ttl = 0;
 
@@ -385,42 +384,40 @@ void xs_socket(xsMachine *the)
 	else if (kRAW == xss->kind)
 		raw_recv(xss->raw, didReceiveRAW, xss);
 
-	if (kTCP == xss->kind) {
-		if (xsmcHas(xsArg(0), xsID_host)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_host);
-			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-			ip_addr_t resolved;
-			if (ERR_OK == dns_gethostbyname_safe(temp, &resolved, didFindDNS, xss)) {
-#if LWIP_IPV4 && LWIP_IPV6
-				ip[0] = ip4_addr1(&resolved.u_addr.ip4);
-				ip[1] = ip4_addr2(&resolved.u_addr.ip4);
-				ip[2] = ip4_addr3(&resolved.u_addr.ip4);
-				ip[3] = ip4_addr4(&resolved.u_addr.ip4);
-#else
-				ip[0] = ip4_addr1(&resolved);
-				ip[1] = ip4_addr2(&resolved);
-				ip[2] = ip4_addr3(&resolved);
-				ip[3] = ip4_addr4(&resolved);
-#endif
-			}
-			else
-				waiting = 1;
-		}
-		else
-		if (xsmcHas(xsArg(0), xsID_address)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_address);
-			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-			if (!parseAddress(temp, ip))
-				xsUnknownError("invalid IP address");
-		}
-		else
-			xsUnknownError("invalid dictionary");
-	}
-
-	if (waiting || (kUDP == xss->kind) || (kRAW == xss->kind))
+	if ((kUDP == xss->kind) || (kRAW == xss->kind))
 		return;
 
 	configureSocketTCP(the, xss);
+
+	if (xsmcHas(xsArg(0), xsID_host)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_host);
+		xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
+		ip_addr_t resolved;
+		if (ERR_OK == dns_gethostbyname_safe(temp, &resolved, didFindDNS, xss)) {
+#if LWIP_IPV4 && LWIP_IPV6
+			ip[0] = ip4_addr1(&resolved.u_addr.ip4);
+			ip[1] = ip4_addr2(&resolved.u_addr.ip4);
+			ip[2] = ip4_addr3(&resolved.u_addr.ip4);
+			ip[3] = ip4_addr4(&resolved.u_addr.ip4);
+#else
+			ip[0] = ip4_addr1(&resolved);
+			ip[1] = ip4_addr2(&resolved);
+			ip[2] = ip4_addr3(&resolved);
+			ip[3] = ip4_addr4(&resolved);
+#endif
+		}
+		else
+			return;
+	}
+	else
+	if (xsmcHas(xsArg(0), xsID_address)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_address);
+		xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
+		if (!parseAddress(temp, ip))
+			xsUnknownError("invalid IP address");
+	}
+	else
+		xsUnknownError("invalid dictionary");
 
 	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
 	err = tcp_connect_safe(xss->skt, &ipaddr, port, didConnect);
@@ -854,6 +851,10 @@ void configureSocketTCP(xsMachine *the, xsSocket xss)
 			}
 		}
 	}
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_noDelay);
+	if (xsmcTest(xsVar(0)))
+		tcp_nagle_disable(xss->skt);
 }
 
 void socketMsgConnect(xsSocket xss)
