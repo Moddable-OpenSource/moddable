@@ -29,7 +29,7 @@ const iconTexture = new Texture("icons-alpha.png");
 const iconSkin = new Skin({ 
 	texture: iconTexture, 
 	color: [BLACK, WHITE], 
-	x: 0, y: 0, width: 150, height: 150, variants: 150, states: 0,
+	x: 0, y: 0, width: 150, height: 150, variants: 150
 });
 
 const OpenSans52 = new Style({ font: "52px Open Sans" });
@@ -73,6 +73,18 @@ class MainColBehavior extends Behavior {
 		this.transitioningIn = 1;
 	}
 	onDisplaying(column) {
+		this.onTransitionIn(column);
+	}
+	onTimeChanged(column) {
+		this.timeline.seekTo(column.time);
+	}
+	onFinished(column) {
+		if (this.transitioningIn)
+			this.transitioningIn = false;
+		else
+			application.defer("onAddNextScreen");
+	}
+	onTransitionIn(column) {
 		this.timeline = (new Timeline)
 			.to(column.content("city"), { x:0 }, 750, Math.backEaseOut, 0)
 			.to(column.content("temp"), { x:0 }, 750, Math.backEaseOut, -500)
@@ -82,16 +94,6 @@ class MainColBehavior extends Behavior {
 		column.time = 0;
 		this.timeline.seekTo(0);
 		column.start();
-	}
-	onTimeChanged(column) {
-		this.timeline.seekTo(column.time);
-	}
-	onFinished(column) {
-		if (this.transitioningIn) {
-			this.transitioningIn = false;
-		} else {
-			application.defer("onAddNextScreen");
-		}
 	}
 	onTransitionOut(column) {
 		this.timeline = (new Timeline)
