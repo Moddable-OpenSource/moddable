@@ -46,6 +46,14 @@ typedef struct {
 static int startSPIFFS(void);
 static void stopSPIFFS(void);
 
+static void *xsmcGetHostDataNullCheck(xsMachine *the)
+{
+	void *result = xsmcGetHostData(xsThis);
+	if (result)
+		return result;
+	xsUnknownError("closed");
+}
+
 void xs_file_destructor(void *data)
 {
 	if (data) {
@@ -83,7 +91,7 @@ void xs_File(xsMachine *the)
 
 void xs_file_read(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = (FILE*)data;
     int32_t result;
     int argc = xsmcArgc;
@@ -123,7 +131,7 @@ void xs_file_read(xsMachine *the)
 
 void xs_file_write(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = ((FILE *)data);
     int32_t result;
     int argc = xsmcArgc, i;
@@ -159,7 +167,7 @@ void xs_file_write(xsMachine *the)
 
 void xs_file_close(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = ((FILE*)data);
     xs_file_destructor((void *)((int)file));
     xsmcSetHostData(xsThis, (void *)NULL);
@@ -167,7 +175,7 @@ void xs_file_close(xsMachine *the)
 
 void xs_file_get_length(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = (FILE*)data;
     struct stat buf;
     int fno;
@@ -179,7 +187,7 @@ void xs_file_get_length(xsMachine *the)
 
 void xs_file_get_position(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = (FILE*)data;
     int32_t position = ftell(file);
     xsResult = xsInteger(position);
@@ -187,7 +195,7 @@ void xs_file_get_position(xsMachine *the)
 
 void xs_file_set_position(xsMachine *the)
 {
-    void *data = xsmcGetHostData(xsThis);
+    void *data = xsmcGetHostDataNullCheck(the);
     FILE *file = ((FILE*)data);
     int32_t position = xsmcToInteger(xsArg(0));
     fseek(file, position, SEEK_SET);
