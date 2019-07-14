@@ -100,7 +100,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->prototypeSymbol = fxNewParserSymbol(parser, "prototype");
 	parser->rawSymbol = fxNewParserSymbol(parser, "raw");
 	parser->ReferenceErrorSymbol = fxNewParserSymbol(parser, "ReferenceError");
-	parser->RegExpSymbol = fxNewParserSymbol(parser, "RegExp");
 	parser->returnSymbol = fxNewParserSymbol(parser, "return");
 	parser->setSymbol = fxNewParserSymbol(parser, "set");
 	parser->sliceSymbol = fxNewParserSymbol(parser, "slice");

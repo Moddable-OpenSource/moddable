@@ -3709,12 +3709,10 @@ void fxQuestionMarkNodeCode(void* it, void* param)
 void fxRegexpNodeCode(void* it, void* param) 
 {
 	txRegexpNode* self = it;
-	txCoder* coder = param;
 	fxNodeDispatchCode(self->modifier, param);
 	fxNodeDispatchCode(self->value, param);
 	fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 2);
-	fxCoderAddByte(param, 1, XS_CODE_GLOBAL);
-	fxCoderAddSymbol(param, 0, XS_CODE_GET_VARIABLE, coder->parser->RegExpSymbol);
+	fxCoderAddIndex(param, 1, XS_CODE_INTRINSIC, mxRegExpIntrinsic);
 	fxCoderAddByte(param, -3, XS_CODE_NEW);
 }
 

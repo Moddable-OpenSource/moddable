@@ -2212,6 +2212,7 @@ enum {
 	mxEnumeratorFunctionStackIndex,
 	mxEvalIntrinsicStackIndex,
 	mxCopyObjectFunctionStackIndex,
+	mxRegExpIntrinsicStackIndex,
 	
 	mxAsyncFunctionPrototypeStackIndex,
 	mxGeneratorPrototypeStackIndex,
@@ -2387,6 +2388,7 @@ enum {
 #define mxEnumeratorFunction the->stackPrototypes[-1 - mxEnumeratorFunctionStackIndex]
 #define mxEvalIntrinsic  the->stackPrototypes[-1 - mxEvalIntrinsicStackIndex]
 #define mxCopyObjectFunction the->stackPrototypes[-1 - mxCopyObjectFunctionStackIndex]
+#define mxRegExpIntrinsic the->stackPrototypes[-1 - mxRegExpIntrinsicStackIndex]
 
 #define mxAsyncFunctionPrototype the->stackPrototypes[-1 - mxAsyncFunctionPrototypeStackIndex]
 #define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]

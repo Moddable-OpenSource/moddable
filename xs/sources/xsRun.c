@@ -2458,7 +2458,7 @@ XS_CODE_JUMP:
 			mxSkipCode(2);
 		XS_CODE_CODE:
 			mxSaveState;
-			scratch.value.code.address = (txByte*)fxNewChunk(the, (txID)offset);
+			scratch.value.code.address = (txByte*)fxNewChunk(the, (txSize)offset);
 			mxRestoreState;
 			c_memcpy(scratch.value.code.address, mxCode, offset);
 			variable = mxStack->value.reference;

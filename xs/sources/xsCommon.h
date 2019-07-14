@@ -363,6 +363,7 @@ enum {
 	mxEnumeratorIntrinsic = 0,
 	mxEvalIntrinsic,
 	mxCopyObjectIntrinsic,
+	mxRegExpIntrinsic,
 	mxIntrinsicCount,
 };
 

@@ -691,7 +691,6 @@ struct sxParser {
 	txSymbol* prototypeSymbol;
 	txSymbol* rawSymbol;
 	txSymbol* ReferenceErrorSymbol;
-	txSymbol* RegExpSymbol;
 	txSymbol* returnSymbol;
 	txSymbol* setSymbol;
 	txSymbol* sliceSymbol;
