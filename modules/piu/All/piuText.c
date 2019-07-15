@@ -912,8 +912,8 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 		
 		if (y < line->top)
 			break;
-		lineOffset += sizeof(PiuTextLineRecord);
-		if (line->bottom < y)
+
+    if (line->bottom < y)
 			continue;
 		
 		fromOffset = line->textOffset;
