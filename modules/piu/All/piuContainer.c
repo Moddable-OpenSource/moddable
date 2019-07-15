@@ -400,6 +400,11 @@ void PiuContainerUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContainer* self = it;
 	PiuContent* content = (*self)->last;
+
+	PiuTransition* transition = (*self)->transition;
+	if (transition)
+		PiuTransitionComplete(transition, self);
+
 	while (content) {
 		(*(*content)->dispatch->unbind)(content, application, view);
 		content = (*content)->previous;
