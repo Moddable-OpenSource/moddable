@@ -188,19 +188,11 @@ More detailed getting started guides are available for the following devices:
 
 4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-5. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	```
-
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 6. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
@@ -398,48 +390,40 @@ More detailed getting started guides are available for the following devices:
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-2. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
+3. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
 
-3. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
+4. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
 
 	```
 	%USERPROFILE%\msys32\mingw32.exe
 	```
 	
-4. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
+5. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
 
 	```
 	mkdir ~/esp
 	```
 	
-5. Clone the `ESP-IDF` GitHub repository into the `~/esp` directory. Make sure to specify the `--recursive` option:
+6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
-	cd ~/esp
-	git clone --recursive https://github.com/espressif/esp-idf.git
+	cd ~/esp32
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
-	```
-
-6. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
+7. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
 
 	```
 	export IDF_PATH="C:/Users/<your-user-name>/msys32/home/<your-user-name>/esp/esp-idf"
 	```
 
-7. Connect the ESP32 to your computer with a USB cable.
+8. Connect the ESP32 to your computer with a USB cable.
 
-8. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+9. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-9. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+10. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
 
 	```
 	set BASE_DIR=%USERPROFILE%
@@ -447,7 +431,7 @@ More detailed getting started guides are available for the following devices:
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
-10. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+11. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
@@ -583,19 +567,11 @@ More detailed getting started guides are available for the following devices:
 
 3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-4. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	```
-	
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 5. Install the packages required to compile with the `ESP-IDF`:
