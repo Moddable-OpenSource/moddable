@@ -137,8 +137,9 @@ JNIEXPORT void JNICALL Java_tech_moddable_piu_PiuThread_run(JNIEnv* jenv, jobjec
 	ServiceThread thread = (*jenv)->GetDirectBufferAddress(jenv, jbytes);
 	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_prepare);
 	ServiceThreadInitialize(thread, jenv);
-    pthread_mutex_unlock(&(thread->mutex));
+  pthread_mutex_unlock(&(thread->mutex));
 	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_loop);
+	(*jenv)->DeleteLocalRef(jenv, jbytes);
 }
 #elif mxLinux
 static gpointer ServiceThreadLoop(gpointer it)
