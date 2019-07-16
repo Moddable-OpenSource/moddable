@@ -38,7 +38,7 @@
 #include "xsAll.h"
 #include "stdio.h"
 
-#include "xsqca4020.h"
+#include "xsHost.h"
 #include "qurt_mutex.h"
 
 #ifdef mxInstrument

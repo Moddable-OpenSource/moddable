@@ -20,7 +20,6 @@
 
 
 #include "xs.h"
-#include "xsqca4020.h"
 #include "xsPlatform.h"
 
 #include "mc.defines.h"

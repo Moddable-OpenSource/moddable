@@ -17,8 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "xsqca4020.h"
-#include "xsPlatform.h"
+#include "xsHost.h"
 
 #include <string.h>
 #include <stdlib.h>

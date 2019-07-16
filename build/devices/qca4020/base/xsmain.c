@@ -20,7 +20,6 @@
 
 #define __XS6PLATFORMMINIMAL__
 #include "xs.h"
-#include "xsqca4020.h"
 #include "xsmain.h"
 #include "modTimer.h"
 

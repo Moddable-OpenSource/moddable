@@ -29,7 +29,7 @@
 #elif defined(apollo)
     #include "xsapollo.h"
 #elif defined(qca4020)
-    #include "xsqca4020.h"
+    #include "xsHost.h"
 #elif defined(synergy)
     #include <sys/types.h>
     #include "xssynergy.h"

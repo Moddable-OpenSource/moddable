@@ -44,8 +44,7 @@
 #ifdef __ets__
 	#include "xsesp.h"
 #elif qca4020
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
+	#include "xsHost.h"
 #else
 	#define modLog(msg)
 #endif

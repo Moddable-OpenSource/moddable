@@ -21,7 +21,7 @@
 #include "xs.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #define QAPI_USE_WLAN
 #include "qapi.h"

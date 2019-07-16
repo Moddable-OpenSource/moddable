@@ -27,7 +27,7 @@
 #elif defined(gecko)
 	#include "xsgecko.h"
 #elif defined(qca4020)
-	#include "xsqca4020.h"
+	#include "xsHost.h"
 #endif
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);

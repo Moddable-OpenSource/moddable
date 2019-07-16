@@ -25,7 +25,7 @@
 	#include "xsPlatform.h"
 	#include "xsgecko.h"
 #elif defined(qca4020)
-	#include "xsqca4020.h"
+	#include "xsHost.h"
 #else
 	#error unknown platform
 #endif

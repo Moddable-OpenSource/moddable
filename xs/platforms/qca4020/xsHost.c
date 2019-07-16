@@ -38,7 +38,7 @@
 #include "xsAll.h"
 #include "xs.h"
 #include "xsScript.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #include "qurt_error.h"
 #include "qapi_rtc.h"

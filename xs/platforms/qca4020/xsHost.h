@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef __XSQCA4020__
-#define __XSQCA4020__
+#ifndef __XSHOST__
+#define __XSHOST__
 
 #undef ENOBUFS
 #undef ETIMEDOUT
@@ -51,9 +51,8 @@
 #undef EFAULT
 #undef ENETUNREACH
 
-#include "mc.defines.h"
-#include <stdint.h>
-#include <stddef.h>
+#include "stdint.h"
+#include "stddef.h"
 #include "malloc.h"
 
 #define QAPI_NET_ENABLE_BSD_COMPATIBILITY
@@ -62,9 +61,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void xs_setup();
-void xs_loop();
 
 /*
     timer
@@ -84,14 +80,23 @@ extern void qca4020_delay(uint32_t delayMS);
 /*
 	wlan
 */
+
 int8_t qca4020_wlan_enable(void);
 int8_t qca4020_wlan_disable(void);
 int8_t qca4020_wlan_get_active_device(void);
 void qca4020_wlan_set_active_device(uint8_t deviceId);
 
 /*
+	serial
+*/
+
+int ESP_getc(void);
+void ESP_putc(int c);
+
+/*
 	critical section
 */
+
 #define modCriticalSectionDeclare
 #define modCriticalSectionBegin()	do { __asm("cpsid i"); } while(0)
 #define modCriticalSectionEnd()		do { __asm("isb"); __asm("cpsie i"); } while(0)
@@ -99,6 +104,7 @@ void qca4020_wlan_set_active_device(uint8_t deviceId);
 /*
 	date and time
 */
+
 typedef uint32_t modTime_t;
 
 struct modTimeVal {
@@ -141,9 +147,11 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
     report
 */
 
-extern void modLog_transmit(const char *msg);
-extern void ESP_putc(int c);
+extern void qca4020_error(char *msg, int err);
+extern void qca4020_msg_num(char *msg, int num);
+extern void debugger_write(const char *msg, int len);
 
+extern void modLog_transmit(const char *msg);
 
 #define modLog(msg) \
 	do { \
@@ -175,10 +183,12 @@ extern void ESP_putc(int c);
 
 extern void qca4020_watchdog();
 
-
 /*
     VM
 */
+
+void xs_setup();
+void xs_loop();
 
 #ifdef __XS__
     extern xsMachine *gThe;     // the one XS6 virtual machine running
@@ -193,6 +203,7 @@ extern void qca4020_watchdog();
 /*
 	messages
 */
+
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 #if defined(__XS__)
@@ -257,7 +268,6 @@ extern void *my_malloc(size_t size);
 #define c_vsnprintf vsnprintf
 #define c_snprintf snprintf
 #define c_fprintf fprintf
-
 
 /* DATE */
 
@@ -361,10 +371,9 @@ extern void *my_malloc(size_t size);
 #define C_ENOMEM ENOMEM
 #define C_EINVAL EINVAL
 
+/* READ MEMORY */
 
 #define espRead8(POINTER) *((txU1*)POINTER)
-#define mxGetKeySlotID(SLOT) (SLOT)->ID
-#define mxGetKeySlotKind(SLOT) (SLOT)->kind
 
 #define c_read8(POINTER) *((txU1*)(POINTER))
 #define c_read16(POINTER) *((txU2*)(POINTER))
@@ -376,5 +385,5 @@ extern void *my_malloc(size_t size);
 }
 #endif
 
-#endif /* __XSQCA4020__ */
+#endif /* __XSHOST__ */
 

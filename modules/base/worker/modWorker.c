@@ -23,8 +23,7 @@
 #if __ets__
 	#include "xsesp.h"
 #elif qca4020
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
+	#include "xsHost.h"
 #endif
 
 #include "mc.xs.h"			// for xsID_ values

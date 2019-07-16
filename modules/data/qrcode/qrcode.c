@@ -27,7 +27,7 @@
 #elif gecko
 	#include "xsgecko.h"
 #elif qca4020
-	#include "xsqca4020.h"
+	#include "xsHost.h"
 #endif
 
 void xs_qrcode(xsMachine *the)
