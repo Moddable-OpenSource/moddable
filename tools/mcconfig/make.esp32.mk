@@ -80,8 +80,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/spiffs/include \
  	$(IDF_PATH)/components/spi_flash/include \
- 	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
+ 	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/vfs/include
     
 XS_OBJ = \
