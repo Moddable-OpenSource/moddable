@@ -404,10 +404,10 @@ More detailed getting started guides are available for the following devices:
 	mkdir ~/esp
 	```
 	
-6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp` directory. Make sure to specify the `--recursive` option:
 
 	```
-	cd ~/esp32
+	cd ~/esp
 	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
