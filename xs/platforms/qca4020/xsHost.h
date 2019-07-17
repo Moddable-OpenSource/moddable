@@ -58,6 +58,11 @@
 #define QAPI_NET_ENABLE_BSD_COMPATIBILITY
 #include "qapi_socket.h"	// for ERRNO defines
 
+#define ICACHE_RODATA_ATTR __attribute__((section(".flash.rodata")))
+#define ICACHE_XS6RO_ATTR __attribute__((section(".flash.xs6ro"))) __attribute__((aligned(4)))
+#define ICACHE_XS6RO2_ATTR __attribute__((section(".flash.xs6ro2"))) __attribute__((aligned(4)))
+#define ICACHE_XS6STRING_ATTR __attribute((section(".flash.str1.4"))) __attribute__((aligned(4)))
+
 #ifdef __cplusplus
 extern "C" {
 #endif

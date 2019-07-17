@@ -40,13 +40,9 @@
 
 #include <stdint.h>
 
-#define ICACHE_RAM_ATTR
 #define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
 #define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xsro")))
-#define ICACHE_RODATA_ATTR __attribute__((section(".flash.rodata")))
-#define ICACHE_XS6RO_ATTR __attribute__((section(".flash.xs6ro"))) __attribute__((aligned(4)))
-#define ICACHE_XS6RO2_ATTR __attribute__((section(".flash.xs6ro2"))) __attribute__((aligned(4)))
-#define ICACHE_XS6STRING_ATTR __attribute((section(".flash.str1.4"))) __attribute__((aligned(4)))
+#define ICACHE_RAM_ATTR
 
 #define mxRegExp 1
 //#define mxReport 1
@@ -76,8 +72,6 @@
 #define XS_FUNCTION_NORETURN __attribute__((noreturn))
 #define XS_FUNCTION_ANALYZER_NORETURN
 
-typedef sint8_t txS1;
-typedef sint16_t txS2;
 typedef int8_t txS1;
 typedef uint8_t txU1;
 typedef int16_t txS2;

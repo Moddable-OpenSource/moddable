@@ -36,9 +36,8 @@
  */
 
 #include "xsAll.h"
-#include "stdio.h"
-
 #include "xsHost.h"
+
 #include "qurt_mutex.h"
 
 #ifdef mxInstrument
@@ -392,6 +391,8 @@ void fxSend(txMachine* the, txBoolean more)
 uint8_t gXSBUG[4] = { DEBUG_IP };
 
 //-------------------------------------------------------------------------
+#include "qapi_spi_master.h"
+
 static char* qca4020_error_message(int ret) {
 	if (!ret)
 		return "";

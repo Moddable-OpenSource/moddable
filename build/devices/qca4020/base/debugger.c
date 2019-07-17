@@ -22,8 +22,6 @@
 #include "xs.h"
 #include "xsPlatform.h"
 
-#include "mc.defines.h"
-
 #include "qapi_status.h"
 #include "qapi_types.h"
 #include "qapi_uart.h"
@@ -32,6 +30,7 @@
 #include "qurt_signal.h"
 #include "qurt_thread.h"
 #include "qurt_mutex.h"
+#include "qurt_timer.h"
 
 qurt_mutex_t gDebugMutex;
 static int debuggerSetup = 0;

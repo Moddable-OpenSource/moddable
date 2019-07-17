@@ -22,6 +22,8 @@
 #include "mc.xs.h"
 #if __ets__
 	#include "xsesp.h"
+#elif defined(qca4020)
+	#include "xsHost.h"
 #endif
 
 /*

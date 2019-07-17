@@ -18,7 +18,6 @@
  *
  */
 
-#include "xs.h"
 #include "xsHost.h"
 
 #define QAPI_USE_WLAN

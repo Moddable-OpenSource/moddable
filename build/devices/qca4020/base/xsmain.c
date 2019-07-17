@@ -24,6 +24,7 @@
 #include "modTimer.h"
 
 #include "xsPlatform.h"
+#include "xsHost.h"
 #include "modInstrumentation.h"
 
 #include "qapi_types.h"
