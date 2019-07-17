@@ -156,6 +156,10 @@ Call `serial.poll` with no dictionary to stop polling.
 
 `examples/write` demonstrates writing strings and array buffers.
 
-`examples/sim7100gps` demonstrates setting up the SIM7100 GPS and asynchronously receiving GPS updates.
+`drivers/sim7100/examples/gpsmap` demonstrates setting up the SIM7100 GPS, downloads tiles from OpenStreetMap.org and displays the map on a screen.
 
-`examples/sim7100text` demonsrates setting up the SIM7100 to send a SMS message.
+`drivers/sim7100/examples/sim7100` demonstrates setting up the SIM7100 GPS and sending the location to a SMS phone number.
+
+`drivers/sim7100/examples/sim7100gps` demonstrates setting up the SIM7100 GPS and asynchronously receiving GPS updates.
+
+`drivers/sim7100/examples/sim7100sms` demonsrates setting up the SIM7100 to send a SMS message.
