@@ -117,7 +117,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void* host; \
 	txSocket connection; \
 	txBoolean inPrintf; \
-    txBoolean debugNotifyOutstanding; \
+	uint8_t debugConnectionVerified; \
+	txBoolean debugNotifyOutstanding; \
     DebugFragment debugFragments; \
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \

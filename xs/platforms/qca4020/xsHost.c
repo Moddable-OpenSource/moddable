@@ -219,6 +219,8 @@ int32_t modGetDaylightSavingsOffset(void)
 	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+
+	static uint8_t gHasMods;
 #endif
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
@@ -270,14 +272,21 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	xsSetContext(result, NULL);
 
-#ifdef mxInstrument
-	espInitInstrumentation(result);
-#endif
-
 	return result;
 }
 
 static uint16_t gSetupPending = 0;
+
+void modLoadModule(void *theIn, const char *name)
+{
+	xsMachine *the = theIn;
+
+	xsBeginHost(the);
+		xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT);
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
 
 void setStepDone(xsMachine *the)
 {
@@ -285,11 +294,7 @@ void setStepDone(xsMachine *the)
 	if (gSetupPending)
 		return;
 
-	xsBeginHost(the);
-		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
+	modLoadModule(the, "main");
 }
 
 void mc_setup(xsMachine *the)
@@ -297,6 +302,10 @@ void mc_setup(xsMachine *the)
 	txPreparation *preparation = xsPreparationAndCreation(NULL);
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
+
+#ifdef mxInstrument
+	espInitInstrumentation(the);
+#endif
 
 	gSetupPending = 1;
 
@@ -306,7 +315,7 @@ void mc_setup(xsMachine *the)
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
-				char path[128];
+				char path[PATH_MAX];
 				char *dot;
 
 				c_strcpy(path, script->path);
@@ -335,7 +344,8 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate chunk !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for chunk !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -362,7 +372,8 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate slots !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for slots !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -402,10 +413,15 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		if (the->firstBlock != C_NULL && the->firstBlock->limit == mc_xs_chunk_allocator(the, 0)) {	/* sanity check just in case */
 			fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 			the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
-			the->heap_ptr = (uint8_t*)the->firstBlock->current;
+			the->heap_ptr = the->firstBlock->current;
 			the->firstBlock->limit = the->firstBlock->current;
 		}
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
+	}
+
+	if (!result) {
+		fxReport(the, "# can't make memory for slots\n");
+		xsDebugger();
 	}
 
 	return result;
@@ -431,21 +447,16 @@ void fxBuildKeys(txMachine* the)
 {
 }
 
-static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
+static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID* id)
 {
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	path += preparation->baseLength;
-	c_strcat(path, ".xsb");
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			path -= preparation->baseLength;
-			*id = fxNewNameC(the, path);
+	txID result = fxFindName(the, path);
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == result) {
+			*id = result;
 			return 1;
 		}
-		c--;
-		script++;
+		slot = slot->next;
 	}
 	*id = XS_NO_ID;
 	return 0;
@@ -464,7 +475,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 	int nameLen;
 	char *dot;
 
-	if (!xsb) return NULL;
+	if (!xsb || !gHasMods) return NULL;
 
 	mods = findAtom(FOURCC('M', 'O', 'D', 'S'), xsb, c_read32be(xsb), &modsSize);
 	if (!mods) return NULL;
@@ -492,30 +503,30 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
-	char name[128];
-	char path[128];
+	char name[PATH_MAX];
+	char path[PATH_MAX];
 	txBoolean absolute = 0, relative = 0, search = 0;
 	txInteger dot = 0;
 	txString slash;
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-#if MODDEF_XS_MODS
-	if (findMod(the, name, NULL)) {
-		c_strcpy(path, "/");
-		c_strcat(path, name);
-		c_strcat(path, ".xsb");
-		return fxNewNameC(the, path);
-	}
-#endif
-
+// #if MODDEF_XS_MODS
+// 	if (findMod(the, name, NULL)) {
+// 		c_strcpy(path, "/");
+// 		c_strcat(path, name);
+// 		c_strcat(path, ".xsb");
+// 		return fxNewNameC(the, path);
+// 	}
+// #endif
+// 
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
-	}
+	}	
 	else if (!c_strncmp(name, "./", 2)) {
 		dot = 1;
 		relative = 1;
-	}
+	}	
 	else if (!c_strncmp(name, "../", 3)) {
 		dot = 2;
 		relative = 1;
@@ -524,42 +535,53 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 		search = 1;
 	}
-    if (absolute) {
-        c_strcpy(path, preparation->base);
-        c_strcat(path, name + 1);
-        if (fxFindScript(the, path, &id))
-            return id;
-    }
-    if (relative && (moduleID != XS_NO_ID)) {
-        c_strcpy(path, fxGetKeyName(the, moduleID));
-        slash = c_strrchr(path, '/');
-        if (!slash)
-            return XS_NO_ID;
-        if (dot == 0)
-            slash++;
-        else if (dot == 2) {
-            *slash = 0;
-            slash = c_strrchr(path, '/');
-            if (!slash)
-                return XS_NO_ID;
-        }
-        if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
-            *slash = 0;
-            c_strcat(path, name + dot);
-            if (fxFindScript(the, path, &id))
-                return id;
-        }
-    }
-    if (search) {
-        c_strcpy(path, preparation->base);
-        c_strcat(path, name);
-        if (fxFindScript(the, path, &id))
-            return id;
-    }
-    return XS_NO_ID;
+	if (absolute) {
+		c_strcpy(path, preparation->base);
+		c_strcat(path, name + 1);
+		if (fxFindScript(the, realm, path, &id))
+			return id;
+	}
+	if (relative && (moduleID != XS_NO_ID)) {
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strrchr(path, '/');
+		if (!slash)
+			return XS_NO_ID;
+		if (dot == 0)
+			slash++;
+		else if (dot == 2) {
+			*slash = 0;
+			slash = c_strrchr(path, '/');
+			if (!slash)
+				return XS_NO_ID;
+		}
+		if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
+			*slash = 0;
+			c_strcat(path, name + dot);
+			if (fxFindScript(the, realm, path, &id))
+				return id;
+		}
+#if 0
+		*slash = 0;
+		c_strcat(path, name + dot);
+		if (!c_strncmp(path, "xsbug://", 8)) {
+			return fxNewNameC(the, path);
+		}
+#endif
+	}
+	if (search) {
+		txSlot* slot = mxAvailableModules(realm);
+		slot = slot->value.reference->next;
+		while (slot) {
+			txSlot* key = fxGetKey(the, slot->ID);
+			if (key && !c_strcmp(key->value.key.string, name))
+				return slot->value.symbol;
+			slot = slot->next;
+		}
+	}
+	return XS_NO_ID;
 }
 
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
@@ -586,19 +608,25 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		aScript.version[2] = XS_PATCH_VERSION;
 		aScript.version[3] = 0;
 
-		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &aScript, C_NULL, C_NULL);
 		return;
 	}
 #endif
-    
+
 	while (c > 0) {
 		if (!c_strcmp(path, script->path)) {
-			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+			fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 			return;
 		}
 		c--;
 		script++;
 	}
+	
+#if 0
+	path -= preparation->baseLength;
+	if (!c_strncmp(path, "xsbug://", 8))
+		fxDebugImport(the, path);
+#endif
 }
 
 void fxMarkHost(txMachine* the, txMarkRoot markRoot)
@@ -608,7 +636,24 @@ void fxMarkHost(txMachine* the, txMarkRoot markRoot)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-	return C_NULL;
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
 }
 
 void fxSweepHost(txMachine *the)

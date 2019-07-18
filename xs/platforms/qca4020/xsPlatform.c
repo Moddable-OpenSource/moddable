@@ -183,6 +183,7 @@ void fxDisconnect(txMachine* the)
 {
 	if (the->connection) {
 		fx_putpi(the, '-', true);
+		the->debugConnectionVerified = 0;
 	}
 	the->connection = (txSocket)NULL;
 }
@@ -206,8 +207,8 @@ void fxReceive(txMachine* the)
 	the->debugOffset = 0;
 
 	if ((txSocket)kSerialConnection == the->connection) {
-		static uint8_t forever = 0;
-		uint32_t timeout = forever ? 0 : (modMilliseconds() + 2000);
+
+		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
 		while (true) {
 			if (timeout && (timeout < modMilliseconds())) {
@@ -230,7 +231,7 @@ void fxReceive(txMachine* the)
 				break;
 			}
 		}
-		forever = 1;
+		the->debugConnectionVerified = 1;
 	}
 
 	the->debugBuffer[the->debugOffset] = 0;
