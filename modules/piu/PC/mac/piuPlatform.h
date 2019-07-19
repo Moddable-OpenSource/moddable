@@ -26,6 +26,7 @@
 #define NSEventModifierFlagCommand NSCommandKeyMask
 #define NSEventModifierFlagOption NSAlternateKeyMask
 #define NSEventModifierFlagShift NSShiftKeyMask
+#define NSPasteboardTypeString NSStringPboardType
 #define NSWindowStyleMaskTitled NSTitledWindowMask
 #define NSWindowStyleMaskClosable NSClosableWindowMask
 #define NSWindowStyleMaskMiniaturizable NSMiniaturizableWindowMask
@@ -35,7 +36,6 @@
 #ifndef MAC_OS_X_VERSION_10_14
 #define NSControlStateValueOn NSOnState
 #define NSControlStateValueOff NSOffState
-#define NSPasteboardTypeString NSStringPboardType
 #endif
 
 #define piuPC 1
