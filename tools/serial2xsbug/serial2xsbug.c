@@ -240,7 +240,7 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		fclose(gInstallFD);
 		gInstallFD = NULL;
 		fxRestart(self);
-		usleep(50000);
+		usleep(10000);
 		return;
 	}
 

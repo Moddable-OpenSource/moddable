@@ -64,6 +64,7 @@ debug: $(ARCHIVE)
 	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
+	$(shell pkill serial2xsbug)
 	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
 
 debugURL: $(ARCHIVE)
