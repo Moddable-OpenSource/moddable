@@ -818,6 +818,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxRangeErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxReferenceErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxRegExpPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxRegExpStringIteratorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxSetEntriesIteratorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxSetKeysIteratorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxSetPrototype); fxFreezeBuiltIn(the);
