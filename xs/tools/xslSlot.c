@@ -403,8 +403,13 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 								}
 							}
 						}
+						else if (property->kind == XS_GLOBAL_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
+							property = property->next->next;
+							if (property && (property->kind == XS_REFERENCE_KIND))
+								fxPrepareInstance(the, property->value.reference);
 						}
 						else if (property->kind == XS_EXPORT_KIND)
 							fxPrepareInstance(the, slot);
@@ -466,9 +471,15 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 							closure->flag |= XS_DONT_SET_FLAG;
 						}
 					}
+					else if (closure->kind == XS_HOST_FUNCTION_KIND) {
+						closure->flag |= XS_DONT_SET_FLAG;
+					} 
 					if (closure->flag & XS_DONT_SET_FLAG)
 						closure->flag |= XS_DONT_DELETE_FLAG;
 					else {
+// 						fprintf(stderr, "aliased variable ");
+// 						fxPrintID(the, stderr, slot->ID);
+// 						fprintf(stderr, "\n");
 						if (closure->ID == XS_NO_ID)
 							closure->ID = aliasCount++;
 						slot->flag &= ~XS_DONT_SET_FLAG;
@@ -731,7 +742,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
-		fprintf(file, ".value = { .table = { (txSlot**)(gxGlobals), %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, 0 } }");
 	} break;
 	case XS_HOST_KIND: {
 		fprintf(file, ".kind = XS_HOST_KIND}, ");
