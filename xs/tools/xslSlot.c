@@ -742,7 +742,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
-		fprintf(file, ".value = { .table = { (txSlot**)(gxGlobals), %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, 0 } }");
 	} break;
 	case XS_HOST_KIND: {
 		fprintf(file, ".kind = XS_HOST_KIND}, ");
