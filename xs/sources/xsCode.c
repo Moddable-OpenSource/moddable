@@ -137,6 +137,7 @@ static txInteger fxCoderCountParameters(txCoder* self, txNode* it);
 static txTargetCode* fxCoderCreateTarget(txCoder* self);
 static txTargetCode* fxCoderFinalizeTargets(txCoder* self, txTargetCode* alias, txInteger selector, txInteger* address, txTargetCode* finallyTarget);
 static void fxCoderJumpTargets(txCoder* self, txTargetCode* target, txInteger selector, txInteger* address);
+static void fxCoderOptimize(txCoder* self);
 static txInteger fxCoderUseTemporaryVariable(txCoder* self);
 static void fxCoderUnuseTemporaryVariables(txCoder* self, txInteger count);
 
@@ -199,6 +200,8 @@ txScript* fxParserCode(txParser* parser)
 		fxCoderAddByte(&coder, -2, XS_CODE_NEW);
 		fxCoderAddByte(&coder, -1, XS_CODE_THROW);
 	}
+	
+	//fxCoderOptimize(&coder);
 	
 	script = c_malloc(sizeof(txScript));
 	if (!script) goto bail;
@@ -1171,6 +1174,77 @@ void fxCoderJumpTargets(txCoder* self, txTargetCode* target, txInteger selector,
 		selection++;
 	}
 	*address = selection;
+}
+
+void fxCoderOptimize(txCoder* self)
+{
+	txByteCode** address;
+	txByteCode* code;
+	
+	// branch to (target | unwind)* end => end
+	address = &self->firstCode;
+	while ((code = *address)) {
+		if (code->id == XS_CODE_BRANCH_1) {
+			txByteCode* nextCode = ((txBranchCode*)code)->target->nextCode;
+			while ((nextCode->id == XS_NO_CODE) || (nextCode->id == XS_CODE_UNWIND_1))
+				nextCode = nextCode->nextCode;
+			if ((XS_CODE_END <= nextCode->id) && (nextCode->id <= XS_CODE_END_DERIVED)) {
+				txByteCode* end = fxNewParserChunkClear(self->parser, sizeof(txByteCode));
+				end->nextCode = code->nextCode;
+				end->id = nextCode->id;
+				end->stackLevel = code->stackLevel;
+				*address = end;
+			}
+			else
+				address = &code->nextCode;
+		}
+		else
+			address = &code->nextCode;
+	}
+	// unwind (target | unwind)* end => (target | unwind)* end
+	address = &self->firstCode;
+	while ((code = *address)) {
+		if (code->id == XS_CODE_UNWIND_1) {
+			txByteCode* nextCode = code->nextCode;
+			while ((nextCode->id == XS_NO_CODE) || (nextCode->id == XS_CODE_UNWIND_1))
+				nextCode = nextCode->nextCode;
+			if ((XS_CODE_END <= nextCode->id) && (nextCode->id <= XS_CODE_END_DERIVED))
+				*address = code->nextCode;
+			else
+				address = &code->nextCode;
+		}
+		else
+			address = &code->nextCode;
+	}
+	// end target* end => target* end
+	address = &self->firstCode;
+	while ((code = *address)) {
+		if ((XS_CODE_END <= code->id) && (code->id <= XS_CODE_END_DERIVED)) {
+			txByteCode* nextCode = code->nextCode;
+			if (!nextCode)
+				break;
+			while (nextCode->id == XS_NO_CODE)
+				nextCode = nextCode->nextCode;
+			if (nextCode->id == code->id)
+				*address = code->nextCode;
+			else
+				address = &code->nextCode;
+		}
+		else
+			address = &code->nextCode;
+	}
+	// branch to next =>
+	address = &self->firstCode;
+	while ((code = *address)) {
+		if (code->id == XS_CODE_BRANCH_1) {
+			if (code->nextCode == (txByteCode*)(((txBranchCode*)code)->target))
+				*address = code->nextCode;
+			else
+				address = &code->nextCode;
+		}
+		else
+			address = &code->nextCode;
+	}
 }
 
 txInteger fxCoderUseTemporaryVariable(txCoder* self)
