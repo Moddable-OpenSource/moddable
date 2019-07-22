@@ -201,7 +201,7 @@ txScript* fxParserCode(txParser* parser)
 		fxCoderAddByte(&coder, -1, XS_CODE_THROW);
 	}
 	
-	//fxCoderOptimize(&coder);
+	fxCoderOptimize(&coder);
 	
 	script = c_malloc(sizeof(txScript));
 	if (!script) goto bail;
