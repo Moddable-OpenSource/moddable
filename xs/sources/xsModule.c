@@ -108,7 +108,7 @@ void fxBuildModule(txMachine* the)
 	mxPush(mxObjectPrototype);
 	fxNewObjectInstance(the);
 	mxCompartmentPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 	mxCompartmentConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Compartment_get_map), C_NULL, mxID(_map), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);

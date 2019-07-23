@@ -37,6 +37,7 @@
 
 #include "xsl.h"
 
+static void fxCheckEnvironmentAliases(txMachine* the, char* path, txSlot* slot);
 static txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which);
 static txString fxGetCallbackName(txMachine* the, txCallback callback); 
 static txString fxGetCodeName(txMachine* the, txByte* which);
@@ -59,6 +60,55 @@ txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, t
 	txLinker* linker = (txLinker*)(the->context);
 	fxNewLinkerBuilder(linker, call, length, id);
 	return fxNewHostFunction(the, call, length, id);
+}
+
+void fxCheckAliases(txMachine* the) 
+{
+	txLinker* linker = (txLinker*)(the->context);
+	char path[PATH_MAX], *dot;
+	txSlot* module = mxProgram.value.reference->next; //@@
+	while (module) {
+		txSlot* export = mxModuleExports(module)->value.reference->next;
+		c_strcpy(path, fxGetKeyName(the, module->ID) + linker->baseLength);
+		dot = c_strrchr(path, '.');
+		*dot = 0;
+		while (export) {
+			txSlot* closure = export->value.export.closure;
+			if (closure->ID != XS_NO_ID) {
+				fprintf(stderr, "# warning: \"%s\": export %s: alias!\n", path, fxGetKeyName(the, export->ID));
+			}
+			fxCheckEnvironmentAliases(the, path, closure);
+			export = export->next;
+		}
+		module = module->next;
+	}
+}
+
+void fxCheckEnvironmentAliases(txMachine* the, char* path, txSlot* slot) 
+{
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		txSlot* internal = instance->next;
+		if (internal && ((internal->kind == XS_CODE_KIND) || (internal->kind == XS_CODE_X_KIND))) {
+			if (!(instance->flag & XS_LEVEL_FLAG)) {
+				txSlot* closure = internal->value.code.closures;
+				instance->flag |= XS_LEVEL_FLAG;
+				if (closure) {
+					closure = closure->next;
+					while (closure) {
+						if (closure->kind == XS_CLOSURE_KIND) {
+							if (closure->value.closure->ID != XS_NO_ID) {
+								fprintf(stderr, "# warning: \"%s\": (%s) %s: alias!\n", path, fxGetKeyName(the, internal->ID), fxGetKeyName(the, closure->ID));
+							}
+							fxCheckEnvironmentAliases(the, path, closure->value.closure);
+						}
+						closure = closure->next;
+					}
+				}
+				instance->flag &= ~XS_LEVEL_FLAG;
+			}
+		}
+	}
 }
 
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
