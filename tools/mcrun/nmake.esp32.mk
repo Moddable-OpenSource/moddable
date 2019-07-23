@@ -53,10 +53,10 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(XSBUG).exe)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
