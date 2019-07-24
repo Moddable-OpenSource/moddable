@@ -65,12 +65,6 @@ static uart_t *gUART;
 	#define DEBUGGER_SPEED 921600
 #endif
 
-#ifdef mxDebug
-	#define UART_SPEED	DEBUGGER_SPEED
-#else
-	#define UART_SPEED	115200
-#endif
-
 void setup()
 {
 #if kESP8266Version >= 24
