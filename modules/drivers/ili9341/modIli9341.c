@@ -21,7 +21,7 @@
 #include "xsmc.h"
 
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif defined(__ZEPHYR__)
 	#include "xsPlatform.h"
 	#include "modTimer.h"

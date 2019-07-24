@@ -30,7 +30,7 @@
 #include "mc.xs.h"			// for xsID_ values
 
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #else
 	#define ICACHE_XS6RO_ATTR
 	#define ICACHE_XS6RO2_ATTR

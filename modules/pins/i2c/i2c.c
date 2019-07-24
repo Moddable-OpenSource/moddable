@@ -23,7 +23,7 @@
 	#include "xsPlatform.h"
 	#include "xsgecko.h"
 #else
-	#include "xsesp.h"
+	#include "xsHost.h"
 #endif
 #include "mc.xs.h"			// for xsID_ values
 

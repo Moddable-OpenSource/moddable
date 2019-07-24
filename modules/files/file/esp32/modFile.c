@@ -34,7 +34,7 @@
 #undef c_memset
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 

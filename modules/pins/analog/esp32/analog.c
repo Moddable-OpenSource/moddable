@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "driver/adc.h"
 #include "esp_adc_cal/include/esp_adc_cal.h"

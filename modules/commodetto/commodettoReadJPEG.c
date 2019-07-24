@@ -42,7 +42,7 @@
 #include "mc.xs.h"			// for xsID_ values
 
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif qca4020
 	#include "xsHost.h"
 #else

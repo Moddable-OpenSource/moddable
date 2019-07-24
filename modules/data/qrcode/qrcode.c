@@ -23,7 +23,7 @@
 #include "qrcodegen.h"
 
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif gecko
 	#include "xsgecko.h"
 #elif qca4020

@@ -23,7 +23,7 @@
 #include "modGPIO.h"
 #include "modSerial.h"
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif gecko
 	#include "xsgecko.h"
 	#include "xsPlatform.h"

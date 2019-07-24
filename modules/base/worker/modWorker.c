@@ -19,12 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#if __ets__
-	#include "xsesp.h"
-#elif qca4020
-	#include "xsHost.h"
-#endif
+#include "xsHost.h"
 
 #include "mc.xs.h"			// for xsID_ values
 

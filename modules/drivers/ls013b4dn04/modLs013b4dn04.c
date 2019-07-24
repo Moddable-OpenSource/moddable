@@ -24,7 +24,7 @@
 	#include "xsPlatform.h"
 	#include "xsgecko.h"
 #else
-	#include "xsesp.h"
+	#include "xsHost.h"
 #endif
 #include "modGPIO.h"
 #include "modSPI.h"

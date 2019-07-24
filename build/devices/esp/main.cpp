@@ -22,7 +22,7 @@
 
 #include <Arduino.h>
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modTimer.h"
 
 extern "C" {

@@ -109,7 +109,7 @@
 		kStatePlaying = 1
 	};
 #elif ESP32
-	#include "xsesp.h"
+	#include "xsHost.h"
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 	#include "freertos/semphr.h"
@@ -121,7 +121,7 @@
 		kStateTerminated = 2
 	};
 #elif defined(__ets__)
-	#include "xsesp.h"
+	#include "xsHost.h"
 	#include "tinyi2s.h"
 #endif
 

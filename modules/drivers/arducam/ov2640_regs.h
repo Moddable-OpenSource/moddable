@@ -21,7 +21,7 @@
 #ifndef OV2640_REGS_H
 #define OV2640_REGS_H
 
-#include "xsesp.h"
+#include "xsHost.h"
 #undef PROGMEM
 #define PROGMEM ICACHE_RODATA_ATTR
 

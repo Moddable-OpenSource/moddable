@@ -20,7 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "xsesp.h"
+#include "xsHost.h"
 #include "driver/pcnt.h"
 
 typedef struct {

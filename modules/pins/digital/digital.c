@@ -20,7 +20,7 @@
 
 #include "xsmc.h"
 #if ESP32 || __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif defined(gecko)
 	#include "xsPlatform.h"
 	#include "xsgecko.h"

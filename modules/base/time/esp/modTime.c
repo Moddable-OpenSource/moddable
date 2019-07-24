@@ -21,7 +21,7 @@
 
 #include "xsmc.h"
 #if ESP32 || __ets__
-    #include "xsesp.h"
+    #include "xsHost.h"
 #elif __ZEPHYR__
     #include "modTimer.h"
 #elif defined(gecko)

@@ -21,7 +21,7 @@
 #ifndef __MODLWIPSAFE__
 #define __MODLWIPSAFE__
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #if !ESP32
 	#define tcp_new_safe tcp_new

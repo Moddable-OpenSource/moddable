@@ -20,7 +20,7 @@
 
 #include "mc.defines.h"
 #include "modI2C.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "driver/i2c.h"
 

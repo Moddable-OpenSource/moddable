@@ -23,7 +23,7 @@
 
 #include "modTimer.h"
 #if __ets__ || defined(ESP32)
-	#include "xsesp.h"
+	#include "xsHost.h"
 #elif defined(gecko)
 	#include "xsgecko.h"
 #elif defined(qca4020)

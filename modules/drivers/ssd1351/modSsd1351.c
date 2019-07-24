@@ -23,7 +23,7 @@
 #include "xsmc.h"
 
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 	#include "modGPIO.h"
 #elif defined(__ZEPHYR__)
 	#include "xsPlatform.h"
