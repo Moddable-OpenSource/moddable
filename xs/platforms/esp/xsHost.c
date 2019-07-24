@@ -731,7 +731,7 @@ void mc_setup(xsMachine *the)
 	gSetupPending = 1;
 
 	xsBeginHost(the);
-		xsVars(2);
+		xsVars(1);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
 
 		while (scriptCount--) {
