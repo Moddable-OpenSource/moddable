@@ -224,9 +224,12 @@ void fxRunImport(txMachine* the)
 	{
 		mxTry(the) {
 			txSlot* internal = mxModuleInstanceInternal(module);
+			txSlot* realm = internal->value.module.realm;
+			if (!realm)
+				realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			fxToString(the, stack);
 			the->requireFlag |= XS_REQUIRE_FLAG;
-			module = fxRequireModule(the, internal->value.module.realm, internal->value.module.id, stack);
+			module = fxRequireModule(the, realm, internal->value.module.id, stack);
 			the->requireFlag &= ~XS_REQUIRE_FLAG;
 			mxPushSlot(module);
 			/* COUNT */
