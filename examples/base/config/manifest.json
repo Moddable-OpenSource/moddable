@@ -6,10 +6,10 @@
 			"./echo"
 		]
 	},
+	"preload": "echo",
 	"config": {
 		"sntp": "pool.ntp.org",
 		"threshold": 0.8,
-		"screen": "ili9341",
-		"printModuleName": "echo"
+		"echoModuleSpecifier": "echo"
 	}
 }
