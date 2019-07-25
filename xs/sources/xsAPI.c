@@ -1544,10 +1544,12 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxBuildArchiveKeys(the);
 			
 			the->aliasCount = theMachine->aliasCount;
-			the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
-			if (!the->aliasArray)
-				fxJump(the);
-			c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
+			if (the->aliasCount) {
+				the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
+				if (!the->aliasArray)
+					fxJump(the);
+				c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
+			}
 
 			/* mxGlobal */
 			mxPushUndefined();
