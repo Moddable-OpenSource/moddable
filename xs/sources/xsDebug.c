@@ -1673,6 +1673,8 @@ void fxListGlobal(txMachine* the)
 	txSlot* realm = fxFindRealm(the);
 	txSlot* slot = mxRealmGlobal(realm)->value.reference->next;
 	fxEcho(the, "<global>");
+	if (slot->flag & XS_INTERNAL_FLAG)
+		slot = slot->next;
 	while (slot) {
 		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
 		slot = slot->next;
