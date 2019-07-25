@@ -41,9 +41,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#ifdef __ets__
-	#include "xsHost.h"
-#elif qca4020
+#if defined(__ets__) || defined(qca4020)
 	#include "xsHost.h"
 #else
 	#define modLog(msg)

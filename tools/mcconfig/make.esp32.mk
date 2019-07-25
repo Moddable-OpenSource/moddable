@@ -134,10 +134,10 @@ XS_DIRS = \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 

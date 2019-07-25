@@ -145,10 +145,10 @@ XS_DIRS = \
 
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
-	$(XS_DIR)\includes\xsesp.h \
 	$(XS_DIR)\includes\xsmc.h \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
+	$(XS_DIR)\platforms\esp\xsHost.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 
 !IF "$(SDKCONFIGPATH)"==""
