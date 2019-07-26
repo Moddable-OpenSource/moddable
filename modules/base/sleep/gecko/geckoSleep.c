@@ -25,7 +25,7 @@
 #include "em_rmu.h"
 #include "em_gpio.h"
 
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include "mc.defines.h"
 

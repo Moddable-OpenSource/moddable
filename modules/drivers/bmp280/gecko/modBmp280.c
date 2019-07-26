@@ -21,7 +21,7 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "modGPIO.h"
 #include "modI2C.h"
 #include "bmp280.h"

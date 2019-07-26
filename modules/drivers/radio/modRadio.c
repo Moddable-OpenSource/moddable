@@ -19,10 +19,7 @@
  */
 
 #include "xsmc.h"
-#if gecko
-#include "xsgecko.h"
-#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 #include "mc.xs.h"      // for xsID_ values
  

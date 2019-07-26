@@ -22,14 +22,7 @@
 #include "mc.xs.h"
 #include "modGPIO.h"
 #include "modSerial.h"
-#ifdef __ets__
-	#include "xsHost.h"
-#elif gecko
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#else
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 #include "mc.defines.h"
 

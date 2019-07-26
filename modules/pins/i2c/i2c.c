@@ -19,12 +19,7 @@
  */
 
 #include "xsmc.h"
-#ifdef gecko
-	#include "xsPlatform.h"
-	#include "xsgecko.h"
-#else
-	#include "xsHost.h"
-#endif
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modI2C.h"

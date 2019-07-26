@@ -93,10 +93,10 @@ XS_DIRS = \
 	$(BUILD_DIR)/devices/gecko
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsgecko.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/gecko/xsHost.h \
 	$(XS_DIR)/platforms/gecko/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -163,7 +163,8 @@ C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_
 
 C_FLAGS += -gdwarf-2 -mcpu=$(HWCPU) -mthumb -std=c99 \
     -DDEBUG=1 \
-    -Wall -c -fmessage-length=0 -mno-sched-prolog \
+	-c -fmessage-length=0 -mno-sched-prolog \
+	-Wno-implicit-function-declaration \
     -fno-builtin -ffunction-sections -fdata-sections \
     -MMD -MP \
 	$(DEV_C_FLAGS)

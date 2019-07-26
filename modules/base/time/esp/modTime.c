@@ -20,16 +20,12 @@
 
 
 #include "xsmc.h"
-#if ESP32 || __ets__
+#if defined(ESP32) || defined(__ets__) || defined(gecko) || defined(qca4020)
     #include "xsHost.h"
 #elif __ZEPHYR__
     #include "modTimer.h"
-#elif defined(gecko)
-    #include "xsgecko.h"
 #elif defined(apollo)
     #include "xsapollo.h"
-#elif defined(qca4020)
-    #include "xsHost.h"
 #elif defined(synergy)
     #include <sys/types.h>
     #include "xssynergy.h"

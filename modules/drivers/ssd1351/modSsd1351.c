@@ -22,16 +22,12 @@
 //  https://github.com/adafruit/Adafruit-SSD1351-library
 #include "xsmc.h"
 
-#ifdef __ets__
+#if defined(__ets__) || defined(gecko)
 	#include "xsHost.h"
 	#include "modGPIO.h"
 #elif defined(__ZEPHYR__)
 	#include "xsPlatform.h"
 	#include "modTimer.h"
-	#include "modGPIO.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
 	#include "modGPIO.h"
 #else
 	#include "xslinux.h"

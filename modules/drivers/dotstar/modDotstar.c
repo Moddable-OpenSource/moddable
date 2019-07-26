@@ -20,14 +20,11 @@
 
 #include "xsmc.h"
 
-#ifdef __ets__
+#if defined(__ets__) || defined(gecko)
 	#include "xsHost.h"
 #elif defined(__ZEPHYR__)
 	#include "xsPlatform.h"
 	#include "modTimer.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
 #else
 	#include "xslinux.h"
 	#include "xsPlatform.h"

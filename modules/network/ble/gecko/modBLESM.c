@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "mc.xs.h"
 #include "modBLE.h"
 

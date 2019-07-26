@@ -38,7 +38,7 @@
 #include "xsAll.h"
 #include "xs.h"
 #include "xsScript.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include <stdio.h>
 

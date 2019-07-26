@@ -35,7 +35,7 @@
 	#include "modGPIO.h"
 #elif defined(gecko)
 	#define tryGeckoGPIOIrq	1
-	#include "xsgecko.h"
+	#include "xsHost.h"
 	#include "xsPlatform.h"
 	#include "modGPIO.h"
 #else
