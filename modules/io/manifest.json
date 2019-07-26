@@ -1,0 +1,42 @@
+{
+	"build": {
+		"IO": "$(MODDABLE)/modules/io",
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+	],
+	"modules": {
+		"*": [
+			"$(IO)/common/builtinCommon",
+		],
+		"builtin/analog": "$(IO)/analog/*",
+		"builtin/digital": "$(IO)/digital/digital",
+		"builtin/digitalbank": "$(IO)/digital/digitalbank",
+		"builtin/i2c": "$(IO)/i2c/*",
+		"builtin/serial": "$(IO)/serial/*",
+		"builtin/socket/listener": "$(IO)/socket/listener",
+		"builtin/socket/tcp": "$(IO)/socket/tcp",
+		"builtin/socket/udp": "$(IO)/socket/udp",
+		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
+
+		"expander": "$(IO)/expander/*",
+
+		"system": "$(IO)/system/*",
+	},
+	"preload": [
+		"builtin/analog",
+		"builtin/digital",
+		"builtin/digitalbank",
+		"builtin/i2c",
+		"builtin/serial",
+		"builtin/socket/listener",
+		"builtin/socket/tcp",
+		"builtin/socket/udp",
+		"builtin/wakeabledigital",
+
+		"expander",
+
+		"system",
+	],
+}
