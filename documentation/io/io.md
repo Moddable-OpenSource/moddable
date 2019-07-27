@@ -333,7 +333,7 @@ import Analog from "builtin/analog";
 
 | Property | Description |
 | :---: | :--- |
-|  `pin` | The number of the analog input. The ESP8266 has only a single analog input so the value is always 0.
+|  `pin` | The number of the analog input. The ESP8266 has only a single analog input so this property is unused.
 
 #### Callbacks
 There are no callbacks supported. Analog inputs are generally continuously fluctuating so the value is always changing which would cause onReadable to be invoked continuously.
@@ -351,9 +351,7 @@ An `onReadable` callback may be useful. It could trigger based on various condit
 The following example displays the value of an analog input as a floating point number from 0 to 1. The `resolution` property is used to scale the result of the `read` call.
 
 ```js
-let analog = new Analog({
-	pin: 0,
-});
+let analog = new Analog({});
 trace(analog.read() / (1 << analog.resolution, "\n");
 ```
 

@@ -32,15 +32,6 @@ static uint8_t gInUse;
 
 void xs_analog_constructor(xsMachine *the)
 {
-	int pin;
-
-	xsmcVars(1);
-
-	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = xsmcToInteger(xsVar(0));
-	if (0 != pin)
-		xsRangeError("invalid pin");
-
 	if (gInUse)
 		xsUnknownError("in use");
 
@@ -66,5 +57,3 @@ void xs_analog_read(xsMachine *the)
 /*
 	Normatively define values returned so that they are consistent across microcontrollers from various vendors
 */
-
-
