@@ -105,7 +105,7 @@ struct DigitalRecord {
 	uint16_t	rises;
 	uint16_t	falls;
 	xsMachine	*the;
-	xsSlot		obj;
+	xsSlot		target;
 	xsSlot		*onReadable;
 	struct DigitalRecord *next;
 };
@@ -233,8 +233,10 @@ void xs_digitalbank_constructor(xsMachine *the)
 		xsSlot tmp;
 
 		digital->the = the;
-		digital->obj = xsThis;
-		xsRemember(digital->obj);
+		xsmcGet(digital->target, xsArg(0), xsID_target);
+		if (!xsmcTest(digital->target))
+			digital->target = xsThis;
+		xsRemember(digital->target);
 		digital->rises = rises;
 		digital->falls = falls;
 		digital->triggered = 0;
@@ -327,7 +329,7 @@ void xs_digitalbank_close(xsMachine *the)
 	if (!digital) return;
 
 	xsmcSetHostData(xsThis, NULL);
-	xsForget(digital->obj);
+	xsForget(digital->target);
 	xs_digitalbank_destructor(digital);
 }
 
@@ -405,7 +407,7 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 
 		xsBeginHost(walker->the);
 			xsmcSetInteger(xsResult, triggered);
-			xsCallFunction1(xsReference(walker->onReadable), walker->obj, xsResult);
+			xsCallFunction1(xsReference(walker->onReadable), walker->target, xsResult);
 		xsEndHost(walker->the);
 	}
 }

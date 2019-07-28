@@ -32,6 +32,8 @@ class Digital extends DigitalBank {
 		};
 		if (dictionary.onReadable)
 			d.onReadable = dictionary.onReadable;
+		if (dictionary.target)
+			d.target = dictionary.target;
 		super(d);
 	}
 	read() {
