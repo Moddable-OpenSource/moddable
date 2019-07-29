@@ -421,6 +421,6 @@ Client.receive = 3;
 Client.disconnect = 4;
 Object.freeze(Client.prototype);
 
-export default {
+export default Object.freeze({
 	Client, Server
-};
+});
