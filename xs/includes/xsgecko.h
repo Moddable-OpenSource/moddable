@@ -17,6 +17,8 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>. 
  *
  */
+#error - This file is deprecated. Please #include "xsHost.h" instead.
+
 #ifndef __XS6GECKO__
 #define __XS6GECKO__
 

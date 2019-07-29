@@ -18,6 +18,8 @@
  *
  */
 
+#error - This file is deprecated. Please #include "xsHost.h" instead.
+
 #ifndef __XSQCA4020__
 #define __XSQCA4020__
 

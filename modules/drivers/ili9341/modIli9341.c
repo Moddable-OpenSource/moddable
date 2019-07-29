@@ -19,15 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#if defined(__ets__) || defined(gecko) || defined(qca4020)
-	#include "xsHost.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-#else
-	#error unsupported platform
-#endif
+#include "xsHost.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"

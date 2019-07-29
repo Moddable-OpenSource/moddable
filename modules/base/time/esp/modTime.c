@@ -20,21 +20,7 @@
 
 
 #include "xsmc.h"
-#if defined(ESP32) || defined(__ets__) || defined(gecko) || defined(qca4020)
-    #include "xsHost.h"
-#elif __ZEPHYR__
-    #include "modTimer.h"
-#elif defined(apollo)
-    #include "xsapollo.h"
-#elif defined(synergy)
-    #include <sys/types.h>
-    #include "xssynergy.h"
-    #include <string.h>
-#elif defined(linux)
-    #include "xslinux.h"
-#else
-    #error unknown platform
-#endif
+#include "xsHost.h"
 
 void xs_time_set(xsMachine *the)
 {

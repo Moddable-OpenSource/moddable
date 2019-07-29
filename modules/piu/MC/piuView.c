@@ -813,7 +813,7 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 
 PiuTick PiuViewTicks(PiuView* self)
 {
-#if defined (__ZEPHYR__) || defined (__ets__) || defined (ESP32) || defined(gecko) || defined (_RENESAS_SYNERGY_) || defined(qca4020)
+#if defined (__ets__) || defined (ESP32) || defined(gecko) || defined(qca4020)
 	return modMilliseconds();
 #else
 	//@@ should use modMilliseconds on all platforms

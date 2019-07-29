@@ -18,6 +18,8 @@
  *
  */
 
+#error - This file is deprecated. Please #include "xsHost.h" instead.
+
 #ifndef __XS6ESP__
 #define __XS6ESP__
 
