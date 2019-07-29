@@ -37,9 +37,9 @@
 
 #include "xsAll.h"
 
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
-char lastDebugStr[256];
-char synergyDebugStr[256];
+#if defined(DEBUG_EFM)
+char _lastDebugStrBuffer[256];
+char _debugStrBuffer[256];
 #endif
 static void fxVReportException(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
@@ -2075,10 +2075,10 @@ void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
-	memmove(lastDebugStr, synergyDebugStr, 256);
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+#if defined(DEBUG_EFM)
+	memmove(_lastDebugStrBuffer, _debugStrBuffer, 256);
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -2096,14 +2096,14 @@ void fxVReportException(void* console, txString thePath, txInteger theLine, txSt
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: exception: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: exception: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# exception: ");
-	memmove(lastDebugStr, synergyDebugStr, 256);
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# exception: ");
+	memmove(_lastDebugStrBuffer, _debugStrBuffer, 256);
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -2121,13 +2121,13 @@ void fxVReportError(void* console, txString thePath, txInteger theLine, txString
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: error: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: error: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# error: ");
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# error: ");
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -2145,13 +2145,13 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: warning: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: warning: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# warning: ");
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# warning: ");
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
