@@ -53,7 +53,7 @@ struct SerialRecord {
 	uint8_t		isWritable;
 	uint8_t		format;
 	xsMachine	*the;
-	xsSlot		obj;
+	xsSlot		target;
 	xsSlot		onReadable;
 	xsSlot		onWritable;
 };
@@ -66,19 +66,24 @@ void xs_serial_constructor(xsMachine *the)
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable;
+	xsSlot target;
 
 	if (!builtinArePinsFree((1 << kTXPin) | (1 << kRXPin)))
 		xsUnknownError("in use");
 
 	xsmcVars(1);
 
+	xsmcGet(target, xsArg(0), xsID_target);
+	if (!xsmcTest(target))
+		target = xsThis;
+
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
 	if ((baud < 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = builtinHasCallback(the, xsID_onReadable);
-	hasWritable = builtinHasCallback(the, xsID_onWritable);
+	hasReadable = builtinHasCallback(the, &target, xsID_onReadable);
+	hasWritable = builtinHasCallback(the, &target, xsID_onWritable);
 
 	serial = c_malloc((hasReadable || hasWritable) ? sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
@@ -91,18 +96,18 @@ void xs_serial_constructor(xsMachine *the)
 	serial->hasWritable = hasWritable;
 	if (hasReadable || hasWritable) {
 		serial->the = the;
-		serial->obj = xsThis;
-		xsRemember(serial->obj);
+		serial->target = target;
+		xsRemember(serial->target);
 
 		if (hasReadable) {
 			serial->isReadable = 0;
-			builtinGetCallback(the, xsID_onReadable, &serial->onReadable);
+			builtinGetCallback(the, &target, xsID_onReadable, &serial->onReadable);
 			xsRemember(serial->onReadable);
 		}
 
 		if (hasWritable) {
 			serial->isWritable = 0;
-			builtinGetCallback(the, xsID_onWritable, &serial->onWritable);
+			builtinGetCallback(the, &target, xsID_onWritable, &serial->onWritable);
 			xsRemember(serial->onWritable);
 		}
 	}
@@ -179,7 +184,7 @@ void xs_serial_close(xsMachine *the)
 
 	xsmcSetHostData(xsThis, NULL);
 	if (serial->hasReadable || serial->hasWritable) {
-		xsForget(serial->obj);
+		xsForget(serial->target);
 		if (serial->hasReadable)
 			xsForget(serial->onReadable);
 		if (serial->hasWritable)
@@ -294,7 +299,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onReadable, serial->obj, xsResult);
+				xsCallFunction1(serial->onReadable, serial->target, xsResult);
 			xsEndHost(the);
 		}
 	}
@@ -305,7 +310,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onWritable, serial->obj, xsResult);
+				xsCallFunction1(serial->onWritable, serial->target, xsResult);
 			xsEndHost(the);
 		}
 	}

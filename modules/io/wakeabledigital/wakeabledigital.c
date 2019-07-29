@@ -38,7 +38,7 @@ struct WakeableDigitalRecord {
 	uint8_t		pin;
 	uint8_t		hasOnReadable;
 	xsMachine	*the;
-	xsSlot		obj;
+	xsSlot		target;
 	xsSlot		onReadable;
 	struct WakeableDigitalRecord *next;
 };
@@ -52,8 +52,13 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	WakeableDigital wd;
 	int pin, type;
 	uint8_t hasOnReadable;
+	xsSlot target;
 
 	xsmcVars(1);
+
+	xsmcGet(target, xsArg(0), xsID_target);
+	if (!xsmcTest(target))
+		target = xsThis;
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 
@@ -70,7 +75,7 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	else
 		xsRangeError("invalid pin");
 
-	hasOnReadable = builtinHasCallback(the, xsID_onReadable);
+	hasOnReadable = builtinHasCallback(the, &target, xsID_onReadable);
 
 	wd = c_malloc(hasOnReadable ? sizeof(WakeableDigitalRecord) : offsetof(WakeableDigitalRecord, the));
 	if (!wd)
@@ -82,8 +87,8 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 
 	if (hasOnReadable) {
 		wd->the = the;
-		wd->obj = xsThis;
-		xsRemember(wd->obj);
+		wd->target = target;
+		xsRemember(wd->target);
 
 		builtinGetCallback(the, xsID_onReadable, &wd->onReadable);
 		xsRemember(wd->onReadable);
@@ -111,7 +116,7 @@ void xs_wakeabledigital_close(xsMachine *the)
 
 	xsmcSetHostData(xsThis, NULL);
 	if (wd->hasOnReadable) {
-		xsForget(wd->obj);
+		xsForget(wd->target);
 		xsForget(wd->onReadable);
 	}
 	xs_wakeabledigital_destructor(wd);
@@ -133,7 +138,7 @@ void wakeableDigitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16
 	xsMachine *the = wd->the;
 
 	xsBeginHost(the);
-		xsCallFunction0(wd->onReadable, wd->obj);
+		xsCallFunction0(wd->onReadable, wd->target);
 	xsEndHost(the);
 }
 

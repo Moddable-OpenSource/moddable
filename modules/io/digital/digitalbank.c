@@ -130,8 +130,13 @@ void xs_digitalbank_constructor(xsMachine *the)
 	Digital digital;
 	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
+	xsSlot target;
 
 	xsmcVars(1);
+
+	xsmcGet(target, xsArg(0), xsID_target);
+	if (!xsmcTest(target))
+		target = xsThis;
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_pins);
 	pins = xsmcToInteger(xsVar(0));
@@ -146,7 +151,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	if (builtinHasCallback(the, xsID_onReadable)) {
+	if (builtinHasCallback(the, &target, xsID_onReadable)) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
@@ -233,16 +238,16 @@ void xs_digitalbank_constructor(xsMachine *the)
 		xsSlot tmp;
 
 		digital->the = the;
-		xsmcGet(digital->target, xsArg(0), xsID_target);
-		if (!xsmcTest(digital->target))
-			digital->target = xsThis;
+		digital->target = target;
 		xsRemember(digital->target);
 		digital->rises = rises;
 		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
-		builtinGetCallback(the, xsID_onReadable, &tmp);
+		builtinGetCallback(the, &target, xsID_onReadable, &tmp);
 		digital->onReadable = xsToReference(tmp);
+if (NULL == digital->onReadable)
+	xsTrace("NULL ONREADABLE\n");
 
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 

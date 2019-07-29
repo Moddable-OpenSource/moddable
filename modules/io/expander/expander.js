@@ -159,6 +159,7 @@ class InputBank extends IO {
 		super(dictionary);
 		const i2c = dictionary.i2c;
 		const pins = dictionary.pins;
+		const target = dictionary.target || this;
 
 		this.#pins = pins;
 		this.#i2c = i2c;
@@ -170,7 +171,7 @@ class InputBank extends IO {
 		i2c.write(0x00, i2c.inputs & 255, i2c.inputs >> 8);
 
 		if (dictionary.rises || dictionary.falls) {
-			const onReadable = dictionary.onReadable || this.onReadable;
+			const onReadable = dictionary.onReadable || target.onReadable;
 			if (!onReadable)
 				throw new Error("onReadable required");
 
@@ -178,13 +179,13 @@ class InputBank extends IO {
 			i2c.readers.push({
 				onReadable,
 				pins,
-				target: this,
+				target,
 			});
 		}
 	}
 	close() {
-		for (let i = 0, i2c = this.#i2c, readers = i2c.readers, length = readers.length; i < length; i++) {
-			if (readers[i].target === this) {
+		for (let i = 0, readers = this.#i2c.readers, length = readers.length; i < length; i++) {
+			if (readers[i].pins === this.#pins) {	// requires pins no re-used across instances
 				readers.splice(i, 1);
 				this.#interrupt(0);
 				break;

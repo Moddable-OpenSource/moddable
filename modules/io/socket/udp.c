@@ -46,7 +46,7 @@ struct UDPRecord {
 	UDPPacket		packets;
 	uint8_t			hasOnReadable;
 	xsMachine		*the;
-	xsSlot			obj;
+	xsSlot			target;
 	xsSlot			onReadable;
 };
 typedef struct UDPRecord UDPRecord;
@@ -60,8 +60,13 @@ void xs_udp_constructor(xsMachine *the)
 	UDP udp;
 	int port = 0;
 	struct udp_pcb *skt;
+	xsSlot target;
 
 	xsmcVars(1);
+
+	xsmcGet(target, xsArg(0), xsID_target);
+	if (!xsmcTest(target))
+		target = xsThis;
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
@@ -90,11 +95,11 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, xsID_onReadable, &udp->onReadable)) {
+	if (builtinGetCallback(the, &target, xsID_onReadable, &udp->onReadable)) {
 		udp->hasOnReadable = 1;
 		udp->the = the;
-		udp->obj = xsThis;
-		xsRemember(udp->obj);
+		udp->target = target;
+		xsRemember(udp->target);
 
 		xsRemember(udp->onReadable);
 	}
@@ -124,7 +129,7 @@ void xs_udp_close(xsMachine *the)
 
 	xsmcSetHostData(xsThis, NULL);
 	if (udp->hasOnReadable) {
-		xsForget(udp->obj);
+		xsForget(udp->target);
 		xsForget(udp->onReadable);
 	}
 	xs_udp_destructor(udp);
@@ -233,6 +238,6 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 
 	xsBeginHost(the);
 		xsmcSetInteger(xsResult, count);
-		xsCallFunction1(udp->onReadable, udp->obj, xsResult);
+		xsCallFunction1(udp->onReadable, udp->target, xsResult);
 	xsEndHost(the);
 }

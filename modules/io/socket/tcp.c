@@ -62,7 +62,7 @@ struct TCPRecord {
 	int8_t			useCount;
 	uint8_t			format;
 	xsMachine		*the;
-	xsSlot			obj;
+	xsSlot			target;
 	xsSlot			onReadable;
 	xsSlot			onWritable;
 	xsSlot			onError;
@@ -90,15 +90,20 @@ void xs_tcp_constructor(xsMachine *the)
 	struct tcp_pcb *skt;
 	TCPBuffer buffers = NULL;
 	ip_addr_t address;
+	xsSlot target;
 
 	xsmcVars(1);
 
 	if (create) {
-		if (builtinHasCallback(the, xsID_onReadable))
+		xsmcGet(target, xsArg(0), xsID_target);
+		if (!xsmcTest(target))
+			target = xsThis;
+
+		if (builtinHasCallback(the, &target, xsID_onReadable))
 			triggerable |= kTCPReadable;
-		if (builtinHasCallback(the, xsID_onWritable))
+		if (builtinHasCallback(the, &target, xsID_onWritable))
 			triggerable |= kTCPWritable;
-		if (builtinHasCallback(the, xsID_onError))
+		if (builtinHasCallback(the, &target, xsID_onError))
 			triggerable |= kTCPError;
 
 		if (xsmcHas(xsArg(0), xsID_nodelay)) {
@@ -150,10 +155,10 @@ void xs_tcp_constructor(xsMachine *the)
 			connect = 1;
 		}
 
-		tcp = c_calloc(1, triggerable ? sizeof(TCPRecord) : offsetof(TCPRecord, obj));
+		tcp = c_calloc(1, triggerable ? sizeof(TCPRecord) : offsetof(TCPRecord, target));
 	}
 	else
-		tcp = c_calloc(1, offsetof(TCPRecord, obj));
+		tcp = c_calloc(1, offsetof(TCPRecord, target));
 
 	if (!tcp) {
 		tcp_close(skt);
@@ -184,23 +189,23 @@ void xs_tcp_constructor(xsMachine *the)
 
 	if (triggerable) {
 		tcp->triggerable = triggerable;
-		tcp->obj = xsThis;
-		xsRemember(tcp->obj);
+		tcp->target = target;
+		xsRemember(tcp->target);
 
 		if (triggerable & kTCPReadable) {
-			builtinGetCallback(the, xsID_onReadable, &tcp->onReadable);
+			builtinGetCallback(the, &target, xsID_onReadable, &tcp->onReadable);
 			xsRemember(tcp->onReadable);
 		}
 
 		if (triggerable & kTCPWritable) {
-			builtinGetCallback(the, xsID_onWritable, &tcp->onWritable);
+			builtinGetCallback(the, &target, xsID_onWritable, &tcp->onWritable);
 			xsRemember(tcp->onWritable);
 
 			tcp_sent(skt, tcpSent);
 		}
 
 		if (triggerable & kTCPError) {
-			builtinGetCallback(the, xsID_onError, &tcp->onError);
+			builtinGetCallback(the, &target, xsID_onError, &tcp->onError);
 			xsRemember(tcp->onError);
 		}
 	}
@@ -246,7 +251,7 @@ void xs_tcp_close(xsMachine *the)
 
 	xsmcSetHostData(xsThis, NULL);
 	if (tcp->triggerable) {
-		xsForget(tcp->obj);
+		xsForget(tcp->target);
 		if (tcp->triggerable & kTCPReadable)
 			xsForget(tcp->onReadable);
 		if (tcp->triggerable & kTCPWritable)
@@ -403,7 +408,7 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, bytes);
-			xsCallFunction1(tcp->onReadable, tcp->obj, xsResult);
+			xsCallFunction1(tcp->onReadable, tcp->target, xsResult);
 		xsEndHost(the);
 	}
 
@@ -411,13 +416,13 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 		if (triggered & kTCPWritable) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
-				xsCallFunction1(tcp->onWritable, tcp->obj, xsResult);
+				xsCallFunction1(tcp->onWritable, tcp->target, xsResult);
 			xsEndHost(the);
 		}
 	}
 	else if (tcp->triggerable & kTCPError) {
 		xsBeginHost(the);
-			xsCallFunction0(tcp->onError, tcp->obj);
+			xsCallFunction0(tcp->onError, tcp->target);
 		xsEndHost(the);
 	}
 
@@ -518,7 +523,7 @@ struct ListenerRecord {
 //	uint8_t			hasOnError;
 	uint8_t			triggered;
 	xsMachine		*the;
-	xsSlot			obj;
+	xsSlot			target;
 	xsSlot			onReadable;
 //	xsSlot			onError;
 };
@@ -542,8 +547,13 @@ void xs_listener_constructor(xsMachine *the)
 	ip_addr_t address = *(IP_ADDR_ANY);
 	uint16_t port = 0;
 	uint8_t hasOnReadable = 0;
+	xsSlot target;
 
 	xsmcVars(1);
+
+	xsmcGet(target, xsArg(0), xsID_target);
+	if (!xsmcTest(target))
+		target = xsThis;
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
@@ -551,7 +561,7 @@ void xs_listener_constructor(xsMachine *the)
 	}
 	//@@ address
 
-	hasOnReadable = builtinHasCallback(the, xsID_onReadable);
+	hasOnReadable = builtinHasCallback(the, &target, xsID_onReadable);
 	// hasOnError
 
 	skt = tcp_new();
@@ -570,7 +580,7 @@ void xs_listener_constructor(xsMachine *the)
 		xsRangeError("no memory");
 	}
 
-	listener = c_calloc(1, hasOnReadable ? sizeof(ListenerRecord) : offsetof(ListenerRecord, obj));
+	listener = c_calloc(1, hasOnReadable ? sizeof(ListenerRecord) : offsetof(ListenerRecord, target));
 	if (!listener) {
 		tcp_close(skt);
 		xsRangeError("no memory");
@@ -584,10 +594,10 @@ void xs_listener_constructor(xsMachine *the)
 	tcp_accept(skt, listenerAccept);
 
 	if (hasOnReadable) {
-		listener->obj = xsThis;
-		xsRemember(listener->obj);
+		listener->target = target;
+		xsRemember(listener->target);
 
-		builtinGetCallback(the, xsID_onReadable, &listener->onReadable);
+		builtinGetCallback(the, &target, xsID_onReadable, &listener->onReadable);
 		listener->hasOnReadable = 1;
 		xsRemember(listener->onReadable);
 	}
@@ -616,7 +626,7 @@ void xs_listener_close_(xsMachine *the)
 	Listener listener = xsmcGetHostData(xsThis);
 	if (!listener) return;
 	if (listener->hasOnReadable) {
-		xsForget(listener->obj);
+		xsForget(listener->target);
 		xsForget(listener->onReadable);
 	}
 	xs_listener_destructor_(listener);
@@ -665,7 +675,7 @@ void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t message
 
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, sockets);
-			xsCallFunction1(listener->onReadable, listener->obj, xsResult);
+			xsCallFunction1(listener->onReadable, listener->target, xsResult);
 		xsEndHost(the);
 	}
 

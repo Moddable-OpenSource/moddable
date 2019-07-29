@@ -55,26 +55,26 @@ void builtinFreePins(uint32_t pins)
 	gDigitalAvailable |= pins;
 }
 
-uint8_t builtinHasCallback(xsMachine *the, xsIndex id)
+uint8_t builtinHasCallback(xsMachine *the, xsSlot *target, xsIndex id)
 {
 	if (xsmcHas(xsArg(0), id))
 		return 1;
 
-	if (xsmcHas(xsThis, id))
+	if (xsmcHas(*target, id))
 		return 1;
 
 	return 0;
 }
 
-uint8_t builtinGetCallback(xsMachine *the, xsIndex id, xsSlot *slot)
+uint8_t builtinGetCallback(xsMachine *the, xsSlot *target, xsIndex id, xsSlot *slot)
 {
 	if (xsmcHas(xsArg(0), id)) {
 		xsmcGet(*slot, xsArg(0), id);
 		return 1;
 	}
 
-	if (xsmcHas(xsThis, id)) {
-		xsmcGet(*slot, xsThis, id);
+	if (xsmcHas(*target, id)) {
+		xsmcGet(*slot, *target, id);
 		return 1;
 	}
 
