@@ -43,7 +43,7 @@ import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";
 
-let recordProtocol = {
+const recordProtocol = {
 	name: "recordProtocol",
 	// global constants
 	change_cipher_spec: 20,

@@ -750,7 +750,7 @@ function reason(status)
 	return message.substring(index + 5, message.indexOf("\n", index + 1));
 }
 
-export default {
+export default Object.freeze({
 	Request,
 	Server
-};
+});
