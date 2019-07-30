@@ -26,22 +26,10 @@
 
 #include "xsmc.h"
 
-#ifdef __ets__
-	#include "xsHost.h"
-	#include "modGPIO.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-	#include "modGPIO.h"
-#elif defined(gecko)
+#include "xsHost.h"
+#include "modGPIO.h"
+#if defined(gecko)
 	#define tryGeckoGPIOIrq	1
-	#include "xsHost.h"
-	#include "xsPlatform.h"
-	#include "modGPIO.h"
-#else
-	#include "xslinux.h"
-	#include "xsPlatform.h"
-	#include "gpio.h"
 #endif
 
 #include "commodettoBitmap.h"
