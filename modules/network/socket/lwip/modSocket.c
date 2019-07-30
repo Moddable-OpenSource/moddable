@@ -1052,7 +1052,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (!p) {
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
-		tcp_err(xss->skt, NULL);
 
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
