@@ -42,6 +42,17 @@
 				"net"
 			],
 		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*",
+				],
+			},
+			"preload": [
+				"socket",
+			],
+		},
 		"mac": {
 			"modules": {
 				"*": [
