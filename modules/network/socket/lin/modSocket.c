@@ -67,6 +67,7 @@ struct xsSocketRecord {
 	int32_t						readBytes;
 
 	int32_t						writeBytes;
+	int32_t						unreportedSent;		// bytes sent to the socket but not yet reported to object as sent
 	uint8_t						writeBuf[kTxBufferSize];
 };
 
@@ -99,7 +100,6 @@ static void resolverCallback(GObject *source_object, GAsyncResult *result, gpoin
 static void socketConnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void socketDisconnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void socketReadable(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void socketWritten(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void socketError(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void listenerConnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
@@ -383,14 +383,6 @@ bail:
 	socketDownUseCount(the, xss);
 }
 
-void socketWritten(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	xsSocket xss = (xsSocket)refcon;
-	xsBeginHost(the);
-		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
-	xsEndHost(the);
-}
-
 void socketError(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsSocket xss = (xsSocket)refcon;
@@ -426,10 +418,11 @@ gboolean socketServiceTimerCallback(gpointer data)
 {
 	#define kMaxSockets 10
 	xsSocket xss;
-	uint8_t i, count = 0;
+	uint8_t i, max, count = 0;
 	int result;
 	xsSocket xsss[kMaxSockets];
 	struct pollfd fds[kMaxSockets];
+	fd_set wfds;
 	uint8_t done = false;
 	
 	// check for new connections
@@ -481,6 +474,35 @@ gboolean socketServiceTimerCallback(gpointer data)
 		}
 	}
 	
+	// check for writable sockets
+	FD_ZERO(&wfds);
+	max = -1;
+	for (xss = gSockets, count = 0; xss; xss = xss->next) {
+		if (xss->connected && !xss->done && xss->unreportedSent) {
+			xsss[count] = xss;
+			FD_SET(xss->skt, &wfds);
+			if (xss->skt > max)
+				max = xss->skt;
+			if (++count == kMaxSockets)
+				break;
+		}
+	}
+	if (0 != count) {
+		struct timeval tv = {0, 0};
+		result = select(max + 1, NULL, &wfds, NULL, &tv);
+		if (result > 0) {
+			for (i = 0; i < count; ++i) {
+				xsSocket xss = xsss[i];
+				if (FD_ISSET(xss->skt, &wfds)) {
+					xss->unreportedSent = 0;
+					xsBeginHost(xss->the);
+						xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
+					xsEndHost(xss->the);
+				}
+			}
+		}
+	}
+
 	return G_SOURCE_CONTINUE;
 }
 
@@ -492,7 +514,6 @@ void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer use
 	GList *addresses = NULL;
 	GInetAddress *address = NULL;
 
-	
 	addresses = g_resolver_lookup_by_name_finish(resolver, result, NULL);
 	if (NULL != addresses) {
 		address = (GInetAddress*)addresses->data;
@@ -510,9 +531,6 @@ void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer use
 		result = connect(xss->skt, (struct sockaddr*)&addr, sizeof(addr));
 		if (result >= 0) {
 			xss->connected = true;
-			xsBeginHost(xss->the);
-			xsTrace("posting socketConnected\n");
-			xsEndHost(xss->the);
 			modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
 		}
 		g_free(ip);
@@ -823,7 +841,7 @@ int doFlushWrite(xsSocket xss)
 			return -1;
 		}
 		xss->writeBytes -= ret;
-		modMessagePostToMachine(xss->the, NULL, 0, socketWritten, xss);
+		xss->unreportedSent += ret;
 	}
 
 	return 0;
