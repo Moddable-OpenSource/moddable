@@ -44,8 +44,7 @@ C_OPTIONS = \
 	/D HAVE_MEMMOVE=1 \
 	/I$(SIMULATOR) \
 	/I$(SIMULATOR)\win \
-	/nologo \
-	/Zp1 
+	/nologo
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \

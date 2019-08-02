@@ -55,8 +55,7 @@ C_OPTIONS = \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
 	/I$(TLS_DIR)\yaml \
-	/nologo \
-	/Zp1 
+	/nologo
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \

@@ -219,8 +219,7 @@ C_OPTIONS = \
 	/I$(INSTRUMENTATION) \
 	/I$(TOOLS) \
 	/I$(TMP_DIR) \
-	/nologo \
-	/Zp1 
+	/nologo
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
