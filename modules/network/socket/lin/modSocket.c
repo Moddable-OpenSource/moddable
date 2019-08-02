@@ -94,6 +94,7 @@ static int doFlushWrite(xsSocket xss);
 static void doDestructor(xsSocket xss);
 
 static gboolean socketServiceTimerCallback(gpointer data);
+static void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer user_data);
 
 static void socketConnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void socketDisconnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -278,23 +279,10 @@ void xs_socket(xsMachine *the)
 		xsmcGet(xsVar(0), xsArg(0), xsID_host);
 		xsmcToStringBuffer(xsVar(0), xss->host, sizeof(xss->host));
 		
-		struct hostent *host;
-		struct sockaddr_in address;
-		int result;
-		host = gethostbyname(xss->host);	// @@ synchronous
-		if (!host) {
-			modMessagePostToMachine(xss->the, NULL, 0, socketError, xss);
-			return;		
-		}
-		c_memset(&address, 0, sizeof(address));
-		address.sin_family = AF_INET;
-		c_memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-		address.sin_port = htons(xss->port);
-		result = connect(xss->skt, (struct sockaddr*)&address, sizeof(address));
-		if (result >= 0) {
-			xss->connected = true;
-			modMessagePostToMachine(the, NULL, 0, socketConnected, xss);
-		}
+		GResolver *resolver = g_resolver_get_default();
+		if (NULL == resolver)
+			xsUnknownError("no resolver");
+		g_resolver_lookup_by_name_async(resolver, xss->host, NULL, resolverCallback, xss);
 	}
 	else
 		xsUnknownError("host required in dictionary");
@@ -494,6 +482,45 @@ gboolean socketServiceTimerCallback(gpointer data)
 	}
 	
 	return G_SOURCE_CONTINUE;
+}
+
+void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer user_data)
+{
+	xsSocket xss = (xsSocket)user_data;
+	GResolver *resolver = (GResolver*)source_object;
+	char *ip = NULL;
+	GList *addresses = NULL;
+	GInetAddress *address = NULL;
+
+	
+	addresses = g_resolver_lookup_by_name_finish(resolver, result, NULL);
+	if (NULL != addresses) {
+		address = (GInetAddress*)addresses->data;
+		if (NULL != address)
+			ip = g_inet_address_to_string(address);
+	}
+
+	if (NULL != ip) {
+		struct sockaddr_in addr;
+		int result;
+		c_memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		c_memcpy(&(addr.sin_addr), g_inet_address_to_bytes(address), g_inet_address_get_native_size(address));
+		addr.sin_port = htons(xss->port);
+		result = connect(xss->skt, (struct sockaddr*)&addr, sizeof(addr));
+		if (result >= 0) {
+			xss->connected = true;
+			xsBeginHost(xss->the);
+			xsTrace("posting socketConnected\n");
+			xsEndHost(xss->the);
+			modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
+		}
+		g_free(ip);
+	}
+
+	if (NULL != addresses)
+		g_resolver_free_addresses(addresses);
+	g_object_unref(resolver);
 }
 
 void doDestructor(xsSocket xss)
