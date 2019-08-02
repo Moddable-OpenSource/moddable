@@ -47,7 +47,9 @@
 #define mxWasm 0
 #define mxWindows 0
 
-#ifndef XSPLATFORM
+#include "xsHost.h"
+
+#ifndef XSPLATFORM	
 	/* for XS tools only: xsc, xsid, xsl on Linux, macOS or Windows */
 	#if defined(_MSC_VER)
 		#if defined(_M_IX86) || defined(_M_X64)

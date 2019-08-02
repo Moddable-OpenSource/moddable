@@ -813,14 +813,7 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 
 PiuTick PiuViewTicks(PiuView* self)
 {
-#if defined (__ets__) || defined (ESP32) || defined(gecko) || defined(qca4020)
 	return modMilliseconds();
-#else
-	//@@ should use modMilliseconds on all platforms
-	c_timeval tv;
-	c_gettimeofday(&tv, NULL);
-	return (PiuTick)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
-#endif
 }
 
 void PiuViewUpdate(PiuView* self, PiuApplication* application)
