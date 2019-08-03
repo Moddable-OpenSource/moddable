@@ -619,7 +619,7 @@ void xs_socket_write(xsMachine *the)
 			xsResult = xsInteger(0);
 			return;
 		}
-		xsTrace("write on closed socket\n");
+		xsUnknownError("write on closed socket\n");
 		return;
 	}
 
