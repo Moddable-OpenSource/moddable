@@ -7,7 +7,7 @@ Copyright 2019 Moddable Tech, Inc.
 
 This document introduces work on Input/Output (IO) under development by Ecma TC53 in the IO Class Pattern proposal and describes an implementation of the proposal that uses the XS JavaScript engine on the ESP8266 microcontroller. 
 
-Ecma TC53 is a standards committee with a charter to define EcmaScript Modules for embedded systems. Its goal is to define standard JavaScript APIs for developing software for resource-constrained embedded hardware. This is analogous to the work of W3C and WHATWG to define JavaScript APIs for developing software for the web. The APIs defined by TC53 are intended to be vendor-neutral and, consequently, independent of the host operating system, CPU architecture, and JavaScript engine. IO was selected as the first area of work by TC53 because it is fundamental to nearly all uses of embedded systems. For example, IO is a precondition to implementing support for both sensors and communication.
+Ecma TC53 is a standards committee with a charter to define ECMAScript Modules for embedded systems. Its goal is to define standard JavaScript APIs for developing software for resource-constrained embedded hardware. This is analogous to the work of W3C and WHATWG to define JavaScript APIs for developing software for the web. The APIs defined by TC53 are intended to be vendor-neutral and, consequently, independent of the host operating system, CPU architecture, and JavaScript engine. IO was selected as the first area of work by TC53 because it is fundamental to nearly all uses of embedded systems. For example, IO is a precondition to implementing support for both sensors and communication.
 
 A key characteristic of the initial TC53 work, including the work on IO, is that they are low-level APIs. They can be considered the minimal host for a JavaScript runtime. They will be used to build higher-level APIs, including frameworks for specific types of products, markets, and programming styles. The APIs are similar to drivers, where a small, simple API is important to achieving reliability. The APIs are designed to be straightforward to use in JavaScript. They have an additional design goal which is less common: they are intended to be straightforward to implement in native code. As these APIs make up a porting layer, they need to be clear to the implementors of the porting layer. They need to be small enough that the porting task is not an overwhelming amount of work. They need to be simple enough in their use of JavaScript that an embedded C developer can create an efficient port without first becoming an expert in the JavaScript language.
 
@@ -395,7 +395,7 @@ let touch = new I2C({
 touch.write(Uint8Array.of(2));
 
 let count = touch.read(1);
-count = (new Uint8Array(result))[0];
+count = (new Uint8Array(count))[0];
 trace(`Touch points ${count}.\n`);
 
 if (count)
