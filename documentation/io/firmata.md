@@ -54,7 +54,7 @@ Because of the limited testing, it is possible that there are implementation err
 ## Firmata Server
 To build and run the Firmata server, execute the following commands:
 
-	cd $MODDABLE/examples/experimental/io/examples/firmata/server
+	cd $MODDABLE/examples/io/firmata/server
 	mcconfig -m -p esp
 
 This builds and deploys the Firmata server to an ESP8266. Note that this a release build, not a debug build. This is because Firmata uses the serial port for communication, which precludes it from being by the xsbug debugger to communicate with the ESP8266. 
@@ -235,7 +235,7 @@ const ServerAddress = "10.0.1.36";
 
 To build and run the Firmata client, execute the following commands:
 
-	cd $MODDABLE/examples/experimental/io/examples/firmata/client
+	cd $MODDABLE/examples/io/firmata/client
 	mcconfig -d -m -p esp ssid="Moddable" password="secret"
 
 This  builds and deploys the Firmata client to an ESP8266. Note that unlike the server, this a debug build, as the examples will only use Firmata over TCP, not serial. 
@@ -382,7 +382,7 @@ It is theoretically possible to render to the Moddable One display using the SPI
 ### Example Code
 The following examples show how to use Poco graphics with the Firmata Client when communicating to the Firmata Server. The Firmata Server must have been built with display driver support to use Poco. For Moddable One, build the Firmata Server with the `esp/moddable_one` target:
 
-	cd $MODDABLE/examples/experimental/io/examples/firmata/server
+	cd $MODDABLE/examples/io/firmata/server
 	mcconfig -m -p esp/moddable_one ssid="Moddable" password="secret"
 
 #### Connect and Erase Screen
