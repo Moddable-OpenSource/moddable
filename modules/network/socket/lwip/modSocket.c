@@ -73,7 +73,6 @@ typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
 #define kReadQueueLength (6)
 struct xsSocketRecord {
-	xsSocket			next;
 	xsMachine			*the;
 
 	xsSlot				obj;
@@ -118,7 +117,6 @@ typedef xsListenerRecord *xsListener;
 
 #define kListenerPendingSockets (4)
 struct xsListenerRecord {
-	xsListener			next;
 	xsMachine			*the;
 
 	xsSlot				obj;
@@ -167,25 +165,6 @@ static void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
 #endif
 
 static uint8 parseAddress(char *address, uint8 *ip);
-
-static void forgetSocket(xsSocket xss)
-{
-	xsSocket walker, prev = NULL;
-
-	modCriticalSectionBegin();
-	for (walker = gSockets; NULL != walker; prev = walker, walker = walker->next) {
-		if (walker != xss)
-			continue;
-
-		if (!prev)
-			gSockets = walker->next;
-		else
-			prev->next = walker->next;
-
-		break;
-	}
-	modCriticalSectionEnd();
-}
 
 static void socketUpUseCount(xsMachine *the, xsSocket xss)
 {
@@ -239,9 +218,6 @@ void xs_socket(xsMachine *the)
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
-				xss->next = gSockets;
-				gSockets = xss;
-
 				modCriticalSectionEnd();
 
 				xss->obj = xsThis;
@@ -285,11 +261,6 @@ void xs_socket(xsMachine *the)
 	xss->useCount = 1;
 	xsmcSetHostData(xsThis, xss);
 	xsRemember(xss->obj);
-
-	modCriticalSectionBegin();
-	xss->next = gSockets;
-	gSockets = xss;
-	modCriticalSectionEnd();
 
 	modInstrumentationAdjust(NetworkSockets, 1);
 
@@ -453,8 +424,6 @@ void xs_socket_destructor(void *data)
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);
 	}
-
-	forgetSocket(xss);
 
 	c_free(xss);
 
@@ -1221,11 +1190,6 @@ void xs_listener(xsMachine *the)
 	if (!xsl->skt)
 		xsUnknownError("socket allocation failed");
 
-	modCriticalSectionBegin();
-	xsl->next = (xsListener)gSockets;
-	gSockets = (xsSocket)xsl;
-	modCriticalSectionEnd();
-
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
 		char temp[DNS_MAX_NAME_LENGTH];
@@ -1265,8 +1229,6 @@ void xs_listener_destructor(void *data)
 
 	for (i = 0; i < kListenerPendingSockets; i++)
 		xs_socket_destructor(xsl->accept[i]);
-
-	forgetSocket((xsSocket)xsl);
 
 	c_free(xsl);
 
