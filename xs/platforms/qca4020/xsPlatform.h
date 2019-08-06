@@ -56,8 +56,12 @@
 
 #ifndef __XS6PLATFORMMINIMAL__
 
-#define mxExport extern
-#define mxImport
+#ifndef mxExport
+	#define mxExport extern
+#endif
+#ifndef mxImport
+	#define mxImport extern
+#endif
 
 #define mxBigEndian 0
 #define mxLittleEndian 1
