@@ -57,9 +57,7 @@
 #ifndef __XS6PLATFORMMINIMAL__
 
 #define mxExport extern
-#ifndef mxImport
 #define mxImport
-#endif
 
 #define mxBigEndian 0
 #define mxLittleEndian 1
@@ -80,11 +78,6 @@ typedef int32_t txS4;
 typedef uint32_t txU4;
 typedef int64_t txS8;
 typedef uint64_t txU8;
-
-#ifndef true
-	#define true 1
-	#define false 0
-#endif
 
 typedef int txSocket;
 #define mxNoSocket NULL
