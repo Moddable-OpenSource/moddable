@@ -19,7 +19,11 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#ifdef __ets__
+	#include "xsHost.h"		// esp platform support
+#else
+	#error - unsupported platform
+#endif
 
 #include "builtinCommon.h"
 

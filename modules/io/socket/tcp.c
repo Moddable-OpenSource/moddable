@@ -33,7 +33,11 @@
 #include "lwip/tcp.h"
 
 #include "xsmc.h"			// xs bindings for microcontroller
-#include "xsesp.h"			// esp platform support
+#ifdef __ets__
+	#include "xsHost.h"		// esp platform support
+#else
+	#error - unsupported platform
+#endif
 #include "mc.xs.h"			// for xsID_* values
 #include "builtinCommon.h"
 

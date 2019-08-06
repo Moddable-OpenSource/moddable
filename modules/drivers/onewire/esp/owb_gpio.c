@@ -33,7 +33,7 @@
 #include "xsmc.h"
 
 #if ESP32 || __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 
 #else
 	#error unknown platform    

@@ -20,7 +20,11 @@
 
 #include "user_interface.h"
 #include "xsmc.h"
-#include "xsesp.h"
+#ifdef __ets__
+	#include "xsHost.h"		// esp platform support
+#else
+	#error - unsupported platform
+#endif
 #include "builtinCommon.h"
 
 static uint32_t gDigitalAvailable =
