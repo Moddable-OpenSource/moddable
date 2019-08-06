@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,6 +17,8 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+#error - This file is deprecated. Please #include "xsHost.h" instead.
 
 #ifndef __XS6ESP__
 #define __XS6ESP__
@@ -93,6 +95,7 @@ extern void espFreeUint32(void *t);
 */
 
 extern void modLog_transmit(const char *msg);
+extern void ESP_putc(int c);
 
 #if !ESP32
 	#define modLog(msg) \
