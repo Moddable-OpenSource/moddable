@@ -16,11 +16,6 @@ import {FirmataClientTCP} from "firmataclient";
 import Digital from "builtin/digital";
 import DigitalBank from "builtin/digitalbank";
 
-/* Moddable office */
-// 10.0.1.10 - jphAir2018
-// 10.0.1.36 - Moddable One
-// 10.0.1.65 - Moddable Three
-
 const ServerAddress = "10.0.1.36";
 
 export default function() {
