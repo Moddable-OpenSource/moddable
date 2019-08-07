@@ -40,6 +40,24 @@
 
 #include <stdint.h>
 
+/*
+	link locations
+*/
+
+#define ICACHE_XS6RO_ATTR
+#define ICACHE_XS6RO2_ATTR
+#define ICACHE_RODATA_ATTR
+
+/*
+    report
+*/
+
+#define modLog(msg)
+
+/*
+    timer
+*/
+
 uint32_t modMilliseconds(void);
 
 #endif
