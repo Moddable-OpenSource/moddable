@@ -27,6 +27,8 @@ export default function (done) {
 
 	state.accelerometerGyro = new SH200Q;
 
+	//trace( 'The Temp:',state.accelerometerGyro.sampleTemp(),'\n');
+
 	global.accelerometer = {
 		onreading: nop
 	}
