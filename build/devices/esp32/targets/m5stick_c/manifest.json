@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
 	],
 	"config": {
 		"screen": "st7735",
-		"touch": "",
+		"touch": ""
 	},
 	"defines": {
 		"spi": {
@@ -58,12 +58,16 @@
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
+			"$(MODULES)/drivers/sh200q/*"
 		],
 		"setup/target": "./setup-target",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"monitor",
 		"setup/target",
-	],
+		"sh200q",
+		"pins/smbus"
+	]
 }
 
