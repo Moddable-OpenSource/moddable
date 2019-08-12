@@ -40,6 +40,7 @@
 #include "xsHost.h"
 
 #include "qurt_mutex.h"
+#include "qapi_reset.h"
 
 #ifdef mxInstrument
 	extern void espDescribeInstrumentation(txMachine *the);
@@ -57,7 +58,7 @@ void fxReceiveLoop(void);
 	extern qurt_mutex_t gDebugMutex;
 	#define mxDebugMutexTake()  qurt_mutex_lock(&gDebugMutex);
 	#define mxDebugMutexGive()  qurt_mutex_unlock(&gDebugMutex);
-	#define mxDebugMutexAllocated()  (NULL != gDebugMutex)
+	#define mxDebugMutexAllocated()  (NULL != (void*)gDebugMutex)
 #else
 	#define mxDebugMutexTake()
 	#define mxDebugMutexGive()
