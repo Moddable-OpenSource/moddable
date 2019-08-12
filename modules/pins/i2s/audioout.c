@@ -1067,6 +1067,8 @@ void audioOutLoop(void *pvParameter)
 #endif
 
 	while (kStateTerminated != out->state) {
+		size_t bytes_written;
+
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
 
@@ -1127,9 +1129,9 @@ void audioOutLoop(void *pvParameter)
 		while (i--)
 			*dst++ = *src++ ^ 0x8000;
 
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
@@ -1139,7 +1141,7 @@ void audioOutLoop(void *pvParameter)
 		while (i--)
 			*dst++ = *src++ << 16;
 
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
