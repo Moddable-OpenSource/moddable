@@ -76,6 +76,7 @@ extern int modTimersNext(void);
 
 extern uint32_t qca4020_milliseconds();
 extern void qca4020_delay(uint32_t delayMS);
+extern void qca4020_restart();
 
 #define modDelayMilliseconds(ms) qca4020_delay(ms)
 #define modDelayMicroseconds(us) qca4020_delay(((us) + 500) / 1000)
@@ -202,8 +203,15 @@ void xs_loop();
 	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
 #endif
+
+void modLoadModule(void *the, const char *name);
+
+/*
+	debugging
+*/
+
+void fxReceiveLoop(void);
 
 /*
 	messages
@@ -262,7 +270,8 @@ extern void *my_malloc(size_t size);
 #define c_realloc realloc
 #endif
 
-#define c_exit exit
+//#define c_exit exit
+#define c_exit qca4020_restart
 #define c_free free
 #define c_qsort qsort
 #define c_strtod strtod

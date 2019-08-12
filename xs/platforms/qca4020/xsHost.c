@@ -809,6 +809,17 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 {
 	modMessageRecord msg;
 
+#ifdef mxDebug
+	if (0xffff == messageLength) {
+		msg.message = NULL;
+		msg.callback = callback;
+		msg.refcon = refcon;
+		msg.length = 0;
+		xQueueSendToFront(the->msgQueue, &msg, portMAX_DELAY);
+		return 0;
+	}
+#endif
+
 	if (message && messageLength) {
 		msg.message = c_malloc(messageLength);
 		if (!msg.message) return -1;
@@ -817,11 +828,20 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	}
 	else
 		msg.message = NULL;
-	msg.length = messageLength;
+	msg.length = 0;
 	msg.callback = callback;
 	msg.refcon = refcon;
-
-	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
+#ifdef mxDebug
+	do {
+		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {			// keep one entry free for debugger
+			xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+			break;
+		}
+		vTaskDelay(5);
+	} while (1);
+#else
+	xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+#endif
 
 	return 0;
 }
@@ -845,12 +865,15 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
+	qca4020_watchdog();
+
 	while (true) {
 		modMessageRecord msg;
 
-		qca4020_watchdog();
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
+		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
+			qca4020_watchdog();
 			return;
+		}
 
 		(msg.callback)(the, msg.refcon, msg.message, msg.length);
 		if (msg.message)

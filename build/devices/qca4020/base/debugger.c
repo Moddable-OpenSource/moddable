@@ -42,7 +42,7 @@ static int debuggerSetup = 0;
 #define DEBUG_THREAD_PRIO		(20)
 #define DEBUG_THREAD_STACK_SIZE	2048
 
-#define RCV_BUFFER_SIZE				(128)
+#define RCV_BUFFER_SIZE				(1024)
 #define RCV_BUFFER_COUNT 			(2)
 
 #ifndef MODDEF_DEBUGGER_PORT

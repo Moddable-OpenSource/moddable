@@ -21,6 +21,7 @@
 #ifndef __MODSPI_H__
 #define __MODSPI_H__
 
+#include <xsPlatform.h> 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -49,6 +50,8 @@ struct modSPIConfigurationRecord {
 	qurt_signal_t				spi_signal;
 	uint8_t						cs_pin;
 	uint8_t						spiPort;
+	uint8_t						sync;
+	uint8_t						_pad;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
 };
@@ -60,7 +63,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.hz = HZ; \
 	config.cs_pin = ((uint8_t)(uint32_t)CS_PIN); \
 	config.doChipSelect = DOCHIPSELECT; \
-	config.spiPort = ((uint8_t)(uint32_t)SPI_PORT);
+	config.spiPort = ((uint8_t)(uint32_t)SPI_PORT); \
+	config.sync = 1;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);
@@ -73,6 +77,6 @@ extern void modSPITxGray256To16BE(modSPIConfiguration config, uint8_t *data, uin
 extern void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPIFlush(void);
 extern void modSPIActivateConfiguration(modSPIConfiguration config);
-#define modSPISetSync(config, _sync)
+#define modSPISetSync(config, _sync) (config)->sync = (_sync)
 
 #endif

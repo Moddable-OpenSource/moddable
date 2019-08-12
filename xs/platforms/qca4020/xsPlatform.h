@@ -101,7 +101,9 @@ extern void fx_putc(void *refcon, char c);
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
-	uint8_t count;
+	uint16_t count;
+	uint8_t	binary;
+	uint8_t	pad;
 	uint8_t bytes[1];
 };
 typedef struct DebugFragmentRecord DebugFragmentRecord;
@@ -109,6 +111,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 
 /* MACHINE */
 
+#define kDebugReaderCount (8)
+/*****
 #define mxMachinePlatform \
 	void* host; \
 	txSocket connection; \
@@ -124,6 +128,40 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void *waiterCondition;	\
 	void *waiterData;		\
 	void *waiterLink;
+*/
+
+#ifdef mxDebug
+#define mxMachineDebug \
+		txSocket connection; \
+		void* readers[kDebugReaderCount]; \
+		uint16_t readerOffset; \
+		txBoolean inPrintf; \
+		txBoolean debugNotifyOutstanding; \
+		txBoolean DEBUG_LOOP; \
+		uint8_t debugConnectionVerified; \
+		uint8_t wsState; \
+		uint8_t wsFin; \
+		uint16_t wsLength; \
+		uint16_t wsSendStart; \
+		uint8_t wsMask[4]; \
+		uint8_t *wsCmd; \
+		uint8_t *wsCmdPtr; \
+		DebugFragment debugFragments;
+#else
+	#define mxMachineDebug
+#endif
+
+#define mxMachinePlatform \
+		void* host; \
+		uint8_t *heap; \
+		uint8_t *heap_ptr; \
+		uint8_t *heap_pend; \
+		void *msgQueue; \
+		void *task;	\
+		void *waiterCondition;	\
+		void *waiterData;		\
+		void *waiterLink;		\
+		mxMachineDebug
 
 #ifdef __cplusplus
 }
@@ -132,5 +170,9 @@ typedef struct DebugFragmentRecord *DebugFragment;
 #endif /* __XS6PLATFORMMINIMAL__ */
 
 #define delay(x)            qca4020_delay(x)
+
+extern void qca4020_error(char *msg, int err);
+extern void qca4020_msg_num(char *msg, int num);
+extern void debugger_write(const char *msg, int len);
 
 #endif /* __XSPLATFORM__ */

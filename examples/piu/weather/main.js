@@ -18,7 +18,7 @@ import Timeline from "piu/Timeline";
 
 const APPID = "94de4cda19a2ba07d3fa6450eb80f091";
 const country = "us";
-const zips = ["94025", "64015", "92014", "93901", "73301"];
+const zips = ["95366", "94025", "64015", "92014", "93901", "73301"];
 const icons = ["03", "01", "13", "09", "02", "10", "11", "04"];
 
 const WHITE = "#E7DFDD";
