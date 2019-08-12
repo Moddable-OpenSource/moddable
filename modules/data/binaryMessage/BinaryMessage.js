@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -18,7 +18,7 @@
  *
  */
 
-let BinaryMessage = {
+const BinaryMessage = {
 	Float32: {
 		bytesLength:4,
 		getter:DataView.prototype.getFloat32,
@@ -101,14 +101,6 @@ let BinaryMessage = {
 	},
 }
 
-Object.freeze(BinaryMessage);
-Object.freeze(BinaryMessage.Float32);
-Object.freeze(BinaryMessage.Float64);
-Object.freeze(BinaryMessage.Int8);
-Object.freeze(BinaryMessage.Int16);
-Object.freeze(BinaryMessage.Int32);
-Object.freeze(BinaryMessage.Uint8);
-Object.freeze(BinaryMessage.Uint16);
-Object.freeze(BinaryMessage.Uint32);
+Object.freeze(BinaryMessage, true);
 
 export default BinaryMessage;
