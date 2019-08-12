@@ -37,7 +37,7 @@
 
 import {AES, CBC, DES, DHE_RSA, ECDHE_RSA, GCM, MD5, NONE, NULL, RC4, RSA, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 
-export const supportedCipherSuites = [
+const supportedCipherSuites = [
 	{
 		// TLS_RSA_WITH_AES_128_CBC_SHA
 		value: [0x00, 0x2f],
