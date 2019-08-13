@@ -828,7 +828,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	}
 	else
 		msg.message = NULL;
-	msg.length = 0;
+	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
 #ifdef mxDebug
