@@ -78,7 +78,6 @@ button.b.onChanged = function(){
 
 function onReading(values, labelPrefix){
 	let { x, y, z } = values;
-
 	render.begin(0, 0, width, ball.yMin);
 	render.fillRectangle(backgroundColor, 0, 0, width, height);
 
@@ -87,8 +86,8 @@ function onReading(values, labelPrefix){
 	drawBar(labelPrefix + "Z", z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx - y) * 0.98;
-	ball.vy = (ball.vy + x) * 0.98;
+	ball.vx = (ball.vx - x) * 0.98;
+	ball.vy = (ball.vy - y) * 0.98;
 	let nx = ball.x + ball.vx;
 	let ny = ball.y + ball.vy;
 	if (nx < 0) {

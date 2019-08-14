@@ -54,8 +54,8 @@ const REGISTERS = {
 Object.freeze(REGISTERS);
 
 const EXPECTED_WHO_AM_I = 0x18;
-const GYRO_SCALER = 2000.0 / 32768.0; // Guessing for now
-const ACCEL_SCALER = 16.0 / 32768.0; //  Guessing for now
+const GYRO_SCALER = (1 / 16.4); // at +/- 2000 degree/sec range, per datasheet section 2.1
+const ACCEL_SCALER = (1 / 4096); // at +/- 8g range, per datasheet section 2.2
 
 class SMBHold extends SMBus { //SMBus implementation that holds the i2c bus between the i2c.read and i2c.write on read operations.
     constructor(dictionary) {
@@ -220,24 +220,24 @@ class Gyro_Accelerometer extends SMBHold {
     sampleXL() {
         this.readBlock(REGISTERS.ACCEL_XOUT, 6, this.xlRaw);
         return {
-            x: this.xlView.getInt16(0) * ACCEL_SCALER,
-            y: this.xlView.getInt16(2) * ACCEL_SCALER,
-            z: this.xlView.getInt16(4) * ACCEL_SCALER
+            x: this.xlView.getInt16(0, true) * ACCEL_SCALER,
+            y: this.xlView.getInt16(2, true) * ACCEL_SCALER,
+            z: this.xlView.getInt16(4, true) * ACCEL_SCALER
         }
     }
 
     sampleGyro() {
         this.readBlock(REGISTERS.GYRO_XOUT, 6, this.gyroRaw);
         return {
-            x: this.gyroView.getInt16(0) * GYRO_SCALER,
-            y: this.gyroView.getInt16(2) * GYRO_SCALER,
-            z: this.gyroView.getInt16(4) * GYRO_SCALER
+            x: this.gyroView.getInt16(0, true) * GYRO_SCALER,
+            y: this.gyroView.getInt16(2, true) * GYRO_SCALER,
+            z: this.gyroView.getInt16(4, true) * GYRO_SCALER
         }
     }
 
     sampleTemp() {
         this.readBlock(REGISTERS.TEMP_OUT, 2, this.gyroRaw);
-        return this.tempView.getInt16(0) / 333.87 + 21.0
+        return this.tempView.getInt16(0, true) / 333.87 + 21.0
     }
 
     sample() {
