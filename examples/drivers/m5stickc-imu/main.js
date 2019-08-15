@@ -24,7 +24,7 @@ const height = pixelsOut.height;
 const GYRO_SCALER = 0.002;
 
 let render = new Poco(pixelsOut);
-let font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
+let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
 
 let ball = parseBMP(new Resource("ball-color.bmp"));
 ball.alpha = parseBMP(new Resource("ball-alpha.bmp"));
@@ -92,19 +92,19 @@ function onReading(values, labelPrefix){
 	let ny = ball.y + ball.vy;
 	if (nx < 0) {
 		nx = -nx;
-		ball.vx = -ball.vx;
+		ball.vx = -ball.vx * 0.7;
 	}
 	else if (nx > (width - ball.width)) {
 		nx = width - ball.width;
-		ball.vx = -ball.vx;
+		ball.vx = -ball.vx * 0.7;
 	}
 	if (ny < ball.yMin) {
 		ny = ball.yMin;
-		ball.vy = -ball.vy;
+		ball.vy = -ball.vy * 0.7;
 	}
 	else if (ny > (height - ball.height)) {
 		ny = height - ball.height;
-		ball.vy = -ball.vy;
+		ball.vy = -ball.vy * 0.7;
 	}
 	moveBallTo(nx, ny)
 }
@@ -127,7 +127,7 @@ function drawBar(label, value, x, y, width, height) {
 	else
 		render.fillRectangle(barColor, x + halfWidth + barWidth, y, -barWidth, height);
 
-	render.drawText(label + " " + formatValue(value), font, textColor, x + 50, y);
+	render.drawText(label, font, textColor, x + 50, y);
 }
 
 function moveBallTo(x, y) {
