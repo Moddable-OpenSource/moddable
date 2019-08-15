@@ -166,7 +166,7 @@ class Gyro_Accelerometer extends SMBHold {
     }
 
     sampleTemp() {
-        this.readBlock(REGISTERS.TEMP_OUT, 2, this.gyroRaw);
+        this.readBlock(REGISTERS.TEMP_OUT, 2, this.tempRaw);
         return this.tempView.getInt16(0, true) / 333.87 + 21.0
     }
 
