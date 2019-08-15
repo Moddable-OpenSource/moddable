@@ -106,79 +106,9 @@ class Gyro_Accelerometer extends SMBHold {
         }
     }
 
-    IMUReset() {
-        let tempdata = this.readByte(REGISTERS.RESET);
-
-        //REGISTERS.RESET
-        tempdata = tempdata | 0x80;
-        this.writeByte(REGISTERS.RESET, tempdata);
-
-        Timer.delay(1);
-
-        tempdata = tempdata & 0x7F;
-        this.writeByte(REGISTERS.RESET, tempdata);
-    }
-
-    AdcReset() {
-
-        let tempdata = this.readByte(REGISTERS.RESET);
-
-        //REGISTERS.RESET
-        tempdata = tempdata | 0x04;
-        this.writeByte(REGISTERS.RESET, tempdata);
-
-        Timer.delay(1);
-
-        tempdata = tempdata & 0xFB;
-        this.writeByte(REGISTERS.RESET, tempdata);
-    }
-
     reboot() {
 
-        //this.IMUReset();
-
-        let tempdata = this.readByte(REGISTERS.RESET);
-
-        //REGISTERS.RESET
-        tempdata = tempdata | 0x80;
-        this.writeByte(REGISTERS.RESET, tempdata);
-
         Timer.delay(1);
-
-        tempdata = tempdata & 0x7F;
-        this.writeByte(REGISTERS.RESET, tempdata);
-        //this.ADCReset();
-
-        this.readByte(REGISTERS.RESET);
-
-        //REGISTERS.RESET
-        tempdata = tempdata | 0x04;
-        this.writeByte(REGISTERS.RESET, tempdata);
-
-        Timer.delay(1);
-
-        tempdata = tempdata & 0xFB;
-        this.writeByte(REGISTERS.RESET, tempdata);
-
-        //let tempdata = this.readByte(0xD8);
-
-        tempdata = this.readByte(0xD8);
-
-
-
-        tempdata = tempdata | 0x80;
-        this.writeByte(0xD8, tempdata);
-
-        Timer.delay(1);
-
-        tempdata = tempdata & 0x7F;
-        this.writeByte(0xD8, tempdata);
-
-        this.writeByte(0x78, 0x61);
-
-        Timer.delay(1);
-
-        this.writeByte(0x78, 1, 0x00);
 
         //set acc odr 256hz
         //0x81 1024hz   //0x89 512hz    //0x91  256hz 
@@ -203,7 +133,7 @@ class Gyro_Accelerometer extends SMBHold {
 
         this.writeByte(REGISTERS.REG_SET1, 0xC0);
 
-        tempdata = this.readByte(REGISTERS.REG_SET2);
+        let tempdata = this.readByte(REGISTERS.REG_SET2);
 
         //ADC Reset
         tempdata = tempdata | 0x10;
