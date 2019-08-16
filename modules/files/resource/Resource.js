@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,14 +25,3 @@ export default class Resource @ "Resource_destructor" {
 }
 Object.freeze(Resource.prototype);
 
-function require_awaitImport(specifier) @ "require_awaitImport";
-function require(specifier) {
-	return require_awaitImport(specifier);
-}
-Object.defineProperties(require, {
-	cache: { get: function() { debugger; } },
-	resolve: { value: function() { debugger; } },
-	uri: { get: function() { debugger; } },
-	weak: { value: function(specifier) { return require_awaitImport(specifier); } },
-});
-global.require = Object.freeze(require);
