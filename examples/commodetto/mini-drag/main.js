@@ -157,13 +157,14 @@ let timer = Timer.repeat(() => {
 			}
 			break;
 		case 1:
+		case 2:
 			if (dragger.contains(point.x, point.y) && !point.down) {
 				point.down = true;
 				dragger.onTouchBegan(point.x, point.y);
 			}
-			break;
-		case 2:
-			dragger.onTouchMoved(point.x, point.y);
+			else {
+				dragger.onTouchMoved(point.x, point.y);
+			}
 			break;
 	}
 }, 17);
