@@ -108,7 +108,7 @@ void fxBuildModule(txMachine* the)
 	mxPush(mxObjectPrototype);
 	fxNewObjectInstance(the);
 	mxCompartmentPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 	mxCompartmentConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Compartment_get_map), C_NULL, mxID(_map), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
@@ -224,9 +224,12 @@ void fxRunImport(txMachine* the)
 	{
 		mxTry(the) {
 			txSlot* internal = mxModuleInstanceInternal(module);
+			txSlot* realm = internal->value.module.realm;
+			if (!realm)
+				realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			fxToString(the, stack);
 			the->requireFlag |= XS_REQUIRE_FLAG;
-			module = fxRequireModule(the, internal->value.module.realm, internal->value.module.id, stack);
+			module = fxRequireModule(the, realm, internal->value.module.id, stack);
 			the->requireFlag &= ~XS_REQUIRE_FLAG;
 			mxPushSlot(module);
 			/* COUNT */

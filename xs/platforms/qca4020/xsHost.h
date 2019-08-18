@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef __XSQCA4020__
-#define __XSQCA4020__
+#ifndef __XSHOST__
+#define __XSHOST__
 
 #undef ENOBUFS
 #undef ETIMEDOUT
@@ -51,34 +51,21 @@
 #undef EFAULT
 #undef ENETUNREACH
 
-#include "mc.defines.h"
-#include <stdint.h>
-#include <stddef.h>
+#include "stdint.h"
+#include "stddef.h"
 #include "malloc.h"
 
 #define QAPI_NET_ENABLE_BSD_COMPATIBILITY
 #include "qapi_socket.h"	// for ERRNO defines
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*
-	link locations
- */
-#define ICACHE_RAM_ATTR
-#define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
-#define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xsro")))
 #define ICACHE_RODATA_ATTR __attribute__((section(".flash.rodata")))
 #define ICACHE_XS6RO_ATTR __attribute__((section(".flash.xs6ro"))) __attribute__((aligned(4)))
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".flash.xs6ro2"))) __attribute__((aligned(4)))
 #define ICACHE_XS6STRING_ATTR __attribute((section(".flash.str1.4"))) __attribute__((aligned(4)))
 
-#define sint8_t int8_t
-#define sint16_t int16_t
-
-void xs_setup();
-void xs_loop();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
     timer
@@ -89,6 +76,7 @@ extern int modTimersNext(void);
 
 extern uint32_t qca4020_milliseconds();
 extern void qca4020_delay(uint32_t delayMS);
+extern void qca4020_restart();
 
 #define modDelayMilliseconds(ms) qca4020_delay(ms)
 #define modDelayMicroseconds(us) qca4020_delay(((us) + 500) / 1000)
@@ -98,14 +86,23 @@ extern void qca4020_delay(uint32_t delayMS);
 /*
 	wlan
 */
+
 int8_t qca4020_wlan_enable(void);
 int8_t qca4020_wlan_disable(void);
 int8_t qca4020_wlan_get_active_device(void);
 void qca4020_wlan_set_active_device(uint8_t deviceId);
 
 /*
+	serial
+*/
+
+int ESP_getc(void);
+void ESP_putc(int c);
+
+/*
 	critical section
 */
+
 #define modCriticalSectionDeclare
 #define modCriticalSectionBegin()	do { __asm("cpsid i"); } while(0)
 #define modCriticalSectionEnd()		do { __asm("isb"); __asm("cpsie i"); } while(0)
@@ -113,6 +110,7 @@ void qca4020_wlan_set_active_device(uint8_t deviceId);
 /*
 	date and time
 */
+
 typedef uint32_t modTime_t;
 
 struct modTimeVal {
@@ -155,9 +153,11 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
     report
 */
 
-extern void modLog_transmit(const char *msg);
-extern void ESP_putc(int c);
+extern void qca4020_error(char *msg, int err);
+extern void qca4020_msg_num(char *msg, int num);
+extern void debugger_write(const char *msg, int len);
 
+extern void modLog_transmit(const char *msg);
 
 #define modLog(msg) \
 	do { \
@@ -189,10 +189,12 @@ extern void ESP_putc(int c);
 
 extern void qca4020_watchdog();
 
-
 /*
     VM
 */
+
+void xs_setup();
+void xs_loop();
 
 #ifdef __XS__
     extern xsMachine *gThe;     // the one XS6 virtual machine running
@@ -201,12 +203,20 @@ extern void qca4020_watchdog();
 	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
 	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
 #endif
+
+void modLoadModule(void *the, const char *name);
+
+/*
+	debugging
+*/
+
+void fxReceiveLoop(void);
 
 /*
 	messages
 */
+
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 #if defined(__XS__)
@@ -260,7 +270,8 @@ extern void *my_malloc(size_t size);
 #define c_realloc realloc
 #endif
 
-#define c_exit exit
+//#define c_exit exit
+#define c_exit qca4020_restart
 #define c_free free
 #define c_qsort qsort
 #define c_strtod strtod
@@ -271,7 +282,6 @@ extern void *my_malloc(size_t size);
 #define c_vsnprintf vsnprintf
 #define c_snprintf snprintf
 #define c_fprintf fprintf
-
 
 /* DATE */
 
@@ -375,10 +385,9 @@ extern void *my_malloc(size_t size);
 #define C_ENOMEM ENOMEM
 #define C_EINVAL EINVAL
 
+/* READ MEMORY */
 
 #define espRead8(POINTER) *((txU1*)POINTER)
-#define mxGetKeySlotID(SLOT) (SLOT)->ID
-#define mxGetKeySlotKind(SLOT) (SLOT)->kind
 
 #define c_read8(POINTER) *((txU1*)(POINTER))
 #define c_read16(POINTER) *((txU2*)(POINTER))
@@ -390,5 +399,5 @@ extern void *my_malloc(size_t size);
 }
 #endif
 
-#endif /* __XSQCA4020__ */
+#endif /* __XSHOST__ */
 

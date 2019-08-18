@@ -13,7 +13,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "buildinfo.h"
 
 void xs_getbuildstring(xsMachine *the)

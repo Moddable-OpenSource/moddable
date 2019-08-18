@@ -241,6 +241,7 @@ extern void fxWriteStrips(txLinker* linker, FILE* file);
 extern void fxOptimize(txLinker* linker);
 
 /* xslSlot.c */
+extern void fxCheckAliases(txMachine* the);
 extern void fxLinkerScriptCallback(txMachine* the);
 extern txInteger fxPrepareHeap(txMachine* the, txBoolean stripping);
 extern void fxPrintBuilders(txMachine* the, FILE* file);

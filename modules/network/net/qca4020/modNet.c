@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #define QAPI_USE_WLAN
 #include "qapi.h"

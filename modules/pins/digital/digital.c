@@ -19,16 +19,7 @@
  */
 
 #include "xsmc.h"
-#if ESP32 || __ets__
-	#include "xsesp.h"
-#elif defined(gecko)
-	#include "xsPlatform.h"
-	#include "xsgecko.h"
-#elif defined(qca4020)
-	#include "xsqca4020.h"
-#else
-	#error unknown platform
-#endif
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modGPIO.h"

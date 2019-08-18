@@ -144,7 +144,7 @@ export default class Client {
 		topic = makeStringBuffer(topic);
 		let payload = topic.length + 2;
 
-		let length = 1;	// UBSUBSCRIBE
+		let length = 1;	// UNSUBSCRIBE
 		length += getRemainingLength(payload);
 		length += payload;
 

@@ -495,6 +495,15 @@ void fxSend(txMachine* the, txBoolean more)
 
 #endif
 
+#if mxWindows || mxMacOSX || mxLinux || mxWasm
+uint32_t modMilliseconds()
+{
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+}
+#endif
+
 #if mxWindows
 
 #if _MSC_VER < 1800

@@ -18,7 +18,7 @@
  *
  */
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include <ets_sys.h>
 #include <osapi.h>

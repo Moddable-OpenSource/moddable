@@ -1236,8 +1236,10 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 	txInteger length = 0;
     va_list arguments;
     txSlot* slot;
+#ifdef mxDebug
 	fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
 	length = c_strlen(message);
+#endif
     va_start(arguments, format);
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
     va_end(arguments);
@@ -1544,10 +1546,12 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxBuildArchiveKeys(the);
 			
 			the->aliasCount = theMachine->aliasCount;
-			the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
-			if (!the->aliasArray)
-				fxJump(the);
-			c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
+			if (the->aliasCount) {
+				the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
+				if (!the->aliasArray)
+					fxJump(the);
+				c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
+			}
 
 			/* mxGlobal */
 			mxPushUndefined();

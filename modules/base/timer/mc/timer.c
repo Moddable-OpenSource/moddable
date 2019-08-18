@@ -21,31 +21,7 @@
 
 #include "xsmc.h"
 #include "modTimer.h"
-
-#if ESP32 || __ets__
-	#include "xsesp.h"
-#elif __ZEPHYR__
-	#include "modTimer.h"
-	#include "xsPlatform.h"
-#elif defined(linux)
-	#include "xslinux.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#elif defined(apollo)
-	#include "xsapollo.h"
-	#include "xsPlatform.h"
-#elif defined(qca4020)
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
-#elif defined(synergy)
-	#include <sys/types.h>
-	#include "xssynergy.h"
-	#include "xsPlatform.h"
-	#include <string.h>
-#else
-	#error unknown platform
-#endif
+#include "xsHost.h"
 
 #include "modInstrumentation.h"
 

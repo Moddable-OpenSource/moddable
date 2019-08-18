@@ -21,23 +21,8 @@
 // modeled on Adafruit SSD1351 library.
 //  https://github.com/adafruit/Adafruit-SSD1351-library
 #include "xsmc.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-	#include "modGPIO.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-	#include "modGPIO.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-	#include "modGPIO.h"
-#else
-	#include "xslinux.h"
-	#include "xsPlatform.h"
-	#include "gpio.h"
-#endif
+#include "xsHost.h"
+#include "modGPIO.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"

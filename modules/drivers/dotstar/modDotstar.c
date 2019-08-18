@@ -19,19 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#else
-	#include "xslinux.h"
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"

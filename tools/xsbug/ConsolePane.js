@@ -120,6 +120,9 @@ class ConsoleCodeBehavior extends CodeBehavior {
 			}
 		}
 	}
+	onSelected(code) {
+		code.bubble("onCodeSelected");
+	}
 };
 
 class ConsoleHeaderBehavior extends RowBehavior {

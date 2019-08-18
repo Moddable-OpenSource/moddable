@@ -418,7 +418,7 @@ class ConfigFile extends PrerequisiteFile {
 				this.line(",");
 			}
 		}
-		this.line("});");
+		this.line("}, true);");
 		this.close();
 	}
 }

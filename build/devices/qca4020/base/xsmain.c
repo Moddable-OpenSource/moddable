@@ -20,11 +20,11 @@
 
 #define __XS6PLATFORMMINIMAL__
 #include "xs.h"
-#include "xsqca4020.h"
 #include "xsmain.h"
 #include "modTimer.h"
 
 #include "xsPlatform.h"
+#include "xsHost.h"
 #include "modInstrumentation.h"
 
 #include "qapi_types.h"

@@ -20,12 +20,7 @@
 
 #include "ls013b4dn04.h"
 #include "xsmc.h"
-#if gecko
-	#include "xsPlatform.h"
-	#include "xsgecko.h"
-#else
-	#include "xsesp.h"
-#endif
+#include "xsHost.h"
 #include "modGPIO.h"
 #include "modSPI.h"
 #include "commodettoBitmap.h"

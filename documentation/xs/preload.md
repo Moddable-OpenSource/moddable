@@ -2,7 +2,7 @@
 
 Copyright 2019 Moddable Tech, Inc.
 
-Revised: February 23, 20109
+Revised: August 17, 2019
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
 
@@ -136,7 +136,7 @@ Freezing objects is more common using XS than in other JavaScript environments. 
 		{name: "white", value: 0xFFFF00},	
 		...
 	];
-	Object.freeze(Colors, 1);
+	Object.freeze(Colors, true);
 
 Because this extension is not part of the JavaScript language, care should be taken to only use it in code that is intended for exclusive use by the XS engine. If equivalent functionality becomes available in a standard way such as [`harden`](https://github.com/Agoric/Harden), XS will move to use that mechanism exclusively.
 
@@ -148,7 +148,7 @@ Following the preload build phase, the XS linker freezes the following:
 
 The result of this step generates a runtime environment with characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know the built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
 
-## Module Global State
+## Module Scope
 Sometimes modules need to maintain information for their entire lifetime, independent of a single class instance. These variables are part of the module's closure, lexically scoped to the module's body. They are created when the module executes. The following revision of `CountingLog` shares a single counter variable across all instances.
 
 	let count = 1;
@@ -162,39 +162,9 @@ Sometimes modules need to maintain information for their entire lifetime, indepe
 	
 	export default CountingLog;
 
-In the current implementation of XS, when this module is preloaded, the value of the `count` property is frozen as part of the module's closure. An exception is thrown on any attempt to modify it. The mechanism XS used to allow modification of objects stored in ROM does not work here. That module global variables declared with `let` behave like variables declared with `const` is a limitation of the XS preload implementation. In a future update, it may be addressed. Until then, there are other techniques available as part of the JavaScript standard that allow a module to maintain private, modifiable global state.
+When this module is preloaded, the value of the `count` variable is frozen in ROM as part of the module's closure. Similarly to objects, XS allows such variables to be modified by storing the modification in RAM. It achieves this by maintaining a pointer in RAM for each variable in ROM that may be modified. Each pointer takes up 4 bytes on a typical 32-bit microcontroller.
 
-It is possible to have modifiable module global variables by making them objects. The following example shows how.
-
-	let state = {
-		count = 1,
-	};
-
-	class CountingLog {
-		log(msg) {
-			trace(`${state.count++}: ${msg}\n`);
-		}
-	}
-	Object.freeze(CountingLog.prototype);
-	
-	export default CountingLog;
-
-Because the object stored in `state` has not been frozen, it may be modified at runtime. The `state` object may, of course, be used to store additional properties with the consequence that modules written in this way often need only one module global to maintain their private state. 
-
-Another way for a module to maintain modifiable private state is using the global scope with a symbol.
-
-	const countSymbol = Symbol("count");
-	global[countSymbol] = 0;
-
-	class CountingLog {
-		log(msg) {
-			trace(`${global[countSymbol]++}: ${msg}\n`);
-		}
-	}
-
-Note that this uses `global` to access the global scope, a name in flux in the JavaScript standards process.
-
-Finally, use `const` to declare module variables that are not intended to be modified at runtime. This conveys the intended use of the variable for when the XS preload mechanism allows variables declared with `let` to be modified.
+So use `const` to declare module variables that are not intended to be modified at runtime. This conveys the intended use of the variable.
 
 ## What Cannot be Preloaded
 Preloading occurs on the build machine, not the target device. That limits the operations that may be performed during preload. 
@@ -267,11 +237,6 @@ This fails, because Date cannot be stored as the result of preload. However, a s
 The value of `Stamped.when` is the time that the file was preloaded by the linker, which may be useful for some projects.
 
 The section below on pre-calculation gives other examples of executing code at build time to generate data to be used at runtime.
-
-### `require` and Preloading
-The `require` function is used to load modules on-demand, whereas the `import` statement always loads modules when their containing module is loaded. The `require` function may be called during preload, which causes the module it loads to also be preloaded.
-
-Note: The `require` function is supported in XS for convenience, though it is not part of the JavaScript language. It is not widely used in XS modules at this time. The functionality enabled by the `require` function is in the process of being standardized as the `import` function. 
 
 ## Preloading `main`
 The `main` module is the first application script executed. To do its work, the `main` module usually imports other modules. The `main` module of a project is often the only module that is not set to preload. This is done for convenience, and for small projects, like examples in the Moddable SDK, it is often not a problem. The application's `main` module invariably invokes native functions, to connect to Wi-Fi, display an image, or toggle a digital pin. As noted above native functions cannot be called during preload.

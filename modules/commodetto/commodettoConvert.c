@@ -28,14 +28,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-
-#ifdef __ets__
-	#include "xsesp.h"
-#else
-	#define ICACHE_XS6RO_ATTR
-	#define ICACHE_XS6RO2_ATTR
-	#define ICACHE_RODATA_ATTR
-#endif
+#include "xsHost.h"
 
 /*
 	XS binding

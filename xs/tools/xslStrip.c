@@ -130,6 +130,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxUnuseSymbol(linker, mxID(_BigUint64Array));
 				fxStripCallback(linker, fx_BigUint64Array);
 			}
+			else if (!c_strcmp(name, "Compartment"))
+				fxStripCallback(linker, fx_Compartment);
 			else if (!c_strcmp(name, "DataView"))
 				fxStripCallback(linker, fx_DataView);
 			else if (!c_strcmp(name, "Date"))
@@ -241,8 +243,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_AsyncGenerator);
 	fxUnstripCallback(linker, fx_Boolean_prototype_toString);
 	fxUnstripCallback(linker, fx_Boolean_prototype_valueOf);
-	fxUnstripCallback(linker, fx_Compartment);
-	fxUnstripCallback(linker, fx_Compartment_get_map);
 	fxUnstripCallback(linker, fx_Enumerator);
 	fxUnstripCallback(linker, fx_Enumerator_next);
 	fxUnstripCallback(linker, fx_Error_toString);
@@ -283,6 +283,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_BigInt_prototype_toString);
 		fxUnstripCallback(linker, fx_BigInt_prototype_valueOf);
 	}
+	if (fxIsCallbackStripped(linker, fx_Compartment))
+		fxStripClass(linker, the, &mxCompartmentConstructor);
 	if (fxIsCallbackStripped(linker, fx_DataView))
 		fxStripClass(linker, the, &mxDataViewConstructor);
 	if (fxIsCallbackStripped(linker, fx_Date))

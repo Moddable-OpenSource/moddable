@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -86,14 +86,3 @@ void Resource_slice(xsMachine *the)
 		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
 	}
 }
-
-void require_awaitImport(xsMachine *the)
-{
-	xsTrace("require ");
-	xsTrace(xsToString(xsArg(0)));
-	xsTrace("\n");
-	fxPush(xsArg(0));
-	fxAwaitImport(the, XS_IMPORT_DEFAULT);
-	xsResult = fxPop();
-}
-

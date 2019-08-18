@@ -18,7 +18,7 @@
  *
  */
 
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include <string.h>
 #include <stdlib.h>

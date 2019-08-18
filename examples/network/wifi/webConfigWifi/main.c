@@ -13,12 +13,7 @@
  */
 
 #include "xsmc.h"
-#if ESP32 || __ets__
-	#include "xsesp.h"
-#elif defined(qca4020)
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 void do_restart(xsMachine *the)
 {

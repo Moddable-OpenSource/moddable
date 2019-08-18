@@ -37,6 +37,25 @@
 
 #include "xsl.h"
 
+typedef struct sxAliasIDLink txAliasIDLink;
+typedef struct sxAliasIDList txAliasIDList;
+
+struct sxAliasIDLink {
+	txAliasIDLink* previous;
+	txAliasIDLink* next;
+	txInteger id;
+	txInteger flag;
+};
+
+struct sxAliasIDList {
+	txAliasIDLink* first;
+	txAliasIDLink* last;
+	txFlag* aliases;
+};
+
+static void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag);
+static void fxCheckEnvironmentAliases(txMachine* the, txSlot* environment, txAliasIDList* list);
+static void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* list);
 static txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which);
 static txString fxGetCallbackName(txMachine* the, txCallback callback); 
 static txString fxGetCodeName(txMachine* the, txByte* which);
@@ -46,6 +65,22 @@ static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
 static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
+
+#define mxPushLink(name,ID,FLAG) \
+	txAliasIDLink name = { C_NULL, C_NULL, ID, FLAG }; \
+	name.previous = list->last; \
+	if (list->last) \
+		list->last->next = &name; \
+	else \
+		list->first = &name; \
+	list->last = &name
+
+#define mxPopLink(name) \
+	if (name.previous) \
+		name.previous->next = C_NULL; \
+	else \
+		list->first = C_NULL; \
+	list->last = name.previous
 
 txSlot* fxBuildHostConstructor(txMachine* the, txCallback call, txInteger length, txInteger id)
 {
@@ -59,6 +94,155 @@ txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, t
 	txLinker* linker = (txLinker*)(the->context);
 	fxNewLinkerBuilder(linker, call, length, id);
 	return fxNewHostFunction(the, call, length, id);
+}
+
+void fxCheckAliases(txMachine* the) 
+{
+	txLinker* linker = xsGetContext(the);
+	txAliasIDList _list = { C_NULL, C_NULL }, *list = &_list;
+	txSlot* module = mxProgram.value.reference->next; //@@
+	list->aliases = fxNewLinkerChunkClear(linker, the->aliasCount * sizeof(txFlag));
+	while (module) {
+		txSlot* export = mxModuleExports(module)->value.reference->next;
+		if (export) {
+			mxPushLink(moduleLink, module->ID, 0);
+			while (export) {
+				txSlot* closure = export->value.export.closure;
+				if (closure) {
+					mxPushLink(exportLink, export->ID, 0);
+					if (closure->ID != XS_NO_ID) {
+						if (list->aliases[closure->ID] == 0) {
+							list->aliases[closure->ID] = 1;
+							fxCheckAliasesError(the, list, 0);
+						}
+					}
+					if (closure->kind == XS_REFERENCE_KIND) {
+						fxCheckInstanceAliases(the, closure->value.reference, list);
+					}
+					mxPopLink(exportLink);
+				}
+				export = export->next;
+			}
+			mxPopLink(moduleLink);
+		}
+		module = module->next;
+	}
+}
+
+void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag) 
+{
+	txAliasIDLink* link = list->first;
+	fprintf(stderr, "### warning");
+	while (link) {
+		switch (link->flag) {
+		case 1: fprintf(stderr, "."); break;
+		case 2: fprintf(stderr, "["); break;
+		case 3: fprintf(stderr, ".get "); break;
+		case 4: fprintf(stderr, ".set "); break;
+		default: fprintf(stderr, ": "); break;
+		}
+		if (link->id < 0) {
+			char* string = fxGetKeyName(the, link->id);
+			if (string)
+				fprintf(stderr, "%s", string);
+			else
+				fprintf(stderr, "%d", link->id);
+		}
+		else 
+			fprintf(stderr, "%d", link->id);
+		if (link->flag == 2)
+			fprintf(stderr, "]");
+		link = link->next;
+	}
+	if (flag)
+		fprintf(stderr, ": not frozen\n");
+	else
+		fprintf(stderr, ": no const\n");
+}
+
+void fxCheckEnvironmentAliases(txMachine* the, txSlot* environment, txAliasIDList* list) 
+{
+	txSlot* closure = environment->next;
+	if (environment->flag & XS_LEVEL_FLAG)
+		return;
+	environment->flag |= XS_LEVEL_FLAG;
+	if (environment->value.instance.prototype)
+		fxCheckEnvironmentAliases(the, environment->value.instance.prototype, list);
+	while (closure) {
+		if (closure->kind == XS_CLOSURE_KIND) {
+			txSlot* slot = closure->value.closure;
+			mxPushLink(closureLink, closure->ID, 0);
+			if (slot->ID != XS_NO_ID) {
+				if (list->aliases[slot->ID] == 0) {
+					list->aliases[slot->ID] = 1;
+					fxCheckAliasesError(the, list, 0);
+				}
+			}
+			if (slot->kind == XS_REFERENCE_KIND) {
+				fxCheckInstanceAliases(the, slot->value.reference, list);
+			}
+			mxPopLink(closureLink);
+		}
+		closure = closure->next;
+	}
+	//environment->flag &= ~XS_LEVEL_FLAG;
+}
+
+void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* list) 
+{
+	txSlot* property = instance->next;
+	if (instance->flag & XS_LEVEL_FLAG)
+		return;
+	instance->flag |= XS_LEVEL_FLAG;
+	if (instance->value.instance.prototype) {
+		mxPushLink(propertyLink, mxID(___proto__), 1);
+		fxCheckInstanceAliases(the, instance->value.instance.prototype, list);
+		mxPopLink(propertyLink);
+	}
+	if (instance->ID != XS_NO_ID) {
+		if (list->aliases[instance->ID] == 0) {
+			list->aliases[instance->ID] = 1;
+			fxCheckAliasesError(the, list, 1);
+		}
+	}
+	while (property) {
+		if (property->kind == XS_ACCESSOR_KIND) {
+			if (property->value.accessor.getter) {
+				mxPushLink(propertyLink, property->ID, 3);
+				fxCheckInstanceAliases(the, property->value.accessor.getter, list);
+				mxPopLink(propertyLink);
+			}
+			if (property->value.accessor.setter) {
+				mxPushLink(propertyLink, property->ID, 4);
+				fxCheckInstanceAliases(the, property->value.accessor.setter, list);
+				mxPopLink(propertyLink);
+			}
+		}
+		else if (property->kind == XS_ARRAY_KIND) {
+			txSlot* item = property->value.array.address;
+			txInteger length = (txInteger)fxGetIndexSize(the, property);
+			while (length > 0) {
+				if (item->kind == XS_REFERENCE_KIND) {
+					mxPushLink(propertyLink,  (txInteger)(item->next), 2);
+					fxCheckInstanceAliases(the, item->value.reference, list);
+					mxPopLink(propertyLink);
+				}
+				item++;
+				length--;
+			}
+		}
+		else if ((property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
+			if (property->value.code.closures)
+				fxCheckEnvironmentAliases(the, property->value.code.closures, list);
+		}
+		else if (property->kind == XS_REFERENCE_KIND) {
+			mxPushLink(propertyLink, property->ID, 1);
+			fxCheckInstanceAliases(the, property->value.reference, list);
+			mxPopLink(propertyLink);
+		}
+		property = property->next;
+	}
+// 	instance->flag &= ~XS_LEVEL_FLAG;
 }
 
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
@@ -407,12 +591,11 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
-							property = property->next->next;
-							if (property && (property->kind == XS_REFERENCE_KIND))
-								fxPrepareInstance(the, property->value.reference);
+							property = property->next;
+							fxPrepareInstance(the, property->value.reference); // namespace
+							property = property->next;
+							fxPrepareInstance(the, property->value.reference); // import.meta
 						}
-						else if (property->kind == XS_EXPORT_KIND)
-							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
 							fxPrepareInstance(the, slot);
 					}
@@ -477,9 +660,6 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 					if (closure->flag & XS_DONT_SET_FLAG)
 						closure->flag |= XS_DONT_DELETE_FLAG;
 					else {
-// 						fprintf(stderr, "aliased variable ");
-// 						fxPrintID(the, stderr, slot->ID);
-// 						fprintf(stderr, "\n");
 						if (closure->ID == XS_NO_ID)
 							closure->ID = aliasCount++;
 						slot->flag &= ~XS_DONT_SET_FLAG;

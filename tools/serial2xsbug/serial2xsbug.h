@@ -64,6 +64,7 @@
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
+#include <process.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>

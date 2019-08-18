@@ -40,12 +40,9 @@
 
 #include <stdint.h>
 
-#include "qapi_status.h"
-#include "qapi_spi_master.h"
-#include "qapi_tlmm.h"
-#include "qurt_mutex.h"
-#include "qurt_signal.h"
-#include "qurt_timer.h"
+#define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
+#define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xsro")))
+#define ICACHE_RAM_ATTR
 
 #define mxRegExp 1
 //#define mxReport 1
@@ -59,9 +56,11 @@
 
 #ifndef __XS6PLATFORMMINIMAL__
 
-#define mxExport extern
+#ifndef mxExport
+	#define mxExport extern
+#endif
 #ifndef mxImport
-#define mxImport
+	#define mxImport extern
 #endif
 
 #define mxBigEndian 0
@@ -75,11 +74,6 @@
 #define XS_FUNCTION_NORETURN __attribute__((noreturn))
 #define XS_FUNCTION_ANALYZER_NORETURN
 
-#ifndef true
-	#define true 1
-	#define false 0
-#endif
-
 typedef int8_t txS1;
 typedef uint8_t txU1;
 typedef int16_t txS2;
@@ -92,12 +86,14 @@ typedef uint64_t txU8;
 typedef int txSocket;
 #define mxNoSocket NULL
 
-#include "xsqca4020.h"
+#include "xsHost.h"
 
-#ifndef true
-    #define true 1
-    #define false 0
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+#define mxGetKeySlotID(SLOT) (SLOT)->ID
+#define mxGetKeySlotKind(SLOT) (SLOT)->kind
 
 #define mxVolatile(type, name, value) type name = value; type *name ## Address __attribute__((unused)) = &name
 
@@ -105,7 +101,9 @@ extern void fx_putc(void *refcon, char c);
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
-	uint8_t count;
+	uint16_t count;
+	uint8_t	binary;
+	uint8_t	pad;
 	uint8_t bytes[1];
 };
 typedef struct DebugFragmentRecord DebugFragmentRecord;
@@ -113,6 +111,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 
 /* MACHINE */
 
+#define kDebugReaderCount (8)
+/*****
 #define mxMachinePlatform \
 	void* host; \
 	txSocket connection; \
@@ -128,17 +128,51 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void *waiterCondition;	\
 	void *waiterData;		\
 	void *waiterLink;
+*/
+
+#ifdef mxDebug
+#define mxMachineDebug \
+		txSocket connection; \
+		void* readers[kDebugReaderCount]; \
+		uint16_t readerOffset; \
+		txBoolean inPrintf; \
+		txBoolean debugNotifyOutstanding; \
+		txBoolean DEBUG_LOOP; \
+		uint8_t debugConnectionVerified; \
+		uint8_t wsState; \
+		uint8_t wsFin; \
+		uint16_t wsLength; \
+		uint16_t wsSendStart; \
+		uint8_t wsMask[4]; \
+		uint8_t *wsCmd; \
+		uint8_t *wsCmdPtr; \
+		DebugFragment debugFragments;
+#else
+	#define mxMachineDebug
+#endif
+
+#define mxMachinePlatform \
+		void* host; \
+		uint8_t *heap; \
+		uint8_t *heap_ptr; \
+		uint8_t *heap_pend; \
+		void *msgQueue; \
+		void *task;	\
+		void *waiterCondition;	\
+		void *waiterData;		\
+		void *waiterLink;		\
+		mxMachineDebug
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __XS6PLATFORMMINIMAL__ */
-
-int ESP_getc(void);
-void ESP_putc(int c);
 
 #define delay(x)            qca4020_delay(x)
 
 extern void qca4020_error(char *msg, int err);
 extern void qca4020_msg_num(char *msg, int num);
 extern void debugger_write(const char *msg, int len);
-
 
 #endif /* __XSPLATFORM__ */

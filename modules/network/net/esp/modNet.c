@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "string.h"
 

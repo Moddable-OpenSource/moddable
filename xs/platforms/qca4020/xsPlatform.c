@@ -36,10 +36,11 @@
  */
 
 #include "xsAll.h"
-#include "stdio.h"
+#include "modTimer.h"
+#include "xsHost.h"
 
-#include "xsqca4020.h"
 #include "qurt_mutex.h"
+#include "qapi_reset.h"
 
 #ifdef mxInstrument
 	extern void espDescribeInstrumentation(txMachine *the);
@@ -49,16 +50,21 @@
 #define kSerialConnection ((void*)0x87654321)
 
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
+static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
+
 void fxReceiveLoop(void);
 
-extern qurt_mutex_t gDebugMutex;
+#if defined (mxDebug)
+	extern qurt_mutex_t gDebugMutex;
+	#define mxDebugMutexTake()  qurt_mutex_lock(&gDebugMutex);
+	#define mxDebugMutexGive()  qurt_mutex_unlock(&gDebugMutex);
+	#define mxDebugMutexAllocated()  (NULL != (void*)gDebugMutex)
+#else
+	#define mxDebugMutexTake()
+	#define mxDebugMutexGive()
+	#define mxDebugMutexAllocated()  (true)
+#endif
 
-void doubleMutex(){
-	modDelayMilliseconds(100);
-}
-int dmtx = 0;
-#define mxDebugMutexTake() do { dmtx++; if (dmtx > 1) doubleMutex(); qurt_mutex_lock(&gDebugMutex); } while (0)
-#define mxDebugMutexGive() do { dmtx--;qurt_mutex_unlock(&gDebugMutex); } while (0)
 
 int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);	// @@
 
@@ -71,27 +77,31 @@ void modMachineTaskWake(txMachine *the);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
-	qurt_mutex_create(&gDebugMutex);
-
 	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = (txSocket)mxNoSocket;
+	if (!gDebugMutex) {
+		qurt_mutex_create(&gDebugMutex);
+	}
 #endif
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+#ifdef mxDebug
     while (the->debugFragments) {
         DebugFragment next = the->debugFragments->next;
         c_free(the->debugFragments);
         the->debugFragments = next;
     }
+#endif
 
 	modMachineTaskUninit(the);
 }
 
 void fx_putc(void *refcon, char c)
 {
+#ifdef mxDebug
     txMachine* the = refcon;
 
     if (the->inPrintf) {
@@ -100,6 +110,7 @@ void fx_putc(void *refcon, char c)
                 // write xsbug log trailer
                 const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
 				debugger_write(xsbugTrailer, c_strlen(xsbugTrailer));
+				mxDebugMutexGive();
             }
             the->inPrintf = false;
             return;
@@ -111,12 +122,15 @@ void fx_putc(void *refcon, char c)
 
         the->inPrintf = true;
         if ((txSocket)kSerialConnection == the->connection) {
+			mxDebugMutexTake();
+
             // write xsbug log header
             static const char *xsbugHeader = "<xsbug><log>";
 			fx_putpi(the, '.', true);
 			debugger_write(xsbugHeader, c_strlen(xsbugHeader));
         }
     }
+#endif
 
     ESP_putc(c);
 }
@@ -149,7 +163,6 @@ static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16
 
 void fxAbort(txMachine* the)
 {
-	fxDisconnect(the);
 	c_exit(0);
 }
 
@@ -162,6 +175,8 @@ void fxConnect(txMachine* the)
 
 		if (!once) {
 			static const char *piReset = "<?xs-00000000?>\r\n";
+
+			modDelayMilliseconds(250);
 
 			debugger_write(piReset, c_strlen(piReset));
 
@@ -195,6 +210,7 @@ txBoolean fxIsConnected(txMachine* the)
 
 txBoolean fxIsReadable(txMachine* the)
 {
+	fxReceiveLoop();			// necessary?
 	if ((txSocket)kSerialConnection == the->connection) {
 		return NULL != the->debugFragments;
 	}
@@ -204,13 +220,13 @@ txBoolean fxIsReadable(txMachine* the)
 
 void fxReceive(txMachine* the)
 {
-	the->debugOffset = 0;
+//	the->debugOffset = 0;
 
 	if ((txSocket)kSerialConnection == the->connection) {
 
 		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
-		while (true) {
+		while (!the->debugOffset) {
 			if (timeout && (timeout < modMilliseconds())) {
 				fxDisconnect(the);
 				break;
@@ -225,8 +241,12 @@ void fxReceive(txMachine* the)
 				the->debugFragments = f->next;
 				mxDebugMutexGive();
 
-				c_memcpy(the->debugBuffer, f->bytes, f->count);
-				the->debugOffset = f->count;
+				if (!f->binary) {
+					c_memcpy(the->debugBuffer, f->bytes, f->count);
+					the->debugOffset = f->count;
+				}
+				else
+					doRemoteCommand(the, f->bytes, f->count);
 				c_free(f);
 				break;
 			}
@@ -264,11 +284,16 @@ void fxReceiveLoop(void)
 	static const char *tagEnd = ">\r\n";
 	static txMachine* current = NULL;
 	static uint8_t state = 0;
+	static uint16_t binary = 0;
+	static DebugFragment fragment = NULL;
 	static uint32_t value = 0;
-	static uint8_t buffered[28];
 	static uint8_t bufferedBytes = 0;
+	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
 
 	qca4020_watchdog();
+
+	if (!mxDebugMutexAllocated())
+		return;
 
 	mxDebugMutexTake();
 
@@ -281,9 +306,15 @@ void fxReceiveLoop(void)
 			if (0 == state) {
 				current = NULL;
 				value = 0;
+				binary = 0;
 			}
 			if (c == c_read8(piBegin + state))
 				state++;
+			else
+			if ((6 == state) && ('#' == c)) {
+				binary = 1;
+				state++;
+			}
 			else
 				state = 0;
 		}
@@ -312,8 +343,12 @@ void fxReceiveLoop(void)
 		else if (state == 16) {
 			if (c == '>') {
 				current = (txMachine*)value;
-				state++;
-				bufferedBytes = 0;
+				if (binary)
+					state = 20;
+				else {
+					state++;
+					bufferedBytes = 0;
+				}
 			}
 			else
 				state = 0;
@@ -334,14 +369,16 @@ void fxReceiveLoop(void)
 				state = 17;
 
 			if (enqueue) {
-				DebugFragment fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
+				fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
 				if (NULL == fragment) {
 					modLog("no fragment memory");
 					break;
 				}
 				fragment->next = NULL;
 				fragment->count = bufferedBytes;
+				fragment->binary = 0;
 				c_memcpy(fragment->bytes, buffered, bufferedBytes);
+	enqueue:
 				if (NULL == current->debugFragments)
 					current->debugFragments = fragment;
 				else {
@@ -357,25 +394,153 @@ void fxReceiveLoop(void)
 				bufferedBytes = 0;
 			}
 		}
+		else if (20 == state) {
+			binary = c << 8;
+			state = 21;
+		}
+		else if (21 == state) {
+			binary += c;
+			state = 22;
+
+			fragment = c_malloc(sizeof(DebugFragmentRecord) + binary);
+			if (NULL == fragment) {
+				state = 0;
+				continue;
+			}
+			fragment->next = NULL;
+			fragment->count = binary;
+			fragment->binary = 1;
+			binary = 0;
+		}
+		else if (22 == state) {
+			fragment->bytes[binary++] = c;
+			if (fragment->count == binary) {
+				state = 0;
+				goto enqueue;
+			}
+		}
 	}
 	mxDebugMutexGive();
 }
 
-void fxSend(txMachine* the, txBoolean more)
+void fxSend(txMachine* the, txBoolean flags)
 {
+	txBoolean more = 0 != (flags & 1);
+	txBoolean binary = 0 != (flags & 2);
+
 	if ((txSocket)kSerialConnection == the->connection) {
-		char *c = the->echoBuffer;
-		txInteger count = the->echoOffset;
 		if (!the->inPrintf) {
 			mxDebugMutexTake();
-			fx_putpi(the, '.', false);
+			if (binary) {
+				fx_putpi(the, '#', true);
+				ESP_putc((uint8_t)(the->echoOffset >> 8));
+				ESP_putc((uint8_t)the->echoOffset);
+			}
+			else
+				fx_putpi(the, '.', false);
 		}
 		the->inPrintf = more;
-		debugger_write(c, count);
+		debugger_write(the->echoBuffer, the->echoOffset);
 
 		if (!more)
 			mxDebugMutexGive();
 	}
+}
+
+static void doLoadModule(modTimer timer, void *refcon, int refconSize)
+{
+	modLoadModule((txMachine *)*(uintptr_t *)refcon, sizeof(uintptr_t) + (uint8_t *)refcon);
+}
+
+static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
+{
+	uint16_t resultID = 0;
+	int16_t resultCode = 0;
+	uint8_t	cmdID;
+	int baud = 0;
+
+	if (!cmdLen)
+		return;
+
+	cmdID = *cmd++;
+	cmdLen -= 1;
+
+	if (cmdLen >= 2) {
+		resultID = (cmd[0] << 8) | cmd[1];
+		cmd += 2, cmdLen -= 2;
+
+		the->echoBuffer[0] = 5;
+		the->echoBuffer[1] = resultID >> 8;
+		the->echoBuffer[2] = resultID & 0xff;
+		the->echoBuffer[3] = 0;
+		the->echoBuffer[4] = 0;
+		the->echoOffset = 5;
+	}
+
+	switch (cmdID) {
+		case 1:		// restart
+			the->wsState = 18;
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+			qca4020_restart();
+			while(1)
+				modDelayMilliseconds(1000);
+			return;
+
+		case 2: 	// uninstall
+			break;
+
+		case 3:		// install some
+			break;
+
+		case 4:		// set preference
+			break;
+
+		case 6:		// get preference
+			break;
+
+		case 8:
+			baud = c_read32be(cmd);
+			break;
+
+		case 9:
+			if (cmdLen >= 4)
+				modSetTime(c_read32be(cmd + 0));
+			if (cmdLen >= 8)
+				modSetTimeZone(c_read32be(cmd + 4));
+			if (cmdLen >= 12)
+				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+			break;
+
+		case 10: {
+				uintptr_t bytes[16];
+				bytes[0] = (uintptr_t)the;
+				if (cmdLen > (sizeof(uintptr_t) * 15)) {
+					resultCode = -1;
+					goto bail;
+				}
+
+				c_strcpy((void *)(bytes + 1), cmd);
+				modTimerAdd(0, 0, doLoadModule, bytes, cmdLen + sizeof(uintptr_t));
+			}
+			break;
+
+		default:
+			modLog("unrecognized command");
+			modLogInt(cmdID);
+			resultCode = -1;
+			break;
+	}
+
+bail:
+	if (resultID) {
+		the->echoBuffer[3] = resultCode >> 8;
+		the->echoBuffer[4] = resultCode & 0xff;
+		fxSend(the, 2);		// send binary
+	}
+
+	// if (baud)
+	//		teardown serial debug connection and re-establish with new baud
 }
 
 #endif /* mxDebug */
@@ -392,6 +557,8 @@ void fxSend(txMachine* the, txBoolean more)
 uint8_t gXSBUG[4] = { DEBUG_IP };
 
 //-------------------------------------------------------------------------
+#include "qapi_spi_master.h"
+
 static char* qca4020_error_message(int ret) {
 	if (!ret)
 		return "";
@@ -478,4 +645,6 @@ void qca4020_msg_num(char *bar, int num) {
 	debugger_write(str, p);
 }
 
-	
+void qca4020_restart(void) {
+	qapi_System_Reset();
+}

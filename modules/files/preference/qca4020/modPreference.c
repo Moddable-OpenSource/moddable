@@ -20,7 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #include "qapi_persist.h"
 

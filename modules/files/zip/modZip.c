@@ -20,9 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"
-#if __ets__
-	#include "xsesp.h"
-#endif
+#include "xsHost.h"
 
 /*
 	zip record declarations based on FskZip.c from KinomaJS

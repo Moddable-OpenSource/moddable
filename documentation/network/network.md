@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: May 21, 2019
+Revised: July 11, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -26,6 +26,7 @@ Revised: May 21, 2019
 * [MDNS](#mdns)
 * [Telnet](#telnet)
 * [Ping](#ping)
+* [MQTT](#mqtt)
 
 <a id="socket"></a>
 ## class Socket
@@ -70,6 +71,19 @@ To accept a new connection request from a `Listener`, specify the `listener` pro
 ```js
 let listener = new Listener({port: 80});
 let socket = new Socket({listener});
+```
+For TCP sockets, the dictionary supports two option properties:
+
+- `noDelay` - A Boolean value to control whether the Nagle Algorithm is enabled (`TCP_NODELAY`). It is enabled by default on most platforms. For some situations, better write performance may be achieved by disabling it.
+
+```js
+	{...., noDelay: true}
+```
+
+- `keepalive` - An object to control the keep alive behavior of the socket. The `idle` and `interval` properties are in milliseconds. For example:
+
+```js
+	{...., keepalive: {idle: 60 * 1000, interval: 30 * 1000, count: 4}}
 ```
 
 ***
@@ -1324,3 +1338,10 @@ ping.close();
 ```
 
 ***
+
+<a id="mqtt"></a>
+## class MQTT
+
+- **Source code:** [ping](../../modules/network/mqtt)
+- **Relevant Examples:** [ping](../../examples/network/mqtt)
+

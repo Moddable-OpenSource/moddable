@@ -33,7 +33,7 @@
 
 #include "xsmc.h"
 
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modSPI.h"
 #include "modI2C.h"
 #include "modGPIO.h"

@@ -45,7 +45,7 @@
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "xsPlatform.h"
 

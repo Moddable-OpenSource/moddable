@@ -22,7 +22,7 @@
 
 #include <Arduino.h>
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modTimer.h"
 
 extern "C" {
@@ -63,12 +63,6 @@ static uart_t *gUART;
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
-#endif
-
-#ifdef mxDebug
-	#define UART_SPEED	DEBUGGER_SPEED
-#else
-	#define UART_SPEED	115200
 #endif
 
 void setup()

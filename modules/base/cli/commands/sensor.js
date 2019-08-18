@@ -5,7 +5,7 @@
 
 import CLI from "cli";
 
-CLI.install(function(command, parts) {
+CLI.install(async function(command, parts) {
 	if ("sensor" !== command)
 		return false;
 
@@ -16,7 +16,14 @@ CLI.install(function(command, parts) {
 		case "open":
 			if (this.sensor)
 				throw new Error("already open");
-			this.sensor = new (require(parts[0]))({});
+			this.suspend();
+			try {
+				this.sensor = new ((await import(parts[0]))).default({});
+			}
+			catch(e) {
+				this.line(e.toString());
+			}
+			this.resume();
 			break;
 
 		case "close":
