@@ -374,7 +374,6 @@ int main(int argc, char* argv[])
 			
 			linker->bigintSize = 0;
 			count = fxPrepareHeap(the, linker->stripFlag);
-// 			fxCheckAliases(the);
 			
 // 			if (optimizing) {
 // 				linker->realm = the;
