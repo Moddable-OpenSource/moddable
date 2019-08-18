@@ -66,6 +66,16 @@ static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
 
+enum {
+	XSL_MODULE_FLAG,
+	XSL_EXPORT_FLAG,
+	XSL_ENVIRONMENT_FLAG,
+	XSL_PROPERTY_FLAG,
+	XSL_ITEM_FLAG,
+	XSL_GETTER_FLAG,
+	XSL_SETTER_FLAG,
+};
+
 #define mxPushLink(name,ID,FLAG) \
 	txAliasIDLink name = { C_NULL, C_NULL, ID, FLAG }; \
 	name.previous = list->last; \
@@ -105,11 +115,11 @@ void fxCheckAliases(txMachine* the)
 	while (module) {
 		txSlot* export = mxModuleExports(module)->value.reference->next;
 		if (export) {
-			mxPushLink(moduleLink, module->ID, 0);
+			mxPushLink(moduleLink, module->ID, XSL_MODULE_FLAG);
 			while (export) {
 				txSlot* closure = export->value.export.closure;
 				if (closure) {
-					mxPushLink(exportLink, export->ID, 0);
+					mxPushLink(exportLink, export->ID, XSL_EXPORT_FLAG);
 					if (closure->ID != XS_NO_ID) {
 						if (list->aliases[closure->ID] == 0) {
 							list->aliases[closure->ID] = 1;
@@ -131,26 +141,40 @@ void fxCheckAliases(txMachine* the)
 
 void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag) 
 {
+	txLinker* linker = xsGetContext(the);
 	txAliasIDLink* link = list->first;
 	fprintf(stderr, "### warning");
 	while (link) {
 		switch (link->flag) {
-		case 1: fprintf(stderr, "."); break;
-		case 2: fprintf(stderr, "["); break;
-		case 3: fprintf(stderr, ".get "); break;
-		case 4: fprintf(stderr, ".set "); break;
+		case XSL_PROPERTY_FLAG: fprintf(stderr, "."); break;
+		case XSL_ITEM_FLAG: fprintf(stderr, "["); break;
+		case XSL_GETTER_FLAG: fprintf(stderr, ".get "); break;
+		case XSL_SETTER_FLAG: fprintf(stderr, ".set "); break;
+		case XSL_ENVIRONMENT_FLAG: fprintf(stderr, "() "); break;
 		default: fprintf(stderr, ": "); break;
 		}
 		if (link->id < 0) {
 			char* string = fxGetKeyName(the, link->id);
-			if (string)
-				fprintf(stderr, "%s", string);
+			if (string) {
+				if (link->flag == XSL_MODULE_FLAG) {
+					char* dot = c_strrchr(string, '.');
+					if (dot) {
+						*dot = 0;
+						fprintf(stderr, "\"%s\"", string + linker->baseLength);
+						*dot = '.';
+					}
+					else
+						fprintf(stderr, "%s", string);
+				}
+				else
+					fprintf(stderr, "%s", string);
+			}
 			else
 				fprintf(stderr, "%d", link->id);
 		}
 		else 
 			fprintf(stderr, "%d", link->id);
-		if (link->flag == 2)
+		if (link->flag == XSL_ITEM_FLAG)
 			fprintf(stderr, "]");
 		link = link->next;
 	}
@@ -171,7 +195,7 @@ void fxCheckEnvironmentAliases(txMachine* the, txSlot* environment, txAliasIDLis
 	while (closure) {
 		if (closure->kind == XS_CLOSURE_KIND) {
 			txSlot* slot = closure->value.closure;
-			mxPushLink(closureLink, closure->ID, 0);
+			mxPushLink(closureLink, closure->ID, XSL_ENVIRONMENT_FLAG);
 			if (slot->ID != XS_NO_ID) {
 				if (list->aliases[slot->ID] == 0) {
 					list->aliases[slot->ID] = 1;
@@ -195,7 +219,7 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 		return;
 	instance->flag |= XS_LEVEL_FLAG;
 	if (instance->value.instance.prototype) {
-		mxPushLink(propertyLink, mxID(___proto__), 1);
+		mxPushLink(propertyLink, mxID(___proto__), XSL_PROPERTY_FLAG);
 		fxCheckInstanceAliases(the, instance->value.instance.prototype, list);
 		mxPopLink(propertyLink);
 	}
@@ -208,12 +232,12 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 	while (property) {
 		if (property->kind == XS_ACCESSOR_KIND) {
 			if (property->value.accessor.getter) {
-				mxPushLink(propertyLink, property->ID, 3);
+				mxPushLink(propertyLink, property->ID, XSL_GETTER_FLAG);
 				fxCheckInstanceAliases(the, property->value.accessor.getter, list);
 				mxPopLink(propertyLink);
 			}
 			if (property->value.accessor.setter) {
-				mxPushLink(propertyLink, property->ID, 4);
+				mxPushLink(propertyLink, property->ID, XSL_SETTER_FLAG);
 				fxCheckInstanceAliases(the, property->value.accessor.setter, list);
 				mxPopLink(propertyLink);
 			}
@@ -223,7 +247,7 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 			txInteger length = (txInteger)fxGetIndexSize(the, property);
 			while (length > 0) {
 				if (item->kind == XS_REFERENCE_KIND) {
-					mxPushLink(propertyLink,  (txInteger)(item->next), 2);
+					mxPushLink(propertyLink,  (txInteger)(item->next), XSL_ITEM_FLAG);
 					fxCheckInstanceAliases(the, item->value.reference, list);
 					mxPopLink(propertyLink);
 				}
@@ -236,7 +260,7 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 				fxCheckEnvironmentAliases(the, property->value.code.closures, list);
 		}
 		else if (property->kind == XS_REFERENCE_KIND) {
-			mxPushLink(propertyLink, property->ID, 1);
+			mxPushLink(propertyLink, property->ID, XSL_PROPERTY_FLAG);
 			fxCheckInstanceAliases(the, property->value.reference, list);
 			mxPopLink(propertyLink);
 		}
