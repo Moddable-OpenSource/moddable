@@ -61,10 +61,24 @@ txSlot* fxArgToCallback(txMachine* the, txInteger argi)
 	if (mxArgc > argi) {
 		txSlot* slot = mxArgv(argi);
 		if (slot->kind == XS_REFERENCE_KIND) {
-			slot = slot->value.reference;
-			if (slot->next && ((slot->next->kind == XS_CODE_KIND) || (slot->next->kind == XS_CODE_X_KIND) || (slot->next->kind == XS_CALLBACK_KIND)))
-				return slot;
+			txSlot* instance = slot->value.reference;
+again:
+			if (instance) {
+				txSlot* exotic = instance->next;
+				if (exotic && (exotic->flag & XS_INTERNAL_FLAG)) {
+					if (((exotic->kind == XS_CALLBACK_KIND) || (exotic->kind == XS_CALLBACK_X_KIND) || (exotic->kind == XS_CODE_KIND) || (exotic->kind == XS_CODE_X_KIND)))
+						return slot;
+					if (exotic->kind == XS_PROXY_KIND) {
+						instance = exotic->value.proxy.target;
+						goto again;
+					}
+				}
+			}
 		}
+#ifdef mxHostFunctionPrimitive
+		if (slot->kind == XS_HOST_FUNCTION_KIND)
+			return slot;
+#endif
 	}
 	mxTypeError("callback is no function");
 	return C_NULL;

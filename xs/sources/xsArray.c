@@ -263,7 +263,7 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 		else
 			mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 		return 1;
 	}
@@ -329,7 +329,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			/* THIS */
 			mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			if (the->stack->kind == XS_INTEGER_KIND)
 				result = the->stack->value.integer;
@@ -455,7 +455,7 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 	else
 		mxPushUndefined();
 	/* FUNCTION */
-	mxPushReference(function);
+	mxPushSlot(function);
 	fxCall(the);
 }
 
@@ -581,7 +581,7 @@ void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index)
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 		mxPullSlot(mxResult);
 	}
@@ -926,7 +926,7 @@ void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index)
 		else
 			mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 	}
 }
@@ -1354,7 +1354,7 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 				else
 					mxPushUndefined();
 				/* FUNCTION */
-				mxPushReference(function);
+				mxPushSlot(function);
 				fxCall(the);
 			}
 			item = the->stack;

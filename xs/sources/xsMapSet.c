@@ -351,7 +351,7 @@ void fx_Map_prototype_forEach(txMachine* the)
 			else
 				mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			the->stack++;
 		}
@@ -652,7 +652,7 @@ void fx_Set_prototype_forEach(txMachine* the)
 			else
 				mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			the->stack++;
 		}
