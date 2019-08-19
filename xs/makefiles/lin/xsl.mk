@@ -135,28 +135,20 @@ $(TMP_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/$(NAME): $(TMP_DIR)/xslOpt.xs.o $(OBJECTS)
+$(BIN_DIR)/$(NAME): $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_OPTIONS) $(TMP_DIR)/xslOpt.xs.o $(OBJECTS) $(LIBRARIES) -o $@
+	$(CC) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
 	
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(TLS_DIR)/xsl.h
 $(OBJECTS): $(TLS_DIR)/xslOpt.h
-$(TMP_DIR)/xslOpt.o: $(TMP_DIR)/xslOpt.xs.c
 
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@
 	
-$(TMP_DIR)/xslOpt.xs.o:	 $(TMP_DIR)/xslOpt.xs.c $(PLT_DIR)/xsPlatform.h $(SRC_DIR)/xsCommon.h $(SRC_DIR)/xsAll.h $(TLS_DIR)/xsl.h $(TLS_DIR)/xslOpt.h
-	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
-	$(CC) $< $(C_OPTIONS) -c -o $@
-
-$(TMP_DIR)/xslOpt.xs.c: $(TLS_DIR)/xslOpt.js
-	$(XSC) $< -c -d -o $(TMP_DIR) -p 
-
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME)
 	rm -rf $(BUILD_DIR)/bin/lin/release/$(NAME)
