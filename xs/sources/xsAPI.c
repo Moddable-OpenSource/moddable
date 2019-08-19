@@ -1578,9 +1578,19 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
-				id = slot->ID;
-				if ((id == mxID(_global)) || (id == mxID(_globalThis)))
+				id = slot->ID & 0x7FFF;
+				if ((_Array <= id) && (id < _Infinity))
+					slot->flag = XS_DONT_ENUM_FLAG;
+				else if ((_Infinity <= id) && (id < _Compartment))
+					slot->flag = XS_GET_ONLY;
+				else if ((_Compartment <= id) && (id < ___proto__))
+					slot->flag = XS_DONT_ENUM_FLAG;
+				else if ((id == _global) || (id == _globalThis)) {
 					slot->value.reference = the->stack->value.reference;
+					slot->flag = XS_DONT_ENUM_FLAG;
+				}
+				else
+					slot->flag = XS_NO_FLAG;
 				sharedSlot = sharedSlot->next;
 			}
 			mxGlobal.value = the->stack->value;
