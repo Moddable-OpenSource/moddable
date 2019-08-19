@@ -1009,7 +1009,7 @@ void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, tx
 	else
 		mxPushUndefined();
 	/* FUNCTION */
-	mxPushReference(function);
+	mxPushSlot(function);
 	fxCall(the);
 }
 
@@ -1036,7 +1036,7 @@ int fxCompareTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, 
 	/* THIS */
 	mxPushUndefined();
 	/* FUNCTION */
-	mxPushReference(function);
+	mxPushSlot(function);
 	fxCall(the);
 	if (the->stack->kind == XS_INTEGER_KIND)
 		result = the->stack->value.integer;
@@ -1113,7 +1113,7 @@ void fxReduceTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, 
 	/* THIS */
 	mxPushUndefined();
 	/* FUNCTION */
-	mxPushReference(function);
+	mxPushSlot(function);
 	fxCall(the);
 }
 
@@ -1394,7 +1394,7 @@ void fx_TypedArray_from_object(txMachine* the, txSlot* instance, txSlot* functio
 				else
 					mxPushUndefined();
 				/* FUNCTION */
-				mxPushReference(function);
+				mxPushSlot(function);
 				fxCall(the);
 			}
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, (index * delta), the->stack, EndianNative);
@@ -1421,7 +1421,7 @@ void fx_TypedArray_from_object(txMachine* the, txSlot* instance, txSlot* functio
 				else
 					mxPushUndefined();
 				/* FUNCTION */
-				mxPushReference(function);
+				mxPushSlot(function);
 				fxCall(the);
 			}
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, (index * delta), the->stack, EndianNative);
