@@ -1288,10 +1288,8 @@ void fx_TypedArray_from(txMachine* the)
 	if (mxArgc > 1) {
 		txSlot* slot = mxArgv(1);
 		if (!mxIsUndefined(slot)) {
-			if (!mxIsReference(slot))
-				mxTypeError("map is no object");
-			function = slot->value.reference;
-			if (!mxIsFunction(function))
+			function = slot;
+			if (!fxIsCallable(the, function))
 				mxTypeError("map is no function");
 			if (mxArgc > 2)
 				_this = mxArgv(2);
@@ -1985,8 +1983,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
 		if (slot->kind != XS_UNDEFINED_KIND) {
-			slot = fxToInstance(the, slot);
-			if (mxIsFunction(slot))
+			if (fxIsCallable(the, slot))
 				function = slot;
 			else
 				mxTypeError("compare is no function");
