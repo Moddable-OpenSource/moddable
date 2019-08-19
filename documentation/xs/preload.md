@@ -162,9 +162,9 @@ Sometimes modules need to maintain information for their entire lifetime, indepe
 	
 	export default CountingLog;
 
-When this module is preloaded, the value of the `count` variable is frozen in ROM as part of the module's closure. Similarly to objects, XS allows such variables to be modified by storing the modification in RAM. It achieves this by maintaining a pointer in RAM for each variable in ROM that may be modified. Each pointer takes up 4 bytes on a typical 32-bit microcontroller.
+When this module is preloaded, the value of the `count` variable is frozen in ROM as part of the module's closure. As with objects, XS allows such variables to be modified by storing the modification in RAM. It achieves this by maintaining a pointer in RAM for each variable in ROM that may be modified. Each pointer takes up 4 bytes on a typical 32-bit microcontroller.
 
-So use `const` to declare module variables that are not intended to be modified at runtime. This conveys the intended use of the variable.
+Use `const` to declare module variables that are not intended to be modified at runtime. Declaring a module variable with `connst` conveys to XS that the variable cannot be modified. This saves RAM by eliminating the pointer otherwise needed to allow tthe variable to be modified.
 
 ## What Cannot be Preloaded
 Preloading occurs on the build machine, not the target device. That limits the operations that may be performed during preload. 
@@ -352,4 +352,4 @@ This document was created in response to a [request](https://twitter.com/moddabl
 
 An initial draft of this document was written by Lizzie Prader, who helped edit this document.
 
-The use of terminology at the start of the Module Global State section in the initial posting was imprecise. Thank you to Allen Wirfs-Brock for suggesting improvements.
+The use of terminology at the start of the Module Scope section in the initial posting was imprecise. Thank you to Allen Wirfs-Brock for suggesting improvements.
