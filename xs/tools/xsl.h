@@ -89,6 +89,7 @@ struct sxLinker {
 	
 	txLinkerStrip* firstStrip;
 	txFlag stripFlag;
+	txFlag freezeFlag;
 	
 	txSize symbolModulo;
 	txLinkerSymbol** symbolTable;
@@ -241,8 +242,9 @@ extern void fxWriteStrips(txLinker* linker, FILE* file);
 extern void fxOptimize(txLinker* linker);
 
 /* xslSlot.c */
+extern void fxCheckAliases(txMachine* the);
 extern void fxLinkerScriptCallback(txMachine* the);
-extern txInteger fxPrepareHeap(txMachine* the, txBoolean stripping);
+extern txInteger fxPrepareHeap(txMachine* the);
 extern void fxPrintBuilders(txMachine* the, FILE* file);
 extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count);
 extern void fxPrintStack(txMachine* the, FILE* file);

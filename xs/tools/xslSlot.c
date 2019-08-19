@@ -520,7 +520,7 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 void fxPrepareInstance(txMachine* the, txSlot* instance)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripFlag) {
+	if (linker->freezeFlag) {
 		txSlot *property = instance->next;
 		while (property) {
 			if (property->kind != XS_ACCESSOR_KIND) 
@@ -532,7 +532,7 @@ void fxPrepareInstance(txMachine* the, txSlot* instance)
 	}
 }
 
-txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
+txInteger fxPrepareHeap(txMachine* the)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txID aliasCount = 0;
@@ -598,7 +598,7 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
-							if (stripFlag) {
+							if (linker->freezeFlag) {
 								if (slot->flag & XS_CAN_CONSTRUCT_FLAG /*(XS_BASE_FLAG | XS_DERIVED_FLAG)*/) {
 									property = property->next;
 									while (property) {

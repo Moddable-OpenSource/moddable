@@ -241,6 +241,8 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
+
+		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
 		size = c_strlen(base);
 		script = linker->firstScript;
@@ -353,7 +355,7 @@ int main(int argc, char* argv[])
 							mxHostInspectors = mxUndefined;
 							mxInstanceInspectors = mxUndefined;
 						}
-						if (linker->stripFlag) {
+						if (linker->freezeFlag) {
 							fxFreezeBuiltIns(the);
 							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
 							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
@@ -373,82 +375,9 @@ int main(int argc, char* argv[])
 				fxUnstripCallbacks(linker);
 			
 			linker->bigintSize = 0;
-			count = fxPrepareHeap(the, linker->stripFlag);
-			fxCheckAliases(the);
-			
-// 			if (optimizing) {
-// 				linker->realm = the;
-// 				fxOptimize(linker);
-// 				linker->realm = NULL;
-// 				xsDeleteMachine(the);
-// 				linker->firstCallback = NULL;
-// 				linker->firstBuilder = NULL;
-// 				linker->lastBuilder = NULL;
-// 				linker->builderCount = 0;
-// 				linker->firstProjection = NULL;
-// 				script = linker->firstScript;
-// 				while (script) {
-// 					script->builders = C_NULL;
-// 					script->callbackNames = C_NULL;
-// 					script->hostsCount = 0;
-// 					script = script->nextScript;
-// 				}
-// 				the = xsCreateMachine(creation, "xsl", linker);
-// 				mxThrowElse(the);
-// 				xsBeginHost(the);
-// 				{
-// 					xsVars(2);
-// 					{
-// 						xsTry {
-// 							preload = linker->firstPreload;
-// 							while (preload) {
-// 								fxSlashPath(preload->name, mxSeparator, url[0]);
-// 								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
-// 								preload = preload->nextPreload;
-// 							}
-// 							{
-// 								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-// 								txSlot* modules = mxRequiredModules(realm)->value.reference;
-// 								txSlot* module = modules->next;
-// 									fprintf(stderr, "%p %p %p\n", realm, modules, module);
-// 								while (module) {
-// 								fprintf(stderr, "%p\n", module);
-// 									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-// 									module = modules->next;
-// 								}
-// 								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-// 								mxProgram.value.reference = modules; //@@
-// 								mxPendingJobs = mxUndefined;
-// 								mxRunningJobs = mxUndefined;
-// 								mxBreakpoints = mxUndefined;
-// 								mxHostInspectors = mxUndefined;
-// 								mxInstanceInspectors = mxUndefined;
-// 							}
-// 							if (linker->stripping)
-// 								fxFreezeBuiltIns(the);
-// 							xsCollectGarbage();
-// 						}
-// 						xsCatch {
-// 							xsStringValue message = xsToString(xsException);
-// 							fxReportLinkerError(linker, "%s", message);
-// 						}
-// 					}
-// 				}
-// 				xsEndHost(the);
-// 				if (stripping)
-// 					fxStripCallbacks(linker, the);
-// 				else
-// 					fxUnstripCallbacks(linker);
-// 				strip = linker->firstStrip;
-// 				while (strip) {
-// 					fxStripName(linker, strip->name);
-// 					strip = strip->nextStrip;
-// 				}
-// 				linker->bigintSize = 0;
-// 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
-// 			}
-
-// 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
+			count = fxPrepareHeap(the);
+			if (linker->freezeFlag)
+				fxCheckAliases(the);
 	
 			c_strcpy(path, output);
 			c_strcat(path, name);

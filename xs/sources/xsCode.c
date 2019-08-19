@@ -3045,7 +3045,12 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddByte(param, 0, XS_CODE_END);
 	fxCoderAdd(param, 0, target);
 	
-	if (self->scope->closureNodeCount || (self->flags & mxArrowFlag) || (self->scope->flags & mxEvalFlag) || (coder->evalFlag)) {
+	if ((self->scope->flags & mxEvalFlag) || coder->evalFlag) {
+		fxCoderAddByte(coder, 1, XS_CODE_FUNCTION_ENVIRONMENT);
+		fxScopeCodeStore(self->scope, param);
+		fxCoderAddByte(coder, -1, XS_CODE_POP);
+	}
+	else if (self->scope->closureNodeCount || (self->flags & mxArrowFlag)) {
 		fxCoderAddByte(coder, 1, XS_CODE_ENVIRONMENT);
 		fxScopeCodeStore(self->scope, param);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);

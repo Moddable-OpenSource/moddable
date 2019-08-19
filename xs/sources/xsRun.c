@@ -407,6 +407,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_FOR_IN,
 		&&XS_CODE_FOR_OF,
 		&&XS_CODE_FUNCTION,
+		&&XS_CODE_FUNCTION_ENVIRONMENT,
 		&&XS_CODE_GENERATOR_FUNCTION,
 		&&XS_CODE_GET_CLOSURE_1,
 		&&XS_CODE_GET_CLOSURE_2,
@@ -1809,10 +1810,9 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_ENVIRONMENT)	
-			variable = mxFrameEnvironment;
 			mxPushKind(XS_UNDEFINED_KIND);
 			mxSaveState;
-			slot = fxNewEnvironmentInstance(the, variable);
+			slot = fxNewEnvironmentInstance(the, C_NULL);
 			mxRestoreState;
 			variable = mxFunctionInstanceCode((mxStack + 1)->value.reference);
 			variable->value.code.closures = slot;
@@ -3744,6 +3744,16 @@ XS_CODE_JUMP:
 			variable = mxModuleInstanceInternal(variable)->value.module.realm;
 			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
+			mxBreak;
+		mxCase(XS_CODE_FUNCTION_ENVIRONMENT)	
+			variable = mxFrameEnvironment;
+			mxPushKind(XS_UNDEFINED_KIND);
+			mxSaveState;
+			slot = fxNewEnvironmentInstance(the, variable);
+			mxRestoreState;
+			variable = mxFunctionInstanceCode((mxStack + 1)->value.reference);
+			variable->value.code.closures = slot;
+			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_PROGRAM_ENVIRONMENT)
 			mxNextCode(1);
