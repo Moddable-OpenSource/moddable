@@ -330,6 +330,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	else {
 		fxUnstripCallback(linker, fxProxyGetter);
 		fxUnstripCallback(linker, fxProxySetter);
+		fxUnstripCallback(linker, fx_Proxy_revoke);
 	}
 	{
 		txFlag match = fxIsCallbackStripped(linker, fx_String_prototype_match);

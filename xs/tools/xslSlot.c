@@ -74,6 +74,8 @@ enum {
 	XSL_ITEM_FLAG,
 	XSL_GETTER_FLAG,
 	XSL_SETTER_FLAG,
+	XSL_PROXY_HANDLER_FLAG,
+	XSL_PROXY_TARGET_FLAG,
 };
 
 #define mxPushLink(name,ID,FLAG) \
@@ -151,26 +153,30 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 		case XSL_GETTER_FLAG: fprintf(stderr, ".get "); break;
 		case XSL_SETTER_FLAG: fprintf(stderr, ".set "); break;
 		case XSL_ENVIRONMENT_FLAG: fprintf(stderr, "() "); break;
+		case XSL_PROXY_HANDLER_FLAG: fprintf(stderr, ".(handler)"); break;
+		case XSL_PROXY_TARGET_FLAG: fprintf(stderr, ".(target)"); break;
 		default: fprintf(stderr, ": "); break;
 		}
 		if (link->id < 0) {
-			char* string = fxGetKeyName(the, link->id);
-			if (string) {
-				if (link->flag == XSL_MODULE_FLAG) {
-					char* dot = c_strrchr(string, '.');
-					if (dot) {
-						*dot = 0;
-						fprintf(stderr, "\"%s\"", string + linker->baseLength);
-						*dot = '.';
+			if (link->id != XS_NO_ID) {
+				char* string = fxGetKeyName(the, link->id);
+				if (string) {
+					if (link->flag == XSL_MODULE_FLAG) {
+						char* dot = c_strrchr(string, '.');
+						if (dot) {
+							*dot = 0;
+							fprintf(stderr, "\"%s\"", string + linker->baseLength);
+							*dot = '.';
+						}
+						else
+							fprintf(stderr, "%s", string);
 					}
 					else
 						fprintf(stderr, "%s", string);
 				}
 				else
-					fprintf(stderr, "%s", string);
+					fprintf(stderr, "%d", link->id);
 			}
-			else
-				fprintf(stderr, "%d", link->id);
 		}
 		else 
 			fprintf(stderr, "%d", link->id);
@@ -258,6 +264,18 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 		else if ((property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 			if (property->value.code.closures)
 				fxCheckEnvironmentAliases(the, property->value.code.closures, list);
+		}
+		else if (property->kind == XS_PROXY_KIND) {
+			if (property->value.proxy.handler) {
+				mxPushLink(propertyLink, XS_NO_ID, XSL_PROXY_HANDLER_FLAG);
+				fxCheckInstanceAliases(the, property->value.proxy.handler, list);
+				mxPopLink(propertyLink);
+			}
+			if (property->value.proxy.target) {
+				mxPushLink(propertyLink, XS_NO_ID, XSL_PROXY_TARGET_FLAG);
+				fxCheckInstanceAliases(the, property->value.proxy.target, list);
+				mxPopLink(propertyLink);
+			}
 		}
 		else if (property->kind == XS_REFERENCE_KIND) {
 			mxPushLink(propertyLink, property->ID, XSL_PROPERTY_FLAG);
@@ -596,6 +614,8 @@ txInteger fxPrepareHeap(txMachine* the)
 					if (property) {
 						if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
 							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_BOOLEAN_KIND)
+							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
 							if (linker->freezeFlag) {
@@ -611,6 +631,8 @@ txInteger fxPrepareHeap(txMachine* the)
 								}
 							}
 						}
+						else if (property->kind == XS_DATE_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_GLOBAL_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {
@@ -620,6 +642,10 @@ txInteger fxPrepareHeap(txMachine* the)
 							property = property->next;
 							fxPrepareInstance(the, property->value.reference); // import.meta
 						}
+						else if (property->kind == XS_NUMBER_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_PROXY_KIND)
+							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
 							fxPrepareInstance(the, slot);
 					}
