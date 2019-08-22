@@ -633,6 +633,8 @@ txInteger fxPrepareHeap(txMachine* the)
 						}
 						else if (property->kind == XS_DATE_KIND)
 							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_ERROR_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_GLOBAL_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {
