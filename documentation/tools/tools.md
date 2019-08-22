@@ -154,7 +154,6 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 - `-c`: to accept the `@` constructs that reference host functions and host objects. With the `-c` option and without the `-e` option, **xsc** generates C code that declares XS symbols, host functions and host objects.
 - `-d`: to generate the file and line byte codes that allow to debug the JS file.
 - `-e`: to embed references to host functions and host objects into the XS binary files instead of generating C code. This options is required to compile a JS file into an XS binary file that **xsl** can link into an XS archive file.
-- `-m`: to parse the JS file as a CommonJS module.
 - `-o directory`: the path of the output directory. Defaults to the current directory.
 - `-p`: to parse the JS file as an ECMAScript program.
 - `-r name`: the name of the output file. Defaults to the name of the input file. The output extension is always `.xsb`.
@@ -179,6 +178,8 @@ The C code can then be compiled and linked with the implementation of the host f
 - `-c creation`: the parameters that will be used to create the cloned machines. 
 - `-o directory`: the path of the output directory. Defaults to the current directory.
 - `-p module`: the name of a module to preload. Use one `-p module` option by module to preload.
+- `-r name`: the name of the output file. Defaults to `mc`.
+- `-s feature`: the name of a feature to strip. Use one `-s feature` option by feature to strip, use `s *` to strip all unused features.
 - `-u url`: the base URL of the modules in the archive. Defaults to `/`.
 
 <a id="simulator"></a>
