@@ -69,7 +69,21 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	to = alias;
 	while (from) {
 		to = to->next = fxDuplicateSlot(the, from);
-		if (to->kind == XS_PRIVATE_KIND) {
+		if (to->kind == XS_ARRAY_KIND) {
+			txSlot* address = to->value.array.address;
+			if (address) {
+				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				c_memcpy(chunk, address, size * sizeof(txSlot));
+				to->value.array.address = chunk;
+				while (size) {
+					chunk->flag &= ~XS_MARK_FLAG;
+					chunk++;
+					size--;
+				}
+			}
+		}
+		else if (to->kind == XS_PRIVATE_KIND) {
 			txSlot** address = &to->value.private.first;
 			txSlot* slot;
 			while ((slot = *address)) {

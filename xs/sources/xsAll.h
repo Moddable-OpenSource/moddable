@@ -1661,6 +1661,11 @@ enum {
 };
 
 enum {
+	XS_IMMUTABLE = 0,
+	XS_MUTABLE = 1,
+};
+
+enum {
 	XS_NO_STATUS = 0,
 	XS_RETURN_STATUS = 1,
 	XS_THROW_STATUS = 2,

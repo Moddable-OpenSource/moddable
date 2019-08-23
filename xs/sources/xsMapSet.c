@@ -41,9 +41,6 @@
 	#define mxMapSetLength (127)
 #endif
 
-#define XS_IMMUTABLE 0
-#define XS_MUTABLE 1
-
 static txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable);
 static txSlot* fxCheckMapKey(txMachine* the);
 

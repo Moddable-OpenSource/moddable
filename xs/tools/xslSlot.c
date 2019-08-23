@@ -607,7 +607,6 @@ txInteger fxPrepareHeap(txMachine* the)
 						item++;
 						size--;
 					}
-					slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
@@ -643,8 +642,8 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_REGEXP_KIND)
 							fxPrepareInstance(the, slot);
-						else if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
-							fxPrepareInstance(the, slot);
+// 						else if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
+// 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_TYPED_ARRAY_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_MAP_KIND) || (property->kind == XS_SET_KIND)) {

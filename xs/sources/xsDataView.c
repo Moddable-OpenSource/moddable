@@ -37,9 +37,6 @@
 
 #include "xsAll.h"
 
-#define XS_IMMUTABLE 0
-#define XS_MUTABLE 1
-
 static txNumber fxArgToByteOffset(txMachine* the, txInteger argi, txNumber offset);
 static txSlot* fxArgToInstance(txMachine* the, txInteger i);
 static txBoolean fxCheckLength(txMachine* the, txSlot* slot, txInteger* index);
