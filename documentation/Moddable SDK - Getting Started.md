@@ -78,6 +78,7 @@ More detailed getting started guides are available for the following devices:
 | esp32/lilygo_taudio | [LilyGO TTGO TAudio](https://github.com/LilyGO/TTGO-TAudio)
 | esp32/m5stack | [M5Stack](https://www.aliexpress.com/store/product/M5Stack-Official-Stock-Offer-ESP32-Basic-Core-Development-Kit-Extensible-Micro-Control-Wifi-BLE-IoT-Prototype/3226069_32837164440.html?spm=2114.12010615.8148356.2.11c127aeBNzJBb)
 | esp32/m5stack_fire | [M5Stack Fire](https://www.aliexpress.com/store/product/M5Stack-NEW-PSRAM-2-0-FIRE-IoT-Kit-Dual-Core-ESP32-16M-FLash-4M-PSRAM-Development/3226069_32847906756.html?spm=2114.12010615.8148356.14.11c127aeBNzJBb)
+| esp32/m5stick_c | [M5Stick-C](https://www.adafruit.com/product/4290)
 | esp32/oddwires | [oddWires QVGA TFT touch display](http://www.oddwires.com/2-4-tft-touch-display-qvga/)
 | gecko/blue | [SiLabs Blue Gecko](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit)
 | gecko/giant | [SiLabs Giant Gecko](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit)
