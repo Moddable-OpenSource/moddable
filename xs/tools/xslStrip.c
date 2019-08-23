@@ -343,6 +343,14 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			}
 		}
 		else {
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_dotAll);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_ignoreCase);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_multiline);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_source);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_sticky);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
 			fxUnstripCallback(linker, fx_RegExp_prototype_toString);
 			fxUnstripCallback(linker, fxInitializeRegExp);
 			if (!fxIsCallbackStripped(linker, fx_String_prototype_replace)) {
@@ -361,14 +369,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		}
 		if (!match) {
 			fxUnstripCallback(linker, fxInitializeRegExp);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
 			fxUnstripCallback(linker, fx_RegExp_prototype_match);
 			fxUnstripCallback(linker, fx_RegExp_prototype_exec);
 		}
 		if (!matchAll) {
 			fxUnstripCallback(linker, fxInitializeRegExp);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
 			fxUnstripCallback(linker, fx_RegExp_prototype_matchAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_matchAll_next);
 			fxUnstripCallback(linker, fx_RegExp_prototype_exec);

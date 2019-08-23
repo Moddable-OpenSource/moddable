@@ -612,9 +612,7 @@ txInteger fxPrepareHeap(txMachine* the)
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
 					if (property) {
-						if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
-							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_BOOLEAN_KIND)
+						if (property->kind == XS_GLOBAL_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
@@ -631,11 +629,23 @@ txInteger fxPrepareHeap(txMachine* the)
 								}
 							}
 						}
-						else if (property->kind == XS_DATE_KIND)
+						else if (property->kind == XS_BOOLEAN_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_SYMBOL_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_ERROR_KIND)
 							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_GLOBAL_KIND)
+						else if (property->kind == XS_NUMBER_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_DATE_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_STRING_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_REGEXP_KIND)
+							fxPrepareInstance(the, slot);
+						else if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_TYPED_ARRAY_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_MAP_KIND) || (property->kind == XS_SET_KIND)) {
 							fxPrepareInstance(the, slot);
@@ -645,6 +655,12 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 							linker->slotSize += property->value.table.length + 1;
 						}
+						else if (property->kind == XS_ARRAY_BUFFER_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_DATA_VIEW_KIND)
+							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_PROXY_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
 							property = property->next;
@@ -652,10 +668,6 @@ txInteger fxPrepareHeap(txMachine* the)
 							property = property->next;
 							fxPrepareInstance(the, property->value.reference); // import.meta
 						}
-						else if (property->kind == XS_NUMBER_KIND)
-							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_PROXY_KIND)
-							fxPrepareInstance(the, slot);
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
 							fxPrepareInstance(the, slot);
 					}
@@ -952,7 +964,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_ARRAY_BUFFER_KIND: {
 		fprintf(file, ".kind = XS_ARRAY_BUFFER_KIND}, ");
-		fprintf(file, ".value = { .arrayBuffer = { NULL, 0 } }");
+		fprintf(file, ".value = { .arrayBuffer = { (txByte*)");
+		fxWriteCData(file, slot->value.arrayBuffer.address, slot->value.arrayBuffer.length);
+		fprintf(file, ", %d } } ", (int)slot->value.arrayBuffer.length);
 	} break;
 	case XS_CALLBACK_KIND: {
 		fprintf(file, ".kind = XS_CALLBACK_X_KIND}, ");
@@ -1002,6 +1016,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_PROMISE_KIND: {
 		fprintf(file, ".kind = XS_PROMISE_KIND}, ");
+		fprintf(file, ".value = { .integer = %d } ", slot->value.integer);
 	} break;
 	case XS_PROXY_KIND: {
 		fprintf(file, ".kind = XS_PROXY_KIND}, ");
@@ -1013,6 +1028,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_REGEXP_KIND: {
 		fprintf(file, ".kind = XS_REGEXP_KIND}, ");
+		fprintf(file, ".value = { .regexp = { (txInteger*)NULL, (txInteger*)NULL } } ");
 	} break;
 	case XS_SET_KIND: {
 		fprintf(file, ".kind = XS_SET_KIND}, ");

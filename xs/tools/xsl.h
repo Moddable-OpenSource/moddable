@@ -232,6 +232,7 @@ extern void fxTerminateLinker(txLinker* linker);
 extern void fxUnuseCode(txU1 code);
 extern void fxUseCodes();
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
+extern void fxWriteCData(FILE* file, void* data, txSize size);
 extern void fxWriteCString(FILE* file, txString string);
 extern void fxWriteDefines(txLinker* linker, FILE* file);
 extern void fxWriteScriptCode(txLinkerScript* script, FILE* file);

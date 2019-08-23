@@ -76,17 +76,17 @@ static txCallback gxTypeCallbacks[1 + mxTypeArrayCount] = {
 };
 static int gxTypeCallbacksIndex = 0;
 
-void fx_BigInt64Array(txMachine* the) {}
-void fx_BigUint64Array(txMachine* the) {}
-void fx_Float32Array(txMachine* the) {}
-void fx_Float64Array(txMachine* the) {}
-void fx_Int8Array(txMachine* the) {}
-void fx_Int16Array(txMachine* the) {}
-void fx_Int32Array(txMachine* the) {}
-void fx_Uint8Array(txMachine* the) {}
-void fx_Uint16Array(txMachine* the) {}
-void fx_Uint32Array(txMachine* the) {}
-void fx_Uint8ClampedArray(txMachine* the) {}
+void fx_BigInt64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_BigUint64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Float32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Float64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int8Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int16Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint8Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint16Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint8ClampedArray(txMachine* the) { fx_TypedArray(the); }
 
 void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength)
 {
@@ -787,6 +787,20 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	
 	fclose(file);
 	*fileAddress = NULL;
+}
+
+void fxWriteCData(FILE* file, void* data, txSize size) 
+{
+	unsigned char* p = data;
+	unsigned char c;
+	fprintf(file, "\"");
+	while (size) {
+		c = *p;
+		fprintf(file, "\\x%.2x", c);
+		p++;
+		size--;
+	}
+	fprintf(file, "\"");
 }
 
 void fxWriteCString(FILE* file, txString string) 
