@@ -659,6 +659,11 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_DATA_VIEW_KIND)
 							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_PROMISE_KIND) {
+							fxPrepareInstance(the, slot);
+							property = property->next;
+							fxPrepareInstance(the, property->value.reference); // thens
+						}
 						else if (property->kind == XS_PROXY_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_MODULE_KIND) {

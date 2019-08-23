@@ -113,6 +113,7 @@ struct sxLinker {
 	txCreation creation;
 	
 	txFlag intrinsicFlags[mxIntrinsicCount];
+	txFlag promiseJobsFlag;
 
 	char main[1024];
 };

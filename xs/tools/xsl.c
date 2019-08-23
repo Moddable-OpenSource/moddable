@@ -324,6 +324,10 @@ int main(int argc, char* argv[])
 							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
+						while (linker->promiseJobsFlag) {
+							linker->promiseJobsFlag = 0;
+							fxRunPromiseJobs(the);
+						}
 						{
 							txSlot* property;
 							property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
@@ -845,6 +849,12 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+}
+
+void fxQueuePromiseJobs(txMachine* the)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	linker->promiseJobsFlag = 1;
 }
 
 #ifdef mxDebug
