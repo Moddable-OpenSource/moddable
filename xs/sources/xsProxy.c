@@ -874,7 +874,7 @@ void fx_Proxy_revoke(txMachine* the)
 		if (!proxy || (proxy->kind != XS_PROXY_KIND))
 			mxTypeError("no proxy");
 		if (proxy->flag & XS_MARK_FLAG)
-			mxTypeError("proxy not writable");
+			mxTypeError("Proxy instance is read-only");
 		proxy->value.proxy.target = C_NULL;
 		proxy->value.proxy.handler = C_NULL;
 		property->kind = XS_NULL_KIND;

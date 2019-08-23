@@ -637,6 +637,14 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_GLOBAL_KIND)
 							fxPrepareInstance(the, slot);
+						else if ((property->kind == XS_MAP_KIND) || (property->kind == XS_SET_KIND)) {
+							fxPrepareInstance(the, slot);
+							linker->slotSize += property->value.table.length;
+						}
+						else if ((property->kind == XS_WEAK_MAP_KIND) || (property->kind == XS_WEAK_SET_KIND)) {
+							fxPrepareInstance(the, slot);
+							linker->slotSize += property->value.table.length + 1;
+						}
 						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
 							property = property->next;
@@ -982,7 +990,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_MAP_KIND: {
 		fprintf(file, ".kind = XS_MAP_KIND}, ");
-		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
+		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, slot->value.table.length * sizeof(txSlot*));
+		linker->slotSize += slot->value.table.length;
 	} break;
 	case XS_MODULE_KIND: {
 		fprintf(file, ".kind = XS_MODULE_KIND}, ");
@@ -1006,7 +1016,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_SET_KIND: {
 		fprintf(file, ".kind = XS_SET_KIND}, ");
-		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
+		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, slot->value.table.length * sizeof(txSlot*));
+		linker->slotSize += slot->value.table.length;
 	} break;
 	case XS_TYPED_ARRAY_KIND: {
 		fprintf(file, ".kind = XS_TYPED_ARRAY_KIND}, ");
@@ -1014,11 +1026,15 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_WEAK_MAP_KIND: {
 		fprintf(file, ".kind = XS_WEAK_MAP_KIND}, ");
-		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
+		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, (slot->value.table.length + 1) * sizeof(txSlot*));
+		linker->slotSize += slot->value.table.length + 1;
 	} break;
 	case XS_WEAK_SET_KIND: {
 		fprintf(file, ".kind = XS_WEAK_SET_KIND}, ");
-		fprintf(file, ".value = { .table = { NULL, %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
+		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, (slot->value.table.length + 1) * sizeof(txSlot*));
+		linker->slotSize += slot->value.table.length + 1;
 	} break;
 	case XS_ACCESSOR_KIND: {
 		fprintf(file, ".kind = XS_ACCESSOR_KIND}, ");

@@ -104,6 +104,9 @@ struct sxLinker {
 	txU4* bigintData;
 	txSize bigintSize;
 	
+	txSlot** slotData;
+	txSize slotSize;
+	
 	txString base;
 	txSize baseLength;
 	

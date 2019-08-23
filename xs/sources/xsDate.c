@@ -604,7 +604,7 @@ void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, tx
 	if (c_isnan(number))
 		return;
 	if (slot->flag & XS_MARK_FLAG)
-		mxTypeError("date not writable");
+		mxTypeError("Date instance is read-only");
 	mxResult->value.number = slot->value.number = fxDateMerge(dt, utc);
 	mxResult->kind = XS_NUMBER_KIND;
 }

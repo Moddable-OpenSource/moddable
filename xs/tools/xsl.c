@@ -375,6 +375,7 @@ int main(int argc, char* argv[])
 				fxUnstripCallbacks(linker);
 			
 			linker->bigintSize = 0;
+			linker->slotSize = 0;
 			count = fxPrepareHeap(the);
 			if (linker->freezeFlag)
 				fxCheckAliases(the);
@@ -441,6 +442,12 @@ int main(int argc, char* argv[])
 				linker->bigintData = fxNewLinkerChunk(linker, linker->bigintSize * sizeof(txU4));
 				linker->bigintSize = 0;
 			}
+			if (linker->slotSize) {
+				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
+				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount];\n");
+				linker->slotData = fxNewLinkerChunk(linker, linker->slotSize * sizeof(txSlot*));
+				linker->slotSize = 0;
+			}
 			fprintf(file, "#define mxHeapCount %d\n", (int)count);
 			fprintf(file, "static const txSlot gxHeap[mxHeapCount];\n");
 			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
@@ -503,6 +510,11 @@ int main(int argc, char* argv[])
 					count++;
 				}
 				fprintf(file, "\n};\n\n");
+			}
+			if (linker->slotSize) {
+				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR = {\n");
+				fxPrintTable(the, file, linker->slotSize, linker->slotData);
+				fprintf(file, "};\n\n");
 			}
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 // 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
