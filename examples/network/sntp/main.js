@@ -20,16 +20,16 @@ const hosts = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp
 
 new SNTP({host: hosts.shift()}, function(message, value) {
 	switch (message) {
-		case 1:
+		case SNTP.time:
 			trace("Received time ", value, ".\n");
 			Time.set(value);
 			break;
 
-		case 2:
+		case SNTP.retry:
 			trace("Retrying.\n");
 			break;
 
-		case -1:
+		case SNTP.error:
 			trace("Failed: ", value, "\n");
 			if (hosts.length)
 				return hosts.shift();

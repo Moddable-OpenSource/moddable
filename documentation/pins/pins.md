@@ -346,7 +346,7 @@ sensor.read(3, bytes.buffer);
 
 ### `write(...value [, stop])`
 
-The `write` function writes up to 34 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes). 
+The `write` function writes up to 40 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes). 
 
 The `write` function accepts an optional final boolean argument, `stop`, which indicates if a stop condition should be sent when the write is complete. If the final argument is not a boolean value, a stop condition is sent.
 

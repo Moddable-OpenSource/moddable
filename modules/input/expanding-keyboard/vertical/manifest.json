@@ -1,0 +1,24 @@
+{
+	"modules": {
+		"common/keyboard": "../common/*",
+		"*": [
+			"./keyboard"
+		]
+	},
+	"preload": [
+		"keyboard"
+	],
+	"resources": {
+		"*-mask":[
+			"./assets/vert-glyph-strip",
+			"./assets/vert-bottom-row",
+			"./assets/vert-7pt-22w",
+			"./assets/vert-7pt-25w",
+			"./assets/vert-7pt-28w",
+			"./assets/vert-7pt-31w",
+			"./assets/vert-7pt-34w",
+			"./assets/vert-7pt-37w",
+			"./assets/vert-7pt-40w",
+		]
+	},
+}

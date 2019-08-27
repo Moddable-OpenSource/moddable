@@ -20,7 +20,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #define QAPI_USE_FILESYSTEM
 #include "qapi.h"

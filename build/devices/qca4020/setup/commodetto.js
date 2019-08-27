@@ -22,6 +22,6 @@ import config from "mc/config";
 
 export default function (done) {
 	if (!global.screen)
-		global.screen = new (require(config.screen))({});
+		global.screen = new config.Screen({});
 	done();
 }

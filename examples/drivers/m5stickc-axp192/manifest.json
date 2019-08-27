@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources": {
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+	},
+	"platforms": {
+		"esp32/m5stick_c": {},
+		"...": {
+			"error": "unsupported"
+		}
+	}
+}

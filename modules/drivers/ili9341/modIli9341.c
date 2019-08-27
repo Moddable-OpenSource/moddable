@@ -19,21 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#elif defined(qca4020)
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
-#else
-	#error unsupported platform
-#endif
+#include "xsHost.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"
@@ -76,6 +62,12 @@
 #endif
 #ifndef MODDEF_ILI9341_SPI_PORT
 	#define MODDEF_ILI9341_SPI_PORT NULL
+#endif
+#ifndef MODDEF_ILI9341_COLUMN_OFFSET
+	#define MODDEF_ILI9341_COLUMN_OFFSET 0
+#endif
+#ifndef MODDEF_ILI9341_ROW_OFFSET
+	#define MODDEF_ILI9341_ROW_OFFSET 0
 #endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
@@ -516,8 +508,8 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	uint8_t data[4];
 	uint16_t xMin, xMax, yMin, yMax;
 
-	xMin = x;
-	yMin = y;
+	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
+	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 

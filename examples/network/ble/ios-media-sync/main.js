@@ -38,8 +38,7 @@ import SecureSocket from "securesocket";
 import config from "mc/config";
 
 let render = new Poco(screen);
-let touch = require(config.touch);
-touch = new touch;
+let touch = new config.Touch;
 touch.points = [{}];
 
 let titleFont = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));

@@ -17,8 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "xsqca4020.h"
-#include "xsPlatform.h"
+#include "xsHost.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,7 +53,7 @@ static modSPIBufferLoader gSPIBufferLoader;
 //static uint16_t *gCLUT16;		//@@ unused
 
 // SPI_BUFFER_SIZE can be larger than 64... tested up to 512.
-#define SPI_BUFFER_SIZE (512)
+#define SPI_BUFFER_SIZE (256)
 
 //uint32_t *gSPITransactionBuffer = NULL;
 uint32_t *gSPITxBuffer;
@@ -81,10 +80,10 @@ void spi_callback(uint32_t status, void *refcon)
 
 	config->tx.buf_len = loaded;
 	config->tx.buf_phys_addr = (uint8_t*)gSPITxBuffer;
-	config->rx.buf_len = loaded;
+	config->rx.buf_len = 0;
 	config->rx.buf_phys_addr = (uint8_t*)gSPIRxBuffer;
 
-	ret = qapi_SPIM_Full_Duplex(config->spi_dev, &config->spi_config, &config->tx, &config->rx, spi_callback, config);
+	ret = qapi_SPIM_Full_Duplex(config->spi_dev, &config->spi_config, &config->tx, NULL, spi_callback, config);
 	qca4020_error("spi_callback: SPIM_Full_Duplex:", ret);
 }
 
@@ -404,7 +403,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, u
 	return bytes;		// input bytes consumed
 }
 
-// N.B. callers assume this fucntion is synchronous
+// N.B. callers assume this function is synchronous
 void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	int ret;
@@ -418,6 +417,7 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	config->rx.buf_phys_addr = gSPIRxBuffer;
 	ret = qapi_SPIM_Full_Duplex(config->spi_dev, &config->spi_config, &config->tx, &config->rx, spi_callback, config); 
 	qca4020_error("SPIM_Full_Duplex", ret);
+
 	qurt_signal_wait(&gConfig->spi_signal, kSPI_SIG_TRANSFER_COMPLETE, QURT_SIGNAL_ATTR_WAIT_ANY | QURT_SIGNAL_ATTR_CLEAR_MASK);
 	c_memcpy(data, gSPIRxBuffer, count);
 
@@ -439,6 +439,9 @@ static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t c
 
 	// start the spi transmit
 	spi_callback(0, config);
+
+	if (config->sync)
+		modSPIFlush();
 }
 
 void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)

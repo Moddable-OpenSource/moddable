@@ -106,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	xsMachine* machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
-		xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));
+		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		application = PIU(Application, xsResult);
 		xsCollectGarbage();
 	}

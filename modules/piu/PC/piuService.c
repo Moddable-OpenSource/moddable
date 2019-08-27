@@ -137,8 +137,9 @@ JNIEXPORT void JNICALL Java_tech_moddable_piu_PiuThread_run(JNIEnv* jenv, jobjec
 	ServiceThread thread = (*jenv)->GetDirectBufferAddress(jenv, jbytes);
 	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_prepare);
 	ServiceThreadInitialize(thread, jenv);
-    pthread_mutex_unlock(&(thread->mutex));
+  pthread_mutex_unlock(&(thread->mutex));
 	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_loop);
+	(*jenv)->DeleteLocalRef(jenv, jbytes);
 }
 #elif mxLinux
 static gpointer ServiceThreadLoop(gpointer it)
@@ -406,8 +407,7 @@ void ServiceEventCreate(ServiceEvent event)
 	{
 		xsVars(4);
 		xsTry {
-			xsVar(0) = xsGet(xsGlobal, xsID_require);
-			xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(proxy->name));
+			xsVar(0) = xsAwaitImport(proxy->name, XS_IMPORT_DEFAULT);
 			if (proxy->reverse) {
 				xsVar(1) = xsNewHostFunction(ServiceProxyInvoke, 4);
 				xsVar(2) = xsGet(xsGlobal, xsID_Service);

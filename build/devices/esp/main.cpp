@@ -22,7 +22,7 @@
 
 #include <Arduino.h>
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modTimer.h"
 
 extern "C" {
@@ -61,12 +61,16 @@ static xsMachine *gThe;		// root virtual machine
 
 static uart_t *gUART;
 
+#ifndef DEBUGGER_SPEED
+	#define DEBUGGER_SPEED 921600
+#endif
+
 void setup()
 {
 #if kESP8266Version >= 24
-	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1, 128);
+	gUART = uart_init(UART0, DEBUGGER_SPEED, SERIAL_8N1, SERIAL_FULL, 1, 128);
 #else
-	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+	gUART = uart_init(UART0, DEBUGGER_SPEED, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
 #endif
 
 	system_set_os_print(0);

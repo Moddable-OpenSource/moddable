@@ -42,7 +42,7 @@ import SSLStream from "ssl/stream";
 // type
 const change_cipher_spec = 1;
 
-let changeCipherSpec = Object.freeze({
+const changeCipherSpec = Object.freeze({
 	name: "changeCipherSpec",
 	unpacketize(session, fragment) {
 		session.traceProtocol(this);

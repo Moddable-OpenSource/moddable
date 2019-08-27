@@ -43,8 +43,23 @@ static txString fxGetCodeName(txMachine* the, txByte* which);
 static txInteger fxGetTypeDispatchIndex(txTypeDispatch* dispatch);
 static void fxPrepareInstance(txMachine* the, txSlot* instance);
 static void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot);
+static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintNumber(txMachine* the, FILE* file, txNumber value);
 static void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag);
+
+txSlot* fxBuildHostConstructor(txMachine* the, txCallback call, txInteger length, txInteger id)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	fxNewLinkerBuilder(linker, call, length, id);
+	return fxNewHostConstructor(the, call, length, id);
+}
+
+txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, txInteger id)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	fxNewLinkerBuilder(linker, call, length, id);
+	return fxNewHostFunction(the, call, length, id);
+}
 
 txString fxGetBuilderName(txMachine* the, const txHostFunctionBuilder* which) 
 {
@@ -164,7 +179,7 @@ void fxLinkerScriptCallback(txMachine* the)
 {
 	txLinker* linker = xsGetContext(the);
     txSlot* slot = mxModuleInternal(mxThis);
-    txSlot* key = fxGetKey(the, slot->value.symbol);
+    txSlot* key = fxGetKey(the, slot->value.module.id);
     txString path = key->value.key.string + linker->baseLength;
 	txLinkerScript* linkerScript = linker->firstScript;
 	mxPush(mxArrayPrototype);
@@ -217,7 +232,7 @@ void fxLinkerScriptCallback(txMachine* the)
 txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping)
+	if (linker->stripFlag)
 		return property;
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
@@ -232,7 +247,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	txSlot* property;
 	txSlot* key;
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping)
+	if (linker->stripFlag)
 		return C_NULL;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
 	if (property)
@@ -268,42 +283,11 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	return property;
 }
 
-txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *getter = NULL, *setter = NULL, *home = the->stack, *slot;
-	if (get) {
-		fxNewLinkerBuilder(linker, get, 0, id);
-		getter = fxNewHostFunction(the, get, 0, XS_NO_ID);
-		slot = mxFunctionInstanceHome(getter);
-		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, XS_NO_ID, "get ");
-	}
-	if (set) {
-		fxNewLinkerBuilder(linker, set, 1, id);
-		setter = fxNewHostFunction(the, set, 1, XS_NO_ID);
-		slot = mxFunctionInstanceHome(setter);
-		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, XS_NO_ID, "set ");
-	}
-	property = property->next = fxNewSlot(the);
-	property->flag = flag;
-	property->ID = id;
-	property->kind = XS_ACCESSOR_KIND;
-	property->value.accessor.getter = getter;
-	property->value.accessor.setter = setter;
-	if (set)
-		the->stack++;
-	if (get)
-		the->stack++;
-	return property;
-}
-
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txSlot *function, *home = the->stack, *slot;
-	if (linker->stripping) {
+	if (linker->stripFlag) {
 		property = property->next = fxNewSlot(the);
 		property->flag = flag;
 		property->ID = id;
@@ -325,36 +309,10 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 	return property;
 }
 
-txSlot* fxNewHostConstructorGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *function, *property;
-	fxNewLinkerBuilder(linker, call, length, id);
-	function = fxNewHostConstructor(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
-}
-
-txSlot* fxNewHostFunctionGlobal(txMachine* the, txCallback call, txInteger length, txID id, txFlag flag)
-{
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *function, *property;
-	fxNewLinkerBuilder(linker, call, length, id);
-	function = fxNewHostFunction(the, call, length, id);
-	property = fxGlobalSetProperty(the, mxGlobal.value.reference, id, XS_NO_ID, XS_OWN);
-	property->flag = flag;
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
-	return function;
-}
-
 void fxPrepareInstance(txMachine* the, txSlot* instance)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	if (linker->stripping) {
+	if (linker->stripFlag) {
 		txSlot *property = instance->next;
 		while (property) {
 			if (property->kind != XS_ACCESSOR_KIND) 
@@ -366,7 +324,7 @@ void fxPrepareInstance(txMachine* the, txSlot* instance)
 	}
 }
 
-txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
+txInteger fxPrepareHeap(txMachine* the, txBoolean stripFlag)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txID aliasCount = 0;
@@ -425,13 +383,6 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 					}
 					slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 				}
-				else if (slot->kind == XS_CLOSURE_KIND) {
-					slot->value.closure->flag |= XS_DONT_SET_FLAG;
-				}
-				else if (slot->kind == XS_EXPORT_KIND) {
-					if (slot->value.export.closure)
-						slot->value.export.closure->flag |= XS_DONT_SET_FLAG;
-				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
 					if (property) {
@@ -439,8 +390,8 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
-							if (stripping) {
-								if (slot->flag & (XS_BASE_FLAG | XS_DERIVED_FLAG)) {
+							if (stripFlag) {
+								if (slot->flag & XS_CAN_CONSTRUCT_FLAG /*(XS_BASE_FLAG | XS_DERIVED_FLAG)*/) {
 									property = property->next;
 									while (property) {
 										if ((property->ID == mxID(_prototype)) && (property->kind == XS_REFERENCE_KIND)) {
@@ -452,10 +403,15 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 								}
 							}
 						}
-						else if (property->kind == XS_MODULE_KIND)
+						else if (property->kind == XS_GLOBAL_KIND)
 							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_EXPORT_KIND)
+						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
+							property = property->next;
+							fxPrepareInstance(the, property->value.reference); // namespace
+							property = property->next;
+							fxPrepareInstance(the, property->value.reference); // import.meta
+						}
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
 							fxPrepareInstance(the, slot);
 					}
@@ -499,6 +455,38 @@ txInteger fxPrepareHeap(txMachine* the, txBoolean stripping)
 		}
 		heap = heap->next;
 	}
+	
+	heap = the->firstHeap;
+	while (heap) {
+		slot = heap + 1;
+		limit = heap->value.reference;
+		while (slot < limit) {
+			if (!(slot->flag & XS_MARK_FLAG)) {
+				if (slot->kind == XS_CLOSURE_KIND) {
+					txSlot* closure = slot->value.closure;
+					if (closure->kind == XS_REFERENCE_KIND) {
+						txSlot* internal = closure->value.reference->next;
+						if (internal && ((internal->kind == XS_CALLBACK_KIND) || (internal->kind == XS_CALLBACK_X_KIND) || (internal->kind == XS_CODE_KIND) || (internal->kind == XS_CODE_X_KIND))) {
+							closure->flag |= XS_DONT_SET_FLAG;
+						}
+					}
+					else if (closure->kind == XS_HOST_FUNCTION_KIND) {
+						closure->flag |= XS_DONT_SET_FLAG;
+					} 
+					if (closure->flag & XS_DONT_SET_FLAG)
+						closure->flag |= XS_DONT_DELETE_FLAG;
+					else {
+						if (closure->ID == XS_NO_ID)
+							closure->ID = aliasCount++;
+						slot->flag &= ~XS_DONT_SET_FLAG;
+					}
+				}
+			}
+			slot++;
+		}
+		heap = heap->next;
+	}
+	
 	the->aliasCount = aliasCount;
 	
 	return index;
@@ -529,7 +517,9 @@ void fxPrintBuilders(txMachine* the, FILE* file)
 	fprintf(file, "static const xsHostBuilder gxBuilders[%d] = {\n", linker->builderCount);
 	while (linkerBuilder) {
 		txString name = fxGetCallbackName(the, linkerBuilder->host.callback);
-		fprintf(file, "\t{ %s, %d, %d },\n", name, linkerBuilder->host.length, linkerBuilder->host.id);
+		fprintf(file, "\t{ %s, %d, ", name, linkerBuilder->host.length);
+		fxPrintID(the, file, linkerBuilder->host.id);
+		fprintf(file, " },\n");
 		linkerBuilder = linkerBuilder->nextBuilder;
 	}
 	fprintf(file, "};\n\n");
@@ -556,10 +546,8 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 					txInteger size = (txInteger)fxGetIndexSize(the, slot);
 					fprintf(file, "\t{ ");
 					fxPrintAddress(the, file, slot->next);
-					if (slot->ID == XS_NO_ID)
-						fprintf(file, ", {.ID = XS_NO_ID");
-					else
-						fprintf(file, ", {.ID = %d", slot->ID);
+					fprintf(file, ", {.ID = ");
+					fxPrintID(the, file, slot->ID);
 					fprintf(file, ", .flag = 0x%x", slot->flag | XS_MARK_FLAG);
 					fprintf(file, ", .kind = XS_ARRAY_KIND}, .value = { .array = { (txSlot*)&gxHeap[%d], %d } }},\n", (int)index + 1, (int)slot->value.array.length);
 					fprintf(file, "/* %.4d */", index);
@@ -585,6 +573,31 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 	fprintf(file, "/* %.4d */", index);
 	fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_REFERENCE_KIND}, ");
 	fprintf(file, ".value = { .reference = NULL } }");
+}
+
+void fxPrintID(txMachine* the, FILE* file, txID id) 
+{
+	txLinker* linker = (txLinker*)(the->context);
+	if (id == XS_NO_ID)
+		fprintf(file, "XS_NO_ID");
+	else if (id < 0) {
+		txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+		if (linkerSymbol) {
+			if (fxIsCIdentifier(linker, linkerSymbol->string))
+				fprintf(file, "xsID_%s", linkerSymbol->string);
+			else
+				fprintf(file, "%d /* %s */", id, linkerSymbol->string);
+		}
+		else {
+			char* string = fxGetKeyName(the, id);
+			if (string)
+				fprintf(file, "%d /* %s */", id, string);
+			else
+				fprintf(file, "%d /* ? */", id);
+		}
+	}
+	else
+		fprintf(file, "%d", id);
 }
 
 void fxPrintNumber(txMachine* the, FILE* file, txNumber value) 
@@ -616,10 +629,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	else
 		fxPrintAddress(the, file, slot->next);
 	fprintf(file, ", {.ID = ");
-	if (slot->ID == XS_NO_ID)
-		fprintf(file, "XS_NO_ID, ");
-	else
-		fprintf(file, "%d, ", slot->ID);
+	fxPrintID(the, file, slot->ID);
+	fprintf(file, ", ");
 	if (slot->kind == 	XS_INSTANCE_KIND)
 		fprintf(file, ".flag = 0x%x, ", slot->flag | flag | XS_DONT_MARSHALL_FLAG);
 	else
@@ -727,7 +738,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
-		fprintf(file, ".value = { .table = { (txSlot**)(gxGlobals), %d } }", slot->value.table.length);
+		fprintf(file, ".value = { .table = { NULL, 0 } }");
 	} break;
 	case XS_HOST_KIND: {
 		fprintf(file, ".kind = XS_HOST_KIND}, ");
@@ -739,7 +750,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_MODULE_KIND: {
 		fprintf(file, ".kind = XS_MODULE_KIND}, ");
-		fprintf(file, ".value = { .symbol = %d } ", slot->value.symbol);
+		fprintf(file, ".value = { .module = { ");
+		fxPrintAddress(the, file, slot->value.module.realm);
+		fprintf(file, ", %d } }", slot->value.module.id);
 	} break;
 	case XS_PROMISE_KIND: {
 		fprintf(file, ".kind = XS_PROMISE_KIND}, ");
@@ -822,6 +835,14 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fxPrintAddress(the, file, slot->value.list.first);
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.list.last);
+		fprintf(file, " } }");
+	} break;
+	case XS_PRIVATE_KIND: {
+		fprintf(file, ".kind = XS_PRIVATE_KIND}, ");
+		fprintf(file, ".value = { .private = { ");
+		fxPrintAddress(the, file, slot->value.private.check);
+		fprintf(file, ", ");
+		fxPrintAddress(the, file, slot->value.private.first);
 		fprintf(file, " } }");
 	} break;
 	case XS_STACK_KIND: {

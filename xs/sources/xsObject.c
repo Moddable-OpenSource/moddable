@@ -51,7 +51,9 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_toPrimitive), 1, mxID(_Symbol_toPrimitive), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Object), 1, mxID(_Object), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Object), 1, mxID(_Object));
+	mxObjectConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_assign), 2, mxID(_assign), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_create), 2, mxID(_create), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperties), 2, mxID(_defineProperties), XS_DONT_ENUM_FLAG);

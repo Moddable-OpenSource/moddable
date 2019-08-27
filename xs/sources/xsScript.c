@@ -39,11 +39,11 @@
 
 void fxDisposeParserChunks(txParser* parser)
 {
-	txParserChunk* block = parser->first;
-	while (block) {
-		txParserChunk* next = block->next;
+	txParserChunk** address = &parser->first;
+	txParserChunk* block;
+	while ((block = *address)) {
+		*address = block->next;
 		c_free(block);
-		block = next;
 	}
 }
 
@@ -89,16 +89,17 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->InfinitySymbol = fxNewParserSymbol(parser, "Infinity");
 	parser->lengthSymbol = fxNewParserSymbol(parser, "length");
 	parser->letSymbol = fxNewParserSymbol(parser, "let");
+	parser->metaSymbol = fxNewParserSymbol(parser, "meta");
 	parser->moduleSymbol = fxNewParserSymbol(parser, "module");
 	parser->nameSymbol = fxNewParserSymbol(parser, "name");
 	parser->NaNSymbol = fxNewParserSymbol(parser, "NaN");
 	parser->nextSymbol = fxNewParserSymbol(parser, "next");
 	parser->newTargetSymbol = fxNewParserSymbol(parser, "new.target");
 	parser->ofSymbol = fxNewParserSymbol(parser, "of");
+	parser->privateConstructorSymbol = fxNewParserSymbol(parser, "#constructor");
 	parser->prototypeSymbol = fxNewParserSymbol(parser, "prototype");
 	parser->rawSymbol = fxNewParserSymbol(parser, "raw");
 	parser->ReferenceErrorSymbol = fxNewParserSymbol(parser, "ReferenceError");
-	parser->RegExpSymbol = fxNewParserSymbol(parser, "RegExp");
 	parser->returnSymbol = fxNewParserSymbol(parser, "return");
 	parser->setSymbol = fxNewParserSymbol(parser, "set");
 	parser->sliceSymbol = fxNewParserSymbol(parser, "slice");

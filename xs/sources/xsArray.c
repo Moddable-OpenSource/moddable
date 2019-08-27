@@ -148,7 +148,7 @@ void fxBuildArray(txMachine* the)
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_values), XS_NO_FLAG);
 	slot = fxNextSlotProperty(the, slot, the->stack++, mxID(_Symbol_unscopables), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxArrayPrototype = *the->stack;
-	slot = fxNewHostConstructorGlobal(the, mxCallback(fx_Array), 1, mxID(_Array), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Array), 1, mxID(_Array));
 	mxArrayConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_from), 1, mxID(_from), XS_DONT_ENUM_FLAG);
@@ -263,7 +263,7 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 		else
 			mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 		return 1;
 	}
@@ -329,7 +329,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			/* THIS */
 			mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			if (the->stack->kind == XS_INTEGER_KIND)
 				result = the->stack->value.integer;
@@ -455,7 +455,7 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 	else
 		mxPushUndefined();
 	/* FUNCTION */
-	mxPushReference(function);
+	mxPushSlot(function);
 	fxCall(the);
 }
 
@@ -581,7 +581,7 @@ void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index)
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 		mxPullSlot(mxResult);
 	}
@@ -663,7 +663,12 @@ void fxArrayLengthGetter(txMachine* the)
 			if (array->ID == XS_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
+	}
+	if (instance->ID >= 0) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			array = alias->next;
 	}
 	mxResult->value.number = array->value.array.length;
 	mxResult->kind = XS_NUMBER_KIND;
@@ -679,7 +684,7 @@ void fxArrayLengthSetter(txMachine* the)
 			if (array->ID == XS_ARRAY_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance->ID >= 0) {
 		txSlot* alias = the->aliasArray[instance->ID];
@@ -921,7 +926,7 @@ void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index)
 		else
 			mxPushUndefined();
 		/* FUNCTION */
-		mxPushReference(function);
+		mxPushSlot(function);
 		fxCall(the);
 	}
 }
@@ -1349,7 +1354,7 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 				else
 					mxPushUndefined();
 				/* FUNCTION */
-				mxPushReference(function);
+				mxPushSlot(function);
 				fxCall(the);
 			}
 			item = the->stack;
@@ -1964,8 +1969,7 @@ void fx_Array_prototype_sort(txMachine* the)
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
 		if (slot->kind != XS_UNDEFINED_KIND) {
-			slot = fxToInstance(the, slot);
-			if (mxIsFunction(slot))
+			if (fxIsCallable(the, slot))
 				function = slot;
 			else
 				mxTypeError("compare is no function");

@@ -22,11 +22,11 @@ const CYCLE_AUTOMATICALLY = 10000;		// ms to cycle to the next effect
 const LEN = 144;
 
 const Timing_WS2812B = {
-    mark:  { level0: 1, duration0: 18,  level1: 0, duration1: 7, },
-    space: { level0: 1, duration0: 7,   level1: 0, duration1: 18, },
-    reset: { level0: 0, duration0: 600, level1: 0, duration1: 600, } };
+    mark:  { level0: 1, duration0: 900,  level1: 0, duration1: 350, },
+    space: { level0: 1, duration0: 350,   level1: 0, duration1: 1000, },
+    reset: { level0: 0, duration0: 30000, level1: 0, duration1: 30000, } };
 
-const strand = new NeoStrand({length: LEN, pin: 22, order: "RGB", timing: Timing_WS2812B});
+const strand = new NeoStrand({length: LEN, pin: 23, order: "RGB", timing: Timing_WS2812B});
 
 strand.brightness = 128;
 

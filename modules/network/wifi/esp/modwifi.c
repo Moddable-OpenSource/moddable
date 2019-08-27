@@ -21,7 +21,7 @@
 #include "xs.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "user_interface.h"
 
@@ -262,6 +262,7 @@ struct xsWiFiRecord {
 	xsMachine			*the;
 	xsSlot				obj;
 	uint8_t				haveCallback;
+	int8_t				disconnectReason;
 };
 
 static xsWiFi gWiFi;
@@ -292,8 +293,9 @@ void initVariantXXXX(void)
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsWiFi wifi = refcon;
+	uint32 event = *(uint32 *)message;
 
-	switch (*(uint32 *)message){
+	switch (event){
 		case EVENT_STAMODE_CONNECTED:		message = "connect"; break;
 		case EVENT_STAMODE_DISCONNECTED:	message = "disconnect"; break;
 		case EVENT_STAMODE_GOT_IP:			message = "gotIP"; break;
@@ -302,17 +304,40 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID_callback, xsString(message));
+		if (EVENT_STAMODE_DISCONNECTED != event)
+			xsCall1(wifi->obj, xsID_callback, xsString(message));
+		else {
+			xsmcSetInteger(xsResult, wifi->disconnectReason);
+			xsCall2(wifi->obj, xsID_callback, xsString(message), xsResult);
+		}
 	xsEndHost(the);
 }
 
 static void doWiFiEvent(System_Event_t *msg)
 {
 	xsWiFi walker;
+	int8_t reason = 1;
 
-	for (walker = gWiFi; NULL != walker; walker = walker->next)
+	if (EVENT_STAMODE_DISCONNECTED == msg->event) {
+		reason = msg->event_info.disconnected.reason;
+		reason =	(REASON_AUTH_EXPIRE == reason) ||
+					(REASON_MIC_FAILURE == reason) ||
+					(REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
+					(REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
+					(REASON_IE_IN_4WAY_DIFFERS == reason) ||
+					(REASON_HANDSHAKE_TIMEOUT == reason) ||
+					(REASON_AUTH_FAIL == reason);
+		if (reason)
+			reason = -1;
+	}
+
+	for (walker = gWiFi; NULL != walker; walker = walker->next) {
+		if (reason <= 0)
+			walker->disconnectReason = reason;
+
 		if (walker->haveCallback)
 			modMessagePostToMachine(walker->the, (uint8_t *)&msg->event, sizeof(msg->event), wifiEventPending, walker);
+	}
 }
 
 void xs_wifi_destructor(void *data)

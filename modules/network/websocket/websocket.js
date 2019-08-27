@@ -265,7 +265,7 @@ trace("partial header!!\n");		//@@ untested
 		}
 	}
 
-	if (-1 == message) {
+	if (message < 0) {
 		if (4 !== this.state) {
 			this.callback(Client.disconnect);
 			this.close();
@@ -402,7 +402,7 @@ trace("partial header!!\n");		//@@ untested
 		}
 	}
 
-	if (-1 == message) {
+	if (message < 0) {
 		this.callback(Client.disconnect);
 		this.close();
 	}
@@ -421,6 +421,6 @@ Client.receive = 3;
 Client.disconnect = 4;
 Object.freeze(Client.prototype);
 
-export default {
+export default Object.freeze({
 	Client, Server
-};
+});

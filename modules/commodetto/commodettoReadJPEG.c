@@ -40,15 +40,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif qca4020
-	#include "xsqca4020.h"
-	#include "xsPlatform.h"
-#else
-	#define modLog(msg)
-#endif
+#include "xsHost.h"
 
 #include "commodettoPocoBlit.h"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,8 @@
  */
 
 import WiFi from "wifi";
-import { Keyboard, BACKSPACE, SUBMIT } from "keyboard";
+import {HorizontalExpandingKeyboard} from "keyboard";
+import {KeyboardField} from "common/keyboard";
 import ASSETS from "assets";
 
 class VerticalScrollerBehavior extends Behavior {
@@ -53,8 +54,8 @@ class ListItemBehavior extends Behavior {
 	}
 	onDraw(port) {
 		port.fillColor((this.data.state)? ASSETS.LIGHTEST_GRAY: ASSETS.WHITE, 0, 0, port.width, port.height);
-		port.drawString(this.data.ssid, new ASSETS.OpenSans20, ASSETS.BLACK, 0, 8, 150, port.height);
-		port.drawTexture(new ASSETS.WiFiStripTexture, ASSETS.BLACK, 228, 6, this.data.xOffset, this.data.yOffset, 28, 28);
+		port.drawString(this.data.ssid, new ASSETS.OpenSans20, ASSETS.BLACK, 32, 8, 150, port.height);
+		port.drawTexture(new ASSETS.WiFiStripTexture, ASSETS.BLACK, 260, 6, this.data.xOffset, this.data.yOffset, 28, 28);
 	}
 	onTouchBegan(port, id, x, y, ticks) {
 		this.data.state = 1;
@@ -98,6 +99,8 @@ addNetworks:
 				}
 				continue addNetworks;
 			}
+			if (network.variant <= 1) 
+				continue addNetworks;
 			let ssid = network.ssid.toLowerCase();
 			let first;
 			let separator = column.content("SEPARATOR");
@@ -128,7 +131,7 @@ export const NetworkListScreen = Container.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: ASSETS.WhiteSkin,
 	contents: [
 		Scroller($, {
-			left: 32, right: 32, top: 0, bottom: 0, 
+			left: 0, right: 0, top: 0, bottom: 0, 
 			active: true, backgroundTouch: true, clip: true, Behavior: VerticalScrollerBehavior,
 			contents:[
 				Column($, {
@@ -158,39 +161,67 @@ class BackArrowBehavior extends Behavior {
 	}
 }
 
+const PASSWORDMODE = false;	//Set to true to replace input with asterisks, false for clear text. 
+const TRANSITION = true;	//Set to true to transition keyboard in and out. 
+
+const KeyboardContainer = Column.template($ => ({
+	left: 0, right: 0, top: 0, bottom: 0, active: true,
+	contents:[
+		KeyboardField($, {
+			anchor: "FIELD", password: PASSWORDMODE, left: 32, right: 0, top: 0, bottom: 0,
+			Skin: ASSETS.WhiteSkin, Style: ASSETS.OpenSans20, visible: false
+		}),
+		Container($, {
+			anchor: "KEYBOARD", left:0, right:0, bottom:0, height:164, 
+			Skin:ASSETS.WhiteSkin
+		}),
+	],
+	Behavior: class extends Behavior {
+		onCreate(column, data){
+			this.data = data;
+			this.addKeyboard();
+		}
+		onTouchEnded(column){
+			if (1 != this.data["KEYBOARD"].length)
+				this.addKeyboard();
+		}
+		addKeyboard() {
+			this.data["KEYBOARD"].add(HorizontalExpandingKeyboard(this.data, {
+				style:new ASSETS.OpenSans20(), target:this.data["FIELD"], doTransition:TRANSITION
+			}));
+		}
+	}
+}));
+
 export const LoginScreen = Column.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: ASSETS.WhiteSkin,
 	contents: [
 		new ASSETS.Header({ title: $.ssid, backArrowBehavior: BackArrowBehavior }),
-		Label($, {
-			name: "passwordString", left: 0, right: 0, top: 0, height: 32, 
-			string: "", Style: ASSETS.OpenSans20
-		}),
-		Container($, {
-			left: 0, right: 0, top: 0, bottom: 0, contents: [
-				Keyboard($, {style: new ASSETS.OpenSans18()})
-			]
-		}),
+		KeyboardContainer($),
 	],
 	Behavior: class extends Behavior {
 		onCreate(column, data) {
 			this.ssid = $.ssid;
+			this.data = data;
 		}
-		onPasswordEntered(column, password) {
-			let data = { ssid: this.ssid, password };
-			application.delegate("doNext", "CONNECTING", data);
+		onKeyboardRowsContracted(column) {
+			// keyboard rows contracted back to 1x view
 		}
-		onKeyUp(column, key){
-			let str = application.first.first.next.string || "";
-			if (key == BACKSPACE) {
-				if (str.length > 0) str = str.slice(0, -1);
-				else str = "";
-			} else if (key == SUBMIT) {
-				application.first.delegate("onPasswordEntered", str);
-			} else {
-				str += key;
+		onKeyboardRowsExpanded(column) {
+			// keyboard rows expanded
+		}
+		onKeyboardOK(column, string) {
+			trace(`String is: ${string}\n`);
+			this.password = string;
+		}
+		onKeyboardTransitionFinished(column, out) {
+			if (out) {
+				let data = { ssid: this.ssid, password: this.password };
+				application.delegate("doNext", "CONNECTING", data);
 			}
-			application.first.first.next.string = str;
+			else {
+				this.data["FIELD"].visible = true;
+			}
 		}
 	}
 }));

@@ -1,12 +1,13 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: May 21, 2019
+Revised: July 1, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
 ## Table of Contents
 
 * [Overview](#overview)
+	* [Platforms](#platforms)
 * [macOS](#mac)
 	* [Host environment setup](#host-mac)
 	* [ESP8266](#esp8266-mac)
@@ -25,17 +26,65 @@ This document provides an introduction to getting started building apps with the
 <a id="overview"></a>
 ## Overview
 
-Before you can build applications, you need to set up your host environment and install the required drivers and development tools for your target device. Fo example, if you want to build applications for Moddable One using a Mac, you'll need to follow the macOS host environment and ESP8266 setup instructions below.
+Before you can build applications, you need to set up your host environment and install the required drivers and development tools for your target platform.
 
-A full list of supported target devices is available in the **Target platforms** section of the [examples readme](https://github.com/Moddable-OpenSource/moddable/tree/public/examples).
+The instructions below will have you verify your setup by running the `helloworld` example on your target platform using `mcconfig`, a command line tool that builds and runs Moddable applications. You use a platform identifier to specify which target `mcconfig` should build for. This document contains instructions for the ESP8266 and ESP32 platforms, which use the platform identifiers `esp` and `esp32`, respectively. For example:
 
-Additional getting started guides are available for the following devices:
+```
+mcconfig -d -m -p esp
+```
 
+To build for other ESP8266 or ESP32-based devices--for example the Moddable One and Moddable Two--you must also specify a subplatform. For example:
+
+```
+mcconfig -d -m -p esp/moddable_one
+```
+
+A list of available platforms/subplatforms is provided in the **Platforms** section below.
+
+More detailed getting started guides are available for the following devices:
+
+- [Moddable Zero](./devices/moddable-zero.md)
 - [Moddable One](./devices/moddable-one.md)
 - [Moddable Two](./devices/moddable-two.md)
 - [Moddable Three](./devices/moddable-three.md)
 - [Silicon Labs Gecko devices](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
 - [Qualcomm QCA4020](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/qca4020/README.md)
+
+<a id="platforms"></a>
+### Platforms
+
+| Identifier | Description |
+| :--- | :--- |
+| mac | macOS target
+| win | Windows target
+| lin | Linux target
+| esp | ESP8266 device target
+| esp/moddable_zero | [Moddable Zero](./devices/moddable-one.md) device target
+| esp/moddable_one | [Moddable One](./devices/moddable-one.md) device target
+| esp32/moddable_two | [Moddable Two](./devices/moddable-two.md) device target
+| esp/moddable_three | [Moddable Three](./devices/moddable-three.md) device target
+| esp/adafruit_oled | [Adafruit OLED display + ESP8266](../documentation/displays/wiring-guide-adafruit-OLED.md)
+| esp/adafruit_st7735 | [Adafruit 1.8" ST7735 display + ESP8266](../documentation/displays/wiring-guide-adafruit-1.8-st7735.md)
+| esp/crystalfontz\_monochrome\_epaper | [Crystalfontz monochrome ePaper display + ESP8266](../documentation/displays/wiring-guide-crystalfontz-eink.md)
+| esp/sharp_memory | [2.7" Sharp Memory display + ESP8266](../documentation/displays/wiring-guide-sharp-memory-2.7-spi.md)
+| esp/sharp\_memory\_square | [1.3" Sharp Memory Display + ESP8266](../documentation/displays/wiring-guide-sharp-memory-1.3-spi.md)
+| esp/sparkfun_teensyview | [SparkFun TeensyView + ESP8266](../documentation/displays/wiring-guide-sparkFun-teensyview-spi.md)
+| esp/switch\_science\_reflective\_lcd | [Switch Science reflective LCD display + ESP8266](../documentation/displays/wiring-guide-switch-science-LCD.md)
+| esp/buydisplay_ctp | [BuyDisplay 2.8" CTP display + ESP8266](../documentation/displays/wiring-guide-generic-2.8-CPT-spi.md)
+| esp32 | ESP32 device target
+| esp32/moddable_zero | [ESP32 with generic SPI display](../documentation/displays/wiring-guide-generic-2.4-spi-esp32.md)
+| esp32/lilygo_t5s | [LilyGO TTGO T5S](https://github.com/LilyGO/TTGO-T5S-Epaper)
+| esp32/lilygo_taudio | [LilyGO TTGO TAudio](https://github.com/LilyGO/TTGO-TAudio)
+| esp32/m5stack | [M5Stack](https://www.aliexpress.com/store/product/M5Stack-Official-Stock-Offer-ESP32-Basic-Core-Development-Kit-Extensible-Micro-Control-Wifi-BLE-IoT-Prototype/3226069_32837164440.html?spm=2114.12010615.8148356.2.11c127aeBNzJBb)
+| esp32/m5stack_fire | [M5Stack Fire](https://www.aliexpress.com/store/product/M5Stack-NEW-PSRAM-2-0-FIRE-IoT-Kit-Dual-Core-ESP32-16M-FLash-4M-PSRAM-Development/3226069_32847906756.html?spm=2114.12010615.8148356.14.11c127aeBNzJBb)
+| esp32/m5stick_c | [M5Stick-C](https://www.adafruit.com/product/4290)
+| esp32/oddwires | [oddWires QVGA TFT touch display](http://www.oddwires.com/2-4-tft-touch-display-qvga/)
+| gecko/blue | [SiLabs Blue Gecko](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit)
+| gecko/giant | [SiLabs Giant Gecko](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit)
+| gecko/mighty | [SiLabs Mighty Gecko](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit)
+| gecko/thunderboard2 | [SiLabs Thunderboard Sense 2](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
+| qca4020/cdb | [Qualcomm QCA4020 CDB](https://developer.qualcomm.com/hardware/qca4020-qca4024)
 
 <a id="mac"></a>
 ## macOS
@@ -86,7 +135,7 @@ Additional getting started guides are available for the following devices:
 	```
 
 <a id="esp8266-mac"></a>
-### ESP8266 (Moddable Zero) setup
+### ESP8266 setup
 
 1. Complete ["Host environment setup"](#host-mac) for macOS.
 
@@ -112,9 +161,11 @@ Additional getting started guides are available for the following devices:
 	git checkout v3.0-rc1
 	```
 	
-7. Install the required Python packages: 
+7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
 	```
+	brew install python
+	sudo easy_install pip
 	pip install --user pyserial
 	```
 	
@@ -125,13 +176,6 @@ Additional getting started guides are available for the following devices:
 	```
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp
-	```
-	
-	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
-
-	```
-	cd ${MODDABLE}/examples/piu/balls
-	mcconfig -d -m -p esp/moddable_zero
 	```
 
 <a id="esp32-mac"></a>
@@ -145,19 +189,13 @@ Additional getting started guides are available for the following devices:
 
 4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-5. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
+
+5. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	```
-
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 6. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
@@ -168,17 +206,17 @@ Additional getting started guides are available for the following devices:
 
 	> Note: Close and reopen the Terminal window to enable the `IDF_PATH` environment variable.
 	
-7. Install the Python `pip` package management system:
+7. Install Python and the `pip` package management system:
 
 	```
-	cd ~/esp32
+	brew install python
 	sudo easy_install pip
 	```
 	
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
@@ -209,16 +247,9 @@ Additional getting started guides are available for the following devices:
 	mcconfig -d -m -p esp32
 	```
 	
-	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
-
-	```
-	cd ${MODDABLE}/examples/piu/balls
-	mcconfig -d -m -p esp32/moddable_zero
-	```
-	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
-	> If you encounter SSL certificate errors while building the ESP-IDF, you may need to install Python 2.7 and the required packages manually. We've used [brew](https://brew.sh/) to install the additional components:
+	> If you encounter SSL certificate errors while building the ESP-IDF, you may need to install Python 2.7 and the required packages manually. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 	>
 	```
 	brew install python
@@ -236,7 +267,7 @@ Additional getting started guides are available for the following devices:
 
 > The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
 
-1. Download [Microsoft Visual Studio 2017 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option and install. 
+1. Download [Microsoft Visual Studio 2017 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
 
 2. Create a `Projects` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for the Moddable SDK repository.
 
@@ -263,7 +294,7 @@ Additional getting started guides are available for the following devices:
 	
 	> Environment variables should be set from the System Control Panel. The steps required vary depending on the Windows OS version.
 	
-6. Launch the "Developer Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
+6. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd %MODDABLE%\build\makefiles\win
@@ -284,7 +315,7 @@ Additional getting started guides are available for the following devices:
 	```
 
 <a id="esp8266-windows"></a>
-### ESP8266 (Moddable Zero) setup
+### ESP8266 setup
 
 1. Complete ["Host environment setup"](#host-windows) for Windows.
 
@@ -314,37 +345,45 @@ Additional getting started guides are available for the following devices:
 	git checkout v3.0-rc1
 	```
 
-9. Connect the ESP8266 to your computer with a USB cable.
+9. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
 
-10. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+10. Edit the system `PATH` environment variable to include the Python directories:
+
+	```
+	C:\Python27
+	C:\Python27\Scripts
+	```
+
+11. Open a "Command Prompt" window and install the `pyserial` Python Serial Port Extension:
+
+	```
+	pip install pyserial
+	```
+	
+12. Connect the ESP8266 to your computer with a USB cable.
+
+13. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-11. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
+14. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
 
 	```
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
 	```
 
-12. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
+15. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
 
 	```
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
-13. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
+14. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp
-	```
-	
-	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
-
-	```
-	cd %MODDABLE%\examples\piu\balls
-	mcconfig -d -m -p esp/moddable_zero
 	```
 
 <a id="esp32-windows"></a>	
@@ -354,48 +393,40 @@ Additional getting started guides are available for the following devices:
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-2. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
+3. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
 
-3. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
+4. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
 
 	```
 	%USERPROFILE%\msys32\mingw32.exe
 	```
 	
-4. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
+5. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
 
 	```
 	mkdir ~/esp
 	```
 	
-5. Clone the `ESP-IDF` GitHub repository into the `~/esp` directory. Make sure to specify the `--recursive` option:
+6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp
-	git clone --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
-	```
-
-6. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
+7. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
 
 	```
 	export IDF_PATH="C:/Users/<your-user-name>/msys32/home/<your-user-name>/esp/esp-idf"
 	```
 
-7. Connect the ESP32 to your computer with a USB cable.
+8. Connect the ESP32 to your computer with a USB cable.
 
-8. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+9. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-9. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+10. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
 
 	```
 	set BASE_DIR=%USERPROFILE%
@@ -403,21 +434,14 @@ Additional getting started guides are available for the following devices:
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
-10. Launch the "Developer Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+11. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
 	
-	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
-
-	```
-	cd %MODDABLE%\examples\piu\balls
-	mcconfig -d -m -p esp32/moddable_zero
-	```
-	
-	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the Developer Command Prompt. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
+	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the command line console. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
 	
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
 
@@ -466,7 +490,7 @@ Additional getting started guides are available for the following devices:
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
 
-7. Install the Screen Test desktop simulator and xsbug debugger applications:
+7. Install the Screen Test desktop simulator and `xsbug` debugger applications:
 
 	```
 	cd $MODDABLE/build/makefiles/lin
@@ -475,7 +499,7 @@ Additional getting started guides are available for the following devices:
 
 	When prompted, enter your `sudo` password to copy the application's desktop, executable and icon files into the standard `/usr/share/applications`, `/usr/bin`, and `/usr/share/icon/hicolor` directories.
 	
-8. Launch the xsbug debugger:
+8. Launch the `xsbug` debugger from the command line:
 
 	```
 	xsbug
@@ -489,7 +513,7 @@ Additional getting started guides are available for the following devices:
 	```
 
 <a id="esp8266-linux"></a>
-### ESP8266 (Moddable Zero) setup
+### ESP8266 setup
 
 1. Complete ["Host environment setup"](#host-linux) for Linux.
 
@@ -513,20 +537,21 @@ Additional getting started guides are available for the following devices:
 	git checkout v3.0-rc1
 	```
 
-6. Connect the ESP8266 to your computer with a USB cable.
+6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
-7. Verify the setup by building `helloworld` for the `esp` target:
+	```
+	brew install python
+	sudo easy_install pip
+	pip install --user pyserial
+	```
+	
+7. Connect the ESP8266 to your computer with a USB cable.
+
+8. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp
-	```
-	
-	For Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp` target with the `moddable_zero` subplatform.
-
-	```
-	cd $MODDABLE/examples/piu/balls
-	mcconfig -d -m -p esp/moddable_zero
 	```
 
 	> The ESP8266 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP8266, add your user to the `dialout` group:
@@ -545,19 +570,13 @@ Additional getting started guides are available for the following devices:
 
 3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-4. Clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
+
+4. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```
 	cd ~/esp32
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	```
-	
-	Use the v3.1 version:
-
-	```
-	cd esp-idf
-	git checkout release/v3.1
-	git submodule update
+	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 5. Install the packages required to compile with the `ESP-IDF`:
@@ -583,7 +602,7 @@ Additional getting started guides are available for the following devices:
 8. Install the required Python packages:
 
 	```
-	python -m pip install --user -r $IDF_PATH/docs/requirements.txt
+	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
@@ -614,11 +633,11 @@ Additional getting started guides are available for the following devices:
 	mcconfig -d -m -p esp32
 	```
 
-	For ESP32-based Moddable Zero applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_zero` subplatform.
+	For Moddable Two applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_two` subplatform.
 
 	```
 	cd ${MODDABLE}/examples/piu/balls
-	mcconfig -d -m -p esp32/moddable_zero
+	mcconfig -d -m -p esp32/moddable_two
 	```
 
 	> The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
@@ -642,4 +661,20 @@ For additional details on `xsbug` please refer to the [xsbug](xs/xsbug.md) docum
 
 The Moddable SDK on ESP8266 is hosted by the [ESP8266 core for Arduino](https://github.com/esp8266/Arduino). The Moddable SDK uses version 2.3. Version 2.4 is supported as well. At this time, we do not recommend using version 2.4 as it requires more ROM and more RAM without providing significant benefits for most uses of the Moddable SDK. The team responsible for ESP8266 core for Arduino is aware of [these](https://github.com/esp8266/Arduino/issues/3740) [issues](https://github.com/esp8266/Arduino/issues/4089) and actively working to address them.
 
-You can use version 2.4 today if building on macOS or Linux. Follow the instructions above, but use the [version 2.4](https://github.com/esp8266/Arduino/releases/download/2.4.0/esp8266-2.4.0.zip) of ESP8266 Core for Arduino. Next, in `{MODDABLE}/tools/mcconfig/make.esp.mk` change `ESP_SDK_RELEASE ?= esp8266-2.3.0` to `ESP_SDK_RELEASE ?= esp8266-2.4.0`. Finally, delete the contents of $`{MODDABLE}/build/bin/esp/` and `${MODDABLE}/build/tmp/esp/` and build as above.
+You can use version 2.4 today if building on macOS or Linux. 
+
+- Follow the instructions above, but use the [version 2.4](https://github.com/esp8266/Arduino/releases/download/2.4.0/esp8266-2.4.0.zip) of ESP8266 Core for Arduino.
+
+- In `${MODDABLE}/tools/mcconfig/make.esp.mk` change:
+
+	 ```
+	 ESP_SDK_RELEASE ?= esp8266-2.3.0
+	 ```
+	 
+	 to:
+	 
+	 ```
+	 ESP_SDK_RELEASE ?= esp8266-2.4.0
+	 ```
+
+- Do a clean build of tools by deleting the contents of `${MODDABLE}/build/bin/esp/` and `${MODDABLE}/build/tmp/esp/` and building as above.

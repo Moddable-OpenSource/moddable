@@ -41,6 +41,7 @@ endif
 
 # serial port configuration
 UPLOAD_SPEED ?= 921600
+DEBUGGER_SPEED ?= 921600
 ifeq ($(HOST_OS),Darwin)
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 else
@@ -203,11 +204,11 @@ XS_DIRS = \
 	$(BUILD_DIR)/devices/esp
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsesp.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsScript.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -252,7 +253,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
 ifeq ($(DEBUG),1)
-	C_DEFINES += -DmxDebug=1
+	C_DEFINES += -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -335,13 +336,15 @@ debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 	$(UPLOAD_TO_ESP)
-	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) 921600 8N1
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 
 debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	$(UPLOAD_TO_ESP)
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 921600 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(UPLOAD_TO_ESP)

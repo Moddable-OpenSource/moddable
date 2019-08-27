@@ -44,7 +44,16 @@
 		],
 	},
 	"preload": [
+		"piu/All",
+		"piu/Buttons",
 		"piu/PC",
+		"piu/Scrollbars",
+		"piu/Sliders",
+		"piu/Switches",
+		"BinaryMessage",
+		"ControlsPane",
+		"DevicePane",
+		"assets",
 	],
 	"resources": {
 		"assets/*": "./assets/*",

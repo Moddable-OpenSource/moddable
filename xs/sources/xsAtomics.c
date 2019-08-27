@@ -190,7 +190,9 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "SharedArrayBuffer", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxSharedArrayBufferPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_SharedArrayBuffer), 1, mxID(_SharedArrayBuffer), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_SharedArrayBuffer), 1, mxID(_SharedArrayBuffer));
+	mxSharedArrayBufferConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
 	
@@ -210,11 +212,7 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_notify), 3, mxID(_wake), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_xor), 3, mxID(_xor), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Atomics", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Atomics), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxAtomicsObject);
 }
 
 txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
@@ -342,21 +340,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	mxPushInteger(1);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
-	if (mxIsUndefined(the->stack)) {
-		*the->stack = mxGlobal;
-		fxGetID(the, mxID(_SharedArrayBuffer));
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
-	fxGetID(the, mxID(_Symbol_species));
-	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
-		*the->stack = mxGlobal;
-		fxGetID(the, mxID(_SharedArrayBuffer));
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
+	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
 	fxNew(the);
 	mxPullSlot(mxResult);
 	result = fxCheckSharedArrayBuffer(the, mxResult, "result");

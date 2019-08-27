@@ -45,7 +45,7 @@ export class Listener @ "xs_listener_destructor" {
 Object.freeze(Socket.prototype);
 Object.freeze(Listener.prototype);
 
-export default {
+export default Object.freeze({
 	Socket,
 	Listener
-};
+});

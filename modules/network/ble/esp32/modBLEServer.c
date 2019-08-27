@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
@@ -72,6 +72,7 @@ typedef struct {
 	uint8_t *scanResponseData;
 	esp_ble_adv_params_t adv_params;
 	uint8_t adv_config_done;
+	uint8_t deviceNameSet;
 	
 	// services
 	uint16_t handles[service_count][max_attribute_count];
@@ -176,6 +177,7 @@ void xs_ble_server_get_local_address(xsMachine *the)
 
 void xs_ble_server_set_device_name(xsMachine *the)
 {
+	gBLE->deviceNameSet = 1;
 	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
 }
 
@@ -436,8 +438,13 @@ void xs_ble_server_deploy(xsMachine *the)
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	// Stack is ready
+	xsBeginHost(gBLE->the);
+	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsEndHost(gBLE->the);
 
-	// Set device name and appearance from app GAP service when available
+	// Set appearance from app GAP service when available
+	// Set device name from GAP service if app hasn't already set device name in onReady() callback
 	char *device_name = NULL;
 	uint16_t appearance = 128;	// generic computer
 	
@@ -447,7 +454,7 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 		if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1]) {
 			for (uint16_t j = 1; j < attribute_counts[i]; ++j) {
 				att_desc = &gatts_attr_db[j].att_desc;
-				if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A00 == *(uint16_t*)att_desc->uuid_p) {
+				if (0 == gBLE->deviceNameSet && ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A00 == *(uint16_t*)att_desc->uuid_p) {
 					device_name = c_calloc(1, att_desc->length + 1);
 					c_memmove(device_name, att_desc->value, att_desc->length);
 				}
@@ -464,13 +471,9 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 		esp_ble_gap_set_device_name(device_name);
 		c_free(device_name);
 	}
-	else
+	else if (0 == gBLE->deviceNameSet) {
 		esp_ble_gap_set_device_name(DEVICE_FRIENDLY_NAME);
-
-	// Stack is ready
-	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
-	xsEndHost(gBLE->the);
+	}
 }
 
 static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)

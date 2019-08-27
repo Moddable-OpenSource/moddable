@@ -12,10 +12,11 @@
  *
  */
 
- import {} from "piu/MC";
+import {} from "piu/MC";
+import lorem from "lorem";
 
 const itemSkin = new Skin({ fill:[ "#192eab", "black" ] });
-const itemStyle = new Style({ font:"20px Open Sans", color:"white" });
+const itemStyle = new Style({ font:"20px Open Sans", color:"white", horizontal:"left" });
 const stripSkin = new Skin({ 
 	texture: { path:"wifi-strip.png" }, 
 	color: "white", 
@@ -141,6 +142,6 @@ let TestApplication = Application.template($ => ({
 	]
 }));
 
-let data = require("lorem").split(".").map((item, index) => ({ ssid:item.trim(), variant:(index % 10) - 5 }));
+let data = lorem.split(".").map((item, index) => ({ ssid:item.trim(), variant:(index % 10) - 5 }));
 
-export default new TestApplication(data, { displayListLength: 4096 });
+export default new TestApplication(data, { displayListLength: 8192 });

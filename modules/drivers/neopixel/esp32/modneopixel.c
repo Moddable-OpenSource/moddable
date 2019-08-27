@@ -49,8 +49,8 @@ void xs_neopixel_destructor(void *data)
 		xsNeoPixel np = data;
 
 		np_clear(&np->px);
-		np_show(&np->px, MODDEF_NEOPIXEL_RMT_CHANNEL);
-		neopixel_deinit(MODDEF_NEOPIXEL_RMT_CHANNEL);
+		np_show(&np->px);
+		neopixel_deinit(&np->px);
 	}
 }
 
@@ -101,9 +101,6 @@ void xs_neopixel(xsMachine *the)
 	if (!np)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, &np->pixels);
-
-	if (ESP_OK != neopixel_init(pin, MODDEF_NEOPIXEL_RMT_CHANNEL))
-		xsUnknownError("init failed");
 
 	px = &np->px;
 	px->pixels = (void *)np->pixels;
@@ -182,7 +179,11 @@ void xs_neopixel(xsMachine *the)
 		}
 	}
 
-	np_show(px, MODDEF_NEOPIXEL_RMT_CHANNEL);	// pixels are all zero
+	px->pin = pin;
+	px->rmtChannel = MODDEF_NEOPIXEL_RMT_CHANNEL;
+	neopixel_init(px);
+
+	np_show(px);
 }
 
 void xs_neopixel_close(xsMachine *the)
@@ -231,7 +232,7 @@ void xs_neopixel_fill(xsMachine *the)
 void xs_neopixel_update(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
-	np_show(&np->px, MODDEF_NEOPIXEL_RMT_CHANNEL);
+	np_show(&np->px);
 }
 
 void xs_neopixel_brightness_get(xsMachine *the)
@@ -271,7 +272,9 @@ void xs_neopixel_makeRGB(xsMachine *the)
 	if (24 == np->px.nbits)
 		xsmcSetInteger(xsResult, r | g | b);
 	else {
-		int w = xsmcToInteger(xsArg(3)) << np->whiteShift;
+		int w = 0;
+		if (xsmcArgc > 3)
+			w = xsmcToInteger(xsArg(3)) << np->whiteShift;
 		xsmcSetInteger(xsResult, r | g | b | w);
 	}
 }

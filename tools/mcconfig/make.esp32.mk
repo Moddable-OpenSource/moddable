@@ -28,6 +28,10 @@ export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
+unexport LDFLAGS
+unexport LD_LIBRARY_PATH
+unexport CPPFLAGS
+
 ifeq ($(DEBUG),1)
 	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/idf
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/xsProj
@@ -57,6 +61,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
+ 	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
  	$(IDF_PATH)/components/esp32/include \
@@ -86,7 +91,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/vfs/include
-        
+    
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
@@ -140,10 +145,10 @@ XS_DIRS = \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsesp.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 

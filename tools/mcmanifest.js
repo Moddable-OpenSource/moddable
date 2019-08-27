@@ -1190,7 +1190,7 @@ export class Tool extends TOOL {
 		}
 		catch (e) {
 			var message = e.toString();
-			var result = /SyntaxError: \(host\): ([0-9]+): (.+)/.exec(message);
+			var result = /SyntaxError: [^:]+: ([0-9]+): (.+)/.exec(message);
 			if (result.length == 3) {
 				this.reportError(path, parseInt(result[1]), result[2]);
 			}

@@ -19,8 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsPlatform.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #include "modGPIO.h"
 

@@ -105,10 +105,10 @@ XS_DIRS = \
 	$(BUILD_DIR)/devices/qca4020
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsqca4020.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/qca4020/xsHost.h \
 	$(XS_DIR)/platforms/qca4020/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 

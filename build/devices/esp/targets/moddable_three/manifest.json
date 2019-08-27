@@ -15,7 +15,7 @@
             "cs_pin": 15,
             "dc_pin": 2,
             "rst_pin": 0,
-            "busy_pin": 5,
+            "busy_pin": 16,
             "spi_port": "#HSPI"
         }
     }

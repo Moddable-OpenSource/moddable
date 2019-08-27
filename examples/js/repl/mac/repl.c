@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 #endif
 		{
 			xsTry {
-				xsCall1(xsGlobal, xsID_require, xsString("main"));
+				xsResult = xsAwaitImport("main", XS_IMPORT_NAMESPACE);
 			}
 			xsCatch {
 				xsStringValue message = xsToString(xsException);

@@ -21,6 +21,8 @@
 #ifndef __XSMAIN__
 #define __XSMAIN__
 
+#include "xsPlatform.h"
+
 #include <stdio.h>
 #include "qapi_types.h"
 #include "qurt_error.h"

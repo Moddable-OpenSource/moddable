@@ -1,0 +1,17 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+        "$(MODDABLE)/examples/manifest_net.json",
+        "$(MODULES)/files/preference/manifest.json",
+        "$(MODULES)/network/mdns/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+            "$(MODULES)/network/http/*"
+		]
+	},
+	"preload": [
+		"http"
+	]
+}

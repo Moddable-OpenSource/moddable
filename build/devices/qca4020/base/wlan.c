@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,9 +18,7 @@
  *
  */
 
-#include "xs.h"
-#include "xsmc.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #define QAPI_USE_WLAN
 #include "qapi.h"

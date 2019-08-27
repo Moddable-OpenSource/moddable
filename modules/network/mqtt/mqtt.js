@@ -55,6 +55,7 @@ export default class Client {
 			this.connect.password = dictionary.password;
 
 //		// set default callbacks to be overridden by caller
+//		this.onConnected = function() {};
 //		this.onReady = function() {};
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
@@ -143,7 +144,7 @@ export default class Client {
 		topic = makeStringBuffer(topic);
 		let payload = topic.length + 2;
 
-		let length = 1;	// UBSUBSCRIBE
+		let length = 1;	// UNSUBSCRIBE
 		length += getRemainingLength(payload);
 		length += payload;
 
@@ -317,6 +318,9 @@ export default class Client {
 			this.last = Date.now();
 	}
 	connected() {
+		if (this.onConnected)
+			this.onConnected();
+
 		const timeout = Math.floor(((this.timeout || 0) + 999) / 1000);
 		const header = Uint8Array.of(
 			0x00, 0x04,

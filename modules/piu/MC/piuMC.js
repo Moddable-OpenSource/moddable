@@ -93,7 +93,7 @@ global.Texture = Texture;
 
 // PiuDie.c
 
-var die = {
+const die = {
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuDie__create",
 	and(x, y, width, height) @ "PiuDie_and",
@@ -107,13 +107,13 @@ var die = {
 	sub(x, y, width, height) @ "PiuDie_sub",
 	xor(x, y, width, height) @ "PiuDie_xor",
 };
-export var Die = Template(die);
+export const Die = Template(die);
 Object.freeze(die);
 global.Die = Die;
 
 // PiuImage.c
 
-var image = {
+const image = {
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuImage_create",
 	
@@ -122,13 +122,13 @@ var image = {
 	
 	set frameIndex(it) @ "PiuImage_set_frameIndex",
 };
-export var Image = Template(image);
+export const Image = Template(image);
 Object.freeze(image);
 global.Image = Image;
 
 // PiuApplication.c
 
-var application = {
+const application = {
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuApplication_create",
 	
@@ -165,7 +165,7 @@ global.Application = Application;
 
 class View @ "PiuViewDelete" {
 	constructor(application, it) {
-		let screen = global.screen ? global.screen : require("screen");
+		let screen = global.screen;
 		it.rotation = this.rotation;
 		if (screen.pixelFormat == Bitmap.CLUT16)
 			screen.clut = new Resource("main.cct");

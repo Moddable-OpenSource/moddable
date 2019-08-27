@@ -33,7 +33,7 @@ int main(int argc, const char **argv)
 		xsBeginHost(appDelegate.machine);
 		{
 			xsCollectGarbage();
-			xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));
+			xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 			appDelegate.piuApplication = PIU(Application, xsResult);
 			xsCollectGarbage();
 		}

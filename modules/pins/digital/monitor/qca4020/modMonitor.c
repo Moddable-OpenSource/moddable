@@ -20,7 +20,7 @@
 
 #include "xsPlatform.h"
 #include "xsmc.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modGPIO.h"

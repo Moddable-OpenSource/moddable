@@ -47,7 +47,8 @@ void fxBuildBoolean(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Boolean_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Boolean_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	mxBooleanPrototype = *the->stack;
-	fxNewHostConstructorGlobal(the, mxCallback(fx_Boolean), 1, mxID(_Boolean), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Boolean), 1, mxID(_Boolean));
+	mxBooleanConstructor = *the->stack;
 	the->stack++;
 }
 

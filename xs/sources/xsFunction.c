@@ -68,14 +68,15 @@ void fxBuildFunction(txMachine* the)
 	slot->value.accessor.getter = function;
 	slot->value.accessor.setter = function;
 	slot = fxNextSlotProperty(the, slot, &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	constructor = fxNewHostConstructorGlobal(the, mxCallback(fx_Function), 1, mxID(_Function), XS_DONT_ENUM_FLAG);
+	constructor = fxBuildHostConstructor(the, mxCallback(fx_Function), 1, mxID(_Function));
+	mxFunctionConstructor = *the->stack;
 	the->stack++;
 	
 	mxPush(mxFunctionPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "AsyncFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncFunctionPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
 	slot->value.instance.prototype = constructor;
 	the->stack++;
 	slot = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
@@ -215,9 +216,8 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	txSlot* property;
 	txSlot* key;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
-	if (property)
-		return property;
-	property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	if (!property)
+		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	key = fxGetKey(the, (txID)id);
 	if (key) {
 		txKind kind = mxGetKeySlotKind(key);
@@ -267,6 +267,8 @@ void fx_Function(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -288,7 +290,7 @@ void fx_Function(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -519,6 +521,11 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 	}
 	if (!prototype)
 		mxTypeError("prototype is no object");
+	if (prototype->ID >= 0) {
+		txSlot* alias = the->aliasArray[prototype->ID];
+		if (alias)
+			prototype = alias;
+	}
 	mxPushNull();
 	while (mxBehaviorGetPrototype(the, instance, the->stack)) {
 		instance = the->stack->value.reference;
@@ -686,6 +693,8 @@ void fx_AsyncFunction(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -707,7 +716,7 @@ void fx_AsyncFunction(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);

@@ -54,15 +54,12 @@ void fxAbort(xsMachine* the)
 	exit(1);
 }
 
-#ifdef XSTOOLS
 extern int mainXSA(int argc, char* argv[]) ;
 extern int mainXSC(int argc, char* argv[]) ;
-#endif
 
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-#ifdef XSTOOLS
 	if (!strcmp(argv[1], "xsa")) {
 		error = mainXSA(argc - 1, &argv[1]);
 	}
@@ -70,7 +67,6 @@ int main(int argc, char* argv[])
 		error = mainXSC(argc - 1, &argv[1]);
 	}
 	else {
-#endif
 		xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);
 		xsBeginHost(machine);
 		{
@@ -83,7 +79,7 @@ int main(int argc, char* argv[])
 						for (argi = 1; argi < argc; argi++) {
 							xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
 						}
-						xsVar(1) = xsCall1(xsGlobal, xsID_require, xsString(argv[1]));
+						xsVar(1) = xsAwaitImport(argv[1], XS_IMPORT_DEFAULT);
 						fxPush(xsVar(0));
 						fxPushCount(the, 1);
 						fxPush(xsVar(1));
@@ -110,9 +106,7 @@ int main(int argc, char* argv[])
 			execvp(then[0], then);
 		#endif
 		}
-#ifdef XSTOOLS
 	}
-#endif
 	return error;
 }
 

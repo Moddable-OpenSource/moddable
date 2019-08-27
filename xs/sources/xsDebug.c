@@ -37,9 +37,9 @@
 
 #include "xsAll.h"
 
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
-char lastDebugStr[256];
-char synergyDebugStr[256];
+#if defined(DEBUG_EFM)
+char _lastDebugStrBuffer[256];
+char _debugStrBuffer[256];
 #endif
 static void fxVReportException(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
@@ -70,7 +70,10 @@ static void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList,
 static void fxEchoStart(txMachine* the);
 static void fxEchoStop(txMachine* the);
 static void fxEchoString(txMachine* the, txString theString);
+static txSlot* fxFindFrame(txMachine* the);
+static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
+static txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
 static void fxListLocal(txMachine* the);
@@ -657,7 +660,7 @@ void fxDebugPopTag(txMachine* the)
 		/* COUNT */
 		mxPushInteger(3);
 		/* THIS */
-		mxPush(mxGlobal);
+		mxPushUndefined();
 		/* FUNCTION */
 		mxPush(mxGlobal);
 		if (the->debugTag == XS_MODULE_TAG)
@@ -727,6 +730,8 @@ void fxDebugPushTag(txMachine* the)
 		fxSelect(the, (txSlot*)the->idValue);
 		fxEchoStart(the);
 		fxListLocal(the);
+		fxListGlobal(the);
+		fxListModules(the);
 		fxEchoStop(the);
 		break;
 	case XS_SET_ALL_BREAKPOINTS_TAG:
@@ -969,7 +974,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		if (aliasInstance)
 			theInstance = aliasInstance;
 	}
-	aParent = theInstance->value.instance.prototype;
+	aParent = fxGetPrototype(the, theInstance);
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
 	aProperty = theInstance->next;
@@ -1098,6 +1103,81 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 					item++;
 				}
 			}
+// 			if (aProperty->kind == XS_PRIVATE_KIND) {
+// 				char buffer[128] = "";
+// 				txInteger length;
+// 				txSlot* check = aProperty->value.private.check;
+// 				txSlot* item = aProperty->value.private.first;
+// 				fxBufferFunctionName(the, buffer, sizeof(buffer), check, "");
+// 				length = c_strlen(buffer);
+// 				while (item) {
+// 					fxIDToString(the, item->ID, &buffer[length], sizeof(buffer) - length);
+// 					fxEchoProperty(the, item, theList, buffer, -1, C_NULL);
+// 					item = item->next;
+// 				}
+// 			}
+			if (aProperty->kind == XS_PRIVATE_KIND) {
+				txSlot* instanceInspector = fxToInstanceInspector(the, aProperty);
+				char buffer[128] = "(";
+				txSlot* check = aProperty->value.private.check;
+				txSlot* item = aProperty->value.private.first;
+				fxBufferFunctionName(the, &buffer[1], sizeof(buffer) - 1, check, ")");
+				fxEcho(the, "<property");
+				if (instanceInspector) {
+					if (instanceInspector->value.instanceInspector.link)
+						fxEchoFlags(the, " ", aProperty->flag);
+					else
+						fxEchoFlags(the, "-", aProperty->flag);
+				}
+				else
+					fxEchoFlags(the, "+", aProperty->flag);
+				fxEcho(the, " name=\"");
+				fxEchoString(the, buffer);
+				fxEcho(the, "\"");
+				if (instanceInspector) {
+					if (instanceInspector->value.instanceInspector.link) {
+						txInspectorNameLink* link = theList->first;
+						fxEcho(the, " value=\"");
+						while (link) {
+							fxEchoString(the, link->name);
+							if (link == instanceInspector->value.instanceInspector.link)
+								break;
+							fxEcho(the, ".");
+							link = link->next;
+						}
+						fxEcho(the, "\"/>");
+					}
+					else {
+						txInspectorNameLink link;
+						link.previous = theList->last;
+						link.next = C_NULL;
+						link.name = buffer;
+						if (theList->first)
+							theList->last->next = &link;
+						else
+							theList->first = &link;
+						theList->last = &link;
+						instanceInspector->value.instanceInspector.link = &link;
+						fxEchoAddress(the, aProperty);
+						fxEcho(the, ">");
+						while (item) {
+							fxEchoProperty(the, item, theList, C_NULL, -1, C_NULL);
+							item = item->next;
+						}
+						fxEcho(the, "</property>");
+						instanceInspector->value.instanceInspector.link = C_NULL;
+						if (link.previous)
+							link.previous->next = C_NULL;
+						else
+							theList->first = C_NULL;
+						theList->last = link.previous;
+					}
+				}
+				else {
+					fxEchoAddress(the, aProperty);
+					fxEcho(the, "/>");
+				}
+			}
 		}
 		aProperty = aProperty->next;
 	}
@@ -1115,7 +1195,7 @@ void fxEchoModule(txMachine* the, txSlot* module, txInspectorNameList* list)
 		fxEchoFlags(the, "+", exports->flag);
 	fxEcho(the, " name=\"");
 	slot = mxModuleInternal(module);
-	fxEcho(the, fxGetKeyName(the, slot->value.symbol));
+	fxEcho(the, fxGetKeyName(the, slot->value.module.id));
 	fxEcho(the, "\"");
 	fxEchoAddress(the, module);
 	if (instanceInspector) {
@@ -1154,8 +1234,14 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txSlot* instance;
 	char buffer[256];
 	txString name;
-	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND))
+	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
+		if (theProperty->ID >= 0) {
+			txSlot* slot = the->aliasArray[theProperty->ID];
+			if (slot)
+				theProperty = slot;
+		}
+	}
 	if (theProperty->kind == XS_REFERENCE_KIND) {
  		instance = fxGetInstance(the, theProperty);
 		if (instance)
@@ -1353,7 +1439,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 					}
 					aParentProperty = aParentProperty->next;
 				}
-				aParent = aParent->value.instance.prototype;
+				aParent = fxGetPrototype(the, aParent);
 			}
 		}
 		cache = hostInspector->value.hostInspector.cache;
@@ -1526,6 +1612,33 @@ void fxEchoString(txMachine* the, txString theString)
 	the->echoOffset = dst - start;
 }
 
+txSlot* fxFindFrame(txMachine* the)
+{
+	txSlot* frame = the->frame;
+	while (frame) {
+		if (frame->flag & XS_DEBUG_FLAG)
+			break;
+		frame = frame->next;
+	}
+	return frame;
+}
+
+txSlot* fxFindRealm(txMachine* the)
+{
+	txSlot* frame = fxFindFrame(the);
+	txSlot* realm = C_NULL;
+	if (frame && (!(frame->flag & XS_C_FLAG))) {
+		txSlot* function = frame + 3;
+		if (mxIsReference(function)) {
+			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+			realm = mxModuleInstanceInternal(module)->value.module.realm;
+		}
+	}
+	if (!realm)
+		realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	return realm;
+}
+
 void fxGo(txMachine* the)
 {
 	txSlot* aSlot = the->frame;
@@ -1557,11 +1670,19 @@ void fxListFrames(txMachine* the)
 void fxListGlobal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* aProperty = mxGlobal.value.reference->next->next;
+	txSlot* realm = fxFindRealm(the);
+	txSlot* slot = mxRealmGlobal(realm)->value.reference->next;
 	fxEcho(the, "<global>");
-	while (aProperty) {
-		fxEchoProperty(the, aProperty, &aList, C_NULL, -1, C_NULL);
-		aProperty = aProperty->next;
+	if (slot->flag & XS_INTERNAL_FLAG)
+		slot = slot->next;
+	while (slot) {
+		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
+		slot = slot->next;
+	}
+	slot = mxRealmClosures(realm)->value.reference->next->next;
+	while (slot) {
+		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
+		slot = slot->next;
 	}
 	fxEcho(the, "</global>");
 }
@@ -1569,12 +1690,7 @@ void fxListGlobal(txMachine* the)
 void fxListLocal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* frame  = the->frame;
-	while (frame) {
-		if (frame->flag & XS_DEBUG_FLAG)
-			break;
-		frame = frame->next;
-	}
+	txSlot* frame = fxFindFrame(the);
 	if (!frame) // @@
 		return;
 	fxEcho(the, "<local");
@@ -1613,10 +1729,29 @@ void fxListLocal(txMachine* the)
 		}
 		if (aScope) {
 			txSlot* aSlot = frame - 1;
+			txInteger id;
 			while (aSlot > aScope) {
 				aSlot--;
-				if (aSlot->ID)
-					fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+				id = aSlot->ID;
+				if (id < 0) {
+					id &= 0x7FFF;
+					if (id < the->keyCount) {
+						txSlot* key;
+						if (id < the->keyOffset)
+							key = the->keyArrayHost[id];
+						else
+							key = the->keyArray[id - the->keyOffset];
+						if (key) {
+							txKind kind = mxGetKeySlotKind(key);
+							if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
+								 if (key->value.key.string[0] != '#')
+									fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+							}
+							else
+								fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1626,27 +1761,33 @@ void fxListLocal(txMachine* the)
 void fxListModules(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
-	txSlot* table = mxModules.value.reference->next;
-	txSlot** address = table->value.table.address;
-	txInteger modulo = table->value.table.length;
-	txSlot* module;
+	txSlot* realm = fxFindRealm(the);
+	txSlot* module = mxRequiredModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
-	while (modulo) {
-		txSlot* entry = *address;
-		while (entry) {
-			module = entry->value.entry.slot;
-			fxEchoModule(the, module, &aList);
-			entry = entry->next;
-		}
-		address++;
-		modulo--;
-	}
-	module = the->sharedModules;
 	while (module) {
 		fxEchoModule(the, module, &aList);
 		module = module->next;
 	}
+	
+	module = the->sharedModules;
+	while (module) {
+		if (fxIsModuleAvailable(the, realm, module))
+			fxEchoModule(the, module, &aList);
+		module = module->next;
+	}
 	fxEcho(the, "</grammar>");
+}
+
+txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module)
+{
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == mxModuleInternal(module)->value.module.id) {
+			return 1;
+		}
+		slot = slot->next;
+	}
+	return 0;
 }
 
 void fxLogin(txMachine* the)
@@ -1934,10 +2075,10 @@ void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
-	memmove(lastDebugStr, synergyDebugStr, 256);
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+#if defined(DEBUG_EFM)
+	memmove(_lastDebugStrBuffer, _debugStrBuffer, 256);
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -1955,14 +2096,14 @@ void fxVReportException(void* console, txString thePath, txInteger theLine, txSt
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: exception: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: exception: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# exception: ");
-	memmove(lastDebugStr, synergyDebugStr, 256);
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# exception: ");
+	memmove(_lastDebugStrBuffer, _debugStrBuffer, 256);
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -1980,13 +2121,13 @@ void fxVReportError(void* console, txString thePath, txInteger theLine, txString
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: error: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: error: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# error: ");
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# error: ");
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 
@@ -2004,13 +2145,13 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 		fxEchoStop(the);
 	}
 #endif
-#if defined(_RENESAS_SYNERGY_) || defined(DEBUG_EFM)
+#if defined(DEBUG_EFM)
 	if (thePath && theLine)
-		sprintf(synergyDebugStr, "%s:%d: warning: ", thePath, (int)theLine);
+		sprintf(_debugStrBuffer, "%s:%d: warning: ", thePath, (int)theLine);
 	else
-		sprintf(synergyDebugStr, "# warning: ");
-	vsprintf(synergyDebugStr, theFormat, theArguments);
-	synergyDebugStr[255] = '\0';
+		sprintf(_debugStrBuffer, "# warning: ");
+	vsprintf(_debugStrBuffer, theFormat, theArguments);
+	_debugStrBuffer[255] = '\0';
 #endif
 }
 

@@ -49,18 +49,44 @@ struct sxMD5 {
 	uint8_t buf[MD5_BLKSIZE];
 };
 
-static txBoolean fxIsCIdentifier(txLinker* linker, txString string);
 static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
 static txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
-static txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
 static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);
 static void md5_fin(txMD5 *s, uint8_t *dgst);
 
 static txInteger gxCodeUsages[XS_CODE_COUNT];
+
+static txCallback gxTypeCallbacks[1 + mxTypeArrayCount] = {
+	fx_TypedArray,
+	fx_BigInt64Array,
+	fx_BigUint64Array,
+	fx_Float32Array,
+	fx_Float64Array,
+	fx_Int8Array,
+	fx_Int16Array,
+	fx_Int32Array,
+	fx_Uint8Array,
+	fx_Uint16Array,
+	fx_Uint32Array,
+	fx_Uint8ClampedArray,
+};
+static int gxTypeCallbacksIndex = 0;
+
+void fx_BigInt64Array(txMachine* the) {}
+void fx_BigUint64Array(txMachine* the) {}
+void fx_Float32Array(txMachine* the) {}
+void fx_Float64Array(txMachine* the) {}
+void fx_Int8Array(txMachine* the) {}
+void fx_Int16Array(txMachine* the) {}
+void fx_Int32Array(txMachine* the) {}
+void fx_Uint8Array(txMachine* the) {}
+void fx_Uint16Array(txMachine* the) {}
+void fx_Uint32Array(txMachine* the) {}
+void fx_Uint8ClampedArray(txMachine* the) {}
 
 void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength)
 {
@@ -309,9 +335,12 @@ txCallback fxNewLinkerCallback(txMachine* the, txCallback callback, txString nam
 	txLinkerCallback* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerCallback));
 	result->nextCallback = linker->firstCallback;
 	linker->firstCallback = result;
-	result->callback = callback;
+	if (callback == fx_TypedArray)
+		result->callback = gxTypeCallbacks[gxTypeCallbacksIndex++];
+	else
+		result->callback = callback;
 	result->name = name;
-	return callback;
+	return result->callback;
 }
 
 void* fxNewLinkerChunk(txLinker* linker, txSize size)
@@ -616,6 +645,15 @@ void fxTerminateLinker(txLinker* linker)
 // 	}
 }
 
+void fxUnuseCode(txU1 code)
+{
+	gxCodeUsages[code] = 0;
+}
+
+void fxUseCodes()
+{
+	c_memset(gxCodeUsages, 1, sizeof(gxCodeUsages));
+}
 
 void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 {

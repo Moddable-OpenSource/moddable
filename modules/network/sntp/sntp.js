@@ -52,7 +52,7 @@ class SNTP extends Socket {
 		this.count = 5;		// maximum retransmit attempts
 	}
 	failed(message) {
-		let host = this.client(-1, message);
+		let host = this.client(SNTP.error, message);
 		if (host)
 			this.start(host);
 		else
@@ -77,7 +77,7 @@ class SNTP extends Socket {
 			this.failed("unexpected SNTP packet first byte");
 		else {
 			this.read(null, 39);
-			this.client(1, this.toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number)));
+			this.client(SNTP.time, this.toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number)));
 			this.close();
 		}
 	}
@@ -92,8 +92,12 @@ function timer() {
 		return this.failed("no response from SNTP server");
 
 	this.write(this.address, 123, this.packet());
-	this.client(2);		// retrying
+	this.client(SNTP.retry);		// retrying
 }
+
+SNTP.time = 1;
+SNTP.retry = 2;
+SNTP.error = -1;
 
 Object.freeze(SNTP.prototype);
 

@@ -37,7 +37,7 @@
 
 import BER from "ber";
 
-let X509 = {
+const X509 = {
 	decode(buf) {
 		let ber = new BER(buf);
 		if (ber.getTag() != 0x30)

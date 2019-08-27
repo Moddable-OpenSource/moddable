@@ -120,8 +120,7 @@ C_FLAGS = \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D HAVE_MEMMOVE=1 \
-	/nologo \
-	/Zp1 
+	/nologo
 !IF "$(DEBUG)"=="1"
 C_FLAGS = $(C_FLAGS) \
 	/D _DEBUG \

@@ -14,7 +14,6 @@
 		],
 		"cli": "$(MODULES)/base/cli/cli",
 		"cli/network": "$(MODULES)/base/cli/commands/network",
-		"cli/xs": "$(MODULES)/base/cli/commands/xs",
 	},
 	"preload": [
 		"console",

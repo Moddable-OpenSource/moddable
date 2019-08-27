@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,6 +25,10 @@ trace("\n");
 
 if (config.sntp)
 	trace(`SNTP host: ${config.sntp}\n`);
-	
-let echo = require(config.printModuleName);
-echo.print("Fini!");
+
+async function loadModule(specified) {
+	const Echo = (await import(specified)).default;
+	Echo.print("Fini!");
+}
+
+loadModule(config.echoModuleSpecifier);

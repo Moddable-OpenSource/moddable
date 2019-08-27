@@ -50,7 +50,7 @@
 	#include "spi_flash.h"
 #endif
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)

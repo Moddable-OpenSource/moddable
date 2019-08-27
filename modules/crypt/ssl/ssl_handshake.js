@@ -120,7 +120,7 @@ function handshakeDigestResult(session, which)
 	return H;
 }
 
-let handshakeProtocol = {
+const handshakeProtocol = {
 	name: "handshakeProtocol",
 
 	unpacketize(session, s) {

@@ -24,7 +24,7 @@
 #include <ets_sys.h>
 #include "string.h"
 
-#include "xsesp.h"
+#include "xsHost.h"
 #include "commodettoBitmap.h"
 
 #define SPI (0)

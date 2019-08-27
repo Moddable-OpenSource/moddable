@@ -38,6 +38,7 @@
 
 import PixelsOut from "PixelsOut";
 import Bitmap from "Bitmap";
+import Poco from "commodetto/Poco";
 
 export default class RLEOut extends PixelsOut {
 	constructor(dictionary) {
@@ -167,7 +168,6 @@ export default class RLEOut extends PixelsOut {
 	}
 
 	static encode(source, key) {
-		let Poco = require("commodetto/Poco");
 		let writer = new RLEOut({width: source.width, height: source.height, pixelFormat: source.format, key: key});
 		let render = new Poco(writer);
 		render.begin();

@@ -69,7 +69,7 @@ const close_notify = 0;
 //const bad_certificate_status_response = 113; /* new */
 //const bad_certificate_hash_value = 114;      /* new */
 
-let alert = {
+const alert = {
 	name: "alert",
 	// global constants
 	close_notify: close_notify,

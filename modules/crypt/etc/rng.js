@@ -35,7 +35,7 @@
  *       limitations under the License.
  */
 
-let RNG = {
+const RNG = {
 	'get'(n) @ "xs_rng_get",
 	init(seed) @ "xs_rng_init",
 };

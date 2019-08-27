@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsqca4020.h"
+#include "xsHost.h"
 
 #include "qapi_netservices.h"
 #include "qurt_error.h"

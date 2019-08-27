@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,3 +24,4 @@ export default class Resource @ "Resource_destructor" {
 	slice(begin, end) @ "Resource_slice";
 }
 Object.freeze(Resource.prototype);
+

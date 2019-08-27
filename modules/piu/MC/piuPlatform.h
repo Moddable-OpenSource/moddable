@@ -23,7 +23,7 @@
 #include "commodettoStream.h"
 #include "modInstrumentation.h"
 #ifdef __ets__
-	#include "xsesp.h"
+	#include "xsHost.h"
 #endif
 
 #define piuMC 1

@@ -1,0 +1,36 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/contributed/serial/drivers/sim7100/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"platforms": {
+		"esp32": {
+			"defines": {
+				"serial": {
+					"interface": { "UART": 2 },
+					"baud": 115200,
+					"config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
+					"tx_pin": 17,
+					"rx_pin": 16
+				}
+			}
+		},
+		"gecko/mighty": {
+			"defines": {
+				"serial": {
+					"interface": { "USART": 2 },
+					"location": "1",
+					"baud": 9600,
+					"config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
+					"tx": { "pin": 6, "port": "gpioPortA" },
+					"rx": { "pin": 7, "port": "gpioPortA" }
+				}
+			}
+		}
+	}
+}

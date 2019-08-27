@@ -1,0 +1,12 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./increment",
+			"./main",
+			"./mod",
+		],
+	},
+	"preload": [
+	],
+}

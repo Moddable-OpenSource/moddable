@@ -102,7 +102,7 @@ typedef void *txSocket;
 #include <lwip/netdb.h>
 #include <lwip/inet.h>
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #ifdef __cplusplus
 extern "C" {

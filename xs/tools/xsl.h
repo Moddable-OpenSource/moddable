@@ -35,16 +35,15 @@
  *       limitations under the License.
  */
 
-#define xsBuildKeys(THE) fxBuildKeys(THE)
-#define xsFindModule(THE,ID,NAME) fxFindModule(THE,ID,NAME)
-#define xsLoadModule(THE,ID) fxLoadModule(THE,ID)
-#define xsQueuePromiseJobs(THE) fxQueuePromiseJobs(THE)
-#define xsParseScript(THE,STREAM,GETTER,FLAGS) fxParseScript(THE,STREAM,GETTER,FLAGS)
-
 #include "xsAll.h"
 #include "xs.h"
 
 #define XS_ATOM_INCREMENTAL 0x58535F49 /* 'XS_I' */
+
+enum {
+	XS_STRIP_IMPLICIT_FLAG = 1,
+	XS_STRIP_EXPLICIT_FLAG,
+};
 
 typedef struct sxLinker txLinker;
 typedef struct sxLinkerBuilder txLinkerBuilder;
@@ -89,6 +88,7 @@ struct sxLinker {
 	txID hostsCount;
 	
 	txLinkerStrip* firstStrip;
+	txFlag stripFlag;
 	
 	txSize symbolModulo;
 	txLinkerSymbol** symbolTable;
@@ -109,7 +109,6 @@ struct sxLinker {
 	txCreation creation;
 	
 	txFlag intrinsicFlags[mxIntrinsicCount];
-	txFlag stripping;
 
 	char main[1024];
 };
@@ -188,6 +187,18 @@ struct sxLinkerSymbol {
 };
 
 /* xslBase.c */
+extern void fx_BigInt64Array(txMachine* the);
+extern void fx_BigUint64Array(txMachine* the);
+extern void fx_Float32Array(txMachine* the);
+extern void fx_Float64Array(txMachine* the);
+extern void fx_Int8Array(txMachine* the);
+extern void fx_Int16Array(txMachine* the);
+extern void fx_Int32Array(txMachine* the);
+extern void fx_Uint8Array(txMachine* the);
+extern void fx_Uint16Array(txMachine* the);
+extern void fx_Uint32Array(txMachine* the);
+extern void fx_Uint8ClampedArray(txMachine* the);
+
 extern void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength);
 extern void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInteger baseLength);
 extern void fxBufferPaths(txLinker* linker);
@@ -196,6 +207,7 @@ extern void fxDefaultSymbols(txLinker* linker);
 extern txLinkerCallback* fxGetLinkerCallbackByAddress(txLinker* linker, txCallback which);
 extern txLinkerCallback* fxGetLinkerCallbackByName(txLinker* linker, txString name);
 extern void fxInitializeLinker(txLinker* linker);
+extern txBoolean fxIsCIdentifier(txLinker* linker, txString string);
 extern txBoolean fxIsCodeUsed(txU1 code);
 extern void fxMapScript(txLinker* linker, txLinkerScript* script);
 extern txHostFunctionBuilder* fxNewLinkerBuilder(txLinker* linker, txCallback callback, txInteger length, txID id);
@@ -206,12 +218,15 @@ extern txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name);
 extern txLinkerResource* fxNewLinkerResource(txLinker* linker, txString path, FILE** fileAddress);
 extern txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAddress);
 extern txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name);
+extern txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
 extern void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddress);
 extern txString fxRealDirectoryPath(txLinker* linker, txString path);
 extern txString fxRealFilePath(txLinker* linker, txString path);
 extern void fxReportLinkerError(txLinker* linker, txString theFormat, ...);
 extern void fxSlashPath(txString path, char from, char to);
 extern void fxTerminateLinker(txLinker* linker);
+extern void fxUnuseCode(txU1 code);
+extern void fxUseCodes();
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteCString(FILE* file, txString string);
 extern void fxWriteDefines(txLinker* linker, FILE* file);

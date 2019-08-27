@@ -19,8 +19,9 @@
  */
 
 #include "xsmc.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 #include "modBLE.h"
 #include "modTimer.h"
 

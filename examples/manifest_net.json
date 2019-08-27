@@ -32,13 +32,27 @@
 					"$(MODULES)/network/wifi/*",
 					"$(MODULES)/network/wifi/esp32/*",
 				],
-				"setup/network": "$(BUILD)/devices/esp/setup/network",
+				"setup/network": "$(BUILD)/devices/esp32/setup/network",
 			},
 			"preload": [
 				"socket",
 				"setup/network",
 				"sntp",
 				"wifi",
+				"net"
+			],
+		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/lin/*",
+				],
+			},
+			"preload": [
+				"socket",
 				"net"
 			],
 		},

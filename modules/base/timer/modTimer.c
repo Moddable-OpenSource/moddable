@@ -22,13 +22,7 @@
 #include "xsmc.h"
 
 #include "modTimer.h"
-#if __ets__ || defined(ESP32)
-	#include "xsesp.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-#elif defined(qca4020)
-	#include "xsqca4020.h"
-#endif
+#include "xsHost.h"
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void modTimerDelete(void *data);

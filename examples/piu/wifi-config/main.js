@@ -46,7 +46,11 @@ class ApplicationBehavior extends Behavior {
 		let now = Date.now();
 		if ((this.timeout) && (now > this.timeout)) {
 			trace("Attempt to connect to Wi-Fi timed out\n");
-			global.monitor = undefined;
+			if (global.monitor) {
+				global.monitor.close();
+				global.monitor = undefined;
+			}
+			WiFi.connect();
 			application.delegate("doNext", "CONNECTION_ERROR", this.nextScreenData);
 			delete this.timeout;
 			delete this.nextScreenData;
@@ -61,8 +65,12 @@ class ApplicationBehavior extends Behavior {
 		switch (nextScreenName) {
 			case "NETWORK_LIST_SCAN":
 				// expected nextScreenData: {}
-				application.add(new WiFiStatusSpinner({ status: "Finding networks..." }));
-				this.scan(application, true);
+				if (undefined === this.networks) {
+					application.add(new WiFiStatusSpinner({ status: "Finding networks..." }));
+					this.scan(application, true);
+				} else {
+					application.add(new NetworkListScreen({networks: this.networks}));
+				}
 				break;
 			case "NETWORK_LIST":
 				// expected nextScreenData: { networks: x } where x is a linked list created above^
@@ -78,7 +86,6 @@ class ApplicationBehavior extends Behavior {
 				this.timeout = Date.now() + 10000;
 				this.nextScreenData = nextScreenData;
 				global.monitor = new WiFi(nextScreenData, message => {
-					trace("message: "+message+"\n");
 					if (message == "gotIP"){
 					  	Net.resolve("pool.ntp.org", (name, host) => {
 							if (!host) {
@@ -88,7 +95,7 @@ class ApplicationBehavior extends Behavior {
 							}
 							trace(`resolved ${name} to ${host}\n`);
 							global.application.behavior.timeout = Date.now() + 10000;
-							global.monitor = new SNTP({host}, (message, value) => {
+							let sntp = new SNTP({host}, (message, value) => {
 								if (1 == message) {
 									Time.set(value);
 									delete global.application.behavior.timeout;
@@ -109,7 +116,6 @@ class ApplicationBehavior extends Behavior {
 				});
 				break;
 			case "CONNECTION_ERROR":
-				global.monitor = undefined;
 				application.add(new ConnectionErrorScreen(nextScreenData));
 				break;
 			case "SET_TIMEZONE":

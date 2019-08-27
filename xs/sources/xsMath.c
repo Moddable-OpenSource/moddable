@@ -86,11 +86,7 @@ void fxBuildMath(txMachine* the)
 	slot = fxNextNumberProperty(the, slot, C_M_SQRT1_2, mxID(_SQRT1_2), XS_GET_ONLY);
 	slot = fxNextNumberProperty(the, slot, C_M_SQRT2, mxID(_SQRT2), XS_GET_ONLY);
 	slot = fxNextStringXProperty(the, slot, "Math", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Math), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxMathObject);
 //@@	c_srand((unsigned)c_time(0));
 }
 

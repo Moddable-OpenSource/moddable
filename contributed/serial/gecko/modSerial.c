@@ -22,7 +22,7 @@
 #include "em_cmu.h"
 
 #include "xsmc.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "xsPlatform.h"
 
 #include "mc.defines.h"

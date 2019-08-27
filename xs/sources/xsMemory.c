@@ -471,13 +471,15 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anIndex--;
 	}
 	
-	(*theMarker)(the, &mxGlobal);
 	anArray = the->aliasArray;
 	anIndex = the->aliasCount;
 	while (anIndex) {
-		if ((aSlot = *anArray))
-			if (!(aSlot->flag & XS_MARK_FLAG))
-				fxMarkInstance(the, aSlot, theMarker);
+		if ((aSlot = *anArray)) {
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				(*theMarker)(the, aSlot);
+				aSlot->flag |= XS_MARK_FLAG;
+			}
+		}
 		anArray++;
 		anIndex--;
 	}
@@ -606,6 +608,11 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
+	case XS_MODULE_KIND:
+		aSlot = theSlot->value.module.realm;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkReference);
+		break;
 	case XS_EXPORT_KIND:
 		aSlot = theSlot->value.export.closure;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
@@ -641,6 +648,19 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			aSlot = aSlot->next;
 		}
 		break;
+		
+	case XS_PRIVATE_KIND:
+		aSlot = theSlot->value.private.check;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkReference);
+		aSlot = theSlot->value.private.first;
+		while (aSlot) {
+			aSlot->flag |= XS_MARK_FLAG;
+			fxMarkReference(the, aSlot);
+			aSlot = aSlot->next;
+		}
+		break;
+
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
 		{
@@ -776,6 +796,11 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
+	case XS_MODULE_KIND:
+		aSlot = theSlot->value.module.realm;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
 	case XS_EXPORT_KIND:
 		aSlot = theSlot->value.export.closure;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
@@ -801,6 +826,19 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			aSlot = aSlot->next;
 		}
 		break;
+		
+	case XS_PRIVATE_KIND:
+		aSlot = theSlot->value.private.check;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		aSlot = theSlot->value.private.first;
+		while (aSlot) {
+			aSlot->flag |= XS_MARK_FLAG;
+			fxMarkValue(the, aSlot);
+			aSlot = aSlot->next;
+		}
+		break;
+
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
 		{
@@ -1203,6 +1241,10 @@ void fxSweep(txMachine* the)
 					else if (bSlot->value.host.variant.destructor)
 						(*(bSlot->value.host.variant.destructor))(bSlot->value.host.data);
 				}
+// 				if (bSlot->kind == XS_MODULE_KIND) {
+// 					char* name = fxGetKeyName(the, bSlot->value.module.id);
+// 					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);
+// 				}
 			#if mxInstrument
 				if (bSlot->kind == XS_MODULE_KIND)
 					the->loadedModulesCount--;

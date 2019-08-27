@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.xs.h"
 #include "modBLE.h"
 
@@ -32,6 +32,8 @@
 void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
     int dev_num = esp_ble_get_bond_device_num();
+    if (0 == dev_num) return;
+    
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)c_malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
     if (!dev_list)
 		xsUnknownError("no memory");

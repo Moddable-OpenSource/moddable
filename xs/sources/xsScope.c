@@ -47,6 +47,7 @@ typedef struct {
 	mxBindHoistPart;
 	txInteger scopeLevel;
 	txInteger scopeMaximum;
+	txClassNode* classNode;
 } txBinder;
 
 typedef struct {
@@ -55,6 +56,7 @@ typedef struct {
 	txScope* bodyScope;
 	txNode* environmentNode;
 	txExportLink* firstExportLink;
+	txClassNode* classNode;
 } txHoister;
 
 struct sxExportlink {
@@ -86,6 +88,8 @@ static void fxMemberNodeBindCompound(void* it, void* param, txAssignNode* compou
 static void fxMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 static void fxMemberAtNodeBindCompound(void* it, void* param, txAssignNode* compound);
 static void fxMemberAtNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
+static void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound);
+static void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 
 void fxParserBind(txParser* parser)
 {
@@ -287,8 +291,17 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 	txDeclareNode* declaration;
 	if (self->token == XS_TOKEN_EVAL) {
 		declaration = fxScopeGetDeclareNode(self, access->symbol);
-		if ((!(self->flags & mxStrictFlag)) && declaration && ((declaration->description->token == XS_TOKEN_VAR) || (declaration->description->token == XS_TOKEN_DEFINE))) {
-			declaration = C_NULL;
+		if (declaration) {
+			if ((!(self->flags & mxStrictFlag)) && ((declaration->description->token == XS_TOKEN_VAR) || (declaration->description->token == XS_TOKEN_DEFINE))) {
+				declaration = C_NULL;
+			}
+		}
+		else if ((self->flags & mxStrictFlag) && (access->description->token == XS_TOKEN_PRIVATE_MEMBER)) {
+			declaration = fxDeclareNodeNew(self->parser, XS_TOKEN_PRIVATE, access->symbol);
+			declaration->flags |= mxDeclareNodeClosureFlag;
+			declaration->line = access->line;
+			fxScopeAddDeclareNode(self, declaration);
+			self->closureNodeCount++;
 		}
 		access->declaration = declaration;
 	}
@@ -342,7 +355,6 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 		}
 	}
 }
-
 
 void fxNodeHoist(void* it, void* param) 
 {
@@ -424,19 +436,74 @@ void fxClassNodeHoist(void* it, void* param)
 {
 	txClassNode* self = it;
 	txHoister* hoister = param;
-	txSymbol* symbol = self->symbol;
-	if (symbol) {
-		txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+	txClassNode* former = hoister->classNode;
+	txNode* item = self->items->first;
+	if (self->symbol) {
+		txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, self->symbol);
 		node->flags |= mxDeclareNodeClosureFlag;
-		self->scope = fxScopeNew(hoister, it, XS_TOKEN_BLOCK);
-		fxScopeAddDeclareNode(self->scope, node);
-	}	
+		self->symbolScope = fxScopeNew(hoister, it, XS_TOKEN_BLOCK);
+		fxScopeAddDeclareNode(self->symbolScope, node);
+	}
 	if (self->heritage)
 		fxNodeDispatchHoist(self->heritage, param);
+	self->scope = fxScopeNew(hoister, it, XS_TOKEN_BLOCK);
+	while (item) {
+		if (item->description->token == XS_TOKEN_PROPERTY) {
+		}
+		else if (item->description->token == XS_TOKEN_PROPERTY_AT) {
+			if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+			}
+			else {
+				txSymbol* symbol = fxNewParserChunkClear(hoister->parser, sizeof(txSymbol));
+				txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+				symbol->ID = -1;
+				node->flags |= mxDeclareNodeClosureFlag;
+				fxScopeAddDeclareNode(self->scope, node);
+				((txPropertyAtNode*)item)->atAccess = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+			}
+		}
+		else {
+			txSymbol* symbol = ((txPrivatePropertyNode*)item)->symbol;
+			txDeclareNode* node = fxScopeGetDeclareNode(self->scope, symbol);
+			if (node) {
+                txUnsigned flags = (node->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag)) ^ (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
+				if ((flags != (mxGetterFlag | mxSetterFlag)))
+					fxReportLineError(hoister->parser, item->line, "duplicate %s", symbol->string);
+			}
+			node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+			node->flags |= mxDeclareNodeClosureFlag | (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
+			fxScopeAddDeclareNode(self->scope, node);
+			((txPrivatePropertyNode*)item)->symbolAccess = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+			if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag)) {
+				txSymbol* symbol = fxNewParserChunkClear(hoister->parser, sizeof(txSymbol));
+				txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+				symbol->ID = -1;
+				node->flags |= mxDeclareNodeClosureFlag;
+				fxScopeAddDeclareNode(self->scope, node);
+				((txPrivatePropertyNode*)item)->valueAccess = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+			}
+		}
+		item = item->next;
+	}
+	if (self->instanceInit) {
+		txSymbol* symbol = fxNewParserChunkClear(hoister->parser, sizeof(txSymbol));
+		txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
+		symbol->ID = -1;
+		node->flags |= mxDeclareNodeClosureFlag;
+		fxScopeAddDeclareNode(self->scope, node);
+		self->instanceInitAccess = fxAccessNodeNew(hoister->parser, XS_TOKEN_ACCESS, symbol);
+	}
+	hoister->classNode = self;
 	fxNodeDispatchHoist(self->constructor, param);
 	fxNodeListDistribute(self->items, fxNodeDispatchHoist, param);
-	if (symbol)
-		fxScopeHoisted(self->scope, param);
+	if (self->constructorInit)
+		fxNodeDispatchHoist(self->constructorInit, param);
+	if (self->instanceInit)
+		fxNodeDispatchHoist(self->instanceInit, param);
+	hoister->classNode = former;
+	fxScopeHoisted(self->scope, param);
+	if (self->symbol)
+		fxScopeHoisted(self->symbolScope, param);
 }
 
 void fxDeclareNodeHoist(void* it, void* param) 
@@ -566,7 +633,6 @@ void fxExportNodeHoist(void* it, void* param)
 			node->importSpecifier = specifier;
 			fxScopeAddDeclareNode(hoister->scope, node);
 		}
-		return;
 	}
 	if (self->specifiers && self->specifiers->length) {
 		txSpecifierNode* specifier = (txSpecifierNode*)self->specifiers->first;
@@ -617,7 +683,7 @@ void fxFunctionNodeHoist(void* it, void* param)
 		fxScopeAddDefineNode(hoister->functionScope, node);
 	}
 	fxNodeDispatchHoist(self->params, param);
-	if (self->flags & mxArgumentsFlag) {
+	if (self->flags & (mxArgumentsFlag | mxEvalFlag)) {
 		txDeclareNode* declaration = fxDeclareNodeNew(hoister->parser, XS_TOKEN_VAR, hoister->parser->argumentsSymbol);
 		fxScopeAddDeclareNode(hoister->functionScope, declaration);
 	}	
@@ -854,32 +920,25 @@ void fxCatchNodeBind(void* it, void* param)
 void fxClassNodeBind(void* it, void* param) 
 {
 	txClassNode* self = it;
-	txNode* item = self->items->first;
+	txBinder* binder = param;
+	txClassNode* former = binder->classNode;
 	fxBinderPushVariables(param, 2);
-	if (self->scope)
-		fxScopeBinding(self->scope, param);
+	if (self->symbol)
+		fxScopeBinding(self->symbolScope, param);
 	if (self->heritage)
 		fxNodeDispatchBind(self->heritage, param);
+	fxScopeBinding(self->scope, param);
+	binder->classNode = self;
 	fxNodeDispatchBind(self->constructor, param);
-// 	if (self->symbol)
-// 		((txFunctionNode*)self->constructor)->symbol = self->symbol;
-	while (item) {
-		txNode* value;
-		if (item->description->token == XS_TOKEN_PROPERTY) {
-			value = ((txPropertyNode*)item)->value;
-		}
-		else {
-			value = ((txPropertyAtNode*)item)->value;
-		}
-		if ((value->description->token == XS_TOKEN_FUNCTION) || (value->description->token == XS_TOKEN_GENERATOR) || (value->description->token == XS_TOKEN_HOST)) {
-			txFunctionNode* node = (txFunctionNode*)value;
-			node->flags |= item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag);
-		}
-		fxNodeDispatchBind(item, param);
-		item = item->next;
-	}
-	if (self->scope) 
-		fxScopeBound(self->scope, param);
+	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+	if (self->constructorInit)
+		fxNodeDispatchBind(self->constructorInit, param);
+	if (self->instanceInit)
+		fxNodeDispatchBind(self->instanceInit, param);
+	binder->classNode = former;
+	fxScopeBound(self->scope, param);
+	if (self->symbol)
+		fxScopeBound(self->symbolScope, param);
 	fxBinderPopVariables(param, 2);
 }
 
@@ -890,6 +949,7 @@ void fxCompoundExpressionNodeBind(void* it, void* param)
 	case XS_TOKEN_ACCESS: fxAccessNodeBindCompound(self->reference, param, self); break;
 	case XS_TOKEN_MEMBER: fxMemberNodeBindCompound(self->reference, param, self); break;
 	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindCompound(self->reference, param, self); break;
+	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindCompound(self->reference, param, self); break;
 	}
 }
 
@@ -947,6 +1007,22 @@ void fxExportNodeBind(void* it, void* param)
 	}
 }
 
+void fxFieldNodeBind(void* it, void* param) 
+{
+	txFieldNode* self = it;
+	txBinder* binder = param;
+	txNode* item = self->item;
+	if (item->description->token == XS_TOKEN_PROPERTY_AT)
+		fxScopeLookup(binder->scope, ((txPropertyAtNode*)item)->atAccess, 0);
+	else if (item->description->token == XS_TOKEN_PRIVATE_PROPERTY) {
+		if (item->flags & (mxMethodFlag | mxGetterFlag | mxSetterFlag))
+			fxScopeLookup(binder->scope, ((txPrivatePropertyNode*)item)->valueAccess, 0);
+		fxScopeLookup(binder->scope, ((txPrivatePropertyNode*)item)->symbolAccess, 0);
+	}
+	if (self->value)
+		fxNodeDispatchBind(self->value, param);
+}
+
 void fxForNodeBind(void* it, void* param) 
 {
 	txForNode* self = it;
@@ -987,6 +1063,11 @@ void fxFunctionNodeBind(void* it, void* param)
 	binder->scopeMaximum = 0;
 	fxScopeBinding(self->scope, param);
 	fxNodeDispatchBind(self->params, param);
+	if (self->flags & mxBaseFlag) {
+		if (binder->classNode->instanceInitAccess) {
+			fxScopeLookup(binder->scope, binder->classNode->instanceInitAccess, 0);
+		}
+	}
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->body, param);
 	fxScopeBound(self->scope, param);
@@ -1008,7 +1089,7 @@ void fxFunctionNodeRename(void* it, txSymbol* symbol)
 	if (token == XS_TOKEN_CLASS) {
 		txClassNode* node = (txClassNode*)self;
 		if (!node->symbol)
-			node->symbol = symbol;
+			((txFunctionNode*)(node->constructor))->symbol = symbol;
 	}
 	else if ((token == XS_TOKEN_FUNCTION) || (token == XS_TOKEN_GENERATOR) || (token == XS_TOKEN_HOST)) {
 		txFunctionNode* node = (txFunctionNode*)self;
@@ -1163,7 +1244,31 @@ void fxPostfixExpressionNodeBind(void* it, void* param)
 	case XS_TOKEN_ACCESS: fxAccessNodeBindPostfix(self->left, param, self); break;
 	case XS_TOKEN_MEMBER: fxMemberNodeBindPostfix(self->left, param, self); break;
 	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindPostfix(self->left, param, self); break;
+	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindPostfix(self->left, param, self); break;
 	}
+}
+
+void fxPrivateMemberNodeBind(void* it, void* param) 
+{
+	txBinder* binder = param;
+	txPrivateMemberNode* self = it;
+	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
+	if (!self->declaration)
+		fxReportLineError(binder->parser, self->line, "invalid private identifier");
+	fxNodeDispatchBind(self->reference, param);
+}
+
+void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound) 
+{
+	fxPrivateMemberNodeBind(it, param);
+	fxNodeDispatchBind(compound->value, param);
+}
+
+void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
+{
+	fxPrivateMemberNodeBind(it, param);
+	fxBinderPushVariables(param, 1);
+	fxBinderPopVariables(param, 1);
 }
 
 void fxProgramNodeBind(void* it, void* param) 
@@ -1183,6 +1288,16 @@ void fxSpreadNodeBind(void* it, void* param)
 	fxBinderPushVariables(param, 1);
 	fxNodeDispatchBind(self->expression, param);
 	fxBinderPopVariables(param, 1);
+}
+
+void fxSuperNodeBind(void* it, void* param)
+{
+	txSuperNode* self = it;
+	txBinder* binder = param;
+	fxNodeDispatchBind(self->params, param);
+	if (binder->classNode->instanceInitAccess) {
+		fxScopeLookup(binder->scope, binder->classNode->instanceInitAccess, 0);
+	}
 }
 
 void fxSwitchNodeBind(void* it, void* param) 

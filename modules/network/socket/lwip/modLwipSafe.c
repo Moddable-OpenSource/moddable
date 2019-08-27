@@ -25,7 +25,7 @@
 #include "lwip/priv/tcpip_priv.h"
 
 typedef struct {
-	struct tcpip_api_call_data		call;
+	struct tcpip_api_call_data	call;
 
 	err_t						err;
 	struct tcp_pcb				*tcpPCB;

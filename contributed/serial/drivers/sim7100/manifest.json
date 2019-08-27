@@ -1,0 +1,13 @@
+{
+	"build": {
+		"SIM7100": "$(MODDABLE)/contributed/serial/drivers/sim7100"
+	},
+	"include": [
+		"$(MODDABLE)/contributed/serial/manifest.json"
+	],
+	"modules": {
+		"sim7100": "$(SIM7100)/sim7100"
+	},
+	"preload": "sim7100"
+}
+

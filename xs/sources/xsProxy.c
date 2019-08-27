@@ -88,8 +88,9 @@ void fxBuildProxy(txMachine* the)
 	mxPull(mxProxyAccessor);
 	the->stack += 2;
 	
-	slot = fxNewHostFunctionGlobal(the, mxCallback(fx_Proxy), 2, mxID(_Proxy), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostFunction(the, mxCallback(fx_Proxy), 2, mxID(_Proxy));
 	slot->flag |= XS_CAN_CONSTRUCT_FLAG;
+	mxProxyConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Proxy_revocable), 2, mxID(_revocable), XS_DONT_ENUM_FLAG);
 	the->stack++;
@@ -110,11 +111,7 @@ void fxBuildProxy(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Reflect_set), 3, mxID(_set), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Reflect_setPrototypeOf), 2, mxID(_setPrototypeOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Reflect", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Reflect), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxReflectObject);
 }
 
 txSlot* fxNewProxyInstance(txMachine* the)
@@ -173,7 +170,7 @@ void fxProxyGetter(txMachine* the)
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txID id = the->scratch.value.at.id;
@@ -188,7 +185,7 @@ void fxProxySetter(txMachine* the)
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
 		txID id = the->scratch.value.at.id;
@@ -273,6 +270,10 @@ txBoolean fxProxyDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 						if (!(the->stack->flag & XS_DONT_DELETE_FLAG))
 							mxTypeError("(proxy).defineProperty: true with non-configurable descriptor for configurable property");
 					}
+					if (the->stack->flag & XS_DONT_DELETE_FLAG) {
+						if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG) && !(the->stack->flag & XS_DONT_SET_FLAG))
+							mxTypeError("(proxy).defineProperty: true with non-writable descriptor for non-configurable writable property");
+					}
 				}
 				else
 					mxTypeError("(proxy).defineProperty: true with incompatible descriptor for existent property");
@@ -319,6 +320,8 @@ txBoolean fxProxyDeleteProperty(txMachine* the, txSlot* instance, txID id, txInd
 			if (mxBehaviorGetOwnProperty(the, target->value.reference, id, index, the->stack)) {
 				if (the->stack->flag & XS_DONT_DELETE_FLAG)
 					mxTypeError("(proxy).deleteProperty: true for non-configurable property");
+				if (!mxBehaviorIsExtensible(the, target->value.reference))
+					mxTypeError("(proxy).deleteProperty: true for non-extensible object");
 			}
 			mxPop();
 		}
@@ -384,6 +387,10 @@ txBoolean fxProxyGetOwnProperty(txMachine* the, txSlot* instance, txID id, txInd
 					if ((mask & XS_DONT_DELETE_FLAG) && (slot->flag & XS_DONT_DELETE_FLAG)) {
 						if (!(the->stack->flag & XS_DONT_DELETE_FLAG))
 							mxTypeError("(proxy).getOwnPropertyDescriptor: non-configurable descriptor for configurable property");
+					}
+					if (the->stack->flag & XS_DONT_DELETE_FLAG) {
+						if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG) && !(the->stack->flag & XS_DONT_SET_FLAG))
+							mxTypeError("(proxy).getOwnPropertyDescriptor: true with non-writable descriptor for non-configurable writable property");
 					}
 				}
 				else

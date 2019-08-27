@@ -84,7 +84,9 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Map", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxMapPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Map), 0, mxID(_Map), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Map), 0, mxID(_Map));
+	mxMapConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
 	
@@ -119,7 +121,9 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Set", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxSetPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Set), 0, mxID(_Set), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Set), 0, mxID(_Set));
+	mxSetConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
 	
@@ -148,7 +152,8 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_set), 2, mxID(_set), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "WeakMap", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxWeakMapPrototype = *the->stack;
-	fxNewHostConstructorGlobal(the, mxCallback(fx_WeakMap), 0, mxID(_WeakMap), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakMap), 0, mxID(_WeakMap));
+	mxWeakMapConstructor = *the->stack;
 	the->stack++;
 	
 	/* WEAK SET */
@@ -159,7 +164,8 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakSet_prototype_has), 1, mxID(_has), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "WeakSet", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxWeakSetPrototype = *the->stack;
-	fxNewHostConstructorGlobal(the, mxCallback(fx_WeakSet), 0, mxID(_WeakSet), XS_DONT_ENUM_FLAG);
+	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakSet), 0, mxID(_WeakSet));
+	mxWeakSetConstructor = *the->stack;
 	the->stack++;
 }
 
@@ -345,7 +351,7 @@ void fx_Map_prototype_forEach(txMachine* the)
 			else
 				mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			the->stack++;
 		}
@@ -646,7 +652,7 @@ void fx_Set_prototype_forEach(txMachine* the)
 			else
 				mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(function);
+			mxPushSlot(function);
 			fxCall(the);
 			the->stack++;
 		}

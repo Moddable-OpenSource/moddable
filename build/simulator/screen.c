@@ -294,8 +294,7 @@ void fxScreenLaunch(txScreen* screen)
 		xsSet(xsVar(0), xsID_pixelFormat, xsInteger(kCommodettoBitmapFormat));
 		xsSet(xsGlobal, xsID_screen, xsVar(0));
 
-		xsVar(0) = xsGet(xsGlobal, xsID_require);
-		xsVar(1) = xsCall1(xsVar(0), xsID_weak, xsString("main"));
+		xsVar(1) = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		if (xsTest(xsVar(1))) {
 			if (xsIsInstanceOf(xsVar(1), xsFunctionPrototype)) {
 				xsCallFunction0(xsVar(1), xsGlobal);

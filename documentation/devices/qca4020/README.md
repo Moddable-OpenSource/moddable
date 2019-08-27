@@ -504,11 +504,11 @@ The following pinout table and image describe the connections required to suppor
 | --- | --- | :--- |
 | `SDO (MISO)` | `J5 / 8` | 27
 | `LED (3.3V)` | `J1 / 4` | N/A
-| `SCK` | `J5 / 4` | 25
+| `SCK (CLK)` | `J5 / 4` | 25
 | `SDI (MOSI)` | `J5 / 6` |  26
-| `RESET` | `J5 / 19` | 13
+| `RESET` | `J1 / 4` | N/A
 | `CS` | `J5 / 2` | 24
-| `DC` | `J5 / 8` | 11
+| `DC` | `J5 / 15` | 11
 | `GND` | `J5 / 40` | N/A
 | `VCC` | `J1 / 4` | N/A
 

@@ -20,7 +20,7 @@
 
 #include "lpm013m126a.h"
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modGPIO.h"
 #include "modSPI.h"
 #include "commodettoBitmap.h"

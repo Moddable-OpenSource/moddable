@@ -20,10 +20,7 @@
 
 
 #include "xs.h"
-#include "xsqca4020.h"
 #include "xsPlatform.h"
-
-#include "mc.defines.h"
 
 #include "qapi_status.h"
 #include "qapi_types.h"
@@ -33,6 +30,7 @@
 #include "qurt_signal.h"
 #include "qurt_thread.h"
 #include "qurt_mutex.h"
+#include "qurt_timer.h"
 
 qurt_mutex_t gDebugMutex;
 static int debuggerSetup = 0;
@@ -44,7 +42,7 @@ static int debuggerSetup = 0;
 #define DEBUG_THREAD_PRIO		(20)
 #define DEBUG_THREAD_STACK_SIZE	2048
 
-#define RCV_BUFFER_SIZE				(128)
+#define RCV_BUFFER_SIZE				(1024)
 #define RCV_BUFFER_COUNT 			(2)
 
 #ifndef MODDEF_DEBUGGER_PORT
