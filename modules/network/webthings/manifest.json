@@ -23,4 +23,9 @@
 		"dns/serializer",
 		"webthings",
 	],
+	"platforms": {
+		"...": {
+			"warning": "Web Thing API support deprecated"
+		},
+	},
 }
