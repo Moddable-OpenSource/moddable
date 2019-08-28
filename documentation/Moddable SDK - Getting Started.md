@@ -265,7 +265,7 @@ More detailed getting started guides are available for the following devices:
 <a id="host-windows"></a>
 #### Host environment setup
 
-> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2019 or newer.
+> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
 
 1. Download [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
 
