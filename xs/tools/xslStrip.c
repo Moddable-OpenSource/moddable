@@ -294,6 +294,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
 	}
+	if (fxIsLinkerSymbolUsed(linker, mxID(_bind)))
+		fxUnstripCallback(linker, fx_Function_prototype_bound);
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
 		fxStripObject(linker, the, &mxJSONObject);
 	if (fxIsCallbackStripped(linker, fx_Map)) {
