@@ -268,27 +268,64 @@ void xs_ble_server_deploy(xsMachine *the)
 static void deployServices(xsMachine *the)
 {
 	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
+	static const ble_uuid16_t BT_UUID_GAP_DEVICE_NAME = BLE_UUID16_INIT(0x2A00);
+	static const ble_uuid16_t BT_UUID_GAP_APPEARANCE = BLE_UUID16_INIT(0x2A01);
 	uint8_t hasGAP = false;
+	char *device_name = NULL;
+	uint16_t appearance = BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER;
+	struct ble_gatt_access_ctxt ctxt = {0};
+	struct ble_gatt_chr_def chr_def = {0};
 
 	if (0 == service_count)
 		return;
-		
+	
+	ctxt.chr = &chr_def;
+    
 	// Set device name and appearance from app GAP service when available
+    
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
 		if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
 			hasGAP = true;
+			for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+				const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+				if (0 == ble_uuid_cmp((const ble_uuid_t*)characteristic->uuid, &BT_UUID_GAP_DEVICE_NAME.u)) {
+					chr_def.uuid = &BT_UUID_GAP_DEVICE_NAME.u;
+					ctxt.om = os_msys_get_pkthdr(32, 0);
+					if (0 == gatt_svr_chr_static_value_access_cb(0, 0, &ctxt, NULL)) {
+						device_name = c_calloc(1, ctxt.om->om_len + 1);
+						if (NULL == device_name)
+							xsUnknownError("no memory");
+						c_memmove(device_name, ctxt.om->om_data, ctxt.om->om_len);
+					}
+					os_mbuf_free_chain(ctxt.om);
+				}
+				if (0 == ble_uuid_cmp((const ble_uuid_t*)characteristic->uuid, &BT_UUID_GAP_APPEARANCE.u)) {
+					chr_def.uuid = &BT_UUID_GAP_APPEARANCE.u;
+					ctxt.om = os_msys_get_pkthdr(2, 0);
+					if (0 == gatt_svr_chr_static_value_access_cb(0, 0, &ctxt, NULL)) {
+						c_memmove(&appearance, ctxt.om->om_data, ctxt.om->om_len);
+					}
+					os_mbuf_free_chain(ctxt.om);
+				}
+			}
 			break;
 		}
 	}
 	
 	int rc = ble_gatts_reset();
+
 	if (0 == rc) {
-		if (!hasGAP) {
-			ble_svc_gap_init();
-			ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
-			ble_svc_gap_device_appearance_set(BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER);
+		ble_svc_gap_device_appearance_set(appearance);
+		if (NULL != device_name) {
+			ble_svc_gap_device_name_set(device_name);
+			c_free(device_name);
 		}
+		else
+			ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
+
+		if (!hasGAP)
+			ble_svc_gap_init();
 	}
 	if (0 == rc)
 		rc = ble_gatts_count_cfg(gatt_svr_svcs);
@@ -296,6 +333,7 @@ static void deployServices(xsMachine *the)
 		rc = ble_gatts_add_svcs(gatt_svr_svcs);
 	if (0 == rc)
 		rc = ble_gatts_start();
+		
 	if (0 != rc)
 		xsUnknownError("failed to start services");
 }
