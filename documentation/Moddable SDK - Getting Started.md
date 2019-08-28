@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: July 1, 2019
+Revised: August 28, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -265,9 +265,9 @@ More detailed getting started guides are available for the following devices:
 <a id="host-windows"></a>
 #### Host environment setup
 
-> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
+> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2019 or newer.
 
-1. Download [Microsoft Visual Studio 2017 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
+1. Download [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
 
 2. Create a `Projects` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for the Moddable SDK repository.
 
@@ -294,7 +294,7 @@ More detailed getting started guides are available for the following devices:
 	
 	> Environment variables should be set from the System Control Panel. The steps required vary depending on the Windows OS version.
 	
-6. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
+6. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
 	cd %MODDABLE%\build\makefiles\win
@@ -379,7 +379,7 @@ More detailed getting started guides are available for the following devices:
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
-14. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp` target:
+14. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
@@ -434,7 +434,7 @@ More detailed getting started guides are available for the following devices:
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
-11. Launch the "x86 Native Tools Command Prompt for VS 2017" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+11. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```
 	cd %MODDABLE%\examples\helloworld
