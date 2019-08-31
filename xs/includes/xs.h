@@ -1243,6 +1243,7 @@ typedef unsigned char xsAttribute;
 	enum {
 		XS_IMPORT_NAMESPACE = 0,
 		XS_IMPORT_DEFAULT = 1,
+		XS_IMPORT_PREFLIGHT = 2,
 	};
 #endif
 
