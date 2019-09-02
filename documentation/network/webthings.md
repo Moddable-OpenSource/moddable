@@ -1,6 +1,8 @@
 # Web Things
 Copyright 2018-2019 Moddable Tech, Inc.<BR>
-Revised: February 6, 2019
+Revised: August 28, 2019
+
+**IMPORTANT**: Web Thing API support in the Moddable SDK is **deprecated** as of August 28, 2019.
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 

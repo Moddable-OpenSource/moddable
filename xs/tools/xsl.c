@@ -301,7 +301,8 @@ int main(int argc, char* argv[])
 			creation->symbolModulo = linker->creation.symbolModulo;
 			the = xsCreateMachine(creation, "xsl", linker);
 			mxThrowElse(the);
-			
+			fxNewLinkerCallback(the, fx_Function_prototype_bound, "fx_Function_prototype_bound");
+				
 			xsBeginHost(the);
 			{
 				xsVars(2);
