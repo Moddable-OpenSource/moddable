@@ -90,6 +90,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsAtomics.o \
 	$(TMP_DIR)/xsBigInt.o \
 	$(TMP_DIR)/xsBoolean.o \
+	$(TMP_DIR)/xsCode.o \
 	$(TMP_DIR)/xsCommon.o \
 	$(TMP_DIR)/xsDataView.o \
 	$(TMP_DIR)/xsDate.o \
@@ -100,6 +101,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsGenerator.o \
 	$(TMP_DIR)/xsGlobal.o \
 	$(TMP_DIR)/xsJSON.o \
+	$(TMP_DIR)/xsLexical.o \
 	$(TMP_DIR)/xsMapSet.o \
 	$(TMP_DIR)/xsMarshall.o \
 	$(TMP_DIR)/xsMath.o \
@@ -114,8 +116,13 @@ OBJECTS = \
 	$(TMP_DIR)/xsProxy.o \
 	$(TMP_DIR)/xsRegExp.o \
 	$(TMP_DIR)/xsRun.o \
+	$(TMP_DIR)/xsScope.o \
+	$(TMP_DIR)/xsScript.o \
+	$(TMP_DIR)/xsSourceMap.o \
 	$(TMP_DIR)/xsString.o \
 	$(TMP_DIR)/xsSymbol.o \
+	$(TMP_DIR)/xsSyntaxical.o \
+	$(TMP_DIR)/xsTree.o \
 	$(TMP_DIR)/xsType.o \
 	$(TMP_DIR)/xsdtoa.o \
 	$(TMP_DIR)/xsre.o \

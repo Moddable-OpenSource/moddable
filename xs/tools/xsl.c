@@ -382,9 +382,11 @@ int main(int argc, char* argv[])
 			linker->bigintSize = 0;
 			linker->slotSize = 0;
 			count = fxPrepareHeap(the);
-			if (linker->freezeFlag)
-				fxCheckAliases(the);
-	
+			if (linker->freezeFlag) {
+				txInteger count = fxCheckAliases(the);
+				if (count)
+					fxReportLinkerError(linker, "%d error(s)", count);
+			}
 			c_strcpy(path, output);
 			c_strcat(path, name);
 			c_strcat(path, ".xs.h");
@@ -834,7 +836,24 @@ txScript* fxLoadScript(txMachine* the, txString path)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-	return C_NULL;
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
 }
 
 /* DEBUG */

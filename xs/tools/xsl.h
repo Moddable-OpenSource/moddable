@@ -38,6 +38,8 @@
 #include "xsAll.h"
 #include "xs.h"
 
+#include "xsScript.h"
+
 #define XS_ATOM_INCREMENTAL 0x58535F49 /* 'XS_I' */
 
 enum {
@@ -247,7 +249,7 @@ extern void fxWriteStrips(txLinker* linker, FILE* file);
 extern void fxOptimize(txLinker* linker);
 
 /* xslSlot.c */
-extern void fxCheckAliases(txMachine* the);
+extern txInteger fxCheckAliases(txMachine* the);
 extern void fxLinkerScriptCallback(txMachine* the);
 extern txInteger fxPrepareHeap(txMachine* the);
 extern void fxPrintBuilders(txMachine* the, FILE* file);

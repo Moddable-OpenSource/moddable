@@ -51,6 +51,7 @@ struct sxAliasIDList {
 	txAliasIDLink* first;
 	txAliasIDLink* last;
 	txFlag* aliases;
+	txInteger errorCount;
 };
 
 static void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag);
@@ -76,6 +77,7 @@ enum {
 	XSL_SETTER_FLAG,
 	XSL_PROXY_HANDLER_FLAG,
 	XSL_PROXY_TARGET_FLAG,
+	XSL_GLOBAL_FLAG,
 };
 
 #define mxPushLink(name,ID,FLAG) \
@@ -108,7 +110,7 @@ txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, t
 	return fxNewHostFunction(the, call, length, id);
 }
 
-void fxCheckAliases(txMachine* the) 
+txInteger fxCheckAliases(txMachine* the) 
 {
 	txLinker* linker = xsGetContext(the);
 	txAliasIDList _list = { C_NULL, C_NULL }, *list = &_list;
@@ -139,13 +141,28 @@ void fxCheckAliases(txMachine* the)
 		}
 		module = module->next;
 	}
+	{
+		txSlot* global = mxGlobal.value.reference->next->next;
+		while (global) {
+			mxPushLink(globalLink, global->ID, XSL_GLOBAL_FLAG);
+			if (global->kind == XS_REFERENCE_KIND) {
+				fxCheckInstanceAliases(the, global->value.reference, list);
+			}
+			mxPopLink(globalLink);
+			global = global->next;
+		}
+	}
+	return list->errorCount;
 }
 
 void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag) 
 {
 	txLinker* linker = xsGetContext(the);
 	txAliasIDLink* link = list->first;
-	fprintf(stderr, "### warning");
+	if (flag == 2)
+		fprintf(stderr, "### error");
+	else
+		fprintf(stderr, "### warning");
 	while (link) {
 		switch (link->flag) {
 		case XSL_PROPERTY_FLAG: fprintf(stderr, "."); break;
@@ -171,6 +188,9 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 						else
 							fprintf(stderr, "%s", string);
 					}
+					else if (link->flag == XSL_GLOBAL_FLAG) {
+						fprintf(stderr, "globalThis"); 
+					}
 					else
 						fprintf(stderr, "%s", string);
 				}
@@ -184,7 +204,11 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 			fprintf(stderr, "]");
 		link = link->next;
 	}
-	if (flag)
+	if (flag== 2) {
+		fprintf(stderr, ": regexp\n");
+		list->errorCount++;
+	}
+	else if (flag)
 		fprintf(stderr, ": not frozen\n");
 	else
 		fprintf(stderr, ": no const\n");
@@ -264,6 +288,9 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 		else if ((property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 			if (property->value.code.closures)
 				fxCheckEnvironmentAliases(the, property->value.code.closures, list);
+		}
+		else if (property->kind == XS_REGEXP_KIND) {
+			fxCheckAliasesError(the, list, 2);
 		}
 		else if (property->kind == XS_PROXY_KIND) {
 			if (property->value.proxy.handler) {
