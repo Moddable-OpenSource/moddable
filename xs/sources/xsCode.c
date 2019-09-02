@@ -3966,11 +3966,8 @@ void fxTemplateNodeCode(void* it, void* param)
 				fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
 			}
 			else {
-				fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
 				fxNodeDispatchCode(item, param);
-				fxCoderAddByte(param, 1, XS_CODE_DUB);
-				fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, parser->toStringSymbol);
-				fxCoderAddByte(param, -2, XS_CODE_CALL);
+				fxCoderAddByte(param, 1, XS_CODE_TO_STRING);
 			}
 			fxCoderAddByte(param, -1, XS_CODE_ADD);
 			item = item->next;
