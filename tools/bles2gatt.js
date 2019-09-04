@@ -341,7 +341,7 @@ class ESP32GATTFile extends GATTFile {
 			props = "char_prop_read";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
 			props = "char_prop_write";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY)
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_write_notify";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
 			props = "char_prop_write_nr";
