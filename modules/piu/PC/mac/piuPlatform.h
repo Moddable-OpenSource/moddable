@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,7 +33,7 @@
 #define NSWindowStyleMaskResizable NSResizableWindowMask
 #endif
 
-#ifndef MAC_OS_X_VERSION_10_14
+#ifndef MAC_OS_X_VERSION_10_13
 #define NSControlStateValueOn NSOnState
 #define NSControlStateValueOff NSOffState
 #endif
