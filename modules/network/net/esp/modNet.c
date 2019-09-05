@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -118,11 +118,11 @@ void xs_net_get(xsMachine *the)
 #if ESP32
 		wifi_ap_record_t config;
 
-		if (ESP_OK == esp_wifi_sta_get_ap_info(&config))
+		if ((ESP_OK == esp_wifi_sta_get_ap_info(&config)) && config.ssid[0])
 #else
 		struct station_config config;
 
-		if (wifi_station_get_config(&config))
+		if (wifi_station_get_config(&config) && config.ssid[0])
 #endif
 			xsResult = xsString(config.ssid);
 	}
