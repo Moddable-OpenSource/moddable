@@ -57,3 +57,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 void xs_ble_server_deploy(xsMachine *the)
 {
 }
+
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+}
