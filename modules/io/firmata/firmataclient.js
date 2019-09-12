@@ -702,7 +702,6 @@ class Poco {
 	}
 }
 
-//@@ untested
 export class FirmataClientSerial extends FirmataClient {
 	constructor(dictionary) {
 		super(dictionary);
