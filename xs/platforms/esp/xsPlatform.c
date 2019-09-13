@@ -907,10 +907,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 		the->inPrintf = more;
 
-		c = the->echoBuffer;
-		count = the->echoOffset;
-		while (count--)
-			ESP_putc(*c++);
+		ESP_put(the->echoBuffer, the->echoOffset);
 
 		if (!more)
 			mxDebugMutexGive();
@@ -982,6 +979,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				modDelayMilliseconds(1000);
 			return;
 
+#if MODDEF_XS_MODS
 		case 2: {		// uninstall
 			uint8_t erase[16] = {0};
 #if ESP32
@@ -1012,7 +1010,6 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					resultCode = 0;
 			}
 #else
-			// check for overflow...
 			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
 				resultCode = -1;
 				break;
@@ -1031,6 +1028,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
+#endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
