@@ -354,6 +354,21 @@ int main(int argc, char* argv[])
 							mxHostInspectors = mxUndefined;
 							mxInstanceInspectors = mxUndefined;
 						}
+						{
+							txSlot* target = fxNewInstance(the);
+							script = linker->firstScript;
+							c_memcpy(path, linker->base, linker->baseLength);
+							while (script) {
+								target = target->next = fxNewSlot(the);
+								c_strcpy(path + linker->baseLength, script->path);
+								target->value.symbol = fxNewNameC(the, path);
+								target->kind = XS_SYMBOL_KIND;
+								path[c_strlen(path) - 4] = 0;
+								target->ID = fxNewNameC(the, path + linker->baseLength);
+								script = script->nextScript;
+							}
+							mxPull(mxHosts); //@@
+						}
 						if (linker->stripFlag) {
 							fxFreezeBuiltIns(the);
 							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
@@ -846,6 +861,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
 	
 	mxPush(mxProgram); fxFreezeBuiltIn(the); //@@
+	mxPush(mxHosts); fxFreezeBuiltIn(the); //@@
 	
 }
 
