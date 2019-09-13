@@ -40,6 +40,7 @@
 #include "stdio.h"
 #include "lwip/tcp.h"
 #include "modLwipSafe.h"
+#include "mc.defines.h"
 
 #if ESP32
 	#include "rom/ets_sys.h"
@@ -1127,6 +1128,23 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				c_strcpy((void *)(bytes + 1), cmd);
 				modTimerAdd(0, 0, doLoadModule, bytes, cmdLen + sizeof(uintptr_t));
 			}
+			break;
+
+
+		case 11:
+			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
+			break;
+
+		case 12:
+			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
+			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
+			break;
+
+		case 13:
+			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
+			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
 			break;
 
 		default:
