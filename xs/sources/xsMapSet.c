@@ -63,6 +63,9 @@ static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot
 static txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
+static void fxKeepDuringJobs(txMachine* the, txSlot* target);
+static txSlot* fxNewWeakRefInstance(txMachine* the);
+
 void fxBuildMapSet(txMachine* the)
 {
 	txSlot* slot;
@@ -166,6 +169,16 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakSetPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakSet), 0, mxID(_WeakSet));
 	mxWeakSetConstructor = *the->stack;
+	the->stack++;
+	
+	/* WEAK REF */
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakRef_prototype_deref), 0, mxID(_deref), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "WeakRef", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxWeakRefPrototype = *the->stack;
+	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakRef), 1, mxID(_WeakRef));
+	mxWeakRefConstructor = *the->stack;
 	the->stack++;
 }
 
@@ -1222,9 +1235,79 @@ txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)
 	return result;
 }
 
+void fxKeepDuringJobs(txMachine* the, txSlot* target)
+{
+	txSlot* instance = mxDuringJobs.value.reference;
+	txSlot** address = &(instance->next);
+	txSlot* slot;
+	while ((slot = *address)) {
+		if (slot->value.reference == target)
+			return;
+		address = &(slot->next);
+	}
+	*address = slot = fxNewSlot(the);
+	slot->value.reference = target;
+	slot->kind = XS_REFERENCE_KIND;
+}
 
+txSlot* fxCheckWeakRefInstance(txMachine* the, txSlot* slot)
+{
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_REF_KIND))
+			return instance;
+	}
+	mxTypeError("this is no WeakRef instance");
+	return C_NULL;
+}
 
+txSlot* fxNewWeakRefInstance(txMachine* the)
+{
+	txSlot* slot;
+	txSlot* instance = fxNewSlot(the);
+	instance->kind = XS_INSTANCE_KIND;
+	instance->value.instance.garbage = C_NULL;
+	instance->value.instance.prototype = the->stack->value.reference;
+	the->stack->kind = XS_REFERENCE_KIND;
+	the->stack->value.reference = instance;
+	slot = instance->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->kind = XS_WEAK_REF_KIND;
+	slot->value.weakRef.target = C_NULL;
+	slot->value.weakRef.link = C_NULL;
+	return instance;
+}
 
+void fx_WeakRef(txMachine* the)
+{
+	txSlot* target;
+	txSlot* instance;
+	if (mxIsUndefined(mxTarget))
+		mxTypeError("call: WeakSet");
+	if (mxArgc < 1)
+		mxTypeError("new WeakSet: no target");
+	target = mxArgv(0);
+	if (!mxIsReference(target))
+		mxTypeError("new WeakSet: target is no object");
+	target = target->value.reference;
+	mxPushSlot(mxTarget);
+	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);
+	instance = fxNewWeakRefInstance(the);
+	mxPullSlot(mxResult);
+	fxKeepDuringJobs(the, target);
+	instance->next->value.weakRef.target = target;
+}
+
+void fx_WeakRef_prototype_deref(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakRefInstance(the, mxThis);
+	txSlot* target = instance->next->value.weakRef.target;
+	if (target) {
+		fxKeepDuringJobs(the, target);
+		mxResult->value.reference = target;
+		mxResult->kind = XS_REFERENCE_KIND;
+	}
+}
 
 
 

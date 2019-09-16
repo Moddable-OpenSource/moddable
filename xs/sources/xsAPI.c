@@ -1322,6 +1322,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxDuringJobs */
+			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1561,6 +1563,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxDuringJobs */
+			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1781,6 +1785,8 @@ void fxEndHost(txMachine* the)
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
+	if (the->frame == C_NULL)
+		mxDuringJobs.value.reference->next = C_NULL;
 }
 
 typedef struct {

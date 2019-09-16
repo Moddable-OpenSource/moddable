@@ -354,6 +354,7 @@ int main(int argc, char* argv[])
 							}
 							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
 							mxProgram.value.reference = modules; //@@
+							mxDuringJobs = mxUndefined;
 							mxPendingJobs = mxUndefined;
 							mxRunningJobs = mxUndefined;
 							mxBreakpoints = mxUndefined;

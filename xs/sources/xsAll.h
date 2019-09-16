@@ -254,6 +254,7 @@ typedef union {
 	struct { txSlot* address; txIndex length; } stack;
 	struct { txSlot** address; txSize length; } table;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
+	struct { txSlot* target; txSlot* link; } weakRef;
 	
 	struct { txSlot* getter; txSlot* setter; } accessor;
 	struct { txU4 index; txID id; } at;
@@ -377,6 +378,7 @@ struct sxMachine {
 	
 	txSlot* firstWeakMapTable;
 	txSlot* firstWeakSetTable;
+	txSlot* firstWeakRefLink;
 
 	txSize currentChunksSize;
 	txSize peakChunksSize;
@@ -1534,6 +1536,8 @@ mxExport void fx_WeakSet(txMachine* the);
 mxExport void fx_WeakSet_prototype_add(txMachine* the);
 mxExport void fx_WeakSet_prototype_delete(txMachine* the);
 mxExport void fx_WeakSet_prototype_has(txMachine* the);
+mxExport void fx_WeakRef(txMachine* the);
+mxExport void fx_WeakRef_prototype_deref(txMachine* the);
 
 extern void fxBuildMapSet(txMachine* the);
 extern txSlot* fxNewMapInstance(txMachine* the);
@@ -1781,6 +1785,7 @@ enum {
 	XS_SET_KIND, // 30
 	XS_TYPED_ARRAY_KIND,
 	XS_WEAK_MAP_KIND,
+	XS_WEAK_REF_KIND,
 	XS_WEAK_SET_KIND,
 
 	XS_ACCESSOR_KIND,
@@ -1788,8 +1793,8 @@ enum {
 	XS_ENTRY_KIND,
 	XS_ERROR_KIND,
 	XS_HOME_KIND,
-	XS_KEY_KIND,
-	XS_KEY_X_KIND, //40
+	XS_KEY_KIND, //40
+	XS_KEY_X_KIND,
 	XS_LIST_KIND,
 	XS_PRIVATE_KIND,
 	XS_STACK_KIND,
@@ -2179,6 +2184,7 @@ enum {
 	mxProgramStackIndex,
 	mxHostsStackIndex,
 
+	mxDuringJobsStackIndex,
 	mxPendingJobsStackIndex,
 	mxRunningJobsStackIndex,
 	mxBreakpointsStackIndex,
@@ -2209,6 +2215,7 @@ enum {
 	mxSetPrototypeStackIndex,
 	mxWeakMapPrototypeStackIndex,
 	mxWeakSetPrototypeStackIndex,
+	mxWeakRefPrototypeStackIndex,
 	mxPromisePrototypeStackIndex,
 	mxProxyPrototypeStackIndex,
 	mxSharedArrayBufferPrototypeStackIndex,
@@ -2282,6 +2289,7 @@ enum {
 #define mxException the->stackTop[-1 - mxExceptionStackIndex]
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
+#define mxDuringJobs the->stackTop[-1 - mxDuringJobsStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]
 #define mxRunningJobs the->stackTop[-1 - mxRunningJobsStackIndex]
 #define mxBreakpoints the->stackTop[-1 - mxBreakpointsStackIndex]
@@ -2332,6 +2340,7 @@ enum {
 #define mxUint8ArrayConstructor the->stackPrototypes[-1 - _Uint8Array]
 #define mxUint8ClampedArrayConstructor the->stackPrototypes[-1 - _Uint8ClampedArray]
 #define mxWeakMapConstructor the->stackPrototypes[-1 - _WeakMap]
+#define mxWeakRefConstructor the->stackPrototypes[-1 - _WeakRef]
 #define mxWeakSetConstructor the->stackPrototypes[-1 - _WeakSet]
 #define mxDecodeURIFunction the->stackPrototypes[-1 - _decodeURI]
 #define mxDecodeURIComponentFunction the->stackPrototypes[-1 - _decodeURIComponent]
@@ -2371,6 +2380,7 @@ enum {
 #define mxSetPrototype the->stackPrototypes[-1 - mxSetPrototypeStackIndex]
 #define mxWeakMapPrototype the->stackPrototypes[-1 - mxWeakMapPrototypeStackIndex]
 #define mxWeakSetPrototype the->stackPrototypes[-1 - mxWeakSetPrototypeStackIndex]
+#define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
 #define mxPromisePrototype the->stackPrototypes[-1 - mxPromisePrototypeStackIndex]
 #define mxProxyPrototype the->stackPrototypes[-1 - mxProxyPrototypeStackIndex]
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]

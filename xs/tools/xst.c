@@ -675,7 +675,6 @@ void fxRunFile(txContext* context, char* path)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (!strcmp((char*)node->data.scalar.value, "FinalizationGroup")
-			||	!strcmp((char*)node->data.scalar.value, "WeakRef")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -814,11 +813,33 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				mxPop();
 			}
 			mxPop();
-			
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
+		}
+		xsCatch {
+			if (context->negative) {
+				txString name;
+				xsResult = xsGet(xsException, xsID("constructor"));
+				name = xsToString(xsGet(xsResult, xsID("name")));
+				if (strcmp(name, (char*)context->negative->data.scalar.value))
+					snprintf(message, 1024, "# Expected a %s but got a %s", context->negative->data.scalar.value, name);
+				else {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+			}
+			else {
+				xsToStringBuffer(xsException, message, 1024);
+			}
+		}
+	}
+	xsEndHost(the);
+	
+	xsBeginHost(machine);
+	{
+		xsTry {
 			fxRunLoop(the);
 			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);

@@ -685,6 +685,12 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		theSlot->value.table.address[theSlot->value.table.length] = the->firstWeakSetTable;
 		the->firstWeakSetTable = theSlot;
 		break;
+	case XS_WEAK_REF_KIND:
+		if (theSlot->value.weakRef.target) {
+			theSlot->value.weakRef.link = the->firstWeakRefLink;
+			the->firstWeakRefLink = theSlot;
+		}
+		break;
 		
 	case XS_HOST_INSPECTOR_KIND:
 		aSlot = theSlot->value.hostInspector.cache;
@@ -866,6 +872,12 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		theSlot->value.table.address[theSlot->value.table.length] = the->firstWeakSetTable;
 		the->firstWeakSetTable = theSlot;
 		break;
+	case XS_WEAK_REF_KIND:
+		if (theSlot->value.weakRef.target) {
+			theSlot->value.weakRef.link = the->firstWeakRefLink;
+			the->firstWeakRefLink = theSlot;
+		}
+		break;
 		
 	case XS_HOST_INSPECTOR_KIND:
 		aSlot = theSlot->value.hostInspector.cache;
@@ -924,19 +936,26 @@ void fxMarkWeakSetTable(txMachine* the, txSlot* table)
 
 void fxMarkWeakTables(txMachine* the, void (*theMarker)(txMachine*, txSlot*)) 
 {
-	txSlot* table;
+	txSlot* slot;
 	txSlot** address;
 	address = &the->firstWeakMapTable;
-	while ((table = *address)) {
-		fxMarkWeakMapTable(the, table, theMarker);
+	while ((slot = *address)) {
+		fxMarkWeakMapTable(the, slot, theMarker);
 		*address = C_NULL;
-		address = &(table->value.table.address[table->value.table.length]);
+		address = &(slot->value.table.address[slot->value.table.length]);
 	}
 	address = &the->firstWeakSetTable;
-	while ((table = *address)) {
-		fxMarkWeakSetTable(the, table);
+	while ((slot = *address)) {
+		fxMarkWeakSetTable(the, slot);
 		*address = C_NULL;
-		address = &(table->value.table.address[table->value.table.length]);
+		address = &(slot->value.table.address[slot->value.table.length]);
+	}
+	address = &the->firstWeakRefLink;
+	while ((slot = *address)) {
+		if (!(slot->value.weakRef.target->flag & XS_MARK_FLAG))
+			slot->value.weakRef.target = C_NULL;
+		*address = C_NULL;
+		address = &(slot->value.weakRef.link);
 	}
 }
 
