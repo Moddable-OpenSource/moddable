@@ -361,7 +361,6 @@ int main(int argc, char* argv[])
 							mxInstanceInspectors = mxUndefined;
 						}
 						if (linker->freezeFlag) {
-						{
 							txSlot* target = fxNewInstance(the);
 							script = linker->firstScript;
 							c_memcpy(path, linker->base, linker->baseLength);
