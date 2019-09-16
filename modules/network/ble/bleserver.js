@@ -76,6 +76,19 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	
 	disconnect() @ "xs_ble_server_disconnect"
 
+	getServiceAttributes(uuid) {
+		let atts = this._getServiceAttributes(uuid);
+		if (undefined === atts)
+			return [];
+		atts.forEach(att => {
+			if (undefined !== att.type && undefined !== att.value) {
+				att.value = typedBufferToValue(att.type, att.value);
+			}
+			att.uuid = new Bytes(att.uuid);
+		});
+		return atts;
+	}
+	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onCharacteristicRead() {}
@@ -97,6 +110,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	_getLocalAddress() @ "xs_ble_server_get_local_address"
 	
 	_setSecurityParameters() @ "xs_ble_server_set_security_parameters"
+
+	_getServiceAttributes() @ "xs_ble_server_get_service_attributes"
 
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);

@@ -95,6 +95,9 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 
 static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
 
+static const char_name_table *handleToCharName(uint16_t handle);
+static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle);
+
 static void logGATTSEvent(esp_gatts_cb_event_t event);
 static void logGAPEvent(esp_gap_ble_cb_event_t event);
 
@@ -260,6 +263,60 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
 	c_memmove(&bda, address, sizeof(bda));
 	esp_ble_confirm_reply(bda, confirm);
+}
+
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	esp_bt_uuid_t uuid;
+	const esp_gatts_attr_db_t *attr;
+	uint16_t serviceIndex;
+	uint8_t found = false;
+	uint16_t argc = xsmcArgc;
+	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	xsmcVars(2);
+	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
+		attr = &gatt_db[serviceIndex][0];
+		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) return;
+	
+	xsResult = xsmcNewArray(0);
+
+	for (uint16_t j = 0; j < attribute_counts[serviceIndex]; ++j) {
+		const char_name_table *char_name;
+		uint16_t handle = gBLE->handles[serviceIndex][j];
+		attr = &gatt_db[serviceIndex][j];
+		
+		xsVar(0) = xsmcNewObject();
+		xsmcSetInteger(xsVar(1), handle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+		if (0 == j) {
+			xsmcSetArrayBuffer(xsVar(1), attr->att_desc.value, attr->att_desc.length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		}
+		else {
+			xsmcSetArrayBuffer(xsVar(1), attr->att_desc.uuid_p, attr->att_desc.uuid_length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		}
+		for (uint16_t k = 0; k < char_name_count; ++k) {
+			if (serviceIndex == char_names[k].service_index && j == char_names[k].att_index) {
+				xsmcSetString(xsVar(1), (char*)char_names[k].name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(1));
+				xsmcSetString(xsVar(1), (char*)char_names[k].type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(1));
+				if (NULL != attr->att_desc.value) {
+					xsmcSetArrayBuffer(xsVar(1), attr->att_desc.value, attr->att_desc.length);
+					xsmcSet(xsVar(0), xsID_value, xsVar(1));
+				}
+				break;
+			}
+		}
+		xsCall1(xsResult, xsID_push, xsVar(0));
+	}
 }
 
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
@@ -513,7 +570,7 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
-static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
+const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j])
@@ -523,7 +580,7 @@ static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
 	return NULL;
 }
 
-static const char_name_table *handleToCharName(uint16_t handle) {
+const char_name_table *handleToCharName(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j]) {

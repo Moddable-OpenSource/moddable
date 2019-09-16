@@ -206,6 +206,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	gecko_cmd_sm_passkey_confirm(gBLE->connection, confirm);
 }
 
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
+}
+
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
 {
 	for (uint8_t i = 0; i < 6; ++i)

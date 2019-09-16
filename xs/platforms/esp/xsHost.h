@@ -93,6 +93,9 @@ extern void espFreeUint32(void *t);
 */
 
 extern void modLog_transmit(const char *msg);
+extern void ESP_putc(int c);
+extern void ESP_put(uint8_t *c, int count);
+
 
 #if !ESP32
 	#define modLog(msg) \

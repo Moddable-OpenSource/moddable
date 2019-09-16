@@ -239,11 +239,11 @@ class ESP32GATTFile extends GATTFile {
 				if ("value" in characteristic)
 					file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 				else {
-					let char_name = { service_index:index, att_index:attributeIndex, name:key };
-					char_name.type = characteristic.type ? characteristic.type: "";
-					char_names.push(char_name);
 					file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 				}
+				let char_name = { service_index:index, att_index:attributeIndex, name:key };
+				char_name.type = characteristic.type ? characteristic.type: "";
+				char_names.push(char_name);
 				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${maxBytes}, `);
 				if ("value" in characteristic)
 					file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
@@ -278,11 +278,11 @@ class ESP32GATTFile extends GATTFile {
 						if ("value" in descriptor)
 							file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 						else {
-							let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
-							char_name.type = descriptor.type ? descriptor.type: "";
-							char_names.push(char_name);
 							file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 						}
+						let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
+						char_name.type = descriptor.type ? descriptor.type: "";
+						char_names.push(char_name);
 						file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&desc_uuid${descriptorIndex}, ${permissions}, ${descriptor.maxBytes}, `);
 						if ("value" in descriptor)
 							file.write(`${descriptor._length}, (uint8_t*)&desc_value${descriptorIndex}}`);
@@ -341,7 +341,7 @@ class ESP32GATTFile extends GATTFile {
 			props = "char_prop_read";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
 			props = "char_prop_write";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY)
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_write_notify";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
 			props = "char_prop_write_nr";

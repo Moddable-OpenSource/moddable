@@ -148,7 +148,7 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-	xsc file [-c] [-d] [-e] [-m] [-o directory] [-p] [-r name] [-t directory]
+	xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
 
 - `file`: the path of a JS file to compile.
 - `-c`: to accept the `@` constructs that reference host functions and host objects. With the `-c` option and without the `-e` option, **xsc** generates C code that declares XS symbols, host functions and host objects.

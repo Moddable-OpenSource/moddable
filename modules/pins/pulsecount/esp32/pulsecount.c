@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -93,19 +93,30 @@ void xs_pulsecount(xsMachine *the)
 	pcnt_counter_resume(pc.unit);
 }
 
+void xs_pulsecount_close(xsMachine *the)
+{
+	PulseCount pc = xsmcGetHostChunk(xsThis);
+	if (!pc) return;
+	xs_pulsecount_destructor(pc);
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void xs_pulsecount_get(xsMachine *the)
 {
 	PulseCount pc = xsmcGetHostChunk(xsThis);
 	int16_t count;
 
-	pcnt_get_counter_value(pc->unit, &count);
+	if (!pc) return;
 
+	pcnt_get_counter_value(pc->unit, &count);
 	xsmcSetInteger(xsResult, count + pc->base);
 }
 
 void xs_pulsecount_set(xsMachine *the)
 {
 	PulseCount pc = xsmcGetHostChunk(xsThis);
+	if (!pc) return;
+
 	pc->base = xsmcToInteger(xsArg(0));
 	pcnt_counter_clear(pc->unit);
 }
