@@ -370,9 +370,9 @@ int main(int argc, char* argv[])
 								script = script->nextScript;
 							}
 							mxPull(mxHosts); //@@
+							fxFreezeBuiltIns(the);
 						}
 						if (linker->stripFlag) {
-							fxFreezeBuiltIns(the);
 							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
 							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
 						}
