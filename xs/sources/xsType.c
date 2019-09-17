@@ -144,6 +144,29 @@ txSlot* fxNewInstance(txMachine* the)
 	return instance;
 }
 
+txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
+{	
+	if (a == b)
+		return 1;
+	if (a->ID >= 0) {
+		txSlot* alias = the->aliasArray[a->ID];
+		if (alias) {
+			a = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	if (b->ID >= 0) {
+		txSlot* alias = the->aliasArray[b->ID];
+		if (alias) {
+			b = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 {
 	txSlot* anInstance = C_NULL;
