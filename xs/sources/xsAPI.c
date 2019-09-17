@@ -1883,6 +1883,8 @@ void fxBuildModuleMap(txMachine* the)
 			atomSize = c_read32be(p);
 			p += atomSize;
 		}
+		*(the->stack + 1) = *(the->stack);
+		the->stack++;
 	}
 }
 
