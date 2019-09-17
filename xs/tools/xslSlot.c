@@ -144,11 +144,13 @@ txInteger fxCheckAliases(txMachine* the)
 	{
 		txSlot* global = mxGlobal.value.reference->next->next;
 		while (global) {
-			mxPushLink(globalLink, global->ID, XSL_GLOBAL_FLAG);
-			if (global->kind == XS_REFERENCE_KIND) {
-				fxCheckInstanceAliases(the, global->value.reference, list);
+			if ((global->ID != mxID(_global)) && (global->ID != mxID(_globalThis))) {
+				mxPushLink(globalLink, global->ID, XSL_GLOBAL_FLAG);
+				if (global->kind == XS_REFERENCE_KIND) {
+					fxCheckInstanceAliases(the, global->value.reference, list);
+				}
+				mxPopLink(globalLink);
 			}
-			mxPopLink(globalLink);
 			global = global->next;
 		}
 	}
@@ -189,7 +191,8 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 							fprintf(stderr, "%s", string);
 					}
 					else if (link->flag == XSL_GLOBAL_FLAG) {
-						fprintf(stderr, "globalThis"); 
+						fprintf(stderr, "globalThis."); 
+						fprintf(stderr, "%s", string);
 					}
 					else
 						fprintf(stderr, "%s", string);

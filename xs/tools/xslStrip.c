@@ -207,6 +207,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			}
 			else if (!c_strcmp(name, "WeakMap"))
 				fxStripCallback(linker, fx_WeakMap);
+			else if (!c_strcmp(name, "WeakRef"))
+				fxStripCallback(linker, fx_WeakRef);
 			else if (!c_strcmp(name, "WeakSet"))
 				fxStripCallback(linker, fx_WeakSet);
 			else if (!c_strcmp(name, "eval")) {
@@ -403,6 +405,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, &mxSharedArrayBufferConstructor);
 	if (fxIsCallbackStripped(linker, fx_WeakMap))
 		fxStripClass(linker, the, &mxWeakMapConstructor);
+	if (fxIsCallbackStripped(linker, fx_WeakRef))
+		fxStripClass(linker, the, &mxWeakRefConstructor);
 	if (fxIsCallbackStripped(linker, fx_WeakSet))
 		fxStripClass(linker, the, &mxWeakSetConstructor);
 		

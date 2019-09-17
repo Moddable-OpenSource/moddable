@@ -328,6 +328,7 @@ int main(int argc, char* argv[])
 						while (linker->promiseJobsFlag) {
 							linker->promiseJobsFlag = 0;
 							fxRunPromiseJobs(the);
+							xsCollectGarbage();
 						}
 						{
 							txSlot* property;
@@ -354,12 +355,6 @@ int main(int argc, char* argv[])
 							}
 							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
 							mxProgram.value.reference = modules; //@@
-							mxDuringJobs = mxUndefined;
-							mxPendingJobs = mxUndefined;
-							mxRunningJobs = mxUndefined;
-							mxBreakpoints = mxUndefined;
-							mxHostInspectors = mxUndefined;
-							mxInstanceInspectors = mxUndefined;
 						}
 						if (linker->freezeFlag) {
 							txSlot* target = fxNewInstance(the);
@@ -389,7 +384,13 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-			
+			mxDuringJobs = mxUndefined;
+			mxPendingJobs = mxUndefined;
+			mxRunningJobs = mxUndefined;
+			mxBreakpoints = mxUndefined;
+			mxHostInspectors = mxUndefined;
+			mxInstanceInspectors = mxUndefined;
+		
 			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
 			else
@@ -798,6 +799,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxTypeErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxURIErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxWeakMapPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxWeakRefPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxWeakSetPrototype); fxFreezeBuiltIn(the);
 	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
