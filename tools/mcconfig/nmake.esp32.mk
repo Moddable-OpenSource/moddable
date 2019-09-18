@@ -32,10 +32,20 @@ UPLOAD_SPEED = 921600
 DEBUGGER_SPEED = 460800
 !ENDIF
 
-
 !IF "$(BASE_DIR)"==""
 BASE_DIR = $(USERPROFILE)
 !ENDIF
+
+!IF "$(UPLOAD_PORT)"==""
+!ERROR UPLOAD_PORT environment variable must be defined!
+!ENDIF
+
+!IF "$(SERIAL2XSBUG)"==""
+!IF "$(DEBUG)"=="1"
+!ERROR SERIAL2XSBUG environment variable must be defined!
+!ENDIF
+!ENDIF
+
 
 MSYS32_BASE = $(BASE_DIR)\msys32
 !IF "$(IDF_PATH)"==""
