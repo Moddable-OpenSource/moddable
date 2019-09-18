@@ -125,10 +125,14 @@ class ESP32GATTFile extends GATTFile {
 		file.line("");
 		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
 		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
+		file.line("static const uint8_t char_prop_read_notify_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
 		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
+		file.line("static const uint8_t char_prop_read_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
+		file.line("static const uint8_t char_prop_write_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write_notify = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
+		file.line("static const uint8_t char_prop_write_notify_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
 		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
 		file.line("static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
@@ -315,6 +319,8 @@ class ESP32GATTFile extends GATTFile {
 		const ESP_GATT_CHAR_PROP_BIT_WRITE = (1 << 3);
 		const ESP_GATT_CHAR_PROP_BIT_NOTIFY = (1 << 4);
 		const ESP_GATT_CHAR_PROP_BIT_INDICATE = (1 << 5);
+		const ESP_GATT_CHAR_PROP_BIT_AUTH = (1 << 6);
+		const ESP_GATT_CHAR_PROP_BIT_EXT_PROP = (1 << 7);
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -333,14 +339,21 @@ class ESP32GATTFile extends GATTFile {
 				case "indicate":
 					props |= ESP_GATT_CHAR_PROP_BIT_INDICATE;
 					break;
+				case "extended":
+					props |= ESP_GATT_CHAR_PROP_BIT_EXT_PROP;
+					break;
 				default:
 					throw new Error("unknown property");
 			}
 		});
 		if (props == ESP_GATT_CHAR_PROP_BIT_READ)
 			props = "char_prop_read";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_read_extended";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
 			props = "char_prop_write";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_write_extended";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_write_notify";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
@@ -351,6 +364,8 @@ class ESP32GATTFile extends GATTFile {
 			props = "char_prop_read_write";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_read_notify";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_read_notify_extended";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
 			props = "char_prop_read_indicate";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
