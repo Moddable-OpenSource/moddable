@@ -522,6 +522,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_THROW_STATUS,
 		&&XS_CODE_TO_INSTANCE,
 		&&XS_CODE_TO_NUMERIC,
+		&&XS_CODE_TO_STRING,
 		&&XS_CODE_TRANSFER,
 		&&XS_CODE_TRUE,
 		&&XS_CODE_TYPEOF,
@@ -2598,6 +2599,10 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceString(the, mxStack->value.string);
 #endif
+			mxBreak;
+		mxCase(XS_CODE_TO_STRING)
+			mxToString(mxStack);
+			mxNextCode(1);
 			mxBreak;
 			
 		mxCase(XS_CODE_SYMBOL)

@@ -150,8 +150,8 @@ void fx_Symbol_keyFor(txMachine* the)
 	if ((mxArgc == 0) || (mxArgv(0)->kind != XS_SYMBOL_KIND))
 		mxTypeError("sym is no symbol");
 	key = fxGetKey(the, mxArgv(0)->value.symbol);
-	if (key && (key->kind == XS_KEY_KIND) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
-		mxResult->kind = XS_STRING_KIND;
+	if (key && ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
+		mxResult->kind = (key->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
 		mxResult->value.string = key->value.key.string;
 	}
 }

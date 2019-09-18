@@ -145,6 +145,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Float64Array);
 			}
 			else if (!c_strcmp(name, "Generator")) {
+				fxStripCallback(linker, fx_Generator_prototype_next);
+				fxStripCallback(linker, fx_Generator_prototype_return);
+				fxStripCallback(linker, fx_Generator_prototype_throw);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_next);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_return);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_throw);
 				fxUnuseCode(XS_CODE_ASYNC_GENERATOR_FUNCTION);
 				fxUnuseCode(XS_CODE_GENERATOR_FUNCTION);
 				fxUnuseCode(XS_CODE_START_ASYNC_GENERATOR);
@@ -169,7 +175,18 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "Math"))
 				fxUnuseSymbol(linker, mxID(_Math));
 			else if (!c_strcmp(name, "Promise")) {
+				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_next);
+				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_return);
+				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_throw);
+				fxStripCallback(linker, fx_AsyncIterator_asyncIterator);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_next);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_return);
+				fxStripCallback(linker, fx_AsyncGenerator_prototype_throw);
 				fxStripCallback(linker, fx_Promise);
+				fxStripCallback(linker, fxOnRejectedPromise);
+				fxStripCallback(linker, fxOnResolvedPromise);
+				fxStripCallback(linker, fxRejectPromise);
+				fxStripCallback(linker, fxResolvePromise);
 				fxUnuseCode(XS_CODE_ASYNC_FUNCTION);
 				fxUnuseCode(XS_CODE_ASYNC_GENERATOR_FUNCTION);
 				fxUnuseCode(XS_CODE_IMPORT);
@@ -181,8 +198,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "Reflect"))
 				fxUnuseSymbol(linker, mxID(_Reflect));
 			else if (!c_strcmp(name, "RegExp")) {
+				fxStripCallback(linker, fxInitializeRegExp);
 				fxStripCallback(linker, fx_RegExp);
 				fxStripCallback(linker, fx_String_prototype_match);
+				fxStripCallback(linker, fx_String_prototype_matchAll);
 				fxStripCallback(linker, fx_String_prototype_search);
 			}
 			else if (!c_strcmp(name, "Set"))
@@ -294,6 +313,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
 	}
+	if (fxIsLinkerSymbolUsed(linker, mxID(_bind)))
+		fxUnstripCallback(linker, fx_Function_prototype_bound);
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
 		fxStripObject(linker, the, &mxJSONObject);
 	if (fxIsCallbackStripped(linker, fx_Map)) {

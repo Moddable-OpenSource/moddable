@@ -76,11 +76,7 @@ comma := ,
 NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
 endif
 
-ifneq ("$(wildcard $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a)", "")
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
-else
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
-endif
+LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \

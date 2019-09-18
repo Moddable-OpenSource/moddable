@@ -386,6 +386,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, gBLE->connection.bd_addr, &GAP_LE_Authentication_Response_Information);									
 }
 
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
+}
+
 static void addressToBuffer(qapi_BLE_BD_ADDR_t BD_ADDR, uint8_t *buffer)
 {
 	buffer[0] = BD_ADDR.BD_ADDR5;

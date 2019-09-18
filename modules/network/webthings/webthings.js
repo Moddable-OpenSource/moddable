@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-19  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -28,6 +28,7 @@ class WebThing {
 	constructor(host) {
 		this.host = host;
 		this.controllers = [];
+		trace("Web Thing API support deprecated.\n");
 	}
 	changed() {
 		if (!this.host.mdns)

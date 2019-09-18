@@ -275,22 +275,29 @@ void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
 	txSlot* export;
 	mxTry(the) {
 		fxToString(the, stack);
-		the->requireFlag |= XS_REQUIRE_FLAG;
-		module = fxRequireModule(the, realm, XS_NO_ID, stack);
-		the->requireFlag &= ~XS_REQUIRE_FLAG;
-		stack->kind = module->kind;
-		stack->value = module->value;
-		if (defaultFlag) {
-			defaultID = mxID(_default);
-			export = mxModuleExports(stack)->value.reference->next;
-			while (export) {
-				mxCheck(the, export->kind == XS_EXPORT_KIND);
-				if (export->ID == defaultID) {
-					stack->kind = export->value.export.closure->kind;
-					stack->value = export->value.export.closure->value;
-					break;
+		if (defaultFlag & XS_IMPORT_PREFLIGHT) {
+			txID moduleID = fxFindModule(the, realm, XS_NO_ID, stack);
+			stack->kind = XS_BOOLEAN_KIND;
+			stack->value.boolean = moduleID != XS_NO_ID;
+		}
+		else {
+			the->requireFlag |= XS_REQUIRE_FLAG;
+			module = fxRequireModule(the, realm, XS_NO_ID, stack);
+			the->requireFlag &= ~XS_REQUIRE_FLAG;
+			stack->kind = module->kind;
+			stack->value = module->value;
+			if (defaultFlag) {
+				defaultID = mxID(_default);
+				export = mxModuleExports(stack)->value.reference->next;
+				while (export) {
+					mxCheck(the, export->kind == XS_EXPORT_KIND);
+					if (export->ID == defaultID) {
+						stack->kind = export->value.export.closure->kind;
+						stack->value = export->value.export.closure->value;
+						break;
+					}
+					export = export->next;
 				}
-				export = export->next;
 			}
 		}
 	}

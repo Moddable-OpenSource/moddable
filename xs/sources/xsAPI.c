@@ -1585,6 +1585,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			}
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
+			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxBuildModuleMap(the);
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
@@ -1831,50 +1832,43 @@ void fxBuildArchiveKeys(txMachine* the)
 
 void fxBuildModuleMap(txMachine* the)
 {
-	txSlot* target = fxNewInstance(the);
 	txPreparation* preparation = the->preparation;
-	if (preparation) {
+	if (preparation && the->archive) {
 		char* path = the->nameBuffer;
-		txInteger c = preparation->scriptCount;
-		txScript* script = preparation->scripts;
+		txSlot* source = the->stack->value.reference->next;
+		txSlot* target = fxNewInstance(the);
+		txU1* p = the->archive;
+		txU1* q;
+		txU4 atomSize;
+		while (source) {
+			target = target->next = fxDuplicateSlot(the, source);
+			source = source->next;
+		}
 		c_memcpy(path, preparation->base, preparation->baseLength);
-		while (c > 0) {
+		p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+		// SYMB
+		atomSize = c_read32be(p);
+		p += atomSize;
+		// MODS
+		atomSize = c_read32be(p);
+		q = p + atomSize;
+		p += sizeof(Atom);
+		while (p < q) {
+			// PATH
+			atomSize = c_read32be(p);
 			target = target->next = fxNewSlot(the);
-			c_strcpy(path + preparation->baseLength, script->path);
+			c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
 			target->value.symbol = fxNewNameC(the, path);
 			target->kind = XS_SYMBOL_KIND;
-			path[c_strlen(path) - 4] = 0;
+			path[atomSize - sizeof(Atom) - 4] = 0;
 			target->ID = fxNewNameC(the, path + preparation->baseLength);
-			c--;
-			script++;
-		}
-		if (the->archive) {
-			txU1* p = the->archive;
-			txU1* q;
-			txU4 atomSize;
-			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
-			// SYMB
+			p += atomSize;
+			// CODE
 			atomSize = c_read32be(p);
 			p += atomSize;
-			// MODS
-			atomSize = c_read32be(p);
-			q = p + atomSize;
-			p += sizeof(Atom);
-			while (p < q) {
-				// PATH
-				atomSize = c_read32be(p);
-				target = target->next = fxNewSlot(the);
-				c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
-				target->value.symbol = fxNewNameC(the, path);
-				target->kind = XS_SYMBOL_KIND;
-				path[atomSize - sizeof(Atom) - 4] = 0;
-				target->ID = fxNewNameC(the, path + preparation->baseLength);
-				p += atomSize;
-				// CODE
-				atomSize = c_read32be(p);
-				p += atomSize;
-			}
 		}
+		*(the->stack + 1) = *(the->stack);
+		the->stack++;
 	}
 }
 

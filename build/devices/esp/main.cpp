@@ -128,6 +128,14 @@ void ESP_putc(int c)
 	uart_write_char(gUART, c);
 }
 
+void ESP_put(uint8_t *c, int count)
+{
+	system_soft_wdt_feed();
+
+	while (count--)
+		uart_write_char(gUART, *c++);
+}
+
 int ESP_getc(void)
 {
 	system_soft_wdt_feed();

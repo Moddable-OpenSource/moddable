@@ -139,10 +139,14 @@ class BluedroidGATTFile extends ESP32GATTFile {
 		file.line("");
 		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
 		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
+		file.line("static const uint8_t char_prop_read_notify_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
 		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
+		file.line("static const uint8_t char_prop_read_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
+		file.line("static const uint8_t char_prop_write_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write_notify = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
+		file.line("static const uint8_t char_prop_write_notify_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
 		file.line("static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
 		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
 		file.line("static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
@@ -253,11 +257,11 @@ class BluedroidGATTFile extends ESP32GATTFile {
 				if ("value" in characteristic)
 					file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 				else {
-					let char_name = { service_index:index, att_index:attributeIndex, name:key };
-					char_name.type = characteristic.type ? characteristic.type: "";
-					char_names.push(char_name);
 					file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 				}
+				let char_name = { service_index:index, att_index:attributeIndex, name:key };
+				char_name.type = characteristic.type ? characteristic.type: "";
+				char_names.push(char_name);
 				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${maxBytes}, `);
 				if ("value" in characteristic)
 					file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
@@ -292,11 +296,11 @@ class BluedroidGATTFile extends ESP32GATTFile {
 						if ("value" in descriptor)
 							file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 						else {
-							let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
-							char_name.type = descriptor.type ? descriptor.type: "";
-							char_names.push(char_name);
 							file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 						}
+						let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
+						char_name.type = descriptor.type ? descriptor.type: "";
+						char_names.push(char_name);
 						file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&desc_uuid${descriptorIndex}, ${permissions}, ${descriptor.maxBytes}, `);
 						if ("value" in descriptor)
 							file.write(`${descriptor._length}, (uint8_t*)&desc_value${descriptorIndex}}`);
@@ -329,6 +333,8 @@ class BluedroidGATTFile extends ESP32GATTFile {
 		const ESP_GATT_CHAR_PROP_BIT_WRITE = (1 << 3);
 		const ESP_GATT_CHAR_PROP_BIT_NOTIFY = (1 << 4);
 		const ESP_GATT_CHAR_PROP_BIT_INDICATE = (1 << 5);
+		const ESP_GATT_CHAR_PROP_BIT_AUTH = (1 << 6);
+		const ESP_GATT_CHAR_PROP_BIT_EXT_PROP = (1 << 7);
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -347,15 +353,22 @@ class BluedroidGATTFile extends ESP32GATTFile {
 				case "indicate":
 					props |= ESP_GATT_CHAR_PROP_BIT_INDICATE;
 					break;
+				case "extended":
+					props |= ESP_GATT_CHAR_PROP_BIT_EXT_PROP;
+					break;
 				default:
 					throw new Error("unknown property");
 			}
 		});
 		if (props == ESP_GATT_CHAR_PROP_BIT_READ)
 			props = "char_prop_read";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_read_extended";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
 			props = "char_prop_write";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY)
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_write_extended";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_write_notify";
 		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
 			props = "char_prop_write_nr";
@@ -365,6 +378,8 @@ class BluedroidGATTFile extends ESP32GATTFile {
 			props = "char_prop_read_write";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
 			props = "char_prop_read_notify";
+		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
+			props = "char_prop_read_notify_extended";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
 			props = "char_prop_read_indicate";
 		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
@@ -997,6 +1012,9 @@ class QCA4020GATTFile extends GATTFile {
 				case "indicate":
 					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_INDICATE");
 					break;
+				case "extended":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_EXTENDED_PROPERTIES");
+					break;
 				default:
 					throw new Error("unknown property");
 			}
@@ -1268,6 +1286,8 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_char_prop_write = 0x08;
 		const gatt_char_prop_notify = 0x10;
 		const gatt_char_prop_indicate = 0x20;
+		const gatt_char_prop_writesign = 0x40;
+		const gatt_char_prop_extended = 0x80;
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -1285,6 +1305,9 @@ class GeckoGATTFile extends GATTFile {
 					break;
 				case "indicate":
 					props |= gatt_char_prop_indicate;
+					break;
+				case "extended":
+					props |= gatt_char_prop_extended;
 					break;
 				default:
 					throw new Error("unknown property");
