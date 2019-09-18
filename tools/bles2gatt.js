@@ -740,6 +740,9 @@ class NimBLEGATTFile extends ESP32GATTFile {
 				case "indicate":
 					flags |= BLE_GATT_CHR_F_INDICATE;
 					break;
+				case "extended":
+					flags |= BLE_GATT_CHR_F_AUX_WRITE;
+					break;
 				default:
 					throw new Error("unknown property");
 			}
