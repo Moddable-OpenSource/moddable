@@ -587,25 +587,6 @@ txInteger fxPrepareHeap(txMachine* the)
 	txInteger index = 1;
 	txSlot *heap, *slot, *limit, *item;
 	txLinkerProjection* projection;
-	txSlot* home = NULL;
-
-	heap = the->firstHeap;
-	while (heap) {
-		slot = heap + 1;
-		limit = heap->value.reference;
-		while (slot < limit) {
-			txSlot* next = slot->next;
-			if (next && (next->next == NULL) && (next->ID == XS_NO_ID) && (next->kind == XS_HOME_KIND)) {
-				if (home && (home->flag == next->flag) && (home->value.home.object == next->value.home.object) && (home->value.home.module == next->value.home.module))
-					slot->next = home;
-				else
-					home = next;
-			}
-			slot++;
-		}
-		heap = heap->next;
-	}
-	xsCollectGarbage();
 
 	slot = the->freeHeap;
 	while (slot) {
@@ -780,6 +761,30 @@ txInteger fxPrepareHeap(txMachine* the)
 	the->aliasCount = aliasCount;
 	
 	return index;
+}
+
+void fxPrepareHome(txMachine* the)
+{
+	txSlot *heap, *slot, *limit;
+	txSlot* home = NULL;
+
+	heap = the->firstHeap;
+	while (heap) {
+		slot = heap + 1;
+		limit = heap->value.reference;
+		while (slot < limit) {
+			txSlot* next = slot->next;
+			if (next && (next->next == NULL) && (next->ID == XS_NO_ID) && (next->kind == XS_HOME_KIND)) {
+				if (home && (home->flag == next->flag) && (home->value.home.object == next->value.home.object) && (home->value.home.module == next->value.home.module))
+					slot->next = home;
+				else
+					home = next;
+			}
+			slot++;
+		}
+		heap = heap->next;
+	}
+	xsCollectGarbage();
 }
 
 void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot) 

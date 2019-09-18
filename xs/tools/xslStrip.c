@@ -136,6 +136,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_DataView);
 			else if (!c_strcmp(name, "Date"))
 				fxStripCallback(linker, fx_Date);
+			else if (!c_strcmp(name, "FinalizationGroup"))
+				fxStripCallback(linker, fx_FinalizationGroup);
 			else if (!c_strcmp(name, "Float32Array")) {
 				fxUnuseSymbol(linker, mxID(_Float32Array));
 				fxStripCallback(linker, fx_Float32Array);
@@ -314,6 +316,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toString);
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
+	}
+	if (fxIsCallbackStripped(linker, fx_FinalizationGroup)) {
+		fxStripClass(linker, the, &mxFinalizationGroupConstructor);
+		fxStripInstance(linker, the, mxFinalizationGroupCleanupIteratorPrototype.value.reference);
 	}
 	if (fxIsLinkerSymbolUsed(linker, mxID(_bind)))
 		fxUnstripCallback(linker, fx_Function_prototype_bound);
@@ -529,6 +535,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxSetPrivateProperty,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCallbackStripped(linker, fx_FinalizationGroup))
+		fprintf(file, "\tC_NULL,\n");
+	else
+		fprintf(file, "\tfxCleanupFinalizationGroups,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");

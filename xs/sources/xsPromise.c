@@ -1311,6 +1311,7 @@ void fxRunPromiseJobs(txMachine* the)
 			mxPushUndefined();
 			fxRunID(the, C_NULL, id);
 			the->stack++;
+			fxEndJob(the);
 		}
 		mxCatch(the) {
 		}

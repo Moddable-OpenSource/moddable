@@ -618,6 +618,8 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	/* NAME */
 	if (name != XS_NO_ID)
 		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+	else if (gxDefaults.newFunctionName)
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -1790,10 +1792,15 @@ void fxEndHost(txMachine* the)
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
 	if (the->frame == C_NULL) {
-		mxDuringJobs.value.reference->next = C_NULL;
-		if (gxDefaults.cleanupFinalizationGroups)
-			gxDefaults.cleanupFinalizationGroups(the);
+		fxEndJob(the);
 	}
+}
+
+void fxEndJob(txMachine* the)
+{
+	mxDuringJobs.value.reference->next = C_NULL;
+	if (gxDefaults.cleanupFinalizationGroups)
+		gxDefaults.cleanupFinalizationGroups(the);
 }
 
 typedef struct {

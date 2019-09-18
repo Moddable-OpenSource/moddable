@@ -612,6 +612,7 @@ mxExport void fxShareMachine(txMachine* the);
 
 mxExport txMachine* fxBeginHost(txMachine*);
 mxExport void fxEndHost(txMachine*);
+mxExport void fxEndJob(txMachine* the);
 
 mxExport void fxCollectGarbage(txMachine*);
 mxExport void fxEnableGarbageCollection(txMachine* the, txBoolean enableIt);

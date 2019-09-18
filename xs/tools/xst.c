@@ -107,12 +107,6 @@ struct sxContext {
 	yaml_document_t* document;
 	yaml_node_t* includes;
 	yaml_node_t* negative;
-#ifdef mxInstrument
-	txSize peakChunksSize;
-	txSize peakHeapCount;
-	txSize peakStackCount;
-	txSize peakParserSize;
-#endif
 };
 
 struct sxJob {
@@ -264,14 +258,14 @@ int main(int argc, char* argv[])
 							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
 					}
 				}
-				fxRunLoop(the);
 			}
 			xsCatch {
 				fprintf(stderr, "%s\n", xsToString(xsException));
 				error = 1;
 			}
 		}
-		xsEndHost(the);
+		xsEndHost(machine);
+		fxRunLoop(machine);
 		xsDeleteMachine(machine);
 	}
 	return error;
@@ -371,12 +365,6 @@ int main262(int argc, char* argv[])
 		int hours = minutes / 60;
 		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
 		fxPrintResult(&context, context.current, 0);
-	#ifdef mxInstrument
-		fprintf(stderr, "# parser chunks: %d bytes\n", context.peakParserSize);
-		fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
-		fprintf(stderr, "# heap slots: %lu bytes\n", context.peakHeapCount * sizeof(txSlot));
-		fprintf(stderr, "# stack slots: %lu bytes\n", context.peakStackCount * sizeof(txSlot));
-	#endif
 	}
 	return error;
 }
@@ -817,30 +805,6 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
-		}
-		xsCatch {
-			if (context->negative) {
-				txString name;
-				xsResult = xsGet(xsException, xsID("constructor"));
-				name = xsToString(xsGet(xsResult, xsID("name")));
-				if (strcmp(name, (char*)context->negative->data.scalar.value))
-					snprintf(message, 1024, "# Expected a %s but got a %s", context->negative->data.scalar.value, name);
-				else {
-					snprintf(message, 1024, "OK");
-					success = 1;
-				}
-			}
-			else {
-				xsToStringBuffer(xsException, message, 1024);
-			}
-		}
-	}
-	xsEndHost(the);
-	
-	xsBeginHost(machine);
-	{
-		xsTry {
-			fxRunLoop(the);
 			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
@@ -865,28 +829,16 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				xsToStringBuffer(xsException, message, 1024);
 			}
 		}
+	}
+	xsEndHost(machine);
+	fxRunLoop(machine);
+	xsBeginHost(machine);
+	{
 		xsResult = xsGet(xsGlobal, xsID("$262"));
 		xsResult = xsGet(xsResult, xsID("agent"));
 		xsCall0(xsResult, xsID("stop"));
 	}
-#ifdef mxInstrument
-	fxCollectGarbage(the);
-	snprintf(buffer, sizeof(buffer), " # %d %lu %lu %d", 
-		the->peakChunksSize, 
-		the->peakHeapCount * sizeof(txSlot), 
-		(the->stackTop - the->stackPeak) * sizeof(txSlot),
-		the->peakParserSize);
-	c_strcat(message, buffer);
-	if (context->peakChunksSize < the->peakChunksSize)
-		context->peakChunksSize = the->peakChunksSize;
-	if (context->peakHeapCount < the->peakHeapCount)
-		context->peakHeapCount = the->peakHeapCount;
-	if (context->peakStackCount < (the->stackTop - the->stackPeak))
-		context->peakStackCount = (the->stackTop - the->stackPeak);
-	if (context->peakParserSize < the->peakParserSize)
-		context->peakParserSize = the->peakParserSize;
-#endif
-	xsEndHost(the);
+	xsEndHost(machine);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);

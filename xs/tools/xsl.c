@@ -384,8 +384,9 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
+			fxPrepareHome(the);
 			mxDuringJobs = mxUndefined;
-			mxFinalizationGroupsStackIndex = mxUndefined;
+			mxFinalizationGroups = mxUndefined;
 			mxPendingJobs = mxUndefined;
 			mxRunningJobs = mxUndefined;
 			mxBreakpoints = mxUndefined;
