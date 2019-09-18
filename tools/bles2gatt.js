@@ -670,6 +670,9 @@ class QCA4020GATTFile extends GATTFile {
 				case "indicate":
 					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_INDICATE");
 					break;
+				case "extended":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_EXTENDED_PROPERTIES");
+					break;
 				default:
 					throw new Error("unknown property");
 			}
@@ -941,6 +944,8 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_char_prop_write = 0x08;
 		const gatt_char_prop_notify = 0x10;
 		const gatt_char_prop_indicate = 0x20;
+		const gatt_char_prop_writesign = 0x40;
+		const gatt_char_prop_extended = 0x80;
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -958,6 +963,9 @@ class GeckoGATTFile extends GATTFile {
 					break;
 				case "indicate":
 					props |= gatt_char_prop_indicate;
+					break;
+				case "extended":
+					props |= gatt_char_prop_extended;
 					break;
 				default:
 					throw new Error("unknown property");
