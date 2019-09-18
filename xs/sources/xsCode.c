@@ -3359,6 +3359,7 @@ void fxModuleNodeCode(void* it, void* param)
 	txTargetCode* target = fxCoderCreateTarget(param);
 	txDeclareNode* declaration;
 	txInteger count;
+	txSymbol* name = (coder->parser->flags & mxDebugFlag) ? self->path : C_NULL;
 	
 	coder->line = -1;
 	coder->programFlag = 0;
@@ -3366,16 +3367,20 @@ void fxModuleNodeCode(void* it, void* param)
 	coder->firstBreakTarget = NULL;
 	coder->firstContinueTarget = NULL;
 	
-	fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, (coder->parser->flags & mxDebugFlag) ? self->path : C_NULL);
-	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
-	if (self->flags & mxStrictFlag)
-		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
+	if (self->flags & mxAwaitingFlag)
+		fxCoderAddSymbol(param, 1, XS_CODE_ASYNC_FUNCTION, name);
 	else
-		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, 0);
+		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
+	fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
+
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
 	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
+	
+	if (self->flags & mxAwaitingFlag)
+		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 
 	coder->returnTarget = fxCoderCreateTarget(param);
 	declaration = self->scope->firstDeclareNode;

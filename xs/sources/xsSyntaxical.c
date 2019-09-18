@@ -659,7 +659,7 @@ void fxModule(txParser* parser)
 {
 	txInteger aCount = parser->nodeCount;
 	txInteger aLine = parser->line;
-	parser->flags |= mxStrictFlag;
+	parser->flags |= mxStrictFlag | mxAsyncFlag;
 	while ((parser->token != XS_TOKEN_EOF) && (parser->token != XS_TOKEN_RIGHT_BRACE)) {
 		if (parser->token == XS_TOKEN_EXPORT)
 			fxExport(parser);
@@ -682,9 +682,7 @@ void fxModule(txParser* parser)
 			fxGetNextToken(parser);
 		}
 		else {
-			parser->flags |= mxAsyncFlag;
 			fxStatement(parser, 1);
-			parser->flags &= ~mxAsyncFlag;
 		}
 	}
 	aCount = parser->nodeCount - aCount;
@@ -697,7 +695,7 @@ void fxModule(txParser* parser)
 		fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, aLine);
 	}
 	fxPushNodeStruct(parser, 1, XS_TOKEN_MODULE, aLine);
-	parser->root->flags = parser->flags & mxStrictFlag;
+	parser->root->flags = parser->flags & (mxStrictFlag | mxAwaitingFlag);
 }
 
 void fxExport(txParser* parser)

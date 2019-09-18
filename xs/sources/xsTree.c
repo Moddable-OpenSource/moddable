@@ -1569,6 +1569,8 @@ void fxNodePrintTree(void* it, void* param)
 			fprintf(stderr, " arrow");
 		if (node->flags & mxAsyncFlag)
 			fprintf(stderr, " async");
+		if (node->flags & mxAwaitingFlag)
+			fprintf(stderr, " await");
 		if (node->flags & mxBaseFlag)
 			fprintf(stderr, " base");
 		if (node->flags & mxDerivedFlag)
