@@ -37,9 +37,6 @@
 
 #include "xsAll.h"
 
-#define mxIsPromise(THE_SLOT) \
-	((THE_SLOT) && ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_PROMISE_KIND) && (THE_SLOT != mxPromisePrototype.value.reference))
-
 
 static txSlot* fxNewPromiseFunctionAll(txMachine* the, txCallback callback, txSlot* already, txSlot* array, txInteger index, txSlot* count, txSlot* promise, txSlot* function);
 static void fxBuildPromiseCapability(txMachine* the);

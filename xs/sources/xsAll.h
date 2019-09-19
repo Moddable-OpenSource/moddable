@@ -1915,6 +1915,8 @@ enum {
 	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_SYMBOL_KIND))
 #define mxIsHost(THE_SLOT) \
 	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_HOST_KIND))
+#define mxIsPromise(THE_SLOT) \
+	((THE_SLOT) && ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_PROMISE_KIND) && (THE_SLOT != mxPromisePrototype.value.reference))
 #define mxIsProxy(THE_SLOT) \
 	(/* (THE_SLOT) && */ ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_PROXY_KIND))
 #define mxIsCallable(THE_SLOT) \
@@ -2111,12 +2113,12 @@ enum {
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)
-#define mxModuleInstanceTransers(MODULE)	((MODULE)->next->next->next)
+#define mxModuleInstanceTransfers(MODULE)	((MODULE)->next->next->next)
 #define mxModuleInstanceFunction(MODULE)	((MODULE)->next->next->next->next)
 #define mxModuleInstanceHosts(MODULE)		((MODULE)->next->next->next->next->next)
 #define mxModuleInternal(MODULE) mxModuleInstanceInternal((MODULE)->value.reference)
 #define mxModuleExports(MODULE) mxModuleInstanceExports((MODULE)->value.reference)
-#define mxModuleTransfers(MODULE) mxModuleInstanceTransers((MODULE)->value.reference)
+#define mxModuleTransfers(MODULE) mxModuleInstanceTransfers((MODULE)->value.reference)
 #define mxModuleFunction(MODULE) mxModuleInstanceFunction((MODULE)->value.reference)
 #define mxModuleHosts(MODULE) mxModuleInstanceHosts((MODULE)->value.reference)
 
@@ -2131,8 +2133,9 @@ enum {
 #define mxLoadingModules(REALM)		((REALM)->next->next->next->next->next)
 #define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next->next)
 #define mxResolvingModules(REALM)	((REALM)->next->next->next->next->next->next->next)
-#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
-#define mxRequiredModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxWaitingModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
+#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRequiredModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,

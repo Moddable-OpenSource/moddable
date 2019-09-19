@@ -1319,6 +1319,9 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxResolvingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
+	/* mxWaitingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
 	/* mxRunningModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
