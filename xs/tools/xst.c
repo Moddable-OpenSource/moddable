@@ -662,7 +662,7 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (0
+			if (!strcmp((char*)node->data.scalar.value, "optional-chaining")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -1280,9 +1280,8 @@ void fxRunLoop(txMachine* the)
 
 void fxRunModuleFile(txMachine* the, txString path)
 {
-	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRequireModule(the, realm, XS_NO_ID, the->stack);
+	fxAwaitImport(the, XS_NO_FLAG);
 	the->stack++;
 }
 

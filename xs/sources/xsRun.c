@@ -3629,7 +3629,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_IMPORT_META)
 			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
-			slot = mxModuleInstanceExports(variable->value.home.module)->next;
+			slot = mxModuleInstanceMeta(variable->value.home.module);
 			mxPushKind(XS_REFERENCE_KIND);
 			mxStack->value.reference = slot->value.reference;
 			mxNextCode(1);

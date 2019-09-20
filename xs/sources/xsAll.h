@@ -401,7 +401,6 @@ struct sxMachine {
 	txSlot* sharedModules;
 
 	txBoolean collectFlag;
-	txFlag requireFlag;
 	void* dtoa;
 	void* preparation;
 
@@ -1640,7 +1639,6 @@ extern const txBehavior gxModuleBehavior;
 extern void fxBuildModule(txMachine* the);
 
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
-extern txSlot* fxRequireModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern void fxRunImport(txMachine* the);
@@ -1690,8 +1688,7 @@ enum {
 	XS_STRING_HINT = 2,
 
 	XS_NO_FLAG = 0,
-	XS_REQUIRE_FLAG = 1,
-	XS_REQUIRE_WEAK_FLAG = 2,
+	XS_ASYNC_FLAG = 1,
 	
 	XS_IMPORT_NAMESPACE = 0,
 	XS_IMPORT_DEFAULT = 1,
@@ -2113,14 +2110,21 @@ enum {
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)
-#define mxModuleInstanceTransfers(MODULE)	((MODULE)->next->next->next)
-#define mxModuleInstanceFunction(MODULE)	((MODULE)->next->next->next->next)
-#define mxModuleInstanceHosts(MODULE)		((MODULE)->next->next->next->next->next)
-#define mxModuleInternal(MODULE) mxModuleInstanceInternal((MODULE)->value.reference)
-#define mxModuleExports(MODULE) mxModuleInstanceExports((MODULE)->value.reference)
-#define mxModuleTransfers(MODULE) mxModuleInstanceTransfers((MODULE)->value.reference)
-#define mxModuleFunction(MODULE) mxModuleInstanceFunction((MODULE)->value.reference)
-#define mxModuleHosts(MODULE) mxModuleInstanceHosts((MODULE)->value.reference)
+#define mxModuleInstanceMeta(MODULE)			((MODULE)->next->next->next)
+#define mxModuleInstanceTransfers(MODULE)		((MODULE)->next->next->next->next)
+#define mxModuleInstanceFunction(MODULE)		((MODULE)->next->next->next->next->next)
+#define mxModuleInstanceHosts(MODULE)			((MODULE)->next->next->next->next->next->next)
+#define mxModuleInstanceFulfill(MODULE)		((MODULE)->next->next->next->next->next->next->next)
+#define mxModuleInstanceReject(MODULE)			((MODULE)->next->next->next->next->next->next->next->next)
+
+#define mxModuleInternal(MODULE) 	mxModuleInstanceInternal((MODULE)->value.reference)
+#define mxModuleExports(MODULE) 	mxModuleInstanceExports((MODULE)->value.reference)
+#define mxModuleMeta(MODULE) 		mxModuleInstanceMeta((MODULE)->value.reference)
+#define mxModuleTransfers(MODULE) 	mxModuleInstanceTransfers((MODULE)->value.reference)
+#define mxModuleFunction(MODULE) 	mxModuleInstanceFunction((MODULE)->value.reference)
+#define mxModuleHosts(MODULE) 		mxModuleInstanceHosts((MODULE)->value.reference)
+#define mxModuleFulfill(MODULE) 	mxModuleInstanceFulfill((MODULE)->value.reference)
+#define mxModuleReject(MODULE) 		mxModuleInstanceReject((MODULE)->value.reference)
 
 #define mxPromiseStatus(INSTANCE) ((INSTANCE)->next)
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)

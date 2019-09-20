@@ -148,7 +148,7 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	
 	parser->flags &= ~mxEvalFlag;
 	if (!(parser->flags & mxProgramFlag))
-		parser->flags |= mxStrictFlag;
+		parser->flags |= mxStrictFlag | mxAsyncFlag;
 	fxGetNextCharacter(parser);
 	if (parser->character == '#') {
 		fxGetNextCharacter(parser);

@@ -659,17 +659,13 @@ void fxModule(txParser* parser)
 {
 	txInteger aCount = parser->nodeCount;
 	txInteger aLine = parser->line;
-	parser->flags |= mxStrictFlag | mxAsyncFlag;
 	while ((parser->token != XS_TOKEN_EOF) && (parser->token != XS_TOKEN_RIGHT_BRACE)) {
 		if (parser->token == XS_TOKEN_EXPORT)
 			fxExport(parser);
 		else if (parser->token == XS_TOKEN_IMPORT) {
 			fxGetNextToken2(parser);
-			if ((parser->token2 == XS_TOKEN_DOT) || (parser->token2 == XS_TOKEN_LEFT_PARENTHESIS)) {
-				parser->flags |= mxAsyncFlag;
+			if ((parser->token2 == XS_TOKEN_DOT) || (parser->token2 == XS_TOKEN_LEFT_PARENTHESIS))
 				fxStatement(parser, 1);
-				parser->flags &= ~mxAsyncFlag;
-			}
 			else
 				fxImport(parser);
 		}
@@ -2502,13 +2498,13 @@ void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSym
 		fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 		fxBody(parser);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, theLine);
-		fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 		fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, theLine);
 	}
 	parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxTargetFlag | mxArgumentsFlag | mxEvalFlag | flag);
 	if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
 		fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
 	parser->flags = flags;
+    fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 }
 
 void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol, txUnsigned flag)
@@ -2534,12 +2530,12 @@ void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSy
     fxBody(parser);
 	parser->flags &= ~mxYieldFlag;
 	fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, theLine);
-	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	fxPushNodeStruct(parser, 3, XS_TOKEN_GENERATOR, theLine);
 	parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxGeneratorFlag | mxArgumentsFlag | mxEvalFlag | flag);
 	if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
 		fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
 	parser->flags = flags;
+    fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 }
 
 void fxGroupExpression(txParser* parser, txUnsigned flag)
