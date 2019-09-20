@@ -45,7 +45,6 @@ static void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
 static void fxFulfillImport(txMachine* the, txSlot* module);
 static void fxFulfillModule(txMachine* the);
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
-static txSlot* fxGetSharedModule(txMachine* the, txSlot* realm, txID moduleID);
 static txBoolean fxIsModuleReady(txMachine* the, txSlot* module, txSlot* runningModules, txSlot* waitingModules);
 static txSlot* fxLinkModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 static void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module);
@@ -286,12 +285,7 @@ txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 	txSlot* result = mxBehaviorGetProperty(the, mxOwnModules(realm)->value.reference, moduleID, XS_NO_ID, XS_OWN);
 	if (result)
 		return result;
-	return fxGetSharedModule(the, realm, moduleID);
-}
-
-txSlot* fxGetSharedModule(txMachine* the, txSlot* realm, txID moduleID)
-{
-	txSlot* result = the->sharedModules;
+	result = the->sharedModules;
 	while (result) {
 		if (result->ID == moduleID)
 			return result;
