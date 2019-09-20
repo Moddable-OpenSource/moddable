@@ -2133,13 +2133,11 @@ enum {
 #define mxRealmGlobal(REALM)		((REALM)->next)
 #define mxRealmClosures(REALM)		((REALM)->next->next)
 #define mxAvailableModules(REALM)	((REALM)->next->next->next)
-#define mxImportingModules(REALM)	((REALM)->next->next->next->next)
+#define mxOwnModules(REALM)			((REALM)->next->next->next->next)
 #define mxLoadingModules(REALM)		((REALM)->next->next->next->next->next)
 #define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next->next)
-#define mxResolvingModules(REALM)	((REALM)->next->next->next->next->next->next->next)
-#define mxWaitingModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
-#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next->next)
-#define mxRequiredModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next->next)
+#define mxWaitingModules(REALM)		((REALM)->next->next->next->next->next->next->next)
+#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,

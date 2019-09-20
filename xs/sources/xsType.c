@@ -1307,7 +1307,7 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	mxPop();
 	/* mxAvailableModules */
 	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
-	/* mxImportingModules */
+	/* mxOwnModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxLoadingModules */
@@ -1316,16 +1316,10 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxLoadedModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
-	/* mxResolvingModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
 	/* mxWaitingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxRunningModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
-	/* mxRequiredModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	global->value.reference = realm;

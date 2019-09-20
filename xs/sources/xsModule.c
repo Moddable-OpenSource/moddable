@@ -138,7 +138,6 @@ void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script)
 	fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 	fxResolveModules(the, realm);
 	fxExecuteModules(the, realm, XS_NO_FLAG);
-	mxImportingModules(realm)->value.reference->next = C_NULL;
 }
 
 void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
@@ -284,7 +283,7 @@ void fxFulfillModule(txMachine* the)
 
 txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 {
-	txSlot* result = mxBehaviorGetProperty(the, mxRequiredModules(realm)->value.reference, moduleID, XS_NO_ID, XS_OWN);
+	txSlot* result = mxBehaviorGetProperty(the, mxOwnModules(realm)->value.reference, moduleID, XS_NO_ID, XS_OWN);
 	if (result)
 		return result;
 	return fxGetSharedModule(the, realm, moduleID);
@@ -334,15 +333,14 @@ txSlot* fxLinkModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name)
 {
 	mxTry(the) {
 		fxResolveFrom(the, realm, moduleID, name);
+		mxCheck(the, mxLoadingModules(realm)->value.reference->next == C_NULL);
 		fxResolveModules(the, realm);
 		mxCheck(the, mxLoadingModules(realm)->value.reference->next == C_NULL);
 		mxCheck(the, mxLoadedModules(realm)->value.reference->next == C_NULL);
-		mxCheck(the, mxResolvingModules(realm)->value.reference->next == C_NULL);
 	}
 	mxCatch(the) {
 		mxLoadingModules(realm)->value.reference->next = C_NULL;
 		mxLoadedModules(realm)->value.reference->next = C_NULL;
-		mxResolvingModules(realm)->value.reference->next = C_NULL;
 		fxJump(the);
 	}
 	return fxGetModule(the, realm, name->value.symbol);
@@ -352,7 +350,7 @@ void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module)
 {
 	txSlot* transfer = mxModuleTransfers(module)->value.reference->next;
 	txSlot** fromAddress = &(mxLoadedModules(realm)->value.reference->next);
-	txSlot** toAddress = &(mxResolvingModules(realm)->value.reference->next);
+	txSlot** toAddress = &(mxLoadingModules(realm)->value.reference->next);
 	txSlot* from;
 	txSlot* to;
 	while ((from = *fromAddress)) {
@@ -724,7 +722,7 @@ void fxResolveModules(txMachine* the, txSlot* realm)
 	while ((module = modules->next)) {
 		fxOrderModule(the, realm, module);
 	}
-	modules = mxResolvingModules(realm)->value.reference;
+	modules = mxLoadingModules(realm)->value.reference;
 	
 	module = modules->next;
 	while (module) {
@@ -757,7 +755,7 @@ void fxResolveModules(txMachine* the, txSlot* realm)
 			}
 			transfer = transfer->next;
 		}
-		property = mxBehaviorSetProperty(the, mxRequiredModules(realm)->value.reference, module->ID, XS_NO_ID, XS_OWN);
+		property = mxBehaviorSetProperty(the, mxOwnModules(realm)->value.reference, module->ID, XS_NO_ID, XS_OWN);
 		property->value = module->value;
 		property->kind = XS_REFERENCE_KIND;
 		module = module->next;

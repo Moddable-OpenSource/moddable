@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
 						}
 						{
 							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-							txSlot* modules = mxRequiredModules(realm)->value.reference;
+							txSlot* modules = mxOwnModules(realm)->value.reference;
 							txSlot* module = modules->next;
 							while (module) {
 								mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;

@@ -1762,7 +1762,7 @@ void fxListModules(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* realm = fxFindRealm(the);
-	txSlot* module = mxRequiredModules(realm)->value.reference->next;
+	txSlot* module = mxOwnModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
 	while (module) {
 		fxEchoModule(the, module, &aList);
