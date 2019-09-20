@@ -99,7 +99,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				remoteCount;
 	uint8				suspended;
 
 	uint8				suspendedError;		// could overload suspended
@@ -869,6 +868,8 @@ void socketMsgDataReceived(xsSocket xss)
 	xsMachine *the = xss->the;
 	struct pbuf *pb;
 	uint8_t i;
+	ip_addr_t address;
+	uint16_t port;
 
 	if (xss->buflen && (xss->bufpos < xss->buflen))
 		return;		// haven't finished reading current pbuf
@@ -902,6 +903,12 @@ void socketMsgDataReceived(xsSocket xss)
 		xss->reader[i] = xss->reader[i + 1];
 	xss->reader[kReadQueueLength - 1] = NULL;
 
+	if (kTCP != xss->kind) {
+		address = xss->remote[0].address;
+		port = xss->remote[0].port;
+		c_memmove(&xss->remote[0], &xss->remote[1], (kReadQueueLength - 1) * sizeof(xsSocketUDPRemoteRecord));
+	}
+
 	modCriticalSectionEnd();
 
 	xss->pb = pb;
@@ -927,9 +934,7 @@ callback:
 #endif
 	}
 	else {
-		ip_addr_t address = xss->remote[0].address;
 		char *out;
-		uint16_t port = xss->remote[0].port;
 
 		xsResult = xsStringBuffer(NULL, 4 * 5);
 		out = xsmcToString(xsResult);
@@ -944,9 +949,6 @@ callback:
 		itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
 		itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
 #endif
-
-		xss->remoteCount -= 1;
-		c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 
 		if (kUDP == xss->kind)
 			xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(port));
@@ -1079,10 +1081,10 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 {
 	xsSocket xss = arg;
 	unsigned char i;
+	struct pbuf *toFree = NULL;
 
 #ifdef mxDebug
 	if (fxInNetworkDebugLoop(xss->the)) {
-		modLog("drop UDP");
 		pbuf_free(p);
 		return;
 	}
@@ -1095,34 +1097,24 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 			break;
 	}
 
-	if (kReadQueueLength == i) {
-#if 1
-		// ignore oldest
-		modLog("udp receive overflow - ignore earliest");
-		pbuf_free(xss->reader[0]);		// not pbuf_free_safe, because we are in lwip task
-		for (i = 1; i < kReadQueueLength; i++) {
-			xss->reader[i - 1] = xss->reader[i];
-			xss->remote[i - 1] = xss->remote[i];
+	if (kReadQueueLength == i) {		// all full. make room by tossing earliest entry
+		toFree = xss->reader[0];
+		for (i = 0; i < kReadQueueLength - 1; i++) {
+			xss->reader[i] = xss->reader[i + 1];
+			xss->remote[i] = xss->remote[i + 1];
 		}
-		xss->reader[kReadQueueLength - 1] = NULL;
-		xss->remoteCount -= 1;
 		i = kReadQueueLength - 1;
-#else
-		// ignore most recent
-		modCriticalSectionEnd();
-		modLog("udp receive overflow - ignore latest");
-		pbuf_free(p);		// not pbuf_free_safe, because we are in lwip task
-		return;
-#endif
 	}
 
-	xss->remote[xss->remoteCount].port = remotePort;
-	xss->remote[xss->remoteCount].address = *remoteAddr;
-	xss->remoteCount += 1;
+	xss->reader[i] = p;
+	xss->remote[i].port = remotePort;
+	xss->remote[i].address = *remoteAddr;
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
-	xss->reader[i] = p;
 	modCriticalSectionEnd();
+
+	if (toFree)
+		pbuf_free(toFree);		// not pbuf_free_safe, because we are in lwip task
 
 	socketSetPending(xss, kPendingReceive);
 }
