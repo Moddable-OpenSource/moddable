@@ -38,7 +38,7 @@
 #include "xsAll.h"
 
 #ifndef mxReport
-#define mxReport 1
+#define mxReport 0
 #endif
 
 static void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
