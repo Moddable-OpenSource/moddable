@@ -196,7 +196,9 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 			fxReport(the, "# Executing module \"%s\"\n", fxGetKeyName(the, module->ID));
 		#endif
 			*address = module->next;
-			module->next = NULL;
+			module->next = runningModules->next;
+			runningModules->next = module;
+			
 			function = mxModuleFunction(module);
 			mxPushSlot(mxModuleHosts(module));
 			mxPull(mxHosts);
@@ -222,16 +224,17 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 						mxPushSlot(result);
 						fxCallID(the, mxID(_then));
 						mxPop();
-					
-						module->next = runningModules->next;
-						runningModules->next = module;
 					}
 					else {
+						runningModules->next = module->next;
+						module->next = C_NULL;
 						fxFulfillImport(the, module);
 					}
 					mxPop();
 				}
 				mxCatch(the) {
+					runningModules->next = module->next;
+					module->next = C_NULL;
 					if (flag == XS_ASYNC_FLAG)
 						fxRejectImport(the, module);
 					else
@@ -249,6 +252,7 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 void fxFulfillImport(txMachine* the, txSlot* module)
 {
 	txSlot* fulfillFunction = mxModuleFulfill(module);
+	mxModuleMeta(module)->next = C_NULL;
 	if (fulfillFunction->kind != XS_NULL_KIND) {
 		mxPushSlot(module);
 		/* COUNT */
@@ -260,7 +264,6 @@ void fxFulfillImport(txMachine* the, txSlot* module)
 		fxCall(the);
 		mxPop();
 	}
-	mxModuleMeta(module)->next = C_NULL;
 }
 
 void fxFulfillModule(txMachine* the)
@@ -542,6 +545,7 @@ void fxRecurseExports(txMachine* the, txSlot* realm, txID moduleID, txSlot* circ
 void fxRejectImport(txMachine* the, txSlot* module)
 {
 	txSlot* rejectFunction = mxModuleReject(module);
+	mxModuleMeta(module)->next = C_NULL;
 	if (rejectFunction->kind != XS_NULL_KIND) {
 		mxPush(mxException);
 		/* COUNT */
@@ -553,7 +557,6 @@ void fxRejectImport(txMachine* the, txSlot* module)
 		fxCall(the);
 		mxPop();
 	}
-	mxModuleMeta(module)->next = C_NULL;
 }
 
 void fxRejectModule(txMachine* the)
