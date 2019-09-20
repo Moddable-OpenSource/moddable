@@ -2493,18 +2493,22 @@ void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSym
 			fxPushNULL(parser);
 		}
 		fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, theLine);
+        parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxTargetFlag | mxArgumentsFlag | mxEvalFlag | flag);
+        if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
+            fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
+        parser->flags = flags;
 	}
 	else {
 		fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 		fxBody(parser);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, theLine);
 		fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, theLine);
+        parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxTargetFlag | mxArgumentsFlag | mxEvalFlag | flag);
+        if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
+            fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
+        parser->flags = flags;
+        fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	}
-	parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxTargetFlag | mxArgumentsFlag | mxEvalFlag | flag);
-	if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
-		fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
-	parser->flags = flags;
-    fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 }
 
 void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol, txUnsigned flag)
