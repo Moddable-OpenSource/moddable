@@ -1004,10 +1004,12 @@ void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		*address = C_NULL;
 		address = &(slot->value.weakRef.link);
 	}
-	slot = mxFinalizationGroups.value.reference->next;
-	while (slot) {
-		fxMarkFinalizationGroup(the, slot->value.closure);
-		slot = slot->next;
+	if (mxFinalizationGroups.kind == XS_REFERENCE_KIND) {
+		slot = mxFinalizationGroups.value.reference->next;
+		while (slot) {
+			fxMarkFinalizationGroup(the, slot->value.closure);
+			slot = slot->next;
+		}
 	}
 }
 

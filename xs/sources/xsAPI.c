@@ -1798,7 +1798,8 @@ void fxEndHost(txMachine* the)
 
 void fxEndJob(txMachine* the)
 {
-	mxDuringJobs.value.reference->next = C_NULL;
+	if (mxDuringJobs.kind == XS_REFERENCE_KIND)
+		mxDuringJobs.value.reference->next = C_NULL;
 	if (gxDefaults.cleanupFinalizationGroups)
 		gxDefaults.cleanupFinalizationGroups(the);
 }

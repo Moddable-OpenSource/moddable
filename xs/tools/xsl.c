@@ -384,7 +384,6 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-			fxPrepareHome(the);
 			mxDuringJobs = mxUndefined;
 			mxFinalizationGroups = mxUndefined;
 			mxPendingJobs = mxUndefined;
@@ -392,6 +391,7 @@ int main(int argc, char* argv[])
 			mxBreakpoints = mxUndefined;
 			mxHostInspectors = mxUndefined;
 			mxInstanceInspectors = mxUndefined;
+			fxPrepareHome(the);
 		
 			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
@@ -769,6 +769,8 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
 	mxPush(mxErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxEvalErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxFinalizationGroupCleanupIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxFinalizationGroupPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxFunctionPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxGeneratorPrototype); fxFreezeBuiltIn(the);
