@@ -22,6 +22,7 @@
 #include "xsHost.h"
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
@@ -30,6 +31,13 @@
 
 #include "modSocket.h"
 #include "modLwipSafe.h"
+
+#ifndef MODDEF_SOCKET_READQUEUE
+	#define MODDEF_SOCKET_READQUEUE (6)
+#endif
+#ifndef MODDEF_SOCKET_LISTENERQUEUE
+	#define MODDEF_SOCKET_LISTENERQUEUE (4)
+#endif
 
 #ifdef mxDebug
 	extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
@@ -71,7 +79,7 @@ struct xsSocketUDPRemoteRecord {
 typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
-#define kReadQueueLength (6)
+#define kReadQueueLength MODDEF_SOCKET_READQUEUE
 struct xsSocketRecord {
 	xsMachine			*the;
 
@@ -114,7 +122,7 @@ struct xsSocketRecord {
 typedef struct xsListenerRecord xsListenerRecord;
 typedef xsListenerRecord *xsListener;
 
-#define kListenerPendingSockets (4)
+#define kListenerPendingSockets MODDEF_SOCKET_LISTENERQUEUE
 struct xsListenerRecord {
 	xsMachine			*the;
 
@@ -279,11 +287,12 @@ void xs_socket(xsMachine *the)
 				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
 				if (!parseAddress(temp, multicastIP))
 					xsUnknownError("invalid multicast IP address");
-
-				ttl = 1;
-				if (xsmcHas(xsArg(0), xsID_ttl)) {
-					xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
-					ttl = xsmcToInteger(xsVar(0));
+				if ((255 != multicastIP[0]) || (255 != multicastIP[1]) || (255 != multicastIP[2]) || (255 != multicastIP[3])) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
+					ttl = 1;
+					if (xsmcHas(xsArg(0), xsID_ttl)) {
+						xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
+						ttl = xsmcToInteger(xsVar(0));
+					}
 				}
 			}
 		}
