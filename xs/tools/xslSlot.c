@@ -1013,7 +1013,12 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_CODE_KIND:  {
 		fprintf(file, ".kind = XS_CODE_X_KIND}, ");
-		fprintf(file, ".value = { .code = { %s, ", fxGetCodeName(the, slot->value.code.address));
+		fprintf(file, ".value = { .code = { (txByte*)");
+		{
+			txChunk* chunk = (txChunk*)(slot->value.code.address - sizeof(txChunk));
+			fxWriteCData(file, slot->value.code.address, chunk->size - sizeof(txChunk));
+		}
+		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.code.closures);
 		fprintf(file, " } } ");
 	} break;

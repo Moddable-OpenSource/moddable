@@ -177,6 +177,7 @@ struct sxLinkerScript {
 	txHostFunctionBuilder* builders;
 	txCallbackName* callbackNames;
 	txSize hostsCount;
+	txLinkerPreload* preload;
 };
 
 struct sxLinkerStrip {

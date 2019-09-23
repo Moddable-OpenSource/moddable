@@ -251,6 +251,22 @@ int main(int argc, char* argv[])
 			fxSlashPath(script->path, mxSeparator, url[0]);
 			script = script->nextScript;
 		}
+		preload = linker->firstPreload;
+		while (preload) {
+			fxSlashPath(preload->name, mxSeparator, url[0]);
+			script = linker->firstScript;
+			while (script) {
+				if (!c_strcmp(preload->name, script->path)) {
+					script->preload = preload;
+					break;
+				}
+				script = script->nextScript;
+			}
+			if (!script) {
+				fxReportLinkerError(linker, "'%s': module not found", preload->name);
+			}
+			preload = preload->nextPreload;
+		}
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
 		if (archiving) {
@@ -490,7 +506,8 @@ int main(int argc, char* argv[])
 			while (script) {
 				if (script->hostsBuffer)
 					fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
-				fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
+				if (script->preload == C_NULL)
+					fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
 				script = script->nextScript;
 			}
 			fprintf(file, "#define mxScriptsCount %d\n", linker->scriptCount);
