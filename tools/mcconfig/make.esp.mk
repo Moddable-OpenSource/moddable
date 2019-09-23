@@ -55,7 +55,7 @@ endif
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE ?= 4M
 FLASH_MODE ?= qio
-FLASH_SPEED ?= 40
+FLASH_SPEED ?= 80
 FLASH_LAYOUT ?= eagle.flash.4m.ld
 
 # WiFi & Debug settings
