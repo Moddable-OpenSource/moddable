@@ -54,7 +54,7 @@ endif
 
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE ?= 4M
-FLASH_MODE ?= dio
+FLASH_MODE ?= qio
 FLASH_SPEED ?= 40
 FLASH_LAYOUT ?= eagle.flash.4m.ld
 
@@ -316,7 +316,7 @@ endif
 
 ESPTOOL_FLASH_OPT = \
 	--flash_freq $(FLASH_SPEED)m \
-	--flash_mode dout \
+	--flash_mode $(FLASH_MODE) \
 	--flash_size $(FLASH_SIZE)B \
 	0x0000 $(ESP_BOOTLOADER_BIN) \
 	0x1000 $(BIN_DIR)/main.bin \
