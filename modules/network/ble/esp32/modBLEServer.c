@@ -288,19 +288,20 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 
 	for (uint16_t j = 0; j < attribute_counts[serviceIndex]; ++j) {
 		const char_name_table *char_name;
+		const uint8_t *value;
 		uint16_t handle = gBLE->handles[serviceIndex][j];
 		attr = &gatt_db[serviceIndex][j];
 		
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), handle);
 		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-		if (0 == j) {
-			xsmcSetArrayBuffer(xsVar(1), attr->att_desc.value, attr->att_desc.length);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		}
-		else {
-			xsmcSetArrayBuffer(xsVar(1), attr->att_desc.uuid_p, attr->att_desc.uuid_length);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		
+		xsmcSetArrayBuffer(xsVar(1), attr->att_desc.uuid_p, attr->att_desc.uuid_length);
+		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+
+		if (ESP_GATT_OK == esp_ble_gatts_get_attr_value(handle, &length, &value) && 0 != length) {
+			xsmcSetArrayBuffer(xsVar(1), (uint8_t*)value, length);
+			xsmcSet(xsVar(0), xsID_value, xsVar(1));
 		}
 		for (uint16_t k = 0; k < char_name_count; ++k) {
 			if (serviceIndex == char_names[k].service_index && j == char_names[k].att_index) {
@@ -308,10 +309,6 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 				xsmcSet(xsVar(0), xsID_name, xsVar(1));
 				xsmcSetString(xsVar(1), (char*)char_names[k].type);
 				xsmcSet(xsVar(0), xsID_type, xsVar(1));
-				if (NULL != attr->att_desc.value) {
-					xsmcSetArrayBuffer(xsVar(1), attr->att_desc.value, attr->att_desc.length);
-					xsmcSet(xsVar(0), xsID_value, xsVar(1));
-				}
 				break;
 			}
 		}
