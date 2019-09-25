@@ -630,7 +630,12 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	char *str;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, c_strlen(str), (uint8_t*)str);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));

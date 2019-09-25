@@ -592,22 +592,25 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	char *str;
+	uint8_t *buffer;
+	uint8_t length;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			length = strlen(str);
+			buffer = c_malloc(length);
+			if (!buffer)
+				xsUnknownError("out of memory");
+			c_memmove(buffer, str, length);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				gattProcedureRecord procedure = {0};
-				uint16_t length = xsGetArrayBufferLength(xsArg(2));
-				uint8_t *buffer = c_malloc(length);
+				length = xsGetArrayBufferLength(xsArg(2));
+				buffer = c_malloc(length);
 				if (!buffer)
 					xsUnknownError("out of memory");
 				c_memmove(buffer, (uint8_t*)xsmcToArrayBuffer(xsArg(2)), length);
-				procedure.obj = xsThis;
-				procedure.cmd = CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID;
-				procedure.write_value_param.connection = conn_id;
-				procedure.write_value_param.handle = handle;
-				procedure.write_value_param.value = buffer;
-				procedure.write_value_param.length = length;
-				gattProcedureQueueAndDo(the, connection, &procedure);
 			}
 			else
 				goto unknown;
@@ -617,6 +620,15 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			xsUnknownError("unsupported type");
 			break;
 	}
+	
+	gattProcedureRecord procedure = {0};
+	procedure.obj = xsThis;
+	procedure.cmd = CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID;
+	procedure.write_value_param.connection = conn_id;
+	procedure.write_value_param.handle = handle;
+	procedure.write_value_param.value = buffer;
+	procedure.write_value_param.length = length;
+	gattProcedureQueueAndDo(the, connection, &procedure);
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)

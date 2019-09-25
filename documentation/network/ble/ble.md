@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: June 5, 2019
+Revised: September 25, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -685,7 +685,7 @@ onCharacteristicValue(characteristic, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeWithoutResponse` function to write a characteristic value on demand.
 
@@ -775,7 +775,7 @@ onDescriptorValue(descriptor, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeValue` function to write a descriptor value.
 

@@ -556,7 +556,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_RSP;
+	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_NO_RSP;
 	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
 	char *str;
 		
@@ -643,12 +643,19 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
+	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_NO_RSP;
+	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
+	char *str;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
