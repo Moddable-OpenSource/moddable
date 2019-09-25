@@ -643,7 +643,6 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 {
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	uint16_t value = xsmcToInteger(xsArg(2));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	switch (xsmcTypeOf(xsArg(2))) {
