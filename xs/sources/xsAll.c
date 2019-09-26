@@ -84,18 +84,6 @@ again:
 	return C_NULL;
 }
 
-txNumber fxArgToInteger(txMachine* the, txInteger i, txNumber value)
-{
-	if (mxArgc > i) {
-		value = fxToNumber(the, mxArgv(i));
-		if (c_isnan(value))
-			value = 0;
-		else if (c_isfinite(value))
-			value = c_trunc(value);
-	}
-	return value;
-}
-
 void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* frame, txString suffix)
 {
 	txSlot* target = frame + 2; 
@@ -234,24 +222,6 @@ txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 		}
 	}
 	return 0;
-}
-
-txString fxResizeString(txMachine* the, txSlot* a, txSize theSize)
-{
-	txString result = C_NULL;
-	if (a->kind == XS_STRING_KIND)
-		result = (txString)fxRenewChunk(the, a->value.string, theSize);
-	if (!result) {
-		txChunk* aChunk = (txChunk*)(a->value.string - sizeof(txChunk));
-		txSize aSize = aChunk->size - sizeof(txChunk); 
-		result = (txString)fxNewChunk(the, theSize);
-		aChunk = (txChunk*)(result - sizeof(txChunk));
-		theSize = aChunk->size - sizeof(txChunk);
-		c_memcpy(result, a->value.string, (aSize < theSize) ? aSize : theSize);
-		a->value.string = result;
-		a->kind = XS_STRING_KIND;
-	}
-	return result;
 }
 
 int fxStringGetter(void* theStream)
