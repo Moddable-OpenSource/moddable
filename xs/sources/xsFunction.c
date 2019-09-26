@@ -171,6 +171,8 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	/* NAME */
 	if (name != XS_NO_ID)
 		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+	else if (gxDefaults.newFunctionName)
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }

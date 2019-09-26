@@ -186,6 +186,13 @@ int main(int argc, char* argv[])
 	int argi;
 	int error = 0;
 	int option = 0;
+	char path[C_PATH_MAX];
+	char* dot;
+#if mxWindows
+    char* harnessPath = "..\\harness";
+#else
+    char* harnessPath = "../harness";
+#endif
 	if (argc == 1) {
 		fxPrintUsage();
 		return 0;
@@ -201,6 +208,8 @@ int main(int argc, char* argv[])
 			option = 2;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
+		else if (!strcmp(argv[argi], "-t"))
+			option = 4;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
 		else {
@@ -208,7 +217,11 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
-	if (option == 0)
+	if (option == 0) {
+		if (c_realpath(harnessPath, path))
+			option  = 4;
+	}
+	if (option == 4)
 		error = main262(argc, argv);
 	else {
 		xsCreation _creation = {
@@ -225,7 +238,6 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
-		char path[C_PATH_MAX];
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
@@ -252,7 +264,8 @@ int main(int argc, char* argv[])
 					else {	
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
-						if (option == 2) 
+						dot = strrchr(path, '.');
+						if (((option == 0) && dot && !c_strcmp(dot, ".mjs")) || (option == 2))
 							fxRunModuleFile(the, path);
 						else
 							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
@@ -423,13 +436,17 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-v] strings...\n");
+	printf("xst [-h] [-e] [-m] [-s] [-t] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
+	printf("\t-t: strings are paths to test262 cases or directories\n");
 	printf("\t-v: print XS version\n");
-	printf("without -e, -m or -s, strings are paths to test262 cases or directories\n");
+	printf("without -e, -m, -s, or -t:\n");
+	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
+	printf("\telse if the extension is .mjs, strings are paths to modules\n");
+	printf("\telse strings are paths to scripts\n");
 }
 
 void fxPushResult(txContext* context, char* path) 

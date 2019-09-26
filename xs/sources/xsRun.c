@@ -2023,7 +2023,7 @@ XS_CODE_JUMP:
 			index = XS_NO_ID;
 			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
-				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
+				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined private property", (txID)offset);
 			goto XS_CODE_GET_ALL;
 		mxCase(XS_CODE_GET_PROPERTY_AT)
 			variable = (mxStack + 1)->value.reference;
@@ -2181,7 +2181,7 @@ XS_CODE_JUMP:
 			index = XS_NO_ID;
 			slot = gxDefaults.setPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
-				mxRunDebugID(XS_TYPE_ERROR, "set %s: undefined private property", (txID)offset);
+				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined private property", (txID)offset);
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_PROPERTY_AT)
 			variable = (mxStack + 2)->value.reference;
