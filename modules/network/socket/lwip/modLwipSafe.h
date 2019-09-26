@@ -29,7 +29,7 @@
 	#define tcp_listen_safe tcp_listen
 	#define tcp_connect_safe(skt, ipaddr, port, connected) tcp_connect(skt, ipaddr, port, connected)
 	// ESP8266 has a sort-of memory leak when using tcp_close without tcp_abort (see https://github.com/esp8266/Arduino/issues/230)
-	#define tcp_close_safe(pb) {if (CLOSED == pb->state) tcp_close(pb); else {tcp_close(pb); tcp_abort(pb);}}
+	#define tcp_close_safe(pb) {if (CLOSED == (pb)->state) tcp_close(pb); else {tcp_close(pb); tcp_abort(pb);}}
 	#define tcp_output_safe tcp_output
 	#define tcp_write_safe tcp_write
 	#define tcp_recved_safe(skt, len) tcp_recved(skt, len)
