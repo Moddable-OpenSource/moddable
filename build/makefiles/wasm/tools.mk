@@ -28,6 +28,7 @@ MAKEFLAGS += --silent
 endif
 
 CC = emcc
+OPT = wasm-opt
 XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
@@ -257,6 +258,8 @@ $(BIN_DIR):
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
 	$(CC) $(LINK_FLAGS) $(LIBRARIES) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o -o $@.js
+	@echo "#" $(NAME) $(GOAL) ": wasm-opt" $(@F)
+	$(OPT) -O2 $(BIN_DIR)/$(NAME).wasm -o $(BIN_DIR)/$(NAME).wasm
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
