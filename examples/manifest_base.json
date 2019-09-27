@@ -60,6 +60,9 @@
 		"qca4020": {
 			"include": "$(BUILD)/devices/qca4020/manifest.json"
 		},
+		"nrf52": {
+			"include": "$(BUILD)/devices/nrf52/manifest.json"
+		},
 		"lin": {
 			"modules": {
 				"*": [

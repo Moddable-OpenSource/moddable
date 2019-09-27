@@ -1,0 +1,101 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <BreakpointListItem trigger="" line="185" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../../main.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="76" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../../../../../../modules/pins/i2c/nrf52/modI2C.c" useHWbreakpoint="false"/>
+  <Exceptions set="MemManage;HardFault"/>
+ </Breakpoints>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="xsproj" radix="16" sizeText="sizeof m_xfer_done" addressText="&amp;m_xfer_done"/>
+ </Memory1>
+ <Memory2>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="xsproj" radix="16" sizeText="" addressText=""/>
+ </Memory2>
+ <Memory3>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="xsproj" radix="16" sizeText="" addressText=""/>
+ </Memory3>
+ <Memory4>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="xsproj" radix="16" sizeText="" addressText=""/>
+ </Memory4>
+ <Project>
+  <ProjectSessionItem path="xsproj"/>
+  <ProjectSessionItem path="xsproj;xsproj"/>
+  <ProjectSessionItem path="xsproj;xsproj;Application"/>
+  <ProjectSessionItem path="xsproj;xsproj;Board Definition"/>
+  <ProjectSessionItem path="xsproj;xsproj;FreeRTOS"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;build"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;build;devices"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;build;devices;nrf52"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;build;devices;nrf52;base"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;xs"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;xs;platforms"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;xs;platforms;nrf52"/>
+  <ProjectSessionItem path="xsproj;xsproj;moddable;xs;sources"/>
+  <ProjectSessionItem path="xsproj;xsproj;nRF_Drivers"/>
+  <ProjectSessionItem path="xsproj;xsproj;nRF_Libraries"/>
+  <ProjectSessionItem path="xsproj;xsproj;nRF_Segger_RTT"/>
+  <ProjectSessionItem path="xsproj;xsproj;nRF_SoftDevice"/>
+  <ProjectSessionItem path="xsproj;xsproj;Segger Startup Files"/>
+ </Project>
+ <Register1>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context;CPU" name="xsproj" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register1>
+ <Register2>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="xsproj" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register2>
+ <Register3>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="xsproj" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register3>
+ <Register4>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="xsproj" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register4>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never">
+   <Watchpoint expression="p_file_name" name="p_file_name" radix="16" linenumber="0" filename="../ses"/>
+  </Watches>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="933" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="918" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="703" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_twi.c" selected="0" top="31" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="168" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/debugger.c" selected="0" top="146" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="251" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/external/freertos/portable/CMSIS/nrf52/port_cmsis_systick.c" selected="0" top="235" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="47" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/xsmain.c" selected="0" top="29" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="343" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsPlatform.c" selected="0" top="313" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="3898" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/external/freertos/source/tasks.c" selected="0" top="3882" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="302" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/sources/xsDebug.c" selected="0" top="285" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="176" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/soc/nrfx_coredep.h" selected="0" top="153" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="73" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/softdevice/s140/headers/nrf_error.h" selected="0" top="61" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="31" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/i2c/nrf52/modI2C.h" selected="0" top="17" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="530" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_twim.c" selected="0" top="515" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="429" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/hal/nrf_twim.h" selected="0" top="414" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="553" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_twi.h" selected="0" top="548" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="183" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/i2c/i2c.c" selected="0" top="168" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1166" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/external/freertos/source/include/task.h" selected="0" top="1151" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="99" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/util/app_error_weak.c" selected="0" top="84" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="66" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/i2c/nrf52/modI2C.c" selected="1" top="187" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="178" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_twi.c" selected="0" top="46" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="456" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/softdevice/s140/headers/nrf_nvic.h" selected="0" top="441" codecName="Default"/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="xsproj" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="/Users/mkellner/nRF5x/moddable/build/components/libraries/hardfault/hardfault_implementation.c&#xa;" fileDialogInitialDirectory="/Users/mkellner/nRF5x/moddable/modules/pins/i2c/nrf52" debugSearchPath="/Users/mkellner/nRF5x/moddable/build/tmp/nrf52/debug/lib/&#xa;/Users/mkellner/nRF5x/moddable/build/tmp/nrf52/debug/helloworld/" autoConnectCapabilities="3711"/>
+</session>
