@@ -1,0 +1,30 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/esp/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*",
+		]
+	},
+	"preload": [
+		"time",
+		"timer",
+	],
+	"recipes": {
+		"separate-asm": [
+			"commodetto*",
+			"piu*",
+			"Resource*",
+			"mod*",
+			"timer*",
+			"i2c*",
+			"digital*",
+		]
+	},
+	"platforms": {
+		"nrf52/*": {
+			"include": "$(BUILD)/devices/nrf52/targets/$(SUBPLATFORM)/manifest.json"
+		},
+	}
+}
