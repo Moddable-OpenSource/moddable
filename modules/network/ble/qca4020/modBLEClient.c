@@ -453,6 +453,11 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	xsUnknownError("unimplemented");	// @@ Only available from HCI connection??
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 	uint32_t conn_id = xsmcToInteger(xsArg(0));

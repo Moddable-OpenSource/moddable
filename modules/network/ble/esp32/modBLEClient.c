@@ -82,6 +82,7 @@ struct modBLEConnectionRecord {
 	esp_gatt_if_t gattc_if;
 	int16_t conn_id;
 	uint16_t app_id;
+	uint8_t mtu_exchange_pending;
 	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
@@ -362,6 +363,19 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	esp_ble_gap_read_rssi(connection->bda);
+}
+
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+
+	if (ESP_OK != esp_ble_gatt_set_local_mtu(mtu))
+		xsRangeError("invalid mtu");
+	connection->mtu_exchange_pending = 1;
+	esp_ble_gattc_send_mtu_req(connection->gattc_if, conn_id);
 }
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
@@ -919,6 +933,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 			goto bail;
 		}
 		connection->conn_id = open->conn_id;
+
 		xsmcVars(3);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), open->conn_id);
@@ -1063,6 +1078,18 @@ static void gattcUnregisterNotifyEvent(void *the, void *refcon, uint8_t *message
 	xsEndHost(gBLE->the);
 }
 
+static void gattcConfigMTUEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_cfg_mtu_evt_param *cfg_mtu = (struct gattc_cfg_mtu_evt_param *)message;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(cfg_mtu->conn_id);
+	if (!connection || !connection->mtu_exchange_pending) return;
+	
+	connection->mtu_exchange_pending = 0;
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(cfg_mtu->mtu));
+	xsEndHost(gBLE->the);
+}
+
 void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_ble_gattc_cb_param_t *p_data = (esp_ble_gattc_cb_param_t *)param;
@@ -1177,6 +1204,17 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, (void*)event);
 				}
 			}
+			break;
+		case ESP_GATTC_CFG_MTU_EVT:
+			if (param->cfg_mtu.status == ESP_GATT_OK) {
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->cfg_mtu, sizeof(struct gattc_cfg_mtu_evt_param), gattcConfigMTUEvent, NULL);
+			}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_CFG_MTU_EVT failed, status =");
+				LOG_GATTC_INT(param->cfg_mtu.status);
+			}
+#endif
 			break;
 	}
 }

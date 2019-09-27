@@ -394,6 +394,11 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	gecko_cmd_le_connection_get_rssi(conn_id);
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 static void gattProcedureExecute(gattProcedure procedure)
 {
 	procedure->executed = true;

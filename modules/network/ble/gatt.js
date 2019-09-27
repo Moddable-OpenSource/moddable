@@ -63,6 +63,12 @@ export class Client {
 		this._readRSSI(this.connection);
 	}
 	
+	exchangeMTU(value) {
+		this._exchangeMTU(this.connection, value);
+	}
+	
+	_exchangeMTU() @ "xs_gap_connection_exchange_mtu"
+	
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
 	_disconnect() @ "xs_gap_connection_disconnect"

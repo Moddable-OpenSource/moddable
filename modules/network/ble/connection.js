@@ -69,6 +69,9 @@ export class Connection {
 			case "onAuthenticated":
 				return this.ble.onAuthenticated(this.client);
 				break;
+			case "onMTUExchanged":
+				this.ble.onMTUExchanged(this.client, params);
+				break;
 		}
 	}
 };
