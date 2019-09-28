@@ -1,0 +1,21 @@
+{
+	"modules": {
+		"pins/pwm": "$(MODULES)/pins/pwm/pwm",
+	},
+	"preload": "pins/pwn",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODULES)/pins/pwm/esp/*",
+			},
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/pwm/esp32/*",
+			},
+		},
+		"...": {
+			"error": "pins/pwm module unsupported"
+		}
+	}
+}

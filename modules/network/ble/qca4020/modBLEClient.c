@@ -453,6 +453,11 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	xsUnknownError("unimplemented");	// @@ Only available from HCI connection??
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 	uint32_t conn_id = xsmcToInteger(xsArg(0));
@@ -630,7 +635,12 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	char *str;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, c_strlen(str), (uint8_t*)str);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));

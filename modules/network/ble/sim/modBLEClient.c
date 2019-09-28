@@ -68,6 +68,10 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 {
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+}
+
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 }
