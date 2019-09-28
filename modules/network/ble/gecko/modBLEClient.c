@@ -161,6 +161,7 @@ struct modBLEConnectionRecord {
 	uint8_t bdaType;
 	uint8_t bond;
 	gattProcedure procedureQueue;
+	uint8_t mtu_exchange_pending;
 	
 	uint16_t handles[char_name_count];
 };
@@ -396,7 +397,13 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 
 void xs_gap_connection_exchange_mtu(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+
+	connection->mtu_exchange_pending = 1;
+	gecko_cmd_gatt_set_max_mtu(mtu);
 }
 
 static void gattProcedureExecute(gattProcedure procedure)
@@ -1013,6 +1020,17 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 	xsEndHost(gBLE->the);
 }
 
+static void gattMTUExchangedEvent(struct gecko_msg_gatt_mtu_exchanged_evt_t *evt)
+{
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
+	if (!connection || !connection->mtu_exchange_pending) return;
+	
+	connection->mtu_exchange_pending = 0;
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(evt->mtu));
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
@@ -1055,6 +1073,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_sm_bonding_failed_id:
 			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
+			break;
+		case gecko_evt_gatt_mtu_exchanged_id:
+			gattMTUExchangedEvent(&evt->data.evt_gatt_mtu_exchanged);
 			break;
 		default:
 			break;
