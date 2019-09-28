@@ -31,6 +31,7 @@ struct modI2CConfigurationRecord {
 	int16_t						sda;
 	int16_t						scl;
 	uint8_t						address;		// 7-bit
+	uint16_t					timeout;
 };
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;

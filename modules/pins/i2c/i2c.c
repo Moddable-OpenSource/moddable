@@ -40,7 +40,7 @@ typedef struct modI2CRecord *modI2C;
 void xs_i2c(xsMachine *the)
 {
 	modI2C i2c;
-	int sda, scl, address, hz = 0, throw = 1;
+	int sda, scl, address, hz = 0, throw = 1, timeout = 0;
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
@@ -62,6 +62,11 @@ void xs_i2c(xsMachine *the)
 		throw = xsmcTest(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_timeout)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
+		timeout = xmscToInteger(xsVar(0));
+	}
+
 	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CRecord));
 
 	i2c->state.hz = hz;
@@ -69,6 +74,7 @@ void xs_i2c(xsMachine *the)
 	i2c->state.scl = scl;
 	i2c->state.address = address;
 	i2c->throw = throw;
+	i2c->timeout = timeout;
 	modI2CInit(&i2c->state);
 }
 

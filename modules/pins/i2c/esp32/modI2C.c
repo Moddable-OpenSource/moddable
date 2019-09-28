@@ -111,6 +111,9 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 		gHz = 0;
 	}
 
+	conf.timeout = config->timeout ? config->timeout : 10000;
+	i2c_set_timeout(I2C_NUM_1, conf.timeout);
+
 	conf.mode = I2C_MODE_MASTER;
 	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
 	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
