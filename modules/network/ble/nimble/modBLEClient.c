@@ -109,6 +109,11 @@ typedef struct {
 	uint16_t handle;
 } characteristicNotificationEnabledRecord, *characteristicNotificationEnabled;
 
+typedef struct {
+	uint16_t conn_id;
+	uint16_t mtu;
+} mtuExchangedRecord;
+
 static void modBLEConnectionAdd(modBLEConnection connection);
 static void modBLEConnectionRemove(modBLEConnection connection);
 static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
@@ -126,6 +131,7 @@ static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct
 static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_def_handle, const struct ble_gatt_dsc *dsc, void *arg);
 static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
 static int nimble_subscribe_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
+static int nimble_mtu_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t mtu, void *arg);
 
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
@@ -408,7 +414,14 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 
 void xs_gap_connection_exchange_mtu(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+
+	if (0 != ble_att_set_preferred_mtu(mtu))
+		xsRangeError("invalid mtu");
+	ble_gattc_exchange_mtu(conn_id, nimble_mtu_event, NULL);
 }
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
@@ -959,6 +972,18 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
 	}
 }
 
+static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	mtuExchangedRecord *mer = (mtuExchangedRecord*)message;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(mer->conn_id);
+	if (!connection) return;
+	
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(mer->mtu));
+	xsEndHost(gBLE->the);
+}
+
+
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg)
 {
 	int rc = 0;
@@ -1142,6 +1167,17 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
     
 bail:
 	return rc;
+}
+
+static int nimble_mtu_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t mtu, void *arg)
+{
+    if (error->status == 0) {
+    	mtuExchangedRecord mer;
+    	mer.conn_id = conn_handle;
+    	mer.mtu = mtu;
+		modMessagePostToMachine(gBLE->the, &mer, sizeof(mtuExchangedRecord), mtuExchangedEvent, NULL);
+    }
+    return 0;
 }
 
 void logGAPEvent(struct ble_gap_event *event) {
