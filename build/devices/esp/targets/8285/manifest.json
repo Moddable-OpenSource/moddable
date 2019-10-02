@@ -3,7 +3,9 @@
         "esp/8285": {
             "build": {
                 "FLASH_SIZE": "1M",
-                "FLASH_LAYOUT": "eagle.flash.1m.ld"
+                "FLASH_LAYOUT": "eagle.flash.1m.ld",
+				"FLASH_MODE": "dout",
+				"FLASH_SPEED": "40"
             }
         }
     }
