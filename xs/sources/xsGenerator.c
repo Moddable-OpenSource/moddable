@@ -37,6 +37,8 @@
 
 #include "xsAll.h"
 
+#define mxPromisePrint 1
+
 static void fxNewGeneratorResult(txMachine* the, txBoolean done);
 static txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot);
 static void fxAsyncGeneratorRejectAwait(txMachine* the);
@@ -413,6 +415,11 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			mxPush(mxPromiseConstructor);
 			fxCallID(the, mxID(_resolve));
 			mxPullSlot(value);
+#ifdef mxPromisePrint
+			fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
+#endif
+			if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+				state->value.integer = XS_CODE_END;
 			if (state->value.integer == XS_CODE_AWAIT) {
 				mxPushSlot(resolveAwaitFunction);
 				mxPushSlot(rejectAwaitFunction);
@@ -551,6 +558,9 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 	
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncGenerator_prototype_aux %d\n", promise->next->ID);
+#endif
 	slot = mxPromiseStatus(promise);
 	slot->value.integer = mxPendingStatus;
 	mxPullSlot(mxResult);
@@ -712,6 +722,9 @@ void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
 	
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncFromSyncIterator_prototype_next %d\n", promise->next->ID);
+#endif
 	slot = mxPromiseStatus(promise);
 	slot->value.integer = mxPendingStatus;
 	mxPullSlot(mxResult);
@@ -737,6 +750,9 @@ void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
 			done = fxToBoolean(the, the->stack);
 			mxPop();
 			fxGetID(the, mxID(_value));
+			mxPushInteger(1);
+			mxPush(mxPromiseConstructor);
+			fxCallID(the, mxID(_resolve));
 			fxNewGeneratorResult(the, done);
 			mxPushInteger(1);
 			mxPushUndefined();
@@ -769,6 +785,9 @@ void fx_AsyncFromSyncIterator_prototype_return(txMachine* the)
 
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncFromSyncIterator_prototype_return %d\n", promise->next->ID);
+#endif
 	slot = mxPromiseStatus(promise);
 	slot->value.integer = mxPendingStatus;
 	mxPullSlot(mxResult);
@@ -833,6 +852,9 @@ void fx_AsyncFromSyncIterator_prototype_throw(txMachine* the)
 	
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncFromSyncIterator_prototype_throw %d\n", promise->next->ID);
+#endif
 	slot = mxPromiseStatus(promise);
 	slot->value.integer = mxPendingStatus;
 	mxPullSlot(mxResult);

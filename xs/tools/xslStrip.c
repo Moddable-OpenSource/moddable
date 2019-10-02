@@ -187,6 +187,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Promise);
 				fxStripCallback(linker, fxOnRejectedPromise);
 				fxStripCallback(linker, fxOnResolvedPromise);
+				fxStripCallback(linker, fxOnThenablePromise);
 				fxStripCallback(linker, fxRejectPromise);
 				fxStripCallback(linker, fxResolvePromise);
 				fxUnuseCode(XS_CODE_ASYNC_FUNCTION);
@@ -349,6 +350,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Promise_resolve);
 		fxUnstripCallback(linker, fxOnRejectedPromise);
 		fxUnstripCallback(linker, fxOnResolvedPromise);
+		fxUnstripCallback(linker, fxOnThenablePromise);
 		fxUnstripCallback(linker, fxRejectPromise);
 		fxUnstripCallback(linker, fxResolvePromise);
 	}

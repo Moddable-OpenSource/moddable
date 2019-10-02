@@ -490,8 +490,9 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 		if (property)
 			return 0;
 		*address = property = fxNewSlot(the);
-        property->ID = id;
-        property->kind = slot->kind;
+ 		property->flag = (mask & XS_METHOD_FLAG) ? XS_DONT_SET_FLAG : XS_NO_FLAG;
+       	property->ID = id;
+       	property->kind = slot->kind;
 		property->value = slot->value;
         if (property->kind == XS_REFERENCE_KIND) {
 			txSlot* function = slot->value.reference;

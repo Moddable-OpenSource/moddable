@@ -1598,6 +1598,7 @@ mxExport void fx_Promise_prototype_finally(txMachine* the);
 mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
+mxExport void fxOnThenable(txMachine* the);
 mxExport void fxRejectPromise(txMachine* the);
 mxExport void fxResolvePromise(txMachine* the);
 
@@ -2138,6 +2139,7 @@ enum {
 #define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next->next)
 #define mxWaitingModules(REALM)		((REALM)->next->next->next->next->next->next->next)
 #define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
+#define mxRejectedModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,
@@ -2260,6 +2262,7 @@ enum {
 	mxTransferConstructorStackIndex,
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
+	mxOnThenableFunctionStackIndex,
 	mxRejectPromiseFunctionStackIndex,
 	mxResolvePromiseFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
@@ -2443,6 +2446,7 @@ enum {
 #define mxTransferConstructor the->stackPrototypes[-1 - mxTransferConstructorStackIndex]
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
+#define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
 #define mxRejectPromiseFunction the->stackPrototypes[-1 - mxRejectPromiseFunctionStackIndex]
 #define mxResolvePromiseFunction the->stackPrototypes[-1 - mxResolvePromiseFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]

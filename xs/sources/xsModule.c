@@ -41,16 +41,17 @@
 #define mxReport 0
 #endif
 
+static void fxCompleteModule(txMachine* the, txSlot* realm, txSlot* module, txSlot* exception);
 static void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
-static void fxFulfillImport(txMachine* the, txSlot* module);
+static void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module);
 static void fxFulfillModule(txMachine* the);
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
-static txBoolean fxIsModuleReady(txMachine* the, txSlot* module, txSlot* runningModules, txSlot* waitingModules);
+static txInteger fxGetModuleStatus(txMachine* the, txSlot* realm, txSlot* module);
 static txSlot* fxLinkModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 static void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module);
 static txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID);
 static void fxRecurseExports(txMachine* the, txSlot* realm, txID moduleID, txSlot* circularities, txSlot* exports);
-static void fxRejectImport(txMachine* the, txSlot* module);
+static void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module);
 static void fxRejectModule(txMachine* the);
 static void fxResolveExports(txMachine* the, txSlot* realm, txSlot* module);
 static void fxResolveFrom(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
@@ -179,43 +180,71 @@ void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
 	the->stack = stack;
 }
 
+void fxCompleteModule(txMachine* the, txSlot* realm, txSlot* module, txSlot* exception)
+{
+	txSlot** address = &(mxRunningModules(realm)->value.reference->next);
+	txSlot* property;
+	while ((property = *address)) {
+		if (property->value.reference == module) {
+			*address = property->next;
+			break;
+		}
+		address = &(property->next);
+	}
+	if (exception) {
+		property = mxBehaviorSetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInstanceInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+		property->value = exception->value;
+		property->kind = exception->kind;
+	}
+}
+
 void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 {
 	txSlot* runningModules = mxRunningModules(realm)->value.reference;
 	txSlot* waitingModules = mxWaitingModules(realm)->value.reference;
-	txSlot** address = &(waitingModules->next);
+	txSlot** waitingAddress = &(waitingModules->next);
 	txSlot* module;
-	txSlot* function;
+	txSlot* slot;
 	txSlot* result;
+	txSlot* function;
 	txSlot* home;
-	while ((module = *address)) {
-		if (fxIsModuleReady(the, module, runningModules, waitingModules)) {
+	while ((module = *waitingAddress)) {
+		txInteger status = fxGetModuleStatus(the, realm, module);
+		if (status < 0) {
+			*waitingAddress = module->next;
+			module->next = C_NULL;
+			if (flag == XS_ASYNC_FLAG)
+				fxRejectImport(the, realm, module->value.reference);
+			else
+				fxJump(the);
+		}
+		else if (status > 0) {
 		#if mxReport
 			fxReport(the, "# Executing module \"%s\"\n", fxGetKeyName(the, module->ID));
 		#endif
-			*address = module->next;
-			module->next = runningModules->next;
-			runningModules->next = module;
+			*waitingAddress = module->next;
+			module->next = C_NULL;
+			slot = fxLastProperty(the, runningModules);
+			slot->next = module;
 			
-			function = mxModuleFunction(module);
 			mxPushSlot(mxModuleHosts(module));
 			mxPull(mxHosts);
 			{
 				mxTry(the) {
 					mxPushInteger(0);
 					mxPushUndefined();
-					mxPushSlot(function);
+					mxPushSlot(mxModuleFunction(module));
 					fxCall(the);
 					result = the->stack;
 					if (mxIsReference(result) && mxIsPromise(result->value.reference)) {
 						function = fxNewHostFunction(the, fxFulfillModule, 1, XS_NO_ID);
 						home = mxFunctionInstanceHome(function);
-						home->value.home.object = runningModules;
+						home->value.home.object = realm;
 						home->value.home.module = module->value.reference;
 	
 						function = fxNewHostFunction(the, fxRejectModule, 1, XS_NO_ID);
 						home = mxFunctionInstanceHome(function);
-						home->value.home.object = runningModules;
+						home->value.home.object = realm;
 						home->value.home.module = module->value.reference;
 				
 						mxPushInteger(2);
@@ -224,17 +253,15 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 						mxPop();
 					}
 					else {
-						runningModules->next = module->next;
-						module->next = C_NULL;
-						fxFulfillImport(the, module);
+						fxCompleteModule(the, realm, module->value.reference, C_NULL);
+						fxFulfillImport(the, realm, module->value.reference);
 					}
 					mxPop();
 				}
 				mxCatch(the) {
-					runningModules->next = module->next;
-					module->next = C_NULL;
+					fxCompleteModule(the, realm, module->value.reference, &mxException);
 					if (flag == XS_ASYNC_FLAG)
-						fxRejectImport(the, module);
+						fxRejectImport(the, realm, module->value.reference);
 					else
 						fxJump(the);
 				}
@@ -243,16 +270,19 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 			mxPull(mxHosts);
 		}
 		else
-			address = &(module->next);
+			waitingAddress = &(module->next);
 	}
 }
 
-void fxFulfillImport(txMachine* the, txSlot* module)
+void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module)
 {
-	txSlot* fulfillFunction = mxModuleFulfill(module);
-	mxModuleMeta(module)->next = C_NULL;
+	txSlot* fulfillFunction = mxModuleInstanceFulfill(module);
+	mxModuleInstanceMeta(module)->next = C_NULL;
+#if mxReport
+	fxReport(the, "# Fullfilled module \"%s\"\n", fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id));
+#endif
 	if (fulfillFunction->kind != XS_NULL_KIND) {
-		mxPushSlot(module);
+		mxPushReference(module);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
@@ -267,17 +297,11 @@ void fxFulfillImport(txMachine* the, txSlot* module)
 void fxFulfillModule(txMachine* the)
 {
 	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
-	txSlot** address = &(home->value.home.object->next);
-	txSlot* module;
-	while ((module = *address)) {
-		if (module->value.reference == home->value.home.module) {
-			*address = module->next;
-			break;
-		}
-		address = &(module->next);
-	}
-	fxFulfillImport(the, module);
-	fxExecuteModules(the, mxModuleInstanceInternal(home->value.home.module)->value.module.realm, XS_ASYNC_FLAG);
+	txSlot* realm = home->value.home.object;
+	txSlot* module = home->value.home.module;
+	fxCompleteModule(the, realm, module, C_NULL);
+	fxFulfillImport(the, realm, module);
+	fxExecuteModules(the, realm, XS_ASYNC_FLAG);
 }
 
 txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
@@ -294,11 +318,27 @@ txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 	return C_NULL;
 }
 
-txBoolean fxIsModuleReady(txMachine* the, txSlot* module, txSlot* runningModules, txSlot* waitingModules)
+txInteger fxGetModuleStatus(txMachine* the, txSlot* realm, txSlot* module)
 {
+	txSlot* rejectedModules = mxRejectedModules(realm)->value.reference;
+	txSlot* runningModules = mxRunningModules(realm)->value.reference;
+	txSlot* waitingModules = mxWaitingModules(realm)->value.reference;
+	txSlot* fromModules = mxModuleTransfers(module)->value.reference;
+	txSlot* fromModule;
 	if (mxModuleTransfers(module)->kind == XS_NULL_KIND)
 		return 1;
-	txSlot* fromModule = mxModuleTransfers(module)->value.reference->next;
+	fromModule = fromModules->next;
+	while (fromModule) {
+		txSlot* exception = mxBehaviorGetProperty(the, rejectedModules, fromModule->ID, XS_NO_ID, XS_OWN);
+		if (exception) {
+			txSlot* property = mxBehaviorSetProperty(the, rejectedModules, mxModuleInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+			property->value = exception->value;
+			property->kind = exception->kind;
+			return -1;
+		}
+		fromModule = fromModule->next;
+	}
+	fromModule = fromModules->next;
 	while (fromModule) {
 		txSlot* runningModule = runningModules->next;
 		while (runningModule) {
@@ -308,7 +348,7 @@ txBoolean fxIsModuleReady(txMachine* the, txSlot* module, txSlot* runningModules
 		}
 		fromModule = fromModule->next;
 	}
-	fromModule = mxModuleTransfers(module)->value.reference->next;
+	fromModule = fromModules->next;
 	while (fromModule) {
 		txSlot* waitingModule = waitingModules->next;
 		while (waitingModule) {
@@ -534,12 +574,16 @@ void fxRecurseExports(txMachine* the, txSlot* realm, txID moduleID, txSlot* circ
 	}
 }
 
-void fxRejectImport(txMachine* the, txSlot* module)
+void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module)
 {
-	txSlot* rejectFunction = mxModuleReject(module);
-	mxModuleMeta(module)->next = C_NULL;
+	txSlot* rejectFunction = mxModuleInstanceReject(module);
+	mxModuleInstanceMeta(module)->next = C_NULL;
+#if mxReport
+	fxReport(the, "# Rejected module \"%s\"\n", fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id));
+#endif
 	if (rejectFunction->kind != XS_NULL_KIND) {
-		mxPush(mxException);
+		txSlot* exception = mxBehaviorGetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInstanceInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+		mxPushSlot(exception);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
@@ -554,17 +598,11 @@ void fxRejectImport(txMachine* the, txSlot* module)
 void fxRejectModule(txMachine* the)
 {
 	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
-	txSlot** address = &(home->value.home.object->next);
-	txSlot* module;
-	while ((module = *address)) {
-		if (module->value.reference == home->value.home.module) {
-			*address = module->next;
-			break;
-		}
-		address = &(module->next);
-	}
-	fxRejectImport(the, module);
-	fxExecuteModules(the, mxModuleInstanceInternal(home->value.home.module)->value.module.realm, XS_ASYNC_FLAG);
+	txSlot* realm = home->value.home.object;
+	txSlot* module = home->value.home.module;
+	fxCompleteModule(the, realm, module, mxArgv(0));
+	fxRejectImport(the, realm, module);
+	fxExecuteModules(the, realm, XS_ASYNC_FLAG);
 }
 
 void fxResolveExports(txMachine* the, txSlot* realm, txSlot* module)
@@ -921,7 +959,8 @@ void fxResolveTransfer(txMachine* the, txSlot* realm, txID fromID, txID importID
 void fxRunImport(txMachine* the)
 {
 	txSlot* stack = the->stack;
-	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+    txSlot* function = mxFunction;
+    txSlot* module = (function->kind == XS_REFERENCE_KIND) ? mxFunctionInstanceHome(function->value.reference)->value.home.module : C_NULL;
 	txSlot* promise;
 	txSlot* status;
 	txSlot* already;
@@ -946,13 +985,25 @@ void fxRunImport(txMachine* the)
 				realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			fxToString(the, stack);
 			module = fxLinkModule(the, realm, internal->value.module.id, stack);
-			slot = mxModuleFulfill(module);
-			slot->kind = XS_REFERENCE_KIND;
-			slot->value.reference = fulfillFunction;
-			slot = mxModuleReject(module);
-			slot->kind = XS_REFERENCE_KIND;
-			slot->value.reference = rejectFunction;
-			fxExecuteModules(the, realm, XS_NO_FLAG);
+			if (mxModuleMeta(module)->next == C_NULL) {
+				mxPushSlot(module);
+				/* COUNT */
+				mxPushInteger(1);
+				/* THIS */
+				mxPushUndefined();
+				/* FUNCTION */
+				mxPushReference(fulfillFunction);
+				fxCall(the);
+			}
+			else {
+				slot = mxModuleFulfill(module);
+				slot->kind = XS_REFERENCE_KIND;
+				slot->value.reference = fulfillFunction;
+				slot = mxModuleReject(module);
+				slot->kind = XS_REFERENCE_KIND;
+				slot->value.reference = rejectFunction;
+				fxExecuteModules(the, realm, XS_NO_FLAG);
+			}
 		}
 		mxCatch(the) {
 			mxPush(mxException);

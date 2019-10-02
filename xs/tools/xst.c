@@ -732,6 +732,7 @@ bail:
 		fclose(file);
 }
 
+static char gxDoneMessage[1024];
 int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message)
 {
 	xsCreation _creation = {
@@ -756,6 +757,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 #else
 	machine = xsCreateMachine(creation, "xst", NULL);
 #endif
+	gxDoneMessage[0] = 0;
 	xsBeginHost(machine);
 	{
 		xsTry {
@@ -822,6 +824,25 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
+			xsException = xsUndefined;
+		}
+		xsCatch {
+		}
+	}
+	xsEndHost(machine);
+	fxRunLoop(machine);
+	xsBeginHost(machine);
+	{
+		if (gxDoneMessage[0]) {
+			if (strcmp(gxDoneMessage, "OK")) {
+				snprintf(message, 1024, "%s", gxDoneMessage);
+			}
+			else {
+				snprintf(message, 1024, "OK");
+				success = 1;
+			}
+		}
+		else if (xsTypeOf(xsException) == xsUndefinedType) {
 			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
@@ -830,7 +851,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				success = 1;
 			}
 		}
-		xsCatch {
+		else {
 			if (context->negative) {
 				txString name;
 				xsResult = xsGet(xsException, xsID("constructor"));
@@ -843,14 +864,9 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				}
 			}
 			else {
-				xsToStringBuffer(xsException, message, 1024);
+				snprintf(message, 1024, "# %s", xsToString(xsException));
 			}
 		}
-	}
-	xsEndHost(machine);
-	fxRunLoop(machine);
-	xsBeginHost(machine);
-	{
 		xsResult = xsGet(xsGlobal, xsID("$262"));
 		xsResult = xsGet(xsResult, xsID("agent"));
 		xsCall0(xsResult, xsID("stop"));
@@ -860,6 +876,16 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);
 	return success;
+}
+
+void fx_done(xsMachine* the)
+{
+	if ((xsToInteger(xsArgc) == 0) || (xsTypeOf(xsArg(0)) == xsUndefinedType))
+		strcpy(gxDoneMessage, "OK");
+	else {
+		txString name = xsToString(xsArg(0));
+		snprintf(gxDoneMessage, 1024, "# Async: %s", name);
+	}
 }
 
 int fxStringEndsWith(const char *string, const char *suffix)
@@ -1108,10 +1134,6 @@ void fx_detachArrayBuffer(xsMachine* the)
 	mxTypeError("this is no ArrayBuffer instance");
 }
 
-void fx_done(xsMachine* the)
-{
-}
-
 void fx_gc(xsMachine* the)
 {
 	xsCollectGarbage();
@@ -1295,17 +1317,36 @@ void fxRunLoop(txMachine* the)
 	}
 }
 
+void fxFulfillModuleFile(txMachine* the)
+{
+	xsException = xsUndefined;
+}
+
+void fxRejectModuleFile(txMachine* the)
+{
+	xsException = xsArg(0);
+}
+
 void fxRunModuleFile(txMachine* the, txString path)
 {
+	txSlot* promise;
 	mxPushStringC(path);
-	fxAwaitImport(the, XS_NO_FLAG);
-	the->stack++;
+	fxRunImport(the);
+	promise = the->stack;
+	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
+	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
+	mxPushInteger(2);
+	mxPushSlot(promise);
+	fxCallID(the, mxID(_then));
+	mxPop();
+	mxPop();
 }
 
 void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 {
 	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txScript* script = fxLoadScript(the, path, flags);
+	mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
 	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }

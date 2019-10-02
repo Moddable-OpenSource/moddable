@@ -54,6 +54,7 @@ static void fxPushSymbol(txParser* parser, txSymbol* symbol);
 static void fxSwapNodes(txParser* parser);
 
 static void fxExport(txParser* parser);
+static void fxExportBinding(txParser* parser, txNode* node);
 static void fxImport(txParser* parser);
 static void fxSpecifiers(txParser* parser);
 
@@ -711,7 +712,6 @@ void fxModule(txParser* parser)
 void fxExport(txParser* parser)
 {
 	txSymbol* symbol = C_NULL;
-	txNode* node;
 	txInteger count;
 	txInteger line = parser->line;
 	txUnsigned flag = 0;
@@ -762,11 +762,9 @@ void fxExport(txParser* parser)
 				fxPushSymbol(parser, symbol);
 			else
 				fxPushSymbol(parser, parser->defaultSymbol);
-			fxPushNULL(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_LET, line);
+			fxPushNodeStruct(parser, 1, XS_TOKEN_LET, line);
 			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_ASSIGN, line);
-			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, line);
+			fxPushNodeStruct(parser, 2, XS_TOKEN_BINDING, line);
 		}
 		else if (parser->token == XS_TOKEN_FUNCTION) {
 	again:
@@ -777,12 +775,16 @@ void fxExport(txParser* parser)
 			}
 			else
 				fxFunctionExpression(parser, line, &symbol, flag);
-			if (symbol)
-				fxPushSymbol(parser, symbol);
-			else
-				fxPushSymbol(parser, parser->defaultSymbol);
-			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_DEFINE, line);
+			if (symbol) {
+				txDefineNode* node = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
+				node->initializer = fxPopNode(parser);
+				fxPushNode(parser, (txNode*)node);
+			}
+			else {
+				txDefineNode* node = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, parser->defaultSymbol);
+				node->initializer = fxPopNode(parser);
+				fxPushNode(parser, (txNode*)node);
+			}
 		}
 		else {
 			if ((parser->token == XS_TOKEN_IDENTIFIER) && (parser->symbol == parser->asyncSymbol) && (!parser->escaped)) {
@@ -797,7 +799,7 @@ void fxExport(txParser* parser)
 			fxSemicolon(parser);
 			fxPushSymbol(parser, parser->defaultSymbol);
 			fxPushNULL(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_CONST, line);
+			fxPushNodeStruct(parser, 2, XS_TOKEN_LET, line);
 			fxSwapNodes(parser);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_ASSIGN, line);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, line);
@@ -819,11 +821,9 @@ void fxExport(txParser* parser)
 		fxClassExpression(parser, line, &symbol);
 		if (symbol) {
 			fxPushSymbol(parser, symbol);
-			fxPushNULL(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_LET, line);
+			fxPushNodeStruct(parser, 1, XS_TOKEN_LET, line);
 			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_ASSIGN, line);
-			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, line);
+			fxPushNodeStruct(parser, 2, XS_TOKEN_BINDING, line);
 			
 			fxPushSymbol(parser, symbol);
 			fxPushNULL(parser);
@@ -845,10 +845,9 @@ void fxExport(txParser* parser)
 		else
 			fxFunctionExpression(parser, line, &symbol, flag);
 		if (symbol) {
-			fxPushSymbol(parser, symbol);
-			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_DEFINE, line);
-			
+			txDefineNode* node = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
+			node->initializer = fxPopNode(parser);
+			fxPushNode(parser, (txNode*)node);
 			fxPushSymbol(parser, symbol);
 			fxPushNULL(parser);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, line);
@@ -864,41 +863,9 @@ void fxExport(txParser* parser)
 	case XS_TOKEN_VAR:
 		aToken = parser->token;
 		fxVariableStatement(parser, aToken);
-		node = parser->root;
-		count = 0;
-		if (node->description->token == XS_TOKEN_STATEMENTS) {
-			node = ((txStatementsNode*)node)->items->first;
-			while (node) {
-				if (node->description->token == XS_TOKEN_STATEMENT) {
-					node = ((txStatementNode*)node)->expression;
-					if (node->description->token == XS_TOKEN_ASSIGN)
-						node = ((txAssignNode*)node)->reference;
-				}	
-				if (node->description->token == aToken) {
-					symbol = ((txDeclareNode*)node)->symbol;
-					fxPushSymbol(parser, symbol);
-					fxPushNULL(parser);
-					fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, line);
-					count++;
-				}
-				node = node->next;
-			}
-		}
-		else {
-			if (node->description->token == XS_TOKEN_STATEMENT) {
-				node = ((txStatementNode*)node)->expression;
-				if (node->description->token == XS_TOKEN_ASSIGN)
-					node = ((txAssignNode*)node)->reference;
-			}	
-			if (node->description->token == aToken) {	
-				symbol = ((txDeclareNode*)node)->symbol;
-				fxPushSymbol(parser, symbol);
-				fxPushNULL(parser);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, line);
-				count++;
-			}
-		}
-		fxPushNodeList(parser, count);
+		count = parser->nodeCount;
+		fxExportBinding(parser, parser->root);
+		fxPushNodeList(parser, parser->nodeCount - count);
 		fxPushNULL(parser);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_EXPORT, line);
 		fxSemicolon(parser);
@@ -937,6 +904,47 @@ void fxExport(txParser* parser)
 		break;
 	}
 }
+
+void fxExportBinding(txParser* parser, txNode* node)
+{
+	txToken token = node->description->token;
+	if ((token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_VAR)) {
+		fxPushSymbol(parser, ((txDeclareNode*)node)->symbol);
+		fxPushNULL(parser);
+		fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, node->line);
+	}
+	else if (token == XS_TOKEN_BINDING) {
+		fxExportBinding(parser, ((txBindingNode*)node)->target);
+	}
+	else if (token == XS_TOKEN_ARRAY_BINDING) {
+		node = ((txArrayBindingNode*)node)->items->first;
+		while (node) {
+			fxExportBinding(parser, node);
+			node = node->next;
+		}
+	}
+	else if (token == XS_TOKEN_OBJECT_BINDING) {
+		node = ((txObjectBindingNode*)node)->items->first;
+		while (node) {
+			fxExportBinding(parser, node);
+			node = node->next;
+		}
+	}
+	else if (token == XS_TOKEN_PROPERTY_BINDING)
+		fxExportBinding(parser, ((txPropertyBindingNode*)node)->binding);
+	else if (token == XS_TOKEN_PROPERTY_BINDING_AT)
+		fxExportBinding(parser, ((txPropertyBindingAtNode*)node)->binding);
+	else if (token == XS_TOKEN_REST_BINDING)
+		fxExportBinding(parser, ((txRestBindingNode*)node)->binding);
+	else if (token == XS_TOKEN_STATEMENTS) {
+		node = ((txStatementsNode*)node)->items->first;
+		while (node) {
+			fxExportBinding(parser, node);
+			node = node->next;
+		}
+	}
+}
+
 
 void fxImport(txParser* parser)
 {
@@ -1129,8 +1137,9 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 		fxClassExpression(parser, line, &symbol);
 		if (symbol) {
 			fxPushSymbol(parser, symbol);
+			fxPushNodeStruct(parser, 1, XS_TOKEN_LET, line);
 			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_LET, line);
+			fxPushNodeStruct(parser, 2, XS_TOKEN_BINDING, line);
 		}
 		else
 			fxReportParserError(parser, "missing identifier");
@@ -1168,9 +1177,9 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 		else
 			fxFunctionExpression(parser, line, &symbol, flag);
 		if (symbol) {
-			fxPushSymbol(parser, symbol);
-			fxSwapNodes(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_DEFINE, line);
+			txDefineNode* node = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
+			node->initializer = fxPopNode(parser);
+			fxPushNode(parser, (txNode*)node);
 		}
 		else
 			fxReportParserError(parser, "missing identifier");
@@ -1364,20 +1373,20 @@ void fxForStatement(txParser* parser)
 		}
 		else {
 			aToken = parser->root->description->token;
-			if ((aToken == XS_TOKEN_CONST) || (aToken == XS_TOKEN_LET) || (aToken == XS_TOKEN_VAR)) {
-				if (((txDeclareNode*)(parser->root))->initializer)
-					fxReportParserError(parser, "invalid %s initializer", gxTokenNames[aToken]);
+			if (aToken == XS_TOKEN_BINDING) {
+				if (((txBindingNode*)(parser->root))->initializer)
+					fxReportParserError(parser, "invalid binding initializer");
 			}
-			else if (aToken == XS_TOKEN_ARRAY_BINDING) {
-				if (((txArrayBindingNode*)(parser->root))->initializer)
-					fxReportParserError(parser, "invalid array binding initializer");
-			}
-			else if (aToken == XS_TOKEN_OBJECT_BINDING) {
-				if (((txObjectBindingNode*)(parser->root))->initializer)
-					fxReportParserError(parser, "invalid object binding initializer");
-			}
-			else
-				fxReportParserError(parser, "no reference %s", gxTokenNames[aToken]);
+// 			else if (aToken == XS_TOKEN_ARRAY_BINDING) {
+// 				if (((txArrayBindingNode*)(parser->root))->initializer)
+// 					fxReportParserError(parser, "invalid array binding initializer");
+// 			}
+// 			else if (aToken == XS_TOKEN_OBJECT_BINDING) {
+// 				if (((txObjectBindingNode*)(parser->root))->initializer)
+// 					fxReportParserError(parser, "invalid object binding initializer");
+// 			}
+// 			else
+// 				fxReportParserError(parser, "no reference %s", gxTokenNames[aToken]);
 		}
 		aToken = parser->token;
 		fxGetNextToken(parser);
@@ -2720,6 +2729,7 @@ void fxObjectExpression(txParser* parser)
 				flags |= mxShorthandFlag;
 				fxPushSymbol(parser, aSymbol);
 				if (parser->token == XS_TOKEN_ASSIGN) {
+					fxPushNodeStruct(parser, 1, XS_TOKEN_ACCESS, aPropertyLine);
 					fxGetNextToken(parser);
 					fxAssignmentExpression(parser);
 					fxPushNodeStruct(parser, 2, XS_TOKEN_BINDING, aPropertyLine);
@@ -3007,41 +3017,31 @@ void fxPropertyName(txParser* parser, txSymbol** theSymbol, txToken* theToken0, 
 
 void fxBinding(txParser* parser, txToken theToken, txFlag initializeIt)
 {
-	txUnsigned flags = 0;
-	txToken aToken;
 	txInteger aLine = parser->line;
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxCheckStrictSymbol(parser, parser->symbol);
 		if (((theToken == XS_TOKEN_CONST) || (theToken == XS_TOKEN_LET)) && (parser->symbol == parser->letSymbol))
 			fxReportParserError(parser, "invalid identifier");
 		fxPushSymbol(parser, parser->symbol);
+		fxPushNodeStruct(parser, 1, theToken, aLine);
 		fxGetNextToken(parser);
-		aToken = theToken;
 	}
 	else if (parser->token == XS_TOKEN_LEFT_BRACE) {
-		flags = fxObjectBinding(parser, theToken);
-		aToken = XS_TOKEN_OBJECT_BINDING;
+		fxObjectBinding(parser, theToken);
 	}
 	else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
 		fxArrayBinding(parser, theToken);
-		aToken = XS_TOKEN_ARRAY_BINDING;
 	}
 	else {
 		fxReportParserError(parser, "missing identifier");
 		fxPushNULL(parser);
-		aToken = theToken;
 	}
 	if (initializeIt && (parser->token == XS_TOKEN_ASSIGN)) {
 		parser->flags &= ~mxForFlag;
 		fxGetNextToken(parser);
 		fxAssignmentExpression(parser);
-		fxPushNodeStruct(parser, 2, aToken, aLine);
+		fxPushNodeStruct(parser, 2, XS_TOKEN_BINDING, aLine);
 	}
-	else {
-		fxPushNULL(parser);
-		fxPushNodeStruct(parser, 2, aToken, aLine);
-	}
-	parser->root->flags |= flags;
 }
 
 txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken)
@@ -3049,59 +3049,69 @@ txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theTo
 	txToken aToken = theNode->description->token;
 	txNode* binding;
 	if (aToken == XS_TOKEN_BINDING) {
-		fxCheckStrictSymbol(parser, ((txBindingNode*)theNode)->symbol);
-		theNode->description = &gxTokenDescriptions[theToken];
+		binding = fxBindingFromExpression(parser, ((txBindingNode*)theNode)->target, theToken);
+		((txBindingNode*)theNode)->target = binding;
+// 		fxCheckStrictBinding(parser, theNode);
+// 		fxCheckStrictSymbol(parser, ((txBindingNode*)theNode)->symbol);
+// 		theNode->description = &gxTokenDescriptions[theToken];
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_ARRAY_BINDING) {
 		txNodeList* list = ((txArrayBindingNode*)theNode)->items;
-		txNode* item = list->first;
-		while (item) {
-			fxBindingFromExpression(parser, item, theToken);
-			item = item->next;
+		txNode** address = &(list->first);
+		txNode* item;
+		while ((item = *address)) {
+			txNode* binding = *address = fxBindingFromExpression(parser, item, theToken);
+			binding->next = item->next;
+			address = &(binding->next);
 		}
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_OBJECT_BINDING) {
 		txNodeList* list = ((txObjectBindingNode*)theNode)->items;
-		txNode* item = list->first;
-		while (item) {
-			fxBindingFromExpression(parser, item, theToken);
-			item = item->next;
+		txNode** address = &(list->first);
+		txNode* item;
+		while ((item = *address)) {
+			txNode* binding = *address = fxBindingFromExpression(parser, item, theToken);
+			binding->next = item->next;
+			address = &(binding->next);
 		}
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_PROPERTY_BINDING) {
-		fxBindingFromExpression(parser, ((txPropertyBindingNode*)theNode)->binding, theToken);
+		((txPropertyBindingNode*)theNode)->binding = fxBindingFromExpression(parser, ((txPropertyBindingNode*)theNode)->binding, theToken);
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_PROPERTY_BINDING_AT) {
-		fxBindingFromExpression(parser, ((txPropertyBindingAtNode*)theNode)->binding, theToken);
+		((txPropertyBindingAtNode*)theNode)->binding = fxBindingFromExpression(parser, ((txPropertyBindingAtNode*)theNode)->binding, theToken);
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_REST_BINDING) {
-		fxBindingFromExpression(parser, ((txRestBindingNode*)theNode)->binding, theToken);
+		((txRestBindingNode*)theNode)->binding = fxBindingFromExpression(parser, ((txRestBindingNode*)theNode)->binding, theToken);
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_SKIP_BINDING)
 		return theNode;
-	if ((aToken== XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT))
-		return theNode;
 	
 	if (aToken == XS_TOKEN_ACCESS) {
 		fxCheckStrictSymbol(parser, ((txAccessNode*)theNode)->symbol);
+		if (theToken == XS_TOKEN_ACCESS)
+			return theNode;
 		fxPushSymbol(parser, ((txAccessNode*)theNode)->symbol);
-		fxPushNULL(parser);
-		fxPushNodeStruct(parser, 2, theToken, theNode->line);
+		fxPushNodeStruct(parser, 1, theToken, ((txAccessNode*)theNode)->line);
 		return fxPopNode(parser);
 	}
-	
+	if ((aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT)) {
+		return theNode;
+	}
 	if (aToken == XS_TOKEN_ASSIGN) {
 		binding = fxBindingFromExpression(parser, ((txAssignNode*)theNode)->reference, theToken);
 		if (!binding)
 			return NULL;
-		((txBindingNode*)binding)->initializer = ((txAssignNode*)theNode)->value;
-		return binding;
+		((txBindingNode*)theNode)->description = &gxTokenDescriptions[XS_TOKEN_BINDING];
+		((txBindingNode*)theNode)->target = binding;
+		((txBindingNode*)theNode)->initializer = ((txAssignNode*)theNode)->value;
+		return theNode;
 	}
 	
 	if (aToken == XS_TOKEN_ARRAY)
@@ -3114,6 +3124,7 @@ txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theTo
 void fxArrayBinding(txParser* parser, txToken theToken)
 {
 	txInteger aCount = 0;
+	txInteger aLine = parser->line;
 	int elision = 1;
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACKET);
 	while ((parser->token == XS_TOKEN_COMMA) || (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_BINDING)) {
@@ -3142,6 +3153,7 @@ void fxArrayBinding(txParser* parser, txToken theToken)
 	}
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
 	fxPushNodeList(parser, aCount);
+	fxPushNodeStruct(parser, 1, XS_TOKEN_ARRAY_BINDING, aLine);
 }
 
 txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken)
@@ -3167,9 +3179,9 @@ txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken 
 			item->description = &gxTokenDescriptions[XS_TOKEN_SKIP_BINDING];
 		}
 		else {
-			if ((theToken == XS_TOKEN_BINDING) && ((item->description->token== XS_TOKEN_MEMBER) || (item->description->token == XS_TOKEN_MEMBER_AT)))
-				binding = item;
-			else {			
+// 			if ((theToken == XS_TOKEN_BINDING) && ((item->description->token== XS_TOKEN_MEMBER) || (item->description->token == XS_TOKEN_MEMBER_AT)))
+// 				binding = item;
+// 			else {			
 				binding = fxBindingFromExpression(parser, item, theToken);
 				if (!binding) {
 					parser->errorSymbol = parser->SyntaxErrorSymbol;
@@ -3177,13 +3189,12 @@ txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken 
 				}
 				binding->next = item->next;
 				item = *address = binding;
-			}
+// 			}
 		}
 		address = &(item->next);
 	}
 	fxPushNode(parser, (txNode*)list);
-	fxPushNULL(parser);
-	fxPushNodeStruct(parser, 2, XS_TOKEN_ARRAY_BINDING, theNode->line);
+	fxPushNodeStruct(parser, 1, XS_TOKEN_ARRAY_BINDING, theNode->line);
 	return fxPopNode(parser);
 }
 
@@ -3191,6 +3202,7 @@ txUnsigned fxObjectBinding(txParser* parser, txToken theToken)
 {
 	txUnsigned flags = 0;
 	txInteger aCount = 0;
+	txInteger aLine = parser->line;
 	txSymbol* aSymbol;
 	txToken aToken;
 	txIndex index;
@@ -3281,6 +3293,8 @@ txUnsigned fxObjectBinding(txParser* parser, txToken theToken)
 	}
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	fxPushNodeList(parser, aCount);
+	fxPushNodeStruct(parser, 1, XS_TOKEN_OBJECT_BINDING, aLine);
+	parser->root->flags |= flags;
 	return flags;
 }
 
@@ -3321,8 +3335,7 @@ txNode* fxObjectBindingFromExpression(txParser* parser, txNode* theNode, txToken
 		property = property->next;
 	}
 	fxPushNode(parser, (txNode*)list);
-	fxPushNULL(parser);
-	fxPushNodeStruct(parser, 2, XS_TOKEN_OBJECT_BINDING, theNode->line);
+	fxPushNodeStruct(parser, 1, XS_TOKEN_OBJECT_BINDING, theNode->line);
 	parser->root->flags |= flags;
 	return fxPopNode(parser);
 }
@@ -3343,9 +3356,7 @@ void fxParametersBinding(txParser* parser)
 			}
 			fxBinding(parser, XS_TOKEN_ARG, 1);
 			binding = (txBindingNode*)parser->root;
-			if (binding->initializer)
-				parser->flags |= mxNotSimpleParametersFlag;
-			else if (binding->description->token != XS_TOKEN_ARG)
+			if (binding->description->token != XS_TOKEN_ARG)
 				parser->flags |= mxNotSimpleParametersFlag;
 			aCount++;
 			if (parser->token != XS_TOKEN_RIGHT_PARENTHESIS)
@@ -3382,9 +3393,7 @@ txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theNode)
 		binding = (txBindingNode*)fxBindingFromExpression(parser, item, XS_TOKEN_ARG);
 		if (!binding)
 			return NULL;
-		if (binding->initializer)
-			parser->flags |= mxNotSimpleParametersFlag;
-		else if (binding->description->token != XS_TOKEN_ARG)
+		if (binding->description->token != XS_TOKEN_ARG)
 			parser->flags |= mxNotSimpleParametersFlag;
 		binding->next = item->next;
 		item = *address = (txNode*)binding;
@@ -3412,19 +3421,19 @@ txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken t
 	}
 	if (!expression)
 		return NULL;
-	if ((theToken == XS_TOKEN_BINDING) && ((expression->description->token == XS_TOKEN_MEMBER) || (expression->description->token == XS_TOKEN_MEMBER_AT)))
-		binding = expression;
-	else {			
+// 	if ((theToken == XS_TOKEN_BINDING) && ((expression->description->token == XS_TOKEN_MEMBER) || (expression->description->token == XS_TOKEN_MEMBER_AT)))
+// 		binding = expression;
+// 	else {			
 		binding = fxBindingFromExpression(parser, expression, theToken);
 		if (!binding) {
 			parser->errorSymbol = parser->SyntaxErrorSymbol;
 			return NULL;
 		}
-		if (((txBindingNode*)binding)->initializer) {
+		if (binding->description->token == XS_TOKEN_BINDING) {
 			fxReportParserError(parser, "invalid rest");
 			return NULL;
 		}
-	}
+// 	}
 	theNode->description = &gxTokenDescriptions[XS_TOKEN_REST_BINDING];
 	((txRestBindingNode*)theNode)->binding = binding;
 	return theNode;
@@ -3455,7 +3464,7 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
 		
 	if (theToken == XS_TOKEN_ASSIGN) {
 		if (aToken == XS_TOKEN_ARRAY) {
-			txNode* binding = fxArrayBindingFromExpression(parser, node, XS_TOKEN_BINDING);
+			txNode* binding = fxArrayBindingFromExpression(parser, node, XS_TOKEN_ACCESS);
             if (binding) {
                 binding->next = node->next;
                 parser->root = binding;
@@ -3463,7 +3472,7 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
            }
        	}
 		else if (aToken == XS_TOKEN_OBJECT) {
-			txNode* binding = fxObjectBindingFromExpression(parser, node, XS_TOKEN_BINDING);
+			txNode* binding = fxObjectBindingFromExpression(parser, node, XS_TOKEN_ACCESS);
             if (binding) {
                 binding->next = node->next;
                 parser->root = binding;
@@ -3478,7 +3487,25 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
 
 void fxCheckStrictBinding(txParser* parser, txNode* node)
 {
-	if (node->description->token == XS_TOKEN_ARRAY_BINDING) {
+	if (node->description->token == XS_TOKEN_ACCESS) {
+		fxCheckStrictSymbol(parser, ((txAccessNode*)node)->symbol);
+	}
+	else if (node->description->token == XS_TOKEN_ARG) {
+		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+	}
+	else if (node->description->token == XS_TOKEN_CONST) {
+		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+	}
+	else if (node->description->token == XS_TOKEN_LET) {
+		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+	}
+	else if (node->description->token == XS_TOKEN_VAR) {
+		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+	}
+	else if (node->description->token == XS_TOKEN_BINDING) {
+		fxCheckStrictBinding(parser, ((txBindingNode*)node)->target);
+	}
+	else if (node->description->token == XS_TOKEN_ARRAY_BINDING) {
 		node = ((txArrayBindingNode*)node)->items->first;
 		while (node) {
 			fxCheckStrictBinding(parser, node);
@@ -3505,8 +3532,6 @@ void fxCheckStrictBinding(txParser* parser, txNode* node)
 		fxCheckStrictBinding(parser, ((txPropertyBindingAtNode*)node)->binding);
 	else if (node->description->token == XS_TOKEN_REST_BINDING)
 		fxCheckStrictBinding(parser, ((txRestBindingNode*)node)->binding);
-	else if (node->description->token != XS_TOKEN_SKIP_BINDING)
-		fxCheckStrictSymbol(parser, ((txBindingNode*)node)->symbol);
 }
 
 void fxCheckStrictFunction(txParser* parser, txFunctionNode* function)

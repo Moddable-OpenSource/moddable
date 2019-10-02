@@ -2021,9 +2021,11 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack);
 			offset = slot->ID;
 			index = XS_NO_ID;
+			if (slot->value.closure->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined private property", (txID)offset);
 			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
-				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined private property", (txID)offset);
+				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
 			goto XS_CODE_GET_ALL;
 		mxCase(XS_CODE_GET_PROPERTY_AT)
 			variable = (mxStack + 1)->value.reference;
@@ -2179,9 +2181,11 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack + 1);
 			offset = slot->ID;
 			index = XS_NO_ID;
+			if (slot->value.closure->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined private property", (txID)offset);
 			slot = gxDefaults.setPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
-				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined private property", (txID)offset);
+				mxRunDebugID(XS_TYPE_ERROR, "set %s: undefined private property", (txID)offset);
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_PROPERTY_AT)
 			variable = (mxStack + 2)->value.reference;
@@ -3941,7 +3945,7 @@ void fxRunForAwaitOf(txMachine* the)
 	mxPushSlot(slot);
 	mxPushSlot(slot);
 	fxGetID(the, mxID(_Symbol_asyncIterator));
-	if (mxIsUndefined(the->stack)) {
+	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
 		fxCallID(the, mxID(_Symbol_iterator));
 		fxNewAsyncFromSyncIteratorInstance(the);
