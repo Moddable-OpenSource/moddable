@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-#define mxPromisePrint 1
+//#define mxPromisePrint 1
 
 static void fxNewGeneratorResult(txMachine* the, txBoolean done);
 static txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot);
@@ -750,9 +750,9 @@ void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
 			done = fxToBoolean(the, the->stack);
 			mxPop();
 			fxGetID(the, mxID(_value));
-			mxPushInteger(1);
-			mxPush(mxPromiseConstructor);
-			fxCallID(the, mxID(_resolve));
+// 			mxPushInteger(1);
+// 			mxPush(mxPromiseConstructor);
+// 			fxCallID(the, mxID(_resolve));
 			fxNewGeneratorResult(the, done);
 			mxPushInteger(1);
 			mxPushUndefined();
