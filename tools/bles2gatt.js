@@ -620,6 +620,13 @@ class NimBLEGATTFile extends ESP32GATTFile {
 				file.line("}");
 				file.line("");
 			}
+			else {
+				file.line("static int gatt_svr_chr_static_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)");
+				file.line("{");
+				file.line("\treturn 0;");
+				file.line("}");
+				file.line("");
+			}
 		}
 
 		file.line(`static const struct ble_gatt_svc_def gatt_svr_svcs[] = {`);
