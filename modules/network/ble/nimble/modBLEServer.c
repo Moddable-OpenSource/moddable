@@ -81,7 +81,6 @@ typedef struct {
 	// connection
 	int16_t conn_id;
 	ble_addr_t remote_bda;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -108,6 +107,8 @@ typedef struct {
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static const char_name_table *handleToCharName(uint16_t handle);
 static const ble_uuid16_t *handleToUUID(uint16_t handle);
+
+static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
 static void logGATTEvent(uint8_t op);
@@ -142,12 +143,13 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	modBLE *ble = xsmcGetHostData(xsThis);
+	modBLE ble = xsmcGetHostData(xsThis);
 	if (!ble) return;
-	
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+
+	gBLE = NULL;
+	xsForget(ble->obj);
 	xsmcSetHostData(xsThis, NULL);
+	modMessagePostToMachine(ble->the, NULL, 0, bleServerCloseEvent, ble);
 }
 
 void xs_ble_server_destructor(void *data)
@@ -155,7 +157,6 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	ble->terminating = true;
 	if (-1 != ble->conn_id)
 		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
 	if (0 != service_count)
@@ -260,6 +261,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	}
 }
 
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
+}
+
 void xs_ble_server_deploy(xsMachine *the)
 {
 	// services deployed from readyEvent(), since stack requires deploy before advertising
@@ -340,6 +346,8 @@ static void deployServices(xsMachine *the)
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+	
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
@@ -353,6 +361,9 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);		
 	if (-1 != desc->conn_handle) {
 		if (-1 != gBLE->conn_id) {
@@ -382,6 +393,9 @@ bail:
 static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	
 	// ignore multiple disconnects on same connection
@@ -407,8 +421,12 @@ static void writeEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	attributeData value = (attributeData)refcon;
 	uint8_t buffer[16];
 	uint16_t length;
-	const char_name_table *char_name = handleToCharName(value->handle);
+	const char_name_table *char_name;
 	
+	if (!gBLE) goto bail;
+
+	char_name = handleToCharName(value->handle);
+
 	xsBeginHost(gBLE->the);
 
 	xsmcVars(4);
@@ -428,8 +446,10 @@ static void writeEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSet(xsVar(0), xsID_value, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
 
-	c_free(value);
 	xsEndHost(gBLE->the);
+	
+bail:
+	c_free(value);
 }
 
 static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -441,6 +461,8 @@ static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messag
 	uint8_t buffer[16];
 	uint16_t uuid_length;
 	
+	if (!gBLE) return;
+
 	char_name = handleToCharName(*chr->val_handle);
 	uuidToBuffer(buffer, (ble_uuid_any_t *)chr->uuid, &uuid_length);
 
@@ -475,9 +497,13 @@ static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messag
 static void notificationStateEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	notificationState state = (notificationState)refcon;
-	xsBeginHost(gBLE->the);
+
+	if (!gBLE) goto bail;
+
 	if (state->conn_id != gBLE->conn_id)
 		goto bail;
+		
+	xsBeginHost(gBLE->the);
 	uint16_t uuid_length;
 	uint8_t buffer[16];
 	char_name_table *char_name = (char_name_table *)handleToCharName(state->handle);
@@ -499,15 +525,18 @@ static void notificationStateEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSet(xsVar(0), xsID_handle, xsVar(4));
 	xsmcSet(xsVar(0), xsID_notify, xsVar(5));
 	xsCall2(gBLE->obj, xsID_callback, xsString(state->notify ? "onCharacteristicNotifyEnabled" : "onCharacteristicNotifyDisabled"), xsVar(0));
+	xsEndHost(gBLE->the);
+
 bail:
 	c_free(state);
-	xsEndHost(gBLE->the);
 }
 
 static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
 	struct ble_sm_io pkey = {0};
+	
+	if (!gBLE) return;
 	
 	pkey.action = event->passkey.params.action;
 	
@@ -550,6 +579,13 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	modBLE ble = refcon;
+
+	xs_ble_server_destructor(ble);
+}
+
 static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
@@ -578,6 +614,8 @@ void ble_server_on_reset(int reason)
 
 void nimble_on_sync(void)
 {
+	if (!gBLE) return;
+	
 	ble_hs_util_ensure_addr(0);
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
 }
@@ -586,8 +624,7 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
 	int service_index, att_index;
 	
-	if (!gBLE || gBLE->terminating)
-		return;
+	if (!gBLE) return;
 
 	switch (ctxt->op) {
 		case BLE_GATT_REGISTER_OP_CHR: {
@@ -619,8 +656,7 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 
 	LOG_GAP_EVENT(event);
 
-	if (!gBLE || gBLE->terminating)
-		goto bail;
+	if (!gBLE) goto bail;
 
     switch (event->type) {
 		case BLE_GAP_EVENT_CONNECT:
@@ -719,8 +755,7 @@ int gatt_svr_chr_dynamic_value_access_cb(uint16_t conn_handle, uint16_t attr_han
 {
 	LOG_GATT_EVENT(ctxt->op);
 	
-	if (!gBLE || gBLE->terminating)
-		goto bail;
+	if (!gBLE) goto bail;
 
 	switch (ctxt->op) {
 		case BLE_GATT_ACCESS_OP_READ_DSC:
