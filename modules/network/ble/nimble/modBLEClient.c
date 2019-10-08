@@ -1175,7 +1175,7 @@ static int nimble_mtu_event(uint16_t conn_handle, const struct ble_gatt_error *e
     	mtuExchangedRecord mer;
     	mer.conn_id = conn_handle;
     	mer.mtu = mtu;
-		modMessagePostToMachine(gBLE->the, &mer, sizeof(mtuExchangedRecord), mtuExchangedEvent, NULL);
+		modMessagePostToMachine(gBLE->the, (uint8_t*)&mer, sizeof(mtuExchangedRecord), mtuExchangedEvent, NULL);
     }
     return 0;
 }
