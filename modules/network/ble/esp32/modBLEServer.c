@@ -87,7 +87,6 @@ typedef struct {
 	esp_bd_addr_t remote_bda;
 	int16_t conn_id;
 	uint16_t app_id;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -152,7 +151,6 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 
-	ble->terminating = true;
 	for (uint16_t i = 0; i < service_count; ++i)
 		if (ble->handles[i][0])
 			esp_ble_gatts_delete_service(ble->handles[i][0]);
@@ -412,7 +410,7 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 {
 	LOG_GAP_EVENT(event);
 
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(event) {
 		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
@@ -761,7 +759,7 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 
 	LOG_GATTS_EVENT(event);
 
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(event) {
 		case ESP_GATTS_REG_EVT:
