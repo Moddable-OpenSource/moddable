@@ -18,4 +18,10 @@
 	"config": {
 		"sntp": "pool.ntp.org",
 	},
+    "resources": {
+        "*": [
+            "$(MODULES)/crypt/data/ca106",
+        ]
+    },
 }
+

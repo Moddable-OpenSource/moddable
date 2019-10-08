@@ -42,7 +42,8 @@ let request = new Request({
 	body: body,
 	response: String,
 	port: 443,
-	Socket: SecureSocket
+	Socket: SecureSocket,
+	secure: { protocolVersion: 0x303 },
 });
 
 request.callback = function(message, value)
