@@ -44,7 +44,6 @@ typedef struct {
 	int8_t connection;
 	bd_addr address;
 	uint8_t bond;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -100,8 +99,12 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+	modBLE ble = gBLE;
+	if (!ble) return;
+
+	gBLE = NULL;
+	xsForget(ble->obj);
+	xs_ble_server_destructor(ble);
 }
 
 void xs_ble_server_destructor(void *data)
@@ -109,7 +112,6 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	ble->terminating = true;
 	if (-1 != ble->connection)
 		gecko_cmd_le_connection_close(ble->connection);
 	modTimerRemove(ble->timer);
@@ -449,7 +451,7 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
