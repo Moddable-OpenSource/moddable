@@ -694,7 +694,6 @@ extern const txTypeBigInt gxTypeBigInt;
 
 /* xsAll.c */
 extern txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix);
-extern txNumber fxArgToInteger(txMachine* the, txInteger i, txNumber value);
 extern txSlot* fxArgToCallback(txMachine* the, txInteger argi);
 extern void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* frame, txString suffix);
 extern void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix);
@@ -704,7 +703,6 @@ extern txString fxConcatStringC(txMachine* the, txSlot* a, txString b);
 extern txString fxCopyString(txMachine* the, txSlot* a, txSlot* b);
 extern txString fxCopyStringC(txMachine* the, txSlot* a, txString b);
 extern txBoolean fxIsCanonicalIndex(txMachine* the, txID id);
-extern txString fxResizeString(txMachine* the, txSlot* a, txSize theSize);
 
 extern int fxStringGetter(void*);
 extern int fxStringCGetter(void*);

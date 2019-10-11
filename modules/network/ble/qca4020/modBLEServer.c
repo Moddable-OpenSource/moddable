@@ -221,23 +221,28 @@ void xs_ble_server_disconnect(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+	modBLE ble = gBLE;
+	if (!ble) return;
+
+	gBLE = NULL;
+	xsForget(ble->obj);
+	xs_ble_server_destructor(ble);
 }
 
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
-		qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);		
-		for (int16_t i = 0; i < service_count; ++i) {
-			if (0 != ble->serviceHandles[i].service_id)
-				qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
-		}
-		qapi_BLE_GATT_Cleanup(ble->stackID);
-		qapi_BLE_BSC_Shutdown(ble->stackID);
-		c_free(ble);
+	if (!ble) return;
+	
+	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);		
+	for (int16_t i = 0; i < service_count; ++i) {
+		if (0 != ble->serviceHandles[i].service_id)
+			qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
 	}
+	qapi_BLE_GATT_Cleanup(ble->stackID);
+	qapi_BLE_BSC_Shutdown(ble->stackID);
+	c_free(ble);
+
 	gBLE = NULL;
 }
 
@@ -434,6 +439,8 @@ static int16_t attributeToHandle(uint32_t service_id, uint16_t att_index)
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
@@ -443,6 +450,8 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	qapi_BLE_GATT_Device_Connection_Data_t *result = (qapi_BLE_GATT_Device_Connection_Data_t*)message;
 	uint8_t buffer[6];
+	
+	if (!gBLE) return;
 	
 	// ignore multiple connections on same connection
 	if (-1 != gBLE->connection.id)
@@ -470,6 +479,8 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	qapi_BLE_GATT_Device_Disconnection_Data_t *result = (qapi_BLE_GATT_Device_Disconnection_Data_t*)message;
 	uint8_t buffer[6];
 		
+	if (!gBLE) return;
+	
 	// ignore multiple disconnects on same connection
 	if (result->ConnectionID != gBLE->connection.id)
 		return;
@@ -494,6 +505,8 @@ static void readRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	qapi_BLE_GATT_Read_Request_Data_t *request = (qapi_BLE_GATT_Read_Request_Data_t*)message;
 	qapi_BLE_GATT_Service_Attribute_Entry_t *attributeEntry, *characteristicDeclarationEntry;
 	uint8_t *buffer;
+	
+	if (!gBLE) return;
 	
 	if (request->ConnectionID != gBLE->connection.id) {
 		return; 	
@@ -601,7 +614,9 @@ static void writeRequestEvent(void *the, void *refcon, uint8_t *message, uint16_
 	qapi_BLE_GATT_Service_Attribute_Entry_t *attributeEntry;
 	uint8_t notify = 0xFF;
 			
- 	xsBeginHost(gBLE->the);	
+ 	if (!gBLE) return;
+	
+	xsBeginHost(gBLE->the);	
  	
  	if (request->ConnectionID != gBLE->connection.id)
 		goto bail; 	
@@ -684,6 +699,9 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
 	uint32_t passkey;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -707,6 +725,9 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	uint32_t passkey = *(uint32_t*)message;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
@@ -723,6 +744,9 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 {
 	uint32_t passkey = *(uint32_t*)message;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
@@ -740,6 +764,9 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	qapi_BLE_GAP_LE_Pairing_Status_t *Pairing_Status = (qapi_BLE_GAP_LE_Pairing_Status_t *)message;
 	modBLEBondedDevice device;
+
+	if (!gBLE) return;
+	
 	if (QAPI_BLE_GAP_LE_PAIRING_STATUS_NO_ERROR == Pairing_Status->Status) {
 		if (gBLE->bonding && ((gBLE->connection.Flags & (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID)) == (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID))) {
 			device = modBLEBondedDevicesFindByAddress(gBLE->connection.bd_addr);
@@ -785,7 +812,7 @@ static void unhandledCallbackEvent(void *the, void *refcon, uint8_t *message, ui
 
 void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GAP_LE_Event_Data_t *GAP_LE_Event_Data, uint32_t CallbackParameter)
 {
-	if (gBLE && gBLE->stackID && GAP_LE_Event_Data) {
+	if (gBLE && BluetoothStackID && GAP_LE_Event_Data) {
 	
 		LOG_GAP_EVENT(GAP_LE_Event_Data->Event_Data_Type);
 	
@@ -1030,7 +1057,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 
 void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Connection_Event_Data_t *GATT_Connection_Event_Data, uint32_t CallbackParameter)
 {
-	if (gBLE && gBLE->stackID && GATT_Connection_Event_Data) {
+	if (gBLE && BluetoothStackID && GATT_Connection_Event_Data) {
 		switch(GATT_Connection_Event_Data->Event_Data_Type) {
 			case QAPI_BLE_ET_GATT_CONNECTION_DEVICE_CONNECTION_E:
 				if (GATT_Connection_Event_Data->Event_Data.GATT_Device_Connection_Data) {
@@ -1059,7 +1086,7 @@ void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, 
 
 void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Server_Event_Data_t *GATT_Server_Event_Data, uint32_t CallbackParameter)
 {
-	if (BluetoothStackID && GATT_Server_Event_Data) {
+	if (gBLE && BluetoothStackID && GATT_Server_Event_Data) {
 	
 		LOG_GATTS_EVENT(GATT_Server_Event_Data->Event_Data_Type);
 		

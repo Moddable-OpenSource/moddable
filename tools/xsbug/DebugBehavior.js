@@ -304,9 +304,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			}
 		}
 		let length = bubbles.length;
-		if (length == 100) {
+		if (length == 999) {
 			bubbles.copyWithin(0, 1);
-			bubbles[length - 1] = { path, line, conversation, flags, message };
+			bubbles[998] = { path, line, conversation, flags, message };
 		}
 		else
 			bubbles.push({ path, line, conversation, flags, message });

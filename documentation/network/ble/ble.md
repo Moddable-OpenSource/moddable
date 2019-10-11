@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: June 5, 2019
+Revised: September 29, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -309,7 +309,7 @@ onReady() {
 
 <a id="classdevice"></a>
 ## Class Device
-An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery and close the peripheral connection.
+An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery, negotiate a higher MTU and close the peripheral connection.
 
 ### Properties
 
@@ -320,6 +320,38 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 
 ### Functions 
+
+#### `exchangeMTU(mtu)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `mtu` | `number` | Requested MTU value |
+
+Use the `exchangeMTU ` function to request a higher MTU once the peripheral connection has been established.
+***
+
+#### `onMTUExchanged(device, mtu)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `mtu` | `number` | Exchanged MTU value |
+
+The `onMTUExchanged` callback function is called when the MTU exchange procedure has been completed.
+
+To request an increased MTU size of 250:
+
+```javascript
+onConnected(device) {
+	device.exchangeMTU(250);
+}
+onMTUExchanged(device, mtu) {
+	trace(`MTU size is now ${mtu}\n`);
+	device.discoverAllPrimaryServices();
+}
+```
+
+***
 
 #### `readRSSI()`
 Use the `readRSSI` function to read the connected peripheral's signal strength.
@@ -685,7 +717,7 @@ onCharacteristicValue(characteristic, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeWithoutResponse` function to write a characteristic value on demand.
 
@@ -775,7 +807,7 @@ onDescriptorValue(descriptor, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeValue` function to write a descriptor value.
 

@@ -807,7 +807,8 @@ Same as for `container` object (see [Dictionary](#container-dictionary) in the s
 
 | Parameter | Type | Description |
 | --- | --- | :--- |
-| `displayListLength ` | `number` | The size of the display list buffer in bytes
+| `commandListLength ` | `number` | The size of the command list buffer in bytes used for holding Piu drawing operations
+| `displayListLength ` | `number` | The size of the display list buffer in bytes for targets using the Poco rendering engine
 | `touchCount` | `number` | The number of touch events that can trigger at the same time
 
 #### Prototype Description
