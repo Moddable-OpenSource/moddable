@@ -608,16 +608,8 @@ txInteger fxPrepareHeap(txMachine* the)
 				projection->indexes[slot - heap] = index;
 				index++;
 				if ((slot->kind == XS_ARRAY_KIND) && ((item = slot->value.array.address))) {
-					txInteger size = (txInteger)fxGetIndexSize(the, slot);
-					index++;
-					while (size) {
-						index++;
-						if (item->kind != XS_ACCESSOR_KIND) 
-							item->flag |= XS_DONT_SET_FLAG;
-						item->flag |= XS_DONT_DELETE_FLAG;
-						item++;
-						size--;
-					}
+					index++; // fake chunk
+					index += (txInteger)fxGetIndexSize(the, slot);;
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
@@ -708,11 +700,26 @@ txInteger fxPrepareHeap(txMachine* the)
 					if (frozen) {
 						txSlot *property = slot->next;
 						while (property) {
-							if (property->kind != XS_ACCESSOR_KIND) 
-								if (!(property->flag & XS_DONT_SET_FLAG))
+							if (property->kind == XS_ARRAY_KIND) {
+								txSlot* item = property->value.array.address;
+								txInteger length = (txInteger)fxGetIndexSize(the, property);
+								while (length > 0) {
+									if (item->kind != XS_ACCESSOR_KIND) 
+										if (!(item->flag & XS_DONT_SET_FLAG))
+											frozen = 0;
+									if (!(item->flag & XS_DONT_DELETE_FLAG))
+										frozen = 0;
+									item++;
+									length--;
+								}
+							}
+							else {
+								if (property->kind != XS_ACCESSOR_KIND) 
+									if (!(property->flag & XS_DONT_SET_FLAG))
+										frozen = 0;
+								if (!(property->flag & XS_DONT_DELETE_FLAG))
 									frozen = 0;
-							if (!(property->flag & XS_DONT_DELETE_FLAG))
-								frozen = 0;
+							}
 							property = property->next;
 						}
 					}
