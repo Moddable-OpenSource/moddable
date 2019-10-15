@@ -14,12 +14,14 @@
 	"recipes": {
 		"separate-asm": [
 			"commodetto*",
+			"cfe*",
 			"piu*",
 			"Resource*",
 			"mod*",
 			"timer*",
 			"i2c*",
 			"digital*",
+			"pulsecount*",
 		]
 	},
 	"platforms": {

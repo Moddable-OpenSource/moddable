@@ -19,11 +19,9 @@
  */
 
 import Digital from "pins/digital";
-import Monitor from "pins/digital/monitor";
 
 class PulseCount @ "xs_pulsecount_destructor" {
 	#onChanged;
-	#monitor;
 	#pin;
 	constructor(dictionary) {
 		build.call(this, dictionary);
@@ -31,24 +29,13 @@ class PulseCount @ "xs_pulsecount_destructor" {
 	}
 	close() {
 		terminate.call(this);
-		if (this.#monitor)
-			this.#monitor.close();
-		this.#monitor = undefined;
 	}
 	get() @ "xs_pulsecount_get";
 	set() @ "xs_pulsecount_set";
 	set onChanged(value) {
 		this.#onChanged = value;
+/*
 		if (this.#onChanged) {
-			if (this.#monitor)
-				return;
-			this.#monitor = new Monitor({
-				pin: this.#pin,
-				mode: Digital.InputPullUp,
-				edge: Monitor.Falling | Monitor.Rising,
-			});
-			this.#monitor.previous = this.get();
-			this.#monitor.target = this;
 			this.#monitor.onChanged = () => {
 				const value = this.get();
 				if (value === this.#monitor.previous)
@@ -62,6 +49,7 @@ class PulseCount @ "xs_pulsecount_destructor" {
 			this.#monitor.close();
 			this.#monitor = undefined;
 		}
+*/
 	}
 	get onChanged() {
 		return this.#onChanged;

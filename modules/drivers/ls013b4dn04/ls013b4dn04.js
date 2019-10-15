@@ -31,21 +31,21 @@ export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 	send(pixels, offset, count) @  "xs_ls013b4dn04_send";
 	end() @  "xs_ls013b4dn04_end";
 
-	hold() @ "xs_ls013b4dn04_hold";
-	clear() @ "xs_ls013b4dn04_clear";
-
 	adaptInvalid() @ "xs_ls013b4dn04_adaptInvalid";
+	continue() {}
 
-	continue() {
-	}
+	pixelsToBytes(count) { return count; }
 
-	pixelsToBytes(count) {
-		return count;
-	}
-
-	get async() {return false;}
 	get pixelFormat() @ "xs_ls013b4dn04_get_pixelFormat";
 	get width() @ "xs_ls013b4dn04_get_width";
 	get height() @ "xs_ls013b4dn04_get_height";
+	get async() {return false;}
+
+
+	hold() @ "xs_ls013b4dn04_hold";
+	clear() @ "xs_ls013b4dn04_clear";
+
 	get c_dispatch() @ "xs_ls013b4dn04_get_c_dispatch";
 }
+
+Object.freeze(LS013B4DN04.prototype);

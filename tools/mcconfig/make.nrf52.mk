@@ -113,67 +113,7 @@ INC_DIRS = \
 	$(XS_DIR)/../modules/base/timer \
 	$(BUILD_DIR)/devices/nrf52 \
 
-# Source files common to all targets
-
-#  $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
-#  $(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
-#  $(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
-#  $(SDK_ROOT)/components/libraries/util/app_error.c \
-#  $(SDK_ROOT)/components/libraries/util/app_error_handler_gcc.c \
-#  $(SDK_ROOT)/components/libraries/util/app_error_weak.c \
-#  $(SDK_ROOT)/components/libraries/util/nrf_assert.c \
-#  $(SDK_ROOT)/components/libraries/atomic/nrf_atomic.c \
-#  $(SDK_ROOT)/components/libraries/balloc/nrf_balloc.c \
-#  $(SDK_ROOT)/external/fprintf/nrf_fprintf.c \
-#  $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
-#  $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
-#  $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
-#  $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
-#  $(SDK_ROOT)/components/libraries/util/app_util_platform.c \
-#  $(SDK_ROOT)/components/libraries/button/app_button.c \
-#  $(SDK_ROOT)/components/libraries/timer/app_timer_freertos.c \
-#  $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler/hardfault_handler_gcc.c \
-#  $(SDK_ROOT)/components/libraries/hardfault/hardfault_implementation.c \
-#  $(SDK_ROOT)/components/libraries/atomic_fifo/nrf_atfifo.c \
-#  $(SDK_ROOT)/components/libraries/atomic_flags/nrf_atflags.c \
-#  $(SDK_ROOT)/components/boards/boards.c \
-#  $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
-
 SDK_SRC=\
-#  $(SDK_ROOT)/components/libraries/scheduler/app_scheduler.c \
-#  $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
-#  $(SDK_ROOT)/components/libraries/serial/nrf_serial.c \
-#  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_power.c \
-
-#  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
-#  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
-#  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
-#  $(SDK_ROOT)/modules/nrfx/soc/nrfx_atomic.c \
-#  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
-#  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
-#  $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
-#  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
-#  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
-
-#  $(SDK_ROOT)/external/freertos/source/croutine.c \
-#  $(SDK_ROOT)/external/freertos/source/event_groups.c \
-#  $(SDK_ROOT)/external/freertos/source/portable/MemMang/heap_1.c \
-#  $(SDK_ROOT)/external/freertos/source/list.c \
-#  $(SDK_ROOT)/external/freertos/portable/GCC/nrf52/port.c \
-#  $(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52/port_cmsis.c \
-#  $(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52/port_cmsis_systick.c \
-#  $(SDK_ROOT)/external/freertos/source/queue.c \
-#  $(SDK_ROOT)/external/freertos/source/stream_buffer.c \
-#  $(SDK_ROOT)/external/freertos/source/tasks.c \
-#  $(SDK_ROOT)/external/freertos/source/timers.c \
-
-#  $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
-#  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_freertos.c \
-#  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
-#  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
-#  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c \
-#  $(SDK_ROOT)/components/libraries/bsp/bsp.c \
-
 
 # Include folders common to all targets
 INC_DIRS += \
@@ -199,6 +139,7 @@ INC_DIRS += \
   $(SDK_ROOT)/components/libraries/hardfault \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/button \
+  $(SDK_ROOT)/components/libraries/spi_mngr \
   $(SDK_ROOT)/components/libraries/twi_sensor \
   $(SDK_ROOT)/components/libraries/twi_mngr \
   $(SDK_ROOT)/modules/nrfx \
@@ -276,7 +217,9 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/platforms/nrf52/xsPlatform.h \
-	$(XS_DIR)/platforms/nrf52/xsHost.h
+	$(XS_DIR)/platforms/nrf52/xsHost.h \
+	$(BUILD_DIR)/devices/nrf52/config/sdk_config.h
+
 HEADERS += $(XS_HEADERS)
 
 # SDK_GLUE_OBJ in the IDE

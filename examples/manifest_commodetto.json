@@ -34,6 +34,12 @@
 			},
 			"preload": "setup/commodetto",
 		},
+		"nrf52": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/nrf52/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
+		},
 
 	}
 }

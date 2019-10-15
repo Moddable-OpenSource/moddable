@@ -2798,7 +2798,7 @@
 // <e> NRFX_QDEC_ENABLED - nrfx_qdec - QDEC peripheral driver
 //==========================================================
 #ifndef NRFX_QDEC_ENABLED
-#define NRFX_QDEC_ENABLED 0
+#define NRFX_QDEC_ENABLED 1
 #endif
 // <o> NRFX_QDEC_CONFIG_REPORTPER  - Report period
  
@@ -2827,7 +2827,7 @@
 // <7=> 16384 us 
 
 #ifndef NRFX_QDEC_CONFIG_SAMPLEPER
-#define NRFX_QDEC_CONFIG_SAMPLEPER 7
+#define NRFX_QDEC_CONFIG_SAMPLEPER 5
 #endif
 
 // <o> NRFX_QDEC_CONFIG_PIO_A - A pin  <0-31> 
@@ -3378,7 +3378,7 @@
 // <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
 //==========================================================
 #ifndef NRFX_SPIM_ENABLED
-#define NRFX_SPIM_ENABLED 0
+#define NRFX_SPIM_ENABLED 1
 #endif
 // <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
  
@@ -3391,7 +3391,7 @@
  
 
 #ifndef NRFX_SPIM1_ENABLED
-#define NRFX_SPIM1_ENABLED 0
+#define NRFX_SPIM1_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM2_ENABLED  - Enable SPIM2 instance
@@ -3604,7 +3604,7 @@
 // <e> NRFX_SPI_ENABLED - nrfx_spi - SPI peripheral driver
 //==========================================================
 #ifndef NRFX_SPI_ENABLED
-#define NRFX_SPI_ENABLED 0
+#define NRFX_SPI_ENABLED 1
 #endif
 // <q> NRFX_SPI0_ENABLED  - Enable SPI0 instance
  
@@ -3617,7 +3617,7 @@
  
 
 #ifndef NRFX_SPI1_ENABLED
-#define NRFX_SPI1_ENABLED 0
+#define NRFX_SPI1_ENABLED 1
 #endif
 
 // <q> NRFX_SPI2_ENABLED  - Enable SPI2 instance
@@ -3966,7 +3966,7 @@
  
 
 #ifndef NRFX_TWIM0_ENABLED
-#define NRFX_TWIM0_ENABLED 0
+#define NRFX_TWIM0_ENABLED 1
 #endif
 
 // <q> NRFX_TWIM1_ENABLED  - Enable TWIM1 instance
@@ -4205,12 +4205,11 @@
  
 
 #ifndef NRFX_TWI0_ENABLED
-#define NRFX_TWI0_ENABLED 0
+#define NRFX_TWI0_ENABLED 1
 #endif
 
 // <q> NRFX_TWI1_ENABLED  - Enable TWI1 instance
  
-
 #ifndef NRFX_TWI1_ENABLED
 #define NRFX_TWI1_ENABLED 0
 #endif
@@ -4977,7 +4976,7 @@
 // <e> QDEC_ENABLED - nrf_drv_qdec - QDEC peripheral driver - legacy layer
 //==========================================================
 #ifndef QDEC_ENABLED
-#define QDEC_ENABLED 0
+#define QDEC_ENABLED 1
 #endif
 // <o> QDEC_CONFIG_REPORTPER  - Report period
  
@@ -5006,7 +5005,7 @@
 // <7=> 16384 us 
 
 #ifndef QDEC_CONFIG_SAMPLEPER
-#define QDEC_CONFIG_SAMPLEPER 7
+#define QDEC_CONFIG_SAMPLEPER 5
 #endif
 
 // <o> QDEC_CONFIG_PIO_A - A pin  <0-31> 
@@ -5447,7 +5446,7 @@
 // <e> SPI_ENABLED - nrf_drv_spi - SPI/SPIM peripheral driver - legacy layer
 //==========================================================
 #ifndef SPI_ENABLED
-#define SPI_ENABLED 0
+#define SPI_ENABLED 1
 #endif
 // <o> SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -5485,7 +5484,7 @@
  
 
 #ifndef SPI0_USE_EASY_DMA
-#define SPI0_USE_EASY_DMA 1
+#define SPI0_USE_EASY_DMA 0
 #endif
 
 // </e>
@@ -5493,7 +5492,7 @@
 // <e> SPI1_ENABLED - Enable SPI1 instance
 //==========================================================
 #ifndef SPI1_ENABLED
-#define SPI1_ENABLED 0
+#define SPI1_ENABLED 1
 #endif
 // <q> SPI1_USE_EASY_DMA  - Use EasyDMA
  
@@ -5704,6 +5703,9 @@
 
 // <e> TWI_ENABLED - nrf_drv_twi - TWI/TWIM peripheral driver - legacy layer
 //==========================================================
+#ifdef TWI_ENABLED
+#error
+#endif
 #ifndef TWI_ENABLED
 #define TWI_ENABLED 1
 #endif
@@ -5771,7 +5773,7 @@
  
 
 #ifndef TWI1_USE_EASY_DMA
-#define TWI1_USE_EASY_DMA 0
+#define TWI1_USE_EASY_DMA 1
 #endif
 
 // </e>
@@ -7266,7 +7268,7 @@
  
 
 #ifndef NRF_SPI_MNGR_ENABLED
-#define NRF_SPI_MNGR_ENABLED 0
+#define NRF_SPI_MNGR_ENABLED 1
 #endif
 
 // <q> NRF_STRERROR_ENABLED  - nrf_strerror - Library for converting error code to string.

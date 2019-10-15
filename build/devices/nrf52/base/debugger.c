@@ -57,6 +57,7 @@ NRF_SERIAL_QUEUES_DEF(gDebuggerQueues, SERIAL_BUFFER_SIZE, SERIAL_BUFFER_SIZE);
 #define SERIAL_BUFF_RX_SIZE 1     // SERIAL_BUFFER_SIZE
 NRF_SERIAL_BUFFERS_DEF(gDebuggerBuffers, SERIAL_BUFF_TX_SIZE, SERIAL_BUFF_RX_SIZE);
 
+//@@ modLog might not be working because we're using MODE_DMA which only reads from RAM, not flash
 NRF_SERIAL_CONFIG_DEF(gDebuggerSerialConfig, NRF_SERIAL_MODE_DMA, &gDebuggerQueues, &gDebuggerBuffers, event_handler, sleep_handler);
 
 NRF_SERIAL_UART_DEF(gDebuggerUarte, 0);
@@ -66,7 +67,7 @@ void ESP_putc(int c);
 void setupDebugger();
 
 static uint8_t readable = 0;
-static volatile uint8_t sReceivedRx = 1;
+static volatile uint8_t sReceivedRx = 0;
 
 static void sleep_handler(void) {
 	__WFE();
@@ -94,8 +95,11 @@ static void event_handler(struct nrf_serial_s const *p_serial, nrf_serial_event_
 		case NRF_SERIAL_EVENT_RX_DATA:
 			readable = 1;
             xx_rx_data_count++;
-			msg = DEBUG_READABLE;
-			xQueueSendFromISR(gUARTQueue, &msg, NULL);
+                        if (!sReceivedRx) {
+                          msg = DEBUG_READABLE;
+                          xQueueSendFromISR(gUARTQueue, &msg, NULL);
+                          sReceivedRx = 1;
+                        }
 			break;
 		case NRF_SERIAL_EVENT_DRV_ERR:
 			break;
@@ -144,7 +148,7 @@ void modLog_transmit(const char *msg)
 //			fx_putc(gThe, c);
 //		fx_putc(gThe, 0);
 		while (NRF_ERROR_BUSY == (ret = nrf_serial_write(&gDebuggerUarte, msg, c_strlen(msg)+1, NULL, NRF_SERIAL_MAX_TIMEOUT)))
-			nrf52_delay_us(10);
+			taskYIELD();
 	}
 	else
 #endif
@@ -161,7 +165,7 @@ void ESP_putc(int c) {
 
 	ch = c;
 	while (NRF_ERROR_BUSY == (ret = nrf_serial_write(&gDebuggerUarte, &ch, 1, NULL, NRF_SERIAL_MAX_TIMEOUT)))
-		nrf52_delay_us(10);
+		taskYIELD();
 
         if (NRF_SUCCESS != ret)
           oof++;
@@ -173,7 +177,7 @@ int ESP_getc(void) {
 	int ret;
 
 	while (NRF_ERROR_BUSY == (ret = nrf_serial_read(&gDebuggerUarte, &ch, 1, NULL, 0)))
-		nrf52_delay_us(10);
+		taskYIELD();
 
 	if (NRF_SUCCESS == ret)
 		return ch;
