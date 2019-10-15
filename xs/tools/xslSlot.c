@@ -675,6 +675,13 @@ txInteger fxPrepareHeap(txMachine* the)
 							property = property->next;
 							fxPrepareInstance(the, property->value.reference); // import.meta
 						}
+						else if (property->kind == XS_EXPORT_KIND) {
+							if (property->ID == mxID(_default)) {
+								txSlot* closure = property->value.export.closure;
+								if (closure)
+									closure->flag |= XS_DONT_SET_FLAG;
+							}
+						}
 						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
 							fxPrepareInstance(the, slot);
 					}
