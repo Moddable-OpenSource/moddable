@@ -134,6 +134,7 @@
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/ringbuf/nrf_ringbuf.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/experimental_section_vars/nrf_section_iter.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/serial/nrf_serial.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/spi_mngr/nrf_spi_mngr.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/strerror/nrf_strerror.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/twi_sensor/nrf_twi_sensor.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/libraries/twi_mngr/nrf_twi_mngr.c" />
@@ -164,10 +165,14 @@
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_clock.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_uart.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_twi.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/integration/nrfx/legacy/nrf_drv_spi.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/soc/nrfx_atomic.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_clock.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_gpiote.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/prs/nrfx_prs.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_qdec.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_spi.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_spim.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_twi.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_twim.c" />
       <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/modules/nrfx/drivers/src/nrfx_uart.c" />
@@ -222,13 +227,16 @@
     </folder>
     <configuration
       Name="Debug"
+      arm_target_interface_type="SWD"
       c_preprocessor_definitions="mxDebug=1;MODINSTRUMENTATION=1;mxInstrument=1"
-      c_user_include_directories="../../../../../../../build/tmp/nrf52/dk/debug/TMP102"
-      linker_additional_options_from_file="/Users/mkellner/nRF5x/moddable/build/bin/nrf52/dk/debug/TMP102/xs_nrf52.ind" />
+      c_user_include_directories="../../../../../../../build/tmp/nrf52/moddable_four/debug/balls"
+      linker_additional_options_from_file="/Users/mkellner/nRF5x/moddable/build/bin/nrf52/moddable_four/debug/balls/xs_nrf52.ind"
+      supplyPower="Yes" />
   </project>
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
   <configuration
     Name="Debug"
+    arm_target_interface_type="SWD"
     c_preprocessor_definitions="DEBUG; DEBUG_NRF"
     gcc_optimization_level="Debug"
     linker_section_placement_file="" />

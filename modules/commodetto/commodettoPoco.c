@@ -37,7 +37,7 @@
 	#define MODDEF_CFE_KERN (0)
 #endif
 
-CommodettoFontEngine gCFE;
+static CommodettoFontEngine gCFE;
 
 #define PocoDisableGC(poco) \
 	if (!(poco->flags & kPocoFlagGCDisabled)) {	\

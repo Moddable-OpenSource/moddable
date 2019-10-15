@@ -931,7 +931,7 @@ void xs_setup();
 void xs_main();
 
 int main(void)
-{
+ {
     bool erase_bonds;
 
     // Initialize modules.

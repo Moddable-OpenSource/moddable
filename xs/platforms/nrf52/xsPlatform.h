@@ -40,8 +40,10 @@
 
 #include <stdint.h>
 
+#include "sdk_config.h"
 #include "nrf.h"
 #include "nrf_error.h"
+#include "nrf_gpio.h"
 
 
 #define mxRegExp 1

@@ -14,6 +14,15 @@
 			"preload": [
 				"pins/pulsecount"
 			],
+		},
+		"nrf52": {
+			"modules": {
+				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
+				"*": "$(MODULES)/pins/pulsecount/nrf52/*"
+			},
+			"preload": [
+				"pins/pulsecount"
+			],
 		}
 	}
 }

@@ -22,7 +22,10 @@ import config from "mc/config";
 import Time from "time";
 import Timer from "timer";
 
-class Screen extends require(config.screen) {
+if (!config.Screen)
+	throw new Error("no screen configured");
+
+class Screen extends config.Screen {
 	start(interval) {
 		this.timer = Timer.repeat(() => {
 			let touch = this.touch;
@@ -53,8 +56,8 @@ class Screen extends require(config.screen) {
 			this.context.onIdle();
 		}, interval);
 
-		if (config.touch) {
-			let touch = require(config.touch);
+		if (config.Touch) {
+			let touch = require(config.Touch);
 			touch = new touch;
 			touch.points = [];
 			let touchCount = config.touchCount ? config.touchCount : 1;
