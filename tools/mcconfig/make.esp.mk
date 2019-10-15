@@ -76,7 +76,7 @@ comma := ,
 NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
 endif
 
-LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
+NEWLIBC_PATH = $(ESPRESSIF_SDK_ROOT)/components/newlib/newlib/lib/libc.a
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \
@@ -362,7 +362,7 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	@$(TOOLS_BIN)/xtensa-lx106-elf-size -A $(TMP_DIR)/main.elf | perl -e $(MEM_USAGE)
 
-$(LIB_DIR)/lib_a-setjmp.o: $(LIBCIROM_PATH)
+$(LIB_DIR)/lib_a-setjmp.o: $(NEWLIBC_PATH)
 	@echo "# ar" $(<F)
 	(cd $(LIB_DIR) && $(AR) -xv $< lib_a-setjmp.o)
 
