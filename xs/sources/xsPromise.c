@@ -40,12 +40,10 @@
 //#define mxPromisePrint 1
 
 static txSlot* fxNewPromiseFunctionAll(txMachine* the, txCallback callback, txSlot* already, txSlot* array, txInteger index, txSlot* count, txSlot* promise, txSlot* function);
-static void fxBuildPromiseCapability(txMachine* the);
 static void fxCallPromise(txMachine* the);
 static void fxCallPromiseAll(txMachine* the);
 static void fxCallPromiseAllSettledReject(txMachine* the);
 static void fxCallPromiseAllSettledResolve(txMachine* the);
-static void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
 
 static void fx_Promise_resolveAux(txMachine* the);
 static void fx_Promise_prototype_finallyAux(txMachine* the);
@@ -409,15 +407,17 @@ void fxOnRejectedPromise(txMachine* the)
 			*argument = mxException;
 		}
 	}
-	mxPushSlot(argument);
-	/* COUNT */
-	mxPushInteger(1);
-	/* THIS */
-	mxPushUndefined();
-	/* FUNCTION */
-	mxPushSlot(function);
-	fxCall(the);
-	the->stack++;
+    if (function->kind == XS_REFERENCE_KIND) {
+		mxPushSlot(argument);
+		/* COUNT */
+		mxPushInteger(1);
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPushSlot(function);
+		fxCall(the);
+		the->stack++;
+	}
 }
 
 void fxOnResolvedPromise(txMachine* the)
@@ -445,15 +445,17 @@ void fxOnResolvedPromise(txMachine* the)
 			function = rejectFunction;
 		}
 	}
-	mxPushSlot(argument);
-	/* COUNT */
-	mxPushInteger(1);
-	/* THIS */
-	mxPushUndefined();
-	/* FUNCTION */
-	mxPushSlot(function);
-	fxCall(the);
-	the->stack++;
+    if (function->kind == XS_REFERENCE_KIND) {
+        mxPushSlot(argument);
+        /* COUNT */
+        mxPushInteger(1);
+        /* THIS */
+        mxPushUndefined();
+        /* FUNCTION */
+        mxPushSlot(function);
+        fxCall(the);
+        the->stack++;
+    }
 }
 
 void fxOnThenable(txMachine* the)
@@ -485,6 +487,66 @@ void fxOnThenable(txMachine* the)
 		the->stack++;
 		mxException = mxUndefined;
 	}
+}
+
+void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* capability)
+{
+	txSlot* resolveFunction;
+	txSlot* rejectFunction;
+	txSlot* reaction;
+	txSlot* slot;
+	txSlot* status;
+	
+	if (capability)
+		fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);
+	reaction = fxNewInstance(the);
+	slot = reaction->next = fxNewSlot(the);
+	if (capability) {
+		slot->kind = XS_REFERENCE_KIND;
+		slot->value.reference = resolveFunction;
+	}
+	slot = slot->next = fxNewSlot(the);
+	if (capability) {
+		slot->kind = XS_REFERENCE_KIND;
+		slot->value.reference = rejectFunction;
+	}
+	slot = slot->next = fxNewSlot(the);
+	if (onFullfilled) {
+		slot->kind = onFullfilled->kind;
+		slot->value = onFullfilled->value;
+	}
+	slot = slot->next = fxNewSlot(the);
+	if (onRejected) {
+		slot->kind = onRejected->kind;
+		slot->value = onRejected->value;
+	}
+		
+	status = mxPromiseStatus(promise);
+	if (status->value.integer == mxPendingStatus) {
+		txSlot** address = &(mxPromiseThens(promise)->value.reference->next);
+		while ((slot = *address)) 
+			address = &(slot->next);
+		slot = *address = fxNewSlot(the);
+		slot->kind = XS_REFERENCE_KIND;
+		slot->value.reference = reaction;
+	}
+	else {
+		slot = mxPromiseResult(promise);
+		mxPushSlot(slot);
+		/* COUNT */
+		mxPushInteger(1);
+		/* THIS */
+		mxPushReference(reaction);
+		/* FUNCTION */
+		if (status->value.integer == mxFulfilledStatus)
+			mxPush(mxOnResolvedPromiseFunction);
+		else
+			mxPush(mxOnRejectedPromiseFunction);
+        /* TARGET */
+		mxPushUndefined();
+		fxQueueJob(the, promise->next->ID);
+	}
+	mxPop(); // reaction
 }
 
 void fxRejectPromise(txMachine* the)
@@ -1225,12 +1287,9 @@ void fx_Promise_prototype_finallyThrow(txMachine* the)
 void fx_Promise_prototype_then(txMachine* the)
 {
 	txSlot* promise;
+	txSlot* onFullfilled = C_NULL;
+	txSlot* onRejected = C_NULL;
 	txSlot* capability;
-	txSlot* resolveFunction;
-	txSlot* rejectFunction;
-	txSlot* reaction;
-	txSlot* slot;
-	txSlot* status;
 
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
@@ -1240,6 +1299,13 @@ void fx_Promise_prototype_then(txMachine* the)
 #ifdef mxPromisePrint
 	fprintf(stderr, "fx_Promise_prototype_then %d\n", promise->next->ID);
 #endif
+
+	if ((mxArgc > 0) && mxIsReference(mxArgv(0))) {
+		onFullfilled = mxArgv(0);
+	}
+	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {
+		onRejected = mxArgv(1);
+	}
 		
 	capability = fxNewHostFunction(the, fxBuildPromiseCapability, 2, XS_NO_ID);
 	mxPushReference(capability);
@@ -1249,52 +1315,8 @@ void fx_Promise_prototype_then(txMachine* the)
 	fxToSpeciesConstructor(the, &mxPromiseConstructor);
 	fxNew(the);
 	mxPullSlot(mxResult);
-	fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);
 		
-	reaction = fxNewInstance(the);
-	slot = reaction->next = fxNewSlot(the);
-	slot->kind = XS_REFERENCE_KIND;
-	slot->value.reference = resolveFunction;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_REFERENCE_KIND;
-	slot->value.reference = rejectFunction;
-	slot = slot->next = fxNewSlot(the);
-	if ((mxArgc > 0) && mxIsReference(mxArgv(0))) {
-		slot->kind = XS_REFERENCE_KIND;
-		slot->value.reference = mxArgv(0)->value.reference;
-	}
-	slot = slot->next = fxNewSlot(the);
-	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {
-		slot->kind = XS_REFERENCE_KIND;
-		slot->value.reference = mxArgv(1)->value.reference;
-	}
-		
-	status = mxPromiseStatus(promise);
-	if (status->value.integer == mxPendingStatus) {
-		txSlot** address = &(mxPromiseThens(promise)->value.reference->next);
-		while ((slot = *address)) 
-			address = &(slot->next);
-		slot = *address = fxNewSlot(the);
-		slot->kind = XS_REFERENCE_KIND;
-		slot->value.reference = reaction;
-	}
-	else {
-		slot = mxPromiseResult(promise);
-		mxPushSlot(slot);
-		/* COUNT */
-		mxPushInteger(1);
-		/* THIS */
-		mxPushReference(reaction);
-		/* FUNCTION */
-		if (status->value.integer == mxFulfilledStatus)
-			mxPush(mxOnResolvedPromiseFunction);
-		else
-			mxPush(mxOnRejectedPromiseFunction);
-        /* TARGET */
-		mxPushUndefined();
-		fxQueueJob(the, promise->next->ID);
-	}
-	mxPop(); // reaction
+	fxPromiseThen(the, promise, onFullfilled, onRejected, capability);
 	mxPop(); // capability
 }
 

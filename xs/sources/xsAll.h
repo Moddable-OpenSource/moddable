@@ -1601,9 +1601,12 @@ mxExport void fxRejectPromise(txMachine* the);
 mxExport void fxResolvePromise(txMachine* the);
 
 extern void fxBuildPromise(txMachine* the);
+extern void fxBuildPromiseCapability(txMachine* the);
+extern void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
 extern txSlot* fxNewPromiseAlready(txMachine* the);
 extern txSlot* fxNewPromiseFunction(txMachine* the, txSlot* already, txSlot* promise, txSlot* function);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
+extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* capability);
 extern void fxRunPromiseJobs(txMachine* the);
 extern void fxQueueJob(txMachine* the, txID id);
 

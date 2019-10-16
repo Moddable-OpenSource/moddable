@@ -669,12 +669,8 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			mxPushInteger(1);
 			mxPush(mxPromiseConstructor);
 			fxCallID(the, mxID(_resolve));
-			mxPullSlot(value);
-			mxPushSlot(resolveAwaitFunction);
-			mxPushSlot(rejectAwaitFunction);
-			mxPushInteger(2);
-			mxPushSlot(value);
-			fxCallID(the, mxID(_then));
+			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL);
+			mxPop();
 		}
 		mxPop();
 	}
