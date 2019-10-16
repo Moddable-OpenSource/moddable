@@ -98,6 +98,7 @@ export class MakeFile extends FILE {
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
 		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
+		let baseConfigLength = baseConfig.length;
 
 		// Read app sdkconfig file
 		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
@@ -109,41 +110,55 @@ export class MakeFile extends FILE {
 			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
 				sdkconfigFile += ".release";
 		}
-		let appConfig = tool.readFileString(sdkconfigFile);
 		
-		// Merge differences
-		if (appConfig != baseConfig) {
-			let appended = false;
+		let appConfig;
+		if (baseConfigFile != sdkconfigFile) {
+			appConfig = tool.readFileString(sdkconfigFile);
 			appConfig = appConfig.split(/[\r\n]+/gm);
-			appConfig.forEach(option => {
-				if (option.length && ('#' != option.charAt(0))) {
-					let parts = option.split('=');
-					let name = parts[0];
-					let value = parts[1];
-					let index = baseConfig.indexOf(name + "=");
-					if (-1 != index) {
-						++index;
-						if ("n" == value) {
-							if ("y" == baseConfig.charAt(index + name.length)) {
-								baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=");
-							}
-						}
-						else {
-							if (value != baseConfig.charAt(index + name.length)) {
-								baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=" + value);
-							}
-						}
+		}
+		else
+			appConfig = [];
+			
+		let port = tool.getenv("UPLOAD_PORT");
+		if (port) {
+			if (port.charAt(0) != '"')
+				port = `"${port}"`;
+			appConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
+		}
+
+		// Merge differences
+		let appended = false;
+		appConfig.forEach(option => {
+			if (option.length && ('#' != option.charAt(0))) {
+				let parts = option.split('=');
+				let name = parts[0];
+				let value = parts[1];
+				let start = baseConfig.indexOf(name + "=");
+				if (-1 != start) {
+					start += name.length + 1;
+					let end = start;
+					let c = baseConfig.charAt(end);
+					while (c != '\n' && c != '\r') {
+						if (++end >= baseConfigLength)
+							break;
+						c = baseConfig.charAt(end);
 					}
-					else {
-						if (!appended) {
-							baseConfig += "\n";
-							appended = true;
-						}
-						baseConfig += name + "=" + value + "\n";
+					let original = baseConfig.slice(start, end);
+					if (original != value) {
+						if ("n" == value)
+							value = "";
+						baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=" + value);
 					}
 				}
-			});
-		}
+				else {
+					if (!appended) {
+						baseConfig += "\n";
+						appended = true;
+					}
+					baseConfig += name + "=" + value + "\n";
+				}
+			}
+		});
 		
 		// Write the result
 		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";

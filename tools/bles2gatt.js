@@ -78,12 +78,6 @@ class ESP32GATTFile extends GATTFile {
 		else {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"n" });
 		}
-		let port = tool.getenv("UPLOAD_PORT");
-		if (port) {
-			if (port.charAt(0) != '"')
-				port = `"${port}"`;
-			options.push({ name:"CONFIG_ESPTOOLPY_PORT", value:port});
-		}
 		for (let i = 0; i < options.length; ++i) {
 			let result = this.setConfigOption(sdkconfig, options[i]);
 			if (result.changed) {
