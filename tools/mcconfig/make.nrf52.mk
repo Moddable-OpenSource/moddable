@@ -25,11 +25,18 @@ PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 # NRF52_GCC_ROOT ?= $(NRF52_GCC_TOOLCHAIN_DIR)/bin/gcc-arm-none-eabi-6-2017-q2-update
 # GNU_VERSION ?= 6.3.1
 
-NRF52_GCC_ROOT ?= /Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/gcc
+NRF52_GCC_ROOT ?= /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/gcc
+SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
+SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
+// SEGGER_PKG_INCLUDE = "/Users/mkellner/Nordic/SEGGER Embedded Studio/v3/packages/include"
+
+# NRF52_GCC_ROOT ?= /Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/gcc
+# SEGGER_INCLUDE = "/Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/include"
+# SEGGER_PKG_INCLUDE = "/Users/mkellner/Nordic/SEGGER Embedded Studio/v3/packages/include"
 
 
-NRF_SDK_DIR = $(HOME)/nRF5x/nRF5_SDK_15.3.0_59ac345
-NRFJPROG = $(HOME)/nRF5x/nrfjprog/nrfjprog
+NRF_SDK_DIR = $(HOME)/nRF5/nRF5_SDK
+NRFJPROG = $(HOME)/nRF5/nrfjprog/nrfjprog
 
 # nRF52840_xxAA
 BOARD = pca10056
@@ -240,8 +247,9 @@ xx =\
 	$(SDK_ROOT)/components/iot/errno \
 	
 C_INCLUDES += \
-	"-isystem/Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/include" \
-	"-isystem/Users/mkellner/Nordic/SEGGER Embedded Studio/v3/packages/include" \
+	"-isystem$(SEGGER_INCLUDE)" \
+
+#	"-isystem$(SEGGER_PKG_INCLUDE)"
 
 # TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
 # TOOLS_PREFIX = arm-none-eabi-
@@ -405,7 +413,7 @@ VPATH += $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 .PRECIOUS: %.d %.o
 
 all: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
-	@echo xs_nrf52.lib built. Use IDE to complete build.
+	@echo Application files and resources have been built. Use SES to complete build.
 
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.bin
 	$(KILL_SERIAL_2_XSBUG)
@@ -440,10 +448,11 @@ ekoFiles = $(foreach fil,$(FINAL_LINK_OBJ),$(shell echo '$(strip $(fil))' >> $(B
 
 $(BIN_DIR)/xs_nrf52.lib: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_nrf52.ind"
-	# @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
-	rm -f $(BIN_DIR)/xs_nrf52.ind
-	@echo $(ekoFiles)
-	mv $(BIN_DIR)/xs_nrf52.ind1 $(BIN_DIR)/xs_nrf52.ind
+#	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
+	@rm -f $(BIN_DIR)/xs_nrf52.ind
+#	@echo $(ekoFiles)
+	$(ekoFiles)
+	@mv $(BIN_DIR)/xs_nrf52.ind1 $(BIN_DIR)/xs_nrf52.ind
 
 $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(SDK_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
 	@echo "# buildinfo"

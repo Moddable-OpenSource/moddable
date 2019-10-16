@@ -1,4 +1,7 @@
 {
+	"include": [
+		"$(MODULES)/drivers/ls013b4dn04/manifest.json"
+	],
 	"modules": {
 		"setup/target": "./setup-target",
 	},
@@ -6,12 +9,12 @@
 		"setup/target",
 	],
 	"config": {
-		"screen": "",
+		"screen": "ls013b4dn04",
 		"touch": "",
-
 		"rotation": 0,
 		"format": "Gray256",
-		"autobacklight": false,
+
+		"autobacklight": 0,
 
 		"led1": { "pin": 13, "port": 0 },
 		"led2": { "pin": 14, "port": 0 },
