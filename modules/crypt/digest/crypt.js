@@ -89,4 +89,4 @@ export class Mode @ "xs_crypt_mode_delete" {
 	set eof() @ "xs_crypt_mode_set_eof";
 };
 
-export default Object.freeze({Digest, BlockCipher, Mode, StreamCipher, GHASH});
+export default Object.freeze({Digest, BlockCipher, Mode, StreamCipher, GHASH}, true);
