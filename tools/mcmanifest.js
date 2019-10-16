@@ -91,6 +91,65 @@ export class MakeFile extends FILE {
 		}
 		this.line("");
 	}
+	generateConfigurationRules(tool) {
+		if ("esp32" != tool.platform) return;
+		
+		// Read base sdkconfig file
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
+		let baseConfig = tool.readFileString(baseConfigFile);
+
+		// Read app sdkconfig file
+		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+		if (tool.debug) {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
+				sdkconfigFile += ".debug";
+		}
+		else {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
+				sdkconfigFile += ".release";
+		}
+		let appConfig = tool.readFileString(sdkconfigFile);
+		
+		// Merge differences
+		if (appConfig != baseConfig) {
+			let appended = false;
+			appConfig = appConfig.split(/[\r\n]+/gm);
+			appConfig.forEach(option => {
+				if (option.length && ('#' != option.charAt(0))) {
+					let parts = option.split('=');
+					let name = parts[0];
+					let value = parts[1];
+					let index = baseConfig.indexOf(name + "=");
+					if (-1 != index) {
+						++index;
+						if ("n" == value) {
+							if ("y" == baseConfig.charAt(index + name.length)) {
+								baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=");
+							}
+						}
+						else {
+							if (value != baseConfig.charAt(index + name.length)) {
+								baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=" + value);
+							}
+						}
+					}
+					else {
+						if (!appended) {
+							baseConfig += "\n";
+							appended = true;
+						}
+						baseConfig += name + "=" + value + "\n";
+					}
+				}
+			});
+		}
+		
+		// Write the result
+		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
+		tool.writeFileString(buildConfigFile, baseConfig);
+		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
 		this.write("\\\n\t$(TMP_DIR)");
@@ -130,20 +189,9 @@ export class MakeFile extends FILE {
 		if (server)
 			this.write(" -v");
 		if ("esp32" == tool.platform) {
-			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
-			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
-			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
-			if (tool.debug) {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
-					sdkconfigFile += ".debug";
-			}
-			else {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
-					sdkconfigFile += ".release";
-			}
+			let sdkconfigFile = tool.getenv("SDKCONFIG_FILE");
 			this.write(" -s ");
 			this.write(sdkconfigFile);
-			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
 			if (tool.windows) {
 				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
@@ -507,6 +555,7 @@ export class MakeFile extends FILE {
 		this.generateModulesRules(tool);
 		this.generateObjectsRules(tool);
 		this.generateDataRules(tool);
+		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
 	}
