@@ -4,7 +4,6 @@
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
   <BreakpointListItem trigger="" line="185" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../../main.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="76" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../../../../../../../modules/pins/i2c/nrf52/modI2C.c" useHWbreakpoint="false"/>
-  <Exceptions set="MemManage;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
  <FrameBufferWindow>
@@ -76,11 +75,12 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="933" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="918" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="933" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="918" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="168" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/debugger.c" selected="0" top="146" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="47" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/xsmain.c" selected="0" top="29" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="343" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsPlatform.c" selected="0" top="313" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="87" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsHost.h" selected="0" top="48" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="87" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsHost.h" selected="0" top="48" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsPlatform.h" selected="1" top="0" codecName="Default"/>
  </Files>
  <ARMCrossStudioWindow activeProject="xsproj" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/lib/&#xa;/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/helloworld/" autoConnectCapabilities="3711"/>
 </session>
