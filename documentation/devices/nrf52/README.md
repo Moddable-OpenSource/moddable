@@ -68,6 +68,8 @@ Set up the MacOS build environment as described in the [Moddable SDK - Getting S
 
 Download and install [SEGGER Embedded Studio][sesdownload]. Choose the version **Embedded Studio for ARM, macOS V4.22**.
 
+Start and register your IDE. Use the menu item Tools->Package Manager and install the support package for **Nordic** devices.
+
 #### Install SEGGER J-Link
 
 Download and install [J-Link Software and Documentation pack for macOS][jlinkdownload]
