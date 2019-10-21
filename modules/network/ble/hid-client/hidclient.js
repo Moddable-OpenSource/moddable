@@ -18,15 +18,15 @@
  *
  */
 /*
- https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=309012&_ga=2.38842976.279320072.1537230968-1286694985.1517851833
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.human_interface_device.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.report.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.report_reference.xml
+ 	https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=309012&_ga=2.38842976.279320072.1537230968-1286694985.1517851833
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.human_interface_device.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.report.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Descriptors/org.bluetooth.descriptor.report_reference.xml
  
- http://www.usb.org/developers/hidpage/HID1_11.pdf
- http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
- https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
- */
+	http://www.usb.org/developers/hidpage/HID1_11.pdf
+	http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
+	https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
+*/
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
