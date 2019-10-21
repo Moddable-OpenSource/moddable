@@ -408,9 +408,11 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason);
 			if (gDisconnectReason)
 				gDisconnectReason = -1;
-			else if ((WIFI_REASON_BEACON_TIMEOUT == reason) ||
+			else /* if ((WIFI_REASON_BEACON_TIMEOUT == reason) ||
 					 (WIFI_REASON_NO_AP_FOUND == reason) ||
-					 (WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) {
+					 (WIFI_REASON_HANDSHAKE_TIMEOUT == reason) ||
+					 (WIFI_REASON_AUTH_EXPIRE == reason) ||
+					 (WIFI_REASON_CONNECTION_FAIL == reason)) */ {
 				if (gWiFiConnectRetryRemaining > 0) {
 					if (0 == esp_wifi_connect()) {
 						gWiFiConnectRetryRemaining -= 1;
