@@ -235,12 +235,12 @@ void xs_file_exists(xsMachine *the)
 void xs_file_rename(xsMachine *the)
 {
 	char *path;
-	char name[SPIFFS_OBJ_NAME_LEN];
+	char name[SPIFFS_OBJ_NAME_LEN + 1];
     int32_t result;
 
     startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(1), name, SPIFFS_OBJ_NAME_LEN);
+	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
 	path = xsmcToString(xsArg(0));
     result = rename(path, name);
 
@@ -296,7 +296,7 @@ void xs_file_iterator_next(xsMachine *the)
     iter d = xsmcGetHostData(xsThis);
     struct dirent *de;
     struct stat buf;
-    char path[SPIFFS_OBJ_NAME_LEN];
+    char path[SPIFFS_OBJ_NAME_LEN + 1];
 
     if (!d || !d->dir) return;
 
@@ -326,7 +326,7 @@ void xs_file_system_config(xsMachine *the)
 {
 	xsResult = xsmcNewObject();
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), SPIFFS_OBJ_NAME_LEN - 1);
+	xsmcSetInteger(xsVar(0), SPIFFS_OBJ_NAME_LEN);
 	xsmcSet(xsResult, xsID_maxPathLength, xsVar(0));
 }
 
