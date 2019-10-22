@@ -1456,7 +1456,7 @@ void fxReturnStatement(txParser* parser)
 		fxCommaExpression(parser);
 	}
 	else {
-		fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
+		fxPushNULL(parser);
 	}
 	fxPushNodeStruct(parser, 1, XS_TOKEN_RETURN, aLine);
 }

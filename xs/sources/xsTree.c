@@ -86,6 +86,7 @@ static void fxPropertyBindingAtNodeDistribute(void* it, txNodeCall call, void* p
 static void fxQuestionMarkNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxRegexpNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxRestBindingNodeDistribute(void* it, txNodeCall call, void* param);
+static void fxReturnNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxSpreadNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxStatementNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxStatementsNodeDistribute(void* it, txNodeCall call, void* param);
@@ -536,6 +537,13 @@ void fxRestBindingNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txRestBindingNode* self = it;
 	(*call)(self->binding, param);
+}
+
+void fxReturnNodeDistribute(void* it, txNodeCall call, void* param)
+{
+	txStatementNode* self = it;
+	if (self->expression)
+		(*call)(self->expression, param);
 }
 
 void fxSpreadNodeDistribute(void* it, txNodeCall call, void* param)
@@ -1146,7 +1154,7 @@ static const txNodeDispatch gxRestBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeReference
 };
 static const txNodeDispatch gxReturnNodeDispatch ICACHE_FLASH_ATTR = {
-	fxStatementNodeDistribute,
+	fxReturnNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
 	fxReturnNodeCode,

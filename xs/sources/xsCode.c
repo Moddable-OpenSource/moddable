@@ -2589,6 +2589,12 @@ void fxDelegateNodeCode(void* it, void* param)
 // RETURN	
 	fxCoderAddByte(param, 0, XS_CODE_UNCATCH);
 	
+	if (async) {
+		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, result);
+		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
+		fxCoderAddByte(param, 0, XS_CODE_THROW_STATUS);
+	}
+	
 	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, iterator);
 	fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->returnSymbol);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, method);
@@ -3813,10 +3819,16 @@ void fxReturnNodeCode(void* it, void* param)
 	txCoder* coder = param;
 	if (coder->programFlag)
 		fxReportLineError(coder->parser, self->line, "invalid return");
-	if (((self->flags & (mxStrictFlag | mxGeneratorFlag)) == mxStrictFlag) && (coder->returnTarget->original == NULL))
-		self->expression->flags |= mxTailRecursionFlag;
-	fxNodeDispatchCode(self->expression, param);
-	fxCoderAddByte(param, -1, XS_CODE_RESULT);
+	if (self->expression) {	
+		if (((self->flags & (mxStrictFlag | mxGeneratorFlag)) == mxStrictFlag) && (coder->returnTarget->original == NULL))
+			self->expression->flags |= mxTailRecursionFlag;
+		fxNodeDispatchCode(self->expression, param);
+		fxCoderAddByte(param, -1, XS_CODE_RESULT);
+	}
+	else if ((self->flags & (mxAsyncFlag | mxGeneratorFlag)) != (mxAsyncFlag | mxGeneratorFlag)) {
+		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
+		fxCoderAddByte(param, -1, XS_CODE_RESULT);
+	}
 	fxCoderAdjustEnvironment(coder, coder->returnTarget);
 	fxCoderAdjustScope(coder, coder->returnTarget);
 	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_1, coder->returnTarget);

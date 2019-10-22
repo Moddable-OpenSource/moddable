@@ -597,7 +597,10 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		mxCode = mxCode + (mxStack++)->value.integer;
 		mxStack->kind = the->scratch.kind;
 		mxStack->value = the->scratch.value;
-		mxFrameResult->kind = XS_UNDEFINED_KIND;
+		if (id)
+			mxFrameResult->kind = XS_UNDEFINED_KIND;
+		else
+			mxFrameResult->kind = XS_UNINITIALIZED_KIND;
 #ifdef mxTraceCall
 		fxTraceCallBegin(the, mxFrameFunction);
 #endif
