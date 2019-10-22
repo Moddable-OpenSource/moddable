@@ -117,22 +117,6 @@ class ESP32GATTFile extends GATTFile {
 		file.line("static const uint16_t character_declaration_uuid = 0x2803;");
 		file.line("static const uint16_t character_client_config_uuid = 0x2902;");
 		file.line("");
-		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_notify_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
-		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
-		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
-		file.line("static const uint8_t char_prop_read_extended = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
-		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
-		file.line("static const uint8_t char_prop_write_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
-		file.line("static const uint8_t char_prop_write_notify = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_write_notify_extended = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP;");
-		file.line("static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
-		file.line("static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("static const uint8_t char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("");
 		
 		var maxAttributeCount = 0;
 		var attributeCounts = new Array(services.length);
@@ -171,6 +155,8 @@ class ESP32GATTFile extends GATTFile {
 				if (characteristic._notify) {
 					file.line(`static const uint8_t char_ccc${characteristicIndex}[2] = { 0x00, 0x00 };`);
 				}
+				let properties = this.parseProperties(characteristic.properties.split(","));
+				file.line(`static const uint8_t char_properties${characteristicIndex} = ${toPaddedHex(properties)};`);
 				if ("descriptors" in characteristic) {
 					for (let key2 in characteristic.descriptors) {
 						let descriptor = characteristic.descriptors[key2];
@@ -218,11 +204,10 @@ class ESP32GATTFile extends GATTFile {
 					characteristic.properties = "read";
 
 				// characteristic declaration
-				let properties = this.parseProperties(characteristic.properties.split(","));
 				let permissions = this.parsePermissions(characteristic.permissions.split(","));
 				file.line("\t\t[", attributeIndex, "] = {");
 				file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
-				file.line(`\t\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ${permissions}, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&${properties}}`);
+				file.line(`\t\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ${permissions}, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_properties${characteristicIndex}}`);
 				file.line("\t\t},");
 				++attributeIndex;
 
@@ -340,36 +325,6 @@ class ESP32GATTFile extends GATTFile {
 					throw new Error("unknown property");
 			}
 		});
-		if (props == ESP_GATT_CHAR_PROP_BIT_READ)
-			props = "char_prop_read";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
-			props = "char_prop_read_extended";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
-			props = "char_prop_write";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
-			props = "char_prop_write_extended";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
-			props = "char_prop_write_notify";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
-			props = "char_prop_write_nr";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_NOTIFY)
-			props = "char_prop_notify";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE))
-			props = "char_prop_read_write";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
-			props = "char_prop_read_notify";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_EXT_PROP))
-			props = "char_prop_read_notify_extended";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
-			props = "char_prop_read_indicate";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
-			props = "char_prop_read_write_nr";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
-			props = "char_prop_read_write_write_nr";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
-			props = "char_prop_read_write_notify";
-		else
-			throw new Error("unsupported property combination");
 		return props;
 	}
 	parsePermissions(permissions) {
