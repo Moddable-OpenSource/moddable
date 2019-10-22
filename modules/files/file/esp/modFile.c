@@ -57,7 +57,7 @@ void xs_File(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	spiffs_file file;
-	char path[SPIFFS_OBJ_NAME_LEN + ];
+	char path[SPIFFS_OBJ_NAME_LEN + 1];
 	uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));;
 
 	startSPIFFS();
