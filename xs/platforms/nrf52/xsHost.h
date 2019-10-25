@@ -194,9 +194,13 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 extern void modLog_transmit(const char *msg);
 extern void ESP_putc(int c);
 
+//@@ MDK I'm using a local variable for scratch below to force the string into
+// ram so EasyDMA can access it.
+//		static const char scratch[] = msg ; \
+
 #define modLog(msg) \
 	do { \
-		static const char scratch[] = msg ; \
+		char scratch[] = msg; \
 		modLog_transmit(scratch); \
 	} while (0)
 #define modLogVar(msg) modLog_transmit(msg)
