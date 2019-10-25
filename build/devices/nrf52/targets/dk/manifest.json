@@ -49,6 +49,9 @@
 			"sda_pin": "NRF_GPIO_PIN_MAP(0,26)"
 		},
 		"ls013b4dn04": {
+			"hz": "1000000",
+			"width": 128,
+			"height": 128,
 			"spi_port": 1,
 			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)"
 		}
