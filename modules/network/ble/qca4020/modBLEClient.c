@@ -109,6 +109,8 @@ struct modBLEConnectionRecord {
 
 	uint32_t passkey;
 
+	uint8_t mtu_exchange_pending;
+	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
 
@@ -451,6 +453,17 @@ void xs_gap_connection_disconnect(xsMachine *the)
 void xs_gap_connection_read_rssi(xsMachine *the)
 {
 	xsUnknownError("unimplemented");	// @@ Only available from HCI connection??
+}
+
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+	connection->mtu_exchange_pending = 1;
+	if (qapi_BLE_GATT_Exchange_MTU_Request(gBLE->stackID, conn_id, mtu, GATT_Client_Event_Callback, 0L) <= 0)
+		xsRangeError("invalid mtu");
 }
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
@@ -1087,6 +1100,19 @@ static void clientErrorEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 }
 
+static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GATT_Exchange_MTU_Response_Data_t *result = (qapi_BLE_GATT_Exchange_MTU_Response_Data_t*)message;
+	uint32_t conn_id = result->ConnectionID;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection || !connection->mtu_exchange_pending) return;
+	
+	connection->mtu_exchange_pending = 0;
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(result->ServerMTU));
+	xsEndHost(gBLE->the);
+}
+
 static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t*)message;
@@ -1570,6 +1596,13 @@ void QAPI_BLE_BTPSAPI GATT_Client_Event_Callback(uint32_t BluetoothStackID, qapi
 					qapi_BLE_GATT_Request_Error_Data_t GATT_Request_Error_Data = *GATT_Client_Event_Data->Event_Data.GATT_Request_Error_Data;
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Request_Error_Data, sizeof(GATT_Request_Error_Data), clientErrorEvent, NULL);	
 				}				
+				break;
+			}
+			case QAPI_BLE_ET_GATT_CLIENT_EXCHANGE_MTU_RESPONSE_E: {
+				if (GATT_Client_Event_Data->Event_Data.GATT_Exchange_MTU_Response_Data) {
+					qapi_BLE_GATT_Exchange_MTU_Response_Data_t GATT_Exchange_MTU_Response_Data = *GATT_Client_Event_Data->Event_Data.GATT_Exchange_MTU_Response_Data;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Exchange_MTU_Response_Data, sizeof(GATT_Exchange_MTU_Response_Data), mtuExchangedEvent, NULL);					
+				}
 				break;
 			}
 			default:

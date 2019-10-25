@@ -1028,6 +1028,12 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
+#else
+		case 2:
+		case 3:
+			modLog("mods disabled");
+			resultCode = -1;
+			break;
 #endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference

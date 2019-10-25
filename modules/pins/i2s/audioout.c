@@ -646,12 +646,6 @@ void xs_audioout_enqueue(xsMachine *the)
 				}
 
 #if defined(__APPLE__)
-				invokeCallbacks(NULL, out);
-#elif ESP || defined(__ets__) || defined(_WIN32)
-				deliverCallbacks(the, out, NULL, 0);
-#endif
-
-#if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
 #elif defined(_WIN32)
 				LeaveCriticalSection(&out->cs);
@@ -659,6 +653,12 @@ void xs_audioout_enqueue(xsMachine *the)
 				xSemaphoreGive(out->mutex);
 #elif defined(__ets__)
 				modCriticalSectionEnd();
+#endif
+
+#if defined(__APPLE__)
+				invokeCallbacks(NULL, out);
+#elif ESP || defined(__ets__) || defined(_WIN32)
+				deliverCallbacks(the, out, NULL, 0);
 #endif
 		} break;
 

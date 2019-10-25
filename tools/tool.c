@@ -471,6 +471,7 @@ void Tool_prototype_enumerateDirectory(xsMachine* the)
 		closedir(dir);
 	}
 #endif
+    xsCall0(xsResult, xsID_sort);
 }
 
 void Tool_prototype_execute(xsMachine* the)

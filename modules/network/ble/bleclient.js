@@ -48,6 +48,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onPasskeyDisplay() {}
 	onPasskeyRequested() {}
 	onRSSI() {}
+	onMTUExchanged() {}
 	
 	// From Client object
 	onServices() {}
