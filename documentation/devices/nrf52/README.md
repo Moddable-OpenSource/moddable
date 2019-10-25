@@ -269,21 +269,43 @@ In SES, use the menu item **Build and Debug** to both build and flash to the dev
 2. Start, stop and restart buttons.
 3. Step into, step over, step out and run to cursor.
 
-![SES Debugging](./assets/sesDebug.png#medFrame)
+![SES Debugging](./assets/sesDebug.png#medFramed)
 
 Press the _Start_ button to start the program.
 
 `xsbug` will show the connection is made and the application will stop at the `debugger` line.
 
-![xsbug running helloworld](./assets/xsbugHelloworld.png#medFrame)
+![xsbug running helloworld](./assets/xsbugHelloworld.png#medFramed)
 
 You can now run and debug your application.
 
 > Note: if you have a debug build, your application will try to connect to `xsbug` at startup for a brief period. If it cannot connect, it will proceed to launch.
 
+### Native debugging on Moddable Four
+
+Debugging native code on the Moddable Four with the Segger Embedded Studio requires a Nordic nRF52840 dk board and this additional wiring:
+
+![nRF52840dk to Moddable 4 connection](./assets/nrf52840dk-m4-connect.png#smallFramed) ![Moddable 4 to dk connection](./assets/m4-dk-connect.png#smallFramed)
+
+1) dk SWD CLK to M4 SDWCLK<br>
+2) dk SWD IO to M4 SWDIO<br>
+3) dk RESET to M4 Reset<br>
+4) dk GND DETECT to M4 GND<br>
+5) dk VTG to M4 3.3v<br>
+
+Connect Moddable 4 to a USB-to-serial dongle:
+
+6) M4 P0.30 to FTDI Rx<br>
+7) M4 P0.31 to FTDI Tx<br>
+
+
+FTDI GND to GND
+
+J-Link:Target Interface Type -> SWD
 
 ### Notes and troubleshooting
 
+* sometimes xsbug doesn't connect on app start. Press the restart button in SES or the reset button on the board.
 * `xsbug` needs to be running before `serial2xsbug` is started.
 
 
@@ -294,10 +316,11 @@ App | Feature
 --- | ------- 
 [helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug 
 [balls](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/balls) | balls using the Sharp Mirror Display ls013b4dn04
+[transitions] | dk - piu on ls013b4dn04
 [button] | digital in
 [blink] | digital out
 [TMP102] | i2c
-[pulsecount] | m4 rotary encoder
+[pulsecount] | m4 - rotary encoder
  
 
 ### Reference Documentation
