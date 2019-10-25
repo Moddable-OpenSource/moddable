@@ -414,6 +414,11 @@ VPATH += $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 all: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
 	@echo Application files and resources have been built. Use SES to complete build.
+	@echo - Ensure the following \"Project 'xsproj' Options\" are set in SES
+	@echo - \"Linker: Additional Linker Options from File\" should refer to:
+	@echo - "   $(BIN_DIR)/xs_nrf52.lib "
+	@echo - \"Preprocessor: User Include Directories\" should contain:
+	@echo - "   $(TMP_DIR) "
 
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.bin
 	$(KILL_SERIAL_2_XSBUG)
