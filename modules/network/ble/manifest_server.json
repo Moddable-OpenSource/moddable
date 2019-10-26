@@ -46,6 +46,14 @@
 				]
 			},
 		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/ble/nrf52/modBLEServer",
+					"$(MODULES)/network/ble/nrf52/modBLESM",
+				]
+			},
+		},
 		"lin": {
 			"modules": {
 				"*": [
