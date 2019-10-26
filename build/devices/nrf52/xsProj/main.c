@@ -133,9 +133,10 @@
 
 #define OSTIMER_WAIT_FOR_QUEUE              2                                       /**< Number of ticks to wait for the timer queue to be ready */
 
-
-BLE_BAS_DEF(m_bas);                                                 /**< Battery service instance. */
-BLE_HRS_DEF(m_hrs);                                                 /**< Heart rate service instance. */
+//BLE_BAS_DEF(m_bas);                                                 /**< Battery service instance. */
+ble_bas_t m_bas;  // @@ stub for link
+//BLE_HRS_DEF(m_hrs);                                                 /**< Heart rate service instance. */
+ble_hrs_t m_hrs;  // @@ stub for link
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                 /**< Advertising module instance. */
@@ -329,6 +330,7 @@ static void sensor_contact_detected_timeout_handler(TimerHandle_t xTimer)
  */
 static void timers_init(void)
 {
+#if 0
     // Initialize timer module.
     ret_code_t err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
@@ -363,6 +365,7 @@ static void timers_init(void)
     {
         APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
     }
+#endif
 }
 
 
