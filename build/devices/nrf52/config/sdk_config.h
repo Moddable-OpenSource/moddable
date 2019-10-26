@@ -232,7 +232,7 @@
 // <e> BLE_BAS_ENABLED - ble_bas - Battery Service
 //==========================================================
 #ifndef BLE_BAS_ENABLED
-#define BLE_BAS_ENABLED 1
+#define BLE_BAS_ENABLED 0
 #endif
 // <e> BLE_BAS_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
@@ -305,7 +305,7 @@
  
 
 #ifndef BLE_DIS_ENABLED
-#define BLE_DIS_ENABLED 1
+#define BLE_DIS_ENABLED 0
 #endif
 
 // <q> BLE_GLS_ENABLED  - ble_gls - Glucose Service
@@ -333,7 +333,7 @@
  
 
 #ifndef BLE_HRS_ENABLED
-#define BLE_HRS_ENABLED 1
+#define BLE_HRS_ENABLED 0
 #endif
 
 // <q> BLE_HTS_ENABLED  - ble_hts - Health Thermometer Service
