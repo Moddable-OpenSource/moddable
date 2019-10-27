@@ -701,7 +701,7 @@ void xs_poco_drawText(xsMachine *the)
 	PocoColor color;
 	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
-	static const char *ellipsis = "...";
+	static const unsigned char *ellipsis = (unsigned char *)"...";
 	PocoDimension ellipsisWidth;
 	int width;
 	const unsigned char *fontData;
