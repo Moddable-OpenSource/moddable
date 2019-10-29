@@ -114,6 +114,8 @@ More detailed getting started guides are available for the following devices:
 	export PATH="${MODDABLE}/build/bin/mac/release:$PATH"
 	```
 	
+	> Note: These instructions assume that your shell sources from `~/.profile` when a new terminal is opened. That may not be the case depending on what shell you use and how you have it configured. Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050) which uses `~/.zshrc` instead.
+	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
