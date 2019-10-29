@@ -25,6 +25,11 @@
 				"*": "$(MODULES)/pins/digital/monitor/qca4020/*",
 			},
 		},
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/nrf52/*",
+			},
+		},
 		"...": {
 			"error": "pins/digital module unsupported"
 		}
