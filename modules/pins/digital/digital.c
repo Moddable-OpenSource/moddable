@@ -37,7 +37,7 @@ void xs_digital_destructor(void *data)
 void xs_digital(xsMachine *the)
 {
 	int pin, mode, argc = xsmcArgc;
-	char *port = NULL;;
+	char *port = NULL;
 	modGPIOConfigurationRecord gpio;
 
 	if (1 == argc) {		//@@ eventually only dictionary case should be here
