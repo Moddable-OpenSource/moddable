@@ -689,6 +689,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	const esp_gatts_attr_db_t *att;
 	const esp_attr_desc_t *att_desc;
 	const char_name_table *char_name;
+	uint8_t cccd;
 
 	att = handleToAtt(write->handle);
 	if (NULL == att) return;
@@ -707,11 +708,13 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		modLog("writing characteristic"); modLogHex(buffer[1]); modLogHex(buffer[0]);
 	}
 #endif
-
-	if (write->need_rsp)
+	cccd = (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len);
+	
+	if (write->need_rsp && !cccd) {
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
+	}
 	xsmcVars(6);
-	if (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len) {
+	if (cccd) {
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
 			att = handleToAtt(write->handle - 1);
@@ -719,8 +722,9 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 			char_name = handleToCharName(write->handle - 1);
 			notify = (uint8_t)descr_value;
 		}
-		else
+		else {
 			xsUnknownError("invalid cccd value");
+		}
 	}
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuid.len = att_desc->uuid_length;
