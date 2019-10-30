@@ -144,11 +144,9 @@ void modLog_transmit(const char *msg)
 
 #if mxDebug
 	if (gThe) {
-//		while (0 != (c = c_read8(msg++)))
-//			fx_putc(gThe, c);
-//		fx_putc(gThe, 0);
-		while (NRF_ERROR_BUSY == (ret = nrf_serial_write(&gDebuggerUarte, msg, c_strlen(msg)+1, NULL, NRF_SERIAL_MAX_TIMEOUT)))
-			taskYIELD();
+		while (0 != (c = c_read8(msg++)))
+			fx_putc(gThe, c);
+		fx_putc(gThe, 0);
 	}
 	else
 #endif
