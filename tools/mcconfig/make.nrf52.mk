@@ -165,6 +165,7 @@ INC_DIRS += \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
   $(SDK_ROOT)/components/softdevice/common \
+  $(SDK_ROOT)/components/ble/common
 
 #  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
 
