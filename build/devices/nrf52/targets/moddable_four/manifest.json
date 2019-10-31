@@ -12,7 +12,11 @@
 
 		"led1_pin": 7,
 
-		"button1_pin": 13
+		"button1_pin": 13,
+
+		"click_wheel_a": 6,
+		"click_wheel_b": 27,
+		"click_wheel_sw": 26,
 	},
     "modules": {
         "*": [
