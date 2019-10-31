@@ -1,0 +1,37 @@
+{
+	"include": [
+			"$(MODDABLE)/examples/manifest_base.json",
+			"$(MODDABLE)/modules/pins/digital/manifest.json",
+			],
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"./main",
+		]
+	},
+	"platforms":{
+		"esp32": {
+			"modules": {
+				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
+				"*": "$(MODULES)/pins/pulsecount/esp32/*"
+			},
+			"preload": [
+				"pins/pulsecount"
+			],
+		},
+		"nrf52": {
+			"modules": {
+				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
+				"*": [
+					"$(MODULES)/pins/pulsecount/nrf52/*",
+					"$(MODULES)/pins/digital/monitor/nrf52/*",
+				],
+			},
+			"preload": [
+				"pins/pulsecount",
+				"pins/digital",
+				"pins/digital/monitor",
+			],
+		}
+	}
+}
