@@ -1837,7 +1837,7 @@ void fxArrayNodeCode(void* it, void* param)
 					fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, counter);
 					fxCoderAddBranch(param, 0, XS_CODE_BRANCH_1, nextTarget);
 					fxCoderAdd(param, 1, doneTarget);
-					fxCoderUnuseTemporaryVariables(param, 1);
+					fxCoderUnuseTemporaryVariables(param, 2);
 				}
 				else {
 					if (item->description->token != XS_TOKEN_ELISION) {
