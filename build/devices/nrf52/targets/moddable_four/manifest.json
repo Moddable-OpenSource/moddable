@@ -44,8 +44,8 @@
 			"scl_pin": "NRF_GPIO_PIN_MAP(0,11)"
 		},
 		"ls013b4dn04": {
-			"width": 96,
-			"height": 96,
+			"width": 128,
+			"height": 128,
 			"spi_port": 1,
 			"cs_pin": "NRF_GPIO_PIN_MAP(0,18)",
 			"disp_pin": "NRF_GPIO_PIN_MAP(0,15)"
