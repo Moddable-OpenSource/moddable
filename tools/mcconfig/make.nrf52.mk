@@ -165,7 +165,8 @@ INC_DIRS += \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
   $(SDK_ROOT)/components/softdevice/common \
-  $(SDK_ROOT)/components/ble/common
+  $(SDK_ROOT)/components/ble/common \
+  $(SDK_ROOT)/components/ble/nrf_ble_gatt
 
 #  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
 
@@ -413,7 +414,7 @@ VPATH += $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
+all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
 	@echo Application files and resources have been built. Use SES to complete build.
 	@echo - Ensure the following \"Project 'xsproj' Options\" are set in SES
 	@echo - \"Linker: Additional Linker Options from File\" should refer to:
