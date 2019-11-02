@@ -31,8 +31,8 @@
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_freertos.h"
-
-//#include "mc.bleservices.c"
+#include "nrf_ble_gatt.h"
+#include "nrf_sdh.h"
 
 #define APP_BLE_CONN_CFG_TAG 1
 #define APP_BLE_OBSERVER_PRIO 3
@@ -62,21 +62,76 @@
 	#define LOG_GAP_INT(i)
 #endif
 
+#define GATT_CHAR_PROP_BIT_READ		(1 << 1)
+#define GATT_CHAR_PROP_BIT_WRITE_NR	(1 << 2)
+#define GATT_CHAR_PROP_BIT_WRITE	(1 << 3)
+#define GATT_CHAR_PROP_BIT_NOTIFY	(1 << 4)
+#define GATT_CHAR_PROP_BIT_INDICATE	(1 << 5)
+#define GATT_CHAR_PROP_BIT_AUTH		(1 << 6)
+#define GATT_CHAR_PROP_BIT_EXT_PROP	(1 << 7)
+
+#define GATT_PERM_READ				(1 << 0)
+#define GATT_PERM_READ_ENCRYPTED	(1 << 1)
+#define GATT_PERM_WRITE				(1 << 4)
+#define GATT_PERM_WRITE_ENCRYPTED	(1 << 5)
+
+#define CHAR_DECLARATION_SIZE		(sizeof(uint8_t))
+#define UUID_LEN_16		2
+#define UUID_LEN_32		4
+#define UUID_LEN_128	16
+
+typedef struct {
+	uint16_t uuid_length;
+	uint8_t  *uuid_p;
+	uint16_t perm;
+	uint16_t max_length;
+	uint16_t length;
+	uint8_t  *value;
+} attr_desc_t;
+
+typedef struct {
+#define GATT_RSP_BY_APP 0
+#define GATT_AUTO_RSP 1
+	uint8_t auto_rsp;
+} attr_control_t;
+
+typedef struct {
+	attr_control_t attr_control;
+	attr_desc_t att_desc;
+} gatts_attr_db_t;
+
+typedef struct {
+	uint8_t service_index;
+	uint8_t att_index;
+	ble_gatts_char_handles_t handles;
+} gatts_handles_t;
+
+static const uint16_t primary_service_uuid = 0x2800;
+static const uint16_t character_declaration_uuid = 0x2803;
+static const uint16_t character_client_config_uuid = 0x2902;
+
+#include "mc.bleservices.c"
+
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void bleServerConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
+static const char_name_table *handleToCharName(uint16_t handle);
+static void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length);
 
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
 
 	// connection
-	int16_t conn_handle;
+	uint16_t conn_handle;
 	ble_gap_addr_t remote_bda;
 	
+	// gatt
+	nrf_ble_gatt_t m_gatt;
+	
 	// advertising
-	uint8_t advertising;
+	uint8_t adv_handle_initialized;
 	uint8_t adv_handle;
 	uint8_t adv_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	uint8_t scan_rsp_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
@@ -107,7 +162,8 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE = (modBLE)c_calloc(sizeof(modBLERecord), 1);
 	if (!gBLE)
 		xsUnknownError("no memory");
-	gBLE->conn_handle = -1;
+	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
+	gBLE->adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
 	gBLE->bond = 0xFF;
 	gBLE->the = the;
 	gBLE->obj = xsThis;
@@ -125,6 +181,10 @@ void xs_ble_server_initialize(xsMachine *the)
     if (NRF_SUCCESS == err_code)
     	err_code = nrf_sdh_ble_enable(&ram_start);
 
+	// Initialize GATT module
+    if (NRF_SUCCESS == err_code)
+		err_code = nrf_ble_gatt_init(&gBLE->m_gatt, NULL);
+    
 	// Initialize connection parameters (required)
     if (NRF_SUCCESS == err_code) {
 		c_memset(&cp_init, 0, sizeof(cp_init));
@@ -165,14 +225,14 @@ void xs_ble_server_destructor(void *data)
 
 	if (-1 != ble->conn_handle)
 		sd_ble_gap_disconnect(ble->conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-		
+	
 	c_free(ble);
 	gBLE = NULL;
 }
 
 void xs_ble_server_disconnect(xsMachine *the)
 {
-	if (-1 != gBLE->conn_handle)
+	if (BLE_CONN_HANDLE_INVALID != gBLE->conn_handle)
 		sd_ble_gap_disconnect(gBLE->conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 }
 
@@ -206,10 +266,6 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	ble_gap_adv_data_t adv_data;
 	ble_gap_adv_params_t adv_params;
 	
-	if (gBLE->advertising)
-		xsUnknownError("ble already advertising");
-		
-modLog("in start advertising");
 	uint16_t intervalMin = xsmcToInteger(xsArg(0));
 	uint16_t intervalMax = xsmcToInteger(xsArg(1));
 	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
@@ -232,32 +288,21 @@ modLog("in start advertising");
     adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
     adv_params.interval        = intervalMin;
 
-	gBLE->adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
 	err_code = sd_ble_gap_adv_set_configure(&gBLE->adv_handle, &adv_data, &adv_params);
 	if (NRF_SUCCESS == err_code)
 		err_code = sd_ble_gap_adv_start(gBLE->adv_handle, APP_BLE_CONN_CFG_TAG);
 	
-	if (NRF_SUCCESS != err_code) {
-		modLogInt(err_code);
+	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble start advertising failed");
-	}
-	
-	gBLE->advertising = 1;
 }
 	
 void xs_ble_server_stop_advertising(xsMachine *the)
 {
     ret_code_t err_code;
     
-	if (!gBLE->advertising)
-		xsUnknownError("ble not advertising");
-		
-	gBLE->advertising = 0;
 	err_code = sd_ble_gap_adv_stop(gBLE->adv_handle);
-	if (NRF_ERROR_INVALID_STATE != err_code) {
-		modLogInt(err_code);
+	if (NRF_ERROR_INVALID_STATE != err_code)
 		xsUnknownError("ble stop advertising failed");
-	}
 }
 
 void xs_ble_server_characteristic_notify_value(xsMachine *the)
@@ -268,6 +313,70 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+    ret_code_t err_code;
+    ble_uuid_t ble_uuid;
+    ble_add_char_params_t add_char_params;
+	uint8_t permissions;
+	uint16_t properties;
+	uint16_t att_handle_index = 0;
+					
+	for (uint16_t i = 0; i < service_count; ++i) {
+		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
+		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
+		if (UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
+			continue;	// don't register gap service
+			
+		uint16_t service_uuid = *(uint16_t*)att_desc->value;
+		BLE_UUID_BLE_ASSIGN(ble_uuid, service_uuid);
+
+		err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &service_handles[i]);
+		for (uint16_t j = 1; (NRF_SUCCESS == err_code) && (j < attribute_counts[i]); ++j) {
+			gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][j];
+			att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
+			if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, sizeof(character_declaration_uuid))) {
+				properties = *att_desc->value;
+				
+				++j;	// advance to characteristic value
+				gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][j];
+				att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
+				permissions = att_desc->perm;
+				
+				c_memset(&add_char_params, 0, sizeof(add_char_params));
+				add_char_params.uuid              = *(uint16_t*)att_desc->uuid_p;
+				add_char_params.max_len           = att_desc->max_length;
+				add_char_params.init_len          = att_desc->length;
+				add_char_params.p_init_value      = att_desc->value;
+				add_char_params.is_var_len        = false;
+				
+				add_char_params.char_props.read = (properties & GATT_CHAR_PROP_BIT_READ ? 1 : 0);
+				add_char_params.char_props.write_wo_resp = (properties & GATT_CHAR_PROP_BIT_WRITE_NR ? 1 : 0);
+				add_char_params.char_props.write = (properties & GATT_CHAR_PROP_BIT_WRITE ? 1 : 0);
+				add_char_params.char_props.notify = (properties & GATT_CHAR_PROP_BIT_NOTIFY ? 1 : 0);
+				add_char_params.char_props.indicate = (properties & GATT_CHAR_PROP_BIT_INDICATE ? 1 : 0);
+				add_char_params.char_ext_props.wr_aux = (properties & GATT_CHAR_PROP_BIT_EXT_PROP ? 1 : 0);
+				
+				add_char_params.read_access = SEC_OPEN;
+				add_char_params.write_access = SEC_OPEN;
+				add_char_params.cccd_write_access = SEC_OPEN;
+
+				att_handles[att_handle_index].service_index = i;
+				att_handles[att_handle_index].att_index = j;
+				err_code = characteristic_add(service_handles[i], &add_char_params, &att_handles[att_handle_index].handles);
+xsLog("add char, service %d att_handle_index %d att %d err %d\n", i, att_handle_index, j, err_code);
+if (add_char_params.char_props.notify) {
+xsLog("notify char, att_handle_index %d value_handle %d cccd_handle %d err %d\n", att_handle_index, att_handles[att_handle_index].handles.value_handle, att_handles[att_handle_index].handles.cccd_handle, err_code);
+}
+				++att_handle_index;
+			}
+			else if (0 == c_memcmp(att_desc->uuid_p, &character_client_config_uuid, sizeof(character_client_config_uuid))) {
+				// Skip CCCD attributes because they are added by characteristic_add() above.
+				modLog("skipping CCCD");
+			}
+			else {
+				xsUnknownError("unhandled attribute type");
+			}
+		}
+	}
 }
 
 void xs_ble_server_set_security_parameters(xsMachine *the)
@@ -302,6 +411,32 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	// @@ TBD
 }
 
+void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length)
+{
+	if (uuid->type == BLE_UUID_TYPE_BLE) {
+		*length = UUID_LEN_16;
+		buffer[0] = uuid->uuid & 0xFF;
+		buffer[1] = (uuid->uuid >> 8) & 0xFF;
+	}
+	else {
+		*length = UUID_LEN_128;
+		// @@ TBD
+	}
+}
+
+const char_name_table *handleToCharName(uint16_t handle) {
+	for (uint16_t i = 0; i < handles_count; ++i) {
+		ble_gatts_char_handles_t *handles = &att_handles[i].handles;
+		if (handle == att_handles[i].handles.value_handle) {
+			for (uint16_t k = 0; k < char_name_count; ++k) {
+				if (char_names[k].service_index == att_handles[i].service_index && char_names[k].att_index == att_handles[i].att_index)
+					return &char_names[k];
+			}
+		}
+	}
+	return NULL;
+}
+
 void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -317,14 +452,14 @@ void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	xs_ble_server_destructor(ble);
 }
 
-void bleServerConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	int16_t conn_handle = gap_evt->conn_handle;
 	xsBeginHost(gBLE->the);
-	if (-1 != gBLE->conn_handle)
+	if (BLE_CONN_HANDLE_INVALID != gBLE->conn_handle)
 		goto bail;
 	gBLE->conn_handle = conn_handle;
 	gBLE->remote_bda = gap_evt->params.connected.peer_addr;
@@ -339,7 +474,7 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
-void bleServerDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
 
@@ -347,18 +482,10 @@ void bleServerDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint1
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	int16_t conn_handle = gap_evt->conn_handle;
 	
-	if (gBLE->advertising) {
-		gBLE->advertising = 0;
-		err_code = sd_ble_gap_adv_stop(gBLE->adv_handle);
-		if (NRF_ERROR_INVALID_STATE != err_code) {
-			modLogInt(err_code);
-			xsUnknownError("ble stop advertising failed");
-		}
-	}
 	xsBeginHost(gBLE->the);
 	if (conn_handle != gBLE->conn_handle)
 		goto bail;
-	gBLE->conn_handle = -1;
+	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), conn_handle);
@@ -366,6 +493,47 @@ void bleServerDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint1
 	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
+void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	const char_name_table *char_name;
+	ble_uuid_t uuid;
+	uint16_t uuid_length;
+	uint8_t buffer[UUID_LEN_128];
+	uint8_t notify;
+	ble_gatts_evt_t *gatts_evt = (ble_gatts_evt_t*)message;
+    ble_gatts_evt_write_t const * p_evt_write = &gatts_evt->params.write;
+
+	xsBeginHost(gBLE->the);
+	for (uint16_t i = 0; i < handles_count; ++i) {
+		if (p_evt_write->handle == att_handles[i].handles.cccd_handle && p_evt_write->len == 2) {
+			notify = ble_srv_is_notification_enabled(p_evt_write->data);
+			char_name = handleToCharName(p_evt_write->handle - 1);
+			sd_ble_gatts_attr_get(p_evt_write->handle - 1, &uuid, NULL);
+			uuidToBuffer(buffer, &uuid, &uuid_length);
+			xsmcVars(6);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			if (char_name) {
+				xsmcSetString(xsVar(2), (char*)char_name->name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(2));
+				xsmcSetString(xsVar(3), (char*)char_name->type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(3));
+			}
+			xsmcSetInteger(xsVar(4), p_evt_write->handle - 1);
+			xsmcSetInteger(xsVar(5), notify);
+			xsmcSet(xsVar(0), xsID_handle, xsVar(4));
+			xsmcSet(xsVar(0), xsID_notify, xsVar(5));
+			xsCall2(gBLE->obj, xsID_callback, xsString(0 == notify ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
+			goto bail;
+		}
+	}
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -393,6 +561,15 @@ static void logGAPEvent(uint16_t evt_id) {
 		case BLE_GAP_EVT_DATA_LENGTH_UPDATE: modLog("BLE_GAP_EVT_DATA_LENGTH_UPDATE"); break;
 		case BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT: modLog("BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT"); break;
 		case BLE_GAP_EVT_ADV_SET_TERMINATED: modLog("BLE_GAP_EVT_ADV_SET_TERMINATED"); break;
+		
+        case BLE_GATTS_EVT_WRITE: modLog("BLE_GATTS_EVT_WRITE"); break;
+        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST: modLog("BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST"); break;
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING: modLog("BLE_GATTS_EVT_SYS_ATTR_MISSING"); break;
+        case BLE_GATTS_EVT_HVC: modLog("BLE_GATTS_EVT_HVC"); break;
+        case BLE_GATTS_EVT_SC_CONFIRM: modLog("BLE_GATTS_EVT_SC_CONFIRM"); break;
+        case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST: modLog("BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST"); break;
+        case BLE_GATTS_EVT_TIMEOUT: modLog("BLE_GATTS_EVT_TIMEOUT"); break;
+        case BLE_GATTS_EVT_HVN_TX_COMPLETE: modLog("BLE_GATTS_EVT_HVN_TX_COMPLETE"); break;
 	}
 }
 
@@ -407,10 +584,10 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
     switch (p_ble_evt->header.evt_id)
     {
 		case BLE_GAP_EVT_CONNECTED:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), bleServerConnectedEvent, NULL);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
 			break;
 		case BLE_GAP_EVT_DISCONNECTED:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), bleServerDisconnectedEvent, NULL);
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapDisconnectedEvent, NULL);
 			break;
 			
 		case BLE_GAP_EVT_CONN_PARAM_UPDATE:
@@ -456,12 +633,43 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 		case BLE_GAP_EVT_ADV_SET_TERMINATED:
 			break;
 
-        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+        case BLE_GATTS_EVT_WRITE:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gatts_evt, sizeof(ble_gatts_evt_t), gattsWriteEvent, NULL);
+            break;
+        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
         	break;
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+#if 0
+        	err_code = sd_ble_gatts_sys_attr_set(gBLE->conn_handle, NULL, 0, 0);
+#if LOG_GAP
+			if (NRF_SUCCESS != err_code) {
+				LOG_GAP_MSG("BLE_GATTS_EVT_SYS_ATTR_MISSING failed, err_code =");
+				LOG_GAP_INT(err_code);
+			}
+#endif
+#endif
+        	break;
+        case BLE_GATTS_EVT_HVC:
+        	break;
+        case BLE_GATTS_EVT_SC_CONFIRM:
+        	break;
+        case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST: {
+            uint16_t const mtu_requested =
+                p_ble_evt->evt.gatts_evt.params.exchange_mtu_request.client_rx_mtu;
+            uint16_t mtu_reply = NRF_SDH_BLE_GATT_MAX_MTU_SIZE;
+            err_code = sd_ble_gatts_exchange_mtu_reply(gBLE->conn_handle, mtu_reply);
+#if LOG_GAP
+			if (NRF_SUCCESS != err_code) {
+				LOG_GAP_MSG("BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST failed, err_code =");
+				LOG_GAP_INT(err_code);
+			}
+#endif
+        	break;
+        }
         case BLE_GATTS_EVT_TIMEOUT:
         	break;
-        case BLE_GATTS_EVT_WRITE:
-            break;
+        case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+        	break;
 
         default:
             break;
