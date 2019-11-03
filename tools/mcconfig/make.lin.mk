@@ -138,12 +138,12 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	all-noflash
-	
+
 all: all-noflash
 
 all-noflash : $(LIB_DIR) $(BIN_DIR)/mc.so
 	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
-	
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	

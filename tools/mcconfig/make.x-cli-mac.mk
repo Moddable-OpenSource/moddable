@@ -130,7 +130,7 @@ VPATH += $(XS_DIRECTORIES)
 all: all-noflash
 
 all-noflash: $(LIB_DIR) $(BIN_DIR)/$(NAME)
-	
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 

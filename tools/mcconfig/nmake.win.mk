@@ -155,7 +155,7 @@ WAV2MAUD = $(BUILD_DIR)\bin\win\debug\wav2maud
 XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
-	
+
 all: all-noflash
 
 all-noflash: $(LIB_DIR) $(BIN_DIR)\mc.dll

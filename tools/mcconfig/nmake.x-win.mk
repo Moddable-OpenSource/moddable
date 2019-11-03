@@ -152,7 +152,7 @@ MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
 XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
-	
+
 all: all-noflash
 
 all-noflash: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
