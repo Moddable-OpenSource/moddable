@@ -152,7 +152,9 @@ XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
-all: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
+all: all-noflash
+
+all-noflash: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe
 
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)

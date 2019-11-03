@@ -133,11 +133,13 @@ XSL = $(BUILD_DIR)/bin/mac/release/xsl
 
 VPATH += $(XS_DIRECTORIES)
 
-.PHONY: all	
-	
-all: $(LIB_DIR) $(BIN_DIR)/mc.so
+.PHONY: all	all-noflash
+
+all: all-noflash
+
+all-noflash: $(LIB_DIR) $(BIN_DIR)/mc.so
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.so
-	
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	

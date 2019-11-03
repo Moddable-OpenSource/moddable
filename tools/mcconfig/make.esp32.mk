@@ -235,7 +235,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all	
+.PHONY: all all-noflash flash
 
 PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
 
@@ -270,7 +270,9 @@ SDKCONFIG_H=$(IDF_BUILD_DIR)/include/sdkconfig.h
 
 .NOTPARALLEL: $(SDKCONFIG_H)
 
-all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+all: all-noflash flash
+
+all-noflash: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
@@ -278,6 +280,8 @@ all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
+
+flash :
 	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash && $(DO_LAUNCH)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)

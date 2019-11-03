@@ -126,9 +126,11 @@ XSL = $(BUILD_DIR)/bin/mac/debug/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 
-.PHONY: all	
+.PHONY: all	all-noflash
 	
-all: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES)
+all: all-noflash
+
+all-noflash: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

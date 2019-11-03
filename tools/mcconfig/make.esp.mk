@@ -324,9 +324,11 @@ ESPTOOL_FLASH_OPT = \
 
 UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
 
-.PHONY: all
+.PHONY: all all-noflash
 
-all: $(LAUNCH)
+all: all-noflash
+
+all-noflash: $(LAUNCH)
 
 debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)

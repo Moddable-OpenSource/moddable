@@ -932,6 +932,9 @@ export class Tool extends TOOL {
 				this.debug = true;
 				this.instrument = true;
 				break;
+			case "-n":
+				this.noFlash = true;
+				break;
 			case "-f":
 				argi++;
 				if (argi >= argc)

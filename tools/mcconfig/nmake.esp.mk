@@ -330,12 +330,14 @@ ESPTOOL_FLASH_OPT = \
 
 UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
 
-.PHONY: all	
+.PHONY: all	all-noflash
 
 APP_ARCHIVE = $(BIN_DIR)\libxsar.a
 LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 
-all: $(LAUNCH)
+all: all-noflash
+
+all-noflash: $(LAUNCH)
 
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1

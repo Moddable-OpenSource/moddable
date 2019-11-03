@@ -24,6 +24,7 @@ export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.debug = false;
+		this.noFlash = false;
 		this.inputPaths = [];
 		this.name = "locals";
 		this.outputPath = null;
@@ -36,6 +37,9 @@ export default class extends TOOL {
 			switch (option) {
 			case "-d":
 				this.debug = true;
+				break;
+			case "-n":
+				this.noFlash = true;
 				break;
 			case "-o":
 				argi++;	

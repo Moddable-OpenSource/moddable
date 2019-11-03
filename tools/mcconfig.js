@@ -1131,10 +1131,17 @@ export default class extends Tool {
 		file.generate(this);
 
 		if (this.make) {
-			if (this.windows)
-				this.then("nmake", "/nologo", "/f", path);
-			else
-				this.then("make", "-f", path);
+			if (this.noFlash) {
+				if (this.windows)
+					this.then("nmake", "/nologo", "/f", path, "all-noflash");
+				else
+					this.then("make", "-f", path, "all-noflash");
+			} else {
+				if (this.windows)
+					this.then("nmake", "/nologo", "/f", path);
+				else
+					this.then("make", "-f", path);
+			}
 		}
 	}
 }

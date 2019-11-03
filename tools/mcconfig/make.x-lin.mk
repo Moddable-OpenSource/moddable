@@ -135,9 +135,11 @@ endif
 
 VPATH += $(XS_DIRECTORIES)
 
-.PHONY: all	
+.PHONY: all	all-noflash
 
-all: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+all: all-noflash
+
+all-noflash: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

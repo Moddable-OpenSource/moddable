@@ -261,9 +261,11 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)\partitions.csv \
 	$(PROJ_DIR)\Makefile
 
-.PHONY: all
+.PHONY: all all-noflash debug-flash release-flash
 
-all: projDir $(BLE) $(SDKCONFIG_H) $(LAUNCH)
+all: projDir $(BLE) $(SDKCONFIG_H) $(LAUNCH) $(LAUNCH)-flash
+
+all-noflash: projDir $(BLE) $(SDKCONFIG_H) $(LAUNCH)
 
 debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
@@ -271,6 +273,8 @@ debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
+
+debug-flash:
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
 
@@ -278,6 +282,8 @@ release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
+
+release-flash:
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); make monitor;"
 
