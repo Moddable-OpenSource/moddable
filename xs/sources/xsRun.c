@@ -920,8 +920,6 @@ XS_CODE_JUMP:
 			
 		mxCase(XS_CODE_START_ASYNC)
 			mxSkipCode(1);
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
-				mxRunDebug(XS_TYPE_ERROR, "new async");
 			mxSaveState;
 			variable = gxDefaults.newAsyncInstance(the);
 			mxRestoreState;
