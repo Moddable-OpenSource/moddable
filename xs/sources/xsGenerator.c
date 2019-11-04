@@ -819,7 +819,10 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				mxPushSlot(stepFunction);
 				fxCall(the);
 				slot = the->stack;
-	
+                if (!mxIsReference(slot)) {
+                    mxTypeError("no object");
+                }
+
 				mxPushSlot(slot);
 				fxGetID(the, mxID(_done));
 				doneFlag->value.boolean = fxToBoolean(the, the->stack);

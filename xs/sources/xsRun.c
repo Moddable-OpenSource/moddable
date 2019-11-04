@@ -597,10 +597,6 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		mxCode = mxCode + (mxStack++)->value.integer;
 		mxStack->kind = the->scratch.kind;
 		mxStack->value = the->scratch.value;
-		if (id)
-			mxFrameResult->kind = XS_UNDEFINED_KIND;
-		else
-			mxFrameResult->kind = XS_UNINITIALIZED_KIND;
 #ifdef mxTraceCall
 		fxTraceCallBegin(the, mxFrameFunction);
 #endif
@@ -923,7 +919,6 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newAsyncInstance(the);
 			mxRestoreState;
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -949,10 +944,11 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
+			mxStack += 5;
 			mxSaveState;
-			gxDefaults.runAsync(the, mxFrameResult->value.reference);
+			gxDefaults.runAsync(the, mxStack->value.reference);
 			mxRestoreState;
- 			slot = mxFrameResult;
+			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
  			
 		mxCase(XS_CODE_START_ASYNC_GENERATOR)
@@ -965,8 +961,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newAsyncGeneratorInstance(the);
 			mxRestoreState;
-			
-			*mxFrameResult = *mxStack;
+			mxFrameResult->kind = XS_UNINITIALIZED_KIND;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -992,7 +987,9 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
- 			slot = mxFrameResult;
+			mxStack += 5;
+			*mxFrameResult = *(mxStack++);
+			slot = mxFrameResult;
 			goto XS_CODE_END_ALL;
 		
 		mxCase(XS_CODE_START_GENERATOR)
@@ -1005,8 +1002,6 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newGeneratorInstance(the);
 			mxRestoreState;
-			
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -1032,17 +1027,18 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
- 			slot = mxFrameResult;
+			mxStack += 5;
+			*mxFrameResult = *(mxStack++);
+			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
  			
 		mxCase(XS_CODE_AWAIT)
 		mxCase(XS_CODE_YIELD)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
-			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;;
+			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = slot - mxScope;
 			mxPushKind(XS_INTEGER_KIND);
@@ -1082,6 +1078,8 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
+			mxStack += 5 + (offset * 4);
+			*mxFrameResult = *(mxStack++);
 			slot = mxFrameResult;
 			goto XS_CODE_END_ALL;
 			
