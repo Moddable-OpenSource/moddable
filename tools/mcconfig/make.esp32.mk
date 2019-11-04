@@ -292,7 +292,7 @@ all-noflash: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
-	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash 'ESPTOOLPY_WRITE_FLASH=echo Skipping flashing #'
+	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash 'ESPTOOLPY_WRITE_FLASH=python ${MODDABLE}/tools/skip-flash.py'
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
