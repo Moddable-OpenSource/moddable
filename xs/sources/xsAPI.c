@@ -56,6 +56,8 @@ txKind fxTypeOf(txMachine* the, txSlot* theSlot)
 {
 	if (theSlot->kind == XS_STRING_X_KIND)
 		return XS_STRING_KIND;
+	if (theSlot->kind == XS_BIGINT_X_KIND)
+		return XS_BIGINT_KIND;
 	return theSlot->kind;
 }
 
