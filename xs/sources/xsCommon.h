@@ -1011,8 +1011,7 @@ enum {
 	_weak,
 	_writable,
 	_xor,
-	___dirname,
-	___filename,
+	__empty_string_,
 	__xsbug_script_,
 	XS_ID_COUNT
 };

@@ -197,7 +197,7 @@ void fxBuildMapSet(txMachine* the)
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroupCleanupIteratorPrototype_next), 0, mxID(_next), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroupCleanupIteratorPrototype_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "FinalizationGroup Cleanup Iterator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPull(mxFinalizationGroupCleanupIteratorPrototype);
 }
@@ -1355,7 +1355,7 @@ void fx_FinalizationGroup(txMachine* the)
 	if (!fxIsCallable(the, callback))
 		mxTypeError("callback is no function");
 	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);
+	fxGetPrototypeFromConstructor(the, &mxFinalizationGroupPrototype);
 	instance = fxNewSlot(the);
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
@@ -1512,6 +1512,7 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
 	txSlot* instance;
 	txSlot* result;
 	txSlot* property;
+	txUnsigned flags;
 
 	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_CHANGED))
 		return;
@@ -1531,13 +1532,22 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
     
 	if (!callback)
 		callback = group->value.finalizationGroup.callback;
-	group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_ACTIVE;
-	mxPushInteger(1);
-	mxPushUndefined();
-	mxPushSlot(callback);
-	fxCall(the);
-	mxPop();
-	group->value.finalizationGroup.flags &= ~XS_FINALIZATION_GROUP_ACTIVE;
+	flags = group->value.finalizationGroup.flags;
+	{
+		mxTry(the) {
+			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_ACTIVE;
+			mxPushInteger(1);
+			mxPushUndefined();
+			mxPushSlot(callback);
+			fxCall(the);
+			mxPop();
+			group->value.finalizationGroup.flags = flags;
+		}
+		mxCatch(the) {
+			group->value.finalizationGroup.flags = flags;
+			fxJump(the);
+		}
+	}
 	
 	slot = group->value.finalizationGroup.callback->next;
 	while (slot) {

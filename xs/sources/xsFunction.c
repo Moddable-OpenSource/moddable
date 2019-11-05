@@ -67,7 +67,6 @@ void fxBuildFunction(txMachine* the)
 	slot->kind = XS_ACCESSOR_KIND;
 	slot->value.accessor.getter = function;
 	slot->value.accessor.setter = function;
-	slot = fxNextSlotProperty(the, slot, &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	constructor = fxBuildHostConstructor(the, mxCallback(fx_Function), 1, mxID(_Function));
 	mxFunctionConstructor = *the->stack;
 	the->stack++;
@@ -397,9 +396,8 @@ void fx_Function_prototype_bind(txMachine* the)
 		if (length)
 			c_memcpy(name + 6, the->stack->value.string, length);
 		name[6 + length] = 0;
-		the->stack->value.string = name;
-		the->stack->kind = XS_STRING_KIND;
-		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+		slot->value.string = name;
+		slot->kind = XS_STRING_KIND;
 		mxPop();
 	}
 

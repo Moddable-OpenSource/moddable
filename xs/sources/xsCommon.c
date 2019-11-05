@@ -1429,7 +1429,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"weak",
 	"writable",
 	"xor",
-	"__dirname",
-	"__filename",
+	"",
 	"<xsbug:script>"
 };
