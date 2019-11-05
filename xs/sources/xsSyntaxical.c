@@ -2241,6 +2241,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	if (parser->token == XS_TOKEN_EXTENDS) {
 		fxMatchToken(parser, XS_TOKEN_EXTENDS);
 		fxCallExpression(parser);
+		flags |= parser->flags & mxAwaitingFlag;
 		heritageFlag = 1;
 	}
 	else if (parser->token == XS_TOKEN_HOST) {
