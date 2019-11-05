@@ -12,8 +12,8 @@
  *
  */
  /*
- 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml
-*/
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml
+ */
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";

@@ -519,7 +519,7 @@ function server(message, value, etc) {
 						if (line.length < 3)
 							throw new Error("unexpected status format");
 						const protocol = line[line.length - 1].trim();
-						if (("HTTP/1.1" != protocol) && ("HTTP/1.0" != protocol))		// http 1.0 for hotspot.html
+						if (("HTTP/1.1" !== protocol) && ("HTTP/1.0" !== protocol))		// http 1.0 for hotspot.html
 							throw new Error("bad protocol ID");
 
 						line.length -= 1;		// remove "HTTP/1.1"

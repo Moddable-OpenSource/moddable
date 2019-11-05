@@ -756,8 +756,12 @@ void xs_socket_write(xsMachine *the)
 			}
 		}
 
-		if ((0 == pass) && (needed > available))
-			xsUnknownError("can't write all data");
+		if ((0 == pass) && (needed > available)) {
+			tcp_output_safe(xss->skt);
+			available = tcp_sndbuf(xss->skt);
+			if (needed > available)
+				xsUnknownError("can't write all data");
+		}
 	}
 
 	xss->outstandingSent += needed;

@@ -136,7 +136,7 @@ The kind of data accepted by the write operation is determined by the `format` p
 Scripts that perform write operations may call write at any time. The IO instance may not always be able to accept new data, such as when its output buffer is full. If write is called in this situation, an exception is thrown. Such IO instances generally support the `onWritable` callback which indicates when space is available in the output buffer. The following example uses the `onWritable` callback to transmit a continuous stream of asterisk (ASCII 42) characters.
 
 ```js
-let close = new Serial({
+new Serial({
 	baud: 921600,
 	onWritable(count) {
 		while (count--)

@@ -361,9 +361,9 @@ let touchController = new firmata.I2C({
 		const result = new Uint8Array(this.read());
 		trace(`${result[0]} touch points\n`);
 	}
-}
-i2c.write(Uint8Array.of(2));
-i2c.read(1);
+});
+touchController.write(Uint8Array.of(2));
+touchController.read(1);
 ```
 
 <a id="client-implementation-notes"></a>

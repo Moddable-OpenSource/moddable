@@ -146,6 +146,12 @@ export class Client {
 				}
 				break;
 			}
+			case "onDescriptorWritten": {
+				let descriptor = this._findDescriptorByHandle(params.handle);
+				if (descriptor)
+					this.ble.onDescriptorWritten(descriptor);		
+				break;
+			}
 		}
 	}
 };
@@ -335,11 +341,16 @@ export class Descriptor {
 		this._readValue(this.connection, this.handle, auth);
 	}
 
-	writeValue(value) {
+	writeWithoutResponse(value) {
 		value = typedValueToBuffer(this.type, value);
 		this._writeValue(this.connection, this.handle, value);
 	}
 	
+	writeValue(value) {
+		value = typedValueToBuffer(this.type, value);
+		this._writeValue(this.connection, this.handle, value, true);
+	}
+
 	_readValue() @ "xs_gatt_descriptor_read_value"
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };

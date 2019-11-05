@@ -66,4 +66,4 @@ export const protocolVersion = (3 << 8) | 1;	// default protocol version
 export const minProtocolVersion = (3 << 8) | 1;
 export const maxProtocolVersion = (3 << 8) | 3;
 
-export const supportedCompressionMethods = [0];	// NULL
+export const supportedCompressionMethods = Object.freeze([0]);	// NULL
