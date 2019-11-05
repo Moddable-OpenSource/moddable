@@ -68,7 +68,6 @@
 #undef EFAULT
 #undef ENETUNREACH
 
-#include "mc.defines.h"
 #include <stdint.h>
 #include <stddef.h>
 //#include "malloc.h"
