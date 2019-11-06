@@ -1064,7 +1064,6 @@ class NRF52GATTFile extends GATTFile {
 			// primary service attribute
 			file.line(`\t\t// Service ${service.uuid}`);
 			file.line("\t\t[", attributeIndex, "] = {");
-			file.line("\t\t\t{GATT_AUTO_RSP},");
 			file.line(`\t\t\t{UUID_LEN_16, (uint8_t*)&primary_service_uuid, GATT_PERM_READ, sizeof(uint16_t), sizeof(service_uuid${index}), (uint8_t*)&service_uuid${index}}`);
 			file.line("\t\t},");
 			++attributeIndex;
@@ -1081,7 +1080,6 @@ class NRF52GATTFile extends GATTFile {
 				// characteristic declaration
 				let permissions = this.parsePermissions(characteristic.permissions.split(","));
 				file.line("\t\t[", attributeIndex, "] = {");
-				file.line("\t\t\t{GATT_AUTO_RSP},");
 				file.line(`\t\t\t{UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ${permissions}, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_properties${characteristicIndex}}`);
 				file.line("\t\t},");
 				++attributeIndex;
@@ -1094,11 +1092,6 @@ class NRF52GATTFile extends GATTFile {
 					maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 				let uuid_len = (4 == characteristic.uuid.length ? "UUID_LEN_16" : "UUID_LEN_128");
 				file.line("\t\t[", attributeIndex, "] = {");
-				if ("value" in characteristic)
-					file.line("\t\t\t{GATT_AUTO_RSP},");
-				else {
-					file.line("\t\t\t{GATT_RSP_BY_APP},");
-				}
 				let char_name = { service_index:index, att_index:attributeIndex, name:key };
 				char_name.type = characteristic.type ? characteristic.type: "";
 				char_names.push(char_name);
@@ -1114,7 +1107,6 @@ class NRF52GATTFile extends GATTFile {
 				// characteristic configuration descriptor
 				if (characteristic._notify) {
 					file.line("\t\t[", attributeIndex, "] = {");
-					file.line("\t\t\t{GATT_AUTO_RSP},");
 					file.line(`\t\t\t{UUID_LEN_16, (uint8_t*)&character_client_config_uuid, GATT_PERM_READ | GATT_PERM_WRITE, sizeof(uint16_t), sizeof(char_ccc${characteristicIndex}), (uint8_t*)char_ccc${characteristicIndex}}`);
 					file.line("\t\t},");
 					++attributeIndex;
@@ -1133,11 +1125,6 @@ class NRF52GATTFile extends GATTFile {
 						permissions = this.parsePermissions(descriptor.permissions.split(","));
 						uuid_len = (4 == descriptor.uuid.length ? "UUID_LEN_16" : "UUID_LEN_128");
 						file.line("\t\t[", attributeIndex, "] = {");
-						if ("value" in descriptor)
-							file.line("\t\t\t{GATT_AUTO_RSP},");
-						else {
-							file.line("\t\t\t{GATT_RSP_BY_APP},");
-						}
 						let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
 						char_name.type = descriptor.type ? descriptor.type: "";
 						char_names.push(char_name);
