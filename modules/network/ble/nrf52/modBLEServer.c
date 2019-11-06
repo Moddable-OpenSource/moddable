@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,6 +37,8 @@
 #include "nrf_sdh_freertos.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_sdh.h"
+#include "peer_manager.h"
+#include "peer_manager_handler.h"
 
 #define APP_BLE_CONN_CFG_TAG 1
 #define APP_BLE_OBSERVER_PRIO 3
@@ -64,6 +66,17 @@
 	#define LOG_GAP_EVENT(event)
 	#define LOG_GAP_MSG(msg)
 	#define LOG_GAP_INT(i)
+#endif
+
+#define LOG_PM 0
+#if LOG_PM
+	#define LOG_PM_EVENT(event) logPMEvent(event)
+	#define LOG_PM_MSG(msg) modLog(msg)
+	#define LOG_PM_INT(i) modLogInt(i)
+#else
+	#define LOG_PM_EVENT(event)
+	#define LOG_PM_MSG(msg)
+	#define LOG_PM_INT(i)
 #endif
 
 #define GATT_CHAR_PROP_BIT_READ		(1 << 1)
@@ -119,6 +132,8 @@ static const uint16_t character_client_config_uuid = 0x2902;
 #include "mc.bleservices.c"
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
+static void pm_evt_handler(pm_evt_t const * p_evt);
+
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
@@ -157,7 +172,6 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 	uint8_t bond;
-	bool erase_bonds;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -210,6 +224,21 @@ void xs_ble_server_initialize(xsMachine *the)
 		err_code = ble_conn_params_init(&cp_init);
     }
 
+	// Initialize the peer manager
+    if (NRF_SUCCESS == err_code) {
+		err_code = pm_init();
+		if (NRF_SUCCESS == err_code) {
+			ble_gap_sec_params_t sec_params;
+			c_memset(&sec_params, 0, sizeof(ble_gap_sec_params_t));
+			sec_params.io_caps        = BLE_GAP_IO_CAPS_NONE;
+			sec_params.min_key_size   = 7;
+			sec_params.max_key_size   = 16;
+			err_code = pm_sec_params_set(&sec_params);
+		}
+		if (NRF_SUCCESS == err_code)
+			err_code = pm_register(pm_evt_handler);
+    }
+
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble initialization failed");
 
@@ -217,7 +246,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 
     // Create a FreeRTOS task for the BLE stack.
-	nrf_sdh_freertos_init(NULL, &gBLE->erase_bonds);
+	nrf_sdh_freertos_init(NULL, NULL);
     
 	modMessagePostToMachine(the, NULL, 0, bleServerReadyEvent, NULL);
 }
@@ -344,7 +373,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 void xs_ble_server_deploy(xsMachine *the)
 {
     ret_code_t err_code = NRF_SUCCESS;
-    ble_uuid_t ble_uuid;
+    ble_uuid128_t ble_uuid_128;
     ble_add_char_params_t add_char_params;
     ble_add_descr_params_t add_desc_params;
 	uint8_t permissions;
@@ -356,21 +385,25 @@ void xs_ble_server_deploy(xsMachine *the)
 		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
 		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
 		uint8_t uuid_type;
+		ble_uuid_t ble_service_uuid;
 		
 		if (UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
 			continue;	// don't register gap service
 			
-		if (UUID_LEN_16 == att_desc->length) {
+		if (UUID_LEN_16 == att_desc->uuid_length) {
 			uint16_t service_uuid = *(uint16_t*)att_desc->value;
-			BLE_UUID_BLE_ASSIGN(ble_uuid, service_uuid);
+			BLE_UUID_BLE_ASSIGN(ble_service_uuid, service_uuid);
 		}
-		else if (UUID_LEN_128 == att_desc->length) {
-			err_code = sd_ble_uuid_vs_add((ble_uuid128_t const *)att_desc->value, &uuid_type);
+		else if (UUID_LEN_128 == att_desc->uuid_length) {
+			c_memmove(&ble_uuid_128.uuid128, att_desc->value, UUID_LEN_128);
+			err_code = sd_ble_uuid_vs_add(&ble_uuid_128, &ble_service_uuid.type);
+			ble_service_uuid.uuid = (att_desc->value[13] << 8) | att_desc->value[12];
 		}
 		else
 			xsUnknownError("unsupported uuid size");
 
-		err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &service_handles[i]);
+		if (NRF_SUCCESS == err_code)
+			err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_service_uuid, &service_handles[i]);
 		for (uint16_t j = 1; (NRF_SUCCESS == err_code) && (j < attribute_counts[i]); ++j) {
 			gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][j];
 			att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
@@ -383,7 +416,13 @@ void xs_ble_server_deploy(xsMachine *the)
 				permissions = att_desc->perm;
 				
 				c_memset(&add_char_params, 0, sizeof(add_char_params));
-				add_char_params.uuid			= *(uint16_t*)att_desc->uuid_p;
+				if (UUID_LEN_128 == att_desc->uuid_length) {
+					add_char_params.uuid_type	= ble_service_uuid.type;
+					add_char_params.uuid		= (att_desc->uuid_p[13] << 8) | att_desc->uuid_p[12];
+				}
+				else {
+					add_char_params.uuid		= *(uint16_t*)att_desc->uuid_p;
+				}
 				add_char_params.max_len			= att_desc->max_length;
 				add_char_params.init_len		= att_desc->length;
 				add_char_params.p_init_value	= att_desc->value;
@@ -415,7 +454,13 @@ void xs_ble_server_deploy(xsMachine *the)
 				permissions = att_desc->perm;
 				
 				c_memset(&add_desc_params, 0, sizeof(add_desc_params));
-				add_desc_params.uuid			= *(uint16_t*)att_desc->uuid_p;
+				if (UUID_LEN_128 == att_desc->uuid_length) {
+					add_desc_params.uuid_type	= ble_service_uuid.type;
+					add_desc_params.uuid		= (att_desc->uuid_p[13] << 8) | att_desc->uuid_p[12];
+				}
+				else {
+					add_desc_params.uuid		= *(uint16_t*)att_desc->uuid_p;
+				}
 				add_desc_params.max_len			= att_desc->max_length;
 				add_desc_params.init_len		= att_desc->length;
 				add_desc_params.p_value			= att_desc->value;
@@ -795,6 +840,15 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_auth_status, sizeof(ble_gap_evt_auth_status_t), gapAuthStatusEvent, NULL);
 			break;
 		}
+        case BLE_GAP_EVT_SEC_INFO_REQUEST:
+            err_code = sd_ble_gap_sec_info_reply(p_ble_evt->evt.gap_evt.conn_handle, NULL, NULL, NULL);
+#if LOG_GAP
+			if (NRF_SUCCESS != err_code) {
+				LOG_GAP_MSG("BLE_GAP_EVT_SEC_INFO_REQUEST failed, err_code =");
+				LOG_GAP_INT(err_code);
+			}
+#endif
+        	break;
 			
         case BLE_GATTS_EVT_WRITE: {
 			ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
@@ -821,7 +875,46 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 #endif
         	break;
         }
+        default:
+            break;
+    }
+}
 
+static void logPMEvent(uint16_t evt_id) {
+	switch(evt_id) {
+		case PM_EVT_BONDED_PEER_CONNECTED: modLog("PM_EVT_BONDED_PEER_CONNECTED"); break;
+		case PM_EVT_CONN_SEC_START: modLog("PM_EVT_CONN_SEC_START"); break;
+		case PM_EVT_CONN_SEC_SUCCEEDED: modLog("PM_EVT_CONN_SEC_SUCCEEDED"); break;
+		case PM_EVT_CONN_SEC_FAILED: modLog("PM_EVT_CONN_SEC_FAILED"); break;
+		case PM_EVT_CONN_SEC_CONFIG_REQ: modLog("PM_EVT_CONN_SEC_CONFIG_REQ"); break;
+		case PM_EVT_CONN_SEC_PARAMS_REQ: modLog("PM_EVT_CONN_SEC_PARAMS_REQ"); break;
+		case PM_EVT_STORAGE_FULL: modLog("PM_EVT_STORAGE_FULL"); break;
+		case PM_EVT_ERROR_UNEXPECTED: modLog("PM_EVT_ERROR_UNEXPECTED"); break;
+		case PM_EVT_PEER_DATA_UPDATE_SUCCEEDED: modLog("PM_EVT_PEER_DATA_UPDATE_SUCCEEDED"); break;
+		case PM_EVT_PEER_DATA_UPDATE_FAILED: modLog("PM_EVT_PEER_DATA_UPDATE_FAILED"); break;
+		case PM_EVT_PEER_DELETE_SUCCEEDED: modLog("PM_EVT_PEER_DELETE_SUCCEEDED"); break;
+		case PM_EVT_PEERS_DELETE_FAILED: modLog("PM_EVT_PEERS_DELETE_FAILED"); break;
+		case PM_EVT_LOCAL_DB_CACHE_APPLIED: modLog("PM_EVT_LOCAL_DB_CACHE_APPLIED"); break;
+		case PM_EVT_LOCAL_DB_CACHE_APPLY_FAILED: modLog("PM_EVT_LOCAL_DB_CACHE_APPLY_FAILED"); break;
+		case PM_EVT_SERVICE_CHANGED_IND_SENT: modLog("PM_EVT_SERVICE_CHANGED_IND_SENT"); break;
+		case PM_EVT_SERVICE_CHANGED_IND_CONFIRMED: modLog("PM_EVT_SERVICE_CHANGED_IND_CONFIRMED"); break;
+		case PM_EVT_SLAVE_SECURITY_REQ: modLog("PM_EVT_SLAVE_SECURITY_REQ"); break;
+		case PM_EVT_FLASH_GARBAGE_COLLECTED: modLog("PM_EVT_FLASH_GARBAGE_COLLECTED"); break;
+		case PM_EVT_FLASH_GARBAGE_COLLECTION_FAILED: modLog("PM_EVT_FLASH_GARBAGE_COLLECTION_FAILED"); break;
+	}
+}
+
+void pm_evt_handler(pm_evt_t const * p_evt)
+{
+	LOG_PM_EVENT(p_evt->evt_id);
+	
+    pm_handler_on_pm_evt(p_evt);
+//  pm_handler_disconnect_on_sec_failure(p_evt);
+	pm_handler_flash_clean(p_evt);
+
+    switch (p_evt->evt_id) {
+    	case PM_EVT_CONN_SEC_FAILED:
+    		break;
         default:
             break;
     }
