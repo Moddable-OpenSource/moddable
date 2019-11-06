@@ -19,7 +19,8 @@
  */
 /*
 	TBD:
-		- 128-bit UUIDs
+		- Encryption, pairing, bonding
+		- Attribute level encryption
  */
 
 #include "xsmc.h"
@@ -109,13 +110,6 @@ typedef struct {
 } attr_desc_t;
 
 typedef struct {
-#define GATT_RSP_BY_APP 0
-#define GATT_AUTO_RSP 1
-	uint8_t auto_rsp;
-} attr_control_t;
-
-typedef struct {
-	attr_control_t attr_control;
 	attr_desc_t att_desc;
 } gatts_attr_db_t;
 
@@ -202,7 +196,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	// Initialize platform Bluetooth modules
     err_code = nrf_sdh_enable_request();
     if (NRF_SUCCESS == err_code) {
-		// Configure the BLE stack using the default settings.
+		// Configure the BLE stack using the default BLE settings defined in the sdk_config.h file.
 		// Fetch the start address of the application RAM.
 		err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
     }
@@ -516,7 +510,63 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 
 void xs_ble_server_get_service_attributes(xsMachine *the)
 {
-	// @@ TBD
+	ret_code_t err_code;
+	uint16_t serviceIndex;
+	uint8_t found = false;
+	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
+		const gatts_attr_db_t *attr = &gatt_db[serviceIndex][0];
+		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) return;
+
+	xsmcVars(2);
+	xsResult = xsmcNewArray(0);
+
+	for (uint16_t i = 0; i < handles_count; ++i) {
+		ble_uuid_t uuid;
+		ble_gatts_value_t gatts_value;
+		uint16_t handle;
+		
+		if (serviceIndex != att_handles[i].service_index)
+			continue;
+			
+		handle = att_handles[i].handles.value_handle;
+		
+		xsVar(0) = xsmcNewObject();
+		xsmcSetInteger(xsVar(1), handle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+			
+		err_code = sd_ble_gatts_attr_get(handle, &uuid, NULL);
+		if (NRF_SUCCESS == err_code) {
+			uint8_t buffer[UUID_LEN_128];
+			uint16_t uuid_length;
+			uuidToBuffer(buffer, &uuid, &uuid_length);
+			xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+		}
+		err_code = sd_ble_gatts_value_get(gBLE->conn_handle, handle, &gatts_value);
+		if (NRF_SUCCESS == err_code && 0 != gatts_value.len) {
+			xsmcSetArrayBuffer(xsVar(1), (uint8_t*)gatts_value.p_value, gatts_value.len);
+			xsmcSet(xsVar(0), xsID_value, xsVar(1));
+		}
+
+		for (uint16_t j = 0; j < char_name_count; ++j) {
+			if (att_handles[i].service_index == char_names[j].service_index && att_handles[i].att_index == char_names[j].att_index) {
+				xsmcSetString(xsVar(1), (char*)char_names[j].name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(1));
+				xsmcSetString(xsVar(1), (char*)char_names[j].type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(1));
+				break;
+			}
+		}
+			
+		xsCall1(xsResult, xsID_push, xsVar(0));
+	}
 }
 
 void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length)
