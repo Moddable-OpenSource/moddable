@@ -384,20 +384,23 @@ void xs_ble_server_deploy(xsMachine *the)
 	for (uint16_t i = 0; i < service_count; ++i) {
 		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
 		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
-		uint8_t uuid_type;
 		ble_uuid_t ble_service_uuid;
 		
 		if (UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
 			continue;	// don't register gap service
 			
-		if (UUID_LEN_16 == att_desc->uuid_length) {
+		if (UUID_LEN_16 == att_desc->length) {
 			uint16_t service_uuid = *(uint16_t*)att_desc->value;
 			BLE_UUID_BLE_ASSIGN(ble_service_uuid, service_uuid);
 		}
-		else if (UUID_LEN_128 == att_desc->uuid_length) {
-			c_memmove(&ble_uuid_128.uuid128, att_desc->value, UUID_LEN_128);
-			err_code = sd_ble_uuid_vs_add(&ble_uuid_128, &ble_service_uuid.type);
-			ble_service_uuid.uuid = (att_desc->value[13] << 8) | att_desc->value[12];
+		else if (UUID_LEN_128 == att_desc->length) {
+			uint8_t uuid_type;
+			ble_uuid_128 = *(ble_uuid128_t*)att_desc->value;
+			err_code = sd_ble_uuid_vs_add(&ble_uuid_128, &uuid_type);
+			if (NRF_SUCCESS == err_code) {
+				ble_service_uuid.type = uuid_type;
+				ble_service_uuid.uuid = (att_desc->value[13] << 8) | att_desc->value[12];
+			}
 		}
 		else
 			xsUnknownError("unsupported uuid size");
@@ -426,7 +429,7 @@ void xs_ble_server_deploy(xsMachine *the)
 				add_char_params.max_len			= att_desc->max_length;
 				add_char_params.init_len		= att_desc->length;
 				add_char_params.p_init_value	= att_desc->value;
-				add_char_params.is_var_len		= false;
+				add_char_params.is_var_len		= (NULL == att_desc->value);
 				add_char_params.is_defered_read = (NULL == att_desc->value);
 				
 				add_char_params.char_props.read = (properties & GATT_CHAR_PROP_BIT_READ ? 1 : 0);
@@ -464,7 +467,7 @@ void xs_ble_server_deploy(xsMachine *the)
 				add_desc_params.max_len			= att_desc->max_length;
 				add_desc_params.init_len		= att_desc->length;
 				add_desc_params.p_value			= att_desc->value;
-				add_desc_params.is_var_len		= false;
+				add_desc_params.is_var_len		= (NULL == att_desc->value);
 				add_desc_params.is_defered_read	= (NULL == att_desc->value);
 				
 				add_desc_params.read_access = SEC_OPEN;
@@ -518,15 +521,9 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 
 void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length)
 {
-	if (uuid->type == BLE_UUID_TYPE_BLE) {
-		*length = UUID_LEN_16;
-		buffer[0] = uuid->uuid & 0xFF;
-		buffer[1] = (uuid->uuid >> 8) & 0xFF;
-	}
-	else {
-		*length = UUID_LEN_128;
-		// @@ TBD
-	}
+	uint8_t uuid_le_len;
+	sd_ble_uuid_encode(uuid, &uuid_le_len, buffer);
+	*length = uuid_le_len;
 }
 
 const char_name_table *handleToCharName(uint16_t handle) {
