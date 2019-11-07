@@ -251,7 +251,7 @@ void xs_ble_server_close(xsMachine *the)
 	if (!ble) return;
 
 	gBLE = NULL;
-	xsForget(gBLE->obj);
+	xsForget(ble->obj);
 	xsmcSetHostData(xsThis, NULL);
 	modMessagePostToMachine(ble->the, NULL, 0, bleServerCloseEvent, ble);
 }

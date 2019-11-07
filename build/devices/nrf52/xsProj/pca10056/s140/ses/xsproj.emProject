@@ -211,6 +211,7 @@
       <file file_name="../../../../../../../../nRF5_SDK/components/ble/peer_manager/pm_buffer.c" />
       <file file_name="../../../../../../../../nRF5_SDK/components/ble/peer_manager/security_dispatcher.c" />
       <file file_name="../../../../../../../../nRF5_SDK/components/ble/peer_manager/security_manager.c" />
+      <file file_name="../../../../../../../../nRF5_SDK_15.3.0_59ac345/components/ble/nrf_ble_scan/nrf_ble_scan.c" />
     </folder>
     <folder Name="UTF8/UTF16 converter">
       <file file_name="../../../../../../../../nRF5_SDK/external/utf_converter/utf.c" />
@@ -230,8 +231,8 @@
       Name="Debug"
       arm_target_interface_type="SWD"
       c_preprocessor_definitions="mxDebug=1;MODINSTRUMENTATION=1;mxInstrument=1"
-      c_user_include_directories="../../../../../../../build/tmp/nrf52/moddable_four/debug/analog-nrf52"
-      linker_additional_options_from_file="/Users/mkellner/nRF5/moddable/build/bin/nrf52/moddable_four/debug/analog-nrf52/xs_nrf52.ind" />
+      c_user_include_directories="../../../../../../../build/tmp/nrf52/dk/debug/scanner"
+      linker_additional_options_from_file="/Users/brianfriedkin/nRF5/moddable/build/bin/nrf52/dk/debug/scanner/xs_nrf52.ind" />
   </project>
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
   <configuration

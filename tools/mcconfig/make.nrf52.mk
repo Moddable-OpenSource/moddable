@@ -167,6 +167,7 @@ INC_DIRS += \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/ble/common \
   $(SDK_ROOT)/components/ble/nrf_ble_gatt \
+  $(SDK_ROOT)/components/ble/nrf_ble_scan \
   $(SDK_ROOT)/components/ble/peer_manager
 
 #  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
