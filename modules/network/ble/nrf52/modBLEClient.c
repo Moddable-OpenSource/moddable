@@ -23,6 +23,7 @@
 #include "mc.xs.h"
 #include "mc.defines.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 
 #include "sdk_errors.h"
 #include "ble.h"
@@ -37,7 +38,6 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 
-#define APP_BLE_CONN_CFG_TAG 1
 #define APP_BLE_OBSERVER_PRIO 3
 #define FIRST_CONN_PARAMS_UPDATE_DELAY      5000                                    /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY       30000                                   /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
@@ -87,19 +87,6 @@
 	#define LOG_PM_INT(i)
 #endif
 
-typedef struct {
-	uint16_t uuid_length;
-	uint8_t  *uuid_p;
-	uint16_t perm;
-	uint16_t max_length;
-	uint16_t length;
-	uint8_t  *value;
-} attr_desc_t;
-
-typedef struct {
-	attr_desc_t att_desc;
-} gatts_attr_db_t;
-
 #include "mc.bleservices.c"
 
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
@@ -112,9 +99,14 @@ struct modBLEConnectionRecord {
 	xsSlot		objConnection;
 	xsSlot		objClient;
 
-	ble_gap_addr_t bda;
+	ble_gap_addr_t addr;
 	uint16_t conn_handle;
 	uint8_t mtu_exchange_pending;
+	
+	// gatt procedure
+	ble_uuid_t searchUUID;
+	ble_gattc_handle_range_t handle_range;
+	xsSlot obj;
 	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
@@ -141,7 +133,8 @@ typedef struct {
 static void modBLEConnectionAdd(modBLEConnection connection);
 static void modBLEConnectionRemove(modBLEConnection connection);
 static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
-static modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *bda);
+static modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *addr);
+static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t *uuid, uint16_t handle);
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void pm_evt_handler(pm_evt_t const * p_evt);
@@ -153,6 +146,11 @@ static void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_
 static void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
+static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void gattcCharacteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void gattcCharacteristicNotificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modBLE gBLE = NULL;
 
@@ -285,6 +283,30 @@ void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
+	ble_gap_addr_t addr;
+	ret_code_t err_code;
+
+	addr.addr_id_peer = 0;
+	addr.addr_type = addressType;
+	c_memmove(&addr.addr, address, BLE_GAP_ADDR_LEN);
+		
+	// Ignore duplicate connection attempts
+	if (modBLEConnectionFindByAddress(&addr)) {
+		LOG_GATTC_MSG("Ignoring duplicate connect attempt");
+		return;
+	};
+	
+	// Add a new connection record to be filled as the connection completes
+	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	if (!connection)
+		xsUnknownError("out of memory");
+	connection->conn_handle = BLE_CONN_HANDLE_INVALID;
+	connection->addr = addr;
+	modBLEConnectionAdd(connection);
+	
+	err_code = sd_ble_gap_connect(&addr, &m_scan.scan_params, &m_scan.conn_params, APP_BLE_CONN_CFG_TAG);
+	if (NRF_SUCCESS != err_code)
+		xsUnknownError("ble connect failed");
 }
 
 void xs_ble_client_set_security_parameters(xsMachine *the)
@@ -313,11 +335,18 @@ void xs_gap_connection_initialize(xsMachine *the)
 	xsmcVars(1);	// xsArg(0) is client
 	xsmcGet(xsVar(0), xsArg(0), xsID_connection);
 	conn_id = xsmcToInteger(xsVar(0));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+	connection->the = the;
+	connection->objConnection = xsThis;
+	connection->objClient = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
 {
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
+	sd_ble_gap_disconnect(conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
@@ -336,16 +365,38 @@ void xs_gap_connection_exchange_mtu(xsMachine *the)
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 	uint16_t argc = xsmcArgc;
+
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection) return;
+	if (argc > 1)
+		bufferToUUID(&connection->searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
+	else
+		connection->searchUUID.uuid = 0;
+	connection->obj = xsThis;
+	
+	sd_ble_gattc_primary_services_discover(conn_handle, 1, (argc > 1 ? &connection->searchUUID : NULL));
 }
 
 void xs_gatt_service_discover_characteristics(xsMachine *the)
 {
 	uint16_t argc = xsmcArgc;
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
-	uint16_t start = xsmcToInteger(xsArg(1));
-	uint16_t end = xsmcToInteger(xsArg(2));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
+
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection) return;
+	
+	connection->handle_range.start_handle = xsmcToInteger(xsArg(1));
+	connection->handle_range.end_handle = xsmcToInteger(xsArg(2));
+	if (argc > 3) {
+		bufferToUUID(&connection->searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
+	}
+	else
+		connection->searchUUID.uuid = 0;
+	connection->obj = xsThis;
+		
+	sd_ble_gattc_characteristics_discover(conn_handle, &connection->handle_range);
 }
 
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
@@ -356,26 +407,59 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 
 void xs_gatt_characteristic_read_value(xsMachine *the)
 {
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
+	ret_code_t err_code;
 #if 0
 	uint16_t auth = 0;
 	uint16_t argc = xsmcArgc;
 	if (argc > 2)
 		auth = xsmcToInteger(xsArg(2));
 #endif
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection) return;
+	
+	sd_ble_gattc_read(connection->conn_handle, handle, 0);
 }
 
 void xs_gatt_characteristic_enable_notifications(xsMachine *the)
 {
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 	uint16_t characteristic = xsmcToInteger(xsArg(1));
+    uint8_t data[2] = {0x01, 0x00};
+	ble_gattc_write_params_t write_params;
+
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection) return;
+
+	c_memset(&write_params, 0, sizeof(write_params));
+	write_params.write_op = BLE_GATT_OP_WRITE_CMD;
+	write_params.handle = characteristic + 1;
+	write_params.offset = 0;
+	write_params.len = 2;
+	write_params.p_value = data;
+	
+	sd_ble_gattc_write(connection->conn_handle, &write_params);
 }
 
 void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 {
-	uint8_t conn_id = xsmcToInteger(xsArg(0));
+	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 	uint16_t characteristic = xsmcToInteger(xsArg(1));
+    uint8_t data[2] = {0x00, 0x00};
+	ble_gattc_write_params_t write_params;
+
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection) return;
+
+	c_memset(&write_params, 0, sizeof(write_params));
+	write_params.write_op = BLE_GATT_OP_WRITE_CMD;
+	write_params.handle = characteristic + 1;
+	write_params.offset = 0;
+	write_params.len = 2;
+	write_params.p_value = data;
+	
+	sd_ble_gattc_write(connection->conn_handle, &write_params);
 }
 
 void xs_gatt_descriptor_read_value(xsMachine *the)
@@ -411,11 +495,11 @@ modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_handle)
 	return walker;
 }
 
-modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *bda)
+modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *addr)
 {
 	modBLEConnection walker;
 	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (0 == c_memcmp(bda, (uint8_t*)&walker->bda, sizeof(ble_gap_addr_t)))
+		if (0 == c_memcmp(addr, (uint8_t*)&walker->addr, sizeof(ble_gap_addr_t)))
 			break;
 	return walker;
 }
@@ -447,6 +531,31 @@ void modBLEConnectionRemove(modBLEConnection connection)
 	}
 }
 
+int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t *uuid, uint16_t handle)
+{
+	int result = -1;
+	for (int service_index = 0; service_index < service_count; ++service_index) {
+		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
+			const gatts_attr_db_t *att_db = &gatt_db[service_index][att_index];
+			const attr_desc_t *att_desc = &att_db->att_desc;
+			ble_uuid_t att_desc_uuid;
+			bufferToUUID(&att_desc_uuid, att_desc->uuid_p, att_desc->uuid_length);
+			if (BLE_UUID_EQ(&att_desc_uuid, uuid)) {
+				for (int k = 0; k < char_name_count; ++k) {
+					const char_name_table *char_name = &char_names[k];
+					if (service_index == char_name->service_index && att_index == char_name->att_index) {
+						connection->handles[k] = handle;
+						result = k;
+						goto bail;
+					}
+				}
+			}
+		}
+	}
+bail:
+	return result;
+}
+
 void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -464,62 +573,71 @@ void bleClientCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 
 void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-#if 0
 	if (!gBLE) return;
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
+	ble_gap_evt_connected_t const * p_evt_connected = (ble_gap_evt_connected_t const *)&gap_evt->params.connected;
 	int16_t conn_handle = gap_evt->conn_handle;
+	
 	xsBeginHost(gBLE->the);
-	if (BLE_CONN_HANDLE_INVALID != gBLE->conn_handle)
+	
+	modBLEConnection connection = modBLEConnectionFindByAddress((ble_gap_addr_t*)&p_evt_connected->peer_addr);
+	if (!connection)
+		xsUnknownError("connection not found");
+		
+	if (BLE_CONN_HANDLE_INVALID != connection->conn_handle)
 		goto bail;
-	gBLE->conn_handle = conn_handle;
-	gBLE->remote_bda = gap_evt->params.connected.peer_addr;
-	xsmcVars(3);
+		
+	connection->conn_handle = conn_handle;
+
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), (uint8_t*)&p_evt_connected->peer_addr.addr[0], 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+
 bail:
 	xsEndHost(gBLE->the);
-#endif
 }
 
 void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-#if 0
 	if (!gBLE) return;
 
-    ret_code_t err_code;
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
+	ble_gap_evt_disconnected_t const * p_evt_disconnected = (ble_gap_evt_disconnected_t const *)&gap_evt->params.disconnected;
 	int16_t conn_handle = gap_evt->conn_handle;
-	
-	if (conn_handle != gBLE->conn_handle) return;
+
 	xsBeginHost(gBLE->the);
-	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetInteger(xsVar(1), conn_handle);
-	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	
+	// ignore multiple disconnects on same connection
+	if (!connection) {
+		LOG_GATTC_MSG("Ignoring duplicate disconnect event");
+		goto bail;
+	}	
+	
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), conn_handle);
+	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	modBLEConnectionRemove(connection);
+
+bail:
 	xsEndHost(gBLE->the);
-#endif
 }
 
-static void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	ble_gap_evt_adv_report_t const * p_evt_adv_report = (ble_gap_evt_adv_report_t const *)message;
-	uint8_t *data = (uint8_t*)refcon;
 
-	if (!gBLE) goto bail;
+	if (!gBLE) return;
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), data, p_evt_adv_report->data.len);
+	xsmcSetArrayBuffer(xsVar(1), p_evt_adv_report->data.p_data, p_evt_adv_report->data.len);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(1), (void*)&p_evt_adv_report->peer_addr.addr[0], 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
@@ -527,12 +645,9 @@ static void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
-
-bail:
-	c_free(data);
 }
 
-static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
 
@@ -542,6 +657,192 @@ static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16
 		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 		xsEndHost(gBLE->the);
 	}
+}
+
+void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+modLog("in gattcServiceDiscoveryEvent");
+	ble_gattc_evt_t const *gattc_evt = (ble_gattc_evt_t const *)message;
+    ble_gattc_evt_prim_srvc_disc_rsp_t const *prim_srvc_disc_rsp = &gattc_evt->params.prim_srvc_disc_rsp;
+    
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gattc_evt->conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (BLE_GATT_STATUS_SUCCESS != gattc_evt->gatt_status) {
+modLog("failure 1 onService");
+		xsCall1(connection->objClient, xsID_callback, xsString("onService"));
+		goto bail;
+	}
+	else {
+		uint16_t end_handle;
+		ret_code_t err_code;
+		xsmcVars(2);
+		for (uint16_t i = 0; i < prim_srvc_disc_rsp->count; ++i) {
+			uint8_t buffer[UUID_LEN_128];
+			uint16_t length;
+			ble_gattc_service_t const *service = &prim_srvc_disc_rsp->services[i];
+modLogInt(service->uuid.uuid);
+			uuidToBuffer(buffer, (ble_uuid_t *)&service->uuid, &length);
+			if (0 != length) {
+				xsVar(0) = xsmcNewObject();
+				xsmcSetArrayBuffer(xsVar(1), buffer, length);
+				xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+				xsmcSetInteger(xsVar(1), service->handle_range.start_handle);
+				xsmcSet(xsVar(0), xsID_start, xsVar(1));
+				xsmcSetInteger(xsVar(1), service->handle_range.end_handle);
+				xsmcSet(xsVar(0), xsID_end, xsVar(1));
+				xsCall2(connection->objClient, xsID_callback, xsString("onService"), xsVar(0));
+				end_handle = service->handle_range.end_handle;
+	modLog("onService, end_handle =");
+	modLogInt(end_handle);
+			}
+		}
+		if (connection->searchUUID.uuid == 0)
+			err_code = sd_ble_gattc_primary_services_discover(connection->conn_handle, end_handle + 1, NULL);
+		else
+			err_code = sd_ble_gattc_primary_services_discover(connection->conn_handle, end_handle + 1, &connection->searchUUID);
+		if (NRF_SUCCESS != err_code) {
+modLog("failure 2 onService");
+			xsCall1(connection->objClient, xsID_callback, xsString("onService"));
+		}
+	}
+bail:
+modLog("out gattcServiceDiscoveryEvent");
+	xsEndHost(gBLE->the);
+}
+
+void gattcCharacteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+	ble_gattc_evt_t const *gattc_evt = (ble_gattc_evt_t const *)message;
+	ble_gattc_evt_char_disc_rsp_t const *char_disc_rsp = &gattc_evt->params.char_disc_rsp;
+    
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gattc_evt->conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (BLE_GATT_STATUS_SUCCESS != gattc_evt->gatt_status) {
+		xsCall1(connection->obj, xsID_callback, xsString("onCharacteristic"));
+		goto bail;
+	}
+	else {
+		uint16_t handle_value = connection->handle_range.start_handle;
+		ret_code_t err_code;
+		xsmcVars(2);
+		
+		for (uint16_t i = 0; i < char_disc_rsp->count; ++i) {
+			uint8_t buffer[UUID_LEN_128];
+			uint16_t length;
+			ble_gattc_char_t const *characteristic = &char_disc_rsp->chars[i];
+			
+			uuidToBuffer(buffer, (ble_uuid_t *)&characteristic->uuid, &length);
+			if ((connection->searchUUID.uuid != 0) && BLE_UUID_NEQ(&connection->searchUUID, &characteristic->uuid))
+				continue;
+				
+			int index = modBLEConnectionSaveAttHandle(connection, (ble_uuid_t *)&characteristic->uuid, characteristic->handle_value);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSetInteger(xsVar(1), characteristic->handle_value);
+			xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+
+			uint8_t properties = 0;
+			if (characteristic->char_props.read)
+				properties |= GATT_CHAR_PROP_BIT_READ;
+			if (characteristic->char_props.write_wo_resp)
+				properties |= GATT_CHAR_PROP_BIT_WRITE_NR;
+			if (characteristic->char_props.write)
+				properties |= GATT_CHAR_PROP_BIT_WRITE;
+			if (characteristic->char_props.notify)
+				properties |= GATT_CHAR_PROP_BIT_NOTIFY;
+			if (characteristic->char_props.indicate)
+				properties |= GATT_CHAR_PROP_BIT_INDICATE;
+			xsmcSetInteger(xsVar(1), properties);
+			xsmcSet(xsVar(0), xsID_properties, xsVar(1));
+			
+			if (-1 != index) {
+				xsmcSetString(xsVar(1), (char*)char_names[index].name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(1));
+				xsmcSetString(xsVar(1), (char*)char_names[index].type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(1));
+			}
+			xsCall2(connection->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+			
+			if (BLE_UUID_EQ(&characteristic->uuid, &connection->searchUUID)) {
+				xsCall1(connection->obj, xsID_callback, xsString("onCharacteristic"));
+				goto bail;
+			}
+			handle_value = characteristic->handle_value;
+		}
+		connection->handle_range.start_handle = handle_value + 1;
+		err_code = sd_ble_gattc_characteristics_discover(connection->conn_handle, &connection->handle_range);
+		if (NRF_SUCCESS != err_code)
+			xsCall1(connection->obj, xsID_callback, xsString("onCharacteristic"));
+	}
+bail:
+	xsEndHost(gBLE->the);
+}
+
+void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+	ble_gattc_evt_t const *gattc_evt = (ble_gattc_evt_t const *)message;
+	ble_gattc_evt_read_rsp_t const *read_rsp = &gattc_evt->params.read_rsp;
+	uint8_t *data = (uint8_t*)refcon;
+
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gattc_evt->conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (BLE_GATT_STATUS_SUCCESS != gattc_evt->gatt_status) {
+		goto bail;
+	}
+	
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), (void*)data, read_rsp->len);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSetInteger(xsVar(1), read_rsp->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicValue"), xsVar(0));
+	
+bail:
+	c_free(data);
+	xsEndHost(gBLE->the);
+}
+
+static void gattcCharacteristicNotificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+	ble_gattc_evt_t const *gattc_evt = (ble_gattc_evt_t const *)message;
+	ble_gattc_evt_hvx_t const *hvx = &gattc_evt->params.hvx;
+	uint8_t *data = (uint8_t*)refcon;
+	
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gattc_evt->conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+	if (BLE_GATT_STATUS_SUCCESS != gattc_evt->gatt_status) {
+		goto bail;
+	}
+	
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), data, hvx->len);
+	xsmcSet(xsVar(0), xsID_value, xsVar(1));
+	xsmcSetInteger(xsVar(1), hvx->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+
+bail:
+	c_free(data);
+	xsEndHost(gBLE->the);
 }
 
 static void logGAPEvent(uint16_t evt_id) {
@@ -597,13 +898,8 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
     {
     	case BLE_GAP_EVT_ADV_REPORT: {
 			ble_gap_evt_adv_report_t const * p_evt_adv_report = &p_ble_evt->evt.gap_evt.params.adv_report;
-			if (0 != p_evt_adv_report->data.len) {
-				uint8_t *data = c_malloc(p_evt_adv_report->data.len);
-				if (NULL != data) {
-					c_memmove(data, p_evt_adv_report->data.p_data, p_evt_adv_report->data.len);
-					modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_adv_report, sizeof(ble_gap_evt_adv_report_t), gapAdvReportEvent, data);
-				}
-			}
+			if (0 != p_evt_adv_report->data.len)
+				modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_adv_report, sizeof(ble_gap_evt_adv_report_t), gapAdvReportEvent, NULL);
    			break;
     	}
 		case BLE_GAP_EVT_CONNECTED:
@@ -627,6 +923,38 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 #endif
         	break;
 			
+		case BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gattc_evt, sizeof(ble_gattc_evt_t), gattcServiceDiscoveryEvent, NULL);
+			break;
+		case BLE_GATTC_EVT_CHAR_DISC_RSP:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gattc_evt, sizeof(ble_gattc_evt_t), gattcCharacteristicDiscoveryEvent, NULL);
+			break;
+        case BLE_GATTC_EVT_READ_RSP: {
+			if (BLE_GATT_STATUS_SUCCESS == p_ble_evt->evt.gattc_evt.gatt_status) {
+				ble_gattc_evt_read_rsp_t const *read_rsp = &p_ble_evt->evt.gattc_evt.params.read_rsp;
+				if (0 != read_rsp->len) {
+					uint8_t *data = c_malloc(read_rsp->len);
+					if (NULL != data) {
+						c_memmove(data, read_rsp->data, read_rsp->len);
+						modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gattc_evt, sizeof(ble_gattc_evt_t), gattcCharacteristicReadEvent, data);
+					}
+				}
+			}
+        	break;
+        }
+        case BLE_GATTC_EVT_HVX:
+			if (BLE_GATT_STATUS_SUCCESS == p_ble_evt->evt.gattc_evt.gatt_status) {
+				ble_gattc_evt_hvx_t const *hvx = &p_ble_evt->evt.gattc_evt.params.hvx;
+				if (0 != hvx->len) {
+					uint8_t *data = c_malloc(hvx->len);
+					if (NULL != data) {
+						c_memmove(data, hvx->data, hvx->len);
+						modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gattc_evt, sizeof(ble_gattc_evt_t), gattcCharacteristicNotificationEvent, data);
+					}
+				}
+			}
+        	break;
+        	
         default:
             break;
     }

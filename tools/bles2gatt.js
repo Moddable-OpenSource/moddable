@@ -1153,8 +1153,10 @@ class NRF52GATTFile extends GATTFile {
 		});
 		file.line("};");
 		file.line("");
-		file.line(`#define handles_count ${char_names.length}`);
-		file.line(`static gatts_handles_t att_handles[${char_names.length}];`);
+		if (this.server) {
+			file.line(`#define handles_count ${char_names.length}`);
+			file.line(`static gatts_handles_t att_handles[${char_names.length}];`);
+		}
 	}
 	parseProperties(properties) {
 		const GATT_CHAR_PROP_BIT_READ = (1 << 1);
