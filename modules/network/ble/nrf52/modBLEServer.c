@@ -28,6 +28,7 @@
 #include "mc.xs.h"
 #include "mc.defines.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 
 #include "sdk_errors.h"
 #include "ble.h"
@@ -41,11 +42,16 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 
-#define APP_BLE_CONN_CFG_TAG 1
 #define APP_BLE_OBSERVER_PRIO 3
 #define FIRST_CONN_PARAMS_UPDATE_DELAY      5000                                    /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY       30000                                   /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT        3                                       /**< Number of attempts before giving up the connection parameter negotiation. */
+
+typedef struct {
+	uint8_t service_index;
+	uint8_t att_index;
+	ble_gatts_char_handles_t handles;
+} gatts_handles_t;
 
 #define LOG_GATTS 0
 #if LOG_GATTS
@@ -80,48 +86,7 @@
 	#define LOG_PM_INT(i)
 #endif
 
-#define GATT_CHAR_PROP_BIT_READ		(1 << 1)
-#define GATT_CHAR_PROP_BIT_WRITE_NR	(1 << 2)
-#define GATT_CHAR_PROP_BIT_WRITE	(1 << 3)
-#define GATT_CHAR_PROP_BIT_NOTIFY	(1 << 4)
-#define GATT_CHAR_PROP_BIT_INDICATE	(1 << 5)
-#define GATT_CHAR_PROP_BIT_AUTH		(1 << 6)
-#define GATT_CHAR_PROP_BIT_EXT_PROP	(1 << 7)
-
-#define GATT_PERM_READ				(1 << 0)
-#define GATT_PERM_READ_ENCRYPTED	(1 << 1)
-#define GATT_PERM_WRITE				(1 << 4)
-#define GATT_PERM_WRITE_ENCRYPTED	(1 << 5)
-
-#define CHAR_DECLARATION_SIZE		(sizeof(uint8_t))
-#define UUID_LEN_16		2
-#define UUID_LEN_32		4
-#define UUID_LEN_128	16
-
 #define DEVICE_FRIENDLY_NAME "Moddable"
-
-typedef struct {
-	uint16_t uuid_length;
-	uint8_t  *uuid_p;
-	uint16_t perm;
-	uint16_t max_length;
-	uint16_t length;
-	uint8_t  *value;
-} attr_desc_t;
-
-typedef struct {
-	attr_desc_t att_desc;
-} gatts_attr_db_t;
-
-typedef struct {
-	uint8_t service_index;
-	uint8_t att_index;
-	ble_gatts_char_handles_t handles;
-} gatts_handles_t;
-
-static const uint16_t primary_service_uuid = 0x2800;
-static const uint16_t character_declaration_uuid = 0x2803;
-static const uint16_t character_client_config_uuid = 0x2902;
 
 #include "mc.bleservices.c"
 
@@ -139,7 +104,6 @@ static void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static const char_name_table *handleToCharName(uint16_t handle);
-static void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length);
 
 typedef struct {
 	xsMachine *the;
@@ -567,13 +531,6 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 			
 		xsCall1(xsResult, xsID_push, xsVar(0));
 	}
-}
-
-void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length)
-{
-	uint8_t uuid_le_len;
-	sd_ble_uuid_encode(uuid, &uuid_le_len, buffer);
-	*length = uuid_le_len;
 }
 
 const char_name_table *handleToCharName(uint16_t handle) {

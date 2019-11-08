@@ -51,6 +51,7 @@
 				"*": [
 					"$(MODULES)/network/ble/nrf52/modBLEServer",
 					"$(MODULES)/network/ble/nrf52/modBLESM",
+					"$(MODULES)/network/ble/nrf52/modBLECommon"
 				]
 			},
 		},
