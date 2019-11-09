@@ -135,6 +135,7 @@ Most instances of built-ins classes can be preloaded but cannot be aliased. Once
 | Symbol | Yes | No | - |
 | TypedArray\* | Yes | No | copyWithin, fill, reverse, set, sort |
 | WeakMap | Yes | No | delete, set |
+| WeakRef | Yes | No | - |
 | WeakSet | Yes | No | add, delete |
 
 * Instances of ArrayBuffer are mostly accessed thru instances of DataView and TypedArray. Currently the endianness at build time has to be the same as the endianness at run time.

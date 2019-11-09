@@ -664,6 +664,8 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 							linker->slotSize += property->value.table.length + 1;
 						}
+						else if (property->kind == XS_WEAK_REF_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_ARRAY_BUFFER_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_DATA_VIEW_KIND)
@@ -1110,6 +1112,14 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
 		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, (slot->value.table.length + 1) * sizeof(txSlot*));
 		linker->slotSize += slot->value.table.length + 1;
+	} break;
+	case XS_WEAK_REF_KIND: {
+		fprintf(file, ".kind = XS_WEAK_REF_KIND}, ");
+		fprintf(file, ".value = { .weakRef = { ");
+		fxPrintAddress(the, file, slot->value.home.object);
+		fprintf(file, ", ");
+		fxPrintAddress(the, file, slot->value.home.module);
+		fprintf(file, " } }");
 	} break;
 	case XS_WEAK_SET_KIND: {
 		fprintf(file, ".kind = XS_WEAK_SET_KIND}, ");
