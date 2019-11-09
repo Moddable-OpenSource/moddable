@@ -2,7 +2,7 @@
 
 Copyright 2019 Moddable Tech, Inc.
 
-Revised: August 19, 2019
+Revised: November 9, 2019
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -115,14 +115,16 @@ Preloaded objects are either aliasable or frozen. Preloaded aliasable objects ar
 Most instances of built-ins classes can be preloaded but cannot be aliased. Once preloaded, such instances are immutable and several built-ins methods throw type errors.
 
 | Instances of | Preload | Alias | Throw Type Error |
-|--------------|---------|-------|--------------------|
+|--------------|---------|-------|------------------|
 | Array | Yes | Yes | - |
 | ArrayBuffer\* | Yes | No | - |
+| AsyncGenerator\* | No | No | 
 | Boolean | Yes | No | - |
 | DataView | Yes | No | set |
 | Date | Yes | No | setDate, setFullYear, setHours, setMilliseconds, setMinutes, setMonth, setSeconds, setTime, setYear, setUTCDate, setUTCFullYear, setUTCHours, setUTCMilliseconds, setUTCMinutes, setUTCMonth, setUTCSeconds |
 | Error | Yes | No | - |
 | Function\* | Yes | No | - |
+| Generator\* | No | No | 
 | Map | Yes | No | clear, delete, set |
 | Number | Yes | No | - |
 | Promise | Yes | No | - |
@@ -137,5 +139,5 @@ Most instances of built-ins classes can be preloaded but cannot be aliased. Once
 
 * Instances of ArrayBuffer are mostly accessed thru instances of DataView and TypedArray. Currently the endianness at build time has to be the same as the endianness at run time.
 * Since classes are instances of Function, static properties and static private properties of preloaded classes are read-only.
-* The XS linker reports an error when a RegExp instance is preloaded.
+* The XS linker reports errors when instances of AsyncGenerator, Generator or RegExp are preloaded.
 * For preloaded instances of TypedArray, integer-indexed assignment also throws a type error.
