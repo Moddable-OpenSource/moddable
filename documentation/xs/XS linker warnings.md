@@ -123,6 +123,7 @@ Most instances of built-ins classes can be preloaded but cannot be aliased. Once
 | DataView | Yes | No | set |
 | Date | Yes | No | setDate, setFullYear, setHours, setMilliseconds, setMinutes, setMonth, setSeconds, setTime, setYear, setUTCDate, setUTCFullYear, setUTCHours, setUTCMilliseconds, setUTCMinutes, setUTCMonth, setUTCSeconds |
 | Error | Yes | No | - |
+| FinalizationGroup | Yes | No | cleanupSome, register, unregister |
 | Function\* | Yes | No | - |
 | Generator\* | No | No | 
 | Map | Yes | No | clear, delete, set |
