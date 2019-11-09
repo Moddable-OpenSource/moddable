@@ -161,7 +161,7 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 {
 	txLinker* linker = xsGetContext(the);
 	txAliasIDLink* link = list->first;
-	if (flag == 2)
+	if (flag > 1)
 		fprintf(stderr, "### error");
 	else
 		fprintf(stderr, "### warning");
@@ -207,7 +207,11 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 			fprintf(stderr, "]");
 		link = link->next;
 	}
-	if (flag== 2) {
+	if (flag == 3) {
+		fprintf(stderr, ": generator\n");
+		list->errorCount++;
+	}
+	else if (flag == 2) {
 		fprintf(stderr, ": regexp\n");
 		list->errorCount++;
 	}
@@ -311,6 +315,9 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 			mxPushLink(propertyLink, property->ID, XSL_PROPERTY_FLAG);
 			fxCheckInstanceAliases(the, property->value.reference, list);
 			mxPopLink(propertyLink);
+		}
+		else if (property->kind == XS_STACK_KIND) {
+			fxCheckAliasesError(the, list, 3);
 		}
 		property = property->next;
 	}
