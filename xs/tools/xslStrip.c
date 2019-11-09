@@ -136,6 +136,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_DataView);
 			else if (!c_strcmp(name, "Date"))
 				fxStripCallback(linker, fx_Date);
+			else if (!c_strcmp(name, "FinalizationGroup"))
+				fxStripCallback(linker, fx_FinalizationGroup);
 			else if (!c_strcmp(name, "Float32Array")) {
 				fxUnuseSymbol(linker, mxID(_Float32Array));
 				fxStripCallback(linker, fx_Float32Array);
@@ -185,6 +187,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Promise);
 				fxStripCallback(linker, fxOnRejectedPromise);
 				fxStripCallback(linker, fxOnResolvedPromise);
+				fxStripCallback(linker, fxOnThenable);
 				fxStripCallback(linker, fxRejectPromise);
 				fxStripCallback(linker, fxResolvePromise);
 				fxUnuseCode(XS_CODE_ASYNC_FUNCTION);
@@ -226,6 +229,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			}
 			else if (!c_strcmp(name, "WeakMap"))
 				fxStripCallback(linker, fx_WeakMap);
+			else if (!c_strcmp(name, "WeakRef"))
+				fxStripCallback(linker, fx_WeakRef);
 			else if (!c_strcmp(name, "WeakSet"))
 				fxStripCallback(linker, fx_WeakSet);
 			else if (!c_strcmp(name, "eval")) {
@@ -313,6 +318,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
 	}
+	if (fxIsCallbackStripped(linker, fx_FinalizationGroup)) {
+		fxStripClass(linker, the, &mxFinalizationGroupConstructor);
+		fxStripInstance(linker, the, mxFinalizationGroupCleanupIteratorPrototype.value.reference);
+	}
 	if (fxIsLinkerSymbolUsed(linker, mxID(_bind)))
 		fxUnstripCallback(linker, fx_Function_prototype_bound);
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_JSON)))
@@ -341,6 +350,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Promise_resolve);
 		fxUnstripCallback(linker, fxOnRejectedPromise);
 		fxUnstripCallback(linker, fxOnResolvedPromise);
+		fxUnstripCallback(linker, fxOnThenable);
 		fxUnstripCallback(linker, fxRejectPromise);
 		fxUnstripCallback(linker, fxResolvePromise);
 	}
@@ -351,6 +361,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	else {
 		fxUnstripCallback(linker, fxProxyGetter);
 		fxUnstripCallback(linker, fxProxySetter);
+		fxUnstripCallback(linker, fx_Proxy_revoke);
 	}
 	{
 		txFlag match = fxIsCallbackStripped(linker, fx_String_prototype_match);
@@ -363,6 +374,14 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			}
 		}
 		else {
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_dotAll);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_ignoreCase);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_multiline);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_source);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_sticky);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
 			fxUnstripCallback(linker, fx_RegExp_prototype_toString);
 			fxUnstripCallback(linker, fxInitializeRegExp);
 			if (!fxIsCallbackStripped(linker, fx_String_prototype_replace)) {
@@ -381,14 +400,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		}
 		if (!match) {
 			fxUnstripCallback(linker, fxInitializeRegExp);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
 			fxUnstripCallback(linker, fx_RegExp_prototype_match);
 			fxUnstripCallback(linker, fx_RegExp_prototype_exec);
 		}
 		if (!matchAll) {
 			fxUnstripCallback(linker, fxInitializeRegExp);
-			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
 			fxUnstripCallback(linker, fx_RegExp_prototype_matchAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_matchAll_next);
 			fxUnstripCallback(linker, fx_RegExp_prototype_exec);
@@ -416,6 +432,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, &mxSharedArrayBufferConstructor);
 	if (fxIsCallbackStripped(linker, fx_WeakMap))
 		fxStripClass(linker, the, &mxWeakMapConstructor);
+	if (fxIsCallbackStripped(linker, fx_WeakRef))
+		fxStripClass(linker, the, &mxWeakRefConstructor);
 	if (fxIsCallbackStripped(linker, fx_WeakSet))
 		fxStripClass(linker, the, &mxWeakSetConstructor);
 		
@@ -519,6 +537,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxSetPrivateProperty,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
+	if (fxIsCallbackStripped(linker, fx_FinalizationGroup))
+		fprintf(file, "\tC_NULL,\n");
+	else
+		fprintf(file, "\tfxCleanupFinalizationGroups,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");

@@ -38,6 +38,8 @@
 #include "xsAll.h"
 #include "xs.h"
 
+#include "xsScript.h"
+
 #define XS_ATOM_INCREMENTAL 0x58535F49 /* 'XS_I' */
 
 enum {
@@ -89,6 +91,7 @@ struct sxLinker {
 	
 	txLinkerStrip* firstStrip;
 	txFlag stripFlag;
+	txFlag freezeFlag;
 	
 	txSize symbolModulo;
 	txLinkerSymbol** symbolTable;
@@ -103,12 +106,16 @@ struct sxLinker {
 	txU4* bigintData;
 	txSize bigintSize;
 	
+	txSlot** slotData;
+	txSize slotSize;
+	
 	txString base;
 	txSize baseLength;
 	
 	txCreation creation;
 	
 	txFlag intrinsicFlags[mxIntrinsicCount];
+	txFlag promiseJobsFlag;
 
 	char main[1024];
 };
@@ -170,6 +177,7 @@ struct sxLinkerScript {
 	txHostFunctionBuilder* builders;
 	txCallbackName* callbackNames;
 	txSize hostsCount;
+	txLinkerPreload* preload;
 };
 
 struct sxLinkerStrip {
@@ -228,6 +236,7 @@ extern void fxTerminateLinker(txLinker* linker);
 extern void fxUnuseCode(txU1 code);
 extern void fxUseCodes();
 extern void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress);
+extern void fxWriteCData(FILE* file, void* data, txSize size);
 extern void fxWriteCString(FILE* file, txString string);
 extern void fxWriteDefines(txLinker* linker, FILE* file);
 extern void fxWriteScriptCode(txLinkerScript* script, FILE* file);
@@ -241,8 +250,10 @@ extern void fxWriteStrips(txLinker* linker, FILE* file);
 extern void fxOptimize(txLinker* linker);
 
 /* xslSlot.c */
+extern txInteger fxCheckAliases(txMachine* the);
 extern void fxLinkerScriptCallback(txMachine* the);
-extern txInteger fxPrepareHeap(txMachine* the, txBoolean stripping);
+extern txInteger fxPrepareHeap(txMachine* the);
+extern void fxPrepareHome(txMachine* the);
 extern void fxPrintBuilders(txMachine* the, FILE* file);
 extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count);
 extern void fxPrintStack(txMachine* the, FILE* file);

@@ -407,6 +407,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_FOR_IN,
 		&&XS_CODE_FOR_OF,
 		&&XS_CODE_FUNCTION,
+		&&XS_CODE_FUNCTION_ENVIRONMENT,
 		&&XS_CODE_GENERATOR_FUNCTION,
 		&&XS_CODE_GET_CLOSURE_1,
 		&&XS_CODE_GET_CLOSURE_2,
@@ -596,7 +597,6 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		mxCode = mxCode + (mxStack++)->value.integer;
 		mxStack->kind = the->scratch.kind;
 		mxStack->value = the->scratch.value;
-		mxFrameResult->kind = XS_UNDEFINED_KIND;
 #ifdef mxTraceCall
 		fxTraceCallBegin(the, mxFrameFunction);
 #endif
@@ -916,12 +916,9 @@ XS_CODE_JUMP:
 			
 		mxCase(XS_CODE_START_ASYNC)
 			mxSkipCode(1);
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND)
-				mxRunDebug(XS_TYPE_ERROR, "new async");
 			mxSaveState;
 			variable = gxDefaults.newAsyncInstance(the);
 			mxRestoreState;
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -947,10 +944,11 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
+			mxStack += 5;
 			mxSaveState;
-			gxDefaults.runAsync(the, mxFrameResult->value.reference);
+			gxDefaults.runAsync(the, mxStack->value.reference);
 			mxRestoreState;
- 			slot = mxFrameResult;
+			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
  			
 		mxCase(XS_CODE_START_ASYNC_GENERATOR)
@@ -963,8 +961,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newAsyncGeneratorInstance(the);
 			mxRestoreState;
-			
-			*mxFrameResult = *mxStack;
+			mxFrameResult->kind = XS_UNINITIALIZED_KIND;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -990,7 +987,9 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
- 			slot = mxFrameResult;
+			mxStack += 5;
+			*mxFrameResult = *(mxStack++);
+			slot = mxFrameResult;
 			goto XS_CODE_END_ALL;
 		
 		mxCase(XS_CODE_START_GENERATOR)
@@ -1003,8 +1002,6 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newGeneratorInstance(the);
 			mxRestoreState;
-			
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
@@ -1030,17 +1027,18 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
- 			slot = mxFrameResult;
+			mxStack += 5;
+			*mxFrameResult = *(mxStack++);
+			slot = mxFrameResult;
  			goto XS_CODE_END_ALL;
  			
 		mxCase(XS_CODE_AWAIT)
 		mxCase(XS_CODE_YIELD)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
-			*mxFrameResult = *mxStack;
 			slot = mxFrameArgv(-1);
 			mxPushKind(XS_INTEGER_KIND);
-			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;;
+			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = slot - mxScope;
 			mxPushKind(XS_INTEGER_KIND);
@@ -1080,6 +1078,8 @@ XS_CODE_JUMP:
 			}
 			slot->value.stack.length = index;
 			c_memcpy(variable, mxStack, index * sizeof(txSlot));
+			mxStack += 5 + (offset * 4);
+			*mxFrameResult = *(mxStack++);
 			slot = mxFrameResult;
 			goto XS_CODE_END_ALL;
 			
@@ -1810,10 +1810,9 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_ENVIRONMENT)	
-			variable = mxFrameEnvironment;
 			mxPushKind(XS_UNDEFINED_KIND);
 			mxSaveState;
-			slot = fxNewEnvironmentInstance(the, variable);
+			slot = fxNewEnvironmentInstance(the, C_NULL);
 			mxRestoreState;
 			variable = mxFunctionInstanceCode((mxStack + 1)->value.reference);
 			variable->value.code.closures = slot;
@@ -2021,6 +2020,8 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack);
 			offset = slot->ID;
 			index = XS_NO_ID;
+			if (slot->value.closure->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined private property", (txID)offset);
 			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
@@ -2179,6 +2180,8 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack + 1);
 			offset = slot->ID;
 			index = XS_NO_ID;
+			if (slot->value.closure->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined private property", (txID)offset);
 			slot = gxDefaults.setPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: undefined private property", (txID)offset);
@@ -3629,7 +3632,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_IMPORT_META)
 			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
-			slot = mxModuleInstanceExports(variable->value.home.module)->next;
+			slot = mxModuleInstanceMeta(variable->value.home.module);
 			mxPushKind(XS_REFERENCE_KIND);
 			mxStack->value.reference = slot->value.reference;
 			mxNextCode(1);
@@ -3749,6 +3752,16 @@ XS_CODE_JUMP:
 			variable = mxModuleInstanceInternal(variable)->value.module.realm;
 			if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 			mxStack->value.reference = mxRealmGlobal(variable)->value.reference;
+			mxBreak;
+		mxCase(XS_CODE_FUNCTION_ENVIRONMENT)	
+			variable = mxFrameEnvironment;
+			mxPushKind(XS_UNDEFINED_KIND);
+			mxSaveState;
+			slot = fxNewEnvironmentInstance(the, variable);
+			mxRestoreState;
+			variable = mxFunctionInstanceCode((mxStack + 1)->value.reference);
+			variable->value.code.closures = slot;
+			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_PROGRAM_ENVIRONMENT)
 			mxNextCode(1);
@@ -3931,7 +3944,7 @@ void fxRunForAwaitOf(txMachine* the)
 	mxPushSlot(slot);
 	mxPushSlot(slot);
 	fxGetID(the, mxID(_Symbol_asyncIterator));
-	if (mxIsUndefined(the->stack)) {
+	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
 		fxCallID(the, mxID(_Symbol_iterator));
 		fxNewAsyncFromSyncIteratorInstance(the);

@@ -69,7 +69,21 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	to = alias;
 	while (from) {
 		to = to->next = fxDuplicateSlot(the, from);
-		if (to->kind == XS_PRIVATE_KIND) {
+		if (to->kind == XS_ARRAY_KIND) {
+			txSlot* address = to->value.array.address;
+			if (address) {
+				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				c_memcpy(chunk, address, size * sizeof(txSlot));
+				to->value.array.address = chunk;
+				while (size) {
+					chunk->flag &= ~XS_MARK_FLAG;
+					chunk++;
+					size--;
+				}
+			}
+		}
+		else if (to->kind == XS_PRIVATE_KIND) {
 			txSlot** address = &to->value.private.first;
 			txSlot* slot;
 			while ((slot = *address)) {
@@ -128,6 +142,29 @@ txSlot* fxNewInstance(txMachine* the)
 	instance->value.instance.prototype = C_NULL;
 	mxPushReference(instance);
 	return instance;
+}
+
+txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
+{	
+	if (a == b)
+		return 1;
+	if (a->ID >= 0) {
+		txSlot* alias = the->aliasArray[a->ID];
+		if (alias) {
+			a = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	if (b->ID >= 0) {
+		txSlot* alias = the->aliasArray[b->ID];
+		if (alias) {
+			b = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	return 0;
 }
 
 txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
@@ -1270,7 +1307,7 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	mxPop();
 	/* mxAvailableModules */
 	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
-	/* mxImportingModules */
+	/* mxOwnModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxLoadingModules */
@@ -1279,13 +1316,13 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxLoadedModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
-	/* mxResolvingModules */
+	/* mxWaitingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxRunningModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
-	/* mxRequiredModules */
+	/* mxRejectedModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	global->value.reference = realm;

@@ -56,6 +56,8 @@ txKind fxTypeOf(txMachine* the, txSlot* theSlot)
 {
 	if (theSlot->kind == XS_STRING_X_KIND)
 		return XS_STRING_KIND;
+	if (theSlot->kind == XS_BIGINT_X_KIND)
+		return XS_BIGINT_KIND;
 	return theSlot->kind;
 }
 
@@ -618,6 +620,8 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	/* NAME */
 	if (name != XS_NO_ID)
 		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+	else if (gxDefaults.newFunctionName)
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -1322,6 +1326,10 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxDuringJobs */
+			fxNewInstance(the);
+			/* mxFinalizationGroups */
+			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1561,6 +1569,10 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxDuringJobs */
+			fxNewInstance(the);
+			/* mxFinalizationGroups */
+			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
 			/* mxRunningJobs */
@@ -1578,9 +1590,19 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
-				id = slot->ID;
-				if ((id == mxID(_global)) || (id == mxID(_globalThis)))
+				id = slot->ID & 0x7FFF;
+				if ((_Array <= id) && (id < _Infinity))
+					slot->flag = XS_DONT_ENUM_FLAG;
+				else if ((_Infinity <= id) && (id < _Compartment))
+					slot->flag = XS_GET_ONLY;
+				else if ((_Compartment <= id) && (id < ___proto__))
+					slot->flag = XS_DONT_ENUM_FLAG;
+				else if ((id == _global) || (id == _globalThis)) {
 					slot->value.reference = the->stack->value.reference;
+					slot->flag = XS_DONT_ENUM_FLAG;
+				}
+				else
+					slot->flag = XS_NO_FLAG;
 				sharedSlot = sharedSlot->next;
 			}
 			mxGlobal.value = the->stack->value;
@@ -1771,6 +1793,17 @@ void fxEndHost(txMachine* the)
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
+	if (the->frame == C_NULL) {
+		fxEndJob(the);
+	}
+}
+
+void fxEndJob(txMachine* the)
+{
+	if (mxDuringJobs.kind == XS_REFERENCE_KIND)
+		mxDuringJobs.value.reference->next = C_NULL;
+	if (gxDefaults.cleanupFinalizationGroups)
+		gxDefaults.cleanupFinalizationGroups(the);
 }
 
 typedef struct {
