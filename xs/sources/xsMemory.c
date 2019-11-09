@@ -205,7 +205,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxProfile
 	fxBeginGC(the);
 #endif
-
 	fxMarkHost(the, theFlag ? fxMarkValue : fxMarkReference);
 
 	if (theFlag) {
@@ -485,10 +484,10 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anIndex--;
 	}
 	
-	aSlot = the->stack;
-	while (aSlot < the->stackTop) {
+	aSlot = the->stackTop;
+	while (aSlot > the->stack) {
+        aSlot--;
 		(*theMarker)(the, aSlot);
-		aSlot++;
 	}
 	aSlot = the->cRoot;
 	while (aSlot) {
