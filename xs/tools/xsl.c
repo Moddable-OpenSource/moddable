@@ -346,57 +346,61 @@ int main(int argc, char* argv[])
 							fxRunPromiseJobs(the);
 							xsCollectGarbage();
 						}
-						{
-							txSlot* property;
-							property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-						}
-						{
-							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-							txSlot* modules = mxOwnModules(realm)->value.reference;
-							txSlot* module = modules->next;
-							while (module) {
-								mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-								module = module->next;
-							}
-							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-							mxProgram.value.reference = modules; //@@
-						}
-						if (linker->freezeFlag) {
-							txSlot* target = fxNewInstance(the);
-							script = linker->firstScript;
-							c_memcpy(path, linker->base, linker->baseLength);
-							while (script) {
-								target = target->next = fxNewSlot(the);
-								c_strcpy(path + linker->baseLength, script->path);
-								target->value.symbol = fxNewNameC(the, path);
-								target->kind = XS_SYMBOL_KIND;
-								path[c_strlen(path) - 4] = 0;
-								target->ID = fxNewNameC(the, path + linker->baseLength);
-								script = script->nextScript;
-							}
-							mxPull(mxHosts); //@@
-							fxFreezeBuiltIns(the);
-						}
-						if (linker->stripFlag) {
-							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
-							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
-						}
 					}
 					xsCatch {
 						xsStringValue message = xsToString(xsException);
 						fxReportLinkerError(linker, "%s", message);
 					}
+				}
+			}
+			xsEndHost(the);
+			xsBeginHost(the);
+			{
+				{
+					txSlot* property;
+					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+				}
+				{
+					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+					txSlot* modules = mxOwnModules(realm)->value.reference;
+					txSlot* module = modules->next;
+					while (module) {
+						mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+						module = module->next;
+					}
+					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+					mxProgram.value.reference = modules; //@@
+				}
+				if (linker->freezeFlag) {
+					txSlot* target = fxNewInstance(the);
+					script = linker->firstScript;
+					c_memcpy(path, linker->base, linker->baseLength);
+					while (script) {
+						target = target->next = fxNewSlot(the);
+						c_strcpy(path + linker->baseLength, script->path);
+						target->value.symbol = fxNewNameC(the, path);
+						target->kind = XS_SYMBOL_KIND;
+						path[c_strlen(path) - 4] = 0;
+						target->ID = fxNewNameC(the, path + linker->baseLength);
+						script = script->nextScript;
+					}
+					mxPull(mxHosts); //@@
+					fxFreezeBuiltIns(the);
+				}
+				if (linker->stripFlag) {
+					mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
+					mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
 				}
 			}
 			xsEndHost(the);

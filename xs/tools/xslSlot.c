@@ -670,6 +670,8 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_DATA_VIEW_KIND)
 							fxPrepareInstance(the, slot);
+						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_GROUP_KIND))
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_PROMISE_KIND) {
 							fxPrepareInstance(the, slot);
 							property = property->next;
@@ -1061,6 +1063,20 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fprintf(file, ".kind = XS_DATA_VIEW_KIND}, ");
 		fprintf(file, ".value = { .dataView = { %d, %d } }", slot->value.dataView.offset, slot->value.dataView.size);
 	} break;
+	case XS_FINALIZATION_CELL_KIND: {
+		fprintf(file, ".kind = XS_FINALIZATION_CELL_KIND}, ");
+		fprintf(file, ".value = { .finalizationCell = { ");
+		fxPrintAddress(the, file, slot->value.finalizationCell.target);
+		fprintf(file, ", ");
+		fxPrintAddress(the, file, slot->value.finalizationCell.token);
+		fprintf(file, " } }");
+	} break;
+	case XS_FINALIZATION_GROUP_KIND: {
+		fprintf(file, ".kind = XS_FINALIZATION_GROUP_KIND}, ");
+		fprintf(file, ".value = { .finalizationGroup = { ");
+		fxPrintAddress(the, file, slot->value.finalizationGroup.callback);
+		fprintf(file, ", %d } }", slot->value.finalizationGroup.flags);
+	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
 		fprintf(file, ".value = { .table = { NULL, 0 } }");
@@ -1116,9 +1132,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	case XS_WEAK_REF_KIND: {
 		fprintf(file, ".kind = XS_WEAK_REF_KIND}, ");
 		fprintf(file, ".value = { .weakRef = { ");
-		fxPrintAddress(the, file, slot->value.home.object);
+		fxPrintAddress(the, file, slot->value.weakRef.target);
 		fprintf(file, ", ");
-		fxPrintAddress(the, file, slot->value.home.module);
+		fxPrintAddress(the, file, slot->value.weakRef.link);
 		fprintf(file, " } }");
 	} break;
 	case XS_WEAK_SET_KIND: {

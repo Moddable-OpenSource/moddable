@@ -1333,8 +1333,11 @@ txSlot* fxCheckFinalizationGroupInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_GROUP_KIND))
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_GROUP_KIND)) {
+			if (slot->flag & XS_MARK_FLAG)
+				mxTypeError("FinalizationGroup instance is read-only");
 			return instance;
+		}
 	}
 	mxTypeError("this is no FinalizationGroup instance");
 	return C_NULL;
