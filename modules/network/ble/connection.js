@@ -79,7 +79,7 @@ Object.freeze(Connection.prototype);
 
 // Maintain a list of connections to ensure each connection and associated properties
 // are not garbage collected when active.
-let _private = { connections:null };
+const _private = { connections:null };
 function rememberConnection(connection) {
 	if (_private.connections) {
 		if (-1 == _private.connections.indexOf(connection))
