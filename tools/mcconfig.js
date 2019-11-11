@@ -1082,6 +1082,8 @@ export default class extends Tool {
 			this.createDirectory(this.resourcesPath);
 		}
 		else if (this.platform == "x-win") {
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.createDirectory(this.resourcesPath);
 		}
 		else if (this.platform.startsWith("x-cli-")) {
 		}
