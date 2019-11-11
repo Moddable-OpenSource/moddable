@@ -20,7 +20,7 @@
 
 import {Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
 
-export class Client {
+class Client {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -157,7 +157,7 @@ export class Client {
 };
 Object.freeze(Client.prototype);
 
-export class Service {
+class Service {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -219,7 +219,7 @@ export class Service {
 };
 Object.freeze(Service.prototype);
 
-export class Characteristic {
+class Characteristic {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -303,7 +303,7 @@ export class Characteristic {
 };
 Object.freeze(Characteristic.prototype);
 
-export class Descriptor {
+class Descriptor {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -356,7 +356,7 @@ export class Descriptor {
 };
 Object.freeze(Descriptor.prototype);
 
-export default {
+export {
 	Client,
 	Service,
 	Characteristic,
