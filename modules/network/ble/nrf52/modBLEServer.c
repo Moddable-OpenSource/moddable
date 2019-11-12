@@ -119,7 +119,6 @@ typedef struct {
 	nrf_ble_gatt_t m_gatt;
 	
 	// advertising
-	uint8_t adv_handle_initialized;
 	uint8_t adv_handle;
 	uint8_t adv_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	uint8_t scan_rsp_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
@@ -140,9 +139,9 @@ static modBLE gBLE = NULL;
 
 void xs_ble_server_initialize(xsMachine *the)
 {
-	uint32_t ram_start = 0;
-    ble_conn_params_init_t cp_init;
     ret_code_t err_code;
+	modBLEPlatformInitializeDataRecord init;
+	ble_conn_params_init_t *p_cp_init;
     
 	if (NULL != gBLE)
 		xsUnknownError("BLE already initialized");
@@ -158,54 +157,23 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
-    err_code = nrf_sdh_enable_request();
-    if (NRF_SUCCESS == err_code) {
-		// Configure the BLE stack using the default BLE settings defined in the sdk_config.h file.
-		// Fetch the start address of the application RAM.
-		err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
-    }
-
-    // Enable BLE stack
-    if (NRF_SUCCESS == err_code)
-    	err_code = nrf_sdh_ble_enable(&ram_start);
-
-	// Initialize GATT module
-    if (NRF_SUCCESS == err_code)
-		err_code = nrf_ble_gatt_init(&gBLE->m_gatt, NULL);
-    
-	// Initialize connection parameters (required)
-    if (NRF_SUCCESS == err_code) {
-		c_memset(&cp_init, 0, sizeof(cp_init));
-		cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-		cp_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
-		cp_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
-		err_code = ble_conn_params_init(&cp_init);
-    }
-
-	// Initialize the peer manager
-    if (NRF_SUCCESS == err_code) {
-		err_code = pm_init();
-		if (NRF_SUCCESS == err_code) {
-			ble_gap_sec_params_t sec_params;
-			c_memset(&sec_params, 0, sizeof(ble_gap_sec_params_t));
-			sec_params.io_caps        = BLE_GAP_IO_CAPS_NONE;
-			sec_params.min_key_size   = 7;
-			sec_params.max_key_size   = 16;
-			err_code = pm_sec_params_set(&sec_params);
-		}
-		if (NRF_SUCCESS == err_code)
-			err_code = pm_register(pm_evt_handler);
-    }
-
+	init.p_gatt = &gBLE->m_gatt;
+	init.pm_event_handler = pm_evt_handler;
+	p_cp_init = &init.cp_init;
+	c_memset(p_cp_init, 0, sizeof(ble_conn_params_init_t));
+	p_cp_init->first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+	p_cp_init->next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
+	p_cp_init->max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
+	
+	err_code = modBLEPlatformInitialize(&init);
+	
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble initialization failed");
 
-    // Register a handler for BLE events.
+    // Register a handler for GAP and GATTC events
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 
-    // Create a FreeRTOS task for the BLE stack.
-	nrf_sdh_freertos_init(NULL, NULL);
-    
+	// Notify app that stack is ready
 	modMessagePostToMachine(the, NULL, 0, bleServerReadyEvent, NULL);
 }
 
@@ -231,7 +199,7 @@ void xs_ble_server_destructor(void *data)
 	c_free(ble);
 	gBLE = NULL;
 
-	nrf_sdh_disable_request();
+	modBLEPlatformTerminate();
 }
 
 void xs_ble_server_disconnect(xsMachine *the)
@@ -479,6 +447,10 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	uint8_t found = false;
 	uint16_t length = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+
+	xsmcVars(2);
+	xsResult = xsmcNewArray(0);
+
 	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
 		const gatts_attr_db_t *attr = &gatt_db[serviceIndex][0];
 		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
@@ -487,9 +459,6 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 		}
 	}
 	if (!found) return;
-
-	xsmcVars(2);
-	xsResult = xsmcNewArray(0);
 
 	for (uint16_t i = 0; i < handles_count; ++i) {
 		ble_uuid_t uuid;
