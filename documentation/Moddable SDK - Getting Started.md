@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: August 28, 2019
+Revised: November 11, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -241,6 +241,12 @@ More detailed getting started guides are available for the following devices:
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
+	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
+	
+	```
+	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
+	```
+	
 12. Verify the setup by building `helloworld` for the `esp32` target:
 
 
