@@ -38,39 +38,8 @@
 #ifndef __XSHOST__
 #define __XSHOST__
 
-#undef ENOBUFS
-#undef ETIMEDOUT
-#undef EISCONN
-#undef EOPNOTSUPP
-#undef ECONNABORTED
-#undef EWOULDBLOCK
-#undef ECONNREFUSED
-#undef ECONNRESET
-#undef ENOTCONN
-#undef EBADF
-#undef EALREADY
-#undef EINVAL
-#undef EMSGSIZE
-#undef EPIPE
-#undef EDESTADDRREQ
-#undef ESHUTDOWN
-#undef ENOPROTOOPT
-#undef EHAVEOOB
-#undef ENOMEM
-#undef EADDRNOTAVAIL
-#undef EADDRINUSE
-#undef EAFNOSUPPORT
-#undef EINPROGRESS
-#undef ELOWER
-#undef ENOTSOCK
-#undef EIEIO
-#undef ETOOMANYREFS
-#undef EFAULT
-#undef ENETUNREACH
-
 #include <stdint.h>
 #include <stddef.h>
-//#include "malloc.h"
 #include "errno.h"
 
 #include "nrf.h"
