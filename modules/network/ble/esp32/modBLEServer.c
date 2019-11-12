@@ -275,7 +275,10 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	uint16_t length = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	
 	xsmcVars(2);
+	xsResult = xsmcNewArray(0);
+
 	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
 		attr = &gatt_db[serviceIndex][0];
 		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
@@ -284,8 +287,6 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 		}
 	}
 	if (!found) return;
-
-	xsResult = xsmcNewArray(0);
 
 	for (uint16_t j = 0; j < attribute_counts[serviceIndex]; ++j) {
 		const char_name_table *char_name;
