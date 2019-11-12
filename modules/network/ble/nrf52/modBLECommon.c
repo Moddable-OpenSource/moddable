@@ -20,6 +20,11 @@
 
 #include "xsHost.h"
 #include "modBLECommon.h"
+#include "nrf_sdh.h"
+#include "nrf_sdh_ble.h"
+#include "nrf_sdh_freertos.h"
+#include "peer_manager.h"
+#include "peer_manager_handler.h"
 
 const uint16_t primary_service_uuid = 0x2800;
 const uint16_t character_declaration_uuid = 0x2803;
@@ -39,18 +44,53 @@ void bufferToUUID(ble_uuid_t *uuid, uint8_t *buffer, uint16_t length)
 	sd_ble_uuid_decode(length, buffer, uuid);
 }
 
-int modBLEPlatformInitialize(void)
+ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
 {
+	ret_code_t err_code;
+	uint32_t ram_start = 0;
+	
 	if (0 != useCount++)
-		return 0;
+		return NRF_SUCCESS;
 
+	// Initialize platform Bluetooth modules
+    err_code = nrf_sdh_enable_request();
+    
+	// Configure the BLE stack using the default BLE settings defined in the sdk_config.h file.
+	// Fetch the start address of the application RAM.
+    if (NRF_SUCCESS == err_code)
+		err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
+
+    // Enable BLE stack
+    if (NRF_SUCCESS == err_code)
+    	err_code = nrf_sdh_ble_enable(&ram_start);
+
+	// Initialize GATT module
+    if (NRF_SUCCESS == err_code)
+		err_code = nrf_ble_gatt_init(init->p_gatt, NULL);
+    
+	// Initialize connection parameters (required)
+    if (NRF_SUCCESS == err_code)
+		err_code = ble_conn_params_init(&init->cp_init);
+
+	// Initialize the peer manager
+    if (NRF_SUCCESS == err_code)
+		err_code = pm_init();
+
+	// Register peer manager event handler
+	if (NRF_SUCCESS == err_code)
+		err_code = pm_register(init->pm_event_handler);
+
+	// Create a FreeRTOS task for the BLE stack.
+    if (NRF_SUCCESS == err_code)
+		nrf_sdh_freertos_init(NULL, NULL);
+    
+	return err_code;
 }
 
-int modBLEPlatformTerminate(void)
+ret_code_t modBLEPlatformTerminate(void)
 {
 	if (0 != --useCount)
-		return 0;
+		return NRF_SUCCESS;
 
-	
-	return 0;
+	return nrf_sdh_disable_request();
 }

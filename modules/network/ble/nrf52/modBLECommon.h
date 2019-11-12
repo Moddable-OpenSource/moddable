@@ -22,6 +22,9 @@
 #define __mod_ble_common__
 
 #include "ble.h"
+#include "ble_conn_params.h"
+#include "nrf_ble_gatt.h"
+#include "peer_manager_types.h"
 
 #define APP_BLE_CONN_CFG_TAG 1
 
@@ -56,12 +59,18 @@ typedef struct {
 	attr_desc_t att_desc;
 } gatts_attr_db_t;
 
+typedef struct {
+	nrf_ble_gatt_t *p_gatt;
+	ble_conn_params_init_t cp_init;
+	pm_evt_handler_t pm_event_handler;
+} modBLEPlatformInitializeDataRecord, *modBLEPlatformInitializeData;
+
 extern const uint16_t primary_service_uuid;
 extern const uint16_t character_declaration_uuid;
 extern const uint16_t character_client_config_uuid;
 
-int modBLEPlatformInitialize(void);
-int modBLEPlatformTerminate(void);
+ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init);
+ret_code_t modBLEPlatformTerminate(void);
 
 void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length);
 void bufferToUUID(ble_uuid_t *uuid, uint8_t *buffer, uint16_t length);
