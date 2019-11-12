@@ -316,6 +316,15 @@ App | Feature
 --- | ------- 
 [helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug 
 [balls](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/balls) | balls using the Sharp Mirror Display ls013b4dn04
+[ble/advertiser](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
+[ble/colorific](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
+[ble/discovery](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
+[ble/health-thermometer-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/)
+[ble/heart-rate-client](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-client) | BLE heart rate client
+[ble/heart-rate-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml)
+[ble/powermate](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth)
+[ble/scanner](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/scanner) | Scans for and displays peripheral advertised names
+[ble/uri-beacon](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service
 [transitions] | dk - piu on ls013b4dn04
 [button] | digital in
 [blink] | digital out
