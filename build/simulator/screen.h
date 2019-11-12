@@ -19,6 +19,13 @@
  */
 
 #include <stdint.h>
+#if mxLinux
+#include <glib.h>
+#elif mxWindows
+#include <process.h>
+#else
+#include "pthread.h"
+#endif
 
 typedef struct sxScreen txScreen;
 
@@ -37,8 +44,26 @@ typedef void (*txScreenTouchProc)(txScreen* screen, int kind, int index, int x, 
 
 #define screenBytesPerPixel 4
 
+#if mxLinux
+	#define mxWorkerPlatform \
+		GMainContext* main_context; \
+		GMutex mutex
+#elif mxWindows
+	#define mxWorkerPlatform \
+		HANDLE event; \
+		CRITICAL_SECTION lock; \
+		HANDLE handle
+#else	
+	#define mxWorkerPlatform \
+		pthread_mutex_t mutex; \
+		CFRunLoopRef runLoop; \
+		CFRunLoopSourceRef runLoopSource
+#endif
+
 struct sxScreen {
 	void* machine;
+	void* queue;
+	mxWorkerPlatform;
 	void* view;
 	void* archive;
 	void* firstWorker;

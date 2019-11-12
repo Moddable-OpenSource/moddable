@@ -23,6 +23,7 @@
 #include "modInstrumentation.h"
 #include "screen.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 
 //#include "commodettoBitmapFormat.h"
 #define kCommodettoBitmapMonochrome (3)
@@ -58,6 +59,9 @@ struct sxWorker {
 };
 
 extern void fxAbortCallback(void *info);
+#ifdef MODDEF_WORKER
+extern void fxWorkerPlatform(void* it);
+#endif
 
 static void fxScreenIdle(txScreen* screen);
 static void fxScreenInvoke(txScreen* screen, char* message, int size);
@@ -231,6 +235,9 @@ void fxScreenLaunch(txScreen* screen)
 	screen->machine = fxPrepareMachine(NULL, preparation, "mc", screen, archive);
 	if (!screen->machine)
 		return;	
+#ifdef MODDEF_WORKER
+	fxWorkerPlatform(screen);
+#endif
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
