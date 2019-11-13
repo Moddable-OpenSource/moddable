@@ -60,7 +60,7 @@ struct sxWorker {
 
 extern void fxAbortCallback(void *info);
 #ifdef MODDEF_WORKER
-extern void fxWorkerPlatform(void* it);
+extern void fxWorkerMain(void* it);
 #endif
 
 static void fxScreenIdle(txScreen* screen);
@@ -235,15 +235,15 @@ void fxScreenLaunch(txScreen* screen)
 	screen->machine = fxPrepareMachine(NULL, preparation, "mc", screen, archive);
 	if (!screen->machine)
 		return;	
-#ifdef MODDEF_WORKER
-	fxWorkerPlatform(screen);
-#endif
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
 	screen->quit = fxScreenQuit;
 	screen->touch = fxScreenTouch;
 	screen->rotation = -1;
+#ifdef MODDEF_WORKER
+	fxWorkerMain(screen);
+#endif
 #ifdef mxInstrument
 	modInstrumentationInit();
 	((txMachine*)(screen->machine))->onBreak = debugBreak;

@@ -6,19 +6,44 @@ extern void fxDescribeInstrumentation(xsMachine* the, xsIntegerValue count, xsSt
 extern void fxSampleInstrumentation(xsMachine* the, xsIntegerValue count, xsIntegerValue* values);
 #endif
 
+#if mxLinux
+	typedef GMutex txMutex;
+	#define mxCreateMutex(MUTEX)
+	#define mxDeleteMutex(MUTEX)
+	#define mxLockMutex(MUTEX) g_mutex_lock(MUTEX)
+	#define mxUnlockMutex(MUTEX) g_mutex_unlock(MUTEX)
+#elif mxWindows
+	typedef CRITICAL_SECTION txMutex;
+	#define mxCreateMutex(MUTEX) InitializeCriticalSection(MUTEX)
+	#define mxDeleteMutex(MUTEX) DeleteCriticalSection(MUTEX)
+	#define mxLockMutex(MUTEX) EnterCriticalSection(MUTEX)
+	#define mxUnlockMutex(MUTEX) LeaveCriticalSection(MUTEX)
+#else	
+	typedef pthread_mutex_t txMutex;
+	#define mxCreateMutex(MUTEX) pthread_mutex_init(MUTEX,NULL)
+	#define mxDeleteMutex(MUTEX) pthread_mutex_destroy(MUTEX)
+	#define mxLockMutex(MUTEX) pthread_mutex_lock(MUTEX)
+	#define mxUnlockMutex(MUTEX) pthread_mutex_unlock(MUTEX)
+#endif
+
 typedef struct sxWorker txWorker;
 typedef struct sxWorkerEvent txWorkerEvent;
 typedef void (*txWorkerCallback)(txWorker* worker, txWorkerEvent* event);
+typedef void (*txWorkerAbort)(txWorker* worker);
 
 struct sxWorker {
 	xsMachine* machine;
 	txWorkerEvent* queue;
 	mxWorkerPlatform;
+	void* view;
+	void* archive;
+	txWorker* nextWorker;
+	txWorkerAbort abort;
 #if mxLinux
 	GMainLoop* main_loop;
 #endif
 	xsSlot reference;
-	xsMachine* ownerMachine;
+	void* owner;
 	xsSlot ownerReference;
 	char name[1];
 };
@@ -30,18 +55,65 @@ struct sxWorkerEvent {
 	void* argument;
 };
 
-static void fxWorkerInitialize(void* it, void* context);
+static void fxWorkerAbort(txWorker* worker);
+static void fxWorkerInitialize(txWorker* worker);
+static void fxWorkerInitializePlatform(void* it);
+extern void fxWorkerMain(void* it);
 static void fxWorkerMessage(txWorker* worker, txWorkerEvent* event);
+static void fxWorkerOwnerMessage(txWorker* worker, txWorkerEvent* event);
 #if mxLinux	
 static gboolean fxWorkerPerform(void* it);
 #else
 static void fxWorkerPerform(void* it);
 #endif
-extern void fxWorkerPlatform(void* it);
+static void fxScreenQuit(txScreen* screen);
 static void fxWorkerSignal(txWorker* worker, txWorkerEvent* event);
-static void fxWorkerTerminate(txWorker* worker, txWorkerEvent* event);
+static void fxWorkerTerminate(txWorker* worker);
+static void fxWorkerTerminatePlatform(void* it);
 
 static void xs_worker_postfromworker(xsMachine *the);
+
+txScreen* gxScreen = NULL;
+txScreenAbortProc gxScreenAbort = NULL;
+txMutex gxScreenMutex;
+txScreenQuitProc gxScreenQuit = NULL;
+
+void fxScreenAbort(txWorker* worker, txWorkerEvent* event)
+{
+	c_free(event);
+	(*gxScreenAbort)(gxScreen);
+}
+
+void fxScreenQuit(txScreen* screen)
+{
+	(*gxScreenQuit)(screen);
+	fxWorkerTerminatePlatform(screen);
+	mxLockMutex(&gxScreenMutex);
+	while (screen->firstWorker) {
+		mxUnlockMutex(&gxScreenMutex);
+	#if mxWindows
+		Sleep(1);
+	#else	
+		usleep(1000);
+	#endif
+		mxLockMutex(&gxScreenMutex);
+	}
+	mxUnlockMutex(&gxScreenMutex);
+	mxDeleteMutex(&gxScreenMutex);
+	gxScreenQuit = NULL;
+	gxScreenAbort = NULL;
+	gxScreen = NULL;
+}
+
+void fxWorkerMain(void* screen) 
+{
+	gxScreen = screen;
+	gxScreenAbort = gxScreen->abort;
+	gxScreenQuit = gxScreen->quit;
+	gxScreen->quit = fxScreenQuit;
+	mxCreateMutex(&gxScreenMutex);
+	fxWorkerInitializePlatform(screen);
+}
 
 #if mxLinux
 static gpointer fxWorkerLoop(gpointer it)
@@ -49,11 +121,13 @@ static gpointer fxWorkerLoop(gpointer it)
 	txWorker* worker = it;
 	GMainContext* main_context = g_main_context_new();
 	g_main_context_push_thread_default(main_context);
-	fxWorkerInitialize(worker, NULL);
+	fxWorkerInitialize(worker);
 	worker->main_loop = g_main_loop_new(main_context, FALSE);
 	g_mutex_unlock(&(worker->mutex));
 	g_main_loop_run(worker->main_loop);
 	g_main_loop_unref(worker->main_loop);
+	worker->main_loop = NULL;
+	fxWorkerTerminate(worker);
 	g_main_context_pop_thread_default(main_context);
 	g_main_context_unref(main_context);
 	return NULL;
@@ -63,33 +137,44 @@ static unsigned int __stdcall fxWorkerLoop(void* it)
 {
 	txWorker* worker = it;
 	MSG msg;
-	fxWorkerInitialize(worker, NULL);
+	fxWorkerInitialize(worker);
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-    return 0;
+ 	fxWorkerTerminate(worker);
+   return 0;
 }
 #else
 static void WorkerThreadSchedule(void *it, CFRunLoopRef runloop, CFStringRef mode)
 {
 	txWorker* worker = it;
-    pthread_mutex_unlock(&(worker->mutex));
+	pthread_mutex_unlock(&(worker->mutex));
 }
 static void* fxWorkerLoop(void* it)
 {
 	txWorker* worker = it;
-	fxWorkerInitialize(worker, NULL);
+	fxWorkerInitialize(worker);
 	CFRunLoopRun();
+	fxWorkerTerminate(worker);
     return NULL;
 }
 #endif
 
-void fxWorkerInitialize(void* it, void* context)
+void fxWorkerAbort(txWorker* worker)
 {
-	txWorker* worker = it;
+	txWorkerEvent* event = c_calloc(sizeof(txWorkerEvent), 1);
+	if (event) {
+		event->callback = fxScreenAbort;
+		fxWorkerSignal((txWorker*)gxScreen, event);
+	}
+}
+
+void fxWorkerInitialize(txWorker* worker)
+{
 	void* preparation = xsPreparation();
 	worker->machine = fxPrepareMachine(NULL, preparation, worker->name, worker, NULL);
+    worker->machine->host = worker;
 	xsBeginHost(worker->machine);
 	{
 		xsVars(3);
@@ -111,7 +196,32 @@ void fxWorkerInitialize(void* it, void* context)
 #if mxInstrument
 	fxDescribeInstrumentation(worker->machine, 0, NULL, NULL);
 #endif
-	fxWorkerPlatform(it);
+	fxWorkerInitializePlatform(worker);
+	
+	worker->abort = fxWorkerAbort;
+	mxLockMutex(&gxScreenMutex);
+	worker->nextWorker = gxScreen->firstWorker;
+	gxScreen->firstWorker = worker;
+	mxUnlockMutex(&gxScreenMutex);
+}
+
+void fxWorkerInitializePlatform(void* it)
+{
+	txWorker* worker = it;
+#if mxLinux
+	worker->main_context = g_main_context_get_thread_default();
+#elif mxWindows
+	worker->machine->thread = worker;
+	worker->machine->threadCallback = fxWorkerPerform;
+	InitializeCriticalSection(&worker->mutex);
+	if (worker->event)
+		SetEvent(worker->event);
+#else
+    CFRunLoopSourceContext runLoopSourceContext = {0, worker, NULL, NULL, NULL, NULL, NULL, WorkerThreadSchedule, NULL, fxWorkerPerform};
+	worker->runLoop = CFRunLoopGetCurrent();
+    worker->runLoopSource = CFRunLoopSourceCreate(NULL, 0, &runLoopSourceContext);
+	CFRunLoopAddSource(worker->runLoop, worker->runLoopSource, kCFRunLoopDefaultMode);
+#endif
 }
 
 void fxWorkerMessage(txWorker* worker, txWorkerEvent* event)
@@ -136,23 +246,23 @@ void fxWorkerMessage(txWorker* worker, txWorkerEvent* event)
 	c_free(event);
 }
 
-void fxWorkerPlatform(void* it)
+void fxWorkerOwnerMessage(txWorker* worker, txWorkerEvent* event)
 {
-	txWorker* worker = it;
-#if mxLinux
-	worker->main_context = g_main_context_get_thread_default();
-#elif mxWindows
-	worker->machine->thread = worker;
-	worker->machine->threadCallback = fxWorkerPerform;
-	InitializeCriticalSection(&worker->lock);
-	if (worker->event)
-		SetEvent(worker->event);
-#else
-    CFRunLoopSourceContext runLoopSourceContext = {0, worker, NULL, NULL, NULL, NULL, NULL, WorkerThreadSchedule, NULL, fxWorkerPerform};
-	worker->runLoop = CFRunLoopGetCurrent();
-    worker->runLoopSource = CFRunLoopSourceCreate(NULL, 0, &runLoopSourceContext);
-	CFRunLoopAddSource(worker->runLoop, worker->runLoopSource, kCFRunLoopDefaultMode);
-#endif
+	xsBeginHost(worker->machine);
+	{
+		xsVars(1);
+		xsTry {
+			xsCollectGarbage();
+			xsResult = xsDemarshall(event->argument);
+			xsVar(0) = xsAccess(*(event->reference));
+			xsCall1(xsVar(0), xsID_onmessage, xsResult);
+		}
+		xsCatch {
+		}
+	}
+	xsEndHost(worker->machine);
+	c_free(event->argument);
+	c_free(event);
 }
 
 #if mxLinux	
@@ -163,22 +273,10 @@ void fxWorkerPerform(void* it)
 {
 	txWorker* worker = it;
 	txWorkerEvent* event;
-#if mxLinux
-	g_mutex_lock(&(worker->mutex));
-#elif mxWindows
-	EnterCriticalSection(&(worker->lock));
-#else
-    pthread_mutex_lock(&(worker->mutex));
-#endif
+	mxLockMutex(&(worker->mutex));
 	event = worker->queue;
 	worker->queue = NULL;
-#if mxLinux
-	g_mutex_unlock(&(worker->mutex));
-#elif mxWindows
-	LeaveCriticalSection(&(worker->lock));
-#else
-    pthread_mutex_unlock(&(worker->mutex));
-#endif
+	mxUnlockMutex(&(worker->mutex));
 	while (event) {
 		txWorkerEvent* next = event->next;
 		txWorkerCallback callback = event->callback;
@@ -196,65 +294,78 @@ void fxWorkerSignal(txWorker* worker, txWorkerEvent* event)
 {
 	txWorkerEvent** address;
 	txWorkerEvent* former;
-#if mxLinux
-	g_mutex_lock(&(worker->mutex));
-#elif mxWindows
-	EnterCriticalSection(&(worker->lock));
-#else
-    pthread_mutex_lock(&(worker->mutex));
-#endif
+	mxLockMutex(&(worker->mutex));
 	address = &(worker->queue);
 	while ((former = *address))
 		address = &(former->next);
 	*address = event;
+	mxUnlockMutex(&(worker->mutex));
 #if mxLinux
-	g_mutex_unlock(&(worker->mutex));
 	GSource* idle_source = g_idle_source_new();
 	g_source_set_callback(idle_source, fxWorkerPerform, worker, NULL);
 	g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
 	g_source_attach(idle_source, worker->main_context);
 	g_source_unref(idle_source);
 #elif mxWindows
-	LeaveCriticalSection(&(worker->lock));
 	PostMessage(worker->machine->window, WM_SERVICE, 0, 0);
 #else
-    pthread_mutex_unlock(&(worker->mutex));
     CFRunLoopSourceSignal(worker->runLoopSource);
     CFRunLoopWakeUp(worker->runLoop);
 #endif
 }
 
-void fxWorkerTerminate(txWorker* worker, txWorkerEvent* event)
+void fxWorkerTerminate(txWorker* worker)
 {
-#if mxLinux
-	g_main_loop_quit(worker->main_loop);
-#elif mxWindows
-	DeleteCriticalSection(&(worker->lock));
-	CloseHandle(worker->event);
-#else
-	CFRunLoopRemoveSource(worker->runLoop, worker->runLoopSource, kCFRunLoopCommonModes);
-	CFRelease(worker->runLoopSource);
-#endif
+	txWorker** address;
+	mxLockMutex(&gxScreenMutex);
+	address = (txWorker**)&(gxScreen->firstWorker);
+	while ((*address != worker))
+		address = &((*address)->nextWorker);
+	*address = worker->nextWorker;
+	mxUnlockMutex(&gxScreenMutex);
     xsDeleteMachine(worker->machine);
-    c_free(event);
+	fxWorkerTerminatePlatform(worker);
     c_free(worker);
+}
+
+void fxWorkerTerminatePlatform(void* it)
+{
+	txWorker* worker = it;
+	txWorkerEvent* event = worker->queue;
+	while (event) {
+		txWorkerEvent* next = event->next;
+		c_free(event);
+		event = next;
+	}
+	worker->queue = NULL;
+	
 #if mxLinux
+	worker->main_context = NULL;
 #elif mxWindows
-	_endthreadex(0);
+	DeleteCriticalSection(&(worker->mutex));
+	CloseHandle(worker->event);
+	worker->event = NULL;
 #else
-    pthread_exit(NULL);
+	CFRunLoopRemoveSource(worker->runLoop, worker->runLoopSource, kCFRunLoopDefaultMode);
+	CFRelease(worker->runLoopSource);
+	worker->runLoopSource = NULL;
+	worker->runLoop = NULL;
+	pthread_mutex_destroy(&(worker->mutex));
 #endif
 }
+
 
 void xs_worker_destructor(void *data)
 {
 	if (data) {
 		txWorker* worker = data;
-		txWorkerEvent* event = c_calloc(sizeof(txWorkerEvent), 1);
-		if (event) {
-			event->callback = fxWorkerTerminate;
-			fxWorkerSignal(worker, event);
-		}
+	#if mxLinux
+		g_main_loop_quit(worker->main_loop);
+    #elif mxWindows
+		PostMessage(worker->machine->window, WM_QUIT, 0, 0);
+	#else
+		CFRunLoopStop(worker->runLoop);
+	#endif
 	}
 }
 
@@ -264,7 +375,7 @@ void xs_worker(xsMachine *the)
 	txWorker* worker = c_calloc(sizeof(txWorker) + c_strlen(name), 1);
 	if (worker == NULL)
 		xsUnknownError("not enough memory");
-	worker->ownerMachine = the;
+	worker->owner = the->host;
 	worker->ownerReference = xsThis;
 	xsRemember(worker->ownerReference);
 	c_strcpy(worker->name, name);
@@ -309,8 +420,8 @@ void xs_worker_postfromworker(xsMachine *the)
 		xsUnknownError("not enough memory");
 	event->argument = xsMarshall(xsArg(0));
 	event->reference = &(worker->ownerReference);
-	event->callback = fxWorkerMessage;
-	fxWorkerSignal(worker->ownerMachine->host, event);
+	event->callback = fxWorkerOwnerMessage;
+	fxWorkerSignal(worker->owner, event);
 }
 
 void xs_worker_terminate(xsMachine *the)

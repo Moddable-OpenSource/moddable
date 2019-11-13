@@ -51,7 +51,7 @@ typedef void (*txScreenTouchProc)(txScreen* screen, int kind, int index, int x, 
 #elif mxWindows
 	#define mxWorkerPlatform \
 		HANDLE event; \
-		CRITICAL_SECTION lock; \
+		CRITICAL_SECTION mutex; \
 		HANDLE handle
 #else	
 	#define mxWorkerPlatform \
