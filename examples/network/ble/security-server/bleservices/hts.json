@@ -4,7 +4,7 @@
 		"characteristics": {
 			"temperature": {
 				"uuid": "2A1C",
-				"maxBytes": 2,
+				"maxBytes": 5,
 				"type": "Array",
 				"permissions": "read",
 				"properties": "notify",
