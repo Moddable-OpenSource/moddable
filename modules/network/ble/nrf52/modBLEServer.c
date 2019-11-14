@@ -64,7 +64,7 @@ typedef struct {
 	#define LOG_GATTS_INT(i)
 #endif
 
-#define LOG_GAP 0
+#define LOG_GAP 1
 #if LOG_GAP
 	#define LOG_GAP_EVENT(event) logGAPEvent(event)
 	#define LOG_GAP_MSG(msg) modLog(msg)
@@ -75,7 +75,7 @@ typedef struct {
 	#define LOG_GAP_INT(i)
 #endif
 
-#define LOG_PM 0
+#define LOG_PM 1
 #if LOG_PM
 	#define LOG_PM_EVENT(event) logPMEvent(event)
 	#define LOG_PM_MSG(msg) modLog(msg)
@@ -96,10 +96,12 @@ static void pm_evt_handler(pm_evt_t const * p_evt);
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void gapPasskeyDisplayEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
 static void gattsReadAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
@@ -129,6 +131,7 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 	uint8_t bond;
+	uint8_t passkey[6];
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -151,6 +154,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
 	gBLE->adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
 	gBLE->bond = 0xFF;
+	gBLE->iocap = 0xFF;
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	xsmcSetHostData(xsThis, gBLE);
@@ -169,6 +173,8 @@ void xs_ble_server_initialize(xsMachine *the)
 	
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble initialization failed");
+
+//pm_peers_delete();	// @@
 
     // Register a handler for GAP and GATTC events
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
@@ -311,7 +317,7 @@ void xs_ble_server_deploy(xsMachine *the)
 		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
 		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
 		ble_uuid_t ble_service_uuid;
-		
+
 		if (UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
 			continue;	// don't register gap service
 			
@@ -323,17 +329,20 @@ void xs_ble_server_deploy(xsMachine *the)
 			uint8_t uuid_type;
 			ble_uuid_128 = *(ble_uuid128_t*)att_desc->value;
 			err_code = sd_ble_uuid_vs_add(&ble_uuid_128, &uuid_type);
-			if (NRF_SUCCESS == err_code) {
-				ble_service_uuid.type = uuid_type;
-				ble_service_uuid.uuid = (att_desc->value[13] << 8) | att_desc->value[12];
-			}
+			if (NRF_SUCCESS != err_code)
+				goto bail;
+				
+			ble_service_uuid.type = uuid_type;
+			ble_service_uuid.uuid = (att_desc->value[13] << 8) | att_desc->value[12];
 		}
 		else
 			xsUnknownError("unsupported uuid size");
 
-		if (NRF_SUCCESS == err_code)
-			err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_service_uuid, &service_handles[i]);
-		for (uint16_t j = 1; (NRF_SUCCESS == err_code) && (j < attribute_counts[i]); ++j) {
+		err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_service_uuid, &service_handles[i]);
+		if (NRF_SUCCESS != err_code)
+			goto bail;
+			
+		for (uint16_t j = 1; j < attribute_counts[i]; ++j) {
 			gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][j];
 			att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
 			if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, sizeof(character_declaration_uuid))) {
@@ -372,6 +381,9 @@ void xs_ble_server_deploy(xsMachine *the)
 				att_handles[att_handle_index].service_index = i;
 				att_handles[att_handle_index].att_index = j;
 				err_code = characteristic_add(service_handles[i], &add_char_params, &att_handles[att_handle_index].handles);
+				if (NRF_SUCCESS != err_code)
+					goto bail;
+
 				char_handle = att_handles[att_handle_index].handles.value_handle;
 				++att_handle_index;
 			}
@@ -402,6 +414,8 @@ void xs_ble_server_deploy(xsMachine *the)
 				att_handles[att_handle_index].service_index = i;
 				att_handles[att_handle_index].att_index = j;
 				err_code = descriptor_add(char_handle, &add_desc_params, &att_handles[att_handle_index].handles.value_handle);
+				if (NRF_SUCCESS != err_code)
+					goto bail;
 				++att_handle_index;
 			}
 			else {
@@ -409,6 +423,7 @@ void xs_ble_server_deploy(xsMachine *the)
 			}
 		}
 	}
+bail:
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("services deploy failed");
 }
@@ -431,13 +446,18 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 void xs_ble_server_passkey_input(xsMachine *the)
 {
 //	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint32_t passkey = xsmcToInteger(xsArg(1));
+	uint32_t digits = xsmcToInteger(xsArg(1));
+	char passkey[7];
+	
+	itoa(digits, passkey, 10);
+	sd_ble_gap_auth_key_reply(gBLE->conn_handle, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey);
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
 {
 	//uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
+	sd_ble_gap_auth_key_reply(gBLE->conn_handle, (confirm ? BLE_GAP_AUTH_KEY_TYPE_PASSKEY : BLE_GAP_AUTH_KEY_TYPE_NONE), NULL);
 }
 
 void xs_ble_server_get_service_attributes(xsMachine *the)
@@ -608,7 +628,7 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 	xsEndHost(gBLE->the);
 }
 
-static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
 
@@ -618,6 +638,24 @@ static void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16
 		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 		xsEndHost(gBLE->the);
 	}
+}
+
+void gapPasskeyDisplayEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	ble_gap_evt_passkey_display_t const * p_evt_passkey_display = (ble_gap_evt_passkey_display_t const *)message;
+	c_memmove(gBLE->passkey, p_evt_passkey_display->passkey, 6);
+	
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), atoi(p_evt_passkey_display->passkey));
+	xsmcSet(xsVar(0), xsID_passkey, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString(p_evt_passkey_display->match_request ? "onPasskeyConfirm" : "onPasskeyDisplay"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -803,6 +841,8 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
     switch (p_ble_evt->header.evt_id)
     {
 		case BLE_GAP_EVT_CONNECTED:
+			if (0xFF != gBLE->iocap)
+				pm_handler_secure_on_connection(p_ble_evt);
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
 			break;
 		case BLE_GAP_EVT_DISCONNECTED:
@@ -813,15 +853,11 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_auth_status, sizeof(ble_gap_evt_auth_status_t), gapAuthStatusEvent, NULL);
 			break;
 		}
-        case BLE_GAP_EVT_SEC_INFO_REQUEST:
-            err_code = sd_ble_gap_sec_info_reply(p_ble_evt->evt.gap_evt.conn_handle, NULL, NULL, NULL);
-#if LOG_GAP
-			if (NRF_SUCCESS != err_code) {
-				LOG_GAP_MSG("BLE_GAP_EVT_SEC_INFO_REQUEST failed, err_code =");
-				LOG_GAP_INT(err_code);
-			}
-#endif
+        case BLE_GAP_EVT_PASSKEY_DISPLAY: {
+			ble_gap_evt_passkey_display_t const * p_evt_passkey_display = &p_ble_evt->evt.gap_evt.params.passkey_display;
+			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_passkey_display, sizeof(ble_gap_evt_passkey_display_t), gapPasskeyDisplayEvent, NULL);
         	break;
+        }
 			
         case BLE_GATTS_EVT_WRITE: {
 			ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
