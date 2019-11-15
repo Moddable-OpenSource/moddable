@@ -58,8 +58,6 @@ static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view
 
 static void fxScreenAbort(txScreen* screen);
 static void fxScreenBufferChanged(txScreen* screen);
-static int fxScreenCreateWorker(txScreen* screen, char* name);
-static void fxScreenDeleteWorker(txScreen* screen, int worker);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
 static void fxScreenStart(txScreen* screen, double interval);
@@ -131,19 +129,15 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		PiuScreenMessage message = (PiuScreenMessage)lParam;
 		if ((*self)->behavior) {
 			xsBeginHost((*self)->the);
-			xsVars(4);
+			xsVars(2);
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				xsVar(1) = xsReference((*self)->reference);
-				if (message->size < 0) {
-					xsVar(2) = xsDemarshallAlien(message->buffer);
-					xsVar(3) = xsInteger(0 - message->size);
-				}
-				else if (message->size > 0)
+				if (message->size > 0)
 					xsVar(2) = xsArrayBuffer(message->buffer, message->size);
 				else
 					xsVar(2) = xsString(message->buffer);
-				(void)xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 			}
 			xsEndHost((*self)->the);
 		}
@@ -213,12 +207,11 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->view = self;
     screen->abort = fxScreenAbort;
     screen->bufferChanged = fxScreenBufferChanged;
-	screen->createWorker = fxScreenCreateWorker;
-	screen->deleteWorker = fxScreenDeleteWorker;
 	screen->formatChanged = fxScreenFormatChanged;
     screen->post = fxScreenPost;
     screen->start = fxScreenStart;
     screen->stop = fxScreenStop;
+	mxCreateMutex(&screen->workersMutex);
     screen->width = width;
     screen->height = height;
     (*self)->screen = screen;
@@ -302,6 +295,7 @@ void PiuScreenQuit(PiuScreen* self)
 void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuScreen* self = (PiuScreen*)it;
+	txScreen* screen = (*self)->screen;
 	PiuScreenQuit(self);
 	DestroyWindow((*self)->window);
 	(*self)->control = NULL;
@@ -313,7 +307,8 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	(*self)->bitmap = NULL;
 	DeleteObject((*self)->dc);
 	(*self)->dc = NULL;
-	free((*self)->screen);
+	mxDeleteMutex(&screen->workersMutex);
+	free(screen);
 	(*self)->screen = NULL;
 	PiuContentUnbind(it, application, view);
 }
@@ -368,19 +363,13 @@ void PiuScreen_postMessage(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
 	PiuScreenMessage message;
-	if (xsToInteger(xsArgc) > 1) {
-		int worker = (int)xsToInteger(xsArg(1));
-		message = PiuScreenCreateMessage(self, (char*)xsMarshallAlien(xsArg(0)), 0 - worker);
+	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
+		int size = (int)xsGetArrayBufferLength(xsArg(0));
+		message = PiuScreenCreateMessage(self, (char*)xsToArrayBuffer(xsArg(0)), size);
 	}
 	else {
-		if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-			int size = (int)xsGetArrayBufferLength(xsArg(0));
-			message = PiuScreenCreateMessage(self, (char*)xsToArrayBuffer(xsArg(0)), size);
-		}
-		else {
-			xsStringValue string = xsToString(xsArg(0));
-			message = PiuScreenCreateMessage(self, string, 0);
-		}
+		xsStringValue string = xsToString(xsArg(0));
+		message = PiuScreenCreateMessage(self, string, 0);
 	}
 	if (message)
 		PostMessage((*self)->control, WM_MESSAGE_TO_APPLICATION, (WPARAM)sizeof(message), (LPARAM)message);
@@ -402,41 +391,6 @@ void fxScreenBufferChanged(txScreen* screen)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
 	InvalidateRect((*self)->control, NULL, FALSE);
-}
-
-int fxScreenCreateWorker(txScreen* screen, char* name)
-{
-	PiuScreen* self = (PiuScreen*)screen->view;
-	int worker = 0;
-	xsBeginHost((*self)->the);
-	{
-		xsVars(3);
-		xsVar(0) = xsReference((*self)->behavior);
-		if (xsFindResult(xsVar(0), xsID_onCreateWorker)) {
-			xsVar(1) = xsReference((*self)->reference);
-			xsVar(2) = xsString(name);
-			xsResult = xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
-			worker = xsToInteger(xsResult);
-		}
-	}
-	xsEndHost((*self)->the);
-	return worker;
-}
-
-void fxScreenDeleteWorker(txScreen* screen, int worker)
-{
-	PiuScreen* self = (PiuScreen*)screen->view;
-	xsBeginHost((*self)->the);
-	{
-		xsVars(3);
-		xsVar(0) = xsReference((*self)->behavior);
-		if (xsFindResult(xsVar(0), xsID_onDeleteWorker)) {
-			xsVar(1) = xsReference((*self)->reference);
-			xsVar(2) = xsInteger(worker);
-			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
-		}
-	}
-	xsEndHost((*self)->the);
 }
 
 void fxScreenFormatChanged(txScreen* screen)
@@ -463,4 +417,12 @@ void fxScreenStop(txScreen* screen)
 	KillTimer((*self)->control, 0);
 }
 
+extern "C" {
+	extern void PiuScreenWorkerCreateAux(xsMachine* the, txScreen* screen);
+}
+void PiuScreenWorkerCreate(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsArg(1));
+	PiuScreenWorkerCreateAux(the, (*self)->screen);
+}
 

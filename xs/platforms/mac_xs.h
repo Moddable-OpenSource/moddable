@@ -67,6 +67,16 @@
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
 
+typedef struct sxWorkerJob txWorkerJob;
+typedef void (*txWorkerCallback)(void* machine, void* job);
+
+struct sxWorkerJob {
+	txWorkerJob* next;
+	txWorkerCallback callback;
+};
+
+extern void fxQueueWorkerJob(void* machine, void* job);
+
 #define mxMachinePlatform \
 	CFSocketRef connection; \
 	CFRunLoopSourceRef connectionSource; \
@@ -74,6 +84,11 @@
 	CFRunLoopSourceRef promiseSource; \
 	void* waiterCondition; \
 	void* waiterData; \
-	void* waiterLink;
+	void* waiterLink; \
+	pthread_mutex_t workerMutex; \
+	CFRunLoopRef workerLoop; \
+	txWorkerJob* workerQueue; \
+	CFRunLoopSourceRef workerSource;
+	
 
 #endif /* __MAC_XS__ */

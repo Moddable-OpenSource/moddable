@@ -44,13 +44,29 @@
 #include <signal.h>
 
 static gboolean fxQueuePromiseJobsCallback(void *it);
+static gboolean fxQueueWorkerJobsCallback(void *it);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
+	the->workerContext = g_main_context_get_thread_default();
+	g_mutex_init(&(the->workerMutex));
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	g_mutex_lock(&(the->workerMutex));
+	{
+		txWorkerJob* job = the->workerQueue;
+		while (job) {
+			txWorkerJob* next = job->next;
+			c_free(job);
+			job = next;
+		}
+		the->workerQueue = NULL;
+	}
+	g_mutex_unlock(&(the->workerMutex));
+	g_mutex_clear(&(the->workerMutex));
+	the->workerContext = NULL;
 }
 
 void fxQueuePromiseJobs(txMachine* the)
@@ -66,6 +82,42 @@ gboolean fxQueuePromiseJobsCallback(void *it)
 {
 	txMachine* the = it;
 	fxRunPromiseJobs(the);
+	return G_SOURCE_REMOVE;
+}
+
+void fxQueueWorkerJob(void* machine, void* job)
+{
+	txMachine* the = machine;
+	g_mutex_lock(&(the->workerMutex));
+	{
+		txWorkerJob** address = &(the->workerQueue);
+		txWorkerJob* former;
+		while ((former = *address))
+			address = &(former->next);
+		*address = job;
+	}
+	g_mutex_unlock(&(the->workerMutex));
+	GSource* idle_source = g_idle_source_new();
+	g_source_set_callback(idle_source, fxQueueWorkerJobsCallback, the, NULL);
+	g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
+	g_source_attach(idle_source, the->workerContext);
+	g_source_unref(idle_source);
+}
+
+gboolean fxQueueWorkerJobsCallback(void *it)
+{
+	txMachine* the = it;
+	txWorkerJob* job;
+	g_mutex_lock(&(the->workerMutex));
+	job = the->workerQueue;
+	the->workerQueue = NULL;
+	g_mutex_unlock(&(the->workerMutex));
+	while (job) {
+		txWorkerJob* next = job->next;
+		(*job->callback)(the, job);
+		c_free(job);
+		job = next;
+	}	
 	return G_SOURCE_REMOVE;
 }
 

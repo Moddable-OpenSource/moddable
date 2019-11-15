@@ -20,25 +20,16 @@
 			},
 		},
 		"lin": {
-			"defines": {
-				"worker": true,
-			},
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker",
 			},
 		},
 		"mac": {
-			"defines": {
-				"worker": true,
-			},
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker",
 			},
 		},
 		"win": {
-			"defines": {
-				"worker": true,
-			},
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker",
 			},

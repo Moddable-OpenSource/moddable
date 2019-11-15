@@ -22,7 +22,6 @@
 #include "stdint.h"
 #include "stdlib.h"
 
-#include "xsPlatform.h"
 #include "mc.xs.h"
 
 #include "piuPlatform.h"
