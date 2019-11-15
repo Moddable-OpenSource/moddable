@@ -628,7 +628,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(read->handle);
 	if (char_name) {
-		xsTrace("reading characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("reading characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -700,7 +700,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 
 #if LOG_GATTS
 	if (char_name) {
-		xsTrace("writing characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("writing characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -800,6 +800,9 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 		case ESP_GATTS_WRITE_EVT:
 			value = c_malloc(param->write.len);
 			if (NULL == value) {
+#if LOG_GATTS
+				LOG_GATTS_MSG("ESP_GATTS_WRITE_EVT failed value malloc");
+#endif
 				if (param->write.need_rsp)
 					esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_ERROR, NULL);
 			}
