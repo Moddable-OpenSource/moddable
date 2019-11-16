@@ -56,7 +56,9 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
  			break;
  	} 	
 
-    c_memset(&sec_param, 0, sizeof(ble_gap_sec_params_t));
+	if (BLE_GAP_IO_CAPS_NONE == io_caps)
+		mitm = 0;
+		
     sec_param.bond           = bonding;
     sec_param.mitm           = mitm;
     sec_param.lesc           = (mitm && (io_caps == BLE_GAP_IO_CAPS_DISPLAY_YESNO));
