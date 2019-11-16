@@ -49,7 +49,7 @@
 void vApplicationIdleHook( void )
 {
 #if NRF_LOG_ENABLED
-     vTaskResume(m_logger_thread);
+//     vTaskResume(m_logger_thread);
 #endif
 }
 
