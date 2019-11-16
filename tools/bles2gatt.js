@@ -987,6 +987,12 @@ class NRF52GATTFile extends GATTFile {
 			file.line("static const uint8_t attribute_counts[0] = {};");
 			file.line("static const gatts_attr_db_t gatt_db[0][0] = {};");
 			file.line("static const char_name_table char_names[0] = {};");
+			if (this.server) {
+				file.line("");
+				file.line("#define handles_count 0");
+				file.line("static gatts_handles_t att_handles[0] = {};");
+				file.line("static uint16_t service_handles[0] = {};");
+			}
 			return;
 		}
 		var attributeIndex = 0;
@@ -1054,7 +1060,8 @@ class NRF52GATTFile extends GATTFile {
 		file.write(buffer2hexlist(attributeCounts));
 		file.write(" };");
 		file.line("");
-		file.line(`static uint16_t service_handles[${services.length}];`);
+		if (this.server)
+			file.line(`static uint16_t service_handles[${services.length}];`);
 		
 		file.line(`static const gatts_attr_db_t gatt_db[${services.length}][${maxAttributeCount}] = {`);
 		services.forEach((service, index) => {
