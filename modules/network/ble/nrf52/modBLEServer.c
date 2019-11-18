@@ -948,7 +948,7 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 
     switch (p_evt->evt_id) {
     	case PM_EVT_CONN_SEC_FAILED:
-            // Rebond if one party has lost its keys.
+            // Rebond if one party has lost its keys
             if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING) {
 				ret_code_t err_code;
                 err_code = pm_conn_secure(p_evt->conn_handle, true);

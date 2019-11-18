@@ -56,18 +56,11 @@
 #define BLE_ADVERTISING_ENABLED 1
 #endif
 
-// <q> BLE_DTM_ENABLED  - ble_dtm - Module for testing RF/PHY using DTM commands
+// <q> BLE_DB_DISCOVERY_ENABLED  - ble_db_discovery - Database discovery module
  
 
-#ifndef BLE_DTM_ENABLED
-#define BLE_DTM_ENABLED 0
-#endif
-
-// <q> BLE_RACP_ENABLED  - ble_racp - Record Access Control Point library
- 
-
-#ifndef BLE_RACP_ENABLED
-#define BLE_RACP_ENABLED 0
+#ifndef BLE_DB_DISCOVERY_ENABLED
+#define BLE_DB_DISCOVERY_ENABLED 1
 #endif
 
 // <e> NRF_BLE_CONN_PARAMS_ENABLED - ble_conn_params - Initiating and executing a connection parameters negotiation procedure
@@ -96,6 +89,13 @@
 
 #ifndef NRF_BLE_GATT_ENABLED
 #define NRF_BLE_GATT_ENABLED 1
+#endif
+
+// <q> NRF_BLE_LESC_ENABLED  - nrf_ble_lesc - Le Secure Connection
+ 
+
+#ifndef NRF_BLE_LESC_ENABLED
+#define NRF_BLE_LESC_ENABLED 0
 #endif
 
 // <e> NRF_BLE_QWR_ENABLED - nrf_ble_qwr - Queued writes support module (prepare/execute write)
@@ -162,7 +162,7 @@
 
 // <o> NRF_BLE_SCAN_SUPERVISION_TIMEOUT - Determines the supervision time-out in units of 10 millisecond. 
 #ifndef NRF_BLE_SCAN_SUPERVISION_TIMEOUT
-#define NRF_BLE_SCAN_SUPERVISION_TIMEOUT 4000
+#define NRF_BLE_SCAN_SUPERVISION_TIMEOUT 500
 #endif
 
 // <o> NRF_BLE_SCAN_SCAN_PHY  - PHY to scan on.
@@ -175,6 +175,36 @@
 
 #ifndef NRF_BLE_SCAN_SCAN_PHY
 #define NRF_BLE_SCAN_SCAN_PHY 1
+#endif
+
+// <e> NRF_BLE_SCAN_FILTER_ENABLE - Enabling filters for the Scanning Module.
+//==========================================================
+#ifndef NRF_BLE_SCAN_FILTER_ENABLE
+#define NRF_BLE_SCAN_FILTER_ENABLE 0
+#endif
+// <o> NRF_BLE_SCAN_UUID_CNT - Number of filters for UUIDs. 
+#ifndef NRF_BLE_SCAN_UUID_CNT
+#define NRF_BLE_SCAN_UUID_CNT 0
+#endif
+
+// <o> NRF_BLE_SCAN_NAME_CNT - Number of name filters. 
+#ifndef NRF_BLE_SCAN_NAME_CNT
+#define NRF_BLE_SCAN_NAME_CNT 0
+#endif
+
+// <o> NRF_BLE_SCAN_SHORT_NAME_CNT - Number of short name filters. 
+#ifndef NRF_BLE_SCAN_SHORT_NAME_CNT
+#define NRF_BLE_SCAN_SHORT_NAME_CNT 0
+#endif
+
+// <o> NRF_BLE_SCAN_ADDRESS_CNT - Number of address filters. 
+#ifndef NRF_BLE_SCAN_ADDRESS_CNT
+#define NRF_BLE_SCAN_ADDRESS_CNT 0
+#endif
+
+// <o> NRF_BLE_SCAN_APPEARANCE_CNT - Number of appearance filters. 
+#ifndef NRF_BLE_SCAN_APPEARANCE_CNT
+#define NRF_BLE_SCAN_APPEARANCE_CNT 0
 #endif
 
 // <e> PEER_MANAGER_ENABLED - peer_manager - Peer Manager
@@ -265,361 +295,6 @@
 
 #ifndef PM_HANDLER_SEC_DELAY_MS
 #define PM_HANDLER_SEC_DELAY_MS 0
-#endif
-
-// </e>
-
-// </h> 
-//==========================================================
-
-// <h> nRF_BLE_Services 
-
-//==========================================================
-// <q> BLE_ANCS_C_ENABLED  - ble_ancs_c - Apple Notification Service Client
- 
-
-#ifndef BLE_ANCS_C_ENABLED
-#define BLE_ANCS_C_ENABLED 0
-#endif
-
-// <q> BLE_ANS_C_ENABLED  - ble_ans_c - Alert Notification Service Client
- 
-
-#ifndef BLE_ANS_C_ENABLED
-#define BLE_ANS_C_ENABLED 0
-#endif
-
-// <q> BLE_BAS_C_ENABLED  - ble_bas_c - Battery Service Client
- 
-
-#ifndef BLE_BAS_C_ENABLED
-#define BLE_BAS_C_ENABLED 0
-#endif
-
-// <e> BLE_BAS_ENABLED - ble_bas - Battery Service
-//==========================================================
-#ifndef BLE_BAS_ENABLED
-#define BLE_BAS_ENABLED 0
-#endif
-// <e> BLE_BAS_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef BLE_BAS_CONFIG_LOG_ENABLED
-#define BLE_BAS_CONFIG_LOG_ENABLED 0
-#endif
-// <o> BLE_BAS_CONFIG_LOG_LEVEL  - Default Severity level
- 
-// <0=> Off 
-// <1=> Error 
-// <2=> Warning 
-// <3=> Info 
-// <4=> Debug 
-
-#ifndef BLE_BAS_CONFIG_LOG_LEVEL
-#define BLE_BAS_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> BLE_BAS_CONFIG_INFO_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_BAS_CONFIG_INFO_COLOR
-#define BLE_BAS_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> BLE_BAS_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_BAS_CONFIG_DEBUG_COLOR
-#define BLE_BAS_CONFIG_DEBUG_COLOR 0
-#endif
-
-// </e>
-
-// </e>
-
-// <q> BLE_CSCS_ENABLED  - ble_cscs - Cycling Speed and Cadence Service
- 
-
-#ifndef BLE_CSCS_ENABLED
-#define BLE_CSCS_ENABLED 0
-#endif
-
-// <q> BLE_CTS_C_ENABLED  - ble_cts_c - Current Time Service Client
- 
-
-#ifndef BLE_CTS_C_ENABLED
-#define BLE_CTS_C_ENABLED 0
-#endif
-
-// <q> BLE_DIS_ENABLED  - ble_dis - Device Information Service
- 
-
-#ifndef BLE_DIS_ENABLED
-#define BLE_DIS_ENABLED 0
-#endif
-
-// <q> BLE_GLS_ENABLED  - ble_gls - Glucose Service
- 
-
-#ifndef BLE_GLS_ENABLED
-#define BLE_GLS_ENABLED 0
-#endif
-
-// <q> BLE_HIDS_ENABLED  - ble_hids - Human Interface Device Service
- 
-
-#ifndef BLE_HIDS_ENABLED
-#define BLE_HIDS_ENABLED 0
-#endif
-
-// <q> BLE_HRS_C_ENABLED  - ble_hrs_c - Heart Rate Service Client
- 
-
-#ifndef BLE_HRS_C_ENABLED
-#define BLE_HRS_C_ENABLED 0
-#endif
-
-// <q> BLE_HRS_ENABLED  - ble_hrs - Heart Rate Service
- 
-
-#ifndef BLE_HRS_ENABLED
-#define BLE_HRS_ENABLED 0
-#endif
-
-// <q> BLE_HTS_ENABLED  - ble_hts - Health Thermometer Service
- 
-
-#ifndef BLE_HTS_ENABLED
-#define BLE_HTS_ENABLED 0
-#endif
-
-// <q> BLE_IAS_C_ENABLED  - ble_ias_c - Immediate Alert Service Client
- 
-
-#ifndef BLE_IAS_C_ENABLED
-#define BLE_IAS_C_ENABLED 0
-#endif
-
-// <e> BLE_IAS_ENABLED - ble_ias - Immediate Alert Service
-//==========================================================
-#ifndef BLE_IAS_ENABLED
-#define BLE_IAS_ENABLED 0
-#endif
-// <e> BLE_IAS_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef BLE_IAS_CONFIG_LOG_ENABLED
-#define BLE_IAS_CONFIG_LOG_ENABLED 0
-#endif
-// <o> BLE_IAS_CONFIG_LOG_LEVEL  - Default Severity level
- 
-// <0=> Off 
-// <1=> Error 
-// <2=> Warning 
-// <3=> Info 
-// <4=> Debug 
-
-#ifndef BLE_IAS_CONFIG_LOG_LEVEL
-#define BLE_IAS_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> BLE_IAS_CONFIG_INFO_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_IAS_CONFIG_INFO_COLOR
-#define BLE_IAS_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> BLE_IAS_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_IAS_CONFIG_DEBUG_COLOR
-#define BLE_IAS_CONFIG_DEBUG_COLOR 0
-#endif
-
-// </e>
-
-// </e>
-
-// <q> BLE_LBS_C_ENABLED  - ble_lbs_c - Nordic LED Button Service Client
- 
-
-#ifndef BLE_LBS_C_ENABLED
-#define BLE_LBS_C_ENABLED 0
-#endif
-
-// <q> BLE_LBS_ENABLED  - ble_lbs - LED Button Service
- 
-
-#ifndef BLE_LBS_ENABLED
-#define BLE_LBS_ENABLED 0
-#endif
-
-// <q> BLE_LLS_ENABLED  - ble_lls - Link Loss Service
- 
-
-#ifndef BLE_LLS_ENABLED
-#define BLE_LLS_ENABLED 0
-#endif
-
-// <q> BLE_NUS_C_ENABLED  - ble_nus_c - Nordic UART Central Service
- 
-
-#ifndef BLE_NUS_C_ENABLED
-#define BLE_NUS_C_ENABLED 0
-#endif
-
-// <e> BLE_NUS_ENABLED - ble_nus - Nordic UART Service
-//==========================================================
-#ifndef BLE_NUS_ENABLED
-#define BLE_NUS_ENABLED 0
-#endif
-// <e> BLE_NUS_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef BLE_NUS_CONFIG_LOG_ENABLED
-#define BLE_NUS_CONFIG_LOG_ENABLED 0
-#endif
-// <o> BLE_NUS_CONFIG_LOG_LEVEL  - Default Severity level
- 
-// <0=> Off 
-// <1=> Error 
-// <2=> Warning 
-// <3=> Info 
-// <4=> Debug 
-
-#ifndef BLE_NUS_CONFIG_LOG_LEVEL
-#define BLE_NUS_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> BLE_NUS_CONFIG_INFO_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_NUS_CONFIG_INFO_COLOR
-#define BLE_NUS_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> BLE_NUS_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef BLE_NUS_CONFIG_DEBUG_COLOR
-#define BLE_NUS_CONFIG_DEBUG_COLOR 0
-#endif
-
-// </e>
-
-// </e>
-
-// <q> BLE_RSCS_C_ENABLED  - ble_rscs_c - Running Speed and Cadence Client
- 
-
-#ifndef BLE_RSCS_C_ENABLED
-#define BLE_RSCS_C_ENABLED 0
-#endif
-
-// <q> BLE_RSCS_ENABLED  - ble_rscs - Running Speed and Cadence Service
- 
-
-#ifndef BLE_RSCS_ENABLED
-#define BLE_RSCS_ENABLED 0
-#endif
-
-// <q> BLE_TPS_ENABLED  - ble_tps - TX Power Service
- 
-
-#ifndef BLE_TPS_ENABLED
-#define BLE_TPS_ENABLED 0
-#endif
-
-// </h> 
-//==========================================================
-
-// <h> nRF_Core 
-
-//==========================================================
-// <e> NRF_MPU_LIB_ENABLED - nrf_mpu_lib - Module for MPU
-//==========================================================
-#ifndef NRF_MPU_LIB_ENABLED
-#define NRF_MPU_LIB_ENABLED 0
-#endif
-// <q> NRF_MPU_LIB_CLI_CMDS  - Enable CLI commands specific to the module.
- 
-
-#ifndef NRF_MPU_LIB_CLI_CMDS
-#define NRF_MPU_LIB_CLI_CMDS 0
-#endif
-
-// </e>
-
-// <e> NRF_STACK_GUARD_ENABLED - nrf_stack_guard - Stack guard
-//==========================================================
-#ifndef NRF_STACK_GUARD_ENABLED
-#define NRF_STACK_GUARD_ENABLED 0
-#endif
-// <o> NRF_STACK_GUARD_CONFIG_SIZE  - Size of the stack guard.
- 
-// <5=> 32 bytes 
-// <6=> 64 bytes 
-// <7=> 128 bytes 
-// <8=> 256 bytes 
-// <9=> 512 bytes 
-// <10=> 1024 bytes 
-// <11=> 2048 bytes 
-// <12=> 4096 bytes 
-
-#ifndef NRF_STACK_GUARD_CONFIG_SIZE
-#define NRF_STACK_GUARD_CONFIG_SIZE 7
 #endif
 
 // </e>
@@ -1356,131 +1031,8 @@
 //==========================================================
 
 
-// <h> nRF_DFU 
-
-//==========================================================
-// <h> ble_dfu - Device Firmware Update
-
-//==========================================================
-// <q> BLE_DFU_ENABLED  - Enable DFU Service.
- 
-
-#ifndef BLE_DFU_ENABLED
-#define BLE_DFU_ENABLED 0
-#endif
-
-// <q> NRF_DFU_BLE_BUTTONLESS_SUPPORTS_BONDS  - Buttonless DFU supports bonds.
- 
-
-#ifndef NRF_DFU_BLE_BUTTONLESS_SUPPORTS_BONDS
-#define NRF_DFU_BLE_BUTTONLESS_SUPPORTS_BONDS 0
-#endif
-
-// </h> 
-//==========================================================
-
-// </h> 
-//==========================================================
-
 // <h> nRF_Drivers 
 
-//==========================================================
-// <e> COMP_ENABLED - nrf_drv_comp - COMP peripheral driver - legacy layer
-//==========================================================
-#ifndef COMP_ENABLED
-#define COMP_ENABLED 0
-#endif
-// <o> COMP_CONFIG_REF  - Reference voltage
- 
-// <0=> Internal 1.2V 
-// <1=> Internal 1.8V 
-// <2=> Internal 2.4V 
-// <4=> VDD 
-// <7=> ARef 
-
-#ifndef COMP_CONFIG_REF
-#define COMP_CONFIG_REF 1
-#endif
-
-// <o> COMP_CONFIG_MAIN_MODE  - Main mode
- 
-// <0=> Single ended 
-// <1=> Differential 
-
-#ifndef COMP_CONFIG_MAIN_MODE
-#define COMP_CONFIG_MAIN_MODE 0
-#endif
-
-// <o> COMP_CONFIG_SPEED_MODE  - Speed mode
- 
-// <0=> Low power 
-// <1=> Normal 
-// <2=> High speed 
-
-#ifndef COMP_CONFIG_SPEED_MODE
-#define COMP_CONFIG_SPEED_MODE 2
-#endif
-
-// <o> COMP_CONFIG_HYST  - Hystheresis
- 
-// <0=> No 
-// <1=> 50mV 
-
-#ifndef COMP_CONFIG_HYST
-#define COMP_CONFIG_HYST 0
-#endif
-
-// <o> COMP_CONFIG_ISOURCE  - Current Source
- 
-// <0=> Off 
-// <1=> 2.5 uA 
-// <2=> 5 uA 
-// <3=> 10 uA 
-
-#ifndef COMP_CONFIG_ISOURCE
-#define COMP_CONFIG_ISOURCE 0
-#endif
-
-// <o> COMP_CONFIG_INPUT  - Analog input
- 
-// <0=> 0 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef COMP_CONFIG_INPUT
-#define COMP_CONFIG_INPUT 0
-#endif
-
-// <o> COMP_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef COMP_CONFIG_IRQ_PRIORITY
-#define COMP_CONFIG_IRQ_PRIORITY 6
-#endif
-
-// </e>
-
-// <q> EGU_ENABLED  - nrf_drv_swi - SWI(EGU) peripheral driver - legacy layer
- 
-
-#ifndef EGU_ENABLED
-#define EGU_ENABLED 0
-#endif
 
 // <e> GPIOTE_ENABLED - nrf_drv_gpiote - GPIOTE peripheral driver - legacy layer
 //==========================================================
@@ -2706,6 +2258,33 @@
 
 // </e>
 
+// <e> NRFX_RNG_ENABLED - nrfx_rng - RNG peripheral driver
+//==========================================================
+#ifndef NRFX_RNG_ENABLED
+#define NRFX_RNG_ENABLED 1
+#endif
+// <q> NRFX_RNG_CONFIG_ERROR_CORRECTION  - Error correction
+ 
+
+#ifndef NRFX_RNG_CONFIG_ERROR_CORRECTION
+#define NRFX_RNG_CONFIG_ERROR_CORRECTION 1
+#endif
+
+// <o> NRFX_RNG_CONFIG_IRQ_PRIORITY  - Interrupt priority
+ 
+// <0=> 0 (highest) 
+// <1=> 1 
+// <2=> 2 
+// <3=> 3 
+// <4=> 4 
+// <5=> 5 
+// <6=> 6 
+// <7=> 7 
+
+#ifndef NRFX_RNG_CONFIG_IRQ_PRIORITY
+#define NRFX_RNG_CONFIG_IRQ_PRIORITY 6
+#endif
+
 // <e> NRFX_PWM_ENABLED - nrfx_pwm - PWM peripheral driver
 //==========================================================
 #ifndef NRFX_PWM_ENABLED
@@ -3163,33 +2742,6 @@
 #endif
 
 // </e>
-
-// <e> NRFX_RNG_ENABLED - nrfx_rng - RNG peripheral driver
-//==========================================================
-#ifndef NRFX_RNG_ENABLED
-#define NRFX_RNG_ENABLED 0
-#endif
-// <q> NRFX_RNG_CONFIG_ERROR_CORRECTION  - Error correction
- 
-
-#ifndef NRFX_RNG_CONFIG_ERROR_CORRECTION
-#define NRFX_RNG_CONFIG_ERROR_CORRECTION 1
-#endif
-
-// <o> NRFX_RNG_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef NRFX_RNG_CONFIG_IRQ_PRIORITY
-#define NRFX_RNG_CONFIG_IRQ_PRIORITY 6
-#endif
 
 // <e> NRFX_RNG_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
@@ -5298,7 +4850,7 @@
 // <e> RNG_ENABLED - nrf_drv_rng - RNG peripheral driver - legacy layer
 //==========================================================
 #ifndef RNG_ENABLED
-#define RNG_ENABLED 0
+#define RNG_ENABLED 1
 #endif
 // <q> RNG_CONFIG_ERROR_CORRECTION  - Error correction
  
@@ -11494,146 +11046,6 @@
 
 #ifndef BSP_BTN_BLE_OBSERVER_PRIO
 #define BSP_BTN_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
-#endif
-
-// <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the NFC pairing library.
-
-#ifndef NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO
-#define NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO 1
 #endif
 
 // <o> NFC_BLE_PAIR_LIB_BLE_OBSERVER_PRIO  

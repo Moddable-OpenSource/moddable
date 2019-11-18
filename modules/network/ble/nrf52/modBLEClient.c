@@ -159,6 +159,8 @@ static void gattcDescriptorDiscoveryEvent(void *the, void *refcon, uint8_t *mess
 static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
 static modBLE gBLE = NULL;
 
 NRF_BLE_SCAN_DEF(m_scan);	// device scanning module
@@ -306,6 +308,18 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	gBLE->iocap = iocap;
 
 	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), gBLE->encryption);
+	xsmcSet(xsVar(0), xsID_encryption, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->bonding);
+	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
+	xsmcSetBoolean(xsVar(1), gBLE->mitm);
+	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsEndHost(gBLE->the);
 }
 
 void xs_ble_client_passkey_reply(xsMachine *the)
@@ -671,7 +685,7 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	ble_gap_evt_connected_t const * p_evt_connected = (ble_gap_evt_connected_t const *)&gap_evt->params.connected;
-	int16_t conn_handle = gap_evt->conn_handle;
+	uint16_t conn_handle = gap_evt->conn_handle;
 	
 	xsBeginHost(gBLE->the);
 	
@@ -702,7 +716,7 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	ble_gap_evt_disconnected_t const * p_evt_disconnected = (ble_gap_evt_disconnected_t const *)&gap_evt->params.disconnected;
-	int16_t conn_handle = gap_evt->conn_handle;
+	uint16_t conn_handle = gap_evt->conn_handle;
 
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
@@ -741,33 +755,14 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsEndHost(gBLE->the);
 }
 
-void gapAuthStatusEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	if (!gBLE) return;
-
-	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
-	ble_gap_evt_auth_status_t const * p_evt_auth_status = (ble_gap_evt_auth_status_t const *)&gap_evt->params.auth_status;
-	int16_t conn_handle = gap_evt->conn_handle;
-
-	if (BLE_GAP_SEC_STATUS_SUCCESS == p_evt_auth_status->auth_status) {
-		xsBeginHost(gBLE->the);
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
-		if (!connection)
-			xsUnknownError("connection not found");
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
-		xsEndHost(gBLE->the);
-	}
-}
-
 void gapAuthKeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	ble_gap_evt_auth_key_request_t const * p_evt_auth_key_request = (ble_gap_evt_auth_key_request_t const *)&gap_evt->params.auth_key_request;
-	int16_t conn_handle = gap_evt->conn_handle;
+	uint16_t conn_handle = gap_evt->conn_handle;
 
-	ble_gap_evt_auth_key_request_t const * p_evt_auth_key_request = (ble_gap_evt_auth_key_request_t const *)message;
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
@@ -786,7 +781,7 @@ void gapPasskeyDisplayEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	ble_gap_evt_passkey_display_t const * p_evt_passkey_display = (ble_gap_evt_passkey_display_t const *)&gap_evt->params.passkey_display;
-	int16_t conn_handle = gap_evt->conn_handle;
+	uint16_t conn_handle = gap_evt->conn_handle;
 
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
@@ -808,13 +803,29 @@ void gapRSSIChangedEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 
 	ble_gap_evt_t *gap_evt = (ble_gap_evt_t*)message;
 	ble_gap_evt_rssi_changed_t const * p_evt_rssi_changed = &gap_evt->params.rssi_changed;
-	int16_t conn_handle = gap_evt->conn_handle;
+	uint16_t conn_handle = gap_evt->conn_handle;
 
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(p_evt_rssi_changed->rssi));
+	xsEndHost(gBLE->the);
+}
+
+static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	pm_evt_t *pm_evt = (pm_evt_t*)message;
+	pm_conn_secured_evt_t const * conn_sec_succeeded = (pm_conn_secured_evt_t const *)&pm_evt->params.conn_sec_succeeded;
+	uint16_t conn_handle = pm_evt->conn_handle;
+
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 	xsEndHost(gBLE->the);
 }
 
@@ -1226,9 +1237,6 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 		case BLE_GAP_EVT_AUTH_KEY_REQUEST:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapAuthKeyRequestEvent, NULL);
 			break;
-		case BLE_GAP_EVT_AUTH_STATUS:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapAuthStatusEvent, NULL);
-			break;
 		case BLE_GAP_EVT_CONNECTED:
 			if (0xFF != gBLE->iocap)
 				pm_handler_secure_on_connection(p_ble_evt);
@@ -1244,6 +1252,15 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapRSSIChangedEvent, NULL);
 			sd_ble_gap_rssi_stop(p_ble_evt->evt.gap_evt.conn_handle);       	
         	break;
+		case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST: {
+			ble_gap_data_length_params_t dlp;
+			dlp.max_rx_octets = BLE_GAP_DATA_LENGTH_AUTO;
+			dlp.max_tx_octets = BLE_GAP_DATA_LENGTH_AUTO;
+			dlp.max_rx_time_us = BLE_GAP_DATA_LENGTH_AUTO;
+			dlp.max_tx_time_us = BLE_GAP_DATA_LENGTH_AUTO;
+			sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dlp, NULL);
+			break;
+		}
 			
 		case BLE_GATTC_EVT_CHAR_DISC_RSP: {
 			gattDiscoveryRecord *gdr;
@@ -1343,13 +1360,16 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 {
 	LOG_PM_EVENT(p_evt->evt_id);
 	
-    pm_handler_on_pm_evt(p_evt);
-//  pm_handler_disconnect_on_sec_failure(p_evt);
+	pm_handler_on_pm_evt(p_evt);
+	pm_handler_disconnect_on_sec_failure(p_evt);
 	pm_handler_flash_clean(p_evt);
 
     switch (p_evt->evt_id) {
     	case PM_EVT_CONN_SEC_FAILED:
     		break;
+		case PM_EVT_CONN_SEC_SUCCEEDED:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmConnSecSucceededEvent, NULL);
+			break;    		
         default:
             break;
     }
