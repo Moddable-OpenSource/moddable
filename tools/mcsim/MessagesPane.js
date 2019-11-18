@@ -83,27 +83,31 @@ class MessagePaneBehavior extends Behavior {
 		var scroller = container.first;
 		if (message)
 			message = this.formatMessage(message);
-		else
-			message = "...";
 		if (buffer)
 			buffer = this.formatBuffer(buffer);
+		if (message)
+			this.add(container, scroller, new MessageInLine(message, { state }));
 		else
-			buffer = "...";
-		this.add(container, scroller, new MessageInLine(message, { state }));
-		this.add(container, scroller.next, new BufferInLine(buffer, { state }));
+			this.add(container, scroller, new BufferInLine(buffer, { state }));
+		if (buffer)
+			this.add(container, scroller.next, new BufferInLine(buffer, { state }));
+		else
+			this.add(container, scroller.next, new MessageInLine(message, { state }));
 	}
 	output(container, message, buffer, state = 0) {
 		var scroller = container.first;
 		if (message)
 			message = this.formatMessage(message);
-		else
-			message = "...";
 		if (buffer)
 			buffer = this.formatBuffer(buffer);
+		if (message)
+			this.add(container, scroller, new MessageOutLine(message, { state }));
 		else
-			buffer = "...";
-		this.add(container, scroller, new MessageOutLine(message, { state }));
-		this.add(container, scroller.next, new BufferOutLine(buffer, { state }));
+			this.add(container, scroller, new BufferOutLine(buffer, { state }));
+		if (buffer)
+			this.add(container, scroller.next, new BufferOutLine(buffer, { state }));
+		else
+			this.add(container, scroller.next, new MessageOutLine(message, { state }));
 	}
 	onEmptyMessages(container) {
 		var scroller = container.first;
