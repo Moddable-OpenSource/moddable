@@ -16,15 +16,15 @@ import Timer from "timer";
 import Digital from "pins/digital";
 
 // traces to console when FLASH button on ESP8266 NodeMCU boards is pressed.
-// traces to console when IO0 button on ESP8266 NodeMCU boards is pressed.
+// traces to console when IO0 button on ESP32 NodeMCU boards is pressed.
 
-let button = new Digital(0, Digital.Input);
-let prev = 0;
+const button = new Digital(0, Digital.InputPullUp);
+let previous = 0;
 Timer.repeat(() => {
-	let curr = button.read();
-	if (curr != prev) {
-		if (curr) trace("button was pressed\n");
-		prev = curr;
+	const current = button.read();
+	if (current !== previous) {
+		if (current)
+			trace("button was pressed\n");
+		previous = current;
 	}
 }, 100);
-
