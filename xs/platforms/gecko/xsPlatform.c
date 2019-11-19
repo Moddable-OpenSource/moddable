@@ -139,13 +139,13 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
 	fxDisconnect(the);
-	c_exit(0);
+	c_exit(status);
 }
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {

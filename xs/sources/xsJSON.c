@@ -115,7 +115,7 @@ void fx_JSON_parse(txMachine* the)
 			mxSyntaxError("no buffer");
 		aParser = c_malloc(sizeof(txJSONParser));
 		if (NULL == aParser)
-			mxUnknownError("out of memory");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		c_memset((txJSONParser*)aParser, 0, sizeof(txJSONParser));
 		if ((mxArgc > 1) && mxIsReference(mxArgv(1)) && fxIsArray(the, mxArgv(1)->value.reference))
 			aParser->keys = fxToJSONKeys(the, mxArgv(1));
@@ -653,7 +653,7 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 	theStringifier->size = 1024;
 	theStringifier->buffer = c_malloc(1024);
 	if (!theStringifier->buffer)
-		mxUnknownError("out of memory");
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	if (mxArgc > 1) {
 		aSlot = mxArgv(1);

@@ -1212,13 +1212,13 @@ void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger 
 	if (theCount < 0) {
 		if (aStack < the->stackBottom) {
 			fxReport(the, "stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
-			fxJump(the);
+			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 		}
 	}
 	else if (theCount > 0) {
 		if (aStack > the->stackTop) {
 			fxReport(the, "stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
-			fxJump(the);
+			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 		}
 	}
 #endif
@@ -1557,7 +1557,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			if (the->aliasCount) {
 				the->aliasArray = (txSlot **)c_malloc_uint32(the->aliasCount * sizeof(txSlot*));
 				if (!the->aliasArray)
-					fxJump(the);
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 				c_memset(the->aliasArray, 0, the->aliasCount * sizeof(txSlot*));
 			}
 

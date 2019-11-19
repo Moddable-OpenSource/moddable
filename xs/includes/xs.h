@@ -1253,6 +1253,12 @@ typedef unsigned char xsAttribute;
 	fxAwaitImport(the, _FLAG), \
 	fxPop())
 
+enum {
+	xsDebuggerExit = 0,
+	xsNotEnoughMemoryExit,
+	xsStackOverflowExit,
+	xsFatalCheckExit,
+};
 
 #ifndef __XSALL__
 

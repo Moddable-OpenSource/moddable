@@ -172,17 +172,17 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->keyIndex = 0;
 	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->keyCount * sizeof(txSlot*));
 	if (!the->keyArray)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->nameModulo = theCreation->nameModulo;
 	the->nameTable = (txSlot **)c_malloc_uint32(theCreation->nameModulo * sizeof(txSlot*));
 	if (!the->nameTable)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->symbolModulo = theCreation->symbolModulo;
 	the->symbolTable = (txSlot **)c_malloc_uint32(theCreation->symbolModulo * sizeof(txSlot*));
 	if (!the->symbolTable)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
@@ -381,7 +381,7 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 	aData = fxAllocateChunks(the, theSize);
 	if (!aData) {
 		fxReport(the, "# Chunk allocation: failed for %ld bytes\n", theSize);
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
 	if ((the->firstBlock != C_NULL) && (the->firstBlock->limit == aData)) {
 		the->firstBlock->limit += theSize;
@@ -410,7 +410,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	aHeap = fxAllocateSlots(the, theCount);
 	if (!aHeap) {
 		fxReport(the, "# Slot allocation: failed for %ld bytes\n", theCount * sizeof(txSlot));
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
 
 	if ((aHeap + theCount) == the->firstHeap) {

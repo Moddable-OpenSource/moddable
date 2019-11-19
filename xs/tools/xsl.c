@@ -921,12 +921,12 @@ void fxQueuePromiseJobs(txMachine* the)
 	linker->promiseJobsFlag = 1;
 }
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
-	c_exit(0);
+	c_exit(status);
 }
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {

@@ -130,7 +130,7 @@ static char* gxTouchEventNames[4] = {
 	"onTouchMoved",
 };
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
 	(*screen->abort)(screen);

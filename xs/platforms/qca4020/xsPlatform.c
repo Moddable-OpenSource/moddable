@@ -156,15 +156,14 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
 
 #ifdef mxDebug
 
 static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
-
-void fxAbort(txMachine* the)
-{
-	c_exit(0);
-}
 
 void fxConnect(txMachine* the)
 {

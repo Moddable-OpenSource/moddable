@@ -672,8 +672,8 @@ extern void* fxRetainSharedChunk(void* data);
 extern void fxUnlinkSharedChunk(txMachine* the);
 extern void fxUnlockSharedChunk(void* data);
 extern txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout);
+extern void fxAbort(txMachine* the, int status);
 #ifdef mxDebug
-extern void fxAbort(txMachine* the);
 extern void fxConnect(txMachine* the);
 extern void fxDisconnect(txMachine* the);
 extern txBoolean fxIsConnected(txMachine* the);
@@ -1822,6 +1822,12 @@ enum {
 	XS_HOST_INSPECTOR_KIND,
 	XS_INSTANCE_INSPECTOR_KIND,
 	XS_EXPORT_KIND,
+};
+enum {
+	XS_DEBUGGER_EXIT = 0,
+	XS_NOT_ENOUGH_MEMORY_EXIT,
+	XS_STACK_OVERFLOW_EXIT,
+	XS_FATAL_CHECK_EXIT,
 };
 
 #if mxBigEndian

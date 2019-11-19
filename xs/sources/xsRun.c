@@ -579,7 +579,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 			}
 			else {
 				mxSaveState;
-				fxJump(the);
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 			}
 			offset--;
 		}
@@ -1220,7 +1220,7 @@ XS_CODE_JUMP:
 			}
 			else {
 				mxSaveState;
-				fxJump(the);
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 			}
 			mxBreak;
 		mxCase(XS_CODE_RETHROW)
