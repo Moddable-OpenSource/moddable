@@ -32,7 +32,7 @@
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 			},
 			"defines": {
-				"destm32s": {
+				"dotstar": {
 					"spi_port": "HSPI_HOST"
 				},
 			}
