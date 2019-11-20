@@ -577,17 +577,15 @@ void fxReviveJSON(txMachine* the, txSlot* reviver, txSlot* holder)
 			index = 0;
 			while (index < length) {
 				mxPushUndefined();
-				fxKeyAt(the, XS_NO_ID, index, the->stack);
+				fxKeyAt(the, 0, index, the->stack);
 				mxPushSlot(reference);
-				fxGetIndex(the, index);
+				fxGetAll(the, 0, index);
 				fxReviveJSON(the, reviver, instance);
 				if (mxIsUndefined(the->stack)) {
-					mxPushSlot(reference);
-					fxDeleteIndex(the, index);
+					mxBehaviorDeleteProperty(the, reference->value.reference, 0, index);
 				}
 				else {
-					mxPushSlot(reference);
-					fxSetIndex(the, index);
+					mxBehaviorDefineOwnProperty(the, reference->value.reference, 0, index, the->stack, XS_GET_ONLY);
 				}
 				mxPop();
 				index++;
@@ -603,12 +601,10 @@ void fxReviveJSON(txMachine* the, txSlot* reviver, txSlot* holder)
 				fxGetAll(the, at->value.at.id, at->value.at.index);
 				fxReviveJSON(the, reviver, instance);
 				if (mxIsUndefined(the->stack)) {
-					mxPushSlot(reference);
-					fxDeleteAll(the, at->value.at.id, at->value.at.index);
+					mxBehaviorDeleteProperty(the, reference->value.reference, at->value.at.id, at->value.at.index);
 				}
 				else {
-					mxPushSlot(reference);
-					fxSetAll(the, at->value.at.id, at->value.at.index);
+					mxBehaviorDefineOwnProperty(the, reference->value.reference, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
 				}
 				mxPop();
 			}
