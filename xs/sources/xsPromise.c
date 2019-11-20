@@ -405,6 +405,7 @@ void fxOnRejectedPromise(txMachine* the)
 		}
 		mxCatch(the) {
 			*argument = mxException;
+			mxException = mxUndefined;
 		}
 	}
     if (function->kind == XS_REFERENCE_KIND) {
@@ -442,6 +443,7 @@ void fxOnResolvedPromise(txMachine* the)
 		}
 		mxCatch(the) {
 			*argument = mxException;
+			mxException = mxUndefined;
 			function = rejectFunction;
 		}
 	}
@@ -477,6 +479,7 @@ void fxOnThenable(txMachine* the)
 	}
 	mxCatch(the) {
 		mxPush(mxException);
+		mxException = mxUndefined;
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
@@ -485,7 +488,6 @@ void fxOnThenable(txMachine* the)
 		mxPushSlot(rejectFunction);
 		fxCall(the);
 		the->stack++;
-		mxException = mxUndefined;
 	}
 }
 
@@ -644,6 +646,7 @@ bail:
 		result = mxPromiseResult(promise);
 		result->kind = mxException.kind;
 		result->value = mxException.value;
+		mxException = mxUndefined;
 		slot = mxPromiseThens(promise)->value.reference->next;
 		while (slot) {
 			mxPushSlot(result);
@@ -702,6 +705,7 @@ void fx_Promise(txMachine* the)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -818,6 +822,7 @@ void fx_Promise_all(txMachine* the)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -934,6 +939,7 @@ void fx_Promise_allSettled(txMachine* the)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -1029,6 +1035,7 @@ void fx_Promise_race(txMachine* the)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -1236,6 +1243,7 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 			mxArgv(0)->value = mxException.value;
 			success->value.boolean = 0;
 			mxPush(mxException);
+			mxException = mxUndefined;
 		}
 	}
 	argument = the->stack;

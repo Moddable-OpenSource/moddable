@@ -352,10 +352,10 @@ txInteger fxGetModuleStatus(txMachine* the, txSlot* realm, txSlot* module)
 	while (fromModule) {
 		txSlot* waitingModule = waitingModules->next;
 		while (waitingModule) {
+            if (module->value.reference == waitingModule->value.reference)
+                break;
 			if (fromModule->value.reference == waitingModule->value.reference)
 				return 0;
-			if (module->value.reference == waitingModule->value.reference)
-				break;
 			waitingModule = waitingModule->next;
 		}
 		fromModule = fromModule->next;
@@ -1007,6 +1007,7 @@ void fxRunImport(txMachine* the)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			/* COUNT */
 			mxPushInteger(1);
 			/* THIS */
@@ -1014,6 +1015,7 @@ void fxRunImport(txMachine* the)
 			/* FUNCTION */
 			mxPushReference(rejectFunction);
 			fxCall(the);
+			the->stack++;
 		}
 	}
 	fxEndHost(the);

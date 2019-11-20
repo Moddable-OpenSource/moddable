@@ -1182,6 +1182,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_EXCEPTION)
 			mxOverflow(1);
 			*mxStack = mxException;
+			mxException = mxUndefined;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_CATCH_4)

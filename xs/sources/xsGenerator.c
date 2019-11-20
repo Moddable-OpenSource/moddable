@@ -452,6 +452,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 		mxCatch(the) {
 			state->value.integer = XS_CODE_END;
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPush(mxPromiseConstructor);
 			fxCallID(the, mxID(_reject));
@@ -610,6 +611,7 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPushUndefined();
 			mxPushReference(rejectFunction);
@@ -838,6 +840,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPushUndefined();
 			mxPushReference(rejectFunction);

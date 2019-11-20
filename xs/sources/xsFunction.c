@@ -674,6 +674,7 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 	}
 	mxCatch(the) {
 		mxPush(mxException);
+		mxException = mxUndefined;
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
