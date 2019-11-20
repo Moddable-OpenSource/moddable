@@ -65,8 +65,8 @@ static uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 #define SCREEN_CS_INIT		modGPIOInit(&ls->cs, (const char *)MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, kModGPIOOutput); \
 	SCREEN_CS_DEACTIVE
 
-#define SCREEN_DISP_ON		if (ls->dispAvail) { modGPIOWrite(&ls->disp, 1); modLog("wrote disp 1"); }
-#define SCREEN_DISP_OFF		if (ls->dispAvail) { modGPIOWrite(&ls->disp, 0); modLog("wrote disp 0"); }
+#define SCREEN_DISP_ON		if (ls->dispAvail) modGPIOWrite(&ls->disp, 1)
+#define SCREEN_DISP_OFF		if (ls->dispAvail) modGPIOWrite(&ls->disp, 0)
 
 // Host data record.
 struct ls013b4dn04Record {
@@ -135,7 +135,6 @@ void xs_LS013B4DN04(xsMachine *the){
 	SCREEN_CS_INIT;
 	modSPIConfig(ls->spiConfig, MODDEF_LS013B4DN04_HZ, MODDEF_LS013B4DN04_SPI_PORT,
 			MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, ls013b4dn04ChipSelect);
-ls->spiConfig.the = the;
 	modSPIInit(&ls->spiConfig);
 
 	ls_clear(ls);
@@ -239,8 +238,6 @@ void xs_ls013b4dn04_send(xsMachine *the){
 		}
 	}
 
-xsTraceRight("doSend", "ls013b4dn04");
-xsTraceRightBytes(data, count, "ls013b4dn04");
 	(ls->dispatch->doSend)((PocoPixel *)data, count, ls);
 }
 
