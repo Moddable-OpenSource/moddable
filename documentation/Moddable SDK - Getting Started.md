@@ -156,11 +156,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 	
 7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
@@ -346,11 +346,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 9. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
@@ -540,11 +540,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
