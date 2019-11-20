@@ -17,11 +17,6 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-/*
-	TBD:
-		- Encryption, pairing, bonding
-		- Attribute level encryption
- */
 
 #include "xsmc.h"
 #include "xsHost.h"
@@ -55,12 +50,6 @@
 #define FIRST_CONN_PARAMS_UPDATE_DELAY      5000                                    /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY       30000                                   /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT        3                                       /**< Number of attempts before giving up the connection parameter negotiation. */
-
-typedef struct {
-	uint8_t service_index;
-	uint8_t att_index;
-	ble_gatts_char_handles_t handles;
-} gatts_handles_t;
 
 #define LOG_GATTS 0
 #if LOG_GATTS
@@ -389,9 +378,9 @@ void xs_ble_server_deploy(xsMachine *the)
 				add_char_params.char_props.indicate = (properties & GATT_CHAR_PROP_BIT_INDICATE ? 1 : 0);
 				add_char_params.char_ext_props.wr_aux = (properties & GATT_CHAR_PROP_BIT_EXT_PROP ? 1 : 0);
 				
-				add_char_params.read_access = SEC_OPEN;
-				add_char_params.write_access = SEC_OPEN;
-				add_char_params.cccd_write_access = SEC_OPEN;
+				add_char_params.read_access = (permissions & GATT_PERM_READ_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
+				add_char_params.write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
+				add_char_params.cccd_write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);;
 
 				att_handles[att_handle_index].service_index = i;
 				att_handles[att_handle_index].att_index = j;
