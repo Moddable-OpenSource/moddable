@@ -33,7 +33,10 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	close() @ "xs_ble_client_close"
 	
 	connect(params) {
-		this._connect(params.address, params.addressType);
+		if ("connection" in params)
+			this._connect(params.address, params.addressType, params.connection);
+		else
+			this._connect(params.address, params.addressType);
 	}
 	
 	onReady() {}
