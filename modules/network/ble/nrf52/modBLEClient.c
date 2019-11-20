@@ -78,8 +78,18 @@
 
 #include "mc.bleservices.c"
 
+typedef enum {
+	NONE = 0,
+	CHARACTERISTIC_WRITE_VALUE = 1,
+	CHARACTERISTIC_WRITE_WITHOUT_RESPONSE,
+	CHARACTERISTIC_READ_VALUE,
+	DESCRIPTOR_WRITE_VALUE,
+	DESCRIPTOR_READ_VALUE
+} gattProcedureID;
+
 typedef struct {
 	xsSlot obj;
+	gattProcedureID id;
 	ble_uuid_t searchUUID;
 	ble_gattc_handle_range_t handle_range;
 	uint16_t discovery_handle;
@@ -118,6 +128,7 @@ typedef struct {
 
 	// gap
 	ble_gap_scan_params_t scan_params;
+	nrf_ble_scan_init_t scan_init;
 	
 	// gatt
 	nrf_ble_gatt_t m_gatt;
@@ -192,6 +203,20 @@ void xs_ble_client_initialize(xsMachine *the)
 	
 	err_code = modBLEPlatformInitialize(&init);
 	
+	// Initialize default scan params - required when connecting without first scanning
+	if (NRF_SUCCESS == err_code) {
+		ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
+		nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
+
+		scan_init->p_scan_param = scan_params;
+		scan_params->active = 1;
+		scan_params->filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+		scan_params->interval = 0x50;
+		scan_params->window = 0x30;
+
+		err_code = nrf_ble_scan_init(&m_scan, scan_init, NULL);
+	}
+	
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble initialization failed");
 
@@ -242,7 +267,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint16_t interval = xsmcToInteger(xsArg(1));
 	uint16_t window = xsmcToInteger(xsArg(2));
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
-	nrf_ble_scan_init_t scan_init;
+	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
 
 	c_memset(scan_params, 0, sizeof(ble_gap_scan_params_t));
 	scan_params->active = active;
@@ -250,10 +275,10 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	scan_params->interval = interval;
 	scan_params->window = window;
 
-    c_memset(&scan_init, 0, sizeof(scan_init));
-    scan_init.p_scan_param = scan_params;
+    c_memset(scan_init, 0, sizeof(scan_init));
+    scan_init->p_scan_param = scan_params;
 
-    err_code = nrf_ble_scan_init(&m_scan, &scan_init, NULL);
+    err_code = nrf_ble_scan_init(&m_scan, scan_init, NULL);
     if (NRF_SUCCESS == err_code)
     	err_code = nrf_ble_scan_start(&m_scan);
 	if (NRF_SUCCESS != err_code)
@@ -267,8 +292,10 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 
 void xs_ble_client_connect(xsMachine *the)
 {
+	uint16_t argc = xsmcArgc;
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
+	
 	ble_gap_addr_t addr;
 	ret_code_t err_code;
 
@@ -291,8 +318,16 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEConnectionAdd(connection);
 	
 	err_code = sd_ble_gap_connect(&addr, &m_scan.scan_params, &m_scan.conn_params, APP_BLE_CONN_CFG_TAG);
-	if (NRF_SUCCESS != err_code)
-		xsUnknownError("ble connect failed");
+	
+	// The third argument is an existing connection handle, when available.
+	// This can happen when the server establishes a connection that gets passed to the client.
+	// When there is an existing connection handle, post the gapConnectedEvent so this client can populate the connection record and notify the application.
+	if (NRF_SUCCESS == err_code && argc > 2) {
+		ble_gap_evt_t gap_evt;
+		gap_evt.conn_handle = xsmcToInteger(xsArg(2));
+		gap_evt.params.connected.peer_addr = addr;
+		modMessagePostToMachine(the, (uint8_t*)&gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
+	}
 }
 
 void xs_ble_client_set_security_parameters(xsMachine *the)
@@ -380,6 +415,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	if (argc > 1)
 		bufferToUUID(&connection->gattProcedure.searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
 	else
@@ -397,6 +433,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	connection->gattProcedure.handle_range.start_handle = xsmcToInteger(xsArg(1));
 	connection->gattProcedure.handle_range.end_handle = xsmcToInteger(xsArg(2));
 	connection->gattProcedure.obj = xsThis;
@@ -420,6 +457,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	if (!connection) return;
 	
 	// Discover all service characteristics to find the range of characteristic handles for searching descriptors
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	connection->gattProcedure.searchUUID.uuid = 0;
 	connection->gattProcedure.obj = xsThis;
 	connection->gattProcedure.discovery_handle = characteristic;
@@ -448,6 +486,9 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 #endif
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
+	
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
+	connection->gattProcedure.id = CHARACTERISTIC_READ_VALUE;
 	
 	sd_ble_gattc_read(connection->conn_handle, handle, 0);
 }
@@ -522,6 +563,10 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			xsUnknownError("unsupported type");
 			break;
 	}
+
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
+	connection->gattProcedure.id = DESCRIPTOR_WRITE_VALUE;
+	
 	writeAttribute(conn_handle, handle, BLE_GATT_OP_WRITE_CMD, data, len);
 }
 
@@ -553,6 +598,10 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			xsUnknownError("unsupported type");
 			break;
 	}
+
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
+	connection->gattProcedure.id = CHARACTERISTIC_WRITE_WITHOUT_RESPONSE;
+
 	writeAttribute(conn_handle, handle, BLE_GATT_OP_WRITE_CMD, data, len);
 }
 
@@ -569,6 +618,9 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
+	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
+	connection->gattProcedure.id = DESCRIPTOR_READ_VALUE;
+
 	sd_ble_gattc_read(conn_handle, handle, 0);
 }
 
@@ -1133,7 +1185,8 @@ void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uin
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSetInteger(xsVar(1), read_rsp->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicValue"), xsVar(0));
+	
+	xsCall2(connection->objClient, xsID_callback, xsString(connection->gattProcedure.id == CHARACTERISTIC_READ_VALUE ? "onCharacteristicValue" : "onDescriptorValue"), xsVar(0));
 	
 	xsEndHost(gBLE->the);
 }
