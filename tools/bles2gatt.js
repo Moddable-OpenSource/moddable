@@ -979,6 +979,13 @@ class NRF52GATTFile extends GATTFile {
 		file.line("\tconst char *type;");
 		file.line("} char_name_table;");
 		file.line("");
+		file.line("typedef struct {");
+		file.line("\tuint8_t service_index;");
+		file.line("\tuint8_t att_index;");
+		file.line("\tble_gatts_char_handles_t handles;");
+		file.line("} gatts_handles_t;");
+		file.line("");
+
 		if (0 == services.length) {
 			file.line("#define service_count 0");
 			file.line("#define char_name_count 0");
