@@ -29,6 +29,13 @@
 				]
 			}
 		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/nrf52/*"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [
