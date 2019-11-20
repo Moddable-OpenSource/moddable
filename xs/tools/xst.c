@@ -132,6 +132,7 @@ struct sxResult {
 
 static int main262(int argc, char* argv[]);
 
+static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 static void fxPopResult(txContext* context);
@@ -140,9 +141,11 @@ static void fxPrintUsage();
 static void fxPushResult(txContext* context, char* path);
 static void fxRunDirectory(txContext* context, char* path);
 static void fxRunFile(txContext* context, char* path);
-static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message);
+static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
+static void fx_agent_get_safeBroadcast(xsMachine* the);
+static void fx_agent_set_safeBroadcast(xsMachine* the);
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
 static void fx_agent_leaving(xsMachine* the);
@@ -159,11 +162,10 @@ static void* fx_agent_start_aux(void* it);
 static void fx_agent_stop(xsMachine* the);
 extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
-static void fx_createRealmException(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
-static void fx_gc(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
+static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
@@ -177,7 +179,6 @@ static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
 static void fx_destroyTimer(void* data);
 static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setTimerCallback(txJob* job);
-
 
 static txAgentCluster gxAgentCluster;
 
@@ -238,22 +239,12 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
+		fxInitializeSharedCluster();
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
 			xsTry {
-				txSlot* slot;
-				mxPush(mxGlobal);
-				slot = fxLastProperty(the, fxToInstance(the, the->stack));
-				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_createRealmException, 1, xsID("createRealm"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-				slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-				mxPop();
-
+				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
@@ -273,12 +264,19 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsCatch {
+			}
+		}
+		xsEndHost(machine);
+		fxRunLoop(machine);
+		xsBeginHost(machine);
+		{
+			if (xsTypeOf(xsException) != xsUndefinedType) {
 				fprintf(stderr, "%s\n", xsToString(xsException));
 				error = 1;
 			}
 		}
 		xsEndHost(machine);
-		fxRunLoop(machine);
+		fxTerminateSharedCluster();
 		xsDeleteMachine(machine);
 	}
 	return error;
@@ -380,6 +378,45 @@ int main262(int argc, char* argv[])
 		fxPrintResult(&context, context.current, 0);
 	}
 	return error;
+}
+
+void fxBuildAgent(xsMachine* the) 
+{
+	txSlot* slot;
+	txSlot* agent;
+	txSlot* global;
+
+	slot = fxLastProperty(the, fxNewHostObject(the, NULL));
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_agent_get_safeBroadcast), mxCallback(fx_agent_set_safeBroadcast), xsID("safeBroadcast"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
+	agent = the->stack;
+
+	mxPush(mxGlobal);
+	global = the->stack;
+
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
+	slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_gc, 1, xsID("gc"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
+
+	slot = fxLastProperty(the, fxToInstance(the, global));
+	slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+
+	mxPop();
+	mxPop();
 }
 
 void fxCountResult(txContext* context, int success, int pending) 
@@ -597,6 +634,7 @@ void fxRunFile(txContext* context, char* path)
 	yaml_document_t* document = NULL;
 	yaml_node_t* root;
 	yaml_node_t* value;
+	int async = 0;
 	int sloppy = 1;
 	int strict = 1;
 	int module = 0;
@@ -643,7 +681,10 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "onlyStrict")) {
+			if (!strcmp((char*)node->data.scalar.value, "async")) {
+				async = 1;
+			}
+			else if (!strcmp((char*)node->data.scalar.value, "onlyStrict")) {
 				sloppy = 0;
 				strict = 1;
 				module = 0;
@@ -679,7 +720,9 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "coalesce-expression")
+			if (!strcmp((char*)node->data.scalar.value, "AggregateError")
+ 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.replaceAll")
+ 			||	!strcmp((char*)node->data.scalar.value, "coalesce-expression")
  			||	!strcmp((char*)node->data.scalar.value, "optional-chaining")
  			||	!strcmp((char*)node->data.scalar.value, "regexp-match-indices")
 #ifndef mxRegExpUnicodePropertyEscapes
@@ -697,21 +740,21 @@ void fxRunFile(txContext* context, char* path)
 
 	if (sloppy) {
 		fprintf(stderr, "### %s (sloppy): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, message))
+		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
 	}
 	if (strict) {
 		fprintf(stderr, "### %s (strict): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, message))
+		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
 	}
 	if (module) {
 		fprintf(stderr, "### %s (module): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, 0, message))
+		if (fxRunTestCase(context, path, 0, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
@@ -735,7 +778,7 @@ bail:
 }
 
 static char gxDoneMessage[1024];
-int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message)
+int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
 		16 * 1024 * 1024, 	/* initialChunkSize */
@@ -763,48 +806,18 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	xsBeginHost(machine);
 	{
 		xsTry {
-			txSlot* slot;
-			txSlot* agent;
-			txSlot* global;
-			
-			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
-			agent = the->stack;
-			
-			mxPush(mxGlobal);
-			global = the->stack;
-
-			mxPush(mxObjectPrototype);
-			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
-			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_gc, 1, xsID("gc"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
-
-			slot = fxLastProperty(the, fxToInstance(the, global));
-			slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_GET_ONLY);
-			slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-			slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-			slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-			slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-			slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-			slot = fxNextHostFunctionProperty(the, slot, fx_done, 1, xsID("$DONE"), XS_DONT_ENUM_FLAG);
-			
-			mxPop();
-			mxPop();
-
+			fxBuildAgent(the);
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "sta.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "assert.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
+			if (async) {
+				xsResult = xsNewHostFunction(fx_done, 1);
+				xsSet(xsGlobal, xsID("$DONE"), xsResult);
+				xsSet(xsGlobal, xsID("$DONE_RESULT"), xsString("Test did not run to completion"));
+			}
 			if (context->includes) {
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
@@ -814,19 +827,12 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
-				
-				mxPushSlot(agent);
-				fxGetID(the, xsID("broadcast"));
-				mxPushSlot(agent);
-				fxSetID(the, xsID("safeBroadcast"));
-				mxPop();
 			}
 			mxPop();
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
-			xsException = xsUndefined;
 		}
 		xsCatch {
 		}
@@ -835,17 +841,18 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	fxRunLoop(machine);
 	xsBeginHost(machine);
 	{
-		if (gxDoneMessage[0]) {
-			if (strcmp(gxDoneMessage, "OK")) {
-				snprintf(message, 1024, "%s", gxDoneMessage);
+		if (xsTypeOf(xsException) == xsUndefinedType) {
+			if (async) {
+				xsResult = xsGet(xsGlobal, xsID("$DONE_RESULT"));
+				if (xsTypeOf(xsResult) == xsUndefinedType) {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+				else {
+					snprintf(message, 1024, "# %s", xsToString(xsResult));
+				}
 			}
-			else {
-				snprintf(message, 1024, "OK");
-				success = 1;
-			}
-		}
-		else if (xsTypeOf(xsException) == xsUndefinedType) {
-			if (context->negative) {
+			else if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
 			else {
@@ -882,12 +889,10 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 
 void fx_done(xsMachine* the)
 {
-	if ((xsToInteger(xsArgc) == 0) || (xsTypeOf(xsArg(0)) == xsUndefinedType))
-		strcpy(gxDoneMessage, "OK");
-	else {
-		txString name = xsToString(xsArg(0));
-		snprintf(gxDoneMessage, 1024, "# Async: %s", name);
-	}
+	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
+		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsArg(0));
+	else
+		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsUndefined);
 }
 
 int fxStringEndsWith(const char *string, const char *suffix)
@@ -898,6 +903,15 @@ int fxStringEndsWith(const char *string, const char *suffix)
 }
 
 /* $262 */
+
+void fx_agent_get_safeBroadcast(xsMachine* the)
+{
+	xsResult = xsGet(xsThis, xsID("broadcast"));
+}
+
+void fx_agent_set_safeBroadcast(xsMachine* the)
+{
+}
 
 void fx_agent_broadcast(xsMachine* the)
 {
@@ -1115,11 +1129,6 @@ void fx_agent_stop(xsMachine* the)
 void fx_createRealm(xsMachine* the)
 {
 	xsResult = xsThis;
-}
-
-void fx_createRealmException(xsMachine* the)
-{
-	mxUnknownError("one realm only");
 }
 
 void fx_detachArrayBuffer(xsMachine* the)
