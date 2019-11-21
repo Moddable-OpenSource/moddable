@@ -102,7 +102,7 @@
       <file file_name="$(StudioDir)/source/thumb_crt0.s" />
     </folder>
     <folder Name="nrf_cc310">
-      <file file_name="../../../../../../../../nRF5_SDK/external/nrf_cc310/lib/cortex-m4/hard-float/libnrf_cc310_0.9.12.a" />
+      <file file_name="../../../../../../../../nRF5_SDK/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a" />
       <configuration Name="Debug" gcc_short_enum="Minimal Container Size" />
     </folder>
     <folder Name="nRF_Crypto backend nRF HW">
@@ -267,8 +267,8 @@
       Name="Debug"
       arm_target_interface_type="SWD"
       c_preprocessor_definitions="mxDebug=1;MODINSTRUMENTATION=1;mxInstrument=1"
-      c_user_include_directories="../../../../../../../build/tmp/nrf52/dk/debug/security-client"
-      linker_additional_options_from_file="/Users/brianfriedkin/nRF5/moddable/build/bin/nrf52/dk/debug/security-client/xs_nrf52.ind" />
+      c_user_include_directories="../../../../../../../build/tmp/nrf52/dk/debug/heart-rate-server"
+      linker_additional_options_from_file="/Users/brianfriedkin/nRF5/moddable/build/bin/nrf52/dk/debug/heart-rate-server/xs_nrf52.ind" />
   </project>
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
   <configuration
