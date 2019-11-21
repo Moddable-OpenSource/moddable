@@ -150,6 +150,7 @@ INC_DIRS += \
   $(SDK_ROOT)/components/libraries/twi_sensor \
   $(SDK_ROOT)/components/libraries/twi_mngr \
   $(SDK_ROOT)/modules/nrfx \
+  $(SDK_ROOT)/components/libraries/fds \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
   $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/components/libraries/mutex \
