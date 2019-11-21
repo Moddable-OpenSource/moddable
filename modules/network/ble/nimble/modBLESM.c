@@ -44,7 +44,7 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 		c_free(peer_addrs);
 }
 
-void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
   	switch(ioCapability) {
  		case NoInputNoOutput:
@@ -70,7 +70,9 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
  	}
  	else
  		ble_hs_cfg.sm_bonding = 0;
-    ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
+	ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
 	ble_hs_cfg.sm_sc = 1;
+	
+	return 0;
 }
 
