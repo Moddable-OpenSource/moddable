@@ -91,6 +91,80 @@ export class MakeFile extends FILE {
 		}
 		this.line("");
 	}
+	generateConfigurationRules(tool) {
+		if ("esp32" != tool.platform) return;
+		
+		// Read base sdkconfig file
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
+		let baseConfig = tool.readFileString(baseConfigFile);
+		let baseConfigLength = baseConfig.length;
+
+		// Read app sdkconfig file
+		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+		if (tool.debug) {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
+				sdkconfigFile += ".debug";
+		}
+		else {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
+				sdkconfigFile += ".release";
+		}
+		
+		let appConfig;
+		if (baseConfigFile != sdkconfigFile) {
+			appConfig = tool.readFileString(sdkconfigFile);
+			appConfig = appConfig.split(/[\r\n]+/gm);
+		}
+		else
+			appConfig = [];
+			
+		let port = tool.getenv("UPLOAD_PORT");
+		if (port) {
+			if (port.charAt(0) != '"')
+				port = `"${port}"`;
+			appConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
+		}
+
+		// Merge differences
+		let appended = false;
+		appConfig.forEach(option => {
+			if (option.length && ('#' != option.charAt(0))) {
+				let parts = option.split('=');
+				let name = parts[0];
+				let value = parts[1];
+				let start = baseConfig.indexOf(name + "=");
+				if (-1 != start) {
+					start += name.length + 1;
+					let end = start;
+					let c = baseConfig.charAt(end);
+					while (c != '\n' && c != '\r') {
+						if (++end >= baseConfigLength)
+							break;
+						c = baseConfig.charAt(end);
+					}
+					let original = baseConfig.slice(start, end);
+					if (original != value) {
+						if ("n" == value)
+							value = "";
+						baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=" + value);
+					}
+				}
+				else {
+					if (!appended) {
+						baseConfig += "\n";
+						appended = true;
+					}
+					baseConfig += name + "=" + value + "\n";
+				}
+			}
+		});
+		
+		// Write the result
+		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
+		tool.writeFileString(buildConfigFile, baseConfig);
+		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
 		this.write("\\\n\t$(TMP_DIR)");
@@ -144,20 +218,9 @@ export class MakeFile extends FILE {
 		if (nimble)
 			this.write(" -n");
 		if ("esp32" == tool.platform) {
-			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
-			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
-			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
-			if (tool.debug) {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
-					sdkconfigFile += ".debug";
-			}
-			else {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
-					sdkconfigFile += ".release";
-			}
+			let sdkconfigFile = tool.getenv("SDKCONFIG_FILE");
 			this.write(" -s ");
 			this.write(sdkconfigFile);
-			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
 			if (tool.windows) {
 				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
@@ -337,15 +400,15 @@ export class MakeFile extends FILE {
 			if (result.colorFile)
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
 			else {
+				var parts = tool.splitPath(target);
 				var source = result.source;
 				var sources = result.sources;
 				var manifest = "";
-				var name = "";
+				var name = " -n " + parts.name.slice(0, -6);
 				if (sources) {
 					for (var path of sources)
 						source += " " + path;
 					manifest = "  $(MANIFEST)";
-					name = " -n " + parts.name.slice(0, -6);
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
@@ -354,18 +417,18 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpColorFiles) {
-			var source = result.source;
 			var target = result.target;
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
 			var clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 
 			this.write("$(RESOURCES_DIR)");
@@ -430,10 +493,9 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpMaskFiles) {
-			var parts;
-			var source = result.source;
 			var target = result.target;
-			parts = tool.splitPath(target);
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var bmpTarget = parts.name + ".bmp";
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
@@ -441,12 +503,11 @@ export class MakeFile extends FILE {
 			this.line("\t$(RLE4ENCODE) ", bmpSource, " -o $(@D)");
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
@@ -521,6 +582,7 @@ export class MakeFile extends FILE {
 		this.generateModulesRules(tool);
 		this.generateObjectsRules(tool);
 		this.generateDataRules(tool);
+		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
 	}

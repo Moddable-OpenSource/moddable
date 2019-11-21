@@ -20,7 +20,7 @@
 
 import {Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
 
-export class Client {
+class Client {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -146,12 +146,18 @@ export class Client {
 				}
 				break;
 			}
+			case "onDescriptorWritten": {
+				let descriptor = this._findDescriptorByHandle(params.handle);
+				if (descriptor)
+					this.ble.onDescriptorWritten(descriptor);		
+				break;
+			}
 		}
 	}
 };
 Object.freeze(Client.prototype);
 
-export class Service {
+class Service {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -213,7 +219,7 @@ export class Service {
 };
 Object.freeze(Service.prototype);
 
-export class Characteristic {
+class Characteristic {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -297,7 +303,7 @@ export class Characteristic {
 };
 Object.freeze(Characteristic.prototype);
 
-export class Descriptor {
+class Descriptor {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -335,17 +341,22 @@ export class Descriptor {
 		this._readValue(this.connection, this.handle, auth);
 	}
 
-	writeValue(value) {
+	writeWithoutResponse(value) {
 		value = typedValueToBuffer(this.type, value);
 		this._writeValue(this.connection, this.handle, value);
 	}
 	
+	writeValue(value) {
+		value = typedValueToBuffer(this.type, value);
+		this._writeValue(this.connection, this.handle, value, true);
+	}
+
 	_readValue() @ "xs_gatt_descriptor_read_value"
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
 Object.freeze(Descriptor.prototype);
 
-export default {
+export {
 	Client,
 	Service,
 	Characteristic,

@@ -31,6 +31,6 @@ typedef enum {
 	DisplayYesNo
 } IOCapability;
 
-void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
 #endif

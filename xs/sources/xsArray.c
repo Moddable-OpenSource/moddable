@@ -43,7 +43,7 @@
 
 static txIndex fxCheckArrayLength(txMachine* the, txSlot* slot);
 static txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item);
-static txSlot* fxCheckArray(txMachine* the, txSlot* slot);
+static txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable);
 static int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txInteger i);
 static txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length);
 static txSlot* fxCreateArraySpecies(txMachine* the, txNumber length);
@@ -270,15 +270,25 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 	return 0;
 }
 
-txSlot* fxCheckArray(txMachine* the, txSlot* slot)
+txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 {
 	txSlot* instance = fxToInstance(the, slot);
 	txSlot* array = instance->next;
 	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
-		txSlot* address = array->value.array.address;
-		txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
-		if (array->value.array.length == size) {
-			return array;
+		if (instance->ID >= 0) {
+			txSlot* alias = the->aliasArray[instance->ID];
+			if (alias)
+				array = alias->next;
+			else if (mutable) {
+				instance = fxAliasInstance(the, instance);
+				array = instance->next;
+			}
+		}
+		{
+			txSlot* address = array->value.array.address;
+			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
+			if (array->value.array.length == size)
+				return array;
 		}
 	}
 	return C_NULL;
@@ -396,7 +406,7 @@ txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 	mxPullSlot(mxResult);
 	if (flag)
 		fxSetIndexSize(the, mxResult->value.reference->next, length);
-	return fxCheckArray(the, mxResult);
+	return fxCheckArray(the, mxResult, XS_MUTABLE);
 }
 
 txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
@@ -474,8 +484,14 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	txNumber length;
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* array = instance->next;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR))
+	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+		if (instance->ID >= 0) {
+			txSlot* alias = the->aliasArray[instance->ID];
+			if (alias)
+				array = alias->next;
+		}
 		return array->value.array.length;
+	}
 	if (array && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
 		txSlot* view = array->next;
 		txSlot* buffer = view->next;
@@ -1102,7 +1118,7 @@ void fx_Array_prototype_concat(txMachine* the)
 
 void fx_Array_prototype_copyWithin(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txNumber length, to, from, final, count;
 	length = (array) ? array->value.array.length : fxGetArrayLength(the, mxThis);
 	to = fxArgToIndex(the, 0, 0, length);
@@ -1399,7 +1415,7 @@ void fx_Array_prototype_forEach(txMachine* the)
 
 void fx_Array_prototype_includes(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* argument;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -1443,7 +1459,7 @@ void fx_Array_prototype_includes(txMachine* the)
 
 void fx_Array_prototype_indexOf(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* argument;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -1556,7 +1572,7 @@ void fx_Array_prototype_keys(txMachine* the)
 
 void fx_Array_prototype_lastIndexOf(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* argument;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -1645,7 +1661,7 @@ void fx_Array_prototype_map(txMachine* the)
 
 void fx_Array_prototype_pop(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (array) {
 		txIndex length = array->value.array.length;
 		txSlot* address;
@@ -1680,7 +1696,7 @@ void fx_Array_prototype_pop(txMachine* the)
 void fx_Array_prototype_push(txMachine* the)
 {
 	txIndex c = mxArgc, i = 0;
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (array) {
 		txIndex length = array->value.array.length;
 		txSlot* address;
@@ -1848,7 +1864,7 @@ void fx_Array_prototype_reverse(txMachine* the)
 
 void fx_Array_prototype_shift(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (array) {
 		txIndex length = array->value.array.length;
 		txSlot* address;
@@ -1907,7 +1923,7 @@ void fx_Array_prototype_slice(txMachine* the)
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber END = fxArgToIndex(the, 1, LENGTH, LENGTH);
 	txNumber COUNT = (END > START) ? END - START : 0;
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* resultArray = fxCreateArraySpecies(the, COUNT);
 	if (array && resultArray) {
 		txIndex start = (txIndex)START;
@@ -1960,7 +1976,7 @@ void fx_Array_prototype_some(txMachine* the)
 
 void fx_Array_prototype_sort(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* function = C_NULL;
  	txNumber LENGTH;
  	txIndex index, length, size;
@@ -2145,7 +2161,7 @@ void fx_Array_prototype_splice(txMachine* the)
 	txNumber LENGTH = fxGetArrayLength(the, mxThis);
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber INSERTIONS, DELETIONS;
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* resultArray;
 	if (c == 0) {
 		INSERTIONS = 0;
@@ -2311,7 +2327,7 @@ void fx_Array_prototype_toString(txMachine* the)
 void fx_Array_prototype_unshift(txMachine* the)
 {
 	txIndex c = mxArgc, i;
-	txSlot* array = fxCheckArray(the, mxThis);
+	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (array) {
 		txSlot* address;
 		txIndex length = array->value.array.length;

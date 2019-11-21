@@ -351,7 +351,7 @@ export default class Client {
 		msg.set(password, position); position += password.length;
 
 		if (timeout) {
-			this.timer = Timer.repeat(this.keepalive.bind(this), this.timeout / 4);
+			this.timer = Timer.repeat(this.keepalive.bind(this), this.timeout >> 2);
 			this.last = Date.now();
 		}
 

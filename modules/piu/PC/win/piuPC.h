@@ -75,7 +75,7 @@ struct PiuViewStruct {
 extern "C" {
 #endif
 extern xsMachine* ServiceThreadMain(void* context);
-extern void fxAbort(xsMachine *the);
+extern void fxAbort(xsMachine *the, int status);
 #ifdef __cplusplus
 }
 #endif

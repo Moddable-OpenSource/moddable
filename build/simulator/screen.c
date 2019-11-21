@@ -23,6 +23,7 @@
 #include "modInstrumentation.h"
 #include "screen.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 
 //#include "commodettoBitmapFormat.h"
 #define kCommodettoBitmapMonochrome (3)
@@ -48,16 +49,6 @@ typedef struct {
 	xsIntegerValue bitsPerPixel;
 	xsIntegerValue commodettoFormat;
 } txPixelFormat;
-
-typedef struct sxWorker txWorker;
-struct sxWorker {
-	txScreen* screen;
-	txWorker* nextWorker;
-	xsIntegerValue id;
-	xsSlot slot;
-};
-
-extern void fxAbortCallback(void *info);
 
 static void fxScreenIdle(txScreen* screen);
 static void fxScreenInvoke(txScreen* screen, char* message, int size);
@@ -139,7 +130,7 @@ static char* gxTouchEventNames[4] = {
 	"onTouchMoved",
 };
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
 	(*screen->abort)(screen);
@@ -187,27 +178,7 @@ void fxScreenIdle(txScreen* screen)
 void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 {
 	xsBeginHost(screen->machine);
-	if (size < 0) {
-		int id = 0 - size;
-		txWorker* worker = screen->firstWorker;
-		while (worker) {
-			if (worker->id == id)
-				break;
-			worker = worker->nextWorker;
-		}
-		if (worker) {
-			xsVars(2);
-			xsVar(0) = xsAccess(worker->slot);
-			xsVar(1) = xsDemarshallAlien(buffer);
-			if (xsFindResult(xsVar(0), xsID_onmessage)) {
-				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
-			}
-			else if (xsFindResult(xsVar(0), xsID_onMessage)) {
-				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
-			}
-		}
-	}
-	else {
+	{
 		xsVars(2);
 		xsVar(0) = xsGet(xsGlobal, xsID_screen);
 		xsVar(1) = xsGet(xsVar(0), xsID_context);
@@ -236,6 +207,7 @@ void fxScreenLaunch(txScreen* screen)
 	screen->invoke = fxScreenInvoke;
 	screen->quit = fxScreenQuit;
 	screen->touch = fxScreenTouch;
+	screen->mainThread = mxCurrentThread();
 	screen->rotation = -1;
 #ifdef mxInstrument
 	modInstrumentationInit();
@@ -822,63 +794,3 @@ xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t siz
 	c_memcpy(((txU1*)dst) + offset, buffer, size);
 	return 1;
 }
-
-void Worker_destructor(void* data)
-{
-}
-
-void Worker_constructor(xsMachine* the)
-{
-	txScreen* screen = xsGetHostData(xsGet(xsGlobal, xsID_screen));
-	txWorker* worker = NULL;
-	if (!screen->createWorker) goto err;
-	worker = c_malloc(sizeof(txWorker));
-	if (!worker) goto err;
-	worker->id = (*screen->createWorker)(screen, xsToString(xsArg(0)));
-	if (!worker->id) goto err;
-	worker->slot =xsThis;
-	xsRemember(worker->slot);
-	worker->screen = screen;
-	worker->nextWorker = screen->firstWorker;
-	screen->firstWorker = worker;
-	xsSetHostData(xsThis, worker);
-	return;
-err:
-	if (worker)
-		c_free(worker);
-	xsUnknownError("unable to instantiate worker");
-
-}
-
-void Worker_postMessage(xsMachine* the)
-{
-	txWorker* worker = xsGetHostData(xsThis);
-	if (worker) {
-		txScreen* screen = worker->screen;
-		if (screen->post)
-			(*screen->post)(screen, xsMarshallAlien(xsArg(0)), 0 - worker->id);
-	}
-}
-
-void Worker_terminate(xsMachine* the)
-{
-	txWorker* worker = xsGetHostData(xsThis);
-	if (worker) {
-		txScreen* screen = worker->screen;
-		txWorker **address = (txWorker**)&screen->firstWorker, *current;
-		while ((current = *address)) {
-			if (current == worker) {
-				*address = worker->nextWorker;
-				break;
-			}
-			address = &current->nextWorker;
-		}	
-		xsForget(worker->slot);
-		if (screen->deleteWorker) 
-			(*screen->deleteWorker)(screen, worker->id);
-		c_free(worker);
-		xsSetHostData(xsThis, NULL);
-	}
-}
-
-

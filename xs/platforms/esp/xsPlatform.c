@@ -195,14 +195,14 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
 #ifdef mxDebug
 
 static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
-
-void fxAbort(txMachine* the)
-{
-	c_exit(0);
-}
 
 static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
@@ -1027,6 +1027,12 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				resultCode = -1;
 #endif
 			}
+			break;
+#else
+		case 2:
+		case 3:
+			modLog("mods disabled");
+			resultCode = -1;
 			break;
 #endif /* MODDEF_XS_MODS */
 

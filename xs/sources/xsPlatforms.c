@@ -456,13 +456,22 @@ void fxQueuePromiseJobs(txMachine* the)
 
 #endif  /* mxUseDefaultQueuePromiseJobs */
 
+#if mxUseDefaultDebug
+
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
+#endif  /* mxUseDefaultDebug */
+
 #ifdef mxDebug
 
 #if mxUseDefaultDebug
 
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
-	c_exit(0);
+	c_exit(status);
 }
 
 void fxConnect(txMachine* the)

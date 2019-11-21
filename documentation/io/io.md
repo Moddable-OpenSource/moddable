@@ -136,7 +136,7 @@ The kind of data accepted by the write operation is determined by the `format` p
 Scripts that perform write operations may call write at any time. The IO instance may not always be able to accept new data, such as when its output buffer is full. If write is called in this situation, an exception is thrown. Such IO instances generally support the `onWritable` callback which indicates when space is available in the output buffer. The following example uses the `onWritable` callback to transmit a continuous stream of asterisk (ASCII 42) characters.
 
 ```js
-let close = new Serial({
+new Serial({
 	baud: 921600,
 	onWritable(count) {
 		while (count--)
@@ -353,6 +353,41 @@ The following example displays the value of an analog input as a floating point 
 ```js
 let analog = new Analog({});
 trace(analog.read() / (1 << analog.resolution, "\n");
+```
+
+### PWM
+The built-in `PWM` IO class provides access to the pulse-width modulation capability of pins.
+
+```js
+import PWM from "builtin/pwm";
+```
+
+#### Constructor Properties
+
+| Property | Description |
+| :---: | :--- |
+|  `pin` | A number from 0 to 16 indicating the GPIO number to operate as a PWM output. This property is required.
+|  `hz` | A number specifying the frequency of the PWM output in Hz. This property is optional.
+
+#### Callbacks
+There are no callbacks supported.
+
+#### Data Format
+The data format is always a number. The `write` call accepts integers between 0 and a maximum value based on the resolution of the PWM output.
+
+#### Use Notes
+PWM instances have a read-only `resolution` property which indicates the number of bits of resolution accepted on writes. PWM outputs on the ESP8266 always use 10-bit values.
+
+The ESP8266 supports only a single PWM output frequency across all PWM output pins. Attempts to construct a PWM with `hz` specified when an existing PWM has already specified a different frequency will fail. A new frequency may be specified if all PWM instances that requested the original frequency have been closed.
+
+When a PWM instance is created, it defaults to a duty cycle of 0% until a `write` is performed.
+
+#### Example
+The following example creates a PWM output on pin 5 with a 10 kHz output frequency and sets it to a 50% duty cycle. The `resolution` property is used to scale the argument to `write`.
+
+```js
+let pwm = new PWM({ pin: 5, hz: 10000 });
+pwm.write(0.5 * ((1 << pwm.resolution) - 1));
 ```
 
 ### I<sup>2</sup>C 

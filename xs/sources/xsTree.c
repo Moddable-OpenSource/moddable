@@ -51,7 +51,7 @@ static void fxArrayNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxArrayBindingNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxAssignNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxBinaryExpressionNodeDistribute(void* it, txNodeCall call, void* param);
-static void fxBindingDeclareDefineNodeDistribute(void* it, txNodeCall call, void* param);
+static void fxBindingNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxBlockNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxBodyNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxCallNewNodeDistribute(void* it, txNodeCall call, void* param);
@@ -86,6 +86,7 @@ static void fxPropertyBindingAtNodeDistribute(void* it, txNodeCall call, void* p
 static void fxQuestionMarkNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxRegexpNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxRestBindingNodeDistribute(void* it, txNodeCall call, void* param);
+static void fxReturnNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxSpreadNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxStatementNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxStatementsNodeDistribute(void* it, txNodeCall call, void* param);
@@ -104,7 +105,7 @@ static void fxNodePrintNode(void* it);
 static void fxNodePrintTree(void* it, void* param);
 
 static void fxAccessNodePrintNode(void* it);
-static void fxBindingDeclareDefineNodePrintNode(void* it);
+static void fxDeclareDefineNodePrintNode(void* it);
 static void fxExportNodePrintNode(void* it);
 static void fxFunctionNodePrintNode(void* it);
 static void fxImportNodePrintNode(void* it);
@@ -148,7 +149,7 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	
 	parser->flags &= ~mxEvalFlag;
 	if (!(parser->flags & mxProgramFlag))
-		parser->flags |= mxStrictFlag;
+		parser->flags |= mxStrictFlag | mxAsyncFlag;
 	fxGetNextCharacter(parser);
 	if (parser->character == '#') {
 		fxGetNextCharacter(parser);
@@ -250,8 +251,6 @@ void fxArrayBindingNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txArrayBindingNode* self = it;
 	fxNodeListDistribute(self->items, call, param);
-	if (self->initializer)
-		(*call)(self->initializer, param);
 }
 
 void fxAssignNodeDistribute(void* it, txNodeCall call, void* param)
@@ -268,11 +267,11 @@ void fxBinaryExpressionNodeDistribute(void* it, txNodeCall call, void* param)
 	(*call)(self->right, param);
 }
 
-void fxBindingDeclareDefineNodeDistribute(void* it, txNodeCall call, void* param)
+void fxBindingNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txBindingNode* self = it;
-	if (self->initializer)
-		(*call)(self->initializer, param);
+	(*call)(self->target, param);
+	(*call)(self->initializer, param);
 }
 
 void fxBlockNodeDistribute(void* it, txNodeCall call, void* param)
@@ -321,6 +320,12 @@ void fxCatchNodeDistribute(void* it, txNodeCall call, void* param)
 	txCatchNode* self = it;
 	(*call)(self->parameter, param);
 	(*call)(self->statement, param);
+}
+
+void fxDefineNodeDistribute(void* it, txNodeCall call, void* param)
+{
+	txDefineNode* self = it;
+	(*call)(self->initializer, param);
 }
 
 void fxDeleteNodeDistribute(void* it, txNodeCall call, void* param)
@@ -446,8 +451,6 @@ void fxObjectBindingNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txObjectBindingNode* self = it;
 	fxNodeListDistribute(self->items, call, param);
-	if (self->initializer)
-		(*call)(self->initializer, param);
 }
 
 void fxParamsNodeDistribute(void* it, txNodeCall call, void* param)
@@ -534,6 +537,13 @@ void fxRestBindingNodeDistribute(void* it, txNodeCall call, void* param)
 {
 	txRestBindingNode* self = it;
 	(*call)(self->binding, param);
+}
+
+void fxReturnNodeDistribute(void* it, txNodeCall call, void* param)
+{
+	txStatementNode* self = it;
+	if (self->expression)
+		(*call)(self->expression, param);
 }
 
 void fxSpreadNodeDistribute(void* it, txNodeCall call, void* param)
@@ -652,7 +662,7 @@ static const txNodeDispatch gxArrayBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxArrayBindingNodeDistribute,
 	fxArrayBindingNodeBind,
 	fxNodeHoist,
-	fxBindingNodeCode,
+	fxArrayBindingNodeCode,
 	fxArrayBindingNodeCodeAssign,
 	fxNodeCodeDelete,
 	fxNodeCodeReference
@@ -694,10 +704,10 @@ static const txNodeDispatch gxBinaryExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeReference
 };
 static const txNodeDispatch gxBindingNodeDispatch ICACHE_FLASH_ATTR = {
-	fxBindingDeclareDefineNodeDistribute,
+	fxBindingNodeDistribute,
 	fxBindingNodeBind,
 	fxNodeHoist,
-	fxNodeCode,
+	fxBindingNodeCode,
 	fxBindingNodeCodeAssign,
 	fxNodeCodeDelete,
 	fxBindingNodeCodeReference
@@ -784,16 +794,16 @@ static const txNodeDispatch gxDebuggerNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeReference
 };
 static const txNodeDispatch gxDeclareNodeDispatch ICACHE_FLASH_ATTR = {
-	fxBindingDeclareDefineNodeDistribute,
+	fxNodeDistribute,
 	fxDeclareNodeBind,
 	fxDeclareNodeHoist,
-	fxBindingNodeCode,
+	fxDeclareNodeCode,
 	fxDeclareNodeCodeAssign,
 	fxNodeCodeDelete,
 	fxDeclareNodeCodeReference
 };
 static const txNodeDispatch gxDefineNodeDispatch ICACHE_FLASH_ATTR = {
-	fxBindingDeclareDefineNodeDistribute,
+	fxDefineNodeDistribute,
 	fxDefineNodeBind,
 	fxDefineNodeHoist,
 	fxDefineNodeCode,
@@ -1012,7 +1022,7 @@ static const txNodeDispatch gxObjectBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxObjectBindingNodeDistribute,
 	fxObjectBindingNodeBind,
 	fxNodeHoist,
-	fxBindingNodeCode,
+	fxObjectBindingNodeCode,
 	fxObjectBindingNodeCodeAssign,
 	fxNodeCodeDelete,
 	fxNodeCodeReference
@@ -1144,7 +1154,7 @@ static const txNodeDispatch gxRestBindingNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeReference
 };
 static const txNodeDispatch gxReturnNodeDispatch ICACHE_FLASH_ATTR = {
-	fxStatementNodeDistribute,
+	fxReturnNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
 	fxReturnNodeCode,
@@ -1517,12 +1527,11 @@ void fxNodePrintTree(void* it, void* param)
 		fxAccessNodePrintNode(it); 
 		break;
 	case XS_TOKEN_ARG: 
-	case XS_TOKEN_BINDING: 
 	case XS_TOKEN_CONST: 
 	case XS_TOKEN_DEFINE: 
 	case XS_TOKEN_LET: 
 	case XS_TOKEN_VAR: 
-		fxBindingDeclareDefineNodePrintNode(it); 
+		fxDeclareDefineNodePrintNode(it); 
 		break;
 	case XS_TOKEN_EXPORT: 
 		fxExportNodePrintNode(it); 
@@ -1569,6 +1578,8 @@ void fxNodePrintTree(void* it, void* param)
 			fprintf(stderr, " arrow");
 		if (node->flags & mxAsyncFlag)
 			fprintf(stderr, " async");
+		if (node->flags & mxAwaitingFlag)
+			fprintf(stderr, " await");
 		if (node->flags & mxBaseFlag)
 			fprintf(stderr, " base");
 		if (node->flags & mxDerivedFlag)
@@ -1611,9 +1622,9 @@ void fxAccessNodePrintNode(void* it)
 	fprintf(stderr, "%s %s", node->description->name, node->symbol->string);
 }
 
-void fxBindingDeclareDefineNodePrintNode(void* it) 
+void fxDeclareDefineNodePrintNode(void* it) 
 {
-	txBindingNode* node = it;
+	txDeclareNode* node = it;
 	fprintf(stderr, "%s %s", node->description->name, node->symbol->string);
 }
 

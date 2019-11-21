@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: August 28, 2019
+Revised: November 11, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -114,6 +114,8 @@ More detailed getting started guides are available for the following devices:
 	export PATH="${MODDABLE}/build/bin/mac/release:$PATH"
 	```
 	
+	> Note: These instructions assume that your shell sources from `~/.profile` when a new terminal is opened. That may not be the case depending on what shell you use and how you have it configured. Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050) which uses `~/.zshrc` instead.
+	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```
@@ -154,11 +156,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 	
 7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
@@ -239,6 +241,12 @@ More detailed getting started guides are available for the following devices:
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
+	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
+	
+	```
+	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
+	```
+	
 12. Verify the setup by building `helloworld` for the `esp32` target:
 
 
@@ -338,11 +346,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 9. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
@@ -366,12 +374,14 @@ More detailed getting started guides are available for the following devices:
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-14. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
+14. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
 
 	```
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
+	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
+
 
 15. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
 
@@ -530,11 +540,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:

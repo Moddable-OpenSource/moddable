@@ -162,7 +162,7 @@ void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 #else
 	c_printf("%s:%d: fatal!\n", thePath, (int)theLine);
 #endif
-	c_exit(0);
+	fxAbort(the, XS_FATAL_CHECK_EXIT);
 }
 
 void fxClearAllBreakpoints(txMachine* the)
@@ -699,7 +699,7 @@ void fxDebugPushTag(txMachine* the)
 	case XS_ABORT_TAG:
 		fxLogout(the);
 		fxGo(the);
-		fxAbort(the);
+		fxAbort(the, XS_DEBUGGER_EXIT);
 		break;
 	case XS_BREAKPOINT_TAG:
 		fxSetBreakpoint(the, the->pathValue, the->lineValue);
@@ -1762,7 +1762,7 @@ void fxListModules(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* realm = fxFindRealm(the);
-	txSlot* module = mxRequiredModules(realm)->value.reference->next;
+	txSlot* module = mxOwnModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
 	while (module) {
 		fxEchoModule(the, module, &aList);

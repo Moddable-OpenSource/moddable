@@ -47,7 +47,7 @@ int main(int argc, const char **argv)
 	return 0;
 }
 
-void fxAbort(xsMachine *the)
+void fxAbort(xsMachine *the, int status)
 {
 	NSApplication* application = [NSApplication sharedApplication];
 	NSPiuAppDelegate *appDelegate = [application delegate];

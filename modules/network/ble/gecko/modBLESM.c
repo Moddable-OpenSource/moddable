@@ -31,10 +31,12 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 	gecko_cmd_sm_delete_bondings();
 }
 
-void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	uint8_t flags = 0;
 	uint8_t io_capabilities;
+	struct gecko_msg_sm_configure_rsp_t *rsp;
+	
  	switch(ioCapability) {
  		case NoInputNoOutput:
  			io_capabilities = sm_io_capability_noinputnooutput;
@@ -56,6 +58,7 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
 	if (mitm)
 		flags |= 0x1;
 		
-	gecko_cmd_sm_configure(flags, io_capabilities);
+	rsp = gecko_cmd_sm_configure(flags, io_capabilities);
+	return rsp->result;
 }
 

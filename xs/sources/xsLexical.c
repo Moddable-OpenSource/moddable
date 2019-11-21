@@ -247,7 +247,7 @@ void fxGetNextKeyword(txParser* parser)
 		aDelta = c_strcmp(gxKeywords[anIndex].text, parser->buffer);
 		if (aDelta == 0) {
 			parser->token2 = gxKeywords[anIndex].token;
-			goto bail;
+			return;
 		}
 	}
 	if ((parser->flags & mxStrictFlag)) {
@@ -257,26 +257,23 @@ void fxGetNextKeyword(txParser* parser)
 			aDelta = c_strcmp(gxStrictKeywords[anIndex].text, parser->buffer);
 			if (aDelta == 0) {
 				parser->token2 = gxStrictKeywords[anIndex].token;
-				goto bail;
+				return;
 			}
 		}
 	}
 	if (c_strcmp("await", parser->buffer) == 0) {
 		if (parser->flags & mxAsyncFlag) {
 			parser->token2 = XS_TOKEN_AWAIT;
-			goto bail;
+			return;
 		}
 	}	
 	if (c_strcmp("yield", parser->buffer) == 0) {
 		if ((parser->flags & mxGeneratorFlag)){
 			parser->token2 = XS_TOKEN_YIELD;
-			goto bail;
+			return;
 		}
 	}	
 	return;
-bail:
-	if (parser->escaped2)
-		fxReportParserError(parser, "escaped keyword");			
 }
 
 txBoolean fxGetNextIdentiferX(txParser* parser, txU4* value)
@@ -424,9 +421,17 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 {
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
-	if (!legacy)
+	if (legacy) {
+		p = fxGetNextDigitsO(parser, p, q);
+		if (parser->character == '_')
+			fxReportParserError(parser, "invalid number");			
+		if (parser->character == 'n')
+			fxReportParserError(parser, "invalid number");			
+	}
+	else {
 		fxGetNextCharacter(parser);
-	p = fxGetNextDigits(parser, fxGetNextDigitsO, p, q, legacy ? 0 : 1);
+		p = fxGetNextDigits(parser, fxGetNextDigitsO, p, q, 1);
+	}
 	c = parser->character;
 	if (p == q) {
 		fxReportParserError(parser, "number overflow");	
@@ -439,13 +444,9 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		if (legacy == 0) {
-			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
-			fxBigIntParseO(&parser->bigint2, q, p - q);
-			parser->token2 = XS_TOKEN_BIGINT;
-		}
-		else
-			fxReportParserError(parser, "invalid number");			
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
+		fxBigIntParseO(&parser->bigint2, q, p - q);
+		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {	
 		txNumber n = 0;

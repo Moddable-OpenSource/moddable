@@ -20,6 +20,7 @@
 		"builtin/socket/tcp": "$(IO)/socket/tcp",
 		"builtin/socket/udp": "$(IO)/socket/udp",
 		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
+		"builtin/pwm": "$(IO)/pwm/pwm",
 
 		"expander": "$(IO)/expander/*",
 
@@ -35,9 +36,17 @@
 		"builtin/socket/tcp",
 		"builtin/socket/udp",
 		"builtin/wakeabledigital",
+		"builtin/pwm",
 
 		"expander",
 
 		"system",
 	],
+	"platforms": {
+		"esp": {
+		},
+		"...": {
+			"error": "Experimental TC53 IO modules unsupported"
+		}
+	}
 }

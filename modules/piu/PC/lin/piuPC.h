@@ -97,6 +97,6 @@ struct PiuViewStruct {
 };
 
 extern xsMachine* ServiceThreadMain(void* context);
-extern void fxAbort(xsMachine *the);
+extern void fxAbort(xsMachine *the, int status);
 extern void PiuConfigPath(char* path);
 extern char gtkApplicationPath[];

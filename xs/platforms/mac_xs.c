@@ -42,6 +42,7 @@
 #include <sys/ioctl.h>
 
 static void fxQueuePromiseJobsCallback(void *info);
+static void fxQueueWorkerJobsCallback(void *info);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
@@ -51,10 +52,34 @@ void fxCreateMachinePlatform(txMachine* the)
 	sourceContext.perform = &fxQueuePromiseJobsCallback;
 	the->promiseSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), the->promiseSource, kCFRunLoopCommonModes);
+	
+	the->workerLoop = CFRunLoopGetCurrent();
+    pthread_mutex_init(&(the->workerMutex), NULL);
+	memset(&sourceContext, 0, sizeof(CFRunLoopSourceContext));
+	sourceContext.info = (void*)the;
+	sourceContext.perform = &fxQueueWorkerJobsCallback;
+	the->workerSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
+	CFRunLoopAddSource(the->workerLoop, the->workerSource, kCFRunLoopCommonModes);
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	if (the->workerSource) {
+		CFRunLoopRemoveSource(the->workerLoop, the->workerSource, kCFRunLoopCommonModes);
+		CFRelease(the->workerSource);
+	}
+	pthread_mutex_lock(&(the->workerMutex));
+	{
+		txWorkerJob* job = the->workerQueue;
+		while (job) {
+			txWorkerJob* next = job->next;
+			c_free(job);
+			job = next;
+		}
+		the->workerQueue = NULL;
+	}
+	pthread_mutex_unlock(&(the->workerMutex));
+	pthread_mutex_destroy(&(the->workerMutex));
 	if (the->promiseSource) {
 		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), the->promiseSource, kCFRunLoopCommonModes);
 		CFRelease(the->promiseSource);
@@ -70,6 +95,38 @@ void fxQueuePromiseJobsCallback(void *info)
 {
 	txMachine* the = info;
 	fxRunPromiseJobs(the);
+}
+
+void fxQueueWorkerJob(void* machine, void* job)
+{
+	txMachine* the = machine;
+	pthread_mutex_lock(&(the->workerMutex));
+	{
+		txWorkerJob** address = &(the->workerQueue);
+		txWorkerJob* former;
+		while ((former = *address))
+			address = &(former->next);
+		*address = job;
+	}
+	pthread_mutex_unlock(&(the->workerMutex));
+    CFRunLoopSourceSignal(the->workerSource);
+    CFRunLoopWakeUp(the->workerLoop);
+}
+
+void fxQueueWorkerJobsCallback(void *info)
+{
+	txMachine* the = info;
+	txWorkerJob* job;
+	pthread_mutex_lock(&(the->workerMutex));
+	job = the->workerQueue;
+	the->workerQueue = NULL;
+	pthread_mutex_unlock(&(the->workerMutex));
+	while (job) {
+		txWorkerJob* next = job->next;
+		(*job->callback)(the, job);
+		c_free(job);
+		job = next;
+	}	
 }
 
 #ifdef mxDebug

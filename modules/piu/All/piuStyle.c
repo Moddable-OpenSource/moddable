@@ -125,10 +125,15 @@ PiuStyle* PiuStyleLinkCompute(xsMachine *the, PiuStyleLink* chain, PiuApplicatio
 void PiuStyleLinkMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuStyleLink self = it;
-	PiuMarkHandle(the, self->next);
-	PiuMarkHandle(the, self->first);
+	PiuStyleLink* link = self->first;
+	while (link) {
+		PiuMarkHandle(the, link);
+		link = (*link)->next;
+	}
 	PiuMarkHandle(the, self->style);
 	PiuMarkHandle(the, self->computedStyle);
+	
+	
 }
 
 PiuStyleLink* PiuStyleLinkMatch(xsMachine *the, PiuStyleLink* list, PiuStyleLink* chain, PiuStyle* style)

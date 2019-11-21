@@ -43,18 +43,14 @@ import GAP from "gap";
 export function typedValueToBuffer(type, value) {
 	let buffer;
 	switch(type) {
-		case "Array":
 		case "Uint8Array":
-			buffer = new Uint8Array(value).buffer;
-			break;
 		case "Int8Array":
-			buffer = new Int8Array(value).buffer;
-			break;
 		case "Int16Array":
-			buffer = new Int16Array(value).buffer;
-			break;
 		case "Uint16Array":
-			buffer = new Uint16Array(value).buffer;
+			buffer = value.buffer;
+			break;
+		case "Array":
+			buffer = new Uint8Array(value).buffer;
 			break;
 		case "String":
 			buffer = ArrayBuffer.fromString(value);

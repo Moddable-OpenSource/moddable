@@ -286,7 +286,11 @@ void PiuScrollerPlaceContentHorizontally(void* it, PiuContent* content)
 	if ((*self)->first == content) {
 		if (!((*self)->flags & piuTracking) || ((*self)->flags & piuLooping))
 			(*self)->delta.x = PiuScrollerConstraintHorizontally(self);
+#ifdef piuPC
+		(*content)->bounds.x -= round((*self)->delta.x);
+#else
 		(*content)->bounds.x -= (*self)->delta.x;
+#endif
 	}
 }
 
@@ -297,7 +301,11 @@ void PiuScrollerPlaceContentVertically(void* it, PiuContent* content)
 	if ((*self)->first == content) {
 		if (!((*self)->flags & piuTracking) || ((*self)->flags & piuLooping))
 			(*self)->delta.y = PiuScrollerConstraintVertically(self);
+#ifdef piuPC
+		(*content)->bounds.y -= round((*self)->delta.y);
+#else
 		(*content)->bounds.y -= (*self)->delta.y;
+#endif
 	}
 }
 

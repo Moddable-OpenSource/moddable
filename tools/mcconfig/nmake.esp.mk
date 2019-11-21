@@ -436,12 +436,12 @@ $(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c

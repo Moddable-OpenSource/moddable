@@ -149,6 +149,7 @@ class ApplicationBehavior extends Behavior {
 	reloadDevices(application, flag) {
 		let devices = this.devices = [];
 		let index = this.deviceIndex;
+
 		this.selectDevice(application, -1);
 		
 		application.purge();
@@ -193,6 +194,8 @@ class ApplicationBehavior extends Behavior {
 		this.selectDevice(application, index);
 	}
 	selectDevice(application, index) {
+		application.distribute("onDeviceUnselected");
+	
 		this.deviceIndex = index;
 		let device = (index < 0) ? noDevice : this.devices[index].export.default;
 		
