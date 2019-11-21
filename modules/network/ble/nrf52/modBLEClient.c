@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -336,14 +336,17 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint8_t iocap = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
-	
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	if (NRF_SUCCESS	!= err)
+		xsUnknownError("invalid security params");
+		
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -1419,6 +1422,11 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 
     switch (p_evt->evt_id) {
     	case PM_EVT_CONN_SEC_FAILED:
+            // Rebond if one party has lost its keys
+            if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING) {
+				ret_code_t err_code;
+                err_code = pm_conn_secure(p_evt->conn_handle, true);
+            }
     		break;
 		case PM_EVT_CONN_SEC_SUCCEEDED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmConnSecSucceededEvent, NULL);

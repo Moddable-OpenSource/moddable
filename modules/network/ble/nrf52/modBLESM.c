@@ -32,7 +32,7 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 	pm_peers_delete();
 }
 
-void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	uint8_t io_caps;
 	ble_gap_sec_params_t sec_param;
@@ -75,5 +75,6 @@ void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mi
     }
 
 	err_code = pm_sec_params_set(&sec_param);
+	return err_code;
 }
 
