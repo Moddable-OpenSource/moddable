@@ -135,8 +135,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #define mxOverflow(_COUNT) \
 	if ((mxStack - _COUNT) < the->stackBottom) { \
 		mxSaveState; \
-		fxReport(the, "stack overflow (%ld)!\n", ((the->stack - _COUNT) - the->stackBottom)); \
-		fxJump(the); \
+		fxAbort(the, XS_STACK_OVERFLOW_EXIT); \
 	} \
 	mxStack -= _COUNT
 #else
