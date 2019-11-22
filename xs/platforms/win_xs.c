@@ -53,6 +53,20 @@ LRESULT CALLBACK fxMessageWindowProc(HWND window, UINT message, WPARAM wParam, L
 		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);
 		(*the->threadCallback)(the->thread);
 	} break;
+	case WM_WORKER: {
+		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);
+		txWorkerJob* job;
+		EnterCriticalSection(&(the->workerMutex));
+		job = the->workerQueue;
+		the->workerQueue = NULL;
+		LeaveCriticalSection(&(the->workerMutex));
+		while (job) {
+			txWorkerJob* next = job->next;
+			(*job->callback)(the, job);
+			c_free(job);
+			job = next;
+		}	
+	} break;
 #ifdef mxDebug
 	case WM_XSBUG: {
 		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);
@@ -83,6 +97,7 @@ void fxCreateMachinePlatform(txMachine* the)
 	RegisterClassEx(&wcex);
 	the->window = CreateWindowEx(0, "fxMessageWindowClass", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
 	SetWindowLongPtr(the->window, 0, (LONG)the);
+	InitializeCriticalSection(&(the->workerMutex));
 #ifdef mxDebug
 	the->connection = INVALID_SOCKET;
 #endif
@@ -90,6 +105,18 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	EnterCriticalSection(&(the->workerMutex));
+	{
+		txWorkerJob* job = the->workerQueue;
+		while (job) {
+			txWorkerJob* next = job->next;
+			c_free(job);
+			job = next;
+		}
+		the->workerQueue = NULL;
+	}
+	LeaveCriticalSection(&(the->workerMutex));
+	DeleteCriticalSection(&(the->workerMutex));
 #ifdef mxDebug
 	the->connection = INVALID_SOCKET;
 #endif
@@ -103,6 +130,21 @@ void fxDeleteMachinePlatform(txMachine* the)
 void fxQueuePromiseJobs(txMachine* the)
 {
 	PostMessage(the->window, WM_PROMISE, 0, 0);
+}
+
+void fxQueueWorkerJob(void* machine, void* job)
+{
+	txMachine* the = machine;
+	EnterCriticalSection(&(the->workerMutex));
+	{
+		txWorkerJob** address = &(the->workerQueue);
+		txWorkerJob* former;
+		while ((former = *address))
+			address = &(former->next);
+		*address = job;
+	}
+	LeaveCriticalSection(&(the->workerMutex));
+	PostMessage(the->window, WM_WORKER, 0, 0);
 }
 
 #ifdef mxDebug

@@ -297,7 +297,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -72
+#define prototypesStackIndex -74
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -1253,6 +1253,12 @@ typedef unsigned char xsAttribute;
 	fxAwaitImport(the, _FLAG), \
 	fxPop())
 
+enum {
+	xsDebuggerExit = 0,
+	xsNotEnoughMemoryExit,
+	xsStackOverflowExit,
+	xsFatalCheckExit,
+};
 
 #ifndef __XSALL__
 

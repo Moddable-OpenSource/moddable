@@ -1081,6 +1081,10 @@ export default class extends Tool {
 			this.dataPath = this.resourcesPath = path + "/Resources";
 			this.createDirectory(this.resourcesPath);
 		}
+		else if (this.platform == "x-win") {
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.createDirectory(this.resourcesPath);
+		}
 		else if (this.platform.startsWith("x-cli-")) {
 		}
 		else {
@@ -1089,7 +1093,7 @@ export default class extends Tool {
 			var source = this.tmpPath + this.slash + "mc.config.js";
 			var target = folder + this.slash + "config.xsb";
 			this.jsFiles.push({ source, target });
-			this.preloads.push("mc/config.xsb");
+			this.preloads.push("mc" + this.slash + "config.xsb");
 			file = new ConfigFile(source, this);
 			file.generate(this);
 			file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);

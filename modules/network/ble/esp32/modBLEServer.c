@@ -241,13 +241,16 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint8_t iocap = xsmcToInteger(xsArg(3));
+	uint16_t err;
 
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	if (ESP_OK != err)
+		xsUnknownError("invalid security params");
 }
 
 void xs_ble_server_passkey_input(xsMachine *the)
@@ -275,7 +278,10 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	uint16_t length = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	
 	xsmcVars(2);
+	xsResult = xsmcNewArray(0);
+
 	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
 		attr = &gatt_db[serviceIndex][0];
 		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
@@ -284,8 +290,6 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 		}
 	}
 	if (!found) return;
-
-	xsResult = xsmcNewArray(0);
 
 	for (uint16_t j = 0; j < attribute_counts[serviceIndex]; ++j) {
 		const char_name_table *char_name;
@@ -627,7 +631,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(read->handle);
 	if (char_name) {
-		xsTrace("reading characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("reading characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -699,7 +703,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 
 #if LOG_GATTS
 	if (char_name) {
-		xsTrace("writing characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("writing characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -798,12 +802,16 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			break;
 		case ESP_GATTS_WRITE_EVT:
 			value = c_malloc(param->write.len);
-			if (NULL == value) {
+			if ((NULL == value) && param->write.len) {
+#if LOG_GATTS
+				LOG_GATTS_MSG("ESP_GATTS_WRITE_EVT failed value malloc");
+#endif
 				if (param->write.need_rsp)
 					esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_ERROR, NULL);
 			}
 			else {
-				c_memmove(value, param->write.value, param->write.len);
+				if (param->write.len)
+					c_memmove(value, param->write.value, param->write.len);
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
 			}
 			break;

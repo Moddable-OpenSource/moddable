@@ -59,12 +59,13 @@ int gxStress = 0;
 static void fxGrowChunks(txMachine* the, txSize theSize); 
 static void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
+static void fxMarkFinalizationGroup(txMachine* the, txSlot* group);
 static void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkReference(txMachine* the, txSlot* theSlot);
 static void fxMarkValue(txMachine* the, txSlot* theSlot);
 static void fxMarkWeakMapTable(txMachine* the, txSlot* table, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkWeakSetTable(txMachine* the, txSlot* table);
-static void fxMarkWeakTables(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
+static void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
 static void fxSweep(txMachine* the);
 static void fxSweepValue(txMachine* the, txSlot* theSlot);
 
@@ -171,17 +172,17 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->keyIndex = 0;
 	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->keyCount * sizeof(txSlot*));
 	if (!the->keyArray)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->nameModulo = theCreation->nameModulo;
 	the->nameTable = (txSlot **)c_malloc_uint32(theCreation->nameModulo * sizeof(txSlot*));
 	if (!the->nameTable)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->symbolModulo = theCreation->symbolModulo;
 	the->symbolTable = (txSlot **)c_malloc_uint32(theCreation->symbolModulo * sizeof(txSlot*));
 	if (!the->symbolTable)
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
@@ -204,17 +205,16 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxProfile
 	fxBeginGC(the);
 #endif
-
 	fxMarkHost(the, theFlag ? fxMarkValue : fxMarkReference);
 
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
-		fxMarkWeakTables(the, fxMarkValue);
+		fxMarkWeakStuff(the, fxMarkValue);
 		fxSweep(the);
 	}
 	else {
 		fxMark(the, fxMarkReference);
-		fxMarkWeakTables(the, fxMarkReference);
+		fxMarkWeakStuff(the, fxMarkReference);
 	#ifdef mxNever
 		startTime(&gxSweepSlotTime);
 	#endif
@@ -381,7 +381,7 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 	aData = fxAllocateChunks(the, theSize);
 	if (!aData) {
 		fxReport(the, "# Chunk allocation: failed for %ld bytes\n", theSize);
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
 	if ((the->firstBlock != C_NULL) && (the->firstBlock->limit == aData)) {
 		the->firstBlock->limit += theSize;
@@ -410,7 +410,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	aHeap = fxAllocateSlots(the, theCount);
 	if (!aHeap) {
 		fxReport(the, "# Slot allocation: failed for %ld bytes\n", theCount * sizeof(txSlot));
-		fxJump(the);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
 
 	if ((aHeap + theCount) == the->firstHeap) {
@@ -484,10 +484,10 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anIndex--;
 	}
 	
-	aSlot = the->stack;
-	while (aSlot < the->stackTop) {
+	aSlot = the->stackTop;
+	while (aSlot > the->stack) {
+        aSlot--;
 		(*theMarker)(the, aSlot);
-		aSlot++;
 	}
 	aSlot = the->cRoot;
 	while (aSlot) {
@@ -497,6 +497,24 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 #ifdef mxNever
 	stopTime(&gxMarkTime);
 #endif
+}
+
+void fxMarkFinalizationGroup(txMachine* the, txSlot* group) 
+{
+	txSlot* slot = group->value.finalizationGroup.callback->next;
+	txSlot* instance;
+	while (slot) {
+		slot = slot->next;
+		instance = slot->value.finalizationCell.target;
+		if (instance && !(instance->flag & XS_MARK_FLAG)) {
+			slot->value.finalizationCell.target = C_NULL;
+			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_CHANGED;
+		}
+		instance = slot->value.finalizationCell.token;
+		if (instance && !(instance->flag & XS_MARK_FLAG))
+			slot->value.finalizationCell.token = C_NULL;
+		slot = slot->next;
+	}
 }
 
 void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMachine*, txSlot*))
@@ -685,6 +703,26 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		theSlot->value.table.address[theSlot->value.table.length] = the->firstWeakSetTable;
 		the->firstWeakSetTable = theSlot;
 		break;
+	case XS_WEAK_REF_KIND:
+		if (theSlot->value.weakRef.target) {
+			theSlot->value.weakRef.link = the->firstWeakRefLink;
+			the->firstWeakRefLink = theSlot;
+		}
+		break;
+	case XS_FINALIZATION_GROUP_KIND:
+		aSlot = theSlot->value.finalizationGroup.callback;
+		aSlot->flag |= XS_MARK_FLAG;
+		fxMarkReference(the, aSlot);
+		aSlot = aSlot->next;
+		while (aSlot) {
+			aSlot->flag |= XS_MARK_FLAG;
+			fxMarkReference(the, aSlot); // holdings
+			aSlot = aSlot->next;
+			aSlot->flag |= XS_MARK_FLAG;
+			// weak target and token
+			aSlot = aSlot->next;
+		}
+		break;
 		
 	case XS_HOST_INSPECTOR_KIND:
 		aSlot = theSlot->value.hostInspector.cache;
@@ -866,6 +904,26 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		theSlot->value.table.address[theSlot->value.table.length] = the->firstWeakSetTable;
 		the->firstWeakSetTable = theSlot;
 		break;
+	case XS_WEAK_REF_KIND:
+		if (theSlot->value.weakRef.target) {
+			theSlot->value.weakRef.link = the->firstWeakRefLink;
+			the->firstWeakRefLink = theSlot;
+		}
+		break;
+	case XS_FINALIZATION_GROUP_KIND:
+		aSlot = theSlot->value.finalizationGroup.callback;
+		aSlot->flag |= XS_MARK_FLAG;
+		fxMarkValue(the, aSlot);
+		aSlot = aSlot->next;
+		while (aSlot) {
+			aSlot->flag |= XS_MARK_FLAG;
+			fxMarkValue(the, aSlot); // holdings
+			aSlot = aSlot->next;
+			aSlot->flag |= XS_MARK_FLAG;
+			// weak target and token
+			aSlot = aSlot->next;
+		}
+		break;
 		
 	case XS_HOST_INSPECTOR_KIND:
 		aSlot = theSlot->value.hostInspector.cache;
@@ -922,21 +980,35 @@ void fxMarkWeakSetTable(txMachine* the, txSlot* table)
 	}
 }
 
-void fxMarkWeakTables(txMachine* the, void (*theMarker)(txMachine*, txSlot*)) 
+void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*)) 
 {
-	txSlot* table;
+	txSlot* slot;
 	txSlot** address;
 	address = &the->firstWeakMapTable;
-	while ((table = *address)) {
-		fxMarkWeakMapTable(the, table, theMarker);
+	while ((slot = *address)) {
+		fxMarkWeakMapTable(the, slot, theMarker);
 		*address = C_NULL;
-		address = &(table->value.table.address[table->value.table.length]);
+		address = &(slot->value.table.address[slot->value.table.length]);
 	}
 	address = &the->firstWeakSetTable;
-	while ((table = *address)) {
-		fxMarkWeakSetTable(the, table);
+	while ((slot = *address)) {
+		fxMarkWeakSetTable(the, slot);
 		*address = C_NULL;
-		address = &(table->value.table.address[table->value.table.length]);
+		address = &(slot->value.table.address[slot->value.table.length]);
+	}
+	address = &the->firstWeakRefLink;
+	while ((slot = *address)) {
+		if (!(slot->value.weakRef.target->flag & XS_MARK_FLAG))
+			slot->value.weakRef.target = C_NULL;
+		*address = C_NULL;
+		address = &(slot->value.weakRef.link);
+	}
+	if (mxFinalizationGroups.kind == XS_REFERENCE_KIND) {
+		slot = mxFinalizationGroups.value.reference->next;
+		while (slot) {
+			fxMarkFinalizationGroup(the, slot->value.closure);
+			slot = slot->next;
+		}
 	}
 }
 

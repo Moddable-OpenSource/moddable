@@ -1101,9 +1101,15 @@ void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 				if (GATT_Server_Event_Data->Event_Data.GATT_Write_Request_Data) {
 					qapi_BLE_GATT_Write_Request_Data_t wrd = *GATT_Server_Event_Data->Event_Data.GATT_Write_Request_Data;
 					uint8_t *value = c_malloc(wrd.AttributeValueLength);
-					c_memmove(value, wrd.AttributeValue, wrd.AttributeValueLength);
-					wrd.AttributeValue = value;
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&wrd, sizeof(wrd), writeRequestEvent, 0);	
+					if ((NULL == value) && wrd.AttributeValueLength) {
+						qapi_BLE_GATT_Error_Response(gBLE->stackID, wrd.TransactionID, wrd.AttributeOffset, QAPI_BLE_ATT_PROTOCOL_ERROR_CODE_REQUEST_NOT_SUPPORTED);
+					}
+					else {
+						if (wrd.AttributeValueLength)
+							c_memmove(value, wrd.AttributeValue, wrd.AttributeValueLength);
+						wrd.AttributeValue = value;
+						modMessagePostToMachine(gBLE->the, (uint8_t*)&wrd, sizeof(wrd), writeRequestEvent, 0);	
+					}
 				}
 				break;
 #if LOG_UNHANDLED_CALLBACK_EVENTS

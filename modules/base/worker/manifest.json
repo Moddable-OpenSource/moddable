@@ -1,14 +1,38 @@
 {
 	"modules": {
-		"*": "$(MODULES)/base/worker/*",
+		"*": "$(MODULES)/base/worker/worker",
 	},
 	"preload": "worker",
 	"platforms": {
 		"esp": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/modWorker",
+			},
 		},
 		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/modWorker",
+			},
 		},
 		"qca4020": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/modWorker",
+			},
+		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker",
+			},
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker",
+			},
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker",
+			},
 		},
 		"...": {
 			"error": "Worker module unsupported"

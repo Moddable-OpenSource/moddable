@@ -70,12 +70,25 @@
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
 
+typedef struct sxWorkerJob txWorkerJob;
+typedef void (*txWorkerCallback)(void* machine, void* job);
+
+struct sxWorkerJob {
+	txWorkerJob* next;
+	txWorkerCallback callback;
+};
+
+extern void fxQueueWorkerJob(void* machine, void* job);
+
 #define mxMachinePlatform \
 	void* host; \
 	GSocket* socket; \
 	GSource* source; \
 	void* waiterCondition; \
 	void* waiterData; \
-	void* waiterLink;
+	void* waiterLink; \
+	GMainContext* workerContext; \
+	GMutex workerMutex; \
+	txWorkerJob* workerQueue;
 
 #endif /* __LINUX_XS__ */

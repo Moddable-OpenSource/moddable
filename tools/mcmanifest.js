@@ -386,15 +386,15 @@ export class MakeFile extends FILE {
 			if (result.colorFile)
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
 			else {
+				var parts = tool.splitPath(target);
 				var source = result.source;
 				var sources = result.sources;
 				var manifest = "";
-				var name = "";
+				var name = " -n " + parts.name.slice(0, -6);
 				if (sources) {
 					for (var path of sources)
 						source += " " + path;
 					manifest = "  $(MANIFEST)";
-					name = " -n " + parts.name.slice(0, -6);
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
@@ -403,18 +403,18 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpColorFiles) {
-			var source = result.source;
 			var target = result.target;
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
 			var clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 
 			this.write("$(RESOURCES_DIR)");
@@ -479,10 +479,9 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpMaskFiles) {
-			var parts;
-			var source = result.source;
 			var target = result.target;
-			parts = tool.splitPath(target);
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var bmpTarget = parts.name + ".bmp";
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
@@ -490,12 +489,11 @@ export class MakeFile extends FILE {
 			this.line("\t$(RLE4ENCODE) ", bmpSource, " -o $(@D)");
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);

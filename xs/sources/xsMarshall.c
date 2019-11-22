@@ -255,7 +255,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		if (alien) {
 			aBuffer.symbolMap = c_calloc(the->keyIndex, sizeof(txID));
 			if (!aBuffer.symbolMap)
-				mxRangeError("marshall: cannot allocate buffer");
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		}
         the->stack->ID = XS_NO_ID;
 		fxMeasureSlot(the, the->stack, &aBuffer, alien);
@@ -263,7 +263,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		mxMarshallAlign(aBuffer.size, aBuffer.symbolSize);
 		aBuffer.base = aBuffer.current = (txByte *)c_malloc(aBuffer.size);
 		if (!aBuffer.base)
-			mxRangeError("marshall: cannot allocate buffer");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		*((txSize*)(aBuffer.current)) = aBuffer.size;
 		aBuffer.current += sizeof(txSize);
 		*((txID*)(aBuffer.current)) = aBuffer.symbolCount;

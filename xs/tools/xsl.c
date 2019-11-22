@@ -241,6 +241,8 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
+
+		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
 		size = c_strlen(base);
 		script = linker->firstScript;
@@ -248,6 +250,22 @@ int main(int argc, char* argv[])
 			fxBaseScript(linker, script, base, size);
 			fxSlashPath(script->path, mxSeparator, url[0]);
 			script = script->nextScript;
+		}
+		preload = linker->firstPreload;
+		while (preload) {
+			fxSlashPath(preload->name, mxSeparator, url[0]);
+			script = linker->firstScript;
+			while (script) {
+				if (!c_strcmp(preload->name, script->path)) {
+					script->preload = preload;
+					break;
+				}
+				script = script->nextScript;
+			}
+			if (!script) {
+				fxReportLinkerError(linker, "'%s': module not found", preload->name);
+			}
+			preload = preload->nextPreload;
 		}
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
@@ -323,56 +341,10 @@ int main(int argc, char* argv[])
 							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
-						{
-							txSlot* property;
-							property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-						}
-						{
-							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-							txSlot* modules = mxRequiredModules(realm)->value.reference;
-							txSlot* module = modules->next;
-							while (module) {
-								mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-								module = module->next;
-							}
-							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-							mxProgram.value.reference = modules; //@@
-							mxPendingJobs = mxUndefined;
-							mxRunningJobs = mxUndefined;
-							mxBreakpoints = mxUndefined;
-							mxHostInspectors = mxUndefined;
-							mxInstanceInspectors = mxUndefined;
-						}
-						{
-							txSlot* target = fxNewInstance(the);
-							script = linker->firstScript;
-							c_memcpy(path, linker->base, linker->baseLength);
-							while (script) {
-								target = target->next = fxNewSlot(the);
-								c_strcpy(path + linker->baseLength, script->path);
-								target->value.symbol = fxNewNameC(the, path);
-								target->kind = XS_SYMBOL_KIND;
-								path[c_strlen(path) - 4] = 0;
-								target->ID = fxNewNameC(the, path + linker->baseLength);
-								script = script->nextScript;
-							}
-							mxPull(mxHosts); //@@
-						}
-						if (linker->stripFlag) {
-							fxFreezeBuiltIns(the);
-							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
-							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
+						while (linker->promiseJobsFlag) {
+							linker->promiseJobsFlag = 0;
+							fxRunPromiseJobs(the);
+							xsCollectGarbage();
 						}
 					}
 					xsCatch {
@@ -382,89 +354,78 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-			
+			xsBeginHost(the);
+			{
+				{
+					txSlot* property;
+					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+				}
+				{
+					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+					txSlot* modules = mxOwnModules(realm)->value.reference;
+					txSlot* module = modules->next;
+					while (module) {
+						mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+						module = module->next;
+					}
+					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+					mxProgram.value.reference = modules; //@@
+				}
+				if (linker->freezeFlag) {
+					txSlot* target = fxNewInstance(the);
+					script = linker->firstScript;
+					c_memcpy(path, linker->base, linker->baseLength);
+					while (script) {
+						target = target->next = fxNewSlot(the);
+						c_strcpy(path + linker->baseLength, script->path);
+						target->value.symbol = fxNewNameC(the, path);
+						target->kind = XS_SYMBOL_KIND;
+						path[c_strlen(path) - 4] = 0;
+						target->ID = fxNewNameC(the, path + linker->baseLength);
+						script = script->nextScript;
+					}
+					mxPull(mxHosts); //@@
+					fxFreezeBuiltIns(the);
+				}
+				if (linker->stripFlag) {
+					mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
+					mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
+				}
+			}
+			xsEndHost(the);
+			mxDuringJobs = mxUndefined;
+			mxFinalizationGroups = mxUndefined;
+			mxPendingJobs = mxUndefined;
+			mxRunningJobs = mxUndefined;
+			mxBreakpoints = mxUndefined;
+			mxHostInspectors = mxUndefined;
+			mxInstanceInspectors = mxUndefined;
+			fxPrepareHome(the);
+		
 			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
 			else
 				fxUnstripCallbacks(linker);
 			
 			linker->bigintSize = 0;
-			count = fxPrepareHeap(the, linker->stripFlag);
-			
-// 			if (optimizing) {
-// 				linker->realm = the;
-// 				fxOptimize(linker);
-// 				linker->realm = NULL;
-// 				xsDeleteMachine(the);
-// 				linker->firstCallback = NULL;
-// 				linker->firstBuilder = NULL;
-// 				linker->lastBuilder = NULL;
-// 				linker->builderCount = 0;
-// 				linker->firstProjection = NULL;
-// 				script = linker->firstScript;
-// 				while (script) {
-// 					script->builders = C_NULL;
-// 					script->callbackNames = C_NULL;
-// 					script->hostsCount = 0;
-// 					script = script->nextScript;
-// 				}
-// 				the = xsCreateMachine(creation, "xsl", linker);
-// 				mxThrowElse(the);
-// 				xsBeginHost(the);
-// 				{
-// 					xsVars(2);
-// 					{
-// 						xsTry {
-// 							preload = linker->firstPreload;
-// 							while (preload) {
-// 								fxSlashPath(preload->name, mxSeparator, url[0]);
-// 								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
-// 								preload = preload->nextPreload;
-// 							}
-// 							{
-// 								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-// 								txSlot* modules = mxRequiredModules(realm)->value.reference;
-// 								txSlot* module = modules->next;
-// 									fprintf(stderr, "%p %p %p\n", realm, modules, module);
-// 								while (module) {
-// 								fprintf(stderr, "%p\n", module);
-// 									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-// 									module = modules->next;
-// 								}
-// 								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-// 								mxProgram.value.reference = modules; //@@
-// 								mxPendingJobs = mxUndefined;
-// 								mxRunningJobs = mxUndefined;
-// 								mxBreakpoints = mxUndefined;
-// 								mxHostInspectors = mxUndefined;
-// 								mxInstanceInspectors = mxUndefined;
-// 							}
-// 							if (linker->stripping)
-// 								fxFreezeBuiltIns(the);
-// 							xsCollectGarbage();
-// 						}
-// 						xsCatch {
-// 							xsStringValue message = xsToString(xsException);
-// 							fxReportLinkerError(linker, "%s", message);
-// 						}
-// 					}
-// 				}
-// 				xsEndHost(the);
-// 				if (stripping)
-// 					fxStripCallbacks(linker, the);
-// 				else
-// 					fxUnstripCallbacks(linker);
-// 				strip = linker->firstStrip;
-// 				while (strip) {
-// 					fxStripName(linker, strip->name);
-// 					strip = strip->nextStrip;
-// 				}
-// 				linker->bigintSize = 0;
-// 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
-// 			}
-
-// 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
-	
+			linker->slotSize = 0;
+			count = fxPrepareHeap(the);
+			if (linker->freezeFlag) {
+				txInteger count = fxCheckAliases(the);
+				if (count)
+					fxReportLinkerError(linker, "%d error(s)", count);
+			}
 			c_strcpy(path, output);
 			c_strcat(path, name);
 			c_strcat(path, ".xs.h");
@@ -527,6 +488,12 @@ int main(int argc, char* argv[])
 				linker->bigintData = fxNewLinkerChunk(linker, linker->bigintSize * sizeof(txU4));
 				linker->bigintSize = 0;
 			}
+			if (linker->slotSize) {
+				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
+				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount];\n");
+				linker->slotData = fxNewLinkerChunk(linker, linker->slotSize * sizeof(txSlot*));
+				linker->slotSize = 0;
+			}
 			fprintf(file, "#define mxHeapCount %d\n", (int)count);
 			fprintf(file, "static const txSlot gxHeap[mxHeapCount];\n");
 			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
@@ -543,7 +510,8 @@ int main(int argc, char* argv[])
 			while (script) {
 				if (script->hostsBuffer)
 					fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
-				fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
+				if (script->preload == C_NULL)
+					fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
 				script = script->nextScript;
 			}
 			fprintf(file, "#define mxScriptsCount %d\n", linker->scriptCount);
@@ -589,6 +557,11 @@ int main(int argc, char* argv[])
 					count++;
 				}
 				fprintf(file, "\n};\n\n");
+			}
+			if (linker->slotSize) {
+				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR = {\n");
+				fxPrintTable(the, file, linker->slotSize, linker->slotData);
+				fprintf(file, "};\n\n");
 			}
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 // 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
@@ -817,6 +790,8 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
 	mxPush(mxErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxEvalErrorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxFinalizationGroupCleanupIteratorPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxFinalizationGroupPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxFunctionPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxGeneratorPrototype); fxFreezeBuiltIn(the);
@@ -849,6 +824,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxTypeErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxURIErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxWeakMapPrototype); fxFreezeBuiltIn(the);
+	mxPush(mxWeakRefPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxWeakSetPrototype); fxFreezeBuiltIn(the);
 	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
@@ -904,7 +880,24 @@ txScript* fxLoadScript(txMachine* the, txString path)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-	return C_NULL;
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
 }
 
 /* DEBUG */
@@ -922,12 +915,18 @@ void fxDeleteMachinePlatform(txMachine* the)
 {
 }
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxQueuePromiseJobs(txMachine* the)
 {
-	c_exit(0);
+	txLinker* linker = (txLinker*)(the->context);
+	linker->promiseJobsFlag = 1;
 }
+
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {

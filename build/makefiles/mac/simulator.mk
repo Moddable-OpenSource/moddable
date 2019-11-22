@@ -46,7 +46,7 @@ SCREENS = $(wildcard $(SIMULATOR)/screens/*)
 MACOS_ARCH ?=
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
-C_OPTIONS = $(MACOS_ARCH) $(MACOS_VERSION_MIN) -fasm-blocks -fno-common -fvisibility=hidden
+C_OPTIONS = $(MACOS_ARCH) $(MACOS_VERSION_MIN) -fasm-blocks -fno-common -fvisibility=hidden -DmxMacOSX=1
 C_OPTIONS += -I$(COMMODETTO) -I$(SIMULATOR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)

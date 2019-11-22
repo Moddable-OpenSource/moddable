@@ -163,7 +163,7 @@ typedef struct {
 typedef struct {
 	mxNodePart;
 	txNodeList* items;
-	txNode* initializer;
+	txInteger count;
 } txArrayBindingNode;
 
 typedef struct {
@@ -185,8 +185,8 @@ typedef struct {
 
 typedef struct {
 	mxNodePart;
-	mxAccessNodePart;
-	mxDeclareNodePart;
+	txNode* target;
+	txNode* initializer;
 } txBindingNode;
 
 typedef struct {
@@ -382,7 +382,6 @@ typedef struct {
 typedef struct {
 	mxNodePart;
 	txNodeList* items;
-	txNode* initializer;
 } txObjectBindingNode;
 
 typedef struct {
@@ -1051,6 +1050,7 @@ extern void fxAccessNodeCodeReference(void* it, void* param);
 extern void fxAndExpressionNodeCode(void* it, void* param); 
 extern void fxArgumentsNodeCode(void* it, void* param);
 extern void fxArrayNodeCode(void* it, void* param); 
+extern void fxArrayBindingNodeCode(void* it, void* param); 
 extern void fxArrayBindingNodeCodeAssign(void* it, void* param); 
 extern void fxAssignNodeCode(void* it, void* param); 
 extern void fxAwaitNodeCode(void* it, void* param); 
@@ -1067,6 +1067,7 @@ extern void fxCatchNodeCode(void* it, void* param);
 extern void fxClassNodeCode(void* it, void* param) ;
 extern void fxCompoundExpressionNodeCode(void* it, void* param); 
 extern void fxDebuggerNodeCode(void* it, void* param);
+extern void fxDeclareNodeCode(void* it, void* param);
 extern void fxDeclareNodeCodeAssign(void* it, void* param);
 extern void fxDeclareNodeCodeReference(void* it, void* param);
 extern void fxDefineNodeCode(void* it, void* param);
@@ -1100,6 +1101,7 @@ extern void fxModuleNodeCode(void* it, void* param);
 extern void fxNewNodeCode(void* it, void* param); 
 extern void fxNumberNodeCode(void* it, void* param); 
 extern void fxObjectNodeCode(void* it, void* param); 
+extern void fxObjectBindingNodeCode(void* it, void* param); 
 extern void fxObjectBindingNodeCodeAssign(void* it, void* param); 
 extern void fxOrExpressionNodeCode(void* it, void* param); 
 extern void fxParamsBindingNodeCode(void* it, void* param); 

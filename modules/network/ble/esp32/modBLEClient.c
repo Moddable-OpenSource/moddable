@@ -245,12 +245,15 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	if (ESP_OK != err)
+		xsUnknownError("invalid security params");
 
 	if (mitm)
 		esp_ble_gap_config_local_privacy(true);	// generate random address

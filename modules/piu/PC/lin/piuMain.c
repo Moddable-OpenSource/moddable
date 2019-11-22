@@ -148,7 +148,7 @@ int main(int argc, char** argv)
   	return g_application_run(G_APPLICATION(gtkApplication), argc, argv);
 }
 
-void fxAbort(xsMachine *the)
+void fxAbort(xsMachine *the, int status)
 {
 	//@@
 }

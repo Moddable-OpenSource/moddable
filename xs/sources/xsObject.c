@@ -326,7 +326,7 @@ void fx_Object_prototype_toString(txMachine* the)
 		break;
 	case XS_SYMBOL_KIND:
 		instance = mxSymbolPrototype.value.reference;
-		tag = "Symbol";
+		tag = "Object";
 		break;
 	case XS_BIGINT_KIND:
 	case XS_BIGINT_X_KIND:

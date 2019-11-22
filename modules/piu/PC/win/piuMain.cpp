@@ -138,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return 0;
 }
 
-void fxAbort(xsMachine *the)
+void fxAbort(xsMachine *the, int status)
 {
 	PostQuitMessage(0);
 }

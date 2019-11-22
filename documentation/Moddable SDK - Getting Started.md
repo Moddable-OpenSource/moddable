@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: August 28, 2019
+Revised: November 11, 2019
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -156,11 +156,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 	
 7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
@@ -241,6 +241,12 @@ More detailed getting started guides are available for the following devices:
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
+	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
+	
+	```
+	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
+	```
+	
 12. Verify the setup by building `helloworld` for the `esp32` target:
 
 
@@ -340,11 +346,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 9. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
@@ -534,11 +540,11 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
-	We need the v3.0rc1 version:
+	We need version 3.2:
 
 	```
 	cd ESP8266_RTOS_SDK
-	git checkout v3.0-rc1
+	git checkout release/v3.2
 	```
 
 6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:

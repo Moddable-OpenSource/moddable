@@ -85,4 +85,4 @@ let TestApplication = Application.template($ => ({
 	]
 }));
 
-export default new TestApplication(null, { displayListLength:8192 });
+export default new TestApplication(null, { displayListLength:4608 });
