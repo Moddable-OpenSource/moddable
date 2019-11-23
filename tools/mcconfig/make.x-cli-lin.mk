@@ -109,9 +109,9 @@ C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
 C_FLAGS = -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
 ifeq ($(DEBUG),)
-	C_FLAGS += -D_RELEASE=1 -O3
+	XS_C_FLAGS += -D_RELEASE=1 -O3
 else
-	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	XS_C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
