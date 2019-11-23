@@ -18,6 +18,7 @@
 #
 
 PKGCONFIG = $(shell which pkg-config)
+GLIB_COMPILE_RESOURCES = $(shell $(PKGCONFIG) --variable=glib_compile_resources gio-2.0)
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/lin/debug/lib
@@ -107,13 +108,14 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
-C_FLAGS = -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
+XS_C_FLAGS = -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
 ifeq ($(DEBUG),)
 	XS_C_FLAGS += -D_RELEASE=1 -O3
 else
 	XS_C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
+C_FLAGS = $(XS_C_FLAGS)
 
 LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
 
@@ -158,13 +160,13 @@ $(TMP_DIR)/mc.xs.c $(TMP_DIR)/mc.xs.h: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
+$(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c
 	@echo "# cc" $(<F)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(XS_C_FLAGS) $< -o $@
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
