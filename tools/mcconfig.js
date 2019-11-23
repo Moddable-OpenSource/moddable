@@ -1085,8 +1085,6 @@ export default class extends Tool {
 			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
 			this.createDirectory(this.resourcesPath);
 		}
-		else if (this.platform.startsWith("x-cli-")) {
-		}
 		else {
 			var folder = "mc", file;
 			this.createDirectory(this.modulesPath + this.slash + folder);
