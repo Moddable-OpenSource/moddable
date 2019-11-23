@@ -44,7 +44,7 @@ int main(int argc, char* argv[])  // here
 				}
 
 				printf("lin_xs_cli: loading top-level main.js\n");
-				xsVar(1) = xsCall1(xsGlobal, xsID_require, xsString("main"));
+				xsVar(1) = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 				printf(" lin_xs_cli: loaded\n");
 
 				printf("lin_xs_cli: invoking main(argv)\n");
