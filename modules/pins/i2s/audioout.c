@@ -55,7 +55,17 @@
 		#define MODDEF_AUDIOOUT_I2S_DAC (0)
 	#endif
 	#if MODDEF_AUDIOOUT_I2S_DAC && (16 != MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE)
-			#error must be 16 bit samples
+		#error must be 16 bit samples
+	#endif
+	#if MODDEF_AUDIOOUT_I2S_DAC
+		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
+			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
+		#endif
+	#endif
+	#if MODDEF_AUDIOOUT_I2S_DAC
+		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
+			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
+		#endif
 	#endif
 #endif
 
@@ -99,7 +109,7 @@
 		kStatePlaying = 1
 	};
 #elif ESP32
-	#include "xsesp.h"
+	#include "xsHost.h"
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 	#include "freertos/semphr.h"
@@ -111,7 +121,7 @@
 		kStateTerminated = 2
 	};
 #elif defined(__ets__)
-	#include "xsesp.h"
+	#include "xsHost.h"
 	#include "tinyi2s.h"
 #endif
 
@@ -412,7 +422,7 @@ void xs_audioout(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 2048, out, 10, &out->task);
+	xTaskCreate(audioOutLoop, "audioOut", 2048 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
 	if (!out->buffer32)
@@ -636,12 +646,6 @@ void xs_audioout_enqueue(xsMachine *the)
 				}
 
 #if defined(__APPLE__)
-				invokeCallbacks(NULL, out);
-#elif ESP || defined(__ets__) || defined(_WIN32)
-				deliverCallbacks(the, out, NULL, 0);
-#endif
-
-#if defined(__APPLE__)
 				pthread_mutex_unlock(&out->mutex);
 #elif defined(_WIN32)
 				LeaveCriticalSection(&out->cs);
@@ -649,6 +653,12 @@ void xs_audioout_enqueue(xsMachine *the)
 				xSemaphoreGive(out->mutex);
 #elif defined(__ets__)
 				modCriticalSectionEnd();
+#endif
+
+#if defined(__APPLE__)
+				invokeCallbacks(NULL, out);
+#elif ESP || defined(__ets__) || defined(_WIN32)
+				deliverCallbacks(the, out, NULL, 0);
 #endif
 		} break;
 
@@ -1017,7 +1027,7 @@ DWORD WINAPI directSoundProc(LPVOID lpParameter)
 void audioOutLoop(void *pvParameter)
 {
 	modAudioOut out = pvParameter;
-	uint8_t installed = false;
+	uint8_t installed = false, stopped = true;
 
 #if !MODDEF_AUDIOOUT_I2S_DAC
 	i2s_config_t i2s_config = {
@@ -1057,16 +1067,26 @@ void audioOutLoop(void *pvParameter)
 #endif
 
 	while (kStateTerminated != out->state) {
+		size_t bytes_written;
+
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
 
-			if (installed) {
+			if (!stopped) {
 #if MODDEF_AUDIOOUT_I2S_DAC
 				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+#else
+				i2s_stop(MODDEF_AUDIOOUT_I2S_NUM);
 #endif
-				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
-				installed = false;
+				stopped = true;
 			}
+//			if (installed) {
+//#if MODDEF_AUDIOOUT_I2S_DAC
+//				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+//#endif
+//				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+//				installed = false;
+//			}
 
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 			if (kStateTerminated == newState)
@@ -1082,9 +1102,18 @@ void audioOutLoop(void *pvParameter)
 #if !MODDEF_AUDIOOUT_I2S_DAC
 			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
 #else
-			i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
 #endif
 			installed = true;
+			stopped = false;
+		}
+		else if (stopped) {
+			stopped = false;
+#if !MODDEF_AUDIOOUT_I2S_DAC
+			i2s_start(MODDEF_AUDIOOUT_I2S_NUM);
+#else
+			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
+#endif
 		}
 
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
@@ -1100,9 +1129,9 @@ void audioOutLoop(void *pvParameter)
 		while (i--)
 			*dst++ = *src++ ^ 0x8000;
 
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
@@ -1112,7 +1141,7 @@ void audioOutLoop(void *pvParameter)
 		while (i--)
 			*dst++ = *src++ << 16;
 
-		i2s_write_bytes(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif

@@ -51,6 +51,15 @@ class MDNS extends Socket {
 			Timer.set(() => this.probe(), 0);
 		}
 	}
+	close() {
+		while (this.services.length)
+			this.remove(this.services[0]);
+
+		while (this.monitors.length)
+			this.remove(this.monitors[0].service.substring(0, this.monitors[0].service.length - 6));
+
+		super.close();
+	}
 	add(service) {
 		if (!this.hostName)
 			throw new Error("no hostName");
@@ -58,6 +67,8 @@ class MDNS extends Socket {
 		if (this.probing)
 			throw new Error("not ready");
 
+		if (!service.txt)
+			service.txt = {};
 		this.services.push(service);
 
 		this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x1F | 0x8000, service, true));		// remove before adding to clear stale state in clients
@@ -70,32 +81,43 @@ class MDNS extends Socket {
 			}
 			else
 				Timer.schedule(timer, timer.interval, timer.interval);
-		}, 500).interval = 500;
+		}, 500);
+		service.timer.interval = 500;
 	}
 	update(service) {
 		const index = this.services.indexOf(service);
 		if (index < 0) throw new Error("service not found");
 
-		if (!service.update) {
-			Timer.repeat(id => {
+		if (!service.updater) {
+			service.updater = Timer.set(updater => {
 				this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x04 | 0x8000, service));
-				service.update--;
-				if (0 == service.update) {
-					Timer.clear(id)
+				updater.interval += 250;
+				if (updater.interval >= 1500) {
+					Timer.clear(updater);
+					delete service.updater;
 					delete service.update;
 				}
-			}, 250, 0);
+				else
+					Timer.schedule(updater, updater.interval, 250);
+			}, 0, 250);
 		}
-		service.update = 3;
-
+		else
+			Timer.schedule(service.updater, 0, 250);
+		service.updater.interval = 0;
 	}
-	remove(service) {
+	remove(service, callback) {
 		if ("string" === typeof service) {
 			service += ".local";
 			service = this.monitors.findIndex(item => item.service === service);
 			if (service >= 0) {
-				Timer.clear(this.monitors[service].timer);
-				this.monitors.splice(service, 1);
+				callback = this.monitors[service].callbacks.findIndex(item => item === callback);
+				if (callback < 0) throw new Error("callback not found");
+				this.monitors[service].callbacks.splice(callback, 1);
+				if (0 === this.monitors[service].callbacks.length) {
+					this.monitors[service].close = true;
+					Timer.clear(this.monitors[service].timer);
+					this.monitors.splice(service, 1);
+				}
 			}
 		}
 		else {
@@ -113,16 +135,28 @@ class MDNS extends Socket {
 	}
 	monitor(service, callback) {
 		service += ".local";
-		if (this.monitors.find(item => item === service))
-			throw new Error("redundant");
+		let monitor = this.monitors.find(item => item.service === service);
+		if (monitor) {
+			if (monitor.callbacks.find(item => item === callback))
+				throw new Error("redundant");
+			monitor.callbacks.push(callback);
+			if (!monitor.length)
+				return;
 
-		let results = [];
-		results.service = service;
-		results.state = 0;
-		results.callback = callback;
-		results.mdns = this;
-		results.timer = Timer.set(this.monitorTask.bind(results), 1);
-		this.monitors.push(results);
+			Timer.set(() => {
+				for (let i = 0; i < monitor.length; i++)
+					callback.call(this, monitor.service.slice(0, -6), monitor[i]);
+			}, 0);
+		}
+		else {
+			monitor = [];
+			monitor.service = service;
+			monitor.state = 0;
+			monitor.callbacks = [callback];
+			monitor.mdns = this;
+			monitor.timer = Timer.set(this.monitorTask.bind(monitor), 1);
+			this.monitors.push(monitor);
+		}
 	}
 	monitorTask() {
 		let mdns = this.mdns;
@@ -151,8 +185,8 @@ class MDNS extends Socket {
 	}
 	scanPacket(packet, address) {
 		const answers = packet.answers;
-		let changed;
-		for (let i = 0, length = answers + packet.additionals; i < length; i++) {
+		let changed, i, j, length;
+		for (i = 0, length = answers + packet.additionals; i < length; i++) {
 			const record = (i < answers) ? packet.answer(i) : packet.additional(i - answers);
 			let name = record.qname, service;
 			let monitor, instance;
@@ -169,8 +203,8 @@ class MDNS extends Socket {
 					name = name.join(".");
 					this.monitors.forEach(monitor => {
 						monitor.forEach(instance => {
-						if (instance.target === name)
-							instance.address = record.rdata;
+							if (instance.target === name)
+								instance.address = record.rdata;
 						});
 					});
 					break;
@@ -199,28 +233,60 @@ class MDNS extends Socket {
 						monitor.push(instance);
 					}
 					if (DNS.RR.TXT === record.qtype) {
-						instance.txt = record.rdata ? record.rdata : [];
-						instance.ttl = record.ttl;
+						const txt = record.rdata ? record.rdata : [];
+						if (!instance.txt || (instance.txt.length !== txt.length)) {
+							instance.txt = txt;
+							instance.changed = changed = true;
+						}
+						else {
+							for (j = 0; j < txt.length; ++j) {
+								if (txt[j] === instance.txt[j])
+									continue;
+								instance.txt = txt;
+								instance.changed = changed = true;
+								break;
+							}
+						}
 					}
 					else {
-						instance.port = record.rdata.port;
-						instance.target = record.rdata.target.join(".");
-						instance.ttl = record.ttl;
+						const target = record.rdata.target.join(".");
+						if ((instance.port !== record.rdata.port) || (instance.target !== target)) {
+							instance.port = record.rdata.port;
+							instance.target = target;
+							instance.changed = changed = true;
+						}
 					}
-					instance.changed = changed = true;
+					instance.ttl = record.ttl;
 					break;
 			}
 		}
 		if (!changed)
 			return;
 
-		this.monitors.forEach(monitor => {
-			monitor.forEach(instance => {
+		//@@ could fire a callback to do this scan... might be better
+		const monitors = Array.from(this.monitors);
+		for (i = 0; i < monitors.length; i++) {
+			const monitor = monitors[i];
+			for (j = 0; (j < monitor.length) && !monitor.closed; j++) {
+				const instance = monitor[j];
 				if (!instance.changed)
-					return;
+					continue;
 				delete instance.changed;
-				if (instance.name && instance.txt && instance.target && instance.address)
-					monitor.callback.call(this, monitor.service.slice(0, -6), instance);
+				if (instance.name && instance.txt && instance.target && instance.address) {
+					const callbacks = Array.from(monitor.callbacks);
+					for (let k = 0; k < callbacks.length; k++) {
+						const callback = callbacks[k];
+
+						if (monitor.callbacks.indexOf(callback) < 0)		// expensive check to see if callback was closed
+							continue;
+
+						try {
+							callback.call(this, monitor.service.slice(0, -6), instance);
+						}
+						catch {
+						}
+					}
+				}
 				else {
 					let query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
@@ -231,8 +297,8 @@ class MDNS extends Socket {
 
 					this.write(MDNS.IP, MDNS.PORT, query.build());
 				}
-			});
-		});
+			}
+		}
 	}
 
 	callback(message, value, address, port) {
@@ -437,10 +503,10 @@ class MDNS extends Socket {
 		this.probing = 1;
 		this.probeAttempt = 1;
 		trace(`probe for ${this.hostName}\n`);
-		this.client(1, "");
+		this.client(MDNS.hostName, "");
 		Timer.repeat(id => {
 			if (this.probing < 0) {
-				 let hostName = this.client(2, this.hostName);
+				 let hostName = this.client(MDNS.retry, this.hostName);
 				 if (hostName) {
 					 if ("string" == typeof hostName) {
 						 this.hostName = hostName;
@@ -451,7 +517,7 @@ class MDNS extends Socket {
 //						delete this.probing;
 						delete this.probeAttempt;
 						delete this.hostName;	// no hostName claimed, no longer probing
-						this.client(-1);
+						this.client(MDNS.error);
 						return;
 					 }
 				 }
@@ -475,7 +541,7 @@ class MDNS extends Socket {
 				delete this.probing;
 				delete this.probeAttempt;
 
-				this.client(1, this.hostName);
+				this.client(MDNS.hostName, this.hostName);
 
 				return;
 			}
@@ -493,6 +559,10 @@ MDNS.IP = "224.0.0.251";
 MDNS.PORT = 5353;
 MDNS.FLUSH = 0x8000;
 MDNS.UNICAST = 0x8000;
+
+MDNS.hostName = 1;
+MDNS.retry = 2;
+MDNS.error = -1;
 
 Object.freeze(MDNS.prototype);
 

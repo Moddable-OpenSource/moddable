@@ -19,12 +19,7 @@
  */
 
 #include "xsmc.h"
-#if gecko
-	#include "xsPlatform.h"
-	#include "xsgecko.h"
-#else
-	#include "xsesp.h"
-#endif
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modGPIO.h"

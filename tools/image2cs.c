@@ -134,7 +134,7 @@ void Tool_readGIF(xsMachine* the)
 	uint16_t* screen;
 	uint16_t* colorTable;
 	
-	xsVars(1);
+	xsVars(2);
 	bufferSize = xsToInteger(xsGet(xsArg(0), xsID_byteLength));
 	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
 		bytesInitial = xsToArrayBuffer(xsArg(0));
@@ -230,8 +230,14 @@ void Tool_readGIF(xsMachine* the)
 			bytesLimit = bytesInitial + bufferSize;
 			bytes = bytesInitial + bufferOffset;
 		
-            screen = xsToArrayBuffer(xsVar(0));
-			c_memset(screen, 0xFF, (globalWidth * globalHeight * 2));
+			screen = xsToArrayBuffer(xsVar(0));
+			if (xsTest(xsVar(1))) {
+				uint16_t* former = xsToArrayBuffer(xsVar(1));
+				c_memcpy(screen, former, (globalWidth * globalHeight * 2));
+			}
+			else
+				c_memset(screen, 0xFF, (globalWidth * globalHeight * 2));
+			xsVar(1) = xsVar(0);
 		
 			x = BYTE;
 			x += BYTE << 8;

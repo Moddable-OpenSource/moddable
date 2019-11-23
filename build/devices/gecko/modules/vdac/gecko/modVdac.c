@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "mc.defines.h"
 #include "em_vdac.h"
 #include "em_cmu.h"

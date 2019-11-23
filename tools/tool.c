@@ -54,49 +54,58 @@ void fxAbort(xsMachine* the)
 	exit(1);
 }
 
+extern int mainXSA(int argc, char* argv[]) ;
+extern int mainXSC(int argc, char* argv[]) ;
+
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-
-	xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);
-	
-	xsBeginHost(machine);
-	{
-		xsVars(2);
+	if (!strcmp(argv[1], "xsa")) {
+		error = mainXSA(argc - 1, &argv[1]);
+	}
+	else if (!strcmp(argv[1], "xsc")) {
+		error = mainXSC(argc - 1, &argv[1]);
+	}
+	else {
+		xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);
+		xsBeginHost(machine);
 		{
-			xsTry {
-				if (argc > 1) {
-					int argi;
-					xsVar(0) = xsNewArray(0);
-					for (argi = 1; argi < argc; argi++) {
-						xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
+			xsVars(2);
+			{
+				xsTry {
+					if (argc > 1) {
+						int argi;
+						xsVar(0) = xsNewArray(0);
+						for (argi = 1; argi < argc; argi++) {
+							xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
+						}
+						xsVar(1) = xsAwaitImport(argv[1], XS_IMPORT_DEFAULT);
+						fxPush(xsVar(0));
+						fxPushCount(the, 1);
+						fxPush(xsVar(1));
+						fxNew(the);
+						xsResult = fxPop();
+						xsCall0(xsResult, xsID_run);
 					}
-					xsVar(1) = xsCall1(xsGlobal, xsID_require, xsString(argv[1]));
-					fxPush(xsVar(0));
-					fxPushCount(the, 1);
-					fxPush(xsVar(1));
-					fxNew(the);
-					xsResult = fxPop();
-					xsCall0(xsResult, xsID_run);
+				}
+				xsCatch {
+					xsStringValue message = xsToString(xsException);
+					fprintf(stderr, "### %s\n", message);
+					error = 1;
 				}
 			}
-			xsCatch {
-				xsStringValue message = xsToString(xsException);
-				fprintf(stderr, "### %s\n", message);
-				error = 1;
-			}
 		}
-	}
-	xsEndHost(the);
-	xsDeleteMachine(machine);
-	if (!error && then) {
-	#if mxWindows
-		error =_spawnvp(_P_WAIT, then[0], then);
-		if (error < 0)
-			fprintf(stderr, "### Cannot execute %s!\n", then[0]);
-	#else
-		execvp(then[0], then);
-	#endif
+		xsEndHost(the);
+		xsDeleteMachine(machine);
+		if (!error && then) {
+		#if mxWindows
+			error =_spawnvp(_P_WAIT, then[0], then);
+			if (error < 0)
+				fprintf(stderr, "### Cannot execute %s!\n", then[0]);
+		#else
+			execvp(then[0], then);
+		#endif
+		}
 	}
 	return error;
 }
@@ -306,6 +315,8 @@ void Tool_prototype_get_currentPlatform(xsMachine* the)
 {
 	#if mxWindows
 		xsResult = xsString("win");
+	#elif mxWasm
+		xsResult = xsString("wasm");
 	#elif mxMacOSX
 		xsResult = xsString("mac");
 	#elif mxLinux
@@ -460,10 +471,14 @@ void Tool_prototype_enumerateDirectory(xsMachine* the)
 		closedir(dir);
 	}
 #endif
+    xsCall0(xsResult, xsID_sort);
 }
 
 void Tool_prototype_execute(xsMachine* the)
 {
+#if mxWasm
+	xsElseThrow(NULL);
+#else
 	FILE* pipe;
 	char buffer[PATH_MAX];
 	xsStringValue command = xsToString(xsArg(0));
@@ -489,6 +504,7 @@ void Tool_prototype_execute(xsMachine* the)
 		pclose(pipe);
 #endif
 	}
+#endif
 }
 
 void Tool_prototype_getenv(xsMachine* the)

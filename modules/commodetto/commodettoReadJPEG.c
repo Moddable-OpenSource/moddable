@@ -40,12 +40,7 @@
 
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-
-#ifdef __ets__
-	#include "xsesp.h"
-#else
-	#define modLog(msg)
-#endif
+#include "xsHost.h"
 
 #include "commodettoPocoBlit.h"
 

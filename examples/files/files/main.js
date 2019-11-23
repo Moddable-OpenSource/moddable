@@ -12,11 +12,11 @@
  *
  */
 
-import {File, Iterator} from "file";
+import {File, Iterator, System} from "file";
+import config from "mc/config";
 
-//const root = "/Users/hoddie/";
-//const root = "c:\\Users\\brianfriedkin\\";
-const root = "/";
+const root = config.file.root;
+
 let file;
 
 // writing/reading strings
@@ -70,6 +70,11 @@ while (item = iterator.next()) {
 		trace(`${item.name.padEnd(32)} file          ${item.length} bytes\n`);
 }
 trace("\n");
+
+if ("/spiffs/" == root) {
+	let info = System.info();
+	trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
+}
 
 File.delete(root + "test.txt");
 File.delete(root + "preferences.json");

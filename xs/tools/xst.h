@@ -78,6 +78,7 @@
 	#include <arpa/inet.h>
 	#include <netdb.h>
 	#include <pthread.h>
+	#include <signal.h>
 	#include <unistd.h>
 	typedef int txSocket;
 	#define mxNoSocket -1

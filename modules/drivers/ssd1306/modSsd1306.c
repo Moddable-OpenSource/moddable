@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.defines.h"
 
 #if MODDEF_SSD1306_SPI
@@ -434,6 +434,7 @@ void ssd1306Send(PocoPixel *pixels, int byteLength, void *refcon)
 	modSPIFlush();
 #endif
 
+	if (byteLength < 0) byteLength = -byteLength;
 	lines = (uint8_t)(byteLength / ssd->width);
 	pixel = ssd->pixel;
 	while (lines--) {

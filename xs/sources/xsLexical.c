@@ -37,6 +37,11 @@
 
 #include "xsScript.h"
 
+static txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, txString), txString p, txString q, int empty);
+static txString fxGetNextDigitsB(txParser* parser, txString p, txString q);
+static txString fxGetNextDigitsE(txParser* parser, txString p, txString q);
+static txString fxGetNextDigitsO(txParser* parser, txString p, txString q);
+static txString fxGetNextDigitsX(txParser* parser, txString p, txString q);
 static void fxGetNextKeyword(txParser* parser);
 static txBoolean fxGetNextIdentiferX(txParser* parser, txU4* value);
 static void fxGetNextNumber(txParser* parser, txNumber theNumber);
@@ -160,6 +165,74 @@ void fxGetNextCharacter(txParser* parser)
 	parser->character = aResult;
 }
 
+txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, txString), txString p, txString q, int empty)
+{
+	int separator = 0;
+	for (;;) {
+		txString r = p;
+		p = (*f)(parser, p, q);
+		if (r < p) {
+			empty = 0;
+			separator = 0;
+			if (parser->character == '_') {
+				fxGetNextCharacter(parser);
+				separator = 1;
+			}
+			else
+				break;
+		}
+		else
+			break;
+	}
+	if (empty || separator)
+		fxReportParserError(parser, "invalid number");	
+	return p;
+}
+
+txString fxGetNextDigitsB(txParser* parser, txString p, txString q)
+{
+	int c = parser->character;
+	while (('0' <= c) && (c <= '1')) {
+		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
+txString fxGetNextDigitsE(txParser* parser, txString p, txString q)
+{
+	int c = parser->character;
+	while (('0' <= c) && (c <= '9')) {
+		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
+txString fxGetNextDigitsO(txParser* parser, txString p, txString q)
+{
+	int c = parser->character;
+	while (('0' <= c) && (c <= '7')) {
+		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
+txString fxGetNextDigitsX(txParser* parser, txString p, txString q)
+{
+	int c = parser->character;
+	while ((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'f')) || (('A' <= c) && (c <= 'F'))) {
+		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
 void fxGetNextKeyword(txParser* parser)
 {
 	int low, high, anIndex, aDelta;
@@ -174,7 +247,7 @@ void fxGetNextKeyword(txParser* parser)
 		aDelta = c_strcmp(gxKeywords[anIndex].text, parser->buffer);
 		if (aDelta == 0) {
 			parser->token2 = gxKeywords[anIndex].token;
-			goto bail;
+			return;
 		}
 	}
 	if ((parser->flags & mxStrictFlag)) {
@@ -184,26 +257,23 @@ void fxGetNextKeyword(txParser* parser)
 			aDelta = c_strcmp(gxStrictKeywords[anIndex].text, parser->buffer);
 			if (aDelta == 0) {
 				parser->token2 = gxStrictKeywords[anIndex].token;
-				goto bail;
+				return;
 			}
 		}
 	}
 	if (c_strcmp("await", parser->buffer) == 0) {
 		if (parser->flags & mxAsyncFlag) {
 			parser->token2 = XS_TOKEN_AWAIT;
-			goto bail;
+			return;
 		}
 	}	
 	if (c_strcmp("yield", parser->buffer) == 0) {
 		if ((parser->flags & mxGeneratorFlag)){
 			parser->token2 = XS_TOKEN_YIELD;
-			goto bail;
+			return;
 		}
 	}	
 	return;
-bail:
-	if (parser->escaped2)
-		fxReportParserError(parser, "escaped keyword");			
 }
 
 txBoolean fxGetNextIdentiferX(txParser* parser, txU4* value)
@@ -255,27 +325,21 @@ void fxGetNextNumberB(txParser* parser)
 {
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
-	int c, i = 0;
-	for (;;) {
-		fxGetNextCharacter(parser);
-		c = parser->character;
-		if (('0' <= c) && (c <= '1')) {
-			if (p < q) *p++ = (char)c;
-		}
-		else
-			break;
-		i++;
-	}
-	if (i == 0)
-		fxReportParserError(parser, "invalid number");	
+	int c;
+	fxGetNextCharacter(parser);
+	p = fxGetNextDigits(parser, fxGetNextDigitsB, p, q, 1);
+	c = parser->character;
 	if (p == q) {
 		fxReportParserError(parser, "number overflow");	
 		fxThrowParserError(parser, parser->errorCount);
 	}
+	if (c == 'n')
+		fxGetNextCharacter(parser);
+	if (fxIsIdentifierFirst(parser->character))
+		fxReportParserError(parser, "invalid number");			
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		fxGetNextCharacter(parser);
 		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumB(p - q));
 		fxBigIntParseB(&parser->bigint2, q, p - q);
 		parser->token2 = XS_TOKEN_BIGINT;
@@ -292,31 +356,32 @@ void fxGetNextNumberE(txParser* parser, int dot)
 {
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
+	txString r;
 	int c;
+	if (dot) {
+		if (p < q) *p++ = '.';
+	}
+	p = fxGetNextDigits(parser, fxGetNextDigitsE, p, q, 0);	
 	if (dot)
-		*p++ = '.';
-	c = parser->character;
-	while (('0' <= c) && (c <= '9')) {
-		if (p < q) *p++ = (char)c;
-		fxGetNextCharacter(parser);
-		c = parser->character;
-	}
-	if ((!dot) && (c == '.')) {
+		r = p;
+	else if (parser->character == '.') {
 		dot = 1;
-		if (p < q) *p++ = (char)c;
+		if (p < q) *p++ = '.';
 		fxGetNextCharacter(parser);
-		c = parser->character;
-		while (('0' <= c) && (c <= '9')) {
-			if (p < q) *p++ = (char)c;
-			fxGetNextCharacter(parser);
-			c = parser->character;
-		}
+		p = fxGetNextDigits(parser, fxGetNextDigitsE, p, q, 0);	
+		r = p;
 	}
+	c = parser->character;
 	if ((c == 'e') || (c == 'E')) {
-		int i = 0;
-		if (!dot) {
+		if (dot) {
+			if (p == r) {
+				if (p < q) *p++ = '0';
+			}
+		}
+		else {
 			dot = 1;
 			if (p < q) *p++ = '.';
+			if (p < q) *p++ = '0';
 		}
 		if (p < q) *p++ = (char)c;
 		fxGetNextCharacter(parser);
@@ -326,23 +391,20 @@ void fxGetNextNumberE(txParser* parser, int dot)
 			fxGetNextCharacter(parser);
 			c = parser->character;
 		}
-		while (('0' <= c) && (c <= '9')) {
-			if (p < q) *p++ = (char)c;
-			fxGetNextCharacter(parser);
-			c = parser->character;
-			i++;
-		}
-		if (i == 0)
-			fxReportParserError(parser, "invalid number");			
+		p = fxGetNextDigits(parser, fxGetNextDigitsE, p, q, 1);
+		c = parser->character;
 	}
 	if (p == q) {
 		fxReportParserError(parser, "number overflow");	
 		fxThrowParserError(parser, parser->errorCount);
 	}
+	if (c == 'n')
+		fxGetNextCharacter(parser);
+	if (fxIsIdentifierFirst(parser->character))
+		fxReportParserError(parser, "invalid number");			
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		fxGetNextCharacter(parser);
 		if (dot == 0) {
 			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximum(p - q));
 			fxBigIntParse(&parser->bigint2, q, p - q, 0);
@@ -355,42 +417,40 @@ void fxGetNextNumberE(txParser* parser, int dot)
 		fxGetNextNumber(parser, fxStringToNumber(parser->dtoa, parser->buffer, 1));
 }
 
-void fxGetNextNumberO(txParser* parser, int c, int i)
+void fxGetNextNumberO(txParser* parser, int c, int legacy)
 {
-	int legacy = i;
-	txNumber n = c - '0';
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
-	for (;;) {
-		fxGetNextCharacter(parser);
-		c = parser->character;
-		if (('0' <= c) && (c <= '7')) {
-			if (p < q) *p++ = (char)c;
-		}
-		else
-			break;
-		i++;
+	if (legacy) {
+		p = fxGetNextDigitsO(parser, p, q);
+		if (parser->character == '_')
+			fxReportParserError(parser, "invalid number");			
+		if (parser->character == 'n')
+			fxReportParserError(parser, "invalid number");			
 	}
-	if (i == 0)
-		fxReportParserError(parser, "invalid number");			
+	else {
+		fxGetNextCharacter(parser);
+		p = fxGetNextDigits(parser, fxGetNextDigitsO, p, q, 1);
+	}
+	c = parser->character;
 	if (p == q) {
 		fxReportParserError(parser, "number overflow");	
 		fxThrowParserError(parser, parser->errorCount);
 	}
+	if (c == 'n')
+		fxGetNextCharacter(parser);
+	if (fxIsIdentifierFirst(parser->character))
+		fxReportParserError(parser, "invalid number");			
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		fxGetNextCharacter(parser);
-		if (legacy == 0) {
-			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
-			fxBigIntParseO(&parser->bigint2, q, p - q);
-			parser->token2 = XS_TOKEN_BIGINT;
-		}
-		else
-			fxReportParserError(parser, "invalid number");			
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
+		fxBigIntParseO(&parser->bigint2, q, p - q);
+		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {	
-		while ((c = *p++))
+		txNumber n = 0;
+		while ((c = *q++))
 			n = (n * 8) + (c - '0');
 		fxGetNextNumber(parser, n);
 	}
@@ -400,27 +460,21 @@ void fxGetNextNumberX(txParser* parser)
 {
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
-	int c, i = 0;
-	for (;;) {
-		fxGetNextCharacter(parser);
-		c = parser->character;
-		if ((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'f')) || (('A' <= c) && (c <= 'F'))) {
-			if (p < q) *p++ = (char)c;
-		}
-		else
-			break;
-		i++;
-	}
-	if (i == 0)
-		fxReportParserError(parser, "invalid number");			
+	int c;
+	fxGetNextCharacter(parser);
+	p = fxGetNextDigits(parser, fxGetNextDigitsX, p, q, 1);
+	c = parser->character;
 	if (p == q) {
 		fxReportParserError(parser, "number overflow");	
 		fxThrowParserError(parser, parser->errorCount);
 	}
+	if (c == 'n')
+		fxGetNextCharacter(parser);
+	if (fxIsIdentifierFirst(parser->character))
+		fxReportParserError(parser, "invalid number");			
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		fxGetNextCharacter(parser);
 		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumX(p - q));
 		fxBigIntParseX(&parser->bigint2, q, p - q);
 		parser->token2 = XS_TOKEN_BIGINT;
@@ -1097,15 +1151,17 @@ void fxGetNextTokenAux(txParser* parser)
 						fxReportParserError(parser, "end of file in comment");			
 						break;
 					}
-					else if (parser->character == 10) {
+					else if ((parser->character == 10) || (parser->character == 0x2028) || (parser->character == 0x2029)) {
 						parser->line2++;
 						fxGetNextCharacter(parser);
+						parser->crlf2 = 1;
 					}
 					else if (parser->character == 13) {
 						parser->line2++;
 						fxGetNextCharacter(parser);
 						if (parser->character == 10)
 							fxGetNextCharacter(parser);
+						parser->crlf2 = 1;
 					}
 					else if (parser->character == '*') {
 						fxGetNextCharacter(parser);
@@ -1212,6 +1268,10 @@ void fxGetNextTokenAux(txParser* parser)
 		default:
 			p = parser->buffer;
 			q = p + parser->bufferSize - 1;
+			if (parser->character == '#') {
+				*p++ = '#';
+				fxGetNextCharacter(parser);
+			}
 			if (fxIsIdentifierFirst(parser->character)) {
 				p = fxUTF8Buffer(parser, parser->character, p, q);				
 				fxGetNextCharacter(parser);
@@ -1248,7 +1308,13 @@ void fxGetNextTokenAux(txParser* parser)
 					}
 					else {
 						*p = 0;
-						fxGetNextKeyword(parser);
+						if (parser->buffer[0] == '#') {
+							parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
+							parser->token2 = XS_TOKEN_PRIVATE_IDENTIFIER;
+						}
+						else {
+							fxGetNextKeyword(parser);
+						}
 						break;
 					}
 				}
@@ -1362,7 +1428,7 @@ void fxGetNextTokenJSON(txParser* parser)
 				fxGetNextCharacter(parser);
 				c = parser->character;
 				if ((('0' <= c) && (c <= '9')) || (c == 'e') || (c == 'E'))
-					fxGetNextNumberE(parser, 0);
+					fxGetNextNumberE(parser, 1);
 				else {
 					parser->number2 = 0;
 					parser->token2 = XS_TOKEN_NUMBER;
@@ -1395,7 +1461,7 @@ void fxGetNextTokenJSON(txParser* parser)
 		case '8':
 		case '9':
 		case '-':	
-			fxGetNextNumberE(parser, 1);
+			fxGetNextNumberE(parser, 0);
 			break;
 		case ',':
 			parser->token2 = XS_TOKEN_COMMA;

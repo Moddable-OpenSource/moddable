@@ -49,17 +49,44 @@ struct sxMD5 {
 	uint8_t buf[MD5_BLKSIZE];
 };
 
-static txBoolean fxIsCIdentifier(txLinker* linker, txString string);
 static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
 static txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
-static txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
+static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);
 static void md5_fin(txMD5 *s, uint8_t *dgst);
 
 static txInteger gxCodeUsages[XS_CODE_COUNT];
+
+static txCallback gxTypeCallbacks[1 + mxTypeArrayCount] = {
+	fx_TypedArray,
+	fx_BigInt64Array,
+	fx_BigUint64Array,
+	fx_Float32Array,
+	fx_Float64Array,
+	fx_Int8Array,
+	fx_Int16Array,
+	fx_Int32Array,
+	fx_Uint8Array,
+	fx_Uint16Array,
+	fx_Uint32Array,
+	fx_Uint8ClampedArray,
+};
+static int gxTypeCallbacksIndex = 0;
+
+void fx_BigInt64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_BigUint64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Float32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Float64Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int8Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int16Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Int32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint8Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint16Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint32Array(txMachine* the) { fx_TypedArray(the); }
+void fx_Uint8ClampedArray(txMachine* the) { fx_TypedArray(the); }
 
 void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength)
 {
@@ -197,16 +224,18 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 	txID id;
 	while (p < q) {
 		code = *((txU1*)p);
-		if (XS_CODE_CODE_1 == code)
-			*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_1;
-		else if (XS_CODE_CODE_2 == code)
-			*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_2;
-		else if (XS_CODE_CODE_4 == code)
-			*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_4;
-		else if (XS_CODE_STRING_1 == code)
-			*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_1;
-		else if (XS_CODE_STRING_2 == code)
-			*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_2;
+		if (script->preload == C_NULL) {
+			if (XS_CODE_CODE_1 == code)
+				*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_1;
+			else if (XS_CODE_CODE_2 == code)
+				*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_2;
+			else if (XS_CODE_CODE_4 == code)
+				*((txU1*)p) = code = XS_CODE_CODE_ARCHIVE_4;
+			else if (XS_CODE_STRING_1 == code)
+				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_1;
+			else if (XS_CODE_STRING_2 == code)
+				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_2;
+		}
 		gxCodeUsages[code]++;	
 		offset = (txS1)sizes[code];
 		if (0 < offset) {
@@ -308,9 +337,12 @@ txCallback fxNewLinkerCallback(txMachine* the, txCallback callback, txString nam
 	txLinkerCallback* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerCallback));
 	result->nextCallback = linker->firstCallback;
 	linker->firstCallback = result;
-	result->callback = callback;
+	if (callback == fx_TypedArray)
+		result->callback = gxTypeCallbacks[gxTypeCallbacksIndex++];
+	else
+		result->callback = callback;
 	result->name = name;
-	return callback;
+	return result->callback;
 }
 
 void* fxNewLinkerChunk(txLinker* linker, txSize size)
@@ -568,6 +600,12 @@ txString fxRealFilePath(txLinker* linker, txString path)
 	return NULL;
 }
 
+void fxReferenceLinkerSymbol(txLinker* linker, txID id)
+{
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	linkerSymbol->flag |= 1;
+}
+
 void fxReportLinkerError(txLinker* linker, txString theFormat, ...)
 {
 	c_va_list arguments;
@@ -609,6 +647,15 @@ void fxTerminateLinker(txLinker* linker)
 // 	}
 }
 
+void fxUnuseCode(txU1 code)
+{
+	gxCodeUsages[code] = 0;
+}
+
+void fxUseCodes()
+{
+	c_memset(gxCodeUsages, 1, sizeof(gxCodeUsages));
+}
 
 void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 {
@@ -744,6 +791,20 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	*fileAddress = NULL;
 }
 
+void fxWriteCData(FILE* file, void* data, txSize size) 
+{
+	unsigned char* p = data;
+	unsigned char c;
+	fprintf(file, "\"");
+	while (size) {
+		c = *p;
+		fprintf(file, "\\x%.2x", c);
+		p++;
+		size--;
+	}
+	fprintf(file, "\"");
+}
+
 void fxWriteCString(FILE* file, txString string) 
 {
 	unsigned char c;
@@ -778,25 +839,27 @@ void fxWriteDefines(txLinker* linker, FILE* file)
 
 void fxWriteScriptCode(txLinkerScript* script, FILE* file)
 {
-	fprintf(file, "static const txU1 gxCode%d[%d] = {\n", script->scriptIndex, script->codeSize);
-	{
-		txU1* buffer = (txU1*)(script->codeBuffer);
-		txSize c = script->codeSize, i = 0;
-		fprintf(file, "\t");
-		for (;;) {
-			fprintf(file, "0x%02x", *buffer);
-			buffer++;
-			i++;
-			if (i == c)
-				break;
-			if (i % 16)
-				fprintf(file, ", ");
-			else
-				fprintf(file, ",\n\t");
+	if (script->preload == C_NULL) {
+		fprintf(file, "static const txU1 gxCode%d[%d] = {\n", script->scriptIndex, script->codeSize);
+		{
+			txU1* buffer = (txU1*)(script->codeBuffer);
+			txSize c = script->codeSize, i = 0;
+			fprintf(file, "\t");
+			for (;;) {
+				fprintf(file, "0x%02x", *buffer);
+				buffer++;
+				i++;
+				if (i == c)
+					break;
+				if (i % 16)
+					fprintf(file, ", ");
+				else
+					fprintf(file, ",\n\t");
+			}
+			fprintf(file, "\n");
 		}
-		fprintf(file, "\n");
+		fprintf(file, "};\n\n");
 	}
-	fprintf(file, "};\n\n");
 }
 
 void fxWriteScriptExterns(txLinkerScript* script, FILE* file)
@@ -849,7 +912,10 @@ void fxWriteScriptRecord(txLinkerScript* script, FILE* file)
 	else
 		fprintf(file, "NULL, ");
 	fprintf(file, "NULL, 0, ");
-	fprintf(file, "(txS1*)gxCode%d, %d, ", script->scriptIndex, script->codeSize);
+	if (script->preload == C_NULL)
+		fprintf(file, "(txS1*)gxCode%d, %d, ", script->scriptIndex, script->codeSize);
+	else
+		fprintf(file, "NULL, 0, ");
 	fprintf(file, "NULL, 0, ");
 	fxWriteCString(file, script->path);
 	fprintf(file, ", ");

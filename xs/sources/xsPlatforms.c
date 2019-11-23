@@ -71,10 +71,8 @@
 	#define mxUseDefaultDebug 0
 #endif
 
-#ifndef mxLink
-
 #if mxUseDefaultFindModule
-	static txBoolean fxFindPreparation(txMachine* the, txString path, txID* id);
+	static txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id);
 #endif
 
 #ifdef mxParse
@@ -85,8 +83,6 @@
 		extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 	#endif
 #endif
-
-#endif /* mxLink*/
 
 #if mxUseDefaultMachinePlatform
 
@@ -99,8 +95,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 }
 
 #endif /* mxUseDefaultMachinePlatform */
-
-#ifndef mxLink
 
 #if mxUseDefaultBuildKeys
 
@@ -120,8 +114,6 @@ void fxBuildKeys(txMachine* the)
 }
 
 #endif	/* mxUseDefaultBuildKeys */ 
-
-#endif
 
 
 #if mxUseDefaultChunkAllocation
@@ -167,11 +159,9 @@ void fxSweepHost(txMachine* the)
 #endif /* mxUseDefaultHostCollection */ 
 
 
-#ifndef mxLink
-
 #if mxUseDefaultFindModule
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
 	char name[C_PATH_MAX];
@@ -220,7 +210,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 			c_strcpy(path, preparation->base);
 			c_strcat(path, name + 1);
 			c_strcat(path, ".xsb");
-			if (fxFindPreparation(the, path, &id))
+			if (fxFindPreparation(the, realm, path, &id))
 				return id;
 		}
 #ifdef mxParse
@@ -246,7 +236,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 				*slash = 0;
 				c_strcat(path, name + dot);
 				c_strcat(path, ".xsb");
-				if (fxFindPreparation(the, path, &id))
+				if (fxFindPreparation(the, realm, path, &id))
 					return id;
 			}
 		}
@@ -266,61 +256,33 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 #endif
 	}
 	if (search) {
-#ifdef mxParse
-		txSlot *iterator, *result;
-#endif
 		if (preparation) {
-			c_strcpy(path, preparation->base);
-			c_strcat(path, name);
-			c_strcat(path, ".xsb");
-			if (fxFindPreparation(the, path, &id))
-				return id;
+			txSlot* slot = mxAvailableModules(realm);
+            slot = slot->value.reference->next;
+			while (slot) {
+				txSlot* key = fxGetKey(the, slot->ID);
+				if (key && !c_strcmp(key->value.key.string, name))
+					return slot->value.symbol;
+				slot = slot->next;
+			}
 		}
-#ifdef mxParse
-		mxCallID(&mxModulePaths, mxID(_Symbol_iterator), 0);
-		iterator = the->stack;
-		for (;;) {
-			mxCallID(iterator, mxID(_next), 0);
-			result = the->stack;
-			mxGetID(result, mxID(_done));
-			if (fxToBoolean(the, the->stack))
-				break;
-			the->stack++;
-			mxGetID(result, mxID(_value));
-			fxToStringBuffer(the, the->stack++, path, sizeof(path));
- 			c_strcat(path, name);
-			if (fxFindScript(the, path, &id))
-				return id;
-		}
-#endif
 	}
 	return XS_NO_ID;
 }
 
-txBoolean fxFindPreparation(txMachine* the, txString path, txID* id)
+txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id)
 {
-	txSize size;
-	txByte* code = fxGetArchiveCode(the, path, &size);
-	if (!code) {
-		txPreparation* preparation = the->preparation;
-		txInteger c = preparation->scriptCount;
-		txScript* script = preparation->scripts;
-		path += preparation->baseLength;
-		while (c > 0) {
-			if (!c_strcmp(path, script->path)) {
-				path -= preparation->baseLength;
-				break;
-			}
-			c--;
-			script++;
+	txID result = fxFindName(the, path);
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == result) {
+			*id = result;
+			return 1;
 		}
-		if (c == 0) {
-			*id = XS_NO_ID;
-			return 0;
-		}
+		slot = slot->next;
 	}
-	*id = fxNewNameC(the, path);
-	return 1;
+	*id = XS_NO_ID;
+	return 0;
 }
 
 #ifdef mxParse
@@ -348,7 +310,7 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 #if mxUseDefaultLoadModule
 
 extern void fxDebugImport(txMachine* the, txString path);
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	char path[C_PATH_MAX];
 	txByte* code;
@@ -369,7 +331,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		script.version[1] = XS_MINOR_VERSION;
 		script.version[2] = XS_PATCH_VERSION;
 		script.version[3] = 0;
-		fxResolveModule(the, moduleID, &script, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &script, C_NULL, C_NULL);
 	}
 	else {
  		txPreparation* preparation = the->preparation;
@@ -378,7 +340,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 			txScript* script = preparation->scripts;
 			while (c > 0) {
 				if (!c_strcmp(path + preparation->baseLength, script->path)) {
-					fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+					fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 					return;
 				}
 				c--;
@@ -395,7 +357,7 @@ void fxLoadModule(txMachine* the, txID moduleID)
 	#endif
  		txScript* script = fxLoadScript(the, path, flags);
  		if (script)
- 			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+ 			fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
  	}
 #else
 	#ifdef mxDebug
@@ -419,10 +381,10 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 	txScript* script = NULL;
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
+	file = fopen(path, "r");
 	if (c_setjmp(jump.jmp_buf) == 0) {
-		parser->path = fxNewParserSymbol(parser, path);
-		file = fopen(path, "r");
 		mxParserThrowElse(file);
+		parser->path = fxNewParserSymbol(parser, path);
 		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
 		fclose(file);
 		file = NULL;
@@ -485,8 +447,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 
 #endif  /* mxUseDefaultParseScript */
 
-#endif /* mxLink */
-
 #if mxUseDefaultQueuePromiseJobs
 
 void fxQueuePromiseJobs(txMachine* the)
@@ -496,13 +456,22 @@ void fxQueuePromiseJobs(txMachine* the)
 
 #endif  /* mxUseDefaultQueuePromiseJobs */
 
+#if mxUseDefaultDebug
+
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
+#endif  /* mxUseDefaultDebug */
+
 #ifdef mxDebug
 
 #if mxUseDefaultDebug
 
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
-	c_exit(0);
+	c_exit(status);
 }
 
 void fxConnect(txMachine* the)
@@ -533,6 +502,19 @@ void fxSend(txMachine* the, txBoolean more)
 
 #endif /* mxUseDefaultDebug */
 
+#endif
+
+#if mxWindows || mxMacOSX || mxLinux || mxWasm
+uint32_t modMilliseconds()
+{
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+#if mxWindows
+	return (uint32_t)(uint64_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+#else
+	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+#endif
+}
 #endif
 
 #if mxWindows

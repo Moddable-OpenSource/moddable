@@ -93,10 +93,10 @@ XS_DIRS = \
 	$(BUILD_DIR)/devices/gecko
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsgecko.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/gecko/xsHost.h \
 	$(XS_DIR)/platforms/gecko/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -119,18 +119,19 @@ AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)-ar
 
 AR_FLAGS = crs
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/debug/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/debug/compressbmf
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/debug/rle4encode
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/debug/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
-IMAGE2CS = $(BUILD_DIR)/bin/mac/debug/image2cs
-WAV2MAUD = $(BUILD_DIR)/bin/mac/debug/wav2maud
-BLES2GATT = $(BUILD_DIR)/bin/mac/debug/bles2gatt
-XSC = $(BUILD_DIR)/bin/mac/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
+WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
+BLES2GATT = $(MODDABLE_TOOLS_DIR)/bles2gatt
+XSC = $(MODDABLE_TOOLS_DIR)/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 #	-DmxNoConsole=1
 C_DEFINES += \
@@ -162,7 +163,8 @@ C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_
 
 C_FLAGS += -gdwarf-2 -mcpu=$(HWCPU) -mthumb -std=c99 \
     -DDEBUG=1 \
-    -Wall -c -fmessage-length=0 -mno-sched-prolog \
+	-c -fmessage-length=0 -mno-sched-prolog \
+	-Wno-implicit-function-declaration \
     -fno-builtin -ffunction-sections -fdata-sections \
     -MMD -MP \
 	$(DEV_C_FLAGS)

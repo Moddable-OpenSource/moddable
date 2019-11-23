@@ -16,6 +16,7 @@ import config from "mc/config";
 import WiFi from "wifi";
 import MDNS from "mdns";
 import ASSETS from "assets";
+import Timer from "timer";
 
 const HOSTNAMES = ["modThermostat", "anotherModThermostat"];
 
@@ -62,6 +63,7 @@ class Thermostat extends WebThing {
 					maximum: 100,
 					unit: "fahrenheit",
 					txt: "actual",
+					"readOnly": true,
 				}
 			}		
 		}
@@ -76,7 +78,7 @@ class AppBehavior extends Behavior {
 		let wifiData = {};
 		if (config.ssid == "YOUR_WIFI_SSID_HERE") {
 			application.first.string = "Error: no Wi-Fi credentials";
-			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in $MODDABLE/modules/network/webthings/manifest.json\n");
+			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in manifest.json\n");
 			return;
 		} else {
 			wifiData.ssid = config.ssid;
@@ -120,8 +122,10 @@ class AppBehavior extends Behavior {
 	onHostname(application, value) {
 		trace(`Got hostname ${value}.\n`);
 		this.data.hostname = value;
-		application.remove(application.first);
-		application.add(new ASSETS.ThermostatScreen(this.data));
+		Timer.set(() => {
+			application.remove(application.first);
+			application.add(new ASSETS.ThermostatScreen(this.data));
+		}, 0);
 		let mdns = this.mdns;
 		let things = this.things = new WebThings(mdns);
 		things.add(Thermostat);

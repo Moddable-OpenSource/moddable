@@ -28,6 +28,12 @@
 			},
 			"preload": "setup/commodetto",
 		},
+		"qca4020": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
+			},
+			"preload": "setup/commodetto",
+		},
 
 	}
 }

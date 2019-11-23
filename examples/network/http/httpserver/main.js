@@ -17,9 +17,9 @@ import {Server} from "http"
 let server = new Server({port: 80});
 server.callback = function(message, value)
 {
-	if (2 == message)
+	if (Server.status === message)
 		this.path = value;
 
-	if (8 == message)
+	if (Server.prepareResponse === message)
 		return {headers: ["Content-type", "text/plain"], body: `hello, client at path ${this.path}.`};
 }

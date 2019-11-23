@@ -42,6 +42,9 @@ export default class ILI9341 @ "xs_ILI9341_destructor" {
 	get clut() @ "xs_ILI9341_get_clut";
 	set clut() @ "xs_ILI9341_set_clut";
 
+	get rotation() @ "xs_ILI9341_get_rotation";
+	set rotation() @ "xs_ILI9341_set_rotation";
+
 	get c_dispatch() @ "xs_ILI9341_get_c_dispatch";
 }
 

@@ -42,9 +42,7 @@ extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 #else
 	#include <dirent.h>
 	#include <pthread.h>
-	#include <signal.h>
 	#include <sys/stat.h>
-	#include <unistd.h>
 	typedef pthread_cond_t txCondition;
 	typedef pthread_mutex_t txMutex;
 	#define fxCreateCondition(CONDITION) pthread_cond_init(CONDITION,NULL)
@@ -100,18 +98,15 @@ struct sxAgentCluster {
 };
 
 struct sxContext {
+#ifdef mxTestSharedMachine
+	txMachine* shared;
+#endif
 	char harnessPath[C_PATH_MAX];
 	int testPathLength;
 	txResult* current;
 	yaml_document_t* document;
 	yaml_node_t* includes;
 	yaml_node_t* negative;
-#ifdef mxInstrument
-	txSize peakChunksSize;
-	txSize peakHeapCount;
-	txSize peakStackCount;
-	txSize peakParserSize;
-#endif
 };
 
 struct sxJob {
@@ -137,6 +132,7 @@ struct sxResult {
 
 static int main262(int argc, char* argv[]);
 
+static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 static void fxPopResult(txContext* context);
@@ -145,9 +141,11 @@ static void fxPrintUsage();
 static void fxPushResult(txContext* context, char* path);
 static void fxRunDirectory(txContext* context, char* path);
 static void fxRunFile(txContext* context, char* path);
-static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message);
+static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
+static void fx_agent_get_safeBroadcast(xsMachine* the);
+static void fx_agent_set_safeBroadcast(xsMachine* the);
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
 static void fx_agent_leaving(xsMachine* the);
@@ -164,10 +162,10 @@ static void* fx_agent_start_aux(void* it);
 static void fx_agent_stop(xsMachine* the);
 extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
-static void fx_createRealmException(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
+static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
@@ -182,7 +180,6 @@ static void fx_destroyTimer(void* data);
 static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setTimerCallback(txJob* job);
 
-
 static txAgentCluster gxAgentCluster;
 
 int main(int argc, char* argv[]) 
@@ -190,6 +187,13 @@ int main(int argc, char* argv[])
 	int argi;
 	int error = 0;
 	int option = 0;
+	char path[C_PATH_MAX];
+	char* dot;
+#if mxWindows
+    char* harnessPath = "..\\harness";
+#else
+    char* harnessPath = "../harness";
+#endif
 	if (argc == 1) {
 		fxPrintUsage();
 		return 0;
@@ -205,6 +209,8 @@ int main(int argc, char* argv[])
 			option = 2;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
+		else if (!strcmp(argv[argi], "-t"))
+			option = 4;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
 		else {
@@ -212,13 +218,17 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
-	if (option == 0)
+	if (option == 0) {
+		if (c_realpath(harnessPath, path))
+			option  = 4;
+	}
+	if (option == 4)
 		error = main262(argc, argv);
 	else {
 		xsCreation _creation = {
-			128 * 1024 * 1024, 	/* initialChunkSize */
+			16 * 1024 * 1024, 	/* initialChunkSize */
 			16 * 1024 * 1024, 	/* incrementalChunkSize */
-			8 * 1024 * 1024, 	/* initialHeapCount */
+			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			4096, 				/* stackCount */
 			4096*3, 			/* keyCount */
@@ -229,26 +239,12 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
-		char path[C_PATH_MAX];
+		fxInitializeSharedCluster();
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
 			xsTry {
-				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_createRealmException, 1, xsID("createRealm"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-				fxNewHostFunctionGlobal(the, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-				the->stack++;
-
+				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
@@ -259,20 +255,28 @@ int main(int argc, char* argv[])
 					else {	
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
-						if (option == 2) 
+						dot = strrchr(path, '.');
+						if (((option == 0) && dot && !c_strcmp(dot, ".mjs")) || (option == 2))
 							fxRunModuleFile(the, path);
 						else
 							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
 					}
 				}
-				fxRunLoop(the);
 			}
 			xsCatch {
+			}
+		}
+		xsEndHost(machine);
+		fxRunLoop(machine);
+		xsBeginHost(machine);
+		{
+			if (xsTypeOf(xsException) != xsUndefinedType) {
 				fprintf(stderr, "%s\n", xsToString(xsException));
 				error = 1;
 			}
 		}
-		xsEndHost(the);
+		xsEndHost(machine);
+		fxTerminateSharedCluster();
 		xsDeleteMachine(machine);
 	}
 	return error;
@@ -280,6 +284,21 @@ int main(int argc, char* argv[])
 
 int main262(int argc, char* argv[]) 
 {
+#ifdef mxTestSharedMachine
+	xsCreation _creation = {
+		16 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		4096, 				/* stackCount */
+		4096*3, 			/* keyCount */
+		1993, 				/* nameModulo */
+		127, 				/* symbolModulo */
+		32 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
+	};
+	xsCreation* creation = &_creation;
+#endif
 	txContext context;
 	char separator[2];
 	char path[C_PATH_MAX];
@@ -297,6 +316,11 @@ int main262(int argc, char* argv[])
 	fxCreateCondition(&(gxAgentCluster.dataCondition));
 	fxCreateMutex(&(gxAgentCluster.dataMutex));
 	fxCreateMutex(&(gxAgentCluster.reportMutex));
+
+#ifdef mxTestSharedMachine
+	context.shared = fxCreateMachine(creation, "xsr", NULL);
+	fxShareMachine(context.shared);
+#endif
 
 	separator[0] = mxSeparator;
 	separator[1] = 0;
@@ -352,14 +376,47 @@ int main262(int argc, char* argv[])
 		int hours = minutes / 60;
 		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
 		fxPrintResult(&context, context.current, 0);
-	#ifdef mxInstrument
-		fprintf(stderr, "# parser chunks: %d bytes\n", context.peakParserSize);
-		fprintf(stderr, "# heap chunks: %d bytes\n", context.peakChunksSize);
-		fprintf(stderr, "# heap slots: %lu bytes\n", context.peakHeapCount * sizeof(txSlot));
-		fprintf(stderr, "# stack slots: %lu bytes\n", context.peakStackCount * sizeof(txSlot));
-	#endif
 	}
 	return error;
+}
+
+void fxBuildAgent(xsMachine* the) 
+{
+	txSlot* slot;
+	txSlot* agent;
+	txSlot* global;
+
+	slot = fxLastProperty(the, fxNewHostObject(the, NULL));
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_agent_get_safeBroadcast), mxCallback(fx_agent_set_safeBroadcast), xsID("safeBroadcast"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
+	agent = the->stack;
+
+	mxPush(mxGlobal);
+	global = the->stack;
+
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextSlotProperty(the, slot, agent, xsID("agent"), XS_GET_ONLY);
+	slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_gc, 1, xsID("gc"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
+
+	slot = fxLastProperty(the, fxToInstance(the, global));
+	slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+
+	mxPop();
+	mxPop();
 }
 
 void fxCountResult(txContext* context, int success, int pending) 
@@ -416,13 +473,17 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-v] strings...\n");
+	printf("xst [-h] [-e] [-m] [-s] [-t] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
+	printf("\t-t: strings are paths to test262 cases or directories\n");
 	printf("\t-v: print XS version\n");
-	printf("without -e, -m or -s, strings are paths to test262 cases or directories\n");
+	printf("without -e, -m, -s, or -t:\n");
+	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
+	printf("\telse if the extension is .mjs, strings are paths to modules\n");
+	printf("\telse strings are paths to scripts\n");
 }
 
 void fxPushResult(txContext* context, char* path) 
@@ -573,10 +634,10 @@ void fxRunFile(txContext* context, char* path)
 	yaml_document_t* document = NULL;
 	yaml_node_t* root;
 	yaml_node_t* value;
+	int async = 0;
 	int sloppy = 1;
 	int strict = 1;
 	int module = 0;
-	int async = 0;
 	int pending = 0;
 	char message[1024];
 	
@@ -620,7 +681,10 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "onlyStrict")) {
+			if (!strcmp((char*)node->data.scalar.value, "async")) {
+				async = 1;
+			}
+			else if (!strcmp((char*)node->data.scalar.value, "onlyStrict")) {
 				sloppy = 0;
 				strict = 1;
 				module = 0;
@@ -640,9 +704,6 @@ void fxRunFile(txContext* context, char* path)
 				strict = 0;
 				module = 0;
 			}
-			else if (!strcmp((char*)node->data.scalar.value, "async")) {
-				async = 1;
-			}
 			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsTrue")) {
 				sloppy = 0;
 				strict = 0;
@@ -653,27 +714,20 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// @@ skip test cases beyond 8th...
+	// @@ skip test cases beyond 2019...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "class-fields")
-			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
-			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
+			if (!strcmp((char*)node->data.scalar.value, "AggregateError")
+ 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.replaceAll")
+ 			||	!strcmp((char*)node->data.scalar.value, "coalesce-expression")
+ 			||	!strcmp((char*)node->data.scalar.value, "optional-chaining")
+ 			||	!strcmp((char*)node->data.scalar.value, "regexp-match-indices")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
-			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
-			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.prototype.description")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -684,31 +738,23 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// take forever because of utf8 from/to unicode offsets
-	if (c_strstr(path, "built-ins/RegExp/CharacterClassEscapes")) {
-		sloppy = 0;
-		strict = 0;
-		module = 0;
-		pending = 1;
-	}
-
 	if (sloppy) {
 		fprintf(stderr, "### %s (sloppy): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, message))
+		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
 	}
 	if (strict) {
 		fprintf(stderr, "### %s (strict): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, message))
+		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
 	}
 	if (module) {
 		fprintf(stderr, "### %s (module): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, 0, message))
+		if (fxRunTestCase(context, path, 0, async, message))
 			fprintf(stderr, "%s\n", message);
 		else
 			fprintf(stderr, "%s\n", message);
@@ -731,12 +777,13 @@ bail:
 		fclose(file);
 }
 
-int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* message)
+static char gxDoneMessage[1024];
+int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
-		128 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* initialChunkSize */
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		8 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
 		4096*3, 			/* keyCount */
@@ -750,52 +797,27 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 	char buffer[C_PATH_MAX];
 	int success = 0;
 	fxInitializeSharedCluster();
+#ifdef mxTestSharedMachine
+	machine = xsCloneMachine(creation, context->shared, "xst", NULL);
+#else
 	machine = xsCreateMachine(creation, "xst", NULL);
+#endif
+	gxDoneMessage[0] = 0;
 	xsBeginHost(machine);
 	{
 		xsTry {
-			txSlot* slot;
-
-			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG); 
-			
-			mxPush(mxObjectPrototype);
-			slot = fxLastProperty(the, fxNewObjectInstance(the));
-			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
-			slot = fxNextHostFunctionProperty(the, slot, fx_createRealm, 0, xsID("createRealm"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
-			slot = fxNextSlotProperty(the, slot, &mxGlobal, xsID("global"), XS_GET_ONLY);
-			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
-			slot->kind = the->stack->kind;
-			slot->value = the->stack->value;
-			the->stack++;
-			
-			the->stack++;
-		
-			fxNewHostFunctionGlobal(the, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-			fxNewHostFunctionGlobal(the, fx_done, 1, xsID("$DONE"), XS_DONT_ENUM_FLAG);
-			the->stack++;
-
+			fxBuildAgent(the);
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "sta.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			c_strcpy(buffer, context->harnessPath);
 			c_strcat(buffer, "assert.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
+			if (async) {
+				xsResult = xsNewHostFunction(fx_done, 1);
+				xsSet(xsGlobal, xsID("$DONE"), xsResult);
+				xsSet(xsGlobal, xsID("$DONE_RESULT"), xsString("Test did not run to completion"));
+			}
 			if (context->includes) {
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
@@ -806,12 +828,31 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 					item++;
 				}
 			}
+			mxPop();
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
-			fxRunLoop(the);
-			if (context->negative) {
+		}
+		xsCatch {
+		}
+	}
+	xsEndHost(machine);
+	fxRunLoop(machine);
+	xsBeginHost(machine);
+	{
+		if (xsTypeOf(xsException) == xsUndefinedType) {
+			if (async) {
+				xsResult = xsGet(xsGlobal, xsID("$DONE_RESULT"));
+				if (xsTypeOf(xsResult) == xsUndefinedType) {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+				else {
+					snprintf(message, 1024, "# %s", xsToString(xsResult));
+				}
+			}
+			else if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
 			else {
@@ -819,7 +860,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				success = 1;
 			}
 		}
-		xsCatch {
+		else {
 			if (context->negative) {
 				txString name;
 				xsResult = xsGet(xsException, xsID("constructor"));
@@ -832,35 +873,26 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, char* messag
 				}
 			}
 			else {
-				xsToStringBuffer(xsException, message, 1024);
+				snprintf(message, 1024, "# %s", xsToString(xsException));
 			}
 		}
 		xsResult = xsGet(xsGlobal, xsID("$262"));
 		xsResult = xsGet(xsResult, xsID("agent"));
 		xsCall0(xsResult, xsID("stop"));
 	}
-#ifdef mxInstrument
-	fxCollectGarbage(the);
-	snprintf(buffer, sizeof(buffer), " # %d %lu %lu %d", 
-		the->peakChunksSize, 
-		the->peakHeapCount * sizeof(txSlot), 
-		(the->stackTop - the->stackPeak) * sizeof(txSlot),
-		the->peakParserSize);
-	c_strcat(message, buffer);
-	if (context->peakChunksSize < the->peakChunksSize)
-		context->peakChunksSize = the->peakChunksSize;
-	if (context->peakHeapCount < the->peakHeapCount)
-		context->peakHeapCount = the->peakHeapCount;
-	if (context->peakStackCount < (the->stackTop - the->stackPeak))
-		context->peakStackCount = (the->stackTop - the->stackPeak);
-	if (context->peakParserSize < the->peakParserSize)
-		context->peakParserSize = the->peakParserSize;
-#endif
-	xsEndHost(the);
+	xsEndHost(machine);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);
 	return success;
+}
+
+void fx_done(xsMachine* the)
+{
+	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
+		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsArg(0));
+	else
+		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsUndefined);
 }
 
 int fxStringEndsWith(const char *string, const char *suffix)
@@ -872,8 +904,21 @@ int fxStringEndsWith(const char *string, const char *suffix)
 
 /* $262 */
 
+void fx_agent_get_safeBroadcast(xsMachine* the)
+{
+	xsResult = xsGet(xsThis, xsID("broadcast"));
+}
+
+void fx_agent_set_safeBroadcast(xsMachine* the)
+{
+}
+
 void fx_agent_broadcast(xsMachine* the)
 {
+	if (xsIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
+		xsArg(0) = xsGet(xsArg(0), xsID("buffer"));
+	}
+
     fxLockMutex(&(gxAgentCluster.dataMutex));
 	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
@@ -1012,7 +1057,11 @@ void* fx_agent_start_aux(void* it)
 	{
 		xsTry {
 			txSlot* slot;
+			txSlot* global;
 			txStringCStream stream;
+			
+			mxPush(mxGlobal);
+			global = the->stack;
 			
 			slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 			slot = fxNextHostFunctionProperty(the, slot, fx_agent_leaving, 0, xsID("leaving"), XS_DONT_ENUM_FLAG); 
@@ -1025,18 +1074,18 @@ void* fx_agent_start_aux(void* it)
 			mxPush(mxObjectPrototype);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
 			slot = fxNextSlotProperty(the, slot, the->stack + 1, xsID("agent"), XS_GET_ONLY);
-			slot = fxGlobalSetProperty(the, mxGlobal.value.reference, xsID("$262"), XS_NO_ID, XS_OWN);
-			slot->flag = XS_GET_ONLY;
-			slot->kind = the->stack->kind;
-			slot->value = the->stack->value;
-			mxPop();
 			
+			slot = fxLastProperty(the, fxToInstance(the, global));
+			slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_GET_ONLY);
+			
+			mxPop();
+			mxPop();
 			mxPop();
 			
 			stream.buffer = agent->script;
 			stream.offset = 0;
 			stream.size = agent->scriptLength;
-			fxRunScript(the, fxParseScript(the, &stream, fxStringCGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, C_NULL);
+			fxRunScript(the, fxParseScript(the, &stream, fxStringCGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, mxProgram.value.reference);
 		}
 		xsCatch {
 		}
@@ -1082,11 +1131,6 @@ void fx_createRealm(xsMachine* the)
 	xsResult = xsThis;
 }
 
-void fx_createRealmException(xsMachine* the)
-{
-	mxUnknownError("one realm only");
-}
-
 void fx_detachArrayBuffer(xsMachine* the)
 {
 	txSlot* slot = mxArgv(0);
@@ -1101,17 +1145,19 @@ void fx_detachArrayBuffer(xsMachine* the)
 	mxTypeError("this is no ArrayBuffer instance");
 }
 
-void fx_done(xsMachine* the)
+void fx_gc(xsMachine* the)
 {
+	xsCollectGarbage();
 }
 
 void fx_evalScript(xsMachine* the)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txStringStream aStream;
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
-	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }
 
@@ -1282,28 +1328,48 @@ void fxRunLoop(txMachine* the)
 	}
 }
 
+void fxFulfillModuleFile(txMachine* the)
+{
+	xsException = xsUndefined;
+}
+
+void fxRejectModuleFile(txMachine* the)
+{
+	xsException = xsArg(0);
+}
+
 void fxRunModuleFile(txMachine* the, txString path)
 {
+	txSlot* promise;
 	mxPushStringC(path);
-	fxRequireModule(the, XS_NO_ID, the->stack);
-	the->stack++;
+	fxRunImport(the);
+	promise = the->stack;
+	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
+	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
+	mxPushInteger(2);
+	mxPushSlot(promise);
+	fxCallID(the, mxID(_then));
+	mxPop();
+	mxPop();
 }
 
 void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	txScript* script = fxLoadScript(the, path, flags);
-	fxRunScript(the, script, &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
+	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }
 
 /* DEBUG */
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
-	c_exit(0);
+	c_exit(status);
 }
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {
@@ -1375,7 +1441,7 @@ void fxConnect(txMachine* the)
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection <= 0)
 		goto bail;
-	signal(SIGPIPE, SIG_IGN);
+	c_signal(SIGPIPE, SIG_IGN);
 #if mxMacOSX
 	{
 		int set = 1;
@@ -1405,7 +1471,7 @@ void fxConnect(txMachine* the)
 			goto bail;
 	}
 	fcntl(the->connection, F_SETFL, flag);
-	signal(SIGPIPE, SIG_DFL);
+	c_signal(SIGPIPE, SIG_DFL);
 }
 #endif
 	return;

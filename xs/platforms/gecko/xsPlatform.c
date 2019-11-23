@@ -36,9 +36,7 @@
  */
 
 #include "xsAll.h"
-#include <stdio.h>
-
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void*)0x87654321)
@@ -48,15 +46,6 @@ void fxReceiveLoop(void);
 
 #define mxDebugMutexTake()
 #define mxDebugMutexGive()
-
-int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
-int modMessagePostToMachineFromPool(txMachine *the, modMessageDeliver callback, void *refcon);
-int modMessageService(void);
-
-void modMachineTaskInit(txMachine *the);
-void modMachineTaskUninit(txMachine *the);
-void modMachineTaskWait(txMachine *the);
-void modMachineTaskWake(txMachine *the);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
@@ -78,11 +67,6 @@ void fxDeleteMachinePlatform(txMachine* the)
 	modMachineTaskUninit(the);
 }
 
-#if 0
-void fx_putc(void *unused, char c) {
-	ESP_putc(c);
-}
-#else
 void fx_putc(void *refcon, char c)
 {
 	txMachine* the = refcon;
@@ -123,7 +107,6 @@ void fx_putc(void *refcon, char c)
 
 	ESP_putc(c);
 }
-#endif
 
 void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 {
@@ -156,13 +139,13 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
 	fxDisconnect(the);
-	c_exit(0);
+	c_exit(status);
 }
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {
@@ -384,8 +367,6 @@ void fxSend(txMachine* the, txBoolean more)
 }
 
 #endif /* mxDebug */
-
-
 
 #define XSDEBUG_NONE	0,0,0,0
 #define XSDEBUG_SERIAL	127,0,0,7

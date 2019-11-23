@@ -94,7 +94,10 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
 	$(LIB_DIR)\xsmc.o \
-	$(LIB_DIR)\xsre.o
+	$(LIB_DIR)\xsre.o \
+	$(LIB_DIR)\xsa.o \
+	$(LIB_DIR)\xsc.o \
+	$(LIB_DIR)\xslBase.o
 
 MODULES = \
 	$(MOD_DIR)\commodetto\Bitmap.xsb \
@@ -216,8 +219,7 @@ C_OPTIONS = \
 	/I$(INSTRUMENTATION) \
 	/I$(TOOLS) \
 	/I$(TMP_DIR) \
-	/nologo \
-	/Zp1 
+	/nologo
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
@@ -275,6 +277,8 @@ $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
 	cl $(C_OPTIONS) $< /Fo$@
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
+	cl $(C_OPTIONS) $< /Fo$@
+{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.o:
 	cl $(C_OPTIONS) $< /Fo$@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)

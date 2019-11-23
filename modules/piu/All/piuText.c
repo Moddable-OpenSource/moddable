@@ -58,8 +58,9 @@ struct PiuTextLineStruct {
 	PiuCoordinate x;
 	xsIntegerValue portion;
 	xsIntegerValue slop;
-	PiuCoordinate y;
+	PiuCoordinate top;
 	PiuCoordinate base;
+	PiuCoordinate bottom;
 };
 
 enum {
@@ -553,35 +554,30 @@ void PiuTextDraw(void* it, PiuView* view, PiuRectangle area)
 	xsIntegerValue step;
 	PiuCoordinate clipTop = area->y;
 	PiuCoordinate clipBottom = clipTop + area->height;
-	PiuCoordinate lineTop = 0;
-	PiuCoordinate lineBottom = 0;
 	PiuTextLink* link = NULL;
+	PiuTextLine previousLine, line = NULL, nextLine = LINE(lineOffset);
+	xsIntegerValue top, bottom;
 	
 	PiuContentDraw(it, view, area);
-	
 	while (lineOffset < lineLimit) {
-		PiuTextLine line = LINE(lineOffset);
-		
-		fromOffset = line->textOffset;
-		lineTop = lineBottom;
-		if (clipBottom <= lineTop)
-			break;
-
+		previousLine = line;
+		line = nextLine;
 		lineOffset += sizeof(PiuTextLineRecord);
-		if (lineOffset < lineLimit) {
-			PiuTextLine nextLine = LINE(lineOffset);
-			toOffset = nextLine->textOffset;
-			lineBottom = nextLine->y;
-		}
-		else {
-			toOffset = (*self)->textOffset;
-			lineBottom = (*self)->textHeight;
-		}
-		if (lineBottom <= clipTop)
+		nextLine = (lineOffset < lineLimit) ? LINE(lineOffset) : NULL;
+		
+		top = (previousLine) ? previousLine->top : line->top;
+		bottom = (nextLine) ? nextLine->bottom : line->bottom;
+		
+		if (top >= clipBottom)
+			break;
+			
+		if (bottom <= clipTop)
 			continue;
 		
-		base = line->base;
+		fromOffset = line->textOffset;
+		toOffset = (nextLine) ? nextLine->textOffset : (*self)->textOffset;
 		
+		base = line->base;
 		
 		x = line->x;
 		portion = line->portion;
@@ -878,8 +874,9 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind
 			height = leading;
 		}
 	}
-	line->y = ctx->y;
+	line->top = ctx->y + (PiuCoordinate)ascent - ctx->lineAscent;
 	line->base = ctx->y + (PiuCoordinate)ascent;
+	line->bottom = line->top + ctx->lineHeight;
 	ctx->y += (PiuCoordinate)height;
 }
 
@@ -898,35 +895,29 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 	xsIntegerValue portion;
 	xsIntegerValue slop;
 	xsIntegerValue step;
-	PiuCoordinate lineTop = 0;
-	PiuCoordinate lineBottom = 0;
 	PiuCoordinate lineLeft = 0;
 	PiuCoordinate lineRight = 0;
+	PiuTextLine previousLine, line = NULL, nextLine = LINE(lineOffset);
+
 	void* link = NULL;
 	if (!((*self)->flags & piuActive))
 		return NULL;
 	if ((x < 0) || (y < 0) || (x >= (*self)->bounds.width) || (y >= (*self)->bounds.height))
 		return NULL;
 	while (lineOffset < lineLimit) {
-		PiuTextLine line = LINE(lineOffset);
+		previousLine = line;
+		line = nextLine;
+		lineOffset += sizeof(PiuTextLineRecord);
+		nextLine = (lineOffset < lineLimit) ? LINE(lineOffset) : NULL;
 		
-		fromOffset = line->textOffset;
-		lineTop = lineBottom;
-		if (y < lineTop)
+		if (y < line->top)
 			break;
 
-		lineOffset += sizeof(PiuTextLineRecord);
-		if (lineOffset < lineLimit) {
-			PiuTextLine nextLine = LINE(lineOffset);
-			toOffset = nextLine->textOffset;
-			lineBottom = nextLine->y;
-		}
-		else {
-			toOffset = (*self)->textOffset;
-			lineBottom = (*self)->textHeight;
-		}
-		if (lineBottom < y)
+    if (line->bottom < y)
 			continue;
+		
+		fromOffset = line->textOffset;
+		toOffset = (nextLine) ? nextLine->textOffset : (*self)->textOffset;
 		
 		lineLeft = line->x;
 		portion = line->portion;

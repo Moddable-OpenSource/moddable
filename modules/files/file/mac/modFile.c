@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,10 +19,10 @@
  */
 
 #include "xsmc.h"
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "xsmc.h"
-#include "xslinux.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,8 +38,10 @@ typedef struct {
 
 void xs_file_destructor(void *data)
 {
-	if (data && ((uintptr_t)-1 != (uintptr_t)data))
+	if (data && ((uintptr_t)-1 != (uintptr_t)data)) {
+		modInstrumentationAdjust(Files, -1);
 		fclose((FILE *)data);
+	}
 }
 
 void xs_File(xsMachine *the)
@@ -53,11 +55,13 @@ void xs_File(xsMachine *the)
 	file = fopen(path, write ? "rb+" : "rb");
 	if (NULL == file) {
 		if (write)
-			file = fopen(path, write ? "ab+" : "rb");
+			file = fopen(path, "ab+");
 		if (NULL == file)
 			xsUnknownError("file not found");
 	}
 	xsmcSetHostData(xsThis, (void *)((uintptr_t)file));
+
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_file_read(xsMachine *the)
@@ -131,6 +135,9 @@ void xs_file_write(xsMachine *the)
 			result = fwrite(buffer, 1, use, file);
 			if (result != use)
 				xsUnknownError("file write failed");
+			result = fflush(file);
+			if (0 != result)
+				xsUnknownError("file flush failed");
 		}
 	}
 }
@@ -139,7 +146,7 @@ void xs_file_close(xsMachine *the)
 {
 	void *data = xsmcGetHostData(xsThis);
 	FILE *file = ((FILE*)data);
-	xs_file_destructor((void *)((int)file));
+	xs_file_destructor((void *)((uintptr_t)file));
 	xsmcSetHostData(xsThis, (void *)NULL);
 }
 
@@ -280,5 +287,5 @@ void xs_file_system_config(xsMachine *the)
 
 void xs_file_system_info(xsMachine *the)
 {
-	xsUnknownError("umimplemented");
+	xsUnknownError("unimplemented");
 }

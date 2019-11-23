@@ -19,19 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#else
-	#include "xslinux.h"
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"
@@ -246,6 +234,7 @@ void dotstarSend_16LE(PocoPixel *pixels, int byteLength, void *refcon)
 	spiDisplay sd = refcon;
 	uint8_t *brightness = sd->brightness;
 
+	if (byteLength < 0) byteLength = -byteLength;
 	while (byteLength > 0) {
 		uint8_t buffer[16 * 4];
 		uint8_t *bgr = buffer;

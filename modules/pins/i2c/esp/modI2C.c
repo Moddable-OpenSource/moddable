@@ -20,6 +20,7 @@
 
 #include "mc.defines.h"
 #include "modI2C.h"
+#include "xsHost.h"
 
 #include "twi.h"		// i2c
 
@@ -64,7 +65,15 @@ void modI2CActivate(modI2CConfiguration config)
 
 	gI2CConfig = *config;
 
+#if defined(MODDEF_I2C_SDA_PIN) && defined(MODDEF_I2C_SCL_PIN)
 	twi_init((-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda, (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl);
+#else
+	if ((-1 == config->sda) || (-1 == config->scl)) {
+		modLog("invalid sda/scl");
+		return;
+	}
+	twi_init(config->sda, config->scl);
+#endif
 	if (config->hz)
 		twi_setClock(config->hz);
 }

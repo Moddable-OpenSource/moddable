@@ -56,15 +56,14 @@ export class Skin @ "PiuSkinDelete" {
 	get height() @ "PiuSkin_get_height"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let skin;
-			if (map)
-				skin = map.get(it);
+			if (global.assetMap)
+				skin = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!skin) {
 				skin = new Skin(it);
-				map.set(it, skin);
+				assetMap.set(it, skin);
 			}
 			return skin;
 		}
@@ -96,15 +95,14 @@ export class Style @ "PiuStyleDelete" {
 	measure(string) @ "PiuStyle_measure"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let style;
-			if (map)
-				style = map.get(it);
+			if (global.assetMap)
+				style = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!style) {
 				style = new Style(it);
-				map.set(it, style);
+				assetMap.set(it, style);
 			}
 			return style;
 		}
@@ -151,12 +149,13 @@ export function template(f) {
 global.template = template;
 
 export function Template(prototype) {
-	let result = function($, it = {}) {
-		let self = (this) ? this : Object.create(prototype);
+	const proto = prototype;
+	const result = function($, it = {}) {
+		let self = (this) ? this : Object.create(proto);
 		self._create($, it);
 		return self;
 	}
-	result.prototype = prototype;
+	result.prototype = proto;
 	result.template = template;
 	return result;
 }
@@ -164,12 +163,12 @@ global.Template = Template;
 
 // CONTENTS
 
-let proto = @ "PiuContentDelete";
+const proto = @ "PiuContentDelete";
 Object.freeze(proto);
 
 // PiuContent.c
 
-export let Content = Template(Object.freeze({
+export const Content = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuContent_create",
 	
@@ -249,7 +248,7 @@ global.Content = Content;
 
 // PiuLabel.c
 
-export let Label = Template(Object.freeze({
+export const Label = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuLabel_create",
 
@@ -261,7 +260,7 @@ global.Label = Label;
 
 // PiuText.c
 
-export let Text = Template(Object.freeze({
+export const Text = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuText_create",
 
@@ -281,7 +280,7 @@ export let Text = Template(Object.freeze({
 }));
 global.Text = Text;
 
-export let Link = Template(Object.freeze({
+export const Link = Template(Object.freeze({
 	__proto__: proto,
 	_create($, it) @ "PiuTextLink_create",
 
@@ -296,7 +295,7 @@ global.Link = Link;
 
 // PiuPort.c
 
-export let Port = Template(Object.freeze({
+export const Port = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuPort_create",
 	
@@ -323,7 +322,7 @@ global.Port = Port;
 
 // PiuContainer.c
 
-export let Container = Template(Object.freeze({
+export const Container = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuContainer_create",
 	_recurse(it) {
@@ -360,7 +359,7 @@ global.Container = Container;
 
 // PiuColumn.c
 
-export let Column = Template(Object.freeze({
+export const Column = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuColumn_create",
 }));
@@ -368,7 +367,7 @@ global.Column = Column;
 
 // PiuLayout.c
 
-export let Layout = Template(Object.freeze({
+export const Layout = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuLayout_create",
 }));
@@ -376,7 +375,7 @@ global.Layout = Layout;
 
 // PiuRow.c
 
-export let Row = Template(Object.freeze({
+export const Row = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuRow_create",
 }));
@@ -384,7 +383,7 @@ global.Row = Row;
 
 // PiuScroller.c
 
-export let Scroller = Template(Object.freeze({
+export const Scroller = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuScroller_create",
 

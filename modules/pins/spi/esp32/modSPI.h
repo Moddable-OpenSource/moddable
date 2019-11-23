@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,8 +34,10 @@ typedef void (*modSPIChipSelectCallback)(uint8_t active, modSPIConfiguration con
 
 struct modSPIConfigurationRecord {
 	spi_device_handle_t			spi_dev;
-	uint8_t						cs_pin;
+	int8_t						cs_pin;
 	uint8_t						spiPort;
+	uint8_t						sync;
+	uint8_t						miso_delay;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
 };
@@ -47,7 +49,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.hz = HZ; \
 	config.cs_pin = CS_PIN; \
 	config.doChipSelect = DOCHIPSELECT; \
-	config.spiPort = SPI_PORT;
+	config.spiPort = SPI_PORT; \
+	config.sync = 1;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);
@@ -60,5 +63,6 @@ extern void modSPITxGray256To16BE(modSPIConfiguration config, uint8_t *data, uin
 extern void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count);
 extern void modSPIFlush(void);
 extern void modSPIActivateConfiguration(modSPIConfiguration config);
+#define modSPISetSync(config, _sync) (config)->sync = (_sync)
 
 #endif

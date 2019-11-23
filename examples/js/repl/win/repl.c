@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,7 +22,7 @@
 #include "xsAll.h"
 #include "mc.xs.h"
 
-extern txPreparation* xsPreparation();
+extern txPreparation* xsPreparation;
 
 void fxAbort(xsMachine* the)
 {
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 #endif
 		{
 			xsTry {
-				xsCall1(xsGlobal, xsID_require, xsString("main"));
+				xsResult = xsAwaitImport("main", XS_IMPORT_NAMESPACE);
 			}
 			xsCatch {
 				xsStringValue message = xsToString(xsException);

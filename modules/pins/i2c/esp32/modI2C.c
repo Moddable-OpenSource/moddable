@@ -20,7 +20,7 @@
 
 #include "mc.defines.h"
 #include "modI2C.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "driver/i2c.h"
 
@@ -90,8 +90,17 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 {
 	i2c_config_t conf;
 
+#if defined(MODDEF_I2C_SDA_PIN) && defined(MODDEF_I2C_SCL_PIN)
 	conf.sda_io_num = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
 	conf.scl_io_num = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;
+#else
+	if ((-1 == config->sda) || (-1 == config->scl)) {
+		modLog("invalid sda/scl");
+		return 1;
+	}
+	conf.sda_io_num = config->sda;
+	conf.scl_io_num = config->scl;
+#endif
 	conf.master.clk_speed = config->hz ? config->hz : 100000;
 
 	if ((conf.master.clk_speed == gHz) && (gSda == conf.sda_io_num) && (gScl == conf.scl_io_num))

@@ -20,7 +20,7 @@ The left pane displays:
 * The **Kill** ![](../assets/xsbug/kill.png), **Break** ![](../assets/xsbug/break.png), **Run** ![](../assets/xsbug/run.png), **Step** ![](../assets/xsbug/step.png), **Step In**  ![](../assets/xsbug/step-in.png) and **Step Out**  ![](../assets/xsbug/step-out.png) buttons. Corresponding menu items and shortcuts are also available in the **Debug** menu to control the virtual machine.
 * The **Instrumentation** panel. Use this to track memory usage and profile application and resource consumption in real-time.
 * The **Calls** stack panel. Select a row in this panel to see where the call happened.
-* The **Locals**, **Modules** and **Globals** variables panel. Expand rows in these panels to inspect values.
+* The **Locals**, **Modules**, and **Globals** panels. Use these to inspect values of local and global variables and see which modules are loaded. Dictionaries and arrays have the ![](../assets/xsbug/arrow.png) icon next to their name. You can inspect the values of a dictionary's properties or an array's items by tapping the name to expand the row.
 
 The right panes display:
 

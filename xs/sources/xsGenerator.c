@@ -37,14 +37,24 @@
 
 #include "xsAll.h"
 
+//#define mxPromisePrint 1
+
 static void fxNewGeneratorResult(txMachine* the, txBoolean done);
+
 static txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot);
+static void fx_Generator_prototype_aux(txMachine* the, txFlag status);
+
 static void fxAsyncGeneratorRejectAwait(txMachine* the);
 static void fxAsyncGeneratorRejectYield(txMachine* the);
 static void fxAsyncGeneratorResolveAwait(txMachine* the);
 static void fxAsyncGeneratorResolveYield(txMachine* the);
 static void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status);
 static txSlot* fxCheckAsyncGeneratorInstance(txMachine* the, txSlot* slot);
+static void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status);
+
+static void fxAsyncFromSyncIteratorDone(txMachine* the);
+static txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot);
+static void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status);
 
 void fxBuildGenerator(txMachine* the)
 {
@@ -59,7 +69,7 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxLastProperty(the, fxNewHostConstructor(the, mxCallback(fx_Generator), 1, XS_NO_ID));
 	slot = fxNextStringXProperty(the, slot, "GeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxGeneratorFunctionPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_GeneratorFunction), 1, mxID(_GeneratorFunction));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_GeneratorFunction), 1, mxID(_GeneratorFunction));
 	the->stack++;
 	
 	slot = mxBehaviorGetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
@@ -84,7 +94,7 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxLastProperty(the, fxNewHostConstructor(the, mxCallback(fx_AsyncGenerator), 1, XS_NO_ID));
 	slot = fxNextStringXProperty(the, slot, "AsyncGeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncGeneratorFunctionPrototype = *the->stack;
-	slot = fxNewHostConstructor(the, mxCallback(fx_AsyncGeneratorFunction), 1, mxID(_AsyncGeneratorFunction));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncGeneratorFunction), 1, mxID(_AsyncGeneratorFunction));
 	the->stack++;
 
 	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
@@ -250,6 +260,8 @@ void fx_GeneratorFunction(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -262,16 +274,16 @@ void fx_GeneratorFunction(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -382,9 +394,6 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 		state->value.integer = XS_CODE_END;
 		
 	if (state->value.integer == XS_CODE_END) {
-		mxPushSlot(resolveYieldFunction);
-		mxPushSlot(rejectYieldFunction);
-		mxPushInteger(2);
 		if ((status == XS_NO_STATUS) || (mxArgc == 0))
 			mxPushUndefined();
 		else 
@@ -395,45 +404,59 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			fxCallID(the, mxID(_reject));
 		else
 			fxCallID(the, mxID(_resolve));
-		fxCallID(the, mxID(_then));
+#ifdef mxPromisePrint
+			fprintf(stderr, "fxAsyncGeneratorStep %d\n", the->stack->value.reference->next->ID);
+#endif
+		fxPromiseThen(the, the->stack->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL);
 		mxPop();
 	}
 	else {
 		mxTry(the) {
 			the->status = status;
 			state->value.integer = XS_NO_CODE;
-			fxRunID(the, generator, XS_NO_ID);
+			fxRunID(the, generator, 0);
 			if (state->value.integer == XS_NO_CODE)
 				state->value.integer = XS_CODE_END;
 			value = the->stack;
-			mxPushSlot(value);
-			mxPushInteger(1);
-			mxPush(mxPromiseConstructor);
-			fxCallID(the, mxID(_resolve));
-			mxPullSlot(value);
-			if (state->value.integer == XS_CODE_AWAIT) {
-				mxPushSlot(resolveAwaitFunction);
-				mxPushSlot(rejectAwaitFunction);
+			if (value->kind == XS_UNINITIALIZED_KIND) {
+				value->kind = XS_UNDEFINED_KIND;
+				state->value.integer = XS_CODE_END;
+				
+				mxPushUndefined();
+				mxPushInteger(1);
+				mxPushUndefined();
+				mxPushSlot(resolveYieldFunction);
+				fxCall(the);
+				mxPop();
 			}
 			else {
-				mxPushSlot(resolveYieldFunction);
-				mxPushSlot(rejectYieldFunction);
+				mxPushSlot(value);
+				mxPushInteger(1);
+				mxPush(mxPromiseConstructor);
+				fxCallID(the, mxID(_resolve));
+				value = the->stack;
+#ifdef mxPromisePrint
+				fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
+#endif
+				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+					state->value.integer = XS_CODE_END;
+				if (state->value.integer == XS_CODE_AWAIT) {
+					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL);
+				}
+				else {
+					fxPromiseThen(the, value->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL);
+				}
 			}
-			mxPushInteger(2);
-			mxPushSlot(value);
-			fxCallID(the, mxID(_then));
 			mxPop();
 		}
 		mxCatch(the) {
 			state->value.integer = XS_CODE_END;
-			mxPushSlot(resolveYieldFunction);
-			mxPushSlot(rejectYieldFunction);
-			mxPushInteger(2);
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPush(mxPromiseConstructor);
 			fxCallID(the, mxID(_reject));
-			fxCallID(the, mxID(_then));
+			fxPromiseThen(the, the->stack->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL);
 			mxPop();
 		}
 	}
@@ -538,6 +561,7 @@ void fx_AsyncGenerator(txMachine* the)
 void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 {
 	txSlot* stack = the->stack;
+	txSlot* capability;
 	txSlot* promise;
 	txSlot* slot;
 	txSlot* resolveFunction;
@@ -547,14 +571,17 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 	txSlot* instance;
 	txSlot* property;
 	
-	mxPush(mxPromisePrototype);
-	promise = fxNewPromiseInstance(the);
-	slot = mxPromiseStatus(promise);
-	slot->value.integer = mxPendingStatus;
+	capability = fxNewHostFunction(the, fxBuildPromiseCapability, 2, XS_NO_ID);
+	mxPushReference(capability);
+	mxPushInteger(1);
+	mxPush(mxPromiseConstructor);
+	fxNew(the);
 	mxPullSlot(mxResult);
-	slot = fxNewPromiseAlready(the);
-	resolveFunction = fxNewPromiseFunction(the, slot, promise, mxResolvePromiseFunction.value.reference);
-	rejectFunction =  fxNewPromiseFunction(the, slot, promise, mxRejectPromiseFunction.value.reference);
+	fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);
+	promise = mxResult->value.reference;
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncGenerator_prototype_aux %d\n", promise->next->ID);
+#endif
 	{
 		mxTry(the) {
 			generator = fxCheckAsyncGeneratorInstance(the, mxThis);
@@ -584,6 +611,7 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPushUndefined();
 			mxPushReference(rejectFunction);
@@ -628,6 +656,8 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 {	
 	txInteger c, i;
 	txStringStream stream;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	if (!module) module = mxProgram.value.reference;
 	
 	c = mxArgc;
 	i = 0;
@@ -640,16 +670,16 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 		c--;
 		i++;
 	}
-	fxConcatStringC(the, the->stack, "){");
+	fxConcatStringC(the, the->stack, "\n){");
 	if (c > 0) {
 		fxToString(the, mxArgv(i));
 		fxConcatString(the, the->stack, mxArgv(i));
 	}
-	fxConcatStringC(the, the->stack, "})");
+	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -664,6 +694,18 @@ void fx_AsyncIterator_asyncIterator(txMachine* the)
 	*mxResult = *mxThis;
 }
 
+void fxAsyncFromSyncIteratorDone(txMachine* the)
+{
+	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* instance = slot->value.home.object;
+	txSlot* iterator = instance->next;
+	txSlot* nextFunction = iterator->next;
+	txSlot* doneFunction = nextFunction->next;
+	txSlot* doneFlag = doneFunction->next;
+	mxPushSlot(mxArgv(0));
+	fxNewGeneratorResult(the, doneFlag->value.boolean);
+	mxPullSlot(mxResult);
+}
 
 txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot)
 {
@@ -682,207 +724,145 @@ txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the)
 	txSlot* iterator = the->stack;
 	txSlot* instance;
 	txSlot* slot;
+	txSlot* function;
+	txSlot* home;
 	mxPush(mxAsyncFromSyncIteratorPrototype);
 	instance = fxNewObjectInstance(the);
 	slot = fxLastProperty(the, instance);
+	
 	slot = fxNextSlotProperty(the, slot, iterator, mxID(_iterator), XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+
 	mxPushSlot(iterator);
 	fxGetID(the, mxID(_next));
 	slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPop();
+	
+	function = fxNewHostFunction(the, fxAsyncFromSyncIteratorDone, 1, XS_NO_ID);
+	home = mxFunctionInstanceHome(function);
+	home->value.home.object = instance;
+    slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxPop();
+	
+    slot = fxNextBooleanProperty(the, slot, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+
 	mxPullSlot(iterator);
 	return instance;
 }
 
-void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
+void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 {
 	txSlot* stack = the->stack;
+	txSlot* capability;
 	txSlot* promise;
 	txSlot* slot;
 	txSlot* resolveFunction;
     txSlot* rejectFunction;
 	txSlot* instance;
 	txSlot* iterator;
-	txSlot* nextFunction;
-	txBoolean done;
+	txSlot* stepFunction = C_NULL;
 	
-	mxPush(mxPromisePrototype);
-	promise = fxNewPromiseInstance(the);
-	slot = mxPromiseStatus(promise);
-	slot->value.integer = mxPendingStatus;
+	capability = fxNewHostFunction(the, fxBuildPromiseCapability, 2, XS_NO_ID);
+	mxPushReference(capability);
+	mxPushInteger(1);
+	mxPush(mxPromiseConstructor);
+	fxNew(the);
 	mxPullSlot(mxResult);
-	slot = fxNewPromiseAlready(the);
-	resolveFunction = fxNewPromiseFunction(the, slot, promise, mxResolvePromiseFunction.value.reference);
-	rejectFunction = fxNewPromiseFunction(the, slot, promise, mxRejectPromiseFunction.value.reference);
+	fxCheckPromiseCapability(the, capability, &resolveFunction, &rejectFunction);
+	promise = mxResult->value.reference;
+#ifdef mxPromisePrint
+	fprintf(stderr, "fx_AsyncFromSyncIterator_prototype_aux %d %d\n", promise->next->ID, status);
+#endif
     {
 		mxTry(the) {
 			instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
 			iterator = instance->next;
-			nextFunction = iterator->next;
-			if (mxArgc == 0)
-				mxPushUndefined();
-			else
-				mxPushSlot(mxArgv(0));
-			mxPushInteger(1);
-			mxPushSlot(iterator);
-			mxPushSlot(nextFunction);
-			fxCall(the);
-			slot = the->stack;
-			mxPushSlot(slot);
-			fxGetID(the, mxID(_done));
-			done = fxToBoolean(the, the->stack);
-			mxPop();
-			fxGetID(the, mxID(_value));
-			fxNewGeneratorResult(the, done);
-			mxPushInteger(1);
-			mxPushUndefined();
-			mxPushReference(resolveFunction);
-			fxCall(the);
+			if (status == XS_NO_STATUS) {
+				stepFunction = iterator->next;
+			}
+			else if (status == XS_RETURN_STATUS) {
+				mxPushSlot(iterator);
+				fxGetID(the, mxID(_return));
+				if (mxIsUndefined(the->stack)) {
+					mxPushUndefined();
+					fxNewGeneratorResult(the, 1);
+					mxPushInteger(1);
+					mxPushUndefined();
+					mxPushReference(resolveFunction);
+					fxCall(the);
+				}
+				else
+					stepFunction = the->stack;
+			}
+			else {
+				mxPushSlot(iterator);
+				fxGetID(the, mxID(_throw));
+				if (mxIsUndefined(the->stack)) {
+					if (mxArgc == 0)
+						mxPushUndefined();
+					else
+						mxPushSlot(mxArgv(0));
+					mxPushInteger(1);
+					mxPushUndefined();
+					mxPushReference(rejectFunction);
+					fxCall(the);
+				}
+				else
+					stepFunction = the->stack;
+			}
+			if (stepFunction) {
+				txSlot* doneFunction = iterator->next->next;
+				txSlot* doneFlag = doneFunction->next;
+				if (mxArgc == 0)
+					mxPushUndefined();
+				else
+					mxPushSlot(mxArgv(0));
+				mxPushInteger(1);
+				mxPushSlot(iterator);
+				mxPushSlot(stepFunction);
+				fxCall(the);
+				slot = the->stack;
+                if (!mxIsReference(slot)) {
+                    mxTypeError("no object");
+                }
+
+				mxPushSlot(slot);
+				fxGetID(the, mxID(_done));
+				doneFlag->value.boolean = fxToBoolean(the, the->stack);
+
+				mxPushSlot(slot);
+				fxGetID(the, mxID(_value));
+				mxPushInteger(1);
+				mxPush(mxPromiseConstructor);
+				fxCallID(the, mxID(_resolve));
+
+				fxPromiseThen(the, the->stack->value.reference, doneFunction, C_NULL, capability);
+			}
 		}
 		mxCatch(the) {
 			mxPush(mxException);
+			mxException = mxUndefined;
 			mxPushInteger(1);
 			mxPushUndefined();
 			mxPushReference(rejectFunction);
 			fxCall(the);
-			mxPop();
 		}
     }
 	the->stack = stack;
 }
 
+void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
+{
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_NO_STATUS);
+}
+
 void fx_AsyncFromSyncIterator_prototype_return(txMachine* the)
 {
-	txSlot* stack = the->stack;
-	txSlot* promise;
-	txSlot* slot;
-	txSlot* resolveFunction;
-	txSlot* rejectFunction;
-	txSlot* instance;
-	txSlot* iterator;
-	txSlot* returnFunction;
-	txBoolean done;
-
-	mxPush(mxPromisePrototype);
-	promise = fxNewPromiseInstance(the);
-	slot = mxPromiseStatus(promise);
-	slot->value.integer = mxPendingStatus;
-	mxPullSlot(mxResult);
-	slot = fxNewPromiseAlready(the);
-	resolveFunction = fxNewPromiseFunction(the, slot, promise, mxResolvePromiseFunction.value.reference);
-	rejectFunction = fxNewPromiseFunction(the, slot, promise, mxRejectPromiseFunction.value.reference);
-	{
-		mxTry(the) {
-			instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
-			iterator = instance->next;
-			mxPushSlot(iterator);
-			fxGetID(the, mxID(_return));
-			returnFunction = the->stack;
-			if (mxIsUndefined(returnFunction)) {
-				done = 1;
-				mxPushUndefined();
-			}
-			else {
-				if (mxArgc == 0)
-					mxPushUndefined();
-				else
-					mxPushSlot(mxArgv(0));
-				mxPushInteger(1);
-				mxPushSlot(iterator);
-				mxPushSlot(returnFunction);
-				fxCall(the);
-				slot = the->stack;
-				mxPushSlot(slot);
-				fxGetID(the, mxID(_done));
-				done = fxToBoolean(the, the->stack);
-				mxPop();
-				fxGetID(the, mxID(_value));
-			}
-			fxNewGeneratorResult(the, done);
-			mxPushInteger(1);
-			mxPushUndefined();
-			mxPushReference(resolveFunction);
-			fxCall(the);
-		}
-		mxCatch(the) {
-			mxPush(mxException);
-			mxPushInteger(1);
-			mxPushUndefined();
-			mxPushReference(rejectFunction);
-			fxCall(the);
-		}
-	}
-	the->stack = stack;
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_RETURN_STATUS);
 }
 
 void fx_AsyncFromSyncIterator_prototype_throw(txMachine* the)
 {
-	txSlot* stack = the->stack;
-	txSlot* promise;
-	txSlot* slot;
-	txSlot* resolveFunction;
-	txSlot* rejectFunction;;
-	txSlot* instance;
-	txSlot* iterator;
-	txSlot* throwFunction;
-	txBoolean done;
-	
-	mxPush(mxPromisePrototype);
-	promise = fxNewPromiseInstance(the);
-	slot = mxPromiseStatus(promise);
-	slot->value.integer = mxPendingStatus;
-	mxPullSlot(mxResult);
-	slot = fxNewPromiseAlready(the);
-	resolveFunction = fxNewPromiseFunction(the, slot, promise, mxResolvePromiseFunction.value.reference);
-	rejectFunction = fxNewPromiseFunction(the, slot, promise, mxRejectPromiseFunction.value.reference);
-	{
-		mxTry(the) {
-			instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
-			iterator = instance->next;
-			mxPushSlot(iterator);
-			fxGetID(the, mxID(_throw));
-			throwFunction = the->stack;
-			if (mxIsUndefined(throwFunction)) {
-				if (mxArgc == 0)
-					mxPushUndefined();
-				else
-					mxPushSlot(mxArgv(0));
-				mxPushInteger(1);
-				mxPushUndefined();
-				mxPushReference(rejectFunction);
-				fxCall(the);
-			}
-			else {
-				if (mxArgc == 0)
-					mxPushUndefined();
-				else
-					mxPushSlot(mxArgv(0));
-				mxPushInteger(1);
-				mxPushSlot(iterator);
-				mxPushSlot(throwFunction);
-				fxCall(the);
-				slot = the->stack;
-				mxPushSlot(slot);
-				fxGetID(the, mxID(_done));
-				done = fxToBoolean(the, the->stack);
-				mxPop();
-				fxGetID(the, mxID(_value));
-				fxNewGeneratorResult(the, done);
-				mxPushInteger(1);
-				mxPushUndefined();
-				mxPushReference(resolveFunction);
-				fxCall(the);
-			}
-		}
-		mxCatch(the) {
-			mxPush(mxException);
-			mxPushInteger(1);
-			mxPushUndefined();
-			mxPushReference(rejectFunction);
-			fxCall(the);
-		}
-	}
-	the->stack = stack;
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_THROW_STATUS);
 }
 
 

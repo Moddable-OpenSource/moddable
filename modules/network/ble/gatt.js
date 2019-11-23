@@ -17,9 +17,10 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import {Bytes} from "btutils";
 
-export class Client {
+import {Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
+
+class Client {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -61,6 +62,12 @@ export class Client {
 	readRSSI() {
 		this._readRSSI(this.connection);
 	}
+	
+	exchangeMTU(value) {
+		this._exchangeMTU(this.connection, value);
+	}
+	
+	_exchangeMTU() @ "xs_gap_connection_exchange_mtu"
 	
 	_discoverPrimaryServices() @ "xs_gatt_client_discover_primary_services"
 
@@ -117,20 +124,32 @@ export class Client {
 			}
 			case "onCharacteristicNotification": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
+				if (characteristic) {
+					params.value = typedBufferToValue(characteristic.type, params.value);
 					this.ble.onCharacteristicNotification(characteristic, params.value);		
+				}
 				break;
 			}
 			case "onCharacteristicValue": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
+				if (characteristic) {
+					params.value = typedBufferToValue(characteristic.type, params.value);
 					this.ble.onCharacteristicValue(characteristic, params.value);		
+				}
 				break;
 			}
 			case "onDescriptorValue": {
 				let descriptor = this._findDescriptorByHandle(params.handle);
-				if (descriptor)
+				if (descriptor) {
+					params.value = typedBufferToValue(descriptor.type, params.value);
 					this.ble.onDescriptorValue(descriptor, params.value);		
+				}
+				break;
+			}
+			case "onDescriptorWritten": {
+				let descriptor = this._findDescriptorByHandle(params.handle);
+				if (descriptor)
+					this.ble.onDescriptorWritten(descriptor);		
 				break;
 			}
 		}
@@ -138,7 +157,7 @@ export class Client {
 };
 Object.freeze(Client.prototype);
 
-export class Service {
+class Service {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -200,7 +219,7 @@ export class Service {
 };
 Object.freeze(Service.prototype);
 
-export class Characteristic {
+class Characteristic {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -221,6 +240,12 @@ export class Characteristic {
 					break;
 				case "properties":
 					this.properties = dictionary.properties;
+					break;
+				case "type":
+					this.type = dictionary.type;
+					break;
+				case "name":
+					this.name = dictionary.name;
 					break;
 				default:
 					throw new Error(`invalid property "${property}`);
@@ -250,6 +275,7 @@ export class Characteristic {
 	}
 
 	writeWithoutResponse(value) {
+		value = typedValueToBuffer(this.type, value);
 		this._writeWithoutResponse(this.connection, this.handle, value);
 	}
 	
@@ -277,7 +303,7 @@ export class Characteristic {
 };
 Object.freeze(Characteristic.prototype);
 
-export class Descriptor {
+class Descriptor {
 	constructor(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
@@ -296,6 +322,12 @@ export class Descriptor {
 				case "characteristic":
 					this.characteristic = dictionary.characteristic;
 					break;
+				case "type":
+					this.type = dictionary.type;
+					break;
+				case "name":
+					this.name = dictionary.name;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;
@@ -309,16 +341,22 @@ export class Descriptor {
 		this._readValue(this.connection, this.handle, auth);
 	}
 
-	writeValue(value) {
+	writeWithoutResponse(value) {
+		value = typedValueToBuffer(this.type, value);
 		this._writeValue(this.connection, this.handle, value);
 	}
 	
+	writeValue(value) {
+		value = typedValueToBuffer(this.type, value);
+		this._writeValue(this.connection, this.handle, value, true);
+	}
+
 	_readValue() @ "xs_gatt_descriptor_read_value"
 	_writeValue() @ "xs_gatt_descriptor_write_value"
 };
 Object.freeze(Descriptor.prototype);
 
-export default {
+export {
 	Client,
 	Service,
 	Characteristic,

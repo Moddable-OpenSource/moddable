@@ -47,6 +47,8 @@ endif
 XS_DIR ?= $(realpath ../..)
 BUILD_DIR ?= $(realpath ../../../build)
 
+XSC =  $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
+
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
 PLT_DIR = $(XS_DIR)/platforms
@@ -55,15 +57,21 @@ TLS_DIR = $(XS_DIR)/tools
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 C_OPTIONS =\
+	-DINCLUDE_XSPLATFORM \
+	-DXSPLATFORM=\"xslOpt.h\" \
 	-fno-common\
 	-I$(INC_DIR)\
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR)\
 	-I$(TLS_DIR)\
 	-I$(TMP_DIR)\
-	-DmxLink=1
+	-DmxLink=1\
 	-DmxRun=1
-C_OPTIONS += -DmxNoFunctionLength=1 -DmxNoFunctionName=1 -DmxHostFunctionPrimitive=1 -DmxFewGlobalsTable=1
+C_OPTIONS +=\
+	-DmxNoFunctionLength=1\
+	-DmxNoFunctionName=1\
+	-DmxHostFunctionPrimitive=1\
+	-DmxFewGlobalsTable=1
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -82,6 +90,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsAtomics.o \
 	$(TMP_DIR)/xsBigInt.o \
 	$(TMP_DIR)/xsBoolean.o \
+	$(TMP_DIR)/xsCode.o \
 	$(TMP_DIR)/xsCommon.o \
 	$(TMP_DIR)/xsDataView.o \
 	$(TMP_DIR)/xsDate.o \
@@ -92,6 +101,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsGenerator.o \
 	$(TMP_DIR)/xsGlobal.o \
 	$(TMP_DIR)/xsJSON.o \
+	$(TMP_DIR)/xsLexical.o \
 	$(TMP_DIR)/xsMapSet.o \
 	$(TMP_DIR)/xsMarshall.o \
 	$(TMP_DIR)/xsMath.o \
@@ -106,12 +116,18 @@ OBJECTS = \
 	$(TMP_DIR)/xsProxy.o \
 	$(TMP_DIR)/xsRegExp.o \
 	$(TMP_DIR)/xsRun.o \
+	$(TMP_DIR)/xsScope.o \
+	$(TMP_DIR)/xsScript.o \
+	$(TMP_DIR)/xsSourceMap.o \
 	$(TMP_DIR)/xsString.o \
 	$(TMP_DIR)/xsSymbol.o \
+	$(TMP_DIR)/xsSyntaxical.o \
+	$(TMP_DIR)/xsTree.o \
 	$(TMP_DIR)/xsType.o \
 	$(TMP_DIR)/xsdtoa.o \
 	$(TMP_DIR)/xsre.o \
 	$(TMP_DIR)/xslBase.o \
+	$(TMP_DIR)/xslOpt.o \
 	$(TMP_DIR)/xslSlot.o \
 	$(TMP_DIR)/xslStrip.o \
 	$(TMP_DIR)/xsl.o
@@ -134,10 +150,12 @@ $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(TLS_DIR)/xsl.h
+$(OBJECTS): $(TLS_DIR)/xslOpt.h
+
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@
-
+	
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME)
 	rm -rf $(BUILD_DIR)/bin/lin/release/$(NAME)

@@ -32,10 +32,20 @@ UPLOAD_SPEED = 921600
 DEBUGGER_SPEED = 460800
 !ENDIF
 
-
 !IF "$(BASE_DIR)"==""
 BASE_DIR = $(USERPROFILE)
 !ENDIF
+
+!IF "$(UPLOAD_PORT)"==""
+!ERROR UPLOAD_PORT environment variable must be defined!
+!ENDIF
+
+!IF "$(SERIAL2XSBUG)"==""
+!IF "$(DEBUG)"=="1"
+!ERROR SERIAL2XSBUG environment variable must be defined!
+!ENDIF
+!ENDIF
+
 
 MSYS32_BASE = $(BASE_DIR)\msys32
 !IF "$(IDF_PATH)"==""
@@ -64,30 +74,35 @@ PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\xsProj
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
 
 INC_DIRS = \
-	-I$(IDF_PATH)\components \
+ 	-I$(IDF_PATH)\components \
+ 	-I$(IDF_PATH)\components\bt\include \
+ 	-I$(IDF_PATH)\components\bt\bluedroid\api\include \
+ 	-I$(IDF_PATH)\components\bt\bluedroid\api\include\api \
+ 	-I$(IDF_PATH)\components\driver\include \
+ 	-I$(IDF_PATH)\components\esp32\include \
+ 	-I$(IDF_PATH)\components\esp_event\include \
+ 	-I$(IDF_PATH)\components\esp_ringbuf\include \
+ 	-I$(IDF_PATH)\components\freertos \
+ 	-I$(IDF_PATH)\components\freertos\include \
+ 	-I$(IDF_PATH)\components\freertos\include\freertos \
 	-I$(IDF_PATH)\components\heap\include \
-	-I$(IDF_PATH)\components\driver\include \
-	-I$(IDF_PATH)\components\soc\esp32\include \
-	-I$(IDF_PATH)\components\soc\include \
-	-I$(IDF_PATH)\components\esp32\include \
-	-I$(IDF_PATH)\components\esp_ringbuf\include \
-	-I$(IDF_PATH)\components\soc\esp32\include\soc \
-	-I$(IDF_PATH)\components\freertos \
-	-I$(IDF_PATH)\components\freertos\include \
-	-I$(IDF_PATH)\components\freertos\include\freertos \
-	-I$(IDF_PATH)\components\lwip\include\lwip \
-	-I$(IDF_PATH)\components\lwip\include\lwip\port \
-	-I$(IDF_PATH)\components\mbedtls\include \
-	-I$(IDF_PATH)\components\spi_flash\include \
-	-I$(IDF_PATH)\components\vfs\include \
-	-I$(IDF_PATH)\components\tcpip_adapter\include \
-	-I$(IDF_PATH)\components\tcpip_adapter \
-	-I$(IDF_PATH)\components\bt\include \
-	-I$(IDF_PATH)\components\bt\bluedroid\api\include \
-	-I$(IDF_PATH)\components\bt\bluedroid\api\include\api \
-	-I$(IDF_PATH)\components\newlib\include \
-	-I$(IDF_PATH)\components\newlib\platform_include
-	
+ 	-I$(IDF_PATH)\components\log\include \
+ 	-I$(IDF_PATH)\components\lwip\include\apps \
+ 	-I$(IDF_PATH)\components\lwip\lwip\src\include \
+ 	-I$(IDF_PATH)\components\lwip\port\esp32 \
+ 	-I$(IDF_PATH)\components\lwip\port\esp32\include \
+ 	-I$(IDF_PATH)\components\mbedtls\include \
+ 	-I$(IDF_PATH)\components\newlib\include \
+ 	-I$(IDF_PATH)\components\newlib\platform_include \
+ 	-I$(IDF_PATH)\components\soc\esp32\include \
+ 	-I$(IDF_PATH)\components\soc\esp32\include\soc \
+ 	-I$(IDF_PATH)\components\soc\include \
+ 	-I$(IDF_PATH)\components\spiffs\include \
+ 	-I$(IDF_PATH)\components\spi_flash\include \
+ 	-I$(IDF_PATH)\components\tcpip_adapter \
+ 	-I$(IDF_PATH)\components\tcpip_adapter\include \
+ 	-I$(IDF_PATH)\components\vfs\include
+
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
 	$(LIB_DIR)\xsPlatform.o \
@@ -96,6 +111,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsArguments.o \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
+	$(LIB_DIR)\xsBigInt.o \
 	$(LIB_DIR)\xsBoolean.o \
 	$(LIB_DIR)\xsCode.o \
 	$(LIB_DIR)\xsCommon.o \
@@ -142,10 +158,10 @@ XS_DIRS = \
 
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
-	$(XS_DIR)\includes\xsesp.h \
 	$(XS_DIR)\includes\xsmc.h \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
+	$(XS_DIR)\platforms\esp\xsHost.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 
 !IF "$(SDKCONFIGPATH)"==""
@@ -256,17 +272,18 @@ debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
 
 release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); make monitor;"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); make monitor;"
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
+	if exist $(TMP_DIR)\_fc.tmp del $(TMP_DIR)\_fc.tmp
 !IF !EXIST($(SDKCONFIGPRIOR))
 	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
 !ENDIF
@@ -275,7 +292,8 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	echo 1 > $(TMP_DIR)\_s.tmp
 !ENDIF
 	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else ( echo 1 > $(TMP_DIR)\_s.tmp )
-	-FC $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) | (find "CONFIG_" > nul) && (echo 1 > $(TMP_DIR)\_s.tmp)
+	-if exist $(SDKCONFIGPRIOR) (fc $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) > $(TMP_DIR)\_fc.tmp)
+	-if exist $(TMP_DIR)\_fc.tmp ((find "CONFIG_" $(TMP_DIR)\_fc.tmp > nul) && echo 1 > $(TMP_DIR)\_s.tmp )
 	set HOME=$(PROJ_DIR)
 	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
 	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR))
@@ -339,6 +357,6 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
-$(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c

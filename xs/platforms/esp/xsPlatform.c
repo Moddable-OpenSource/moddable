@@ -36,32 +36,45 @@
  */
 
 #include "xsAll.h"
+#include "modTimer.h"
 #include "stdio.h"
 #include "lwip/tcp.h"
+#include "modLwipSafe.h"
+#include "mc.defines.h"
 
 #if ESP32
 	#include "rom/ets_sys.h"
+	#include "nvs_flash/include/nvs_flash.h"
+	#include "esp_partition.h"
 #else
 	#include "tinyprintf.h"
+	#include "spi_flash.h"
 #endif
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
+#ifdef mxInstrument
+	extern void espDescribeInstrumentation(txMachine *the);
+#endif
+
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
+static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
 
 #if defined (mxDebug) && ESP32
 	SemaphoreHandle_t gDebugMutex;
 
 	#define mxDebugMutexTake() xSemaphoreTake(gDebugMutex, portMAX_DELAY)
 	#define mxDebugMutexGive() xSemaphoreGive(gDebugMutex)
+	#define mxDebugMutexAllocated() (NULL != gDebugMutex)
 
 	static int fx_vprintf(const char *str, va_list list);
 #else
 	#define mxDebugMutexTake()
 	#define mxDebugMutexGive()
+	#define mxDebugMutexAllocated() (true)
 #endif
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -69,7 +82,6 @@ void fxCreateMachinePlatform(txMachine* the)
 	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = mxNoSocket;
-	the->debugOnReceive = true;
 #if ESP32
 	if (!gDebugMutex) {
 		gDebugMutex = xSemaphoreCreateMutex();
@@ -84,17 +96,29 @@ void fxCreateMachinePlatform(txMachine* the)
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+#ifdef mxDebug
 	while (the->debugFragments) {
 		DebugFragment next = the->debugFragments->next;
 		c_free(the->debugFragments);
 		the->debugFragments = next;
 	}
+#endif
 
 	modMachineTaskUninit(the);
 }
 
+uint8_t fxInNetworkDebugLoop(txMachine *the)
+{
+#ifdef mxDebug
+	return the->DEBUG_LOOP && the->connection && (kSerialConnection != the->connection);
+#else
+	return 0;
+#endif
+}
+
 void fx_putc(void *refcon, char c)
 {
+#ifdef mxDebug
 	txMachine* the = refcon;
 
 	if (the->inPrintf) {
@@ -109,6 +133,7 @@ void fx_putc(void *refcon, char c)
 					if (!c) break;
 					ESP_putc(c);
 				}
+				mxDebugMutexGive();
 			}
 			the->inPrintf = false;
 			return;
@@ -120,6 +145,8 @@ void fx_putc(void *refcon, char c)
 
 		the->inPrintf = true;
 		if (kSerialConnection == the->connection) {
+			mxDebugMutexTake();
+
 			// write xsbug log header
 			static const char *xsbugHeader = "<xsbug><log>";
 			const char *cp = xsbugHeader;
@@ -131,6 +158,7 @@ void fx_putc(void *refcon, char c)
 			}
 		}
 	}
+#endif
 
 	ESP_putc(c);
 }
@@ -167,13 +195,14 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
 #ifdef mxDebug
 
-void fxAbort(txMachine* the)
-{
-	fxDisconnect(the);
-	c_exit(0);
-}
+static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
@@ -184,7 +213,7 @@ static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 		the->connection = (txSocket)-1;
 	}
 	else {
-		xmodLog("  fxConnect - didConnect - OK");
+		modLog("  fxConnect - didConnect - OK");
 		the->connection = tpcb;
 	}
 
@@ -194,53 +223,92 @@ static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 {
 	txMachine* the = arg;
+	uint8_t i;
+	err_t result = ERR_OK;
 
     xmodLog("  didReceive - ENTER");
 
 	if (NULL == p) {
-		modLog("  didReceive - CONNECTION CLOSED");
+		xmodLog("  didReceive - CONNECTION LOST");
+		for (i = 0; i < kDebugReaderCount; i++) {
+			if (the->readers[i])
+				pbuf_free(the->readers[i]);
+			the->readers[i] = NULL;
+		}
+
+		if (the->connection) {
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
+#if ESP32
+#else
+			tcp_close(the->connection);
+			tcp_abort(the->connection);		// not _safe inside callback. must call tcp_abort on ESP8266 or memory leak
+#endif
+			the->connection = NULL;
+
+			return ERR_ABRT;
+		}
 		return ERR_OK;
 	}
 
-	if (NULL != the->reader) {
-		modLog("  UNEXPECTED NETWORK PACKET");
-		pbuf_free(the->reader);
-		the->reader = NULL;		// unprocessed command. free the buffer so it doesn't linger forever.
+	mxDebugMutexTake();
+
+	for (i = 0; i < kDebugReaderCount; i++) {
+		if (NULL == the->readers[i]) {
+			the->readers[i] = p;
+			p = NULL;
+			if (i == 0)
+				the->readerOffset = 0;
+			break;
+		}
 	}
 
-	the->reader = p;
-
-    xmodLog("  didReceive - EXIT");
-
-	return ERR_OK;
-}
-
-static err_t didReceiveMonitor(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
-{
-	txMachine* the = arg;
-	err_t result = didReceive(arg, pcb, p, err);
-
-	if (the->debugOnReceive && (ERR_OK == result) && the->reader) {
-//		ESP_REPORT("  didReceiveMonitor - fxDebugCommand");
-//		fxDebugCommand(the);
-//@@ rather than call fxDebugCommand here, use an immediate timer to defer to main loop
-//@@ otherwise, we can end up with (unexpected) re-entrant calls
+	if (NULL == p) {
+		if (!the->debugNotifyOutstanding) {
+			the->debugNotifyOutstanding = true;
+			modMessagePostToMachine(the, NULL, 0xffff, doDebugCommand, the);
+		}
 	}
+	else {
+		modLog("  debug receive overflow");
+		result = ERR_MEM;
+	}
+
+	mxDebugMutexGive();
+
+	xmodLog("  didReceive - EXIT");
 
 	return result;
 }
 
-static err_t didSend(void *arg, struct tcp_pcb *pcb, u16_t len)
-{
-	txMachine* the = arg;
-	the->pendingSendBytes -= len;
-	return ERR_OK;
-}
-
 static void didError(void *arg, err_t err)
 {
-	modLog("XSBUG SOCKET ERROR!!!!!");
-	modLogInt(err);
+	txMachine* the = arg;
+	the->connection = NULL;		// "pcb is already freed when this callback is called"
+}
+
+static void didErrorConnect(void *arg, err_t err)
+{
+	txMachine* the = arg;
+
+	the->connection = (void *)-1;
+}
+
+static void initializeConnection(txMachine *the)
+{
+	the->connection = NULL;
+	c_memset(the->readers, 0, sizeof(the->readers));
+	the->readerOffset = 0;
+	the->inPrintf =
+	the->debugNotifyOutstanding =
+	the->DEBUG_LOOP = 0;
+	the->wsState = 0;
+	the->wsSendStart = 1;
+	while (the->debugFragments) {
+		void *tmp = the->debugFragments;
+		the->debugFragments = the->debugFragments->next;
+		c_free(tmp);
+	}
 }
 
 void fxConnect(txMachine* the)
@@ -253,6 +321,9 @@ void fxConnect(txMachine* the)
 	struct ip_addr ipaddr;
 #endif
 	extern unsigned char gXSBUG[4];
+	int count;
+
+	initializeConnection(the);
 
 	if (isSerialIP(gXSBUG)) {
 		static txBoolean once;
@@ -274,7 +345,7 @@ void fxConnect(txMachine* the)
 
 		the->connection = kSerialConnection;
 
-	return;
+		goto connected;
 	}
 
 	if (0 == gXSBUG[0]) {
@@ -282,17 +353,17 @@ void fxConnect(txMachine* the)
 		return;
 	}
 
-    xmodLog("  fxConnect - ENTER");
+	modLog("  fxConnect - ENTER");
 
-    xmodLog("  fxConnect - call tcp_new");
 	pcb = tcp_new();
-	the->reader = NULL;
+	if (!pcb) return;
 
-    xmodLog("  fxConnect - call tcp_bind");
 	err = tcp_bind(pcb, IP_ADDR_ANY, 0);
-	if (err) modLog("  fxConnect - tcp_bind ERROR");
+	if (err) {
+		tcp_close_safe(pcb);
+		return;
+	}
 
-	xmodLog("  fxConnect - make address - 192.168.1.30");
 #if ESP32
 	IP4_ADDR(ip_2_ip4(&ipaddr), gXSBUG[0], gXSBUG[1], gXSBUG[2], gXSBUG[3]);
 #else
@@ -300,38 +371,68 @@ void fxConnect(txMachine* the)
 #endif
 
 	tcp_arg(pcb, the);
+	tcp_recv(pcb, didReceive);
+	tcp_err(pcb, didErrorConnect);
+//	tcp_nagle_disable(pcb);
 
     modLog("  fxConnect - connect to XSBUG");
 	err = tcp_connect(pcb, &ipaddr, 5002, didConnect);
 	if (err) {
+		tcp_close_safe(pcb);
 		modLog("  fxConnect - tcp_connect ERROR");
 		return;
 	}
 
-	while (!the->connection)
-		modDelayMilliseconds(100);
+	count = 0;
+	while (!the->connection && (count++ < 500))		// 5 seconds, then surrender
+		modDelayMilliseconds(10);
 
-	if ((txSocket)-1 == the->connection) {
-		the->connection = NULL;
+	if (!the->connection || ((txSocket)-1 == the->connection)) {
 		modLog("  fxConnect - couldn't connect");
+		if (NULL == the->connection) {		// timeout.
+			tcp_err(pcb, NULL);
+			tcp_close_safe(pcb);
+		}
+		the->connection = NULL;
+		return;
 	}
 
-	tcp_recv(pcb, didReceiveMonitor);
-	tcp_sent(pcb, didSend);
 	tcp_err(pcb, didError);
-	tcp_nagle_disable(pcb);
-
+connected:
+#ifdef mxInstrument
+	espDescribeInstrumentation(the);
+#endif
     xmodLog("  fxConnect - EXIT");
+	return;
 }
 
 void fxDisconnect(txMachine* the)
 {
 	xmodLog("  fxDisconnect - ENTER");
 	if (the->connection) {
-		if (kSerialConnection != the->connection)
-			tcp_close((struct tcp_pcb *)the->connection);
-		else
+		if (kSerialConnection != the->connection) {
+			uint8_t i, closeMsg[2];
+			for (i = 0; i < kDebugReaderCount; i++) {
+				if (the->readers[i])
+					pbuf_free(the->readers[i]);
+				the->readers[i] = NULL;
+			}
+			closeMsg[0] = 0x88;
+			closeMsg[1] = 0;
+			tcp_write_safe(the->connection, closeMsg, sizeof(closeMsg), TCP_WRITE_FLAG_COPY);
+			tcp_output_safe(the->connection);
+
+			the->readerOffset = 0;
+			tcp_recv(the->connection, NULL);
+			tcp_err(the->connection, NULL);
+			if (18 != the->wsState)
+				tcp_close_safe((struct tcp_pcb *)the->connection);
+		}
+		else {
 			fx_putpi(the, '-', true);
+			the->debugConnectionVerified = 0;
+			//@@ clear debug fragments?
+		}
 		the->connection = NULL;
 	}
 	xmodLog("  fxDisconnect - EXIT");
@@ -350,47 +451,178 @@ txBoolean fxIsReadable(txMachine* the)
 #endif
 		return NULL != the->debugFragments;
 	}
-	else
-		return the->connection && the->reader;
+	else {
+		extern uint32_t system_get_rtc_time(void);
+		static uint32_t next = 0, now;
+
+		if (!the->connection)
+			return 0;
+
+		now = system_get_rtc_time();
+		if (now > next) {
+			next = now + 170 * 1000;		// about 1000 ms
+			modDelayMilliseconds(0);		// give network stack a momemt
+		}
+
+		return the->readers[0] ? 1 : 0;
+	}
 }
 
 void fxReceive(txMachine* the)
 {
 	struct tcp_pcb *pcb = the->connection;
+	if (!pcb) return;
 
 	xmodLog("  fxReceive - ENTER");
 
-	the->debugOffset = 0;
-
-	if (!pcb) return;
-
 	if (kSerialConnection != pcb) {
 		struct pbuf *p;
+		uint16_t use;
 
-		while (NULL == the->reader)
-			modDelayMilliseconds(100);
-
-		p = the->reader;
-		if (p->next)
-			modLog("  fxReceive - MULTIPLE PACKETS!!");
-
-		if (p->len >=  sizeof(the->debugBuffer)) {
-			modLog("  fxReceive - more than we can handle!!!");
-			goto bail;
+		modWatchDogReset();
+		if (NULL == the->readers[0]) {
+			modDelayMilliseconds(10);
+			return;
 		}
-		c_memmove(the->debugBuffer, p->payload, p->len);
-		the->debugOffset = p->len;
-		the->debugBuffer[the->debugOffset] = 0;		// note: pin input to debugSize - 1 to leave room for this byte
 
-		tcp_recved(pcb, p->tot_len);
-		pbuf_free(the->reader);
-		the->reader = NULL;
+		p = the->readers[0];
+		if (p->next)
+			modLog("  fxReceive - cannot handle fragmented!!");
+
+		mxDebugMutexTake();
+			use = p->len - the->readerOffset;
+			if (use > sizeof(the->debugBuffer))
+				use = sizeof(the->debugBuffer);
+#if 0
+			c_memmove(the->debugBuffer, the->readerOffset + (char *)p->payload, use);
+			the->readerOffset += use;
+			the->debugOffset = use;
+#else
+			uint16_t i;
+			uint8_t *debugBuffer = the->debugBuffer;
+			for (i = 0; i < use; i++) {
+				uint8_t byte = *(uint8_t *)(i + the->readerOffset + (char *)p->payload);
+				switch (the->wsState) {
+					case 0:
+						the->wsState = 1;
+						the->wsFin = 0 != (0x80 & byte);
+						if (NULL == the->wsCmd) {
+							if (8 == (byte & 0x0f)) {		// close
+								fxDisconnect(the);
+								use = 0;
+								break;
+							}
+							the->wsCmd = (2 == (byte & 0x0f)) ? (void *)-1 : NULL;		// binary data is cmd; text is xsbug
+						}
+						break;
+					case 1:
+						byte &= 0x7F;
+						if (126 == byte)
+							the->wsState = 3;
+						else {
+							the->wsLength = byte;
+							the->wsState = 5;
+						}
+						break;
+					case 2:		//@@ unused
+						break;
+					case 3:
+						the->wsLength = byte << 8;
+						the->wsState = 4;
+						break;
+					case 4:
+						the->wsLength |= byte;
+						the->wsState = 5;
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+						the->wsMask[the->wsState - 5] = byte;
+						the->wsState += 1;
+						if ((9 == the->wsState) && the->wsCmd) {
+							if (((void *)-1) == the->wsCmd) {	// new frame
+								the->wsCmd = c_malloc(the->wsLength + sizeof(uint32_t));
+								*(uint32_t *)the->wsCmd = the->wsLength + sizeof(uint32_t);
+								the->wsCmdPtr = the->wsCmd + sizeof(uint32_t);
+							}
+							else {		// continuation frame
+								uint32_t length = *(uint32_t *)the->wsCmd;
+								the->wsCmd = c_realloc(the->wsCmd, length + the->wsLength);
+								if (the->wsCmd) {
+									*(uint32_t *)the->wsCmd = length + the->wsLength;
+									the->wsCmdPtr = the->wsCmd + length;
+								}
+							}
+							the->wsState = the->wsCmd ? 13 : 17;
+						}
+						break;
+					case 9:
+					case 10:
+					case 11:
+					case 12:
+						*debugBuffer++ = byte ^ the->wsMask[the->wsState - 9];
+						the->wsState += 1;
+						if (13 == the->wsState)
+							the->wsState = 9;
+						the->wsLength -= 1;
+						if (0 == the->wsLength)
+							the->wsState = 0;
+						break;
+
+					case 13:
+					case 14:
+					case 15:
+					case 16:
+						*(the->wsCmdPtr++) = byte ^ the->wsMask[the->wsState - 13];
+						the->wsState += 1;
+						if (17 == the->wsState)
+							the->wsState = 13;
+						the->wsLength -= 1;
+						if (0 == the->wsLength) {
+							if (the->wsFin) {
+								// received full remote command
+								doRemoteCommmand(the, the->wsCmd + sizeof(uint32_t), the->wsCmdPtr - (the->wsCmd + sizeof(uint32_t)));
+								c_free(the->wsCmd);
+								the->wsCmd = the->wsCmdPtr = NULL;
+							}
+							the->wsState = 0;
+						}
+						break;
+
+					case 17:
+						the->wsLength -= 1;
+						if (0 == the->wsLength)
+							the->wsState = 0;
+						break;
+					case 18:
+						break;		// reserved for disconnecting on restart (don't close socket)
+
+				}
+			}
+			the->debugOffset = debugBuffer - (uint8_t *)the->debugBuffer;
+
+			the->readerOffset += use;
+#endif
+
+			if (the->readerOffset == p->len) {
+				uint8_t i;
+
+				tcp_recved(pcb, p->tot_len);
+				pbuf_free(p);
+
+				for (i = 0; i < kDebugReaderCount - 1; i++)
+					the->readers[i] = the->readers[i + 1];
+				the->readers[kDebugReaderCount - 1] = NULL;
+
+				the->readerOffset = 0;
+			}
+		mxDebugMutexGive();
 	}
 	else {
-		static uint8_t forever = 0;
-		uint32_t timeout = forever ? 0 : (modMilliseconds() + 2000);
+		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
-		while (true) {
+		while (!the->debugOffset) {
 			if (timeout && (timeout < modMilliseconds())) {
 				fxDisconnect(the);
 				break;
@@ -405,31 +637,35 @@ void fxReceive(txMachine* the)
 				the->debugFragments = f->next;
 				mxDebugMutexGive();
 
-				c_memcpy(the->debugBuffer, f->bytes, f->count);
-				the->debugOffset = f->count;
+				if (!f->binary) {
+					c_memcpy(the->debugBuffer, f->bytes, f->count);
+					the->debugOffset = f->count;
+				}
+				else
+					doRemoteCommmand(the, f->bytes, f->count);
 				c_free(f);
 				break;
 			}
 		}
-		forever = 1;
+		the->debugConnectionVerified = 1;
 	}
-
-bail:
-	the->debugBuffer[the->debugOffset] = 0;
-
-	xmodLog("  fxReceive - EXIT with:");
-	if (the->debugOffset)
-		xmodLogVar(the->debugBuffer);
 }
 
-static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	txMachine* the = machine;
 
 	the->debugNotifyOutstanding = false;
-
-	if (!the->debugFragments || !the->debugOnReceive)
+	if (NULL == the->connection)
 		return;
+	else if (kSerialConnection == the->connection) {
+		if (!the->debugFragments)
+			return;
+	}
+	else {
+		if (!the->readers[0])
+			return;
+	}
 
 	fxDebugCommand(the);
 	if (the->breakOnStartFlag) {
@@ -445,9 +681,14 @@ void fxReceiveLoop(void)
 	static const char *tagEnd = ">\r\n";
 	static txMachine* current = NULL;
 	static uint8_t state = 0;
+	static uint16_t binary = 0;
+	static DebugFragment fragment = NULL;
 	static uint32_t value = 0;
-	static uint8_t buffered[28];
 	static uint8_t bufferedBytes = 0;
+	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
+
+	if (!mxDebugMutexAllocated())
+		return;
 
 	mxDebugMutexTake();
 
@@ -460,9 +701,15 @@ void fxReceiveLoop(void)
 			if (0 == state) {
 				current = NULL;
 				value = 0;
+				binary = 0;
 			}
 			if (c == c_read8(piBegin + state))
 				state++;
+			else
+			if ((6 == state) && ('#' == c)) {
+				binary = 1;
+				state++;
+			}
 			else
 				state = 0;
 		}
@@ -491,8 +738,12 @@ void fxReceiveLoop(void)
 		else if (state == 16) {
 			if (c == '>') {
 				current = (txMachine*)value;
-				state++;
-				bufferedBytes = 0;
+				if (binary)
+					state = 20;
+				else {
+					state++;
+					bufferedBytes = 0;
+				}
 			}
 			else
 				state = 0;
@@ -513,14 +764,16 @@ void fxReceiveLoop(void)
 				state = 17;
 
 			if (enqueue) {
-				DebugFragment fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
+				fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
 				if (NULL == fragment) {
 					modLog("no fragment memory");
 					break;
 				}
 				fragment->next = NULL;
 				fragment->count = bufferedBytes;
+				fragment->binary = 0;
 				c_memcpy(fragment->bytes, buffered, bufferedBytes);
+	enqueue:
 				if (NULL == current->debugFragments)
 					current->debugFragments = fragment;
 				else {
@@ -531,18 +784,45 @@ void fxReceiveLoop(void)
 				}
 				if (!current->debugNotifyOutstanding) {
 					current->debugNotifyOutstanding = true;
-					modMessagePostToMachine(current, NULL, 0, doDebugCommand, current);
+					modMessagePostToMachine(current, NULL, 0xffff, doDebugCommand, current);
 				}
 				bufferedBytes = 0;
+			}
+		}
+		else if (20 == state) {
+			binary = c << 8;
+			state = 21;
+		}
+		else if (21 == state) {
+			binary += c;
+			state = 22;
+
+			fragment = c_malloc(sizeof(DebugFragmentRecord) + binary);
+			if (NULL == fragment) {
+				state = 0;
+				continue;
+			}
+			fragment->next = NULL;
+			fragment->count = binary;
+			fragment->binary = 1;
+			binary = 0;
+		}
+		else if (22 == state) {
+			fragment->bytes[binary++] = c;
+			if (fragment->count == binary) {
+				state = 0;
+				goto enqueue;
 			}
 		}
 	}
 	mxDebugMutexGive();
 }
 
-void fxSend(txMachine* the, txBoolean more)
+void fxSend(txMachine* the, txBoolean flags)
 {
 	struct tcp_pcb *pcb = the->connection;
+	txBoolean more = 0 != (flags & 1);
+	txBoolean binary = 0 != (flags & 2);
 
 	xmodLog("  fxSend - ENTER");
 
@@ -552,67 +832,341 @@ void fxSend(txMachine* the, txBoolean more)
 		int length = the->echoOffset;
 		const char *bytes = the->echoBuffer;
 		err_t err;
+		uint8_t sentHeader = 0;
 
 		xmodLog("  fxSend - about to loop");
 
-		while (length) {
+		while (length && the->connection) {
 			u16_t available = tcp_sndbuf(pcb);
-			if (0 == available) {
+			if ((0 == available) || (!sentHeader && (available < 4))) {
 				xmodLog("  fxSend - need to wait");
-				tcp_output(pcb);
-				modDelayMilliseconds(100);
+				tcp_output_safe(pcb);
+				modWatchDogReset();
+				modDelayMilliseconds(10);
 				continue;
+			}
+
+			if (!sentHeader) {
+				uint8_t header[4];
+				header[0] = (the->wsSendStart ? (binary ? 0x02 : 0x01) : 0) | (more ? 0 : 0x80);
+				the->wsSendStart = !more;
+				if (length < 126) {
+					header[1] = (uint8_t)length;
+					sentHeader = 2;
+				}
+				else {
+					header[1] = 126;
+					header[2] = length >> 8;
+					header[3] = length & 0xff;
+					sentHeader = 4;
+				}
+				tcp_write_safe(pcb, header, sentHeader, more ? (TCP_WRITE_FLAG_MORE | TCP_WRITE_FLAG_COPY) : TCP_WRITE_FLAG_COPY);
+				available -= sentHeader;
+				if (0 == available)
+					continue;
 			}
 
 			if (available > length)
 				available = length;
 
-			while (true) {
-				the->pendingSendBytes += available;
-				// symchronous write so copy flag is unnecessary
-				err = tcp_write(pcb, bytes, available, (more && (available == length)) ? TCP_WRITE_FLAG_MORE : 0);
+			while (the->connection) {
+				modWatchDogReset();
+				err = tcp_write_safe(pcb, bytes, available, more ? (TCP_WRITE_FLAG_MORE | TCP_WRITE_FLAG_COPY) : TCP_WRITE_FLAG_COPY);
 				if (ERR_MEM == err) {
-					the->pendingSendBytes -= available;
-					modLog("  fxSend - wait for send memory:");
-					tcp_output(pcb);
-					modDelayMilliseconds(100);
+					xmodLog("  fxSend - wait for send memory:");
+					tcp_output_safe(pcb);
+					modDelayMilliseconds(10);
 					continue;
 				}
 				if (err) {
-					the->pendingSendBytes -= available;
 					modLog("  fxSend - tcp_write ERROR:");
 					modLogInt(err);
 				}
 				break;
 			}
 
-			while (the->pendingSendBytes) {
-				err = tcp_output(pcb);
-				if (err)
-					modLog("  fxSend - tcp_output ERROR:");
-				modDelayMilliseconds(10);
-			}
-
 			length -= available;
 			bytes += available;
 		}
+		if (!more && the->connection)
+			tcp_output_safe(pcb);
 	}
 	else {
-		char *c = the->echoBuffer;
-		txInteger count = the->echoOffset;
+		char *c;
+		txInteger count;
+
 		if (!the->inPrintf) {
 			mxDebugMutexTake();
-			fx_putpi(the, '.', false);
+			if (binary) {
+				fx_putpi(the, '#', true);
+				ESP_putc((uint8_t)(the->echoOffset >> 8));
+				ESP_putc((uint8_t)the->echoOffset);
+			}
+			else
+				fx_putpi(the, '.', false);
 		}
 		the->inPrintf = more;
-		while (count--)
-			ESP_putc(*c++);
+
+		ESP_put(the->echoBuffer, the->echoOffset);
 
 		if (!more)
 			mxDebugMutexGive();
 	}
 
 	xmodLog("  fxSend - EXIT");
+}
+
+void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
+{
+	initializeConnection(the);
+
+	tcp_arg(pcb, the);
+	tcp_recv(pcb, didReceive);
+	tcp_err(pcb, didError);
+
+	the->connection = pcb;
+}
+
+#if !ESP32
+
+#define kPrefsTypeString (3)
+
+extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
+extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
+#endif
+
+static void doLoadModule(modTimer timer, void *refcon, int refconSize)
+{
+	modLoadModule((txMachine *)*(uintptr_t *)refcon, sizeof(uintptr_t) + (uint8_t *)refcon);
+}
+
+void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
+{
+	uint16_t resultID = 0;
+	int16_t resultCode = 0;
+	uint8_t cmdID;
+	int baud = 0;
+
+	if (!cmdLen)
+		return;
+
+	cmdID = *cmd++;
+	cmdLen -= 1;
+
+	if (cmdLen >= 2) {
+		resultID = (cmd[0] << 8) | cmd[1];
+		cmd += 2, cmdLen -= 2;
+
+		the->echoBuffer[0] = 5;
+		the->echoBuffer[1] = resultID >> 8;
+		the->echoBuffer[2] = resultID & 0xff;
+		the->echoBuffer[3] = 0;
+		the->echoBuffer[4] = 0;
+		the->echoOffset = 5;
+	}
+
+	switch (cmdID) {
+		case 1:		// restart
+			the->wsState = 18;
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+#if ESP32
+			esp_restart();
+#else
+			system_restart();
+#endif
+			while (1)
+				modDelayMilliseconds(1000);
+			return;
+
+#if MODDEF_XS_MODS
+		case 2: {		// uninstall
+			uint8_t erase[16] = {0};
+#if ESP32
+			const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
+			if (!partition || (ESP_OK != esp_partition_write(partition, 0, erase, sizeof(erase))))
+				resultCode = -1;
+#else
+			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
+			if (!modSPIWrite(offset, sizeof(erase), erase))
+				resultCode = -1;
+#endif
+			} break;
+
+		case 3: {	// install some
+			uint32_t offset = c_read32be(cmd);
+			cmd += 4, cmdLen -= 4;
+#if ESP32
+			const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
+			resultCode = -1;
+			if (partition) {
+				int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
+				if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
+					esp_partition_erase_range(partition, offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
+				else if (firstSector != lastSector)
+					esp_partition_erase_range(partition, (firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
+
+				if (ESP_OK == esp_partition_write(partition, offset, cmd, cmdLen))
+					resultCode = 0;
+			}
+#else
+			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
+				resultCode = -1;
+				break;
+			}
+
+			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
+
+			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
+			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary {
+				modSPIErase(offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
+			else if (firstSector != lastSector)
+				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
+
+			if (!modSPIWrite(offset, cmdLen, cmd))
+				resultCode = -1;
+#endif
+			}
+			break;
+#else
+		case 2:
+		case 3:
+			modLog("mods disabled");
+			resultCode = -1;
+			break;
+#endif /* MODDEF_XS_MODS */
+
+		case 4: {	// set preference
+			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+			int zeros = 0;
+			while (cmdLen--) {
+				if (!*cmd++) {
+					zeros += 1;
+					if (NULL == key)
+						key = cmd;
+					else if (NULL == value)
+						value = cmd;
+					else
+						break;
+				}
+			}
+			if ((3 == zeros) && key && value) {
+#if ESP32
+				nvs_handle handle;
+				resultCode = -1;
+
+				if (ESP_OK == nvs_open(domain, NVS_READWRITE, &handle)) {
+					if (ESP_OK == nvs_set_str(handle, key, value))
+						resultCode = 0;
+					nvs_close(handle);
+				}
+#else
+				if (!modPreferenceSet(domain, key, kPrefsTypeString, value, c_strlen(value) + 1))
+					resultCode = -1;
+#endif
+			}
+			}
+			break;
+
+		case 6: {		// get preference
+			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+			int zeros = 0;
+			while (cmdLen--) {
+				if (!*cmd++) {
+					zeros += 1;
+					if (NULL == key)
+						key = cmd;
+					else
+						break;
+				}
+			}
+			if ((2 == zeros) && key) {
+#if ESP32
+				nvs_handle handle;
+				resultCode = -1;
+
+				if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
+					int32_t size = 64;
+					if (ESP_OK == nvs_get_str(handle, key, the->echoBuffer + the->echoOffset, &size)) {
+						the->echoOffset += size;
+						resultCode = 0;
+					}
+					nvs_close(handle);
+				}
+#else
+				uint8_t buffer[64];
+				uint8_t type;
+				uint16_t byteCountOut;
+				if (!modPreferenceGet(domain, key, &type, buffer, sizeof(buffer), &byteCountOut) || (kPrefsTypeString != type))
+					resultCode = -1;
+				else {
+					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut);
+					the->echoOffset += byteCountOut;
+				}
+#endif
+			}
+		}
+		break;
+
+		case 8:
+			baud = c_read32be(cmd);
+			break;
+
+		case 9:
+			if (cmdLen >= 4)
+				modSetTime(c_read32be(cmd + 0));
+			if (cmdLen >= 8)
+				modSetTimeZone(c_read32be(cmd + 4));
+			if (cmdLen >= 12)
+				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+			break;
+
+		case 10: {
+				uintptr_t bytes[16];
+				bytes[0] = (uintptr_t)the;
+				if (cmdLen > (sizeof(uintptr_t) * 15)) {
+					resultCode = -1;
+					goto bail;
+				}
+
+				c_strcpy((void *)(bytes + 1), cmd);
+				modTimerAdd(0, 0, doLoadModule, bytes, cmdLen + sizeof(uintptr_t));
+			}
+			break;
+
+
+		case 11:
+			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
+			break;
+
+		case 12:
+			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
+			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
+			break;
+
+		case 13:
+			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
+			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
+			break;
+
+		default:
+			modLog("unrecognized command");
+			modLogInt(cmdID);
+			resultCode = -1;
+			break;
+	}
+
+bail:
+	if (resultID) {
+		the->echoBuffer[3] = resultCode >> 8;
+		the->echoBuffer[4] = resultCode & 0xff;
+		fxSend(the, 2);		// send binary
+	}
+
+	if (baud)
+		ESP_setBaud(baud);
 }
 
 #if defined(mxDebug) && ESP32

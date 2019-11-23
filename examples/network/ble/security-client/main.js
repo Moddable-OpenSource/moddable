@@ -12,8 +12,8 @@
  *
  */
  /*
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.temperature_measurement.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.temperature_measurement.xml
  */
 
 import BLEClient from "bleclient";
@@ -51,15 +51,14 @@ class SecureHealthThermometerClient extends BLEClient {
 		if (characteristics.length)
 			characteristics[0].enableNotifications();
 	}
-	onCharacteristicNotification(characteristic, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let units = bytes[0];
-		let temp = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
+	onCharacteristicNotification(characteristic, value) {
+		let units = value[0];
+		let temp = value[1] | (value[2] << 8) | (value[3] << 16) | (value[4] << 24);
 		let exponent = (temp >> 24) & 0xFF;
 		exponent = exponent & 0x80 ? -(~exponent + 257): exponent;
 		let mantissa = temp & 0xFFFFFF;
-		let value = (mantissa * Math.pow(10, exponent)).toFixed(2);
-		trace(`${value}\n`);
+		let temperature = (mantissa * Math.pow(10, exponent)).toFixed(2);
+		trace(`${temperature}\n`);
 	}
 	onPasskeyConfirm(params) {
 		let passkey = this.passkeyToString(params.passkey);
@@ -69,6 +68,11 @@ class SecureHealthThermometerClient extends BLEClient {
 	onPasskeyDisplay(params) {
 		let passkey = this.passkeyToString(params.passkey);
 		trace(`client display passkey: ${passkey}\n`);
+	}
+	onPasskeyInput(params) {
+		trace(`client input passkey displayed by peer\n`);
+		//let passkey = 0;
+		//this.passkeyInput(params.address, passkey);
 	}
 	onPasskeyRequested(params) {
 		let passkey = Math.round(Math.random() * 999999);

@@ -19,8 +19,8 @@
  */
 
 #include "piuPC.h"
-#include "screen.h"
 #include <dlfcn.h>
+#include "screen.h"
 
 typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
 typedef struct PiuScreenMessageStruct PiuScreenMessageRecord, *PiuScreenMessage;
@@ -161,6 +161,7 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->post = fxScreenPost;
     screen->start = fxScreenStart;
     screen->stop = fxScreenStop;
+	mxCreateMutex(&screen->workersMutex);
     screen->width = width;
     screen->height = height;
 
@@ -287,6 +288,7 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	txScreen* screen = (*self)->screen;
 	PiuScreenQuit(self);
 	if (screen) {
+		mxDeleteMutex(&screen->workersMutex);
 		free(screen);
 		(*self)->screen = NULL;
 	}
@@ -357,19 +359,13 @@ void PiuScreen_postMessage(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
 	PiuScreenMessage message;
-	if (xsToInteger(xsArgc) > 1) {
-		int worker = (int)xsToInteger(xsArg(1));
-		message = PiuScreenCreateMessage(self, xsMarshallAlien(xsArg(0)), 0 - worker);
+	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
+		int size = (int)xsGetArrayBufferLength(xsArg(0));
+		message = PiuScreenCreateMessage(self, xsToArrayBuffer(xsArg(0)), size);
 	}
 	else {
-		if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-			int size = (int)xsGetArrayBufferLength(xsArg(0));
-			message = PiuScreenCreateMessage(self, xsToArrayBuffer(xsArg(0)), size);
-		}
-		else {
-			xsStringValue string = xsToString(xsArg(0));
-			message = PiuScreenCreateMessage(self, string, 0);
-		}
+		xsStringValue string = xsToString(xsArg(0));
+		message = PiuScreenCreateMessage(self, string, 0);
 	}
 	if (message)
 		g_idle_add(PiuScreen_postMessageAux, message);
@@ -411,41 +407,6 @@ void fxScreenBufferChanged(txScreen* screen)
 	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, screen->width, screen->height);
 }
 
-int fxScreenCreateWorker(txScreen* screen, char* name)
-{
-	PiuScreen* self = (PiuScreen*)screen->view;
-	int worker = 0;
-	xsBeginHost((*self)->the);
-	{
-		xsVars(3);
-		xsVar(0) = xsReference((*self)->behavior);
-		if (xsFindResult(xsVar(0), xsID_onCreateWorker)) {
-			xsVar(1) = xsReference((*self)->reference);
-			xsVar(2) = xsString(name);
-			xsResult = xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
-			worker = xsToInteger(xsResult);
-		}
-	}
-	xsEndHost((*self)->the);
-	return worker;
-}
-
-void fxScreenDeleteWorker(txScreen* screen, int worker)
-{
-	PiuScreen* self = (PiuScreen*)screen->view;
-	xsBeginHost((*self)->the);
-	{
-		xsVars(3);
-		xsVar(0) = xsReference((*self)->behavior);
-		if (xsFindResult(xsVar(0), xsID_onDeleteWorker)) {
-			xsVar(1) = xsReference((*self)->reference);
-			xsVar(2) = xsInteger(worker);
-			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
-		}
-	}
-	xsEndHost((*self)->the);
-}
-
 void fxScreenFormatChanged(txScreen* screen)
 {
 }
@@ -472,19 +433,15 @@ gboolean fxScreenPostAux(gpointer data)
 	PiuScreen* self = message->self;
 	if ((*self)->behavior) {
 		xsBeginHost((*self)->the);
-		xsVars(4);
+		xsVars(3);
 		xsVar(0) = xsReference((*self)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onMessage)) {
 			xsVar(1) = xsReference((*self)->reference);
-			if (message->size < 0) {
-				xsVar(2) = xsDemarshallAlien(message->buffer);
-				xsVar(3) = xsInteger(0 - message->size);
-			}
-			else if (message->size > 0)
+			if (message->size > 0)
 				xsVar(2) = xsArrayBuffer(message->buffer, message->size);
 			else
 				xsVar(2) = xsString(message->buffer);
-			(void)xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 		}
 		xsEndHost((*self)->the);
 	}
@@ -510,3 +467,10 @@ void fxScreenStop(txScreen* screen)
 	}
 }
 
+extern void PiuScreenWorkerCreateAux(xsMachine* the, txScreen* screen);
+
+void PiuScreenWorkerCreate(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsArg(1));
+	PiuScreenWorkerCreateAux(the, (*self)->screen);
+}

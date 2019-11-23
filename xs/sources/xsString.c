@@ -52,6 +52,7 @@ static txSlot* fxCheckString(txMachine* the, txSlot* it);
 static txString fxCoerceToString(txMachine* the, txSlot* theSlot);
 static txInteger fxArgToPosition(txMachine* the, txInteger i, txInteger index, txInteger length);
 static void fx_String_prototype_pad(txMachine* the, txBoolean flag);
+static void fx_String_prototype_trimAux(txMachine* the, txBoolean trimStart, txBoolean trimEnd);
 
 static txBoolean fxStringDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
 static txBoolean fxStringDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
@@ -122,16 +123,22 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toUpperCase), 0, mxID(_toUpperCase), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trim), 0, mxID(_trim), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trimEnd), 0, mxID(_trimEnd), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trimStart), 0, mxID(_trimStart), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_match), 1, mxID(_match), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_matchAll), 1, mxID(_matchAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_search), 1, mxID(_search), XS_DONT_ENUM_FLAG);
 	mxStringPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_String), 1, mxID(_String), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_String), 1, mxID(_String));
+	mxStringConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromArrayBuffer), 1, mxID(_fromArrayBuffer), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromCharCode), 1, mxID(_fromCharCode), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromCodePoint), 1, mxID(_fromCodePoint), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_raw), 1, mxID(_raw), XS_DONT_ENUM_FLAG);
+	the->stack++;
 
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -163,7 +170,7 @@ void fxStringAccessorGetter(txMachine* the)
 			if (string->ID == XS_STRING_BEHAVIOR)
 				break;
 		}
-		instance = instance->value.instance.prototype;
+		instance = fxGetPrototype(the, instance);
 	}
 	if (id == mxID(_length)) {
 		mxResult->value.integer = string->value.key.sum;
@@ -795,6 +802,42 @@ void fx_String_prototype_match(txMachine* the)
 	mxPush(mxInitializeRegExpFunction);
 	fxCall(the);
 	fxCallID(the, mxID(_Symbol_match));
+	mxPullSlot(mxResult);
+}
+
+void fx_String_prototype_matchAll(txMachine* the)
+{	
+	txSlot* regexp = C_NULL;
+
+	fxCoerceToString(the, mxThis);
+	mxPushSlot(mxThis);
+	mxPushInteger(1);
+	if (mxArgc > 0) {
+		regexp = mxArgv(0);
+		if (mxIsReference(regexp)) {
+			mxPushSlot(regexp);
+			mxPushSlot(regexp);
+			fxGetID(the, mxID(_Symbol_matchAll));
+			if (!mxIsUndefined(the->stack) && !mxIsNull(the->stack)) {
+				fxCall(the);
+				mxPullSlot(mxResult);
+				return;
+			}
+			mxPop();
+			mxPop();
+		}
+	}	
+	if (regexp)
+		mxPushSlot(regexp);
+	else
+		mxPushUndefined();
+	mxPushStringX("g");
+	mxPushInteger(2);
+	mxPush(mxRegExpPrototype);
+	fxNewRegExpInstance(the);
+	mxPush(mxInitializeRegExpFunction);
+	fxCall(the);
+	fxCallID(the, mxID(_Symbol_matchAll));
 	mxPullSlot(mxResult);
 }
 
@@ -1436,21 +1479,46 @@ void fx_String_prototype_toUpperCase(txMachine* the)
 
 void fx_String_prototype_trim(txMachine* the)
 {
-	txString string = fxCoerceToString(the, mxThis);
-	txString start = fxSkipSpaces(string);
-	txString current = start;
-	txString stop = current;
+	fx_String_prototype_trimAux(the, 1, 1);
+}
+
+void fx_String_prototype_trimAux(txMachine* the, txBoolean trimStart, txBoolean trimEnd)
+{
+	txString string = fxCoerceToString(the, mxThis), start;
 	txInteger offset, length;
-	while (c_read8(current)) {
-		stop = current + 1;
-		current = fxSkipSpaces(stop);
+	if (trimStart) {
+		start = fxSkipSpaces(string);
+		offset = start - string;
 	}
-	offset = start - string;
-	length = stop - start;
+	else {
+		start = string;
+		offset = 0;
+	}
+	if (trimEnd) {
+		txString current = start;
+		txString end = current;
+		while (c_read8(current)) {
+			end = current + 1;
+			current = fxSkipSpaces(end);
+		}
+		length = end - start;
+	}
+	else
+		length = c_strlen(start);
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 	c_memcpy(mxResult->value.string, mxThis->value.string + offset, length);
 	mxResult->value.string[length] = 0;
 	mxResult->kind = XS_STRING_KIND;
+}
+
+void fx_String_prototype_trimEnd(txMachine* the)
+{
+	fx_String_prototype_trimAux(the, 0, 1);
+}
+
+void fx_String_prototype_trimStart(txMachine* the)
+{
+	fx_String_prototype_trimAux(the, 1, 0);
 }
 
 void fx_String_prototype_valueOf(txMachine* the)

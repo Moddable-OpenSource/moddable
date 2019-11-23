@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,7 +18,7 @@
  *
  */
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -135,6 +135,8 @@ void modSPIInit(modSPIConfiguration config)
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 		if (ret) return;
 		gSPIInited = 1;
+		gSPIData = NULL;
+		gSPIDataCount = -1;
 	}
 
 	spi_device_interface_config_t devcfg;
@@ -145,23 +147,14 @@ void modSPIInit(modSPIConfiguration config)
 	devcfg.queue_size = 3;
 	devcfg.pre_cb = NULL;
 	devcfg.post_cb = postTransfer;
+	devcfg.input_delay_ns = config->miso_delay;
+
 
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {
 		printf("spi_bus_add_device failed %d\n", ret);
 		return;
 	}
-
-	if (NULL == gConfig) {
-		gSPIData = NULL;
-		gSPIDataCount = -1;
-
-		gConfig = config;
-	}
-	else
-		modSPIFlush();
-
-	(config->doChipSelect)(0, config);
 }
 
 void modSPIUninit(modSPIConfiguration config)
@@ -458,6 +451,9 @@ static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t c
 	gSPIDataCount = count;
 
 	postTransfer(NULL);
+
+	if (config->sync)
+		modSPIFlush();
 }
 
 void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)

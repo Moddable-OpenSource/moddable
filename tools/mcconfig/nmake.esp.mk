@@ -25,6 +25,7 @@ BASE_DIR = $(USERPROFILE)
 
 ESP_SDK_DIR = $(BASE_DIR)\esp
 ESP_SDK_RELEASE = esp8266-2.3.0
+ESPRESSIF_SDK_ROOT = $(ESP_SDK_DIR)\ESP8266_RTOS_SDK
 
 ARDUINO_ROOT = $(ESP_SDK_DIR)\$(ESP_SDK_RELEASE)
 TOOLS_ROOT = $(ESP_SDK_DIR)\xtensa-lx106-elf
@@ -47,7 +48,12 @@ LIB_DIR = $(BUILD_DIR)\tmp\esp\release\lib
 !ENDIF
 
 # serial port configuration
+!IF "$(UPLOAD_SPEED)"==""
 UPLOAD_SPEED = 921600
+!ENDIF
+!IF "$(DEBUGGER_SPEED)"==""
+DEBUGGER_SPEED = 921600
+!ENDIF
 !IF "$(UPLOAD_PORT)"==""
 UPLOAD_PORT = com8
 !ENDIF
@@ -58,8 +64,8 @@ UPLOAD_VERB = -v
 
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE = 4M
-FLASH_MODE = dio
-FLASH_SPEED = 40
+FLASH_MODE = qio
+FLASH_SPEED = 80
 FLASH_LAYOUT = eagle.flash.4m.ld
 
 # WiFi & Debug settings
@@ -99,7 +105,9 @@ XS_OBJ = \
 	$(LIB_DIR)\xsArguments.o \
 	$(LIB_DIR)\xsArray.o \
 	$(LIB_DIR)\xsAtomics.o \
+	$(LIB_DIR)\xsBigInt.o \
 	$(LIB_DIR)\xsBoolean.o \
+	$(LIB_DIR)\xsCode.o \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
@@ -109,6 +117,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsGenerator.o \
 	$(LIB_DIR)\xsGlobal.o \
 	$(LIB_DIR)\xsJSON.o \
+	$(LIB_DIR)\xsLexical.o \
 	$(LIB_DIR)\xsMapSet.o \
 	$(LIB_DIR)\xsMarshall.o \
 	$(LIB_DIR)\xsMath.o \
@@ -116,16 +125,24 @@ XS_OBJ = \
 	$(LIB_DIR)\xsModule.o \
 	$(LIB_DIR)\xsNumber.o \
 	$(LIB_DIR)\xsObject.o \
+	$(LIB_DIR)\xsPlatforms.o \
+	$(LIB_DIR)\xsProfile.o \
 	$(LIB_DIR)\xsPromise.o \
 	$(LIB_DIR)\xsProperty.o \
 	$(LIB_DIR)\xsProxy.o \
 	$(LIB_DIR)\xsRegExp.o \
 	$(LIB_DIR)\xsRun.o \
+	$(LIB_DIR)\xsScope.o \
+	$(LIB_DIR)\xsScript.o \
+	$(LIB_DIR)\xsSourceMap.o \
 	$(LIB_DIR)\xsString.o \
 	$(LIB_DIR)\xsSymbol.o \
+	$(LIB_DIR)\xsSyntaxical.o \
+	$(LIB_DIR)\xsTree.o \
 	$(LIB_DIR)\xsType.o \
 	$(LIB_DIR)\xsdtoa.o \
-	$(LIB_DIR)\xsmc.o
+	$(LIB_DIR)\xsmc.o \
+	$(LIB_DIR)\xsre.o
 XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
@@ -134,10 +151,11 @@ XS_DIRS = \
 	-I$(BUILD_DIR)\devices\esp
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
-	$(XS_DIR)\includes\xsesp.h \
 	$(XS_DIR)\includes\xsmc.h \
+	$(XS_DIR)\sources\xsScript.h \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
+	$(XS_DIR)\platforms\esp\xsHost.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
@@ -210,7 +228,7 @@ CC  = $(TOOLS_BIN)\xtensa-lx106-elf-gcc
 CPP = $(TOOLS_BIN)\xtensa-lx106-elf-g++
 LD  = $(CPP)
 AR  = $(TOOLS_BIN)\xtensa-lx106-elf-ar
-ESPTOOL = $(ESP_SDK_DIR)\esptool.exe
+ESPTOOL = python $(ESPRESSIF_SDK_ROOT)\components\esptool_py\esptool\esptool.py
 
 AR_OPTIONS = rcs
 
@@ -251,7 +269,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
 !IF "$(DEBUG)"=="1"
-C_DEFINES = $(C_DEFINES) -DmxDebug=1
+C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 !ENDIF
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -268,10 +286,10 @@ CPP_FLAGS = -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-r
 S_FLAGS = -c -g -x assembler-with-cpp -MMD
 
 !IF "$(ESP_SDK_RELEASE)"=="esp8266-2.4.0"
-LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read -Wl,-wrap,spi_flash_erase_sector
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
 !ELSE
-LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy -Wl,-wrap,spi_flash_erase_sector
+LD_FLAGS = -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)\main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static $(LD_DIRS) -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy
 LD_STD_LIBS = -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls -lstdc++
 !ENDIF
 
@@ -292,6 +310,26 @@ LAUNCH = debug
 LAUNCH = release
 !ENDIF
 
+ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)\components\esp8266\firmware
+ESP_BOOTLOADER_BIN = $(ESP_FIRMWARE_DIR)\boot_v1.7.bin
+ESP_DATA_DEFAULT_BIN = $(ESP_FIRMWARE_DIR)\esp_init_data_default.bin
+
+!IF "$(FLASH_SIZE)"=="1M"
+ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0xFC000
+!ELSEIF "$(FLASH_SIZE)"=="4M"
+ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0x3FC000
+!ENDIF
+
+ESPTOOL_FLASH_OPT = \
+	--flash_freq $(FLASH_SPEED)m \
+	--flash_mode $(FLASH_MODE) \
+	--flash_size $(FLASH_SIZE)B \
+	0x0000 $(ESP_BOOTLOADER_BIN) \
+	0x1000 $(BIN_DIR)\main.bin \
+	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
+
+UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
+
 .PHONY: all	
 
 APP_ARCHIVE = $(BIN_DIR)\libxsar.a
@@ -302,11 +340,12 @@ all: $(LAUNCH)
 debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) 921600 8N1 $(TMP_DIR)\main.elf
+	$(UPLOAD_TO_ESP)
+#	@echo # using DEBUGGER_SPEED $(DEBUGGER_SPEED)
+	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
 
 release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)\main.bin
+	$(UPLOAD_TO_ESP)
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
@@ -331,7 +370,7 @@ $(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
 	$(LD) -L$(BIN_DIR) $(LD_FLAGS) -Wl,--start-group $(LIB_DIR)\buildinfo.o $(LIB_DIR)\lib_a-setjmp.o $(LD_STD_LIBS) -lxslib -lxsar -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)\main.elf
 	$(TOOLS_BIN)\xtensa-lx106-elf-objdump -t $(TMP_DIR)\main.elf > $(BIN_DIR)\main.sym
-	$(ESPTOOL) -eo $(ARDUINO_ROOT)\bootloaders\eboot\eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)\main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
+	$(ESPTOOL) --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)\main.elf
 
 $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
 	@echo # ar $(@F)
@@ -397,31 +436,29 @@ $(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
-
 $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 	@echo # cc $(@F)
 	$(CPP) $? $(C_DEFINES) $(C_INCLUDES) $(CPP_INCLUDES) $(CPP_FLAGS) -o $@
-
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
-$(TMP_DIR)\mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
 	
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped

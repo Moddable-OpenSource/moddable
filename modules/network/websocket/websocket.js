@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,6 +45,7 @@ import {Digest} from "crypt";
 		2 - websocket handshake complete
 		3 - message received
 		4 - closed
+		5 - sub-protocol(s) (client only)
 */
 
 export class Client {
@@ -94,9 +95,15 @@ export class Client {
 		else
 			throw new Error("message too long");
 	}
-
+	detach() {
+		const socket = this.socket;
+		delete this.socket.callback;
+		delete this.socket;
+		return socket;
+	}
 	close() {
-		this.socket.close();
+		if (this.socket)
+			this.socket.close();
 		delete this.socket;
 	}
 };
@@ -108,7 +115,7 @@ function callback(message, value) {
 		if (0 != this.state)
 			throw new Error("socket connected but ws not in connecting state");
 
-		this.callback(1);		// connected socket
+		this.callback(Client.connect);		// connected socket
 
 		let key = new Uint8Array(16);
 		for (let i = 0; i < 16; i++)
@@ -169,21 +176,21 @@ function callback(message, value) {
 					this.line = undefined;
 				}
 
-				if (10 != line.charCodeAt(line.length - 1)) {		// partial header line, accumulate and wait for more
+				if (10 != line.charCodeAt(line.length - 1)) {	// partial header line, accumulate and wait for more
 trace("partial header!!\n");		//@@ untested
 					this.line = line;
 					return;
 				}
 
-				if ("\r\n" == line) {		// empty line is end of headers
+				if ("\r\n" == line) {							// empty line is end of headers
 					if (7 == this.flags) {
-						this.callback(2);		// websocket handshake complete
-						this.state = 3;			// ready to receive
+						this.callback(Client.handshake);		// websocket handshake complete
+						this.state = 3;							// ready to receive
 						value = socket.read();
 					}
 					else {
-						this.callback(4);		// failed
-						this.state = 4;			// close state
+						this.callback(Client.disconnect);		// failed
+						this.state = 4;							// close state
 						return;
 					}
 					delete this.flags;
@@ -235,11 +242,11 @@ trace("partial header!!\n");		//@@ untested
 					}
 					else
 						data = socket.read((1 === (tag & 0x0f)) ? String : ArrayBuffer, length);
-					this.callback(3, data);
+					this.callback(Client.receive, data);
 					break;
 				case 8:
 					this.state = 4;
-					this.callback(4);		// close
+					this.callback(Client.disconnect);		// close
 					this.close();
 					return;
 				case 9:		// ping
@@ -258,9 +265,9 @@ trace("partial header!!\n");		//@@ untested
 		}
 	}
 
-	if (-1 == message) {
+	if (message < 0) {
 		if (4 !== this.state) {
-			this.callback(4);
+			this.callback(Client.disconnect);
 			this.close();
 			this.state = 4;
 		}
@@ -268,7 +275,7 @@ trace("partial header!!\n");		//@@ untested
 }
 
 export class Server {
-	constructor(dictionary) {
+	constructor(dictionary = {}) {
 		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
 		this.listener.callback = listener => {
 			let socket = new Socket({listener: this.listener});
@@ -277,7 +284,7 @@ export class Server {
 			socket.callback = server.bind(request);
 			request.state = 1;		// already connected socket
 			request.callback = this.callback;		// transfer server.callback to request.callback
-			request.callback(1);		// tell app we have a new connection
+			request.callback(Server.connect);		// tell app we have a new connection
 		};
 	}
 
@@ -295,8 +302,6 @@ function server(message, value, etc) {
 	let socket = this.socket;
 
 	if (!socket) return;
-
-	trace(`WS SERVER SOCKET MSG ${message} in state ${this.state}\n`);
 
 	if (2 == message) {
 		if ((1 == this.state) || (2 == this.state)) {
@@ -328,13 +333,22 @@ trace("partial header!!\n");		//@@ untested
 					delete this.key;
 					sha1.write("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 
-					socket.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
-								"Connection: Upgrade\r\n",
-								"Upgrade: websocket\r\n",
-								"Sec-WebSocket-Accept: ", Base64.encode(sha1.close()), "\r\n",
-								"\r\n");
+					let response = [
+						"HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
+						"Connection: Upgrade\r\n",
+						"Upgrade: websocket\r\n",
+						"Sec-WebSocket-Accept: ", Base64.encode(sha1.close()), "\r\n",
+					]
 
-					this.callback(2);		// websocket handshake complete
+					if (this.protocol) {
+						response.push("Sec-WebSocket-Protocol: ", this.protocol, "\r\n");
+						delete this.protocol;
+					}
+					response.push("\r\n");
+
+					socket.write.apply(socket, response);
+
+					this.callback(Server.handshake);		// websocket handshake complete
 
 					this.state = 3;
 					socket.callback = callback.bind(this);
@@ -375,20 +389,38 @@ trace("partial header!!\n");		//@@ untested
 						this.flags |= 8;
 						this.key = data;
 					}
+					else if ("sec-websocket-protocol" === name) {
+						data = data.split(",");
+						for (let i = 0; i < data.length; ++i)
+							data[i] = data[i].trim().toLowerCase();
+						const protocol = this.callback(Server.subprotocol, data);
+						if (protocol)
+							this.protocol = protocol;
+					}
 				}
 			}
 		}
 	}
 
-	if (-1 == message) {
-		this.callback(4);
+	if (message < 0) {
+		this.callback(Client.disconnect);
 		this.close();
 	}
 }
 
+Server.connect = 1;
+Server.handshake = 2;
+Server.receive = 3;
+Server.disconnect = 4;
+Server.subprotocol = 5;
 Object.freeze(Server.prototype);
+
+Client.connect = 1;
+Client.handshake = 2;
+Client.receive = 3;
+Client.disconnect = 4;
 Object.freeze(Client.prototype);
 
-export default {
+export default Object.freeze({
 	Client, Server
-};
+});

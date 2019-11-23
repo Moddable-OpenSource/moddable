@@ -807,19 +807,13 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	PiuView* self = refCon;
 	xsMachine *the = (*self)->the;
 	Poco poco = (*self)->poco;
+	if (byteLength < 0) byteLength = -byteLength;
 	xsCallFunction3((*self)->_send, xsReference((*self)->screen), xsReference((*self)->pixels), xsInteger((char *)pixels - (char *)poco->pixels), xsInteger(byteLength));
 }
 
 PiuTick PiuViewTicks(PiuView* self)
 {
-#if defined (__ZEPHYR__) || defined (__ets__) || defined (ESP32) || defined(gecko) || defined (_RENESAS_SYNERGY_)
 	return modMilliseconds();
-#else
-	//@@ should use modMilliseconds on all platforms
-	c_timeval tv;
-	c_gettimeofday(&tv, NULL);
-	return (PiuTick)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
-#endif
 }
 
 void PiuViewUpdate(PiuView* self, PiuApplication* application)
@@ -1054,6 +1048,28 @@ void PiuApplication_set_clut(xsMachine* the)
 #endif
 }
 
+void PiuApplication_get_rotation(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuView* view = (*self)->view;
+	xsVars(1);
+	xsVar(0) = xsReference((*view)->screen);
+	xsResult = xsGet(xsVar(0), xsID_rotation);
+}
+
+void PiuApplication_set_rotation(xsMachine* the) 
+{
+	PiuApplication* self = PIU(Application, xsThis);
+	PiuView* view = (*self)->view;
+	Poco poco = (*view)->poco;
+	xsVars(1);
+	xsVar(0) = xsReference((*view)->screen);
+	xsSet(xsVar(0), xsID_rotation, xsArg(0));
+	poco->width = xsToInteger(xsGet(xsVar(0), xsID_width));
+	poco->height = xsToInteger(xsGet(xsVar(0), xsID_height));
+	PiuApplicationResize(self);
+}
+
 void PiuApplication_keyDown(xsMachine* the) 
 {
 	PiuApplication* self = PIU(Application, xsThis);
@@ -1122,7 +1138,7 @@ void PiuCLUT_get_colors(xsMachine* the)
 	xsSet(xsResult, xsID_length, xsInteger(16));
 	xsCall0(xsResult, xsID_fill);
 	while (i < 16) {
-		uint16_t src = *clut;
+		uint16_t src = c_read8(clut);
 		uint8_t r = src >> 11;
 		uint8_t g = (src >> 5) & 0x3F;
 		uint8_t b = src & 0x1F;

@@ -49,4 +49,6 @@ void xs_parseRLE(xsMachine *the)
 	bitmap->format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
 	bitmap->havePointer = 1;
 	bitmap->bits.data = bytes + 8;		//@@ only valid if from Resource
+
+	xsResult = xsArg(1);
 }

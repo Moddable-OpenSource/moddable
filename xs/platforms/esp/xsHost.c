@@ -50,12 +50,15 @@
 	#include "Arduino.h"
 	#include "rtctime.h"
 	#include "spi_flash.h"
+
+	#define FLASH_INT_MASK (((2 << 8) | 0x3A))
 #endif
 
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
-	static void espStartInstrumentation(txMachine* the);
+	void espInitInstrumentation(txMachine *the);
+	void espDescribeInstrumentation(txMachine *the);
 #endif
 
 extern void* xsPreparationAndCreation(xsCreation **creation);
@@ -634,6 +637,13 @@ int32_t modGetDaylightSavingsOffset(void)
 	static uint8_t gHasMods;
 #endif
 
+void modPrelaunch(void)
+{
+#if MODDEF_STARTUP_DELAYMS
+	modDelayMilliseconds(MODDEF_STARTUP_DELAYMS);
+#endif
+}
+
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
 	xsMachine *result;
@@ -683,14 +693,21 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	xsSetContext(result, NULL);
 
-#ifdef mxInstrument
-	espStartInstrumentation(result);
-#endif
-
 	return result;
 }
 
 static uint16_t gSetupPending = 0;
+
+void modLoadModule(void *theIn, const char *name)
+{
+	xsMachine *the = theIn;
+
+	xsBeginHost(the);
+		xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT);
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+	xsEndHost(the);
+}
 
 void setStepDone(xsMachine *the)
 {
@@ -698,12 +715,7 @@ void setStepDone(xsMachine *the)
 	if (gSetupPending)
 		return;
 
-	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, mxID(_require));
-		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
+	modLoadModule(the, "main");
 }
 
 void mc_setup(xsMachine *the)
@@ -712,12 +724,15 @@ void mc_setup(xsMachine *the)
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
 
+#ifdef mxInstrument
+	espInitInstrumentation(the);
+#endif
+
 	gSetupPending = 1;
 
 	xsBeginHost(the);
-		xsVars(2);
+		xsVars(1);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
-		xsVar(1) = xsGet(xsGlobal, mxID(_require));
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
@@ -729,7 +744,7 @@ void mc_setup(xsMachine *the)
 				if (dot)
 					*dot = 0;
 
-				xsResult = xsCall1(xsVar(1), mxID(_weak), xsString(path));
+				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
 					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
@@ -750,7 +765,8 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate chunk !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for chunk !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -777,7 +793,8 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	modLog("!!! xs: failed to allocate slots !!!\n");
+	fxReport(the, "!!! xs: failed to allocate %d bytes for slots !!!\n", size);
+	xsDebugger();
 	return NULL;
 }
 
@@ -823,6 +840,11 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
 	}
 
+	if (!result) {
+		fxReport(the, "# can't make memory for slots\n");
+		xsDebugger();
+	}
+
 	return result;
 }
 
@@ -846,21 +868,16 @@ void fxBuildKeys(txMachine* the)
 {
 }
 
-static txBoolean fxFindScript(txMachine* the, txString path, txID* id)
+static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID* id)
 {
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	path += preparation->baseLength;
-	c_strcat(path, ".xsb");
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			path -= preparation->baseLength;
-			*id = fxNewNameC(the, path);
+	txID result = fxFindName(the, path);
+	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
+	while (slot) {
+		if (slot->value.symbol == result) {
+			*id = result;
 			return 1;
 		}
-		c--;
-		script++;
+		slot = slot->next;
 	}
 	*id = XS_NO_ID;
 	return 0;
@@ -904,7 +921,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 }
 #endif
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
 	char name[PATH_MAX];
@@ -915,15 +932,15 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	txID id;
 
 	fxToStringBuffer(the, slot, name, sizeof(name));
-#if MODDEF_XS_MODS
-	if (findMod(the, name, NULL)) {
-		c_strcpy(path, "/");
-		c_strcat(path, name);
-		c_strcat(path, ".xsb");
-		return fxNewNameC(the, path);
-	}
-#endif
-
+// #if MODDEF_XS_MODS
+// 	if (findMod(the, name, NULL)) {
+// 		c_strcpy(path, "/");
+// 		c_strcat(path, name);
+// 		c_strcat(path, ".xsb");
+// 		return fxNewNameC(the, path);
+// 	}
+// #endif
+// 
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
 	}	
@@ -942,7 +959,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 	if (absolute) {
 		c_strcpy(path, preparation->base);
 		c_strcat(path, name + 1);
-		if (fxFindScript(the, path, &id))
+		if (fxFindScript(the, realm, path, &id))
 			return id;
 	}
 	if (relative && (moduleID != XS_NO_ID)) {
@@ -961,7 +978,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 		if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
 			*slash = 0;
 			c_strcat(path, name + dot);
-			if (fxFindScript(the, path, &id))
+			if (fxFindScript(the, realm, path, &id))
 				return id;
 		}
 #if 0
@@ -973,15 +990,19 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
 #endif
 	}
 	if (search) {
-		c_strcpy(path, preparation->base);
-		c_strcat(path, name);
-		if (fxFindScript(the, path, &id))
-			return id;
+		txSlot* slot = mxAvailableModules(realm);
+		slot = slot->value.reference->next;
+		while (slot) {
+			txSlot* key = fxGetKey(the, slot->ID);
+			if (key && !c_strcmp(key->value.key.string, name))
+				return slot->value.symbol;
+			slot = slot->next;
+		}
 	}
 	return XS_NO_ID;
 }
 
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
@@ -1008,14 +1029,14 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		aScript.version[2] = XS_PATCH_VERSION;
 		aScript.version[3] = 0;
 
-		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &aScript, C_NULL, C_NULL);
 		return;
 	}
 #endif
 
 	while (c > 0) {
 		if (!c_strcmp(path, script->path)) {
-			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+			fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
 			return;
 		}
 		c--;
@@ -1079,7 +1100,9 @@ static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)"Files",
 	(char *)"Poco display list used",
 	(char *)"Piu command List used",
+#if ESP32
 	(char *)"SPI flash erases",
+#endif
 	(char *)"System bytes free",
 };
 
@@ -1093,7 +1116,9 @@ static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 	(char *)" files",
 	(char *)" bytes",
 	(char *)" bytes",
+#if ESP32
 	(char *)" sectors",
+#endif
 	(char *)" bytes",
 };
 
@@ -1142,22 +1167,24 @@ static int32_t modInstrumentationStackRemain(void)
 
 static modTimer gInstrumentationTimer;
 
+#ifdef mxDebug
 void espDebugBreak(txMachine* the, uint8_t stop)
 {
 	if (stop) {
+		the->DEBUG_LOOP = 1;
 		fxCollectGarbage(the);
 		the->garbageCollectionCount -= 1;
 		espSampleInstrumentation(NULL, NULL, 0);
 	}
-	else
+	else {
+		the->DEBUG_LOOP = 0;
 		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
+	}
 }
+#endif
 
-void espStartInstrumentation(txMachine *the)
+void espInitInstrumentation(txMachine *the)
 {
-	if ((NULL == the->connection) || gInstrumentationThe)
-		return;
-
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -1168,12 +1195,17 @@ void espStartInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
 
-	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
-
 	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
 	gInstrumentationThe = the;
 
+#ifdef mxDebug
 	the->onBreak = espDebugBreak;
+#endif
+}
+
+void espDescribeInstrumentation(txMachine *the)
+{
+	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
 }
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
@@ -1193,7 +1225,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+#if ESP32
 	modInstrumentationSet(SPIFlashErases, 0);
+#endif
 	gInstrumentationThe->garbageCollectionCount = 0;
 	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
 	gInstrumentationThe->peakParserSize = 0;
@@ -1208,6 +1242,121 @@ uint32_t modMilliseconds(void)
 }
 
 #endif
+
+/*
+	64-bit atomics
+*/
+
+bool __atomic_compare_exchange_8(txU8 *ptr, txU8 *expected, txU8 desired, bool weak, int success_memorder, int failure_memorder)
+{
+	modCriticalSectionBegin();
+
+	bool result;
+	if (*ptr == *expected) {
+		*ptr = desired;
+		result = true;
+	}
+	else {
+		*expected = *ptr;
+		result = false;
+	}
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_load_8(txU8 *ptr, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_add_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result + val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_and_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result & val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_exchange_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_or_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result | val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+void __atomic_store_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	*ptr = val;
+
+	modCriticalSectionEnd();
+}
+
+txU8 __atomic_fetch_sub_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result - val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
+
+txU8 __atomic_fetch_xor_8(txU8 *ptr, txU8 val, int memorder)
+{
+	modCriticalSectionBegin();
+
+	txU8 result = *ptr;
+	*ptr = result ^ val;
+
+	modCriticalSectionEnd();
+
+	return result;
+}
 
 /*
 	messages
@@ -1229,6 +1378,17 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 {
 	modMessageRecord msg;
 
+#ifdef mxDebug
+	if (0xffff == messageLength) {
+		msg.message = NULL;
+		msg.callback = callback;
+		msg.refcon = refcon;
+		msg.length = 0;
+		xQueueSendToFront(the->msgQueue, &msg, portMAX_DELAY);
+		return 0;
+	}
+#endif
+
 	if (message && messageLength) {
 		msg.message = c_malloc(messageLength);
 		if (!msg.message) return -1;
@@ -1240,8 +1400,17 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
-
-	xQueueSend(the->msgQueue, &msg, portMAX_DELAY);
+#ifdef mxDebug
+	do {
+		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {		// keep one entry free for debugger
+			xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+			break;
+		}
+		vTaskDelay(5);
+	} while (1);
+#else
+	xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
+#endif
 
 	return 0;
 }
@@ -1256,7 +1425,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-	xQueueSendFromISR(the->msgQueue, &msg, &ignore);
+	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
 
 	return 0;
 }
@@ -1367,6 +1536,11 @@ static void appendMessage(modMessage msg)
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
+#ifdef mxDebug
+	if (0xffff == messageLength)
+		messageLength = 0;
+#endif
+
 	modMessage msg = c_malloc(sizeof(modMessageRecord) + messageLength);
 	if (!msg) return -1;
 
@@ -1384,7 +1558,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	return 0;
 }
 
-#define kMessagePoolCount (2)
+#define kMessagePoolCount (4)
 static modMessageRecord gMessagePool[kMessagePoolCount];
 
 int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
@@ -1461,23 +1635,26 @@ void modMachineTaskUninit(xsMachine *the)
 }
 #endif
 
-
 #if ESP32
 esp_err_t __wrap_spi_flash_erase_sector(size_t sector)
-#else
-SpiFlashOpResult ICACHE_RAM_ATTR __wrap_spi_flash_erase_sector(uint16 sector)
-#endif
 {
-#if ESP32
 	extern esp_err_t __real_spi_flash_erase_sector(size_t sector);
-#else
-	extern SpiFlashOpResult __real_spi_flash_erase_sector(uint16 sector);
-#endif
 #ifdef mxInstrument
 	modInstrumentationAdjust(SPIFlashErases, +1);
 #endif
 	return __real_spi_flash_erase_sector(sector);
 }
+
+esp_err_t __wrap_spi_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+	extern esp_err_t __real_spi_flash_erase_range(uint32_t start_addr, uint32_t size);
+#ifdef mxInstrument
+	modInstrumentationAdjust(SPIFlashErases, (size / SPI_FLASH_SEC_SIZE));
+#endif
+	return __real_spi_flash_erase_range(start_addr, size);
+}
+
+#endif
 
 /*
 	promises
@@ -1514,6 +1691,7 @@ static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = dst;
+//@@ this erase seems wrong... unless offset is always a sector boundary?
 	int result = esp_partition_erase_range(partition, (uintptr_t)offset, (size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1));
 	if (ESP_OK != result)
 		return 0;
@@ -1549,14 +1727,6 @@ void *installModules(txPreparation *preparation)
 
 #else /* ESP8266 */
 
-static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
-
-extern uint8_t _XSMOD_start;
-extern uint8_t _XSMOD_end;
-
-#define kModulesInstallStart ((uintptr_t)&_XSMOD_start)
-#define kModulesInstallEnd ((uintptr_t)&_XSMOD_end)
-
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
@@ -1566,7 +1736,7 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	offset += (uintptr_t)dst;
 
-	if ((offset + SPI_FLASH_SEC_SIZE) > (uintptr_t)kModulesInstallStart)
+	if ((offset + SPI_FLASH_SEC_SIZE) > (uintptr_t)kModulesEnd)
 		return 0;		// attempted write beyond end of available space
 
 	if (!(offset & (SPI_FLASH_SEC_SIZE - 1))) {		// if offset is at start of a sector, erase that sector
@@ -1579,27 +1749,11 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
-	uint8_t buffer[8];
-	uint32_t modulesAtomSize, modulesAtomType;
-	uint32_t freeSpace = kModulesInstallStart - (uint32_t)kModulesStart;
-	
-	spiRead((void *)kModulesInstallStart, 0, buffer, 8);
-	modulesAtomSize = c_read32be(buffer);
-	modulesAtomType = c_read32be(buffer + 4);
-	
-	if (modulesAtomType != XS_ATOM_ARCHIVE) return NULL;
-	
-	if (freeSpace < modulesAtomSize){
-		modLog("mod is too large to install");
-		return NULL;
-	}
-
-	if (fxMapArchive(preparation, (void *)kModulesInstallStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
+	if (fxMapArchive(preparation, (void *)kModulesStart, kModulesStart, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
 		return kModulesStart;
 
 	return NULL;
 }
-
 
 #endif
 
@@ -1643,21 +1797,52 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 #if !ESP32
 #include "flash_utils.h"
 
+// declarations from rboot.h
+// standard rom header
+typedef struct {
+	// general rom header
+	uint8 magic;
+	uint8 count;
+	uint8 flags1;
+	uint8 flags2;
+	void* entry;
+} rom_header;
+
+typedef struct {
+	// general rom header
+	uint8 magic;
+	uint8 count; // second magic for new header
+	uint8 flags1;
+	uint8 flags2;
+	uint32 entry;
+	// new type rom, lib header
+	uint32 add; // zero
+	uint32 len; // length of irom section
+} rom_header_new;
+
 uint8_t *espFindUnusedFlashStart(void)
 {
-	image_header_t header;
-	section_header_t section;
-	uint32_t sectionFlashAddress = APP_START_OFFSET + sizeof(image_header_t);
-	
-	spi_flash_read(APP_START_OFFSET, (void *)&header, sizeof(image_header_t));
-	spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
-	
-	while (header.num_segments--){
-		sectionFlashAddress += section.size + sizeof(section_header_t);		
-		spi_flash_read(sectionFlashAddress, (void *)&section, sizeof(section_header_t));
+	rom_header_new header;
+	uint32_t pos = APP_START_OFFSET;
+
+	spi_flash_read(pos, (void *)&header, sizeof(rom_header_new));
+	if ((0xea != header.magic) || (4 != header.count)) {
+		modLog("unrecognized boot loader");
+		return NULL;
 	}
-	sectionFlashAddress += (uint32_t)kFlashStart;
-	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + sectionFlashAddress) & ~(SPI_FLASH_SEC_SIZE - 1));
+
+	pos += header.len + sizeof(rom_header_new);
+	spi_flash_read(pos, (void *)&header, sizeof(rom_header));
+
+	pos += sizeof(rom_header);
+	while (header.count--) {
+		section_header_t section;
+		spi_flash_read(pos, (void *)&section, sizeof(section_header_t));
+		pos += section.size + sizeof(section_header_t);
+	}
+
+	pos += (uint32_t)kFlashStart;
+	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + pos) & ~(SPI_FLASH_SEC_SIZE - 1));
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
@@ -1718,15 +1903,17 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
+	ets_isr_mask(FLASH_INT_MASK);
+
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset & ~3, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 
 		if (size <= toAlign)
-			return 1;
+			goto bail;
 
 		src += toAlign;
 		offset += toAlign;
@@ -1741,7 +1928,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
 				if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, use))
-					return 0;
+					goto fail;
 
 				toAlign -= use;
 				src += use;
@@ -1750,7 +1937,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		}
 		else {
 			if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)src, toAlign))
-				return 0;
+				goto fail;
 			src += toAlign;
 			offset += toAlign;
 		}
@@ -1760,10 +1947,16 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
 		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset, (uint32_t *)temp, 4))
-			return 0;
+			goto fail;
 	}
 
+bail:
+	ets_isr_unmask(FLASH_INT_MASK);
 	return 1;
+
+fail:
+	ets_isr_unmask(FLASH_INT_MASK);
+	return 0;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
@@ -1774,8 +1967,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	offset /= SPI_FLASH_SEC_SIZE;
 	size /= SPI_FLASH_SEC_SIZE;
 	while (size--) {
+		int err;
+
 		optimistic_yield(10000);
-		if (SPI_FLASH_RESULT_OK != spi_flash_erase_sector(offset++))
+    	ets_isr_mask(FLASH_INT_MASK);
+    	err = spi_flash_erase_sector(offset++);
+    	ets_isr_unmask(FLASH_INT_MASK);
+		if (SPI_FLASH_RESULT_OK != err)
 			return 0;
 	}
 

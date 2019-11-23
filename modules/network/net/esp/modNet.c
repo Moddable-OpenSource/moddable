@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,7 +19,7 @@
  */
 
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "string.h"
 
@@ -36,6 +36,33 @@ void twoHex(uint8_t value, char *out)
 	*out++ = espRead8(gHex + (value & 15));
 }
 
+uint8_t getNIF(xsMachine *the)
+{
+	uint8_t wantsAP = 0, wantsStation = 0;
+
+	if (xsToInteger(xsArgc) > 1) {
+		wantsAP = 0 == c_strcmp(xsToString(xsArg(1)), "ap");
+		wantsStation = 0 == c_strcmp(xsToString(xsArg(1)), "station");
+	}
+
+#if ESP32
+	//@@
+#else
+	uint8 mode = wifi_get_opmode();
+	if (wantsStation && ((STATION_MODE == mode) || (STATIONAP_MODE == mode)))
+		return STATION_IF;
+	if (wantsAP && ((SOFTAP_MODE == mode) || (STATIONAP_MODE == mode)))
+		return SOFTAP_IF;
+	if (wantsAP || wantsStation)
+		return ~0;
+	if (SOFTAP_MODE == mode)
+		return SOFTAP_IF;
+	if (STATION_MODE == mode)
+		return STATION_IF;
+	return 255;
+#endif
+}
+
 void xs_net_get(xsMachine *the)
 {
 	const char *prop = xsToString(xsArg(0));
@@ -45,12 +72,18 @@ void xs_net_get(xsMachine *the)
 		wifi_mode_t mode;
 		tcpip_adapter_ip_info_t info = {0};
 
-		esp_wifi_get_mode(&mode);
+		if ((ESP_OK != esp_wifi_get_mode(&mode)) || (WIFI_MODE_NULL == mode))
+			return;
+
 		if ((ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;
+		uint8_t nif = getNIF(the);
 
-		if (wifi_get_ip_info((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, &info)) {
+		if (255 == nif)
+			return;
+
+		if (wifi_get_ip_info(nif, &info) && (ip4_addr1(&info.ip) || ip4_addr2(&info.ip) || ip4_addr3(&info.ip) || ip4_addr4(&info.ip))) {
 #endif
 			char *out;
 			xsResult = xsStringBuffer(NULL, 4 * 5);
@@ -67,7 +100,7 @@ void xs_net_get(xsMachine *the)
 #if ESP32
 		if (ESP_OK == esp_wifi_get_mac(ESP_IF_WIFI_STA, macaddr))
 #else
-		if (wifi_get_macaddr((SOFTAP_MODE == wifi_get_opmode()) ? SOFTAP_IF : STATION_IF, macaddr))
+		if (wifi_get_macaddr(getNIF(the), macaddr))
 #endif
 		{
 			char *out;
@@ -85,11 +118,11 @@ void xs_net_get(xsMachine *the)
 #if ESP32
 		wifi_ap_record_t config;
 
-		if (ESP_OK == esp_wifi_sta_get_ap_info(&config))
+		if ((ESP_OK == esp_wifi_sta_get_ap_info(&config)) && config.ssid[0])
 #else
 		struct station_config config;
 
-		if (wifi_station_get_config(&config))
+		if (wifi_station_get_config(&config) && config.ssid[0])
 #endif
 			xsResult = xsString(config.ssid);
 	}

@@ -35,12 +35,12 @@
  *       limitations under the License.
  */
 
-import Crypt from "crypt";
-import Arith from "arith";
+import RNG from "rng";
+import BER from "ber";
 
 export default class PKCS1 {
 	static I2OSP(I, l) {
-		var c = I.toChunk();
+		var c = ArrayBuffer.fromBigInt(I);
 		if (l && l > c.byteLength) {
 			// prepend 0
 			var d = l - c.byteLength;
@@ -78,18 +78,22 @@ export default class PKCS1 {
 		return c.buffer;
 	};
 	static OS2IP(OS) {
-		return new Arith.Integer(OS);
+		if (OS instanceof Uint8Array) {
+			let offset = OS.byteOffset;
+			OS = OS.buffer.slice(offset, offset + OS.byteLength);
+		}
+		return BigInt.fromArrayBuffer(OS);
 	};
 	static randint(max, z) {
-		var i = new Arith.Integer(Crypt.rng(max.sizeof()));
-		while (i.comp(max) >= 0)
-			i = z.lsr(i, 1);
+		var i = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(max) >>> 3));
+		while (i >= max)
+			i >>>= 1;
 		return i;
 	};
 	static parse(buf, privFlag) {
 		// currently RSA only
 		var key = {};
-		var ber = new Crypt.BER(buf);
+		var ber = new BER(buf);
 		if (ber.getTag() != 0x30)	// SEQUENCE
 			throw new Error("PKCS1: not a sequence");
 		ber.getLength();	// skip the sequence length
@@ -107,3 +111,5 @@ export default class PKCS1 {
 		return key;
 	};
 };
+
+Object.freeze(PKCS1.prototype);

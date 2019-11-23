@@ -20,12 +20,12 @@ let characterCount = 0;
 let request = new Request({host: "www.google.com", path: "/", Socket: SecureSocket, port: 443});
 request.callback = function(message, value, etc)
 {
-	if (4 == message) {
+	if (Request.responseFragment == message) {
 		let text = this.read(String);
 		characterCount += text.length;
 		trace(text);
 	}
 
-	if (5 == message)
+	if (Request.responseComplete == message)
 		trace(`\n\nTransfer complete. ${characterCount} characters.\n`);
 }

@@ -78,12 +78,6 @@ class ESP32GATTFile extends GATTFile {
 		else {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"n" });
 		}
-		let port = tool.getenv("UPLOAD_PORT");
-		if (port) {
-			if (port.charAt(0) != '"')
-				port = `"${port}"`;
-			options.push({ name:"CONFIG_ESPTOOLPY_PORT", value:port});
-		}
 		for (let i = 0; i < options.length; ++i) {
 			let result = this.setConfigOption(sdkconfig, options[i]);
 			if (result.changed) {
@@ -123,18 +117,6 @@ class ESP32GATTFile extends GATTFile {
 		file.line("static const uint16_t character_declaration_uuid = 0x2803;");
 		file.line("static const uint16_t character_client_config_uuid = 0x2902;");
 		file.line("");
-		file.line("static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE;");
-		file.line("static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;");
-		file.line("static const uint8_t char_prop_write = ESP_GATT_CHAR_PROP_BIT_WRITE;");
-		file.line("static const uint8_t char_prop_write_notify = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;");
-		file.line("static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;");
-		file.line("static const uint8_t char_prop_read_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("static const uint8_t char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR;");
-		file.line("");
 		
 		var maxAttributeCount = 0;
 		var attributeCounts = new Array(services.length);
@@ -146,6 +128,10 @@ class ESP32GATTFile extends GATTFile {
 			attributeCount += (Object.keys(characteristics).length * 2);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
 				let properties = characteristic.properties;
 				if (properties.includes("notify") || properties.includes("indicate")) {
 					++attributeCount;
@@ -169,6 +155,8 @@ class ESP32GATTFile extends GATTFile {
 				if (characteristic._notify) {
 					file.line(`static const uint8_t char_ccc${characteristicIndex}[2] = { 0x00, 0x00 };`);
 				}
+				let properties = this.parseProperties(characteristic.properties.split(","));
+				file.line(`static const uint8_t char_properties${characteristicIndex} = ${toPaddedHex(properties)};`);
 				if ("descriptors" in characteristic) {
 					for (let key2 in characteristic.descriptors) {
 						let descriptor = characteristic.descriptors[key2];
@@ -210,27 +198,36 @@ class ESP32GATTFile extends GATTFile {
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
 				
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
+
 				// characteristic declaration
-				let properties = this.parseProperties(characteristic.properties.split(","));
 				let permissions = this.parsePermissions(characteristic.permissions.split(","));
 				file.line("\t\t[", attributeIndex, "] = {");
 				file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
-				file.line(`\t\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ${permissions}, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&${properties}}`);
+				file.line(`\t\t\t{ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ${permissions}, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_properties${characteristicIndex}}`);
 				file.line("\t\t},");
 				++attributeIndex;
 
 				// characteristic value
+				let maxBytes;
+				if (this.server && !this.client)
+					maxBytes = characteristic.maxBytes;
+				else
+					maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 				let esp_uuid_len = (4 == characteristic.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 				file.line("\t\t[", attributeIndex, "] = {");
 				if ("value" in characteristic)
 					file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 				else {
-					let char_name = { service_index:index, att_index:attributeIndex, name:key };
-					char_name.type = characteristic.type ? characteristic.type: "";
-					char_names.push(char_name);
 					file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 				}
-				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${characteristic.maxBytes}, `);
+				let char_name = { service_index:index, att_index:attributeIndex, name:key };
+				char_name.type = characteristic.type ? characteristic.type: "";
+				char_names.push(char_name);
+				file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&char_uuid${characteristicIndex}, ${permissions}, ${maxBytes}, `);
 				if ("value" in characteristic)
 					file.write(`${characteristic._length}, (uint8_t*)&char_value${characteristicIndex}}`);
 				else
@@ -252,17 +249,23 @@ class ESP32GATTFile extends GATTFile {
 				if (characteristic._descriptors) {
 					for (let key2 in characteristic.descriptors) {
 						let descriptor = characteristic.descriptors[key2];
+						if ((undefined === descriptor.permissions) && this.client)
+							descriptor.permissions = "read";
+						if ((undefined === descriptor.properties) && this.client)
+							descriptor.properties = "read";
+						if ((undefined === descriptor.maxBytes) && this.client)
+							descriptor.maxBytes = 2;
 						permissions = this.parsePermissions(descriptor.permissions.split(","));
 						esp_uuid_len = (4 == descriptor.uuid.length ? "ESP_UUID_LEN_16" : "ESP_UUID_LEN_128");
 						file.line("\t\t[", attributeIndex, "] = {");
 						if ("value" in descriptor)
 							file.line("\t\t\t{ESP_GATT_AUTO_RSP},");
 						else {
-							let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
-							char_name.type = descriptor.type ? descriptor.type: "";
-							char_names.push(char_name);
 							file.line("\t\t\t{ESP_GATT_RSP_BY_APP},");
 						}
+						let char_name = { service_index:index, att_index:attributeIndex, name:key2 };
+						char_name.type = descriptor.type ? descriptor.type: "";
+						char_names.push(char_name);
 						file.write(`\t\t\t{${esp_uuid_len}, (uint8_t*)&desc_uuid${descriptorIndex}, ${permissions}, ${descriptor.maxBytes}, `);
 						if ("value" in descriptor)
 							file.write(`${descriptor._length}, (uint8_t*)&desc_value${descriptorIndex}}`);
@@ -295,6 +298,8 @@ class ESP32GATTFile extends GATTFile {
 		const ESP_GATT_CHAR_PROP_BIT_WRITE = (1 << 3);
 		const ESP_GATT_CHAR_PROP_BIT_NOTIFY = (1 << 4);
 		const ESP_GATT_CHAR_PROP_BIT_INDICATE = (1 << 5);
+		const ESP_GATT_CHAR_PROP_BIT_AUTH = (1 << 6);
+		const ESP_GATT_CHAR_PROP_BIT_EXT_PROP = (1 << 7);
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -313,56 +318,46 @@ class ESP32GATTFile extends GATTFile {
 				case "indicate":
 					props |= ESP_GATT_CHAR_PROP_BIT_INDICATE;
 					break;
+				case "extended":
+					props |= ESP_GATT_CHAR_PROP_BIT_EXT_PROP;
+					break;
 				default:
 					throw new Error("unknown property");
 			}
 		});
-		if (props == ESP_GATT_CHAR_PROP_BIT_READ)
-			props = "char_prop_read";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE)
-			props = "char_prop_write";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY)
-			props = "char_prop_write_notify";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_WRITE_NR)
-			props = "char_prop_write_nr";
-		else if (props == ESP_GATT_CHAR_PROP_BIT_NOTIFY)
-			props = "char_prop_notify";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE))
-			props = "char_prop_read_write";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
-			props = "char_prop_read_notify";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE))
-			props = "char_prop_read_indicate";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
-			props = "char_prop_read_write_nr";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR))
-			props = "char_prop_read_write_write_nr";
-		else if (props == (ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY))
-			props = "char_prop_read_write_notify";
-		else
-			throw new Error("unsupported property combination");
 		return props;
 	}
 	parsePermissions(permissions) {
 		let perms = [];
+		let readPerms = 0;
+		let writePerms = 0;
 		permissions.forEach(p => {
 			switch(p.trim()) {
 				case "read":
+					++readPerms;
 					perms.push("ESP_GATT_PERM_READ");
 					break;
 				case "readEncrypted":
+					++readPerms;
 					perms.push("ESP_GATT_PERM_READ_ENCRYPTED");
 					break;
 				case "write":
+					++writePerms;
 					perms.push("ESP_GATT_PERM_WRITE");
 					break;
 				case "writeEncrypted":
+					++writePerms;
 					perms.push("ESP_GATT_PERM_WRITE_ENCRYPTED");
 					break;
 				default:
 					throw new Error("unsupported permission");
 			}
 		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
+			
 		return perms.join("|");
 	}
 	writeAttributeValue(file, attribute, index, prefix) {
@@ -388,29 +383,317 @@ class ESP32GATTFile extends GATTFile {
 	}
 };
 
+class QCA4020GATTFile extends GATTFile {
+	generate() {
+		let tool = this.tool;
+		let file = this.file;
+		let services = this.services;
+		file.line('/* WARNING: This file is automatically generated. Do not edit. */');
+		file.line("");
+		file.line("typedef struct {");
+		file.line("\tuint8_t service_index;");
+		file.line("\tuint8_t att_index;");
+		file.line("\tuint8_t encrypted;");
+		file.line("\tconst char *name;");
+		file.line("\tconst char *type;");
+		file.line("} char_name_table;");
+		file.line("");
+		if (0 == services.length) {
+			file.line("#define service_count 0");
+			file.line("#define char_name_count 0");
+			file.line("#define max_attribute_count 0");
+			file.line("");
+			file.line("static qapi_BLE_GATT_Service_Attribute_Entry_t ServiceTable[0][0] = {};");
+			file.line("static const uint8_t attribute_counts[0] = {};");
+			file.line("static const char_name_table char_names[0] = {};");
+			return;
+		}
+		var attributeIndex = 0;
+		var char_names = [];
+		var maxAttributeCount = 0;
+		var attributeCounts = new Array(services.length);
+		var characteristicIndex = 0;
+		var did_cccd = 0;
+
+		services.forEach((service, index) => {
+			let attributeCount = 1;
+			let characteristics = service.characteristics;
+			attributeCount += (Object.keys(characteristics).length * 2);
+			for (let key in characteristics) {
+				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
+				let properties = characteristic.properties;
+				if (properties.includes("notify") || properties.includes("indicate")) {
+					++attributeCount;
+					characteristic._notify = true;
+					if (!did_cccd) {
+						did_cccd = true;
+						file.line("static qapi_BLE_GATT_Characteristic_Descriptor_16_Entry_t cccd = {{0x02, 0x29}, 2, NULL};");
+						file.line("");
+					}
+				}
+			}
+			if (attributeCount > maxAttributeCount)
+				maxAttributeCount = attributeCount;
+			attributeCounts[index] = attributeCount;
+			if (4 == service.uuid.length) {
+				file.write(`static qapi_BLE_GATT_Primary_Service_16_Entry_t service${index} = {{`);
+				file.write(buffer2hexlist(uuid16toBuffer(parseInt(service.uuid, 16))));
+				file.write("}};");
+
+			}
+			else {
+				file.write(`static qapi_BLE_GATT_Primary_Service_128_Entry_t service${index} = {{`);
+				file.write(buffer2hexlist(uuid128toBuffer(service.uuid)));
+				file.write("}};");
+			}
+			file.line("");
+			file.line("");
+			
+			for (let key in characteristics) {
+				let characteristic = characteristics[key];
+				let uuid = characteristic.uuid;
+				let properties = this.parseProperties(characteristic.properties.split(","));
+				if (4 == uuid.length) {
+					file.write(`static qapi_BLE_GATT_Characteristic_Declaration_16_Entry_t characteristic${characteristicIndex} = {`);
+					file.write(`${properties}, {`);
+					file.write(buffer2hexlist(uuid16toBuffer(parseInt(uuid, 16))));
+					file.write("}};");
+					file.line("");
+				}
+				else {
+					file.write(`static qapi_BLE_GATT_Characteristic_Declaration_128_Entry_t characteristic${characteristicIndex} = {`);
+					file.write(`${properties}, {`);
+					file.write(buffer2hexlist(uuid128toBuffer(uuid)));
+					file.write("}};");
+					file.line("");
+				}
+				
+				if ("value" in characteristic) {
+					let buffer = typedValueToBuffer(characteristic.type, characteristic.value);
+					characteristic._length = buffer.byteLength;
+					file.write(`static uint8_t char_value_buffer${characteristicIndex}[${buffer.byteLength}] = { `);
+					file.write(buffer2hexlist(buffer));
+					file.write(" };");
+					file.line("");
+					if (4 == uuid.length) {
+						file.write(`static qapi_BLE_GATT_Characteristic_Value_16_Entry_t char_value${characteristicIndex} = {{`);
+						file.write(buffer2hexlist(uuid16toBuffer(parseInt(uuid, 16))));
+						file.write(`}, ${characteristic._length}, char_value_buffer${characteristicIndex}`);
+						file.write(" };");
+					}
+					else {
+						file.write(`static qapi_BLE_GATT_Characteristic_Value_128_Entry_t char_value${characteristicIndex} = {{`);
+						file.write(buffer2hexlist(uuid128toBuffer(uuid)));
+						file.write(`}, ${characteristic._length}, char_value_buffer${characteristicIndex}`);
+						file.write(" };");					
+					}
+				}
+				else {
+					let maxBytes;
+					if (this.server && !this.client)
+						maxBytes = characteristic.maxBytes;
+					else
+						maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
+					if (4 == uuid.length) {
+						file.write(`static qapi_BLE_GATT_Characteristic_Value_16_Entry_t char_value${characteristicIndex} = {{`);
+						file.write(buffer2hexlist(uuid16toBuffer(parseInt(uuid, 16))));
+						file.write(`}, ${maxBytes}, NULL`);
+						file.write(" };");
+					}
+					else {
+						file.write(`static qapi_BLE_GATT_Characteristic_Value_128_Entry_t char_value${characteristicIndex} = {{`);
+						file.write(buffer2hexlist(uuid128toBuffer(uuid)));
+						file.write(`}, ${maxBytes}, NULL`);
+						file.write(" };");					
+					}
+				}
+				file.line("");
+				++characteristicIndex;
+			}
+		});
+		characteristicIndex = 0;
+		
+		file.line(`#define service_count ${services.length}`);
+		file.line(`#define max_attribute_count ${maxAttributeCount}`);
+		file.write(`static const uint8_t attribute_counts[${services.length}] = { `);
+		file.write(buffer2hexlist(attributeCounts));
+		file.write(" };");
+		file.line("");
+
+		file.line(`static qapi_BLE_GATT_Service_Attribute_Entry_t ServiceTable[${services.length}][${maxAttributeCount}] = {`);
+		services.forEach((service, index) => {
+			attributeIndex = 0;
+			file.line("\t{");
+			
+			// primary service attribute
+			let uuid = service.uuid;
+			file.line(`\t\t// Service ${uuid}`);
+			file.line("\t\t[", attributeIndex, "] = {");
+			file.line("\t\t\tQAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE,");
+			if (4 == uuid.length)
+				file.line("\t\t\tQAPI_BLE_AET_PRIMARY_SERVICE_16_E,");
+			else
+				file.line("\t\t\tQAPI_BLE_AET_PRIMARY_SERVICE_128_E,");
+			file.line(`\t\t\t(void*)&service${index},`);
+			file.line("\t\t},");
+			++attributeIndex;
+			
+			let characteristics = service.characteristics;
+			for (let key in characteristics) {
+				let characteristic = characteristics[key];
+				let uuid = characteristic.uuid;
+				let encrypted = this.isEncrypted(characteristic);
+				
+				// characteristic declaration
+				file.line("\t\t[", attributeIndex, "] = {");
+				file.line("\t\t\tQAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE,");
+				if (4 == uuid.length)
+					file.line("\t\t\tQAPI_BLE_AET_CHARACTERISTIC_DECLARATION_16_E,");
+				else
+					file.line("\t\t\tQAPI_BLE_AET_CHARACTERISTIC_DECLARATION_128_E,");
+				file.line(`\t\t\t(void*)&characteristic${characteristicIndex},`);
+				file.line("\t\t},");
+				++attributeIndex;
+
+				// characteristic value
+				let permissions = this.parsePermissions(characteristic.permissions.split(","));
+				file.line("\t\t[", attributeIndex, "] = {");
+				file.line(`\t\t\t${permissions},`);
+				if (4 == uuid.length)
+					file.line("\t\t\tQAPI_BLE_AET_CHARACTERISTIC_VALUE_16_E,");
+				else
+					file.line("\t\t\tQAPI_BLE_AET_CHARACTERISTIC_VALUE_128_E,");
+				file.line(`\t\t\t(void*)&char_value${characteristicIndex},`);
+				file.line("\t\t},");
+				
+				let char_name = { service_index:index, att_index:attributeIndex, encrypted, name:key };
+				char_name.type = characteristic.type ? characteristic.type: "";
+				char_names.push(char_name);
+
+				++attributeIndex;
+				
+				// characteristic configuration descriptor
+				if (characteristic._notify) {
+					file.line("\t\t[", attributeIndex, "] = {");
+					file.line("\t\t\tQAPI_BLE_GATT_ATTRIBUTE_FLAGS_WRITABLE,");
+					file.line("\t\t\tQAPI_BLE_AET_CHARACTERISTIC_DESCRIPTOR_16_E,");
+					file.line("\t\t\t(void*)&cccd,");
+					file.line("\t\t},");
+					++attributeIndex;
+				}
+				++characteristicIndex;
+			}
+			file.line("\t},");
+		});
+		file.line("};");
+		file.line("");
+		
+		file.line(`#define char_name_count ${char_names.length}`);
+		file.line(`static const char_name_table char_names[${char_names.length}] = {`);
+		char_names.forEach(entry => {
+			file.line(`\t{${entry.service_index}, ${entry.att_index}, ${entry.encrypted}, "${entry.name}", "${entry.type}"},`);
+		});
+		file.line("};");
+		file.line("");
+	}
+	parseProperties(properties) {
+		let props = [];
+		properties.forEach(p => {
+			switch(p.trim()) {
+				case "read":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_READ");
+					break;
+				case "write":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_WRITE");
+					break;
+				case "writeNoResponse":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_WRITE_WITHOUT_RESPONSE");
+					break;
+				case "notify":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_NOTIFY");
+					break;
+				case "indicate":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_INDICATE");
+					break;
+				case "extended":
+					props.push("QAPI_BLE_GATT_CHARACTERISTIC_PROPERTIES_EXTENDED_PROPERTIES");
+					break;
+				default:
+					throw new Error("unknown property");
+			}
+		});
+		return props.join('|');
+	}
+	parsePermissions(permissions) {
+		let perms = [];
+		let readPerms = 0;
+		let writePerms = 0;
+		permissions.forEach(p => {
+			switch(p.trim()) {
+				case "read":
+					++readPerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE");
+					break;
+				case "readEncrypted":
+					++readPerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_READABLE");
+					break;
+				case "write":
+					++writePerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_WRITABLE");
+					break;
+				case "writeEncrypted":
+					++writePerms;
+					perms.push("QAPI_BLE_GATT_ATTRIBUTE_FLAGS_WRITABLE");
+					break;
+				default:
+					throw new Error("unsupported permission");
+			}
+		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
+		return perms.join('|');
+	}
+	isEncrypted(characteristic) {
+		let encrypted = (-1 != characteristic.permissions.indexOf("readEncrypted") || -1 != characteristic.permissions.indexOf("writeEncrypted"));	
+		return encrypted ? 1 : 0;
+	}
+};
+
 class GeckoGATTFile extends GATTFile {
 	generate() {
 		let file = this.file;
 		let services = this.services;
+		let clientOnly = (this.client && !this.server);
 		file.line('/* WARNING: This file is automatically generated. Do not edit. */');
 		file.line('');
-		file.line('#include "bg_gattdb_def.h"');
-		file.line('');
-		file.line('#ifdef __GNUC__');
-		file.line('\t#define GATT_HEADER(F) F __attribute__ ((section (".gatt_header")))');
-		file.line('\t#define GATT_DATA(F) F __attribute__ ((section (".gatt_data")))');
-		file.line('#else');
-		file.line('\t#ifdef __ICCARM__');
-		file.line('\t\t#define GATT_HEADER(F) _Pragma("location=\\".gatt_header\\"") F');
-		file.line('\t\t#define GATT_DATA(F) _Pragma("location=\\".gatt_data\\"") F');
-		file.line('\t#else');
-		file.line('\t\t#define GATT_HEADER(F) F');
-		file.line('\t\t#define GATT_DATA(F) F');
-		file.line('\t#endif');
-		file.line('#endif');
-		file.line('');
+		if (!clientOnly) {
+			file.line('#include "bg_gattdb_def.h"');
+			file.line('');
+			file.line('#ifdef __GNUC__');
+			file.line('\t#define GATT_HEADER(F) F __attribute__ ((section (".gatt_header")))');
+			file.line('\t#define GATT_DATA(F) F __attribute__ ((section (".gatt_data")))');
+			file.line('#else');
+			file.line('\t#ifdef __ICCARM__');
+			file.line('\t\t#define GATT_HEADER(F) _Pragma("location=\\".gatt_header\\"") F');
+			file.line('\t\t#define GATT_DATA(F) _Pragma("location=\\".gatt_data\\"") F');
+			file.line('\t#else');
+			file.line('\t\t#define GATT_HEADER(F) F');
+			file.line('\t\t#define GATT_DATA(F) F');
+			file.line('\t#endif');
+			file.line('#endif');
+			file.line('');
+		}
 		file.line("typedef struct {");
 		file.line("\tuint16_t handle;");
+		file.line("\tuint8_t uuid[16];");
+		file.line("\tuint16_t uuid_length;");
 		file.line("\tconst char *name;");
 		file.line("\tconst char *type;");
 		file.line("} char_name_table;");
@@ -429,6 +712,10 @@ class GeckoGATTFile extends GATTFile {
 			attributes_max += (length * 2);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
+				if ((undefined === characteristic.permissions) && this.client)
+					characteristic.permissions = "read";
+				if ((undefined === characteristic.properties) && this.client)
+					characteristic.properties = "read";
 				if (!characteristic.hasOwnProperty("value"))
 					attributes_dynamic_max += 1;
 				uuidtable_16_map.push('0x' + characteristic.uuid);
@@ -443,15 +730,17 @@ class GeckoGATTFile extends GATTFile {
 				}
 			}
 		});
-		file.line("GATT_DATA(const uint16_t bg_gattdb_data_uuidtable_16_map[]) = {");
-		file.write('\t' + uuidtable_16_map.join(','));
-		file.line('');
-		file.line("};")
-		file.line("GATT_DATA(const uint8_t bg_gattdb_data_uuidtable_128_map[]) = {0x00};");
-		file.line('');
-		file.line("GATT_DATA(const uint8_t bg_gattdb_data_adv_uuid16_map[]) = {0x00};");
-		file.line("GATT_DATA(const uint8_t bg_gattdb_data_adv_uuid128_map[]) = {0x00};");
-		file.line('');
+		if (!clientOnly) {
+			file.line("GATT_DATA(const uint16_t bg_gattdb_data_uuidtable_16_map[]) = {");
+			file.write('\t' + uuidtable_16_map.join(','));
+			file.line('');
+			file.line("};")
+			file.line("GATT_DATA(const uint8_t bg_gattdb_data_uuidtable_128_map[]) = {0x00};");
+			file.line('');
+			file.line("GATT_DATA(const uint8_t bg_gattdb_data_adv_uuid16_map[]) = {0x00};");
+			file.line("GATT_DATA(const uint8_t bg_gattdb_data_adv_uuid128_map[]) = {0x00};");
+			file.line('');
+		}
 		let field_index = 0;
 		let clientconfig_index = 0;
 		let index = 0;
@@ -461,13 +750,15 @@ class GeckoGATTFile extends GATTFile {
 			buffer = uuid16toBuffer(parseInt(service.uuid, 16));
 			
 			// service
-			file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
-			file.line(`\t.len = ${buffer.byteLength},`);
-			file.write('\t.data = {');
-			file.write(buffer2hexlist(buffer));
-			file.write('}');
-			file.line('');
-			file.line('};');
+			if (!clientOnly) {
+				file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
+				file.line(`\t.len = ${buffer.byteLength},`);
+				file.write('\t.data = {');
+				file.write(buffer2hexlist(buffer));
+				file.write('}');
+				file.line('');
+				file.line('};');
+			}
 			++field_index;
 			let characteristics = service.characteristics;
 			for (let key in characteristics) {
@@ -482,101 +773,116 @@ class GeckoGATTFile extends GATTFile {
 				data[4] = (uuid >> 8) & 0xFF;
 				
 				// characteristic declaration
-				file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
-				file.line(`\t.len = ${data.buffer.byteLength},`);
-				file.write('\t.data = {');
-				file.write(buffer2hexlist(data.buffer));
-				file.write('}');
-				file.line('');
-				file.line('};');
+				if (!clientOnly) {
+					file.line(`GATT_DATA(const struct bg_gattdb_buffer_with_len bg_gattdb_data_attribute_field_${field_index}) = {`);
+					file.line(`\t.len = ${data.buffer.byteLength},`);
+					file.write('\t.data = {');
+					file.write(buffer2hexlist(data.buffer));
+					file.write('}');
+					file.line('');
+					file.line('};');
+				}
 				dynamic_mapping_map.push('0x' + parseInt(field_index + 2).toString(16));
 				++field_index;
 
 				// characteristic value
-				let maxBytes = characteristic.maxBytes;
+				let maxBytes;
+				if (this.server && !this.client)
+					maxBytes = characteristic.maxBytes;
+				else
+					maxBytes = ("maxBytes" in characteristic ? characteristic.maxBytes : 0);
 				if (characteristic.hasOwnProperty("value")) {
 					buffer = typedValueToBuffer(characteristic.type, characteristic.value);
-					file.write(`uint8_t bg_gattdb_data_attribute_field_${field_index}_data[${maxBytes}] = {`);
-					file.write(buffer2hexlist(buffer));
-					file.write('};');
-					file.line('');
+					if (!clientOnly) {
+						file.write(`uint8_t bg_gattdb_data_attribute_field_${field_index}_data[${maxBytes}] = {`);
+						file.write(buffer2hexlist(buffer));
+						file.write('};');
+						file.line('');
+					}
 				}
 				else {
 					let char_name = { handle:field_index + 1, name:key };
+					char_name.uuid = (4 == characteristic.uuid.length ? uuid16toBuffer(parseInt(characteristic.uuid, 16)): uuid128toBuffer(characteristic.uuid));
+					char_name.uuid = `{${buffer2hexlist(char_name.uuid)}}`;
+					char_name.uuid_length = (4 == characteristic.uuid.length ? 2 : 16);
 					char_name.type = characteristic.type ? characteristic.type: "";
 					char_names.push(char_name);
 				}
-				file.line(`GATT_DATA(const struct bg_gattdb_attribute_chrvalue bg_gattdb_data_attribute_field_${field_index}) = {`);
-				file.line(`\t.properties = 0x${properties.toString(16)},`);
-				file.line(`\t.index = ${index},`);
-				if (characteristic.hasOwnProperty("value")) {
-					file.line(`\t.max_len = ${maxBytes},`);
-					file.line(`\t.data = bg_gattdb_data_attribute_field_${field_index}_data`);
+				if (!clientOnly) {
+					file.line(`GATT_DATA(const struct bg_gattdb_attribute_chrvalue bg_gattdb_data_attribute_field_${field_index}) = {`);
+					file.line(`\t.properties = 0x${properties.toString(16)},`);
+					file.line(`\t.index = ${index},`);
+					if (characteristic.hasOwnProperty("value")) {
+						file.line(`\t.max_len = ${maxBytes},`);
+						file.line(`\t.data = bg_gattdb_data_attribute_field_${field_index}_data`);
+					}
+					else {
+						file.line(`\t.max_len = 0,`);
+						file.line(`\t.data = NULL`);
+					}
+					file.line('};');
 				}
-				else {
-					file.line(`\t.max_len = 0,`);
-					file.line(`\t.data = NULL`);
-				}
-				file.line('};');
 				field_index += characteristic._flags ? 2 : 1;
 				++index;
 			}
 		});
-		file.line("GATT_DATA(const uint16_t bg_gattdb_data_attributes_dynamic_mapping_map[]) = {");
-		file.write('\t' + dynamic_mapping_map.join(','));
-		file.line('');
-		file.line("};")
-		file.line('');
+		if (!clientOnly) {
+			file.line("GATT_DATA(const uint16_t bg_gattdb_data_attributes_dynamic_mapping_map[]) = {");
+			file.write('\t' + dynamic_mapping_map.join(','));
+			file.line('');
+			file.line("};")
+			file.line('');
 
-		let _uuid = 2;
-		field_index = 0;
-		file.line('GATT_DATA(const struct bg_gattdb_attribute bg_gattdb_data_attributes_map[]) = {');
-		services.forEach((service) => {
-			file.line(`\t{.uuid = 0x00, .permissions = 0x801, .caps = 0xFFFF, .datatype = 0x00, .min_key_size = 0x00, .constdata = &bg_gattdb_data_attribute_field_${field_index}},`);
-			++_uuid;
-			++field_index;
-			let characteristics = service.characteristics;
-			for (let key in characteristics) {
-				let characteristic = characteristics[key];
-				file.line(`\t{.uuid = 0x02, .permissions = 0x801, .caps = 0xFFFF, .datatype = 0x00, .min_key_size = 0x00, .constdata = &bg_gattdb_data_attribute_field_${field_index}},`);
-				++field_index;
+			let _uuid = 2;
+			field_index = 0;
+			file.line('GATT_DATA(const struct bg_gattdb_attribute bg_gattdb_data_attributes_map[]) = {');
+			services.forEach((service) => {
+				file.line(`\t{.uuid = 0x00, .permissions = 0x801, .caps = 0xFFFF, .datatype = 0x00, .min_key_size = 0x00, .constdata = &bg_gattdb_data_attribute_field_${field_index}},`);
 				++_uuid;
-				let datatype = (characteristic.hasOwnProperty("value") ? 1 : 7);
-				let permissions = characteristic._flags ? "0x800" : "0x" + this.parsePermissions(characteristic.permissions.split(",")).toString(16);
-				file.line(`\t{.uuid = ${toPaddedHex(_uuid)}, .permissions = ${permissions}, .caps = 0xFFFF, .datatype = ${toPaddedHex(datatype)}, .min_key_size = 0x00, .dynamicdata = &bg_gattdb_data_attribute_field_${field_index}},`);
 				++field_index;
-				if (characteristic._flags) {
-					let index = dynamic_mapping_map.findIndex(element => field_index == parseInt(element, 16));
-					++_uuid;
-					file.line(`\t{.uuid = ${toPaddedHex(_uuid)}, .permissions = 0x807, .caps = 0xFFFF, .datatype = 0x03, .min_key_size = 0x00, .configdata = {.flags = ${toPaddedHex(characteristic._flags)}, .index = ${toPaddedHex(index)}, .clientconfig_index = ${toPaddedHex(clientconfig_index)}}},`);
+				let characteristics = service.characteristics;
+				for (let key in characteristics) {
+					let characteristic = characteristics[key];
+					file.line(`\t{.uuid = 0x02, .permissions = 0x801, .caps = 0xFFFF, .datatype = 0x00, .min_key_size = 0x00, .constdata = &bg_gattdb_data_attribute_field_${field_index}},`);
 					++field_index;
-					++clientconfig_index;
+					++_uuid;
+					let datatype = (characteristic.hasOwnProperty("value") ? 1 : 7);
+					let permissions = characteristic._flags ? "0x800" : "0x" + this.parsePermissions(characteristic.permissions.split(",")).toString(16);
+					file.line(`\t{.uuid = ${toPaddedHex(_uuid)}, .permissions = ${permissions}, .caps = 0xFFFF, .datatype = ${toPaddedHex(datatype)}, .min_key_size = 0x00, .dynamicdata = &bg_gattdb_data_attribute_field_${field_index}},`);
+					++field_index;
+					if (characteristic._flags) {
+						let index = dynamic_mapping_map.findIndex(element => field_index == parseInt(element, 16));
+						++_uuid;
+						file.line(`\t{.uuid = ${toPaddedHex(_uuid)}, .permissions = 0x807, .caps = 0xFFFF, .datatype = 0x03, .min_key_size = 0x00, .configdata = {.flags = ${toPaddedHex(characteristic._flags)}, .index = ${toPaddedHex(index)}, .clientconfig_index = ${toPaddedHex(clientconfig_index)}}},`);
+						++field_index;
+						++clientconfig_index;
+					}
 				}
-			}
-		});
-		file.line('};');
-		file.line('');
-		file.line('GATT_HEADER(const struct bg_gattdb_def bg_gattdb_data) = {');
-		file.line('\t.attributes = bg_gattdb_data_attributes_map,');
-		file.line(`\t.attributes_max = ${attributes_max},`);
-		file.line(`\t.uuidtable_16_size = ${uuidtable_16_map.length},`);
-		file.line('\t.uuidtable_16 = bg_gattdb_data_uuidtable_16_map,');
-		file.line(`\t.uuidtable_128_size = ${uuidtable_128_map.length},`);
-		file.line('\t.uuidtable_128 = bg_gattdb_data_uuidtable_128_map,');
-		file.line(`\t.attributes_dynamic_max = ${attributes_dynamic_max},`);
-		file.line('\t.attributes_dynamic_mapping = bg_gattdb_data_attributes_dynamic_mapping_map,');
-		file.line('\t.adv_uuid16 = bg_gattdb_data_adv_uuid16_map,');
-		file.line('\t.adv_uuid16_num = 0,');
-		file.line('\t.adv_uuid128 = bg_gattdb_data_adv_uuid128_map,');
-		file.line('\t.adv_uuid128_num = 0,');
-		file.line('\t.caps_mask = 0xffff,');
-		file.line('\t.enabled_caps = 0xffff');
-		file.line('};');
-		file.line('');
+			});
+			file.line('};');
+			file.line('');
+			file.line('GATT_HEADER(const struct bg_gattdb_def bg_gattdb_data) = {');
+			file.line('\t.attributes = bg_gattdb_data_attributes_map,');
+			file.line(`\t.attributes_max = ${attributes_max},`);
+			file.line(`\t.uuidtable_16_size = ${uuidtable_16_map.length},`);
+			file.line('\t.uuidtable_16 = bg_gattdb_data_uuidtable_16_map,');
+			file.line(`\t.uuidtable_128_size = ${uuidtable_128_map.length},`);
+			file.line('\t.uuidtable_128 = bg_gattdb_data_uuidtable_128_map,');
+			file.line(`\t.attributes_dynamic_max = ${attributes_dynamic_max},`);
+			file.line('\t.attributes_dynamic_mapping = bg_gattdb_data_attributes_dynamic_mapping_map,');
+			file.line('\t.adv_uuid16 = bg_gattdb_data_adv_uuid16_map,');
+			file.line('\t.adv_uuid16_num = 0,');
+			file.line('\t.adv_uuid128 = bg_gattdb_data_adv_uuid128_map,');
+			file.line('\t.adv_uuid128_num = 0,');
+			file.line('\t.caps_mask = 0xffff,');
+			file.line('\t.enabled_caps = 0xffff');
+			file.line('};');
+			file.line('');
+		}
 		file.line(`#define char_name_count ${char_names.length}`);
 		file.line(`static const char_name_table char_names[${char_names.length}] = {`);
 		char_names.forEach(entry => {
-			file.line(`\t{${entry.handle}, "${entry.name}", "${entry.type}"},`);
+			file.line(`\t{${entry.handle}, ${entry.uuid}, ${entry.uuid_length}, "${entry.name}", "${entry.type}"},`);
 		});
 		file.line("};");
 		file.line("");		
@@ -587,6 +893,8 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_char_prop_write = 0x08;
 		const gatt_char_prop_notify = 0x10;
 		const gatt_char_prop_indicate = 0x20;
+		const gatt_char_prop_writesign = 0x40;
+		const gatt_char_prop_extended = 0x80;
 		let props = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
@@ -605,6 +913,9 @@ class GeckoGATTFile extends GATTFile {
 				case "indicate":
 					props |= gatt_char_prop_indicate;
 					break;
+				case "extended":
+					props |= gatt_char_prop_extended;
+					break;
 				default:
 					throw new Error("unknown property");
 			}
@@ -619,24 +930,34 @@ class GeckoGATTFile extends GATTFile {
 		const gatt_att_perm_encrypted_write = 0x0100;
 		const gatt_att_perm_discoverable = 0x0800;
 		let perms = gatt_att_perm_discoverable;
+		let readPerms = 0;
+		let writePerms = 0;
 		permissions.forEach(p => {
 			switch(p.trim()) {
 				case "read":
+					++readPerms;
 					perms |= gatt_att_perm_readable;
 					break;
 				case "readEncrypted":
+					++readPerms;
 					perms |= gatt_att_perm_encrypted_read;
 					break;
 				case "write":
+					++writePerms;
 					perms |= gatt_att_perm_writable;
 					break;
 				case "writeEncrypted":
+					++writePerms;
 					perms |= gatt_att_perm_encrypted_write;
 					break;
 				default:
 					throw new Error("unsupported permission");
 			}
 		});
+		if (readPerms > 1)
+			throw new Error("only one of read/readEncrypted can be specified");
+		if (writePerms > 1)
+			throw new Error("only one of write/writeEncrypted can be specified");
 		return perms;
 	}
 };
@@ -670,6 +991,8 @@ export default class extends TOOL {
 						this.platform = "esp32";
 					else if (this.outputPath.includes('tmp/gecko') || this.outputPath.includes('tmp\\gecko'))
 						this.platform = "gecko";
+					else if (this.outputPath.includes('tmp/qca4020') || this.outputPath.includes('tmp\\qca4020'))
+						this.platform = "qca4020";
 					else
 						throw new Error("unknown platform");
 					break;
@@ -716,6 +1039,8 @@ export default class extends TOOL {
 		}
 		else if ("gecko" == this.platform)
 			gatt = new GeckoGATTFile(dictionary);
+		else if ("qca4020" == this.platform)
+			gatt = new QCA4020GATTFile(dictionary);
 		gatt.generate();
 		file.close();
 	}
@@ -752,6 +1077,7 @@ function typedValueToBuffer(type, value) {
 	let buffer;
 	switch(type) {
 		case "Array":
+		case "Uint8Array":
 			buffer = new Uint8Array(value).buffer;
 			break;
 		case "String":
@@ -766,6 +1092,7 @@ function typedValueToBuffer(type, value) {
 		case "Uint32":
 			buffer = new Uint8Array([value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF]).buffer;
 			break;
+		case "ArrayBuffer":
 		default:
 			buffer = value;
 			break;

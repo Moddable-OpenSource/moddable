@@ -36,7 +36,6 @@
  */
 
 import Crypt from "crypt";
-import Arith from "arith";
 
 function howmany(x, y)
 {
@@ -142,3 +141,5 @@ export default class PKCS8 {
 		throw new Error("PKCS8: malformed input");
 	};
 };
+
+Object.freeze(PKCS8.prototype);

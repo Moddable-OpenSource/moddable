@@ -20,7 +20,7 @@
 
 #include "xs.h"
 #include "xsPlatform.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include "modGPIO.h"
 

@@ -1,0 +1,27 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+	],
+	"config": {
+		"rotation": 90
+	},
+	"modules": {
+		"*": "./main",
+		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG",
+	},
+	"resources": {
+		"*-alpha": [
+			"./steps",
+			"./progress-overlay",
+		],
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
+		],
+	},
+}

@@ -69,9 +69,49 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	to = alias;
 	while (from) {
 		to = to->next = fxDuplicateSlot(the, from);
+		if (to->kind == XS_ARRAY_KIND) {
+			txSlot* address = to->value.array.address;
+			if (address) {
+				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				c_memcpy(chunk, address, size * sizeof(txSlot));
+				to->value.array.address = chunk;
+				while (size) {
+					chunk->flag &= ~XS_MARK_FLAG;
+					chunk++;
+					size--;
+				}
+			}
+		}
+		else if (to->kind == XS_PRIVATE_KIND) {
+			txSlot** address = &to->value.private.first;
+			txSlot* slot;
+			while ((slot = *address)) {
+				*address = slot = fxDuplicateSlot(the, slot);
+				address = &slot->next;
+			}
+		}
 		from = from->next;
 	}
 	return alias;
+}
+
+txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
+{
+	txSlot* result;
+	txSlot* from;
+	txSlot* to;
+	result = fxNewInstance(the);
+	result->flag = instance->flag & ~XS_MARK_FLAG;
+	result->value.instance.garbage = C_NULL;
+	result->value.instance.prototype = instance->value.instance.prototype;
+	from = instance->next;
+	to = result;
+	while (from) {
+		to = to->next = fxDuplicateSlot(the, from);
+		from = from->next;
+	}
+	return result;
 }
 
 txSlot* fxGetInstance(txMachine* the, txSlot* theSlot)
@@ -79,6 +119,19 @@ txSlot* fxGetInstance(txMachine* the, txSlot* theSlot)
 	if (theSlot->kind == XS_REFERENCE_KIND)
 		return theSlot->value.reference;
 	return C_NULL;
+}
+
+txSlot* fxGetPrototype(txMachine* the, txSlot* instance)
+{
+	txSlot* prototype = instance->value.instance.prototype;
+	if (prototype) {
+		if (prototype->ID >= 0) {
+			txSlot* alias = the->aliasArray[prototype->ID];
+			if (alias)
+				prototype = alias;
+		}
+	}
+	return prototype;
 }
 
 txSlot* fxNewInstance(txMachine* the)
@@ -89,6 +142,29 @@ txSlot* fxNewInstance(txMachine* the)
 	instance->value.instance.prototype = C_NULL;
 	mxPushReference(instance);
 	return instance;
+}
+
+txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
+{	
+	if (a == b)
+		return 1;
+	if (a->ID >= 0) {
+		txSlot* alias = the->aliasArray[a->ID];
+		if (alias) {
+			a = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	if (b->ID >= 0) {
+		txSlot* alias = the->aliasArray[b->ID];
+		if (alias) {
+			b = alias;
+			if (a == b)
+				return 1;
+		}
+	}
+	return 0;
 }
 
 txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
@@ -149,6 +225,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		mxPullSlot(theSlot);
 		break;
 	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
 		anInstance = gxTypeBigInt.toInstance(the, theSlot);
 		break;
 	case XS_REFERENCE_KIND:
@@ -209,6 +286,25 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 	}
 }
 
+void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
+{
+	if (mxIsUndefined(the->stack)) {
+		mxPop();
+		mxPushSlot(constructor);
+		return;
+	}
+	if (!mxIsReference(the->stack)) {
+		mxTypeError("no constructor");
+	}
+	fxGetID(the, mxID(_Symbol_species));
+	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+		mxPop();
+		mxPushSlot(constructor);
+		return;
+	}
+	if (!mxIsReference(the->stack) || !mxIsConstructor(the->stack->value.reference))
+		mxTypeError("no constructor");
+}
 
 void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments)
 {
@@ -445,7 +541,7 @@ again:
 		}		
 	}
 	if (flag) {
-		txSlot* prototype = instance->value.instance.prototype;
+		txSlot* prototype = fxGetPrototype(the, instance);
 		if (prototype) {
 			if (prototype->flag & XS_EXOTIC_FLAG)
 				return mxBehaviorGetProperty(the, prototype, id, index, flag);
@@ -501,7 +597,7 @@ txBoolean fxOrdinaryGetPrototype(txMachine* the, txSlot* instance, txSlot* resul
 		if (alias)
 			instance = alias;
 	}
-	prototype = instance->value.instance.prototype;
+	prototype = fxGetPrototype(the, instance);
 	if (prototype) {
 		result->kind = XS_REFERENCE_KIND;
 		result->value.reference = prototype;
@@ -609,7 +705,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		}		
 	}
 	if (flag) {
-		txSlot* prototype = instance->value.instance.prototype;
+		txSlot* prototype = fxGetPrototype(the, instance);
 		if (prototype) {
 			result = mxBehaviorGetProperty(the, prototype, id, index, flag);
 			if (result) {
@@ -707,7 +803,7 @@ txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 		while (slot) {
 			if (instance == slot) 
 				return 0;
-			slot = slot->value.instance.prototype;
+			slot = fxGetPrototype(the, slot);
 		}
 		if (instance->ID >= 0)
 			instance = fxAliasInstance(the, instance);
@@ -923,7 +1019,7 @@ txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
 	instance->flag = XS_EXOTIC_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
-	instance->value.instance.prototype = (environment->kind == XS_REFERENCE_KIND) ? environment->value.reference : C_NULL;
+	instance->value.instance.prototype = (environment && (environment->kind == XS_REFERENCE_KIND)) ? environment->value.reference : C_NULL;
 	mxPushReference(instance);
 	slot = instance->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG;
@@ -1015,7 +1111,10 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 void fxRunEvalEnvironment(txMachine* the)
 {
-	txSlot* global = mxGlobal.value.reference;
+	txSlot* function = (the->frame + 3);
+	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
 	txSlot* top = the->frame - 2;
 	txSlot* bottom = the->scope;
 	txSlot* slot;
@@ -1102,8 +1201,11 @@ void fxRunEvalEnvironment(txMachine* the)
 
 void fxRunProgramEnvironment(txMachine* the)
 {
-	txSlot* environment = mxClosures.value.reference;
-	txSlot* global = mxGlobal.value.reference;
+	txSlot* function = (the->frame + 3);
+	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
+	txSlot* environment = mxRealmClosures(realm)->value.reference;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
 	txSlot* top = the->frame - 2;
 	txSlot* middle = C_NULL;
 	txSlot* bottom = the->scope;
@@ -1188,4 +1290,53 @@ void fxRunProgramEnvironment(txMachine* the)
 	}
 	mxPop();
 	the->stack = the->scope = middle + 1;
+}
+
+
+txSlot* fxNewRealmInstance(txMachine* the)
+{
+	txSlot* global = the->stack + 1;
+	txSlot* filter = the->stack;
+	txSlot* realm = fxNewInstance(the);
+	txSlot* slot;
+	/* mxRealmGlobal */
+	slot = fxNextSlotProperty(the, realm, global, XS_NO_ID, XS_GET_ONLY);
+	/* mxRealmClosures */
+	mxPushUndefined();
+	slot = fxNextReferenceProperty(the, slot, fxNewEnvironmentInstance(the, C_NULL), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxAvailableModules */
+	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
+	/* mxOwnModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxLoadedModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxWaitingModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRunningModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	/* mxRejectedModules */
+	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	mxPop();
+	global->value.reference = realm;
+    mxPop();
+    mxPop();
+	return realm;
+}
+
+txSlot* fxNewProgramInstance(txMachine* the)
+{
+	txSlot* program = fxNewInstance(the);
+	txSlot* slot = program->next = fxNewSlot(the);
+	slot->kind = XS_MODULE_KIND;
+	slot->value.module.realm = C_NULL;
+	slot->value.module.id = XS_NO_ID;
+	return program;
 }

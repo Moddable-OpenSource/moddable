@@ -42,7 +42,8 @@ MOD_DIR = $(TMP_DIR)/modules
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
-	$(XS_DIR)/sources
+	$(XS_DIR)/sources \
+	$(XS_DIR)/tools
 	
 XS_HEADERS = \
 	$(XS_DIR)/platforms/mac_xs.h \
@@ -97,7 +98,10 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsmc.c.o \
-	$(LIB_DIR)/xsre.c.o
+	$(LIB_DIR)/xsre.c.o \
+	$(LIB_DIR)/xsa.c.o \
+	$(LIB_DIR)/xsc.c.o \
+	$(LIB_DIR)/xslBase.c.o
 
 MODULES = \
 	$(MOD_DIR)/commodetto/Bitmap.xsb \
@@ -127,7 +131,6 @@ MODULES = \
 	$(MOD_DIR)/tool.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
-	$(MOD_DIR)/xsopt.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -142,8 +145,7 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi \
-	$(TMP_DIR)/xsopt.c.xsi
+	$(TMP_DIR)/tool.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -180,8 +182,7 @@ OBJECTS = \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/wav2maud.c.o \
-	$(TMP_DIR)/xsopt.c.o
+	$(TMP_DIR)/wav2maud.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -194,8 +195,7 @@ COMMANDS = \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
-	$(BIN_DIR)/bles2gatt \
-	$(BIN_DIR)/xsopt \
+	$(BIN_DIR)/bles2gatt
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
@@ -347,11 +347,6 @@ $(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
 	chmod +x $(BIN_DIR)/bles2gatt
-
-$(BIN_DIR)/xsopt: $(MAKEFILE_LIST)
-	@echo "#" $(NAME) $(GOAL) ": xsopt"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools xsopt "$$@"' > $(BIN_DIR)/xsopt
-	chmod +x $(BIN_DIR)/xsopt
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/mac/debug/$(NAME).*

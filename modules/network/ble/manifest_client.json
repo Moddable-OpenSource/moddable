@@ -42,6 +42,14 @@
 				]
 			},
 		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/ble/qca4020/modBLEClient",
+					"$(MODULES)/network/ble/qca4020/modBLESM",
+				]
+			},
+		},
 		"lin": {
 			"modules": {
 				"*": [
@@ -67,7 +75,7 @@
 			}
 		},
 		"...": {
-			"error": "ble unsupported"
+			"error": "BLE modules unsupported"
 		}
 	}
 }

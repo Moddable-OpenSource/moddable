@@ -190,7 +190,9 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "SharedArrayBuffer", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxSharedArrayBufferPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_SharedArrayBuffer), 1, mxID(_SharedArrayBuffer), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_SharedArrayBuffer), 1, mxID(_SharedArrayBuffer));
+	mxSharedArrayBufferConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
 	
@@ -210,11 +212,7 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_notify), 3, mxID(_wake), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_xor), 3, mxID(_xor), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Atomics", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Atomics), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxAtomicsObject);
 }
 
 txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
@@ -342,21 +340,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	mxPushInteger(1);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
-	if (mxIsUndefined(the->stack)) {
-		*the->stack = mxGlobal;
-		fxGetID(the, mxID(_SharedArrayBuffer));
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
-	fxGetID(the, mxID(_Symbol_species));
-	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
-		*the->stack = mxGlobal;
-		fxGetID(the, mxID(_SharedArrayBuffer));
-	}
-	if (!mxIsReference(the->stack)) {
-		mxTypeError("no constructor");
-	}
+	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
 	fxNew(the);
 	mxPullSlot(mxResult);
 	result = fxCheckSharedArrayBuffer(the, mxResult, "result");
@@ -607,6 +591,7 @@ void* fxCreateSharedChunk(txInteger size)
 void fxLinkSharedChunk(txMachine* the)
 {
 	if (gxSharedCluster && (gxSharedCluster->mainThread != mxCurrentThread())) {
+#if mxThreads
 		txMachine** machineAddress;
 		txMachine* machine;
 		mxLockMutex(&gxSharedCluster->waiterMutex);
@@ -614,6 +599,7 @@ void fxLinkSharedChunk(txMachine* the)
 		while ((machine = *machineAddress))
 			machineAddress = (txMachine**)&machine->waiterLink;
 		*machineAddress = the;
+#endif
 	}
 	else {
 		mxTypeError("main thread cannot wait");
@@ -694,6 +680,7 @@ void fxUnlockSharedChunk(void* data)
 
 void fxUnlinkSharedChunk(txMachine* the)
 {
+#if mxThreads
 	txMachine** machineAddress;
 	txMachine* machine;
 	machineAddress = &gxSharedCluster->waiterLink;
@@ -706,11 +693,13 @@ void fxUnlinkSharedChunk(txMachine* the)
 		machineAddress = (txMachine**)&machine->waiterLink;
 	}
 	mxUnlockMutex(&gxSharedCluster->waiterMutex);
+#endif
 }
 
 txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 {
-	txInteger result;;
+	txInteger result = 1;
+#if mxThreads
 	txCondition condition;
 	mxCreateCondition(&condition);
 	the->waiterCondition = &condition;
@@ -719,7 +708,6 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 	#if defined(mxUsePOSIXThreads)
 		while (the->waiterData == address)
 			pthread_cond_wait(&condition, &gxSharedCluster->waiterMutex);
-		result = 1;
 	#elif defined(mxUseFreeRTOSTasks)
 		mxUnlockMutex(&gxSharedCluster->waiterMutex);
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -728,7 +716,6 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 		while (the->waiterData == address)
 			SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, INFINITE);
 	#endif
-		result = 1;
 	}
 	else {
 	#if defined(mxUsePOSIXThreads)
@@ -757,6 +744,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
 	}
 	the->waiterCondition = C_NULL;
 	mxDeleteCondition(&condition);
+#endif
 	return result;
 }
 

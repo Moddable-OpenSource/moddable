@@ -19,10 +19,11 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "esp_partition.h"
+#include "app_update/include/esp_ota_ops.h"
 
 struct modFlashRecord {
 	const esp_partition_t *partition;
@@ -41,16 +42,17 @@ void xs_flash(xsMachine *the)
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		char *partition = xsmcToString(xsArg(0));
 
-		if (0 == c_strcmp(partition, "xs")) {
+		if (0 == c_strcmp(partition, "xs"))
 			flash.partition = esp_partition_find_first(0x40, 1,  NULL);
-			if (!flash.partition)
-				xsUnknownError("can't find xs partition");
-		}
-		else {
+		else if (0 == c_strcmp(partition, "running"))
+			flash.partition = esp_ota_get_running_partition();
+		else if (0 == c_strcmp(partition, "nextota"))
+			flash.partition = esp_ota_get_next_update_partition(NULL);
+		else
 			flash.partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partition);
-			if (!flash.partition)
-			xsUnknownError("can't find xs partition");
-		}
+
+		if (!flash.partition)
+			xsUnknownError("can't find partition");
 
 		flash.partitionByteLength = flash.partition->size;
 	}

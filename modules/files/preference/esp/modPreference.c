@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "spi_flash.h"
@@ -42,12 +42,13 @@ enum {
 
 #define kBufferSize (64)
 
+uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
+
 static void resetPrefs(void);
 static uint8_t findPrefsBlock(uint32_t *offset);
 static uint8_t findPrefOffset(const char *domain, const char *key, uint32_t *entryOffset, uint32_t *valueOffset, uint32_t *entrySize, uint8_t *buffer);
 static int getPrefSize(const uint8_t *pref);
 static uint8_t erasePref(const char *domain, const char *key, uint8_t *buffer);
-static uint8_t setPref(xsMachine *the, char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
 
 void xs_preference_set(xsMachine *the)
 {
@@ -63,12 +64,12 @@ void xs_preference_set(xsMachine *the)
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsBooleanType:
 			boolean = xsmcToBoolean(xsArg(2));
-			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBoolean, (uint8_t *)&boolean, 1);
+			success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBoolean, (uint8_t *)&boolean, 1);
 			break;
 
 		case xsIntegerType:
 			integer = xsmcToInteger(xsArg(2));
-			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
+			success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
 			break;
 
 		case xsNumberType:
@@ -76,17 +77,17 @@ void xs_preference_set(xsMachine *the)
 			integer = (int32_t)dbl;
 			if (dbl != integer)
 				xsUnknownError("float unsupported");
-			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
+			success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeInteger, (uint8_t *)&integer, sizeof(integer));
 			break;
 
 		case xsStringType:
 			str = xsmcToString(xsArg(2));
-			success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeString, (uint8_t *)str, c_strlen(str) + 1);
+			success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeString, (uint8_t *)str, c_strlen(str) + 1);
 			break;
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				success = setPref(the, xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+				success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
 			else
 				goto unknown;
 			break;
@@ -312,7 +313,7 @@ uint8_t erasePref(const char *domain, const char *key, uint8_t *buffer)
 	return 1;
 }
 
-uint8_t setPref(xsMachine *the, char *domain, char *key, uint8_t type, uint8_t *value, uint16_t byteCount)
+uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, uint16_t byteCount)
 {
 	uint8_t buffer[kBufferSize * 2] __attribute__((aligned(4))), *pref = buffer;
 	uint32_t prefSize, prefsEnd, valueOffset, entrySize, prefsFree;
@@ -412,6 +413,42 @@ int getPrefSize(const uint8_t *pref)
 	}
 
 	return SPI_FLASH_SEC_SIZE;		// force to skip to end of preferences
+}
+
+uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut)
+{
+	uint32_t entryOffset, valueOffset, entrySize;
+	uint8_t buffer[kBufferSize] __attribute__((aligned(4)));
+	uint8_t *pref = buffer;
+
+	if (!findPrefOffset(domain, key, &entryOffset, &valueOffset, &entrySize, buffer))
+		return 0;
+
+	*type = *pref;
+	switch (*pref++) {
+		case kPrefsTypeBoolean:
+			*byteCountOut = 1;
+			break;
+		case kPrefsTypeInteger:
+			*byteCountOut = sizeof(int32_t);
+			break;
+		case kPrefsTypeString:
+			*byteCountOut = c_strlen(pref) + 1;
+			break;
+		case kPrefsTypeBuffer:
+			*byteCountOut = c_read16(pref);
+			pref += 2;
+			break;
+		default:
+			return 0;
+	}
+
+	if (byteCountIn < *byteCountOut)
+		return 0;
+
+	c_memcpy(value, pref, *byteCountOut);
+
+	return 1;
 }
 
 /*

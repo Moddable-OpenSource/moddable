@@ -18,15 +18,15 @@
  *
  */
 /*
- https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=309012&_ga=2.38842976.279320072.1537230968-1286694985.1517851833
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.human_interface_device.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.report.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.report_reference.xml
+ 	https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=309012&_ga=2.38842976.279320072.1537230968-1286694985.1517851833
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.human_interface_device.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.report.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Descriptors/org.bluetooth.descriptor.report_reference.xml
  
- http://www.usb.org/developers/hidpage/HID1_11.pdf
- http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
- https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
- */
+	http://www.usb.org/developers/hidpage/HID1_11.pdf
+	http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
+	https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
+*/
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
@@ -117,11 +117,10 @@ class BLEHIDClient extends BLEClient {
 		this.reportIndex = 0;
 		this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
 	}
-	onCharacteristicValue(characteristic, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let usageID = bytes[3];
+	onCharacteristicValue(characteristic, value) {
+		let usageID = value[3];
 		if (usageID == this.usageID) {
-			this.onDeviceReportMap(buffer);
+			this.onDeviceReportMap(value);
 			characteristic.service.discoverCharacteristic(this.REPORT_CHARACTERISTIC_UUID);
 		}
 		else {
@@ -134,9 +133,8 @@ class BLEHIDClient extends BLEClient {
 		if (descriptor)
 			descriptor.readValue(Authorization.NoMITM);
 	}
-	onDescriptorValue(descriptor, buffer) {
-		let bytes = new Uint8Array(buffer);
-		let reportType = bytes[1];
+	onDescriptorValue(descriptor, value) {
+		let reportType = value[1];
 		this.reports[this.reportIndex].reportType = reportType;
 		if (++this.reportIndex < this.reports.length)
 			this.reports[this.reportIndex].characteristic.discoverAllDescriptors();

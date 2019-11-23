@@ -48,6 +48,8 @@ XS_DIR = ..\..
 BUILD_DIR = ..\..\..\build
 !ENDIF
 
+XSC = $(BUILD_DIR)\bin\win\$(GOAL)\xsc
+
 BIN_DIR = $(BUILD_DIR)\bin\win\$(GOAL)
 INC_DIR = $(XS_DIR)\includes
 PLT_DIR = $(XS_DIR)\platforms
@@ -60,7 +62,10 @@ C_OPTIONS = \
 	/D _CONSOLE \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
+	/D INCLUDE_XSPLATFORM \
+	/D XSPLATFORM=\"xslOpt.h\" \
 	/D mxLink=1 \
+	/D mxRun=1 \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
@@ -69,8 +74,8 @@ C_OPTIONS = \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
-	/nologo \
-	/Zp1 
+	/I$(TMP_DIR) \
+	/nologo
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \
@@ -102,6 +107,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsAtomics.o \
 	$(TMP_DIR)\xsBigInt.o \
 	$(TMP_DIR)\xsBoolean.o \
+	$(TMP_DIR)\xsCode.o \
 	$(TMP_DIR)\xsCommon.o \
 	$(TMP_DIR)\xsDataView.o \
 	$(TMP_DIR)\xsDate.o \
@@ -112,6 +118,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsGenerator.o \
 	$(TMP_DIR)\xsGlobal.o \
 	$(TMP_DIR)\xsJSON.o \
+	$(TMP_DIR)\xsLexical.o \
 	$(TMP_DIR)\xsMapSet.o \
 	$(TMP_DIR)\xsMarshall.o \
 	$(TMP_DIR)\xsMath.o \
@@ -126,12 +133,18 @@ OBJECTS = \
 	$(TMP_DIR)\xsProxy.o \
 	$(TMP_DIR)\xsRegExp.o \
 	$(TMP_DIR)\xsRun.o \
+	$(TMP_DIR)\xsScope.o \
+	$(TMP_DIR)\xsScript.o \
+	$(TMP_DIR)\xsSourceMap.o \
 	$(TMP_DIR)\xsString.o \
 	$(TMP_DIR)\xsSymbol.o \
+	$(TMP_DIR)\xsSyntaxical.o \
+	$(TMP_DIR)\xsTree.o \
 	$(TMP_DIR)\xsType.o \
 	$(TMP_DIR)\xsdtoa.o \
 	$(TMP_DIR)\xsre.o \
 	$(TMP_DIR)\xslBase.o \
+	$(TMP_DIR)\xslOpt.o \
 	$(TMP_DIR)\xslSlot.o \
 	$(TMP_DIR)\xslStrip.o \
 	$(TMP_DIR)\xsl.o
@@ -156,6 +169,8 @@ $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(TLS_DIR)\xsl.h
+$(OBJECTS) : $(TLS_DIR)\xslOpt.h
+
 {$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TLS_DIR)\}.c{$(TMP_DIR)\}.o:

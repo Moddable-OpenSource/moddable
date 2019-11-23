@@ -50,7 +50,7 @@ enum {
 	/* Piu */
 	kModInstrumentationPiuCommandListUsed,
 
-#if ESP32 || defined(__ets__)
+#if ESP32
 	/* SPI flash */
 	kModInstrumentationSPIFlashErases,
 #endif

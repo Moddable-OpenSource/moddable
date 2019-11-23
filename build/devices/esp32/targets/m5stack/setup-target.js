@@ -1,16 +1,24 @@
 import Digital from "pins/digital";
 import Monitor from "monitor";
 
-import AudioOut from "pins/i2s";
+import AudioOut from "pins/audioout";
 import Resource from "Resource";
+
+class Button extends Monitor {
+	constructor(pin) {
+		super({pin, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge});
+		this.onChanged = this.nop;
+	}
+	nop() {
+	}
+}
 
 export default function (done) {
 	global.button = {
-		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
-		b: new Monitor({pin: 38, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
-		c: new Monitor({pin: 37, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
+		a: new Button(39),
+		b: new Button(38),
+		c: new Button(37),
 	};
-	button.a.onChanged = button.b.onChanged = button.c.onChanged = nop;
 
 	global.speaker = new AudioOut({streams: 4});
 	speaker.callback = function() {this.stop()};
@@ -22,7 +30,3 @@ export default function (done) {
 
 	done();
 }
-
-function nop() {
-}
-

@@ -23,9 +23,9 @@ import CLI from "cli";
 
 class Connection extends Socket {
 	constructor(dictionary) {
-		super(dictionary);
+		super({...dictionary, keepalive: {enable: true, idle: 60 * 1000, interval: 30 * 1000, count: 4}});
 		this.initialize = Symbol();
-		CLI.distribute.call(this, this.initialize);
+		CLI.distribute.call(this, this.initialize, {remote: super.get("REMOTE_IP")});
 		this.incoming = "";
 		this.write(255, 251, 1, 255, 251, 3, 255, 252, 34);		// character, not line, mode
 	}
@@ -87,9 +87,15 @@ class Connection extends Socket {
 
 			default:
 				if (message < 0)
-					trace("connection lost\n");
+					this.close();
 				break;
 		}
+	}
+	close() {
+		super.close();
+		let index = this.listener.connections.findIndex(item => item === this);
+		if (index >= 0)
+			this.listener.connections.splice(index, 1);
 	}
 	// placeholders
 	suspend(cancel) {
@@ -107,9 +113,16 @@ Object.freeze(Connection.prototype);
 class Telnet extends Listener {
 	constructor(dictionary = {}) {
 		super(Object.assign({port: 23}, dictionary));
+		this.connections = [];
+	}
+	close() {
+		this.connections.forEach(connection => connection.close());
+		super.close();
 	}
 	callback() {
 		const socket = new Connection({listener: this});
+		socket.listener = this;
+		this.connections.push(socket);
 		CLI.execute.call(socket, "welcome");
 		CLI.execute.call(socket, "prompt");
 	}

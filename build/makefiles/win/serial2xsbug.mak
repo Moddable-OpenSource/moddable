@@ -28,7 +28,7 @@ BUILD_DIR = $(MODDABLE)\build
 !ENDIF
 
 BIN_DIR = $(BUILD_DIR)\bin\win\$(GOAL)
-SRC_DIR = $(MODDABLE)\tools\$(NAME)\win
+SRC_DIR = $(MODDABLE)\tools\$(NAME)
 TMP_DIR = $(BUILD_DIR)\tmp\win\$(GOAL)\$(NAME)
 
 C_OPTIONS = \
@@ -36,13 +36,11 @@ C_OPTIONS = \
 	/D _CONSOLE \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
-	-D mxCompile=1 \
-	-D mxParse=1 \
+	-D mxWindows=1 \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
 	/I$(TMP_DIR) \
-	/nologo \
-	/Zp1
+	/nologo
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
@@ -68,7 +66,8 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 OBJECTS = \
-	$(TMP_DIR)\serial2xsbug.o
+	$(TMP_DIR)\serial2xsbug.o \
+	$(TMP_DIR)\serial2xsbug_win.o
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -86,6 +85,7 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/implib:$(TMP_DIR)\$(NAME).lib \
 		/out:$(BIN_DIR)\$(NAME).exe
 
+$(OBJECTS) : $(SRC_DIR)\serial2xsbug.h
 {$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 

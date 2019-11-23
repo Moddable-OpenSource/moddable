@@ -42,10 +42,10 @@ C_OPTIONS = \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D HAVE_MEMMOVE=1 \
+	/D mxWindows=1 \
 	/I$(SIMULATOR) \
 	/I$(SIMULATOR)\win \
-	/nologo \
-	/Zp1 
+	/nologo
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \

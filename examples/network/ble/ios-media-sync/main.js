@@ -37,9 +37,8 @@ import {Request} from "http";
 import SecureSocket from "securesocket";
 import config from "mc/config";
 
-let render = new Poco(screen, { displayListLength:8192 });
-let touch = require(config.touch);
-touch = new touch;
+let render = new Poco(screen);
+let touch = new config.Touch;
 touch.points = [{}];
 
 let titleFont = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
@@ -88,6 +87,7 @@ class Rectangle {
 		return false;
 	}
 }
+Object.freeze(Rectangle.prototype);
 
 class AppleMediaServiceClient {
 	constructor(render) {
@@ -100,6 +100,7 @@ class AppleMediaServiceClient {
 		this.client = new AMSPlayerClient(this.render, device);
 	}
 }
+Object.freeze(AppleMediaServiceClient.prototype);
 
 class AMSPlayerClient extends AMSClient {
 	constructor(render, device) {
@@ -379,6 +380,7 @@ class AMSPlayerClient extends AMSClient {
 		}, 75);
 	}
 }
+Object.freeze(AMSPlayerClient.prototype);
 
 render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);

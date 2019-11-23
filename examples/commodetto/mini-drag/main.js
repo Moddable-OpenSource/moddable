@@ -134,8 +134,7 @@ class Dragger {
 }
 
 let dragger = new Dragger((render.width - button.width) >> 1, (render.height - (button.height >> 1)) >> 1, "Drag Me", button);
-let touch = require(config.touch);
-touch = new touch;
+let touch = new config.Touch;
 touch.points = [{}];
 
 render.begin();

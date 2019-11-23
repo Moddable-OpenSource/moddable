@@ -69,21 +69,21 @@ const close_notify = 0;
 //const bad_certificate_status_response = 113; /* new */
 //const bad_certificate_hash_value = 114;      /* new */
 
-let alert = {
+const alert = {
 	name: "alert",
 	// global constants
 	close_notify: close_notify,
 
 	unpacketize(session, fragment) {
 		session.traceProtocol(this);
-		var s = new SSLStream(fragment);
+		let s = new SSLStream(fragment);
 		session.alert = {level: s.readChar(), description: s.readChar()};
 		if (session.alert.description != close_notify)
 			throw new Error("SSL: alert: " + session.alert.level + ", " + session.alert.description);
 	},
 	packetize(session, level, description) {
 		session.traceProtocol(this);
-		var s = new SSLStream();
+		let s = new SSLStream();
 		s.writeChar(level);
 		s.writeChar(description);
 		return recordProtocol.packetize(session, recordProtocol.alert, s.getChunk());

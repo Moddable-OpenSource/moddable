@@ -134,7 +134,7 @@ export default class extends TOOL {
 		else {
 			file.line("#include \"xsPlatform.h\"");
 			this.resources.forEach((path, index) => {
-				if (this.windows)
+				if (("win" === this.platform) || ("x-win" === this.platform))
 					file.line("static const unsigned char _", index, "[] = {");
 				else
 					file.line("static const unsigned char _", index, "[] __attribute__((aligned(4))) = {");

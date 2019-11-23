@@ -26,11 +26,13 @@
 		],
 		"*": [
 			"$(MODULES)/crypt/data/ca107",
-			"$(MODULES)/crypt/data/ca109",
 		]
 	},
 	"creation": {
 		"static":53000,
+	},
+	"config": {
+		"sntp": "pool.ntp.org",
 	},
 	"platforms": {
 		"gecko/blue": {

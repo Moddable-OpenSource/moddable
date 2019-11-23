@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,31 +44,6 @@ static txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot);
 static txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole);
 #endif
 
-static int fxBigInt_iszero(txBigInt *a);
-static txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a);
-static int fxBigInt_bitsize(txBigInt *e);
-
-static int fxBigInt_ucomp(txBigInt *a, txBigInt *b);
-
-static txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-static txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-static txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b);
-
-static txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
-static txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw);
-
-static txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-
-static txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb);
-static txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b);
-static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r);
-
-#define mxBigIntIsNaN(x) ((x)->size == 0)
-#define mxBigIntHighWord(x)		((txU4)((x) >> 32))
-#define mxBigIntLowWord(x)		((txU4)(x))
-#define mxBigIntWordSize		(sizeof(txU4) * 8)
-
 #ifndef howmany
 #define howmany(x, y)	(((x) + (y) - 1) / (y))
 #endif
@@ -85,6 +60,8 @@ const txBigInt gxBigIntNaN = { .sign=0, .size=0, .data=(txU4*)gxDataZero };
 const txBigInt gxBigIntOne = { .sign=0, .size=1, .data=(txU4*)gxDataOne };
 const txBigInt gxBigIntZero = { .sign=0, .size=1, .data=(txU4*)gxDataZero };
 
+static txBigInt *fxBigInt_fit(txBigInt *r);
+
 // BYTE CODE
 
 #ifdef mxRun
@@ -99,9 +76,13 @@ void fxBuildBigInt(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "BigInt", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxBigIntPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_BigInt), 1, mxID(_BigInt), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_BigInt), 1, mxID(_BigInt));
+	mxBigIntConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asIntN), 2, mxID(_asIntN), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_asUintN), 2, mxID(_asUintN), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_bitLength), 1, mxID(_bitLength), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_BigInt_fromArrayBuffer), 1, mxID(_fromArrayBuffer), XS_DONT_ENUM_FLAG);
 	the->stack++;
 }
 
@@ -195,6 +176,73 @@ void fx_BigInt_asUintN(txMachine* the)
 // 	mxResult->kind = XS_BIGINT_KIND;
 }
 
+void fx_BigInt_bitLength(txMachine *the)
+{
+	txBigInt* arg = fxToBigInt(the, mxArgv(0), 1);
+	mxResult->value.integer = fxBigInt_bitsize(arg);;
+	mxResult->kind = XS_INTEGER_KIND;
+}
+
+void fx_BigInt_fromArrayBuffer(txMachine* the)
+{
+	txSlot* slot;
+	txSlot* arrayBuffer = C_NULL;
+	txBoolean sign = 0;
+	int endian = EndianBig;
+	txInteger length;
+	txBigInt* bigint;
+	txU1 *src, *dst;
+	if (mxArgc < 1)
+		mxTypeError("no argument");
+	slot = mxArgv(0);
+	if (slot->kind == XS_REFERENCE_KIND) {
+		slot = slot->value.reference->next;
+		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
+			arrayBuffer = slot;
+	}
+	if (!arrayBuffer)
+		mxTypeError("argument is no ArrayBuffer instance");
+	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
+		sign = 1;
+	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
+		endian = EndianLittle;
+	length = arrayBuffer->value.arrayBuffer.length;
+	if (length == 0) {
+		mxResult->value.bigint = gxBigIntNaN;
+		mxResult->kind = XS_BIGINT_X_KIND;
+		return;
+	}
+	if (sign)
+		length--;
+	bigint = fxBigInt_alloc(the, howmany(length, sizeof(txU4)));
+	bigint->data[bigint->size - 1] = 0;
+	src = (txU1*)(arrayBuffer->value.arrayBuffer.address);
+	dst = (txU1*)(bigint->data);
+	if (sign)
+		bigint->sign = *src++;
+#if mxBigEndian
+	if (endian != EndianLittle) {
+#else
+	if (endian != EndianBig) {
+#endif	
+		c_memcpy(dst, src, length);
+	}
+	else {
+		dst += length;
+		while (length > 0) {
+			dst--;
+			*dst = *src;
+			src++;
+			length--;
+		}
+	}
+	length = bigint->size - 1;
+	while (bigint->data[length] == 0)
+		length--;
+	bigint->size = length + 1;
+	mxPullSlot(mxResult);
+}
+
 void fx_BigInt_prototype_toString(txMachine* the)
 {
 	txSlot* slot;
@@ -242,12 +290,12 @@ void fxBigIntX(txMachine* the, txSlot* slot, txU1 sign, txU2 size, txU4* data)
 txSlot* fxBigIntCheck(txMachine* the, txSlot* it)
 {
 	txSlot* result = C_NULL;
-	if (it->kind == XS_BIGINT_KIND)
+	if ((it->kind == XS_BIGINT_KIND) || (it->kind == XS_BIGINT_X_KIND))
 		result = it;
 	else if (it->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = it->value.reference;
 		it = instance->next;
-		if ((it) && (it->flag & XS_INTERNAL_FLAG) && (it->kind == XS_BIGINT_KIND))
+		if ((it) && (it->flag & XS_INTERNAL_FLAG) && ((it->kind == XS_BIGINT_KIND) || (it->kind == XS_BIGINT_X_KIND)))
 			result = it;
 	}
 	return result;
@@ -261,34 +309,33 @@ void fxBigIntCoerce(txMachine* the, txSlot* slot)
 txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoolean more, txSlot* left, txSlot* right)
 {
 	int result;
+	txNumber delta = 0;
 	if (mxBigIntIsNaN(&left->value.bigint))
-		return 0;
+		return less & more & !equal;
 	if (right->kind == XS_STRING_KIND)
-		fxStringToBigInt(the, right, 0);
+		fxStringToBigInt(the, right, 1);
 	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND)) {
 		fxToNumber(the, right);
 		result = c_fpclassify(right->value.number);
 		if (result == FP_NAN)
-			return 0;
-		if (result == C_FP_INFINITE) {
-			if (less)
-				return right->value.number > 0;
-			if (more)
-				return right->value.number < 0;
-			return 0;
-		}
+			return less & more & !equal;
+		if (result == C_FP_INFINITE)
+			return (right->value.number > 0) ? less : more;
+		delta = right->value.number - c_trunc(right->value.number);
 		fxNumberToBigInt(the, right);
 	}
 	if (mxBigIntIsNaN(&right->value.bigint))
-		return 0;
+		return less & more & !equal;
 	result = fxBigInt_comp(&left->value.bigint, &right->value.bigint);
 	if (result < 0)
 		return less;
     if (result > 0)
         return more;
-    if (result == 0)
-        return equal;
-	return 0;
+	if (delta > 0)
+		return less;
+	if (delta < 0)
+		return more;
+	return equal;
 }
 
 void fxBigIntDecode(txMachine* the, txSize size)
@@ -370,17 +417,17 @@ txSize fxBigIntMaximum(txInteger length)
 
 txSize fxBigIntMaximumB(txInteger length)
 {
-	return sizeof(txU4) * (1 + (length / 32));
+	return sizeof(txU4) * (1 + howmany(1, mxBigIntWordSize) + (length / 32));
 }
 
 txSize fxBigIntMaximumO(txInteger length)
 {
-	return sizeof(txU4) * (1 + ((length * 3) / 32));
+	return sizeof(txU4) * (1 + howmany(3, mxBigIntWordSize) + ((length * 3) / 32));
 }
 
 txSize fxBigIntMaximumX(txInteger length)
 {
-	return sizeof(txU4) * (1 + ((length * 4) / 32));
+	return sizeof(txU4) * (1 + howmany(4, mxBigIntWordSize) + ((length * 4) / 32));
 }
 
 void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sign)
@@ -396,7 +443,8 @@ void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sig
 		fxBigInt_uadd(NULL, bigint, fxBigInt_umul1(NULL, bigint, bigint, 10), &digit);
 		length--;
 	}
-	bigint->sign = sign;
+	if ((bigint->size > 1) || (bigint->data[0] != 0))
+		bigint->sign = sign;
 }
 
 void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
@@ -451,6 +499,53 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
 
 #ifdef mxRun
 
+void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txU4 minBytes, txBoolean sign, int endian)
+{
+	txBigInt* bigint = fxToBigInt(the, slot, 1);
+	txU4 length = howmany(fxBigInt_bitsize(bigint), 8);
+	int prepend = 0;
+	txU1 *src, *dst;
+	if (length == 0)
+		length = 1;
+	prepend = minBytes - length;
+	if (length < minBytes)
+		length = minBytes;
+	if (sign)
+		length++;
+	fxConstructArrayBufferResult(the, mxThis, length);
+	src = (txU1*)(bigint->data);
+	dst = (txU1*)(mxResult->value.reference->next->value.arrayBuffer.address);
+	if (sign) {
+		*dst++ = bigint->sign;
+		length--;
+	}
+	if (prepend > 0 && endian == EndianBig) {
+		length -= prepend;
+		while (--prepend >= 0)
+			*dst++ = 0;
+	}
+#if mxBigEndian
+	if (endian != EndianLittle) {
+#else
+	if (endian != EndianBig) {
+#endif	
+		c_memcpy(dst, src, length);
+	}
+	else {
+		src += length;
+		while (length > 0) {
+			src--;
+			*dst = *src;
+			dst++;
+			length--;
+		}
+	}
+	if (prepend > 0 && endian == EndianLittle) {
+		while (--prepend >= 0)
+			*dst++ = 0;
+	}
+}
+
 txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 {
 	txBigInt* bigint = &slot->value.bigint;
@@ -501,7 +596,6 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	while (!fxBigInt_iszero(&slot->value.bigint));
 	if (minus)
 		result->value.string[--offset] = '-';
-		
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
 	
 	mxPop();
@@ -544,26 +638,29 @@ txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot)
 
 txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot)
 {
-	txS8 integer = (txS8)slot->value.number;
 	txBigInt* bigint = &slot->value.bigint;
+	txNumber number = slot->value.number;
+	txNumber limit = c_pow(2, 32);
 	txU1 sign = 0;
-	if (integer < 0) {
-		integer = -integer;
+	txU2 size = 1;
+	if (number < 0) {
+		number = -number;
 		sign = 1;
 	}
-	if (integer > 0x00000000FFFFFFFFll) {
-		bigint->data = fxNewChunk(the, 2 * sizeof(txU4));
-		bigint->data[0] = (txU4)(integer);
-		bigint->data[1] = (txU4)(integer >> 32);
-		bigint->size = 2;
-		bigint->sign = sign;
+	while (number >= limit) {
+		size++;
+		number /= limit;
 	}
-	else {
-		bigint->data = fxNewChunk(the, sizeof(txU4));
-		bigint->data[0] = (txU4)integer;
-		bigint->size = 1;
-		bigint->sign = sign;
+	bigint->data = fxNewChunk(the, size * sizeof(txU4));
+	bigint->size = size;
+	while (size > 0) {
+		txU4 part = (txU4)number;
+		number -= part;
+		size--;
+		bigint->data[size] = part;
+		number *= limit;
 	}
+	bigint->sign = sign;
 	slot->kind = XS_BIGINT_KIND;
 	return bigint;
 }
@@ -774,7 +871,7 @@ int fxBigInt_iszero(txBigInt *a)
 	return(a->size == 1 && a->data[0] == 0);
 }
 
-static void
+void
 fxBigInt_fill0(txBigInt *r)
 {
 	c_memset(r->data, 0, r->size * sizeof(txU4));
@@ -794,7 +891,7 @@ txBigInt *fxBigInt_dup(txMachine* the, txBigInt *a)
 	return(r);
 }
 
-static int
+int
 fxBigInt_ffs(txBigInt *a)
 {
 	int i;
@@ -805,6 +902,26 @@ fxBigInt_ffs(txBigInt *a)
 	return(i);
 }
 
+txBigInt *fxBigInt_fit(txBigInt *r)
+{
+	int i = r->size;
+	while (i > 0) {
+		i--;
+		if (r->data[i])
+			break;
+	}
+	r->size = (txU2)(i + 1);
+	return r;
+}
+
+
+#if mxWindows
+int
+fxBigInt_bitsize(txBigInt *e)
+{
+	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
+}
+#else
 int
 fxBigInt_bitsize(txBigInt *a)
 {
@@ -820,14 +937,9 @@ fxBigInt_bitsize(txBigInt *a)
 	}
 	return 0;
 }
+#endif
 
-int
-fxBigInt_bitsize2(txBigInt *e)
-{
-	return(e->size * mxBigIntWordSize - fxBigInt_ffs(e));
-}
-
-static int fxBigInt_isset(txBigInt *e, txU4 i)
+int fxBigInt_isset(txBigInt *e, txU4 i)
 {
 	txU4 w = e->data[i / mxBigIntWordSize];
 	return((w & ((txU4)1 << (i % mxBigIntWordSize))) != 0);
@@ -862,7 +974,7 @@ txBigInt *fxBigInt_and(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	}
 	if (b->sign)
 		goto AND_PLUS_MINUS;
-	return fxBigInt_uand(the, r, a, b);
+	return fxBigInt_fit(fxBigInt_uand(the, r, a, b));
 AND_PLUS_MINUS:
 // GMP: OP1 & -OP2 == OP1 & ~(OP2 - 1)
 	if (r == NULL)
@@ -879,7 +991,7 @@ AND_PLUS_MINUS:
 			r->data[i] = a->data[i] & ~bb->data[i];
     }
     fxBigInt_free(the, bb);
-	return(r);
+	return fxBigInt_fit(r);
 AND_MINUS_MINUS:
 // GMP: -((-OP1) & (-OP2)) = -(~(OP1 - 1) & ~(OP2 - 1)) == ~(~(OP1 - 1) & ~(OP2 - 1)) + 1 == ((OP1 - 1) | (OP2 - 1)) + 1
 	if (r == NULL)
@@ -891,7 +1003,7 @@ AND_MINUS_MINUS:
 	r->sign = 1;
 	fxBigInt_free(the, bb);
 	fxBigInt_free(the, aa);
-	return(r);
+	return fxBigInt_fit(r);
 }
 
 txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
@@ -992,7 +1104,7 @@ txBigInt *fxBigInt_xor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	}
 	if (b->sign)
 		goto XOR_PLUS_MINUS;
-	return fxBigInt_uxor(the, r, a, b);
+	return fxBigInt_fit(fxBigInt_uxor(the, r, a, b));
 XOR_PLUS_MINUS:
 // GMP: -(OP1 ^ (-OP2)) == -(OP1 ^ ~(OP2 - 1)) == ~(OP1 ^ ~(OP2 - 1)) + 1 == (OP1 ^ (OP2 - 1)) + 1
 	if (r == NULL)
@@ -1002,7 +1114,8 @@ XOR_PLUS_MINUS:
 	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
 	r->sign = 1;
 	fxBigInt_free(the, bb);
-	return(r);
+    fxBigInt_fit(r);
+	return fxBigInt_fit(r);
 XOR_MINUS_MINUS:
 // GMP: (-OP1) ^ (-OP2) == ~(OP1 - 1) ^ ~(OP2 - 1) == (OP1 - 1) ^ (OP2 - 1)
 	if (r == NULL)
@@ -1012,7 +1125,8 @@ XOR_MINUS_MINUS:
 	r = fxBigInt_uxor(the, r, aa, bb);
 	fxBigInt_free(the, bb);
 	fxBigInt_free(the, aa);
-	return(r);
+    fxBigInt_fit(r);
+	return fxBigInt_fit(r);
 }
 
 txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
@@ -1039,7 +1153,8 @@ txBigInt *fxBigInt_lsl(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	if (b->sign) {
 		if (a->sign) {
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
-			r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+            if (b->data[0])
+                r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
 			r->sign = 1;
 		}
 		else
@@ -1049,7 +1164,7 @@ txBigInt *fxBigInt_lsl(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		r = fxBigInt_ulsl1(the, r, a, b->data[0]);
 		r->sign = a->sign;
 	}
-	return(r);
+	return fxBigInt_fit(r);
 }
 
 txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
@@ -1091,13 +1206,14 @@ txBigInt *fxBigInt_lsr(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	else {
 		if (a->sign) {
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
-			r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+            if (b->data[0])
+                r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
 			r->sign = 1;
 		}
 		else
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
 	}
-	return(r);
+	return fxBigInt_fit(r);
 }
 
 txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
@@ -1173,7 +1289,8 @@ txBigInt *fxBigInt_neg(txMachine* the, txBigInt *r, txBigInt *a)
 	if (r == NULL)
 		r = fxBigInt_alloc(the, a->size);
 	fxBigInt_copy(r, a);
-	r->sign = !a->sign;
+	if (!fxBigInt_iszero(a))
+		r->sign = !a->sign;
 	return(r);
 }
 
@@ -1238,7 +1355,7 @@ txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	return(rr);
 }
 
-static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
+txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
 	int i, n;
 	txU4 a, b, r, t;
@@ -1278,7 +1395,7 @@ static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBig
 	else {
 		n = bb->size;
 		for (; i < n; i++) {
-			t = -bp[i];
+			t = 0 - bp[i];
 			r = t - c;
 			rp[i] = r;
 			c = r > t;
@@ -1294,7 +1411,7 @@ static txBigInt *fxBigInt_usub(txMachine* the, txBigInt *rr, txBigInt *aa, txBig
 txBigInt *fxBigInt_mul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
 	rr = fxBigInt_umul(the, rr, aa, bb);
-	if (aa->sign != bb->sign)
+	if ((aa->sign != bb->sign) && !fxBigInt_iszero(rr))
 		rr->sign = 1;
 	return(rr);
 }
@@ -1330,6 +1447,7 @@ txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	for (n = i + j; --n > 0 && rp[n] == 0;)
 		;
 	rr->size = n + 1;
+	rr->sign = 0;
 	return(rr);
 }
 
@@ -1364,16 +1482,11 @@ txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b)
 
 txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-	if (b->sign) {
-		if (r == NULL)
-			r = fxBigInt_alloc(the, 1);
-		else {
-			r->size = 1;
-			r->sign = 0;
-		}
-		r->data[0] = 0;
-	}
-	else if (fxBigInt_iszero(b)) {
+#ifdef mxRun
+	if (b->sign)
+		mxRangeError("negative exponent");
+#endif
+	if (fxBigInt_iszero(b)) {
 		if (r == NULL)
 			r = fxBigInt_alloc(the, 1);
 		else {
@@ -1463,11 +1576,17 @@ txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
 
 txBigInt *fxBigInt_div(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b)
 {
+#ifdef mxRun
+	if (fxBigInt_iszero(b))
+		mxRangeError("zero divider");
+#endif
 	q = fxBigInt_udiv(the, q, a, b, C_NULL);
-	if (a->sign)
-		q->sign = !q->sign;
-	if (b->sign)
-		q->sign = !q->sign;
+	if (!fxBigInt_iszero(q)) {
+		if (a->sign)
+			q->sign = !q->sign;
+		if (b->sign)
+			q->sign = !q->sign;
+	}
 	return(q);
 }
 
@@ -1488,6 +1607,10 @@ txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
 	txBigInt *q;
+#ifdef mxRun
+	if (fxBigInt_iszero(b))
+		mxRangeError("zero divider");
+#endif
 	if (r == NULL)
 		r = fxBigInt_alloc(the, MIN(a->size, b->size));
 	q = fxBigInt_udiv(the, NULL, a, b, &r);
@@ -1542,7 +1665,7 @@ div64_32(txU8 a, txU4 b)
 }
 #endif
 
-static txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r)
+txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, txBigInt **r)
 {
 	int sw;
 	txBigInt *nb, *na, *tb, *a2, *b2, *tb2, *tb3;

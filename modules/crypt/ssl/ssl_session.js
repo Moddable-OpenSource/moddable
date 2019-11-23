@@ -41,9 +41,9 @@ import changeCipherSpec from "ssl/changecipher";
 import SSLAlert from "ssl/alert";
 import cacheManager from "ssl/cache";
 import CertificateManager from "ssl/cert";
-import Arith from "arith";
 import Bin from "bin";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
+import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 
 const maxFragmentSize = 16384	// maximum record layer framgment size (not a packet size): 2^14
 
@@ -109,7 +109,7 @@ class SSLSession {
 			}
 			else {
 				// assign a new one
-				this.serverSessionID = (new Arith.Integer(((new Date()).valueOf()).toString())).toChunk();
+				this.serverSessionID = ArrayBuffer.fromBigInt(BigInt(((new Date()).valueOf()).toString()));
 				this.doProtocol(s, handshakeProtocol.serverHello);
 				// S -> C: Certificate   (always -- i.e. not support anonymous auth.)
 				let certs = this.certificateManager.getCerts();
@@ -172,11 +172,17 @@ class SSLSession {
 		if (this.alert) {
 			if (this.alert.description != SSLAlert.close_notify)
 				this.doProtocol(s, SSLAlert, this.alert.level, this.alert.description);
+			this.stopTrace();
 			return true;	// stop handshaking right away
 		}
 		if (state == 0)
 			this.handshakeProcess = -1;
-		return state == 2;
+		if (state == 2) {
+			this.stopTrace();
+			return true;
+		}
+		else
+			return false;
 	};
 	read(s, n) {
 		let applicationData = this.applicationData;
@@ -281,6 +287,43 @@ class SSLSession {
 
 		trace(">".repeat(this.traceLevel + 1) + " " + protocol.name + "." + this.traceDirection + "\n");
 		this.traceLevel++;
+	}
+	stopTrace() {
+		if (this.alert) {
+			trace("ALERT! (" + this.alert.level + ", " + htis.alert.description + "\n");
+			return;
+		}
+		if (undefined === this.traceLevel)
+			return;
+
+		let algo = "";
+		switch (this.chosenCipher.keyExchangeAlgorithm) {
+		case RSA:	algo = "RSA"; break;
+		case DHE_DSS:	algo = "DHE_DSS"; break;
+		case DHE_RSA:	algo = "DHE_RSA"; break;
+		case ECDHE_RSA:	algo = "ECDHE_RSA"; break;
+		}
+		let enc = "";
+		switch (this.chosenCipher.cipherAlgorithm) {
+		case AES:	enc = "AES"; break;
+		case DES:	enc = "DES"; break;
+		case TDES:	enc = "TDES"; break;
+		case RC4:	enc = "RC4"; break;
+		}
+		let mode = "";
+		switch (this.chosenCipher.encryptionMode) {
+		case CBC:	mode = "CBC"; break;
+		case GCM:	mode = "GCM"; break;
+		case NONE:	mode = "NONE"; break;
+		}
+		let hash = "";
+		switch (this.chosenCipher.hashAlgorithm) {
+		case SHA1:	hash = "SHA1"; break;
+		case MD5:	hash = "MD5"; break;
+		case SHA256:	hash = "SHA256"; break;
+		case SHA384:	hash = "SHA384"; break;
+		}
+		trace("FINISHED: " + algo + "-" + enc + "-" + mode + "-" + hash + "\n");
 	}
 };
 

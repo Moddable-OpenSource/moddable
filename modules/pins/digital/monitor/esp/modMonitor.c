@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modGPIO.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "ets_sys.h"

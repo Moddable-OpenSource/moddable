@@ -45,7 +45,7 @@
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "xsPlatform.h"
 
@@ -117,7 +117,8 @@ void setup(void)
 	uartConfig.parity = UART_PARITY_DISABLE;
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-	uartConfig.rx_flow_ctrl_thresh = 120;
+	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
+	uartConfig.use_ref_tick = 0;
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -127,15 +128,15 @@ void setup(void)
 		printf("uart_set_pin err %d\n", err);
 
 #ifdef mxDebug
-	err = uart_driver_install(USE_UART, 512, 512, 8, &gUARTQueue, 0);
+	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &gUARTQueue, 0);
 #else
-	err = uart_driver_install(USE_UART, 512, 512, 0, NULL, 0);
+	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 	if (err)
 		printf("uart_driver_install err %d\n", err);
 
 #ifdef mxDebug
-	xTaskCreate(debug_task, "debug", 768 / sizeof(StackType_t), NULL, 8, NULL);
+	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), NULL, 8, NULL);
 #endif
 
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
@@ -182,6 +183,10 @@ void modLog_transmit(const char *msg)
 	}
 }
 
+void ESP_put(uint8_t *c, int count) {
+	uart_write_bytes(USE_UART, (char *)c, count);
+}
+
 void ESP_putc(int c) {
 	char cx = c;
 	uart_write_bytes(USE_UART, &cx, 1);
@@ -199,18 +204,25 @@ uint8_t ESP_isReadable() {
 	return s > 0;
 }
 
+uint8_t ESP_setBaud(int baud) {
+	uart_wait_tx_done(USE_UART, 5 * 1000);
+	return ESP_OK == uart_set_baudrate(USE_UART, baud);
+}
+
 void app_main() {
+	modPrelaunch();
+
 	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 
-	nvs_flash_init();
+	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((5 * 1024) / sizeof(StackType_t))
+		#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#else
-		#define kStack ((7 * 1024) / sizeof(StackType_t))
+		#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
 
     xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);

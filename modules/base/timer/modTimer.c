@@ -22,12 +22,7 @@
 #include "xsmc.h"
 
 #include "modTimer.h"
-#if __ets__ || defined(ESP32)
-	#include "xsesp.h"
-#elif gecko
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void modTimerDelete(void *data);
@@ -70,8 +65,8 @@ static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 	xsEndHost(the);
 
 	if (ts->callback && (0 == modTimerGetSecondInterval(timer))) {
-		xsmcSetHostData(ts->self, NULL);
 		xsForget(ts->self);
+		xsmcSetHostData(ts->self, NULL);
 	}
 }
 
@@ -90,7 +85,7 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 
 	xsmcSetHostData(ts.self, timer);
 	xsSetHostHooks(ts.self, &modTimerHooks);
-	xsResult = ts.self;		//@@ fxAccess
+	xsResult = xsAccess(ts.self);
 }
 
 void xs_timer_set(xsMachine *the)

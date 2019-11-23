@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2019  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -41,6 +41,7 @@ endif
 
 # serial port configuration
 UPLOAD_SPEED ?= 921600
+DEBUGGER_SPEED ?= 921600
 ifeq ($(HOST_OS),Darwin)
 UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
 else
@@ -53,8 +54,8 @@ endif
 
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE ?= 4M
-FLASH_MODE ?= dio
-FLASH_SPEED ?= 40
+FLASH_MODE ?= qio
+FLASH_SPEED ?= 80
 FLASH_LAYOUT ?= eagle.flash.4m.ld
 
 # WiFi & Debug settings
@@ -75,11 +76,7 @@ comma := ,
 NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
 endif
 
-ifneq ("$(wildcard $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a)", "")
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
-else
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
-endif
+NEWLIBC_PATH = $(ESPRESSIF_SDK_ROOT)/components/newlib/newlib/lib/libc.a
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \
@@ -203,11 +200,11 @@ XS_DIRS = \
 	$(BUILD_DIR)/devices/esp
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsesp.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsScript.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -217,7 +214,7 @@ CPP = $(TOOLS_BIN)/xtensa-lx106-elf-g++
 LD  = $(CC)
 AR  = $(TOOLS_BIN)/xtensa-lx106-elf-ar
 OTA_TOOL = $(TOOLS_ROOT)/espota.py
-ESPTOOL = $(ESP_BASE)/esptool/esptool
+ESPTOOL = $(ESPRESSIF_SDK_ROOT)/components/esptool_py/esptool/esptool.py
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -252,7 +249,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
 ifeq ($(DEBUG),1)
-	C_DEFINES += -DmxDebug=1
+	C_DEFINES += -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -269,10 +266,10 @@ C_FLAGS_NODATASECTION = -c -Os -g -Wpointer-arith -Wno-implicit-function-declara
 CPP_FLAGS ?= -c -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions=4 -std=c++11 -MMD -ffunction-sections
 S_FLAGS ?= -c -g -x assembler-with-cpp -MMD
 ifeq ($(ESP_SDK_RELEASE),esp8266-2.4.0)
-LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_erase_sector -Wl,-wrap,spi_flash_read
+LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read
 LD_STD_LIBS ?= -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lc -lcrypto
 else
-LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_erase_sector -Wl,-wrap,register_chipv6_phy
+LD_FLAGS ?= -g -w -Os -nostdlib -Wl,-Map=$(BIN_DIR)/main.txt -Wl,--cref -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(ESP_TOOLS_SDK_ROOT)/lib -L$(MODDABLE)/build/devices/esp/sdk/ld -T$(FLASH_LAYOUT) -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,register_chipv6_phy  -Wl,-wrap,espconn_init
 LD_STD_LIBS ?= -lm -lgcc -lhal -lphy -lnet80211 -llwip -lwpa -lmain -lpp -lsmartconfig -lwps -lcrypto -laxtls
 endif
 # stdc++ used in later versions of esp8266 Arduino
@@ -294,7 +291,7 @@ MEM_USAGE = \
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
-	
+
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		LAUNCH = debugmac
@@ -305,29 +302,53 @@ else
 	LAUNCH = release
 endif
 
-.PHONY: all	
+
+ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)/components/esp8266/firmware
+ESP_BOOTLOADER_BIN = $(ESP_FIRMWARE_DIR)/boot_v1.7.bin
+ESP_DATA_DEFAULT_BIN = $(ESP_FIRMWARE_DIR)/esp_init_data_default.bin
+
+ifeq ($(FLASH_SIZE),1M)
+	ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0xFC000
+endif
+ifeq ($(FLASH_SIZE),4M)
+	ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0x3FC000
+endif
+
+ESPTOOL_FLASH_OPT = \
+	--flash_freq $(FLASH_SPEED)m \
+	--flash_mode $(FLASH_MODE) \
+	--flash_size $(FLASH_SIZE)B \
+	0x0000 $(ESP_BOOTLOADER_BIN) \
+	0x1000 $(BIN_DIR)/main.bin \
+	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
+
+UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
+
+.PHONY: all
 
 all: $(LAUNCH)
 
 debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) 921600 8N1
+	$(UPLOAD_TO_ESP)
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 
 debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(shell pkill serial2xsbug)
 	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) 921600 8N1 $(TMP_DIR)/main.elf $(TOOLS_BIN)
-	
+	$(UPLOAD_TO_ESP)
+#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
+	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(ESPTOOL) $(UPLOAD_VERB) -cd $(UPLOAD_RESET) -cb $(UPLOAD_SPEED) -cp $(UPLOAD_PORT) -ca 0x00000 -cf $(BIN_DIR)/main.bin
-	
+	$(UPLOAD_TO_ESP)
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
-	
+
 $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld main.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.cpp
@@ -335,13 +356,13 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)/buildinfo.cpp -o $(LIB_DIR)/buildinfo.cpp.o
 	$(LD) $(LD_FLAGS) -Wl,--start-group $^ $(LIB_DIR)/buildinfo.cpp $(LD_STD_LIBS) -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)/main.elf
 	$(TOOLS_BIN)/xtensa-lx106-elf-objdump -t $(TMP_DIR)/main.elf > $(BIN_DIR)/main.sym
-	$(ESPTOOL) -eo $(ARDUINO_ROOT)/bootloaders/eboot/eboot.elf -bo $@ -bm $(FLASH_MODE) -bf $(FLASH_SPEED) -bz $(FLASH_SIZE) -bs .text -bp 4096 -ec -eo $(TMP_DIR)/main.elf -bs .irom0.text -bs .text -bs .data -bs .rodata -bc -ec
+	$(ESPTOOL) --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)/main.elf
 	@echo "# Versions"
 	@echo "#  ESP:   $(ESP_SDK_RELEASE)"
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	@$(TOOLS_BIN)/xtensa-lx106-elf-size -A $(TMP_DIR)/main.elf | perl -e $(MEM_USAGE)
 
-$(LIB_DIR)/lib_a-setjmp.o: $(LIBCIROM_PATH)
+$(LIB_DIR)/lib_a-setjmp.o: $(NEWLIBC_PATH)
 	@echo "# ar" $(<F)
 	(cd $(LIB_DIR) && $(AR) -xv $< lib_a-setjmp.o)
 
@@ -363,20 +384,19 @@ $(LIB_DIR)/%.cpp.o: %.cpp
 	@echo "# cpp" $(<F)
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $< -o $@
 
-	
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
-	
+
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
-	
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
+
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

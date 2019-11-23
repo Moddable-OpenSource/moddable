@@ -94,7 +94,7 @@ static void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamEr
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
 	xss->useCount -= 1;
-	if (xss->useCount <= 0) {
+	if ((xss->useCount <= 0) && !xss->done) {
 		xsDestructor destructor = xsGetHostDestructor(xss->obj);
 		xsmcSetHostData(xss->obj, NULL);
 		(*destructor)(xss);
@@ -147,16 +147,15 @@ void xs_socket(xsMachine *the)
 		else
 			xsUnknownError("invalid socket kind");
 	}
-
 	CFSocketContext socketCtxt = {0, xss, NULL, NULL, NULL};
-	if (kTCP == xss->kind) {
-		if (xsmcHas(xsArg(0), xsID_port)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_port);
-			xss->port = xsmcToInteger(xsVar(0));
-		}
-		else
-			xsUnknownError("port required in dictionary");
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		xss->port = xsmcToInteger(xsVar(0));
+	}
 
+	if (kTCP == xss->kind) {
+		if (!xss->port)
+			xsUnknownError("port required");
 		xss->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack | kCFSocketReadCallBack | kCFSocketWriteCallBack, socketCallback, &socketCtxt);
 	}
 	else
@@ -191,6 +190,10 @@ void xs_socket(xsMachine *the)
 
 		if (setsockopt(xss->skt, SOL_SOCKET, SO_BROADCAST, (const void *)&flag, sizeof(flag)) < 0)
 			return;		//@@
+        if (setsockopt(xss->skt, SOL_SOCKET, SO_REUSEPORT, (const void *)&flag, sizeof(flag)) < 0)
+			return;		//@@
+		u_char loop = 0;
+		setsockopt(xss->skt, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
 
 		if (setsockopt(xss->skt, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
 			return;
@@ -209,8 +212,8 @@ void xs_socket(xsMachine *the)
 
 		// bind
 		address.sin_family      = AF_INET;
-		address.sin_port        = -1;		//@@
-		address.sin_addr.s_addr = 0; // Want to receive multicasts AND unicasts on this socket
+		address.sin_port        = htons(xss->port);		//@@
+		address.sin_addr.s_addr = htonl(INADDR_ANY); // Want to receive multicasts AND unicasts on this socket
 		if (0 != bind(xss->skt, (struct sockaddr *) &address, sizeof(address)))
 			return;		//@@
 	}
@@ -228,6 +231,16 @@ void xs_socket(xsMachine *the)
 		CFStringRef host;
 
 		xsmcGet(xsVar(0), xsArg(0), xsID_host);
+		str = xsmcToString(xsVar(0));
+		host = CFStringCreateWithCString(NULL, (const char *)str, kCFStringEncodingUTF8);
+		cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
+		CFRelease(host);
+	}
+	else if (xsmcHas(xsArg(0), xsID_address)) {
+		char *str;
+		CFStringRef host;
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		str = xsmcToString(xsVar(0));
 		host = CFStringCreateWithCString(NULL, (const char *)str, kCFStringEncodingUTF8);
 		cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
@@ -329,6 +342,10 @@ void xs_socket_close(xsMachine *the)
 	socketDownUseCount(the, xss);
 }
 
+void xs_socket_get(xsMachine *the)
+{
+}
+
 void xs_socket_read(xsMachine *the)
 {
 	xsSocket xss = xsmcGetHostData(xsThis);
@@ -367,7 +384,7 @@ void xs_socket_read(xsMachine *the)
 			char *str = xsmcToString(xsArg(1));
 			char terminator = c_read8(str);
 			if (terminator) {
-				unsigned char *t = (unsigned char *)c_strchr((char *)srcData, terminator);
+				unsigned char *t = (unsigned char *)memchr((char *)srcData, terminator, srcBytes);
 				if (t) {
 					uint16_t count = (t - srcData) + 1;		// terminator included in result
 					if (count < srcBytes)
@@ -446,6 +463,9 @@ void xs_socket_write(xsMachine *the)
 		int result = sendto(xss->skt, buf, len, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
 		if (result < 0)
 			xsUnknownError("sendto failed");
+
+		modInstrumentationAdjust(NetworkBytesWritten, len);
+
 		return;
 	}
 
@@ -527,19 +547,21 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	xsSocket xss = info;
 	xsMachine *the = xss->the;
 
+	if ((-1 == xss->skt) || xss->done)
+		return;		// closed socket
+
 	xss->useCount += 1;
 
 	if (cbType & kCFSocketReadCallBack) {
 		unsigned char buffer[2048];
 		int count;
 
-
 		if (kTCP == xss->kind) {
 			count = read(xss->skt, buffer, sizeof(buffer));
 
 			if (count <= 0) {
 				xsBeginHost(the);
-					xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+					xsCall1(xss->obj, xsID_callback, (count < 0) ? xsInteger(kSocketMsgError) : xsInteger(kSocketMsgDisconnect));
 				xsEndHost(the);
 
 				socketDownUseCount(the, xss);
@@ -578,7 +600,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 
 			xsBeginHost(the);
 				xsmcSetString(xsResult, srcAddrStr);
-				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(srcAddr.sin_port));		//@@ port
+				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(ntohs(srcAddr.sin_port)));		//@@ port
 			xsEndHost(the);
 
 			xss->readBuffer = NULL;

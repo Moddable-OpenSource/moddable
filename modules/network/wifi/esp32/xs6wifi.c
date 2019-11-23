@@ -20,14 +20,21 @@
 
 #include "xs.h"
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "mc.xs.h"			// for xsID_ values
 
 #include "esp_wifi.h"
 
-// maybe use task event group flags for this like all the samples?
+#ifndef MODDEF_WIFI_ESP32_CONNECT_RETRIES
+	#define MODDEF_WIFI_ESP32_CONNECT_RETRIES (5)
+#endif
+
 int8_t gWiFiState = -1;	// -1 = uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
+int8_t gDisconnectReason = 0;		// -1 = password rejected
+int8_t gWiFiConnectRetryRemaining;
+
+#define SYSTEM_EVENT_STA_CHANGED_IP (SYSTEM_EVENT_MAX + 1)
 
 static void initWiFi(void);
 
@@ -74,8 +81,8 @@ void xs_wifi_scan(xsMachine *the)
 	initWiFi();
 
 	esp_wifi_get_mode(&mode);
-	if (WIFI_MODE_STA != mode)
-		xsUnknownError("can't scan in WIFI_MODE_STA");
+	if (WIFI_MODE_AP == mode)
+		xsUnknownError("can't scan in WIFI_MODE_AP");
 
 	if (0 == xsmcArgc) {
 		// clear gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
@@ -130,21 +137,13 @@ void xs_wifi_scan(xsMachine *the)
 	}
 }
 
-void xs_wifi_status(xsMachine *the)
-{
-//@@
-//	station_status_t status = wifi_station_get_connect_status();
-//
-//	xsmcSetInteger(xsResult, (int)status);
-}
-
 void xs_wifi_connect(xsMachine *the)
 {
 	wifi_config_t config;
 	char *str;
 	int argc = xsmcToInteger(xsArgc);
 	wifi_mode_t mode;
-	int channel = -1;
+	int channel;
 
 	initWiFi();
 
@@ -157,16 +156,16 @@ void xs_wifi_connect(xsMachine *the)
 	c_memset(&config, 0, sizeof(config));
 
 	xsmcVars(2);
-	if (xsmcHas(xsArg(0), xsID_ssid)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
-		str = xsmcToString(xsVar(0));
-		if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
-			xsUnknownError("ssid too long - 32 bytes max");
-		espMemCpy(config.sta.ssid, str, espStrLen(str));
-	}
+	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
+	if (!xsmcTest(xsVar(0)))
+		xsUnknownError("ssid required");
+	str = xsmcToString(xsVar(0));
+	if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
+		xsUnknownError("ssid too long - 32 bytes max");
+	espMemCpy(config.sta.ssid, str, espStrLen(str));
 
-	if (xsmcHas(xsArg(0), xsID_password)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	if (xsmcTest(xsVar(0))) {
 		str = xsmcToString(xsVar(0));
 		if (espStrLen(str) > (sizeof(config.sta.password) - 1))
 			xsUnknownError("password too long - 64 bytes max");
@@ -184,20 +183,18 @@ void xs_wifi_connect(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_channel)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
 		channel = xsmcToInteger(xsVar(0));
+		if ((channel < 1) || (channel > 13))
+			xsUnknownError("invalid channel");
+		config.sta.channel = channel;
 	}
 
 	esp_wifi_get_mode(&mode);
 	if (WIFI_MODE_STA != mode)
 		esp_wifi_set_mode(WIFI_MODE_STA);
 
-	if (gWiFiState >= 4)
-		esp_wifi_disconnect();
-
 	esp_wifi_set_config(WIFI_IF_STA, &config);
 
-	if (channel >= 0)
-		esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
-		
+	gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
 	if (0 != esp_wifi_connect())
 		xsUnknownError("esp_wifi_connect failed");
 }
@@ -291,11 +288,17 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 		case SYSTEM_EVENT_STA_CONNECTED:		msg = "connect"; break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:		msg = "disconnect"; break;
 		case SYSTEM_EVENT_STA_GOT_IP:			msg = "gotIP"; break;
+		case SYSTEM_EVENT_STA_CHANGED_IP:		msg = "changedIP"; break;
 		default: return;
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+		if (SYSTEM_EVENT_STA_DISCONNECTED != event_id)
+			xsCall1(wifi->obj, xsID_callback, xsString(msg));
+		else {
+			xsmcSetInteger(xsResult, gDisconnectReason);
+			xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
+		}
 	xsEndHost(the);
 }
 
@@ -375,11 +378,13 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 {
 	wifi_config_t wifi_config;
 	xsWiFi walker;
+	system_event_id_t event_id = event->event_id;
 
-    switch (event->event_id) {
+	switch (event_id) {
 		case SYSTEM_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
 				gWiFiState = 3;
+				gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
 				esp_wifi_connect();
 			}
 			else
@@ -387,16 +392,40 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			break;
 		case SYSTEM_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
+			gWiFiConnectRetryRemaining = 0;
 			break;
 		case SYSTEM_EVENT_STA_GOT_IP:
+			if (event->event_info.got_ip.ip_changed)
+				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
 			gWiFiState = 5;
 			break;
-		case SYSTEM_EVENT_STA_DISCONNECTED:
+		case SYSTEM_EVENT_STA_DISCONNECTED: {
+			uint8_t reason = event->event_info.disconnected.reason;
+			gDisconnectReason =	(WIFI_REASON_MIC_FAILURE == reason) ||
+								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
+								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
+								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
+								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason);
+			if (gDisconnectReason)
+				gDisconnectReason = -1;
+			else /* if ((WIFI_REASON_BEACON_TIMEOUT == reason) ||
+					 (WIFI_REASON_NO_AP_FOUND == reason) ||
+					 (WIFI_REASON_HANDSHAKE_TIMEOUT == reason) ||
+					 (WIFI_REASON_AUTH_EXPIRE == reason) ||
+					 (WIFI_REASON_CONNECTION_FAIL == reason)) */ {
+				if (gWiFiConnectRetryRemaining > 0) {
+					if (0 == esp_wifi_connect()) {
+						gWiFiConnectRetryRemaining -= 1;
+						return ESP_OK;
+					}
+					gWiFiConnectRetryRemaining = 0;
+				}
+			}
 			gWiFiState = 2;
-			break;
+			} break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
-				modMessagePostToMachine(gScan->the, (uint8_t *)&event->event_id, sizeof(event->event_id), reportScan, NULL);
+				modMessagePostToMachine(gScan->the, (uint8_t *)&event_id, sizeof(event_id), reportScan, NULL);
 			return ESP_OK;
 		default:
 			return ESP_OK;
@@ -414,9 +443,11 @@ void initWiFi(void)
 
 	if (-1 == gWiFiState) {
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
 		tcpip_adapter_init();
 		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
 		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+		esp_wifi_set_mode(WIFI_MODE_NULL);
 		gWiFiState = 0;
 	}
 
@@ -429,7 +460,7 @@ void initWiFi(void)
 
 void xs_wifi_accessPoint(xsMachine *the)
 {
-    wifi_mode_t mode;
+	wifi_mode_t mode;
 	wifi_config_t config;
 	wifi_ap_config_t *ap;
 	tcpip_adapter_ip_info_t info;
@@ -471,19 +502,19 @@ void xs_wifi_accessPoint(xsMachine *the)
 			xsUnknownError("invalid channel");
 	}
 
-    ap->ssid_hidden = 0;
+	ap->ssid_hidden = 0;
 	if (xsmcHas(xsArg(0), xsID_hidden)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
 		ap->ssid_hidden = xsmcTest(xsVar(0));
 	}
 
-    ap->max_connection = 4;
+	ap->max_connection = 4;
 	if (xsmcHas(xsArg(0), xsID_max)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_max);
 		ap->max_connection = xsmcToInteger(xsVar(0));
 	}
 
-    ap->beacon_interval = 100;
+	ap->beacon_interval = 100;
 	if (xsmcHas(xsArg(0), xsID_interval)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_interval);
 		ap->beacon_interval = xsmcToInteger(xsVar(0));
@@ -502,6 +533,6 @@ void xs_wifi_accessPoint(xsMachine *the)
 	if (ESP_OK != tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &info))
 		xsUnknownError("tcpip_adapter_get_ip_info failed");
 	if (0 == info.ip.addr)
-        xsUnknownError("IP config bad when starting Wi-Fi AP!\n");
+		xsUnknownError("IP config bad when starting Wi-Fi AP!");
 }
 

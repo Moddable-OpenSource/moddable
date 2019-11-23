@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,16 +18,19 @@
  *
  */
 
-
 #include "xsmc.h"
+#include "xsHost.h"
 
-#include "xsesp.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 
+	static void workerLoop(void *pvParameter);
+#elif qca4020
+	#include "FreeRTOS.h"
+	#include "task.h"
 	static void workerLoop(void *pvParameter);
 #endif
 
@@ -44,10 +47,10 @@ struct modWorkerRecord {
 	uint32_t				slotCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
-#if ESP32
+#if ESP32 || qca4020
 	TaskHandle_t			task;
 #endif
-	char						module[1];
+	char					module[1];
 };
 
 typedef struct modWorkerRecord modWorkerRecord;
@@ -73,12 +76,13 @@ static modWorker gWorkers;
 
 void xs_worker_destructor(void *data)
 {
+	modCriticalSectionDeclare;
 	modWorker worker = data;
 
 	if (worker) {
 		modWorker walker, prev;
 
-#if ESP32
+#if ESP32 || qca4020
 		if (worker->task) {
 			vTaskDelete(worker->task);
 			worker->task = NULL;
@@ -109,6 +113,7 @@ void xs_worker_destructor(void *data)
 
 static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 {
+	modCriticalSectionDeclare;
 	modWorker worker;
 	char *module = xsmcToString(xsArg(0));
 
@@ -174,13 +179,24 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((5 * 1024) / sizeof(StackType_t))
+		#define kStack (((5 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#else
-		#define kStack ((6 * 1024) / sizeof(StackType_t))
+		#define kStack (((6 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
 
 	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 8, &worker->task);
+
+	modMachineTaskWait(the);
+#elif qca4020
+	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
+		#define kStack ((9 * 1024) / sizeof(StackType_t))
+	#else
+		#define kStack ((10 * 1024) / sizeof(StackType_t))
+	#endif
+
+	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
+	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
 
 	modMachineTaskWait(the);
 #else
@@ -417,8 +433,7 @@ int workerStart(modWorker worker)
 			xsmcSet(xsVar(0), xsID_close, xsVar(1));
 		}
 
-		xsmcGet(xsVar(0), xsGlobal, xsID_require);
-		xsVar(0) = xsCall1(xsVar(0), xsID_weak, xsString(worker->module));
+		xsVar(0) = xsAwaitImport(worker->module, XS_IMPORT_DEFAULT);
 		if (xsmcTest(xsVar(0)) && xsmcIsInstanceOf(xsVar(0), xsFunctionPrototype))
 			xsCallFunction0(xsVar(0), xsGlobal);
 
@@ -450,7 +465,7 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 	xs_worker_destructor(worker);
 }
 
-#if ESP32
+#if ESP32 || qca4020
 
 void workerLoop(void *pvParameter)
 {
@@ -469,6 +484,9 @@ void workerLoop(void *pvParameter)
 	while (true) {
 		modTimersExecute();
 		modMessageService(worker->the, modTimersNext());
+#if qca4020
+		qca4020_watchdog();
+#endif
 	}
 
 #if CONFIG_TASK_WDT

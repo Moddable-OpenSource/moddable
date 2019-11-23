@@ -21,12 +21,7 @@
 #include "mc.xs.h"			// for xsID_ values
 
 #include "qrcodegen.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif gecko
-	#include "xsgecko.h"
-#endif
+#include "xsHost.h"
 
 void xs_qrcode(xsMachine *the)
 {

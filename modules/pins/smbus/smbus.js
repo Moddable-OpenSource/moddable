@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,7 +33,7 @@ export default class SMBus extends I2C {
 	}
 	readWord(register, endian) {
 		super.write(register);				// set address
-		let value = super.read(2);			// read two bytes
+		const value = super.read(2);			// read two bytes
 		return endian ? (value[1] | (value[0] << 8)) : (value[0] | (value[1] << 8));
 	}
 	readBlock(register, count, buffer) {
@@ -41,15 +41,14 @@ export default class SMBus extends I2C {
 		return buffer ? super.read(count, buffer) : super.read(count);
 	}
 	writeByte(register, value) {
-		super.write(register, value & 255);
+		return super.write(register, value & 255);
 	}
 	writeWord(register, value, endian) {
 		if (endian)
-			super.write(register, (value >> 8) & 255, value & 255);
-		else
-			super.write(register, value & 255, (value >> 8) & 255);
+			return super.write(register, (value >> 8) & 255, value & 255);
+		return super.write(register, value & 255, (value >> 8) & 255);
 	}
 	writeBlock(register, ...value) {
-		super.write(register, ...value);
+		return super.write(register, ...value);
 	}
 }

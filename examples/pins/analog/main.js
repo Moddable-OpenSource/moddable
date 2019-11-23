@@ -22,7 +22,7 @@ import Poco from "commodetto/Poco";
 
 let font = parseBMF(new Resource("myFont.bf4"));
 
-let render = new Poco(global.screen ? screen : new (require(config.screen))({}));
+let render = new Poco(screen);
 let width = render.width, height = render.height;
 
 let white = render.makeColor(255, 255, 255);

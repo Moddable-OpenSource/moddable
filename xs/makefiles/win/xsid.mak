@@ -47,8 +47,7 @@ C_OPTIONS = \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
 	/I$(TMP_DIR) \
-	/nologo \
-	/Zp1
+	/nologo
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \

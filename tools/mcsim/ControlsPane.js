@@ -82,7 +82,7 @@ class ControlsHeaderBehavior extends Behavior {
 		if (model.devices.length > 1) { 
 			let data = {
 				button: row,
-				items: model.devices.map((device, index) => ({ title:device.title, index })),
+				items: model.devices.map((device, index) => ({ title:device.export.default.title, index })),
 			};
 			data.items.splice(model.deviceIndex, 1);
 			application.add(new ControlsMenu(data));
@@ -264,6 +264,25 @@ export var ButtonsRow = Row.template(function($) { return {
 	],
 }});
 
+export var InfoRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { left:0, right:0, style:controlValueStyle, string:$.value,
+			Behavior: class extends Behavior {
+				onCreate(label, data) {
+					this.data = data;
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+				}
+			},
+		}),
+	],
+}});
+
 var PopupMenu = Layout.template($ => ({
 	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
 	Behavior: PopupMenuBehavior,
@@ -398,6 +417,11 @@ export var SwitchRow = Row.template(function($) { return {
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
+				}
+				onDataChanged(container) {
+					let data = this.data;
+					this.changeOffset(container, data.value ? this.size : 0);
+					container.next.string = data.value ? data.on : data.off;
 				}
 				onValueChanged(container) {
 					let data = this.data;

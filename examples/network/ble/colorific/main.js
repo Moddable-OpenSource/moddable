@@ -47,7 +47,7 @@ class Colorific extends BLEClient {
 				payload[6] = Math.floor(Math.random() * 256);
 				payload[7] = Math.floor(Math.random() * 256);
 				payload[8] = Math.floor(Math.random() * 256);
-				characteristic.writeWithoutResponse(payload.buffer);
+				characteristic.writeWithoutResponse(this.payload);
 			}, 100);
 		}
 	}

@@ -20,13 +20,7 @@
 
 
 #include "xsmc.h"
-#if _RENESAS_SYNERGY_
-	#include "xssynergy.h"
-#elif gecko
-	#include "xsgecko.h"
-#else
-	#include "xsesp.h"
-#endif
+#include "xsHost.h"
 
 void xs_time_set(xsMachine *the)
 {

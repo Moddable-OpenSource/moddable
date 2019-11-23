@@ -15,8 +15,13 @@
 				"*": "$(MODULES)/pins/spi/gecko/*",
 			},
 		},
+		"qca4020": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/qca4020/*",
+			},
+		},
 		"...": {
-			"error": "pins/spi unsupported"
+			"error": "pins/spi module unsupported"
 		}
 	}
 }

@@ -28,6 +28,10 @@ export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
+unexport LDFLAGS
+unexport LD_LIBRARY_PATH
+unexport CPPFLAGS
+
 ifeq ($(DEBUG),1)
 	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/idf
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/xsProj
@@ -52,28 +56,33 @@ endif
 
 INC_DIRS = \
  	$(IDF_PATH)/components \
-	$(IDF_PATH)/components/heap/include \
+ 	$(IDF_PATH)/components/bt/include \
+ 	$(IDF_PATH)/components/bt/bluedroid/api/include \
+ 	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
- 	$(IDF_PATH)/components/soc/esp32/include \
- 	$(IDF_PATH)/components/soc/esp32/include/soc \
- 	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/esp32/include \
+ 	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
- 	$(IDF_PATH)/components/lwip/include/lwip \
- 	$(IDF_PATH)/components/lwip/include/lwip/port \
+	$(IDF_PATH)/components/heap/include \
+ 	$(IDF_PATH)/components/log/include \
+ 	$(IDF_PATH)/components/lwip/include/apps/ \
+ 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
+ 	$(IDF_PATH)/components/lwip/port/esp32/ \
+ 	$(IDF_PATH)/components/lwip/port/esp32/include/ \
  	$(IDF_PATH)/components/mbedtls/include \
+ 	$(IDF_PATH)/components/newlib/include \
+ 	$(IDF_PATH)/components/newlib/platform_include \
+ 	$(IDF_PATH)/components/soc/esp32/include \
+ 	$(IDF_PATH)/components/soc/esp32/include/soc \
+ 	$(IDF_PATH)/components/soc/include \
+ 	$(IDF_PATH)/components/spiffs/include \
  	$(IDF_PATH)/components/spi_flash/include \
- 	$(IDF_PATH)/components/vfs/include \
- 	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
- 	$(IDF_PATH)/components/bt/include \
- 	$(IDF_PATH)/components/bt/bluedroid/api/include \
- 	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
-	$(IDF_PATH)/components/newlib/include \
-	$(IDF_PATH)/components/newlib/platform_include
+ 	$(IDF_PATH)/components/tcpip_adapter/include \
+ 	$(IDF_PATH)/components/vfs/include
     
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
@@ -83,6 +92,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsArguments.c.o \
 	$(LIB_DIR)/xsArray.c.o \
 	$(LIB_DIR)/xsAtomics.c.o \
+	$(LIB_DIR)/xsBigInt.c.o \
 	$(LIB_DIR)/xsBoolean.c.o \
 	$(LIB_DIR)/xsCode.c.o \
 	$(LIB_DIR)/xsCommon.c.o \
@@ -127,10 +137,10 @@ XS_DIRS = \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
-	$(XS_DIR)/includes/xsesp.h \
 	$(XS_DIR)/includes/xsmc.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
+	$(XS_DIR)/platforms/esp/xsHost.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -240,7 +250,7 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1 $(IDF_BUILD_DIR)/xs_esp32.elf $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
+		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -268,11 +278,11 @@ all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
-	cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash;
+	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash && $(DO_LAUNCH)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
-	$(DO_LAUNCH)
+	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); fi
@@ -332,9 +342,9 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
 	
 MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)

@@ -44,9 +44,12 @@
 #define mxiOS 0
 #define mxLinux 0
 #define mxMacOSX 0
+#define mxWasm 0
 #define mxWindows 0
 
-#ifndef XSPLATFORM
+#include "xsHost.h"
+
+#ifndef XSPLATFORM	
 	/* for XS tools only: xsc, xsid, xsl on Linux, macOS or Windows */
 	#if defined(_MSC_VER)
 		#if defined(_M_IX86) || defined(_M_X64)
@@ -269,6 +272,14 @@
 #endif
 #ifndef c_fprintf
 	#define c_fprintf fprintf
+#endif
+
+#ifndef c_signal
+	#ifdef EMSCRIPTEN
+		#define c_signal(signum, handler)
+	#else
+		#define c_signal signal
+	#endif
 #endif
 
 /* DATE */

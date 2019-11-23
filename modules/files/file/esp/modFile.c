@@ -25,7 +25,7 @@
 #undef c_memset
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 
@@ -33,6 +33,14 @@ static int startSPIFFS(void);
 static void stopSPIFFS(void);
 
 static spiffs *gSPIFFS;
+
+static void *xsmcGetHostDataNullCheck(xsMachine *the)
+{
+	void *result = xsmcGetHostData(xsThis);
+	if (result)
+		return result;
+	xsUnknownError("closed");
+}
 
 void xs_file_destructor(void *data)
 {
@@ -49,12 +57,12 @@ void xs_File(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	spiffs_file file;
-	char path[SPIFFS_OBJ_NAME_LEN];
+	char path[SPIFFS_OBJ_NAME_LEN + 1];
 	uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));;
 
 	startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(0), path, sizeof(path));		// in case name is in ROM
 	file = SPIFFS_open(gSPIFFS, path, write ? (SPIFFS_CREAT | SPIFFS_RDWR) : SPIFFS_RDONLY, 0);
 	if (file < 0) {
 		stopSPIFFS();
@@ -67,7 +75,7 @@ void xs_File(xsMachine *the)
 
 void xs_file_read(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	s32_t result;
 	int argc = xsmcArgc;
@@ -105,7 +113,7 @@ void xs_file_read(xsMachine *the)
 
 void xs_file_write(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	s32_t result;
 	int argc = xsmcArgc, i;
@@ -113,10 +121,17 @@ void xs_file_write(xsMachine *the)
 	for (i = 0; i < argc; i++) {
 		unsigned char *src;
 		s32_t srcLen;
+		int type = xsmcTypeOf(xsArg(i));
+		uint8_t temp;
 
-		if (xsStringType == xsmcTypeOf(xsArg(i))) {
+		if (xsStringType == type) {
 			src = xsmcToString(xsArg(i));
-			srcLen = espStrLen(src);
+			srcLen = c_strlen(src);
+		}
+		else if ((xsIntegerType == type) || (xsNumberType == type)) {
+			temp = (uint8_t)xsmcToInteger(xsArg(i));
+			src = &temp;
+			srcLen = 1;
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
@@ -127,7 +142,7 @@ void xs_file_write(xsMachine *the)
 			unsigned char *buffer[128];
 			int use = (srcLen <= sizeof(buffer)) ? srcLen : 128;
 
-			espMemCpy(buffer, src, use);
+			c_memcpy(buffer, src, use);
 			src += use;
 			srcLen -= use;
 
@@ -140,7 +155,7 @@ void xs_file_write(xsMachine *the)
 
 void xs_file_close(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	xs_file_destructor((void *)((int)file));
 	xsmcSetHostData(xsThis, NULL);
@@ -148,7 +163,7 @@ void xs_file_close(xsMachine *the)
 
 void xs_file_get_length(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	spiffs_stat stat;
 	SPIFFS_fstat(gSPIFFS, file, &stat);
@@ -157,7 +172,7 @@ void xs_file_get_length(xsMachine *the)
 
 void xs_file_get_position(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	s32_t position = SPIFFS_lseek(gSPIFFS, file, 0, SPIFFS_SEEK_CUR);
 	xsResult = xsInteger(position);
@@ -165,7 +180,7 @@ void xs_file_get_position(xsMachine *the)
 
 void xs_file_set_position(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
+	void *data = xsmcGetHostDataNullCheck(the);
 	spiffs_file file = *((spiffs_file*)(&data));
 	s32_t position = xsmcToInteger(xsArg(0));
 	SPIFFS_lseek(gSPIFFS, file, position, SPIFFS_SEEK_SET);
@@ -173,12 +188,12 @@ void xs_file_set_position(xsMachine *the)
 
 void xs_file_delete(xsMachine *the)
 {
-	char path[SPIFFS_OBJ_NAME_LEN];
+	char path[SPIFFS_OBJ_NAME_LEN + 1];
 	s32_t result;
 
 	startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(0), path, sizeof(path));		// in case name is in ROM
 	result = SPIFFS_remove(gSPIFFS, path);
 
 	stopSPIFFS();
@@ -188,13 +203,13 @@ void xs_file_delete(xsMachine *the)
 
 void xs_file_exists(xsMachine *the)
 {
-	char path[SPIFFS_OBJ_NAME_LEN];
+	char path[SPIFFS_OBJ_NAME_LEN + 1];
 	spiffs_stat stat;
 	s32_t result;
 
 	startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(0), path, sizeof(path));		// in case name is in ROM
 	result = SPIFFS_stat(gSPIFFS, path, &stat);
 
 	stopSPIFFS();
@@ -204,14 +219,14 @@ void xs_file_exists(xsMachine *the)
 
 void xs_file_rename(xsMachine *the)
 {
-	char path[SPIFFS_OBJ_NAME_LEN];
-	char name[SPIFFS_OBJ_NAME_LEN];
+	char path[SPIFFS_OBJ_NAME_LEN + 1];
+	char name[SPIFFS_OBJ_NAME_LEN + 1];
 	s32_t result;
 
 	startSPIFFS();
 
-	xsmcToStringBuffer(xsArg(0), path, SPIFFS_OBJ_NAME_LEN);		// in case name is in ROM
-	xsmcToStringBuffer(xsArg(1), name, SPIFFS_OBJ_NAME_LEN);			// in case name is in ROM
+	xsmcToStringBuffer(xsArg(0), path, sizeof(path));		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(1), name, sizeof(name));			// in case name is in ROM
 	result = SPIFFS_rename(gSPIFFS, path, name);
 
 	stopSPIFFS();
@@ -281,7 +296,7 @@ void xs_file_system_config(xsMachine *the)
 {
 	xsResult = xsmcNewObject();
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), SPIFFS_OBJ_NAME_LEN - 1);
+	xsmcSetInteger(xsVar(0), SPIFFS_OBJ_NAME_LEN);
 	xsmcSet(xsResult, xsID_maxPathLength, xsVar(0));
 }
 

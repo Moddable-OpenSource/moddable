@@ -20,7 +20,7 @@
 
 class Parser {
 	constructor(packet) {
-		this.buffer = packet;
+		this.buffer = (packet.byteLength >= 12) ? packet : new ArrayBuffer(12);		// too small to be valid
 	}
 	get id() @ "xs_dnspacket_get_id"
 	get flags() @ "xs_dnspacket_get_flags"

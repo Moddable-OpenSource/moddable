@@ -2,24 +2,24 @@
  * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
@@ -65,33 +65,39 @@
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
-	
+
 	// server
 	esp_gatt_if_t gatts_if;
 	uint8_t *advertisingData;
 	uint8_t *scanResponseData;
 	esp_ble_adv_params_t adv_params;
 	uint8_t adv_config_done;
-	
+	uint8_t deviceNameSet;
+
 	// services
 	uint16_t handles[service_count][max_attribute_count];
-	
+
 	// security
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
-	
+	uint8_t iocap;
+
 	// connection
 	esp_bd_addr_t remote_bda;
 	int16_t conn_id;
 	uint16_t app_id;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
+
+static const char_name_table *handleToCharName(uint16_t handle);
+static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle);
+
+static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGATTSEvent(esp_gatts_cb_event_t event);
 static void logGAPEvent(esp_gap_ble_cb_event_t event);
@@ -113,7 +119,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	gBLE->gatts_if = ESP_GATT_IF_NONE;
 	xsRemember(gBLE->obj);
-	
+
 	// Initialize platform Bluetooth modules
 	esp_err_t err = modBLEPlatformInitialize();
 
@@ -131,20 +137,20 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	modBLE *ble = xsmcGetHostData(xsThis);
+	modBLE ble = xsmcGetHostData(xsThis);
 	if (!ble) return;
-	
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+
+	gBLE = NULL;
+	xsForget(ble->obj);
 	xsmcSetHostData(xsThis, NULL);
+	modMessagePostToMachine(ble->the, NULL, 0, bleServerCloseEvent, ble);
 }
 
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
 	if (!ble) return;
-	
-	ble->terminating = true;
+
 	for (uint16_t i = 0; i < service_count; ++i)
 		if (ble->handles[i][0])
 			esp_ble_gatts_delete_service(ble->handles[i][0]);
@@ -157,7 +163,7 @@ void xs_ble_server_destructor(void *data)
 		c_free(ble->scanResponseData);
 	c_free(ble);
 	gBLE = NULL;
-	
+
 	modBLEPlatformTerminate();
 }
 
@@ -175,6 +181,7 @@ void xs_ble_server_get_local_address(xsMachine *the)
 
 void xs_ble_server_set_device_name(xsMachine *the)
 {
+	gBLE->deviceNameSet = 1;
 	esp_ble_gap_set_device_name(xsmcToString(xsArg(0)));
 }
 
@@ -186,7 +193,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
 	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
 	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
-	
+
 	// Save the advertising and scan response data. The buffers cannot be freed until the GAP callback confirmation.
 	gBLE->advertisingData = (uint8_t*)c_malloc(advertisingDataLength);
 	if (!gBLE->advertisingData)
@@ -198,7 +205,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 			xsUnknownError("no memory");
 		c_memmove(gBLE->scanResponseData, scanResponseData, scanResponseDataLength);
 	}
-	
+
 	// Initialize the advertising parameters
 	gBLE->adv_params.adv_int_min = intervalMin;
 	gBLE->adv_params.adv_int_max = intervalMax;
@@ -215,7 +222,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 		esp_ble_gap_config_scan_rsp_data_raw(scanResponseData, scanResponseDataLength);
 	}
 }
-	
+
 void xs_ble_server_stop_advertising(xsMachine *the)
 {
 	esp_ble_gap_stop_advertising();
@@ -233,13 +240,21 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
-	
+	uint8_t iocap = xsmcToInteger(xsArg(3));
+
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+//	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -249,6 +264,58 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
 	c_memmove(&bda, address, sizeof(bda));
 	esp_ble_confirm_reply(bda, confirm);
+}
+
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	esp_bt_uuid_t uuid;
+	const esp_gatts_attr_db_t *attr;
+	uint16_t serviceIndex;
+	uint8_t found = false;
+	uint16_t argc = xsmcArgc;
+	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
+	
+	xsmcVars(2);
+	xsResult = xsmcNewArray(0);
+
+	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
+		attr = &gatt_db[serviceIndex][0];
+		if (attr->att_desc.length == length && 0 == c_memcmp(buffer, attr->att_desc.value, length)) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) return;
+
+	for (uint16_t j = 0; j < attribute_counts[serviceIndex]; ++j) {
+		const char_name_table *char_name;
+		const uint8_t *value;
+		uint16_t handle = gBLE->handles[serviceIndex][j];
+		attr = &gatt_db[serviceIndex][j];
+
+		xsVar(0) = xsmcNewObject();
+		xsmcSetInteger(xsVar(1), handle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+
+		xsmcSetArrayBuffer(xsVar(1), attr->att_desc.uuid_p, attr->att_desc.uuid_length);
+		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+
+		if (ESP_GATT_OK == esp_ble_gatts_get_attr_value(handle, &length, &value) && 0 != length) {
+			xsmcSetArrayBuffer(xsVar(1), (uint8_t*)value, length);
+			xsmcSet(xsVar(0), xsID_value, xsVar(1));
+		}
+		for (uint16_t k = 0; k < char_name_count; ++k) {
+			if (serviceIndex == char_names[k].service_index && j == char_names[k].att_index) {
+				xsmcSetString(xsVar(1), (char*)char_names[k].name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(1));
+				xsmcSetString(xsVar(1), (char*)char_names[k].type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(1));
+				break;
+			}
+		}
+		xsCall1(xsResult, xsID_push, xsVar(0));
+	}
 }
 
 void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
@@ -271,8 +338,17 @@ void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 	}
 }
 
+static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	modBLE ble = refcon;
+
+	xs_ble_server_destructor(ble);
+}
+
 static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
@@ -287,6 +363,8 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 
 static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
@@ -301,6 +379,8 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 
 static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+
 	esp_ble_sec_req_t *ble_req = (esp_ble_sec_req_t *)message;
 	uint32_t passkey;
 	xsBeginHost(gBLE->the);
@@ -308,15 +388,20 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-	passkey = xsmcToInteger(xsResult);
+	if (gBLE->iocap == KeyboardOnly)
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		passkey = xsmcToInteger(xsResult);
+		esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
+	}
 	xsEndHost(gBLE->the);
-	esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
 }
 
 static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
+	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
 	xsEndHost(gBLE->the);
@@ -326,7 +411,7 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 {
 	LOG_GAP_EVENT(event);
 
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(event) {
 		case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
@@ -421,18 +506,25 @@ void xs_ble_server_deploy(xsMachine *the)
 
 static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
 
-	// Set device name and appearance from app GAP service when available
+	// Stack is ready
+	xsBeginHost(gBLE->the);
+	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsEndHost(gBLE->the);
+
+	// Set appearance from app GAP service when available
+	// Set device name from GAP service if app hasn't already set device name in onReady() callback
 	char *device_name = NULL;
 	uint16_t appearance = 128;	// generic computer
-	
+
 	for (uint16_t i = 0; i < service_count; ++i) {
 		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
 		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
 		if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1]) {
 			for (uint16_t j = 1; j < attribute_counts[i]; ++j) {
 				att_desc = &gatts_attr_db[j].att_desc;
-				if (ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A00 == *(uint16_t*)att_desc->uuid_p) {
+				if (0 == gBLE->deviceNameSet && ESP_UUID_LEN_16 == att_desc->uuid_length && 0x2A00 == *(uint16_t*)att_desc->uuid_p) {
 					device_name = c_calloc(1, att_desc->length + 1);
 					c_memmove(device_name, att_desc->value, att_desc->length);
 				}
@@ -443,24 +535,21 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 			break;
 		}
 	}
-	
+
 	esp_ble_gap_config_local_icon(appearance);
 	if (NULL != device_name) {
 		esp_ble_gap_set_device_name(device_name);
 		c_free(device_name);
 	}
-	else
+	else if (0 == gBLE->deviceNameSet) {
 		esp_ble_gap_set_device_name(DEVICE_FRIENDLY_NAME);
-
-	// Stack is ready
-	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
-	xsEndHost(gBLE->the);
+	}
 }
 
 static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_connect_evt_param *connect = (struct gatts_connect_evt_param *)message;
+	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
 	if (-1 != gBLE->conn_id)
 		goto bail;
@@ -480,6 +569,7 @@ bail:
 static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_disconnect_evt_param *disconnect = (struct gatts_disconnect_evt_param *)message;
+	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
 	if (disconnect->conn_id != gBLE->conn_id)
 		goto bail;
@@ -495,7 +585,7 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
-static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
+const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j])
@@ -505,7 +595,7 @@ static const esp_gatts_attr_db_t *handleToAtt(uint16_t handle) {
 	return NULL;
 }
 
-static const char_name_table *handleToCharName(uint16_t handle) {
+const char_name_table *handleToCharName(uint16_t handle) {
 	for (uint16_t i = 0; i < service_count; ++i) {
 		for (uint16_t j = 0; j < attribute_counts[i]; ++j) {
 			if (handle == gBLE->handles[i][j]) {
@@ -521,6 +611,8 @@ static const char_name_table *handleToCharName(uint16_t handle) {
 
 static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+
 	struct gatts_read_evt_param *read = (struct gatts_read_evt_param *)message;
 	esp_bt_uuid_t uuid;
 	uint8_t buffer[ESP_UUID_LEN_128];
@@ -528,15 +620,15 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	const esp_gatts_attr_db_t *att;
 	const esp_attr_desc_t *att_desc;
 	const char_name_table *char_name;
-	
+
 	att = handleToAtt(read->handle);
 	if (NULL == att) return;
-	
+
 #if LOG_GATTS
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(read->handle);
 	if (char_name) {
-		xsTrace("reading characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("reading characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -547,7 +639,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 #endif
 
 	if (ESP_GATT_AUTO_RSP == att->attr_control.auto_rsp) return;
-	
+
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(read->handle);
 
@@ -556,7 +648,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	uuid.len = att_desc->uuid_length;
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuidToBuffer(buffer, &uuid, &uuid_length);
-	
+
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSetInteger(xsVar(2), read->handle);
@@ -585,9 +677,11 @@ bail:
 
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+
 	struct gatts_write_evt_param *write = (struct gatts_write_evt_param *)message;
 	uint8_t *value = refcon;
-	
+
 	xsBeginHost(gBLE->the);
 	esp_bt_uuid_t uuid;
 	uint8_t buffer[ESP_UUID_LEN_128];
@@ -596,16 +690,17 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	const esp_gatts_attr_db_t *att;
 	const esp_attr_desc_t *att_desc;
 	const char_name_table *char_name;
-	
+	uint8_t cccd;
+
 	att = handleToAtt(write->handle);
 	if (NULL == att) return;
-	
+
 	att_desc = &att->att_desc;
 	char_name = handleToCharName(write->handle);
 
 #if LOG_GATTS
 	if (char_name) {
-		xsTrace("writing characteristic "); xsTrace(char_name); xsTrace("\n");
+		xsTrace("writing characteristic "); xsTrace(char_name->name); xsTrace("\n");
 	}
 	else {
 		uuid.len = att_desc->uuid_length;
@@ -614,11 +709,13 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		modLog("writing characteristic"); modLogHex(buffer[1]); modLogHex(buffer[0]);
 	}
 #endif
-
-	if (write->need_rsp)
+	cccd = (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len);
+	
+	if (write->need_rsp && !cccd) {
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
+	}
 	xsmcVars(6);
-	if (sizeof(uint16_t) == att_desc->uuid_length && 0x2902 == *(uint16_t*)att_desc->uuid_p && 2 == write->len) {
+	if (cccd) {
 		uint16_t descr_value = write->value[1]<<8 | write->value[0];
 		if (descr_value < 0x0003) {
 			att = handleToAtt(write->handle - 1);
@@ -626,8 +723,9 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 			char_name = handleToCharName(write->handle - 1);
 			notify = (uint8_t)descr_value;
 		}
-		else
+		else {
 			xsUnknownError("invalid cccd value");
+		}
 	}
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuid.len = att_desc->uuid_length;
@@ -663,11 +761,11 @@ bail:
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
 	uint8_t *value;
-	
+
 	LOG_GATTS_EVENT(event);
-	
-	if (!gBLE || gBLE->terminating) return;
-	
+
+	if (!gBLE) return;
+
 	switch(event) {
 		case ESP_GATTS_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
@@ -689,7 +787,7 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 		case ESP_GATTS_CONNECT_EVT:
 			if (gBLE->mitm)
     			esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
-    		else if (gBLE->encryption) 
+    		else if (gBLE->encryption)
     			esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT);
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->connect, sizeof(struct gatts_connect_evt_param), gattsConnectEvent, NULL);
 			break;
@@ -701,12 +799,16 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			break;
 		case ESP_GATTS_WRITE_EVT:
 			value = c_malloc(param->write.len);
-			if (NULL == value) {
+			if ((NULL == value) && param->write.len) {
+#if LOG_GATTS
+				LOG_GATTS_MSG("ESP_GATTS_WRITE_EVT failed value malloc");
+#endif
 				if (param->write.need_rsp)
 					esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_ERROR, NULL);
 			}
 			else {
-				c_memmove(value, param->write.value, param->write.len);
+				if (param->write.len)
+					c_memmove(value, param->write.value, param->write.len);
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gatts_write_evt_param), gattsWriteEvent, value);
 			}
 			break;

@@ -173,6 +173,7 @@ global.cursors = {
 	get resizeColumn() @ "PiuCursors_get_resizeColumn",
 	get resizeRow() @ "PiuCursors_get_resizeRow",
 };
+Object.freeze(global.cursors);
 
 global.system = {
 	get applicationPath() @ "PiuSystem_get_applicationPath",
@@ -228,6 +229,7 @@ global.system = {
 	getPathExtension(path) @ "PiuSystem_getPathExtension",
 	getPathName(path) @ "PiuSystem_getPathName",
 }
+Object.freeze(global.system);
 
 
 

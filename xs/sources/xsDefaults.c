@@ -53,6 +53,11 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxTerminateSharedCluster,
 	fxNewFunctionLength,
 	fxNewFunctionName,
+	fxRunImport,
+	fxDefinePrivateProperty,
+	fxGetPrivateProperty,
+	fxSetPrivateProperty,
+	fxCleanupFinalizationGroups,
 };
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
@@ -99,6 +104,7 @@ const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {
 const txTypeBigInt ICACHE_FLASH_ATTR gxTypeBigInt = {
 	fxBigIntCompare,
 	fxBigIntDecode,
+	fxBigintToArrayBuffer,
 	fxBigIntToInstance,
 	fxBigIntToNumber,
 	fxBigintToString,

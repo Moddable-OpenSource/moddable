@@ -11,10 +11,12 @@
 	"platforms": {
 		"esp": {},
 		"esp32": {},
+		"lin": {},
+		"qca4020": {},
 		"mac": {},
 		"win": {},
 		"...": {
-			"error": "Net unsupported"
+			"error": "Net module unsupported"
 		}
 	}
 }

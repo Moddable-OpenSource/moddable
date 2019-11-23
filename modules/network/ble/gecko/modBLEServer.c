@@ -19,8 +19,9 @@
  */
 
 #include "xsmc.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 #include "modBLE.h"
 #include "modTimer.h"
 
@@ -37,12 +38,12 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	uint8_t iocap;
 
 	modTimer timer;
 	int8_t connection;
 	bd_addr address;
 	uint8_t bond;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -98,8 +99,12 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+	modBLE ble = gBLE;
+	if (!ble) return;
+
+	gBLE = NULL;
+	xsForget(ble->obj);
+	xs_ble_server_destructor(ble);
 }
 
 void xs_ble_server_destructor(void *data)
@@ -107,7 +112,6 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	ble->terminating = true;
 	if (-1 != ble->connection)
 		gecko_cmd_le_connection_close(ble->connection);
 	modTimerRemove(ble->timer);
@@ -176,16 +180,24 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t encryption = xsmcToBoolean(xsArg(0));
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
-	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint8_t iocap = xsmcToInteger(xsArg(3));
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
+	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
 
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+//	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint32_t passkey = xsmcToInteger(xsArg(1));
+	gecko_cmd_sm_enter_passkey(gBLE->connection, passkey);
 }
 
 void xs_ble_server_passkey_reply(xsMachine *the)
@@ -194,6 +206,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
 
 	gecko_cmd_sm_passkey_confirm(gBLE->connection, confirm);
+}
+
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
 }
 
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
@@ -389,9 +406,13 @@ static void smPasskeyRequestEvent(struct gecko_msg_sm_passkey_request_evt_t *evt
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), gBLE->address.addr, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
-	passkey = xsmcToInteger(xsResult);
-	gecko_cmd_sm_enter_passkey(evt->connection, passkey);
+	if (gBLE->iocap == KeyboardOnly)
+		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	else {
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		passkey = xsmcToInteger(xsResult);
+		gecko_cmd_sm_enter_passkey(evt->connection, passkey);
+	}
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -430,7 +451,7 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:

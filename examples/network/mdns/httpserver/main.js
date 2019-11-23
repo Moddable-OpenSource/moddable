@@ -31,7 +31,7 @@ import Net from "net"
 let hostName = "example";		// the hostName to claim. updated by callback to actual name claimed.
 
 new MDNS({hostName}, function(message, value) {
-	if (1 === message)
+	if (MDNS.hostName === message)
 		hostName = value;
 });
 

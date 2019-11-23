@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,19 +19,7 @@
  */
 
 #include "xsmc.h"
-
-#ifdef __ets__
-	#include "xsesp.h"
-#elif defined(__ZEPHYR__)
-	#include "xsPlatform.h"
-	#include "modTimer.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#else
-	#include "xslinux.h"
-	#include "xsPlatform.h"
-#endif
+#include "xsHost.h"
 
 #include "commodettoBitmap.h"
 #include "commodettoPocoBlit.h"
@@ -72,6 +60,15 @@
 #else
 	#define MODDEF_ILI9341_BACKLIGHT_OFF (1)
 #endif
+#ifndef MODDEF_ILI9341_SPI_PORT
+	#define MODDEF_ILI9341_SPI_PORT NULL
+#endif
+#ifndef MODDEF_ILI9341_COLUMN_OFFSET
+	#define MODDEF_ILI9341_COLUMN_OFFSET 0
+#endif
+#ifndef MODDEF_ILI9341_ROW_OFFSET
+	#define MODDEF_ILI9341_ROW_OFFSET 0
+#endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
 	#define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
@@ -79,6 +76,7 @@
 	#define SCREEN_CS_INIT		modGPIOInit(&sd->cs, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput); \
 			SCREEN_CS_DEACTIVE
 #else
+	#define MODDEF_ILI9341_CS_PIN	NULL
 	#define SCREEN_CS_ACTIVE
 	#define SCREEN_CS_DEACTIVE
 	#define SCREEN_CS_INIT
@@ -110,13 +108,15 @@ typedef struct {
 #endif
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOConfigurationRecord	backlight;
-	uint8_t						backlightOn;
 #endif
+	uint8_t						firstFrame;
+	uint8_t						memoryAccessControl;	// register 36h initialization value
+	uint8_t						rotation;				// 0, 1, 2, 3 => 0, 90, 180, 270
 } spiDisplayRecord, *spiDisplay;
 
 static void ili9341ChipSelect(uint8_t active, modSPIConfiguration config);
 
-static void ili9341Init(spiDisplay sd);
+/* static */ void ili9341Init(spiDisplay sd);
 static void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count);
 
 static void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
@@ -203,7 +203,7 @@ void xs_ILI9341(xsMachine *the)
 	xsmcSetHostData(xsThis, sd);
 
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
-			MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, ili9341ChipSelect);
+			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
@@ -287,12 +287,14 @@ void xs_ILI9341_get_pixelFormat(xsMachine *the)
 
 void xs_ILI9341_get_width(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_ILI9341_WIDTH);
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_ILI9341_HEIGHT : MODDEF_ILI9341_WIDTH);
 }
 
 void xs_ILI9341_get_height(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_ILI9341_HEIGHT);
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_ILI9341_WIDTH : MODDEF_ILI9341_HEIGHT);
 }
 
 void xs_ILI9341_get_clut(xsMachine *the)
@@ -323,46 +325,72 @@ void xs_ILI9341_get_c_dispatch(xsMachine *the)
 	xsResult = xsThis;
 }
 
+void xs_ILI9341_get_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, sd->rotation * 90);
+}
+
+void xs_ILI9341_set_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	int32_t rotation = xsmcToInteger(xsArg(0));
+	uint8_t value;
+	static const uint8_t masks[] ICACHE_RODATA_ATTR = {0x00, 0x60, 0xc0, 0xa0};
+	if ((0 != rotation) && (90 != rotation) && (180 != rotation) && (270 != rotation))
+		xsRangeError("invalid rotation");
+
+	sd->rotation = (uint8_t)(rotation / 90);
+	value = sd->memoryAccessControl ^ c_read8(masks + sd->rotation);
+	ili9341Command(sd, 0x36, &value, 1);
+}
+
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 // caller provides little-endian pixels, convert to big-endian for display
 void ili9341Send_16LE(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxSwap16(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxSwap16(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
 // caller provides big-endian pixels, transfer directly to display
 void ili9341Send_16BE(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITx(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITx(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapGray256
 // caller provides 8-bit gray pixels, convert for  display
 void ili9341Send_Gray256(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxGray256To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxGray256To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapRGB332
 // caller provides 332 RGB pixels, convert for  display
 void ili9341Send_RGB332(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxRGB332To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxRGB332To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapGray16
 // caller provides 4-bit gray pixels, convert for  display
 void ili9341Send_Gray16(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
-	modSPITxGray16To16BE(&sd->spiConfig, (void *)pixels, byteLength);
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
+	modSPITxGray16To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength);
 }
 #elif kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 // caller provides 4-bit CLUT pixels, convert for  display
 void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
+	modSPISetSync(&sd->spiConfig, byteLength > 0);
 	modSPITxCLUT16To16BE(&sd->spiConfig, (void *)pixels, byteLength, (uint16_t *)(sd->clut + ((16 * 16 * 16) + (16 * 2))));
 }
 #endif
@@ -370,10 +398,11 @@ void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count)
 {
 	modSPIFlush();
-   	SCREEN_DC_COMMAND;
+	modSPIActivateConfiguration(NULL);
+	SCREEN_DC_COMMAND;
    	modSPITxRx(&sd->spiConfig, &command, 1);		// could use modSPITx, but modSPITxRx is synchronous and callers rely on that
-
-    if (count) {
+	   
+	if (count) {
     	SCREEN_DC_DATA;
         modSPITxRx(&sd->spiConfig, (uint8_t *)data, count);
     }
@@ -403,8 +432,6 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	0xE1, 15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F,
 
 #define kILI9341RegistersModdableZero_Finish \
-	0x11, 0, \
-	0x29, 0, \
 	kDelayMS, 0
 
 
@@ -440,7 +467,6 @@ void ili9341Init(spiDisplay sd)
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
 	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);
-	sd->backlightOn = 0;		// start off in case there's garbage in frame buffer
 #endif
 
 	cmds = gInit;
@@ -453,6 +479,8 @@ void ili9341Init(spiDisplay sd)
 			modDelayMilliseconds(ms);
 		}
 		else {
+			if (0x36 == cmd)
+				sd->memoryAccessControl = c_read8(cmds + 1);
 			uint8_t count = c_read8(cmds++);
 			if (count)
 				c_memcpy(data, cmds, count);
@@ -460,6 +488,8 @@ void ili9341Init(spiDisplay sd)
 			cmds += count;
 		}
 	}
+
+	sd->firstFrame = true;
 }
 
 void ili9341ChipSelect(uint8_t active, modSPIConfiguration config)
@@ -478,8 +508,8 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	uint8_t data[4];
 	uint16_t xMin, xMax, yMin, yMax;
 
-	xMin = x;
-	yMin = y;
+	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
+	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 
@@ -502,14 +532,18 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 void ili9341End(void *refcon)
 {
-#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	spiDisplay sd = refcon;
 
-	if (!sd->backlightOn) {
+	if (sd->firstFrame) {
+		sd->firstFrame = false;
+
+		ili9341Command(sd, 0x11, NULL, 0);
+		ili9341Command(sd, 0x29, NULL, 0);
+
+#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 		modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_ON);
-		sd->backlightOn = 1;
-	}
 #endif
+	}
 }
 
 void ili9341AdaptInvalid(void *refcon, CommodettoRectangle invalid)

@@ -85,7 +85,7 @@ static void fxReviveJSON(txMachine* the, txSlot* reviver, txSlot* holder);
 
 static void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier);
 static void fxStringifyJSONChar(txMachine* the, txJSONStringifier* theStringifier, char c);
-static void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s);
+static void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s, txSize theSize);
 static void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier);
 static void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, txInteger theInteger);
 static void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag);
@@ -104,11 +104,7 @@ void fxBuildJSON(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_parse), 2, mxID(_parse), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_stringify), 3, mxID(_stringify), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "JSON", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_JSON), XS_NO_ID, XS_OWN);
-	slot->flag = XS_DONT_ENUM_FLAG;
-	slot->kind = the->stack->kind;
-	slot->value = the->stack->value;
-	the->stack++;
+	mxPull(mxJSONObject);
 }
 
 void fx_JSON_parse(txMachine* the)
@@ -119,7 +115,7 @@ void fx_JSON_parse(txMachine* the)
 			mxSyntaxError("no buffer");
 		aParser = c_malloc(sizeof(txJSONParser));
 		if (NULL == aParser)
-			mxUnknownError("out of memory");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		c_memset((txJSONParser*)aParser, 0, sizeof(txJSONParser));
 		if ((mxArgc > 1) && mxIsReference(mxArgv(1)) && fxIsArray(the, mxArgv(1)->value.reference))
 			aParser->keys = fxToJSONKeys(the, mxArgv(1));
@@ -285,7 +281,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			theParser->number = fxStringToNumber(the->dtoa, the->nameBuffer, 0);
 			theParser->integer = (txInteger)theParser->number;
 			number = theParser->integer;
-			if (theParser->number == number)
+			if ((theParser->number == number) && (theParser->number != -0))
 				theParser->token = XS_JSON_TOKEN_INTEGER;
 			else
 				theParser->token = XS_JSON_TOKEN_NUMBER;
@@ -581,17 +577,15 @@ void fxReviveJSON(txMachine* the, txSlot* reviver, txSlot* holder)
 			index = 0;
 			while (index < length) {
 				mxPushUndefined();
-				fxKeyAt(the, XS_NO_ID, index, the->stack);
+				fxKeyAt(the, 0, index, the->stack);
 				mxPushSlot(reference);
-				fxGetIndex(the, index);
+				fxGetAll(the, 0, index);
 				fxReviveJSON(the, reviver, instance);
 				if (mxIsUndefined(the->stack)) {
-					mxPushSlot(reference);
-					fxDeleteIndex(the, index);
+					mxBehaviorDeleteProperty(the, reference->value.reference, 0, index);
 				}
 				else {
-					mxPushSlot(reference);
-					fxSetIndex(the, index);
+					mxBehaviorDefineOwnProperty(the, reference->value.reference, 0, index, the->stack, XS_GET_ONLY);
 				}
 				mxPop();
 				index++;
@@ -607,12 +601,10 @@ void fxReviveJSON(txMachine* the, txSlot* reviver, txSlot* holder)
 				fxGetAll(the, at->value.at.id, at->value.at.index);
 				fxReviveJSON(the, reviver, instance);
 				if (mxIsUndefined(the->stack)) {
-					mxPushSlot(reference);
-					fxDeleteAll(the, at->value.at.id, at->value.at.index);
+					mxBehaviorDeleteProperty(the, reference->value.reference, at->value.at.id, at->value.at.index);
 				}
 				else {
-					mxPushSlot(reference);
-					fxSetAll(the, at->value.at.id, at->value.at.index);
+					mxBehaviorDefineOwnProperty(the, reference->value.reference, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
 				}
 				mxPop();
 			}
@@ -650,30 +642,34 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 {
 	txSlot* aSlot;
 	txInteger aFlag;
+	txSlot* instance;
 	
 	aSlot = fxGetInstance(the, mxThis);
 	theStringifier->offset = 0;
 	theStringifier->size = 1024;
 	theStringifier->buffer = c_malloc(1024);
 	if (!theStringifier->buffer)
-		mxUnknownError("out of memory");
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	if (mxArgc > 1) {
 		aSlot = mxArgv(1);
 		if (mxIsReference(aSlot)) {
-			aSlot = fxGetInstance(the, aSlot);
-			if (mxIsCallable(aSlot))
+			if (fxIsCallable(the, aSlot))
 				theStringifier->replacer = mxArgv(1);
-			else if (fxIsArray(the, aSlot))
-				theStringifier->keys = fxToJSONKeys(the, mxArgv(1));
+			else if (fxIsArray(the, fxGetInstance(the, aSlot)))
+				theStringifier->keys = fxToJSONKeys(the, aSlot);
 		}
 	}
 	if (mxArgc > 2) {
 		aSlot = mxArgv(2);
 		if (mxIsReference(aSlot)) {
-			aSlot = fxGetInstance(the, aSlot);
-			if (mxIsNumber(aSlot) || mxIsString(aSlot))
-				aSlot = aSlot->next;
+			txSlot* instance = fxGetInstance(the, aSlot);
+			if (mxIsNumber(instance)) {
+				fxToNumber(the, aSlot);
+			}
+			else if (mxIsString(instance)) {
+				fxToString(the, aSlot);
+			}
 		}
 		if ((aSlot->kind == XS_INTEGER_KIND) || (aSlot->kind == XS_NUMBER_KIND)) {
 			txInteger aCount = fxToInteger(the, aSlot), anIndex;
@@ -690,12 +686,13 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 
 	theStringifier->stack = the->stack;
 	mxPush(mxObjectPrototype);
-	fxNewObjectInstance(the);
+	instance = fxNewObjectInstance(the);
 	aFlag = 0;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
+	fxNextSlotProperty(the, instance, the->stack, mxID(__empty_string_), XS_NO_FLAG);
 	mxPush(mxEmptyString);
 	fxStringifyJSONProperty(the, theStringifier, &aFlag);
 	the->stack++;
@@ -716,20 +713,21 @@ void fxStringifyJSONChar(txMachine* the, txJSONStringifier* theStringifier, char
 	theStringifier->offset++;
 }
 
-void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s)
+void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s, txSize theSize)
 {
     //fprintf(stderr, "%s", s);
-	txSize aSize = c_strlen(s);
-	if ((theStringifier->offset + aSize) >= theStringifier->size) {
+    if (!theSize)
+    	theSize = c_strlen(s);
+	if ((theStringifier->offset + theSize) >= theStringifier->size) {
 		char* aBuffer;
-		theStringifier->size += ((aSize / 1024) + 1) * 1024;
+		theStringifier->size += ((theSize / 1024) + 1) * 1024;
 		aBuffer = c_realloc(theStringifier->buffer, theStringifier->size);
 		if (!aBuffer)
 			mxUnknownError("out of memory");
 		theStringifier->buffer = aBuffer;
 	}
-	c_memcpy(theStringifier->buffer + theStringifier->offset, s, aSize);
-	theStringifier->offset += aSize;
+	c_memcpy(theStringifier->buffer + theStringifier->offset, s, theSize);
+	theStringifier->offset += theSize;
 }
 
 void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier)
@@ -738,7 +736,7 @@ void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier)
 	if (theStringifier->indent[0]) {
 		fxStringifyJSONChar(the, theStringifier, '\n');
 		for (aLevel = 0; aLevel < theStringifier->level; aLevel++)
-			fxStringifyJSONChars(the, theStringifier, theStringifier->indent);
+			fxStringifyJSONChars(the, theStringifier, theStringifier->indent, 0);
 	}
 }
 
@@ -746,14 +744,14 @@ void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, t
 {
 	char aBuffer[256];
 	fxIntegerToString(the->dtoa, theInteger, aBuffer, sizeof(aBuffer));
-	fxStringifyJSONChars(the, theStringifier, aBuffer);
+	fxStringifyJSONChars(the, theStringifier, aBuffer, 0);
 }
 
 void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag)
 {
 	txSlot* aSlot = the->stack;
 	if (*theFlag & 1) {
-		fxStringifyJSONChars(the, theStringifier, ",");
+		fxStringifyJSONChar(the, theStringifier, ',');
 		fxStringifyJSONIndent(the, theStringifier);
 	}
 	else
@@ -766,7 +764,9 @@ void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txIn
 		}
 		else
 			fxStringifyJSONString(the, theStringifier, aSlot->value.string);
-		fxStringifyJSONChars(the, theStringifier, ":");
+		fxStringifyJSONChar(the, theStringifier, ':');
+		if (theStringifier->indent[0])
+			fxStringifyJSONChar(the, theStringifier, ' ');
 	}
 	the->stack++; // POP KEY
 }
@@ -777,10 +777,10 @@ void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, tx
 	if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE)) {
 		char aBuffer[256];
 		fxNumberToString(the->dtoa, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
-		fxStringifyJSONChars(the, theStringifier, aBuffer);
+		fxStringifyJSONChars(the, theStringifier, aBuffer, 0);
 	}
 	else
-		fxStringifyJSONChars(the, theStringifier, "null");
+		fxStringifyJSONChars(the, theStringifier, "null", 0);
 }
 
 void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag)
@@ -789,22 +789,19 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	txSlot* aValue = the->stack + 1;
 	txSlot* aKey = the->stack;
 	txSlot* anInstance;
+	txSlot* aSlot;
 	txInteger aFlag;
 	txIndex aLength, anIndex;
 	
 	if (mxIsReference(aValue) || mxIsBigInt(aValue)) {
-		mxPushSlot(aValue);
-		anInstance = the->stack;
-		fxToInstance(the, the->stack);
-		if (anInstance->flag & XS_LEVEL_FLAG)
-			mxTypeError("cyclic value");
 		mxPushSlot(aKey);
+		fxToString(the, the->stack);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
-		mxPushSlot(anInstance);
+		mxPushSlot(aValue);
 		/* FUNCTION */
-		mxPushSlot(anInstance);
+		mxPushSlot(aValue);
 		fxGetID(the, mxID(_toJSON));
 		if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))  {
 			fxCall(the);
@@ -812,10 +809,9 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 		}
 		the->stack = aKey;
 	}
-	else
-		anInstance = C_NULL;
 	if (theStringifier->replacer) {
 		mxPushSlot(aKey);
+		fxToString(the, the->stack);
 		mxPushSlot(aValue);
 		/* COUNT */
 		mxPushInteger(2);
@@ -825,152 +821,175 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 		mxPushSlot(theStringifier->replacer);
 		fxCall(the);
 		mxPullSlot(aValue);
+		the->stack = aKey;
 	}
-again:
-	switch (aValue->kind) {
-	case XS_NULL_KIND:
+	if (mxIsReference(aValue)) {
+		mxPushSlot(aValue);
+		anInstance = fxToInstance(the, the->stack);
+		if (anInstance->flag & XS_LEVEL_FLAG)
+			mxTypeError("cyclic value");
+		the->stack = aKey;
+		aSlot = anInstance->next;
+		if (aSlot && (aSlot->flag & XS_INTERNAL_FLAG)) {
+			if ((aSlot->kind == XS_INTEGER_KIND) || (aSlot->kind == XS_NUMBER_KIND)) {
+				fxToNumber(the, aValue);
+			}
+			else if (mxIsStringPrimitive(aSlot)) {
+				fxToString(the, aValue);
+			}
+			else if ((aSlot->kind == XS_BOOLEAN_KIND) || (aSlot->kind == XS_BIGINT_KIND) || (aSlot->kind == XS_BIGINT_X_KIND)) {
+				aValue->kind = aSlot->kind;
+				aValue->value = aSlot->value;
+			}
+		}
+	}
+	if (aValue->kind == XS_NULL_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
-		fxStringifyJSONChars(the, theStringifier, "null");
-		break;
-	case XS_BOOLEAN_KIND:
+		fxStringifyJSONChars(the, theStringifier, "null", 0);
+	}
+	else if (aValue->kind == XS_BOOLEAN_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
-		fxStringifyJSONChars(the, theStringifier, aValue->value.boolean ? "true" : "false");
-		break;
-	case XS_INTEGER_KIND:
+		fxStringifyJSONChars(the, theStringifier, aValue->value.boolean ? "true" : "false", 0);
+	}
+	else if (aValue->kind == XS_INTEGER_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
 		fxStringifyJSONInteger(the, theStringifier, aValue->value.integer);
-		break;
-	case XS_NUMBER_KIND:
+	}
+	else if (aValue->kind == XS_NUMBER_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
 		fxStringifyJSONNumber(the, theStringifier, aValue->value.number);
-		break;
-	case XS_STRING_KIND:
-	case XS_STRING_X_KIND:
+	}
+	else if ((aValue->kind == XS_STRING_KIND) || (aValue->kind == XS_STRING_X_KIND)) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
 		fxStringifyJSONString(the, theStringifier, aValue->value.string);
-		break;
-	case XS_BIGINT_KIND:
-	case XS_BIGINT_X_KIND:
+	}
+	else if ((aValue->kind == XS_BIGINT_KIND) || (aValue->kind == XS_BIGINT_X_KIND)) {
 		mxTypeError("stringify bigint");
-		break;
-	case XS_REFERENCE_KIND:
-		anInstance = fxGetInstance(the, aValue);
-		aValue = anInstance->next;
-		if (aValue && (aValue->flag & XS_INTERNAL_FLAG) && (aValue->kind != XS_PROXY_KIND)) {
-			goto again;
-		}
-		fxStringifyJSONName(the, theStringifier, theFlag);
-		{
-			mxTry(the) {
-				anInstance->flag |= XS_LEVEL_FLAG;
-				if (fxIsArray(the, anInstance)) {
-					fxStringifyJSONChar(the, theStringifier, '[');
-					theStringifier->level++;
-					fxStringifyJSONIndent(the, theStringifier);
-					aFlag = 4;
+	}
+	else if ((aValue->kind == XS_REFERENCE_KIND) && !fxIsCallable(the, aValue)) {
+		mxTry(the) {
+			fxStringifyJSONName(the, theStringifier, theFlag);
+			anInstance->flag |= XS_LEVEL_FLAG;
+			if (fxIsArray(the, anInstance)) {
+				fxStringifyJSONChar(the, theStringifier, '[');
+				theStringifier->level++;
+				fxStringifyJSONIndent(the, theStringifier);
+				aFlag = 4;
+				mxPushReference(anInstance);
+				fxGetID(the, mxID(_length));
+				aLength = fxToInteger(the, the->stack);
+				mxPop();
+				for (anIndex = 0; anIndex < aLength; anIndex++) {
 					mxPushReference(anInstance);
-					fxGetID(the, mxID(_length));
-					aLength = fxToInteger(the, the->stack);
-					mxPop();
-					for (anIndex = 0; anIndex < aLength; anIndex++) {
-						mxPushReference(anInstance);
-						fxGetID(the, anIndex);
-						mxPushInteger(anIndex);
-						fxStringifyJSONProperty(the, theStringifier, &aFlag);
-					}
-					theStringifier->level--;
-					fxStringifyJSONIndent(the, theStringifier);
-					fxStringifyJSONChar(the, theStringifier, ']');
+					fxGetID(the, anIndex);
+					mxPushInteger(anIndex);
+					fxStringifyJSONProperty(the, theStringifier, &aFlag);
 				}
-				else {
-					fxStringifyJSONChar(the, theStringifier, '{');
-					theStringifier->level++;
-					fxStringifyJSONIndent(the, theStringifier);
-					aFlag = 2;
-					{
-						txSlot* at;
-						txSlot* property;
+				theStringifier->level--;
+				fxStringifyJSONIndent(the, theStringifier);
+				fxStringifyJSONChar(the, theStringifier, ']');
+			}
+			else {
+				fxStringifyJSONChar(the, theStringifier, '{');
+				theStringifier->level++;
+				fxStringifyJSONIndent(the, theStringifier);
+				aFlag = 2;
+				{
+					txSlot* at;
+					txSlot* property;
+					if (theStringifier->keys) {
+						mxPushUndefined();
+						at = theStringifier->keys->value.reference;
+					}
+					else {
 						at = fxNewInstance(the);
 						mxBehaviorOwnKeys(the, anInstance, XS_EACH_NAME_FLAG, at);
-						mxPushUndefined();
-						property = the->stack;
-						while ((at = at->next)) {
-							if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
-								mxPushReference(anInstance);
-								fxGetAll(the, at->value.at.id, at->value.at.index);
-								if (at->value.at.id) {
-									txSlot* key = fxGetKey(the, at->value.at.id);
-									mxPushString(key->value.key.string);
-								}
-								else
-									mxPushInteger((txInteger)at->value.at.index);
-								fxStringifyJSONProperty(the, theStringifier, &aFlag);
-							}
-						}
-						mxPop();
-						mxPop();
 					}
-					theStringifier->level--;
-					fxStringifyJSONIndent(the, theStringifier);
-					fxStringifyJSONChar(the, theStringifier, '}');
+					mxPushUndefined();
+					property = the->stack;
+					mxPushReference(anInstance);
+					while ((at = at->next)) {
+						if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+							mxPushReference(anInstance);
+							fxGetAll(the, at->value.at.id, at->value.at.index);
+							if (at->value.at.id) {
+								txSlot* key = fxGetKey(the, at->value.at.id);
+								if (mxGetKeySlotKind(key) == XS_KEY_KIND)
+									mxPushString(key->value.key.string);
+								else
+									mxPushStringX(key->value.key.string);
+							}
+							else
+								mxPushInteger((txInteger)at->value.at.index);
+							fxStringifyJSONProperty(the, theStringifier, &aFlag);
+						}
+					}
+					mxPop();
+					mxPop();
+					mxPop();
 				}
-				anInstance->flag &= ~XS_LEVEL_FLAG;
+				theStringifier->level--;
+				fxStringifyJSONIndent(the, theStringifier);
+				fxStringifyJSONChar(the, theStringifier, '}');
 			}
-			mxCatch(the) {
-				anInstance->flag &= ~XS_LEVEL_FLAG;
-				fxJump(the);
-			}
+			anInstance->flag &= ~XS_LEVEL_FLAG;
 		}
-		break;
-	default:
+		mxCatch(the) {
+			anInstance->flag &= ~XS_LEVEL_FLAG;
+			fxJump(the);
+		}
+	}
+	else {
 		if (*theFlag & 4) {
 			if (*theFlag & 1) {
-				fxStringifyJSONChars(the, theStringifier, ",");
+				fxStringifyJSONChar(the, theStringifier, ',');
 				fxStringifyJSONIndent(the, theStringifier);
 			}
 			else
 				*theFlag |= 1;
-			fxStringifyJSONChars(the, theStringifier, "null");
+			fxStringifyJSONChars(the, theStringifier, "null", 0);
 		}
-		break;
 	}
 	the->stack++; // POP VALUE
 }
 
 void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, txString theString)
 {
-	txString string = theString;
+	txString string;
 	txInteger character;	
 	fxStringifyJSONChar(the, theStringifier, '"');
-	while (((string = fxUTF8Decode(string, &character))) && (character != C_EOF)) {
+	while (((string = fxUTF8Decode(theString, &character))) && (character != C_EOF)) {
 		if (character < 8)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else if (character == 8)
-			fxStringifyJSONChars(the, theStringifier, "\\b"); 
+			fxStringifyJSONChars(the, theStringifier, "\\b", 0); 
 		else if (character == 9)
-			fxStringifyJSONChars(the, theStringifier, "\\t"); 
+			fxStringifyJSONChars(the, theStringifier, "\\t", 0); 
 		else if (character == 10)
-			fxStringifyJSONChars(the, theStringifier, "\\n"); 
+			fxStringifyJSONChars(the, theStringifier, "\\n", 0); 
 		else if (character == 11)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character); 
 		else if (character == 12)
-			fxStringifyJSONChars(the, theStringifier, "\\f");
+			fxStringifyJSONChars(the, theStringifier, "\\f", 0);
 		else if (character == 13)
-			fxStringifyJSONChars(the, theStringifier, "\\r");
+			fxStringifyJSONChars(the, theStringifier, "\\r", 0);
 		else if (character < 32)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else if (character < 34)
 			fxStringifyJSONChar(the, theStringifier, (char)character);
 		else if (character == 34)
-			fxStringifyJSONChars(the, theStringifier, "\\\"");
+			fxStringifyJSONChars(the, theStringifier, "\\\"", 0);
 		else if (character < 92)
 			fxStringifyJSONChar(the, theStringifier, (char)character);
 		else if (character == 92)
-			fxStringifyJSONChars(the, theStringifier, "\\\\");
+			fxStringifyJSONChars(the, theStringifier, "\\\\", 0);
 		else if (character < 127)
 			fxStringifyJSONChar(the, theStringifier, (char)character);
-		else
+		else if ((0xD800 <= character) && (character <= 0xDFFF))
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
+		else
+			fxStringifyJSONChars(the, theStringifier, theString, string - theString);
+		theString = string;
 	}
 	fxStringifyJSONChar(the, theStringifier, '"');
 }
@@ -982,8 +1001,7 @@ void fxStringifyJSONUnicodeEscape(txMachine* the, txJSONStringifier* theStringif
 	*p++ = '\\'; 
 	*p++ = 'u'; 
 	p = fxStringifyUnicodeEscape(p, character, '\\');
-	*p = 0;
-	fxStringifyJSONChars(the, theStringifier, buffer);
+	fxStringifyJSONChars(the, theStringifier, buffer, p - buffer);
 }
 
 txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
@@ -1015,24 +1033,42 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 					id = fxNewName(the, slot);
 			}
 		}
-		else if ((slot->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, slot->value.integer, &index)) {
-			id = 0;
+		else if (slot->kind == XS_INTEGER_KIND) {
+			if (fxIntegerToIndex(the->dtoa, slot->value.integer, &index))
+				id = 0;
+			else {
+				fxToString(the, slot);
+				goto again;
+			}
 		}
-		else if ((slot->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, slot->value.number, &index)) {
-			id = 0;
+		else if (slot->kind == XS_NUMBER_KIND){
+			if (fxNumberToIndex(the->dtoa, slot->value.number, &index))
+				id = 0;
+			else {
+				fxToString(the, slot);
+				goto again;
+			}
 		}
 		else if (slot->kind == XS_REFERENCE_KIND) {
 			txSlot* instance = slot->value.reference;
 			if (mxIsNumber(instance) || mxIsString(instance)) {
-				slot = instance->next;
+				fxToString(the, slot);
 				goto again;
 			}
 		}
 		if (id != XS_NO_ID) {
-			item = item->next = fxNewSlot(the);
-			item->value.at.id = id;
-			item->value.at.index = index;
-			item->kind = XS_AT_KIND;
+			txSlot* already = list->next;
+			while (already) {
+				if ((already->value.at.id == id) && (already->value.at.index == index))
+					break;
+				already = already->next;
+			}
+			if (!already) {
+				item = item->next = fxNewSlot(the);
+				item->value.at.id = id;
+				item->value.at.index = index;
+				item->kind = XS_AT_KIND;
+			}
 		}
 		mxPop();
 		i++;

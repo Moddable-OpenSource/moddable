@@ -25,8 +25,6 @@ import BLEClient from "bleclient";
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
 
-const AMS_UUID = uuid`89D3502B-0F36-433A-8EF4-C502AD55F8DC`;
-
 const EntityID = {
 	Player: 0,
 	Queue: 1,
@@ -106,6 +104,7 @@ class AMSAuthenticator extends BLEServer {
 	constructor(client) {
 		super();
 		this.client = client;
+		this.AMS_UUID = uuid`89D3502B-0F36-433A-8EF4-C502AD55F8DC`;
 	}
 	onReady() {
 		this.deviceName = "Moddable";
@@ -121,7 +120,7 @@ class AMSAuthenticator extends BLEServer {
 	}
 	onDisconnected() {
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, solicitationUUID128List: [AMS_UUID]}
+			advertisingData: {flags: 6, completeName: this.deviceName, solicitationUUID128List: [this.AMS_UUID]}
 		});
 	}
 }
@@ -134,6 +133,7 @@ class AMSClient extends BLEClient {
 		this._supportedRemoteCommands = new Uint8Array;
 	}
 	onReady() {
+		this.AMS_UUID = uuid`89D3502B-0F36-433A-8EF4-C502AD55F8DC`;
 		this.REMOTE_COMMAND_CHARACTERISTIC_UUID = uuid`9B3C81D8-57B1-4A8A-B8DF-0E56F7CA51C2`;
 		this.ENTITY_UPDATE_CHARACTERISTIC_UUID = uuid`2F7CABCE-808D-411F-9A0C-BB92BA96C102`;
 		this.ENTITY_ATTRIBUTE_CHARACTERISTIC_UUID = uuid`C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7`;
@@ -143,7 +143,7 @@ class AMSClient extends BLEClient {
 		this.connect(this.device);
 	}
 	onConnected(device) {
-		device.discoverPrimaryService(AMS_UUID);
+		device.discoverPrimaryService(this.AMS_UUID);
 	}
 	onServices(services) {
 		if (services.length)

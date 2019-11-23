@@ -33,15 +33,12 @@
 
 #include "xsmc.h"
 
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modSPI.h"
 #include "modI2C.h"
 #include "modGPIO.h"
-#include "stdlib.h"
 #include "mc.defines.h"
 
-#include <ets_sys.h>
-#include <osapi.h>
 #include "mc.xs.h"			// for xsID_ values
 
 #ifndef MODDEF_ARDUCAM_HZ
@@ -174,20 +171,20 @@ void xs_arducam(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_format);
 	format = xsmcToString(xsVar(0));
 
-	if (0 == espStrCmp(format, "rgb565be")) {
+	if (0 == c_strcmp(format, "rgb565be")) {
 		if ((320 != width) || (240 != height))
 			xsUnknownError("unsupported dimensions");
 
 		writeRegistersI2C_8(ac, OV2640_QVGA);
 	}
-	else if (0 == espStrCmp(format, "rgb565le")) {
+	else if (0 == c_strcmp(format, "rgb565le")) {
 		if ((320 != width) || (240 != height))
 			xsUnknownError("unsupported dimensions");
 
 		writeRegistersI2C_8(ac, OV2640_QVGA);
 		ac->swap16 = 1;
 	}
-	else if (0 == espStrCmp(format, "jpeg")) {
+	else if (0 == c_strcmp(format, "jpeg")) {
 		// configure JPEG mode
 		writeRegistersI2C_8(ac, OV2640_JPEG_INIT);
 		writeRegistersI2C_8(ac, OV2640_YUV422);
@@ -221,6 +218,7 @@ void xs_arducam(xsMachine *the)
 	*/
 
 	modGPIOInit(&ac->csPin, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput);
+	arducamChipSelect(false, ac);
 
 	modSPIInit(&ac->spiConfig);
 
@@ -391,8 +389,8 @@ void writeRegisterI2C_8(ArduCAM ac, uint8_t reg, uint8_t value)
 
 void writeRegistersI2C_8(ArduCAM ac, const struct sensor_reg8 *pairs)
 {
-	while ((255 != espRead8(&pairs->reg)) | (255 != espRead8(&pairs->value))) {
-		writeRegisterI2C_8(ac, espRead8(&pairs->reg), espRead8(&pairs->value));
+	while ((255 != c_read8(&pairs->reg)) | (255 != c_read8(&pairs->value))) {
+		writeRegisterI2C_8(ac, c_read8(&pairs->reg), c_read8(&pairs->value));
 		pairs++;
 	}
 }

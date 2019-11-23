@@ -1,0 +1,35 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/contributed/serial/drivers/sim7100/manifest.json"
+	],
+	"creation": {
+		"static": 53000
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*"
+		],
+		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG"
+	},
+	"preload": [
+		"http",
+		"main"
+	],
+	"platforms": {
+		"esp32": {
+			"defines": {
+				"serial": {
+					"interface": { "UART": 2 },
+					"baud": 115200,
+					"config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
+					"tx_pin": 17,
+					"rx_pin": 16
+				}
+			}
+		}
+	}
+}

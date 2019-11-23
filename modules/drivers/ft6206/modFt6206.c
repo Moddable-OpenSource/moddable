@@ -57,6 +57,12 @@
 #ifndef MODDEF_FT6206_SCL
     #define MODDEF_FT6206_SCL -1
 #endif
+#ifndef MODDEF_FT6206_DX
+    #define MODDEF_FT6206_DX 0
+#endif
+#ifndef MODDEF_FT6206_DY
+    #define MODDEF_FT6206_DY 0
+#endif
 
 #define FT6206_REG_NUMTOUCHES 0x02
 #define FT6206_REG_THRESHHOLD 0x80
@@ -182,6 +188,22 @@ void xs_FT6202_read(xsMachine *the)
 			x = (x * MODDEF_FT6206_WIDTH) / 240;
 		if (320 != MODDEF_FT6206_HEIGHT)
 			y = (y * MODDEF_FT6206_HEIGHT) / 320;
+
+#if MODDEF_FT6206_DX
+		x += MODDEF_FT6206_DX;
+		if (x > (MODDEF_FT6206_WIDTH - 1))
+			x = (MODDEF_FT6206_WIDTH - 1);
+		else if (x < 0)
+			x = 0;
+#endif
+
+#if MODDEF_FT6206_DY
+		y += MODDEF_FT6206_DY;
+		if (y > (MODDEF_FT6206_HEIGHT - 1))
+			y = (MODDEF_FT6206_HEIGHT - 1);
+		else if (y < 0)
+			y = 0;
+#endif
 
 		// result
 		xsmcGet(xsVar(0), xsArg(0), id);

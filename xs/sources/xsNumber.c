@@ -42,16 +42,11 @@ static txSlot* fxCheckNumber(txMachine* the, txSlot* it);
 void fxBuildNumber(txMachine* the)
 {
 	txSlot* slot;
-	txSlot* property;
 	
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_Infinity), XS_NO_ID, XS_OWN);
-	slot->flag = XS_GET_ONLY;
-	slot->kind = XS_NUMBER_KIND;
-	slot->value.number = (txNumber)C_INFINITY;
-	slot = fxGlobalSetProperty(the, mxGlobal.value.reference, mxID(_NaN), XS_NO_ID, XS_OWN);
-	slot->flag = XS_GET_ONLY;
-	slot->kind = XS_NUMBER_KIND;
-	slot->value.number = C_NAN;
+	mxPushNumber((txNumber)C_INFINITY);
+	mxPull(mxInfinity);
+	mxPushNumber((txNumber)C_NAN);
+	mxPull(mxNaN);
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewNumberInstance(the));
@@ -62,15 +57,15 @@ void fxBuildNumber(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toString), 1, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	mxNumberPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Number), 1, mxID(_Number), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Number), 1, mxID(_Number));
+	mxNumberConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_isFinite), 1, mxID(_isFinite), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_isInteger), 1, mxID(_isInteger), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_isNaN), 1, mxID(_isNaN), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_isSafeInteger), 1, mxID(_isSafeInteger), XS_DONT_ENUM_FLAG);
-	property = mxBehaviorGetProperty(the, mxGlobal.value.reference, mxID(_parseFloat), XS_NO_ID, XS_OWN);
-	slot = fxNextSlotProperty(the, slot, property, mxID(_parseFloat), XS_DONT_ENUM_FLAG);
-	property = mxBehaviorGetProperty(the, mxGlobal.value.reference, mxID(_parseInt), XS_NO_ID, XS_OWN);
-	slot = fxNextSlotProperty(the, slot, property, mxID(_parseInt), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, &mxParseFloatFunction, mxID(_parseFloat), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, &mxParseIntFunction, mxID(_parseInt), XS_DONT_ENUM_FLAG);
 	slot = fxNextNumberProperty(the, slot, C_EPSILON, mxID(_EPSILON), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextNumberProperty(the, slot, C_MAX_SAFE_INTEGER, mxID(_MAX_SAFE_INTEGER), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextNumberProperty(the, slot, C_DBL_MAX, mxID(_MAX_VALUE), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);

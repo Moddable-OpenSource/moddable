@@ -32,5 +32,5 @@ CLI.install(function (command, params) {
 export default function() {
 	new Telnet({port: 2300});
 
-	trace("telnet ready\n");
+	trace("telnet ready on port 2300\n");
 }

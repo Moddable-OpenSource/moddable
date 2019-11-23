@@ -19,15 +19,19 @@
  */
 
 #include "xsmc.h"
-#ifdef gecko
-	#include "xsPlatform.h"
-	#include "xsgecko.h"
-#else
-	#include "xsesp.h"
-#endif
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "modI2C.h"
+
+struct modI2CRecord {
+	modI2CConfigurationRecord	state;
+	uint8_t						throw;
+};
+
+typedef struct modI2CRecord modI2CRecord;
+typedef struct modI2CRecord *modI2C;
+
 
 /*
 	I2C
@@ -35,8 +39,8 @@
 
 void xs_i2c(xsMachine *the)
 {
-	modI2CConfiguration i2c;
-	int sda, scl, address, hz = 0;
+	modI2C i2c;
+	int sda, scl, address, hz = 0, throw = 1;
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
@@ -53,33 +57,39 @@ void xs_i2c(xsMachine *the)
 		hz = xsmcToInteger(xsVar(0));
 	}
 
-	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CConfigurationRecord));
+	if (xsmcHas(xsArg(0), xsID_throw)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_throw);
+		throw = xsmcTest(xsVar(0));
+	}
 
-	i2c->hz = hz;
-	i2c->sda = sda;
-	i2c->scl = scl;
-	i2c->address = address;
-	modI2CInit(i2c);
+	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CRecord));
+
+	i2c->state.hz = hz;
+	i2c->state.sda = sda;
+	i2c->state.scl = scl;
+	i2c->state.address = address;
+	i2c->throw = throw;
+	modI2CInit(&i2c->state);
 }
 
 void xs_i2c_destructor(void *data)
 {
 	if (data)
-		modI2CUninit((modI2CConfiguration)data);
+		modI2CUninit(&((modI2C)data)->state);
 }
 
 void xs_i2c_close(xsMachine *the)
 {
-	modI2CConfiguration i2c = xsmcGetHostChunk(xsThis);
+	modI2C i2c = xsmcGetHostChunk(xsThis);
 	if (i2c) {
-		modI2CUninit(i2c);
+		modI2CUninit(&i2c->state);
 		xsmcSetHostData(xsThis, NULL);		// this clears the host chunk allocated
 	}
 }
 
 void xs_i2c_read(xsMachine *the)
 {
-	modI2CConfiguration i2c;
+	modI2C i2c;
 	int argc = xsmcArgc;
 	unsigned int len = xsmcToInteger(xsArg(0)), i;
 	unsigned char err;
@@ -89,7 +99,7 @@ void xs_i2c_read(xsMachine *the)
 		xsUnknownError("40 byte read limit");
 
 	i2c = xsmcGetHostChunk(xsThis);
-	err = modI2CRead(i2c, buffer, len, true);
+	err = modI2CRead(&i2c->state, buffer, len, true);
 	if (err)
 		return;		// undefined returned on read failure
 
@@ -109,7 +119,7 @@ void xs_i2c_read(xsMachine *the)
 
 void xs_i2c_write(xsMachine *the)
 {
-	modI2CConfiguration i2c;
+	modI2C i2c;
 	uint8_t argc = xsmcArgc, i;
 	unsigned char err;
 	uint8_t stop = true;
@@ -139,6 +149,14 @@ void xs_i2c_write(xsMachine *the)
 			len += l;
 			continue;
 		}
+		if (xsmcIsInstanceOf(xsArg(i), xsArrayBufferPrototype)) {
+			int l = xsGetArrayBufferLength(xsArg(i));
+			if ((len + l) > sizeof(buffer))
+				xsUnknownError("40 byte write limit");
+			c_memmove(buffer + len, xsmcToArrayBuffer(xsArg(i)), l);
+			len += l;
+			continue;
+		}
 
 		{	// assume some kind of array (Array, Uint8Array, etc) (@@ use .buffer if present)
 			int l;
@@ -156,7 +174,10 @@ void xs_i2c_write(xsMachine *the)
 	}
 
 	i2c = xsmcGetHostChunk(xsThis);
-	err = modI2CWrite(i2c, buffer, len, stop);
-	if (err)
-		xsUnknownError("write failed");
+	err = modI2CWrite(&i2c->state, buffer, len, stop);
+	if (err) {
+		if (i2c->throw)
+			xsUnknownError("write failed");
+		xsResult = xsNew0(xsGlobal, xsID_Error);
+	}
 }

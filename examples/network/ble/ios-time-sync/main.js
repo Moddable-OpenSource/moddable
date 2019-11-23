@@ -18,7 +18,7 @@
 	
 	mcconfig -d -m -p esp32/moddable_zero
 
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.current_time.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.current_time.xml
 */
 
 import {CTSAuthenticator, CTSClient} from "cts";

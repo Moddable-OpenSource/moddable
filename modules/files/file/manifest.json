@@ -7,20 +7,65 @@
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/files/file/esp/*"
+			},
+			"config": {
+				"file": {
+					"root": "/spiffs/"
+				}
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/files/file/esp32/*"
+			},
+			"config": {
+				"file": {
+					"root": "/spiffs/"
+				}
 			}
 		},
 		"mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"
+			},
+			"config": {
+				"file": {
+					"root": "/Users/Shared/"
+				}
 			}
 		},
 		"win": {
 			"modules": {
 				"*": "$(MODULES)/files/file/win/*"
+			},
+			"config": {
+				"file": {
+					"root": "./"
+				}
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			},
+			"config": {
+				"file": {
+					"root": "/tmp/"
+				}
+			}
+		},
+		"qca4020": {
+			"modules": {
+				"*": "$(MODULES)/files/file/qca4020/*"
+			},
+			"config": {
+				"file": {
+					"root": "/spinor/"
+				}
 			}
 		},
 		"...": {
-			"error": "File unsupported"
+			"error": "File module unsupported"
 		}
 	}
 }

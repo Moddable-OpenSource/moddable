@@ -49,8 +49,8 @@ void xs_neopixel_destructor(void *data)
 		xsNeoPixel np = data;
 
 		np_clear(&np->px);
-		np_show(&np->px, MODDEF_NEOPIXEL_RMT_CHANNEL);
-		neopixel_deinit(MODDEF_NEOPIXEL_RMT_CHANNEL);
+		np_show(&np->px);
+		neopixel_deinit(&np->px);
 	}
 }
 
@@ -62,7 +62,7 @@ void xs_neopixel(xsMachine *the)
 	char *order;
 	uint8_t shift;
 
-	xsmcVars(1);
+	xsmcVars(3);
 #ifdef MODDEF_NEOPIXEL_LENGTH
 	length = MODDEF_NEOPIXEL_LENGTH;
 #else
@@ -102,9 +102,6 @@ void xs_neopixel(xsMachine *the)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, &np->pixels);
 
-	if (ESP_OK != neopixel_init(pin, MODDEF_NEOPIXEL_RMT_CHANNEL))
-		xsUnknownError("init failed");
-
 	px = &np->px;
 	px->pixels = (void *)np->pixels;
 	px->pixel_count = length;
@@ -130,28 +127,63 @@ void xs_neopixel(xsMachine *the)
 		shift -= 8;
 	}
 
-	px->timings.mark.level0 = 1;
-	px->timings.space.level0 = 1;
-	px->timings.mark.duration0 = 12;
+	px->nbits = (1 == wstype) ? 32 : 24;
+	if (xsmcHas(xsArg(0), xsID_timing)) {
+		uint8_t i;
 
-	if (1 == wstype) {
-		px->nbits = 32;
-		px->timings.mark.duration1 = 12;
-		px->timings.space.duration0 = 6;
-		px->timings.space.duration1 = 18;
-		px->timings.reset.duration0 = 900;
-		px->timings.reset.duration1 = 900;
+		xsmcGet(xsVar(0), xsArg(0), xsID_timing);
+		for (i = 0; i < 3; i++) {
+			bit_timing_t *bt;
+
+			if (0 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_mark);
+				bt = &px->timings.mark;
+			}
+			else if (1 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_reset);
+				bt = &px->timings.reset;
+			}
+			else if (2 == i) {
+				xsmcGet(xsVar(1), xsVar(0), xsID_space);
+				bt = &px->timings.space;
+			}
+
+			xsmcGet(xsVar(2), xsVar(1), xsID_level0);
+			bt->level0 = xsmcToInteger(xsVar(2));
+			xsmcGet(xsVar(2), xsVar(1), xsID_level1);
+			bt->level1 = xsmcToInteger(xsVar(2));
+			xsmcGet(xsVar(2), xsVar(1), xsID_duration0);
+			bt->duration0 = xsmcToInteger(xsVar(2)) / RMT_PERIOD_NS;
+			xsmcGet(xsVar(2), xsVar(1), xsID_duration1);
+			bt->duration1 = xsmcToInteger(xsVar(2)) / RMT_PERIOD_NS;
+		}
 	}
 	else {
-		px->nbits = 24;
-		px->timings.mark.duration1 = 14;
-		px->timings.space.duration0 = 7;
-		px->timings.space.duration1 = 16;
-		px->timings.reset.duration0 = 600;
-		px->timings.reset.duration1 = 600;
+		px->timings.mark.level0 = 1;
+		px->timings.space.level0 = 1;
+		px->timings.mark.duration0 = 12;
+
+		if (1 == wstype) {
+			px->timings.mark.duration1 = 12;
+			px->timings.space.duration0 = 6;
+			px->timings.space.duration1 = 18;
+			px->timings.reset.duration0 = 900;
+			px->timings.reset.duration1 = 900;
+		}
+		else {
+			px->timings.mark.duration1 = 14;
+			px->timings.space.duration0 = 7;
+			px->timings.space.duration1 = 16;
+			px->timings.reset.duration0 = 600;
+			px->timings.reset.duration1 = 600;
+		}
 	}
 
-	np_show(px, MODDEF_NEOPIXEL_RMT_CHANNEL);	// pixels are all zero
+	px->pin = pin;
+	px->rmtChannel = MODDEF_NEOPIXEL_RMT_CHANNEL;
+	neopixel_init(px);
+
+	np_show(px);
 }
 
 void xs_neopixel_close(xsMachine *the)
@@ -200,7 +232,7 @@ void xs_neopixel_fill(xsMachine *the)
 void xs_neopixel_update(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
-	np_show(&np->px, MODDEF_NEOPIXEL_RMT_CHANNEL);
+	np_show(&np->px);
 }
 
 void xs_neopixel_brightness_get(xsMachine *the)
@@ -240,7 +272,9 @@ void xs_neopixel_makeRGB(xsMachine *the)
 	if (24 == np->px.nbits)
 		xsmcSetInteger(xsResult, r | g | b);
 	else {
-		int w = xsmcToInteger(xsArg(3)) << np->whiteShift;
+		int w = 0;
+		if (xsmcArgc > 3)
+			w = xsmcToInteger(xsArg(3)) << np->whiteShift;
 		xsmcSetInteger(xsResult, r | g | b | w);
 	}
 }

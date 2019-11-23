@@ -33,7 +33,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	close() @ "xs_ble_client_close"
 	
 	connect(params) {
-		this._connect(params.address);
+		this._connect(params.address, params.addressType);
 	}
 	
 	onReady() {}
@@ -48,6 +48,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onPasskeyDisplay() {}
 	onPasskeyRequested() {}
 	onRSSI() {}
+	onMTUExchanged() {}
 	
 	// From Client object
 	onServices() {}
@@ -63,6 +64,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 
 	// From Descriptor object
 	onDescriptorValue() {}
+	onDescriptorWritten() {}
 
 	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
 	
@@ -95,8 +97,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				break;
 			case "onDiscovered": {
 				let address = new Bytes(params.address);
+				let addressType = params.addressType;
 				let scanResponse = new Advertisement(params.scanResponse);
-				this.onDiscovered({ address, scanResponse });
+				this.onDiscovered({ address, addressType, scanResponse });
 				break;
 			}
 			case "onConnected": {

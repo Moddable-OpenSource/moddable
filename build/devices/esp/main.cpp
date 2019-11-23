@@ -22,7 +22,7 @@
 
 #include <Arduino.h>
 #include "xs.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "modTimer.h"
 
 extern "C" {
@@ -30,6 +30,12 @@ extern "C" {
 
 	extern void fx_putc(void *refcon, char c);
 	extern void mc_setup(xsMachine *the);
+	extern void __wrap_espconn_init(void);
+	extern uint8_t uart_set_baud(uart_t* uart, int baudrate);
+}
+
+void __wrap_espconn_init(void)
+{
 }
 
 /*
@@ -55,12 +61,16 @@ static xsMachine *gThe;		// root virtual machine
 
 static uart_t *gUART;
 
+#ifndef DEBUGGER_SPEED
+	#define DEBUGGER_SPEED 921600
+#endif
+
 void setup()
 {
 #if kESP8266Version >= 24
-	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1, 128);
+	gUART = uart_init(UART0, DEBUGGER_SPEED, SERIAL_8N1, SERIAL_FULL, 1, 128);
 #else
-	gUART = uart_init(UART0, 921600, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
+	gUART = uart_init(UART0, DEBUGGER_SPEED, SERIAL_8N1, SERIAL_FULL, 1);		// ESP8266 boots to 74880
 #endif
 
 	system_set_os_print(0);
@@ -118,6 +128,14 @@ void ESP_putc(int c)
 	uart_write_char(gUART, c);
 }
 
+void ESP_put(uint8_t *c, int count)
+{
+	system_soft_wdt_feed();
+
+	while (count--)
+		uart_write_char(gUART, *c++);
+}
+
 int ESP_getc(void)
 {
 	system_soft_wdt_feed();
@@ -128,4 +146,8 @@ int ESP_getc(void)
 uint8_t ESP_isReadable()
 {
 	return uart_rx_available(gUART);
+}
+
+uint8_t ESP_setBaud(int baud) {
+	return uart_set_baud(gUART, baud);
 }

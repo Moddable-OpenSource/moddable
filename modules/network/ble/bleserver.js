@@ -19,7 +19,7 @@
  */
 
 import GAP from "gap";
-import {Advertisement, Bytes} from "btutils";
+import {Advertisement, Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
 import {IOCapability} from "sm";
 
 export class BLEServer @ "xs_ble_server_destructor" {
@@ -60,7 +60,6 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._startAdvertising(interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
-	deploy() @ "xs_ble_server_deploy"
 	initialize() @ "xs_ble_server_initialize"
 	
 	get localAddress() {
@@ -68,14 +67,28 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	}
 	
 	notifyValue(characteristic, value) {
-		value = this._typedValueToBuffer(characteristic.type, value);
+		value = typedValueToBuffer(characteristic.type, value);
 		this._notifyValue(characteristic.handle, characteristic.notify, value);
 	}
 	
+	passkeyInput() @ "xs_ble_server_passkey_input"
 	passkeyReply() @ "xs_ble_server_passkey_reply"
 	
 	disconnect() @ "xs_ble_server_disconnect"
 
+	getServiceAttributes(uuid) {
+		let atts = this._getServiceAttributes(uuid);
+		if (undefined === atts)
+			return [];
+		atts.forEach(att => {
+			if (undefined !== att.type && undefined !== att.value) {
+				att.value = typedBufferToValue(att.type, att.value);
+			}
+			att.uuid = new Bytes(att.uuid);
+		});
+		return atts;
+	}
+	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onCharacteristicRead() {}
@@ -85,9 +98,11 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onDisconnected() {}
 	onPasskeyConfirm() {}
 	onPasskeyDisplay() {}
+	onPasskeyInput() {}
 	onPasskeyRequested() {}
 	onAuthenticated() {}
 
+	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
 	_startAdvertising() @ "xs_ble_server_start_advertising"
 	_notifyValue() @ "xs_ble_server_characteristic_notify_value"
@@ -96,72 +111,23 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	
 	_setSecurityParameters() @ "xs_ble_server_set_security_parameters"
 
-	_typedValueToBuffer(type, value) {
-		let buffer;
-		switch(type) {
-			case "Array":
-				buffer = new Uint8Array(value).buffer;
-				break;
-			case "String":
-				buffer = ArrayBuffer.fromString(value);
-				break;
-			case "Uint8":
-				buffer = Uint8Array.of(value & 0xFF).buffer;
-				break;
-			case "Int16":
-			case "Uint16":
-				buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
-				break;
-			case "Uint32":
-				buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF).buffer;
-				break;
-			default:
-				buffer = value;
-				break;
-		}
-		return buffer;
-	}
-	_typedBufferToValue(type, buffer) {
-		let value;
-		switch(type) {
-			case "Array":
-				value = new Uint8Array(buffer);
-				break;
-			case "String":
-				value = String.fromArrayBuffer(buffer);
-				break;
-			case "Uint8":
-				value = new Uint8Array(buffer)[0] & 0xFF;
-				break;
-			case "Int16":
-				value = (new DataView(buffer)).getInt16(0, true);
-				break;
-			case "Uint16":
-				value = (new DataView(buffer)).getUint16(0, true);
-				break;
-			case "Uint32":
-				value = (new DataView(buffer)).getUint32(0, true);
-				break;
-			default:
-				value = buffer;
-				break;
-		}
-		return value;
-	}
-	
+	_getServiceAttributes() @ "xs_ble_server_get_service_attributes"
+
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
 		switch(event) {
 			case "onReady":
 				this.onReady();
+				this._deploy();
 				break;
-			case "onCharacteristicWritten":
-				params.value = this._typedBufferToValue(params.type, params.value);
-				this.onCharacteristicWritten(params);
+			case "onCharacteristicWritten": {
+				let value = typedBufferToValue(params.type, params.value);
+				this.onCharacteristicWritten({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type }, value);
 				break;
+			}
 			case "onCharacteristicRead": {
-				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name });
-				value = this._typedValueToBuffer(params.type, value);
+				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
+				value = typedValueToBuffer(params.type, value);
 				return value;
 			}
 			case "onCharacteristicNotifyEnabled":
@@ -181,6 +147,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onPasskeyDisplay":
 				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });
+				break;
+			case "onPasskeyInput":
+				this.onPasskeyInput({ address:new Bytes(params.address) });
 				break;
 			case "onPasskeyRequested":
 				return this.onPasskeyRequested({ address:new Bytes(params.address) });

@@ -1,10 +1,20 @@
 # Web Things
-Copyright 2018 Moddable Tech, Inc.
+Copyright 2018-2019 Moddable Tech, Inc.<BR>
+Revised: August 28, 2019
 
-Revised: October 10, 2018
+**IMPORTANT**: Web Thing API support in the Moddable SDK is **deprecated** as of August 28, 2019.
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
+## Table of Contents
+
+* [Introduction](#introduction)
+	* [Implementing a Light using the WebThing class](#implementing-a-light)
+	* [Announcing a Web Thing](#announcing-a-webthing)
+* [class WebThings](#webthings)
+* [class WebThing](#webthing)
+
+<a id="introduction"></a>
 ## Introduction
 The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that  implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products. 
 
@@ -25,6 +35,7 @@ The Moddable SDK repository on GitHub contains the [WebThings implementation](ht
 
 This documentation describes how to implement a `WebThing` subclass to be used with the `WebThings` host. The `WebThing` class is a base class to be subclassed by specific implementations. It contains no device specific capabilities. 
 
+<a id="implementing-a-light"></a>
 ### Implementing a Light using the WebThing class
 
 A Web Thing is a subclass of the `WebThing` class contained in the `WebThings` module.
@@ -33,11 +44,38 @@ A Web Thing is a subclass of the `WebThing` class contained in the `WebThings` m
 import {WebThings, WebThing} from "webthings";
 ```
 
-The following code subclasses `WebThing` to define a simple `Light` device which can be turned on and off remotely by the gateway using the Web Thing API.
+The following code subclasses `WebThing` to define a simple `OnOffLight ` device which can be turned on and off remotely by the gateway using the Web Thing API.
 
 ```js
-class Light extends WebThing {
-	// ...implementation goes here
+class OnOffLight extends WebThing {
+	constructor(host) {
+		super(host);
+		this.state = true;
+	}
+	get on() {
+		return this.state;
+	}
+	set on(state) {
+		if (state == this.state) return;
+		this.state = state;
+		this.changed();
+		// light specific implementation details here
+	}
+	static get description() {
+		return {
+			"@context": "https://iot.mozilla.org/schemas",
+			"@type": ["Light", "OnOffSwitch"],
+			name: "light",
+			description: "On/off light",
+			properties: {
+				on: {
+					type: "boolean",
+					description: "light state",
+					txt: "on"
+				}
+			}
+		}
+	}
 }
 ```
 
@@ -87,6 +125,7 @@ set on(state) {
 
 The call to `this.changed()` tells the WebThing base class that the property value has been modified. The call triggers an mDNS update to the TXT resource record, such as the `on` property in the example device description above.
 
+<a id="announcing-a-webthing"></a>
 ### Announcing a Web Thing
 
 Once a subclass of `WebThing`, such as the `Light` above, has been defined it needs to be instantiated. The `WebThings` class instantiates and hosts one or more `WebThing` instances.
@@ -104,37 +143,99 @@ const mdns = new MDNS({hostName: "my light"}, (message, value) => {
 
 The mDNS name claiming process must be completed before the `WebThings` host can be instantiated. The code above waits for the claiming process to complete successfully, then instantiates the `WebThings` host, and finally registers the `Light` by passing its constructor.
 
+***
+
+<a id="webthings"></a>
 ## class WebThings
 The `WebThings` class is a host for one or more `WebThing` devices. It provides the mDNS and HTTP services used for the device and gateway to communicate.
 
 ```js
-import {WebThings, WebThing} from "webthings";
+import {WebThings} from "webthings";
 ```
 
-### constructor(mdns)
+### `constructor(mdns)`
 The `WebThings` constructor takes an mDNS instance as an argument. This is a required parameter. The mDNS instance must have completed the claiming process before being passed to the constructor.
 
-### add(constructor [, ...args])
+```js
+let mdns = new MDNS( /* mDNS parameters here */ );
+let things = new WebThings(mdns);
+```
+
+***
+
+
+### `add(constructor [, ...args])`
 The `add` function registers a subclass of `WebThing`. The constructor argument is a constructor of the `WebThing` subclass to be added. It will be instantiated with `new` by the `WebThings` host. Any additional arguments passed to `add` are passed to the `WebThing` constructor following the `host` argument. This can be useful when initializing a `WebThing` subclass.
 
+In this example, `OnOffLight` is the class defined in the "Implementing a Light using the WebThing class" section above.
+
+```js
+things.add(OnOffLight);	
+```
+
+***
+
+<a id="webthing"></a>
 ## class WebThing
 The `WebThing` class is subclassed to create implementations of specific Web Things. 
 
 ```js
-import {WebThings, WebThing} from "webthings";
+import {WebThing} from "webthings";
 ```
 
-### constructor(host [, ...args])
+The example code in the sections below refer to the `OnOffLight` class defined in the "Implementing a Light using the WebThing class" section above.
+
+### `constructor(host [, ...args])`
 The constructor of a `WebThing` is invoked by the `WebThings` host when the `WebThing` subclass is added to the host. It must call the constructor of its super class with the `host` parameter. Any additional arguments passed to the `add` function of the `WebThings` class are passed to this constructor as `...args`.
 
-### static get description()
+```js
+let light = new OnOffLight(this, ...args);
+```
+
+***
+
+
+### `static get description()`
 The static getter for the description property returns the device description. The device description is defined in the draft Web Thing API specification from Mozilla. Its use here omits the `href` properties as they are automatically assigned by the `WebThings` host.
 
-### get property()
+```js
+let description = OnOffLight.description;
+```
+
+***
+
+
+### `get property()`
 When a request is received to retrieve the value of a `WebThing` property, the corresponding getter is invoked on the `WebThing` instance. For example, if a thermostat device has a "temperature" property, the "get temperature()" getter is called.
 
-### set property()
+```js
+let on = light.on;
+```
+
+***
+
+
+### `set property()`
 When a request is received to set the value of a `WebThing` property, the corresponding setter is invoked on the `WebThing` instance. For example, if a thermostat device has a "temperature" property, the "set temperature()" setter is called.
 
-### changed()
+```js
+light.on = true;
+```
+
+***
+
+### `changed()`
 A WebThing subclass calls `changed` to indicate that one or more property values been modified. It is usually called from a setter. Properties published by including the optional `txt` property in the device description are updated only after changed is called.
+
+```js
+class OnOffLight extends WebThing {
+	...
+	set on(state) {
+    	this.state = state;
+    	this.changed();
+	}
+	...
+}
+```
+
+***

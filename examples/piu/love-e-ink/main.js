@@ -74,8 +74,10 @@ let LoveApplication = Application.template($ => ({
 			this.index = 0;
 		}
 		onDisplaying(application) {
-			if (application.height != 128 || application.width != 296)
-				trace("WARNING: This application was designed to run on a 296x128 screen.\n");
+			if ((122 === application.height) && (250 === application.width))
+				;	// moddable three
+			else
+				trace("WARNING: This application was designed to run on a 250 x 122 screen.\n");
 		}
 		onTimeChanged(application) {
 			let count = steps.length;

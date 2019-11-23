@@ -39,12 +39,11 @@ import handshakeProtocol from "ssl/handshake";
 import changeCipherSpec from "ssl/changecipher";
 import SSLStream from "ssl/stream";
 import SSLAlert from "ssl/alert";
-import Crypt from "crypt";
 import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";
 
-let recordProtocol = {
+const recordProtocol = {
 	name: "recordProtocol",
 	// global constants
 	change_cipher_spec: 20,
@@ -109,7 +108,7 @@ let recordProtocol = {
 		name: "tlsCipherText",
 		calculateMac(hmac, seqNum, type, version, content) {
 			hmac.reset();
-			seqNum = seqNum.toChunk();
+			seqNum = ArrayBuffer.fromBigInt(seqNum);
 			let stream = new SSLStream();
 			for (let len = 8 - seqNum.byteLength; len > 0; len--)
 				stream.writeChar(0);
@@ -123,14 +122,12 @@ let recordProtocol = {
 		},
 		aeadAdditionalData(seqNum, type, version, len) {
 			let tmps = new SSLStream();
-			let c = seqNum.toChunk();
-			for (let i = 0, len = 8 - c.byteLength; i < len; i++)
-				tmps.writeChar(0);
+			let c = ArrayBuffer.fromBigInt(seqNum, 8);
 			tmps.writeChunk(c);
 			tmps.writeChar(type);
 			tmps.writeChars(version, 2);
 			tmps.writeChars(len, 2);
-			return tmps.getChunk();
+			return tmps.readChunk(tmps.bytesAvailable);
 		},
 		unpacketize(session, s) {
 			session.traceProtocol(this);
@@ -167,15 +164,15 @@ let recordProtocol = {
 					fragmentLen -= session.chosenCipher.ivSize;
 					nonce = cipher.iv.concat(nonce);
 					fragment = s.readChunk(fragmentLen);
-					s.close();
 					let additional_data = this.aeadAdditionalData(session.readSeqNum, type, version, fragmentLen - cipher.enc.tagLength);
 					if (!(fragment = cipher.enc.process(fragment, null, nonce, additional_data, false))) {
 						// @@ should send an alert
 						throw new Error("SSL: recordProtocol auth failed");
 					}
+					fragment = new Uint8Array(fragment);
 					break;
 				}
-				session.readSeqNum.inc();
+				session.readSeqNum++;
 			}
 			else
 				fragment = s.readChunk(fragmentLen, true);
@@ -214,8 +211,8 @@ let recordProtocol = {
 					}
 					break;
 				case GCM: {
-					let explicit_nonce = cipher.nonce.toChunk(session.chosenCipher.ivSize);
-					cipher.nonce.inc();
+					let explicit_nonce = ArrayBuffer.fromBigInt(cipher.nonce, session.chosenCipher.ivSize);
+					cipher.nonce++;
 					let nonce = cipher.iv.concat(explicit_nonce);
 					let additional_data = this.aeadAdditionalData(session.writeSeqNum, type, session.protocolVersion, fragment.byteLength);
 					fragment = cipher.enc.process(fragment, null, nonce, additional_data, true);
@@ -223,7 +220,7 @@ let recordProtocol = {
 					}
 					break;
 				}
-				session.writeSeqNum.inc();
+				session.writeSeqNum++;
 			}
 			stream = new SSLStream();
 			stream.writeChar(type);

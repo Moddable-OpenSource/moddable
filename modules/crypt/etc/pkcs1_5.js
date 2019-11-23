@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
 import Bin from "bin";
 import RSA from "rsa";
 import PKCS1 from "pkcs1";
@@ -61,10 +60,10 @@ export default class PKCS1_5 {
 		for (; i <= ffsize; i++)
 			s[i] = 0xff;
 		s[i++] = 0x00;
-		return new Arith.Integer(s.buffer.concat(bc));
+		return BigInt.fromByteArray(s.buffer.concat(bc));
 	};
 	emsaDecode(EM) {
-		let s = new Uint8Array(EM.toChunk());
+		let s = new Uint8Array(ArrayBuffer.fromBigInt(EM));
 		let i = 0;
 		if (s[i++] != 0x01)
 			return;		// not an encoded data??
@@ -127,10 +126,10 @@ export default class PKCS1_5 {
 		}
 		s[i++] = 0x00;
 		s.set(M, pssize + 2);
-		return new Arith.Integer(s);
+		return BigInt.fromArrayBuffer(s.buffer);
 	};
 	emeDecode(EM) {
-		var s = new Uint8Array(EM.toChunk());
+		var s = new Uint8Array(ArrayBuffer.fromBigInt(EM));
 		var i = 0;
 		if (s[i++] != 0x02)
 			return;		// not an encoded data??
@@ -163,3 +162,5 @@ export default class PKCS1_5 {
 		return M;
 	};
 };
+
+Object.freeze(PKCS1_5.prototype);

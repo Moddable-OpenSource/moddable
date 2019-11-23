@@ -17,7 +17,6 @@
 		"*-alpha": [
 			"./assets/icons-alpha",
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-52",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-20",
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 		],
 	},

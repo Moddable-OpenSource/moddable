@@ -20,7 +20,7 @@
 
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 #include "user_interface.h"
 
 void xs_esp_reset(xsMachine *the)

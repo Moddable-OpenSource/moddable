@@ -21,7 +21,6 @@ export default class WiFiServer extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable Device";
 		this.onDisconnected();
-		this.deploy();
 	}
 	onConnected() {
 		this.stopAdvertising();
@@ -32,9 +31,8 @@ export default class WiFiServer extends BLEServer {
 			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
 		});
 	}
-	onCharacteristicWritten(params) {
-		let value = params.value;
-		switch(params.name) {
+	onCharacteristicWritten(characteristic, value) {
+		switch(characteristic.name) {
 			case "SSID":
 				this.ssid = value;
 				break;

@@ -33,7 +33,7 @@ int main(int argc, const char **argv)
 		xsBeginHost(appDelegate.machine);
 		{
 			xsCollectGarbage();
-			xsResult = xsCall1(xsGlobal, xsID_require, xsString("main"));
+			xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 			appDelegate.piuApplication = PIU(Application, xsResult);
 			xsCollectGarbage();
 		}
@@ -47,7 +47,7 @@ int main(int argc, const char **argv)
 	return 0;
 }
 
-void fxAbort(xsMachine *the)
+void fxAbort(xsMachine *the, int status)
 {
 	NSApplication* application = [NSApplication sharedApplication];
 	NSPiuAppDelegate *appDelegate = [application delegate];

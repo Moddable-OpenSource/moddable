@@ -17,7 +17,7 @@ import {Request} from "http"
 let request = new Request({host: "www.example.com", path: "/", response: String});
 request.callback = function(message, value, etc)
 {
-	if (5 == message) {
+	if (Request.responseComplete == message) {
 		trace(value);
 		trace("\n");
 	}

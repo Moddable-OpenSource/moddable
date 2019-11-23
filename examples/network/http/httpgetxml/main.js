@@ -24,7 +24,7 @@ let request = new Request({	host: "api.openweathermap.org",
 
 request.callback = function(message, value)
 {
-	if (5 == message) {
+	if (Request.responseComplete == message) {
 		let root = XML.parse(value);
 
 		let cityElement = root.elements.find(element => "city" == element.name);

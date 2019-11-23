@@ -1,0 +1,550 @@
+<?xml version="1.0"?>
+<dal>
+<module name="ioe">
+<driver name="i2cm">
+  <device id="0x0200000b">
+    <props id="0x00000001" id_name="CORE CONFIGURATION" oem_configurable="false" helptext="I2C controller configuration" type="0x00000012">
+      I2CCoreConfig02
+    </props>
+    <props id="0x00000002" id_name="PLATFORM CONFIGURATION" oem_configurable="true" helptext="GPIO encoding bitmap: function[3:0] | gpio[13:4] | direction[14] -> 0 - INPUT, 1 = OUTPUT | pull[16:15] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | drive_strength[20:17] -> 0 - 2mA, 1 - 4mA, 2 - 6mA, 3 - 8mA, 4 - 10mA, 5 - 12mA, 6 - 14mA, 7 - 16mA | gpio_version[31:28] -> 2, I2C Core Clock Frequency: i2c core clock frequency in KHz (ex. 20 MHz = 0x00004E20 KHz)" type="0x00000008">
+      <!-- .scl_key                 = --> 0x00, 0x00, 0x00, 0x00, 
+      <!-- .sda_key                 = --> 0x00, 0x00, 0x00, 0x00, 
+      <!-- .clock_core_freq_khz     = --> 0x20, 0x4E, 0x00, 0x00, 
+      <!-- .pu_scl_gpio_encoding    = --> 0x02, 0x41, 0x01, 0x20, 
+      <!-- .pu_sda_gpio_encoding    = --> 0x12, 0x41, 0x01, 0x20, 
+      <!-- .pu_power1               = --> 0x03, 0x00, 0x00, 0x00, 
+      <!-- .pu_power2               = --> 0x02, 0x00, 0x00, 0x00, 
+      <!-- .pd_scl_gpio_encoding    = --> 0x00, 0x01, 0x00, 0x20, 
+      <!-- .pd_sda_gpio_encoding    = --> 0x10, 0x01, 0x00, 0x20, 
+      <!-- .pd_power1               = --> 0x00, 0x00, 0x00, 0x00, 
+      <!-- .pd_power2               = --> 0x00, 0x00, 0x00, 0x00, 
+      end
+    </props>
+  </device>
+</driver>
+<driver name="spi2">
+<!-- GPIO configuration calculations
+GPIO DIR values
+   GPIO_INPUT = 0x0
+   GPIO_OUTPUT = 0x1
+GPIO_PULL values
+   GPIO_NO_PULL    = 0,    
+   GPIO_PULL_DOWN  = 0x1,  
+   GPIO_PULL_UP    = 0x2,  
+GPIO_DRV_STRENGTH values
+   GPIO_1P6MA   = 0,       
+   GPIO_2P7MA   = 0x1,     
+   GPIO_4P0MA   = 0x2,     
+GPIO configuration =  (GPIO_NUM           & 0xFF) << 0x10 |
+                      (GPIO_FS_VAL        &  0xF) <<  0xC |
+                      (GPIO_DRV_STRENGTH  &  0xF) <<  0x8 |
+                      (GPIO_PULL          &  0xF) <<  0x4 |
+                      (GPIO_DIR           &  0xF)
+-->
+   <device id="0x02000011">
+      <props id="0x21001"  id_name="SPI Core Configuration" oem_configurable="false" helptext="SPI Master Core Configuration"     type="0x00000012"> spi_second_port  </props>
+	  <props id="0x2100A" id_name="SPI Controller Board Specific Configuration" oem_configurable="true" helptext="GPIO encoding {Format 0xXX (LSB), 0xXX, 0xXX, 0xXX(MSB)}: 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000008">
+         <!-- MOSI GPIO key               = --> 0x00, 0x00, 0x00, 0x00,
+         <!-- MISO GPIO key               = --> 0x00, 0x00, 0x00, 0x00,
+         <!-- CS GPIO key                 = --> 0x00, 0x00, 0x00, 0x00,
+         <!-- CLK GPIO key                = --> 0x00, 0x00, 0x00, 0x00,
+         <!-- PU MOSI GPIO encoding       = --> 0x01, 0x22, 0x23, 0x00, 
+         <!-- PU MISO GPIO encoding       = --> 0x00, 0x22, 0x26, 0x00,
+         <!-- PU CS GPIO encoding         = --> 0x01, 0x22, 0x22, 0x00,
+         <!-- PU CLK GPIO encoding        = --> 0x01, 0x22, 0x27, 0x00,
+         <!-- PD MOSI GPIO encoding       = --> 0x10, 0x00, 0x23, 0x00,
+         <!-- PD MISO GPIO encoding       = --> 0x10, 0x00, 0x26, 0x00,
+         <!-- PD CS GPIO encoding         = --> 0x20, 0x00, 0x22, 0x00,
+         <!-- PD CLK GPIO encoding        = --> 0x10, 0x00, 0x27, 0x00,
+         <!-- CS 1 GPIO key               = --> 0x00, 0x00, 0x00, 0x00,
+         <!-- PU CS 1 GPIO encoding       = --> 0x20, 0x00, 0x00, 0x00,
+         <!-- PD CS 1 GPIO encoding       = --> 0x00, 0x00, 0x00, 0x00,
+	     end
+	  </props>
+      <props id="0x2100B" id_name="SPI BAM Configuration" oem_configurable="true" helptext="SPI BAM mode enable"  type="0x00000002"> 1 </props>
+   </device>
+</driver>
+<driver name="uart">
+<!--
+GPIO configuration calculation
+GPIO DIR values
+   GPIO_INPUT = 0x0
+   GPIO_OUTPUT = 0x1
+GPIO_PULL values
+   GPIO_NO_PULL    = 0,    
+   GPIO_PULL_DOWN  = 0x1,  
+   GPIO_PULL_UP    = 0x2,  
+GPIO_DRV_STRENGTH values
+   GPIO_1P6MA   = 0,       
+   GPIO_2P7MA   = 0x1,     
+   GPIO_4P0MA   = 0x2,     
+GPIO configuration =  (GPIO_NUM           & 0xFF) << 0x10 |
+                      (GPIO_FS_VAL        &  0xF) <<  0xC |
+                      (GPIO_DRV_STRENGTH  &  0xF) <<  0x8 |
+                      (GPIO_PULL          &  0xF) <<  0x4 |
+                      (GPIO_DIR           &  0xF)
+-->
+   <device id="0x0200000e">
+      <props id="0x20001"          id_name="UART_PROP_STRUCT_ID" oem_configurable="false" helptext="Internal uart device structure"   type="0x00000012">      uart_first_port                    </props>
+     <!-- UART open gpio configurations --> 
+      <props id="0x20002" id_name="UART_PROP_GPIO_TX_PU_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">      0x00081021         </props>      
+      <props id="0x20003" id_name="UART_PROP_GPIO_RX_PU_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">      0x00091020         </props>
+      <!-- UART close gpio configurations --> 
+      <props id="0x20006" id_name="UART_PROP_GPIO_TX_PD_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">      0x00080010         </props>
+      <props id="0x20007" id_name="UART_PROP_GPIO_RX_PD_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">      0x00090010         </props>
+   </device>
+   <device id="0x0200000f">
+      <props id="0x20001"            id_name="UART_PROP_STRUCT_ID" oem_configurable="false" helptext="Internal uart device structure"   type="0x00000012">  uart_second_port  </props>
+      <!-- UART open gpio configurations -->
+      <props id="0x20002"   id_name="UART_PROP_GPIO_TX_PU_CONF_ID"  oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00135021          </props>
+      <props id="0x20003"   id_name="UART_PROP_GPIO_RX_PU_CONF_ID"  oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00144020          </props>
+      <props id="0x20004"  id_name="UART_PROP_GPIO_RFR_PU_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00175021          </props>
+      <props id="0x20005"  id_name="UART_PROP_GPIO_CTS_PU_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00125020          </props>
+      <!-- UART close gpio configurations --> 
+      <props id="0x20006"   id_name="UART_PROP_GPIO_TX_PD_CONF_ID"  oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00130020          </props>
+      <props id="0x20007"   id_name="UART_PROP_GPIO_RX_PD_CONF_ID"  oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00140020          </props>
+      <props id="0x20008"  id_name="UART_PROP_GPIO_RFR_PD_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00170020          </props>
+      <props id="0x20009"  id_name="UART_PROP_GPIO_CTS_PD_CONF_ID" oem_configurable="true"  helptext="GPIO encoding {Format (MSB)0x(4)XX(3)XX(2)XX(1)XX(LSB)}: 1st LSB 8 bits = 1st 8 bits = pull[7:4] -> 0 - NO_PULL, 1 - PULL_DOWN, 2 - PULL_UP | direction[3:0] -> 0 - INPUT, 1 = OUTPUT , 2nd 8 bits = drive_strength[7:4] -> 0 - 1.6mA, 1 - 2.7mA, 2 - 4mA | function[3:0], 3rd 8 bits = gpio pin[7:0] -> pin number, 4th 8 bits {unused[7:0] -> Reserved" type="0x00000002">   0x00120010          </props>
+   </device>
+</driver>
+<driver name="platform_internal">
+  <device id="0x02000007">
+    <props id="0" id_name="PLATFORM PWRMGR" oem_configurable="false" helptext="C struct containing power manager related data." type="0x00000012">
+       platFlashPwrData
+    </props>
+    <props id="4" id_name="PLATFORM THREAD CONF" oem_configurable="false" helptext="C struct containing thread configurations." type="0x00000012">
+      platThreadConfig
+    </props>
+  </device>
+</driver>
+<driver name="sdio">
+<!--  GPIO configuration parameters details for sdio_gpio_arr and sdio_gpio_off_arr
+Format: GPIO FUNCTION, GPIO DIR, GPIO_PULL, GPIO_DRV_STRENGTH
+GPIO FUNCTION values
+   GPIO_NONE = 0x0
+   GPIO_PWM = 0x1
+GPIO DIR values
+   GPIO_INPUT = 0x0
+   GPIO_OUTPUT = 0x1
+GPIO_PULL values
+   GPIO_NO_PULL    = 0,    
+   GPIO_PULL_DOWN  = 0x1,  
+   GPIO_PULL_UP    = 0x2,  
+GPIO_DRV_STRENGTH values
+   GPIO_1P6MA   = 0,       
+   GPIO_2P7MA   = 0x1,     
+   GPIO_4P0MA   = 0x2,     
+-->
+  <global_def>
+    <var_seq name="sdio_gpio_arr" type="0x00000002">
+        0x22, 1, 0, 2, 1,
+        0x23, 1, 0, 2, 1,
+        0x24, 1, 0, 2, 1,
+        0x25, 1, 0, 2, 1,
+        0x26, 1, 0, 2, 1,
+        0x27, 1, 0, 0, 1,
+        end
+    </var_seq>
+    <var_seq name="sdio_gpio_off_arr" type="0x00000002">
+        0x22, 1, 0, 2, 1,
+        0x23, 1, 0, 2, 1,
+        0x24, 1, 0, 2, 1,
+        0x25, 1, 0, 2, 1,
+        0x26, 1, 0, 2, 1,
+        0x27, 1, 0, 2, 1,
+        end
+    </var_seq>
+  </global_def>
+  <device id="0x03000006">
+    <props id="0x0010" type="0x00000018"> sdio_gpio_arr </props>
+    <props id="0x0011" type="0x00000018"> sdio_gpio_off_arr </props>
+    <props id="0x0020" type="0x00000002"> 96000000 </props>
+    <props id="0x0021" type="0x00000002"> 2 </props>
+    <props id="0x0022" type="0x00000002"> 10 </props>
+    <props id="0x0023" type="0x00000002"> 1 </props>    
+  </device>
+</driver>
+<driver name="TLMM">
+<!-- TLMM Configuration
+TLMM Mask coonfiguration:
+        PULL_BMSK  0x3
+        DIR_BMSK   0x4
+        OP_BMSK    0x8
+        APPLY_BMSK 0x80
+TLMM Pull details:
+        NO_PULL   0x0
+        PULL_DOWN 0x1
+        PULL_UP   0x2
+TLMM input/output details:
+        INPUT     0x0
+        OUTPUT    0x4
+TLMM to keep high or low:
+        OUT_LOW   0x0
+        OUT_HIGH  0x8
+To apply the configuration or not for a given GPIO:
+        APPLY_YES 0x80
+        APPLY_NO  0x00
+Each GPIO configuration is 8 bits
+		(PULL_BMSK | DIR_BMSK | OP_BMSK| APPLY_BMSK)
+Note: It is better to configure the unused GPIO to pull up/pull down state accordingly for saving power.
+-->
+  <device id="0x0200001c">
+    <props id="1" type="0x00000008">
+      <!--  GPIO   DIR,     PULL,    Outval,    Program  -->
+<!-- GPIO_0  Addr_50200000 4024,blocked 4020,coex,int   = -->    0x0  | 0x1 | 0x0 | 0x80,
+												
+<!-- GPIO_1  Addr_50201000 4024,blocked 4020,coex,int   = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_2  Addr_50202000 4024,blocked 4020,coex,int   = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_3  Addr_50203000 4024,blocked 4020,coex,int   = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_4  Addr_50204000 4024,blocked 4020,wake,int   = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_5  Addr_50205000 4024,blocked PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_6  Addr_50206000 4024,blocked PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_7  Addr_50207000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_8  Addr_50208000              UART            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_9  Addr_50209000              UART            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_10 Addr_5020A000              PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_11 Addr_5020B000              PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_12 Addr_5020C000                              = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_13 Addr_5020D000 4024,blocked                 = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_14 Addr_5020E000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_15 Addr_5020F000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_16 Addr_50210000              PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_17 Addr_50211000              PD DOESN'T EXIST= -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_18 Addr_50212000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_19 Addr_50213000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_20 Addr_50214000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_21 Addr_50215000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_22 Addr_50216000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_23 Addr_50217000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_24 Addr_50218000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_25 Addr_50219000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_26 Addr_5021A000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_27 Addr_5021B000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_28 Addr_5021C000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_29 Addr_5021D000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_30 Addr_5021E000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_31 Addr_5021F000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_32 Addr_50220000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_33 Addr_50223000 4024,blocked 4020,WL_PWD,ext = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_34 Addr_50224000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_35 Addr_50223000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_36 Addr_50224000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_37 Addr_50225000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_38 Addr_50226000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_39 Addr_50227000 4024,blocked 4020,SDIO,int   = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_40 Addr_5022A000 4024,blocked 4020,ClkReq,int = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_41 Addr_50229000 4024,blocked                 = -->    0x0  | 0x2 | 0x0 | 0x80,
+<!-- GPIO_42 Addr_5022A000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_43 Addr_5022B000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_44 Addr_5022C000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_45 Addr_5022D000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_46 Addr_5022E000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_47 Addr_5022F000              QSPI            = -->    0x0  | 0x0 | 0x0 | 0x00,
+<!-- GPIO_48 Addr_50230000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_49 Addr_50231000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_50 Addr_50232000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_51 Addr_50233000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_52 Addr_50234000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_53 Addr_50235000 4024,blocked                 = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_54 Addr_50236000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_55 Addr_50237000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_56 Addr_50238000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_57 Addr_50239000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_58 Addr_5023A000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_59 Addr_5023B000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+<!-- GPIO_60 Addr_5023C000                              = -->    0x0  | 0x1 | 0x0 | 0x80,
+      end
+    </props>
+  </device>
+</driver>
+<driver name="ble">
+  <device id="0x0300000b">
+      <props id="0x01"         type="0x00000002" oem_configurable="false"> 1024         </props>
+      <props id="0x02"           type="0x00000002" oem_configurable="false"> 15           </props>
+      <props id="0x03"  type="0x00000002" oem_configurable="false"> 3584  </props>
+      <props id="0x04"    type="0x00000002" oem_configurable="false"> 8    </props>
+      <props id="0x06"                type="0x00000002" oem_configurable="false"> 5000                </props>
+      <props id="0x05"                type="0x00000002" oem_configurable="false"> 10000                </props>
+      <props id="0x07"               type="0x00000002" oem_configurable="false"> 0               </props>
+      <props id="0x08" type="0x00000002" oem_configurable="false"> 512 </props>
+      <props id="0x09"   type="0x00000002" oem_configurable="false"> 8   </props>
+      <props id="0x0A"   type="0x00000002" oem_configurable="false"> 128   </props>
+  </device>
+</driver>
+<driver name="crypto">
+  <global_def>
+    <var_seq name="crypto_securefs_default_password_arr" type="0x00000002">
+     0x12, 0xa7, 0x53, 0xfc, 0x24, 0x4f, 0x4b, 0xd7, 0xa5, 0x5a, 0x0b, 0xff, 0x86, 0xea, 0x58, 0x81, end
+    </var_seq>
+    <var_seq name="ssl_cert_mount_path" type="0x00000001">
+     /spinor
+    </var_seq>
+    <var_seq name="persistent_object_mount_path" type="0x00000001">
+     /spinor/p
+    </var_seq>
+  </global_def>
+  <device id="0x03000002">
+      <props id="0x1" id_name="CRYPTO_MAX_OBJECTS" oem_configurable="true" helptext="Maximum number of open crypto objects" type="0x00000002"> 10 </props>
+      <props id="0x2" id_name="CRYPTO_MAX_OPERATIONS" oem_configurable="true" helptext="Maximum number of concurrent crypto operations" type="0x00000002"> 10 </props>
+      <props id="0x3" id_name="CRYPTO_SECUREFS_DEFAULT_PASSWORD" oem_configurable="true" helptext="Default password for Secure Storage" type="0x00000018"> crypto_securefs_default_password_arr </props>
+      <props id="0x4" id_name="CRYPTO_SSL_CERT_MOUNT_PATH" oem_configurable="true" helptext="SSL Certificates mount path in flash" type="0x00000011"> ssl_cert_mount_path </props>
+      <props id="0x5" id_name="CRYPTO_PERSISTENT_OBJ_MOUNT_PATH" oem_configurable="true" helptext="Persistent Object mount path in flash" type="0x00000011"> persistent_object_mount_path </props>
+  </device>
+</driver>
+<driver name="fwup_scheme">
+   <device id="0x03000016">
+      <props id="0x26001" id_name="FW_UPGRADE_SCHEME_PROP_FWD_SUPPORT_NUM_ID" oem_configurable="true" helptext="Support FWD Numbers ( 2 - support two FWDs, 3 - support three FWDs)" type="0x00000002">  2 </props>
+      <props id="0x26002" id_name="FW_UPGRADE_SCHEME_PROP_BATTERY_CHECK_ID" oem_configurable="true" helptext="Enable/Disable battery check (1 - enable; 0 - disable)" type="0x00000002">  0 </props>
+      <props id="0x26003" id_name="FW_UPGRADE_SCHEME_PROP_BATTERY_REF_LEVEL_ID" oem_configurable="true" helptext="Good battery reference level, valid range: 2100 to 2800 (2.1 V to 2.8 V)" type="0x00000002">  2400 </props>
+   </device> 
+</driver>
+<driver name="i15p4">
+  <device id="0x0300000c">
+      <props id="0x01" type="0x00000002" oem_configurable="false"> 5000 </props>
+      <props id="0x02" type="0x00000002" oem_configurable="false"> 10000 </props>
+  </device>
+</driver>
+<driver name="i2s">
+   <device id="0x0300000f">
+      <props id="0x2100B" type="0x00000002" oem_configurable="true" helptext="I2S thread stack size">   2048  </props>
+      <props id="0x2100C"  type="0x00000002" oem_configurable="true" helptext="I2S thread priority">   7    </props>
+      <props id="0x21002" type="0x00000002" oem_configurable="true" helptext="I2S bclk pin">      0x001C1200      </props>
+      <props id="0x21003"  type="0x00000002" oem_configurable="true" helptext="I2S SDI pin">      0x001D1200    </props>
+      <props id="0x21004"   type="0x00000002" oem_configurable="true"  helptext="I2S SDO pin">     0x001E1200      </props>
+      <props id="0x21005"  type="0x00000002" oem_configurable="true" helptext="I2S word select pin">   0x001F1200   </props>
+      <props id="0x21006"  type="0x00000002" oem_configurable="true" helptext="I2S mclk pin">     0x00201200      </props>
+      <props id="0x21007" type="0x00000002" oem_configurable="true" helptext="PCM clk pin">      0x001C2200      </props>
+      <props id="0x21008"  type="0x00000002" oem_configurable="true" helptext="PCM data rx pin">      0x001D2200      </props>
+      <props id="0x21009"   type="0x00000002" oem_configurable="true" helptext="PCM data tx pin">     0x001E2200      </props>
+      <props id="0x2100A"  type="0x00000002" oem_configurable="true" helptext="PCM frame sync pin">    0x001F2200      </props>
+      <props id="0x21011" type="0x00000002" oem_configurable="true" helptext="low power I2S bclk pin">     0x001C0000      </props>
+      <props id="0x21012" type="0x00000002" oem_configurable="true" helptext="low power I2S SDI pin">      0x001D0000      </props>
+      <props id="0x21013"   type="0x00000002" oem_configurable="true" helptext="low power I2S SDO pin">    0x001E0000      </props>
+      <props id="0x21014"  type="0x00000002" oem_configurable="true" helptext="low power I2S word select pin">      0x001F0000      </props>
+      <props id="0x21015"  type="0x00000002" oem_configurable="true" helptext="low power I2S mclk pin">    0x00200000      </props>
+      <props id="0x21016"  type="0x00000002" oem_configurable="true" helptext="I2S sleep control(1-ECON HFLPO, 2-ECON XTAL, 3-ECON PLL, 4-Normal)"> 3 </props>
+   </device> 
+</driver>
+<driver name="conss">
+  <device id="0x0300000a">
+      <props id="(0x00000001)" type="0x00000002" oem_configurable="false"> 0x0000000B </props>
+  </device>
+</driver>
+<driver name="net">
+  <global_def>
+    <var_seq name="ssl_ca_list_store_password_arr" type="0x00000002">
+     0x59, 0xe0, 0x7f, 0x00, 0xed, 0xaf, 0x49, 0xac, 0x96, 0xe8, 0x4a, 0x69, 0x96, 0x7c, 0x8b, 0x83, end
+    </var_seq>
+    <var_seq name="netbuf_profile_custom_arr" type="0x00000003">
+	12,128,3,512,9,1536, end
+    </var_seq>
+    <var_seq name="hostname" type="0x00000001">
+     QCA402x
+    </var_seq>
+    <var_seq name="http_server_username" type="0x00000001">
+     admin
+    </var_seq>
+    <var_seq name="http_server_password" type="0x00000001">
+     admin
+    </var_seq>
+    <var_seq name="sntp_server_name" type="0x00000001">
+     pool.ntp.org
+    </var_seq>
+  </global_def>
+  <device id="0x03000001">
+      <props id="1" id_name="NET_NETBUF_PROFILE" min="1" max="3" oem_configurable="true" helptext="Network buffers profile (1 - Performance, 2 - Best effort, 3 - Memory optimized)" type="0x00000002"> 2 </props>
+      <props id="2" id_name="NET_MAX_SOCKETS" oem_configurable="true" helptext="Maximum number of supported sockets" type="0x00000002"> 12 </props>
+      <props id="3" id_name="NET_DNS_FIRST_TRY" oem_configurable="true" helptext="Time to first DNS client retry (in seconds)" type="0x00000002"> 4 </props>
+      <props id="4" id_name="NET_DNS_TRIES" oem_configurable="true" helptext="Maximum number of DNS client retries" type="0x00000002"> 5 </props>
+      <props id="5" id_name="NET_MAX_DNS_SERVERS" oem_configurable="true" helptext="Maximum number of DNS servers" type="0x00000002"> 3 </props>
+      <props id="6" id_name="NET_ENABLED" oem_configurable="true" helptext="Enable Networking stack (1 - Enable, 0 - Disable)" type="0x00000002"> 1 </props>
+      <props id="7" id_name="NET_IPV4_ENABLED" oem_configurable="true" helptext="Enable IPv4 offload stack (1 - Enable, 0 - Disable)" type="0x00000002"> 1 </props>
+      <props id="8" id_name="NET_TCP_SEND_SPACE" oem_configurable="true" helptext="Size (in bytes) of TCP Send window" type="0x00000002"> 12288 </props>
+      <props id="9" id_name="NET_TCP_RECV_SPACE" oem_configurable="true" helptext="Size (in bytes) of TCP Receive window" type="0x00000002"> 8192 </props>
+      <props id="10" id_name="NET_IPV6_ROUTING_ENABLED" oem_configurable="true" helptext="Enable IPv6 Routing (1 - Enable, 0 - Disable)" type="0x00000002"> 1 </props>
+      <props id="11" id_name="NET_IPV6_MAX_ROUTING_ENTRIES" oem_configurable="true" helptext="Maximum number of IPv6 routing entries" type="0x00000002"> 5 </props>
+      <props id="12" id_name="NET_SSL_MAX_RECORD_SIZE" min="1024" max="16384" oem_configurable="true" helptext="Maximum SSL Record/Fragment size (in bytes) support" type="0x00000002"> 8192 </props>
+      <props id="16" id_name="NET_SSL_MAX_NUM_OBJ" oem_configurable="true" helptext="Maximum number of SSL Objects (Servers/Clients)" type="0x00000002"> 4 </props>
+      <props id="17" id_name="NET_SSL_MAX_NUM_CON" oem_configurable="true" helptext="Maximum number of SSL Connections" type="0x00000002"> 8 </props>
+      <props id="15" id_name="NET_STORE_RECALL_MAXCLIENT" helptext="Maximum number of store/recall clients" type="0x00000002"> 5 </props>
+      <props id="19" id_name="NET_NETMAIN_TASK_PRIORITY" oem_configurable="true" helptext="Netmain task priority" type="0x00000002"> 18 </props>
+      <props id="20" id_name="NET_NETMAIN_TASK_STACK_SIZE" oem_configurable="true" helptext="Netmain task stack size" type="0x00000002"> 2048 </props>
+      <props id="21" id_name="NET_NETTICK_TASK_PRIORITY" oem_configurable="true" helptext="Nettick task priority" type="0x00000002"> 3 </props>
+      <props id="22" id_name="NET_NETTICK_TASK_STACK_SIZE" oem_configurable="true" helptext="Nettick task stack size" type="0x00000002"> 2048 </props>
+      <props id="23" id_name="NET_MAX_INTERVAL_TIMERS" helptext="Maximum number of interval timers" type="0x00000002"> 5 </props>
+      <props id="28" id_name="NET_HTTPC_MAX_NUM_CON" oem_configurable="true" helptext="Maximum number of concurrent HTTP client connections" type="0x00000002"> 4 </props>
+      <props id="29" id_name="NET_HTTPC_TASK_PRIORITY" oem_configurable="true" helptext="HTTP Client task priority" type="0x00000002"> 12 </props>
+      <props id="30" id_name="NET_HTTPC_TASK_STACK_SIZE" oem_configurable="true" helptext="HTTP Client task stack size" type="0x00000002"> 2048 </props>
+      <props id="24" id_name="NET_SSL_CA_LIST_STORE_PASSWORD" oem_configurable="true" helptext="SSL CA List storage password" type="0x00000018"> ssl_ca_list_store_password_arr </props>
+      <props id="25" id_name="NET_IPV6_MIN_PMTU" oem_configurable="true" helptext="Minimum IPv6 path MTU (in bytes)" type="0x00000002"> 1500 </props>
+      <props id="26" id_name="NET_NETTICK_SLEEP_MSEC_1" oem_configurable="true" helptext="Nettick 1st tier (fast) tick period (in ms)" type="0x00000002"> 50 </props>
+      <props id="27" id_name="NET_NETTICK_SLEEP_MSEC_2" oem_configurable="true" helptext="Nettick 2nd tier (slow) tick period (in ms)" type="0x00000002"> 500 </props>
+      <props id="31" id_name="NET_IPV6_REASM_TMO_SEC" oem_configurable="true" helptext="IPv6 reassembly timeout (in seconds)" type="0x00000002"> 60 </props>
+      <props id="32" id_name="NET_SSL_ALPN_MAX_PROTOCOLS" oem_configurable="true" helptext="Maximum number of supported ALPN protocols" type="0x00000002"> 4 </props>
+      <props id="33" id_name="NET_HTTPSVR_TASK_PRIORITY" oem_configurable="true" helptext="HTTP Server task priority" type="0x00000002"> 12 </props>
+      <props id="34" id_name="NET_HTTPSVR_TASK_STACK_SIZE" oem_configurable="true" helptext="HTTP Server task stack size" type="0x00000002"> 2048 </props>
+      <props id="35" id_name="NET_WEBSVR_TASK_PRIORITY" oem_configurable="true" helptext="WEB Server task priority" type="0x00000002"> 12 </props>
+      <props id="36" id_name="NET_WEBSVR_TASK_STACK_SIZE" oem_configurable="true" helptext="WEB Server task stack size" type="0x00000002"> 1536 </props>
+      <props id="39" id_name="NET_SSL_TASK_PRIORITY" oem_configurable="true" helptext="ssl_task thread priority" type="0x00000002"> 3 </props>
+      <props id="40" id_name="NET_SSL_TASK_STACK_SIZE" oem_configurable="true" helptext="ssl_task thread stack size" type="0x00000002"> 1656 </props>
+      <props id="41" id_name="NET_POST_SSL_TASK_PRIORITY" oem_configurable="true" helptext="post_ssl_task thread priority" type="0x00000002"> 12 </props>
+      <props id="42" id_name="NET_POST_SSL_TASK_STACK_SIZE" oem_configurable="true" helptext="post_ssl_task thread stack size" type="0x00000002"> 700 </props>
+      <props id="37" id_name="NET_HOSTNAME" oem_configurable="true" helptext="Textual name of a host" type="0x00000011"> hostname </props>
+      <props id="43" id_name="NET_HTTP_SERVER_USERNAME" oem_configurable="true" helptext="User name to login HTTP server" type="0x00000011"> http_server_username </props>
+      <props id="44" id_name="NET_HTTP_SERVER_PASSWORD" oem_configurable="true" helptext="User password to login HTTP server" type="0x00000011"> http_server_password </props>
+      <props id="38" id_name="NET_NDCACHE_STALE_ENTRY_AGE" oem_configurable="true" helptext="Age (in seconds) of stale entry in ND cache" type="0x00000002"> 4 </props>
+      <props id="13" id_name="NET_NETBUF_POOL_SIZE" min="1" max="3" oem_configurable="true" helptext="Number of pools for custom network buffer profile" type="0x00000002"> 3 </props>
+      <props id="14" id_name="NET_NETBUF_POOL" oem_configurable="true" helptext="Custom network buffer profile default configuration" type="0x00000014">netbuf_profile_custom_arr</props>
+      <props id="45" id_name="NET_SNTPC_INITIAL_POLL_INTERVAL" oem_configurable="true" helptext="SNTP client initial poll interval in seconds (min=15)" type="0x00000002"> 15 </props>
+      <props id="46" id_name="NET_SNTPC_CONTINUOUS_POLL_INTERVAL" oem_configurable="true" helptext="SNTP client poll interval in seconds once time is acquired (min=15, should be more than initial to save power)" type="0x00000002"> 30 </props>
+      <props id="47" id_name="NET_SNTPC_PORT" oem_configurable="true" helptext="SNTP client port to use" type="0x00000002"> 123 </props>
+      <props id="48" id_name="NET_SNTPC_DEFAULT_SERVER" oem_configurable="true" helptext="SNTP server to use by SNTP client" type="0x00000011"> sntp_server_name </props>    
+	  <props id="49" id_name="NET_SSL_THRESHOLD_TO_USE_SHARED_INBUF" min="2048" max="16385" oem_configurable="true" helptext="The threshold to use shared inbuf for SSL, if the value = 16385, it means disable SSL shared inbuf. If customer wants to use shared inbuf, set it less than 16385." type="0x00000002"> 16385 </props>	  
+  </device>
+</driver>
+<driver name="exhost_scheme">
+   <device id="0x03000019">
+      <props id="0x100001" id_name="EXHOST_SYS_SCHEME_HEART_BEAT_ENABLE" oem_configurable="true" helptext="0: Heart Beat Disable; 1:Heart Beat Enable" type="0x00000002"> 1 </props>
+      <props id="0x100002" id_name="EXHOST_SYS_SCHEME_HEART_BEAT_INTERVAL" oem_configurable="true" helptext="Heart Beat Interval in ms" type="0x00000002"> 1000 </props>
+      <props id="0x110001" id_name="EXHOST_UART_SCHEME_PROP_ENABLE" oem_configurable="true" helptext="0: Uart Disable; 1:Uart Enable)" type="0x00000002"> 0 </props>
+      <props id="0x110002" id_name="EXHOST_UART_SCHEME_PROP_DEVICE_ID" oem_configurable="true" helptext="Device ID Setting" type="0x00000002"> 0 </props>
+      <props id="0x110003" id_name="EXHOST_UART_SCHEME_PROP_UART_PORT" oem_configurable="true" helptext="0: High Speed Uart Port; 1: Debug Uart Port)" type="0x00000002"> 0 </props>
+      <props id="0x110004" id_name="EXHOST_UART_SCHEME_PROP_BAUD_RATE" oem_configurable="true" helptext="Uart Baud Rate" type="0x00000002"> 115200 </props>
+      <props id="0x110005" id_name="EXHOST_UART_SCHEME_PROP_FLOW_CONTROL_ENABLE" oem_configurable="true" helptext="0: Uart Flow Control Disable; 1:Uart Flow Control Enable)" type="0x00000002"> 0 </props>
+      <props id="0x110006" id_name="EXHOST_UART_SCHEME_PROP_NUM_OF_SERVICE_QUEUES" oem_configurable="true" helptext="number of service queues for UART interface" type="0x00000002"> 6 </props>
+      <props id="0x110007" id_name="EXHOST_UART_SCHEME_PROP_SERVICE_QUEUES" oem_configurable="true" helptext="service queue id list for UART interface" type="0x00000008">0, 1, 2, 3, 4, 5, end </props>
+      <props id="0x210001" id_name="EXHOST_SPI_SCHEME_PROP_ENABLE" oem_configurable="true" helptext="0: SPI Disable; 1:SPI Enable" type="0x00000002"> 1 </props>
+      <props id="0x210002" id_name="EXHOST_SPI_SCHEME_PROP_DEVICE_ID" oem_configurable="true" helptext="Device ID Setting" type="0x00000002"> 0 </props>
+      <props id="0x210003" id_name="EXHOST_SPI_SCHEME_PROP_BLOCK_SIZE" oem_configurable="true" helptext="SPI Block Size" type="0x00000002"> 1024 </props>
+      <props id="0x210004" id_name="EXHOST_SPI_SCHEME_PROP_NUM_OF_SERVICE_QUEUES" oem_configurable="true" helptext="number of service queues for UART interface" type="0x00000002"> 5 </props>
+      <props id="0x210005" id_name="EXHOST_SPI_SCHEME_PROP_SERVICE_QUEUES" oem_configurable="true" helptext="service queue id list for SPI interface" type="0x00000008">0, 1, 2, 3, 4, 5, end </props>
+   </device> 
+</driver>
+<driver name="thread">
+  <device id="0x03000018">
+      <props id="(0x00002000)" type="0x00000002" oem_configurable="true" helptext="DTLS handshake timeout for Thread commissioning" id_name="Thread DTLS Handshake Timeout" min="1" max="60"> 8 </props>
+      <props id="(0x00002001)" type="0x00000002" oem_configurable="true" helptext="Maximum number of children (REED/SED/ED) when acting as a Router." id_name="Thread Router Max Children" min="10" max="64"> 10 </props>
+  </device>
+</driver>
+<driver name="zigbee">
+  <global_def>
+    <var_seq name="zb_manufacturer" type="0x00000001"   oem_configurable="true" helptext="Value of the Basic cluster's ManufacturerName attribute"                            id_name="ZigBee Config Basic Cluster ManufacturerName"> Qualcomm                        </var_seq>
+    <var_seq name="zb_model"        type="0x00000001"   oem_configurable="true" helptext="Value of the Basic cluster's ModelIdentifier attribute"                             id_name="ZigBee Config Basic Cluster ModelIdentifier">  QCA402x                         </var_seq>
+    <var_seq name="zb_date"         type="0x00000001"   oem_configurable="true" helptext="Value of the Basic cluster's DateCode attribute"                                    id_name="ZigBee Config Basic Cluster DateCode">         20170101                        </var_seq>
+    <var_seq name="zb_sw_build"     type="0x00000001"   oem_configurable="true" helptext="Value of the Basic cluster's SWBuildID attribute"                                   id_name="ZigBee Config Basic Cluster SWBuildID">        1.0                             </var_seq>
+  </global_def>
+  <device id="0x03000017">
+      <props id="(0x00001000)"                     type="0x00000002"   oem_configurable="true" helptext="Configuration flags for ZigBee"                                                     id_name="ZigBee Config Flags"                            min="0" max="1">     1    </props>
+      <props id="(0x00001001)"               type="0x00000002"   oem_configurable="true" helptext="Period in milliseconds the parent is polled when configured as a sleepy device"     id_name="ZigBee Config Poll Period"                      min="0" max="65535"> 5000 </props>
+      <props id="(0x00001101)" type="0x00000002"   oem_configurable="true" helptext="Value of the Basic cluster's ApplicationVersion attribute"                          id_name="ZigBee Config Basic Cluster ApplicationVersion" min="0" max="65535"> 1    </props>
+      <props id="(0x00001102)"       type="0x00000002"   oem_configurable="true" helptext="Value of the Basic cluster's StackVersion attribute"                                id_name="ZigBee Config Basic Cluster StackVersion"       min="0" max="65535"> 21   </props>
+      <props id="(0x00001103)"          type="0x00000002"   oem_configurable="true" helptext="Value of the Basic cluster's HWVersion attribute"                                   id_name="ZigBee Config Basic Cluster HWVersion"          min="0" max="65535"> 1    </props>
+      <props id="(0x00001200)"   type="0x00000002"   oem_configurable="true" helptext="Size of the NWK address map table"                                                  id_name="ZigBee Config NWK addr map table size"          min="1" max="65535"> 32   </props>
+      <props id="(0x00001201)"        type="0x00000002"   oem_configurable="true" helptext="Size of the NWK BTT table"                                                          id_name="ZigBee Config NWK BTT table size"               min="1" max="65535"> 32   </props>
+      <props id="(0x00001202)"           type="0x00000002"   oem_configurable="true" helptext="Maximum number of outstanding NWK packets"                                          id_name="ZigBee Config NWK max packets"                  min="1" max="65535"> 255  </props>
+      <props id="(0x00001203)"   type="0x00000002"   oem_configurable="true" helptext="Size fo the NWK neighbor table"                                                     id_name="ZigBee Config NWK neighbor table size"          min="1" max="65535"> 64   </props>
+      <props id="(0x00001204)"      type="0x00000002"   oem_configurable="true" helptext="Size of the NWK route table"                                                        id_name="ZigBee Config NWK route table size"             min="1" max="65535"> 32   </props>
+      <props id="(0x00001205)"       type="0x00000002"   oem_configurable="true" helptext="Number of bits in the Rrec hash table (the actual size of the table is 2^n)"        id_name="ZigBee Config NWK RRec table bits"              min="1" max="255">   8    </props>
+      <props id="(0x00001206)"   type="0x00000002"   oem_configurable="true" helptext="Overflow entries for the RRec hash table"                                           id_name="ZigBee Config NWK RRec table overflow"          min="1" max="65535"> 8    </props>
+      <props id="(0x00001207)"       type="0x00000002"   oem_configurable="true" helptext="Size of the NWK RReq table"                                                         id_name="ZigBee Config NWK RReq table size"              min="1" max="65535"> 16   </props>
+      <props id="(0x00001300)"    type="0x00000002"   oem_configurable="true" helptext="Size of the APS binding table"                                                      id_name="ZigBee Config APS binding table size"           min="1" max="65535"> 64   </props>
+      <props id="(0x00001301)" type="0x00000002"   oem_configurable="true" helptext="Number of device key pairs that can be retained"                                    id_name="ZigBee Config APS device key pair count"        min="1" max="65535"> 32   </props>
+      <props id="(0x00001302)"      type="0x00000002"   oem_configurable="true" helptext="Size of the APS group table"                                                        id_name="ZigBee Config APS group table size"             min="1" max="65535"> 16   </props>
+      <props id="(0x00001303)"       type="0x00000002"   oem_configurable="true" helptext="Maximum APS packet size"                                                            id_name="ZigBee Config APS max packet size"              min="1" max="65535"> 2048 </props>
+      <props id="(0x00001208)"          type="0x00000008" oem_configurable="true" helptext="LQI to cost mapping. Each byte represents the minimum LQI value for link cost 1..6" id_name="ZigBee Config NWK LQI Cost mapping">127, 106, 85, 63, 42, 21, end </props>
+      <props id="(0x00001104)"   type="0x00000011"   oem_configurable="false"> zb_manufacturer </props>
+      <props id="(0x00001105)"    type="0x00000011"   oem_configurable="false"> zb_model        </props>
+      <props id="(0x00001106)"           type="0x00000011"   oem_configurable="false"> zb_date         </props>
+      <props id="(0x00001107)"         type="0x00000011"   oem_configurable="false"> zb_sw_build     </props>
+  </device>
+</driver>
+<driver name="wlan">
+  <device id="0x03000004">
+      <props id="1" id_name="SYS_TUNE_WLAN_NUM_IRAM_BANKS" min="0" max="1" oem_configurable="false" helptext="Number of WLAN IRAM Banks" type="0x00000002"> 1 </props>
+      <props id="2" id_name="SYS_TUNE_WLAN_MULTI_MBOX_ENABLE" oem_configurable="false" helptext="Multiple MBOX support" type="0x00000002"> 1 </props>
+      <props id="3" id_name="SYS_TUNE_WLAN_ENABLE_FASTCHANNEL_SWITCH" oem_configurable="true" helptext="Fast Channel switch support" type="0x00000002"> 1 </props>
+      <props id="4" id_name="SYS_TUNE_WLAN_NUM_RXBUF" min="12" max="20" oem_configurable="true" helptext="Number of WLAN Rx buffers" type="0x00000002"> 16 </props>
+      <props id="5" id_name="SYS_TUNE_WLAN_NUM_TXBUF" min="12" max="20" oem_configurable="true" helptext="Number of WLAN Tx buffers" type="0x00000002"> 16 </props>
+      <props id="6" id_name="SYS_TUNE_WLAN_NUM_MGMTBUF" oem_configurable="true" helptext="Number of managment buffers" type="0x00000002"> 12 </props>
+      <props id="7" id_name="SYS_TUNE_WLAN_NUM_SOFTAP_CLIENTS" oem_configurable="true" helptext="Max Numbers of Connnection allowed in SoftAp mode" type="0x00000002"> 10 </props>
+      <props id="8" id_name="SYS_TUNE_WLAN_OOB_GPIO_INT_PIN" oem_configurable="true" helptext="WLAN OutOfBand Interrupt GPIO" type="0x00000002"> 18 </props>
+      <props id="9" id_name="SYS_TUNE_WLAN_GPIO_COEX_BTACTIVE" oem_configurable="false" helptext="Coex  BT active GPIO " type="0x00000002"> 22 </props>
+      <props id="10" id_name="SYS_TUNE_WLAN_GPIO_COEX_BTPRI_1" oem_configurable="false" helptext="Coex BT priority 1 GPIO " type="0x00000002"> 23 </props>
+      <props id="11" id_name="SYS_TUNE_WLAN_GPIO_COEX_BTPRI_2" oem_configurable="false" helptext="Coex BT priority 2 GPIO" type="0x00000002"> 24 </props>
+      <props id="12" id_name="SYS_TUNE_WLAN_GPIO_COEX_WLAN_ACTIVE" oem_configurable="false" helptext="Coex WLAN Active GPIO" type="0x00000002"> 25 </props>
+      <props id="13" id_name="SYS_TUNE_WLAN_DSET_PENDING_MAX" oem_configurable="false" helptext="Max number of Outstanding asynchronous DataSet" type="0x00000002"> 8 </props>
+      <props id="14" id_name="SYS_TUNE_WLAN_PERSISTENT_MAX_LIST_COUNT" oem_configurable="true" helptext="Max number of persistent list for p2p" type="0x00000002"> 8 </props>
+      <props id="16" id_name="SYS_TUNE_WLAN_FLOW_CONTROL_ENABLE" oem_configurable="true" helptext="WLAN FW Flow control enable/disable Flag" type="0x00000002"> 0 </props>
+      <props id="17" id_name="SYS_TUNE_WLAN_ERROR_DUMP_ENABLE" oem_configurable="true" helptext="WLAN FW error dump enable/disable flag" type="0x00000002"> 1 </props>
+      <props id="18" id_name="SYS_TUNE_NET_BRIDGE_DATABASE_SIZE" oem_configurable="true" helptext="WLAN FW bridge mode relay data base size" type="0x00000002"> 12 </props>
+      <props id="19" id_name="SYS_TUNE_NET_MAX_SOCKETS" oem_configurable="true" helptext="Max Number of Sockets supported in system" type="0x00000002"> 12 </props>
+      <props id="20" id_name="SYS_TUNE_WLAN_CLOCK_SETTLING_TIME" oem_configurable="false" helptext="WLAN Crystal settling time" type="0x00000002"> 2147487648 </props>
+      <props id="21" id_name="SYS_TUNE_WLAN_NULL_PACKET_ENABLE" oem_configurable="true" helptext="Enable Null data tx after device comes out of suspend state" type="0x00000002"> 1 </props>
+      <props id="22" id_name="SYS_TUNE_NET_MAX_DHCP_SERVER_ENTRIES" oem_configurable="true" helptext="Max number of clients supported in DHCPv4 server" type="0x00000002"> 10 </props>
+      <props id="23" id_name="SYS_TUNE_WLAN_OTP_MAC_DEVID" min="0" max="1" oem_configurable="true" helptext="Configure which device use OTP MAC address" type="0x00000002"> 1 </props>
+      <props id="24" id_name="SYS_TUNE_WLAN_FW_DIVERSITY_ANTENNA_SELECT" min="0" max="3" oem_configurable="true" helptext="1-for external antenna(J1),2-PCB antenna(J2),3-PCB antenna(J3)" type="0x00000002"> 0 </props>
+      <props id="25" id_name="SYS_TUNE_WLAN_BTCOEX_ANTENNA_CONFIG" min="1" max="7" oem_configurable="true" helptext="1-Single, Shared Antenna; 2-Dual Antenna, Low Isolation; 3-Dual Antenna, High Isolation; 7-Single, Shared Antenna, switched rx" type="0x00000002"> 2 </props>
+      <props id="26" id_name="SYS_TUNE_WLAN_2G_ANTENNA_CONFIG" oem_configurable="true" helptext="antenna configuration for 2G band, lower nibble correspond to Tx and higher nibble correspond to Rx config in each byte, Byte 0- Antenna1,Byte 1- Antenna2,Byte 2 -Antenna3,Byte 3 -Antenna4" type="0x00000002"> 8987461 </props>
+      <props id="27" id_name="SYS_TUNE_WLAN_5G_ANTENNA_CONFIG" oem_configurable="true" helptext="antenna configuration for 5G band, lower nibble correspond to Tx and higher nibble correspond to Rx config in each byte, Byte 0- Antenna1,Byte 1- Antenna2,Byte 2 -Antenna3,Byte 3 -Antenna4" type="0x00000002"> 0 </props>
+      <props id="28" id_name="SYS_TUNE_WLAN_FW_RESERVE8" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="29" id_name="SYS_TUNE_WLAN_FW_RESERVE9" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="30" id_name="SYS_TUNE_WLAN_FW_RESERVE10" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="31" id_name="SYS_TUNE_WLAN_FW_RESERVE11" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="32" id_name="SYS_TUNE_WLAN_FW_RESERVE12" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="33" id_name="SYS_TUNE_WLAN_FW_RESERVE13" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="34" id_name="SYS_TUNE_WLAN_FW_RESERVE14" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="35" id_name="SYS_TUNE_WLAN_FW_RESERVE15" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="36" id_name="SYS_TUNE_WLAN_FW_RESERVE16" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="37" id_name="SYS_TUNE_WLAN_FW_RESERVE17" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="38" id_name="SYS_TUNE_WLAN_FW_RESERVE18" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="39" id_name="SYS_TUNE_WLAN_FW_RESERVE19" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="40" id_name="SYS_TUNE_WLAN_FW_RESERVE20" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+  </device>
+  <device id="0x03000003">
+      <props id="1" id_name="SYS_TUNE_WLAN_DRV_NUM_OF_DEVICES" min="1" max="2" oem_configurable="true" helptext="Num of wlan devices" type="0x00000002"> 2 </props>
+      <props id="2" id_name="SYS_TUNE_WLAN_DRV_TASK_PRIORITY" oem_configurable="false" helptext="Priority of WLAN task" type="0x00000002"> 18 </props>
+      <props id="3" id_name="SYS_TUNE_WLAN_DRV_TASK_STACK_SIZE" oem_configurable="false" helptext="WLAN stack size" type="0x00000002"> 1500 </props>
+      <props id="4" id_name="SYS_TUNE_WLAN_TEMP_LPO_TRIGGER_THRESHOLD" oem_configurable="false" helptext="future use (Temparature LPO Trigger Threshold)" type="0x00000002"> 10 </props>
+      <props id="5" id_name="SYS_TUNE_WLAN_TKIP_COUNTERMEASURES_ENABLE" oem_configurable="true" helptext="TKIP counter measurement enable/disable flag" type="0x00000002"> 1 </props>
+      <props id="6" id_name="SYS_TUNE_WLAN_ENABLE_FW_ERR_COLLECT" oem_configurable="true" helptext="Collect WLAN error log through outOfBand interrupt" type="0x00000002"> 1 </props>
+      <props id="7" id_name="SYS_TUNE_WLAN_BUS_SELECT" oem_configurable="true" helptext="WLAN Host Interface 1-SDIO 0-SPI" type="0x00000002"> 1 </props>
+      <props id="8" id_name="SYS_TUNE_WLAN_ENABLE_STORERECALL" oem_configurable="false" helptext="Future use (flag to enable/disable WLAN suspend/resume feature)" type="0x00000002"> 1 </props>
+      <props id="9" id_name="SYS_TUNE_WLAN_FW_FILE_FORMAT" oem_configurable="false" helptext="WLAN FW file format method 1-ELF 2-Segmented" type="0x00000002"> 1 </props>
+      <props id="10" id_name="SYS_TUNE_WLAN_GPIO_PWD" oem_configurable="true" helptext="PWD GPIO" type="0x00000002"> 33 </props>
+      <props id="11" id_name="SYS_TUNE_WLAN_GPIO_OOB " oem_configurable="true" helptext="OutofBand GPIO" type="0x00000002"> 4 </props>
+      <props id="12" id_name="SYS_TUNE_WLAN_GPIO_SPI_INTR" oem_configurable="true" helptext="SPI Interrupt GPIO" type="0x00000002"> 37 </props>
+      <props id="13" id_name="SYS_TUNE_WLAN_GPIO_PWD_CONFIG" oem_configurable="true" helptext="PWD gpio configuration" type="0x00000002"> 1 </props>
+      <props id="14" id_name="SYS_TUNE_WLAN_GPIO_OOB_CONFIG" oem_configurable="true" helptext="OutOfBand GPIO configuration" type="0x00000002"> 2434 </props>
+      <props id="15" id_name="SYS_TUNE_WLAN_GPIO_SPI_INTR_CONFIG" oem_configurable="true" helptext="SPI interrupt GPIO configuration" type="0x00000002"> 65536 </props>
+      <props id="16" id_name="SYS_TUNE_WLAN_ENABLE_STACK_OFFLOAD" oem_configurable="true" helptext="Flag to enable Stack offlaod feature" type="0x00000002"> 1 </props>
+      <props id="17" id_name="SYS_TUNE_WLAN_BUS_CLOCK_FREQ" oem_configurable="true" helptext="Host interface SDIO/SPI bus clock frequency in Hz" type="0x00000002"> 48000000 </props>
+      <props id="18" id_name="SYS_TUNE_WLAN_SDIO_BUS_WIDTH" oem_configurable="true" helptext="Width of the SDIO BUS to operate(1 or 4 bit mode)" type="0x00000002"> 4 </props>
+      <props id="19" id_name="SYS_TUNE_WLAN_GPIO_CLK_REQ" oem_configurable="true" helptext="WLAN Shared Clock Request GPIO" type="0x00000002"> 40 </props>
+      <props id="20" id_name="SYS_TUNE_WLAN_GPIO_CLK_REQ_CONFIG" oem_configurable="false" helptext="WLAN Clock Request GPIO configuration" type="0x00000002"> 640 </props>
+      <props id="21" id_name="SYS_TUNE_WLAN_NETBUF_TXRX_POOL_SIZE" oem_configurable="true" helptext="WLAN Descriptors pool size for tx and rx" type="0x00000002"> 16 </props>
+      <props id="22" id_name="SYS_TUNE_WLAN_NETBUF_RX_THRESHOLD" oem_configurable="true" helptext="Threshold for WLAN Rx Descriptors" type="0x00000002"> 2 </props> 
+      <props id="23" id_name="SYS_TUNE_WLAN_HOST_PLATFORM_FPGA" oem_configurable="false" helptext="Platform type 1-FPGA 0-ASIC(4020)" type="0x00000002"> 0 </props>
+      <props id="24" id_name="SYS_TUNE_WLAN_DRIVER_SUSP_RESUME_ENABLE" oem_configurable="false" helptext=" Future use (WLAN Driver Suspend/Resume feature flag)" type="0x00000002"> 0 </props>
+      <props id="25" id_name="SYS_TUNE_WLAN_DRIVER_SLEEP_ENABLE" oem_configurable="true" helptext="Configuration for SDIO/SPI bus suspend/resume" type="0x00000002"> 0 </props>
+      <props id="26" id_name="SYS_TUNE_WLAN_ENABLE_KF_UART_LOGS" oem_configurable="true" helptext="Flag for enable/disabling WLAN Debug logs through Local UART" type="0x00000002"> 0 </props>
+      <props id="27" id_name="SYS_TUNE_WLAN_SUPPLICANT_TASK_PRIORITY" oem_configurable="true" helptext="wlan supplicant task priority" type="0x00000002"> 18 </props>
+      <props id="28" id_name="SYS_TUNE_WLAN_SUPPLICANT_TASK_STACK_SIZE" oem_configurable="true" helptext="wlan supplicant task stack size" type="0x00000002"> 3072 </props>
+      <props id="29" id_name="SYS_TUNE_WLAN_OPTION_FLAG_0" oem_configurable="true" helptext="'use [0:3] bit for select bData 0' will choose default bData. '1' will choose EXT bData. For future, '2' will choose EXT bData 2, etc.." type="0x00000002"> 0 </props>
+      <props id="31" id_name="SYS_TUNE_WLAN_HOST_RESERVE6" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="32" id_name="SYS_TUNE_WLAN_HOST_RESERVE7" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+  </device>
+  <device id="0x03000005">
+      <props id="1" id_name="SYS_TUNE_WLAN_RESERVE0" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="2" id_name="SYS_TUNE_WLAN_RESERVE1" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="3" id_name="SYS_TUNE_WLAN_RESERVE2" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="4" id_name="SYS_TUNE_WLAN_RESERVE3" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="5" id_name="SYS_TUNE_WLAN_RESERVE4" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="6" id_name="SYS_TUNE_WLAN_RESERVE5" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="7" id_name="SYS_TUNE_WLAN_RESERVE6" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="8" id_name="SYS_TUNE_WLAN_RESERVE7" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="9" id_name="SYS_TUNE_WLAN_RESERVE8" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+      <props id="10" id_name="SYS_TUNE_WLAN_RESERVE9" oem_configurable="true" helptext="reserved for future use" type="0x00000002"> 0 </props>
+  </device>
+</driver>
+</module>
+</dal>

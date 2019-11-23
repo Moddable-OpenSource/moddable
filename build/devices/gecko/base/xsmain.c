@@ -20,7 +20,7 @@
 
 #define __XS6PLATFORMMINIMAL__
 #include "xs.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include "xsPlatform.h"
 #include "modInstrumentation.h"
@@ -39,7 +39,6 @@ xsCallback xsHostModuleAt(xsIndex i)
 
 extern void mc_setup(xsMachine *the);
 extern void geckoSetupGPIO();
-extern void	setupDebugger();
 extern void geckoSetupClocks();
 
 void xs_setup() {

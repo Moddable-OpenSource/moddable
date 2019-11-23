@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,6 +19,7 @@
  */
 
 #include "xsmc.h"
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include <stdio.h>
@@ -37,8 +38,10 @@ typedef struct {
 
 void xs_file_destructor(void *data)
 {
-	if (data && ((uintptr_t)-1 != (uintptr_t)data))
+	if (data && ((uintptr_t)-1 != (uintptr_t)data)) {
+		modInstrumentationAdjust(Files, -1);
 		fclose((FILE *)data);
+	}
 }
 
 void xs_File(xsMachine *the)
@@ -52,11 +55,13 @@ void xs_File(xsMachine *the)
 	file = fopen(path, write ? "rb+" : "rb");
 	if (NULL == file) {
 		if (write)
-			file = fopen(path, write ? "ab+" : "rb");
+			file = fopen(path, "ab+");
 		if (NULL == file)
 			xsUnknownError("file not found");
 	}
 	xsmcSetHostData(xsThis, (void *)((uintptr_t)file));
+	
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_file_read(xsMachine *the)
@@ -289,5 +294,23 @@ void xs_file_system_config(xsMachine *the)
 
 void xs_file_system_info(xsMachine *the)
 {
-	xsUnknownError("umimplemented");
+	ULARGE_INTEGER freeSpace, totalSpace;
+	ULONG usedSpace;
+	GetDiskFreeSpaceEx(NULL, &freeSpace, &totalSpace, NULL);
+	xsResult = xsmcNewObject();
+	xsmcVars(1);
+
+	// Stub implementation when values are > 32 bits
+	if (0 == freeSpace.HighPart && 0 == totalSpace.HighPart) {
+		usedSpace = totalSpace.LowPart - freeSpace.LowPart;
+		xsmcSetInteger(xsVar(0), totalSpace.LowPart);
+		xsmcSet(xsResult, xsID_total, xsVar(0));
+	}
+	else {
+		usedSpace = -1;
+		xsmcSetInteger(xsVar(0), -1);
+		xsmcSet(xsResult, xsID_total, xsVar(0));
+	}
+	xsmcSetInteger(xsVar(0), usedSpace);
+	xsmcSet(xsResult, xsID_used, xsVar(0));
 }

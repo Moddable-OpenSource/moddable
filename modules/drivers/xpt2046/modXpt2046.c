@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,6 +38,9 @@
 #include "modSPI.h"
 #include "stddef.h"		// for offsetof macro
 
+#ifndef MODDEF_XPT2046_ZTHRESHOLD
+	#define MODDEF_XPT2046_ZTHRESHOLD (100)
+#endif
 #ifndef MODDEF_XPT2046_HZ
 	#define MODDEF_XPT2046_HZ (1000000)
 #endif
@@ -88,7 +91,10 @@ struct xpt2046Record {
 	uint8_t			priorCount;
 	uint8_t			state;		// 1 = down, 2 = move, 3 = lift
 
+#ifdef MODDEF_XPT2046_TOUCH_PIN
 	modGPIOConfigurationRecord	touchPin;
+#endif
+
 	modGPIOConfigurationRecord	csPin;
 };
 typedef struct xpt2046Record xpt2046Record;
@@ -97,6 +103,7 @@ typedef xpt2046Record *xpt2046;
 static void xpt2046ChipSelect(uint8_t active, modSPIConfiguration config);
 static void powerDown(xpt2046 xpt);
 static void xpt2046GetPosition(xpt2046 xpt, uint16_t *x, uint16_t *y);
+static int xpt2046GetZ1(xpt2046 xpt);
 
 void xs_XPT2046_destructor(void *data)
 {
@@ -116,12 +123,20 @@ void xs_XPT2046(xsMachine *the)
 	modSPIConfig(xpt->spiConfig, MODDEF_XPT2046_HZ, MODDEF_XPT2046_SPI_PORT,
 			MODDEF_XPT2046_CS_PORT, MODDEF_XPT2046_CS_PIN, xpt2046ChipSelect);
 
+#ifdef MODDEF_XPT2046_MISO_DELAY
+	xpt->spiConfig.miso_delay = MODDEF_XPT2046_MISO_DELAY;
+#endif
+	
 	modGPIOInit(&xpt->csPin, MODDEF_XPT2046_CS_PORT, MODDEF_XPT2046_CS_PIN, kModGPIOOutput);
+	modGPIOWrite(&xpt->csPin, 1);
+
+#ifdef MODDEF_XPT2046_TOUCH_PIN
 	modGPIOInit(&xpt->touchPin, MODDEF_XPT2046_TOUCH_PORT, MODDEF_XPT2046_TOUCH_PIN, kModGPIOInput);
+#endif
+
 	modSPIInit(&xpt->spiConfig);
 
 	xpt->priorCount = 0;
-
 	xpt->state = 0;
 
 #if MODDEF_XPT2046_CALIBRATE
@@ -156,7 +171,12 @@ void xs_XPT2046_read(xsMachine *the)
 	xsmcVars(2);
 	xsmcGet(xsVar(1), xsArg(0), 0);
 
-	if (modGPIORead(&xpt->touchPin)) {
+#ifdef MODDEF_XPT2046_TOUCH_PIN
+	if (modGPIORead(&xpt->touchPin))
+#else
+	if (xpt2046GetZ1(xpt) < MODDEF_XPT2046_ZTHRESHOLD)
+#endif
+	{
 		if ((1 != xpt->state) && (2 != xpt->state)) {
 			xpt->state = 0;
 			xpt->priorCount = 0;
@@ -258,6 +278,13 @@ void xpt2046GetPosition(xpt2046 xpt, uint16_t *x, uint16_t *y)
 	modSPITxRx(&xpt->spiConfig, (uint8_t *)&zero, sizeof(zero));
 
 	powerDown(xpt);		// reset to get interrupt pin working again
+}
+
+int xpt2046GetZ1(xpt2046 xpt)
+{
+	uint8_t data[3] = {CTRLZ1, 0, 0};
+	modSPITxRx(&xpt->spiConfig, (uint8_t *)&data, sizeof(data));
+	return (data[1] << 8 | data[2]) >> 3;
 }
 
 void powerDown(xpt2046 xpt)

@@ -21,7 +21,7 @@
 #include "xs.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "user_interface.h"
 
@@ -64,9 +64,10 @@ void xs_wifi_get_mode(xsMachine *the)
 void xs_wifi_scan(xsMachine *the)
 {
 	struct scan_config config;
+	uint8 mode = wifi_get_opmode();
 
-	if (STATION_MODE != wifi_get_opmode())
-		xsUnknownError("can only scan in STATION_MODE");
+	if ((STATION_MODE != mode) && (STATIONAP_MODE != mode))
+		xsUnknownError("can't scan");
 
 	if (gScan)
 		xsUnknownError("unfinished wifi scan pending");
@@ -101,13 +102,6 @@ void xs_wifi_scan(xsMachine *the)
 	xsRemember(gScan->callback);
 }
 
-void xs_wifi_status(xsMachine *the)
-{
-	station_status_t status = wifi_station_get_connect_status();
-
-	xsmcSetInteger(xsResult, (int)status);
-}
-
 void xs_wifi_connect(xsMachine *the)
 {
 	struct station_config config;
@@ -124,16 +118,17 @@ void xs_wifi_connect(xsMachine *the)
 	c_memset(&config, 0, sizeof(config));
 
 	xsmcVars(2);
-	if (xsmcHas(xsArg(0), xsID_ssid)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
-		str = xsmcToString(xsVar(0));
-		if (c_strlen(str) > (sizeof(config.ssid) - 1))
-			xsUnknownError("ssid too long - 32 bytes max");
-		c_memcpy(config.ssid, str, c_strlen(str));
-	}
 
-	if (xsmcHas(xsArg(0), xsID_password)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
+	if (!xsmcTest(xsVar(0)))
+		xsUnknownError("ssid required");
+	str = xsmcToString(xsVar(0));
+	if (c_strlen(str) > (sizeof(config.ssid) - 1))
+		xsUnknownError("ssid too long - 32 bytes max");
+	c_memcpy(config.ssid, str, c_strlen(str));
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	if (xsmcTest(xsVar(0))) {
 		str = xsmcToString(xsVar(0));
 		if (c_strlen(str) > (sizeof(config.password) - 1))
 			xsUnknownError("password too long - 64 bytes max");
@@ -267,15 +262,40 @@ struct xsWiFiRecord {
 	xsMachine			*the;
 	xsSlot				obj;
 	uint8_t				haveCallback;
+	int8_t				disconnectReason;
 };
 
 static xsWiFi gWiFi;
 
+void initVariantXXXX(void)
+{
+	struct ip_info info;
+
+	wifi_station_dhcpc_stop();
+	wifi_softap_dhcps_stop();
+
+	IP4_ADDR(&info.ip, 10, 0, 1, 32);
+	IP4_ADDR(&info.gw, 10, 0, 1, 1);
+	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
+
+	wifi_set_ip_info(STATION_IF, &info);
+
+	ip_addr_t d;
+	IP4_ADDR(&d, 8, 8, 8, 8);
+	dns_setserver(0, &d);
+	IP4_ADDR(&d, 8, 8, 4, 4);
+	dns_setserver(1, &d);
+
+	//	wifi_station_dhcpc_start();
+}
+
+
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsWiFi wifi = refcon;
+	uint32 event = *(uint32 *)message;
 
-	switch (*(uint32 *)message){
+	switch (event){
 		case EVENT_STAMODE_CONNECTED:		message = "connect"; break;
 		case EVENT_STAMODE_DISCONNECTED:	message = "disconnect"; break;
 		case EVENT_STAMODE_GOT_IP:			message = "gotIP"; break;
@@ -284,17 +304,40 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID_callback, xsString(message));
+		if (EVENT_STAMODE_DISCONNECTED != event)
+			xsCall1(wifi->obj, xsID_callback, xsString(message));
+		else {
+			xsmcSetInteger(xsResult, wifi->disconnectReason);
+			xsCall2(wifi->obj, xsID_callback, xsString(message), xsResult);
+		}
 	xsEndHost(the);
 }
 
 static void doWiFiEvent(System_Event_t *msg)
 {
 	xsWiFi walker;
+	int8_t reason = 1;
 
-	for (walker = gWiFi; NULL != walker; walker = walker->next)
+	if (EVENT_STAMODE_DISCONNECTED == msg->event) {
+		reason = msg->event_info.disconnected.reason;
+		reason =	(REASON_AUTH_EXPIRE == reason) ||
+					(REASON_MIC_FAILURE == reason) ||
+					(REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
+					(REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
+					(REASON_IE_IN_4WAY_DIFFERS == reason) ||
+					(REASON_HANDSHAKE_TIMEOUT == reason) ||
+					(REASON_AUTH_FAIL == reason);
+		if (reason)
+			reason = -1;
+	}
+
+	for (walker = gWiFi; NULL != walker; walker = walker->next) {
+		if (reason <= 0)
+			walker->disconnectReason = reason;
+
 		if (walker->haveCallback)
 			modMessagePostToMachine(walker->the, (uint8_t *)&msg->event, sizeof(msg->event), wifiEventPending, walker);
+	}
 }
 
 void xs_wifi_destructor(void *data)
@@ -379,6 +422,7 @@ void xs_wifi_accessPoint(xsMachine *the)
     struct softap_config config;
 	char *str;
 	int ret;
+	uint8 station = 0;
 
 	c_memset(&config, 0, sizeof(config));
 
@@ -431,8 +475,13 @@ void xs_wifi_accessPoint(xsMachine *the)
 		config.beacon_interval = xsmcToInteger(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_station)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_station);
+		station = xsmcToBoolean(xsVar(0));
+	}
+
 	ETS_UART_INTR_DISABLE();
-	ret = wifi_set_opmode_current(SOFTAP_MODE);
+	ret = wifi_set_opmode_current(station ? STATIONAP_MODE : SOFTAP_MODE);
 	ETS_UART_INTR_ENABLE();
 	if (!ret)
 		xsUnknownError("wifi_set_opmode_current failed");

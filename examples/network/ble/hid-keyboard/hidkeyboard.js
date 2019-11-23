@@ -12,14 +12,13 @@
  *
  */
 /*
-/*
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.human_interface_device.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.report.xml
- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.report_reference.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.human_interface_device.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.report.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Descriptors/org.bluetooth.descriptor.report_reference.xml
  
- http://www.usb.org/developers/hidpage/HID1_11.pdf
- http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
- https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
+	http://www.usb.org/developers/hidpage/HID1_11.pdf
+	http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
+	https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
 */
 
 import {BLEHIDClient, ReportType, UsageID} from "hidclient";
@@ -63,8 +62,8 @@ class BLEHIDKeyboard extends BLEHIDClient {
 		this.configure({ usageID: UsageID.KEYBOARD, reportTypes:[ReportType.INPUT, ReportType.OUTPUT] });
 		this.onDeviceDisconnected();
 	}
-	onCharacteristicNotification(characteristic, buffer) {
-		this.onReportData(new Uint8Array(buffer));
+	onCharacteristicNotification(characteristic, value) {
+		this.onReportData(value);
 	}
 	onDeviceDisconnected() {
 		this.lastKeyCount = 0;
@@ -73,7 +72,7 @@ class BLEHIDKeyboard extends BLEHIDClient {
 		this.indicators = 0;
 		this.outputReportCharacteristic = null;
 	}
-	onDeviceReportMap(buffer) {
+	onDeviceReportMap(value) {
 	}
 	onDeviceReports(reports) {
 		let enabledNotifications = false;
@@ -180,7 +179,7 @@ class BLEHIDKeyboard extends BLEHIDClient {
 	}
 	updateIndicators() {
 		if (this.outputReportCharacteristic)
-			this.outputReportCharacteristic.writeWithoutResponse(Uint8Array.of(this.indicators).buffer);
+			this.outputReportCharacteristic.writeWithoutResponse(Uint8Array.of(this.indicators));
 	}
 }
 

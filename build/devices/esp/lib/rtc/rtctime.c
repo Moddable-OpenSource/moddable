@@ -36,7 +36,7 @@
 #include "rtctime_internal.h"
 #include "rtctime.h"
 
-#include "xsesp.h"
+#include "xsHost.h"
 
 /* seconds per day */
 #define SPD 24*60*60

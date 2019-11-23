@@ -44,12 +44,15 @@ void fxBuildSymbol(txMachine* the)
 	txSlot* slot;
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Symbol_prototype_get_description), C_NULL, mxID(_description), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_prototype_toPrimitive), 1, mxID(_Symbol_toPrimitive), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Symbol", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxSymbolPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructorGlobal(the, mxCallback(fx_Symbol), 0, mxID(_Symbol), XS_DONT_ENUM_FLAG));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Symbol), 0, mxID(_Symbol));
+	mxSymbolConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_for), 1, mxID(_for), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_keyFor), 1, mxID(_keyFor), XS_DONT_ENUM_FLAG);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncIterator), mxID(_asyncIterator), XS_GET_ONLY);
@@ -57,6 +60,7 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_isConcatSpreadable), mxID(_isConcatSpreadable), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_iterator), mxID(_iterator), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_match), mxID(_match), XS_GET_ONLY);
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_matchAll), mxID(_matchAll), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_replace), mxID(_replace), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_search), mxID(_search), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_species), mxID(_species), XS_GET_ONLY);
@@ -146,9 +150,20 @@ void fx_Symbol_keyFor(txMachine* the)
 	if ((mxArgc == 0) || (mxArgv(0)->kind != XS_SYMBOL_KIND))
 		mxTypeError("sym is no symbol");
 	key = fxGetKey(the, mxArgv(0)->value.symbol);
-	if (key && (key->kind == XS_KEY_KIND) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
-		mxResult->kind = XS_STRING_KIND;
+	if (key && ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
+		mxResult->kind = (key->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
 		mxResult->value.string = key->value.key.string;
+	}
+}
+
+void fx_Symbol_prototype_get_description(txMachine* the)
+{
+	txSlot* slot = fxCheckSymbol(the, mxThis);
+	if (!slot) mxTypeError("this is no symbol");
+	slot = fxGetKey(the, slot->value.symbol);
+	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))) {
+		mxResult->kind = slot->kind;
+		mxResult->value = slot->value;
 	}
 }
 
@@ -195,7 +210,7 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 {
 	txSlot* key = fxGetKey(the, slot->value.symbol);
 	fxStringX(the, slot, "Symbol(");
-	if (key)
+	if (key && ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)))
 		fxConcatStringC(the, slot, key->value.string);
 	fxConcatStringC(the, slot, ")");
 }

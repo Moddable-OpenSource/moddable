@@ -16,6 +16,7 @@ import config from "mc/config";
 import WiFi from "wifi";
 import MDNS from "mdns";
 import ASSETS from "assets";
+import Timer from "timer";
 
 const HOSTNAMES = ["modSwitch", "anotherModSwitch"];
 
@@ -59,7 +60,7 @@ class AppBehavior extends Behavior {
 		let wifiData = {};
 		if (config.ssid == "YOUR_WIFI_SSID_HERE") {
 			application.first.string = "Error: no Wi-Fi credentials";
-			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in $MODDABLE/modules/network/webthings/manifest.json\n");
+			trace("Error: no Wi-Fi credentials. Must include Wi-Fi credentials in manifest.json\n");
 			return;
 		} else {
 			wifiData.ssid = config.ssid;
@@ -102,11 +103,13 @@ class AppBehavior extends Behavior {
 	}
 	onHostname(application, value) {
 		trace(`Got hostname ${value}.\n`);
-		application.remove(application.first);
-		application.add(new ASSETS.SwitchScreen(value));
 		let mdns = this.mdns;
 		let things = this.things = new WebThings(mdns);
 		things.add(OnOffSwitch);
+		Timer.set(() => {
+			application.remove(application.first);
+			application.add(new ASSETS.SwitchScreen(value));	
+		}, 0);
 	}
 	stateChanged(container, state) {
 		this.things.things[0].instance["on"] = state;

@@ -38,7 +38,7 @@
 #include "xsAll.h"
 #include "xs.h"
 #include "xsScript.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 
 #include <stdio.h>
 
@@ -164,8 +164,7 @@ void setStepDone(xsMachine *the)
 		return;
 
 	xsBeginHost(the);
-		xsResult = xsGet(xsGlobal, mxID(_require));
-		xsResult = xsCall1(xsResult, mxID(_weak), xsString("main"));
+		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
 	xsEndHost(the);
@@ -182,7 +181,6 @@ void mc_setup(xsMachine *the)
 	xsBeginHost(the);
 		xsVars(2);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
-		xsVar(1) = xsGet(xsGlobal, mxID(_require));
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
@@ -194,7 +192,7 @@ void mc_setup(xsMachine *the)
 				if (dot)
 					*dot = 0;
 
-				xsResult = xsCall1(xsVar(1), mxID(_weak), xsString(path));
+				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
 					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
@@ -368,7 +366,7 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 }
 #endif
 
-txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
 	char name[128];
@@ -438,7 +436,7 @@ txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)
     return XS_NO_ID;
 }
 
-void fxLoadModule(txMachine* the, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txPreparation* preparation = the->preparation;
 	txString path = fxGetKeyName(the, moduleID) + preparation->baseLength;
@@ -465,14 +463,14 @@ void fxLoadModule(txMachine* the, txID moduleID)
 		aScript.version[2] = XS_PATCH_VERSION;
 		aScript.version[3] = 0;
 
-		fxResolveModule(the, moduleID, &aScript, C_NULL, C_NULL);
+		fxResolveModule(the, realm, moduleID, &aScript, C_NULL, C_NULL);
 		return;
 	}
 #endif
     
 	while (c > 0) {
 		if (!c_strcmp(path, script->path)) {
-			fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
+			fxResolveModule(the,realm,  moduleID, script, C_NULL, C_NULL);
 			return;
 		}
 		c--;
@@ -695,6 +693,7 @@ static modMessage gMessageQueue;
 
 static void appendMessage(modMessage msg)
 {
+	modCriticalSectionDeclare;
 	msg->next = NULL;
 	msg->marked = 0;
 
@@ -737,6 +736,7 @@ static modMessageRecord gMessagePool[kMessagePoolCount];
 
 int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
 {
+	modCriticalSectionDeclare;
 	modMessage msg;
 	uint8_t i;
 
@@ -768,6 +768,7 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 
 int modMessageService(void)
 {
+	modCriticalSectionDeclare;
 	modMessage msg = gMessageQueue;
 	while (msg) {
 		msg->marked = 1;
@@ -812,12 +813,12 @@ void modMachineTaskUninit(xsMachine *the)
 
 
 #if MY_MALLOC
-char synergyDebugStr[256];
+char _debugStrBuffer[256];
 void *my_calloc(size_t nitems, size_t size) {
 	void *ret;
 	ret = calloc(nitems, size);
 	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# calloc failed %ld\n", size);
+		sprintf(_debugStrBuffer, "# calloc failed %ld\n", size);
 	}
 	return ret;
 }
@@ -826,7 +827,7 @@ void *my_realloc(void *ptr, size_t size) {
 	void *ret;
 	ret = realloc(ptr, size);
 	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# realloc failed %ld\n", size);
+		sprintf(_debugStrBuffer, "# realloc failed %ld\n", size);
 	}
 	return ret;
 }
@@ -835,7 +836,7 @@ void *my_malloc(size_t size) {
 	void *ret;
 	ret = malloc(size);
 	if (NULL == ret) {
-		sprintf(synergyDebugStr, "# malloc failed %ld\n", size);
+		sprintf(_debugStrBuffer, "# malloc failed %ld\n", size);
 	}
 	return ret;
 }

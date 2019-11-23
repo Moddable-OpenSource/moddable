@@ -67,6 +67,16 @@
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
 
+typedef struct sxWorkerJob txWorkerJob;
+typedef void (*txWorkerCallback)(void* machine, void* job);
+
+struct sxWorkerJob {
+	txWorkerJob* next;
+	txWorkerCallback callback;
+};
+
+extern void fxQueueWorkerJob(void* machine, void* job);
+
 #define mxMachinePlatform \
 	SOCKET connection; \
 	HWND window; \
@@ -75,11 +85,14 @@
 	void (*threadCallback)(void*); \
 	void* waiterCondition; \
 	void* waiterData; \
-	void* waiterLink;
+	void* waiterLink; \
+	CRITICAL_SECTION workerMutex; \
+	txWorkerJob* workerQueue;
 
 #define WM_PROMISE WM_USER
 #define WM_SERVICE WM_USER + 1
 #define WM_XSBUG WM_USER + 2
 #define WM_CALLBACK WM_USER + 3
+#define WM_WORKER WM_USER + 4
 
 #endif /* __WIN_XS__ */

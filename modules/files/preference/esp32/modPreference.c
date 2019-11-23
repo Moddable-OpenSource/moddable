@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsesp.h"
+#include "xsHost.h"
 
 #include "nvs_flash/include/nvs_flash.h"
 

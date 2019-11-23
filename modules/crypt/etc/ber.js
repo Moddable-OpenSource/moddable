@@ -35,8 +35,6 @@
  *       limitations under the License.
  */
 
-import Arith from "arith";
-
 export default class BER {
 	constructor(buf) {
 		this.i = 0;
@@ -79,7 +77,9 @@ export default class BER {
 		if (this.getTag() != 2)
 			throw new Error("BER: not an integer");
 		let length = this.getLength();
-		let ai = new Arith.Integer(new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, length));
+		let offset = this.a.byteOffset + this.i;
+		let chunk = this.a.buffer.slice(offset, offset + length);
+		let ai = BigInt.fromArrayBuffer(chunk);
 		this.i += length;
 		return ai;
 	};
@@ -198,7 +198,7 @@ export default class BER {
 			b.putc(val ? 1 : 0);
 			break;
 		case 0x02:	// integer
-			var c = val.toChunk(0, true);	// signess = true
+			var c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
 			b.putLength(c.byteLength);
 			b.putChunk(c);
 			break;
@@ -360,7 +360,10 @@ export default class BER {
 			res = b.getc() != 0;
 			break;
 		case 0x02:	// integer
-			res = new Arith.Integer(b.getChunk(len));
+			let chunk = b.getChunk(len);
+			let offset = chunk.byteOffset;
+			chunk = chunk.buffer.slice(offset, offset + chunk.byteLength);
+			res = BigInt.fromArrayBuffer(chunk);
 			break;
 		case 0x03:	{// bit string
 			let pad = b.getc();
@@ -434,3 +437,5 @@ export default class BER {
 		return res;
 	};
 };
+
+Object.freeze(BER.prototype);

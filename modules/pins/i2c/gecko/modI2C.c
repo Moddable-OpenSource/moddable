@@ -19,7 +19,7 @@
  */
 
 #include "modI2C.h"
-#include "xsgecko.h"
+#include "xsHost.h"
 #include "em_cmu.h"
 #include "em_emu.h"
 #include "em_core.h"

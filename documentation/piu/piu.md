@@ -35,6 +35,7 @@ Piu is a user interface framework designed to run on microcontrollers. The progr
  	 * [Row Object](#row-object)
  	 * [Scroller Object](#scroller-object)
  	 * [Skin Object](#skin-object)
+ 	 * [Sound Object](#sound-object)
  	 * [Style Object](#style-object)
  	 * [Text Object](#text-object)
  	 * [Texture Object](#texture-object)
@@ -806,7 +807,8 @@ Same as for `container` object (see [Dictionary](#container-dictionary) in the s
 
 | Parameter | Type | Description |
 | --- | --- | :--- |
-| `displayListLength ` | `number` | The size of the display list buffer in bytes
+| `commandListLength ` | `number` | The size of the command list buffer in bytes used for holding Piu drawing operations
+| `displayListLength ` | `number` | The size of the display list buffer in bytes for targets using the Poco rendering engine
 | `touchCount` | `number` | The number of touch events that can trigger at the same time
 
 #### Prototype Description
@@ -3536,6 +3538,90 @@ All properties of a `skin` object are read-only, but you can change the style of
 | `fill` | `object` | | This skin's fill color(s), as an `array` of strings of the form specified in the [Color](#color) section of this document.<BR><BR>The `state` property of the `content` object using the skin determines the index of the array; if `state` is not an integer, colors from surrounding states are blended. If specified as one string instead of an array, it is treated as an array with a single item. The default fill color is `transparent`.
 | `stroke` | `object` | |This skin's stroke color(s), as an `array` of strings of the form specified in the [Color](#color) section of this document.<BR><BR>The `state` property of the `content` object using the skin determines the index of the array; if `state` is not an integer, colors from surrounding states are blended. If specified as one string instead of an array, it is treated as an array with a single item. The default stroke color is `transparent`.
 
+***
+
+### Sound Object
+
+- **Source code:** [`piuSound.c`][37]
+- **Relevant Examples:** [sound][38]
+
+The `Sound` object plays audio using the [`AudioOut` class](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/pins/audioout.md). It may be used to play all or part of an audio resource once or repeatedly. The `Sound` object is designed to play short sounds to provide audible feedback for user actions. Use the `AudioOut` class directly for other audio playback needs.
+
+#### Constructor Description
+A separate instance of the Sound class is created for each audio resource to be played.
+
+##### `Sound(dictionary)`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#sound-dictionary) section below have an effect; other parameters are ignored.
+
+Returns a `sound` instance, an object that inherits from `Sound.prototype`
+
+```javascript
+let sampleSound = new Sound({ path: "piano.wav" });
+```
+
+<a id="sound-dictionary"></a>
+#### Dictionary
+
+| Parameter | Type | Description |
+| --- | --- | :--- |
+| `path` | `string` | The name of the resource containing the audio audio.
+| `offset` | `number` | The number of samples into the audio to begin playback. If not specified, playback begins with the first sample.
+| `size` | `number` | The number of samples to play. If not specified, playback continues to the end of the audio resource.
+
+#### Prototype Description
+
+Prototype inherits from `Object.prototype`.
+
+##### Properties
+
+All properties are static. The default values for the `bitsPerSample`, `numChannels`, and `sampleRate` properties reflect the configuration of the `AudioOut` module.
+
+| Name | Type | Default Value | Read Only | Description |
+| --- | --- | --- | --- | :--- |
+| `bitsPerSample` | `number ` | | ✓ | The number of bits (either 8 or 16) for audio playback.
+| `numChannels` | `number ` | | ✓ |  The number of channels for audio playback.
+| `sampleRate` | `number` | | ✓ | The number of samples per second for audio playback.
+| `volume` | `number` | 1 | | The volume of sounds; values range from 0 for silent, to 1 for full volume
+
+##### Functions
+
+**`static close() `**
+
+Stops any sounds that are playing and closes the `AudioOut` instance used by the `Sound` object. Instances of the `Sound` class are not closed or otherwise affected by this call.
+
+```javascript
+Sound.close();
+```
+
+***
+
+**`play([stream, repeat, callback]) `**
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `stream` | `number` | The stream to play the sound on. Defaults to `0`.
+| `repeat` | `number` | The number of times to repeat the sound. Defaults to `1`. Set the `repeat` property to `Infinity` to repeat the sound indefinitely.
+| `callback` | `function` | An optional callback function to invoke after the audio resource completes playback.
+
+Plays the audio sample on the specified stream `repeat` times. If the `callback` parameter is provided, it is invoked after playback of the audio completes.
+
+```javascript
+// Play sampleSound once
+sampleSound.play();
+
+// Play sampleSound 5 times
+sampleSound.play(0, 5);	
+
+// Play sampleSound once and print to the console when finished
+sampleSound.play(0, 1, () => {
+	trace("Sound finished\n");
+});
+```
+
+***
 
 ### Style Object
 
@@ -4217,6 +4303,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
 [33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [36]: ../../modules/piu/MC/piuTimeline.js "piuTimeline.js"
+[37]: ../../modules/piu/MC/piuSound.c "piuSound.c"
 
 [18]: ../../examples/piu/balls "balls"
 [19]: ../../examples/piu/drag "drag"
@@ -4233,5 +4320,9 @@ Called while this transition is running; called at least twice (with a `fraction
 [32]: ../../examples/piu/scroller "scroller"
 [34]: ../../examples/piu/easing-equations "easing-equations"
 [35]: ../../examples/piu/timeline "timeline"
+[38]: ../../examples/piu/sound "sound"
 
 [29]: ./PiuContainmentHierarchy.md "Piu Containment Hierarchy"
+
+
+

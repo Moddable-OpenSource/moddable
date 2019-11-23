@@ -40,14 +40,13 @@ global.CLUT = CLUT;
 
 export class Texture @ "PiuTextureDelete" {
 	constructor(it) {
-		let path;
 		let alphaBitmap;
 		let colorBitmap;
 		if (typeof(it) == "object")
 			it = it.path;
 		if (it.endsWith(".png")) {
 			let name = it.slice(0, -4);
-			path = name + "-alpha.bm4";
+			let path = name + "-alpha.bm4";
 			if (Resource.exists(path)) {
 				alphaBitmap = parseRLE(new Resource(path));
 			}
@@ -76,15 +75,14 @@ export class Texture @ "PiuTextureDelete" {
 	get height() @ "PiuTexture_get_height"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
 			let texture;
-			if (map)
-				texture = map.get(it);
+			if (global.assetMap)
+				texture = assetMap.get(it);
 			else
-				map = global.assetMap = new Map;
+				global.assetMap = new Map;
 			if (!texture) {
 				texture = new Texture(it);
-				map.set(it, texture);
+				assetMap.set(it, texture);
 			}
 			return texture;
 		}
@@ -95,7 +93,7 @@ global.Texture = Texture;
 
 // PiuDie.c
 
-var die = {
+const die = {
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuDie__create",
 	and(x, y, width, height) @ "PiuDie_and",
@@ -109,13 +107,13 @@ var die = {
 	sub(x, y, width, height) @ "PiuDie_sub",
 	xor(x, y, width, height) @ "PiuDie_xor",
 };
-export var Die = Template(die);
+export const Die = Template(die);
 Object.freeze(die);
 global.Die = Die;
 
 // PiuImage.c
 
-var image = {
+const image = {
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuImage_create",
 	
@@ -124,19 +122,21 @@ var image = {
 	
 	set frameIndex(it) @ "PiuImage_set_frameIndex",
 };
-export var Image = Template(image);
+export const Image = Template(image);
 Object.freeze(image);
 global.Image = Image;
 
 // PiuApplication.c
 
-var application = {
+const application = {
 	__proto__: Container.prototype,
 	_create($, it) @ "PiuApplication_create",
 	
 	get clut() @ "PiuApplication_get_clut",
+	get rotation() @ "PiuApplication_get_rotation",
 	
 	set clut(it) @ "PiuApplication_set_clut",
+	set rotation(it) @ "PiuApplication_set_rotation",
 	
 	animateColors(colors) @ "PiuApplication_animateColors",
 	keyDown(key) @ "PiuApplication_keyDown",
@@ -165,7 +165,7 @@ global.Application = Application;
 
 class View @ "PiuViewDelete" {
 	constructor(application, it) {
-		let screen = global.screen ? global.screen : require("screen");
+		let screen = global.screen;
 		it.rotation = this.rotation;
 		if (screen.pixelFormat == Bitmap.CLUT16)
 			screen.clut = new Resource("main.cct");

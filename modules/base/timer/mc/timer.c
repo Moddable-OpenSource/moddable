@@ -21,26 +21,7 @@
 
 #include "xsmc.h"
 #include "modTimer.h"
-
-#if ESP32 || __ets__
-	#include "xsesp.h"
-#elif __ZEPHYR__
-	#include "modTimer.h"
-	#include "xsPlatform.h"
-#elif defined(linux)
-	#include "xslinux.h"
-#elif defined(gecko)
-	#include "xsgecko.h"
-	#include "xsPlatform.h"
-#elif defined(apollo)
-	#include "xsapollo.h"
-	#include "xsPlatform.h"
-#else	// synergy
-	#include <sys/types.h>
-	#include "xssynergy.h"
-	#include "xsPlatform.h"
-	#include <string.h>
-#endif
+#include "xsHost.h"
 
 #include "modInstrumentation.h"
 
@@ -68,6 +49,7 @@ static modTimer gTimers = NULL;
 
 void modTimersExecute(void)
 {
+	modCriticalSectionDeclare;
 	int now = modMilliseconds();
 	modTimer walker;
 #if MOD_TASKS
@@ -115,6 +97,7 @@ void modTimersExecute(void)
 
 int modTimersNext(void)
 {
+	modCriticalSectionDeclare;
 	int next = 60 * 60 * 1000;		// an hour
 	int now = modMilliseconds();
 	modTimer walker;
@@ -151,6 +134,7 @@ int modTimersNext(void)
 
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
+	modCriticalSectionDeclare;
 	modTimer timer;
 
 	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
@@ -189,6 +173,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 
 void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 {
+	modCriticalSectionDeclare;
 	modCriticalSectionBegin();
 	timer->triggerTime = modMilliseconds() + firstInterval;
 	timer->repeatInterval = secondInterval;
@@ -207,6 +192,7 @@ void *modTimerGetRefcon(modTimer timer)
 
 void modTimerRemove(modTimer timer)
 {
+	modCriticalSectionDeclare;
 	modTimer walker, prev = NULL;
 
 	modCriticalSectionBegin();

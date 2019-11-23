@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,7 +28,7 @@
 
 #if MODINSTRUMENTATION
 
-static uintptr_t gInstrumentationValues[kModInstrumentationLast + 1] /* ICACHE_RAM_ATTR */;
+static uintptr_t ICACHE_RAM_ATTR gInstrumentationValues[kModInstrumentationLast + 1] ;
 
 void modInstrumentationInit(void)
 {
@@ -38,7 +38,7 @@ void modInstrumentationInit(void)
 void modInstrumentationSetCallback_(uint8_t what, ModInstrumentationGetter getter)
 {
 	if ((kModInstrumentationCallbacksBegin <= what) && (what <= kModInstrumentationCallbacksEnd))
-		gInstrumentationValues[what] = (int32_t)getter;
+		gInstrumentationValues[what] = (uintptr_t)getter;
 }
 
 void modInstrumentationSet_(uint8_t what, int32_t value)

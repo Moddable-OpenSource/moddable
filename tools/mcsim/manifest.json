@@ -40,11 +40,21 @@
 		"*": [
 			"./*",
 			"$(SIMULATOR)/screen",
+			"$(MODULES)/base/worker/pcWorker",
 			"$(MODULES)/data/binaryMessage/*",
 		],
 	},
 	"preload": [
+		"piu/All",
+		"piu/Buttons",
 		"piu/PC",
+		"piu/Scrollbars",
+		"piu/Sliders",
+		"piu/Switches",
+		"BinaryMessage",
+		"ControlsPane",
+		"DevicePane",
+		"assets",
 	],
 	"resources": {
 		"assets/*": "./assets/*",

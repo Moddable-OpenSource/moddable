@@ -13,8 +13,9 @@
 	"platforms": {
 		"esp": {},
 		"esp32": {},
+		"qca4020": {},
 		"...": {
-			"error": "WiFi unsupported"
+			"error": "WiFi module unsupported"
 		}
 	}
 }

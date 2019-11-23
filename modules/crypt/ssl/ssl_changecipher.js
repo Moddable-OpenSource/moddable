@@ -38,18 +38,17 @@
 import recordProtocol from "ssl/record";
 import SetupCipher from "ssl/setup";
 import SSLStream from "ssl/stream";
-import Arith from "arith";
 
 // type
 const change_cipher_spec = 1;
 
-let changeCipherSpec = {
+const changeCipherSpec = Object.freeze({
 	name: "changeCipherSpec",
 	unpacketize(session, fragment) {
 		session.traceProtocol(this);
 		var type = (new SSLStream(fragment)).readChar();
 		if (type == change_cipher_spec) {
-			session.readSeqNum = new Arith.Integer(0);	// the specification is very ambiguous about the sequence number...
+			session.readSeqNum = BigInt(0);	// the specification is very ambiguous about the sequence number...
 			return SetupCipher(session, !session.connectionEnd);		// tail call optimization
 		}
 		else
@@ -61,12 +60,10 @@ let changeCipherSpec = {
 		if (type === undefined) type = change_cipher_spec;
 		s.writeChar(type);
 		var upper = recordProtocol.packetize(session, recordProtocol.change_cipher_spec, s.getChunk());
-		session.writeSeqNum = new Arith.Integer(0);	// the specification is very ambiguous about the sequence number...
+		session.writeSeqNum = BigInt(0);	// the specification is very ambiguous about the sequence number...
 		SetupCipher(session, session.connectionEnd);
 		return upper;
 	},
-};
-
-Object.freeze(changeCipherSpec);
+});
 
 export default changeCipherSpec;

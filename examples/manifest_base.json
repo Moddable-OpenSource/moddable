@@ -40,13 +40,25 @@
 	"strip": "*",
 	"platforms": {
 		"esp": {
-			"include": "$(BUILD)/devices/esp/manifest.json"
+			"include": "$(BUILD)/devices/esp/manifest.json",
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/esp/*",
+					"$(MODULES)/network/socket/lwip/modLwipSafe",
+				],
+			},
 		},
 		"esp32": {
-			"include": "$(BUILD)/devices/esp32/manifest.json"
+			"include": "$(BUILD)/devices/esp32/manifest.json",
+			"modules": {
+				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
+			},
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
+		},
+		"qca4020": {
+			"include": "$(BUILD)/devices/qca4020/manifest.json"
 		},
 		"lin": {
 			"modules": {

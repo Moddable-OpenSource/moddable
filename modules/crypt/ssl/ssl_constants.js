@@ -42,6 +42,7 @@ export const DHE_RSA = 2;
 export const DH_ANON = 3;
 export const DH_DSS = 4;
 export const DH_RSA = 5;
+export const ECDHE_RSA = 6;
 // encryption algroithms
 export const AES = 0;
 export const DES = 1;
@@ -65,4 +66,4 @@ export const protocolVersion = (3 << 8) | 1;	// default protocol version
 export const minProtocolVersion = (3 << 8) | 1;
 export const maxProtocolVersion = (3 << 8) | 3;
 
-export const supportedCompressionMethods = [0];	// NULL
+export const supportedCompressionMethods = Object.freeze([0]);	// NULL

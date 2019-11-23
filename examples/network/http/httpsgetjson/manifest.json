@@ -17,5 +17,8 @@
 		"*": [
 			"$(MODULES)/crypt/data/ca109",
 		]
-	}
+	},
+	"config": {
+		"sntp": "pool.ntp.org",
+	},
 }

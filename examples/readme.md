@@ -1,9 +1,7 @@
 # Moddable SDK - Examples
 
-Copyright 2018 Moddable Tech, Inc.<BR>
-Revised: October 26, 2018
-
-<!-- Last edit: 10/26/18 LP -->
+Copyright 2018-2019 Moddable Tech, Inc.<BR>
+Revised: May 17, 2019
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -14,7 +12,7 @@ This document is a guide to building example applications in the Moddable SDK. I
 ## Table of Contents
 
 * [Building apps](#building-apps)
-* [Target platforms](#target-platforms)
+* [Specifying target platforms](#target-platforms)
 * [Screen pixel formats](#screen-pixel-formats)
 * [Screen rotation](#screen-rotation)
 * [Wi-Fi configuration](#wifi-configuration)
@@ -43,53 +41,29 @@ For example, to build a debug version of an app that targets the host platform:
 
 	mcconfig -d -m
 
->**Note**: Only a debug app build connects to `xsbug`, the XS JavaScript source level debugger.
+Note that only a debug app build connects to `xsbug`, the XS JavaScript source level debugger.
 
-For additional details on `mcconfig` please refer to the [tools.md](https://github.com/Moddable-OpenSource/moddable/blob/master/documentation/tools/tools.md) document.
+Also note that `mcconfig` automatically deploys apps to target devices. For many platforms, the `xsbug` debugger is launched when deploying debug apps to devices.
+
+> For additional details on `mcconfig` please refer to the [tools.md](../documentation/tools/tools.md) document.
 
 <a id="target-platforms"></a>
-### Target platforms
+### Specifying target platforms
 
-The `-p` command line option specifies the target platform/subplatform you are building for. The following options are available:
+The `-p` command line option specifies the target platform/subplatform you are building for. For example, to build a release app that targets Moddable One:
 
-| Identifier | Description |
-| :--- | :--- |
-| mac | macOS target
-| win | Windows target
-| lin | Linux target
-| esp | ESP8266 device target
-| esp/moddable_zero | [Moddable Zero](http://www.moddable.com/moddable-zero.php) device target
-| esp/adafruit_oled | [Adafruit OLED display + ESP8266](../documentation/displays/wiring-guide-adafruit-OLED.md)
-| esp/crystalfontz\_monochrome\_epaper | [Crystalfontz monochrome ePaper display + ESP8266](../documentation/displays/wiring-guide-crystalfontz-eink.md)
-| esp/sharp_memory | [2.7" Sharp Memory display + ESP8266](../documentation/displays/wiring-guide-sharp-memory-2.7-spi.md)
-| esp/sparkfun_teensyview | [SparkFun TeensyView + ESP8266](../documentation/displays/wiring-guide-sparkFun-teensyview-spi.md)
-| esp/switch\_science\_reflective\_lcd | [Switch Science reflective LCD display + ESP8266](../documentation/displays/wiring-guide-switch-science-LCD.md)
-| esp32 | ESP32 device target
-| esp32/moddable_zero | [ESP32 with generic SPI display](../documentation/displays/wiring-guide-generic-2.4-spi-esp32.md)
-| esp32/lilygo_t5s | [LilyGO TTGO T5S](https://github.com/LilyGO/TTGO-T5S-Epaper)
-| esp32/lilygo_taudio | [LilyGO TTGO TAudio](https://github.com/LilyGO/TTGO-TAudio)
-| esp32/m5stack | [M5Stack](https://www.aliexpress.com/store/product/M5Stack-Official-Stock-Offer-ESP32-Basic-Core-Development-Kit-Extensible-Micro-Control-Wifi-BLE-IoT-Prototype/3226069_32837164440.html?spm=2114.12010615.8148356.2.11c127aeBNzJBb)
-| esp32/m5stack_fire | [M5Stack Fire](https://www.aliexpress.com/store/product/M5Stack-NEW-PSRAM-2-0-FIRE-IoT-Kit-Dual-Core-ESP32-16M-FLash-4M-PSRAM-Development/3226069_32847906756.html?spm=2114.12010615.8148356.14.11c127aeBNzJBb)
-| esp32/oddwires | [oddWires QVGA TFT touch display](http://www.oddwires.com/2-4-tft-touch-display-qvga/)
-| gecko/blue | [SiLabs Blue Gecko](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit)
-| gecko/giant | [SiLabs Giant Gecko](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit)
-| gecko/mighty | [SiLabs Mighty Gecko](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit)
-| gecko/thunderboard2 | [SiLabs Thunderboard Sense 2](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
-
-For example, to build a release app that targets Moddable Zero:
-
-	mcconfig -m -p esp/moddable_zero
+	mcconfig -m -p esp/moddable_one
 	
 To build a debug app that targets ESP32 devices:
 
 	mcconfig -d -m -p esp32
-	
-> **Note**: `mcconfig` automatically deploys apps to target devices. For many platforms, the `xsbug` debugger is launched when deploying debug apps to devices.
+
+For a full list of available platforms/subplatforms, see the **Platforms** section of the [Getting Started Guide](../documentation/Moddable%20SDK%20-%20Getting%20Started.md).
 
 <a id="screen-pixel-formats"></a>
 ### Screen pixel formats
 
-`mcconfig` defaults to building for 16-bit RGB565 little-endian pixels. Some example apps are designed to run on e-Ink displays or LCD screens with different pixel formats. Use the `-f` command line option to set the destination screen pixel format:
+`mcconfig` defaults to building for 16-bit RGB565 little-endian pixels. Some example apps are designed to run on e-paper displays or LCD screens with different pixel formats. Use the `-f` command line option to set the destination screen pixel format:
 
 - `-f rgb565le`: 16-bit RGB565 little-endian (default)
 - `-f rgb332`: 8-bit RGB332
@@ -112,10 +86,10 @@ Some example apps are designed to render on a rotated screen. Use the `-r` comma
 - `-r 180`: 180 degree rotation
 - `-r 270`: 270 degree rotation
 
-For example, the `rotated` app is designed to run at 90 degree rotation. To build a debug version for the [ESP32 device with a generic QVGA display](../documentation/displays/wiring-guide-generic-2.4-spi-esp32.md):
+For example, the `rotated` app is designed to run at 90 degree rotation. To build a debug version for [Moddable Two](../documentation/devices/moddable-two.md):
 
 	cd $MODDABLE/examples/commodetto/rotated
-	mcconfig -d -m -r 90 -p esp32/moddable_zero
+	mcconfig -d -m -r 90 -p esp32/moddable_two
 
 
 To build the `progress` app to run at 180 degrees rotation on the host platform:

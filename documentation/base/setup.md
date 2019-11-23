@@ -1,7 +1,7 @@
 ## setup
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: November 15, 2017
+Revised: July 24, 2019
 
 ### Background
 The use of JavaScript on a minimal MCU requires an extremely lightweight runtime. One obvious way to keep the runtime small is to only include functionality which is required by the application being run. For example, while a modern Linux, macOS, or Windows distribution includes drivers for a wide variety of displays to support whatever the user may connect, an efficient MCU distribution only includes a single display driver to support the built-in display of the device. Consequently, each device configuration (MCU + display + network capabilities, etc) is distinct.
@@ -24,9 +24,9 @@ The setup function receives a single argument, a done function to call when setu
 		done();
 	}
 
-### Preload and unloading
+### Preload
 
-To minimize RAM use and speed start-up time, the main module and any setup modules should be preloaded. If the setup or main modules are not preloaded, they are loaded with `require.weak`. This allows them to be unloaded by the garbage collector when they are no longer in use. 
+To minimize RAM use and speed start-up time, the main module and any setup modules should be preloaded.
 
 ### Additional notes
 

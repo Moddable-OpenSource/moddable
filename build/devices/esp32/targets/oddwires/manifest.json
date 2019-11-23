@@ -5,10 +5,11 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "",
+		"touch": "xpt2046",
 	},
 	"defines": {
 		"spi": {
+			"port": "VSPI_HOST",
 			"mosi_pin": 23,
 			"miso_pin": 19,
 			"sck_pin": 18,
@@ -22,14 +23,16 @@
 			"spi_port": "VSPI_HOST"
 		},
 		"xpt2046": {
+			"hz": 2000000,
 			"cs_pin": 16,
-			"touch_pin": 17,
 			"spi_port": "VSPI_HOST",
-			"raw_left": 141,
-			"raw_right": 1955,
-			"raw_top": 1970,
-			"raw_bottom": 158,
-		}
+			"raw_left": 250,
+			"raw_right": 3600,
+			"raw_top": 250,
+			"raw_bottom": 3600,
+			"zthreshold": 100,
+			"miso_delay": 150
+		},
 	}
 }
 

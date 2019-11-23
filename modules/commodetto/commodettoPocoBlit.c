@@ -3412,17 +3412,21 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 #endif
 		}
 
-		(pixelReceiver)(pixels, rowBytes * (yMax - yMin), refCon);
-
 		if (pixelsAlt) {
 			int16_t tdl;
 			PocoPixel *tp = pixels;
+
+			(pixelReceiver)(pixels, -(rowBytes * (yMax - yMin)), refCon);		// negative length means async
+
 			pixels = pixelsAlt;
 			pixelsAlt = tp;
 
 			tdl = displayLines;
 			displayLines = displayLinesAlt;
 			displayLinesAlt = tdl;
+		}
+		else {
+			(pixelReceiver)(pixels, rowBytes * (yMax - yMin), refCon);
 		}
 	}
 
