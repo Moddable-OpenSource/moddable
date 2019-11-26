@@ -26,6 +26,7 @@
 #include "modBLECommon.h"
 
 #include "sdk_errors.h"
+#include "sdk_config.h"
 #include "ble.h"
 #include "ble_conn_params.h"
 #include "ble_gap.h"
@@ -378,6 +379,7 @@ void xs_ble_server_deploy(xsMachine *the)
 				add_char_params.p_init_value	= att_desc->value;
 				add_char_params.is_var_len		= (NULL == att_desc->value);
 				add_char_params.is_defered_read = (NULL == att_desc->value);
+				add_char_params.is_defered_write = (NULL == att_desc->value);
 				
 				add_char_params.char_ext_props.wr_aux = (properties & GATT_CHAR_PROP_BIT_EXT_PROP ? 1 : 0);
 				setAttributeProperties(&add_char_params.char_props, properties);
@@ -528,6 +530,11 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
+
+#if (NRF_BLE_LESC_ENABLED == 1)
+	if (mitm && (iocap == DisplayYesNo))
+		modLog("# warning: LE secure connections require a Nordic SDK patch. Refer to the Moddable nRF52 README.md for details.");
+#endif
 
 	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
 	if (NRF_SUCCESS != err)

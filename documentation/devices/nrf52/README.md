@@ -26,6 +26,7 @@ This document describes how to set up and build Moddable applications for the No
   * [Wiring the serial interface](#wiring-the-serial-interface)
   * [Start xsbug](#start-xsbug)
   * [Run the application](#run-the-application) 
+* [Enabling LE secure connection support](#le-secure-connections)
 * [Notes and troubleshooting](#notes-and-troubleshooting)
 * [Example apps with nrf52 support](#example-apps-with-qca4020-support)
 * [Reference Documentation](#reference-documentation)
@@ -302,6 +303,39 @@ Connect Moddable 4 to a USB-to-serial dongle:
 FTDI GND to GND
 
 J-Link:Target Interface Type -> SWD
+
+<a id="le-secure-connections"></a>
+### Enabling LE secure connection support
+LE secure connection support is disabled by default in the Moddable build due to a FreeRTOS incompatibility in the Nordic SDK. To enable LE secure connections, the Nordic SDK and config must be patched as follows:
+
+1. Edit the two #define statements in the `sdk_config.h` file to enable LE secure connection support:
+
+	```
+	#ifndef NRF_BLE_LESC_ENABLED
+		#define NRF_BLE_LESC_ENABLED 1
+	#endif
+	
+	#ifndef PM_LESC_ENABLED
+		#define PM_LESC_ENABLED 1
+	#endif
+	``` 
+	
+2. In the Nordic SDK sources, disable the stack overflow check in the `nrf_stack_info_overflowed()` function:
+
+	```
+	__STATIC_INLINE bool nrf_stack_info_overflowed(void)
+	{
+	#if 0
+		if (NRF_STACK_INFO_GET_SP() < NRF_STACK_INFO_BASE)
+		{
+			return true;
+		}
+	#endif
+		return false;
+	}
+	```
+
+> Note: Because of this incompatibility, the Moddable BLE server traces a warning to the xsbug console when LE secure connections are enabled.
 
 ### Notes and troubleshooting
 
