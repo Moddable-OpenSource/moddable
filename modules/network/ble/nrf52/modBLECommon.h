@@ -68,6 +68,9 @@ typedef struct {
 extern const uint16_t primary_service_uuid;
 extern const uint16_t character_declaration_uuid;
 extern const uint16_t character_client_config_uuid;
+extern const uint16_t character_extended_properties_uuid;
+extern const uint16_t character_user_descriptor_uuid;
+extern const uint16_t character_presentation_format_uuid;
 
 ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init);
 ret_code_t modBLEPlatformTerminate(void);

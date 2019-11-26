@@ -103,6 +103,9 @@ static void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void setAttributePermissions(security_req_t *read_access, security_req_t *write_access, security_req_t *cccd_write_access, uint8_t permissions);
+static void setAttributeProperties(ble_gatt_char_props_t *char_props, uint16_t properties);
+
 static const char_name_table *handleToCharName(uint16_t handle);
 
 typedef struct {
@@ -312,6 +315,8 @@ void xs_ble_server_deploy(xsMachine *the)
     ble_uuid128_t ble_uuid_128;
     ble_add_char_params_t add_char_params;
     ble_add_descr_params_t add_desc_params;
+	ble_add_char_user_desc_t add_user_desc;
+	ble_gatts_char_pf_t char_presentation_format;
 	uint8_t permissions;
 	uint16_t properties;
 	uint16_t char_handle;
@@ -345,11 +350,14 @@ void xs_ble_server_deploy(xsMachine *the)
 		err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_service_uuid, &service_handles[i]);
 		if (NRF_SUCCESS != err_code)
 			goto bail;
-			
+
 		for (uint16_t j = 1; j < attribute_counts[i]; ++j) {
 			gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][j];
 			att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
-			if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, sizeof(character_declaration_uuid))) {
+
+			if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, UUID_LEN_16)) {
+				uint8_t attIndexUserDescription = 0;
+				uint8_t attIndexPresentationFormat = 0;
 				properties = *att_desc->value;
 				
 				++j;	// advance to characteristic value
@@ -371,62 +379,138 @@ void xs_ble_server_deploy(xsMachine *the)
 				add_char_params.is_var_len		= (NULL == att_desc->value);
 				add_char_params.is_defered_read = (NULL == att_desc->value);
 				
-				add_char_params.char_props.read = (properties & GATT_CHAR_PROP_BIT_READ ? 1 : 0);
-				add_char_params.char_props.write_wo_resp = (properties & GATT_CHAR_PROP_BIT_WRITE_NR ? 1 : 0);
-				add_char_params.char_props.write = (properties & GATT_CHAR_PROP_BIT_WRITE ? 1 : 0);
-				add_char_params.char_props.notify = (properties & GATT_CHAR_PROP_BIT_NOTIFY ? 1 : 0);
-				add_char_params.char_props.indicate = (properties & GATT_CHAR_PROP_BIT_INDICATE ? 1 : 0);
 				add_char_params.char_ext_props.wr_aux = (properties & GATT_CHAR_PROP_BIT_EXT_PROP ? 1 : 0);
-				
-				add_char_params.read_access = (permissions & GATT_PERM_READ_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
-				add_char_params.write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
-				add_char_params.cccd_write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);;
+				setAttributeProperties(&add_char_params.char_props, properties);
+				setAttributePermissions(&add_char_params.read_access, &add_char_params.write_access, &add_char_params.cccd_write_access, permissions);
 
 				att_handles[att_handle_index].service_index = i;
 				att_handles[att_handle_index].att_index = j;
+				
+				// Add characteristic user description and/or presentation format descriptors
+				for (uint16_t k = j + 1; k < attribute_counts[i]; ++k) {
+					gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][k];
+					att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
+					
+					if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, UUID_LEN_16)) {
+						break;
+					}
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_user_descriptor_uuid, UUID_LEN_16)) {
+						uint16_t user_desc_properties = 0;
+						permissions = att_desc->perm;
+						add_user_desc.max_size = att_desc->max_length;
+						add_user_desc.size = att_desc->length;
+						
+						// Inherit properties from characteristic
+						if (properties & GATT_CHAR_PROP_BIT_READ)
+							user_desc_properties |= GATT_CHAR_PROP_BIT_READ;
+						if (properties & GATT_CHAR_PROP_BIT_WRITE)
+							user_desc_properties |= GATT_CHAR_PROP_BIT_READ;
+							
+						// Unlike other attributes, the user description descriptor appears to require
+						// non-deferred reads and writes.
+						add_user_desc.p_char_user_desc = att_desc->value;
+						add_user_desc.is_var_len = 1;
+						add_user_desc.is_defered_read = 0;
+						add_user_desc.is_defered_write = 0;
+						add_user_desc.is_value_user = 1;
+						setAttributeProperties(&add_user_desc.char_props, user_desc_properties);
+						setAttributePermissions(&add_user_desc.read_access, &add_user_desc.write_access, NULL, permissions);
+						
+						add_char_params.p_user_descr = &add_user_desc;
+						attIndexUserDescription = k;
+					}
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_presentation_format_uuid, UUID_LEN_16)) {
+						char_presentation_format.format = att_desc->value[0];
+						char_presentation_format.exponent = att_desc->value[1];
+						char_presentation_format.unit = (att_desc->value[2] << 8) | att_desc->value[3];
+						char_presentation_format.name_space = att_desc->value[4];
+						char_presentation_format.desc = (att_desc->value[5] << 8) | att_desc->value[6];
+
+						add_char_params.p_presentation_format = &char_presentation_format;
+						attIndexPresentationFormat = k;
+					}
+				}
+
 				err_code = characteristic_add(service_handles[i], &add_char_params, &att_handles[att_handle_index].handles);
 				if (NRF_SUCCESS != err_code)
 					goto bail;
 
 				char_handle = att_handles[att_handle_index].handles.value_handle;
-				++att_handle_index;
-			}
-			else if (0 == c_memcmp(att_desc->uuid_p, &character_client_config_uuid, sizeof(character_client_config_uuid))) {
-				// Skip CCCD attributes because they are added by characteristic_add() above.
-			}
-			else if (2 == att_desc->uuid_length && (((*((uint16_t *)att_desc->uuid_p) & 0xFF00) >> 8) == 0x29)) {
-				properties = *att_desc->value;
-				permissions = att_desc->perm;
 				
-				c_memset(&add_desc_params, 0, sizeof(add_desc_params));
-				if (UUID_LEN_128 == att_desc->uuid_length) {
-					add_desc_params.uuid_type	= ble_service_uuid.type;
-					add_desc_params.uuid		= (att_desc->uuid_p[13] << 8) | att_desc->uuid_p[12];
+				// If the user description descriptor was added by characteristic_add() above,
+				// add an att_handles entry for this descriptor so we can match this descriptor by name
+				// on subsequent read and write operations.
+				if (BLE_GATT_HANDLE_INVALID != att_handles[att_handle_index].handles.user_desc_handle) {
+					++att_handle_index;
+					c_memset(&att_handles[att_handle_index].handles, 0, sizeof(ble_gatts_char_handles_t));
+					att_handles[att_handle_index].handles.value_handle = att_handles[att_handle_index - 1].handles.user_desc_handle;
+					att_handles[att_handle_index].service_index = i;
+					att_handles[att_handle_index].att_index = attIndexUserDescription;
 				}
-				else {
-					add_desc_params.uuid		= *(uint16_t*)att_desc->uuid_p;
-				}
-				add_desc_params.max_len			= att_desc->max_length;
-				add_desc_params.init_len		= att_desc->length;
-				add_desc_params.p_value			= att_desc->value;
-				add_desc_params.is_var_len		= (NULL == att_desc->value);
-				add_desc_params.is_defered_read	= (NULL == att_desc->value);
 				
-				add_desc_params.read_access = SEC_OPEN;
-				add_desc_params.write_access = SEC_OPEN;
+				// If the presentation format descriptor was added by characteristic_add() above,
+				// there doesn't seem to be a way to find the presentation format descriptor handle.
+				// Create an empty att_handles entry for this descriptor.
+				if (0 != attIndexPresentationFormat) {
+					++att_handle_index;
+					c_memset(&att_handles[att_handle_index].handles, 0, sizeof(ble_gatts_char_handles_t));
+					att_handles[att_handle_index].service_index = i;
+					att_handles[att_handle_index].att_index = attIndexPresentationFormat;
+				}
 
-				att_handles[att_handle_index].service_index = i;
-				att_handles[att_handle_index].att_index = j;
-				err_code = descriptor_add(char_handle, &add_desc_params, &att_handles[att_handle_index].handles.value_handle);
-				if (NRF_SUCCESS != err_code)
-					goto bail;
 				++att_handle_index;
-			}
-			else {
-				xsUnknownError("unhandled attribute type");
+				
+				// Add other descriptors
+				for (uint16_t k = j + 1; k < attribute_counts[i]; ++k) {
+					gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][k];
+					att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
+					if (0 == c_memcmp(att_desc->uuid_p, &character_declaration_uuid, UUID_LEN_16)) {
+						j = k - 1;	// will be incremented by main loop
+						break;
+					}
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_client_config_uuid, UUID_LEN_16)) {
+						// CCCD attributes are automatically added by characteristic_add().
+					}
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_extended_properties_uuid, UUID_LEN_16)) {
+						// Characteristic extended property descriptors are automatically added by characteristic_add().
+					} 
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_user_descriptor_uuid, UUID_LEN_16)) {
+						// Characteristic user description descriptors are added above.
+					} 
+					else if (0 == c_memcmp(att_desc->uuid_p, &character_presentation_format_uuid, UUID_LEN_16)) {
+						// Characteristic presentation format descriptors are added above.
+					}
+					else {
+						permissions = att_desc->perm;
+						c_memset(&add_desc_params, 0, sizeof(add_desc_params));
+						if (UUID_LEN_128 == att_desc->uuid_length) {
+							add_desc_params.uuid_type	= ble_service_uuid.type;
+							add_desc_params.uuid		= (att_desc->uuid_p[13] << 8) | att_desc->uuid_p[12];
+						}
+						else {
+							add_desc_params.uuid		= *(uint16_t*)att_desc->uuid_p;
+						}
+						add_desc_params.max_len			= att_desc->max_length;
+						add_desc_params.init_len		= att_desc->length;
+						add_desc_params.p_value			= att_desc->value;
+						add_desc_params.is_var_len		= (NULL == att_desc->value);
+						add_desc_params.is_defered_read	= (NULL == att_desc->value);
+						setAttributePermissions(&add_desc_params.read_access, &add_desc_params.write_access, NULL, permissions);
+
+						att_handles[att_handle_index].service_index = i;
+						att_handles[att_handle_index].att_index = j;
+						
+						err_code = descriptor_add(char_handle, &add_desc_params, &att_handles[att_handle_index].handles.value_handle);
+						if (NRF_SUCCESS != err_code)
+							goto bail;
+							
+						++att_handle_index;
+					}
+				}
 			}
 		}
 	}
+	
 bail:
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("services deploy failed");
@@ -446,7 +530,7 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	gBLE->iocap = iocap;
 
 	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
-	if (NRF_SUCCESS	!= err)
+	if (NRF_SUCCESS != err)
 		xsUnknownError("invalid security params");
 }
 
@@ -496,6 +580,8 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 			continue;
 			
 		handle = att_handles[i].handles.value_handle;
+		if (BLE_GATT_HANDLE_INVALID == handle)
+			continue;
 		
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), handle);
@@ -527,6 +613,29 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 			
 		xsCall1(xsResult, xsID_push, xsVar(0));
 	}
+}
+
+void setAttributePermissions(security_req_t *read_access, security_req_t *write_access, security_req_t *cccd_write_access, uint8_t permissions)
+{
+	security_req_t security_req;
+	if (NULL != read_access) {
+		*read_access = (permissions & GATT_PERM_READ_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
+	}
+	if (NULL != write_access) {
+		*write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
+	}
+	if (NULL != cccd_write_access) {
+		*cccd_write_access = (permissions & GATT_PERM_WRITE_ENCRYPTED ? (gBLE->mitm ? SEC_MITM : SEC_JUST_WORKS) : SEC_OPEN);
+	}
+}
+
+void setAttributeProperties(ble_gatt_char_props_t *char_props, uint16_t properties)
+{
+	char_props->read = (properties & GATT_CHAR_PROP_BIT_READ ? 1 : 0);
+	char_props->write_wo_resp = (properties & GATT_CHAR_PROP_BIT_WRITE_NR ? 1 : 0);
+	char_props->write = (properties & GATT_CHAR_PROP_BIT_WRITE ? 1 : 0);
+	char_props->notify = (properties & GATT_CHAR_PROP_BIT_NOTIFY ? 1 : 0);
+	char_props->indicate = (properties & GATT_CHAR_PROP_BIT_INDICATE ? 1 : 0);
 }
 
 const char_name_table *handleToCharName(uint16_t handle) {
@@ -886,7 +995,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			if (BLE_GATTS_AUTHORIZE_TYPE_READ == p_evt_authorize_request->type)
 				modMessagePostToMachine(gBLE->the, (uint8_t*)&p_evt_authorize_request->request.read, sizeof(ble_gatts_evt_read_t), gattsReadAuthRequestEvent, NULL);
 			else if (BLE_GATTS_AUTHORIZE_TYPE_WRITE == p_evt_authorize_request->type)
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&p_evt_authorize_request->request.write, sizeof(ble_gatts_evt_write_t), gattsWriteAuthRequestEvent, NULL);
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&p_evt_authorize_request->request.write, sizeof(ble_gatts_evt_write_t) + p_evt_authorize_request->request.write.len - 1, gattsWriteAuthRequestEvent, NULL);
 			break;
         }
         case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST: {

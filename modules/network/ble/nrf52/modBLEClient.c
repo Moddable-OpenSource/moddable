@@ -344,7 +344,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	gBLE->iocap = iocap;
 
 	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
-	if (NRF_SUCCESS	!= err)
+	if (NRF_SUCCESS != err)
 		xsUnknownError("invalid security params");
 		
 	xsBeginHost(gBLE->the);

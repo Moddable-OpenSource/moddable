@@ -28,7 +28,10 @@
 
 const uint16_t primary_service_uuid = 0x2800;
 const uint16_t character_declaration_uuid = 0x2803;
+const uint16_t character_extended_properties_uuid = 0x2900;
+const uint16_t character_user_descriptor_uuid = 0x2901;
 const uint16_t character_client_config_uuid = 0x2902;
+const uint16_t character_presentation_format_uuid = 0x2904;
 
 static int16_t useCount = 0;
 

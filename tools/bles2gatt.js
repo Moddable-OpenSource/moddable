@@ -1051,6 +1051,10 @@ class NRF52GATTFile extends GATTFile {
 						if ("value" in descriptor) {
 							this.writeAttributeValue(file, descriptor, descriptorIndex, "desc");
 						}
+						else if ("2901" == descriptor.uuid) {
+							descriptor._length = descriptor.maxBytes;
+							file.line(`static uint8_t desc_value${descriptorIndex}[${descriptor.maxBytes}] = {0};`);
+						}
 						++descriptorIndex;
 					}
 				}
@@ -1143,7 +1147,7 @@ class NRF52GATTFile extends GATTFile {
 						char_name.type = descriptor.type ? descriptor.type: "";
 						char_names.push(char_name);
 						file.write(`\t\t\t{${uuid_len}, (uint8_t*)&desc_uuid${descriptorIndex}, ${permissions}, ${descriptor.maxBytes}, `);
-						if ("value" in descriptor)
+						if ("value" in descriptor || "2901" == descriptor.uuid)
 							file.write(`${descriptor._length}, (uint8_t*)&desc_value${descriptorIndex}}`);
 						else
 							file.write("0, NULL}");
