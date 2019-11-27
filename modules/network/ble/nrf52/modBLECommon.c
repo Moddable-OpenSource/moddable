@@ -50,6 +50,7 @@ void bufferToUUID(ble_uuid_t *uuid, uint8_t *buffer, uint16_t length)
 ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
 {
 	ret_code_t err_code;
+    ble_cfg_t ble_cfg;
 	uint32_t ram_start = 0;
 	
 	if (0 != useCount++)
@@ -63,6 +64,13 @@ ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
     if (NRF_SUCCESS == err_code)
 		err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
 
+	// Override specific configuration options from the initialization data
+	if (NRF_SUCCESS == err_code) {
+		c_memset(&ble_cfg, 0, sizeof(ble_cfg));
+		ble_cfg.common_cfg.vs_uuid_cfg.vs_uuid_count = init->vs_uuid_count;
+		err_code = sd_ble_cfg_set(BLE_COMMON_CFG_VS_UUID, &ble_cfg, ram_start);
+	}
+	
     // Enable BLE stack
     if (NRF_SUCCESS == err_code)
     	err_code = nrf_sdh_ble_enable(&ram_start);

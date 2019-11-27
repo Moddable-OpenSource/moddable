@@ -63,6 +63,7 @@ typedef struct {
 	nrf_ble_gatt_t *p_gatt;
 	ble_conn_params_init_t cp_init;
 	pm_evt_handler_t pm_event_handler;
+	uint16_t vs_uuid_count;
 } modBLEPlatformInitializeDataRecord, *modBLEPlatformInitializeData;
 
 extern const uint16_t primary_service_uuid;
@@ -77,6 +78,5 @@ ret_code_t modBLEPlatformTerminate(void);
 
 void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length);
 void bufferToUUID(ble_uuid_t *uuid, uint8_t *buffer, uint16_t length);
-
 
 #endif
