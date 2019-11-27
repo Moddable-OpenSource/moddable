@@ -26,6 +26,7 @@
 #include "modBLECommon.h"
 
 #include "sdk_errors.h"
+#include "sdk_config.h"
 #include "ble.h"
 #include "ble_conn_params.h"
 #include "ble_gap.h"
@@ -165,6 +166,7 @@ static void gapRSSIChangedEvent(void *the, void *refcon, uint8_t *message, uint1
 static void gattcCharacteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcCharacteristicNotificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void gattcCharacteristicWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcCharacteristicsForDescriptorsDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcDescriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -342,6 +344,11 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
+
+#if (NRF_BLE_LESC_ENABLED == 1)
+	if (mitm && (iocap == DisplayYesNo))
+		modLog("# warning: LE secure connections require a Nordic SDK patch. Refer to the Moddable nRF52 README.md for details.");
+#endif
 
 	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
 	if (NRF_SUCCESS != err)
@@ -570,7 +577,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	connection->gattProcedure.id = DESCRIPTOR_WRITE_VALUE;
 	
-	writeAttribute(conn_handle, handle, BLE_GATT_OP_WRITE_CMD, data, len);
+	writeAttribute(conn_handle, handle, needResponse ? BLE_GATT_OP_WRITE_REQ : BLE_GATT_OP_WRITE_CMD, data, len);
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
@@ -1217,6 +1224,27 @@ static void gattcCharacteristicNotificationEvent(void *the, void *refcon, uint8_
 	xsEndHost(gBLE->the);
 }
 
+static void gattcCharacteristicWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+	ble_gattc_evt_write_rsp_t const *write_rsp = (ble_gattc_evt_write_rsp_t const *)message;
+	uint32_t conn_handle = (uint32_t)refcon;
+
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	if (!connection)
+		xsUnknownError("connection not found");
+		
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), write_rsp->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("onDescriptorWritten"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
 static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -1380,6 +1408,12 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			if (BLE_GATT_STATUS_SUCCESS == p_ble_evt->evt.gattc_evt.gatt_status) {
 				ble_gattc_evt_read_rsp_t const *read_rsp = &p_ble_evt->evt.gattc_evt.params.read_rsp;
 				modMessagePostToMachine(gBLE->the, (uint8_t*)read_rsp, sizeof(ble_gattc_evt_read_rsp_t) + read_rsp->len - 1, gattcCharacteristicReadEvent, (void*)(uint32_t)p_ble_evt->evt.gattc_evt.conn_handle);
+			}
+        	break;
+        case BLE_GATTC_EVT_WRITE_RSP:
+			if (BLE_GATT_STATUS_SUCCESS == p_ble_evt->evt.gattc_evt.gatt_status) {
+				ble_gattc_evt_write_rsp_t const *write_rsp = &p_ble_evt->evt.gattc_evt.params.write_rsp;
+				modMessagePostToMachine(gBLE->the, (uint8_t*)write_rsp, sizeof(ble_gattc_evt_write_rsp_t) + write_rsp->len - 1, gattcCharacteristicWriteEvent, (void*)(uint32_t)p_ble_evt->evt.gattc_evt.conn_handle);
 			}
         	break;
         	
