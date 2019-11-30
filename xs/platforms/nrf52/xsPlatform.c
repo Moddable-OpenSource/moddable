@@ -183,14 +183,14 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
-#ifdef mxDebug
-
-static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
-
 void fxAbort(txMachine* the, int status)
 {
 	c_exit(status);
 }
+
+#ifdef mxDebug
+
+static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
 
 void fxConnect(txMachine* the)
 {
@@ -218,7 +218,9 @@ void fxConnect(txMachine* the)
 
 	}
 
+#ifdef mxInstrument
 	espDescribeInstrumentation(the);
+#endif
 	return;
 }
 
