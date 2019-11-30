@@ -49,8 +49,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define PATH_MAX 128
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -256,6 +254,11 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 
 #define C_EOF EOF
 #define C_NULL NULL
+
+#ifndef PATH_MAX
+#define PATH_MAX 128
+#endif
+
 
 #define c_tolower tolower
 #define c_toupper toupper
