@@ -35,8 +35,10 @@ xsCallback xsHostModuleAt(xsIndex i)
 }
 
 extern void mc_setup(xsMachine *the);
-extern void setupDebugger();
-extern void fxReceiveLoop();
+#if mxDebug
+extern void fxReceiveLoop(void);
+extern void setupDebugger(void);
+#endif
 
 void xsTask(void *pvParameter);
 
@@ -50,7 +52,9 @@ void xs_setup() {
 void xsTask(void *pvParameter) {
 
 	taskYIELD();
+#if mxDebug
 	setupDebugger();
+#endif
 
     gThe = ESP_cloneMachine(0, 0, 0, 0);
 
