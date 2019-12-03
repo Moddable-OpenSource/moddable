@@ -289,7 +289,7 @@ void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t mess
 	the->debugNotifyOutstanding = false;
 	if (NULL == the->connection)
 		return;
-	else if (kSerialConnection == the->connection) {
+	else if ((txSocket)kSerialConnection == the->connection) {
 		if (!the->debugFragments)
 			return;
 	}

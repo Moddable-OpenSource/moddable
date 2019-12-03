@@ -756,7 +756,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(NetworkBytesWritten, 0);
 	gInstrumentationThe->garbageCollectionCount = 0;
 	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-	gInstrumentationThe->peakParserSize = gInstrumentationThe->stack;
+	gInstrumentationThe->peakParserSize = 0;
 }
 #endif
 

@@ -28,8 +28,6 @@
 #define TIMER_RESOLUTION_IN_MS	1
 #define TICK_INTERVAL_MS		1
 
-APP_TIMER_DEF(timer_tick_src_id);
-
 volatile uint32_t gTicksMS = 0;
 
 void nrf52_delay(uint32_t delayMS) {
