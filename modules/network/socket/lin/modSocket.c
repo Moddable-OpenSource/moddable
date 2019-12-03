@@ -400,57 +400,23 @@ gboolean socketServiceTimerCallback(gpointer data)
 {
 	#define kMaxSockets 10
 	xsSocket xss;
-	uint8_t i, max, count = 0;
+	uint8_t i, max, count;
 	int result;
 	xsSocket xsss[kMaxSockets];
-	fd_set wfds;
-	fd_set rfds;
+	fd_set rfds, wfds;
 	struct timeval tv;
-	uint8_t done = false;
 
-	// check for new connections
-	FD_ZERO(&wfds);
-	max = -1;
-	for (xss = gSockets, count = 0; xss; xss = xss->next) {
-		if (!xss->connected && !xss->done) {
-			xsss[count] = xss;
-			FD_SET(xss->skt, &wfds);
-			if (xss->skt > max)
-				max = xss->skt;
-			if (++count == kMaxSockets)
-				break;
-		}
-	}
-	if (0 != count) {
-		tv.tv_sec = tv.tv_usec = 0;
-		result = select(max + 1, NULL, &wfds, NULL, &tv);
-		if (result > 0) {
-			for (i = 0; i < count; ++i) {
-				xsSocket xss = xsss[i];
-				if (FD_ISSET(xss->skt, &wfds)) {
-					done = true;
-					xss->connected = true;
-					modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
-				}
-			}
-		}
-	}
-	if (done)
-		goto bail;
-		
-	// check for readable sockets or writable sockets with unreported data sent
 	FD_ZERO(&wfds);
 	FD_ZERO(&rfds);
-	max = -1;
-	for (xss = gSockets, count = 0; xss; xss = xss->next) {
-		if (xss->connected && !xss->done) {
-			xsss[count] = xss;
-			FD_SET(xss->skt, (xss->unreportedSent ? &wfds : &rfds));
-			if (xss->skt > max)
-				max = xss->skt;
-			if (++count == kMaxSockets)
-				break;		
-		}
+	for (xss = gSockets, count = 0, max = -1; xss; xss = xss->next) {
+		if (xss->done)
+			continue;
+		xsss[count] = xss;
+		FD_SET(xss->skt, (!xss->connected || xss->unreportedSent) ? &wfds : &rfds);
+		if (xss->skt > max)
+			max = xss->skt;
+		if (++count == kMaxSockets)
+			break;
 	}
 	if (0 != count) {
 		tv.tv_sec = tv.tv_usec = 0;
@@ -459,11 +425,14 @@ gboolean socketServiceTimerCallback(gpointer data)
 			for (i = 0; i < count; ++i) {
 				xsSocket xss = xsss[i];
 				if (FD_ISSET(xss->skt, &wfds)) {
-					xss->unreportedSent = 0;
-					modMessagePostToMachine(xss->the, NULL, 0, socketWritable, xss);
-					//xsBeginHost(xss->the);
-					//	xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
-					//xsEndHost(xss->the);
+					if (!xss->connected) {
+						xss->connected = true;
+						modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
+					}
+					else if (0 != xss->unreportedSent) {
+						xss->unreportedSent = 0;
+						modMessagePostToMachine(xss->the, NULL, 0, socketWritable, xss);
+					}
 				}
 				if (FD_ISSET(xss->skt, &rfds)) {
 					modMessagePostToMachine(xss->the, NULL, 0, socketReadable, xss);
@@ -472,7 +441,6 @@ gboolean socketServiceTimerCallback(gpointer data)
 		}
 	}
 	
-bail:
 	return G_SOURCE_CONTINUE;
 }
 
