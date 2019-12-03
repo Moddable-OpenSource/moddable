@@ -38,15 +38,6 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 
-#if NRF_MODULE_ENABLED(NRF_LOG)
-#undef modLog
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-#define modLog(x) NRF_LOG_INFO(x)
-#endif
-
 #define APP_BLE_OBSERVER_PRIO 3
 #define FIRST_CONN_PARAMS_UPDATE_DELAY      5000                                    /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY       30000                                   /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
@@ -63,7 +54,7 @@
 	#define LOG_GATTS_INT(i)
 #endif
 
-#define LOG_GAP 0
+#define LOG_GAP 1
 #if LOG_GAP
 	#define LOG_GAP_EVENT(event) logGAPEvent(event)
 	#define LOG_GAP_MSG(msg) modLog(msg)
@@ -171,11 +162,6 @@ void xs_ble_server_initialize(xsMachine *the)
 	
 	err_code = modBLEPlatformInitialize(&init);
 	
-#if NRF_MODULE_ENABLED(NRF_LOG)
-	err_code = NRF_LOG_INIT(NULL);
-    NRF_LOG_DEFAULT_BACKENDS_INIT();
-#endif
-
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble initialization failed");
 
