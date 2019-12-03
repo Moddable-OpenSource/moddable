@@ -65,12 +65,6 @@ void vApplicationIdleHook( void )
 
 #if NRF_LOG_ENABLED
 /**@brief Thread for handling the logger.
- *
- * @details This thread is responsible for processing log entries if logs are deferred.
- *          Thread flushes all log entries and suspends. It is resumed by idle task hook.
- *
- * @param[in]   arg   Pointer used for passing some arbitrary information (context) from the
- *                    osThreadCreate() call to the thread.
  */
 static void logger_thread(void * arg)
 {

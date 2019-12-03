@@ -54,7 +54,7 @@
 	#define LOG_GATTS_INT(i)
 #endif
 
-#define LOG_GAP 1
+#define LOG_GAP 0
 #if LOG_GAP
 	#define LOG_GAP_EVENT(event) logGAPEvent(event)
 	#define LOG_GAP_MSG(msg) modLog(msg)
@@ -938,7 +938,11 @@ static void logGAPEvent(uint16_t evt_id) {
 		case BLE_GAP_EVT_DATA_LENGTH_UPDATE: modLog("BLE_GAP_EVT_DATA_LENGTH_UPDATE"); break;
 		case BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT: modLog("BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT"); break;
 		case BLE_GAP_EVT_ADV_SET_TERMINATED: modLog("BLE_GAP_EVT_ADV_SET_TERMINATED"); break;
-		
+	}
+}
+
+static void logGATTSEvent(uint16_t evt_id) {
+	switch(evt_id) {
         case BLE_GATTS_EVT_WRITE: modLog("BLE_GATTS_EVT_WRITE"); break;
         case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST: modLog("BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST"); break;
         case BLE_GATTS_EVT_SYS_ATTR_MISSING: modLog("BLE_GATTS_EVT_SYS_ATTR_MISSING"); break;
@@ -957,6 +961,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 	if (!gBLE) return;
 	
 	LOG_GAP_EVENT(p_ble_evt->header.evt_id);
+	LOG_GATTS_EVENT(p_ble_evt->header.evt_id);
 	
     switch (p_ble_evt->header.evt_id)
     {
