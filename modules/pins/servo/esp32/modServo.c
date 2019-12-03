@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -26,14 +26,19 @@ typedef struct {
 	int			min;
 	int			max;
 	uint8_t		running;
+	uint8_t		channel;
 } modServoRecord, *modServo;
+
+static uint8_t gChannelsUsed = 0;
 
 void xs_servo_destructor(void *data)
 {
 	if (data) {
 		modServo ms = (modServo)data;
-		if (ms->running)
-			ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0);
+		if (ms->running){
+			ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
+			gChannelsUsed &= ~(1 << ms->channel);
+		}
 	}
 }
 
@@ -58,10 +63,31 @@ void xs_servo(xsMachine *the)
 
 	ms.min = 890;
 	ms.max = 4000;
+	ms.channel = LEDC_CHANNEL_0;
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	ledc_channel.gpio_num = xsmcToInteger(xsVar(0));
+
+	if (xsmcHas(xsArg(0), xsID_channel)){
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		ledc_channel.channel = xsmcToInteger(xsVar(0));
+		ms.channel = ledc_channel.channel;
+	}else{
+		uint8_t channels = gChannelsUsed;
+		uint8_t channelNumber = 0;
+		while ((channels & 1) && channelNumber < LEDC_CHANNEL_MAX){
+			channelNumber++;
+			channels >>= 1;
+		}
+		if (channelNumber == LEDC_CHANNEL_MAX){
+			xsRangeError("all servo channels are already taken");
+		}else{
+			ledc_channel.channel = channelNumber;
+			ms.channel = channelNumber;
+			gChannelsUsed |= (1 << channelNumber);
+		}
+	}
 
 	if (xsmcHas(xsArg(0), xsID_min)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_min);
@@ -87,8 +113,9 @@ void xs_servo_close(xsMachine *the)
 	modServo ms = (modServo)xsmcGetHostChunk(xsThis);
 	if (!ms || !ms->running) return;
 
-	ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0);
+	ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
 	ms->running = false;
+	gChannelsUsed &= ~(1 << ms->channel);
 }
 
 void xs_servo_write(xsMachine *the)
@@ -101,8 +128,8 @@ void xs_servo_write(xsMachine *the)
 
 	duty = (((double)(ms->max - ms->min) * degrees) / 180.0) + ms->min;
 
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, duty);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
+	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
 }
 
 void xs_servo_writeMicroseconds(xsMachine *the)
@@ -115,6 +142,6 @@ void xs_servo_writeMicroseconds(xsMachine *the)
 
 	duty = (int)((us / 1000000.0) * 32767.0);
 
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, duty);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
+	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
 }
