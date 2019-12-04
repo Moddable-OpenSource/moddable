@@ -639,7 +639,11 @@ int32_t modGetDaylightSavingsOffset(void)
 
 void modPrelaunch(void)
 {
-#if MODDEF_STARTUP_DELAYMS
+#if defined(mxDebug) && defined(MODDEF_STARTUP_DEBUGDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_DEBUGDELAYMS);
+#elif !defined(mxDebug) && defined(MODDEF_STARTUP_RELEASEDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_RELEASEDELAYMS);
+#elif defined(MODDEF_STARTUP_DELAYMS)
 	modDelayMilliseconds(MODDEF_STARTUP_DELAYMS);
 #endif
 }

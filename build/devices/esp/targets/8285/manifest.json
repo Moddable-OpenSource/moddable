@@ -8,5 +8,10 @@
 				"FLASH_SPEED": "40"
             }
         }
+    },
+    "defines": {
+		"startup": {
+			"debugdelayms": 1000
+		}
     }
 }
