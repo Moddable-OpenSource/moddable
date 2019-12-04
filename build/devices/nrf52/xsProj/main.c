@@ -97,8 +97,10 @@ int main(void)
     // Initialize modules.
     clock_init();
 
+    // Activate deep sleep mode.
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
 #if NRF_LOG_ENABLED
-    // Start execution.
     if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 256, NULL, 1, &m_logger_thread))
     {
         APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
