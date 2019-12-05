@@ -44,6 +44,7 @@
 #include "nrf.h"
 #include "nrf_error.h"
 #include "nrf_gpio.h"
+#include "nrf_drv_wdt.h"
 
 
 #define mxRegExp 1

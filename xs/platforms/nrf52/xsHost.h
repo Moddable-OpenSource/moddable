@@ -192,7 +192,7 @@ extern void ESP_putc(int c);
 	watchdog timer
 */
 
-#define modWatchDogReset()	
+#define modWatchDogReset() nrf_drv_wdt_feed()
 
 /*
     VM

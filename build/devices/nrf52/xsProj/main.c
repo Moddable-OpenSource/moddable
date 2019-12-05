@@ -41,7 +41,10 @@
 #include <stdint.h>
 #include <string.h>
 #include "app_error.h"
+#include "app_timer.h"
 #include "nrf_drv_clock.h"
+#include "nrf_drv_wdt.h"
+#include "xsHost.h"
 
 #if NRF_LOG_ENABLED
 #include "FreeRTOS.h"
@@ -79,12 +82,30 @@ static void logger_thread(void * arg)
 }
 #endif //NRF_LOG_ENABLED
 
-/**@brief Function for initializing the clock.
- */
+static void wdt_event_handler(void)
+{
+    //NOTE: The max amount of time we can spend in WDT interrupt is two cycles of 32768[Hz] clock - after that, reset occurs
+	modLog("watchdog expire! - RESET");
+}
+
 static void clock_init(void)
 {
-    ret_code_t err_code = nrf_drv_clock_init();
-    APP_ERROR_CHECK(err_code);
+	ret_code_t err_code = nrf_drv_clock_init();
+	APP_ERROR_CHECK(err_code);
+	nrf_drv_clock_lfclk_request(NULL);	// for watchdog
+}
+
+static void timer_init(void)
+{
+	ret_code_t err_code = app_timer_init();
+	APP_ERROR_CHECK(err_code);
+}
+
+static void watchdog_init(void)
+{
+	nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
+	ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
+	APP_ERROR_CHECK(err_code);
 }
 
 /**@brief Function for application main entry.
@@ -95,7 +116,9 @@ void xs_main();
 int main(void)
 {
     // Initialize modules.
-    clock_init();
+	clock_init();
+	timer_init();
+	watchdog_init();
 
     // Activate deep sleep mode.
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
