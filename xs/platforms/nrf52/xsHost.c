@@ -761,6 +761,16 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #endif
 
 /*
+	watchdog
+*/
+void modWatchDogReset(void)
+{
+#if !mxDebug
+	nrf_drv_wdt_feed();
+#endif
+}
+
+/*
 	messages
 */
 typedef struct modMessageRecord modMessageRecord;
@@ -833,7 +843,16 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
+#if !mxDebug
 	modWatchDogReset();
+	if (maxDelayMS >= NRFX_WDT_CONFIG_RELOAD_VALUE) {
+		#if NRFX_WDT_CONFIG_RELOAD_VALUE <= 1000
+			maxDelayMS = 500;
+		#else
+			maxDelayMS = NRFX_WDT_CONFIG_RELOAD_VALUE - 1000;
+		#endif
+	}
+#endif
 
 	while (true) {
 		modMessageRecord msg;
@@ -854,23 +873,10 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 }
 
-static nrf_drv_wdt_channel_id wdt_channel_id;
-static uint8_t wdt_channel_initialized = false;
-
 void modMachineTaskInit(xsMachine *the)
 {
 	the->task = xTaskGetCurrentTaskHandle();
 	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
-	
-	// We only create and feed one watchdog channel for the main virtual machine that is created first.
-	// This is because subsequent VMs can come and go and there is no way to remove a watchdog channel
-	// once the channel is created. We call nrf_drv_wdt_feed() to feed the watchdog, which doesn't require
-	// a channel id parameter. The API feeds all watchdog channels (one in our case);
-	if (!wdt_channel_initialized) {
-		nrf_drv_wdt_channel_alloc(&wdt_channel_id);
-		wdt_channel_initialized = 1;
-		nrf_drv_wdt_enable();
-	}
 }
 
 void modMachineTaskUninit(xsMachine *the)
