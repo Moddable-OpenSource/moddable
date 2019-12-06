@@ -639,7 +639,11 @@ int32_t modGetDaylightSavingsOffset(void)
 
 void modPrelaunch(void)
 {
-#if MODDEF_STARTUP_DELAYMS
+#if defined(mxDebug) && defined(MODDEF_STARTUP_DEBUGDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_DEBUGDELAYMS);
+#elif !defined(mxDebug) && defined(MODDEF_STARTUP_RELEASEDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_RELEASEDELAYMS);
+#elif defined(MODDEF_STARTUP_DELAYMS)
 	modDelayMilliseconds(MODDEF_STARTUP_DELAYMS);
 #endif
 }
@@ -765,8 +769,9 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	fxReport(the, "!!! xs: failed to allocate %d bytes for chunk !!!\n", size);
-	xsDebugger();
+	if (size)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
 	return NULL;
 }
 
@@ -793,8 +798,8 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	fxReport(the, "!!! xs: failed to allocate %d bytes for slots !!!\n", size);
-	xsDebugger();
+	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
 	return NULL;
 }
 
@@ -840,10 +845,8 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
 	}
 
-	if (!result) {
-		fxReport(the, "# can't make memory for slots\n");
-		xsDebugger();
-	}
+	if (!result)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	return result;
 }

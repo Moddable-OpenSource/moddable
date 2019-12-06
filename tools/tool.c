@@ -49,9 +49,9 @@
 
 static char** then = NULL;
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
-	exit(1);
+	exit(status);
 }
 
 extern int mainXSA(int argc, char* argv[]) ;

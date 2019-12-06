@@ -343,6 +343,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Math)))
 		fxStripObject(linker, the, &mxMathObject);
+	if (fxIsLinkerSymbolUsed(linker, mxID(_freeze)))
+		fxUnstripCallback(linker, fx_Object_isFrozen);
 	if (fxIsCallbackStripped(linker, fx_Promise))
 		fxStripClass(linker, the, &mxPromiseConstructor);
 	else {

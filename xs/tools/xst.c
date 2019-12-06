@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
 						continue;
 					if (option == 1) {
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsGlobal, xsID("evalScript"), xsResult);
+						xsCall1(xsGet(xsGlobal, xsID("$262")), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))

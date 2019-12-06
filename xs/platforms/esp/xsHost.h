@@ -338,7 +338,7 @@ typedef va_list c_va_list;
 #if ESP32
 	#define c_exit(n) esp_restart()
 #else
-	#define c_exit(n) system_restart()
+	#define c_exit(n) {system_restart(); while (1) esp_yield();}
 #endif
 #define c_free free
 #define c_malloc malloc

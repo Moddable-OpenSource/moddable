@@ -1,11 +1,18 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json"
 	],
+	"modules": {
+		"setup/target": "./setup-target",
+	},
+	"preload": "setup/target",
 	"config": {
 		"screen": "ili9341",
 		"touch": "ft6206",
+		"backlight": 18,
+		"brightness": 100,
 	},
 	"defines": {
 		"i2c": {

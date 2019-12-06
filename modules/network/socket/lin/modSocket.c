@@ -98,9 +98,8 @@ static gboolean socketServiceTimerCallback(gpointer data);
 static void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer user_data);
 
 static void socketConnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void socketDisconnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void socketReadable(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void socketError(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void socketWritable(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void listenerConnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void socketUpUseCount(xsMachine *the, xsSocket xss);
@@ -301,24 +300,6 @@ void socketConnected(void *the, void *refcon, uint8_t *message, uint16_t message
 	socketDownUseCount(the, xss);
 }
 						
-void socketDisconnected(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	xsSocket xss = (xsSocket)refcon;
-	
-	if (xss->done)
-		return;
-		
-	socketUpUseCount(the, xss);
-	
-	xsBeginHost(the);
-		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
-	xsEndHost(the);
-	
-	socketDownUseCount(the, xss);
-	
-	doDestructor(xss);
-}
-
 void socketReadable(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsSocket xss = (xsSocket)refcon;
@@ -383,16 +364,17 @@ bail:
 	socketDownUseCount(the, xss);
 }
 
-void socketError(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+static void socketWritable(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsSocket xss = (xsSocket)refcon;
 	
-	socketUpUseCount(the, xss);
+	if (xss->done)
+		return;
 	
+	socketUpUseCount(the, xss);
 	xsBeginHost(the);
-	xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));		//@@ report the error value
+		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
 	xsEndHost(the);
-
 	socketDownUseCount(the, xss);
 }
 
@@ -418,91 +400,47 @@ gboolean socketServiceTimerCallback(gpointer data)
 {
 	#define kMaxSockets 10
 	xsSocket xss;
-	uint8_t i, max, count = 0;
+	uint8_t i, max, count;
 	int result;
 	xsSocket xsss[kMaxSockets];
-	struct pollfd fds[kMaxSockets];
-	fd_set wfds;
-	uint8_t done = false;
-	
-	// check for new connections
-	for (xss = gSockets; xss; xss = xss->next) {
-		if (!xss->connected && !xss->done) {
-			struct pollfd fds[1];
-			fds[0].fd = xss->skt;
-			fds[0].events = POLLOUT;
-			fds[0].revents = 0;
-			result = poll(fds, 1, 0);
-			if (result > 0) {
-				if (fds[0].revents & (POLLERR | POLLHUP)) {
-					modMessagePostToMachine(xss->the, NULL, 0, socketError, xss);
-				}
-				else if (fds[0].revents & POLLOUT) {
-					xss->connected = true;
-					modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
-				}
-				done = true;
-			}
-		}
-	}
-	if (done)
-		return G_SOURCE_CONTINUE;
-		
-	// collect list of sockets to service
-	for (xss = gSockets; xss; xss = xss->next) {
-		if (xss->connected || (kUDP == xss->kind || kRAW == xss->kind)) {
-			xsss[count] = xss;
-			fds[count].fd = xss->skt;
-			fds[count].events = POLLIN | POLLHUP;
-			fds[count].revents = 0;
-			if (++count == kMaxSockets)
-				break;
-		}
-	}
+	fd_set rfds, wfds;
+	struct timeval tv;
 
-	// service readable sockets and close disconnected sockets
-	result = poll(fds, count, 0);
-	if (result > 0) {
-		for (i = 0; i < count; ++i) {
-			xss = xsss[i];
-			if ((fds[i].revents & (POLLERR | POLLHUP)) && !xss->done) {
-				modMessagePostToMachine(xss->the, NULL, 0, socketDisconnected, xss);
-			}
-			else if (fds[i].revents & POLLIN) {
-				modMessagePostToMachine(xss->the, NULL, 0, socketReadable, xss);
-			}
-		}
-	}
-	
-	// check for writable sockets
 	FD_ZERO(&wfds);
-	max = -1;
-	for (xss = gSockets, count = 0; xss; xss = xss->next) {
-		if (xss->connected && !xss->done && xss->unreportedSent) {
-			xsss[count] = xss;
-			FD_SET(xss->skt, &wfds);
-			if (xss->skt > max)
-				max = xss->skt;
-			if (++count == kMaxSockets)
-				break;
-		}
+	FD_ZERO(&rfds);
+	for (xss = gSockets, count = 0, max = -1; xss; xss = xss->next) {
+		if (xss->done)
+			continue;
+		xsss[count] = xss;
+		FD_SET(xss->skt, (!xss->connected || xss->unreportedSent) ? &wfds : &rfds);
+		if (xss->skt > max)
+			max = xss->skt;
+		if (++count == kMaxSockets)
+			break;
 	}
 	if (0 != count) {
-		struct timeval tv = {0, 0};
-		result = select(max + 1, NULL, &wfds, NULL, &tv);
+		tv.tv_sec = tv.tv_usec = 0;
+		result = select(max + 1, &rfds, &wfds, NULL, &tv);
 		if (result > 0) {
 			for (i = 0; i < count; ++i) {
 				xsSocket xss = xsss[i];
 				if (FD_ISSET(xss->skt, &wfds)) {
-					xss->unreportedSent = 0;
-					xsBeginHost(xss->the);
-						xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
-					xsEndHost(xss->the);
+					if (!xss->connected) {
+						xss->connected = true;
+						modMessagePostToMachine(xss->the, NULL, 0, socketConnected, xss);
+					}
+					else if (0 != xss->unreportedSent) {
+						xss->unreportedSent = 0;
+						modMessagePostToMachine(xss->the, NULL, 0, socketWritable, xss);
+					}
+				}
+				if (FD_ISSET(xss->skt, &rfds)) {
+					modMessagePostToMachine(xss->the, NULL, 0, socketReadable, xss);
 				}
 			}
 		}
 	}
-
+	
 	return G_SOURCE_CONTINUE;
 }
 
@@ -830,8 +768,9 @@ int doFlushWrite(xsSocket xss)
 	int ret;
 
 	ret = send(xss->skt, (char*)xss->writeBuf, xss->writeBytes, 0);
-	if (ret < 0)
+	if (ret < 0) {
 		return -1;
+	}
 
 	modInstrumentationAdjust(NetworkBytesWritten, ret);
 

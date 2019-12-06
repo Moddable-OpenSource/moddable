@@ -394,6 +394,32 @@ export var SliderRow = Row.template(function($) { return {
 	],
 }});
 
+export var StatusRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { 
+			left:0, right:0, style:controlValueStyle,
+			Behavior: class extends Behavior {
+				onCreate(label, data) {
+					this.data = data;
+				}
+				onDataChanged(label) {
+					let data = this.data;
+					let item = data.items.find(item => item.value == data.value);
+					label.string = item.title;
+				}
+				onDisplaying(label) {
+					let data = this.data;
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = label;
+					this.onDataChanged(label);
+				}
+			},
+		}),
+	],
+}});
+
 export var SwitchRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
