@@ -1061,6 +1061,14 @@ export class Tool extends TOOL {
 			case "-v":
 				this.verbose = true;
 				break;
+			case "-t":
+				if (++argi >= argc)
+					throw new Error("-t: no build target!");
+				if (undefined === this.buildTarget)
+					this.buildTarget = argv[argi];
+				else
+					this.buildTarget = this.buildTarget + " " + argv[argi];
+				break;
 			default:
 				name = argv[argi];
 				let split = name.split("=");
