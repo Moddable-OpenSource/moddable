@@ -44,6 +44,7 @@
     <ProgramSection alignment="4" keep="Yes" load="No" name=".log_dynamic_data_run" address_symbol="__start_log_dynamic_data" end_symbol="__stop_log_dynamic_data" />
     <ProgramSection alignment="4" keep="Yes" load="No" name=".log_filter_data_run" address_symbol="__start_log_filter_data" end_symbol="__stop_log_filter_data" />
     <ProgramSection alignment="4" keep="Yes" load="No" name=".nrf_sections_run_end" address_symbol="__end_nrf_sections_run" />
+    <ProgramSection alignment="4" keep="Yes" load="No" name=".retained_section" address_symbol="__start_retained_section" end_symbol="__stop__retained_section" size="256" />
     <ProgramSection alignment="4" load="No" name=".fast_run" />
     <ProgramSection alignment="4" load="No" name=".data_run" />
     <ProgramSection alignment="4" load="No" name=".tdata_run" />

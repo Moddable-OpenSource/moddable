@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"*": [
+			"$(BUILD)/devices/nrf52/modules/sleep/*",
+		],
+	},
+	"preload": [
+		"sleep",
+	],
+}
