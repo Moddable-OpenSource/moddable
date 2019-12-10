@@ -1,7 +1,7 @@
 # Getting Started with Moddable Two
 
 Copyright 2019 Moddable Tech, Inc.<BR>
-Revised: December 3, 2019
+Revised: December 10, 2019
 
 This document describes how to start building Moddable applications for Moddable Two. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Two.
 
@@ -102,7 +102,7 @@ The backlight control is connected to GPIO 18. There is a constant defined for t
 ```javascript
 import "config" from "mc/config";
 
-Digital.write(config.backlight, 0);	// backlight ON
+Digital.write(config.backlight, 1);	// backlight ON
 Digital.write(config.backlight, 0);	// backlight OFF
 ```
 
