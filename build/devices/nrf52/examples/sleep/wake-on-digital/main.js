@@ -13,8 +13,9 @@
  */
 /*
 	This application demonstrates how to use the Sleep object to put the device into System Off power saving mode (deep sleep).
+	The device is woken up from a digital input.
 	Upon wakeup, the application re-launches and the reset reason is traced to the console.
-	Press the device reset button to wakeup from deep sleep.
+	Press the button connected to the digital input pin to wakeup the device.
 */
 
 import {Sleep, ResetReason} from "sleep";

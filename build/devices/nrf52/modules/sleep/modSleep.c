@@ -109,6 +109,23 @@ void xs_sleep_deep(xsMachine *the)
 	else
 #endif
 		NRF_POWER->SYSTEMOFF = 1;
+		
+	// Use data synchronization barrier and a delay to ensure that no failure
+	// indication occurs before System OFF is actually entered.
+	__DSB();
+	__NOP();
+
+	// System Off mode is emulated in debug mode. It is therefore suggested to include an
+	// infinite loop right after System OFF to prevent the CPU from executing code that shouldn't
+	// normally be executed. 
+	// https://devzone.nordicsemi.com/f/nordic-q-a/55486/gpio-wakeup-from-system-off-under-freertos-restarts-at-address-0x00000a80
+	// https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf52840%2Fpower.html&cp=4_0_0_4_2_2_0&anchor=unique_142049681
+
+	// Note that even with this loop, on debug builds, the application ends up in the Hardfault_Handler at restart
+	// after a wakeup from a digital pin.
+#ifdef mxDebug
+	for (;;) {}
+#endif
 }
 
 void xs_sleep_get_reset_reason(xsMachine *the)
@@ -124,7 +141,7 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 #endif
 		reset_reason = NRF_POWER->RESETREAS;
 
-	// clear the reset reason using the bit mask
+	// clear the reset reason register using the bit mask
 	if (softdevice_enabled)
 		sd_power_reset_reason_clr(reset_reason);
 	else
@@ -157,4 +174,10 @@ void xs_sleep_wake_on_digital(xsMachine *the)
 	
     // Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
     nrf_delay_ms(10);
+}
+
+void xs_sleep_wake_on_analog(xsMachine *the)
+{
+	uint16_t pin = xsmcToInteger(xsArg(0));
+
 }

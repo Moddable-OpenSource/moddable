@@ -31,6 +31,7 @@ class Sleep {
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
+	static wakeOnAnalog(pin) @ "xs_sleep_wake_on_analog"
 };
 Object.freeze(Sleep);
 
@@ -51,7 +52,7 @@ const ResetReason = {
 	DOG: 1 << 1,
 	SREQ: 1 << 2,
 	LOCKUP: 1 << 3,
-	OFF: 1 << 16,		// detected by the use of DETECT signal from GPIO (wake on digital)
+	GPIO: 1 << 16,		// detected by the use of DETECT signal from GPIO (wake on digital)
 	LPCOMP: 1 << 17,
 	DIF: 1 << 18,
 	NFC: 1 << 19
