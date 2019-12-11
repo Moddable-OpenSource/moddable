@@ -207,4 +207,9 @@ standard names - or at least those used in the unmodified vector table. */
      */
 #define configUSE_DISABLE_TICK_AUTO_CORRECTION_DEBUG     0
 
+#if configUSE_TICKLESS_IDLE == 1
+	extern void vApplicationSleep();
+	#define portSUPPRESS_TICKS_AND_SLEEP(xIdleTime) vApplicationSleep(xIdleTime)
+#endif
+
 #endif /* FREERTOS_CONFIG_H */
