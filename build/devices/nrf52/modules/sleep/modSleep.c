@@ -21,6 +21,8 @@
 #include "xsmc.h"
 #include "nrf_soc.h"
 #include "nrf_sdm.h"
+#include "nrf_gpio.h"
+#include "nrf_delay.h"
 
 enum {
 	kPowerModeUnknown = 0,
@@ -147,3 +149,12 @@ void xs_sleep_get_reset_pin(xsMachine *the)
 	xsmcSetInteger(xsResult, result);	
 }
 
+void xs_sleep_wake_on_digital(xsMachine *the)
+{
+	uint16_t pin = xsmcToInteger(xsArg(0));
+	
+	nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+	
+    // Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
+    nrf_delay_ms(10);
+}
