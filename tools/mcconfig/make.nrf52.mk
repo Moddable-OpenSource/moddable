@@ -19,21 +19,14 @@
 
 HOST_OS := $(shell uname)
 
+SERIAL_PORT = /dev/cu.usbmodem0006837101911
+
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
-# NRF52_GCC_TOOLCHAIN_DIR ?= /usr/local
-# NRF52_GCC_ROOT ?= $(NRF52_GCC_TOOLCHAIN_DIR)/bin/gcc-arm-none-eabi-6-2017-q2-update
-# GNU_VERSION ?= 6.3.1
+GNU_VERSION ?= 8.2.1
+NRF52_GCC_ROOT ?= /Users/mkellner/gcctoolchain
 
-NRF52_GCC_ROOT ?= /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/gcc
-SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
-SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
-// SEGGER_PKG_INCLUDE = "/Users/mkellner/Nordic/SEGGER Embedded Studio/v3/packages/include"
-
-# NRF52_GCC_ROOT ?= /Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/gcc
-# SEGGER_INCLUDE = "/Applications/SEGGER/arm_segger_embedded_studio_v418_macos_x64_nordic/include"
-# SEGGER_PKG_INCLUDE = "/Users/mkellner/Nordic/SEGGER Embedded Studio/v3/packages/include"
-
+COMPILER_INCLUDE = $(NRF52_GCC_ROOT)/arm-none-eabi/include
 
 NRF_SDK_DIR = $(HOME)/nRF5/nRF5_SDK
 NRFJPROG = $(HOME)/nRF5/nrfjprog/nrfjprog
@@ -101,79 +94,102 @@ ASMFLAGS += -DSOFTDEVICE_PRESENT
 # Linker flags
 LDFLAGS += -mthumb -mabi=aapcs -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
 LDFLAGS += -mcpu=cortex-m4
-# LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-LDFLAGS += $(FP_OPTS)
+LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+# LDFLAGS += $(FP_OPTS)
 # let linker dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-# LDFLAGS += --specs=nano.specs
+LDFLAGS += --specs=nano.specs
 
+LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
 LIB_FILES += -lc -lnosys -lm
 
-# nrf52840_xxaa: CFLAGS += -D__HEAP_SIZE=8192
-# nrf52840_xxaa: CFLAGS += -D__STACK_SIZE=8192
-# nrf52840_xxaa: ASMFLAGS += -D__HEAP_SIZE=8192
-# nrf52840_xxaa: ASMFLAGS += -D__STACK_SIZE=8192
+GNU_VERSION ?= 8.2.1
+NRF52_GCC_ROOT ?= /Users/mkellner/gcctoolchain
 
 INC_DIRS = \
+	$(NRF52_GCC_ROOT)/arm-none-eabi/include \
+	$(NRF52_GCC_ROOT)/arm-none-eabi/include/machine \
+	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/include \
+	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/include-fixed \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
 	$(BUILD_DIR)/devices/nrf52 \
+	$(BUILD_DIR)/devices/nrf52/base \
+	$(BUILD_DIR)/devices/nrf52/xsProj \
 
-SDK_SRC=\
+SDK_SRC=
+
+FREE_RTOS_PATHS = \
+	$(SDK_ROOT)/external/freertos/source \
+	$(SDK_ROOT)/external/freertos/source/include \
+	$(SDK_ROOT)/external/freertos/source/portable/MemMang \
+	$(SDK_ROOT)/external/freertos/portable/GCC/nrf52 \
+	$(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52
 
 # Include folders common to all targets
 INC_DIRS += \
   $(PLATFORM_DIR) \
   $(PLATFORM_DIR)/config \
-  $(SDK_ROOT)/external/freertos/source/include \
-  $(SDK_ROOT)/external/freertos/portable/GCC/nrf52 \
-  $(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52 \
+  $(FREE_RTOS_PATHS) \
   $(SDK_ROOT)/components \
-  $(SDK_ROOT)/modules/nrfx/mdk \
-  $(SDK_ROOT)/components/libraries/scheduler \
-  $(SDK_ROOT)/components/libraries/queue \
-  $(SDK_ROOT)/components/libraries/timer \
-  $(SDK_ROOT)/components/libraries/strerror \
-  $(SDK_ROOT)/components/libraries/serial \
-  $(SDK_ROOT)/components/toolchain/cmsis/include \
-  $(SDK_ROOT)/components/libraries/util \
-  $(SDK_ROOT)/components/libraries/bsp \
+  $(SDK_ROOT)/components/boards \
+  $(SDK_ROOT)/components/libraries/atomic \
+  $(SDK_ROOT)/components/libraries/atomic_fifo \
+  $(SDK_ROOT)/components/libraries/atomic_flags \
   $(SDK_ROOT)/components/libraries/balloc \
-  $(SDK_ROOT)/components/libraries/ringbuf \
-  $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
-  $(SDK_ROOT)/modules/nrfx/hal \
-  $(SDK_ROOT)/components/libraries/hardfault \
-  $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/button \
+  $(SDK_ROOT)/components/libraries/bsp \
+  $(SDK_ROOT)/components/libraries/delay \
+  $(SDK_ROOT)/components/libraries/fds \
+  $(SDK_ROOT)/components/libraries/fstorage \
+  $(SDK_ROOT)/components/libraries/hardfault \
+  $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
+  $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
+  $(SDK_ROOT)/components/libraries/log \
+  $(SDK_ROOT)/components/libraries/queue \
+  $(SDK_ROOT)/components/libraries/ringbuf \
+  $(SDK_ROOT)/components/libraries/scheduler \
+  $(SDK_ROOT)/components/libraries/serial \
   $(SDK_ROOT)/components/libraries/spi_mngr \
+  $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/twi_sensor \
   $(SDK_ROOT)/components/libraries/twi_mngr \
-  $(SDK_ROOT)/modules/nrfx \
-  $(SDK_ROOT)/components/libraries/fds \
+  $(SDK_ROOT)/components/libraries/timer \
+  $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
-  $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/components/libraries/mutex \
-  $(SDK_ROOT)/components/libraries/delay \
-  $(SDK_ROOT)/integration/nrfx \
-  $(SDK_ROOT)/components/libraries/atomic \
-  $(SDK_ROOT)/components/boards \
   $(SDK_ROOT)/components/libraries/memobj \
-  $(SDK_ROOT)/modules/nrfx/drivers/include \
-  $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/components/libraries/log/src \
-  $(SDK_ROOT)/modules/nrfx/hal \
+  $(SDK_ROOT)/components/libraries/sensorsim \
+  $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/ble/common \
+  $(SDK_ROOT)/components/ble/ble_advertising \
+  $(SDK_ROOT)/components/ble/ble_services/ble_bas \
+  $(SDK_ROOT)/components/ble/ble_services/ble_dis \
+  $(SDK_ROOT)/components/ble/ble_services/ble_hrs \
   $(SDK_ROOT)/components/ble/nrf_ble_gatt \
-  $(SDK_ROOT)/components/ble/nrf_ble_scan \
-  $(SDK_ROOT)/components/ble/peer_manager
+  $(SDK_ROOT)/components/ble/nrf_ble_qwr \
+  $(SDK_ROOT)/components/ble/peer_manager \
+  $(SDK_ROOT)/external/fprintf \
+  $(SDK_ROOT)/integration/nrfx/legacy \
+  $(SDK_ROOT)/integration/nrfx \
+  $(SDK_ROOT)/modules/nrfx/mdk \
+  $(SDK_ROOT)/modules/nrfx \
+  $(SDK_ROOT)/modules/nrfx/hal \
+  $(SDK_ROOT)/modules/nrfx/mdk \
+  $(SDK_ROOT)/modules/nrfx/soc \
+  $(SDK_ROOT)/modules/nrfx/drivers/include \
+  $(SDK_ROOT)/modules/nrfx/drivers/src \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/prs \
 
-#  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
+NRF_PATHS += \
+	$(INC_DIRS) \
 
-xXS_OBJ = \
+XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
@@ -223,6 +239,7 @@ XS_DIRS = \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/nrf52 \
 	$(BUILD_DIR)/devices/nrf52
+
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
@@ -234,48 +251,134 @@ XS_HEADERS = \
 
 HEADERS += $(XS_HEADERS)
 
-# SDK_GLUE_OBJ in the IDE
 SDK_GLUE_OBJ = \
-
-#	$(TMP_DIR)/xsmain.c.o \
-#	$(TMP_DIR)/systemclock.c.o \
-#	$(TMP_DIR)/debugger.c.o \
-
-#	$(TMP_DIR)/main.c.o \
+	$(TMP_DIR)/xsmain.c.o \
+	$(TMP_DIR)/systemclock.c.o \
+	$(TMP_DIR)/debugger.c.o \
+	$(TMP_DIR)/main.c.o \
 
 SDK_GLUE_DIRS = \
 	$(BUILD_DIR)/devices/nrf52/base \
 
-xx =\
-	$(SDK_ROOT)/components/libraries/queue \
-	$(SDK_ROOT)/components/libraries/serial \
-	$(SDK_ROOT)/components/iot/errno \
-	
-C_INCLUDES += \
-	"-isystem$(SEGGER_INCLUDE)" \
+BOARD_SUPPORT = \
+	$(LIB_DIR)/boards.c.o \
+	$(LIB_DIR)/bsp.c.o \
+	$(LIB_DIR)/bsp_btn_ble.c.o \
 
-#	"-isystem$(SEGGER_PKG_INCLUDE)"
+FREERTOS_OBJECTS = \
+	$(LIB_DIR)/croutine.c.o \
+	$(LIB_DIR)/event_groups.c.o \
+	$(LIB_DIR)/heap_1.c.o \
+	$(LIB_DIR)/list.c.o \
+	$(LIB_DIR)/port_cmsis_systick.c.o \
+	$(LIB_DIR)/port_cmsis.c.o \
+	$(LIB_DIR)/port.c.o \
+	$(LIB_DIR)/queue.c.o \
+	$(LIB_DIR)/stream_buffer.c.o \
+	$(LIB_DIR)/tasks.c.o \
+	$(LIB_DIR)/timers.c.o
 
-# TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
-# TOOLS_PREFIX = arm-none-eabi-
+STARTUP_OBJECTS = \
+	$(LIB_DIR)/gcc_startup_nrf52840.S.o \
+	$(LIB_DIR)/system_nrf52840.c.o \
+	$(LIB_DIR)/hardfault_handler_gcc.c.o \
+	$(LIB_DIR)/hardfault_implementation.c.o \
 
-# CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
-# CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
-# LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ld
-# AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
-# OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
-# SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
+NRF_BLE_OBJECTS = \
+	$(LIB_DIR)/auth_status_tracker.c.o \
+	$(LIB_DIR)/ble_advdata.c.o \
+	$(LIB_DIR)/ble_advertising.c.o \
+	$(LIB_DIR)/ble_conn_params.c.o \
+	$(LIB_DIR)/ble_conn_state.c.o \
+	$(LIB_DIR)/ble_srv_common.c.o \
+	$(LIB_DIR)/gatt_cache_manager.c.o \
+	$(LIB_DIR)/gatts_cache_manager.c.o \
+	$(LIB_DIR)/id_manager.c.o \
+	$(LIB_DIR)/nrf_ble_gatt.c.o \
+	$(LIB_DIR)/nrf_ble_qwr.c.o \
+	$(LIB_DIR)/peer_data_storage.c.o \
+	$(LIB_DIR)/peer_database.c.o \
+	$(LIB_DIR)/peer_id.c.o \
+	$(LIB_DIR)/peer_manager_handler.c.o \
+	$(LIB_DIR)/peer_manager.c.o \
+	$(LIB_DIR)/pm_buffer.c.o \
+	$(LIB_DIR)/security_dispatcher.c.o \
+	$(LIB_DIR)/security_manager.c.o
 
-TOOLS_BIN = $(NRF52_GCC_ROOT)/arm-none-eabi/bin
+NRF_DRIVERS = \
+	$(LIB_DIR)/nrf_drv_clock.c.o \
+	$(LIB_DIR)/nrf_drv_spi.c.o \
+	$(LIB_DIR)/nrf_drv_twi.c.o \
+	$(LIB_DIR)/nrf_drv_uart.c.o \
+	$(LIB_DIR)/nrfx_atomic.c.o \
+	$(LIB_DIR)/nrfx_clock.c.o \
+	$(LIB_DIR)/nrfx_gpiote.c.o \
+	$(LIB_DIR)/nrfx_prs.c.o \
+	$(LIB_DIR)/nrfx_qdec.c.o \
+	$(LIB_DIR)/nrfx_saadc.c.o \
+	$(LIB_DIR)/nrfx_spim.c.o \
+	$(LIB_DIR)/nrfx_twim.c.o \
+	$(LIB_DIR)/nrfx_uart.c.o \
+	$(LIB_DIR)/nrfx_uarte.c.o
 
-CC = $(TOOLS_BIN)/cc1
-AS = $(TOOLS_BIN)/as
-AR = $(TOOLS_BIN)/ar
-OBJCOPY = $(TOOLS_BIN)/objcopy
+NRF_LIBRARIES = \
+	$(LIB_DIR)/app_button.c.o \
+	$(LIB_DIR)/app_error.c.o \
+	$(LIB_DIR)/app_error_handler_gcc.c.o \
+	$(LIB_DIR)/app_error_weak.c.o \
+	$(LIB_DIR)/app_timer_freertos.c.o \
+	$(LIB_DIR)/app_util_platform.c.o \
+	$(LIB_DIR)/fds.c.o \
+	$(LIB_DIR)/nrf_assert.c.o \
+	$(LIB_DIR)/nrf_atfifo.c.o \
+	$(LIB_DIR)/nrf_atflags.c.o \
+	$(LIB_DIR)/nrf_atomic.c.o \
+	$(LIB_DIR)/nrf_balloc.c.o \
+	$(LIB_DIR)/nrf_fprintf.c.o \
+	$(LIB_DIR)/nrf_fprintf_format.c.o \
+	$(LIB_DIR)/nrf_fstorage_sd.c.o \
+	$(LIB_DIR)/nrf_fstorage.c.o \
+	$(LIB_DIR)/nrf_memobj.c.o \
+	$(LIB_DIR)/nrf_queue.c.o \
+	$(LIB_DIR)/nrf_ringbuf.c.o \
+	$(LIB_DIR)/nrf_section_iter.c.o \
+	$(LIB_DIR)/nrf_serial.c.o \
+	$(LIB_DIR)/nrf_spi_mngr.c.o \
+	$(LIB_DIR)/nrf_strerror.c.o \
+	$(LIB_DIR)/nrf_twi_mngr.c.o \
+	$(LIB_DIR)/nrf_twi_sensor.c.o \
+	$(LIB_DIR)/sensorsim.c.o
+
+NRF_SOFTDEVICE = \
+	$(LIB_DIR)/nrf_sdh_ble.c.o \
+	$(LIB_DIR)/nrf_sdh_freertos.c.o \
+	$(LIB_DIR)/nrf_sdh_soc.c.o \
+	$(LIB_DIR)/nrf_sdh.c.o
+
+OBJECTS += \
+	$(BOARD_SUPPORT) \
+	$(SEGGER_RTT) \
+	$(FREERTOS_OBJECTS) \
+	$(STARTUP_OBJECTS) \
+	$(NRF_BLE_OBJECTS) \
+	$(NRF_DRIVERS) \
+	$(NRF_LIBRARIES) \
+	$(NRF_SOFTDEVICE) \
+
+TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
+TOOLS_PREFIX = arm-none-eabi-
+
+CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
+CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
+#LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ld
+LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
+AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
+OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
+SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
 
 AR_FLAGS = crs
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/debug
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
@@ -290,24 +393,25 @@ XSID = $(MODDABLE_TOOLS_DIR)/xsid
 XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 #	-DmxNoConsole=1
-#	-c \
 
 NRF_ASM_FLAGS= \
-	--traditional-format \
 	-mcpu=cortex-m4 \
+	-mthumb -mabi=aapcs
 	-mlittle-endian \
 	-mfloat-abi=hard \
 	-mfpu=fpv4-sp-d16 \
-	-mthumb
+	-DBOARD_PCA10056 \
+	-DBSP_DEFINES_ONLY \
+	-DCONFIG_GPIO_AS_PINRESET \
+	-DFLOAT_ABI_HARD \
+	-DNRF52840_XXAA \
+
 
 NRF_C_DEFINES= \
-	-quiet \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
-	-D__SES_ARM \
 	-D__ARM_ARCH_FPV4_SP_D16__ \
 	-D__HEAP_SIZE__=0x13000 \
-	-D__SES_VERSION=41800 \
 	-D__GNU_LINKER \
 	-DBOARD_PCA10056 \
 	-DCONFIG_GPIO_AS_PINRESET \
@@ -330,27 +434,33 @@ C_DEFINES = \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
+
+C_FLAGS=\
+	-c	\
 	-std=gnu99 \
+	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi \
+	-ffunction-sections -fdata-sections -fno-strict-aliasing \
+	-fno-short-enums \
+	-fno-common \
+	-fomit-frame-pointer \
+	-fno-dwarf2-cfi-asm \
+	-fno-builtin \
+	-gdwarf-3 \
+	-gpubnames \
 
 ifeq ($(DEBUG),1)
 	C_DEFINES += \
 		-DDEBUG=1 \
 		-DmxDebug=1 \
 		-DDEBUG_NRF \
-		-gdwarf-3 \
 		-g3 \
-		-gpubnames \
-		-Og \
-		-fomit-frame-pointer \
-		-fno-dwarf2-cfi-asm \
-		-fno-builtin \
-		-ffunction-sections \
-		-fdata-sections \
-		-fno-short-enums \
-		-fno-common
+		-Os
 	C_FLAGS += $(HW_DEBUG_OPT)
 	ASM_FLAGS += $(HW_DEBUG_OPT) -DDEBUG_NRF
 else
+	C_DEFINES += \
+		-Os \
+		-DmxDebug=0
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
 endif
@@ -366,11 +476,6 @@ C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(call qs,$(dir)))
 
 
-# C_INCLUDES += \
-# 	"-isystem/$(NRF52_GCC_TOOLCHAIN_DIR)/include"
-
-
-	
 C_FLAGS +=  \
 	-fmessage-length=0 \
 	-fno-diagnostics-show-caret \
@@ -384,13 +489,10 @@ C_FLAGS +=  \
 	-munaligned-access \
 	-nostdinc \
 
-# no: nrf52 doesn't support double precision?
-#	-mfpu=fpv4-sp-d16
-#	-mfloat-abi=softfp
-
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
-LINKER_SCRIPT := $(PLATFORM_DIR)/generic_gcc_nrf52.ld
+# LINKER_SCRIPT := $(PLATFORM_DIR)/config/generic_gcc_nrf52.ld
+LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
 
 # Utility functions
 git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
@@ -410,22 +512,46 @@ MEM_USAGE = \
 SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
 
-VPATH += $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
+VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 .SUFFIXES:
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
-	@echo Application files and resources have been built. Use SES to complete build.
-	@echo - Ensure the following \"Project 'xsproj' Options\" are set in SES
-	@echo - \"Linker: Additional Linker Options from File\" should refer to:
-	@echo - "   $(BIN_DIR)/xs_nrf52.lib "
-	@echo - \"Preprocessor: User Include Directories\" should contain:
-	@echo - "   $(TMP_DIR) "
+all: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 
-xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.bin
+clean:
+	@echo "# Cleaning tmp and bin for this project"
+	@echo "# rm $(TMP_DIR)"
+	-rm -rf $(TMP_DIR) 2>/dev/null
+	@echo "# rm $(BIN_DIR)"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+
+allclean:
+	@echo "# Cleaning all nrf52"
+	@echo "# rm $(MODDABLE)/build/bin/nrf52"
+	-rm -rf $(MODDABLE)/build/bin/nrf52
+	@echo "# rm $(MODDABLE)/build/tmp/nrf52"
+	-rm -rf $(MODDABLE)/build/tmp/nrf52
+
+flash: $(BIN_DIR)/xs_nrf52.hex
+	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
+	nrfjprog -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
+	nrfjprog -f nrf52 --reset
+
+erase:
+	nrfjprog -f nrf52 --eraseall
+
+dfu-package: $(BIN_DIR)/xs_nrf52.hex
+	@echo "# Packaging $<"
+	adafruit-nrfutil dfu genpkg --sd-req 0xFFFE --dev-type 0x0052 --application $< $(BIN_DIR)/dfu-package.zip
+
+bootload: $(BIN_DIR)/xs_nrf52.hex dfu-package
+	@echo "# Flashing $<"
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(SERIAL_PORT) -b 115200 --singlebank --touch 1200
+
+xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	@echo Flashing xs_nrf52.hex to device.
@@ -443,20 +569,23 @@ $(LIB_DIR):
 $(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.bin
 
-$(TMP_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
+$(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
 	@echo "# Size"
 	$(SIZE) $(TMP_DIR)/xs_nrf52.out
-	$(OBJCOPY) $(TMP_DIR)/xs_nrf52.out $(TMP_DIR)/xs_nrf52.hex
+#	$(OBJCOPY) $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.hex
+	$(OBJCOPY) -O ihex $< $@
 
 FINAL_LINK_OBJ:=\
-	$(SDK_GLUE_OBJ) $(SDK_OBJ) \
+	$(XS_OBJ) \
+	$(SDK_GLUE_OBJ) \
+	$(SDK_OBJ) \
 	$(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o \
 	$(OBJECTS) \
 	$(LIB_DIR)/buildinfo.c.o
 
 ekoFiles = $(foreach fil,$(FINAL_LINK_OBJ),$(shell echo '$(strip $(fil))' >> $(BIN_DIR)/xs_nrf52.ind1))
 
-$(BIN_DIR)/xs_nrf52.lib: $(FINAL_LINK_OBJ)
+$(BIN_DIR)/xs_nrf52.ind: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_nrf52.ind"
 #	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
 	@rm -f $(BIN_DIR)/xs_nrf52.ind
@@ -464,45 +593,40 @@ $(BIN_DIR)/xs_nrf52.lib: $(FINAL_LINK_OBJ)
 	$(ekoFiles)
 	@mv $(BIN_DIR)/xs_nrf52.ind1 $(BIN_DIR)/xs_nrf52.ind
 
+$(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
+	@echo "# creating xs_nrf52.out"
+#	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
+	@rm -f $(TMP_DIR)/xs_nrf52.out
+	@echo "# $(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@"
+	@echo "# Link to .out file"
+	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
+
 $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(SDK_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
 	@echo "# buildinfo"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@.asm
-	$(AS) $(NRF_ASM_FLAGS) $@.asm -o $@
-
-flash: $(BIN_DIR)/xs_nrf52.hex
-	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-	nrfjprog -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
-	nrfjprog -f nrf52 --reset
-
-erase:
-	nrfjprog -f nrf52 --eraseall
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F) "(strings in flash)"
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@.asm
-	$(AS) $(NRF_ASM_FLAGS) $@.asm -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
 $(LIB_DIR)/%.c.o: %.c
 	@echo "# library: " $(<F)
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@.asm
-	$(AS) $(NRF_ASM_FLAGS) $@.asm -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
-$(LIB_DIR)/%.S.o %.s.o.o: %.S
+$(LIB_DIR)/%.S.o %.s.o: %.S
 	@echo "# asm " $(<F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
 
 $(TMP_DIR)/%.c.o: %.c
 	@echo "# application: " $(<F)
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@.asm
-	$(AS) $(NRF_ASM_FLAGS) $@.asm -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
 $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 	@echo "# cc" $(<F) "(slots in flash)"
-	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.asm
-	$(AS) $(NRF_ASM_FLAGS) $@.asm -o $@
+	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@
 #	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped
 #	$(OBJCOPY) --rename-section .data.gxKeys=.rodata.gxKeys --rename-section .data.gxNames=.rodata.gxNames --rename-section .data.gxGlobals=.rodata.gxGlobals $@.unmapped $@
 
