@@ -1,0 +1,56 @@
+{
+    "build": {
+        "MAKE_FRAGMENT": "$(MODDABLE)/tools/mcconfig/make.nrf52.ses.mk"
+    },
+    "recipes": {
+        "separate-asm": [
+            "commodetto*",
+            "cfe*",
+            "piu*",
+            "Resource*",
+            "mod*",
+            "timer*",
+            "i2c*",
+            "digital*",
+            "pulsecount*",
+            "analog*",
+            "btutils*"
+        ]
+    },
+	"modules": {
+		"setup/target": "./setup-target",
+	},
+	"preload": [
+		"setup/target",
+	],
+	"config": {
+		"led1": { "pin": 13, "port": 0 },
+		"led2": { "pin": 14, "port": 0 },
+		"led3": { "pin": 15, "port": 0 },
+		"led4": { "pin": 16, "port": 0 },
+
+		"button1": { "pin": 11, "port": 0 },
+		"button2": { "pin": 12, "port": 0 },
+		"button3": { "pin": 24, "port": 0 },
+		"button4": { "pin": 25, "port": 0 }
+	},
+	"defines": {
+		"debugger": {
+			"tx": "NRF_GPIO_PIN_MAP(0,30)",
+			"rx": "NRF_GPIO_PIN_MAP(0,31)",
+			"baud": "NRF_UART_BAUDRATE_115200"
+		},
+		"spi": {
+			"interface": "1",
+			"hz": "8000000",
+			"mosi_pin": "NRF_GPIO_PIN_MAP(0,2)",
+			"miso_pin": "NRF_GPIO_PIN_MAP(1,15)",
+			"sck_pin": "NRF_GPIO_PIN_MAP(1,14)"
+		},
+		"i2c": {
+			"interface": "0",
+			"scl_pin": "NRF_GPIO_PIN_MAP(0,27)",
+			"sda_pin": "NRF_GPIO_PIN_MAP(0,26)"
+		}
+	}
+}

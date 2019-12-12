@@ -70,7 +70,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="110" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="78" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="120" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="103" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="74" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/xsmain.c" selected="0" top="47" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="343" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsPlatform.c" selected="0" top="313" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="70" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../xs/platforms/nrf52/xsHost.h" selected="0" top="48" codecName="Default"/>
@@ -81,14 +81,14 @@
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/i2c/nrf52/modI2C.c" selected="0" top="57" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/integration/nrfx/legacy/nrf_drv_gpiote.h" selected="0" top="69" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="166" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/include/nrfx_uart.h" selected="0" top="156" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="193" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/debugger.c" selected="1" top="176" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="29" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../base/debugger.c" selected="0" top="23" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="775" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/integration/nrfx/legacy/apply_old_config.h" selected="0" top="756" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="139" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/analog/nrf52/analog.c" selected="0" top="122" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="50" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/components/libraries/util/nrf_assert.c" selected="0" top="33" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="3" y="201" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/include/nrfx_saadc.h" selected="0" top="196" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="72" y="427" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/src/nrfx_saadc.c" selected="0" top="399" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="586" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/hal/nrf_saadc.h" selected="0" top="559" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="139" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../modules/pins/analog/nrf52/analog.c" selected="0" top="122" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="50" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/components/libraries/util/nrf_assert.c" selected="0" top="33" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="201" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/include/nrfx_saadc.h" selected="0" top="196" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="427" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/src/nrfx_saadc.c" selected="0" top="399" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="586" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/hal/nrf_saadc.h" selected="0" top="559" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="169" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../../../nRF5_SDK/modules/nrfx/drivers/nrfx_common.h" selected="0" top="102" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="xsproj" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/Users/mkellner/nRF5/mm-moddable/modules/pins/digital/monitor/nrf52" debugSearchPath="/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/lib/&#xa;/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/helloworld/" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="xsproj" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/Users/mkellner/nRF5/mm-moddable/modules/pins/digital/monitor/nrf52" debugSearchPath="/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/lib/&#xa;/Users/mkellner/nRF5/moddable/build/tmp/nrf52/debug/helloworld/" autoConnectCapabilities="3711"/>
 </session>

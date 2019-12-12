@@ -53,7 +53,7 @@ A few notes:
 
 ### Arguments
 
-	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [-t build_target] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
@@ -65,6 +65,7 @@ A few notes:
 - `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue` or `gecko/thunderboard2`. Defaults to the host build platform:`mac`, `win` or `lin`.
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
 - `-v`: to trace all commands executed by make
+- `-t`: to pass a build target to make. For example: `-t clean`
 - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
 - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
 

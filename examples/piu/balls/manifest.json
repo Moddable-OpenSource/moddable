@@ -1,4 +1,7 @@
 {
+    "build": {
+        "xMAKE_FRAGMENT": "$(MODDABLE)/tools/mcconfig/make.nrf52.ses.mk"
+    },
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
