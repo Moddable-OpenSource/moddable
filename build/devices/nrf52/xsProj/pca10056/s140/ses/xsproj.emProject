@@ -269,8 +269,13 @@
       Name="Debug"
       arm_target_interface_type="SWD"
       c_preprocessor_definitions="mxDebug=1;MODINSTRUMENTATION=1;mxInstrument=1"
-      c_user_include_directories="../../../../../../../build/tmp/nrf52/dk/debug/heart-rate-server"
-      linker_additional_options_from_file="/Users/brianfriedkin/nRF5/moddable/build/bin/nrf52/dk/debug/heart-rate-server/xs_nrf52.ind" />
+      c_user_include_directories="../../../../../../../build/tmp/nrf52/ses/debug/balls"
+      linker_additional_options_from_file="/Users/mkellner/nRF5/moddable/build/bin/nrf52/ses/debug/balls/xs_nrf52.ind" />
+    <configuration
+      Name="Release"
+      arm_target_interface_type="SWD"
+      c_user_include_directories="../../../../../../../build/tmp/nrf52/ses/release/blink-nrf52"
+      linker_additional_options_from_file="/Users/mkellner/nRF5/moddable/build/bin/nrf52/ses/release/blink-nrf52/xs_nrf52.ind" />
   </project>
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
   <configuration
