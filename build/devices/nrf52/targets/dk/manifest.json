@@ -1,7 +1,4 @@
 {
-	"include": [
-		"$(MODULES)/drivers/ls013b4dn04/manifest.json"
-	],
 	"modules": {
 		"setup/target": "./setup-target",
 	},
@@ -9,13 +6,6 @@
 		"setup/target",
 	],
 	"config": {
-		"screen": "ls013b4dn04",
-		"touch": "",
-		"rotation": 0,
-		"format": "Gray256",
-
-		"autobacklight": 0,
-
 		"led1": { "pin": 13, "port": 0 },
 		"led2": { "pin": 14, "port": 0 },
 		"led3": { "pin": 15, "port": 0 },
@@ -41,19 +31,8 @@
 		},
 		"i2c": {
 			"interface": "0",
-			"ascl_pin": "NRF_GPIO_PIN_MAP(1,1)",
-			"asda_pin": "NRF_GPIO_PIN_MAP(1,2)",
-			"m4scl_pin": "NRF_GPIO_PIN_MAP(0,11)",
-			"m4sda_pin": "NRF_GPIO_PIN_MAP(0,8)",
 			"scl_pin": "NRF_GPIO_PIN_MAP(0,27)",
 			"sda_pin": "NRF_GPIO_PIN_MAP(0,26)"
-		},
-		"ls013b4dn04": {
-			"hz": "1000000",
-			"width": 128,
-			"height": 128,
-			"spi_port": 1,
-			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)"
 		}
 	}
 }
