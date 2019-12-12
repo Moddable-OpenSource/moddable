@@ -331,7 +331,8 @@ ifeq ($(DEBUG),1)
 		-gdwarf-3 \
 		-g3 \
 		-gpubnames \
-		-Og \
+		-Og
+
 	C_FLAGS += $(HW_DEBUG_OPT)
 	ASM_FLAGS += $(HW_DEBUG_OPT) -DDEBUG_NRF
 else
