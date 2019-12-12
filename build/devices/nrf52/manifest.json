@@ -11,21 +11,6 @@
 		"time",
 		"timer",
 	],
-	"recipes": {
-		"separate-asm": [
-			"commodetto*",
-			"cfe*",
-			"piu*",
-			"Resource*",
-			"mod*",
-			"timer*",
-			"i2c*",
-			"digital*",
-			"pulsecount*",
-			"analog*",
-			"btutils*"
-		]
-	},
 	"platforms": {
 		"nrf52/*": {
 			"include": "$(BUILD)/devices/nrf52/targets/$(SUBPLATFORM)/manifest.json"
