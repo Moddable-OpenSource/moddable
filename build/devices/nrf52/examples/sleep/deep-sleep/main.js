@@ -19,15 +19,28 @@
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
+import Digital from "pins/digital";
+
+const LED = 13;	// LED1 on nRF52840-DK
+
+const ON = 0;	// active low
+const OFF = 1;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 
 trace(`Good morning. Reset reason: ${str}\n`);
 
+// Turn on LED upon wakeup
+Digital.write(LED, ON);
+
 let count = 6;
 Timer.repeat(id => {
 	if (0 == count) {
 		Timer.clear(id);
+
+		// turn off led while asleep
+		Digital.write(LED, OFF);
+
 		Sleep.deep();
 	}
 	if (count > 1)

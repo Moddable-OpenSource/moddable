@@ -14,25 +14,38 @@
 /*
 	This application demonstrates how to use the Sleep object to put the device into System Off power saving mode (deep sleep).
 	The device is woken up from a digital input.
+	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and the reset reason is traced to the console.
 	Press the button connected to the digital input pin to wakeup the device.
 */
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
+import Digital from "pins/digital";
 
 const PIN = 25;		// Button 4 on nRF52840-DK
+const LED = 13;		// LED1 on nRF52840-DK
+
+const ON = 0;		// active low
+const OFF = 1;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
-
 trace(`Good morning. Reset reason: ${str}\n`);
+
+// Turn on LED upon wakeup
+Digital.write(LED, ON)
 
 let count = 6;
 Timer.repeat(id => {
 	if (0 == count) {
 		Timer.clear(id);
 		
+		// wakeup on pin
 		Sleep.wakeOnDigital(PIN);
+
+		// turn off led while asleep
+		Digital.write(LED1, OFF);
+		
 		Sleep.deep();
 	}
 	if (count > 1)

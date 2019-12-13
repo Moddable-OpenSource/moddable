@@ -14,43 +14,68 @@
 /*
 	This application demonstrates how to retain a buffer in RAM across System Off power saving mode (deep sleep).
 	The device is woken up from a digital input.
-	Upon wakeup, the application re-launches and the reset reason is traced to the console.
-	Press the button connected to the digital input pin to wakeup the device.
+	The application turns on the LED1 while running and turns off the LED1 when asleep.
+	Upon wakeup, all LEDs are turned on if the retention buffer contents are valid.
+	If the retention buffer contents are invalid, LED4 is turned on.
+	Press the button connected to the digital input PIN to wakeup the device.
 */
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
+import Digital from "pins/digital";
 
 const PIN = 25;		// Button 4 on nRF52840-DK
+const LED1 = 13;	// LED1 on nRF52840-DK
+const LED2 = 14;	// LED2 on nRF52840-DK
+const LED3 = 15;	// LED3 on nRF52840-DK
+const LED4 = 16;	// LED4 on nRF52840-DK
+
+const ON = 0;		// active low
+const OFF = 1;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 
 trace(`Good morning. Reset reason: ${str}\n`);
 
+allLEDs(OFF);
+
+// Turn on LED1 upon wakeup
+Digital.write(LED1, ON);
+
+// Install a handler function to be called before entering deep sleep
+Sleep.install(preSleep);
+
 // Check if retained ram buffer is available
-let retained;
-let buffer = Sleep.retainedRAMBuffer;
+let buffer = Sleep.retainedBuffer;
+
 if (undefined !== buffer) {
-	retained = new Uint8Array(buffer);
-	for (let i = 0; i < 100; ++i)
-		if (retained[i] != i)
-			throw new Error("corrupt retention buffer");
+	let retained = new Uint8Array(buffer);
+	let valid = true;
+	for (let i = 0; i < 100; ++i) {
+		if (retained[i] != i) {
+			Digital.write(LED4, ON);
+			valid = false;
+			break;
+		}
+	}
 			
+	// Turn on all LEDs to confirm retention buffer
+	if (valid)
+		allLEDs(ON);
+	
 	trace(`Retention buffer read and okay.\n`);
 }
 
 // No retained ram buffer is available. Retain a buffer and sleep.
 else {
-	retained = new Uint8Array(100);
-	for (let i = 0; i < 100; ++i)
-		retained[i] = i;
-		
 	let count = 6;
 	Timer.repeat(id => {
 		if (0 == count) {
 			Timer.clear(id);
-		debugger;
-			Sleep.retainedRAMBuffer = retained.buffer;
+
+			// Turn off LEDS while asleep
+			allLEDs(OFF);
+			
 			Sleep.wakeOnDigital(PIN);
 			Sleep.deep();
 		}
@@ -62,6 +87,19 @@ else {
 	}, 1000);
 }
 
+function preSleep() {
+	let retained = new Uint8Array(100);
+	for (let i = 0; i < 100; ++i)
+		retained[i] = i;
+	Sleep.retainedBuffer = retained.buffer;
+}
+
+function allLEDs(mode) {
+	Digital.write(LED1, mode);
+	Digital.write(LED2, mode);
+	Digital.write(LED3, mode);
+	Digital.write(LED4, mode);
+}
 
 function valueToString(obj, value) {
 	let result = Object.keys(obj).find(element => obj[element] == value);

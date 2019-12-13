@@ -26,6 +26,8 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 
+#define RAM_START_ADDRESS  0x20000000
+
 #define kRamRetentionRegisterMagic 0xBF
 
 #define kRamRetentionBufferSize 256		// must match .retained_section linker size
@@ -57,6 +59,8 @@ enum {
 
 uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 
+static uint8_t softdevice_enabled();
+
 /**
 	Retention buffer format:
 	
@@ -65,15 +69,17 @@ uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".re
 	buffer
 **/
 
-void xs_sleep_set_retained_ram_buffer(xsMachine *the)
+void xs_sleep_set_retained_buffer(xsMachine *the)
 {
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
-	uint32_t ram_powerset = (POWER_RAM_POWER_S0RETENTION_On << POWER_RAM_POWER_S0RETENTION_Pos);
-	uint32_t retainedSize;
 	
-	retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
+	uint32_t ram_powerset = 
+		(POWER_RAM_POWER_S0RETENTION_On  << POWER_RAM_POWER_S0RETENTION_Pos)  |
+		(POWER_RAM_POWER_S1RETENTION_On  << POWER_RAM_POWER_S1RETENTION_Pos);
+
+	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
 	if (retainedSize > kRamRetentionBufferSize)
 		xsRangeError("invalid buffer size");
@@ -84,54 +90,51 @@ void xs_sleep_set_retained_ram_buffer(xsMachine *the)
 	ram[2] = (uint8_t)((kRamRetentionBufferMagic >> 16) & 0xFF);
 	ram[3] = (uint8_t)((kRamRetentionBufferMagic >> 24) & 0xFF);
 	ram += sizeof(kRamRetentionBufferMagic);
-	ram[0] = (uint8_t)bufferLength;
-	ram[1] = (uint8_t)(bufferLength >> 8);
+	ram[0] = (uint8_t)(bufferLength & 0xFF);
+	ram[1] = (uint8_t)((bufferLength >> 8) & 0xFF);
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
-#ifdef SOFTDEVICE_PRESENT
-	uint8_t softdevice_enabled;
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled) {
+	// Eight RAM slave blocks, each divided into to 4 KB sections 
+	uint32_t p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
+	uint8_t ram_slave_n = (p_offset / 8192);  
+	uint8_t ram_section_n = (p_offset % 8192) / 4096;
+
+	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(0, ram_powerset);
+		sd_power_ram_power_set(ram_slave_n, ram_powerset);
 	}
-	else
-#endif
-	{
+	else {
     	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-    	NRF_POWER->RAM[0].POWERSET = ram_powerset;
+		NRF_POWER->RAM[ram_slave_n].POWERSET = ram_powerset;
 	}
 }
 
-void xs_sleep_get_retained_ram_buffer(xsMachine *the)
+void xs_sleep_get_retained_buffer(xsMachine *the)
 {
 	uint8_t *ram;
 	uint16_t bufferLength;
 	uint32_t gpreg;
-	uint8_t softdevice_enabled = 0;
+	uint8_t sd_enabled = softdevice_enabled();
 	
-#ifdef SOFTDEVICE_PRESENT
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled) {
+	if (sd_enabled)
 		sd_power_gpregret_get(0, &gpreg);
-	}
 	else
-#endif
 		gpreg = NRF_POWER->GPREGRET;
 
+	// If retention register doesn't contain the magic value there is no retained ram
 	if (kRamRetentionRegisterMagic != gpreg)
 		return;
 
 	// Clear general purpose retention register
-	if (softdevice_enabled)
+	if (sd_enabled)
 		sd_power_gpregret_set(0, 0);
 	else
 		NRF_POWER->GPREGRET = 0x00;
 	
 	ram = &gRamRetentionBuffer[0];
 	if (kRamRetentionBufferMagic != c_read32(ram))
-		xsUnknownError("corrupt retention buffer");
+		return;
 	ram += 4;
 	bufferLength = c_read16(ram);
 	ram += 2;
@@ -147,51 +150,39 @@ void xs_sleep_set_power_mode(xsMachine *the)
 	if (!(mode == kPowerModeConstantLatency || mode == kPowerModeLowPower))
 		xsUnknownError("invalid power mode");
 		
-#ifdef SOFTDEVICE_PRESENT
-	uint8_t softdevice_enabled;
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled)
+	if (softdevice_enabled())
 		sd_power_mode_set(kPowerModeConstantLatency == mode ? NRF_POWER_MODE_CONSTLAT : NRF_POWER_MODE_LOWPWR);
-	else
-#endif
+	else {
 		if (kPowerModeConstantLatency == mode)
 			NRF_POWER->TASKS_CONSTLAT = 1;
 		else if (kPowerModeLowPower == mode)
 			NRF_POWER->TASKS_LOWPWR = 1;
+	}
 }
 
 void xs_sleep_get_power_mode(xsMachine *the)
 {
-	uint16_t mode;
+	uint16_t mode = kPowerModeUnknown;
 	
-#ifdef SOFTDEVICE_PRESENT
-	uint8_t softdevice_enabled;
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled)
-		mode = kPowerModeUnknown;	// @@ doesn't seem to be a way to know power mode when SoftDevice is enabled??
-	else
-#endif
+	if (softdevice_enabled())
+		;	// @@ doesn't seem to be a way to know power mode when SoftDevice is enabled??
+	else {
 		if (1 == NRF_POWER->TASKS_CONSTLAT)
 			mode = kPowerModeConstantLatency;
 		else if (1 == NRF_POWER->TASKS_LOWPWR)
 			mode = kPowerModeLowPower;
-		else
-			mode = kPowerModeUnknown;
+	}
 			
 	xsmcSetInteger(xsResult, mode);
 }
 
 void xs_sleep_deep(xsMachine *the)
 {
-#ifdef SOFTDEVICE_PRESENT
-	uint8_t softdevice_enabled;
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled)
+	if (softdevice_enabled())
 		sd_power_system_off();
 	else
-#endif
 		NRF_POWER->SYSTEMOFF = 1;
-		
+
 	// Use data synchronization barrier and a delay to ensure that no failure
 	// indication occurs before System OFF is actually entered.
 	__DSB();
@@ -205,6 +196,7 @@ void xs_sleep_deep(xsMachine *the)
 
 	// Note that even with this loop, on debug builds, the application ends up in what appears to be 
 	// the Hardfault_Handler at restart after a wakeup from a digital pin.
+	// This code should never be reached on release builds.
 #ifdef mxDebug
 	for (;;) {}
 #endif
@@ -213,18 +205,15 @@ void xs_sleep_deep(xsMachine *the)
 void xs_sleep_get_reset_reason(xsMachine *the)
 {
 	uint32_t reset_reason;
-	uint8_t softdevice_enabled = 0;
-	
-#ifdef SOFTDEVICE_PRESENT
-	sd_softdevice_is_enabled(&softdevice_enabled);
-	if (softdevice_enabled)
+	uint8_t sd_enabled = softdevice_enabled();
+
+	if (sd_enabled)
 		sd_power_reset_reason_get(&reset_reason);
 	else
-#endif
 		reset_reason = NRF_POWER->RESETREAS;
 
 	// clear the reset reason register using the bit mask
-	if (softdevice_enabled)
+	if (sd_enabled)
 		sd_power_reset_reason_clr(reset_reason);
 	else
 		NRF_POWER->RESETREAS = reset_reason;
@@ -263,3 +252,19 @@ void xs_sleep_wake_on_analog(xsMachine *the)
 	uint16_t pin = xsmcToInteger(xsArg(0));
 
 }
+
+void xs_sleep_wake_on_interrupt(xsMachine *the)
+{
+	uint16_t pin = xsmcToInteger(xsArg(0));
+
+}
+
+uint8_t softdevice_enabled()
+{
+#ifdef SOFTDEVICE_PRESENT
+	return nrf_sdh_is_enabled();
+#else
+	return false;
+#endif
+}
+

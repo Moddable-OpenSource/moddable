@@ -19,21 +19,34 @@
  */
 
 class Sleep {
-	static set retainedRAMBuffer() @ "xs_sleep_set_retained_ram_buffer";
-	static get retainedRAMBuffer() @ "xs_sleep_get_retained_ram_buffer";
+	static install(handler) {
+		// this dance allows handlers to be installed both at preload and run time
+		if (Object.isFrozen(Sleep.prototype.handlers))
+			Sleep.prototype.handlers = Array.from(Sleep.prototype.handlers);
+		Sleep.prototype.handlers.push(handler);
+	}
+
+	static set retainedBuffer() @ "xs_sleep_set_retained_buffer";
+	static get retainedBuffer() @ "xs_sleep_get_retained_buffer";
 
 	static set powerMode() @ "xs_sleep_set_power_mode";
 	static get powerMode() @ "xs_sleep_get_power_mode";
 	
-	static deep() @ "xs_sleep_deep";	// System OFF sleep mode
+	static deep() {
+		Sleep.prototype.handlers.forEach(handler => (handler)());
+		Sleep.#deep();
+	}
 	
+	static #deep() @ "xs_sleep_deep";	// System OFF sleep mode
+
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
 	static wakeOnAnalog(pin) @ "xs_sleep_wake_on_analog"
+	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
 };
-Object.freeze(Sleep);
+Sleep.prototype.handlers = [];
 
 const PowerMode = {
 	ConstantLatency: 1,
