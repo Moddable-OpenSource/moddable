@@ -256,7 +256,7 @@ void Tool_prototype_get_ipAddress(xsMachine* the)
 					snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
 					if (c_strcmp(buffer, "127.0.0.1")) {
 						xsResult = xsString(buffer);
-						return;
+						break;
 					}
 					pUnicast = pUnicast->Next;
                 }
@@ -282,7 +282,7 @@ bail:
 			snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
 			if (c_strcmp(buffer, "127.0.0.1")) {
 				xsResult = xsString(buffer);
-				return;
+				break;
 			}
 		}
 	}
