@@ -60,10 +60,10 @@ if (undefined !== buffer) {
 	}
 			
 	// Turn on all LEDs to confirm retention buffer
-	if (valid)
+	if (valid) {
 		allLEDs(ON);
-	
-	trace(`Retention buffer read and okay.\n`);
+		trace(`Retention buffer read and okay.\n`);
+	}
 }
 
 // No retained ram buffer is available. Retain a buffer and sleep.
@@ -72,11 +72,6 @@ else {
 	Timer.repeat(id => {
 		if (0 == count) {
 			Timer.clear(id);
-
-			// Turn off LEDS while asleep
-			allLEDs(OFF);
-			
-			Sleep.wakeOnDigital(PIN);
 			Sleep.deep();
 		}
 		if (count > 1)
@@ -88,6 +83,13 @@ else {
 }
 
 function preSleep() {
+	// Turn off LEDS while asleep
+	allLEDs(OFF);
+
+	// Wakeup on digital pin
+	Sleep.wakeOnDigital(PIN);
+	
+	// Retain buffer
 	let retained = new Uint8Array(100);
 	for (let i = 0; i < 100; ++i)
 		retained[i] = i;

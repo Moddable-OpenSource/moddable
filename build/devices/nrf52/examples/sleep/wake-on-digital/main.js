@@ -33,7 +33,7 @@ let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
 
 // Turn on LED upon wakeup
-Digital.write(LED, ON)
+Digital.write(LED, ON);
 
 let count = 6;
 Timer.repeat(id => {
@@ -44,7 +44,7 @@ Timer.repeat(id => {
 		Sleep.wakeOnDigital(PIN);
 
 		// turn off led while asleep
-		Digital.write(LED1, OFF);
+		Digital.write(LED, OFF);
 		
 		Sleep.deep();
 	}

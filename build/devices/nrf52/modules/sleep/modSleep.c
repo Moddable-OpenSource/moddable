@@ -25,13 +25,17 @@
 #include "nrf_sdm.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "nrf51_to_nrf52840.h"
+
+#include "nrfx_saadc.h"
 
 #define RAM_START_ADDRESS  0x20000000
 
 #define kRamRetentionRegisterMagic 0xBF
-
 #define kRamRetentionBufferSize 256		// must match .retained_section linker size
 #define kRamRetentionBufferMagic 0x89341057
+
+#define kAnalogResolution 10	// 10 bits
 
 enum {
 	kPowerModeUnknown = 0,
@@ -55,6 +59,13 @@ enum {
 	kResetReasonLPCOMP = (1L << 17),
 	kResetReasonDebugInterface = (1L << 18),
 	kResetReasonNFC = (1L << 19)
+};
+
+enum {
+	kAnalogWakeModeUnknown = 0,
+	kAnalogWakeModeCross,
+	kAnalogWakeModeAbove,
+	kAnalogWakeModeBelow
 };
 
 uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
@@ -160,22 +171,6 @@ void xs_sleep_set_power_mode(xsMachine *the)
 	}
 }
 
-void xs_sleep_get_power_mode(xsMachine *the)
-{
-	uint16_t mode = kPowerModeUnknown;
-	
-	if (softdevice_enabled())
-		;	// @@ doesn't seem to be a way to know power mode when SoftDevice is enabled??
-	else {
-		if (1 == NRF_POWER->TASKS_CONSTLAT)
-			mode = kPowerModeConstantLatency;
-		else if (1 == NRF_POWER->TASKS_LOWPWR)
-			mode = kPowerModeLowPower;
-	}
-			
-	xsmcSetInteger(xsResult, mode);
-}
-
 void xs_sleep_deep(xsMachine *the)
 {
 	if (softdevice_enabled())
@@ -249,8 +244,54 @@ void xs_sleep_wake_on_digital(xsMachine *the)
 
 void xs_sleep_wake_on_analog(xsMachine *the)
 {
-	uint16_t pin = xsmcToInteger(xsArg(0));
+	uint16_t channel = xsmcToInteger(xsArg(0));
+	uint16_t mode = xsmcToInteger(xsArg(1));
+	uint16_t value = xsmcToInteger(xsArg(2));
+	
+	if (channel < 0 || channel > (NRF_SAADC_CHANNEL_COUNT - 1))
+		xsRangeError("invalid analog channel number");
 
+	if (kAnalogWakeModeCross == mode)
+		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_CROSS_Msk;
+	else if (kAnalogWakeModeBelow == mode)
+		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_DOWN_Msk;
+	else
+		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_UP_Msk;
+
+	if (softdevice_enabled())
+		sd_nvic_EnableIRQ(LPCOMP_IRQn);
+	else
+		NVIC_EnableIRQ(LPCOMP_IRQn);	
+	
+	uint32_t prescaling = 0;
+	double scaledValue = ((double)value) / (1L << kAnalogResolution);
+	if (scaledValue >= 7/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling;
+	else if (scaledValue >= 6/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplySixEighthsPrescaling;
+	else if (scaledValue >= 5/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplyFiveEighthsPrescaling;
+	else if (scaledValue >= 4/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplyFourEighthsPrescaling;
+	else if (scaledValue >= 3/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplyThreeEighthsPrescaling;
+	else if (scaledValue >= 2/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplyTwoEighthsPrescaling;
+	else if (scaledValue >= 1/8)
+		prescaling = LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling;
+	if (0 == prescaling)
+		xsRangeError("invalid analog wake value");	
+	
+	NRF_LPCOMP->REFSEL |= (prescaling << LPCOMP_REFSEL_REFSEL_Pos);
+
+	//Enable 50 mV hysteresis
+	NRF_LPCOMP->HYST = (LPCOMP_HYST_HYST_Hyst50mV << LPCOMP_HYST_HYST_Pos);
+    
+	NRF_LPCOMP->PSEL |= (channel << LPCOMP_PSEL_PSEL_Pos);
+	NRF_LPCOMP->ENABLE = (LPCOMP_ENABLE_ENABLE_Enabled  << LPCOMP_ENABLE_ENABLE_Pos);	
+	NRF_LPCOMP->TASKS_START = 1;
+	while (NRF_LPCOMP->EVENTS_READY == 0)
+		; 
 }
 
 void xs_sleep_wake_on_interrupt(xsMachine *the)

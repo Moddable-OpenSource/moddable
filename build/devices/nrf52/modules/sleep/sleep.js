@@ -30,8 +30,7 @@ class Sleep {
 	static get retainedBuffer() @ "xs_sleep_get_retained_buffer";
 
 	static set powerMode() @ "xs_sleep_set_power_mode";
-	static get powerMode() @ "xs_sleep_get_power_mode";
-	
+
 	static deep() {
 		Sleep.prototype.handlers.forEach(handler => (handler)());
 		Sleep.#deep();
@@ -43,8 +42,30 @@ class Sleep {
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
-	static wakeOnAnalog(pin) @ "xs_sleep_wake_on_analog"
+	
+	static wakeOnAnalog(channel, configuration) {
+		let value = configuration.value;
+		let mode;
+		switch(configuration.mode) {
+			case "cross":
+				mode = 1;
+				break;
+			case "above":
+				mode = 2;
+				break;
+			case "below":
+				mode = 3;
+				break;
+			default:
+				throw new Error("invalid analog wake mode");
+				break;
+		}
+		Sleep.#wakeOnAnalog(channel, mode, value);
+	}
+	
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
+	
+	static #wakeOnAnalog() @ "xs_sleep_wake_on_analog"
 };
 Sleep.prototype.handlers = [];
 
