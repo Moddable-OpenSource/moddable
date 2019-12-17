@@ -1636,7 +1636,7 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 {
 	txMachine _root;
 	txMachine* root = &_root;
-	if ((preparation->version[0] != XS_MAJOR_VERSION) || (preparation->version[1] != XS_MINOR_VERSION) || (preparation->version[2] != XS_PATCH_VERSION))
+	if ((preparation->version[0] != XS_MAJOR_VERSION) || (preparation->version[1] != XS_MINOR_VERSION))
 		return C_NULL;
 	c_memset(root, 0, sizeof(txMachine));
 	root->preparation = preparation;
@@ -2016,7 +2016,7 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		mxElseThrow(atom.atomSize == sizeof(Atom) + 4);
 		mxElseThrow(*p++ == XS_MAJOR_VERSION);
 		mxElseThrow(*p++ == XS_MINOR_VERSION);
-		mxElseThrow(*p++ == XS_PATCH_VERSION);
+		p++;
 		flag = p;
 		p++;
 		mxMapAtom(p);
@@ -2046,7 +2046,7 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 			mxElseInstall(atom.atomSize == sizeof(Atom) + 4);
 			mxElseInstall(*q++ == XS_MAJOR_VERSION);
 			mxElseInstall(*q++ == XS_MINOR_VERSION);
-			mxElseInstall(*q++ == XS_PATCH_VERSION);
+			q++;
 			q++;
 			mxMapAtom(q);
 			mxElseInstall(atom.atomType == XS_ATOM_SIGNATURE);
