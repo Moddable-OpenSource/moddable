@@ -138,15 +138,11 @@ void xs_sleep_get_retained_buffer(xsMachine *the)
 	if (kRamRetentionRegisterMagic != gpreg)
 		return;
 
-	// Clear general purpose retention register
-	if (sd_enabled)
-		sd_power_gpregret_set(0, 0);
-	else
-		NRF_POWER->GPREGRET = 0x00;
-	
 	ram = &gRamRetentionBuffer[0];
-	if (kRamRetentionBufferMagic != c_read32(ram))
+	if (kRamRetentionBufferMagic != c_read32(ram)) {
+		clear_retained_buffer();	// clear retained ram on failure
 		return;
+	}
 	ram += 4;
 	bufferLength = c_read16(ram);
 	ram += 2;
@@ -282,6 +278,10 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 {
 	uint16_t pin = xsmcToInteger(xsArg(0));
 
+	nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_SENSE_LOW);
+
+	// Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
+	nrf_delay_ms(1);
 }
 
 uint8_t softdevice_enabled()
@@ -304,5 +304,15 @@ void clear_retained_buffer()
 
 void lpcomp_event_handler(nrf_lpcomp_event_t event)
 {
+	switch(event) {
+		case NRF_LPCOMP_EVENT_READY:
+			break;
+		case NRF_LPCOMP_EVENT_DOWN:
+			break;
+		case NRF_LPCOMP_EVENT_UP:
+			break;
+		case NRF_LPCOMP_EVENT_CROSS:
+			break;
+	}
 }
 

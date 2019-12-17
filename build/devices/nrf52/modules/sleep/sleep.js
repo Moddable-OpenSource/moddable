@@ -37,12 +37,8 @@ class Sleep {
 		Sleep.#deep();
 	}
 	
-	static #deep() @ "xs_sleep_deep";	// System OFF sleep mode
-
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
-	
-	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
 	
 	static wakeOnAnalog(channel, configuration) {
 		switch(configuration.mode) {
@@ -57,8 +53,11 @@ class Sleep {
 		Sleep.#wakeOnAnalog(channel, configuration.mode, configuration.value);
 	}
 	
+	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
 	
+	static #deep() @ "xs_sleep_deep";	// System OFF sleep mode
+
 	static #wakeOnAnalog() @ "xs_sleep_wake_on_analog"
 };
 Sleep.prototype.handlers = [];
@@ -83,14 +82,14 @@ const AnalogDetectMode = {
 Object.freeze(AnalogDetectMode);
 
 const ResetReason = {
-	RESETPIN: 1 << 0,
-	DOG: 1 << 1,
-	SREQ: 1 << 2,
-	LOCKUP: 1 << 3,
+	RESETPIN: 1 << 0,	// reset pin
+	DOG: 1 << 1,		// watchdog
+	SREQ: 1 << 2,		// software reset
+	LOCKUP: 1 << 3,		// cpu lockup
 	GPIO: 1 << 16,		// detected by the use of DETECT signal from GPIO (wake on digital)
 	LPCOMP: 1 << 17,	// detected by the use of ANDETECT signal from GPIO (wake on analog)
-	DIF: 1 << 18,
-	NFC: 1 << 19
+	DIF: 1 << 18,		// debugger interface
+	NFC: 1 << 19		// nfc field detect
 };
 Object.freeze(ResetReason);
 
