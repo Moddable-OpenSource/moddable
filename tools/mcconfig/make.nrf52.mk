@@ -313,6 +313,7 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_atomic.c.o \
 	$(LIB_DIR)/nrfx_clock.c.o \
 	$(LIB_DIR)/nrfx_gpiote.c.o \
+	$(LIB_DIR)/nrfx_lpcomp.c.o \
 	$(LIB_DIR)/nrfx_prs.c.o \
 	$(LIB_DIR)/nrfx_qdec.c.o \
 	$(LIB_DIR)/nrfx_saadc.c.o \

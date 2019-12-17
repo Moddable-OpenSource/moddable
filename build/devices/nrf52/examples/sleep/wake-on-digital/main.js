@@ -35,7 +35,7 @@ trace(`Good morning. Reset reason: ${str}\n`);
 // Turn on LED upon wakeup
 Digital.write(LED, ON);
 
-let count = 6;
+let count = 3;
 Timer.repeat(id => {
 	if (0 == count) {
 		Timer.clear(id);

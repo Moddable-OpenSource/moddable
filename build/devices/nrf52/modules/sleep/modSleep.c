@@ -25,9 +25,7 @@
 #include "nrf_sdm.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
-#include "nrf51_to_nrf52840.h"
-
-#include "nrfx_saadc.h"
+#include "nrf_drv_lpcomp.h"
 
 #define RAM_START_ADDRESS  0x20000000
 
@@ -62,15 +60,17 @@ enum {
 };
 
 enum {
-	kAnalogWakeModeUnknown = 0,
-	kAnalogWakeModeCross,
-	kAnalogWakeModeAbove,
-	kAnalogWakeModeBelow
+	kAnalogWakeModeUnknown = -1,
+	kAnalogWakeModeCrossing,
+	kAnalogWakeModeUp,
+	kAnalogWakeModeDown
 };
 
 uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 
 static uint8_t softdevice_enabled();
+static void clear_retained_buffer();
+static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 
 /**
 	Retention buffer format:
@@ -95,7 +95,8 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	if (retainedSize > kRamRetentionBufferSize)
 		xsRangeError("invalid buffer size");
 
-	c_memset(ram, 0, kRamRetentionBufferSize);
+	clear_retained_buffer();
+	
 	ram[0] = (uint8_t)(kRamRetentionBufferMagic & 0xFF);
 	ram[1] = (uint8_t)((kRamRetentionBufferMagic >> 8) & 0xFF);
 	ram[2] = (uint8_t)((kRamRetentionBufferMagic >> 16) & 0xFF);
@@ -106,7 +107,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
-	// Eight RAM slave blocks, each divided into to 4 KB sections 
+	// Eight RAM slave blocks, each divided into two 4 KB sections 
 	uint32_t p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
 	uint8_t ram_slave_n = (p_offset / 8192);  
 	uint8_t ram_section_n = (p_offset % 8192) / 4096;
@@ -151,6 +152,11 @@ void xs_sleep_get_retained_buffer(xsMachine *the)
 	ram += 2;
 
 	xsmcSetArrayBuffer(xsResult, (uint8_t*)ram, bufferLength);
+}
+
+void xs_sleep_clear_retained_buffer(xsMachine *the)
+{
+	clear_retained_buffer();
 }
 
 // Set the power mode for System On sleep
@@ -239,59 +245,37 @@ void xs_sleep_wake_on_digital(xsMachine *the)
 	nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
 	
     // Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
-    nrf_delay_ms(10);
+    nrf_delay_ms(1);
 }
 
 void xs_sleep_wake_on_analog(xsMachine *the)
 {
-	uint16_t channel = xsmcToInteger(xsArg(0));
-	uint16_t mode = xsmcToInteger(xsArg(1));
+	uint16_t input = xsmcToInteger(xsArg(0));
+	uint16_t detection = xsmcToInteger(xsArg(1));
 	uint16_t value = xsmcToInteger(xsArg(2));
-	
-	if (channel < 0 || channel > (NRF_SAADC_CHANNEL_COUNT - 1))
+	nrf_drv_lpcomp_config_t config;
+	uint16_t reference;
+	double scaledValue;
+	ret_code_t err_code;
+
+	if (input < NRF_LPCOMP_INPUT_0 || input > NRF_LPCOMP_INPUT_7)
 		xsRangeError("invalid analog channel number");
 
-	if (kAnalogWakeModeCross == mode)
-		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_CROSS_Msk;
-	else if (kAnalogWakeModeBelow == mode)
-		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_DOWN_Msk;
-	else
-		NRF_LPCOMP->INTENSET = LPCOMP_INTENSET_UP_Msk;
+	scaledValue = ((double)value) / (1L << kAnalogResolution);
+	reference = (uint16_t)(scaledValue * (LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling - LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling + 1));
 
-	if (softdevice_enabled())
-		sd_nvic_EnableIRQ(LPCOMP_IRQn);
-	else
-		NVIC_EnableIRQ(LPCOMP_IRQn);	
-	
-	uint32_t prescaling = 0;
-	double scaledValue = ((double)value) / (1L << kAnalogResolution);
-	if (scaledValue >= 7/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling;
-	else if (scaledValue >= 6/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplySixEighthsPrescaling;
-	else if (scaledValue >= 5/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplyFiveEighthsPrescaling;
-	else if (scaledValue >= 4/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplyFourEighthsPrescaling;
-	else if (scaledValue >= 3/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplyThreeEighthsPrescaling;
-	else if (scaledValue >= 2/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplyTwoEighthsPrescaling;
-	else if (scaledValue >= 1/8)
-		prescaling = LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling;
-	if (0 == prescaling)
-		xsRangeError("invalid analog wake value");	
-	
-	NRF_LPCOMP->REFSEL |= (prescaling << LPCOMP_REFSEL_REFSEL_Pos);
+	config.hal.reference = reference;
+	config.hal.detection = detection;
+	config.hal.hyst = 0;
+	config.input = input;
+	config.interrupt_priority = 6;
+	err_code = nrf_drv_lpcomp_init(&config, lpcomp_event_handler);
+	if (NRF_SUCCESS != err_code)
+		xsUnknownError("wake on analog config failure");
 
-	//Enable 50 mV hysteresis
-	NRF_LPCOMP->HYST = (LPCOMP_HYST_HYST_Hyst50mV << LPCOMP_HYST_HYST_Pos);
-    
-	NRF_LPCOMP->PSEL |= (channel << LPCOMP_PSEL_PSEL_Pos);
-	NRF_LPCOMP->ENABLE = (LPCOMP_ENABLE_ENABLE_Enabled  << LPCOMP_ENABLE_ENABLE_Pos);	
-	NRF_LPCOMP->TASKS_START = 1;
-	while (NRF_LPCOMP->EVENTS_READY == 0)
-		; 
+	nrf_drv_lpcomp_enable();
+
+	nrf_delay_ms(10);	// @@ seems necessary?
 }
 
 void xs_sleep_wake_on_interrupt(xsMachine *the)
@@ -307,5 +291,18 @@ uint8_t softdevice_enabled()
 #else
 	return false;
 #endif
+}
+
+void clear_retained_buffer()
+{
+	if (softdevice_enabled())
+		sd_power_gpregret_set(0, 0);
+	else
+		NRF_POWER->GPREGRET = 0x00;
+	c_memset(&gRamRetentionBuffer[0], 0, kRamRetentionBufferSize);
+}
+
+void lpcomp_event_handler(nrf_lpcomp_event_t event)
+{
 }
 

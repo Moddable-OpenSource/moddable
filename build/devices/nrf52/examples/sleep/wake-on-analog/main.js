@@ -12,23 +12,28 @@
  *
  */
 /*
-	This application demonstrates how to use the Sleep object to put the device into System Off power saving mode (deep sleep).
+	This application demonstrates how to use the Sleep object to trigger wakeup on analog change detection.
+	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and the reset reason is traced to the console.
-	Press the device reset button to wakeup from deep sleep.
+	Change the voltage connected to the analog input pin to wakeup the device.
 */
 
-import {Sleep, ResetReason} from "sleep";
+import {Sleep, AnalogDetectMode, ResetReason} from "sleep";
 import Timer from "timer";
+import Analog from "pins/analog";
 import Digital from "pins/digital";
 
-const LED = 13;	// LED1 on nRF52840-DK
+const CHANNEL = 5;	// Pin P0.29 / AIN5 on nRF52840-DK
+const LED = 13;		// LED1 on nRF52840-DK
 
-const ON = 0;	// active low
+const ON = 0;		// active low
 const OFF = 1;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
+let value = Analog.read(CHANNEL);
 
 trace(`Good morning. Reset reason: ${str}\n`);
+trace(`Analog value: ${value}\n`);
 
 // Turn on LED upon wakeup
 Digital.write(LED, ON);
@@ -37,16 +42,21 @@ let count = 3;
 Timer.repeat(id => {
 	if (0 == count) {
 		Timer.clear(id);
+		
+		// wakeup on pin
+		Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Crossing });
+		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
+		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
 
 		// turn off led while asleep
 		Digital.write(LED, OFF);
-
+		
 		Sleep.deep();
 	}
 	if (count > 1)
 		trace(`Going to deep sleep in ${count - 1} seconds...\n`);
 	else
-		trace(`Good night. Press the reset button to wake me up.\n\n`);
+		trace(`Good night. Adjust analog channel ${CHANNEL} to wake me up.\n\n`);
 	--count;
 }, 1000);
 

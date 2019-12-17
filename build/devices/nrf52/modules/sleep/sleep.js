@@ -26,8 +26,9 @@ class Sleep {
 		Sleep.prototype.handlers.push(handler);
 	}
 
-	static set retainedBuffer() @ "xs_sleep_set_retained_buffer";
-	static get retainedBuffer() @ "xs_sleep_get_retained_buffer";
+	static clearRetainedBuffer() @ "xs_sleep_clear_retained_buffer";
+	static getRetainedBuffer() @ "xs_sleep_get_retained_buffer";
+	static setRetainedBuffer() @ "xs_sleep_set_retained_buffer";
 
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
@@ -44,23 +45,16 @@ class Sleep {
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
 	
 	static wakeOnAnalog(channel, configuration) {
-		let value = configuration.value;
-		let mode;
 		switch(configuration.mode) {
-			case "cross":
-				mode = 1;
-				break;
-			case "above":
-				mode = 2;
-				break;
-			case "below":
-				mode = 3;
+			case AnalogDetectMode.Crossing:
+			case AnalogDetectMode.Up:
+			case AnalogDetectMode.Down:
 				break;
 			default:
-				throw new Error("invalid analog wake mode");
+				throw new Error("invalid analog detect mode");
 				break;
 		}
-		Sleep.#wakeOnAnalog(channel, mode, value);
+		Sleep.#wakeOnAnalog(channel, configuration.mode, configuration.value);
 	}
 	
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
@@ -81,16 +75,23 @@ const SleepMode = {
 };
 Object.freeze(SleepMode);
 
+const AnalogDetectMode = {
+	Crossing: 0,
+	Up: 1,
+	Down: 2
+};
+Object.freeze(AnalogDetectMode);
+
 const ResetReason = {
 	RESETPIN: 1 << 0,
 	DOG: 1 << 1,
 	SREQ: 1 << 2,
 	LOCKUP: 1 << 3,
 	GPIO: 1 << 16,		// detected by the use of DETECT signal from GPIO (wake on digital)
-	LPCOMP: 1 << 17,
+	LPCOMP: 1 << 17,	// detected by the use of ANDETECT signal from GPIO (wake on analog)
 	DIF: 1 << 18,
 	NFC: 1 << 19
 };
 Object.freeze(ResetReason);
 
-export {Sleep as default, Sleep, PowerMode, SleepMode, ResetReason};
+export {Sleep as default, Sleep, PowerMode, SleepMode, AnalogDetectMode, ResetReason};
