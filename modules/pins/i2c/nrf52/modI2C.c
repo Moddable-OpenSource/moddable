@@ -70,7 +70,6 @@ void twi_handler(nrf_drv_twi_evt_t const *p_event, void *p_context) {
 			if ((p_event->xfer_desc.type == NRF_DRV_TWI_XFER_TX)
 				|| (p_event->xfer_desc.type == NRF_DRV_TWI_XFER_TXTX))
 				msg = TWI_WRITE_COMPLETE;
-			xQueueSendFromISR(gTWIQueue, &msg, NULL);
 			break;
 		default:
 			msg = TWI_ERROR;
