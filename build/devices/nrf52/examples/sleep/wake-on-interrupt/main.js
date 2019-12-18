@@ -17,40 +17,38 @@
 	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and the reset reason is traced to the console.
 	Change the voltage connected to the analog input pin to wakeup the device.
+
+	https://devzone.nordicsemi.com/f/nordic-q-a/35408/lis2dh-int1-interrupt-for-wake-up/152144#152144
 */
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
-import LIS3DH from "lis3dh";
+import {Sensor, Register} from "lis3dh";
 
-const PIN = 6;		// Pin P0.06
-const LED = 13;		// LED1 on nRF52840-DK
+const PIN = 6;	// Pin P0.06 connects to LIS3DH INT pin
+const LED = 13;	// LED1 on nRF52840-DK
 
-const ON = 0;		// active low
+const ON = 0;	// active low
 const OFF = 1;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
 
-/**
-class lis3dh extends LIS3DH {
+class lis3dh extends Sensor {
 	configure(dictionary) {
 		super.configure(dictionary);
 
 		// configure to generate interrupt on motion
-		this.writeByte(Register.CTRL2, 0x00);	// disable high-pass filter
 		this.writeByte(Register.CTRL3, 0x40);	// route interrupt activity 1 to INT1
 		this.writeByte(Register.CTRL4, 0x00);	// full scale selection +/- 2g
-		this.writeByte(Register.CTRL5, 0x00);	// interrupt 1 pin latched
 		this.writeByte(Register.INT1THS, 0x10);	// 250 mg threshold
 		this.writeByte(Register.INT1DUR, 0x00);	// 0 duration
-		this.writeByte(Register.INT1CFG, 0x2A);	// enable XH, YH, and ZH interrupts
+		this.writeByte(Register.INT1CFG, 0x0A);	// enable XH and YH interrupts
 	}
 }
 
 let sensor = new lis3dh({});
-**/
 
 // Turn on LED upon wakeup
 Digital.write(LED, ON);

@@ -141,4 +141,4 @@ class Sensor extends SMBus {
 }
 Object.freeze(Sensor.prototype);
 
-export {Sensor as default, Sensor, DataRate, Range};
+export {Sensor as default, Sensor, DataRate, Range, Register};
