@@ -42,9 +42,6 @@ allLEDs(OFF);
 // Turn on LED1 upon wakeup
 Digital.write(LED1, ON);
 
-// Install a handler function to be called before entering deep sleep
-Sleep.install(preSleep);
-
 // Check if retained ram buffer is available
 let buffer = Sleep.getRetainedBuffer();
 
@@ -73,6 +70,7 @@ else {
 	Timer.repeat(id => {
 		if (0 == count) {
 			Timer.clear(id);
+			Sleep.install(preSleep);
 			Sleep.deep();
 		}
 		if (count > 1)

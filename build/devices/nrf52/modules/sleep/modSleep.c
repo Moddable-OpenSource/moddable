@@ -85,10 +85,6 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
-	
-	uint32_t ram_powerset = 
-		(POWER_RAM_POWER_S0RETENTION_On  << POWER_RAM_POWER_S0RETENTION_Pos)  |
-		(POWER_RAM_POWER_S1RETENTION_On  << POWER_RAM_POWER_S1RETENTION_Pos);
 
 	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
@@ -110,7 +106,8 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	// Eight RAM slave blocks, each divided into two 4 KB sections 
 	uint32_t p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
 	uint8_t ram_slave_n = (p_offset / 8192);  
-	uint8_t ram_section_n = (p_offset % 8192) / 4096;
+	uint32_t ram_section_n = (p_offset % 8192) / 4096;
+	uint32_t ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
