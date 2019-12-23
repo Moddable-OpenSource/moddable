@@ -42,10 +42,6 @@
 #include <stddef.h>
 #include "errno.h"
 
-#include "nrf.h"
-#include "nrf_sdh.h"
-#include "nrf_sdh_soc.h"
-
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -232,12 +228,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
     void modMachineTaskUninit(xsMachine *the);
     void modMachineTaskWait(xsMachine *the);
     void modMachineTaskWake(xsMachine *the);
-#endif
-
-#if ESP32
-	#define MOD_TASKS	(true)
-
-	#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
 #endif
 
 /* 

@@ -19,12 +19,12 @@
 
 HOST_OS := $(shell uname)
 
-SERIAL_PORT = /dev/cu.usbmodem0006837101911
+NRF_SERIAL_PORT ?= /dev/cu.usbmodem14121
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
 GNU_VERSION ?= 8.2.1
-NRF52_GCC_ROOT ?= /Users/mkellner/gcctoolchain
+NRF52_GCC_ROOT ?= $(HOME)/nRF5/gcc-arm-none-eabi-8-2018-q4-major
 
 COMPILER_INCLUDE = $(NRF52_GCC_ROOT)/arm-none-eabi/include
 
@@ -168,11 +168,9 @@ INC_DIRS += \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/ble/common \
   $(SDK_ROOT)/components/ble/ble_advertising \
-  $(SDK_ROOT)/components/ble/ble_services/ble_bas \
-  $(SDK_ROOT)/components/ble/ble_services/ble_dis \
-  $(SDK_ROOT)/components/ble/ble_services/ble_hrs \
   $(SDK_ROOT)/components/ble/nrf_ble_gatt \
   $(SDK_ROOT)/components/ble/nrf_ble_qwr \
+  $(SDK_ROOT)/components/ble/nrf_ble_scan \
   $(SDK_ROOT)/components/ble/peer_manager \
   $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/integration/nrfx/legacy \
@@ -296,6 +294,7 @@ NRF_BLE_OBJECTS = \
 	$(LIB_DIR)/id_manager.c.o \
 	$(LIB_DIR)/nrf_ble_gatt.c.o \
 	$(LIB_DIR)/nrf_ble_qwr.c.o \
+	$(LIB_DIR)/nrf_ble_scan.c.o \
 	$(LIB_DIR)/peer_data_storage.c.o \
 	$(LIB_DIR)/peer_database.c.o \
 	$(LIB_DIR)/peer_id.c.o \
@@ -516,11 +515,12 @@ SDK_DIRS = $(sort $(dir $(SDK_SRC)))
 VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
+
 .SUFFIXES:
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
+all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 
 clean:
 	@echo "# Cleaning tmp and bin for this project"
@@ -550,7 +550,7 @@ dfu-package: $(BIN_DIR)/xs_nrf52.hex
 
 bootload: $(BIN_DIR)/xs_nrf52.hex dfu-package
 	@echo "# Flashing $<"
-	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(SERIAL_PORT) -b 115200 --singlebank --touch 1200
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
 
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
@@ -560,9 +560,6 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	@echo Resetting the device.
 	$(NRFJPROG) -f nrf52 --reset
 
-$(TMP_DIR):
-	mkdir -p $(TMP_DIR)
-	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
