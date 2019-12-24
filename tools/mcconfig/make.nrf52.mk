@@ -20,16 +20,17 @@
 HOST_OS := $(shell uname)
 
 NRF_SERIAL_PORT ?= /dev/cu.usbmodem14121
+NRF_ROOT ?= $(HOME)/nRF5
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
 GNU_VERSION ?= 8.2.1
-NRF52_GCC_ROOT ?= $(HOME)/nRF5/gcc-arm-none-eabi-8-2018-q4-major
+NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
 COMPILER_INCLUDE = $(NRF52_GCC_ROOT)/arm-none-eabi/include
 
-NRF_SDK_DIR = $(HOME)/nRF5/nRF5_SDK
-NRFJPROG = $(HOME)/nRF5/nrfjprog/nrfjprog
+NRF_SDK_DIR = $(NRF_ROOT)/nRF5_SDK
+NRFJPROG = $(NRF_ROOT)/nrfjprog/nrfjprog
 
 # nRF52840_xxAA
 BOARD = pca10056
@@ -106,9 +107,6 @@ LIB_FILES += \
 	-lc -lnosys -lm \
 	$(SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
 
-GNU_VERSION ?= 8.2.1
-NRF52_GCC_ROOT ?= /Users/mkellner/gcctoolchain
-
 INC_DIRS = \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include/machine \
@@ -129,8 +127,23 @@ FREE_RTOS_PATHS = \
 	$(SDK_ROOT)/external/freertos/portable/GCC/nrf52 \
 	$(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52
 
+CRYPTO_PATHS = \
+  $(SDK_ROOT)/components/libraries/crypto \
+  $(SDK_ROOT)/components/libraries/crypto/backend/cc310 \
+  $(SDK_ROOT)/components/libraries/crypto/backend/cc310_bl \
+  $(SDK_ROOT)/components/libraries/crypto/backend/cifra \
+  $(SDK_ROOT)/components/libraries/crypto/backend/nrf_hw \
+  $(SDK_ROOT)/components/libraries/crypto/backend/mbedtls \
+  $(SDK_ROOT)/components/libraries/crypto/backend/micro_ecc \
+  $(SDK_ROOT)/components/libraries/crypto/backend/nrf_sw \
+  $(SDK_ROOT)/components/libraries/crypto/backend/oberon \
+  $(SDK_ROOT)/components/libraries/crypto/backend/optiga \
+  $(SDK_ROOT)/external/nrf_cc310/include \
+  $(SDK_ROOT)/external/nrf_cc310_bl/include \
+
 # Include folders common to all targets
 INC_DIRS += \
+  $(CRYPTO_PATHS) \
   $(PLATFORM_DIR) \
   $(PLATFORM_DIR)/config \
   $(FREE_RTOS_PATHS) \
@@ -149,11 +162,13 @@ INC_DIRS += \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
   $(SDK_ROOT)/components/libraries/log \
+  $(SDK_ROOT)/components/libraries/log/src \
   $(SDK_ROOT)/components/libraries/queue \
   $(SDK_ROOT)/components/libraries/ringbuf \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/serial \
   $(SDK_ROOT)/components/libraries/spi_mngr \
+  $(SDK_ROOT)/components/libraries/stack_info \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/twi_sensor \
   $(SDK_ROOT)/components/libraries/twi_mngr \
@@ -305,6 +320,42 @@ NRF_BLE_OBJECTS = \
 	$(LIB_DIR)/security_dispatcher.c.o \
 	$(LIB_DIR)/security_manager.c.o
 
+NRF_CRYPTO_OBJECTS = \
+	$(LIB_DIR)/nrf_crypto_aead.c.o \
+	$(LIB_DIR)/nrf_crypto_aes.c.o \
+	$(LIB_DIR)/nrf_crypto_aes_shared.c.o \
+	$(LIB_DIR)/nrf_crypto_ecc.c.o \
+	$(LIB_DIR)/nrf_crypto_ecdh.c.o \
+	$(LIB_DIR)/nrf_crypto_ecdsa.c.o \
+	$(LIB_DIR)/nrf_crypto_eddsa.c.o \
+	$(LIB_DIR)/nrf_crypto_error.c.o \
+	$(LIB_DIR)/nrf_crypto_hash.c.o \
+	$(LIB_DIR)/nrf_crypto_hkdf.c.o \
+	$(LIB_DIR)/nrf_crypto_hmac.c.o \
+	$(LIB_DIR)/nrf_crypto_init.c.o \
+	$(LIB_DIR)/nrf_crypto_rng.c.o \
+	$(LIB_DIR)/nrf_crypto_shared.c.o
+
+NRF_HW_CRYPTO_BACKEND_OBJECTS = \
+	$(LIB_DIR)/nrf_hw_backend_init.c.o \
+	$(LIB_DIR)/nrf_hw_backend_rng.c.o \
+	$(LIB_DIR)/nrf_hw_backend_rng_mbedtls.c.o
+
+NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
+	$(LIB_DIR)/cc310_backend_aes.c.o \
+	$(LIB_DIR)/cc310_backend_aes_aead.c.o \
+	$(LIB_DIR)/cc310_backend_chacha_poly_aead.c.o \
+	$(LIB_DIR)/cc310_backend_ecc.c.o \
+	$(LIB_DIR)/cc310_backend_ecdh.c.o \
+	$(LIB_DIR)/cc310_backend_ecdsa.c.o \
+	$(LIB_DIR)/cc310_backend_eddsa.c.o \
+	$(LIB_DIR)/cc310_backend_hash.c.o \
+	$(LIB_DIR)/cc310_backend_hmac.c.o \
+	$(LIB_DIR)/cc310_backend_init.c.o \
+	$(LIB_DIR)/cc310_backend_mutex.c.o \
+	$(LIB_DIR)/cc310_backend_rng.c.o \
+	$(LIB_DIR)/cc310_backend_shared.c.o
+
 NRF_DRIVERS = \
 	$(LIB_DIR)/nrf_drv_clock.c.o \
 	$(LIB_DIR)/nrf_drv_spi.c.o \
@@ -350,6 +401,14 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_twi_sensor.c.o \
 	$(LIB_DIR)/sensorsim.c.o
 
+NRF_LOG_OBJECTS = \
+	$(LIB_DIR)/nrf_log_backend_rtt.c.o \
+	$(LIB_DIR)/nrf_log_backend_serial.c.o \
+	$(LIB_DIR)/nrf_log_backend_uart.c.o \
+	$(LIB_DIR)/nrf_log_default_backends.c.o \
+	$(LIB_DIR)/nrf_log_frontend.c.o \
+	$(LIB_DIR)/nrf_log_str_formatter.c.o
+
 NRF_SOFTDEVICE = \
 	$(LIB_DIR)/nrf_sdh_ble.c.o \
 	$(LIB_DIR)/nrf_sdh_freertos.c.o \
@@ -362,9 +421,13 @@ OBJECTS += \
 	$(FREERTOS_OBJECTS) \
 	$(STARTUP_OBJECTS) \
 	$(NRF_BLE_OBJECTS) \
+	$(NRF_CRYPTO_OBJECTS) \
+	$(NRF_CRYPTO_BACKEND_CC310_OBJECTS) \
+	$(NRF_HW_CRYPTO_BACKEND_OBJECTS) \
+	$(NRF_LOG_OBJECTS) \
 	$(NRF_DRIVERS) \
 	$(NRF_LIBRARIES) \
-	$(NRF_SOFTDEVICE) \
+	$(NRF_SOFTDEVICE)
 
 TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi-
