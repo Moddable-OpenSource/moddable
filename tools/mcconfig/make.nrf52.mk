@@ -102,7 +102,9 @@ LDFLAGS += -Wl,--gc-sections
 LDFLAGS += --specs=nano.specs
 
 LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
-LIB_FILES += -lc -lnosys -lm
+LIB_FILES += \
+	-lc -lnosys -lm \
+	$(SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
 
 GNU_VERSION ?= 8.2.1
 NRF52_GCC_ROOT ?= /Users/mkellner/gcctoolchain
@@ -175,7 +177,6 @@ INC_DIRS += \
   $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/integration/nrfx \
-  $(SDK_ROOT)/modules/nrfx/mdk \
   $(SDK_ROOT)/modules/nrfx \
   $(SDK_ROOT)/modules/nrfx/hal \
   $(SDK_ROOT)/modules/nrfx/mdk \
@@ -515,12 +516,11 @@ SDK_DIRS = $(sort $(dir $(SDK_SRC)))
 VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
-
 .SUFFIXES:
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
+all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 
 clean:
 	@echo "# Cleaning tmp and bin for this project"
@@ -541,6 +541,11 @@ flash: $(BIN_DIR)/xs_nrf52.hex
 	nrfjprog -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
 	nrfjprog -f nrf52 --reset
 
+flash_softdevice:
+	@echo Flashing: s140_nrf52_6.1.1_softdevice.hex
+	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex --sectorerase
+	nrfjprog -f nrf52 --reset
+
 erase:
 	nrfjprog -f nrf52 --eraseall
 
@@ -559,6 +564,10 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(NRFJPROG) -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
 	@echo Resetting the device.
 	$(NRFJPROG) -f nrf52 --reset
+
+$(TMP_DIR):
+	@echo "TMP_DIR"
+	mkdir -p $(TMP_DIR)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
