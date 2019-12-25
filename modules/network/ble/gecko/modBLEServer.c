@@ -181,13 +181,16 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint8_t iocap = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	if (0 != err)
+		xsUnknownError("invalid security params");
 
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);

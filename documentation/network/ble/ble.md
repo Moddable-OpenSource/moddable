@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: October 21, 2019
+Revised: December 4, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -1637,9 +1637,9 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 
 | Name | Description |
 | :---: | :--- |
-| [ble-friend](../../../examples/network/ble/ble-friend)| Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
+| [heart-rate-client](../../../examples/network/ble/heart-rate-client) | Demonstrates how to implement a [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml) client.
 | [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
 | [hid-mouse](../../../examples/network/ble/hid-mouse) | Demonstrates how to connect to a BLE mouse that implements the HID over GATT profile.
 | [ios-media-sync](../../../examples/network/ble/ios-media-sync) | [Commodetto](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/commodetto.md) app that demonstrates how to implement an [Apple Media Service](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html#//apple_ref/doc/uid/TP40014716-CH1-SW48) client.
@@ -1649,6 +1649,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 | [tempo](../../../examples/network/ble/tempo) | Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
+| [uart-client](../../../examples/network/ble/uart-client) | Shows how implement a Nordic UART Service client. The `uart-client` can connect to the [uart-server](../../../examples/network/ble/uart-server) app.
 
 ### Server Apps
 
@@ -1656,7 +1657,9 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
-| [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).
+| [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
+| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).
 | [security-server](../../../examples/network/ble/security-server) | Demonstrates how to implement a secure health thermometer BLE server using SMP. The `security-server` can connect to the [security-client](../../../examples/network/ble/security-client) app.
 | [uri-beacon](../../../examples/network/ble/uri-beacon) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 | [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
+| [uart-server](../../../examples/network/ble/uart-server) | Shows how implement a Nordic UART Service server. The `uart-server` can connect to the [uart-client](../../../examples/network/ble/uart-client) app.

@@ -197,6 +197,25 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 
 void fxAbort(txMachine* the, int status)
 {
+#ifdef mxDebug
+	const char *msg = "unknown abort";
+
+	switch (status) {
+		case XS_STACK_OVERFLOW_EXIT:
+			msg = "stack overflow!!!";
+			break;
+		case XS_NOT_ENOUGH_MEMORY_EXIT:
+			msg = "memory full";
+			break;
+		case XS_DEBUGGER_EXIT:
+		case XS_FATAL_CHECK_EXIT:
+			msg = NULL;
+			break;
+	}
+	if (msg)
+		fxReport(the, "%s\n", msg);
+#endif
+
 	c_exit(status);
 }
 

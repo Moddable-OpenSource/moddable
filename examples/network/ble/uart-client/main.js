@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,13 +12,11 @@
  *
  */
  /*
- 	Adafruit Bluefruit LE Friend UART service
- 	https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service
-	https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/terminal-settings
- 
- 	To use this application, first set the BLEFriend for UART mode and connect with a serial terminal @ 9600,8,N,1 and line feed output.
- 	Strings written to the RX characteristic display in the terminal, and strings sent from
- 	the terminal arrive as TX notifications and are traced to the console.
+ 	Nordic UART Service Client 
+	The Nordic UART Service is a simple GATT-based service with TX and RX characteristics.
+	Strings written to the UART Service server are echoed back to the client as characteristic notifications.
+
+	https://devzone.nordicsemi.com/f/nordic-q-a/10567/what-is-nus-nordic-uart-service
  */
 
 import BLEClient from "bleclient";
@@ -29,17 +27,25 @@ const SERVICE_UUID = uuid`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`;
 const CHARACTERISTIC_RX_UUID = uuid`6E400002-B5A3-F393-E0A9-E50E24DCCA9E`;
 const CHARACTERISTIC_TX_UUID = uuid`6E400003-B5A3-F393-E0A9-E50E24DCCA9E`;
 
-class BLEFriend extends BLEClient {
+const UART_CLIENT = "UART Client";
+
+class UARTClient extends BLEClient {
 	onReady() {
-		this.count = 1;
-		this.startScanning();
+		this.onDisconnected();
 	}
 	onDiscovered(device) {
-		let completeName = device.scanResponse.completeName;
-		if (completeName && ((completeName == "UART") || completeName.includes("BLE Friend"))) {
+		if ("UART" == device.scanResponse.completeName) {
 			this.stopScanning();
 			this.connect(device);
 		}
+	}
+	onDisconnected() {
+		if (this.timer) {
+			Timer.clear(this.timer);
+			delete this.timer;
+		}
+		this.count = 1;
+		this.startScanning();
 	}
 	onConnected(device) {
 		device.discoverPrimaryService(SERVICE_UUID);
@@ -66,8 +72,8 @@ class BLEFriend extends BLEClient {
 		}
 	}
 	onCharacteristicNotification(characteristic, value) {
-		trace(value);
+		trace.right(value, UART_CLIENT);
 	}
 }
 
-let bleFriend = new BLEFriend;
+let client = new UARTClient;

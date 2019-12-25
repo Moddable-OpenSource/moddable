@@ -55,9 +55,9 @@ void __wrap_espconn_init(void)
 
 #ifdef mxDebug
 	unsigned char gXSBUG[4] = {DEBUG_IP};
-#endif
 
-static xsMachine *gThe;		// root virtual machine
+	static xsMachine *gThe;		// root virtual machine
+#endif
 
 static uart_t *gUART;
 
@@ -75,9 +75,15 @@ void setup()
 
 	system_set_os_print(0);
 
+	modPrelaunch();
+
+#ifdef mxDebug
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
 
 	mc_setup(gThe);
+#else
+	mc_setup(ESP_cloneMachine(0, 0, 0, NULL));
+#endif
 }
 
 
@@ -105,7 +111,7 @@ void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
-#if mxDebug
+#ifdef mxDebug
 	if (gThe) {
 		while (c = c_read8(msg++))
 			fx_putc(gThe, c);
@@ -148,6 +154,7 @@ uint8_t ESP_isReadable()
 	return uart_rx_available(gUART);
 }
 
-uint8_t ESP_setBaud(int baud) {
+uint8_t ESP_setBaud(int baud)
+{
 	return uart_set_baud(gUART, baud);
 }
