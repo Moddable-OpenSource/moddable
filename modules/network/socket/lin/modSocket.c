@@ -453,10 +453,14 @@ void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer use
 	GInetAddress *address = NULL;
 
 	addresses = g_resolver_lookup_by_name_finish(resolver, result, NULL);
-	if (NULL != addresses) {
+	while (NULL != addresses) {
 		address = (GInetAddress*)addresses->data;
-		if (NULL != address)
+		if (NULL != address &&
+		    g_inet_address_get_family(address) == G_SOCKET_FAMILY_IPV4) {
 			ip = g_inet_address_to_string(address);
+			break;
+		}
+		addresses = addresses->next;
 	}
 
 	if (NULL != ip) {
