@@ -69,6 +69,14 @@
 				]
 			}
 		},
+		"x-cli-lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/lin/*",
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [
