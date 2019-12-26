@@ -1,3 +1,4 @@
+#include "lin_xs.h"
 
 #include "xsPlatform.h"
 #include "xs.h"
@@ -19,7 +20,9 @@
 		((void)((_ASSERTION) || (fxThrowMessage(the,NULL,0,XS_UNKNOWN_ERROR,"%s",strerror(errno)), 1)))
 #endif
 
-static char** then = NULL;
+extern void fxRunPromiseJobs(void* machine);
+extern txS1 fxPromiseIsPending(xsMachine* the, xsSlot* promise);
+extern txS1 fxPromiseIsRejected(xsMachine* the, xsSlot* promise);
 
 void fxAbort(xsMachine* the)
 {
@@ -48,8 +51,26 @@ int main(int argc, char* argv[])  // here
 				printf(" lin_xs_cli: loaded\n");
 
 				printf("lin_xs_cli: invoking main(argv)\n");
-				xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
-				printf(" lin_xs_cli: invoked\n");
+				xsVar(2) = xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
+				if (!xsIsInstanceOf(xsVar(2), xsPromisePrototype)) {
+					fprintf(stderr, "main() returned immediate value (not a promise). exiting\n");
+					exit(xsToInteger(xsVar(2)));
+				}
+				printf(" lin_xs_cli: main() returned a promise; entering event loop\n");
+
+				GMainContext *mainctx = g_main_context_default();
+				while (the->promiseJobsFlag || fxPromiseIsPending(the, &xsVar(2))) {
+					while (the->promiseJobsFlag) {
+						the->promiseJobsFlag = 0;
+						fxRunPromiseJobs(the);
+					}
+					g_main_context_iteration(mainctx, TRUE);
+				}
+				if (fxPromiseIsRejected(the, &xsVar(2))) {
+					error = 1;
+				}
+				// ISSUE: g_main_context_unref(mainctx); causes xsDeleteMachine() below
+				//        to hang in g_main_context_find_source_by_id() aquiring a lock.
 			}
 			xsCatch {
 				xsStringValue message = xsToString(xsException);
@@ -60,14 +81,5 @@ int main(int argc, char* argv[])  // here
 	}
 	xsEndHost(the);
 	xsDeleteMachine(machine);
-	if (!error && then) {
-	#if mxWindows
-		error =_spawnvp(_P_WAIT, then[0], then);
-		if (error < 0)
-			fprintf(stderr, "### Cannot execute %s!\n", then[0]);
-	#else
-		execvp(then[0], then);
-	#endif
-	}
 	return error;
 }

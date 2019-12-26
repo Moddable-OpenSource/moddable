@@ -71,6 +71,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 
 void fxQueuePromiseJobs(txMachine* the)
 {
+	the->promiseJobsFlag = 1;
 	GSource* idle_source = g_idle_source_new();
 	g_source_set_callback(idle_source, fxQueuePromiseJobsCallback, the, NULL);
 	g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
