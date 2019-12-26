@@ -49,7 +49,11 @@ int main(int argc, char* argv[])  // here
 
 				printf("lin_xs_cli: invoking main(argv)\n");
 				xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
-				printf(" lin_xs_cli: invoked\n");
+				printf(" lin_xs_cli: invoked; entering event loop\n");
+
+				GMainLoop *loop = g_main_loop_new(g_main_context_default(), FALSE);
+				g_main_loop_run(loop);  // ISSUE: how to exit when quiescent?
+				g_main_loop_unref(loop);
 			}
 			xsCatch {
 				xsStringValue message = xsToString(xsException);
