@@ -1,3 +1,4 @@
+#include "lin_xs.h"
 
 #include "xsPlatform.h"
 #include "xs.h"
@@ -20,6 +21,9 @@
 #endif
 
 static char** then = NULL;
+
+extern void fxRunPromiseJobs(void* machine);
+extern txS1 fxPromiseIsPending(xsMachine* the, xsSlot* promise);
 
 void fxAbort(xsMachine* the)
 {
@@ -48,12 +52,22 @@ int main(int argc, char* argv[])  // here
 				printf(" lin_xs_cli: loaded\n");
 
 				printf("lin_xs_cli: invoking main(argv)\n");
-				xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
-				printf(" lin_xs_cli: invoked; entering event loop\n");
+				xsVar(2) = xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
+				if (!xsIsInstanceOf(xsVar(2), xsPromisePrototype)) {
+					fprintf(stderr, "main() returned immediate value (not a promise). exiting\n");
+					exit(xsToInteger(xsVar(2)));
+				}
+				printf(" lin_xs_cli: main() returned a promise; entering event loop\n");
 
-				GMainLoop *loop = g_main_loop_new(g_main_context_default(), FALSE);
-				g_main_loop_run(loop);  // ISSUE: how to exit when quiescent?
-				g_main_loop_unref(loop);
+				GMainContext *main = g_main_context_default();
+				while (fxPromiseIsPending(the, &xsVar(2))) {
+					while (the->promiseJobsFlag) {
+						the->promiseJobsFlag = 0;
+						fxRunPromiseJobs(the);
+					}
+					g_main_context_iteration(main, TRUE);
+				}
+				g_main_context_unref(main);
 			}
 			xsCatch {
 				xsStringValue message = xsToString(xsException);
