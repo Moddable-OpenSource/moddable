@@ -1,0 +1,52 @@
+name: build and release moddable SDK for linux CLI (x-cli-lin)
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: build moddable headless tools
+        run: |
+          # ISSUE: move this to a makefile stanza?
+          export MODDABLE=$PWD
+          export XS_DIR=$MODDABLE/xs
+          cd $MODDABLE/build/makefiles/lin
+          # debug
+          # ISSUE: why are debug tools needed?
+          make -f $XS_DIR/makefiles/lin/xsc.mk
+          make -f $XS_DIR/makefiles/lin/xsid.mk
+          make -f $XS_DIR/makefiles/lin/xsl.mk
+          make -f tools.mk
+          # release
+          make GOAL=release -f $XS_DIR/makefiles/lin/xsc.mk
+          make GOAL=release -f $XS_DIR/makefiles/lin/xsid.mk
+          make GOAL=release -f $XS_DIR/makefiles/lin/xsl.mk
+          make GOAL=release -f tools.mk
+      - name: check that helloworld builds
+        run: |
+          export MODDABLE=$PWD
+          export PATH=$MODDABLE/build/bin/lin/release:$PATH
+          cd $MODDABLE/examples/helloworld
+          mcconfig -m -p x-cli-lin
+          # ISSUE: support scripts with no main()?
+          # $MODDABLE/build/bin/lin/release/helloworld
+          test -x $MODDABLE/build/bin/lin/release/helloworld
+          mcconfig -d -m -p x-cli-lin
+          test -x $MODDABLE/build/bin/lin/debug/helloworld
+      - name: archive linux SDK
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd ..
+          tar czf moddable-linux-sdk.tgz moddable/
+          mv moddable-linux-sdk.tgz moddable/
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: moddable-linux-sdk.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
