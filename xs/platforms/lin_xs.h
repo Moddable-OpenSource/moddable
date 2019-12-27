@@ -87,6 +87,7 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	void* waiterCondition; \
 	void* waiterData; \
 	void* waiterLink; \
+	gboolean promiseJobsFlag; \
 	GMainContext* workerContext; \
 	GMutex workerMutex; \
 	txWorkerJob* workerQueue;
