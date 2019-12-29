@@ -15,15 +15,15 @@
 import {Request} from "http"
 
 let request = new Request({	host: "httpbin.org",
-							path: "/post",
-							method: "POST",
-							body: JSON.stringify({name: "Moddable", value: 123}),
-							response: String
-						});
+	path: "/post",
+	method: "POST",
+	body: JSON.stringify({name: "Moddable", value: 123}),
+	response: String
+});
 
 request.callback = function(message, value)
 {
-	if (Request.responseComplete == message) {
+	if (Request.responseComplete === message) {
 		value = JSON.parse(value);
 		value = JSON.parse(value.data);
 		trace(`name: ${value.name}\n`);
