@@ -17,7 +17,6 @@ import Time from "time";
 import Timer from "timer";
 
 class Scanner {
-	static #once;
 	#items = [];
 	#interval;
 	#max;
@@ -55,7 +54,10 @@ class Scanner {
 			}
 			else {
 				this.#purge();
-				this.#timer = Timer.set(() => this.#scan(), this.#interval);
+				this.#timer = Timer.set(() => {
+					this.#timer = undefined;
+					this.#scan();
+				}, this.#interval);
 			}
 		});
 	}
