@@ -11,21 +11,10 @@ jobs:
       - uses: actions/checkout@v1
       - name: build moddable headless tools
         run: |
-          # ISSUE: move this to a makefile stanza?
           export MODDABLE=$PWD
           export XS_DIR=$MODDABLE/xs
           cd $MODDABLE/build/makefiles/lin
-          # debug
-          # ISSUE: why are debug tools needed?
-          make -f $XS_DIR/makefiles/lin/xsc.mk
-          make -f $XS_DIR/makefiles/lin/xsid.mk
-          make -f $XS_DIR/makefiles/lin/xsl.mk
-          make -f tools.mk
-          # release
-          make GOAL=release -f $XS_DIR/makefiles/lin/xsc.mk
-          make GOAL=release -f $XS_DIR/makefiles/lin/xsid.mk
-          make GOAL=release -f $XS_DIR/makefiles/lin/xsl.mk
-          make GOAL=release -f tools.mk
+          make headless
       - name: check that helloworld builds
         run: |
           export MODDABLE=$PWD

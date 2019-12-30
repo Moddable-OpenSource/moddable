@@ -42,7 +42,20 @@ release:
 	make GOAL=release -f simulator.mk
 	make GOAL=release -f tools.mk
 	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
-	
+
+# ISSUE: why do headless builds fail without debug tools?
+headless:
+	make -f $(XS_DIR)/makefiles/lin/xsc.mk
+	make -f $(XS_DIR)/makefiles/lin/xsid.mk
+	make -f $(XS_DIR)/makefiles/lin/xsl.mk
+	make -f tools.mk
+	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
+	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsc.mk
+	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsid.mk
+	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsl.mk
+	make GOAL=release -f tools.mk
+	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
+
 clean:
 	make clean -f $(XS_DIR)/makefiles/lin/xsc.mk
 	make clean -f $(XS_DIR)/makefiles/lin/xsid.mk
