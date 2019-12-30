@@ -207,7 +207,20 @@ void xs_ILI9341(xsMachine *the)
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
+	SCREEN_CS_INIT;
+	SCREEN_DC_INIT;
+	modSPIInit(&sd->spiConfig);
+
+#ifdef MODDEF_ILI9341_RST_PIN
+	SCREEN_RST_INIT;
+#endif
+
 	ili9341Init(sd);
+
+#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
+	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
+	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);
+#endif
 }
 
 void xs_ILI9341_begin(xsMachine *the)
@@ -453,20 +466,11 @@ void ili9341Init(spiDisplay sd)
 	uint8_t data[16] __attribute__((aligned(4)));
 	const uint8_t *cmds;
 
-	SCREEN_CS_INIT;
-	SCREEN_DC_INIT;
-	modSPIInit(&sd->spiConfig);
-
 #ifdef MODDEF_ILI9341_RST_PIN
-	SCREEN_RST_INIT;
 	SCREEN_RST_ACTIVE;
 	modDelayMilliseconds(10);
 	SCREEN_RST_DEACTIVE;
 	modDelayMilliseconds(1);
-#endif
-#ifdef MODDEF_ILI9341_BACKLIGHT_PIN
-	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
-	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);
 #endif
 
 	cmds = gInit;
