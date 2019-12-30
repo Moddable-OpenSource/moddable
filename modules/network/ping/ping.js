@@ -42,27 +42,25 @@ class Ping extends Socket {
 	}
 	ping() {
 		this.icmp_seq++;
-		let address = this.address;
-		let packet = this.packet = new ArrayBuffer(56);		// 8 for icmp header + 48 for icmp payload
-		let values = new Uint8Array(packet);
+		const values = new Uint8Array(56);					// 8 for icmp header + 48 for icmp payload
 
 		// ICMP header
 		values[0] = 8;										// type 8 (echo request)
-		values[1] = 0;										// code 0
-		values[2] = values[3] = 0;							// will be the checksum
-		values[4] = (this.id & 0xFF00) >> 8;
-		values[5] =	this.id & 0x00FF;
-		values[6] = (this.icmp_seq & 0xFF00) >> 8;
-		values[7] =	this.icmp_seq & 0x00FF;
+//		values[1] = 0;										// code 0
+//		values[2] = values[3] = 0;							// will be the checksum
+		values[4] = this.id >> 8;
+		values[5] = this.id;
+		values[6] = this.icmp_seq >> 8;
+		values[7] = this.icmp_seq;
 		for (let i=8, val=0x08; val<0x38; val+=1, i++) {	// packet data
 			values[i] = val;
 		}
-		let cs = Ping.checksum(values);
-		values[2] = (cs & 0xFF00) >> 8;
-		values[3] = cs & 0x00FF;
+		const checksum = Ping.checksum(values);
+		values[2] = checksum >> 8;
+		values[3] = checksum;
 
 		this.reply = false;
-		this.write(address, packet);
+		this.write(this.address, values.buffer);
 	}
 	failed(message) {
 		this.client(-1, message);
@@ -103,15 +101,13 @@ class Ping extends Socket {
 		for (let i=0; i<values.length; i+=2) {
 			sum += (values[i] << 8) + values[i+1];
 		}
-		let carry = sum & 0xFFFF0000;
-		sum += (carry >> 16);
+		sum += (sum >> 16);
 		return ~sum & 0xFFFF;
 	}
 	static validate_checksum(identifier, seqNumber, checksum) {
 		let sum = 191232;									// sum of packet bytes (0x08, 0x09...0x37)
 		sum += identifier + seqNumber;
-		let carry = sum & 0xFFFF0000;
-		sum += (carry >> 16);
+		sum += (sum >> 16);
 		return checksum == (~sum & 0xFFFF);
 	}
 };
