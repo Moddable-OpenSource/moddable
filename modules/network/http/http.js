@@ -490,6 +490,10 @@ function server(message, value, etc) {
 						delete this.line;
 
 						let request = this.callback(Server.headersComplete);		// headers complete... let's see what to do with the request body
+						if ('upgrade' === request) {
+							return;
+						}
+
 						if (false === request)
 							delete this.total;				// ignore request body and just send response
 
