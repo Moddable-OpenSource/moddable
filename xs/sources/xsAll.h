@@ -428,10 +428,11 @@ struct sxMachine {
 	txNumber frequencies[XS_CODE_COUNT];
 #endif
 #ifdef mxInstrument
-	txSize garbageCollectionCount;
-	txSize loadedModulesCount;
+	uint16_t garbageCollectionCount;
+	uint16_t loadedModulesCount;
 	txSize peakParserSize;
 	txSlot* stackPeak;
+	txSize floatingPointOps;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
 #ifdef mxProfile
@@ -743,6 +744,11 @@ mxExport void fxReportWarning(txMachine* the, txString thePath, txInteger theLin
 #ifdef mxInstrument	
 extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units);
 extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values);
+#define mxFloatingPointOp(operation) \
+		/* fprintf(stderr, "float: %s\n", operation); */ \
+		the->floatingPointOps += 1
+#else
+	#define mxFloatingPointOp(operation)
 #endif
 
 /* xsType.c */

@@ -298,6 +298,7 @@ void fxScreenSampleInstrumentation(txScreen* screen)
 	modInstrumentationSet(NetworkBytesWritten, 0);
 	the->garbageCollectionCount = 0;
 	the->stackPeak = the->stack;
+	the->floatingPointOps = 0;
 }
 #endif
 
