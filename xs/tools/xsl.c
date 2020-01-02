@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
 		
 			if (linker->stripFlag) {
-				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
+				fprintf(file, "static void fxDeadStrip(txMachine* the) { fxAbort(the, XS_DEAD_STRIP_EXIT); }\n\n");
 				fxPrintBuilders(the, file);
 			}
 			script = linker->firstScript;
