@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "sdk_config.h"
 #include "nrf.h"
