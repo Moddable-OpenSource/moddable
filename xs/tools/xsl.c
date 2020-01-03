@@ -382,7 +382,7 @@ int main(int argc, char* argv[])
 					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
 					mxProgram.value.reference = modules; //@@
 				}
-				if (linker->freezeFlag) {
+				{
 					txSlot* target = fxNewInstance(the);
 					script = linker->firstScript;
 					c_memcpy(path, linker->base, linker->baseLength);
@@ -396,6 +396,8 @@ int main(int argc, char* argv[])
 						script = script->nextScript;
 					}
 					mxPull(mxHosts); //@@
+				}
+				if (linker->freezeFlag) {
 					fxFreezeBuiltIns(the);
 				}
 				if (linker->stripFlag) {
