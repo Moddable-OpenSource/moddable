@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #define mxRegExp 1
 //#define mxReport 1

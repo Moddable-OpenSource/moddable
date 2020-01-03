@@ -92,7 +92,7 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateConfigurationRules(tool) {
-		if ("esp32" != tool.platform) return;
+		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
 		// Read base sdkconfig file
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;

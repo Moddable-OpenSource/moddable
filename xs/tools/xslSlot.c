@@ -638,24 +638,14 @@ txInteger fxPrepareHeap(txMachine* the)
 								}
 							}
 						}
-						else if (property->kind == XS_BOOLEAN_KIND)
-							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_SYMBOL_KIND)
+
+						else if (property->kind == XS_DATE_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_ERROR_KIND)
 							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_NUMBER_KIND)
-							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_DATE_KIND)
-							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_STRING_KIND)
-							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_REGEXP_KIND)
 							fxPrepareInstance(the, slot);
-// 						else if ((property->kind == XS_ARRAY_KIND) && (slot != mxArrayPrototype.value.reference))
-// 							fxPrepareInstance(the, slot);
-						else if (property->kind == XS_TYPED_ARRAY_KIND)
-							fxPrepareInstance(the, slot);
+							
 						else if ((property->kind == XS_MAP_KIND) || (property->kind == XS_SET_KIND)) {
 							fxPrepareInstance(the, slot);
 							linker->slotSize += property->value.table.length;
@@ -666,12 +656,16 @@ txInteger fxPrepareHeap(txMachine* the)
 						}
 						else if (property->kind == XS_WEAK_REF_KIND)
 							fxPrepareInstance(the, slot);
+						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_GROUP_KIND))
+							fxPrepareInstance(the, slot);
+							
 						else if (property->kind == XS_ARRAY_BUFFER_KIND)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_DATA_VIEW_KIND)
 							fxPrepareInstance(the, slot);
-						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_GROUP_KIND))
+						else if (property->kind == XS_TYPED_ARRAY_KIND)
 							fxPrepareInstance(the, slot);
+							
 						else if (property->kind == XS_PROMISE_KIND) {
 							fxPrepareInstance(the, slot);
 							property = property->next;
@@ -693,8 +687,20 @@ txInteger fxPrepareHeap(txMachine* the)
 									closure->flag |= XS_DONT_SET_FLAG;
 							}
 						}
-						else if ((property->flag & XS_INTERNAL_FLAG) && (property->ID == XS_ENVIRONMENT_BEHAVIOR))
-							fxPrepareInstance(the, slot);
+						else if (property->flag & XS_INTERNAL_FLAG) {
+							if (property->kind == XS_BOOLEAN_KIND)
+								fxPrepareInstance(the, slot);
+							else if (property->kind == XS_SYMBOL_KIND)
+								fxPrepareInstance(the, slot);
+							else if (property->kind == XS_INTEGER_KIND)
+								fxPrepareInstance(the, slot);
+							else if (property->kind == XS_NUMBER_KIND)
+								fxPrepareInstance(the, slot);
+							else if (property->kind == XS_STRING_KIND)
+								fxPrepareInstance(the, slot);
+						 	else if (property->ID == XS_ENVIRONMENT_BEHAVIOR)
+								fxPrepareInstance(the, slot);
+						}
 					}
 				}
 				else if (slot->kind == XS_BIGINT_KIND) {

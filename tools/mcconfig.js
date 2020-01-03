@@ -1093,7 +1093,8 @@ export default class extends Tool {
 			var source = this.tmpPath + this.slash + "mc.config.js";
 			var target = folder + this.slash + "config.xsb";
 			this.jsFiles.push({ source, target });
-			this.preloads.push("mc" + this.slash + "config.xsb");
+			if (this.preloads.length)
+				this.preloads.push("mc" + this.slash + "config.xsb");
 			file = new ConfigFile(source, this);
 			file.generate(this);
 			file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);

@@ -416,7 +416,6 @@ txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAd
 	mxThrowElse(fread(version, sizeof(version), 1, aFile) == 1);	
 	mxAssert(version[0] == XS_MAJOR_VERSION);
 	mxAssert(version[1] == XS_MINOR_VERSION);
-	mxAssert(version[2] == XS_PATCH_VERSION);
 	mxAssert(version[3] != 1);
 	
 	mxThrowElse(fread(&atom, sizeof(atom), 1, aFile) == 1);	
@@ -533,7 +532,6 @@ void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddr
 	mxThrowElse(fread(version, sizeof(version), 1, aFile) == 1);	
 	mxAssert(version[0] == XS_MAJOR_VERSION);
 	mxAssert(version[1] == XS_MINOR_VERSION);
-	mxAssert(version[2] == XS_PATCH_VERSION);
 	
 	mxThrowElse(fread(&atom, sizeof(atom), 1, aFile) == 1);	
 	atom.atomSize = ntohl(atom.atomSize);
