@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #if ESP32
 	#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.mod.0")))

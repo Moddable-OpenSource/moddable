@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #define ICACHE_FLASH_ATTR
 #define ICACHE_FLASH1_ATTR

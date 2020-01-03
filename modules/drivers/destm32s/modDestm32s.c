@@ -1019,12 +1019,12 @@ void destm32sBegin_2g1r(void *refcon, CommodettoCoordinate x, CommodettoCoordina
 
 void pixelToGrayAndRed(PocoPixel pixel, uint8_t *gray, uint8_t *red)
 {
-	sint8_t pixel_r = (pixel & 0xE0) >> 5;
-	sint8_t pixel_g = (pixel & 0x1C) >> 2;
-	sint8_t pixel_b = ((pixel & 0x03) << 1) | ((pixel & 0x02) >> 1);
-	sint16_t delta_black = (pixel_r * pixel_r) + (pixel_g * pixel_g) + (pixel_b * pixel_b);
-	sint16_t delta_white = ((7 - pixel_r) * (7 - pixel_r)) + ((7 - pixel_g) * (7 - pixel_g)) + ((7 - pixel_b) * (7 - pixel_b));
-	sint16_t delta_gray = ((3 - pixel_r) * (3 - pixel_r)) + ((3 - pixel_g) * (3 - pixel_g)) + ((3 - pixel_b) * (3 - pixel_b));
+	uint8_t pixel_r = (pixel & 0xE0) >> 5;
+	uint8_t pixel_g = (pixel & 0x1C) >> 2;
+	uint8_t pixel_b = ((pixel & 0x03) << 1) | ((pixel & 0x02) >> 1);
+	uint16_t delta_black = (pixel_r * pixel_r) + (pixel_g * pixel_g) + (pixel_b * pixel_b);
+	uint16_t delta_white = ((7 - pixel_r) * (7 - pixel_r)) + ((7 - pixel_g) * (7 - pixel_g)) + ((7 - pixel_b) * (7 - pixel_b));
+	uint16_t delta_gray = ((3 - pixel_r) * (3 - pixel_r)) + ((3 - pixel_g) * (3 - pixel_g)) + ((3 - pixel_b) * (3 - pixel_b));
 
 	if ((delta_black <= delta_white) && (delta_black <= delta_gray))
 		*gray = 0xC0;
@@ -1211,10 +1211,10 @@ void destm32sBegin_bw1r(void *refcon, CommodettoCoordinate x, CommodettoCoordina
 
 void pixelToMonoAndRed(PocoPixel pixel, uint8_t *mono, uint8_t *red)
 {
-	sint8_t pixel_r = (pixel & 0xE0) >> 5;
-	sint8_t pixel_g = (pixel & 0x1C) >> 2;
-	sint8_t pixel_b = ((pixel & 0x03) << 1) | ((pixel & 0x02) >> 1);
-	sint8_t gray = ((pixel_r << 1) + pixel_r + (pixel_g << 2) + pixel_b) >> 3;
+	uint8_t pixel_r = (pixel & 0xE0) >> 5;
+	uint8_t pixel_g = (pixel & 0x1C) >> 2;
+	uint8_t pixel_b = ((pixel & 0x03) << 1) | ((pixel & 0x02) >> 1);
+	uint8_t gray = ((pixel_r << 1) + pixel_r + (pixel_g << 2) + pixel_b) >> 3;
 	
 	*mono = (gray > 4 ? 0 : 1);
 
