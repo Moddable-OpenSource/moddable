@@ -596,53 +596,54 @@ function server(message, value, etc) {
 			let first;
 
 			if (7 === this.state) {
-				let response = this.callback(Server.prepareResponse);		// prepare response
+				let responseP = Promise.resolve(this.callback(Server.prepareResponse));		// prepare response
+				responseP.then(response => {
+					let parts = [];
+					let status = (!response || (undefined === response.status)) ? 200 : response.status;
+					let message = (!response || (undefined === response.reason)) ? reason(status) : response.reason.toString();
+					parts.push("HTTP/1.1 ", status.toString(), " ", message, "\r\n",
+										 "connection: ", "close\r\n");
 
-				let parts = [];
-				let status = (!response || (undefined === response.status)) ? 200 : response.status;
-				let message = (!response || (undefined === response.reason)) ? reason(status) : response.reason.toString();
-				parts.push("HTTP/1.1 ", status.toString(), " ", message, "\r\n",
-							"connection: ", "close\r\n");
+					if (response) {
+						let byteLength;
 
-				if (response) {
-					let byteLength;
-
-					for (let i = 0, headers = response.headers; headers && (i < headers.length); i += 2) {
-						parts.push(headers[i], ": ", headers[i + 1].toString(), "\r\n");
-						if ("content-length" == headers[i].toLowerCase())
-							byteLength = parseInt(headers[i + 1]);
-					}
-
-					this.body = response.body;
-					if (true === response.body) {
-						if (undefined === byteLength) {
-							this.flags = 2;
-							parts.push("transfer-encoding: chunked\r\n");
+						for (let i = 0, headers = response.headers; headers && (i < headers.length); i += 2) {
+							parts.push(headers[i], ": ", headers[i + 1].toString(), "\r\n");
+							if ("content-length" == headers[i].toLowerCase())
+								byteLength = parseInt(headers[i + 1]);
 						}
-						else
-							this.flags = 4;
-					}
-					else {
-						this.flags = 1;
-						let count = 0;
-						if (this.body)
-							count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
-						parts.push("content-length: ", count.toString(), "\r\n");
-					}
-				}
-				else
-					parts.push("content-length: 0\r\n");
-				parts.push("\r\n");
-				socket.write.apply(socket, parts);
 
-				this.state = 8;
-				first = true;
+						this.body = response.body;
+						if (true === response.body) {
+							if (undefined === byteLength) {
+								this.flags = 2;
+								parts.push("transfer-encoding: chunked\r\n");
+							}
+							else
+								this.flags = 4;
+						}
+						else {
+							this.flags = 1;
+							let count = 0;
+							if (this.body)
+								count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
+							parts.push("content-length: ", count.toString(), "\r\n");
+						}
+					}
+					else
+						parts.push("content-length: 0\r\n");
+					parts.push("\r\n");
+					socket.write.apply(socket, parts);
 
-				if (this.body && (true !== this.body)) {
-					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
-					if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
-						return;
-				}
+					this.state = 8;
+					first = true;
+
+					if (this.body && (true !== this.body)) {
+						let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
+						if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
+							return;
+					}
+				});
 			}
 			if (8 === this.state) {
 				let body = this.body;
