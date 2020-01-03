@@ -711,6 +711,11 @@ void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* scr
 	*toAddress = module = the->stack->value.closure;
 	the->stack++;
 	
+	slot = mxModuleFunction(module);	
+	if (slot->kind == XS_NULL_KIND) {
+		mxReferenceError("\"%s\" is no module", fxGetKeyName(the, module->ID));
+	}
+	
 	slot = fxNewInstance(the);
 	key = fxGetKey(the, moduleID);
 	if (key) {

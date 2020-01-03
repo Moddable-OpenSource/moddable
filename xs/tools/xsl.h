@@ -145,6 +145,7 @@ struct sxLinkerInclude {
 struct sxLinkerPreload {
 	txLinkerPreload* nextPreload;
 	txString name;
+	txFlag moduleFlag;
 };
 
 struct sxLinkerProjection {

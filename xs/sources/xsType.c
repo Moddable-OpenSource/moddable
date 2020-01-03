@@ -1063,6 +1063,7 @@ txBoolean fxEnvironmentDeleteProperty(txMachine* the, txSlot* instance, txID id,
 
 txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
 {
+	txID alias;
 	if (id) {
 		txSlot* result = instance->next->next;
 		while (result) {
@@ -1070,6 +1071,12 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 				result = result->value.closure;
 				if (result->kind < 0)
 					mxDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", id);
+				alias = result->ID;
+				if (alias >= 0) {
+					txSlot* slot = the->aliasArray[alias];
+					if (slot)
+						result = slot;
+				}	
 				return result;
 			}
 			result = result->next;
@@ -1094,6 +1101,7 @@ txBoolean fxEnvironmentHasProperty(txMachine* the, txSlot* instance, txID id, tx
 
 txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
 {
+	txID alias;
 	if (id) {
 		txSlot* result = instance->next->next;
 		while (result) {
@@ -1101,6 +1109,14 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 				result = result->value.closure;
 				if (result->flag & XS_DONT_SET_FLAG)
 					mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+				alias = result->ID;
+				if (alias >= 0) {
+					result = the->aliasArray[alias];
+					if (!result) {
+						result = fxNewSlot(the);
+						the->aliasArray[alias] = result;
+					}
+				}	
 				return result;
 			}
 			result = result->next;

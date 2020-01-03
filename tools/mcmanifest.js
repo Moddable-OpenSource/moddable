@@ -279,7 +279,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
-				options += " -m";
+				options += " -p";
 			if (tool.debug)
 				options += " -d";
 			if (tool.config)

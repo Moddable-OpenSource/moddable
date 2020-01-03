@@ -1609,9 +1609,20 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxGlobal.kind = the->stack->kind;
 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxBuildModuleMap(the);
-			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = slot = fxNewRealmInstance(the);
+			
+			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
+			slot = fxLastProperty(the, mxRealmClosures(slot)->value.reference);
+			while (sharedSlot) {
+				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
+				sharedSlot = sharedSlot->next;
+			}
 			mxPop();
 			
+			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
+			slot = fxLastProperty(the, fxNewGlobalInstance(the));
+			
+		
 			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			
 			the->collectFlag = XS_COLLECTING_FLAG;

@@ -676,10 +676,13 @@ txInteger fxPrepareHeap(txMachine* the)
 						else if (property->kind == XS_MODULE_KIND) {
 							fxPrepareInstance(the, slot);
 							property = property->next;
-							fxPrepareInstance(the, property->value.reference); // namespace
-							property = property->next;
-							fxPrepareInstance(the, property->value.reference); // import.meta
-						}
+                            if (property) {
+                                fxPrepareInstance(the, property->value.reference); // namespace
+                                property = property->next;
+                                if (property)
+                                    fxPrepareInstance(the, property->value.reference); // import.meta
+                            }
+                        }
 						else if (property->kind == XS_EXPORT_KIND) {
 							if (property->ID == mxID(_default)) {
 								txSlot* closure = property->value.export.closure;
