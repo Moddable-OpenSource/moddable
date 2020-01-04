@@ -28,6 +28,7 @@
 #include <netdb.h>
 #include <poll.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <linux/ip.h>
 #include <linux/if_ether.h>
 

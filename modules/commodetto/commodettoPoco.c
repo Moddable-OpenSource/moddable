@@ -25,6 +25,7 @@
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
 #include "stdlib.h"
+#include "stdbool.h"
 
 #include "xsPlatform.h"
 #include "xsmc.h"
