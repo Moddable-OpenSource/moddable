@@ -498,7 +498,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		txSlot* data = buffer->value.reference->next;
 		if (data->value.arrayBuffer.address == C_NULL)
 			mxTypeError("detached buffer");
-		return view->value.dataView.size / array->value.typedArray.dispatch->size;
+		return view->value.dataView.size >> array->value.typedArray.dispatch->shift;
 	}
 	mxPushReference(instance);
 	fxGetID(the, mxID(_length));
@@ -686,8 +686,14 @@ void fxArrayLengthGetter(txMachine* the)
 		if (alias)
 			array = alias->next;
 	}
-	mxResult->value.number = array->value.array.length;
-	mxResult->kind = XS_NUMBER_KIND;
+	if (array->value.array.length < 0) {
+		mxResult->value.number = array->value.array.length;
+		mxResult->kind = XS_NUMBER_KIND;
+	}
+	else {
+		mxResult->value.integer = (txInteger)array->value.array.length;
+		mxResult->kind = XS_INTEGER_KIND;
+	}
 }
 
 void fxArrayLengthSetter(txMachine* the)

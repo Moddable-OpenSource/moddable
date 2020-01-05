@@ -163,7 +163,8 @@ typedef struct {
 #define mxTypeArrayCount 11
 
 typedef struct {
-	txInteger size;
+	txU2 size;
+	txU2 shift;		// (1 << shift) == size
 	txTypeCallback getter;
 	txTypeCallback setter;
 	txTypeCoerce coerce;
@@ -428,8 +429,8 @@ struct sxMachine {
 	txNumber frequencies[XS_CODE_COUNT];
 #endif
 #ifdef mxInstrument
-	uint16_t garbageCollectionCount;
-	uint16_t loadedModulesCount;
+	txU2 garbageCollectionCount;
+	txU2 loadedModulesCount;
 	txSize peakParserSize;
 	txSlot* stackPeak;
 	txSize floatingPointOps;
@@ -980,6 +981,8 @@ mxExport void fx_Number_prototype_valueOf(txMachine* the);
 extern void fxBuildNumber(txMachine* the);
 extern txSlot* fxNewNumberInstance(txMachine* the);
 extern void fxNumberCoerce(txMachine* the, txSlot* slot);
+extern void fxIntCoerce(txMachine* the, txSlot* slot);
+extern void fxUintCoerce(txMachine* the, txSlot* slot);
 
 /* xsMath.c */
 mxExport void fx_Math_abs(txMachine* the);
