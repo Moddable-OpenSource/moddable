@@ -22,12 +22,12 @@ HOST_OS := $(shell uname)
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
 ifeq ($(HOST_OS),Darwin)
-SEGGER_ROOT ?= "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22"
+NRF52_GCC_ROOT ?= /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/gcc
+SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
 else
-SEGGER_ROOT ?= /usr/share/segger_embedded_studio_for_arm_4.30c
+NRF52_GCC_ROOT ?= /usr/share/segger_embedded_studio_for_arm_4.30c/gcc
+SEGGER_INCLUDE = /usr/share/segger_embedded_studio_for_arm_4.30c/include
 endif
-NRF52_GCC_ROOT ?= $(SEGGER_ROOT)/gcc
-SEGGER_INCLUDE = $(SEGGER_ROOT)/include
 
 NRF_SDK_DIR = $(HOME)/nRF5/nRF5_SDK
 NRFJPROG = $(HOME)/nRF5/nrfjprog/nrfjprog
