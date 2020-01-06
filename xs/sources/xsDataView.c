@@ -2528,10 +2528,8 @@ void fxIntCoerce(txMachine* the, txSlot* slot)
 
 void fxUintCoerce(txMachine* the, txSlot* slot)
 {
-	if ((XS_INTEGER_KIND == slot->kind) && (slot->value.integer >= 0))
-		return;
-
-	fxToNumber(the, slot);
+	slot->value.integer = fxToUnsigned(the, slot);
+	slot->kind = XS_INTEGER_KIND;		// XS_UNSIGNED_INTEGER_KIND
 }
 
 int fxInt8Compare(const void* p, const void* q)
@@ -2627,7 +2625,7 @@ void fxUint8Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot,
 
 void fxUint8Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	*((txU1*)(data->value.arrayBuffer.address + offset)) = (txU1)fxToUnsigned(the, slot);
+	*((txU1*)(data->value.arrayBuffer.address + offset)) = (slot->kind == XS_INTEGER_KIND) ? (txU1)slot->value.integer : (txU1)slot->value.number;
 }
 
 int fxUint16Compare(const void* p, const void* q)
@@ -2651,7 +2649,7 @@ void fxUint16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot
 
 void fxUint16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	txU2 value = (txU2)fxToUnsigned(the, slot);
+	txU2 value = (slot->kind == XS_INTEGER_KIND) ? (txU2)slot->value.integer : (txU2)slot->value.number;
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(U16);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(txU2));
@@ -2687,7 +2685,7 @@ void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot
 
 void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	txU4 value = (txU4)fxToUnsigned(the, slot);
+	txU4 value = (slot->kind == XS_INTEGER_KIND) ? (txU4)slot->value.integer : (txU4)slot->value.number;
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(U32);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(txU4));
