@@ -686,7 +686,7 @@ void fxArrayLengthGetter(txMachine* the)
 		if (alias)
 			array = alias->next;
 	}
-	if (array->value.array.length < 0) {
+	if (((txInteger)array->value.array.length) < 0) {
 		mxResult->value.number = array->value.array.length;
 		mxResult->kind = XS_NUMBER_KIND;
 	}
