@@ -609,7 +609,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	else
 		fprintf(file, "\t{ 4, 2, C_NULL, C_NULL, C_NULL, C_NULL, _getUint32, _setUint32, _Uint32Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint8ClampedArray)))
-		fprintf(file, "\t{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxUintCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
+		fprintf(file, "\t{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
 	else
 		fprintf(file, "\t{ 1, 0, C_NULL, C_NULL, C_NULL, C_NULL, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
 	fprintf(file, "};\n\n");
