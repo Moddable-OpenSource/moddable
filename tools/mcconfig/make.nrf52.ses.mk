@@ -21,9 +21,13 @@ HOST_OS := $(shell uname)
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
-NRF52_GCC_ROOT ?= /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/gcc
-SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
-SEGGER_INCLUDE = "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22/include"
+ifeq ($(HOST_OS),Darwin)
+SEGGER_ROOT ?= "/Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.22"
+else
+SEGGER_ROOT ?= /usr/share/segger_embedded_studio_for_arm_4.30c
+endif
+NRF52_GCC_ROOT ?= $(SEGGER_ROOT)/gcc
+SEGGER_INCLUDE = $(SEGGER_ROOT)/include
 
 NRF_SDK_DIR = $(HOME)/nRF5/nRF5_SDK
 NRFJPROG = $(HOME)/nRF5/nrfjprog/nrfjprog
@@ -259,7 +263,11 @@ OBJCOPY = $(TOOLS_BIN)/objcopy
 
 AR_FLAGS = crs
 
+ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+endif
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
@@ -406,7 +414,7 @@ all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.lib
 	@echo "# Application files and resources have been built. Use SES to complete build."
 	@echo "# - Ensure the following \"Project 'xsproj' Options\" are set in SES"
 	@echo "# - \"Linker: Additional Linker Options from File\" should refer to:"
-	@echo "# -    $(BIN_DIR)/xs_nrf52.lib"
+	@echo "# -    $(BIN_DIR)/xs_nrf52.ind"
 	@echo "# - \"Preprocessor: User Include Directories\" should contain:"
 	@echo "# -    $(TMP_DIR)"
 
