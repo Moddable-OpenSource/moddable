@@ -102,6 +102,9 @@ C_DEFINES = \
 	-DmxFewGlobalsTable=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
+C_DEFINES += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
