@@ -393,9 +393,9 @@ again:
 				theSlot->kind = XS_NUMBER_KIND;
 				theSlot->value.number = aNumber;
 			}
-			mxFloatingPointOp("to unsigned");
 			} break;
 		}
+		mxFloatingPointOp("number to unsigned");
 		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:

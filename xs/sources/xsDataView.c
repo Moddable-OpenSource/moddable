@@ -2528,8 +2528,7 @@ void fxIntCoerce(txMachine* the, txSlot* slot)
 
 void fxUintCoerce(txMachine* the, txSlot* slot)
 {
-	slot->value.integer = fxToUnsigned(the, slot);
-	slot->kind = XS_INTEGER_KIND;		// XS_UNSIGNED_INTEGER_KIND
+	fxToUnsigned(the, slot);
 }
 
 int fxInt8Compare(const void* p, const void* q)
