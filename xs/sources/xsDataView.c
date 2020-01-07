@@ -2624,7 +2624,8 @@ void fxUint8Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot,
 
 void fxUint8Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	*((txU1*)(data->value.arrayBuffer.address + offset)) = (slot->kind == XS_INTEGER_KIND) ? (txU1)slot->value.integer : (txU1)slot->value.number;
+	txUnsigned tmp = (slot->kind == XS_INTEGER_KIND) ? (txUnsigned)slot->value.integer : (txUnsigned)slot->value.number;
+	*((txU1*)(data->value.arrayBuffer.address + offset)) = (txU1)tmp;
 }
 
 int fxUint16Compare(const void* p, const void* q)
@@ -2648,7 +2649,8 @@ void fxUint16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot
 
 void fxUint16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	txU2 value = (slot->kind == XS_INTEGER_KIND) ? (txU2)slot->value.integer : (txU2)slot->value.number;
+	txUnsigned tmp = (slot->kind == XS_INTEGER_KIND) ? (txUnsigned)slot->value.integer : (txUnsigned)slot->value.number;
+	txU2 value = (txU2)tmp;
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(U16);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(txU2));
