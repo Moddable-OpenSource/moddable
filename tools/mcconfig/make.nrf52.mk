@@ -19,24 +19,38 @@
 
 HOST_OS := $(shell uname)
 
-NRF_SERIAL_PORT ?= /dev/cu.usbmodem14121
 NRF_ROOT ?= $(HOME)/nRF5
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
+NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
+DEBUGGER_PORT ?= /dev/cu.usbserial-AL035YB2
+DEBUGGER_SPEED ?= 115200
+
+BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
+SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
+
+UF2_VOLUME_NAME ?= MODDABLE4
+
 GNU_VERSION ?= 8.2.1
+# NRF52_GCC_ROOT ?= $(HOME)/opt/gcctoolchain
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
-COMPILER_INCLUDE = $(NRF52_GCC_ROOT)/arm-none-eabi/include
-
-NRF_SDK_DIR = $(NRF_ROOT)/nRF5_SDK
-NRFJPROG = $(NRF_ROOT)/nrfjprog/nrfjprog
+NRF_SDK_DIR ?= $(NRF_ROOT)/nRF5_SDK
+NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
+UF2CONV ?= $(NRF_ROOT)/uf2conv.py
 
 # nRF52840_xxAA
 BOARD = pca10056
 SOFT_DEVICE = s140
 SDK_ROOT = $(NRF_SDK_DIR)
 HWCPU = cortex-m4
+
+# BOARD_DEF = BOARD_PCA10056
+# BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
+BOARD_DEF = BOARD_MODDABLE_FOUR
+
+HEAP_SIZE = 0x13000
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
@@ -58,7 +72,7 @@ endif
 
 
 # C flags common to all targets
-CFLAGS += -DBOARD_PCA10056
+CFLAGS += -D$(BOARD_DEF)
 CFLAGS += -DCONFIG_GPIO_AS_PINRESET
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -DNRF52840_XXAA
@@ -81,7 +95,7 @@ CFLAGS += -DNRF_DRV_UART_WITH_UARTE
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 # ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-ASMFLAGS += -DBOARD_PCA10056
+ASMFLAGS += -D$(BOARD_DEF)
 ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -DNRF52840_XXAA
@@ -429,6 +443,9 @@ OBJECTS += \
 	$(NRF_LIBRARIES) \
 	$(NRF_SOFTDEVICE)
 
+OTHER_STUFF += \
+	boards_h
+
 TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi-
 
@@ -464,7 +481,7 @@ NRF_ASM_FLAGS= \
 	-mlittle-endian \
 	-mfloat-abi=hard \
 	-mfpu=fpv4-sp-d16 \
-	-DBOARD_PCA10056 \
+	-D$(BOARD_DEF) \
 	-DBSP_DEFINES_ONLY \
 	-DCONFIG_GPIO_AS_PINRESET \
 	-DFLOAT_ABI_HARD \
@@ -475,9 +492,9 @@ NRF_C_DEFINES= \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
 	-D__ARM_ARCH_FPV4_SP_D16__ \
-	-D__HEAP_SIZE__=0x13000 \
+	-D__HEAP_SIZE__=$(HEAP_SIZE) \
 	-D__GNU_LINKER \
-	-DBOARD_PCA10056 \
+	-D$(BOARD_DEF) \
 	-DCONFIG_GPIO_AS_PINRESET \
 	-DFLOAT_ABI_HARD \
 	-DFREERTOS \
@@ -576,6 +593,25 @@ MEM_USAGE = \
 SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
 
+#-----------------
+ifeq ($(DEBUG),1)
+	ifeq ($(HOST_OS),Darwin)
+		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		DO_LAUNCH = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+	else
+		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		DO_LAUNCH = 
+	endif
+else
+	KILL_SERIAL_2_XSBUG =
+	DO_XSBUG =
+	DO_LAUNCH = 
+endif
+
+#-----------------
+
 VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
@@ -583,7 +619,7 @@ VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
+all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
 clean:
 	@echo "# Cleaning tmp and bin for this project"
@@ -599,7 +635,7 @@ allclean:
 	@echo "# rm $(MODDABLE)/build/tmp/nrf52"
 	-rm -rf $(MODDABLE)/build/tmp/nrf52
 
-flash: $(BIN_DIR)/xs_nrf52.hex
+flash: all $(BIN_DIR)/xs_nrf52.hex
 	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
 	nrfjprog -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
 	nrfjprog -f nrf52 --reset
@@ -609,17 +645,45 @@ flash_softdevice:
 	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex --sectorerase
 	nrfjprog -f nrf52 --reset
 
+$(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
+	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
+	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
+
+copyToM4: all $(BIN_DIR)/xs_nrf52.uf2
+	$(KILL_SERIAL_2_XSBUG)
+	$(DO_XSBUG)
+	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
+	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
+	$(DO_LAUNCH)
+
+installBootloader:
+	nrfjprog --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
+
+installSoftdevice:	
+	nrfjprog --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
+
 erase:
 	nrfjprog -f nrf52 --eraseall
 
-dfu-package: $(BIN_DIR)/xs_nrf52.hex
-	@echo "# Packaging $<"
-	adafruit-nrfutil dfu genpkg --sd-req 0xFFFE --dev-type 0x0052 --application $< $(BIN_DIR)/dfu-package.zip
+$(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
+	@echo CR $<
+	@mergehex -q -m $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex -o $@
 
-bootload: $(BIN_DIR)/xs_nrf52.hex dfu-package
+dfu-package: $(BIN_DIR)/xs_nrf52-merged.hex
+	@echo "# Packaging $<"
+#	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $< $(BIN_DIR)/dfu-package.zip
+#	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip --bootloader $(BOOTLOADER_HEX) --softdevice $(SOFTDEVICE_HEX)
+	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52-merged.hex $(BIN_DIR)/dfu-package.zip
+
+installDFU: all dfu-package
 	@echo "# Flashing $<"
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
 
+startDebugger:
+	$(KILL_SERIAL_2_XSBUG)
+	$(DO_XSBUG)
+	$(DO_LAUNCH)
+	
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
@@ -627,6 +691,12 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(NRFJPROG) -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
 	@echo Resetting the device.
 	$(NRFJPROG) -f nrf52 --reset
+
+$(SDK_ROOT)/components/boards/moddable_four.h:
+	$(error "## Please add Moddable boards to your NRF52 SDK")
+	
+
+boards_h: $(SDK_ROOT)/components/boards/moddable_four.h
 
 $(TMP_DIR):
 	@echo "TMP_DIR"
