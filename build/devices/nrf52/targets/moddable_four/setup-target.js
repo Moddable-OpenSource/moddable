@@ -26,6 +26,9 @@ export default function (done) {
 trace(`autobacklight on - write 0 to ${config.lcd_power_pin}\n`);
 		Digital.write(config.lcd_power_pin, 0);
 	}
+	if (config.led1_pin) {
+		Digital.write(config.led1_pin, 0);
+	}
 
 	done();
 }
