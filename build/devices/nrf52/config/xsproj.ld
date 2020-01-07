@@ -3,15 +3,38 @@
 SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
 
+/*
+  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
+  RAM (rwx) :  ORIGIN = 0x20000000, LENGTH = 0x40000
+*/
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x0, LENGTH = 0x100000
-  RAM (rwx) :  ORIGIN = 0x20000000, LENGTH = 0x40000
+  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
+  RAM (rwx) :  ORIGIN = 0x200022e0, LENGTH = 0x3dd20
 }
+
+/* much of Moddable code goes into flash */
+/* this is in nrf_common.h */
+/*  .rodata : { KEEP(*(.rodata.*)) } > FLASH */
 
 SECTIONS
 {
-}
+  . = ALIGN(4);
+
+  .rodata.str : { KEEP(*(.rodata.str.1.4)) } > FLASH
+  .xs6ro2 : { KEEP(*(.xs6ro*)) } > FLASH
+  .irom.text : {
+		KEEP(*(.irom.str))
+		KEEP(*(.irom0.str.*))
+		KEEP(*(.irom2.literal))
+		KEEP(*(.irom2.text.literal))
+		KEEP(*(.irom2.text))
+		KEEP(*(.irom1.literal))
+		KEEP(*(.irom1.text.literal))
+		KEEP(*(.irom1.text))
+	} > FLASH
+	
+} INSERT AFTER .data;
 
 SECTIONS
 {
@@ -51,19 +74,13 @@ SECTIONS
   .mem_section_dummy_rom :
   {
   }
-  .xs_lib_flash :
-  {
-    PROVIDE(__start_xs_lib = .);
-    KEEP(*(SORT(.flash*)))
-    PROVIDE(__stop_xs_lib = .);
-  } > FLASH
   .sdh_soc_observers :
   {
     PROVIDE(__start_sdh_soc_observers = .);
     KEEP(*(SORT(.sdh_soc_observers*)))
     PROVIDE(__stop_sdh_soc_observers = .);
   } > FLASH
-  .sdh_ble_observers :
+ .sdh_ble_observers :
   {
     PROVIDE(__start_sdh_ble_observers = .);
     KEEP(*(SORT(.sdh_ble_observers*)))
@@ -76,13 +93,13 @@ SECTIONS
     PROVIDE(__stop_sdh_req_observers = .);
   } > FLASH
   .sdh_state_observers :
-  {
+  { 
     PROVIDE(__start_sdh_state_observers = .);
     KEEP(*(SORT(.sdh_state_observers*)))
     PROVIDE(__stop_sdh_state_observers = .);
   } > FLASH
   .sdh_stack_observers :
-  {
+  { 
     PROVIDE(__start_sdh_stack_observers = .);
     KEEP(*(SORT(.sdh_stack_observers*)))
     PROVIDE(__stop_sdh_stack_observers = .);
@@ -129,8 +146,15 @@ SECTIONS
     KEEP(*(.nrf_balloc))
     PROVIDE(__stop_nrf_balloc = .);
   } > FLASH
+  .xs_lib_flash :
+  {
+    PROVIDE(__start_xs_lib = .);
+    KEEP(*(SORT(.flash*)))
+    PROVIDE(__stop_xs_lib = .);
+  } > FLASH
 
 } INSERT AFTER .text
 
+/* located in the nRF52 sdk at modules/nrfx/mdk/nrf_common.ld */
 
 INCLUDE "nrf_common.ld"
