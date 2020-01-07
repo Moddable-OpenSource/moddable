@@ -92,9 +92,9 @@ static void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer);
 	txSlot* view = dispatch->next; \
 	txSlot* buffer = view->next; \
 	txSlot* host = fxCheckSharedArrayBuffer(the, buffer, "typedArray.buffer"); \
-	txInteger delta = dispatch->value.typedArray.dispatch->size; \
-	txInteger index = fxCheckAtomicsIndex(the, 1, view->value.dataView.size / delta); \
-	txInteger offset = view->value.dataView.offset + (index * delta)
+	txU2 shift = dispatch->value.typedArray.dispatch->shift; \
+	txInteger index = fxCheckAtomicsIndex(the, 1, view->value.dataView.size >> shift); \
+	txInteger offset = view->value.dataView.offset + (index << shift)
 
 void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
 void fxInt16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS2, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }

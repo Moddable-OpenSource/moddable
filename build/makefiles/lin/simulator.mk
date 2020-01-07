@@ -36,7 +36,7 @@ GLIB_COMPILE_RESOURCES = $(shell $(PKGCONFIG) --variable=glib_compile_resources 
 
 C_OPTIONS = $(shell $(PKGCONFIG) --cflags gtk+-3.0) -DmxLinux=1
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-misleading-indentation -Wno-implicit-fallthrough
 else
 	C_OPTIONS += -O3
 endif

@@ -493,59 +493,56 @@ void fx_String_prototype_charAt(txMachine* the)
 	txInteger anOffset;
 
 	aString = fxCoerceToString(the, mxThis);
-	aLength = fxUnicodeLength(aString);
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND))
+	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		anOffset = fxToInteger(the, mxArgv(0));
+		if (anOffset < 0) goto fail;
+	}
 	else
 		anOffset = 0;
-	if ((0 <= anOffset) && (anOffset < aLength)) {
-		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
-		aLength = fxUnicodeToUTF8Offset(aString + anOffset, 1);
-		if ((anOffset >= 0) && (aLength > 0)) {
-			mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
-			c_memcpy(mxResult->value.string, mxThis->value.string + anOffset, aLength);
-			mxResult->value.string[aLength] = 0;
-			mxResult->kind = XS_STRING_KIND;
-		}
-		else {
-			mxResult->value.string = mxEmptyString.value.string;
-			mxResult->kind = mxEmptyString.kind;
-		}
-	}
-	else {
-		mxResult->value.string = mxEmptyString.value.string;
-		mxResult->kind = mxEmptyString.kind;
-	}
+
+	anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
+	if (anOffset < 0) goto fail;
+
+	aLength = fxUnicodeToUTF8Offset(aString + anOffset, 1);
+	if (aLength < 0) goto fail;
+
+	mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
+	c_memcpy(mxResult->value.string, mxThis->value.string + anOffset, aLength);
+	mxResult->value.string[aLength] = 0;
+	mxResult->kind = XS_STRING_KIND;
+	return;
+
+fail:
+	mxResult->value.string = mxEmptyString.value.string;
+	mxResult->kind = mxEmptyString.kind;
 }
 
 void fx_String_prototype_charCodeAt(txMachine* the)
 {
 	txString aString;
-	txInteger aLength;
 	txInteger anOffset;
 
 	aString = fxCoerceToString(the, mxThis);
-	aLength = fxUnicodeLength(aString);
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND))
+	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		anOffset = fxToInteger(the, mxArgv(0));
+		if (anOffset < 0) goto fail;
+	}
 	else
 		anOffset = 0;
-	if ((0 <= anOffset) && (anOffset < aLength)) {
-		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
-		aLength = fxUnicodeToUTF8Offset(aString + anOffset, 1);
-		if ((anOffset >= 0) && (aLength > 0)) {
-			fxUTF8Decode(aString + anOffset, &mxResult->value.integer);
-			mxResult->kind = XS_INTEGER_KIND;
-		}
-		else {
-			mxResult->value.number = C_NAN;
-			mxResult->kind = XS_NUMBER_KIND;
-		}
-	}
-	else {
-		mxResult->value.number = C_NAN;
-		mxResult->kind = XS_NUMBER_KIND;
-	}
+
+	anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
+	if (anOffset < 0) goto fail;
+
+	if (fxUnicodeToUTF8Offset(aString + anOffset, 1) < 0)
+		goto fail;
+
+	fxUTF8Decode(aString + anOffset, &mxResult->value.integer);
+	mxResult->kind = XS_INTEGER_KIND;
+	return;
+
+fail:
+	mxResult->value.number = C_NAN;
+	mxResult->kind = XS_NUMBER_KIND;
 }
 
 void fx_String_prototype_codePointAt(txMachine* the)

@@ -217,8 +217,10 @@ void fxAbort(txMachine* the, int status)
 			msg = "unknown";
 			break;
 	}
-	if (msg)
+	if (msg) {
 		fxReport(the, "xs abort: %s\n", msg);
+		fxDebugger(the, NULL, 0);
+	}
 #endif
 
 	c_exit(status);

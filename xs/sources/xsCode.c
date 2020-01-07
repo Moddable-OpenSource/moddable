@@ -3652,12 +3652,12 @@ void fxParamsBindingNodeCode(void* it, void* param)
 		fxCoderAddByte(param, -1, XS_CODE_POP);
 	}
 	while (item) {
-		if ((item->flags & mxEvalFlag) && !(item->flags & mxStrictFlag)) {
-			fxCoderAddByte(param, 1, XS_CODE_NULL);
-			fxCoderAddByte(param, 0, XS_CODE_WITH);
-			fxCoderAddByte(param, -1, XS_CODE_POP);
-			coder->evalFlag = 1;
-		}
+// 		if ((item->flags & mxEvalFlag) && !(item->flags & mxStrictFlag)) {
+// 			fxCoderAddByte(param, 1, XS_CODE_NULL);
+// 			fxCoderAddByte(param, 0, XS_CODE_WITH);
+// 			fxCoderAddByte(param, -1, XS_CODE_POP);
+// 			coder->evalFlag = 1;
+// 		}
 		if (item->description->token == XS_TOKEN_REST_BINDING) {
 			fxNodeDispatchCodeReference(((txRestBindingNode*)item)->binding, param);
 			fxCoderAddIndex(param, 1, XS_CODE_ARGUMENTS, index);
@@ -3669,10 +3669,10 @@ void fxParamsBindingNodeCode(void* it, void* param)
 			fxNodeDispatchCodeAssign(item, param);
 		}
 		fxCoderAddByte(param, -1, XS_CODE_POP);
-		if ((item->flags & mxEvalFlag) && !(item->flags & mxStrictFlag)) {
-			coder->evalFlag = evalFlag;
-			fxCoderAddByte(param, 0, XS_CODE_WITHOUT);
-		}
+// 		if ((item->flags & mxEvalFlag) && !(item->flags & mxStrictFlag)) {
+// 			coder->evalFlag = evalFlag;
+// 			fxCoderAddByte(param, 0, XS_CODE_WITHOUT);
+// 		}
 		item = item->next;
 		index++;
 	}
