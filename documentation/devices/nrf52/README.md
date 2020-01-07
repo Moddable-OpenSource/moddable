@@ -3,59 +3,65 @@
 	img[src*="#medFramed"] { width:400px;border:1px solid black; }
 </style>
 
-# NRF52
+# Moddable Four getting started
 
 ## About This Document
 
-This document describes how to set up and build Moddable applications for the Nordic nRF52 series processors.
+This document describes how to set up and build Moddable applications for the Nordic nRF52 series processors using the **gcc** tools. It is specifically written for the **Moddable Four**, and can be adapted for other nRF52840 devices.
 
 ## Table of Contents
 
-* [About nRF52](#about-nrf52)
-* [Development workflow](#development-workflow)
+* [About Moddable Four](#about-moddable-four)
+* [Development Workflow](#development-workflow)
 * [Getting Started](#getting-started)
   * [MacOS host environment setup](#macos-host-environment-setup)
+    * [Install a gcc toolchain](#install-a-gcc-toolchain)
+    * [Install the nRF Command Line Tools](#install-the-nrf-command-line-tools)
+    * [Get uf2conv.py](#get-uf2conf.py)
 * [nRF5 SDK Setup](#nrf5-sdk-setup)
-* [Set up the nRF5 host application](#set-up-the-nrf5-host-application)
+  * [Install the nRF5 SDK v15.3.0](#install-the-nrf5-sdk-v15.3.0)
+  * [Add a board definition](#add-a-board-definition)
 * [MacOS Build and Deploy](#macos-build-and-deploy)
   * [Build Moddable tools for MacOS](#build-moddable-tools-for-macos)
-  * [Build Moddable app](#build-moddable-tools-for-macos)
-  * [Build the nRF5 host application](#build-the-nrf5-host-application)
-  * [Flash to device](#flash-to-device)
+  * [Moddable Four Programming mode](#moddable-four-programming-mode)
+  * [Build and deploy a Moddable app](#build-and-deploy-a-moddable-app)
 * [Debugging](#debugging)
   * [Wiring the serial interface](#wiring-the-serial-interface)
   * [Start xsbug](#start-xsbug)
-  * [Run the application](#run-the-application) 
-* [Enabling LE secure connection support](#le-secure-connections)
+  * [Native debugging on Moddable Four](#native-debugging-on-moddable-four)
 * [Notes and troubleshooting](#notes-and-troubleshooting)
 * [Example apps with nrf52 support](#example-apps-with-qca4020-support)
 * [Reference Documentation](#reference-documentation)
 * [Reference Sites](#reference-sites)
 
 
-## About nRF52
+## About Moddable Four
 
-<!-- MDK needs refocus on Moddable Four as the development kit -->
+Moddable's Moddable Four device is a low-power, bluetooth development board that utilizes Nordic Semiconductor's nRF52840 hardware and Moddable's ECMAScript software development tools.
 
-The Nordic nRF52 is an low-powered ARM-based SoC with Bluetooth. The Moddable SDK has been ported to the [nRF52840 DK](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK)
+The Nordic nRF52840 is an low-powered ARM-based SoC with Bluetooth. The Moddable SDK can also be used with the [nRF52840 DK](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK) as well as other nRF52840 based boards.
 
 Moddable supports FreeRTOS on the nRF52 using a MacOS based host build platform.
 
-The build platform `-p nrf52/dk` is used to target the **nRF52840-DK** development board powered by the nRF52840.
-
-The **Moddable Four** is based on the nRF52840. Use the build platform `-p nrf52/moddable_four`.
+The build platform `-p nrf52/moddable_four` is used to target the Moddable Four. An alternate build arrangement can be set up for development with Nordic's **nRF52840-DK** development board and Segger Embedded Systems IDE. See the Using Moddable with Segger Embedded Systems document for details.
 
 ## Development workflow
 
-<!-- MDK eventually, we'd like to get to a command line build & deploy like we do with Moddable Zero, One, Two and Three -->
+After the initial build host setup, building and deploying to the Moddable Four can be performed with the command:
 
-After the initial build host setup, there are three major steps to build and deploy a Moddable application for the nRF52.
+```
+mcconfig -d -m -p nrf52/moddable_four -t copyToM4
+```
 
-1. The application, assets, and modules are built using the `mcconfig` tool. This produces a number of `.c.o` files and an index.
+This will perform the following steps:
 
-2. Build the xs runtime, nRF52 libraries and small launcher application using the SEGGER Embedded Studio (SES). This will link the files generated in step 1.
+1. The application, assets, and modules are built using the `mcconfig` tool.
 
-3. Flash the application to the board and debug. Use SES to launch and debug the native portion of your application. Use `xsbug` to debug your ECMAScript application. 
+2. Files are linked and assembled into a .hex, and further assembled into a .uf2 file to be copied to the Moddable Four device.
+
+3. xsbug and serial2xsbug are started
+
+4. The device reboots and attaches to xsbug
 
 ## Getting Started
 
@@ -63,23 +69,37 @@ After the initial build host setup, there are three major steps to build and dep
 
 Set up the MacOS build environment as described in the [Moddable SDK - Getting Started][modStart] guide.
 
-[nrf5 SDK v15.3.0 documentation][nrf5sdkdoc]
+Moddable is currently using the Nordic SDK v15.3.0. Documentation can be found here: 
+[nrf5 SDK v15.3.0][nrf5sdkdoc]
 
-#### Install SEGGER Embedded Studio (SES)
+We will use a directory named `nrf5` in your home directory to hold the SDK and various tools:
 
-Download and install [SEGGER Embedded Studio][sesdownload]. Choose the version **Embedded Studio for ARM, macOS V4.22**.
+```text
+cd $HOME
+mkdir nrf5
+cd nrf5
+```
 
-Start and register your IDE. Use the menu item Tools->Package Manager and install the support package for **Nordic** devices.
+#### Install a gcc toolchain
 
-#### Install SEGGER J-Link
+We will use the `gnu` tools to build applications, so we will need an arm complier. Currently supported version is `8.2.1` but others may work.
 
-Download and install [J-Link Software and Documentation pack for macOS][jlinkdownload]
+The following environment variables can be modified to suit your environment.
+
+Variable | Default | Description 
+--- | ------- | -----
+`NRF52_GCC_ROOT` | `$HOME/opt/gcctoolchain` | root of the gcc toolchain. Should include `arm-non-eabi`, `bin`, etc.
+`GNU_VERSION` | `8.2.1` | version of the gcc toolchain
+
+Download from the [gcc toolchain][gcctoolchain] site.
+
+You can set the `NRF_GCC_ROOT` to an existing installation if you already have a gcc arm compiler installed.
 
 #### Install the nRF Command Line Tools
 
-The nRF Command Line Tools are used
+The nRF Command Line Tools are used in programming the Moddable Four and other nRF52840 devices.
 
-Download and install `nRF util` and `nRF Py nrfjprog` from [Nordic Development Tools][nrfcmdtools]. Put them into a `~/nRF5` directory making:
+Download and install **nRF util** and **nRF Py nrfjprog** from [Nordic Development Tools][nrfcmdtools]. Put them into a `$HOME/nRF5` directory making:
 
 ```text
 ...
@@ -91,16 +111,17 @@ Download and install `nRF util` and `nRF Py nrfjprog` from [Nordic Development T
 Add them to your `PATH` environment variable:
 
 ```text
-export PATH=~/nRF5/nrfjprog:~/nRF5/mergehex:$PATH
+export PATH=$HOME/nRF5/nrfjprog:$HOME/nRF5/mergehex:$PATH
 ```
 
 #### Get uf2conv.py
 
-For Moddable Four, we are using the Sparkfun bootloader. `uf2conv.py` is a tool from Microsoft that packages up our final binary for transfer to the device.
+The Moddable Four uses a modified `Adafruit_nRF52_Bootloader`. `uf2conv.py` is a tool from Microsoft that packages up the final binary for transfer to the device.
 
 [uf2convdownload]:https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py
 
-[Download uf2conv.py][uf2convdownload] into the `~/nRF5` directory.
+[Download uf2conv.py][uf2convdownload] into the `$HOME/nRF5` directory.
+
 
 ### nRF5 SDK Setup
 
@@ -121,54 +142,34 @@ Decompress the files into a `~/nRF5` directory making:
 Make a symbolic link to the long name of the SDK. This will also allow us to change the version of the SDK without having to change many PATHs in our project.
 
 ```text
-cd ~/nRF5
+cd $NRF_SDK_DIR
 ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
+export NRF_SDK_DIR=$HOME/nRF5/nRF5_SDK
 ```
 
-The nRF build environment requires a particular location of the **$MODDABLE** directory with respect to the SDK.
-
-From the nRF5 directory, make a symbolic link to your `$MODDABLE` directory:
+You can locate the SDK in a different location by setting a `NRF_SDK_DIR` environment variable:
 
 ```text
-cd ~/nRF5
-ln -s $MODDABLE ./moddable
+export NRF_SDK_DIR=another_location/nRF5_SDK_15.3.0_59ac345
 ```
 
-### Set up the nRF5 host application
+#### Add a board definition
 
-Open the `xsproj` project in SES. The location of the project is a bit deep in the tree: `$MODDABLE/build/devices/nrf52/xsProj/pca10056/s140/ses/xsproj.emProject`
+Next, we will add the Moddable Four board definition to the Nordic SDK. This provides some pin layout and constant definitions suitable for development with the Moddable Four.
 
-Right-click on the **Project 'xsproj'** item in the left column to open the project options dialog:
+The file `moddable_four.h` is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the file to the Nordic SDK's `components/boards/` directory:
 
-![Choose project options](./assets/selectProjectOptions.png#medFramed)
+```text
+cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
+```
 
-In the **Project 'xsproj' Options** dialog, two items need to be changed each time you change the application you are building.
+You'll also need to modify `components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
 
-(1) Select the **Show Modified Options Only** item at the top-right to simplify finding the two items we need to change:
+```c
+#elif defined (BOARD_MODDABLE_FOUR)
+  #include "moddable_four.h"
+```
 
-![Change project paths](./assets/projectPathsChangeDetail.png#medFramed)
-
-Scroll down to the option **Additional Linker Options From File**.
-
-(2) Set the _full path_ to the linker include file at `$MODDABLE/build/bin/nrf52/<subplatform>/debug/<application>/xs_nrf52.ind`
-
-For example, the user _**bob**_ building **helloworld** for the **moddable_four** would use the path:
-
-`/Users/bob/nRF5/moddable/build/bin/nrf52/moddable_four/debug/helloworld/xs_nrf52.ind`
-
-(3) Change the _relative path_ of the **User Include Directories** to reflect the platform and application you are developing.
-
-For example, building **helloworld** for the **moddable_four** would use the path:
-
-`../../../../../../../build/tmp/nrf52/moddable_four/debug/helloworld`
-
-> That's seven (7) `../`
-
-These two items will need to change whenever you work on a new application or new device subplatform.
-
-> Note: If you can't find the **Additional Linker Options From File** and  **User Include Directories** options, make sure you are looking at the **Project 'xsproj' Options** and not the **Solution 'xsproj' Options**.
-
-![Project vs. Solution](./assets/projectVSsolution.png#medFramed)
 
 ## MacOS build and Deploy
 
@@ -182,68 +183,61 @@ cd $MODDABLE/build/makefiles/mac
 make
 ```
 
-### Build Moddable app
+### Moddable Four Programming mode
 
-Build the Moddable `helloworld` app:
+The Moddable Four has a bootloader that will automatically launch the application that is installed onto it.
+
+To put new software onto the Moddable Four, you must put it into **programming mode**. Programming mode is indicated by the LED indicator staying lit at boot time, and a disk named `MODDABLE4` will appear on your desktop.
+
+![Moddable Four disk](./assets/M4-disk.png#smallFramed)
+
+Programming mode is set by double-tapping the reset button, or holding the boot button while tapping reset. The LED will light.
+
+Your Moddable Four is now ready to be programmed.
+
+> Note: If you do not program your device within a short period, it will reboot to the installed application.
+
+### Build and deploy a Moddable app
+
+Put the Moddable Four into **programming mode** and build the Moddable `helloworld` app:
 
 ```text
 cd $MODDABLE/examples/helloworld
-mcconfig -d -m -p nrf52/moddable_four
+mcconfig -d -m -p nrf52/moddable_four -t copyToM4
 ```
 
-> The `mcconfig` tool compiles the application source code and any assets. 
+The `mcconfig` tool compiles the application source code and any assets. The `-t` target of `copyToM4` builds, packages and uploads your application to the Moddable Four device and launches the `xsbug` debugger.
 
+Other targets include:
 
-### Build the nRF5 host application
+Target | Description
+-------|------
+`-t all`<br>_or no target_ | builds the application into a xs_nrf52.hex file
+`-t clean` | removes the `bin` and `tmp` directories for this application leaving libraries and other apps
+`-t allclean` | removes all Moddable nrf52 applications and libraries tmp and bin
+`-t copyToM4` | builds and packages the application, copies it to the Moddable Four, and starts `xsbug`
+`-t startDebugger` | starts `xsbug` and `serial2xsbug`
 
-In _SEGGER Embedded Studio_, ensure that the `xsproj` project is open.
-
-> The location of the project is a bit deep in the tree: `$MODDABLE/build/devices/nrf52/xsProj/pca10056/s140/ses/xsproj.emProject`
-
-Make sure the application paths are set up as described in the section _**Set up the nRF5 host application**_ above.
-
-Use the menu option **Build xsproj** to build the files.
-
-![Build and Debug](./assets/buildAndDebug.png#medFramed)
-
-Alternately, use **Build and Debug** or **Build and Run** to both build and flash to the device.
-
-> If there is a build error it will be noted by **Build failed** at the bottom left of the window.
-
-![Build error](./assets/buildError.png#medFramed)
-
-### Flash to device
-
-The development board should be connected and powered on. Connections for peripherals should already be made (_see the section on **Debugging** below_).
-
-Use the menu item **Build and Debug** or **Build and Run** to both build and flash to the device.
-
-_need to document the following:_
-
- -	_Using nrfprog_
- - 	_Using uf2conv.py_
- - 	_Using drag/copy method_
- -  
 
 ### Debugging
 
 A Moddable application has _native_ portions, written in C and _script_ portions written in ECMAScript.
 
-You can debug _native_ code on the nRF52840 DK with SEGGER Embedded Studio. Examine registers, set breakpoints, view variables, memory and registers.
+You can debug _script_ code using `xsbug` and a serial interface with the Moddable Four.
 
-You can debug _script_ code using `xsbug` and a serial interface.
+You can debug _native_ code on the nRF52840 DK with SEGGER Embedded Studio. Examine registers, set breakpoints, view variables, memory and registers. This document does not describe that use.
 
 <!-- MDK - some day without the FTDI dongle -->
 
 #### Wiring the serial interface
 
- - Connect TX on the serial interface to `P0.31`.
- - Connect RX on the serial interface to `P0.30`.
+ - Connect RX on the serial interface to `P0.03`.
+ - Connect TX on the serial interface to `P0.04`.
  - Connect GND on the serial interface to a GND on the device.
 
-For the **Moddable Four** and **nRF52840 DK**
+**Moddable Four debugger serial connection**
 
-![Moddable Four FTDI](./assets/xsbugM4.png#smallFramed) ![Moddable Four FTDI](./assets/xsbugDK.png#smallFramed)
+![Moddable Four FTDI](./assets/M4-R0.7-SerialDebug.png#smallFramed)
 
 Identify the serial port that the interface is using by looking for the device files matching `/dev/cu.*` before and after plugging in the serial interface.
 
@@ -251,38 +245,32 @@ Identify the serial port that the interface is using by looking for the device f
 
 In this case, it is `/dev/cu.usbserial-AL035YB2`.
 
-#### Start xsbug
-
-In a terminal window, launch `xsbug` and `serial2xsbug`. Use the serial port that you identified above.
+Set the environment variable **DEBUGGER_PORT**:
 
 ```text
-xsbug &
-serial2xsbug /dev/cu.usbserial-AL035YB2 115200 8N1
+export DEBUGGER_PORT=/dev/cu.usbserial-AL035YB2
 ```
 
-> `xsbug` is used to debug the ECMAScript side of your application. `serial2xsbug` provides a serial to network socket bridge between the serial port and the `xsbug` debugger.
+#### Start xsbug
+
+If you use the build target `-t copyToM4`, the build process will automatically start **xsbug** and **serial2xsbug** to connect to the debugger.
+
+```text
+cd ../path/to/application
+mcconfig -d -m -p nrf52/moddable_four -t copyToM4
+```
+
+If the Moddable Four already has an application installed and you would like to debug it without reinstalling, you can use the `-t startDebugger` build target: 
+
+```text
+cd ../path/to/application
+mcconfig -d -m -p nrf52/moddable_four -t startDebugger
+```
+
+> `xsbug` is used to debug the ECMAScript side of your application. `serial2xsbug` provides a serial to network socket bridge between the serial port and the `xsbug` debugger. 
      
-#### Run the application
-
-In SES, use the menu item **Build and Debug** to both build and flash to the device. The window will change to look something like the following image. Items to note:
-
-1. Application is stopped at the start of `main()`
-2. Start, stop and restart buttons.
-3. Step into, step over, step out and run to cursor.
-
-![SES Debugging](./assets/sesDebug.png#medFramed)
-
-Press the _Start_ button to start the program.
-
-`xsbug` will show the connection is made and the application will stop at the `debugger` line.
-
-![xsbug running helloworld](./assets/xsbugHelloworld.png#medFramed)
-
-You can now run and debug your application.
-
-> Note: if you have a debug build, your application will try to connect to `xsbug` at startup for a brief period. If it cannot connect, it will proceed to launch.
-
 ### Native debugging on Moddable Four
+_needs an update to the new board layout_
 
 Debugging native code on the Moddable Four with the Segger Embedded Studio requires a Nordic nRF52840 dk board and this additional wiring:
 
@@ -304,45 +292,9 @@ FTDI GND to GND
 
 J-Link:Target Interface Type -> SWD
 
-<a id="le-secure-connections"></a>
-### Enabling LE secure connection support
-LE secure connection support is disabled by default in the Moddable build due to a FreeRTOS incompatibility in the Nordic SDK. To enable LE secure connections, the Nordic SDK and config must be patched as follows:
-
-1. Edit the two #define statements in the `sdk_config.h` file to enable LE secure connection support:
-
-	```
-	#ifndef NRF_BLE_LESC_ENABLED
-		#define NRF_BLE_LESC_ENABLED 1
-	#endif
-	
-	#ifndef PM_LESC_ENABLED
-		#define PM_LESC_ENABLED 1
-	#endif
-	``` 
-	
-2. In the Nordic SDK sources, disable the stack overflow check in the `nrf_stack_info_overflowed()` function:
-
-	```
-	__STATIC_INLINE bool nrf_stack_info_overflowed(void)
-	{
-	#if 0
-		if (NRF_STACK_INFO_GET_SP() < NRF_STACK_INFO_BASE)
-		{
-			return true;
-		}
-	#endif
-		return false;
-	}
-	```
-
-> Note: Because of this incompatibility, the Moddable BLE server traces a warning to the xsbug console when LE secure connections are enabled.
-
 ### Notes and troubleshooting
 
-* sometimes xsbug doesn't connect on app start. Press the restart button in SES or the reset button on the board.
-* `xsbug` needs to be running before `serial2xsbug` is started.
-
-
+* if double-tapping the reset button doesn't put M4 into debug mode, try holding the **boot** button while pressing reset.
 
 ## Example apps with nRF52 support
 
@@ -350,15 +302,6 @@ App | Feature
 --- | ------- 
 [helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug 
 [balls](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/piu/balls) | balls using the Sharp Mirror Display ls013b4dn04
-[ble/advertiser](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
-[ble/colorific](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
-[ble/discovery](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
-[ble/health-thermometer-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/)
-[ble/heart-rate-client](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-client) | BLE heart rate client
-[ble/heart-rate-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml)
-[ble/powermate](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth)
-[ble/scanner](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/scanner) | Scans for and displays peripheral advertised names
-[ble/uri-beacon](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service
 [transitions] | dk - piu on ls013b4dn04
 [button] | digital in
 [blink] | digital out
@@ -396,3 +339,4 @@ Of particular interest and referenced earlier in this document are:
 [nrfcmdtools]:https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Command-Line-Tools
 [jlinkdownload]:https://www.segger.com/downloads/jlink/
 
+[gcctoolchain]:https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
