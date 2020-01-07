@@ -27,8 +27,10 @@
     },
 	"defines": {
 		"debugger": {
-			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
-			"rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
+			"xtx_pin": "NRF_GPIO_PIN_MAP(0,30)",
+			"xrx_pin": "NRF_GPIO_PIN_MAP(0,31)",
+			"tx_pin": "3",
+			"rx_pin": "4",
 			"baudrate": "NRF_UART_BAUDRATE_115200"
 		},
 		"spi": {
