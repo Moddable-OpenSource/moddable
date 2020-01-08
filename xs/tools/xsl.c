@@ -396,7 +396,7 @@ int main(int argc, char* argv[])
                     mxException.value.reference = mxRealmClosures(realm)->value.reference;
 					mxProgram.value.reference = modules; //@@
 				}
-				if (linker->freezeFlag) {
+				{
 					txSlot* target = fxNewInstance(the);
 					script = linker->firstScript;
 					c_memcpy(path, linker->base, linker->baseLength);
@@ -410,6 +410,8 @@ int main(int argc, char* argv[])
 						script = script->nextScript;
 					}
 					mxPull(mxHosts); //@@
+				}
+				if (linker->freezeFlag) {
 					fxFreezeBuiltIns(the);
 				}
 				if (linker->stripFlag) {
@@ -533,7 +535,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
 		
 			if (linker->stripFlag) {
-				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
+				fprintf(file, "static void fxDeadStrip(txMachine* the) { fxAbort(the, XS_DEAD_STRIP_EXIT); }\n\n");
 				fxPrintBuilders(the, file);
 			}
 			script = linker->firstScript;
@@ -937,6 +939,14 @@ void fxQueuePromiseJobs(txMachine* the)
 
 void fxAbort(txMachine* the, int status)
 {
+	mxTry(the) {
+		if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
+			mxUnknownError("not enough memory");
+		else if (status == XS_STACK_OVERFLOW_EXIT)
+			mxUnknownError("stack overflow");
+	}
+	mxCatch(the) {
+	}
 	c_exit(status);
 }
 

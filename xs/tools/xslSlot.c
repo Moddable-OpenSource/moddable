@@ -513,9 +513,8 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	if (linker->stripFlag)
 		return C_NULL;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
-	if (property)
-		return property;
-	property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	if (!property)
+        property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	key = fxGetKey(the, (txID)id);
 	if (key) {
 		txKind kind = mxGetKeySlotKind(key);

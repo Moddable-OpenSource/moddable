@@ -1234,6 +1234,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 	gInstrumentationThe->garbageCollectionCount = 0;
 	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
 	gInstrumentationThe->peakParserSize = 0;
+	gInstrumentationThe->floatingPointOps = 0;
 }
 #endif
 

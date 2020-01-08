@@ -163,7 +163,8 @@ typedef struct {
 #define mxTypeArrayCount 11
 
 typedef struct {
-	txInteger size;
+	txU2 size;
+	txU2 shift;		// (1 << shift) == size
 	txTypeCallback getter;
 	txTypeCallback setter;
 	txTypeCoerce coerce;
@@ -428,10 +429,11 @@ struct sxMachine {
 	txNumber frequencies[XS_CODE_COUNT];
 #endif
 #ifdef mxInstrument
-	txSize garbageCollectionCount;
-	txSize loadedModulesCount;
+	txU2 garbageCollectionCount;
+	txU2 loadedModulesCount;
 	txSize peakParserSize;
 	txSlot* stackPeak;
+	txSize floatingPointOps;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
 #ifdef mxProfile
@@ -743,6 +745,11 @@ mxExport void fxReportWarning(txMachine* the, txString thePath, txInteger theLin
 #ifdef mxInstrument	
 extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units);
 extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values);
+#define mxFloatingPointOp(operation) \
+		/* fprintf(stderr, "float: %s\n", operation); */ \
+		the->floatingPointOps += 1
+#else
+	#define mxFloatingPointOp(operation)
 #endif
 
 /* xsType.c */
@@ -974,6 +981,8 @@ mxExport void fx_Number_prototype_valueOf(txMachine* the);
 extern void fxBuildNumber(txMachine* the);
 extern txSlot* fxNewNumberInstance(txMachine* the);
 extern void fxNumberCoerce(txMachine* the, txSlot* slot);
+extern void fxIntCoerce(txMachine* the, txSlot* slot);
+extern void fxUintCoerce(txMachine* the, txSlot* slot);
 
 /* xsMath.c */
 mxExport void fx_Math_abs(txMachine* the);
@@ -1828,6 +1837,7 @@ enum {
 	XS_NOT_ENOUGH_MEMORY_EXIT,
 	XS_STACK_OVERFLOW_EXIT,
 	XS_FATAL_CHECK_EXIT,
+	XS_DEAD_STRIP_EXIT,
 };
 
 #if mxBigEndian

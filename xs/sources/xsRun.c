@@ -1312,8 +1312,10 @@ XS_CODE_JUMP:
 				mxNextCode(mxStack->value.boolean ? (txS4)index + offset : (txS4)index)
 			else if (XS_INTEGER_KIND == byte)
 				mxNextCode(mxStack->value.integer ? (txS4)index + offset : (txS4)index)
-			else if (XS_NUMBER_KIND == byte)
+			else if (XS_NUMBER_KIND == byte) {
 				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index : (txS4)index + offset)
+				mxFloatingPointOp("if");
+			}
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
 				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index : (txS4)index + offset)
 			else
@@ -2638,6 +2640,7 @@ XS_CODE_JUMP:
 			else if (mxStack->kind == XS_NUMBER_KIND) {
 				mxStack->kind = XS_INTEGER_KIND;
 				mxStack->value.integer = ~fxNumberToInteger(mxStack->value.number);
+				mxFloatingPointOp("not");
 			}
 			else {
 				mxSaveState;
@@ -2652,8 +2655,10 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					slot->value.integer &= mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND)
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.integer &= fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("and");
+				}
 				else
 					goto XS_CODE_BIT_AND_GENERAL;
 			}
@@ -2661,10 +2666,12 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) & mxStack->value.integer;
+					mxFloatingPointOp("and");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) & fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("and");
 				}
 				else
 					goto XS_CODE_BIT_AND_GENERAL;
@@ -2684,8 +2691,10 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					slot->value.integer |= mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND)
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.integer |= fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("or");
+				}
 				else
 					goto XS_CODE_BIT_OR_GENERAL;
 			}
@@ -2693,10 +2702,12 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) | mxStack->value.integer;
+					mxFloatingPointOp("or");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) | fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("or");
 				}
 				else
 					goto XS_CODE_BIT_OR_GENERAL;
@@ -2716,8 +2727,10 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					slot->value.integer ^= mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND)
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.integer ^= fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("xor");
+				}
 				else
 					goto XS_CODE_BIT_XOR_GENERAL;
 			}
@@ -2725,10 +2738,12 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) ^ mxStack->value.integer;
+					mxFloatingPointOp("xor");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) ^ fxNumberToInteger(mxStack->value.number);
+					mxFloatingPointOp("xor");
 				}
 				else
 					goto XS_CODE_BIT_XOR_GENERAL;
@@ -2749,8 +2764,10 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					slot->value.integer <<= mxStack->value.integer & 0x1f;
-				else if (mxStack->kind == XS_NUMBER_KIND)
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.integer <<= fxNumberToInteger(mxStack->value.number) & 0x1f;
+					mxFloatingPointOp("left shift");
+				}
 				else
 					goto XS_CODE_LEFT_SHIFT_GENERAL;
 			}
@@ -2758,10 +2775,12 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) << (mxStack->value.integer & 0x1f);
+					mxFloatingPointOp("left shift");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) << (fxNumberToInteger(mxStack->value.number) & 0x1f);
+					mxFloatingPointOp("left shift");
 				}
 				else
 					goto XS_CODE_LEFT_SHIFT_GENERAL;
@@ -2781,8 +2800,10 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					slot->value.integer >>= mxStack->value.integer & 0x1f;
-				else if (mxStack->kind == XS_NUMBER_KIND)
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.integer >>= fxNumberToInteger(mxStack->value.number) & 0x1f;
+					mxFloatingPointOp("signed right shift");
+				}
 				else
 					goto XS_CODE_SIGNED_RIGHT_SHIFT_GENERAL;
 			}
@@ -2790,10 +2811,12 @@ XS_CODE_JUMP:
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) >> (mxStack->value.integer & 0x1f);
+					mxFloatingPointOp("signed right shift");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
 					slot->value.integer = fxNumberToInteger(slot->value.number) >> (fxNumberToInteger(mxStack->value.number) & 0x1f);
+					mxFloatingPointOp("signed right shift");
 				}
 				else
 					goto XS_CODE_SIGNED_RIGHT_SHIFT_GENERAL;
@@ -2830,14 +2853,19 @@ XS_CODE_JUMP:
 				else {
 					mxStack->kind = XS_NUMBER_KIND;
 					mxStack->value.number = -((txNumber)(mxStack->value.integer));
+					mxFloatingPointOp("minus");
 				}
 			}
-			else if (mxStack->kind == XS_NUMBER_KIND)
+			else if (mxStack->kind == XS_NUMBER_KIND) {
 				mxStack->value.number = -mxStack->value.number;
+				mxFloatingPointOp("minus");
+			}
 			else {
 				mxSaveState;
-				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._neg))
+				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._neg)) {
 					mxStack->value.number = -mxStack->value.number;
+					mxFloatingPointOp("minus");
+				}
 				mxRestoreState;
 			}
 			mxNextCode(1);
@@ -2865,14 +2893,19 @@ XS_CODE_JUMP:
 					mxStack->kind = XS_NUMBER_KIND;
 					mxStack->value.number = mxStack->value.integer;
 					mxStack->value.number--;
+					mxFloatingPointOp("decrement");
 				}
 			}
-			else if (mxStack->kind == XS_NUMBER_KIND)
+			else if (mxStack->kind == XS_NUMBER_KIND) {
 				mxStack->value.number--;
+				mxFloatingPointOp("decrement");
+			}
 			else {
 				mxSaveState;
-				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._dec))
+				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._dec)) {
 					mxStack->value.number--;
+					mxFloatingPointOp("decrement");
+				}
 				mxRestoreState;
 			}
 			mxNextCode(1);
@@ -2885,14 +2918,19 @@ XS_CODE_JUMP:
 					mxStack->kind = XS_NUMBER_KIND;
 					mxStack->value.number = mxStack->value.integer;
 					mxStack->value.number++;
+					mxFloatingPointOp("increment");
 				}
 			}
-			else if (mxStack->kind == XS_NUMBER_KIND)
+			else if (mxStack->kind == XS_NUMBER_KIND) {
 				mxStack->value.number++;
+				mxFloatingPointOp("increment");
+			}
 			else {
 				mxSaveState;
-				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._inc))
+				if (fxToNumericNumberUnary(the, mxStack, gxTypeBigInt._inc)) {
 					mxStack->value.number++;
+					mxFloatingPointOp("increment");
+				}
 				mxRestoreState;
 			}
 			mxNextCode(1);
@@ -2919,6 +2957,7 @@ XS_CODE_JUMP:
 						if (((a ^ c) & (b ^ c)) < 0) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("add");
 						}
 						else
 							slot->value.integer = c;
@@ -2927,15 +2966,20 @@ XS_CODE_JUMP:
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
 					slot->value.number = (txNumber)(slot->value.integer) + mxStack->value.number;
+					mxFloatingPointOp("add");
 				}
 				else
 					goto XS_CODE_ADD_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->value.number += (txNumber)(mxStack->value.integer);
-				else if (mxStack->kind == XS_NUMBER_KIND)
+					mxFloatingPointOp("add");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.number += mxStack->value.number;
+					mxFloatingPointOp("add");
+				}
 				else
 					goto XS_CODE_ADD_GENERAL;
 			}
@@ -2950,8 +2994,10 @@ XS_CODE_JUMP:
 					fxConcatString(the, slot, mxStack);
 				}
 				else {
-					if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._add))
+					if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._add)) {
 						slot->value.number += mxStack->value.number;
+						mxFloatingPointOp("add");
+					}
 				}
 				mxRestoreState;
 			}
@@ -2987,23 +3033,30 @@ XS_CODE_JUMP:
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
 					slot->value.number = (txNumber)(slot->value.integer) - mxStack->value.number;
+					mxFloatingPointOp("subtract");
 				}
 				else
 					goto XS_CODE_SUBTRACT_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->value.number -= (txNumber)(mxStack->value.integer);
-				else if (mxStack->kind == XS_NUMBER_KIND)
+					mxFloatingPointOp("subtract");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.number -= mxStack->value.number;
+					mxFloatingPointOp("subtract");
+				}
 				else
 					goto XS_CODE_SUBTRACT_GENERAL;
 			}
 			else {
 		XS_CODE_SUBTRACT_GENERAL:
 				mxSaveState;
-				if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._sub))
+				if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._sub)) {
 					slot->value.number -= mxStack->value.number;
+					mxFloatingPointOp("subtract");
+				}
 				mxRestoreState;
 			}
 			mxStack++;
@@ -3039,6 +3092,7 @@ XS_CODE_JUMP:
 					slot->value.number /= mxStack->value.number;
 				mxRestoreState;
 			}
+			mxFloatingPointOp("divide");
 			mxStack++;
 			mxNextCode(1);
 			mxBreak;
@@ -3071,6 +3125,7 @@ XS_CODE_JUMP:
 					slot->value.number = fx_pow(slot->value.number, mxStack->value.number);
 				mxRestoreState;
 			}
+			mxFloatingPointOp("exponent");
 			mxStack++;
 			mxNextCode(1);
 			mxBreak;
@@ -3096,15 +3151,20 @@ XS_CODE_JUMP:
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
 					slot->value.number = (txNumber)(slot->value.integer) * mxStack->value.number;
+					mxFloatingPointOp("multiply");
 				}
 				else
 					goto XS_CODE_MULTIPLY_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->value.number *= (txNumber)(mxStack->value.integer);
-				else if (mxStack->kind == XS_NUMBER_KIND)
+					mxFloatingPointOp("multiply");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.number *= mxStack->value.number;
+					mxFloatingPointOp("multiply");
+				}
 				else
 					goto XS_CODE_MULTIPLY_GENERAL;
 			}
@@ -3127,28 +3187,36 @@ XS_CODE_JUMP:
 					else {
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = c_fmod((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
+						mxFloatingPointOp("modulo");
 					}
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
 					slot->value.number = c_fmod((txNumber)(slot->value.integer), mxStack->value.number);
+					mxFloatingPointOp("modulo");
 				}
 				else
 					goto XS_CODE_MODULO_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->value.number = c_fmod(slot->value.number, (txNumber)(mxStack->value.integer));
-				else if (mxStack->kind == XS_NUMBER_KIND)
+					mxFloatingPointOp("modulo");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->value.number = c_fmod(slot->value.number, mxStack->value.number);
+					mxFloatingPointOp("modulo");
+				}
 				else
 					goto XS_CODE_MODULO_GENERAL;
 			}
 			else {
 		XS_CODE_MODULO_GENERAL:
 				mxSaveState;
-				if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._rem))
+				if (fxToNumericNumberBinary(the, slot, mxStack, gxTypeBigInt._rem)) {
 					slot->value.number = c_fmod(slot->value.number, mxStack->value.number);
+					mxFloatingPointOp("modulo");
+				}
 				mxRestoreState;
 			}
 			mxStack++;
@@ -3165,16 +3233,22 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					offset = slot->value.integer < mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+				else if (mxStack->kind == XS_NUMBER_KIND)  {
 					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) < mxStack->value.number);
+					mxFloatingPointOp("less");
+				}
 				else
 					goto XS_CODE_LESS_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (slot->value.number < (txNumber)(mxStack->value.integer));
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+					mxFloatingPointOp("less");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number < mxStack->value.number);
+					mxFloatingPointOp("less");
+				}
 				else
 					goto XS_CODE_LESS_GENERAL;
 			}
@@ -3193,6 +3267,7 @@ XS_CODE_JUMP:
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number < mxStack->value.number);
+					mxFloatingPointOp("less");
 				}
 				mxRestoreState;
 			}
@@ -3206,16 +3281,22 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					offset = slot->value.integer <= mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) <= mxStack->value.number);
+					mxFloatingPointOp("less or equal");
+				}
 				else
 					goto XS_CODE_LESS_EQUAL_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (slot->value.number <= (txNumber)(mxStack->value.integer));
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+					mxFloatingPointOp("less or equal");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number <= mxStack->value.number);
+					mxFloatingPointOp("less or equal");
+				}
 				else
 					goto XS_CODE_LESS_EQUAL_GENERAL;
 			}
@@ -3234,6 +3315,7 @@ XS_CODE_JUMP:
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number <= mxStack->value.number);
+					mxFloatingPointOp("less or equal");
 				}
 				mxRestoreState;
 			}
@@ -3247,16 +3329,22 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					offset = slot->value.integer > mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) > mxStack->value.number);
+					mxFloatingPointOp("more");
+				}
 				else
 					goto XS_CODE_MORE_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (slot->value.number > (txNumber)(mxStack->value.integer));
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+					mxFloatingPointOp("more");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number > mxStack->value.number);
+					mxFloatingPointOp("more");
+				}
 				else
 					goto XS_CODE_MORE_GENERAL;
 			}
@@ -3275,6 +3363,7 @@ XS_CODE_JUMP:
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number > mxStack->value.number);
+					mxFloatingPointOp("more");
 				}
 				mxRestoreState;
 			}
@@ -3288,16 +3377,22 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
 					offset = slot->value.integer >= mxStack->value.integer;
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) >= mxStack->value.number);
+					mxFloatingPointOp("more or equal");
+				}
 				else
 					goto XS_CODE_MORE_EQUAL_GENERAL;
 			}
 			else if (slot->kind == XS_NUMBER_KIND) {
-				if (mxStack->kind == XS_INTEGER_KIND)
+				if (mxStack->kind == XS_INTEGER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (slot->value.number >= (txNumber)(mxStack->value.integer));
-				else if (mxStack->kind == XS_NUMBER_KIND) 
+					mxFloatingPointOp("more or equal");
+				}
+				else if (mxStack->kind == XS_NUMBER_KIND) {
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number >= mxStack->value.number);
+					mxFloatingPointOp("more or equal");
+				}
 				else
 					goto XS_CODE_MORE_EQUAL_GENERAL;
 			}
@@ -3316,6 +3411,7 @@ XS_CODE_JUMP:
 					fxToNumber(the, slot);
 					fxToNumber(the, mxStack);
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number >= mxStack->value.number);
+					mxFloatingPointOp("more or equal");
 				}
 				mxRestoreState;
 			}
@@ -3324,7 +3420,7 @@ XS_CODE_JUMP:
 			mxStack++;
 			mxNextCode(1);
 			mxBreak;
-			
+
 		mxCase(XS_CODE_EQUAL)
 		mxCase(XS_CODE_STRICT_EQUAL)
 			slot = mxStack + 1;
@@ -3336,8 +3432,10 @@ XS_CODE_JUMP:
 					offset = slot->value.boolean == stack->value.boolean;
 				else if (XS_INTEGER_KIND == slot->kind)
 					offset = slot->value.integer == stack->value.integer;
-				else if (XS_NUMBER_KIND == slot->kind)
+				else if (XS_NUMBER_KIND == slot->kind) {
 					offset = (!c_isnan(slot->value.number)) && (!c_isnan(mxStack->value.number)) && (slot->value.number == mxStack->value.number);
+					mxFloatingPointOp("equal");
+				}
 				else if ((XS_STRING_KIND == slot->kind) || (XS_STRING_X_KIND == slot->kind))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) == 0;
 				else if (XS_SYMBOL_KIND == slot->kind)
@@ -3353,10 +3451,14 @@ XS_CODE_JUMP:
 				else
                     offset = 0;
 			}
-			else if ((XS_INTEGER_KIND == slot->kind) && (XS_NUMBER_KIND == mxStack->kind))
+			else if ((XS_INTEGER_KIND == slot->kind) && (XS_NUMBER_KIND == mxStack->kind)) {
 				offset = (!c_isnan(mxStack->value.number)) && ((txNumber)(slot->value.integer) == stack->value.number);
-			else if ((XS_NUMBER_KIND == slot->kind) && (XS_INTEGER_KIND == mxStack->kind))
+				mxFloatingPointOp("equal");
+			}
+			else if ((XS_NUMBER_KIND == slot->kind) && (XS_INTEGER_KIND == mxStack->kind)) {
 				offset = (!c_isnan(slot->value.number)) && (slot->value.number == (txNumber)(mxStack->value.integer));
+				mxFloatingPointOp("equal");
+			}
 			else if ((XS_STRING_KIND == slot->kind) && (XS_STRING_X_KIND == mxStack->kind))
 				offset = c_strcmp(slot->value.string, mxStack->value.string) == 0;
 			else if ((XS_STRING_X_KIND == slot->kind) && (XS_STRING_KIND == mxStack->kind))
@@ -3425,8 +3527,10 @@ XS_CODE_JUMP:
 					offset = slot->value.boolean != stack->value.boolean;
 				else if (XS_INTEGER_KIND == slot->kind)
 					offset = slot->value.integer != stack->value.integer;
-				else if (XS_NUMBER_KIND == slot->kind)
+				else if (XS_NUMBER_KIND == slot->kind) {
 					offset = (c_isnan(slot->value.number)) || (c_isnan(mxStack->value.number)) || (slot->value.number != mxStack->value.number);
+					mxFloatingPointOp("not equal");
+				}
 				else if ((XS_STRING_KIND == slot->kind) || (XS_STRING_X_KIND == slot->kind))
 					offset = c_strcmp(slot->value.string, mxStack->value.string) != 0;
 				else if (XS_SYMBOL_KIND == slot->kind)
@@ -3442,10 +3546,14 @@ XS_CODE_JUMP:
                 else
                 	offset = 1;
 			}
-			else if ((XS_INTEGER_KIND == slot->kind) && (XS_NUMBER_KIND == mxStack->kind))
+			else if ((XS_INTEGER_KIND == slot->kind) && (XS_NUMBER_KIND == mxStack->kind)) {
 				offset = (c_isnan(mxStack->value.number)) || ((txNumber)(slot->value.integer) != stack->value.number);
-			else if ((XS_NUMBER_KIND == slot->kind) && (XS_INTEGER_KIND == mxStack->kind))
+				mxFloatingPointOp("not equal");
+			}
+			else if ((XS_NUMBER_KIND == slot->kind) && (XS_INTEGER_KIND == mxStack->kind)) {
 				offset = (c_isnan(slot->value.number)) || (slot->value.number != (txNumber)(mxStack->value.integer));
+				mxFloatingPointOp("not equal");
+			}
 			else if ((XS_STRING_KIND == slot->kind) && (XS_STRING_X_KIND == mxStack->kind))
 				offset = c_strcmp(slot->value.string, mxStack->value.string) != 0;
 			else if ((XS_STRING_X_KIND == slot->kind) && (XS_STRING_KIND == mxStack->kind))
@@ -4058,8 +4166,10 @@ txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 			result = a->value.boolean == b->value.boolean;
 		else if (XS_INTEGER_KIND == a->kind)
 			result = a->value.integer == b->value.integer;
-        else if (XS_NUMBER_KIND == a->kind)
+        else if (XS_NUMBER_KIND == a->kind) {
 			result = (!c_isnan(a->value.number)) && (!c_isnan(b->value.number)) && (a->value.number == b->value.number);
+			mxFloatingPointOp("same slot");
+		}
 		else if ((XS_STRING_KIND == a->kind) || (XS_STRING_X_KIND == a->kind))
 			result = c_strcmp(a->value.string, b->value.string) == 0;
 		else if (XS_SYMBOL_KIND == a->kind)
@@ -4069,10 +4179,14 @@ txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b)
 		else if (XS_REFERENCE_KIND == a->kind)
 			result = fxIsSameReference(the, a, b);
 	}
-	else if ((XS_INTEGER_KIND == a->kind) && (XS_NUMBER_KIND == b->kind))
+	else if ((XS_INTEGER_KIND == a->kind) && (XS_NUMBER_KIND == b->kind)) {
 		result = (!c_isnan(b->value.number)) && ((txNumber)(a->value.integer) == b->value.number);
-	else if ((XS_NUMBER_KIND == a->kind) && (XS_INTEGER_KIND == b->kind))
+		mxFloatingPointOp("same slot");
+	}
+	else if ((XS_NUMBER_KIND == a->kind) && (XS_INTEGER_KIND == b->kind)) {
 		result = (!c_isnan(a->value.number)) && (a->value.number == (txNumber)(b->value.integer));
+		mxFloatingPointOp("same slot");
+	}
 	else if ((XS_STRING_KIND == a->kind) && (XS_STRING_X_KIND == b->kind))
 		result = c_strcmp(a->value.string, b->value.string) == 0;
 	else if ((XS_STRING_X_KIND == a->kind) && (XS_STRING_KIND == b->kind))
@@ -4094,8 +4208,10 @@ txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero)
 			result = a->value.boolean == b->value.boolean;
 		else if (XS_INTEGER_KIND == a->kind)
 			result = a->value.integer == b->value.integer;
-        else if (XS_NUMBER_KIND == a->kind)
+        else if (XS_NUMBER_KIND == a->kind) {
 			result = ((c_isnan(a->value.number) && c_isnan(b->value.number)) || ((a->value.number == b->value.number) && (zero || (c_signbit(a->value.number) == c_signbit(b->value.number)))));
+			mxFloatingPointOp("same value");
+		}
 		else if ((XS_STRING_KIND == a->kind) || (XS_STRING_X_KIND == a->kind))
 			result = c_strcmp(a->value.string, b->value.string) == 0;
 		else if (XS_SYMBOL_KIND == a->kind)
@@ -4108,10 +4224,12 @@ txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero)
 	else if ((XS_INTEGER_KIND == a->kind) && (XS_NUMBER_KIND == b->kind)) {
 		txNumber aNumber = a->value.integer;
 		result = (aNumber == b->value.number) && (zero || (signbit(aNumber) == signbit(b->value.number)));
+		mxFloatingPointOp("same value");
 	}
 	else if ((XS_NUMBER_KIND == a->kind) && (XS_INTEGER_KIND == b->kind)) {
 		txNumber bNumber = b->value.integer;
 		result = (a->value.number == bNumber) && (zero || (signbit(a->value.number) == signbit(bNumber)));
+		mxFloatingPointOp("same value");
 	}
 	else if ((XS_STRING_KIND == a->kind) && (XS_STRING_X_KIND == b->kind))
 		result = c_strcmp(a->value.string, b->value.string) == 0;

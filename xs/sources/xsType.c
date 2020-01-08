@@ -1147,8 +1147,7 @@ void fxRunEvalEnvironment(txMachine* the)
 	while (slot >= bottom) {
 		txSlot* environment = currentEnvironment;
 		while (environment != varEnvironment) {
-			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
-			if (property)
+			if (mxBehaviorHasProperty(the, environment, slot->ID, XS_NO_ID))
 				mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
 			environment = environment->value.instance.prototype;
 		}

@@ -158,13 +158,6 @@ mxImport xsIntegerValue fxIncrementalVars(xsMachine*, xsIntegerValue);
 mxImport xsIntegerValue _xsArgc(xsMachine*);
 #define xsmcArgc _xsArgc(the)
 
-#ifndef true
-	#define true (1)
-#endif
-#ifndef false
-	#define false (0)
-#endif
-
 #ifdef __cplusplus
 }
 #endif

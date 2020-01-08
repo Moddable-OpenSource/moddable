@@ -54,6 +54,9 @@ C_OPTIONS = \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
 	-I$(TMP_DIR)
+C_OPTIONS += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else

@@ -63,6 +63,9 @@ C_OPTIONS =\
 	-I$(TMP_DIR)\
 	-DmxCompile=1\
 	-DmxParse=1
+C_OPTIONS += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else

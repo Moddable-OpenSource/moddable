@@ -188,6 +188,7 @@ again:
 			theSlot->value.integer = (txInteger)aNumber;
 			} break;
 		}
+		mxFloatingPointOp("number to integer");
 		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
@@ -235,6 +236,7 @@ again:
 	case XS_INTEGER_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = theSlot->value.integer;
+		mxFloatingPointOp("integer to number");
 		break;
 	case XS_NUMBER_KIND:
 		break;
@@ -393,6 +395,7 @@ again:
 			}
 			} break;
 		}
+		mxFloatingPointOp("number to unsigned");
 		break;
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
