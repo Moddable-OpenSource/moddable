@@ -1392,6 +1392,8 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 		mxTypeError("this is no object");
 	instance = fxCheckFinalizationGroupInstance(the, mxThis);
 	group = instance->next->value.closure;
+	if (group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_ACTIVE)
+		mxTypeError("cleanup in progress");
 	if (mxArgc > 0) {
 		callback = mxArgv(0);
 		if (mxIsUndefined(callback))
@@ -1415,22 +1417,27 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 
 void fx_FinalizationGroup_prototype_register(txMachine* the)
 {
-	txSlot* target;
 	txSlot* instance;
-	txSlot* token = C_NULL;
 	txSlot* group;
+	txSlot* target;
+	txSlot* token = C_NULL;
 	txSlot* callback;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
+	instance = fxCheckFinalizationGroupInstance(the, mxThis);
+	group = instance->next->value.closure;
 	if (mxArgc < 1)
 		mxTypeError("no target");
 	target = mxArgv(0);
 	if (!mxIsReference(target))
 		mxTypeError("target is no object");
+	if (mxArgc > 1) {
+		if (fxIsSameValue(the, target, mxArgv(1), 1))
+			mxTypeError("target and holdings are the same");
+	}
 	target = target->value.reference;
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
 	if (mxArgc > 2) {
 		token = mxArgv(2);
 		if (mxIsUndefined(token))
@@ -1440,7 +1447,6 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 		else
 			mxTypeError("token is no object");
 	}
-	group = instance->next->value.closure;
 	callback = group->value.finalizationGroup.callback;
 	address = &(callback->next);
 	while ((slot = *address))
@@ -1519,6 +1525,20 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
 
 	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_CHANGED))
 		return;
+		
+	slot = group->value.finalizationGroup.callback->next;
+	flags = 0;
+	while (slot) {
+		slot = slot->next;
+		if (slot->value.finalizationCell.target == C_NULL) {
+			flags = 1;
+			break;
+		}
+		slot = slot->next;
+	}
+	if (!flags)
+		return;
+		
 		
 	mxPush(mxFinalizationGroupCleanupIteratorPrototype);
 	instance = fxNewObjectInstance(the);
