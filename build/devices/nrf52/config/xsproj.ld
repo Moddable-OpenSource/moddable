@@ -10,7 +10,7 @@ GROUP(-lgcc -lc -lnosys)
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
-  RAM (rwx) :  ORIGIN = 0x200022e0, LENGTH = 0x3dd20
+  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a484
 }
 
 /* much of Moddable code goes into flash */
