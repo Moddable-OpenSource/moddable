@@ -2012,8 +2012,24 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 
-		mxCase(XS_CODE_DELETE_PROPERTY_AT)
 		mxCase(XS_CODE_DELETE_SUPER_AT)
+			variable = (mxStack + 1)->value.reference;
+			offset = mxStack->value.at.id;
+			index = mxStack->value.at.index;
+			mxStack++;
+			mxNextCode(1);
+			goto XS_CODE_DELETE_SUPER_ALL;
+		mxCase(XS_CODE_DELETE_SUPER)
+			mxToInstance(mxStack);
+			offset = mxRunS2(1);
+			index = XS_NO_ID;
+			mxNextCode(3);
+			/* continue */
+		XS_CODE_DELETE_SUPER_ALL:	
+			mxRunDebugID(XS_REFERENCE_ERROR, "delete super.%s", (txID)offset);
+			mxBreak;
+
+		mxCase(XS_CODE_DELETE_PROPERTY_AT)
 			variable = (mxStack + 1)->value.reference;
 			offset = mxStack->value.at.id;
 			index = mxStack->value.at.index;
@@ -2021,7 +2037,6 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			goto XS_CODE_DELETE_PROPERTY_ALL;
 		mxCase(XS_CODE_DELETE_PROPERTY)
-		mxCase(XS_CODE_DELETE_SUPER)
 			mxToInstance(mxStack);
 			offset = mxRunS2(1);
 			index = XS_NO_ID;
