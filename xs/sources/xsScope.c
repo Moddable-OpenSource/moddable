@@ -506,6 +506,20 @@ void fxClassNodeHoist(void* it, void* param)
 		fxScopeHoisted(self->symbolScope, param);
 }
 
+void fxCoalesceExpressionNodeHoist(void* it, void* param) 
+{
+	txBinaryExpressionNode* self = it;
+	txHoister* hoister = param;
+	txToken leftToken = self->left->description->token;
+	txToken rightToken = self->right->description->token;
+	if ((leftToken == XS_TOKEN_AND) || (rightToken == XS_TOKEN_AND))
+		fxReportLineError(hoister->parser, self->line, "missing () around &&");
+	else if ((leftToken == XS_TOKEN_OR) || (rightToken == XS_TOKEN_OR))
+		fxReportLineError(hoister->parser, self->line, "missing () around ||");
+	fxNodeDispatchHoist(self->left, param);
+	fxNodeDispatchHoist(self->right, param);
+}
+
 void fxDeclareNodeHoist(void* it, void* param) 
 {
 	txDeclareNode* self = it;
@@ -1295,11 +1309,15 @@ void fxSwitchNodeBind(void* it, void* param)
 void fxTemplateNodeBind(void* it, void* param) 
 {
 	txTemplateNode* self = it;
-	fxBinderPushVariables(param, 2);
-	if (self->reference)
+	if (self->reference) {
+		fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->reference, param);
-	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
-	fxBinderPopVariables(param, 2);
+		fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+		fxBinderPopVariables(param, 2);
+	}
+	else {
+		fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+	}
 }
 
 void fxTryNodeBind(void* it, void* param) 

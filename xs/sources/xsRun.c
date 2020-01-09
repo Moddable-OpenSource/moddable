@@ -98,6 +98,8 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #define mxScope scope
 #define mxStack stack
 
+#define mxFrameEnd (((mxFrame + 5)->flag & 1) ? mxFrame + 8 + (mxFrame + 5)->value.integer : mxFrame + 6 + (mxFrame + 5)->value.integer)
+
 #define mxFrameArgv(THE_INDEX) (mxFrame + 5 + ((mxFrame + 5)->value.integer) - (THE_INDEX))
 #define mxFrameArgc ((mxFrame + 5)->value.integer)
 #define mxFrameThis (mxFrame + 4)
@@ -350,6 +352,12 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_BRANCH_1,
 		&&XS_CODE_BRANCH_2,
 		&&XS_CODE_BRANCH_4,
+		&&XS_CODE_BRANCH_CHAIN_1,
+		&&XS_CODE_BRANCH_CHAIN_2,
+		&&XS_CODE_BRANCH_CHAIN_4,
+		&&XS_CODE_BRANCH_COALESCE_1,
+		&&XS_CODE_BRANCH_COALESCE_2,
+		&&XS_CODE_BRANCH_COALESCE_4,
 		&&XS_CODE_BRANCH_ELSE_1,
 		&&XS_CODE_BRANCH_ELSE_2,
 		&&XS_CODE_BRANCH_ELSE_4,
@@ -360,7 +368,9 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_BRANCH_STATUS_2,
 		&&XS_CODE_BRANCH_STATUS_4,
 		&&XS_CODE_CALL,
+		&&XS_CODE_CALL_SWAP,
 		&&XS_CODE_CALL_TAIL,
+		&&XS_CODE_CALL_TAIL_SWAP,
 		&&XS_CODE_CATCH_1,
 		&&XS_CODE_CATCH_2,
 		&&XS_CODE_CATCH_4,
@@ -420,6 +430,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_GET_SUPER_AT,
 		&&XS_CODE_GET_THIS,
 		&&XS_CODE_GET_VARIABLE,
+		&&XS_CODE_GET_THIS_VARIABLE,
 		&&XS_CODE_GLOBAL,
 		&&XS_CODE_HOST,
 		&&XS_CODE_IMPORT,
@@ -676,6 +687,13 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 			
+		mxCase(XS_CODE_CALL_SWAP)
+			mxStack->flag |= 1;
+			slot = mxStack + 1 + mxStack->value.integer;
+			mxOverflow(2);
+			*(mxStack + 1) = *(slot + 1);
+			*mxStack = *slot;
+			// continue
 		mxCase(XS_CODE_CALL)
 			mxSkipCode(1);
 		#ifdef mxHostFunctionPrimitive
@@ -800,6 +818,13 @@ XS_CODE_JUMP:
 			mxCode = slot->next->value.code.address;
 			mxNextCode(0);
 			mxBreak;
+		mxCase(XS_CODE_CALL_TAIL_SWAP)
+			mxStack->flag |= 1;
+			slot = mxStack + 1 + mxStack->value.integer;
+			mxOverflow(2);
+			*(mxStack + 1) = *(slot + 1);
+			*mxStack = *slot;
+			// continue
 		mxCase(XS_CODE_CALL_TAIL)
 			mxSkipCode(1);
 		#ifdef mxHostFunctionPrimitive
@@ -837,8 +862,8 @@ XS_CODE_JUMP:
 #ifdef mxProfile
 			fxEndFunction(the, mxFrameFunction);
 #endif
-			offset = 6 + ((mxStack + 5)->value.integer);
-			variable = mxFrame + 6 + ((mxFrame + 5)->value.integer) - offset;
+			offset = (((mxStack + 5)->flag & 1) ? 8 + (mxStack + 5)->value.integer : 6 + (mxStack + 5)->value.integer);
+			variable = mxFrameEnd - offset;
 			c_memmove(variable, mxStack, offset * sizeof(txSlot));
 			mxStack = variable;
 			goto XS_CODE_CALL_STACK;
@@ -880,7 +905,7 @@ XS_CODE_JUMP:
 			if (the->stackPeak > mxStack)
 				the->stackPeak = mxStack;
 #endif
-			mxStack = mxFrameArgv(-1);
+			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
 			mxOverflow(1);
@@ -900,7 +925,7 @@ XS_CODE_JUMP:
 #ifdef mxProfile
 			fxEndFunction(the, mxFrameFunction);
 #endif
-			mxStack = mxFrameArgv(-1);
+			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
 			mxOverflow(1);
@@ -918,7 +943,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newAsyncInstance(the);
 			mxRestoreState;
-			slot = mxFrameArgv(-1);
+			slot = mxFrameEnd;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
@@ -961,7 +986,7 @@ XS_CODE_JUMP:
 			variable = gxDefaults.newAsyncGeneratorInstance(the);
 			mxRestoreState;
 			mxFrameResult->kind = XS_UNINITIALIZED_KIND;
-			slot = mxFrameArgv(-1);
+			slot = mxFrameEnd;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
@@ -1001,7 +1026,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = gxDefaults.newGeneratorInstance(the);
 			mxRestoreState;
-			slot = mxFrameArgv(-1);
+			slot = mxFrameEnd;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
@@ -1035,7 +1060,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_YIELD)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
-			slot = mxFrameArgv(-1);
+			slot = mxFrameEnd;
 			mxPushKind(XS_INTEGER_KIND);
 			mxStack->value.integer = mxCode - mxFrameFunction->value.reference->next->value.code.address;
 			mxPushKind(XS_INTEGER_KIND);
@@ -1269,6 +1294,46 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_BRANCH_4)
 			offset = mxRunS4(1);
 			mxNextCode(5 + offset);
+			mxBreak;
+		mxCase(XS_CODE_BRANCH_CHAIN_4)
+			offset = mxRunS4(1);
+			index = 5;
+			goto XS_CODE_BRANCH_CHAIN;
+		mxCase(XS_CODE_BRANCH_CHAIN_2)
+			offset = mxRunS2(1);
+			index = 3;
+			goto XS_CODE_BRANCH_CHAIN;
+		mxCase(XS_CODE_BRANCH_CHAIN_1)
+			offset = mxRunS1(1);
+			index = 2;
+		XS_CODE_BRANCH_CHAIN:
+			byte = mxStack->kind;
+			if ((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte)) {
+				mxStack->kind = XS_UNDEFINED_KIND;
+				mxNextCode((txS4)index + offset)
+			}
+			else
+				mxNextCode((txS4)index)
+			mxBreak;
+		mxCase(XS_CODE_BRANCH_COALESCE_4)
+			offset = mxRunS4(1);
+			index = 5;
+			goto XS_CODE_BRANCH_COALESCE;
+		mxCase(XS_CODE_BRANCH_COALESCE_2)
+			offset = mxRunS2(1);
+			index = 3;
+			goto XS_CODE_BRANCH_COALESCE;
+		mxCase(XS_CODE_BRANCH_COALESCE_1)
+			offset = mxRunS1(1);
+			index = 2;
+		XS_CODE_BRANCH_COALESCE:
+			byte = mxStack->kind;
+			if ((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte)) {
+				mxStack++;
+				mxNextCode((txS4)index)
+			}
+			else
+				mxNextCode((txS4)index + offset)
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_ELSE_4)
 			offset = mxRunS4(1);
@@ -1975,6 +2040,7 @@ XS_CODE_JUMP:
 			mxStack->value.boolean = index;
 			mxBreak;
 			
+		mxCase(XS_CODE_GET_THIS_VARIABLE)
 		mxCase(XS_CODE_GET_VARIABLE)
 			mxToInstance(mxStack);
 			offset = mxRunS2(1);
@@ -3828,13 +3894,9 @@ XS_CODE_JUMP:
 						index = fxIsScopableSlot(the, slot, (txID)offset);
 						mxRestoreState;
 						if (index) {
-							if (XS_CODE_GET_VARIABLE == byte) {
-								mxNextCode(3);
-								if ((XS_CODE_CALL == byte) || (XS_CODE_CALL_TAIL == byte)) {
-									mxStack->kind = XS_REFERENCE_KIND;
-									mxStack->value.reference = slot;
-								}
-								mxNextCode(-3);
+							if (XS_CODE_GET_THIS_VARIABLE == byte) {
+								mxStack->kind = XS_REFERENCE_KIND;
+								mxStack->value.reference = slot;
 							}
 							mxPushKind(XS_REFERENCE_KIND);
 							mxStack->value.reference = slot;

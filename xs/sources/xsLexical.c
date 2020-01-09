@@ -955,8 +955,17 @@ void fxGetNextTokenAux(txParser* parser)
 			fxGetNextCharacter(parser);
 			break;	
 		case '?':
-			parser->token2 = XS_TOKEN_QUESTION_MARK;
 			fxGetNextCharacter(parser);
+			if (parser->character == '.') {		
+				parser->token2 = XS_TOKEN_CHAIN;
+				fxGetNextCharacter(parser);
+			}
+			else if (parser->character == '?') {		
+				parser->token2 = XS_TOKEN_COALESCE;
+				fxGetNextCharacter(parser);
+			}
+			else	
+				parser->token2 = XS_TOKEN_QUESTION_MARK;
 			break;	
 		case '(':
 			parser->token2 = XS_TOKEN_LEFT_PARENTHESIS;

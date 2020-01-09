@@ -257,7 +257,7 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 				id = theIDs[id];
 				p -= 2;
 				mxEncode2(p, id);
-				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_VARIABLE == code)) {
+				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_THIS_VARIABLE == code) || (XS_CODE_GET_VARIABLE == code)) {
 					fxReferenceLinkerSymbol(linker, id);
 				}
 			}
