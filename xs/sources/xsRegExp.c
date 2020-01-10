@@ -450,10 +450,14 @@ void fx_RegExp_prototype_exec(txMachine* the)
 	offset = (globalFlag || stickyFlag) ? fxUnicodeToUTF8Offset(argument->value.string, lastIndex) : 0;
 
 	if (fxMatchRegExp(the, regexp->value.regexp.code, regexp->value.regexp.data, argument->value.string, offset)) {
-		txSlot* array;
-		txSlot* item;
-		txSlot* object;
-		txSlot* property;
+		txSlot* resultArray;
+		txSlot* resultItem;
+		txSlot* indicesArray;
+		txSlot* indicesItem;
+		txSlot* resultObject;
+		txSlot* resultProperty;
+		txSlot* indicesObject;
+		txSlot* indicesProperty;
 		txInteger count;
 		txInteger index;
 		txInteger length;
@@ -465,51 +469,80 @@ void fx_RegExp_prototype_exec(txMachine* the)
 			mxPop();
 		}
 		mxPush(mxArrayPrototype);
-		array = fxNewArrayInstance(the);
-		item = fxLastProperty(the, array);
+		resultArray = fxNewArrayInstance(the);
+		resultItem = fxLastProperty(the, resultArray);
+		mxPush(mxArrayPrototype);
+		indicesArray = fxNewArrayInstance(the);
+		indicesItem = fxLastProperty(the, indicesArray);
 		if (namedFlag) {
-			object = fxNewInstance(the);
-			property = fxLastProperty(the, object);
+			resultObject = fxNewInstance(the);
+			resultProperty = fxLastProperty(the, resultObject);
+			indicesObject = fxNewInstance(the);
+			indicesProperty = fxLastProperty(the, indicesObject);
 		}
 		count = regexp->value.regexp.code[1];
 		for (index = 0; index < count; index++) {
-			item = item->next = fxNewSlot(the);
-			offset = regexp->value.regexp.data[2 * index];
-			if (offset >= 0) {
-				length = regexp->value.regexp.data[(2 * index) + 1] - offset;
-				item->value.string = (txString)fxNewChunk(the, length + 1);
-				c_memcpy(item->value.string, argument->value.string + offset, length);
-				item->value.string[length] = 0;
-				item->kind = XS_STRING_KIND;
+			txInteger start = regexp->value.regexp.data[2 * index];
+			resultItem = resultItem->next = fxNewSlot(the);
+			indicesItem = indicesItem->next = fxNewSlot(the);
+			if (start >= 0) {
+				txInteger end = regexp->value.regexp.data[(2 * index) + 1];
+				length = end - start;
+				resultItem->value.string = (txString)fxNewChunk(the, length + 1);
+				c_memcpy(resultItem->value.string, argument->value.string + start, length);
+				resultItem->value.string[length] = 0;
+				resultItem->kind = XS_STRING_KIND;
+				mxPushInteger(start);
+				mxPushInteger(end);
+				fxConstructArrayEntry(the, indicesItem);
 			}
 			if (namedFlag) {
 				txID name = (txID)(regexp->value.regexp.code[2 + index]);
 				if (name != XS_NO_ID) {
-					property = property->next = fxNewSlot(the);
-					property->value = item->value;
-					property->kind = item->kind;
-					property->ID = name;
+					resultProperty = resultProperty->next = fxNewSlot(the);
+					resultProperty->value = resultItem->value;
+					resultProperty->kind = resultItem->kind;
+					resultProperty->ID = name;
+					indicesProperty = indicesProperty->next = fxNewSlot(the);
+					indicesProperty->value = indicesItem->value;
+					indicesProperty->kind = indicesItem->kind;
+					indicesProperty->ID = name;
 				}
 			}
-			array->next->value.array.length++;
+			resultArray->next->value.array.length++;
+			indicesArray->next->value.array.length++;
 		}
-		fxCacheArray(the, array);
-		item = fxLastProperty(the, array);
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_index);
-		item->kind = XS_INTEGER_KIND;
-		item->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_input);
-		item->value.string = argument->value.string;
-		item->kind = argument->kind;
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_groups);
+		fxCacheArray(the, indicesArray);
+		indicesItem = fxLastProperty(the, indicesArray);
+		indicesItem = indicesItem->next = fxNewSlot(the);
+		indicesItem->ID = mxID(_groups);
 		if (namedFlag) {
-			item->value.reference = object;
-			item->kind = XS_REFERENCE_KIND;
+			indicesItem->value.reference = indicesObject;
+			indicesItem->kind = XS_REFERENCE_KIND;
 			mxPop();
 		}
+		fxCacheArray(the, resultArray);
+		resultItem = fxLastProperty(the, resultArray);
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_index);
+		resultItem->kind = XS_INTEGER_KIND;
+		resultItem->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_input);
+		resultItem->value.string = argument->value.string;
+		resultItem->kind = argument->kind;
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_groups);
+		if (namedFlag) {
+			resultItem->value.reference = resultObject;
+			resultItem->kind = XS_REFERENCE_KIND;
+			mxPop();
+		}
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_indices);
+		resultItem->value.reference = indicesArray;
+		resultItem->kind = XS_REFERENCE_KIND;
+		mxPop();
 	}
 	else {
 		if (globalFlag || stickyFlag) {

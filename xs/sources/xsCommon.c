@@ -1273,6 +1273,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"includes",
 	"index",
 	"indexOf",
+	"indices",
 	"input",
 	"is",
 	"isArray",

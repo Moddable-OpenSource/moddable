@@ -846,6 +846,7 @@ enum {
 	_includes,
 	_index,
 	_indexOf,
+	_indices,
 	_input,
 	_is,
 	_isArray,
