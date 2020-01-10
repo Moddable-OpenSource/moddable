@@ -721,7 +721,6 @@ void fxRunFile(txContext* context, char* path)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (!strcmp((char*)node->data.scalar.value, "AggregateError")
- 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.replaceAll")
  			||	!strcmp((char*)node->data.scalar.value, "regexp-match-indices")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")

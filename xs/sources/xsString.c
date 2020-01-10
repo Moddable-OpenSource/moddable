@@ -46,6 +46,7 @@
 
 #define mxStringInstanceLength(INSTANCE) ((txIndex)((INSTANCE)->next->value.key.sum))
 
+static void fx_String_prototype_replaceAux(txMachine* the, txInteger size, txInteger offset, txSlot* function, txSlot* match, txInteger matchLength, txSlot* replace);
 static txSlot* fx_String_prototype_split_aux(txMachine* the, txSlot* theString, txSlot* theArray, txSlot* theItem, txInteger theStart, txInteger theStop);
 
 static txSlot* fxCheckString(txMachine* the, txSlot* it);
@@ -111,6 +112,7 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_padStart), 1, mxID(_padStart), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_repeat), 1, mxID(_repeat), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_replace), 2, mxID(_replace), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_replaceAll), 2, mxID(_replaceAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_split), 2, mxID(_split), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_startsWith), 1, mxID(_startsWith), XS_DONT_ENUM_FLAG);
@@ -812,6 +814,13 @@ void fx_String_prototype_matchAll(txMachine* the)
 	if (mxArgc > 0) {
 		regexp = mxArgv(0);
 		if (mxIsReference(regexp)) {
+			if (fxIsRegExp(the, regexp)) {
+				mxPushSlot(regexp);
+				fxGetID(the, mxID(_flags));
+				if (!c_strchr(fxToString(the, the->stack), 'g'))
+					mxTypeError("regexp has no g flag");
+				mxPop();
+			}
 			mxPushSlot(regexp);
 			mxPushSlot(regexp);
 			fxGetID(the, mxID(_Symbol_matchAll));
@@ -1078,18 +1087,7 @@ void fx_String_prototype_replace(txMachine* the)
 		txInteger size = c_strlen(mxThis->value.string);
 		txInteger matchLength = c_strlen(match->value.string);
 		txInteger replaceLength;
-		if (function) {
-			mxPushSlot(match);
-			mxPushInteger(fxUTF8ToUnicodeOffset(mxThis->value.string, offset));
-			mxPushSlot(mxThis);
-			mxPushInteger(3);
-			mxPushUndefined();
-			mxPushSlot(function);
-			fxCall(the);
-			fxToString(the, the->stack);
-		}
-		else
-			fxPushSubstitutionString(the, mxThis, size, offset, match, matchLength, 0, C_NULL, C_NULL, replace);
+ 		fx_String_prototype_replaceAux(the, size, offset, function, match, matchLength, replace);
 		replaceLength = c_strlen(the->stack->value.string);
 		mxResult->value.string = (txString)fxNewChunk(the, size - matchLength + replaceLength + 1);
 		c_memcpy(mxResult->value.string, mxThis->value.string, offset);
@@ -1103,6 +1101,144 @@ void fx_String_prototype_replace(txMachine* the)
 		*mxResult = *mxThis;
 	mxPop();
 	mxPop();
+}
+
+void fx_String_prototype_replaceAll(txMachine* the)
+{
+	txString string;
+	txSlot* match;
+	txSlot* function = C_NULL;
+	txSlot* replace;
+	txInteger size;
+	txInteger matchLength;
+	txInteger resultSize = 0;
+	txSlot* list;
+	txSlot* item;
+	txInteger offset = 0;
+
+	if (mxArgc > 0) {
+		txSlot* regexp = mxArgv(0);
+		if (mxIsReference(regexp)) {
+			if (fxIsRegExp(the, regexp)) {
+				mxPushSlot(regexp);
+				fxGetID(the, mxID(_flags));
+				if (!c_strchr(fxToString(the, the->stack), 'g'))
+					mxTypeError("regexp has no g flag");
+				mxPop();
+			}
+			mxPushSlot(regexp);
+			fxGetID(the, mxID(_Symbol_replace));
+			if (the->stack->kind != XS_UNDEFINED_KIND) {
+				txSlot* function = the->stack;
+				mxPushSlot(mxThis);
+				if (mxArgc > 1)
+					mxPushSlot(mxArgv(1));
+				else
+					mxPushUndefined();
+				mxPushInteger(2);
+				mxPushSlot(regexp);
+				mxPushSlot(function);
+				fxCall(the);
+				mxPullSlot(mxResult);
+				mxPop();
+				return;
+			}
+			mxPop();
+		}
+	}
+	string = fxCoerceToString(the, mxThis);
+	if (mxArgc <= 0)
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	match = the->stack;
+	fxToString(the, match);
+	if (mxArgc <= 1)
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(1));
+	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))
+		function = the->stack;
+	else {		
+		replace = the->stack;
+		fxToString(the, replace);
+	}
+	size = c_strlen(mxThis->value.string);
+	matchLength = c_strlen(match->value.string);
+	
+	list = item = fxNewInstance(the);
+	mxPushSlot(list);
+	
+	if (!matchLength) {
+		fx_String_prototype_replaceAux(the, size, offset, function, match, matchLength, replace);
+		item = item->next = fxNewSlot(the);
+		mxPullSlot(item);
+		item->value.key.sum = c_strlen(item->value.string);
+		resultSize += item->value.key.sum;
+	}
+	while (offset < size) {
+		txInteger current;
+		if (!matchLength) {
+			current = offset + fxUnicodeToUTF8Offset(mxThis->value.string + offset, 1);
+		}
+		else {
+			txString string = c_strstr(mxThis->value.string + offset, match->value.string);
+			if (string)
+				current = string - mxThis->value.string;
+			else
+				current = size;
+		}
+		if (offset < current) {
+			txInteger length = current - offset;
+			item = item->next = fxNewSlot(the);
+			item->value.string = (txString)fxNewChunk(the, length + 1);
+			c_memcpy(item->value.string, mxThis->value.string + offset, length);
+			item->value.string[length] = 0;
+			item->kind = XS_STRING_KIND;
+			item->value.key.sum = length;
+			resultSize += length;
+		}
+		if ((!matchLength) || (current < size)) {
+ 			fx_String_prototype_replaceAux(the, size, current, function, match, matchLength, replace);
+			item = item->next = fxNewSlot(the);
+            mxPullSlot(item);
+			item->value.key.sum = c_strlen(item->value.string);
+			resultSize += item->value.key.sum;
+		}
+		offset = current + matchLength;
+	}		
+	resultSize++;
+	mxResult->value.string = (txString)fxNewChunk(the, resultSize);
+	offset = 0;
+	item = list->next;
+	while (item) {
+		c_memcpy(mxResult->value.string + offset, item->value.string, item->value.key.sum);
+		offset += item->value.key.sum;
+		item = item->next;
+	}
+	mxResult->value.string[offset] = 0;
+	mxResult->kind = XS_STRING_KIND;
+	
+	mxPop();
+	
+	mxPop();
+	mxPop();
+}
+
+void fx_String_prototype_replaceAux(txMachine* the, txInteger size, txInteger offset, txSlot* function, txSlot* match, txInteger matchLength, txSlot* replace)
+{
+	if (function) {
+		mxPushSlot(match);
+		mxPushInteger(fxUTF8ToUnicodeOffset(mxThis->value.string, offset));
+		mxPushSlot(mxThis);
+		mxPushInteger(3);
+		mxPushUndefined();
+		mxPushSlot(function);
+		fxCall(the);
+		fxToString(the, the->stack);
+	}
+	else
+		fxPushSubstitutionString(the, mxThis, size, offset, match, matchLength, 0, C_NULL, C_NULL, replace);
 }
 
 void fx_String_prototype_search(txMachine* the)

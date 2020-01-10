@@ -915,6 +915,7 @@ enum {
 	_reject,
 	_repeat,
 	_replace,
+	_replaceAll,
 	_resolve,
 	_result,
 	_return,

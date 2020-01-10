@@ -1174,6 +1174,7 @@ mxExport void fx_String_prototype_padEnd(txMachine* the);
 mxExport void fx_String_prototype_padStart(txMachine* the);
 mxExport void fx_String_prototype_repeat(txMachine* the);
 mxExport void fx_String_prototype_replace(txMachine* the);
+mxExport void fx_String_prototype_replaceAll(txMachine* the);
 mxExport void fx_String_prototype_search(txMachine* the);
 mxExport void fx_String_prototype_slice(txMachine* the);
 mxExport void fx_String_prototype_split(txMachine* the);

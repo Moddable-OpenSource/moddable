@@ -1342,6 +1342,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"reject",
 	"repeat",
 	"replace",
+	"replaceAll",
 	"resolve",
 	"result",
 	"return",
