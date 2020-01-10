@@ -263,6 +263,7 @@ typedef union {
 	struct { txSlot* getter; txSlot* setter; } accessor;
 	struct { txU4 index; txID id; } at;
 	struct { txSlot* slot; txU4 sum; } entry;
+	struct { txSlot* first; txIndex length; } errors;
 	struct { txSlot* object; txSlot* module; } home;
 	struct { txString string; txU4 sum; } key;
 	struct { txSlot* first; txSlot* last; } list;
@@ -953,6 +954,8 @@ extern void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSiz
 /* xsError.c */
 mxExport void fx_Error(txMachine* the);
 mxExport void fx_Error_toString(txMachine* the);
+mxExport void fx_AggregateError(txMachine* the);
+mxExport void fx_AggregateError_prototype_get_errors(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);
@@ -1818,6 +1821,7 @@ enum {
 	XS_AT_KIND,
 	XS_ENTRY_KIND,
 	XS_ERROR_KIND, //40
+	XS_ERRORS_KIND,
 	XS_HOME_KIND,
 	XS_KEY_KIND,
 	XS_KEY_X_KIND,
@@ -2243,6 +2247,7 @@ enum {
 	mxDatePrototypeStackIndex,
 	mxRegExpPrototypeStackIndex,
 	mxHostPrototypeStackIndex,
+	
 	mxErrorPrototypeStackIndex,
 	mxEvalErrorPrototypeStackIndex,
 	mxRangeErrorPrototypeStackIndex,
@@ -2250,6 +2255,8 @@ enum {
 	mxSyntaxErrorPrototypeStackIndex,
 	mxTypeErrorPrototypeStackIndex,
 	mxURIErrorPrototypeStackIndex,
+	mxAggregateErrorPrototypeStackIndex,
+	
 	mxSymbolPrototypeStackIndex,
 	mxArrayBufferPrototypeStackIndex,
 	mxDataViewPrototypeStackIndex,
@@ -2343,6 +2350,7 @@ enum {
 #define mxHostInspectors the->stackTop[-1 - mxHostInspectorsStackIndex]
 #define mxInstanceInspectors the->stackTop[-1 - mxInstanceInspectorsStackIndex]
 
+#define mxAggregateErrorConstructor the->stackPrototypes[-1 - _AggregateError]
 #define mxArrayConstructor the->stackPrototypes[-1 - _Array]
 #define mxArrayBufferConstructor the->stackPrototypes[-1 - _ArrayBuffer]
 #define mxAtomicsObject the->stackPrototypes[-1 - _Atomics]
@@ -2413,6 +2421,8 @@ enum {
 #define mxDatePrototype the->stackPrototypes[-1 - mxDatePrototypeStackIndex]
 #define mxRegExpPrototype the->stackPrototypes[-1 - mxRegExpPrototypeStackIndex]
 #define mxHostPrototype the->stackPrototypes[-1 - mxHostPrototypeStackIndex]
+
+#define mxErrorPrototypes(THE_ERROR) (the->stackPrototypes[-mxErrorPrototypeStackIndex-(THE_ERROR)])
 #define mxErrorPrototype the->stackPrototypes[-1 - mxErrorPrototypeStackIndex]
 #define mxEvalErrorPrototype the->stackPrototypes[-1 - mxEvalErrorPrototypeStackIndex]
 #define mxRangeErrorPrototype the->stackPrototypes[-1 - mxRangeErrorPrototypeStackIndex]
@@ -2420,6 +2430,8 @@ enum {
 #define mxSyntaxErrorPrototype the->stackPrototypes[-1 - mxSyntaxErrorPrototypeStackIndex]
 #define mxTypeErrorPrototype the->stackPrototypes[-1 - mxTypeErrorPrototypeStackIndex]
 #define mxURIErrorPrototype the->stackPrototypes[-1 - mxURIErrorPrototypeStackIndex]
+#define mxAggregateErrorPrototype the->stackPrototypes[-1 - mxAggregateErrorPrototypeStackIndex]
+
 #define mxSymbolPrototype the->stackPrototypes[-1 - mxSymbolPrototypeStackIndex]
 #define mxArrayBufferPrototype the->stackPrototypes[-1 - mxArrayBufferPrototypeStackIndex]
 #define mxDataViewPrototype the->stackPrototypes[-1 - mxDataViewPrototypeStackIndex]
@@ -2498,7 +2510,6 @@ enum {
 #define  mxInitializeRegExpFunction the->stackPrototypes[-1 - mxInitializeRegExpFunctionIndex]
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
 
-#define mxErrorPrototypes(THE_ERROR) (the->stackPrototypes[-mxErrorPrototypeStackIndex-(THE_ERROR)])
 
 #define mxID(ID) ((ID) - 32768)
 

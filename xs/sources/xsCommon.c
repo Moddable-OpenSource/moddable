@@ -1036,6 +1036,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Symbol.toStringTag",
 	"Symbol.unscopables",
 	
+	"AggregateError",
 	"Array",
 	"ArrayBuffer",
 	"Atomics",
@@ -1195,6 +1196,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"entries",
 	"enumerable",
 	"enumerate",
+	"errors",
 	"every",
 	"exchange",
 	"exec",

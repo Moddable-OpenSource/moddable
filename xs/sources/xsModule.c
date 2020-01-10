@@ -1298,7 +1298,7 @@ void fx_Compartment(txMachine* the)
 		mxPush(mxObjectPrototype);
 		global = fxNewObjectInstance(the);
 		slot = fxLastProperty(the, global);
-		for (id = _Array; id < _Infinity; id++)
+		for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 		for (; id < _Compartment; id++)
 			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);

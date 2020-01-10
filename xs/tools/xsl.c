@@ -789,6 +789,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPush(mxMathObject); fxFreezeBuiltIn(the);
 	mxPush(mxReflectObject); fxFreezeBuiltIn(the);
 
+	mxPush(mxAggregateErrorPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxArgumentsSloppyPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxArgumentsStrictPrototype); fxFreezeBuiltIn(the);
 	mxPush(mxArrayBufferPrototype); fxFreezeBuiltIn(the);

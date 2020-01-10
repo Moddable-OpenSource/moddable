@@ -612,6 +612,7 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
+	_AggregateError,
 	_Array,
 	_ArrayBuffer,
 	_Atomics,
@@ -768,6 +769,7 @@ enum {
 	_entries,
 	_enumerable,
 	_enumerate,
+	_errors,
 	_every,
 	_exchange,
 	_exec,
@@ -1029,7 +1031,7 @@ enum {
 #ifdef mxFewGlobalsTable
 #define XS_FEW_GLOBALS_COUNT ___proto__
 #endif
-#define XS_SYMBOL_ID_COUNT _Array
+#define XS_SYMBOL_ID_COUNT _AggregateError
 
 extern const txString gxIDStrings[XS_ID_COUNT];
 

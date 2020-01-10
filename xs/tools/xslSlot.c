@@ -642,6 +642,8 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_ERROR_KIND)
 							fxPrepareInstance(the, slot);
+						else if (property->kind == XS_ERRORS_KIND)
+							fxPrepareInstance(the, slot);
 						else if (property->kind == XS_REGEXP_KIND)
 							fxPrepareInstance(the, slot);
 							
@@ -1171,7 +1173,13 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_ERROR_KIND: {
 		fprintf(file, ".kind = XS_ERROR_KIND}, ");
-		fprintf(file, ".value = { .number = 0 } ");
+		fprintf(file, ".value = { .number = 0 } }");
+	} break;
+	case XS_ERRORS_KIND: {
+		fprintf(file, ".kind = XS_ERRORS_KIND}, ");
+		fprintf(file, ".value = { .error = { ");
+		fxPrintAddress(the, file, slot->value.error.first);
+		fprintf(file, ", %d } }", slot->value.error.length);
 	} break;
 	case XS_HOME_KIND: {
 		fprintf(file, ".kind = XS_HOME_KIND}, ");

@@ -357,6 +357,7 @@ void fx_Object_prototype_toString(txMachine* the)
 						tag = "Date";
 						break;
 					case XS_ERROR_KIND:
+					case XS_ERRORS_KIND:
 						tag = "Error";
 						break;
 					case XS_GLOBAL_KIND:

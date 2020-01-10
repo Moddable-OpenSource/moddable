@@ -1402,7 +1402,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPush(mxObjectPrototype);
 			
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
-			for (id = _Array; id < _Infinity; id++)
+			for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			for (; id < _Compartment; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
@@ -1594,7 +1594,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				id = slot->ID & 0x7FFF;
-				if ((_Array <= id) && (id < _Infinity))
+				if ((XS_SYMBOL_ID_COUNT <= id) && (id < _Infinity))
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((_Infinity <= id) && (id < _Compartment))
 					slot->flag = XS_GET_ONLY;
