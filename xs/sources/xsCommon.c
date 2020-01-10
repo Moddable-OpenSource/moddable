@@ -1130,6 +1130,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"all",
 	"allSettled",
 	"and",
+	"any",
 	"append",
 	"apply",
 	"arguments",

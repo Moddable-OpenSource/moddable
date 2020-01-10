@@ -703,6 +703,7 @@ enum {
 	_all,
 	_allSettled,
 	_and,
+	_any,
 	_append,
 	_apply,
 	_arguments,
