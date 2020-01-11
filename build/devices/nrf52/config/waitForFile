@@ -1,0 +1,6 @@
+while [ ! -d "$1" ]; do
+	echo "Waiting for $1.\nDouble-tap the reset button to enter programming mode."
+    sleep 5
+done
+echo "Found $1."
+
