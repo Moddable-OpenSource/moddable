@@ -14,9 +14,9 @@
 
 		"button1_pin": 13,
 
-		"click_wheel_a": 6,
-		"click_wheel_b": 8,
-		"click_wheel_sw": 11,
+		"jogdial_signal": 6,
+		"jogdial_control": 8,
+		"jogdial_button": 11,
 	},
     "modules": {
         "*": [
