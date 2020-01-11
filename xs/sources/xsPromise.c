@@ -1439,4 +1439,16 @@ txS1 fxPromiseIsPending(txMachine* the, txSlot* instance) {
 	return status->value.integer == mxPendingStatus;
 }
 
+txS1 fxPromiseIsRejected(txMachine* the, txSlot* instance) {
+	if (instance->kind != XS_REFERENCE_KIND) {
+		return 0;
+	}
+	txSlot *promise = instance->value.reference;
+	if (!mxIsPromise(promise)) {
+		return 0;
+	}
+	txSlot* status = mxPromiseStatus(promise);
+	return status->value.integer == mxRejectedStatus;
+}
+
 
