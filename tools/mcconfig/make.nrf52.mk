@@ -32,6 +32,13 @@ SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1
 
 UF2_VOLUME_NAME ?= MODDABLE4
 
+ifeq ($(HOST_OS),Darwin)
+	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile /Volumes/$(UF2_VOLUME_NAME)
+else
+	# need to tweak the path for linux from /Volumes/whatever
+	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile /Volumes/$(UF2_VOLUME_NAME)
+endif
+
 GNU_VERSION ?= 8.2.1
 # NRF52_GCC_ROOT ?= $(HOME)/opt/gcctoolchain
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
@@ -650,6 +657,7 @@ $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
 
 copyToM4: all $(BIN_DIR)/xs_nrf52.uf2
+	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
