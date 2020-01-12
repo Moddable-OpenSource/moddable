@@ -558,7 +558,6 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	txSlot* property;
 	txSlot* promise;
 	txSlot* status;
-	txSlot* already;
 	txSlot* function;
 	txSlot* home;
 	
@@ -587,14 +586,11 @@ txSlot* fxNewAsyncInstance(txMachine* the)
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPop();
 	
-	already = fxNewPromiseAlready(the);
-	fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
+	fxPushPromiseFunctions(the, promise);
+    property = fxNextSlotProperty(the, property, the->stack + 1, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPop();
-	fxNewPromiseFunction(the, already, promise, mxRejectPromiseFunction.value.reference);
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPop();
-	mxPop(); // already
 	
 	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);

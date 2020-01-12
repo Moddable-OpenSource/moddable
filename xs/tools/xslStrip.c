@@ -188,8 +188,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fxOnRejectedPromise);
 				fxStripCallback(linker, fxOnResolvedPromise);
 				fxStripCallback(linker, fxOnThenable);
-				fxStripCallback(linker, fxRejectPromise);
-				fxStripCallback(linker, fxResolvePromise);
 				fxUnuseCode(XS_CODE_ASYNC_FUNCTION);
 				fxUnuseCode(XS_CODE_ASYNC_GENERATOR_FUNCTION);
 				fxUnuseCode(XS_CODE_IMPORT);
@@ -353,8 +351,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fxOnRejectedPromise);
 		fxUnstripCallback(linker, fxOnResolvedPromise);
 		fxUnstripCallback(linker, fxOnThenable);
-		fxUnstripCallback(linker, fxRejectPromise);
-		fxUnstripCallback(linker, fxResolvePromise);
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Reflect)))
 		fxStripObject(linker, the, &mxReflectObject);

@@ -1611,16 +1611,13 @@ mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
-mxExport void fxRejectPromise(txMachine* the);
-mxExport void fxResolvePromise(txMachine* the);
 
 extern void fxBuildPromise(txMachine* the);
 extern void fxBuildPromiseCapability(txMachine* the);
 extern void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
-extern txSlot* fxNewPromiseAlready(txMachine* the);
-extern txSlot* fxNewPromiseFunction(txMachine* the, txSlot* already, txSlot* promise, txSlot* function);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
 extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* capability);
+extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
 extern void fxRunPromiseJobs(txMachine* the);
 extern void fxQueueJob(txMachine* the, txID id);
 
@@ -2289,8 +2286,6 @@ enum {
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
-	mxRejectPromiseFunctionStackIndex,
-	mxResolvePromiseFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
@@ -2478,8 +2473,6 @@ enum {
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
-#define mxRejectPromiseFunction the->stackPrototypes[-1 - mxRejectPromiseFunctionStackIndex]
-#define mxResolvePromiseFunction the->stackPrototypes[-1 - mxResolvePromiseFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]

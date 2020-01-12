@@ -968,7 +968,6 @@ void fxRunImport(txMachine* the)
     txSlot* module = (function->kind == XS_REFERENCE_KIND) ? mxFunctionInstanceHome(function->value.reference)->value.home.module : C_NULL;
 	txSlot* promise;
 	txSlot* status;
-	txSlot* already;
 	txSlot* fulfillFunction;
 	txSlot* rejectFunction;
 	txSlot* slot;
@@ -979,9 +978,9 @@ void fxRunImport(txMachine* the)
 	promise = fxNewPromiseInstance(the);
 	status = mxPromiseStatus(promise);
 	status->value.integer = mxPendingStatus;
-	already = fxNewPromiseAlready(the);
-	fulfillFunction = fxNewPromiseFunction(the, already, promise, mxResolvePromiseFunction.value.reference);
-	rejectFunction = fxNewPromiseFunction(the, already, promise, mxRejectPromiseFunction.value.reference);
+	fxPushPromiseFunctions(the, promise);
+	fulfillFunction = the->stack + 1;
+	rejectFunction = the->stack;
 	{
 		mxTry(the) {
 			txSlot* internal = mxModuleInstanceInternal(module);
@@ -1003,10 +1002,10 @@ void fxRunImport(txMachine* the)
 			else {
 				slot = mxModuleFulfill(module);
 				slot->kind = XS_REFERENCE_KIND;
-				slot->value.reference = fulfillFunction;
+				slot->value.reference = fulfillFunction->value.reference;
 				slot = mxModuleReject(module);
 				slot->kind = XS_REFERENCE_KIND;
-				slot->value.reference = rejectFunction;
+				slot->value.reference = rejectFunction->value.reference;
 				fxExecuteModules(the, realm, XS_NO_FLAG);
 			}
 		}
@@ -1018,7 +1017,7 @@ void fxRunImport(txMachine* the)
 			/* THIS */
 			mxPushUndefined();
 			/* FUNCTION */
-			mxPushReference(rejectFunction);
+			mxPushSlot(rejectFunction);
 			fxCall(the);
 			the->stack++;
 		}
