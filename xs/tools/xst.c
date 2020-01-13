@@ -954,13 +954,14 @@ void fx_agent_leaving(xsMachine* the)
 
 void fx_agent_monotonicNow(xsMachine* the)
 {
-#if mxWindows
-    xsResult = xsNumber((txNumber)GetTickCount64());
-#else	
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-    xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
-#endif
+	xsResult = xsNumber(fxDateNow());
+// #if mxWindows
+//     xsResult = xsNumber((txNumber)GetTickCount64());
+// #else	
+// 	struct timespec now;
+// 	clock_gettime(CLOCK_MONOTONIC, &now);
+//     xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
+// #endif
 }
 
 void fx_agent_receiveBroadcast(xsMachine* the)
