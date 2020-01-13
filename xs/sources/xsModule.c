@@ -276,22 +276,31 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 
 void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module)
 {
-	txSlot* fulfillFunction = mxModuleInstanceFulfill(module);
+	txSlot* stack = the->stack;
+	txSlot* slot = mxModuleInstanceFulfill(module);
+	while (slot) {
+		mxPushSlot(slot);
+		slot = slot->next;
+		slot = slot->next;
+	}
 	mxModuleInstanceMeta(module)->next = C_NULL;
 #if mxReport
 	fxReport(the, "# Fullfilled module \"%s\"\n", fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id));
 #endif
-	if (fulfillFunction->kind != XS_NULL_KIND) {
+	slot = stack;
+	while (slot > the->stack) {
+		slot--;
 		mxPushReference(module);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
-		mxPushSlot(fulfillFunction);
+		mxPushSlot(slot);
 		fxCall(the);
 		mxPop();
 	}
+	the->stack = stack;
 }
 
 void fxFulfillModule(txMachine* the)
@@ -449,10 +458,6 @@ txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID)
 	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
 	/* HOSTS */
 	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
-	/* RESOLVE */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
-	/* REJECT */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
 
 	*address = slot = fxNewSlot(the);
 	slot->ID = moduleID;
@@ -576,23 +581,33 @@ void fxRecurseExports(txMachine* the, txSlot* realm, txID moduleID, txSlot* circ
 
 void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module)
 {
-	txSlot* rejectFunction = mxModuleInstanceReject(module);
+	txSlot* stack = the->stack;
+	txSlot* slot = mxModuleInstanceFulfill(module);
+	txSlot* exception;
+	while (slot) {
+		slot = slot->next;
+		mxPushSlot(slot);
+		slot = slot->next;
+	}
 	mxModuleInstanceMeta(module)->next = C_NULL;
 #if mxReport
 	fxReport(the, "# Rejected module \"%s\"\n", fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id));
 #endif
-	if (rejectFunction->kind != XS_NULL_KIND) {
-		txSlot* exception = mxBehaviorGetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInstanceInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+	exception = mxBehaviorGetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInstanceInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+    slot = stack;
+	while (slot > the->stack) {
+		slot--;
 		mxPushSlot(exception);
 		/* COUNT */
 		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
-		mxPushSlot(rejectFunction);
+		mxPushSlot(slot);
 		fxCall(the);
 		mxPop();
 	}
+	the->stack = stack;
 }
 
 void fxRejectModule(txMachine* the)
@@ -990,23 +1005,33 @@ void fxRunImport(txMachine* the)
 			fxToString(the, stack);
 			module = fxLinkModule(the, realm, internal->value.module.id, stack);
 			if (mxModuleMeta(module)->next == C_NULL) {
-				mxPushSlot(module);
-				/* COUNT */
-				mxPushInteger(1);
-				/* THIS */
-				mxPushUndefined();
-				/* FUNCTION */
-				mxPushReference(fulfillFunction);
-				fxCall(the);
+				txSlot* exception = mxBehaviorGetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
+				if (exception) {
+					mxPushSlot(exception);
+					/* COUNT */
+					mxPushInteger(1);
+					/* THIS */
+					mxPushUndefined();
+					/* FUNCTION */
+					mxPushSlot(rejectFunction);
+					fxCall(the);
+				}
+				else {
+					mxPushSlot(module);
+					/* COUNT */
+					mxPushInteger(1);
+					/* THIS */
+					mxPushUndefined();
+					/* FUNCTION */
+					mxPushSlot(fulfillFunction);
+					fxCall(the);
+				}
 			}
 			else {
-				slot = mxModuleFulfill(module);
-				slot->kind = XS_REFERENCE_KIND;
-				slot->value.reference = fulfillFunction->value.reference;
-				slot = mxModuleReject(module);
-				slot->kind = XS_REFERENCE_KIND;
-				slot->value.reference = rejectFunction->value.reference;
-				fxExecuteModules(the, realm, XS_NO_FLAG);
+				slot = fxLastProperty(the, module->value.reference);
+				slot = fxNextSlotProperty(the, slot, fulfillFunction, XS_NO_ID, XS_NO_FLAG);
+				slot = fxNextSlotProperty(the, slot, rejectFunction, XS_NO_ID, XS_NO_FLAG);
+				fxExecuteModules(the, realm, XS_ASYNC_FLAG);
 			}
 		}
 		mxCatch(the) {
