@@ -1526,6 +1526,7 @@ void fx_TypedArray_prototype_copyWithin(txMachine* the)
 	txInteger start = (txInteger)fxArgToIndex(the, 1, 0, length);
 	txInteger end = (txInteger)fxArgToIndex(the, 2, length, length);
 	txInteger count = end - start;
+	fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
 	if (count > length - target)
 		count = length - target;
 	if (count > 0)

@@ -1176,16 +1176,6 @@ One realm.
 	
 Sorting typed arrays is unstable.	
 	
-### Annex B
-
-	annexB/built-ins/String/prototype/substr/surrogate-pairs.js
-	
-Code points vs code units.	
-	
 ### Skipped cases
 
-	AggregateError
-	coalesce-expression
-	optional-chaining
-	regexp-match-indices
 
