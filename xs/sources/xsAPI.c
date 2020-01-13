@@ -1598,7 +1598,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((_Infinity <= id) && (id < _Compartment))
 					slot->flag = XS_GET_ONLY;
-				else if ((_Compartment <= id) && (id < ___proto__))
+				else if ((_Compartment <= id) && (id < XS_INTRINSICS_COUNT))
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((id == _global) || (id == _globalThis)) {
 					slot->value.reference = the->stack->value.reference;

@@ -178,7 +178,7 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 	txSlot* instance;
 	txSlot* property;
 #ifdef mxFewGlobalsTable
-	txSize length = XS_FEW_GLOBALS_COUNT;
+	txSize length = XS_INTRINSICS_COUNT;
 #else
 	txSize length = the->keyCount;
 #endif

@@ -44,6 +44,10 @@ void fxBuildObject(txMachine* the)
 	slot = fxLastProperty(the, the->stack->value.reference);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Object_prototype___proto__get), mxCallback(fx_Object_prototype___proto__set), mxID(___proto__), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_hasOwnProperty), 1, mxID(_hasOwnProperty), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype___defineGetter__), 2, mxID(___defineGetter__), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype___defineSetter__), 2, mxID(___defineSetter__), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype___lookupGetter__), 1, mxID(___lookupGetter__), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype___lookupSetter__), 1, mxID(___lookupSetter__), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_isPrototypeOf), 1, mxID(_isPrototypeOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_propertyIsEnumerable), 1, mxID(_propertyIsEnumerable), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_propertyIsScriptable), 1, mxID(_propertyIsScriptable), XS_DONT_ENUM_FLAG);
@@ -166,6 +170,104 @@ void fx_Object_prototype___proto__set(txMachine* the)
 		if (!mxBehaviorSetPrototype(the, instance, mxArgv(0)))
 			mxTypeError("invalid prototype");
 	}
+}
+
+void fx_Object_prototype___defineGetter__(txMachine* the)
+{
+	txSlot* instance = fxToInstance(the, mxThis);
+	txSlot* at;
+	txSlot* slot;
+	if ((mxArgc < 2) || (!fxIsCallable(the, mxArgv(1))))
+		mxTypeError("invalid getter");
+	if (mxArgc < 1)
+		mxTypeError("invalid key");
+	at = fxAt(the, mxArgv(0));
+	mxPushUndefined();
+	slot = the->stack;
+	slot->value.accessor.getter = fxToInstance(the, mxArgv(1));
+	slot->value.accessor.setter = C_NULL;
+	slot->kind = XS_ACCESSOR_KIND;
+	slot->flag = XS_NO_FLAG;
+	if(!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, slot, XS_GETTER_FLAG | XS_DONT_DELETE_FLAG| XS_DONT_ENUM_FLAG))
+		mxTypeError("invalid descriptor");
+	mxPop();
+}
+
+void fx_Object_prototype___defineSetter__(txMachine* the)
+{
+	txSlot* instance = fxToInstance(the, mxThis);
+	txSlot* at;
+	txSlot* slot;
+	if ((mxArgc < 2) || (!fxIsCallable(the, mxArgv(1))))
+		mxTypeError("invalid setter");
+	if (mxArgc < 1)
+		mxTypeError("invalid key");
+	at = fxAt(the, mxArgv(0));
+	mxPushUndefined();
+	slot = the->stack;
+	slot->value.accessor.getter = C_NULL;
+	slot->value.accessor.setter = fxToInstance(the, mxArgv(1));
+	slot->kind = XS_ACCESSOR_KIND;
+	slot->flag = XS_NO_FLAG;
+	if(!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, slot, XS_SETTER_FLAG | XS_DONT_DELETE_FLAG| XS_DONT_ENUM_FLAG))
+		mxTypeError("invalid descriptor");
+	mxPop();
+}
+
+void fx_Object_prototype___lookupGetter__(txMachine* the)
+{
+	txSlot* instance = fxToInstance(the, mxThis);
+	txSlot* at;
+	txSlot* slot;
+	if (mxArgc < 1)
+		mxTypeError("invalid key");
+	at = fxAt(the, mxArgv(0));
+	mxPushUndefined();
+	slot = the->stack;
+again:
+	if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, slot)) {
+		if (slot->kind == XS_ACCESSOR_KIND) {
+			if (slot->value.accessor.getter) {
+				mxResult->kind = XS_REFERENCE_KIND;
+				mxResult->value.reference = slot->value.accessor.getter;
+			}
+		}
+		mxPop();
+		return;
+	}
+	if (mxBehaviorGetPrototype(the, instance, slot)) {
+		instance = slot->value.reference;
+		goto again;
+	}
+	mxPop();
+}
+
+void fx_Object_prototype___lookupSetter__(txMachine* the)
+{
+	txSlot* instance = fxToInstance(the, mxThis);
+	txSlot* at;
+	txSlot* slot;
+	if (mxArgc < 1)
+		mxTypeError("invalid key");
+	at = fxAt(the, mxArgv(0));
+	mxPushUndefined();
+	slot = the->stack;
+again:
+	if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, slot)) {
+		if (slot->kind == XS_ACCESSOR_KIND) {
+			if (slot->value.accessor.setter) {
+				mxResult->kind = XS_REFERENCE_KIND;
+				mxResult->value.reference = slot->value.accessor.setter;
+			}
+		}
+		mxPop();
+		return;
+	}
+	if (mxBehaviorGetPrototype(the, instance, slot)) {
+		instance = slot->value.reference;
+		goto again;
+	}
+	mxPop();
 }
 
 void fx_Object_prototype_hasOwnProperty(txMachine* the)

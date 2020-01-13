@@ -673,7 +673,6 @@ enum {
 	_Compartment,
 	_Function,
 	_eval,
-	___proto__,
 	_AsyncFunction,
 	_AsyncGeneratorFunction,
 	_BYTES_PER_ELEMENT,
@@ -695,6 +694,11 @@ enum {
 	_SQRT1_2,
 	_SQRT2,
 	_UTC,
+	___defineGetter__,
+	___defineSetter__,
+	___lookupGetter__,
+	___lookupSetter__,
+	___proto__,
 	_abs,
 	_acos,
 	_acosh,
@@ -1029,10 +1033,8 @@ enum {
 	__xsbug_script_,
 	XS_ID_COUNT
 };
-#ifdef mxFewGlobalsTable
-#define XS_FEW_GLOBALS_COUNT ___proto__
-#endif
 #define XS_SYMBOL_ID_COUNT _AggregateError
+#define XS_INTRINSICS_COUNT _AsyncFunction
 
 extern const txString gxIDStrings[XS_ID_COUNT];
 
