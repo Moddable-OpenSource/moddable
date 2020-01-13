@@ -333,6 +333,7 @@ enum {
 	XS_CODE_SYMBOL,
 	XS_CODE_TARGET,
 	XS_CODE_TEMPLATE,
+	XS_CODE_TEMPLATE_CACHE,
 	XS_CODE_THIS,
 	XS_CODE_THROW,
 	XS_CODE_THROW_STATUS,
@@ -418,6 +419,7 @@ txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
 txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
 
 /* ? */
+mxExport void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path);
 mxExport void fxVReport(void* console, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportError(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);

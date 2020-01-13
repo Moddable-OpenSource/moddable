@@ -406,6 +406,7 @@ struct sxMachine {
 	void* dtoa;
 	void* preparation;
 
+	txInteger tag;
 	char nameBuffer[256];
 #ifdef mxDebug
 	txString name;
@@ -2155,15 +2156,16 @@ enum {
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)
 #define mxPromiseResult(INSTANCE) ((INSTANCE)->next->next->next)
 
-#define mxRealmGlobal(REALM)		((REALM)->next)
-#define mxRealmClosures(REALM)		((REALM)->next->next)
-#define mxAvailableModules(REALM)	((REALM)->next->next->next)
-#define mxOwnModules(REALM)			((REALM)->next->next->next->next)
-#define mxLoadingModules(REALM)		((REALM)->next->next->next->next->next)
-#define mxLoadedModules(REALM)		((REALM)->next->next->next->next->next->next)
-#define mxWaitingModules(REALM)		((REALM)->next->next->next->next->next->next->next)
-#define mxRunningModules(REALM)		((REALM)->next->next->next->next->next->next->next->next)
-#define mxRejectedModules(REALM)	((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRealmGlobal(REALM)			((REALM)->next)
+#define mxRealmClosures(REALM)			((REALM)->next->next)
+#define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
+#define mxAvailableModules(REALM)		((REALM)->next->next->next->next)
+#define mxOwnModules(REALM)				((REALM)->next->next->next->next->next)
+#define mxLoadingModules(REALM)			((REALM)->next->next->next->next->next->next)
+#define mxLoadedModules(REALM)			((REALM)->next->next->next->next->next->next->next)
+#define mxWaitingModules(REALM)			((REALM)->next->next->next->next->next->next->next->next)
+#define mxRunningModules(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRejectedModules(REALM)		((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,

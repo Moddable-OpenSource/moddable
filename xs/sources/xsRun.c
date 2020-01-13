@@ -528,6 +528,7 @@ void fxRunID(txMachine* the, txSlot* generator, txID id)
 		&&XS_CODE_SYMBOL,
 		&&XS_CODE_TARGET,
 		&&XS_CODE_TEMPLATE,
+		&&XS_CODE_TEMPLATE_CACHE,
 		&&XS_CODE_THIS,
 		&&XS_CODE_THROW,
 		&&XS_CODE_THROW_STATUS,
@@ -2455,6 +2456,15 @@ XS_CODE_JUMP:
 			variable = slot->value.reference;
 			variable->flag |= XS_DONT_PATCH_FLAG;
 			variable->next->flag |= XS_DONT_SET_FLAG;
+			mxBreak;
+		mxCase(XS_CODE_TEMPLATE_CACHE)
+			mxNextCode(1);
+            variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+            variable = mxModuleInstanceInternal(variable)->value.module.realm;
+            if (!variable) variable = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+            slot = mxRealmTemplateCache(variable);
+			mxPushKind(XS_REFERENCE_KIND);
+			mxStack->value.reference = slot->value.reference;
 			mxBreak;
 			
 	/* FUNCTIONS */		

@@ -4070,12 +4070,21 @@ void fxTemplateNodeCode(void* it, void* param)
 	txNode* item = self->items->first;
 	
 	if (self->reference) {
+		txSymbol* symbol;
+		txTargetCode* cacheTarget = fxCoderCreateTarget(param);
 		txInteger i = (self->items->length / 2) + 1;
 		txInteger raws = fxCoderUseTemporaryVariable(param);
 		txInteger strings = fxCoderUseTemporaryVariable(param);
 		txFlag flag = XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 
 		fxNodeDispatchCodeThis(self->reference, param);
+
+		fxGenerateTag(parser->console, parser->buffer, parser->bufferSize, (parser->path) ? parser->path->string : C_NULL);
+		symbol = fxNewParserSymbol(parser, parser->buffer);
+		fxCoderAddByte(param, 1, XS_CODE_TEMPLATE_CACHE);
+		fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, symbol);
+		fxCoderAddBranch(param, 0, XS_CODE_BRANCH_COALESCE_1, cacheTarget);
+		fxCoderAddByte(param, 1, XS_CODE_TEMPLATE_CACHE);
 
 		fxCoderAddByte(param, 1, XS_CODE_ARRAY);
 		fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, strings);
@@ -4118,6 +4127,11 @@ void fxTemplateNodeCode(void* it, void* param)
 		fxCoderAddByte(param, -1, XS_CODE_POP);
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, strings);
 		fxCoderAddByte(param, 0, XS_CODE_TEMPLATE);
+		
+		fxCoderAddSymbol(param, -1, XS_CODE_SET_PROPERTY, symbol);
+		
+		fxCoderAdd(param, 0, cacheTarget);
+		
 		i = 1;
 		item = self->items->first;
 		while (item) {

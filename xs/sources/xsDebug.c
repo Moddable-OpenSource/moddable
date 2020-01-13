@@ -2063,6 +2063,16 @@ void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txStri
 #endif
 }
 
+void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path)
+{
+	txMachine* the = console;
+	if (path)
+		snprintf(buffer, bufferSize, "#%d@%s", the->tag, path);
+	else
+		snprintf(buffer, bufferSize, "#%d", the->tag);
+	the->tag++;
+}
+
 void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 {
 #ifdef mxDebug
