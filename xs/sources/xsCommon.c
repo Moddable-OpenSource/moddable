@@ -1035,7 +1035,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Symbol.toPrimitive",
 	"Symbol.toStringTag",
 	"Symbol.unscopables",
-	
 	"AggregateError",
 	"Array",
 	"ArrayBuffer",
@@ -1091,15 +1090,12 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"parseInt",
 	"trace",
 	"unescape",
-	
 	"Infinity",
 	"NaN",
 	"undefined",
-	
 	"Compartment",
 	"Function",
 	"eval",
-	
 	"AsyncFunction",
 	"AsyncGeneratorFunction",
 	"BYTES_PER_ELEMENT",

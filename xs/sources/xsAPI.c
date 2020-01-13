@@ -1406,7 +1406,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			for (; id < _Compartment; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
-			for (; id < ___proto__; id++)
+			for (; id < XS_INTRINSICS_COUNT; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
