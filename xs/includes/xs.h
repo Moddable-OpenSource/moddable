@@ -297,7 +297,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -74
+#define prototypesStackIndex -75
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -314,16 +314,17 @@ typedef txU4 xsUnsignedValue;
 #define xsSyntaxErrorPrototype (the->stackPrototypes[prototypesStackIndex - 14])
 #define xsTypeErrorPrototype (the->stackPrototypes[prototypesStackIndex - 15])
 #define xsURIErrorPrototype (the->stackPrototypes[prototypesStackIndex - 16])
-#define xsSymbolPrototype (the->stackPrototypes[prototypesStackIndex - 17])
-#define xsArrayBufferPrototype (the->stackPrototypes[prototypesStackIndex - 18])
-#define xsDataViewPrototype (the->stackPrototypes[prototypesStackIndex - 19])
-#define xsTypedArrayPrototype (the->stackPrototypes[prototypesStackIndex - 20])
-#define xsMapPrototype (the->stackPrototypes[prototypesStackIndex - 21])
-#define xsSetPrototype (the->stackPrototypes[prototypesStackIndex - 22])
-#define xsWeakMapPrototype (the->stackPrototypes[prototypesStackIndex - 23])
-#define xsWeakSetPrototype (the->stackPrototypes[prototypesStackIndex - 24])
-#define xsPromisePrototype (the->stackPrototypes[prototypesStackIndex - 25])
-#define xsProxyPrototype (the->stackPrototypes[prototypesStackIndex - 26])
+#define xsAggregateErrorPrototype (the->stackPrototypes[prototypesStackIndex - 17])
+#define xsSymbolPrototype (the->stackPrototypes[prototypesStackIndex - 18])
+#define xsArrayBufferPrototype (the->stackPrototypes[prototypesStackIndex - 19])
+#define xsDataViewPrototype (the->stackPrototypes[prototypesStackIndex - 20])
+#define xsTypedArrayPrototype (the->stackPrototypes[prototypesStackIndex - 21])
+#define xsMapPrototype (the->stackPrototypes[prototypesStackIndex - 22])
+#define xsSetPrototype (the->stackPrototypes[prototypesStackIndex - 23])
+#define xsWeakMapPrototype (the->stackPrototypes[prototypesStackIndex - 24])
+#define xsWeakSetPrototype (the->stackPrototypes[prototypesStackIndex - 25])
+#define xsPromisePrototype (the->stackPrototypes[prototypesStackIndex - 26])
+#define xsProxyPrototype (the->stackPrototypes[prototypesStackIndex - 27])
 
 #define xsNewArray(_LENGTH) \
 	(fxNewArray(the,_LENGTH), \

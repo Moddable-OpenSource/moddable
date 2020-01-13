@@ -2242,7 +2242,7 @@ enum {
 	mxHostInspectorsStackIndex,
 	mxInstanceInspectorsStackIndex,
 
-	mxObjectPrototypeStackIndex = ___proto__,
+	mxObjectPrototypeStackIndex = XS_INTRINSICS_COUNT,
 	mxFunctionPrototypeStackIndex,
 	mxArrayPrototypeStackIndex,
 	mxStringPrototypeStackIndex,
@@ -2251,7 +2251,7 @@ enum {
 	mxDatePrototypeStackIndex,
 	mxRegExpPrototypeStackIndex,
 	mxHostPrototypeStackIndex,
-	
+
 	mxErrorPrototypeStackIndex,
 	mxEvalErrorPrototypeStackIndex,
 	mxRangeErrorPrototypeStackIndex,
