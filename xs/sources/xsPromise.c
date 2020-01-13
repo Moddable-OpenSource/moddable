@@ -41,7 +41,7 @@
 
 static void fxCombinePromises(txMachine* the, txInteger which);
 static void fxCombinePromisesCallback(txMachine* the);
-static txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* count, txSlot* array, txSlot* promise, txSlot* function);
+static txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* object);
 static void fxRejectPromise(txMachine* the);
 static void fxResolvePromise(txMachine* the);
 
@@ -183,13 +183,14 @@ void fxCombinePromises(txMachine* the, txInteger which)
 	txSlot* promise;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
+	txSlot* object;
+	txSlot* property;
 	txSlot* array;
-	txSlot* count;
+	txSlot* already;
 	txSlot* iterator;
 	txInteger index;
 	txSlot* result;
 	txSlot* argument;
-	txSlot* already;
 	
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
@@ -204,21 +205,18 @@ void fxCombinePromises(txMachine* the, txInteger which)
 	{
 		mxTry(the) {
 			if (which) {
-				txSlot* instance;
+				object = fxNewInstance(the);
+				property = fxNextIntegerProperty(the, object, 0, XS_NO_ID, XS_NO_FLAG);
 				mxPush(mxArrayPrototype);
-				instance = fxNewArrayInstance(the);
-				mxPushUndefined();
-				array = the->stack->value.closure = fxNewSlot(the);
-				the->stack->kind = XS_CLOSURE_KIND;
-				array->kind = XS_REFERENCE_KIND;
-				array->value.reference = instance;
-				already = instance->next;
-				
-				mxPushUndefined();
-				count = the->stack->value.closure = fxNewSlot(the);
-				the->stack->kind = XS_CLOSURE_KIND;
-				count->kind = XS_INTEGER_KIND;
-				count->value.integer = 0;
+				array = fxNewArrayInstance(the);
+				already = array->next;
+				property = fxNextReferenceProperty(the, property, array, XS_NO_ID, XS_NO_FLAG);
+				mxPop();
+				property = fxNextReferenceProperty(the, property, promise, XS_NO_ID, XS_NO_FLAG);
+				if (which == XS_PROMISE_COMBINE_REJECTED)
+					property = fxNextReferenceProperty(the, property, rejectFunction, XS_NO_ID, XS_NO_FLAG);
+				else
+					property = fxNextReferenceProperty(the, property, resolveFunction, XS_NO_ID, XS_NO_FLAG);
 			}
 			
 			if (!mxIsReference(mxArgv(0)))
@@ -257,19 +255,19 @@ void fxCombinePromises(txMachine* the, txInteger which)
 						if (which) {
 							already = already->next = fxNewSlot(the);
 							already->kind = XS_UNINITIALIZED_KIND;
-							array->value.reference->next->value.array.length++;
+							array->next->value.array.length++;
 						}
 						if (which & XS_PROMISE_COMBINE_SETTLED) {
-							fxNewCombinePromisesFunction(the, which | XS_PROMISE_COMBINE_FULFILLED, already, count, array, promise, resolveFunction);
-							fxNewCombinePromisesFunction(the, which | XS_PROMISE_COMBINE_REJECTED, already, count, array, promise, resolveFunction);
+							fxNewCombinePromisesFunction(the, which | XS_PROMISE_COMBINE_FULFILLED, already, object);
+							fxNewCombinePromisesFunction(the, which | XS_PROMISE_COMBINE_REJECTED, already, object);
 						}
 						else if (which & XS_PROMISE_COMBINE_FULFILLED) {
-							fxNewCombinePromisesFunction(the, which, already, count, array, promise, resolveFunction);
+							fxNewCombinePromisesFunction(the, which, already, object);
 							mxPushReference(rejectFunction);
 						}
 						else if (which & XS_PROMISE_COMBINE_REJECTED) {
 							mxPushReference(resolveFunction);
-							fxNewCombinePromisesFunction(the, which, already, count, array, promise, rejectFunction);
+							fxNewCombinePromisesFunction(the, which, already, object);
 						}
 						else {
 							mxPushReference(resolveFunction);
@@ -289,13 +287,14 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				}
 			}
 			if (which) {
-				count->value.integer += index;
-				index = count->value.integer;
+				property = object->next;
+				property->value.integer += index;
+				index = property->value.integer;
 			}
 			if (index == 0) {
 				if ((which == XS_PROMISE_COMBINE_SETTLED) || (which == XS_PROMISE_COMBINE_FULFILLED)) {
-					fxCacheArray(the, array->value.reference);
-					mxPushSlot(array);
+					fxCacheArray(the, array);
+					mxPushReference(array);
 					/* COUNT */
 					mxPushInteger(1);
 					/* THIS */
@@ -332,11 +331,9 @@ void fxCombinePromises(txMachine* the, txInteger which)
 void fxCombinePromisesCallback(txMachine* the)
 {
 	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.object->next;
+	txInteger which = slot->value.integer;
 	txSlot* instance;
 	txSlot* property;
-	txSlot* array;
-	txSlot* count;
-	txInteger which = slot->value.integer;
 	slot = slot->next;
 	if (slot->value.closure->kind != XS_UNINITIALIZED_KIND)
 		return;
@@ -361,14 +358,12 @@ void fxCombinePromisesCallback(txMachine* the)
 		mxPop();
 	}
 	mxPullSlot(slot->value.closure);
-	slot = slot->next;
-	count = slot->value.closure;
-	count->value.integer--;
-	if (count->value.integer == 0) {
+	slot = slot->next->value.reference->next;
+	slot->value.integer--;
+	if (slot->value.integer == 0) {
 		slot = slot->next;
-		array = slot->value.closure;
-		fxCacheArray(the, array->value.reference);
-		mxPushSlot(array);
+		fxCacheArray(the, slot->value.reference);
+		mxPushSlot(slot);
 		if (which == XS_PROMISE_COMBINE_REJECTED) {
 			mxPushInteger(1);
 			mxPush(mxAggregateErrorConstructor);
@@ -387,33 +382,20 @@ void fxCombinePromisesCallback(txMachine* the)
 	}
 }
 
-txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* count, txSlot* array, txSlot* promise, txSlot* function)
+txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* object)
 {
 	txSlot* result;
-	txSlot* object;
-	txSlot* slot;
+	txSlot* instance;
+	txSlot* property;
 	result = fxNewHostFunction(the, fxCombinePromisesCallback, 1, XS_NO_ID);
-	object = fxNewInstance(the);
-	slot = object->next = fxNewSlot(the);
-	slot->kind = XS_INTEGER_KIND;
-	slot->value.integer = which;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_CLOSURE_KIND;
-	slot->value.closure = already;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_CLOSURE_KIND;
-	slot->value.closure = count;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_CLOSURE_KIND;
-	slot->value.closure = array;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_REFERENCE_KIND;
-	slot->value.reference = promise;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = XS_REFERENCE_KIND;
-	slot->value.reference = function;
-	slot = mxFunctionInstanceHome(result);
-	slot->value.home.object = object;
+	instance = fxNewInstance(the);
+	property = fxNextIntegerProperty(the, instance, which, XS_NO_ID, XS_NO_FLAG);
+	property = property->next = fxNewSlot(the);
+	property->kind = XS_CLOSURE_KIND;
+	property->value.closure = already;
+	property = fxNextReferenceProperty(the, property, object, XS_NO_ID, XS_NO_FLAG);
+	property = mxFunctionInstanceHome(result);
+	property->value.home.object = instance;
 	the->stack++;
 	return result;
 }
