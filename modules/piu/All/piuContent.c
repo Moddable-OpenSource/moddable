@@ -879,6 +879,12 @@ void PiuContent_get_time(xsMachine *the)
 	xsResult = xsNumber((*self)->time);
 }
 
+void PiuContent_get_type(xsMachine *the)
+{
+	PiuContent* self = PIU(Content, xsThis);
+	fxStringX(the, &xsResult, (*self)->dispatch->type);
+}
+
 void PiuContent_get_variant(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
