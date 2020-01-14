@@ -197,6 +197,7 @@ export const Content = Template(Object.freeze({
 	get state() @ "PiuContent_get_state",
 	get style() @ "PiuContent_get_style",
 	get time() @ "PiuContent_get_time",
+	get type() @ "PiuContent_get_type",
 	get variant() @ "PiuContent_get_variant",
 	get visible() @ "PiuContent_get_visible",
 	get x() @ "PiuContent_get_x",

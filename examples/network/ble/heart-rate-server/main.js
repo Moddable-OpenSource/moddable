@@ -48,13 +48,13 @@ class HeartRateService extends BLEServer {
 		this.timer = Timer.repeat(id => {
 			this.notifyValue(characteristic, this.bpm);
 			this.bpm[1] += this.bump;
-			if (this.bpm[1] == 65) {
+			if (this.bpm[1] === 65) {
 				this.bump = -1;
-				this.bpm[1] == 64;
+				this.bpm[1] = 64;
 			}
-			else if (this.bpm[1] == 55) {
+			else if (this.bpm[1] === 55) {
 				this.bump = +1;
-				this.bpm[1] == 56;
+				this.bpm[1] = 56;
 			}
 		}, 1000);
 	}
