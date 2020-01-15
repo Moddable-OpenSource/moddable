@@ -288,8 +288,6 @@ void fx_Object_prototype_hasOwnProperty(txMachine* the)
 
 void fx_Object_prototype_isPrototypeOf(txMachine* the)
 {
-	if ((mxThis->kind == XS_UNDEFINED_KIND) || (mxThis->kind == XS_NULL_KIND))
-		mxTypeError("invalid this");
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
 	if (mxArgc > 0) {
