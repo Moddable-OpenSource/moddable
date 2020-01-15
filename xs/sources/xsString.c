@@ -271,11 +271,8 @@ void fxStringOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys
 
 txSlot* fxStringSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
 {
-	if ((id == mxID(_length)) || (!id && (mxStringInstanceLength(instance) > index))) {
-		the->scratch.value.at.id = id;
-		the->scratch.value.at.index = index;
-		return &mxStringAccessor;
-	}
+	if ((id == mxID(_length)) || (!id && (mxStringInstanceLength(instance) > index)))
+		return 0;
 	return fxOrdinarySetProperty(the, instance, id, index, flag);
 }
 
