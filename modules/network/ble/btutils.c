@@ -66,25 +66,31 @@ static void hexStringToBytes(xsMachine *the, uint8_t *buffer, const char *string
 void xs_bytes_set(xsMachine *the)
 {
 	uint8_t reverse = xsmcToBoolean(xsArg(1));
+	uint8_t *dst = xsmcToArrayBuffer(xsThis);
+	uint32_t dstLength = xsGetArrayBufferLength(xsThis);
 	if (xsmcTypeOf(xsArg(0)) == xsStringType) {
-		const char *s = xsmcToString(xsArg(0));
-		hexStringToBytes(the, xsmcToArrayBuffer(xsThis), s, c_strlen(s), reverse);
+		const char *src = xsmcToString(xsArg(0));
+		uint32_t srcLength = c_strlen(src);
+		if ((srcLength >> 1) != dstLength)
+			xsRangeError("invalid buffer size");
+		hexStringToBytes(the, dst, src, srcLength, reverse);
 	}
 	else {
 		uint8_t *src = xsmcToArrayBuffer(xsArg(0));
-		uint8_t *dst = xsmcToArrayBuffer(xsThis);
-		uint16_t i, length = xsGetArrayBufferLength(xsArg(0));
+		uint32_t i, srcLength = xsGetArrayBufferLength(xsArg(0));
+		if (srcLength != dstLength)
+			xsRangeError("invalid buffer size");
 		if (reverse)
-			for (i = 0; i < length; ++i)
-				dst[i] = src[length - i - 1];
+			for (i = 0; i < srcLength; ++i)
+				dst[i] = src[srcLength - i - 1];
 		else
-			c_memmove(dst, src, length);
+			c_memmove(dst, src, srcLength);
 	}
 }
 
 void xs_bytes_equals(xsMachine *the)
 {
-	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint32_t length = xsGetArrayBufferLength(xsArg(0));
 	if (length != xsGetArrayBufferLength(xsThis))
 		xsmcSetFalse(xsResult);
 	else {
