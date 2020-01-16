@@ -1075,7 +1075,7 @@ Revoked proxy are no functions.
 	language/function-code/10.4.3-1-104.js (strict)
 	language/function-code/10.4.3-1-106.js (strict)
 	
-When calling a member, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
+For getters, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
 	
 	language/literals/string/legacy-octal-escape-sequence-prologue-strict.js (sloppy)
 
