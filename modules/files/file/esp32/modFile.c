@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,13 +25,8 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "esp_err.h"
 #include "esp_spiffs.h"
 #include "spiffs_config.h"
-
-#undef c_memcpy
-#undef c_printf
-#undef c_memset
 
 #include "xsmc.h"
 #include "xsHost.h"
@@ -40,27 +35,27 @@
 
 typedef struct {
     DIR *dir;
+    int rootPathLen;
     char path[1];
 } iteratorRecord, *iter;
 
 static int startSPIFFS(void);
 static void stopSPIFFS(void);
 
-static void *xsmcGetHostDataNullCheck(xsMachine *the)
+static FILE *getFile(xsMachine *the)
 {
-	void *result = xsmcGetHostData(xsThis);
-	if (result)
-		return result;
-	xsUnknownError("closed");
+	FILE *result = xsmcGetHostData(xsThis);
+	if (!result)
+		xsUnknownError("closed");
+	return result;
 }
 
 void xs_file_destructor(void *data)
 {
 	if (data) {
-		if (-1 != (uintptr_t)data) {
-			fclose((FILE *)data);
-			stopSPIFFS();
-		}
+		fclose((FILE *)data);
+		stopSPIFFS();
+
 		modInstrumentationAdjust(Files, -1);
 	}
 }
@@ -69,12 +64,11 @@ void xs_File(xsMachine *the)
 {
     int argc = xsmcArgc;
     FILE *file;
-	char *path;
     uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));
+	char *path = xsmcToString(xsArg(0));
 
     startSPIFFS();
 
-	path = xsmcToString(xsArg(0));
     file = fopen(path, write ? "rb+" : "rb");
     if (NULL == file) {
         if (write)
@@ -91,19 +85,16 @@ void xs_File(xsMachine *the)
 
 void xs_file_read(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = (FILE*)data;
+    FILE *file = getFile(the);
     int32_t result;
     int argc = xsmcArgc;
     int dstLen = (argc < 2) ? -1 : xsmcToInteger(xsArg(1));
     void *dst;
     xsSlot *s1, *s2;
     struct stat buf;
-    int fno;
     int32_t position = ftell(file);
 
-    fno = fileno(file);
-    fstat(fno, &buf);
+    fstat(fileno(file), &buf);
     if ((-1 == dstLen) || (buf.st_size < (position + dstLen))) {
         if (position >= buf.st_size)
             xsUnknownError("read past end of file");
@@ -131,8 +122,7 @@ void xs_file_read(xsMachine *the)
 
 void xs_file_write(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = ((FILE *)data);
+    FILE *file = getFile(the);
     int32_t result;
     int argc = xsmcArgc, i;
 
@@ -167,48 +157,41 @@ void xs_file_write(xsMachine *the)
 
 void xs_file_close(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = ((FILE*)data);
-    xs_file_destructor((void *)((int)file));
+    FILE *file = getFile(the);
+    xs_file_destructor((void *)((uintptr_t)file));
     xsmcSetHostData(xsThis, (void *)NULL);
 }
 
 void xs_file_get_length(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = (FILE*)data;
+    FILE *file = getFile(the);
     struct stat buf;
-    int fno;
 
-    fno = fileno(file);
-    fstat(fno, &buf);
+    fstat(fileno(file), &buf);
     xsResult = xsInteger(buf.st_size);
 }
 
 void xs_file_get_position(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = (FILE*)data;
+    FILE *file = getFile(the);
     int32_t position = ftell(file);
     xsResult = xsInteger(position);
 }
 
 void xs_file_set_position(xsMachine *the)
 {
-    void *data = xsmcGetHostDataNullCheck(the);
-    FILE *file = ((FILE*)data);
+    FILE *file = getFile(the);
     int32_t position = xsmcToInteger(xsArg(0));
     fseek(file, position, SEEK_SET);
 }
 
 void xs_file_delete(xsMachine *the)
 {
-    char *path;
     int32_t result;
+    char *path = xsmcToString(xsArg(0));
 
     startSPIFFS();
 
-	path = xsmcToString(xsArg(0));
     result = unlink(path);
 
 	stopSPIFFS();
@@ -218,13 +201,12 @@ void xs_file_delete(xsMachine *the)
 
 void xs_file_exists(xsMachine *the)
 {
-    char *path;
     struct stat buf;
     int32_t result;
+    char *path = xsmcToString(xsArg(0));
 
     startSPIFFS();
 
-	path = xsmcToString(xsArg(0));
     result = stat(path, &buf);
 
 	stopSPIFFS();
@@ -238,10 +220,11 @@ void xs_file_rename(xsMachine *the)
 	char name[SPIFFS_OBJ_NAME_LEN + 1];
     int32_t result;
 
-    startSPIFFS();
-
 	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
 	path = xsmcToString(xsArg(0));
+
+    startSPIFFS();
+
     result = rename(path, name);
 
 	stopSPIFFS();
@@ -268,21 +251,20 @@ void xs_File_Iterator(xsMachine *the)
     int i;
     char *p;
 
+    p = xsmcToString(xsArg(0));
+    i = c_strlen(p);
+    if (i == 0)
+        xsUnknownError("bad path");
+    d = c_calloc(1, sizeof(iteratorRecord) + i + 2 + SPIFFS_OBJ_NAME_LEN + 1);
+    c_strcpy(d->path, p);
+    if (p[i - 1] != '/')
+        d->path[i++] = '/';
+	d->rootPathLen = i;
+
     startSPIFFS();
 
-    p = xsmcToString(xsArg(0));
-    i = strlen(p);
-    if (i == 0) {
-    	stopSPIFFS();
-        xsUnknownError("no directory to iterate on");
-    }
-    d = calloc(1, sizeof(iteratorRecord) + i + 2);
-    strcpy(d->path, p);
-    if (p[i-1] != '/')
-        d->path[i] = '/';
-
     if (NULL == (d->dir = opendir(d->path))) {
-    	free(d);
+    	c_free(d);
     	stopSPIFFS();
         xsUnknownError("failed to open directory");
     }
@@ -313,10 +295,10 @@ void xs_file_iterator_next(xsMachine *the)
     xsmcSetString(xsVar(0), de->d_name);
     xsmcSet(xsResult, xsID_name, xsVar(0));
 
-    sprintf(path, "%s%s", d->path, de->d_name);
     if (DT_REG == de->d_type) {
-        if (-1 == stat(path, &buf))
-            fprintf(stderr, "stat %s returns errno: %d\n", path, errno);
+		c_strcpy(d->path + d->rootPathLen, de->d_name);
+		if (-1 == stat(d->path, &buf))
+			xsUnknownError("stat error");
         xsmcSetInteger(xsVar(0), buf.st_size);
         xsmcSet(xsResult, xsID_length, xsVar(0));
     }
@@ -338,12 +320,10 @@ void xs_file_system_info(xsMachine *the)
 
 	esp_err_t ret = esp_spiffs_info(NULL, &total, &used);
 
-	if (ret != ESP_OK) {
-		stopSPIFFS();
-		xsUnknownError("system info failed");
-	}
-
 	stopSPIFFS();
+
+	if (ret != ESP_OK)
+		xsUnknownError("system info failed");
 
     xsResult = xsmcNewObject();
 	xsmcVars(1);
@@ -360,6 +340,7 @@ int startSPIFFS(void)
 	if (0 != gUseCount++)
 		return 0;
 
+//@@ these behaviors could be controlled by DEFINE properties
 	esp_vfs_spiffs_conf_t conf = {
 			.base_path = "/spiffs",
 			.partition_label = NULL,
