@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -19,6 +19,9 @@
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
 
+const SERVICE_UUID = uuid`25598CF7-4240-40A6-9910-080F19F91EBC`;
+const CHARACTERISTIC_UUID = uuid`9CF53570-DDD9-47F3-BA63-09ACEFC60415`;
+
 class PowerMate extends BLEClient {
 	onReady() {
 		this.onDisconnected();
@@ -30,11 +33,11 @@ class PowerMate extends BLEClient {
 		}
 	}
 	onConnected(device) {
-		device.discoverPrimaryService(uuid`25598CF7-4240-40A6-9910-080F19F91EBC`);
+		device.discoverPrimaryService(SERVICE_UUID);
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(uuid`9CF53570-DDD9-47F3-BA63-09ACEFC60415`);
+			services[0].discoverCharacteristic(CHARACTERISTIC_UUID);
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length)
