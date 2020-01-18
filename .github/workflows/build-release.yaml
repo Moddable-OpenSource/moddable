@@ -10,7 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install libgtk-3-dev
-        run: sudo apt-get install libgtk-3-dev
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libgtk-3-dev
       - name: build moddable headless tools
         run: |
           export MODDABLE=$PWD
