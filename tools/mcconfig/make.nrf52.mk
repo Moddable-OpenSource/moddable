@@ -392,7 +392,8 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_spim.c.o \
 	$(LIB_DIR)/nrfx_twim.c.o \
 	$(LIB_DIR)/nrfx_uart.c.o \
-	$(LIB_DIR)/nrfx_uarte.c.o
+	$(LIB_DIR)/nrfx_uarte.c.o \
+	$(LIB_DIR)/nrfx_wdt.c.o
 
 NRF_LIBRARIES = \
 	$(LIB_DIR)/app_button.c.o \
