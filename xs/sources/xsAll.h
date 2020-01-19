@@ -714,7 +714,7 @@ extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
 
 /* xsRun.c */
 extern void fxRunEval(txMachine* the);
-extern void fxRunID(txMachine* the, txSlot* generator, txID theID);
+extern void fxRunID(txMachine* the, txSlot* generator, txInteger count);
 extern void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _target, txSlot* environment, txSlot* object, txSlot* module);
 extern txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b);
 extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero);
@@ -734,7 +734,7 @@ extern void fxShare(txMachine* the);
 #ifdef mxDebug
 mxExport void fxCheck(txMachine* the, txString thePath, txInteger theLine);
 extern void fxDebugCommand(txMachine* the);
-extern void fxDebugLine(txMachine* the);
+extern void fxDebugLine(txMachine* the, txID id, txInteger line);
 extern void fxDebugLoop(txMachine* the, txString thePath, txInteger theLine, txString message);
 extern void fxDebugThrow(txMachine* the, txString thePath, txInteger theLine, txString message);
 mxExport void fxLogin(txMachine* the);
@@ -1718,7 +1718,7 @@ enum {
 	/* frame flags */
 	/* ? = 1, */
 	XS_C_FLAG = 2,
-	/* ? =  = 4, */
+	/* ? =  4, */
 	XS_STEP_INTO_FLAG = 8,
 	XS_STEP_OVER_FLAG = 16,
 	XS_STRICT_FLAG = 32,
@@ -1727,9 +1727,9 @@ enum {
 
 	/* instance flags */
 	XS_EXOTIC_FLAG = 1,
-	XS_CAN_CONSTRUCT_FLAG = 2,
-	XS_BASE_FLAG = 4,
-	XS_DERIVED_FLAG = 8,
+	XS_CAN_CALL_FLAG = 2,
+	XS_CAN_CONSTRUCT_FLAG = 4,
+	/* ? = 8, */
 	XS_DONT_PATCH_FLAG = 16,
 	XS_LEVEL_FLAG = 32,
 	XS_DONT_MARSHALL_FLAG = 64,
@@ -1741,8 +1741,8 @@ enum {
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8 ,  */
 	XS_INSPECTOR_FLAG = 16,
-	/* ? = 32, */
-	/* ? = 64, */
+	XS_BASE_FLAG = 32,
+	XS_DERIVED_FLAG = 64,
 	/* XS_MARK_FLAG = 128, */
 
 	/* mxBehaviorOwnKeys flags */
@@ -2116,14 +2116,17 @@ enum {
 #define mxPop() \
 	(the->stack++)
 
-#define mxArgv(THE_INDEX) (the->frame + 5 + ((the->frame + 5)->value.integer) - (THE_INDEX))
-#define mxArgc ((the->frame + 5)->value.integer)
+
 #define mxThis (the->frame + 4)
 #define mxFunction (the->frame + 3)
 #define mxTarget (the->frame + 2)
 #define mxResult (the->frame + 1)
-#define mxVarc ((the->frame - 1)->value.environment.variable.count)
-#define mxVarv(THE_INDEX) (the->frame -2 - THE_INDEX)
+#define mxArgc ((the->frame - 1)->value.integer)
+#define mxArgv(THE_INDEX) (the->frame - 2 - (THE_INDEX))
+#define mxVarc (the->scope->value.environment.variable.count)
+#define mxVarv(THE_INDEX) (the->scope - 1 - (THE_INDEX))
+
+#define mxFrameToEnvironment(FRAME) ((FRAME) - 1 - ((FRAME) - 1)->value.integer - 1)
 
 #define mxFunctionInstanceCode(INSTANCE) 		((INSTANCE)->next)
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)

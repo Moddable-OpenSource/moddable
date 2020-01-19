@@ -824,7 +824,7 @@ void fx_Proxy(txMachine* the)
 	handler = mxArgv(1)->value.reference;
 	if ((handler->next) && (handler->next->kind == XS_PROXY_KIND) && !handler->next->value.proxy.handler)
 		mxTypeError("handler is a revoked proxy");
-	instance->flag |= target->flag & XS_CAN_CONSTRUCT_FLAG;
+	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	proxy->value.proxy.target = target;
 	proxy->value.proxy.handler = handler;
 }
@@ -853,6 +853,7 @@ void fx_Proxy_revocable(txMachine* the)
 	
 	mxPushUndefined();
 	instance = fxNewProxyInstance(the);
+	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	slot = instance->next;
 	slot->value.proxy.target = target;
 	slot->value.proxy.handler = handler;

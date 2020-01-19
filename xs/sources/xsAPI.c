@@ -582,6 +582,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	mxPushUndefined();
 	instance = fxNewSlot(the);
+	instance->flag |= XS_CAN_CALL_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
 	instance->value.instance.prototype = mxFunctionPrototype.value.reference;
@@ -1068,24 +1069,21 @@ void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask)
 
 void fxCall(txMachine* the)
 {
-#ifdef mxHostFunctionPrimitive
-	txSlot* function = the->stack;
-	if (function->kind != XS_HOST_FUNCTION_KIND) {
-		function = fxGetInstance(the, the->stack);
-		if (!mxIsCallable(function)) {
-			mxTypeError("C: xsCall: no function");
-		}
+	txSlot functionSlot = the->stack[0];
+	txSlot thisSlot = the->stack[1];
+	txInteger c = (the->stack + 2)->value.integer, i;
+	fxOverflow(the, -3, C_NULL, 0);
+	the->stack -= 3;
+	for (i = 0; i < c; i++) {
+		the->stack[i] = the->stack[6 + i];
 	}
-#else
-	txSlot* function = fxGetInstance(the, the->stack);
-	if (!mxIsCallable(function))
-		mxTypeError("C: xsCall: no function");
-#endif
-	/* TARGET */
-	mxPushUndefined();
-	/* RESULT */
-	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	the->stack[c] = mxUndefined; // COUNT
+	the->stack[c + 1] = mxUndefined; // FRAME
+	the->stack[c + 2] = mxUndefined; // RESULT
+	the->stack[c + 3] = mxUndefined; // TARGET
+	the->stack[c + 4] = functionSlot; // FUNCTION
+	the->stack[c + 5] = thisSlot; // THIS
+	fxRunID(the, C_NULL, c);
 }
 
 void fxCallID(txMachine* the, txInteger theID)
@@ -1098,22 +1096,20 @@ void fxCallID(txMachine* the, txInteger theID)
 
 void fxNew(txMachine* the)
 {
-	txSlot* function;
-	function = fxGetInstance(the, the->stack);
-	if (!mxIsCallable(function))
-		mxTypeError("C: xsNew: no function");
-	/* THIS */
-	mxPushUninitialized();
-	/* FUNCTION */
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	/* TARGET */
-	--(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	/* RESULT */
-	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	txSlot functionSlot = the->stack[0];
+	txInteger c = (the->stack + 1)->value.integer, i;
+	fxOverflow(the, -4, C_NULL, 0);
+	the->stack -= 4;
+	for (i = 0; i < c; i++) {
+		the->stack[i] = the->stack[6 + i];
+	}
+	the->stack[c] = mxUndefined; // COUNT
+	the->stack[c + 1] = mxUndefined; // FRAME
+	the->stack[c + 2] = mxUndefined; // RESULT
+	the->stack[c + 3] = functionSlot; // TARGET
+	the->stack[c + 4] = functionSlot; // FUNCTION
+	the->stack[c + 5].kind = XS_UNINITIALIZED_KIND; // THIS
+	fxRunID(the, C_NULL, c);
 }
 
 void fxNewID(txMachine* the, txInteger theID)
@@ -1167,11 +1163,10 @@ txBoolean fxRunTest(txMachine* the)
 
 void fxVars(txMachine* the, txInteger theCount)
 {
-	txSlot* environment = the->frame - 1;
-	if (environment != the->stack)
+	if (the->scope != the->stack)
 		mxSyntaxError("C: xsVars: too late");
 	fxOverflow(the, theCount, C_NULL, 0);
-	environment->value.environment.variable.count = theCount;
+	the->scope->value.environment.variable.count = theCount;
 	while (theCount) {
 		mxPushUndefined();
 		theCount--;
@@ -1180,23 +1175,11 @@ void fxVars(txMachine* the, txInteger theCount)
 
 txInteger fxCheckArg(txMachine* the, txInteger theIndex)
 {
-	txInteger aCount = mxArgc;
 #if mxBoundsCheck
-#if !mxOptimize
-	if ((theIndex < 0) || (aCount <= theIndex))
+	if ((theIndex < 0) || (mxArgc <= theIndex))
 		mxSyntaxError("C: xsArg(%ld): invalid index", theIndex);
-	return aCount - 1 - theIndex;
-#else
-	aCount -= theIndex;
-	if (aCount >= 0)
-		return aCount - 1;
-
-	mxSyntaxError("C: xsArg(%ld): invalid index", theIndex);
-	return 0;			// never happens
 #endif
-#else
-	return aCount - theIndex - 1;
-#endif
+	return theIndex;
 }
 
 txInteger fxCheckVar(txMachine* the, txInteger theIndex)

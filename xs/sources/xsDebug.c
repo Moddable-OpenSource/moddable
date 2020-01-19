@@ -240,22 +240,19 @@ void fxDebugImport(txMachine* the, txString path)
     }
 }
 
-void fxDebugLine(txMachine* the)
+void fxDebugLine(txMachine* the, txID id, txInteger line)
 {
-	txSlot* environment = the->frame - 1;
-	if (environment->ID != XS_NO_ID) {
-		txSlot* breakpoint = C_NULL;
-		breakpoint = mxBreakpoints.value.list.first;
-		while (breakpoint) {
-			if ((breakpoint->ID == environment->ID) && (breakpoint->value.integer == environment->value.environment.line))
-				break;
-			breakpoint = breakpoint->next;
-		}
-		if (breakpoint)
-			fxDebugLoop(the, C_NULL, 0, "breakpoint");
-		else if ((the->frame->flag & XS_STEP_OVER_FLAG))
-			fxDebugLoop(the, C_NULL, 0, "step");
+	txSlot* breakpoint = C_NULL;
+	breakpoint = mxBreakpoints.value.list.first;
+	while (breakpoint) {
+		if ((breakpoint->ID == id) && (breakpoint->value.integer == line))
+			break;
+		breakpoint = breakpoint->next;
 	}
+	if (breakpoint)
+		fxDebugLoop(the, C_NULL, 0, "breakpoint");
+	else if ((the->frame->flag & XS_STEP_OVER_FLAG))
+		fxDebugLoop(the, C_NULL, 0, "step");
 }
 
 void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message)
@@ -283,7 +280,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	fxEcho(the, "<break");
 	frame = the->frame;
 	while (frame && !path) {
-		txSlot* environment = frame - 1;
+		txSlot* environment = mxFrameToEnvironment(frame);
 		if (environment->ID != XS_NO_ID) {
 			path = fxGetKeyName(the, environment->ID);
 			line = environment->value.environment.line;
@@ -787,7 +784,7 @@ void fxDebugThrow(txMachine* the, txString path, txInteger line, txString messag
 	else {
 		txSlot* frame = the->frame;
 		while (frame && !path) {
-			txSlot* environment = frame - 1;
+			txSlot* environment = mxFrameToEnvironment(frame);
 			if (environment->ID != XS_NO_ID) {
 				path = fxGetKeyName(the, environment->ID);
 				line = environment->value.environment.line;
@@ -948,7 +945,7 @@ void fxEchoFrameName(txMachine* the, txSlot* theFrame)
 void fxEchoFramePathLine(txMachine* the, txSlot* theFrame)
 {
 	if (theFrame) {
-		txSlot* environment = theFrame - 1;
+		txSlot* environment = mxFrameToEnvironment(theFrame);
 		if (environment->ID != XS_NO_ID)
 			fxEchoPathLine(the, fxGetKeyName(the, environment->ID), environment->value.environment.line);
 	}
@@ -1706,13 +1703,13 @@ void fxListLocal(txMachine* the)
 	fxEchoProperty(the, frame + 4, &aList, "this", -1, C_NULL);
 	if (frame->flag & XS_C_FLAG) {
 		txInteger aCount, anIndex;
-		aCount = (frame + 5)->value.integer;
+		aCount = mxArgc;
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, frame + 5 + aCount - anIndex, &aList, "arg(", anIndex, ")");
+			fxEchoProperty(the, mxArgv(anIndex), &aList, "arg(", anIndex, ")");
 		}
-		aCount = (frame - 1)->value.environment.variable.count;
+		aCount = mxVarc;
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, frame - 2 - anIndex, &aList, "var(", anIndex, ")");
+			fxEchoProperty(the, mxVarv(anIndex), &aList, "var(", anIndex, ")");
 		}
 	}
 	else {
@@ -1728,7 +1725,7 @@ void fxListLocal(txMachine* the)
 				aScope = current->value.frame.scope;
 		}
 		if (aScope) {
-			txSlot* aSlot = frame - 1;
+			txSlot* aSlot = mxFrameToEnvironment(frame);
 			txInteger id;
 			while (aSlot > aScope) {
 				aSlot--;
@@ -1945,7 +1942,7 @@ void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, 
 		txInteger line = 0;
 		txSlot* frame = the->frame;
 		while (frame && !path) {
-			txSlot* environment = frame - 1;
+			txSlot* environment = mxFrameToEnvironment(frame);
 			if (environment->ID != XS_NO_ID) {
 				path = fxGetKeyName(the, environment->ID);
 				line = environment->value.environment.line;

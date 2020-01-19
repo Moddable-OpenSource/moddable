@@ -552,19 +552,14 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 		slot->value.reference = reaction;
 	}
 	else {
-		slot = mxPromiseResult(promise);
-		mxPushSlot(slot);
-		/* COUNT */
-		mxPushInteger(1);
-		/* THIS */
 		mxPushReference(reaction);
-		/* FUNCTION */
 		if (status->value.integer == mxFulfilledStatus)
 			mxPush(mxOnResolvedPromiseFunction);
 		else
 			mxPush(mxOnRejectedPromiseFunction);
-        /* TARGET */
-		mxPushUndefined();
+		slot = mxPromiseResult(promise);
+		mxPushSlot(slot);
+		mxPushInteger(1);
 		fxQueueJob(the, promise->next->ID);
 	}
 	mxPop(); // reaction
@@ -618,15 +613,10 @@ void fxRejectPromise(txMachine* the)
 	result->value = argument->value;
 	slot = mxPromiseThens(promise)->value.reference->next;
 	while (slot) {
-		mxPushSlot(argument);
-		/* COUNT */
-		mxPushInteger(1);
-		/* THIS */
 		mxPushReference(slot->value.reference);
-		/* FUNCTION */
 		mxPush(mxOnRejectedPromiseFunction);
-		/* TARGET */
-		mxPushUndefined();
+		mxPushSlot(argument);
+		mxPushInteger(1);
 		fxQueueJob(the, promise->next->ID);
 		slot = slot->next;
 	}
@@ -665,19 +655,12 @@ void fxResolvePromise(txMachine* the)
 #ifdef mxPromisePrint
 	fprintf(stderr, "fxResolvePromise then %d\n", promise->next->ID);
 #endif
+				mxPushSlot(argument);
+				mxPush(mxOnThenableFunction);
 				fxPushPromiseFunctions(the, promise);
 				mxPushSlot(slot);
-				/* COUNT */
 				mxPushInteger(3);
-				/* THIS */
-				mxPushSlot(argument);
-				/* FUNCTION */
-				mxPush(mxOnThenableFunction);
-				/* TARGET */
-				mxPushUndefined();
 				fxQueueJob(the, promise->next->ID);
-				mxPop();
-				mxPop();
 				goto bail;
 			}
 			mxPop();
@@ -687,15 +670,10 @@ void fxResolvePromise(txMachine* the)
 		result->value = argument->value;
 		slot = mxPromiseThens(promise)->value.reference->next;
 		while (slot) {
-			mxPushSlot(result);
-			/* COUNT */
-			mxPushInteger(1);
-			/* THIS */
 			mxPushReference(slot->value.reference);
-			/* FUNCTION */
 			mxPush(mxOnResolvedPromiseFunction);
-			/* TARGET */
-			mxPushUndefined();
+			mxPushSlot(result);
+			mxPushInteger(1);
 			fxQueueJob(the, promise->next->ID);
 			slot = slot->next;
 		}
@@ -710,15 +688,10 @@ bail:
 		mxException = mxUndefined;
 		slot = mxPromiseThens(promise)->value.reference->next;
 		while (slot) {
-			mxPushSlot(result);
-			/* COUNT */
-			mxPushInteger(1);
-			/* THIS */
 			mxPushReference(slot->value.reference);
-			/* FUNCTION */
 			mxPush(mxOnRejectedPromiseFunction);
-			/* TARGET */
-			mxPushUndefined();
+			mxPushSlot(result);
+			mxPushInteger(1);
 			fxQueueJob(the, promise->next->ID);
 			slot = slot->next;
 		}
@@ -733,6 +706,7 @@ void fx_Promise(txMachine* the)
 	txSlot* promise;
 	txSlot* argument;
 	txSlot* status;
+	txSlot* resolveFunction;
 	txSlot* rejectFunction;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: Promise");
@@ -751,9 +725,12 @@ void fx_Promise(txMachine* the)
 	status = mxPromiseStatus(promise);
 	status->value.integer = mxPendingStatus;
 	fxPushPromiseFunctions(the, promise);
+	resolveFunction = the->stack + 1;
 	rejectFunction = the->stack;
 	{
 		mxTry(the) {
+			mxPushSlot(resolveFunction);
+			mxPushSlot(rejectFunction);
 			/* COUNT */
 			mxPushInteger(2);
 			/* THIS */
@@ -1079,10 +1056,10 @@ void fx_Promise_prototype_then(txMachine* the)
 
 void fxQueueJob(txMachine* the, txID id)
 {
-	txInteger count, index;
 	txSlot* job;
 	txSlot* stack;
 	txSlot* slot;
+	txInteger count;
 	txSlot** address;
 	
 	if (mxPendingJobs.value.reference->next == NULL) {
@@ -1092,49 +1069,38 @@ void fxQueueJob(txMachine* the, txID id)
 	fprintf(stderr, "fxQueueJob %d\n", id);
 #endif
 	job = fxNewInstance(the);
-	stack = the->stack + 4;
+	stack = the->stack + 1;
+	count = stack->value.integer;
+	stack += 1 + count + 1;
 	slot = job->next = fxNewSlot(the);
-	slot->ID = id;
-	slot->kind = XS_INTEGER_KIND;
-	count = slot->value.integer = stack->value.integer;
-	stack += count;
-	for (index = 0; index < count; index++) {
+	slot->kind = stack->kind;
+	slot->value = stack->value;
+	stack--;
+	slot = slot->next = fxNewSlot(the);
+	slot->kind = stack->kind;
+	slot->value = stack->value;
+	stack--;
+	while (count > 0) {
 		slot = slot->next = fxNewSlot(the);
 		slot->kind = stack->kind;
 		slot->value = stack->value;
+		count--;
 		stack--;
 	}
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	stack--;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	stack--;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	stack--;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	
 	address = &(mxPendingJobs.value.reference->next);
 	while ((slot = *address)) 
 		address = &(slot->next);
 	slot = *address = fxNewSlot(the);	
 	slot->kind = XS_REFERENCE_KIND;
 	slot->value.reference = job;
-	the->stack += 5 + count;
+	the->stack += 2 + count + 2;
 }
 
 void fxRunPromiseJobs(txMachine* the)
 {
-	txInteger count, index;
 	txSlot* job;
 	txSlot* slot;
-	txID id;
+	txInteger count;
 	
 #ifdef mxPromisePrint
 	fprintf(stderr, "\n# fxRunPromiseJobs\n");
@@ -1143,28 +1109,27 @@ void fxRunPromiseJobs(txMachine* the)
 	mxPendingJobs.value.reference->next = C_NULL;
 	while (job) {
 		mxTry(the) {
+            /* THIS */
 			slot = job->value.reference->next;
-			id = slot->ID;
-			count = slot->value.integer;
-			for (index = 0; index < count; index++) {
-				slot = slot->next;
-				mxPushSlot(slot);
-			}
-			/* COUNT */
-			slot = slot->next;
-			mxPushSlot(slot);
-			/* THIS */
-			slot = slot->next;
 			mxPushSlot(slot);
 			/* FUNCTION */
 			slot = slot->next;
 			mxPushSlot(slot);
 			/* TARGET */
-			slot = slot->next;
-			mxPushSlot(slot);
+			mxPushUndefined();
 			/* RESULT */
 			mxPushUndefined();
-			fxRunID(the, C_NULL, id);
+			mxPushUndefined();
+			mxPushUndefined();
+			/* ARGUMENTS */
+			count = 0;
+			slot = slot->next;
+			while (slot) {
+				mxPushSlot(slot);
+				count++;
+				slot = slot->next;
+			}
+			fxRunID(the, C_NULL, count);
 			the->stack++;
 			fxEndJob(the);
 		}

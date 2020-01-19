@@ -309,6 +309,16 @@ void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
 void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments)
 {
 	txInteger c, i;
+	/* THIS */
+	mxPushSlot(_this);
+	/* FUNCTION */
+	mxPushReference(instance);
+	/* TARGET */
+	mxPushUndefined();
+	/* RESULT */
+	mxPushUndefined();
+	mxPushUndefined();
+	mxPushUndefined();
 	mxPushSlot(arguments);
 	fxGetID(the, mxID(_length));
 	c = fxToInteger(the, the->stack);
@@ -317,29 +327,13 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 		mxPushSlot(arguments);
 		fxGetID(the, (txID)i);
 	}
-	/* ARGC */
-	mxPushInteger(c);
-	/* THIS */
-	mxPushSlot(_this);
-	/* FUNCTION */
-	mxPushReference(instance);
-	fxCall(the);
+	fxRunID(the, C_NULL, c);
 	mxPullSlot(mxResult);
 }
 
 void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target)
 {
 	txInteger c, i;
-	mxPushSlot(arguments);
-	fxGetID(the, mxID(_length));
-	c = fxToInteger(the, the->stack);
-	the->stack++;
-	for (i = 0; i < c; i++) {
-		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
-	}
-	/* ARGC */
-	mxPushInteger(c);
 	/* THIS */
 	mxPushUninitialized();
 	/* FUNCTION */
@@ -348,7 +342,18 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	mxPushSlot(target);
 	/* RESULT */
 	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	mxPushUndefined();
+	mxPushUndefined();
+	/* ARGUMENTS */
+	mxPushSlot(arguments);
+	fxGetID(the, mxID(_length));
+	c = fxToInteger(the, the->stack);
+	the->stack++;
+	for (i = 0; i < c; i++) {
+		mxPushSlot(arguments);
+		fxGetID(the, (txID)i);
+	}
+	fxRunID(the, C_NULL, c);
 	mxPullSlot(mxResult);
 }
 
@@ -1127,16 +1132,17 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 void fxRunEvalEnvironment(txMachine* the)
 {
-	txSlot* function = (the->frame + 3);
+	txSlot* function = mxFunction;
 	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
 	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
 	txSlot* global = mxRealmGlobal(realm)->value.reference;
-	txSlot* top = the->frame - 2;
+	txSlot* top = mxFrameToEnvironment(the->frame);
 	txSlot* bottom = the->scope;
 	txSlot* slot;
 	txSlot* property;
-	txSlot* currentEnvironment = (the->frame - 1)->value.reference;
+	txSlot* currentEnvironment = top->value.reference;
 	txSlot* varEnvironment = currentEnvironment;
+	top--;
 	while (varEnvironment) {
 		property = varEnvironment->next;
 		if (property->kind == XS_NULL_KIND)
@@ -1211,21 +1217,22 @@ void fxRunEvalEnvironment(txMachine* the)
 			slot--;
 		}
 	}
-	the->stack = the->scope = the->frame - 1;
+	the->stack = the->scope = top + 1;
 }
 
 void fxRunProgramEnvironment(txMachine* the)
 {
-	txSlot* function = (the->frame + 3);
+	txSlot* function = mxFunction;
 	txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
 	txSlot* realm = mxModuleInstanceInternal(module)->value.module.realm;
 	txSlot* environment = mxRealmClosures(realm)->value.reference;
 	txSlot* global = mxRealmGlobal(realm)->value.reference;
-	txSlot* top = the->frame - 2;
+	txSlot* top = mxFrameToEnvironment(the->frame);
 	txSlot* middle = C_NULL;
 	txSlot* bottom = the->scope;
 	txSlot* slot;
 	txSlot* property;
+	top--;
 	slot = top;
 	while (slot >= bottom) {
 		if (slot->kind == XS_CLOSURE_KIND) {

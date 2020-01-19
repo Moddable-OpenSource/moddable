@@ -625,7 +625,7 @@ txInteger fxPrepareHeap(txMachine* the)
 						else if ((property->kind == XS_CALLBACK_KIND) || (property->kind == XS_CALLBACK_X_KIND) || (property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND)) {
 							fxPrepareInstance(the, slot);
 							if (linker->freezeFlag) {
-								if (slot->flag & XS_CAN_CONSTRUCT_FLAG /*(XS_BASE_FLAG | XS_DERIVED_FLAG)*/) {
+								if (slot->flag & XS_CAN_CONSTRUCT_FLAG) {
 									property = property->next;
 									while (property) {
 										if ((property->ID == mxID(_prototype)) && (property->kind == XS_REFERENCE_KIND)) {

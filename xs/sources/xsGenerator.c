@@ -416,7 +416,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 		mxTry(the) {
 			the->status = status;
 			state->value.integer = XS_NO_CODE;
-			fxRunID(the, generator, 0);
+			fxRunID(the, generator, XS_NO_ID);
 			if (state->value.integer == XS_NO_CODE)
 				state->value.integer = XS_CODE_END;
 			value = the->stack;

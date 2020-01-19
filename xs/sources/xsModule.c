@@ -1233,60 +1233,70 @@ txBoolean fxModuleSetPrototype(txMachine* the, txSlot* instance, txSlot* prototy
 
 void fx_Module(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
+	txInteger c = the->stack->value.integer, i;
+	txSlot* argument = the->stack + c;
+	txSlot* result = the->stack + c;
 	txSlot* slot;
 	txSlot* property;
-	slot = mxArgv(0);
-	property = mxModuleFunction(mxThis);	
+	slot = argument--;
+	property = mxModuleInstanceFunction(module);	
 	property->kind = slot->kind;
 	property->value = slot->value;
 	slot = &mxHosts;	
-	property = mxModuleHosts(mxThis);	
+	property = mxModuleInstanceHosts(module);	
 	property->kind = slot->kind;
 	property->value = slot->value;
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	for (i = 1; i < c; i++)
-		slot = fxNextSlotProperty(the, slot, mxArgv(i), XS_NO_ID, XS_DONT_ENUM_FLAG);
-	property = mxModuleTransfers(mxThis);	
+		slot = fxNextSlotProperty(the, slot, argument--, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	property = mxModuleInstanceTransfers(module);	
 	mxPullSlot(property);
-	*mxResult = *mxThis;
+	result->kind = XS_REFERENCE_KIND;
+	result->value.reference = module;
+	the->stack = result;
 }
 
 void fx_Transfer(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txInteger c = the->stack->value.integer, i;
+	txSlot* argument = the->stack + c;
+	txSlot* result = the->stack + c;
 	txSlot* property;
 	txSlot* slot;
 	mxPush(mxTransferPrototype);
 	property = fxNewObjectInstance(the);
-	mxPullSlot(mxResult);
-	property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_local), XS_DONT_ENUM_FLAG);
-	property = fxNextSlotProperty(the, property, mxArgv(1), mxID(_from), XS_DONT_ENUM_FLAG);
-	property = fxNextSlotProperty(the, property, mxArgv(2), mxID(_import), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, argument--, mxID(_local), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, argument--, mxID(_from), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, argument--, mxID(_import), XS_DONT_ENUM_FLAG);
 	if (c > 3) {
 		mxPush(mxObjectPrototype);
 		slot = fxLastProperty(the, fxNewObjectInstance(the));
 		for (i = 3; i < c; i++)
-			slot = fxNextSlotProperty(the, slot, mxArgv(i), XS_NO_ID, XS_DONT_ENUM_FLAG);
+			slot = fxNextSlotProperty(the, slot, argument--, XS_NO_ID, XS_DONT_ENUM_FLAG);
 		property = fxNextSlotProperty(the, property, the->stack, mxID(_aliases), XS_DONT_ENUM_FLAG);
-		the->stack++;
+		mxPop();
 	}
 	else {
 		property = fxNextNullProperty(the, property, mxID(_aliases), XS_DONT_ENUM_FLAG);
 	}
 	property = fxNextNullProperty(the, property, mxID(_closure), XS_DONT_ENUM_FLAG);
-#ifdef mxDebug
-	slot = the->frame->next;
-	if (slot) {
-		slot = slot - 1;
-		if (slot->next) {
-			property = fxNextSlotProperty(the, property, slot->next, XS_NO_ID, XS_DONT_ENUM_FLAG);
-			property = fxNextIntegerProperty(the, property, slot->ID, XS_NO_ID, XS_DONT_ENUM_FLAG);
-		}
-	}
-#endif
+	result->kind = the->stack->kind;
+	result->value = the->stack->value;
+	the->stack = result;
+	
+// #ifdef mxDebug
+// 	slot = the->frame->next;
+// 	if (slot) {
+// 		slot = slot - 1;
+// 		if (slot->next) {
+// 			property = fxNextSlotProperty(the, property, slot->next, XS_NO_ID, XS_DONT_ENUM_FLAG);
+// 			property = fxNextIntegerProperty(the, property, slot->ID, XS_NO_ID, XS_DONT_ENUM_FLAG);
+// 		}
+// 	}
+// #endif
 }
 
 void fx_Compartment(txMachine* the)

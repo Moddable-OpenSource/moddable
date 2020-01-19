@@ -134,6 +134,7 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	txSlot* property;
 
 	instance = fxNewObjectInstance(the);
+	instance->flag |= XS_CAN_CALL_FLAG;
 
 	/* CODE */
 	property = instance->next = fxNewSlot(the);
@@ -429,26 +430,6 @@ void fx_Function_prototype_bound(txMachine* the)
 	txSlot* boundArguments;
 	txInteger c, i;
 	txSlot* argument;
-	mxPush(*mxFunction);
-	fxGetID(the, mxID(_boundArguments));
-	if (the->stack->kind == XS_REFERENCE_KIND) {
-		boundArguments = fxGetInstance(the, the->stack);
-		mxPop();
-		c = boundArguments->next->value.array.length;
-		argument = boundArguments->next->value.array.address;
-		for (i = 0; i < c; i++) {
-			mxPushSlot(argument);
-			argument++;
-		}
-	}
-	else {
-		mxPop();
-		c = 0;
-	}
-	for (i = 0; i < mxArgc; i++)
-		mxPushSlot(mxArgv(i));
-	/* ARGC */
-	mxPushInteger(c + i);
 	/* THIS */
 	if (mxTarget->kind == XS_UNDEFINED_KIND) {
 		mxPushSlot(mxFunction);
@@ -468,7 +449,28 @@ void fx_Function_prototype_bound(txMachine* the)
 		mxPushSlot(mxTarget);
 	/* RESULT */
 	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	mxPushUndefined();
+	mxPushUndefined();
+	/* ARGUMENTS */
+	mxPushSlot(mxFunction);
+	fxGetID(the, mxID(_boundArguments));
+	if (the->stack->kind == XS_REFERENCE_KIND) {
+		boundArguments = fxGetInstance(the, the->stack);
+		mxPop();
+		c = boundArguments->next->value.array.length;
+		argument = boundArguments->next->value.array.address;
+		for (i = 0; i < c; i++) {
+			mxPushSlot(argument);
+			argument++;
+		}
+	}
+	else {
+		mxPop();
+		c = 0;
+	}
+	for (i = 0; i < mxArgc; i++)
+		mxPushSlot(mxArgv(i));
+	fxRunID(the, C_NULL, c + i);
 	mxPullSlot(mxResult);
 }
 

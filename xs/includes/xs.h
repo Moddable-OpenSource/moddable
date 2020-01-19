@@ -939,14 +939,14 @@ struct xsHostHooksStruct {
 
 #define xsVars(_COUNT) fxVars(the, _COUNT)
 
-#define xsArg(_INDEX) (the->frame[6 + fxCheckArg(the, _INDEX)])
-#define xsArgc (the->frame[5])
 #define xsThis (the->frame[4])
 #define xsFunction (the->frame[3])
 #define xsTarget (the->frame[2])
 #define xsResult (the->frame[1])
-#define xsVarc (the->frame[-1])
-#define xsVar(_INDEX) (the->frame[-2 - fxCheckVar(the, _INDEX)])
+#define xsArgc (the->frame[-1])
+#define xsArg(_INDEX) (the->frame[-2 - fxCheckArg(the, _INDEX)])
+#define xsVarc (the->scope[0])
+#define xsVar(_INDEX) (the->scope[-1 - fxCheckVar(the, _INDEX)])
 	
 /* Garbage Collector */
 

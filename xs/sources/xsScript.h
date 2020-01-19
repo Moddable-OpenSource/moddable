@@ -919,6 +919,8 @@ enum {
 	mxYieldFlag = 1 << 30,
 	mxYieldingFlag = 1 << 31,
 	
+	mxEvalParametersFlag = 1 << 25,
+
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,
 };
@@ -1119,6 +1121,7 @@ extern void fxObjectBindingNodeCodeAssign(void* it, void* param);
 extern void fxOptionNodeCode(void* it, void* param); 
 extern void fxOptionNodeCodeThis(void* it, void* param);
 extern void fxOrExpressionNodeCode(void* it, void* param); 
+extern void fxParamsNodeCode(void* it, void* param);
 extern void fxParamsBindingNodeCode(void* it, void* param); 
 extern void fxPostfixExpressionNodeCode(void* it, void* param); 
 extern void fxPrivateMemberNodeCode(void* it, void* param); 

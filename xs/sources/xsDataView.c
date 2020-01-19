@@ -1228,8 +1228,7 @@ void fx_TypedArray(txMachine* the)
 			txInteger arrayOffset = arrayView->value.dataView.offset;
 			txInteger offset = 0;
 			txInteger size = arrayLength << shift;
-			mxPushInteger(size);
-			mxPushInteger(1);
+			/* THIS */
 			mxPushUninitialized();	
 			/* FUNCTION */
 			mxPush(mxArrayBufferConstructor);
@@ -1243,8 +1242,13 @@ void fx_TypedArray(txMachine* the)
 				mxPush(mxArrayBufferConstructor);
 			/* RESULT */
 			mxPushUndefined();	
-			fxRunID(the, C_NULL, XS_NO_ID);
+			mxPushUndefined();	
+			mxPushUndefined();	
+			/* ARGUMENTS */
+			mxPushInteger(size);
+			fxRunID(the, C_NULL, 1);
 			mxPullSlot(buffer);
+			
 			arrayData = fxCheckArrayBufferDetached(the, arrayBuffer, XS_IMMUTABLE);
 			data = fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
 			view->value.dataView.offset = offset;

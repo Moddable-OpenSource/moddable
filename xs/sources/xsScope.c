@@ -399,7 +399,7 @@ void fxCallNodeHoist(void* it, void* param)
 			fxScopeEval(hoister->scope);
 			hoister->functionScope->node->flags |= mxArgumentsFlag | mxEvalFlag;
 			hoister->environmentNode->flags |= mxEvalFlag;
-			self->scope = hoister->scope;
+			self->params->flags |= mxEvalParametersFlag;
 		}
 	}
 	fxNodeDispatchHoist(self->reference, param);
