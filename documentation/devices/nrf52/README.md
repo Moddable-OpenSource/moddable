@@ -88,7 +88,7 @@ The following environment variables can be modified to suit your environment.
 
 Variable | Default | Description 
 --- | ------- | -----
-`NRF52_GCC_ROOT` | `$HOME/opt/gcctoolchain` | root of the gcc toolchain. Should include `arm-non-eabi`, `bin`, etc.
+`NRF52_GCC_ROOT` | `$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major` | root of the gcc toolchain. Should include `arm-non-eabi`, `bin`, etc.
 `GNU_VERSION` | `8.2.1` | version of the gcc toolchain
 
 Download from the [gcc toolchain][gcctoolchain] site.
