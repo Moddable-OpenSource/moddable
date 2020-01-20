@@ -37,11 +37,19 @@ typedef struct {
 	char path[1];
 } iteratorRecord, *iter;
 
+static FILE* getFile(xsMachine* the)
+{
+	FILE* result = xsmcGetHostData(xsThis);
+	if (!result)
+		xsUnknownError("closed");
+	return result;
+}
+
 void xs_file_destructor(void *data)
 {
-	if (data && ((uintptr_t)-1 != (uintptr_t)data)) {
+	if (data) {
+		fclose((FILE*)data);
 		modInstrumentationAdjust(Files, -1);
-		fclose((FILE *)data);
 	}
 }
 
@@ -67,19 +75,16 @@ void xs_File(xsMachine *the)
 
 void xs_file_read(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = (FILE*)data;
+	FILE* file = getFile(the);
 	int32_t result;
 	int argc = xsmcArgc;
 	int dstLen = (argc < 2) ? -1 : xsmcToInteger(xsArg(1));
 	void *dst;
 	xsSlot *s1, *s2;
 	struct stat buf;
-	int fno;
 	int32_t position = ftell(file);
 
-	fno = _fileno(file);
-	fstat(fno, &buf);
+	fstat(_fileno(file), &buf);
 	if ((-1 == dstLen) || (buf.st_size < (position + dstLen))) {
 		if (position >= buf.st_size)
 			xsUnknownError("read past end of file");
@@ -107,84 +112,74 @@ void xs_file_read(xsMachine *the)
 
 void xs_file_write(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = ((FILE *)data);
+	FILE* file = getFile(the);
 	int32_t result;
 	int argc = xsmcArgc, i;
 
 	for (i = 0; i < argc; i++) {
-		uint8_t *src;
+		uint8_t* src;
 		int32_t srcLen;
+		int type = xsmcTypeOf(xsArg(i));
+		uint8_t temp;
 
-		if (xsStringType == xsmcTypeOf(xsArg(i))) {
-			src = (uint8_t *)xsmcToString(xsArg(i));
-			srcLen = strlen((char *)src);
+		if (xsStringType == type) {
+			src = xsmcToString(xsArg(i));
+			srcLen = c_strlen(src);
+		}
+		else if ((xsIntegerType == type) || (xsNumberType == type)) {
+			temp = (uint8_t)xsmcToInteger(xsArg(i));
+			src = &temp;
+			srcLen = 1;
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
 			srcLen = xsGetArrayBufferLength(xsArg(i));
 		}
 
-		while (srcLen) {	// spool through RAM for data in flash
-			unsigned char *buffer[128];
-			int use = (srcLen <= (int)sizeof(buffer)) ? srcLen : 128;
-
-			memcpy(buffer, src, use);
-			src += use;
-			srcLen -= use;
-
-			result = fwrite(buffer, 1, use, file);
-			if (result != use)
-				xsUnknownError("file write failed");
-			result = fflush(file);
-			if (0 != result)
-				xsUnknownError("file flush failed");
-		}
+		result = fwrite(src, 1, srcLen, file);
+		if (result != srcLen)
+			xsUnknownError("file write failed");
 	}
+	result = fflush(file);
+	if (0 != result)
+		xsUnknownError("file flush failed");
 }
 
 void xs_file_close(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = ((FILE*)data);
-	xs_file_destructor((void *)((int)file));
-	xsmcSetHostData(xsThis, (void *)NULL);
+	FILE* file = getFile(the);
+	xs_file_destructor((void*)((uintptr_t)file));
+	xsmcSetHostData(xsThis, (void*)NULL);
 }
 
 void xs_file_get_length(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = (FILE*)data;
+	FILE* file = getFile(the);
 	struct stat buf;
-	int fno;
 
-	fno = _fileno(file);
-	fstat(fno, &buf);
+	fstat(fileno(file), &buf);
 	xsResult = xsInteger(buf.st_size);
 }
 
 void xs_file_get_position(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = (FILE*)data;
+	FILE* file = getFile(the);
 	int32_t position = ftell(file);
 	xsResult = xsInteger(position);
 }
 
 void xs_file_set_position(xsMachine *the)
 {
-	void *data = xsmcGetHostData(xsThis);
-	FILE *file = ((FILE*)data);
+	FILE* file = getFile(the);
 	int32_t position = xsmcToInteger(xsArg(0));
 	fseek(file, position, SEEK_SET);
 }
 
 void xs_file_delete(xsMachine *the)
 {
-	char path[PATH_MAX];
 	int32_t result;
+	char* path = xsmcToString(xsArg(0));
 
-	xsmcToStringBuffer(xsArg(0), path, PATH_MAX);
 	result = _unlink(path);
 
 	xsResult = xsBoolean(result == 0);
@@ -192,11 +187,10 @@ void xs_file_delete(xsMachine *the)
 
 void xs_file_exists(xsMachine *the)
 {
-	char *path;
 	struct stat buf;
 	int32_t result;
+	char* path = xsmcToString(xsArg(0));
 
-	path = xsmcToString(xsArg(0));
 	result = stat(path, &buf);
 
 	xsResult = xsBoolean(result == 0);
@@ -204,12 +198,13 @@ void xs_file_exists(xsMachine *the)
 
 void xs_file_rename(xsMachine *the)
 {
-	char *path;
-	char *name;
+	char* path;
+	char name[PATH_MAX + 1];
 	int32_t result;
 
+	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
 	path = xsmcToString(xsArg(0));
-	name = xsmcToString(xsArg(1));
+
 	result = rename(path, name);
 
 	xsResult = xsBoolean(result == 0);
@@ -223,6 +218,8 @@ void xs_file_iterator_destructor(void *data)
 		if ((NULL != d->hFind) && (INVALID_HANDLE_VALUE != d->hFind))
 			FindClose(d->hFind);
 		free(d);
+
+		modInstrumentationAdjust(Files, -1);
 	}
 }
 
@@ -233,7 +230,7 @@ void xs_File_Iterator(xsMachine *the)
 	char *p;
 
 	p = xsmcToString(xsArg(0));
-	i = strlen(p);
+	i = c_strlen(p);
 	if (i == 0) {
 		xsUnknownError("no directory to iterate on");
 	}
@@ -241,9 +238,11 @@ void xs_File_Iterator(xsMachine *the)
 	strcpy(d->path, p);
 	if (p[i - 1] != '\\')
 		d->path[i] = '\\';
-	strcat(d->path, "*");
+	c_strcat(d->path, "*");
 
 	xsmcSetHostData(xsThis, d);
+
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_file_iterator_next(xsMachine *the)
@@ -268,8 +267,8 @@ void xs_file_iterator_next(xsMachine *the)
 			xsmcSetHostData(xsThis, NULL);
 			return;
 		}
-		if ((0 == strcmp(d->ffd.cFileName, ".")) ||
-			(0 == strcmp(d->ffd.cFileName, "..")) ||
+		if ((0 == c_strcmp(d->ffd.cFileName, ".")) ||
+			(0 == c_strcmp(d->ffd.cFileName, "..")) ||
 			(0 != (FILE_ATTRIBUTE_HIDDEN & d->ffd.dwFileAttributes)))
 			continue;
 		break;
