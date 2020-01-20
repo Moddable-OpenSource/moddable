@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,7 +22,7 @@
 	file
 */
 
-export class File @ "xs_file_destructor" {
+class File @ "xs_file_destructor" {
 	constructor(dictionary) @ "xs_File";
 
 	read(type, count) @ "xs_file_read";
@@ -39,7 +39,7 @@ export class File @ "xs_file_destructor" {
 	static rename(path, name) @ "xs_file_rename";
 };
 
-export class Iterator @ "xs_file_iterator_destructor" {
+class Iterator @ "xs_file_iterator_destructor" {
 	constructor(path) @ "xs_File_Iterator";
 	next() @ "xs_file_iterator_next";
 
@@ -55,11 +55,11 @@ export class Iterator @ "xs_file_iterator_destructor" {
 	}
 };
 
-export class System {
+class System {
 	static config() @ "xs_file_system_config";
 	static info() @ "xs_file_system_info";
 };
 
-export default {
-	File, Iterator, System
+export {
+	File as default, File, Iterator, System
 };
