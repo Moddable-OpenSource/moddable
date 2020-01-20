@@ -134,7 +134,7 @@ void xs_file_write(xsMachine *the)
 
 		if (xsStringType == type) {
 			src = xsmcToString(xsArg(i));
-			srcLen = strlen(src);
+			srcLen = c_strlen(src);
 		}
 		else if ((xsIntegerType == type) || (xsNumberType == type)) {
 			temp = (uint8_t)xsmcToInteger(xsArg(i));
@@ -278,7 +278,6 @@ void xs_file_iterator_next(xsMachine *the)
     iter d = xsmcGetHostData(xsThis);
     struct dirent *de;
     struct stat buf;
-    char path[SPIFFS_OBJ_NAME_LEN + 1];
 
     if (!d || !d->dir) return;
 
