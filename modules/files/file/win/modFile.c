@@ -64,7 +64,7 @@ void xs_File(xsMachine *the)
 	file = fopen(path, write ? "rb+" : "rb");
 	if (NULL == file) {
 		if (write)
-			file = fopen(path, "ab+");
+			file = fopen(path, "wb+");
 		if (NULL == file)
 			xsUnknownError("file not found");
 	}
@@ -157,7 +157,7 @@ void xs_file_get_length(xsMachine *the)
 	FILE* file = getFile(the);
 	struct stat buf;
 
-	fstat(fileno(file), &buf);
+	fstat(_fileno(file), &buf);
 	xsResult = xsInteger(buf.st_size);
 }
 
