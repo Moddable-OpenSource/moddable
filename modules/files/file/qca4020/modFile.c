@@ -122,28 +122,26 @@ void xs_file_write(xsMachine *the)
 	for (i = 0; i < argc; i++) {
 		uint8_t *src;
 		int32_t srcLen;
+		int type = xsmcTypeOf(xsArg(i));
+		uint8_t temp;
 
-		if (xsStringType == xsmcTypeOf(xsArg(i))) {
+		if (xsStringType == type) {
 			src = (uint8_t *)xsmcToString(xsArg(i));
 			srcLen = c_strlen((char *)src);
+		}
+		else if ((xsIntegerType == type) || (xsNumberType == type)) {
+			temp = (uint8_t)xsmcToInteger(xsArg(i));
+			src = &temp;
+			srcLen = 1;
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
 			srcLen = xsGetArrayBufferLength(xsArg(i));
 		}
 
-		while (srcLen) {	// spool through RAM for data in flash
-			uint8_t buffer[128];
-			int use = (srcLen <= (int)sizeof(buffer)) ? srcLen : 128;
-
-			c_memcpy(buffer, src, use);
-			src += use;
-			srcLen -= use;
-
-			result = qapi_Fs_Write(file->fd, buffer, use, &bytes_written);
-			if (QAPI_OK != result)
-				xsUnknownError("file write failed");
-		}
+		result = qapi_Fs_Write(file->fd, src, srcLen, &bytes_written);
+		if (QAPI_OK != result)
+			xsUnknownError("file write failed");
 	}
 }
 
