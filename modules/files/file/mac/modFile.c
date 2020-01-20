@@ -47,7 +47,7 @@ static FILE *getFile(xsMachine *the)
 void xs_file_destructor(void *data)
 {
 	if (data) {
-		((FILE *)data);
+		fclose((FILE *)data);
 
 		modInstrumentationAdjust(Files, -1);
 	}
@@ -217,6 +217,7 @@ void xs_file_iterator_destructor(void *data)
 		if (d->dir)
 			closedir(d->dir);
 		free(d);
+		modInstrumentationAdjust(Files, -1);
 	}
 }
 

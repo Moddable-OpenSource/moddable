@@ -19,6 +19,7 @@
  */
 
 #include "xsmc.h"
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"
 
@@ -223,6 +224,7 @@ void xs_file_iterator_destructor(void *data)
 		if (NULL != d->handle)
 			qapi_Fs_Iter_Close(d->handle);
 		free(d);
+		modInstrumentationAdjust(Files, -1);
 	}
 }
 
@@ -247,6 +249,8 @@ void xs_File_Iterator(xsMachine *the)
 		xsUnknownError("failed to open directory");
 
 	xsmcSetHostData(xsThis, d);
+
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_file_iterator_next(xsMachine *the)
