@@ -29,6 +29,7 @@ This document describes how to set up and build Moddable applications for the No
   * [Wiring the serial interface](#wiring-the-serial-interface)
   * [Start xsbug](#start-xsbug)
   * [Native debugging on Moddable Four](#native-debugging-on-moddable-four)
+* [Bootloader](#bootloader)
 * [Notes and troubleshooting](#notes-and-troubleshooting)
 * [Example apps with nrf52 support](#example-apps-with-qca4020-support)
 * [Reference Documentation](#reference-documentation)
@@ -292,6 +293,43 @@ FTDI GND to GND
 
 J-Link:Target Interface Type -> SWD
 
+### Bootloader
+
+Moddable Four uses a slightly modified [Adafruit nRF52 Bootloader][adafruitbootloader]. It is pre-installed and allows software and bootloader updates. There is no need to build the bootloader, as a pre-built version of the bootloader is included on the device and in the source tree.
+
+> Note: It is very unlikely you will need to build a bootloader and you can brick your device.
+
+For reference:
+
+Get the bootloader sources, enter the repository directory and update the submodules:
+
+```	
+	git clone https://github.com/adafruit/Adafruit_nRF52_Bootloader.git
+	cd Adafruit_nRF52_Bootloader
+	git submodule update --init --recursive
+```
+
+From the repository directory add the Moddable Four configuration:
+
+```
+	cp -r $MODDABLE/build/devices/nrf52/config/bootloader/moddable_four src/boards
+```
+
+Build the bootloader and combine with the softdevice:
+
+```
+	make BOARD=moddable_four all combinehex
+```
+
+With the board hooked up to a DK through SWD interface, flash to a Moddable Four:
+
+```
+	make BOARD=moddable_four flash
+```
+
+Remove the board from the programmer and it is ready for use.
+
+
 ### Notes and troubleshooting
 
 * if double-tapping the reset button doesn't put M4 into debug mode, try holding the **boot** button while pressing reset.
@@ -340,3 +378,4 @@ Of particular interest and referenced earlier in this document are:
 [jlinkdownload]:https://www.segger.com/downloads/jlink/
 
 [gcctoolchain]:https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
+[adafruitbootloader]:https://github.com/adafruit/Adafruit_nRF52_Bootloader

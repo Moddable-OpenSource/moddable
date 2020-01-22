@@ -1,0 +1,1 @@
+MCU_SUB_VARIANT = nrf52840
