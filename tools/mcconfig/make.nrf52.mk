@@ -91,7 +91,7 @@ CFLAGS += -Wall  # -Werror
 # CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
-CFLAGS += -fno-builtin -fno-short-enums
+CFLAGS += -fno-builtin
 CFLAGS += -DFREERTOS
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
 CFLAGS += -DS140
@@ -200,6 +200,9 @@ INC_DIRS += \
   $(SDK_ROOT)/components/libraries/memobj \
   $(SDK_ROOT)/components/libraries/log/src \
   $(SDK_ROOT)/components/libraries/sensorsim \
+  $(SDK_ROOT)/components/libraries/usbd \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
   $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
@@ -211,6 +214,7 @@ INC_DIRS += \
   $(SDK_ROOT)/components/ble/nrf_ble_scan \
   $(SDK_ROOT)/components/ble/peer_manager \
   $(SDK_ROOT)/external/fprintf \
+  $(SDK_ROOT)/external/utf_converter \
   $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/integration/nrfx \
   $(SDK_ROOT)/modules/nrfx \
@@ -379,6 +383,7 @@ NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
 
 NRF_DRIVERS = \
 	$(LIB_DIR)/nrf_drv_clock.c.o \
+	$(LIB_DIR)/nrf_drv_power.c.o \
 	$(LIB_DIR)/nrf_drv_spi.c.o \
 	$(LIB_DIR)/nrf_drv_twi.c.o \
 	$(LIB_DIR)/nrf_drv_uart.c.o \
@@ -386,10 +391,12 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_clock.c.o \
 	$(LIB_DIR)/nrfx_gpiote.c.o \
 	$(LIB_DIR)/nrfx_lpcomp.c.o \
+	$(LIB_DIR)/nrfx_power.c.o \
 	$(LIB_DIR)/nrfx_prs.c.o \
 	$(LIB_DIR)/nrfx_qdec.c.o \
 	$(LIB_DIR)/nrfx_saadc.c.o \
 	$(LIB_DIR)/nrfx_spim.c.o \
+	$(LIB_DIR)/nrfx_systick.c.o \
 	$(LIB_DIR)/nrfx_twim.c.o \
 	$(LIB_DIR)/nrfx_uart.c.o \
 	$(LIB_DIR)/nrfx_uarte.c.o \
@@ -437,6 +444,15 @@ NRF_SOFTDEVICE = \
 	$(LIB_DIR)/nrf_sdh_soc.c.o \
 	$(LIB_DIR)/nrf_sdh.c.o
 
+NRF_USBD = \
+	$(LIB_DIR)/app_usbd.c.o \
+	$(LIB_DIR)/app_usbd_cdc_acm.c.o \
+	$(LIB_DIR)/app_usbd_core.c.o \
+	$(LIB_DIR)/app_usbd_serial_num.c.o \
+	$(LIB_DIR)/app_usbd_string_desc.c.o \
+	$(LIB_DIR)/nrfx_usbd.c.o \
+	$(TMP_DIR)/debugger_usbd.c.o
+
 OBJECTS += \
 	$(BOARD_SUPPORT) \
 	$(SEGGER_RTT) \
@@ -449,7 +465,8 @@ OBJECTS += \
 	$(NRF_LOG_OBJECTS) \
 	$(NRF_DRIVERS) \
 	$(NRF_LIBRARIES) \
-	$(NRF_SOFTDEVICE)
+	$(NRF_SOFTDEVICE) \
+	$(NRF_USBD)
 
 OTHER_STUFF += \
 	boards_h
@@ -514,7 +531,6 @@ NRF_C_DEFINES= \
 	-DS140 \
 	-DSOFTDEVICE_PRESENT \
 	-Dnrf52 \
-    -fno-short-enums \
 
 C_DEFINES = \
 	$(NRF_C_DEFINES) \
@@ -529,7 +545,6 @@ C_FLAGS=\
 	-std=gnu99 \
 	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi \
 	-ffunction-sections -fdata-sections -fno-strict-aliasing \
-	-fno-short-enums \
 	-fno-common \
 	-fomit-frame-pointer \
 	-fno-dwarf2-cfi-asm \
@@ -577,6 +592,12 @@ C_FLAGS +=  \
 	-mtp=soft \
 	-munaligned-access \
 	-nostdinc \
+
+C_FLAGS_USBD := -fshort-enums $(C_FLAGS)
+C_DEFINES_USBD := -fshort-enums $(C_DEFINES)
+
+C_FLAGS := -fno-short-enums $(C_FLAGS)
+C_DEFINES := -fno-short-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
@@ -761,6 +782,18 @@ $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F) "(strings in flash)"
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
+$(LIB_DIR)/app_usbd.c.o: app_usbd.c
+	@echo "# library usbd: " $(<F)
+	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
+
+$(LIB_DIR)/app_usbd%.c.o: app_usbd%.c
+	@echo "# library usbd: " $(<F)
+	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
+
+$(LIB_DIR)/nrfx_usbd.c.o: nrfx_usbd.c
+	@echo "# library usbd: " $(<F)
+	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
+
 $(LIB_DIR)/%.c.o: %.c
 	@echo "# library: " $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
@@ -768,6 +801,10 @@ $(LIB_DIR)/%.c.o: %.c
 $(LIB_DIR)/%.S.o %.s.o: %.S
 	@echo "# asm " $(<F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
+
+$(TMP_DIR)/debugger_usbd.c.o: debugger_usbd.c
+	@echo "# application usbd: " $(<F)
+	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
 
 $(TMP_DIR)/%.c.o: %.c
 	@echo "# application: " $(<F)

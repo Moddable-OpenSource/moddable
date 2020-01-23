@@ -28,7 +28,7 @@
 #include "queue.h"
 #include "sdk_config.h"
 
-#if !defined(DEBUG_USBD)
+#if !USE_DEBUGGER_USBD
 
 #if NRF_LOG_ENABLED
 
@@ -234,5 +234,5 @@ void modLog_transmit(const char *msg) { }
 
 #endif	// !mxDebug
 
-#endif	// !defined(DEBUG_USBD) 
+#endif	// !USE_DEBUGGER_USBD 
 

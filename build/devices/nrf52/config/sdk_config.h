@@ -2194,7 +2194,7 @@
 // <e> NRFX_POWER_ENABLED - nrfx_power - POWER peripheral driver
 //==========================================================
 #ifndef NRFX_POWER_ENABLED
-#define NRFX_POWER_ENABLED 0
+#define NRFX_POWER_ENABLED 1
 #endif
 // <o> NRFX_POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -4201,6 +4201,7 @@
 #ifndef NRFX_UART_ENABLED
 #define NRFX_UART_ENABLED 1
 #endif
+
 // <o> NRFX_UART0_ENABLED - Enable UART0 instance 
 #ifndef NRFX_UART0_ENABLED
 #define NRFX_UART0_ENABLED 0
@@ -4569,7 +4570,7 @@
 // <e> POWER_ENABLED - nrf_drv_power - POWER peripheral driver - legacy layer
 //==========================================================
 #ifndef POWER_ENABLED
-#define POWER_ENABLED 0
+#define POWER_ENABLED 1
 #endif
 // <o> POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -6034,7 +6035,7 @@
 // <i> Enable processing power events in USB event handler.
 
 #ifndef APP_USBD_CONFIG_POWER_EVENTS_PROCESS
-#define APP_USBD_CONFIG_POWER_EVENTS_PROCESS 0
+#define APP_USBD_CONFIG_POWER_EVENTS_PROCESS 1
 #endif
 
 // <e> APP_USBD_CONFIG_EVENT_QUEUE_ENABLE - Enable event queue.

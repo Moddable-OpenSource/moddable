@@ -62,6 +62,8 @@
 static TaskHandle_t m_logger_thread;
 #endif
 
+#include "nrf_drv_power.h"
+
 /**@brief A function which is hooked to idle task.
  * @note Idle hook must be enabled in FreeRTOS configuration (configUSE_IDLE_HOOK).
  */
@@ -131,6 +133,11 @@ int main(void)
     // Initialize modules.
 	clock_init();
 	timer_init();
+
+#if mxDebug
+	nrf_drv_power_init(NULL);
+#endif
+
 #if !mxDebug
 	watchdog_init();
 #endif
