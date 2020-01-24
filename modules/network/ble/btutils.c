@@ -90,11 +90,11 @@ void xs_bytes_set(xsMachine *the)
 
 void xs_bytes_equals(xsMachine *the)
 {
-	uint32_t length = xsGetArrayBufferLength(xsArg(0));
+	int length = xsGetArrayBufferLength(xsArg(0));
 	if (length != xsGetArrayBufferLength(xsThis))
 		xsmcSetFalse(xsResult);
 	else {
-		uint16_t result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
+		int result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
 		xsmcSetBoolean(xsResult, (0 == result));
 	}
 }
