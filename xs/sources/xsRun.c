@@ -207,9 +207,11 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		mxSaveState; \
 		variable = fxToInstance(the, SLOT); \
 		mxRestoreState; \
+		primitive = 1; \
 	} \
 	else { \
 		variable = (SLOT)->value.reference; \
+		primitive = 0; \
 	}
 	
 #ifdef __ets__
@@ -327,6 +329,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 	register txU1 byte = 0;
 	register txU4 index;
 	register txS4 offset;
+	txU1 primitive = 0;
 #if defined(__GNUC__) && defined(__OPTIMIZE__)
 	static void *const ICACHE_RAM_ATTR gxBytes[] = {
 		&&XS_NO_CODE,
@@ -410,6 +413,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_EXPONENTIATION,
 		&&XS_CODE_EXTEND,
 		&&XS_CODE_FALSE,
+		&&XS_CODE_FIELD_FUNCTION,
 		&&XS_CODE_FILE,
 		&&XS_CODE_FOR_AWAIT_OF,
 		&&XS_CODE_FOR_IN,
@@ -2105,7 +2109,7 @@ XS_CODE_JUMP:
 			offset = slot->ID;
 			index = XS_NO_ID;
 			if (slot->value.closure->kind < 0)
-				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined private property", (txID)offset);
+				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
 			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
 			if (!slot)
 				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
@@ -2146,7 +2150,12 @@ XS_CODE_JUMP:
 				mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 				mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 				slot->value.reference = variable;
-				mxInitSlotKind(slot, XS_REFERENCE_KIND);
+				mxInitSlotKind(slot++, XS_REFERENCE_KIND);
+				if (primitive) {
+					variable = slot->value.reference->next;
+					slot->value = variable->value;
+					mxInitSlotKind(slot, variable->kind);
+				}
 				offset = 0;
 				goto XS_CODE_RUN_ALL;
 			}
@@ -2507,6 +2516,18 @@ XS_CODE_JUMP:
 			fxDefaultFunctionPrototype(the);
 			mxRestoreState;
 			mxNextCode(3);
+			mxBreak;
+		mxCase(XS_CODE_FIELD_FUNCTION)
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceID(the, (txID)offset);
+#endif
+			mxOverflow(1);
+			*mxStack = mxFunctionPrototype;
+			mxSaveState;
+			fxNewFunctionInstance(the, XS_NO_ID);
+			mxRestoreState;
+			mxStack->value.reference->flag |= XS_CAN_CONSTRUCT_FLAG | XS_FIELD_FLAG;
+			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_FUNCTION)
 			offset = mxRunS2(1);
@@ -4118,6 +4139,8 @@ void fxRunEval(txMachine* the)
 		function = mxFunction->value.reference;
 		if (function->flag & XS_CAN_CONSTRUCT_FLAG)
 			flags |= mxTargetFlag;
+		if (function->flag & XS_FIELD_FLAG)
+			flags |= mxFieldFlag;
 		home = mxFunctionInstanceHome(function);
 		if (home->value.home.object)
 			flags |= mxSuperFlag;

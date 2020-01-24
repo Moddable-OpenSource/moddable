@@ -214,6 +214,7 @@ enum {
 	XS_CODE_EXPONENTIATION,
 	XS_CODE_EXTEND,
 	XS_CODE_FALSE,
+	XS_CODE_FIELD_FUNCTION,
 	XS_CODE_FILE,
 	XS_CODE_FOR_AWAIT_OF,
 	XS_CODE_FOR_IN,
@@ -393,6 +394,7 @@ enum {
 	mxStrictFlag = 1 << 4,
 	mxSuperFlag = 1 << 5,
 	mxTargetFlag = 1 << 6,
+	mxFieldFlag = 1 << 15,
 };
 
 extern void fxDeleteScript(txScript* script);

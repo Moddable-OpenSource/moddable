@@ -1059,6 +1059,9 @@ void fxProgram(txParser* parser)
 	txInteger aLine = parser->line;
 	fxBody(parser);
 	fxPushNodeStruct(parser, 1, XS_TOKEN_PROGRAM, aLine);
+	if (parser->flags & mxFieldFlag)
+		if (parser->flags & mxArgumentsFlag)
+			fxReportParserError(parser, "invalid arguments");
 	parser->root->flags = parser->flags & mxStrictFlag;
 }
 
@@ -2419,7 +2422,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, aLine);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
-			parser->root->flags = mxStrictFlag | mxSuperFlag;
+			parser->root->flags = mxStrictFlag | mxSuperFlag | mxFieldFlag;
 		}
 		else 
 			fxPushNULL(parser);
@@ -2434,7 +2437,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, aLine);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
 			fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
-			parser->root->flags = mxStrictFlag | mxSuperFlag;
+			parser->root->flags = mxStrictFlag | mxSuperFlag | mxFieldFlag;
 		}
 		else 
 			fxPushNULL(parser);

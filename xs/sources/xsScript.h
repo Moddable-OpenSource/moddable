@@ -891,7 +891,9 @@ enum {
 	/* mxStrictFlag = 1 << 4, */
 	/* mxSuperFlag = 1 << 5, */
 	/* mxTargetFlag = 1 << 6, */
+	/* mxFieldFlag = 1 << 15, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
+
 
 	mxArgumentsFlag = 1 << 7,
 	mxArrowFlag = 1 << 8,
@@ -901,8 +903,6 @@ enum {
 	mxDeclareNodeClosureFlag = 1 << 12,
 	mxDeclareNodeUseClosureFlag = 1 << 13,
 	mxDefaultFlag = 1 << 14,
-	mxDefineNodeBoundFlag = 1 << 15,
-	mxDefineNodeCodedFlag = 1 << 16,
 	mxDerivedFlag = 1 << 17,
 	mxElisionFlag = 1 << 18,
 	mxExpressionNoValue = 1 << 19,
@@ -920,6 +920,10 @@ enum {
 	mxYieldingFlag = 1 << 31,
 	
 	mxEvalParametersFlag = 1 << 25,
+
+	mxDefineNodeBoundFlag = 1 << 15,
+	mxDefineNodeCodedFlag = 1 << 16,
+	
 
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,

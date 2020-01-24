@@ -240,6 +240,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
+		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -3068,11 +3069,12 @@ void fxFunctionNodeCode(void* it, void* param)
 		else
 			fxCoderAddSymbol(param, 1, XS_CODE_ASYNC_FUNCTION, name);
 	}
-	else if (self->flags & mxGeneratorFlag) {
+	else if (self->flags & mxGeneratorFlag)
 		fxCoderAddSymbol(param, 1, XS_CODE_GENERATOR_FUNCTION, name);
-	}
 	else if (self->flags & (mxArrowFlag | mxMethodFlag | mxGetterFlag | mxSetterFlag))
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+	else if (self->flags & mxFieldFlag)
+		fxCoderAddSymbol(param, 1, XS_CODE_FIELD_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_CONSTRUCTOR_FUNCTION, name);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
