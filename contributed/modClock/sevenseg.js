@@ -20,8 +20,8 @@ import config from "mc/config";
 
 
 // 50mA / pixel
-const DEFAULT_NUM_PIXELS = 58;
-const EXTRA_PIXELS_START = 58;
+const DEFAULT_NUM_PIXELS = 56;	// (2 pixels per 7 segments * 4 digits)
+//const EXTRA_PIXELS_START = 58;
 
 const DisplayWidth = 17;
 const DisplayHeight = 7;
@@ -75,7 +75,7 @@ const letterSegments = [
 	"f", 0b10001110,		// F - a   efg
 	"g", 0b11110110,		// g - abcd fg
 	"h", 0b01101110,		// H -  bc efg
-	"i", 0b01100000,		// I -  bc    
+	"i", 0b00100000,		// i -   c    
 	"j", 0b01110000,		// J -  bcd   
 	"k", 0b01101110,		// K -  bc efg  // like H
 	"l", 0b00011100,		// L -    def 
@@ -103,6 +103,7 @@ export class SevenSegDisplay {
 		this.timing = dict.timing;
 		this.order = "RGB"; // dict.order ? dict.order : "RGB";
 		this._main_order = dict.order ? dict.order : "RGB";
+		this._tail_on = (undefined !== dict.tail_on) ? dict.tail_on : 1;
 		this._tail_order = dict.tail_order ? dict.tail_order : "RGB";
 
 		this.width = DisplayWidth;
@@ -119,10 +120,18 @@ export class SevenSegDisplay {
 			this.segment_pixels = config.seven_segments[this._layout].segments;
 			this.colonSegments = config.seven_segments[this._layout].colon;
 			this.setupPixels();
-		this.extra_start = EXTRA_PIXELS_START;
-		this.extra = (undefined !== dict.extra) ? dict.extra : 0;
-		// setting "extra" may cause the length to change, thus requiring
-		// a new neopixel object - so do this before setting brightness
+		this._zero = dict.zero !== undefined ? dict.zero : 0;
+		this.tail_length = (undefined !== dict.tail) ? dict.tail : 0;
+		this.tail_start = DEFAULT_NUM_PIXELS + this.colonSegments.length;
+		this.length = this.tail_start + this.tail_length;
+
+		this.setup_neopixels();
+
+		this.tail_only = (undefined !== dict.tail_only) ? dict.tail_only : 0;
+
+		this.tail_sched = (undefined !== dict.tail_sched) ? dict.tail_sched : 0;
+		this.tail_time_on = (undefined !== dict.tail_time_on) ? dict.tail_time_on : 0;
+		this.tail_time_off = (undefined !== dict.tail_time_off) ? dict.tail_time_off : 0;
 
 		this._brightness = (dict.brightness !== undefined) ? dict.brightness : 96;
 		this._tail_brightness = (dict.tail_brightness !== undefined) ? dict.tail_brightness : 32;
@@ -151,9 +160,19 @@ export class SevenSegDisplay {
 		}, refreshMS);
 	}
 
+	restart() @ "do_restart";
+
 	setup_neopixels() {
-		if (undefined !== this.neopixels)
-			this.neopixels.close();
+		if (undefined !== this.neopixels) {
+			let oldLength = this.neopixels.length;
+			this.neopixels.fill(0);
+        	this.neopixels.update();
+			if (oldLength > this.length)		// if neopixels are longer, it's okay
+				return;
+		// otherwise, reboot
+			this.restart();
+		}
+
 		this.neopixels = new NeoPixel(this);
 		this.neopixels.fill(0);
 		this.neopixels.brightness = 255;
@@ -168,16 +187,31 @@ export class SevenSegDisplay {
 	}
 
 
-	get extra() { return this.extra_length; }
-	set extra(v) {
+/*
+	get tail() { return this.tail_length; }
+	set tail(v) { this.tail_length = v; }
+	set tail(v) {
 // delete neopixels if it already exists?
-		this.extra_length = v;
-		this.length = DEFAULT_NUM_PIXELS + this.extra_length;
+		this.tail_length = v;
+		this.length = DEFAULT_NUM_PIXELS + this.colonSegments.length + this.tail_length;
+//		if (this.colonSegments == 7)
+//			this.length += 5;
+		this.setup_neopixels();
+	}
+*/
+	get extra() { return this.tail_length; }
+	set extra(v) {
+		this.tail_length = v;
+		this.length = DEFAULT_NUM_PIXELS + this.colonSegments.length + this.tail_length;
 		this.setup_neopixels();
 	}
 
 	get style() { return this._style; }
-	set style(val) { this._style = val; }
+	set style(val) {
+		this._style = val;
+		for (let n=0; n<this.colonSegments.length; n++)
+			this._style.op_clear(this.colonSegments[n], 0);
+	}
 
 	value(val) {
 		if (undefined === val) {
@@ -198,6 +232,59 @@ export class SevenSegDisplay {
 	get tail_brightness() { return this._tail_brightness; }
 	set tail_brightness(val) { this._tail_brightness = val; }
 
+	get tail_on() { return this._tail_on; }
+	set tail_on(val) { this._tail_on = val; }
+
+	get tail_sched() { return this._tail_sched; }
+	set tail_sched(val) { this._tail_sched = val|0; }
+
+	get tail_time_on() { return this._tail_time_on; }
+	set tail_time_on(val) { this._tail_time_on = val|0; }
+
+	get tail_time_off() { return this._tail_time_off; }
+	set tail_time_off(val) { this._tail_time_off = val|0; }
+
+	get shouldShowTail() {
+		let ret = true;
+		if (!this.tail_on)			// master off switch
+			return false;
+		if (!this.tail_sched)		// if not scheduled, then on.
+			return true;
+		if (this._tail_time_off < this._tail_time_on) {	// off in morning
+			if ((this.timeVal24 >= this._tail_time_off)
+				&& (this.timeVal24 < this._tail_time_on))
+				return false;
+		}
+		else {
+			if ((this.timeVal24 < this._tail_time_on)
+				|| (this.timeVal24 >= this._tail_time_off))
+				return false;
+		}
+		return true;
+	}
+
+	get tail_only() { return this._tail_only; }
+	set tail_only(val) {
+		if (undefined === this._tail_only)
+			this._tail_only = 0;
+
+		if (this._tail_only != val) {
+			this._tail_only = val;
+			if (this._tail_only) {
+				if (this.tail_start != 0) {
+					this.tail_length += this.tail_start;
+					this.tail_start = 0;
+				}
+			}
+			else {
+				if (this.tail_start != 0) {
+					this.tail_start = DEFAULT_NUM_PIXELS + this.colonSegments.length;
+					this.tail_length -= this.length - this.tail_start;
+				}
+			}
+		}
+	 }
+
 	get tail_order() { return this._tail_order; }
 	set tail_order(val) { this._tail_order = val; }
 
@@ -210,6 +297,12 @@ export class SevenSegDisplay {
 			this.colonSegments = config.seven_segments[this._layout].colon;
 			this.setupPixels();
 		}
+	}
+
+	get zero() { return this._zero; }
+	set zero(val) {
+		if (val != this._zero)
+			this._zero = val;
 	}
 
 	findLetterSegment(letter) {
@@ -243,6 +336,8 @@ export class SevenSegDisplay {
 		else {
 			let now = new Date();
 			this.timeVal = now.getHours() * 100 + now.getMinutes();
+			this.timeVal24 = this.timeVal;
+			this.seconds = now.getSeconds();
 //			trace(`this.timeVal: ${this.timeVal} - utcHours: ${now.getUTCHours()}\n`);
 			if (this.twelve) {
 				if (this.timeVal > 1300) this.timeVal -= 1200;
@@ -252,72 +347,79 @@ export class SevenSegDisplay {
 	
 		if (undefined !== this._style.op_prep)
 			this._style.op_prep(value);
-		if (undefined !== this._style.op_head)
-			this._style.op_head(value);
+		if (undefined !== this._style.op_first)
+			this._style.op_first(value);
 
-		let segment_pixels, pix, seg;
-		for (let digits=0; digits<4; digits++) {
-			let d;
-			let skipDigit = 0;
+		if (!this.tail_only) {
+			let segment_pixels, pix, seg;
+			for (let digits=0; digits<4; digits++) {
+				let d;
+				let skipDigit = 0;
 
-			if (undefined !== this.userValue) {
-				let v = this.userValue[3-digits];
-				if (v >= "0" && v <= "9")
-					d = sevenSegments[parseInt(v)];
-				else if (v >= "a" && v <= "z")
-					d = this.findLetterSegment(v);
-				else
-					skipDigit = 1;
-			}
-			else {
-				let v = ((this.timeVal / TenPow[digits]) | 0) % 10;
-
-				if ((digits == 3) && (v == 0)) {
-					skipDigit = 1;
-					v = 0;
-				}
-				d = sevenSegments[v];		// which 7 segments for this digit
-			}
-
-			if ( !((1 << digits) & displayDigits) || !this.blinkDisplayOn)
-				skipDigit = 1;
-
-			segment_pixels = this.segment_pixels[digits];
-
-			for (seg=0; seg<7; seg++) {
-				if (!skipDigit && (d & 0b10000000)) {	// segment that should be on
-					for (pix=0; pix<segment_pixels[seg].length; pix++)
-						this._style.op_set(segment_pixels[seg][pix], value, digits);
+				if (undefined !== this.userValue) {
+					let v = this.userValue[3-digits];
+					if (v >= "0" && v <= "9")
+						d = sevenSegments[parseInt(v)];
+					else if (v >= "a" && v <= "z")
+						d = this.findLetterSegment(v);
+					else
+						skipDigit = 1;
 				}
 				else {
-					for (pix=0; pix<segment_pixels[seg].length; pix++)
-						this._style.op_clear(segment_pixels[seg][pix], value);
+					let v = ((this.timeVal / TenPow[digits]) | 0) % 10;
+	
+					if ((digits == 3) && (v == 0)) {
+						if (!this._zero)
+							skipDigit = 1;
+					}
+					d = sevenSegments[v];		// which 7 segments for this digit
 				}
-				d <<= 1;
+	
+				if ( !((1 << digits) & displayDigits) || !this.blinkDisplayOn)
+					skipDigit = 1;
+	
+				segment_pixels = this.segment_pixels[digits];
+	
+				for (seg=0; seg<7; seg++) {
+					const pixels = segment_pixels[seg];
+					const length = pixels.length;
+					if (!skipDigit && (d & 0b10000000)) {	// segment that should be on
+						for (pix=0; pix<length; pix++)
+							this._style.op_set(pixels[pix], value, digits, seg);
+					}
+					else {
+						for (pix=0; pix<length; pix++)
+							this._style.op_clear(pixels[pix], value);
+					}
+					d <<= 1;
+				}
+			}
+	
+			// colons
+			if (doColons)
+				this._style.doColon(value);
+			else {
+				for (let n=0; n<this.colonSegments.length; n++)
+					this._style.op_clear(this.colonSegments[n], value);
 			}
 		}
 
-		// colons
-		if (doColons) {
-			this._style.doColon(this.colonSegments[0], value, 0);
-			this._style.doColon(this.colonSegments[1], value, 1);
-		}
-		else {
-			this._style.op_clear(this.colonSegments[0], value);
-			this._style.op_clear(this.colonSegments[1], value);
-		}
+		if (this.tail_length > 0 && (undefined !== this._style.op_tail))
+			if (this.tail_on)
+				this._style.op_tail(value);
+			else
+				for (let i=this.tail_start; i<this.tail_start+this.tail_length; i++)
+					this.set(i, 0);
 
-		if (this.extra > 0 && (undefined !== this._style.op_extra))
-			this._style.op_extra(value);
-
-		if (undefined !== this._style.op_tail)
-			this._style.op_tail(value);
+		if (undefined !== this._style.op_last)
+			this._style.op_last(value);
 
 		this.update();
 	}
 
 	set(p, c) { this.pixels[p|0] = c; }
 
+/*
 	scaleColor(c, amt) {				// 0..1.0
 		let r = (c & 0xff0000) >> 16;
 		let g = (c & 0x00ff00) >>  8;
@@ -328,6 +430,7 @@ export class SevenSegDisplay {
 		return this.neopixels.makeRGB(r, g, b);
 	}
 
+
 	_dim(i, amt) {			// dim decreases the amount floored at 0
 		let p = this.pixels[i];
 		let r = ((p & 0xff0000) >> 16) - amt; if (r < 0) r = 0;
@@ -335,37 +438,62 @@ export class SevenSegDisplay {
 		let b =  (p & 0x0000ff)        - amt; if (b < 0) b = 0;
 		this.pixels[i] = (r << 16) | (g << 8) | b;
 	}
+*/
+
+	scaleColor(c, amt) @ "xs_scaleColor";				// 0..1.0
+	_dim(color, amt) @ "xs_dimColor";
 
 	dim(start, end, amt) {
 		for (let i=start; i<end; i++)
-			this._dim(i, amt);
+			this.pixels[i] = this._dim(this.pixels[i], amt);
 	}
-
 
 	xyToPixel(x, y) {
-		if (undefined === this.pixel_xy)
+		if (undefined === this.pixel_loc)
 			return -1;
-		return this.pixel_xy[x|0][y|0];
+		return this.pixel_loc[x|0][y|0];
 	}
 
-	pixelToXY(p) {
-		for (let x=0; x<DisplayWidth; x++)
-			for (let y=0; y<DisplayHeight; y++)
-				if (p == this.pixel_xy[x][y])
-					return {x,y};
-		return undefined;
-	}
+	pixelToXY(p) { return this.pixel_xy[p]; }
 
 	setupPixels() {
+		let numPix = DEFAULT_NUM_PIXELS + this.colonSegments.length;
 		this.pixel_xy = [];
-		this.pixel_xy[8] = [ -1, -1, this.colonSegments[0], -1, this.colonSegments[1], -1, -1 ];
+		this.pixel_loc = [];
+		this.pixel_marqA = [];
+		this.pixel_marqB = [];
+		if (this.colonSegments.length == 7) {		// r6 uses a pixel bar
+			this.pixel_loc[8] = [ this.colonSegments[0], this.colonSegments[1], this.colonSegments[2], this.colonSegments[3], this.colonSegments[4], this.colonSegments[5], this.colonSegments[6] ];
+		}
+		else
+			this.pixel_loc[8] = [ -1, -1, this.colonSegments[0], -1, this.colonSegments[1], -1, -1 ];
 		for (let d=0;d<4;d++) {
 			let bx = d*4 + 1*(d>1);
 			let segs = this.segment_pixels[d];
-			this.pixel_xy[bx++] = [-1, segs[1][0], segs[1][1], -1, segs[2][0], segs[2][1], -1];
-			this.pixel_xy[bx++] = [segs[0][1], -1, -1, segs[6][1], -1, -1, segs[3][1]];
-			this.pixel_xy[bx++] = [segs[0][0], -1, -1, segs[6][0], -1, -1, segs[3][0]];
-			this.pixel_xy[bx++] = [-1, segs[5][0], segs[5][1], -1, segs[4][0], segs[4][1], -1];
+			this.pixel_loc[bx++] = [-1, segs[1][0], segs[1][1], -1, segs[2][0], segs[2][1], -1];
+			this.pixel_loc[bx++] = [segs[0][1], -1, -1, segs[6][1], -1, -1, segs[3][1]];
+			this.pixel_loc[bx++] = [segs[0][0], -1, -1, segs[6][0], -1, -1, segs[3][0]];
+			this.pixel_loc[bx++] = [-1, segs[5][0], segs[5][1], -1, segs[4][0], segs[4][1], -1];
+			this.pixel_marqA.push(segs[0][0], segs[1][0], segs[2][0], segs[3][1], segs[4][1], segs[5][1], segs[6][1]);
+			this.pixel_marqB.push(segs[0][1], segs[1][1], segs[2][1], segs[3][0], segs[4][0], segs[5][0], segs[6][0]);
+		}
+		this.pixel_marqA.push(this.colonSegments[0]);
+		this.pixel_marqB.push(this.colonSegments[1]);
+		if (this.colonSegments.length == 7) {
+			this.pixel_marqA.push(this.colonSegments[2]);
+			this.pixel_marqB.push(this.colonSegments[3]);
+			this.pixel_marqA.push(this.colonSegments[4]);
+			this.pixel_marqB.push(this.colonSegments[5]);
+			this.pixel_marqA.push(this.colonSegments[6]);
+		}
+		
+		
+
+		for (let p=0; p<numPix; p++) {
+			for (let x=0; x<DisplayWidth; x++)
+				for (let y=0; y<DisplayHeight; y++)
+					if (p == this.pixel_loc[x][y])
+						this.pixel_xy[p] = {x,y};
 		}
 	}
 
@@ -384,11 +512,26 @@ export class SevenSegDisplay {
 	brightenAndConvert(color, brightness, order) @ "xs_brightenAndConvert";
 
 	update() {
-        for (let i=0; i<this.length; i++) {
-			if (i < DEFAULT_NUM_PIXELS)
-            	this.neopixels.setPixel(i, this.brightenAndConvert(this.pixels[i], this._brightness, this._main_order));
+		let brightness = this._brightness;
+		let order = this._main_order;
+		let clockPixels = DEFAULT_NUM_PIXELS + this.colonSegments.length;
+
+		if (this.tail_only) {
+			if (this.shouldShowTail)
+				brightness = this._tail_brightness;
 			else
-            	this.neopixels.setPixel(i, this.brightenAndConvert(this.pixels[i], this._tail_brightness, this._tail_order));
+				brightness = 0;
+		}
+
+        for (let i=0, length = this.length, pixels = this.pixels; i<length; i++) {
+        	if (i === clockPixels) { // this.tail_start) { // DEFAULT_NUM_PIXELS) {
+				if (this.shouldShowTail)
+					brightness = this._tail_brightness;
+				else
+					brightness = 0;
+				order = this._tail_order;
+        	}
+			this.neopixels.setPixel(i, this.brightenAndConvert(pixels[i], brightness, order));
 		}
 
         this.neopixels.update();
