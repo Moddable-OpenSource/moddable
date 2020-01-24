@@ -14,12 +14,14 @@
 
 /*
 	ToDo:
+		Presets - save and load
+		Tail segments
+
 		Access control
 		secure preferences
 		connect with Android devices (use BT beacon to advertise address?)
+			(added IP discovery from the interface)
 
-		better html
-		
 	Future:
 		extended strand effects
 
@@ -32,6 +34,7 @@
 		Time/temp/barometer
 		Second display expansion (time + temp)
 		automatically use an open access point (ie. no password)
+		advertise time with bluetooth beacon
 */
 
 import config from "mc/config";
@@ -47,25 +50,31 @@ import MDNS from "mdns";
 import Preference from "preference";
 import Monitor from "pins/digital/monitor";
 import Digital from "pins/digital";
+import DS1307 from "ds1307";
+import DS3231 from "ds3231";
+import RV3028 from "rv3028";
 
 import SevenSegDisplay from "sevenseg";
 import ClockStyle from "styles";
 import html_content from "web";
 import OTARequest from "update";
 
-import ClockPrefs from "prefs";
+// Timer.delay(1);
 
-const ntpHosts = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org"];
+import ClockPrefs from "prefs";
+import ClockButton from "buttons";
 
 const PROD_NAME = "ModClock";
-const UPDATE_URL = "http://robotranch.org/superclock/clock.update.current";
+const UPDATE_URL = "http://wildclocks.com/superclock/clock.update.current";
+const REMOTE_SCRIPTS = "http://wildclocks.com/superclock/";
 const LOCAL_SCRIPTS = "http://192.168.4.1/";
-const REMOTE_SCRIPTS = "http://robotranch.org/superclock/";
 
 const AP_NAME = "clock";
 const AP_PASSWORD = "12345678";
+let ap_name = AP_NAME;
 
-const MAX_WIFI_SCANS = 3;		// before opening the access point
+const MAX_WIFI_SCANS = 2;		// before opening the access point
+const SCAN_TIME = 5000;
 
 const BUTTON_PIN = 0;
 
@@ -75,7 +84,38 @@ const BUTTON_ACCEPT_TIME_MS = 2500;		// hold > 4s to accept time
 const BUTTON_ERASE_WARNING_TIME_MS = 8000;		// blink like mad at 8s to warn of imending erasure
 const BUTTON_ERASE_PREFS_MS = 10000;	// hold 10 s to erase prefs
 
-let hostName = "clock";
+const STATE_SETUP =				0;
+const STATE_SHOW_TIME =			1;
+const STATE_CYCLE_MODE =		2;
+	const CYCLE_MODE_MS =		800;
+	const CYCLE_ITERATE_MS =	1000;
+	const SETTING_ITER1_MS =    1500;
+	const SETTING_ITER2_MS =    1000;
+	const SETTING_ITER3_MS =    800;
+	const MODE_SET =	0;
+	const MODE_2412 =	1;
+	const MODE_DST =	2;
+	const MODE_BRIGHT =	3;
+	const MODE_TAIL =	4;
+	const MODE_TAIL_BRIGHT =	5;
+	const MODE_BOOT =	6;
+	const MODE_CLEAR =	7;
+	const MODE_MAX =	7;
+const STATE_SET_HOURS =			3;
+const STATE_SET_10MINUTES =		4;
+const STATE_SET_MINUTES =		5;
+const STATE_SET_DONE =			7;
+const STATE_SET_2412 =			8;
+const STATE_SET_DST =			9;
+const STATE_SET_BRIGHT =		10;
+const STATE_SET_TAIL =			11;
+const STATE_SET_TAIL_BRIGHT =	12;
+const STATE_BOOT_CONFIRM =		13;
+const STATE_CLEAR_CONFIRM =		14;
+
+const ntpHosts = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org" ];
+
+// let hostName = "clock";
 
 let prefs = new ClockPrefs();
 
@@ -83,11 +123,32 @@ trace(`Clock starting... Name: ${prefs.name}\n`);
 
 Time.set(0);
 
+const SELECTION_BAR = [
+	{ "link": "style", "title": "Style" },
+	{ "link": "tail", "title": "Tail" },
+	{ "link": "options", "title": "Clock Options" },
+	{ "link": "network", "title": "Network" },
+	{ "link": "http://wildclocks.com/superclock/inst", "title": "Instructions", "target":"_blank" }
+];
+
+const REBOOT_TIME = 60000 * 5;	// 5 minutes
+
+function resetRebootTimer() {
+trace("resetRebootTimer\n");
+	global.needsReboot = 1;
+	global.rebootTimer = Timer.set(id => {
+		if (global.needsReboot) {
+			trace("REBOOT TIMER triggered\n");
+			doRestart();
+		}
+	}, REBOOT_TIME);
+}
+resetRebootTimer();
+
 let accessPointList = [];
 const RESET_TIME_INTERVAL = (1000 * 60 * 60 * 12);		// 12 hours
-let favico = new Resource("favicon.ico");
-//let colorPicker = new Resource("html5kellycolorpicker.ico");
-//let colorPicker = undefined;
+const favico = new Resource("favicon.ico");
+const clock_css = new Resource("clock.css");
 
 /*
 const Timing_WS2812B = {
@@ -99,7 +160,7 @@ const Timing_WS2812B = {
 const Timing_WS2811 = {
     mark:  { level0: 1, duration0: 950,  level1: 0, duration1: 350, },
     space: { level0: 1, duration0: 350,   level1: 0, duration1: 950, },
-    reset: { level0: 0, duration0: 50000, level1: 0, duration1: 50000, } };
+    reset: { level0: 0, duration0: 60000, level1: 0, duration1: 60000, } };
 
 class Clock {
 	constructor(prefs) {
@@ -108,10 +169,16 @@ class Clock {
 		this.display = new SevenSegDisplay( {
 			length:58, pin:prefs.pin,
 			order:config.seven_segments[prefs.layout].order,
+			tail_on:prefs.tail_on,
+			tail_only:prefs.tail_only,
 			tail_order:prefs.tail_order,
+			tail_sched:prefs.tail_sched,
+			tail_time_on:prefs.tail_time_on,
+			tail_time_off:prefs.tail_time_off,
 			timing:Timing_WS2811,
 			layout:prefs.layout,
-			extra:prefs.extra,
+			zero:prefs.zero,
+			tail:prefs.extra,
 			twelve:prefs.twelve, 
 			brightness:prefs.brightness,
 			tail_brightness:prefs.tail_brightness } );
@@ -121,7 +188,6 @@ class Clock {
 			new ClockStyle.TwoColor(this.display, {}),
 			new ClockStyle.Rainbow(this.display, {}),
 			new ClockStyle.ColorWheel(this.display, {}),
-			new ClockStyle.NiceColors(this.display, {}),
 			new ClockStyle.Special(this.display, {})
 		];
 		this.styles.forEach(prefs.loadPref);
@@ -129,22 +195,30 @@ class Clock {
 		this.currentStyle = this.styles.find(x => x.tag === prefs.style);
 		if (undefined === this.currentStyle)
 			this.currentStyle = this.styles[0];
+		this.styleIdx = 0;
 		this.display.value("helo").blink();
 
 		this.wifiScans = 0;
 		this.connecting = 0;
 		this.usingAP = undefined;
 
+		this.selectionBarSelected = 0;
+
 //		if (undefined === this.prefs.ssid) {
 //			this.configAP(AP_NAME, AP_PASSWORD);
 //		}
 //		else
 		 {
-			this.display.value("scan").blink();
-			Timer.set(id => { this.checkConnected(); }, 10000);		// wait ten seconds before falling back to AP
+			this.setupRtc();
+			if (this.rtc.valid) 
+				this.display.showTime(this.currentStyle);
+			else
+				this.display.value("scan").blink();
+			Timer.set(id => { this.checkConnected(); }, SCAN_TIME);		// wait ten seconds before falling back to AP
 			this.doWiFiScan(this.prefs.ssid);
 		}
 
+/*
 		this.monitor = new Monitor({ pin: BUTTON_PIN, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising });
 		this.monitor.idx = 0;
 		this.monitor.lastPressed = Time.ticks;
@@ -153,6 +227,27 @@ class Clock {
 		this.monitor.changeDigits = 0;
 		this.monitor.onChanged = this.buttonPressed;
 		this.monitor.clock = this;
+*/
+
+		if (("none" !== this.prefs.buttonA)
+			&& ("none" !== this.prefs.buttonB) ) {
+trace(`ui: has two buttons\n`);
+			this.leftButton = new ClockButton({ pin:this.prefs.buttonA, mode:Digital.Input, edge: Monitor.Falling|Monitor.Rising });
+			this.leftButton.clock = this;
+//			this.leftButton.onPressed = this.leftPressed;
+			this.leftButton.onStillDown = this.leftStillDown;
+			this.leftButton.onReleased = this.leftReleased;
+
+			this.rightButton = new ClockButton({ pin:this.prefs.buttonB, mode:Digital.Input, edge: Monitor.Falling|Monitor.Rising });
+			this.rightButton.clock = this;
+//			this.rightButton.onPressed = this.rightPressed;
+			this.rightButton.onStillDown = this.rightStillDown;
+			this.rightButton.onReleased = this.rightReleased;
+	
+		}
+trace(`uiState: SHOW_TIME\n`);
+		this.uiState = STATE_SHOW_TIME;
+
 	}
 
 	getbuildstring() @ "xs_getbuildstring";
@@ -168,8 +263,8 @@ class Clock {
 					accessPointList.push(item);
 				else
 					theap.rssi = item.rssi;
-	
-				if (item.ssid == this.prefs.ssid)
+
+				if (!this.connectionWasEstablished && item.ssid == this.prefs.ssid)
 					this.checkSSIDS();
 			}
 		});
@@ -181,7 +276,7 @@ class Clock {
 			this.connect(this.prefs.ssid, this.prefs.pass);
 		else {
 			if (WiFi.status === 0) {			// idle
-				if (this.wifiScans++ > MAX_WIFI_SCANS) {
+				if (this.wifiScans > MAX_WIFI_SCANS) {
 					this.wifiScans = 0;
 					this.checkConnected();
 				}
@@ -192,7 +287,15 @@ class Clock {
 	}
 
 	connect(ssid, password) {
-		this.display.value("conn").blink();
+		if (this.connecting > 0) {
+			trace(`Already trying to connect WiFi (passed <${ssid}>)...\n`);
+			return;
+		}
+
+		if (this.rtc.valid) 
+			this.display.showTime(this.currentStyle);
+		else
+			this.display.value("conn").blink();
 		this.connecting++;
 
 		trace(`Starting WiFi to connect to <${ssid}>...\n`);
@@ -201,28 +304,32 @@ class Clock {
 
 		this.myWiFi = new WiFi({ssid, password}, msg => {
 			switch (msg) {
-				case "connect":
-					trace(`WiFi connecting to ${ssid}\n`);
-					break;
-				case "gotIP":
+				case WiFi.gotIP:
 					if (!this.connectionWasEstablished) {
 						trace(`WiFi gotIP: ${Net.get("IP")}. Going to connect to the local network.\n`);
 						this.connected();
 					}
 					break;
 				case "disconnect":
-					if (undefined === WiFi.status) {
+//					if (undefined === WiFi.status) {
+
+					if (this.connecting) {
+						resetRebootTimer();
 						this.display.value("fail").blink();
+/*
 						if (this.connecting < 2) {
 							this.myWiFi.close();
 							this.myWiFi = undefined;
 							this.connect(ssid, password);
 						}
 						else {
+*/
 							this.connecting = 0;
-							this.checkConnected();
-						}
+//							this.checkConnected();
+							this.configAP(ap_name, AP_PASSWORD);
+//						}
 					}
+/*
 					else {		// do we get here?
 							this.connecting = 0;
 							this.display.value("fa-x").blink();
@@ -236,10 +343,11 @@ class Clock {
 								}
 								else {
 									trace("WiFi never established - ask for SSID\n");
-									this.configAP(AP_NAME, AP_PASSWORD);
+									this.configAP(ap_name, AP_PASSWORD);
 								}
 							}
 					}
+*/
 					break;
 			}
 		});
@@ -248,8 +356,12 @@ class Clock {
 	connected() {
 		this.connecting = 0;
 		this.connectionWasEstablished = 1;
-		this.display.value("yay").blink();
-
+		if (this.rtc.valid) {
+			this.display.showTime(this.currentStyle);
+		}
+		else {
+			this.display.value("yay").blink();
+		}
 		this.fetchTime();
 		this.configServer();
 	}
@@ -257,17 +369,22 @@ class Clock {
 	checkConnected() {
 		if (this.connectionWasEstablished || this.connecting || (undefined !== this.usingAP))
 			return;
+		if (this.wifiScans++ < MAX_WIFI_SCANS) {
+			Timer.set(id => { this.checkConnected(); }, SCAN_TIME);		// wait ten seconds before falling back to AP
+			this.doWiFiScan(this.prefs.ssid);
+			return;
+		}
 		if (undefined !== this.myWiFi) {
 			this.myWiFi.close();
 			this.myWiFi = undefined;
 		}
-		this.configAP(AP_NAME, AP_PASSWORD);
+		this.configAP(ap_name, AP_PASSWORD);
 	}
 
 	advertiseServer() {
 		let name = this.prefs.name;
 		if (this.usingAP)
-			name = AP_NAME;
+			name = ap_name;
 
 		this.mdns = new MDNS({hostName: name, prefs: this.prefs}, function(message, value) {
 			if (1 === message) {
@@ -283,9 +400,28 @@ class Clock {
 
 	checkName(newName, oldName) {
 		if ((undefined !== newName) && (newName.length > 3) && (newName != oldName)) {
-			return newName.replace(/\s+/g,"_").toLowerCase();
+			return newName.split(' ').join('_').toLowerCase();
+//			return newName.replace(/\s+/g,"_").toLowerCase();
 		}
 		return 0;
+	}
+
+	parseTimeReq(timeRequest) {
+		if (undefined === timeRequest)
+			return 0;
+		let h = timeRequest.slice(0,2);
+		let m = timeRequest.slice(-2);
+		return h+m;
+	}
+
+
+// checkFormat looks for "f" within formats. If not found, treat f as an index
+	checkFormat(formats, f) {
+		if (formats.includes(f))
+			return f;
+		let i = parseInt(f);
+		i = (i >= formats.length) ? formats.length : i;
+		return formats[i];
 	}
 
 	checkPass(newPass, oldPass) {
@@ -295,7 +431,6 @@ class Clock {
 	}
 
 	configServer() {
-		this.head = `<html><head><title>${PROD_NAME}</title></head>`;
 		this.suffixLine = "build: " + this.getbuildstring();
 
 		this.uiServer = new Server();
@@ -303,8 +438,10 @@ class Clock {
 		this.uiServer.callback = function(message, value, v2) {
 			let clock = this.server.clock;
 			let name = clock.prefs.name;
+			let scriptServer = clock.connectionWasEstablished ? REMOTE_SCRIPTS : LOCAL_SCRIPTS;
 			switch (message) {
 				case Server.status:
+					global.needsReboot = 0;
 					this.userReq = [];
 					this.path = value;
 					this.redirect = 0;
@@ -316,9 +453,17 @@ class Clock {
 				case Server.requestComplete:
 					let postData = value.split("&");
 
+					this.userReq.dataValid = postData.length > 1;
+
 					for (let i=0; i<postData.length; i++) {
-						let x = postData[i].split("=");
-						this.userReq[x[0]] = x[1].replace("+"," ");
+						const equal = postData[i].indexOf("=");
+						if (equal < 0)
+							continue;
+						let name = postData[i].slice(0, equal);
+						let value = postData[i].slice(equal + 1);
+						value = value.split("+");
+						value = value.join(" ");
+						this.userReq[name] = value;
 					}
 					this.redirect = 1;
 					if (this.path == "/style") {
@@ -330,12 +475,27 @@ class Clock {
 						clock.styles.forEach(clock.prefs.savePref);
 
 						clock.prefs.brightness = parseInt(this.userReq.brightness);
-						clock.prefs.tail_brightness = parseInt(this.userReq.tail_brightness);
-						clock.prefs.tail_order = clock.display.supportedFormats[this.userReq.tail_order]
-						clock.prefs.extra = parseInt(this.userReq.extra);
 					}
-					else if (this.path == "/rescanSSID" || this.path == "/html5kellycolorpicker.min.js" || this.path.slice(0,19) == "/current_version.js")
+					else if (this.path == "/rescanSSID" || this.path.slice(0,19) == "/current_version.js")
 						this.redirect = 0;
+					else if (this.path == "/tail") {
+//						this.redirect = 1;
+						clock.prefs.tail_brightness = parseInt(this.userReq.tail_brightness);
+						clock.prefs.tail_order = clock.checkFormat(clock.display.supportedFormats, this.userReq.tail_order);
+						clock.prefs.extra = parseInt(this.userReq.extra);
+						clock.prefs.tail_on = parseInt(this.userReq.tail_on);
+						clock.prefs.tail_sched = parseInt(this.userReq.tail_sched);
+						clock.prefs.tail_time_on = clock.parseTimeReq(this.userReq.tail_time_on);
+						clock.prefs.tail_time_off = clock.parseTimeReq(this.userReq.tail_time_off);
+					}
+					else if (this.path == "/options") {
+//						this.redirect = 1;
+					}
+					else if (this.path == "/setTime") {
+						let aTime = clock.parseTimeReq(this.userReq.set_clock_time);
+						clock.setTimeFromText(aTime);
+//						this.redirect = 1;
+					}
 					else if (this.path == "/set-ssid") {
 						if (!this.userReq.ssid)
 							this.userReq.ssid = this.userReq.ssid_select;
@@ -357,50 +517,67 @@ class Clock {
 					}
 
 					if (this.redirect) {
-						msg = html_content.redirectHead(clock.prefs.name, 0) + html_content.bodyPrefix() + "One moment please." + html_content.bodySuffix(this.server.clock.suffixLine);
+						msg = html_content.redirectHead(clock.prefs.name, 0, this.path) + html_content.bodyPrefix() + "One moment please." + html_content.bodySuffix(this.server.clock.suffixLine);
 					}
 
 					if (this.path == "/set-ssid") {
 						if (this.userReq.ssid) {
-							msg = this.server.clock.head + html_content.bodyPrefix() + html_content.changeSSIDResp(this.userReq.ssid, name) + html_content.bodySuffix(this.server.clock.suffixLine);
+							msg = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.changeSSIDResp(this.userReq.ssid, name) + html_content.bodySuffix(this.server.clock.suffixLine);
 						}
 						trace("new ssid requested");
 					}
-					else if (this.path == "/html5kellycolorpicker.min.js") {
-//						return {headers: ["Cache-Control", "public, max-age=31536000"], body: colorPicker.slice(0)};
-						return {headers: ["Cache-Control", "public, max-age=31536000"], body: "class KellyColorPicker { }"};
-					}
+					/* -- these two are to respond to local requests for remote server content when not on the internet */
 					else if (this.path.slice(0,19) == "/current_version.js") {
 						return {headers: ["Cache-Control", "public, max-age=31536000"], body: "function current_version() { return 'current';} function check_update(version) { return false; }" };
+					}
+					/* -- end these two */
+					else if (this.path == "/clock.css") {
+						return {headers: ["Content-type", "text/css", "Cache-Control", "public, max-age=600"], body: clock_css.slice(0)};
 					}
 					else if (this.path == "/favicon.ico") {
 						return {headers: ["Content-type", "image/vnd.microsoft.icon", "Cache-Control", "public, max-age=31536000"], body: favico.slice(0)};
 					}
 					else if (this.path == "/reset") {
-						msg = this.server.clock.head + html_content.bodyPrefix() + html_content.resetPrefsResp();
+						msg = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.resetPrefsResp();
 					}
 					else if (!this.redirect && undefined === msg) {
-						msg = this.server.clock.head + html_content.bodyPrefix();
-						if (clock.connectionWasEstablished)
- 							msg += html_content.clockScripts(clock.currentStyle, REMOTE_SCRIPTS);
-						else
- 							msg += html_content.clockScripts(clock.currentStyle, LOCAL_SCRIPTS);
-						
-						msg += `<h1>${PROD_NAME}</h1>`;
-
+						let impliedPath = this.path;
+						msg = "";
+						let head = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.clockScripts(clock.currentStyle, scriptServer) + html_content.masthead(PROD_NAME, name);
 						if (undefined !== clock.ota)
-							msg += `<b>Updating</b> - Received ${clock.ota.received} of ${clock.ota.length === undefined ? "unknown" : clock.ota.length}<p>`;
+							head += html_content.ota_status(clock.ota.received, clock.ota.length);
+						if (!clock.connectionWasEstablished) {
+							head += html_content.noAccessPointSet();
+							if (impliedPath == "/")
+								impliedPath = "/network";
+						}
 
-						if (!clock.connectionWasEstablished)
-							msg += `${html_content.noAccessPointSet()} ${html_content.accessPointSection(accessPointList, clock.prefs.ssid, clock.prefs.name)}<hr>`;
+						switch (impliedPath) {
+							case "/tail":
+								clock.selectionBarSelected = 1;
+								msg += html_content.clockTailSection(clock);
+								break;
+							case "/options":
+							case "/setTime":
+								clock.selectionBarSelected = 2;
+								msg += `${html_content.clockOptionsSection(clock)}${html_content.clockSetTimeSection(clock)}${html_content.clockResetPrefsSection(clock)}`;
+								break;
+							case "/network":
+							case "/rescanSSID":
+								clock.selectionBarSelected = 3;
+								msg += html_content.accessPointSection(accessPointList, clock.prefs.ssid, clock.prefs.name);
+								if (!this.usingAP)
+									msg += html_content.clockUpdateCheck(clock);
+								break;
+							case "/style":
+							default:
+								clock.selectionBarSelected = 0;
+								msg += html_content.clockStyleSection(clock, scriptServer);
+								break;
+						}
 
-						msg += `${html_content.clockStyleSection(clock)}<hr>${html_content.clockOptionsSection(clock.prefs)}<hr>`;
-
-						if (clock.connectionWasEstablished)
-							msg += `${html_content.accessPointSection(accessPointList, clock.prefs.ssid, clock.prefs.name)}<hr>`;
-
-						msg += `${html_content.clockUpdateCheck(clock)} <hr>${html_content.clockResetPrefsSection(clock)} ${html_content.bodySuffix(this.server.clock.suffixLine)}`;
-
+						head += html_content.selection_bar(SELECTION_BAR, clock.selectionBarSelected);
+						msg = head + msg + html_content.bodySuffix(this.server.clock.suffixLine);
 					}
 					if (undefined !== msg && (msg.length > 1024)) {
 						this.msg = msg;
@@ -425,52 +602,95 @@ class Clock {
 	
 				case Server.responseComplete:
 					let resetTime = 0;
-					let resetWiFi = 0;
+					let restartClock = 0;
 					if (this.path == "/set-ssid") {
 						if ((undefined !== this.userReq.ssid) && (clock.prefs.ssid != this.userReq.ssid)) {
 							clock.prefs.ssid = this.userReq.ssid;
-							resetWiFi = 1;
+							restartClock++;
 						}
 
-						if (clock.checkPass(this.userReq.password, clock.prefs.pass)) {
+						if (!this.userReq.password) {
+							if (clock.prefs.pass) {
+								clock.prefs.pass = ""
+								restartClock++;
+							}
+						}
+						else if (clock.checkPass(this.userReq.password, clock.prefs.pass)) {
 							clock.prefs.pass = this.userReq.password;
-							resetWiFi = 1;
+							restartClock++;
 						}
 						if (0 != (name = clock.checkName(this.userReq.clock_name, clock.prefs.name))) {
 							clock.prefs.storedName = name;
-							resetWiFi = 1;
+							restartClock++;
 						}
 					}
-					else if (this.path == "/clockOptions") {
-						clock.prefs.tz = this.userReq.timezone;
+					else if (this.path == "/tail") {
+						if (!this.userReq.dataValid)
+							break;
+						clock.prefs.tail_only = checkboxValue(this.userReq, "tail_only");
+					}
+					else if (this.path == "/options") {
+//						if (this.userReq.length == 0)
+						if (!this.userReq.dataValid)
+							break;
+
+						if (clock.prefs.tz != this.userReq.timezone) {
+							clock.prefs.tz = this.userReq.timezone;
+							resetTime = 1;
+						}
 
 						if (clock.checkName(this.userReq.clock_name, clock.prefs.name)) {
 							clock.prefs.storedName = this.userReq.clock_name;
-							resetWiFi = 1;
+							restartClock++;
 						}
 
 				// checkboxes return no value if they aren't checked. So undefined === 0
+						let requestedLayout = parseInt(this.userReq.layout);
+						if (requestedLayout !== clock.prefs.layout) {
+							clock.prefs.layout = requestedLayout;
+							restartClock++;
+						}
 
-						clock.prefs.pin = parseInt(this.userReq.pin);
-						clock.prefs.layout = parseInt(this.userReq.layout);
-						clock.prefs.dst = checkboxValue(this.userReq, "dst");
 						clock.prefs.twelve = checkboxValue(this.userReq, "twelve");
+						clock.prefs.zero = checkboxValue(this.userReq, "zero");
+
+
+						let dst = dstValue(clock.prefs.dst_types, this.userReq, "dst");
+						if (dst != clock.prefs.dst) {
+							clock.prefs.dst = dst;
+							resetTime = 1;
+						}
+
+						if (this.userReq.buttonA != clock.prefs.buttonA) {
+							clock.prefs.buttonA = this.userReq.buttonA;
+							restartClock++;
+						}
+						if (this.userReq.buttonB != clock.prefs.buttonB) {
+							clock.prefs.buttonB = parseInt(this.userReq.buttonB);
+							restartClock++;
+						}
+						if (parseInt(this.userReq.pin) != clock.prefs.pin) {
+							clock.prefs.pin = parseInt(this.userReq.pin);
+							restartClock++;
+						}
 					}
 					else if (this.path == "/reset") {
 						clock.prefs.reset();
 						trace("restarting after resetting preferences\n");
-						doRestart(this.clock);
+						restartClock++;
 					}
 					else if (this.path == "/checkForUpdate") {
-						clock.ota = new OTARequest(UPDATE_URL);
-						clock.ota.onFinished = restart;
-						clock.currentStyle = clock.styles[0];			// change to default style to indicate updating
+						if (undefined === clock.ota) {
+							clock.ota = new OTARequest(UPDATE_URL);
+							clock.ota.onFinished = doRestart;
+							clock.currentStyle = clock.styles[0];			// change to default style to indicate updating
+						}
 					}
 					else if (this.path == "/rescanSSID") {
 						clock.doWiFiScan();
 					}
 	
-					if (resetWiFi) {
+					if (restartClock) {
 						Timer.set(id => { doRestart(clock); }, 1000);		// wait a second for the response to be sent
 //						doRestart(this.clock);
 					}
@@ -488,21 +708,134 @@ class Clock {
 
 	configAP(ssid, password) {
 trace(`Configure access point ${ssid}\n`);
+		let iter = 2;
+		let clockAP;
+		let disp = 'ap  ';
+		while (undefined !== (clockAP = accessPointList.find(x => x.ssid === ap_name))) {
+trace(` ap - ${clockAP.ssid} found iterating\n`);
+			ap_name = AP_NAME + `_${iter}`;
+			disp = `ap_${iter}`;
+			iter++;
+		}
+
 		this.usingAP = 1;
-		this.display.value("set ").blink();
+		if (!this.rtc.valid)
+			this.display.value(disp).blink();
 
 		if (undefined !== this.myWiFi) {
 			this.myWiFi.close();
 			this.myWiFi = undefined;
 		}
-		this.AP = WiFi.accessPoint({ ssid, password });
+		this.AP = WiFi.accessPoint({ ssid:ap_name, password });
 
-        this.fetchTime();
+//        this.fetchTime();
 
 		this.configServer();
 	}
 
+	setupRtc() {
+		if (this.prefs.pin == 22 || this.prefs.pin == 21)
+			this.rtc = { exists: 0, valid: 0, enabled: 0 };
+		else
+
+		try {
+			this.rtc = new DS1307;
+			this.rtc.exists = 1;
+			try {
+				let now = this.rtc.seconds;
+			}
+			catch(e) {
+				this.rtc.enabled = 0;		// turn it off, time was invalid
+			}
+		}
+		catch (e) {
+trace(`no ds1307, try ds3231\n`);
+			try {
+				this.rtc = new DS3231;
+				this.rtc.exists = 1;
+				try {
+					let now = this.rtc.seconds;
+				}
+				catch (e) {
+					this.rtc.enabled = 0;		// turn it off, time was invalid
+				}
+			}
+			catch (e) {
+trace(`no ds3231, try rv3028\n`);
+				try {
+					this.rtc = new RV3028;
+					this.rtc.exists = 1;
+					try {
+						let now = this.rtc.seconds;
+					}
+					catch (e) {
+						this.rtc.enabled = 0;		// turn it off, time was invalid
+					}
+				}
+				catch (e) {
+trace(`no rtc\n`);
+				}
+			}
+		}
+		finally {
+			if (undefined === this.rtc)
+				this.rtc = { exists: 0, valid: 0, enabled: 0 };
+		}
+		if (!this.rtc.enabled) {
+			this.rtc.valid = 0;
+		}
+		else {
+			global.needsReboot = 0;	// time is valid, don't need to reconnect
+			this.rtc.valid = 1;
+			this.setTime(this.rtc.seconds);
+		}
+	}
+
+	checkDSTObserved() {
+		// 2nd sun March 2am to 1st sun Nov 2am
+		let today = new Date();
+		let yr = today.getFullYear();
+		let dst_start = new Date("March 14, "+yr+" 02:00:00"); // 2nd Sunday in March can't occur after the 14th 
+		let dst_end = new Date("November 07, "+yr+" 02:00:00"); // 1st Sunday in November can't occur after the 7th
+		let day = dst_start.getDay(); // day of week of 14th
+		dst_start.setDate(14-day); // Calculate 2nd Sunday in March of this year
+		day = dst_end.getDay(); // day of the week of 7th
+		dst_end.setDate(7-day); // Calculate first Sunday in November of this year
+		if (today >= dst_start && today < dst_end) { //does today fall inside of DST period?
+			return true; //if so then return true
+		}
+		return false; //if not then return false
+	}
+
+	setTimeFromText(tx) {	// required format hh:mm or hhmm
+		let d = new Date();
+		d.setHours(tx.slice(0, 2));
+		d.setMinutes(tx.slice(-2));
+		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
+		let tz = this.prefs.tz + dst - 11;
+		let time = (d.getTime()/1000) - (tz *3600);
+		this.setTime(time, 1);
+	}
+
+	setTime(v, forceRTC=0) {
+		Time.set(v + Time.timezone);
+		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
+		let tz = this.prefs.tz + dst - 11;
+		Time.timezone = tz * 3600;
+		Time.set(v + Time.timezone);
+		if (this.rtc.exists && (forceRTC || !this.rtc.valid)) {
+			if (!this.rtc.enabled) {
+				this.rtc.enabled = 1;
+			}
+			this.rtc.seconds = v;
+			this.rtc.valid = 1;
+		}
+	}
+
 	fetchTime() {
+		if (this.rtc.valid)
+			this.setTime(this.rtc.seconds);
+
 		if (!this.connectionWasEstablished)
 			return;
 
@@ -517,10 +850,9 @@ trace(`fetchTime\n`);
 			let sntp = new SNTP({host: hosts.shift()}, function(message, value) {
 				switch (message) {
 					case 1:			// success!
-						let tz = this.clock.prefs.tz + this.clock.prefs.dst - 11;
-						Time.timezone = tz * 3600;
-						Time.set(value + Time.timezone);
+						this.clock.setTime(value, 1);
 						this.clock.display.showTime(this.clock.currentStyle);
+						global.needsReboot = 0;
 						break;
 					case -1:
 						if (hosts.length)
@@ -532,6 +864,7 @@ trace(`fetchTime\n`);
 		}, 100, RESET_TIME_INTERVAL);
 	}
 
+/*
 	buttonPressed() {
 		let now = Time.ticks;
 		if (! this.clock.display.timeShowing)
@@ -670,6 +1003,271 @@ trace(`fetchTime\n`);
 
 		}
 	}
+*/
+
+	showMode(mode) {
+		switch (mode) {
+			case MODE_SET: this.display.value("set "); break;
+			case MODE_2412: this.display.value("2412"); break;
+			case MODE_DST: this.display.value("dst "); break;
+			case MODE_BRIGHT: this.display.value("brit"); break;
+			case MODE_TAIL: this.display.value("tail"); break;
+			case MODE_TAIL_BRIGHT: this.display.value("tbrt"); break;
+			case MODE_BOOT: this.display.value("boot"); break;
+			case MODE_CLEAR: this.display.value("clr "); break;
+			default: this.display.value("huh "); break;
+		}
+	}
+
+	drawHours(d) {
+		let h = d.getHours();
+		if (1 == this.prefs.twelve) {
+			let ap = 0;
+			if (h == 12)
+				ap = 1;
+			if (h == 0)
+				h = 12;
+			if (h > 12) {
+				ap = 1;
+				h = h - 12;
+			}
+			this.display.value((` ${h} ${ap?'p':'a'}`).slice(-4));
+		}
+		else
+			this.display.value((` ${d.getHours()}  `).slice(-4));
+	}
+	draw10Min(d) {
+		this.display.value((`  ${(d.getMinutes()/10)|0} `).slice(0,4));
+	}
+	drawMin(d) {
+		this.display.value((`   ${(d.getMinutes()%10)}`).slice(0,4));
+	}
+	drawOnOff(d) { 1 == d ? this.display.value("  on") : this.display.value(" off"); }
+	draw2412(d) { 1 == d ? this.display.value("  12") : this.display.value("24  "); }
+	drawYesNo(d) { 1 == d ? this.display.value(" yes") : this.display.value("  no"); }
+
+	incrementSetting() {
+		let b;
+		switch (this.uiState) {
+			case STATE_SET_DST:
+				this.prefs.dst = this.prefs.dst ? 0 : 1;
+				this.drawOnOff(this.prefs.dst);
+				break;
+			case STATE_SET_2412:
+				this.prefs.twelve = this.prefs.twelve ? 0 : 1;
+				this.draw2412(this.prefs.twelve);
+				break;
+			case STATE_SET_BRIGHT:
+				b = this.prefs.brightness;
+				b += 10;
+				if (b > 255) b = 5;
+				this.prefs.brightness = b;
+				this.display.value(b);
+				break;
+			case STATE_SET_TAIL_BRIGHT:
+				b = this.prefs.tail_brightness;
+				b += 10;
+				if (b > 255) b = 0;
+				this.prefs.tail_brightness = b;
+				this.display.value(b);
+				break;
+			case STATE_SET_TAIL:
+				this.confirm = this.confirm ? 0 : 1;
+				this.drawYesNo(this.confirm);
+				this.prefs.tail_on = this.confirm;
+				break;
+			case STATE_CLEAR_CONFIRM:
+			case STATE_BOOT_CONFIRM:
+			case STATE_SET_DONE:
+				this.confirm = this.confirm ? 0 : 1;
+				this.drawYesNo(this.confirm);
+				break;
+			case STATE_SHOW_TIME:
+				this.currentStyle.next_kind();
+				this.display.showTime(this.currentStyle);
+				this.prefs.savePref(this.currentStyle);
+				break;
+			case STATE_SET_HOURS:
+			case STATE_SET_10MINUTES:
+			case STATE_SET_MINUTES:
+				let nowTime = Date.now() / 1000;
+				let d = new Date();
+				let timeVal = d.getHours() * 100 + d.getMinutes();
+				let h = (timeVal / 100) | 0;
+				let m10 = ((timeVal % 100) / 10) | 0;
+				let m1 = (timeVal % 10) | 0;
+				if (STATE_SET_HOURS === this.uiState) {
+					h += 1;
+					if (h > 23) {
+						h = 0;
+						nowTime -= (60 * 60) * 23;
+					}
+					else
+						nowTime += 60 * 60;
+				}
+				else if (STATE_SET_10MINUTES === this.uiState) {
+					m10 += 1;
+					if (m10 > 5) {
+						m10 = 0;
+						nowTime -= 60 * 60
+					}
+					else
+						nowTime += 60 * 10;
+				}
+				else if (STATE_SET_MINUTES === this.uiState) {
+					m1 += 1;
+					if (m1 > 9) {
+						m1 = 0;
+						nowTime -= 60 * 10;
+					}
+					else
+						nowTime += 60;
+				}
+				Time.set(nowTime);
+			
+				d = new Date();
+				if (STATE_SET_HOURS === this.uiState)
+					this.drawHours(d);
+				else if (STATE_SET_10MINUTES === this.uiState)
+					this.draw10Min(d);
+				else if (STATE_SET_MINUTES === this.uiState)
+					this.drawMin(d);
+				break;
+			default:
+				;
+		}
+	}
+
+	rightPressed(button) {
+		this.clock.uiValueChanged = 0;
+		this.clock.uiValueChangedMS = Time.ticks;
+trace(`rightPressed valuechangedMS:${this.clock.uiValueChangedMS}\n`);
+	}
+
+	rightReleased(button) {
+trace(`rightReleased elapsed: ${button.elapsed}\n`);
+		if (button.elapsed < 50)
+			return;
+		if (!this.clock.uiChangedValue) {
+			this.clock.incrementSetting();
+		}
+		else {
+			// right released but value already changed in stilldown.
+		}
+	}
+
+	rightStillDown(button) {
+		let now = Time.ticks;
+		if (now - this.clock.uiValueChangedMS > SETTING_ITER1_MS) {
+			button.lastModeChanged = now;
+trace(`rightStillDown\n`);
+			this.clock.uiValueChanged = 1;
+			this.clock.incrementSetting();
+			this.clock.uiValueChangedMS = now;
+		}
+	}
+
+	leftPressed(button) {
+trace(`leftPressed - clear value changed now: ${Time.ticks}\n`);
+		this.clock.uiValueChanged = 0;
+		this.clock.display.blinking = 0;
+
+	}
+
+	leftReleased(button) {
+		let d = new Date();
+trace(`leftReleased - clear needsReboot, now: ${Time.ticks} elapsed: ${button.elapsed}\n`);
+		global.needsReboot = 0;
+		if (this.clock.uiState === STATE_CYCLE_MODE) {
+trace(`uiState: CYCLE_MODE - uiMode: ${this.clock.uiMode}\n`);
+			switch (this.clock.uiMode) {
+				case MODE_SET:
+					this.clock.uiState = STATE_SET_HOURS;
+
+					this.clock.drawHours(d);
+					this.clock.confirm = 0;
+					break;
+				case MODE_2412: this.clock.uiState = STATE_SET_2412; break;
+				case MODE_DST: this.clock.uiState = STATE_SET_DST; break;
+				case MODE_BRIGHT: this.clock.uiState = STATE_SET_BRIGHT; break;
+				case MODE_TAIL: this.clock.uiState = STATE_SET_TAIL; break;
+				case MODE_TAIL_BRIGHT: this.clock.uiState = STATE_SET_TAIL_BRIGHT; break;
+				case MODE_BOOT:
+					this.clock.confirm = 0;
+					this.clock.uiState = STATE_BOOT_CONFIRM;
+					break;
+				case MODE_CLEAR:
+					this.clock.confirm = 0;
+					this.clock.uiState = STATE_CLEAR_CONFIRM;
+					break;
+			}
+trace(`uiState: set to ${this.clock.uiState}\n`);
+		}
+		else if ((this.clock.uiState === STATE_CLEAR_CONFIRM) || (this.clock.uiState === STATE_BOOT_CONFIRM)) {
+			if (this.clock.confirm) {
+				if (this.clock.uiState === STATE_CLEAR_CONFIRM)
+					this.clock.prefs.reset();
+				doRestart(this.clock);
+			}
+			this.clock.uiState = STATE_SHOW_TIME;
+			this.clock.display.showTime(this.clock.currentStyle);
+		}
+		else if (this.clock.uiState === STATE_SET_HOURS) {
+			this.clock.uiState = STATE_SET_10MINUTES;
+			this.clock.draw10Min(d);
+		}
+		else if (this.clock.uiState === STATE_SET_10MINUTES) {
+			this.clock.uiState = STATE_SET_MINUTES;
+			this.clock.drawMin(d);
+		}
+		else if (this.clock.uiState === STATE_SET_MINUTES) {
+			this.clock.uiState = STATE_SET_DONE;
+			this.clock.display.value("done");
+		}
+		else if (this.clock.uiState === STATE_SET_DONE) {
+			if (this.clock.confirm) {
+				this.clock.uiState = STATE_SHOW_TIME;
+				this.clock.display.showTime(this.clock.currentStyle);
+			}
+			else {
+				this.clock.uiState = STATE_SET_HOURS;
+				this.clock.drawHours(d);
+			}
+		}
+		else if (this.clock.uiState === STATE_SHOW_TIME) {
+trace(`uiState: showTime - change style\n`);
+			this.clock.styleIdx = (this.clock.styleIdx + 1) % this.clock.styles.length;
+			this.clock.prefs.style = this.clock.styleIdx;
+		}
+		else {
+trace(`uiState wuz: ${this.clock.uiState} - now SHOW_TIME\n`);
+			this.clock.uiState = STATE_SHOW_TIME;
+			this.clock.display.showTime(this.clock.currentStyle);
+		}
+	}
+
+	leftStillDown(button) {
+		let now = Time.ticks;
+		if (this.clock.uiState === STATE_SHOW_TIME) {
+			if (button.elapsed > CYCLE_MODE_MS) {
+				button.lastModeChanged = now;
+				this.clock.uiMode = MODE_SET;
+				this.clock.uiState = STATE_CYCLE_MODE;
+				this.clock.showMode(this.clock.uiMode);
+			}
+		}
+		else if (this.clock.uiState === STATE_CYCLE_MODE) {
+			if (now - button.lastModeChanged > CYCLE_ITERATE_MS) {
+				button.lastModeChanged = now;
+				this.clock.uiMode += 1;
+				if (this.clock.uiMode > MODE_MAX)
+					this.clock.uiMode = 0;
+				this.clock.showMode(this.clock.uiMode);
+			}
+		}
+trace(`leftStillDown\n`);
+	}
+
 }
 
 
@@ -683,6 +1281,15 @@ function checkboxValue(reqVal, item) {
 	else
 		return parseInt(reqVal[item]);
 }
+
+function dstValue(source, reqVal, item) {
+	let ret;
+	if (undefined == reqVal[item])
+		return 0;
+	ret = source.indexOf(reqVal[item]);
+	return (-1 === ret) ? 0 : ret;
+}
+
 
 //---------------
 
