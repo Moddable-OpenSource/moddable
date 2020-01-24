@@ -63,11 +63,11 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) and **99.8%** of the built-ins tests (`30164/30234`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.9%** of the language tests (`39037/39065`) and **99.8%** of the built-ins tests (`30164/30234`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     99% 39021/39065 language
+     99% 39037/39065 language
         100% 457/457 arguments-object
             100% 40/40 mapped
             100% 8/8 unmapped
@@ -102,7 +102,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
             100% 139/139 direct
              98% 114/116 indirect
         100% 3/3 export
-         99% 18247/18271 expressions
+         99% 18253/18271 expressions
             100% 95/95 addition
             100% 104/104 array
             100% 618/618 arrow-function
@@ -123,7 +123,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
             100% 59/59 bitwise-or
             100% 59/59 bitwise-xor
              99% 178/179 call
-             99% 7284/7288 class
+             99% 7286/7288 class
                 100% 42/42 accessor-name-inst
                 100% 42/42 accessor-name-static
                 100% 186/186 async-gen-method
@@ -131,7 +131,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
                 100% 42/42 async-method
                 100% 42/42 async-method-static
                 100% 3720/3720 dstr
-                 99% 2619/2623 elements
+                100% 2623/2623 elements
                     100% 156/156 async-gen-private-method
                     100% 156/156 async-gen-private-method-static
                     100% 12/12 async-private-method
@@ -204,17 +204,17 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
             100% 59/59 strict-does-not-equals
             100% 59/59 strict-equals
             100% 75/75 subtraction
-             98% 164/166 super
+            100% 166/166 super
             100% 48/48 tagged-template
             100% 108/108 template-literal
             100% 11/11 this
-             93% 30/32 typeof
+            100% 32/32 typeof
             100% 28/28 unary-minus
             100% 34/34 unary-plus
             100% 89/89 unsigned-right-shift
             100% 18/18 void
             100% 119/119 yield
-         99% 279/281 function-code
+        100% 281/281 function-code
         100% 85/85 future-reserved-words
         100% 73/73 global-code
         100% 19/19 identifier-resolution
@@ -242,14 +242,14 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
         100% 22/22 rest-parameters
           0% 0/2 source-text
         100% 160/160 statementList
-         99% 16497/16510 statements
+         99% 16505/16510 statements
             100% 114/114 async-function
             100% 567/567 async-generator
                 100% 360/360 dstr
             100% 38/38 block
                 100% 8/8 early-errors
             100% 38/38 break
-             99% 7788/7796 class
+            100% 7796/7796 class
                 100% 42/42 accessor-name-inst
                 100% 42/42 accessor-name-static
                 100% 4/4 arguments
@@ -259,7 +259,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
                 100% 42/42 async-method-static
                 100% 124/124 definition
                 100% 3720/3720 dstr
-                 99% 2786/2792 elements
+                100% 2792/2792 elements
                     100% 156/156 async-gen-private-method
                     100% 156/156 async-gen-private-method-static
                     100% 12/12 async-private-method
@@ -280,7 +280,7 @@ Currently, on macOS, XS passes **99.8%** of the language tests (`39021/39065`) a
                 100% 30/30 method-static
                 100% 12/12 name-binding
                 100% 4/4 strict-mode
-                 98% 190/192 subclass
+                100% 192/192 subclass
                     100% 140/140 builtin-objects
                         100% 10/10 Array
                         100% 4/4 ArrayBuffer
@@ -1037,11 +1037,10 @@ Assignments should rename functions only if the left hand side is an identifier.
 	language/expressions/call/eval-realm-indirect.js (sloppy)
 
 One realm.
-
-	language/expressions/class/elements/direct-eval-err-contains-arguments.js
-	language/expressions/class/elements/private-direct-eval-err-contains-arguments.js
-
-Reference error instead of syntax error.
+	
+	language/expressions/class/super-evaluation-order.js
+	
+Invalid test.
 	
 	language/expressions/compound-assignment/mod-whitespace.js
 		
@@ -1063,20 +1062,7 @@ In object initializers, if property values are functions, the implementation mus
 	language/expressions/optional-chaining/punctuator-decimal-lookahead.js
 	
 The lexical parser has no lookahead.	
-	
-	language/expressions/super/call-proto-not-ctor.js
-
-When calling `super`, XS evaluates parameters before `super`.
-
-	language/expressions/typeof/proxy.js
-
-Revoked proxy are no functions.
-
-	language/function-code/10.4.3-1-104.js (strict)
-	language/function-code/10.4.3-1-106.js (strict)
-	
-For getters, XS promotes primitives into objects to lookup the property then uses the object instead of the primitive as `this`.
-	
+		
 	language/literals/string/legacy-octal-escape-sequence-prologue-strict.js (sloppy)
 
 Strings with octal escape sequences are a lexical error in strict mode but in sloppy mode if "use strict" follows the string, it is too late for a lexical error...
@@ -1084,18 +1070,6 @@ Strings with octal escape sequences are a lexical error in strict mode but in sl
 	language/source-text/6.1.js
 
 Code points vs code units.	
-
-	language/statements/class/elements/direct-eval-err-contains-arguments.js
-	language/statements/class/elements/private-direct-eval-err-contains-arguments.js
-
-Reference error instead of syntax error.
-
-	language/statements/class/elements/private-field-is-visible-in-computed-properties.js	
-Reference error instead of type error.
-
-	language/statements/class/subclass/class-definition-null-proto-super.js
-
-When calling `super`, XS evaluates parameters before `super`.
 
 	language/statements/for-of/map-expand.js
 	language/statements/for-of/set-expand.js

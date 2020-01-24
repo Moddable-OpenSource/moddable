@@ -193,13 +193,24 @@ void fxDefaultFunctionPrototype(txMachine* the)
 
 txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultPrototype)
 {
-	fxCheckCallable(the, the->stack);
+	txSlot* result = the->stack;
+	fxCheckCallable(the, result);
+	mxDub();
 	fxGetID(the, mxID(_prototype));
 	if (!mxIsReference(the->stack)) {
+		txSlot* instance = result->value.reference;
+		txSlot* proxy = instance->next;
+		if (proxy->kind == XS_PROXY_KIND) {
+			if (!proxy->value.proxy.handler)
+				mxTypeError("(proxy).%s: handler is no object", fxName(the, mxID(_prototype)));
+			if (!proxy->value.proxy.target)
+				mxTypeError("(proxy).%s: target is no object", fxName(the, mxID(_prototype)));
+		}
 		the->stack->kind = defaultPrototype->kind;
 		the->stack->value = defaultPrototype->value;
 	}
-	return the->stack->value.reference;
+	mxPullSlot(result);
+	return result->value.reference;
 }
 
 #ifndef mxLink
