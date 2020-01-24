@@ -100,16 +100,16 @@ txSlot* fxCheckRegExpInstance(txMachine* the, txSlot* slot)
 
 void fxExecuteRegExp(txMachine* the, txSlot* regexp, txSlot* argument)
 {
-	mxPushSlot(argument);
-	mxPushInteger(1);
 	mxPushSlot(regexp);
-	mxPushSlot(regexp);
+	mxDub();
 	fxGetID(the, mxID(_exec));
 	if ((the->stack->kind != XS_REFERENCE_KIND) || (!mxIsFunction(the->stack->value.reference))) {
 		the->stack->kind = mxExecuteRegExpFunction.kind;
 		the->stack->value = mxExecuteRegExpFunction.value;
 	}
-	fxCall(the);
+	fxCallFrame(the);
+	mxPushSlot(argument);
+	mxRunCount(1);
 	if ((the->stack->kind != XS_NULL_KIND) && (the->stack->kind != XS_REFERENCE_KIND))
 		mxTypeError("invalid exec result");
 }
@@ -191,7 +191,7 @@ void fx_RegExp(txMachine* the)
 	txSlot* pattern = ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) ? mxArgv(0) : C_NULL;
 	txSlot* flags = ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) ? mxArgv(1) : C_NULL;
 	txBoolean patternIsRegExp = (pattern && fxIsRegExp(the, pattern)) ? 1 : 0;
-	txSlot* instance = C_NULL;
+	
 	if (mxTarget->kind == XS_UNDEFINED_KIND) {
 		if (patternIsRegExp && !flags) {
 			mxPushSlot(pattern);
@@ -209,8 +209,9 @@ void fx_RegExp(txMachine* the)
 		mxPushSlot(mxTarget);
 	}
 	fxGetPrototypeFromConstructor(the, &mxRegExpPrototype);
-	instance = fxNewRegExpInstance(the);
-	mxPullSlot(mxResult);		
+	fxNewRegExpInstance(the);
+	mxPush(mxInitializeRegExpFunction);
+	fxCallFrame(the);
 	if (patternIsRegExp) {
 		mxPushSlot(pattern);
 		fxGetID(the, mxID(_source));
@@ -231,10 +232,7 @@ void fx_RegExp(txMachine* the)
 		else
 			mxPushUndefined();
 	}
-	mxPushInteger(2);
-	mxPushReference(instance);
-	mxPush(mxInitializeRegExpFunction);
-	fxCall(the);
+	mxRunCount(2);
 	mxPullSlot(mxResult);
 #else
 	mxUnknownError("not built-in");
@@ -620,7 +618,6 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 {
 #if mxRegExp
 	txSlot* argument;
-	txSlot* constructor;
 	txBoolean global = 0;
 	txSlot* matcher;
 	txSlot* iterator;
@@ -639,16 +636,13 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	constructor = the->stack;
-	
+	fxNewFrame(the);	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
 	if (c_strchr(fxToString(the, the->stack), 'g'))
 		global = 1;
-	mxPushInteger(2);
-	mxPushSlot(constructor);
-	fxNew(the);	
+	mxRunCount(2);
 	matcher = the->stack;
 	
 	mxPushSlot(mxThis);
@@ -811,7 +805,12 @@ void fx_RegExp_prototype_replace(txMachine* the)
             c = fxToInteger(the, the->stack);
 			mxPop();
 
-            mxPushSlot(matched);
+           	if (function) {
+                mxPushUndefined();
+                mxPushSlot(function);
+            	fxCallFrame(the);
+            }
+           	mxPushSlot(matched);
             for (i = 1; i < c; i++) {
                 mxPushSlot(result);
                 fxGetID(the, i);
@@ -819,19 +818,16 @@ void fx_RegExp_prototype_replace(txMachine* the)
                		fxToString(the, the->stack);
             }
             if (function) {
-                mxPushInteger(position);
-                mxPushSlot(argument);
+               	mxPushInteger(position);
+				mxPushSlot(argument);
 				mxPushSlot(result);
 				fxGetID(the, mxID(_groups));
 				if (mxIsUndefined(the->stack)) {
 					mxPop();
-					mxPushInteger(3 + i - 1);
+					mxRunCount(3 + i - 1);
 				}
 				else
-					mxPushInteger(4 + i - 1);
-                mxPushUndefined();
-                mxPushSlot(function);
-                fxCall(the);
+					mxRunCount(4 + i - 1);
                 fxToString(the, the->stack);
                 item = item->next = fxNewSlot(the);
                 mxPullSlot(item);
@@ -943,7 +939,6 @@ void fx_RegExp_prototype_split(txMachine* the)
 #if mxRegExp
 	txSlot* argument;
 	txIndex limit;
-	txSlot* constructor;
 	txSlot* splitter;
 	txSlot* array;
 	txSlot* item;
@@ -962,16 +957,13 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	constructor = the->stack;	
-	
+	fxNewFrame(the);	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
 	if (!c_strchr(fxToString(the, the->stack), 'y'))
 		fxConcatStringC(the, the->stack, "y");
-	mxPushInteger(2);
-	mxPushSlot(constructor);
-	fxNew(the);	
+	mxRunCount(2);
 	splitter = the->stack;
 	
 	mxPush(mxArrayPrototype);

@@ -231,12 +231,16 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 			mxPull(mxHosts);
 			{
 				mxTry(the) {
-					mxPushInteger(0);
 					mxPushUndefined();
 					mxPushSlot(mxModuleFunction(module));
-					fxCall(the);
+					fxCallFrame(the);
+					mxRunCount(0);
 					result = the->stack;
 					if (mxIsReference(result) && mxIsPromise(result->value.reference)) {
+						mxDub();
+						fxGetID(the, mxID(_then));
+						fxCallFrame(the);
+					
 						function = fxNewHostFunction(the, fxFulfillModule, 1, XS_NO_ID);
 						home = mxFunctionInstanceHome(function);
 						home->value.home.object = realm;
@@ -247,16 +251,14 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 						home->value.home.object = realm;
 						home->value.home.module = module->value.reference;
 				
-						mxPushInteger(2);
-						mxPushSlot(result);
-						fxCallID(the, mxID(_then));
+						mxRunCount(2);
 						mxPop();
 					}
 					else {
+						mxPop();
 						fxCompleteModule(the, realm, module->value.reference, C_NULL);
 						fxFulfillImport(the, realm, module->value.reference);
 					}
-					mxPop();
 				}
 				mxCatch(the) {
 					fxCompleteModule(the, realm, module->value.reference, &mxException);
@@ -290,14 +292,14 @@ void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module)
 	slot = stack;
 	while (slot > the->stack) {
 		slot--;
-		mxPushReference(module);
-		/* COUNT */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(slot);
-		fxCall(the);
+		fxCallFrame(the);
+		/* ARGUMENTS */
+		mxPushReference(module);
+		mxRunCount(1);
 		mxPop();
 	}
 	the->stack = stack;
@@ -597,14 +599,14 @@ void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module)
     slot = stack;
 	while (slot > the->stack) {
 		slot--;
-		mxPushSlot(exception);
-		/* COUNT */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(slot);
-		fxCall(the);
+		fxCallFrame(the);
+		/* ARGUMENTS */
+		mxPushSlot(exception);
+		mxRunCount(1);
 		mxPop();
 	}
 	the->stack = stack;
@@ -1007,24 +1009,24 @@ void fxRunImport(txMachine* the)
 			if (mxModuleMeta(module)->next == C_NULL) {
 				txSlot* exception = mxBehaviorGetProperty(the, mxRejectedModules(realm)->value.reference, mxModuleInternal(module)->value.module.id, XS_NO_ID, XS_OWN);
 				if (exception) {
-					mxPushSlot(exception);
-					/* COUNT */
-					mxPushInteger(1);
 					/* THIS */
 					mxPushUndefined();
 					/* FUNCTION */
 					mxPushSlot(rejectFunction);
-					fxCall(the);
+					fxCallFrame(the);
+					/* ARGUMENTS */
+					mxPushSlot(exception);
+					mxRunCount(1);
 				}
 				else {
-					mxPushSlot(module);
-					/* COUNT */
-					mxPushInteger(1);
 					/* THIS */
 					mxPushUndefined();
 					/* FUNCTION */
 					mxPushSlot(fulfillFunction);
-					fxCall(the);
+					fxCallFrame(the);
+					/* ARGUMENTS */
+					mxPushSlot(module);
+					mxRunCount(1);
 				}
 			}
 			else {
@@ -1035,16 +1037,7 @@ void fxRunImport(txMachine* the)
 			}
 		}
 		mxCatch(the) {
-			mxPush(mxException);
-			mxException = mxUndefined;
-			/* COUNT */
-			mxPushInteger(1);
-			/* THIS */
-			mxPushUndefined();
-			/* FUNCTION */
-			mxPushSlot(rejectFunction);
-			fxCall(the);
-			the->stack++;
+			fxRejectException(the, rejectFunction);
 		}
 	}
 	fxEndHost(the);
@@ -1345,11 +1338,12 @@ void fx_Compartment(txMachine* the)
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 		if (mxArgc > 1) {
-			mxPushSlot(mxArgv(1));
-			mxPushInteger(2);
 			mxPushUndefined();
 			mxPush(mxCopyObjectFunction);
-			fxCall(the);
+			fxCallFrame(the);
+			mxPushReference(global);
+			mxPushSlot(mxArgv(1));
+			mxRunCount(2);
 		}
 		
 		if (mxArgc > 2) {

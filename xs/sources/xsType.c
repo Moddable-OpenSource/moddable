@@ -258,30 +258,30 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 
 void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 {
-	if (theSlot->kind == XS_REFERENCE_KIND) {
+	if (mxIsReference(theSlot)) {
 		fxBeginHost(the);
+		mxPushSlot(theSlot);
+		mxPushSlot(theSlot);
+		fxGetID(the, mxID(_Symbol_toPrimitive));
+		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+			mxPop();
+			mxPushSlot(&mxObjectPrototype);
+			fxGetID(the, mxID(_Symbol_toPrimitive));
+		}
+		fxCallFrame(the);
 		if (theHint == XS_NO_HINT)
 			mxPushSlot(&mxDefaultString);
 		else if (theHint == XS_NUMBER_HINT)
 			mxPushSlot(&mxNumberString);
 		else
 			mxPushSlot(&mxStringString);
-		mxPushInteger(1);
-		mxPushSlot(theSlot);
-		mxPushSlot(theSlot);
-		fxGetID(the, mxID(_Symbol_toPrimitive));
-		if ((the->stack->kind == XS_UNDEFINED_KIND) || (the->stack->kind == XS_NULL_KIND)) {
-            the->stack++;
-			mxPushSlot(&mxObjectPrototype);
-			fxGetID(the, mxID(_Symbol_toPrimitive));
-		}
-		fxCall(the);
+		mxRunCount(1);
 		theSlot->kind = the->stack->kind;
 		theSlot->value = the->stack->value;
-		if (theSlot->kind == XS_REFERENCE_KIND) {
+		if (mxIsReference(the->stack)) {
 			mxTypeError("cannot coerce to primitive");
 		}
-		the->stack++;
+		mxPullSlot(theSlot);
 		fxEndHost(the);
 	}
 }
@@ -317,8 +317,11 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	mxPushUndefined();
 	/* RESULT */
 	mxPushUndefined();
-	mxPushUndefined();
-	mxPushUndefined();
+	/* FRAME */
+	mxPushUninitialized();
+	/* COUNT */
+	mxPushUninitialized();
+	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	fxGetID(the, mxID(_length));
 	c = fxToInteger(the, the->stack);
@@ -327,7 +330,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 		mxPushSlot(arguments);
 		fxGetID(the, (txID)i);
 	}
-	fxRunID(the, C_NULL, c);
+	mxRunCount(c);
 	mxPullSlot(mxResult);
 }
 
@@ -342,8 +345,10 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	mxPushSlot(target);
 	/* RESULT */
 	mxPushUndefined();
-	mxPushUndefined();
-	mxPushUndefined();
+	/* FRAME */
+	mxPushUninitialized();
+	/* COUNT */
+	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	fxGetID(the, mxID(_length));
@@ -353,7 +358,7 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 		mxPushSlot(arguments);
 		fxGetID(the, (txID)i);
 	}
-	fxRunID(the, C_NULL, c);
+	mxRunCount(c);
 	mxPullSlot(mxResult);
 }
 
@@ -575,12 +580,12 @@ txBoolean fxOrdinaryGetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 		txSlot* function = property->value.accessor.getter;
 		if (!mxIsFunction(function))
 			goto bail;
-		mxPushInteger(0);
 		/* THIS */
 		mxPushSlot(receiver);
 		/* FUNCTION */
 		mxPushReference(function);
-		fxCall(the);
+		fxCallFrame(the);
+		mxRunCount(0);
 		mxPullSlot(value);
 	}
 	else {
@@ -764,13 +769,13 @@ txBoolean fxOrdinarySetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 		txSlot* function = property->value.accessor.setter;
 		if (!mxIsFunction(function))
 			goto bail;
-		mxPushSlot(value);
-		mxPushInteger(1);
 		/* THIS */
 		mxPushSlot(receiver);
 		/* FUNCTION */
 		mxPushReference(function);
-		fxCall(the);
+		fxCallFrame(the);
+		mxPushSlot(value);
+		mxRunCount(1);
 		mxPop();
 		result = 1;
 		goto bail;

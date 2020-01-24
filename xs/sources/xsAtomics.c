@@ -326,12 +326,12 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	if (stop < start) 
 		stop = start;
 	length = stop - start;
-	mxPushInteger(length);
-	mxPushInteger(1);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
-	fxNew(the);
+	fxNewFrame(the);
+	mxPushInteger(length);
+	mxRunCount(1);
 	mxPullSlot(mxResult);
 	result = fxCheckSharedArrayBuffer(the, mxResult, "result");
 	if (result == host)

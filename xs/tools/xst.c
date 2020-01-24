@@ -1337,16 +1337,14 @@ void fxRejectModuleFile(txMachine* the)
 
 void fxRunModuleFile(txMachine* the, txString path)
 {
-	txSlot* promise;
 	mxPushStringC(path);
 	fxRunImport(the);
-	promise = the->stack;
+	mxDub();
+	fxGetID(the, mxID(_then));
+	fxCallFrame(the);
 	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
 	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
-	mxPushInteger(2);
-	mxPushSlot(promise);
-	fxCallID(the, mxID(_then));
-	mxPop();
+	mxRunCount(2);
 	mxPop();
 }
 

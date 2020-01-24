@@ -597,6 +597,8 @@ mxExport void fxNew(txMachine*);
 mxExport void fxNewID(txMachine*, txInteger);
 mxExport txBoolean fxRunTest(txMachine* the);
 
+mxExport void fxCallFrame(txMachine*);
+mxExport void fxNewFrame(txMachine* the);
 mxExport void fxVars(txMachine*, txInteger);
 
 mxExport txInteger fxCheckArg(txMachine*, txInteger);
@@ -851,7 +853,9 @@ mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
 
 extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot);
-extern void fxCloseIterator(txMachine* the, txSlot* iterator);
+extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
+extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
+extern void fxIteratorReturn(txMachine* the, txSlot* iterator);
 extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
@@ -1618,11 +1622,11 @@ mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
 
 extern void fxBuildPromise(txMachine* the);
-extern void fxBuildPromiseCapability(txMachine* the);
-extern void fxCheckPromiseCapability(txMachine* the, txSlot* capability, txSlot** resolveFunction, txSlot** rejectFunction);
+extern txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* rejectFunction);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
-extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* capability);
+extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
+extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
 extern void fxRunPromiseJobs(txMachine* the);
 extern void fxQueueJob(txMachine* the, txID id);
 
@@ -1951,6 +1955,15 @@ enum {
 	(((THE_SLOT)->kind == XS_STRING_KIND) || ((THE_SLOT)->kind == XS_STRING_X_KIND))
 
 #ifdef mxDebug
+#define mxTemporary(_SLOT) \
+	(fxOverflow(the, -1, C_NULL, 0), \
+	_SLOT = --the->stack)
+#define mxDub() \
+	(fxOverflow(the, -1, C_NULL, 0), \
+	((--the->stack)->next = C_NULL, \
+	the->stack->flag = XS_NO_FLAG, \
+	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
+	the->stack->value = (the->stack + 1)->value))
 
 #define mxPush(THE_SLOT) \
 	(fxOverflow(the, -1, C_NULL, 0), \
@@ -2037,6 +2050,12 @@ enum {
 		the->stack->value.number = (txNumber)(THE_NUMBER)) \
 	)
 #else
+
+#define mxDub() \
+	((--the->stack)->next = C_NULL, \
+	the->stack->flag = XS_NO_FLAG, \
+	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
+	the->stack->value = (the->stack + 1)->value))
 
 #define mxPush(THE_SLOT) \
 	((--the->stack)->next = C_NULL, \
@@ -2214,22 +2233,13 @@ enum {
 	(*mxBehavior(INSTANCE)->setPropertyValue)(THE, INSTANCE, ID, INDEX, VALUE, RECEIVER)
 #define mxBehaviorSetPrototype(THE, INSTANCE, PROTOTYPE) \
 	(*mxBehavior(INSTANCE)->setPrototype)(THE, INSTANCE, PROTOTYPE)
-
-#define mxCall(_FUNCTION,_THIS,_COUNT) \
-	mxPushInteger(_COUNT); \
-	mxPushSlot(_THIS); \
-	mxPushSlot(_FUNCTION); \
-	fxCall(the)
-
-#define mxCallID(_THIS,_ID,_COUNT) \
-	mxPushInteger(_COUNT); \
-	mxPushSlot(_THIS); \
-	fxCallID(the, _ID)
 	
 #define mxGetID(_THIS,_ID) \
 	mxPushSlot(_THIS); \
 	fxGetID(the, _ID)
 
+#define mxRunCount(_COUNT) \
+	fxRunID(the, C_NULL, _COUNT)
 
 enum {
 	mxGlobalStackIndex,

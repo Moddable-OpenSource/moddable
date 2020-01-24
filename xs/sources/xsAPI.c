@@ -862,14 +862,9 @@ txString fxName(txMachine* the, txID theID)
 
 void fxEnumerate(txMachine* the) 
 {
-	mxPushInteger(0);
-	/* SWAP THIS */
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	/* FUNCTION */
 	mxPush(mxEnumeratorFunction);
-	fxCall(the);
+	fxCallFrame(the);
+	mxRunCount(0);
 }
 
 void fxGetAll(txMachine* the, txInteger id, txIndex index)
@@ -883,16 +878,22 @@ void fxGetAll(txMachine* the, txInteger id, txIndex index)
 	else if (property->kind == XS_ACCESSOR_KIND) {
 		txSlot* function = property->value.accessor.getter;
 		if (mxIsFunction(function)) {
-			the->stack->value.integer = 0;
-			the->stack->kind = XS_INTEGER_KIND;
-			/* THIS */
-			if (flag)
-				mxPushReference(instance);
-			else
-				mxPushSlot(instance->next);
-			/* FUNCTION */
-			mxPushReference(function);
-			fxCall(the);
+			txSlot* slot;
+			fxOverflow(the, -5, C_NULL, 0);
+            the->stack -= 5;
+			slot = the->stack;
+			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+			slot->value.reference = function;
+			mxInitSlotKind(slot++, XS_REFERENCE_KIND);
+			if (!flag) {
+				txSlot* primitive = instance->next;
+				slot->value = primitive->value;
+				mxInitSlotKind(slot, primitive->kind);
+			}
+			mxRunCount(0);
 		}
 		else
 			the->stack->kind = XS_UNDEFINED_KIND;
@@ -950,34 +951,38 @@ txBoolean fxHasIndex(txMachine* the, txIndex index)
 
 void fxSetAll(txMachine* the, txInteger id, txIndex index)
 {
+	txSlot* value = the->stack + 1;
 	txSlot* instance = fxToInstance(the, the->stack);
-	txSlot* property;
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	property = mxBehaviorSetProperty(the, instance, (txID)id, index, XS_ANY);
+	txSlot* property = mxBehaviorSetProperty(the, instance, (txID)id, index, XS_ANY);
 	if (!property)
 		mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not extensible", id);
 	if (property->kind == XS_ACCESSOR_KIND) {
+		txSlot* slot;
 		txSlot* function = property->value.accessor.setter;
 		if (!mxIsFunction(function))
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: no setter", id);
-		*(the->stack + 1) = *(the->stack);
-		the->stack->kind = XS_INTEGER_KIND;
-		the->stack->value.integer = 1;
-		/* THIS */
-		mxPushReference(instance);
-		/* FUNCTION */
-		mxPushReference(function);
-		fxCall(the);
+		fxOverflow(the, -5, C_NULL, 0);
+		the->stack -= 5;
+		slot = the->stack;
+		slot->value = value->value;
+		mxInitSlotKind(slot++, value->kind);
+		mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+		mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+		slot->value = value->value;
+		mxInitSlotKind(slot++, value->kind);
+		mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+		slot->value.reference = function;
+		mxInitSlotKind(slot++, XS_REFERENCE_KIND);
+		slot->value.reference = instance;
+		mxInitSlotKind(slot, XS_REFERENCE_KIND);
+		mxRunCount(1);
 	}
 	else {
 		if (property->flag & XS_DONT_SET_FLAG)
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not writable", id);
-		property->kind = the->stack->kind;
-		property->value = the->stack->value;
-		*(the->stack + 1) = *(the->stack);
-		the->stack++;
+		property->kind = value->kind;
+		property->value = value->value;
+		mxPop();
 	}
 }
 
@@ -1094,6 +1099,30 @@ void fxCallID(txMachine* the, txInteger theID)
 	fxCall(the);
 }
 
+void fxCallFrame(txMachine* the)
+{
+	fxOverflow(the, -4, C_NULL, 0);
+	// TARGET
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
+	// RESULT
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
+	// FRAME
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND);
+	// COUNT
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND);
+}
+
+void fxCallFrameID(txMachine* the, txInteger theID)
+{
+	mxDub();
+	fxGetID(the, theID);
+	fxCallFrame(the);
+}
+
 void fxNew(txMachine* the)
 {
 	txSlot functionSlot = the->stack[0];
@@ -1116,6 +1145,23 @@ void fxNewID(txMachine* the, txInteger theID)
 {
 	fxGetID(the, theID);
 	fxNew(the);
+}
+
+void fxNewFrame(txMachine* the)
+{
+	txSlot* constructor = the->stack;
+	txSlot* slot;
+	fxOverflow(the, -5, C_NULL, 0);
+	the->stack -= 5;
+	slot = the->stack;
+	mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+	mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+	mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+	slot->value = constructor->value;
+	mxInitSlotKind(slot++, constructor->kind);
+	slot->value = constructor->value;
+	mxInitSlotKind(slot++, constructor->kind);
+	mxInitSlotKind(slot, XS_UNINITIALIZED_KIND);
 }
 
 txBoolean fxRunTest(txMachine* the)

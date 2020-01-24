@@ -4137,17 +4137,19 @@ void fxRunForAwaitOf(txMachine* the)
 {
 	txSlot* slot = the->stack;
 	fxBeginHost(the);
-	mxPushInteger(0);
 	mxPushSlot(slot);
-	mxPushSlot(slot);
+	mxDub();
 	fxGetID(the, mxID(_Symbol_asyncIterator));
 	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
-		fxCallID(the, mxID(_Symbol_iterator));
+		mxPop();
+		fxGetIterator(the, slot, the->stack, C_NULL, 0);
 		fxNewAsyncFromSyncIteratorInstance(the);
 	}
-	else
-		fxCall(the);
+	else {
+		fxCallFrame(the);
+		mxRunCount(0);
+	}
 	mxPullSlot(slot);
 	fxEndHost(the);
 }
@@ -4156,10 +4158,7 @@ void fxRunForOf(txMachine* the)
 {
 	txSlot* slot = the->stack;
 	fxBeginHost(the);
-	mxPushInteger(0);
-	mxPushSlot(slot);
-	fxCallID(the, mxID(_Symbol_iterator));
-	mxPullSlot(slot);
+	fxGetIterator(the, slot, slot, C_NULL, 0);
 	fxEndHost(the);
 }
 
@@ -4181,14 +4180,16 @@ void fxRunInstanceOf(txMachine* the)
 	txSlot* left = the->stack + 1;
 	txSlot* right = the->stack;
 	fxBeginHost(the);
-	mxPushSlot(left);
-	mxPushInteger(1);
 	mxPushSlot(right);
-	fxCallID(the, mxID(_Symbol_hasInstance));
+	mxDub();
+	fxGetID(the, mxID(_Symbol_hasInstance));
+	fxCallFrame(the);
+	mxPushSlot(left);
+	mxRunCount(1);
 	fxToBoolean(the, the->stack);
 	mxPullSlot(left);
 	fxEndHost(the);
-	the->stack++;
+	mxPop();
 }
 
 void fxRunProxy(txMachine* the, txSlot* instance)
@@ -4509,9 +4510,11 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				mxPushUndefined();
 				/* RESULT */
 				mxPushUndefined();
-				mxPushUndefined();
-				mxPushUndefined();
-				fxRunID(the, C_NULL, 0);
+				/* FRAME */
+				mxPushUninitialized();
+				/* COUNT */
+				mxPushUninitialized();
+				mxRunCount(0);
 			}
 			else {
 				mxPushUndefined();
@@ -4541,9 +4544,11 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				mxPushUndefined();
 			/* RESULT */
             mxPushUndefined();
-            mxPushUndefined();
-            mxPushUndefined();
-			fxRunID(the, C_NULL, 0);
+ 			/* FRAME */
+			mxPushUninitialized();
+			/* COUNT */
+			mxPushUninitialized();
+			mxRunCount(0);
 
 			mxPushUndefined();
 			mxPull(mxHosts);

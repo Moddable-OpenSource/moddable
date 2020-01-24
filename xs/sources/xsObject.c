@@ -329,17 +329,17 @@ void fx_Object_prototype_propertyIsScriptable(txMachine* the)
 
 void fx_Object_prototype_toLocaleString(txMachine* the)
 {
-	mxPushInteger(0);
 	mxPushSlot(mxThis);
-	mxPushSlot(mxThis);
+	mxDub();
 	fxGetID(the, mxID(_toString));
-	fxCall(the);
+	fxCallFrame(the);
+	mxRunCount(0);
 	mxPullSlot(mxResult);
 }
 
 void fx_Object_prototype_toPrimitive(txMachine* the)
 {
-	if (mxThis->kind == XS_REFERENCE_KIND) {
+	if (mxIsReference(mxThis)) {
 		txInteger hint = XS_NO_HINT;
 		txInteger ids[2], i;
 		if (mxArgc > 0) {
@@ -364,27 +364,23 @@ void fx_Object_prototype_toPrimitive(txMachine* the)
  		else
      		mxTypeError("invalid hint");
 		for (i = 0; i < 2; i++) {
-			mxPushInteger(0);
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
 			fxGetID(the, ids[i]);
-			if (
-#ifdef mxHostFunctionPrimitive
-				(XS_HOST_FUNCTION_KIND == the->stack->kind) ||
-#endif
-				(mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))) {
-				fxCall(the);
+			if (fxIsCallable(the, the->stack)) {
+				fxCallFrame(the);
+				mxRunCount(0);
 				if (mxIsReference(the->stack))
-					the->stack++;
+					mxPop();
 				else {
-					mxResult->kind = the->stack->kind;
-					mxResult->value = the->stack->value;
-					the->stack++;
+					mxPullSlot(mxResult);
 					return;
       			}
 			}
-			else
-				the->stack++;
+			else {
+				mxPop();
+				mxPop();
+			}
 		}
 		if (hint == XS_STRING_HINT)
             mxTypeError("cannot coerce object to string");
@@ -729,17 +725,19 @@ void fx_Object_freeze(txMachine* the)
 				while ((at = at->next)) {
 					if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
 						if (property->kind == XS_REFERENCE_KIND) {
-							mxPushSlot(property);
-							mxPushInteger(1);
 							mxPushSlot(mxThis);
-							fxCallID(the, mxID(_isFrozen));
+							mxDub();
+							fxGetID(the, mxID(_isFrozen));
+							fxCallFrame(the);
+							mxPushSlot(property);
+							mxRunCount(1);
 							if (!fxRunTest(the)) {
-								mxPushSlot(property);
-								mxPushBoolean(1);
-								mxPushInteger(2);
 								mxPushSlot(mxThis);
 								mxPushSlot(mxFunction);
-								fxCall(the);
+								fxCallFrame(the);
+								mxPushSlot(property);
+								mxPushBoolean(1);
+								mxRunCount(2);
 								mxPop();
 							}
 						}
@@ -755,46 +753,30 @@ void fx_Object_freeze(txMachine* the)
 
 void fx_Object_fromEntries(txMachine* the)
 {
-	txSlot *instance, *iterator, *result, *value, *at, *function;
+	txSlot *instance, *iterator, *next, *value, *at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
 		mxTypeError("invalid iterable");
 	mxPush(mxObjectPrototype);
 	instance = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
-	mxCallID(mxArgv(0), mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	for (;;) {
-		mxCallID(iterator, mxID(_next), 0);
-		result = the->stack;
-		mxGetID(result, mxID(_done));
-		if (fxToBoolean(the, the->stack))
-			break;
-		the->stack++;
-		mxGetID(result, mxID(_value));
-		value = the->stack;
-		{
-			mxTry(the) {
-				if (value->kind != XS_REFERENCE_KIND)
-					mxTypeError("item is no object");
-				mxGetID(value, 0);
-				mxGetID(value, 1);
-				at = fxAt(the, the->stack + 1);
-				mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
-				the->stack++;
-				the->stack++;
-				the->stack++;
-				the->stack++;
-			}
-			mxCatch(the) {
-				mxGetID(iterator, mxID(_return));
-				function = the->stack;	
-				if (!mxIsUndefined(function)) {
-					mxCall(function, iterator, 0);
-					the->stack++;
-				}
-				the->stack++;
-				fxJump(the);
-			}
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, mxArgv(0), iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxGetID(value, 0);
+			mxGetID(value, 1);
+			at = fxAt(the, the->stack + 1);
+			mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
+			mxPop();
+			mxPop();
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator);
+			fxJump(the);
 		}
 	}
 	the->stack++;

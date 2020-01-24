@@ -1419,12 +1419,12 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 							txSlot* aFunction = aParentProperty->value.accessor.getter;
 							if (mxIsFunction(aFunction)) {
 								fxBeginHost(the);
-								mxPushInteger(0);
 								/* THIS */
 								mxPushReference(theInstance);
 								/* FUNCTION */
 								mxPushReference(aFunction);
-								fxCall(the);
+								fxCallFrame(the);
+								mxRunCount(0);
 								cacheProperty = mxBehaviorSetProperty(the, cache, aParentProperty->ID, XS_NO_ID, XS_ANY);
 								cacheProperty->flag |= XS_INSPECTOR_FLAG;
 								cacheProperty->kind = the->stack->kind;

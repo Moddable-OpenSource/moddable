@@ -184,31 +184,28 @@ void fx_AggregateError(txMachine* the)
 	txSlot* internal = fx_Error_aux(the, &mxAggregateErrorPrototype, 1);
 	txSlot** address = &internal->value.errors.first;
 	txSlot* iterator;
+	txSlot* next;
+	txSlot* value;
 	txSlot* slot;
 	internal->kind = XS_ERRORS_KIND;
 	internal->value.errors.first = C_NULL;
 	internal->value.errors.length = 0;
-	mxPushInteger(0);
-	mxPushSlot(mxArgv(0));
-	fxCallID(the, mxID(_Symbol_iterator));
-	iterator = the->stack;
-	for(;;) {
-		mxPushInteger(0);
-		mxPushSlot(iterator);
-		fxCallID(the, mxID(_next));
-		slot = the->stack;
-		if (!mxIsReference(slot))
-			mxTypeError("result is no object");
-		mxPushSlot(slot);
-		fxGetID(the, mxID(_done));
-		if (fxToBoolean(the, the->stack))
-			break;
-		mxPop();
-		fxGetID(the, mxID(_value));
-		*address = slot = fxNewSlot(the);
-		mxPullSlot(slot);
-		address = &slot->next;
-		internal->value.errors.length++;
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, mxArgv(0), iterator, next, 0);
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			*address = slot = fxNewSlot(the);
+			slot->kind = value->kind;
+			slot->value = value->value;
+			address = &slot->next;
+			internal->value.errors.length++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator);
+			fxJump(the);
+		}
 	}
 	the->stack = stack;
 }

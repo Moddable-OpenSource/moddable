@@ -257,7 +257,7 @@ txSlot* fxNewMapInstance(txMachine* the)
 
 void fx_Map(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result, *value;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: Map");
 	mxPushSlot(mxTarget);
@@ -273,40 +273,29 @@ void fx_Map(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				value = the->stack;
-				if (value->kind != XS_REFERENCE_KIND)
-					mxTypeError("item is no object");
-				mxGetID(value, 0);
-				mxGetID(value, 1);
-				mxCall(function, mxResult, 2);
-				the->stack++;
-				the->stack++;
-			}
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			fxCallFrame(the);
+			mxPushSlot(value);
+			fxGetIndex(the, 0);
+			mxPushSlot(value);
+			fxGetIndex(the, 1);
+			mxRunCount(2);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
-	the->stack++;
 }
 
 void fx_Map_prototype_clear(txMachine* the)
@@ -373,14 +362,6 @@ void fx_Map_prototype_forEach(txMachine* the)
 	while (key) {
 		txSlot* value = key->next;
 		if (!(key->flag & XS_DONT_ENUM_FLAG)) {
-			/* ARG0 */
-			mxPushSlot(value);
-			/* ARG1 */
-			mxPushSlot(key);
-			/* ARG2 */
-			mxPushSlot(mxThis);
-			/* ARGC */
-			mxPushInteger(3);
 			/* THIS */
 			if (mxArgc > 1)
 				mxPushSlot(mxArgv(1));
@@ -388,7 +369,12 @@ void fx_Map_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCall(the);
+			fxCallFrame(the);
+			/* ARGUMENTS */
+			mxPushSlot(value);
+			mxPushSlot(key);
+			mxPushSlot(mxThis);
+			mxRunCount(3);
 			the->stack++;
 		}
 		key = value->next;
@@ -562,7 +548,7 @@ txSlot* fxNewSetInstance(txMachine* the)
 
 void fx_Set(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: Set");
 	mxPushSlot(mxTarget);
@@ -578,30 +564,21 @@ void fx_Set(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				mxCall(function, mxResult, 1);
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			fxCallFrame(the);
+			mxPushSlot(value);
+			mxRunCount(1);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -677,14 +654,6 @@ void fx_Set_prototype_forEach(txMachine* the)
 	txSlot* value = list->value.list.first;
 	while (value) {
 		if (!(value->flag & XS_DONT_ENUM_FLAG)) {
-			/* ARG0 */
-			mxPushSlot(value);
-			/* ARG1 */
-			mxPushSlot(value);
-			/* ARG2 */
-			mxPushSlot(mxThis);
-			/* ARGC */
-			mxPushInteger(3);
 			/* THIS */
 			if (mxArgc > 1)
 				mxPushSlot(mxArgv(1));
@@ -692,8 +661,13 @@ void fx_Set_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCall(the);
-			the->stack++;
+			fxCallFrame(the);
+			/* ARGUMENTS */
+			mxPushSlot(value);
+			mxPushSlot(value);
+			mxPushSlot(mxThis);
+			mxRunCount(3);
+			mxPop();
 		}
 		value = value->next;
 	}
@@ -798,7 +772,7 @@ txSlot* fxNewWeakMapInstance(txMachine* the)
 
 void fx_WeakMap(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result, *value;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: WeakMap");
 	mxPushSlot(mxTarget);
@@ -814,34 +788,26 @@ void fx_WeakMap(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				value = the->stack;
-				mxGetID(value, 0);
-				mxGetID(value, 1);
-				mxCall(function, mxResult, 2);
-				the->stack++;
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			fxCallFrame(the);
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxPushSlot(value);
+			fxGetIndex(the, 0);
+			mxPushSlot(value);
+			fxGetIndex(the, 1);
+			mxRunCount(2);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -938,7 +904,7 @@ txSlot* fxNewWeakSetInstance(txMachine* the)
 
 void fx_WeakSet(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: WeakSet");
 	mxPushSlot(mxTarget);
@@ -954,30 +920,21 @@ void fx_WeakSet(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				mxCall(function, mxResult, 1);
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			fxCallFrame(the);
+			mxPushSlot(value);
+			mxRunCount(1);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -1538,32 +1495,32 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
 	}
 	if (!flags)
 		return;
-		
-		
-	mxPush(mxFinalizationGroupCleanupIteratorPrototype);
-	instance = fxNewObjectInstance(the);
-	mxPush(mxObjectPrototype);
-	result = fxNewObjectInstance(the);
-	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_GET_ONLY);
-	mxPop();
-	mxPushClosure(group);
-	property = fxNextSlotProperty(the, property, the->stack, mxID(_iterable), XS_GET_ONLY);
- 	mxPop();
-	property = fxNextIntegerProperty(the, property, 0, mxID(_index), XS_GET_ONLY);
-    
 	if (!callback)
 		callback = group->value.finalizationGroup.callback;
 	flags = group->value.finalizationGroup.flags;
+	
 	{
 		mxTry(the) {
 			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_ACTIVE;
-			mxPushInteger(1);
+		
 			mxPushUndefined();
 			mxPushSlot(callback);
-			fxCall(the);
+			fxCallFrame(the);
+			mxPush(mxFinalizationGroupCleanupIteratorPrototype);
+			instance = fxNewObjectInstance(the);
+			mxPush(mxObjectPrototype);
+			result = fxNewObjectInstance(the);
+			property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+			property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+			property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_GET_ONLY);
 			mxPop();
+			mxPushClosure(group);
+			property = fxNextSlotProperty(the, property, the->stack, mxID(_iterable), XS_GET_ONLY);
+			mxPop();
+			property = fxNextIntegerProperty(the, property, 0, mxID(_index), XS_GET_ONLY);
+			mxRunCount(1);
+			mxPop();
+			
 			group->value.finalizationGroup.flags = flags;
 		}
 		mxCatch(the) {
