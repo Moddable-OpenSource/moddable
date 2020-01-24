@@ -251,7 +251,7 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 			mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(mxThis);
 		fxGetIndex(the, index);
@@ -333,7 +333,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(a);
 			mxPushSlot(b);
@@ -397,7 +397,7 @@ txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 	}
 	else
 		mxPush(mxArrayConstructor);
-	fxNewFrame(the);
+	mxNew();
 	if (flag) {
 		mxPushUnsigned(length);
 		mxRunCount(1);
@@ -434,7 +434,7 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	}
 	else
 		mxTypeError("invalid constructor");
-	fxNewFrame(the);
+	mxNew();
 	mxPushNumber(length);
 	mxRunCount(1);
 	mxPullSlot(mxResult);
@@ -454,7 +454,7 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 		mxPushUndefined();
 	/* FUNCTION */
 	mxPushSlot(function);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	mxPushSlot(mxThis);
 	fxGetIndex(the, index);
@@ -586,7 +586,7 @@ void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index)
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(mxResult);
 		mxPushSlot(mxThis);
@@ -927,7 +927,7 @@ void fx_Array_from_aux(txMachine* the, txSlot* function, txSlot* value, txIndex 
 			mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(value);
 		mxPushInteger(index);
@@ -1355,7 +1355,7 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 					mxPushUndefined();
 				/* FUNCTION */
 				mxPushSlot(function);
-				fxCallFrame(the);
+				mxCall();
 				/* ARGUMENTS */
 				mxPushSlot(source);
 				fxGetIndex(the, index);
@@ -2287,7 +2287,7 @@ void fx_Array_prototype_toLocaleString(txMachine* the)
 		if ((the->stack->kind != XS_UNDEFINED_KIND) && (the->stack->kind != XS_NULL_KIND)) {
 			mxDub();
 			fxGetID(the, mxID(_toLocaleString));
-			fxCallFrame(the);
+			mxCall();
 			mxRunCount(0);
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 			string = fxToString(the, slot);
@@ -2315,7 +2315,7 @@ void fx_Array_prototype_toString(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_join));
-	fxCallFrame(the);
+	mxCall();
 	mxRunCount(0);
 	mxPullSlot(mxResult);
 }

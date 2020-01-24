@@ -222,7 +222,7 @@ txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot*
 {
 	mxPushSlot(iterator);
 	mxPushSlot(next);
-	fxCallFrame(the);
+	mxCall();
 	mxRunCount(0);
 	if (!mxIsReference(the->stack))
 		mxTypeError("iterator result is no object");
@@ -247,7 +247,7 @@ void fxIteratorReturn(txMachine* the, txSlot* iterator)
 	if (mxIsUndefined(the->stack)) 
 		mxPop();
 	else {
-		fxCallFrame(the);
+		mxCall();
 		mxRunCount(0);
 	}
 	mxPop();
@@ -263,7 +263,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 		mxPop();
 		return 0;
 	}
-	fxCallFrame(the);
+	mxCall();
 	mxRunCount(0);
 	if (!mxIsReference(the->stack))
 		mxTypeError("iterator is no object");

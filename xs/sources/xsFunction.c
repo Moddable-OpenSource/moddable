@@ -324,7 +324,7 @@ void fx_Function_prototype_apply(txMachine* the)
 		mxPushSlot(mxArgv(0));
 	/* FUNCTION */
 	mxPushSlot(mxThis);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	if ((mxArgc < 2) || (mxArgv(1)->kind == XS_UNDEFINED_KIND) || (mxArgv(1)->kind == XS_NULL_KIND))
 		c = 0;
@@ -496,7 +496,7 @@ void fx_Function_prototype_call(txMachine* the)
 		mxPushSlot(mxArgv(0));
 	/* FUNCTION */
 	mxPushSlot(mxThis);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	c = mxArgc;
 	i = 1;
@@ -668,7 +668,7 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(resolveFunction);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
 			mxRunCount(1);
@@ -680,7 +680,7 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			/* FUNCTION */
 			mxDub();
 			fxGetID(the, mxID(_resolve));
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
 			mxRunCount(1);

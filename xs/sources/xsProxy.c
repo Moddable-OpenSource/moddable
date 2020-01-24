@@ -203,7 +203,7 @@ void fxProxyCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* argume
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushSlot(_this);
@@ -225,7 +225,7 @@ void fxProxyConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlo
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushSlot(arguments);
@@ -253,7 +253,7 @@ txBoolean fxProxyDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -307,7 +307,7 @@ txBoolean fxProxyDeleteProperty(txMachine* the, txSlot* instance, txID id, txInd
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -347,7 +347,7 @@ txBoolean fxProxyGetOwnProperty(txMachine* the, txSlot* instance, txID id, txInd
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -433,7 +433,7 @@ txBoolean fxProxyGetPropertyValue(txMachine* the, txSlot* instance, txID id, txI
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -478,7 +478,7 @@ txBoolean fxProxyGetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxRunCount(1);
@@ -516,7 +516,7 @@ txBoolean fxProxyHasProperty(txMachine* the, txSlot* instance, txID id, txIndex 
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -555,7 +555,7 @@ txBoolean fxProxyIsExtensible(txMachine* the, txSlot* instance)
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxRunCount(1);
@@ -593,7 +593,7 @@ void fxProxyOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* list)
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxRunCount(1);
@@ -690,7 +690,7 @@ txBoolean fxProxyPreventExtensions(txMachine* the, txSlot* instance)
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxRunCount(1);
@@ -728,7 +728,7 @@ txBoolean fxProxySetPropertyValue(txMachine* the, txSlot* instance, txID id, txI
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
@@ -776,7 +776,7 @@ txBoolean fxProxySetPrototype(txMachine* the, txSlot* instance, txSlot* prototyp
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushSlot(prototype);

@@ -136,7 +136,7 @@ void fx_JSON_parse(txMachine* the)
 			id = fxID(the, "");
 			mxBehaviorDefineOwnProperty(the, instance, id, XS_NO_ID, mxResult, XS_GET_ONLY);
 			mxPushSlot(mxArgv(1));
-			fxCallFrame(the);
+			mxCall();
 			mxPushUndefined();
 			fxKeyAt(the, id, XS_NO_ID, the->stack);
 			mxPushSlot(mxResult);
@@ -580,7 +580,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 			while (index < length) {
 				mxPushSlot(reference);
 				mxPushSlot(reviver);
-				fxCallFrame(the);
+				mxCall();
 				mxPushUndefined();
 				fxKeyAt(the, 0, index, the->stack);
 				mxPushSlot(reference);
@@ -602,7 +602,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 			while ((at = at->next)) {
 				mxPushSlot(reference);
 				mxPushSlot(reviver);
-                fxCallFrame(the);
+                mxCall();
 				mxPushUndefined();
 				fxKeyAt(the, at->value.at.id, at->value.at.index, the->stack);
 				mxPushSlot(reference);
@@ -805,7 +805,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 		mxDub();
 		fxGetID(the, mxID(_toJSON));
 		if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))  {
-			fxCallFrame(the);
+			mxCall();
 			mxPushSlot(aKey);
 			fxToString(the, the->stack);
 			mxRunCount(1);
@@ -818,7 +818,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 		mxPushSlot(aWrapper);
 		/* FUNCTION */
 		mxPushSlot(theStringifier->replacer);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(aKey);
 		fxToString(the, the->stack);

@@ -200,7 +200,7 @@ void fx_Date(txMachine* the)
 			mxPushSlot(mxFunction);
 			mxDub();
 			fxGetID(the, mxID(_parse));
-			fxCallFrame(the);
+			mxCall();
 			mxPushSlot(slot);
 			mxRunCount(1);
 			instance->next->value.number = the->stack->value.number;
@@ -1048,7 +1048,7 @@ void fx_Date_prototype_toJSON(txMachine* the)
 		mxPushSlot(mxThis);
 		mxDub();
 		fxGetID(the, mxID(_toISOString));
-		fxCallFrame(the);
+		mxCall();
 		mxRunCount(0);
 		mxPullSlot(mxResult);
 	}
@@ -1085,7 +1085,7 @@ void fx_Date_prototype_toPrimitive(txMachine* the)
 			mxPushSlot(mxThis);
 			fxGetID(the, ids[i]);
 			if (fxIsCallable(the, the->stack)) {
-				fxCallFrame(the);
+				mxCall();
 				mxRunCount(0);
 				if (mxIsReference(the->stack))
 					mxPop();

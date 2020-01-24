@@ -268,7 +268,7 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 			mxPushSlot(&mxObjectPrototype);
 			fxGetID(the, mxID(_Symbol_toPrimitive));
 		}
-		fxCallFrame(the);
+		mxCall();
 		if (theHint == XS_NO_HINT)
 			mxPushSlot(&mxDefaultString);
 		else if (theHint == XS_NUMBER_HINT)
@@ -584,7 +584,7 @@ txBoolean fxOrdinaryGetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 		mxPushSlot(receiver);
 		/* FUNCTION */
 		mxPushReference(function);
-		fxCallFrame(the);
+		mxCall();
 		mxRunCount(0);
 		mxPullSlot(value);
 	}
@@ -773,7 +773,7 @@ txBoolean fxOrdinarySetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 		mxPushSlot(receiver);
 		/* FUNCTION */
 		mxPushReference(function);
-		fxCallFrame(the);
+		mxCall();
 		mxPushSlot(value);
 		mxRunCount(1);
 		mxPop();

@@ -131,7 +131,7 @@ txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* 
 	txSlot* capability;
 	txSlot* slot;
 	txSlot* function;
-	fxNewFrame(the);
+	mxNew();
 	capability = fxNewHostFunction(the, fxNewPromiseCapabilityCallback, 2, XS_NO_ID);
     mxRunCount(1);
 	slot = mxFunctionInstanceHome(capability)->value.home.object;
@@ -244,12 +244,12 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				mxTry(the) {
 					mxPushSlot(mxThis);
 					mxPushSlot(resolve);
-					fxCallFrame(the);
+					mxCall();
 					mxPushSlot(value);
 					mxRunCount(1);
 					mxDub();
 					fxGetID(the, mxID(_then));
-					fxCallFrame(the);
+					mxCall();
 					if (which) {
 						already = already->next = fxNewSlot(the);
 						already->kind = XS_UNINITIALIZED_KIND;
@@ -291,7 +291,7 @@ void fxCombinePromises(txMachine* the, txInteger which)
 					mxPushSlot(rejectFunction);
 				else
 					mxPushSlot(resolveFunction);
-				fxCallFrame(the);
+				mxCall();
 				if ((which == XS_PROMISE_COMBINE_SETTLED) || (which == XS_PROMISE_COMBINE_FULFILLED)) {
 					fxCacheArray(the, array);
 					mxPushReference(array);
@@ -348,12 +348,12 @@ void fxCombinePromisesCallback(txMachine* the)
 		/* FUNCTION */
 		slot = slot->next;
 		mxPushSlot(slot);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		slot = slot->next;
 		if (which == XS_PROMISE_COMBINE_REJECTED) {
 			mxPush(mxAggregateErrorConstructor);
-			fxNewFrame(the);
+			mxNew();
 		}
 		fxCacheArray(the, slot->value.reference);
 		mxPushSlot(slot);
@@ -399,7 +399,7 @@ void fxOnRejectedPromise(txMachine* the)
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(rejectHandler);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(argument);
 			mxRunCount(1);
@@ -416,7 +416,7 @@ void fxOnRejectedPromise(txMachine* the)
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(argument);
 		mxRunCount(1);
@@ -438,7 +438,7 @@ void fxOnResolvedPromise(txMachine* the)
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(resolveHandler);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(argument);
 			mxRunCount(1);
@@ -455,7 +455,7 @@ void fxOnResolvedPromise(txMachine* the)
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(argument);
 		mxRunCount(1);
@@ -473,7 +473,7 @@ void fxOnThenable(txMachine* the)
 		mxPushSlot(mxThis);
 		/* FUNCTION */
 		mxPushSlot(thenFunction);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(resolveFunction);
 		mxPushSlot(rejectFunction);
@@ -564,7 +564,7 @@ void fxRejectException(txMachine* the, txSlot* rejectFunction)
 	mxPushUndefined();
 	/* FUNCTION */
 	mxPushSlot(rejectFunction);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	mxPush(mxException);
 	mxException = mxUndefined;
@@ -717,7 +717,7 @@ void fx_Promise(txMachine* the)
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(argument);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(resolveFunction);
 			mxPushSlot(rejectFunction);
@@ -766,7 +766,7 @@ void fx_Promise_reject(txMachine* the)
 	mxPushUndefined();
 	/* FUNCTION */
 	mxPushSlot(rejectFunction);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -819,7 +819,7 @@ void fx_Promise_resolveAux(txMachine* the)
 	mxPushUndefined();
 	/* FUNCTION */
 	mxPushSlot(resolveFunction);
-	fxCallFrame(the);
+	mxCall();
 	/* ARGUMENTS */
 	mxPushSlot(argument);
 	/* COUNT */
@@ -832,7 +832,7 @@ void fx_Promise_prototype_catch(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_then));
-	fxCallFrame(the);
+	mxCall();
 	mxPushUndefined();
 	if (mxArgc > 0) 
 		mxPushSlot(mxArgv(0));
@@ -872,7 +872,7 @@ void fx_Promise_prototype_finally(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_then));
-	fxCallFrame(the);
+	mxCall();
 	if (mxArgc > 0) {
 		if (mxIsReference(mxArgv(0)) && mxIsCallable(mxArgv(0)->value.reference)) {
 			txSlot* function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
@@ -934,7 +934,7 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 		mxTry(the) {
 			mxPushUndefined();
 			mxPushSlot(onFinally);
-			fxCallFrame(the);
+			mxCall();
 			mxRunCount(0);
 		}
 		mxCatch(the) {
@@ -957,7 +957,7 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
     mxPushSlot(mxResult);
 	mxDub();
 	fxGetID(the, mxID(_then));
-	fxCallFrame(the);
+	mxCall();
 	
 	if (success->value.boolean)
 		function = fxNewHostFunction(the, fx_Promise_prototype_finallyReturn, 0, XS_NO_ID);

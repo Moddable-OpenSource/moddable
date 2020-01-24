@@ -317,7 +317,7 @@ void fxAsyncGeneratorRejectYield(txMachine* the)
 
 	mxPushUndefined();
 	mxPushSlot(rejectFunction);
-	fxCallFrame(the);
+	mxCall();
 	mxPushSlot(mxArgv(0));
 	
 	queue->value.list.first = current = current->next;
@@ -359,7 +359,7 @@ void fxAsyncGeneratorResolveYield(txMachine* the)
 	
 	mxPushUndefined();
 	mxPushSlot(resolveFunction);
-	fxCallFrame(the);
+	mxCall();
 	mxPushSlot(mxArgv(0));
 	fxNewGeneratorResult(the, (state->value.integer == XS_CODE_END) ? 1 : 0);
 	
@@ -402,7 +402,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			fxGetID(the, mxID(_reject));
 		else
 			fxGetID(the, mxID(_resolve));
-		fxCallFrame(the);
+		mxCall();
 		if ((status == XS_NO_STATUS) || (mxArgc == 0))
 			mxPushUndefined();
 		else 
@@ -427,7 +427,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 				state->value.integer = XS_CODE_END;
 				mxPushUndefined();
 				mxPushSlot(resolveYieldFunction);
-				fxCallFrame(the);
+				mxCall();
 				mxPushUndefined();
 				mxRunCount(1);
 				mxPop();
@@ -436,7 +436,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 				mxPush(mxPromiseConstructor);
 				mxDub();
 				fxGetID(the, mxID(_resolve));
-				fxCallFrame(the);
+				mxCall();
 				mxPushSlot(value);
 				mxRunCount(1);
 				value = the->stack;
@@ -459,7 +459,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			mxPush(mxPromiseConstructor);
 			mxDub();
 			fxGetID(the, mxID(_reject));
-			fxCallFrame(the);
+			mxCall();
 			mxPush(mxException);
 			mxException = mxUndefined;
 			mxRunCount(1);
@@ -778,7 +778,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				if (mxIsUndefined(the->stack)) {
 					mxPushUndefined();
 					mxPushSlot(resolveFunction);
-					fxCallFrame(the);
+					mxCall();
 					mxPushUndefined();
 					fxNewGeneratorResult(the, 1);
 					mxRunCount(1);
@@ -792,7 +792,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				if (mxIsUndefined(the->stack)) {
 					mxPushUndefined();
 					mxPushSlot(rejectFunction);
-					fxCallFrame(the);
+					mxCall();
 					if (mxArgc == 0)
 						mxPushUndefined();
 					else
@@ -807,7 +807,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				txSlot* doneFlag = doneFunction->next;
 				mxPushSlot(iterator);
 				mxPushSlot(stepFunction);
-				fxCallFrame(the);
+				mxCall();
 				if (mxArgc == 0)
 					mxPushUndefined();
 				else
@@ -825,7 +825,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				mxPush(mxPromiseConstructor);
 				mxDub();
 				fxGetID(the, mxID(_resolve));
-				fxCallFrame(the);
+				mxCall();
 				mxPushSlot(slot);
 				fxGetID(the, mxID(_value));
 				mxRunCount(1);

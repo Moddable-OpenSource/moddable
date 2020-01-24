@@ -51,7 +51,6 @@
 #endif
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
-static void fxFreezeBuiltIn(txMachine* the);
 static void fxFreezeBuiltIns(txMachine* the);
 static txScript* fxLoadScript(txMachine* the, txString path);
 
@@ -427,7 +426,7 @@ int main(int argc, char* argv[])
 			mxBreakpoints = mxUndefined;
 			mxHostInspectors = mxUndefined;
 			mxInstanceInspectors = mxUndefined;
-			fxPrepareHome(the);
+			//fxPrepareHome(the);
 		
 			if (linker->stripFlag)
 				fxStripCallbacks(linker, the);
@@ -776,7 +775,7 @@ void fxFreezeBuiltIns(txMachine* the)
 #define mxFreezeBuiltInCall \
 	mxPush(mxObjectConstructor); \
 	mxPushSlot(freeze); \
-	fxCallFrame(the)
+	mxCall()
 #define mxFreezeBuiltInRun \
 	mxRunCount(1); \
 	mxPop()

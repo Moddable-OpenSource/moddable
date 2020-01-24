@@ -1248,15 +1248,15 @@ void fx_setTimerCallback(txJob* job)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	{
-		mxPush(job->argument);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPush(job->function);
-		fxCall(the);
-		the->stack++;
+		mxCall();
+		mxPush(job->argument);
+		/* ARGC */
+		mxRunCount(1);
+		mxPop();
 	}
 	fxEndHost(the);
 }
@@ -1341,7 +1341,7 @@ void fxRunModuleFile(txMachine* the, txString path)
 	fxRunImport(the);
 	mxDub();
 	fxGetID(the, mxID(_then));
-	fxCallFrame(the);
+	mxCall();
 	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
 	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
 	mxRunCount(2);

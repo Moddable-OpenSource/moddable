@@ -121,9 +121,9 @@ void PiuContentDictionary(xsMachine* the, void* it)
 	}
 	if (xsFindResult(xsArg(1), xsID_Behavior)) {
 		if (xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
-			fxPushCount(the, 0);
 			fxPush(xsResult);
 			fxNew(the);
+			fxRunCount(the, 0);
 			xsResult = fxPop();
 			(*self)->behavior = xsToReference(xsResult);
 		}
@@ -1283,15 +1283,15 @@ void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsI
 		xsVar(0) = xsReference((*content)->behavior);
 		if (xsFindResult(xsVar(0), id)) {
 			xsVar(1) = xsReference((*content)->reference);
-			xsOverflow(-3 - c);
+			xsOverflow(-(XS_FRAME_COUNT + c));
+			fxPush(xsVar(0));
+			fxPush(xsResult);
+			fxCall(the);
 			fxPush(xsVar(1));
 			for (i = 1; i < c; i++) {
 				fxPush(xsArg(i));
 			}
-			fxPushCount(the, c);
-			fxPush(xsVar(0));
-			fxPush(xsResult);
-			fxCall(the);
+			fxRunCount(the, c);
 			xsResult = fxPop();
 			return;
 		}

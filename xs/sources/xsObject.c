@@ -332,7 +332,7 @@ void fx_Object_prototype_toLocaleString(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_toString));
-	fxCallFrame(the);
+	mxCall();
 	mxRunCount(0);
 	mxPullSlot(mxResult);
 }
@@ -368,7 +368,7 @@ void fx_Object_prototype_toPrimitive(txMachine* the)
 			mxPushSlot(mxThis);
 			fxGetID(the, ids[i]);
 			if (fxIsCallable(the, the->stack)) {
-				fxCallFrame(the);
+				mxCall();
 				mxRunCount(0);
 				if (mxIsReference(the->stack))
 					mxPop();
@@ -728,13 +728,13 @@ void fx_Object_freeze(txMachine* the)
 							mxPushSlot(mxThis);
 							mxDub();
 							fxGetID(the, mxID(_isFrozen));
-							fxCallFrame(the);
+							mxCall();
 							mxPushSlot(property);
 							mxRunCount(1);
 							if (!fxRunTest(the)) {
 								mxPushSlot(mxThis);
 								mxPushSlot(mxFunction);
-								fxCallFrame(the);
+								mxCall();
 								mxPushSlot(property);
 								mxPushBoolean(1);
 								mxRunCount(2);

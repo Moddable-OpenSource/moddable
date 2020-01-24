@@ -1423,7 +1423,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 								mxPushReference(theInstance);
 								/* FUNCTION */
 								mxPushReference(aFunction);
-								fxCallFrame(the);
+								mxCall();
 								mxRunCount(0);
 								cacheProperty = mxBehaviorSetProperty(the, cache, aParentProperty->ID, XS_NO_ID, XS_ANY);
 								cacheProperty->flag |= XS_INSPECTOR_FLAG;
@@ -1627,7 +1627,9 @@ txSlot* fxFindRealm(txMachine* the)
 	if (frame && (!(frame->flag & XS_C_FLAG))) {
 		txSlot* function = frame + 3;
 		if (mxIsReference(function)) {
-			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+            txSlot* instance = function->value.reference;
+            txSlot* home = mxFunctionInstanceHome(instance);
+			txSlot* module = home->value.home.module;
 			realm = mxModuleInstanceInternal(module)->value.module.realm;
 		}
 	}

@@ -517,7 +517,6 @@ typedef struct {
 
 mxExport txKind fxTypeOf(txMachine*, txSlot*);
 
-mxExport void fxPushCount(txMachine*, txInteger);
 mxExport void fxUndefined(txMachine*, txSlot*);
 mxExport void fxNull(txMachine*, txSlot*);
 mxExport void fxBoolean(txMachine*, txSlot*, txS1);
@@ -595,6 +594,7 @@ mxExport void fxCall(txMachine*);
 mxExport void fxCallID(txMachine*, txInteger);
 mxExport void fxNew(txMachine*);
 mxExport void fxNewID(txMachine*, txInteger);
+mxExport void fxRunCount(txMachine*, txInteger);
 mxExport txBoolean fxRunTest(txMachine* the);
 
 mxExport void fxCallFrame(txMachine*);
@@ -1955,15 +1955,18 @@ enum {
 	(((THE_SLOT)->kind == XS_STRING_KIND) || ((THE_SLOT)->kind == XS_STRING_X_KIND))
 
 #ifdef mxDebug
-#define mxTemporary(_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
-	_SLOT = --the->stack)
+#define mxCall() \
+	(fxOverflow(the, -4, C_NULL, 0), \
+	fxCall(the))
 #define mxDub() \
 	(fxOverflow(the, -1, C_NULL, 0), \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
 	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
 	the->stack->value = (the->stack + 1)->value))
+#define mxNew() \
+	(fxOverflow(the, -5, C_NULL, 0), \
+	fxNew(the))
 
 #define mxPush(THE_SLOT) \
 	(fxOverflow(the, -1, C_NULL, 0), \
@@ -2049,14 +2052,19 @@ enum {
 		(mxInitSlotKind(the->stack, XS_NUMBER_KIND), \
 		the->stack->value.number = (txNumber)(THE_NUMBER)) \
 	)
+#define mxTemporary(_SLOT) \
+	(fxOverflow(the, -1, C_NULL, 0), \
+	_SLOT = --the->stack)
 #else
-
+#define mxCall() \
+	(fxCall(the))
 #define mxDub() \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
 	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
-	the->stack->value = (the->stack + 1)->value))
-
+	the->stack->value = (the->stack + 1)->value)
+#define mxNew() \
+	(fxNew(the))
 #define mxPush(THE_SLOT) \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
@@ -2122,9 +2130,11 @@ enum {
 		(mxInitSlotKind(the->stack, XS_NUMBER_KIND), \
 		the->stack->value.number = (txNumber)(THE_NUMBER)) \
 	)
-
+#define mxTemporary(_SLOT) \
+	(_SLOT = --the->stack)
 #endif
-
+#define mxPop() \
+	(the->stack++)
 #define mxPull(THE_SLOT) \
 	((THE_SLOT).value = the->stack->value, \
 	(THE_SLOT).kind = (the->stack++)->kind)
@@ -2132,8 +2142,6 @@ enum {
 	((THE_SLOT)->value = the->stack->value, \
 	(THE_SLOT)->kind = (the->stack++)->kind)
 
-#define mxPop() \
-	(the->stack++)
 
 
 #define mxThis (the->frame + 4)

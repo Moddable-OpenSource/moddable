@@ -283,7 +283,7 @@ void fx_Map(txMachine* the)
 				mxTypeError("item is no object");
 			mxPushSlot(mxResult);
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			mxPushSlot(value);
 			fxGetIndex(the, 0);
 			mxPushSlot(value);
@@ -369,7 +369,7 @@ void fx_Map_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
 			mxPushSlot(key);
@@ -572,7 +572,7 @@ void fx_Set(txMachine* the)
 		mxTry(the) {
 			mxPushSlot(mxResult);
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			mxPushSlot(value);
 			mxRunCount(1);
 			mxPop();
@@ -661,7 +661,7 @@ void fx_Set_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
 			mxPushSlot(value);
@@ -796,7 +796,7 @@ void fx_WeakMap(txMachine* the)
 		mxTry(the) {
 			mxPushSlot(mxResult);
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			if (value->kind != XS_REFERENCE_KIND)
 				mxTypeError("item is no object");
 			mxPushSlot(value);
@@ -928,7 +928,7 @@ void fx_WeakSet(txMachine* the)
 		mxTry(the) {
 			mxPushSlot(mxResult);
 			mxPushSlot(function);
-			fxCallFrame(the);
+			mxCall();
 			mxPushSlot(value);
 			mxRunCount(1);
 			mxPop();
@@ -1505,7 +1505,7 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
 		
 			mxPushUndefined();
 			mxPushSlot(callback);
-			fxCallFrame(the);
+			mxCall();
 			mxPush(mxFinalizationGroupCleanupIteratorPrototype);
 			instance = fxNewObjectInstance(the);
 			mxPush(mxObjectPrototype);

@@ -1178,8 +1178,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	case XS_ERRORS_KIND: {
 		fprintf(file, ".kind = XS_ERRORS_KIND}, ");
 		fprintf(file, ".value = { .error = { ");
-		fxPrintAddress(the, file, slot->value.error.first);
-		fprintf(file, ", %d } }", slot->value.error.length);
+		fxPrintAddress(the, file, slot->value.errors.first);
+		fprintf(file, ", %d } }", slot->value.errors.length);
 	} break;
 	case XS_HOME_KIND: {
 		fprintf(file, ".kind = XS_HOME_KIND}, ");

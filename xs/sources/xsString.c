@@ -1115,7 +1115,7 @@ void fx_String_prototype_replaceAux(txMachine* the, txInteger size, txInteger of
 	if (function) {
 		mxPushUndefined();
 		mxPushSlot(function);
-		fxCallFrame(the);
+		mxCall();
 		mxPushSlot(match);
 		mxPushInteger(fxUTF8ToUnicodeOffset(mxThis->value.string, offset));
 		mxPushSlot(mxThis);
@@ -1513,7 +1513,7 @@ txBoolean fx_String_prototype_withRegexp(txMachine* the, txID id, txBoolean glob
 			mxPushSlot(regexp);
 			fxGetID(the, id);
 			if (!mxIsUndefined(the->stack) && !mxIsNull(the->stack)) {
-				fxCallFrame(the);
+				mxCall();
 				mxPushSlot(mxThis);
 				if (count > 1) {
 					if (mxArgc > 1)
@@ -1538,7 +1538,7 @@ void fx_String_prototype_withoutRegexp(txMachine* the, txID id, txBoolean global
 	mxPush(mxRegExpPrototype);
 	fxNewRegExpInstance(the);
 	mxPush(mxInitializeRegExpFunction);
-	fxCallFrame(the);
+	mxCall();
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
@@ -1550,7 +1550,7 @@ void fx_String_prototype_withoutRegexp(txMachine* the, txID id, txBoolean global
 	mxRunCount(2);
 	mxDub();
 	fxGetID(the, id);
-	fxCallFrame(the);
+	mxCall();
 	mxPushSlot(mxThis);
 	if (count > 1) {
 		if (mxArgc > 1)

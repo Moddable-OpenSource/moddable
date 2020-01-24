@@ -107,7 +107,7 @@ void fxExecuteRegExp(txMachine* the, txSlot* regexp, txSlot* argument)
 		the->stack->kind = mxExecuteRegExpFunction.kind;
 		the->stack->value = mxExecuteRegExpFunction.value;
 	}
-	fxCallFrame(the);
+	mxCall();
 	mxPushSlot(argument);
 	mxRunCount(1);
 	if ((the->stack->kind != XS_NULL_KIND) && (the->stack->kind != XS_REFERENCE_KIND))
@@ -211,7 +211,7 @@ void fx_RegExp(txMachine* the)
 	fxGetPrototypeFromConstructor(the, &mxRegExpPrototype);
 	fxNewRegExpInstance(the);
 	mxPush(mxInitializeRegExpFunction);
-	fxCallFrame(the);
+	mxCall();
 	if (patternIsRegExp) {
 		mxPushSlot(pattern);
 		fxGetID(the, mxID(_source));
@@ -636,7 +636,7 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	fxNewFrame(the);	
+	mxNew();	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
@@ -808,7 +808,7 @@ void fx_RegExp_prototype_replace(txMachine* the)
            	if (function) {
                 mxPushUndefined();
                 mxPushSlot(function);
-            	fxCallFrame(the);
+            	mxCall();
             }
            	mxPushSlot(matched);
             for (i = 1; i < c; i++) {
@@ -957,7 +957,7 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	fxNewFrame(the);	
+	mxNew();	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));

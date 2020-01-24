@@ -329,7 +329,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
-	fxNewFrame(the);
+	mxNew();
 	mxPushInteger(length);
 	mxRunCount(1);
 	mxPullSlot(mxResult);

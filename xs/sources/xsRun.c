@@ -4170,7 +4170,7 @@ void fxRunForAwaitOf(txMachine* the)
 		fxNewAsyncFromSyncIteratorInstance(the);
 	}
 	else {
-		fxCallFrame(the);
+		mxCall();
 		mxRunCount(0);
 	}
 	mxPullSlot(slot);
@@ -4206,7 +4206,7 @@ void fxRunInstanceOf(txMachine* the)
 	mxPushSlot(right);
 	mxDub();
 	fxGetID(the, mxID(_Symbol_hasInstance));
-	fxCallFrame(the);
+	mxCall();
 	mxPushSlot(left);
 	mxRunCount(1);
 	fxToBoolean(the, the->stack);

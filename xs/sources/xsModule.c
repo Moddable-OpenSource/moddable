@@ -233,13 +233,13 @@ void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag)
 				mxTry(the) {
 					mxPushUndefined();
 					mxPushSlot(mxModuleFunction(module));
-					fxCallFrame(the);
+					mxCall();
 					mxRunCount(0);
 					result = the->stack;
 					if (mxIsReference(result) && mxIsPromise(result->value.reference)) {
 						mxDub();
 						fxGetID(the, mxID(_then));
-						fxCallFrame(the);
+						mxCall();
 					
 						function = fxNewHostFunction(the, fxFulfillModule, 1, XS_NO_ID);
 						home = mxFunctionInstanceHome(function);
@@ -296,7 +296,7 @@ void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module)
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(slot);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushReference(module);
 		mxRunCount(1);
@@ -603,7 +603,7 @@ void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module)
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(slot);
-		fxCallFrame(the);
+		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(exception);
 		mxRunCount(1);
@@ -1013,7 +1013,7 @@ void fxRunImport(txMachine* the)
 					mxPushUndefined();
 					/* FUNCTION */
 					mxPushSlot(rejectFunction);
-					fxCallFrame(the);
+					mxCall();
 					/* ARGUMENTS */
 					mxPushSlot(exception);
 					mxRunCount(1);
@@ -1023,7 +1023,7 @@ void fxRunImport(txMachine* the)
 					mxPushUndefined();
 					/* FUNCTION */
 					mxPushSlot(fulfillFunction);
-					fxCallFrame(the);
+					mxCall();
 					/* ARGUMENTS */
 					mxPushSlot(module);
 					mxRunCount(1);
@@ -1340,7 +1340,7 @@ void fx_Compartment(txMachine* the)
 		if (mxArgc > 1) {
 			mxPushUndefined();
 			mxPush(mxCopyObjectFunction);
-			fxCallFrame(the);
+			mxCall();
 			mxPushReference(global);
 			mxPushSlot(mxArgv(1));
 			mxRunCount(2);
