@@ -170,10 +170,6 @@ txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
 txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 {
 	txSlot* anInstance = C_NULL;
-#ifdef mxHostFunctionPrimitive
-	txSlot* aProperty = C_NULL;
-#endif
-	
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:
 		mxTypeError("cannot coerce undefined to object");
@@ -239,14 +235,6 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 			(theSlot->value.hostFunction.IDs && (theSlot->value.hostFunction.builder->id >= 0)) 
 				? theSlot->value.hostFunction.IDs[theSlot->value.hostFunction.builder->id]
 				: theSlot->value.hostFunction.builder->id);
-#ifndef mxLink		
-		anInstance->flag |= XS_DONT_PATCH_FLAG;
-		aProperty = anInstance->next;
-		while (aProperty) {
-			aProperty->flag |= XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-			aProperty = aProperty->next;
-		}
-#endif
 		the->code = code;
 		mxPullSlot(theSlot);
 		} break;

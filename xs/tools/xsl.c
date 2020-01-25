@@ -426,10 +426,11 @@ int main(int argc, char* argv[])
 			mxBreakpoints = mxUndefined;
 			mxHostInspectors = mxUndefined;
 			mxInstanceInspectors = mxUndefined;
-			//fxPrepareHome(the);
 		
-			if (linker->stripFlag)
+			if (linker->stripFlag) {
+				fxPrepareHome(the);
 				fxStripCallbacks(linker, the);
+			}
 			else
 				fxUnstripCallbacks(linker);
 			

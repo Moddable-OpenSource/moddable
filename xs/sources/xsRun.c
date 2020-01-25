@@ -49,7 +49,6 @@ static txBoolean fxRunDefine(txMachine* the, txSlot* instance, txSlot* check, tx
 static txBoolean fxRunDelete(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunDerived(txMachine* the);
 static void fxRunExtends(txMachine* the);
-static void fxRunForAwaitOf(txMachine* the);
 static void fxRunForOf(txMachine* the);
 static void fxRunIn(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
@@ -3730,7 +3729,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_FOR_AWAIT_OF)
 			mxNextCode(1);
 			mxSaveState;
-			fxRunForAwaitOf(the);
+			gxDefaults.runForAwaitOf(the);
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_FOR_IN)

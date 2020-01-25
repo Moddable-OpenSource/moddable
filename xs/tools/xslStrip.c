@@ -273,7 +273,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Function_prototype_toString);
 	fxUnstripCallback(linker, fx_Generator);
 	fxUnstripCallback(linker, fx_Iterator_iterator);
-	fxUnstripCallback(linker, fx_Module);
 	fxUnstripCallback(linker, fx_Number_prototype_toString);
 	fxUnstripCallback(linker, fx_Number_prototype_valueOf);
 	fxUnstripCallback(linker, fx_Object_prototype_toPrimitive);
@@ -285,7 +284,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Symbol_prototype_toString);
 	fxUnstripCallback(linker, fx_Symbol_prototype_toPrimitive);
 	fxUnstripCallback(linker, fx_Symbol_prototype_valueOf);
-	fxUnstripCallback(linker, fx_Transfer);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_join);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_values);
 	
@@ -490,6 +488,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxNewAsyncGeneratorFunctionInstance,\n");
 	else
 		fprintf(file, "\tfxNewAsyncGeneratorFunctionInstanceDeadStrip,\n");
+	if (fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF))
+		fprintf(file, "\tfxRunForAwaitOf,\n");
+	else
+		fprintf(file, "\tfxDeadStrip,\n");
 	if (fxIsCodeUsed(XS_CODE_ARGUMENTS_SLOPPY))
 		fprintf(file, "\tfxNewArgumentsSloppyInstance,\n");
 	else
@@ -520,6 +522,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	}
 	fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "\tC_NULL,\n");
+	if (fxIsCallbackStripped(linker, fx_Promise))
+		fprintf(file, "\tfxExecuteModulesSync,\n");
+	else
+		fprintf(file, "\tfxExecuteModules,\n");
 	if (fxIsCodeUsed(XS_CODE_IMPORT))
 		fprintf(file, "\tfxRunImport,\n");
 	else

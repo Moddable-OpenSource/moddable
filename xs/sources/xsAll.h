@@ -105,6 +105,7 @@ typedef struct {
 	txSlot* (*newGeneratorFunctionInstance)(txMachine*, txID name);
 	txSlot* (*newAsyncGeneratorInstance)(txMachine*);
 	txSlot* (*newAsyncGeneratorFunctionInstance)(txMachine*, txID name);
+	void (*runForAwaitOf)(txMachine*);
 	txSlot* (*newArgumentsSloppyInstance)(txMachine*, txIndex count);
 	txSlot* (*newArgumentsStrictInstance)(txMachine*, txIndex count);
 	void (*runEval)(txMachine*);
@@ -114,6 +115,7 @@ typedef struct {
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
+    void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine*);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -716,6 +718,7 @@ extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
 
 /* xsRun.c */
 extern void fxRunEval(txMachine* the);
+extern void fxRunForAwaitOf(txMachine* the);
 extern void fxRunID(txMachine* the, txSlot* generator, txInteger count);
 extern void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _target, txSlot* environment, txSlot* object, txSlot* module);
 extern txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b);
@@ -1660,6 +1663,8 @@ extern const txBehavior gxModuleBehavior;
 
 extern void fxBuildModule(txMachine* the);
 
+extern void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
+extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
@@ -2307,9 +2312,7 @@ enum {
 	mxGeneratorPrototypeStackIndex,
 	mxGeneratorFunctionPrototypeStackIndex,
 	mxModulePrototypeStackIndex,
-	mxModuleConstructorStackIndex,
 	mxTransferPrototypeStackIndex,
-	mxTransferConstructorStackIndex,
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
@@ -2494,9 +2497,7 @@ enum {
 #define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]
 #define mxGeneratorFunctionPrototype the->stackPrototypes[-1 - mxGeneratorFunctionPrototypeStackIndex]
 #define mxModulePrototype the->stackPrototypes[-1 - mxModulePrototypeStackIndex]
-#define mxModuleConstructor the->stackPrototypes[-1 - mxModuleConstructorStackIndex]
 #define mxTransferPrototype the->stackPrototypes[-1 - mxTransferPrototypeStackIndex]
-#define mxTransferConstructor the->stackPrototypes[-1 - mxTransferConstructorStackIndex]
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
