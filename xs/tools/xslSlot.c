@@ -886,8 +886,7 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 					while (size) {
 						fprintf(file, "/* %.4d */", index);
 						index++;
-						item->flag |= XS_DEBUG_FLAG;
-						fxPrintSlot(the, file, item, XS_MARK_FLAG);
+						fxPrintSlot(the, file, item, XS_MARK_FLAG | XS_DEBUG_FLAG);
 						item++;
 						size--;
 					}
@@ -952,8 +951,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	fprintf(file, "\t{ ");
-	if (slot->flag & XS_DEBUG_FLAG) {
-		slot->flag &= ~XS_DEBUG_FLAG;
+	if (flag & XS_DEBUG_FLAG) {
+		flag &= ~XS_DEBUG_FLAG;
 		fprintf(file, "(txSlot*)%ld", (long int)slot->next);
 	}
 	else

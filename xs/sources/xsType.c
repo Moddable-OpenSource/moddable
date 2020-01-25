@@ -239,12 +239,14 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 			(theSlot->value.hostFunction.IDs && (theSlot->value.hostFunction.builder->id >= 0)) 
 				? theSlot->value.hostFunction.IDs[theSlot->value.hostFunction.builder->id]
 				: theSlot->value.hostFunction.builder->id);
+#ifndef mxLink		
 		anInstance->flag |= XS_DONT_PATCH_FLAG;
 		aProperty = anInstance->next;
 		while (aProperty) {
 			aProperty->flag |= XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 			aProperty = aProperty->next;
 		}
+#endif
 		the->code = code;
 		mxPullSlot(theSlot);
 		} break;
