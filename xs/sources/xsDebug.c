@@ -213,7 +213,7 @@ void fxDebugCommand(txMachine* the)
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG))
-		fxQueueJob(the, XS_NO_ID);
+		fxQueueJob(the, 3, XS_NO_ID);
 }
 
 void fxDebugImport(txMachine* the, txString path)
@@ -233,9 +233,7 @@ void fxDebugImport(txMachine* the, txString path)
 			break;
 	}
     if (the->debugTag == XS_MODULE_TAG){
-        /* RESULT */
-        mxPushUndefined();
-        fxRunID(the, C_NULL, XS_NO_ID);
+        mxRunCount(3);
         mxPop();
     }
 }
@@ -654,18 +652,6 @@ void fxDebugPopTag(txMachine* the)
 	case XS_SCRIPT_TAG:
 		mxPop();
 		mxPop();
-		/* COUNT */
-		mxPushInteger(3);
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(mxGlobal);
-		if (the->debugTag == XS_MODULE_TAG)
-			fxGetID(the, fxID(the, "<xsbug:module>"));
-		else
-			fxGetID(the, mxID(__xsbug_script_));
-		/* TARGET */
-		mxPushUndefined();
 		the->debugExit |= 2;
 		break;
 	case XS_SELECT_TAG:
@@ -716,6 +702,15 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPush(mxGlobal);
+		if (the->debugTag == XS_MODULE_TAG)
+			fxGetID(the, fxID(the, "<xsbug:module>"));
+		else
+			fxGetID(the, mxID(__xsbug_script_));
+		mxCall();
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
 		mxPushStringC(the->pathValue);

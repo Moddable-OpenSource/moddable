@@ -1631,7 +1631,7 @@ extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled,
 extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
 extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
 extern void fxRunPromiseJobs(txMachine* the);
-extern void fxQueueJob(txMachine* the, txID id);
+extern void fxQueueJob(txMachine* the, txInteger count, txID id);
 
 /* xsProxy.c */
 extern void fxBuildProxy(txMachine* the);

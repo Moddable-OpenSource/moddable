@@ -528,10 +528,10 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 			mxPush(mxOnResolvedPromiseFunction);
 		else
 			mxPush(mxOnRejectedPromiseFunction);
+		mxCall();
 		slot = mxPromiseResult(promise);
 		mxPushSlot(slot);
-		mxPushInteger(1);
-		fxQueueJob(the, promise->next->ID);
+		fxQueueJob(the, 1, promise->next->ID);
 	}
 	mxPop(); // reaction
 }
@@ -599,9 +599,9 @@ void fxRejectPromise(txMachine* the)
 	while (slot) {
 		mxPushReference(slot->value.reference);
 		mxPush(mxOnRejectedPromiseFunction);
+		mxCall();
 		mxPushSlot(argument);
-		mxPushInteger(1);
-		fxQueueJob(the, promise->next->ID);
+		fxQueueJob(the, 1, promise->next->ID);
 		slot = slot->next;
 	}
 	slot = mxPromiseStatus(promise);
@@ -641,10 +641,10 @@ void fxResolvePromise(txMachine* the)
 #endif
 				mxPushSlot(argument);
 				mxPush(mxOnThenableFunction);
+				mxCall();
 				fxPushPromiseFunctions(the, promise);
 				mxPushSlot(slot);
-				mxPushInteger(3);
-				fxQueueJob(the, promise->next->ID);
+				fxQueueJob(the, 3, promise->next->ID);
 				goto bail;
 			}
 			mxPop();
@@ -656,9 +656,9 @@ void fxResolvePromise(txMachine* the)
 		while (slot) {
 			mxPushReference(slot->value.reference);
 			mxPush(mxOnResolvedPromiseFunction);
+			mxCall();
 			mxPushSlot(result);
-			mxPushInteger(1);
-			fxQueueJob(the, promise->next->ID);
+			fxQueueJob(the, 1, promise->next->ID);
 			slot = slot->next;
 		}
 		slot = mxPromiseStatus(promise);
@@ -674,9 +674,9 @@ bail:
 		while (slot) {
 			mxPushReference(slot->value.reference);
 			mxPush(mxOnRejectedPromiseFunction);
+			mxCall();
 			mxPushSlot(result);
-			mxPushInteger(1);
-			fxQueueJob(the, promise->next->ID);
+			fxQueueJob(the, 1, promise->next->ID);
 			slot = slot->next;
 		}
 		slot = mxPromiseStatus(promise);
@@ -1028,12 +1028,12 @@ void fx_Promise_prototype_then(txMachine* the)
 	fxPromiseThen(the, promise, onFullfilled, onRejected, resolveFunction, rejectFunction);
 }
 
-void fxQueueJob(txMachine* the, txID id)
+void fxQueueJob(txMachine* the, txInteger count, txID id)
 {
-	txSlot* job;
-	txSlot* stack;
 	txSlot* slot;
-	txInteger count;
+	txSlot* job;
+	txSlot* item;
+	txSlot* stack;
 	txSlot** address;
 	
 	if (mxPendingJobs.value.reference->next == NULL) {
@@ -1042,24 +1042,15 @@ void fxQueueJob(txMachine* the, txID id)
 #ifdef mxPromisePrint
 	fprintf(stderr, "fxQueueJob %d\n", id);
 #endif
-	job = fxNewInstance(the);
-	stack = the->stack + 1;
-	count = stack->value.integer;
-	stack += 1 + count + 1;
-	slot = job->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	stack--;
-	slot = slot->next = fxNewSlot(the);
-	slot->kind = stack->kind;
-	slot->value = stack->value;
-	stack--;
+	count += 6;
+	item = stack = the->stack + count;
+	slot = job = fxNewInstance(the);
 	while (count > 0) {
+		item--;
 		slot = slot->next = fxNewSlot(the);
-		slot->kind = stack->kind;
-		slot->value = stack->value;
+		slot->kind = item->kind;
+		slot->value = item->value;
 		count--;
-		stack--;
 	}
 	address = &(mxPendingJobs.value.reference->next);
 	while ((slot = *address)) 
@@ -1067,8 +1058,7 @@ void fxQueueJob(txMachine* the, txID id)
 	slot = *address = fxNewSlot(the);	
 	slot->kind = XS_REFERENCE_KIND;
 	slot->value.reference = job;
-	count = stack->value.integer;
-	the->stack += 2 + count + 2;
+	the->stack = stack;
 }
 
 void fxRunPromiseJobs(txMachine* the)
@@ -1084,27 +1074,14 @@ void fxRunPromiseJobs(txMachine* the)
 	mxPendingJobs.value.reference->next = C_NULL;
 	while (job) {
 		mxTry(the) {
-            /* THIS */
-			slot = job->value.reference->next;
-			mxPushSlot(slot);
-			/* FUNCTION */
-			slot = slot->next;
-			mxPushSlot(slot);
-			/* TARGET */
-			mxPushUndefined();
-			/* RESULT */
-			mxPushUndefined();
-			mxPushUninitialized();
-			mxPushUninitialized();
-			/* ARGUMENTS */
 			count = 0;
-			slot = slot->next;
+			slot = job->value.reference->next;
 			while (slot) {
 				mxPushSlot(slot);
 				count++;
 				slot = slot->next;
 			}
-			mxRunCount(count);
+			mxRunCount(count - 6);
 			mxPop();
 			fxEndJob(the);
 		}
