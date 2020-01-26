@@ -1024,6 +1024,8 @@ enum {
 	_transfers,
 	_trim,
 	_trimEnd,
+	_trimLeft,
+	_trimRight,
 	_trimStart,
 	_trunc,
 	_unicode,

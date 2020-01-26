@@ -113,7 +113,6 @@ void fxBuildDate(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_setUTCMonth), 2, mxID(_setUTCMonth), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_setUTCSeconds), 2, mxID(_setUTCSeconds), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toDateString), 0, mxID(_toDateString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toUTCString), 0, mxID(_toGMTString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toISOString), 0, mxID(_toISOString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toJSON), 1, mxID(_toJSON), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toDateString), 0, mxID(_toLocaleDateString), XS_DONT_ENUM_FLAG);
@@ -122,6 +121,7 @@ void fxBuildDate(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toTimeString), 0, mxID(_toTimeString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toUTCString), 0, mxID(_toUTCString), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, slot, mxID(_toGMTString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toPrimitive), 1, mxID(_Symbol_toPrimitive), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxDatePrototype = *the->stack;

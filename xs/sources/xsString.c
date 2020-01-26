@@ -128,7 +128,9 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toUpperCase), 0, mxID(_toUpperCase), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trim), 0, mxID(_trim), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trimEnd), 0, mxID(_trimEnd), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, slot, mxID(_trimRight), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_trimStart), 0, mxID(_trimStart), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, slot, mxID(_trimLeft), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_match), 1, mxID(_match), XS_DONT_ENUM_FLAG);

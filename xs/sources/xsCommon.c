@@ -1453,6 +1453,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"transfers",
 	"trim",
 	"trimEnd",
+	"trimLeft",
+	"trimRight",
 	"trimStart",
 	"trunc",
 	"unicode",

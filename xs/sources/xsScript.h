@@ -606,6 +606,7 @@ struct sxParser {
 	
 	int ahead;
 	txU4 character;
+	txU4 lookahead;
 
 	int line;
 	int crlf;
