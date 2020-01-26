@@ -63,11 +63,11 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.9%** of the language tests (`39037/39065`) and **99.8%** of the built-ins tests (`30164/30234`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
+Currently, on macOS, XS passes **99.9%** of the language tests (`39039/39065`) and **99.8%** of the built-ins tests (`30164/30234`). Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     99% 39037/39065 language
+     99% 39039/39065 language
         100% 457/457 arguments-object
             100% 40/40 mapped
             100% 8/8 unmapped
@@ -102,7 +102,7 @@ Currently, on macOS, XS passes **99.9%** of the language tests (`39037/39065`) a
             100% 139/139 direct
              98% 114/116 indirect
         100% 3/3 export
-         99% 18253/18271 expressions
+         99% 18255/18271 expressions
             100% 95/95 addition
             100% 104/104 array
             100% 618/618 arrow-function
@@ -193,7 +193,7 @@ Currently, on macOS, XS passes **99.9%** of the language tests (`39037/39065`) a
              99% 2048/2050 object
                 100% 1080/1080 dstr
                 100% 500/500 method-definition
-             96% 54/56 optional-chaining
+            100% 56/56 optional-chaining
             100% 64/64 postfix-decrement
             100% 65/65 postfix-increment
             100% 57/57 prefix-decrement
@@ -1059,10 +1059,6 @@ XS optimizes modulus for integer values, which fails for -1 % -1 == -0.
 
 In object initializers, if property values are functions, the implementation must rename functions with property names. It happens at runtime for the sake of computed property names. If property values are groups, the implementation should rename functions only if they are the unique expression of their group, XS rename functions if they are the last expression of their group.
 
-	language/expressions/optional-chaining/punctuator-decimal-lookahead.js
-	
-The lexical parser has no lookahead.	
-		
 	language/literals/string/legacy-octal-escape-sequence-prologue-strict.js (sloppy)
 
 Strings with octal escape sequences are a lexical error in strict mode but in sloppy mode if "use strict" follows the string, it is too late for a lexical error...
