@@ -184,6 +184,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_next);
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_return);
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_throw);
+				fxStripCallback(linker, fx_Compartment_prototype_import);
 				fxStripCallback(linker, fx_Promise);
 				fxStripCallback(linker, fxOnRejectedPromise);
 				fxStripCallback(linker, fxOnResolvedPromise);
@@ -232,6 +233,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "WeakSet"))
 				fxStripCallback(linker, fx_WeakSet);
 			else if (!c_strcmp(name, "eval")) {
+				fxStripCallback(linker, fx_Compartment_prototype_evaluate);
 				fxStripCallback(linker, fx_Function);
 				fxStripCallback(linker, fx_eval);
 				fxUnuseCode(XS_CODE_ARGUMENTS_SLOPPY);
@@ -460,6 +462,8 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "static txSlot* fxNewAsyncGeneratorInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n");
 	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
 		fprintf(file, "static txSlot* fxNewAsyncGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); }\n");
+	if (!fxIsCodeUsed(XS_CODE_IMPORT) && fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
+		fprintf(file, "static void fxRunImportDeadStrip(txMachine* the, txSlot* realm, txID id) { mxUnknownError(\"dead strip\"); }\n");
 	if (fxIsCallbackStripped(linker, fx_BigInt))
 		fprintf(file, "static void fxBigIntDecodeDeadStrip(txMachine* the, txSize size) { mxUnknownError(\"dead strip\"); }\n");
 
@@ -504,7 +508,7 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxRunEval,\n");
 	else
 		fprintf(file, "\tfxDeadStrip,\n");
-	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsCodeUsed(XS_CODE_EVAL_TAIL) || !fxIsCallbackStripped(linker, fx_eval))
+	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsCodeUsed(XS_CODE_EVAL_TAIL) || !fxIsCallbackStripped(linker, fx_eval) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_evaluate))
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
 		fprintf(file, "\tC_NULL,\n");
@@ -526,10 +530,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxExecuteModulesSync,\n");
 	else
 		fprintf(file, "\tfxExecuteModules,\n");
-	if (fxIsCodeUsed(XS_CODE_IMPORT))
+	if (fxIsCodeUsed(XS_CODE_IMPORT) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
 		fprintf(file, "\tfxRunImport,\n");
 	else
-		fprintf(file, "\tfxDeadStrip,\n");
+		fprintf(file, "\tfxRunImportDeadStrip,\n");
 	if (fxIsCodeUsed(XS_CODE_NEW_PRIVATE_1) || fxIsCodeUsed(XS_CODE_NEW_PRIVATE_2))
 		fprintf(file, "\tfxDefinePrivateProperty,\n");
 	else

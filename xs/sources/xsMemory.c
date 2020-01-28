@@ -627,6 +627,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 	case XS_MODULE_KIND:
+	case XS_PROGRAM_KIND:
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
@@ -845,6 +846,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
 	case XS_MODULE_KIND:
+	case XS_PROGRAM_KIND:
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);

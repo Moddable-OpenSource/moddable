@@ -1106,6 +1106,12 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fxPrintAddress(the, file, slot->value.module.realm);
 		fprintf(file, ", %d } }", slot->value.module.id);
 	} break;
+	case XS_PROGRAM_KIND: {
+		fprintf(file, ".kind = XS_PROGRAM_KIND}, ");
+		fprintf(file, ".value = { .module = { ");
+		fxPrintAddress(the, file, slot->value.module.realm);
+		fprintf(file, ", %d } }", slot->value.module.id);
+	} break;
 	case XS_PROMISE_KIND: {
 		fprintf(file, ".kind = XS_PROMISE_KIND}, ");
 		fprintf(file, ".value = { .integer = %d } ", slot->value.integer);

@@ -1337,8 +1337,9 @@ void fxRejectModuleFile(txMachine* the)
 
 void fxRunModuleFile(txMachine* the, txString path)
 {
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRunImport(the);
+	fxRunImport(the, realm, XS_NO_ID);
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();

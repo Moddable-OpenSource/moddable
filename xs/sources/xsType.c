@@ -1312,8 +1312,9 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
-	txSlot* global = the->stack + 1;
-	txSlot* filter = the->stack;
+	txSlot* global = the->stack + 2;
+	txSlot* filter = the->stack + 1;
+	txSlot* own = the->stack;
 	txSlot* realm = fxNewInstance(the);
 	txSlot* slot;
 	/* mxRealmGlobal */
@@ -1328,7 +1329,7 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxAvailableModules */
 	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
 	/* mxOwnModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
+	slot = fxNextSlotProperty(the, slot, own, XS_NO_ID, XS_GET_ONLY);
 	mxPop();
 	/* mxLoadingModules */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
@@ -1353,10 +1354,18 @@ txSlot* fxNewRealmInstance(txMachine* the)
 
 txSlot* fxNewProgramInstance(txMachine* the)
 {
-	txSlot* program = fxNewInstance(the);
-	txSlot* slot = program->next = fxNewSlot(the);
-	slot->kind = XS_MODULE_KIND;
+	txSlot* instance;
+	txSlot* slot;
+	instance = fxNewSlot(the);
+	instance->kind = XS_INSTANCE_KIND;
+	instance->value.instance.garbage = C_NULL;
+	instance->value.instance.prototype = mxIsReference(the->stack) ? the->stack->value.reference : C_NULL;
+	the->stack->value.reference = instance;
+	the->stack->kind = XS_REFERENCE_KIND;
+	slot = instance->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	slot->kind = XS_PROGRAM_KIND;
 	slot->value.module.realm = C_NULL;
 	slot->value.module.id = XS_NO_ID;
-	return program;
+	return instance;
 }

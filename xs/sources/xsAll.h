@@ -116,7 +116,7 @@ typedef struct {
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
     void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
-    void (*runImport)(txMachine*);
+    void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	txSlot* (*setPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -1668,13 +1668,17 @@ extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
-extern void fxRunImport(txMachine* the);
+extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Module(txMachine* the);
 mxExport void fx_Transfer(txMachine* the);
 
 mxExport void fx_Compartment(txMachine* the);
 mxExport void fx_Compartment_get_map(txMachine* the);
+mxExport void fx_Compartment_prototype_get_global(txMachine* the);
+mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
+mxExport void fx_Compartment_prototype_import(txMachine* the);
+mxExport void fx_Compartment_prototype_importSync(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -1820,19 +1824,20 @@ enum {
 	XS_HOST_KIND,
 	XS_MAP_KIND,
 	XS_MODULE_KIND,
-	XS_PROMISE_KIND,
-	XS_PROXY_KIND, // 30
+	XS_PROGRAM_KIND,
+	XS_PROMISE_KIND, // 30
+	XS_PROXY_KIND,
 	XS_REGEXP_KIND,
 	XS_SET_KIND,
 	XS_TYPED_ARRAY_KIND,
-	XS_WEAK_MAP_KIND,
+	XS_WEAK_MAP_KIND, // 35
 	XS_WEAK_REF_KIND,
 	XS_WEAK_SET_KIND,
 
 	XS_ACCESSOR_KIND,
 	XS_AT_KIND,
-	XS_ENTRY_KIND,
-	XS_ERROR_KIND, //40
+	XS_ENTRY_KIND, //40
+	XS_ERROR_KIND,
 	XS_ERRORS_KIND,
 	XS_HOME_KIND,
 	XS_KEY_KIND,
