@@ -1342,6 +1342,6 @@ ping.close();
 <a id="mqtt"></a>
 ## class MQTT
 
-- **Source code:** [ping](../../modules/network/mqtt)
+- **Source code:** [mqtt](../../modules/network/mqtt)
 - **Relevant Examples:** [ping](../../examples/network/mqtt)
 
