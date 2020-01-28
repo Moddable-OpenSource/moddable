@@ -549,7 +549,7 @@ More detailed getting started guides are available for the following devices:
 6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
 	```
-	brew install python
+	sudo apt-get install python
 	sudo easy_install pip
 	pip install --user pyserial
 	```
