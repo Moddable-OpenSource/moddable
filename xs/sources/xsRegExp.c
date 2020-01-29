@@ -70,7 +70,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_unicode), C_NULL, mxID(_unicode), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxRegExpPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_RegExp), 2, mxID(_RegExp));
-	mxRegExpConstructor = mxRegExpIntrinsic = *the->stack;
+	mxRegExpConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;

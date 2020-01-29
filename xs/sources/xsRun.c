@@ -387,6 +387,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_CONST_LOCAL_1,
 		&&XS_CODE_CONST_LOCAL_2,
 		&&XS_CODE_CONSTRUCTOR_FUNCTION,
+		&&XS_CODE_COPY_OBJECT,
 		&&XS_CODE_CURRENT,
 		&&XS_CODE_DEBUGGER,
 		&&XS_CODE_DECREMENT,
@@ -444,7 +445,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_INTEGER_1,
 		&&XS_CODE_INTEGER_2,
 		&&XS_CODE_INTEGER_4,
-		&&XS_CODE_INTRINSIC,
 		&&XS_CODE_LEFT_SHIFT,
 		&&XS_CODE_LESS,
 		&&XS_CODE_LESS_EQUAL,
@@ -485,6 +485,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_REFRESH_CLOSURE_2,
 		&&XS_CODE_REFRESH_LOCAL_1,
 		&&XS_CODE_REFRESH_LOCAL_2,
+		&&XS_CODE_REGEXP,
 		&&XS_CODE_RESERVE_1,
 		&&XS_CODE_RESERVE_2,
 		&&XS_CODE_RESET_CLOSURE_1,
@@ -1947,16 +1948,6 @@ XS_CODE_JUMP:
 			mxBreak;
 				
 	/* PROPERTIES */	
-		mxCase(XS_CODE_INTRINSIC)
-			offset = mxRunS2(1);
-#ifdef mxTrace
-			if (gxDoTrace) fxTraceIndex(the, offset);
-#endif
-			mxNextCode(3);
-			mxOverflow(1);
-			*mxStack = mxIntrinsics[-offset];
-			mxBreak;
-		
 		mxCase(XS_CODE_CHECK_INSTANCE)
 			if (mxStack->kind != XS_REFERENCE_KIND)
 				mxRunDebug(XS_TYPE_ERROR, "result: no instance");
@@ -2370,6 +2361,11 @@ XS_CODE_JUMP:
 			mxStack += 3;
             mxNextCode(1);
 			mxBreak;
+		mxCase(XS_CODE_COPY_OBJECT)
+			mxNextCode(1);
+			mxOverflow(1);
+			*mxStack = mxCopyObjectFunction;
+			mxBreak;
 		mxCase(XS_CODE_EXTEND)
 			if (mxStack->kind == XS_NULL_KIND) {
 				mxSaveState;
@@ -2438,6 +2434,11 @@ XS_CODE_JUMP:
 			fxNewObject(the);
 			mxRestoreState;
 			mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_REGEXP)
+			mxNextCode(1);
+			mxOverflow(1);
+			*mxStack = mxRegExpConstructor;
 			mxBreak;
 		mxCase(XS_CODE_SUPER)
 			mxNextCode(1);
@@ -3862,13 +3863,13 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_TRANSFER)
 			mxSaveState;
-			fx_Transfer(the);
+			fxPrepareTransfer(the);
 			mxRestoreState;
             mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_MODULE)
 			mxSaveState;
-			fx_Module(the);
+			fxPrepareModule(the);
 			mxRestoreState;
             mxNextCode(1);
 			mxBreak;
@@ -3877,7 +3878,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_EVAL)
 			offset = mxStack->value.integer;
 			slot = mxStack + 1 + offset + 4;
-			if (slot->value.reference == mxEvalIntrinsic.value.reference) {
+			if (slot->value.reference == mxEvalFunction.value.reference) {
 				mxSaveState;
 				gxDefaults.runEval(the);
 				mxRestoreState;
@@ -3890,7 +3891,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_EVAL_TAIL)
 			offset = mxStack->value.integer;
 			slot = mxStack + 1 + offset + 4;
-			if (slot->value.reference == mxEvalIntrinsic.value.reference) {
+			if (slot->value.reference == mxEvalFunction.value.reference) {
 				mxSaveState;
 				gxDefaults.runEval(the);
 				mxRestoreState;

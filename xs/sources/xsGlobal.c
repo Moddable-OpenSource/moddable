@@ -136,7 +136,6 @@ void fxBuildGlobal(txMachine* the)
 	mxPull(mxEscapeFunction);
 	fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
 	mxPull(mxEvalFunction);
-	mxEvalIntrinsic = mxEvalFunction;
 	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
 	mxPull(mxUnescapeFunction);
 	
@@ -167,9 +166,6 @@ void fxBuildGlobal(txMachine* the)
 		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		slot = slot->next;
 	}
-	the->stack++;
-	fxNewHostFunction(the, mxCallback(fxCopyObject), 0, XS_NO_ID);
-	mxCopyObjectFunction = *the->stack;
 	the->stack++;
 }
 

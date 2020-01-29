@@ -40,6 +40,12 @@
 void fxBuildObject(txMachine* the)
 {
 	txSlot* slot;
+	fxNewHostFunction(the, mxCallback(fx_Object_assign), 2, XS_NO_ID);
+	mxAssignObjectFunction = *the->stack;
+	the->stack++;
+	fxNewHostFunction(the, mxCallback(fx_Object_copy), 2, XS_NO_ID);
+	mxCopyObjectFunction = *the->stack;
+	the->stack++;
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, the->stack->value.reference);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Object_prototype___proto__get), mxCallback(fx_Object_prototype___proto__set), mxID(___proto__), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -58,7 +64,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Object), 1, mxID(_Object));
 	mxObjectConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_assign), 2, mxID(_assign), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, &mxAssignObjectFunction, mxID(_assign), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_create), 2, mxID(_create), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperties), 2, mxID(_defineProperties), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperty), 3, mxID(_defineProperty), XS_DONT_ENUM_FLAG);
@@ -82,43 +88,6 @@ void fxBuildObject(txMachine* the)
 	the->stack++;
 }
 
-void fxCopyObject(txMachine* the)
-{
-	txInteger c = mxArgc, i;
-	txSlot* target;
-	txSlot* source;
-	txSlot* at;
-	txSlot* property;
-	if ((c < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
-		mxTypeError("invalid object");
-	target = fxToInstance(the, mxArgv(0));
-	*mxResult = *mxArgv(0);
-	if ((c < 2) || (mxArgv(1)->kind == XS_UNDEFINED_KIND) || (mxArgv(1)->kind == XS_NULL_KIND))
-		return;
-	source = fxToInstance(the, mxArgv(1));
-	at = fxNewInstance(the);
-	mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
-	mxPushUndefined();
-	property = the->stack;
-	while ((at = at->next)) {
-		for (i = 2; i < c; i++) {
-			txSlot* exclude = mxArgv(i);
-			if ((exclude->value.at.id == at->value.at.id) && (exclude->value.at.index == at->value.at.index))
-				break;
-		}
-		if (i == c) {
-			if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
-				mxPushReference(source);
-				fxGetAll(the, at->value.at.id, at->value.at.index);
-				the->stack->flag = 0;
-				mxBehaviorDefineOwnProperty(the, target, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
-				mxPop();
-			}
-		}
-	}
-	mxPop(); // property
-	mxPop(); // at
-}
 
 txSlot* fxNewObjectInstance(txMachine* the)
 {
@@ -561,6 +530,44 @@ void fx_Object_assign(txMachine* the)
 		mxPop();
 	}
 	*mxResult = *target;
+}
+
+void fx_Object_copy(txMachine* the)
+{
+	txInteger c = mxArgc, i;
+	txSlot* target;
+	txSlot* source;
+	txSlot* at;
+	txSlot* property;
+	if ((c < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
+		mxTypeError("invalid object");
+	target = fxToInstance(the, mxArgv(0));
+	*mxResult = *mxArgv(0);
+	if ((c < 2) || (mxArgv(1)->kind == XS_UNDEFINED_KIND) || (mxArgv(1)->kind == XS_NULL_KIND))
+		return;
+	source = fxToInstance(the, mxArgv(1));
+	at = fxNewInstance(the);
+	mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
+	mxPushUndefined();
+	property = the->stack;
+	while ((at = at->next)) {
+		for (i = 2; i < c; i++) {
+			txSlot* exclude = mxArgv(i);
+			if ((exclude->value.at.id == at->value.at.id) && (exclude->value.at.index == at->value.at.index))
+				break;
+		}
+		if (i == c) {
+			if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushReference(source);
+				fxGetAll(the, at->value.at.id, at->value.at.index);
+				the->stack->flag = 0;
+				mxBehaviorDefineOwnProperty(the, target, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
+				mxPop();
+			}
+		}
+	}
+	mxPop(); // property
+	mxPop(); // at
 }
 
 void fx_Object_create(txMachine* the)

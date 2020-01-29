@@ -250,7 +250,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_VARIABLE:
 		case XS_CODE_EVAL_PRIVATE:
 		case XS_CODE_EVAL_REFERENCE:
-		case XS_CODE_INTRINSIC:
 		case XS_CODE_LINE:
 		case XS_CODE_NAME:
 		case XS_CODE_NEW_CLOSURE:
@@ -397,7 +396,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT_DERIVED:
 			size += 2;
 			break;
-		case XS_CODE_INTRINSIC:
 		case XS_CODE_LINE:
 			size += 3;
 			break;
@@ -642,7 +640,6 @@ txScript* fxParserCode(txParser* parser)
 			u1 = (txU1)(((txIndexCode*)code)->index);
 			*((txU1*)p++) = u1;
 			break;
-		case XS_CODE_INTRINSIC:
 		case XS_CODE_LINE:
 		case XS_CODE_RESERVE_2:
 		case XS_CODE_RETRIEVE_2:
@@ -801,7 +798,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT:
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
-		case XS_CODE_INTRINSIC:
 		case XS_CODE_LINE:
 			fprintf(stderr, "%s %d\n", gxCodeNames[code->id], ((txIndexCode*)code)->index);
 			break;
@@ -3532,7 +3528,7 @@ void fxObjectNodeCode(void* it, void* param)
 		while (item) {
 			if (item->description->token == XS_TOKEN_SPREAD) {
 				fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
-				fxCoderAddIndex(param, 1, XS_CODE_INTRINSIC, mxCopyObjectIntrinsic);
+				fxCoderAddByte(param, 1, XS_CODE_COPY_OBJECT);
 				fxCoderAddByte(param, 1, XS_CODE_CALL);
 				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, object);
 				fxNodeDispatchCode(((txSpreadNode*)item)->expression, param);
@@ -3593,7 +3589,7 @@ void fxObjectBindingNodeCodeAssign(void* it, void* param)
 	fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, object);
 	if (self->flags & mxSpreadFlag) {
 		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
-		fxCoderAddIndex(param, 1, XS_CODE_INTRINSIC, mxCopyObjectIntrinsic);
+		fxCoderAddByte(param, 1, XS_CODE_COPY_OBJECT);
 		fxCoderAddByte(param, 1, XS_CODE_CALL);
 		fxCoderAddByte(param, 1, XS_CODE_OBJECT);
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, object);
@@ -3892,7 +3888,7 @@ void fxQuestionMarkNodeCode(void* it, void* param)
 void fxRegexpNodeCode(void* it, void* param) 
 {
 	txRegexpNode* self = it;
-	fxCoderAddIndex(param, 1, XS_CODE_INTRINSIC, mxRegExpIntrinsic);
+	fxCoderAddByte(param, 1, XS_CODE_REGEXP);
 	fxCoderAddByte(param, 2, XS_CODE_NEW);
 	fxNodeDispatchCode(self->modifier, param);
 	fxNodeDispatchCode(self->value, param);

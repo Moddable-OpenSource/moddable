@@ -864,7 +864,6 @@ mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
 /* xsObject.c */
-mxExport void fxCopyObject(txMachine* the);
 mxExport void fx_Object(txMachine* the);
 mxExport void fx_Object_prototype___proto__get(txMachine* the);
 mxExport void fx_Object_prototype___proto__set(txMachine* the);
@@ -881,6 +880,7 @@ mxExport void fx_Object_prototype_toPrimitive(txMachine* the);
 mxExport void fx_Object_prototype_toString(txMachine* the);
 mxExport void fx_Object_prototype_valueOf(txMachine* the);
 mxExport void fx_Object_assign(txMachine* the);
+mxExport void fx_Object_copy(txMachine* the);
 mxExport void fx_Object_create(txMachine* the);
 mxExport void fx_Object_defineProperties(txMachine* the);
 mxExport void fx_Object_defineProperty(txMachine* the);
@@ -1666,15 +1666,13 @@ extern void fxBuildModule(txMachine* the);
 extern void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
 extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
+extern void fxPrepareModule(txMachine* the);
+extern void fxPrepareTransfer(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
-mxExport void fx_Module(txMachine* the);
-mxExport void fx_Transfer(txMachine* the);
-
 mxExport void fx_Compartment(txMachine* the);
-mxExport void fx_Compartment_get_map(txMachine* the);
 mxExport void fx_Compartment_prototype_get_global(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
 mxExport void fx_Compartment_prototype_import(txMachine* the);
@@ -2309,9 +2307,8 @@ enum {
 	mxFinalizationGroupPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
-	mxEvalIntrinsicStackIndex,
+	mxAssignObjectFunctionStackIndex,
 	mxCopyObjectFunctionStackIndex,
-	mxRegExpIntrinsicStackIndex,
 	
 	mxAsyncFunctionPrototypeStackIndex,
 	mxGeneratorPrototypeStackIndex,
@@ -2492,11 +2489,9 @@ enum {
 #define mxSymbolString the->stackPrototypes[-1 - mxSymbolStringStackIndex]
 #define mxUndefinedString the->stackPrototypes[-1 - mxUndefinedStringStackIndex]
 
-#define mxIntrinsics (the->stackPrototypes - 1 - mxEnumeratorFunctionStackIndex)
 #define mxEnumeratorFunction the->stackPrototypes[-1 - mxEnumeratorFunctionStackIndex]
-#define mxEvalIntrinsic  the->stackPrototypes[-1 - mxEvalIntrinsicStackIndex]
+#define mxAssignObjectFunction the->stackPrototypes[-1 - mxAssignObjectFunctionStackIndex]
 #define mxCopyObjectFunction the->stackPrototypes[-1 - mxCopyObjectFunctionStackIndex]
-#define mxRegExpIntrinsic the->stackPrototypes[-1 - mxRegExpIntrinsicStackIndex]
 
 #define mxAsyncFunctionPrototype the->stackPrototypes[-1 - mxAsyncFunctionPrototypeStackIndex]
 #define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]

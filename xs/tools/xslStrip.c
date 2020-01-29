@@ -277,6 +277,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Iterator_iterator);
 	fxUnstripCallback(linker, fx_Number_prototype_toString);
 	fxUnstripCallback(linker, fx_Number_prototype_valueOf);
+	fxUnstripCallback(linker, fx_Object_assign);
+	fxUnstripCallback(linker, fx_Object_copy);
 	fxUnstripCallback(linker, fx_Object_prototype_toPrimitive);
 	fxUnstripCallback(linker, fx_Object_prototype_toString);
 	fxUnstripCallback(linker, fx_Object_prototype_valueOf);
@@ -291,7 +293,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	
 	fxUnstripCallback(linker, fxArrayLengthGetter);
 	fxUnstripCallback(linker, fxArrayLengthSetter);
-	fxUnstripCallback(linker, fxCopyObject);
 	fxUnstripCallback(linker, fxStringAccessorGetter);
 	fxUnstripCallback(linker, fxStringAccessorSetter);
 	fxUnstripCallback(linker, fxThrowTypeError);
