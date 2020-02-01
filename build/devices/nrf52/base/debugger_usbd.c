@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,52 +20,32 @@
 
 #include "xs.h"
 #include "xsPlatform.h"
-
 #include "mc.defines.h"
-
-#include "nrf.h"
-#include "nrfx_uart.h"
-#include "task.h"
-#include "queue.h"
-#include "sdk_config.h"
 
 #if USE_DEBUGGER_USBD
 
 #if mxDebug
 
+#include "nrf.h"
+#include "nrf_queue.h"
 #include "nrf_drv_usbd.h"
-#include "nrf_drv_clock.h"
 #include "nrf_ringbuf.h"
 #include "app_usbd_core.h"
 #include "app_usbd.h"
 #include "app_usbd_string_desc.h"
 #include "app_usbd_cdc_acm.h"
 #include "app_usbd_serial_num.h"
+#include "sdk_config.h"
 
-typedef struct {
-	uint16_t id;
-} modDebugTaskQueueRecord;
+#include "task.h"
+#include "queue.h"
+#include "ftdi_trace.h"
 
-// Set USE_RX_RING_BUFFER to 1 to read all available data in the USB user event callback into a ring buffer
-#define USE_RX_RING_BUFFER 1
-
-// Set USE_TX_RING_BUFFER to 1 to buffer unsent data into a ring buffer to send when TX becomes available
-#define USE_TX_RING_BUFFER 1
-
-// Set USE_TX_BUFFERS to 1 to buffer data until the buffer fills or a `\n` is written.
-// Note this technique isn't reliable because sometimes there is no trailing `\n` character.
-#define USE_TX_BUFFERS 0
-
-// Set USE_DEBUG_TASK to 1 to process USB RX/TX notifications in a separate debug task
-#define USE_DEBUG_TASK 1
-
-#if (USE_TX_RING_BUFFER && USE_TX_BUFFERS)
-	#error - only one of USE_TX_RING_BUFFER or USE_TX_BUFFERS can be set to 1
-#endif
+// LED to blink when device is ready for host serial connection
+#define LED 7
 
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event);
 static void usbd_user_ev_handler(app_usbd_event_type_t event);
-static void debug_task(void *pvParameter);
 static void usbd_task(void *pvParameter);
 static void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued);
 
@@ -91,92 +71,88 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(
 #define USBD_PRIORITY			2
 #define USB_THREAD_MAX_BLOCK_TIME portMAX_DELAY
 
-#define DEBUGGER_STACK			768
-#define DEBUG_QUEUE_LEN			8
-#define DEBUG_QUEUE_ITEM_SIZE	(sizeof(modDebugTaskQueueRecord))
+#define kTXBufferSize 2048
 
-enum {
-	DEBUG_TASK_CREATED = 1,		// task running
-	DEBUG_USBD_AVAILABLE,		// usbd port available for host
-	DEBUG_USBD_CONNECTED,		// host connected to usbd port
-	DEBUG_READABLE,				// data available to read
-	DEBUG_WRITABLE,				// data can be written to port
-	DEBUG_DRV_ERR
+typedef struct txBufferRecord txBufferRecord;
+typedef txBufferRecord *txBuffer;
+
+struct txBufferRecord {
+	struct txBufferRecord *next;
+
+	uint16_t	size;
+	uint8_t		buffer[1];
 };
 
-#if USE_DEBUG_TASK
-	static QueueHandle_t gDebugTaskQueue;
-#endif
+static txBuffer gTxBufferList = NULL;
+static uint8_t m_tx_buffer[kTXBufferSize];
+static int16_t m_tx_buffer_index = 0;
+
+static char m_rx_buffer[1];
+NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2048, NRF_QUEUE_MODE_OVERFLOW);
+
+static uint8_t m_usb_connected = false;
+static uint8_t m_usb_restarted = false;
+static uint8_t m_usb_reopened = false;
+static uint8_t m_usb_closed = false;
 
 static TaskHandle_t m_usbd_thread;
-static bool m_usb_connected = false;
-static bool m_tx_pending = false;
 
-static uint16_t m_tx_written = 0;
-static uint16_t m_tx_acked = 0;
-static uint16_t m_rx_received = 0;
-static uint16_t m_rx_read = 0;
-
-#if USE_TX_BUFFERS
-#define kTXBufferCount 1024
-#define kTXBufferSize 1
-static uint8_t m_tx_buffers[kTXBufferCount][kTXBufferSize];
-static uint16_t m_tx_buffer = 0;
-static uint16_t m_tx_buffer_index = 0;
-#endif
-
-#if USE_TX_RING_BUFFER
-	static uint8_t m_tx_buffer;	// buffer content cannot change until APP_USBD_CDC_ACM_USER_EVT_TX_DONE confirmation
-	NRF_RINGBUF_DEF(m_tx_ringbuf, 1024);
-#endif
-
-#if USE_RX_RING_BUFFER
-	NRF_RINGBUF_DEF(m_rx_ringbuf, 1024);
-#endif
-
-int debuggerStats()
+static void blink(uint16_t times)
 {
-	uint16_t tx_written = m_tx_written;
-	uint16_t tx_acked = m_tx_acked;
-	uint16_t rx_received = m_rx_received;
-	uint16_t rx_read = m_rx_read;
-	if (tx_acked != tx_written)
-		return -1;
+	nrf_gpio_cfg_output(LED);
+	for (uint16_t i = 0; i < times; ++i) {
+		nrf_gpio_pin_write(LED, 0);
+		modDelayMilliseconds(100);
+		nrf_gpio_pin_write(LED, 1);
+		modDelayMilliseconds(100);
+	}
+	nrf_gpio_pin_write(LED, 0);
 }
 
 void setupDebugger()
 {
-	m_tx_written = 0;
-	m_tx_acked = 0;
-	m_rx_received = 0;
-	m_rx_read = 0;
-	
-#if USE_TX_RING_BUFFER
-	nrf_ringbuf_init(&m_tx_ringbuf);
-#endif
-#if USE_RX_RING_BUFFER
-	nrf_ringbuf_init(&m_rx_ringbuf);
-#endif
-	
-#if USE_DEBUG_TASK
-	gDebugTaskQueue = xQueueCreate(DEBUG_QUEUE_LEN, DEBUG_QUEUE_ITEM_SIZE);
-	if (pdPASS != xTaskCreate(debug_task, "debug", DEBUGGER_STACK/sizeof(StackType_t), NULL, 8, NULL))
-		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
-#endif
+	uint32_t count;
+
+	ftdiTraceInit();
+
+	m_usb_connected = false;
+	m_usb_restarted = false;
+	m_usb_reopened = false;
+	m_usb_closed = false;
 
 	app_usbd_serial_num_generate();
 
-    if (pdPASS != xTaskCreate(usbd_task, "USBD", USBD_STACK_SIZE, NULL, USBD_PRIORITY, &m_usbd_thread))
-        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
+	if (pdPASS != xTaskCreate(usbd_task, "USBD", USBD_STACK_SIZE, NULL, USBD_PRIORITY, &m_usbd_thread))
+		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
         
-    // Wait up to approximately ten seconds for USBD port to be available and connected to host
-	uint32_t count = 0;
-	while (!m_usb_connected && (count++ < 1000)) {
+    ftdiTrace("Waiting for USBD port connection");
+    
+    // Wait two seconds to let USBD port complete the suspend/resume dance
+	count = 0;
+	while (count++ < 20) {
 		taskYIELD();
-		modDelayMilliseconds(10);
-	}
-	if (m_usb_connected)
 		modDelayMilliseconds(100);
+	}
+	//blink(5);
+
+    // Wait up to approximately ten seconds for USBD port to be available and connected to host
+    count = 0;
+	while (!m_usb_connected && (count++ < 100)) {
+		taskYIELD();
+		modDelayMilliseconds(100);
+	}
+	
+	// Wait for serial2xsbug to complete host serial port initialization
+	if (m_usb_connected) {
+		count = 0;
+		while (!m_usb_reopened && (count++ < 30)) {
+			taskYIELD();
+			modDelayMilliseconds(100);
+		}
+	}
+	
+	// Finally, let the host connection settle
+	modDelayMilliseconds(1000);
 }
 
 void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued)
@@ -185,7 +161,7 @@ void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bo
     UNUSED_PARAMETER(p_event);
     UNUSED_PARAMETER(queued);
     ASSERT(m_usbd_thread != NULL);
-    /* Release the semaphore */
+
     vTaskNotifyGiveFromISR(m_usbd_thread, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -194,21 +170,30 @@ void usbd_task(void *pvParameter)
 {
     ret_code_t ret;
     static const app_usbd_config_t usbd_config = {
-        .ev_isr_handler = usb_new_event_isr_handler,
-        .ev_state_proc  = usbd_user_ev_handler
+		.ev_isr_handler = usb_new_event_isr_handler,
+		.ev_state_proc  = usbd_user_ev_handler
     };
     UNUSED_PARAMETER(pvParameter);
 
     ret = app_usbd_init(&usbd_config);
-    APP_ERROR_CHECK(ret);
-    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
-    ret = app_usbd_class_append(class_cdc_acm);
-    APP_ERROR_CHECK(ret);
-    ret = app_usbd_power_events_enable();
-    APP_ERROR_CHECK(ret);
-
+    if (0 == ret) {
+    	app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    	ret = app_usbd_class_append(class_cdc_acm);
+    }
+    if (0 == ret) {
+		ret = app_usbd_power_events_enable();
+    }
+	if (0 == ret) {
+		app_usbd_enable();
+	}
+	if (0 != ret) {
+    	ftdiTrace("usbd task init failed");
+		return;
+	}
+	
     // Set the first event to make sure that USB queue is processed after it is started
     UNUSED_RETURN_VALUE(xTaskNotifyGive(xTaskGetCurrentTaskHandle()));
+
     // Enter main loop.
     for (;;)
     {
@@ -225,29 +210,46 @@ void usbd_user_ev_handler(app_usbd_event_type_t event)
 {
 	switch(event) {
 		case APP_USBD_EVT_STOPPED:
+    		ftdiTrace("APP_USBD_EVT_STOPPED");
 			app_usbd_disable();
 			break;
 
 		case APP_USBD_EVT_STARTED:
+    		ftdiTrace("APP_USBD_EVT_STARTED");
 			break;
 
 		case APP_USBD_EVT_POWER_DETECTED:
-			if (!nrf_drv_usbd_is_enabled())
+    		ftdiTrace("APP_USBD_EVT_POWER_DETECTED");
+			if (!nrf_drv_usbd_is_enabled()) {
+    			ftdiTrace("calling app_usbd_enable");
 				app_usbd_enable();
+			}
+			else
+    			ftdiTrace("usbd already enabled");
 			break;
 
 		case APP_USBD_EVT_POWER_REMOVED:
+    		ftdiTrace("APP_USBD_EVT_POWER_REMOVED");
 			app_usbd_stop();
 			break;
 
 		case APP_USBD_EVT_POWER_READY:
+    		ftdiTrace("APP_USBD_EVT_POWER_READY");
+			if (!nrf_drv_usbd_is_enabled()) {
+    			ftdiTrace("calling app_usbd_enable");
+				app_usbd_enable();
+			}
+			else
+    			ftdiTrace("usbd already enabled");
 			app_usbd_start();
 			break;
 
 		case APP_USBD_EVT_DRV_SUSPEND:
+    		ftdiTrace("APP_USBD_EVT_DRV_SUSPEND");
 			break;
 
 		case APP_USBD_EVT_DRV_RESUME:
+    		ftdiTrace("APP_USBD_EVT_DRV_RESUME");
 			break;
 
 		default:
@@ -255,112 +257,132 @@ void usbd_user_ev_handler(app_usbd_event_type_t event)
 	}
 }
 
+// Helper functions required to send ZLP packet at end of every TX message
+#define APP_USBD_CDC_ACM_DATA_IFACE_IDX 1    /**< CDC ACM class data interface index. */
+#define APP_USBD_CDC_ACM_DATA_EPIN_IDX  0    /**< CDC ACM data class endpoint IN index. */
+
+static nrf_drv_usbd_ep_t data_ep_in_addr_get(app_usbd_class_inst_t const * p_inst)
+{
+    app_usbd_class_iface_conf_t const * class_iface;
+    class_iface = app_usbd_class_iface_get(p_inst, APP_USBD_CDC_ACM_DATA_IFACE_IDX);
+
+    app_usbd_class_ep_conf_t const * ep_cfg;
+    ep_cfg = app_usbd_class_iface_ep_get(class_iface, APP_USBD_CDC_ACM_DATA_EPIN_IDX);
+
+    return app_usbd_class_ep_address_get(ep_cfg);
+}
+
+static app_usbd_cdc_acm_ctx_t * cdc_acm_ctx_get(app_usbd_cdc_acm_t const * p_cdc_acm)
+{
+    ASSERT(p_cdc_acm != NULL);
+    ASSERT(p_cdc_acm->specific.p_data != NULL);
+    return &p_cdc_acm->specific.p_data->ctx;
+}
+
+// Send the next queued buffer with ZLP packet
+static ret_code_t sendNextBuffer()
+{
+	ret_code_t ret;
+	txBuffer buffer = gTxBufferList;
+
+	if (NULL == buffer)
+		return 0;
+
+    app_usbd_class_inst_t const * p_inst = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    app_usbd_cdc_acm_ctx_t * p_cdc_acm_ctx = cdc_acm_ctx_get(&m_app_cdc_acm);
+
+    bool dtr_state = (p_cdc_acm_ctx->line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR) ? true : false;
+    if (!dtr_state) {
+		ftdiTrace("DTR line not set!");
+        return NRF_ERROR_INVALID_STATE;	// port not opened
+    }
+    
+    nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
+    
+	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
+	ftdiTrace("sending buffer, size=");
+	ftdiTraceInt(buffer->size);
+	return app_usbd_ep_transfer(ep, &transfer);
+}
+
 void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
 {
 	ret_code_t ret;
-	uint8_t c;
     app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
-#if USE_DEBUG_TASK
-	modDebugTaskQueueRecord msg = {0};
-#endif
 
     switch(event) {
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN: {
-			// Setup the first transfer - this is called once when a remote device connects to the port
-            ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, &c, 1);
-#if USE_DEBUG_TASK
-			msg.id = DEBUG_USBD_CONNECTED;
-#else
+			// Setup the first transfer.
+			// This case is triggered when a remote device connects to the port.
+    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN");
+			app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
 			m_usb_connected = true;
-#endif
+			if (m_usb_closed) {
+				m_usb_closed = false;
+				m_usb_reopened = true;
+			}
             break;
         }
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE: {
-        	size_t index = 0;
-#if USE_RX_RING_BUFFER
-			size_t len;
-            do {
-            	len = 1;
-				ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, &c, len);
-                if (ret == NRF_SUCCESS) {
-					nrf_ringbuf_cpy_put(&m_rx_ringbuf, &c, &len);
-					++index;
-					++m_rx_received;
-                }
-            }
-            while (ret == NRF_SUCCESS);
-#endif
-#if USE_DEBUG_TASK
-			if (0 != index)
-				msg.id = DEBUG_READABLE;
-#endif
+    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_RX_DONE");
+    		
+    		// The first byte is already in the buffer due to app_usbd_cdc_acm_read()
+    		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event.
+    		uint16_t count = 0;
+    		if (!nrf_queue_is_full(&m_rx_queue)) {
+				ftdiTraceChar(m_rx_buffer[0]);
+				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
+				++count;
+    		}
+			while (!nrf_queue_is_full(&m_rx_queue)) {
+                ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm, m_rx_buffer, 1);
+                if (NRF_SUCCESS != ret)
+                	break;
+				ftdiTraceChar(m_rx_buffer[0]);
+				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
+				++count;
+			}
+    		ftdiTrace("Read bytes =");
+    		ftdiTraceInt(count);
+    		
+    		// Drain and toss remaining bytes if queue is full
+    		if (nrf_queue_is_full(&m_rx_queue)) {
+    			ftdiTrace("Queue is full!");
+    			do {
+                	ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm, m_rx_buffer, 1);
+    			} while (NRF_SUCCESS == ret);
+    		}
             break;
         }
         
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
+    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE");
+    		m_usb_connected = false;
+    		m_usb_closed = true;
         	break;
         	
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE: {
-#if USE_TX_RING_BUFFER
-			size_t len = 1;
-			uint8_t ch;
-			++m_tx_acked;
-			ret = nrf_ringbuf_cpy_get(&m_tx_ringbuf, &ch, &len);
-			if (1 == len) {
-				m_tx_buffer = ch;
-				ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, &m_tx_buffer, 1);
-				++m_tx_written;
+    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_TX_DONE");
+			if (NULL != gTxBufferList) {
+				txBuffer buffer = gTxBufferList;
+				gTxBufferList = gTxBufferList->next;
+				c_free(buffer);
 			}
-			else
-				m_tx_pending = false;		
-#elif USE_TX_BUFFERS
-			msg.id = DEBUG_WRITABLE;
-#endif
+			
+    		if (!m_usb_connected)
+    			break;
+    		
+			ret = sendNextBuffer();
+			if (0 != ret)
+    			ftdiTrace("sendNextBuffer failed");
         	break;
         }
         	
         default:
             break;
     }
-    
-#if USE_DEBUG_TASK
-	if (0 != msg.id)
-		xQueueSend(gDebugTaskQueue, &msg, NULL);
-#endif
 }
-
-#if USE_DEBUG_TASK
-void debug_task(void *pvParameter)
-{
-	modDebugTaskQueueRecord msg;
-
-	msg.id = DEBUG_TASK_CREATED;
-	xQueueSend(gDebugTaskQueue, &msg, 0);
-
-	while (true) {
-		if (!xQueueReceive(gDebugTaskQueue, (void*)&msg, portMAX_DELAY))
-			continue;
-
-		switch(msg.id) {
-			case DEBUG_USBD_AVAILABLE:
-				break;
-			case DEBUG_USBD_CONNECTED:
-				m_usb_connected = true;
-				break;
-			case DEBUG_READABLE:
-				fxReceiveLoop();
-				break;
-			case DEBUG_WRITABLE:
-				break;
-			case DEBUG_DRV_ERR:
-				break;
-			default:
-				break;
-		}
-	}
-}
-#endif
 
 void modLog_transmit(const char *msg)
 {
@@ -380,82 +402,65 @@ void modLog_transmit(const char *msg)
 	ESP_putc('\n');
 }
 
-void ESP_putc(int c) {
-	ret_code_t ret;
+void ESP_putc(int c)
+{
 	uint8_t ch = c;
+
+	if (!m_usb_connected)
+		return;
+
+	m_tx_buffer[m_tx_buffer_index++] = ch;
 	
-#if USE_TX_BUFFERS
-	m_tx_buffers[m_tx_buffer][m_tx_buffer_index++] = ch;
+	// Flush buffer at end of message or when we've reached the buffer size limit
 	if ('\n' == ch || kTXBufferSize == m_tx_buffer_index) {
-		app_usbd_cdc_acm_write(&m_app_cdc_acm, &(m_tx_buffers[m_tx_buffer][0]), m_tx_buffer_index);
-		m_tx_buffer = (m_tx_buffer + 1) % kTXBufferCount;
+		uint8_t doSend = (NULL == gTxBufferList);
+		
+		txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
+		if (NULL == buffer) return;
+		
+		buffer->size = m_tx_buffer_index;
+		c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
 		m_tx_buffer_index = 0;
+		if (!gTxBufferList)
+			gTxBufferList = buffer;
+		else {
+			txBuffer walker;
+			for (walker = gTxBufferList; walker->next; walker = walker->next)
+				;
+			walker->next = buffer;
+		}
+
+		if (doSend) {
+			sendNextBuffer();
+		}
+		else {
+			ftdiTrace("queuing buffer");
+		}
 	}
-#elif USE_TX_RING_BUFFER
-	size_t len = 1;
-    if (m_tx_pending) {
-		nrf_ringbuf_cpy_put(&m_tx_ringbuf, &ch, &len);
-    }
-    else {
-    	m_tx_buffer = ch;
-		ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, &m_tx_buffer, 1);
-		m_tx_pending = true;
-		++m_tx_written;
-    }
-#else
-	ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, &ch, 1);
-	while (NRF_ERROR_BUSY == ret) {
-		taskYIELD();	// @@
-		ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, &ch, 1);
-	}
-	if (NRF_SUCCESS == ret) {
-		++m_tx_written;
-	}
-	else {
-		int foo = 1;
-	}
-#endif
 }
 
-int ESP_getc(void) {
+int ESP_getc(void)
+{
 	uint8_t ch;
 	ret_code_t ret;
+	size_t size;
 
-#if USE_TX_RING_BUFFER
-	if (m_tx_pending) {
-		vTaskDelay(1);
+	if (!m_usb_connected)
 		return -1;
-	}
-#endif
 
-#if USE_RX_RING_BUFFER
-	size_t len = 1;
-	ret = nrf_ringbuf_cpy_get(&m_rx_ringbuf, &ch, &len);
-	if (1 == len) {
-		++m_rx_read;
-		return ch;
+	if (/*gTxBufferList &&*/ nrf_queue_is_empty(&m_rx_queue)) {
+		taskYIELD();
+		goto bail;
 	}
-#else
-	uint16_t i;
-	#define kTries 5
-	for (i = 0; i < kTries; ++i) {
-		size_t len = 1;
-		ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, &ch, 1);
-		if (NRF_SUCCESS == ret) {
-			return ch;
-		}
-		else if (NRF_ERROR_IO_PENDING == ret) {
-			taskYIELD();	// @@
-		}
-		else
-			break;
+
+	size = nrf_queue_out(&m_rx_queue, &ch, 1);
+    if (1 == size) {
+		return (int)ch;
     }
-#endif
-
+	
+bail:
 	return -1;
 }
-
-
 
 #else
 
