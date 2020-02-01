@@ -1,3 +1,9 @@
+# first, wait for the M4 to go away
+NAME=/Volumes/MODDABLE4
+while [ -d "$NAME" ]; do
+     echo "Waiting for $NAME to unmount."
+     sleep 1
+done
 
 # find /dev -type c -name "cu.*"
 original=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
@@ -43,7 +49,7 @@ findNew() {
 newOne=0
 
 while [ $newOne -eq 0 ]; do
-	sleep 2
+	sleep 1
 	compare=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
 
 	findNew "${compare[@]}"
@@ -53,4 +59,8 @@ while [ $newOne -eq 0 ]; do
 	
 done
 
-echo ${fileToCompare}
+# sleep 5
+
+# echo ${fileToCompare}
+serial2xsbug ${fileToCompare} 115200 8N1 -dtr
+
