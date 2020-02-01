@@ -65,7 +65,6 @@ HW_OPT = -O2 $(FP_OPTS) # -flto
 
 # changed from default NRF:
 # FP_OPTS
-# remove  -fshort-enums, use -fno-short-enums
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/nrf52/debug/lib
@@ -294,6 +293,7 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/systemclock.c.o \
 	$(TMP_DIR)/debugger.c.o \
+	$(TMP_DIR)/ftdi_trace.c.o \
 	$(TMP_DIR)/main.c.o \
 
 SDK_GLUE_DIRS = \
@@ -557,6 +557,8 @@ ifeq ($(DEBUG),1)
 		-DDEBUG=1 \
 		-DmxDebug=1 \
 		-DDEBUG_NRF \
+		-DUSE_DEBUGGER_USBD=1 \
+		-DUSE_FTDI_TRACE=0 \
 		-g3 \
 		-Os
 	C_FLAGS += $(HW_DEBUG_OPT)
@@ -593,11 +595,9 @@ C_FLAGS +=  \
 	-munaligned-access \
 	-nostdinc \
 
-C_FLAGS_USBD := -fshort-enums $(C_FLAGS)
-C_DEFINES_USBD := -fshort-enums $(C_DEFINES)
-
-C_FLAGS := -fno-short-enums $(C_FLAGS)
-C_DEFINES := -fno-short-enums $(C_DEFINES)
+# Nordic example apps are built with -fshort-enums
+C_FLAGS := -fshort-enums $(C_FLAGS)
+C_DEFINES := -fshort-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
@@ -627,16 +627,19 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+		DO_LAUNCH =
+		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		DO_LAUNCH = 
+		WAIT_FOR_NEW_SERIAL =
 	endif
 else
 	KILL_SERIAL_2_XSBUG =
 	DO_XSBUG =
 	DO_LAUNCH = 
+	WAIT_FOR_NEW_SERIAL =
 endif
 
 #-----------------
@@ -684,7 +687,7 @@ copyToM4: all $(BIN_DIR)/xs_nrf52.uf2
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
-	$(DO_LAUNCH)
+	$(WAIT_FOR_NEW_SERIAL)
 
 installBootloader:
 	nrfjprog --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
@@ -712,7 +715,7 @@ installDFU: all dfu-package
 startDebugger:
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	$(DO_LAUNCH)
+	$(WAIT_FOR_NEW_SERIAL)
 	
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
@@ -782,18 +785,6 @@ $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F) "(strings in flash)"
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
-$(LIB_DIR)/app_usbd.c.o: app_usbd.c
-	@echo "# library usbd: " $(<F)
-	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
-
-$(LIB_DIR)/app_usbd%.c.o: app_usbd%.c
-	@echo "# library usbd: " $(<F)
-	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
-
-$(LIB_DIR)/nrfx_usbd.c.o: nrfx_usbd.c
-	@echo "# library usbd: " $(<F)
-	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
-
 $(LIB_DIR)/%.c.o: %.c
 	@echo "# library: " $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
@@ -801,10 +792,6 @@ $(LIB_DIR)/%.c.o: %.c
 $(LIB_DIR)/%.S.o %.s.o: %.S
 	@echo "# asm " $(<F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
-
-$(TMP_DIR)/debugger_usbd.c.o: debugger_usbd.c
-	@echo "# application usbd: " $(<F)
-	$(CC) $(C_FLAGS_USBD) $(C_INCLUDES) $(C_DEFINES_USBD) $< -o $@
 
 $(TMP_DIR)/%.c.o: %.c
 	@echo "# application: " $(<F)
