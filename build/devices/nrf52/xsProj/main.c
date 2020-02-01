@@ -139,7 +139,7 @@ int main(void)
 #endif
 
 #if !mxDebug
-	watchdog_init();
+//	watchdog_init();
 #endif
 
     // Activate deep sleep mode.
