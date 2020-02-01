@@ -259,6 +259,8 @@ void fxRestartSerial(txSerialTool self)
 	usleep(5000);
 
 	flags &= ~TIOCM_RTS;
+	if (self->dtr)
+		flags |= TIOCM_DTR;
 	ioctl(fd, TIOCMSET, &flags);
 }
 
