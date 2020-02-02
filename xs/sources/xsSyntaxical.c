@@ -2617,8 +2617,12 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 {
 	txInteger aCount = 0;
 	txInteger aLine;
+	txUnsigned former;
 	parser->flags &= ~(mxAwaitingFlag | mxYieldingFlag);
-	parser->flags |= flag;
+	if (flag) {
+		former = parser->flags & flag;
+		parser->flags |= flag;
+	}
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
 	while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
 		fxAssignmentExpression(parser);
@@ -2633,13 +2637,17 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 	}
 	aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
-	parser->flags &= ~flag;
+	if (flag) {
+		if (!former)
+			parser->flags &= ~flag;
+	}
 	if ((!parser->crlf) && (parser->token == XS_TOKEN_ARROW)) {
 		fxPushNodeList(parser, aCount);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
 		if (!fxParametersBindingFromExpressions(parser, parser->root))
 			fxReportParserError(parser, "no parameters");
 		fxCheckStrictBinding(parser, parser->root);
+		parser->root->flags |= flag;
 		if (parser->flags & mxAwaitingFlag)
 			fxReportParserError(parser, "invalid await");
 		if (parser->flags & mxYieldingFlag)
