@@ -539,6 +539,7 @@ C_DEFINES = \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
+	-DUSE_FTDI_TRACE=0
 
 C_FLAGS=\
 	-c	\
@@ -558,15 +559,13 @@ ifeq ($(DEBUG),1)
 		-DmxDebug=1 \
 		-DDEBUG_NRF \
 		-DUSE_DEBUGGER_USBD=1 \
-		-DUSE_FTDI_TRACE=0 \
 		-g3 \
 		-Os
 	C_FLAGS += $(HW_DEBUG_OPT)
 	ASM_FLAGS += $(HW_DEBUG_OPT) -DDEBUG_NRF
 else
 	C_DEFINES += \
-		-Os \
-		-DmxDebug=0
+		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
 endif
@@ -628,7 +627,7 @@ ifeq ($(DEBUG),1)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		DO_LAUNCH =
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial
+		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial $(DEBUG)
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)

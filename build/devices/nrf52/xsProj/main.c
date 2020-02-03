@@ -47,6 +47,7 @@
 #include "xsHost.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ftdi_trace.h"
 
 #ifdef SOFTDEVICE_PRESENT
 #include "nrf_soc.h"
@@ -130,7 +131,10 @@ void xs_main();
 
 int main(void)
 {
-    // Initialize modules.
+#if USE_FTDI_TRACE
+	ftdiTraceInit();
+#endif
+
 	clock_init();
 	timer_init();
 
@@ -139,7 +143,7 @@ int main(void)
 #endif
 
 #if !mxDebug
-//	watchdog_init();
+	watchdog_init();
 #endif
 
     // Activate deep sleep mode.
