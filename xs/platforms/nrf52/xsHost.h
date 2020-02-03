@@ -207,6 +207,9 @@ void modWatchDogReset(void);
 */
 
 void fxReceiveLoop(void);
+#ifdef mxDebug
+	void setupDebugger(void);
+#endif
 
 /*
 	messages

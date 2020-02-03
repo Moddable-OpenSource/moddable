@@ -35,10 +35,6 @@ xsCallback xsHostModuleAt(xsIndex i)
 }
 
 extern void mc_setup(xsMachine *the);
-#if mxDebug
-extern void fxReceiveLoop(void);
-extern void setupDebugger(void);
-#endif
 
 void xsTask(void *pvParameter);
 
@@ -52,7 +48,7 @@ void xs_setup() {
 void xsTask(void *pvParameter) {
 
 	taskYIELD();
-#if mxDebug
+#ifdef mxDebug
 	setupDebugger();
 #endif
 
@@ -74,9 +70,6 @@ void xs_loop(void)
 
 void xs_start() {
 	while (1) {
-//#if mxDebug
-//		fxReceiveLoop();
-//#endif
 		xs_loop();
 	}
 

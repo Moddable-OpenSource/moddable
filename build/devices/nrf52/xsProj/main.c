@@ -103,7 +103,7 @@ static void timer_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
-#if !mxDebug
+#ifndef mxDebug
 static nrf_drv_wdt_channel_id wdt_channel_id;
 
 static void wdt_event_handler(void)
@@ -138,11 +138,11 @@ int main(void)
 	clock_init();
 	timer_init();
 
-#if mxDebug
+#ifdef mxDebug
 	nrf_drv_power_init(NULL);
 #endif
 
-#if !mxDebug
+#ifndef mxDebug
 	watchdog_init();
 #endif
 

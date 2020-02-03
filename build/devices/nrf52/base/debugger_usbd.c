@@ -24,7 +24,7 @@
 
 #if USE_DEBUGGER_USBD
 
-#if mxDebug
+#ifdef mxDebug
 
 #include "nrf.h"
 #include "nrf_queue.h"
@@ -112,8 +112,6 @@ static void blink(uint16_t times)
 void setupDebugger()
 {
 	uint32_t count;
-
-	ftdiTraceInit();
 
 	m_usb_connected = false;
 	m_usb_restarted = false;
@@ -336,7 +334,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 				++count;
     		}
 			while (!nrf_queue_is_full(&m_rx_queue)) {
-                ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm, m_rx_buffer, 1);
+                ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
                 if (NRF_SUCCESS != ret)
                 	break;
 				ftdiTraceChar(m_rx_buffer[0]);
@@ -350,7 +348,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		if (nrf_queue_is_full(&m_rx_queue)) {
     			ftdiTrace("Queue is full!");
     			do {
-                	ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm, m_rx_buffer, 1);
+                	ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
     			} while (NRF_SUCCESS == ret);
     		}
             break;
@@ -388,7 +386,7 @@ void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
-#if mxDebug
+#ifdef mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);

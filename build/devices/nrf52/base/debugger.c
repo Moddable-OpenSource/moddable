@@ -30,44 +30,7 @@
 
 #if !USE_DEBUGGER_USBD
 
-#if NRF_LOG_ENABLED
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-static uint8_t gNRFLogEnabled = 0;
-
-static void NRFLogInit()
-{
-	ret_code_t err_code;
-	err_code = NRF_LOG_INIT(NULL);
-	APP_ERROR_CHECK(err_code);
-	NRF_LOG_DEFAULT_BACKENDS_INIT();
-}
-
-void modLog_transmit(const char *msg)
-{ 
-	static char _msgBuffer[128];
-	
-	if (0 == gNRFLogEnabled) {
-		NRFLogInit();
-		gNRFLogEnabled = 1;
-	}
-	
-	uint16_t msgLength = c_strlen(msg) + 1;
-	if (msgLength + 3 < sizeof(_msgBuffer)) {
-		c_memcpy(_msgBuffer, msg, msgLength);
-		NRF_LOG_RAW_INFO("<mod> %s\r\n", _msgBuffer);
-	}
-}
-
-void setupDebugger() { }
-void ESP_putc(int c) { }
-int ESP_getc(void) { return -1; }
-uint8_t ESP_isReadable() { return 0; }
-
-#elif mxDebug
+#ifdef mxDebug
 
 #define DEBUGGER_STACK	768
 
@@ -96,10 +59,6 @@ nrfx_uart_t gDebuggerUart = {
     .p_reg        = NRFX_CONCAT_2(NRF_UART, 0),
     .drv_inst_idx = NRFX_CONCAT_3(NRFX_UART, 0, _INST_IDX),
 };
-
-int ESP_getc(void);
-void ESP_putc(int c);
-void setupDebugger();
 
 static uint32_t xx_tx_data_count = 0;
 static uint32_t xx_rx_data_count = 0;
@@ -173,7 +132,7 @@ void modLog_transmit(const char *msg)
 	int ret;
 	uint8_t c;
 
-#if mxDebug
+#ifdef mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);
@@ -203,7 +162,6 @@ void ESP_putc(int c) {
 		oof++;
 }
 
-static int debugRead = 0;
 int ESP_getc(void) {
 	uint8_t ch;
 	int ret;
@@ -219,20 +177,13 @@ int ESP_getc(void) {
 	return -1;
 }
 
-uint8_t ESP_isReadable() {
-	uint8_t ret;
-	ret = nrfx_uart_rx_ready(&gDebuggerUart);
-	return ret;
-}
-
-#else	// !mxDebug
+#else
 
 void ESP_putc(int c) { }
 int ESP_getc(void) { return -1; }
-uint8_t ESP_isReadable() { return 0; }
 void modLog_transmit(const char *msg) { }
 
-#endif	// !mxDebug
+#endif
 
 #endif	// !USE_DEBUGGER_USBD 
 

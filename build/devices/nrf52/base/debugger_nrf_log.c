@@ -25,7 +25,7 @@ void setupDebugger() { }
 void ESP_putc(int c) { }
 int ESP_getc(void) { return -1; }
 
-#if mxDebug
+#ifdef mxDebug
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
