@@ -34,9 +34,6 @@
 #ifndef MODDEF_LS013B4DN04_CS_PORT
 	#define MODDEF_LS013B4DN04_CS_PORT	NULL
 #endif
-#ifndef MODDEF_LS013B4DN04_DISP_PIN
-	#define MODDEF_LS013B4DN04_DISP_PIN	NULL
-#endif
 #ifndef MODDEF_LS013B4DN04_DISP_PORT
 	#define MODDEF_LS013B4DN04_DISP_PORT	NULL
 #endif
@@ -127,10 +124,10 @@ void xs_LS013B4DN04(xsMachine *the){
 
 	ls->dispatch = (PixelsOutDispatch) &gPixelsOutDispatch;
 
-	if (NULL != MODDEF_LS013B4DN04_DISP_PIN) {
-		modGPIOInit(&ls->disp, (const char *)MODDEF_LS013B4DN04_DISP_PORT, MODDEF_LS013B4DN04_DISP_PIN, kModGPIOOutput);
-		ls->dispAvail = 1;
-	}
+#ifdef MODDEF_LS013B4DN04_DISP_PIN
+	modGPIOInit(&ls->disp, (const char *)MODDEF_LS013B4DN04_DISP_PORT, MODDEF_LS013B4DN04_DISP_PIN, kModGPIOOutput);
+	ls->dispAvail = 1;
+#endif
 
 	SCREEN_CS_INIT;
 	modSPIConfig(ls->spiConfig, MODDEF_LS013B4DN04_HZ, MODDEF_LS013B4DN04_SPI_PORT,

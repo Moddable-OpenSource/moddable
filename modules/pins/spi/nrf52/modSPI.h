@@ -33,7 +33,7 @@
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
 typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
-typedef void (*modSPIChipSelectCallback)(int status, modSPIConfiguration config);
+typedef void (*modSPIChipSelectCallback)(uint8_t status, modSPIConfiguration config);
 
 struct modSPIConfigurationRecord {
 	nrf_drv_spi_config_t		spi_config;
@@ -54,9 +54,9 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
 #define modSPIConfig(config, HZ, SPI_PORT, CS_PORT, CS_PIN, DOCHIPSELECT) \
 	config.hz = HZ; \
-	config.cs_pin = ((uint8_t)(uint32_t)CS_PIN); \
+	config.cs_pin = CS_PIN; \
 	config.doChipSelect = DOCHIPSELECT; \
-	config.spiPort = ((uint8_t)(uint32_t)SPI_PORT); \
+	config.spiPort = SPI_PORT; \
 	config.sync = 1;
 
 extern void modSPIInit(modSPIConfiguration config);
