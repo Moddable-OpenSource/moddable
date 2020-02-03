@@ -1,0 +1,20 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/logical/*",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/mqtt/*",
+			"$(MODULES)/network/websocket/*",
+		]
+	},
+	"preload": [
+		"base64",
+		"logical",
+		"http",
+		"mqtt",
+		"websocket"
+	]
+}
