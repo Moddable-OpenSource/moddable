@@ -1,7 +1,7 @@
 # first, wait for the M4 to go away
 NAME=/Volumes/MODDABLE4
 while [ -d "$NAME" ]; do
-     echo "Waiting for $NAME to unmount."
+     echo "Waiting for $NAME to unmount..."
      sleep 1
 done
 
@@ -62,5 +62,8 @@ done
 # sleep 5
 
 # echo ${fileToCompare}
+if [ $1 -eq 1 ]; then
+	echo "Connecting to xsbug..."
+fi
 serial2xsbug ${fileToCompare} 115200 8N1 -dtr
 
