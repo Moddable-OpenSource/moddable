@@ -96,7 +96,11 @@ export class PubNub {
 // https://www.pubnub.com/docs/pubnub-rest-api-documentation
 
 function makeRequest(params, callback, scope) {
-	let host = params.authority, path = params.location, method, headers, body;
+	let requestData = {
+		host: params.authority,
+		response: String
+	}
+	let path = params.location;
 	let requirement = { uuid:params.uuid, pnsdk:params.pnsdk };
 	if (params.query && Object.keys(params.query).length) {
 		path += "?" + serializeQuery(Object.assign({}, params.query, requirement));
@@ -104,18 +108,19 @@ function makeRequest(params, callback, scope) {
 	else {
 		path += "?" + serializeQuery(requirement);
 	}
-	//trace(path + "\n");
+	requestData.path = path;
 	let data = params.data || params.message;
 	if (data) {
-		body = JSON.stringify(data);
-		headers = [
-			"Content-Length", body.length,
+		requestData.body = JSON.stringify(data);
+		requestData.headers = [
+			"Content-Length", requestData.body.length,
 			"Content-Type", "application/json; charset=UTF-8",
 			"Connection", "close"
 		];
-		method = "POST";
+		requestData.method = "POST";
 	}
-	let request = new Request({ host, path, method, headers, body, response:String });
+
+	let request = new Request(requestData);
 	request.callback = (message, data) => {
 		switch (message) {
 			case 0:
