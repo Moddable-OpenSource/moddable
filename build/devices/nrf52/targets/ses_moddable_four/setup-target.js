@@ -22,12 +22,8 @@ import config from "mc/config";
 import Digital from "pins/digital";
 
 export default function (done) {
-// Put startup code in here
-
 	if (config.autobacklight) {
-		trace(`autobacklight on - write 0 to ${config.lcd_power_pin}\n`);
 		Digital.write(config.lcd_power_pin, 0);
 	}
-
 	done();
 }

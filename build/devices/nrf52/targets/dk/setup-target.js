@@ -21,9 +21,6 @@
 import config from "mc/config";
 
 export default function (done) {
-// Put startup code in here
-//	if (config.autobacklight)
-//		Digital.write(config.backlight_pin, 1);
-
+	// Put startup code in here
 	done();
 }
