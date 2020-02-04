@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -22,41 +22,41 @@ import {Sleep, AnalogDetectMode, ResetReason} from "sleep";
 import Timer from "timer";
 import Analog from "pins/analog";
 import Digital from "pins/digital";
+import config from "mc/config";
 
-const CHANNEL = 5;	// Pin P0.29 / AIN5 on nRF52840-DK
-const LED = 13;		// LED1 on nRF52840-DK
-
-const ON = 0;		// active low
-const OFF = 1;
+const wakeup_channel = 5;		// AIN5
+const led_pin = config.led1_pin;
+const ON = 1;
+const OFF = 0;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
-let value = Analog.read(CHANNEL);
+let value = Analog.read(wakeup_channel);
 
 trace(`Good morning. Reset reason: ${str}\n`);
 trace(`Analog value: ${value}\n`);
 
 // Turn on LED upon wakeup
-Digital.write(LED, ON);
+Digital.write(led_pin, ON);
 
 let count = 3;
 Timer.repeat(id => {
 	if (0 == count) {
 		Timer.clear(id);
 		
-		// wakeup on pin
-		Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Crossing });
+		// wakeup on analog value change
+		Sleep.wakeOnAnalog(wakeup_channel, { value:512, mode:AnalogDetectMode.Crossing });
 		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
 		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
 
 		// turn off led while asleep
-		Digital.write(LED, OFF);
+		Digital.write(led_pin, OFF);
 		
 		Sleep.deep();
 	}
 	if (count > 1)
 		trace(`Going to deep sleep in ${count - 1} seconds...\n`);
 	else
-		trace(`Good night. Adjust analog channel ${CHANNEL} to wake me up.\n\n`);
+		trace(`Good night. Adjust analog channel ${wakeup_channel} to wake me up.\n\n`);
 	--count;
 }, 1000);
 

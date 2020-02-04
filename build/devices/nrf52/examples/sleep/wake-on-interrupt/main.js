@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,7 +16,6 @@
 	The LIS3DH accelerometer is configured to generate an interrupt on motion.
 	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and the reset reason is traced to the console.
-	Change the voltage connected to the analog input pin to wakeup the device.
 
 	https://devzone.nordicsemi.com/f/nordic-q-a/35408/lis2dh-int1-interrupt-for-wake-up/152144#152144
 */
@@ -26,6 +25,11 @@ import Timer from "timer";
 import Digital from "pins/digital";
 import {Sensor, Register} from "lis3dh";
 import config from "mc/config";
+
+const led_pin = config.led1_pin;
+const int_pin = config.lis3dh_int1_pin;
+const ON = 1;
+const OFF = 0;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
@@ -46,7 +50,7 @@ class lis3dh extends Sensor {
 let sensor = new lis3dh({});
 
 // Turn on LED upon wakeup
-Digital.write(config.led1_pin, 1);
+Digital.write(led_pin, ON);
 
 let count = 3;
 Timer.repeat(id => {
@@ -54,10 +58,10 @@ Timer.repeat(id => {
 		Timer.clear(id);
 		
 		// wakeup on interrupt pin
-		Sleep.wakeOnInterrupt(config.lis3dh_int1_pin);
+		Sleep.wakeOnInterrupt(int_pin);
 
 		// turn off led while asleep
-		Digital.write(config.led1_pin, 0);
+		Digital.write(led_pin, OFF);
 		
 		Sleep.deep();
 	}

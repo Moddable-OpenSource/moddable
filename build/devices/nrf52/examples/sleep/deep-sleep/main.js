@@ -22,12 +22,15 @@ import Timer from "timer";
 import Digital from "pins/digital";
 import config from "mc/config";
 
-let str = valueToString(ResetReason, Sleep.resetReason);
+const led_pin = config.led1_pin;
+const ON = 1;
+const OFF = 0;
 
+let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
 
 // Turn on LED upon wakeup
-Digital.write(config.led1_pin, 1);
+Digital.write(led_pin, ON);
 
 let count = 3;
 Timer.repeat(id => {
@@ -35,7 +38,7 @@ Timer.repeat(id => {
 		Timer.clear(id);
 
 		// turn off led while asleep
-		Digital.write(config.led1_pin, 0);
+		Digital.write(led_pin, OFF);
 
 		Sleep.deep();
 	}

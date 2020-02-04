@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,33 +14,26 @@
 /*
 	This application demonstrates how to retain a buffer in RAM across System Off power saving mode (deep sleep).
 	The device is woken up from a digital input.
-	The application turns on the LED1 while running and turns off the LED1 when asleep.
-	Upon wakeup, all LEDs are turned on if the retention buffer contents are valid.
-	If the retention buffer contents are invalid, LED4 is turned on.
-	Press the button connected to the digital input PIN to wakeup the device.
+	The application turns on the LED while running and turns off the LED when asleep.
+	Upon wakeup, the LED blinks if the retention buffer contents are valid.
+	Press the button connected to the digital input pin to wakeup the device.
 */
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
+import config from "mc/config";
 
-const PIN = 25;		// Button 4 on nRF52840-DK
-const LED1 = 13;	// LED1 on nRF52840-DK
-const LED2 = 14;	// LED2 on nRF52840-DK
-const LED3 = 15;	// LED3 on nRF52840-DK
-const LED4 = 16;	// LED4 on nRF52840-DK
-
-const ON = 0;		// active low
-const OFF = 1;
+const wakeup_pin = 22;
+const led_pin = config.led1_pin;
+const ON = 1;
+const OFF = 0;
 
 let str = valueToString(ResetReason, Sleep.resetReason);
-
 trace(`Good morning. Reset reason: ${str}\n`);
 
-allLEDs(OFF);
-
-// Turn on LED1 upon wakeup
-Digital.write(LED1, ON);
+// Turn on LED upon wakeup
+Digital.write(led_pin, ON);
 
 // Check if retained ram buffer is available
 let buffer = Sleep.getRetainedBuffer();
@@ -50,15 +43,23 @@ if (undefined !== buffer) {
 	let valid = true;
 	for (let i = 0; i < 100; ++i) {
 		if (retained[i] != i) {
-			Digital.write(LED4, ON);
+		
+			// Turn off LED if retention buffer invalid
+			Digital.write(led_pin, OFF);
 			valid = false;
 			break;
 		}
 	}
 			
-	// Turn on all LEDs to confirm retention buffer
+	// Blink LED to confirm retention buffer
 	if (valid) {
-		allLEDs(ON);
+		for (let i = 0; i < 5; ++i) {
+			Digital.write(led_pin, ON);
+			Timer.delay(200);
+			Digital.write(led_pin, OFF);
+			Timer.delay(200);
+		}
+		Digital.write(led_pin, ON);
 		Sleep.clearRetainedBuffer();
 		trace(`Retention buffer read and okay.\n`);
 	}
@@ -76,30 +77,23 @@ else {
 		if (count > 1)
 			trace(`Going to deep sleep in ${count - 1} seconds...\n`);
 		else
-			trace(`Good night. Press the button connected to pin ${PIN} to wake me up.\n\n`);
+			trace(`Good night. Press the button connected to pin ${wakeup_pin} to wake me up.\n\n`);
 		--count;
 	}, 1000);
 }
 
 function preSleep() {
-	// Turn off LEDS while asleep
-	allLEDs(OFF);
+	// Turn off LED while asleep
+	Digital.write(led_pin, OFF);
 
 	// Wakeup on digital pin
-	Sleep.wakeOnDigital(PIN);
+	Sleep.wakeOnDigital(wakeup_pin);
 	
 	// Retain buffer
 	let retained = new Uint8Array(100);
 	for (let i = 0; i < 100; ++i)
 		retained[i] = i;
 	Sleep.setRetainedBuffer(retained.buffer);
-}
-
-function allLEDs(mode) {
-	Digital.write(LED1, mode);
-	Digital.write(LED2, mode);
-	Digital.write(LED3, mode);
-	Digital.write(LED4, mode);
 }
 
 function valueToString(obj, value) {

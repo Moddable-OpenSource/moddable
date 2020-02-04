@@ -10,7 +10,8 @@ GROUP(-lgcc -lc -lnosys)
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
-  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a484
+  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a384
+  NOINIT (rwx) :  ORIGIN = 0x2003fb3c, LENGTH = 0x100
 }
 
 /* much of Moddable code goes into flash */
@@ -66,8 +67,17 @@ SECTIONS
     KEEP(*(SORT(.log_filter_data*)))
     PROVIDE(__stop_log_filter_data = .);
   } > RAM
-
 } INSERT AFTER .data;
+
+SECTIONS
+{
+  .no_init (NOLOAD):
+  {
+    PROVIDE(__start_no_init_data = .);
+	KEEP(*(SORT(.no_init*)))
+	PROVIDE(__stop_no_init_data = .);
+  } > NOINIT
+}
 
 SECTIONS
 {

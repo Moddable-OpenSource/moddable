@@ -27,10 +27,13 @@ import config from "mc/config";
 let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
 
-const wakeup_pin = config.button1_pin;
+const wakeup_pin = 22;
+const led_pin = config.led1_pin;
+const ON = 1;
+const OFF = 0;
 
 // Turn on LED upon wakeup
-Digital.write(config.led1_pin, 1);
+Digital.write(led_pin, ON);
 
 let count = 3;
 Timer.repeat(id => {
@@ -41,7 +44,7 @@ Timer.repeat(id => {
 		Sleep.wakeOnDigital(wakeup_pin);
 
 		// turn off led while asleep
-		Digital.write(config.led1_pin, 0);
+		Digital.write(led_pin, OFF);
 		
 		Sleep.deep();
 	}
