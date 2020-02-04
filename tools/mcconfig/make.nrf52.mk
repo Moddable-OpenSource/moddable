@@ -496,6 +496,7 @@ C_DEFINES = \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
+	-DMODGCC=1 \
 	-DUSE_FTDI_TRACE=0
 
 C_FLAGS=\
