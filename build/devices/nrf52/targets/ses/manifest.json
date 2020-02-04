@@ -24,15 +24,15 @@
 		"setup/target",
 	],
 	"config": {
-		"led1": { "pin": 13, "port": 0 },
-		"led2": { "pin": 14, "port": 0 },
-		"led3": { "pin": 15, "port": 0 },
-		"led4": { "pin": 16, "port": 0 },
+		"led1_pin": 13,
+		"led2_pin": 14,
+		"led3_pin": 15,
+		"led4_pin": 16,
 
-		"button1": { "pin": 11, "port": 0 },
-		"button2": { "pin": 12, "port": 0 },
-		"button3": { "pin": 24, "port": 0 },
-		"button4": { "pin": 25, "port": 0 }
+		"button1_pin": 11,
+		"button2_pin": 12,
+		"button3_pin": 24,
+		"button4_pin": 25
 	},
 	"defines": {
 		"debugger": {
