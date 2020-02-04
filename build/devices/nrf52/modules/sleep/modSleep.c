@@ -28,7 +28,7 @@
 #include "nrf_delay.h"
 #include "nrf_drv_lpcomp.h"
 
-#define RAM_START_ADDRESS  0x20000000
+#include "ftdi_trace.h"
 
 #define kRamRetentionRegisterMagic 0xBF
 #define kRamRetentionBufferSize 256		// must match .retained_section linker size
@@ -67,7 +67,13 @@ enum {
 	kAnalogWakeModeDown
 };
 
-uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
+#ifdef MODGCC
+	#define RAM_START_ADDRESS  0x200058b8
+	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".no_init"))) __attribute__((used)) = {0};
+#else
+	#define RAM_START_ADDRESS  0x20000000
+	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
+#endif
 
 static uint8_t softdevice_enabled();
 static void clear_retained_buffer();
@@ -87,6 +93,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
 
+	ftdiTrace("in xs_sleep_set_retained_buffer");
 	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
 	if (retainedSize > kRamRetentionBufferSize)
@@ -107,7 +114,13 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	// Eight RAM slave blocks, each divided into two 4 KB sections 
 	uint32_t p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
 	uint8_t ram_slave_n = (p_offset / 8192);  
+	ftdiTrace("gRamRetentionBuffer address =");
+	ftdiTraceInt(((uint32_t)&gRamRetentionBuffer[0]));
+	ftdiTrace("RAM slave =");
+	ftdiTraceInt(ram_slave_n);
 	uint32_t ram_section_n = (p_offset % 8192) / 4096;
+	ftdiTrace("RAM section =");
+	ftdiTraceInt(ram_section_n);
 	uint32_t ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
 
 	if (softdevice_enabled()) {
