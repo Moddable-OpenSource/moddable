@@ -25,12 +25,7 @@ import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
 import {Sensor, Register} from "lis3dh";
-
-const PIN = 6;	// Pin P0.06 connects to LIS3DH INT pin
-const LED = 13;	// LED1 on nRF52840-DK
-
-const ON = 0;	// active low
-const OFF = 1;
+import config from "mc/config";
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 trace(`Good morning. Reset reason: ${str}\n`);
@@ -51,7 +46,7 @@ class lis3dh extends Sensor {
 let sensor = new lis3dh({});
 
 // Turn on LED upon wakeup
-Digital.write(LED, ON);
+Digital.write(config.led1_pin, 1);
 
 let count = 3;
 Timer.repeat(id => {
@@ -59,10 +54,10 @@ Timer.repeat(id => {
 		Timer.clear(id);
 		
 		// wakeup on interrupt pin
-		Sleep.wakeOnInterrupt(PIN);
+		Sleep.wakeOnInterrupt(config.lis3dh_int1_pin);
 
 		// turn off led while asleep
-		Digital.write(LED, OFF);
+		Digital.write(config.led1_pin, 0);
 		
 		Sleep.deep();
 	}

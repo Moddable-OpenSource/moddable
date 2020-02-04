@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -20,18 +20,14 @@
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
-
-const LED = 13;	// LED1 on nRF52840-DK
-
-const ON = 0;	// active low
-const OFF = 1;
+import config from "mc/config";
 
 let str = valueToString(ResetReason, Sleep.resetReason);
 
 trace(`Good morning. Reset reason: ${str}\n`);
 
 // Turn on LED upon wakeup
-Digital.write(LED, ON);
+Digital.write(config.led1_pin, 1);
 
 let count = 3;
 Timer.repeat(id => {
@@ -39,7 +35,7 @@ Timer.repeat(id => {
 		Timer.clear(id);
 
 		// turn off led while asleep
-		Digital.write(LED, OFF);
+		Digital.write(config.led1_pin, 0);
 
 		Sleep.deep();
 	}

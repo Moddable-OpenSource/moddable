@@ -13,6 +13,9 @@
 		"led1_pin": 7,
 
 		"button1_pin": 13,
+		
+		"lis3dh_int1_pin": 14,
+		"lis3dh_int2_pin": 16,
 
 		"jogdial_signal": 6,
 		"jogdial_control": 8,

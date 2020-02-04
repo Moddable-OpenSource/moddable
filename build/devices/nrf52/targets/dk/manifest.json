@@ -15,6 +15,8 @@
 		"button2_pin": 12,
 		"button3_pin": 24,
 		"button4_pin": 25
+
+		"lis3dh_int1_pin": 6,
 	},
 	"defines": {
 		"debugger": {

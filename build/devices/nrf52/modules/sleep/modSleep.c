@@ -22,6 +22,7 @@
 #include "xsHost.h"
 
 #include "nrf_soc.h"
+#include "nrf_sdh.h"
 #include "nrf_sdm.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
