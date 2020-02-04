@@ -41,6 +41,8 @@
 #include "queue.h"
 #include "ftdi_trace.h"
 
+extern TaskHandle_t gMainTask;
+
 // LED to blink when device is ready for host serial connection
 #define LED 7
 
@@ -307,6 +309,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 {
 	ret_code_t ret;
     app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
+	uint32_t ulPreviousValue;
 
     switch(event) {
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN: {
@@ -343,6 +346,10 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 			}
     		ftdiTrace("Read bytes =");
     		ftdiTraceInt(count);
+
+			// Here, we inform the xsMain task that there is data available.
+			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
+			xTaskNotifyAndQuery(gMainTask, 1, eSetBits, &ulPreviousValue);
     		
     		// Drain and toss remaining bytes if queue is full
     		if (nrf_queue_is_full(&m_rx_queue)) {

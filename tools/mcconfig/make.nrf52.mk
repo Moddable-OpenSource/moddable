@@ -24,8 +24,6 @@ NRF_ROOT ?= $(HOME)/nRF5
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
 NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
-DEBUGGER_PORT ?= /dev/cu.usbserial-AL035YB2
-DEBUGGER_SPEED ?= 115200
 
 BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
 SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
@@ -40,7 +38,6 @@ else
 endif
 
 GNU_VERSION ?= 8.2.1
-# NRF52_GCC_ROOT ?= $(HOME)/opt/gcctoolchain
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
 NRF_SDK_DIR ?= $(NRF_ROOT)/nRF5_SDK
@@ -48,9 +45,9 @@ NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
 
 # nRF52840_xxAA
+SDK_ROOT = $(NRF_SDK_DIR)
 BOARD = pca10056
 SOFT_DEVICE = s140
-SDK_ROOT = $(NRF_SDK_DIR)
 HWCPU = cortex-m4
 
 # BOARD_DEF = BOARD_PCA10056
@@ -61,10 +58,6 @@ HEAP_SIZE = 0x13000
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
-#DEV_C_FLAGS = -Dnrf52
-
-# changed from default NRF:
-# FP_OPTS
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/nrf52/debug/lib
@@ -76,37 +69,14 @@ else
 	endif
 endif
 
-
-# C flags common to all targets
-CFLAGS += -D$(BOARD_DEF)
-CFLAGS += -DCONFIG_GPIO_AS_PINRESET
-CFLAGS += -DFLOAT_ABI_HARD
-CFLAGS += -DNRF52840_XXAA
-CFLAGS += -DSWI_DISABLE0
-CFLAGS += -mcpu=cortex-m4
-CFLAGS += -mthumb -mabi=aapcs
-CFLAGS += -munaligned-access
-CFLAGS += -Wall  # -Werror
-# CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-# keep every function in a separate section, this allows linker to discard unused ones
-CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
-CFLAGS += -fno-builtin
-CFLAGS += -DFREERTOS
-CFLAGS += -DNRF_SD_BLE_API_VERSION=6
-CFLAGS += -DS140
-CFLAGS += -DSOFTDEVICE_PRESENT
-CFLAGS += -DNRF_DRV_UART_WITH_UARTE
-
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
-# ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -D$(BOARD_DEF)
 ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += $(FP_OPTS)
-
 ASMFLAGS += -DFREERTOS
 ASMFLAGS += -DNRF_SD_BLE_API_VERSION=6
 ASMFLAGS += -DS140
@@ -121,8 +91,8 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
-
 LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
+
 LIB_FILES += \
 	-lc -lnosys -lm \
 	$(SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
@@ -500,19 +470,6 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 #	-DmxNoConsole=1
 
-NRF_ASM_FLAGS= \
-	-mcpu=cortex-m4 \
-	-mthumb -mabi=aapcs
-	-mlittle-endian \
-	-mfloat-abi=hard \
-	-mfpu=fpv4-sp-d16 \
-	-D$(BOARD_DEF) \
-	-DBSP_DEFINES_ONLY \
-	-DCONFIG_GPIO_AS_PINRESET \
-	-DFLOAT_ABI_HARD \
-	-DNRF52840_XXAA \
-
-
 NRF_C_DEFINES= \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
@@ -618,9 +575,6 @@ MEM_USAGE = \
 	 print "\# Memory usage\n";\
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
-SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
-SDK_DIRS = $(sort $(dir $(SDK_SRC)))
-
 #-----------------
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -643,7 +597,7 @@ endif
 
 #-----------------
 
-VPATH += $(NRF_PATHS) $(SDK_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
+VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 .SUFFIXES:
@@ -703,7 +657,6 @@ $(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
 
 dfu-package: $(BIN_DIR)/xs_nrf52-merged.hex
 	@echo "# Packaging $<"
-#	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $< $(BIN_DIR)/dfu-package.zip
 #	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip --bootloader $(BOOTLOADER_HEX) --softdevice $(SOFTDEVICE_HEX)
 	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52-merged.hex $(BIN_DIR)/dfu-package.zip
 
@@ -726,7 +679,6 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 
 $(SDK_ROOT)/components/boards/moddable_four.h:
 	$(error "## Please add Moddable boards to your NRF52 SDK")
-	
 
 boards_h: $(SDK_ROOT)/components/boards/moddable_four.h
 
@@ -744,13 +696,11 @@ $(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
 $(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
 	@echo "# Size"
 	$(SIZE) $(TMP_DIR)/xs_nrf52.out
-#	$(OBJCOPY) $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.hex
 	$(OBJCOPY) -O ihex $< $@
 
 FINAL_LINK_OBJ:=\
 	$(XS_OBJ) \
 	$(SDK_GLUE_OBJ) \
-	$(SDK_OBJ) \
 	$(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o \
 	$(OBJECTS) \
 	$(LIB_DIR)/buildinfo.c.o
@@ -773,7 +723,7 @@ $(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo "# Link to .out file"
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
-$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(SDK_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
 	@echo "# buildinfo"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
@@ -808,7 +758,7 @@ $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
 
-MAKEFLAGS += --jobs 1
+MAKEFLAGS += --jobs 8
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

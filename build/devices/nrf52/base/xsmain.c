@@ -35,6 +35,11 @@ xsCallback xsHostModuleAt(xsIndex i)
 }
 
 extern void mc_setup(xsMachine *the);
+#if mxDebug
+TaskHandle_t gMainTask = NULL;
+extern void fxReceiveLoop(void);
+extern void setupDebugger(void);
+#endif
 
 void xsTask(void *pvParameter);
 
@@ -49,6 +54,7 @@ void xsTask(void *pvParameter) {
 
 	taskYIELD();
 #ifdef mxDebug
+	gMainTask = xTaskGetCurrentTaskHandle();
 	setupDebugger();
 #endif
 
@@ -70,6 +76,16 @@ void xs_loop(void)
 
 void xs_start() {
 	while (1) {
+#if mxDebug
+{
+	uint32_t num;
+	num = ulTaskNotifyTake(pdTRUE, 0);
+	if (num) {
+		// got notification from usb driver that there is data available.
+		fxReceiveLoop();
+	}
+}
+#endif
 		xs_loop();
 	}
 
