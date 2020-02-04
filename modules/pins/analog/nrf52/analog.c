@@ -27,52 +27,6 @@ sint8_t gAnalogInited = 0;
 
 void saadc_handler(nrfx_saadc_evt_t const *event)
 {
-	switch (event->type) {
-		case NRF_SAADC_EVENT_STARTED:
-			break;
-		case NRF_SAADC_EVENT_END:
-			break;
-		case NRF_SAADC_EVENT_DONE:
-			break;
-		case NRF_SAADC_EVENT_RESULTDONE:
-			break;
-		case NRF_SAADC_EVENT_CALIBRATEDONE:
-			break;
-		case NRF_SAADC_EVENT_STOPPED:
-			break;
-		case NRF_SAADC_EVENT_CH0_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH0_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH1_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH1_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH2_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH2_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH3_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH3_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH4_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH4_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH5_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH5_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH6_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH6_LIMITL:
-			break;
-		case NRF_SAADC_EVENT_CH7_LIMITH:
-			break;
-		case NRF_SAADC_EVENT_CH7_LIMITL:
-			break;
-	}
 }
 
 void init_analog()
