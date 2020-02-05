@@ -30,6 +30,11 @@ class Sleep {
 	static getRetainedBuffer() @ "xs_sleep_get_retained_buffer";
 	static setRetainedBuffer() @ "xs_sleep_set_retained_buffer";
 
+	// alternate slot-based ram retention api
+	static clearRetainedValue(index) @ "xs_sleep_clear_retained_value";
+	static getRetainedValue(index) @ "xs_sleep_get_retained_value";
+	static setRetainedValue(index, value) @ "xs_sleep_set_retained_value";
+	
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
 	static deep() {

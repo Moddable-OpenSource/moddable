@@ -29,8 +29,10 @@
 #include "nrf_drv_lpcomp.h"
 
 #define kRamRetentionRegisterMagic 0xBF
-#define kRamRetentionBufferSize 256		// must match .retained_section linker size
+#define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size
 #define kRamRetentionBufferMagic 0x89341057
+
+#define kRamRetentionValueMagic 0x52081543
 
 #define kAnalogResolution 10	// 10 bits
 
@@ -66,7 +68,6 @@ enum {
 };
 
 #ifdef MODGCC
-	#define RAM_START_ADDRESS  0x200058b8
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".no_init"))) __attribute__((used)) = {0};
 #else
 	#define RAM_START_ADDRESS  0x20000000
@@ -80,7 +81,7 @@ static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 /**
 	Retention buffer format:
 	
-	kRamRetentionRegisterMagic
+	kRamRetentionBufferMagic
 	16-bit buffer length
 	buffer
 **/
@@ -90,8 +91,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
-	uint8_t ram_slave_n;
-	uint32_t ram_powerset;
+	uint32_t ram_slave_n, ram_powerset;
 
 	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
@@ -164,6 +164,82 @@ void xs_sleep_get_retained_buffer(xsMachine *the)
 void xs_sleep_clear_retained_buffer(xsMachine *the)
 {
 	clear_retained_buffer();
+}
+
+/**
+	Retained value format (each value requires 8 bytes):
+	
+	32-bit kRamRetentionValueMagic
+	32-bit value
+**/
+
+void xs_sleep_clear_retained_value(xsMachine *the)
+{
+	int16_t index = xsmcToInteger(xsArg(0));
+	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	
+	if (index < 0 || index > 31)
+		xsRangeError("invalid index");
+	
+	slots[index * 2] = 0;
+}
+
+void xs_sleep_get_retained_value(xsMachine *the)
+{
+	int16_t index = xsmcToInteger(xsArg(0));
+	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	uint32_t gpreg;
+	
+	if (index < 0 || index > 31)
+		xsRangeError("invalid index");
+
+	if (softdevice_enabled())
+		sd_power_gpregret_get(0, &gpreg);
+	else
+		gpreg = NRF_POWER->GPREGRET;
+
+	// If retention register doesn't contain the magic value there is no retained ram
+	if (kRamRetentionRegisterMagic != gpreg)
+		return;
+			
+	if (kRamRetentionValueMagic == slots[index * 2])
+		xsResult = xsInteger(slots[(index * 2) + 1]);
+}
+
+void xs_sleep_set_retained_value(xsMachine *the)
+{
+	int16_t index = xsmcToInteger(xsArg(0));
+	int32_t value = xsmcToInteger(xsArg(1));
+	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	uint32_t ram_slave_n, ram_powerset;
+	
+	if (index < 0 || index > 31)
+		xsRangeError("invalid index");
+	
+#ifdef MODGCC
+	// The gRamRetentionBuffer lives in the last 32KB section in the last RAM slave
+	// Refer to the NOINIT section in the xsproj.ld linker configuration file
+	ram_slave_n = 8;
+	ram_powerset = (POWER_RAM_POWER_S5RETENTION_On  << POWER_RAM_POWER_S5RETENTION_Pos);
+#else
+	// Eight RAM slave blocks, each divided into two 4 KB sections 
+	uint32_t ram_section_n, p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
+	ram_slave_n = (p_offset / 8192);  
+	ram_section_n = (p_offset % 8192) / 4096;
+	ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
+#endif
+
+	if (softdevice_enabled()) {
+		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
+		sd_power_ram_power_set(ram_slave_n, ram_powerset);
+	}
+	else {
+    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
+		NRF_POWER->RAM[ram_slave_n].POWERSET = ram_powerset;
+	}
+
+	slots[index * 2] = kRamRetentionValueMagic;
+	slots[(index * 2) + 1] = value;
 }
 
 // Set the power mode for System On sleep
