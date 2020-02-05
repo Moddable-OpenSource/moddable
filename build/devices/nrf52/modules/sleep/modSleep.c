@@ -28,8 +28,6 @@
 #include "nrf_delay.h"
 #include "nrf_drv_lpcomp.h"
 
-#include "ftdi_trace.h"
-
 #define kRamRetentionRegisterMagic 0xBF
 #define kRamRetentionBufferSize 256		// must match .retained_section linker size
 #define kRamRetentionBufferMagic 0x89341057
@@ -92,8 +90,9 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
+	uint8_t ram_slave_n;
+	uint32_t ram_powerset;
 
-	ftdiTrace("in xs_sleep_set_retained_buffer");
 	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
 	if (retainedSize > kRamRetentionBufferSize)
@@ -111,17 +110,18 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
+#ifdef MODGCC
+	// The gRamRetentionBuffer lives in the last 32KB section in the last RAM slave
+	// Refer to the NOINIT section in the xsproj.ld linker configuration file
+	ram_slave_n = 8;
+	ram_powerset = (POWER_RAM_POWER_S5RETENTION_On  << POWER_RAM_POWER_S5RETENTION_Pos);
+#else
 	// Eight RAM slave blocks, each divided into two 4 KB sections 
-	uint32_t p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
-	uint8_t ram_slave_n = (p_offset / 8192);  
-	ftdiTrace("gRamRetentionBuffer address =");
-	ftdiTraceInt(((uint32_t)&gRamRetentionBuffer[0]));
-	ftdiTrace("RAM slave =");
-	ftdiTraceInt(ram_slave_n);
-	uint32_t ram_section_n = (p_offset % 8192) / 4096;
-	ftdiTrace("RAM section =");
-	ftdiTraceInt(ram_section_n);
-	uint32_t ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
+	uint32_t ram_section_n, p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
+	ram_slave_n = (p_offset / 8192);  
+	ram_section_n = (p_offset % 8192) / 4096;
+	ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
+#endif
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
