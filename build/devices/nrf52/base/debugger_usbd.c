@@ -41,8 +41,6 @@
 #include "queue.h"
 #include "ftdi_trace.h"
 
-extern TaskHandle_t gMainTask;
-
 // LED to blink when device is ready for host serial connection
 #define LED 7
 
