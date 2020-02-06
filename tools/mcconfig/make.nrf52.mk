@@ -605,7 +605,13 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
+all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/xs_nrf52.uf2
+	$(WAIT_FOR_M4)
+	$(KILL_SERIAL_2_XSBUG)
+	$(DO_XSBUG)
+	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
+	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
+	$(WAIT_FOR_NEW_SERIAL)
 
 clean:
 	@echo "# Cleaning tmp and bin for this project"
@@ -635,14 +641,6 @@ $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
 	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
 
-copyToM4: all $(BIN_DIR)/xs_nrf52.uf2
-	$(WAIT_FOR_M4)
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
-	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
-	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
-	$(WAIT_FOR_NEW_SERIAL)
-
 installBootloader:
 	nrfjprog --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
 
@@ -666,6 +664,7 @@ installDFU: all dfu-package
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
 
 startDebugger:
+	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	$(WAIT_FOR_NEW_SERIAL)

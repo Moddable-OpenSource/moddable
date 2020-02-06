@@ -1,9 +1,10 @@
-<style>
-	img[src*="#smallFramed"] { width:300px;border:1px solid black; }
-	img[src*="#medFramed"] { width:400px;border:1px solid black; }
-</style>
+# Moddable Four Getting Started
 
-# Moddable Four getting started
+Copyright 2020 Moddable Tech, Inc.
+
+Revised: February 5, 2020
+
+Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## About This Document
 
@@ -204,19 +205,17 @@ Put the Moddable Four into **programming mode** and build the Moddable `hellowor
 
 ```text
 cd $MODDABLE/examples/helloworld
-mcconfig -d -m -p nrf52/moddable_four -t copyToM4
+mcconfig -d -m -p nrf52/moddable_four
 ```
 
-The `mcconfig` tool compiles the application source code and any assets. The `-t` target of `copyToM4` builds, packages and uploads your application to the Moddable Four device and launches the `xsbug` debugger.
+The `mcconfig` tool builds the application, uploads the application to the Moddable Four device and launches the `xsbug` debugger.
 
-Other targets include:
+Additional `mcconfig` features are provided by the `-t` option:
 
 Target | Description
 -------|------
-`-t all`<br>_or no target_ | builds the application into a xs_nrf52.hex file
 `-t clean` | removes the `bin` and `tmp` directories for this application leaving libraries and other apps
 `-t allclean` | removes all Moddable nrf52 applications and libraries tmp and bin
-`-t copyToM4` | builds and packages the application, copies it to the Moddable Four, and starts `xsbug`
 `-t startDebugger` | starts `xsbug` and `serial2xsbug`
 
 
