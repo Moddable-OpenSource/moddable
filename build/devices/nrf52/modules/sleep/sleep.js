@@ -18,6 +18,10 @@
  *
  */
 
+// @@ How to make these writable within the class when preloaded?
+let suspended = false;
+let pending = false;
+
 class Sleep {
 	static install(handler) {
 		// this dance allows handlers to be installed both at preload and run time
@@ -38,12 +42,29 @@ class Sleep {
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
 	static deep() {
-		Sleep.prototype.handlers.forEach(handler => (handler)());
-		Sleep.#deep();
+		if (false === suspended) {
+			pending = false;
+			Sleep.prototype.handlers.forEach(handler => (handler)());
+			Sleep.#deep();
+		}
+		else
+			pending = true;
 	}
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
+	
+	static prevent() {
+		suspended = true;
+	}
+	static allow() {
+		suspended = false;
+		if (pending) {
+			pending = false;
+			Sleep.prototype.handlers.forEach(handler => (handler)());
+			Sleep.#deep();
+		}
+	}
 	
 	static wakeOnAnalog(channel, configuration) {
 		switch(configuration.mode) {
