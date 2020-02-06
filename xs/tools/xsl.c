@@ -336,19 +336,7 @@ int main(int argc, char* argv[])
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
-							if (preload->moduleFlag)
-								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
-							else {
-								txSlot* realm = mxProgram.value.reference->next->value.module.realm;
-								txScript* script;
-								c_strcpy(path, linker->base);
-								c_strcat(path, preload->name);
-								script = fxLoadScript(the, path);
-                            	script->callback = NULL;
-								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
-								fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
-								mxPullSlot(mxResult);
-							}
+							xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
 							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}

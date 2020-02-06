@@ -236,8 +236,6 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 			else if (XS_CODE_STRING_2 == code)
 				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_2;
 		}
-		if ((code == XS_CODE_MODULE) && (script->preload))
-			script->preload->moduleFlag = 1;
 		gxCodeUsages[code]++;	
 		offset = (txS1)sizes[code];
 		if (0 < offset) {
