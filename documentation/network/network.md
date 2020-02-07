@@ -1380,7 +1380,7 @@ let mqtt = new Client({
 
 ### `onReady()`
 
-The `onReady` callback is invoked when a connection is successfully established to the server. No messages may be publishes or subscriptions created before `onReady` is called.
+The `onReady` callback is invoked when a connection is successfully established to the server. No messages may be published or subscriptions created before `onReady` is called.
 
 ```
 mqtt.onReady = function () {
@@ -1452,7 +1452,7 @@ mqtt.publish("test/json", JSON.stringify({
 
 ### `onClose()`
 
-The `onClose` callback is invoked when the connection is lost, because of a network error or because the MQTT broker closed thee connection.
+The `onClose` callback is invoked when the connection is lost, because of a network error or because the MQTT broker closed the connection.
 
 ```
 mqtt.onClose = function() {
