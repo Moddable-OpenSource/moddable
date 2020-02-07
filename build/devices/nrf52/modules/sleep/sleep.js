@@ -19,7 +19,7 @@
  */
 
 // @@ How to make these writable within the class when preloaded?
-let suspended = false;
+let suspended = 0;
 let pending = false;
 
 class Sleep {
@@ -42,7 +42,7 @@ class Sleep {
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
 	static deep() {
-		if (false === suspended) {
+		if (0 == suspended) {
 			pending = false;
 			Sleep.prototype.handlers.forEach(handler => (handler)());
 			Sleep.#deep();
@@ -55,14 +55,14 @@ class Sleep {
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
 	static prevent() {
-		suspended = true;
+		++suspended;
 	}
 	static allow() {
-		suspended = false;
-		if (pending) {
-			pending = false;
-			Sleep.prototype.handlers.forEach(handler => (handler)());
-			Sleep.#deep();
+		--suspended;
+		if (suspended <= 0) {
+			suspended = 0;
+			if (pending)
+				Sleep.deep();
 		}
 	}
 	
