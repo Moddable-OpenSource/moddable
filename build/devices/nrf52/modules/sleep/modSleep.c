@@ -28,8 +28,10 @@
 #include "nrf_delay.h"
 #include "nrf_drv_lpcomp.h"
 
+#define RAM_START_ADDRESS  0x20000000
+#define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
+
 #define kRamRetentionRegisterMagic 0xBF
-#define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size
 #define kRamRetentionBufferMagic 0x89341057
 
 #define kRamRetentionValueMagic 0x52081543
@@ -70,13 +72,13 @@ enum {
 #ifdef MODGCC
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".no_init"))) __attribute__((used)) = {0};
 #else
-	#define RAM_START_ADDRESS  0x20000000
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 #endif
 
 static uint8_t softdevice_enabled();
 static void clear_retained_buffer();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
+static void getRAMRetentionSlaveAndPowerset(uint32_t address, uint32_t *slave, uint32_t *powerset);
 
 /**
 	Retention buffer format:
@@ -110,18 +112,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
-#ifdef MODGCC
-	// The gRamRetentionBuffer lives in the last 32KB section in the last RAM slave
-	// Refer to the NOINIT section in the xsproj.ld linker configuration file
-	ram_slave_n = 8;
-	ram_powerset = (POWER_RAM_POWER_S5RETENTION_On  << POWER_RAM_POWER_S5RETENTION_Pos);
-#else
-	// Eight RAM slave blocks, each divided into two 4 KB sections 
-	uint32_t ram_section_n, p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
-	ram_slave_n = (p_offset / 8192);  
-	ram_section_n = (p_offset % 8192) / 4096;
-	ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
-#endif
+	getRAMRetentionSlaveAndPowerset((uint32_t)&gRamRetentionBuffer[0], &ram_slave_n, &ram_powerset);
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
@@ -187,7 +178,7 @@ void xs_sleep_clear_retained_value(xsMachine *the)
 void xs_sleep_get_retained_value(xsMachine *the)
 {
 	int16_t index = xsmcToInteger(xsArg(0));
-	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	int32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
 	uint32_t gpreg;
 	
 	if (index < 0 || index > 31)
@@ -201,7 +192,7 @@ void xs_sleep_get_retained_value(xsMachine *the)
 	// If retention register doesn't contain the magic value there is no retained ram
 	if (kRamRetentionRegisterMagic != gpreg)
 		return;
-			
+
 	if (kRamRetentionValueMagic == slots[index * 2])
 		xsResult = xsInteger(slots[(index * 2) + 1]);
 }
@@ -210,24 +201,13 @@ void xs_sleep_set_retained_value(xsMachine *the)
 {
 	int16_t index = xsmcToInteger(xsArg(0));
 	int32_t value = xsmcToInteger(xsArg(1));
-	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	int32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
 	uint32_t ram_slave_n, ram_powerset;
 	
 	if (index < 0 || index > 31)
 		xsRangeError("invalid index");
 	
-#ifdef MODGCC
-	// The gRamRetentionBuffer lives in the last 32KB section in the last RAM slave
-	// Refer to the NOINIT section in the xsproj.ld linker configuration file
-	ram_slave_n = 8;
-	ram_powerset = (POWER_RAM_POWER_S5RETENTION_On  << POWER_RAM_POWER_S5RETENTION_Pos);
-#else
-	// Eight RAM slave blocks, each divided into two 4 KB sections 
-	uint32_t ram_section_n, p_offset = (((uint32_t)&gRamRetentionBuffer[0]) - RAM_START_ADDRESS);
-	ram_slave_n = (p_offset / 8192);  
-	ram_section_n = (p_offset % 8192) / 4096;
-	ram_powerset = 1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section_n);
-#endif
+	getRAMRetentionSlaveAndPowerset((uint32_t)&gRamRetentionBuffer[0], &ram_slave_n, &ram_powerset);
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
@@ -240,6 +220,8 @@ void xs_sleep_set_retained_value(xsMachine *the)
 
 	slots[index * 2] = kRamRetentionValueMagic;
 	slots[(index * 2) + 1] = value;
+	
+	nrf_delay_ms(1);
 }
 
 // Set the power mode for System On sleep
@@ -403,3 +385,41 @@ void lpcomp_event_handler(nrf_lpcomp_event_t event)
 	}
 }
 
+void getRAMRetentionSlaveAndPowerset(uint32_t address, uint32_t *slave, uint32_t *powerset)
+{
+	uint32_t ram_section_n;
+	
+	// From the nRF52840 Product Specification:
+	// The RAM interface is divided into 9 RAM AHB slaves.
+	// RAM AHB slave 0-7 is connected to 2x4 kB RAM sections each and RAM AHB slave 8 is connected to 6x32 kB sections
+	uint32_t p_offset = address - RAM_START_ADDRESS;
+	if (address < 0x20010000L) {
+		*slave = (p_offset / 8192);  
+		ram_section_n = (p_offset % 8192) / 4096;
+	}
+	else {
+		*slave = 8;
+		address -= 0x20010000L;
+		ram_section_n = address / 32768L;
+	}
+
+	switch(ram_section_n) {
+		case 0: *powerset = (1L  << POWER_RAM_POWER_S0RETENTION_Pos); break;
+		case 1: *powerset = (1L  << POWER_RAM_POWER_S1RETENTION_Pos); break;
+		case 2: *powerset = (1L  << POWER_RAM_POWER_S2RETENTION_Pos); break;
+		case 3: *powerset = (1L  << POWER_RAM_POWER_S3RETENTION_Pos); break;
+		case 4: *powerset = (1L  << POWER_RAM_POWER_S4RETENTION_Pos); break;
+		case 5: *powerset = (1L  << POWER_RAM_POWER_S5RETENTION_Pos); break;
+		case 6: *powerset = (1L  << POWER_RAM_POWER_S6RETENTION_Pos); break;
+		case 7: *powerset = (1L  << POWER_RAM_POWER_S7RETENTION_Pos); break;
+		case 8: *powerset = (1L  << POWER_RAM_POWER_S8RETENTION_Pos); break;
+		case 9: *powerset = (1L  << POWER_RAM_POWER_S9RETENTION_Pos); break;
+		case 10: *powerset = (1L  << POWER_RAM_POWER_S10RETENTION_Pos); break;
+		case 11: *powerset = (1L  << POWER_RAM_POWER_S11RETENTION_Pos); break;
+		case 12: *powerset = (1L  << POWER_RAM_POWER_S12RETENTION_Pos); break;
+		case 13: *powerset = (1L  << POWER_RAM_POWER_S13RETENTION_Pos); break;
+		case 14: *powerset = (1L  << POWER_RAM_POWER_S14RETENTION_Pos); break;
+		case 15: *powerset = (1L  << POWER_RAM_POWER_S15RETENTION_Pos); break;
+		default: *powerset = 0; break;
+	}
+}

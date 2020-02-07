@@ -19,7 +19,7 @@
 	Press the button connected to the digital input pin to wakeup the device.
 */
 
-import {Sleep, ResetReason} from "sleep";
+import Sleep from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
 import config from "mc/config";
@@ -29,43 +29,39 @@ const led_pin = config.led1_pin;
 const ON = 1;
 const OFF = 0;
 
-let str = valueToString(ResetReason, Sleep.resetReason);
-trace(`Good morning. Reset reason: ${str}\n`);
-
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
 
 // Check if retained ram buffer is available
 let buffer = Sleep.getRetainedBuffer();
+let valid = true;
 
 if (undefined !== buffer) {
 	let retained = new Uint8Array(buffer);
-	let valid = true;
 	for (let i = 0; i < 100; ++i) {
 		if (retained[i] != i) {
-		
 			// Turn off LED if retention buffer invalid
 			Digital.write(led_pin, OFF);
 			valid = false;
 			break;
 		}
 	}
-			
-	// Blink LED to confirm retention buffer
-	if (valid) {
-		for (let i = 0; i < 5; ++i) {
-			Digital.write(led_pin, ON);
-			Timer.delay(200);
-			Digital.write(led_pin, OFF);
-			Timer.delay(200);
-		}
-		Digital.write(led_pin, ON);
-		Sleep.clearRetainedBuffer();
-		trace(`Retention buffer read and okay.\n`);
-	}
 }
+else
+	valid = false;
 
-// No retained ram buffer is available. Retain a buffer and sleep.
+
+// Blink LED to confirm retention buffer
+if (valid) {
+	for (let i = 0; i < 5; ++i) {
+		Digital.write(led_pin, ON);
+		Timer.delay(100);
+		Digital.write(led_pin, OFF);
+		Timer.delay(100);
+	}
+	Digital.write(led_pin, ON);
+	Sleep.clearRetainedBuffer();
+}
 else {
 	let count = 3;
 	Timer.repeat(id => {
@@ -74,10 +70,6 @@ else {
 			Sleep.install(preSleep);
 			Sleep.deep();
 		}
-		if (count > 1)
-			trace(`Going to deep sleep in ${count - 1} seconds...\n`);
-		else
-			trace(`Good night. Press the button connected to pin ${wakeup_pin} to wake me up.\n\n`);
 		--count;
 	}, 1000);
 }
@@ -94,9 +86,4 @@ function preSleep() {
 	for (let i = 0; i < 100; ++i)
 		retained[i] = i;
 	Sleep.setRetainedBuffer(retained.buffer);
-}
-
-function valueToString(obj, value) {
-	let result = Object.keys(obj).find(element => obj[element] == value);
-	return (result ? result : "Unknown");
 }

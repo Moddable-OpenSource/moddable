@@ -19,7 +19,7 @@
 	Press the button connected to the digital input pin to wakeup the device.
 */
 
-import {Sleep, ResetReason} from "sleep";
+import Sleep from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
 import config from "mc/config";
@@ -29,9 +29,6 @@ const led_pin = config.led1_pin;
 const ON = 1;
 const OFF = 0;
 
-let str = valueToString(ResetReason, Sleep.resetReason);
-trace(`Good morning. Reset reason: ${str}\n`);
-
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
 
@@ -39,7 +36,7 @@ Digital.write(led_pin, ON);
 let valid = true;
 for (let i = 0; i < 32; ++i) {
 	let value = Sleep.getRetainedValue(i);
-	if (undefined === value || i != value) {
+	if (i != value) {
 		valid = false;
 		break;
 	}
@@ -49,11 +46,13 @@ for (let i = 0; i < 32; ++i) {
 if (valid) {
 	for (let i = 0; i < 5; ++i) {
 		Digital.write(led_pin, ON);
-		Timer.delay(200);
+		Timer.delay(100);
 		Digital.write(led_pin, OFF);
-		Timer.delay(200);
+		Timer.delay(100);
 	}
 	Digital.write(led_pin, ON);
+	for (let i = 0; i < 32; ++i)
+		Sleep.clearRetainedValue(i);
 }
 
 // Retain values and sleep
@@ -65,28 +64,18 @@ else {
 			Sleep.install(preSleep);
 			Sleep.deep();
 		}
-		if (count > 1)
-			trace(`Going to deep sleep in ${count - 1} seconds...\n`);
-		else
-			trace(`Good night. Press the button connected to pin ${wakeup_pin} to wake me up.\n\n`);
 		--count;
 	}, 1000);
 }
 
 function preSleep() {
+	// Retain values
+	for (let i = 0; i < 32; ++i)
+		Sleep.setRetainedValue(i, i);
+	
 	// Turn off LED while asleep
 	Digital.write(led_pin, OFF);
 
 	// Wakeup on digital pin
 	Sleep.wakeOnDigital(wakeup_pin);
-	
-	// Retain values
-	for (let i = 0; i < 32; ++i) {
-		Sleep.setRetainedValue(i, i);
-	}
-}
-
-function valueToString(obj, value) {
-	let result = Object.keys(obj).find(element => obj[element] == value);
-	return (result ? result : "Unknown");
 }
