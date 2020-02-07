@@ -1345,7 +1345,7 @@ ping.close();
 - **Source code:** [mqtt](../../modules/network/mqtt)
 - **Relevant examples:** [mqttbasic](../../examples/network/mqtt/mqttbasic), [mqttsecure](../../examples/network/mqtt/mqttsecure)
 
-The MQTT `Client` class implements a client that connects to an MQTT broker.
+The MQTT `Client` class implements a client that connects to an MQTT broker (server).
 
 ```js
 import Client from "mqtt";
@@ -1353,24 +1353,23 @@ import Client from "mqtt";
 
 ### `constructor(dictionary)`
 
-A new MQTT `Client` is configured using a dictionary of properties. The dictionary must contain `host`, `port`, and `id` properties; other properties are optional.
+A new MQTT `Client` is configured using a dictionary of properties. The dictionary must contain `host` and `id` properties; other properties are optional.
 
 | Parameter | Description |
 | :---: | :--- |
 | `host` | The host name of the remote MQTT server |
-| `port` | The remote port number |
+| `port` | The remote port number. Required for connections using TLS., defaults to 1883 for direct MQTT connections and 80 for MQTT over WebSocket connections.  |
 | `id` | A unique ID for this device |
-| `user` | The username (for MQTT servers that require authentication) |
-| `password` | The password, as an `ArrayBuffer` (for MQTT servers that require authentication) |
-| `path` | The endpoint to connect to (for MQTT servers that use the WebSocket protocol to transport MQTT data) |
-| `timeout` | The keepalive timeout interval, in ms |
-
-<!-- TO DO: `Socket` and `secure` properties -->
+| `user` | The username |
+| `password` | The password as an `ArrayBuffer` |
+| `path` | The endpoint to connect to. If present, the MQTT client communicates established a WebSocket connecting using the `mqtt` sub-protocol. |
+| `timeout` | The keep-alive timeout interval, in milliseconds. If no timeout is provided, the MQTT keep-alive feature is not used. |
+| `Socket` | The socket constructor to use to create the MQTT connection. Use `SecureSocket` to establish a secure connection using TLS. |
+| `secure` | Dictionary of options for a TLS connection when using `SecureSocket` |
 
 ```
 let mqtt = new Client({
 	host: "test.mosquitto.org",
-	port: 1883,	
 	id: "iot_" + Net.get("MAC"),
 	user: "user name",
 	password: ArrayBuffer.fromString("secret")
@@ -1381,7 +1380,7 @@ let mqtt = new Client({
 
 ### `onReady()`
 
-The `onReady` callback is invoked when a connection is successfully established to the server.
+The `onReady` callback is invoked when a connection is successfully established to the server. No messages may be publishes or subscriptions created before `onReady` is called.
 
 ```
 mqtt.onReady = function () {
@@ -1401,6 +1400,15 @@ mqtt.subscribe("test/binary");
 mqtt.subscribe("test/json");
 ```
 
+### `unsubscribe(topic)`
+
+Use the `unsubscribe` method to unsubscribe to a topic.
+
+
+```
+mqtt.unsubscribe("test/string");
+```
+
 ### `onMessage(topic, data)` 
 
 The `onMessage` callback is invoked when a message is received for any topic that your client has subscribed to. The `topic` argument is the name of the topic and the `data` argument is the complete message.
@@ -1411,7 +1419,7 @@ mqtt.onMessage = function(topic, data) {
 }
 ```
 
-The `data` argument is always provided as an `ArrayBuffer`. You can convert it to a string using `String.fromArrayBuffer`.
+The `data` argument is an `ArrayBuffer`. For messages containing only UTF-8 text, you can convert it to a string using `String.fromArrayBuffer`.
 
 ```
 mqtt.onMessage = function(topic, data) {
@@ -1444,7 +1452,7 @@ mqtt.publish("test/json", JSON.stringify({
 
 ### `onClose()`
 
-The `onClose` callback is invoked when the connection is lost.
+The `onClose` callback is invoked when the connection is lost, because of a network error or because the MQTT broker closed thee connection.
 
 ```
 mqtt.onClose = function() {
