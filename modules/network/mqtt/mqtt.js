@@ -212,7 +212,7 @@ export default class Client {
 					parse.state = 0x32;
 					break;
 
-				case 0x32:		// optimization: consume as many bytes as possible
+				case 0x32:		// optimization: consume as many bytes as possible (see state 0x37)
 					parse.topic[parse.topic.position++] = buffer[position++];
 					if (parse.topic.position === parse.topic.length) {
 						parse.topic = String.fromArrayBuffer(parse.topic.buffer);
@@ -325,7 +325,7 @@ export default class Client {
 		const header = Uint8Array.of(
 			0x00, 0x04,
 			'M'.charCodeAt(),'Q'.charCodeAt(),'T'.charCodeAt(),'T'.charCodeAt(),		// protocol name MQTT
-			0x04,									// protocol level 4
+			0x04,									// protocol level 4 (MQTT version 3.1.1)
 			0x02,									// flags : CleanSession
 			(timeout >> 8) & 0xFF, timeout & 0xFF	// keepalive in seconds
 		);
