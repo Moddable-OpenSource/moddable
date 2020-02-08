@@ -23,12 +23,18 @@ class WakeableAnalog @ "xs_wakeableanalog_destructor" {
 	close() @ "xs_wakeableanalog_close"
 	read() @ "xs_wakeableanalog_read"
 
+	get wakeupReason() @ "xs_wakeableanalog_get_wakeup_reason"
+
 	get format() {
 		return "number";
 	}
 	set format(value) {
 		if ("number" !== value)
 			throw new RangeError;
+	}
+	
+	get resolution() {
+		return 10;	
 	}
 }
 

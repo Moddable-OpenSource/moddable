@@ -8,6 +8,7 @@
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
+			"$(MODULES)/pins/analog/nrf52/*"
 		],
 		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
 		"builtin/wakeableanalog": "$(IO)/wakeableanalog/wakeableanalog",
