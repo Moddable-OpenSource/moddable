@@ -10,6 +10,8 @@ class Serializer {
 			opcode |= 0x80;
 		if (dictionary.authoritative)
 			opcode |= 0x04;
+		if (dictionary.recursionDesired)
+			opcode |= 0x01;
 		this.opcode = opcode;
 		if (dictionary.id)
 			this.id = dictionary.id;
