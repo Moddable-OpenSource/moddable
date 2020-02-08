@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -23,6 +23,8 @@ class WakeableDigital @ "xs_wakeabledigital_destructor" {
 	close() @ "xs_wakeabledigital_close"
 	read() @ "xs_wakeabledigital_read"
 
+	get wakeupReason() @ "xs_wakeabledigital_get_wakeup_reason"
+	
 	get format() {
 		return "number";
 	}

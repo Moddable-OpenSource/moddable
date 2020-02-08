@@ -53,6 +53,7 @@ enum {
 struct WakeableDigitalRecord {
 	uint8_t		pin;
 	uint8_t		hasOnReadable;
+	uint32_t	resetReason;
 	xsMachine	*the;
 	xsSlot		target;
 	xsSlot		*onReadable;
@@ -61,8 +62,15 @@ struct WakeableDigitalRecord {
 typedef struct WakeableDigitalRecord WakeableDigitalRecord;
 typedef struct WakeableDigitalRecord *WakeableDigital;
 
+static void xs_wakeabledigital_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void wakeableDigitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength);
 static uint8_t softdevice_enabled();
+
+static const xsHostHooks ICACHE_FLASH_ATTR xsWakeableDigitalHooks = {
+	xs_wakeabledigital_destructor,
+	xs_wakeabledigital_mark,
+	NULL
+};
 
 void xs_wakeabledigital_constructor(xsMachine *the)
 {
@@ -70,6 +78,7 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	int pin, type;
 	uint8_t hasOnReadable;
 	xsSlot target;
+	uint32_t resetReason;
 
 	xsmcVars(1);
 
@@ -100,6 +109,20 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	wd->pin = pin;
 	wd->hasOnReadable = hasOnReadable;
 
+	// get the reset reason
+	if (softdevice_enabled())
+		sd_power_reset_reason_get(&resetReason);
+	else
+		resetReason = NRF_POWER->RESETREAS;
+		
+	wd->resetReason = resetReason;
+	
+	// clear the reset reason register using the bit mask (required)
+	if (softdevice_enabled())
+		sd_power_reset_reason_clr(resetReason);
+	else
+		NRF_POWER->RESETREAS = resetReason;
+
 	if (hasOnReadable) {
 		xsSlot tmp;
 		wd->the = the;
@@ -108,7 +131,8 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 
 		builtinGetCallback(the, &target, xsID_onReadable, &tmp);
 		wd->onReadable = xsToReference(tmp);
-		//xsRemember(wd->onReadable);
+
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsWakeableDigitalHooks);
 
 		if (kPinReset == wd->pin)
 			modMessagePostToMachine(the, NULL, 0, wakeableDigitalDeliver, wd);
@@ -126,41 +150,70 @@ void xs_wakeabledigital_destructor(void *data)
 	c_free(wd);
 }
 
+void xs_wakeabledigital_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
+{
+	WakeableDigital wd = it;
+
+	(*markRoot)(the, wd->onReadable);
+}
+
 void xs_wakeabledigital_close(xsMachine *the)
 {
 	WakeableDigital wd = xsmcGetHostData(xsThis);
 	if (!wd) return;
 
 	xsmcSetHostData(xsThis, NULL);
-	if (wd->hasOnReadable) {
-		xsForget(wd->target);
-		//xsForget(wd->onReadable);
-	}
+	xsForget(wd->target);
 	xs_wakeabledigital_destructor(wd);
 }
 
 void xs_wakeabledigital_read(xsMachine *the)
 {
 	WakeableDigital wd = xsmcGetHostData(xsThis);
-	uint32_t reset_reason;
-
-	// get the reset reason
-	if (softdevice_enabled())
-		sd_power_reset_reason_get(&reset_reason);
-	else
-		reset_reason = NRF_POWER->RESETREAS;
-		
-	// clear the reset reason register using the bit mask (required)
-	if (softdevice_enabled())
-		sd_power_reset_reason_clr(reset_reason);
-	else
-		NRF_POWER->RESETREAS = reset_reason;
+	uint32_t resetReason = wd->resetReason;
 
 	// Wake up from deep sleep can only occur from digital, analog, or NFC field triggers. Also hard reset.
-	if (kResetReasonGPIO == reset_reason || kResetReasonLPCOMP == reset_reason || kResetReasonNFC == reset_reason)
+	if (kResetReasonGPIO == resetReason || kResetReasonLPCOMP == resetReason || kResetReasonNFC == resetReason)
 		xsmcSetInteger(xsResult, 1);
 	else
 		xsmcSetInteger(xsResult, 0);
+}
+
+void xs_wakeabledigital_get_wakeup_reason(xsMachine *the)
+{
+	WakeableDigital wd = xsmcGetHostData(xsThis);
+
+	switch(wd->resetReason) {
+		case kResetReasonUnknown:
+			xsmcSetString(xsResult, "unknown");
+			break;
+		case kResetReasonResetPin:
+			xsmcSetString(xsResult, "hard-reset");
+			break;
+		case kResetReasonWatchdog:
+			xsmcSetString(xsResult, "watchdog");
+			break;
+		case kResetReasonSoftReset:
+			xsmcSetString(xsResult, "soft-reset");
+			break;
+		case kResetReasonLockup:
+			xsmcSetString(xsResult, "lockup");
+			break;
+		case kResetReasonGPIO:
+			xsmcSetString(xsResult, "digital");
+			break;
+		case kResetReasonLPCOMP:
+			xsmcSetString(xsResult, "analog");
+			break;
+		case kResetReasonDebugInterface:
+			xsmcSetString(xsResult, "debugger");
+			break;
+		case kResetReasonNFC:
+			xsmcSetString(xsResult, "nfc");
+			break;
+		default:
+			break;
+	}
 }
 
 void wakeableDigitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
