@@ -167,7 +167,8 @@ class Serializer {
 			 byteLength += sections[i].reduce((byteLength, value) => byteLength + value.byteLength, 0);
 		let position = 12;
 		let result = new Uint8Array(byteLength + position);
-		result.set(Uint8Array.of(this.id >> 8, this.id & 255, this.opcode, 0, 0, sections[0].length, 0, sections[1].length, 0, sections[2].length, 0, sections[3].length), 0);		// header
+		const id = (undefined === this.id) ? 0 : this.id;
+		result.set(Uint8Array.of(id >> 8, id & 255, this.opcode, 0, 0, sections[0].length, 0, sections[1].length, 0, sections[2].length, 0, sections[3].length), 0);		// header
 		for (let i = 0; i < 4; i++)
 			sections[i].forEach(fragment => {
 				result.set(fragment, position);
@@ -176,7 +177,6 @@ class Serializer {
 		return result.buffer;
 	}
 }
-Serializer.prototype.id = 0;
 Object.freeze(Serializer.prototype);
 
 export default Serializer;
