@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,6 +22,8 @@
 
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <resolv.h>
+#include <arpa/inet.h>
 
 #import <CoreWLAN/CoreWLAN.h>
 
@@ -74,6 +76,33 @@ void xs_net_get(xsMachine *the)
 		if (!xsTest(xsResult) && localhost)
 			xsResult = xsString("127.0.0.1");
 		freeifaddrs(ifaddr);
+	}
+	else if (0 == c_strcmp(prop, "DNS")) {
+		struct __res_state res;
+		int i, index = 0;
+
+		xsVars(1);
+
+		res_ninit(&res);
+
+		xsResult = xsNewArray(0);
+		for (i = 0; i < res.nscount; i++) {
+			sa_family_t family = res.nsaddr_list[i].sin_family;
+			if (AF_INET == family) {
+				char str[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, &(res.nsaddr_list[i].sin_addr.s_addr), str, INET_ADDRSTRLEN);
+				xsVar(0) = xsString(str);
+			} else if (family == AF_INET6) {
+				char str[INET6_ADDRSTRLEN];
+				inet_ntop(AF_INET6, &(res.nsaddr_list [i].sin_addr.s_addr), str, INET6_ADDRSTRLEN);
+				xsVar(0) = xsString(str);
+			}
+			else
+				continue;
+			xsSet(xsResult, index++, xsVar(0));
+		}
+
+		res_ndestroy(&res);
 	}
 }
 
