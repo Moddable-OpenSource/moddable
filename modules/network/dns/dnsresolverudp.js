@@ -84,19 +84,17 @@ class Manager {
 		const id = packet.id;
 		for (let i = 0; i < this.requests.length; i++) {
 			const request = this.requests[i];
-			if ((id !== request.id) || (host !== request.host))
-				continue;
+			if ((id === request.id) || (host === request.host)) {
+				this.remove(request.request);
 
-			this.remove(request.request);
-			try {
-				if (packet.answers)
-					request.onResolved.call(request.target, packet.answer(0).rdata);
-				else
-					request.onError.call(request.target);
+				for (let j = 0, answers = packet.answers; j < answers; j++) {
+					const answer = packet.answer(j);
+					if (DNS.RR.A === answer.qtype)
+						return request.onResolved.call(request.target, answer.rdata);
+				}
+
+				return request.onError.call(request.target);
 			}
-			catch {
-			}
-			i -= 1;
 		}
 	}
 	task() {
