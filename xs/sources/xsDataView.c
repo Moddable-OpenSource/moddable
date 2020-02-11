@@ -1564,6 +1564,7 @@ void fx_TypedArray_prototype_fill(txMachine* the)
 	else
 		mxPushUndefined();
 	(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
+	fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
 	while (start < end) {
 		(*dispatch->value.typedArray.dispatch->setter)(the, data, start, the->stack, EndianNative);
 		start += delta;
@@ -1666,6 +1667,7 @@ void fx_TypedArray_prototype_includes(txMachine* the)
 	fxBoolean(the, mxResult, 0);
 	if (length) {
 		txInteger index = (txInteger)fxArgToIndex(the, 1, 0, length);
+		fxCheckArrayBufferDetached(the, buffer, XS_IMMUTABLE);
 		if (mxArgc > 0)
 			mxPushSlot(mxArgv(0));
 		else
