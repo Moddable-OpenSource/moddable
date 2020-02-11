@@ -64,7 +64,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Object), 1, mxID(_Object));
 	mxObjectConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
-	slot = fxNextSlotProperty(the, slot, &mxAssignObjectFunction, mxID(_assign), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_assign), 2, mxID(_assign), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_create), 2, mxID(_create), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperties), 2, mxID(_defineProperties), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_defineProperty), 3, mxID(_defineProperty), XS_DONT_ENUM_FLAG);
