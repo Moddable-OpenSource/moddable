@@ -33,6 +33,7 @@ import Timer from "timer";
 	note:
 		- this module does no caching
 		- requests are retried at 3 second intervals, up to three times for each DNS server
+		- .local addresses resolved with mDNS
 */
 
 let manager = null;
@@ -47,7 +48,7 @@ class Manager {
 	}
 	add(request) {
 		request.state = 0;
-		request.id = (Math.random() * 65535) | 0;
+		request.id = request.host.endsWith(".local") ? 0 : (Math.random() * 65535) | 1;
 		this.requests.push(request);
 
 		this.send(request);
@@ -69,30 +70,37 @@ class Manager {
 		const packet = new Serializer({query: true, recursionDesired: true, opcode: DNS.OPCODE.QUERY, id: request.id});
 		packet.add(DNS.SECTION.QUESTION, request.host, DNS.RR.A, DNS.CLASS.IN);
 
-		const dns = Net.get("DNS");
-		this.socket.write(dns[request.state % dns.length], 53, packet.build());
+		if (request.id) {
+			const dns = Net.get("DNS");
+			this.socket.write(dns[request.state % dns.length], 53, packet.build());
+		}
+		else
+			this.socket.write("224.0.0.251", 5353, packet.build());
 	}
-	callback(message, value, address, port) {
+	callback(message /*, value, address, port */) {
 		if (2 !== message)
 			return;
 
 		const packet = new Parser(this.socket.read(ArrayBuffer));
 		const question = packet.question(0);
-		if (DNS.CLASS.IN !== question.qclass)
+		if (question && (DNS.CLASS.IN !== question.qclass))
 			return;
-		const host = question.qname.join(".");
 		const id = packet.id;
 		for (let i = 0; i < this.requests.length; i++) {
 			const request = this.requests[i];
-			if ((id === request.id) || (host === request.host)) {
-				this.remove(request.request);
+			if (id !== request.id)
+				continue;
 
-				for (let j = 0, answers = packet.answers; j < answers; j++) {
-					const answer = packet.answer(j);
-					if (DNS.RR.A === answer.qtype)
-						return request.onResolved.call(request.target, answer.rdata);
+			for (let j = 0, answers = packet.answers; j < answers; j++) {
+				const answer = packet.answer(j);
+				if ((DNS.RR.A === answer.qtype) && (answer.qname.join(".") === request.host)) {
+					this.remove(request.request);
+					return request.onResolved.call(request.target, answer.rdata);
 				}
+			}
 
+			if (id) {
+				this.remove(request.request);
 				return request.onError.call(request.target);
 			}
 		}
@@ -102,7 +110,7 @@ class Manager {
 			const request = this.requests[i];
 			request.state += 1;
 			if (!(request.state % 3)) {
-				if ((Net.get("DNS").length * 3) === request.state) {
+				if ((request.id ? (Net.get("DNS").length * 3) : 3) === request.state) {
 					this.remove(request.request);
 					request.onError.call(request.target);
 					i -= 1;
