@@ -1,7 +1,7 @@
 # Networking
 
-Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: July 11, 2019
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: February 3, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -34,7 +34,7 @@ Revised: July 11, 2019
 - **Source code:** [socket](../../modules/network/socket)
 - **Relevant Examples:** [socket](../../examples/network/socket/socket), [socketreadwrite](../../examples/network/socket/socketreadwrite)
 
-The `Socket` object implements a non-blocking network connection using a TCP or a UDP socket.
+The `Socket` class implements a non-blocking network connection using a TCP or a UDP socket.
 
 ```js
 import {Socket, Listener} from "socket";
@@ -857,7 +857,7 @@ WiFi.accessPoint({
 - **Source code:** [sntp](../../modules/network/sntp)
 - **Relevant Examples:** [sntp](../../examples/network/sntp), [ntpclient](../../examples/network/mdns/ntpclient)
 
-The [SNTP](https://en.wikipedia.org/wiki/Network_Time_Protocol#SNTP) class implements an SNTP client ([RFC 4330](https://tools.ietf.org/html/rfc4330)) to retrieve a real time clock value.
+The `SNTP` class implements an [SNTP](https://en.wikipedia.org/wiki/Network_Time_Protocol#SNTP) client ([RFC 4330](https://tools.ietf.org/html/rfc4330)) to retrieve a real time clock value.
 
 ```js
 import SNTP from "sntp";
@@ -1260,7 +1260,7 @@ mdns.remove("_http._tcp");
 - **Source code:** [telnet](../../modules/network/telnet)
 - **Relevant Examples:** [telnet](../../examples/network/telnet)
 
-The Telnet class implements a simple telnet server. The commands supported by the telnet server are determined by the `CLI` classes registered with the Console `module`.
+The `Telnet` class implements a simple telnet server. The commands supported by the telnet server are determined by the `CLI` classes registered with the Console `module`.
 
 ### `constructor(dictionary)`
 
@@ -1290,7 +1290,7 @@ telnet.close();
 - **Source code:** [ping](../../modules/network/ping)
 - **Relevant Examples:** [ping](../../examples/network/ping)
 
-The Ping class implements the ping networking utility.
+The `Ping` class implements the ping networking utility.
 
 ```js
 import Ping from "ping";
@@ -1342,6 +1342,122 @@ ping.close();
 <a id="mqtt"></a>
 ## class MQTT
 
-- **Source code:** [ping](../../modules/network/mqtt)
-- **Relevant Examples:** [ping](../../examples/network/mqtt)
+- **Source code:** [mqtt](../../modules/network/mqtt)
+- **Relevant examples:** [mqttbasic](../../examples/network/mqtt/mqttbasic), [mqttsecure](../../examples/network/mqtt/mqttsecure)
 
+The MQTT `Client` class implements a client that connects to an MQTT broker (server).
+
+```js
+import Client from "mqtt";
+```
+
+### `constructor(dictionary)`
+
+A new MQTT `Client` is configured using a dictionary of properties. The dictionary must contain `host` and `id` properties; other properties are optional.
+
+| Parameter | Description |
+| :---: | :--- |
+| `host` | The host name of the remote MQTT server |
+| `port` | The remote port number. Required for connections using TLS., defaults to 1883 for direct MQTT connections and 80 for MQTT over WebSocket connections.  |
+| `id` | A unique ID for this device |
+| `user` | The username |
+| `password` | The password as an `ArrayBuffer` |
+| `path` | The endpoint to connect to. If present, the MQTT client communicates established a WebSocket connecting using the `mqtt` sub-protocol. |
+| `timeout` | The keep-alive timeout interval, in milliseconds. If no timeout is provided, the MQTT keep-alive feature is not used. |
+| `Socket` | The socket constructor to use to create the MQTT connection. Use `SecureSocket` to establish a secure connection using TLS. |
+| `secure` | Dictionary of options for a TLS connection when using `SecureSocket` |
+
+```
+let mqtt = new Client({
+	host: "test.mosquitto.org",
+	id: "iot_" + Net.get("MAC"),
+	user: "user name",
+	password: ArrayBuffer.fromString("secret")
+});
+```
+
+***
+
+### `onReady()`
+
+The `onReady` callback is invoked when a connection is successfully established to the server. No messages may be published or subscriptions created before `onReady` is called.
+
+```
+mqtt.onReady = function () {
+	trace("connection established\n");
+}
+```
+
+***
+
+### `subscribe(topic)`
+
+To subscribe to a topic, use the `subscribe` method. Your client can subscribe to multiple clients by calling `subscribe` more than once.
+
+```
+mqtt.subscribe("test/string");
+mqtt.subscribe("test/binary");
+mqtt.subscribe("test/json");
+```
+
+### `unsubscribe(topic)`
+
+Use the `unsubscribe` method to unsubscribe to a topic.
+
+
+```
+mqtt.unsubscribe("test/string");
+```
+
+### `onMessage(topic, data)` 
+
+The `onMessage` callback is invoked when a message is received for any topic that your client has subscribed to. The `topic` argument is the name of the topic and the `data` argument is the complete message.
+
+```
+mqtt.onMessage = function(topic, data) {
+	trace(`received message on topic "${topic}"\n`);
+}
+```
+
+The `data` argument is an `ArrayBuffer`. For messages containing only UTF-8 text, you can convert it to a string using `String.fromArrayBuffer`.
+
+```
+mqtt.onMessage = function(topic, data) {
+	trace(`received message on topic "${topic}"\n`);
+	trace(`data: ${String.fromArrayBuffer(data)}\n`);
+}
+```
+
+***
+
+### `publish(topic, message)`
+
+To send a message to a topic, use the `publish` method. The `message` argument may be either a string or an `ArrayBuffer`.
+
+```
+mqtt.publish("test/string", "hello");
+mqtt.publish("test/binary", Uint8Array.of(1, 2, 3).buffer);
+```
+
+To publish JSON, first convert it to a string.
+
+```
+mqtt.publish("test/json", JSON.stringify({
+	message: "hello",
+	version: 1
+}));
+```
+
+***
+
+### `onClose()`
+
+The `onClose` callback is invoked when the connection is lost, because of a network error or because the MQTT broker closed the connection.
+
+```
+mqtt.onClose = function() {
+	trace("connection lost\n");
+}
+```
+
+***

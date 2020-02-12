@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -21,6 +21,9 @@ import BLEClient from "bleclient";
 import Timer from "timer";
 import {uuid} from "btutils";
 
+const IMMEDIATE_ALERT_SERVICE_UUID = uuid`1802`;
+const ALERT_LEVEL_UUID = uuid`2A06`;
+
 class Colorific extends BLEClient {
 	onReady() {
 		this.payload = Uint8Array.of(0x58, 0x01, 0x03, 0x01, 0x10, 0x00, 0xFF, 0xFF, 0xFF);
@@ -33,11 +36,11 @@ class Colorific extends BLEClient {
 		}
 	}
 	onConnected(device) {
-		device.discoverPrimaryService(uuid`1802`);
+		device.discoverPrimaryService(IMMEDIATE_ALERT_SERVICE_UUID);
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(uuid`2A06`);
+			services[0].discoverCharacteristic(ALERT_LEVEL_UUID);
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length) {

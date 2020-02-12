@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -20,6 +20,9 @@ import BLEServer from "bleserver";
 import {uuid} from "btutils";
 import Timer from "timer";
 
+const HEALTH_THERMOMETER_SERVICE_UUID = uuid`1809`;
+const BATTERY_SERVICE_UUID = uuid`180F`;
+
 class HealthThermometerService extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable HTM";
@@ -31,7 +34,7 @@ class HealthThermometerService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`1809`, uuid`180F`]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEALTH_THERMOMETER_SERVICE_UUID, BATTERY_SERVICE_UUID]}
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {

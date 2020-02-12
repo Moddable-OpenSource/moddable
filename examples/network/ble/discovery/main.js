@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -22,8 +22,13 @@ import {uuid} from "btutils";
 
 const DEVICE_NAME = "<YOUR DEVICE NAME>";
 
+const DEVICE_INFORMATION_SERVICE_UUID = uuid`180A`;
+const MANUFACTURER_NAME_UUID = uuid`2A29`;
+
 class Discovery extends BLEClient {
 	onReady() {
+		if ("<YOUR DEVICE NAME>" == DEVICE_NAME)
+			throw new Error("Set DEVICE_NAME to your device's advertised complete name");
 		this.startScanning();
 	}
 	onDiscovered(device) {
@@ -34,11 +39,11 @@ class Discovery extends BLEClient {
 	}
 	onConnected(device) {
 		this.device = device;
-		device.discoverPrimaryService(uuid`180A`);
+		device.discoverPrimaryService(DEVICE_INFORMATION_SERVICE_UUID);
 	}
 	onServices(services) {
 		if (services.length)
-			services[0].discoverCharacteristic(uuid`2A29`);
+			services[0].discoverCharacteristic(MANUFACTURER_NAME_UUID);
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length)

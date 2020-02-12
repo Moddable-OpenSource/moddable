@@ -67,21 +67,18 @@ export default class BER {
 		this.i += n;
 	};
 	next() {
-		let i = this.i;
+		const i = this.i;
 		void this.getTag();
-		let length = this.getLength();		//@@ merging this line with the next fails. should it??
-		this.i += length;
+		this.skip(this.getLength());
 		return new Uint8Array(this.a.buffer, this.a.byteOffset + i, this.i - i);
 	};
 	getInteger() {
 		if (this.getTag() != 2)
 			throw new Error("BER: not an integer");
-		let length = this.getLength();
-		let offset = this.a.byteOffset + this.i;
-		let chunk = this.a.buffer.slice(offset, offset + length);
-		let ai = BigInt.fromArrayBuffer(chunk);
-		this.i += length;
-		return ai;
+		const length = this.getLength();
+		const offset = this.a.byteOffset + this.i;
+		this.skip(length)
+		return BigInt.fromArrayBuffer(this.a.buffer.slice(offset, offset + length));
 	};
 	getBitString() {
 		let result;
@@ -103,14 +100,12 @@ export default class BER {
 	getOctetString() {
 		if (this.getTag() != 0x04)
 			throw new Error("BER: not a octet string");
-		var len = this.getLength();
-		return this.getChunk(len);
+		return this.getChunk(this.getLength());
 	};
 	getObjectIdentifier() {
 		if (this.getTag() != 0x06)
 			throw new Error("BER: not an object identifier");
-		var len = this.getLength();
-		return this._getObjectIdentifier(len)
+		return this._getObjectIdentifier(this.getLength())
 	}
 	_getObjectIdentifier(len) {
 		let oid = [];
@@ -136,9 +131,9 @@ export default class BER {
 		return seq;
 	};
 	getChunk(n) {
-		let res = new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, n);
-		this.i += n;
-		return res;
+		const result = new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, n);
+		this.skip(n);
+		return result;
 	};
 	getBuffer() {
 		return this.a.slice(0, this.i).buffer;
@@ -165,13 +160,13 @@ export default class BER {
 		if (len < 128)
 			this.putc(len);
 		else {
-			var lenlen = 1;
-			var x = len;
+			let lenlen = 1;
+			let x = len;
 			while (x >>>= 8)
 				lenlen++;
 			this.putc(lenlen | 0x80);
 			while (--lenlen >= 0)
-				this.putc(len >>> (lenlen * 8));
+				this.putc(len >>> (lenlen << 3));
 		}
 	};
 	putChunk(c) {
@@ -180,12 +175,11 @@ export default class BER {
 		this.a.set(new Uint8Array(c), this.i);
 		this.i += c.byteLength;
 	};
-	static itoa(n, col = 2) {
-		var a = n.toString();
-		var prepend = col - a.length;
-		while (--prepend >= 0)
-			a = '0' + a;
-		return a;
+	static itoa(n) {
+		n = n.toString();
+		if (n.length < 2)
+			return "0" + n;
+		return n;
 	};
 	static encode(arr) {
 		var b = new BER();
@@ -259,7 +253,7 @@ export default class BER {
 				(date.getUTCHours()).toString() +
 				(date.getUTCMinutes()).toString() +
 				(date.getUTCSeconds()).toString() +
-				(tag == 0x18 ? "." + (date.getUTCMilliSedonds()).toString(): "") +
+				(tag == 0x18 ? "." + (date.getUTCMilliseconds()).toString(): "") +
 				"Z";
 			*/
 			var s = "";
@@ -273,7 +267,7 @@ export default class BER {
 			s += this.itoa(date.getUTCMinutes());
 			s += this.itoa(date.getUTCSeconds());
 			if (tag == 0x18)
-				s += this.itoa(date.getUTCMilliSedonds());
+				s += this.itoa(date.getUTCMilliseconds());
 			s += "Z";
 			var c = ArrayBuffer.fromString(s);
 			b.putLength(c.byteLength);

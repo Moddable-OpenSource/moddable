@@ -130,21 +130,26 @@ function callback(message, value) {
 		let parts = [];
 		parts.push(this.method, " ", this.path, " HTTP/1.1\r\n");
 			//@@ Date: would be nice here...
-		parts.push("Host: ", this.host, "\r\n");
 		parts.push("Connection: close\r\n");
 
-		let length;
+		let length, host = this.host;
 		for (let i = 0; i < (this.headers ? this.headers.length : 0); i += 2) {
 			let name = this.headers[i].toString();
 			parts.push(name, ": ", this.headers[i + 1].toString(), "\r\n");
-			if ("content-length" === name.toLowerCase())
+			name = name.toLowerCase();
+			if ("content-length" === name)
 				length = true;
+			else if ("host" === name)
+				host = undefined;
 		}
 
 		if (this.body && (true !== this.body) && !length) {
 			let length = (this.body instanceof ArrayBuffer) ? this.body.byteLength : this.body.length;
 			parts.push("content-length: ", length.toString(), "\r\n");
 		}
+
+		if (host)
+			parts.push("Host: ", host, "\r\n");
 
 		parts.push("\r\n");
 		socket.write.apply(socket, parts);

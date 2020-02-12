@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
-Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: November 11, 2019
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
+Revised: February 3, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -374,12 +374,11 @@ More detailed getting started guides are available for the following devices:
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-14. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+14. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
 
 	```
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
-	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
 
