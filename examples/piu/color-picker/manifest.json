@@ -1,0 +1,26 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/Convert": "$(COMMODETTO)/commodettoConvert"
+	},
+	"resources":{
+		"*-color": [
+			"./assets/color"
+		],
+		"*-mask": [
+			"./assets/color-indicator"
+		],
+		"*-alpha": [
+			"./assets/color-limiter",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-42"
+		]
+	}
+}

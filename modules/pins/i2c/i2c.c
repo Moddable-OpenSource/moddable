@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,7 +40,7 @@ typedef struct modI2CRecord *modI2C;
 void xs_i2c(xsMachine *the)
 {
 	modI2C i2c;
-	int sda, scl, address, hz = 0, throw = 1;
+	int sda, scl, address, hz = 0, throw = 1, timeout = 0;
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
@@ -62,12 +62,14 @@ void xs_i2c(xsMachine *the)
 		throw = xsmcTest(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_timeout)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
+		timeout = xsmcToInteger(xsVar(0));
+	}
+
 	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CRecord));
 
-	i2c->state.hz = hz;
-	i2c->state.sda = sda;
-	i2c->state.scl = scl;
-	i2c->state.address = address;
+	modI2CConfig(i2c->state, hz, sda, scl, address, timeout);
 	i2c->throw = throw;
 	modI2CInit(&i2c->state);
 }
