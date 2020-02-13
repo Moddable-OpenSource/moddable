@@ -30,8 +30,8 @@ class PulseCount @ "xs_pulsecount_destructor" {
 	close() {
 		terminate.call(this);
 	}
-	get() @ "xs_pulsecount_get";
-	set() @ "xs_pulsecount_set";
+	read() @ "xs_pulsecount_read";
+	write() @ "xs_pulsecount_write";
 	set onChanged(value) {
 		this.#onChanged = value;
 /*
