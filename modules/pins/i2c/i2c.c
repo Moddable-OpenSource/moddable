@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -64,17 +64,13 @@ void xs_i2c(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_timeout)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
-		timeout = xmscToInteger(xsVar(0));
+		timeout = xsmcToInteger(xsVar(0));
 	}
 
 	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CRecord));
 
-	i2c->state.hz = hz;
-	i2c->state.sda = sda;
-	i2c->state.scl = scl;
-	i2c->state.address = address;
+	modI2CConfig(i2c->state, hz, sda, scl, address, timeout);
 	i2c->throw = throw;
-	i2c->timeout = timeout;
 	modI2CInit(&i2c->state);
 }
 
