@@ -28,9 +28,6 @@ typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
 	xsSlot		onReadable;
-	int16_t		acc;			// last read
-	int16_t		accdbl;			// last read
-uint32_t dblerr;							// was expected ot have 0 but not
 	int			current;		// current value
 	uint8_t		changeQueued;
 	uint8_t		hasOnReadable;
@@ -53,11 +50,7 @@ static void qdec_event_handler(nrfx_qdec_event_t event)
 {
     if (event.type == NRF_QDEC_EVENT_REPORTRDY)
     {
-        gPCR->accdbl        = event.data.report.accdbl;
-		if (0 != gPCR->accdbl)
-			gPCR->dblerr++;
-        gPCR->acc           = event.data.report.acc;
-		gPCR->current += gPCR->acc;
+		gPCR->current += event.data.report.acc;
 		if (!gPCR->changeQueued && gPCR->hasOnReadable) {
 			gPCR->changeQueued = 1;
 			modMessagePostToMachineFromISR(gPCR->the, qdec_event_deliver, NULL);
@@ -103,9 +96,6 @@ void xs_pulsecount(xsMachine *the)
 	}
 	else
 		pc->hasOnReadable = false;
-	pc->acc = 0;
-	pc->accdbl = 0;
-pc->dblerr = 0;
 	pc->current = 0;
 	pc->changeQueued = 0;
 	xsmcSetHostData(xsThis, pc);
