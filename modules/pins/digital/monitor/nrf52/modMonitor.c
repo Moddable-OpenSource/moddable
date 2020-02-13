@@ -96,7 +96,7 @@ void xs_digital_monitor(xsMachine *the)
 		mode = xsmcToInteger(xsVar(0));
 	}
 
-	monitor = c_malloc(sizeof(modDigitalMonitorRecord));
+	monitor = c_calloc(1, sizeof(modDigitalMonitorRecord));
 	if (!monitor)
 		xsUnknownError("no memory");
 
