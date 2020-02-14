@@ -1,6 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/drivers/ls013b4dn04/manifest.json"
+		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",
@@ -22,12 +24,13 @@
 		"jogdial_button": 11,
 	},
     "modules": {
-        "*": [
-            "$(MODULES)/pins/digital/*"
-        ],
 		"setup/target": "./setup-target",
         "pins/smbus": "$(MODULES)/pins/smbus/smbus"
     },
+    "preload": [
+		"setup/target",
+		"pins/smbus"
+    ],
 	"defines": {
 		"debugger": {
 			"xtx_pin": "NRF_GPIO_PIN_MAP(0,30)",
