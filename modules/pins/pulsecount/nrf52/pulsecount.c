@@ -48,8 +48,7 @@ static void qdec_event_deliver(void *the, void *refcon, uint8_t *message, uint16
 
 static void qdec_event_handler(nrfx_qdec_event_t event)
 {
-    if (event.type == NRF_QDEC_EVENT_REPORTRDY)
-    {
+    if (event.type == NRF_QDEC_EVENT_REPORTRDY) {
 		gPCR->current += event.data.report.acc;
 		if (!gPCR->changeQueued && gPCR->hasOnReadable) {
 			gPCR->changeQueued = 1;
@@ -103,7 +102,7 @@ void xs_pulsecount(xsMachine *the)
 
 	nrfx_qdec_config_t qdec_config = {
         .reportper          = (nrf_qdec_reportper_t)NRF_QDEC_REPORTPER_10,
-        .sampleper          = (nrf_qdec_sampleper_t)NRF_QDEC_SAMPLEPER_4096us,
+        .sampleper          = (nrf_qdec_sampleper_t)QDEC_SAMPLEPER_SAMPLEPER_2048us,
         .psela              = signal,
         .pselb              = control,
         .pselled            = NRF_QDEC_LED_NOT_CONNECTED,
