@@ -238,15 +238,16 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	uint16_t intervalMin = xsmcToInteger(xsArg(0));
 	uint16_t intervalMax = xsmcToInteger(xsArg(1));
 	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(2));
 
     c_memset(&adv_data, 0, sizeof(ble_gap_adv_data_t));
 	c_memmove(&gBLE->adv_data[0], advertisingData, advertisingDataLength);
 	adv_data.adv_data.p_data = &gBLE->adv_data[0];
 	adv_data.adv_data.len = advertisingDataLength;
-	if (NULL != scanResponseData) {
+	if (xsmcTest(xsArg(3))) {
+		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(3));
+
 		c_memmove(&gBLE->scan_rsp_data[0], scanResponseData, scanResponseDataLength);
 		adv_data.scan_rsp_data.p_data = &gBLE->scan_rsp_data[0];
 		adv_data.scan_rsp_data.len = scanResponseDataLength;
@@ -279,7 +280,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
 	ble_gatts_hvx_params_t hvx_params;
-	uint16_t hvx_len = xsGetArrayBufferLength(xsArg(2));
+	uint16_t hvx_len = xsmcGetArrayBufferLength(xsArg(2));
 	ret_code_t err_code;
 
 	c_memset(&hvx_params, 0, sizeof(hvx_params));
@@ -550,7 +551,7 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	ret_code_t err_code;
 	uint16_t serviceIndex;
 	uint8_t found = false;
-	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint16_t length = xsmcGetArrayBufferLength(xsArg(0));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
 
 	xsmcVars(2);
@@ -857,7 +858,7 @@ void gattsReadAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16
 		auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
 		auth_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
 		auth_reply.params.read.update = 1;
-		auth_reply.params.read.len = xsGetArrayBufferLength(xsResult);
+		auth_reply.params.read.len = xsmcGetArrayBufferLength(xsResult);
 		auth_reply.params.read.p_data = xsmcToArrayBuffer(xsResult);
 		sd_ble_gatts_rw_authorize_reply(gBLE->conn_handle, &auth_reply);
 	}
