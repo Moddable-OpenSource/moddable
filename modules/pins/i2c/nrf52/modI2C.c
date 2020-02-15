@@ -48,7 +48,7 @@ static const nrf_drv_twi_t gTwi = NRF_DRV_TWI_INSTANCE(MODDEF_I2C_INTERFACE);
 /* Indicates if operation on TWI has ended. */
 static volatile bool m_xfer_done = false;
 
-BaseType_t gTWITask = NULL;
+BaseType_t gTWITask = 0;
 QueueHandle_t gTWIQueue = NULL;
 
 #define TWI_ERROR			13
