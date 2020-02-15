@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -37,8 +37,11 @@
 #ifndef MODDEF_LS013B4DN04_DISP_PORT
 	#define MODDEF_LS013B4DN04_DISP_PORT	NULL
 #endif
+#ifndef MODDEF_LS013B4DN04_DITHER
+	#define MODDEF_LS013B4DN04_DITHER (0)
+#endif
 
-static uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
+static const uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 	0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
 	0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8, 0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
 	0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4, 0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
@@ -62,8 +65,16 @@ static uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 #define SCREEN_CS_INIT		modGPIOInit(&ls->cs, (const char *)MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, kModGPIOOutput); \
 	SCREEN_CS_DEACTIVE
 
-#define SCREEN_DISP_ON		if (ls->dispAvail) modGPIOWrite(&ls->disp, 1)
-#define SCREEN_DISP_OFF		if (ls->dispAvail) modGPIOWrite(&ls->disp, 0)
+#if MODDEF_LS013B4DN04_DISP_PIN
+	#define SCREEN_DISP_INIT	modGPIOInit(&ls->disp, (const char *)MODDEF_LS013B4DN04_DISP_PORT, MODDEF_LS013B4DN04_DISP_PIN, kModGPIOOutput)
+
+	#define SCREEN_DISP_ON		modGPIOWrite(&ls->disp, 1)
+	#define SCREEN_DISP_OFF		modGPIOWrite(&ls->disp, 0)
+#else
+	#define SCREEN_DISP_INIT
+	#define SCREEN_DISP_ON
+	#define SCREEN_DISP_OFF
+#endif
 
 // Host data record.
 struct ls013b4dn04Record {
@@ -71,8 +82,9 @@ struct ls013b4dn04Record {
 
 	modSPIConfigurationRecord	spiConfig;
 	modGPIOConfigurationRecord	cs;
+#ifdef MODDEF_LS013B4DN04_DISP_PIN
 	modGPIOConfigurationRecord	disp;
-	uint8_t		dispAvail;
+#endif
 
 	uint8_t 	onRow;						// store what scanline row we are on
 
@@ -82,6 +94,12 @@ struct ls013b4dn04Record {
 
 	uint8_t		*pixelBuffer;
 	uint16_t	bufferSize;
+
+#if MODDEF_LS013B4DN04_DITHER
+	uint8_t				ditherPhase;
+	int16_t				ditherA[MODDEF_LS013B4DN04_WIDTH + 4];
+	int16_t				ditherB[MODDEF_LS013B4DN04_WIDTH + 4];
+#endif
 };
 typedef struct ls013b4dn04Record ls013b4dn04Record;
 typedef ls013b4dn04Record *ls013b4dn04;
@@ -101,17 +119,13 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 	ls013b4dn04Send,
 	ls013b4dn04AdaptInvalid
 };
-#if kCommodettoBitmapFormat != kCommodettoBitmapGray256
-	#error gray256 pixels required
-#endif
 
 void xs_LS013B4DN04(xsMachine *the){
 	ls013b4dn04 ls;
 
-	xsmcVars(1);
-
-	if (kCommodettoBitmapGray256 != kCommodettoBitmapFormat)
-		xsUnknownError("gray256 pixels required");
+#if kCommodettoBitmapFormat != kCommodettoBitmapGray256
+	#error gray256 pixels required
+#endif
 
 	ls = c_calloc(1, sizeof(ls013b4dn04Record));
 	if (!ls)
@@ -119,15 +133,10 @@ void xs_LS013B4DN04(xsMachine *the){
 
 	xsmcSetHostData(xsThis, ls);
 	ls->bytesPerLine = 2 + (MODDEF_LS013B4DN04_WIDTH / 8);
-//	ls->onRow = 0;			//@@ calloc was used
-//	ls->bufferSize = 0;
 
 	ls->dispatch = (PixelsOutDispatch) &gPixelsOutDispatch;
 
-#ifdef MODDEF_LS013B4DN04_DISP_PIN
-	modGPIOInit(&ls->disp, (const char *)MODDEF_LS013B4DN04_DISP_PORT, MODDEF_LS013B4DN04_DISP_PIN, kModGPIOOutput);
-	ls->dispAvail = 1;
-#endif
+	SCREEN_DISP_INIT;
 
 	SCREEN_CS_INIT;
 	modSPIConfig(ls->spiConfig, MODDEF_LS013B4DN04_HZ, MODDEF_LS013B4DN04_SPI_PORT,
@@ -149,6 +158,12 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 		return 1;
 
 	ls->onRow = yMin;
+
+#if MODDEF_LS013B4DN04_DITHER
+	// ditherA is cleared in send
+	c_memset(ls->ditherB, 0, sizeof(ls->ditherB));
+	ls->ditherPhase = 0;
+#endif
 
 	return 0;
 }
@@ -177,7 +192,6 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 	if (size + 10 > ls->bufferSize){
 		if (ls->pixelBuffer) {
 			c_free(ls->pixelBuffer);
-			ls->pixelBuffer = NULL;
 			ls->bufferSize = 0;
 		}
 		ls->pixelBuffer = c_malloc(size + 10);
@@ -187,18 +201,70 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 	}
 
 	toSend = ls->pixelBuffer;
-	ls->updateCycle = !(ls->updateCycle);
+	ls->updateCycle = !ls->updateCycle;
 	flags = MODE_FLAG | (ls->updateCycle ? FRAME_FLAG : 0) & (~CLEAR_FLAG);
 
 	for (int i = ls->onRow + 1; i <= (ls->onRow + lines); i++){
-		PocoPixel *dest = data + MODDEF_LS013B4DN04_WIDTH;
+		PocoPixel *dest;
+#if MODDEF_LS013B4DN04_DITHER
+		int16_t *thisLineErrors, *nextLineErrors;
+
+		if (ls->ditherPhase) {
+			thisLineErrors = ls->ditherA + 2;
+			nextLineErrors = ls->ditherB + 2;
+			ls->ditherPhase = 0;
+		}
+		else {
+			thisLineErrors = ls->ditherB + 2;
+			nextLineErrors = ls->ditherA + 2;
+			ls->ditherPhase = 1;
+		}
+		c_memset(nextLineErrors - 2, 0, sizeof(ls->ditherA));		// zero out next line
+#endif
+
+		dest = data + MODDEF_LS013B4DN04_WIDTH;
 		*toSend++ = flags;
 		*toSend++ = c_read8(gReversedBytes + i);
 
+#if MODDEF_LS013B4DN04_DITHER
+		uint8_t pixels = 0, mask = 0x80;
+		do {
+			int16_t thisPixel = *data++ + (thisLineErrors[0] >> 4);
+
+			if (thisPixel >= 128) {
+				pixels |= mask;
+				thisPixel -= 255;
+			}
+
+			// Burkes
+			nextLineErrors[-2] += thisPixel;
+			nextLineErrors[ 2] += thisPixel;
+			thisPixel <<= 1;
+			thisLineErrors[ 2] += thisPixel;
+			nextLineErrors[-1] += thisPixel;
+			nextLineErrors[ 1] += thisPixel;
+			thisPixel <<= 1;
+			thisLineErrors[ 1] += thisPixel;
+			nextLineErrors[ 0] += thisPixel;
+
+			thisLineErrors++;
+			nextLineErrors++;
+
+			mask >>= 1;
+			if (!mask) {
+				*toSend++ = pixels;
+				if (data >= dest)
+					break;
+				mask = 0x80;
+				pixels = 0;
+			}
+		} while (true);
+#else
 		while (data < dest){
 			*toSend++ = (data[0] & 0x80) | ((data[1] & 0x80) >> 1) | ((data[2] & 0x80) >> 2) | ((data[3] & 0x80) >> 3) | ((data[4] & 0x80) >> 4) | ((data[5] & 0x80) >> 5) | ((data[6] & 0x80) >> 6) | ((data[7] & 0x80) >> 7);
 			data += 8;
 		}
+#endif
 	}
 
 	ls->onRow = ls->onRow + lines;
