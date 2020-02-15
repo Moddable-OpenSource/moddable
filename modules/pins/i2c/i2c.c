@@ -106,13 +106,13 @@ void xs_i2c_read(xsMachine *the)
 	if (argc >= 2) {
 		int bufferByteLength;
 		xsResult = xsArg(1);
-		bufferByteLength = xsGetArrayBufferLength(xsResult);
+		bufferByteLength = xsmcGetArrayBufferLength(xsResult);
 		if (bufferByteLength < len)
 			xsUnknownError("buffer too small");
 		c_memmove(xsmcToArrayBuffer(xsResult), buffer, len);
 	}
 	else {
-		xsResult = xsArrayBuffer(buffer, len);
+		xsmcSetArrayBuffer(xsResult, buffer, len);
 		xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
 	}
 }
@@ -150,7 +150,7 @@ void xs_i2c_write(xsMachine *the)
 			continue;
 		}
 		if (xsmcIsInstanceOf(xsArg(i), xsArrayBufferPrototype)) {
-			int l = xsGetArrayBufferLength(xsArg(i));
+			int l = xsmcGetArrayBufferLength(xsArg(i));
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("40 byte write limit");
 			c_memmove(buffer + len, xsmcToArrayBuffer(xsArg(i)), l);

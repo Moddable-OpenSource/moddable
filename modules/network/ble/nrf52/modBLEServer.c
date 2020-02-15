@@ -555,7 +555,7 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
 
 	xsmcVars(2);
-	xsResult = xsmcNewArray(0);
+	xsmcSetNewArray(xsResult, 0);
 
 	for (serviceIndex = 0; !found && (serviceIndex < service_count); ++serviceIndex) {
 		const gatts_attr_db_t *attr = &gatt_db[serviceIndex][0];
@@ -578,7 +578,7 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 		if (BLE_GATT_HANDLE_INVALID == handle)
 			continue;
 		
-		xsVar(0) = xsmcNewObject();
+		xsmcSetNewObject(xsVar(0));
 		xsmcSetInteger(xsVar(1), handle);
 		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
 			
@@ -708,7 +708,7 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	gBLE->conn_handle = conn_handle;
 	gBLE->remote_bda = gap_evt->params.connected.peer_addr;
 	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
@@ -730,7 +730,7 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 	xsBeginHost(gBLE->the);
 	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
 	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
@@ -746,7 +746,7 @@ void gapAuthKeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	ble_gap_evt_auth_key_request_t const * p_evt_auth_key_request = (ble_gap_evt_auth_key_request_t const *)message;
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
@@ -761,7 +761,7 @@ void gapPasskeyDisplayEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), atoi(p_evt_passkey_display->passkey));
@@ -799,7 +799,7 @@ void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t message
 	char_name = handleToCharName(handle);
 	sd_ble_gatts_attr_get(handle, &uuid, NULL);
 	uuidToBuffer(buffer, &uuid, &uuid_length);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	if (char_name) {
@@ -840,7 +840,7 @@ void gattsReadAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16
 
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSetInteger(xsVar(1), read->handle);
@@ -880,7 +880,7 @@ void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint1
 
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), buffer, uuid_length);
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSetInteger(xsVar(1), write->handle);

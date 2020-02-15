@@ -73,7 +73,7 @@ void xs_bytes_set(xsMachine *the)
 	else {
 		uint8_t *src = xsmcToArrayBuffer(xsArg(0));
 		uint8_t *dst = xsmcToArrayBuffer(xsThis);
-		uint16_t i, length = xsGetArrayBufferLength(xsArg(0));
+		uint16_t i, length = xsmcGetArrayBufferLength(xsArg(0));
 		if (reverse)
 			for (i = 0; i < length; ++i)
 				dst[i] = src[length - i - 1];
@@ -84,8 +84,8 @@ void xs_bytes_set(xsMachine *the)
 
 void xs_bytes_equals(xsMachine *the)
 {
-	uint16_t length = xsGetArrayBufferLength(xsArg(0));
-	if (length != xsGetArrayBufferLength(xsThis))
+	uint16_t length = xsmcGetArrayBufferLength(xsArg(0));
+	if (length != xsmcGetArrayBufferLength(xsThis))
 		xsmcSetFalse(xsResult);
 	else {
 		uint16_t result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
