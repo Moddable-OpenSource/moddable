@@ -1353,7 +1353,6 @@ void fx_TypedArray_from_object(txMachine* the, txSlot* instance, txSlot* functio
 			slot = fxNextSlotProperty(the, slot, value, XS_NO_ID, XS_NO_FLAG);
 			length++;
 		}
-		the->stack += 2;
 	}
 	else {
 		mxPushSlot(mxArgv(0));
