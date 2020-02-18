@@ -235,18 +235,19 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	ble_gap_adv_data_t adv_data;
 	ble_gap_adv_params_t adv_params;
 	
-	uint16_t intervalMin = xsmcToInteger(xsArg(0));
-	uint16_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(2));
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
 
-    c_memset(&adv_data, 0, sizeof(ble_gap_adv_data_t));
+	c_memset(&adv_data, 0, sizeof(ble_gap_adv_data_t));
 	c_memmove(&gBLE->adv_data[0], advertisingData, advertisingDataLength);
 	adv_data.adv_data.p_data = &gBLE->adv_data[0];
 	adv_data.adv_data.len = advertisingDataLength;
-	if (xsmcTest(xsArg(3))) {
-		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	if (xsmcTest(xsArg(4))) {
+		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(4));
 
 		c_memmove(&gBLE->scan_rsp_data[0], scanResponseData, scanResponseDataLength);
 		adv_data.scan_rsp_data.p_data = &gBLE->scan_rsp_data[0];
@@ -254,9 +255,13 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	}
 
     c_memset(&adv_params, 0, sizeof(ble_gap_adv_params_t));
-    adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
     adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
     adv_params.interval        = intervalMin;
+
+	if (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE))
+		adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+	else
+		adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_NONSCANNABLE_UNDIRECTED;
 
 	err_code = sd_ble_gap_adv_set_configure(&gBLE->adv_handle, &adv_data, &adv_params);
 	if (NRF_SUCCESS == err_code)

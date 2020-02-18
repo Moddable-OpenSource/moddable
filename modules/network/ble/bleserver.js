@@ -40,24 +40,19 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
-		let {fast = true, connectable = true, discoverable = true, scanResponseData = null, advertisingData} = params;
-		let flags = GAP.ADFlag.NO_BR_EDR;
-		if (discoverable)
-			flags |= GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE;
+		let {fast = true, scanResponseData = null, advertisingData} = params;
+		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
-		if (connectable) {
-			// Undirected Connectable Mode
-			interval = fast ?
-				(discoverable ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_FAST_INTERVAL2) :
-				GAP.ADV_SLOW_INTERVAL;
+		if (flags & (GAP.ADFlag.LE_LIMITED_DISCOVERABLE_MODE | GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE)) {
+			// Connectable mode
+			interval = fast ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_SLOW_INTERVAL;
 		} else {
 			// Non-Connectable Mode
 			interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
 		}
-		advertisingData.flags = flags;
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(flags, interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
 	initialize() @ "xs_ble_server_initialize"
