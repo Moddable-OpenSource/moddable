@@ -238,7 +238,7 @@ void xs_preference_get(xsMachine *the)
 			xsmcSetBoolean(xsResult, b);
 		}
 		else if (PREF_KIND_U32 == pref->type) {
-			integer = (uint32_t)pref->data;
+			integer = *(uint32_t*)pref->data;
 			xsmcSetInteger(xsResult, integer);
 		}
 		else if (PREF_KIND_STR == pref->type) {
