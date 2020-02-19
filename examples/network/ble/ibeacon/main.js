@@ -30,7 +30,6 @@ const RSSI = 0xC3;
 class IBeacon extends BLEServer {
 	onReady() {
 		let data = new Uint8Array(23);
-		let buffer = data.buffer;
 		data[0] = 0x02;									// iBeacon subtype
 		data[1] = 0x15;									// iBeacon subtype length
 		data.set(new Uint8Array(PROXIMITY_UUID), 2);	// proximity uuid
@@ -40,13 +39,11 @@ class IBeacon extends BLEServer {
  		data[21] = MINOR_VERSION_NUMBER & 0xFF;
 		data[22] = RSSI;
 		
-		let advertisingData = {
-			manufacturerSpecific: {
-				identifier: MANUFACTURER_ID,
-				data
+		this.startAdvertising({
+			advertisingData: {
+				manufacturerSpecific: { identifier: MANUFACTURER_ID, data }
 			}
-		}
-		this.startAdvertising({ advertisingData });
+		});
 	}
 }
 	
