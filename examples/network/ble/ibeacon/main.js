@@ -17,7 +17,6 @@
  */
 
 import BLEServer from "bleserver";
-import GAP from "gap";
 import {uuid} from "btutils";
 
 //const APPLE_MANUFACTURER_ID = 0x4c00;
