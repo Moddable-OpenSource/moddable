@@ -17,9 +17,10 @@
  */
 
 import BLEServer from "bleserver";
+import GAP from "gap";
 import {uuid} from "btutils";
 
-//const APPLE_MANUFACTURER_ID = 0x4c00;
+//const MANUFACTURER_ID = 0x4c00;		// Apple
 const MANUFACTURER_ID = 0x0059;			// Nordic Semiconductor ASA
 const MAJOR_VERSION_NUMBER = 0x04D2;
 const MINOR_VERSION_NUMBER = 0x162E;
@@ -40,6 +41,7 @@ class IBeacon extends BLEServer {
 		
 		this.startAdvertising({
 			advertisingData: {
+				flags: GAP.ADFlag.NO_BR_EDR,
 				manufacturerSpecific: { identifier: MANUFACTURER_ID, data }
 			}
 		});
