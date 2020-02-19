@@ -65,5 +65,5 @@ done
 if [ $1 -eq 1 ]; then
 	echo "Connecting to xsbug..."
 fi
-serial2xsbug ${fileToCompare} 115200 8N1 -dtr
+serial2xsbug ${fileToCompare} 921600 8N1 -dtr
 
