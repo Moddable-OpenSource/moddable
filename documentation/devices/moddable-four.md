@@ -1,0 +1,366 @@
+# Getting Started with Moddable Four
+
+Copyright 2020 Moddable Tech, Inc.<BR>
+Revised: February 19, 2020
+
+This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
+
+> **Note:** Support for Moddable Four is only available for macOS.
+
+## Table of Contents
+
+- [About Moddable Four](#about-moddable-four)
+	- [Components](#components)
+	- [Pinout](#pinout)
+	
+- [SDK and Host Environment Setup](#setup)
+
+- [Building and Deploying Apps](#building-and-deploying-apps)
+
+-  [Enabling LE secure connection support](#le-secure-connections)
+
+- [Development Resources](#development-resources)
+	- [Examples](#examples)
+	- [Documentation](#documentation)
+	- [Support](#support)
+	- [Updates](#updates)
+
+- [Advanced](#advanced)
+	- [Debugging Native code](#debugging-native-code)
+	- [Debugging Native and Script Code](#debugging-native-and-script-code)
+	- [Bootloader](#bootloader)
+
+<a id="about-moddable-four"></a>
+## About Moddable Four
+
+<!--TO DO: add image-->
+<img src="../assets/devices/moddable-four.png">
+
+Moddable Four is a low-power, bluetooth development board that makes it easy for developers to experiment with the Moddable SDK. It is available to purchase on the [Moddable website](http://www.moddable.com/purchase).
+
+<a id="components"></a>
+### Components
+
+The two main components of Moddable Four are the nRF52840 module and mirror display. The nRF52840 module includes a Wi-Fi/BLE antenna, 1 MB Flash, and 256 KB RAM. The Sharp mirror display is a 128x128 black and white display that uses the [`ls013b4dn04` display driver](../drivers/ls013b4dn04/ls013b4dn04.md).
+
+<!--TO DO: add information about the built-in sensors -->
+
+<a id="pinout"></a>
+### Pinout
+
+<!--TO DO: add pinout diagram-->
+
+<a id="setup"></a>
+## SDK and Host Environment Setup
+
+### Step 1: Set up Moddable SDK tools for macOS
+
+The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the **Host environment setup** section for macOS.
+
+### Step 2: Create an `nrf5` directory
+
+Create an `nrf5` directory in your home directory. This directory is where you will put all of the other SDKs and toolchains you download in the remaining steps.
+
+```text
+cd $HOME
+mkdir nrf5
+cd nrf5
+```
+
+### Step 3: Install the GNU Embedded Toolchain for Arm
+
+Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-mac.tar.bz2?revision=b88d4399-9897-465a-9363-ace86610e48c?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Mac%20OS%20X,8-2018-q4-major) of the GNU Arm Embedded Toolchain from the the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Unzip the file and place the `gcc-arm-none-eabi-8-2018-q4-major` directry in your `nrf5` directory.
+
+> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
+
+Set the `NRF52_GCC_ROOT` and `GNU_VERSION ` environment variables.
+
+```
+export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
+export GNU_VERSION=8.2.1
+```
+
+### Step 4: Install the nRF Command Line Tools
+
+Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs).
+
+Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
+
+![](../assets/devices/nrf-tools.png)
+
+Unzip the file and place the `nRF-Command-Line-Tools_10_5_0_OSX` directory in your `nrf5` directory. 
+
+### Step 5: Get `uf2conv.py`
+
+Moddable Four uses a modified `Adafruit_nRF52_Bootloader`. `uf2conv.py` is a tool from Microsoft that packages up the final binary for transfer to the device.
+
+Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) into your new `nRF5` directory.
+
+Change the access permissions of `uf2conv` using `chmod`.
+
+```
+chmod 755 uf2conv.py 
+```
+
+### Step 6: Set up the nRF5 SDK
+
+Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+
+- Select `v15.3.0` from the nF5 SDK versions section.
+
+	![](../assets/devices/nrf5-sdk-versions.png)
+
+- Select `S140: Bluetooth 5` from the SoftDevices section.
+
+	![](../assets/devices/softdevices.png)
+
+- Click the **Download Files** button at the bottom. You should see the same selections as in the image below.
+
+	![](../assets/devices/selected.png)
+
+The downloaded file is called `DeviceDownload.zip`. When you unzip this file, you will have a folder that contains two more zip files:
+
+- `nRF5_SDK_15.3.0_59ac345.zip`
+- `s140nrf52611.zip`
+
+Unzip both of these files and put the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories in your `nRF5` directory.
+
+Then make a symbolic link to the SDK. This will also allow you to change the version of the SDK without having to change many PATHs.
+
+```text
+ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
+export NRF_SDK_DIR=$HOME/nRF5/nRF5_SDK
+```
+
+Next, add a board definition for the Moddable Four to the Nordic SDK. This provides some pin layout and constant definitions suitable for development with the Moddable Four. To add a board definition, take the following steps:
+
+- The file `moddable_four.h` is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the file to the Nordic SDK's `components/boards/` directory.
+
+	```text
+	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
+	```
+
+- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
+
+	```c
+	#elif defined (BOARD_MODDABLE_FOUR)
+	  #include "moddable_four.h"
+	```
+
+<a id="building-and-deploying-apps"></a>
+## Building and Deploying Apps
+
+After you've set up your host environment, take the following steps to install an application on your Moddable Four.
+
+1. Attach your Moddable Four to your computer with a micro USB cable.
+
+	Make sure you're using a data sync&#8211;capable cable, not one that is power-only.
+
+2. Put the device into programming mode by double-tapping the RESET button or by holding the BOOT button while tapping RESET.
+
+	Programming mode is indicated by the LED indicator staying lit at boot time. A disk named `MODDABLE4` will also appear on your desktop.
+
+	![Moddable Four disk](./nrf52/assets/M4-disk.png#smallFramed)
+
+	> **Note:** If you do not program your device within a short period, it will reboot to the installed application.
+
+3. Build and deploy the app with `mcconfig`.
+
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
+	
+	Use the platform `-p nrf52/moddable_four`  with `mcconfig` to build for Moddable Four. For example, to build the [`piu/balls` example](../../examples/piu/balls):
+	
+	```
+	cd $MODDABLE/examples/piu/balls
+	mcconfig -d -m -p nrf52/moddable_four
+	```
+	
+	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	
+<!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
+
+<a id="le-secure-connections"></a>
+## Enabling LE secure connection support
+
+LE secure connection support is disabled by default in the Moddable build due to a FreeRTOS incompatibility in the Nordic SDK. To enable LE secure connections, the Nordic SDK and config must be patched as follows:
+
+1. Edit the two `#define` statements in the `sdk_config.h` file to enable LE secure connection support:
+
+	```
+	#ifndef NRF_BLE_LESC_ENABLED
+		#define NRF_BLE_LESC_ENABLED 1
+	#endif
+	
+	#ifndef PM_LESC_ENABLED
+		#define PM_LESC_ENABLED 1
+	#endif
+	``` 
+	
+2. In the Nordic SDK sources, disable the stack overflow check in the `nrf_stack_info_overflowed` function:
+
+	```
+	__STATIC_INLINE bool nrf_stack_info_overflowed(void)
+	{
+	#if 0
+		if (NRF_STACK_INFO_GET_SP() < NRF_STACK_INFO_BASE)
+		{
+			return true;
+		}
+	#endif
+		return false;
+	}
+	```
+
+> **Note:** Because of this incompatibility, the Moddable BLE server traces a warning to the `xsbug` console when LE secure connections are enabled.
+	
+<a id="development-resources"></a>
+## Development Resources
+
+<a id="examples"></a>
+### Examples
+
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Most of these examples run on Moddable Four. 
+
+That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Three hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
+
+<a id="documentation"></a>
+### Documentation
+
+Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic SDK v15.3.0, which is available [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Findex.html).
+
+All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+
+- The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
+- The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.
+- The `networking` subdirectory, which contains networking resources related to network sockets and a variety of standard, secure networking protocols built on sockets including HTTP/HTTPS, WebSockets, DNS, SNTP, and telnet
+- The `pins` subdirectory, which contains resources related to supported hardware protocols (digital, analog, PWM, I2C, etc.). A number of drivers for common off-the-shelf sensors and corresponding example apps are also available.
+
+<a id="support"></a>
+### Support
+
+If you have questions, we recommend you [open an issue](https://github.com/Moddable-OpenSource/moddable/issues). We'll respond as quickly as practical, and other developers can offer help and benefit from the answers to your questions. Many questions have already been answered, so please try searching previous issues before opening a new issue.
+
+<a id="updates"></a>
+### Updates
+
+The best way to keep up with what we're doing is to follow us on Twitter ([@moddabletech](https://twitter.com/moddabletech)). We post announcements about new posts on [our blog](http://blog.moddable.com/) there, along with other Moddable news.
+
+<a id="advanced"></a>
+## Advanced
+
+This section provides information about debugging and the bootloader on Moddable Four.
+
+<a id="debugging-native-code"></a>
+### Debugging Native code
+
+As with all Moddable platforms, you can debug script code using `xsbug` and the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md).
+
+Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger.
+
+This section explains how to set up your Moddable Four so it can be used with the SEGGER Embedded Studio debugger; for documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
+
+<!-- TO DO: needs an update to the new board layout-->
+
+Debugging native code on the Moddable Four with SEGGER Embedded Studio requires a [Nordic nRF52840 DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK) and an FTDI cable. 
+
+Connect your Moddable Four to the nRF52840 DK board as follows:
+
+| nRF52840 DK | Moddable Four |
+| :---: | :---: |
+| SWD CLK | SDWCLK |
+| SWD IO | SWDIO |
+| RESET | Reset |
+| GND DETECT | GND |
+| VTG | 3.3v |
+
+![nRF52840dk to Moddable 4 connection](./nrf52/assets/nrf52840dk-m4-connect.png#smallFramed) ![Moddable 4 to dk connection](./nrf52/assets/m4-dk-connect.png#smallFramed)
+
+Connect your Moddable Four to the FTDI cable as follows:
+
+| Moddable Four | FTDI cable |
+| :---: | :---: |
+| P0.30 | Rx |
+| P0.31 | Tx |
+| GND | GND |
+
+
+J-Link:Target Interface Type -> SWD
+
+<a id="debugging-native-and-script-code"></a>
+### Debugging Native and Script Code
+
+`xsbug` and the SEGGER Embedded Studio debugger can be used simultaneously. To do so, your Moddable Four must be connected to the nRF52840 DK using an external FTDI serial interface as follows:
+
+<!--TO DO: fill this in-->
+
+| nRF52840 DK | FTDI interface |
+| :---: | :---: |
+| ? | ? |
+| ? | ? |
+| ? | ? |
+
+
+![Moddable Four FTDI](./nrf52/assets/M4-R0.7-SerialDebug.png#smallFramed)
+
+Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the following steps:
+
+- Identify the serial port that the interface is using. Start with your device unplugged. Enter the following command in a terminal window.
+
+	```
+	ls dev/cu.*
+	```
+	
+	Then plug your device in and enter the same command. There should be an additional device file this time.
+	
+	The image below shows the terminal output when the command is entered before and after plugging a Moddable Four in. In this example, the Moddable Four is `/dev/cu.usbserial-AL035YB2`.
+
+	![Identify FTDI port](./nrf52/assets/identifyFTDI.png)
+
+- Enter the following commands to launch `xsbug` and `serial2xsbug`. Replace `<DEVICE_FILE>` with the serial port that you identified.
+
+	```text
+	xsbug &
+	serial2xsbug <DEVICE_FILE> 115200 8N1
+	```
+	
+	For example:
+	
+	```text
+	xsbug &
+	serial2xsbug /dev/cu.usbserial-AL035YB2115200 8N1
+	```
+
+<a id="bootloader"></a>
+### Bootloader
+
+Moddable Four uses a slightly modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). It is very unlikely you will need to build a bootloader; the bootloader is pre-installed on Moddable Four and a pre-built version of the bootloader is included on the device and in the source tree.
+
+In the unlikely event that you need to build a bootloader, take the following steps. Be careful when you do so, as you can brick your device.
+
+1. Get the bootloader sources, enter the repository directory and update the submodules.
+
+	```	
+	git clone https://github.com/adafruit/Adafruit_nRF52_Bootloader.git
+	cd Adafruit_nRF52_Bootloader
+	git submodule update --init --recursive
+	```
+
+2. From the repository directory, add the Moddable Four configuration.
+
+	```
+	cp -r $MODDABLE/build/devices/nrf52/config/bootloader/moddable_four src/boards
+	```
+
+3. Build the bootloader and combine with the softdevice.
+
+	```
+	make BOARD=moddable_four all combinehex
+	```
+
+4. With the board hooked up to a DK through SWD interface, flash to the Moddable Four:
+
+	```
+	make BOARD=moddable_four flash
+	```
+
+5. Remove the board from the programmer. It is now ready for use.
