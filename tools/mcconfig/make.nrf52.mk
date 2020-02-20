@@ -19,14 +19,13 @@
 
 HOST_OS := $(shell uname)
 
+XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
+
 NRF_ROOT ?= $(HOME)/nRF5
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
 NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
-
-BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
-SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
 
 UF2_VOLUME_NAME ?= MODDABLE4
 
@@ -49,6 +48,10 @@ SDK_ROOT = $(NRF_SDK_DIR)
 BOARD = pca10056
 SOFT_DEVICE = s140
 HWCPU = cortex-m4
+
+BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
+SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
+
 
 # BOARD_DEF = BOARD_PCA10056
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
@@ -694,8 +697,9 @@ $(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.bin
 
 $(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
-	@echo "# Size"
-	$(SIZE) $(TMP_DIR)/xs_nrf52.out
+	@echo "# Version"
+	@echo "#  XS:    $(XS_GIT_VERSION)"
+	$(SIZE) -A $(TMP_DIR)/xs_nrf52.out | perl -e $(MEM_USAGE)
 	$(OBJCOPY) -O ihex $< $@
 
 FINAL_LINK_OBJ:=\
@@ -719,7 +723,6 @@ $(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_nrf52.out"
 #	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
 	@rm -f $(TMP_DIR)/xs_nrf52.out
-	@echo "# $(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@"
 	@echo "# Link to .out file"
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 

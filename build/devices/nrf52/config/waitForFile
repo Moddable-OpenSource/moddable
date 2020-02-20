@@ -1,6 +1,9 @@
+#!/bin/bash
+echo "Waiting for $1."
+echo -n "Double-tap the reset button to enter programming mode."
 while [ ! -d "$1" ]; do
-	echo "Waiting for $1.\nDouble-tap the reset button to enter programming mode."
+	echo -n "."
     sleep 5
 done
-echo "Found $1."
+echo
 
