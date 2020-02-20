@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: February 19, 2020
+Revised: February 20, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -12,19 +12,14 @@ This document describes how to start building Moddable applications for Moddable
 - [About Moddable Four](#about-moddable-four)
 	- [Components](#components)
 	- [Pinout](#pinout)
-	
 - [SDK and Host Environment Setup](#setup)
-
 - [Building and Deploying Apps](#building-and-deploying-apps)
-
 -  [Enabling LE secure connection support](#le-secure-connections)
-
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
 	- [Support](#support)
 	- [Updates](#updates)
-
 - [Advanced](#advanced)
 	- [Debugging Native code](#debugging-native-code)
 	- [Debugging Native and Script Code](#debugging-native-and-script-code)
@@ -75,7 +70,7 @@ Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/dow
 
 Set the `NRF52_GCC_ROOT` and `GNU_VERSION ` environment variables.
 
-```
+```text
 export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
 export GNU_VERSION=8.2.1
 ```
@@ -98,7 +93,7 @@ Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv
 
 Change the access permissions of `uf2conv` using `chmod`.
 
-```
+```text
 chmod 755 uf2conv.py 
 ```
 
@@ -170,7 +165,7 @@ After you've set up your host environment, take the following steps to install a
 	
 	Use the platform `-p nrf52/moddable_four`  with `mcconfig` to build for Moddable Four. For example, to build the [`piu/balls` example](../../examples/piu/balls):
 	
-	```
+	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p nrf52/moddable_four
 	```
@@ -186,7 +181,7 @@ LE secure connection support is disabled by default in the Moddable build due to
 
 1. Edit the two `#define` statements in the `sdk_config.h` file to enable LE secure connection support:
 
-	```
+	```c
 	#ifndef NRF_BLE_LESC_ENABLED
 		#define NRF_BLE_LESC_ENABLED 1
 	#endif
@@ -198,7 +193,7 @@ LE secure connection support is disabled by default in the Moddable build due to
 	
 2. In the Nordic SDK sources, disable the stack overflow check in the `nrf_stack_info_overflowed` function:
 
-	```
+	```c
 	__STATIC_INLINE bool nrf_stack_info_overflowed(void)
 	{
 	#if 0
@@ -283,7 +278,7 @@ Connect your Moddable Four to the FTDI cable as follows:
 | P0.31 | Tx |
 | GND | GND |
 
-
+<!--TO DO: figure out where this next line is supposed to go-->
 J-Link:Target Interface Type -> SWD
 
 <a id="debugging-native-and-script-code"></a>
@@ -299,14 +294,13 @@ J-Link:Target Interface Type -> SWD
 | ? | ? |
 | ? | ? |
 
-
 ![Moddable Four FTDI](./nrf52/assets/M4-R0.7-SerialDebug.png#smallFramed)
 
 Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the following steps:
 
 - Identify the serial port that the interface is using. Start with your device unplugged. Enter the following command in a terminal window.
 
-	```
+	```text
 	ls dev/cu.*
 	```
 	
@@ -339,7 +333,7 @@ In the unlikely event that you need to build a bootloader, take the following st
 
 1. Get the bootloader sources, enter the repository directory and update the submodules.
 
-	```	
+	```	text
 	git clone https://github.com/adafruit/Adafruit_nRF52_Bootloader.git
 	cd Adafruit_nRF52_Bootloader
 	git submodule update --init --recursive
@@ -347,19 +341,19 @@ In the unlikely event that you need to build a bootloader, take the following st
 
 2. From the repository directory, add the Moddable Four configuration.
 
-	```
+	```text
 	cp -r $MODDABLE/build/devices/nrf52/config/bootloader/moddable_four src/boards
 	```
 
 3. Build the bootloader and combine with the softdevice.
 
-	```
+	```text
 	make BOARD=moddable_four all combinehex
 	```
 
 4. With the board hooked up to a DK through SWD interface, flash to the Moddable Four:
 
-	```
+	```text
 	make BOARD=moddable_four flash
 	```
 
