@@ -439,6 +439,8 @@ In ECMAScript an `ArrayBuffer` is commonly used to store fixed length binary dat
 #### Macros
 
 **`xsSlot xsArrayBuffer(void *theData, xsIntegerValue theSize)`**
+**`void xsmcSetArrayBuffer(xsSlot theSlot, void *theData, xsIntegerValue theSize)`**
+
  
 | Arguments | Description |
 | --- | :-- |
