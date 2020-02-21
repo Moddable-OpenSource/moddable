@@ -48,7 +48,7 @@ class Manager {
 	}
 	add(request) {
 		request.state = 0;
-		request.id = request.host.endsWith(".local") ? 0 : (Math.random() * 65535) | 1;
+		request.id = request.host.endsWith(".local") ? 0 : ((Math.random() * 65535) | 1);
 		this.requests.push(request);
 
 		this.send(request);
@@ -93,7 +93,10 @@ class Manager {
 
 			for (let j = 0, answers = packet.answers; j < answers; j++) {
 				const answer = packet.answer(j);
-				if ((DNS.RR.A === answer.qtype) && (answer.qname.join(".") === request.host)) {
+				if (DNS.RR.A !== answer.qtype)
+					continue;
+
+				if ((question && (question.qname.join(".") === request.host)) || (answer.qname.join(".") === request.host)) {
 					this.remove(request.request);
 					return request.onResolved.call(request.target, answer.rdata);
 				}
@@ -137,12 +140,8 @@ class Resolver {
 		});
 	}
 	close() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			delete this.timer;
-		}
-
-		manager.remove(this);
+		if (manager)
+			manager.remove(this);
 	}
 }
 Object.freeze(Resolver.prototype);
