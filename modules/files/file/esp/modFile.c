@@ -136,7 +136,7 @@ void xs_file_write(xsMachine *the)
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
-			srcLen = xsGetArrayBufferLength(xsArg(i));
+			srcLen = xsmcGetArrayBufferLength(xsArg(i));
 		}
 
 		while (srcLen) {	// spool through RAM for data in flash

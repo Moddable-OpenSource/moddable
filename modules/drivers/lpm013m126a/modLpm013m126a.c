@@ -226,7 +226,7 @@ void xs_lpm013m126a_send(xsMachine *the){
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsGetArrayBufferLength(xsArg(0));
+		count = xsmcGetArrayBufferLength(xsArg(0));
 	}else {
 		xsmcVars(1);
 		data = xsmcGetHostData(xsArg(0));

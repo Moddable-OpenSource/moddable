@@ -73,7 +73,7 @@ void xs_Radio_postMessage(xsMachine *the) {
 	int size;
 	char *buffer;
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		size = (int)xsGetArrayBufferLength(xsArg(0));
+		size = (int)xsmcGetArrayBufferLength(xsArg(0));
 		buffer = c_malloc(size);
 		c_memcpy(buffer, xsmcToArrayBuffer(xsArg(0)), size);
 	}

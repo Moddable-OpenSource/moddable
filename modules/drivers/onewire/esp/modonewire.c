@@ -182,7 +182,7 @@ void xs_onewire_isPresent(xsMachine *the)
   bool found = false;
   uint8_t *id;
 
-  if (8 != xsGetArrayBufferLength(xsArg(0)))
+  if (8 != xsmcGetArrayBufferLength(xsArg(0)))
     xsUnknownError("invalid id");
 
   id = xsmcToArrayBuffer(xsArg(0));
@@ -213,7 +213,7 @@ void xs_onewire_crc(xsMachine *the)
 {
   uint8_t crc = 0;
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
-  uint8_t len = xsGetArrayBufferLength(xsArg(0));
+  uint8_t len = xsmcGetArrayBufferLength(xsArg(0));
   int argc = xsmcArgc;
 
   if (argc > 1)

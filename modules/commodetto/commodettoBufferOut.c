@@ -113,7 +113,7 @@ void xs_BufferOut_send(xsMachine *the)
  	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		src = xsmcToArrayBuffer(xsArg(0));
 		if (argc <= 2)
-			count = xsGetArrayBufferLength(xsArg(0)) - offsetIn;
+			count = xsmcGetArrayBufferLength(xsArg(0)) - offsetIn;
 	}
 	else {
 		src = xsmcGetHostData(xsArg(0));

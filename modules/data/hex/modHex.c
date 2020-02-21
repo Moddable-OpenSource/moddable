@@ -26,7 +26,7 @@ void xs_hex_toString(xsMachine *the)
 	int argc = xsmcArgc;
 	const uint8_t *bytes;
 	char *string;
-	int i, length = xsGetArrayBufferLength(xsArg(0));
+	int i, length = xsmcGetArrayBufferLength(xsArg(0));
 	char separator = 0;
 	static const char *gHex = "0123456789ABCDEF";
 

@@ -306,7 +306,7 @@ void xs_crypt_HMAC(xsMachine *the)
 	}
 	else {
 		data = xsmcToArrayBuffer(xsArg(1));
-		size = xsGetArrayBufferLength(xsArg(1));
+		size = xsmcGetArrayBufferLength(xsArg(1));
 	}
 	key = c_calloc(1, ch->digest->blockSize);
 	if (!key) {
@@ -388,7 +388,7 @@ void xs_crypt_HMAC_write(xsMachine *the)
 	}
 	else {
 		data = xsmcToArrayBuffer(xsArg(0));
-		size = xsGetArrayBufferLength(xsArg(0));
+		size = xsmcGetArrayBufferLength(xsArg(0));
 	}
 	while (size) {
 		unsigned char buffer[32];
@@ -477,7 +477,7 @@ void xs_crypt_cipher_constructor(xsMachine *the)
 	crypt_blockcipher_t cipher = {0};
 	size_t contextSize;
 	void *key = xsmcToArrayBuffer(xsArg(1));
-	xsIntegerValue keySize = xsGetArrayBufferLength(xsArg(1));
+	xsIntegerValue keySize = xsmcGetArrayBufferLength(xsArg(1));
 
 	if (0 == c_strcmp(cipherName, "AES")) {
 		if ((16 != keySize) && (24 != keySize) && (32 != keySize))
@@ -582,7 +582,7 @@ static void xs_crypt_cipher_crypt(xsMachine *the, kcl_symmetric_direction_t dire
 	xs_crypt_cipher_setDirection(cipher, direction);
 
 	if (argc > 1 && xsmcTest(xsArg(1))) {
-		if (xsGetArrayBufferLength(xsArg(1)) < (xsIntegerValue)cipher->blockSize)
+		if (xsmcGetArrayBufferLength(xsArg(1)) < (xsIntegerValue)cipher->blockSize)
 			xsUnknownError("buffer too small");
 		xsResult = xsArg(1);
 	}
@@ -595,7 +595,7 @@ static void xs_crypt_cipher_crypt(xsMachine *the, kcl_symmetric_direction_t dire
 	}
 	else {
 		data = xsmcToArrayBuffer(xsArg(0));
-		size = xsGetArrayBufferLength(xsArg(0));
+		size = xsmcGetArrayBufferLength(xsArg(0));
 	}
 
 	cipher = *cipherH;
@@ -660,7 +660,7 @@ void xs_crypt_streamcipher_constructor(xsMachine *the)
 	crypt_streamcipher_t stream = {0};
 	size_t contextSize;
 	void *key = xsmcToArrayBuffer(xsArg(1));
-	xsIntegerValue keySize = xsGetArrayBufferLength(xsArg(1));
+	xsIntegerValue keySize = xsmcGetArrayBufferLength(xsArg(1));
 
 	if (0 == c_strcmp(cipherName, "RC4")) {
 		rc4_init(&stream.context.rc4, key, keySize);
@@ -680,7 +680,7 @@ void xs_crypt_streamcipher_constructor(xsMachine *the)
 
 			if (xsmcTest(xsArg(2))) {
 				iv = xsmcToArrayBuffer(xsArg(2));
-				ivSize = xsGetArrayBufferLength(xsArg(2));
+				ivSize = xsmcGetArrayBufferLength(xsArg(2));
 			}
 		}
 
@@ -755,7 +755,7 @@ void xs_crypt_streamcipher_setIV(xsMachine *the)
 
 		if (xsmcTest(xsArg(2))) {
 			iv = xsmcToArrayBuffer(xsArg(0));
-			ivSize = xsGetArrayBufferLength(xsArg(0));
+			ivSize = xsmcGetArrayBufferLength(xsArg(0));
 		}
 	}
 
@@ -842,7 +842,7 @@ void xs_crypt_mode_constructor(xsMachine *the)
 		mode->maxSlop = 0;
 		if ((argc >= 3) && xsmcTest(xsArg(2))) {
 			uint8_t *iv = xsmcToArrayBuffer(xsArg(2));
-			xsIntegerValue ivSize = xsGetArrayBufferLength(xsArg(2));
+			xsIntegerValue ivSize = xsmcGetArrayBufferLength(xsArg(2));
 			ctr_setIV(mode, iv, ivSize);
 		}
 		xs_crypt_cipher_setDirection(*mode->cipherH, KCL_DIRECTION_ENCRYPTION);		// CTR uses encryption only
@@ -852,7 +852,7 @@ void xs_crypt_mode_constructor(xsMachine *the)
 		mode->padding = (argc >= 4) && xsmcToBoolean(xsArg(3));
 		if ((argc >= 3) && xsmcTest(xsArg(2))) {
 			uint8_t *iv = xsmcToArrayBuffer(xsArg(2));
-			xsIntegerValue ivSize = xsGetArrayBufferLength(xsArg(2));
+			xsIntegerValue ivSize = xsmcGetArrayBufferLength(xsArg(2));
 			cbc_setIV(mode, iv, ivSize);
 		}
 	}
@@ -874,7 +874,7 @@ void xs_crypt_mode_encrypt(xsMachine *the)
 	resolveBuffer(the, &xsArg(0), NULL, &count_);
 	count = count_;
 	if ((argc > 1) && xsmcTest(xsArg(1))) {
-		if (xsGetArrayBufferLength(xsArg(1)) < count)
+		if (xsmcGetArrayBufferLength(xsArg(1)) < count)
 			xsUnknownError("output too small");
 		xsResult = xsArg(1);
 	}
@@ -1058,7 +1058,7 @@ void xs_crypt_mode_setIV(xsMachine *the)
 {
 	crypt_mode_t *mode = xsmcGetHostChunk(xsThis);
 	uint8_t *iv = xsmcToArrayBuffer(xsArg(0));
-	xsIntegerValue ivSize = xsGetArrayBufferLength(xsArg(0));
+	xsIntegerValue ivSize = xsmcGetArrayBufferLength(xsArg(0));
 	if (kCryptModeCTR == mode->kind)
 		ctr_setIV(mode, iv, ivSize);
 	else if (kCryptModeCBC == mode->kind)
@@ -1112,7 +1112,7 @@ void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count
 
 	if (xsmcIsInstanceOf(*slot, xsArrayBufferPrototype)) {
 		if (count)
-			*count = xsGetArrayBufferLength(*slot);
+			*count = xsmcGetArrayBufferLength(*slot);
 		if (data)
 			*data = xsmcToArrayBuffer(*slot);
 	}
@@ -1157,14 +1157,14 @@ xs_ghash_init(xsMachine *the)
 	int ac = xsmcToInteger(xsArgc);
 	size_t len;
 
-	len = xsGetArrayBufferLength(xsArg(0));
+	len = xsmcGetArrayBufferLength(xsArg(0));
 	if (len > sizeof(ghash->h))
 		len = sizeof(ghash->h);
 	c_memcpy(&ghash->h, xsmcToArrayBuffer(xsArg(0)), len);
 	_ghash_fix128(&ghash->h);
 	if (ac > 1 && xsmcTest(xsArg(1))) {
 		void *aad = xsmcToArrayBuffer(xsArg(1));
-		len = xsGetArrayBufferLength(xsArg(1));
+		len = xsmcGetArrayBufferLength(xsArg(1));
 		c_memset(&ghash->y, 0, sizeof(ghash->y));
 		_ghash_update(ghash, aad, len);
 		c_memcpy(&ghash->y0, &ghash->y, sizeof(ghash->y));

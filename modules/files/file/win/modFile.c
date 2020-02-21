@@ -133,7 +133,7 @@ void xs_file_write(xsMachine *the)
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
-			srcLen = xsGetArrayBufferLength(xsArg(i));
+			srcLen = xsmcGetArrayBufferLength(xsArg(i));
 		}
 
 		result = fwrite(src, 1, srcLen, file);

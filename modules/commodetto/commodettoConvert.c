@@ -77,7 +77,7 @@ void xs_Convert(xsMachine *the)
 
 		if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 			clut = xsmcToArrayBuffer(xsArg(2));
-			clutBytes = xsGetArrayBufferLength(xsArg(2));
+			clutBytes = xsmcGetArrayBufferLength(xsArg(2));
 		}
 		else {
 			xsmcVars(1);
@@ -101,7 +101,7 @@ void xs_convert_process(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		src = xsmcToArrayBuffer(xsArg(0));
-		srcLength = xsGetArrayBufferLength(xsArg(0));
+		srcLength = xsmcGetArrayBufferLength(xsArg(0));
 	}
 	else {
 		xsmcVars(1);
@@ -110,7 +110,7 @@ void xs_convert_process(xsMachine *the)
 		srcLength = xsmcToInteger(xsVar(0));
 	}
 	dst = xsmcToArrayBuffer(xsArg(1));
-	dstLength = xsGetArrayBufferLength(xsArg(1));
+	dstLength = xsmcGetArrayBufferLength(xsArg(1));
 
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
 

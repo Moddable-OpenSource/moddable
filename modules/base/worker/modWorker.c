@@ -257,7 +257,7 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsGetArrayBufferLength(xsArg(0));
+		messageLength = xsmcGetArrayBufferLength(xsArg(0));
 		kind = 1;
 	}
 	else {
@@ -292,7 +292,7 @@ void xs_worker_postfromworker(xsMachine *the)
 #else
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsGetArrayBufferLength(xsArg(0));
+		messageLength = xsmcGetArrayBufferLength(xsArg(0));
 		kind = 1;
 	}
 	else {

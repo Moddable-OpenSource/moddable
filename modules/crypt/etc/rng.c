@@ -103,7 +103,7 @@ xs_rng_init(xsMachine *the)
 
 	if (xsmcArgc > 0 && xsmcTest(xsArg(0))) {
 		seed = xsmcToArrayBuffer(xsArg(0));
-		seedsize = xsGetArrayBufferLength(xsArg(0));
+		seedsize = xsmcGetArrayBufferLength(xsArg(0));
 	}
 	rng_init(seed, seedsize);
 }

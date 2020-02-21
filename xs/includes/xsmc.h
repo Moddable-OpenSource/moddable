@@ -93,6 +93,8 @@ extern "C" {
 #define xsmcSetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxSetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)
 #undef xsToArrayBuffer
 #define xsmcToArrayBuffer(_SLOT)	fxToArrayBuffer(the, &_SLOT)
+#undef xsGetArrayBufferLength
+#undef xsmcGetArrayBufferLength
 #define xsmcGetArrayBufferLength(_SLOT) fxGetArrayBufferLength(the, &(_SLOT))
 
 mxImport void _xsNewArray(xsMachine*, xsSlot*, xsIntegerValue);

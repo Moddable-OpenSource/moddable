@@ -191,7 +191,7 @@ void xs_securesocket_write(xsMachine *the)
 			}
 			else if (xsReferenceType == t) {
 				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsGetArrayBufferLength(xsArg(arg));
+					int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 					if (0 == pass)
 						needed += msgLen;
 					else {

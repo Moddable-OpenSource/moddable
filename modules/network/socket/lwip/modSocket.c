@@ -552,7 +552,7 @@ void xs_socket_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])		//@@
-					xsResult = xsArrayBuffer(srcData, srcBytes);
+					xsmcSetArrayBuffer(xsResult, srcData, srcBytes);
 				else
 					xsUnknownError("unsupported output type");
 			}
@@ -609,7 +609,7 @@ void xs_socket_write(xsMachine *the)
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(2));
+		needed = xsmcGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
 		if (ERR_OK != err) {
@@ -631,7 +631,7 @@ void xs_socket_write(xsMachine *the)
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(1));
+		needed = xsmcGetArrayBufferLength(xsArg(1));
 		data = xsmcToArrayBuffer(xsArg(1));
 		p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)needed, PBUF_RAM);
 		if (!p)
@@ -670,7 +670,7 @@ void xs_socket_write(xsMachine *the)
 			}
 			else if (xsReferenceType == t) {
 				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					msgLen = xsGetArrayBufferLength(xsArg(arg));
+					msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 					if (pass)
 						msg = xsmcToArrayBuffer(xsArg(arg));
 				}

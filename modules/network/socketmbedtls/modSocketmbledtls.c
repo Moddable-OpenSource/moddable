@@ -383,7 +383,7 @@ void xs_socketmbedtls_write(xsMachine *the)
 					*dst++ = (unsigned char)xsmcToInteger(xsArg(arg));
 			}
 			else if ((xsReferenceType == t) && (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype))) {
-				int msgLen = xsGetArrayBufferLength(xsArg(arg));
+				int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 				if (0 == pass)
 					needed += msgLen;
 				else {

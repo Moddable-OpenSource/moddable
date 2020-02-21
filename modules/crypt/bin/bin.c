@@ -51,7 +51,7 @@ void
 xs_bin_encode(xsMachine *the)
 {
 	void *src = xsmcToArrayBuffer(xsArg(0));
-	size_t len = xsGetArrayBufferLength(xsArg(0));
+	size_t len = xsmcGetArrayBufferLength(xsArg(0));
 	char *dst;
 	size_t n;
 

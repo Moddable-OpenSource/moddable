@@ -174,7 +174,7 @@ void xs_wifi_connect(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_bssid)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
-		if (sizeof(config.sta.bssid) != xsGetArrayBufferLength(xsVar(0)))
+		if (sizeof(config.sta.bssid) != xsmcGetArrayBufferLength(xsVar(0)))
 			xsUnknownError("bssid must be 6 bytes");
 		xsmcGetArrayBufferData(xsVar(0), 0, config.sta.bssid, sizeof(config.sta.bssid));
 		config.sta.bssid_set = 1;

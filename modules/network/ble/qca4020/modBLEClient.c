@@ -478,7 +478,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	
 	if (argc > 1) {
 		qapi_BLE_GATT_UUID_t uuid;
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsmcGetArrayBufferLength(xsArg(1)));
 		qapi_BLE_GATT_Start_Service_Discovery(gBLE->stackID, conn_id, 1, &uuid, GATT_Service_Discovery_Event_Callback, conn_id);
 	}
 	else {
@@ -505,7 +505,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	request->start = start;
 	request->end = end;
 	if (argc > 3)
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &request->uuid, xsGetArrayBufferLength(xsArg(3)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &request->uuid, xsmcGetArrayBufferLength(xsArg(3)));
 	
 	connection->procedure.what = GATT_PROCEDURE_DISCOVER_CHARACTERISTICS;
 	connection->procedure.obj = xsThis;
@@ -543,7 +543,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	xsmcVars(2);
 	xsmcGet(xsVar(0), xsThis, xsID_service);
 	xsmcGet(xsVar(1), xsVar(0), xsID_uuid);
-	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsVar(1)), &uuid, xsGetArrayBufferLength(xsVar(1)));
+	bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsVar(1)), &uuid, xsmcGetArrayBufferLength(xsVar(1)));
 	qapi_BLE_GATT_Start_Service_Discovery(gBLE->stackID, conn_id, 1, &uuid, GATT_Descriptor_Discovery_Event_Callback, (uint32_t)request);
 }
 
@@ -651,7 +651,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
+				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
 			}
 			else
 				goto unknown;
@@ -678,7 +678,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
+				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
 			}
 			else
 				goto unknown;
