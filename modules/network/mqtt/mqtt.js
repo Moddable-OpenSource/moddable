@@ -397,7 +397,7 @@ export default class Client {
 
 		if (this.ws) {
 			try {
-			this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
+				this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
 			}
 			catch {
 			}
