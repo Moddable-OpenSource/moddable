@@ -100,7 +100,7 @@ void xs_file_read(xsMachine *the)
 		dst = xsmcToString(xsResult);
 	}
 	else {
-		xsResult = xsArrayBuffer(NULL, dstLen);
+		xsmcSetArrayBuffer(xsResult, NULL, dstLen);
 		dst = xsmcToArrayBuffer(xsResult);
 	}
 

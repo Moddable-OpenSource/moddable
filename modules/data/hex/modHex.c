@@ -73,7 +73,7 @@ void xs_hex_toBuffer(xsMachine *the)
 		xsUnknownError("bad string length");
 
 	length = separator ? ((length + 1) / 3) : (length / 2);
-	xsResult = xsArrayBuffer(NULL, length);
+	xsmcSetArrayBuffer(xsResult, NULL, length);
 	bytes = xsmcToArrayBuffer(xsResult);
 	string = xsmcToString(xsArg(0));		// refresh
 	for (i = 0; i < length; i++) {

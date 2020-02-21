@@ -82,7 +82,7 @@ xs_rng_get(xsMachine *the)
 	if (!rng_inited)
 		rng_init(NULL, 0);
 
-	xsResult = xsArrayBuffer(NULL, n);
+	xsmcSetArrayBuffer(xsResult, NULL, n);
 	bp = xsmcToArrayBuffer(xsResult);
 	for (i = j = 0, bufend = bp + n; bp < bufend;) {
 		++i;

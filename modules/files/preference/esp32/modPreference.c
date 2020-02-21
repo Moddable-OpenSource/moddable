@@ -105,7 +105,7 @@ void xs_preference_get(xsMachine *the)
 		err = nvs_get_str(handle, key, xsmcToString(xsResult), &integer);
 	}
 	else if (ESP_OK == nvs_get_blob(handle, key, NULL, &integer)) {
-		xsResult = xsArrayBuffer(NULL, integer);
+		xsmcSetArrayBuffer(xsResult, NULL, integer);
 		err = nvs_get_blob(handle, key, xsmcToArrayBuffer(xsResult), &integer);
 	}
 	else

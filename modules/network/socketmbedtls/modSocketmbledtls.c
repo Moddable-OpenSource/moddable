@@ -331,7 +331,7 @@ void xs_socketmbedtls_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])		//@@
-					xsResult = xsArrayBuffer(srcData, srcBytes);
+					xsmcSetArrayBuffer(xsResult, srcData, srcBytes);
 				else
 					xsUnknownError("unsupported output type");
 			}

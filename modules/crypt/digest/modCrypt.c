@@ -214,14 +214,14 @@ void xs_crypt_Digest_close(xsMachine *the)
 
 	if (argc && xsmcTest(xsArg(0))) {
 		xsmcVars(1);
-		xsVar(0) = xsArrayBuffer(NULL, cd->digest->ctxSize);
+		xsmcSetArrayBuffer(xsVar(0), NULL, cd->digest->ctxSize);
 		cd = xsmcGetHostChunk(xsThis);
 		c_memcpy(xsmcToArrayBuffer(xsVar(0)), cd->ctx, cd->digest->ctxSize);
 	}
 	else
 		argc = 0;
 
-	xsResult = xsArrayBuffer(NULL, cd->digest->digestSize);
+	xsmcSetArrayBuffer(xsResult, NULL, cd->digest->digestSize);
 
 	cd = xsmcGetHostChunk(xsThis);
 	(cd->digest->doFin)(cd->ctx, xsmcToArrayBuffer(xsResult));
@@ -407,8 +407,11 @@ void xs_crypt_HMAC_write(xsMachine *the)
 void xs_crypt_HMAC_close(xsMachine *the)
 {
 	xsCryptHMAC ch = xsmcGetHostData(xsThis);
-	xsSlot resultBuffer = xsArrayBuffer(NULL, ch->digest->digestSize);
-	uint8_t* buffer = xsmcToArrayBuffer(resultBuffer);
+	uint8_t* buffer;
+
+	xsmcVars(1);
+	xsmcSetArrayBuffer(xsVar(0), NULL, ch->digest->digestSize);
+	buffer = xsmcToArrayBuffer(xsVar(0));
 
 	// take the final hash from ipad and run it into opad (which should already be "primed" with the key
 	(ch->digest->doFin)(ch->ictx, buffer);
@@ -419,7 +422,7 @@ void xs_crypt_HMAC_close(xsMachine *the)
 
 	xs_crypt_HMAC_destructor(ch);
 
-	xsResult = resultBuffer;
+	xsResult = xsVar(0);
 	xsmcSetHostData(xsThis, NULL);
 }
 
@@ -587,7 +590,7 @@ static void xs_crypt_cipher_crypt(xsMachine *the, kcl_symmetric_direction_t dire
 		xsResult = xsArg(1);
 	}
 	else
-		xsResult = xsArrayBuffer(NULL, cipher->blockSize);
+		xsmcSetArrayBuffer(xsResult, NULL, cipher->blockSize);
 
 	if (xsmcTypeOf(xsArg(0)) == xsStringType) {
 		data = (unsigned char *)xsmcToString(xsArg(0));
@@ -724,7 +727,7 @@ void xs_crypt_streamcipher_process(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 	else
-		xsResult = xsArrayBuffer(NULL, count);
+		xsmcSetArrayBuffer(xsResult, NULL, count);
 
 	if (xsStringType == xsmcTypeOf(xsArg(0)))
 		data = (uint8_t *)xsmcToString(xsArg(0));
@@ -879,7 +882,7 @@ void xs_crypt_mode_encrypt(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 	else
-		xsResult = xsArrayBuffer(NULL, count);
+		xsmcSetArrayBuffer(xsResult, NULL, count);
 
 	resolveBuffer(the, &xsArg(0), &data, NULL);
 	result = resultStart = xsmcToArrayBuffer(xsResult);
@@ -984,7 +987,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 	else {
-		xsResult = xsArrayBuffer(NULL, count);
+		xsmcSetArrayBuffer(xsResult, NULL, count);
 		result = xsmcToArrayBuffer(xsResult);
 	}
 

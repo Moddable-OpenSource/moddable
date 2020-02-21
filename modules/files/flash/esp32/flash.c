@@ -84,7 +84,7 @@ void xs_flash_read(xsMachine *the)
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 
-	xsResult = xsArrayBuffer(NULL, byteLength);
+	xsmcSetArrayBuffer(xsResult, NULL, byteLength);
 	if (ESP_OK != esp_partition_read(flash->partition, offset, xsmcToArrayBuffer(xsResult), byteLength))
 		xsUnknownError("read failed");
 }

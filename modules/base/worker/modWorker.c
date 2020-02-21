@@ -349,7 +349,7 @@ void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message
 
 	xsmcVars(2);
 
-	xsVar(0) = xsArrayBuffer(message, messageLength);
+	xsmcSetArrayBuffer(xsVar(0), message, messageLength);
 
 	if (the == worker->parent)
 		xsCall1(worker->ownerPort, xsID_onmessage, xsVar(0));

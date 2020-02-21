@@ -132,7 +132,7 @@ void xs_onewire_read(xsMachine *the)
   else
   {
     int count = xsmcToInteger(xsArg(0));
-    xsResult = xsArrayBuffer(NULL, count);
+    xsmcSetArrayBuffer(xsResult, NULL, count);
     uint8_t *buffer = xsmcToArrayBuffer(xsResult);
     owb_read_bytes(onewire->owb, (uint8_t *)buffer, count);
   }
@@ -169,7 +169,8 @@ void xs_onewire_search(xsMachine *the)
 
   while (found)
   {
-    xsCall1(xsResult, xsID_push, xsArrayBuffer(&search_state.rom_code.bytes, 8));
+	xsmcSetArrayBuffer(xsVar(0), &search_state.rom_code.bytes, 8);
+    xsCall1(xsResult, xsID_push, xsVar(0));
     owb_search_next(onewire->owb, &search_state, &found);
   }
 }

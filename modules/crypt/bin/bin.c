@@ -70,7 +70,7 @@ xs_bin_decode(xsMachine *the)
 	size_t len = c_strlen(src);
 	size_t n = howmany(len, 4) * 3;
 
-	xsResult = xsArrayBuffer(NULL, n);
+	xsmcSetArrayBuffer(xsResult, NULL, n);
 	n = mc_decode64(xsmcToArrayBuffer(xsResult), src, n);
 	xsSetArrayBufferLength(xsResult, n);
 }

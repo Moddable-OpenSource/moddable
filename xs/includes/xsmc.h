@@ -86,6 +86,7 @@ extern "C" {
 #define xsmcSetString(_SLOT, _VALUE)	fxString(the, &_SLOT, _VALUE)
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
 
+#undef xsArrayBuffer
 #define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE)
 #undef xsGetArrayBufferData
 #define xsmcGetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxGetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)

@@ -156,7 +156,7 @@ void xs_colorcell_end(xsMachine *the)
 
 	xsmcVars(1);
 
-	xsVar(0) = xsArrayBuffer(NULL, cc->outputOffset);
+	xsmcSetArrayBuffer(xsVar(0), NULL, cc->outputOffset);
 	cc = xsmcGetHostChunk(xsThis);
 	c_memmove(xsmcToArrayBuffer(xsVar(0)), cc->output, cc->outputOffset);
 	xsmcSetHostChunk(xsThis, NULL, 0);
