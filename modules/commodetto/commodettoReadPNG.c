@@ -282,7 +282,7 @@ void xs_PNG_constructor(xsMachine *the)
 				const unsigned char *src = pngBytes;
 				unsigned char *dst;
 
-				xsmcSetArrayBuffer(xsVar(0), NULL, colors * 4);
+				xsVar(0) = xsArrayBuffer(NULL, colors * 4);
 				xsSet(xsThis, xsID_palette, xsVar(0));
 				dst = xsToArrayBuffer(xsVar(0));
 
