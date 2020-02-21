@@ -38,7 +38,7 @@ Moddable Four is a low-power, bluetooth development board that makes it easy for
 
 The two main components of Moddable Four are the nRF52840 module and mirror display. The nRF52840 module includes a Wi-Fi/BLE antenna, 1 MB Flash, and 256 KB RAM. The Sharp mirror display is a 128x128 black and white display that uses the [`ls013b4dn04` display driver](../drivers/ls013b4dn04/ls013b4dn04.md).
 
-<!--TO DO: add information about the built-in sensors -->
+It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 battery connector.
 
 <a id="pinout"></a>
 ### Pinout
@@ -87,11 +87,11 @@ Unzip the file and place the `nRF-Command-Line-Tools_10_5_0_OSX` directory in yo
 
 ### Step 5: Get `uf2conv.py`
 
-Moddable Four uses a modified `Adafruit_nRF52_Bootloader`. `uf2conv.py` is a tool from Microsoft that packages up the final binary for transfer to the device.
+Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages up the final binary for transfer to the device.
 
 Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) into your new `nRF5` directory.
 
-Change the access permissions of `uf2conv` using `chmod`.
+Change the access permissions of `uf2conv` (to make it executable) using `chmod`.
 
 ```text
 chmod 755 uf2conv.py 
@@ -216,7 +216,7 @@ LE secure connection support is disabled by default in the Moddable build due to
 
 The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Most of these examples run on Moddable Four. 
 
-That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Three hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
+That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Four hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
 
 <a id="documentation"></a>
 ### Documentation
