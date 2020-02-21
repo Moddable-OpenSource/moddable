@@ -284,8 +284,7 @@ void xs_socket(xsMachine *the)
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
-				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-				if (!parseAddress(temp, multicastIP))
+				if (!parseAddress(xsmcToString(xsVar(0)), multicastIP))
 					xsUnknownError("invalid multicast IP address");
 				if ((255 != multicastIP[0]) || (255 != multicastIP[1]) || (255 != multicastIP[2]) || (255 != multicastIP[3])) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
 					ttl = 1;
@@ -601,14 +600,12 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->udp) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
@@ -625,14 +622,12 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->raw) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		ip_addr_t dst = {0};
 		struct pbuf *p;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
@@ -1144,18 +1139,25 @@ u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *ad
 
 static uint8 parseAddress(char *address, uint8_t *ip)
 {
+	char temp[4];
 	char *p = address;
-	int i;
+	uint8_t i;
 	for (i = 0; i < 3; i++) {
-		char *separator = c_strchr(p, (i < 3) ? '.' : 0);
-		if (!separator)
+		char *t = temp;
+		char *separator = c_strchr(p, '.');
+		if (!separator || ((separator - p) > 3))
 			return 0;
-		*separator = 0;
-		ip[i] = (unsigned char)atoi(p);
-		p = separator + 1;
+		while (p < separator)
+			*t++ = c_read8(p++);
+		*t++ = 0;
+		ip[i] = (unsigned char)atoi(temp);
+		p += 1;		// skip separator
 	}
-	ip[3] = (unsigned char)atoi(p);
+	if (c_strlen(p) > 3)
+		return 0;
 
+	c_strcpy(temp, p);
+	ip[3] = (unsigned char)atoi(temp);
 	return 1;
 }
 
@@ -1197,12 +1199,10 @@ void xs_listener(xsMachine *the)
 
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
-		char temp[DNS_MAX_NAME_LENGTH];
 		uint8_t ip[4];
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		if (xsmcTest(xsVar(0))) {
-			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-			if (!parseAddress(temp, ip))
+			if (!parseAddress(xsmcToString(xsVar(0)), ip))
 				xsUnknownError("invalid IP address");
 			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
 		}
