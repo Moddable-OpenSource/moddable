@@ -34,7 +34,8 @@ void xs_net_get(xsMachine *the)
 	if (0 == c_strcmp(prop, "SSID")) {
 		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
 		NSString *ssid = wifi.ssid;
-		xsResult = xsString([ssid UTF8String]);
+		if (ssid)
+			xsResult = xsString([ssid UTF8String]);
 	}
 	else if (0 == c_strcmp(prop, "RSSI")) {
 		CWInterface* wifi = [[CWWiFiClient sharedWiFiClient] interface];
