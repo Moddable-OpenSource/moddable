@@ -3,8 +3,9 @@ globalThis.increment = new Function("return x++");
 globalThis.test = function() {
     trace("app " + increment() + "\n");
 }
-let mod = new Compartment("mod");
+let compartment = new Compartment();
+await compartment.import("mod");
 test();
-mod.global.test();
+compartment.global.test();
 test();
-mod.global.test();
+compartment.global.test();

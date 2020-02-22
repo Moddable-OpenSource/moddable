@@ -720,11 +720,7 @@ void fxRunFile(txContext* context, char* path)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "AggregateError")
- 			||	!strcmp((char*)node->data.scalar.value, "String.prototype.replaceAll")
- 			||	!strcmp((char*)node->data.scalar.value, "coalesce-expression")
- 			||	!strcmp((char*)node->data.scalar.value, "optional-chaining")
- 			||	!strcmp((char*)node->data.scalar.value, "regexp-match-indices")
+			if (0
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -958,13 +954,14 @@ void fx_agent_leaving(xsMachine* the)
 
 void fx_agent_monotonicNow(xsMachine* the)
 {
-#if mxWindows
-    xsResult = xsNumber((txNumber)GetTickCount64());
-#else	
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-    xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
-#endif
+	xsResult = xsNumber(fxDateNow());
+// #if mxWindows
+//     xsResult = xsNumber((txNumber)GetTickCount64());
+// #else	
+// 	struct timespec now;
+// 	clock_gettime(CLOCK_MONOTONIC, &now);
+//     xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
+// #endif
 }
 
 void fx_agent_receiveBroadcast(xsMachine* the)
@@ -1251,15 +1248,15 @@ void fx_setTimerCallback(txJob* job)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	{
-		mxPush(job->argument);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPush(job->function);
-		fxCall(the);
-		the->stack++;
+		mxCall();
+		mxPush(job->argument);
+		/* ARGC */
+		mxRunCount(1);
+		mxPop();
 	}
 	fxEndHost(the);
 }
@@ -1340,16 +1337,15 @@ void fxRejectModuleFile(txMachine* the)
 
 void fxRunModuleFile(txMachine* the, txString path)
 {
-	txSlot* promise;
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRunImport(the);
-	promise = the->stack;
+	fxRunImport(the, realm, XS_NO_ID);
+	mxDub();
+	fxGetID(the, mxID(_then));
+	mxCall();
 	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
 	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
-	mxPushInteger(2);
-	mxPushSlot(promise);
-	fxCallID(the, mxID(_then));
-	mxPop();
+	mxRunCount(2);
 	mxPop();
 }
 

@@ -5,8 +5,9 @@ globalThis.increment = function() {
 globalThis.test = function() {
     trace("app " + increment() + "\n");
 }
-let mod = new Compartment("mod", { increment });
+let compartment = new Compartment({ increment });
+await compartment.import("mod");
 test();
-mod.global.test();
+compartment.global.test();
 test();
-mod.global.test();
+compartment.global.test();

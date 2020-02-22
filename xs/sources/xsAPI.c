@@ -63,11 +63,6 @@ txKind fxTypeOf(txMachine* the, txSlot* theSlot)
 
 /* Primitives */
 
-void fxPushCount(txMachine* the, txInteger count)
-{
-	mxPushInteger(count);
-}
-
 void fxUndefined(txMachine* the, txSlot* theSlot)
 {
 	theSlot->kind = XS_UNDEFINED_KIND;
@@ -582,6 +577,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	mxPushUndefined();
 	instance = fxNewSlot(the);
+	instance->flag |= XS_CAN_CALL_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
 	instance->value.instance.prototype = mxFunctionPrototype.value.reference;
@@ -861,14 +857,9 @@ txString fxName(txMachine* the, txID theID)
 
 void fxEnumerate(txMachine* the) 
 {
-	mxPushInteger(0);
-	/* SWAP THIS */
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	/* FUNCTION */
 	mxPush(mxEnumeratorFunction);
-	fxCall(the);
+	mxCall();
+	mxRunCount(0);
 }
 
 void fxGetAll(txMachine* the, txInteger id, txIndex index)
@@ -882,16 +873,22 @@ void fxGetAll(txMachine* the, txInteger id, txIndex index)
 	else if (property->kind == XS_ACCESSOR_KIND) {
 		txSlot* function = property->value.accessor.getter;
 		if (mxIsFunction(function)) {
-			the->stack->value.integer = 0;
-			the->stack->kind = XS_INTEGER_KIND;
-			/* THIS */
-			if (flag)
-				mxPushReference(instance);
-			else
-				mxPushSlot(instance->next);
-			/* FUNCTION */
-			mxPushReference(function);
-			fxCall(the);
+			txSlot* slot;
+			fxOverflow(the, -5, C_NULL, 0);
+            the->stack -= 5;
+			slot = the->stack;
+			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+			slot->value.reference = function;
+			mxInitSlotKind(slot++, XS_REFERENCE_KIND);
+			if (!flag) {
+				txSlot* primitive = instance->next;
+				slot->value = primitive->value;
+				mxInitSlotKind(slot, primitive->kind);
+			}
+			mxRunCount(0);
 		}
 		else
 			the->stack->kind = XS_UNDEFINED_KIND;
@@ -949,34 +946,38 @@ txBoolean fxHasIndex(txMachine* the, txIndex index)
 
 void fxSetAll(txMachine* the, txInteger id, txIndex index)
 {
+	txSlot* value = the->stack + 1;
 	txSlot* instance = fxToInstance(the, the->stack);
-	txSlot* property;
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	property = mxBehaviorSetProperty(the, instance, (txID)id, index, XS_ANY);
+	txSlot* property = mxBehaviorSetProperty(the, instance, (txID)id, index, XS_ANY);
 	if (!property)
 		mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not extensible", id);
 	if (property->kind == XS_ACCESSOR_KIND) {
+		txSlot* slot;
 		txSlot* function = property->value.accessor.setter;
 		if (!mxIsFunction(function))
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: no setter", id);
-		*(the->stack + 1) = *(the->stack);
-		the->stack->kind = XS_INTEGER_KIND;
-		the->stack->value.integer = 1;
-		/* THIS */
-		mxPushReference(instance);
-		/* FUNCTION */
-		mxPushReference(function);
-		fxCall(the);
+		fxOverflow(the, -5, C_NULL, 0);
+		the->stack -= 5;
+		slot = the->stack;
+		slot->value = value->value;
+		mxInitSlotKind(slot++, value->kind);
+		mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+		mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+		slot->value = value->value;
+		mxInitSlotKind(slot++, value->kind);
+		mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+		slot->value.reference = function;
+		mxInitSlotKind(slot++, XS_REFERENCE_KIND);
+		slot->value.reference = instance;
+		mxInitSlotKind(slot, XS_REFERENCE_KIND);
+		mxRunCount(1);
 	}
 	else {
 		if (property->flag & XS_DONT_SET_FLAG)
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not writable", id);
-		property->kind = the->stack->kind;
-		property->value = the->stack->value;
-		*(the->stack + 1) = *(the->stack);
-		the->stack++;
+		property->kind = value->kind;
+		property->value = value->value;
+		mxPop();
 	}
 }
 
@@ -1068,58 +1069,63 @@ void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask)
 
 void fxCall(txMachine* the)
 {
-#ifdef mxHostFunctionPrimitive
-	txSlot* function = the->stack;
-	if (function->kind != XS_HOST_FUNCTION_KIND) {
-		function = fxGetInstance(the, the->stack);
-		if (!mxIsCallable(function)) {
-			mxTypeError("C: xsCall: no function");
-		}
-	}
-#else
-	txSlot* function = fxGetInstance(the, the->stack);
-	if (!mxIsCallable(function))
-		mxTypeError("C: xsCall: no function");
-#endif
-	/* TARGET */
-	mxPushUndefined();
-	/* RESULT */
-	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	// TARGET
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
+	// RESULT
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
+	// FRAME
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND);
+	// COUNT
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND);
 }
 
 void fxCallID(txMachine* the, txInteger theID)
 {
-	mxPushUndefined();
-	*the->stack = *(the->stack + 1);
+	mxDub();
 	fxGetID(the, theID);
+	fxCall(the);
+}
+
+void fxCallFrame(txMachine* the)
+{
+	fxOverflow(the, -4, C_NULL, 0);
 	fxCall(the);
 }
 
 void fxNew(txMachine* the)
 {
-	txSlot* function;
-	function = fxGetInstance(the, the->stack);
-	if (!mxIsCallable(function))
-		mxTypeError("C: xsNew: no function");
-	/* THIS */
-	mxPushUninitialized();
-	/* FUNCTION */
-	the->scratch = *(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	*(the->stack + 1) = the->scratch;
-	/* TARGET */
-	--(the->stack);
-	*(the->stack) = *(the->stack + 1);
-	/* RESULT */
-	mxPushUndefined();
-	fxRunID(the, C_NULL, XS_NO_ID);
+	txSlot* constructor = the->stack;
+	txSlot* slot = constructor - 5;
+	the->stack = slot;
+	mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+	mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
+	mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
+	slot->value = constructor->value;
+	mxInitSlotKind(slot++, constructor->kind);
+	slot->value = constructor->value;
+	mxInitSlotKind(slot++, constructor->kind);
+	mxInitSlotKind(slot, XS_UNINITIALIZED_KIND);
 }
 
 void fxNewID(txMachine* the, txInteger theID)
 {
 	fxGetID(the, theID);
 	fxNew(the);
+}
+
+void fxNewFrame(txMachine* the)
+{
+	fxOverflow(the, -5, C_NULL, 0);
+	fxNew(the);
+}
+
+void fxRunCount(txMachine* the, txInteger count)
+{
+	fxRunID(the, C_NULL, count);
 }
 
 txBoolean fxRunTest(txMachine* the)
@@ -1167,11 +1173,10 @@ txBoolean fxRunTest(txMachine* the)
 
 void fxVars(txMachine* the, txInteger theCount)
 {
-	txSlot* environment = the->frame - 1;
-	if (environment != the->stack)
+	if (the->scope != the->stack)
 		mxSyntaxError("C: xsVars: too late");
 	fxOverflow(the, theCount, C_NULL, 0);
-	environment->value.environment.variable.count = theCount;
+	the->scope->value.environment.variable.count = theCount;
 	while (theCount) {
 		mxPushUndefined();
 		theCount--;
@@ -1180,23 +1185,11 @@ void fxVars(txMachine* the, txInteger theCount)
 
 txInteger fxCheckArg(txMachine* the, txInteger theIndex)
 {
-	txInteger aCount = mxArgc;
 #if mxBoundsCheck
-#if !mxOptimize
-	if ((theIndex < 0) || (aCount <= theIndex))
+	if ((theIndex < 0) || (mxArgc <= theIndex))
 		mxSyntaxError("C: xsArg(%ld): invalid index", theIndex);
-	return aCount - 1 - theIndex;
-#else
-	aCount -= theIndex;
-	if (aCount >= 0)
-		return aCount - 1;
-
-	mxSyntaxError("C: xsArg(%ld): invalid index", theIndex);
-	return 0;			// never happens
 #endif
-#else
-	return aCount - theIndex - 1;
-#endif
+	return theIndex;
 }
 
 txInteger fxCheckVar(txMachine* the, txInteger theIndex)
@@ -1326,6 +1319,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			/* mxException */
 			mxPushUndefined();
 			/* mxProgram */
+			mxPushNull();
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
@@ -1402,16 +1396,17 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPush(mxObjectPrototype);
 			
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
-			for (id = _Array; id < _Infinity; id++)
+			for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			for (; id < _Compartment; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
-			for (; id < ___proto__; id++)
+			for (; id < XS_INTRINSICS_COUNT; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
+			fxNewInstance(the);
 			fxNewInstance(the);
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
@@ -1569,6 +1564,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			/* mxException */
 			mxPushUndefined();
 			/* mxProgram */
+			mxPushNull();
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
@@ -1594,11 +1590,11 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				id = slot->ID & 0x7FFF;
-				if ((_Array <= id) && (id < _Infinity))
+				if ((XS_SYMBOL_ID_COUNT <= id) && (id < _Infinity))
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((_Infinity <= id) && (id < _Compartment))
 					slot->flag = XS_GET_ONLY;
-				else if ((_Compartment <= id) && (id < ___proto__))
+				else if ((_Compartment <= id) && (id < XS_INTRINSICS_COUNT))
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((id == _global) || (id == _globalThis)) {
 					slot->value.reference = the->stack->value.reference;
@@ -1612,9 +1608,21 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxGlobal.kind = the->stack->kind;
 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxBuildModuleMap(the);
-			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
+			fxNewInstance(the);
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = slot = fxNewRealmInstance(the);
+			
+			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
+			slot = fxLastProperty(the, mxRealmClosures(slot)->value.reference);
+			while (sharedSlot) {
+				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
+				sharedSlot = sharedSlot->next;
+			}
 			mxPop();
 			
+			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
+			slot = fxLastProperty(the, fxNewGlobalInstance(the));
+			
+		
 			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			
 			the->collectFlag = XS_COLLECTING_FLAG;

@@ -2,8 +2,13 @@ import increment from "increment";
 function test() {
     trace("app " + increment() + "\n");
 }
-let mod = new Compartment("mod");
+let compartment = new Compartment({}, { 
+	"*": { 
+		"mod":"mod", 
+		"increment":"increment" } 
+});
+let modNS = await compartment.import("mod");
 test();
-mod.export.test();
+modNS.test();
 test();
-mod.export.test();
+modNS.test();

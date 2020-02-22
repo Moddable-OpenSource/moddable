@@ -57,6 +57,13 @@ static void fxWriteIDs(txScript* script, FILE* file);
 
 #ifndef XSTOOLS
 
+void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path)
+{
+	static txInteger gxTag = 0;
+	snprintf(buffer, bufferSize, "#%d@%s", gxTag, path);
+	gxTag++;
+}
+
 void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 {
 	vfprintf(stderr, theFormat, theArguments);
