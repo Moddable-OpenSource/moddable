@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -638,7 +638,7 @@ void xs_socket_write(xsMachine *the)
 			xsUnknownError("no buffer");
 		c_memcpy(p->payload, data, needed);
 		err = raw_sendto(xss->raw, p, &dst);
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		if (ERR_OK != err)
 			xsUnknownError("RAW send failed");
 
@@ -995,6 +995,9 @@ void didError(void *arg, err_t err)
 {
 	xsSocket xss = arg;
 
+	tcp_recv(xss->skt, NULL);
+	tcp_sent(xss->skt, NULL);
+	tcp_err(xss->skt, NULL);
 	xss->skt = NULL;		// "pcb is already freed when this callback is called"
 	socketSetPending(xss, kPendingError);
 }
@@ -1035,6 +1038,9 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
+			tcp_recv(xss->skt, NULL);
+			tcp_sent(xss->skt, NULL);
+			tcp_err(xss->skt, NULL);
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
