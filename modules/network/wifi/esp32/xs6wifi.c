@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -147,8 +147,8 @@ void xs_wifi_connect(xsMachine *the)
 
 	initWiFi();
 
-	if (gWiFiState >= 3)
-		esp_wifi_disconnect();
+	gWiFiState = 2;
+	esp_wifi_disconnect();
 
 	if (0 == argc)
 		return;
@@ -401,27 +401,19 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED: {
 			uint8_t reason = event->event_info.disconnected.reason;
-			gDisconnectReason =	(WIFI_REASON_MIC_FAILURE == reason) ||
+			gWiFiState = 2;
+			gDisconnectReason =	((WIFI_REASON_MIC_FAILURE == reason) ||
 								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
 								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
 								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
-								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason);
-			if (gDisconnectReason)
-				gDisconnectReason = -1;
-			else /* if ((WIFI_REASON_BEACON_TIMEOUT == reason) ||
-					 (WIFI_REASON_NO_AP_FOUND == reason) ||
-					 (WIFI_REASON_HANDSHAKE_TIMEOUT == reason) ||
-					 (WIFI_REASON_AUTH_EXPIRE == reason) ||
-					 (WIFI_REASON_CONNECTION_FAIL == reason)) */ {
-				if (gWiFiConnectRetryRemaining > 0) {
-					if (0 == esp_wifi_connect()) {
-						gWiFiConnectRetryRemaining -= 1;
-						return ESP_OK;
-					}
-					gWiFiConnectRetryRemaining = 0;
+								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) ? -1 : 0;
+			if (gWiFiConnectRetryRemaining > 0) {
+				if (0 == esp_wifi_connect()) {
+					gWiFiConnectRetryRemaining -= 1;
+					return ESP_OK;
 				}
+				gWiFiConnectRetryRemaining = 0;
 			}
-			gWiFiState = 2;
 			} break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
@@ -448,14 +440,13 @@ void initWiFi(void)
 		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
 		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 		esp_wifi_set_mode(WIFI_MODE_NULL);
-		gWiFiState = 0;
 	}
+
+	gWiFiState = 1;
 
 	ESP_ERROR_CHECK( esp_event_loop_set_cb(doWiFiEvent, NULL) );
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 	ESP_ERROR_CHECK( esp_wifi_start() );
-
-	gWiFiState = 1;
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
