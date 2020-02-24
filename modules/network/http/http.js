@@ -55,7 +55,7 @@ export class Request {
 			return;
 		}
 
-		dictionary = Object.assign({port: 80, method: "GET", path: "/"}, dictionary);
+		dictionary = {port: 80, method: "GET", path: "/", Socket, ...dictionary};
 
 		this.method = dictionary.method;
 		this.path = dictionary.path;
@@ -68,10 +68,7 @@ export class Request {
 			this.response = dictionary.response;
 		this.state = 0;
 
-		if (dictionary.Socket)
-			this.socket = new dictionary.Socket(Object.assign({}, dictionary.Socket, dictionary));
-		else
-			this.socket = new Socket(dictionary);
+		this.socket = new (dictionary.Socket)(dictionary);
 		this.socket.callback = callback.bind(this);
 	}
 
