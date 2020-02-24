@@ -82,7 +82,7 @@ class ControlsHeaderBehavior extends Behavior {
 		if (model.devices.length > 1) { 
 			let data = {
 				button: row,
-				items: model.devices.map((device, index) => ({ title:device.export.default.title, index })),
+				items: model.devices.map((device, index) => ({ title: device.default.title, index })),
 			};
 			data.items.splice(model.deviceIndex, 1);
 			application.add(new ControlsMenu(data));
@@ -407,7 +407,8 @@ export var StatusRow = Row.template(function($) { return {
 				onDataChanged(label) {
 					let data = this.data;
 					let item = data.items.find(item => item.value == data.value);
-					label.string = item.title;
+					if (item)
+						label.string = item.title;
 				}
 				onDisplaying(label) {
 					let data = this.data;

@@ -164,6 +164,7 @@ class ApplicationBehavior extends Behavior {
 						let device = compartment.importSync(info.path).default;
 						if (device && ("DeviceTemplate" in device)) {
 							device.compartment = compartment;
+							device.default = device;
 							devices.push(device);
 							let name = device.applicationName;
 							if (name) {
