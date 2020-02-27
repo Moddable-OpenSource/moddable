@@ -98,6 +98,15 @@
 				"time",
 				"timer",
 			],
+		},
+		"wasm": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen",
+				]
+			},
+			"preload": [
+			],
 		}
 	},
 }
