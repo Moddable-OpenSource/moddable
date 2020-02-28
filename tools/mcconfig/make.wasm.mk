@@ -114,8 +114,7 @@ endif
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 LINK_OPTIONS = \
 	-s ENVIRONMENT=web\
-	-s INVOKE_RUN=0\
-	-s "EXPORTED_FUNCTIONS=['_fxScreenMain', '_fxScreenIdle']"
+	-s "EXPORTED_FUNCTIONS=['_fxMainIdle', '_fxMainLaunch', '_fxMainQuit', '_fxMainTouch']"
 
 LINK_LIBRARIES = -ldl -lm
 
@@ -135,10 +134,14 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/mc.js
+all: $(LIB_DIR) $(BIN_DIR)/mc.js $(BIN_DIR)/index.html
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
+	
+$(BIN_DIR)/index.html: 	$(BUILD_DIR)/simulator/wasm/index.html
+	@echo "# cp index.html"
+	cp $< $@
 	
 $(BIN_DIR)/mc.js: $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(TMP_DIR)/mc.main.c.o
 	@echo "# cc mc.js"

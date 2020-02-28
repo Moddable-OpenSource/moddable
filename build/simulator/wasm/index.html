@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen Test</title> 
+<body> 
+<style>
+html, body, div {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+}
+#header {
+	background: #002f87;
+}
+#header-center {
+  	position: relative;
+	clear: both;
+	margin: 0 auto;
+	width: 600px;
+	height: 60px;
+}
+#logo {
+  	position: absolute;
+  	left: 20px;
+  	top: 10px;
+	height: 40px;
+}
+#button {
+  	position: absolute;
+  	right: 20px;
+  	top: 10px;
+	height: 40px;
+	width: 40px;
+}
+#info {
+	background: white;
+}
+#info-center {
+	clear: both;
+	margin: 0 auto;
+	padding-top: 10px;
+	width: 600px;
+	text-align: center;
+}
+#body {
+	background: white;
+}
+#body-center {
+  	position: relative;
+	clear: both;
+	margin: 0 auto;
+	width: 600px;
+	height: 600px;
+}
+#device {
+  	position: absolute;
+  	left: 60px;
+  	top: 0px;
+	width: 480px;
+	height: 320px;
+}
+#screen {
+  	position: absolute;
+  	left: 140px;
+  	top: 40px;
+	width: 320px;
+	height: 240px;
+}
+
+</style>
+	<body> 
+		<div id="header">
+			<div id="header-center">
+				<a href="https://www.moddable.com"/><img id="logo" src="https://www.moddable.com/images/white-moddable.svg" height="40"></img></a>
+				<canvas id="button" width="40" height="40" onclick="rotate()"></canvas>
+			</div>
+		</div>
+		<div id="info">
+			<div id="info-center">Loading...</div>
+		</div>
+		<div id="body">
+			<div id="body-center">
+				<canvas id="device" width="480" height="320"></canvas>
+				<canvas id="screen" width="320" height="240"></canvas>
+			</div>
+		</div>
+
+<script>
+	const pixelFormats = [
+		"16-bit RGB 565 Little Endian",
+		"16-bit RGB 565 Big Endian",
+		"8-bit Gray",
+		"8-bit RGB 332",
+		"4-bit Gray",
+		"4-bit Color Look-up Table",
+	];
+	var orientation = 0;
+	var button = document.getElementById('button');
+	var info = document.getElementById('info-center');
+	var body = document.getElementById('body-center');
+	var device = document.getElementById('device');
+	var screen = document.getElementById('screen');
+	var image = null;
+	var interval = 0;
+	var tracking = 0;
+	var when;
+	var fxMainIdle;
+	var fxMainLaunch;
+	var fxMainQuit;
+	var fxMainTouch;
+	function drawButton() {
+		const ctx = button.getContext('2d');
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "white";
+		ctx.rect(5, 20, 15, 15);
+		ctx.stroke();
+		ctx.moveTo(10, 10);
+		ctx.arcTo(30, 10, 30, 30, 19);
+		ctx.stroke();
+		ctx.moveTo(15, 5);
+		ctx.lineTo(10, 10);
+		ctx.lineTo(15, 15);
+		ctx.stroke();
+		ctx.moveTo(25, 25);
+		ctx.lineTo(30, 30);
+		ctx.lineTo(35, 25);
+		ctx.stroke();
+	}
+	function drawDevice() {
+		const ctx = device.getContext('2d');
+		const x = 10;
+		const y = 10;
+		const width = device.width - 20;
+		const height = device.height - 20;
+		const radius = 20;
+		var grd = ctx.createLinearGradient(x + (width / 2) - 20, y + height, x + (width / 2) + 20, y);
+		grd.addColorStop(0, "black");
+		grd.addColorStop(0.5, "#273A45");
+		grd.addColorStop(0.6, "black");
+		grd.addColorStop(1, "black");
+		ctx.fillStyle = grd;
+		ctx.shadowBlur = 5;
+		ctx.shadowOffsetX = 5;
+		ctx.shadowOffsetY = 5;
+		ctx.shadowColor = "grey";		
+		ctx.beginPath();
+		ctx.moveTo(x + radius, y);
+		ctx.arcTo(x + width, y, x + width, y + height, radius);
+		ctx.arcTo(x + width, y + height, x, y + height, radius);
+		ctx.arcTo(x, y + height, x, y, radius);
+		ctx.arcTo(x, y, x + width, y, radius);
+		ctx.closePath();
+		ctx.arc(x + radius, y + radius, radius / 2, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.arc(x + width - radius, y + radius, radius / 2, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.arc(x + width - radius, y + height - radius, radius / 2, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.arc(x + radius, y + height - radius, radius / 2, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
+	}
+	function drawScreen() {
+		const ctx = screen.getContext('2d');
+		if (image)
+			ctx.putImageData(image, 0, 0);
+	}
+	function idle(timeStamp) {
+		if (when <= timeStamp) {
+			when = timeStamp + interval;
+			fxMainIdle();
+		}
+		window.requestAnimationFrame(idle);    
+	}
+	function launch() {
+		const width = screen.width;
+		const height = screen.height;
+		const pointer = fxMainLaunch(width, height);
+		const array = new Uint8ClampedArray(wasmMemory.buffer, pointer, width * height * 4);
+		image = new ImageData(array, width, height);
+	}
+	function _mousedown(event) {
+		event.preventDefault();
+		tracking++;
+		_touch(0, 0, event.clientX, event.clientY, event.timeStamp);
+	}
+	function _mousemove(event) {
+		event.preventDefault();
+		if (tracking)
+			_touch(3, 0, event.clientX, event.clientY, event.timeStamp);
+	}
+	function _mouseup(event) {
+		event.preventDefault();
+		tracking--;
+		_touch(2, 0, event.clientX, event.clientY, event.timeStamp);
+	}
+	function onBufferChanged() {
+		drawScreen();
+	}
+	function onFormatChanged(which) {
+		info.innerHTML = pixelFormats[which];
+	}
+	function onStart(it) {
+		interval = it;
+		when = performance.now();
+		window.requestAnimationFrame(idle);    
+	}
+	function onStop() {
+		interval = 0;
+	}
+	function quit() {
+		image = null;
+		fxMainQuit();
+	}
+	function rotate() {
+		quit();
+		if (orientation == 0) {
+			orientation = 90;
+			screenWidth = 240;
+			screenHeight = 320;
+			deviceWidth = 320;
+			deviceHeight = 480;
+		}
+		else {
+			orientation = 0;
+			screenWidth = 320;
+			screenHeight = 240;
+			deviceWidth = 480;
+			deviceHeight = 320;
+		}
+		const bounds = body.getBoundingClientRect();
+		screen.width = screenWidth;
+		screen.height = screenHeight;
+		screen.style.left = ((bounds.width - screenWidth) >> 1) + 'px';
+		screen.style.width = screenWidth + 'px';
+		screen.style.top = ((deviceHeight - screenHeight) >> 1) + 'px';
+		screen.style.height = screenHeight + 'px';
+		
+		device.width = deviceWidth;
+		device.height = deviceHeight;
+		device.style.left = ((bounds.width - deviceWidth) >> 1) + 'px';
+		device.style.width = deviceWidth + 'px';
+		device.style.top = '0px';
+		device.style.height = deviceHeight + 'px';
+		drawDevice();
+		launch();
+	}
+	function _touch(kind, index, x, y, when) {
+		const bounds = screen.getBoundingClientRect();
+		fxMainTouch(kind, index, x - bounds.left, y - bounds.top, when);
+	}
+	function _touches(event, kind) {
+		var touches = event.changedTouches;
+		var c = touches.length;
+		for (var i = 0; i < c; i++) {
+			var touch = touches[i];
+			_touch(kind, touch.identifier, touch.pageX, touch.pageY, event.timeStamp);
+		}
+	}
+	function _touchcancel(event) {
+		event.preventDefault();
+		tracking--;
+		_touches(event, 1);
+	}
+	function _touchend(event) {
+		event.preventDefault();
+		tracking--;
+		_touches(event, 2);
+	}
+	function _touchmove(event) {
+		event.preventDefault();
+		if (tracking)
+			_touches(event, 3);
+	}
+	function _touchstart(event) {
+		event.preventDefault();
+		tracking++;
+		_touches(event, 0);
+	}
+
+    var Module = {
+   		preRun: [],
+        postRun: [
+        	function() {
+				fxMainIdle = Module._fxMainIdle;
+				fxMainLaunch = Module._fxMainLaunch;
+				fxMainQuit = Module._fxMainQuit;
+				fxMainTouch = Module._fxMainTouch;
+				screen.addEventListener("mousedown", _mousedown, false);
+				screen.addEventListener("mousemove", _mousemove, false);
+				screen.addEventListener("mouseup", _mouseup, false);
+				screen.addEventListener("touchcancel", _touchcancel, false);
+				screen.addEventListener("touchend", _touchend, false);
+				screen.addEventListener("touchmove", _touchmove, false);
+				screen.addEventListener("touchstart", _touchstart, false);
+				launch();
+        	}
+        ],
+	}
+	
+	drawButton();
+	drawDevice();
+</script>
+<script async type="text/javascript" src="mc.js"></script>
+</body>
+</html>
