@@ -20,6 +20,7 @@ This document provides an introduction to getting started building apps with the
 	* [Host environment setup](#host-linux)
 	* [ESP8266](#esp8266-linux)
 	* [ESP32](#esp32-linux)
+* [Troubleshooting](#troubleshooting)
 * [Debugging applications](#debugging-applications)
 * [ESP8266 Arduino version 2.4](#arduino-version)
 
@@ -657,6 +658,107 @@ More detailed getting started guides are available for the following devices:
 	```
 
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
+
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+When you're trying to install applications, you may experience roadblocks in the form of errors or warnings; this section explains some common issues and how to resolve them.
+
+### Device not connected/recognized
+
+The following error message means that the device is not connected to your computer or the computer doesn't recognize the device.
+
+```text
+error: cannot access /dev/cu.SLAB_USBtoUART
+```
+
+There are a few reasons this can happen:
+ 
+- Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands. 
+- You have a USB cable that is power only. Make sure you're using a data sync-capable USB cable.
+- The computer does not recognize your device. To fix this problem, follow the instructions for your operating system below.
+
+#### macOS/Linux
+
+To test whether your computer recognizes your device, unplug the device and enter the following command.
+
+```
+ls /dev/cu*
+```
+
+Then plug in the device and repeat the same command. If nothing new appears in the terminal output, the device isn't being recognized by your computer. Make sure you have the correct VCP driver installed. 
+
+If it is recognized, you now have the device name and you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `/dev/cu.SLAB_USBtoUART` with the name of the device on your system.
+
+```text
+export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
+```
+
+#### Windows
+
+Check the list of USB devices in Device Manager. If your device shows up as an unknown device, make sure you have the correct VCP driver installed.
+
+If your device shows up on a COM port other than COM3, you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `COM3` with the appropriate device COM port for your system.
+
+```text
+set UPLOAD_PORT=COM3
+```
+
+### Incompatible baud rate
+
+The following warning message is normal and is no cause for concern.
+
+```text
+warning: serialport_set_baudrate: baud rate 921600 may not work
+```
+
+However, sometimes the upload starts but does not complete. You can tell an upload is complete after the progress bar traced to the console goes to 100%. For example:
+
+```text
+........................................................... [ 16% ]
+........................................................... [ 33% ]
+........................................................... [ 49% ]
+........................................................... [ 66% ]
+........................................................... [ 82% ]
+........................................................... [ 99% ]
+..                                                         [ 100% ]
+```
+
+There are a few reasons the upload may fail partway through:
+
+- You have a faulty USB cable.
+- You have a USB cable that does not support higher baud rates.
+- You're using a board that requires a lower baud rate than the default baud rate that the Moddable SDK uses.
+
+To solve the last two problems above, you can change to a slower baud rate as follows: 
+
+1. If you're working with an ESP32, open `moddable/tools/mcconfig/make.esp32.mk`; if an ESP8266, open `moddable/tools/mcconfig/make.esp.mk`. 
+
+2. Find this line, which sets the upload speed to 921600:
+
+    `UPLOAD_SPEED ?= 921600`
+
+3. Set the speed to a smaller number. For example:
+
+    `UPLOAD_SPEED ?= 115200`
+ 
+### ESP32 is not in bootloader mode
+
+If an ESP32 is not in bootloader mode, you cannot flash the device. Most development boards built with the ESP32 include circuitry that automatically puts them into bootloader mode when you try to reflash the board. Some do not, and sometimes the auto programming will fail. This is most common on Windows machines. 
+
+When your ESP32 is not in bootloader mode, status messages stop being traced briefly when you attempt to flash the device, and after several seconds this error message is traced to the console:
+
+```text
+A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header
+```
+
+To manually put your ESP32 into bootloader mode, follow these steps:
+
+1. Unplug the device.
+2. Hold down the BOOT button.
+3. Plug the device into your computer.
+4. Enter the `mcconfig` command.
+5. Wait a few seconds and release the BOOT button.
 
 <a id="debugging-applications"></a>
 ## Debugging applications

@@ -11,9 +11,8 @@ This document describes how to start building Moddable applications for Moddable
 	- [Components](#components)
 	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
-
 - [Building and Deploying Apps](#building-and-deploying-apps)
-
+- [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
@@ -72,6 +71,11 @@ After you've set up your host environment, take the following steps to install a
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+See the Troubleshooting section of the [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) for a list of common issues and how to resolve them.
 
 <a id="development-resources"></a>
 ## Development Resources
