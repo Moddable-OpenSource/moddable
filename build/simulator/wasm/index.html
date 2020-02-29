@@ -182,7 +182,7 @@ html, body, div {
 		const width = screen.width;
 		const height = screen.height;
 		const pointer = fxMainLaunch(width, height);
-		const array = new Uint8ClampedArray(wasmMemory.buffer, pointer, width * height * 4);
+		const array = new Uint8ClampedArray(Module.HEAP8.buffer, pointer, width * height * 4);
 		image = new ImageData(array, width, height);
 	}
 	function _mousedown(event) {
