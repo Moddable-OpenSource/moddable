@@ -43,12 +43,16 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		let {fast = true, scanResponseData = null, advertisingData} = params;
 		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
-		if (flags & (GAP.ADFlag.LE_LIMITED_DISCOVERABLE_MODE | GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE)) {
-			// Connectable mode
-			interval = fast ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_SLOW_INTERVAL;
-		} else {
-			// Non-Connectable Mode
-			interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
+		if (undefined !== params.interval)
+			interval = params.interval;
+		else {
+			if (flags & (GAP.ADFlag.LE_LIMITED_DISCOVERABLE_MODE | GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE)) {
+				// Connectable mode
+				interval = fast ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_SLOW_INTERVAL;
+			} else {
+				// Non-Connectable Mode
+				interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
+			}
 		}
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
