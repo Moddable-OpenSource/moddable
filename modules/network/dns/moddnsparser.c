@@ -32,7 +32,7 @@ static void *getPacket(xsMachine *the, uint8_t **end)
 	result = xsmcToArrayBuffer(xsResult);
 	//@@ also support host buffer... to avoid packet copy
 	if (end) {
-		uint32_t length = xsGetArrayBufferLength(xsResult);
+		uint32_t length = xsmcGetArrayBufferLength(xsResult);
 		*end = length + (uint8_t *)result;
 	}
 	return result;

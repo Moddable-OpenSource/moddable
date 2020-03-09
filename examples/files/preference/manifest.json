@@ -1,49 +1,11 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json",
+	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/files/preference/*"
 		]
 	},
-	"preload": [
-		"preference"
-	],
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/esp/*"
-				]
-			}
-		},
-		"esp32": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/esp32/*"
-				]
-			}
-		},
-		"qca4020": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/qca4020/*"
-				]
-			}
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/mac/*"
-				]
-			}
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/win/*"
-				]
-			}
-		}
-	}
 }

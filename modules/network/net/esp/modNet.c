@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,6 +28,9 @@
 #else
 	#include "user_interface.h"
 #endif
+
+#include "lwip/err.h"
+#include "lwip/dns.h"
 
 void twoHex(uint8_t value, char *out)
 {
@@ -167,5 +170,24 @@ void xs_net_get(xsMachine *the)
 #else
 		xsResult = xsInteger(wifi_get_channel());
 #endif
+	}
+	else if (0 == espStrCmp(prop, "DNS")) {
+		u8_t i = 0;
+
+		xsResult = xsNewArray(0);
+		xsVars(1);
+		do {
+			ip_addr_t addr = dns_getserver(i);
+#if LWIP_IPV4 && LWIP_IPV6
+			if (!addr.u_addr.ip4.addr)
+#else
+			if (!addr.addr)
+#endif
+				break;
+
+			xsVar(0) = xsStringBuffer(NULL, 32);
+			ipaddr_ntoa_r(&addr, xsToString(xsVar(0)), 32);
+			xsSet(xsResult, i++, xsVar(0));
+		} while (true);
 	}
 }

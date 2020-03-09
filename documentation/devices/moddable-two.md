@@ -1,7 +1,7 @@
 # Getting Started with Moddable Two
 
-Copyright 2019 Moddable Tech, Inc.<BR>
-Revised: May 17, 2019
+Copyright 2019-2020 Moddable Tech, Inc.<BR>
+Revised: February 27, 2020
 
 This document describes how to start building Moddable applications for Moddable Two. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Two.
 
@@ -11,12 +11,12 @@ This document describes how to start building Moddable applications for Moddable
 	- [Components](#components)
 	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
-
 - [Building and Deploying Apps](#building-and-deploying-apps)
-
+- [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
+	- [Backlight](#backlight)
 	- [Support](#support)
 	- [Updates](#updates)
 
@@ -65,12 +65,17 @@ After you've set up your host environment, take the following steps to install a
 	
 	Use the platform `-p esp32/moddable_two`  with `mcconfig` to build for Moddable Two. For example, to build the [`piu/balls` example](../../examples/piu/balls):
 	
-	```
+	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p esp32/moddable_two
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+See the Troubleshooting section of the [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) for a list of common issues and how to resolve them.
 
 <a id="development-resources"></a>
 ## Development Resources
@@ -91,6 +96,49 @@ All the documentation for the Moddable SDK is in the [documentation](../) direct
 - The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.
 - The `networking` subdirectory, which contains networking resources related to BLE, network sockets, and a variety of standard, secure networking protocols built on sockets including HTTP/HTTPS, WebSockets, DNS, SNTP, and telnet.
 - The `pins` subdirectory, which contains resources related to supported hardware protocols (digital, analog, PWM, I2C, etc.). A number of drivers for common off-the-shelf sensors and corresponding example apps are also available.
+
+<a id="backlight"></a>
+### Backlight
+The original Moddable Two has an always-on backlight. The second revision has the ability to adjust the backlight brightness in software. Moddable Two units with backlight brightness control are identified by the small `ESP32 r9` printed on the back of the board to the right of the Moddable logo. 
+
+The backlight control is connected to GPIO 18. There is a constant defined for the backlight GPIO in the host config.
+
+```javascript
+import "config" from "mc/config";
+
+Digital.write(config.backlight, 1);	// backlight ON
+Digital.write(config.backlight, 0);	// backlight OFF
+```
+
+The brightness of the backlight may be set at build time in the `config` section of your project manifest. It defaults to 100%.
+
+```javascript
+"config": {
+	"brightness": 75
+}
+```
+
+You can also set the brightness on the command line when building with `mcconfig`. Here it is set to 50%.
+
+```text
+mcconfig -d -m -p esp32/moddable_two backlight=50
+```
+
+The `setup/target` module for Moddable Two installs a global variable named `backlight` that you can use to adjust the backlight in your code. Here it is set to 80%.
+
+```javascript
+backlight.write(80);
+```
+
+The `backlight` global contains an instance of a subclass of `PWM`. If you do not want the `setup/target` to create this `PWM` instance, set the brightness to `"none"` in the `config` section of your project's manifest.
+
+```javascript
+"config": {
+	"brightness": "none",
+},
+```
+
+**Note**: Backlight support is present in all builds using the `esp32/moddable_two` build target, however it only works for revision two.
 
 <a id="support"></a>
 ### Support

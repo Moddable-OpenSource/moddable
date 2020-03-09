@@ -607,10 +607,10 @@ Here above `style ` will look for `OpenSans-BoldItalic-16.fnt`, `appStyle` will 
 
 Applications can tile skins using their `tiles` property. The size of the tiles is determined by left, right, top, and bottom values, as follows:
 
-- If no size values are defined, the skin becomes a 1-part pattern. The entire texture is repeated to fill the content.
-- If only `left` and `right` are defined, the skin becomes a horizontal 3-part pattern. The left part is drawn at the left of the content, the right part is drawn at the right of the content, and the center part is repeated to fill the center of the content.
-- If only `top` and `bottom` are defined, the skin becomes a vertical 3-part pattern. The top part is drawn at the top of the content, the bottom part is drawn at the bottom of the content, and the middle part is repeated to fill the middle of the content.
-- If all attributes are defined, the skin becomes a 9-part pattern. Corner parts are drawn in the corresponding corners of the content, side parts are repeated in the sides, and the middle part is repeated to fill the middle.
+- If the `tiles` property is undefined or if its `left`, `right`, `top` and `bottom` values are all undefined, the skin is just an image, for instance an icon.
+- Else if only the `left` or `right` values are defined, the skin becomes a horizontal 3-part pattern. The left part is drawn at the left of the content, the right part is drawn at the right of the content, and the center part is repeated to fill the center of the content.
+- Else if only the `top` or `bottom` values are defined, the skin becomes a vertical 3-part pattern. The top part is drawn at the top of the content, the bottom part is drawn at the bottom of the content, and the middle part is repeated to fill the middle of the content.
+- Else the skin becomes a 9-part pattern. Corner parts are drawn in the corresponding corners of the content, side parts are repeated in the sides, and the middle part is repeated to fill the middle. The `left`, `right`, `top` and `bottom` values can all be defined to 0 to fill the content with the skin.
 
 Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitarily sized contents.
 

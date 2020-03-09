@@ -82,7 +82,7 @@ class ControlsHeaderBehavior extends Behavior {
 		if (model.devices.length > 1) { 
 			let data = {
 				button: row,
-				items: model.devices.map((device, index) => ({ title:device.export.default.title, index })),
+				items: model.devices.map((device, index) => ({ title: device.title, index })),
 			};
 			data.items.splice(model.deviceIndex, 1);
 			application.add(new ControlsMenu(data));
@@ -391,6 +391,33 @@ export var SliderRow = Row.template(function($) { return {
 			},
 		}),
 		Label($, { left:0, right:0, style:controlValueStyle, string:$.value + $.unit }),
+	],
+}});
+
+export var StatusRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { 
+			left:0, right:0, style:controlValueStyle,
+			Behavior: class extends Behavior {
+				onCreate(label, data) {
+					this.data = data;
+				}
+				onDataChanged(label) {
+					let data = this.data;
+					let item = data.items.find(item => item.value == data.value);
+					if (item)
+						label.string = item.title;
+				}
+				onDisplaying(label) {
+					let data = this.data;
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = label;
+					this.onDataChanged(label);
+				}
+			},
+		}),
 	],
 }});
 

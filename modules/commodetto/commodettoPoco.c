@@ -25,6 +25,7 @@
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
 #include "stdlib.h"
+#include "stdbool.h"
 
 #include "xsPlatform.h"
 #include "xsmc.h"
@@ -633,7 +634,7 @@ void xs_poco_drawFrame(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsGetArrayBufferLength(xsArg(0));
+		dataSize = xsmcGetArrayBufferLength(xsArg(0));
 		PocoDisableGC(poco);
 	}
 	else {

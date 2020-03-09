@@ -93,9 +93,9 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 9
+#define XS_MAJOR_VERSION 10
 #define XS_MINOR_VERSION 0
-#define XS_PATCH_VERSION 2
+#define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -157,6 +157,12 @@ enum {
 	XS_CODE_BRANCH_1,
 	XS_CODE_BRANCH_2,
 	XS_CODE_BRANCH_4,
+	XS_CODE_BRANCH_CHAIN_1,
+	XS_CODE_BRANCH_CHAIN_2,
+	XS_CODE_BRANCH_CHAIN_4,
+	XS_CODE_BRANCH_COALESCE_1,
+	XS_CODE_BRANCH_COALESCE_2,
+	XS_CODE_BRANCH_COALESCE_4,
 	XS_CODE_BRANCH_ELSE_1,
 	XS_CODE_BRANCH_ELSE_2,
 	XS_CODE_BRANCH_ELSE_4,
@@ -167,7 +173,6 @@ enum {
 	XS_CODE_BRANCH_STATUS_2,
 	XS_CODE_BRANCH_STATUS_4,
 	XS_CODE_CALL,
-	XS_CODE_CALL_TAIL,
 	XS_CODE_CATCH_1,
 	XS_CODE_CATCH_2,
 	XS_CODE_CATCH_4,
@@ -184,6 +189,7 @@ enum {
 	XS_CODE_CONST_LOCAL_1,
 	XS_CODE_CONST_LOCAL_2,
 	XS_CODE_CONSTRUCTOR_FUNCTION,
+	XS_CODE_COPY_OBJECT,
 	XS_CODE_CURRENT,
 	XS_CODE_DEBUGGER,
 	XS_CODE_DECREMENT,
@@ -204,10 +210,12 @@ enum {
 	XS_CODE_EVAL_ENVIRONMENT,
 	XS_CODE_EVAL_PRIVATE,
 	XS_CODE_EVAL_REFERENCE,
+	XS_CODE_EVAL_TAIL,
 	XS_CODE_EXCEPTION,
 	XS_CODE_EXPONENTIATION,
 	XS_CODE_EXTEND,
 	XS_CODE_FALSE,
+	XS_CODE_FIELD_FUNCTION,
 	XS_CODE_FILE,
 	XS_CODE_FOR_AWAIT_OF,
 	XS_CODE_FOR_IN,
@@ -226,6 +234,7 @@ enum {
 	XS_CODE_GET_SUPER,
 	XS_CODE_GET_SUPER_AT,
 	XS_CODE_GET_THIS,
+	XS_CODE_GET_THIS_VARIABLE,
 	XS_CODE_GET_VARIABLE,
 	XS_CODE_GLOBAL,
 	XS_CODE_HOST,
@@ -238,7 +247,6 @@ enum {
 	XS_CODE_INTEGER_1,
 	XS_CODE_INTEGER_2,
 	XS_CODE_INTEGER_4,
-	XS_CODE_INTRINSIC,
 	XS_CODE_LEFT_SHIFT,
 	XS_CODE_LESS,
 	XS_CODE_LESS_EQUAL,
@@ -279,6 +287,7 @@ enum {
 	XS_CODE_REFRESH_CLOSURE_2,
 	XS_CODE_REFRESH_LOCAL_1,
 	XS_CODE_REFRESH_LOCAL_2,
+	XS_CODE_REGEXP,
 	XS_CODE_RESERVE_1,
 	XS_CODE_RESERVE_2,
 	XS_CODE_RESET_CLOSURE_1,
@@ -292,6 +301,14 @@ enum {
 	XS_CODE_RETRIEVE_TARGET,
 	XS_CODE_RETRIEVE_THIS,
 	XS_CODE_RETURN,
+	XS_CODE_RUN,
+	XS_CODE_RUN_1,
+	XS_CODE_RUN_2,
+	XS_CODE_RUN_4,
+	XS_CODE_RUN_TAIL,
+	XS_CODE_RUN_TAIL_1,
+	XS_CODE_RUN_TAIL_2,
+	XS_CODE_RUN_TAIL_4,
 	XS_CODE_SET_CLOSURE_1,
 	XS_CODE_SET_CLOSURE_2,
 	XS_CODE_SET_HOME,
@@ -324,6 +341,7 @@ enum {
 	XS_CODE_SYMBOL,
 	XS_CODE_TARGET,
 	XS_CODE_TEMPLATE,
+	XS_CODE_TEMPLATE_CACHE,
 	XS_CODE_THIS,
 	XS_CODE_THROW,
 	XS_CODE_THROW_STATUS,
@@ -363,9 +381,7 @@ enum {
 
 enum {
 	mxEnumeratorIntrinsic = 0,
-	mxEvalIntrinsic,
 	mxCopyObjectIntrinsic,
-	mxRegExpIntrinsic,
 	mxIntrinsicCount,
 };
 
@@ -377,6 +393,7 @@ enum {
 	mxStrictFlag = 1 << 4,
 	mxSuperFlag = 1 << 5,
 	mxTargetFlag = 1 << 6,
+	mxFieldFlag = 1 << 15,
 };
 
 extern void fxDeleteScript(txScript* script);
@@ -409,6 +426,7 @@ txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
 txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
 
 /* ? */
+mxExport void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path);
 mxExport void fxVReport(void* console, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportError(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
@@ -603,6 +621,7 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
+	_AggregateError,
 	_Array,
 	_ArrayBuffer,
 	_Atomics,
@@ -663,7 +682,6 @@ enum {
 	_Compartment,
 	_Function,
 	_eval,
-	___proto__,
 	_AsyncFunction,
 	_AsyncGeneratorFunction,
 	_BYTES_PER_ELEMENT,
@@ -685,6 +703,11 @@ enum {
 	_SQRT1_2,
 	_SQRT2,
 	_UTC,
+	___defineGetter__,
+	___defineSetter__,
+	___lookupGetter__,
+	___lookupSetter__,
+	___proto__,
 	_abs,
 	_acos,
 	_acosh,
@@ -693,6 +716,7 @@ enum {
 	_all,
 	_allSettled,
 	_and,
+	_any,
 	_append,
 	_apply,
 	_arguments,
@@ -759,6 +783,8 @@ enum {
 	_entries,
 	_enumerable,
 	_enumerate,
+	_errors,
+	_evaluate,
 	_every,
 	_exchange,
 	_exec,
@@ -833,10 +859,12 @@ enum {
 	_id,
 	_ignoreCase,
 	_import,
+	_importSync,
 	_imul,
 	_includes,
 	_index,
 	_indexOf,
+	_indices,
 	_input,
 	_is,
 	_isArray,
@@ -906,6 +934,7 @@ enum {
 	_reject,
 	_repeat,
 	_replace,
+	_replaceAll,
 	_resolve,
 	_result,
 	_return,
@@ -996,6 +1025,8 @@ enum {
 	_transfers,
 	_trim,
 	_trimEnd,
+	_trimLeft,
+	_trimRight,
 	_trimStart,
 	_trunc,
 	_unicode,
@@ -1015,10 +1046,8 @@ enum {
 	__xsbug_script_,
 	XS_ID_COUNT
 };
-#ifdef mxFewGlobalsTable
-#define XS_FEW_GLOBALS_COUNT ___proto__
-#endif
-#define XS_SYMBOL_ID_COUNT _Array
+#define XS_SYMBOL_ID_COUNT _AggregateError
+#define XS_INTRINSICS_COUNT _AsyncFunction
 
 extern const txString gxIDStrings[XS_ID_COUNT];
 

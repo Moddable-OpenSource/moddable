@@ -60,7 +60,7 @@ void xs_ota_write(xsMachine *the)
 {
 	esp_err_t err;
 	xsOTA ota = xsmcGetHostData(xsThis);
-	int size = xsGetArrayBufferLength(xsArg(0));
+	int size = xsmcGetArrayBufferLength(xsArg(0));
 	void *data = xsmcToArrayBuffer(xsArg(0));
 
 	err = esp_ota_write(ota->handle, data, size);

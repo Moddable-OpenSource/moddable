@@ -160,10 +160,12 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment(info.path, global);
-						let device = compartment.export.default;
+						let compartment = new Compartment(global);
+						let device = compartment.importSync(info.path).default;
 						if (device && ("DeviceTemplate" in device)) {
-							devices.push(compartment);
+							device.compartment = compartment;
+							device.default = device;
+							devices.push(device);
 							let name = device.applicationName;
 							if (name) {
 								let path = system.applicationPath;
@@ -184,7 +186,7 @@ class ApplicationBehavior extends Behavior {
 			}
 			info = iterator.next();
 		}
-		devices.sort((a, b) => a.export.default.title.compare(b.export.default.title));
+		devices.sort((a, b) => a.title.compare(b.title));
 		
 		let length = devices.length;
 		if (index < 0)
@@ -197,7 +199,7 @@ class ApplicationBehavior extends Behavior {
 		application.distribute("onDeviceUnselected");
 	
 		this.deviceIndex = index;
-		let device = (index < 0) ? noDevice : this.devices[index].export.default;
+		let device = (index < 0) ? noDevice : this.devices[index];
 		
 		let screenContainer = new device.DeviceTemplate(device);
 		let container = this.DEVICE;
@@ -298,7 +300,7 @@ class ApplicationBehavior extends Behavior {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
 			this.quitScreen();
-			let index = this.devices.findIndex(device => device.export.default.applicationPath == path);
+			let index = this.devices.findIndex(device => device.applicationPath == path);
 			if ((index >= 0) && (index != this.deviceIndex))
 				this.selectDevice(application, index);
 			this.screenPath = path;

@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
 #define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xsro")))

@@ -145,10 +145,13 @@ class ToDoFile extends FILE {
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
+			let targetDirectory = tool.modulesPath;
+			if (targetParts.directory)
+				targetDirectory += tool.slash + targetParts.directory;
 			let line = ["xsc"];
 			if (tool.debug)
 				line.push("-d");
-			line.push("-e", source, "-o", tool.modulesPath, "-r", targetParts.name);
+			line.push("-e", source, "-o", targetDirectory, "-r", targetParts.name);
 			lines.push(line);
 		}
 	}

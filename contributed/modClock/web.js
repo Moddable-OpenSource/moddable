@@ -17,13 +17,13 @@ import config from "mc/config";
 import Time from "time";
 
 const PROD_NAME = "ModClock";
+const SPACES = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
 export class html_content {
 
 	static clockScripts(style, server) {
 		return `
 <script src="${server}current_version.js?${Time.ticks}"></script>
-<script src="${server}html5kellycolorpicker.min.js"></script>
 <script type="text/javascript">
 	let lastSelected = "${style.tag}";
 	function showStyleDiv(select) {
@@ -48,6 +48,18 @@ export class html_content {
 		document.body.appendChild(form);
 		form._submit_function_();
 	}
+
+	function fmtClr(c) {
+		c = c.trim();
+		if (c[0] == "#")
+			c = c.slice(1);
+		if (c.length < 3)
+			c = (c + "000").slice(0,2);
+		if (c.length < 4)
+			return "#" + c[0] + "0" + c[1] + "0" + c[2] + "0";
+		return ("#" + c + "000").slice(0,7);
+	}
+
 </script>\n`;
 	}
 
@@ -60,8 +72,8 @@ export class html_content {
 		return `Trying ssid:<b>${ssid}</b>. Reconnect to the Wi-Fi access point ${ssid} and try <a href="http://${name}.local">http://${name}.local</a><br>`;
 	}
 
-	static redirectHead(name, sec=3) {
-		return `<html><head><meta http-equiv="refresh" content="${sec}; url=http://${name}.local"><title>${name}</title></head>`;
+	static redirectHead(name, sec=3, path="") {
+		return `<html><head><meta http-equiv="refresh" content="${sec}; url=http://${name}.local${path.length?path:""}"><title>${name}</title></head>`;
 	}
 
 	static bodyPrefix() {
@@ -73,14 +85,14 @@ export class html_content {
 	}
 
 	static noAccessPointSet() {
-		return `Please set the name of your clock and connect to an access point.<p>`;
+		return `<h2>Please set the name of your clock and connect to an access point.<p></h2>`;
 	}
 
 	static accessPointSection(apList, selected="", name) {
 		let body = `<h2>Access point</h2><form action="/set-ssid" method="post"><div><label name="ssid">SSID: </label>`;
 
 	    if (apList.length > 0) {
-	        body += '<select name="ssid_select">';
+	        body += '<select class="select-css" name="ssid_select">';
 			apList.forEach(function(ap) {
 				body += `<option value="${ap.ssid}" `;
 				if (ap.ssid == selected)
@@ -88,29 +100,39 @@ export class html_content {
 				body += `>${ap.ssid}</option>`;
 			});
 
-			body += `</select>&nbsp;&nbsp;Other:`;
+			body += `</select>${SPACES}Other:`;
 		}
 
-		body += `<input type="text" id="ssid" name="ssid"><p>
+		body += `<input type="text" width="64" id="ssid" name="ssid"><p>
 <label for="password">password: </label>
 <input type="password" id="password" name="password" minlength="8"></div><p>
 <div><label name="name">Name:</label>
-<input type="text" id="name" name="clock_name" value="${name}"></div><p>
-<div class="button"><button>Set SSID</button></div>
+<input type="text" width="64" id="name" name="clock_name" value="${name}"></div><p>
+<div><button class="button pressButton">Set SSID</button></div>
 </form>`;
+/*
 	    if (apList.length > 0)
-			body += `<div class="button"><button onclick="postToURL('http://${name}.local/rescanSSID',{submit:'submit'})">Rescan SSIDs</button></div>`;
+			body += `<div><button class="button pressButton" onclick="postToURL('http://${name}.local/rescanSSID',{submit:'submit'})">Rescan SSIDs</button></div>`;
+*/
 		return body;
 	}
 
 
-	static selection(name, items, selected) {
-		let x = `<select name="${name}">`;
+	static selection(name, items, selected, indexed=1, sclass="select-css") {
+		let x = `<select class="${sclass}" name="${name}">`;
 		for (let i=0; i<items.length; i++) {
-			x += `<option value=${i}`;
-			if (selected == i)
-				x += ` selected`;
-			x += `>${items[i]}</option>`;
+			if (1 === indexed) {
+				x += `<option value="${i}"`;
+				if (selected == i)
+					x += ` selected`;
+				x += `>${items[i]}</option>`;
+			}
+			else {
+				x += `<option value="${items[i]}"`;
+				if (selected === items[i])
+					x += ` selected`;
+				x += `>${items[i]}</option>`;
+			}
 		}
 		x += `</select>`;
 		return x;
@@ -139,9 +161,9 @@ slider${name}.oninput = function() {
 		if (undefined === clock.ota) {
 			body += `<span id="id_update_html">Checking for update</span><p><script type="text/javascript">
 if (check_update("${clock.getbuildstring().trim()}"))
-	document.getElementById("id_update_html").innerHTML = "<h2>Update Available</h2>Clock version: ${clock.getbuildstring()}<p>Server version: <b>" + current_version() + "</b><p><div class='button'><button onclick=\\"postToURL('http://${clock.prefs.name}.local/checkForUpdate',{submit:'submit'})\\">Update</button></div>";
+	document.getElementById("id_update_html").innerHTML = "<h2>Update Available</h2>Clock version: ${clock.getbuildstring()}<p>Server version: <b>" + current_version() + "</b><p>" + version_description() + "<p><div><button class=\\"button pressButton\\" onclick=\\"postToURL('http://${clock.prefs.name}.local/checkForUpdate',{submit:'submit'})\\">Update</button></div>";
 else
-	document.getElementById("id_update_html").innerHTML = "<h2>Up to date</h2>Version: ${clock.getbuildstring()}<p>";</script>`;
+	document.getElementById("id_update_html").innerHTML = "<h2>Up to date</h2>Version: ${clock.getbuildstring()}<p>"+version_description();</script>`;
 		}
 		else if (clock.ota.error !== 0) {
 			body += `<hr><h2>Update</h2><div><b>Error on previous update attempt: ${clock.ota.error}.</b></div><p>`;
@@ -150,9 +172,9 @@ else
 		return body;
 	}
 
-	static clockStyleSection(clock) {
+	static clockStyleSection(clock, server) {
 		let i;
-		let body = `<form action="/style" method="post"><h2>Style</h2><div><label>Style:</label><select id="style" name="style" onchange="showStyleDiv(this)">`;
+		let body = `<form action="/style" method="post"><h2>Style</h2><div><label>Style:</label><select class="select-css" id="style" name="style" onchange="showStyleDiv(this)">`;
 
     	for (i=0; i<clock.styles.length; i++) {
         	body += `<option value="${clock.styles[i].tag}"`;
@@ -160,7 +182,7 @@ else
             	body += ' selected';
         	body += `>${clock.styles[i].name}</option>`;
     	}
-    	body += '</select>';
+    	body += '</select><p>';
 
     	for (i=0; i<clock.styles.length; i++) {
         	body += `<div id="hidden_style_${clock.styles[i].tag}"`;
@@ -175,64 +197,139 @@ else
     	body += `</div><p>`;
     	body += clock.currentStyle.base_options_html();
 
-    	// brightness sliders
+    	// brightness slider
     	body += `<div><label>Brightness:</label>`;
     	body += html_content.slider("brightness", clock.prefs.brightness);
 
-    	body += `</div><p><h2>Tail</h2>Tail Brightness:</label>`;
-
-    	body += html_content.slider("tail_brightness", clock.prefs.tail_brightness);
-    	body += `</div><p><div><label name="extra">Extra pixels: </label>
-<input type="text" id="extra" name="extra" value="${clock.prefs.extra}">
-<select name="tail_order">`;
-
-    	for (i=0; i<clock.display.supportedFormats.length; i++) {
-        	body += `<option value=${i}`;
-        	if (clock.prefs.tail_order == clock.display.supportedFormats[i])
-				body += ' selected';
-       		body += `>${clock.display.supportedFormats[i]}</option>`;
-		}
-
-    	body += `</select></div><p><div class="button"><button>Set Style</button></div></form>`;
+		body += `</div><p><div><button class="button pressButton">Set Style</button></div></form>`;
 		return body;
 	}
 
-	static clockOptionsSection(prefs) {
+	static selectOptions(name, set, value, useIndex=0) {
+		let body = `<select class="select-css" name="${name}">`;
+		if (useIndex) {
+			for (let i=0; i<set.length; i++) {
+				body += `<option value=${i}`;
+				if (undefined !== value && value === i)
+					body += ' selected';
+				body += '>' + set[i].name + '</option>';
+			}
+		}
+		else {
+			for (let i=0; i<set.length; i++) {
+				body += `<option value=${set[i]}`;
+				if (undefined !== value && value == set[i])
+					body += ' selected';
+				body += '>' + set[i] + '</option>';
+			}
+		}
+		return body + `</select>`;
+	}
+	
+	static timeFormatted(v) {
+		let m = v%100;
+		let h = (v/100)|0;
+		return `${("0"+h).slice(-2)}:${("0"+m).slice(-2)}`;
+	}
+
+	static clockTailSection(clock) {
 		let i;
-		let body = `<h2>Clock Options</h2><form action="/clockOptions" method="post"><div><label>Name:</label>&nbsp;&nbsp;&nbsp;
-<input type="text" id="clock_name" name="clock_name" value="${prefs.name}">
-&nbsp;&nbsp;<a href="http://${prefs.name}.local">http://<b>${prefs.name}</b>.local</a></div><div><label>Timezone:</label>`;
+		let body = `<h2>Tail</h2>
+<form action="/tail" method="post">
+<div><p>
+<input type="checkbox" name="tail_on"  ${(clock.prefs.tail_on?" checked":"")} value="1">${SPACES}
+<label>Tail on</label>
 
-	    body += html_content.selection("timezone", html_content.tzNames, prefs.tz);
-		body += `</div><p><div><label>12 hour:</label>
-<input type="checkbox" name="twelve" ${(prefs.twelve?" checked":"")} value="1">
-&nbsp;&nbsp;<label>Daylight Savings:</label>
-<input type="checkbox" name="dst"  ${(prefs.dst?" checked":"")} value="1">
-</div><p><div><label>Layout:</label>
-<select name="layout">`;
+<p><input type="checkbox" name="tail_sched"  ${(clock.prefs.tail_sched?" checked":"")} value="1">${SPACES}
+<label>Use schedule</label>${SPACES}
+Turn on at: <input type="time" name="tail_time_on" value="${html_content.timeFormatted(clock.prefs.tail_time_on)}">${SPACES}
+Turn off at: <input type="time" name="tail_time_off" value="${html_content.timeFormatted(clock.prefs.tail_time_off)}">
 
-		for (i=0; i<config.seven_segments.length; i++) {
-			body += '<option value=' + i;
-			if (undefined !== prefs.layout && prefs.layout == i)
-				body += ' selected';
-			body += '>' + config.seven_segments[i].name + '</option>';
-		}
-		body += `</select>&nbsp;&nbsp;&nbsp;<label>Pin:</label><select name="pin">`;
-
-		for (i=0; i<prefs.available_pins.length; i++) {
-			body += `<option value=${prefs.available_pins[i]}`;
-			if (undefined !== prefs.pin && prefs.pin == prefs.available_pins[i])
-				body += ' selected';
-			body += '>' + prefs.available_pins[i] + '</option>';
-		}
-		body += `</select></div><p><div class="button"><button>Set Clock options</button></div></form>`;
+<p><label>Display all pixels as tail</label>
+<input type="checkbox" name="tail_only" ${(clock.prefs.tail_only?" checked":"")} value="1"><p>
+<label>Tail Brightness:</label>
+${html_content.slider("tail_brightness", clock.prefs.tail_brightness)}
+</div><p>
+<div><label name="extra">Tail length: </label>
+<input type="text" id="extra" name="extra" value="${clock.prefs.extra}">
+${html_content.selectOptions("tail_order", clock.display.supportedFormats, clock.prefs.tail_order)}
+</div><p>
+<div><button class="button pressButton">Set Tail options</button></div></form>`;
 		return body;
+	}
+
+	static clockOptionsSection(clock) {
+		let i;
+		let body = `<h2>Clock Options</h2>
+<form action="/options" method="post">
+<div><label>Name:</label>${SPACES}
+<input type="text" width=25 id="clock_name" name="clock_name" value="${clock.prefs.name}">
+${SPACES}<a href="http://${clock.prefs.name}.local">
+http://<b>${clock.prefs.name}</b>.local</a></div><p>
+<div><label>Timezone:</label>
+${html_content.selection("timezone", html_content.tzNames, clock.prefs.tz)}
+${SPACES}<label>12 hour:</label>
+<input type="checkbox" name="twelve" ${(clock.prefs.twelve?" checked":"")} value="1">
+${SPACES}<label>Daylight Savings:</label>
+${html_content.selectOptions("dst", clock.prefs.dst_types, clock.prefs.dst_types[clock.prefs.dst], 0)}
+</div><p>
+<div><label>Layout:</label>
+${html_content.selectOptions("layout", config.seven_segments, clock.prefs.layout, 1)}
+${SPACES}
+<label>Pin: </label>
+${html_content.selection("pin", clock.prefs.neopixel_pins, clock.prefs.pin, 0)}${SPACES}
+<label>Leading zero</label>
+<input type="checkbox" name="zero" ${(clock.prefs.zero?" checked":"")} value="1">
+</div><p><div>
+<label>Button Pins: Left: </label>
+${html_content.selection("buttonA", clock.prefs.button_pins, clock.prefs.buttonA, 0)}
+${SPACES}<label>Right: </label>
+${html_content.selection("buttonB", clock.prefs.button_pins, clock.prefs.buttonB, 0)}
+</select></div>
+<p>
+<div><button class="button pressButton">Set Clock options</button></div></form>`;
+		return body;
+	}
+
+	static clockSetTimeSection(clock) {
+		let now = new Date();
+		let t = now.getHours() * 100 + now.getMinutes();
+		let ret = `<h2>Set time</h2><p>Set time manually if you don't have a network connection.<p>
+<form action="/setTime" method="post">
+Time: <input type="time" name="set_clock_time" value="${html_content.timeFormatted(t)}"><p>
+<div><button class="button pressButton">Set Time</button></div></form>`;
+		return ret;
 	}
 
 	static clockResetPrefsSection(clock) {
-		return `<h2>Reset all</h2>Reset all preferences to factory default.<p>You'll have to reconnect to the <b>clock</b> access point and reconfigure all of your settings.<p><div class="button"><button onclick="postToURL('http://${clock.prefs.name}.local/reset',{submit:'submit'})">Reset all</button>`;
+		return `<h2>Reset all</h2>Reset all preferences to factory default.<p>You'll have to reconnect to the <b>clock</b> access point and reconfigure all of your settings.<p><div><button class="button pressButton" onclick="postToURL('http://${clock.prefs.name}.local/reset',{submit:'submit'})">Reset all</button></div>`;
 	}
-		
+
+	
+	static head(name, server) {
+		return `<html><head><title>${name}</title><link rel="stylesheet" href="${server}clock.css" type="text/css"></html>`;
+	}
+
+	static masthead(prod, name) {
+		return `<p class="inline prodTitle">ModClock</p> ${SPACES}${SPACES}${SPACES}<p class="inline configLink">http://${name}.local</p>`;
+	}
+
+	static ota_status(val, max) {
+		return `<div class="high_impact"><b>Updating</b> - Received ${val} of ${max === undefined ? "unknown" : max}</div><p>`;
+	}
+
+	static selection_bar(selections, selected) {
+		let msg = `<div>`;
+		for (let i=0; i<selections.length; i++) {
+			msg += `<a href="${selections[i].link}" class="button ${i==selected?"buttonHilite":"buttonShadow"}"`;
+			if (undefined !== selections[i].target)
+				msg += `target="${selections[i].target}"`;
+			msg += `>${selections[i].title}</a>`;
+		}
+
+		return msg + `</div>`;
+	}
+
 };
 
 

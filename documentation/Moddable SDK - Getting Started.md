@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
-Copyright 2016-2019 Moddable Tech, Inc.<BR>
-Revised: November 11, 2019
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
+Revised: February 27, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -20,6 +20,7 @@ This document provides an introduction to getting started building apps with the
 	* [Host environment setup](#host-linux)
 	* [ESP8266](#esp8266-linux)
 	* [ESP32](#esp32-linux)
+* [Troubleshooting](#troubleshooting)
 * [Debugging applications](#debugging-applications)
 * [ESP8266 Arduino version 2.4](#arduino-version)
 
@@ -30,13 +31,13 @@ Before you can build applications, you need to set up your host environment and 
 
 The instructions below will have you verify your setup by running the `helloworld` example on your target platform using `mcconfig`, a command line tool that builds and runs Moddable applications. You use a platform identifier to specify which target `mcconfig` should build for. This document contains instructions for the ESP8266 and ESP32 platforms, which use the platform identifiers `esp` and `esp32`, respectively. For example:
 
-```
+```text
 mcconfig -d -m -p esp
 ```
 
 To build for other ESP8266 or ESP32-based devices--for example the Moddable One and Moddable Two--you must also specify a subplatform. For example:
 
-```
+```text
 mcconfig -d -m -p esp/moddable_one
 ```
 
@@ -102,14 +103,14 @@ More detailed getting started guides are available for the following devices:
 	
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
-	```
+	```text
 	cd ~/Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
 4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory and edit the `PATH` environment variable in your `~/.profile` to include the build directory:
 
-	```
+	```text
 	export MODDABLE="/Users/<user>/Projects/moddable"
 	export PATH="${MODDABLE}/build/bin/mac/release:$PATH"
 	```
@@ -118,20 +119,20 @@ More detailed getting started guides are available for the following devices:
 	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
-	```
+	```text
 	cd ${MODDABLE}/build/makefiles/mac
 	make
 	```
 	
 6. Launch the `xsbug` debugger from the command line:
 
-	```
+	```text
 	open ${MODDABLE}/build/bin/mac/release/xsbug.app
 	```
 
 7. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
-	```
+	```text
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
@@ -151,21 +152,21 @@ More detailed getting started guides are available for the following devices:
 
 6. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
-	```
+	```text
 	cd ~/esp
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
 	We need version 3.2:
 
-	```
+	```text
 	cd ESP8266_RTOS_SDK
 	git checkout release/v3.2
 	```
 	
 7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
-	```
+	```text
 	brew install python
 	sudo easy_install pip
 	pip install --user pyserial
@@ -175,7 +176,7 @@ More detailed getting started guides are available for the following devices:
 
 9. Verify the setup by building `helloworld` for the `esp` target:
 
-	```
+	```text
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp
 	```
@@ -195,14 +196,14 @@ More detailed getting started guides are available for the following devices:
 
 5. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
-	```
+	```text
 	cd ~/esp32
 	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 6. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
 
-	```
+	```text
 	export IDF_PATH="/Users/<user>/esp32/esp-idf"
 	```
 
@@ -210,14 +211,14 @@ More detailed getting started guides are available for the following devices:
 	
 7. Install Python and the `pip` package management system:
 
-	```
+	```text
 	brew install python
 	sudo easy_install pip
 	```
 	
 8. Install the required Python packages:
 
-	```
+	```text
 	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
@@ -231,26 +232,26 @@ More detailed getting started guides are available for the following devices:
 
 	To determine the serial port, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial devices, use the following command in Terminal:
 	
-	```
+	```text
 	ls /dev/cu.*
 	```
 
 11. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
 
-	```
+	```text
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
 
 	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
 	
-	```
+	```text
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
 	
 12. Verify the setup by building `helloworld` for the `esp32` target:
 
 
-	```
+	```text
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp32
 	```
@@ -259,7 +260,7 @@ More detailed getting started guides are available for the following devices:
 
 	> If you encounter SSL certificate errors while building the ESP-IDF, you may need to install Python 2.7 and the required packages manually. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 	>
-	```
+	```text
 	brew install python
 	brew install python@2
 	pip install future
@@ -283,20 +284,20 @@ More detailed getting started guides are available for the following devices:
 
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
-	```
+	```text
 	cd C:\Users\<user>\Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
 4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
 
-	```
+	```text
 	set MODDABLE=C:\Users\<user>\Projects\moddable
 	```
 	
 5. Edit the system `PATH` environment variable to include the build directory:
 
-	```
+	```text
 	%MODDABLE%\build\bin\win\release
 	```
 	
@@ -304,20 +305,20 @@ More detailed getting started guides are available for the following devices:
 	
 6. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
-	```
+	```text
 	cd %MODDABLE%\build\makefiles\win
 	build
 	```
 	
 7. Launch the `xsbug` debugger from the command line:
 
-	```
+	```text
 	xsbug
 	```
 	
 8. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
-	```
+	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p win
 	```
@@ -341,14 +342,14 @@ More detailed getting started guides are available for the following devices:
 
 8. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
-	```
+	```text
 	cd C:\Users\<user>\esp
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
 	We need version 3.2:
 
-	```
+	```text
 	cd ESP8266_RTOS_SDK
 	git checkout release/v3.2
 	```
@@ -357,14 +358,14 @@ More detailed getting started guides are available for the following devices:
 
 10. Edit the system `PATH` environment variable to include the Python directories:
 
-	```
+	```text
 	C:\Python27
 	C:\Python27\Scripts
 	```
 
 11. Open a "Command Prompt" window and install the `pyserial` Python Serial Port Extension:
 
-	```
+	```text
 	pip install pyserial
 	```
 	
@@ -374,24 +375,23 @@ More detailed getting started guides are available for the following devices:
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-14. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+14. Set the `BASE_DIR` and `UPLOAD_PORT` environment variables to your `%USERPROFILE%` directory and device COM port:
 
-	```
+	```text
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
-	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
 	```
 
 
 15. Edit the system `PATH` environment variable to include the `cygwin\bin` directory:
 
-	```
+	```text
 	%BASE_DIR%\esp\cygwin\bin
 	```
 
 14. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp` target:
 
-	```
+	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp
 	```
@@ -407,26 +407,26 @@ More detailed getting started guides are available for the following devices:
 
 4. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
 
-	```
+	```text
 	%USERPROFILE%\msys32\mingw32.exe
 	```
 	
 5. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
 
-	```
+	```text
 	mkdir ~/esp
 	```
 	
 6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp` directory. Make sure to specify the `--recursive` option:
 
-	```
+	```text
 	cd ~/esp
 	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 7. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
 
-	```
+	```text
 	export IDF_PATH="C:/Users/<your-user-name>/msys32/home/<your-user-name>/esp/esp-idf"
 	```
 
@@ -438,7 +438,7 @@ More detailed getting started guides are available for the following devices:
 	
 10. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
 
-	```
+	```text
 	set BASE_DIR=%USERPROFILE%
 	set UPLOAD_PORT=COM3
 	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
@@ -446,7 +446,7 @@ More detailed getting started guides are available for the following devices:
 
 11. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
-	```
+	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
@@ -465,7 +465,7 @@ More detailed getting started guides are available for the following devices:
 
 1. Install the development version of the GTK+ 3 library:
 
-	```
+	```text
 	sudo apt-get install libgtk-3-dev
 	```
 	
@@ -475,34 +475,34 @@ More detailed getting started guides are available for the following devices:
 
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
-	```
+	```text
 	cd ~/Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
 4. Setup the `MODDABLE` environment variable in your `~/.bashrc` file to point at your local Moddable SDK repository directory:
 
-	```
+	```text
 	MODDABLE=~/Projects/moddable
 	export MODDABLE
 	```
 	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
-	```
+	```text
 	cd $MODDABLE/build/makefiles/lin
 	make
 	```
 	
 6. Update the `PATH` environment variable in your `~/.bashrc` to include the tools directory:
 
-	```
+	```text
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
 
 7. Install the Screen Test desktop simulator and `xsbug` debugger applications:
 
-	```
+	```text
 	cd $MODDABLE/build/makefiles/lin
 	make install
 	```
@@ -511,13 +511,13 @@ More detailed getting started guides are available for the following devices:
 	
 8. Launch the `xsbug` debugger from the command line:
 
-	```
+	```text
 	xsbug
 	```
 	
 9. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
-	```
+	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p lin
 	```
@@ -535,22 +535,22 @@ More detailed getting started guides are available for the following devices:
 
 5. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
-	```
+	```text
 	cd ~/esp
 	git clone https://github.com/espressif/ESP8266_RTOS_SDK.git
 	```
 
 	We need version 3.2:
 
-	```
+	```text
 	cd ESP8266_RTOS_SDK
 	git checkout release/v3.2
 	```
 
 6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
-	```
-	brew install python
+	```text
+	sudo apt-get install python
 	sudo easy_install pip
 	pip install --user pyserial
 	```
@@ -559,14 +559,14 @@ More detailed getting started guides are available for the following devices:
 
 8. Verify the setup by building `helloworld` for the `esp` target:
 
-	```
+	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp
 	```
 
 	> The ESP8266 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP8266, add your user to the `dialout` group:
 	> 
-	```
+	```text
 	sudo adduser <username> dialout 
 	sudo reboot
 	```
@@ -584,40 +584,40 @@ More detailed getting started guides are available for the following devices:
 
 4. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
-	```
+	```text
 	cd ~/esp32
 	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 5. Install the packages required to compile with the `ESP-IDF`:
 
-	```
+	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial 
 	```
 	
 6. Set the `IDF_PATH` environment variable in your `~/.bashrc` to the `esp-idf` directory:
 
-	```
+	```text
 	IDF_PATH=~/esp32/esp-idf
 	export IDF_PATH
 	```
 
 7. Install the Python `pip` package management system:
 
-	```
+	```text
 	cd ~/esp32
 	sudo easy_install pip
 	```
 	
 8. Install the required Python packages:
 
-	```
+	```text
 	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
 9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
 
-	```
+	```text
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
 	```
 		
@@ -625,39 +625,144 @@ More detailed getting started guides are available for the following devices:
 
 11. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
 
-	```
+	```text
 	ls /dev
 	```
 	
 12. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
 
-	```
+	```text
 	UPLOAD_PORT=/dev/ttyUSB0
 	export UPLOAD_PORT
 	```
 
 13. Verify the setup by building `helloworld` for the `esp32` target:
 
-	```
+	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp32
 	```
 
 	For Moddable Two applications that rely on the screen or use I2C pins, build for the `esp32` target with the `moddable_two` subplatform.
 
-	```
+	```text
 	cd ${MODDABLE}/examples/piu/balls
 	mcconfig -d -m -p esp32/moddable_two
 	```
 
 	> The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
 	> 
-	```
+	```text
 	sudo adduser <username> dialout 
 	sudo reboot
 	```
 
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
+
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+When you're trying to install applications, you may experience roadblocks in the form of errors or warnings; this section explains some common issues and how to resolve them.
+
+### Device not connected/recognized
+
+The following error message means that the device is not connected to your computer or the computer doesn't recognize the device.
+
+```text
+error: cannot access /dev/cu.SLAB_USBtoUART
+```
+
+There are a few reasons this can happen:
+ 
+- Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands. 
+- You have a USB cable that is power only. Make sure you're using a data sync-capable USB cable.
+- The computer does not recognize your device. To fix this problem, follow the instructions for your operating system below.
+
+#### macOS/Linux
+
+To test whether your computer recognizes your device, unplug the device and enter the following command.
+
+```text
+ls /dev/cu*
+```
+
+Then plug in the device and repeat the same command. If nothing new appears in the terminal output, the device isn't being recognized by your computer. Make sure you have the correct VCP driver installed. 
+
+If it is recognized, you now have the device name and you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `/dev/cu.SLAB_USBtoUART` with the name of the device on your system.
+
+```text
+export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
+```
+
+#### Windows
+
+Check the list of USB devices in Device Manager. If your device shows up as an unknown device, make sure you have the correct VCP driver installed.
+
+If your device shows up on a COM port other than COM3, you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `COM3` with the appropriate device COM port for your system.
+
+```text
+set UPLOAD_PORT=COM3
+```
+
+### Incompatible baud rate
+
+The following warning message is normal and is no cause for concern.
+
+```text
+warning: serialport_set_baudrate: baud rate 921600 may not work
+```
+
+However, sometimes the upload starts but does not complete. You can tell an upload is complete after the progress bar traced to the console goes to 100%. For example:
+
+```text
+........................................................... [ 16% ]
+........................................................... [ 33% ]
+........................................................... [ 49% ]
+........................................................... [ 66% ]
+........................................................... [ 82% ]
+........................................................... [ 99% ]
+..                                                         [ 100% ]
+```
+
+There are a few reasons the upload may fail partway through:
+
+- You have a faulty USB cable.
+- You have a USB cable that does not support higher baud rates.
+- You're using a board that requires a lower baud rate than the default baud rate that the Moddable SDK uses.
+
+To solve the last two problems above, you can change to a slower baud rate as follows: 
+
+1. If you're working with an ESP32, open `moddable/tools/mcconfig/make.esp32.mk`; if an ESP8266, open `moddable/tools/mcconfig/make.esp.mk`. 
+
+2. Find this line, which sets the upload speed to 921600:
+
+    ```text 
+    UPLOAD_SPEED ?= 921600
+    ```
+
+3. Set the speed to a smaller number. For example:
+
+    ```text 
+    UPLOAD_SPEED ?= 115200
+    ```
+ 
+### ESP32 is not in bootloader mode
+
+If an ESP32 is not in bootloader mode, you cannot flash the device. Most development boards built with the ESP32 include circuitry that automatically puts them into bootloader mode when you try to reflash the board. Some do not, and sometimes the auto programming will fail. This is most common on Windows machines. 
+
+When your ESP32 is not in bootloader mode, status messages stop being traced briefly when you attempt to flash the device, and after several seconds this error message is traced to the console:
+
+```text
+A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header
+```
+
+To manually put your ESP32 into bootloader mode, follow these steps:
+
+1. Unplug the device.
+2. Hold down the BOOT button.
+3. Plug the device into your computer.
+4. Enter the `mcconfig` command.
+5. Wait a few seconds and release the BOOT button.
 
 <a id="debugging-applications"></a>
 ## Debugging applications
@@ -677,13 +782,13 @@ You can use version 2.4 today if building on macOS or Linux.
 
 - In `${MODDABLE}/tools/mcconfig/make.esp.mk` change:
 
-	 ```
+	 ```text
 	 ESP_SDK_RELEASE ?= esp8266-2.3.0
 	 ```
 	 
 	 to:
 	 
-	 ```
+	 ```text
 	 ESP_SDK_RELEASE ?= esp8266-2.4.0
 	 ```
 

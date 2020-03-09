@@ -36,7 +36,7 @@ TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 C_OPTIONS = -DmxLinux=1 -fno-common -I$(INC_DIR) -I$(SRC_DIR) -I$(TLS_DIR) -I$(TMP_DIR)
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-misleading-indentation -Wno-implicit-fallthrough
 else
 	C_OPTIONS += -O3
 endif

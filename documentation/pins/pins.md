@@ -155,7 +155,7 @@ import Monitor from "pins/digital/monitor";
 The constructor takes a single dictionary argument containing properties to configure the instance. The `Monitor` dictionary is an extension of the `Digital` constructor accepting `pin`, `port`, and `mode` arguments. Only input modes are allowed for a `Monitor` instance  and the mode cannot be changed after instantiation.
 
 ```js
-let monitor = new Monitor({pin: 0, port: "B", mode: Digital.Input, edges: Monitor.Rising});
+let monitor = new Monitor({pin: 0, port: "B", mode: Digital.Input, edge: Monitor.Rising});
 ```
 
 ***
@@ -210,7 +210,7 @@ let triggers = this.rises + this.falls;
 The following example shows how to receive callbacks on rising and falling edge events.
 
 ```js
-let monitor = new Monitor({pin: 4, mode: Digital.InputPullUp, edges: Monitor.Rising | Monitor.Falling});
+let monitor = new Monitor({pin: 4, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 monitor.onChanged = function() {
 	trace(`Pin value is ${this.read()}\n`);
 }
@@ -315,6 +315,12 @@ The constructor dictionary has an optional `hz` property to specify the speed of
 
 ```js
 let sensor = new I2C({sda: 5, scl: 4, address: 0x48, hz: 1000000});
+```
+
+The constructor dictionary also has an optional `timeout` property to specify the I2C clock stretching timeout in microseonds (μs). Support for this property is device dependent.
+
+```js
+let sensor = new I2C({sda: 5, scl: 4, address: 0x48, timeout: 600});
 ```
 
 Many devices have a default I2C bus. On these devices, the `sda` and `scl` parameters may be omitted from the dictionary to use the default I2C bus.

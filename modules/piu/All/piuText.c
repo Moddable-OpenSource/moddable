@@ -253,9 +253,9 @@ void PiuTextLinkDictionary(xsMachine* the, void* it)
 	}
 	if (xsFindResult(xsArg(1), xsID_Behavior)) {
 		if (xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
-			fxPushCount(the, 0);
 			fxPush(xsResult);
 			fxNew(the);
+			fxRunCount(the, 0);
 			xsResult = fxPop();
 			(*self)->behavior = xsToReference(xsResult);
 		}

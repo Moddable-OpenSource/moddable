@@ -30,6 +30,14 @@ trace(content);
 file.close();
 trace("\n");
 
+// renaming file
+let from = "test.txt";
+let to = "test2.txt";
+File.rename(root + from, root + to);
+if (File.exists(root + to))
+	trace(`${from} renamed to ${to}\n`);
+trace("\n");
+	
 // writing/reading JSON
 let preferences = { name: "Brian", city: "Del Mar", state: "CA" };
 file = new File(root + "preferences.json", true);
@@ -76,6 +84,6 @@ if ("/spiffs/" == root) {
 	trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
 }
 
-File.delete(root + "test.txt");
+File.delete(root + "test2.txt");
 File.delete(root + "preferences.json");
 File.delete(root + "test.bin");

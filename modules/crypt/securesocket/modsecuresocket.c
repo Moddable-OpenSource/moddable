@@ -132,7 +132,7 @@ void xs_securesocket_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])	{	//@@
-					xsResult = xsArrayBuffer(NULL, srcBytes);
+					xsmcSetArrayBuffer(xsResult, NULL, srcBytes);
 					resolveBuffer(the, &xsVar(1), &srcData, NULL);
 					c_memmove(xsmcToArrayBuffer(xsResult), srcData + position, srcBytes);
 				}
@@ -164,7 +164,7 @@ void xs_securesocket_write(xsMachine *the)
 
 	for (pass = 0; pass < 2; pass++ ) {
 		if (1 == pass)
-			xsVar(0) = xsArrayBuffer(NULL, needed);
+			xsmcSetArrayBuffer(xsVar(0), NULL, needed);
 
 		for (arg = 0; arg < argc; arg++) {
 			xsType t = xsmcTypeOf(xsArg(arg));
@@ -191,7 +191,7 @@ void xs_securesocket_write(xsMachine *the)
 			}
 			else if (xsReferenceType == t) {
 				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsGetArrayBufferLength(xsArg(arg));
+					int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 					if (0 == pass)
 						needed += msgLen;
 					else {

@@ -13,7 +13,6 @@
  */
 
 import Poco from "commodetto/Poco";
-import Resource from "Resource";
 
 let render = new Poco(screen);
 

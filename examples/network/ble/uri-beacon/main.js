@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -21,6 +21,7 @@ import BLEServer from "bleserver";
 import {uuid} from "btutils";
 
 const URI = "http://www.moddable.com";
+const SERVICE_UUID = uuid`FED8`;
 
 const schemes = [ 'http://www.', 'https://www.', 'http://', 'https://', 'urn:uuid:' ];
 const domains = [ '.com/', '.org/', '.edu/', '.net/', '.info/', '.biz/', '.gov/', '.com', '.org', '.edu', '.net', '.info', '.biz', '.gov' ];
@@ -28,7 +29,7 @@ const domains = [ '.com/', '.org/', '.edu/', '.net/', '.info/', '.biz/', '.gov/'
 class URIBeacon extends BLEServer {
 	onReady() {
 		this.startAdvertising({
-			advertisingData: {completeUUID16List: [uuid`FED8`], serviceDataUUID16: {uuid: uuid`FED8`, data: this.encodeData(URI)}}
+			advertisingData: {completeUUID16List: [SERVICE_UUID], serviceDataUUID16: {uuid: SERVICE_UUID, data: this.encodeData(URI)}}
 		});
 	}
 	encodeData(uri) {

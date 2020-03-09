@@ -66,7 +66,8 @@ void resolverCallback(GObject *source_object, GAsyncResult *result, gpointer use
 		GInetAddress *address = (GInetAddress*)addresses->data;
 		if (NULL != address) {
 			char *ip = g_inet_address_to_string(address);
-			if (NULL != ip) {
+			if (NULL != ip &&
+			    g_inet_address_get_family(address) == G_SOCKET_FAMILY_IPV4) {
 				nr->resolved = 1;
 				c_strcpy(nr->ip, ip);
 				g_free(ip);

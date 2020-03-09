@@ -213,7 +213,7 @@ void fxDebugCommand(txMachine* the)
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG))
-		fxQueueJob(the, XS_NO_ID);
+		fxQueueJob(the, 3, XS_NO_ID);
 }
 
 void fxDebugImport(txMachine* the, txString path)
@@ -233,29 +233,24 @@ void fxDebugImport(txMachine* the, txString path)
 			break;
 	}
     if (the->debugTag == XS_MODULE_TAG){
-        /* RESULT */
-        mxPushUndefined();
-        fxRunID(the, C_NULL, XS_NO_ID);
+        mxRunCount(3);
         mxPop();
     }
 }
 
-void fxDebugLine(txMachine* the)
+void fxDebugLine(txMachine* the, txID id, txInteger line)
 {
-	txSlot* environment = the->frame - 1;
-	if (environment->ID != XS_NO_ID) {
-		txSlot* breakpoint = C_NULL;
-		breakpoint = mxBreakpoints.value.list.first;
-		while (breakpoint) {
-			if ((breakpoint->ID == environment->ID) && (breakpoint->value.integer == environment->value.environment.line))
-				break;
-			breakpoint = breakpoint->next;
-		}
-		if (breakpoint)
-			fxDebugLoop(the, C_NULL, 0, "breakpoint");
-		else if ((the->frame->flag & XS_STEP_OVER_FLAG))
-			fxDebugLoop(the, C_NULL, 0, "step");
+	txSlot* breakpoint = C_NULL;
+	breakpoint = mxBreakpoints.value.list.first;
+	while (breakpoint) {
+		if ((breakpoint->ID == id) && (breakpoint->value.integer == line))
+			break;
+		breakpoint = breakpoint->next;
 	}
+	if (breakpoint)
+		fxDebugLoop(the, C_NULL, 0, "breakpoint");
+	else if ((the->frame->flag & XS_STEP_OVER_FLAG))
+		fxDebugLoop(the, C_NULL, 0, "step");
 }
 
 void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message)
@@ -283,7 +278,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	fxEcho(the, "<break");
 	frame = the->frame;
 	while (frame && !path) {
-		txSlot* environment = frame - 1;
+		txSlot* environment = mxFrameToEnvironment(frame);
 		if (environment->ID != XS_NO_ID) {
 			path = fxGetKeyName(the, environment->ID);
 			line = environment->value.environment.line;
@@ -657,18 +652,6 @@ void fxDebugPopTag(txMachine* the)
 	case XS_SCRIPT_TAG:
 		mxPop();
 		mxPop();
-		/* COUNT */
-		mxPushInteger(3);
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(mxGlobal);
-		if (the->debugTag == XS_MODULE_TAG)
-			fxGetID(the, fxID(the, "<xsbug:module>"));
-		else
-			fxGetID(the, mxID(__xsbug_script_));
-		/* TARGET */
-		mxPushUndefined();
 		the->debugExit |= 2;
 		break;
 	case XS_SELECT_TAG:
@@ -719,6 +702,15 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPush(mxGlobal);
+		if (the->debugTag == XS_MODULE_TAG)
+			fxGetID(the, fxID(the, "<xsbug:module>"));
+		else
+			fxGetID(the, mxID(__xsbug_script_));
+		mxCall();
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
 		mxPushStringC(the->pathValue);
@@ -787,7 +779,7 @@ void fxDebugThrow(txMachine* the, txString path, txInteger line, txString messag
 	else {
 		txSlot* frame = the->frame;
 		while (frame && !path) {
-			txSlot* environment = frame - 1;
+			txSlot* environment = mxFrameToEnvironment(frame);
 			if (environment->ID != XS_NO_ID) {
 				path = fxGetKeyName(the, environment->ID);
 				line = environment->value.environment.line;
@@ -948,7 +940,7 @@ void fxEchoFrameName(txMachine* the, txSlot* theFrame)
 void fxEchoFramePathLine(txMachine* the, txSlot* theFrame)
 {
 	if (theFrame) {
-		txSlot* environment = theFrame - 1;
+		txSlot* environment = mxFrameToEnvironment(theFrame);
 		if (environment->ID != XS_NO_ID)
 			fxEchoPathLine(the, fxGetKeyName(the, environment->ID), environment->value.environment.line);
 	}
@@ -1422,12 +1414,12 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 							txSlot* aFunction = aParentProperty->value.accessor.getter;
 							if (mxIsFunction(aFunction)) {
 								fxBeginHost(the);
-								mxPushInteger(0);
 								/* THIS */
 								mxPushReference(theInstance);
 								/* FUNCTION */
 								mxPushReference(aFunction);
-								fxCall(the);
+								mxCall();
+								mxRunCount(0);
 								cacheProperty = mxBehaviorSetProperty(the, cache, aParentProperty->ID, XS_NO_ID, XS_ANY);
 								cacheProperty->flag |= XS_INSPECTOR_FLAG;
 								cacheProperty->kind = the->stack->kind;
@@ -1630,7 +1622,9 @@ txSlot* fxFindRealm(txMachine* the)
 	if (frame && (!(frame->flag & XS_C_FLAG))) {
 		txSlot* function = frame + 3;
 		if (mxIsReference(function)) {
-			txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
+            txSlot* instance = function->value.reference;
+            txSlot* home = mxFunctionInstanceHome(instance);
+			txSlot* module = home->value.home.module;
 			realm = mxModuleInstanceInternal(module)->value.module.realm;
 		}
 	}
@@ -1706,13 +1700,13 @@ void fxListLocal(txMachine* the)
 	fxEchoProperty(the, frame + 4, &aList, "this", -1, C_NULL);
 	if (frame->flag & XS_C_FLAG) {
 		txInteger aCount, anIndex;
-		aCount = (frame + 5)->value.integer;
+		aCount = mxArgc;
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, frame + 5 + aCount - anIndex, &aList, "arg(", anIndex, ")");
+			fxEchoProperty(the, mxArgv(anIndex), &aList, "arg(", anIndex, ")");
 		}
-		aCount = (frame - 1)->value.environment.variable.count;
+		aCount = mxVarc;
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, frame - 2 - anIndex, &aList, "var(", anIndex, ")");
+			fxEchoProperty(the, mxVarv(anIndex), &aList, "var(", anIndex, ")");
 		}
 	}
 	else {
@@ -1728,7 +1722,7 @@ void fxListLocal(txMachine* the)
 				aScope = current->value.frame.scope;
 		}
 		if (aScope) {
-			txSlot* aSlot = frame - 1;
+			txSlot* aSlot = mxFrameToEnvironment(frame);
 			txInteger id;
 			while (aSlot > aScope) {
 				aSlot--;
@@ -1945,7 +1939,7 @@ void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, 
 		txInteger line = 0;
 		txSlot* frame = the->frame;
 		while (frame && !path) {
-			txSlot* environment = frame - 1;
+			txSlot* environment = mxFrameToEnvironment(frame);
 			if (environment->ID != XS_NO_ID) {
 				path = fxGetKeyName(the, environment->ID);
 				line = environment->value.environment.line;
@@ -2063,6 +2057,16 @@ void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txStri
 #endif
 }
 
+void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path)
+{
+	txMachine* the = console;
+	if (path)
+		snprintf(buffer, bufferSize, "#%d@%s", the->tag, path);
+	else
+		snprintf(buffer, bufferSize, "#%d", the->tag);
+	the->tag++;
+}
+
 void fxVReport(void* console, txString theFormat, c_va_list theArguments)
 {
 #ifdef mxDebug
@@ -2156,7 +2160,7 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #ifdef mxInstrument	
-#define xsInstrumentCount 10
+#define xsInstrumentCount 11
 static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",
 	"Chunk available",
@@ -2168,6 +2172,7 @@ static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Keys used",
 	"Modules loaded",
 	"Parser used",
+	"Floating Point",
 };
 static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" / ",
@@ -2180,6 +2185,7 @@ static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" keys",
 	" modules",
 	" bytes",
+	" operations",
 };
 
 void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units)
@@ -2238,6 +2244,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
 	xsInstrumentValues[8] = the->loadedModulesCount;
 	xsInstrumentValues[9] = the->peakParserSize;
+	xsInstrumentValues[10] = the->floatingPointOps;
 
 	txInteger i, j = 0;
 #ifdef mxDebug

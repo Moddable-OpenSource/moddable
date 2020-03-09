@@ -1,3 +1,6 @@
-let map = Compartment.map;
-delete map.increment;
-let mod = new Compartment("mod", {}, map);
+let compartment = new Compartment({}, { 
+	"*": { 
+		"mod":"mod"
+	}
+});
+compartment.import("mod");

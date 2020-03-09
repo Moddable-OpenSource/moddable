@@ -239,13 +239,7 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 		gxCodeUsages[code]++;	
 		offset = (txS1)sizes[code];
 		if (0 < offset) {
-			if (XS_CODE_INTRINSIC == code) {
-				p++;
-				mxDecode2(p, id);
-				linker->intrinsicFlags[id] = 1;
-			}
-			else
-				p += offset;
+			p += offset;
 		}
 		else if (0 == offset) {
 			p++;
@@ -255,7 +249,7 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 				id = theIDs[id];
 				p -= 2;
 				mxEncode2(p, id);
-				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_VARIABLE == code)) {
+				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_THIS_VARIABLE == code) || (XS_CODE_GET_VARIABLE == code)) {
 					fxReferenceLinkerSymbol(linker, id);
 				}
 			}
@@ -416,7 +410,6 @@ txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAd
 	mxThrowElse(fread(version, sizeof(version), 1, aFile) == 1);	
 	mxAssert(version[0] == XS_MAJOR_VERSION);
 	mxAssert(version[1] == XS_MINOR_VERSION);
-	mxAssert(version[2] == XS_PATCH_VERSION);
 	mxAssert(version[3] != 1);
 	
 	mxThrowElse(fread(&atom, sizeof(atom), 1, aFile) == 1);	
@@ -533,7 +526,6 @@ void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddr
 	mxThrowElse(fread(version, sizeof(version), 1, aFile) == 1);	
 	mxAssert(version[0] == XS_MAJOR_VERSION);
 	mxAssert(version[1] == XS_MINOR_VERSION);
-	mxAssert(version[2] == XS_PATCH_VERSION);
 	
 	mxThrowElse(fread(&atom, sizeof(atom), 1, aFile) == 1);	
 	atom.atomSize = ntohl(atom.atomSize);

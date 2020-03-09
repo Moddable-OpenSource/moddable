@@ -215,6 +215,10 @@ C_DEFINES = \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
 	-DmxFewGlobalsTable=1
+C_DEFINES += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough \
+	-Wno-empty-body
 ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif

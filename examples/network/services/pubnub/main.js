@@ -31,7 +31,7 @@ function publishSampleMessage() {
 
 pubnub.addListener({
 	message(event) {
-		trace(event.message + "\n");
+		trace(JSON.stringify(event.message) + "\n");
 	},
 	status(event) {
 		if (event.category === "PNConnectedCategory") {

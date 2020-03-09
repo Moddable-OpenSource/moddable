@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -31,6 +31,7 @@ static uint8_t modI2CActivate(modI2CConfiguration config);
 static uint32_t gHz;		// non-zero when driver initialized
 static uint16_t gSda;
 static uint16_t gScl;
+static uint16_t gTimeout = DEFAULT_ESP32_I2C_TIMEOUT;
 
 void modI2CInit(modI2CConfiguration config)
 {
@@ -127,6 +128,12 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 	gHz = conf.master.clk_speed;
 	gSda = conf.sda_io_num;
 	gScl = conf.scl_io_num;
+
+	if (config->timeout == 0) config->timeout = DEFAULT_ESP32_I2C_TIMEOUT;
+	if (config->timeout != gTimeout){
+		i2c_set_timeout(I2C_NUM_1, config->timeout);
+		gTimeout = config->timeout;
+	}
 
 	return 0;
 }

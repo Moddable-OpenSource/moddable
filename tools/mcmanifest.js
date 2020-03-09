@@ -92,7 +92,7 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateConfigurationRules(tool) {
-		if ("esp32" != tool.platform) return;
+		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
 		// Read base sdkconfig file
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
@@ -293,7 +293,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
-				options += " -m";
+				options += " -p";
 			if (tool.debug)
 				options += " -d";
 			if (tool.config)
@@ -1074,6 +1074,14 @@ export class Tool extends TOOL {
 				break;
 			case "-v":
 				this.verbose = true;
+				break;
+			case "-t":
+				if (++argi >= argc)
+					throw new Error("-t: no build target!");
+				if (undefined === this.buildTarget)
+					this.buildTarget = argv[argi];
+				else
+					this.buildTarget = this.buildTarget + " " + argv[argi];
 				break;
 			default:
 				name = argv[argi];

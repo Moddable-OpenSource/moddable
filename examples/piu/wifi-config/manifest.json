@@ -68,8 +68,6 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
 			"./assets/header-arrow",
 			"./assets/wifi-strip",
-			"./assets/down-arrow-mask",
-			"./assets/up-arrow-mask",
 			"./assets/page-1",
 		],
 	},
