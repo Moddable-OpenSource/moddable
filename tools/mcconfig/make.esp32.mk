@@ -71,6 +71,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps \
+	$(IDF_PATH)/components/lwip/include/apps/sntp \
  	$(IDF_PATH)/components/lwip/lwip/src/include \
  	$(IDF_PATH)/components/lwip/port/esp32/include \
  	$(IDF_PATH)/components/mbedtls/include \

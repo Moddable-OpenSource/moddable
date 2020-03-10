@@ -432,7 +432,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	if (!connection) return;
 	if (argc > 1) {
 		ble_uuid_any_t uuid;
-		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
 		ble_gattc_disc_svc_by_uuid(conn_id, (const ble_uuid_t *)&uuid, nimble_service_event, NULL);
 	}
 	else {
@@ -455,7 +455,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 		csr->obj = xsThis;
 		if (argc > 3) {
 			ble_uuid_any_t uuid;
-			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
+			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
 			ble_gattc_disc_chrs_by_uuid(conn_id, start, end, (const ble_uuid_t *)&uuid, nimble_characteristic_event, csr);
 		}
 		else {
@@ -495,7 +495,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(2));
-	uint16_t length = xsGetArrayBufferLength(xsArg(2));
+	uint16_t length = xsmcGetArrayBufferLength(xsArg(2));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	ble_gattc_write_no_rsp_flat(conn_id, handle, buffer, length);
@@ -569,7 +569,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(2));
-	uint16_t length = xsGetArrayBufferLength(xsArg(2));
+	uint16_t length = xsmcGetArrayBufferLength(xsArg(2));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	ble_gattc_write_no_rsp_flat(conn_id, handle, buffer, length);

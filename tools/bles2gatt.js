@@ -67,7 +67,7 @@ class ESP32GATTFile extends GATTFile {
 		if (this.client || this.server) {
 			options.push({ name:"CONFIG_BT_ENABLED", value:"y" });
 			if (this.nimble) {
-				options.push({ name:"CONFIG_BT_NIMBLE_ENABLED", value:"y" });
+				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"y" });
 				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"n" });
 				options.push({ name:"CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY", value:"y" });
 				options.push({ name:"CONFIG_NIMBLE_SM_LEGACY", value:"y" });
@@ -77,7 +77,7 @@ class ESP32GATTFile extends GATTFile {
 			}
 			else {
 				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"y" });
-				options.push({ name:"CONFIG_BT_NIMBLE_ENABLED", value:"n" });
+				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"n" });
 				options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
 				options.push({ name:"CONFIG_GATTS_ENABLE", value:(this.server ? "y" : "n") });
 				options.push({ name:"CONFIG_GATTC_ENABLE", value:(this.client ? "y" : "n") });

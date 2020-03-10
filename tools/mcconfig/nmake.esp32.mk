@@ -89,6 +89,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
+	-I$(IDF_PATH)\components\lwip\include\apps\sntp \
 	-I$(IDF_PATH)\components\lwip\lwip\src\include \
 	-I$(IDF_PATH)\components\lwip\port\esp32\include \
 	-I$(IDF_PATH)\components\mbedtls\include \

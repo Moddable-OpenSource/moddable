@@ -185,17 +185,18 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint32_t intervalMin = xsmcToInteger(xsArg(0));
-	uint32_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;	
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 	struct ble_gap_adv_params adv_params;
 	
 	c_memset(&adv_params, 0, sizeof(adv_params));
-	adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
-	adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+	adv_params.conn_mode = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? BLE_GAP_CONN_MODE_UND : BLE_GAP_CONN_MODE_NON;
+	adv_params.disc_mode = (flags & LE_GENERAL_DISCOVERABLE_MODE) ? BLE_GAP_DISC_MODE_GEN : (flags & LE_LIMITED_DISCOVERABLE_MODE ? BLE_GAP_DISC_MODE_LTD : BLE_GAP_DISC_MODE_NON);
 	adv_params.itvl_min = intervalMin;
 	adv_params.itvl_max = intervalMax;
 	if (NULL != advertisingData)
@@ -216,7 +217,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	uint16_t notify = xsmcToInteger(xsArg(1));
 	struct os_mbuf *om;
 
-	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
 	if (notify)
 		ble_gattc_notify_custom(gBLE->conn_id, handle, om);
 	else
@@ -482,9 +483,9 @@ static void readEvent(void *the, void *refcon, uint8_t *message, uint16_t messag
 	}
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
 	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
-		readDataRequest data = c_malloc(sizeof(readDataRequestRecord) + xsGetArrayBufferLength(xsResult));
+		readDataRequest data = c_malloc(sizeof(readDataRequestRecord) + xsmcGetArrayBufferLength(xsResult));
 		if (NULL != data) {
-			data->length = xsGetArrayBufferLength(xsResult);
+			data->length = xsmcGetArrayBufferLength(xsResult);
 			c_memmove(data->data, xsmcToArrayBuffer(xsResult), data->length);
 			gBLE->requestResult = data;
 		}
