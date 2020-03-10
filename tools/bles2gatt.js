@@ -69,7 +69,7 @@ class ESP32GATTFile extends GATTFile {
 			if (this.nimble) {
 				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"y" });
 				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"n" });
-				options.push({ name:"CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY", value:"y" });
+				options.push({ name:"CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value:"y" });
 				options.push({ name:"CONFIG_NIMBLE_SM_LEGACY", value:"y" });
 				options.push({ name:"CONFIG_NIMBLE_SM_SC", value:"y" });
 				options.push({ name:"CONFIG_NIMBLE_ROLE_PERIPHERAL", value:(this.server ? "y" : "n") });
