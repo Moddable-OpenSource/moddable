@@ -35,6 +35,12 @@ struct modI2CConfigurationRecord {
 	uint8_t						address;		// 7-bit
 };
 
+#define modI2CConfig(config, HZ, SDA_PIN, SCL_PIN, ADDRESS, TIMEOUT)  \
+    config.hz = HZ;                                                   \
+    config.sda = SDA_PIN;                                             \
+    config.scl = SCL_PIN;                                             \
+    config.address = ADDRESS;
+
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
 

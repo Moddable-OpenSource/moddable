@@ -70,7 +70,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_unicode), C_NULL, mxID(_unicode), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxRegExpPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_RegExp), 2, mxID(_RegExp));
-	mxRegExpConstructor = mxRegExpIntrinsic = *the->stack;
+	mxRegExpConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	the->stack++;
@@ -100,16 +100,16 @@ txSlot* fxCheckRegExpInstance(txMachine* the, txSlot* slot)
 
 void fxExecuteRegExp(txMachine* the, txSlot* regexp, txSlot* argument)
 {
-	mxPushSlot(argument);
-	mxPushInteger(1);
 	mxPushSlot(regexp);
-	mxPushSlot(regexp);
+	mxDub();
 	fxGetID(the, mxID(_exec));
 	if ((the->stack->kind != XS_REFERENCE_KIND) || (!mxIsFunction(the->stack->value.reference))) {
 		the->stack->kind = mxExecuteRegExpFunction.kind;
 		the->stack->value = mxExecuteRegExpFunction.value;
 	}
-	fxCall(the);
+	mxCall();
+	mxPushSlot(argument);
+	mxRunCount(1);
 	if ((the->stack->kind != XS_NULL_KIND) && (the->stack->kind != XS_REFERENCE_KIND))
 		mxTypeError("invalid exec result");
 }
@@ -191,7 +191,7 @@ void fx_RegExp(txMachine* the)
 	txSlot* pattern = ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) ? mxArgv(0) : C_NULL;
 	txSlot* flags = ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) ? mxArgv(1) : C_NULL;
 	txBoolean patternIsRegExp = (pattern && fxIsRegExp(the, pattern)) ? 1 : 0;
-	txSlot* instance = C_NULL;
+	
 	if (mxTarget->kind == XS_UNDEFINED_KIND) {
 		if (patternIsRegExp && !flags) {
 			mxPushSlot(pattern);
@@ -209,8 +209,9 @@ void fx_RegExp(txMachine* the)
 		mxPushSlot(mxTarget);
 	}
 	fxGetPrototypeFromConstructor(the, &mxRegExpPrototype);
-	instance = fxNewRegExpInstance(the);
-	mxPullSlot(mxResult);		
+	fxNewRegExpInstance(the);
+	mxPush(mxInitializeRegExpFunction);
+	mxCall();
 	if (patternIsRegExp) {
 		mxPushSlot(pattern);
 		fxGetID(the, mxID(_source));
@@ -231,10 +232,7 @@ void fx_RegExp(txMachine* the)
 		else
 			mxPushUndefined();
 	}
-	mxPushInteger(2);
-	mxPushReference(instance);
-	mxPush(mxInitializeRegExpFunction);
-	fxCall(the);
+	mxRunCount(2);
 	mxPullSlot(mxResult);
 #else
 	mxUnknownError("not built-in");
@@ -450,10 +448,14 @@ void fx_RegExp_prototype_exec(txMachine* the)
 	offset = (globalFlag || stickyFlag) ? fxUnicodeToUTF8Offset(argument->value.string, lastIndex) : 0;
 
 	if (fxMatchRegExp(the, regexp->value.regexp.code, regexp->value.regexp.data, argument->value.string, offset)) {
-		txSlot* array;
-		txSlot* item;
-		txSlot* object;
-		txSlot* property;
+		txSlot* resultArray;
+		txSlot* resultItem;
+		txSlot* indicesArray;
+		txSlot* indicesItem;
+		txSlot* resultObject;
+		txSlot* resultProperty;
+		txSlot* indicesObject;
+		txSlot* indicesProperty;
 		txInteger count;
 		txInteger index;
 		txInteger length;
@@ -465,51 +467,80 @@ void fx_RegExp_prototype_exec(txMachine* the)
 			mxPop();
 		}
 		mxPush(mxArrayPrototype);
-		array = fxNewArrayInstance(the);
-		item = fxLastProperty(the, array);
+		resultArray = fxNewArrayInstance(the);
+		resultItem = fxLastProperty(the, resultArray);
+		mxPush(mxArrayPrototype);
+		indicesArray = fxNewArrayInstance(the);
+		indicesItem = fxLastProperty(the, indicesArray);
 		if (namedFlag) {
-			object = fxNewInstance(the);
-			property = fxLastProperty(the, object);
+			resultObject = fxNewInstance(the);
+			resultProperty = fxLastProperty(the, resultObject);
+			indicesObject = fxNewInstance(the);
+			indicesProperty = fxLastProperty(the, indicesObject);
 		}
 		count = regexp->value.regexp.code[1];
 		for (index = 0; index < count; index++) {
-			item = item->next = fxNewSlot(the);
-			offset = regexp->value.regexp.data[2 * index];
-			if (offset >= 0) {
-				length = regexp->value.regexp.data[(2 * index) + 1] - offset;
-				item->value.string = (txString)fxNewChunk(the, length + 1);
-				c_memcpy(item->value.string, argument->value.string + offset, length);
-				item->value.string[length] = 0;
-				item->kind = XS_STRING_KIND;
+			txInteger start = regexp->value.regexp.data[2 * index];
+			resultItem = resultItem->next = fxNewSlot(the);
+			indicesItem = indicesItem->next = fxNewSlot(the);
+			if (start >= 0) {
+				txInteger end = regexp->value.regexp.data[(2 * index) + 1];
+				length = end - start;
+				resultItem->value.string = (txString)fxNewChunk(the, length + 1);
+				c_memcpy(resultItem->value.string, argument->value.string + start, length);
+				resultItem->value.string[length] = 0;
+				resultItem->kind = XS_STRING_KIND;
+				mxPushInteger(start);
+				mxPushInteger(end);
+				fxConstructArrayEntry(the, indicesItem);
 			}
 			if (namedFlag) {
 				txID name = (txID)(regexp->value.regexp.code[2 + index]);
 				if (name != XS_NO_ID) {
-					property = property->next = fxNewSlot(the);
-					property->value = item->value;
-					property->kind = item->kind;
-					property->ID = name;
+					resultProperty = resultProperty->next = fxNewSlot(the);
+					resultProperty->value = resultItem->value;
+					resultProperty->kind = resultItem->kind;
+					resultProperty->ID = name;
+					indicesProperty = indicesProperty->next = fxNewSlot(the);
+					indicesProperty->value = indicesItem->value;
+					indicesProperty->kind = indicesItem->kind;
+					indicesProperty->ID = name;
 				}
 			}
-			array->next->value.array.length++;
+			resultArray->next->value.array.length++;
+			indicesArray->next->value.array.length++;
 		}
-		fxCacheArray(the, array);
-		item = fxLastProperty(the, array);
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_index);
-		item->kind = XS_INTEGER_KIND;
-		item->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_input);
-		item->value.string = argument->value.string;
-		item->kind = argument->kind;
-		item = item->next = fxNewSlot(the);
-		item->ID = mxID(_groups);
+		fxCacheArray(the, indicesArray);
+		indicesItem = fxLastProperty(the, indicesArray);
+		indicesItem = indicesItem->next = fxNewSlot(the);
+		indicesItem->ID = mxID(_groups);
 		if (namedFlag) {
-			item->value.reference = object;
-			item->kind = XS_REFERENCE_KIND;
+			indicesItem->value.reference = indicesObject;
+			indicesItem->kind = XS_REFERENCE_KIND;
 			mxPop();
 		}
+		fxCacheArray(the, resultArray);
+		resultItem = fxLastProperty(the, resultArray);
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_index);
+		resultItem->kind = XS_INTEGER_KIND;
+		resultItem->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_input);
+		resultItem->value.string = argument->value.string;
+		resultItem->kind = argument->kind;
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_groups);
+		if (namedFlag) {
+			resultItem->value.reference = resultObject;
+			resultItem->kind = XS_REFERENCE_KIND;
+			mxPop();
+		}
+		resultItem = resultItem->next = fxNewSlot(the);
+		resultItem->ID = mxID(_indices);
+		resultItem->value.reference = indicesArray;
+		resultItem->kind = XS_REFERENCE_KIND;
+		mxPop();
 	}
 	else {
 		if (globalFlag || stickyFlag) {
@@ -587,7 +618,6 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 {
 #if mxRegExp
 	txSlot* argument;
-	txSlot* constructor;
 	txBoolean global = 0;
 	txSlot* matcher;
 	txSlot* iterator;
@@ -606,16 +636,13 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	constructor = the->stack;
-	
+	mxNew();	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
 	if (c_strchr(fxToString(the, the->stack), 'g'))
 		global = 1;
-	mxPushInteger(2);
-	mxPushSlot(constructor);
-	fxNew(the);	
+	mxRunCount(2);
 	matcher = the->stack;
 	
 	mxPushSlot(mxThis);
@@ -778,7 +805,12 @@ void fx_RegExp_prototype_replace(txMachine* the)
             c = fxToInteger(the, the->stack);
 			mxPop();
 
-            mxPushSlot(matched);
+           	if (function) {
+                mxPushUndefined();
+                mxPushSlot(function);
+            	mxCall();
+            }
+           	mxPushSlot(matched);
             for (i = 1; i < c; i++) {
                 mxPushSlot(result);
                 fxGetID(the, i);
@@ -786,19 +818,16 @@ void fx_RegExp_prototype_replace(txMachine* the)
                		fxToString(the, the->stack);
             }
             if (function) {
-                mxPushInteger(position);
-                mxPushSlot(argument);
+               	mxPushInteger(position);
+				mxPushSlot(argument);
 				mxPushSlot(result);
 				fxGetID(the, mxID(_groups));
 				if (mxIsUndefined(the->stack)) {
 					mxPop();
-					mxPushInteger(3 + i - 1);
+					mxRunCount(3 + i - 1);
 				}
 				else
-					mxPushInteger(4 + i - 1);
-                mxPushUndefined();
-                mxPushSlot(function);
-                fxCall(the);
+					mxRunCount(4 + i - 1);
                 fxToString(the, the->stack);
                 item = item->next = fxNewSlot(the);
                 mxPullSlot(item);
@@ -910,7 +939,6 @@ void fx_RegExp_prototype_split(txMachine* the)
 #if mxRegExp
 	txSlot* argument;
 	txIndex limit;
-	txSlot* constructor;
 	txSlot* splitter;
 	txSlot* array;
 	txSlot* item;
@@ -929,16 +957,13 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxRegExpConstructor);
-	constructor = the->stack;	
-	
+	mxNew();	
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
 	if (!c_strchr(fxToString(the, the->stack), 'y'))
 		fxConcatStringC(the, the->stack, "y");
-	mxPushInteger(2);
-	mxPushSlot(constructor);
-	fxNew(the);	
+	mxRunCount(2);
 	splitter = the->stack;
 	
 	mxPush(mxArrayPrototype);

@@ -143,19 +143,30 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint16_t intervalMin = xsmcToInteger(xsArg(0));
-	uint16_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 	uint8_t scan_rsp = scanResponseData ? 0 : 1;
-	
+	uint16_t discoverableMode, connectableMode = le_gap_undirected_connectable;
+
+	if (flags & LE_LIMITED_DISCOVERABLE_MODE)
+		discoverableMode = le_gap_limited_discoverable;
+	else if (flags & LE_GENERAL_DISCOVERABLE_MODE)
+		discoverableMode = le_gap_general_discoverable;
+	else {
+		discoverableMode = le_gap_non_discoverable;
+		connectableMode = le_gap_non_connectable;
+	}
+		
 	gecko_cmd_le_gap_set_advertise_timing(0, intervalMin, intervalMax, 0, 0);
 	gecko_cmd_le_gap_set_adv_data(scan_rsp, advertisingDataLength, advertisingData);
 	if (scanResponseData)
 		gecko_cmd_le_gap_set_adv_data(1, scanResponseDataLength, scanResponseData);	
-	gecko_cmd_le_gap_set_mode(le_gap_general_discoverable, le_gap_undirected_connectable);
+	gecko_cmd_le_gap_set_mode(discoverableMode, connectableMode);
 }
 	
 void xs_ble_server_stop_advertising(xsMachine *the)
@@ -167,7 +178,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	//uint16_t notify = xsmcToInteger(xsArg(1));
-	gecko_cmd_gatt_server_send_characteristic_notification(gBLE->connection, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)));
+	gecko_cmd_gatt_server_send_characteristic_notification(gBLE->connection, handle, xsmcGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)));
 }
 
 void xs_ble_server_deploy(xsMachine *the)
@@ -367,7 +378,7 @@ static void doReadOrWriteRequest(struct gecko_msg_gatt_server_user_write_request
 	}
 	else {
 		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-		gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+		gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsmcGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
 	}
 bail:
 	xsEndHost(gBLE->the);

@@ -257,7 +257,7 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsGetArrayBufferLength(xsArg(0));
+		messageLength = xsmcGetArrayBufferLength(xsArg(0));
 		kind = 1;
 	}
 	else {
@@ -292,7 +292,7 @@ void xs_worker_postfromworker(xsMachine *the)
 #else
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsGetArrayBufferLength(xsArg(0));
+		messageLength = xsmcGetArrayBufferLength(xsArg(0));
 		kind = 1;
 	}
 	else {
@@ -349,7 +349,7 @@ void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message
 
 	xsmcVars(2);
 
-	xsVar(0) = xsArrayBuffer(message, messageLength);
+	xsmcSetArrayBuffer(xsVar(0), message, messageLength);
 
 	if (the == worker->parent)
 		xsCall1(worker->ownerPort, xsID_onmessage, xsVar(0));

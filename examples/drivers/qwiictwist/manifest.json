@@ -1,0 +1,19 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_base.json",
+        "$(MODDABLE)/examples/manifest_piu.json",
+        "$(MODULES)/drivers/qwiictwist/manifest.json",
+        "$(MODULES)/input/color-picker/manifest.json"
+    ],
+    "creation": {
+        "stack": 350
+    },
+    "modules": {
+        "*": "./main"
+    },
+    "resources": {
+        "*-alpha": [
+            "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18"
+        ]
+    }
+}

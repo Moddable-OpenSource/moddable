@@ -61,3 +61,19 @@ void xs_ble_server_deploy(xsMachine *the)
 void xs_ble_server_get_service_attributes(xsMachine *the)
 {
 }
+
+void xs_ble_server_disconnect(xsMachine *the)
+{
+}
+
+void xs_ble_server_passkey_input(xsMachine *the)
+{
+}
+
+void xs_ble_server_passkey_reply(xsMachine *the)
+{
+}
+
+void xs_ble_server_set_security_parameters(xsMachine *the)
+{
+}

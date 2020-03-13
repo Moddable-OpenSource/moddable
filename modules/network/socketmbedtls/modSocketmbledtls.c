@@ -331,7 +331,7 @@ void xs_socketmbedtls_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])		//@@
-					xsResult = xsArrayBuffer(srcData, srcBytes);
+					xsmcSetArrayBuffer(xsResult, srcData, srcBytes);
 				else
 					xsUnknownError("unsupported output type");
 			}
@@ -383,7 +383,7 @@ void xs_socketmbedtls_write(xsMachine *the)
 					*dst++ = (unsigned char)xsmcToInteger(xsArg(arg));
 			}
 			else if ((xsReferenceType == t) && (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype))) {
-				int msgLen = xsGetArrayBufferLength(xsArg(arg));
+				int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 				if (0 == pass)
 					needed += msgLen;
 				else {

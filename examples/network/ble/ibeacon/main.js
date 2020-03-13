@@ -22,8 +22,8 @@ import {uuid} from "btutils";
 
 //const MANUFACTURER_ID = 0x4c00;		// Apple
 const MANUFACTURER_ID = 0x0059;			// Nordic Semiconductor ASA
-const MAJOR_VERSION_NUMBER = 0x04D2;
-const MINOR_VERSION_NUMBER = 0x162E;
+const MAJOR_VERSION_NUMBER = 1234;
+const MINOR_VERSION_NUMBER = 5678;
 const PROXIMITY_UUID = uuid`01020304-0506-0708-09A0-112233445566`;
 const RSSI = 0xC3;
 

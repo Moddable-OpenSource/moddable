@@ -262,12 +262,13 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint32_t intervalMin = xsmcToInteger(xsArg(0));
-	uint32_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 	qapi_BLE_GAP_LE_Advertising_Parameters_t AdvertisingParameters;
 	qapi_BLE_GAP_LE_Connectability_Parameters_t ConnectabilityParameters;
 	
@@ -291,7 +292,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingParameters.Advertising_Interval_Min  = (uint32_t)(intervalMin / 0.625);	// convert to 1 ms units;
 	AdvertisingParameters.Advertising_Interval_Max  = (uint32_t)(intervalMax / 0.625);
 	
-	ConnectabilityParameters.Connectability_Mode   = QAPI_BLE_LCM_CONNECTABLE_E;
+	ConnectabilityParameters.Connectability_Mode   = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? QAPI_BLE_LCM_CONNECTABLE_E : QAPI_BLE_LCM_NON_CONNECTABLE_E;
 	ConnectabilityParameters.Own_Address_Type      = QAPI_BLE_LAT_PUBLIC_E;
 	ConnectabilityParameters.Direct_Address_Type   = QAPI_BLE_LAT_PUBLIC_E;
 	QAPI_BLE_ASSIGN_BD_ADDR(ConnectabilityParameters.Direct_Address, 0, 0, 0, 0, 0, 0);  
@@ -313,7 +314,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
 	uint8_t *value = xsmcToArrayBuffer(xsArg(2));
-	uint32_t length = xsGetArrayBufferLength(xsArg(2));
+	uint32_t length = xsmcGetArrayBufferLength(xsArg(2));
 	
  	for (int16_t i = 0; i < service_count; ++i) {
  		if (handle >= gBLE->serviceHandles[i].start && handle <= gBLE->serviceHandles[i].end) {
@@ -603,7 +604,7 @@ static void readRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 	
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-	qapi_BLE_GATT_Read_Response(gBLE->stackID, request->TransactionID, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+	qapi_BLE_GATT_Read_Response(gBLE->stackID, request->TransactionID, xsmcGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
 	
 	xsEndHost(gBLE->the);
 }

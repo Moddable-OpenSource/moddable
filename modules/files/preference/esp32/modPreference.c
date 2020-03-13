@@ -61,7 +61,7 @@ void xs_preference_set(xsMachine *the)
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				err = nvs_set_blob(handle, xsmcToString(xsArg(1)), xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+				err = nvs_set_blob(handle, xsmcToString(xsArg(1)), xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
 			else
 				goto unknown;
 			break;
@@ -105,7 +105,7 @@ void xs_preference_get(xsMachine *the)
 		err = nvs_get_str(handle, key, xsmcToString(xsResult), &integer);
 	}
 	else if (ESP_OK == nvs_get_blob(handle, key, NULL, &integer)) {
-		xsResult = xsArrayBuffer(NULL, integer);
+		xsmcSetArrayBuffer(xsResult, NULL, integer);
 		err = nvs_get_blob(handle, key, xsmcToArrayBuffer(xsResult), &integer);
 	}
 	else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -60,7 +60,7 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 
 void modI2CActivate(modI2CConfiguration config)
 {
-	if ((gI2CConfig.sda == config->sda) && (gI2CConfig.scl == config->scl) && (gI2CConfig.hz == config->hz))
+	if ((gI2CConfig.sda == config->sda) && (gI2CConfig.scl == config->scl) && (gI2CConfig.hz == config->hz) && gI2CConfig.timeout == config->timeout)
 		return;
 
 	gI2CConfig = *config;
@@ -76,4 +76,6 @@ void modI2CActivate(modI2CConfiguration config)
 #endif
 	if (config->hz)
 		twi_setClock(config->hz);
+	if (config->timeout)
+		twi_setClockStretchLimit(config->timeout);
 }

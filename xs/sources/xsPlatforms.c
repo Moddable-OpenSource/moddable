@@ -519,7 +519,7 @@ uint32_t modMilliseconds()
 {
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
-#if mxWindows
+#if (mxWasm || mxWindows)
 	return (uint32_t)(uint64_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
 #else
 	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));

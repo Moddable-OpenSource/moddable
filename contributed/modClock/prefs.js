@@ -19,25 +19,58 @@ const PREF_WIFI = "wifi";
 const PREF_CLOCK = "clock";
 const PREF_STYLE = "style";
 
-const EXTRA_PIXELS_DEFAULT = 5;
+const DEFAULT_LAYOUT = 0;
+const EXTRA_PIXELS_DEFAULT = 50;
+
+const PREF_KEY_NAME = "name";
+const PREF_KEY_SSID = "ssid";
+const PREF_KEY_PASS = "password";
+const PREF_KEY_TZ 	= "tz";
+const PREF_KEY_LAYOUT = "layout";
+const PREF_KEY_ZERO = "zero";
+const PREF_KEY_PIN = "pin";
+const PREF_KEY_DST = "dst";
+const PREF_KEY_BRIGHTNESS = "brightness";
+const PREF_KEY_TWELVE = "twelve";
+const PREF_KEY_STYLE = "style";
+const PREF_KEY_EXTRA = "extra";
+const PREF_KEY_TAIL_ON = "tail_on";
+const PREF_KEY_TAIL_ONLY = "tail_only";
+const PREF_KEY_TAIL_ORDER = "tail_order";
+const PREF_KEY_TAIL_BRIGHTNESS = "tail_brightness";
+const PREF_KEY_TAIL_SCHEDULE = "tail_sched";
+const PREF_KEY_TAIL_TIME_ON = "tail_time_on";
+const PREF_KEY_TAIL_TIME_OFF = "tail_time_off";
+const PREF_KEY_BUTTON_A = "buttonA";
+const PREF_KEY_BUTTON_B = "buttonB";
 
 export class ClockPrefs {
 	constructor() {
-		this.available_pins = [ 22, 23 ];
-		this._storedName = this.getPref(PREF_CLOCK, "name", "clock");
+		this.neopixel_pins = [ 22, 23 ];
+		this.button_pins = [ "none", 0, 32, 34, 35 ];
+		this.dst_types = [ "Off", "On", "Auto" ];
+		this._storedName = this.getPref(PREF_CLOCK, PREF_KEY_NAME, "clock");
 		this._name = this._storedName;
-		this._ssid = this.getPref(PREF_WIFI, "ssid");
-		this._pass = this.getPref(PREF_WIFI, "password");
-		this._tz = this.getPref(PREF_CLOCK, "tz", 3)|0;
-		this._layout = this.getPref(PREF_CLOCK, "layout", 0)|0;
-		this._pin = this.getPref(PREF_CLOCK, "pin", config.seven_segments[this._layout].pin)|0;
-		this._dst = this.getPref(PREF_CLOCK, "dst", 0)|0;
-		this._brightness = this.getPref(PREF_CLOCK, "brightness", 36)|0;
-		this._twelve = this.getPref(PREF_CLOCK, "twelve", 0)|0;
-		this._style = this.getPref(PREF_CLOCK, "style", "ONEC");
-		this._extra = this.getPref(PREF_CLOCK, "extra", EXTRA_PIXELS_DEFAULT)|0;
-		this._tail_order = this.getPref(PREF_CLOCK, "tail_order", "GRB");
-		this._tail_brightness = this.getPref(PREF_CLOCK, "tail_brightness", 20)|0;
+		this._ssid = this.getPref(PREF_WIFI, PREF_KEY_SSID);
+		this._pass = this.getPref(PREF_WIFI, PREF_KEY_PASS);
+		this._tz = this.getPref(PREF_CLOCK, PREF_KEY_TZ, 3)|0;
+		this._layout = this.getPref(PREF_CLOCK, PREF_KEY_LAYOUT, DEFAULT_LAYOUT)|0;
+		this._zero = this.getPref(PREF_CLOCK, PREF_KEY_ZERO, 0)|0;
+		this._pin = this.getPref(PREF_CLOCK, PREF_KEY_PIN, config.seven_segments[this._layout].pin)|0;
+		this._dst = this.getPref(PREF_CLOCK, PREF_KEY_DST, 0)|0;
+		this._brightness = this.getPref(PREF_CLOCK, PREF_KEY_BRIGHTNESS, 36)|0;
+		this._twelve = this.getPref(PREF_CLOCK, PREF_KEY_TWELVE, 1)|0;
+		this._style = this.getPref(PREF_CLOCK, PREF_KEY_STYLE, "ONEC");
+		this._extra = this.getPref(PREF_CLOCK, PREF_KEY_EXTRA, EXTRA_PIXELS_DEFAULT)|0;
+		this._tail_on = this.getPref(PREF_CLOCK, PREF_KEY_TAIL_ON, 1);
+		this._tail_only = this.getPref(PREF_CLOCK, PREF_KEY_TAIL_ONLY, 0);
+		this._tail_order = this.getPref(PREF_CLOCK, PREF_KEY_TAIL_ORDER, "RGB");
+		this._tail_brightness = this.getPref(PREF_CLOCK, PREF_KEY_TAIL_BRIGHTNESS, 20)|0;
+		this._tail_sched = this.getPref(PREF_CLOCK, PREF_KEY_TAIL_SCHEDULE, 0);
+		this._tail_time_on = this.getPref(PREF_CLOCK, "tail_time_on", "1700");
+		this._tail_time_off = this.getPref(PREF_CLOCK, "tail_time_off", "0100");
+		this._buttonA = this.getPref(PREF_CLOCK, "buttonA", 34);
+		this._buttonB = this.getPref(PREF_CLOCK, "buttonB", 35);
 	}
 
     reset() {
@@ -45,15 +78,22 @@ export class ClockPrefs {
         Preference.delete(PREF_WIFI, "password");
 		Preference.delete(PREF_CLOCK, "name");
 		Preference.delete(PREF_CLOCK, "tz");
-		Preference.delete(PREF_CLOCK, "pin");
 		Preference.delete(PREF_CLOCK, "dst");
 		Preference.delete(PREF_CLOCK, "brightness");
 		Preference.delete(PREF_CLOCK, "twelve");
 		Preference.delete(PREF_CLOCK, "layout");
 		Preference.delete(PREF_CLOCK, "style");
 		Preference.delete(PREF_CLOCK, "extra");
+		Preference.delete(PREF_CLOCK, "tail_on");
+		Preference.delete(PREF_CLOCK, "tail_only");
 		Preference.delete(PREF_CLOCK, "tail_order");
 		Preference.delete(PREF_CLOCK, "tail_brightness");
+		Preference.delete(PREF_CLOCK, "tail_sched");
+		Preference.delete(PREF_CLOCK, "tail_time_on");
+		Preference.delete(PREF_CLOCK, "tail_time_off");
+//		Preference.delete(PREF_CLOCK, "pin");
+//		Preference.delete(PREF_CLOCK, "buttonA");
+//		Preference.delete(PREF_CLOCK, "buttonB");
 		if (undefined !== this.owner)
         	this.owner.styles.forEach(this.resetPref);
     }
@@ -97,6 +137,16 @@ export class ClockPrefs {
 			Preference.set(PREF_CLOCK, "pin", this._pin);
 			if (undefined !== this.owner)
 				this.owner.display.pin = this._pin;
+		}
+	}
+
+	get zero() { return this._zero; }
+	set zero(v) {
+		if (this._zero != v|0) {
+			this._zero = v|0;
+			Preference.set(PREF_CLOCK, "zero", this._zero);
+			if (undefined !== this.owner)
+				this.owner.display.zero = this._zero;
 		}
 	}
 
@@ -148,6 +198,54 @@ export class ClockPrefs {
 			this.owner.display.tail_order = this._tail_order;
 	}
 	
+	get tail_on() { return this._tail_on; }
+	set tail_on(v) {
+		this._tail_on = v;
+		Preference.set(PREF_CLOCK, "tail_on", this._tail_on);
+		if (undefined !== this.owner)
+			this.owner.display.tail_on = this._tail_on;
+	}
+	
+	get tail_only() { return this._tail_only; }
+	set tail_only(v) {
+		if (this._tail_only != v|0) {
+			this._tail_only = v|0;
+			Preference.set(PREF_CLOCK, "tail_only", this._tail_only);
+			if (undefined !== this.owner)
+				this.owner.display.tail_only = this._tail_only;
+		}
+	}
+
+	get tail_sched() { return this._tail_sched; }
+	set tail_sched(v) {
+		if (this._tail_sched != v|0) {
+			this._tail_sched = v|0;
+			Preference.set(PREF_CLOCK, "tail_sched", this._tail_sched);
+			if (undefined !== this.owner)
+				this.owner.display.tail_sched = this._tail_sched;
+		}
+	}
+	
+	get tail_time_on() { return this._tail_time_on; }
+	set tail_time_on(v) {
+		if (this._tail_time_on != v|0) {
+			this._tail_time_on = v|0;
+			Preference.set(PREF_CLOCK, "tail_time_on", this._tail_time_on);
+			if (undefined !== this.owner)
+				this.owner.display.tail_time_on = this._tail_time_on;
+		}
+	}
+	
+	get tail_time_off() { return this._tail_time_off; }
+	set tail_time_off(v) {
+		if (this._tail_time_off != v|0) {
+			this._tail_time_off = v|0;
+			Preference.set(PREF_CLOCK, "tail_time_off", this._tail_time_off);
+			if (undefined !== this.owner)
+				this.owner.display.tail_time_off = this._tail_time_off;
+		}
+	}
+	
 	get extra() { return this._extra; }
 	set extra(v) {
 		if (this._extra != v|0) {
@@ -175,6 +273,20 @@ export class ClockPrefs {
 			if (undefined !== this.owner)
 				this.owner.currentStyle = this.owner.styles.find(x => x.tag === this._style)
 		}
+	}
+
+	get buttonA() { return this._buttonA; }
+	set buttonA(v) {
+		if (v !== "none")
+			this._buttonA = parseInt(v);
+		Preference.set(PREF_CLOCK, "buttonA", this._buttonA);
+	}
+
+	get buttonB() { return this._buttonB; }
+	set buttonB(v) {
+		if (v !== "none")
+			this._buttonB = parseInt(v);
+		Preference.set(PREF_CLOCK, "buttonB", this._buttonB);
 	}
 
 	getPref(domain, key, default_value) {

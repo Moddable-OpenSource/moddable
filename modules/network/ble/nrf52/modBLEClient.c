@@ -427,7 +427,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	if (!connection) return;
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	if (argc > 1)
-		bufferToUUID(&connection->gattProcedure.searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID(&connection->gattProcedure.searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
 	else
 		connection->gattProcedure.searchUUID.uuid = 0;
 	connection->gattProcedure.obj = xsThis;
@@ -448,7 +448,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	connection->gattProcedure.handle_range.end_handle = xsmcToInteger(xsArg(2));
 	connection->gattProcedure.obj = xsThis;
 	if (argc > 3) {
-		bufferToUUID(&connection->gattProcedure.searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
+		bufferToUUID(&connection->gattProcedure.searchUUID, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
 	}
 	else
 		connection->gattProcedure.searchUUID.uuid = 0;
@@ -563,7 +563,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				data = xsmcToArrayBuffer(xsArg(2));
-				len = xsGetArrayBufferLength(xsArg(2));
+				len = xsmcGetArrayBufferLength(xsArg(2));
 			}
 			else
 				goto unknown;
@@ -598,7 +598,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				data = xsmcToArrayBuffer(xsArg(2));
-				len = xsGetArrayBufferLength(xsArg(2));
+				len = xsmcGetArrayBufferLength(xsArg(2));
 			}
 			else
 				goto unknown;

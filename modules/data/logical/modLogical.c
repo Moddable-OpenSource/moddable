@@ -35,7 +35,7 @@ static void xs_logical_op(xsMachine *the, int operation)
 	uint32_t srcLen, dstLen, i = 0;
 
 	dst = xsmcToArrayBuffer(xsArg(0));
-	dstLen = xsGetArrayBufferLength(xsArg(0));
+	dstLen = xsmcGetArrayBufferLength(xsArg(0));
 
 	switch (srcType) {
 		case xsIntegerType:
@@ -52,7 +52,7 @@ static void xs_logical_op(xsMachine *the, int operation)
 
 		case xsReferenceType:
 			src = xsmcToArrayBuffer(xsArg(1));
-			srcLen = xsGetArrayBufferLength(xsArg(1));
+			srcLen = xsmcGetArrayBufferLength(xsArg(1));
 			break;
 
 		default:

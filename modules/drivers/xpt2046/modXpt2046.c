@@ -149,7 +149,7 @@ void xs_XPT2046(xsMachine *the)
 	xsVar(0) = xsCall0(xsThis, xsID_calibrate);
 	if (xsmcTest(xsVar(0))) {
 		uint16_t *calibration = xsmcToArrayBuffer(xsVar(0));
-		if (xsGetArrayBufferLength(xsVar(0)) >= 8) {
+		if (xsmcGetArrayBufferLength(xsVar(0)) >= 8) {
 			xpt->min_x = calibration[0];
 			xpt->max_x = calibration[1];
 			xpt->min_y = calibration[2];

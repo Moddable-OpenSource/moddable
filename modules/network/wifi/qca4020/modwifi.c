@@ -18,7 +18,6 @@
  *
  */
 
-#include "xs.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"
@@ -169,7 +168,7 @@ void xs_wifi_connect(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_bssid)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
-		if (__QAPI_WLAN_MAC_LEN != xsGetArrayBufferLength(xsVar(0)))
+		if (__QAPI_WLAN_MAC_LEN != xsmcGetArrayBufferLength(xsVar(0)))
 			xsUnknownError("bssid must be 6 bytes");
 		xsmcGetArrayBufferData(xsVar(0), 0, bssid, sizeof(bssid));
 	}

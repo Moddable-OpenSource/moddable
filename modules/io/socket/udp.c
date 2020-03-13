@@ -178,7 +178,7 @@ void xs_udp_write(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(2), xsTypedArrayPrototype))
 		xsmcGet(xsArg(2), xsArg(2), xsID_buffer);
-	byteLength = xsGetArrayBufferLength(xsArg(2));
+	byteLength = xsmcGetArrayBufferLength(xsArg(2));
 
 	pb = pbuf_alloc(PBUF_TRANSPORT, byteLength, PBUF_RAM);
 	if (!pb)

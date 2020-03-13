@@ -113,7 +113,6 @@ void fxBuildDate(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_setUTCMonth), 2, mxID(_setUTCMonth), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_setUTCSeconds), 2, mxID(_setUTCSeconds), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toDateString), 0, mxID(_toDateString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toUTCString), 0, mxID(_toGMTString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toISOString), 0, mxID(_toISOString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toJSON), 1, mxID(_toJSON), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toDateString), 0, mxID(_toLocaleDateString), XS_DONT_ENUM_FLAG);
@@ -122,6 +121,7 @@ void fxBuildDate(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toTimeString), 0, mxID(_toTimeString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toUTCString), 0, mxID(_toUTCString), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, slot, mxID(_toGMTString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_prototype_toPrimitive), 1, mxID(_Symbol_toPrimitive), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxDatePrototype = *the->stack;
@@ -197,10 +197,12 @@ void fx_Date(txMachine* the)
 		}
 		fxToPrimitive(the, slot, XS_NO_HINT);
 		if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
-			mxPushSlot(slot);
-			mxPushInteger(1);
 			mxPushSlot(mxFunction);
-			fxCallID(the, mxID(_parse));
+			mxDub();
+			fxGetID(the, mxID(_parse));
+			mxCall();
+			mxPushSlot(slot);
+			mxRunCount(1);
 			instance->next->value.number = the->stack->value.number;
 			mxPop();
 			return;
@@ -1035,22 +1037,26 @@ void fx_Date_prototype_toISOString(txMachine* the)
 void fx_Date_prototype_toJSON(txMachine* the)
 {
 	fxToInstance(the, mxThis);
-	mxPushInteger(0);
 	mxPushSlot(mxThis);
-	fxToPrimitive(the, mxThis, XS_NUMBER_HINT);
-	if ((mxThis->kind == XS_NUMBER_KIND) && !c_isfinite(mxThis->value.number)) {
-		the->stack += 2;
+	fxToPrimitive(the, the->stack, XS_NUMBER_HINT);
+	if ((the->stack->kind == XS_NUMBER_KIND) && !c_isfinite(the->stack->value.number)) {
+		mxPop();
 		mxResult->kind = XS_NULL_KIND;
 	}
 	else {		
-		fxCallID(the, mxID(_toISOString));
+		mxPop();
+		mxPushSlot(mxThis);
+		mxDub();
+		fxGetID(the, mxID(_toISOString));
+		mxCall();
+		mxRunCount(0);
 		mxPullSlot(mxResult);
 	}
 }
 
 void fx_Date_prototype_toPrimitive(txMachine* the)
 {
-	if (mxThis->kind == XS_REFERENCE_KIND) {
+	if (mxIsReference(mxThis)) {
 		txInteger hint = XS_NO_HINT;
 		txInteger ids[2], i;
 		if (mxArgc > 0) {
@@ -1075,23 +1081,23 @@ void fx_Date_prototype_toPrimitive(txMachine* the)
  		else
      		mxTypeError("invalid hint");
 		for (i = 0; i < 2; i++) {
-			mxPushInteger(0);
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
 			fxGetID(the, ids[i]);
 			if (fxIsCallable(the, the->stack)) {
-				fxCall(the);
+				mxCall();
+				mxRunCount(0);
 				if (mxIsReference(the->stack))
-					the->stack++;
+					mxPop();
 				else {
-					mxResult->kind = the->stack->kind;
-					mxResult->value = the->stack->value;
-					the->stack++;
+					mxPullSlot(mxResult);
 					return;
       			}
 			}
-			else
-				the->stack++;
+			else {
+				mxPop();
+				mxPop();
+			}
 		}
 		if (hint == XS_STRING_HINT)
             mxTypeError("cannot coerce object to string");

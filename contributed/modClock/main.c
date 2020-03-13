@@ -81,9 +81,10 @@ void xs_mergeAndScale(xsMachine *the)
 	ar = (color1 & 0xff0000) * amt;
 	ag = (color1 & 0x00ff00) * amt;
 	ab = (color1 & 0x0000ff) * amt;
-	br = (color2 & 0xff0000) * (1-amt);
-	bg = (color2 & 0x00ff00) * (1-amt);
-	bb = (color2 & 0x0000ff) * (1-amt);
+	amt = 1 - amt;
+	br = (color2 & 0xff0000) * amt;
+	bg = (color2 & 0x00ff00) * amt;
+	bb = (color2 & 0x0000ff) * amt;
 
 	ar = ar + br;
 	ag = ag + bg;
@@ -95,9 +96,50 @@ void xs_mergeAndScale(xsMachine *the)
 	xsmcSetInteger(xsResult, (ar&0xff0000) | (ag&0x00ff00) | (ab&0x0000ff));
 }
 
+uint32_t scaleColor(uint32_t c, double amt) {
+	uint32_t r, g, b;
+	r = ((c & 0xff0000) >> 16) * amt;
+	g = ((c & 0x00ff00) >>  8) * amt;
+	b =  (c & 0x0000ff)        * amt;
+	return ((r&0xff) << 16 | (g&0xff) << 8 | (b&0xff));
+}
+
+uint32_t dimColor(uint32_t c, uint8_t amt) {
+	uint32_t r, g, b;
+	r = (((c & 0xff0000) >> 16) - amt);
+	if (r > 0xff) r = 0;
+	g = (((c & 0x00ff00) >>  8) - amt);
+	if (g > 0xff) g = 0;
+	b = ( (c & 0x0000ff)        - amt);
+	if (b > 0xff) b = 0;
+	return (r << 16 | g << 8 | b);
+}
+
+void xs_scaleColor(xsMachine *the)
+{
+	uint32_t color;
+	double amt;
+	color = xsmcToInteger(xsArg(0));
+	amt = xsmcToNumber(xsArg(1));
+	xsmcSetInteger(xsResult, scaleColor(color, amt));
+}
+
+void xs_dimColor(xsMachine *the)
+{
+	uint32_t color, amt;
+	color = xsmcToInteger(xsArg(0));
+	amt = xsmcToInteger(xsArg(1));
+	xsmcSetInteger(xsResult, dimColor(color, amt));
+}
+
+void xs_raise(xsMachine *the)
+{
+	uint32_t pix, color, amt;
+}
+
 void xs_brightenAndConvert(xsMachine *the)
 {
-	uint32_t color, brightness;
+	uint32_t color, brightness, out;
 	int r, g, b;
 	char *order;
 
@@ -105,21 +147,29 @@ void xs_brightenAndConvert(xsMachine *the)
 	brightness = xsmcToInteger(xsArg(1));
 	order = xsmcToString(xsArg(2));
 
-	r = (color & 0xff0000) >> 16;
-	g = (color & 0x00ff00) >> 8;
-	b =  color & 0x0000ff;
-
-	r = ((r * brightness) / 255) & 255;
-	g = ((g * brightness) / 255) & 255;
-	b = ((b * brightness) / 255) & 255;
+	r = ((color & 0xff0000) * brightness) >> 24;
+	g = ((color & 0x00ff00) * brightness) >> 16;
+	b = ((color & 0x0000ff) * brightness) >> 8;
 
 	if (0 == c_strcmp(order, "RGB"))
-		xsmcSetInteger(xsResult, (r << 16) | (g << 8) | b);
+		out = (r << 16) | (g << 8) | b;
 	else if (0 == c_strcmp(order, "GRB"))
-		xsmcSetInteger(xsResult, (g << 16) | (r << 8) | b);
+		out = (g << 16) | (r << 8) | b;
 	else if (0 == c_strcmp(order, "RGBW"))
-		xsmcSetInteger(xsResult, (r << 24) | (g << 16) | (b << 8));
+		out = (r << 24) | (g << 16) | (b << 8);
 	else
 		xsErrorPrintf("Unknown LED order");
+
+	xsmcSetInteger(xsResult, out);
 }
 
+void xs_hueDist(xsMachine *the)
+{
+	double x, y, span, r;
+
+	x = xsmcToNumber(xsArg(0));
+	y = xsmcToNumber(xsArg(1));
+	span = xsmcToNumber(xsArg(2));
+	r = c_sqrt((x*x)+(y*y)) / span;
+	xsmcSetNumber(xsResult, r);
+}

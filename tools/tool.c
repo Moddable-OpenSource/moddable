@@ -80,10 +80,10 @@ int main(int argc, char* argv[])
 							xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
 						}
 						xsVar(1) = xsAwaitImport(argv[1], XS_IMPORT_DEFAULT);
-						fxPush(xsVar(0));
-						fxPushCount(the, 1);
 						fxPush(xsVar(1));
 						fxNew(the);
+						fxPush(xsVar(0));
+						fxRunCount(the, 1);
 						xsResult = fxPop();
 						xsCall0(xsResult, xsID_run);
 					}

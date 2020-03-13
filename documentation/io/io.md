@@ -176,7 +176,7 @@ For example, consider the following example which reads one byte from serial as 
 
 ```js
 serial.format = "number";
-let count = serial.read()
+let count = serial.read();
 serial.format = "buffer";
 let data = serial.read(count);
 ```
@@ -249,7 +249,7 @@ let button = new Digital({
 The built-in `DigitalBank` class provides simultaneous access to a group of digital pins.
 
 ```js
-import Digital from "builtin/digitalbank";
+import DigitalBank from "builtin/digitalbank";
 ```
 
 Many microcontrollers, including the ESP8266, provide access to their digital pins through unified memory mapped hardware ports that make it possible to read and write several pins as a single operation. The `DigitalBank` IO provides direct access to this capability.
@@ -342,7 +342,7 @@ There are no callbacks supported. Analog inputs are generally continuously fluct
 The data format is always a number. The value returned is an integer from 0 to a maximum value based on the resolution of the analog input.
 
 #### Usage Notes
-The analog input on the ESP8266 always provides 10-bit values. The analog input devices a read-only `resolution` property which indicates the number of bits of resolution provided by values returned by the instance.
+The analog input on the ESP8266 always provides 10-bit values. The analog input devices have a read-only `resolution` property which indicates the number of bits of resolution provided by values returned by the instance.
 
 #### Implementation Notes
 An `onReadable` callback may be useful. It could trigger based on various conditions, such as changing by more than a certain amount or entering a certain range of values. This is similar to triggers used in energy management work with very-low-power co-processors. This is an area for future work.
@@ -352,7 +352,7 @@ The following example displays the value of an analog input as a floating point 
 
 ```js
 let analog = new Analog({});
-trace(analog.read() / (1 << analog.resolution, "\n");
+trace(analog.read() / (1 << analog.resolution), "\n");
 ```
 
 ### PWM

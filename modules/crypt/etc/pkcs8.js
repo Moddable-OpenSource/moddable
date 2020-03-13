@@ -36,6 +36,7 @@
  */
 
 import Crypt from "crypt";
+import BER from "ber";
 
 function howmany(x, y)
 {
@@ -83,7 +84,7 @@ export default class PKCS8 {
 	static parse(buf) {
 		// RSA only
 		var key = {};
-		var ber = new Crypt.BER(buf);
+		var ber = new BER(buf);
 		if (ber.getTag() != 0x30)	// SEQUENCE
 			throw new Error("PKCS8: not a sequence");
 		ber.getLength()		// skip the sequence length
@@ -107,7 +108,7 @@ export default class PKCS8 {
 		return key;
 	};
 	static decrypt(buf, pass) {
-		var ber = new Crypt.BER(buf);
+		var ber = new BER(buf);
 		if (ber.getTag() == 0x30) {
 			ber.getLength();
 			if (ber.getTag() == 0x30) {

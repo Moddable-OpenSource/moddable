@@ -92,8 +92,8 @@ let MainCol = Column.template($ => ({
 
 const WeatherApp = Application.template($ => ({
 	contents: [
-		Label($, {
-			left: 0, right: 0, top: 0, bottom: 0, 
+		Text($, {
+			left: 15, right: 15, top: 60, 
 			skin: blackSkin, style: OpenSans20White, string: "Loading...",
 			Behavior: class extends Behavior {
 				onTransitionOut(label) {
@@ -127,7 +127,7 @@ const WeatherApp = Application.template($ => ({
 				response: String
 			});
 			request.callback = (message, value) => {
-				if (5 == message) {
+				if (Request.responseComplete == message) {
 					value = JSON.parse(value);
 					let icon = value.weather[0].icon.substring(0,2);
 					let toDraw;
@@ -165,6 +165,9 @@ const WeatherApp = Application.template($ => ({
 					this.data.condition = titleCase(value.weather[0].description),
 					this.data.icon = toDraw
 					application.first.delegate("onTransitionOut");
+				}
+				else if (Request.error == message) {
+					application.first.string = "HTTP request failed";
 				}
 		  	}
 		}

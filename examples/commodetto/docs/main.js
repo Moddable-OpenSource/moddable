@@ -15,7 +15,6 @@
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import BufferOut from "commodetto/BufferOut";
-import Bitmap from "commodetto/Bitmap";
 import JPEG from "commodetto/readJPEG";
 import loadJPEG from "commodetto/loadJPEG";
 import Poco from "commodetto/Poco";

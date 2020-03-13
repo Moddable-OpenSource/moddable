@@ -789,25 +789,25 @@ extern xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
 
 #define xsNewFunction0(_FUNCTION) \
-	(xsOverflow(-2), \
-	fxPushCount(the, 0), \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
+	fxRunCount(the, 0), \
 	fxPop())
 #define xsNewFunction1(_FUNCTION,_SLOT0) \
-	(xsOverflow(-3), \
-	fxPush(_SLOT0), \
-	fxPushCount(the, 1), \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
 	fxPop())
 #define xsNewFunction2(_FUNCTION,_SLOT0,_SLOT1) \
-	(xsOverflow(-4), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPushCount(the, 2), \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
 	fxPop())
 
 #define PiuMarkHandle(THE, HANDLE) if (HANDLE) (*markRoot)(THE, (*((PiuHandle*)(HANDLE)))->reference)

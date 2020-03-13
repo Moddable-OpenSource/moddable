@@ -82,6 +82,10 @@
 					"$(MODULES)/base/timer/mac/*",
 				],
 			},
+			"preload": [
+				"time",
+				"timer",
+			],
 		},
 		"win": {
 			"modules": {
@@ -92,7 +96,20 @@
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/win/*"
 				]
-			}
+			},
+			"preload": [
+				"time",
+				"timer",
+			],
+		},
+		"wasm": {
+			"modules": {
+				"*": [
+					"$(BUILD)/simulator/screen",
+				]
+			},
+			"preload": [
+			],
 		}
 	},
 }

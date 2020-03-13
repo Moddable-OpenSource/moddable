@@ -23,7 +23,7 @@
 static txInteger fxCheckAtomicsIndex(txMachine* the, txInteger index, txInteger length);
 static txSlot* fxCheckAtomicsTypedArray(txMachine* the, txBoolean onlyInt32);
 static txSlot* fxCheckSharedArrayBuffer(txMachine* the, txSlot* slot, txString which);
-static void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer);
+static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 
 #define mxAtomicsHead0(TYPE,TO) \
 	TYPE result = 0; \
@@ -262,7 +262,7 @@ txSlot* fxCheckSharedArrayBuffer(txMachine* the, txSlot* slot, txString which)
 	return slot;
 }
 
-void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer)
+void fxPushAtomicsValue(txMachine* the, int i, txID id)
 {
 	txSlot* slot;
 	if (mxArgc > i)
@@ -270,26 +270,16 @@ void fxPushAtomicsValue(txMachine* the, int i, txTypeCoerce coercer)
 	else
 		mxPushUndefined();
 	slot = the->stack;
-	(*coercer)(the, the->stack);
-	if (slot->kind == XS_NUMBER_KIND) {
-		txNumber value = c_trunc(slot->value.number); 
+	if ((id == _BigInt64Array) || (id == _BigUint64Array))
+		fxBigIntCoerce(the, slot);
+	else {
+		txNumber value;
+		fxNumberCoerce(the, slot);
+		value = c_trunc(slot->value.number); 
 		if (c_isnan(value))
 			value = 0;
 		slot->value.number = value;
 	}
-// 	if (mxArgc > i) {
-// 		txSlot* slot = mxArgv(i);
-// 		if (slot->kind == XS_INTEGER_KIND)
-// 			mxPushSlot(slot);
-// 		else {
-// 			txNumber value = c_trunc(fxToNumber(the, slot)); 
-// 			if (c_isnan(value))
-// 				value = 0;
-// 			mxPushNumber(value);
-// 		}
-// 	}
-// 	else
-// 		mxPushInteger(0);
 }
 
 
@@ -336,12 +326,12 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	if (stop < start) 
 		stop = start;
 	length = stop - start;
-	mxPushInteger(length);
-	mxPushInteger(1);
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
-	fxNew(the);
+	mxNew();
+	mxPushInteger(length);
+	mxRunCount(1);
 	mxPullSlot(mxResult);
 	result = fxCheckSharedArrayBuffer(the, mxResult, "result");
 	if (result == host)
@@ -354,7 +344,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 void fx_Atomics_add(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->add)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -362,7 +352,7 @@ void fx_Atomics_add(txMachine* the)
 void fx_Atomics_and(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->and)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -370,8 +360,8 @@ void fx_Atomics_and(txMachine* the)
 void fx_Atomics_compareExchange(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
-	fxPushAtomicsValue(the, 3, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
+	fxPushAtomicsValue(the, 3, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->compareExchange)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 	mxPop();
@@ -380,7 +370,7 @@ void fx_Atomics_compareExchange(txMachine* the)
 void fx_Atomics_exchange(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->exchange)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -401,7 +391,7 @@ void fx_Atomics_load(txMachine* the)
 void fx_Atomics_or(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->or)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -419,7 +409,7 @@ void fx_Atomics_notify(txMachine* the)
 void fx_Atomics_store(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	*mxResult = *the->stack;
 	(*dispatch->value.typedArray.atomics->store)(the, host, offset, the->stack, 0);
 	mxPop();
@@ -428,7 +418,7 @@ void fx_Atomics_store(txMachine* the)
 void fx_Atomics_sub(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->sub)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
@@ -438,7 +428,7 @@ void fx_Atomics_wait(txMachine* the)
 	mxAtomicsDeclarations(1);
 	txNumber timeout;
 	txInteger result;
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	timeout = (mxArgc > 3) ? fxToNumber(the, mxArgv(3)) : C_NAN;
 	if (c_isnan(timeout))
 		timeout = C_INFINITY;
@@ -459,7 +449,7 @@ void fx_Atomics_wait(txMachine* the)
 void fx_Atomics_xor(txMachine* the)
 {
 	mxAtomicsDeclarations(0);
-	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->coerce);
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->xor)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
 }
