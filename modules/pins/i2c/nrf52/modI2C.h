@@ -29,6 +29,7 @@ typedef struct modI2CConfigurationRecord *modI2CConfiguration;
 
 struct modI2CConfigurationRecord {
 	uint32_t					hz;
+	uint32_t					timeout;
 	nrf_drv_twi_frequency_t		nrfHz;
 	int16_t						sda;
 	int16_t						scl;
@@ -39,7 +40,8 @@ struct modI2CConfigurationRecord {
     config.hz = HZ;                                                   \
     config.sda = SDA_PIN;                                             \
     config.scl = SCL_PIN;                                             \
-    config.address = ADDRESS;
+    config.address = ADDRESS;										  \
+	config.timeout = TIMEOUT;
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;

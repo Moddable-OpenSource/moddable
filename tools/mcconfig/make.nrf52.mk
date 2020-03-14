@@ -585,7 +585,7 @@ ifeq ($(DEBUG),1)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		DO_LAUNCH =
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial $(DEBUG)
+		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 1
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -596,7 +596,7 @@ else
 	KILL_SERIAL_2_XSBUG =
 	DO_XSBUG =
 	DO_LAUNCH = 
-	WAIT_FOR_NEW_SERIAL =
+	WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 0
 endif
 
 #-----------------
@@ -608,13 +608,15 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
-all: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/xs_nrf52.uf2
+all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
 	$(WAIT_FOR_NEW_SERIAL)
+
+precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
 clean:
 	@echo "# Cleaning tmp and bin for this project"

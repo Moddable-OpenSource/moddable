@@ -110,6 +110,9 @@ void modI2CInit(modI2CConfiguration config)
 	}
 	twi_config.frequency = config->nrfHz;
 
+	if (0 == config->timeout)
+		config->timeout = portMAX_DELAY;
+
 	ret = nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL);
 	if (0 == ret)
 		nrf_drv_twi_enable(&gTwi);
@@ -165,7 +168,7 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 		modLogInt(ret);
 	}
 	else
-		waitForComplete(portMAX_DELAY);
+		waitForComplete(config->timeout);
 
 	return ret;
 }
@@ -185,7 +188,7 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 		modLogInt(ret);
 	}
 	else
-		waitForComplete(portMAX_DELAY);
+		waitForComplete(config->timeout);
 
 	return ret;
 }

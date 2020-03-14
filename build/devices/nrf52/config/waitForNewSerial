@@ -8,6 +8,11 @@ while [ -d "$NAME" ]; do
 done
 echo
 
+if [ $1 -eq 0 ]; then
+	echo "Release build installed."
+	exit
+fi
+
 # find /dev -type c -name "cu.*"
 original=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
 
@@ -64,12 +69,7 @@ done
 
 # sleep 5
 
-# echo ${fileToCompare}
-echo -n "Connecting to xsbug.."
-if [ $1 -eq 1 ]; then
-	echo -n "."
-fi
-echo
+echo "Connecting to xsbug (${fileToCompare})."
 
 serial2xsbug ${fileToCompare} 921600 8N1 -dtr
 
