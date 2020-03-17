@@ -134,8 +134,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Compartment);
 			else if (!c_strcmp(name, "DataView"))
 				fxStripCallback(linker, fx_DataView);
-			else if (!c_strcmp(name, "Date"))
+			else if (!c_strcmp(name, "Date")) {
 				fxStripCallback(linker, fx_Date);
+				fxStripCallback(linker, fx_Date_secure);
+			}
 			else if (!c_strcmp(name, "FinalizationGroup"))
 				fxStripCallback(linker, fx_FinalizationGroup);
 			else if (!c_strcmp(name, "Float32Array")) {
@@ -314,6 +316,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (fxIsCallbackStripped(linker, fx_Date))
 		fxStripClass(linker, the, &mxDateConstructor);
 	else {
+		fxUnstripCallback(linker, fx_Date_parse);
 		fxUnstripCallback(linker, fx_Date_prototype_toString);
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);

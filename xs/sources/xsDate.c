@@ -51,6 +51,7 @@ typedef struct sxDateTime {
 
 static txSlot* fxNewDateInstance(txMachine* the);
 
+static void fx_Date_aux(txMachine* the, txFlag secure);
 static txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString);
 static txInteger fx_Date_parse_fraction(txByte* theCharacter, txString* theString);
 static txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* td, txBoolean utc, txSlot* slot);
@@ -147,12 +148,19 @@ txSlot* fxNewDateInstance(txMachine* the)
 
 void fx_Date(txMachine* the)
 {
+	fx_Date_aux(the, 0);
+}
+
+void fx_Date_aux(txMachine* the, txFlag secure)
+{
 	txInteger c = mxArgc;
 	txDateTime dt;
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget)) {
 		char buffer[256];
 		txDateTime dt;
+		if (secure)
+			mxTypeError("secure mode");
 		mxResult->value.number = fxDateNow();
 		mxResult->kind = XS_NUMBER_KIND;
 		if (fx_Date_prototype_get_aux(the, &dt, 0, mxResult)) {
@@ -210,13 +218,25 @@ void fx_Date(txMachine* the)
 		instance->next->value.number = fxDateClip(fxToNumber(the, slot));
 		return;
 	}
+	if (secure)
+		mxTypeError("secure mode");
 	instance->next->value.number = fxDateNow();
+}
+
+void fx_Date_secure(txMachine* the)
+{
+	fx_Date_aux(the, 1);
 }
 
 void fx_Date_now(txMachine* the)
 {
 	mxResult->value.number = fxDateNow();
 	mxResult->kind = XS_NUMBER_KIND;
+}
+
+void fx_Date_now_secure(txMachine* the)
+{
+	mxTypeError("secure mode");
 }
 
 txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString)

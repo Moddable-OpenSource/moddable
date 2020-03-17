@@ -258,6 +258,7 @@ extern void fxPrintBuilders(txMachine* the, FILE* file);
 extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count);
 extern void fxPrintStack(txMachine* the, FILE* file);
 extern void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** table);
+extern void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id);
 
 /* xslStrip.c */
 extern void fxStripCallbacks(txLinker* linker, txMachine* the);
