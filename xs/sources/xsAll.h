@@ -1027,6 +1027,7 @@ mxExport void fx_Math_max(txMachine* the);
 mxExport void fx_Math_min(txMachine* the);
 mxExport void fx_Math_pow(txMachine* the);
 mxExport void fx_Math_random(txMachine* the);
+mxExport void fx_Math_random_secure(txMachine* the);
 mxExport void fx_Math_round(txMachine* the);
 mxExport void fx_Math_sign(txMachine* the);
 mxExport void fx_Math_sin(txMachine* the);
@@ -1116,7 +1117,9 @@ mxExport void fxBigInt_fill0(txBigInt *r);
 
 /* xsDate.c */
 mxExport void fx_Date(txMachine* the);
+mxExport void fx_Date_secure(txMachine* the);
 mxExport void fx_Date_now(txMachine* the);
+mxExport void fx_Date_now_secure(txMachine* the);
 mxExport void fx_Date_parse(txMachine* the);
 mxExport void fx_Date_UTC(txMachine* the);
 mxExport void fx_Date_prototype_getMilliseconds(txMachine* the);

@@ -397,6 +397,11 @@ void fx_Math_random(txMachine* the)
 	mxResult->value.number = (double)result / (double)C_RAND_MAX;
 }
 
+void fx_Math_random_secure(txMachine* the)
+{
+	mxTypeError("secure mode");
+}
+
 void fx_Math_round(txMachine* the)
 {
     txNumber arg;

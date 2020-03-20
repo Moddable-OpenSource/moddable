@@ -182,6 +182,7 @@ SDK_SRC = \
 	$(CORE_DIR)\Schedule.cpp \
 	$(CORE_DIR)\time.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
+	$(PLATFORM_DIR)\lib\bsearch\bsearch.c \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
@@ -211,6 +212,7 @@ SDK_OBJ = \
 	$(LIB_DIR)\spiffs_hal.o \
 	$(LIB_DIR)\time.o \
 	$(LIB_DIR)\umm_malloc.o \
+	$(LIB_DIR)\bsearch.o \
 	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
@@ -410,6 +412,11 @@ $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 {$(CORE_DIR)\umm_malloc\}.c{$(LIB_DIR)\}.o:
+	@echo # cc $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
+$(LIB_DIR)\bsearch.o: $(PLATFORM_DIR)\lib\bsearch\bsearch.c
 	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@

@@ -356,6 +356,7 @@ int main(int argc, char* argv[])
 			xsBeginHost(the);
 			{
 				{
+					txCallback callback;
 					txSlot* property;
 					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
@@ -369,6 +370,25 @@ int main(int argc, char* argv[])
 					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
+
+					fxDuplicateInstance(the, mxDateConstructor.value.reference);
+					callback = mxCallback(fx_Date_secure);
+					fxNewLinkerBuilder(linker, callback, 7, mxID(_Date));
+					property = mxFunctionInstanceCode(the->stack->value.reference);
+					property->value.callback.address = callback;
+		
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), XS_NO_ID, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
+					
+					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = the->stack->kind;
+					property->value = the->stack->value;
+					mxPull(mxDateConstructor);
+
+					fxDuplicateInstance(the, mxMathObject.value.reference);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), XS_NO_ID, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+					mxPull(mxMathObject);
 				}
 				{
 					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
@@ -780,6 +800,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxAtomicsObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxJSONObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxMathObject); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGlobal); fxGetID(the, mxID(_Math)); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxReflectObject); mxFreezeBuiltInRun;
 
 	mxFreezeBuiltInCall; mxPush(mxAggregateErrorPrototype); mxFreezeBuiltInRun;

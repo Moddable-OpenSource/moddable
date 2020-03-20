@@ -134,8 +134,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Compartment);
 			else if (!c_strcmp(name, "DataView"))
 				fxStripCallback(linker, fx_DataView);
-			else if (!c_strcmp(name, "Date"))
+			else if (!c_strcmp(name, "Date")) {
 				fxStripCallback(linker, fx_Date);
+				fxStripCallback(linker, fx_Date_secure);
+			}
 			else if (!c_strcmp(name, "FinalizationGroup"))
 				fxStripCallback(linker, fx_FinalizationGroup);
 			else if (!c_strcmp(name, "Float32Array")) {
@@ -314,6 +316,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	if (fxIsCallbackStripped(linker, fx_Date))
 		fxStripClass(linker, the, &mxDateConstructor);
 	else {
+		fxUnstripCallback(linker, fx_Date_parse);
 		fxUnstripCallback(linker, fx_Date_prototype_toString);
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
@@ -465,6 +468,13 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "static txSlot* fxNewAsyncGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); }\n");
 	if (!fxIsCodeUsed(XS_CODE_IMPORT) && fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
 		fprintf(file, "static void fxRunImportDeadStrip(txMachine* the, txSlot* realm, txID id) { mxUnknownError(\"dead strip\"); }\n");
+	if (!fxIsCodeUsed(XS_CODE_NEW_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_NEW_PRIVATE_2))
+		fprintf(file, "static txBoolean fxDefinePrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask) { mxUnknownError(\"dead strip\"); }\n");
+	if (!fxIsCodeUsed(XS_CODE_GET_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_GET_PRIVATE_2))
+		fprintf(file, "static txSlot* fxGetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); }\n");
+	if (!fxIsCodeUsed(XS_CODE_SET_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_SET_PRIVATE_2))
+		fprintf(file, "static txSlot* fxSetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); }\n");
+		
 	if (fxIsCallbackStripped(linker, fx_BigInt))
 		fprintf(file, "static void fxBigIntDecodeDeadStrip(txMachine* the, txSize size) { mxUnknownError(\"dead strip\"); }\n");
 
@@ -538,15 +548,15 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	if (fxIsCodeUsed(XS_CODE_NEW_PRIVATE_1) || fxIsCodeUsed(XS_CODE_NEW_PRIVATE_2))
 		fprintf(file, "\tfxDefinePrivateProperty,\n");
 	else
-		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxDefinePrivatePropertyDeadStrip,\n");
 	if (fxIsCodeUsed(XS_CODE_GET_PRIVATE_1) || fxIsCodeUsed(XS_CODE_GET_PRIVATE_2))
 		fprintf(file, "\tfxGetPrivateProperty,\n");
 	else
-		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxGetPrivatePropertyDeadStrip,\n");
 	if (fxIsCodeUsed(XS_CODE_SET_PRIVATE_1) || fxIsCodeUsed(XS_CODE_SET_PRIVATE_2))
 		fprintf(file, "\tfxSetPrivateProperty,\n");
 	else
-		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxSetPrivatePropertyDeadStrip,\n");
 	if (fxIsCallbackStripped(linker, fx_FinalizationGroup))
 		fprintf(file, "\tC_NULL,\n");
 	else
