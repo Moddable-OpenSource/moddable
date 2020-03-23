@@ -375,7 +375,7 @@ build: precursor
 deploy:
 	if not exist $(BIN_DIR)\main.bin (echo # Build before deploy) else ( $(UPLOAD_TO_ESP) )
 
-debugger:
+xsbug:
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)

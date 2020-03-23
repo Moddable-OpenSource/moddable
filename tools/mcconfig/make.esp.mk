@@ -340,7 +340,7 @@ deploy:
 	$(UPLOAD_TO_ESP)
 
 
-debugger:
+xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)

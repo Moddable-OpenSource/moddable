@@ -147,7 +147,7 @@ all: precursor
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
-debugger:
+xsbug:
 	@echo "# starting xsbug"
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 

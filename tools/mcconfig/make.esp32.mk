@@ -283,7 +283,7 @@ deploy:
 	@echo "# uploading to esp32"
 	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 
-debugger:
+xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
 	$(DO_XSBUG)

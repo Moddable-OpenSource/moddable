@@ -330,7 +330,7 @@ build: precursor mingPrepare
 	$(MING_BUILD)
 	echo # Build is complete when the MinGW windows closes.
 
-debugger:
+xsbug:
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
