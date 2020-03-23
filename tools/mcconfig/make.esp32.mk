@@ -270,28 +270,46 @@ SDKCONFIG_H=$(IDF_BUILD_DIR)/include/sdkconfig.h
 
 .NOTPARALLEL: $(SDKCONFIG_H)
 
-all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
-	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
-	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
-	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
-	touch $(PROJ_DIR)/main/main.c
 	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash && $(DO_LAUNCH)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
 
-clean:
-	@echo # Clean project
-	-rm -rf $(BIN_DIR) 2>/dev/null
-	-rm -rf $(TMP_DIR) 2>/dev/null
+deploy:
+	@echo "# uploading to esp32"
+	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 
-allclean:
-	@echo # Clean project and library
-	-rm -rf $(LIB_DIR) 2>/dev/null
+debugger:
+	@echo "# starting xsbug"
+	$(KILL_SERIAL2XSBUG)
+	$(DO_XSBUG)
+	$(DO_LAUNCH)
+
+prepareOutput:
+	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
+	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
+	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
+
+precursor: prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
+	touch $(PROJ_DIR)/main/main.c
+
+build: precursor
+	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make --silent
+	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	echo "#"
+	echo "# Built files at $(BIN_DIR)"
+	echo "#"
+
+clean:
+	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 

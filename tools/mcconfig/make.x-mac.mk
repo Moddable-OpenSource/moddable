@@ -141,6 +141,13 @@ $(BIN_DIR)/MacOS/main: $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS)
 	@echo "# cc" $(@F)
 	$(CC) $(LINK_FLAGS) $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS) $(LIBRARIES) -o $@
 
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
+	
+
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
 	@echo "# cc" $(<F)

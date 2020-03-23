@@ -137,6 +137,11 @@ VPATH += $(XS_DIRECTORIES)
 	
 all: $(LIB_DIR) $(BIN_DIR)/mc.so
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.so
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

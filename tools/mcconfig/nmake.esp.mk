@@ -62,6 +62,11 @@ UPLOAD_RESET = nodemcu
 UPLOAD_VERB = -v
 !ENDIF
 
+START_SERIAL2XSBUG= $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
+
+
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE = 4M
 FLASH_MODE = qio
@@ -339,15 +344,41 @@ LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 
 all: $(LAUNCH)
 
-debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
-	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-	$(UPLOAD_TO_ESP)
-#	@echo # using DEBUGGER_SPEED $(DEBUGGER_SPEED)
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+clean:
+	$(KILL_SERIAL2XSBUG)
+	echo # Clean project bin and tmp
+	echo $(BIN_DIR)
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	echo $(TMP_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	echo $(LIB_DIR)
+	del /s/q/f $(LIB_DIR)\*.* > NUL
+	rmdir /s/q $(LIB_DIR)
 
-release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
+precursor: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
+	
+
+debug: precursor
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(UPLOAD_TO_ESP)
+	$(START_SERIAL2XSBUG)
+
+release: precursor
+	$(KILL_SERIAL2XSBUG)
+	$(UPLOAD_TO_ESP)
+
+build: precursor
+
+deploy:
+	if not exist $(BIN_DIR)\main.bin (echo # Build before deploy) else ( $(UPLOAD_TO_ESP) )
+
+debugger:
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(START_SERIAL2XSBUG)
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)

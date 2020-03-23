@@ -159,6 +159,19 @@ XSL = $(BUILD_DIR)\bin\win\debug\xsl
 all: $(LIB_DIR) $(BIN_DIR)\mc.dll
 	start $(SIMULATOR) $(BIN_DIR)\mc.dll
 
+clean:
+	echo # Clean project lib, bin and tmp
+	echo $(BIN_DIR)
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	echo $(TMP_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	echo $(LIB_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
+
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 

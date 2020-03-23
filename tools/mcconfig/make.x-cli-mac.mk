@@ -128,6 +128,11 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+
+clean:
+	echo "# Clean application"
+	-rm -rf $(BIN_DIR)
+	-rm -rf $(TMP_DIR)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

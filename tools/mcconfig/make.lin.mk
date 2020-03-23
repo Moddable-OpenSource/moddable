@@ -144,7 +144,16 @@ VPATH += $(XS_DIRECTORIES)
 	
 all: $(LIB_DIR) $(BIN_DIR)/mc.so
 	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
-	
+
+debugger:
+	@echo "# starting xsbug"
+	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	

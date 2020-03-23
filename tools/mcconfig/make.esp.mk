@@ -294,13 +294,18 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
-		LAUNCH = debugmac
+		LAUNCH = debug
+		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 	else
-		LAUNCH = debuglin
+		LAUNCH = debug
+		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 	endif
 else
 	LAUNCH = release
 endif
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 
 ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)/components/esp8266/firmware
@@ -328,22 +333,32 @@ UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ES
 
 all: $(LAUNCH)
 
-debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(shell pkill serial2xsbug)
-	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-	$(UPLOAD_TO_ESP)
-#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
-	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+build: $(LIB_DIR) $(BIN_DIR)/main.bin
 
-debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(shell pkill serial2xsbug)
-	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+deploy:
+	@echo "# uploading to esp"
 	$(UPLOAD_TO_ESP)
-#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+
+
+debugger:
+	@echo "# starting xsbug"
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(START_SERIAL2XSBUG)
+
+debug: build
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(UPLOAD_TO_ESP)
+	$(START_SERIAL2XSBUG)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(UPLOAD_TO_ESP)
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
