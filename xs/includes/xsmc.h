@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -39,24 +39,6 @@
 #define __XSMC_H__
 
 #include "xs.h"
-
-#if 0
-#undef fxPop
-#undef fxPush
-
-static inline xsSlot _fxPop(xsMachine *the)
-{
-	return *the->stack++;
-}
-
-static inline void _fxPush(xsMachine *the, xsSlot *v)
-{
-	*--the->stack = *v;
-}
-
-#define fxPop()		_fxPop(the)
-#define fxPush(v)	_fxPush(the, &v)
-#endif
 
 #ifdef __cplusplus
 extern "C" {
