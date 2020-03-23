@@ -218,9 +218,8 @@ void fxAbort(txMachine* the, int status)
 			break;
 	}
 	if (msg) {
-		fxReport(the, "xs abort: %s\n", msg);
-		fxDebugger(the, NULL, 0);
-	}
+		fxReport(the, "XS abort: %s\n", msg);
+		fxDebugger(the, (char *)__FILE__, __LINE__);
 #endif
 
 	c_exit(status);
@@ -425,9 +424,6 @@ void fxConnect(txMachine* the)
 
 	tcp_err(pcb, didError);
 connected:
-#ifdef mxInstrument
-	espDescribeInstrumentation(the);
-#endif
     xmodLog("  fxConnect - EXIT");
 	return;
 }

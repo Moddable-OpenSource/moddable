@@ -63,14 +63,14 @@ void modInstrumentationMax_(uint8_t what, int32_t value)
 	}
 }
 
-int32_t modInstrumentationGet_(uint8_t what)
+int32_t modInstrumentationGet_(void *the, uint8_t what)
 {
 	if (what <= kModInstrumentationLast) {
 		if ((kModInstrumentationCallbacksBegin <= what) && (what <= kModInstrumentationCallbacksEnd)) {
 			if (!gInstrumentationValues[what])
 				return 0;
 
-			return ((ModInstrumentationGetter)gInstrumentationValues[what])();
+			return ((ModInstrumentationGetter)gInstrumentationValues[what])(the);
 		}
 		return gInstrumentationValues[what];
 	}
@@ -89,7 +89,7 @@ void xs_instrumentation_get(xsMachine *the)
 	int what = xsmcToInteger(xsArg(0));
 
 	if ((0 <= what) && (what <= kModInstrumentationLast))
-		xsmcSetInteger(xsResult, modInstrumentationGet_(what));
+		xsmcSetInteger(xsResult, modInstrumentationGet_(the, what));
 }
 
 #else

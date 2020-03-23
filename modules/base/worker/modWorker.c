@@ -23,6 +23,13 @@
 
 #include "mc.xs.h"			// for xsID_ values
 
+#ifdef mxInstrument
+	#include "modTimer.h"
+	#include "modInstrumentation.h"
+
+	static void workerSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize);
+#endif
+
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
@@ -89,8 +96,12 @@ void xs_worker_destructor(void *data)
 			vTaskDelay(1);	// necessary to allow idle task to run so task memory is freed. perhaps there's a better solution?
 		}
 #endif
-		if (worker->the)
+		if (worker->the) {
+#ifdef mxInstrument
+			espInstrumentMachineEnd(worker->the);
+#endif
 			xsDeleteMachine(worker->the);
+		}
 
 		modCriticalSectionBegin();
 			for (walker = gWorkers, prev = NULL; NULL != walker; walker = walker->next) {
@@ -414,6 +425,10 @@ int workerStart(modWorker worker)
 	if (!the)
 		return -1;
 
+#ifdef mxInstrument
+	espInstrumentMachineBegin(the, workerSampleInstrumentation, 0, NULL, NULL);
+#endif
+
 	xsBeginHost(the);
 
 	xsmcVars(2);
@@ -495,3 +510,11 @@ void workerLoop(void *pvParameter)
 }
 #endif
 
+#ifdef mxInstrument
+void workerSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
+{
+	xsMachine *the = *(xsMachine **)refcon;
+	fxSampleInstrumentation(the, 0, NULL);
+	espInstrumentMachineReset(the);
+}
+#endif
