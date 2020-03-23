@@ -142,6 +142,9 @@ clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
+
+build: $(LIB_DIR) $(BIN_DIR)/mc.so
+	
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
