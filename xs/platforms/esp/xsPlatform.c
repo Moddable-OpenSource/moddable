@@ -220,6 +220,7 @@ void fxAbort(txMachine* the, int status)
 	if (msg) {
 		fxReport(the, "XS abort: %s\n", msg);
 		fxDebugger(the, (char *)__FILE__, __LINE__);
+	}
 #endif
 
 	c_exit(status);
