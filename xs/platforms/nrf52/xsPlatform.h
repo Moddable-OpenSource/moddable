@@ -145,6 +145,14 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	#define mxMachineDebug
 #endif
 
+#ifdef mxInstrument
+	#define mxMachineInstrument \
+		void *instrumentationTimer; \
+		void *instrumentationCallback;
+#else
+	#define mxMachineInstrument
+#endif
+
 #define mxMachinePlatform \
 	void* host; \
 	uint8_t *heap; \
@@ -155,7 +163,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void *waiterCondition; \
 	void *waiterData; \
 	void *waiterLink; \
-	mxMachineDebug
+	mxMachineDebug \
+	mxMachineInstrument
 
 #endif /* __XS6PLATFORMMINIMAL__ */
 

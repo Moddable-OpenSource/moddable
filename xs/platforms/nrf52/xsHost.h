@@ -231,6 +231,16 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
     void modMachineTaskWake(xsMachine *the);
 #endif
 
+/*
+	instrumentation
+*/
+
+#if defined(mxInstrumentation) && defined(__XS__)
+	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(xsMachine *the);
+	void espInstrumentMachineReset(xsMachine *the);
+#endif
+
 /* 
 	c libraries
 */
