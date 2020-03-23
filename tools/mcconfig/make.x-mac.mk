@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -128,7 +128,9 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES)
+all: build
+
+build: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -145,6 +147,7 @@ clean:
 	@echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
+	-rm -rf $(LIB_DIR) 2>/dev/null
 
 	
 

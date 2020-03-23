@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -142,12 +142,16 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/mc.so
+all: precursor
 	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+
+precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 debugger:
 	@echo "# starting xsbug"
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+
+build: precursor
 
 clean:
 	echo "# Clean project"

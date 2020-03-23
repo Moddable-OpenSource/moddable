@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -135,15 +135,17 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/mc.so
+all: precursor
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.so
+
+precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
-build: $(LIB_DIR) $(BIN_DIR)/mc.so
+build: precursor
 	
 	
 $(LIB_DIR):

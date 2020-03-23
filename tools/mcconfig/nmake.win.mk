@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -156,8 +156,10 @@ XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
-all: $(LIB_DIR) $(BIN_DIR)\mc.dll
+all: build
 	start $(SIMULATOR) $(BIN_DIR)\mc.dll
+
+build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 
 clean:
 	echo # Clean project lib, bin and tmp

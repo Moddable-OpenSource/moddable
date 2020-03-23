@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -140,7 +140,9 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 
-all: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+all: precursor
+
+build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
