@@ -2217,15 +2217,16 @@ void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names,
 #endif
 #ifndef mxNoConsole
 	j = 0;
+	c_printf("instruments key: ");
 	for (i = 0; i < count; i++, j++) {
 		if (j)
 			c_printf(",");
-		c_printf(",%s", names[i]);
+		c_printf("%s", names[i]);
 	}
 	for (i = 0; i < xsInstrumentCount; i++, j++) {
 		if (j)
 			c_printf(",");
-		c_printf(",%s", xsInstrumentNames[i]);
+		c_printf("%s", xsInstrumentNames[i]);
 	}
 	c_printf("\n");
 #endif
@@ -2268,6 +2269,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 #endif
 #ifndef mxNoConsole
 	j = 0;
+	c_printf("instruments: ");
 	for (i = 0; i < count; i++, j++) {
 		if (j)
 			c_printf(",");

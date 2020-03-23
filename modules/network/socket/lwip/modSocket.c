@@ -427,6 +427,9 @@ void xs_socket_destructor(void *data)
 		raw_remove(xss->raw);
 	}
 
+	if (xss->pb)
+		pbuf_free_safe(xss->pb);
+
 	for (i = 0; i < kReadQueueLength; i++) {
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);

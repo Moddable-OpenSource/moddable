@@ -547,27 +547,10 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
-	txLinker* linker = (txLinker*)(the->context);
-	txSlot *function, *home = the->stack, *slot;
-	if (linker->stripFlag) {
-		property = property->next = fxNewSlot(the);
-		property->flag = flag;
-		property->ID = id;
-		property->kind = XS_HOST_FUNCTION_KIND;
-		property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
-		property->value.hostFunction.IDs = (txID*)the->code;
-	}
-	else {
-		function = fxNewHostFunction(the, call, length, id);
-		slot = mxFunctionInstanceHome(function);
-		slot->value.home.object = home->value.reference;
-		property = property->next = fxNewSlot(the);
-		property->flag = flag;
-		property->ID = id;
-		property->kind = the->stack->kind;
-		property->value = the->stack->value;
-		the->stack++;
-	}
+	property = property->next = fxNewSlot(the);
+	property->flag = flag;
+	property->ID = id;
+	fxSetHostFunctionProperty(the, property, call, length, id);
 	return property;
 }
 
@@ -1266,3 +1249,21 @@ void fxPrintTable(txMachine* the, FILE* file, txSize modulo, txSlot** table)
 	fprintf(file, "\n");
 }
 
+void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	if (linker->stripFlag) {
+		property->kind = XS_HOST_FUNCTION_KIND;
+		property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
+		property->value.hostFunction.IDs = (txID*)the->code;
+	}
+	else {
+		txSlot* home = the->stack;
+		txSlot* function = fxNewHostFunction(the, call, length, id);
+		txSlot* slot = mxFunctionInstanceHome(function);
+		slot->value.home.object = home->value.reference;
+		property->kind = the->stack->kind;
+		property->value = the->stack->value;
+		mxPop();
+	}
+}

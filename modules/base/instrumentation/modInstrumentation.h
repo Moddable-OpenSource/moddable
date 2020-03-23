@@ -74,7 +74,7 @@ enum {
 	kModInstrumentationLast = kModInstrumentationCallbacksEnd
 };
 
-typedef int32_t (*ModInstrumentationGetter)(void);
+typedef int32_t (*ModInstrumentationGetter)(void *the);
 
 #ifdef __cplusplus 
 extern "C" {
@@ -88,7 +88,7 @@ void modInstrumentationSet_(uint8_t what, int32_t value);
 void modInstrumentationMin_(uint8_t what, int32_t value);
 void modInstrumentationMax_(uint8_t what, int32_t value);
 void modInstrumentationAdjust_(uint8_t what, int32_t value);
-int32_t modInstrumentationGet_(uint8_t what);
+int32_t modInstrumentationGet_(void *the, uint8_t what);
 
 #ifdef __cplusplus 
 };
@@ -99,7 +99,7 @@ int32_t modInstrumentationGet_(uint8_t what);
 #define modInstrumentationMin(what, value) modInstrumentationMin_(kModInstrumentation##what, value)
 #define modInstrumentationMax(what, value) modInstrumentationMax_(kModInstrumentation##what, value)
 #define modInstrumentationAdjust(what, value) modInstrumentationAdjust_(kModInstrumentation##what, value)
-#define modInstrumentationGet(what) modInstrumentationGet_(kModInstrumentation##what)
+#define modInstrumentationGet(the, what) modInstrumentationGet_(the, kModInstrumentation##what)
 
 #else
 
@@ -108,7 +108,7 @@ int32_t modInstrumentationGet_(uint8_t what);
 #define modInstrumentationSetCallback(what, getter)
 #define modInstrumentationSet(what, value)
 #define modInstrumentationAdjust(what, value)
-#define modInstrumentationGet(what, value)
+#define modInstrumentationGet(the, what)
 
 #endif
 
