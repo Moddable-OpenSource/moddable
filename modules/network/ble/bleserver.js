@@ -100,6 +100,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyInput() {}
 	onPasskeyRequested() {}
 	onAuthenticated() {}
+	onMTUExchanged() {}
 
 	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
@@ -155,6 +156,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onAuthenticated":
 				return this.onAuthenticated();
+				break;
+			case "onMTUExchanged":
+				this.onMTUExchanged(params);
 				break;
 		}
 	}
