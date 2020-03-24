@@ -912,6 +912,18 @@ void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint1
 	xsEndHost(gBLE->the);
 }
 
+static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+	
+	uint16_t mtu = *(uint16_t *)message;
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), mtu);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -1013,6 +1025,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 				LOG_GAP_INT(err_code);
 			}
 #endif
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&mtu_reply, sizeof(mtu_reply), gattsMTUExchangedEvent, NULL);
         	break;
         }
         default:
