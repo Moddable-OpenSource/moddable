@@ -172,9 +172,9 @@ function serializeManufacturerSpecificData({identifier, data = null}) {
 function serializeConnectionInterval({intervalMin, intervalMax}) {
 	let buffer = new ArrayBuffer(4);
 	let result = new DataView(buffer);
-	result.setUint16(intervalMin, 0, true);
-	result.setUint16(intervalMax, 2, true);
-	return result;
+	result.setUint16(0, intervalMin, true);
+	result.setUint16(2, intervalMax, true);
+	return new Uint8Array(buffer);
 }
 
 function serializeServiceData16({uuid, data = null}) {
@@ -288,7 +288,7 @@ class AdvertisementSerializer {
 	static appearance(param) {
 		return {
 			type: GAP.ADType.APPEARANCE,
-			data: [data & 0xFF, (data >> 8) & 0xFF]
+			data: [param & 0xFF, (param >> 8) & 0xFF]
 		};
 	}
 	static publicAddress(param) {
