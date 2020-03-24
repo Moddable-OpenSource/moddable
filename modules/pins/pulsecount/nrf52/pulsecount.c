@@ -87,14 +87,18 @@ void xs_pulsecount(xsMachine *the)
 		xsUnknownError("no memory");
 
 	pc->the = the;
+
 	pc->obj = xsThis;
+	if (xsmcHas(xsArg(0), xsID_target))
+		xsmcGet(pc->obj, xsArg(0), xsID_target);
+
+	pc->hasOnReadable = false;
 	if (xsmcHas(xsArg(0), xsID_onReadable)) {
 		xsmcGet(pc->onReadable, xsArg(0), xsID_onReadable);
 		xsRemember(pc->onReadable);
 		pc->hasOnReadable = true;
 	}
-	else
-		pc->hasOnReadable = false;
+
 	pc->current = 0;
 	pc->changeQueued = 0;
 	xsmcSetHostData(xsThis, pc);

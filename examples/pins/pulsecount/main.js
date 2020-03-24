@@ -1,21 +1,37 @@
+import config from "mc/config";
 import PulseCount from "pins/pulsecount";
-import Timer from "timer";
+import Digital from "pins/digital";
+import Monitor from "pins/digital/monitor";
 
-let pulse = new PulseCount({signal: 6, control: 27});
-let last = 0;
 
-pulse.onChanged = function pulseChanged() {
-	trace(`pulse changed ${pulse.get()}\n`);
+const pulse = new PulseCount({
+	signal: config.jogdial.signal,
+	control: config.jogdial.control,
+	onReadable() {
+		trace(`Pulse ${this.read()}\n`);
+	}
+});
+
+const button = new Monitor({
+	pin: config.jogdial.button,
+	mode: Digital.InputPullUp,
+	edge: Monitor.Falling | Monitor.Rising,
+});
+button.onChanged = function() {
+	if (this.read())
+		trace(`Button Release\n`);
+	else
+		trace(`Button Push\n`);
 }
 
-
-Timer.repeat(() => {
-	let value = pulse.get();
-	if (value === last) return;
-
-	last = value;
-	trace(value, "\n");
-
-	if (value > 20)
-		pulse.set(0);
-}, 17);
+const back = new Monitor({
+	pin: 13,
+	mode: Digital.InputPullUp,
+	edge: Monitor.Falling | Monitor.Rising,
+});
+back.onChanged = function() {
+	if (this.read())
+		trace(`Back Release\n`);
+	else
+		trace(`Back Push\n`);
+}
