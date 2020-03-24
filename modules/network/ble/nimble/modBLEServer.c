@@ -607,6 +607,23 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
 	}
 }
 
+static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_gap_event *event = (struct ble_gap_event *)message;
+	
+	if (!gBLE)
+		return;
+
+	if (event->mtu.conn_handle != gBLE->conn_id)
+		return;
+		
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), event->mtu.value);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void ble_server_on_reset(int reason)
 {
 	if (gBLE)
@@ -697,6 +714,9 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 			break;
 		case BLE_GAP_EVENT_PASSKEY_ACTION:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), passkeyEvent, NULL);
+			break;
+		case BLE_GAP_EVENT_MTU:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)event, sizeof(struct ble_gap_event), mtuExchangedEvent, NULL);
 			break;
 		default:
 			break;
