@@ -60,7 +60,8 @@
 			"spi_port": 1,
 			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)",
 			"disp_pin": "NRF_GPIO_PIN_MAP(1,1)",
-			"dither": 1
+			"dither": 0,
+			"updateAll": 0,
 		},
 		"click_wheel": {
 			"enc_a": "NRF_GPIO_PIN_MAP(0,6)",

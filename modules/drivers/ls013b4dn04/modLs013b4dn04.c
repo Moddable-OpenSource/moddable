@@ -40,6 +40,9 @@
 #ifndef MODDEF_LS013B4DN04_DITHER
 	#define MODDEF_LS013B4DN04_DITHER (0)
 #endif
+#ifndef MODDEF_LS013B4DN04_UPDATEALL
+	#define MODDEF_LS013B4DN04_UPDATEALL (0)
+#endif
 
 static const uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 	0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
@@ -57,7 +60,8 @@ static const uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
 	0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3, 0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
 	0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb, 0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
 	0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7, 0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
-	0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef, 0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff};
+	0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef, 0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
+};
 
 
 #define SCREEN_CS_DEACTIVE	modGPIOWrite(&ls->cs, 0)
@@ -322,32 +326,36 @@ void xs_ls013b4dn04_destructor(void *data){
 	}
 }
 
-void ls013b4dn04Hold(ls013b4dn04 ls){
-	ls->updateCycle = !(ls->updateCycle);
+void ls013b4dn04Hold(ls013b4dn04 ls)
+{
+	ls->updateCycle = !ls->updateCycle;
 	uint8_t mode[6] = {0,0,0,0,0,0};
-	if (ls->updateCycle){
+	if (ls->updateCycle)
 		mode[0] |= FRAME_FLAG;
-	}
 	modSPITx(&ls->spiConfig, mode, 6);
 	modSPIActivateConfiguration(NULL);
 }
 
-static void ls_clear(ls013b4dn04 ls){
-	ls->updateCycle = !(ls->updateCycle);
+void ls_clear(ls013b4dn04 ls)
+{
+	ls->updateCycle = !ls->updateCycle;
 	uint8_t mode[6] = {0,0,0,0,0,0};
 	mode[0] = CLEAR_FLAG;
-	if (ls->updateCycle){
+	if (ls->updateCycle)
 		mode[0] |= FRAME_FLAG;
-	}
 
 	modSPITx(&ls->spiConfig, mode, 6);
 	modSPIActivateConfiguration(NULL);
 }
 
-void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid){
-//	ls013b4dn04 ls = refcon;
+void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid)
+{
 	invalid->x = 0;
 	invalid->w = MODDEF_LS013B4DN04_WIDTH;
+#if MODDEF_LS013B4DN04_UPDATEALL
+	invalid->y = 0;
+	invalid->h = MODDEF_LS013B4DN04_HEIGHT;
+#endif
 }
 
 void xs_ls013b4dn04_adaptInvalid(xsMachine *the)
@@ -357,12 +365,15 @@ void xs_ls013b4dn04_adaptInvalid(xsMachine *the)
 	ls013b4dn04AdaptInvalid(ls, invalid);
 }
 
-void xs_ls013b4dn04_clear(xsMachine *the){
+void xs_ls013b4dn04_clear(xsMachine *the)
+{
 	ls013b4dn04 ls = xsmcGetHostData(xsThis);
 	ls_clear(ls);
 }
 
-void xs_ls013b4dn04_hold(xsMachine *the){
+//@@ no power!?!
+void xs_ls013b4dn04_hold(xsMachine *the)
+{
 	ls013b4dn04 ls = xsmcGetHostData(xsThis);
 	ls013b4dn04Hold(ls);
 }
