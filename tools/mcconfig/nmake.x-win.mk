@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -153,7 +153,22 @@ XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
-all: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
+all: build
+
+build: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
+
+clean:
+	echo # Clean project lib, bin and tmp
+	echo $(BIN_DIR)
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	echo $(TMP_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	echo $(LIB_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
 
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)

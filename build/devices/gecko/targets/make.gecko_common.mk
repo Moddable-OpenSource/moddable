@@ -71,6 +71,8 @@ XS_OBJ = \
 	$(LIB_DIR)/xsModule.c.o \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
+	$(LIB_DIR)/xsPlatforms.c.o \
+	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
@@ -85,6 +87,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsTree.c.o \
 	$(LIB_DIR)/xsType.c.o \
 	$(LIB_DIR)/xsdtoa.c.o \
+	$(LIB_DIR)/xsre.c.o \
 	$(LIB_DIR)/xsmc.c.o
 XS_DIRS = \
 	$(XS_DIR)/includes \
@@ -194,7 +197,12 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 .PHONY: all	
 
 all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_gecko.a
-	
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 

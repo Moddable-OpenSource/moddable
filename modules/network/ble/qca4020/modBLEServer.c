@@ -797,6 +797,20 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	}
 }
 
+static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t *result = (qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t*)message;
+
+ 	if (result->ConnectionID != gBLE->connection.id)
+ 		return;
+	
+	xsBeginHost(gBLE->the);
+		xsmcVars(1);
+		xsmcSetInteger(xsVar(0), result->MTU);
+		xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 #if LOG_UNHANDLED_CALLBACK_EVENTS
 typedef struct {
 	int event;
@@ -1113,6 +1127,13 @@ void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 					}
 				}
 				break;
+			case QAPI_BLE_ET_GATT_SERVER_DEVICE_CONNECTION_MTU_UPDATE_E:
+				if (GATT_Server_Event_Data->Event_Data.GATT_Device_Connection_MTU_Update_Data) {
+					qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t mtu = *GATT_Server_Event_Data->Event_Data.GATT_Device_Connection_MTU_Update_Data;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&mtu, sizeof(mtu), mtuExchangedEvent, 0);					
+				}
+				break;
+				
 #if LOG_UNHANDLED_CALLBACK_EVENTS
 			default: {
 				UnhandledCallbackEventRecord u;

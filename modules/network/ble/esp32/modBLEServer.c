@@ -762,6 +762,21 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	struct gatts_mtu_evt_param *mtu = (struct gatts_mtu_evt_param *)message;
+	if (mtu->conn_id != gBLE->conn_id)
+		return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), mtu->mtu);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
 	uint8_t *value;
@@ -830,6 +845,9 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			}
         	break;
 #endif
+		case ESP_GATTS_MTU_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->mtu, sizeof(struct gatts_mtu_evt_param), gattsMTUExchangedEvent, NULL);
+			break;
 	}
 }
 
