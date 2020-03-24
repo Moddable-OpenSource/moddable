@@ -194,52 +194,54 @@ More detailed getting started guides are available for the following devices:
 
 	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
 
-5. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. Clone the v3.3.1 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-6. Set the `IDF_PATH` environment variable in your `~/.profile` to the `esp-idf` directory:
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
 
-	```text
-	export IDF_PATH="/Users/<user>/esp32/esp-idf"
-	```
-
-	> Note: Close and reopen the Terminal window to enable the `IDF_PATH` environment variable.
+    ```text
+    cd ~/esp32/esp-idf
+    git fetch
+    git checkout v3.3.1
+    git submodule update
+    ```
 	
-7. Install Python and the `pip` package management system:
+6. Update homebrew and then install Python, cmake, ninja, and the pip package management system. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
 	```text
-	brew install python
+	brew update
+	brew install python cmake ninja
+	brew upgrade python cmake ninja
 	sudo easy_install pip
 	```
 	
-8. Install the required Python packages:
+7. Install required Python packages:
 
 	```text
-	python -m pip install --user -r $IDF_PATH/requirements.txt
-	```
-
-9. Update the `PATH` environment variable in your `~/.profile` to include the toolchain directory:
-
-	```
-	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
+	python -m pip install --user -r ~/esp32/esp-idf/requirements.txt
 	```
 		
-10. Connect the ESP32 device to your macOS host with a USB cable and determine the serial port of the ESP32 device.
+8. Optional: Connect the ESP32 device to your macOS host with a USB cable and determine the serial port device file for your ESP32.
 
-	To determine the serial port, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial devices, use the following command in Terminal:
+	To determine the device file, examine the list of devices before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial device files, use the following command in Terminal:
 	
 	```text
 	ls /dev/cu.*
 	```
 
-11. Set the `UPLOAD_PORT` environment variable in your `~/.profile` to the ESP32 serial port:
+	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
-	```text
-	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
+9. Set the `IDF_PATH`, `UPLOAD_PORT`, `PATH`, and `ESP32_CMAKE` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/cu.SLAB_USBtoUART`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+
+	```
+    export IDF_PATH=$HOME/esp32/esp-idf
+    export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
+	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
+    export ESP32_CMAKE=1
 	```
 
 	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
@@ -247,8 +249,10 @@ More detailed getting started guides are available for the following devices:
 	```text
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
-	
-12. Verify the setup by building `helloworld` for the `esp32` target:
+
+	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
+
+10. Verify the setup by building `helloworld` for the `esp32` target:
 
 
 	```text
@@ -267,6 +271,7 @@ More detailed getting started guides are available for the following devices:
 	pip install pyserial
 	pip install cryptography
 	```
+    
 
 <a id="windows"></a>
 ## Windows
@@ -403,57 +408,56 @@ More detailed getting started guides are available for the following devices:
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-3. Download the Espressif [all-in-one Windows toolchain and MSYS2](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip) zip archive. Copy the extracted `msys32` directory into your home `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>\msys32`.
+3. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, and a Windows-based kconfig tool. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
-4. Open a MSYS2 MINGW32 terminal window from a Windows command line console:
+    It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
-	```text
-	%USERPROFILE%\msys32\mingw32.exe
-	```
-	
-5. From the MINGW32 terminal window, create an `esp` directory in the home `~` directory:
+    If you do not already have CMake or Python 2.7, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-	```text
-	mkdir ~/esp
-	```
-	
-6. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp` directory. Make sure to specify the `--recursive` option:
+4. Create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git bash:
 
-	```text
-	cd ~/esp
-	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
-	```
+    ```text
+    cd ~
+    mkdir esp32
+    ```
 
-7. Create a new script file `esp32_moddable.sh` in your `%USERPROFILE%\msys32\etc\profile.d\` directory. Add an export command for the ESP-IDF path to the script file:
+5. Clone the v3.3.1 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
-	```text
-	export IDF_PATH="C:/Users/<your-user-name>/msys32/home/<your-user-name>/esp/esp-idf"
-	```
+    ```text
+    cd ~/esp32
+    git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
+    ```
 
-8. Connect the ESP32 to your computer with a USB cable.
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
 
-9. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+    ```text
+    cd ~/esp32/esp-idf
+    git fetch
+    git checkout v3.3.1
+    git submodule update
+    ```
+
+6. Connect the ESP32 to your computer with a USB cable.
+
+7. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
 	
-10. Set the `BASE_DIR`, `UPLOAD_PORT` and `SERIAL2XSBUG` Windows environment variables to your `%USERPROFILE%` directory, device COM port and serial2xsbug.exe tool path. Note that forward slashes are required in the tool path:
+8. Update the `IDF_PATH`, `UPLOAD_PORT`, `ESP32_CMAKE`, and `PATH` Windows environment variables as below. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
+- `IDF_PATH`: the directory where you cloned the ESP-IDF, e.g. `%userprofile%\esp32\esp-idf`
+- `UPLOAD_PORT`: the COM port you identified in step 7, e.g. `COM3`
+- `ESP32_CMAKE`: set to `1` to enable the Windows CMake build in the Moddable SDK
+- `PATH`: Add the directory `%IDF_PATH%\tools` to your `PATH`.
 
-	```text
-	set BASE_DIR=%USERPROFILE%
-	set UPLOAD_PORT=COM3
-	set SERIAL2XSBUG=/c/Users/<your-user-name>/Projects/moddable/build/bin/win/release/serial2xsbug.exe
-	```
-
-11. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
+9. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32
 	```
-	
-	> The mcconfig tool launches a MINGW32 shell to configure the ESP32 firmware build. After this configuration completes, the MINGW32 shell closes and control is returned back to the command line console. Press any key to complete the build and Flash the binary to the device. Another MINGW32 shell opens to complete the build.
-	
-	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.	
+
+**Troubleshooting:**
+ - If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install --user -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2019."	
 
 <a id="linux"></a>
 ## Linux
@@ -582,61 +586,62 @@ More detailed getting started guides are available for the following devices:
 
 	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
 
-4. Clone the v3.2.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. Clone the v3.3.1 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.2.2 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
 	```
+
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
+
+    ```text
+    cd ~/esp32/esp-idf
+    git fetch
+    git checkout v3.3.1
+    git submodule update
+    ```
 
 5. Install the packages required to compile with the `ESP-IDF`:
 
 	```text
-	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial 
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
 	```
-	
-6. Set the `IDF_PATH` environment variable in your `~/.bashrc` to the `esp-idf` directory:
+
+6. Connect the ESP32 device to your Linux host with a USB cable.
+
+7. Optional: determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
 
 	```text
-	IDF_PATH=~/esp32/esp-idf
-	export IDF_PATH
+	ls /dev
 	```
 
-7. Install the Python `pip` package management system:
+	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
-	```text
-	cd ~/esp32
-	sudo easy_install pip
+8. Set the `IDF_PATH`, `UPLOAD_PORT`, `PATH`, and `ESP32_CMAKE` environment variables in your shell's user profile file (e.g. `~/.bashrc` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/ttyUSB0`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+
 	```
+    export IDF_PATH=~/esp32/esp-idf
+    export UPLOAD_PORT=/dev/ttyUSB0
+	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
+    export ESP32_CMAKE=1
+	```
+
+	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
 	
-8. Install the required Python packages:
+	```text
+	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
+	```
+
+	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
+
+9. Install the required Python packages:
 
 	```text
 	python -m pip install --user -r $IDF_PATH/requirements.txt
 	```
 
-9. Update the `PATH` environment variable in your `~/.bashrc` to include the toolchain directory:
-
-	```text
-	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin
-	```
-		
-10. Connect the ESP32 device to your Linux host with a USB cable.
-
-11. Determine the USB device path used by the ESP32 device, e.g. `/dev/ttyUSB0`:
-
-	```text
-	ls /dev
-	```
-	
-12. Set the `UPLOAD_PORT` environment variable in your `~/.bashrc` to the ESP32 serial port:
-
-	```text
-	UPLOAD_PORT=/dev/ttyUSB0
-	export UPLOAD_PORT
-	```
-
-13. Verify the setup by building `helloworld` for the `esp32` target:
+10. Verify the setup by building `helloworld` for the `esp32` target:
 
 	```text
 	cd $MODDABLE/examples/helloworld
