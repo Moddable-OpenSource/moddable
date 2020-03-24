@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -66,10 +66,23 @@ LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
 !IF "$(DEBUG)"=="1"
 IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\idf
 PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\xsProj
+KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
+START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+MING_BUILD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make ; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW)"
+
+START_SERIAL2XSBUG = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c " echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
+DEPLOY_CMD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Deploying xs_esp32.elf...; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash"
+
 !ELSE
 IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\idf
 PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\xsProj
+KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
+START_XSBUG=
+MING_BUILD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW)"
+START_SERIAL2XSBUG = echo No debugger for a release build.
+DEPLOY_CMD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Deploying xs_esp32.elf...; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash"
 !ENDIF
+
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
 
@@ -271,9 +284,30 @@ PROJ_DIR_FILES = \
 
 .PHONY: all
 
-all: projDir $(BLE) $(SDKCONFIG_H) $(LAUNCH)
+all: $(LAUNCH)
 
-debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
+clean:
+	echo # Clean project lib, bin and tmp
+	echo $(BIN_DIR)
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	echo $(TMP_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	echo $(LIB_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+	echo $(IDF_BUILD_DIR)
+	if exist $(IDF_BUILD_DIR) del /s/q/f $(IDF_BUILD_DIR)\*.* > NUL
+	if exist $(IDF_BUILD_DIR) rmdir /s/q $(IDF_BUILD_DIR)
+	echo $(PROJ_DIR)
+	if exist del /s/q/f $(PROJ_DIR)\*.* > NUL
+	if exist rmdir /s/q $(PROJ_DIR)
+
+precursor: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
+
+
+debug: precursor
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
@@ -282,12 +316,37 @@ debug: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
 
-release: $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
+release: precursor
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
 	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); make monitor;"
+
+
+mingPrepare:
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
+	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
+	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
+	set HOME=$(PROJ_DIR)
+		
+build: precursor mingPrepare
+	echo $(MING_BUILD)
+	$(MING_BUILD)
+	echo # Build is complete when the MinGW windows closes.
+
+xsbug:
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(START_SERIAL2XSBUG)
+
+deploy:
+	$(KILL_SERIAL2XSBUG)
+	set HOME=$(PROJ_DIR)
+	echo $(DEPLOY_CMD)
+	$(DEPLOY_CMD)
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp

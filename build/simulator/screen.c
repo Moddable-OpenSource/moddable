@@ -298,7 +298,7 @@ void fxScreenSampleInstrumentation(txScreen* screen)
 	int what;
 	txMachine *the = (txMachine*)screen->machine;
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationPiuCommandListUsed; what++)
-		screenInstrumentValues[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
+		screenInstrumentValues[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 	fxSampleInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentValues);
 	modInstrumentationSet(PixelsDrawn, 0);
 	modInstrumentationSet(FramesDrawn, 0);

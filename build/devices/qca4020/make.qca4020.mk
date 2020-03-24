@@ -213,6 +213,21 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_qca4020.a
 
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
+build: all
+
+debugger:
+	@echo "# kill serial2xsbug"
+	$(shell pkill serial2xsbug)
+	echo "# start xsbug"
+	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	echo "# start serial2xsbug at port $(UPLOAD_PORT)"
+	$(shell nohup serial2xsbug $(UPLOAD_PORT) 115200 8N1 2>&1 &)
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h

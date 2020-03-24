@@ -463,6 +463,18 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 	}
 }
 
+static void gattMTUExchangedEvent(struct gecko_msg_gatt_mtu_exchanged_evt_t *evt)
+{
+	if (evt->connection != gBLE->connection)
+		return;
+		
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), evt->mtu);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	if (!gBLE) return;
@@ -500,6 +512,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_sm_bonding_failed_id:
 			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
+			break;
+		case gecko_evt_gatt_mtu_exchanged_id:
+			gattMTUExchangedEvent(&evt->data.evt_gatt_mtu_exchanged);
 			break;
 		default:
 			break;
