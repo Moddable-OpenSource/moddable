@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: February 20, 2020
+Revised: March 25, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -43,7 +43,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 <a id="pinout"></a>
 ### Pinout
 
-<!--TO DO: add pinout diagram-->
+<img src="../assets/devices/moddable-four-pinout.png">
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
@@ -264,21 +264,22 @@ Connect your Moddable Four to the nRF52840 DK board as follows:
 | :---: | :---: |
 | SWD CLK | SDWCLK |
 | SWD IO | SWDIO |
-| RESET | Reset |
+| RESET | RESET |
 | GND DETECT | GND |
-| VTG | 3.3v |
+| VTG | 3V3 |
 
-![nRF52840dk to Moddable 4 connection](./nrf52/assets/nrf52840dk-m4-connect.png#smallFramed) ![Moddable 4 to dk connection](./nrf52/assets/m4-dk-connect.png#smallFramed)
+![Moddable Four to nRF52840 DK connection](../assets/devices/moddable-four-dk-pinout.png)
 
 Connect your Moddable Four to the FTDI cable as follows:
 
+<!-- TO DO: fix Moddable Four column. What are P0.30 and P0.31? Are they P30 and P31? -->
 | Moddable Four | FTDI cable |
 | :---: | :---: |
 | P0.30 | Rx |
 | P0.31 | Tx |
 | GND | GND |
 
-<!--TO DO: figure out where this next line is supposed to go-->
+<!--TO DO: CLarify what this next line means. -->
 J-Link:Target Interface Type -> SWD
 
 <a id="debugging-native-and-script-code"></a>
@@ -294,7 +295,10 @@ J-Link:Target Interface Type -> SWD
 | ? | ? |
 | ? | ? |
 
-![Moddable Four FTDI](./nrf52/assets/M4-R0.7-SerialDebug.png#smallFramed)
+<!--TO DO: add diagram? ->
+
+<!--![Moddable Four FTDI](./nrf52/assets/M4-R0.7-SerialDebug.png#smallFramed)
+-->
 
 Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the following steps:
 
