@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -89,7 +89,7 @@ export default class Client {
 	}
 	publish(topic, data) {
 		if (this.state < 2)
-			throw new Error("cannot publish to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -114,7 +114,7 @@ export default class Client {
 	}
 	subscribe(topic) {
 		if (this.state < 2)
-			throw new Error("cannot subscribe to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -137,7 +137,7 @@ export default class Client {
 	}
 	unsubscribe(topic) {
 		if (this.state < 2)
-			throw new Error("cannot subscribe to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -318,13 +318,12 @@ export default class Client {
 			this.last = Date.now();
 	}
 	connected() {
-		if (this.onConnected)
-			this.onConnected();
+		this.onConnected?.();
 
 		const timeout = Math.floor(((this.timeout || 0) + 999) / 1000);
 		const header = Uint8Array.of(
 			0x00, 0x04,
-			'M'.charCodeAt(),'Q'.charCodeAt(),'T'.charCodeAt(),'T'.charCodeAt(),		// protocol name MQTT
+			77,  81, 84, 84,						// protocol name MQTT
 			0x04,									// protocol level 4 (MQTT version 3.1.1)
 			0x02,									// flags : CleanSession
 			(timeout >> 8) & 0xFF, timeout & 0xFF	// keepalive in seconds
@@ -422,8 +421,7 @@ export default class Client {
 	}
 	fail(msg = "") {
 		trace("MQTT FAIL: ", msg, "\n");
-		if (this.onClose)
-			this.onClose();
+		this.onClose?.();
 		this.close();
 	}
 }
@@ -449,7 +447,7 @@ function ws_callback(state, message) {
 
 		case 4: // websocket closed
 			delete this.ws;
-			this.onClose();
+			this.onClose?.();
 			this.close();
 			break;
 
