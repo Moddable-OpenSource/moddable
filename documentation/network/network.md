@@ -368,14 +368,15 @@ The `read` function behaves exactly like the read function of the `Socket` class
 The user of the `Request` object receives status information through the callback function. The callback receives messages and, for some messages, additional data values. Non-negative `message` values indicate normal operation and negative `message` values indicate an error.
 
 
-| `message` | Description |
-| :---: | :--- |
-| 0 | Get request body fragment. This callback is only received if the `body` property in the dictionary is set to `true`. When called, `val1` is the maximum number of bytes that can be transmitted. Return either a `String` or `ArrayBuffer` containing the next fragment of the request body. Return `undefined` when there are no more fragments.
-| 1 | Response status received with status code. This callback is invoked when the HTTP response status line is successfully received. When called, `val1` is the HTTP status code (e.g. 200 for OK).
-| 2 | One header received. The callback is called for each header in the response. When called, `val1` is the header name in lowercase letters (e.g. `connection`) and `val2` is the header value (e.g. `close`).
-| 3 | All headers received. When all headers have been received, the callback is invoked.
-| 4 | Response body fragment. This callback is invoked when a fragment of the complete HTTP response body is received. `val1` is the number of bytes in the fragment which may be retrieved using the `read` function. This callback only invoked if the `response` property value is `undefined`.
-| 5 | All response body received. This callback is invoked when the entire response body has been received. If the `response` property value is not  `undefined`, `val1` contains the response.
+| `message` | `Request.` | Description |
+| :---: | :---: | :--- |
+|-2 | `error` | 
+| 0 | `requestFragment` | Get request body fragment. This callback is only received if the `body` property in the dictionary is set to `true`. When called, `val1` is the maximum number of bytes that can be transmitted. Return either a `String` or `ArrayBuffer` containing the next fragment of the request body. Return `undefined` when there are no more fragments.
+| 1 | `status` | Response status received with status code. This callback is invoked when the HTTP response status line is successfully received. When called, `val1` is the HTTP status code (e.g. 200 for OK).
+| 2 | `header` | One header received. The callback is called for each header in the response. When called, `val1` is the header name in lowercase letters (e.g. `connection`) and `val2` is the header value (e.g. `close`).
+| 3 | `headersComplete` | All headers received. When all headers have been received, the callback is invoked.
+| 4 | `responseFragment` | Response body fragment. This callback is invoked when a fragment of the complete HTTP response body is received. `val1` is the number of bytes in the fragment which may be retrieved using the `read` function. This callback only invoked if the `response` property value is `undefined`.
+| 5 | `responseComplete` | All response body received. This callback is invoked when the entire response body has been received. If the `response` property value is not  `undefined`, `val1` contains the response.
 
 ***
 
@@ -425,16 +426,18 @@ server.close();
 
 The user of the server receives status information through the callback function. The callback receives messages and, for some messages, additional data values. Positive `message` values indicate normal operation and negative `message` values indicate an error.
 
-| `message` | Description |
-| :---: | :--- |
-| -1 | Disconnected. The request disconnected before the complete response could be delivered. Once disconnected, the request is closed by the server.
-| 1| New connection received. A new requested has been accepted by the server.
-| 2 | Status line of request received. The `val1` argument contains the request path (e.g. `index.html`) and `val2` contains the request method (e.g. `GET`).
-| 3 | One header received. A single HTTP header has been received, with the header name in lowercase letters in `val1` (e.g. `connection`) and the header value (e.g. `close`) in `val2`.
-| 4 | All headers received. All HTTP headers have been received.
-| 8 | Prepare response. The server is ready to send the response. Callback returns a dictionary with the response status (e.g. 200) in the `status` property, HTTP headers in an array on the `headers` property, and the response body on the `body` property. If the status property is missing, the default value of `200` is used. If the body is a `String` or `ArrayBuffer`, it is the complete response. The server adds the `Content-Length` HTTP header. If the body property is set to `true`, the response is delivered using the `Transfer-encoding` mode `chunked`, and the callback is invoked to retrieve each response fragment.
-| 9 | Get response fragment. The server is ready to transmit another fragment of the response. The `val1` argument contains the number of bytes that may be transmitted. The callback returns either a `String` or `ArrayBuffer`. When all data of the request has been returned, the callback returns `undefined`.
-| 10 | Request complete. The request has successfully completed.
+| `message` | `Server.` | Description |
+| :---: | :---: | :--- |
+| -1| `error`  | Disconnected. The request disconnected before the complete response could be delivered. Once disconnected, the request is closed by the server.
+| 1 | `connection` | New connection received. A new requested has been accepted by the server.
+| 2 | `status` | Status line of request received. The `val1` argument contains the request path (e.g. `index.html`) and `val2` contains the request method (e.g. `GET`).
+| 3 | `header` | One header received. A single HTTP header has been received, with the header name in lowercase letters in `val1` (e.g. `connection`) and the header value (e.g. `close`) in `val2`.
+| 4 | `headersComplete` | All headers received. All HTTP headers have been received.
+| 5 | `requestFragment` |
+| 6 | `requestComplete` |
+| 8 | `prepareResponse` | Prepare response. The server is ready to send the response. Callback returns a dictionary with the response status (e.g. 200) in the `status` property, HTTP headers in an array on the `headers` property, and the response body on the `body` property. If the status property is missing, the default value of `200` is used. If the body is a `String` or `ArrayBuffer`, it is the complete response. The server adds the `Content-Length` HTTP header. If the body property is set to `true`, the response is delivered using the `Transfer-encoding` mode `chunked`, and the callback is invoked to retrieve each response fragment.
+| 9 | `responseFragment` | Get response fragment. The server is ready to transmit another fragment of the response. The `val1` argument contains the number of bytes that may be transmitted. The callback returns either a `String` or `ArrayBuffer`. When all data of the request has been returned, the callback returns `undefined`.
+| 10| `responseComplete`  | Request complete. The request has successfully completed.
 
 A new HTTP `Request` is instantiated for each incoming request. The callback is invoked with `this` set to the callback instance for the request. The callback function may attach properties related to handling a specific request to `this`, rather than using global variables, to ensure there are no state collisions when there are multiple active requests.
 
@@ -612,12 +615,12 @@ ws.write(JSON.stringify({text: "hello"}));
 
 The user of the WebSocket client receives status information through the callback function. The callback receives messages and, for some messages, a data value. Positive `message` values indicate normal operation and negative `message` values indicate an error.
 
-| `message` | Description |
-| :---: | :--- |
-| 1 | Socket connected. This callback is received when the client has connected to the WebSocket server. |
-| 2 | WebSocket handshake complete. This callback is received after the client has successfully completed the handshake with the WebSocket server to upgrade from the HTTP connection to a WebSocket connection. |
-| 3 | Message received. This callback is received when a complete new message arrives from the server. The `value` argument contains the message. Binary messages are delivered in an `ArrayBuffer` and text messages in a `String`. |
-| 4 | Closed. This callback is received when the connection closes, either by request of the server or a network error. `value` contains the error code, which is 0 if the connection was closed by the server and non-zero in the case of a network error. |
+| `message` | `Client.` | Description |
+| :---: | :---: | :--- |
+| 1 | `connect` | Socket connected. This callback is received when the client has connected to the WebSocket server. |
+| 2 | `handshake` | WebSocket handshake complete. This callback is received after the client has successfully completed the handshake with the WebSocket server to upgrade from the HTTP connection to a WebSocket connection. |
+| 3 | `receive` | Message received. This callback is received when a complete new message arrives from the server. The `value` argument contains the message. Binary messages are delivered in an `ArrayBuffer` and text messages in a `String`. |
+| 4 | `disconnect` | Closed. This callback is received when the connection closes, either by request of the server or a network error. `value` contains the error code, which is 0 if the connection was closed by the server and non-zero in the case of a network error. |
 
 ***
 
@@ -674,7 +677,7 @@ ws.write(JSON.stringify({text: "hello"}));
 
 ### `callback(message, value)`
 
-The WebSocket server callback is the same as the WebSocket client callback with the exception of the "Socket connected" (`1`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection. The value of `this` is unique for each new server connect to a client. Like the WebSocket client callback, messages cannot be sent until after the callback receives the WebSocket handshake complete message.
+The WebSocket server callback is the same as the WebSocket client callback with the exception of the "Socket connected" (`1` or `Server.connect`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection. The value of `this` is unique for each new server connect to a client. Like the WebSocket client callback, messages cannot be sent until after the callback receives the WebSocket handshake complete message.
 
 >**Note**: Text and binary messages received with the mask bit set are unmasked by the server before delivering them to the callback.
 
