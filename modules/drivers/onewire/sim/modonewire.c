@@ -177,7 +177,7 @@ void xs_onewire_read(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  int argc = xsmcToInteger(xsArgc);
+  int argc = xsmcArgc;
   if (argc == 0)
   {
 

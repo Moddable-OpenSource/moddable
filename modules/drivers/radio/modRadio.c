@@ -91,7 +91,7 @@ void modRadioReceivedMessage(void *the, void *refcon, uint8_t *message, uint16_t
 {
 	xsBeginHost(the);
 		xsmcVars(1);
-		xsVar(0) = xsArrayBuffer(message, messageLength);
+		xsmcSetArrayBuffer(xsVar(0), message, messageLength);
 		xsCall1_noResult(gRadioInstance, xsID_onMessage, xsVar(0));
 	xsEndHost(the);
 }
