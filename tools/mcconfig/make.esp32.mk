@@ -312,6 +312,8 @@ clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
+	-rm -rf $(LIB_DIR) 2>/dev/null
+	-rm -rf $(IDF_BUILD_DIR) 2>/dev/null
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); fi
