@@ -118,6 +118,12 @@ export class MakeFile extends FILE {
 		}
 		else
 			appConfig = [];
+
+		if (tool.instrument === true && tool.debug === false) {
+			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
+			let instConfig = tool.readFileString(instConfigFile);
+			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
+		}
 			
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
@@ -162,12 +168,7 @@ export class MakeFile extends FILE {
 		
 		// Write the result
 		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
-		if (tool.instrument === true) {
-			let instConfig = tool.readFileString(baseConfigDirectory + "sdkconfig.inst");
-			tool.writeFileString(buildConfigFile, baseConfig + instConfig);
-		}
-		else
-			tool.writeFileString(buildConfigFile, baseConfig);
+		tool.writeFileString(buildConfigFile, baseConfig);
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 	}
 	generateBLEDefinitions(tool) {
