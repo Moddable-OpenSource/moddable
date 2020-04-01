@@ -162,7 +162,12 @@ export class MakeFile extends FILE {
 		
 		// Write the result
 		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
-		tool.writeFileString(buildConfigFile, baseConfig);
+		if (tool.instrument === true) {
+			let instConfig = tool.readFileString(baseConfigDirectory + "sdkconfig.inst");
+			tool.writeFileString(buildConfigFile, baseConfig + instConfig);
+		}
+		else
+			tool.writeFileString(buildConfigFile, baseConfig);
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 	}
 	generateBLEDefinitions(tool) {
