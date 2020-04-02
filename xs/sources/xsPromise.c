@@ -1083,7 +1083,7 @@ void fxRunPromiseJobs(txMachine* the)
 			}
 			mxRunCount(count - 6);
 			mxPop();
-			fxEndJob(the);
+// 			fxEndJob(the);
 		}
 		mxCatch(the) {
 		}

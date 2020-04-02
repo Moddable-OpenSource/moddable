@@ -428,7 +428,7 @@ int main(int argc, char* argv[])
 			}
 			xsEndHost(the);
 			mxDuringJobs = mxUndefined;
-			mxFinalizationGroups = mxUndefined;
+			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;
 			mxRunningJobs = mxUndefined;
 			mxBreakpoints = mxUndefined;
@@ -821,8 +821,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxDatePrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxEvalErrorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxFinalizationGroupCleanupIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxFinalizationGroupPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxFinalizationRegistryPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxFunctionPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxGeneratorFunctionPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxGeneratorPrototype); mxFreezeBuiltInRun;

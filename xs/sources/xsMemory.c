@@ -59,7 +59,7 @@ int gxStress = 0;
 static void fxGrowChunks(txMachine* the, txSize theSize); 
 static void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
-static void fxMarkFinalizationGroup(txMachine* the, txSlot* group);
+static void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry);
 static void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkReference(txMachine* the, txSlot* theSlot);
 static void fxMarkValue(txMachine* the, txSlot* theSlot);
@@ -499,16 +499,16 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 #endif
 }
 
-void fxMarkFinalizationGroup(txMachine* the, txSlot* group) 
+void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry) 
 {
-	txSlot* slot = group->value.finalizationGroup.callback->next;
+	txSlot* slot = registry->value.finalizationRegistry.callback->next;
 	txSlot* instance;
 	while (slot) {
 		slot = slot->next;
 		instance = slot->value.finalizationCell.target;
 		if (instance && !(instance->flag & XS_MARK_FLAG)) {
 			slot->value.finalizationCell.target = C_NULL;
-			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_CHANGED;
+			registry->value.finalizationRegistry.flags |= XS_FINALIZATION_REGISTRY_CHANGED;
 		}
 		instance = slot->value.finalizationCell.token;
 		if (instance && !(instance->flag & XS_MARK_FLAG))
@@ -720,8 +720,8 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			the->firstWeakRefLink = theSlot;
 		}
 		break;
-	case XS_FINALIZATION_GROUP_KIND:
-		aSlot = theSlot->value.finalizationGroup.callback;
+	case XS_FINALIZATION_REGISTRY_KIND:
+		aSlot = theSlot->value.finalizationRegistry.callback;
 		aSlot->flag |= XS_MARK_FLAG;
 		fxMarkReference(the, aSlot);
 		aSlot = aSlot->next;
@@ -932,8 +932,8 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			the->firstWeakRefLink = theSlot;
 		}
 		break;
-	case XS_FINALIZATION_GROUP_KIND:
-		aSlot = theSlot->value.finalizationGroup.callback;
+	case XS_FINALIZATION_REGISTRY_KIND:
+		aSlot = theSlot->value.finalizationRegistry.callback;
 		aSlot->flag |= XS_MARK_FLAG;
 		fxMarkValue(the, aSlot);
 		aSlot = aSlot->next;
@@ -1025,10 +1025,10 @@ void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		*address = C_NULL;
 		address = &(slot->value.weakRef.link);
 	}
-	if (mxFinalizationGroups.kind == XS_REFERENCE_KIND) {
-		slot = mxFinalizationGroups.value.reference->next;
+	if (mxFinalizationRegistries.kind == XS_REFERENCE_KIND) {
+		slot = mxFinalizationRegistries.value.reference->next;
 		while (slot) {
-			fxMarkFinalizationGroup(the, slot->value.closure);
+			fxMarkFinalizationRegistry(the, slot->value.closure);
 			slot = slot->next;
 		}
 	}

@@ -640,7 +640,7 @@ txInteger fxPrepareHeap(txMachine* the)
 						}
 						else if (property->kind == XS_WEAK_REF_KIND)
 							fxPrepareInstance(the, slot);
-						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_GROUP_KIND))
+						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND))
 							fxPrepareInstance(the, slot);
 							
 						else if (property->kind == XS_ARRAY_BUFFER_KIND)
@@ -1063,11 +1063,11 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fxPrintAddress(the, file, slot->value.finalizationCell.token);
 		fprintf(file, " } }");
 	} break;
-	case XS_FINALIZATION_GROUP_KIND: {
-		fprintf(file, ".kind = XS_FINALIZATION_GROUP_KIND}, ");
-		fprintf(file, ".value = { .finalizationGroup = { ");
-		fxPrintAddress(the, file, slot->value.finalizationGroup.callback);
-		fprintf(file, ", %d } }", slot->value.finalizationGroup.flags);
+	case XS_FINALIZATION_REGISTRY_KIND: {
+		fprintf(file, ".kind = XS_FINALIZATION_REGISTRY_KIND}, ");
+		fprintf(file, ".value = { .finalizationRegistry = { ");
+		fxPrintAddress(the, file, slot->value.finalizationRegistry.callback);
+		fprintf(file, ", %d } }", slot->value.finalizationRegistry.flags);
 	} break;
 	case XS_GLOBAL_KIND: {
 		fprintf(file, ".kind = XS_GLOBAL_KIND}, ");
