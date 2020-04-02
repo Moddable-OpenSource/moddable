@@ -24,6 +24,10 @@
 
 #include "driver/i2c.h"
 
+#if !defined(MODDEF_I2C_PULLUPS)
+	#define MODDEF_I2C_PULLUPS	1
+#endif
+
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
 static uint8_t modI2CActivate(modI2CConfiguration config);
@@ -113,8 +117,13 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 	}
 
 	conf.mode = I2C_MODE_MASTER;
+#if MODDEF_I2C_PULLUPS
 	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
 	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+#else
+	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
+	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
+#endif
 	if (ESP_OK != i2c_param_config(I2C_NUM_1, &conf)) {
 		modLog("i2c_param_config fail");
 		return 1;
