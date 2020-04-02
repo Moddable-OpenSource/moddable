@@ -371,7 +371,7 @@ void xs_wifi_set_onNotify(xsMachine *the)
 
 	xsmcSet(xsThis, xsID_callback, xsArg(0));
 
-	xsCall1(wifi->obj, xsID_callback, xsString("init"));		//@@ this should be unnecessary
+	//xsCall1(wifi->obj, xsID_callback, xsString("init"));		//@@ this should be unnecessary
 }
 
 static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
