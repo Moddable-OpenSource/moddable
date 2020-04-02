@@ -58,6 +58,9 @@ class MDNS extends Socket {
 		while (this.monitors.length)
 			this.remove(this.monitors[0].service.substring(0, this.monitors[0].service.length - 6));
 
+		if (this.probeTimer)
+			Timer.clear(this.probeTimer);
+
 		super.close();
 	}
 	add(service) {
@@ -125,7 +128,12 @@ class MDNS extends Socket {
 			if (index < 0) throw new Error("service not found");
 
 			this.services.splice(index, 1);
-			this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x0F, service, true));
+			try {
+				this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x0F, service, true));
+			}
+			catch {
+				// write fails if socket closed
+			}
 
 			if (service.timer) {
 				Timer.clear(service.timer);
@@ -504,7 +512,7 @@ class MDNS extends Socket {
 		this.probeAttempt = 1;
 		trace(`probe for ${this.hostName}\n`);
 		this.client(MDNS.hostName, "");
-		Timer.repeat(id => {
+		this.probeTimer = Timer.repeat(id => {
 			if (this.probing < 0) {
 				 let hostName = this.client(MDNS.retry, this.hostName);
 				 if (hostName) {
@@ -514,6 +522,7 @@ class MDNS extends Socket {
 					 }
 					 else {
 						Timer.clear(id);
+						delete this.probeTimer;
 //						delete this.probing;
 						delete this.probeAttempt;
 						delete this.hostName;	// no hostName claimed, no longer probing
@@ -538,6 +547,7 @@ class MDNS extends Socket {
 				trace(`probe claimed ${this.hostName}\n`);
 
 				Timer.clear(id);
+				delete this.probeTimer;
 				delete this.probing;
 				delete this.probeAttempt;
 
