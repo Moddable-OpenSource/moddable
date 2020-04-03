@@ -222,6 +222,8 @@ void xs_socket(xsMachine *the)
 
 		for (i = 0; i < kListenerPendingSockets; i++) {
 			if (xsl->accept[i]) {
+				uint8_t pending = kPendingConnect;
+
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
@@ -240,13 +242,12 @@ void xs_socket(xsMachine *the)
 				socketUpUseCount(the, xss);
 
 				if (xss->pending) {
-					uint8_t pending;
 					modCriticalSectionBegin();
-						pending = xss->pending;
+						pending |= xss->pending;
 						xss->pending = 0;
 					modCriticalSectionEnd();
-					socketSetPending(xss, pending);
 				}
+				socketSetPending(xss, pending);
 
 				socketDownUseCount(xss->the, xss);
 				return;
@@ -1375,6 +1376,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		goto done;		// return or done...
 	}
 
+	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
+		socketMsgConnect(xss);
+
 	if ((pending & kPendingReceive) && !(xss->pending & kPendingClose))
 		socketMsgDataReceived(xss);
 
@@ -1383,9 +1387,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
 		tcp_output_safe(xss->skt);
-
-	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
-		socketMsgConnect(xss);
 
 	if ((pending & kPendingDisconnect) && !(xss->pending & kPendingClose))
 		socketMsgDisconnect(xss);

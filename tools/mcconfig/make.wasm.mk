@@ -114,6 +114,13 @@ endif
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 LINK_OPTIONS = \
 	-s ENVIRONMENT=web\
+	-s ALLOW_MEMORY_GROWTH=1\
+	-s MODULARIZE=1\
+	-s EXPORT_ES6=1\
+	-s USE_ES6_IMPORT_META=0\
+	-s EXPORT_NAME=$(NAME)\
+	-s INVOKE_RUN=0\
+	-s FORCE_FILESYSTEM=1\
 	-s "EXPORTED_FUNCTIONS=['_fxMainIdle', '_fxMainLaunch', '_fxMainQuit', '_fxMainTouch']"
 
 LINK_LIBRARIES = -ldl -lm

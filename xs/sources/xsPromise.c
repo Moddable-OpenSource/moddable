@@ -224,8 +224,6 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				property = fxNextReferenceProperty(the, property, array, XS_NO_ID, XS_NO_FLAG);
 				mxPop();
 			}
-			if (!mxIsReference(mxArgv(0)))
-				mxTypeError("iterable is no object");
 			mxTemporary(iterator);
 			mxTemporary(next);
 			fxGetIterator(the, mxArgv(0), iterator, next, 0);
@@ -264,7 +262,7 @@ void fxCombinePromises(txMachine* the, txInteger which)
 						mxPushSlot(rejectFunction);
 					}
 					else if (which & XS_PROMISE_COMBINE_REJECTED) {
-						mxPushReference(resolveFunction);
+						mxPushSlot(resolveFunction);
 						fxNewCombinePromisesFunction(the, which, already, object);
 					}
 					else {
@@ -295,6 +293,13 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				if ((which == XS_PROMISE_COMBINE_SETTLED) || (which == XS_PROMISE_COMBINE_FULFILLED)) {
 					fxCacheArray(the, array);
 					mxPushReference(array);
+				}
+				else if (which == XS_PROMISE_COMBINE_REJECTED) {
+					mxPush(mxAggregateErrorConstructor);
+					mxNew();
+					fxCacheArray(the, array);
+					mxPushReference(array);
+					mxRunCount(1);
 				}
 				else {
 					mxPushUndefined();
@@ -1083,7 +1088,7 @@ void fxRunPromiseJobs(txMachine* the)
 			}
 			mxRunCount(count - 6);
 			mxPop();
-			fxEndJob(the);
+// 			fxEndJob(the);
 		}
 		mxCatch(the) {
 		}

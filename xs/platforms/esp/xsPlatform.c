@@ -56,10 +56,6 @@
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
-#ifdef mxInstrument
-	extern void espDescribeInstrumentation(txMachine *the);
-#endif
-
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
 

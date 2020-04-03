@@ -633,7 +633,7 @@ enum {
 	_Date,
 	_Error,
 	_EvalError,
-	_FinalizationGroup,
+	_FinalizationRegistry,
 	_Float32Array,
 	_Float64Array,
 	_Int16Array,

@@ -66,7 +66,7 @@ static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);
 static txSlot* fxNewWeakRefInstance(txMachine* the);
 
-static void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback);
+static void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* callback);
 
 void fxBuildMapSet(txMachine* the)
 {
@@ -183,23 +183,17 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakRefConstructor = *the->stack;
 	the->stack++;
 	
-	/* FINALIZATION GROUP */
+	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "FinalizationGroup", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	mxFinalizationGroupPrototype = *the->stack;
-	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationGroup), 1, mxID(_FinalizationGroup));
-	mxFinalizationGroupConstructor = *the->stack;
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "FinalizationRegistry", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxFinalizationRegistryPrototype = *the->stack;
+	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationRegistry), 1, mxID(_FinalizationRegistry));
+	mxFinalizationRegistryConstructor = *the->stack;
 	the->stack++;
-	
-	mxPush(mxIteratorPrototype);
-	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroupCleanupIteratorPrototype_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "FinalizationGroup Cleanup Iterator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	mxPull(mxFinalizationGroupCleanupIteratorPrototype);
 }
 
 txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
@@ -1286,36 +1280,36 @@ void fx_WeakRef_prototype_deref(txMachine* the)
 	}
 }
 
-txSlot* fxCheckFinalizationGroupInstance(txMachine* the, txSlot* slot)
+txSlot* fxCheckFinalizationRegistryInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_GROUP_KIND)) {
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND)) {
 			if (slot->flag & XS_MARK_FLAG)
-				mxTypeError("FinalizationGroup instance is read-only");
+				mxTypeError("FinalizationRegistry instance is read-only");
 			return instance;
 		}
 	}
-	mxTypeError("this is no FinalizationGroup instance");
+	mxTypeError("this is no FinalizationRegistry instance");
 	return C_NULL;
 }
 
-void fx_FinalizationGroup(txMachine* the)
+void fx_FinalizationRegistry(txMachine* the)
 {
 	txSlot* callback;
 	txSlot* instance;
 	txSlot* property;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* slot;
 	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: FinalizationGroup");
+		mxTypeError("call: FinalizationRegistry");
 	if (mxArgc < 1)
 		mxTypeError("no callback");
 	callback = mxArgv(0);
 	if (!fxIsCallable(the, callback))
 		mxTypeError("callback is no function");
 	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxFinalizationGroupPrototype);
+	fxGetPrototypeFromConstructor(the, &mxFinalizationRegistryPrototype);
 	instance = fxNewSlot(the);
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
@@ -1327,30 +1321,28 @@ void fx_FinalizationGroup(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = XS_CLOSURE_KIND;
 	property->value.closure = C_NULL;
-	group = fxNewSlot(the);
-	group->kind = XS_FINALIZATION_GROUP_KIND;
-	group->value.finalizationGroup.callback = C_NULL;
-	group->value.finalizationGroup.flags = XS_NO_FLAG;
-	property->value.closure = group;
+	registry = fxNewSlot(the);
+	registry->kind = XS_FINALIZATION_REGISTRY_KIND;
+	registry->value.finalizationRegistry.callback = C_NULL;
+	registry->value.finalizationRegistry.flags = XS_NO_FLAG;
+	property->value.closure = registry;
 	slot = fxNewSlot(the);
 	slot->kind = callback->kind;
 	slot->value = callback->value;
-	group->value.finalizationGroup.callback = slot;
+	registry->value.finalizationRegistry.callback = slot;
 }
 
-void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
+void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 {
 	txSlot* instance;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* callback = C_NULL;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
-	group = instance->next->value.closure;
-	if (group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_ACTIVE)
-		mxTypeError("cleanup in progress");
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
+	registry = instance->next->value.closure;
 	if (mxArgc > 0) {
 		callback = mxArgv(0);
 		if (mxIsUndefined(callback))
@@ -1358,12 +1350,12 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 		else if (!fxIsCallable(the, callback))
 			mxTypeError("callback is no function");
 	}
-	fx_FinalizationGroupCleanup(the, group, callback);
-	callback = group->value.finalizationGroup.callback;
+	fx_FinalizationRegistryCleanup(the, registry, callback);
+	callback = registry->value.finalizationRegistry.callback;
 	if (callback->next == C_NULL) {
-		address = &(mxFinalizationGroups.value.reference->next);
+		address = &(mxFinalizationRegistries.value.reference->next);
 		while ((slot = *address)) {
-			if (slot->value.closure == group) {
+			if (slot->value.closure == registry) {
 				*address = slot->next;
 				return;
 			}
@@ -1372,10 +1364,10 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 	}
 }
 
-void fx_FinalizationGroup_prototype_register(txMachine* the)
+void fx_FinalizationRegistry_prototype_register(txMachine* the)
 {
 	txSlot* instance;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* target;
 	txSlot* token = C_NULL;
 	txSlot* callback;
@@ -1383,8 +1375,8 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
-	group = instance->next->value.closure;
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
+	registry = instance->next->value.closure;
 	if (mxArgc < 1)
 		mxTypeError("no target");
 	target = mxArgv(0);
@@ -1404,7 +1396,7 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 		else
 			mxTypeError("token is no object");
 	}
-	callback = group->value.finalizationGroup.callback;
+	callback = registry->value.finalizationRegistry.callback;
 	address = &(callback->next);
 	while ((slot = *address))
 		address = &(slot->next);
@@ -1418,28 +1410,28 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 	slot->value.finalizationCell.target = target;
 	slot->value.finalizationCell.token = token;
 	
-	address = &(mxFinalizationGroups.value.reference->next);
+	address = &(mxFinalizationRegistries.value.reference->next);
 	while ((slot = *address)) {
-		if (slot->value.closure == group)
+		if (slot->value.closure == registry)
 			return;
 		address = &(slot->next);
 	}
 	slot = *address = fxNewSlot(the);
 	slot->kind = XS_CLOSURE_KIND;
-	slot->value.closure = group;
+	slot->value.closure = registry;
 }	
 
-void fx_FinalizationGroup_prototype_unregister(txMachine* the)
+void fx_FinalizationRegistry_prototype_unregister(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* token;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* callback;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	if (mxArgc < 1)
 		mxTypeError("no token");
 	token = mxArgv(0);
@@ -1448,8 +1440,8 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 	token = token->value.reference;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
-	group = instance->next->value.closure;
-	callback = group->value.finalizationGroup.callback;
+	registry = instance->next->value.closure;
+	callback = registry->value.finalizationRegistry.callback;
 	address = &(callback->next);
 	while ((slot = *address)) {
 		slot = slot->next;
@@ -1461,9 +1453,9 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 			address = &(slot->next);
 	}
 	if (callback->next == C_NULL) {
-		address = &(mxFinalizationGroups.value.reference->next);
+		address = &(mxFinalizationRegistries.value.reference->next);
 		while ((slot = *address)) {
-			if (slot->value.closure == group) {
+			if (slot->value.closure == registry) {
 				*address = slot->next;
 				return;
 			}
@@ -1472,18 +1464,17 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 	}
 }
 
-void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback)
+void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* callback)
 {
 	txSlot* slot;
-	txSlot* instance;
-	txSlot* result;
-	txSlot* property;
 	txUnsigned flags;
+	txSlot** address;
+	txSlot* value;
 
-	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_CHANGED))
+	if (!(registry->value.finalizationRegistry.flags & XS_FINALIZATION_REGISTRY_CHANGED))
 		return;
 		
-	slot = group->value.finalizationGroup.callback->next;
+	slot = registry->value.finalizationRegistry.callback->next;
 	flags = 0;
 	while (slot) {
 		slot = slot->next;
@@ -1496,85 +1487,51 @@ void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback
 	if (!flags)
 		return;
 	if (!callback)
-		callback = group->value.finalizationGroup.callback;
-	flags = group->value.finalizationGroup.flags;
-	
+		callback = registry->value.finalizationRegistry.callback;
+	flags = registry->value.finalizationRegistry.flags;
 	{
 		mxTry(the) {
-			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_ACTIVE;
-		
-			mxPushUndefined();
-			mxPushSlot(callback);
-			mxCall();
-			mxPush(mxFinalizationGroupCleanupIteratorPrototype);
-			instance = fxNewObjectInstance(the);
-			mxPush(mxObjectPrototype);
-			result = fxNewObjectInstance(the);
-			property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-			property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-			property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_GET_ONLY);
-			mxPop();
-			mxPushClosure(group);
-			property = fxNextSlotProperty(the, property, the->stack, mxID(_iterable), XS_GET_ONLY);
-			mxPop();
-			property = fxNextIntegerProperty(the, property, 0, mxID(_index), XS_GET_ONLY);
-			mxRunCount(1);
-			mxPop();
-			
-			group->value.finalizationGroup.flags = flags;
+			address = &(registry->value.finalizationRegistry.callback->next);
+			while ((value = *address)) {
+				slot = value->next;
+				if (slot->value.finalizationCell.target == C_NULL) {
+					*address = slot->next;
+					mxPushUndefined();
+					mxPushSlot(callback);
+					mxCall();
+					mxPushSlot(value);
+					mxRunCount(1);
+					mxPop();
+				}
+				else
+					address = &(slot->next);
+			}
+			registry->value.finalizationRegistry.flags = flags;
 		}
 		mxCatch(the) {
-			group->value.finalizationGroup.flags = flags;
+			registry->value.finalizationRegistry.flags = flags;
 			fxJump(the);
 		}
 	}
 	
-	slot = group->value.finalizationGroup.callback->next;
+	slot = registry->value.finalizationRegistry.callback->next;
 	while (slot) {
 		if (slot->value.finalizationCell.target == C_NULL)
 			break;
 		slot = slot->next;
 	}
 	if (!slot)
-		group->value.finalizationGroup.flags &= ~XS_FINALIZATION_GROUP_CHANGED;
+		registry->value.finalizationRegistry.flags &= ~XS_FINALIZATION_REGISTRY_CHANGED;
 }
 
-void fx_FinalizationGroupCleanupIteratorPrototype_next(txMachine* the)
+void fxCleanupFinalizationRegistries(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
-	txSlot* result = iterator->next;
-	txSlot* group = result->next->value.closure;
-	txSlot** address;
-	txSlot* value;
-	txSlot* slot;
-	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_ACTIVE))
-		mxTypeError("no cleanup in progress");
-	mxResult->kind = result->kind;
-	mxResult->value = result->value;
-	result = result->value.reference->next;
-	address = &(group->value.finalizationGroup.callback->next);
-	while ((value = *address)) {
-		slot = value->next;
-		if (slot->value.finalizationCell.target == C_NULL) {
-			*address = slot->next;
-			result->kind = value->kind;
-			result->value = value->value;
-			return;
-		}
-		address = &(slot->next);
-	}
-	result->kind = XS_UNDEFINED_KIND;
-	result->next->value.boolean = 1;
-}
-
-void fxCleanupFinalizationGroups(txMachine* the)
-{
-	txSlot** address = &(mxFinalizationGroups.value.reference->next);
+	txSlot** address = &(mxFinalizationRegistries.value.reference->next);
 	txSlot* closure;
 	while ((closure = *address)) {
-		txSlot* group = closure->value.closure;
-		fx_FinalizationGroupCleanup(the, group, C_NULL);
-		if (group->value.finalizationGroup.callback->next == C_NULL)
+		txSlot* registry = closure->value.closure;
+		fx_FinalizationRegistryCleanup(the, registry, C_NULL);
+		if (registry->value.finalizationRegistry.callback->next == C_NULL)
 			*address = closure->next;
 		else
 			address = &(closure->next);

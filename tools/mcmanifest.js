@@ -118,6 +118,12 @@ export class MakeFile extends FILE {
 		}
 		else
 			appConfig = [];
+
+		if (tool.instrument === true && tool.debug === false) {
+			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
+			let instConfig = tool.readFileString(instConfigFile);
+			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
+		}
 			
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {

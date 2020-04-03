@@ -1065,7 +1065,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Date",
 	"Error",
 	"EvalError",
-	"FinalizationGroup",
+	"FinalizationRegistry",
 	"Float32Array",
 	"Float64Array",
 	"Int16Array",

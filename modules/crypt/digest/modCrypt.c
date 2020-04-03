@@ -1157,7 +1157,7 @@ xs_ghash_init(xsMachine *the)
 {
 	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
 	ghash_t *ghash = (ghash_t *)cd->ctx;
-	int ac = xsmcToInteger(xsArgc);
+	int ac = xsmcArgc;
 	size_t len;
 
 	len = xsmcGetArrayBufferLength(xsArg(0));

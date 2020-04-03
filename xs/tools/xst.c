@@ -844,6 +844,9 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 					snprintf(message, 1024, "OK");
 					success = 1;
 				}
+				else if (xsTypeOf(xsResult) == xsSymbolType) {
+					snprintf(message, 1024, "# %s", xsName(xsResult.value.symbol));
+				}
 				else {
 					snprintf(message, 1024, "# %s", xsToString(xsResult));
 				}

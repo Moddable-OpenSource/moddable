@@ -120,7 +120,7 @@ typedef struct {
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	txSlot* (*setPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
-	void (*cleanupFinalizationGroups)(txMachine*);
+	void (*cleanupFinalizationRegistries)(txMachine*);
 } txDefaults;
 
 enum {
@@ -259,7 +259,7 @@ typedef union {
 	struct { txSlot** address; txSize length; } table;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
 	struct { txSlot* target; txSlot* link; } weakRef;
-	struct { txSlot* callback; txUnsigned flags; } finalizationGroup;
+	struct { txSlot* callback; txUnsigned flags; } finalizationRegistry;
 	struct { txSlot* target; txSlot* token; } finalizationCell;
 	
 	struct { txSlot* getter; txSlot* setter; } accessor;
@@ -1568,18 +1568,17 @@ mxExport void fx_WeakSet_prototype_delete(txMachine* the);
 mxExport void fx_WeakSet_prototype_has(txMachine* the);
 mxExport void fx_WeakRef(txMachine* the);
 mxExport void fx_WeakRef_prototype_deref(txMachine* the);
-mxExport void fx_FinalizationGroup(txMachine* the);
-mxExport void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the);
-mxExport void fx_FinalizationGroup_prototype_register(txMachine* the);
-mxExport void fx_FinalizationGroup_prototype_unregister(txMachine* the);
-mxExport void fx_FinalizationGroupCleanupIteratorPrototype_next(txMachine* the);
+mxExport void fx_FinalizationRegistry(txMachine* the);
+mxExport void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the);
+mxExport void fx_FinalizationRegistry_prototype_register(txMachine* the);
+mxExport void fx_FinalizationRegistry_prototype_unregister(txMachine* the);
 
 extern void fxBuildMapSet(txMachine* the);
 extern txSlot* fxNewMapInstance(txMachine* the);
 extern txSlot* fxNewSetInstance(txMachine* the);
 extern txSlot* fxNewWeakMapInstance(txMachine* the);
 extern txSlot* fxNewWeakSetInstance(txMachine* the);
-extern void fxCleanupFinalizationGroups(txMachine* the);
+extern void fxCleanupFinalizationRegistries(txMachine* the);
 
 /* xsJSON.c */
 mxExport void fx_JSON_parse(txMachine* the);
@@ -1780,9 +1779,8 @@ enum {
 	XS_HOST_CHUNK_FLAG = 32,
 	XS_HOST_HOOKS_FLAG = 64,
 	
-	/* finalization group flags */
-	XS_FINALIZATION_GROUP_ACTIVE = 1,
-	XS_FINALIZATION_GROUP_CHANGED = 2,
+	/* finalization registry flags */
+	XS_FINALIZATION_REGISTRY_CHANGED = 1,
 	
 	/* bubble flags */
 	XS_BUBBLE_LEFT = 1,
@@ -1820,7 +1818,7 @@ enum {
 	XS_DATE_KIND,
 	XS_DATA_VIEW_KIND,
 	XS_FINALIZATION_CELL_KIND,
-	XS_FINALIZATION_GROUP_KIND,
+	XS_FINALIZATION_REGISTRY_KIND,
 	XS_GLOBAL_KIND, // 25
 	XS_HOST_KIND,
 	XS_MAP_KIND,
@@ -2267,7 +2265,7 @@ enum {
 	mxHostsStackIndex,
 
 	mxDuringJobsStackIndex,
-	mxFinalizationGroupsStackIndex,
+	mxFinalizationRegistriesStackIndex,
 	mxPendingJobsStackIndex,
 	mxRunningJobsStackIndex,
 	mxBreakpointsStackIndex,
@@ -2307,7 +2305,7 @@ enum {
 	mxBigIntPrototypeStackIndex,
 	mxCompartmentPrototypeStackIndex,
 	mxWeakRefPrototypeStackIndex,
-	mxFinalizationGroupPrototypeStackIndex,
+	mxFinalizationRegistryPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxAssignObjectFunctionStackIndex,
@@ -2336,7 +2334,6 @@ enum {
 	mxSetKeysIteratorPrototypeStackIndex,
 	mxSetValuesIteratorPrototypeStackIndex,
 	mxStringIteratorPrototypeStackIndex,
-	mxFinalizationGroupCleanupIteratorPrototypeStackIndex,
 	
 	mxAsyncIteratorPrototypeStackIndex,
 	mxAsyncFromSyncIteratorPrototypeStackIndex,
@@ -2374,7 +2371,7 @@ enum {
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
 #define mxDuringJobs the->stackTop[-1 - mxDuringJobsStackIndex]
-#define mxFinalizationGroups the->stackTop[-1 - mxFinalizationGroupsStackIndex]
+#define mxFinalizationRegistries the->stackTop[-1 - mxFinalizationRegistriesStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]
 #define mxRunningJobs the->stackTop[-1 - mxRunningJobsStackIndex]
 #define mxBreakpoints the->stackTop[-1 - mxBreakpointsStackIndex]
@@ -2394,7 +2391,7 @@ enum {
 #define mxDateConstructor the->stackPrototypes[-1 - _Date]
 #define mxErrorConstructor the->stackPrototypes[-1 - _Error]
 #define mxEvalErrorConstructor the->stackPrototypes[-1 - _EvalError]
-#define mxFinalizationGroupConstructor the->stackPrototypes[-1 - _FinalizationGroup]
+#define mxFinalizationRegistryConstructor the->stackPrototypes[-1 - _FinalizationRegistry]
 #define mxFloat32ArrayConstructor the->stackPrototypes[-1 - _Float32Array]
 #define mxFloat64ArrayConstructor the->stackPrototypes[-1 - _Float64Array]
 #define mxFunctionConstructor the->stackPrototypes[-1 - _Function]
@@ -2477,7 +2474,7 @@ enum {
 #define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
 #define mxCompartmentPrototype the->stackPrototypes[-1 - mxCompartmentPrototypeStackIndex]
 #define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
-#define mxFinalizationGroupPrototype the->stackPrototypes[-1 - mxFinalizationGroupPrototypeStackIndex]
+#define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]
@@ -2519,7 +2516,6 @@ enum {
 #define mxSetKeysIteratorPrototype the->stackPrototypes[-1 - mxSetKeysIteratorPrototypeStackIndex]
 #define mxSetValuesIteratorPrototype the->stackPrototypes[-1 - mxSetValuesIteratorPrototypeStackIndex]
 #define mxStringIteratorPrototype the->stackPrototypes[-1 - mxStringIteratorPrototypeStackIndex]
-#define mxFinalizationGroupCleanupIteratorPrototype the->stackPrototypes[-1 - mxFinalizationGroupCleanupIteratorPrototypeStackIndex]
 
 #define mxAsyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncIteratorPrototypeStackIndex]
 #define mxAsyncFromSyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncFromSyncIteratorPrototypeStackIndex]

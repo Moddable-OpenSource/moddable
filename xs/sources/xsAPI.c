@@ -1325,7 +1325,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushUndefined();
 			/* mxDuringJobs */
 			fxNewInstance(the);
-			/* mxFinalizationGroups */
+			/* mxFinalizationRegistries */
 			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
@@ -1570,7 +1570,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushUndefined();
 			/* mxDuringJobs */
 			fxNewInstance(the);
-			/* mxFinalizationGroups */
+			/* mxFinalizationRegistries */
 			fxNewInstance(the);
 			/* mxPendingJobs */
 			fxNewInstance(the);
@@ -1813,8 +1813,8 @@ void fxEndJob(txMachine* the)
 {
 	if (mxDuringJobs.kind == XS_REFERENCE_KIND)
 		mxDuringJobs.value.reference->next = C_NULL;
-	if (gxDefaults.cleanupFinalizationGroups)
-		gxDefaults.cleanupFinalizationGroups(the);
+	if (gxDefaults.cleanupFinalizationRegistries)
+		gxDefaults.cleanupFinalizationRegistries(the);
 }
 
 typedef struct {
