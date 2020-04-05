@@ -772,6 +772,7 @@ txBoolean fxOrdinarySetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 	}
 	if (property->flag & XS_DONT_SET_FLAG)
 		goto bail;
+	value->flag = property->flag;
 	if (receiver->kind != XS_REFERENCE_KIND)
 		goto bail;
 	if (mxBehaviorGetOwnProperty(the, receiver->value.reference, id, index, property)) {
@@ -780,7 +781,6 @@ txBoolean fxOrdinarySetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 		if (property->flag & XS_DONT_SET_FLAG)
 			goto bail;
 	}
-	value->flag = XS_NO_FLAG;
 	result = mxBehaviorDefineOwnProperty(the, receiver->value.reference, id, index, value, XS_GET_ONLY);
 bail:
 	mxPop();
