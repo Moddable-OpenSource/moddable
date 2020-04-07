@@ -235,14 +235,15 @@ More detailed getting started guides are available for the following devices:
 
 	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
-9. Set the `IDF_PATH`, `UPLOAD_PORT`, `PATH`, and `ESP32_CMAKE` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/cu.SLAB_USBtoUART`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+9. Set the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/cu.SLAB_USBtoUART`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
 
 	```
     export IDF_PATH=$HOME/esp32/esp-idf
-    export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
-    export ESP32_CMAKE=1
+	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
+
+	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases. 
 
 	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
 	
@@ -250,7 +251,7 @@ More detailed getting started guides are available for the following devices:
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
 
-	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
+	> An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older `make`-based build.
 
 10. Verify the setup by building `helloworld` for the `esp32` target:
 
@@ -445,13 +446,14 @@ More detailed getting started guides are available for the following devices:
 	
 	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 	
-8. Update the `IDF_PATH`, `UPLOAD_PORT`, `ESP32_CMAKE`, and `PATH` Windows environment variables as below. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
+8. Update the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` Windows environment variables as below. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
 - `IDF_PATH`: the directory where you cloned the ESP-IDF, e.g. `%userprofile%\esp32\esp-idf`
-- `UPLOAD_PORT`: the COM port you identified in step 7, e.g. `COM3`
-- `ESP32_CMAKE`: set to `1` to enable the Windows CMake build in the Moddable SDK
 - `PATH`: Add the directory `%IDF_PATH%\tools` to your `PATH`.
+- `UPLOAD_PORT`: the COM port you identified in step 7, e.g. `COM3`
 
 > Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
+
+> An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older MinGW-based build.
 
 9. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
@@ -622,14 +624,15 @@ More detailed getting started guides are available for the following devices:
 
 	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
-8. Set the `IDF_PATH`, `UPLOAD_PORT`, `PATH`, and `ESP32_CMAKE` environment variables in your shell's user profile file (e.g. `~/.bashrc` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/ttyUSB0`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+8. Set the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` environment variables in your shell's user profile file (e.g. `~/.bashrc` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system (e.g. use the device file you identified in step 8 rather than `/dev/ttyUSB0`). And remember that you will need to open a new shell instance to pick up these changes before proceeding.
 
 	```
     export IDF_PATH=~/esp32/esp-idf
-    export UPLOAD_PORT=/dev/ttyUSB0
 	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
-    export ESP32_CMAKE=1
+	export UPLOAD_PORT=/dev/ttyUSB0
 	```
+
+	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
 	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
 	
@@ -637,7 +640,7 @@ More detailed getting started guides are available for the following devices:
 	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
 	```
 
-	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
+	> An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older `make`-based build.
 
 9. Install the required Python packages:
 

@@ -36,6 +36,10 @@ DEBUGGER_SPEED = 921600
 BASE_DIR = $(USERPROFILE)
 !ENDIF
 
+!IF "$(ESP32_CMAKE)"==""
+ESP32_CMAKE = 1
+!ENDIF
+
 !IF "$(ESP32_CMAKE)"!="1"
 !IF "$(UPLOAD_PORT)"==""
 !ERROR UPLOAD_PORT environment variable must be defined!
