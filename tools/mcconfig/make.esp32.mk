@@ -258,7 +258,7 @@ PROJ_DIR_FILES = \
 ifeq ($(ESP32_CMAKE),1)
 	ifeq ($(UPLOAD_PORT),)
 		PORT_SET =
-		SERIAL2XSBUG_PORT = $(PORT_USED)
+		SERIAL2XSBUG_PORT = $$PORT_USED
 	else
 		PORT_SET = -p $(UPLOAD_PORT)
 		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
@@ -330,7 +330,7 @@ xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
 	$(DO_XSBUG)
-	$(eval PORT_USED := $(shell sh -c "grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print(\$$3)}'"))
+	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	$(DO_LAUNCH)
 
 prepareOutput:
