@@ -439,15 +439,19 @@ More detailed getting started guides are available for the following devices:
 
 6. Connect the ESP32 to your computer with a USB cable.
 
-7. Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
+7. Optional: Launch the Windows Device Manager, open the "Ports (COM & LPT)" section, and verify the "Silicon Labs CP210x USB to UART Bridge" is displayed. Note the COM port (e.g. COM3) for the next step.
 
 	> The Device Manager interface may vary depending on the Windows OS version.
+	
+	>Note: this step is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 	
 8. Update the `IDF_PATH`, `UPLOAD_PORT`, `ESP32_CMAKE`, and `PATH` Windows environment variables as below. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
 - `IDF_PATH`: the directory where you cloned the ESP-IDF, e.g. `%userprofile%\esp32\esp-idf`
 - `UPLOAD_PORT`: the COM port you identified in step 7, e.g. `COM3`
 - `ESP32_CMAKE`: set to `1` to enable the Windows CMake build in the Moddable SDK
 - `PATH`: Add the directory `%IDF_PATH%\tools` to your `PATH`.
+
+> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
 
 9. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for the `esp32` target:
 
