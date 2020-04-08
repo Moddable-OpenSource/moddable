@@ -126,6 +126,7 @@ void fxOpenSerial(txSerialTool self)
 	mxThrowElse(self->serialConnection >= 0);
 	fcntl(self->serialConnection, F_SETFL, 0);
 	switch (self->baud) {
+	case 921600: speed = B921600; break;
 	case 460800: speed = B460800; break;
 	case 230400: speed = B230400; break;
 	case 115200: speed = B115200; break;
