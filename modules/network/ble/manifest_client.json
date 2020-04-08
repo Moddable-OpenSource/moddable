@@ -7,7 +7,9 @@
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
 			"$(MODULES)/network/ble/gatt",
-			"$(MODULES)/network/ble/sm"
+			"$(MODULES)/network/ble/sm",
+			"$(BLEMODULEPATH)/modBLEClient",
+			"$(BLEMODULEPATH)/modBLESM",
 		],
 	},
 	"preload": [
@@ -21,62 +23,16 @@
 	"defines": {
 		"ble": {
 			"client": true,
-			"max_connections": 2,
-			"nimble": true
+			"max_connections": 2
 		}
 	},
 	"platforms": {
 		"esp32": {
 			"modules": {
 				"*": [
-					"$(MODULES)/network/ble/nimble/modBLEClient",
-					"$(MODULES)/network/ble/nimble/modBLESM",
-					"$(MODULES)/network/ble/nimble/modBLECommon",
+					"$(BLEMODULEPATH)/modBLECommon"
 				]
 			},
 		},
-		"gecko/blue": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/gecko/modBLEClient",
-					"$(MODULES)/network/ble/gecko/modBLESM",
-				]
-			},
-		},
-		"qca4020": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/qca4020/modBLEClient",
-					"$(MODULES)/network/ble/qca4020/modBLESM",
-				]
-			},
-		},
-		"lin": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/ble/sim/modBLEClient",
-					"$(MODULES)/network/ble/sim/modBLESM"
-				]
-			}
-		},
-		"...": {
-			"error": "BLE modules unsupported"
-		}
 	}
 }

@@ -189,8 +189,7 @@ export class MakeFile extends FILE {
 				server = true;
 			if ("client" in defines.ble && true == defines.ble.client)
 				client = true;
-			if ("nimble" in defines.ble && true == defines.ble.nimble)
-				nimble = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -1112,6 +1111,16 @@ export class Tool extends TOOL {
 			this.environment.FULLPLATFORM = this.platform;
 			this.environment.PLATFORMPATH = this.platform;
 		}
+		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
+		if ("esp32" == this.platform) {
+			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
+			path += bluedroid ? this.platform : "nimble";
+		}
+		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
+			path += "sim";
+		else
+			path += this.platform;
+		this.environment.BLEMODULEPATH = path;
 
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);
