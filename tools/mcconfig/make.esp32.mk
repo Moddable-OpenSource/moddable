@@ -103,7 +103,6 @@ INC_DIRS = \
     
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
-	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -388,7 +387,7 @@ $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
-$(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
@@ -415,6 +414,10 @@ $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 
 $(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+	
+$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
