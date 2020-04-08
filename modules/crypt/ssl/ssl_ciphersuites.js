@@ -36,7 +36,9 @@
  */
 
 import config from "mc/config";
-import {AES, CBC, DES, DHE_RSA, ECDHE_RSA, GCM, MD5, NONE, NULL, RC4, RSA, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
+import {AES, CBC, DES, DHE_RSA, ECDHE_RSA, GCM, MD5, NONE, NULL, RSA, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
+
+
 
 const supportedCipherSuites = [
 	{

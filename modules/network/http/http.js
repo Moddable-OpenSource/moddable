@@ -207,6 +207,9 @@ function callback(message, value) {
 			this.chunk = undefined;		// bytes remaining in this chunk (undefined if not chunked)
 
 			this.callback(Request.status, parseInt(status[1]));
+
+			if (!socket.read())
+				return;
 		}
 
 		if (4 === this.state) {		// receiving response headers
