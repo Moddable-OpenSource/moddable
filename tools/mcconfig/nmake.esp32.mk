@@ -79,7 +79,7 @@ PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj
 !IF "$(ESP32_CMAKE)"=="1"
 
 !IF "$(UPLOAD_PORT)"==""
-!IF [python $(PROJ_DIR_TEMPLATE)\getPort.py $(IDF_PATH)\tools > $(TMP_DIR)\_default_port.tmp] == 0
+!IF [python $(PROJ_DIR_TEMPLATE)\getPort.py $(IDF_PATH)\tools > $(TMP_DIR)\_default_port.tmp 2> nul] == 0
 DEFAULT_PORT = \
 !INCLUDE $(TMP_DIR)\_default_port.tmp
 !IF [del $(TMP_DIR)\_default_port.tmp] == 0
@@ -355,8 +355,8 @@ clean:
 	if exist $(IDF_BUILD_DIR) del /s/q/f $(IDF_BUILD_DIR)\*.* > NUL
 	if exist $(IDF_BUILD_DIR) rmdir /s/q $(IDF_BUILD_DIR)
 	echo $(PROJ_DIR)
-	if exist del /s/q/f $(PROJ_DIR)\*.* > NUL
-	if exist rmdir /s/q $(PROJ_DIR)
+	if exist $(PROJ_DIR) del /s/q/f $(PROJ_DIR)\*.* > NUL
+	if exist $(PROJ_DIR) rmdir /s/q $(PROJ_DIR)
 
 precursor: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 
