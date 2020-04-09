@@ -365,6 +365,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null
 	-rm -rf $(IDF_BUILD_DIR) 2>/dev/null
+	-rm -rf $(PROJ_DIR) 2>/dev/null
 
 erase_flash:
 	$(ESPTOOL) --chip esp32 --port $(UPLOAD_PORT) erase_flash
