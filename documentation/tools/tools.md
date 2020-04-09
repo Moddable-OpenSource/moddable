@@ -71,6 +71,7 @@ A few notes:
 
 **Build Targets**
 mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:
+
 - `clean`: removes platform-specific app build outputs from `$MODDABLE/build/tmp` and `$MODDABLE/build/bin`
 - `build`: builds the selected app, but does not deploy it
 - `deploy`: deploys a previously built app without rebuilding
