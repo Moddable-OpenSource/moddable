@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -98,8 +98,7 @@ export class Request {
 	}
 
 	close() {
-		if (this.socket)
-			this.socket.close();
+		this.socket?.close();
 		delete this.socket;
 		delete this.buffers;
 		delete this.callback;
@@ -208,6 +207,9 @@ function callback(message, value) {
 			this.chunk = undefined;		// bytes remaining in this chunk (undefined if not chunked)
 
 			this.callback(Request.status, parseInt(status[1]));
+
+			if (!socket.read())
+				return;
 		}
 
 		if (4 === this.state) {		// receiving response headers
@@ -670,10 +672,9 @@ function server(message, value, etc) {
 			}
 			if (9 === this.state) {
 				this.state = 10;
-				if (2 & this.flags) {
+				if (2 & this.flags)
 					socket.write("0\r\n\r\n");
-					return;
-				}
+				return;
 			}
 			if (10 === this.state) {
 				try {
@@ -693,7 +694,7 @@ function server(message, value, etc) {
 
 	if (-1 === message) {		// disconnected
 		try {
-			this.callback(Server.error);
+			this.callback((10 === this.state) ? Server.responseComplete : Server.error);
 		}
 		finally {
 			this.server.connections.splice(this.server.connections.indexOf(this), 1);
@@ -704,7 +705,7 @@ function server(message, value, etc) {
 
 function reason(status)
 {
-	let message = `
+	const message = `
 100 Continue
 101 Switching Protocols
 200 OK

@@ -46,6 +46,7 @@
 	#include "rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
+	#include "esp_wifi.h"
 #else
 	#include "tinyprintf.h"
 	#include "spi_flash.h"
@@ -55,10 +56,6 @@
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
-
-#ifdef mxInstrument
-	extern void espDescribeInstrumentation(txMachine *the);
-#endif
 
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
@@ -1172,6 +1169,20 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		case 13:
 			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
 			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
+			break;
+
+		case 14:
+#if ESP32
+			if (ESP_ERR_WIFI_NOT_INIT == esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset)) {
+				wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+				cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
+				esp_wifi_init(&cfg);
+				esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset);
+			}
+#else
+			wifi_get_macaddr(0 /* STATION_IF */, the->echoBuffer + the->echoOffset);
+#endif
+			the->echoOffset += 6;
 			break;
 
 		default:

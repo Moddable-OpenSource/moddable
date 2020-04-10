@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -59,7 +59,7 @@
 	#include "modInstrumentation.h"
 
 	static void espInitInstrumentation(txMachine *the);
-	static void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize);
+	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
 	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
 	void espInstrumentMachineEnd(txMachine *the);
 	void espInstrumentMachineReset(txMachine *the);
@@ -1205,7 +1205,7 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
 }
 
-void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
+void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	txInteger values[espInstrumentCount];
 	int what;
@@ -1256,8 +1256,6 @@ void espInstrumentMachineReset(txMachine *the)
 	the->peakParserSize = 0;
 	the->floatingPointOps = 0;
 }
-
-
 #endif
 
 #if ESP32

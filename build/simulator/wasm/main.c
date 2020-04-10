@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <emscripten.h>
@@ -20,7 +21,7 @@ int fxMainIdle()
 	return 0;
 }
 
-void* fxMainLaunch(int width, int height) 
+void* fxMainLaunch(int width, int height, void* archive) 
 {
 	gxScreen = (txScreen*)malloc(sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
 	memset(gxScreen, 0, sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
@@ -31,6 +32,7 @@ void* fxMainLaunch(int width, int height)
 	gxScreen->stop = fxScreenStop;
 	gxScreen->width = width;
 	gxScreen->height = height;
+	gxScreen->archive = archive;
 	fxScreenLaunch(gxScreen);
 	return gxScreen->buffer;
 }
@@ -46,6 +48,8 @@ int fxMainQuit()
 {
 	if (gxScreen->quit) 
 		(*gxScreen->quit)(gxScreen);
+	if (gxScreen->archive) 
+		free(gxScreen->archive);
 	free(gxScreen);
 	gxScreen = NULL;
 	return 0;
@@ -58,27 +62,27 @@ void fxScreenAbort(txScreen* screen)
 void fxScreenBufferChanged(txScreen* screen)
 {
   EM_ASM({
-    onBufferChanged();
+    gxView.onBufferChanged();
   });
 }
 
 void fxScreenFormatChanged(txScreen* screen)
 {
   EM_ASM({
-    onFormatChanged($0);
+     gxView.onFormatChanged($0);
   }, screen->pixelFormat);
 }
 
 void fxScreenStart(txScreen* screen, double interval)
 {
   EM_ASM({
-    onStart($0);
+     gxView.onStart($0);
   }, interval);
 }
 
 void fxScreenStop(txScreen* screen)
 {
   EM_ASM({
-    onStop();
+     gxView.onStop();
   });
 }

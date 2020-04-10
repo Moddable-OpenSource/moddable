@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
 		1024,				/* stackCount */
-		2048+2048,			/* keyCount */
+		2048 * 4,			/* keyCount */
 		1993,				/* nameModulo */
 		127,				/* symbolModulo */
 		32 * 1024,			/* parserBufferSize */
@@ -428,7 +428,7 @@ int main(int argc, char* argv[])
 			}
 			xsEndHost(the);
 			mxDuringJobs = mxUndefined;
-			mxFinalizationGroups = mxUndefined;
+			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;
 			mxRunningJobs = mxUndefined;
 			mxBreakpoints = mxUndefined;
@@ -821,8 +821,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxDatePrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxEvalErrorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxFinalizationGroupCleanupIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxFinalizationGroupPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxFinalizationRegistryPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxFunctionPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxGeneratorFunctionPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxGeneratorPrototype); mxFreezeBuiltInRun;

@@ -113,23 +113,14 @@ typedef struct DebugFragmentRecord *DebugFragment;
 /* MACHINE */
 
 #define kDebugReaderCount (8)
-/*****
-#define mxMachinePlatform \
-	void* host; \
-	txSocket connection; \
-	txBoolean inPrintf; \
-	uint8_t debugConnectionVerified; \
-	txBoolean debugNotifyOutstanding; \
-    DebugFragment debugFragments; \
-	uint8_t *heap; \
-	uint8_t *heap_ptr; \
-	uint8_t *heap_pend; \
-	void *msgQueue; \
-	void *task;	\
-	void *waiterCondition;	\
-	void *waiterData;		\
-	void *waiterLink;
-*/
+
+#ifdef mxInstrument
+	#define mxMachineInstrument \
+		void *instrumentationTimer; \
+		void *instrumentationCallback;
+#else
+	#define mxMachineInstrument
+#endif
 
 #ifdef mxDebug
 #define mxMachineDebug \
@@ -162,8 +153,9 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		void *waiterCondition;	\
 		void *waiterData;		\
 		void *waiterLink;		\
-		mxMachineDebug
-
+		mxMachineDebug \
+		mxMachineInstrument
+		
 #ifdef __cplusplus
 }
 #endif

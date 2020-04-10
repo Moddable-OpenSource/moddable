@@ -37,7 +37,6 @@
 
 #include "xsAll.h"
 
-#define XS_MAX_INDEX ((2 << 28) - 2)
 #define mxPop() (the->stack++)
 #define mxArraySize(ARRAY) (((ARRAY)->value.array.address) ? (((txChunk*)(((txByte*)((ARRAY)->value.array.address)) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0)
 
@@ -503,8 +502,16 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	fxGetID(the, mxID(_length));
 	length = fxToLength(the, the->stack);
 	mxPop();
-	if (length > 0xFFFFFFFF) // @@ practical limit for iterations
-		length = 0xFFFFFFFF;
+	if (length > 0xFFFFFFFF) { // @@ practical limit for iterations
+		txSlot* result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG))
+			result = result->next;
+		if (result && (result->kind == XS_ARRAY_KIND))
+			length = array->value.array.length;
+		else
+			length = 0;
+	}
+		
 	return (txIndex)length;
 }
 
@@ -1009,6 +1016,8 @@ void fx_Array_prototype_concat(txMachine* the)
 				fxGetID(the, mxID(_length));
 				length = (txIndex)fxToLength(the, the->stack);
 				mxPop();
+                if (resultLength + length < resultLength)
+                    mxTypeError("array overflow");
 				index = 0;
 				while (index < length) {
 					mxPushSlot(argument);
@@ -1030,6 +1039,8 @@ void fx_Array_prototype_concat(txMachine* the)
 			else {
 				slot = fxNextSlotProperty(the, slot, argument, XS_NO_ID, XS_NO_FLAG);
 				resultLength++;
+				if (resultLength == 0)
+					mxTypeError("array overflow");
 			}
 			mxPop();
 			i++;

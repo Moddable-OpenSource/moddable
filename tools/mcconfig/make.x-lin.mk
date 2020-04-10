@@ -140,7 +140,7 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 
-all: precursor
+all: build
 
 build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 

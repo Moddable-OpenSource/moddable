@@ -28,9 +28,9 @@ class Scanner {
 	constructor(options) {
 		this.#onFound = options.onFound;
 		this.#onLost = options.onLost;
-		this.#max = options.max || 32;
-		this.#interval = options.interval || 1000;
-		this.#scanOptions = options.scanOptions || {};
+		this.#max = options.max ?? 32;
+		this.#interval = options.interval ?? 1000;
+		this.#scanOptions = options.scanOptions ?? {};
 
 		this.#scan();
 	}
@@ -45,8 +45,7 @@ class Scanner {
 					i.ticks = Time.ticks;
 				else {
 					this.#items.push({ssid: item.ssid, ticks: Time.ticks});
-					if (this.#onFound)
-						this.#onFound(item);
+					this.#onFound?.(item);
 				}
 
 				if (this.#items.length > this.#max)
@@ -69,8 +68,7 @@ class Scanner {
 			if (items[i].ticks > expire)
 				continue;
 
-			if (this.#onLost)
-				this.#onLost(items[i].ssid);
+			this.#onLost?.(items[i].ssid);		//@@ check
 
 			items.splice(i, 1);
 			i -= 1;

@@ -184,10 +184,6 @@ void fxConnect(txMachine* the)
 
 		the->connection = (txSocket)kSerialConnection;
 
-#ifdef mxInstrument
-		espDescribeInstrumentation(the);
-#endif
-
 		return;
 	}
 

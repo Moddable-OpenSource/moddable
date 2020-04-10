@@ -190,7 +190,11 @@ void fxProxySetter(txMachine* the)
 	if (instance) {
 		txID id = the->scratch.value.at.id;
 		txIndex index = the->scratch.value.at.index;
-		fxProxySetPropertyValue(the, instance, id, index, mxArgv(0), mxThis);
+		txBoolean result = fxProxySetPropertyValue(the, instance, id, index, mxArgv(0), mxThis);
+        if (!result) {
+            if (the->frame->next->flag & XS_STRICT_FLAG)
+				mxTypeError("(proxy).set: not extensible or not writable");
+        }
 	}
 }
 

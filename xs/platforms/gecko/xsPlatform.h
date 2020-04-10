@@ -104,6 +104,14 @@ typedef struct DebugFragmentRecord *DebugFragment;
 
 /* MACHINE */
 
+#ifdef mxInstrument
+	#define mxMachineInstrument \
+		void *instrumentationTimer; \
+		void *instrumentationCallback;
+#else
+	#define mxMachineInstrument
+#endif
+
 #define mxMachinePlatform \
 	void* host; \
 	txSocket connection; \
@@ -115,7 +123,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	DebugFragment debugFragments; \
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \
-	uint8_t *heap_pend;
+	uint8_t *heap_pend; \
+	mxMachineInstrument
 
 #ifdef __cplusplus
 }

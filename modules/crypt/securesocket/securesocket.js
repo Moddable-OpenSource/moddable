@@ -81,7 +81,7 @@ class SecureSocket {
 						this.closing = true;
 						break;
 					default:
-						debugger;		// error
+						trace(`secure socket error ${message}\n`);
 						this.error = true;
 						break;
 				}

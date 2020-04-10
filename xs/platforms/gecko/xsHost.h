@@ -273,6 +273,16 @@ extern uint32_t gMsgBufferMax;
 #endif
 
 /*
+	instrumentation
+*/
+
+#if defined(mxInstrumentation) && defined(__XS__)
+	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(txMachine *the);
+	void espInstrumentMachineReset(txMachine *the);
+#endif
+
+/*
 	c libraries
 */
 

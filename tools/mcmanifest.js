@@ -118,6 +118,12 @@ export class MakeFile extends FILE {
 		}
 		else
 			appConfig = [];
+
+		if (tool.instrument === true && tool.debug === false) {
+			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
+			let instConfig = tool.readFileString(instConfigFile);
+			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
+		}
 			
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
@@ -177,11 +183,13 @@ export class MakeFile extends FILE {
 		let defines = tool.defines;
 		let client = false;
 		let server = false;
+		let nimble = false;
 		if (defines && ("ble" in defines)) {
 			if ("server" in defines.ble && true == defines.ble.server)
 				server = true;
 			if ("client" in defines.ble && true == defines.ble.client)
 				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -190,11 +198,20 @@ export class MakeFile extends FILE {
 			this.write(` ${result.source}`);
 		this.line("");
 		if (tool.bleServicesFiles.length) {
+			let platform = (nimble ? 'nimble' : tool.platform);
 			this.echo(tool, "bles2gatt bleservices");
-			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
-			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
+			if (server) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+			}
+			if (client) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+			}
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
@@ -203,6 +220,8 @@ export class MakeFile extends FILE {
 			this.write(" -c");
 		if (server)
 			this.write(" -v");
+		if (nimble)
+			this.write(" -n");
 		if ("esp32" == tool.platform) {
 			let sdkconfigFile = tool.getenv("SDKCONFIG_FILE");
 			this.write(" -s ");
@@ -1092,6 +1111,16 @@ export class Tool extends TOOL {
 			this.environment.FULLPLATFORM = this.platform;
 			this.environment.PLATFORMPATH = this.platform;
 		}
+		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
+		if ("esp32" == this.platform) {
+			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
+			path += bluedroid ? this.platform : "nimble";
+		}
+		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
+			path += "sim";
+		else
+			path += this.platform;
+		this.environment.BLEMODULEPATH = path;
 
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);

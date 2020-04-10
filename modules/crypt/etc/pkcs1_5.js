@@ -60,7 +60,7 @@ export default class PKCS1_5 {
 		for (; i <= ffsize; i++)
 			s[i] = 0xff;
 		s[i++] = 0x00;
-		return BigInt.fromByteArray(s.buffer.concat(bc));
+		return BigInt.fromArrayBuffer(s.buffer.concat(bc));
 	};
 	emsaDecode(EM) {
 		let s = new Uint8Array(ArrayBuffer.fromBigInt(EM));

@@ -1,7 +1,7 @@
 # Tools
 
 Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: November 21, 2018
+Revised: April 8, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -53,7 +53,7 @@ A few notes:
 
 ### Arguments
 
-	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [-t build_target] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
@@ -64,10 +64,20 @@ A few notes:
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue` or `gecko/thunderboard2`. Defaults to the host build platform:`mac`, `win` or `lin`.
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
+- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
 - `-v`: to trace all commands executed by make
 - `-t`: to pass a build target to make. For example: `-t clean`
 - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
 - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
+
+**Build Targets**
+mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:
+
+- `clean`: removes platform-specific app build outputs from `$MODDABLE/build/tmp` and `$MODDABLE/build/bin`
+- `build`: builds the selected app, but does not deploy it
+- `deploy`: deploys a previously built app without rebuilding
+- `xsbug`: starts `serial2xsbug` to connect a previously-deployed app to the XSBug debugger running on your host machine
+- `all`: provides the same default behavior as omitting the `-t` flag
 
 <a id="mcrez"></a>
 ## mcrez
