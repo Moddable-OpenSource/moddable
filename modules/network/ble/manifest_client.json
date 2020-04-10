@@ -34,5 +34,12 @@
 				]
 			},
 		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"$(BLEMODULEPATH)/modBLECommon"
+				]
+			},
+		},
 	}
 }
