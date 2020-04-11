@@ -368,6 +368,7 @@ debug: precursor
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
+	cd $(PROJ_DIR)
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
@@ -385,6 +386,7 @@ release: precursor
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
+	cd $(PROJ_DIR)
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
@@ -404,6 +406,7 @@ mingPrepare:
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
+	cd $(PROJ_DIR)
 		
 build: precursor mingPrepare
 	echo $(BUILD_CMD)
@@ -411,7 +414,7 @@ build: precursor mingPrepare
 	$(BUILD_MSG)
 	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\ota_data_initial.bin $(BIN_DIR)
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin copy $(IDF_BUILD_DIR)\ota_data_initial.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)
 
