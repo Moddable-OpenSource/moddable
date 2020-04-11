@@ -194,19 +194,19 @@ More detailed getting started guides are available for the following devices:
 
 	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
 
-5. Clone the v3.3.1 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.1
+    git checkout v3.3.2
     git submodule update
     ```
 	
@@ -422,19 +422,19 @@ More detailed getting started guides are available for the following devices:
     mkdir esp32
     ```
 
-5. Clone the v3.3.1 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. Clone the v3.3.2 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
     cd ~/esp32
-    git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
     ```
 
-	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.1
+    git checkout v3.3.2
     git submodule update
     ```
 
@@ -592,19 +592,19 @@ More detailed getting started guides are available for the following devices:
 
 	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
 
-4. Clone the v3.3.1 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.3.1 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.1 tag:
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.1
+    git checkout v3.3.2
     git submodule update
     ```
 

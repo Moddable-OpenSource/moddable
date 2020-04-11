@@ -177,16 +177,21 @@ void xs_net_get(xsMachine *the)
 		xsResult = xsNewArray(0);
 		xsVars(1);
 		do {
-			ip_addr_t addr = dns_getserver(i);
-#if LWIP_IPV4 && LWIP_IPV6
-			if (!addr.u_addr.ip4.addr)
+#if ESP32
+			const ip_addr_t* addr = dns_getserver(i);
 #else
-			if (!addr.addr)
+			const ip_addr_t address = dns_getserver(i);
+			const ip_addr_t *addr = &address;
+#endif
+#if LWIP_IPV4 && LWIP_IPV6
+			if (!addr->u_addr.ip4.addr)
+#else
+			if (!addr->addr)
 #endif
 				break;
 
 			xsVar(0) = xsStringBuffer(NULL, 32);
-			ipaddr_ntoa_r(&addr, xsToString(xsVar(0)), 32);
+			ipaddr_ntoa_r(addr, xsToString(xsVar(0)), 32);
 			xsSet(xsResult, i++, xsVar(0));
 		} while (true);
 	}
