@@ -970,5 +970,19 @@ void *my_malloc(size_t size) {
 }
 #endif
 
+#include "nrf_sdh.h"
+
+void nrf52_reset(void)
+{
+#ifdef SOFTDEVICE_PRESENT
+	if (nrf_sdh_is_enabled())
+		sd_nvic_SystemReset();
+	else
+		NVIC_SystemReset();
+#else
+	NVIC_SystemReset();
+#endif
+}
+
 
 

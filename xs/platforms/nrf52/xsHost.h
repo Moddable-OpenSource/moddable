@@ -288,7 +288,9 @@ extern void *my_malloc(size_t size);
 #define c_realloc realloc
 #endif
 
-#define c_exit exit
+extern void nrf52_reset(void);
+
+#define c_exit(n) { nrf52_reset(); }
 #define c_free free
 #define c_qsort qsort
 #define c_strtod strtod
