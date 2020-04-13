@@ -152,6 +152,7 @@ struct txSerialToolStruct {
 	char* host;
 	int port;
 	int dtr;
+	int delayOnReopen;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;

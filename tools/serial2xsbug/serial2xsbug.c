@@ -126,6 +126,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-dtr")) {
 			self->dtr = 1;
 		}
+		else if (!strcmp(argv[argi], "-delayOnReopen") && ((argi + 1) < argc)) {
+			self->delayOnReopen = atoi(argv[++argi]);
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;

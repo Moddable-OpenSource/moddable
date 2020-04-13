@@ -124,6 +124,10 @@ void fxOpenSerial(txSerialTool self)
 	CFSocketContext context;
 	static uint8_t first = true;
 
+	if (!first && self->delayOnReopen) {
+		usleep(self->delayOnReopen);
+	}
+	
     fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd == -1) {
         fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
@@ -268,6 +272,7 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 {
 	txSerialDescription description = refCon;
 	fxCloseSerial(description->tool);
+
 	free(description);
 }
 
