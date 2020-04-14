@@ -127,9 +127,6 @@
 #ifndef ICACHE_FLASH_ATTR
 	#define ICACHE_FLASH_ATTR
 #endif
-#ifndef ICACHE_STORE_ATTR
-	#define ICACHE_STORE_ATTR
-#endif
 #ifndef ICACHE_RODATA_ATTR
 	#define ICACHE_RODATA_ATTR
 #endif

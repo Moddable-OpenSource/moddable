@@ -45,8 +45,6 @@
 	link locations
 */
 
-#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
-
 #if ESP32
 	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))

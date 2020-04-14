@@ -32,7 +32,6 @@ extern "C" {
 /*
 	link locations
 */
-#define ICACHE_STORE_ATTR
 #define ICACHE_RODATA_ATTR
 #define ICACHE_XS6RO_ATTR
 #define ICACHE_XS6RO2_ATTR
