@@ -124,16 +124,16 @@ void fxOpenSerial(txSerialTool self)
 	CFSocketContext context;
 	static uint8_t first = true;
 
-	if (!first && self->delayOnReopen) {
-		usleep(self->delayOnReopen);
+	fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (fd == -1) {
+		usleep(500000);
+		fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
+		if (fd == -1) {
+			fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
+			return;
+		}
 	}
 	
-    fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (fd == -1) {
-        fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
-        return;
-    }
-
     if (ioctl(fd, TIOCEXCL) == -1) {
         fprintf(stderr, "Error setting TIOCEXCL on %s - %s(%d).\n", self->path, strerror(errno), errno);
         return;
