@@ -4,6 +4,8 @@ Revised: February 27, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
+If you have already set up your host environment and target platform builds once, use the [Keeping Up To Date](Moddable%20SDK%20-%20Keeping%20Up%20To%20Date.md) document to keep your Moddable SDK tools and build environment up to date over time.
+
 ## Table of Contents
 
 * [Overview](#overview)
