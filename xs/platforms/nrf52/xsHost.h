@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -52,36 +52,14 @@ extern "C" {
 /*
 	link locations
  */
-#if 0
-#if 1
-#define ICACHE_RAM_ATTR
-#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.flash")))
-#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
-#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
-#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
-#define ICACHE_XS6STRING_ATTR __attribute__((section(".rodata.str1.4"))) __attribute__((aligned(4)))
-#else
-#define ICACHE_RAM_ATTR
-#define ICACHE_FLASH_ATTR __attribute__((section(".flash.x")))
-#define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xs6ro")))
-#define ICACHE_RODATA_ATTR __attribute__((section(".flash.rodata")))
-#define ICACHE_XS6RO_ATTR __attribute__((section(".flash.xs6ro"))) __attribute__((aligned(4)))
-#define ICACHE_XS6RO2_ATTR __attribute__((section(".flash.xs6ro2"))) __attribute__((aligned(4)))
-#define ICACHE_XS6STRING_ATTR __attribute__((section(".flash.str1.4"))) __attribute__((aligned(4)))
-#endif
-#endif
 
 #define ICACHE_RAM_ATTR __attribute__((section(".data")))
 #define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
 #define ICACHE_FLASH1_ATTR __attribute__((section(".flash.1")))
-    #define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
-    #define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
-    #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
-    #define ICACHE_XS6STRING_ATTR __attribute__((section(".data"))) __attribute__((aligned(4)))
-
-
-#define sint8_t int8_t
-#define sint16_t int16_t
+#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
+#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
+#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
+#define ICACHE_XS6STRING_ATTR __attribute__((section(".text"))) __attribute__((aligned(4)))
 
 void xs_setup();
 void xs_loop();
