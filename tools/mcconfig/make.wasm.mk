@@ -142,7 +142,8 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: $(LIB_DIR) $(BIN_DIR)/mc.js $(BIN_DIR)/index.html
-	
+build: all
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
