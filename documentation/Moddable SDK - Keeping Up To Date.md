@@ -1,6 +1,6 @@
 # Moddable SDK – Keeping Up To Date
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: April 13, 2020
+Revised: April 15, 2020
 
 This document describes the steps that you should take to update the Moddable SDK. By following the steps in this guide, you can update your Moddable SDK git repository, rebuild the Moddable SDK tools, and update the target-specific build environments needed for the ESP8266 and ESP32.
 
@@ -123,23 +123,24 @@ To ensure that your build environment is up to date, perform the following steps
 	python -m pip install --user -r ~/esp32/esp-idf/requirements.txt
 	```
 		
-4. Verify that you have the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` environment variables set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system. And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+4. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
 
 	```
-    export IDF_PATH=$HOME/esp32/esp-idf
+	export IDF_PATH=$HOME/esp32/esp-idf
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
-    export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
+There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
+The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
 
-	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
+	```
+	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
+	```
+The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 	
-	```text
+	```
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
-
-	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
-
-    > An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older `make`-based build.
+The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer Cmake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
 
 5. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
