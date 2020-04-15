@@ -1185,6 +1185,14 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoOffset += 6;
 			break;
 
+		case 15:
+#if MODDEF_XS_MODS
+			the->echoBuffer[the->echoOffset++] = 1;
+#else
+			the->echoBuffer[the->echoOffset++] = 0;
+#endif
+			break;
+
 		default:
 			modLog("unrecognized command");
 			modLogInt(cmdID);
