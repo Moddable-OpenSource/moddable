@@ -510,8 +510,12 @@ $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+	$(XSL) <<args.txt
+-b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+<<
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+	$(MCREZ) <<args.txt
+$(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+<<
