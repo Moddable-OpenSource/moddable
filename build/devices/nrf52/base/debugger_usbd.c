@@ -127,13 +127,17 @@ void setupDebugger()
 	
 	// Wait for host serial port initialization and connection
     count = 0;
-	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 200)) {
+	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 300)) {
 		taskYIELD();
 		modDelayMilliseconds(10);
 	}
 
 	// Finally, let the host connection settle
-	modDelayMilliseconds(1000);
+	count = 0;
+	while (count++ < 10) {
+		taskYIELD();
+		modDelayMilliseconds(100);
+	}
 }
 
 void flushDebugger()
