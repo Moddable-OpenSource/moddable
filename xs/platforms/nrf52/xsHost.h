@@ -186,6 +186,7 @@ void modWatchDogReset(void);
 
 void fxReceiveLoop(void);
 void setupDebugger(void);
+void flushDebugger(void);
 extern TaskHandle_t gMainTask;
 /*
 	messages

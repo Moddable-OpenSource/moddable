@@ -153,6 +153,16 @@ void setupDebugger()
 	modDelayMilliseconds(1000);
 }
 
+void flushDebugger()
+{
+	uint32_t count = 0;
+	
+	while ((NULL != gTxBufferList) && (count++ < 10)) {
+		taskYIELD();
+		modDelayMilliseconds(100);
+	}
+}
+
 void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;

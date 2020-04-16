@@ -181,6 +181,9 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 
 void fxAbort(txMachine* the, int status)
 {
+#ifdef mxDebug
+	flushDebugger();
+#endif
 	c_exit(status);
 }
 
