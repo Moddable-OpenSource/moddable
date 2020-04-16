@@ -124,31 +124,14 @@ void setupDebugger()
 		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
         
     ftdiTrace("Waiting for USBD port connection");
-    
-    // Wait two seconds to let USBD port complete the suspend/resume dance
-	count = 0;
-	while (count++ < 20) {
-		taskYIELD();
-		modDelayMilliseconds(100);
-	}
-	//blink(5);
-
-    // Wait up to approximately ten seconds for USBD port to be available and connected to host
+	
+	// Wait for host serial port initialization and connection
     count = 0;
-	while (!m_usb_connected && (count++ < 100)) {
+	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 200)) {
 		taskYIELD();
-		modDelayMilliseconds(100);
+		modDelayMilliseconds(10);
 	}
-	
-	// Wait for serial2xsbug to complete host serial port initialization
-	if (m_usb_connected) {
-		count = 0;
-		while (!m_usb_reopened && (count++ < 30)) {
-			taskYIELD();
-			modDelayMilliseconds(100);
-		}
-	}
-	
+
 	// Finally, let the host connection settle
 	modDelayMilliseconds(1000);
 }

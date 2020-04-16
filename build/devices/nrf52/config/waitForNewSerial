@@ -4,7 +4,7 @@ NAME=/Volumes/MODDABLE4
 echo -n "Installing to $NAME.."
 while [ -d "$NAME" ]; do
      echo -n "."
-     sleep 1
+     sleep 0.1
 done
 echo
 
@@ -57,7 +57,7 @@ findNew() {
 newOne=0
 
 while [ $newOne -eq 0 ]; do
-	sleep 1
+	sleep 0.1
 	compare=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
 
 	findNew "${compare[@]}"
@@ -66,8 +66,6 @@ while [ $newOne -eq 0 ]; do
 	fi
 	
 done
-
-# sleep 5
 
 echo "Connecting to xsbug (${fileToCompare})."
 
