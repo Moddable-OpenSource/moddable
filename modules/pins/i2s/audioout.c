@@ -77,6 +77,8 @@
 	#define MODDEF_AUDIOOUT_I2S_PDM (0)
 #elif !defined(__ets__)
 	#error "PDM on ESP8266 only"
+#elif MODDEF_AUDIOOUT_I2S_PDM == 0
+	// esp8266 direct i2s output
 #elif (MODDEF_AUDIOOUT_I2S_PDM != 32) && (MODDEF_AUDIOOUT_I2S_PDM != 64) && (MODDEF_AUDIOOUT_I2S_PDM != 128)
 	#error "invalid PDM oversampling"
 #endif
