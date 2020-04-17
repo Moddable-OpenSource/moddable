@@ -44,7 +44,7 @@
 #include "ets_sys.h"
 
 #include "i2s_reg.h"
-#include "i2s.h"
+#include "tinyi2s.h"
 
 #define SLC_BUF_CNT (4) //Number of buffers in the I2S circular buffer
 #define SLC_BUF_LEN (64) //Length of one buffer, in 32-bit words.
