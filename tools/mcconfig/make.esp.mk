@@ -84,7 +84,8 @@ INC_DIRS = \
  	$(ESP_TOOLS_SDK_ROOT)/lwip/include \
  	$(CORE_DIR) \
  	$(ARDUINO_ROOT)/variants/generic \
- 	$(ARDUINO_ROOT)/cores/esp8266/spiffs
+ 	$(ARDUINO_ROOT)/cores/esp8266/spiffs \
+	$(PLATFORM_DIR)/lib/tinyi2s/
 SDK_SRC = \
 	$(ARDUINO_ESP8266)/abi.cpp \
 	$(ARDUINO_ESP8266)/cont.S \
@@ -112,6 +113,7 @@ SDK_SRC = \
 	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
+	$(PLATFORM_DIR)/lib/tinyi2s/tinyi2s.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
 	$(PLATFORM_DIR)/lib/tinyuart/tinyuart.c
 
