@@ -327,7 +327,7 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	cd $(PROJ_DIR) ; set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
+	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(PARTITIONS_BIN) $(BIN_DIR)
