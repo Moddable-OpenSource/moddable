@@ -129,18 +129,21 @@ To ensure that your build environment is up to date, perform the following steps
 	export IDF_PATH=$HOME/esp32/esp-idf
 	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
 	```
-There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
-The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
+
+	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
+	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
 
 	```
 	export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```
-The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
+
+	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 	
 	```
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
-The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer Cmake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
 
 5. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
@@ -262,14 +265,17 @@ To ensure that your build environment is up to date, perform the following steps
     git submodule update
     ```
 
-3. Update the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` Windows environment variables as below. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
+3. Verify the `IDF_PATH` and `PATH` Windows environment variables are set correctly. Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
+
     - `IDF_PATH`: the directory where you cloned the ESP-IDF, e.g. `%userprofile%\esp32\esp-idf`
     - `PATH`: Add the directory `%IDF_PATH%\tools` to your `PATH`.
+
+	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
+	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
+
     - `UPLOAD_PORT`: the COM port for your device, e.g. `COM3`
 
-    > Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
-
-    > An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older MinGW-based build.
+	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `MinGW`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `MinGW`-based build. Support for `MinGW`-based builds will be removed in a future Moddable SDK update.
 
 4. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2019" command line console:
 
@@ -409,23 +415,27 @@ To ensure that your build environment is up to date, perform the following steps
     sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
 	```
 
-3. Set the `IDF_PATH`, `PATH`, and (optional) `UPLOAD_PORT` environment variables in your shell's user profile file (e.g. `~/.bashrc` or `~/.zshrc`, depending on your shell). Replace the values below with those appropriate to your system. And remember that you will need to open a new shell instance to pick up these changes before proceeding.
+3. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
 
 	```
     export IDF_PATH=~/esp32/esp-idf
 	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
-    export UPLOAD_PORT=/dev/ttyUSB0
 	```
 
-	> Note the UPLOAD_PORT can also be specified on the `mcconfig` command line (see below), which can be useful when deploying to multiple ESP32 devices:
+	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
+	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
+
+	```
+	export UPLOAD_PORT=/dev/ttyUSB0
+	```
+
+	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 	
-	```text
+	```
 	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
 	```
-
-	> Setting the `UPLOAD_PORT` is optional. The ESP-IDF build/config tool `idf.py` will auto-detect the serial port in most cases.
-
-    > An additional optional environment variable `ESP32_CMAKE` can be set to 0 to disable the CMake-based ESP32 build and default to the older `make`-based build.
+	
+	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
 
 4. Each version of the ESP-IDF comes with an updated set of python dependencies. To keep up to date, run this command to install the required Python packages::
 
