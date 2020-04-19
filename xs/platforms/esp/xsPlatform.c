@@ -1038,7 +1038,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
 			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
-			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary {
+			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
 				modSPIErase(offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
 			else if (firstSector != lastSector)
 				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
@@ -1187,8 +1187,14 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 15:
 #if MODDEF_XS_MODS
-			the->echoBuffer[the->echoOffset++] = 1;
+			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >> 24;
+			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >> 16;
+			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >>  8;
+			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart);
 #else
+			the->echoBuffer[the->echoOffset++] = 0;
+			the->echoBuffer[the->echoOffset++] = 0;
+			the->echoBuffer[the->echoOffset++] = 0;
 			the->echoBuffer[the->echoOffset++] = 0;
 #endif
 			break;
