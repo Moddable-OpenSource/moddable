@@ -1703,7 +1703,7 @@ void fxQueuePromiseJobs(txMachine* the)
 #if ESP32
 
 const esp_partition_t *gPartition;
-const void *gPartitionAddress;
+const uint8_t *gPartitionAddress;
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
@@ -1730,23 +1730,19 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
-	const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
-	const void *partitionAddress;
-	if (!partition) return NULL;
+	gPartition = esp_partition_find_first(0x40, 1,  NULL);
+	if (!gPartition) return NULL;
 
-	if (fxMapArchive(preparation, (void *)partition, (void *)partition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
+	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
 		spi_flash_mmap_handle_t handle;
 
-		if (ESP_OK != esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
 			return NULL;
 	}
 	else
 		return 0;
 
-	gPartition = partition;
-	gPartitionAddress = partitionAddress;
-
-	return (void *)partitionAddress;
+	return (void *)gPartitionAddress;
 }
 
 #else /* ESP8266 */

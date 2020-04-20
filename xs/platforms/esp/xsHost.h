@@ -519,7 +519,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#include "esp_partition.h"
 
 	extern const esp_partition_t *gPartition;
-	extern const void *gPartitionAddress;
+	extern const uint8_t *gPartitionAddress;
 
 	#define kModulesStart (gPartitionAddress)
 	#define kModulesByteLength (gPartition ? gPartition->size : 0)

@@ -988,16 +988,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 	switch (cmdID) {
 		case 1:		// restart
 			the->wsState = 18;
-			fxDisconnect(the);
-			modDelayMilliseconds(1000);
-#if ESP32
-			esp_restart();
-#else
-			system_restart();
-#endif
-			while (1)
-				modDelayMilliseconds(1000);
-			return;
+			break;
 
 #if MODDEF_XS_MODS
 		case 2: {		// uninstall
@@ -1128,7 +1119,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		}
 		break;
 
-		case 8:
+		case 8:		// set baud
 			baud = c_read32be(cmd);
 			break;
 
@@ -1187,10 +1178,10 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 15:
 #if MODDEF_XS_MODS
-			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >> 24;
-			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >> 16;
-			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart) >>  8;
-			the->echoBuffer[the->echoOffset++] = (kModulesEnd - kModulesStart);
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
 #else
 			the->echoBuffer[the->echoOffset++] = 0;
 			the->echoBuffer[the->echoOffset++] = 0;
@@ -1213,8 +1204,25 @@ bail:
 		fxSend(the, 2);		// send binary
 	}
 
-	if (baud)
-		ESP_setBaud(baud);
+	// finish command after sending reply
+	switch (cmdID) {
+		case 1:		// restart
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+#if ESP32
+			esp_restart();
+#else
+			system_restart();
+#endif
+			while (1)
+				modDelayMilliseconds(1000);
+			break;
+
+		case 8:		// set baud
+			if (baud)
+				ESP_setBaud(baud);
+			break;
+	}
 }
 
 #if defined(mxDebug) && ESP32
