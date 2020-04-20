@@ -90,13 +90,10 @@ class Server extends Listener {
 		const socket = new Socket({listener: this});
 		new Server.#Client({socket}, this);
 	}
-	publish(topic, body, client) {
+	publish(topic, body) {
 		const parts = topic.split("/");
 		const l = parts.length;
 		for (let i = 0, clients = this.#clients; i < clients.length; i++) {
-			if (client === clients[i])
-				continue;
-
 		loop:
 			for (let j = 0, subscriptions = clients[i].subscriptions, length = subscriptions.length; j < length; j++) {
 				const subscription = subscriptions[j]
