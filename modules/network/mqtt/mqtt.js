@@ -536,7 +536,11 @@ export default class Client {
 			}
 			catch {
 			}
-			this.ws.close();
+			try {
+				this.ws.close();		// can throw if already closed (wi-fi disconnect notification not yet received )
+			}
+			catch {
+			}
 			delete this.ws;
 		}
 
