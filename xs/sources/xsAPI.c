@@ -812,12 +812,12 @@ void fxSetHostDestructor(txMachine* the, txSlot* slot, txDestructor theDestructo
 		mxSyntaxError("C: xsSetHostDestructor: no host object");
 }
 
-void fxSetHostHooks(txMachine* the, txSlot* slot, txHostHooks* theHooks)
+void fxSetHostHooks(txMachine* the, txSlot* slot, const txHostHooks* theHooks)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
 	if (host) {
 		host->flag |= XS_HOST_HOOKS_FLAG;
-		host->value.host.variant.hooks = theHooks;
+		host->value.host.variant.hooks = (txHostHooks *) theHooks;
 	}
 	else
 		mxSyntaxError("C: xsSetHostHooks: no host object");

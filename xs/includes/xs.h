@@ -1321,7 +1321,7 @@ mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
 mxImport void fxSetHostDestructor(xsMachine*, xsSlot*, xsDestructor);
 mxImport void* fxGetHostHandle(xsMachine*, xsSlot*);
 mxImport xsHostHooks* fxGetHostHooks(xsMachine*, xsSlot*);
-mxImport void fxSetHostHooks(xsMachine*, xsSlot*, xsHostHooks*);
+mxImport void fxSetHostHooks(xsMachine*, xsSlot*, const xsHostHooks*);
 
 mxImport xsIndex fxID(xsMachine*, const char*);
 mxImport xsIndex fxFindID(xsMachine*, char*);

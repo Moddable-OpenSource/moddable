@@ -27,7 +27,7 @@
 static void modTimerMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void modTimerDelete(void *data);
 
-static xsHostHooks modTimerHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks modTimerHooks ICACHE_RODATA_ATTR = {
 	modTimerDelete,
 	modTimerMark,
 	NULL

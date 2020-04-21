@@ -41,7 +41,7 @@ struct PiuLocalsStruct {
 static uint32_t PiuLocalsHash(uint32_t d, uint8_t* string);
 static void PiuLocalsMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks ICACHE_FLASH_ATTR PiuLocalsHooks = {
+static const xsHostHooks ICACHE_FLASH_ATTR PiuLocalsHooks = {
 	PiuLocalsDelete,
 	PiuLocalsMark,
 	NULL

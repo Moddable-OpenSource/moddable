@@ -2161,7 +2161,7 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 
 #ifdef mxInstrument	
 #define xsInstrumentCount 11
-static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
+static char* const xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",
 	"Chunk available",
 	"Slot used",
@@ -2174,7 +2174,7 @@ static char* xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Parser used",
 	"Floating Point",
 };
-static char* xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
+static char* const xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" / ",
 	" bytes",
 	" / ",
@@ -2204,9 +2204,9 @@ void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names,
 		}
 		for (i = 0; i < xsInstrumentCount; i++, j++) {
 			fxEcho(the, "<instrument name=\"");
-			fxEchoString(the, xsInstrumentNames[i]);
+			fxEchoString(the, (txString) xsInstrumentNames[i]);
 			fxEcho(the, "\" value=\"");
-			fxEchoString(the, xsInstrumentUnits[i]);
+			fxEchoString(the, (txString) xsInstrumentUnits[i]);
 			fxEcho(the, "\"/>");
 		}
 		fxEcho(the, "</instruments>");
