@@ -274,7 +274,7 @@ txInteger fx_Date_parse_fraction(txByte* theCharacter, txString* theString)
 void fx_Date_parse(txMachine* the)
 {
 	#define mxDayCount 7
-	static const char* gxDays[mxDayCount] ICACHE_RODATA_ATTR = {
+	static const char* const gxDays[mxDayCount] ICACHE_RODATA_ATTR = {
 		"monday", 
 		"tuesday", 
 		"wednesday", 
@@ -284,7 +284,7 @@ void fx_Date_parse(txMachine* the)
 		"sunday"
 	};
 	#define mxMonthCount 12
-	static const char* gxMonths[mxMonthCount] ICACHE_RODATA_ATTR = {
+	static const char* const gxMonths[mxMonthCount] ICACHE_RODATA_ATTR = {
 		"january",
 		"february",
 		"march",
@@ -299,7 +299,7 @@ void fx_Date_parse(txMachine* the)
 		"december"
 	};
 	#define mxZoneCount 11
-	static const char* gxZones[mxZoneCount] ICACHE_RODATA_ATTR = {
+	static const char* const gxZones[mxZoneCount] ICACHE_RODATA_ATTR = {
 		"gmt", "ut", "utc",
 		"est", "edt",
 		"cst", "cdt",

@@ -23,7 +23,7 @@
 static void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical);
 static void PiuSkinMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuSkinHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuSkinHooks ICACHE_RODATA_ATTR = {
 	PiuSkinDelete,
 	PiuSkinMark,
 	NULL

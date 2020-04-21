@@ -563,7 +563,7 @@ mxExport txHostHooks* fxGetHostHooks(txMachine*, txSlot*);
 mxExport void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize);
 mxExport void fxSetHostData(txMachine*, txSlot*, void*);
 mxExport void fxSetHostDestructor(txMachine*, txSlot*, txDestructor);
-mxExport void fxSetHostHooks(txMachine*, txSlot*, txHostHooks*);
+mxExport void fxSetHostHooks(txMachine*, txSlot*, const txHostHooks*);
 mxExport void* fxToHostHandle(txMachine* the, txSlot* slot);
 
 mxExport txID fxID(txMachine*, txString);

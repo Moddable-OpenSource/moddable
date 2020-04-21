@@ -523,11 +523,11 @@ int main(int argc, char* argv[])
 			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
 			fprintf(file, "static const txSlot gxStack[mxStackCount];\n");
 			fprintf(file, "#define mxKeysCount %d\n", the->keyIndex);
-			fprintf(file, "static const txSlot* gxKeys[mxKeysCount];\n");
+			fprintf(file, "static const txSlot* const gxKeys[mxKeysCount];\n");
 			fprintf(file, "#define mxNamesCount %d\n", the->nameModulo);
-			fprintf(file, "static const txSlot* gxNames[mxNamesCount];\n");
+			fprintf(file, "static const txSlot* const gxNames[mxNamesCount];\n");
 			fprintf(file, "#define mxSymbolsCount %d\n", the->symbolModulo);
-			fprintf(file, "static const txSlot* gxSymbols[mxSymbolsCount];\n");
+			fprintf(file, "static const txSlot* const gxSymbols[mxSymbolsCount];\n");
 // 			fprintf(file, "#define mxGlobalsCount %d\n", (int)globalCount);
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount];\n");
 			script = linker->firstScript;
@@ -583,20 +583,20 @@ int main(int argc, char* argv[])
 				fprintf(file, "\n};\n\n");
 			}
 			if (linker->slotSize) {
-				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR = {\n");
+				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR = {\n");
 				fxPrintTable(the, file, linker->slotSize, linker->slotData);
 				fprintf(file, "};\n\n");
 			}
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 // 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
 // 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->keyIndex, the->keyArray);
 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxNames[mxNamesCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxNames[mxNamesCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->nameModulo, the->nameTable);
 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxSymbols[mxSymbolsCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxSymbols[mxSymbolsCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->symbolModulo, the->symbolTable);
 			fprintf(file, "};\n\n");
 			fprintf(file, "static const txPreparation gxPreparation = {\n");

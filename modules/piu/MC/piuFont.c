@@ -24,7 +24,7 @@
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 	PiuFontDelete,
 	PiuFontMark,
 	NULL
