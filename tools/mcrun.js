@@ -251,7 +251,7 @@ class ToDoFile extends FILE {
 			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString(), "-t");
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
-			lines.push(["rle4encode ", bmpSource, "-o", tool.resourcesPath]);
+			lines.push(["rle4encode", bmpSource, "-o", tool.resourcesPath]);
 		}
 
 		for (var result of tool.imageFiles) {
