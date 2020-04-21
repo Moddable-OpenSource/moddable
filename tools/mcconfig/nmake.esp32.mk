@@ -19,6 +19,10 @@
 
 HOST_OS = win
 
+!IF "$(EXPECTED_ESP_IDF)"==""
+EXPECTED_ESP_IDF = v3.3.2
+!ENDIF
+
 !IF "$(VERBOSE)"=="1"
 !CMDSWITCHES -S
 CMAKE_LOG_LEVEL = VERBOSE
@@ -65,6 +69,18 @@ IDF_PATH = $(MSYS32_BASE)\home\$(USERNAME)\esp\esp-idf
 !ENDIF
 !IF "$(TOOLS_ROOT)"==""
 TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
+!ENDIF
+
+!IF [cd $(IDF_PATH) && git describe --always --tags --dirty > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+IDF_VERSION = \
+!INCLUDE $(TMP_DIR)\_idf_version.tmp
+!IF [del $(TMP_DIR)\_idf_version.tmp] == 0
+!ENDIF
+!IF "$(IDF_VERSION)"!="$(EXPECTED_ESP_IDF)"
+!ERROR Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).
+!ENDIF
+!ELSE
+!MESSAGE Could not detect ESP-IDF version.
 !ENDIF
 
 !IF "$(DEBUG)"=="1"

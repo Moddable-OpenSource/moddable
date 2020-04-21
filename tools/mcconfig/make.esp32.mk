@@ -23,6 +23,8 @@ UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 ESP32_CMAKE ?= 1
 
+EXPECTED_ESP_IDF ?= v3.3.2
+
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
 	IDF_PY_LOG_FLAG = -v
@@ -36,6 +38,16 @@ IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
+
+IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --tags --dirty")
+
+ifeq ($(IDF_VERSION),)
+$(warning Could not detect ESP-IDF version.)
+else
+ifneq ($(IDF_VERSION),$(EXPECTED_ESP_IDF))
+$(error Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
+endif
+endif
 
 unexport LDFLAGS
 unexport LD_LIBRARY_PATH
