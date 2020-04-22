@@ -71,7 +71,7 @@ IDF_PATH = $(MSYS32_BASE)\home\$(USERNAME)\esp\esp-idf
 TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
 !ENDIF
 
-!IF [cd $(IDF_PATH) && git describe --always --tags --dirty > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+!IF [cd $(IDF_PATH) && git describe --always > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
 IDF_VERSION = \
 !INCLUDE $(TMP_DIR)\_idf_version.tmp
 !IF [del $(TMP_DIR)\_idf_version.tmp] == 0

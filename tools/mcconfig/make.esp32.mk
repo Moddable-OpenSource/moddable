@@ -39,7 +39,7 @@ export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
-IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --tags --dirty")
+IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always")
 
 ifeq ($(IDF_VERSION),)
 $(warning Could not detect ESP-IDF version.)
