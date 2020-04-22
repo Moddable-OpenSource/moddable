@@ -101,7 +101,7 @@ void xs_preference_get(xsMachine *the)
 		xsmcSetBoolean(xsResult, b);
 	else if (ESP_OK == (err = nvs_get_i32(handle, key, &integer)))
 		xsmcSetInteger(xsResult, integer);
-	else if (ESP_OK == (err = nvs_get_str(handle, key, NULL, &integer)))
+	else if (ESP_OK == (err = nvs_get_str(handle, key, NULL, &integer))) {
 		xsResult = xsStringBuffer(NULL, integer);
 		err = nvs_get_str(handle, key, xsmcToString(xsResult), &integer);
 	}
