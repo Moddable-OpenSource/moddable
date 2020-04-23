@@ -8,11 +8,13 @@
 	<script>
 		function getData() {
 			return {
-				date: document.getElementById("DATE").value,
+				config: {
+					date: document.getElementById("DATE").value,
+				},
 			};
 		}
 		function setData(data) {
-			document.getElementById("DATE").value = data.date;
+			document.getElementById("DATE").value = data.config.date;
 		}
 	</script>
 </body>
