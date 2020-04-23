@@ -38,12 +38,12 @@
 #include "xsPlatform.h"
 #include "fips46.h"
 
-static const uint16_t const bytebit[] ICACHE_XS6RO2_ATTR = {
+static const uint16_t bytebit[] ICACHE_XS6RO2_ATTR = {
 	/*01, 02, 04, 010, 020, 040, 0100, 0200,*/	/* parity is MSB */
 	0200, 0100, 040, 020, 010, 04, 02, 01,	/* parity is LSB */
 };
 
-static const uint32_t const bigbyte[] ICACHE_XS6RO2_ATTR = {
+static const uint32_t bigbyte[] ICACHE_XS6RO2_ATTR = {
 	0x800000L,	0x400000L,	0x200000L,	0x100000L,
 	0x80000L,	0x40000L,	0x20000L,	0x10000L,
 	0x8000L,	0x4000L,	0x2000L,	0x1000L,
@@ -52,18 +52,18 @@ static const uint32_t const bigbyte[] ICACHE_XS6RO2_ATTR = {
 	0x8L,		0x4L,		0x2L,		0x1L,
 };
 
-static const uint8_t const pc1[56] ICACHE_XS6RO2_ATTR = {
+static const uint8_t pc1[56] ICACHE_XS6RO2_ATTR = {
 	56, 48, 40, 32, 24, 16,  8,	 0, 57, 49, 41, 33, 25, 17,
 	 9,  1, 58, 50, 42, 34, 26,	18, 10,  2, 59, 51, 43, 35,
 	62, 54, 46, 38, 30, 22, 14,	 6, 61, 53, 45, 37, 29, 21,
 	13,  5, 60, 52, 44, 36, 28,	20, 12,  4, 27, 19, 11,  3,
 };
 
-static const uint8_t const totrot[16] ICACHE_XS6RO2_ATTR = {
+static const uint8_t totrot[16] ICACHE_XS6RO2_ATTR = {
 	1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28,
 };
 
-static const uint8_t const pc2[48] ICACHE_XS6RO2_ATTR = {
+static const uint8_t pc2[48] ICACHE_XS6RO2_ATTR = {
 	13, 16, 10, 23,  0,  4,  2, 27, 14,  5, 20,  9,
 	22, 18, 11,  3, 25,  7, 15,  6, 26, 19, 12,  1,
 	40, 51, 30, 36, 46, 54, 29, 39, 50, 44, 32, 47,
