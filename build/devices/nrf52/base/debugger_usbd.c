@@ -131,13 +131,6 @@ void setupDebugger()
 		taskYIELD();
 		modDelayMilliseconds(10);
 	}
-
-	// Finally, let the host connection settle
-	count = 0;
-	while (count++ < 10) {
-		taskYIELD();
-		modDelayMilliseconds(100);
-	}
 }
 
 void flushDebugger()

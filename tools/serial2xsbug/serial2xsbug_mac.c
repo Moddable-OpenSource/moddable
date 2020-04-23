@@ -219,7 +219,7 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 	int size = read(handle, buffer, 1024);
 	if (size > 0)
 		fxReadSerialBuffer(self, buffer, size);
-	else if ((size < 0) && (errno != EINPROGRESS)) {
+	else if ((size < 0) && (errno != EINPROGRESS) && (errno != ENXIO)) {
         fprintf(stderr, "Error reading serial - %s(%d).\n", strerror(errno), errno);
         exit(1);
 	}

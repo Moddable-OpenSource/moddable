@@ -69,5 +69,5 @@ done
 
 echo "Connecting to xsbug (${fileToCompare})."
 
-${MODDABLE}/build/bin/mac/debug/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
 
