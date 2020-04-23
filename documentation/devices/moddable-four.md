@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: March 25, 2020
+Revised: April 22, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -44,6 +44,11 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 ### Pinout
 
 <img src="../assets/devices/moddable-four-pinout.png">
+
+**Note:** LCD-PWR is not for arbitrary digital inputs/outputs. It is used to provide power to a sensor and to the screen. 
+
+- Writing `0` to GPIO23 emits 3.3V on LCD-PWR, which also gives power to the screen. 
+- Writing `1` to GPIO23 turns off the the pin and the screen.
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
@@ -253,8 +258,6 @@ As with all Moddable platforms, you can debug script code using `xsbug` and the 
 Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger.
 
 This section explains how to set up your Moddable Four so it can be used with the SEGGER Embedded Studio debugger; for documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
-
-<!-- TO DO: needs an update to the new board layout-->
 
 Debugging native code on the Moddable Four with SEGGER Embedded Studio requires a [Nordic nRF52840 DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK) and an FTDI cable. 
 
