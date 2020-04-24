@@ -39,6 +39,12 @@ class JogDial {
 		this.#button.onChanged = this.#buttonChanged.bind(this);
 		this.#button.previous = this.#button.read();
 	}
+	close() {
+		this.#button?.close();
+		this.#pulse?.close();
+		this.#button =
+		this.#pulse = null;
+	}
 	#buttonChanged() {
 		const value = this.#button.read();
 		if (value === this.#button.previous)
