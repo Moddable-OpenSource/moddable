@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -31,6 +31,7 @@ typedef struct {
 	xsSlot			obj;
 	uint8_t			pin;
 	uint8_t			triggered;
+	uint8_t			closed;
 	uint8_t			edge;
 	uint32_t		rises;
 	uint32_t		falls;
@@ -146,7 +147,9 @@ void xs_digital_monitor_close(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
 	xsForget(monitor->obj);
-	xs_digital_monitor_destructor(monitor);
+	monitor->closed = true;
+	if (!monitor->triggered)
+		xs_digital_monitor_destructor(monitor);
 	xsmcSetHostData(xsThis, NULL);
 }
 
@@ -213,6 +216,11 @@ void digitalMonitorISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modDigitalMonitor monitor = refcon;
+
+	if (monitor->closed) {
+		xs_digital_monitor_destructor(monitor);
+		return;
+	}
 
 	monitor->triggered = false;		// allow another notification
 
