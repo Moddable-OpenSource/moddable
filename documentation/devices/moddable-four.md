@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: April 22, 2020
+Revised: April 23, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -255,13 +255,9 @@ This section provides information about debugging and the bootloader on Moddable
 
 As with all Moddable platforms, you can debug script code using `xsbug` and the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md).
 
-Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger.
+Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger. For documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
 
-This section explains how to set up your Moddable Four so it can be used with the SEGGER Embedded Studio debugger; for documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
-
-Debugging native code on the Moddable Four with SEGGER Embedded Studio requires a [Nordic nRF52840 DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK) and an FTDI cable. 
-
-Connect your Moddable Four to the nRF52840 DK board as follows:
+Debugging native code on the Moddable Four with SEGGER Embedded Studio requires a [Nordic nRF52840 DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK). Connect your Moddable Four to the nRF52840 DK board as follows:
 
 | nRF52840 DK | Moddable Four |
 | :---: | :---: |
@@ -273,35 +269,20 @@ Connect your Moddable Four to the nRF52840 DK board as follows:
 
 ![Moddable Four to nRF52840 DK connection](../assets/devices/moddable-four-dk-pinout.png)
 
-Connect your Moddable Four to the FTDI cable as follows:
+<!--In SEGGER Embedded Studio, open the Options dialog for the `xsproj` project. Go to **Debug->J-Link** and set the **Target Interface Type** to **SWD**, as shown in the image below.
 
-<!-- TO DO: fix Moddable Four column. What are P0.30 and P0.31? Are they P30 and P31? -->
-| Moddable Four | FTDI cable |
-| :---: | :---: |
-| P0.30 | Rx |
-| P0.31 | Tx |
-| GND | GND |
-
-<!--TO DO: CLarify what this next line means. -->
-J-Link:Target Interface Type -> SWD
+![J-Link->Target Interface Type in SEGGER Embedded Studio](../assets/devices/target-interface-type.png)
 
 <a id="debugging-native-and-script-code"></a>
 ### Debugging Native and Script Code
 
 `xsbug` and the SEGGER Embedded Studio debugger can be used simultaneously. To do so, your Moddable Four must be connected to the nRF52840 DK using an external FTDI serial interface as follows:
 
-<!--TO DO: fill this in-->
-
 | nRF52840 DK | FTDI interface |
 | :---: | :---: |
 | ? | ? |
 | ? | ? |
 | ? | ? |
-
-<!--TO DO: add diagram? ->
-
-<!--![Moddable Four FTDI](./nrf52/assets/M4-R0.7-SerialDebug.png#smallFramed)
--->
 
 Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the following steps:
 
@@ -330,6 +311,8 @@ Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the follo
 	xsbug &
 	serial2xsbug /dev/cu.usbserial-AL035YB2115200 8N1
 	```
+	
+	-->
 
 <a id="bootloader"></a>
 ### Bootloader
