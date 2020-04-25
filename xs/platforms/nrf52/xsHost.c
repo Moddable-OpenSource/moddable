@@ -56,7 +56,7 @@
 	void espInstrumentMachineReset(txMachine *the);
 
 	#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
-	static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)"Pixels drawn",
 		(char *)"Frames drawn",
 		(char *)"Network bytes read",
@@ -69,7 +69,7 @@
 		(char *)"System bytes free",
 	};
 
-	static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)" pixels",
 		(char *)" frames",
 		(char *)" bytes",
@@ -307,7 +307,7 @@ void mc_setup(xsMachine *the)
 
 #ifdef mxInstrument
 	espInitInstrumentation(the);
-	espInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
+	espInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 #endif
 
 	gSetupPending = 1;
