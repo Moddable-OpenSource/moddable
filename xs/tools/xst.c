@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 			4096*3, 			/* keyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
-			32 * 1024,			/* parserBufferSize */
+			64 * 1024,			/* parserBufferSize */
 			1993,				/* parserTableModulo */
 		};
 		xsCreation* creation = &_creation;
@@ -294,7 +294,7 @@ int main262(int argc, char* argv[])
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
@@ -785,7 +785,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
@@ -1047,7 +1047,7 @@ void* fx_agent_start_aux(void* it)
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	txAgent* agent = it;
