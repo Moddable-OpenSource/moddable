@@ -53,13 +53,13 @@ extern "C" {
 	link locations
  */
 
-#define ICACHE_RAM_ATTR __attribute__((section(".data")))
+#define ICACHE_RAM_ATTR __attribute__((section(".data.xsram")))
 #define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
 #define ICACHE_FLASH1_ATTR __attribute__((section(".flash.1")))
 #define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 #define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
-#define ICACHE_XS6STRING_ATTR __attribute__((section(".text"))) __attribute__((aligned(4)))
+#define ICACHE_XS6STRING_ATTR __attribute__((section(".rodata.xs6string"))) __attribute__((aligned(4)))
 
 void xs_setup();
 void xs_loop();
