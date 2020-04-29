@@ -3440,6 +3440,47 @@ void fxModuleNodeCode(void* it, void* param)
 	coder->scopeLevel = 0;
 	coder->firstBreakTarget = NULL;
 	coder->firstContinueTarget = NULL;
+
+	count = 0;
+	declaration = self->scope->firstDeclareNode;
+	while (declaration) {
+		if ((declaration->description->token == XS_TOKEN_DEFINE) || (declaration->description->token == XS_TOKEN_VAR))
+			count++;
+		declaration = declaration->nextDeclareNode;
+	}
+	if (count) {
+		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+		fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
+		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
+		if (self->scopeCount)
+			fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
+		coder->path = C_NULL;
+		fxScopeCodeRetrieve(self->scope, param);
+		declaration = self->scope->firstDeclareNode;
+		while (declaration) {
+			if (declaration->description->token == XS_TOKEN_VAR) {
+				fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
+				fxCoderAddIndex(coder, 0, XS_CODE_VAR_CLOSURE_1, declaration->index);
+				fxCoderAddByte(coder, -1, XS_CODE_POP);
+			}
+			declaration = declaration->nextDeclareNode;
+		}
+		fxScopeCodeDefineNodes(self->scope, param);
+		fxCoderAddByte(param, 0, XS_CODE_END);
+		fxCoderAdd(param, 0, target);
+		fxCoderAddByte(param, 1, XS_CODE_ENVIRONMENT);
+		fxCoderAddByte(param, -1, XS_CODE_POP);
+	
+		target = fxCoderCreateTarget(param);
+		coder->line = -1;
+		coder->programFlag = 0;
+		coder->scopeLevel = 0;
+		coder->firstBreakTarget = NULL;
+		coder->firstContinueTarget = NULL;
+	}
+	else {
+		fxCoderAddByte(coder, 1, XS_CODE_NULL);
+	}
 	
 	if (self->flags & mxAwaitingFlag)
 		fxCoderAddSymbol(param, 1, XS_CODE_ASYNC_FUNCTION, name);
@@ -3457,16 +3498,6 @@ void fxModuleNodeCode(void* it, void* param)
 		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 
 	coder->returnTarget = fxCoderCreateTarget(param);
-	declaration = self->scope->firstDeclareNode;
-	while (declaration) {
-		if (declaration->description->token == XS_TOKEN_VAR) {
-			fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
-			fxCoderAddIndex(coder, 0, XS_CODE_VAR_CLOSURE_1, declaration->index);
-			fxCoderAddByte(coder, -1, XS_CODE_POP);
-		}
-		declaration = declaration->nextDeclareNode;
-	}
-	fxScopeCodeDefineNodes(self->scope, param);
 	
 	fxNodeDispatchCode(self->body, param);
 	
@@ -3477,7 +3508,7 @@ void fxModuleNodeCode(void* it, void* param)
 	fxCoderAddByte(param, 1, XS_CODE_ENVIRONMENT);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 	
-	count = 1 + fxScopeCodeSpecifierNodes(self->scope, coder);
+	count = 2 + fxScopeCodeSpecifierNodes(self->scope, coder);
 	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, count);
 	fxCoderAddByte(coder, 0 - count, XS_CODE_MODULE);
 	fxCoderAddByte(coder, -1, XS_CODE_RESULT);
