@@ -514,7 +514,7 @@ int main(int argc, char* argv[])
 			}
 			if (linker->slotSize) {
 				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
-				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount];\n");
+				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR;\n");
 				linker->slotData = fxNewLinkerChunk(linker, linker->slotSize * sizeof(txSlot*));
 				linker->slotSize = 0;
 			}
