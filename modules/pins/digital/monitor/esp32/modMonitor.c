@@ -196,7 +196,7 @@ void xs_digital_monitor_get_pwm_freq(xsMachine *the)
 
 #else
 void xs_digital_monitor_get_pwm_duty(xsMachine *the) {}
-void xs_digital_monitor_get_pwm_cycle(xsMachine *the) {}
+void xs_digital_monitor_get_pwm_freq(xsMachine *the) {}
 #endif
 
 void digitalMonitorISR(void *refcon)
