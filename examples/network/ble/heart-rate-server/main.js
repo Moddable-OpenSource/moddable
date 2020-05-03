@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,16 +12,19 @@
  *
  */
  /*
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml
- 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml
- 	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml
-	https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.body_sensor_location.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.generic_access.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.battery_service.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.heart_rate_measurement.xml
+	https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.body_sensor_location.xml
  */
 
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
 import Timer from "timer";
+
+const HEART_RATE_SERVIE_UUID = uuid`180D`;
+const BATTERY_SERVICE_UUID = uuid`180F`;
 
 class HeartRateService extends BLEServer {
 	onReady() {
@@ -34,7 +37,7 @@ class HeartRateService extends BLEServer {
 	onDisconnected() {
 		this.stopMeasurements();
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`180D`, uuid`180F`]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEART_RATE_SERVIE_UUID, BATTERY_SERVICE_UUID]}
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
@@ -48,13 +51,13 @@ class HeartRateService extends BLEServer {
 		this.timer = Timer.repeat(id => {
 			this.notifyValue(characteristic, this.bpm);
 			this.bpm[1] += this.bump;
-			if (this.bpm[1] == 65) {
+			if (this.bpm[1] === 65) {
 				this.bump = -1;
-				this.bpm[1] == 64;
+				this.bpm[1] = 64;
 			}
-			else if (this.bpm[1] == 55) {
+			else if (this.bpm[1] === 55) {
 				this.bump = +1;
-				this.bpm[1] == 56;
+				this.bpm[1] = 56;
 			}
 		}, 1000);
 	}

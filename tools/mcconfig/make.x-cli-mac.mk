@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -114,7 +114,7 @@ else
 endif
 C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation
+LIBRARIES = -framework CoreFoundation -lpng16
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = 
@@ -127,7 +127,14 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+all: build
+
+build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+
+clean:
+	echo "# Clean application"
+	-rm -rf $(BIN_DIR)
+	-rm -rf $(TMP_DIR)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

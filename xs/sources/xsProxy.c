@@ -190,7 +190,11 @@ void fxProxySetter(txMachine* the)
 	if (instance) {
 		txID id = the->scratch.value.at.id;
 		txIndex index = the->scratch.value.at.index;
-		fxProxySetPropertyValue(the, instance, id, index, mxArgv(0), mxThis);
+		txBoolean result = fxProxySetPropertyValue(the, instance, id, index, mxArgv(0), mxThis);
+        if (!result) {
+            if (the->frame->next->flag & XS_STRICT_FLAG)
+				mxTypeError("(proxy).set: not extensible or not writable");
+        }
 	}
 }
 
@@ -199,16 +203,16 @@ void fxProxyCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* argume
 	txSlot* proxy = instance->next;
 	txSlot* function = fxCheckProxyFunction(the, proxy, _apply);
 	if (function) {
-		mxPushReference(proxy->value.proxy.target);
-		mxPushSlot(_this);
-		mxPushSlot(arguments);
-		/* ARGC */
-		mxPushInteger(3);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushSlot(_this);
+		mxPushSlot(arguments);
+		mxRunCount(3);
 		mxPullSlot(mxResult);
 	}
 	else 
@@ -221,16 +225,16 @@ void fxProxyConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlo
 	txSlot* proxy = instance->next;
 	txSlot* function = fxCheckProxyFunction(the, proxy, _construct);
 	if (function) {
-		mxPushReference(proxy->value.proxy.target);
-		mxPushSlot(arguments);
-		mxPushSlot(target);
-		/* ARGC */
-		mxPushInteger(3);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushSlot(arguments);
+		mxPushSlot(target);
+		mxRunCount(3);
 		mxPullSlot(mxResult);
 		if (!mxIsReference(mxResult))
 			mxTypeError("(proxy).construct: no object");
@@ -249,17 +253,17 @@ txBoolean fxProxyDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushUndefined();
-		fxKeyAt(the, id, index, the->stack);
-		fxDescribeProperty(the, slot, mask);
-		/* ARGC */
-		mxPushInteger(3);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushUndefined();
+		fxKeyAt(the, id, index, the->stack);
+		fxDescribeProperty(the, slot, mask);
+		mxRunCount(3);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (result) {
@@ -303,16 +307,16 @@ txBoolean fxProxyDeleteProperty(txMachine* the, txSlot* instance, txID id, txInd
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushUndefined();
-		fxKeyAt(the, id, index, the->stack);
-		/* ARGC */
-		mxPushInteger(2);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushUndefined();
+		fxKeyAt(the, id, index, the->stack);
+		mxRunCount(2);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (result) {
@@ -343,16 +347,16 @@ txBoolean fxProxyGetOwnProperty(txMachine* the, txSlot* instance, txID id, txInd
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushUndefined();
-		fxKeyAt(the, id, index, the->stack);
-		/* ARGC */
-		mxPushInteger(2);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushUndefined();
+		fxKeyAt(the, id, index, the->stack);
+		mxRunCount(2);
 		mxPullSlot(slot);
 		mxPushUndefined();
 		if (slot->kind == XS_UNDEFINED_KIND) {
@@ -429,17 +433,17 @@ txBoolean fxProxyGetPropertyValue(txMachine* the, txSlot* instance, txID id, txI
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushUndefined();
-		fxKeyAt(the, id, index, the->stack);
-		mxPushSlot(receiver);
-		/* ARGC */
-		mxPushInteger(3);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushUndefined();
+		fxKeyAt(the, id, index, the->stack);
+		mxPushSlot(receiver);
+		mxRunCount(3);
 		mxPullSlot(slot);
 		mxPushUndefined();
 		if (mxBehaviorGetOwnProperty(the, target->value.reference, id, index, the->stack)) {
@@ -474,14 +478,14 @@ txBoolean fxProxyGetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxRunCount(1);
 		mxPullSlot(slot);
 		if ((slot->kind == XS_NULL_KIND) ||  (slot->kind == XS_REFERENCE_KIND)) {
 			if (!mxBehaviorIsExtensible(the, target->value.reference)) {
@@ -512,16 +516,16 @@ txBoolean fxProxyHasProperty(txMachine* the, txSlot* instance, txID id, txIndex 
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushUndefined();
-		fxKeyAt(the, id, index, the->stack);
-		/* ARGC */
-		mxPushInteger(2);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushUndefined();
+		fxKeyAt(the, id, index, the->stack);
+		mxRunCount(2);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (!result) {
@@ -551,14 +555,14 @@ txBoolean fxProxyIsExtensible(txMachine* the, txSlot* instance)
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxRunCount(1);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (mxBehaviorIsExtensible(the, target->value.reference)) {
@@ -589,14 +593,14 @@ void fxProxyOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* list)
 		txSlot* at;
 		txBoolean test;
 		txSlot* property;
-		mxPushReference(proxy->value.proxy.target);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxRunCount(1);
 		reference = the->stack;
 		mxPushSlot(reference);
 		fxGetID(the, mxID(_length));
@@ -686,14 +690,14 @@ txBoolean fxProxyPreventExtensions(txMachine* the, txSlot* instance)
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		/* ARGC */
-		mxPushInteger(1);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxRunCount(1);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (result) {
@@ -724,18 +728,18 @@ txBoolean fxProxySetPropertyValue(txMachine* the, txSlot* instance, txID id, txI
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
+		/* THIS */
+		mxPushReference(proxy->value.proxy.handler);
+		/* FUNCTION */
+		mxPushSlot(function);
+		mxCall();
+		/* ARGUMENTS */
 		mxPushReference(proxy->value.proxy.target);
 		mxPushUndefined();
 		fxKeyAt(the, id, index, the->stack);
 		mxPushSlot(slot);
 		mxPushSlot(receiver);
-		/* ARGC */
-		mxPushInteger(4);
-		/* THIS */
-		mxPushReference(proxy->value.proxy.handler);
-		/* FUNCTION */
-		mxPushSlot(function);
-		fxCall(the);
+		mxRunCount(4);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (result) {
@@ -772,15 +776,15 @@ txBoolean fxProxySetPrototype(txMachine* the, txSlot* instance, txSlot* prototyp
 		txSlot* target;
 		mxPushReference(proxy->value.proxy.target);
 		target = the->stack;
-		mxPushReference(proxy->value.proxy.target);
-		mxPushSlot(prototype);
-		/* ARGC */
-		mxPushInteger(2);
 		/* THIS */
 		mxPushReference(proxy->value.proxy.handler);
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushReference(proxy->value.proxy.target);
+		mxPushSlot(prototype);
+		mxRunCount(2);
 		result = fxToBoolean(the, the->stack);
 		mxPop();
 		if (result) {
@@ -824,7 +828,7 @@ void fx_Proxy(txMachine* the)
 	handler = mxArgv(1)->value.reference;
 	if ((handler->next) && (handler->next->kind == XS_PROXY_KIND) && !handler->next->value.proxy.handler)
 		mxTypeError("handler is a revoked proxy");
-	instance->flag |= target->flag & XS_CAN_CONSTRUCT_FLAG;
+	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	proxy->value.proxy.target = target;
 	proxy->value.proxy.handler = handler;
 }
@@ -853,6 +857,7 @@ void fx_Proxy_revocable(txMachine* the)
 	
 	mxPushUndefined();
 	instance = fxNewProxyInstance(the);
+	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	slot = instance->next;
 	slot->value.proxy.target = target;
 	slot->value.proxy.handler = handler;
@@ -873,6 +878,8 @@ void fx_Proxy_revoke(txMachine* the)
 		txSlot* proxy = instance->next;
 		if (!proxy || (proxy->kind != XS_PROXY_KIND))
 			mxTypeError("no proxy");
+		if (proxy->flag & XS_MARK_FLAG)
+			mxTypeError("Proxy instance is read-only");
 		proxy->value.proxy.target = C_NULL;
 		proxy->value.proxy.handler = C_NULL;
 		property->kind = XS_NULL_KIND;

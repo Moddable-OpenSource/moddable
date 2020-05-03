@@ -60,6 +60,6 @@ export class System {
 	static info() @ "xs_file_system_info";
 };
 
-export default {
+export default Object.freeze({
 	File, Iterator, System
-};
+});

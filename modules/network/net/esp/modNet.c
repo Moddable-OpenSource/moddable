@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,6 +28,9 @@
 #else
 	#include "user_interface.h"
 #endif
+
+#include "lwip/err.h"
+#include "lwip/dns.h"
 
 void twoHex(uint8_t value, char *out)
 {
@@ -118,11 +121,11 @@ void xs_net_get(xsMachine *the)
 #if ESP32
 		wifi_ap_record_t config;
 
-		if (ESP_OK == esp_wifi_sta_get_ap_info(&config))
+		if ((ESP_OK == esp_wifi_sta_get_ap_info(&config)) && config.ssid[0])
 #else
 		struct station_config config;
 
-		if (wifi_station_get_config(&config))
+		if (wifi_station_get_config(&config) && config.ssid[0])
 #endif
 			xsResult = xsString(config.ssid);
 	}
@@ -167,5 +170,29 @@ void xs_net_get(xsMachine *the)
 #else
 		xsResult = xsInteger(wifi_get_channel());
 #endif
+	}
+	else if (0 == espStrCmp(prop, "DNS")) {
+		u8_t i = 0;
+
+		xsResult = xsNewArray(0);
+		xsVars(1);
+		do {
+#if ESP32
+			const ip_addr_t* addr = dns_getserver(i);
+#else
+			const ip_addr_t address = dns_getserver(i);
+			const ip_addr_t *addr = &address;
+#endif
+#if LWIP_IPV4 && LWIP_IPV6
+			if (!addr->u_addr.ip4.addr)
+#else
+			if (!addr->addr)
+#endif
+				break;
+
+			xsVar(0) = xsStringBuffer(NULL, 32);
+			ipaddr_ntoa_r(addr, xsToString(xsVar(0)), 32);
+			xsSet(xsResult, i++, xsVar(0));
+		} while (true);
 	}
 }

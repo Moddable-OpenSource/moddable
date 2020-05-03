@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -124,7 +124,7 @@ COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
 IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
 MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/release/png2bmp
+PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
 WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
 XSC = $(BUILD_DIR)/bin/mac/release/xsc
@@ -135,8 +135,18 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: $(LIB_DIR) $(BIN_DIR)/mc.so
+all: precursor
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.so
+
+precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
+build: precursor
+	
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

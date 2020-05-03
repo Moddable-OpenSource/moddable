@@ -221,23 +221,28 @@ void xs_ble_server_disconnect(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+	modBLE ble = gBLE;
+	if (!ble) return;
+
+	gBLE = NULL;
+	xsForget(ble->obj);
+	xs_ble_server_destructor(ble);
 }
 
 void xs_ble_server_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
-		qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);		
-		for (int16_t i = 0; i < service_count; ++i) {
-			if (0 != ble->serviceHandles[i].service_id)
-				qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
-		}
-		qapi_BLE_GATT_Cleanup(ble->stackID);
-		qapi_BLE_BSC_Shutdown(ble->stackID);
-		c_free(ble);
+	if (!ble) return;
+	
+	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);		
+	for (int16_t i = 0; i < service_count; ++i) {
+		if (0 != ble->serviceHandles[i].service_id)
+			qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
 	}
+	qapi_BLE_GATT_Cleanup(ble->stackID);
+	qapi_BLE_BSC_Shutdown(ble->stackID);
+	c_free(ble);
+
 	gBLE = NULL;
 }
 
@@ -257,12 +262,13 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint32_t intervalMin = xsmcToInteger(xsArg(0));
-	uint32_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 	qapi_BLE_GAP_LE_Advertising_Parameters_t AdvertisingParameters;
 	qapi_BLE_GAP_LE_Connectability_Parameters_t ConnectabilityParameters;
 	
@@ -286,7 +292,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingParameters.Advertising_Interval_Min  = (uint32_t)(intervalMin / 0.625);	// convert to 1 ms units;
 	AdvertisingParameters.Advertising_Interval_Max  = (uint32_t)(intervalMax / 0.625);
 	
-	ConnectabilityParameters.Connectability_Mode   = QAPI_BLE_LCM_CONNECTABLE_E;
+	ConnectabilityParameters.Connectability_Mode   = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? QAPI_BLE_LCM_CONNECTABLE_E : QAPI_BLE_LCM_NON_CONNECTABLE_E;
 	ConnectabilityParameters.Own_Address_Type      = QAPI_BLE_LAT_PUBLIC_E;
 	ConnectabilityParameters.Direct_Address_Type   = QAPI_BLE_LAT_PUBLIC_E;
 	QAPI_BLE_ASSIGN_BD_ADDR(ConnectabilityParameters.Direct_Address, 0, 0, 0, 0, 0, 0);  
@@ -308,7 +314,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
 	uint8_t *value = xsmcToArrayBuffer(xsArg(2));
-	uint32_t length = xsGetArrayBufferLength(xsArg(2));
+	uint32_t length = xsmcGetArrayBufferLength(xsArg(2));
 	
  	for (int16_t i = 0; i < service_count; ++i) {
  		if (handle >= gBLE->serviceHandles[i].start && handle <= gBLE->serviceHandles[i].end) {
@@ -386,6 +392,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, gBLE->connection.bd_addr, &GAP_LE_Authentication_Response_Information);									
 }
 
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
+}
+
 static void addressToBuffer(qapi_BLE_BD_ADDR_t BD_ADDR, uint8_t *buffer)
 {
 	buffer[0] = BD_ADDR.BD_ADDR5;
@@ -429,6 +440,8 @@ static int16_t attributeToHandle(uint32_t service_id, uint16_t att_index)
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(gBLE->the);
@@ -438,6 +451,8 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	qapi_BLE_GATT_Device_Connection_Data_t *result = (qapi_BLE_GATT_Device_Connection_Data_t*)message;
 	uint8_t buffer[6];
+	
+	if (!gBLE) return;
 	
 	// ignore multiple connections on same connection
 	if (-1 != gBLE->connection.id)
@@ -465,6 +480,8 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	qapi_BLE_GATT_Device_Disconnection_Data_t *result = (qapi_BLE_GATT_Device_Disconnection_Data_t*)message;
 	uint8_t buffer[6];
 		
+	if (!gBLE) return;
+	
 	// ignore multiple disconnects on same connection
 	if (result->ConnectionID != gBLE->connection.id)
 		return;
@@ -489,6 +506,8 @@ static void readRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	qapi_BLE_GATT_Read_Request_Data_t *request = (qapi_BLE_GATT_Read_Request_Data_t*)message;
 	qapi_BLE_GATT_Service_Attribute_Entry_t *attributeEntry, *characteristicDeclarationEntry;
 	uint8_t *buffer;
+	
+	if (!gBLE) return;
 	
 	if (request->ConnectionID != gBLE->connection.id) {
 		return; 	
@@ -585,7 +604,7 @@ static void readRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 	
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-	qapi_BLE_GATT_Read_Response(gBLE->stackID, request->TransactionID, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+	qapi_BLE_GATT_Read_Response(gBLE->stackID, request->TransactionID, xsmcGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
 	
 	xsEndHost(gBLE->the);
 }
@@ -596,7 +615,9 @@ static void writeRequestEvent(void *the, void *refcon, uint8_t *message, uint16_
 	qapi_BLE_GATT_Service_Attribute_Entry_t *attributeEntry;
 	uint8_t notify = 0xFF;
 			
- 	xsBeginHost(gBLE->the);	
+ 	if (!gBLE) return;
+	
+	xsBeginHost(gBLE->the);	
  	
  	if (request->ConnectionID != gBLE->connection.id)
 		goto bail; 	
@@ -679,6 +700,9 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
 	uint32_t passkey;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -702,6 +726,9 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	uint32_t passkey = *(uint32_t*)message;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
@@ -718,6 +745,9 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 {
 	uint32_t passkey = *(uint32_t*)message;
 	uint8_t buffer[6];
+
+	if (!gBLE) return;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
@@ -735,6 +765,9 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	qapi_BLE_GAP_LE_Pairing_Status_t *Pairing_Status = (qapi_BLE_GAP_LE_Pairing_Status_t *)message;
 	modBLEBondedDevice device;
+
+	if (!gBLE) return;
+	
 	if (QAPI_BLE_GAP_LE_PAIRING_STATUS_NO_ERROR == Pairing_Status->Status) {
 		if (gBLE->bonding && ((gBLE->connection.Flags & (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID)) == (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID))) {
 			device = modBLEBondedDevicesFindByAddress(gBLE->connection.bd_addr);
@@ -764,6 +797,20 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	}
 }
 
+static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t *result = (qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t*)message;
+
+ 	if (result->ConnectionID != gBLE->connection.id)
+ 		return;
+	
+	xsBeginHost(gBLE->the);
+		xsmcVars(1);
+		xsmcSetInteger(xsVar(0), result->MTU);
+		xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 #if LOG_UNHANDLED_CALLBACK_EVENTS
 typedef struct {
 	int event;
@@ -780,7 +827,7 @@ static void unhandledCallbackEvent(void *the, void *refcon, uint8_t *message, ui
 
 void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GAP_LE_Event_Data_t *GAP_LE_Event_Data, uint32_t CallbackParameter)
 {
-	if (gBLE && gBLE->stackID && GAP_LE_Event_Data) {
+	if (gBLE && BluetoothStackID && GAP_LE_Event_Data) {
 	
 		LOG_GAP_EVENT(GAP_LE_Event_Data->Event_Data_Type);
 	
@@ -1025,7 +1072,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 
 void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Connection_Event_Data_t *GATT_Connection_Event_Data, uint32_t CallbackParameter)
 {
-	if (gBLE && gBLE->stackID && GATT_Connection_Event_Data) {
+	if (gBLE && BluetoothStackID && GATT_Connection_Event_Data) {
 		switch(GATT_Connection_Event_Data->Event_Data_Type) {
 			case QAPI_BLE_ET_GATT_CONNECTION_DEVICE_CONNECTION_E:
 				if (GATT_Connection_Event_Data->Event_Data.GATT_Device_Connection_Data) {
@@ -1054,7 +1101,7 @@ void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, 
 
 void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Server_Event_Data_t *GATT_Server_Event_Data, uint32_t CallbackParameter)
 {
-	if (BluetoothStackID && GATT_Server_Event_Data) {
+	if (gBLE && BluetoothStackID && GATT_Server_Event_Data) {
 	
 		LOG_GATTS_EVENT(GATT_Server_Event_Data->Event_Data_Type);
 		
@@ -1069,11 +1116,24 @@ void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 				if (GATT_Server_Event_Data->Event_Data.GATT_Write_Request_Data) {
 					qapi_BLE_GATT_Write_Request_Data_t wrd = *GATT_Server_Event_Data->Event_Data.GATT_Write_Request_Data;
 					uint8_t *value = c_malloc(wrd.AttributeValueLength);
-					c_memmove(value, wrd.AttributeValue, wrd.AttributeValueLength);
-					wrd.AttributeValue = value;
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&wrd, sizeof(wrd), writeRequestEvent, 0);	
+					if ((NULL == value) && wrd.AttributeValueLength) {
+						qapi_BLE_GATT_Error_Response(gBLE->stackID, wrd.TransactionID, wrd.AttributeOffset, QAPI_BLE_ATT_PROTOCOL_ERROR_CODE_REQUEST_NOT_SUPPORTED);
+					}
+					else {
+						if (wrd.AttributeValueLength)
+							c_memmove(value, wrd.AttributeValue, wrd.AttributeValueLength);
+						wrd.AttributeValue = value;
+						modMessagePostToMachine(gBLE->the, (uint8_t*)&wrd, sizeof(wrd), writeRequestEvent, 0);	
+					}
 				}
 				break;
+			case QAPI_BLE_ET_GATT_SERVER_DEVICE_CONNECTION_MTU_UPDATE_E:
+				if (GATT_Server_Event_Data->Event_Data.GATT_Device_Connection_MTU_Update_Data) {
+					qapi_BLE_GATT_Device_Connection_MTU_Update_Data_t mtu = *GATT_Server_Event_Data->Event_Data.GATT_Device_Connection_MTU_Update_Data;
+					modMessagePostToMachine(gBLE->the, (uint8_t*)&mtu, sizeof(mtu), mtuExchangedEvent, 0);					
+				}
+				break;
+				
 #if LOG_UNHANDLED_CALLBACK_EVENTS
 			default: {
 				UnhandledCallbackEventRecord u;

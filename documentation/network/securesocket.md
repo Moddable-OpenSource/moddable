@@ -1,7 +1,7 @@
 # SecureSocket
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: May 10, 2017
+Revised: October 20, 2019
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -29,7 +29,7 @@ In the following example, the TLS socket is created with support for version 0x3
 
 The "secure" dictionary may contain the following properties:
 
-- `protocolVersion` - the minimum version of the TLS protocol to implement. TLS 1.0 is used by default.
+- `protocolVersion` - the minimum version of the TLS protocol to implement. TLS 1.1 is used by default.
 - `certificate` - a certificate in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
 - `trace`  - if true, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
 - `verify` - if false, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
@@ -89,9 +89,20 @@ The TLS handshake require a fair amount of memory. The exact amount required var
 
 Once the handshake is complete (e.g. once the secure connection is established), memory use drops considerably.
 
-However, if the server sends large fragments (e.g. apple.com sends 16 KB fragments), there is not enough free RAM on the ESP8266 to buffer them. The requests will fail. Secure web servers designed to work with IoT devices will use smaller fragments by default and/or will support the tls_max_fragment_length extension.
+However, if the server sends large fragments (e.g. apple.com sends 16 KB fragments), there is not enough free RAM on the ESP8266 to buffer them. The requests will fail. Secure web servers designed to work with IoT devices will use smaller fragments by default and/or will support the `tls_max_fragment_length` extension.
 
 When working with HTTPS, it is best to use streaming mode to retrieve the response body as it arrives rather than having the http client buffer the entire response body in memory.
+
+### Configuration
+
+The TLS implementation defaults to enabling cipher suites that use DHE and ECDHE. These modes are computationally complex and therefore can take a long time to run on slower microcontrollers. The use of these suites is controlled by the `config` section of the manifest. To disable these suites, include the following in your project manifest.
+
+	"config": {
+		"tls": {
+			"DHE_RSA": false,
+			"ECDHE_RSA": false
+		}
+	},
 
 ### macOS
 
@@ -100,11 +111,5 @@ SecureSocket works on macOS. The code is the same. macOS is more generous with m
 ### To do
 
 Large fragments (e.g. larger than can be fully buffered in RAM) may be possible to support, but it will be complicated.
-
-GCM mode is untested.
-
-Much more testing.
-
-Sort out how to handle built-in certificates.
 
 Listener.

@@ -13,12 +13,14 @@
 		"builtin/analog": "$(IO)/analog/*",
 		"builtin/digital": "$(IO)/digital/digital",
 		"builtin/digitalbank": "$(IO)/digital/digitalbank",
-		"builtin/i2c": "$(IO)/i2c/*",
+		"builtin/i2c": "$(IO)/i2c/_i2c",
 		"builtin/serial": "$(IO)/serial/*",
+		"builtin/smbus": "$(IO)/i2c/smbus",
 		"builtin/socket/listener": "$(IO)/socket/listener",
 		"builtin/socket/tcp": "$(IO)/socket/tcp",
 		"builtin/socket/udp": "$(IO)/socket/udp",
 		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
+		"builtin/pwm": "$(IO)/pwm/pwm",
 
 		"expander": "$(IO)/expander/*",
 
@@ -34,9 +36,17 @@
 		"builtin/socket/tcp",
 		"builtin/socket/udp",
 		"builtin/wakeabledigital",
+		"builtin/pwm",
 
 		"expander",
 
 		"system",
 	],
+	"platforms": {
+		"esp": {
+		},
+		"...": {
+			"error": "Experimental TC53 IO modules unsupported"
+		}
+	}
 }

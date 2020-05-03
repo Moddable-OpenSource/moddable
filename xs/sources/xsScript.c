@@ -104,6 +104,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->setSymbol = fxNewParserSymbol(parser, "set");
 	parser->sliceSymbol = fxNewParserSymbol(parser, "slice");
 	parser->SyntaxErrorSymbol = fxNewParserSymbol(parser, "SyntaxError");
+	parser->staticSymbol = fxNewParserSymbol(parser, "static");
 	parser->StringSymbol = fxNewParserSymbol(parser, "String");
 	parser->targetSymbol = fxNewParserSymbol(parser, "target");
 	parser->thisSymbol = fxNewParserSymbol(parser, "this");

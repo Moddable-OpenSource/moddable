@@ -117,7 +117,7 @@ void xs_flash_read(xsMachine *the)
 
 	}
 	else {
-		xsResult = xsArrayBuffer(NULL, byteLength);
+		xsmcSetArrayBuffer(xsResul, NULL, byteLength);
 		buffer = xsmcToArrayBuffer(xsResult);
 	}
 

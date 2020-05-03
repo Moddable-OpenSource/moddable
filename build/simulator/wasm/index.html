@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screen Test</title> 
+<body> 
+<style>
+html, body, div {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+}
+#header {
+	background: #002f87;
+}
+#header-center {
+  	position: relative;
+	clear: both;
+	margin: 0 auto;
+	width: 600px;
+	height: 60px;
+}
+#logo {
+  	position: absolute;
+  	left: 20px;
+  	top: 10px;
+	height: 40px;
+}
+#folder {
+  	position: absolute;
+  	top: 20px;
+  	right: 80px;
+  	color: white;
+}
+input[type="file"] {
+    display: none;
+}
+#button {
+  	position: absolute;
+  	right: 20px;
+  	top: 10px;
+	height: 40px;
+	width: 40px;
+}
+#simulator {
+	background: white;
+}
+#simulator-info {
+	clear: both;
+	margin: 0 auto;
+	padding-top: 10px;
+	width: 600px;
+	text-align: center;
+}
+#simulator-body {
+  	position: relative;
+	clear: both;
+	margin: 0 auto;
+	width: 600px;
+	height: 600px;
+}
+#simulator-device {
+  	position: absolute;
+  	left: 60px;
+  	top: 0px;
+	width: 480px;
+	height: 320px;
+}
+#simulator-screen {
+  	position: absolute;
+  	left: 140px;
+  	top: 40px;
+	width: 320px;
+	height: 240px;
+}
+
+</style>
+	<body> 
+		<div id="header">
+			<div id="header-center">
+				<a href="https://www.moddable.com"/><img id="logo" src="https://www.moddable.com/images/white-moddable.svg" height="40"></img></a>
+				<canvas id="button" width="40" height="40" onclick="gxView.rotate()"></canvas>
+			</div>
+		</div>
+		<div id="simulator">
+			<div id="simulator-info">Loading...</div>
+			<div id="simulator-body">
+				<canvas id="simulator-device" width="480" height="320"></canvas>
+				<canvas id="simulator-screen" width="320" height="240"></canvas>
+			</div>
+		</div>
+		<script>
+		
+	class View {
+		constructor() {
+			this.orientation = 0;
+			this.image = null;
+			this.interval = 0;
+			this.tracking = 0;
+			this.when = 0;
+			this.button = document.getElementById('button');
+			this.info = document.getElementById('simulator-info');
+			this.body = document.getElementById('simulator-body');
+			this.device = document.getElementById('simulator-device');
+			this.screen = document.getElementById('simulator-screen');
+			this.screen.addEventListener("mousedown", this.mousedown.bind(this), false);
+			this.screen.addEventListener("mousemove", this.mousemove.bind(this), false);
+			this.screen.addEventListener("mouseup", this.mouseup.bind(this), false);
+			this.screen.addEventListener("touchcancel", this.touchcancel.bind(this), false);
+			this.screen.addEventListener("touchend", this.touchend.bind(this), false);
+			this.screen.addEventListener("touchmove", this.touchmove.bind(this), false);
+			this.screen.addEventListener("touchstart", this.touchstart.bind(this), false);
+			this.drawButton();
+			this.drawDevice();
+			import('./mc.js')
+			.then(ns => {
+				ns.default({ 
+					locateFile: () => {
+						return './mc.wasm' 
+					}
+				})
+				.then(mc => {
+					this.mc = mc;
+					this.fxMainIdle = mc._fxMainIdle;
+					this.fxMainLaunch = mc._fxMainLaunch;
+					this.fxMainQuit = mc._fxMainQuit;
+					this.fxMainTouch = mc._fxMainTouch;
+					this.launch()
+				});
+			})
+		}
+		drawButton() {
+			const ctx = this.button.getContext('2d');
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = "white";
+			ctx.rect(5, 20, 15, 15);
+			ctx.stroke();
+			ctx.moveTo(10, 10);
+			ctx.arcTo(30, 10, 30, 30, 19);
+			ctx.stroke();
+			ctx.moveTo(15, 5);
+			ctx.lineTo(10, 10);
+			ctx.lineTo(15, 15);
+			ctx.stroke();
+			ctx.moveTo(25, 25);
+			ctx.lineTo(30, 30);
+			ctx.lineTo(35, 25);
+			ctx.stroke();
+		}
+		drawDevice() {
+			const ctx = this.device.getContext('2d');
+			const x = 10;
+			const y = 10;
+			const width = this.device.width - 20;
+			const height = this.device.height - 20;
+			const radius = 20;
+			var grd = ctx.createLinearGradient(x + (width / 2) - 20, y + height, x + (width / 2) + 20, y);
+			grd.addColorStop(0, "black");
+			grd.addColorStop(0.5, "#273A45");
+			grd.addColorStop(0.6, "black");
+			grd.addColorStop(1, "black");
+			ctx.fillStyle = grd;
+			ctx.shadowBlur = 5;
+			ctx.shadowOffsetX = 5;
+			ctx.shadowOffsetY = 5;
+			ctx.shadowColor = "grey";		
+			ctx.beginPath();
+			ctx.moveTo(x + radius, y);
+			ctx.arcTo(x + width, y, x + width, y + height, radius);
+			ctx.arcTo(x + width, y + height, x, y + height, radius);
+			ctx.arcTo(x, y + height, x, y, radius);
+			ctx.arcTo(x, y, x + width, y, radius);
+			ctx.closePath();
+			ctx.arc(x + radius, y + radius, radius / 2, 0, 2 * Math.PI, true);
+			ctx.closePath();
+			ctx.arc(x + width - radius, y + radius, radius / 2, 0, 2 * Math.PI, true);
+			ctx.closePath();
+			ctx.arc(x + width - radius, y + height - radius, radius / 2, 0, 2 * Math.PI, true);
+			ctx.closePath();
+			ctx.arc(x + radius, y + height - radius, radius / 2, 0, 2 * Math.PI, true);
+			ctx.closePath();
+			ctx.fill();
+		}
+		drawScreen() {
+			const ctx = this.screen.getContext('2d');
+			if (this.image)
+				ctx.putImageData(this.image, 0, 0);
+			else
+				ctx.clearRect(0, 0, this.screen.width, this.screen.height);
+		}
+		idle(timeStamp) {
+			if (this.when <= timeStamp) {
+				this.when = timeStamp + this.interval;
+				this.fxMainIdle();
+			}
+			window.requestAnimationFrame(this.idle.bind(this));    
+		}
+		launch(archive) {
+			const width = this.screen.width;
+			const height = this.screen.height;
+			const pointer = this.fxMainLaunch(width, height, archive);
+			const array = new Uint8ClampedArray(this.mc.HEAP8.buffer, pointer, width * height * 4);
+			this.image = new ImageData(array, width, height);
+		}
+		mousedown(event) {
+			event.preventDefault();
+			this.tracking++;
+			this.touch(0, 0, event.clientX, event.clientY, event.timeStamp);
+		}
+		mousemove(event) {
+			event.preventDefault();
+			if (this.tracking)
+				this.touch(3, 0, event.clientX, event.clientY, event.timeStamp);
+		}
+		mouseup(event) {
+			event.preventDefault();
+			this.tracking--;
+			this.touch(2, 0, event.clientX, event.clientY, event.timeStamp);
+		}
+		onBufferChanged() {
+			this.drawScreen();
+		}
+		onFormatChanged(which) {
+			const pixelFormats = [
+				"16-bit RGB 565 Little Endian",
+				"16-bit RGB 565 Big Endian",
+				"8-bit Gray",
+				"8-bit RGB 332",
+				"4-bit Gray",
+				"4-bit Color Look-up Table",
+			];
+			this.info.innerHTML = pixelFormats[which];
+		}
+		onStart(it) {
+			this.interval = it;
+			this.when = performance.now();
+			window.requestAnimationFrame(this.idle.bind(this));    
+		}
+		onStop() {
+			this.interval = 0;
+		}
+		quit() {
+			this.image = null;
+			this.fxMainQuit();
+			this.drawScreen();
+		}
+		reload(archive) {
+			this.quit();
+			this.launch(archive);
+		}
+		rotate() {
+			this.quit();
+			let screenWidth, screenHeight, deviceWidth, deviceHeight;
+			if (this.orientation == 0) {
+				this.orientation = 90;
+				screenWidth = 240;
+				screenHeight = 320;
+				deviceWidth = 320;
+				deviceHeight = 480;
+			}
+			else {
+				this.orientation = 0;
+				screenWidth = 320;
+				screenHeight = 240;
+				deviceWidth = 480;
+				deviceHeight = 320;
+			}
+			const bounds = this.body.getBoundingClientRect();
+			this.screen.width = screenWidth;
+			this.screen.height = screenHeight;
+			this.screen.style.left = ((bounds.width - screenWidth) >> 1) + 'px';
+			this.screen.style.width = screenWidth + 'px';
+			this.screen.style.top = ((deviceHeight - screenHeight) >> 1) + 'px';
+			this.screen.style.height = screenHeight + 'px';
+		
+			this.device.width = deviceWidth;
+			this.device.height = deviceHeight;
+			this.device.style.left = ((bounds.width - deviceWidth) >> 1) + 'px';
+			this.device.style.width = deviceWidth + 'px';
+			this.device.style.top = '0px';
+			this.device.style.height = deviceHeight + 'px';
+			this.drawDevice();
+			this.launch(null);
+		}
+		touch(kind, index, x, y, when) {
+			const bounds = this.screen.getBoundingClientRect();
+			if (this.image)
+				this.fxMainTouch(kind, index, x - bounds.left, y - bounds.top, when);
+		}
+		touches(event, kind) {
+			var touches = event.changedTouches;
+			var c = touches.length;
+			for (var i = 0; i < c; i++) {
+				var touch = touches[i];
+				this.touch(kind, touch.identifier, touch.pageX, touch.pageY, event.timeStamp);
+			}
+		}
+		touchcancel(event) {
+			event.preventDefault();
+			this.tracking--;
+			this.touches(event, 1);
+		}
+		touchend(event) {
+			event.preventDefault();
+			this.tracking--;
+			this.touches(event, 2);
+		}
+		touchmove(event) {
+			event.preventDefault();
+			if (this.tracking)
+				this.touches(event, 3);
+		}
+		touchstart(event) {
+			event.preventDefault();
+			this.tracking++;
+			this.touches(event, 0);
+		}
+	};
+	gxView = new View();
+	
+		</script>
+	</body>
+</html>

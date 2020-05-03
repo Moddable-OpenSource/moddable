@@ -23,6 +23,12 @@
 		"hex",
 		"Resource",
 	],
+	"config": {
+		"tls": {
+			"DHE_RSA": true,
+			"ECDHE_RSA": true,
+		}
+	},
 	"resources":{
 		"*": [
 			"$(MODULES)/crypt/data/ca",

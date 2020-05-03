@@ -23,7 +23,7 @@ import {
 	Template,
 } from "piu/All";
 
-var screen = {
+export const Screen = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuScreen_create",
 	
@@ -32,5 +32,11 @@ var screen = {
 	launch(path) @ "PiuScreen_launch",
 	postMessage(json) @ "PiuScreen_postMessage",
 	quit() @ "PiuScreen_quit",
-};
-export var Screen = Template(screen);
+}));
+
+export class ScreenWorker @ "PiuScreenWorkerDelete" {
+	constructor(name, screen) @ "PiuScreenWorkerCreate"
+	close()  @ "PiuScreenWorker_close"
+	onmessage()  { debugger }
+	postMessage(message)  @ "PiuScreenWorker_postMessage"
+}

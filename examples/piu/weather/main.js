@@ -156,6 +156,9 @@ class WeatherAppBehavior extends Behavior {
 				application.time = 0;
 				application.start();
 			}
+			else if (Request.error == message) {
+				application.first.string = "HTTP request failed";
+			}
 		}
 	}
 	onAddNextScreen(application) {
@@ -167,8 +170,8 @@ class WeatherAppBehavior extends Behavior {
 const WeatherApp = Application.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, skin: blackSkin, 
 	contents: [
-		Label($, {
-			left: 0, right: 0, top: 0, bottom: 0, 
+		Text($, {
+			left: 20, right: 20, top: 100,
 			skin: blackSkin, style: OpenSans28, string: "Loading...",
 			Behavior: class extends Behavior {
 				onTransitionOut(label) {

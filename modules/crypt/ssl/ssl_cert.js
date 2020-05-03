@@ -57,6 +57,7 @@ class CertificateManager {
 		return [getResource("srvcert.der")];
 	};
 	getKey(cert) {
+	//@@ use of require here is obsolete... and unused
 		if (!cert) {
 			// return the self key
 			let Configuration = require.weak("config");
@@ -76,8 +77,11 @@ class CertificateManager {
 			return PKCS8.decrypt(getResource("clntkey.pk8"), Configuration.pk8Password);
 		}
 	};
-	findPreferedCert(types, names) {
-		// MC has only one key pair...
+	findPreferredCert(types, names) {
+		// MC has only zero or one key pairs...
+		if (!Resource.exists("clntcert.der"))
+			return [];
+
 		return [getResource("clntcert.der")];
 	};
 	getIndex(fname, target) {

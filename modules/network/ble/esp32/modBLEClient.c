@@ -82,6 +82,7 @@ struct modBLEConnectionRecord {
 	esp_gatt_if_t gattc_if;
 	int16_t conn_id;
 	uint16_t app_id;
+	uint8_t mtu_exchange_pending;
 	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
@@ -244,12 +245,15 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	if (ESP_OK != err)
+		xsUnknownError("invalid security params");
 
 	if (mitm)
 		esp_ble_gap_config_local_privacy(true);	// generate random address
@@ -364,6 +368,19 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	esp_ble_gap_read_rssi(connection->bda);
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+
+	if (ESP_OK != esp_ble_gatt_set_local_mtu(mtu))
+		xsRangeError("invalid mtu");
+	connection->mtu_exchange_pending = 1;
+	esp_ble_gattc_send_mtu_req(connection->gattc_if, conn_id);
+}
+
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 	esp_bt_uuid_t uuid;
@@ -372,7 +389,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	if (argc > 1)
-		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
 	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
@@ -459,7 +476,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 			xsUnknownError("out of memory");
 		if (argc > 3) {
 			esp_bt_uuid_t uuid;
-			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
+			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
 			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, &csr->char_elem_result[0], &count))
 				count = 0;
 		}
@@ -556,7 +573,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_RSP;
+	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_NO_RSP;
 	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
 	char *str;
 		
@@ -567,7 +584,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
@@ -641,15 +658,29 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
 {
+	uint16_t argc = xsmcArgc;
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
-	uint16_t value = xsmcToInteger(xsArg(2));
+	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
+	uint8_t needResponse = 0;
+	esp_gatt_write_type_t write_type;
+	char *str;
+
+	if (argc > 3)
+		needResponse = xsmcToInteger(xsArg(3));
+
+	write_type = (needResponse ? ESP_GATT_WRITE_TYPE_RSP : ESP_GATT_WRITE_TYPE_NO_RSP);
+	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
@@ -913,6 +944,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 			goto bail;
 		}
 		connection->conn_id = open->conn_id;
+
 		xsmcVars(3);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), open->conn_id);
@@ -1021,6 +1053,32 @@ static void gattcReadCharEvent(void *the, void *refcon, uint8_t *message, uint16
 	doCharEvent(the, ESP_GATTC_READ_CHAR_EVT == event ? "onCharacteristicValue" : "onDescriptorValue", read->conn_id, read->handle, read->value, read->value_len);
 }
 
+static void gattcDescWrittenEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_write_evt_param *written = (struct gattc_write_evt_param *)message;
+	xsBeginHost(gBLE->the);
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(written->conn_id);
+	if (!connection)
+		xsUnknownError("connection not found");
+		
+	// Don't report writes to CCCD handles
+	modBLENotification walker;
+	for (walker = connection->notifications; walker; walker = walker->next) {
+		if (written->handle == walker->char_handle + 1)
+			break;
+	}
+	if (NULL != walker)
+		goto bail;
+		
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), written->handle);
+	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+	xsCall2(connection->objClient, xsID_callback, xsString("onDescriptorWritten"), xsVar(0));
+bail:
+	xsEndHost(gBLE->the);
+}
+
 static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
@@ -1054,6 +1112,18 @@ static void gattcUnregisterNotifyEvent(void *the, void *refcon, uint8_t *message
 	xsmcSetInteger(xsVar(1), unreg_for_notify->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
 	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+static void gattcConfigMTUEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct gattc_cfg_mtu_evt_param *cfg_mtu = (struct gattc_cfg_mtu_evt_param *)message;
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(cfg_mtu->conn_id);
+	if (!connection || !connection->mtu_exchange_pending) return;
+	
+	connection->mtu_exchange_pending = 0;
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(cfg_mtu->mtu));
 	xsEndHost(gBLE->the);
 }
 
@@ -1171,6 +1241,28 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&read, sizeof(struct gattc_read_char_evt_param), gattcReadCharEvent, (void*)event);
 				}
 			}
+			break;
+		case ESP_GATTC_WRITE_DESCR_EVT:
+			if (param->write.status == ESP_GATT_OK) {
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->write, sizeof(struct gattc_write_evt_param), gattcDescWrittenEvent, NULL);
+			}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_WRITE_DESCR_EVT failed, status =");
+				LOG_GATTC_INT(param->write.status);
+			}
+#endif
+			break;
+		case ESP_GATTC_CFG_MTU_EVT:
+			if (param->cfg_mtu.status == ESP_GATT_OK) {
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->cfg_mtu, sizeof(struct gattc_cfg_mtu_evt_param), gattcConfigMTUEvent, NULL);
+			}
+#if LOG_GATTC
+			else {
+				LOG_GATTC_MSG("ESP_GATTC_CFG_MTU_EVT failed, status =");
+				LOG_GATTC_INT(param->cfg_mtu.status);
+			}
+#endif
 			break;
 	}
 }

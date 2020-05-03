@@ -39,11 +39,12 @@ void xs_analog_read(xsMachine *the)
 		xsUnknownError("can't configure attenuation for requested channel on ADC1 peripheral");
 
 	esp_adc_cal_characteristics_t characteristics;
-	esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_10, &characteristics);
+	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_10, V_REF, &characteristics);
 
-	uint32_t milli_volts = adc1_to_voltage(channel, &characteristics);
-	uint32_t linear_raw_value = c_round(milli_volts / 3300.0 * 1023.0);
+	uint32_t reading = adc1_get_raw(channel);
+	uint32_t millivolts = esp_adc_cal_raw_to_voltage(reading, &characteristics);
+	uint32_t linear_value = c_round(millivolts / 3300.0 * 1023.0);
 
-	xsResult = xsInteger(linear_raw_value);
+	xsResult = xsInteger(linear_value);
 }
 

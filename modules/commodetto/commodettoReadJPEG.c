@@ -35,6 +35,7 @@
 */
 
 #include "stdlib.h"
+#include "stdbool.h"
 #include "string.h"
 #include "xsPlatform.h"
 
@@ -170,7 +171,7 @@ void xs_JPEG_push(xsMachine *the)
 		activateBuffer(jpeg);
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		jpeg->totalBytesAvailable += xsGetArrayBufferLength(xsArg(0));
+		jpeg->totalBytesAvailable += xsmcGetArrayBufferLength(xsArg(0));
 	else {
 		xsmcGet(xsResult, xsArg(0), xsID_byteLength);
 		jpeg->totalBytesAvailable += xsmcToInteger(xsResult);
@@ -681,7 +682,7 @@ void activateBuffer(JPEG jpeg)
 
 	jpeg->isArrayBuffer = xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype);
 	if (jpeg->isArrayBuffer)
-		jpeg->bytesInBuffer = xsGetArrayBufferLength(xsVar(0));
+		jpeg->bytesInBuffer = xsmcGetArrayBufferLength(xsVar(0));
 	else {
 		xsmcGet(xsVar(0), xsVar(0), xsID_byteLength);
 		jpeg->bytesInBuffer = xsmcToInteger(xsVar(0));

@@ -40,24 +40,23 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
-		let {fast = true, connectable = true, discoverable = true, scanResponseData = null, advertisingData} = params;
-		let flags = GAP.ADFlag.NO_BR_EDR;
-		if (discoverable)
-			flags |= GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE;
+		let {fast = true, scanResponseData = null, advertisingData} = params;
+		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
-		if (connectable) {
-			// Undirected Connectable Mode
-			interval = fast ?
-				(discoverable ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_FAST_INTERVAL2) :
-				GAP.ADV_SLOW_INTERVAL;
-		} else {
-			// Non-Connectable Mode
-			interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
+		if (undefined !== params.interval)
+			interval = params.interval;
+		else {
+			if (flags & (GAP.ADFlag.LE_LIMITED_DISCOVERABLE_MODE | GAP.ADFlag.LE_GENERAL_DISCOVERABLE_MODE)) {
+				// Connectable mode
+				interval = fast ? GAP.ADV_FAST_INTERVAL1 : GAP.ADV_SLOW_INTERVAL;
+			} else {
+				// Non-Connectable Mode
+				interval = fast ? GAP.ADV_FAST_INTERVAL2 : GAP.ADV_SLOW_INTERVAL;
+			}
 		}
-		advertisingData.flags = flags;
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(flags, interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
 	initialize() @ "xs_ble_server_initialize"
@@ -76,6 +75,19 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	
 	disconnect() @ "xs_ble_server_disconnect"
 
+	getServiceAttributes(uuid) {
+		let atts = this._getServiceAttributes(uuid);
+		if (undefined === atts)
+			return [];
+		atts.forEach(att => {
+			if (undefined !== att.type && undefined !== att.value) {
+				att.value = typedBufferToValue(att.type, att.value);
+			}
+			att.uuid = new Bytes(att.uuid);
+		});
+		return atts;
+	}
+	
 	onReady() {}
 	onCharacteristicWritten() {}
 	onCharacteristicRead() {}
@@ -88,6 +100,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyInput() {}
 	onPasskeyRequested() {}
 	onAuthenticated() {}
+	onMTUExchanged() {}
 
 	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
@@ -97,6 +110,8 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	_getLocalAddress() @ "xs_ble_server_get_local_address"
 	
 	_setSecurityParameters() @ "xs_ble_server_set_security_parameters"
+
+	_getServiceAttributes() @ "xs_ble_server_get_service_attributes"
 
 	callback(event, params) {
 		//trace(`BLE callback ${event}\n`);
@@ -122,7 +137,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onCharacteristicNotifyDisabled(params);
 				break;
 			case "onConnected":
-				this.onConnected({ address:new Bytes(params.address), connection:params.connection });
+				this.onConnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
 				break;
 			case "onDisconnected":
 				this.onDisconnected({ address:new Bytes(params.address), connection:params.connection });
@@ -141,6 +156,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onAuthenticated":
 				return this.onAuthenticated();
+				break;
+			case "onMTUExchanged":
+				this.onMTUExchanged(params);
 				break;
 		}
 	}

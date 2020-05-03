@@ -50,6 +50,7 @@ C_OPTIONS = \
 	/D mxParse=1 \
 	/D mxRun=1 \
 	/D mxSloppy=1 \
+	/D mxRegExpUnicodePropertyEscapes=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \

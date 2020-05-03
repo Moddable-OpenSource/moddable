@@ -790,7 +790,7 @@ export default class extends Tool {
 		else
 			path += this.slash + "release";
 		this.createDirectory(path);
-		if ((platform == "mac") || (platform == "win") || (platform == "lin")) {
+		if ((platform == "lin") || (platform == "mac") || (platform == "win")) {
 			path += this.slash + "mc";
 			this.createDirectory(path);
 		}
@@ -1081,6 +1081,10 @@ export default class extends Tool {
 			this.dataPath = this.resourcesPath = path + "/Resources";
 			this.createDirectory(this.resourcesPath);
 		}
+		else if (this.platform == "x-win") {
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.createDirectory(this.resourcesPath);
+		}
 		else if (this.platform.startsWith("x-cli-")) {
 		}
 		else {
@@ -1089,6 +1093,8 @@ export default class extends Tool {
 			var source = this.tmpPath + this.slash + "mc.config.js";
 			var target = folder + this.slash + "config.xsb";
 			this.jsFiles.push({ source, target });
+			if (this.preloads.length)
+				this.preloads.push("mc" + this.slash + "config.xsb");
 			file = new ConfigFile(source, this);
 			file.generate(this);
 			file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);
@@ -1130,10 +1136,18 @@ export default class extends Tool {
 		file.generate(this);
 
 		if (this.make) {
-			if (this.windows)
-				this.then("nmake", "/nologo", "/f", path);
-			else
-				this.then("make", "-f", path);
+			if (this.buildTarget) {
+				if (this.windows)
+					this.then("nmake", "/nologo", "/f", path, this.buildTarget);
+				else 
+					this.then("make", "-f", path, this.buildTarget);
+			}
+			else {
+				if (this.windows)
+					this.then("nmake", "/nologo", "/f", path);
+				else
+					this.then("make", "-f", path);
+			}
 		}
 	}
 }

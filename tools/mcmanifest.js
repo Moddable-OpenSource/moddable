@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -91,6 +91,154 @@ export class MakeFile extends FILE {
 		}
 		this.line("");
 	}
+	setConfigOption(sdkconfig, option) {
+		let name = option.name;
+		let value = option.value;
+		let index = sdkconfig.indexOf(name);
+		let changed = false;
+		if (-1 != index) {
+			++index;
+			if ("n" == value) {
+				if ("y" == sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=");
+					changed = true;
+				}
+			}
+			else {
+				if (value != sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=" + value);
+					changed = true;
+				}
+			}
+		}
+		return { sdkconfig, changed };
+	}
+	generateConfigurationRules(tool) {
+		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
+		
+		// Read base sdkconfig file
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
+		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
+		let baseConfig = tool.readFileString(baseConfigFile);
+		let baseConfigLength = baseConfig.length;
+
+		// Read app sdkconfig file
+		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+		if (tool.debug) {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
+				sdkconfigFile += ".debug";
+		}
+		else {
+			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
+				sdkconfigFile += ".release";
+		}
+		
+		let appConfig;
+		if (baseConfigFile != sdkconfigFile) {
+			appConfig = tool.readFileString(sdkconfigFile);
+			appConfig = appConfig.split(/[\r\n]+/gm);
+		}
+		else
+			appConfig = [];
+
+		if (tool.instrument === true && tool.debug === false) {
+			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
+			let instConfig = tool.readFileString(instConfigFile);
+			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
+		}
+			
+		let port = tool.getenv("UPLOAD_PORT");
+		if (port) {
+			if (port.charAt(0) != '"')
+				port = `"${port}"`;
+			appConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
+		}
+
+		// Merge differences
+		let appended = false;
+		appConfig.forEach(option => {
+			if (option.length && ('#' != option.charAt(0))) {
+				let parts = option.split('=');
+				let name = parts[0];
+				let value = parts[1];
+				let start = baseConfig.indexOf(name + "=");
+				if (-1 != start) {
+					start += name.length + 1;
+					let end = start;
+					let c = baseConfig.charAt(end);
+					while (c != '\n' && c != '\r') {
+						if (++end >= baseConfigLength)
+							break;
+						c = baseConfig.charAt(end);
+					}
+					let original = baseConfig.slice(start, end);
+					if (original != value) {
+						if ("n" == value)
+							value = "";
+						baseConfig = baseConfig.replace(new RegExp(name + "=.*"), name + "=" + value);
+					}
+				}
+				else {
+					if (!appended) {
+						baseConfig += "\n";
+						appended = true;
+					}
+					baseConfig += name + "=" + value + "\n";
+				}
+			}
+		});
+
+		//BLE configuration, moved from bles2gatt.js
+		let defines = tool.defines;
+		if (defines && ("ble" in defines)) {
+			let server, client, nimble;
+			client = server = false;
+			if ("server" in defines.ble && true == defines.ble.server)
+				server = true;
+			if ("client" in defines.ble && true == defines.ble.client)
+				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
+
+			let options = [];
+			if (client || server) {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
+				if (nimble) {
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+				}
+				else {
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+				}
+			} else {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
+			}
+
+			for (let i = 0; i < options.length; ++i) {
+				let result = this.setConfigOption(baseConfig, options[i]);
+				if (result.changed) {
+					baseConfig = result.sdkconfig;
+				}
+			}
+		}
+		
+		// Write the result, if it has changed
+		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
+		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
+			const oldConfig = tool.readFileString(buildConfigFile);
+			if (oldConfig == baseConfig) return;
+		}
+		tool.writeFileString(buildConfigFile, baseConfig);
+	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
 		this.write("\\\n\t$(TMP_DIR)");
@@ -103,11 +251,13 @@ export class MakeFile extends FILE {
 		let defines = tool.defines;
 		let client = false;
 		let server = false;
+		let nimble = false;
 		if (defines && ("ble" in defines)) {
 			if ("server" in defines.ble && true == defines.ble.server)
 				server = true;
 			if ("client" in defines.ble && true == defines.ble.client)
 				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -116,11 +266,20 @@ export class MakeFile extends FILE {
 			this.write(` ${result.source}`);
 		this.line("");
 		if (tool.bleServicesFiles.length) {
+			let platform = (nimble ? 'nimble' : tool.platform);
 			this.echo(tool, "bles2gatt bleservices");
-			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
-			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
+			if (server) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+			}
+			if (client) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+			}
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
@@ -129,21 +288,12 @@ export class MakeFile extends FILE {
 			this.write(" -c");
 		if (server)
 			this.write(" -v");
+		if (nimble)
+			this.write(" -n");
 		if ("esp32" == tool.platform) {
-			let directory = tool.environment.SDKCONFIGPATH + tool.slash;
-			let sdkconfigDefaults = tool.getenv("SDKCONFIG_DEFAULTS");
-			let sdkconfigFile = directory + (sdkconfigDefaults ? sdkconfigDefaults : "sdkconfig.defaults");
-			if (tool.debug) {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
-					sdkconfigFile += ".debug";
-			}
-			else {
-				if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
-					sdkconfigFile += ".release";
-			}
+			let sdkconfigFile = tool.getenv("SDKCONFIG_FILE");
 			this.write(" -s ");
 			this.write(sdkconfigFile);
-			tool.setenv("SDKCONFIG_FILE", sdkconfigFile);
 			if (tool.windows) {
 				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
@@ -216,7 +366,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
-				options += " -m";
+				options += " -p";
 			if (tool.debug)
 				options += " -d";
 			if (tool.config)
@@ -323,15 +473,15 @@ export class MakeFile extends FILE {
 			if (result.colorFile)
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
 			else {
+				var parts = tool.splitPath(target);
 				var source = result.source;
 				var sources = result.sources;
 				var manifest = "";
-				var name = "";
+				var name = " -n " + parts.name.slice(0, -6);
 				if (sources) {
 					for (var path of sources)
 						source += " " + path;
 					manifest = "  $(MANIFEST)";
-					name = " -n " + parts.name.slice(0, -6);
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
@@ -340,18 +490,18 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpColorFiles) {
-			var source = result.source;
 			var target = result.target;
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
 			var clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 
 			this.write("$(RESOURCES_DIR)");
@@ -416,10 +566,9 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.bmpMaskFiles) {
-			var parts;
-			var source = result.source;
 			var target = result.target;
-			parts = tool.splitPath(target);
+			var parts = tool.splitPath(target);
+			var source = result.source;
 			var bmpTarget = parts.name + ".bmp";
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
@@ -427,12 +576,11 @@ export class MakeFile extends FILE {
 			this.line("\t$(RLE4ENCODE) ", bmpSource, " -o $(@D)");
 			var sources = result.sources;
 			var manifest = "";
-			var name = "";
+			var name = " -n " + parts.name.slice(0, -6);
 			if (sources) {
 				for (var path of sources)
 					source += " " + path;
 				manifest = "  $(MANIFEST)";
-				name = " -n " + parts.name.slice(0, -6);
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
@@ -507,6 +655,7 @@ export class MakeFile extends FILE {
 		this.generateModulesRules(tool);
 		this.generateObjectsRules(tool);
 		this.generateDataRules(tool);
+		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
 	}
@@ -999,6 +1148,14 @@ export class Tool extends TOOL {
 			case "-v":
 				this.verbose = true;
 				break;
+			case "-t":
+				if (++argi >= argc)
+					throw new Error("-t: no build target!");
+				if (undefined === this.buildTarget)
+					this.buildTarget = argv[argi];
+				else
+					this.buildTarget = this.buildTarget + " " + argv[argi];
+				break;
 			default:
 				name = argv[argi];
 				let split = name.split("=");
@@ -1022,6 +1179,16 @@ export class Tool extends TOOL {
 			this.environment.FULLPLATFORM = this.platform;
 			this.environment.PLATFORMPATH = this.platform;
 		}
+		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
+		if ("esp32" == this.platform) {
+			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
+			path += bluedroid ? this.platform : "nimble";
+		}
+		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
+			path += "sim";
+		else
+			path += this.platform;
+		this.environment.BLEMODULEPATH = path;
 
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);

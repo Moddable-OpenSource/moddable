@@ -48,12 +48,16 @@ C_OPTIONS = \
 	-DmxParse=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
+	-DmxRegExpUnicodePropertyEscapes=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
 	-I$(TMP_DIR)
+C_OPTIONS += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else

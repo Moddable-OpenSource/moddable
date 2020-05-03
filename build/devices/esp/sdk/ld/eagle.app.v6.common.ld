@@ -266,5 +266,7 @@ SECTIONS
 
 }
 
+PROVIDE ( GPIO = 0x60000300);
+
 /* get ROM code address */
 INCLUDE "../ld/eagle.rom.addr.v6.ld"

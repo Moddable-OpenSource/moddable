@@ -44,6 +44,7 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxNewGeneratorFunctionInstance,
 	fxNewAsyncGeneratorInstance,
 	fxNewAsyncGeneratorFunctionInstance,
+	fxRunForAwaitOf,
 	fxNewArgumentsSloppyInstance,
 	fxNewArgumentsStrictInstance,
 	fxRunEval,
@@ -53,10 +54,12 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxTerminateSharedCluster,
 	fxNewFunctionLength,
 	fxNewFunctionName,
+	fxExecuteModules,
 	fxRunImport,
 	fxDefinePrivateProperty,
 	fxGetPrivateProperty,
 	fxSetPrivateProperty,
+	fxCleanupFinalizationRegistries,
 };
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
@@ -73,17 +76,17 @@ const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
 };
 
 const txTypeDispatch ICACHE_FLASH_ATTR gxTypeDispatches[mxTypeArrayCount] = {
-	{ 8, fxBigInt64Getter, fxBigInt64Setter, fxBigIntCoerce, fxBigInt64Compare, _getBigInt64, _setBigInt64, _BigInt64Array },
-	{ 8, fxBigUint64Getter, fxBigUint64Setter, fxBigIntCoerce, fxBigUint64Compare, _getBigUint64, _setBigUint64, _BigUint64Array },
-	{ 4, fxFloat32Getter, fxFloat32Setter, fxNumberCoerce, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },
-	{ 8, fxFloat64Getter, fxFloat64Setter, fxNumberCoerce, fxFloat64Compare, _getFloat64, _setFloat64, _Float64Array },
-	{ 1, fxInt8Getter, fxInt8Setter, fxNumberCoerce, fxInt8Compare, _getInt8, _setInt8, _Int8Array },
-	{ 2, fxInt16Getter, fxInt16Setter, fxNumberCoerce, fxInt16Compare, _getInt16, _setInt16, _Int16Array },
-	{ 4, fxInt32Getter, fxInt32Setter, fxNumberCoerce, fxInt32Compare, _getInt32, _setInt32, _Int32Array },
-	{ 1, fxUint8Getter, fxUint8Setter, fxNumberCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8Array },
-	{ 2, fxUint16Getter, fxUint16Setter, fxNumberCoerce, fxUint16Compare, _getUint16, _setUint16, _Uint16Array },
-	{ 4, fxUint32Getter, fxUint32Setter, fxNumberCoerce, fxUint32Compare, _getUint32, _setUint32, _Uint32Array },
-	{ 1, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }
+	{ 8, 3, fxBigInt64Getter, fxBigInt64Setter, fxBigIntCoerce, fxBigInt64Compare, _getBigInt64, _setBigInt64, _BigInt64Array },
+	{ 8, 3, fxBigUint64Getter, fxBigUint64Setter, fxBigIntCoerce, fxBigUint64Compare, _getBigUint64, _setBigUint64, _BigUint64Array },
+	{ 4, 2, fxFloat32Getter, fxFloat32Setter, fxNumberCoerce, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },
+	{ 8, 3, fxFloat64Getter, fxFloat64Setter, fxNumberCoerce, fxFloat64Compare, _getFloat64, _setFloat64, _Float64Array },
+	{ 1, 0, fxInt8Getter, fxInt8Setter, fxIntCoerce, fxInt8Compare, _getInt8, _setInt8, _Int8Array },
+	{ 2, 1, fxInt16Getter, fxInt16Setter, fxIntCoerce, fxInt16Compare, _getInt16, _setInt16, _Int16Array },
+	{ 4, 2, fxInt32Getter, fxInt32Setter, fxIntCoerce, fxInt32Compare, _getInt32, _setInt32, _Int32Array },
+	{ 1, 0, fxUint8Getter, fxUint8Setter, fxUintCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8Array },
+	{ 2, 1, fxUint16Getter, fxUint16Setter, fxUintCoerce, fxUint16Compare, _getUint16, _setUint16, _Uint16Array },
+	{ 4, 2, fxUint32Getter, fxUint32Setter, fxUintCoerce, fxUint32Compare, _getUint32, _setUint32, _Uint32Array },
+	{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }
 };
 
 const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {

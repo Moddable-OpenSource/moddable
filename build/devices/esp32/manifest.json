@@ -7,10 +7,6 @@
 			"$(MODULES)/base/timer/mc/*",
 		]
 	},
-	"preload": [
-		"time",
-		"timer",
-	],
 	"defines": {
 		"i2c": {
 			"sda_pin": 21,

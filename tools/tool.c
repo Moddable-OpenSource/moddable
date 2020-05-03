@@ -49,9 +49,9 @@
 
 static char** then = NULL;
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
-	exit(1);
+	exit(status);
 }
 
 extern int mainXSA(int argc, char* argv[]) ;
@@ -61,10 +61,14 @@ int main(int argc, char* argv[])
 {
 	int error = 0;
 	if (!strcmp(argv[1], "xsa")) {
+#ifdef XSTOOLS
 		error = mainXSA(argc - 1, &argv[1]);
+#endif
 	}
 	else if (!strcmp(argv[1], "xsc")) {
+#ifdef XSTOOLS
 		error = mainXSC(argc - 1, &argv[1]);
+#endif
 	}
 	else {
 		xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);
@@ -80,10 +84,10 @@ int main(int argc, char* argv[])
 							xsSetAt(xsVar(0), xsInteger(argi - 1), xsString(argv[argi]));
 						}
 						xsVar(1) = xsAwaitImport(argv[1], XS_IMPORT_DEFAULT);
-						fxPush(xsVar(0));
-						fxPushCount(the, 1);
 						fxPush(xsVar(1));
 						fxNew(the);
+						fxPush(xsVar(0));
+						fxRunCount(the, 1);
 						xsResult = fxPop();
 						xsCall0(xsResult, xsID_run);
 					}
@@ -256,7 +260,7 @@ void Tool_prototype_get_ipAddress(xsMachine* the)
 					snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
 					if (c_strcmp(buffer, "127.0.0.1")) {
 						xsResult = xsString(buffer);
-						return;
+						break;
 					}
 					pUnicast = pUnicast->Next;
                 }
@@ -282,7 +286,7 @@ bail:
 			snprintf(buffer, 22, "%u.%u.%u.%u", (ip & 0xff000000) >> 24, (ip & 0x00ff0000) >> 16, (ip & 0x0000ff00) >> 8, (ip & 0x000000ff));
 			if (c_strcmp(buffer, "127.0.0.1")) {
 				xsResult = xsString(buffer);
-				return;
+				break;
 			}
 		}
 	}
@@ -471,6 +475,7 @@ void Tool_prototype_enumerateDirectory(xsMachine* the)
 		closedir(dir);
 	}
 #endif
+    xsCall0(xsResult, xsID_sort);
 }
 
 void Tool_prototype_execute(xsMachine* the)

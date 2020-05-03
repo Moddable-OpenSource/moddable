@@ -25,6 +25,7 @@
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
 #include "stdlib.h"
+#include "stdbool.h"
 
 #include "xsPlatform.h"
 #include "xsmc.h"
@@ -633,7 +634,7 @@ void xs_poco_drawFrame(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsGetArrayBufferLength(xsArg(0));
+		dataSize = xsmcGetArrayBufferLength(xsArg(0));
 		PocoDisableGC(poco);
 	}
 	else {
@@ -701,7 +702,7 @@ void xs_poco_drawText(xsMachine *the)
 	PocoColor color;
 	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
-	static const char *ellipsis = "...";
+	static const unsigned char *ellipsis = (unsigned char *)"...";
 	PocoDimension ellipsisWidth;
 	int width;
 	const unsigned char *fontData;
@@ -773,7 +774,14 @@ void xs_poco_drawText(xsMachine *the)
 				w += tg->advance;
 			}
 			if (w > width) {
-				text = (const unsigned char *)ellipsis;		// draw ellipsis
+				if ((text == (ellipsis + 2)) || (text == (ellipsis + 3))) {
+					width = ellipsisWidth;						// not enough space for ellipsis. draw one dot.
+					text = ellipsis + 2;
+				}
+				else if (text == (ellipsis + 1))
+					;		// try again with fewer characters
+				else
+					text = (const unsigned char *)ellipsis;		// draw ellipsis
 				continue;
 			}
 			ellipsisWidth = 0;		// enough room to draw entire string

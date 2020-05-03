@@ -91,7 +91,7 @@ void xs_serial_write(xsMachine *the) {
 	char *p;
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		int bufferLen = xsGetArrayBufferLength(xsArg(0));
+		int bufferLen = xsmcGetArrayBufferLength(xsArg(0));
 		if (serial->trace)
 			xsTraceRight("write ArrayBuffer", "serial");
 		p = xsmcToArrayBuffer(xsArg(0));
@@ -164,7 +164,7 @@ void xs_serial_readBytes(xsMachine *the) {
 	char *str;
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		int bufferLen = xsGetArrayBufferLength(xsArg(0));
+		int bufferLen = xsmcGetArrayBufferLength(xsArg(0));
 		char *p;
 
 		if (serial->trace)
@@ -250,7 +250,7 @@ void xs_serial_readBytesUntil(xsMachine *the) {
 	int num;
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		int bufferLen = xsGetArrayBufferLength(xsArg(0));
+		int bufferLen = xsmcGetArrayBufferLength(xsArg(0));
 		char *p;
 
 		p = xsmcToArrayBuffer(xsArg(0));
@@ -279,12 +279,14 @@ void xs_serial_readBytesUntil(xsMachine *the) {
 	terminators = xsmcToString(xsArg(0));
 	len = xsmcToInteger(xsArg(1));
 
-	str = (char*)c_malloc(len);
+	str = (char*)c_malloc(len+1);
 	num = serialReadUntil(serial, terminators, str, len);
 	if (num > 0) {
 		if (serial->trace) {
 			xsTraceLeft("readBytesUntil", "xsSerial");
 			xsTraceLeftBytes(str, num, "xsSerial");
+			str[len] = '\0';
+			xsTraceLeft(str, "xsSerial");
 		}
 		xsmcSetString(xsResult, str);
 	}

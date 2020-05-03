@@ -399,7 +399,7 @@ void fxCallNodeHoist(void* it, void* param)
 			fxScopeEval(hoister->scope);
 			hoister->functionScope->node->flags |= mxArgumentsFlag | mxEvalFlag;
 			hoister->environmentNode->flags |= mxEvalFlag;
-			self->scope = hoister->scope;
+			self->params->flags |= mxEvalParametersFlag;
 		}
 	}
 	fxNodeDispatchHoist(self->reference, param);
@@ -506,6 +506,20 @@ void fxClassNodeHoist(void* it, void* param)
 		fxScopeHoisted(self->symbolScope, param);
 }
 
+void fxCoalesceExpressionNodeHoist(void* it, void* param) 
+{
+	txBinaryExpressionNode* self = it;
+	txHoister* hoister = param;
+	txToken leftToken = self->left->description->token;
+	txToken rightToken = self->right->description->token;
+	if ((leftToken == XS_TOKEN_AND) || (rightToken == XS_TOKEN_AND))
+		fxReportLineError(hoister->parser, self->line, "missing () around &&");
+	else if ((leftToken == XS_TOKEN_OR) || (rightToken == XS_TOKEN_OR))
+		fxReportLineError(hoister->parser, self->line, "missing () around ||");
+	fxNodeDispatchHoist(self->left, param);
+	fxNodeDispatchHoist(self->right, param);
+}
+
 void fxDeclareNodeHoist(void* it, void* param) 
 {
 	txDeclareNode* self = it;
@@ -566,8 +580,6 @@ void fxDeclareNodeHoist(void* it, void* param)
 			}
 		}
 	}
-	if (self->initializer)
-		fxNodeDispatchHoist(self->initializer, param);
 }
 
 void fxDefineNodeHoist(void* it, void* param) 
@@ -855,8 +867,6 @@ void fxArrayNodeBind(void* it, void* param)
 void fxArrayBindingNodeBind(void* it, void* param) 
 {
 	txArrayBindingNode* self = it;
-	if (self->initializer)
-		fxNodeDispatchBind(self->initializer, param);
 	fxBinderPushVariables(param, 6);
 	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
 	fxBinderPopVariables(param, 6);
@@ -865,27 +875,21 @@ void fxArrayBindingNodeBind(void* it, void* param)
 void fxAssignNodeBind(void* it, void* param) 
 {
 	txAssignNode* self = it;
-	txToken referenceToken = self->reference->description->token;
-	txSymbol* symbol = C_NULL;
+	txToken token = self->reference->description->token;
 	fxNodeDispatchBind(self->reference, param);
-	if (referenceToken == XS_TOKEN_ACCESS)
-		symbol = ((txAccessNode*)self->reference)->symbol;
-	else if ((referenceToken == XS_TOKEN_CONST) || (referenceToken == XS_TOKEN_LET) || (referenceToken == XS_TOKEN_VAR)) 
-		symbol = ((txDeclareNode*)self->reference)->symbol;
-	if (symbol)
-		fxFunctionNodeRename(self->value, symbol);
+	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_VAR))
+		fxFunctionNodeRename(self->value, ((txAccessNode*)self->reference)->symbol);
 	fxNodeDispatchBind(self->value, param);
 }
 
 void fxBindingNodeBind(void* it, void* param) 
 {
 	txBindingNode* self = it;
-	txBinder* binder = param;
-	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
-	if (self->initializer) {
-		fxFunctionNodeRename(self->initializer, self->symbol);
-		fxNodeDispatchBind(self->initializer, param);
-	}
+	txToken token = self->target->description->token;
+	fxNodeDispatchBind(self->target, param);
+	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_VAR))
+		fxFunctionNodeRename(self->initializer, ((txAccessNode*)self->target)->symbol);
+	fxNodeDispatchBind(self->initializer, param);
 }
 
 void fxBlockNodeBind(void* it, void* param) 
@@ -958,10 +962,6 @@ void fxDeclareNodeBind(void* it, void* param)
 	txBindingNode* self = it;
 	txBinder* binder = param;
 	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
-	if (self->initializer) {
-		fxFunctionNodeRename(self->initializer, self->symbol);
-		fxNodeDispatchBind(self->initializer, param);
-	}
 }
 
 void fxDefineNodeBind(void* it, void* param) 
@@ -978,9 +978,9 @@ void fxDefineNodeBind(void* it, void* param)
 void fxDelegateNodeBind(void* it, void* param) 
 {
 	txStatementNode* self = it;
-	fxBinderPushVariables(param, 4);
+	fxBinderPushVariables(param, 5);
 	fxNodeDispatchBind(self->expression, param);
-	fxBinderPopVariables(param, 4);
+	fxBinderPopVariables(param, 5);
 }
 
 void fxExportNodeBind(void* it, void* param) 
@@ -1178,8 +1178,6 @@ void fxObjectNodeBind(void* it, void* param)
 void fxObjectBindingNodeBind(void* it, void* param) 
 {
 	txObjectBindingNode* self = it;
-	if (self->initializer)
-		fxNodeDispatchBind(self->initializer, param);
 	fxBinderPushVariables(param, 2);
 	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
 	fxBinderPopVariables(param, 2);
@@ -1222,13 +1220,11 @@ void fxParamsBindingNodeBind(void* it, void* param)
 		while (item) {
 			if (item->description->token != XS_TOKEN_ARG)
 				goto bail;
-			if (((txBindingNode*)item)->initializer)
-				goto bail;
 			item = item->next;
 		}
 		item = self->items->first;
 		while (item) {
-			item->flags |= mxDeclareNodeClosureFlag;
+			((txDeclareNode*)item)->flags |= mxDeclareNodeClosureFlag;
 			item = item->next;
 		}
 		self->mapped = 1;
@@ -1313,11 +1309,15 @@ void fxSwitchNodeBind(void* it, void* param)
 void fxTemplateNodeBind(void* it, void* param) 
 {
 	txTemplateNode* self = it;
-	fxBinderPushVariables(param, 2);
-	if (self->reference)
+	if (self->reference) {
+		fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->reference, param);
-	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
-	fxBinderPopVariables(param, 2);
+		fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+		fxBinderPopVariables(param, 2);
+	}
+	else {
+		fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+	}
 }
 
 void fxTryNodeBind(void* it, void* param) 

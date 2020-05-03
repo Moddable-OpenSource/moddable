@@ -12,8 +12,8 @@
 			"threshold": 32
 		}
 	},
-			"modules": {
-				"*": "$(MODULES)/drivers/ft6206/*"
-			},
+	"modules": {
+		"*": "$(MODULES)/drivers/ft6206/*"
+	},
 	"preload": "ft6206",
 }

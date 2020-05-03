@@ -107,6 +107,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsAtomics.o \
 	$(TMP_DIR)\xsBigInt.o \
 	$(TMP_DIR)\xsBoolean.o \
+	$(TMP_DIR)\xsCode.o \
 	$(TMP_DIR)\xsCommon.o \
 	$(TMP_DIR)\xsDataView.o \
 	$(TMP_DIR)\xsDate.o \
@@ -117,6 +118,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsGenerator.o \
 	$(TMP_DIR)\xsGlobal.o \
 	$(TMP_DIR)\xsJSON.o \
+	$(TMP_DIR)\xsLexical.o \
 	$(TMP_DIR)\xsMapSet.o \
 	$(TMP_DIR)\xsMarshall.o \
 	$(TMP_DIR)\xsMath.o \
@@ -131,8 +133,13 @@ OBJECTS = \
 	$(TMP_DIR)\xsProxy.o \
 	$(TMP_DIR)\xsRegExp.o \
 	$(TMP_DIR)\xsRun.o \
+	$(TMP_DIR)\xsScope.o \
+	$(TMP_DIR)\xsScript.o \
+	$(TMP_DIR)\xsSourceMap.o \
 	$(TMP_DIR)\xsString.o \
 	$(TMP_DIR)\xsSymbol.o \
+	$(TMP_DIR)\xsSyntaxical.o \
+	$(TMP_DIR)\xsTree.o \
 	$(TMP_DIR)\xsType.o \
 	$(TMP_DIR)\xsdtoa.o \
 	$(TMP_DIR)\xsre.o \
@@ -150,11 +157,10 @@ $(TMP_DIR) :
 $(BIN_DIR) :
 	if not exist $(BIN_DIR)\$(NULL) mkdir $(BIN_DIR)
 
-$(BIN_DIR)\$(NAME).exe : $(TMP_DIR)\xslOpt.xs.o $(OBJECTS)
+$(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 	link \
 		$(LINK_OPTIONS) \
 		$(LIBRARIES) \
-		$(TMP_DIR)\xslOpt.xs.o \
 		$(OBJECTS) \
 		/implib:$(TMP_DIR)\$(NAME).lib \
 		/out:$(BIN_DIR)\$(NAME).exe
@@ -164,19 +170,11 @@ $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(TLS_DIR)\xsl.h
 $(OBJECTS) : $(TLS_DIR)\xslOpt.h
-$(TMP_DIR)/xslOpt.o: $(TMP_DIR)/xslOpt.xs.c
 
 {$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TLS_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
-	
-$(TMP_DIR)\xslOpt.xs.o:	 $(TMP_DIR)\xslOpt.xs.c $(PLT_DIR)\xsPlatform.h $(SRC_DIR)\xsCommon.h $(SRC_DIR)\xsAll.h $(TLS_DIR)\xsl.h $(TLS_DIR)\xslOpt.h
-	cl $(TMP_DIR)\xslOpt.xs.c $(C_OPTIONS) /Fo$@
-
-$(TMP_DIR)\xslOpt.xs.c: $(TLS_DIR)\xslOpt.js
-	$(XSC) $(TLS_DIR)\xslOpt.js -c -d -o $(TMP_DIR) -p 
-
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

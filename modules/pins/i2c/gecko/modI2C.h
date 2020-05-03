@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -66,6 +66,12 @@ struct modI2CConfigurationRecord {
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
+
+#define modI2CConfig(config, HZ, SDA_PIN, SCL_PIN, ADDRESS, TIMEOUT)  \
+    config.hz = HZ;                                                   \
+    config.sda = SDA_PIN;                                             \
+    config.scl = SCL_PIN;                                             \
+    config.address = ADDRESS;
 
 extern void modI2CInit(modI2CConfiguration config);		// required
 extern void modI2CUninit(modI2CConfiguration config);	// optional

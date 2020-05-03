@@ -1,5 +1,8 @@
 build/bin/
 build/tmp/
+build/devices/esp32/xsProj/sdkconfig.defaults.prior
+build/devices/esp32/xsProj/sdkconfig.mc
+build/devices/esp32/xsProj/sdkconfig.old
 build/devices/esp32/xsProj/build
 libraries/esp/
 .DS_Store

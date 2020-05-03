@@ -28,6 +28,7 @@ MAKEFLAGS += --silent
 endif
 
 CC = emcc
+OPT = wasm-opt
 XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
@@ -221,12 +222,12 @@ LINK_FLAGS =\
 	-s ALLOW_MEMORY_GROWTH=1\
 	-s MODULARIZE=1\
 	-s EXPORT_ES6=1\
+	-s USE_ES6_IMPORT_META=0\
 	-s EXPORT_NAME=$(NAME)\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
 	-s ERROR_ON_UNDEFINED_SYMBOLS=0\
-	-s "BINARYEN_TRAP_MODE='clamp'"\
-	-s "EXTRA_EXPORTED_RUNTIME_METHODS=['FS', 'cwrap', 'ccall', 'ALLOC_NORMAL','ALLOC_STACK','ALLOC_DYNAMIC','ALLOC_NONE']"
+	-s "EXTRA_EXPORTED_RUNTIME_METHODS=['FS', 'cwrap', 'ccall', 'callMain', 'ALLOC_NORMAL','ALLOC_STACK','ALLOC_DYNAMIC','ALLOC_NONE']"
 ifeq ($(GOAL),release)
 	LINK_OPTIONS += -Oz
 endif
@@ -257,6 +258,8 @@ $(BIN_DIR):
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
 	$(CC) $(LINK_FLAGS) $(LIBRARIES) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o -o $@.js
+	@echo "#" $(NAME) $(GOAL) ": wasm-opt" $(@F)
+	$(OPT) -O2 $(BIN_DIR)/$(NAME).wasm -o $(BIN_DIR)/$(NAME).wasm
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c

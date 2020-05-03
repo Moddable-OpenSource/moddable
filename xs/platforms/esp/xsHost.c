@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -57,8 +57,45 @@
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
-	void espInitInstrumentation(txMachine *the);
-	void espDescribeInstrumentation(txMachine *the);
+
+	static void espInitInstrumentation(txMachine *the);
+	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
+	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(txMachine *the);
+	void espInstrumentMachineReset(txMachine *the);
+
+	#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
+	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)"Pixels drawn",
+		(char *)"Frames drawn",
+		(char *)"Network bytes read",
+		(char *)"Network bytes written",
+		(char *)"Network sockets",
+		(char *)"Timers",
+		(char *)"Files",
+		(char *)"Poco display list used",
+		(char *)"Piu command List used",
+	#if ESP32
+		(char *)"SPI flash erases",
+	#endif
+		(char *)"System bytes free",
+	};
+
+	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)" pixels",
+		(char *)" frames",
+		(char *)" bytes",
+		(char *)" bytes",
+		(char *)" sockets",
+		(char *)" timers",
+		(char *)" files",
+		(char *)" bytes",
+		(char *)" bytes",
+	#if ESP32
+		(char *)" sectors",
+	#endif
+		(char *)" bytes",
+	};
 #endif
 
 extern void* xsPreparationAndCreation(xsCreation **creation);
@@ -639,7 +676,11 @@ int32_t modGetDaylightSavingsOffset(void)
 
 void modPrelaunch(void)
 {
-#if MODDEF_STARTUP_DELAYMS
+#if defined(mxDebug) && defined(MODDEF_STARTUP_DEBUGDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_DEBUGDELAYMS);
+#elif !defined(mxDebug) && defined(MODDEF_STARTUP_RELEASEDELAYMS)
+	modDelayMilliseconds(MODDEF_STARTUP_RELEASEDELAYMS);
+#elif defined(MODDEF_STARTUP_DELAYMS)
 	modDelayMilliseconds(MODDEF_STARTUP_DELAYMS);
 #endif
 }
@@ -726,6 +767,7 @@ void mc_setup(xsMachine *the)
 
 #ifdef mxInstrument
 	espInitInstrumentation(the);
+	espInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 #endif
 
 	gSetupPending = 1;
@@ -765,8 +807,9 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	fxReport(the, "!!! xs: failed to allocate %d bytes for chunk !!!\n", size);
-	xsDebugger();
+	if (size)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
 	return NULL;
 }
 
@@ -793,8 +836,8 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	fxReport(the, "!!! xs: failed to allocate %d bytes for slots !!!\n", size);
-	xsDebugger();
+	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
 	return NULL;
 }
 
@@ -840,10 +883,8 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
 	}
 
-	if (!result) {
-		fxReport(the, "# can't make memory for slots\n");
-		xsDebugger();
-	}
+	if (!result)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	return result;
 }
@@ -1087,45 +1128,9 @@ void fxSweepHost(txMachine* the)
 
 #ifdef mxInstrument
 
-static void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize);
-
-#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
-static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)"Pixels drawn",
-	(char *)"Frames drawn",
-	(char *)"Network bytes read",
-	(char *)"Network bytes written",
-	(char *)"Network sockets",
-	(char *)"Timers",
-	(char *)"Files",
-	(char *)"Poco display list used",
-	(char *)"Piu command List used",
-#if ESP32
-	(char *)"SPI flash erases",
-#endif
-	(char *)"System bytes free",
-};
-
-static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)" pixels",
-	(char *)" frames",
-	(char *)" bytes",
-	(char *)" bytes",
-	(char *)" sockets",
-	(char *)" timers",
-	(char *)" files",
-	(char *)" bytes",
-	(char *)" bytes",
-#if ESP32
-	(char *)" sectors",
-#endif
-	(char *)" bytes",
-};
-
-txMachine *gInstrumentationThe;
-
-static int32_t modInstrumentationSystemFreeMemory(void)
+static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
+	txMachine *the = theIn;
 #if ESP32
 	return (uint32_t)esp_get_free_heap_size();
 #else
@@ -1133,39 +1138,43 @@ static int32_t modInstrumentationSystemFreeMemory(void)
 #endif
 }
 
-static int32_t modInstrumentationSlotHeapSize(void)
+static int32_t modInstrumentationSlotHeapSize(void *theIn)
 {
-	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
+	txMachine *the = theIn;
+	return the->currentHeapCount * sizeof(txSlot);
 }
 
-static int32_t modInstrumentationChunkHeapSize(void)
+static int32_t modInstrumentationChunkHeapSize(void *theIn)
 {
-	return gInstrumentationThe->currentChunksSize;
+	txMachine *the = theIn;
+	return the->currentChunksSize;
 }
 
-static int32_t modInstrumentationKeysUsed(void)
+static int32_t modInstrumentationKeysUsed(void *theIn)
 {
-	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
+	txMachine *the = theIn;
+	return the->keyIndex - the->keyOffset;
 }
 
-static int32_t modInstrumentationGarbageCollectionCount(void)
+static int32_t modInstrumentationGarbageCollectionCount(void *theIn)
 {
-	return gInstrumentationThe->garbageCollectionCount;
+	txMachine *the = theIn;
+	return the->garbageCollectionCount;
 }
 
-static int32_t modInstrumentationModulesLoaded(void)
+static int32_t modInstrumentationModulesLoaded(void *theIn)
 {
-	return gInstrumentationThe->loadedModulesCount;
+	txMachine *the = theIn;
+	return the->loadedModulesCount;
 }
 
-static int32_t modInstrumentationStackRemain(void)
+static int32_t modInstrumentationStackRemain(void *theIn)
 {
-	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
-		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
+	txMachine *the = theIn;
+	if (the->stackPeak > the->stack)
+		the->stackPeak = the->stack;
+	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
-
-static modTimer gInstrumentationTimer;
 
 #ifdef mxDebug
 void espDebugBreak(txMachine* the, uint8_t stop)
@@ -1173,12 +1182,12 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 	if (stop) {
 		the->DEBUG_LOOP = 1;
 		fxCollectGarbage(the);
-		the->garbageCollectionCount -= 1;
-		espSampleInstrumentation(NULL, NULL, 0);
+		modInstrumentationAdjust(GarbageCollectionCount, -1);
+		((modTimerCallback)the->instrumentationCallback)(NULL, &the, sizeof(the));
 	}
 	else {
 		the->DEBUG_LOOP = 0;
-		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
+		modTimerReschedule(the->instrumentationTimer, 1000, 1000);
 	}
 }
 #endif
@@ -1194,30 +1203,18 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(GarbageCollectionCount, modInstrumentationGarbageCollectionCount);
 	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
-
-	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
-	gInstrumentationThe = the;
-
-#ifdef mxDebug
-	the->onBreak = espDebugBreak;
-#endif
 }
 
-void espDescribeInstrumentation(txMachine *the)
-{
-	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
-}
-
-void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
+void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	txInteger values[espInstrumentCount];
 	int what;
+	xsMachine *the = *(xsMachine **)refcon;
 
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
-		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
+		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
-	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;	// remove timer used by instrumentation
-	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
+	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
 	modInstrumentationSet(FramesDrawn, 0);
@@ -1228,9 +1225,36 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
 #if ESP32
 	modInstrumentationSet(SPIFlashErases, 0);
 #endif
-	gInstrumentationThe->garbageCollectionCount = 0;
-	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-	gInstrumentationThe->peakParserSize = 0;
+	espInstrumentMachineReset(the);
+}
+
+void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units)
+{
+	the->instrumentationCallback = instrumentationCallback;
+	the->instrumentationTimer = modTimerAdd(0, 1000, instrumentationCallback, &the, sizeof(the));
+	modInstrumentationAdjust(Timers, -1);
+
+#ifdef mxDebug
+	the->onBreak = espDebugBreak;
+#endif
+	fxDescribeInstrumentation(the, count, names, units);
+}
+
+void espInstrumentMachineEnd(txMachine *the)
+{
+	if (!the->instrumentationTimer)
+		return;
+
+	modInstrumentationAdjust(Timers, +1);
+	modTimerRemove(the->instrumentationTimer);
+}
+
+void espInstrumentMachineReset(txMachine *the)
+{
+	the->garbageCollectionCount = 0;
+	the->stackPeak = the->stack;
+	the->peakParserSize = 0;
+	the->floatingPointOps = 0;
 }
 #endif
 
@@ -1679,7 +1703,7 @@ void fxQueuePromiseJobs(txMachine* the)
 #if ESP32
 
 const esp_partition_t *gPartition;
-const void *gPartitionAddress;
+const uint8_t *gPartitionAddress;
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
@@ -1706,23 +1730,19 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
-	const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
-	const void *partitionAddress;
-	if (!partition) return NULL;
+	gPartition = esp_partition_find_first(0x40, 1,  NULL);
+	if (!gPartition) return NULL;
 
-	if (fxMapArchive(preparation, (void *)partition, (void *)partition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
+	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
 		spi_flash_mmap_handle_t handle;
 
-		if (ESP_OK != esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
 			return NULL;
 	}
 	else
 		return 0;
 
-	gPartition = partition;
-	gPartitionAddress = partitionAddress;
-
-	return (void *)partitionAddress;
+	return (void *)gPartitionAddress;
 }
 
 #else /* ESP8266 */

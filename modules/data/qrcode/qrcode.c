@@ -59,7 +59,7 @@ void xs_qrcode(xsMachine *the)
 
 			if (xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype)) {
 				data = xsmcToArrayBuffer(xsVar(0));
-				dataSize = xsGetArrayBufferLength(xsVar(0));
+				dataSize = xsmcGetArrayBufferLength(xsVar(0));
 			}
 			else {
 				data = xsmcGetHostData(xsVar(0));
@@ -77,7 +77,7 @@ void xs_qrcode(xsMachine *the)
 
 		int size = qrcodegen_getSize(qr0);
 
-		xsResult = xsArrayBuffer(NULL, size * size);
+		xsmcSetArrayBuffer(xsResult, NULL, size * size);
 
 		xsmcSetInteger(xsVar(0), size);
 		xsmcSet(xsResult, xsID_size, xsVar(0));

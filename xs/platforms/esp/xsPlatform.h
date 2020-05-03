@@ -39,6 +39,7 @@
 #define __XSPLATFORM__
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #if ESP32
 	#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.mod.0")))
@@ -157,6 +158,14 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	#define mxMachineDebug
 #endif
 
+#ifdef mxInstrument
+	#define mxMachineInstrument \
+		void *instrumentationTimer; \
+		void *instrumentationCallback;
+#else
+	#define mxMachineInstrument
+#endif
+
 #if ESP32
 	#define mxMachinePlatform \
 		void* host; \
@@ -168,14 +177,16 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		void* waiterCondition; \
 		void* waiterData; \
 		void* waiterLink; \
-		mxMachineDebug
+		mxMachineDebug \
+		mxMachineInstrument
 #else
 	#define mxMachinePlatform \
 		void* host; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \
-		mxMachineDebug
+		mxMachineDebug \
+		mxMachineInstrument
 #endif
 
 #ifdef __cplusplus

@@ -1,0 +1,25 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_piu.json"
+    ],
+    "modules": {
+        "color-picker": "./color-picker",
+        "commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+        "commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+        "commodetto/Convert": "$(COMMODETTO)/commodettoConvert"
+    },
+    "resources": {
+        "*-color": [
+            "./assets/color"
+        ],
+        "*-mask": [
+            "./assets/color-indicator"
+        ],
+        "*-alpha": [
+            "./assets/color-limiter"
+        ]
+    },
+    "preload": [
+        "color-picker"
+    ]
+}

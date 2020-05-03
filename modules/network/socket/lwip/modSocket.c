@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,6 +22,7 @@
 #include "xsHost.h"
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
@@ -30,6 +31,13 @@
 
 #include "modSocket.h"
 #include "modLwipSafe.h"
+
+#ifndef MODDEF_SOCKET_READQUEUE
+	#define MODDEF_SOCKET_READQUEUE (6)
+#endif
+#ifndef MODDEF_SOCKET_LISTENERQUEUE
+	#define MODDEF_SOCKET_LISTENERQUEUE (4)
+#endif
 
 #ifdef mxDebug
 	extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
@@ -71,7 +79,7 @@ struct xsSocketUDPRemoteRecord {
 typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
-#define kReadQueueLength (6)
+#define kReadQueueLength MODDEF_SOCKET_READQUEUE
 struct xsSocketRecord {
 	xsMachine			*the;
 
@@ -99,7 +107,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				remoteCount;
 	uint8				suspended;
 
 	uint8				suspendedError;		// could overload suspended
@@ -115,7 +122,7 @@ struct xsSocketRecord {
 typedef struct xsListenerRecord xsListenerRecord;
 typedef xsListenerRecord *xsListener;
 
-#define kListenerPendingSockets (4)
+#define kListenerPendingSockets MODDEF_SOCKET_LISTENERQUEUE
 struct xsListenerRecord {
 	xsMachine			*the;
 
@@ -215,6 +222,8 @@ void xs_socket(xsMachine *the)
 
 		for (i = 0; i < kListenerPendingSockets; i++) {
 			if (xsl->accept[i]) {
+				uint8_t pending = kPendingConnect;
+
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
@@ -233,13 +242,12 @@ void xs_socket(xsMachine *the)
 				socketUpUseCount(the, xss);
 
 				if (xss->pending) {
-					uint8_t pending;
 					modCriticalSectionBegin();
-						pending = xss->pending;
+						pending |= xss->pending;
 						xss->pending = 0;
 					modCriticalSectionEnd();
-					socketSetPending(xss, pending);
 				}
+				socketSetPending(xss, pending);
 
 				socketDownUseCount(xss->the, xss);
 				return;
@@ -277,14 +285,14 @@ void xs_socket(xsMachine *the)
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
-				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-				if (!parseAddress(temp, multicastIP))
+				if (!parseAddress(xsmcToString(xsVar(0)), multicastIP))
 					xsUnknownError("invalid multicast IP address");
-
-				ttl = 1;
-				if (xsmcHas(xsArg(0), xsID_ttl)) {
-					xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
-					ttl = xsmcToInteger(xsVar(0));
+				if ((255 != multicastIP[0]) || (255 != multicastIP[1]) || (255 != multicastIP[2]) || (255 != multicastIP[3])) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
+					ttl = 1;
+					if (xsmcHas(xsArg(0), xsID_ttl)) {
+						xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
+						ttl = xsmcToInteger(xsVar(0));
+					}
 				}
 			}
 		}
@@ -420,6 +428,9 @@ void xs_socket_destructor(void *data)
 		raw_remove(xss->raw);
 	}
 
+	if (xss->pb)
+		pbuf_free_safe(xss->pb);
+
 	for (i = 0; i < kReadQueueLength; i++) {
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);
@@ -545,7 +556,7 @@ void xs_socket_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])		//@@
-					xsResult = xsArrayBuffer(srcData, srcBytes);
+					xsmcSetArrayBuffer(xsResult, srcData, srcBytes);
 				else
 					xsUnknownError("unsupported output type");
 			}
@@ -593,18 +604,16 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->udp) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(2));
+		needed = xsmcGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
 		if (ERR_OK != err) {
@@ -617,25 +626,23 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->raw) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		ip_addr_t dst = {0};
 		struct pbuf *p;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(1));
+		needed = xsmcGetArrayBufferLength(xsArg(1));
 		data = xsmcToArrayBuffer(xsArg(1));
 		p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)needed, PBUF_RAM);
 		if (!p)
 			xsUnknownError("no buffer");
 		c_memcpy(p->payload, data, needed);
 		err = raw_sendto(xss->raw, p, &dst);
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		if (ERR_OK != err)
 			xsUnknownError("RAW send failed");
 
@@ -667,7 +674,7 @@ void xs_socket_write(xsMachine *the)
 			}
 			else if (xsReferenceType == t) {
 				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					msgLen = xsGetArrayBufferLength(xsArg(arg));
+					msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 					if (pass)
 						msg = xsmcToArrayBuffer(xsArg(arg));
 				}
@@ -748,8 +755,12 @@ void xs_socket_write(xsMachine *the)
 			}
 		}
 
-		if ((0 == pass) && (needed > available))
-			xsUnknownError("can't write all data");
+		if ((0 == pass) && (needed > available)) {
+			tcp_output_safe(xss->skt);
+			available = tcp_sndbuf(xss->skt);
+			if (needed > available)
+				xsUnknownError("can't write all data");
+		}
 	}
 
 	xss->outstandingSent += needed;
@@ -869,6 +880,8 @@ void socketMsgDataReceived(xsSocket xss)
 	xsMachine *the = xss->the;
 	struct pbuf *pb;
 	uint8_t i;
+	ip_addr_t address;
+	uint16_t port;
 
 	if (xss->buflen && (xss->bufpos < xss->buflen))
 		return;		// haven't finished reading current pbuf
@@ -902,6 +915,12 @@ void socketMsgDataReceived(xsSocket xss)
 		xss->reader[i] = xss->reader[i + 1];
 	xss->reader[kReadQueueLength - 1] = NULL;
 
+	if (kTCP != xss->kind) {
+		address = xss->remote[0].address;
+		port = xss->remote[0].port;
+		c_memmove(&xss->remote[0], &xss->remote[1], (kReadQueueLength - 1) * sizeof(xsSocketUDPRemoteRecord));
+	}
+
 	modCriticalSectionEnd();
 
 	xss->pb = pb;
@@ -927,9 +946,7 @@ callback:
 #endif
 	}
 	else {
-		ip_addr_t address = xss->remote[0].address;
 		char *out;
-		uint16_t port = xss->remote[0].port;
 
 		xsResult = xsStringBuffer(NULL, 4 * 5);
 		out = xsmcToString(xsResult);
@@ -944,9 +961,6 @@ callback:
 		itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
 		itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
 #endif
-
-		xss->remoteCount -= 1;
-		c_memmove(&xss->remote[0], &xss->remote[1], xss->remoteCount * sizeof(xsSocketUDPRemoteRecord));
 
 		if (kUDP == xss->kind)
 			xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(port));
@@ -985,6 +999,9 @@ void didError(void *arg, err_t err)
 {
 	xsSocket xss = arg;
 
+	tcp_recv(xss->skt, NULL);
+	tcp_sent(xss->skt, NULL);
+	tcp_err(xss->skt, NULL);
 	xss->skt = NULL;		// "pcb is already freed when this callback is called"
 	socketSetPending(xss, kPendingError);
 }
@@ -1025,6 +1042,9 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
+			tcp_recv(xss->skt, NULL);
+			tcp_sent(xss->skt, NULL);
+			tcp_err(xss->skt, NULL);
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
@@ -1079,10 +1099,10 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 {
 	xsSocket xss = arg;
 	unsigned char i;
+	struct pbuf *toFree = NULL;
 
 #ifdef mxDebug
 	if (fxInNetworkDebugLoop(xss->the)) {
-		modLog("drop UDP");
 		pbuf_free(p);
 		return;
 	}
@@ -1095,34 +1115,24 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 			break;
 	}
 
-	if (kReadQueueLength == i) {
-#if 1
-		// ignore oldest
-		modLog("udp receive overflow - ignore earliest");
-		pbuf_free(xss->reader[0]);		// not pbuf_free_safe, because we are in lwip task
-		for (i = 1; i < kReadQueueLength; i++) {
-			xss->reader[i - 1] = xss->reader[i];
-			xss->remote[i - 1] = xss->remote[i];
+	if (kReadQueueLength == i) {		// all full. make room by tossing earliest entry
+		toFree = xss->reader[0];
+		for (i = 0; i < kReadQueueLength - 1; i++) {
+			xss->reader[i] = xss->reader[i + 1];
+			xss->remote[i] = xss->remote[i + 1];
 		}
-		xss->reader[kReadQueueLength - 1] = NULL;
-		xss->remoteCount -= 1;
 		i = kReadQueueLength - 1;
-#else
-		// ignore most recent
-		modCriticalSectionEnd();
-		modLog("udp receive overflow - ignore latest");
-		pbuf_free(p);		// not pbuf_free_safe, because we are in lwip task
-		return;
-#endif
 	}
 
-	xss->remote[xss->remoteCount].port = remotePort;
-	xss->remote[xss->remoteCount].address = *remoteAddr;
-	xss->remoteCount += 1;
+	xss->reader[i] = p;
+	xss->remote[i].port = remotePort;
+	xss->remote[i].address = *remoteAddr;
 
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
-	xss->reader[i] = p;
 	modCriticalSectionEnd();
+
+	if (toFree)
+		pbuf_free(toFree);		// not pbuf_free_safe, because we are in lwip task
 
 	socketSetPending(xss, kPendingReceive);
 }
@@ -1139,18 +1149,25 @@ u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *ad
 
 static uint8 parseAddress(char *address, uint8_t *ip)
 {
+	char temp[4];
 	char *p = address;
-	int i;
+	uint8_t i;
 	for (i = 0; i < 3; i++) {
-		char *separator = c_strchr(p, (i < 3) ? '.' : 0);
-		if (!separator)
+		char *t = temp;
+		char *separator = c_strchr(p, '.');
+		if (!separator || ((separator - p) > 3))
 			return 0;
-		*separator = 0;
-		ip[i] = (unsigned char)atoi(p);
-		p = separator + 1;
+		while (p < separator)
+			*t++ = c_read8(p++);
+		*t++ = 0;
+		ip[i] = (unsigned char)atoi(temp);
+		p += 1;		// skip separator
 	}
-	ip[3] = (unsigned char)atoi(p);
+	if (c_strlen(p) > 3)
+		return 0;
 
+	c_strcpy(temp, p);
+	ip[3] = (unsigned char)atoi(temp);
 	return 1;
 }
 
@@ -1192,12 +1209,10 @@ void xs_listener(xsMachine *the)
 
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
-		char temp[DNS_MAX_NAME_LENGTH];
 		uint8_t ip[4];
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		if (xsmcTest(xsVar(0))) {
-			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-			if (!parseAddress(temp, ip))
+			if (!parseAddress(xsmcToString(xsVar(0)), ip))
 				xsUnknownError("invalid IP address");
 			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
 		}
@@ -1224,7 +1239,7 @@ void xs_listener_destructor(void *data)
 
 	if (xsl->skt) {
 		tcp_accept(xsl->skt, NULL);
-		tcp_close(xsl->skt);
+		tcp_close_safe(xsl->skt);
 	}
 
 	for (i = 0; i < kListenerPendingSockets; i++)
@@ -1361,6 +1376,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		goto done;		// return or done...
 	}
 
+	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
+		socketMsgConnect(xss);
+
 	if ((pending & kPendingReceive) && !(xss->pending & kPendingClose))
 		socketMsgDataReceived(xss);
 
@@ -1369,9 +1387,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
 		tcp_output_safe(xss->skt);
-
-	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
-		socketMsgConnect(xss);
 
 	if ((pending & kPendingDisconnect) && !(xss->pending & kPendingClose))
 		socketMsgDisconnect(xss);

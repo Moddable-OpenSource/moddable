@@ -31,6 +31,14 @@ typedef enum {
 	DisplayYesNo
 } IOCapability;
 
-void modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
+typedef enum {
+	LE_LIMITED_DISCOVERABLE_MODE = (1L << 0),
+	LE_GENERAL_DISCOVERABLE_MODE = (1L << 1),
+	NO_BR_EDR = (1L << 2),
+	LE_BR_EDR_CONTROLLER = (1L << 3),
+	LE_BR_EDR_HOST = (1L << 4)
+} AdvertisingFlags;
+
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
 #endif

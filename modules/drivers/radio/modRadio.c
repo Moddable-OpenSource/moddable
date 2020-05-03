@@ -73,7 +73,7 @@ void xs_Radio_postMessage(xsMachine *the) {
 	int size;
 	char *buffer;
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		size = (int)xsGetArrayBufferLength(xsArg(0));
+		size = (int)xsmcGetArrayBufferLength(xsArg(0));
 		buffer = c_malloc(size);
 		c_memcpy(buffer, xsmcToArrayBuffer(xsArg(0)), size);
 	}
@@ -91,7 +91,7 @@ void modRadioReceivedMessage(void *the, void *refcon, uint8_t *message, uint16_t
 {
 	xsBeginHost(the);
 		xsmcVars(1);
-		xsVar(0) = xsArrayBuffer(message, messageLength);
+		xsmcSetArrayBuffer(xsVar(0), message, messageLength);
 		xsCall1_noResult(gRadioInstance, xsID_onMessage, xsVar(0));
 	xsEndHost(the);
 }

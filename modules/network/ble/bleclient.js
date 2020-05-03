@@ -48,6 +48,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onPasskeyDisplay() {}
 	onPasskeyRequested() {}
 	onRSSI() {}
+	onMTUExchanged() {}
 	
 	// From Client object
 	onServices() {}
@@ -63,6 +64,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 
 	// From Descriptor object
 	onDescriptorValue() {}
+	onDescriptorWritten() {}
 
 	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
 	

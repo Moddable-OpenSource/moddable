@@ -161,6 +161,7 @@ struct modBLEConnectionRecord {
 	uint8_t bdaType;
 	uint8_t bond;
 	gattProcedure procedureQueue;
+	uint8_t mtu_exchange_pending;
 	
 	uint16_t handles[char_name_count];
 };
@@ -282,12 +283,15 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint16_t ioCapability = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, ioCapability);
+	if (0 != err)
+		xsUnknownError("invalid security params");
 
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
@@ -394,6 +398,17 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	gecko_cmd_le_connection_get_rssi(conn_id);
 }
 
+void xs_gap_connection_exchange_mtu(xsMachine *the)
+{
+	uint16_t conn_id = xsmcToInteger(xsArg(0));
+	uint16_t mtu = xsmcToInteger(xsArg(1));
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	if (!connection) return;
+
+	connection->mtu_exchange_pending = 1;
+	gecko_cmd_gatt_set_max_mtu(mtu);
+}
+
 static void gattProcedureExecute(gattProcedure procedure)
 {
 	procedure->executed = true;
@@ -468,7 +483,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	procedure.discover_services_param.connection = conn_id;
 	if (argc > 1) {
 		uuidRecord uuid;
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsmcGetArrayBufferLength(xsArg(1)));
 		procedure.cmd = CMD_GATT_DISCOVER_SERVICES_UUID_ID;
 		procedure.discover_services_param.uuid = uuid;
 	}
@@ -493,7 +508,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	procedure.discover_characteristics_param.service = service;
 	if (argc > 3) {
 		uuidRecord uuid;
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsGetArrayBufferLength(xsArg(3)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsmcGetArrayBufferLength(xsArg(3)));
 		procedure.cmd = CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID;
 		procedure.discover_characteristics_param.uuid = uuid;
 	}
@@ -592,22 +607,25 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	char *str;
+	uint8_t *buffer;
+	uint8_t length;
 	switch (xsmcTypeOf(xsArg(2))) {
+		case xsStringType:
+			str = xsmcToString(xsArg(2));
+			length = strlen(str);
+			buffer = c_malloc(length);
+			if (!buffer)
+				xsUnknownError("out of memory");
+			c_memmove(buffer, str, length);
+			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				gattProcedureRecord procedure = {0};
-				uint16_t length = xsGetArrayBufferLength(xsArg(2));
-				uint8_t *buffer = c_malloc(length);
+				length = xsmcGetArrayBufferLength(xsArg(2));
+				buffer = c_malloc(length);
 				if (!buffer)
 					xsUnknownError("out of memory");
 				c_memmove(buffer, (uint8_t*)xsmcToArrayBuffer(xsArg(2)), length);
-				procedure.obj = xsThis;
-				procedure.cmd = CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID;
-				procedure.write_value_param.connection = conn_id;
-				procedure.write_value_param.handle = handle;
-				procedure.write_value_param.value = buffer;
-				procedure.write_value_param.length = length;
-				gattProcedureQueueAndDo(the, connection, &procedure);
 			}
 			else
 				goto unknown;
@@ -617,6 +635,15 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			xsUnknownError("unsupported type");
 			break;
 	}
+	
+	gattProcedureRecord procedure = {0};
+	procedure.obj = xsThis;
+	procedure.cmd = CMD_GATT_DESCRIPTOR_WRITE_VALUE_ID;
+	procedure.write_value_param.connection = conn_id;
+	procedure.write_value_param.handle = handle;
+	procedure.write_value_param.value = buffer;
+	procedure.write_value_param.length = length;
+	gattProcedureQueueAndDo(the, connection, &procedure);
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
@@ -640,7 +667,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				length = xsGetArrayBufferLength(xsArg(2));
+				length = xsmcGetArrayBufferLength(xsArg(2));
 				buffer = c_malloc(length);
 				if (!buffer)
 					xsUnknownError("out of memory");
@@ -996,6 +1023,17 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 	xsEndHost(gBLE->the);
 }
 
+static void gattMTUExchangedEvent(struct gecko_msg_gatt_mtu_exchanged_evt_t *evt)
+{
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(evt->connection);
+	if (!connection || !connection->mtu_exchange_pending) return;
+	
+	connection->mtu_exchange_pending = 0;
+	xsBeginHost(gBLE->the);
+		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(evt->mtu));
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
 	switch(BGLIB_MSG_ID(evt->header)) {
@@ -1038,6 +1076,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_sm_bonding_failed_id:
 			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
+			break;
+		case gecko_evt_gatt_mtu_exchanged_id:
+			gattMTUExchangedEvent(&evt->data.evt_gatt_mtu_exchanged);
 			break;
 		default:
 			break;

@@ -40,11 +40,13 @@
 #include "stdio.h"
 #include "lwip/tcp.h"
 #include "modLwipSafe.h"
+#include "mc.defines.h"
 
 #if ESP32
 	#include "rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
+	#include "esp_wifi.h"
 #else
 	#include "tinyprintf.h"
 	#include "spi_flash.h"
@@ -54,10 +56,6 @@
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
-
-#ifdef mxInstrument
-	extern void espDescribeInstrumentation(txMachine *the);
-#endif
 
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
@@ -194,14 +192,40 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
+void fxAbort(txMachine* the, int status)
+{
+#ifdef mxDebug
+	char *msg = NULL;
+
+	switch (status) {
+		case XS_STACK_OVERFLOW_EXIT:
+			msg = "stack overflow";
+			break;
+		case XS_NOT_ENOUGH_MEMORY_EXIT:
+			msg = "memory full";
+			break;
+		case XS_DEAD_STRIP_EXIT:
+			msg = "dead strip";
+			break;
+		case XS_DEBUGGER_EXIT:
+		case XS_FATAL_CHECK_EXIT:
+			break;
+		default:
+			msg = "unknown";
+			break;
+	}
+	if (msg) {
+		fxReport(the, "XS abort: %s\n", msg);
+		fxDebugger(the, (char *)__FILE__, __LINE__);
+	}
+#endif
+
+	c_exit(status);
+}
+
 #ifdef mxDebug
 
 static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
-
-void fxAbort(txMachine* the)
-{
-	c_exit(0);
-}
 
 static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
@@ -398,9 +422,6 @@ void fxConnect(txMachine* the)
 
 	tcp_err(pcb, didError);
 connected:
-#ifdef mxInstrument
-	espDescribeInstrumentation(the);
-#endif
     xmodLog("  fxConnect - EXIT");
 	return;
 }
@@ -906,10 +927,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 		the->inPrintf = more;
 
-		c = the->echoBuffer;
-		count = the->echoOffset;
-		while (count--)
-			ESP_putc(*c++);
+		ESP_put(the->echoBuffer, the->echoOffset);
 
 		if (!more)
 			mxDebugMutexGive();
@@ -970,17 +988,9 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 	switch (cmdID) {
 		case 1:		// restart
 			the->wsState = 18;
-			fxDisconnect(the);
-			modDelayMilliseconds(1000);
-#if ESP32
-			esp_restart();
-#else
-			system_restart();
-#endif
-			while (1)
-				modDelayMilliseconds(1000);
-			return;
+			break;
 
+#if MODDEF_XS_MODS
 		case 2: {		// uninstall
 			uint8_t erase[16] = {0};
 #if ESP32
@@ -1011,7 +1021,6 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					resultCode = 0;
 			}
 #else
-			// check for overflow...
 			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
 				resultCode = -1;
 				break;
@@ -1020,7 +1029,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
 			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
-			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary {
+			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
 				modSPIErase(offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
 			else if (firstSector != lastSector)
 				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
@@ -1030,6 +1039,13 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
+#else
+		case 2:
+		case 3:
+			modLog("mods disabled");
+			resultCode = -1;
+			break;
+#endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
@@ -1103,7 +1119,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		}
 		break;
 
-		case 8:
+		case 8:		// set baud
 			baud = c_read32be(cmd);
 			break;
 
@@ -1129,6 +1145,51 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 			break;
 
+
+		case 11:
+			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
+			break;
+
+		case 12:
+			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
+			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
+			break;
+
+		case 13:
+			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
+			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
+			break;
+
+		case 14:
+#if ESP32
+			if (ESP_ERR_WIFI_NOT_INIT == esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset)) {
+				wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+				cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
+				esp_wifi_init(&cfg);
+				esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset);
+			}
+#else
+			wifi_get_macaddr(0 /* STATION_IF */, the->echoBuffer + the->echoOffset);
+#endif
+			the->echoOffset += 6;
+			break;
+
+		case 15:
+#if MODDEF_XS_MODS
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
+#else
+			the->echoBuffer[the->echoOffset++] = 0;
+			the->echoBuffer[the->echoOffset++] = 0;
+			the->echoBuffer[the->echoOffset++] = 0;
+			the->echoBuffer[the->echoOffset++] = 0;
+#endif
+			break;
+
 		default:
 			modLog("unrecognized command");
 			modLogInt(cmdID);
@@ -1143,8 +1204,25 @@ bail:
 		fxSend(the, 2);		// send binary
 	}
 
-	if (baud)
-		ESP_setBaud(baud);
+	// finish command after sending reply
+	switch (cmdID) {
+		case 1:		// restart
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+#if ESP32
+			esp_restart();
+#else
+			system_restart();
+#endif
+			while (1)
+				modDelayMilliseconds(1000);
+			break;
+
+		case 8:		// set baud
+			if (baud)
+				ESP_setBaud(baud);
+			break;
+	}
 }
 
 #if defined(mxDebug) && ESP32

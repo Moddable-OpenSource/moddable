@@ -22,7 +22,7 @@
 
 static void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuTextureHoks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuTextureHoks ICACHE_RODATA_ATTR = {
 	PiuTextureDelete,
 	PiuTextureMark,
 	NULL

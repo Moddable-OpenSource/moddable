@@ -32,6 +32,18 @@ void xs_ble_client_destructor(void *data)
 {
 }
 
+void xs_ble_client_set_local_privacy(xsMachine *the)
+{
+}
+
+void xs_ble_client_passkey_reply(xsMachine *the)
+{
+}
+
+void xs_ble_client_set_security_parameters(xsMachine *the)
+{
+}
+
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 }
@@ -53,6 +65,10 @@ void xs_gap_connection_disconnect(xsMachine *the)
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
+{
+}
+
+void xs_gap_connection_exchange_mtu(xsMachine *the)
 {
 }
 
@@ -85,5 +101,9 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
+{
+}
+
+void xs_gatt_descriptor_read_value(xsMachine *the)
 {
 }

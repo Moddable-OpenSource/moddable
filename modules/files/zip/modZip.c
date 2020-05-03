@@ -195,7 +195,7 @@ void xs_zip(xsMachine *the)
 
 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
 		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsGetArrayBufferLength(xsArg(0));
+		dataSize = xsmcGetArrayBufferLength(xsArg(0));
 	}
 	else {
 		xsmcVars(1);
@@ -291,7 +291,7 @@ void xs_zip_file_read(xsMachine *the)
 	if (s1->data[2] == s2->data[2])
 		xsResult = xsStringBuffer((char *)zf->data + zf->position, dstLen);
 	else
-		xsResult = xsArrayBuffer(zf->data + zf->position, dstLen);
+		xsmcSetArrayBuffer(xsResult, zf->data + zf->position, dstLen);
 
 	zf->position += dstLen;
 }

@@ -95,11 +95,13 @@ void xs_onewire_search(xsMachine *the)
   xsResult = xsNewArray(0);
 
   uint8_t buffer[] = {0x28, 0xCA, 0x00, 0xA9, 0x04, 0x00, 0x00, 0xEA};
-  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
+  xsmcSetArrayBuffer(xsVar(0), buffer, 8);
+  xsCall1(xsResult, xsID_push, xsVars(0));
 
   buffer[6] = 0x78;
   buffer[3] = 0x92;
-  xsCall1(xsResult, xsID_push, xsArrayBuffer(buffer, 8));
+  xsmcSetArrayBuffer(xsVar(0), buffer, 8);
+  xsCall1(xsResult, xsID_push, xsVar(0));
 }
 
 void xs_onewire_isPresent(xsMachine *the)
@@ -108,7 +110,7 @@ void xs_onewire_isPresent(xsMachine *the)
 
   uint8_t *id;
 
-  if (8 != xsGetArrayBufferLength(xsArg(0)))
+  if (8 != xsmcGetArrayBufferLength(xsArg(0)))
     xsUnknownError("invalid id");
 
   id = xsmcToArrayBuffer(xsArg(0));
@@ -157,7 +159,7 @@ void xs_onewire_crc(xsMachine *the)
 {
   uint8_t crc = 0;
   uint8_t *src = xsmcToArrayBuffer(xsArg(0));
-  uint8_t len = xsGetArrayBufferLength(xsArg(0));
+  uint8_t len = xsmcGetArrayBufferLength(xsArg(0));
   int argc = xsmcArgc;
   
   if (argc > 1)
@@ -175,7 +177,7 @@ void xs_onewire_read(xsMachine *the)
 {
   modOneWire onewire = xsmcGetHostData(xsThis);
 
-  int argc = xsmcToInteger(xsArgc);
+  int argc = xsmcArgc;
   if (argc == 0)
   {
 
@@ -191,7 +193,7 @@ void xs_onewire_read(xsMachine *the)
 
 */
     int count = xsmcToInteger(xsArg(0));
-    xsResult = xsArrayBuffer(NULL, count);
+    xsmcSetArrayBuffer(xsResult, NULL, count);
     uint8_t *buffer = xsmcToArrayBuffer(xsResult);
 
     // hack as 24.1875c ->  800115097FFF10107D

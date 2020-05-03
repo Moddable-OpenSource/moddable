@@ -1,7 +1,7 @@
 # Tools
 
 Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: November 21, 2018
+Revised: April 8, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -53,7 +53,7 @@ A few notes:
 
 ### Arguments
 
-	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
@@ -64,9 +64,19 @@ A few notes:
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue` or `gecko/thunderboard2`. Defaults to the host build platform:`mac`, `win` or `lin`.
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
+- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
 - `-v`: to trace all commands executed by make
 - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
 - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
+
+**Build Targets**
+mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:
+
+- `clean`: removes build outputs for the app
+- `build`: builds the app, but does not deploy it
+- `deploy`: deploys a previously built app without rebuilding
+- `xsbug`: connect the xsbug debugger to a previously-deployed app
+- `all`: performs all steps (This is the default value, when the `-t` flag is omitted)
 
 <a id="mcrez"></a>
 ## mcrez
@@ -129,7 +139,7 @@ To be able to use bitmaps directly from flash storage, the bitmaps need to confo
 
 **xsc** is the XS compiler, a command line tool that compiles JS files into XS binary files containing symbols and byte codes. 
 
-By default **xsc** parses the JS file as an ECMAScript module. Optionally, for compatibility and conformance, **xsc** can parse the JS file as an ECMAScript program or a CommonJS module. Moddable apps only use ECMAScript modules.
+By default **xsc** parses the JS file as an ECMAScript module. Optionally, for compatibility and conformance, **xsc** can parse the JS file as an ECMAScript program. Moddable apps only use ECMAScript modules.
 
 With the `-c` option, **xsc** accepts the `@` constructs that reference host functions and host objects. For instance:
 
@@ -148,13 +158,12 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-	xsc file [-c] [-d] [-e] [-m] [-o directory] [-p] [-r name] [-t directory]
+	xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
 
 - `file`: the path of a JS file to compile.
 - `-c`: to accept the `@` constructs that reference host functions and host objects. With the `-c` option and without the `-e` option, **xsc** generates C code that declares XS symbols, host functions and host objects.
 - `-d`: to generate the file and line byte codes that allow to debug the JS file.
 - `-e`: to embed references to host functions and host objects into the XS binary files instead of generating C code. This options is required to compile a JS file into an XS binary file that **xsl** can link into an XS archive file.
-- `-m`: to parse the JS file as a CommonJS module.
 - `-o directory`: the path of the output directory. Defaults to the current directory.
 - `-p`: to parse the JS file as an ECMAScript program.
 - `-r name`: the name of the output file. Defaults to the name of the input file. The output extension is always `.xsb`.
@@ -179,6 +188,8 @@ The C code can then be compiled and linked with the implementation of the host f
 - `-c creation`: the parameters that will be used to create the cloned machines. 
 - `-o directory`: the path of the output directory. Defaults to the current directory.
 - `-p module`: the name of a module to preload. Use one `-p module` option by module to preload.
+- `-r name`: the name of the output file. Defaults to `mc`.
+- `-s feature`: the name of a feature to strip. Use one `-s feature` option by feature to strip, use `s *` to strip all unused features.
 - `-u url`: the base URL of the modules in the archive. Defaults to `/`.
 
 <a id="simulator"></a>

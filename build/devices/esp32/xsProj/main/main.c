@@ -31,13 +31,16 @@
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task_wdt.h"
-#include "esp_bt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/dns.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+
+#if CONFIG_BT_ENABLED
+	#include "esp_bt.h"
+#endif
 
 #include "driver/uart.h"
 
@@ -117,7 +120,8 @@ void setup(void)
 	uartConfig.parity = UART_PARITY_DISABLE;
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-	uartConfig.rx_flow_ctrl_thresh = 120;
+	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
+	uartConfig.use_ref_tick = 0;
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -127,9 +131,9 @@ void setup(void)
 		printf("uart_set_pin err %d\n", err);
 
 #ifdef mxDebug
-	err = uart_driver_install(USE_UART, 512, 512, 8, &gUARTQueue, 0);
+	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &gUARTQueue, 0);
 #else
-	err = uart_driver_install(USE_UART, 512, 512, 0, NULL, 0);
+	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 	if (err)
 		printf("uart_driver_install err %d\n", err);
@@ -180,6 +184,10 @@ void modLog_transmit(const char *msg)
 		ESP_putc(13);
 		ESP_putc(10);
 	}
+}
+
+void ESP_put(uint8_t *c, int count) {
+	uart_write_bytes(USE_UART, (char *)c, count);
 }
 
 void ESP_putc(int c) {

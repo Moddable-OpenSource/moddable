@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: June 5, 2019
+Revised: December 4, 2019
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -309,7 +309,7 @@ onReady() {
 
 <a id="classdevice"></a>
 ## Class Device
-An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery and close the peripheral connection.
+An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery, negotiate a higher MTU and close the peripheral connection.
 
 ### Properties
 
@@ -320,6 +320,38 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 
 ### Functions 
+
+#### `exchangeMTU(mtu)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `mtu` | `number` | Requested MTU value |
+
+Use the `exchangeMTU ` function to request a higher MTU once the peripheral connection has been established.
+***
+
+#### `onMTUExchanged(device, mtu)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `mtu` | `number` | Exchanged MTU value |
+
+The `onMTUExchanged` callback function is called when the MTU exchange procedure has been completed.
+
+To request an increased MTU size of 250:
+
+```javascript
+onConnected(device) {
+	device.exchangeMTU(250);
+}
+onMTUExchanged(device, mtu) {
+	trace(`MTU size is now ${mtu}\n`);
+	device.discoverAllPrimaryServices();
+}
+```
+
+***
 
 #### `readRSSI()`
 Use the `readRSSI` function to read the connected peripheral's signal strength.
@@ -477,7 +509,7 @@ The `onCharacteristics` callback function is called when characteristic discover
 
 ***
 
-To discover all the characteristics in the [Device Information](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.device_information.xml) service:
+To discover all the characteristics in the [Device Information](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.device_information.xml) service:
 
 ```javascript
 const DEVICE_INFORMATION_SERVICE_UUID = uuid`180A`;
@@ -492,7 +524,7 @@ onCharacteristics(characteristics) {
 }
 ```
 
-To find the [Heart Rate Measurement](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.heart_rate_measurement.xml) characteristic in the [Heart Rate](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) service:
+To find the [Heart Rate Measurement](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.heart_rate_measurement.xml) characteristic in the [Heart Rate](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml) service:
 
 ```javascript
 const HEART_RATE_SERVICE_UUID = uuid`180A`;
@@ -544,7 +576,7 @@ Use the `discoverAllDescriptors` function to discover all the characteristic's d
 
 The `onDescriptors` callback function is called when descriptor discovery completes.
 
-To discover the [Characteristic Presentation Format Descriptor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.characteristic_presentation_format.xml) for a characteristic with UUID 0xFF00:
+To discover the [Characteristic Presentation Format Descriptor](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Descriptors/org.bluetooth.descriptor.gatt.characteristic_presentation_format.xml) for a characteristic with UUID 0xFF00:
 
 ```javascript
 const CHARACTERISTIC_UUID = uuid`FF00`;
@@ -603,7 +635,7 @@ The `onCharacteristicNotificationDisabled` callback function is called when noti
 
 The `onCharacteristicNotification` callback function is called when notifications are enabled and the peripheral notifies the characteristic value.
 
-To enable and receive characteristic value change notifications for the [Battery Level](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.battery_level.xml) characteristic in the [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
+To enable and receive characteristic value change notifications for the [Battery Level](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.battery_level.xml) characteristic in the [Battery Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.battery_service.xml):
 
 ```javascript
 const BATTERY_SERVICE_UUID = uuid`180F`;
@@ -656,7 +688,7 @@ The `Authorization` object contains the following properties:
 
 The `onCharacteristicValue` callback function is called when a characteristic is read by the `readValue` function.
 
-To read the [Device Name](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.device_name.xml) from the [Generic Access Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.generic_access.xml):
+To read the [Device Name](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.gap.device_name.xml) from the [Generic Access Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.generic_access.xml):
 
 ```javascript
 const GENERIC_ACCESS_SERVICE_UUID = uuid`1800`;
@@ -685,11 +717,11 @@ onCharacteristicValue(characteristic, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeWithoutResponse` function to write a characteristic value on demand.
 
-To write the [URI](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.uri.xml) characteristic value in the [HTTP Proxy](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.http_proxy.xml) service:
+To write the [URI](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.uri.xml) characteristic value in the [HTTP Proxy](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.http_proxy.xml) service:
 
 ```javascript
 const HTTP_PROXY_SERVICE_UUID = uuid`1823`;
@@ -775,11 +807,11 @@ onDescriptorValue(descriptor, value) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
+| `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeValue` function to write a descriptor value.
 
-To enable characteristic value change notifications by writing 0x0001 to the [Client Characteristic Configuration](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml) descriptor:
+To enable characteristic value change notifications by writing 0x0001 to the [Client Characteristic Configuration](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Descriptors/org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml) descriptor:
 
 ```javascript
 const CCCD_UUID = uuid`2902`;
@@ -1069,7 +1101,7 @@ The `advertisementData` and `scanResponseData` contain one or more properties co
 | `role` | `number` | Number corresponding to the *LE Role*.
 | `uri` | `string` | String corresponding to the *Uniform Resource Identifier*.
 
-To advertise a [Health Thermometer Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml) BLE-only connectable device with the complete local name "Thermometer" and one service with UUID 0x1809:
+To advertise a [Health Thermometer Sensor](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml) BLE-only connectable device with the complete local name "Thermometer" and one service with UUID 0x1809:
 
 ```javascript
 import {uuid} from "btutils";
@@ -1079,7 +1111,7 @@ this.startAdvertising({
 });
 ```
 
-To advertise a [Heart Rate Sensor](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 0x180F:
+To advertise a [Heart Rate Sensor](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml) BLE-only connectable device with the complete local name "Moddable HRS" and two services with UUIDs 0x180D and 0x180F:
 
 ```javascript
 import {uuid} from "btutils";
@@ -1287,12 +1319,12 @@ Each item in the `characteristics` object contains the following properties. Not
 | `maxBytes` | `number` | Maximum number of bytes required to store the characteristic value.
 | `type` | `string` | Optional JavaScript data value type. Supported types include `Array`, `ArrayBuffer`, `String`, `Uint8`, `Uint8Array`, `Int8Array`, `Int16Array`, `Uint16`, `Uint16Array`, and `Uint32`. If the `type` property is not present, the data value type defaults to `ArrayBuffer`. The `BLEServer` and `BLEClient` classes automatically convert characteristic values delivered in buffers by the underlying BLE implementation to the requested `type`. | Y
 | `permissions` | `string` | Characteristic permissions. Supported permissions include `read`, `readEncrypted`, `write`, and `writeEncrypted`. Multiple permissions can be specified by comma-separating permission strings, but only one of read/readEncrypted and write/writeEncrypted can be specified for each characteristic.
-| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `writeNoResponse`, `notify` and `indicate`. Multiple properties can be specified by comma-separating property strings.
+| `properties` | `string` | Characteristic properties. Supported properties include `read`, `write`, `writeNoResponse`, `notify`, `indicate` and `extended`. Multiple properties can be specified by comma-separating property strings.
 | `value` | `array`, `string`, or `number` | Optional characteristic value. The `BLEServer` class automatically converts the value specified here to the type specified by the `type` property.
 
 Characteristics that include a `value` property are considered static. The `BLEServer` class automatically responds to read requests for static characteristic values, further reducing the script code required to host a GATT service.
 
-The following is an example of JSON corresponding to a Bluetooth [Battery Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.battery_service.xml):
+The following is an example of JSON corresponding to a Bluetooth [Battery Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.battery_service.xml):
 
 	{
 		"service": {
@@ -1605,26 +1637,29 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 
 | Name | Description |
 | :---: | :--- |
-| [ble-friend](../../../examples/network/ble/ble-friend)| Shows how to interact with the Adafruit BLE Friend [UART service](https://learn.adafruit.com/introducing-adafruit-ble-bluetooth-low-energy-friend/uart-service) RX and TX characteristics.
 | [colorific](../../../examples/network/ble/colorific) | Randomly changes the color of a BLE bulb every 100 ms.
 | [discovery](../../../examples/network/ble/discovery) | Demonstrates how to discover a specific GATT service and characteristic.
+| [heart-rate-client](../../../examples/network/ble/heart-rate-client) | Demonstrates how to implement a [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml) client.
 | [hid-keyboard](../../../examples/network/ble/hid-keyboard) | Demonstrates how to connect to a BLE keyboard that implements the HID over GATT profile.
 | [hid-mouse](../../../examples/network/ble/hid-mouse) | Demonstrates how to connect to a BLE mouse that implements the HID over GATT profile.
 | [ios-media-sync](../../../examples/network/ble/ios-media-sync) | [Commodetto](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/commodetto.md) app that demonstrates how to implement an [Apple Media Service](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html#//apple_ref/doc/uid/TP40014716-CH1-SW48) client.
-| [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.current_time.xml).
+| [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.current_time.xml).
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 | [tempo](../../../examples/network/ble/tempo) | Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
+| [uart-client](../../../examples/network/ble/uart-client) | Shows how implement a Nordic UART Service client. The `uart-client` can connect to the [uart-server](../../../examples/network/ble/uart-server) app.
 
 ### Server Apps
 
 | Name | Description |
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
-| [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).
-| [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.health_thermometer.xml).| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.heart_rate.xml).
+| [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
+| [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
+| [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).
 | [security-server](../../../examples/network/ble/security-server) | Demonstrates how to implement a secure health thermometer BLE server using SMP. The `security-server` can connect to the [security-client](../../../examples/network/ble/security-client) app.
 | [uri-beacon](../../../examples/network/ble/uri-beacon) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
 | [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
+| [uart-server](../../../examples/network/ble/uart-server) | Shows how implement a Nordic UART Service server. The `uart-server` can connect to the [uart-client](../../../examples/network/ble/uart-client) app.

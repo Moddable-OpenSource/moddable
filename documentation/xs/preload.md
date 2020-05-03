@@ -2,7 +2,7 @@
 
 Copyright 2019 Moddable Tech, Inc.
 
-Revised: February 23, 20109
+Revised: August 17, 2019
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
 
@@ -30,31 +30,35 @@ In this example, the `http` network protocol module is preloaded but the `main` 
 ## Executing a Module
 To understand what it means to execute a module, let's look at a trivial module:
 
-	class CountingLog {
-		constructor() {
-			this.count = 1;
-		}
-		log(msg) {
-			trace(`${this.count++}: ${msg}\n`);
-		}
+```js
+class CountingLog {
+	constructor() {
+		this.count = 1;
 	}
+	log(msg) {
+		trace(`${this.count++}: ${msg}\n`);
+	}
+}
 	
-	export default CountingLog;
+export default CountingLog;
+```
 
 Because this module contains only a class definition it may seem that there is no benefit to be had from preloading. In JavaScript, the  class is built dynamically when the class statement is executed, not at compilation time. The JavaScript compiler outputs byte code to build the `CountingLog` class. That byte code is executed when the module is loaded. Creating the class and each of its methods executes byte code (which takes time) and allocates objects (which consume memory). By preloading the `CountingLog` module, both the time and memory are recovered.
 
 Here's another example module, one that imports `CountingLog` and extends it to print the current date and time at the beginning of each log line.
 
-	import CountingLog from "countinglog";
+```js
+import CountingLog from "countinglog";
 	
-	class CountingDateLog extends CountingLog {
-		log(msg) {
-			trace(`${new Date} `);
-			super.log(msg);
-		}
+class CountingDateLog extends CountingLog {
+	log(msg) {
+		trace(`${new Date} `);
+		super.log(msg);
 	}
+}
 	
-	export default CountingDateLog;
+export default CountingDateLog;
+```
 
 When `CountingDateLog` imports `CountingLog`, the import is resolved, which takes some time and uses some memory to keep track of the import. By preloading `CountingDateLog` the import statement is executed at build time, which allows this memory to be kept in flash memory instead of RAM.
 
@@ -66,27 +70,31 @@ The JavaScript language allows objects to be changed at any time. Preloading put
 ### Freezing Classes
 Because XS allows objects stored in flash to be modified, code that modifies the prototype of a class works, as in the following example.
 
-	import CountingLog from "countinglog";
+```js
+import CountingLog from "countinglog";
 	
-	CountingLog.prototype.reset = function() {
-		this.count = 0;
-	}
+CountingLog.prototype.reset = function() {
+	this.count = 0;
+}
+```
 
 Assuming the above module is not preloaded, the `reset` property and the function object it references is stored in RAM. In some cases, that is desirable behavior. However, to enable that behavior XS must reserve a four byte pointer in RAM for `CountingLog` to allow it to be patched. In many, if not most, cases developers of modules do not want to have their objects modified in this way because it can lead to reliability problems and security issues.
 
 The JavaScript language provides the `Object.freeze` function to prevent changes to existing properties and to prevent the addition of new properties. Here is the `CountingLog` module modified to use `Object.freeze` on its prototype.
 
-	class CountingLog {
-		constructor() {
-			this.count = 1;
-		}
-		log(msg) {
-			trace(`${this.count++}: ${msg}\n`);
-		}
+```js
+class CountingLog {
+	constructor() {
+		this.count = 1;
 	}
-	Object.freeze(CountingLog.prototype);
+	log(msg) {
+		trace(`${this.count++}: ${msg}\n`);
+	}
+}
+Object.freeze(CountingLog.prototype);
 	
-	export default CountingLog;
+export default CountingLog;
+```
 
 With this change, the code above that patches the prototype to add the `reset` function throws an exception. The `CountingDateLog` example continues to work as it subclasses `CountingLog` which references `CountingLog.prototype` but does not change it.
 
@@ -95,48 +103,58 @@ The XS engine recognizes that objects which have been frozen cannot be modified,
 ### Freezing Data
 JavaScript applications often use objects to store data. Here's an example from a script that runs in a light bulb.
 
-	const Colors = [
-		{name: "blue", value: 0x0000FF},
-		{name: "white", value: 0xFFFF00},	
-		{name: "red", value: 0xFF0000},
-		{name: "green", value: 0x00FF00},
-		{name: "purple", value: 0xFF00FF},
-		{name: "yellow", value: 0xFFFF00},
-		{name: "cyan", value: 0x00FFFF},
-	];
+```js
+const Colors = [
+	{name: "blue", value: 0x0000FF},
+	{name: "white", value: 0xFFFF00},	
+	{name: "red", value: 0xFF0000},
+	{name: "green", value: 0x00FF00},
+	{name: "purple", value: 0xFF00FF},
+	{name: "yellow", value: 0xFFFF00},
+	{name: "cyan", value: 0x00FFFF},
+];
+```
 
 The `Colors` object is an `Array` with seven entries. XS reserves a pointer to track changes to `Colors`, as described above. Freezing the `Array` eliminates that pointer:
 
-	Object.freeze(Colors);
+```js
+Object.freeze(Colors);
+```
 
 However, the array contains seven objects, and a pointer must also be reserved for each of those, requiring an additional 28 bytes. These objects should also be frozen. Here's one way.
 
-	const Colors = [
-		Object.freeze({name: "blue", value: 0x0000FF}),
-		Object.freeze({white", value: 0xFFFF00}),
-		*..*.
+```js
+const Colors = [
+	Object.freeze({name: "blue", value: 0x0000FF}),
+	Object.freeze({white", value: 0xFFFF00}),
+	*..*.
+```
 
 Unfortunately, that obscures the data. Here's another approach:
 
-	const Colors = [
-		{name: "blue", value: 0x0000FF},
-		{name: "white", value: 0xFFFF00},	
-		...
-	];
-	Object.freeze(Colors);
-	Colors.forEach(color => Object.freeze(color));
+```js
+const Colors = [
+	{name: "blue", value: 0x0000FF},
+	{name: "white", value: 0xFFFF00},	
+	...
+];
+Object.freeze(Colors);
+Colors.forEach(color => Object.freeze(color));
+```
 
 This is better, but it is more code. Further, if these objects had their own sub-objects, additional code would be required.
 
 ### Deep Freezing
 Freezing objects is more common using XS than in other JavaScript environments. To make it easier for developers to reliably freeze objects, XS extends `Object.freeze` with an optional second argument that that requests the object be frozen recursively. This allows the `Colors` object above to completely frozen with a single call.
 
-	const Colors = [
-		{name: "blue", value: 0x0000FF},
-		{name: "white", value: 0xFFFF00},	
-		...
-	];
-	Object.freeze(Colors, 1);
+```js
+const Colors = [
+	{name: "blue", value: 0x0000FF},
+	{name: "white", value: 0xFFFF00},	
+	...
+];
+Object.freeze(Colors, true);
+```
 
 Because this extension is not part of the JavaScript language, care should be taken to only use it in code that is intended for exclusive use by the XS engine. If equivalent functionality becomes available in a standard way such as [`harden`](https://github.com/Agoric/Harden), XS will move to use that mechanism exclusively.
 
@@ -148,53 +166,25 @@ Following the preload build phase, the XS linker freezes the following:
 
 The result of this step generates a runtime environment with characteristics in common with the [Frozen Realms proposal](https://github.com/tc39/proposal-frozen-realms). In addition to memory savings already explained, it provides a reliable execution environment because scripts know the built-in objects are those defined by the JavaScript language specification and that will not change during execution due to runtime patching. Eliminating patching of runtime objects also contributes to providing a secure execution environment.
 
-## Module Global State
+## Module Scope
 Sometimes modules need to maintain information for their entire lifetime, independent of a single class instance. These variables are part of the module's closure, lexically scoped to the module's body. They are created when the module executes. The following revision of `CountingLog` shares a single counter variable across all instances.
 
-	let count = 1;
+```js
+let count = 1;
 
-	class CountingLog {
-		log(msg) {
-			trace(`${count++}: ${msg}\n`);
-		}
+class CountingLog {
+	log(msg) {
+		trace(`${count++}: ${msg}\n`);
 	}
-	Object.freeze(CountingLog.prototype);
+}
+Object.freeze(CountingLog.prototype);
 	
-	export default CountingLog;
+export default CountingLog;
+```
 
-In the current implementation of XS, when this module is preloaded, the value of the `count` property is frozen as part of the module's closure. An exception is thrown on any attempt to modify it. The mechanism XS used to allow modification of objects stored in ROM does not work here. That module global variables declared with `let` behave like variables declared with `const` is a limitation of the XS preload implementation. In a future update, it may be addressed. Until then, there are other techniques available as part of the JavaScript standard that allow a module to maintain private, modifiable global state.
+When this module is preloaded, the value of the `count` variable is frozen in ROM as part of the module's closure. As with objects, XS allows such variables to be modified by storing the modification in RAM. It achieves this by maintaining a pointer in RAM for each variable in ROM that may be modified. Each pointer takes up 4 bytes on a typical 32-bit microcontroller.
 
-It is possible to have modifiable module global variables by making them objects. The following example shows how.
-
-	let state = {
-		count = 1,
-	};
-
-	class CountingLog {
-		log(msg) {
-			trace(`${state.count++}: ${msg}\n`);
-		}
-	}
-	Object.freeze(CountingLog.prototype);
-	
-	export default CountingLog;
-
-Because the object stored in `state` has not been frozen, it may be modified at runtime. The `state` object may, of course, be used to store additional properties with the consequence that modules written in this way often need only one module global to maintain their private state. 
-
-Another way for a module to maintain modifiable private state is using the global scope with a symbol.
-
-	const countSymbol = Symbol("count");
-	global[countSymbol] = 0;
-
-	class CountingLog {
-		log(msg) {
-			trace(`${global[countSymbol]++}: ${msg}\n`);
-		}
-	}
-
-Note that this uses `global` to access the global scope, a name in flux in the JavaScript standards process.
-
-Finally, use `const` to declare module variables that are not intended to be modified at runtime. This conveys the intended use of the variable for when the XS preload mechanism allows variables declared with `let` to be modified.
+Use `const` to declare module variables that are not intended to be modified at runtime. Declaring a module variable with `const` conveys to XS that the variable cannot be modified. This saves RAM by eliminating the pointer otherwise needed to allow tthe variable to be modified.
 
 ## What Cannot be Preloaded
 Preloading occurs on the build machine, not the target device. That limits the operations that may be performed during preload. 
@@ -204,9 +194,11 @@ Because the build is for the target device, not the build machine, any native fu
 
 For example, the following fails to preload because `Digital.write` is a native function.
 
-	import Digital from "pins/digital";
+```js
+import Digital from "pins/digital";
 	
-	Digital.write(1, 0);
+Digital.write(1, 0);
+```
 
 This image shows the error generated during build when this module is preloaded.
 
@@ -214,16 +206,20 @@ This image shows the error generated during build when this module is preloaded.
 
 Note that it is safe to define native functions during preload, as in the following example.
 
-	class Example {
-		static aNativeFunction() @ "xs_nativefunction";
-	}
+```js
+class Example {
+	static aNativeFunction() @ "xs_nativefunction";
+}
+```
 	
 Because calling a native function is not possible, this generates an error at build time:
 
-	class Example {
-		static aNativeFunction() @ "xs_nativefunction";
-	}
-	Example.aNativeFunction();
+```js
+class Example {
+	static aNativeFunction() @ "xs_nativefunction";
+}
+Example.aNativeFunction();
+```
 
 ### Some JavaScript Built-ins
 Many of the basic JavaScript types and objects may be created at build time allowing the objects created be stored in flash memory. Those which may be safely used include:
@@ -254,110 +250,118 @@ In the future XS may support storing additional built-in objects in flash memory
 
 These objects cannot be stored in flash. However, they maybe used during preload as long as they do not need to be stored. The following examples uses the `Date` object to save the time when the module is loaded in a static property of the class.
 
-	class Stamped {
-	}
-	Stamped.when = new Date;
+```js
+class Stamped {
+}
+Stamped.when = new Date;
+```
 
 This fails, because Date cannot be stored as the result of preload. However, a string can be stored, so this works:
 
-	class Stamped {
-	}
-	Stamped.when = (new Date).toString();
+```js
+class Stamped {
+}
+Stamped.when = (new Date).toString();
+```
 
 The value of `Stamped.when` is the time that the file was preloaded by the linker, which may be useful for some projects.
 
 The section below on pre-calculation gives other examples of executing code at build time to generate data to be used at runtime.
-
-### `require` and Preloading
-The `require` function is used to load modules on-demand, whereas the `import` statement always loads modules when their containing module is loaded. The `require` function may be called during preload, which causes the module it loads to also be preloaded.
-
-Note: The `require` function is supported in XS for convenience, though it is not part of the JavaScript language. It is not widely used in XS modules at this time. The functionality enabled by the `require` function is in the process of being standardized as the `import` function. 
 
 ## Preloading `main`
 The `main` module is the first application script executed. To do its work, the `main` module usually imports other modules. The `main` module of a project is often the only module that is not set to preload. This is done for convenience, and for small projects, like examples in the Moddable SDK, it is often not a problem. The application's `main` module invariably invokes native functions, to connect to Wi-Fi, display an image, or toggle a digital pin. As noted above native functions cannot be called during preload.
 
 Here's a trivial example of an application that turns on one LED using a Digital pin at start-up and sets a repeating timer to toggle the state of another LED.
 
-	import Digital from "pins/digital:
+```js
+import Digital from "pins/digital:
 	
+let toggle = false;
+	
+Digital.write(1, true);
+Timer.repeat(() => {
+	toggle = !toggle;
+	Digital.write(2, toggle)
+}
+```
+
+In the Moddable SDK runtime, if the `main` module returns a function, that function is executed immediately. This can be used to make `main` support preloading. Here is a naive example of doing that:
+
+```js
+import Digital from "pins/digital:
+	
+export default function() {
 	let toggle = false;
 	
 	Digital.write(1, true);
 	Timer.repeat(() => {
 		toggle = !toggle;
 		Digital.write(2, toggle)
-	}
-
-In the Moddable SDK runtime, if the `main` module returns a function, that function is executed immediately. This can be used to make `main` support preloading. Here is a naive example of doing that:
-
-
-	import Digital from "pins/digital:
-	
-	export default function() {
-		let toggle = false;
-		
-		Digital.write(1, true);
-		Timer.repeat(() => {
-			toggle = !toggle;
-			Digital.write(2, toggle)
-		}, 1000);
-	}
+	}, 1000);
+}
+```
 
 A better approach is to create a simple class to instantiate from the exported function. This structures the code more cleanly and any needed state, such as `toggle` in the above example, is part of the instance state accessed using `this`.
 
-	import Digital from "pins/digital:
+```js
+import Digital from "pins/digital:
 
-	class App {
-		constructor() {
-			Digital.write(1, true);
+class App {
+	constructor() {
+		Digital.write(1, true);
 
-			this.toggle = false;
-			Timer.repeat(this.blink.bind(this), 1000);
-		}
-		blink() {
-			this.toggle = !this.toggle;
-			Digital.write(2, this.toggle)
-		}
+		this.toggle = false;
+		Timer.repeat(this.blink.bind(this), 1000);
 	}
-
-	export default function() {
-		new App;
+	blink() {
+		this.toggle = !this.toggle;
+		Digital.write(2, this.toggle)
 	}
+}
+
+export default function() {
+	new App;
+}
+```
 
 ## Pre-calculating During Preload
 Because microcontrollers are relatively slow in performance, a common optimization technique is to use tables of pre-calculated values to minimize the complex calculations that need to be performed on the microcontroller. The values are typically calculated by another program and then entered into a data structure such as an array.
 
 For example, the floating square root function is relatively complex and so is a good candidate for optimization when used in performance critical situations. The following example, contrived for simplicity, uses an array containing the square roots of the integers from 0 to 10 as a look-up table.
 
-	const roots = [
-		0,
-		1,
-		1.4142135624,
-		1.7320508076,
-		2,
-		2.2360679775,
-		2.4494897428, 
-		2.6457513111,
-		2.8284271247,
-		3,
-		3.1622776602
-	];
-	Object.freeze(roots);
+```js
+const roots = [
+	0,
+	1,
+	1.4142135624,
+	1.7320508076,
+	2,
+	2.2360679775,
+	2.4494897428, 
+	2.6457513111,
+	2.8284271247,
+	3,
+	3.1622776602
+];
+Object.freeze(roots);
 	
-	function fastSquareRootToTen(x) {
-		return roots[x];
-	}
+function fastSquareRootToTen(x) {
+	return roots[x];
+}
+```
 
 With eleven elements, the table is already awkward. With 100 or 1000, it becomes unwieldy. Worse, there is no way to be certain the values are correct by visual inspection, so errors could creep in unnoticed. Taking advantage of preloading solves these problems by generating the table programmatically at build time.
 
-	const roots = [];
-	for (let i = 0; i <= 10; i++)
-		roots[i] = Math.sqrt(i)
-	Object.freeze(roots);
+```js
+const roots = [];
+for (let i = 0; i <= 10; i++)
+	roots[i] = Math.sqrt(i)
+Object.freeze(roots);
 	
-	function fastSquareRootToTen(x) {
-		return roots[x];
-	}
+function fastSquareRootToTen(x) {
+	return roots[x];
+}
+```
 
 This technique may be applied to perform more sophisticated calculations and to generate data structures more complex than arrays.
 
@@ -387,4 +391,4 @@ This document was created in response to a [request](https://twitter.com/moddabl
 
 An initial draft of this document was written by Lizzie Prader, who helped edit this document.
 
-The use of terminology at the start of the Module Global State section in the initial posting was imprecise. Thank you to Allen Wirfs-Brock for suggesting improvements.
+The use of terminology at the start of the Module Scope section in the initial posting was imprecise. Thank you to Allen Wirfs-Brock for suggesting improvements.

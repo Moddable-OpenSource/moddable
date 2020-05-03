@@ -456,13 +456,32 @@ void fxQueuePromiseJobs(txMachine* the)
 
 #endif  /* mxUseDefaultQueuePromiseJobs */
 
+#if mxUseDefaultDebug
+
+void fxAbort(txMachine* the, int status)
+{
+	c_exit(status);
+}
+
+#endif  /* mxUseDefaultDebug */
+
 #ifdef mxDebug
 
 #if mxUseDefaultDebug
 
-void fxAbort(txMachine* the)
+void fxAbort(txMachine* the, int status)
 {
-	c_exit(0);
+	mxTry(the) {
+		if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
+			mxUnknownError("not enough memory");
+		else if (status == XS_STACK_OVERFLOW_EXIT)
+			mxUnknownError("stack overflow");
+		else if (status == XS_DEAD_STRIP_EXIT)
+			mxUnknownError("dead strip");
+	}
+	mxCatch(the) {
+	}
+	c_exit(status);
 }
 
 void fxConnect(txMachine* the)
@@ -500,7 +519,11 @@ uint32_t modMilliseconds()
 {
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
+#if (mxWasm || mxWindows)
+	return (uint32_t)(uint64_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+#else
 	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+#endif
 }
 #endif
 

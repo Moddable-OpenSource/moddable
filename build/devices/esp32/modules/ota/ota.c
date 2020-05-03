@@ -21,6 +21,7 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "app_update/include/esp_ota_ops.h"
+#include "mc.xs.h"      // for xsID_ values
 
 typedef struct {
 	esp_ota_handle_t			handle;
@@ -42,6 +43,7 @@ void xs_ota(xsMachine *the)
 {
 	esp_err_t err;
 	esp_ota_handle_t handle;
+	uint32_t size = OTA_SIZE_UNKNOWN;
 	xsOTA ota = c_calloc(1, sizeof(xsOTARecord));
 	if (NULL == ota)
 		xsUnknownError("no memory");
@@ -51,7 +53,14 @@ void xs_ota(xsMachine *the)
 	if (NULL == ota->partition)
 		xsUnknownError("no update parition");
 
-	err = esp_ota_begin(ota->partition, OTA_SIZE_UNKNOWN, &ota->handle);
+	if (xsmcArgc) {
+		xsmcVars(1);
+		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
+		size = xsmcToInteger(xsVar(0));
+		size = (size + 4095) & ~4095;
+	}
+
+	err = esp_ota_begin(ota->partition, size, &ota->handle);
 	if (ESP_OK != err)
 		xsUnknownError("begin failed");
 }
@@ -60,7 +69,7 @@ void xs_ota_write(xsMachine *the)
 {
 	esp_err_t err;
 	xsOTA ota = xsmcGetHostData(xsThis);
-	int size = xsGetArrayBufferLength(xsArg(0));
+	int size = xsmcGetArrayBufferLength(xsArg(0));
 	void *data = xsmcToArrayBuffer(xsArg(0));
 
 	err = esp_ota_write(ota->handle, data, size);

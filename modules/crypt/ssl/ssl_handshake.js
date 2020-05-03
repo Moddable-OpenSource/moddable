@@ -505,14 +505,10 @@ const handshakeProtocol = {
 		},
 		packetize(session, certs) {
 			session.traceProtocol(this);
-			let s = new SSLStream();
-			// calculate the length
-			let byteLength = 3;
-			for (let i = 0; i < certs.length; i++)
-				byteLength += certs[i].byteLength;
-			s.writeChars(byteLength, 3);
+			const s = new SSLStream();
+			s.writeChars(certs.length, 3);		// number of certificates
 			for (let i = 0; i < certs.length; i++) {
-				let c = certs[i];
+				const c = certs[i];
 				s.writeChars(c.byteLength, 3);
 				s.writeChunk(c);
 			}
@@ -717,10 +713,10 @@ const handshakeProtocol = {
 
 		unpacketize(session, s) {
 			session.traceProtocol(this);
-			var nCertTypes = s.readChar();
-			var types = [];
-			for (var i = 0; i < nCertTypes; i++) {
-				var type = s.readChar();
+			const nCertTypes = s.readChar();
+			const types = [];
+			for (let i = 0; i < nCertTypes; i++) {
+				const type = s.readChar();
 				switch (type) {
 				case this.rsa_sign:
 					types.push(CERT_RSA);
@@ -733,16 +729,15 @@ const handshakeProtocol = {
 					break;
 				}
 			}
-			var ttlSize = s.readChars(2);
-			var names = [];
+			let ttlSize = s.readChars(2);
+			const names = [];
 			while (ttlSize > 0) {
-				var nbytes = s.readChars(2);
-				names.push(s.readChunk(nbytes));
-				ttlSize -= nbytes + 2;
+				let bytes = s.readChars(2);
+				names.push(s.readChunk(bytes));
+				ttlSize -= bytes + 2;
 			}
-			session.clientCerts = session.certificateManager.findPreferedCert(types, names);
-			if (!session.clientCerts)
-				session.clientCerts = [];	// proceed to the "certificate" protocol with a null certificate
+			session.clientCerts = session.certificateManager.findPreferredCert(types, names);
+			// if no clientCerts, proceed to the "certificate" protocol with a null list
 		},
 		packetize(session, types, authorities) {
 			session.traceProtocol(this);
@@ -921,7 +916,7 @@ const handshakeProtocol = {
 				if (!session.myCert)
 					throw new Error("SSL: certificateVerify: no cert");	// out of sequence
 				var key = session.certificateManager.getKey(cert);
-				var rsa = new Crypt.PKCS1_5(key, true);
+				var rsa = new PKCS1_5(key, true);
 				var sig = rsa.sign(this.calculateDigest(session));
 				var s = new SSLStream();
 				s.writeChars(sig.byteLength, 2);

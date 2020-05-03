@@ -87,7 +87,7 @@ void xs_preference_set(xsMachine *the)
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+				success = modPreferenceSet(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), kPrefsTypeBuffer, xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
 			else
 				goto unknown;
 			break;

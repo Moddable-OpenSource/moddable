@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -62,10 +62,15 @@ UPLOAD_RESET = nodemcu
 UPLOAD_VERB = -v
 !ENDIF
 
+START_SERIAL2XSBUG= $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
+
+
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE = 4M
-FLASH_MODE = dio
-FLASH_SPEED = 40
+FLASH_MODE = qio
+FLASH_SPEED = 80
 FLASH_LAYOUT = eagle.flash.4m.ld
 
 # WiFi & Debug settings
@@ -182,6 +187,7 @@ SDK_SRC = \
 	$(CORE_DIR)\Schedule.cpp \
 	$(CORE_DIR)\time.c \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
+	$(PLATFORM_DIR)\lib\bsearch\bsearch.c \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
@@ -211,6 +217,7 @@ SDK_OBJ = \
 	$(LIB_DIR)\spiffs_hal.o \
 	$(LIB_DIR)\time.o \
 	$(LIB_DIR)\umm_malloc.o \
+	$(LIB_DIR)\bsearch.o \
 	$(LIB_DIR)\e_fmod.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
@@ -322,7 +329,7 @@ ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0x3FC000
 
 ESPTOOL_FLASH_OPT = \
 	--flash_freq $(FLASH_SPEED)m \
-	--flash_mode dout \
+	--flash_mode $(FLASH_MODE) \
 	--flash_size $(FLASH_SIZE)B \
 	0x0000 $(ESP_BOOTLOADER_BIN) \
 	0x1000 $(BIN_DIR)\main.bin \
@@ -337,15 +344,41 @@ LIB_ARCHIVE = $(LIB_DIR)\libxslib.a
 
 all: $(LAUNCH)
 
-debug: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
-	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-	$(UPLOAD_TO_ESP)
-#	@echo # using DEBUGGER_SPEED $(DEBUGGER_SPEED)
-	$(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+clean:
+	$(KILL_SERIAL2XSBUG)
+	echo # Clean project bin and tmp
+	echo $(BIN_DIR)
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	echo $(TMP_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	echo $(LIB_DIR)
+	del /s/q/f $(LIB_DIR)\*.* > NUL
+	rmdir /s/q $(LIB_DIR)
 
-release: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
+precursor: $(LIB_DIR) $(LIB_ARCHIVE) $(APP_ARCHIVE) $(BIN_DIR)\main.bin
+	
+
+debug: precursor
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(UPLOAD_TO_ESP)
+	$(START_SERIAL2XSBUG)
+
+release: precursor
+	$(KILL_SERIAL2XSBUG)
+	$(UPLOAD_TO_ESP)
+
+build: precursor
+
+deploy:
+	if not exist $(BIN_DIR)\main.bin (echo # Build before deploy) else ( $(UPLOAD_TO_ESP) )
+
+xsbug:
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(START_SERIAL2XSBUG)
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
@@ -414,6 +447,11 @@ $(LIB_DIR)\cont.S.o: $(CORE_DIR)\cont.S
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
+$(LIB_DIR)\bsearch.o: $(PLATFORM_DIR)\lib\bsearch\bsearch.c
+	@echo # cc $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
 $(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
 	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
@@ -436,12 +474,12 @@ $(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\esp\xsPlatform.c
 	@echo # cc $(@F)
-	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o $@.unmapped
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c

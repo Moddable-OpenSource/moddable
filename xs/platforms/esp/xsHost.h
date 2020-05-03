@@ -45,8 +45,6 @@
 	link locations
 */
 
-#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
-
 #if ESP32
 	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
@@ -93,6 +91,9 @@ extern void espFreeUint32(void *t);
 */
 
 extern void modLog_transmit(const char *msg);
+extern void ESP_putc(int c);
+extern void ESP_put(uint8_t *c, int count);
+
 
 #if !ESP32
 	#define modLog(msg) \
@@ -299,6 +300,16 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #endif
 
 /*
+	instrumentation
+*/
+
+#if defined(mxInstrumentation) && defined(__XS__)
+	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(xsMachine *the);
+	void espInstrumentMachineReset(xsMachine *the);
+#endif
+
+/*
 	c libraries
 */
 
@@ -335,7 +346,7 @@ typedef va_list c_va_list;
 #if ESP32
 	#define c_exit(n) esp_restart()
 #else
-	#define c_exit(n) system_restart()
+	#define c_exit(n) {system_restart(); while (1) esp_yield();}
 #endif
 #define c_free free
 #define c_malloc malloc
@@ -508,7 +519,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#include "esp_partition.h"
 
 	extern const esp_partition_t *gPartition;
-	extern const void *gPartitionAddress;
+	extern const uint8_t *gPartitionAddress;
 
 	#define kModulesStart (gPartitionAddress)
 	#define kModulesByteLength (gPartition ? gPartition->size : 0)

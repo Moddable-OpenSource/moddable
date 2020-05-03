@@ -66,7 +66,7 @@ const PiuStyleBuilderRecord ICACHE_FLASH_ATTR piuStyleSizeBuilders[] = {
 
 static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
 	NULL,
 	PiuFontListMark,
 	NULL
@@ -74,7 +74,7 @@ static xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
 
 static void PiuStyleLinkMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuStyleLinkHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuStyleLinkHooks ICACHE_RODATA_ATTR = {
 	NULL,
 	PiuStyleLinkMark,
 	NULL
@@ -82,7 +82,7 @@ static xsHostHooks PiuStyleLinkHooks ICACHE_RODATA_ATTR = {
 
 static void PiuStyleMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsHostHooks PiuStyleHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuStyleHooks ICACHE_RODATA_ATTR = {
 	PiuStyleDelete,
 	PiuStyleMark,
 	NULL
@@ -125,10 +125,15 @@ PiuStyle* PiuStyleLinkCompute(xsMachine *the, PiuStyleLink* chain, PiuApplicatio
 void PiuStyleLinkMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuStyleLink self = it;
-	PiuMarkHandle(the, self->next);
-	PiuMarkHandle(the, self->first);
+	PiuStyleLink* link = self->first;
+	while (link) {
+		PiuMarkHandle(the, link);
+		link = (*link)->next;
+	}
 	PiuMarkHandle(the, self->style);
 	PiuMarkHandle(the, self->computedStyle);
+	
+	
 }
 
 PiuStyleLink* PiuStyleLinkMatch(xsMachine *the, PiuStyleLink* list, PiuStyleLink* chain, PiuStyle* style)

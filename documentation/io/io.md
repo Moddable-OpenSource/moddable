@@ -136,7 +136,7 @@ The kind of data accepted by the write operation is determined by the `format` p
 Scripts that perform write operations may call write at any time. The IO instance may not always be able to accept new data, such as when its output buffer is full. If write is called in this situation, an exception is thrown. Such IO instances generally support the `onWritable` callback which indicates when space is available in the output buffer. The following example uses the `onWritable` callback to transmit a continuous stream of asterisk (ASCII 42) characters.
 
 ```js
-let close = new Serial({
+new Serial({
 	baud: 921600,
 	onWritable(count) {
 		while (count--)
@@ -176,7 +176,7 @@ For example, consider the following example which reads one byte from serial as 
 
 ```js
 serial.format = "number";
-let count = serial.read()
+let count = serial.read();
 serial.format = "buffer";
 let data = serial.read(count);
 ```
@@ -249,7 +249,7 @@ let button = new Digital({
 The built-in `DigitalBank` class provides simultaneous access to a group of digital pins.
 
 ```js
-import Digital from "builtin/digitalbank";
+import DigitalBank from "builtin/digitalbank";
 ```
 
 Many microcontrollers, including the ESP8266, provide access to their digital pins through unified memory mapped hardware ports that make it possible to read and write several pins as a single operation. The `DigitalBank` IO provides direct access to this capability.
@@ -342,7 +342,7 @@ There are no callbacks supported. Analog inputs are generally continuously fluct
 The data format is always a number. The value returned is an integer from 0 to a maximum value based on the resolution of the analog input.
 
 #### Usage Notes
-The analog input on the ESP8266 always provides 10-bit values. The analog input devices a read-only `resolution` property which indicates the number of bits of resolution provided by values returned by the instance.
+The analog input on the ESP8266 always provides 10-bit values. The analog input devices have a read-only `resolution` property which indicates the number of bits of resolution provided by values returned by the instance.
 
 #### Implementation Notes
 An `onReadable` callback may be useful. It could trigger based on various conditions, such as changing by more than a certain amount or entering a certain range of values. This is similar to triggers used in energy management work with very-low-power co-processors. This is an area for future work.
@@ -352,7 +352,42 @@ The following example displays the value of an analog input as a floating point 
 
 ```js
 let analog = new Analog({});
-trace(analog.read() / (1 << analog.resolution, "\n");
+trace(analog.read() / (1 << analog.resolution), "\n");
+```
+
+### PWM
+The built-in `PWM` IO class provides access to the pulse-width modulation capability of pins.
+
+```js
+import PWM from "builtin/pwm";
+```
+
+#### Constructor Properties
+
+| Property | Description |
+| :---: | :--- |
+|  `pin` | A number from 0 to 16 indicating the GPIO number to operate as a PWM output. This property is required.
+|  `hz` | A number specifying the frequency of the PWM output in Hz. This property is optional.
+
+#### Callbacks
+There are no callbacks supported.
+
+#### Data Format
+The data format is always a number. The `write` call accepts integers between 0 and a maximum value based on the resolution of the PWM output.
+
+#### Use Notes
+PWM instances have a read-only `resolution` property which indicates the number of bits of resolution accepted on writes. PWM outputs on the ESP8266 always use 10-bit values.
+
+The ESP8266 supports only a single PWM output frequency across all PWM output pins. Attempts to construct a PWM with `hz` specified when an existing PWM has already specified a different frequency will fail. A new frequency may be specified if all PWM instances that requested the original frequency have been closed.
+
+When a PWM instance is created, it defaults to a duty cycle of 0% until a `write` is performed.
+
+#### Example
+The following example creates a PWM output on pin 5 with a 10 kHz output frequency and sets it to a 50% duty cycle. The `resolution` property is used to scale the argument to `write`.
+
+```js
+let pwm = new PWM({ pin: 5, hz: 10000 });
+pwm.write(0.5 * ((1 << pwm.resolution) - 1));
 ```
 
 ### I<sup>2</sup>C 

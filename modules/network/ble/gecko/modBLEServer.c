@@ -44,7 +44,6 @@ typedef struct {
 	int8_t connection;
 	bd_addr address;
 	uint8_t bond;
-	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -100,8 +99,12 @@ void xs_ble_server_initialize(xsMachine *the)
 
 void xs_ble_server_close(xsMachine *the)
 {
-	xsForget(gBLE->obj);
-	xs_ble_server_destructor(gBLE);
+	modBLE ble = gBLE;
+	if (!ble) return;
+
+	gBLE = NULL;
+	xsForget(ble->obj);
+	xs_ble_server_destructor(ble);
 }
 
 void xs_ble_server_destructor(void *data)
@@ -109,7 +112,6 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	ble->terminating = true;
 	if (-1 != ble->connection)
 		gecko_cmd_le_connection_close(ble->connection);
 	modTimerRemove(ble->timer);
@@ -141,19 +143,30 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint16_t intervalMin = xsmcToInteger(xsArg(0));
-	uint16_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 	uint8_t scan_rsp = scanResponseData ? 0 : 1;
-	
+	uint16_t discoverableMode, connectableMode = le_gap_undirected_connectable;
+
+	if (flags & LE_LIMITED_DISCOVERABLE_MODE)
+		discoverableMode = le_gap_limited_discoverable;
+	else if (flags & LE_GENERAL_DISCOVERABLE_MODE)
+		discoverableMode = le_gap_general_discoverable;
+	else {
+		discoverableMode = le_gap_non_discoverable;
+		connectableMode = le_gap_non_connectable;
+	}
+		
 	gecko_cmd_le_gap_set_advertise_timing(0, intervalMin, intervalMax, 0, 0);
 	gecko_cmd_le_gap_set_adv_data(scan_rsp, advertisingDataLength, advertisingData);
 	if (scanResponseData)
 		gecko_cmd_le_gap_set_adv_data(1, scanResponseDataLength, scanResponseData);	
-	gecko_cmd_le_gap_set_mode(le_gap_general_discoverable, le_gap_undirected_connectable);
+	gecko_cmd_le_gap_set_mode(discoverableMode, connectableMode);
 }
 	
 void xs_ble_server_stop_advertising(xsMachine *the)
@@ -165,7 +178,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	//uint16_t notify = xsmcToInteger(xsArg(1));
-	gecko_cmd_gatt_server_send_characteristic_notification(gBLE->connection, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)));
+	gecko_cmd_gatt_server_send_characteristic_notification(gBLE->connection, handle, xsmcGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)));
 }
 
 void xs_ble_server_deploy(xsMachine *the)
@@ -179,13 +192,16 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 	uint8_t bonding = xsmcToBoolean(xsArg(1));
 	uint8_t mitm = xsmcToBoolean(xsArg(2));
 	uint8_t iocap = xsmcToInteger(xsArg(3));
+	uint16_t err;
 	
 	gBLE->encryption = encryption;
 	gBLE->bonding = bonding;
 	gBLE->mitm = mitm;
 	gBLE->iocap = iocap;
 
-	modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	err = modBLESetSecurityParameters(encryption, bonding, mitm, iocap);
+	if (0 != err)
+		xsUnknownError("invalid security params");
 
 	if (bonding || (encryption && mitm))
 		gecko_cmd_sm_set_bondable_mode(1);
@@ -204,6 +220,11 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
 
 	gecko_cmd_sm_passkey_confirm(gBLE->connection, confirm);
+}
+
+void xs_ble_server_get_service_attributes(xsMachine *the)
+{
+	// @@ TBD
 }
 
 void addressToBuffer(bd_addr *bda, uint8_t *buffer)
@@ -357,7 +378,7 @@ static void doReadOrWriteRequest(struct gecko_msg_gatt_server_user_write_request
 	}
 	else {
 		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
-		gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
+		gecko_cmd_gatt_server_send_user_read_response(evt->connection, evt->characteristic, 0, xsmcGetArrayBufferLength(xsResult), xsmcToArrayBuffer(xsResult));
 	}
 bail:
 	xsEndHost(gBLE->the);
@@ -442,9 +463,21 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 	}
 }
 
+static void gattMTUExchangedEvent(struct gecko_msg_gatt_mtu_exchanged_evt_t *evt)
+{
+	if (evt->connection != gBLE->connection)
+		return;
+		
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), evt->mtu);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void ble_event_handler(struct gecko_cmd_packet* evt)
 {
-	if (!gBLE || gBLE->terminating) return;
+	if (!gBLE) return;
 
 	switch(BGLIB_MSG_ID(evt->header)) {
 		case gecko_evt_system_boot_id:
@@ -479,6 +512,9 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_sm_bonding_failed_id:
 			smBondingFailedEvent(&evt->data.evt_sm_bonding_failed);
+			break;
+		case gecko_evt_gatt_mtu_exchanged_id:
+			gattMTUExchangedEvent(&evt->data.evt_gatt_mtu_exchanged);
 			break;
 		default:
 			break;

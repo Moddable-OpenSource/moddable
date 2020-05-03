@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-19  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,14 +20,15 @@
 import Timer from "timer";
 import {Server} from "http"
 
-const ThingHeaders = [	"content-type", "application/json",
+const ThingHeaders = Object.freeze([	"content-type", "application/json",
 						"access-control-allow-origin", "*",
-						"access-control-allow-methods", "PUT, GET"];
+						"access-control-allow-methods", "PUT, GET"], true);
 
 class WebThing {
 	constructor(host) {
 		this.host = host;
 		this.controllers = [];
+		trace("Web Thing API support deprecated.\n");
 	}
 	changed() {
 		if (!this.host.mdns)

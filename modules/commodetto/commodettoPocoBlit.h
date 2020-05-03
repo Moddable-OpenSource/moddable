@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -136,7 +136,7 @@ struct PocoRecord {
 	PocoCoordinate		xOrigin;		// with rotation applied (not physical)
 	PocoCoordinate		yOrigin;		// with rotation applied (not physical)
 
-	int16_t				rowBytes;		// scanline stride forb blitters
+	int16_t				rowBytes;		// scanline stride for blitters
 
 	uint8_t				flags;
 	uint8_t				stackDepth;

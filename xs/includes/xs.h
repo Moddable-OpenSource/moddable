@@ -297,7 +297,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -72
+#define prototypesStackIndex -75
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -314,16 +314,17 @@ typedef txU4 xsUnsignedValue;
 #define xsSyntaxErrorPrototype (the->stackPrototypes[prototypesStackIndex - 14])
 #define xsTypeErrorPrototype (the->stackPrototypes[prototypesStackIndex - 15])
 #define xsURIErrorPrototype (the->stackPrototypes[prototypesStackIndex - 16])
-#define xsSymbolPrototype (the->stackPrototypes[prototypesStackIndex - 17])
-#define xsArrayBufferPrototype (the->stackPrototypes[prototypesStackIndex - 18])
-#define xsDataViewPrototype (the->stackPrototypes[prototypesStackIndex - 19])
-#define xsTypedArrayPrototype (the->stackPrototypes[prototypesStackIndex - 20])
-#define xsMapPrototype (the->stackPrototypes[prototypesStackIndex - 21])
-#define xsSetPrototype (the->stackPrototypes[prototypesStackIndex - 22])
-#define xsWeakMapPrototype (the->stackPrototypes[prototypesStackIndex - 23])
-#define xsWeakSetPrototype (the->stackPrototypes[prototypesStackIndex - 24])
-#define xsPromisePrototype (the->stackPrototypes[prototypesStackIndex - 25])
-#define xsProxyPrototype (the->stackPrototypes[prototypesStackIndex - 26])
+#define xsAggregateErrorPrototype (the->stackPrototypes[prototypesStackIndex - 17])
+#define xsSymbolPrototype (the->stackPrototypes[prototypesStackIndex - 18])
+#define xsArrayBufferPrototype (the->stackPrototypes[prototypesStackIndex - 19])
+#define xsDataViewPrototype (the->stackPrototypes[prototypesStackIndex - 20])
+#define xsTypedArrayPrototype (the->stackPrototypes[prototypesStackIndex - 21])
+#define xsMapPrototype (the->stackPrototypes[prototypesStackIndex - 22])
+#define xsSetPrototype (the->stackPrototypes[prototypesStackIndex - 23])
+#define xsWeakMapPrototype (the->stackPrototypes[prototypesStackIndex - 24])
+#define xsWeakSetPrototype (the->stackPrototypes[prototypesStackIndex - 25])
+#define xsPromisePrototype (the->stackPrototypes[prototypesStackIndex - 26])
+#define xsProxyPrototype (the->stackPrototypes[prototypesStackIndex - 27])
 
 #define xsNewArray(_LENGTH) \
 	(fxNewArray(the,_LENGTH), \
@@ -432,148 +433,152 @@ typedef short xsIndex;
 	fxDeleteAt(the), \
 	the->stack++)
 
+#define XS_FRAME_COUNT 6 
+
 #define xsCall0(_THIS,_ID) \
-	(xsOverflow(-2), \
-	fxPushCount(the, 0), \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxRunCount(the, 0), \
 	fxPop())
 
 #define xsCall0_noResult(_THIS,_ID) \
-	(xsOverflow(-2), \
-	fxPushCount(the, 0), \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxRunCount(the, 0), \
 	the->stack++)
 
 #define xsCall1(_THIS,_ID,_SLOT0) \
-	(xsOverflow(-3), \
-	fxPush(_SLOT0), \
-	fxPushCount(the, 1), \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
 	fxPop())
 
 #define xsCall1_noResult(_THIS,_ID,_SLOT0) \
-	(xsOverflow(-3), \
-	fxPush(_SLOT0), \
-	fxPushCount(the, 1), \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
 	the->stack++)
 
 #define xsCall2(_THIS,_ID,_SLOT0,_SLOT1) \
-	(xsOverflow(-4), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPushCount(the, 2), \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
 	fxPop())
 
 #define xsCall2_noResult(_THIS,_ID,_SLOT0,_SLOT1) \
-	(xsOverflow(-4), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPushCount(the, 2), \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
 	fxPush(_THIS), \
 	fxCallID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
 	the->stack++)
 
 #define xsCall3(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2) \
-	(xsOverflow(-5), \
+	(xsOverflow(-XS_FRAME_COUNT-3), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
-	fxPushCount(the, 3), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 3), \
 	fxPop())
 
 #define xsCall3_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2) \
-	(xsOverflow(-5), \
+	(xsOverflow(-XS_FRAME_COUNT-3), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
-	fxPushCount(the, 3), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 3), \
 	the->stack++)
 
 #define xsCall4(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
-	(xsOverflow(-6), \
+	(xsOverflow(-XS_FRAME_COUNT-4), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
-	fxPushCount(the, 4), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 4), \
 	fxPop())
 
 #define xsCall4_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
-	(xsOverflow(-6), \
+	(xsOverflow(-XS_FRAME_COUNT-4), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
-	fxPushCount(the, 4), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 4), \
 	the->stack++)
 
 #define xsCall5(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
-	(xsOverflow(-7), \
+	(xsOverflow(-XS_FRAME_COUNT-5), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
-	fxPushCount(the, 5), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 5), \
 	fxPop())
 
 #define xsCall5_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
-	(xsOverflow(-7), \
+	(xsOverflow(-XS_FRAME_COUNT-5), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
-	fxPushCount(the, 5), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 5), \
 	the->stack++)
 
 #define xsCall6(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
-	(xsOverflow(-8), \
+	(xsOverflow(-XS_FRAME_COUNT-6), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
-	fxPushCount(the, 6), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 6), \
 	fxPop())
 
 #define xsCall6_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
-	(xsOverflow(-8), \
+	(xsOverflow(-XS_FRAME_COUNT-6), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
-	fxPushCount(the, 6), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 6), \
 	the->stack++)
 
 #define xsCall7(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
-	(xsOverflow(-9), \
+	(xsOverflow(-XS_FRAME_COUNT-7), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -581,13 +586,13 @@ typedef short xsIndex;
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
-	fxPushCount(the, 7), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 7), \
 	fxPop())
 
 #define xsCall7_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
-	(xsOverflow(-9), \
+	(xsOverflow(-XS_FRAME_COUNT-7), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -595,13 +600,13 @@ typedef short xsIndex;
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
-	fxPushCount(the, 7), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 7), \
 	the->stack++)
 
 #define xsCall8(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
-	(xsOverflow(-10), \
+	(xsOverflow(-XS_FRAME_COUNT-8), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -610,13 +615,13 @@ typedef short xsIndex;
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
 	fxPush(_SLOT7), \
-	fxPushCount(the, 8), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 8), \
 	fxPop())
 
 #define xsCall8_noResult(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
-	(xsOverflow(-10), \
+	(xsOverflow(-XS_FRAME_COUNT-8), \
+	fxPush(_THIS), \
+	fxCallID(the, _ID), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -625,90 +630,91 @@ typedef short xsIndex;
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
 	fxPush(_SLOT7), \
-	fxPushCount(the, 8), \
-	fxPush(_THIS), \
-	fxCallID(the, _ID), \
+	fxRunCount(the, 8), \
 	the->stack++)
 
 #define xsCallFunction0(_FUNCTION,_THIS) \
-	(xsOverflow(-3), \
-	fxPushCount(the, 0), \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
 	fxPush(_THIS), \
 	fxPush(_FUNCTION), \
 	fxCall(the), \
+	fxRunCount(the, 0), \
 	fxPop())
 
 #define xsCallFunction1(_FUNCTION,_THIS,_SLOT0) \
-	(xsOverflow(-4), \
-	fxPush(_SLOT0), \
-	fxPushCount(the, 1), \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
 	fxPush(_THIS), \
 	fxPush(_FUNCTION), \
 	fxCall(the), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
 	fxPop())
 
 #define xsCallFunction2(_FUNCTION,_THIS,_SLOT0,_SLOT1) \
-	(xsOverflow(-5), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPushCount(the, 2), \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
 	fxPush(_THIS), \
 	fxPush(_FUNCTION), \
 	fxCall(the), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
 	fxPop())
 
 #define xsCallFunction3(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2) \
-	(xsOverflow(-6), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPushCount(the, 3), \
+	(xsOverflow(-XS_FRAME_COUNT-3), \
 	fxPush(_THIS), \
 	fxPush(_FUNCTION), \
 	fxCall(the), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxRunCount(the, 3), \
 	fxPop())
 
 #define xsCallFunction4(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
-	(xsOverflow(-7), \
+	(xsOverflow(-XS_FRAME_COUNT-4), \
+	fxPush(_THIS), \
+	fxPush(_FUNCTION), \
+	fxCall(the), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
-	fxPushCount(the, 4), \
-	fxPush(_THIS), \
-	fxPush(_FUNCTION), \
-	fxCall(the), \
+	fxRunCount(the, 4), \
 	fxPop())
 
 #define xsCallFunction5(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
-	(xsOverflow(-8), \
+	(xsOverflow(-XS_FRAME_COUNT-5), \
+	fxPush(_THIS), \
+	fxPush(_FUNCTION), \
+	fxCall(the), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
-	fxPushCount(the, 5), \
-	fxPush(_THIS), \
-	fxPush(_FUNCTION), \
-	fxCall(the), \
+	fxRunCount(the, 5), \
 	fxPop())
 
 #define xsCallFunction6(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
-	(xsOverflow(-9), \
+	(xsOverflow(-XS_FRAME_COUNT-6), \
+	fxPush(_THIS), \
+	fxPush(_FUNCTION), \
+	fxCall(the), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
 	fxPush(_SLOT3), \
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
-	fxPushCount(the, 6), \
-	fxPush(_THIS), \
-	fxPush(_FUNCTION), \
-	fxCall(the), \
+	fxRunCount(the, 6), \
 	fxPop())
 
 #define xsCallFunction7(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
-	(xsOverflow(-10), \
+	(xsOverflow(-XS_FRAME_COUNT-7), \
+	fxPush(_THIS), \
+	fxPush(_FUNCTION), \
+	fxCall(the), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -716,114 +722,14 @@ typedef short xsIndex;
 	fxPush(_SLOT4), \
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
-	fxPushCount(the, 7), \
-	fxPush(_THIS), \
-	fxPush(_FUNCTION), \
-	fxCall(the), \
+	fxRunCount(the, 7), \
 	fxPop())
 
 #define xsCallFunction8(_FUNCTION,_THIS,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
-	(xsOverflow(-11), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPush(_SLOT3), \
-	fxPush(_SLOT4), \
-	fxPush(_SLOT5), \
-	fxPush(_SLOT6), \
-	fxPush(_SLOT7), \
-	fxPushCount(the, 8), \
+	(xsOverflow(-XS_FRAME_COUNT-8), \
 	fxPush(_THIS), \
 	fxPush(_FUNCTION), \
 	fxCall(the), \
-	fxPop())
-
-#define xsNew0(_THIS,_ID) \
-	(xsOverflow(-2), \
-	fxPushCount(the, 0), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew1(_THIS,_ID,_SLOT0) \
-	(xsOverflow(-3), \
-	fxPush(_SLOT0), \
-	fxPushCount(the, 1), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew2(_THIS,_ID,_SLOT0,_SLOT1) \
-	(xsOverflow(-4), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPushCount(the, 2), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew3(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2) \
-	(xsOverflow(-5), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPushCount(the, 3), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew4(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
-	(xsOverflow(-6), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPush(_SLOT3), \
-	fxPushCount(the, 4), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew5(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
-	(xsOverflow(-7), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPush(_SLOT3), \
-	fxPush(_SLOT4), \
-	fxPushCount(the, 5), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew6(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
-	(xsOverflow(-8), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPush(_SLOT3), \
-	fxPush(_SLOT4), \
-	fxPush(_SLOT5), \
-	fxPushCount(the, 6), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew7(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
-	(xsOverflow(-9), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxPush(_SLOT2), \
-	fxPush(_SLOT3), \
-	fxPush(_SLOT4), \
-	fxPush(_SLOT5), \
-	fxPush(_SLOT6), \
-	fxPushCount(the, 7), \
-	fxPush(_THIS), \
-	fxNewID(the, _ID), \
-	fxPop())
-
-#define xsNew8(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
-	(xsOverflow(-10), \
 	fxPush(_SLOT0), \
 	fxPush(_SLOT1), \
 	fxPush(_SLOT2), \
@@ -832,9 +738,106 @@ typedef short xsIndex;
 	fxPush(_SLOT5), \
 	fxPush(_SLOT6), \
 	fxPush(_SLOT7), \
-	fxPushCount(the, 8), \
+	fxRunCount(the, 8), \
+	fxPop())
+
+#define xsNew0(_THIS,_ID) \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
+	fxRunCount(the, 0), \
+	fxPop())
+
+#define xsNew1(_THIS,_ID,_SLOT0) \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
+	fxPop())
+
+#define xsNew2(_THIS,_ID,_SLOT0,_SLOT1) \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
+	fxPop())
+
+#define xsNew3(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2) \
+	(xsOverflow(-XS_FRAME_COUNT-3), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxRunCount(the, 3), \
+	fxPop())
+
+#define xsNew4(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
+	(xsOverflow(-XS_FRAME_COUNT-4), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxPush(_SLOT3), \
+	fxRunCount(the, 4), \
+	fxPop())
+
+#define xsNew5(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
+	(xsOverflow(-XS_FRAME_COUNT-5), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxPush(_SLOT3), \
+	fxPush(_SLOT4), \
+	fxRunCount(the, 5), \
+	fxPop())
+
+#define xsNew6(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
+	(xsOverflow(-XS_FRAME_COUNT-6), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxPush(_SLOT3), \
+	fxPush(_SLOT4), \
+	fxPush(_SLOT5), \
+	fxRunCount(the, 6), \
+	fxPop())
+
+#define xsNew7(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
+	(xsOverflow(-XS_FRAME_COUNT-7), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxPush(_SLOT3), \
+	fxPush(_SLOT4), \
+	fxPush(_SLOT5), \
+	fxPush(_SLOT6), \
+	fxRunCount(the, 7), \
+	fxPop())
+
+#define xsNew8(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
+	(xsOverflow(-XS_FRAME_COUNT-8), \
+	fxPush(_THIS), \
+	fxNewID(the, _ID), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxPush(_SLOT2), \
+	fxPush(_SLOT3), \
+	fxPush(_SLOT4), \
+	fxPush(_SLOT5), \
+	fxPush(_SLOT6), \
+	fxPush(_SLOT7), \
+	fxRunCount(the, 8), \
 	fxPop())
 	
 #define xsTest(_SLOT) \
@@ -938,14 +941,14 @@ struct xsHostHooksStruct {
 
 #define xsVars(_COUNT) fxVars(the, _COUNT)
 
-#define xsArg(_INDEX) (the->frame[6 + fxCheckArg(the, _INDEX)])
-#define xsArgc (the->frame[5])
 #define xsThis (the->frame[4])
 #define xsFunction (the->frame[3])
 #define xsTarget (the->frame[2])
 #define xsResult (the->frame[1])
-#define xsVarc (the->frame[-1])
-#define xsVar(_INDEX) (the->frame[-2 - fxCheckVar(the, _INDEX)])
+#define xsArgc (the->frame[-1])
+#define xsArg(_INDEX) (the->frame[-2 - fxCheckArg(the, _INDEX)])
+#define xsVarc (the->scope[0])
+#define xsVar(_INDEX) (the->scope[-1 - fxCheckVar(the, _INDEX)])
 	
 /* Garbage Collector */
 
@@ -1171,7 +1174,7 @@ struct xsCreationRecord {
 	#ifndef __ets__
 		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception arrived in function %s at line %d\n", __FUNCTION__, __LINE__)
 	#else
-		// cannoot have __FUNCTION__ as the string is stored in RAM
+		// cannot have __FUNCTION__ as the string is stored in RAM
 		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception\n")
 	#endif
 #endif
@@ -1243,6 +1246,7 @@ typedef unsigned char xsAttribute;
 	enum {
 		XS_IMPORT_NAMESPACE = 0,
 		XS_IMPORT_DEFAULT = 1,
+		XS_IMPORT_PREFLIGHT = 2,
 	};
 #endif
 
@@ -1252,6 +1256,13 @@ typedef unsigned char xsAttribute;
 	fxAwaitImport(the, _FLAG), \
 	fxPop())
 
+enum {
+	xsDebuggerExit = 0,
+	xsNotEnoughMemoryExit,
+	xsStackOverflowExit,
+	xsFatalCheckExit,
+	xsDeadStripExit,
+};
 
 #ifndef __XSALL__
 
@@ -1261,7 +1272,6 @@ extern "C" {
 
 mxImport xsType fxTypeOf(xsMachine*, xsSlot*);
 
-mxImport void fxPushCount(xsMachine*, xsIntegerValue);
 mxImport void fxUndefined(xsMachine*, xsSlot*);
 mxImport void fxNull(xsMachine*, xsSlot*);
 mxImport void fxBoolean(xsMachine*, xsSlot*, xsBooleanValue);
@@ -1311,7 +1321,7 @@ mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
 mxImport void fxSetHostDestructor(xsMachine*, xsSlot*, xsDestructor);
 mxImport void* fxGetHostHandle(xsMachine*, xsSlot*);
 mxImport xsHostHooks* fxGetHostHooks(xsMachine*, xsSlot*);
-mxImport void fxSetHostHooks(xsMachine*, xsSlot*, xsHostHooks*);
+mxImport void fxSetHostHooks(xsMachine*, xsSlot*, const xsHostHooks*);
 
 mxImport xsIndex fxID(xsMachine*, const char*);
 mxImport xsIndex fxFindID(xsMachine*, char*);
@@ -1336,6 +1346,7 @@ mxImport void fxCall(xsMachine*);
 mxImport void fxCallID(xsMachine*, xsIntegerValue);
 mxImport void fxNew(xsMachine*);
 mxImport void fxNewID(xsMachine*, xsIntegerValue);
+mxImport void fxRunCount(xsMachine*, xsIntegerValue);
 mxImport xsBooleanValue fxRunTest(xsMachine* the);
 
 mxImport void fxVars(xsMachine*, xsIntegerValue);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2019  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -54,8 +54,8 @@ endif
 
 # Board settings for ESP-12E module (the most common); change for other modules
 FLASH_SIZE ?= 4M
-FLASH_MODE ?= dio
-FLASH_SPEED ?= 40
+FLASH_MODE ?= qio
+FLASH_SPEED ?= 80
 FLASH_LAYOUT ?= eagle.flash.4m.ld
 
 # WiFi & Debug settings
@@ -76,11 +76,7 @@ comma := ,
 NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
 endif
 
-ifneq ("$(wildcard $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a)", "")
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/components/esp8266/lib/libcirom.a
-else
-	LIBCIROM_PATH = $(ESPRESSIF_SDK_ROOT)/lib/libcirom.a
-endif
+NEWLIBC_PATH = $(ESPRESSIF_SDK_ROOT)/components/newlib/newlib/lib/libc.a
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
 INC_DIRS = \
@@ -88,7 +84,8 @@ INC_DIRS = \
  	$(ESP_TOOLS_SDK_ROOT)/lwip/include \
  	$(CORE_DIR) \
  	$(ARDUINO_ROOT)/variants/generic \
- 	$(ARDUINO_ROOT)/cores/esp8266/spiffs
+ 	$(ARDUINO_ROOT)/cores/esp8266/spiffs \
+	$(PLATFORM_DIR)/lib/tinyi2s/
 SDK_SRC = \
 	$(ARDUINO_ESP8266)/abi.cpp \
 	$(ARDUINO_ESP8266)/cont.S \
@@ -116,6 +113,7 @@ SDK_SRC = \
 	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
+	$(PLATFORM_DIR)/lib/tinyi2s/tinyi2s.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
 	$(PLATFORM_DIR)/lib/tinyuart/tinyuart.c
 
@@ -150,8 +148,6 @@ SDK_OBJ = $(subst .ino,.cpp,$(patsubst %,$(LIB_DIR)/%.o,$(notdir $(SDK_SRC))))
 SDK_DIRS = $(sort $(dir $(SDK_SRC)))
     
 XS_OBJ = \
-	$(LIB_DIR)/xsHost.c.o \
-	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -298,13 +294,18 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
-		LAUNCH = debugmac
+		LAUNCH = debug
+		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 	else
-		LAUNCH = debuglin
+		LAUNCH = debug
+		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 	endif
 else
 	LAUNCH = release
 endif
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 
 ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)/components/esp8266/firmware
@@ -320,7 +321,7 @@ endif
 
 ESPTOOL_FLASH_OPT = \
 	--flash_freq $(FLASH_SPEED)m \
-	--flash_mode dout \
+	--flash_mode $(FLASH_MODE) \
 	--flash_size $(FLASH_SIZE)B \
 	0x0000 $(ESP_BOOTLOADER_BIN) \
 	0x1000 $(BIN_DIR)/main.bin \
@@ -332,28 +333,38 @@ UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ES
 
 all: $(LAUNCH)
 
-debuglin: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(shell pkill serial2xsbug)
-	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-	$(UPLOAD_TO_ESP)
-#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
-	$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+build: $(LIB_DIR) $(BIN_DIR)/main.bin
 
-debugmac: $(LIB_DIR) $(BIN_DIR)/main.bin
-	$(shell pkill serial2xsbug)
-	open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+deploy:
+	@echo "# uploading to esp"
 	$(UPLOAD_TO_ESP)
-#	@echo "# using DEBUGGER_SPEED $(DEBUGGER_SPEED)"
-	$(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+
+
+xsbug:
+	@echo "# starting xsbug"
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(START_SERIAL2XSBUG)
+
+debug: build
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(UPLOAD_TO_ESP)
+	$(START_SERIAL2XSBUG)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(UPLOAD_TO_ESP)
+
+clean:
+	echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 
-$(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld main.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.cpp
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(XS_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.cpp
@@ -366,12 +377,21 @@ $(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/m
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	@$(TOOLS_BIN)/xtensa-lx106-elf-size -A $(TMP_DIR)/main.elf | perl -e $(MEM_USAGE)
 
-$(LIB_DIR)/lib_a-setjmp.o: $(LIBCIROM_PATH)
+$(LIB_DIR)/lib_a-setjmp.o: $(NEWLIBC_PATH)
 	@echo "# ar" $(<F)
 	(cd $(LIB_DIR) && $(AR) -xv $< lib_a-setjmp.o)
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
+	@echo "# cc" $(<F) "(strings in flash + force-l32)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
+	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
+	
+$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+	@echo "# cc" $(<F) "(strings in flash + force-l32)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
+	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
+$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash + force-l32)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@

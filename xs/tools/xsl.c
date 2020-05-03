@@ -51,7 +51,6 @@
 #endif
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
-static void fxFreezeBuiltIn(txMachine* the);
 static void fxFreezeBuiltIns(txMachine* the);
 static txScript* fxLoadScript(txMachine* the, txString path);
 
@@ -90,7 +89,7 @@ int main(int argc, char* argv[])
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
 		1024,				/* stackCount */
-		2048+2048,			/* keyCount */
+		2048 * 4,			/* keyCount */
 		1993,				/* nameModulo */
 		127,				/* symbolModulo */
 		32 * 1024,			/* parserBufferSize */
@@ -241,6 +240,8 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
+
+		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
 		size = c_strlen(base);
 		script = linker->firstScript;
@@ -248,6 +249,22 @@ int main(int argc, char* argv[])
 			fxBaseScript(linker, script, base, size);
 			fxSlashPath(script->path, mxSeparator, url[0]);
 			script = script->nextScript;
+		}
+		preload = linker->firstPreload;
+		while (preload) {
+			fxSlashPath(preload->name, mxSeparator, url[0]);
+			script = linker->firstScript;
+			while (script) {
+				if (!c_strcmp(preload->name, script->path)) {
+					script->preload = preload;
+					break;
+				}
+				script = script->nextScript;
+			}
+			if (!script) {
+				fxReportLinkerError(linker, "'%s': module not found", preload->name);
+			}
+			preload = preload->nextPreload;
 		}
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
@@ -299,7 +316,8 @@ int main(int argc, char* argv[])
 			creation->symbolModulo = linker->creation.symbolModulo;
 			the = xsCreateMachine(creation, "xsl", linker);
 			mxThrowElse(the);
-			
+			fxNewLinkerCallback(the, fx_Function_prototype_bound, "fx_Function_prototype_bound");
+				
 			xsBeginHost(the);
 			{
 				xsVars(2);
@@ -322,41 +340,10 @@ int main(int argc, char* argv[])
 							xsCollectGarbage();
 							preload = preload->nextPreload;
 						}
-						{
-							txSlot* property;
-							property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-							property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-							property->kind = mxThrowTypeErrorFunction.kind;
-							property->value = mxThrowTypeErrorFunction.value;
-						}
-						{
-							txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-							txSlot* modules = mxRequiredModules(realm)->value.reference;
-							txSlot* module = modules->next;
-							while (module) {
-								mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-								module = module->next;
-							}
-							mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-							mxProgram.value.reference = modules; //@@
-							mxPendingJobs = mxUndefined;
-							mxRunningJobs = mxUndefined;
-							mxBreakpoints = mxUndefined;
-							mxHostInspectors = mxUndefined;
-							mxInstanceInspectors = mxUndefined;
-						}
-						if (linker->stripFlag) {
-							fxFreezeBuiltIns(the);
-							mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
-							mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
+						while (linker->promiseJobsFlag) {
+							linker->promiseJobsFlag = 0;
+							fxRunPromiseJobs(the);
+							xsCollectGarbage();
 						}
 					}
 					xsCatch {
@@ -366,90 +353,103 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
-			
-			if (linker->stripFlag)
+			xsBeginHost(the);
+			{
+				{
+					txCallback callback;
+					txSlot* property;
+					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
+
+					fxDuplicateInstance(the, mxDateConstructor.value.reference);
+					callback = mxCallback(fx_Date_secure);
+					fxNewLinkerBuilder(linker, callback, 7, mxID(_Date));
+					property = mxFunctionInstanceCode(the->stack->value.reference);
+					property->value.callback.address = callback;
+		
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), XS_NO_ID, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
+					
+					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = the->stack->kind;
+					property->value = the->stack->value;
+					mxPull(mxDateConstructor);
+
+					fxDuplicateInstance(the, mxMathObject.value.reference);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), XS_NO_ID, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+					mxPull(mxMathObject);
+				}
+				{
+					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+					txSlot* modules = mxOwnModules(realm)->value.reference;
+					txSlot* module = modules->next;
+					while (module) {
+						mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+						module = module->next;
+					}
+					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+                    mxException.kind = XS_REFERENCE_KIND;
+                    mxException.value.reference = mxRealmClosures(realm)->value.reference;
+					mxProgram.value.reference = modules; //@@
+				}
+				{
+					txSlot* target = fxNewInstance(the);
+					script = linker->firstScript;
+					c_memcpy(path, linker->base, linker->baseLength);
+					while (script) {
+						target = target->next = fxNewSlot(the);
+						c_strcpy(path + linker->baseLength, script->path);
+						target->value.symbol = fxNewNameC(the, path);
+						target->kind = XS_SYMBOL_KIND;
+						path[c_strlen(path) - 4] = 0;
+						target->ID = fxNewNameC(the, path + linker->baseLength);
+						script = script->nextScript;
+					}
+					mxPull(mxHosts); //@@
+				}
+				if (linker->freezeFlag) {
+					fxFreezeBuiltIns(the);
+				}
+				if (linker->stripFlag) {
+					mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
+					mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
+				}
+			}
+			xsEndHost(the);
+			mxDuringJobs = mxUndefined;
+			mxFinalizationRegistries = mxUndefined;
+			mxPendingJobs = mxUndefined;
+			mxRunningJobs = mxUndefined;
+			mxBreakpoints = mxUndefined;
+			mxHostInspectors = mxUndefined;
+			mxInstanceInspectors = mxUndefined;
+		
+			if (linker->stripFlag) {
+				fxPrepareHome(the);
 				fxStripCallbacks(linker, the);
+			}
 			else
 				fxUnstripCallbacks(linker);
 			
 			linker->bigintSize = 0;
-			count = fxPrepareHeap(the, linker->stripFlag);
-// 			fxCheckAliases(the);
-			
-// 			if (optimizing) {
-// 				linker->realm = the;
-// 				fxOptimize(linker);
-// 				linker->realm = NULL;
-// 				xsDeleteMachine(the);
-// 				linker->firstCallback = NULL;
-// 				linker->firstBuilder = NULL;
-// 				linker->lastBuilder = NULL;
-// 				linker->builderCount = 0;
-// 				linker->firstProjection = NULL;
-// 				script = linker->firstScript;
-// 				while (script) {
-// 					script->builders = C_NULL;
-// 					script->callbackNames = C_NULL;
-// 					script->hostsCount = 0;
-// 					script = script->nextScript;
-// 				}
-// 				the = xsCreateMachine(creation, "xsl", linker);
-// 				mxThrowElse(the);
-// 				xsBeginHost(the);
-// 				{
-// 					xsVars(2);
-// 					{
-// 						xsTry {
-// 							preload = linker->firstPreload;
-// 							while (preload) {
-// 								fxSlashPath(preload->name, mxSeparator, url[0]);
-// 								xsResult = xsCall1(xsGlobal, xsID("require"), xsString(preload->name));
-// 								preload = preload->nextPreload;
-// 							}
-// 							{
-// 								txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-// 								txSlot* modules = mxRequiredModules(realm)->value.reference;
-// 								txSlot* module = modules->next;
-// 									fprintf(stderr, "%p %p %p\n", realm, modules, module);
-// 								while (module) {
-// 								fprintf(stderr, "%p\n", module);
-// 									mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-// 									module = modules->next;
-// 								}
-// 								mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-// 								mxProgram.value.reference = modules; //@@
-// 								mxPendingJobs = mxUndefined;
-// 								mxRunningJobs = mxUndefined;
-// 								mxBreakpoints = mxUndefined;
-// 								mxHostInspectors = mxUndefined;
-// 								mxInstanceInspectors = mxUndefined;
-// 							}
-// 							if (linker->stripping)
-// 								fxFreezeBuiltIns(the);
-// 							xsCollectGarbage();
-// 						}
-// 						xsCatch {
-// 							xsStringValue message = xsToString(xsException);
-// 							fxReportLinkerError(linker, "%s", message);
-// 						}
-// 					}
-// 				}
-// 				xsEndHost(the);
-// 				if (stripping)
-// 					fxStripCallbacks(linker, the);
-// 				else
-// 					fxUnstripCallbacks(linker);
-// 				strip = linker->firstStrip;
-// 				while (strip) {
-// 					fxStripName(linker, strip->name);
-// 					strip = strip->nextStrip;
-// 				}
-// 				linker->bigintSize = 0;
-// 				count = fxPrepareHeap(the, stripping || linker->firstStrip);
-// 			}
-
-// 			globalCount = the->stackTop[-1].value.reference->next->value.table.length;
-	
+			linker->slotSize = 0;
+			count = fxPrepareHeap(the);
+			if (linker->freezeFlag) {
+				txInteger count = fxCheckAliases(the);
+				if (count)
+					fxReportLinkerError(linker, "%d error(s)", count);
+			}
 			c_strcpy(path, output);
 			c_strcat(path, name);
 			c_strcat(path, ".xs.h");
@@ -512,23 +512,30 @@ int main(int argc, char* argv[])
 				linker->bigintData = fxNewLinkerChunk(linker, linker->bigintSize * sizeof(txU4));
 				linker->bigintSize = 0;
 			}
+			if (linker->slotSize) {
+				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
+				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR;\n");
+				linker->slotData = fxNewLinkerChunk(linker, linker->slotSize * sizeof(txSlot*));
+				linker->slotSize = 0;
+			}
 			fprintf(file, "#define mxHeapCount %d\n", (int)count);
 			fprintf(file, "static const txSlot gxHeap[mxHeapCount];\n");
 			fprintf(file, "#define mxStackCount %ld\n", (long)(the->stackTop - the->stack));
 			fprintf(file, "static const txSlot gxStack[mxStackCount];\n");
 			fprintf(file, "#define mxKeysCount %d\n", the->keyIndex);
-			fprintf(file, "static const txSlot* gxKeys[mxKeysCount];\n");
+			fprintf(file, "static const txSlot* const gxKeys[mxKeysCount];\n");
 			fprintf(file, "#define mxNamesCount %d\n", the->nameModulo);
-			fprintf(file, "static const txSlot* gxNames[mxNamesCount];\n");
+			fprintf(file, "static const txSlot* const gxNames[mxNamesCount];\n");
 			fprintf(file, "#define mxSymbolsCount %d\n", the->symbolModulo);
-			fprintf(file, "static const txSlot* gxSymbols[mxSymbolsCount];\n");
+			fprintf(file, "static const txSlot* const gxSymbols[mxSymbolsCount];\n");
 // 			fprintf(file, "#define mxGlobalsCount %d\n", (int)globalCount);
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount];\n");
 			script = linker->firstScript;
 			while (script) {
 				if (script->hostsBuffer)
 					fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
-				fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
+				if (script->preload == C_NULL)
+					fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
 				script = script->nextScript;
 			}
 			fprintf(file, "#define mxScriptsCount %d\n", linker->scriptCount);
@@ -536,7 +543,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "static const txPreparation gxPreparation;\n\n");
 		
 			if (linker->stripFlag) {
-				fprintf(file, "static void fxDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n\n");
+				fprintf(file, "static void fxDeadStrip(txMachine* the) { fxAbort(the, XS_DEAD_STRIP_EXIT); }\n\n");
 				fxPrintBuilders(the, file);
 			}
 			script = linker->firstScript;
@@ -575,16 +582,21 @@ int main(int argc, char* argv[])
 				}
 				fprintf(file, "\n};\n\n");
 			}
+			if (linker->slotSize) {
+				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR = {\n");
+				fxPrintTable(the, file, linker->slotSize, linker->slotData);
+				fprintf(file, "};\n\n");
+			}
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 // 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
 // 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->keyIndex, the->keyArray);
 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxNames[mxNamesCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxNames[mxNamesCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->nameModulo, the->nameTable);
 			fprintf(file, "};\n\n");
-			fprintf(file, "static const txSlot* gxSymbols[mxSymbolsCount] ICACHE_FLASH1_ATTR = {\n");
+			fprintf(file, "static const txSlot* const gxSymbols[mxSymbolsCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->symbolModulo, the->symbolTable);
 			fprintf(file, "};\n\n");
 			fprintf(file, "static const txPreparation gxPreparation = {\n");
@@ -766,87 +778,99 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	*id = XS_NO_ID;
 	return 0;
 }
-
-void fxFreezeBuiltIn(txMachine* the)
-{
-	mxPushInteger(1);
-	mxPush(mxObjectConstructor);
-	fxCallID(the, mxID(_freeze));
-	mxPop();
-}
-
+	
 void fxFreezeBuiltIns(txMachine* the)
 {
+#define mxFreezeBuiltInCall \
+	mxPush(mxObjectConstructor); \
+	mxPushSlot(freeze); \
+	mxCall()
+#define mxFreezeBuiltInRun \
+	mxRunCount(1); \
+	mxPop()
+
+	txSlot* freeze;
 	txInteger index;
 	const txTypeDispatch *dispatch;
+	mxTemporary(freeze);
+	mxPush(mxObjectConstructor);
+	fxGetID(the, mxID(_freeze));
+	mxPullSlot(freeze);
 	
-	mxPush(mxAtomicsObject); fxFreezeBuiltIn(the);
-	mxPush(mxJSONObject); fxFreezeBuiltIn(the);
-	mxPush(mxMathObject); fxFreezeBuiltIn(the);
-	mxPush(mxReflectObject); fxFreezeBuiltIn(the);
+	mxFreezeBuiltInCall; mxPush(mxAtomicsObject); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxJSONObject); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMathObject); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGlobal); fxGetID(the, mxID(_Math)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxReflectObject); mxFreezeBuiltInRun;
 
-	mxPush(mxArgumentsSloppyPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxArgumentsStrictPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxArrayBufferPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxArrayIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxArrayPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxAsyncFromSyncIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxAsyncFunctionPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxAsyncGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxAsyncGeneratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxAsyncIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxBigIntPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxBooleanPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxCompartmentPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxDataViewPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxDatePrototype); fxFreezeBuiltIn(the);
-	mxPush(mxErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxEvalErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxFunctionPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxGeneratorFunctionPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxGeneratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxHostPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxMapEntriesIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxMapKeysIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxMapPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxMapValuesIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxModulePrototype); fxFreezeBuiltIn(the);
-	mxPush(mxNumberPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxObjectPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxPromisePrototype); fxFreezeBuiltIn(the);
-	mxPush(mxProxyPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxRangeErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxReferenceErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxRegExpPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxRegExpStringIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSetEntriesIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSetKeysIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSetPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSetValuesIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSharedArrayBufferPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxStringIteratorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxStringPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSymbolPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxSyntaxErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxTransferPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxTypedArrayPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxTypeErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxURIErrorPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxWeakMapPrototype); fxFreezeBuiltIn(the);
-	mxPush(mxWeakSetPrototype); fxFreezeBuiltIn(the);
+	mxFreezeBuiltInCall; mxPush(mxAggregateErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArgumentsSloppyPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArgumentsStrictPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArrayBufferPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArrayIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncFromSyncIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncFunctionPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncGeneratorFunctionPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncGeneratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxBigIntPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxBooleanPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxCompartmentPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxDataViewPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxDatePrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxEvalErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxFinalizationRegistryPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxFunctionPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGeneratorFunctionPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGeneratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxHostPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMapEntriesIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMapKeysIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMapPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMapValuesIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxModulePrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxNumberPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxObjectPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxPromisePrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxProxyPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxRangeErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxReferenceErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxRegExpPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxRegExpStringIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSetEntriesIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSetKeysIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSetPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSetValuesIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSharedArrayBufferPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxStringIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxStringPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSymbolPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSyntaxErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxTransferPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxTypedArrayPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxTypeErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxURIErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxWeakMapPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxWeakRefPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxWeakSetPrototype); mxFreezeBuiltInRun;
 	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
+		mxFreezeBuiltInCall; 
 		mxPush(the->stackPrototypes[-1 - dispatch->constructorID]);
 		fxGetID(the, mxID(_prototype));
-		fxFreezeBuiltIn(the);
+		mxFreezeBuiltInRun;
 	}
-	mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); fxFreezeBuiltIn(the);
+	mxFreezeBuiltInCall; mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); mxFreezeBuiltInRun;
 	
-	mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); fxFreezeBuiltIn(the);
+	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); mxFreezeBuiltInRun;
 	
-	mxPush(mxProgram); fxFreezeBuiltIn(the); //@@
+	mxFreezeBuiltInCall; mxPush(mxProgram); mxFreezeBuiltInRun; //@@
+	mxFreezeBuiltInCall; mxPush(mxHosts); mxFreezeBuiltInRun; //@@
 	
+	mxPop();
 }
 
 void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
@@ -888,7 +912,24 @@ txScript* fxLoadScript(txMachine* the, txString path)
 
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
-	return C_NULL;
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
 }
 
 /* DEBUG */
@@ -906,12 +947,26 @@ void fxDeleteMachinePlatform(txMachine* the)
 {
 }
 
-#ifdef mxDebug
-
-void fxAbort(txMachine* the)
+void fxQueuePromiseJobs(txMachine* the)
 {
-	c_exit(0);
+	txLinker* linker = (txLinker*)(the->context);
+	linker->promiseJobsFlag = 1;
 }
+
+void fxAbort(txMachine* the, int status)
+{
+	mxTry(the) {
+		if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
+			mxUnknownError("not enough memory");
+		else if (status == XS_STACK_OVERFLOW_EXIT)
+			mxUnknownError("stack overflow");
+	}
+	mxCatch(the) {
+	}
+	c_exit(status);
+}
+
+#ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {
