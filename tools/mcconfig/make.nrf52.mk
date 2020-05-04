@@ -21,7 +21,7 @@ HOST_OS := $(shell uname)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
 
-NRF_ROOT ?= $(HOME)/nRF5
+NRF_ROOT ?= $(HOME)/nrf5
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
@@ -30,10 +30,14 @@ NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
 UF2_VOLUME_NAME ?= MODDABLE4
 
 ifeq ($(HOST_OS),Darwin)
-	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile /Volumes/$(UF2_VOLUME_NAME)
+	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
+	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile $(UF2_VOLUME_PATH)
+	NRF_SERIAL_FILTER = cu.*
+	GET_UF2_VOLUME_PATH =
 else
-	# need to tweak the path for linux from /Volumes/whatever
-	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile /Volumes/$(UF2_VOLUME_NAME)
+	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForVolume $(UF2_VOLUME_NAME) $(TMP_DIR)
+	NRF_SERIAL_FILTER = ttyACM*
+	GET_UF2_VOLUME_PATH = $(eval UF2_VOLUME_PATH := $(shell cat $(TMP_DIR)/volumename))
 endif
 
 GNU_VERSION ?= 8.2.1
@@ -268,6 +272,7 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)/debugger.c.o \
 	$(TMP_DIR)/ftdi_trace.c.o \
 	$(TMP_DIR)/main.c.o \
+	$(TMP_DIR)/debugger_usbd.c.o
 
 SDK_GLUE_DIRS = \
 	$(BUILD_DIR)/devices/nrf52/base \
@@ -423,8 +428,7 @@ NRF_USBD = \
 	$(LIB_DIR)/app_usbd_core.c.o \
 	$(LIB_DIR)/app_usbd_serial_num.c.o \
 	$(LIB_DIR)/app_usbd_string_desc.c.o \
-	$(LIB_DIR)/nrfx_usbd.c.o \
-	$(TMP_DIR)/debugger_usbd.c.o
+	$(LIB_DIR)/nrfx_usbd.c.o
 
 OBJECTS += \
 	$(BOARD_SUPPORT) \
@@ -457,7 +461,11 @@ SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
 
 AR_FLAGS = crs
 
+ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+endif
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
@@ -579,27 +587,23 @@ MEM_USAGE = \
 	 print "\# Memory usage\n";\
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
-#-----------------
 ifeq ($(DEBUG),1)
+	WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial $(UF2_VOLUME_PATH) $(NRF_SERIAL_FILTER) 1 $(MODDABLE_TOOLS_DIR)/serial2xsbug
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		DO_LAUNCH =
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 1
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		DO_LAUNCH = 
-		WAIT_FOR_NEW_SERIAL =
 	endif
 else
+	WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial $(UF2_VOLUME_PATH) $(NRF_SERIAL_FILTER) 0
 	KILL_SERIAL_2_XSBUG =
 	DO_XSBUG =
 	DO_LAUNCH = 
-	WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 0
 endif
-
-#-----------------
 
 VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
@@ -610,10 +614,11 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(WAIT_FOR_M4)
+	$(GET_UF2_VOLUME_PATH)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
-	cp $(BIN_DIR)/xs_nrf52.uf2 /Volumes/$(UF2_VOLUME_NAME)
+	cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH)
 	$(WAIT_FOR_NEW_SERIAL)
 
 precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex

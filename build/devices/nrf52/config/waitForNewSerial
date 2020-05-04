@@ -1,20 +1,25 @@
 #!/bin/bash
-# first, wait for the M4 to go away
-NAME=/Volumes/MODDABLE4
-echo -n "Installing to $NAME.."
-while [ -d "$NAME" ]; do
+
+name=$1
+filter=$2
+debug=$3
+serial2xsbug=$4
+
+# wait for the M4 to go away
+echo -n "Installing to $name..."
+while [ -d "$name" ]; do
      echo -n "."
      sleep 0.1
 done
 echo
 
-if [ $1 -eq 0 ]; then
+if [ $debug -eq 0 ]; then
 	echo "Release build installed."
 	exit
 fi
 
-# find /dev -type c -name "cu.*"
-original=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
+# save original serial port
+original=( $(find /dev -type c -name "$filter" 2> /dev/null) )
 
 fileToCompare=""
 
@@ -58,7 +63,7 @@ newOne=0
 
 while [ $newOne -eq 0 ]; do
 	sleep 0.1
-	compare=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
+	compare=( $(find /dev -type c -name "$filter" 2> /dev/null) )
 
 	findNew "${compare[@]}"
 	if [ 1 -eq $? ]; then
@@ -67,5 +72,6 @@ while [ $newOne -eq 0 ]; do
 	
 done
 
-${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+echo "Debug build installed."
+${serial2xsbug} ${fileToCompare} 921600 8N1 -dtr
 
