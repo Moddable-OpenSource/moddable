@@ -346,6 +346,9 @@ LAUNCH = release
 PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 !ENDIF
 
+PARTITIONS_BIN = partition-table.bin
+PARTITIONS_PATH = $(IDF_BUILD_DIR)\partition_table\$(PARTITIONS_BIN)
+
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
 	$(PROJ_DIR)\main\component.mk	\
@@ -439,12 +442,36 @@ xsbug:
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
 
-deploy:
+DEPLOY_PRE:
 	$(KILL_SERIAL2XSBUG)
+	if not exist $(BIN_DIR)\xs_esp32.bin echo "Please build before deploy"
+	if not exist $(BIN_DIR)\xs_esp32.bin exit 1
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin move /Y $(IDF_BUILD_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)\xs_esp32.bin_prev
+	if exist $(PARTITIONS_PATH) move /Y $(PARTITIONS_PATH) $(PARTITIONS_PATH)_prev
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin_prev
+
+DEPLOY_START:
+	if exist $(BIN_DIR)\xs_esp32.bin copy $(BIN_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)
+	if exist $(BIN_DIR)\$(PARTITIONS_BIN) copy $(BIN_DIR)\$(PARTITIONS_BIN) $(PARTITIONS_PATH)
+	if exist $(BIN_DIR)\bootloader.bin  copy $(BIN_DIR)\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(BIN_DIR)\ota_data_initial.bin copy $(BIN_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin
 	set HOME=$(PROJ_DIR)
 	cd $(PROJ_DIR)
 	echo $(DEPLOY_CMD)
 	$(DEPLOY_CMD)
+
+DEPLOY_END:
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin del $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(PARTITIONS_PATH) del $(PARTITIONS_PATH)
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin del $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin del $(IDF_BUILD_DIR)\ota_data_initial.bin
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin_prev move /Y $(IDF_BUILD_DIR)\xs_esp32.bin_prev $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(PARTITIONS_PATH)_prev move /Y $(PARTITIONS_PATH)_prev $(PARTITIONS_PATH)
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin_prev move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin_prev $(IDF_BUILD_DIR)\ota_data_initial.bin
+
+deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp

@@ -295,7 +295,8 @@ ifeq ($(ESP32_CMAKE),1)
 	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	RELEASE_LAUNCH_CMD = idf.py -B $(IDF_BUILD_DIR) $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL)
-	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partition_table/partition-table.bin
+	PARTITIONS_BIN = partition-table.bin
+	PARTITIONS_PATH = $(IDF_BUILD_DIR)/partition_table/$(PARTITIONS_BIN)
 else
 	BUILD_AND_FLASH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 	BUILD_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make --silent
@@ -303,7 +304,8 @@ else
 	DEPLOY_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 	IDF_RECONFIGURE_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig
 	RELEASE_LAUNCH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
-	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partitions.bin
+	PARTITIONS_BIN = partitions.bin
+	PARTITIONS_PATH = $(IDF_BUILD_DIR)/$(PARTITIONS_BIN)
 	ifeq ($(HOST_OS),Darwin)
 		SERIAL2XSBUG_PORT = `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'`
 	else
@@ -342,15 +344,35 @@ all: precursor
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(PARTITIONS_PATH) $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	cd $(PROJ_DIR); \
 	$(DO_LAUNCH)
 
-deploy:
+DEPLOY_PRE:
+	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to esp32"
+	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)/xs_esp32.bin_prev 2>/dev/null
+	-@mv $(PARTITIONS_PATH) $(PARTITIONS_BIN)_prev 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin_prev 2>&1
+
+DEPLOY_START:
+	-cp $(BIN_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)
+	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
+	-cp $(BIN_DIR)/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin
+	-cp $(BIN_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
+
+DEPLOY_END:
+	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin_prev $(IDF_BUILD_DIR)/xs_esp32.bin 2>/dev/null
+	-@mv $(PARTITIONS_BIN)_prev $(PARTITIONS_PATH) 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev $(IDF_BUILD_DIR)/bootloader/bootloader.bin 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin_prev $(IDF_BUILD_DIR)/ota_data_initial.bin 2>/dev/null
+
+deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 xsbug:
 	@echo "# starting xsbug"
@@ -373,7 +395,7 @@ build: precursor
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
-	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(PARTITIONS_PATH) $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
 	echo "#"
 	echo "# Built files at $(BIN_DIR)"
