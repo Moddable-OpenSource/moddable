@@ -1107,6 +1107,10 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				}
 			}
 			if ((2 == zeros) && key) {
+				if (NULL != c_strstr(key, "password")) {
+					resultCode = -4;
+					break;
+				}
 #if ESP32
 				nvs_handle handle;
 				resultCode = -1;
