@@ -75,7 +75,7 @@ class VerticalBottomKeyRowBehavior extends BottomKeyRowBehavior {
 		x = offsets[4];
 		port.drawTexture(texture, color, x, 0, 0, 0, widths[0], keyHeight);
 		if (!expanded)
-			port.drawString(keyboard.ok, port.container.style, Colors.TEXTDOWN, x + ((40 - keyboard.okMeasure.width) >> 1), ((keyHeight - keyboard.okMeasure.height) >> 1) - 1, widths[4], keyboard.okMeasure.height);
+			port.drawString(keyboard.ok, port.container.style, Colors.TEXTDOWN, x + ((40 - keyboard.okMeasure.width - 2) >> 1), ((keyHeight - keyboard.okMeasure.height + 2) >> 1) - 2, widths[4], keyboard.okMeasure.height);
 		else
 			port.drawTexture(glyphTexture, Colors.TEXTDOWN, x + (widths[4] >> 1) - 16, 10, 51, 0, 32, 20);
 		

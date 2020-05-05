@@ -26,7 +26,7 @@ void xs_hex_toString(xsMachine *the)
 	int argc = xsmcArgc;
 	const uint8_t *bytes;
 	char *string;
-	int i, length = xsGetArrayBufferLength(xsArg(0));
+	int i, length = xsmcGetArrayBufferLength(xsArg(0));
 	char separator = 0;
 	static const char *gHex = "0123456789ABCDEF";
 
@@ -73,7 +73,7 @@ void xs_hex_toBuffer(xsMachine *the)
 		xsUnknownError("bad string length");
 
 	length = separator ? ((length + 1) / 3) : (length / 2);
-	xsResult = xsArrayBuffer(NULL, length);
+	xsmcSetArrayBuffer(xsResult, NULL, length);
 	bytes = xsmcToArrayBuffer(xsResult);
 	string = xsmcToString(xsArg(0));		// refresh
 	for (i = 0; i < length; i++) {

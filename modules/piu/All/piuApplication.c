@@ -134,15 +134,15 @@ void PiuApplicationDeferContents(xsMachine* the, PiuApplication* self)
 			if (xsFindResult(xsVar(0), (*link)->id)) {
 				xsVar(1) = xsReference((*content)->reference);
 				c = (*link)->argc;
-				xsOverflow(-4 - c);
+				xsOverflow(-(XS_FRAME_COUNT + 1 + c));
+				fxPush(xsVar(0));
+				fxPush(xsResult);
+				fxCall(the);
 				fxPush(xsVar(1));
 				for (i = 0; i < c; i++) {
 					fxPush((*link)->argv[i]);
 				}
-				fxPushCount(the, 1 + c);
-				fxPush(xsVar(0));
-				fxPush(xsResult);
-				fxCall(the);
+				fxRunCount(the, 1 + c);
 				the->stack++;
 			}
 		}

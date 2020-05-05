@@ -790,7 +790,7 @@ export default class extends Tool {
 		else
 			path += this.slash + "release";
 		this.createDirectory(path);
-		if ((platform == "mac") || (platform == "win") || (platform == "lin")) {
+		if ((platform == "lin") || (platform == "mac") || (platform == "win")) {
 			path += this.slash + "mc";
 			this.createDirectory(path);
 		}

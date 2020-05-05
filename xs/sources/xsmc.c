@@ -141,14 +141,14 @@ void _xsCall(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	for (n = 0; va_arg(ap, txSlot *) != NULL; n++)
 		;
 	va_end(ap);
-	fxOverflow(the, -(n+2), C_NULL, 0);
+	fxOverflow(the, -(n+6), C_NULL, 0);
+	fxPush(*self);
+	fxCallID(the, id);
 	va_start(ap, id);
 	while ((v = va_arg(ap, txSlot *)) != NULL)
 		fxPush(*v);
 	va_end(ap);
-	fxInteger(the, --the->stack, n);
-	fxPush(*self);
-	fxCallID(the, id);
+	fxRunCount(the, n);
 	if (res != NULL)
 		*res = fxPop();
 	else
@@ -165,14 +165,14 @@ void _xsNew(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	for (n = 0; va_arg(ap, txSlot *) != NULL; n++)
 		;
 	va_end(ap);
-	fxOverflow(the, -(n+2), C_NULL, 0);
+	fxOverflow(the, -(n+6), C_NULL, 0);
+	fxPush(*self);
+	fxNewID(the, id);
 	va_start(ap, id);
 	while ((v = va_arg(ap, txSlot *)) != NULL)
 		fxPush(*v);
 	va_end(ap);
-	fxInteger(the, --the->stack, n);
-	fxPush(*self);
-	fxNewID(the, id);
+	fxRunCount(the, n);
 	*res = fxPop();
 }
 
@@ -185,7 +185,7 @@ txBoolean _xsTest(txMachine *the, txSlot *v)
 
 txInteger fxIncrementalVars(txMachine* the, txInteger theCount)
 {
-	txSlot* aStack = the->frame - 1;
+	txSlot* aStack = the->scope;
 	txInteger aVar;
 
 	if (aStack - aStack->value.integer != the->stack) {

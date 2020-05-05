@@ -44,6 +44,7 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxNewGeneratorFunctionInstance,
 	fxNewAsyncGeneratorInstance,
 	fxNewAsyncGeneratorFunctionInstance,
+	fxRunForAwaitOf,
 	fxNewArgumentsSloppyInstance,
 	fxNewArgumentsStrictInstance,
 	fxRunEval,
@@ -53,11 +54,12 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxTerminateSharedCluster,
 	fxNewFunctionLength,
 	fxNewFunctionName,
+	fxExecuteModules,
 	fxRunImport,
 	fxDefinePrivateProperty,
 	fxGetPrivateProperty,
 	fxSetPrivateProperty,
-	fxCleanupFinalizationGroups,
+	fxCleanupFinalizationRegistries,
 };
 
 const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {

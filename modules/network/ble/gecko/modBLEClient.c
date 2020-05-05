@@ -483,7 +483,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	procedure.discover_services_param.connection = conn_id;
 	if (argc > 1) {
 		uuidRecord uuid;
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsmcGetArrayBufferLength(xsArg(1)));
 		procedure.cmd = CMD_GATT_DISCOVER_SERVICES_UUID_ID;
 		procedure.discover_services_param.uuid = uuid;
 	}
@@ -508,7 +508,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	procedure.discover_characteristics_param.service = service;
 	if (argc > 3) {
 		uuidRecord uuid;
-		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsGetArrayBufferLength(xsArg(3)));
+		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &uuid, xsmcGetArrayBufferLength(xsArg(3)));
 		procedure.cmd = CMD_GATT_DISCOVER_CHARACTERISTICS_UUID_ID;
 		procedure.discover_characteristics_param.uuid = uuid;
 	}
@@ -621,7 +621,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				length = xsGetArrayBufferLength(xsArg(2));
+				length = xsmcGetArrayBufferLength(xsArg(2));
 				buffer = c_malloc(length);
 				if (!buffer)
 					xsUnknownError("out of memory");
@@ -667,7 +667,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				length = xsGetArrayBufferLength(xsArg(2));
+				length = xsmcGetArrayBufferLength(xsArg(2));
 				buffer = c_malloc(length);
 				if (!buffer)
 					xsUnknownError("out of memory");

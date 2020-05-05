@@ -187,12 +187,13 @@ void xs_ble_server_set_device_name(xsMachine *the)
 
 void xs_ble_server_start_advertising(xsMachine *the)
 {
-	uint32_t intervalMin = xsmcToInteger(xsArg(0));
-	uint32_t intervalMax = xsmcToInteger(xsArg(1));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(2));
-	uint32_t advertisingDataLength = xsGetArrayBufferLength(xsArg(2));
-	uint8_t *scanResponseData = xsmcTest(xsArg(3)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(3)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(3)) ? xsGetArrayBufferLength(xsArg(3)) : 0;
+	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
+	uint16_t intervalMin = xsmcToInteger(xsArg(1));
+	uint16_t intervalMax = xsmcToInteger(xsArg(2));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
 
 	// Save the advertising and scan response data. The buffers cannot be freed until the GAP callback confirmation.
 	gBLE->advertisingData = (uint8_t*)c_malloc(advertisingDataLength);
@@ -209,7 +210,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	// Initialize the advertising parameters
 	gBLE->adv_params.adv_int_min = intervalMin;
 	gBLE->adv_params.adv_int_max = intervalMax;
-	gBLE->adv_params.adv_type = ADV_TYPE_IND;
+	gBLE->adv_params.adv_type = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? ADV_TYPE_IND : ADV_TYPE_NONCONN_IND;
 	gBLE->adv_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
 	gBLE->adv_params.channel_map = ADV_CHNL_ALL;
 	gBLE->adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
@@ -232,7 +233,7 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
-	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(0 == notify));
+	esp_ble_gatts_send_indicate(gBLE->gatts_if, gBLE->conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), xsmcToArrayBuffer(xsArg(2)), (bool)(0 == notify));
 }
 
 void xs_ble_server_set_security_parameters(xsMachine *the)
@@ -276,7 +277,7 @@ void xs_ble_server_get_service_attributes(xsMachine *the)
 	uint16_t serviceIndex;
 	uint8_t found = false;
 	uint16_t argc = xsmcArgc;
-	uint16_t length = xsGetArrayBufferLength(xsArg(0));
+	uint16_t length = xsmcGetArrayBufferLength(xsArg(0));
 	uint8_t *buffer = xsmcToArrayBuffer(xsArg(0));
 	
 	xsmcVars(2);
@@ -668,7 +669,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
 		if (gatt_rsp != NULL) {
 			gatt_rsp->attr_value.handle = read->handle;
-			gatt_rsp->attr_value.len = xsGetArrayBufferLength(xsResult);
+			gatt_rsp->attr_value.len = xsmcGetArrayBufferLength(xsResult);
 			c_memmove(gatt_rsp->attr_value.value, xsmcToArrayBuffer(xsResult), gatt_rsp->attr_value.len);
 			esp_ble_gatts_send_response(gBLE->gatts_if, read->conn_id, read->trans_id, ESP_GATT_OK, gatt_rsp);
 			c_free(gatt_rsp);
@@ -761,6 +762,21 @@ bail:
 	xsEndHost(gBLE->the);
 }
 
+static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	struct gatts_mtu_evt_param *mtu = (struct gatts_mtu_evt_param *)message;
+	if (mtu->conn_id != gBLE->conn_id)
+		return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), mtu->mtu);
+	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
 	uint8_t *value;
@@ -829,6 +845,9 @@ void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp
 			}
         	break;
 #endif
+		case ESP_GATTS_MTU_EVT:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)&param->mtu, sizeof(struct gatts_mtu_evt_param), gattsMTUExchangedEvent, NULL);
+			break;
 	}
 }
 

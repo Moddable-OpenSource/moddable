@@ -126,7 +126,7 @@ static void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon);
 static void PiuViewUpdate(PiuView* self, PiuApplication* application);
 static void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, uint8_t flag); 
 
-static xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
 	PiuViewDelete,
 	PiuViewMark,
 	NULL

@@ -1,7 +1,7 @@
 # Getting Started with Moddable One
 
-Copyright 2019 Moddable Tech, Inc.<BR>
-Revised: May 17, 2019
+Copyright 2019-2020 Moddable Tech, Inc.<BR>
+Revised: February 27, 2020
 
 This document describes how to start building Moddable applications for Moddable One. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable One.
 
@@ -11,9 +11,8 @@ This document describes how to start building Moddable applications for Moddable
 	- [Components](#components)
 	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
-
 - [Building and Deploying Apps](#building-and-deploying-apps)
-
+- [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
@@ -65,12 +64,18 @@ After you've set up your host environment, take the following steps to install a
 	
 	Use the platform `-p esp/moddable_one`  with `mcconfig` to build for Moddable One. For example, to build the [`piu/balls` example](../../examples/piu/balls):
 	
-	```
+	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p esp/moddable_one
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+See the Troubleshooting section of the [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) for a list of common issues and how to resolve them.
+
 
 <a id="development-resources"></a>
 ## Development Resources

@@ -66,7 +66,7 @@ static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);
 static txSlot* fxNewWeakRefInstance(txMachine* the);
 
-static void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback);
+static void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* callback);
 
 void fxBuildMapSet(txMachine* the)
 {
@@ -183,23 +183,17 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakRefConstructor = *the->stack;
 	the->stack++;
 	
-	/* FINALIZATION GROUP */
+	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroup_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "FinalizationGroup", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	mxFinalizationGroupPrototype = *the->stack;
-	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationGroup), 1, mxID(_FinalizationGroup));
-	mxFinalizationGroupConstructor = *the->stack;
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "FinalizationRegistry", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxFinalizationRegistryPrototype = *the->stack;
+	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationRegistry), 1, mxID(_FinalizationRegistry));
+	mxFinalizationRegistryConstructor = *the->stack;
 	the->stack++;
-	
-	mxPush(mxIteratorPrototype);
-	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationGroupCleanupIteratorPrototype_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "FinalizationGroup Cleanup Iterator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	mxPull(mxFinalizationGroupCleanupIteratorPrototype);
 }
 
 txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
@@ -257,7 +251,7 @@ txSlot* fxNewMapInstance(txMachine* the)
 
 void fx_Map(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result, *value;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: Map");
 	mxPushSlot(mxTarget);
@@ -273,40 +267,29 @@ void fx_Map(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				value = the->stack;
-				if (value->kind != XS_REFERENCE_KIND)
-					mxTypeError("item is no object");
-				mxGetID(value, 0);
-				mxGetID(value, 1);
-				mxCall(function, mxResult, 2);
-				the->stack++;
-				the->stack++;
-			}
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			mxPushSlot(value);
+			fxGetIndex(the, 0);
+			mxPushSlot(value);
+			fxGetIndex(the, 1);
+			mxRunCount(2);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
-	the->stack++;
 }
 
 void fx_Map_prototype_clear(txMachine* the)
@@ -373,14 +356,6 @@ void fx_Map_prototype_forEach(txMachine* the)
 	while (key) {
 		txSlot* value = key->next;
 		if (!(key->flag & XS_DONT_ENUM_FLAG)) {
-			/* ARG0 */
-			mxPushSlot(value);
-			/* ARG1 */
-			mxPushSlot(key);
-			/* ARG2 */
-			mxPushSlot(mxThis);
-			/* ARGC */
-			mxPushInteger(3);
 			/* THIS */
 			if (mxArgc > 1)
 				mxPushSlot(mxArgv(1));
@@ -388,7 +363,12 @@ void fx_Map_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCall(the);
+			mxCall();
+			/* ARGUMENTS */
+			mxPushSlot(value);
+			mxPushSlot(key);
+			mxPushSlot(mxThis);
+			mxRunCount(3);
 			the->stack++;
 		}
 		key = value->next;
@@ -562,7 +542,7 @@ txSlot* fxNewSetInstance(txMachine* the)
 
 void fx_Set(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: Set");
 	mxPushSlot(mxTarget);
@@ -578,30 +558,21 @@ void fx_Set(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				mxCall(function, mxResult, 1);
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			mxPushSlot(value);
+			mxRunCount(1);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -677,14 +648,6 @@ void fx_Set_prototype_forEach(txMachine* the)
 	txSlot* value = list->value.list.first;
 	while (value) {
 		if (!(value->flag & XS_DONT_ENUM_FLAG)) {
-			/* ARG0 */
-			mxPushSlot(value);
-			/* ARG1 */
-			mxPushSlot(value);
-			/* ARG2 */
-			mxPushSlot(mxThis);
-			/* ARGC */
-			mxPushInteger(3);
 			/* THIS */
 			if (mxArgc > 1)
 				mxPushSlot(mxArgv(1));
@@ -692,8 +655,13 @@ void fx_Set_prototype_forEach(txMachine* the)
 				mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCall(the);
-			the->stack++;
+			mxCall();
+			/* ARGUMENTS */
+			mxPushSlot(value);
+			mxPushSlot(value);
+			mxPushSlot(mxThis);
+			mxRunCount(3);
+			mxPop();
 		}
 		value = value->next;
 	}
@@ -798,7 +766,7 @@ txSlot* fxNewWeakMapInstance(txMachine* the)
 
 void fx_WeakMap(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result, *value;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: WeakMap");
 	mxPushSlot(mxTarget);
@@ -814,34 +782,26 @@ void fx_WeakMap(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				value = the->stack;
-				mxGetID(value, 0);
-				mxGetID(value, 1);
-				mxCall(function, mxResult, 2);
-				the->stack++;
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxPushSlot(value);
+			fxGetIndex(the, 0);
+			mxPushSlot(value);
+			fxGetIndex(the, 1);
+			mxRunCount(2);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -938,7 +898,7 @@ txSlot* fxNewWeakSetInstance(txMachine* the)
 
 void fx_WeakSet(txMachine* the)
 {
-	txSlot *function, *iterable, *iterator, *result;
+	txSlot *function, *iterable, *iterator, *next, *value;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: WeakSet");
 	mxPushSlot(mxTarget);
@@ -954,30 +914,21 @@ void fx_WeakSet(txMachine* the)
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
-	mxCallID(iterable, mxID(_Symbol_iterator), 0);
-	iterator = the->stack;
-	{
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
-			for (;;) {
-				mxCallID(iterator, mxID(_next), 0);
-				result = the->stack;
-				mxGetID(result, mxID(_done));
-				if (fxToBoolean(the, the->stack))
-					break;
-				the->stack++;
-				mxGetID(result, mxID(_value));
-				mxCall(function, mxResult, 1);
-				the->stack++;
-			}
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			mxPushSlot(value);
+			mxRunCount(1);
+			mxPop();
 		}
 		mxCatch(the) {
-			mxGetID(iterator, mxID(_return));
-			function = the->stack;	
-			if (!mxIsUndefined(function)) {
-				mxCall(function, iterator, 0);
-				the->stack++;
-			}
-			the->stack++;
+			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
@@ -1329,36 +1280,36 @@ void fx_WeakRef_prototype_deref(txMachine* the)
 	}
 }
 
-txSlot* fxCheckFinalizationGroupInstance(txMachine* the, txSlot* slot)
+txSlot* fxCheckFinalizationRegistryInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_GROUP_KIND)) {
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND)) {
 			if (slot->flag & XS_MARK_FLAG)
-				mxTypeError("FinalizationGroup instance is read-only");
+				mxTypeError("FinalizationRegistry instance is read-only");
 			return instance;
 		}
 	}
-	mxTypeError("this is no FinalizationGroup instance");
+	mxTypeError("this is no FinalizationRegistry instance");
 	return C_NULL;
 }
 
-void fx_FinalizationGroup(txMachine* the)
+void fx_FinalizationRegistry(txMachine* the)
 {
 	txSlot* callback;
 	txSlot* instance;
 	txSlot* property;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* slot;
 	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: FinalizationGroup");
+		mxTypeError("call: FinalizationRegistry");
 	if (mxArgc < 1)
 		mxTypeError("no callback");
 	callback = mxArgv(0);
 	if (!fxIsCallable(the, callback))
 		mxTypeError("callback is no function");
 	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxFinalizationGroupPrototype);
+	fxGetPrototypeFromConstructor(the, &mxFinalizationRegistryPrototype);
 	instance = fxNewSlot(the);
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
@@ -1370,28 +1321,28 @@ void fx_FinalizationGroup(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = XS_CLOSURE_KIND;
 	property->value.closure = C_NULL;
-	group = fxNewSlot(the);
-	group->kind = XS_FINALIZATION_GROUP_KIND;
-	group->value.finalizationGroup.callback = C_NULL;
-	group->value.finalizationGroup.flags = XS_NO_FLAG;
-	property->value.closure = group;
+	registry = fxNewSlot(the);
+	registry->kind = XS_FINALIZATION_REGISTRY_KIND;
+	registry->value.finalizationRegistry.callback = C_NULL;
+	registry->value.finalizationRegistry.flags = XS_NO_FLAG;
+	property->value.closure = registry;
 	slot = fxNewSlot(the);
 	slot->kind = callback->kind;
 	slot->value = callback->value;
-	group->value.finalizationGroup.callback = slot;
+	registry->value.finalizationRegistry.callback = slot;
 }
 
-void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
+void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 {
 	txSlot* instance;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* callback = C_NULL;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
-	group = instance->next->value.closure;
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
+	registry = instance->next->value.closure;
 	if (mxArgc > 0) {
 		callback = mxArgv(0);
 		if (mxIsUndefined(callback))
@@ -1399,12 +1350,12 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 		else if (!fxIsCallable(the, callback))
 			mxTypeError("callback is no function");
 	}
-	fx_FinalizationGroupCleanup(the, group, callback);
-	callback = group->value.finalizationGroup.callback;
+	fx_FinalizationRegistryCleanup(the, registry, callback);
+	callback = registry->value.finalizationRegistry.callback;
 	if (callback->next == C_NULL) {
-		address = &(mxFinalizationGroups.value.reference->next);
+		address = &(mxFinalizationRegistries.value.reference->next);
 		while ((slot = *address)) {
-			if (slot->value.closure == group) {
+			if (slot->value.closure == registry) {
 				*address = slot->next;
 				return;
 			}
@@ -1413,24 +1364,29 @@ void fx_FinalizationGroup_prototype_cleanupSome(txMachine* the)
 	}
 }
 
-void fx_FinalizationGroup_prototype_register(txMachine* the)
+void fx_FinalizationRegistry_prototype_register(txMachine* the)
 {
-	txSlot* target;
 	txSlot* instance;
+	txSlot* registry;
+	txSlot* target;
 	txSlot* token = C_NULL;
-	txSlot* group;
 	txSlot* callback;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
+	registry = instance->next->value.closure;
 	if (mxArgc < 1)
 		mxTypeError("no target");
 	target = mxArgv(0);
 	if (!mxIsReference(target))
 		mxTypeError("target is no object");
+	if (mxArgc > 1) {
+		if (fxIsSameValue(the, target, mxArgv(1), 1))
+			mxTypeError("target and holdings are the same");
+	}
 	target = target->value.reference;
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
 	if (mxArgc > 2) {
 		token = mxArgv(2);
 		if (mxIsUndefined(token))
@@ -1440,8 +1396,7 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 		else
 			mxTypeError("token is no object");
 	}
-	group = instance->next->value.closure;
-	callback = group->value.finalizationGroup.callback;
+	callback = registry->value.finalizationRegistry.callback;
 	address = &(callback->next);
 	while ((slot = *address))
 		address = &(slot->next);
@@ -1455,28 +1410,28 @@ void fx_FinalizationGroup_prototype_register(txMachine* the)
 	slot->value.finalizationCell.target = target;
 	slot->value.finalizationCell.token = token;
 	
-	address = &(mxFinalizationGroups.value.reference->next);
+	address = &(mxFinalizationRegistries.value.reference->next);
 	while ((slot = *address)) {
-		if (slot->value.closure == group)
+		if (slot->value.closure == registry)
 			return;
 		address = &(slot->next);
 	}
 	slot = *address = fxNewSlot(the);
 	slot->kind = XS_CLOSURE_KIND;
-	slot->value.closure = group;
+	slot->value.closure = registry;
 }	
 
-void fx_FinalizationGroup_prototype_unregister(txMachine* the)
+void fx_FinalizationRegistry_prototype_unregister(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* token;
-	txSlot* group;
+	txSlot* registry;
 	txSlot* callback;
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
-	instance = fxCheckFinalizationGroupInstance(the, mxThis);
+	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	if (mxArgc < 1)
 		mxTypeError("no token");
 	token = mxArgv(0);
@@ -1485,8 +1440,8 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 	token = token->value.reference;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
-	group = instance->next->value.closure;
-	callback = group->value.finalizationGroup.callback;
+	registry = instance->next->value.closure;
+	callback = registry->value.finalizationRegistry.callback;
 	address = &(callback->next);
 	while ((slot = *address)) {
 		slot = slot->next;
@@ -1498,9 +1453,9 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 			address = &(slot->next);
 	}
 	if (callback->next == C_NULL) {
-		address = &(mxFinalizationGroups.value.reference->next);
+		address = &(mxFinalizationRegistries.value.reference->next);
 		while ((slot = *address)) {
-			if (slot->value.closure == group) {
+			if (slot->value.closure == registry) {
 				*address = slot->next;
 				return;
 			}
@@ -1509,95 +1464,74 @@ void fx_FinalizationGroup_prototype_unregister(txMachine* the)
 	}
 }
 
-void fx_FinalizationGroupCleanup(txMachine* the, txSlot* group, txSlot* callback)
+void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* callback)
 {
 	txSlot* slot;
-	txSlot* instance;
-	txSlot* result;
-	txSlot* property;
 	txUnsigned flags;
+	txSlot** address;
+	txSlot* value;
 
-	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_CHANGED))
+	if (!(registry->value.finalizationRegistry.flags & XS_FINALIZATION_REGISTRY_CHANGED))
 		return;
 		
-	mxPush(mxFinalizationGroupCleanupIteratorPrototype);
-	instance = fxNewObjectInstance(the);
-	mxPush(mxObjectPrototype);
-	result = fxNewObjectInstance(the);
-	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_GET_ONLY);
-	mxPop();
-	mxPushClosure(group);
-	property = fxNextSlotProperty(the, property, the->stack, mxID(_iterable), XS_GET_ONLY);
- 	mxPop();
-	property = fxNextIntegerProperty(the, property, 0, mxID(_index), XS_GET_ONLY);
-    
+	slot = registry->value.finalizationRegistry.callback->next;
+	flags = 0;
+	while (slot) {
+		slot = slot->next;
+		if (slot->value.finalizationCell.target == C_NULL) {
+			flags = 1;
+			break;
+		}
+		slot = slot->next;
+	}
+	if (!flags)
+		return;
 	if (!callback)
-		callback = group->value.finalizationGroup.callback;
-	flags = group->value.finalizationGroup.flags;
+		callback = registry->value.finalizationRegistry.callback;
+	flags = registry->value.finalizationRegistry.flags;
 	{
 		mxTry(the) {
-			group->value.finalizationGroup.flags |= XS_FINALIZATION_GROUP_ACTIVE;
-			mxPushInteger(1);
-			mxPushUndefined();
-			mxPushSlot(callback);
-			fxCall(the);
-			mxPop();
-			group->value.finalizationGroup.flags = flags;
+			address = &(registry->value.finalizationRegistry.callback->next);
+			while ((value = *address)) {
+				slot = value->next;
+				if (slot->value.finalizationCell.target == C_NULL) {
+					*address = slot->next;
+					mxPushUndefined();
+					mxPushSlot(callback);
+					mxCall();
+					mxPushSlot(value);
+					mxRunCount(1);
+					mxPop();
+				}
+				else
+					address = &(slot->next);
+			}
+			registry->value.finalizationRegistry.flags = flags;
 		}
 		mxCatch(the) {
-			group->value.finalizationGroup.flags = flags;
+			registry->value.finalizationRegistry.flags = flags;
 			fxJump(the);
 		}
 	}
 	
-	slot = group->value.finalizationGroup.callback->next;
+	slot = registry->value.finalizationRegistry.callback->next;
 	while (slot) {
 		if (slot->value.finalizationCell.target == C_NULL)
 			break;
 		slot = slot->next;
 	}
 	if (!slot)
-		group->value.finalizationGroup.flags &= ~XS_FINALIZATION_GROUP_CHANGED;
+		registry->value.finalizationRegistry.flags &= ~XS_FINALIZATION_REGISTRY_CHANGED;
 }
 
-void fx_FinalizationGroupCleanupIteratorPrototype_next(txMachine* the)
+void fxCleanupFinalizationRegistries(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
-	txSlot* result = iterator->next;
-	txSlot* group = result->next->value.closure;
-	txSlot** address;
-	txSlot* value;
-	txSlot* slot;
-	if (!(group->value.finalizationGroup.flags & XS_FINALIZATION_GROUP_ACTIVE))
-		mxTypeError("no cleanup in progress");
-	mxResult->kind = result->kind;
-	mxResult->value = result->value;
-	result = result->value.reference->next;
-	address = &(group->value.finalizationGroup.callback->next);
-	while ((value = *address)) {
-		slot = value->next;
-		if (slot->value.finalizationCell.target == C_NULL) {
-			*address = slot->next;
-			result->kind = value->kind;
-			result->value = value->value;
-			return;
-		}
-		address = &(slot->next);
-	}
-	result->kind = XS_UNDEFINED_KIND;
-	result->next->value.boolean = 1;
-}
-
-void fxCleanupFinalizationGroups(txMachine* the)
-{
-	txSlot** address = &(mxFinalizationGroups.value.reference->next);
+	txSlot** address = &(mxFinalizationRegistries.value.reference->next);
 	txSlot* closure;
 	while ((closure = *address)) {
-		txSlot* group = closure->value.closure;
-		fx_FinalizationGroupCleanup(the, group, C_NULL);
-		if (group->value.finalizationGroup.callback->next == C_NULL)
+		txSlot* registry = closure->value.closure;
+		fx_FinalizationRegistryCleanup(the, registry, C_NULL);
+		if (registry->value.finalizationRegistry.callback->next == C_NULL)
 			*address = closure->next;
 		else
 			address = &(closure->next);

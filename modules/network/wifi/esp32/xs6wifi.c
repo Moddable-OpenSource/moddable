@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,7 +30,7 @@
 	#define MODDEF_WIFI_ESP32_CONNECT_RETRIES (5)
 #endif
 
-int8_t gWiFiState = -1;	// -1 = uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
+int8_t gWiFiState = -2;	// -2 = uninitialized, -1 - wifi task uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 int8_t gDisconnectReason = 0;		// -1 = password rejected
 int8_t gWiFiConnectRetryRemaining;
 
@@ -141,19 +141,22 @@ void xs_wifi_connect(xsMachine *the)
 {
 	wifi_config_t config;
 	char *str;
-	int argc = xsmcToInteger(xsArgc);
+	int argc = xsmcArgc;
 	wifi_mode_t mode;
 	int channel;
 
 	initWiFi();
 
-	if (gWiFiState >= 3)
-		esp_wifi_disconnect();
+	gWiFiState = 2;
+	esp_wifi_disconnect();
 
 	if (0 == argc)
 		return;
 
 	c_memset(&config, 0, sizeof(config));
+
+	config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+	config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 
 	xsmcVars(2);
 	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
@@ -174,7 +177,7 @@ void xs_wifi_connect(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_bssid)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
-		if (sizeof(config.sta.bssid) != xsGetArrayBufferLength(xsVar(0)))
+		if (sizeof(config.sta.bssid) != xsmcGetArrayBufferLength(xsVar(0)))
 			xsUnknownError("bssid must be 6 bytes");
 		xsmcGetArrayBufferData(xsVar(0), 0, config.sta.bssid, sizeof(config.sta.bssid));
 		config.sta.bssid_set = 1;
@@ -322,7 +325,7 @@ void xs_wifi_destructor(void *data)
 
 void xs_wifi_constructor(xsMachine *the)
 {
-	int argc = xsmcToInteger(xsArgc);
+	int argc = xsmcArgc;
 
 	if (1 == argc)
 		xsCall1(xsThis, xsID_build, xsArg(0));
@@ -370,8 +373,6 @@ void xs_wifi_set_onNotify(xsMachine *the)
 	gWiFi = wifi;
 
 	xsmcSet(xsThis, xsID_callback, xsArg(0));
-
-	xsCall1(wifi->obj, xsID_callback, xsString("init"));		//@@ this should be unnecessary
 }
 
 static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
@@ -390,49 +391,44 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			else
 				gWiFiState = 2;
 			break;
+		case SYSTEM_EVENT_STA_STOP:
+			gWiFiState = 0;
+			break;
 		case SYSTEM_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
 			gWiFiConnectRetryRemaining = 0;
 			break;
 		case SYSTEM_EVENT_STA_GOT_IP:
-			if (event->event_info.got_ip.ip_changed)
+			if (event->event_info.got_ip.ip_changed && (5 == gWiFiState))		// N.B. ip_changed is set when initial IP address received.
 				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
 			gWiFiState = 5;
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED: {
 			uint8_t reason = event->event_info.disconnected.reason;
-			gDisconnectReason =	(WIFI_REASON_MIC_FAILURE == reason) ||
+			gWiFiState = 2;
+			gDisconnectReason =	((WIFI_REASON_MIC_FAILURE == reason) ||
 								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
 								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
 								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
-								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason);
-			if (gDisconnectReason)
-				gDisconnectReason = -1;
-			else /* if ((WIFI_REASON_BEACON_TIMEOUT == reason) ||
-					 (WIFI_REASON_NO_AP_FOUND == reason) ||
-					 (WIFI_REASON_HANDSHAKE_TIMEOUT == reason) ||
-					 (WIFI_REASON_AUTH_EXPIRE == reason) ||
-					 (WIFI_REASON_CONNECTION_FAIL == reason)) */ {
-				if (gWiFiConnectRetryRemaining > 0) {
-					if (0 == esp_wifi_connect()) {
-						gWiFiConnectRetryRemaining -= 1;
-						return ESP_OK;
-					}
-					gWiFiConnectRetryRemaining = 0;
+								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) ? -1 : 0;
+			if (gWiFiConnectRetryRemaining > 0) {
+				if (0 == esp_wifi_connect()) {
+					gWiFiConnectRetryRemaining -= 1;
+					return ESP_OK;
 				}
+				gWiFiConnectRetryRemaining = 0;
 			}
-			gWiFiState = 2;
 			} break;
 		case SYSTEM_EVENT_SCAN_DONE:
 			if (gScan)
-				modMessagePostToMachine(gScan->the, (uint8_t *)&event_id, sizeof(event_id), reportScan, NULL);
+				modMessagePostToMachine(gScan->the, NULL, 0, reportScan, NULL);
 			return ESP_OK;
 		default:
 			return ESP_OK;
 	}
 
 	for (walker = gWiFi; NULL != walker; walker = walker->next)
-		modMessagePostToMachine(walker->the, (uint8_t *)&event->event_id, sizeof(event->event_id), wifiEventPending, walker);
+		modMessagePostToMachine(walker->the, (uint8_t *)&event_id, sizeof(event_id), wifiEventPending, walker);
 
 	return ESP_OK;
 }
@@ -441,21 +437,20 @@ void initWiFi(void)
 {
 	if (gWiFiState > 0) return;
 
-	if (-1 == gWiFiState) {
-		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-		cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
+	if (gWiFiState <= -2) {
 		tcpip_adapter_init();
 		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
-		ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-		esp_wifi_set_mode(WIFI_MODE_NULL);
-		gWiFiState = 0;
 	}
 
+	gWiFiState = 1;
+
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
+	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+	esp_wifi_set_mode(WIFI_MODE_NULL);
 	ESP_ERROR_CHECK( esp_event_loop_set_cb(doWiFiEvent, NULL) );
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 	ESP_ERROR_CHECK( esp_wifi_start() );
-
-	gWiFiState = 1;
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
@@ -470,7 +465,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	
 	c_memset(&config, 0, sizeof(config));
 	ap = &config.ap;
-	
+
 	xsmcVars(2);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);

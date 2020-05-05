@@ -139,30 +139,33 @@ void fxGetNextCharacter(txParser* parser)
 	txUTF8Sequence const *aSequence = NULL;
 	txInteger aSize;
 
-	aResult = (txU4)(*(parser->getter))(parser->stream);
-	if (aResult & 0x80) {  // According to UTF-8, aResult should be 1xxx xxxx when it is not a ASCII
-		if (aResult != (txU4)C_EOF) {
-			for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
-				if ((aResult & aSequence->cmask) == aSequence->cval)
-					break;
-			}
-			if (aSequence->size == 0) {
-				fxReportParserError(parser, "invalid character %d", aResult);
-				aResult = (txU4)C_EOF;
-			}
-			else {
-				aSize = aSequence->size - 1;
-				while (aSize) {
-					aSize--;
-					aResult = (aResult << 6) | ((*(parser->getter))(parser->stream) & 0x3F);
+	parser->character = parser->lookahead;
+	if (parser->character != (txU4)C_EOF) {
+		aResult = (txU4)(*(parser->getter))(parser->stream);
+		if (aResult & 0x80) {  // According to UTF-8, aResult should be 1xxx xxxx when it is not a ASCII
+			if (aResult != (txU4)C_EOF) {
+				for (aSequence = gxUTF8Sequences; aSequence->size; aSequence++) {
+					if ((aResult & aSequence->cmask) == aSequence->cval)
+						break;
 				}
-				aResult &= aSequence->lmask;
+				if (aSequence->size == 0) {
+					fxReportParserError(parser, "invalid character %d", aResult);
+					aResult = (txU4)C_EOF;
+				}
+				else {
+					aSize = aSequence->size - 1;
+					while (aSize) {
+						aSize--;
+						aResult = (aResult << 6) | ((*(parser->getter))(parser->stream) & 0x3F);
+					}
+					aResult &= aSequence->lmask;
+				}
 			}
+			if (aResult == 0x110000)
+				aResult = 0;
 		}
-		if (aResult == 0x110000)
-			aResult = 0;
+		parser->lookahead = aResult;
 	}
-	parser->character = aResult;
 }
 
 txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, txString), txString p, txString q, int empty)
@@ -955,8 +958,21 @@ void fxGetNextTokenAux(txParser* parser)
 			fxGetNextCharacter(parser);
 			break;	
 		case '?':
-			parser->token2 = XS_TOKEN_QUESTION_MARK;
 			fxGetNextCharacter(parser);
+			if (parser->character == '.') {	
+				if ((parser->lookahead < '0') || ('9' < parser->lookahead)) {
+					parser->token2 = XS_TOKEN_CHAIN;
+					fxGetNextCharacter(parser);
+				}
+				else
+					parser->token2 = XS_TOKEN_QUESTION_MARK;
+			}
+			else if (parser->character == '?') {		
+				parser->token2 = XS_TOKEN_COALESCE;
+				fxGetNextCharacter(parser);
+			}
+			else	
+				parser->token2 = XS_TOKEN_QUESTION_MARK;
 			break;	
 		case '(':
 			parser->token2 = XS_TOKEN_LEFT_PARENTHESIS;

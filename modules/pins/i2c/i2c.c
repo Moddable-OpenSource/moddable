@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,7 +40,7 @@ typedef struct modI2CRecord *modI2C;
 void xs_i2c(xsMachine *the)
 {
 	modI2C i2c;
-	int sda, scl, address, hz = 0, throw = 1;
+	int sda, scl, address, hz = 0, throw = 1, timeout = 0;
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
@@ -62,12 +62,14 @@ void xs_i2c(xsMachine *the)
 		throw = xsmcTest(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_timeout)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
+		timeout = xsmcToInteger(xsVar(0));
+	}
+
 	i2c = xsmcSetHostChunk(xsThis, NULL, sizeof(modI2CRecord));
 
-	i2c->state.hz = hz;
-	i2c->state.sda = sda;
-	i2c->state.scl = scl;
-	i2c->state.address = address;
+	modI2CConfig(i2c->state, hz, sda, scl, address, timeout);
 	i2c->throw = throw;
 	modI2CInit(&i2c->state);
 }
@@ -106,13 +108,13 @@ void xs_i2c_read(xsMachine *the)
 	if (argc >= 2) {
 		int bufferByteLength;
 		xsResult = xsArg(1);
-		bufferByteLength = xsGetArrayBufferLength(xsResult);
+		bufferByteLength = xsmcGetArrayBufferLength(xsResult);
 		if (bufferByteLength < len)
 			xsUnknownError("buffer too small");
 		c_memmove(xsmcToArrayBuffer(xsResult), buffer, len);
 	}
 	else {
-		xsResult = xsArrayBuffer(buffer, len);
+		xsmcSetArrayBuffer(xsResult, buffer, len);
 		xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
 	}
 }
@@ -150,7 +152,7 @@ void xs_i2c_write(xsMachine *the)
 			continue;
 		}
 		if (xsmcIsInstanceOf(xsArg(i), xsArrayBufferPrototype)) {
-			int l = xsGetArrayBufferLength(xsArg(i));
+			int l = xsmcGetArrayBufferLength(xsArg(i));
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("40 byte write limit");
 			c_memmove(buffer + len, xsmcToArrayBuffer(xsArg(i)), l);

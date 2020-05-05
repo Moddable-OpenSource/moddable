@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,9 +24,9 @@
 
 extern txPreparation* xsPreparation;
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
-	exit(1);
+	exit(status);
 }
 
 void xs_repl_destructor(void* it)
@@ -64,11 +64,11 @@ void xs_repl_write(xsMachine *the)
 void xs_repl_eval(txMachine* the)
 {
 	txStringStream aStream;
-
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
 	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
-	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag), &mxGlobal, C_NULL, mxClosures.value.reference, C_NULL, C_NULL);
+	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 #ifdef mxInstrument
 	fxSampleInstrumentation(the, 0, NULL);

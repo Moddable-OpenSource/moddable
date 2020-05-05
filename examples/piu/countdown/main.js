@@ -13,11 +13,18 @@
  */
 
 import {} from "piu/MC";
+import Preference from "preference";
 
 const digitsTexture = new Texture("digits.png");
 
 class PortBehavior extends Behavior {
 	onCreate(port, delta) {
+		let string = Preference.get("config", "date") 
+		if (!string) {
+			const date = new Date();
+			string = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + (date.getDate() + 1); // tomorrow
+		}
+		this.date = new Date(string);
 		this.hue0 = 0;
 		this.hue1 = 90;
 		this.hue2 = 180;
@@ -28,8 +35,7 @@ class PortBehavior extends Behavior {
 		port.start();
 	}
 	onDraw(port, x, y, w, h) {
-		let date = new Date(2018, 0, 0);
-		let time = (date.valueOf() - Date.now()) / 1000;
+		let time = (this.date.valueOf() - Date.now()) / 1000;
 		if (time < 0) time = 0;
 		let seconds = Math.floor(time % 60);
 		time = Math.floor(time / 60);

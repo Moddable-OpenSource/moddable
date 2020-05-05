@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,24 +40,6 @@
 
 #include "xs.h"
 
-#if 0
-#undef fxPop
-#undef fxPush
-
-static inline xsSlot _fxPop(xsMachine *the)
-{
-	return *the->stack++;
-}
-
-static inline void _fxPush(xsMachine *the, xsSlot *v)
-{
-	*--the->stack = *v;
-}
-
-#define fxPop()		_fxPop(the)
-#define fxPush(v)	_fxPush(the, &v)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -86,6 +68,7 @@ extern "C" {
 #define xsmcSetString(_SLOT, _VALUE)	fxString(the, &_SLOT, _VALUE)
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
 
+#undef xsArrayBuffer
 #define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE)
 #undef xsGetArrayBufferData
 #define xsmcGetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxGetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)
@@ -93,6 +76,8 @@ extern "C" {
 #define xsmcSetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxSetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)
 #undef xsToArrayBuffer
 #define xsmcToArrayBuffer(_SLOT)	fxToArrayBuffer(the, &_SLOT)
+#undef xsGetArrayBufferLength
+#undef xsmcGetArrayBufferLength
 #define xsmcGetArrayBufferLength(_SLOT) fxGetArrayBufferLength(the, &(_SLOT))
 
 mxImport void _xsNewArray(xsMachine*, xsSlot*, xsIntegerValue);

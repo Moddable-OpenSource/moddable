@@ -32,7 +32,6 @@ extern "C" {
 /*
 	link locations
 */
-#define ICACHE_STORE_ATTR
 #define ICACHE_RODATA_ATTR
 #define ICACHE_XS6RO_ATTR
 #define ICACHE_XS6RO2_ATTR
@@ -270,6 +269,16 @@ extern uint32_t gMsgBufferMax;
 	
 #endif
 
+#endif
+
+/*
+	instrumentation
+*/
+
+#if defined(mxInstrumentation) && defined(__XS__)
+	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(txMachine *the);
+	void espInstrumentMachineReset(txMachine *the);
 #endif
 
 /*

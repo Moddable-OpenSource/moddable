@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -222,6 +222,8 @@ void xs_socket(xsMachine *the)
 
 		for (i = 0; i < kListenerPendingSockets; i++) {
 			if (xsl->accept[i]) {
+				uint8_t pending = kPendingConnect;
+
 				xss = xsl->accept[i];
 				xsl->accept[i] = NULL;
 
@@ -240,13 +242,12 @@ void xs_socket(xsMachine *the)
 				socketUpUseCount(the, xss);
 
 				if (xss->pending) {
-					uint8_t pending;
 					modCriticalSectionBegin();
-						pending = xss->pending;
+						pending |= xss->pending;
 						xss->pending = 0;
 					modCriticalSectionEnd();
-					socketSetPending(xss, pending);
 				}
+				socketSetPending(xss, pending);
 
 				socketDownUseCount(xss->the, xss);
 				return;
@@ -284,8 +285,7 @@ void xs_socket(xsMachine *the)
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
-				xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-				if (!parseAddress(temp, multicastIP))
+				if (!parseAddress(xsmcToString(xsVar(0)), multicastIP))
 					xsUnknownError("invalid multicast IP address");
 				if ((255 != multicastIP[0]) || (255 != multicastIP[1]) || (255 != multicastIP[2]) || (255 != multicastIP[3])) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
 					ttl = 1;
@@ -428,6 +428,9 @@ void xs_socket_destructor(void *data)
 		raw_remove(xss->raw);
 	}
 
+	if (xss->pb)
+		pbuf_free_safe(xss->pb);
+
 	for (i = 0; i < kReadQueueLength; i++) {
 		if (xss->reader[i])
 			pbuf_free_safe(xss->reader[i]);
@@ -553,7 +556,7 @@ void xs_socket_read(xsMachine *the)
 				xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 				s2 = &xsVar(0);
 				if (s1->data[2] == s2->data[2])		//@@
-					xsResult = xsArrayBuffer(srcData, srcBytes);
+					xsmcSetArrayBuffer(xsResult, srcData, srcBytes);
 				else
 					xsUnknownError("unsupported output type");
 			}
@@ -601,18 +604,16 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->udp) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(2));
+		needed = xsmcGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
 		udp_sendto_safe(xss->udp, data, needed, &dst, port, &err);
 		if (ERR_OK != err) {
@@ -625,25 +626,23 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->raw) {
-		char temp[16];
 		uint8 ip[4];
 		unsigned char *data;
 		ip_addr_t dst = {0};
 		struct pbuf *p;
 
-		xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!parseAddress(xsmcToString(xsArg(0)), ip))
 			xsUnknownError("invalid IP address");
 		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
-		needed = xsGetArrayBufferLength(xsArg(1));
+		needed = xsmcGetArrayBufferLength(xsArg(1));
 		data = xsmcToArrayBuffer(xsArg(1));
 		p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)needed, PBUF_RAM);
 		if (!p)
 			xsUnknownError("no buffer");
 		c_memcpy(p->payload, data, needed);
 		err = raw_sendto(xss->raw, p, &dst);
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		if (ERR_OK != err)
 			xsUnknownError("RAW send failed");
 
@@ -675,7 +674,7 @@ void xs_socket_write(xsMachine *the)
 			}
 			else if (xsReferenceType == t) {
 				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					msgLen = xsGetArrayBufferLength(xsArg(arg));
+					msgLen = xsmcGetArrayBufferLength(xsArg(arg));
 					if (pass)
 						msg = xsmcToArrayBuffer(xsArg(arg));
 				}
@@ -1000,6 +999,9 @@ void didError(void *arg, err_t err)
 {
 	xsSocket xss = arg;
 
+	tcp_recv(xss->skt, NULL);
+	tcp_sent(xss->skt, NULL);
+	tcp_err(xss->skt, NULL);
 	xss->skt = NULL;		// "pcb is already freed when this callback is called"
 	socketSetPending(xss, kPendingError);
 }
@@ -1040,6 +1042,9 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
+			tcp_recv(xss->skt, NULL);
+			tcp_sent(xss->skt, NULL);
+			tcp_err(xss->skt, NULL);
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
 #endif
@@ -1144,18 +1149,25 @@ u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *ad
 
 static uint8 parseAddress(char *address, uint8_t *ip)
 {
+	char temp[4];
 	char *p = address;
-	int i;
+	uint8_t i;
 	for (i = 0; i < 3; i++) {
-		char *separator = c_strchr(p, (i < 3) ? '.' : 0);
-		if (!separator)
+		char *t = temp;
+		char *separator = c_strchr(p, '.');
+		if (!separator || ((separator - p) > 3))
 			return 0;
-		*separator = 0;
-		ip[i] = (unsigned char)atoi(p);
-		p = separator + 1;
+		while (p < separator)
+			*t++ = c_read8(p++);
+		*t++ = 0;
+		ip[i] = (unsigned char)atoi(temp);
+		p += 1;		// skip separator
 	}
-	ip[3] = (unsigned char)atoi(p);
+	if (c_strlen(p) > 3)
+		return 0;
 
+	c_strcpy(temp, p);
+	ip[3] = (unsigned char)atoi(temp);
 	return 1;
 }
 
@@ -1197,12 +1209,10 @@ void xs_listener(xsMachine *the)
 
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
-		char temp[DNS_MAX_NAME_LENGTH];
 		uint8_t ip[4];
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		if (xsmcTest(xsVar(0))) {
-			xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-			if (!parseAddress(temp, ip))
+			if (!parseAddress(xsmcToString(xsVar(0)), ip))
 				xsUnknownError("invalid IP address");
 			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
 		}
@@ -1229,7 +1239,7 @@ void xs_listener_destructor(void *data)
 
 	if (xsl->skt) {
 		tcp_accept(xsl->skt, NULL);
-		tcp_close(xsl->skt);
+		tcp_close_safe(xsl->skt);
 	}
 
 	for (i = 0; i < kListenerPendingSockets; i++)
@@ -1366,6 +1376,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 		goto done;		// return or done...
 	}
 
+	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
+		socketMsgConnect(xss);
+
 	if ((pending & kPendingReceive) && !(xss->pending & kPendingClose))
 		socketMsgDataReceived(xss);
 
@@ -1374,9 +1387,6 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 
 	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
 		tcp_output_safe(xss->skt);
-
-	if ((pending & kPendingConnect) && !(xss->pending & kPendingClose))
-		socketMsgConnect(xss);
 
 	if ((pending & kPendingDisconnect) && !(xss->pending & kPendingClose))
 		socketMsgDisconnect(xss);

@@ -31,13 +31,16 @@
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task_wdt.h"
-#include "esp_bt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/dns.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+
+#if CONFIG_BT_ENABLED
+	#include "esp_bt.h"
+#endif
 
 #include "driver/uart.h"
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -21,12 +21,33 @@ HOST_OS := $(shell uname)
 
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
+ESP32_CMAKE ?= 1
+
+EXPECTED_ESP_IDF ?= v3.3.2
+
+ifeq ($(VERBOSE),1)
+	CMAKE_LOG_LEVEL = VERBOSE
+	IDF_PY_LOG_FLAG = -v
+else
+	CMAKE_LOG_LEVEL = ERROR
+	IDF_PY_LOG_FLAG = -n
+endif
 
 ESP32_BASE ?= $(HOME)/esp32
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
+
+IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always")
+
+ifeq ($(IDF_VERSION),)
+$(warning Could not detect ESP-IDF version.)
+else
+ifneq ($(IDF_VERSION),$(EXPECTED_ESP_IDF))
+$(error Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
+endif
+endif
 
 unexport LDFLAGS
 unexport LD_LIBRARY_PATH
@@ -54,8 +75,15 @@ else
 	endif
 endif
 
+ifeq ($(ESP32_CMAKE),1)
+	SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/config
+else
+	SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/include
+endif
+
 INC_DIRS = \
  	$(IDF_PATH)/components \
+ 	$(IDF_PATH)/components/bootloader_support/include \
  	$(IDF_PATH)/components/bt/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
@@ -63,30 +91,37 @@ INC_DIRS = \
  	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
+ 	$(IDF_PATH)/components/esp32/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \
+	$(IDF_PATH)/components/lwip/include/apps/sntp \
  	$(IDF_PATH)/components/lwip/lwip/src/include/ \
  	$(IDF_PATH)/components/lwip/port/esp32/ \
  	$(IDF_PATH)/components/lwip/port/esp32/include/ \
  	$(IDF_PATH)/components/mbedtls/include \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
+ 	$(IDF_PATH)/components/nimble/esp-hci/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/services/gap/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
+ 	$(IDF_PATH)/components/nimble/port/include \
  	$(IDF_PATH)/components/soc/esp32/include \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/spiffs/include \
  	$(IDF_PATH)/components/spi_flash/include \
- 	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/tcpip_adapter/include \
+ 	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/vfs/include
     
 XS_OBJ = \
-	$(LIB_DIR)/xsHost.c.o \
-	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -133,7 +168,7 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/esp \
-	$(IDF_BUILD_DIR)/include \
+	$(SDKCONFIG_H_DIR) \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
@@ -246,54 +281,115 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
 
+ifeq ($(ESP32_CMAKE),1)
+	ifeq ($(UPLOAD_PORT),)
+		PORT_SET =
+		SERIAL2XSBUG_PORT = $$PORT_USED
+	else
+		PORT_SET = -p $(UPLOAD_PORT)
+		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	endif
+	BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	BUILD_ERR = "ESP-IDF Build Failed"
+	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	RELEASE_LAUNCH_CMD = idf.py -B $(IDF_BUILD_DIR) $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL)
+	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partition_table/partition-table.bin
+else
+	BUILD_AND_FLASH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
+	BUILD_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make --silent
+	BUILD_ERR = "ESP-IDF build failed (perhaps due to parallel build race conditions). Please try again."
+	DEPLOY_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
+	IDF_RECONFIGURE_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig
+	RELEASE_LAUNCH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
+	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partitions.bin
+	ifeq ($(HOST_OS),Darwin)
+		SERIAL2XSBUG_PORT = `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'`
+	else
+		SERIAL2XSBUG_PORT = `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'`
+	endif
+endif
+
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
+		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_LAUNCH = bash -c "serial2xsbug `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'` $(DEBUGGER_SPEED) 8N1"
+		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 	endif
 else
 	KILL_SERIAL_2_XSBUG = 
 	DO_XSBUG = 
-	DO_LAUNCH = cd $(PROJ_DIR); IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
+	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 endif
 
 SDKCONFIGPATH ?= $(PROJ_DIR)
 SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
 SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.defaults.prior
-SDKCONFIG_H=$(IDF_BUILD_DIR)/include/sdkconfig.h
+SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 
 
 .NOTPARALLEL: $(SDKCONFIG_H)
 
-all: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
+	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
+	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
+	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
+	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
+	cd $(PROJ_DIR); \
+	$(DO_LAUNCH)
+
+deploy:
+	@echo "# uploading to esp32"
+	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
+
+xsbug:
+	@echo "# starting xsbug"
+	$(KILL_SERIAL2XSBUG)
+	$(DO_XSBUG)
+	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
+	$(DO_LAUNCH)
+
+prepareOutput:
 	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
+
+precursor: prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
-	-cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash && $(DO_LAUNCH)
+
+build: precursor
+	-cd $(PROJ_DIR) ; $(BUILD_CMD)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/partitions.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
+	echo "#"
+	echo "# Built files at $(BIN_DIR)"
+	echo "#"
 
 clean:
-	@echo # Clean project
+	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
-
-allclean:
-	@echo # Clean project and library
 	-rm -rf $(LIB_DIR) 2>/dev/null
-	-rm -rf $(BIN_DIR) 2>/dev/null
-	-rm -rf $(TMP_DIR) 2>/dev/null
+	-rm -rf $(IDF_BUILD_DIR) 2>/dev/null
+	-rm -rf $(PROJ_DIR) 2>/dev/null
+
+erase_flash:
+	$(ESPTOOL) --chip esp32 --port $(UPLOAD_PORT) erase_flash
+	
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); fi
@@ -303,15 +399,15 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 		|| ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
 		rm $(PROJ_DIR)/sdkconfig; \
 		cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); \
-		echo "# Running GENCONFIG..." ; cd $(PROJ_DIR) ; IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig; \
-		mv $(PROJ_DIR)/sdkconfig.old $(SDKCONFIGPATH)/sdkconfig.old;  \
+		echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD); \
+		if test -s $(PROJ_DIR)/sdkconfig.old ; then mv $(PROJ_DIR)/sdkconfig.old $(SDKCONFIGPATH)/sdkconfig.old; fi ;\
 	fi
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
-$(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
@@ -338,6 +434,14 @@ $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 
 $(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+	
+$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+	
+$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 

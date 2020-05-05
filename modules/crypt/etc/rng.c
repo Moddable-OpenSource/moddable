@@ -82,7 +82,7 @@ xs_rng_get(xsMachine *the)
 	if (!rng_inited)
 		rng_init(NULL, 0);
 
-	xsResult = xsArrayBuffer(NULL, n);
+	xsmcSetArrayBuffer(xsResult, NULL, n);
 	bp = xsmcToArrayBuffer(xsResult);
 	for (i = j = 0, bufend = bp + n; bp < bufend;) {
 		++i;
@@ -103,7 +103,7 @@ xs_rng_init(xsMachine *the)
 
 	if (xsmcArgc > 0 && xsmcTest(xsArg(0))) {
 		seed = xsmcToArrayBuffer(xsArg(0));
-		seedsize = xsGetArrayBufferLength(xsArg(0));
+		seedsize = xsmcGetArrayBufferLength(xsArg(0));
 	}
 	rng_init(seed, seedsize);
 }

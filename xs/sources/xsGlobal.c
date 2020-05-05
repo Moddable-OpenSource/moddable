@@ -136,7 +136,6 @@ void fxBuildGlobal(txMachine* the)
 	mxPull(mxEscapeFunction);
 	fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
 	mxPull(mxEvalFunction);
-	mxEvalIntrinsic = mxEvalFunction;
 	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
 	mxPull(mxUnescapeFunction);
 	
@@ -168,9 +167,6 @@ void fxBuildGlobal(txMachine* the)
 		slot = slot->next;
 	}
 	the->stack++;
-	fxNewHostFunction(the, mxCallback(fxCopyObject), 0, XS_NO_ID);
-	mxCopyObjectFunction = *the->stack;
-	the->stack++;
 }
 
 txSlot* fxNewGlobalInstance(txMachine* the)
@@ -178,7 +174,7 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 	txSlot* instance;
 	txSlot* property;
 #ifdef mxFewGlobalsTable
-	txSize length = XS_FEW_GLOBALS_COUNT;
+	txSize length = XS_INTRINSICS_COUNT;
 #else
 	txSize length = the->keyCount;
 #endif
@@ -218,16 +214,62 @@ txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot)
 	return C_NULL;
 }
 
-void fxCloseIterator(txMachine* the, txSlot* iterator)
+txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value)
 {
- 	mxPushInteger(0);
-   	mxPushSlot(iterator);
 	mxPushSlot(iterator);
+	mxPushSlot(next);
+	mxCall();
+	mxRunCount(0);
+	if (!mxIsReference(the->stack))
+		mxTypeError("iterator result is no object");
+	mxDub();
+	fxGetID(the, mxID(_done));
+	if (fxToBoolean(the, the->stack)) {
+		mxPop();
+		mxPop();
+		return 0;
+	}
+	mxPop();
+	fxGetID(the, mxID(_value));
+	mxPullSlot(value);
+	return 1;
+}
+
+void fxIteratorReturn(txMachine* the, txSlot* iterator)
+{
+	mxPushSlot(iterator);
+	mxDub();
 	fxGetID(the, mxID(_return));
-	if (the->stack->kind != XS_UNDEFINED_KIND)
-		fxCall(the);
-	else
-		the->stack += 3;
+	if (mxIsUndefined(the->stack)) 
+		mxPop();
+	else {
+		mxCall();
+		mxRunCount(0);
+	}
+	mxPop();
+}
+
+txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional)
+{
+	mxPushSlot(iterable);
+	mxDub();
+	fxGetID(the, mxID(_Symbol_iterator));
+	if (optional && (mxIsUndefined(the->stack) || mxIsNull(the->stack))) {
+		mxPop();
+		mxPop();
+		return 0;
+	}
+	mxCall();
+	mxRunCount(0);
+	if (!mxIsReference(the->stack))
+		mxTypeError("iterator is no object");
+	if (next) {
+		mxDub();
+		fxGetID(the, mxID(_next));
+		mxPullSlot(next);
+	}
+	mxPullSlot(iterator);
+	return 1;
 }
 
 txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable) 

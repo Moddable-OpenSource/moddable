@@ -1,0 +1,20 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<link type="text/css" rel="stylesheet" href="/assets/custom.css"/>
+</head>
+<body>
+	<div class="line"><label>Date</label><input id="DATE" type="date"></input></div>
+	<script>
+		function getData() {
+			return {
+				config: {
+					date: document.getElementById("DATE").value,
+				},
+			};
+		}
+		function setData(data) {
+			document.getElementById("DATE").value = data.config.date;
+		}
+	</script>
+</body>

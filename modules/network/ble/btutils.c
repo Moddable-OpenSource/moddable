@@ -67,7 +67,7 @@ void xs_bytes_set(xsMachine *the)
 {
 	uint8_t reverse = xsmcToBoolean(xsArg(1));
 	uint8_t *dst = xsmcToArrayBuffer(xsThis);
-	uint32_t dstLength = xsGetArrayBufferLength(xsThis);
+	uint32_t dstLength = xsmcGetArrayBufferLength(xsThis);
 	if (xsmcTypeOf(xsArg(0)) == xsStringType) {
 		const char *src = xsmcToString(xsArg(0));
 		uint32_t srcLength = c_strlen(src);
@@ -77,7 +77,7 @@ void xs_bytes_set(xsMachine *the)
 	}
 	else {
 		uint8_t *src = xsmcToArrayBuffer(xsArg(0));
-		uint32_t i, srcLength = xsGetArrayBufferLength(xsArg(0));
+		uint32_t i, srcLength = xsmcGetArrayBufferLength(xsArg(0));
 		if (srcLength != dstLength)
 			xsRangeError("invalid buffer size");
 		if (reverse)
@@ -90,8 +90,8 @@ void xs_bytes_set(xsMachine *the)
 
 void xs_bytes_equals(xsMachine *the)
 {
-	int length = xsGetArrayBufferLength(xsArg(0));
-	if (length != xsGetArrayBufferLength(xsThis))
+	int length = xsmcGetArrayBufferLength(xsArg(0));
+	if (length != xsmcGetArrayBufferLength(xsThis))
 		xsmcSetFalse(xsResult);
 	else {
 		int result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);

@@ -408,6 +408,8 @@ void ServiceEventCreate(ServiceEvent event)
 		xsVars(4);
 		xsTry {
 			xsVar(0) = xsAwaitImport(proxy->name, XS_IMPORT_DEFAULT);
+			fxPush(xsVar(0));
+			fxNew(the);
 			if (proxy->reverse) {
 				xsVar(1) = xsNewHostFunction(ServiceProxyInvoke, 4);
 				xsVar(2) = xsGet(xsGlobal, xsID_Service);
@@ -419,12 +421,10 @@ void ServiceEventCreate(ServiceEvent event)
 				proxy->reverse = NULL;
 				xsVar(2) = xsNew2(xsGlobal, xsID_Proxy, xsVar(1), xsVar(3));
 				fxPush(xsVar(2));
-				fxPushCount(the, 1);
+				fxRunCount(the, 1);
 			}
 			else
-				fxPushCount(the, 0);
-			fxPush(xsVar(0));
-			fxNew(the);
+				fxRunCount(the, 0);
 			proxy->behavior = fxPop();
 		}
 		xsCatch {
@@ -710,11 +710,11 @@ void Piu__jsx__(xsMachine* the)
 			xsSetAt(xsVar(2), xsInteger(i), xsArg(2 + i));
 		xsSet(xsVar(0), xsID_contents, xsVar(2));
 	}
-	fxPush(xsVar(1));
-	fxPush(xsVar(0));
-	fxPushCount(the, 2);
 	fxPush(xsArg(0));
 	fxNew(the);
+	fxPush(xsVar(1));
+	fxPush(xsVar(0));
+	fxRunCount(the, 2);
 	xsResult = *the->stack;
 	the->stack++;
 }

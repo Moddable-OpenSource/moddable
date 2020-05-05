@@ -11,6 +11,8 @@ The [Getting Started Guide](./Moddable%20SDK%20-%20Getting%20Started.md) provide
 
 Guides for specific devices supported by the Moddable SDK, including Moddable One and Moddable Two, are available in the [devices](./devices) directory.
 
+The [Keeping Up To Date](Moddable%20SDK%20-%20Keeping%20Up%20To%20Date.md) guide provides instructions for keeping the Moddable SDK tools and build environment up to date over time.
+
 ### APIs for Moddable SDK Modules
 
 The JavaScript APIs for the modules in the Moddable SDK are documented in the following folders:

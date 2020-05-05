@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -140,7 +140,9 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 
-all: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+all: build
+
+build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -148,6 +150,11 @@ $(LIB_DIR):
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.o $(OBJECTS)
 	@echo "# ld " $(<F)
 	$(CC) $(LINK_OPTIONS) $^ $(LINK_LIBRARIES) -o $@
+
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c

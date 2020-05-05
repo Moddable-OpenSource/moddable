@@ -260,7 +260,7 @@ export default class extends TOOL {
 				pngX++;
 			}
 		}
-	}
+	} 
 	
 	run() {
 		let inputPaths = this.inputPaths;

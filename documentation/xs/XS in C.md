@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2019  Moddable Tech, Inc.
+ | Copyright (c) 2016-2020  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  | 
@@ -37,7 +37,7 @@
 
 # XS in C
 
-Revised: January 28, 2019  
+Revised: March 2, 2020  
 **See end of document for [copyright and license](#license)**
 
 ## About This Document
@@ -439,6 +439,8 @@ In ECMAScript an `ArrayBuffer` is commonly used to store fixed length binary dat
 #### Macros
 
 **`xsSlot xsArrayBuffer(void *theData, xsIntegerValue theSize)`**
+**`void xsmcSetArrayBuffer(xsSlot theSlot, void *theData, xsIntegerValue theSize)`**
+
  
 | Arguments | Description |
 | --- | :-- |
@@ -2185,6 +2187,18 @@ void xs_rectangle_union(xsMachine *the)
 	}
 	*r0 = rUnion;
 }
+```
+
+Standalone functions -- functions that are not part of a class -- can also be implemented in C. The `@` syntax extension is used where the function body normally appears. 
+
+```
+	function restart() @ "xs_restart";
+```
+
+The value of `xsThis` in the implementation of `xs_restart` matches the receiver, which is `xsGlobal` in the following invocation.
+
+```javascript
+	restart();
 ```
 
 <a id="glossary"></a>

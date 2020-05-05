@@ -13,7 +13,6 @@
  */ 
 import config from "mc/config";
 import Time from "time";
-import SetOfNiceColors from "nice-colors";
 
 import html_content from "web";
 
@@ -22,8 +21,8 @@ const RAD2DEG = (180 / Math.PI);
 
 	// name
 	// tag				4 chars used to identify options, html, etc.
-	// op_head			called before frame is drawn (for setup, whatever)
-	// op_tail			called after frame is prepared, before it is drawn
+	// op_first			called before frame is drawn (for setup, whatever)
+	// op_last			called after frame is prepared, before it is drawn
 	// op_set(p,v,d)	pixel, variable, digit
 	// op_clear(p,v)
 	// options_html		should return a chunk of html
@@ -67,15 +66,23 @@ export class ClockStyle {
 
 		this.colonKinds = [ "Solid", "Blink", "None", "Blink Alternate", "Pulse", "Pulse Alternate" ];
 		this.colonKind = 0;
+
+		if (this.display.colonSegments.length == 7)
+			this.colonKinds.push("Solid Bar", "Scanner", "Seconds", "Countdown", "Countup");
 	}
+
+	next_kind() { if (undefined !== this._next_kind) this._next_kind(); }
 
 	get speed() { return this._speed; }
 	set speed(v) {
 		this._speed = parseInt(v); 
-		this.movingMS = ((100-this._speed)*70)+200;
+		this._xspeed = 100 - this._speed;
+		this.movingMS = (this._xspeed*70)+200;
 		if (undefined !== this.updateVars)
 			this.updateVars();
 	}
+
+	get xspeed() { return this._xspeed; }
 
 	get base_prefs() {
 		return `"colonKind":"${this.colonKind}", "speed":"${this._speed}"`;
@@ -107,15 +114,9 @@ export class ClockStyle {
 
 	// base options always show
 	base_options_html() {
-		let body = `<p> <div><label>Colon:</label><select name="COLN_kind">`;
-		for (let i=0; i<this.colonKinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.colonKind == i)
-				body += " selected";
-			body += `>${this.colonKinds[i]}</option>`;
-		}
-		body += `</select></div><p>`;
-		return body;
+		let body = `<p> <div><label>Colon:</label>`;
+		body += html_content.selection("COLN_kind", this.colonKinds, this.colonKind);
+		return body + `</div><p>`;
 	}
 
 	_base_options_response(kv) {
@@ -142,38 +143,74 @@ export class ClockStyle {
 		return body;
 	}
 
-	doColon(p,v,x) {				// pixel, val, which colon pixel (0-1)
+	doColon(v) {				// pixel, val, which colon pixel (0-1)
+		let len = this.display.colonSegments.length;
+		
 		if (this.display.ticks > this.lastBlinkChangeMS + this.blinkTimeMS) {
 			this.blinkState = !this.blinkState;
 			this.lastBlinkChangeMS = this.display.ticks;
 		}
+		let topColon, botColon;
+		let m, c1, c2, i;
+
+		switch (len) {
+			case 7:
+				topColon = this.display.colonSegments[2];
+				botColon = this.display.colonSegments[4];
+				break;
+			default:
+				topColon = this.display.colonSegments[0];
+				botColon = this.display.colonSegments[1];
+				break;
+		}
 
 		switch (this.colonKind) {
 			case 0:			// Solid
-				this.op_set(p, v);
+				this.op_set(topColon, v);
+				this.op_set(botColon, v);
 				break;
 			case 1:			// Blink
-				this.blinkState ? this.op_set(p, v) : this.op_clear(p, v);
+				this.blinkState ? this.op_set(topColon, v) : this.op_clear(topColon, v);
+				this.blinkState ? this.op_set(botColon, v) : this.op_clear(botColon, v);
 				break;
 			case 2:			// None
-				this.op_clear(p, v);
+				this.op_clear(topColon, v);
+				this.op_clear(botColon, v);
 				break;
 			case 3:			// Blink Alternate
-				if (x)
-					this.blinkState ? this.op_set(p, v) : this.op_clear(p, v);
-				else
-					(!this.blinkState) ? this.op_set(p, v) : this.op_clear(p, v);
+				this.blinkState ? this.op_set(topColon, v) : this.op_clear(topColon, v);
+				(!this.blinkState) ? this.op_set(botColon, v) : this.op_clear(botColon, v);
 				break;
 			case 4:			// Pulse
 			case 5:			// Pulse Alternate
-				this.op_set(p, v);
-				let c = this.display.pixels[p];
-				let m = (Math.sin(v*this.display.incVal)/2)+0.5;
-				if (x)
-					c = this.display.scaleColor(c, 4 === this.colonKind ? m : 1-m);
-				else
-					c = this.display.scaleColor(c, m);
-				this.display.set(p, c);
+				this.op_set(topColon, v);
+				this.op_set(botColon, v);
+				c1 = this.display.pixels[topColon];
+				c2 = this.display.pixels[botColon];
+				m = (Math.sin(v*this.display.incVal)/2)+0.5;
+				c1 = this.display.scaleColor(c1, 4 === this.colonKind ? m : 1-m);
+				c2 = this.display.scaleColor(c2, m);
+				this.display.set(topColon, c1);
+				this.display.set(botColon, c2);
+				break;
+			case 6:			// solid bar
+				for (i=0; i<len; i++)
+					this.op_set(this.display.colonSegments[i], v);
+				break;
+			case 7:			// Scanner
+				break;
+			case 8:			// Seconds point
+			case 9:			// Countdown
+			case 10:		// Countup
+				m = ((this.display.seconds * len) / 60) | 0;
+				for (i=0; i<len; i++) {
+					if (this.colonKind == 8)
+						i == m ? this.op_set(this.display.colonSegments[i], v) : this.op_clear(this.display.colonSegments[i], v);
+					else if (this.colonKind == 9)
+						i >= m ? this.op_set(this.display.colonSegments[i], v) : this.op_clear(this.display.colonSegments[i], v);
+					else if (this.colonKind == 10)
+						i >= (len - m) ? this.op_set(this.display.colonSegments[i], v) : this.op_clear(this.display.colonSegments[i], v);
+				}
 				break;
 		}
 	}
@@ -240,16 +277,16 @@ export class ClockStyle {
 		return (r << 16 | g << 8 | b);
 	}
 
+	
 	colorPickerHTML(tag, label, color, num=1) {
-		let body = `<div style="float:left"><label>${label}</label>
-<input name="${tag}_color${num}" id="${tag}_color${num}" value="${this.rgbToHex(color)}">
-<br>
-<canvas id="${tag}_ColorPicker${num}"></canvas>
-<script>
-new KellyColorPicker({place:'${tag}_ColorPicker${num}',input:'${tag}_color${num}'});
-</script></div>`;
+		return `<div style="float:left" id=div_${tag}_color${num}">
+<table><tr><td>
+<label>${label}</label></td><td>
+<input type="color" name="${tag}_color${num}" id="${tag}_color${num}" value="#${this.rgbToHex(color)}" onchange="javascript:document.getElementById('tx${tag}_color${num}').value = document.getElementById('${tag}_color${num}').value;"/>
+</td><td>
+<input type="text" size="7" id='tx${tag}_color${num}' value="#${this.rgbToHex(color)}" onchange="javascript:document.getElementById('${tag}_color${num}').value = fmtClr(document.getElementById('tx${tag}_color${num}').value);"/></td></tr></table></div>
+`;
 
-		return body;
 	}
 
 }
@@ -263,7 +300,7 @@ class Style_OneColor extends ClockStyle {
 		super(display, dict);
 		this.name = "One Color";
 		this.tag = "ONEC";
-        this.color1 = (undefined !== dict.color1) ? dict.color1 : 0xb84223;
+        this.color1 = (undefined !== dict.color1) ? dict.color1 : 0xff2c00;
 
 		this.kind = (undefined !== dict.kind) ? dict.kind : 0;
 		this.kinds = [ "LED", "Scan", "Twinkle" ];
@@ -272,17 +309,16 @@ class Style_OneColor extends ClockStyle {
 		this.pulseMod = 20;
 
 		this.lastSetMS = 0;
+		this.lastTailSetMS = 0;
 	}
 
+	_next_kind() { this.kind = (this.kind == this.kinds.length-1) ? 0 : this.kind + 1; }
+
 	_options_html() {
-		let body = `<div><label>Kind:</label> <select name="ONEC_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += `</select></div><p> <div style="display: table-row">`;
+		let body = `<div><label>Kind:</label>`;
+		body += html_content.selection("ONEC_kind", this.kinds, this.kind);
+
+		body += `</div><p> <div style="display: table-row">`;
 		body += this.colorPickerHTML("ONEC", "Color: ", this.color1);
 		body += `</div>`;
 		return body;
@@ -302,9 +338,9 @@ class Style_OneColor extends ClockStyle {
 		if (undefined !== val.kind) this.kind = parseInt(val.kind);
 	}
 
-	op_head(v) {
+	op_first(v) {
 		if (1 == this.kind) {
-			if (this.display.ticks > this.lastSetMS + (4 * (100-this.speed))) {
+			if (this.display.ticks > this.lastSetMS + (4 * this.xspeed)) {
 				this.lastSetMS = this.display.ticks;
 				if (this.scanLine > this.display.height + 1)
 					this.scanLine = 0;
@@ -323,38 +359,40 @@ class Style_OneColor extends ClockStyle {
 		else if (1 == this.kind) {
 			let xy = this.display.pixelToXY(p);
 			if (xy.y == this.scanLine)
+{
+//trace(`pixel: ${p}, scanline: ${this.scanLine}, xy: ${xy.x},${xy.y}\n`);
 				this.display.set(p, this.color1);
+}
 		}
 		else if (2 == this.kind) {
-			if (this.display.ticks > this.lastSetMS + (100-this.speed))
+			if (this.display.ticks > this.lastSetMS + this.xspeed)
 				if (0.10 > Math.random()) this.display.set(p, this.color1);
 		}
 	}
 
-	op_tail(v) {
+	op_last(v) {
 		if (1 == this.kind)
 			this.display.dim(0, this.display.length, this.speed/10);
 		else if (2 == this.kind) {
-			if (this.display.ticks > this.lastSetMS + (100-this.speed)) {
+			if (this.display.ticks > this.lastSetMS + this.xspeed) {
 				this.lastSetMS = this.display.ticks;
-
 				this.display.dim(0, this.display.length, this.speed/20);
 			}
 		}
 	}
 
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
+	op_tail(v) {
+		let x = this.display.tail_start;
+		let l = this.display.tail_length;
 
-		if (1 == this.kind) {
+		if (1 == this.kind) {		// scan
 			if (this.scanLine == this.display.height) {
-				this.scanFollower.push({lastMS:this.display.ticks, pixel:this.display.extra_start-1});
+				this.scanFollower.push({lastMS:this.display.ticks, pixel:this.display.tail_start-1});
 			}
 
 			for (var k = 0; k < this.scanFollower.length; k++) {
 				let follower = this.scanFollower[k];
-				if (this.display.ticks > follower.lastMS + (4 * (100-this.speed))) {
+				if (this.display.ticks > follower.lastMS + (4 * this.xspeed)) {
 					follower.lastMS = this.display.ticks;
 					follower.pixel = follower.pixel + 1;
 					if (follower.pixel >= this.display.length)
@@ -365,13 +403,24 @@ class Style_OneColor extends ClockStyle {
 			}
 		}
 		else {
-			for (let i=x; i<x+l; i++) {
-				if (0 == this.kind)
-					this.display.set(i, this.color1);
-				else if (2 == this.kind) {
-					if (this.display.ticks > this.lastSetMS + (100-this.speed)*2) {
-						if (0.10 > Math.random()) this.display.set(i, this.color1);
+			if (0 == this.kind) {					// LED
+				for (let i=x; i<x+l; i++) {
+						this.display.set(i, this.color1);
+				}
+			}
+			else if (2 == this.kind) {			// sparkle
+				let doit = 0;
+				if (this.display.ticks > this.lastTailSetMS + this.xspeed*2)
+					doit = 1;
+				if (doit) {
+					this.lastTailSetMS = this.display.ticks;
+					for (let i=x; i<x+l; i++) {
+						if (0.30 > Math.random())
+							this.display.set(i, this.color1);
 					}
+				}
+				else {
+					this.display.dim(x, x+l, 1);
 				}
 			}
 		}
@@ -387,29 +436,35 @@ class Style_TwoColor extends ClockStyle {
 		super(display, dict);
 		this.name = "Two Color";
 		this.tag = "TWOC";
-        this.color1 = (undefined !== dict.color1) ? dict.color1 : 0x52948b;
+        this.color1 = (undefined !== dict.color1) ? dict.color1 : 0x339888;
         this.color2 = (undefined !== dict.color2) ? dict.color2 : 0x128277;
 
 		this.kind = (undefined !== dict.kind) ? dict.kind : 0;
-		this.kinds = [ "Still", "Fade", "Waves", "Sparkle" ];
+		this.kinds = [ "Still", "Fade", "Waves", "Sparkle", "Marquee", "Scan" ];
 
 		this.decayAmt = 5;
 		this.pulseMod = 20;
+
+		this.lastSetMS = 0;
+		this.flipd = 0;
+
+		this.marqScale = 25;
+
+		this.scanLine = 0;
+
+		this.precalcd = 0;
+		this.precalcdTail = 0;
 	}
 
+	_next_kind() { this.kind = (this.kind == this.kinds.length-1) ? 0 : this.kind + 1; }
+
 	_options_html() {
-		let body = `<div><label>Kind:</label> <select name="TWOC_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += `</select></div><p> <div style="display: table-row">`;
-		body += this.colorPickerHTML("TWOC", "Color 1: ", this.color1);
-		body += this.colorPickerHTML("TWOC", "Color 2: ", this.color2, 2);
-		body += `</div>`;
-		return body;
+		return `<div><label>Kind:</label>
+${html_content.selection("TWOC_kind", this.kinds, this.kind)}
+</div><p> <div style="display: table-row">
+${this.colorPickerHTML("TWOC", "Color 1: ", this.color1)}<p>
+${this.colorPickerHTML("TWOC", "Color 2: ", this.color2, 2)}
+</div>`;
 	}
 
 	_options_response(kv) {
@@ -429,37 +484,107 @@ class Style_TwoColor extends ClockStyle {
 		if (undefined !== val.color2) this.color2 = parseInt(val.color2);
 	}
 
+	op_first(v) {
+		this.precalcd = 0;
+		if (1 == this.kind) 					// Fade
+			this.precalcd = this.display.incVal * ((this.speed / 100) + 0.3);
+		else if (2 == this.kind) { 				//  Waves
+			this.precalcd = this.display.incVal * this.easedIn(this.speed) / 4;
+			this.precalcdTail = (this.display.incVal * this.easedIn(this.speed) / 4) * (this.display.tail_length / this.display.height);
+		}
+		else if (3 == this.kind) 				// Sparkle
+			this.precalcd = this.speed / 400;
+		else if (5 == this.kind) {				// Scan
+			if (this.display.ticks > this.lastSetMS + (4 * this.xspeed)) {
+				this.lastSetMS = this.display.ticks;
+				if (this.scanLine > this.display.height + 1) {
+					this.scanFollower.push({lastMS:this.display.ticks, pixel:this.display.tail_start-1, color:(this.flipd ? this.color1 : this.color2)});
+					this.scanLine = 0;
+					this.flipd = !this.flipd;
+				}
+				else
+					this.scanLine++;
+			}
+			if (undefined === this.scanFollower)
+				this.scanFollower = [];
+		}
+	}
+
+	easedIn(t, max=100) {
+		if (t > 0.5)
+			t -= 0.5;
+		let v = t/max;
+		return (max * v*v*v) + 0.5;
+	}
+
 	op_set(p, v) {
 		let xy = this.display.pixelToXY(p);
 		if (0 == this.kind) {						// still
 			this.display.set(p, xy.y > this.display.height/2 ? this.color2 : this.color1);
 		}
 		else if (1 == this.kind) {				// Fade
-			let x = this.display.incVal * ((this.speed / 100) + 0.3);
-			let a = Math.sin(v*x);
+			let a = Math.sin(v*this.precalcd);
 			a = (a/2)+0.5;
 			this.display.set(p, this.mergeAndScale(a, this.color1, this.color2));
-			}
+		}
 		else if (2 == this.kind) {				//  Waves
-			let speed = this.speed / 3;
-			let x = (this.display.incVal / 150) * (100-speed)/2;
-			let a = Math.sin(v*x*this.speed/4);
-			a = (a/2)+0.5;
-			let b = (xy.y+1) / this.display.height;		// b is midpoint
-
-			this.display.set(p, a >= (b-0.1) ? this.color1 : this.color2);
+				let a = (Math.sin(v*this.precalcd + xy.x*0.1)/2);
+				let center = (xy.y + .5) / this.display.height;
+				a += 0.52;
+				if (Math.abs(center-a) < 0.1)
+					this.display.set(p, this.mergeAndScale(a, this.color1, this.color2));
+				else
+					this.display.set(p, a >= center ? this.color2 : this.color1);
 		}
 		else if (3 == this.kind) {					// Sparkle
-			let speed = this.speed / 400;
-			this.display.set(p, Math.random() > speed ? this.color1 : this.color2);
+			this.display.set(p, Math.random() > this.precalcd ? this.color1 : this.color2);
+		}
+		else if (4 == this.kind) {					// Marquee
+			if (this.display.pixel_marqA.includes(p))
+				this.display.set(p, this.flipd ? this.color1 : this.color2);
+			else
+				this.display.set(p, this.flipd ? this.color2 : this.color1);
+		}
+		else if (5 == this.kind) {					// Scan
+			if (xy.y == this.scanLine)
+				this.display.set(p, this.flipd ? this.color1 : this.color2);
 		}
 	}
 
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
+	op_last(v) {
+		if (4 == this.kind) {
+			if (this.display.ticks > this.lastSetMS + (this.xspeed * this.marqScale)) {
+				this.lastSetMS = this.display.ticks;
+				this.flipd = !this.flipd;
+			}
+		}
+		else if (5 == this.kind)
+			this.display.dim(0, this.display.length, this.speed/10);
+	}
+
+	op_tail(v) {
+		if (5 == this.kind) {					// Scan
+
+			for (var k=0; k<this.scanFollower.length; k++) {
+				let follower = this.scanFollower[k];
+				if (this.display.ticks > follower.lastMS + (4 * this.xspeed)) {
+					follower.lastMS = this.display.ticks;
+					follower.pixel = follower.pixel + 1;
+					if (follower.pixel > this.display.length)
+						this.scanFollower.pop();
+					else
+						this.display.set(follower.pixel, follower.color);
+				}
+			}
+			return;
+		}
+		
+		let x = this.display.tail_start;
+		let l = this.display.tail_length;
+		let center = (l / 2) + x + .1;
 		for (let i=x; i<x+l; i++) {
-			let a = (Math.sin(v*this.display.incVal*2 + i*0.01)/2);
+//			let a = (Math.sin(v*this.display.incVal*2 + i*0.01)/2);
+			let a = (Math.sin(v*this.precalcd + i*0.1)/2);
 			if (0 == this.kind) {						// still
 				this.display.set(i, i % 2 ? this.color1 : this.color2);
 			}
@@ -468,17 +593,23 @@ class Style_TwoColor extends ClockStyle {
 				this.display.set(i, this.mergeAndScale(a, this.color1, this.color2));
 			}
 			else if (2 == this.kind) {					// Waves
-				let center = x + (l >> 1);
-				a += 0.52;
-				let b = (i - x) / l;
-				if (Math.abs(b-a) < 0.1)
-					this.display.set(i, this.mergeAndScale(a, this.color2, this.color1));
+				let center = ((i - x) / l) + 0.02;
+				a = (Math.sin(v*this.precalcdTail*0.1)/2);
+				a += 0.50;
+				if (Math.abs(center-a) < 0.05)
+					this.display.set(i, this.mergeAndScale(a, this.color1, this.color2));
 				else
-					this.display.set(i, a >= b ? this.color1 : this.color2);
+					this.display.set(i, a >= center ? this.color2 : this.color1);
 			}
 			else if (3 == this.kind) {					// Sparkle
 				let speed = this.speed / 400;
 				this.display.set(i, Math.random() > speed ? this.color2 : this.color1);
+			}
+			else if (4 == this.kind) {					// Marquee
+				if (this.flipd)
+					this.display.set(i, i%2 ? this.color2 : this.color1);
+				else
+					this.display.set(i, i%2 ? this.color1 : this.color2);
 			}
 		}
 	}
@@ -493,22 +624,20 @@ class Style_Rainbow extends ClockStyle {
 		this.name = "Rainbow";
 		this.tag = "RNBW";
 		this.kind = (undefined !== dict.kind) ? dict.kind : 0;
-		this.kinds = [ "Sunrise", "Span", "Scan", "Disc", "Moving Disc", "Target", "Moving Target" ];
+		this.kinds = [ "Sunrise", "Span", "Scan", "Disc", "Moving Disc", "Target", "Moving Target", "Marquee" ];
 
 		this.rainbowSpeed = (undefined !== dict.rainbowSpeed) ? dict.rainbowSpeed : 50;
 		this.direction = 0;
+		this.flipd = 0;
+		this.lastSetMS = 0;
 	}
+
+	_next_kind() { this.kind = (this.kind == this.kinds.length-1) ? 0 : this.kind + 1; }
 
 	_options_html() {
 		let body = `<div><label>Kind:</label>`;
-		body += `<select name="RNBW_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += `</select><p><label>Rainbow Speed:</label>`;
+		body += html_content.selection("RNBW_kind", this.kinds, this.kind);
+		body += `<p><label>Rainbow Speed:</label>`;
 		body += html_content.slider("RNBW_speed", this.rainbowSpeed, 0, 100);
 		body += `</div>`;
 		return body;
@@ -528,11 +657,15 @@ class Style_Rainbow extends ClockStyle {
 		if (undefined !== val.rSpeed) this.rainbowSpeed = parseInt(val.rSpeed);
 	}
 
-	op_head(v) {
+	op_first(v) {
 		this._hueInc = (v * this.display.incHue) * (this.rainbowSpeed / 20);
+		if (2 == this.kind) 		// scan
+			this.tailHueMultiplier = this.display.tail_length / this.display.height;
+		else 
+			this.tailHueMultiplier = 1;
 	}
 
-	op_set(p, v) {
+	op_set(p, v, d = 0, s = 0) {
 		let x = this.display.width/2;
 		let y = this.display.height/2;
 		let xy, a;
@@ -572,6 +705,23 @@ class Style_Rainbow extends ClockStyle {
 				}
 				this.hueTarget(p, v, x, y, this.direction);
 				break;
+			case 7:						// marquee
+				let h = (this.hue + (s/7) + (d/4)) % 1;
+				let color1 = this.hsvToRgb(h, this.sat, this.val);
+				let color2 = this.hsvToRgb((h + 0.5) % 1, this.sat, this.val);
+				if (this.display.pixel_marqA.includes(p))
+					this.display.set(p, this.flipd ? color1 : color2);
+				else
+					this.display.set(p, this.flipd ? color2 : color1);
+		}
+	}
+
+	op_last(v) {
+		if (7 == this.kind) {
+			if ((this.speed != 0) && (this.display.ticks > this.lastSetMS + (this.xspeed * 50))) {
+				this.lastSetMS = this.display.ticks;
+				this.flipd = !this.flipd;
+			}
 		}
 	}
 
@@ -584,10 +734,13 @@ class Style_Rainbow extends ClockStyle {
 		this.display.set(p, this.hsvToRgb(hue, this.sat, this.val));
 	}
 
+	hueDist(x, y, span) @ "xs_hueDist";
+
 	hueTarget(p, v, x, y, direction) {
 		let xy = this.display.pixelToXY(p);
-		let dist = Math.sqrt((Math.pow(xy.x - x, 2))+(Math.pow(xy.y-y,2)));
-		let hue = dist / this.display.width;
+//		let dist = Math.sqrt((Math.pow(xy.x - x, 2))+(Math.pow(xy.y-y,2)));
+//		let hue = dist / this.display.width;
+		let hue = this.hueDist(xy.x-x, xy.y-y, this.display.width);
 		if (direction == 0) {
 			hue += this._hueInc;
 			hue %= 1;
@@ -602,24 +755,42 @@ class Style_Rainbow extends ClockStyle {
 		this.display.set(p, this.hsvToRgb(hue, this.sat, this.val));
 	}
 
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
+	op_tail(v) {
+		let x = this.display.tail_start;
+		let l = this.display.tail_length;
 		let center = x + (l >> 1);
 		for (let i=x; i<x+l; i++) {
-			let dist = Math.sqrt(Math.pow(center - i, 2));
-			let hue = dist / l;
-			if (this.direction == 0) {
-				hue += this._hueInc;
-				hue %= 1;
+			if (1 == this.kind) {				// span
+				this.display.set(i, this.hsv);
 			}
-			else if (this.direction == 1) {
-				hue -= this._hueInc;
-				let sub = Math.abs(hue) | 0;
-				if (hue < 0)
-					hue = sub + 1 + hue;
+			else {
+				let hue = this.hueDist(center-i, 0, l);
+
+				if (2 == this.kind)				// scan
+					hue += (i % 12) / 12;
+
+				if (this.direction == 0) {
+					hue += this._hueInc * this.tailHueMultiplier;
+					hue %= 1;
+				}
+				else if (this.direction == 1) {
+					hue -= this._hueInc * this.tailHueMultiplier;
+					let sub = Math.abs(hue) | 0;
+					if (hue < 0)
+						hue = sub + 1 + hue;
+				}
+	
+				if (this.kind == 7) {				// marquee
+					let color1 = this.hsvToRgb(hue, this.sat, this.val);
+					let color2 = this.hsvToRgb((hue + 0.5) % 1, this.sat, this.val);
+					if (i % 2 == 0)
+						this.display.set(i, this.flipd ? color1 : color2);
+					else
+						this.display.set(i, this.flipd ? color2 : color1);
+				}
+				else
+					this.display.set(i, this.hsvToRgb(hue, this.sat, this.val));
 			}
-			this.display.set(i, this.hsvToRgb(hue, this.sat, this.val));
 		}
 	}
 	
@@ -634,7 +805,7 @@ class Style_Special extends ClockStyle {
 		this.name = "Special";
 		this.tag = "SPCL";
 
-		this.kinds = [ "America", "Fire", "Random", "Random decay" ];
+		this.kinds = [ "America", "Fire", "Ice", "Random", "Random decay" ];
 		this.kind = 0;
 
 		this.setTimeMS = 5000;
@@ -644,16 +815,12 @@ class Style_Special extends ClockStyle {
 		this.lastDecayMS = -this.decayTimeMS;
 	}
 
+	_next_kind() { this.kind = (this.kind == this.kinds.length-1) ? 0 : this.kind + 1; }
+
 	_options_html() {
 		let body = `<div><label>Kind:</label>`;
-		body += `<select name="SPCL_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += "</select></div>";
+		body += html_content.selection("SPCL_kind", this.kinds, this.kind);
+		body += "</div>";
 		return body;
 	}
 
@@ -668,14 +835,14 @@ class Style_Special extends ClockStyle {
 		if (undefined !== val.kind) this.kind = parseInt(val.kind);
 	}
 
-	op_head(v) {
-		if (1 == this.kind) {				// Fire
+	op_first(v) {
+		if (1 == this.kind || 2 == this.kind) {				// Fire & ice
 			const COOLING = 5; // 55;
 			const SPARKING = 120; // 120;
 
 			let cooldown, i, j, x, l;
-			l = this.display.extra + this.display.extra_start;
-			if (l < this.display.width * this.display.height)
+//			l = this.display.tail_length + this.display.tail_start;
+//			if (l < this.display.width * this.display.height)
 				l = this.display.width * this.display.height;
 				
 			if (undefined === this.heat)
@@ -710,6 +877,40 @@ class Style_Special extends ClockStyle {
 		}
 	}
 
+	fniSet(x) {
+		let c;
+		while (x >= this.heat.length)
+			x -= this.heat.length;
+
+//if (this.heat[x] === undefined) {
+//	debugger;
+//}
+		let t192 = Math.round((this.heat[x]/255.0)*191);
+		let heatramp = t192 & 0x3F;
+		heatramp <<= 2;
+
+		if (1 == this.kind) {
+			if (t192 > 0x80)
+				c = 0xffff00 | heatramp;
+			else if (t192 > 0x40)
+				c = 0xff0000 | (heatramp << 8);
+			else
+				c = heatramp << 16;
+		}
+		else {
+			if (t192 > 0x80)
+				c = 0x0000ff | (heatramp << 8) | (heatramp << 16);
+			else if (t192 > 0x40) {
+				heatramp <<= 1;
+				c = 0x0000ff | (heatramp << 8) | (heatramp << 16);
+			}
+			else
+				c = heatramp;
+		}
+		return c;
+	}
+
+
 	op_set(p, v) {
 		let xy = this.display.pixelToXY(p);
 
@@ -719,23 +920,11 @@ class Style_Special extends ClockStyle {
 			else 								// red or white bar
 				this.display.set(p, xy.y % 2 ? 0xffffff : 0xff0000);
 		}
-		else if (this.kind == 1) {				// Fire
+		else if (this.kind == 1 || this.kind == 2) {				// Fire
 			let x = xy.x * this.display.height + xy.y;
-			let c;
-
-			let t192 = Math.round((this.heat[x]/255.0)*191);
-			let heatramp = t192 & 0x3F;
-			heatramp <<= 2;
-
-			if (t192 > 0x80)
-				c = 0xffff00 | heatramp;
-			else if (t192 > 0x40)
-				c = 0xff0000 | (heatramp << 8);
-			else
-				c = heatramp << 16;
-			this.display.set(p, c);
+			this.display.set(p, this.fniSet(x));
 		}
-		else if ((this.kind == 2) || (this.kind == 3))  {	// Random color
+		else if ((this.kind == 3) || (this.kind == 4))  {	// Random color
 			if (this.display.ticks > this.lastSetMS + this.setTimeMS) {
 				let r = (Math.random() * 255) | 0;
 				let g = (Math.random() * 255) | 0;
@@ -751,12 +940,12 @@ class Style_Special extends ClockStyle {
 		}
 	}
 
-	op_tail(v) {
-		if ((this.kind == 2) || (this.kind == 3)) {			// Random color fade
+	op_last(v) {
+		if ((this.kind == 3) || (this.kind == 4)) {			// Random color fade
 			if (this.display.ticks > this.lastSetMS + this.setTimeMS)
 				this.lastSetMS = this.display.ticks;
 
-			if (this.kind == 3)	{ 							// decay
+			if (this.kind == 4)	{ 							// decay
 				if (this.display.ticks > this.lastDecayMS + this.decayTimeMS) {
 					this.lastDecayMS = this.display.ticks;
 					this.display.dim(0, this.display.length, 5);
@@ -765,9 +954,9 @@ class Style_Special extends ClockStyle {
 		}
 	}
 
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
+	op_tail(v) {
+		let x = this.display.tail_start;
+		let l = this.display.tail_length;
 		for (let i=x; i<x+l; i++) {
 			if (this.kind == 0) {							// America
 					switch (i%3) {
@@ -776,153 +965,13 @@ class Style_Special extends ClockStyle {
 						case 2: this.display.set(i, 0x000000ff); break;
 					}
 			}
-			else if (this.kind == 1) {						// fire
+			else if (this.kind == 1 || this.kind == 2) {						// fire & ice
 				let n = i - x;
-				let c;
-	
-				let t192 = Math.round((this.heat[n]/255.0)*191);
-				let heatramp = t192 & 0x3F;
-				heatramp <<= 2;
-	
-				if (t192 > 0x80)
-					c = 0xffff00 | heatramp;
-				else if (t192 > 0x40)
-					c = 0xff0000 | (heatramp << 8);
-				else
-					c = heatramp << 16;
-				this.display.set(i, c);
+				this.display.set(i, this.fniSet(n));
 			}
 			else if (this.kind == 2 || this.kind == 3) {	// random
 				this.op_set(i, v);
 			}
-		}
-	}
-}
-
-/*****************/
-/* Nice Colors   */
-
-class Style_NiceColors extends ClockStyle {
-	constructor(display, dict) {
-		super(display, dict);
-		this.name = "Nice Colors";
-		this.tag = "NICE";
-		this.stepMS = (undefined !== dict.stepMS) ? dict.stepMS : 20000;
-		this.div = this.stepMS / 4;
-		this.lastColorChangeMS = -1;	// make sure it triggers once before drawing
-		this.niceColor = 0;
-
-		this.kind = (undefined !== dict.kind) ? dict.kind : 0;
-		this.kinds = [ "Still", "Step", "Quad", "Quad step", "Moving" ];
-	}
-
-	get style_prefs() { return `"kind":"${this.kind}"`; }
-
-	set style_prefs(val) {
-		if (undefined !== val.kind) this.kind = parseInt(val.kind);
-	}
-
-	_options_html() {
-		let body = `<div><label>Kind:</label>`;
-		body += `<select name="NICE_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += "</select></div>";
-		return body;
-	}
-
-	_options_response(kv) {
-		if (undefined !== kv.NICE_kind)
-			this.kind = parseInt(kv.NICE_kind);
-	}
-
-	updateVars() {
-		this.stepMS = (100 - this.speed) * 600;
-		this.lastColorChangeMS = -1;
-		this.div = this.stepMS / 4;
-	}
-
-	op_set(p, v, d) {
-		let step = ((this.display.ticks - this.lastColorChangeMS) / this.div)|0;
-		step %= 4;
-		if (undefined === d)
-			d = 2;
-		switch (this.kind) {
-			case 0:				// static color set - one per digit
-				this.display.set(p, this.niceColors[d]);
-				break;
-			case 1:				// step
-				this.display.set(p, this.niceColors[(d+step)%4]);
-				break;
-			case 2:				// quad
-				step = 0;
-				// don't break
-			case 3:				// quad step
-				this.quad(p, step);
-				break;
-			case 4:				// moving
-				this.moveCenter(p);
-				break;
-		}
-	}
-
-	quad(p, step) {
-		let xy = this.display.pixelToXY(p);
-		let c;
-		if (xy.x < (this.display.width/2)-1) {
-			if (xy.y < this.display.height/2)
-				c = this.niceColors[(step+0)%4];
-			else
-				c = this.niceColors[(step+1)%4];
-		}
-		else {
-			if (xy.y < this.display.height/2)
-				c = this.niceColors[(step+3)%4];
-			else
-				c = this.niceColors[(step+2)%4];
-		}
-		this.display.set(p, c);
-	}
-
-	moveCenter(p) {
-		let x, y;
-		let elapsed = this.display.ticks - this.lastMovedMS;
-		x = this.xCenter + (this.xInc * elapsed);
-		y = this.yCenter + (this.yInc * elapsed);
-		let xy = this.display.pixelToXY(p);
-		if (xy.x < x) {
-			if (xy.y < y)
-				this.display.set(p, this.niceColors[0]);
-			else
-				this.display.set(p, this.niceColors[1]);
-		}
-		else if (xy.y < y)
-			this.display.set(p, this.niceColors[2]);
-		else
-			this.display.set(p, this.niceColors[3]);
-	}
-
-	op_head(v) {
-		if (this.display.ticks > this.lastColorChangeMS + this.stepMS) {
-			this.lastColorChangeMS = this.display.ticks;
-			this.niceColor += 1;
-			if (this.niceColor >= SetOfNiceColors.length)
-				this.niceColor = 0;
-			this.niceColors = SetOfNiceColors[this.niceColor].slice(0,4);
-		}
-	}
-
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
-		let center = x + (l >> 1);
-		for (let i=x; i<x+l; i++) {
-			let which = (((i-x)/4)%4)|0;
-			this.display.set(i, this.niceColors[which]);
 		}
 	}
 }
@@ -950,25 +999,18 @@ class Style_ColorWheel extends ClockStyle {
 		this.colorKinds = [ "Monochromatic", "Complementary", "Split Complementary", "Analogous", "Triadic", "Tetradic", "Warm", "Cool" ];
 	}
 
+	_next_kind() {
+		this.colorKind = (this.colorKind == this.colorKinds.length-1) ? 0 : this.colorKind + 1;
+		this.lastColorChangeMS = -1;
+	}
+
 	_options_html() {
 		let body = `<div><label>Kind:</label>`;
-		body += `<select name="WHEL_kind">`;
-		for (let i=0; i<this.kinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.kind == i)
-				body += " selected";
-			body += `>${this.kinds[i]}</option>`;
-		}
-		body += "</select></div><p>";
+		body += html_content.selection("WHEL_kind", this.kinds, this.kind);
+		body += "</div><p>";
 		body += `<div><label>Color Kind:</label>`;
-		body += `<select name="WHEL_colr">`;
-		for (let i=0; i<this.colorKinds.length; i++) {
-			body += `<option value=${i}`;
-			if (this.colorKind == i)
-				body += " selected";
-			body += `>${this.colorKinds[i]}</option>`;
-		}
-		body += `</select></div><p><div><label>Pastels:</label>
+		body += html_content.selection("WHEL_colr", this.colorKinds, this.colorKind);
+		body += `</div><p><div><label>Pastels:</label>
 <input type="checkbox" name="WHEL_pstl" ${(this.pastels ?" checked":"")} value="1"></div><p>`;
 
 		return body;
@@ -1000,7 +1042,7 @@ class Style_ColorWheel extends ClockStyle {
 			this.sat = 0.60;
 		else
 			this.sat = 1;
-		this.stepMS = (100 - this.speed) * 600;
+		this.stepMS = this.xspeed * 600;
 		this.lastColorChangeMS = -1;
 		this.div = this.stepMS / 4;
 	}
@@ -1029,11 +1071,11 @@ class Style_ColorWheel extends ClockStyle {
 		return x;
 	}
 
-	op_head(v) {
+	op_first(v) {
 		let i, inc;
 		this._step = ((this.display.ticks - this.lastColorChangeMS) / this.div)|0;
 		this._step %= 4;
-		if (this.display.ticks > this.lastSetMS + (4 * 100-this.speed)) {
+		if (this.display.ticks > this.lastSetMS + (4 * this.xspeed)) {
 			this.lastSetMS = this.display.ticks;
 		}
 		if ((this.lastColorChangeMS < 0) || (this.display.ticks > this.lastColorChangeMS + this.stepMS)) {
@@ -1146,9 +1188,9 @@ class Style_ColorWheel extends ClockStyle {
 			this.display.set(p, this.color[3]);
 	}
 
-	op_extra(v) {
-		let x = this.display.extra_start;
-		let l = this.display.extra;
+	op_tail(v) {
+		let x = this.display.tail_start;
+		let l = this.display.tail_length;
 		let center = x + (l >> 1);
 		for (let i=x; i<x+l; i++) {
 			let which = ((((i-x)/4)+this._step)%4)|0;
@@ -1160,19 +1202,17 @@ class Style_ColorWheel extends ClockStyle {
 ClockStyle.OneColor = Style_OneColor;
 ClockStyle.TwoColor = Style_TwoColor;
 ClockStyle.Rainbow = Style_Rainbow;
-ClockStyle.NiceColors = Style_NiceColors;
 ClockStyle.Special = Style_Special;
 ClockStyle.ColorWheel = Style_ColorWheel;
 
 
-Object.freeze(Style_OneColor.prototype);
-Object.freeze(Style_TwoColor.prototype);
-Object.freeze(Style_Rainbow.prototype);
-Object.freeze(Style_NiceColors.prototype);
-Object.freeze(Style_Special.prototype);
-Object.freeze(Style_ColorWheel.prototype);
+Object.freeze(Style_OneColor.prototype, true);
+Object.freeze(Style_TwoColor.prototype, true);
+Object.freeze(Style_Rainbow.prototype, true);
+Object.freeze(Style_Special.prototype, true);
+Object.freeze(Style_ColorWheel.prototype, true);
 
-Object.freeze(ClockStyle.prototype);
+Object.freeze(ClockStyle.prototype, true);
 
 export default ClockStyle;
 

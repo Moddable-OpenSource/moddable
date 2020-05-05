@@ -37,7 +37,6 @@
 
 #include "xsAll.h"
 
-#define XS_MAX_INDEX ((2 << 28) - 2)
 #define mxPop() (the->stack++)
 #define mxArraySize(ARRAY) (((ARRAY)->value.array.address) ? (((txChunk*)(((txByte*)((ARRAY)->value.array.address)) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0)
 
@@ -53,7 +52,7 @@ static txIndex fxGetArrayLimit(txMachine* the, txSlot* reference);
 static void fxMoveThisItem(txMachine* the, txNumber from, txNumber to);
 static void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index);
 static txBoolean fxSetArrayLength(txMachine* the, txSlot* array, txIndex target);
-static void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index);
+static void fx_Array_from_aux(txMachine* the, txSlot* function, txSlot* value, txIndex index);
 static txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex length, txIndex start, txIndex depth, txSlot* function);
 
 static txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
@@ -244,19 +243,6 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 {
 	mxPushSlot(mxThis);
 	if (fxHasIndex(the, index)) {
-		/* ARG0 */
-		mxPushSlot(mxThis);
-		fxGetIndex(the, index);
-		if (item) {
-			item->kind = the->stack->kind;
-			item->value = the->stack->value;
-		}
-		/* ARG1 */
-		mxPushUnsigned(index);
-		/* ARG2 */
-		mxPushSlot(mxThis);
-		/* ARGC */
-		mxPushInteger(3);
 		/* THIS */
 		if (mxArgc > 1)
 			mxPushSlot(mxArgv(1));
@@ -264,7 +250,17 @@ txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot
 			mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushSlot(mxThis);
+		fxGetIndex(the, index);
+		if (item) {
+			item->kind = the->stack->kind;
+			item->value = the->stack->value;
+		}
+		mxPushUnsigned(index);
+		mxPushSlot(mxThis);
+		mxRunCount(3);
 		return 1;
 	}
 	return 0;
@@ -331,29 +327,32 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 	else if (b->kind == XS_UNDEFINED_KIND)
 		result = -1;
 	else {
-		mxPushSlot(a);
-		mxPushSlot(b);
 		if (function) {
-			/* ARGC */
-			mxPushInteger(2);
 			/* THIS */
 			mxPushUndefined();
 			/* FUNCTION */
 			mxPushSlot(function);
-			fxCall(the);
+			mxCall();
+			/* ARGUMENTS */
+			mxPushSlot(a);
+			mxPushSlot(b);
+			mxRunCount(2);
 			if (the->stack->kind == XS_INTEGER_KIND)
 				result = the->stack->value.integer;
 			else {
 				txNumber number = fxToNumber(the, the->stack);
 				result = (number < 0) ? -1 :  (number > 0) ? 1 : 0;
 			}
-			the->stack++;
+			mxPop();
 		}
 		else {
+			mxPushSlot(a);
+			mxPushSlot(b);
 			fxToString(the, the->stack + 1);
 			fxToString(the, the->stack);
 			result = c_strcmp((the->stack + 1)->value.string, the->stack->value.string);
-			the->stack += 2;
+			mxPop();
+			mxPop();
 		}
 	}
 	if (result == 0)
@@ -389,22 +388,23 @@ void fxConstructArrayEntry(txMachine* the, txSlot* entry)
 
 txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 {
-	if (flag) {
-		mxPushUnsigned(length);
-		mxPushInteger(1);
-	}
-	else
-		mxPushInteger(0);
+    txBoolean resize = 1;
 	if (mxIsReference(mxThis) && mxIsConstructor(mxThis->value.reference)) {
 		mxPushSlot(mxThis);
 		if (the->stack->value.reference != mxArrayConstructor.value.reference)
-			flag = 0;
+			resize = 0;
 	}
 	else
 		mxPush(mxArrayConstructor);
-	fxNew(the);
+	mxNew();
+	if (flag) {
+		mxPushUnsigned(length);
+		mxRunCount(1);
+	}
+	else
+		mxRunCount(0);
 	mxPullSlot(mxResult);
-	if (flag)
+	if (resize)
 		fxSetIndexSize(the, mxResult->value.reference->next, length);
 	return fxCheckArray(the, mxResult, XS_MUTABLE);
 }
@@ -414,8 +414,6 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	txSlot* instance = fxToInstance(the, mxThis);
 	txFlag flag = 1;
 	txSlot* array = C_NULL;
-	mxPushNumber(length);
-	mxPushInteger(1);
 	if (fxIsArray(the, instance)) {
 		mxPushSlot(mxThis);
 		fxGetID(the, mxID(_constructor));
@@ -435,7 +433,9 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	}
 	else
 		mxTypeError("invalid constructor");
-	fxNew(the);
+	mxNew();
+	mxPushNumber(length);
+	mxRunCount(1);
 	mxPullSlot(mxResult);
 	if (flag) {
 		array = mxResult->value.reference->next;
@@ -446,19 +446,6 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 
 void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item)
 {
-	/* ARG0 */
-	mxPushSlot(mxThis);
-	fxGetIndex(the, index);
-	if (item) {
-		item->kind = the->stack->kind;
-		item->value = the->stack->value;
-	}
-	/* ARG1 */
-	mxPushUnsigned(index);
-	/* ARG2 */
-	mxPushSlot(mxThis);
-	/* ARGC */
-	mxPushInteger(3);
 	/* THIS */
 	if (mxArgc > 1)
 		mxPushSlot(mxArgv(1));
@@ -466,7 +453,18 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 		mxPushUndefined();
 	/* FUNCTION */
 	mxPushSlot(function);
-	fxCall(the);
+	mxCall();
+	/* ARGUMENTS */
+	mxPushSlot(mxThis);
+	fxGetIndex(the, index);
+	if (item) {
+		item->kind = the->stack->kind;
+		item->value = the->stack->value;
+	}
+	mxPushUnsigned(index);
+	mxPushSlot(mxThis);
+	/* ARGC */
+	mxRunCount(3);
 }
 
 txNumber fxGetArrayLength(txMachine* the, txSlot* reference)
@@ -504,8 +502,16 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	fxGetID(the, mxID(_length));
 	length = fxToLength(the, the->stack);
 	mxPop();
-	if (length > 0xFFFFFFFF) // @@ practical limit for iterations
-		length = 0xFFFFFFFF;
+	if (length > 0xFFFFFFFF) { // @@ practical limit for iterations
+		txSlot* result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG))
+			result = result->next;
+		if (result && (result->kind == XS_ARRAY_KIND))
+			length = array->value.array.length;
+		else
+			length = 0;
+	}
+		
 	return (txIndex)length;
 }
 
@@ -583,22 +589,18 @@ void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index)
 {
 	mxPushSlot(mxThis);
 	if (fxHasIndex(the, index)) {
-		/* ARG0 */
-		mxPushSlot(mxResult);
-		/* ARG1 */
-		mxPushSlot(mxThis);
-		fxGetIndex(the, index);
-		/* ARG2 */
-		mxPushUnsigned(index);
-		/* ARG3 */
-		mxPushSlot(mxThis);
-		/* ARGC */
-		mxPushInteger(4);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushSlot(mxResult);
+		mxPushSlot(mxThis);
+		fxGetIndex(the, index);
+		mxPushUnsigned(index);
+		mxPushSlot(mxThis);
+		mxRunCount(4);
 		mxPullSlot(mxResult);
 	}
 }
@@ -869,10 +871,13 @@ void fx_Array_from(txMachine* the)
 {
 	txSlot* function = (mxArgc > 1) ? fxArgToCallback(the, 1) : C_NULL;
 	txIndex length = 0;
+	txSlot* iterator;
+	txSlot* next;
+	txSlot* value;
 	if (mxArgc > 0) {
 		mxPushSlot(mxArgv(0));
 		fxGetID(the, mxID(_Symbol_iterator));
-		if (mxIsUndefined(the->stack)) {
+		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 			txIndex index = 0;
 			mxPushSlot(mxArgv(0));
 			fxGetID(the, mxID(_length));
@@ -885,45 +890,29 @@ void fx_Array_from(txMachine* the)
 			while (index < length) {
 				mxPushSlot(mxArgv(0));
 				fxGetIndex(the, index);
-				fx_Array_from_aux(the, function, index);
-				mxPushSlot(mxResult);
-				fxDefineIndex(the, index, 0, XS_GET_ONLY);
+				fx_Array_from_aux(the, function, the->stack, index);
 				mxPop();
 				index++;
 			}
 		}
 		else {
-			txSlot* iterator;
-			txSlot* result;
 			fxCreateArray(the, 0, 0);
-			mxPushInteger(0);
-			mxPushSlot(mxArgv(0));
-			fxCallID(the, mxID(_Symbol_iterator));
-			iterator = the->stack;
-			{
+			mxTemporary(iterator);
+			mxTemporary(next);
+			fxGetIterator(the, mxArgv(0), iterator, next, 0);
+			mxTemporary(value);
+			length = 0;
+			while (fxIteratorNext(the, iterator, next, value)) {
 				mxTry(the) {
-					length = 0;
-					for(;;) {
-						mxCallID(iterator, mxID(_next), 0);
-						result = the->stack;
-						mxGetID(result, mxID(_done));
-						if (fxToBoolean(the, the->stack))
-							break;
-						the->stack++;
-						mxGetID(result, mxID(_value));
-						fx_Array_from_aux(the, function, length);
-						mxPushSlot(mxResult);
-						fxDefineIndex(the, length, 0, XS_GET_ONLY);
-						mxPop();
-						length++;
-					}
+					fx_Array_from_aux(the, function, value, length);
+					length++;
 				}
 				mxCatch(the) {
-					fxCloseIterator(the, iterator);
+					fxIteratorReturn(the, iterator);
 					fxJump(the);
 				}
 			}
-			the->stack++;
+			mxPop();
 		}
 	}
 	else {
@@ -935,13 +924,9 @@ void fx_Array_from(txMachine* the)
 	mxPop();
 }
 
-void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index)
+void fx_Array_from_aux(txMachine* the, txSlot* function, txSlot* value, txIndex index)
 {
 	if (function) {
-		/* ARG1 */
-		mxPushInteger(index);
-		/* ARGC */
-		mxPushInteger(2);
 		/* THIS */
 		if (mxArgc > 2)
 			mxPushSlot(mxArgv(2));
@@ -949,8 +934,17 @@ void fx_Array_from_aux(txMachine* the, txSlot* function, txIndex index)
 			mxPushUndefined();
 		/* FUNCTION */
 		mxPushSlot(function);
-		fxCall(the);
+		mxCall();
+		/* ARGUMENTS */
+		mxPushSlot(value);
+		mxPushInteger(index);
+		mxRunCount(2);
 	}
+	else
+		mxPushSlot(value);
+	mxPushSlot(mxResult);
+	fxDefineIndex(the, index, 0, XS_GET_ONLY);
+	mxPop();
 }
 
 void fx_Array_isArray(txMachine* the)
@@ -1022,6 +1016,8 @@ void fx_Array_prototype_concat(txMachine* the)
 				fxGetID(the, mxID(_length));
 				length = (txIndex)fxToLength(the, the->stack);
 				mxPop();
+                if (resultLength + length < resultLength)
+                    mxTypeError("array overflow");
 				index = 0;
 				while (index < length) {
 					mxPushSlot(argument);
@@ -1043,6 +1039,8 @@ void fx_Array_prototype_concat(txMachine* the)
 			else {
 				slot = fxNextSlotProperty(the, slot, argument, XS_NO_ID, XS_NO_FLAG);
 				resultLength++;
+				if (resultLength == 0)
+					mxTypeError("array overflow");
 			}
 			mxPop();
 			i++;
@@ -1360,16 +1358,7 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 	while (index < length) {
 		mxPushSlot(source);
 		if (fxHasIndex(the, index)) {
-			/* ARG0 */
-			mxPushSlot(source);
-			fxGetIndex(the, index);
 			if (function) {
-				/* ARG1 */
-				mxPushUnsigned(index);
-				/* ARG2 */
-				mxPushSlot(mxThis);
-				/* ARGC */
-				mxPushInteger(3);
 				/* THIS */
 				if (mxArgc > 1)
 					mxPushSlot(mxArgv(1));
@@ -1377,7 +1366,17 @@ txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex lengt
 					mxPushUndefined();
 				/* FUNCTION */
 				mxPushSlot(function);
-				fxCall(the);
+				mxCall();
+				/* ARGUMENTS */
+				mxPushSlot(source);
+				fxGetIndex(the, index);
+				mxPushUnsigned(index);
+				mxPushSlot(mxThis);
+				mxRunCount(3);
+			}
+			else {
+				mxPushSlot(source);
+				fxGetIndex(the, index);
 			}
 			item = the->stack;
 			if ((depth > 0) && mxIsReference(item) && fxIsArray(the, fxToInstance(the, item))) {
@@ -2294,19 +2293,19 @@ void fx_Array_prototype_toLocaleString(txMachine* the)
 		}
 		else
 			comma = 1;
-		mxPushInteger(0);
 		mxPushSlot(mxThis);
 		fxGetIndex(the, index);
 		if ((the->stack->kind != XS_UNDEFINED_KIND) && (the->stack->kind != XS_NULL_KIND)) {
-			fxCallID(the, mxID(_toLocaleString));
+			mxDub();
+			fxGetID(the, mxID(_toLocaleString));
+			mxCall();
+			mxRunCount(0);
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 			string = fxToString(the, slot);
 			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
 			slot->value.key.sum = c_strlen(string);
 			size += slot->value.key.sum;
 		}
-		else
-			mxPop();
 		mxPop();
 		index++;
 	}
@@ -2324,9 +2323,11 @@ void fx_Array_prototype_toLocaleString(txMachine* the)
 
 void fx_Array_prototype_toString(txMachine* the)
 {
-	mxPushInteger(0);
 	mxPushSlot(mxThis);
-	fxCallID(the, mxID(_join));
+	mxDub();
+	fxGetID(the, mxID(_join));
+	mxCall();
+	mxRunCount(0);
 	mxPullSlot(mxResult);
 }
 

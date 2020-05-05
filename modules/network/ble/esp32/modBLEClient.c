@@ -389,7 +389,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	if (argc > 1)
-		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsGetArrayBufferLength(xsArg(1)));
+		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
 	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
@@ -476,7 +476,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 			xsUnknownError("out of memory");
 		if (argc > 3) {
 			esp_bt_uuid_t uuid;
-			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsGetArrayBufferLength(xsArg(3)));
+			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
 			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, &csr->char_elem_result[0], &count))
 				count = 0;
 		}
@@ -584,7 +584,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
@@ -680,7 +680,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;

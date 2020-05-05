@@ -45,7 +45,44 @@
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
-	static void espStartInstrumentation(txMachine *the);
+	static void espInitInstrumentation(txMachine *the);
+	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
+	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(txMachine *the);
+	void espInstrumentMachineReset(txMachine *the);
+
+	#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
+	static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)"Pixels drawn",
+		(char *)"Frames drawn",
+		(char *)"Network bytes read",
+		(char *)"Network bytes written",
+		(char *)"Network sockets",
+		(char *)"Timers",
+		(char *)"Files",
+		(char *)"Poco display list used",
+		(char *)"Piu command List used",
+	#if ESP32
+		(char *)"SPI flash erases",
+	#endif
+		(char *)"System bytes free",
+	};
+
+	static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)" pixels",
+		(char *)" frames",
+		(char *)" bytes",
+		(char *)" bytes",
+		(char *)" sockets",
+		(char *)" timers",
+		(char *)" files",
+		(char *)" bytes",
+		(char *)" bytes",
+	#if ESP32
+		(char *)" sectors",
+	#endif
+		(char *)" bytes",
+	};
 #endif
 
 extern void* xsPreparationAndCreation(xsCreation **creation);
@@ -148,10 +185,6 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	xsSetContext(result, NULL);
 
-#ifdef mxInstrument
-	espStartInstrumentation(result);
-#endif
-
 	return result;
 }
 
@@ -175,6 +208,11 @@ void mc_setup(xsMachine *the)
 	txPreparation *preparation = xsPreparationAndCreation(NULL);
 	txInteger scriptCount = preparation->scriptCount;
 	txScript* script = preparation->scripts;
+
+#ifdef mxInstrument
+	espInitInstrumentation(the);
+	espInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
+#endif
 
 	gSetupPending = 1;
 
@@ -544,73 +582,49 @@ void fxSweepHost(txMachine* the)
 
 #ifdef mxInstrument
 
-static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
-
-#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
-static char* espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)"Pixels drawn",
-	(char *)"Frames drawn",
-	(char *)"Network bytes read",
-	(char *)"Network bytes written",
-	(char *)"Network sockets",
-	(char *)"Timers",
-	(char *)"Files",
-	(char *)"Poco display list used",
-	(char *)"Piu command List used",
-	(char *)"System bytes free",
-};
-    
-static char* espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
-	(char *)" pixels",
-	(char *)" frames",
-	(char *)" bytes",
-	(char *)" bytes",
-	(char *)" sockets",
-	(char *)" timers",
-	(char *)" files",
-	(char *)" bytes",
-	(char *)" bytes",
-	(char *)" bytes",
-};  
-
-txMachine *gInstrumentationThe;
-    
-static int32_t modInstrumentationSystemFreeMemory(void)
+static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
+	txMachine *the = theIn;
 //	return (int32_t)xPortGetFreeHeapSize();
 	return (int32_t)0;
 }
 
-static int32_t modInstrumentationSlotHeapSize(void)
+static int32_t modInstrumentationSlotHeapSize(void *theIn)
 {
-	return gInstrumentationThe->currentHeapCount * sizeof(txSlot);
+	txMachine *the = theIn;
+	return the->currentHeapCount * sizeof(txSlot);
 }
 
-static int32_t modInstrumentationChunkHeapSize(void)
+static int32_t modInstrumentationChunkHeapSize(void *theIn)
 {
-	return gInstrumentationThe->currentChunksSize;
+	txMachine *the = theIn;
+	return the->currentChunksSize;
 }
 
-static int32_t modInstrumentationKeysUsed(void)
+static int32_t modInstrumentationKeysUsed(void *theIn)
 {
-	return gInstrumentationThe->keyIndex - gInstrumentationThe->keyOffset;
+	txMachine *the = theIn;
+	return the->keyIndex - the->keyOffset;
 }
 
-static int32_t modInstrumentationGarbageCollectionCount(void)
+static int32_t modInstrumentationGarbageCollectionCount(void *theIn)
 {
-	return gInstrumentationThe->garbageCollectionCount;
+	txMachine *the = theIn;
+	return the->garbageCollectionCount;
 }
 
-static int32_t modInstrumentationModulesLoaded(void)
+static int32_t modInstrumentationModulesLoaded(void *theIn)
 {
-	return gInstrumentationThe->loadedModulesCount;
+	txMachine *the = theIn;
+	return the->loadedModulesCount;
 }
 
-static int32_t modInstrumentationStackRemain(void)
+static int32_t modInstrumentationStackRemain(void *theIn)
 {
-	if (gInstrumentationThe->stackPeak > gInstrumentationThe->stack)
-		gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
-	return (gInstrumentationThe->stackTop - gInstrumentationThe->stackPeak) * sizeof(txSlot);
+	txMachine *the = theIn;
+	if (the->stackPeak > the->stack)
+		the->stackPeak = the->stack;
+	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
 
 static modTimer gInstrumentationTimer;
@@ -626,11 +640,8 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 		modTimerReschedule(gInstrumentationTimer, 1000, 1000);
 }
 
-void espStartInstrumentation(txMachine *the)
+void espInitInstrumentation(txMachine *the)
 {
-	if (NULL == (void*)the->connection)
-		return;
-
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -640,25 +651,18 @@ void espStartInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(GarbageCollectionCount, modInstrumentationGarbageCollectionCount);
 	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
-
-	fxDescribeInstrumentation(the, espInstrumentCount, espInstrumentNames, espInstrumentUnits);
-
-	gInstrumentationTimer = modTimerAdd(0, 1000, espSampleInstrumentation, NULL, 0);
-	gInstrumentationThe = the;
-
-	the->onBreak = espDebugBreak;
 }
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	txInteger values[espInstrumentCount];
 	int what;
+	xsMachine *the = *(xsMachine **)refcon;
 
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
-		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(what);
+		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
-	values[kModInstrumentationTimers - kModInstrumentationPixelsDrawn] -= 1;    // remove timer used by instrumentation
-	fxSampleInstrumentation(gInstrumentationThe, espInstrumentCount, values);
+	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
 	modInstrumentationSet(FramesDrawn, 0);
@@ -666,8 +670,36 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
-	gInstrumentationThe->garbageCollectionCount = 0;
-	gInstrumentationThe->stackPeak = gInstrumentationThe->stack;
+	espInstrumentMachineReset(the);
+}
+
+void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units)
+{
+	the->instrumentationCallback = instrumentationCallback;
+	the->instrumentationTimer = modTimerAdd(0, 1000, instrumentationCallback, &the, sizeof(the));
+	modInstrumentationAdjust(Timers, -1);
+
+#ifdef mxDebug
+	the->onBreak = espDebugBreak;
+#endif
+	fxDescribeInstrumentation(the, count, names, units);
+}
+
+void espInstrumentMachineEnd(txMachine *the)
+{
+	if (!the->instrumentationTimer)
+		return;
+
+	modInstrumentationAdjust(Timers, +1);
+	modTimerRemove(the->instrumentationTimer);
+}
+
+void espInstrumentMachineReset(txMachine *the)
+{
+	the->garbageCollectionCount = 0;
+	the->stackPeak = the->stack;
+	the->peakParserSize = 0;
+	the->floatingPointOps = 0;
 }
 #endif
 

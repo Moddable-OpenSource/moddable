@@ -24,7 +24,7 @@ static void PiuHSL2RGB(const uint8_t *hsl, uint8_t *rgb);
 static uint32_t PiuStringHexToNum(const char *string, uint32_t i);
 
 #define PiuColorCount 18
-static const char* PiuColorNames[PiuColorCount] ICACHE_RODATA_ATTR = {
+static const char* const PiuColorNames[PiuColorCount] ICACHE_RODATA_ATTR = {
 	"black",
 	"silver",
 	"gray",

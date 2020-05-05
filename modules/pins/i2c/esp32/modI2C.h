@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,6 +23,8 @@
 
 #include "stdint.h"
 
+#define DEFAULT_ESP32_I2C_TIMEOUT 32000
+
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
 
@@ -30,11 +32,19 @@ struct modI2CConfigurationRecord {
 	uint32_t					hz;
 	int16_t						sda;
 	int16_t						scl;
+	uint16_t					timeout;
 	uint8_t						address;		// 7-bit
 };
 
 typedef struct modI2CConfigurationRecord modI2CConfigurationRecord;
 typedef struct modI2CConfigurationRecord *modI2CConfiguration;
+
+#define modI2CConfig(config, HZ, SDA_PIN, SCL_PIN, ADDRESS, TIMEOUT)       \
+	config.hz = HZ;                                                        \
+	config.sda = SDA_PIN;                                                  \
+	config.scl = SCL_PIN;                                                  \
+	config.timeout = (TIMEOUT ? TIMEOUT * 80 : DEFAULT_ESP32_I2C_TIMEOUT); \
+	config.address = ADDRESS;
 
 extern void modI2CInit(modI2CConfiguration config);		// required
 extern void modI2CUninit(modI2CConfiguration config);	// optional

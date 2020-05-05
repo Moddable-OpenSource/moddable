@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -91,6 +91,28 @@ export class MakeFile extends FILE {
 		}
 		this.line("");
 	}
+	setConfigOption(sdkconfig, option) {
+		let name = option.name;
+		let value = option.value;
+		let index = sdkconfig.indexOf(name);
+		let changed = false;
+		if (-1 != index) {
+			++index;
+			if ("n" == value) {
+				if ("y" == sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=");
+					changed = true;
+				}
+			}
+			else {
+				if (value != sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=" + value);
+					changed = true;
+				}
+			}
+		}
+		return { sdkconfig, changed };
+	}
 	generateConfigurationRules(tool) {
 		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
@@ -118,6 +140,12 @@ export class MakeFile extends FILE {
 		}
 		else
 			appConfig = [];
+
+		if (tool.instrument === true && tool.debug === false) {
+			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
+			let instConfig = tool.readFileString(instConfigFile);
+			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
+		}
 			
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
@@ -159,11 +187,57 @@ export class MakeFile extends FILE {
 				}
 			}
 		});
+
+		//BLE configuration, moved from bles2gatt.js
+		let defines = tool.defines;
+		if (defines && ("ble" in defines)) {
+			let server, client, nimble;
+			client = server = false;
+			if ("server" in defines.ble && true == defines.ble.server)
+				server = true;
+			if ("client" in defines.ble && true == defines.ble.client)
+				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
+
+			let options = [];
+			if (client || server) {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
+				if (nimble) {
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+				}
+				else {
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+				}
+			} else {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
+			}
+
+			for (let i = 0; i < options.length; ++i) {
+				let result = this.setConfigOption(baseConfig, options[i]);
+				if (result.changed) {
+					baseConfig = result.sdkconfig;
+				}
+			}
+		}
 		
-		// Write the result
+		// Write the result, if it has changed
 		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
-		tool.writeFileString(buildConfigFile, baseConfig);
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
+			const oldConfig = tool.readFileString(buildConfigFile);
+			if (oldConfig == baseConfig) return;
+		}
+		tool.writeFileString(buildConfigFile, baseConfig);
 	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
@@ -177,11 +251,13 @@ export class MakeFile extends FILE {
 		let defines = tool.defines;
 		let client = false;
 		let server = false;
+		let nimble = false;
 		if (defines && ("ble" in defines)) {
 			if ("server" in defines.ble && true == defines.ble.server)
 				server = true;
 			if ("client" in defines.ble && true == defines.ble.client)
 				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
 		}
 		this.write("$(TMP_DIR)");
 		this.write(tool.slash);
@@ -190,11 +266,20 @@ export class MakeFile extends FILE {
 			this.write(` ${result.source}`);
 		this.line("");
 		if (tool.bleServicesFiles.length) {
+			let platform = (nimble ? 'nimble' : tool.platform);
 			this.echo(tool, "bles2gatt bleservices");
-			if (tool.windows)
-				this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
-			else
-				this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${tool.platform}/` + (server ? "modBLEServer.c" : "modBLEClient.c"));
+			if (server) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEServer.c`);
+			}
+			if (client) {
+				if (tool.windows)
+					this.line(`\ttype nul >> ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+				else
+					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
+			}
 		}
 		this.write("\t$(BLES2GATT)");
 		if (tool.bleServicesFiles.length)
@@ -203,6 +288,8 @@ export class MakeFile extends FILE {
 			this.write(" -c");
 		if (server)
 			this.write(" -v");
+		if (nimble)
+			this.write(" -n");
 		if ("esp32" == tool.platform) {
 			let sdkconfigFile = tool.getenv("SDKCONFIG_FILE");
 			this.write(" -s ");
@@ -279,7 +366,7 @@ export class MakeFile extends FILE {
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
-				options += " -m";
+				options += " -p";
 			if (tool.debug)
 				options += " -d";
 			if (tool.config)
@@ -1092,6 +1179,16 @@ export class Tool extends TOOL {
 			this.environment.FULLPLATFORM = this.platform;
 			this.environment.PLATFORMPATH = this.platform;
 		}
+		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
+		if ("esp32" == this.platform) {
+			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
+			path += bluedroid ? this.platform : "nimble";
+		}
+		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
+			path += "sim";
+		else
+			path += this.platform;
+		this.environment.BLEMODULEPATH = path;
 
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);

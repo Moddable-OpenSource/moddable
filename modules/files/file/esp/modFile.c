@@ -103,7 +103,7 @@ void xs_file_read(xsMachine *the)
 		dst = xsmcToString(xsResult);
 	}
 	else {
-		xsResult = xsArrayBuffer(NULL, dstLen);
+		xsmcSetArrayBuffer(xsResult, NULL, dstLen);
 		dst = xsmcToArrayBuffer(xsResult);
 	}
 
@@ -136,7 +136,7 @@ void xs_file_write(xsMachine *the)
 		}
 		else {
 			src = xsmcToArrayBuffer(xsArg(i));
-			srcLen = xsGetArrayBufferLength(xsArg(i));
+			srcLen = xsmcGetArrayBufferLength(xsArg(i));
 		}
 
 		while (srcLen) {	// spool through RAM for data in flash

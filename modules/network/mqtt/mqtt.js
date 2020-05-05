@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,8 +40,25 @@ import Timer from "timer";
  * This implementation is QoS 0 only.
  */
 
+const CONNECT = 0x10;
+const CONNACK = 0x20;
+const PUBLISH = 0x30;
+const SUBSCRIBE = 0x80;
+const UNSUBSCRIBE = 0xA0;
+
 export default class Client {
+	#timer;
+
 	constructor(dictionary) {
+		this.state = 0;
+
+		if (dictionary.socket) {
+			this.server = true;
+			this.ws = dictionary.socket;
+			this.ws.callback = socket_callback.bind(this);
+			return;
+		}
+
 		if (!dictionary.id)
 			throw new Error("parameter id is required");
 
@@ -62,15 +79,10 @@ export default class Client {
 
 		const path = dictionary.path ? dictionary.path : null; // includes query string
 
-		this.state = 0;
-		this.parse = {state: 0};
-
-		this.packet = 1;
-
 		if (dictionary.timeout)
 			this.timeout = dictionary.timeout;
 
-		if (this.path) {
+		if (path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
 			const port = dictionary.port ? dictionary.port : 80;
 			if (dictionary.Socket)
@@ -89,7 +101,7 @@ export default class Client {
 	}
 	publish(topic, data) {
 		if (this.state < 2)
-			throw new Error("cannot publish to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -114,7 +126,7 @@ export default class Client {
 	}
 	subscribe(topic) {
 		if (this.state < 2)
-			throw new Error("cannot subscribe to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -126,7 +138,7 @@ export default class Client {
 		length += payload;
 
 		let msg = new Uint8Array(length), position = 0;
-		msg[position++] = 0x82;		// SUBSCRIBE + flag
+		msg[position++] = SUBSCRIBE | 2;		// SUBSCRIBE + flag
 		position = writeRemainingLength(payload, msg, position);
 		msg[position++] = (this.packet >> 8) & 0xFF;
 		msg[position++] = this.packet & 0xFF;
@@ -137,7 +149,7 @@ export default class Client {
 	}
 	unsubscribe(topic) {
 		if (this.state < 2)
-			throw new Error("cannot subscribe to closed connection");
+			throw new Error("connection closed");
 
 		++this.packet;
 
@@ -149,7 +161,7 @@ export default class Client {
 		length += payload;
 
 		let msg = new Uint8Array(length), position = 0;
-		msg[position++] = 0xA2;		// UNSUBSCRIBE + flag
+		msg[position++] = UNSUBSCRIBE | 2;		// UNSUBSCRIBE + flag
 		position = writeRemainingLength(payload, msg, position);
 		msg[position++] = (this.packet >> 8) & 0xFF;
 		msg[position++] = this.packet & 0xFF;
@@ -158,7 +170,8 @@ export default class Client {
 		this.ws.write(msg.buffer);
 	}
 	received(buffer) {
-		let length = buffer.byteLength, position = 0;
+		const length = buffer.byteLength;
+		let position = 0;
 		buffer = new Uint8Array(buffer);
 		let parse = this.parse;
 		while (position < length) {
@@ -196,6 +209,59 @@ export default class Client {
 					parse.state = parse.code;
 					break;
 
+				// CONNECT
+				case 0x10:
+					if (!parse.expect)
+						parse.expect = Array.of(0, 4, 77, 81, 84, 84, 4);
+					if (buffer[position++] !== parse.expect.shift())
+						return this.fail("bad connect");
+					if (!parse.expect.length) {
+						delete parse.expect;
+						parse.state = 0x11;
+					}
+					break;
+
+				case 0x11:
+					parse.flags = buffer[position++];
+					if (parse.flags & 1)
+						return this.fail("reserved not zero");
+					parse.state = 0x12;
+					break;
+
+				case 0x12:
+					parse.connect = {keepalive: buffer[position++] << 8};
+					parse.state = 0x13;
+					break;
+
+				case 0x13:
+					parse.connect.keepalive |= buffer[position++];
+					parse.state = 0x14;
+					parse.length -= 10;
+					parse.buffer = new Uint8Array(parse.length);
+					parse.buffer.position = 0;
+					parse.state = 0x14;
+					break;
+
+				case 0x14:
+					parse.buffer[parse.buffer.position++] = buffer[position++];
+					if (parse.buffer.position === parse.length) {
+						const connect = parse.connect;
+						parse.buffer.position = 0;
+						connect.id = String.fromArrayBuffer(getBuffer(parse.buffer));
+						if (parse.flags & 4) {	// will
+							connect.will = {topic: String.fromArrayBuffer(getBuffer(parse.buffer))};
+							connect.will.message = getBuffer(parse.buffer);
+						}
+						if (parse.flags & 0x80)
+							connect.user = String.fromArrayBuffer(getBuffer(parse.buffer));
+						if (parse.flags & 0x40)
+							connect.password = getBuffer(parse.buffer);
+						const result = this.dispatch(parse);
+						this.ws.write(Uint8Array.of(0x20, 2, 1, result).buffer);		// CONNACK
+						parse = this.parse = {state: 0};
+					}
+					break;
+
 				// PUBLISH
 				case 0x30:
 					parse.topic = buffer[position++] << 8;
@@ -212,7 +278,7 @@ export default class Client {
 					parse.state = 0x32;
 					break;
 
-				case 0x32:		// optimization: consume as many bytes as possible
+				case 0x32:		// optimization: consume as many bytes as possible (see state 0x37)
 					parse.topic[parse.topic.position++] = buffer[position++];
 					if (parse.topic.position === parse.topic.length) {
 						parse.topic = String.fromArrayBuffer(parse.topic.buffer);
@@ -279,6 +345,44 @@ export default class Client {
 					}
 					break;
 
+				case 0x80:		// SUBSCRIBE
+				case 0xA0:		// UNSUBSCRIBE
+					parse.id = buffer[position++] << 8;				// MSB packet ID
+					parse.state = 0x81;
+					break;
+
+				case 0x81:
+					parse.id |= buffer[position++];					// LSB packet ID
+					parse.length -= 2;
+					parse.buffer = new Uint8Array(parse.length);	// capture payload bytes
+					parse.buffer.position = 0;
+					parse.state = 0x82;
+					break;
+
+				case 0x82:
+					parse.buffer[parse.buffer.position++] = buffer[position++];
+					if (parse.buffer.position === parse.length) {
+						const result = (0x80 === parse.code) ? [] : null;
+						parse.buffer.position = 0;
+						while (parse.buffer.position < parse.buffer.length) {
+							parse.topic = String.fromArrayBuffer(getBuffer(parse.buffer));
+							if (result) {
+								parse.qos = parse.buffer[parse.buffer.position++];
+								result.push(this.dispatch(parse) ?? 0);
+							}
+							else
+								this.dispatch(parse)
+						}
+						if (result) {
+							this.ws.write(Uint8Array.of(0x90, result.length + 2, parse.id >> 8, parse.id & 0xFF).buffer);	// SUBACK
+							this.ws.write(Uint8Array.from(result).buffer);
+						}
+						else
+							this.ws.write(Uint8Array.of(0xB0, 2, parse.id >> 8, parse.id & 0xFF).buffer);					// UNSUBACK
+						parse = this.parse = {state: 0};
+					}
+					break;
+
 				// PUBACK, PUBREC, PUBREL, PUBCOMP, SUBACK, UNSUBACK
 				case 0x40:
 				case 0x50:
@@ -304,28 +408,37 @@ export default class Client {
 						parse = this.parse = {state: 0};		// not dispatched
 					break;
 
-				case 0xD0:	// PINGRESP (ignored - N.B. this will not trigger until first byte of next message received)
+				case 0xC0:		// PINGREQ
+					this.ws.write(Uint8Array.of(0xD0, 0x00).buffer);		// PINGRESP
+					parse = this.parse = {state: 0};
+					break;
+
+				case 0xD0:		// PINGRESP (ignored)
 					parse = this.parse = {state: 0};
 					break;
 
 				default:
-					this.fail("bad parse state");
-					break;
+					return this.fail("bad parse state");
 			}
 		}
 
-		if (this.timer)
+		if (this.#timer)
 			this.last = Date.now();
 	}
 	connected() {
-		if (this.onConnected)
-			this.onConnected();
+		this.onConnected?.();
 
-		const timeout = Math.floor(((this.timeout || 0) + 999) / 1000);
+		this.parse = {state: 0};
+		this.packet = 1;
+
+		if (this.server)
+			return;
+
+		const timeout = Math.floor(((this.timeout ?? 0) + 999) / 1000);
 		const header = Uint8Array.of(
 			0x00, 0x04,
-			'M'.charCodeAt(),'Q'.charCodeAt(),'T'.charCodeAt(),'T'.charCodeAt(),		// protocol name MQTT
-			0x04,									// protocol level 4
+			77,  81, 84, 84,						// protocol name MQTT
+			0x04,									// protocol level 4 (MQTT version 3.1.1)
 			0x02,									// flags : CleanSession
 			(timeout >> 8) & 0xFF, timeout & 0xFF	// keepalive in seconds
 		);
@@ -351,7 +464,7 @@ export default class Client {
 		msg.set(password, position); position += password.length;
 
 		if (timeout) {
-			this.timer = Timer.repeat(this.keepalive.bind(this), this.timeout >> 2);
+			this.#timer = Timer.repeat(this.keepalive.bind(this), this.timeout >> 2);
 			this.last = Date.now();
 		}
 
@@ -361,53 +474,80 @@ export default class Client {
 	dispatch(msg) {
 		if (1 === this.state) {
 			if (msg.code !== CONNACK)
-				return this.fail(`received message type '${flag}' when expecting CONNACK`);
+				return this.fail(`received message type '${msg.code}' when expecting CONNACK`);
 
 			if (msg.returnCode)
 				return this.fail(`server rejected mqtt request with code ${msg.returnCode}`);
 
 			this.state = 2;
-			try {
-				this.onReady();
-			}
-			catch {
-			}
-			return;
 		}
 
 		switch (msg.code) {
+			case CONNECT:
+				try {
+					return this.onAccept(msg.connect);
+				}
+				catch {
+				}
+				break;
+			case CONNACK:
+				try {
+					this.onReady();
+				}
+				catch {
+				}
+				break;
+			case SUBSCRIBE:
+				try {
+					return this.onSubscribe?.(msg.topic, msg.qos);
+				}
+				catch {
+				}
+				break;
+			case UNSUBSCRIBE:
+				try {
+					this.onUnsubscribe?.(msg.topic);
+				}
+				catch {
+				}
+				break;
 			case PUBLISH:
 				try {
-					this.onMessage(msg.topic, msg.payload);
+					this.onMessage?.(msg.topic, msg.payload);
 				}
 				catch {
 				}
 				break;
 			default:
 				if (msg.code)
-					this.fail(`received unhandled or no-op message type '${msg.code}'`);
+					this.fail(`unhandled or no-op message type '${msg.code}'`);
 				break;
 		}
 
 	}
 	close() {
-		if (this.timer)
-			Timer.clear(this.timer);
-		delete this.timer;
+		if (this.#timer)
+			Timer.clear(this.#timer);
+		this.#timer = undefined;
 
 		if (this.ws) {
-			this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
-			this.ws.close();
+			try {
+				this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
+			}
+			catch {
+			}
+			try {
+				this.ws.close();		// can throw if already closed (wi-fi disconnect notification not yet received )
+			}
+			catch {
+			}
 			delete this.ws;
 		}
 
 		this.state = 0;
 	}
 	keepalive() {
-		if (!this.timer)
-			return;
-
-		let now = Date.now();
+		const now = Date.now();
 		if ((this.last + this.timeout) > now)
 			return;		// received data within the timeout interval
 
@@ -418,15 +558,11 @@ export default class Client {
 	}
 	fail(msg = "") {
 		trace("MQTT FAIL: ", msg, "\n");
-		if (this.onClose)
-			this.onClose();
+		this.onClose?.();
 		this.close();
 	}
 }
 Object.freeze(Client.prototype);
-
-const CONNACK = 0x20;
-const PUBLISH = 0x30;
 
 function ws_callback(state, message) {
 	switch (state) {
@@ -441,11 +577,17 @@ function ws_callback(state, message) {
 			break;
 
 		case 3: // message received
-			return this.received(message);
+			try {
+				return this.received(message);
+			}
+			catch {
+				this.fail();
+			}
+			break;
 
 		case 4: // websocket closed
 			delete this.ws;
-			this.onClose();
+			this.onClose?.();
 			this.close();
 			break;
 
@@ -459,12 +601,20 @@ function socket_callback(state, message) {
 	switch (state) {
 		case 1: // socket connected
 			// at this point we need to begin the MQTT protocol handshake
-			this.state = 1;
-			this.ws.write(this.connected());
+			this.state = this.server ? 2 : 1;
+			const reply = this.connected();
+			if (reply)
+				this.ws.write(reply);
 			break;
 
 		case 2: // data received
-			return this.received(this.ws.read(ArrayBuffer));
+			try {
+				return this.received(this.ws.read(ArrayBuffer));
+			}
+			catch {
+				this.fail();
+			}
+			break;
 
 		case 3: // ready to send
 			break;
@@ -525,4 +675,12 @@ function writeRemainingLength(length, buffer, position) {
 	}
 
 	return position;
+}
+
+function getBuffer(buffer) {
+	const position = buffer.position;
+	const length = (buffer[position] << 8) | buffer[position + 1];
+	const result = buffer.buffer.slice(position + 2, position + 2 + length);
+	buffer.position += 2 + length;
+	return result;
 }
