@@ -1442,10 +1442,7 @@ void fxIfStatement(txParser* parser)
 	txInteger aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_IF);
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
-	if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-		fxCommaExpression(parser);
-	else
-		fxReportParserError(parser, "invalid if");
+	fxCommaExpression(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
 	fxStatement(parser, 0);
 	if (parser->token == XS_TOKEN_ELSE) {
@@ -1478,10 +1475,7 @@ void fxSwitchStatement(txParser* parser)
 	txInteger aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_SWITCH);
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
-	if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-		fxCommaExpression(parser);
-	else
-		fxReportParserError(parser, "invalid switch");
+	fxCommaExpression(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 	while ((parser->token == XS_TOKEN_CASE) || (parser->token == XS_TOKEN_DEFAULT)) {
@@ -1489,10 +1483,7 @@ void fxSwitchStatement(txParser* parser)
 		txInteger aCaseLine = parser->line;
 		if (parser->token == XS_TOKEN_CASE) {
 			fxMatchToken(parser, XS_TOKEN_CASE);
-			if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-				fxCommaExpression(parser);
-			else
-				fxReportParserError(parser, "invalid case");
+			fxCommaExpression(parser);
 			fxMatchToken(parser, XS_TOKEN_COLON);
 			aCaseCount = parser->nodeCount;
 			while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_STATEMENT)
@@ -1653,6 +1644,10 @@ void fxCommaExpression(txParser* parser)
 	if (aCount > 1) {
 		fxPushNodeList(parser, aCount);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
+	}
+	else if (aCount == 0) {
+		fxPushNULL(parser);
+		fxReportParserError(parser, "missing expression");
 	}
 }
 
