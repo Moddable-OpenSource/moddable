@@ -65,7 +65,7 @@ void xs_inflate_push(xsMachine *the)
 		zlib->total_out	= 0;
 
 		zlib->next_in = inputOffset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
-		zlib->avail_in = (inputRemaining < 8) ? inputRemaining : 8;
+		zlib->avail_in = inputRemaining;
 		zlib->total_in = 0;
 
 		status = inflate(zlib, Z_PARTIAL_FLUSH);
@@ -85,7 +85,7 @@ void xs_inflate_push(xsMachine *the)
 		inputRemaining -= zlib->total_in;
 	}
 
-	if (inputEnd) {
+	if (inputEnd || (status == Z_STREAM_END)) {
 		if (Z_STREAM_END != status)
 			inflateEnd(zlib);
 

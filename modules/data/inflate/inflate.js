@@ -6,7 +6,17 @@ class Inflate @ "xs_inflate_destructor" {
 	}
 	build(options) @ "xs_inflate";
 
-	push(chunk, end) @ "xs_inflate_push";
+	push(buffer, end) {
+		if (ArrayBuffer.isView(buffer)) {
+			if (buffer.byteOffset || (buffer.byteLength !== buffer.buffer.byteLength))
+				throw new Error;
+
+			buffer = buffer.buffer;
+		}
+		return this._push(buffer, end);
+	}
+
+	_push(buffer, end) @ "xs_inflate_push";
 
 	onData(chunk) {
 		this.chunks.push(chunk);
@@ -34,11 +44,3 @@ class Inflate @ "xs_inflate_destructor" {
 }
 
 export default Inflate;
-
-/*
-
-new Inflate(options)
-windowBits
-dictionary
-
-*/
