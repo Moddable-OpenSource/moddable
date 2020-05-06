@@ -164,6 +164,9 @@ typedef struct PocoBitmapRecord {
 	PocoBitmapFormat	format;
 
 	PocoPixel			*pixels;
+#if COMMODETTO_BITMAP_ID
+	uint32_t			id;
+#endif
 } PocoBitmapRecord, *PocoBitmap;
 
 typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, void *refCon);

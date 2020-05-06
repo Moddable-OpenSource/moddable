@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,6 +25,7 @@ class Bitmap @ "xs_Bitmap_destructor" {
 	get height() @ "xs_bitmap_get_height"
 	get pixelFormat() @ "xs_bitmap_get_pixelFormat"
 	get offset() @ "xs_bitmap_get_offset"
+	get byteLength() @ "xs_bitmap_get_byteLength"
 	static depth(pixelFormat) @ "xs_bitmap_get_depth";
 }
 
@@ -38,6 +39,8 @@ Bitmap.RGB565BE = 8;
 Bitmap.RGB24 = 9;
 Bitmap.RGBA32 = 10;
 Bitmap.CLUT16 = 11;
+Bitmap.PNG = 0x40;
+Bitmap.JPEG = 0x41;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 

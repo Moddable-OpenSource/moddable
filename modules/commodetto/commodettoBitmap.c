@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,6 +28,10 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#if COMMODETTO_BITMAP_ID
+	static uint32_t gBitmapID;
+#endif
+
 void xs_Bitmap_destructor(void *data)
 {
 }
@@ -54,6 +58,10 @@ void xs_Bitmap(xsMachine *the)
 		cb->havePointer = true;
 		cb->bits.data = offset + (char *)xsmcGetHostData(xsArg(3));
 	}
+
+	#if COMMODETTO_BITMAP_ID
+		cb->id = ++gBitmapID;
+	#endif
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(3));
 }
