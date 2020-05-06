@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# save original serial port
+original=( $(find /dev -type c -name "ttyACM*" 2> /dev/null) )
+
+volumefile=$(cat "$2")
+
 # wait for the M4 to go away
-NAME=/Volumes/MODDABLE4
-echo -n "Installing to $NAME.."
-while [ -d "$NAME" ]; do
+echo -n "Installing to $volumefile..."
+while [ -d "$volumefile" ]; do
      echo -n "."
      sleep 0.1
 done
@@ -13,9 +17,6 @@ if [ $1 -eq 0 ]; then
 	echo "Release build installed."
 	exit
 fi
-
-# save original serial port
-original=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
 
 fileToCompare=""
 
@@ -57,10 +58,9 @@ findNew() {
 
 newOne=0
 
-# wait for usbd serial port to enumerate
 while [ $newOne -eq 0 ]; do
 	sleep 0.1
-	compare=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
+	compare=( $(find /dev -type c -name "ttyACM*" 2> /dev/null) )
 
 	findNew "${compare[@]}"
 	if [ 1 -eq $? ]; then
@@ -70,4 +70,4 @@ while [ $newOne -eq 0 ]; do
 done
 
 echo "Debug build installed."
-${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+${MODDABLE}/build/bin/lin/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
