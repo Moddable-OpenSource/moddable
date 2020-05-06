@@ -57,9 +57,9 @@ void xs_inflate_push(xsMachine *the)
 	int inputOffset = 0;
 	int inputRemaining = xsmcGetArrayBufferLength(xsArg(0));
 	int inputEnd = xsmcTest(xsArg(1));
-	int status = 0;
+	int status = Z_OK;
 
-	while (0 == status) {
+	while (Z_OK == status) {
 		zlib->next_out	= output;
 		zlib->avail_out	= sizeof(output);
 		zlib->total_out	= 0;
@@ -93,5 +93,5 @@ void xs_inflate_push(xsMachine *the)
 		xsCall1(xsThis, xsID_onEnd, xsResult);
 	}
 
-	xsmcSetUndefined(xsResult);
+	xsmcSetInteger(xsResult, inputRemaining);
 }

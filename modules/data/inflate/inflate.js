@@ -1,6 +1,7 @@
 class Inflate @ "xs_inflate_destructor" {
 	constructor(options = {}) {
 		this.chunks = [];
+		this.strm = {};
 
 		this.build(options);
 	}
@@ -13,7 +14,7 @@ class Inflate @ "xs_inflate_destructor" {
 
 			buffer = buffer.buffer;
 		}
-		return this._push(buffer, end);
+		this.strm.avail_in = this._push(buffer, end);
 	}
 
 	_push(buffer, end) @ "xs_inflate_push";
