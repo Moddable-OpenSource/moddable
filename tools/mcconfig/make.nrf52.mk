@@ -58,7 +58,7 @@ else
 	endif
 endif
 
-GNU_VERSION ?= 8.2.1
+NRF52_GNU_VERSION ?= 8.2.1
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
 NRF_SDK_DIR ?= $(NRF_ROOT)/nRF5_SDK
@@ -125,8 +125,8 @@ LIB_FILES += \
 INC_DIRS = \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include/machine \
-	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/include \
-	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/include-fixed \
+	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(NRF52_GNU_VERSION)/include \
+	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(NRF52_GNU_VERSION)/include-fixed \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
 	$(BUILD_DIR)/devices/nrf52 \
@@ -632,26 +632,26 @@ allclean:
 
 flash: all $(BIN_DIR)/xs_nrf52.hex
 	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-	nrfjprog -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
-	nrfjprog -f nrf52 --reset
+	$(NRFJPROG) -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
+	$(NRFJPROG) -f nrf52 --reset
 
 flash_softdevice:
 	@echo Flashing: s140_nrf52_6.1.1_softdevice.hex
-	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex --sectorerase
-	nrfjprog -f nrf52 --reset
+	$(NRFJPROG) -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex --sectorerase
+	$(NRFJPROG) -f nrf52 --reset
 
 $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
 	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
 
 installBootloader:
-	nrfjprog --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
+	$(NRFJPROG) --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
 
 installSoftdevice:	
-	nrfjprog --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
+	$(NRFJPROG) --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
 
 erase:
-	nrfjprog -f nrf52 --eraseall
+	$(NRFJPROG) -f nrf52 --eraseall
 
 $(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
 	@echo CR $<

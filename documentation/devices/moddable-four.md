@@ -1,11 +1,11 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: April 23, 2020
+Revised: May 6, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
-> **Note:** Support for Moddable Four is only available for macOS.
+> **Note:** Support for Moddable Four is only available for macOS and Linux.
 
 ## Table of Contents
 
@@ -13,7 +13,8 @@ This document describes how to start building Moddable applications for Moddable
 	- [Components](#components)
 	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
-- [Building and Deploying Apps](#building-and-deploying-apps)
+	- [macOS](#macos-setup)
+	- [Linux](#linux-setup)
 -  [Enabling LE secure connection support](#le-secure-connections)
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
@@ -53,104 +54,94 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-### Step 1: Set up Moddable SDK tools for macOS
+<a id="macos-setup"></a>
 
-The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the **Host environment setup** section for macOS.
+### macOS setup
 
-### Step 2: Create an `nrf5` directory
+1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-mac) section for macOS.
 
-Create an `nrf5` directory in your home directory. This directory is where you will put all of the other SDKs and toolchains you download in the remaining steps.
+2. Create an `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
 
-```text
-cd $HOME
-mkdir nrf5
-cd nrf5
-```
+	```text
+	cd $HOME
+	mkdir nrf5
+	cd nrf5
+	```
 
-### Step 3: Install the GNU Embedded Toolchain for Arm
+3. Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-mac.tar.bz2?revision=b88d4399-9897-465a-9363-ace86610e48c?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Mac%20OS%20X,8-2018-q4-major) of the GNU Arm Embedded Toolchain from the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Untar the archive and copy the `gcc-arm-none-eabi-8-2018-q4-major` directory into the `nrf5` directory.
 
-Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-mac.tar.bz2?revision=b88d4399-9897-465a-9363-ace86610e48c?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Mac%20OS%20X,8-2018-q4-major) of the GNU Arm Embedded Toolchain from the the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Unzip the file and place the `gcc-arm-none-eabi-8-2018-q4-major` directry in your `nrf5` directory.
+	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
 
-> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
+4. Setup the `NRF52_GCC_ROOT` and `NRF52_GNU_VERSION` environment variables in your `~/.profile`.
 
-Set the `NRF52_GCC_ROOT` and `GNU_VERSION ` environment variables.
+	```text
+	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
+	export GNU_VERSION=8.2.1
+	```
 
-```text
-export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
-export GNU_VERSION=8.2.1
-```
+5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
 
-### Step 4: Install the nRF Command Line Tools
+	![](../assets/devices/nrf-tools.png)
 
-Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs).
+	Untar the archive and copy the `nRF-Command-Line-Tools_10_5_0_OSX` directory in the `nrf5` directory. 
 
-Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
+6. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
 
-![](../assets/devices/nrf-tools.png)
+	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
+	
+	```text
+	cd ~/nrf5
+	chmod 755 uf2conv.py 
+	```
 
-Unzip the file and place the `nRF-Command-Line-Tools_10_5_0_OSX` directory in your `nrf5` directory. 
+7. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-### Step 5: Get `uf2conv.py`
+	- Select `v15.3.0` from the nRF5 SDK versions section.
 
-Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages up the final binary for transfer to the device.
+		![](../assets/devices/nrf5-sdk-versions.png)
 
-Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) into your new `nRF5` directory.
+	- Select `S140: Bluetooth 5` from the SoftDevices section.
 
-Change the access permissions of `uf2conv` (to make it executable) using `chmod`.
+		![](../assets/devices/softdevices.png)
 
-```text
-chmod 755 uf2conv.py 
-```
+	- Click the **Download Files** button at the bottom of the page. You should see the same selections as in the image below.
 
-### Step 6: Set up the nRF5 SDK
+		![](../assets/devices/selected.png)
 
-Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
+	
+	- `nRF5_SDK_15.3.0_59ac345.zip`
+	- `s140nrf52611.zip`
 
-- Select `v15.3.0` from the nF5 SDK versions section.
+	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
 
-	![](../assets/devices/nrf5-sdk-versions.png)
+8. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+	
+	```text
+	cd ~/nrf5
+	ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
+	```
 
-- Select `S140: Bluetooth 5` from the SoftDevices section.
+9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
-	![](../assets/devices/softdevices.png)
-
-- Click the **Download Files** button at the bottom. You should see the same selections as in the image below.
-
-	![](../assets/devices/selected.png)
-
-The downloaded file is called `DeviceDownload.zip`. When you unzip this file, you will have a folder that contains two more zip files:
-
-- `nRF5_SDK_15.3.0_59ac345.zip`
-- `s140nrf52611.zip`
-
-Unzip both of these files and put the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories in your `nRF5` directory.
-
-Then make a symbolic link to the SDK. This will also allow you to change the version of the SDK without having to change many PATHs.
-
-```text
-ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
-export NRF_SDK_DIR=$HOME/nRF5/nRF5_SDK
-```
-
-Next, add a board definition for the Moddable Four to the Nordic SDK. This provides some pin layout and constant definitions suitable for development with the Moddable Four. To add a board definition, take the following steps:
-
-- The file `moddable_four.h` is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the file to the Nordic SDK's `components/boards/` directory.
+	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
 	```text
 	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
 	```
 
-- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
+	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
 
 	```c
 	#elif defined (BOARD_MODDABLE_FOUR)
 	  #include "moddable_four.h"
 	```
 
-<a id="building-and-deploying-apps"></a>
-## Building and Deploying Apps
+<a id="macOS-building-and-deploying-apps"></a>
+#### Building and Deploying Apps
 
-After you've set up your host environment, take the following steps to install an application on your Moddable Four.
+After you've setup your macOS host environment, take the following steps to install an application on your Moddable Four.
 
 1. Attach your Moddable Four to your computer with a micro USB cable.
 
@@ -160,7 +151,7 @@ After you've set up your host environment, take the following steps to install a
 
 	Programming mode is indicated by the LED indicator staying lit at boot time. A disk named `MODDABLE4` will also appear on your desktop.
 
-	![Moddable Four disk](./nrf52/assets/M4-disk.png#smallFramed)
+	![Moddable Four disk](../assets/devices/moddable-four-M4-disk.png)
 
 	> **Note:** If you do not program your device within a short period, it will reboot to the installed application.
 
@@ -168,7 +159,123 @@ After you've set up your host environment, take the following steps to install a
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
 	
-	Use the platform `-p nrf52/moddable_four`  with `mcconfig` to build for Moddable Four. For example, to build the [`piu/balls` example](../../examples/piu/balls):
+	Specify the platform `-p nrf52/moddable_four` with `mcconfig` to build for Moddable Four. Build the [`piu/balls`](../../examples/piu/balls) example:
+	
+	```text
+	cd $MODDABLE/examples/piu/balls
+	mcconfig -d -m -p nrf52/moddable_four
+	```
+	
+	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	
+<!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
+
+<a id="linux-setup"></a>
+
+### Linux setup
+
+1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-linux) section for Linux.
+
+2. Create an `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
+
+	```text
+	cd $HOME
+	mkdir nrf5
+	cd nrf5
+	```
+
+3. Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2?revision=ab7c81a3-cba3-43be-af9d-e922098961dd?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Linux,8-2018-q4-major) of the 64-bit GNU Arm Embedded Toolchain from the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Untar the archive and copy the `gcc-arm-none-eabi-8-2018-q4-major` directory into the `nrf5` directory.
+
+	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
+
+4. Setup the `NRF52_GCC_ROOT` and `NRF52_GNU_VERSION` environment variables in your `~/.bashrc`.
+
+	```text
+	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
+	export GNU_VERSION=8.2.1
+	```
+
+5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
+
+	![](../assets/devices/nrf-tools.png)
+
+	Untar the archive and copy the `nRF-Command-Line-Tools_10_5_0_OSX` directory in the `nrf5` directory. 
+
+6. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+
+	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
+	
+	```text
+	cd ~/nrf5
+	chmod 755 uf2conv.py 
+	```
+
+7. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+
+	- Select `v15.3.0` from the nRF5 SDK versions section.
+
+		![](../assets/devices/nrf5-sdk-versions.png)
+
+	- Select `S140: Bluetooth 5` from the SoftDevices section.
+
+		![](../assets/devices/softdevices.png)
+
+	- Click the **Download Files** button at the bottom of the page. You should see the same selections as in the image below.
+
+		![](../assets/devices/selected.png)
+
+	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
+	
+	- `nRF5_SDK_15.3.0_59ac345.zip`
+	- `s140nrf52611.zip`
+
+	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
+
+8. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+	
+	```text
+	cd ~/nrf5
+	ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
+	```
+
+9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+
+	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
+
+	```text
+	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
+	```
+
+	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
+
+	```c
+	#elif defined (BOARD_MODDABLE_FOUR)
+	  #include "moddable_four.h"
+	```
+
+<a id="linux-building-and-deploying-apps"></a>
+#### Building and Deploying Apps
+
+After you've setup your Linux host environment, take the following steps to install an application on your Moddable Four.
+
+1. Attach your Moddable Four to your computer with a micro USB cable.
+
+	Make sure you're using a data sync&#8211;capable cable, not one that is power-only.
+
+2. Put the device into programming mode by double-tapping the RESET button or by holding the BOOT button while tapping RESET.
+
+	Programming mode is indicated by the LED indicator staying lit at boot time. A disk named `MODDABLE4` will also appear on your desktop.
+
+	![Moddable Four disk](../assets/devices/moddable-four-M4-disk.png)
+
+	> **Note:** If you do not program your device within a short period, it will reboot to the installed application.
+
+3. Build and deploy the app with `mcconfig`.
+
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
+	
+	Specify the platform `-p nrf52/moddable_four` with `mcconfig` to build for Moddable Four. Build the [`piu/balls`](../../examples/piu/balls) example:
 	
 	```text
 	cd $MODDABLE/examples/piu/balls
