@@ -23,7 +23,7 @@ class CTSAuthenticator extends BLEServer {
 		this.client = client;
 	}
 	onReady() {
-		this.deviceName = "Moddable Zero";
+		this.deviceName = "Moddable";
 		this.securityParameters = { mitm:true };
 		this.onDisconnected();
 	}
