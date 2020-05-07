@@ -100,7 +100,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Select `S140: Bluetooth 5` from the SoftDevices section.
+	- Select `SoftDevice S140` from the SoftDevices section.
 
 		![](../assets/devices/softdevices.png)
 
@@ -195,9 +195,9 @@ After you've setup your macOS host environment, take the following steps to inst
 	export GNU_VERSION=8.2.1
 	```
 
-5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
+5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the Linux platform and the correct version when you download, as shown in the image below.
 
-	![](../assets/devices/nrf-tools.png)
+	![](../assets/devices/nrf-tools-linux.png)
 
 	Untar the archive and copy the `nRF-Command-Line-Tools_10_5_0_OSX` directory in the `nrf5` directory. 
 
@@ -214,9 +214,9 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	- Select `v15.3.0` from the nRF5 SDK versions section.
 
-		![](../assets/devices/nrf5-sdk-versions.png)
+		![](../assets/devices/nrf5-sdk-versions-linux.png)
 
-	- Select `S140: Bluetooth 5` from the SoftDevices section.
+	- Select `SoftDevice S140` from the SoftDevices section.
 
 		![](../assets/devices/softdevices.png)
 
@@ -267,7 +267,7 @@ After you've setup your Linux host environment, take the following steps to inst
 
 	Programming mode is indicated by the LED indicator staying lit at boot time. A disk named `MODDABLE4` will also appear on your desktop.
 
-	![Moddable Four disk](../assets/devices/moddable-four-M4-disk.png)
+	![Moddable Four disk](../assets/devices/moddable-four-M4-disk-linux.png)
 
 	> **Note:** If you do not program your device within a short period, it will reboot to the installed application.
 
