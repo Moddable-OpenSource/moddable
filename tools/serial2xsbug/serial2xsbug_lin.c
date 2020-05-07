@@ -122,8 +122,13 @@ void fxOpenSerial(txSerialTool self)
 {
 	speed_t speed;
 	struct termios term;
-  	self->serialConnection = open(self->path, O_RDWR | O_NOCTTY | O_NDELAY);
-	mxThrowElse(self->serialConnection >= 0);
+
+	self->serialConnection = open(self->path, O_RDWR | O_NOCTTY | O_NDELAY);
+	if (self->serialConnection < 0) {
+		usleep(500000);
+		self->serialConnection = open(self->path, O_RDWR | O_NOCTTY | O_NDELAY);
+		mxThrowElse(self->serialConnection >= 0);
+	}
 	fcntl(self->serialConnection, F_SETFL, 0);
 	switch (self->baud) {
 	case 921600: speed = B921600; break;
@@ -184,6 +189,8 @@ void fxRestartSerial(txSerialTool self)
 	usleep(5000);
 
 	flags &= ~TIOCM_RTS;
+	if (self->dtr)
+		flags |= TIOCM_DTR;
 	ioctl(fd, TIOCMSET, &flags);
 }
 
@@ -267,3 +274,4 @@ int main(int argc, char* argv[])
 	fxCloseSerial(self);
 	return result;
 }
+
