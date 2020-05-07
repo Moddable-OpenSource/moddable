@@ -79,13 +79,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	export GNU_VERSION=8.2.1
 	```
 
-5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the macOS platform and the correct version when you download, as shown in the image below.
-
-	![](../assets/devices/nrf-tools.png)
-
-	Untar the archive and copy the `nRF-Command-Line-Tools_10_5_0_OSX` directory in the `nrf5` directory. 
-
-6. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -94,7 +88,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	chmod 755 uf2conv.py 
 	```
 
-7. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
 	- Select `v15.3.0` from the nRF5 SDK versions section.
 
@@ -115,7 +109,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
 
-8. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+7. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
 	
 	```text
 	cd ~/nrf5
@@ -123,7 +117,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
 	```
 
-9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
@@ -195,13 +189,7 @@ After you've setup your macOS host environment, take the following steps to inst
 	export GNU_VERSION=8.2.1
 	```
 
-5. Download version `10.5.0` of the [nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download#infotabs). Be sure to select the Linux platform and the correct version when you download, as shown in the image below.
-
-	![](../assets/devices/nrf-tools-linux.png)
-
-	Untar the archive and copy the `nRF-Command-Line-Tools_10_5_0_OSX` directory in the `nrf5` directory. 
-
-6. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -210,7 +198,7 @@ After you've setup your macOS host environment, take the following steps to inst
 	chmod 755 uf2conv.py 
 	```
 
-7. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
 	- Select `v15.3.0` from the nRF5 SDK versions section.
 
@@ -231,7 +219,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
 
-8. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+7. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
 	
 	```text
 	cd ~/nrf5
@@ -239,7 +227,7 @@ After you've setup your macOS host environment, take the following steps to inst
 	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
 	```
 
-9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
