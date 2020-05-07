@@ -76,7 +76,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	```text
 	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
-	export GNU_VERSION=8.2.1
+	export NRF52_GNU_VERSION=8.2.1
 	```
 
 5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
@@ -186,7 +186,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	```text
 	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
-	export GNU_VERSION=8.2.1
+	export NRF52_GNU_VERSION=8.2.1
 	```
 
 5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
