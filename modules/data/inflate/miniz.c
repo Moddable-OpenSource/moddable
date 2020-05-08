@@ -1298,7 +1298,15 @@ int mz_inflate(mz_streamp pStream, int flush)
       break;
   }
 
-  return ((status == TINFL_STATUS_DONE) && (!pState->m_dict_avail)) ? MZ_STREAM_END : MZ_OK;
+  if ((status == TINFL_STATUS_DONE) && (!pState->m_dict_avail)) {
+	uint8_t unusedBytes = pState->m_decomp.m_num_bits >> 3;
+	pStream->next_in -= unusedBytes;
+	pStream->avail_in += unusedBytes;
+	pStream->total_in -= unusedBytes;
+	return MZ_STREAM_END;
+  }
+
+  return MZ_OK;
 }
 
 int mz_inflateEnd(mz_streamp pStream)
