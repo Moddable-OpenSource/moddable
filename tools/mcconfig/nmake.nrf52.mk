@@ -22,20 +22,30 @@ HOST_OS = win
 !IF "$(NRF_ROOT)"==""
 NRF_ROOT = $(USERPROFILE)\nrf5
 !ENDIF
+
 !IF "$(NRF52_GNU_VERSION)"==""
 NRF52_GNU_VERSION = 8.2.1
 !ENDIF
+
 !IF "$(NRF_ROOT)"==""
 NRF_ROOT = $(USERPROFILE)\nrf5
 !ENDIF
+
 !IF "$(NRF52_GCC_ROOT)"==""
 NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-8-2018-q4-major
 !ENDIF
+
 !IF "$(NRF_SDK_DIR)"==""
 NRF_SDK_DIR = $(NRF_ROOT)\nRF5_SDK
 !ENDIF
+SDK_ROOT = $(NRF_SDK_DIR)
+
 !IF "$(UF2CONV)"==""
 UF2CONV = $(NRF_ROOT)\uf2conv.py
+!ENDIF
+
+!IF [exist $(SDK_ROOT)\components\boards\moddable_four.h] == 0
+!ERROR ## Please add Moddable boards to your nRF52 SDK
 !ENDIF
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
@@ -59,7 +69,6 @@ BOARD = pca10056
 BOARD_DEF = BOARD_MODDABLE_FOUR
 HEAP_SIZE = 0x13000
 HWCPU = cortex-m4
-SDK_ROOT = $(NRF_SDK_DIR)
 SOFT_DEVICE = s140
 
 !IF "$(DEBUG)"=="1"
@@ -165,210 +174,210 @@ XS_DIRS = \
 	-I$(BUILD_DIR)\devices\nrf52
 
 BOARD_SUPPORT_OBJECTS = \
-	$(LIB_DIR)\boards.c.o \
-	$(LIB_DIR)\bsp.c.o \
-	$(LIB_DIR)\bsp_btn_ble.c.o
+	$(LIB_DIR)\boards.o \
+	$(LIB_DIR)\bsp.o \
+	$(LIB_DIR)\bsp_btn_ble.o
 
 FREERTOS_OBJECTS = \
-	$(LIB_DIR)\croutine.c.o \
-	$(LIB_DIR)\event_groups.c.o \
-	$(LIB_DIR)\heap_1.c.o \
-	$(LIB_DIR)\list.c.o \
-	$(LIB_DIR)\port_cmsis_systick.c.o \
-	$(LIB_DIR)\port_cmsis.c.o \
-	$(LIB_DIR)\port.c.o \
-	$(LIB_DIR)\queue.c.o \
-	$(LIB_DIR)\stream_buffer.c.o \
-	$(LIB_DIR)\tasks.c.o \
-	$(LIB_DIR)\timers.c.o
+	$(LIB_DIR)\croutine.o \
+	$(LIB_DIR)\event_groups.o \
+	$(LIB_DIR)\heap_1.o \
+	$(LIB_DIR)\list.o \
+	$(LIB_DIR)\port_cmsis_systick.o \
+	$(LIB_DIR)\port_cmsis.o \
+	$(LIB_DIR)\port.o \
+	$(LIB_DIR)\queue.o \
+	$(LIB_DIR)\stream_buffer.o \
+	$(LIB_DIR)\tasks.o \
+	$(LIB_DIR)\timers.o
 
 NRF_BLE_OBJECTS = \
-	$(LIB_DIR)\auth_status_tracker.c.o \
-	$(LIB_DIR)\ble_advdata.c.o \
-	$(LIB_DIR)\ble_advertising.c.o \
-	$(LIB_DIR)\ble_conn_params.c.o \
-	$(LIB_DIR)\ble_conn_state.c.o \
-	$(LIB_DIR)\ble_srv_common.c.o \
-	$(LIB_DIR)\gatt_cache_manager.c.o \
-	$(LIB_DIR)\gatts_cache_manager.c.o \
-	$(LIB_DIR)\id_manager.c.o \
-	$(LIB_DIR)\nrf_ble_gatt.c.o \
-	$(LIB_DIR)\nrf_ble_qwr.c.o \
-	$(LIB_DIR)\nrf_ble_scan.c.o \
-	$(LIB_DIR)\peer_data_storage.c.o \
-	$(LIB_DIR)\peer_database.c.o \
-	$(LIB_DIR)\peer_id.c.o \
-	$(LIB_DIR)\peer_manager_handler.c.o \
-	$(LIB_DIR)\peer_manager.c.o \
-	$(LIB_DIR)\pm_buffer.c.o \
-	$(LIB_DIR)\security_dispatcher.c.o \
-	$(LIB_DIR)\security_manager.c.o
+	$(LIB_DIR)\auth_status_tracker.o \
+	$(LIB_DIR)\ble_advdata.o \
+	$(LIB_DIR)\ble_advertising.o \
+	$(LIB_DIR)\ble_conn_params.o \
+	$(LIB_DIR)\ble_conn_state.o \
+	$(LIB_DIR)\ble_srv_common.o \
+	$(LIB_DIR)\gatt_cache_manager.o \
+	$(LIB_DIR)\gatts_cache_manager.o \
+	$(LIB_DIR)\id_manager.o \
+	$(LIB_DIR)\nrf_ble_gatt.o \
+	$(LIB_DIR)\nrf_ble_qwr.o \
+	$(LIB_DIR)\nrf_ble_scan.o \
+	$(LIB_DIR)\peer_data_storage.o \
+	$(LIB_DIR)\peer_database.o \
+	$(LIB_DIR)\peer_id.o \
+	$(LIB_DIR)\peer_manager_handler.o \
+	$(LIB_DIR)\peer_manager.o \
+	$(LIB_DIR)\pm_buffer.o \
+	$(LIB_DIR)\security_dispatcher.o \
+	$(LIB_DIR)\security_manager.o
 
 NRF_CRYPTO_OBJECTS = \
-	$(LIB_DIR)\nrf_crypto_aead.c.o \
-	$(LIB_DIR)\nrf_crypto_aes.c.o \
-	$(LIB_DIR)\nrf_crypto_aes_shared.c.o \
-	$(LIB_DIR)\nrf_crypto_ecc.c.o \
-	$(LIB_DIR)\nrf_crypto_ecdh.c.o \
-	$(LIB_DIR)\nrf_crypto_ecdsa.c.o \
-	$(LIB_DIR)\nrf_crypto_eddsa.c.o \
-	$(LIB_DIR)\nrf_crypto_error.c.o \
-	$(LIB_DIR)\nrf_crypto_hash.c.o \
-	$(LIB_DIR)\nrf_crypto_hkdf.c.o \
-	$(LIB_DIR)\nrf_crypto_hmac.c.o \
-	$(LIB_DIR)\nrf_crypto_init.c.o \
-	$(LIB_DIR)\nrf_crypto_rng.c.o \
-	$(LIB_DIR)\nrf_crypto_shared.c.o
+	$(LIB_DIR)\nrf_crypto_aead.o \
+	$(LIB_DIR)\nrf_crypto_aes.o \
+	$(LIB_DIR)\nrf_crypto_aes_shared.o \
+	$(LIB_DIR)\nrf_crypto_ecc.o \
+	$(LIB_DIR)\nrf_crypto_ecdh.o \
+	$(LIB_DIR)\nrf_crypto_ecdsa.o \
+	$(LIB_DIR)\nrf_crypto_eddsa.o \
+	$(LIB_DIR)\nrf_crypto_error.o \
+	$(LIB_DIR)\nrf_crypto_hash.o \
+	$(LIB_DIR)\nrf_crypto_hkdf.o \
+	$(LIB_DIR)\nrf_crypto_hmac.o \
+	$(LIB_DIR)\nrf_crypto_init.o \
+	$(LIB_DIR)\nrf_crypto_rng.o \
+	$(LIB_DIR)\nrf_crypto_shared.o
 
 NRF_DRIVERS_OBJECTS = \
-	$(LIB_DIR)\nrf_drv_clock.c.o \
-	$(LIB_DIR)\nrf_drv_power.c.o \
-	$(LIB_DIR)\nrf_drv_spi.c.o \
-	$(LIB_DIR)\nrf_drv_twi.c.o \
-	$(LIB_DIR)\nrf_drv_uart.c.o \
-	$(LIB_DIR)\nrfx_atomic.c.o \
-	$(LIB_DIR)\nrfx_clock.c.o \
-	$(LIB_DIR)\nrfx_gpiote.c.o \
-	$(LIB_DIR)\nrfx_lpcomp.c.o \
-	$(LIB_DIR)\nrfx_power.c.o \
-	$(LIB_DIR)\nrfx_prs.c.o \
-	$(LIB_DIR)\nrfx_qdec.c.o \
-	$(LIB_DIR)\nrfx_saadc.c.o \
-	$(LIB_DIR)\nrfx_spim.c.o \
-	$(LIB_DIR)\nrfx_systick.c.o \
-	$(LIB_DIR)\nrfx_twim.c.o \
-	$(LIB_DIR)\nrfx_uart.c.o \
-	$(LIB_DIR)\nrfx_uarte.c.o \
-	$(LIB_DIR)\nrfx_wdt.c.o
+	$(LIB_DIR)\nrf_drv_clock.o \
+	$(LIB_DIR)\nrf_drv_power.o \
+	$(LIB_DIR)\nrf_drv_spi.o \
+	$(LIB_DIR)\nrf_drv_twi.o \
+	$(LIB_DIR)\nrf_drv_uart.o \
+	$(LIB_DIR)\nrfx_atomic.o \
+	$(LIB_DIR)\nrfx_clock.o \
+	$(LIB_DIR)\nrfx_gpiote.o \
+	$(LIB_DIR)\nrfx_lpcomp.o \
+	$(LIB_DIR)\nrfx_power.o \
+	$(LIB_DIR)\nrfx_prs.o \
+	$(LIB_DIR)\nrfx_qdec.o \
+	$(LIB_DIR)\nrfx_saadc.o \
+	$(LIB_DIR)\nrfx_spim.o \
+	$(LIB_DIR)\nrfx_systick.o \
+	$(LIB_DIR)\nrfx_twim.o \
+	$(LIB_DIR)\nrfx_uart.o \
+	$(LIB_DIR)\nrfx_uarte.o \
+	$(LIB_DIR)\nrfx_wdt.o
 
 NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
-	$(LIB_DIR)\cc310_backend_aes.c.o \
-	$(LIB_DIR)\cc310_backend_aes_aead.c.o \
-	$(LIB_DIR)\cc310_backend_chacha_poly_aead.c.o \
-	$(LIB_DIR)\cc310_backend_ecc.c.o \
-	$(LIB_DIR)\cc310_backend_ecdh.c.o \
-	$(LIB_DIR)\cc310_backend_ecdsa.c.o \
-	$(LIB_DIR)\cc310_backend_eddsa.c.o \
-	$(LIB_DIR)\cc310_backend_hash.c.o \
-	$(LIB_DIR)\cc310_backend_hmac.c.o \
-	$(LIB_DIR)\cc310_backend_init.c.o \
-	$(LIB_DIR)\cc310_backend_mutex.c.o \
-	$(LIB_DIR)\cc310_backend_rng.c.o \
-	$(LIB_DIR)\cc310_backend_shared.c.o
+	$(LIB_DIR)\cc310_backend_aes.o \
+	$(LIB_DIR)\cc310_backend_aes_aead.o \
+	$(LIB_DIR)\cc310_backend_chacha_poly_aead.o \
+	$(LIB_DIR)\cc310_backend_ecc.o \
+	$(LIB_DIR)\cc310_backend_ecdh.o \
+	$(LIB_DIR)\cc310_backend_ecdsa.o \
+	$(LIB_DIR)\cc310_backend_eddsa.o \
+	$(LIB_DIR)\cc310_backend_hash.o \
+	$(LIB_DIR)\cc310_backend_hmac.o \
+	$(LIB_DIR)\cc310_backend_init.o \
+	$(LIB_DIR)\cc310_backend_mutex.o \
+	$(LIB_DIR)\cc310_backend_rng.o \
+	$(LIB_DIR)\cc310_backend_shared.o
 
 NRF_HW_CRYPTO_BACKEND_OBJECTS = \
-	$(LIB_DIR)\nrf_hw_backend_init.c.o \
-	$(LIB_DIR)\nrf_hw_backend_rng.c.o \
-	$(LIB_DIR)\nrf_hw_backend_rng_mbedtls.c.o
+	$(LIB_DIR)\nrf_hw_backend_init.o \
+	$(LIB_DIR)\nrf_hw_backend_rng.o \
+	$(LIB_DIR)\nrf_hw_backend_rng_mbedtls.o
 
 NRF_LIBRARIES_OBJECTS = \
-	$(LIB_DIR)\app_button.c.o \
-	$(LIB_DIR)\app_error.c.o \
-	$(LIB_DIR)\app_error_handler_gcc.c.o \
-	$(LIB_DIR)\app_error_weak.c.o \
-	$(LIB_DIR)\app_timer_freertos.c.o \
-	$(LIB_DIR)\app_util_platform.c.o \
-	$(LIB_DIR)\fds.c.o \
-	$(LIB_DIR)\nrf_assert.c.o \
-	$(LIB_DIR)\nrf_atfifo.c.o \
-	$(LIB_DIR)\nrf_atflags.c.o \
-	$(LIB_DIR)\nrf_atomic.c.o \
-	$(LIB_DIR)\nrf_balloc.c.o \
-	$(LIB_DIR)\nrf_fprintf.c.o \
-	$(LIB_DIR)\nrf_fprintf_format.c.o \
-	$(LIB_DIR)\nrf_fstorage_sd.c.o \
-	$(LIB_DIR)\nrf_fstorage.c.o \
-	$(LIB_DIR)\nrf_memobj.c.o \
-	$(LIB_DIR)\nrf_queue.c.o \
-	$(LIB_DIR)\nrf_ringbuf.c.o \
-	$(LIB_DIR)\nrf_section_iter.c.o \
-	$(LIB_DIR)\nrf_serial.c.o \
-	$(LIB_DIR)\nrf_spi_mngr.c.o \
-	$(LIB_DIR)\nrf_strerror.c.o \
-	$(LIB_DIR)\nrf_twi_mngr.c.o \
-	$(LIB_DIR)\nrf_twi_sensor.c.o \
-	$(LIB_DIR)\sensorsim.c.o
+	$(LIB_DIR)\app_button.o \
+	$(LIB_DIR)\app_error.o \
+	$(LIB_DIR)\app_error_handler_gcc.o \
+	$(LIB_DIR)\app_error_weak.o \
+	$(LIB_DIR)\app_timer_freertos.o \
+	$(LIB_DIR)\app_util_platform.o \
+	$(LIB_DIR)\fds.o \
+	$(LIB_DIR)\nrf_assert.o \
+	$(LIB_DIR)\nrf_atfifo.o \
+	$(LIB_DIR)\nrf_atflags.o \
+	$(LIB_DIR)\nrf_atomic.o \
+	$(LIB_DIR)\nrf_balloc.o \
+	$(LIB_DIR)\nrf_fprintf.o \
+	$(LIB_DIR)\nrf_fprintf_format.o \
+	$(LIB_DIR)\nrf_fstorage_sd.o \
+	$(LIB_DIR)\nrf_fstorage.o \
+	$(LIB_DIR)\nrf_memobj.o \
+	$(LIB_DIR)\nrf_queue.o \
+	$(LIB_DIR)\nrf_ringbuf.o \
+	$(LIB_DIR)\nrf_section_iter.o \
+	$(LIB_DIR)\nrf_serial.o \
+	$(LIB_DIR)\nrf_spi_mngr.o \
+	$(LIB_DIR)\nrf_strerror.o \
+	$(LIB_DIR)\nrf_twi_mngr.o \
+	$(LIB_DIR)\nrf_twi_sensor.o \
+	$(LIB_DIR)\sensorsim.o
 
 NRF_LOG_OBJECTS = \
-	$(LIB_DIR)\nrf_log_backend_rtt.c.o \
-	$(LIB_DIR)\nrf_log_backend_serial.c.o \
-	$(LIB_DIR)\nrf_log_backend_uart.c.o \
-	$(LIB_DIR)\nrf_log_default_backends.c.o \
-	$(LIB_DIR)\nrf_log_frontend.c.o \
-	$(LIB_DIR)\nrf_log_str_formatter.c.o
+	$(LIB_DIR)\nrf_log_backend_rtt.o \
+	$(LIB_DIR)\nrf_log_backend_serial.o \
+	$(LIB_DIR)\nrf_log_backend_uart.o \
+	$(LIB_DIR)\nrf_log_default_backends.o \
+	$(LIB_DIR)\nrf_log_frontend.o \
+	$(LIB_DIR)\nrf_log_str_formatter.o
 
 NRF_SOFTDEVICE_OBJECTS = \
-	$(LIB_DIR)\nrf_sdh_ble.c.o \
-	$(LIB_DIR)\nrf_sdh_freertos.c.o \
-	$(LIB_DIR)\nrf_sdh_soc.c.o \
-	$(LIB_DIR)\nrf_sdh.c.o
+	$(LIB_DIR)\nrf_sdh_ble.o \
+	$(LIB_DIR)\nrf_sdh_freertos.o \
+	$(LIB_DIR)\nrf_sdh_soc.o \
+	$(LIB_DIR)\nrf_sdh.o
 
 NRF_USBD_OBJECTS = \
-	$(LIB_DIR)\app_usbd.c.o \
-	$(LIB_DIR)\app_usbd_cdc_acm.c.o \
-	$(LIB_DIR)\app_usbd_core.c.o \
-	$(LIB_DIR)\app_usbd_serial_num.c.o \
-	$(LIB_DIR)\app_usbd_string_desc.c.o \
-	$(LIB_DIR)\nrfx_usbd.c.o
+	$(LIB_DIR)\app_usbd.o \
+	$(LIB_DIR)\app_usbd_cdc_acm.o \
+	$(LIB_DIR)\app_usbd_core.o \
+	$(LIB_DIR)\app_usbd_serial_num.o \
+	$(LIB_DIR)\app_usbd_string_desc.o \
+	$(LIB_DIR)\nrfx_usbd.o
 
 SDK_GLUE_OBJECTS = \
-	$(TMP_DIR)\xsmain.c.o \
-	$(TMP_DIR)\systemclock.c.o \
-	$(TMP_DIR)\debugger.c.o \
-	$(TMP_DIR)\ftdi_trace.c.o \
-	$(TMP_DIR)\main.c.o \
-	$(TMP_DIR)\debugger_usbd.c.o
+	$(TMP_DIR)\xsmain.o \
+	$(TMP_DIR)\systemclock.o \
+	$(TMP_DIR)\debugger.o \
+	$(TMP_DIR)\ftdi_trace.o \
+	$(TMP_DIR)\main.o \
+	$(TMP_DIR)\debugger_usbd.o
 
 STARTUP_OBJECTS = \
 	$(LIB_DIR)\gcc_startup_nrf52840.S.o \
-	$(LIB_DIR)\system_nrf52840.c.o \
-	$(LIB_DIR)\hardfault_handler_gcc.c.o \
-	$(LIB_DIR)\hardfault_implementation.c.o
+	$(LIB_DIR)\system_nrf52840.o \
+	$(LIB_DIR)\hardfault_handler_gcc.o \
+	$(LIB_DIR)\hardfault_implementation.o
 
 XS_OBJ = \
-	$(LIB_DIR)\xsHost.c.o \
-	$(LIB_DIR)\xsPlatform.c.o \
-	$(LIB_DIR)\xsAll.c.o \
-	$(LIB_DIR)\xsAPI.c.o \
-	$(LIB_DIR)\xsArguments.c.o \
-	$(LIB_DIR)\xsArray.c.o \
-	$(LIB_DIR)\xsAtomics.c.o \
-	$(LIB_DIR)\xsBigInt.c.o \
-	$(LIB_DIR)\xsBoolean.c.o \
-	$(LIB_DIR)\xsCode.c.o \
-	$(LIB_DIR)\xsCommon.c.o \
-	$(LIB_DIR)\xsDataView.c.o \
-	$(LIB_DIR)\xsDate.c.o \
-	$(LIB_DIR)\xsDebug.c.o \
-	$(LIB_DIR)\xsError.c.o \
-	$(LIB_DIR)\xsFunction.c.o \
-	$(LIB_DIR)\xsGenerator.c.o \
-	$(LIB_DIR)\xsGlobal.c.o \
-	$(LIB_DIR)\xsJSON.c.o \
-	$(LIB_DIR)\xsLexical.c.o \
-	$(LIB_DIR)\xsMapSet.c.o \
-	$(LIB_DIR)\xsMarshall.c.o \
-	$(LIB_DIR)\xsMath.c.o \
-	$(LIB_DIR)\xsMemory.c.o \
-	$(LIB_DIR)\xsModule.c.o \
-	$(LIB_DIR)\xsNumber.c.o \
-	$(LIB_DIR)\xsObject.c.o \
-	$(LIB_DIR)\xsPromise.c.o \
-	$(LIB_DIR)\xsProperty.c.o \
-	$(LIB_DIR)\xsProxy.c.o \
-	$(LIB_DIR)\xsRegExp.c.o \
-	$(LIB_DIR)\xsRun.c.o \
-	$(LIB_DIR)\xsScope.c.o \
-	$(LIB_DIR)\xsScript.c.o \
-	$(LIB_DIR)\xsSourceMap.c.o \
-	$(LIB_DIR)\xsString.c.o \
-	$(LIB_DIR)\xsSymbol.c.o \
-	$(LIB_DIR)\xsSyntaxical.c.o \
-	$(LIB_DIR)\xsTree.c.o \
-	$(LIB_DIR)\xsType.c.o \
-	$(LIB_DIR)\xsdtoa.c.o \
-	$(LIB_DIR)\xsmc.c.o \
-	$(LIB_DIR)\xsre.c.o
+	$(LIB_DIR)\xsHost.o \
+	$(LIB_DIR)\xsPlatform.o \
+	$(LIB_DIR)\xsAll.o \
+	$(LIB_DIR)\xsAPI.o \
+	$(LIB_DIR)\xsArguments.o \
+	$(LIB_DIR)\xsArray.o \
+	$(LIB_DIR)\xsAtomics.o \
+	$(LIB_DIR)\xsBigInt.o \
+	$(LIB_DIR)\xsBoolean.o \
+	$(LIB_DIR)\xsCode.o \
+	$(LIB_DIR)\xsCommon.o \
+	$(LIB_DIR)\xsDataView.o \
+	$(LIB_DIR)\xsDate.o \
+	$(LIB_DIR)\xsDebug.o \
+	$(LIB_DIR)\xsError.o \
+	$(LIB_DIR)\xsFunction.o \
+	$(LIB_DIR)\xsGenerator.o \
+	$(LIB_DIR)\xsGlobal.o \
+	$(LIB_DIR)\xsJSON.o \
+	$(LIB_DIR)\xsLexical.o \
+	$(LIB_DIR)\xsMapSet.o \
+	$(LIB_DIR)\xsMarshall.o \
+	$(LIB_DIR)\xsMath.o \
+	$(LIB_DIR)\xsMemory.o \
+	$(LIB_DIR)\xsModule.o \
+	$(LIB_DIR)\xsNumber.o \
+	$(LIB_DIR)\xsObject.o \
+	$(LIB_DIR)\xsPromise.o \
+	$(LIB_DIR)\xsProperty.o \
+	$(LIB_DIR)\xsProxy.o \
+	$(LIB_DIR)\xsRegExp.o \
+	$(LIB_DIR)\xsRun.o \
+	$(LIB_DIR)\xsScope.o \
+	$(LIB_DIR)\xsScript.o \
+	$(LIB_DIR)\xsSourceMap.o \
+	$(LIB_DIR)\xsString.o \
+	$(LIB_DIR)\xsSymbol.o \
+	$(LIB_DIR)\xsSyntaxical.o \
+	$(LIB_DIR)\xsTree.o \
+	$(LIB_DIR)\xsType.o \
+	$(LIB_DIR)\xsdtoa.o \
+	$(LIB_DIR)\xsmc.o \
+	$(LIB_DIR)\xsre.o
 
 OBJECTS = \
 	$(BOARD_SUPPORT_OBJECTS) \
@@ -384,6 +393,14 @@ OBJECTS = \
 	$(NRF_SOFTDEVICE_OBJECTS) \
 	$(NRF_USBD_OBJECTS)
 
+FINAL_LINK_OBJ = \
+	$(XS_OBJ) \
+	$(SDK_GLUE_OBJECTS) \
+	$(TMP_DIR)\mc.xs.o
+	$(TMP_DIR)\mc.resources.o \
+	$(OBJECTS) \
+	$(LIB_DIR)\buildinfo.o
+
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
 	$(XS_DIR)\includes\xsmc.h \
@@ -397,9 +414,6 @@ HEADERS = $(HEADERS) $(XS_HEADERS)
 
 LIB_FILES = \
 	$(SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
-
-OTHER_STUFF = \
-	boards_h
 
 TOOLS_BIN = $(NRF52_GCC_ROOT)\bin
 CC  = $(TOOLS_BIN)\arm-none-eabi-gcc
@@ -451,6 +465,9 @@ C_DEFINES = \
 	-DMODGCC=1 \
 	-DUSE_FTDI_TRACE=0 \
 	-fshort-enums
+!IF "$(INSTRUMENT)"=="1"
+C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
+!ENDIF
 
 C_FLAGS = \
 	-c \
@@ -522,15 +539,13 @@ C_FLAGS = $(C_FLAGS) $(HW_OPT)
 ASM_FLAGS = $(ASM_FLAGS) $(HW_OPT)
 !ENDIF
 
-!IF "$(INSTRUMENT)"=="1"
-C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
-!ENDIF
-
 C_INCLUDES = $(C_INCLUDES) $(GCC_DIRS) $(CRYPTO_DIRS) $(SDK_DIRS) $(PLATFORM_DIR) $(FREE_RTOS_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS) -I$(LIB_DIR) -I$(TMP_DIR)
 
 LINKER_SCRIPT = $(PLATFORM_DIR)\config\xsproj.ld
 
 .PHONY: all	
+
+precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
 
 all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	$(WAIT_FOR_M4)
@@ -540,10 +555,8 @@ all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	$(DO_COPY)
 	$(WAIT_FOR_NEW_SERIAL)
 
-boards_h: $(SDK_ROOT)\components\boards\moddable_four.h
-
 clean:
-	echo "# Clean project"
+	echo # Clean project
 	echo $(BIN_DIR)
 	del /s/q/f $(BIN_DIR)\*.* > NUL
 	rmdir /s/q $(BIN_DIR)
@@ -554,94 +567,67 @@ clean:
 	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
 
-precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)\xs_nrf52.hex
-
-$(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
-	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
-	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
-
 xsbug:
 	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	$(WAIT_FOR_NEW_SERIAL)
 
-$(SDK_ROOT)\components\boards\moddable_four.h:
-	$(error "## Please add Moddable boards to your nRF52 SDK")
+$(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
+	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex
+	$(UF2CONV) $(BIN_DIR)\xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)\xs_nrf52.uf2
 
 $(TMP_DIR):
-	@echo "TMP_DIR"
-	mkdir -p $(TMP_DIR)
+	if not exist $(TMP_DIR)\$(NULL) mkdir $(TMP_DIR)
 
 $(LIB_DIR):
-	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
+	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
+	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 	
 $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.bin
 
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
-	@echo "# Version"
-	@echo "#  XS:    $(XS_GIT_VERSION)"
 	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out | perl -e $(MEM_USAGE)
 	$(OBJCOPY) -O ihex $< $@
 
-FINAL_LINK_OBJ = \
-	$(XS_OBJ) \
-	$(SDK_GLUE_OBJECTS) \
-	$(TMP_DIR)\mc.xs.c.o $(TMP_DIR)\mc.resources.c.o \
-	$(OBJECTS) \
-	$(LIB_DIR)\buildinfo.c.o
-
-ekoFiles = $(foreach fil,$(FINAL_LINK_OBJ),$(shell echo '$(strip $(fil))' >> $(BIN_DIR)/xs_nrf52.ind1))
-
-$(BIN_DIR)/xs_nrf52.ind: $(FINAL_LINK_OBJ)
-	@echo "# creating xs_nrf52.ind"
-#	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
-	@rm -f $(BIN_DIR)/xs_nrf52.ind
-#	@echo $(ekoFiles)
-	$(ekoFiles)
-	@mv $(BIN_DIR)/xs_nrf52.ind1 $(BIN_DIR)/xs_nrf52.ind
-
-$(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
-	@echo "# creating xs_nrf52.out"
-#	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
-	@rm -f $(TMP_DIR)/xs_nrf52.out
-	@echo "# Link to .out file"
+$(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
+	@echo # creating xs_nrf52.out
+	if exist $(TMP_DIR)\xs_nrf52.out del /s/q/f $(TMP_DIR)\xs_nrf52.out > NUL
+	@echo # Link to .out file
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -lc -lnosys -lm -o $@
 
-$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.c.o $(TMP_DIR)\mc.resources.c.o $(OBJECTS)
-	@echo "# buildinfo"
+$(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+	@echo # buildinfo
 	echo '#include "buildinfo.h"' > $(LIB_DIR)\buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
-$(LIB_DIR)/xs%.c.o: xs%.c
-	@echo "# library xs:" $(<F)
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
+	@echo # library xs: $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
-$(LIB_DIR)/%.c.o: %.c
-	@echo "# library: " $(<F)
+{$(LIB_DIR)\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
 $(LIB_DIR)/%.S.o %.s.o: %.S
-	@echo "# asm " $(<F)
+	@echo # asm $(@F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
 
-$(TMP_DIR)/%.c.o: %.c
-	@echo "# application: " $(<F)
+$(TMP_DIR)/%.o: %.c
+	@echo # application: $(@F))
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
-$(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
-	@echo "# cc" $(<F) "(slots in flash)"
+$(TMP_DIR)/mc.%.o: $(TMP_DIR)/mc.%.c
+	@echo # cc $(@F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@
 
-$(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
-	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+$(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
+	@echo # xsl modules
+	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
-	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
-
+$(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
+	@echo # mcrez resources
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
