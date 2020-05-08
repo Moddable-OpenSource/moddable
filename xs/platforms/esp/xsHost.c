@@ -646,24 +646,23 @@ void modSetTime(uint32_t seconds)
 #endif
 }
 
-void modSetTimeZone(int32_t timeZoneOffset)
+#if ESP32
+static void updateTZ(void)
 {
-#if !ESP32
-	gTimeZoneOffset = timeZoneOffset;
-#else
+	int32_t offset = gTimeZoneOffset + gDaylightSavings;
 	int32_t hours, minutes;
-
 	char zone[10];
+
 	zone[0] = 'U';
 	zone[1] = 'T';
 	zone[2] = 'C';
-	zone[3] = (timeZoneOffset >= 0) ? '-' : '+';		// yes, backwards
+	zone[3] = (offset >= 0) ? '-' : '+';		// yes, backwards
 
-	if (timeZoneOffset < 0)
-		timeZoneOffset = -timeZoneOffset;
-	timeZoneOffset /= 60;	// seconds to minutes
-	hours = timeZoneOffset / 60;
-	minutes = timeZoneOffset % 60;
+	if (offset < 0)
+		offset = -offset;
+	offset /= 60;	// seconds to minutes
+	hours = offset / 60;
+	minutes = offset % 60;
 
 	zone[4] = (hours / 10) + '0';
 	zone[5] = (hours % 10) + '0';
@@ -674,7 +673,15 @@ void modSetTimeZone(int32_t timeZoneOffset)
 
 	setenv("TZ", zone, 1);
 	tzset();
+}
+#else
+	#define updateTZ()
 #endif
+
+void modSetTimeZone(int32_t timeZoneOffset)
+{
+	gTimeZoneOffset = timeZoneOffset;
+	updateTZ();
 }
 
 int32_t modGetTimeZone(void)
@@ -685,6 +692,7 @@ int32_t modGetTimeZone(void)
 void modSetDaylightSavingsOffset(int32_t daylightSavings)
 {
 	gDaylightSavings = daylightSavings;
+	updateTZ();
 }
 
 int32_t modGetDaylightSavingsOffset(void)
