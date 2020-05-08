@@ -648,7 +648,33 @@ void modSetTime(uint32_t seconds)
 
 void modSetTimeZone(int32_t timeZoneOffset)
 {
+#if !ESP32
 	gTimeZoneOffset = timeZoneOffset;
+#else
+	int32_t hours, minutes;
+
+	char zone[10];
+	zone[0] = 'U';
+	zone[1] = 'T';
+	zone[2] = 'C';
+	zone[3] = (timeZoneOffset >= 0) ? '-' : '+';		// yes, backwards
+
+	if (timeZoneOffset < 0)
+		timeZoneOffset = -timeZoneOffset;
+	timeZoneOffset /= 60;	// seconds to minutes
+	hours = timeZoneOffset / 60;
+	minutes = timeZoneOffset % 60;
+
+	zone[4] = (hours / 10) + '0';
+	zone[5] = (hours % 10) + '0';
+	zone[6] = ':';
+	zone[7] = (minutes / 10) + '0';
+	zone[8] = (minutes % 10) + '0';
+	zone[9] = 0;
+
+	setenv("TZ", zone, 1);
+	tzset();
+#endif
 }
 
 int32_t modGetTimeZone(void)
