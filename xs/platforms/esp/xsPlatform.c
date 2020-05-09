@@ -1044,12 +1044,6 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
-#else
-		case 2:
-		case 3:
-			modLog("mods disabled");
-			resultCode = -1;
-			break;
 #endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
@@ -1212,23 +1206,25 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoOffset += 6;
 			break;
 
-		case 15:
 #if MODDEF_XS_MODS
+		case 15:
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
-#else
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-#endif
 			break;
 
+		case 16: {
+			int atomSize;
+			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
+				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
+				the->echoOffset += atomSize;
+			}
+			} break;
+#endif
+
 		default:
-			modLog("unrecognized command");
-			modLogInt(cmdID);
 			resultCode = -1;
 			break;
 	}
