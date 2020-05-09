@@ -100,6 +100,8 @@ class ToDoFile extends FILE {
 		line.push("xsa");
 		line.push("-b");
 		line.push(tool.modulesPath);
+		line.push("-n");
+		line.push(tool.environment.DOT_SIGNATURE);
 		line.push("-o");
 		line.push(tool.binPath);
 		line.push("-r");

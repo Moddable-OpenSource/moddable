@@ -1483,6 +1483,14 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.resources);
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
+		
+		if (!this.environment.NAMESPACE)
+			this.environment.NAMESPACE = "moddable.tech"
+		var signature = this.environment.NAME + "." + this.environment.NAMESPACE;
+		signature = signature.split(".").reverse();
+		this.environment.DASH_SIGNATURE = signature.join("-");
+		this.environment.DOT_SIGNATURE = signature.join(".");
+		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
 	}
 }
 

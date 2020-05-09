@@ -52,7 +52,6 @@ struct sxMD5 {
 static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
-static txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
 static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);
@@ -653,8 +652,9 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 {
 	FILE* file = NULL;
 	txMD5 md5;
-	txSize padSize;
+	txSize nameSize;
 	txSize modsSize;
+	txSize padSize;
 	txLinkerScript* script;
 	txSize rsrcSize;
 	txLinkerResource* resource;
@@ -667,6 +667,8 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	*fileAddress = file;
 	
 	md5_create(&md5);
+	nameSize = c_strlen(linker->name) + 1;
+	md5_update(&md5, linker->name, nameSize);
 	md5_update(&md5, linker->symbolsBuffer, linker->symbolsSize);
 	modsSize = 0;
 	script = linker->firstScript;
@@ -681,6 +683,7 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 		+ 8 + 4 
 		+ 8 + sizeof(signature) 
 		+ 8 + sizeof(signature) 
+		+ 8 + nameSize
 		+ 8 + linker->symbolsSize 
 		+ 8 + modsSize
 		+ 8;
@@ -731,6 +734,12 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
+	
+	size = 8 + nameSize;
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("NAME", 4, 1, file) == 1);
+	mxThrowElse(fwrite(linker->name, nameSize, 1, file) == 1);
 
 	size = 8 + linker->symbolsSize;
 	size = htonl(size);

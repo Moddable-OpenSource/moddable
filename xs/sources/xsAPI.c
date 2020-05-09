@@ -1854,7 +1854,7 @@ static void fxMapperStep(txMapper* self);
 #define mxElseThrow(_ASSERTION) if (!(_ASSERTION)) c_longjmp(self->jmp_buf, 1)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) +  XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
 void fxBuildArchiveKeys(txMachine* the)
 {
@@ -1862,8 +1862,14 @@ void fxBuildArchiveKeys(txMachine* the)
 	if (preparation) {
 		txU1* p = the->archive;
 		if (p) {
+			txU4 atomSize;
 			txID c, i;
-			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE  + sizeof(Atom);
+			p += mxArchiveHeaderSize;
+			// NAME
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// SYMB
+			p += sizeof(Atom);
 			c = (txID)c_read16(p);
 			p += 2;
 			for (i = 0; i < c; i++) {
@@ -1889,7 +1895,10 @@ void fxBuildModuleMap(txMachine* the)
 			source = source->next;
 		}
 		c_memcpy(path, preparation->base, preparation->baseLength);
-		p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+		p += mxArchiveHeaderSize;
+		// NAME
+		atomSize = c_read32be(p);
+		p += atomSize;
 		// SYMB
 		atomSize = c_read32be(p);
 		p += atomSize;
@@ -1924,7 +1933,10 @@ void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
 		if (p) {
 			txU4 atomSize;
 			txU1* q;
-			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+			p += mxArchiveHeaderSize;
+			// NAME
+			atomSize = c_read32be(p);
+			p += atomSize;
 			// SYMB
 			atomSize = c_read32be(p);
 			p += atomSize;
@@ -1959,7 +1971,10 @@ void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
 		if (p) {
 			txU4 atomSize;
 			txU1* q;
-			p += sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE;
+			p += mxArchiveHeaderSize;
+			// NAME
+			atomSize = c_read32be(p);
+			p += atomSize;
 			// SYMB
 			atomSize = c_read32be(p);
 			p += atomSize;
@@ -2081,6 +2096,10 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		if (self->bufferSize > self->size)
 			self->bufferSize = self->size;
 		mxElseThrow(self->read(self->src, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
+	
+		fxMapperReadAtom(self, &atom);
+		mxElseThrow(atom.atomType == XS_ATOM_NAME);
+		fxMapperSkip(self, atom.atomSize - sizeof(Atom));
 	
 		fxMapperReadAtom(self, &atom);
 		mxElseThrow(atom.atomType == XS_ATOM_SYMBOLS);

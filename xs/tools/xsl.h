@@ -116,6 +116,8 @@ struct sxLinker {
 	
 	txFlag intrinsicFlags[mxIntrinsicCount];
 	txFlag promiseJobsFlag;
+	
+	txString name;
 
 	char main[1024];
 };
@@ -225,6 +227,7 @@ extern txLinkerInclude* fxNewLinkerInclude(txLinker* linker, txString path);
 extern txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name);
 extern txLinkerResource* fxNewLinkerResource(txLinker* linker, txString path, FILE** fileAddress);
 extern txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAddress);
+extern txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size);
 extern txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name);
 extern txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag);
 extern void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddress);
