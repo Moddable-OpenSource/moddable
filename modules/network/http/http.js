@@ -311,6 +311,8 @@ function callback(message, value) {
 						}
 						else {
 							this.callback(Request.responseFragment, count);
+							if (this.state >= 11)
+								return;		// callback closed instance
 							this.read(null);		// skip whatever the callback didn't read
 						}
 					}
