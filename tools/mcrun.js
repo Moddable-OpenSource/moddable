@@ -104,8 +104,6 @@ class ToDoFile extends FILE {
 		line.push(tool.environment.DOT_SIGNATURE);
 		line.push("-o");
 		line.push(tool.binPath);
-		line.push("-r");
-		line.push(tool.environment.NAME);
 		for (var result of tool.jsFiles) {
 			line.push(tool.modulesPath + tool.slash + result.target);
 		}
