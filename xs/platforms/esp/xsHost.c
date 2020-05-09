@@ -1811,6 +1811,14 @@ void *installModules(txPreparation *preparation)
 
 #endif
 
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	if (!xsb || !gHasMods) return NULL;
+
+	return findNthAtom(atomTypeIn, 0, xsb, c_read32be(xsb), atomSizeOut);
+}
+
 char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
 {
 	const uint8_t *atom = xsb, *xsbEnd = xsb + xsbSize;
