@@ -21,6 +21,8 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 
+static const char *gHexUpper ICACHE_FLASH_ATTR = "0123456789ABCDEF";
+
 void xs_hex_toString(xsMachine *the)
 {
 	int argc = xsmcArgc;
@@ -28,11 +30,16 @@ void xs_hex_toString(xsMachine *the)
 	char *string;
 	int i, length = xsmcGetArrayBufferLength(xsArg(0));
 	char separator = 0;
-	static const char *gHex = "0123456789ABCDEF";
+	char *gHex = (char *)gHexUpper;
 
 	if (argc > 1) {
 		char *str = xsmcToString(xsArg(1));
 		separator = c_read8(str);
+		if (argc > 2) {
+			gHex = xsmcToString(xsArg(2));
+			if (c_strlen(gHex) < 16)
+				xsUnknownError("bad string");
+		}
 	}
 
 	if (0 == length)
