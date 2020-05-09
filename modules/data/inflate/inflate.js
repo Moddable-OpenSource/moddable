@@ -6,6 +6,7 @@ class Inflate @ "xs_inflate_destructor" {
 		this.build(options);
 	}
 	build(options) @ "xs_inflate";
+	close() @ "xs_inflate_close";
 
 	push(buffer, end) {
 		if (ArrayBuffer.isView(buffer)) {

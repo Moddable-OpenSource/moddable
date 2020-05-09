@@ -50,6 +50,15 @@ void xs_inflate(xsMachine *the)
 	xsmcSetHostData(xsThis, zlib);
 }
 
+void xs_inflate_close(xsMachine *the)
+{
+	z_stream *zlib = xsmcGetHostData(xsThis);
+	if (!zlib) return;
+
+	c_free(zlib);
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void xs_inflate_push(xsMachine *the)
 {
 	z_stream *zlib = xsmcGetHostData(xsThis);
@@ -68,12 +77,15 @@ void xs_inflate_push(xsMachine *the)
 		zlib->avail_in = inputRemaining;
 		zlib->total_in = 0;
 
-		status = inflate(zlib, Z_PARTIAL_FLUSH);
+		status = inflate(zlib, (inputEnd ? Z_FINISH : MZ_NO_FLUSH));
 		if ((Z_OK != status) && (Z_STREAM_END != status)) {
-			if (Z_DATA_ERROR == status)
+			if (Z_DATA_ERROR == status) {
+				xs_inflate_close(the);
+				xsDebugger();
 				xsUnknownError("bad zlib data");
+			}
 		}
-		if (status == Z_BUF_ERROR)
+		if (Z_BUF_ERROR == status)
 			status = Z_OK;
 
 		if (zlib->total_out) {
@@ -88,6 +100,8 @@ void xs_inflate_push(xsMachine *the)
 	if (inputEnd || (status == Z_STREAM_END)) {
 		if (Z_STREAM_END != status)
 			inflateEnd(zlib);
+
+		xs_inflate_close(the);
 
 		xsmcSetInteger(xsResult, (Z_STREAM_END == status) ? Z_OK : status);
 		xsCall1(xsThis, xsID_onEnd, xsResult);
