@@ -23,20 +23,16 @@ HOST_OS = win
 NRF_ROOT = $(USERPROFILE)\nrf5
 !ENDIF
 
+!IF "$(NRF52_GCC_ROOT)"==""
+NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-8-2018-q4-major-win32
+!ENDIF
+
 !IF "$(NRF52_GNU_VERSION)"==""
 NRF52_GNU_VERSION = 8.2.1
 !ENDIF
 
-!IF "$(NRF_ROOT)"==""
-NRF_ROOT = $(USERPROFILE)\nrf5
-!ENDIF
-
-!IF "$(NRF52_GCC_ROOT)"==""
-NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-8-2018-q4-major
-!ENDIF
-
 !IF "$(NRF_SDK_DIR)"==""
-NRF_SDK_DIR = $(NRF_ROOT)\nRF5_SDK
+NRF_SDK_DIR = $(NRF_ROOT)\nRF5_SDK_15.3.0_59ac345
 !ENDIF
 SDK_ROOT = $(NRF_SDK_DIR)
 
@@ -44,13 +40,42 @@ SDK_ROOT = $(NRF_SDK_DIR)
 UF2CONV = $(NRF_ROOT)\uf2conv.py
 !ENDIF
 
-!IF [exist $(SDK_ROOT)\components\boards\moddable_four.h] == 0
+!IF !EXIST($(SDK_ROOT)\components\boards\moddable_four.h)
 !ERROR ## Please add Moddable boards to your nRF52 SDK
 !ENDIF
 
+#VERBOSE = 1
+
+!IF "$(VERBOSE)"=="1"
+!CMDSWITCHES -S
+!ELSE
+!CMDSWITCHES +S
+!ENDIF
+
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
+MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
+WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
+BLES2GATT = $(MODDABLE_TOOLS_DIR)\bles2gatt
+XSC = $(MODDABLE_TOOLS_DIR)\xsc
+XSID = $(MODDABLE_TOOLS_DIR)\xsid
+XSL = $(MODDABLE_TOOLS_DIR)\xsl
+
+TOOLS_BIN = $(NRF52_GCC_ROOT)\bin
+CC = $(TOOLS_BIN)\arm-none-eabi-gcc
+CPP = $(TOOLS_BIN)\arm-none-eabi-g++
+LD = $(TOOLS_BIN)\arm-none-eabi-gcc
+AR = $(TOOLS_BIN)\arm-none-eabi-ar
+OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
+SIZE = $(TOOLS_BIN)\arm-none-eabi-size
+
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
 DO_COPY =
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
 UF2_VOLUME_PATH =
 WAIT_FOR_M4 =
 
@@ -79,7 +104,7 @@ LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
 LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
 !ENDIF
 
-CRYPTO_DIRS = \
+CRYPTO_INCLUDES = \
 	-I$(SDK_ROOT)\components\libraries\crypto \
 	-I$(SDK_ROOT)\components\libraries\crypto\backend\cc310 \
 	-I$(SDK_ROOT)\components\libraries\crypto\backend\cc310_bl \
@@ -93,21 +118,27 @@ CRYPTO_DIRS = \
 	-I$(SDK_ROOT)\external\nrf_cc310\include \
 	-I$(SDK_ROOT)\external\nrf_cc310_bl\include
 
-FREE_RTOS_DIRS = \
+FREE_RTOS_INCLUDES = \
+	-I$(SDK_ROOT)\external\freertos\portable\GCC\nrf52 \
+	-I$(SDK_ROOT)\external\freertos\portable\CMSIS\nrf52 \
 	-I$(SDK_ROOT)\external\freertos\source \
 	-I$(SDK_ROOT)\external\freertos\source\include \
-	-I$(SDK_ROOT)\external\freertos\source\portable\MemMang \
-	-I$(SDK_ROOT)\external\freertos\portable\GCC\nrf52 \
-	-I$(SDK_ROOT)\external\freertos\portable\CMSIS\nrf52
+	-I$(SDK_ROOT)\external\freertos\source\portable\MemMang
 
-GCC_DIRS = \
+GCC_INCLUDES = \
 	-I$(NRF52_GCC_ROOT)\arm-none-eabi\include \
 	-I$(NRF52_GCC_ROOT)\arm-none-eabi\include\machine \
 	-I$(NRF52_GCC_ROOT)\lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include \
 	-I$(NRF52_GCC_ROOT)\lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include-fixed
 
-SDK_DIRS = \
+SDK_INCLUDES = \
 	-I$(SDK_ROOT)\components \
+	-I$(SDK_ROOT)\components\ble\common \
+	-I$(SDK_ROOT)\components\ble\ble_advertising \
+	-I$(SDK_ROOT)\components\ble\nrf_ble_gatt \
+	-I$(SDK_ROOT)\components\ble\nrf_ble_qwr \
+	-I$(SDK_ROOT)\components\ble\nrf_ble_scan \
+	-I$(SDK_ROOT)\components\ble\peer_manager \
 	-I$(SDK_ROOT)\components\boards \
 	-I$(SDK_ROOT)\components\libraries\atomic \
 	-I$(SDK_ROOT)\components\libraries\atomic_fifo \
@@ -116,6 +147,7 @@ SDK_DIRS = \
 	-I$(SDK_ROOT)\components\libraries\button \
 	-I$(SDK_ROOT)\components\libraries\bsp \
 	-I$(SDK_ROOT)\components\libraries\delay \
+	-I$(SDK_ROOT)\components\libraries\experimental_section_vars \
 	-I$(SDK_ROOT)\components\libraries\fds \
 	-I$(SDK_ROOT)\components\libraries\fstorage \
 	-I$(SDK_ROOT)\components\libraries\hardfault \
@@ -123,9 +155,12 @@ SDK_DIRS = \
 	-I$(SDK_ROOT)\components\libraries\hardfault\nrf52\handler \
 	-I$(SDK_ROOT)\components\libraries\log \
 	-I$(SDK_ROOT)\components\libraries\log\src \
+	-I$(SDK_ROOT)\components\libraries\memobj \
+	-I$(SDK_ROOT)\components\libraries\mutex \
 	-I$(SDK_ROOT)\components\libraries\queue \
 	-I$(SDK_ROOT)\components\libraries\ringbuf \
 	-I$(SDK_ROOT)\components\libraries\scheduler \
+	-I$(SDK_ROOT)\components\libraries\sensorsim \
 	-I$(SDK_ROOT)\components\libraries\serial \
 	-I$(SDK_ROOT)\components\libraries\spi_mngr \
 	-I$(SDK_ROOT)\components\libraries\stack_info \
@@ -134,64 +169,54 @@ SDK_DIRS = \
 	-I$(SDK_ROOT)\components\libraries\twi_mngr \
 	-I$(SDK_ROOT)\components\libraries\timer \
 	-I$(SDK_ROOT)\components\libraries\util \
-	-I$(SDK_ROOT)\components\libraries\experimental_section_vars \
-	-I$(SDK_ROOT)\components\libraries\mutex \
-	-I$(SDK_ROOT)\components\libraries\memobj \
-	-I$(SDK_ROOT)\components\libraries\log\src \
-	-I$(SDK_ROOT)\components\libraries\sensorsim \
 	-I$(SDK_ROOT)\components\libraries\usbd \
 	-I$(SDK_ROOT)\components\libraries\usbd\class\cdc \
 	-I$(SDK_ROOT)\components\libraries\usbd\class\cdc\acm \
-	-I$(SDK_ROOT)\components\toolchain\cmsis\include \
-	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
-	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers \
 	-I$(SDK_ROOT)\components\softdevice\common \
-	-I$(SDK_ROOT)\components\ble\common \
-	-I$(SDK_ROOT)\components\ble\ble_advertising \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_gatt \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_qwr \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_scan \
-	-I$(SDK_ROOT)\components\ble\peer_manager \
+	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers \
+	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
+	-I$(SDK_ROOT)\components\toolchain\cmsis\include \
 	-I$(SDK_ROOT)\external\fprintf \
 	-I$(SDK_ROOT)\external\utf_converter \
 	-I$(SDK_ROOT)\integration\nrfx\legacy \
 	-I$(SDK_ROOT)\integration\nrfx \
 	-I$(SDK_ROOT)\modules\nrfx \
-	-I$(SDK_ROOT)\modules\nrfx\hal \
-	-I$(SDK_ROOT)\modules\nrfx\mdk \
-	-I$(SDK_ROOT)\modules\nrfx\soc \
 	-I$(SDK_ROOT)\modules\nrfx\drivers\include \
 	-I$(SDK_ROOT)\modules\nrfx\drivers\src \
-	-I$(SDK_ROOT)\modules\nrfx\drivers\src\prs
+	-I$(SDK_ROOT)\modules\nrfx\drivers\src\prs \
+	-I$(SDK_ROOT)\modules\nrfx\hal \
+	-I$(SDK_ROOT)\modules\nrfx\mdk \
+	-I$(SDK_ROOT)\modules\nrfx\soc
 
-SDK_GLUE_DIRS = \
-	-I$(BUILD_DIR)\devices\nrf52\base
+SDK_GLUE_INCLUDES = \
+	-I$(BUILD_DIR)\devices\nrf52\base \
+	-I$(BUILD_DIR)\devices\nrf52\config
 
-XS_DIRS = \
+XS_INCLUDES = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\nrf52 \
 	-I$(BUILD_DIR)\devices\nrf52
 
-BOARD_SUPPORT_OBJECTS = \
+BOARD_SUPPORT_OBJ = \
 	$(LIB_DIR)\boards.o \
 	$(LIB_DIR)\bsp.o \
 	$(LIB_DIR)\bsp_btn_ble.o
 
-FREERTOS_OBJECTS = \
+FREERTOS_OBJ = \
 	$(LIB_DIR)\croutine.o \
 	$(LIB_DIR)\event_groups.o \
 	$(LIB_DIR)\heap_1.o \
 	$(LIB_DIR)\list.o \
-	$(LIB_DIR)\port_cmsis_systick.o \
-	$(LIB_DIR)\port_cmsis.o \
 	$(LIB_DIR)\port.o \
+	$(LIB_DIR)\port_cmsis.o \
+	$(LIB_DIR)\port_cmsis_systick.o \
 	$(LIB_DIR)\queue.o \
 	$(LIB_DIR)\stream_buffer.o \
 	$(LIB_DIR)\tasks.o \
 	$(LIB_DIR)\timers.o
 
-NRF_BLE_OBJECTS = \
+NRF_BLE_OBJ = \
 	$(LIB_DIR)\auth_status_tracker.o \
 	$(LIB_DIR)\ble_advdata.o \
 	$(LIB_DIR)\ble_advertising.o \
@@ -207,13 +232,13 @@ NRF_BLE_OBJECTS = \
 	$(LIB_DIR)\peer_data_storage.o \
 	$(LIB_DIR)\peer_database.o \
 	$(LIB_DIR)\peer_id.o \
-	$(LIB_DIR)\peer_manager_handler.o \
 	$(LIB_DIR)\peer_manager.o \
+	$(LIB_DIR)\peer_manager_handler.o \
 	$(LIB_DIR)\pm_buffer.o \
 	$(LIB_DIR)\security_dispatcher.o \
 	$(LIB_DIR)\security_manager.o
 
-NRF_CRYPTO_OBJECTS = \
+NRF_CRYPTO_OBJ = \
 	$(LIB_DIR)\nrf_crypto_aead.o \
 	$(LIB_DIR)\nrf_crypto_aes.o \
 	$(LIB_DIR)\nrf_crypto_aes_shared.o \
@@ -229,7 +254,7 @@ NRF_CRYPTO_OBJECTS = \
 	$(LIB_DIR)\nrf_crypto_rng.o \
 	$(LIB_DIR)\nrf_crypto_shared.o
 
-NRF_DRIVERS_OBJECTS = \
+NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrf_drv_clock.o \
 	$(LIB_DIR)\nrf_drv_power.o \
 	$(LIB_DIR)\nrf_drv_spi.o \
@@ -250,14 +275,13 @@ NRF_DRIVERS_OBJECTS = \
 	$(LIB_DIR)\nrfx_uarte.o \
 	$(LIB_DIR)\nrfx_wdt.o
 
-NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
+NRF_CRYPTO_BACKEND_CC310_OBJ = \
 	$(LIB_DIR)\cc310_backend_aes.o \
 	$(LIB_DIR)\cc310_backend_aes_aead.o \
 	$(LIB_DIR)\cc310_backend_chacha_poly_aead.o \
 	$(LIB_DIR)\cc310_backend_ecc.o \
 	$(LIB_DIR)\cc310_backend_ecdh.o \
 	$(LIB_DIR)\cc310_backend_ecdsa.o \
-	$(LIB_DIR)\cc310_backend_eddsa.o \
 	$(LIB_DIR)\cc310_backend_hash.o \
 	$(LIB_DIR)\cc310_backend_hmac.o \
 	$(LIB_DIR)\cc310_backend_init.o \
@@ -265,12 +289,12 @@ NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
 	$(LIB_DIR)\cc310_backend_rng.o \
 	$(LIB_DIR)\cc310_backend_shared.o
 
-NRF_HW_CRYPTO_BACKEND_OBJECTS = \
+NRF_HW_CRYPTO_BACKEND_OBJ = \
 	$(LIB_DIR)\nrf_hw_backend_init.o \
 	$(LIB_DIR)\nrf_hw_backend_rng.o \
 	$(LIB_DIR)\nrf_hw_backend_rng_mbedtls.o
 
-NRF_LIBRARIES_OBJECTS = \
+NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\app_button.o \
 	$(LIB_DIR)\app_error.o \
 	$(LIB_DIR)\app_error_handler_gcc.o \
@@ -298,7 +322,7 @@ NRF_LIBRARIES_OBJECTS = \
 	$(LIB_DIR)\nrf_twi_sensor.o \
 	$(LIB_DIR)\sensorsim.o
 
-NRF_LOG_OBJECTS = \
+NRF_LOG_OBJ = \
 	$(LIB_DIR)\nrf_log_backend_rtt.o \
 	$(LIB_DIR)\nrf_log_backend_serial.o \
 	$(LIB_DIR)\nrf_log_backend_uart.o \
@@ -306,13 +330,13 @@ NRF_LOG_OBJECTS = \
 	$(LIB_DIR)\nrf_log_frontend.o \
 	$(LIB_DIR)\nrf_log_str_formatter.o
 
-NRF_SOFTDEVICE_OBJECTS = \
+NRF_SOFTDEVICE_OBJ = \
+	$(LIB_DIR)\nrf_sdh.o \
 	$(LIB_DIR)\nrf_sdh_ble.o \
 	$(LIB_DIR)\nrf_sdh_freertos.o \
-	$(LIB_DIR)\nrf_sdh_soc.o \
-	$(LIB_DIR)\nrf_sdh.o
+	$(LIB_DIR)\nrf_sdh_soc.o
 
-NRF_USBD_OBJECTS = \
+NRF_USBD_OBJ = \
 	$(LIB_DIR)\app_usbd.o \
 	$(LIB_DIR)\app_usbd_cdc_acm.o \
 	$(LIB_DIR)\app_usbd_core.o \
@@ -320,19 +344,19 @@ NRF_USBD_OBJECTS = \
 	$(LIB_DIR)\app_usbd_string_desc.o \
 	$(LIB_DIR)\nrfx_usbd.o
 
-SDK_GLUE_OBJECTS = \
-	$(TMP_DIR)\xsmain.o \
-	$(TMP_DIR)\systemclock.o \
+SDK_GLUE_OBJ = \
 	$(TMP_DIR)\debugger.o \
+	$(TMP_DIR)\debugger_usbd.o \
 	$(TMP_DIR)\ftdi_trace.o \
 	$(TMP_DIR)\main.o \
-	$(TMP_DIR)\debugger_usbd.o
+	$(TMP_DIR)\systemclock.o \
+	$(TMP_DIR)\xsmain.o
 
-STARTUP_OBJECTS = \
-	$(LIB_DIR)\gcc_startup_nrf52840.S.o \
-	$(LIB_DIR)\system_nrf52840.o \
+STARTUP_OBJ = \
+#	$(LIB_DIR)\gcc_startup_nrf52840.o \
 	$(LIB_DIR)\hardfault_handler_gcc.o \
-	$(LIB_DIR)\hardfault_implementation.o
+	$(LIB_DIR)\hardfault_implementation.o \
+	$(LIB_DIR)\system_nrf52840.o
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
@@ -380,26 +404,26 @@ XS_OBJ = \
 	$(LIB_DIR)\xsre.o
 
 OBJECTS = \
-	$(BOARD_SUPPORT_OBJECTS) \
-	$(FREERTOS_OBJECTS) \
-	$(STARTUP_OBJECTS) \
-	$(NRF_BLE_OBJECTS) \
-	$(NRF_CRYPTO_OBJECTS) \
-	$(NRF_CRYPTO_BACKEND_CC310_OBJECTS) \
-	$(NRF_HW_CRYPTO_BACKEND_OBJECTS) \
-	$(NRF_LOG_OBJECTS) \
-	$(NRF_DRIVERS_OBJECTS) \
-	$(NRF_LIBRARIES_OBJECTS) \
-	$(NRF_SOFTDEVICE_OBJECTS) \
-	$(NRF_USBD_OBJECTS)
+	$(BOARD_SUPPORT_OBJ) \
+	$(FREERTOS_OBJ) \
+	$(NRF_BLE_OBJ) \
+	$(NRF_CRYPTO_OBJ) \
+	$(NRF_CRYPTO_BACKEND_CC310_OBJ) \
+	$(NRF_DRIVERS_OBJ) \
+	$(NRF_HW_CRYPTO_BACKEND_OBJ) \
+	$(NRF_LOG_OBJ) \
+	$(NRF_LIBRARIES_OBJ) \
+	$(NRF_SOFTDEVICE_OBJ) \
+	$(NRF_USBD_OBJ) \
+	$(STARTUP_OBJ)
 
 FINAL_LINK_OBJ = \
-	$(XS_OBJ) \
-	$(SDK_GLUE_OBJECTS) \
-	$(TMP_DIR)\mc.xs.o
-	$(TMP_DIR)\mc.resources.o \
+	$(LIB_DIR)\buildinfo.o \
 	$(OBJECTS) \
-	$(LIB_DIR)\buildinfo.o
+	$(SDK_GLUE_OBJECTS) \
+	$(TMP_DIR)\mc.xs.o \
+	$(TMP_DIR)\mc.resources.o \
+	$(XS_OBJ)
 
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -414,27 +438,6 @@ HEADERS = $(HEADERS) $(XS_HEADERS)
 
 LIB_FILES = \
 	$(SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
-
-TOOLS_BIN = $(NRF52_GCC_ROOT)\bin
-CC  = $(TOOLS_BIN)\arm-none-eabi-gcc
-CPP = $(TOOLS_BIN)\arm-none-eabi-g++
-LD  = $(TOOLS_BIN)\arm-none-eabi-gcc
-AR  = $(TOOLS_BIN)\arm-none-eabi-ar
-OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
-SIZE  = $(TOOLS_BIN)\arm-none-eabi-size
-
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
-BLES2GATT = $(MODDABLE_TOOLS_DIR)\bles2gatt
-XSC = $(MODDABLE_TOOLS_DIR)\xsc
-XSID = $(MODDABLE_TOOLS_DIR)\xsid
-XSL = $(MODDABLE_TOOLS_DIR)\xsl
 
 NRF_C_DEFINES = \
 	-D__SIZEOF_WCHAR_T=4 \
@@ -468,6 +471,14 @@ C_DEFINES = \
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
 !ENDIF
+!IF "$(DEBUG)"=="1"
+C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUG=1 -DDEBUG_NRF -DUSE_DEBUGGER_USBD=1 -g3 -Os
+!ELSE
+C_DEFINES = $(C_DEFINES) -Os
+!ENDIF
+
+HW_DEBUG_OPT = $(FP_OPTS)
+HW_OPT = -O2 $(FP_OPTS)
 
 C_FLAGS = \
 	-c \
@@ -494,6 +505,11 @@ C_FLAGS = \
 	-mtp=soft \
 	-munaligned-access \
 	-nostdinc
+!IF "$(DEBUG)"=="1"
+#C_FLAGS = $(C_FLAGS) $(HW_DEBUG_OPT)
+!ELSE
+#C_FLAGS = $(C_FLAGS) $(HW_OPT)
+!ENDIF
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
@@ -526,26 +542,14 @@ LDFLAGS = \
 	-Xlinker \
 	--specs=nano.specs
 
-HW_DEBUG_OPT = $(FP_OPTS)
-HW_OPT = -O2 $(FP_OPTS)
-
-!IF "$(DEBUG)"=="1"
-C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUG=1 -DDEBUG_NRF DUSE_DEBUGGER_USBD=1 -g3 -Os
-C_FLAGS = $(C_FLAGS) $(HW_DEBUG_OPT)
-ASM_FLAGS = $(ASM_FLAGS) $(HW_DEBUG_OPT) -DDEBUG_NRF
-!ELSE
-C_DEFINES = $(C_DEFINES) -Os
-C_FLAGS = $(C_FLAGS) $(HW_OPT)
-ASM_FLAGS = $(ASM_FLAGS) $(HW_OPT)
-!ENDIF
-
-C_INCLUDES = $(C_INCLUDES) $(GCC_DIRS) $(CRYPTO_DIRS) $(SDK_DIRS) $(PLATFORM_DIR) $(FREE_RTOS_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS) -I$(LIB_DIR) -I$(TMP_DIR)
+C_INCLUDES = $(C_INCLUDES) $(GCC_INCLUDES) $(CRYPTO_INCLUDES) $(SDK_INCLUDES) $(FREE_RTOS_INCLUDES) $(SDK_GLUE_INCLUDES) $(XS_INCLUDES) -I$(LIB_DIR) -I$(TMP_DIR) -I$(PLATFORM_DIR)
 
 LINKER_SCRIPT = $(PLATFORM_DIR)\config\xsproj.ld
 
-.PHONY: all	
+.PHONY: all
+.SUFFIXES: .s
 
-precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
+precursor: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
 
 all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	$(WAIT_FOR_M4)
@@ -575,7 +579,7 @@ xsbug:
 
 $(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
 	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex
-	$(UF2CONV) $(BIN_DIR)\xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)\xs_nrf52.uf2
+	python $(UF2CONV) $(BIN_DIR)\xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)\xs_nrf52.uf2
 
 $(TMP_DIR):
 	if not exist $(TMP_DIR)\$(NULL) mkdir $(TMP_DIR)
@@ -592,9 +596,9 @@ $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
 	$(OBJCOPY) -O ihex $< $@
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
-	@echo # creating xs_nrf52.out
+	@echo creating xs_nrf52.out
 	if exist $(TMP_DIR)\xs_nrf52.out del /s/q/f $(TMP_DIR)\xs_nrf52.out > NUL
-	@echo # Link to .out file
+	@echo link to .out file
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -lc -lnosys -lm -o $@
 
 $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
@@ -603,26 +607,210 @@ $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_D
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
-$(XS_OBJ): $(XS_HEADERS)
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	@echo # library xs: $(@F)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
-
-{$(LIB_DIR)\}.c{$(LIB_DIR)\}.o:
-	@echo # library: $(@F)
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
-
-$(LIB_DIR)/%.S.o %.s.o: %.S
+{$(LIB_DIR)\}.s{$(LIB_DIR)\}.o:
 	@echo # asm $(@F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
 
-$(TMP_DIR)/%.o: %.c
-	@echo # application: $(@F))
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+{$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
+	@echo # application: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-$(TMP_DIR)/mc.%.o: $(TMP_DIR)/mc.%.c
+$(XS_OBJ): $(XS_HEADERS)
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
+	@echo # library xs: $(@F)
+	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\common\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\nrf_ble_gatt\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\nrf_ble_qwr\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\nrf_ble_scan\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\ble\peer_manager\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\boards\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\atomic\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\atomic_fifo\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\atomic_flags\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\balloc\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\bsp\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\button\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\crypto\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\crypto\backend\cc310\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\crypto\backend\nrf_hw\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\experimental_section_vars\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\fds\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\fstorage\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\hardfault\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\hardfault\nrf52\handler\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\log\src\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\memobj\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\queue\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\ringbuf\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\sensorsim\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\serial\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\spi_mngr\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\strerror\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\timer\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\twi_mngr\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\twi_sensor\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\usbd\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\usbd\class\cdc\acm\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\libraries\util\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\components\softdevice\common\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\external\fprintf\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\external\freertos\portable\CMSIS\nrf52\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\external\freertos\portable\GCC\nrf52\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\external\freertos\source\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\external\freertos\source\portable\MemMang\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\integration\nrfx\legacy\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\modules\nrfx\mdk\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\modules\nrfx\drivers\src\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\modules\nrfx\drivers\src\prs\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(SDK_ROOT)\modules\nrfx\soc\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+$(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	@echo # cc $(@F)
-	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+
+$(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
+	@echo # cc $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
