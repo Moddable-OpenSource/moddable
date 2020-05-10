@@ -1299,7 +1299,7 @@ int mz_inflate(mz_streamp pStream, int flush)
   }
 
   if ((status == TINFL_STATUS_DONE) && (!pState->m_dict_avail)) {
-	uint8_t unusedBytes = pState->m_decomp.m_num_bits >> 3;
+	unsigned char unusedBytes = pState->m_decomp.m_num_bits >> 3;
 	pStream->next_in -= unusedBytes;
 	pStream->avail_in += unusedBytes;
 	pStream->total_in -= unusedBytes;
