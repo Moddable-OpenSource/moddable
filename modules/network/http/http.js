@@ -231,6 +231,8 @@ function callback(message, value) {
 				if ("\r\n" === line) {							// empty line is end of headers
 					this.callback(Request.headersComplete);		// all response headers received
 					delete this.line;
+					if (this.state >= 11)
+						return;		// callback closed instance
 					this.state = 5;								// advance to receiving response headers state
 
 					if (this.response)
