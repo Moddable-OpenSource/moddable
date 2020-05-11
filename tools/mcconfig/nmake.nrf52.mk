@@ -24,11 +24,19 @@ NRF_ROOT = $(USERPROFILE)\nrf5
 !ENDIF
 
 !IF "$(NRF52_GCC_ROOT)"==""
-NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-8-2018-q4-major-win32
+NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
 !ENDIF
 
 !IF "$(NRF52_GNU_VERSION)"==""
-NRF52_GNU_VERSION = 8.2.1
+NRF52_GNU_VERSION = 7.2.1
+!ENDIF
+
+!IF "$(NRF52_UPLOAD_DRIVE)"==""
+!ERROR NRF52_UPLOAD_DRIVE environment variable must be defined!
+!ENDIF
+
+!IF "$(NRF52_UPLOAD_PORT)"==""
+!ERROR NRF52_UPLOAD_PORT environment variable must be defined!
 !ENDIF
 
 !IF "$(NRF_SDK_DIR)"==""
@@ -41,7 +49,7 @@ UF2CONV = $(NRF_ROOT)\uf2conv.py
 !ENDIF
 
 !IF !EXIST($(SDK_ROOT)\components\boards\moddable_four.h)
-!ERROR ## Please add Moddable boards to your nRF52 SDK
+!ERROR Please add moddable_four.h to your nRF52 SDK!
 !ENDIF
 
 #VERBOSE = 1
@@ -75,18 +83,19 @@ OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
 SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
-DO_COPY =
-UF2_VOLUME_PATH =
+UF2_VOLUME_NAME = MODDABLE4
+UF2_VOLUME_PATH = $(NRF52_UPLOAD_DRIVE)
 WAIT_FOR_M4 =
+DO_COPY = copy $(BIN_DIR)\xs_nrf52.uf2 $(UF2_VOLUME_PATH)
 
 !IF "$(DEBUG)"=="1"
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-WAIT_FOR_NEW_SERIAL =1
+WAIT_FOR_NEW_SERIAL = $(MODDABLE_TOOLS_DIR)\serial2xsbug $(NRF52_UPLOAD_PORT) 921600 8N1 -dtr
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
-WAIT_FOR_NEW_SERIAL =
+WAIT_FOR_NEW_SERIAL = @echo Release build installed.
 !ENDIF
 
 # nRF52840_xxAA
@@ -190,13 +199,19 @@ SDK_INCLUDES = \
 
 SDK_GLUE_INCLUDES = \
 	-I$(BUILD_DIR)\devices\nrf52\base \
-	-I$(BUILD_DIR)\devices\nrf52\config
+	-I$(BUILD_DIR)\devices\nrf52\config \
+	-I$(PLATFORM_DIR) \
+	-I$(PLATFORM_DIR)\config
 
 XS_INCLUDES = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\nrf52 \
-	-I$(BUILD_DIR)\devices\nrf52
+	-I$(XS_DIR)\..\modules\base\instrumentation \
+	-I$(XS_DIR)\..\modules\base\timer \
+	-I$(BUILD_DIR)\devices\nrf52 \
+	-I$(BUILD_DIR)\devices\nrf52\base \
+	-I$(BUILD_DIR)\devices\nrf52\xsProj
 
 BOARD_SUPPORT_OBJ = \
 	$(LIB_DIR)\boards.o \
@@ -353,14 +368,12 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)\xsmain.o
 
 STARTUP_OBJ = \
-#	$(LIB_DIR)\gcc_startup_nrf52840.o \
+	$(LIB_DIR)\gcc_startup_nrf52840.o \
 	$(LIB_DIR)\hardfault_handler_gcc.o \
 	$(LIB_DIR)\hardfault_implementation.o \
 	$(LIB_DIR)\system_nrf52840.o
 
 XS_OBJ = \
-	$(LIB_DIR)\xsHost.o \
-	$(LIB_DIR)\xsPlatform.o \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
 	$(LIB_DIR)\xsArguments.o \
@@ -404,6 +417,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsre.o
 
 OBJECTS = \
+	$(OBJECTS) \
 	$(BOARD_SUPPORT_OBJ) \
 	$(FREERTOS_OBJ) \
 	$(NRF_BLE_OBJ) \
@@ -419,8 +433,10 @@ OBJECTS = \
 
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
+	$(LIB_DIR)\xsHost.o \
+	$(LIB_DIR)\xsPlatform.o \
 	$(OBJECTS) \
-	$(SDK_GLUE_OBJECTS) \
+	$(SDK_GLUE_OBJ) \
 	$(TMP_DIR)\mc.xs.o \
 	$(TMP_DIR)\mc.resources.o \
 	$(XS_OBJ)
@@ -437,6 +453,9 @@ XS_HEADERS = \
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
 LIB_FILES = \
+	-lc \
+	-lnosys \
+	-lm \
 	$(SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
 
 NRF_C_DEFINES = \
@@ -534,22 +553,21 @@ LDFLAGS = \
 	-mfloat-abi=hard \
 	-mfpu=fpv4-sp-d16 \
 	-mthumb \
-	-no-enum-size-warning \
-	-Map=$(BIN_DIR)\xs_lib.map \
+	--specs=nano.specs \
 	-L$(SDK_ROOT)\modules\nrfx\mdk \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
-	-Xlinker \
-	--specs=nano.specs
+	-Xlinker -no-enum-size-warning \
+	-Xlinker -Map=$(BIN_DIR)\xs_lib.map
 
-C_INCLUDES = $(C_INCLUDES) $(GCC_INCLUDES) $(CRYPTO_INCLUDES) $(SDK_INCLUDES) $(FREE_RTOS_INCLUDES) $(SDK_GLUE_INCLUDES) $(XS_INCLUDES) -I$(LIB_DIR) -I$(TMP_DIR) -I$(PLATFORM_DIR)
+C_INCLUDES = $(C_INCLUDES) $(DIRECTORIES) $(GCC_INCLUDES) $(CRYPTO_INCLUDES) $(SDK_INCLUDES) $(FREE_RTOS_INCLUDES) $(SDK_GLUE_INCLUDES) $(XS_INCLUDES) -I$(LIB_DIR) -I$(TMP_DIR) -I$(PLATFORM_DIR)
 
 LINKER_SCRIPT = $(PLATFORM_DIR)\config\xsproj.ld
 
 .PHONY: all
-.SUFFIXES: .s
+.SUFFIXES: .S .s
 
-precursor: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
+precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
 
 all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	$(WAIT_FOR_M4)
@@ -592,24 +610,24 @@ $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.bin
 
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
-	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out | perl -e $(MEM_USAGE)
-	$(OBJCOPY) -O ihex $< $@
+#	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out | perl -e $(MEM_USAGE)
+	$(OBJCOPY) -O ihex $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.hex
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo creating xs_nrf52.out
 	if exist $(TMP_DIR)\xs_nrf52.out del /s/q/f $(TMP_DIR)\xs_nrf52.out > NUL
 	@echo link to .out file
-	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -lc -lnosys -lm -o $@
+	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
 $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
 	@echo # buildinfo
-	echo '#include "buildinfo.h"' > $(LIB_DIR)\buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)\buildinfo.c
+	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
+	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
-{$(LIB_DIR)\}.s{$(LIB_DIR)\}.o:
+$(LIB_DIR)\gcc_startup_nrf52840.o: $(SDK_ROOT)\modules\nrfx\mdk\gcc_startup_nrf52840.S
 	@echo # asm $(@F)
-	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
+	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $? -o $@
 
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
 	@echo # application: $(@F)
@@ -619,6 +637,14 @@ $(XS_OBJ): $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+$(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
+	@echo # library xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+
+$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
+	@echo # library xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
 {$(SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
@@ -803,6 +829,14 @@ $(XS_OBJ): $(XS_HEADERS)
 {$(SDK_ROOT)\modules\nrfx\soc\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(BUILD_DIR)\devices\nrf52\base\}.c{$(TMP_DIR)\}.o:
+	@echo # application: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+$(TMP_DIR)\main.o: $(BUILD_DIR)\devices\nrf52\xsProj\main.c
+	@echo # application: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c
 	@echo # cc $(@F)
