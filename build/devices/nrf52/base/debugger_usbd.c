@@ -306,11 +306,13 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN");
 			app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
 			m_usb_connected = true;
-			if (m_usb_closed) {
-				m_usb_closed = false;
-				m_usb_reopened = true;
-			}
-            break;
+#if NRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN
+			if (!m_usb_closed)
+				break;
+#endif
+			m_usb_closed = false;
+			m_usb_reopened = true;
+			break;
         }
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE: {
