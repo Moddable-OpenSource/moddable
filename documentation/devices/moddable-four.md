@@ -38,7 +38,7 @@ Moddable Four is a low-power, bluetooth development board that makes it easy for
 <a id="components"></a>
 ### Components
 
-The two main components of Moddable Four are the nRF52840 module and mirror display. The nRF52840 module includes a Wi-Fi/BLE antenna, 1 MB Flash, and 256 KB RAM. The Sharp mirror display is a 128x128 black and white display that uses the [`ls013b4dn04` display driver](../drivers/ls013b4dn04/ls013b4dn04.md).
+The two main components of Moddable Four are the nRF52840 module and mirror display. The nRF52840 module includes a BLE antenna, 1 MB Flash, and 256 KB RAM. The Sharp mirror display is a 128x128 black and white display that uses the [`ls013b4dn04` display driver](../drivers/ls013b4dn04/ls013b4dn04.md).
 
 It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 battery connector.
 
@@ -161,7 +161,7 @@ After you've setup your macOS host environment, take the following steps to inst
 	mcconfig -d -m -p nrf52/moddable_four
 	```
 	
-	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
 <!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
 
@@ -264,7 +264,7 @@ After you've setup your Windows host environment, take the following steps to in
 	mcconfig -d -m -p nrf52/moddable_four
 	```
 	
-	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
 <!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
 
@@ -374,7 +374,7 @@ After you've setup your Linux host environment, take the following steps to inst
 	mcconfig -d -m -p nrf52/moddable_four
 	```
 	
-	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
 <!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
 
