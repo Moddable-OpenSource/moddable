@@ -20,7 +20,7 @@ import WipeTransition from "piu/WipeTransition";
 const whiteSkin = new Skin({ fill:"white" });
 const labelSkin = new Skin({ fill:"black", stroke:"white", top:1 });
 const labelStyle = new Style({ font:"semibold 16px Open Sans", color:"black" });
-const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 }),
+const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 });
 const teamStrings = [
 	"moddable", 
 	"Andy Carle", 

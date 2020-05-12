@@ -17,7 +17,7 @@ import {} from "piu/MC";
 import WipeTransition from "piu/WipeTransition";
 import CombTransition from "piu/CombTransition";
 
-let appStyle = new Style({ font:"semibold 28px Open Sans", left:5, right:5 }),
+let appStyle = new Style({ font:"semibold 28px Open Sans", left:5, right:5 });
 let skins = [
 	new Skin({ fill:"#192eab" }),
 	new Skin({ fill:"white" }),

@@ -52,7 +52,7 @@ else {
 	trace("FAIL\n");
 	trace("result: " + B2H(result) + "\n");
 	trace("expected: " + B2H(expected) + "\n");
-	debugger
+	debugger;
 }
 
 ghash = new GHASH(H2B("0xb83b533708bf535d0aa6e52980d53b78"),
@@ -66,5 +66,5 @@ else {
 	trace("FAIL\n");
 	trace("result: " + B2H(result) + "\n");
 	trace("expected: " + B2H(expected) + "\n");
-	debugger
+	debugger;
 }
