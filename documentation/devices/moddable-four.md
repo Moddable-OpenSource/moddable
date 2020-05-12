@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: May 6, 2020
+Revised: May 12, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -181,7 +181,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 3. Download version [`7-2017-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/7-2017q4/gcc-arm-none-eabi-7-2017-q4-major-win32.zip?revision=df1b65d3-7c8d-4e82-b114-e0b6ad7c2e6d?product=GNU%20Arm%20Embedded%20Toolchain,ZIP,,Windows,7-2017-q4-major) of the 32-bit GNU Arm Embedded Toolchain from the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Unzip the archive and copy the `gcc-arm-none-eabi-7-2017-q4-major-win32` directory into the `nrf5` directory.
 
-	> **Note:** Other versions of the GNU tools may work, but `7-2017-q4-major` is the version we currently support.
+	> **Note:** Newer versions of the GNU Arm Embedded Toolchain for Windows are not supported due to [issues](https://bugs.launchpad.net/gcc-arm-embedded/+bug/1810274) with `objcopy.exe`.
 
 4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
 
@@ -206,15 +206,30 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
 
-6. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+6. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
+
+7. Edit the system `PATH` environment variable to include the Python directories:
+
+	```text
+	C:\Python27
+	C:\Python27\Scripts
+	```
+
+8. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
+
+	```text
+	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_15.3.0_59ac345
+	```
+
+9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `%MODDABLE%\build\devices\nrf52\config\moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components\boards\` directory.
 
 	```text
-	copy %MODDABLE%\build\devices\nrf52\config\moddable_four.h %USERPROFILE%\nrf5\nRF5_SDK_15.3.0_59ac345\components\boards
+	copy %MODDABLE%\build\devices\nrf52\config\moddable_four.h %NRF52_SDK_PATH%\components\boards
 	```
 
-	- Modify `%USERPROFILE%\nrf5\nRF5_SDK_15.3.0_59ac345\components\boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
+	- Modify the `%NRF52_SDK_PATH%\components\boards.h` file, adding the following before `#elif defined(BOARD_CUSTOM)`:
 
 	```c
 	#elif defined (BOARD_MODDABLE_FOUR)
