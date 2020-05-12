@@ -39,10 +39,10 @@ NRF52_GNU_VERSION = 7.2.1
 !ERROR NRF52_UPLOAD_PORT environment variable must be defined!
 !ENDIF
 
-!IF "$(NRF_SDK_DIR)"==""
-NRF_SDK_DIR = $(NRF_ROOT)\nRF5_SDK_15.3.0_59ac345
+!IF "$(NRF52_SDK_PATH)"==""
+NRF52_SDK_PATH = $(NRF_ROOT)\nRF5_SDK_15.3.0_59ac345
 !ENDIF
-SDK_ROOT = $(NRF_SDK_DIR)
+SDK_ROOT = $(NRF52_SDK_PATH)
 
 !IF "$(UF2CONV)"==""
 UF2CONV = $(NRF_ROOT)\uf2conv.py
@@ -169,7 +169,6 @@ SDK_INCLUDES = \
 	-I$(SDK_ROOT)\components\libraries\queue \
 	-I$(SDK_ROOT)\components\libraries\ringbuf \
 	-I$(SDK_ROOT)\components\libraries\scheduler \
-	-I$(SDK_ROOT)\components\libraries\sensorsim \
 	-I$(SDK_ROOT)\components\libraries\serial \
 	-I$(SDK_ROOT)\components\libraries\spi_mngr \
 	-I$(SDK_ROOT)\components\libraries\stack_info \
@@ -334,8 +333,7 @@ NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\nrf_spi_mngr.o \
 	$(LIB_DIR)\nrf_strerror.o \
 	$(LIB_DIR)\nrf_twi_mngr.o \
-	$(LIB_DIR)\nrf_twi_sensor.o \
-	$(LIB_DIR)\sensorsim.o
+	$(LIB_DIR)\nrf_twi_sensor.o
 
 NRF_LOG_OBJ = \
 	$(LIB_DIR)\nrf_log_backend_rtt.o \
@@ -525,9 +523,9 @@ C_FLAGS = \
 	-munaligned-access \
 	-nostdinc
 !IF "$(DEBUG)"=="1"
-#C_FLAGS = $(C_FLAGS) $(HW_DEBUG_OPT)
+C_FLAGS = $(C_FLAGS) $(HW_DEBUG_OPT)
 !ELSE
-#C_FLAGS = $(C_FLAGS) $(HW_OPT)
+C_FLAGS = $(C_FLAGS) $(HW_OPT)
 !ENDIF
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
@@ -743,10 +741,6 @@ $(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
 {$(SDK_ROOT)\components\libraries\ringbuf\}.c{$(LIB_DIR)\}.o:
-	@echo # library: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
-
-{$(SDK_ROOT)\components\libraries\sensorsim\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
