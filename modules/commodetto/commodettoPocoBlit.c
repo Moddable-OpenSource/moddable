@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -290,9 +290,10 @@ typedef struct RenderMonochromeBitsRecord {
 typedef struct RenderGray16BitsRecord {
 	PocoCommandFields;
 
+	uint8_t				mask;
+	uint8_t				blendersOffset;
 	uint16_t			rowBump;
 	PocoColor			color;
-	uint8_t				mask;
 	const unsigned char	*pixels;
 } RenderGray16BitsRecord, *RenderGray16Bits;
 
@@ -651,6 +652,7 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		srcBits->rowBump = bits->width >> 1;
 		srcBits->mask = (sx & 1) ? 0 : 4;
 		srcBits->color = color;
+		srcBits->blendersOffset = blend & 0xF0;		// (blend >> 4) << 4
 	}
 	else {
 		RenderGray16RLEBits srcBits = (RenderGray16RLEBits)pc;
@@ -1547,6 +1549,17 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 	uint8_t *map = 32 + (uint8_t *)poco->clut;
 	color = c_read8(map + color);		// color index
 #endif
+#ifndef __ets__
+	const uint8_t *blender = gBlenders + srcBits->blendersOffset;
+#else
+	uint8_t blender[16];
+	uint32_t *bfrom = (uint32_t *)(gBlenders + srcBits->blendersOffset), *bto = (uint32_t *)blender;
+	bto[0] = bfrom[0];
+	bto[1] = bfrom[1];
+	bto[2] = bfrom[2];
+	bto[3] = bfrom[3];
+#endif
+
 
 	while (h--) {
 #if 4 == kPocoPixelSize
@@ -1554,7 +1567,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 #endif
 		PocoCoordinate tw = srcBits->w;
 		uint32_t *srcLong = (uint32_t *)(~3 & (uintptr_t)src);
-		uint32_t bits = ~READ_PROG_MEM_UNSIGNED_LONG(srcLong++);		// 32 bits of mask - 8 4-bit gray values
+		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);		// 32 bits of mask - 8 4-bit gray values
 		uint8_t tm = mask + ((3 - (3 & (uintptr_t)src)) << 3);
 #if 4 == kPocoPixelSize
 		uint8_t xphase = srcBits->xphase;
@@ -1567,13 +1580,13 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 
 			if (((int8_t)tm) < 0) {
 				tm = 32 - 4;
-				bits = ~READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+				bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
 				bits = SwapLong(bits);
 			}
 
-			blend = (bits >> tm) & 0x0f;
+			blend = *(blender + ((bits >> tm) & 0x0f));		// 5-bit blend above 8-bit, 4 bit below
 			if (blend) {
-				if (15 == blend) {
+				if (31 == blend) {
 #if 4 != kPocoPixelSize
 					*d = color;
 #else
@@ -1586,8 +1599,6 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 				else {
 #if kPocoPixelFormat == kCommodettoBitmapRGB565LE
 					uint32_t dst = *d;
-
-					blend = (blend << 1) | (blend >> 3);		// 5-bit blend
 
 					dst |= dst << 16;
 					dst &= 0x07E0F81F;
