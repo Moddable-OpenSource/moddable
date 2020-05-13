@@ -270,7 +270,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all	
+.PHONY: all partitionsFileCheck
 
 PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
 
@@ -386,7 +386,7 @@ prepareOutput:
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 
-precursor: prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+precursor: partitionsFileCheck prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -436,7 +436,14 @@ $(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_esp32.a $^ $(LIB_DIR)/buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/partitions.csv
+
+partitionsFileCheck:
+	if test -e $(PROJ_DIR)/partitions.csv ; then \
+		if ! cmp -s $(PROJ_DIR)/partitions.csv $(PARTITIONS_FILE) ; then \
+			touch $(PARTITIONS_FILE); \
+		fi ; \
+	fi
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
