@@ -349,6 +349,11 @@ PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(IDF_BUILD_DIR)\partition_table\$(PARTITIONS_BIN)
 
+!IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul] >= 1
+!IF [copy /Y $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv] == 0
+!ENDIF
+!ENDIF
+
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
 	$(PROJ_DIR)\main\component.mk	\
@@ -512,7 +517,7 @@ $(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DI
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
 	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp32.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)\partitions.csv
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
 	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
