@@ -605,7 +605,7 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 #elif (90 == kPocoRotation) || (270 == kPocoRotation)
 	rotateCoordinatesAndDimensions(bits->height, bits->width, sx, sy, sw, sh);
 #endif
-	if ((x >= poco->xMax) || (y >= poco->yMax))
+	if ((x >= poco->xMax) || (y >= poco->yMax) || (0 == blend))
 		return;
 
 	if (x < poco->x) {
@@ -668,9 +668,6 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		else {
 			pc->command = kPocoCommandGray16RLEBlendBitmapDraw;
 			((RenderGray16RLEBits)pc)->blendersOffset = blend & 0xF0;		// (blend >> 4) << 4
-
-			if (0 == blend)
-				return;
 		}
 
 		if (bits->width - sw) {
