@@ -58,22 +58,21 @@ else
 	endif
 endif
 
-NRF52_GNU_VERSION ?= 8.2.1
-NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
+NRF52_SDK_ROOT = $(NRF_SDK_DIR)
+NRF52_GNU_VERSION = 8.2.1
+NRF52_GCC_ROOT = $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
-NRF_SDK_DIR ?= $(NRF_ROOT)/nRF5_SDK
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
 
 # nRF52840_xxAA
-SDK_ROOT = $(NRF_SDK_DIR)
+NRF52_SDK_ROOT = $(NRF_SDK_DIR)
 BOARD = pca10056
 SOFT_DEVICE = s140
 HWCPU = cortex-m4
 
 BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
-SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
-
+SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1_softdevice.hex
 
 # BOARD_DEF = BOARD_PCA10056
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
@@ -108,7 +107,7 @@ ASMFLAGS += -DS140
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 
 # Linker flags
-LDFLAGS += -mthumb -mabi=aapcs -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
+LDFLAGS += -mthumb -mabi=aapcs -L$(NRF52_SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
 LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # LDFLAGS += $(FP_OPTS)
@@ -120,7 +119,7 @@ LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
 
 LIB_FILES += \
 	-lc -lnosys -lm \
-	$(SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
+	$(NRF52_SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
 
 INC_DIRS = \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include \
@@ -131,96 +130,94 @@ INC_DIRS = \
 	$(XS_DIR)/../modules/base/timer \
 	$(BUILD_DIR)/devices/nrf52 \
 	$(BUILD_DIR)/devices/nrf52/base \
-	$(BUILD_DIR)/devices/nrf52/xsProj \
-
-SDK_SRC=
+	$(BUILD_DIR)/devices/nrf52/xsProj
 
 FREE_RTOS_PATHS = \
-	$(SDK_ROOT)/external/freertos/source \
-	$(SDK_ROOT)/external/freertos/source/include \
-	$(SDK_ROOT)/external/freertos/source/portable/MemMang \
-	$(SDK_ROOT)/external/freertos/portable/GCC/nrf52 \
-	$(SDK_ROOT)/external/freertos/portable/CMSIS/nrf52
+	$(NRF52_SDK_ROOT)/external/freertos/source \
+	$(NRF52_SDK_ROOT)/external/freertos/source/include \
+	$(NRF52_SDK_ROOT)/external/freertos/source/portable/MemMang \
+	$(NRF52_SDK_ROOT)/external/freertos/portable/GCC/nrf52 \
+	$(NRF52_SDK_ROOT)/external/freertos/portable/CMSIS/nrf52
 
 CRYPTO_PATHS = \
-  $(SDK_ROOT)/components/libraries/crypto \
-  $(SDK_ROOT)/components/libraries/crypto/backend/cc310 \
-  $(SDK_ROOT)/components/libraries/crypto/backend/cc310_bl \
-  $(SDK_ROOT)/components/libraries/crypto/backend/cifra \
-  $(SDK_ROOT)/components/libraries/crypto/backend/nrf_hw \
-  $(SDK_ROOT)/components/libraries/crypto/backend/mbedtls \
-  $(SDK_ROOT)/components/libraries/crypto/backend/micro_ecc \
-  $(SDK_ROOT)/components/libraries/crypto/backend/nrf_sw \
-  $(SDK_ROOT)/components/libraries/crypto/backend/oberon \
-  $(SDK_ROOT)/components/libraries/crypto/backend/optiga \
-  $(SDK_ROOT)/external/nrf_cc310/include \
-  $(SDK_ROOT)/external/nrf_cc310_bl/include \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/cc310 \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/cc310_bl \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/cifra \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/nrf_hw \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/mbedtls \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/micro_ecc \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/nrf_sw \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/oberon \
+	$(NRF52_SDK_ROOT)/components/libraries/crypto/backend/optiga \
+	$(NRF52_SDK_ROOT)/external/nrf_cc310/include \
+	$(NRF52_SDK_ROOT)/external/nrf_cc310_bl/include
 
 # Include folders common to all targets
 INC_DIRS += \
-  $(CRYPTO_PATHS) \
-  $(PLATFORM_DIR) \
-  $(PLATFORM_DIR)/config \
-  $(FREE_RTOS_PATHS) \
-  $(SDK_ROOT)/components \
-  $(SDK_ROOT)/components/boards \
-  $(SDK_ROOT)/components/libraries/atomic \
-  $(SDK_ROOT)/components/libraries/atomic_fifo \
-  $(SDK_ROOT)/components/libraries/atomic_flags \
-  $(SDK_ROOT)/components/libraries/balloc \
-  $(SDK_ROOT)/components/libraries/button \
-  $(SDK_ROOT)/components/libraries/bsp \
-  $(SDK_ROOT)/components/libraries/delay \
-  $(SDK_ROOT)/components/libraries/fds \
-  $(SDK_ROOT)/components/libraries/fstorage \
-  $(SDK_ROOT)/components/libraries/hardfault \
-  $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
-  $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
-  $(SDK_ROOT)/components/libraries/log \
-  $(SDK_ROOT)/components/libraries/log/src \
-  $(SDK_ROOT)/components/libraries/queue \
-  $(SDK_ROOT)/components/libraries/ringbuf \
-  $(SDK_ROOT)/components/libraries/scheduler \
-  $(SDK_ROOT)/components/libraries/serial \
-  $(SDK_ROOT)/components/libraries/spi_mngr \
-  $(SDK_ROOT)/components/libraries/stack_info \
-  $(SDK_ROOT)/components/libraries/strerror \
-  $(SDK_ROOT)/components/libraries/twi_sensor \
-  $(SDK_ROOT)/components/libraries/twi_mngr \
-  $(SDK_ROOT)/components/libraries/timer \
-  $(SDK_ROOT)/components/libraries/util \
-  $(SDK_ROOT)/components/libraries/experimental_section_vars \
-  $(SDK_ROOT)/components/libraries/mutex \
-  $(SDK_ROOT)/components/libraries/memobj \
-  $(SDK_ROOT)/components/libraries/log/src \
-  $(SDK_ROOT)/components/libraries/sensorsim \
-  $(SDK_ROOT)/components/libraries/usbd \
-  $(SDK_ROOT)/components/libraries/usbd/class/cdc \
-  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
-  $(SDK_ROOT)/components/toolchain/cmsis/include \
-  $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
-  $(SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
-  $(SDK_ROOT)/components/softdevice/common \
-  $(SDK_ROOT)/components/ble/common \
-  $(SDK_ROOT)/components/ble/ble_advertising \
-  $(SDK_ROOT)/components/ble/nrf_ble_gatt \
-  $(SDK_ROOT)/components/ble/nrf_ble_qwr \
-  $(SDK_ROOT)/components/ble/nrf_ble_scan \
-  $(SDK_ROOT)/components/ble/peer_manager \
-  $(SDK_ROOT)/external/fprintf \
-  $(SDK_ROOT)/external/utf_converter \
-  $(SDK_ROOT)/integration/nrfx/legacy \
-  $(SDK_ROOT)/integration/nrfx \
-  $(SDK_ROOT)/modules/nrfx \
-  $(SDK_ROOT)/modules/nrfx/hal \
-  $(SDK_ROOT)/modules/nrfx/mdk \
-  $(SDK_ROOT)/modules/nrfx/soc \
-  $(SDK_ROOT)/modules/nrfx/drivers/include \
-  $(SDK_ROOT)/modules/nrfx/drivers/src \
-  $(SDK_ROOT)/modules/nrfx/drivers/src/prs \
+	$(CRYPTO_PATHS) \
+	$(PLATFORM_DIR) \
+	$(PLATFORM_DIR)/config \
+	$(FREE_RTOS_PATHS) \
+	$(NRF52_SDK_ROOT)/components \
+	$(NRF52_SDK_ROOT)/components/boards \
+	$(NRF52_SDK_ROOT)/components/libraries/atomic \
+	$(NRF52_SDK_ROOT)/components/libraries/atomic_fifo \
+	$(NRF52_SDK_ROOT)/components/libraries/atomic_flags \
+	$(NRF52_SDK_ROOT)/components/libraries/balloc \
+	$(NRF52_SDK_ROOT)/components/libraries/button \
+	$(NRF52_SDK_ROOT)/components/libraries/bsp \
+	$(NRF52_SDK_ROOT)/components/libraries/delay \
+	$(NRF52_SDK_ROOT)/components/libraries/fds \
+	$(NRF52_SDK_ROOT)/components/libraries/fstorage \
+	$(NRF52_SDK_ROOT)/components/libraries/hardfault \
+	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52 \
+	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
+	$(NRF52_SDK_ROOT)/components/libraries/log \
+	$(NRF52_SDK_ROOT)/components/libraries/log/src \
+	$(NRF52_SDK_ROOT)/components/libraries/queue \
+	$(NRF52_SDK_ROOT)/components/libraries/ringbuf \
+	$(NRF52_SDK_ROOT)/components/libraries/scheduler \
+	$(NRF52_SDK_ROOT)/components/libraries/serial \
+	$(NRF52_SDK_ROOT)/components/libraries/spi_mngr \
+	$(NRF52_SDK_ROOT)/components/libraries/stack_info \
+	$(NRF52_SDK_ROOT)/components/libraries/strerror \
+	$(NRF52_SDK_ROOT)/components/libraries/twi_sensor \
+	$(NRF52_SDK_ROOT)/components/libraries/twi_mngr \
+	$(NRF52_SDK_ROOT)/components/libraries/timer \
+	$(NRF52_SDK_ROOT)/components/libraries/util \
+	$(NRF52_SDK_ROOT)/components/libraries/experimental_section_vars \
+	$(NRF52_SDK_ROOT)/components/libraries/mutex \
+	$(NRF52_SDK_ROOT)/components/libraries/memobj \
+	$(NRF52_SDK_ROOT)/components/libraries/log/src \
+	$(NRF52_SDK_ROOT)/components/libraries/sensorsim \
+	$(NRF52_SDK_ROOT)/components/libraries/usbd \
+	$(NRF52_SDK_ROOT)/components/libraries/usbd/class/cdc \
+	$(NRF52_SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
+	$(NRF52_SDK_ROOT)/components/toolchain/cmsis/include \
+	$(NRF52_SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers/nrf52 \
+	$(NRF52_SDK_ROOT)/components/softdevice/$(SOFT_DEVICE)/headers \
+	$(NRF52_SDK_ROOT)/components/softdevice/common \
+	$(NRF52_SDK_ROOT)/components/ble/common \
+	$(NRF52_SDK_ROOT)/components/ble/ble_advertising \
+	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_gatt \
+	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_qwr \
+	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_scan \
+	$(NRF52_SDK_ROOT)/components/ble/peer_manager \
+	$(NRF52_SDK_ROOT)/external/fprintf \
+	$(NRF52_SDK_ROOT)/external/utf_converter \
+	$(NRF52_SDK_ROOT)/integration/nrfx/legacy \
+	$(NRF52_SDK_ROOT)/integration/nrfx \
+	$(NRF52_SDK_ROOT)/modules/nrfx \
+	$(NRF52_SDK_ROOT)/modules/nrfx/hal \
+	$(NRF52_SDK_ROOT)/modules/nrfx/mdk \
+	$(NRF52_SDK_ROOT)/modules/nrfx/soc \
+	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/include \
+	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/src \
+	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/src/prs
 
 NRF_PATHS += \
-	$(INC_DIRS) \
+	$(INC_DIRS)
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
@@ -423,8 +420,7 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_spi_mngr.c.o \
 	$(LIB_DIR)/nrf_strerror.c.o \
 	$(LIB_DIR)/nrf_twi_mngr.c.o \
-	$(LIB_DIR)/nrf_twi_sensor.c.o \
-	$(LIB_DIR)/sensorsim.c.o
+	$(LIB_DIR)/nrf_twi_sensor.c.o
 
 NRF_LOG_OBJECTS = \
 	$(LIB_DIR)/nrf_log_backend_rtt.c.o \
@@ -464,14 +460,14 @@ OBJECTS += \
 	$(NRF_USBD)
 
 OTHER_STUFF += \
-	boards_h
+	boards_h \
+	env_vars
 
 TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi-
 
 CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
-#LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ld
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
@@ -512,7 +508,7 @@ NRF_C_DEFINES= \
 	-DNRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN=1 \
 	-DS140 \
 	-DSOFTDEVICE_PRESENT \
-	-Dnrf52 \
+	-Dnrf52
 
 C_DEFINES = \
 	$(NRF_C_DEFINES) \
@@ -534,7 +530,7 @@ C_FLAGS=\
 	-fno-dwarf2-cfi-asm \
 	-fno-builtin \
 	-gdwarf-3 \
-	-gpubnames \
+	-gpubnames
 
 ifeq ($(DEBUG),1)
 	C_DEFINES += \
@@ -575,7 +571,7 @@ C_FLAGS +=  \
 	-mthumb-interwork	\
 	-mtp=soft \
 	-munaligned-access \
-	-nostdinc \
+	-nostdinc
 
 # Nordic example apps are built with -fshort-enums
 C_FLAGS := -fshort-enums $(C_FLAGS)
@@ -583,7 +579,6 @@ C_DEFINES := -fshort-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
-# LINKER_SCRIPT := $(PLATFORM_DIR)/config/generic_gcc_nrf52.ld
 LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
 
 # Utility functions
@@ -618,6 +613,11 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 
 precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
+env_vars:
+ifndef NRF_SDK_DIR
+	$(error NRF_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
+endif
+
 clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
@@ -638,7 +638,7 @@ flash: all $(BIN_DIR)/xs_nrf52.hex
 
 flash_softdevice:
 	@echo Flashing: s140_nrf52_6.1.1_softdevice.hex
-	$(NRFJPROG) -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex --sectorerase
+	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
 	$(NRFJPROG) -f nrf52 --reset
 
 $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
@@ -681,10 +681,10 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	@echo Resetting the device.
 	$(NRFJPROG) -f nrf52 --reset
 
-$(SDK_ROOT)/components/boards/moddable_four.h:
-	$(error "## Please add Moddable boards to your nRF52 SDK")
+$(NRF52_SDK_ROOT)/components/boards/moddable_four.h:
+	$(error ## Please add moddable_four.h to your nRF52 SDK. See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
 
-boards_h: $(SDK_ROOT)/components/boards/moddable_four.h
+boards_h: $(NRF52_SDK_ROOT)/components/boards/moddable_four.h
 
 $(TMP_DIR):
 	@echo "TMP_DIR"
@@ -724,7 +724,7 @@ $(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_nrf52.out"
 #	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
 	@rm -f $(TMP_DIR)/xs_nrf52.out
-	@echo "# Link to .out file"
+	@echo "# link to .out file"
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
 $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)

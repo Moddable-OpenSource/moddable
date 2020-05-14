@@ -19,16 +19,12 @@
 
 HOST_OS = win
 
-!IF "$(NRF_ROOT)"==""
-NRF_ROOT = $(USERPROFILE)\nrf5
+!IF "$(NRF52_SDK_PATH)"==""
+!ERROR NRF52_SDK_PATH environment variable must be defined!
 !ENDIF
 
-!IF "$(NRF52_GCC_ROOT)"==""
-NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
-!ENDIF
-
-!IF "$(NRF52_GNU_VERSION)"==""
-NRF52_GNU_VERSION = 7.2.1
+!IF !EXIST($(NRF52_SDK_PATH)\components\boards\moddable_four.h)
+!ERROR Please add moddable_four.h to your nRF52 SDK! See 
 !ENDIF
 
 !IF "$(NRF52_UPLOAD_DRIVE)"==""
@@ -39,18 +35,10 @@ NRF52_GNU_VERSION = 7.2.1
 !ERROR NRF52_UPLOAD_PORT environment variable must be defined!
 !ENDIF
 
-!IF "$(NRF52_SDK_PATH)"==""
-NRF52_SDK_PATH = $(NRF_ROOT)\nRF5_SDK_15.3.0_59ac345
-!ENDIF
-SDK_ROOT = $(NRF52_SDK_PATH)
-
-!IF "$(UF2CONV)"==""
+NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
+NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
+NRF52_GNU_VERSION = 7.2.1
 UF2CONV = $(NRF_ROOT)\uf2conv.py
-!ENDIF
-
-!IF !EXIST($(SDK_ROOT)\components\boards\moddable_four.h)
-!ERROR Please add moddable_four.h to your nRF52 SDK!
-!ENDIF
 
 #VERBOSE = 1
 
@@ -114,25 +102,25 @@ LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
 !ENDIF
 
 CRYPTO_INCLUDES = \
-	-I$(SDK_ROOT)\components\libraries\crypto \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\cc310 \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\cc310_bl \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\cifra \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\nrf_hw \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\mbedtls \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\micro_ecc \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\nrf_sw \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\oberon \
-	-I$(SDK_ROOT)\components\libraries\crypto\backend\optiga \
-	-I$(SDK_ROOT)\external\nrf_cc310\include \
-	-I$(SDK_ROOT)\external\nrf_cc310_bl\include
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cc310 \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cc310_bl \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cifra \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\nrf_hw \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\mbedtls \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\micro_ecc \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\nrf_sw \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\oberon \
+	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\optiga \
+	-I$(NRF52_SDK_ROOT)\external\nrf_cc310\include \
+	-I$(NRF52_SDK_ROOT)\external\nrf_cc310_bl\include
 
 FREE_RTOS_INCLUDES = \
-	-I$(SDK_ROOT)\external\freertos\portable\GCC\nrf52 \
-	-I$(SDK_ROOT)\external\freertos\portable\CMSIS\nrf52 \
-	-I$(SDK_ROOT)\external\freertos\source \
-	-I$(SDK_ROOT)\external\freertos\source\include \
-	-I$(SDK_ROOT)\external\freertos\source\portable\MemMang
+	-I$(NRF52_SDK_ROOT)\external\freertos\portable\GCC\nrf52 \
+	-I$(NRF52_SDK_ROOT)\external\freertos\portable\CMSIS\nrf52 \
+	-I$(NRF52_SDK_ROOT)\external\freertos\source \
+	-I$(NRF52_SDK_ROOT)\external\freertos\source\include \
+	-I$(NRF52_SDK_ROOT)\external\freertos\source\portable\MemMang
 
 GCC_INCLUDES = \
 	-I$(NRF52_GCC_ROOT)\arm-none-eabi\include \
@@ -141,60 +129,60 @@ GCC_INCLUDES = \
 	-I$(NRF52_GCC_ROOT)\lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include-fixed
 
 SDK_INCLUDES = \
-	-I$(SDK_ROOT)\components \
-	-I$(SDK_ROOT)\components\ble\common \
-	-I$(SDK_ROOT)\components\ble\ble_advertising \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_gatt \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_qwr \
-	-I$(SDK_ROOT)\components\ble\nrf_ble_scan \
-	-I$(SDK_ROOT)\components\ble\peer_manager \
-	-I$(SDK_ROOT)\components\boards \
-	-I$(SDK_ROOT)\components\libraries\atomic \
-	-I$(SDK_ROOT)\components\libraries\atomic_fifo \
-	-I$(SDK_ROOT)\components\libraries\atomic_flags \
-	-I$(SDK_ROOT)\components\libraries\balloc \
-	-I$(SDK_ROOT)\components\libraries\button \
-	-I$(SDK_ROOT)\components\libraries\bsp \
-	-I$(SDK_ROOT)\components\libraries\delay \
-	-I$(SDK_ROOT)\components\libraries\experimental_section_vars \
-	-I$(SDK_ROOT)\components\libraries\fds \
-	-I$(SDK_ROOT)\components\libraries\fstorage \
-	-I$(SDK_ROOT)\components\libraries\hardfault \
-	-I$(SDK_ROOT)\components\libraries\hardfault\nrf52 \
-	-I$(SDK_ROOT)\components\libraries\hardfault\nrf52\handler \
-	-I$(SDK_ROOT)\components\libraries\log \
-	-I$(SDK_ROOT)\components\libraries\log\src \
-	-I$(SDK_ROOT)\components\libraries\memobj \
-	-I$(SDK_ROOT)\components\libraries\mutex \
-	-I$(SDK_ROOT)\components\libraries\queue \
-	-I$(SDK_ROOT)\components\libraries\ringbuf \
-	-I$(SDK_ROOT)\components\libraries\scheduler \
-	-I$(SDK_ROOT)\components\libraries\serial \
-	-I$(SDK_ROOT)\components\libraries\spi_mngr \
-	-I$(SDK_ROOT)\components\libraries\stack_info \
-	-I$(SDK_ROOT)\components\libraries\strerror \
-	-I$(SDK_ROOT)\components\libraries\twi_sensor \
-	-I$(SDK_ROOT)\components\libraries\twi_mngr \
-	-I$(SDK_ROOT)\components\libraries\timer \
-	-I$(SDK_ROOT)\components\libraries\util \
-	-I$(SDK_ROOT)\components\libraries\usbd \
-	-I$(SDK_ROOT)\components\libraries\usbd\class\cdc \
-	-I$(SDK_ROOT)\components\libraries\usbd\class\cdc\acm \
-	-I$(SDK_ROOT)\components\softdevice\common \
-	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers \
-	-I$(SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
-	-I$(SDK_ROOT)\components\toolchain\cmsis\include \
-	-I$(SDK_ROOT)\external\fprintf \
-	-I$(SDK_ROOT)\external\utf_converter \
-	-I$(SDK_ROOT)\integration\nrfx\legacy \
-	-I$(SDK_ROOT)\integration\nrfx \
-	-I$(SDK_ROOT)\modules\nrfx \
-	-I$(SDK_ROOT)\modules\nrfx\drivers\include \
-	-I$(SDK_ROOT)\modules\nrfx\drivers\src \
-	-I$(SDK_ROOT)\modules\nrfx\drivers\src\prs \
-	-I$(SDK_ROOT)\modules\nrfx\hal \
-	-I$(SDK_ROOT)\modules\nrfx\mdk \
-	-I$(SDK_ROOT)\modules\nrfx\soc
+	-I$(NRF52_SDK_ROOT)\components \
+	-I$(NRF52_SDK_ROOT)\components\ble\common \
+	-I$(NRF52_SDK_ROOT)\components\ble\ble_advertising \
+	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_gatt \
+	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_qwr \
+	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_scan \
+	-I$(NRF52_SDK_ROOT)\components\ble\peer_manager \
+	-I$(NRF52_SDK_ROOT)\components\boards \
+	-I$(NRF52_SDK_ROOT)\components\libraries\atomic \
+	-I$(NRF52_SDK_ROOT)\components\libraries\atomic_fifo \
+	-I$(NRF52_SDK_ROOT)\components\libraries\atomic_flags \
+	-I$(NRF52_SDK_ROOT)\components\libraries\balloc \
+	-I$(NRF52_SDK_ROOT)\components\libraries\button \
+	-I$(NRF52_SDK_ROOT)\components\libraries\bsp \
+	-I$(NRF52_SDK_ROOT)\components\libraries\delay \
+	-I$(NRF52_SDK_ROOT)\components\libraries\experimental_section_vars \
+	-I$(NRF52_SDK_ROOT)\components\libraries\fds \
+	-I$(NRF52_SDK_ROOT)\components\libraries\fstorage \
+	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault \
+	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52 \
+	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52\handler \
+	-I$(NRF52_SDK_ROOT)\components\libraries\log \
+	-I$(NRF52_SDK_ROOT)\components\libraries\log\src \
+	-I$(NRF52_SDK_ROOT)\components\libraries\memobj \
+	-I$(NRF52_SDK_ROOT)\components\libraries\mutex \
+	-I$(NRF52_SDK_ROOT)\components\libraries\queue \
+	-I$(NRF52_SDK_ROOT)\components\libraries\ringbuf \
+	-I$(NRF52_SDK_ROOT)\components\libraries\scheduler \
+	-I$(NRF52_SDK_ROOT)\components\libraries\serial \
+	-I$(NRF52_SDK_ROOT)\components\libraries\spi_mngr \
+	-I$(NRF52_SDK_ROOT)\components\libraries\stack_info \
+	-I$(NRF52_SDK_ROOT)\components\libraries\strerror \
+	-I$(NRF52_SDK_ROOT)\components\libraries\twi_sensor \
+	-I$(NRF52_SDK_ROOT)\components\libraries\twi_mngr \
+	-I$(NRF52_SDK_ROOT)\components\libraries\timer \
+	-I$(NRF52_SDK_ROOT)\components\libraries\util \
+	-I$(NRF52_SDK_ROOT)\components\libraries\usbd \
+	-I$(NRF52_SDK_ROOT)\components\libraries\usbd\class\cdc \
+	-I$(NRF52_SDK_ROOT)\components\libraries\usbd\class\cdc\acm \
+	-I$(NRF52_SDK_ROOT)\components\softdevice\common \
+	-I$(NRF52_SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers \
+	-I$(NRF52_SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
+	-I$(NRF52_SDK_ROOT)\components\toolchain\cmsis\include \
+	-I$(NRF52_SDK_ROOT)\external\fprintf \
+	-I$(NRF52_SDK_ROOT)\external\utf_converter \
+	-I$(NRF52_SDK_ROOT)\integration\nrfx\legacy \
+	-I$(NRF52_SDK_ROOT)\integration\nrfx \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\include \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src\prs \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\hal \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\mdk \
+	-I$(NRF52_SDK_ROOT)\modules\nrfx\soc
 
 SDK_GLUE_INCLUDES = \
 	-I$(BUILD_DIR)\devices\nrf52\base \
@@ -454,7 +442,7 @@ LIB_FILES = \
 	-lc \
 	-lnosys \
 	-lm \
-	$(SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
+	$(NRF52_SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
 
 NRF_C_DEFINES = \
 	-D__SIZEOF_WCHAR_T=4 \
@@ -552,7 +540,7 @@ LDFLAGS = \
 	-mfpu=fpv4-sp-d16 \
 	-mthumb \
 	--specs=nano.specs \
-	-L$(SDK_ROOT)\modules\nrfx\mdk \
+	-L$(NRF52_SDK_ROOT)\modules\nrfx\mdk \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
 	-Xlinker -no-enum-size-warning \
@@ -623,7 +611,7 @@ $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_D
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
-$(LIB_DIR)\gcc_startup_nrf52840.o: $(SDK_ROOT)\modules\nrfx\mdk\gcc_startup_nrf52840.S
+$(LIB_DIR)\gcc_startup_nrf52840.o: $(NRF52_SDK_ROOT)\modules\nrfx\mdk\gcc_startup_nrf52840.S
 	@echo # asm $(@F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $? -o $@
 
@@ -644,183 +632,183 @@ $(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	@echo # library xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-{$(SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\ble\common\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\common\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\ble\nrf_ble_gatt\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\nrf_ble_gatt\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\ble\nrf_ble_qwr\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\nrf_ble_qwr\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\ble\nrf_ble_scan\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\nrf_ble_scan\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\ble\peer_manager\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\ble\peer_manager\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\boards\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\boards\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\atomic\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\atomic\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\atomic_fifo\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\atomic_fifo\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\atomic_flags\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\atomic_flags\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\balloc\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\balloc\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\bsp\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\bsp\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\button\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\button\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\crypto\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\crypto\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\crypto\backend\cc310\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cc310\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\crypto\backend\nrf_hw\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\nrf_hw\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\experimental_section_vars\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\experimental_section_vars\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\fds\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\fds\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\fstorage\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\fstorage\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\hardfault\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\hardfault\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\hardfault\nrf52\handler\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52\handler\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\log\src\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\log\src\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\memobj\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\memobj\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\queue\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\queue\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\ringbuf\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\ringbuf\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\serial\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\serial\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\spi_mngr\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\spi_mngr\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\strerror\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\strerror\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\timer\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\timer\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\twi_mngr\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\twi_mngr\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\twi_sensor\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\twi_sensor\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\usbd\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\usbd\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\usbd\class\cdc\acm\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\usbd\class\cdc\acm\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\libraries\util\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\libraries\util\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\components\softdevice\common\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\components\softdevice\common\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\external\fprintf\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\external\fprintf\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\external\freertos\portable\CMSIS\nrf52\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\external\freertos\portable\CMSIS\nrf52\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\external\freertos\portable\GCC\nrf52\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\external\freertos\portable\GCC\nrf52\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\external\freertos\source\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\external\freertos\source\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\external\freertos\source\portable\MemMang\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\external\freertos\source\portable\MemMang\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\integration\nrfx\legacy\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\integration\nrfx\legacy\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\modules\nrfx\mdk\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\modules\nrfx\mdk\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\modules\nrfx\drivers\src\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\modules\nrfx\drivers\src\prs\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src\prs\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(SDK_ROOT)\modules\nrfx\soc\}.c{$(LIB_DIR)\}.o:
+{$(NRF52_SDK_ROOT)\modules\nrfx\soc\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 

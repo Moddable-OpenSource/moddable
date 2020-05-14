@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: May 12, 2020
+Revised: May 14, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
 
@@ -61,7 +61,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-mac) section for macOS.
 
-2. Create an `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
+2. Create a `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
 
 	```text
 	cd $HOME
@@ -73,14 +73,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
 
-4. Setup the `NRF52_GCC_ROOT` and `NRF52_GNU_VERSION` environment variables in your `~/.profile`.
-
-	```text
-	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
-	export NRF52_GNU_VERSION=8.2.1
-	```
-
-5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -89,9 +82,9 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	chmod 755 uf2conv.py 
 	```
 
-6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v15.3.0` from the nRF5 SDK versions section.
+	- Select `v16.0.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -105,25 +98,23 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
 	
-	- `nRF5_SDK_15.3.0_59ac345.zip`
-	- `s140nrf52611.zip`
+	- `nRF5SDK160098a08e2.zip`
+	- `s140nrf52701.zip`
 
-	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
+	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
 
-7. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
-	cd ~/nrf5
-	ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
-	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5SDK160098a08e2
 	```
 
-8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
 	```text
-	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
+	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards
 	```
 
 	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
@@ -140,7 +131,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 1. Attach your Moddable Four to your computer with a micro USB cable.
 
-	Make sure you're using a data sync&#8211;capable cable, not one that is power-only.
+	Make sure you're using a data-sync capable cable, not one that is power-only.
 
 2. Put the device into programming mode by double-tapping the RESET button or by holding the BOOT button while tapping RESET.
 
@@ -171,7 +162,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-windows) section for Windows.
 
-2. Create an `nrf5` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for required third party SDKs and tools.
+2. Create a `nrf5` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for required third party SDKs and tools.
 
 	```text
 	cd %USERPROFILE%
@@ -183,11 +174,11 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	> **Note:** Newer versions of the GNU Arm Embedded Toolchain for Windows are not supported due to [issues](https://bugs.launchpad.net/gcc-arm-embedded/+bug/1810274) with `objcopy.exe`.
 
-4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
 
 5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v15.3.0` from the nRF5 SDK versions section.
+	- Select `v16.0.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -201,24 +192,24 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
 	
-	- `nRF5_SDK_15.3.0_59ac345.zip`
-	- `s140nrf52611.zip`
+	- `nRF5SDK160098a08e2.zip`
+	- `s140nrf52701.zip`
 
-	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
+	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
 
-6. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
+6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
-7. Edit the system `PATH` environment variable to include the Python directories:
+	```text
+	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5SDK160098a08e2
+	```
+
+7. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
+
+8. Edit the system `PATH` environment variable to include the Python directories:
 
 	```text
 	C:\Python27
 	C:\Python27\Scripts
-	```
-
-8. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
-
-	```text
-	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_15.3.0_59ac345
 	```
 
 9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
@@ -274,7 +265,7 @@ After you've setup your Windows host environment, take the following steps to in
 
 1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-linux) section for Linux.
 
-2. Create an `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
+2. Create a `nrf5` directory in your home directory at `~/nrf5` for required third party SDKs and tools.
 
 	```text
 	cd $HOME
@@ -286,14 +277,7 @@ After you've setup your Windows host environment, take the following steps to in
 
 	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
 
-4. Setup the `NRF52_GCC_ROOT` and `NRF52_GNU_VERSION` environment variables in your `~/.bashrc`.
-
-	```text
-	export NRF52_GCC_ROOT=$HOME/nrf5/gcc-arm-none-eabi-8-2018-q4-major
-	export NRF52_GNU_VERSION=8.2.1
-	```
-
-5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader). `uf2conv.py` is a tool from Microsoft that packages the final binary for transfer to the device. Download [uf2conv.py](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy into the `nrf5` directory.
+4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -302,9 +286,9 @@ After you've setup your Windows host environment, take the following steps to in
 	chmod 755 uf2conv.py 
 	```
 
-6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v15.3.0` from the nRF5 SDK versions section.
+	- Select `v16.0.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -318,25 +302,23 @@ After you've setup your Windows host environment, take the following steps to in
 
 	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
 	
-	- `nRF5_SDK_15.3.0_59ac345.zip`
-	- `s140nrf52611.zip`
+	- `nRF5SDK160098a08e2.zip`
+	- `s140nrf52701.zip`
 
-	Unzip both of these archives and copy the `nRF5_SDK_15.3.0_59ac345` and `s140nrf52611` directories into the `nrf5` directory.
+	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
 
-7. Create and export a symbolic link to the nRF5 SDK. The symbolic link is used by the Moddable Four build.
+6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
-	cd ~/nrf5
-	ln -s nRF5_SDK_15.3.0_59ac345 nRF5_SDK
-	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5SDK160098a08e2
 	```
 
-8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
 	```text
-	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards/
+	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards
 	```
 
 	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
@@ -353,7 +335,7 @@ After you've setup your Linux host environment, take the following steps to inst
 
 1. Attach your Moddable Four to your computer with a micro USB cable.
 
-	Make sure you're using a data sync&#8211;capable cable, not one that is power-only.
+	Make sure you're using a data-sync capable cable, not one that is power-only.
 
 2. Put the device into programming mode by double-tapping the RESET button or by holding the BOOT button while tapping RESET.
 
