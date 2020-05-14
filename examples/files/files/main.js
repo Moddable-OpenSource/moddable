@@ -79,10 +79,8 @@ while (item = iterator.next()) {
 }
 trace("\n");
 
-if ("/spiffs/" == root) {
-	let info = System.info();
-	trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
-}
+let info = System.info();
+trace('Used/Total: ' + info.used + '/' + info.total + '\n\n');
 
 File.delete(root + "test2.txt");
 File.delete(root + "preferences.json");

@@ -116,6 +116,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/spiffs/include \
+	$(IDF_PATH)/components/fatfs/src \
+	$(IDF_PATH)/components/wear_levelling/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
