@@ -20,11 +20,11 @@
 HOST_OS = win
 
 !IF "$(NRF52_SDK_PATH)"==""
-!ERROR NRF52_SDK_PATH environment variable must be defined!
+!ERROR NRF52_SDK_PATH environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.
 !ENDIF
 
 !IF !EXIST($(NRF52_SDK_PATH)\components\boards\moddable_four.h)
-!ERROR Please add moddable_four.h to your nRF52 SDK! See 
+!ERROR Please add moddable_four.h to your nRF52 SDK! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details. 
 !ENDIF
 
 !IF "$(NRF52_UPLOAD_DRIVE)"==""
@@ -35,6 +35,7 @@ HOST_OS = win
 !ERROR NRF52_UPLOAD_PORT environment variable must be defined!
 !ENDIF
 
+NRF_ROOT = $(USERPROFILE)\nrf5
 NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
 NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
 NRF52_GNU_VERSION = 7.2.1
