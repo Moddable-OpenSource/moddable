@@ -53,9 +53,7 @@ void xs_inflate(xsMachine *the)
 void xs_inflate_close(xsMachine *the)
 {
 	z_stream *zlib = xsmcGetHostData(xsThis);
-	if (!zlib) return;
-
-	c_free(zlib);
+	xs_inflate_destructor(zlib);
 	xsmcSetHostData(xsThis, NULL);
 }
 
