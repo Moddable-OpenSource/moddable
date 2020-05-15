@@ -216,6 +216,16 @@ void xs_file_rename(xsMachine *the)
 	xsResult = xsBoolean(QAPI_OK == result);
 }
 
+void xs_directory_create(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void xs_file_iterator_destructor(void *data)
 {
 	iter d = data;

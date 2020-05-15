@@ -33,7 +33,11 @@
 
 #ifndef MODDEF_FILE_FAT32
     #define MODDEF_FILE_FAT32 0
-#endif 
+#endif
+
+#ifndef MODDEF_FILE_MAXOPEN
+	#define MODDEF_FILE_MAXOPEN (5)
+#endif
 
 #if MODDEF_FILE_FAT32
     #include "esp_vfs_fat.h"
@@ -277,8 +281,13 @@ void xs_File_Iterator(xsMachine *the)
         xsUnknownError("bad path");
     d = c_calloc(1, sizeof(iteratorRecord) + i + 2 + MAX_FILENAME_LENGTH + 1);
     c_strcpy(d->path, p);
+#if MODDEF_FILE_FAT32
+	if (p[i - 1] == '/')
+		d->path[--i] = 0;
+#else
     if (p[i - 1] != '/')
         d->path[i++] = '/';
+#endif
 	d->rootPathLen = i;
 
     startFS();
@@ -289,6 +298,11 @@ void xs_File_Iterator(xsMachine *the)
         xsUnknownError("failed to open directory");
     }
     xsmcSetHostData(xsThis, d);
+
+#if MODDEF_FILE_FAT32
+	d->path[i] = '/';
+	d->rootPathLen += 1;
+#endif
 
 	modInstrumentationAdjust(Files, +1);
 }
@@ -372,7 +386,7 @@ int startFS(void)
 #if MODDEF_FILE_FAT32
     esp_vfs_fat_mount_config_t conf = {
         .format_if_mount_failed = true,
-        .max_files = 5,
+        .max_files = MODDEF_FILE_MAXOPEN,
         .allocation_unit_size = 512
     };
 
@@ -382,7 +396,7 @@ int startFS(void)
 	esp_vfs_spiffs_conf_t conf = {
 			.base_path = MODDEF_FILE_ROOT,
 			.partition_label = NULL,
-			.max_files = 5,
+			.max_files = MODDEF_FILE_MAXOPEN,
 			.format_if_mount_failed = true
 	};
 
@@ -418,8 +432,31 @@ void stopFS(void)
 
 #if MODDEF_FILE_FAT32
     esp_vfs_fat_spiflash_unmount(MODDEF_FILE_ROOT, wl_handle);
-    wl_handle = NULL;
+    wl_handle = 0;
 #else
 	esp_vfs_spiffs_unregister(NULL);
 #endif
+}
+
+
+void xs_directory_create(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+
+	startFS();
+	int result = mkdir(path, 0775);
+	if (result && (EEXIST != errno))
+		xsUnknownError("failed");
+	stopFS();
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+
+	startFS();
+	int result = rmdir(path);
+	if (result && (ENOENT != errno))
+		xsUnknownError("failed");
+	stopFS();
 }
