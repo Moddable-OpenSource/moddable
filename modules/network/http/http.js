@@ -189,9 +189,6 @@ function callback(message, value) {
 				status = this.line + status;
 
 			if ((10 !== status.charCodeAt(status.length - 1)) || (13 !== status.charCodeAt(status.length - 2))) {
-				if (socket.read())
-					throw new Error("didn't receive full status line!?!");
-
 				this.line = status;
 				return;
 			}
