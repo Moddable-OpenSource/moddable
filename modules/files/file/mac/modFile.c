@@ -286,5 +286,5 @@ void xs_file_system_config(xsMachine *the)
 
 void xs_file_system_info(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	xsResult = xsmcNewObject();
 }
