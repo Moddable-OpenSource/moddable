@@ -212,12 +212,18 @@ void xs_file_rename(xsMachine *the)
 
 void xs_directory_create(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	char *path = xsmcToString(xsArg(0));
+	int result = mkdir(path, 0755);
+	if (result && (EEXIST != errno))
+		xsUnknownError("failed");
 }
 
 void xs_directory_delete(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	char *path = xsmcToString(xsArg(0));
+	int result = rmdir(path);
+	if (result && (ENOENT != errno))
+		xsUnknownError("failed");
 }
 
 void xs_file_iterator_destructor(void *data)
