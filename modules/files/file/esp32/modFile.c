@@ -42,7 +42,16 @@
 #if MODDEF_FILE_FAT32
     #include "esp_vfs_fat.h"
     #include "sdkconfig.h"
-    #define MAX_FILENAME_LENGTH CONFIG_FATFS_MAX_LFN
+    #ifdef CONFIG_FATFS_MAX_LFN
+        #define MAX_FILENAME_LENGTH CONFIG_FATFS_MAX_LFN
+    #else
+        #define MAX_FILENAME_LENGTH 12
+    #endif
+    #ifdef CONFIG_WL_SECTOR_SIZE
+        #define SECTOR_SIZE CONFIG_WL_SECTOR_SIZE
+    #else
+        #define SECTOR_SIZE 512
+    #endif
 #else
     #include "esp_spiffs.h"
     #include "spiffs_config.h"
@@ -349,15 +358,22 @@ void xs_file_system_info(xsMachine *the)
 {
     xsResult = xsmcNewObject();
 
-#if MODDEF_FILE_FAT32
-    return;
-#endif
-
     startFS();
-
 	size_t total = 0, used = 0;
+    esp_err_t ret;
 
-	esp_err_t ret = esp_spiffs_info(NULL, &total, &used);
+#if MODDEF_FILE_FAT32
+    //based on example in the FatFs documentation at http://www.elm-chan.org/fsw/ff/doc/getfree.html
+    FATFS *fs;
+    DWORD fre_clust, fre_sect, tot_sect;
+    ret = f_getfree("0:", &fre_clust, &fs);
+    tot_sect = (fs->n_fatent - 2) * fs->csize;
+    fre_sect = fre_clust * fs->csize;
+    total = tot_sect * SECTOR_SIZE;
+    used = (tot_sect - fre_sect) * SECTOR_SIZE;
+#else
+	ret = esp_spiffs_info(NULL, &total, &used);
+#endif
 
     stopFS();
 
