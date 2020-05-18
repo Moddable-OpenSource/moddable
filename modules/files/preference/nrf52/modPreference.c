@@ -77,7 +77,7 @@ static uint16_t strToFileID(uint8_t *str)
 
 static void fds_event_handler(fds_evt_t const * p_evt)
 {
-	if (FDS_SUCCESS == p_evt->result) {
+	if (NRF_SUCCESS == p_evt->result) {
 		switch (p_evt->id) {
 			case FDS_EVT_INIT:
 				gFDSInitialized = 1;
@@ -119,7 +119,7 @@ void xs_preference_set(xsMachine *the)
 
 	rc = fds_record_find(domain, key, &desc, &tok);
 
-	if (FDS_SUCCESS == rc) {
+	if (NRF_SUCCESS == rc) {
 		rc = fds_record_open(&desc, &flashRecord);
 		APP_ERROR_CHECK(rc);
 		recordOK = 1;
@@ -170,11 +170,11 @@ void xs_preference_set(xsMachine *the)
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-				size = prefHeaderSize + xsGetArrayBufferLength(xsArg(2));
+				size = prefHeaderSize + xsmcGetArrayBufferLength(xsArg(2));
 				pref = (prefFormat*)c_calloc(size, 1);
 				pref->type = PREF_KIND_BLOB;
-				pref->size = xsGetArrayBufferLength(xsArg(2));
-				c_memcpy(pref->data, xsmcToArrayBuffer(xsArg(2)), xsGetArrayBufferLength(xsArg(2)));
+				pref->size = xsmcGetArrayBufferLength(xsArg(2));
+				c_memcpy(pref->data, xsmcToArrayBuffer(xsArg(2)), pref->size);
 			}
 			else
 				goto done;
@@ -191,13 +191,13 @@ void xs_preference_set(xsMachine *the)
 
 	if (recordOK) {
 		rc = fds_record_update(&desc, &prefRecord);
-		if (FDS_SUCCESS != rc) {
+		if (NRF_SUCCESS != rc) {
 			xsUnknownError("pref update error");
 		}
 	}
 	else {
 		rc = fds_record_write(NULL, &prefRecord);
-		if (FDS_SUCCESS != rc) {
+		if (NRF_SUCCESS != rc) {
 			xsUnknownError("pref write error");
 		}
 	}
@@ -227,7 +227,7 @@ void xs_preference_get(xsMachine *the)
 
 	rc = fds_record_find(domain, key, &desc, &tok);
 
-	if (FDS_SUCCESS == rc) {
+	if (NRF_SUCCESS == rc) {
 		prefFormat *pref;
 		rc = fds_record_open(&desc, &prefRecord);
 		APP_ERROR_CHECK(rc);
@@ -245,7 +245,7 @@ void xs_preference_get(xsMachine *the)
 			xsResult = xsStringBuffer(pref->data, pref->size);
 		}
 		else if (PREF_KIND_BLOB == pref->type) {
-			xsResult = xsArrayBuffer(pref->data, pref->size);
+			xsmcSetArrayBuffer(xsResult, pref->data, pref->size);
 		}
 		else
 			xsmcSetUndefined(xsResult);	// not an error if not found, just undefined
@@ -272,9 +272,9 @@ void xs_preference_delete(xsMachine *the)
 
 	rc = fds_record_find(domain, key, &desc, &tok);
 
-	if (FDS_SUCCESS == rc) {
+	if (NRF_SUCCESS == rc) {
 		rc = fds_record_delete(&desc);
-		if (FDS_SUCCESS != rc) {
+		if (NRF_SUCCESS != rc) {
 			xsUnknownError("failed to delete preference record");
 		}
 	}
