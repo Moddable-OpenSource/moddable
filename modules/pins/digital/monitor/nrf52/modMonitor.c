@@ -180,6 +180,21 @@ void xs_digital_monitor_get_falls(xsMachine *the)
 	xsmcSetInteger(xsResult, monitor->falls);
 }
 
+#if MODDEF_MONITOR_PWM
+void xs_digital_monitor_get_pwm_duty(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
+void xs_digital_monitor_get_pwm_freq(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+#else
+void xs_digital_monitor_get_pwm_duty(xsMachine *the) {}
+void xs_digital_monitor_get_pwm_freq(xsMachine *the) {}
+#endif
+
 static modDigitalMonitor findMonitor(nrf_drv_gpiote_pin_t pin)
 {
 	modDigitalMonitor monitor = gMonitors;
