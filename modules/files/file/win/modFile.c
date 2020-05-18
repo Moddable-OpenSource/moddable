@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <direct.h>
 
 #define PATH_MAX 1024
 
@@ -208,6 +209,40 @@ void xs_file_rename(xsMachine *the)
 	result = rename(path, name);
 
 	xsResult = xsBoolean(result == 0);
+}
+
+void xs_directory_create(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = _mkdir(path);
+	if (result && (EEXIST != errno)){
+		if (errno == ENOENT){
+			xsUnknownError("path not found");
+		}else{
+			xsUnknownError("failed");
+		}
+	}
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = _rmdir(path);
+	if (result){
+		switch (errno){
+			case ENOTEMPTY:
+				xsUnknownError("path is not a directory, is not empty, or is the current working directory");
+				break;
+			case ENOENT:
+				xsUnknownError("path is invalid");
+				break;
+			case EACCES:
+				xsUnknownError("a program has an open handle to path");
+				break;
+			default:
+				xsUnknownError("failed");
+		}
+	}
 }
 
 void xs_file_iterator_destructor(void *data)

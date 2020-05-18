@@ -1442,10 +1442,7 @@ void fxIfStatement(txParser* parser)
 	txInteger aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_IF);
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
-	if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-		fxCommaExpression(parser);
-	else
-		fxReportParserError(parser, "invalid if");
+	fxCommaExpression(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
 	fxStatement(parser, 0);
 	if (parser->token == XS_TOKEN_ELSE) {
@@ -1478,10 +1475,7 @@ void fxSwitchStatement(txParser* parser)
 	txInteger aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_SWITCH);
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
-	if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-		fxCommaExpression(parser);
-	else
-		fxReportParserError(parser, "invalid switch");
+	fxCommaExpression(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 	while ((parser->token == XS_TOKEN_CASE) || (parser->token == XS_TOKEN_DEFAULT)) {
@@ -1489,10 +1483,7 @@ void fxSwitchStatement(txParser* parser)
 		txInteger aCaseLine = parser->line;
 		if (parser->token == XS_TOKEN_CASE) {
 			fxMatchToken(parser, XS_TOKEN_CASE);
-			if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)
-				fxCommaExpression(parser);
-			else
-				fxReportParserError(parser, "invalid case");
+			fxCommaExpression(parser);
 			fxMatchToken(parser, XS_TOKEN_COLON);
 			aCaseCount = parser->nodeCount;
 			while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_STATEMENT)
@@ -1653,6 +1644,10 @@ void fxCommaExpression(txParser* parser)
 	if (aCount > 1) {
 		fxPushNodeList(parser, aCount);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
+	}
+	else if (aCount == 0) {
+		fxPushNULL(parser);
+		fxReportParserError(parser, "missing expression");
 	}
 }
 
@@ -1962,6 +1957,13 @@ void fxCallExpression(txParser* parser)
 				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
 				fxPushSymbol(parser, parser->symbol);
 				fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER, aLine);
+				fxGetNextToken(parser);
+			}
+			else if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
+				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+				fxPushSymbol(parser, parser->symbol);
+				fxSwapNodes(parser);
+				fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_MEMBER, aLine);
 				fxGetNextToken(parser);
 			}
 			else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
@@ -2329,12 +2331,16 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				fxGetNextToken(parser);
 			if (parser->token == XS_TOKEN_RIGHT_BRACE)
 				break;
+			aStaticFlag = 0;
 			if ((parser->token == XS_TOKEN_STATIC) && (!parser->escaped)) {
 				fxGetNextToken(parser);
+				if ((parser->token == XS_TOKEN_ASSIGN) || parser->token == XS_TOKEN_SEMICOLON) {
+					fxPushSymbol(parser, parser->staticSymbol);
+					aToken1 = XS_TOKEN_PROPERTY;
+					goto field;
+				}
 				aStaticFlag = 1;
 			}
-			else
-				aStaticFlag = 0;
 			fxPropertyName(parser, &aSymbol, &aToken0, &aToken1, &aToken2, &flag);
 			if ((aStaticFlag == 0) && (aSymbol == parser->constructorSymbol)) {
 				fxPopNode(parser); // symbol
@@ -2377,6 +2383,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 					fxReportParserError(parser, "invalid field: constructor");
 				if (aSymbol == parser->prototypeSymbol)
 					fxReportParserError(parser, "invalid field: prototype");
+			field:
 				if (parser->token == XS_TOKEN_ASSIGN) {
 					txUnsigned flags = parser->flags;
 					parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxSuperFlag | mxTargetFlag;

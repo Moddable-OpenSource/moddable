@@ -114,7 +114,7 @@ else
 endif
 C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation
+LIBRARIES = -framework CoreFoundation -lcurl -lpng16
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = 

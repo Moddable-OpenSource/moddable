@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -37,70 +37,10 @@ class ESP32GATTFile extends GATTFile {
 		super(dictionary);
 		this.sdkconfig = dictionary.sdkconfig;
 	}
-	setConfigOption(sdkconfig, option) {
-		let name = option.name;
-		let value = option.value;
-		let index = sdkconfig.indexOf(name);
-		let changed = false;
-		if (-1 != index) {
-			++index;
-			if ("n" == value) {
-				if ("y" == sdkconfig.charAt(index + name.length)) {
-					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=");
-					changed = true;
-				}
-			}
-			else {
-				if (value != sdkconfig.charAt(index + name.length)) {
-					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=" + value);
-					changed = true;
-				}
-			}
-		}
-		return {sdkconfig, changed};
-	}
-	setConfigOptions() {
-		let tool = this.tool;
-		let sdkconfig = tool.readFileString(this.sdkconfig);
-		let changed = false;
-		let options = [];
-		if (this.client || this.server) {
-			options.push({ name:"CONFIG_BT_ENABLED", value:"y" });
-			if (this.nimble) {
-				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"y" });
-				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"n" });
-				options.push({ name:"CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value:"y" });
-				options.push({ name:"CONFIG_NIMBLE_SM_LEGACY", value:"y" });
-				options.push({ name:"CONFIG_NIMBLE_SM_SC", value:"y" });
-				options.push({ name:"CONFIG_NIMBLE_ROLE_PERIPHERAL", value:(this.server ? "y" : "n") });
-				options.push({ name:"CONFIG_NIMBLE_ROLE_CENTRAL", value:(this.client ? "y" : "n") });
-			}
-			else {
-				options.push({ name:"CONFIG_BLUEDROID_ENABLED", value:"y" });
-				options.push({ name:"CONFIG_NIMBLE_ENABLED", value:"n" });
-				options.push({ name:"CONFIG_BLE_SMP_ENABLE", value:"y" });
-				options.push({ name:"CONFIG_GATTS_ENABLE", value:(this.server ? "y" : "n") });
-				options.push({ name:"CONFIG_GATTC_ENABLE", value:(this.client ? "y" : "n") });
-			}
-		}
-		else {
-			options.push({ name:"CONFIG_BT_ENABLED", value:"n" });
-		}
-		for (let i = 0; i < options.length; ++i) {
-			let result = this.setConfigOption(sdkconfig, options[i]);
-			if (result.changed) {
-				changed = true;
-				sdkconfig = result.sdkconfig;
-			}
-		}
-		if (changed)
-			tool.writeFileString(this.sdkconfig, sdkconfig);
-	}
 };
 
 class BluedroidGATTFile extends ESP32GATTFile {
 	generate() {
-		this.setConfigOptions();
 		let tool = this.tool;
 		let file = this.file;
 		let services = this.services;
@@ -399,7 +339,6 @@ class BluedroidGATTFile extends ESP32GATTFile {
 
 class NimBLEGATTFile extends ESP32GATTFile {
 	generate() {
-		this.setConfigOptions();
 		let tool = this.tool;
 		let file = this.file;
 		let services = this.services;

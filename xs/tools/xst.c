@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 			4096*3, 			/* keyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
-			32 * 1024,			/* parserBufferSize */
+			64 * 1024,			/* parserBufferSize */
 			1993,				/* parserTableModulo */
 		};
 		xsCreation* creation = &_creation;
@@ -243,14 +243,16 @@ int main(int argc, char* argv[])
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
+			xsVars(1);
 			xsTry {
 				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
 					if (option == 1) {
+						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsGet(xsGlobal, xsID("$262")), xsID("evalScript"), xsResult);
+						xsCall1(xsVar(0), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))
@@ -294,7 +296,7 @@ int main262(int argc, char* argv[])
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
@@ -721,6 +723,8 @@ void fxRunFile(txContext* context, char* path)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
+ 			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "logical-assignment-operators")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -785,7 +789,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	xsCreation* creation = &_creation;
@@ -1047,7 +1051,7 @@ void* fx_agent_start_aux(void* it)
 		4096*3, 			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
-		32 * 1024,			/* parserBufferSize */
+		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
 	txAgent* agent = it;

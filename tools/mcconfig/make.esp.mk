@@ -84,7 +84,8 @@ INC_DIRS = \
  	$(ESP_TOOLS_SDK_ROOT)/lwip/include \
  	$(CORE_DIR) \
  	$(ARDUINO_ROOT)/variants/generic \
- 	$(ARDUINO_ROOT)/cores/esp8266/spiffs
+ 	$(ARDUINO_ROOT)/cores/esp8266/spiffs \
+	$(PLATFORM_DIR)/lib/tinyi2s/
 SDK_SRC = \
 	$(ARDUINO_ESP8266)/abi.cpp \
 	$(ARDUINO_ESP8266)/cont.S \
@@ -112,6 +113,7 @@ SDK_SRC = \
 	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
+	$(PLATFORM_DIR)/lib/tinyi2s/tinyi2s.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
 	$(PLATFORM_DIR)/lib/tinyuart/tinyuart.c
 
@@ -358,6 +360,9 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
+erase:
+	$(ESPTOOL) -p $(UPLOAD_PORT) erase_flash
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
@@ -385,11 +390,11 @@ $(LIB_DIR)/xs%.c.o: xs%.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 	
-$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h
+$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash + force-l32)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
-$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h
+$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash + force-l32)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@

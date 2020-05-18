@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -91,6 +91,28 @@ export class MakeFile extends FILE {
 		}
 		this.line("");
 	}
+	setConfigOption(sdkconfig, option) {
+		let name = option.name;
+		let value = option.value;
+		let index = sdkconfig.indexOf(name);
+		let changed = false;
+		if (-1 != index) {
+			++index;
+			if ("n" == value) {
+				if ("y" == sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=");
+					changed = true;
+				}
+			}
+			else {
+				if (value != sdkconfig.charAt(index + name.length)) {
+					sdkconfig = sdkconfig.replace(new RegExp(name + ".*"), name + "=" + value);
+					changed = true;
+				}
+			}
+		}
+		return { sdkconfig, changed };
+	}
 	generateConfigurationRules(tool) {
 		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
@@ -165,11 +187,57 @@ export class MakeFile extends FILE {
 				}
 			}
 		});
+
+		//BLE configuration, moved from bles2gatt.js
+		let defines = tool.defines;
+		if (defines && ("ble" in defines)) {
+			let server, client, nimble;
+			client = server = false;
+			if ("server" in defines.ble && true == defines.ble.server)
+				server = true;
+			if ("client" in defines.ble && true == defines.ble.client)
+				client = true;
+			nimble = ("esp32" == tool.platform) && !(tool.getenv("ESP32_BLUEDROID") === "1");
+
+			let options = [];
+			if (client || server) {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
+				if (nimble) {
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+				}
+				else {
+					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+				}
+			} else {
+				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
+			}
+
+			for (let i = 0; i < options.length; ++i) {
+				let result = this.setConfigOption(baseConfig, options[i]);
+				if (result.changed) {
+					baseConfig = result.sdkconfig;
+				}
+			}
+		}
 		
-		// Write the result
+		// Write the result, if it has changed
 		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
-		tool.writeFileString(buildConfigFile, baseConfig);
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
+			const oldConfig = tool.readFileString(buildConfigFile);
+			if (oldConfig == baseConfig) return;
+		}
+		tool.writeFileString(buildConfigFile, baseConfig);
 	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
@@ -1415,6 +1483,14 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.resources);
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
+		
+		if (!this.environment.NAMESPACE)
+			this.environment.NAMESPACE = "moddable.tech"
+		var signature = this.environment.NAME + "." + this.environment.NAMESPACE;
+		signature = signature.split(".").reverse();
+		this.environment.DASH_SIGNATURE = signature.join("-");
+		this.environment.DOT_SIGNATURE = signature.join(".");
+		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
 	}
 }
 

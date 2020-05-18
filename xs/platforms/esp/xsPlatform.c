@@ -947,9 +947,14 @@ void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
 	the->connection = pcb;
 }
 
-#if !ESP32
+enum {
+	kPrefsTypeBoolean = 1,
+	kPrefsTypeInteger = 2,
+	kPrefsTypeString = 3,
+	kPrefsTypeBuffer = 4,
+};
 
-#define kPrefsTypeString (3)
+#if !ESP32
 
 extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
 extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
@@ -988,16 +993,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 	switch (cmdID) {
 		case 1:		// restart
 			the->wsState = 18;
-			fxDisconnect(the);
-			modDelayMilliseconds(1000);
-#if ESP32
-			esp_restart();
-#else
-			system_restart();
-#endif
-			while (1)
-				modDelayMilliseconds(1000);
-			return;
+			break;
 
 #if MODDEF_XS_MODS
 		case 2: {		// uninstall
@@ -1038,7 +1034,7 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
 			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
-			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary {
+			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
 				modSPIErase(offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
 			else if (firstSector != lastSector)
 				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
@@ -1048,40 +1044,44 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
-#else
-		case 2:
-		case 3:
-			modLog("mods disabled");
-			resultCode = -1;
-			break;
 #endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			int zeros = 0;
 			while (cmdLen--) {
 				if (!*cmd++) {
-					zeros += 1;
 					if (NULL == key)
 						key = cmd;
-					else if (NULL == value)
+					else if (NULL == value) {
 						value = cmd;
-					else
 						break;
+					}
 				}
 			}
-			if ((3 == zeros) && key && value) {
+			if (key && value) {
+				uint8_t prefType = c_read8(value++);
+				cmdLen -= 1;
 #if ESP32
 				nvs_handle handle;
 				resultCode = -1;
 
 				if (ESP_OK == nvs_open(domain, NVS_READWRITE, &handle)) {
-					if (ESP_OK == nvs_set_str(handle, key, value))
-						resultCode = 0;
+					int result = -1;
+
+					if (kPrefsTypeBoolean == prefType)
+						result = nvs_set_u8(handle, key, *(uint8_t *)value);
+					else if (kPrefsTypeInteger == prefType)
+						result = nvs_set_i32(handle, key, *(int32_t *)value);
+					else if (kPrefsTypeString == prefType)
+						result = nvs_set_str(handle, key, value);
+					else if (kPrefsTypeBuffer == prefType)
+						result = nvs_set_blob(handle, key, value, cmdLen);
+
+					resultCode = result ? -1 : 0;
 					nvs_close(handle);
 				}
 #else
-				if (!modPreferenceSet(domain, key, kPrefsTypeString, value, c_strlen(value) + 1))
+				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
 					resultCode = -1;
 #endif
 			}
@@ -1101,34 +1101,55 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				}
 			}
 			if ((2 == zeros) && key) {
+				if (NULL != c_strstr(key, "password")) {
+					resultCode = -4;
+					break;
+				}
 #if ESP32
 				nvs_handle handle;
 				resultCode = -1;
 
 				if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
 					int32_t size = 64;
-					if (ESP_OK == nvs_get_str(handle, key, the->echoBuffer + the->echoOffset, &size)) {
-						the->echoOffset += size;
-						resultCode = 0;
+					uint8_t *buffer = the->echoBuffer + the->echoOffset + 1;
+					resultCode = 0;
+					if (!nvs_get_u8(handle, key, buffer)) {
+						buffer[-1] = kPrefsTypeBoolean;
+						the->echoOffset += 1 + 1;
 					}
+					else if (!nvs_get_i32(handle, key, (int32_t *)buffer)) {
+						buffer[-1] = kPrefsTypeInteger;
+						the->echoOffset += 1 + 4;
+					}
+					else if (!nvs_get_str(handle, key, buffer, &size)) {
+						buffer[-1] = kPrefsTypeString;
+						the->echoOffset += 1 + size;
+					}
+					else if (!nvs_get_blob(handle, key, buffer, &size)) {
+						buffer[-1] = kPrefsTypeBuffer;
+						the->echoOffset += 1 + size;
+					}
+					else
+						resultCode = -2;
+
 					nvs_close(handle);
 				}
 #else
-				uint8_t buffer[64];
+				uint8_t buffer[65];
 				uint8_t type;
 				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, &type, buffer, sizeof(buffer), &byteCountOut) || (kPrefsTypeString != type))
+				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
 					resultCode = -1;
 				else {
-					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut);
-					the->echoOffset += byteCountOut;
+					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+					the->echoOffset += byteCountOut + 1;
 				}
 #endif
 			}
 		}
 		break;
 
-		case 8:
+		case 8:		// set baud
 			baud = c_read32be(cmd);
 			break;
 
@@ -1185,9 +1206,25 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoOffset += 6;
 			break;
 
+#if MODDEF_XS_MODS
+		case 15:
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
+			break;
+
+		case 16: {
+			int atomSize;
+			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
+				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
+				the->echoOffset += atomSize;
+			}
+			} break;
+#endif
+
 		default:
-			modLog("unrecognized command");
-			modLogInt(cmdID);
 			resultCode = -1;
 			break;
 	}
@@ -1199,8 +1236,25 @@ bail:
 		fxSend(the, 2);		// send binary
 	}
 
-	if (baud)
-		ESP_setBaud(baud);
+	// finish command after sending reply
+	switch (cmdID) {
+		case 1:		// restart
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+#if ESP32
+			esp_restart();
+#else
+			system_restart();
+#endif
+			while (1)
+				modDelayMilliseconds(1000);
+			break;
+
+		case 8:		// set baud
+			if (baud)
+				ESP_setBaud(baud);
+			break;
+	}
 }
 
 #if defined(mxDebug) && ESP32

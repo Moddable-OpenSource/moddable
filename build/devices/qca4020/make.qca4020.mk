@@ -220,7 +220,7 @@ clean:
 
 build: all
 
-debugger:
+xsbug:
 	@echo "# kill serial2xsbug"
 	$(shell pkill serial2xsbug)
 	echo "# start xsbug"

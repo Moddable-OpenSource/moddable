@@ -65,7 +65,7 @@ let steps = [
 ];
 
 let LoveApplication = Application.template($ => ({
-	top: 0, bottom: 0, left: 0, right: 0,
+	skin:blackSkin,
 	Behavior: class extends Behavior {
 		onCreate(application, anchors) {
 			this.anchors = anchors;
@@ -97,21 +97,23 @@ let LoveApplication = Application.template($ => ({
 		}
 	},
 	contents: [
-		Row($, { left:0, top:0, height:61, contents:[
-			Content($.backgrounds, { anchor:0, width:65, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:1, width:60, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:2, width:60, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:3, width:65, height:61, skin:backgroundSkin } ),
+		Container($, { width:250, height:122, contents:[
+			Row($, { left:0, top:0, height:61, contents:[
+				Content($.backgrounds, { anchor:0, width:65, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:1, width:60, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:2, width:60, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:3, width:65, height:61, skin:backgroundSkin } ),
+			]}),
+			Row($, { left:0, top:61, height:61, contents:[
+				Content($.backgrounds, { anchor:4, width:65, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:5, width:60, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:6, width:60, height:61, skin:backgroundSkin } ),
+				Content($.backgrounds, { anchor:7, width:65, height:61, skin:backgroundSkin } ),
+			]}),
+			Content($, { anchor:"moddable", left:5, top:1, skin:moddableSkin } ),
+			Content($, { anchor:"love", left:65, top:61, skin:loveSkin } ),
+			Content($, { anchor:"eink", left:126, top:61, skin:einkSkin } ),
 		]}),
-		Row($, { left:0, top:61, height:61, contents:[
-			Content($.backgrounds, { anchor:4, width:65, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:5, width:60, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:6, width:60, height:61, skin:backgroundSkin } ),
-			Content($.backgrounds, { anchor:7, width:65, height:61, skin:backgroundSkin } ),
-		]}),
- 		Content($, { anchor:"moddable", left:5, top:1, skin:moddableSkin } ),
- 		Content($, { anchor:"love", left:65, top:61, skin:loveSkin } ),
- 		Content($, { anchor:"eink", left:126, top:61, skin:einkSkin } ),
 	]
 }));
 

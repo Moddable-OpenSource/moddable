@@ -45,8 +45,6 @@
 	link locations
 */
 
-#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
-
 #if ESP32
 	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
@@ -521,7 +519,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#include "esp_partition.h"
 
 	extern const esp_partition_t *gPartition;
-	extern const void *gPartitionAddress;
+	extern const uint8_t *gPartitionAddress;
 
 	#define kModulesStart (gPartitionAddress)
 	#define kModulesByteLength (gPartition ? gPartition->size : 0)
@@ -540,6 +538,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 #ifdef __cplusplus
 }

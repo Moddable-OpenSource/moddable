@@ -210,6 +210,22 @@ void xs_file_rename(xsMachine *the)
     xsResult = xsBoolean(result == 0);
 }
 
+void xs_directory_create(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = mkdir(path, 0755);
+	if (result && (EEXIST != errno))
+		xsUnknownError("failed");
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = rmdir(path);
+	if (result && (ENOENT != errno))
+		xsUnknownError("failed");
+}
+
 void xs_file_iterator_destructor(void *data)
 {
 	iter d = data;
@@ -287,5 +303,5 @@ void xs_file_system_config(xsMachine *the)
 
 void xs_file_system_info(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	xsResult = xsmcNewObject();
 }

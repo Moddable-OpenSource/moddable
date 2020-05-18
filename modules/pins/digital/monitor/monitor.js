@@ -24,9 +24,13 @@ class Monitor @ "xs_digital_monitor_destructor" {
 	read() @ "xs_digital_monitor_read"
 	get rises() @ "xs_digital_monitor_get_rises"
 	get falls() @ "xs_digital_monitor_get_falls"
+
+	get pwm_duty() @ "xs_digital_monitor_get_pwm_duty"
+	get pwm_freq() @ "xs_digital_monitor_get_pwm_freq"
 }
 Monitor.Rising = 1;
 Monitor.Falling = 2;
+Monitor.PWM = 4;
 
 Object.freeze(Monitor.prototype);
 

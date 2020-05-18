@@ -696,6 +696,7 @@ struct sxParser {
 	txSymbol* setSymbol;
 	txSymbol* sliceSymbol;
 	txSymbol* SyntaxErrorSymbol;
+	txSymbol* staticSymbol;
 	txSymbol* StringSymbol;
 	txSymbol* targetSymbol;
 	txSymbol* thisSymbol;

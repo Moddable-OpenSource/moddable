@@ -25,13 +25,46 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "esp_spiffs.h"
-#include "spiffs_config.h"
-
 #include "xsmc.h"
 #include "xsHost.h"
 #include "modInstrumentation.h"
-#include "mc.xs.h"			// for xsID_ values
+#include "mc.xs.h" // for xsID_ values
+#include "mc.defines.h"
+
+#ifndef MODDEF_FILE_FAT32
+    #define MODDEF_FILE_FAT32 0
+#endif
+
+#ifndef MODDEF_FILE_MAXOPEN
+	#define MODDEF_FILE_MAXOPEN (5)
+#endif
+
+#if MODDEF_FILE_FAT32
+    #include "esp_vfs_fat.h"
+    #include "sdkconfig.h"
+    #ifdef CONFIG_FATFS_MAX_LFN
+        #define MAX_FILENAME_LENGTH CONFIG_FATFS_MAX_LFN
+    #else
+        #define MAX_FILENAME_LENGTH 12
+    #endif
+    #ifdef CONFIG_WL_SECTOR_SIZE
+        #define SECTOR_SIZE CONFIG_WL_SECTOR_SIZE
+    #else
+        #define SECTOR_SIZE 512
+    #endif
+#else
+    #include "esp_spiffs.h"
+    #include "spiffs_config.h"
+    #define MAX_FILENAME_LENGTH SPIFFS_OBJ_NAME_LEN
+#endif
+
+#ifndef MODDEF_FILE_ROOT
+    #define MODDEF_FILE_ROOT "/mod"
+#endif
+
+#ifndef MODDEF_FILE_PARTITION
+    #define MODDEF_FILE_PARTITION "storage"
+#endif
 
 typedef struct {
     DIR *dir;
@@ -39,8 +72,8 @@ typedef struct {
     char path[1];
 } iteratorRecord, *iter;
 
-static int startSPIFFS(void);
-static void stopSPIFFS(void);
+static int startFS(void);
+static void stopFS(void);
 
 static FILE *getFile(xsMachine *the)
 {
@@ -54,7 +87,7 @@ void xs_file_destructor(void *data)
 {
 	if (data) {
 		fclose((FILE *)data);
-		stopSPIFFS();
+		stopFS();
 
 		modInstrumentationAdjust(Files, -1);
 	}
@@ -67,14 +100,14 @@ void xs_File(xsMachine *the)
     uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));
 	char *path = xsmcToString(xsArg(0));
 
-    startSPIFFS();
+    startFS();
 
     file = fopen(path, write ? "rb+" : "rb");
     if (NULL == file) {
         if (write)
             file = fopen(path, "wb+");
         if (NULL == file) {
-			stopSPIFFS();
+			stopFS();
 			xsUnknownError("file not found");
 		}
     }
@@ -190,11 +223,11 @@ void xs_file_delete(xsMachine *the)
     int32_t result;
     char *path = xsmcToString(xsArg(0));
 
-    startSPIFFS();
+    startFS();
 
     result = unlink(path);
 
-	stopSPIFFS();
+    stopFS();
 
     xsResult = xsBoolean(result == 0);
 }
@@ -205,11 +238,11 @@ void xs_file_exists(xsMachine *the)
     int32_t result;
     char *path = xsmcToString(xsArg(0));
 
-    startSPIFFS();
+    startFS();
 
     result = stat(path, &buf);
 
-	stopSPIFFS();
+    stopFS();
 
     xsResult = xsBoolean(result == 0);
 }
@@ -217,17 +250,17 @@ void xs_file_exists(xsMachine *the)
 void xs_file_rename(xsMachine *the)
 {
 	char *path;
-	char name[SPIFFS_OBJ_NAME_LEN + 1];
+    char name[MAX_FILENAME_LENGTH + 1];
     int32_t result;
 
 	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
 	path = xsmcToString(xsArg(0));
 
-    startSPIFFS();
+    startFS();
 
     result = rename(path, name);
 
-	stopSPIFFS();
+    stopFS();
 
     xsResult = xsBoolean(result == 0);
 }
@@ -240,7 +273,7 @@ void xs_file_iterator_destructor(void *data)
         if (d->dir)
             closedir(d->dir);
         free(d);
-    	stopSPIFFS();
+        stopFS();
     	modInstrumentationAdjust(Files, -1);
     }
 }
@@ -255,20 +288,30 @@ void xs_File_Iterator(xsMachine *the)
     i = c_strlen(p);
     if (i == 0)
         xsUnknownError("bad path");
-    d = c_calloc(1, sizeof(iteratorRecord) + i + 2 + SPIFFS_OBJ_NAME_LEN + 1);
+    d = c_calloc(1, sizeof(iteratorRecord) + i + 2 + MAX_FILENAME_LENGTH + 1);
     c_strcpy(d->path, p);
+#if MODDEF_FILE_FAT32
+	if (p[i - 1] == '/')
+		d->path[--i] = 0;
+#else
     if (p[i - 1] != '/')
         d->path[i++] = '/';
+#endif
 	d->rootPathLen = i;
 
-    startSPIFFS();
+    startFS();
 
     if (NULL == (d->dir = opendir(d->path))) {
     	c_free(d);
-    	stopSPIFFS();
+        stopFS();
         xsUnknownError("failed to open directory");
     }
     xsmcSetHostData(xsThis, d);
+
+#if MODDEF_FILE_FAT32
+	d->path[i] = '/';
+	d->rootPathLen += 1;
+#endif
 
 	modInstrumentationAdjust(Files, +1);
 }
@@ -307,24 +350,36 @@ void xs_file_system_config(xsMachine *the)
 {
 	xsResult = xsmcNewObject();
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), SPIFFS_OBJ_NAME_LEN);
+    xsmcSetInteger(xsVar(0), MAX_FILENAME_LENGTH);
 	xsmcSet(xsResult, xsID_maxPathLength, xsVar(0));
 }
 
 void xs_file_system_info(xsMachine *the)
 {
-	startSPIFFS();
+    xsResult = xsmcNewObject();
 
+    startFS();
 	size_t total = 0, used = 0;
+    esp_err_t ret;
 
-	esp_err_t ret = esp_spiffs_info(NULL, &total, &used);
+#if MODDEF_FILE_FAT32
+    //based on example in the FatFs documentation at http://www.elm-chan.org/fsw/ff/doc/getfree.html
+    FATFS *fs;
+    DWORD fre_clust, fre_sect, tot_sect;
+    ret = f_getfree("0:", &fre_clust, &fs);
+    tot_sect = (fs->n_fatent - 2) * fs->csize;
+    fre_sect = fre_clust * fs->csize;
+    total = tot_sect * SECTOR_SIZE;
+    used = (tot_sect - fre_sect) * SECTOR_SIZE;
+#else
+	ret = esp_spiffs_info(NULL, &total, &used);
+#endif
 
-	stopSPIFFS();
+    stopFS();
 
 	if (ret != ESP_OK)
 		xsUnknownError("system info failed");
 
-    xsResult = xsmcNewObject();
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), total);
 	xsmcSet(xsResult, xsID_total, xsVar(0));
@@ -334,23 +389,38 @@ void xs_file_system_info(xsMachine *the)
 
 static uint16_t gUseCount;
 
-int startSPIFFS(void)
+#if MODDEF_FILE_FAT32
+static wl_handle_t wl_handle;
+#endif
+
+int startFS(void)
 {
+    esp_err_t ret;
 	if (0 != gUseCount++)
 		return 0;
 
+#if MODDEF_FILE_FAT32
+    esp_vfs_fat_mount_config_t conf = {
+        .format_if_mount_failed = true,
+        .max_files = MODDEF_FILE_MAXOPEN,
+        .allocation_unit_size = 512
+    };
+
+    ret = esp_vfs_fat_spiflash_mount(MODDEF_FILE_ROOT, MODDEF_FILE_PARTITION, &conf, &wl_handle);
+#else
 //@@ these behaviors could be controlled by DEFINE properties
 	esp_vfs_spiffs_conf_t conf = {
-			.base_path = "/spiffs",
+			.base_path = MODDEF_FILE_ROOT,
 			.partition_label = NULL,
-			.max_files = 5,
+			.max_files = MODDEF_FILE_MAXOPEN,
 			.format_if_mount_failed = true
 	};
 
 	// Use settings defined above to initialize and mount SPIFFS filesystem.
 	// Note: esp_vfs_spiffs_register is an all-in-one convenience function.
 	// https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/spiffs.html
-	esp_err_t ret = esp_vfs_spiffs_register(&conf);
+	ret = esp_vfs_spiffs_register(&conf);
+#endif
 
 	if (ret != ESP_OK) {
 		if (ret == ESP_FAIL) {
@@ -358,9 +428,11 @@ int startSPIFFS(void)
 		} else if (ret == ESP_ERR_NO_MEM) {
 			modLog("Failed to allocate memory for filesystem");
 		} else if (ret == ESP_ERR_NOT_FOUND) {
-			modLog("Failed to find SPIFFS partition");
+			modLog("Failed to find partition");
+        } else if (ret == ESP_ERR_INVALID_STATE) {
+            modLog("Failed because filesystem was already registered");
 		} else {
-			modLog("Failed to initialize SPIFFS");
+			modLog("Failed to initialize filesystem");
 		}
 
 		gUseCount--;
@@ -369,10 +441,38 @@ int startSPIFFS(void)
 	return 0;
 }
 
-void stopSPIFFS(void)
+void stopFS(void)
 {
 	if (0 != --gUseCount)
 		return;
 
+#if MODDEF_FILE_FAT32
+    esp_vfs_fat_spiflash_unmount(MODDEF_FILE_ROOT, wl_handle);
+    wl_handle = 0;
+#else
 	esp_vfs_spiffs_unregister(NULL);
+#endif
+}
+
+
+void xs_directory_create(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+
+	startFS();
+	int result = mkdir(path, 0775);
+	if (result && (EEXIST != errno))
+		xsUnknownError("failed");
+	stopFS();
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+
+	startFS();
+	int result = rmdir(path);
+	if (result && (ENOENT != errno))
+		xsUnknownError("failed");
+	stopFS();
 }

@@ -73,11 +73,11 @@ A few notes:
 **Build Targets**
 mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:
 
-- `clean`: removes platform-specific app build outputs from `$MODDABLE/build/tmp` and `$MODDABLE/build/bin`
-- `build`: builds the selected app, but does not deploy it
+- `clean`: removes build outputs for the app
+- `build`: builds the app, but does not deploy it
 - `deploy`: deploys a previously built app without rebuilding
-- `xsbug`: starts `serial2xsbug` to connect a previously-deployed app to the XSBug debugger running on your host machine
-- `all`: provides the same default behavior as omitting the `-t` flag
+- `xsbug`: connect the xsbug debugger to a previously-deployed app
+- `all`: performs all steps (This is the default value, when the `-t` flag is omitted)
 
 <a id="mcrez"></a>
 ## mcrez

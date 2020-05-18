@@ -19,6 +19,10 @@
 
 HOST_OS = win
 
+!IF "$(EXPECTED_ESP_IDF)"==""
+EXPECTED_ESP_IDF = v3.3.2
+!ENDIF
+
 !IF "$(VERBOSE)"=="1"
 !CMDSWITCHES -S
 CMAKE_LOG_LEVEL = VERBOSE
@@ -65,6 +69,18 @@ IDF_PATH = $(MSYS32_BASE)\home\$(USERNAME)\esp\esp-idf
 !ENDIF
 !IF "$(TOOLS_ROOT)"==""
 TOOLS_ROOT = $(MSYS32_BASE)\opt\xtensa-esp32-elf
+!ENDIF
+
+!IF [cd $(IDF_PATH) && git describe --always > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+IDF_VERSION = \
+!INCLUDE $(TMP_DIR)\_idf_version.tmp
+!IF [del $(TMP_DIR)\_idf_version.tmp] == 0
+!ENDIF
+!IF "$(IDF_VERSION)"!="$(EXPECTED_ESP_IDF)"
+!ERROR Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).
+!ENDIF
+!ELSE
+!MESSAGE Could not detect ESP-IDF version.
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
@@ -164,6 +180,8 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\soc\esp32\include\soc \
 	-I$(IDF_PATH)\components\soc\include \
 	-I$(IDF_PATH)\components\spiffs\include \
+	-I$(IDF_PATH)\components\fatfs\src \
+	-I$(IDF_PATH)\components\wear_levelling\include \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
@@ -330,6 +348,16 @@ LAUNCH = release
 PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 !ENDIF
 
+PARTITIONS_BIN = partition-table.bin
+PARTITIONS_PATH = $(IDF_BUILD_DIR)\partition_table\$(PARTITIONS_BIN)
+
+!IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul] == 1
+!IF [copy /Y $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv] == 0
+!IF [copy /b $(PROJ_DIR)\partitions.csv+,, $(PROJ_DIR)\partitions.csv] == 0
+!ENDIF
+!ENDIF
+!ENDIF
+
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
 	$(PROJ_DIR)\main\component.mk	\
@@ -368,6 +396,7 @@ debug: precursor
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
+	cd $(PROJ_DIR)
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
@@ -385,6 +414,7 @@ release: precursor
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
+	cd $(PROJ_DIR)
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
@@ -404,6 +434,7 @@ mingPrepare:
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 	set HOME=$(PROJ_DIR)
+	cd $(PROJ_DIR)
 		
 build: precursor mingPrepare
 	echo $(BUILD_CMD)
@@ -411,7 +442,7 @@ build: precursor mingPrepare
 	$(BUILD_MSG)
 	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\ota_data_initial.bin $(BIN_DIR)
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin copy $(IDF_BUILD_DIR)\ota_data_initial.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)
 
@@ -420,12 +451,36 @@ xsbug:
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
 
-deploy:
+DEPLOY_PRE:
 	$(KILL_SERIAL2XSBUG)
+	if not exist $(BIN_DIR)\xs_esp32.bin echo "Please build before deploy"
+	if not exist $(BIN_DIR)\xs_esp32.bin exit 1
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin move /Y $(IDF_BUILD_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)\xs_esp32.bin_prev
+	if exist $(PARTITIONS_PATH) move /Y $(PARTITIONS_PATH) $(PARTITIONS_PATH)_prev
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin_prev
+
+DEPLOY_START:
+	if exist $(BIN_DIR)\xs_esp32.bin copy $(BIN_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)
+	if exist $(BIN_DIR)\$(PARTITIONS_BIN) copy $(BIN_DIR)\$(PARTITIONS_BIN) $(PARTITIONS_PATH)
+	if exist $(BIN_DIR)\bootloader.bin  copy $(BIN_DIR)\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(BIN_DIR)\ota_data_initial.bin copy $(BIN_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin
 	set HOME=$(PROJ_DIR)
 	cd $(PROJ_DIR)
 	echo $(DEPLOY_CMD)
 	$(DEPLOY_CMD)
+
+DEPLOY_END:
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin del $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(PARTITIONS_PATH) del $(PARTITIONS_PATH)
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin del $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin del $(IDF_BUILD_DIR)\ota_data_initial.bin
+	if exist $(IDF_BUILD_DIR)\xs_esp32.bin_prev move /Y $(IDF_BUILD_DIR)\xs_esp32.bin_prev $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(PARTITIONS_PATH)_prev move /Y $(PARTITIONS_PATH)_prev $(PARTITIONS_PATH)
+	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev $(IDF_BUILD_DIR)\bootloader\bootloader.bin
+	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin_prev move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin_prev $(IDF_BUILD_DIR)\ota_data_initial.bin
+
+deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
@@ -466,7 +521,7 @@ $(BIN_DIR)\xs_esp32.a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DI
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
 	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_esp32.a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)\partitions.csv
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
 	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
@@ -507,8 +562,12 @@ $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+	$(XSL) <<args.txt
+-b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+<<
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+	$(MCREZ) <<args.txt
+$(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp32 -r mc.resources.c
+<<

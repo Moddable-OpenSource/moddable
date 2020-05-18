@@ -61,10 +61,14 @@ int main(int argc, char* argv[])
 {
 	int error = 0;
 	if (!strcmp(argv[1], "xsa")) {
+#ifdef XSTOOLS
 		error = mainXSA(argc - 1, &argv[1]);
+#endif
 	}
 	else if (!strcmp(argv[1], "xsc")) {
+#ifdef XSTOOLS
 		error = mainXSC(argc - 1, &argv[1]);
+#endif
 	}
 	else {
 		xsMachine* machine = fxPrepareMachine(NULL, xsPreparation(), "tool", NULL, NULL);

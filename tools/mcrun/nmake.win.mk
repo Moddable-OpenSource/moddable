@@ -38,4 +38,4 @@ all: $(BIN_DIR)\mc.xsa
 
 $(BIN_DIR)\mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa
-	$(XSL) -a -b $(MODULES_DIR) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)

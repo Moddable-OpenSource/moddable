@@ -71,6 +71,12 @@ int main(int argc, char* argv[])
 				if (!base)
 					fxReportLinkerError(linker, "-b '%s': directory not found", argv[argi]);
 			}
+			else if (!c_strcmp(argv[argi], "-n")) {
+				argi++;
+				if (argi >= argc)
+					fxReportLinkerError(linker, "-n: no namespace");
+				linker->name = fxNewLinkerString(linker, argv[argi], c_strlen(argv[argi]));
+			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
 				if (argi >= argc)
@@ -81,6 +87,8 @@ int main(int argc, char* argv[])
 			}
 			else if (!c_strcmp(argv[argi], "-r")) {
 				argi++;
+				if (argi >= argc)
+					fxReportLinkerError(linker, "-r: no name");
 				c_strncpy(name, argv[argi], sizeof(name));
 			}
 			else if (!c_strcmp(argv[argi], "-u")) {
@@ -115,6 +123,8 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
+		if (!linker->name)
+			linker->name = fxNewLinkerString(linker, name, c_strlen(name));
 			
 		size = c_strlen(base);
 		script = linker->firstScript;

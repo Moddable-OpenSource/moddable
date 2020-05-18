@@ -173,6 +173,12 @@ int main(int argc, char* argv[])
 					linker->main);
 				linker->symbolModulo = linker->creation.nameModulo;
 			}		
+			else if (!c_strcmp(argv[argi], "-n")) {
+				argi++;
+				if (argi >= argc)
+					fxReportLinkerError(linker, "-n: no namespace");
+				linker->name = fxNewLinkerString(linker, argv[argi], c_strlen(argv[argi]));
+			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
 				if (argi >= argc)
@@ -190,6 +196,8 @@ int main(int argc, char* argv[])
 			}
 			else if (!c_strcmp(argv[argi], "-r")) {
 				argi++;
+				if (argi >= argc)
+					fxReportLinkerError(linker, "-r: no name");
 				c_strncpy(name, argv[argi], sizeof(name));
 			}
 			else if (!c_strcmp(argv[argi], "-s")) {
@@ -240,6 +248,8 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
+		if (!linker->name)
+			linker->name = fxNewLinkerString(linker, name, c_strlen(name));
 
 		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
@@ -514,7 +524,7 @@ int main(int argc, char* argv[])
 			}
 			if (linker->slotSize) {
 				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
-				fprintf(file, "static const txSlot* gxSlotData[mxSlotCount];\n");
+				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR;\n");
 				linker->slotData = fxNewLinkerChunk(linker, linker->slotSize * sizeof(txSlot*));
 				linker->slotSize = 0;
 			}

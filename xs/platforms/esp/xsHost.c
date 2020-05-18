@@ -646,9 +646,42 @@ void modSetTime(uint32_t seconds)
 #endif
 }
 
+#if ESP32
+static void updateTZ(void)
+{
+	int32_t offset = gTimeZoneOffset + gDaylightSavings;
+	int32_t hours, minutes;
+	char zone[10];
+
+	zone[0] = 'U';
+	zone[1] = 'T';
+	zone[2] = 'C';
+	zone[3] = (offset >= 0) ? '-' : '+';		// yes, backwards
+
+	if (offset < 0)
+		offset = -offset;
+	offset /= 60;	// seconds to minutes
+	hours = offset / 60;
+	minutes = offset % 60;
+
+	zone[4] = (hours / 10) + '0';
+	zone[5] = (hours % 10) + '0';
+	zone[6] = ':';
+	zone[7] = (minutes / 10) + '0';
+	zone[8] = (minutes % 10) + '0';
+	zone[9] = 0;
+
+	setenv("TZ", zone, 1);
+	tzset();
+}
+#else
+	#define updateTZ()
+#endif
+
 void modSetTimeZone(int32_t timeZoneOffset)
 {
 	gTimeZoneOffset = timeZoneOffset;
+	updateTZ();
 }
 
 int32_t modGetTimeZone(void)
@@ -659,6 +692,7 @@ int32_t modGetTimeZone(void)
 void modSetDaylightSavingsOffset(int32_t daylightSavings)
 {
 	gDaylightSavings = daylightSavings;
+	updateTZ();
 }
 
 int32_t modGetDaylightSavingsOffset(void)
@@ -1703,7 +1737,7 @@ void fxQueuePromiseJobs(txMachine* the)
 #if ESP32
 
 const esp_partition_t *gPartition;
-const void *gPartitionAddress;
+const uint8_t *gPartitionAddress;
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
@@ -1730,23 +1764,19 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
-	const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
-	const void *partitionAddress;
-	if (!partition) return NULL;
+	gPartition = esp_partition_find_first(0x40, 1,  NULL);
+	if (!gPartition) return NULL;
 
-	if (fxMapArchive(preparation, (void *)partition, (void *)partition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
+	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
 		spi_flash_mmap_handle_t handle;
 
-		if (ESP_OK != esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
 			return NULL;
 	}
 	else
 		return 0;
 
-	gPartition = partition;
-	gPartitionAddress = partitionAddress;
-
-	return (void *)partitionAddress;
+	return (void *)gPartitionAddress;
 }
 
 #else /* ESP8266 */
@@ -1780,6 +1810,14 @@ void *installModules(txPreparation *preparation)
 }
 
 #endif
+
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	if (!xsb || !gHasMods) return NULL;
+
+	return findNthAtom(atomTypeIn, 0, xsb, c_read32be(xsb), atomSizeOut);
+}
 
 char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
 {

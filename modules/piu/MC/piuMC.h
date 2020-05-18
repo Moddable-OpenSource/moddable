@@ -19,6 +19,8 @@
  */
 
 #include "piuAll.h"
+#include "mc.defines.h"
+#include "commodettoPoco.h"
 #include "commodettoFontEngine.h"
 
 typedef struct PiuGlyphStruct PiuGlyphRecord, *PiuGlyph;
@@ -162,10 +164,6 @@ struct PiuViewStruct {
 	PiuHandlePart;
 	xsMachine* the;
 	PiuApplication* application;
-	PiuRegion* dirty;
-	PiuRegion* swap;
-	uint32_t current;
-	uint32_t limit;
 	Poco poco;
 	PocoColor pixel;
 	uint8_t blend;
@@ -178,7 +176,15 @@ struct PiuViewStruct {
 	xsSlot _continue;
 	xsSlot _end;
 	xsSlot _send;
+#if MODDEF_POCO_EVE
+	uint8_t dirty;
+#else
+	PiuRegion* dirty;
+	PiuRegion* swap;
+	uint32_t current;
+	uint32_t limit;
 	// commands...
+#endif		
 };
 
 extern void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);

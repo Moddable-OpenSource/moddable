@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,20 +29,21 @@ void xs_preference_set(xsMachine *the)
 	nvs_handle handle;
 	uint8_t b;
 	int32_t integer;
-	char *str;
+	char *str, key[64];
 	double dbl;
 
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
 	if (ESP_OK != err)
 		xsUnknownError("nvs_open fail");
 
+	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsBooleanType:
-			err = nvs_set_u8(handle, xsmcToString(xsArg(1)), xsmcToBoolean(xsArg(2)));
+			err = nvs_set_u8(handle, key, xsmcToBoolean(xsArg(2)));
 			break;
 
 		case xsIntegerType:
-			err = nvs_set_i32(handle, xsmcToString(xsArg(1)), xsmcToInteger(xsArg(2)));
+			err = nvs_set_i32(handle, key, xsmcToInteger(xsArg(2)));
 			break;
 
 		case xsNumberType:
@@ -51,17 +52,17 @@ void xs_preference_set(xsMachine *the)
 				nvs_close(handle);
 				xsUnknownError("float unsupported");
 			}
-			err = nvs_set_i32(handle, xsmcToString(xsArg(1)), (int)dbl);
+			err = nvs_set_i32(handle, key, (int)dbl);
 			break;
 
 		case xsStringType:
-			err = nvs_set_str(handle, xsmcToString(xsArg(1)), xsmcToString(xsArg(2)));
+			err = nvs_set_str(handle, key, xsmcToString(xsArg(2)));
 			break;
 
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				err = nvs_set_blob(handle, xsmcToString(xsArg(1)), xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
+				err = nvs_set_blob(handle, key, xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
 			else
 				goto unknown;
 			break;
@@ -89,27 +90,30 @@ void xs_preference_get(xsMachine *the)
 	nvs_handle handle;
 	uint8_t b;
 	int32_t integer;
-	char *str, *key;
+	char *str, key[64];
 
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READONLY, &handle);
 	if (ESP_OK != err)
 		return;  // most likely that domain doesn't exist yet
 
-	key = xsmcToString(xsArg(1));
-	if (ESP_OK == nvs_get_u8(handle, key, &b))
+	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
+	if (ESP_OK == (err = nvs_get_u8(handle, key, &b)))
 		xsmcSetBoolean(xsResult, b);
-	else if (ESP_OK == nvs_get_i32(handle, key, &integer))
+	else if (ESP_OK == (err = nvs_get_i32(handle, key, &integer)))
 		xsmcSetInteger(xsResult, integer);
-	else if (ESP_OK == nvs_get_str(handle, key, NULL, &integer)) {
-		xsResult = xsStringBuffer(NULL, integer + 1);
+	else if (ESP_OK == (err = nvs_get_str(handle, key, NULL, &integer))) {
+		xsResult = xsStringBuffer(NULL, integer);
 		err = nvs_get_str(handle, key, xsmcToString(xsResult), &integer);
 	}
-	else if (ESP_OK == nvs_get_blob(handle, key, NULL, &integer)) {
+	else if (ESP_OK == (err = nvs_get_blob(handle, key, NULL, &integer))) {
 		xsmcSetArrayBuffer(xsResult, NULL, integer);
 		err = nvs_get_blob(handle, key, xsmcToArrayBuffer(xsResult), &integer);
 	}
 	else
 		xsmcSetUndefined(xsResult);	// not an error if not found, just undefined
+
+	if (err == ESP_ERR_NVS_NOT_FOUND)
+		err = ESP_OK;
 
 bail:
 	nvs_close(handle);

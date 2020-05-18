@@ -118,7 +118,7 @@ LINK_OPTIONS = \
 	-s MODULARIZE=1\
 	-s EXPORT_ES6=1\
 	-s USE_ES6_IMPORT_META=0\
-	-s EXPORT_NAME=$(NAME)\
+	-s EXPORT_NAME=mc\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
 	-s "EXPORTED_FUNCTIONS=['_fxMainIdle', '_fxMainLaunch', '_fxMainQuit', '_fxMainTouch']"
@@ -142,7 +142,8 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: $(LIB_DIR) $(BIN_DIR)/mc.js $(BIN_DIR)/index.html
-	
+build: all
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,19 +21,37 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "modGPIO.h"
+
+#ifndef MODDEF_MONITOR_PWM
+	#define MODDEF_MONITOR_PWM 0
+#endif
 
 typedef struct {
 	xsMachine			*the;
 	xsSlot				obj;
 	uint8_t				pin;
 	uint8_t				triggered;
+	uint8_t				closed;
 	uint8_t				edge;
 	uint32_t			rises;
 	uint32_t			falls;
+#if MODDEF_MONITOR_PWM
+	uint32_t			start_off_us;
+	uint32_t			start_on_us;
+	uint32_t			time_on_us;
+	uint32_t			time_off_us;
+	uint8_t				pwm_duty;
+	uint32_t			pwm_freq;
+	uint32_t			pwm_cycle;
+#endif
 } modDigitalMonitorRecord, *modDigitalMonitor;
+
+#define EDGE_PWM 4
+#define ONE_SECOND 1000000
 
 static void digitalMonitorISR(void *refcon);
 static void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -87,8 +105,13 @@ void xs_digital_monitor(xsMachine *the)
 	monitor->pin = pin;
 	monitor->edge = (uint8_t)edge;
 	monitor->triggered = false;
+	monitor->closed = false;
 	monitor->rises = 0;
 	monitor->falls = 0;
+
+#if MODDEF_MONITOR_PWM
+	monitor->pwm_duty = monitor->pwm_freq = monitor->pwm_cycle = monitor->start_off_us = monitor->start_on_us = monitor->time_on_us = monitor->time_off_us = 0;
+#endif
 
 	xsRemember(monitor->obj);
 
@@ -123,7 +146,9 @@ void xs_digital_monitor_close(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
 	xsForget(monitor->obj);
-	xs_digital_monitor_destructor(monitor);
+	monitor->closed = true;
+	if (!monitor->triggered)
+		xs_digital_monitor_destructor(monitor);
 	xsmcSetHostData(xsThis, NULL);
 }
 
@@ -154,26 +179,74 @@ void xs_digital_monitor_get_falls(xsMachine *the)
 	xsmcSetInteger(xsResult, monitor->falls);
 }
 
+#if MODDEF_MONITOR_PWM
+void xs_digital_monitor_get_pwm_duty(xsMachine *the)
+{
+	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+
+	xsmcSetInteger(xsResult, monitor->pwm_duty);
+}
+
+void xs_digital_monitor_get_pwm_freq(xsMachine *the)
+{
+	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+
+	xsmcSetInteger(xsResult, monitor->pwm_freq);
+}
+
+#else
+void xs_digital_monitor_get_pwm_duty(xsMachine *the) {}
+void xs_digital_monitor_get_pwm_freq(xsMachine *the) {}
+#endif
+
 void digitalMonitorISR(void *refcon)
 {
 	modDigitalMonitor monitor = refcon;
 	BaseType_t ignore;
 	uint8_t value = gpio_get_level(monitor->pin);
 
-	if (value)
-		monitor->rises += 1;
-	else
-		monitor->falls += 1;
-	if (monitor->triggered)
-		return;
-	monitor->triggered = true;
+#if MODDEF_MONITOR_PWM
+	if (monitor->edge == EDGE_PWM) {
+		uint32_t now = modMicroseconds();
+		if (value) {
+			monitor->time_off_us = now - monitor->start_off_us;
 
-	modMessagePostToMachineFromISR(monitor->the, digitalMonitorDeliver, monitor);
+			monitor->pwm_cycle = monitor->time_on_us + monitor->time_off_us;
+	
+			monitor->pwm_freq = ONE_SECOND / monitor->pwm_cycle;
+			monitor->pwm_duty = (monitor->time_on_us * 100) / monitor->pwm_cycle;
+			monitor->start_on_us = now;
+		}
+		else 
+		{
+			monitor->time_on_us = now - monitor->start_on_us;
+			monitor->start_off_us = now;
+		}
+	}
+	else
+#endif
+	{
+		if (value)
+			monitor->rises += 1;
+		else
+			monitor->falls += 1;
+
+		if (monitor->triggered)
+			return;
+		monitor->triggered = true;
+
+		modMessagePostToMachineFromISR(monitor->the, digitalMonitorDeliver, monitor);
+	}
 }
 
 void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modDigitalMonitor monitor = refcon;
+
+	if (monitor->closed) {
+		xs_digital_monitor_destructor(monitor);
+		return;
+	}
 
 	monitor->triggered = false;
 

@@ -60,4 +60,4 @@ release: $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
-	$(XSL) -a -b $(MODULES_DIR) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)
+	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)

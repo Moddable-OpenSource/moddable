@@ -39,12 +39,13 @@ export default class WiFi @ "xs_wifi_destructor" {
 	static scan(dictionary, callback) @ "xs_wifi_scan";
 	static connect(dictionary) @ "xs_wifi_connect";		// no arguments to disconnect
 	static accessPoint(dictionary) @ "xs_wifi_accessPoint";
-	static close() {WiFi.connect();}
+	static close() {WiFi.connect();}		// deprecated
+	static disconnect() {WiFi.connect();}
 }
 
 WiFi.gotIP = "gotIP";
 WiFi.lostIP = "lostIP";
-//WiFi.connect = "connect";
-//WiFi.disconnect = "disconnect";
+WiFi.connected = "connect";
+WiFi.disconnected = "disconnect";
 
 Object.freeze(WiFi.prototype);

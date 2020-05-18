@@ -20,7 +20,7 @@
 			},
 			"config": {
 				"file": {
-					"root": "/spiffs/"
+					"root": "/mod/"
 				}
 			}
 		},

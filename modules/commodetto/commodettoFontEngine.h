@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -34,6 +34,10 @@ struct CFEGlyphRecord {
 	uint16_t				w;
 	uint16_t				h;
 	void					*bits;
+
+#if COMMODETTO_BITMAP_ID
+	uint32_t				id;
+#endif
 
 	uint16_t				sx;
 	uint16_t				sy;

@@ -812,7 +812,7 @@ export default class extends Tool {
 		else
 			path += this.slash + "release";
 		this.createDirectory(path);
-		if ((platform == "lin") || (platform == "mac") || (platform == "wasm") || (platform == "win")) {
+		if ((platform == "lin") || (platform == "mac") || (platform == "win")) {
 			path += this.slash + "mc";
 			this.createDirectory(path);
 		}
@@ -1044,14 +1044,6 @@ export default class extends Tool {
 		this.createDirectory(this.modulesPath);
 		for (var folder of this.jsFolders)
 			this.createDirectory(this.modulesPath + this.slash + folder);
-		
-		if (!this.environment.NAMESPACE)
-			this.environment.NAMESPACE = "moddable.tech"
-		var signature = this.environment.NAME + "." + this.environment.NAMESPACE;
-		signature = signature.split(".").reverse();
-		this.environment.DASH_SIGNATURE = signature.join("-");
-		this.environment.DOT_SIGNATURE = signature.join(".");
-		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
 
 		if (this.platform == "esp32") {
 			if (undefined === this.environment.SDKCONFIGPATH)

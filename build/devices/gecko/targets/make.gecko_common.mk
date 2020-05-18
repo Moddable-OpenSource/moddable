@@ -198,6 +198,8 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 all: $(BLE) $(LIB_DIR) $(BIN_DIR)/xs_gecko.a
 
+build: all
+
 clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null

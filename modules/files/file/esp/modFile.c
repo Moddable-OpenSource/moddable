@@ -238,6 +238,16 @@ void xs_file_rename(xsMachine *the)
 	xsResult = xsBoolean(result == SPIFFS_OK);
 }
 
+void xs_directory_create(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void xs_file_iterator_destructor(void *data)
 {
 	spiffs_DIR *d = data;
