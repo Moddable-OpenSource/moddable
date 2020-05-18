@@ -637,7 +637,7 @@ flash: all $(BIN_DIR)/xs_nrf52.hex
 	$(NRFJPROG) -f nrf52 --reset
 
 flash_softdevice:
-	@echo Flashing: s140_nrf52_6.1.1_softdevice.hex
+	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
 	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
 	$(NRFJPROG) -f nrf52 --reset
 

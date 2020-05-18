@@ -88,7 +88,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Select `SoftDevice S140` from the SoftDevices section.
+	- Uncheck all devices from the SoftDevices section.
 
 		![](../assets/devices/softdevices.png)
 
@@ -96,12 +96,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
-	
-	- `nRF5SDK160098a08e2.zip`
-	- `s140nrf52701.zip`
-
-	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
@@ -182,7 +177,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Select `SoftDevice S140` from the SoftDevices section.
+	- Uncheck all devices from the SoftDevices section.
 
 		![](../assets/devices/softdevices.png)
 
@@ -190,12 +185,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
-	
-	- `nRF5SDK160098a08e2.zip`
-	- `s140nrf52701.zip`
-
-	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
@@ -292,7 +282,7 @@ After you've setup your Windows host environment, take the following steps to in
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Select `SoftDevice S140` from the SoftDevices section.
+	- Uncheck all devices from the SoftDevices section.
 
 		![](../assets/devices/softdevices.png)
 
@@ -300,12 +290,7 @@ After you've setup your Windows host environment, take the following steps to in
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. When you unzip this archive, you will have a folder that contains two more zip archives:
-	
-	- `nRF5SDK160098a08e2.zip`
-	- `s140nrf52701.zip`
-
-	Unzip both of these archives and copy the `nRF5SDK160098a08e2` and `s140nrf52701` directories into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
