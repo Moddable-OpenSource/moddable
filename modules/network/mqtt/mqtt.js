@@ -621,6 +621,7 @@ function socket_callback(state, message) {
 
 		default:	
 			if (state < 0) {
+				this.ws.close();
 				delete this.ws;
 				this.fail(`socket error ${state}`);
 			}
