@@ -127,7 +127,7 @@ void setupDebugger()
 	
 	// Wait for host serial port initialization and connection
     count = 0;
-	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 300)) {
+	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 700)) {
 		taskYIELD();
 		modDelayMilliseconds(10);
 	}
