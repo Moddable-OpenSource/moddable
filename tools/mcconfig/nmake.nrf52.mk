@@ -27,14 +27,6 @@ HOST_OS = win
 !ERROR Please add moddable_four.h to your nRF52 SDK! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details. 
 !ENDIF
 
-!IF "$(NRF52_UPLOAD_DRIVE)"==""
-!ERROR NRF52_UPLOAD_DRIVE environment variable must be defined!
-!ENDIF
-
-!IF "$(NRF52_UPLOAD_PORT)"==""
-!ERROR NRF52_UPLOAD_PORT environment variable must be defined!
-!ENDIF
-
 NRF_ROOT = $(USERPROFILE)\nrf5
 NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
 NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
@@ -73,18 +65,19 @@ SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
 UF2_VOLUME_NAME = MODDABLE4
-UF2_VOLUME_PATH = $(NRF52_UPLOAD_DRIVE)
-WAIT_FOR_M4 =
-DO_COPY = copy $(BIN_DIR)\xs_nrf52.uf2 $(UF2_VOLUME_PATH)
+WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp
+DO_COPY = for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
 
 !IF "$(DEBUG)"=="1"
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-WAIT_FOR_NEW_SERIAL = $(MODDABLE_TOOLS_DIR)\serial2xsbug $(NRF52_UPLOAD_PORT) 921600 8N1 -dtr
+WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Press control-c to exit. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do $(MODDABLE_TOOLS_DIR)\serial2xsbug %%i 921600 8n1 -dtr
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
-WAIT_FOR_NEW_SERIAL = @echo Release build installed.
+WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 0 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp
+SERIAL_2_XSBUG = 
 !ENDIF
 
 # nRF52840_xxAA
@@ -563,6 +556,7 @@ all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)\xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_NEW_SERIAL)
+	$(SERIAL_2_XSBUG)
 
 clean:
 	echo # Clean project
@@ -581,6 +575,7 @@ xsbug:
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	$(WAIT_FOR_NEW_SERIAL)
+	$(SERIAL_2_XSBUG)
 
 $(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
 	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex
