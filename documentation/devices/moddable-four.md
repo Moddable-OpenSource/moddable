@@ -1,11 +1,9 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: May 14, 2020
+Revised: May 21, 2020
 
-This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Four.
-
-> **Note:** Support for Moddable Four is only available for macOS and Linux.
+This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 ## Table of Contents
 
@@ -33,7 +31,7 @@ This document describes how to start building Moddable applications for Moddable
 <!--TO DO: add image-->
 <img src="../assets/devices/moddable-four.png">
 
-Moddable Four is a low-power, bluetooth development board that makes it easy for developers to experiment with the Moddable SDK. It is available to purchase on the [Moddable website](http://www.moddable.com/purchase).
+Moddable Four is a low-power, Bluetooth LE development board that makes it easy for developers to experiment with the Moddable SDK. It is available to purchase on the [Moddable website](http://www.moddable.com/purchase).
 
 <a id="components"></a>
 ### Components
@@ -88,11 +86,11 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Uncheck all devices from the SoftDevices section.
+	- Uncheck all SoftDevices.
 
 		![](../assets/devices/softdevices.png)
 
-	- Click the **Download Files** button at the bottom of the page. You should see the same selections as in the image below.
+	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
 
 		![](../assets/devices/selected.png)
 
@@ -149,8 +147,6 @@ After you've setup your macOS host environment, take the following steps to inst
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
-<!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
-
 <a id="windows-setup"></a>
 
 ### Windows setup
@@ -177,11 +173,11 @@ After you've setup your macOS host environment, take the following steps to inst
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Uncheck all devices from the SoftDevices section.
+	- Uncheck all SoftDevices.
 
 		![](../assets/devices/softdevices.png)
 
-	- Click the **Download Files** button at the bottom of the page. You should see the same selections as in the image below.
+	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
 
 		![](../assets/devices/selected.png)
 
@@ -247,8 +243,6 @@ After you've setup your Windows host environment, take the following steps to in
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
-<!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
-
 <a id="linux-setup"></a>
 
 ### Linux setup
@@ -282,11 +276,11 @@ After you've setup your Windows host environment, take the following steps to in
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Uncheck all devices from the SoftDevices section.
+	- Uncheck all SoftDevices.
 
 		![](../assets/devices/softdevices.png)
 
-	- Click the **Download Files** button at the bottom of the page. You should see the same selections as in the image below.
+	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
 
 		![](../assets/devices/selected.png)
 
@@ -343,14 +337,12 @@ After you've setup your Linux host environment, take the following steps to inst
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
 	
-<!-- TO DO: add the information about the `-t` option of mcconfig to the mcconfig documentation. It doesn't belong in this document unless it's specific to Moddable Four. -->
-
 <a id="le-secure-connections"></a>
 ## Enabling LE secure connection support
 
 LE secure connection support is disabled by default in the Moddable build due to a FreeRTOS incompatibility in the Nordic SDK. To enable LE secure connections, the Nordic SDK and config must be patched as follows:
 
-1. Edit the two `#define` statements in the `sdk_config.h` file to enable LE secure connection support:
+1. Edit the two `#define` statements in the Moddable SDK [`sdk_config.h`](../build/devices/nrf52/config/sdk_config.h) file to enable LE secure connection support:
 
 	```c
 	#ifndef NRF_BLE_LESC_ENABLED
@@ -362,7 +354,7 @@ LE secure connection support is disabled by default in the Moddable build due to
 	#endif
 	``` 
 	
-2. In the Nordic SDK sources, disable the stack overflow check in the `nrf_stack_info_overflowed` function:
+2. Disable the stack overflow check in the `nrf_stack_info_overflowed` function In the Nordic SDK `nrf_stack_info.h` file:
 
 	```c
 	__STATIC_INLINE bool nrf_stack_info_overflowed(void)
@@ -385,14 +377,14 @@ LE secure connection support is disabled by default in the Moddable build due to
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Most of these examples run on Moddable Four. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four. 
 
-That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Four hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
+That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Four hardware. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
 
 <a id="documentation"></a>
 ### Documentation
 
-Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic SDK v15.3.0, which is available [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Findex.html).
+Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v16.0.0, which is available [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v16.0.0%2Findex.html).
 
 All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
 
@@ -419,7 +411,7 @@ This section provides information about debugging and the bootloader on Moddable
 <a id="debugging-native-code"></a>
 ### Debugging Native code
 
-As with all Moddable platforms, you can debug script code using `xsbug` and the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md).
+As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md).
 
 Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger. For documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
 
