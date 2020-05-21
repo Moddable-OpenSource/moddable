@@ -67,6 +67,7 @@ PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
 UF2_VOLUME_NAME = MODDABLE4
 WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp
 DO_COPY = for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
+ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE)
 
 !IF "$(DEBUG)"=="1"
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
@@ -592,7 +593,8 @@ $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.bin
 
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
-#	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out | perl -e $(MEM_USAGE)
+	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_size.tmp
+	$(ECHO_GIT_AND_SIZE)
 	$(OBJCOPY) -O ihex $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.hex
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
