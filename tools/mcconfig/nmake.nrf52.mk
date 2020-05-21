@@ -72,7 +72,7 @@ DO_COPY = for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Press control-c to exit. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do $(MODDABLE_TOOLS_DIR)\serial2xsbug %%i 921600 8N1 -dtr
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Press control-c to exit. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do @$(MODDABLE_TOOLS_DIR)\serial2xsbug %%i 921600 8N1 -dtr
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
