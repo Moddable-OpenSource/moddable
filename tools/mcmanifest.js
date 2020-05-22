@@ -1298,11 +1298,11 @@ export class Tool extends TOOL {
 		this.mergeProperties(all.config, platform.config);
 		this.mergeProperties(all.creation, platform.creation);
 		this.mergeProperties(all.defines, platform.defines);
-		this.mergeProperties(all.ble, platform.ble);
 
 		this.concatProperties(all.data, platform.data, true);
 		this.concatProperties(all.modules, platform.modules, true);
 		this.concatProperties(all.resources, platform.resources, true);
+		this.concatProperties(all.ble, platform.ble, true);
 		this.concatProperties(all.recipes, platform.recipes);
 
 		all.commonjs = this.concatProperty(all.commonjs, platform.commonjs);
