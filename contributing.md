@@ -26,15 +26,15 @@ Before you open an issue, search the repository to see if someone else has alrea
 <a id="pull-requests"></a>
 ## Submitting pull requests
 
-To add a new feature to the Moddable SDK, fix typos in our [documentation](https://github.com/Moddable-OpenSource/moddable/tree/public/documentation), or fix bugs in our [examples](https://github.com/Moddable-OpenSource/moddable/tree/public/examples), please [submit a pull request](https://github.com/Moddable-OpenSource/moddable/pulls).
+To add a new feature to the Moddable SDK, fix typos in our [documentation](./documentation), or fix bugs in our [examples](./examples), please [submit a pull request](https://github.com/Moddable-OpenSource/moddable/pulls).
 
 Before we can accept pull requests, we ask that you complete a Contributor License Agreement (CLA) and e-mail it to us at [info@moddable.com](mailto:info@moddable.com). The contributor license agreements are in the files [Moddable CLA - individual.pdf](https://github.com/Moddable-OpenSource/moddable/blob/public/licenses/Moddable%20CLA%20-%20individual.pdf) and [Moddable CLA - corporate.pdf](https://github.com/Moddable-OpenSource/moddable/blob/public/licenses/Moddable%20CLA%20-%20corporate.pdf).
 
-> For more information about why we require a CLA, see the [licenses document](https://github.com/Moddable-OpenSource/moddable/blob/public/licenses/readme.md#contributor-license-agreement).
+> For more information about why we require a CLA, see the [licenses document](./licenses/readme.md#contributor-license-agreement).
 
 <a id="sample-projects"></a>
 ## Creating sample projects
 
 We'd love to see what you make with the Moddable SDK! Please share with us on Twitter [@moddabletech](https://www.twitter.com/moddabletech) or our [chatroom on Gitter](https://gitter.im/embedded-javascript/moddable).
 
-We'd also love to help share your work. The [`contributed` directory](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed) of this repository contains community-contributed modules and code. Feel free to [submit a pull request](#pull-requests) to add your projects to this directory.
+We'd also love to help share your work. The [`contributed` directory](./contributed) of this repository contains community-contributed modules and code. Feel free to [submit a pull request](#pull-requests) to add your projects to this directory.
