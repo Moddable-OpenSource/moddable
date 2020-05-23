@@ -485,7 +485,14 @@ export class MakeFile extends FILE {
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
-				this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, name);
+				this.write("\t$(PNG2BMP) ");
+				this.write(source);
+				this.write(" -a");
+				if (result.monochrome)
+					this.write(" -m");
+				this.write(" -o $(@D) -r ");
+				this.write(tool.rotation);
+				this.line(name);
 			}
 		}
 
@@ -534,16 +541,20 @@ export class MakeFile extends FILE {
 				this.line("\"");
 			this.write("\t$(PNG2BMP) ");
 			this.write(source);
-			this.write(" -f ");
-			this.write(tool.format);
-			this.write(" -o $(@D) -r ");
-			this.write(tool.rotation);
 			if (!alphaTarget)
 				this.write(" -c");
-			if (clutSource) {
-				this.write(" -clut ");
-				this.write(clutSource);
+			if (result.monochrome)
+				this.write(" -m");
+			else {
+				this.write(" -f ");
+				this.write(tool.format);
+				if (clutSource) {
+					this.write(" -clut ");
+					this.write(clutSource);
+				}
 			}
+			this.write(" -o $(@D) -r ");
+			this.write(tool.rotation);
 			this.line(name);
 		}
 
@@ -902,8 +913,16 @@ class ResourcesRule extends Rule {
 		if (suffix == "-color") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 		}
+		else if (suffix == "-color-monochrome") {
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile.monochrome = true;
+		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+		}
+		else if (suffix == "-alpha-monochrome") {
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			alphaFile.monochrome = true;
 		}
 		else if (suffix == "-mask") {
 			alphaFile = this.appendFile(tool.bmpMaskFiles, name + "-alpha.bm4", path, include);

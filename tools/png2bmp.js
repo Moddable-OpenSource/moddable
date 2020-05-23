@@ -31,6 +31,7 @@ var formatNames = {
 	rgb565le: "rgb565le",
 	rgb565be: "rgb565be",
 	clut16: "clut16",
+	monochrome: "monochrome",
 };
 
 var formatValues = {
@@ -40,14 +41,16 @@ var formatValues = {
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
+	monochrome: 3,
 };
 
 export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.alpha = true;
+		this.alphaFormat = formatValues.gray16;
 		this.color = true;
-		this.format = 0;
+		this.colorFormat = 0;
 		this.name = "";
 		this.rotation = 0;
 		this.inputPaths = [];
@@ -79,14 +82,20 @@ export default class extends TOOL {
 				if (argi >= argc)
 					throw new Error("-f: no format!");
 				name = argv[argi];
-				if (this.format)
+				if (this.colorFormat)
 					throw new Error("-f '" + name + "': too many formats!");
 				name = name.toLowerCase();
 				if (name in formatNames)
 					name = formatNames[name];
 				else
 					throw new Error("-f '" + name + "': unknown format!");
-				this.format = formatValues[name];
+				this.colorFormat = formatValues[name];
+				break;
+			case "-m":
+				if (this.colorFormat)
+					throw new Error("-m: too many formats!");
+				this.alphaFormat = formatValues.monochrome;
+				this.colorFormat = formatValues.monochrome;
 				break;
 			case "-n":
 				argi++;	
@@ -130,8 +139,8 @@ export default class extends TOOL {
 				break;
 			}
 		}
-		if (!this.format) {
-			this.format = 7;
+		if (!this.colorFormat) {
+			this.colorFormat = 7;
 		}
 		if (this.inputPaths.length == 0) {
 			throw new Error("no file!");
@@ -149,8 +158,10 @@ export default class extends TOOL {
 		}
 		return (png.channels == 2) || (png.channels == 3) || (png.channels == 4);
 	}
-	pad(width, format) {
-		let multiple = 32 / Bitmap.depth(format);
+	pad(width) {
+		const colorDepth = (this.color) ? Bitmap.depth(this.colorFormat) : 32;
+		const alphaDepth = (this.alpha) ? Bitmap.depth(this.alphaFormat) : 32;
+		let multiple = 32 / Math.min(colorDepth, alphaDepth);
 		let overflow = width & (multiple - 1);
 		if (overflow)
 			width += multiple - overflow;
@@ -265,7 +276,7 @@ export default class extends TOOL {
 	run() {
 		let inputPaths = this.inputPaths;
 		let c = inputPaths.length;
-		let width, height, pixelFormat = this.format;
+		let width, height;
 		let buffer;
 		let offset = 0;
 		let y = 0;
@@ -277,12 +288,12 @@ export default class extends TOOL {
 			let pngWidth = png.width;
 			let pngHeight = png.height;
 			if ((this.rotation == 0) || (this.rotation == 180)) {
-				width = this.pad(pngWidth, this.alpha ? formatValues.gray16 : pixelFormat);
+				width = this.pad(pngWidth);
 				height = pngHeight;
 			}
 			else {
 				width = pngWidth;
-				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
+				height = this.pad(pngHeight);
 			}
 			buffer = new Uint8Array(width * height * 4);
 			while (y < pngHeight) {
@@ -322,12 +333,12 @@ export default class extends TOOL {
 			}
 			let stripWidth = pngWidth * i;
 			if ((this.rotation == 0) || (this.rotation == 180)) {
-				width = this.pad(stripWidth, this.alpha ? formatValues.gray16 : pixelFormat);
+				width = this.pad(stripWidth);
 				height = pngHeight;
 			}
 			else {
 				width = stripWidth;
-				height = this.pad(pngHeight, this.alpha ? formatValues.gray16 : pixelFormat);
+				height = this.pad(pngHeight);
 			}
 			buffer = new Uint8Array(width * height * 4);
 			while (y < pngHeight) {
@@ -378,9 +389,10 @@ export default class extends TOOL {
 		}
 			
 		let colorPath, colorOut, colorConvert, colorLine;
-		let alphaPath, alphaOut, alphaLine;
+		let alphaPath, alphaOut, alphaConvert, alphaLine;
 		
-		let bufferLine = new Uint8Array(width * 4);
+		let convertRGB24Line = new Uint8Array(width * 3);
+		let convertGray256Line = new Uint8Array(width);
 
 		if (this.color) {
 			let parts = this.splitPath(inputPaths[0]);
@@ -390,16 +402,16 @@ export default class extends TOOL {
 			parts.name += "-color";
 			parts.extension = ".bmp";
 			colorPath = this.joinPath(parts);
-			let dictionary = {width, height, pixelFormat:this.format, path:colorPath};
+			let dictionary = {width, height, pixelFormat:this.colorFormat, path:colorPath};
 			let clut;
 			if (this.clut)
 				clut = dictionary.clut = this.readFileBuffer(this.clut);
 			colorOut = new BMPOut(dictionary);
-			colorConvert = new Convert(Bitmap.RGBA32, this.format, clut);
-			colorLine = new Uint8Array(colorOut.pixelsToBytes(width))
+			colorConvert = new Convert(Bitmap.RGB24, this.colorFormat, clut);
+			colorLine = new Uint8Array(colorOut.pixelsToBytes(width));
 			colorOut.begin(0, 0, width, height);
 		}
-		
+	
 		if (this.alpha) {
 			let parts = this.splitPath(inputPaths[0]);
 			if (this.name)
@@ -408,44 +420,30 @@ export default class extends TOOL {
 			parts.name += "-alpha";
 			parts.extension = ".bmp";
 			alphaPath = this.joinPath(parts);
-			let dictionary = {width, height, pixelFormat:Bitmap.Gray16, path:alphaPath};
+			let dictionary = {width, height, pixelFormat:this.alphaFormat, path:alphaPath};
 			alphaOut = new BMPOut(dictionary);
-			alphaLine = new Uint8Array(width >> 1);
+			alphaConvert = new Convert(Bitmap.Gray256, this.alphaFormat);
+			alphaLine = new Uint8Array(alphaOut.pixelsToBytes(width));
 			alphaOut.begin(0, 0, width, height);
 		}
-		
+	
+		offset = 0;
 		y = 0;
 		while (y < height) {
-			let count = width * 4;
-			let offset = y * count;
-			let index = 0;
-			while (index < count) {
-				let r = bufferLine[index++] = buffer[offset++];
-				let g = bufferLine[index++] = buffer[offset++];
-				let b = bufferLine[index++] = buffer[offset++];
-				let a = bufferLine[index++] = buffer[offset++];
+			let colorIndex = 0;
+			let alphaIndex = 0;
+			while (alphaIndex < width) {
+				let r = convertRGB24Line[colorIndex++] = buffer[offset++];
+				let g = convertRGB24Line[colorIndex++] = buffer[offset++];
+				let b = convertRGB24Line[colorIndex++] = buffer[offset++];
+				let a = convertGray256Line[alphaIndex++] = 255 - buffer[offset++];
 			}
 			if (this.color) {
-				colorConvert.process(bufferLine.buffer, colorLine.buffer);
+				colorConvert.process(convertRGB24Line.buffer, colorLine.buffer);
 				colorOut.send(colorLine.buffer);
 			}
 			if (this.alpha) {
-				let offset = 0;
-				let former = 0;
-				let x = 0;
-				while (x < width) {
-					offset += 3;
-					let a = bufferLine[offset++];
-					if (this.alpha) {
-						if (x & 1)
-							alphaLine[x >> 1] = ~((former & 0xf0) | (a >> 4));
-						else
-							former = a;
-					}
-					x++;
-				}
-				if (x & 1)
-					alphaLine[x >> 1] = ~(former & 0xf0);
+				alphaConvert.process(convertGray256Line.buffer, alphaLine.buffer);
 				alphaOut.send(alphaLine.buffer);
 			}
 			y++;
