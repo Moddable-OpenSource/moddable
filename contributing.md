@@ -4,10 +4,10 @@ Updated May 20, 2020
 
 Want to contribute to the Moddable SDK? Great! We welcome all kinds of contributions. There are many ways to get involved and help out, including:
 
-- [Reporting issues](#reporting-issues)
-- [Requesting features](#requesting-features)
-- [Submitting pull requests](#pull-requests)
-- [Creating sample projects](#sample-projects)
+- Reporting issues
+- Requesting features
+- Submitting pull requests
+- Creating sample projects
 
 <a id="reporting-issues"></a>
 ## Reporting issues
@@ -37,4 +37,4 @@ Before we can accept pull requests, we ask that you complete a Contributor Licen
 
 We'd love to see what you make with the Moddable SDK! Please share with us on Twitter [@moddabletech](https://www.twitter.com/moddabletech) or our [chatroom on Gitter](https://gitter.im/embedded-javascript/moddable).
 
-We'd also love to help share your work. The [`contributed` directory](./contributed) of this repository contains community-contributed modules and code. Feel free to [submit a pull request](#pull-requests) to add your projects to this directory.
+We'd also love to help share your work. The [`contributed` directory](./contributed) of this repository contains community-contributed modules and code. Feel free to submit a pull request to add your projects to this directory.
