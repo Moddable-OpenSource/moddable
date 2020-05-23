@@ -249,16 +249,27 @@ void xs_file_exists(xsMachine *the)
 
 void xs_file_rename(xsMachine *the)
 {
-	char *path;
-    char name[MAX_FILENAME_LENGTH + 1];
+    char* path;
+    char toPath[MAX_FILENAME_LENGTH + 1];
     int32_t result;
+    char* slash;
+    size_t pathLength = 0;
 
-	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
-	path = xsmcToString(xsArg(0));
+    path = xsmcToString(xsArg(0));
+    slash = c_strrchr(path, '/');
+    if (slash){
+        pathLength = slash - path + 1;
+		if (pathLength >= sizeof(toPath)) xsUnknownError("path is too long");
+        c_memcpy(toPath, path, pathLength);
+        toPath[pathLength] = '\0';
+    }
+
+    xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
+    path = xsmcToString(xsArg(0));
 
     startFS();
 
-    result = rename(path, name);
+    result = rename(path, toPath);
 
     stopFS();
 

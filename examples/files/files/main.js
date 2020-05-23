@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -33,7 +33,7 @@ trace("\n");
 // renaming file
 let from = "test.txt";
 let to = "test2.txt";
-File.rename(root + from, root + to);
+File.rename(root + from, to);
 if (File.exists(root + to))
 	trace(`${from} renamed to ${to}\n`);
 trace("\n");
