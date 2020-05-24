@@ -493,16 +493,36 @@ In the unlikely event that you need to build a bootloader, take the following st
 	cp -r $MODDABLE/build/devices/nrf52/config/bootloader/moddable_four src/boards
 	```
 
-3. Build the bootloader and combine with the softdevice.
+3. Edit the file `src/usb/uf2/uf2cfg.h` to expand available flash.
+
+	Change:
 
 	```text
-	make BOARD=moddable_four all combinehex
+    #define USER_FLASH_END     0xAD000 // Fat Fs start here
+	```
+	to:
+
+	```text
+	#define USER_FLASH_END     0xF4000 // use all of flash up to the bootloader
 	```
 
-4. With the board hooked up to a DK through SWD interface, flash to the Moddable Four:
+4. Build the bootloader.
+
+	```text
+	make BOARD=moddable_four all
+	```
+
+5. With the board hooked up to a DK through SWD interface, flash the softdevice to the Moddable Four:
+
+	```text
+	make BOARD=moddable_four sd
+	```
+
+6. With the board hooked up to a DK through SWD interface, flash the bootloader to the Moddable Four:
 
 	```text
 	make BOARD=moddable_four flash
 	```
 
-5. Remove the board from the programmer. It is now ready for use.
+7. Remove the board from the programmer. It is now ready for use.
+
