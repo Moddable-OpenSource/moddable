@@ -40,8 +40,14 @@
 #ifndef MODDEF_LS013B4DN04_DITHER
 	#define MODDEF_LS013B4DN04_DITHER (0)
 #endif
-#ifndef MODDEF_LS013B4DN04_UPDATEALL
-	#define MODDEF_LS013B4DN04_UPDATEALL (0)
+#ifndef MODDEF_LS013B4DN04_DITHER_ATKINSON
+	#define MODDEF_LS013B4DN04_DITHER_ATKINSON (1)
+#endif
+
+#if MODDEF_LS013B4DN04_DITHER_ATKINSON
+	#define DITHER_INITIAL_SHIFT (3)
+#else
+	#define DITHER_INITIAL_SHIFT (4)
 #endif
 
 static const uint8_t gReversedBytes[256] ICACHE_XS6RO_ATTR = {
@@ -101,6 +107,7 @@ struct ls013b4dn04Record {
 
 #if MODDEF_LS013B4DN04_DITHER
 	uint8_t				ditherPhase;
+	uint8_t				flags;			// 1 dither, 2 update all
 	int16_t				ditherA[MODDEF_LS013B4DN04_WIDTH + 4];
 	int16_t				ditherB[MODDEF_LS013B4DN04_WIDTH + 4];
 #endif
@@ -140,6 +147,10 @@ void xs_LS013B4DN04(xsMachine *the){
 
 	ls->dispatch = (PixelsOutDispatch) &gPixelsOutDispatch;
 
+#if MODDEF_LS013B4DN04_DITHER && MODDEF_LS013B4DN04_UPDATEALL
+	ls->flags = MODDEF_LS013B4DN04_UPDATEALL ? 2 : 0;
+#endif
+
 	SCREEN_DISP_INIT;
 
 	SCREEN_CS_INIT;
@@ -156,7 +167,6 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 	uint16_t xMin = x;
 	uint16_t yMin = y;
 	uint16_t xMax = xMin + w;
-//	uint16_t yMax = yMin + h;
 
 	if ((0 != xMin) || (MODDEF_LS013B4DN04_WIDTH != xMax))
 		return 1;
@@ -164,9 +174,11 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 	ls->onRow = yMin;
 
 #if MODDEF_LS013B4DN04_DITHER
-	// ditherA is cleared in send
-	c_memset(ls->ditherB, 0, sizeof(ls->ditherB));
-	ls->ditherPhase = 0;
+	if (ls->flags) {
+		// ditherA is cleared in send
+		c_memset(ls->ditherB, 0, sizeof(ls->ditherB));
+		ls->ditherPhase = 0;
+	}
 #endif
 
 	return 0;
@@ -213,17 +225,22 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 #if MODDEF_LS013B4DN04_DITHER
 		int16_t *thisLineErrors, *nextLineErrors;
 
-		if (ls->ditherPhase) {
-			thisLineErrors = ls->ditherA + 2;
-			nextLineErrors = ls->ditherB + 2;
-			ls->ditherPhase = 0;
+		if (ls->flags) {
+			if (ls->ditherPhase) {
+				thisLineErrors = ls->ditherA + 2;
+				nextLineErrors = ls->ditherB + 2;
+				ls->ditherPhase = 0;
+			}
+			else {
+				thisLineErrors = ls->ditherB + 2;
+				nextLineErrors = ls->ditherA + 2;
+				ls->ditherPhase = 1;
+			}
+#if !MODDEF_LS013B4DN04_DITHER_ATKINSON
+			// Burkes
+			c_memset(nextLineErrors - 2, 0, sizeof(ls->ditherA));		// zero out next line
+#endif
 		}
-		else {
-			thisLineErrors = ls->ditherB + 2;
-			nextLineErrors = ls->ditherA + 2;
-			ls->ditherPhase = 1;
-		}
-		c_memset(nextLineErrors - 2, 0, sizeof(ls->ditherA));		// zero out next line
 #endif
 
 		dest = data + MODDEF_LS013B4DN04_WIDTH;
@@ -231,44 +248,56 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 		*toSend++ = c_read8(gReversedBytes + i);
 
 #if MODDEF_LS013B4DN04_DITHER
-		uint8_t pixels = 0, mask = 0x80;
-		do {
-			int16_t thisPixel = *data++ + (thisLineErrors[0] >> 4);
+		if (ls->flags) {
+			uint8_t pixels = 0, mask = 0x80;
+			do {
+				int16_t thisPixel = *data++ + (thisLineErrors[0] >> DITHER_INITIAL_SHIFT);
 
-			if (thisPixel >= 128) {
-				pixels |= mask;
-				thisPixel -= 255;
-			}
+				if (thisPixel >= 128) {
+					pixels |= mask;
+					thisPixel -= 255;
+				}
 
-			// Burkes
-			nextLineErrors[-2] += thisPixel;
-			nextLineErrors[ 2] += thisPixel;
-			thisPixel <<= 1;
-			thisLineErrors[ 2] += thisPixel;
-			nextLineErrors[-1] += thisPixel;
-			nextLineErrors[ 1] += thisPixel;
-			thisPixel <<= 1;
-			thisLineErrors[ 1] += thisPixel;
-			nextLineErrors[ 0] += thisPixel;
+#if MODDEF_LS013B4DN04_DITHER_ATKINSON
+				// Atkinson
+				thisLineErrors[ 0]  = thisPixel;		// next next!
+				thisLineErrors[+1] += thisPixel;
+				thisLineErrors[+2] += thisPixel;
 
-			thisLineErrors++;
-			nextLineErrors++;
-
-			mask >>= 1;
-			if (!mask) {
-				*toSend++ = pixels;
-				if (data >= dest)
-					break;
-				mask = 0x80;
-				pixels = 0;
-			}
-		} while (true);
+				nextLineErrors[-1] += thisPixel;
+				nextLineErrors[ 0] += thisPixel;
+				nextLineErrors[+1] += thisPixel;
 #else
+				// Burkes
+				nextLineErrors[-2] += thisPixel;
+				nextLineErrors[ 2] += thisPixel;
+				thisPixel <<= 1;
+				thisLineErrors[ 2] += thisPixel;
+				nextLineErrors[-1] += thisPixel;
+				nextLineErrors[ 1] += thisPixel;
+				thisPixel <<= 1;
+				thisLineErrors[ 1] += thisPixel;
+				nextLineErrors[ 0] += thisPixel;
+#endif
+				thisLineErrors++;
+				nextLineErrors++;
+
+				mask >>= 1;
+				if (!mask) {
+					*toSend++ = pixels;	
+					if (data >= dest)
+						break;
+					mask = 0x80;
+					pixels = 0;
+				}
+			} while (true);
+		}
+		else
+#endif
 		while (data < dest){
 			*toSend++ = (data[0] & 0x80) | ((data[1] & 0x80) >> 1) | ((data[2] & 0x80) >> 2) | ((data[3] & 0x80) >> 3) | ((data[4] & 0x80) >> 4) | ((data[5] & 0x80) >> 5) | ((data[6] & 0x80) >> 6) | ((data[7] & 0x80) >> 7);
 			data += 8;
 		}
-#endif
 	}
 
 	ls->onRow = ls->onRow + lines;
@@ -350,11 +379,15 @@ void ls_clear(ls013b4dn04 ls)
 
 void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid)
 {
+	ls013b4dn04 ls = refcon;
+
 	invalid->x = 0;
 	invalid->w = MODDEF_LS013B4DN04_WIDTH;
-#if MODDEF_LS013B4DN04_UPDATEALL
-	invalid->y = 0;
-	invalid->h = MODDEF_LS013B4DN04_HEIGHT;
+#if MODDEF_LS013B4DN04_DITHER
+	if (ls->flags & 2) {
+		invalid->y = 0;
+		invalid->h = MODDEF_LS013B4DN04_HEIGHT;
+	}
 #endif
 }
 
@@ -363,6 +396,27 @@ void xs_ls013b4dn04_adaptInvalid(xsMachine *the)
 	ls013b4dn04 ls = xsmcGetHostData(xsThis);
 	CommodettoRectangle invalid = xsmcGetHostChunk(xsArg(0));
 	ls013b4dn04AdaptInvalid(ls, invalid);
+}
+
+void xs_ls013b4dn04_dither_get(xsMachine *the)
+{
+#if MODDEF_LS013B4DN04_DITHER
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, ls->flags);
+#endif
+}
+
+void xs_ls013b4dn04_dither_set(xsMachine *the)
+{
+#if MODDEF_LS013B4DN04_DITHER
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+	int type = xsmcTypeOf(xsArg(0));
+	int flags = xsmcToInteger(xsArg(0));
+	if (flags)
+		ls->flags = (xsBooleanType == type) ? 3 : (flags & 3);
+	else
+		ls->flags = 0;
+#endif
 }
 
 void xs_ls013b4dn04_clear(xsMachine *the)

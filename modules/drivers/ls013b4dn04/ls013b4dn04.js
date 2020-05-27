@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,9 +41,10 @@ export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 	get height() @ "xs_ls013b4dn04_get_height";
 	get async() {return false;}
 
-
 	hold() @ "xs_ls013b4dn04_hold";
 	clear() @ "xs_ls013b4dn04_clear";
+	get dither() @ "xs_ls013b4dn04_dither_get";
+	set dither(value) @ "xs_ls013b4dn04_dither_set";
 
 	get c_dispatch() @ "xs_ls013b4dn04_get_c_dispatch";
 }
