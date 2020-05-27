@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: May 21, 2020
+Revised: May 27, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -82,7 +82,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v16.0.0` from the nRF5 SDK versions section.
+	- Select `v15.3.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -94,12 +94,12 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_15.3.0_59ac345` directory into the `nrf5` directory.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
-	export NRF_SDK_DIR=$HOME/nrf5/nRF5SDK160098a08e2
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_15.3.0_59ac345
 	```
 
 7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
@@ -169,7 +169,7 @@ After you've setup your macOS host environment, take the following steps to inst
 
 5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v16.0.0` from the nRF5 SDK versions section.
+	- Select `v15.3.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -181,12 +181,12 @@ After you've setup your macOS host environment, take the following steps to inst
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_15.3.0_59ac345` directory into the `nrf5` directory.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
 	```text
-	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5SDK160098a08e2
+	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_15.3.0_59ac345
 	```
 
 7. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
@@ -272,7 +272,7 @@ After you've setup your Windows host environment, take the following steps to in
 
 5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
-	- Select `v16.0.0` from the nRF5 SDK versions section.
+	- Select `v15.3.0` from the nRF5 SDK versions section.
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
@@ -284,12 +284,12 @@ After you've setup your Windows host environment, take the following steps to in
 
 		![](../assets/devices/selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5SDK160098a08e2` directory into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_15.3.0_59ac345` directory into the `nrf5` directory.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
-	export NRF_SDK_DIR=$HOME/nrf5/nRF5SDK160098a08e2
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_15.3.0_59ac345
 	```
 
 7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
@@ -384,7 +384,7 @@ That said, many of the examples that use Commodetto and Piu are designed for col
 <a id="documentation"></a>
 ### Documentation
 
-Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v16.0.0, which is available [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v16.0.0%2Findex.html).
+Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v15.3.0, which is available [here](https://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v15.3.0/index.html?cp=7_5_0).
 
 All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
 
