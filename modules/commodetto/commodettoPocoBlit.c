@@ -549,7 +549,7 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 		srcBits->mode = kPocoMonochromeForeAndBackground;	// mode, fore, amd back are patched in PocoMonochromeBitmapDraw
 		srcBits->fore = 0x00;
 		srcBits->back = ~0;
-		return;		// special case for PocoMonochromeBitmapDraw
+// 		return;		// special case for PocoMonochromeBitmapDraw
 	}
 	else
 		return;

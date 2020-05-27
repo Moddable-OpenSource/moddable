@@ -42,7 +42,7 @@ Revised: March 2, 2020
 
 ## About This Document
 
-This document describes XS in C, the C interface to the runtime of the XS JavaScript engine. Information on building XS for target software/hardware platforms is provided in the companion document [XS Platforms.md](./XS%20%Platforms.md). 
+This document describes XS in C, the C interface to the runtime of the XS JavaScript engine. Information on building XS for target software/hardware platforms is provided in the companion document [XS Platforms.md](./XS%20Platforms.md). 
 
 In accordance with the ECMAScript specifications, the XS runtime implements only generic features that all scripts can use. An application defines the specific features that its own scripts can use through C callbacks. An application that uses the XS runtime is a host in ECMAScript terminology. 
 

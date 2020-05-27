@@ -188,7 +188,10 @@ class ToDoFile extends FILE {
 				for (var path of sources)
 					line.push(path);
 			}
-			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString());
+			line.push("-a");
+			if (result.monochrome)
+				line.push("-m");
+			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
 		}
@@ -207,11 +210,16 @@ class ToDoFile extends FILE {
 				for (var path of sources)
 					line.push(path);
 			}
-			line.push("-f", tool.format, "-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			if (!alphaTarget)
 				line.push("-c");
-			if (clutSource)
-				line.push("-clut", clutSource);
+			if (result.monochrome)
+				line.push("-m");
+			else {
+				line.push("-f", tool.format);
+				if (clutSource)
+					line.push("-clut", clutSource);
+			}
+			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
 		}
@@ -253,7 +261,7 @@ class ToDoFile extends FILE {
 			lines.push(line);
 			lines.push(["rle4encode", bmpSource, "-o", tool.resourcesPath]);
 		}
-
+		
 		for (var result of tool.imageFiles) {
 			var source = result.source;
 			var target = result.target;

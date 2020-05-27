@@ -343,12 +343,12 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(PARTITIONS_PATH) $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
+	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	cd $(PROJ_DIR); \
 	$(DO_LAUNCH)

@@ -37,7 +37,7 @@ export default class BMPOut extends PixelsOut {
 
 		this.depth = Bitmap.depth(dictionary.pixelFormat);
 
-		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat))
+		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat) && (Bitmap.Monochrome != dictionary.pixelFormat))
 			throw new Error("unsupported BMP pixel fornat");
 
 		this.file = new File(dictionary.path, 1);
@@ -154,6 +154,31 @@ export default class BMPOut extends PixelsOut {
 			}
 			else
 				throw new Error("unsupported input pixel format");
+		}
+		else if (1 == this.depth) {
+			if (width % 32)
+				throw new Error("width must be multiple of 32");
+			
+			this.file.write("BM");						// imageFileType
+			this.write32((rowBytes * height) + 0x3E);	// fileSize
+			this.write16(0);							// reserved1
+			this.write16(0);							// reserved2
+			this.write32(0x3E);							// imageDataOffset
+
+			this.write32(0x28);							// biSize
+			this.write32(width);						// biWidth
+			this.write32(-height);						// biHeight (negative, because we write top-to-bottom)
+			this.write16(1);							// biPlanes
+			this.write16(1);							// biBitCount
+			this.write32(0);							// biCompression (3 == 565 pixels (see mask below), 0 == 555 pixels)
+			this.write32((rowBytes * height) + 2);		// biSizeImage
+			this.write32(0x0b12);						// biXPelsPerMeter
+			this.write32(0x0b12);						// biYPelsPerMeter
+			this.write32(0);							// biClrUsed
+			this.write32(0);							// biClrImportant
+			
+			this.file.write(255, 255, 255, 0);
+			this.file.write(0, 0, 0, 0);
 		}
 		else
 			throw new Error("unsupported depth");
